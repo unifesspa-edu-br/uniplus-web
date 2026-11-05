@@ -1,0 +1,91 @@
+<section class="panel" aria-labelledby="cfg-perfis-titulo" [attr.aria-busy]="carregando()">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-perfis-titulo">Perfis</h2>
+      @if (carregando()) {
+        <span><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+  </div>
+
+  @if (perfis().length > 0) {
+    <div
+      class="table-responsive table-responsive--acoes-fixas"
+      role="region"
+      tabindex="0"
+      aria-label="Lista de perfis de acesso"
+    >
+      <table>
+        <caption class="sr-only">
+          Perfis de acesso
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col">Permissões</th>
+            <th scope="col">Sensibilidade</th>
+            <th scope="col">Situação</th>
+            <th scope="col" class="table-responsive__actions">
+              <span class="sr-only">Ações</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (perfil of perfis(); track perfil.id) {
+            <tr>
+              <td data-label="Nome">
+                <div>
+                  {{ perfil.nome }}
+                  @if (perfil.governanca) {
+                    <ui-tag variant="info">Governança</ui-tag>
+                  }
+                  <div class="table-responsive__meta">{{ perfil.descricao }}</div>
+                </div>
+              </td>
+              <td data-label="Permissões">{{ perfil.permissoes.length }}</td>
+              <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
+              <td data-label="Situação">
+                <ui-tag [variant]="perfil.ativo ? 'success' : 'neutral'">{{
+                  perfil.ativo ? 'Ativo' : 'Desativado'
+                }}</ui-tag>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                @if (!perfil.governanca) {
+                  <ui-icon-button
+                    [isDisabled]="gravando()"
+                    icon="pi-pencil"
+                    [accessibleName]="'Editar o perfil ' + perfil.nome"
+                    tooltip="Editar perfil"
+                    (triggered)="editar.emit(perfil)"
+                  />
+                  <ui-icon-button
+                    [isDisabled]="gravando()"
+                    icon="pi-power-off"
+                    [accessibleName]="
+                      (perfil.ativo ? 'Desativar' : 'Ativar') + ' o perfil ' + perfil.nome
+                    "
+                    [tooltip]="perfil.ativo ? 'Desativar perfil' : 'Ativar perfil'"
+                    (triggered)="alternarAtivacao.emit(perfil)"
+                  />
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state heading="Nenhum perfil" description="Crie o primeiro perfil de acesso." />
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de perfis"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

@@ -1,0 +1,44 @@
+<section class="panel" aria-labelledby="cfg-pedido-anexos">
+  <div class="panel-head">
+    <h2 id="cfg-pedido-anexos">Documentos</h2>
+  </div>
+  <div class="panel-body cfg-bloco">
+    @if (pedido().anexos.length === 0) {
+      <p class="cfg-muted">Nenhum documento anexado.</p>
+    } @else {
+      <ul class="cfg-lista">
+        @for (anexo of pedido().anexos; track anexo.id) {
+          <li>
+            Documento enviado em
+            {{ anexo.enviadoEm ? (anexo.enviadoEm | dateBr: 'datetime') : '—' }} ·
+            {{ rotuloDoAnexo(anexo.situacao) }}
+            @if (anexo.situacao === 'verificado') {
+              <button
+                type="button"
+                class="btn btn--tertiary btn--sm"
+                (click)="abrir.emit(anexo.id)"
+              >
+                Abrir documento
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+    @if (podeAnexar()) {
+      <ui-file-upload
+        fieldLabel="Anexar documento"
+        acceptedFileTypes=".pdf"
+        acceptLabel="PDF de até 10 MB"
+        [allowedMimeTypes]="['application/pdf']"
+        [maxSizeMb]="10"
+        [disabled]="anexando()"
+        [mensagemExterna]="erroDoAnexo()"
+        (selectedFileChange)="arquivoSelecionado.emit($event)"
+      />
+      @if (anexando()) {
+        <p role="status"><ui-spinner size="sm" /> Enviando o documento…</p>
+      }
+    }
+  </div>
+</section>

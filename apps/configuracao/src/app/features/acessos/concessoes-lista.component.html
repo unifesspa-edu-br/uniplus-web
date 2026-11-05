@@ -1,0 +1,102 @@
+<section class="panel" aria-labelledby="cfg-concessoes-titulo" [attr.aria-busy]="carregando()">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-concessoes-titulo">Concessões</h2>
+      @if (carregando()) {
+        <span><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <label class="field">
+      <span class="field__label">Situação</span>
+      <select class="select" [ngModel]="situacao()" (ngModelChange)="filtrar.emit($event)">
+        @for (opcao of situacoes; track opcao.value) {
+          <option [value]="opcao.value">{{ opcao.label }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (concessoes().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Concessões de acesso
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Pessoa</th>
+            <th scope="col">Perfil</th>
+            <th scope="col">Escopo</th>
+            <th scope="col">Concedida em</th>
+            <th scope="col">Válida até</th>
+            <th scope="col">Situação</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (concessao of concessoes(); track concessao.id) {
+            <tr>
+              <td data-label="Pessoa">
+                {{ pessoa(concessao) }}
+              </td>
+              <td data-label="Perfil">{{ concessao.perfil.nome }}</td>
+              <td data-label="Escopo">{{ nomeDoEscopo()(concessao.escopo) }}</td>
+              <td data-label="Concedida em">
+                {{ concessao.concedidaEm | dateBr: 'datetime' }}
+              </td>
+              <td data-label="Válida até">
+                {{ concessao.validaAte ? (concessao.validaAte | dateBr: 'datetime') : 'Sem prazo' }}
+              </td>
+              <td data-label="Situação">
+                <ui-tag [variant]="situacaoDe(concessao).variante">{{
+                  situacaoDe(concessao).texto
+                }}</ui-tag>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                @if (concessao.origem.tipo === 'pedido') {
+                  <ui-icon-button
+                    icon="pi-eye"
+                    [link]="['/acessos/pedidos', concessao.origem.id]"
+                    [accessibleName]="'Visualizar o pedido da concessão de ' + pessoa(concessao)"
+                    tooltip="Visualizar pedido"
+                  />
+                }
+                <ui-icon-button
+                  icon="pi-list"
+                  [accessibleName]="'Ver a trilha da concessão de ' + concessao.perfil.nome"
+                  tooltip="Ver trilha"
+                  (triggered)="verTrilha.emit(concessao)"
+                />
+                @if (concessao.ativa) {
+                  <ui-icon-button
+                    icon="pi-ban"
+                    [accessibleName]="'Revogar a concessão de ' + concessao.perfil.nome"
+                    tooltip="Revogar concessão"
+                    (triggered)="revogar.emit(concessao)"
+                  />
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state
+      heading="Nenhuma concessão"
+      description="Nenhuma concessão corresponde a este filtro."
+    />
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de concessões"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

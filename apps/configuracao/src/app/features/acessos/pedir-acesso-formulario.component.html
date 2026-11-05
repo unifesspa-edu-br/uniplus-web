@@ -1,0 +1,177 @@
+<form class="panel form-drawer__form" [formGroup]="form()" (ngSubmit)="aoEnviar()" novalidate>
+  <fieldset
+    class="form-drawer__campos"
+    role="none"
+    [disabled]="enviando() || aguardandoConfirmacao()"
+  >
+    <fieldset class="field">
+      <legend class="field__label">Para quem é o acesso</legend>
+      <label class="radio">
+        <input type="radio" formControlName="paraQuem" value="mim" />
+        <span class="radio__dot" aria-hidden="true"></span>
+        Para mim
+      </label>
+      <label class="radio">
+        <input type="radio" formControlName="paraQuem" value="outra" />
+        <span class="radio__dot" aria-hidden="true"></span>
+        Para outra pessoa
+      </label>
+    </fieldset>
+
+    @if (paraQuem() === 'outra') {
+      <label class="field" [class.is-error]="invalido('beneficiarioEmail')">
+        <span class="field__label is-required">E-mail institucional do beneficiário</span>
+        <input
+          class="input"
+          type="email"
+          autocomplete="off"
+          formControlName="beneficiarioEmail"
+          [attr.aria-invalid]="invalido('beneficiarioEmail') ? 'true' : null"
+          [attr.aria-describedby]="
+            invalido('beneficiarioEmail') ? 'cfg-pedir-beneficiarioEmail-erro' : null
+          "
+        />
+        <span class="field__hint"
+          >O pedido espera o aceite da pessoa antes de seguir para aprovação.</span
+        >
+        @if (invalido('beneficiarioEmail')) {
+          <span class="field__error" id="cfg-pedir-beneficiarioEmail-erro">{{
+            mensagemDoCampo('beneficiarioEmail', 'Informe um e-mail válido.')
+          }}</span>
+        }
+      </label>
+    }
+    @if (perfisIndisponiveis(); as indisponivel) {
+      <ui-alert variant="danger" heading="Não foi possível listar os perfis de acesso">{{
+        indisponivel
+      }}</ui-alert>
+    } @else {
+      <label class="field" [class.is-error]="invalido('perfilId')">
+        <span class="field__label is-required">Perfil de acesso</span>
+        <select
+          class="select"
+          formControlName="perfilId"
+          [attr.aria-invalid]="invalido('perfilId') ? 'true' : null"
+          [attr.aria-describedby]="invalido('perfilId') ? 'cfg-pedir-perfilId-erro' : null"
+        >
+          <option value="">Selecione um perfil</option>
+          @for (perfil of perfis(); track perfil.id) {
+            <option [value]="perfil.id">{{ perfil.nome }}</option>
+          }
+        </select>
+        @if (perfilSelecionado(); as perfil) {
+          <span class="field__hint">{{ perfil.descricao }}</span>
+        }
+        @if (invalido('perfilId')) {
+          <span class="field__error" id="cfg-pedir-perfilId-erro">{{
+            mensagemDoCampo('perfilId', 'Selecione o perfil.')
+          }}</span>
+        }
+      </label>
+    }
+    @if (exigeUnidade()) {
+      <label class="field" [class.is-error]="invalido('unidadeId')">
+        <span class="field__label is-required">Unidade</span>
+        <select
+          class="select"
+          formControlName="unidadeId"
+          [attr.aria-invalid]="invalido('unidadeId') ? 'true' : null"
+          [attr.aria-describedby]="invalido('unidadeId') ? 'cfg-pedir-unidadeId-erro' : null"
+        >
+          <option value="">Selecione a unidade</option>
+          @for (unidade of unidades(); track unidade.id) {
+            <option [value]="unidade.id">{{ unidade.sigla }} — {{ unidade.nome }}</option>
+          }
+        </select>
+        @if (invalido('unidadeId')) {
+          <span class="field__error" id="cfg-pedir-unidadeId-erro">{{
+            mensagemDoCampo('unidadeId', 'Selecione a unidade.')
+          }}</span>
+        }
+      </label>
+    } @else {
+      <p class="field__hint">Este perfil vale para a instituição, sem unidade.</p>
+    }
+
+    <label class="field" [class.is-error]="invalido('justificativa')">
+      <span class="field__label is-required">Justificativa</span>
+      <textarea
+        class="textarea"
+        formControlName="justificativa"
+        [attr.aria-invalid]="invalido('justificativa') ? 'true' : null"
+        [attr.aria-describedby]="invalido('justificativa') ? 'cfg-pedir-justificativa-erro' : null"
+      ></textarea>
+      <span class="field__hint"
+        >Explique por que o trabalho exige o acesso (de 10 a 2000 caracteres).</span
+      >
+      @if (invalido('justificativa')) {
+        <span class="field__error" id="cfg-pedir-justificativa-erro">{{
+          mensagemDoCampo(
+            'justificativa',
+            'A justificativa deve ter de 10 a 2000
+        caracteres.'
+          )
+        }}</span>
+      }
+    </label>
+
+    @if (!exigeDocumento()) {
+      <label class="field" [class.is-error]="invalido('validaAteSugerida')">
+        <span class="field__label">Prazo sugerido (opcional)</span>
+        <input
+          class="input"
+          type="date"
+          formControlName="validaAteSugerida"
+          [min]="hoje()"
+          [attr.aria-invalid]="invalido('validaAteSugerida') ? 'true' : null"
+          [attr.aria-describedby]="
+            'cfg-pedir-validaAteSugerida-dica' +
+            (invalido('validaAteSugerida') ? ' cfg-pedir-validaAteSugerida-erro' : '')
+          "
+        />
+        <span class="field__hint" id="cfg-pedir-validaAteSugerida-dica"
+          >Último dia em que o acesso deve valer. O gestor de acessos decide o prazo; sem sugestão,
+          o acesso não tem fim previsto.</span
+        >
+        @if (invalido('validaAteSugerida')) {
+          <span class="field__error" id="cfg-pedir-validaAteSugerida-erro">{{
+            mensagemDoCampo('validaAteSugerida', mensagemDoPrazo())
+          }}</span>
+        }
+      </label>
+    }
+
+    <cfg-pedido-documento-formulario
+      [exigeDocumento]="exigeDocumento()"
+      [desabilitado]="enviando() || aguardandoConfirmacao()"
+      [erroDoDocumento]="erroDoDocumento()"
+      [(arquivo)]="arquivo"
+    />
+  </fieldset>
+
+  <p role="status" [class.sr-only]="faseDoEnvio() === null">
+    {{ faseDoEnvio() ?? (enviando() ? 'Enviando pedido…' : '') }}
+  </p>
+
+  <div class="form-drawer__footer">
+    <a
+      class="btn btn--tertiary btn--rect"
+      [routerLink]="enviando() ? null : '/acessos/pedidos'"
+      [attr.aria-disabled]="enviando() ? 'true' : null"
+      (click)="aoClicar($event)"
+      >Cancelar</a
+    >
+    <button
+      type="submit"
+      class="btn btn--primary"
+      [attr.aria-disabled]="enviando() ? 'true' : null"
+      [attr.aria-busy]="enviando() ? 'true' : null"
+      (click)="aoClicar($event)"
+    >
+      @if (enviando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ enviando() ? 'Enviando…' : 'Enviar pedido' }}
+    </button>
+  </div>
+</form>

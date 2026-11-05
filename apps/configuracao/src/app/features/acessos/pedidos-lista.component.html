@@ -1,0 +1,110 @@
+<section
+  class="panel"
+  [attr.aria-labelledby]="'cfg-pedidos-titulo'"
+  [attr.aria-busy]="carregando()"
+>
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-pedidos-titulo">Pedidos</h2>
+      @if (carregando()) {
+        <span><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    @if (filtraPorSituacao()) {
+      <label class="field">
+        <span class="field__label">Situação</span>
+        <select class="select" [ngModel]="situacao()" (ngModelChange)="filtrar.emit($event)">
+          <option value="">Todas</option>
+          @for (opcao of situacoes; track opcao.value) {
+            <option [value]="opcao.value">{{ opcao.label }}</option>
+          }
+        </select>
+      </label>
+    }
+  </div>
+
+  @if (pedidos().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          {{
+            titulo()
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Beneficiário</th>
+            <th scope="col">Perfil</th>
+            <th scope="col">Escopo</th>
+            <th scope="col">Situação</th>
+            <th scope="col">Pedido em</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (pedido of pedidos(); track pedido.id) {
+            <tr
+              class="table-responsive__row--clickable"
+              [attr.tabindex]="carregando() ? null : 0"
+              (click)="abrirPedido(pedido)"
+              (keydown.enter)="abrirPeloTeclado(pedido, $event)"
+              (keydown.space)="abrirPeloTeclado(pedido, $event)"
+            >
+              <td data-label="Beneficiário">
+                {{ pedido.beneficiario.nome ?? pedido.beneficiario.email }}
+              </td>
+              <td data-label="Perfil">{{ pedido.perfil.nome }}</td>
+              <td data-label="Escopo">
+                {{
+                  pedido.escopo.unidadeId === null
+                    ? 'Instituição'
+                    : (nomesDosEscopos().get(pedido.escopo.unidadeId) ?? 'Unidade não identificada')
+                }}
+              </td>
+              <td data-label="Situação">
+                <ui-tag [variant]="rotulo(pedido.situacao).variante">{{
+                  rotulo(pedido.situacao).texto
+                }}</ui-tag>
+              </td>
+              <td data-label="Pedido em">{{ pedido.criadoEm | dateBr: 'datetime' }}</td>
+              <td
+                class="table-responsive__actions"
+                data-label="Ações"
+                (click)="$event.stopPropagation()"
+                (keydown.enter)="$event.stopPropagation()"
+                (keydown.space)="$event.stopPropagation()"
+              >
+                <ui-icon-button
+                  icon="pi-eye"
+                  [link]="['/acessos/pedidos', pedido.id]"
+                  [queryParams]="origem()"
+                  [accessibleName]="
+                    'Visualizar o pedido de ' +
+                    pedido.perfil.nome +
+                    ' para ' +
+                    (pedido.beneficiario.nome ?? pedido.beneficiario.email)
+                  "
+                  tooltip="Visualizar pedido"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state heading="Nada por aqui" [description]="vazio()" />
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de pedidos"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

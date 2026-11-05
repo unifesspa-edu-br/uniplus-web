@@ -1,13 +1,23 @@
+import {
+  HttpHeaders,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import { map } from 'rxjs';
+import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { apiFailure } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
+import { EdicaoDoPedido } from './edicao-do-pedido';
 import { PedidoDetalhePage } from './pedido-detalhe.page';
 import { EU, concedidas, ok, pedido, recusa, UNIDADES } from './testes';
 
@@ -17,7 +27,8 @@ const PROTECAO_DE_DADOS = 'autorizacao:pedidos:aprovar-protecao-de-dados';
 interface Interna {
   executar(): Promise<void>;
   pedirConfirmacao(acao: string): void;
-  recusar(motivo: string): Promise<void>;
+  recusar(): Promise<void>;
+  motivo: { setValue(valor: string): void };
   anexar(arquivo: File | null): Promise<void>;
   abrirAnexo(id: string): Promise<void>;
   podeAceitar(): boolean;
@@ -61,6 +72,16 @@ describe('PedidoDetalhePage', () => {
     api.trilha.mockReturnValue(of(ok([])));
     TestBed.configureTestingModule({
       providers: [
+        { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+        provideHttpClient(
+          withInterceptors([
+            (req) =>
+              (req.url.endsWith('/trilha')
+                ? api.trilha(decodeURIComponent(req.url.split('/').at(-2) ?? ''))
+                : api.obter(decodeURIComponent(req.url.split('/').at(-1) ?? ''))
+              ).pipe(map((body: unknown) => new HttpResponse({ body }))),
+          ]),
+        ),
         provideRouter([]),
         { provide: PedidosDeConcessaoApi, useValue: api },
         { provide: AnexoDoPedidoService, useValue: anexos },
@@ -252,15 +273,46 @@ describe('PedidoDetalhePage', () => {
     expect(host.textContent).toContain('Encarregado(a) pelo tratamento de dados');
   });
 
+  it('mantém a confirmação aberta e impede outra decisão durante o envio', async () => {
+    const { fixture, host, pagina } = await abrir([GESTOR]);
+    const resposta = new Subject<ReturnType<typeof ok>>();
+    api.aprovar.mockReturnValue(resposta);
+    pagina.pedirConfirmacao('aprovar');
+    fixture.detectChanges();
+    const dialogo = host.querySelector('ui-dialog');
+    const botoes = dialogo?.querySelectorAll('button');
+    const confirmar = [...(botoes ?? [])].find((botao) => botao.textContent?.includes('Aprovar'));
+    confirmar?.click();
+    fixture.detectChanges();
+
+    expect(pagina.enviando()).toBe(true);
+    expect(confirmar?.getAttribute('aria-disabled')).toBe('true');
+    expect(dialogo?.querySelector('[role="status"]')?.textContent).toContain('Enviando');
+    expect(
+      [...dialogo!.querySelectorAll('button')].find((botao) =>
+        botao.textContent?.includes('Voltar'),
+      )?.disabled,
+    ).toBe(true);
+    confirmar?.click();
+    expect(api.aprovar).toHaveBeenCalledTimes(1);
+
+    resposta.next(ok(pedido()));
+    resposta.complete();
+    await esperar(fixture);
+    expect(dialogo?.querySelector('dialog')?.hasAttribute('open')).toBe(false);
+  });
+
   it('fecha o diálogo de recusa quando o pedido já não está na etapa da pessoa', async () => {
-    const { pagina } = await abrir([GESTOR]);
+    const { pagina, fixture } = await abrir([GESTOR]);
     pagina.abrirRecusa();
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.etapa_invalida')));
     api.obter.mockReturnValue(
       of(ok(pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }))),
     );
 
-    await pagina.recusar('Motivo.');
+    pagina.motivo.setValue('Motivo.');
+    await pagina.recusar();
+    await esperar(fixture);
 
     expect(pagina.podeDecidir()).toBe(false);
     expect(pagina.recusando()).toBe(false);
@@ -268,11 +320,12 @@ describe('PedidoDetalhePage', () => {
   });
 
   it('aprova e recarrega o pedido', async () => {
-    const { pagina } = await abrir([GESTOR]);
+    const { pagina, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(ok(pedido({ situacao: 'aguardando_protecao_de_dados' }))));
 
     pagina.pedirConfirmacao('aprovar');
     await pagina.executar();
+    await esperar(fixture);
 
     expect(api.aprovar).toHaveBeenCalledWith('pedido-1', expect.anything(), null);
     expect(notificacoes.success).toHaveBeenCalledWith('Pedido atualizado');
@@ -351,6 +404,22 @@ describe('PedidoDetalhePage', () => {
       expect(host.querySelector('#cfg-pedido-prazo-erro')?.textContent).toContain('já passou');
     });
 
+    it('ao aprovar com prazo inválido, o resumo encaminha o foco ao campo', async () => {
+      const { host, fixture } = await abrir([GESTOR]);
+      digitar(host, '2020-01-01');
+      const focar = vi.spyOn(campo(host)!, 'focus');
+      const aprovar = [...host.querySelectorAll('cfg-pedido-resumo button')].find(
+        (botao) => botao.textContent?.trim() === 'Aprovar',
+      );
+
+      aprovar!.click();
+      fixture.detectChanges();
+
+      expect(focar).toHaveBeenCalled();
+      expect(campo(host)?.getAttribute('aria-invalid')).toBe('true');
+      expect(api.aprovar).not.toHaveBeenCalled();
+    });
+
     it('perfil que não admite prazo não mostra o campo e aprova sem validaAte', async () => {
       const { pagina, host } = await abrir([GESTOR], pedido({ admitePrazo: false }));
       api.aprovar.mockReturnValue(of(ok(pedido())));
@@ -382,21 +451,109 @@ describe('PedidoDetalhePage', () => {
   });
 
   it('mostra a recusa de quem decide o pedido de que é parte e relê o pedido', async () => {
-    const { pagina } = await abrir([GESTOR]);
+    const { pagina, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.decisor_e_parte')));
 
     pagina.pedirConfirmacao('aprovar');
     await pagina.executar();
+    await esperar(fixture);
 
     expect(pagina.erro()).toBe('Recusado');
     expect(api.obter).toHaveBeenCalledTimes(2);
+  });
+
+  it('ao reabrir a recusa limpa o motivo e a validação anterior', async () => {
+    const { fixture, host, pagina } = await abrir([GESTOR]);
+    pagina.abrirRecusa();
+    fixture.detectChanges();
+    await pagina.recusar();
+    await esperar(fixture);
+    const campo = host.querySelector<HTMLTextAreaElement>('cfg-motivo-dialog textarea');
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    expect(document.activeElement).toBe(campo);
+    pagina.motivo.setValue('Motivo anterior');
+    pagina.recusando.set?.(false);
+    pagina.abrirRecusa();
+    fixture.detectChanges();
+    expect(campo?.value).toBe('');
+    expect(campo?.getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it('impede decisões concorrentes e mantém o diálogo aberto durante o envio', async () => {
+    const { fixture, host, pagina } = await abrir([GESTOR]);
+    const resposta = new Subject<ReturnType<typeof ok>>();
+    api.recusar.mockReturnValue(resposta);
+    pagina.abrirRecusa();
+    pagina.motivo.setValue('Motivo');
+    fixture.detectChanges();
+    const edicao = fixture.debugElement.injector.get(EdicaoDoPedido);
+    const envio = pagina.recusar();
+    fixture.detectChanges();
+    const campo = host.querySelector<HTMLTextAreaElement>('cfg-motivo-dialog textarea');
+    const botao = host.querySelector<HTMLButtonElement>('cfg-motivo-dialog .btn--danger');
+    expect(campo?.matches(':disabled')).toBe(true);
+    expect(botao?.getAttribute('aria-disabled')).toBe('true');
+    expect(host.querySelector('cfg-motivo-dialog [role="status"]')?.textContent).toContain(
+      'Enviando decisão',
+    );
+    botao?.click();
+    void edicao.recusar(signal(true));
+    void edicao.executar(false);
+    host
+      .querySelector('cfg-motivo-dialog dialog')
+      ?.dispatchEvent(new Event('cancel', { cancelable: true }));
+    fixture.detectChanges();
+    expect(edicao.recusando()).toBe(true);
+    expect(api.recusar).toHaveBeenCalledTimes(1);
+    expect(api.aprovar).not.toHaveBeenCalled();
+    resposta.next(ok(pedido()));
+    resposta.complete();
+    await envio;
+    expect(edicao.recusando()).toBe(false);
+  });
+
+  it('mostra e foca o motivo recusado pelo servidor', async () => {
+    const { fixture, host, pagina } = await abrir([GESTOR]);
+    api.recusar.mockReturnValue(
+      of(
+        apiFailure(
+          {
+            type: 'x',
+            title: 'Dados inválidos',
+            status: 422,
+            code: 'uniplus.validacao',
+            traceId: '',
+            errors: [
+              {
+                field: 'Motivo',
+                code: 'uniplus.autorizacao.pedido.motivo_invalido',
+                message: 'Motivo recusado.',
+              },
+            ],
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    pagina.abrirRecusa();
+    pagina.motivo.setValue('Motivo');
+    fixture.detectChanges();
+    await pagina.recusar();
+    await esperar(fixture);
+    await esperar(fixture);
+    const campo = host.querySelector<HTMLTextAreaElement>('cfg-motivo-dialog textarea');
+    expect(campo?.getAttribute('aria-invalid')).toBe('true');
+    expect(host.textContent).toContain('Motivo recusado.');
+    expect(document.activeElement).toBe(campo);
   });
 
   it('recusa com motivo e fecha o diálogo', async () => {
     const { pagina } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(ok(pedido({ situacao: 'recusado', etapaAtual: null }))));
 
-    await pagina.recusar('Sem necessidade funcional.');
+    pagina.motivo.setValue('Sem necessidade funcional.');
+    await pagina.recusar();
 
     expect(api.recusar.mock.calls[0]?.slice(0, 2)).toEqual([
       'pedido-1',
@@ -410,7 +567,8 @@ describe('PedidoDetalhePage', () => {
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.motivo_invalido')));
 
     pagina.abrirRecusa();
-    await pagina.recusar('x');
+    pagina.motivo.setValue('x');
+    await pagina.recusar();
 
     expect(pagina.erroDaRecusa()).toBe('Recusado');
     expect(pagina.recusando()).toBe(true);
@@ -420,7 +578,8 @@ describe('PedidoDetalhePage', () => {
     const { pagina } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.motivo_invalido')));
     pagina.abrirRecusa();
-    await pagina.recusar('x');
+    pagina.motivo.setValue('x');
+    await pagina.recusar();
     pagina.recusando.set?.(false);
 
     pagina.abrirRecusa();
@@ -499,10 +658,11 @@ describe('PedidoDetalhePage', () => {
   });
 
   it('anexa o documento do solicitante e recarrega o pedido', async () => {
-    const { pagina } = await abrir([], solicitadoPorMim());
+    const { pagina, fixture } = await abrir([], solicitadoPorMim());
     anexos.anexar.mockResolvedValue({ ok: true });
 
     await pagina.anexar(new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
+    await esperar(fixture);
 
     expect(anexos.anexar).toHaveBeenCalled();
     expect(api.obter).toHaveBeenCalledTimes(2);
@@ -585,6 +745,16 @@ describe('PedidoDetalhePage', () => {
     api.trilha.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.nao_encontrado', 404)));
     TestBed.configureTestingModule({
       providers: [
+        { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+        provideHttpClient(
+          withInterceptors([
+            (req) =>
+              (req.url.endsWith('/trilha')
+                ? api.trilha(decodeURIComponent(req.url.split('/').at(-2) ?? ''))
+                : api.obter(decodeURIComponent(req.url.split('/').at(-1) ?? ''))
+              ).pipe(map((body: unknown) => new HttpResponse({ body }))),
+          ]),
+        ),
         provideRouter([]),
         { provide: PedidosDeConcessaoApi, useValue: api },
         { provide: AnexoDoPedidoService, useValue: anexos },

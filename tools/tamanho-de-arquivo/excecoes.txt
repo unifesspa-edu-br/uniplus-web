@@ -4,9 +4,6 @@
 # A lista só diminui: arquivo novo não entra aqui, e arquivo listado não pode crescer.
 # Ao dividir um arquivo até 400 linhas ou menos, remova a entrada (ou rode
 # `npm run check:tamanho -- --atualizar`, que só reduz números e remove entradas).
-633 apps/configuracao/src/app/features/acessos/pedido-detalhe.page.ts
-462 apps/configuracao/src/app/features/acessos/pedir-acesso.page.ts
-460 apps/configuracao/src/app/features/acessos/perfis.page.ts
 1110 apps/configuracao/src/app/features/base-legal-bonus-regional/base-legal-bonus-regional-list.page.ts
 1049 apps/configuracao/src/app/features/calendario-dias-uteis/calendario-dias-uteis-detalhe.page.ts
 1023 apps/configuracao/src/app/features/calendario-dias-uteis/calendario-dias-uteis-novo.page.ts

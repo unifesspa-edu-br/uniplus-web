@@ -1,0 +1,15 @@
+<ui-drawer
+  class="cfg-detail-drawer cfg-detail-drawer--ampla"
+  [(visible)]="aberto"
+  heading="Trilha da concessão"
+  ariaLabel="Trilha da concessão"
+  position="right"
+>
+  @if (carregando()) {
+    <p role="status"><ui-spinner size="sm" /> Carregando a trilha…</p>
+  }
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível carregar a trilha">{{ erro() }}</ui-alert>
+  }
+  <cfg-trilha-de-acesso [eventos]="eventos()" legenda="Trilha da concessão" />
+</ui-drawer>

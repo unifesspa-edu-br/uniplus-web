@@ -1,0 +1,38 @@
+<section class="panel" aria-labelledby="cfg-pedido-decisoes">
+  <div class="panel-head">
+    <h2 id="cfg-pedido-decisoes">Decisões</h2>
+  </div>
+  <div class="panel-body">
+    @if (pedido().decisoes.length === 0) {
+      <p class="cfg-muted">Nenhuma decisão registrada.</p>
+    } @else {
+      <ul class="cfg-lista">
+        @for (decisao of pedido().decisoes; track $index) {
+          <li class="cfg-lista__coluna">
+            <strong>{{ etapaDe(decisao.etapa) }}</strong>
+            <span>
+              {{ rotuloDaDecisao(decisao.resultado) }} em
+              {{ decisao.instante | dateBr: 'datetime' }} por {{ autorDe(decisao.decisor) }}
+            </span>
+            <span class="cfg-muted">
+              Sensibilidade avaliada: {{ sensibilidadeDe(decisao.sensibilidadeAvaliada) }}
+            </span>
+            @if (decisao.motivo) {
+              <span>Motivo: {{ decisao.motivo }}</span>
+            }
+            @if (decisao.dispensa) {
+              <span>Segunda aprovação dispensada: {{ dispensaDe(decisao.dispensa) }}</span>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="cfg-pedido-trilha">
+  <div class="panel-head">
+    <h2 id="cfg-pedido-trilha">Trilha</h2>
+  </div>
+  <cfg-trilha-de-acesso [eventos]="trilha()" legenda="Trilha do pedido" />
+</section>

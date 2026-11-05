@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl, Validators } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 import { MotivoDialogComponent } from './motivo-dialog.component';
 
@@ -8,14 +9,24 @@ import { MotivoDialogComponent } from './motivo-dialog.component';
   imports: [MotivoDialogComponent],
   template: `<cfg-motivo-dialog
     [(visible)]="aberto"
-    heading="Revogar"
-    confirmLabel="Revogar"
-    (confirmado)="motivos.push($event)"
+    heading="Recusar pedido"
+    confirmLabel="Recusar"
+    [motivo]="motivo"
+    [tentou]="tentou()"
+    [enviando]="enviando()"
+    (confirmado)="confirmar()"
   />`,
 })
 class HospedeComponent {
-  readonly aberto = signal(false);
+  readonly aberto = signal(true);
+  readonly enviando = signal(false);
+  readonly tentou = signal(false);
+  readonly motivo = new FormControl('', { nonNullable: true, validators: [Validators.required] });
   readonly motivos: string[] = [];
+  confirmar(): void {
+    this.tentou.set(true);
+    if (this.motivo.valid) this.motivos.push(this.motivo.value.trim());
+  }
 }
 
 describe('MotivoDialogComponent', () => {
@@ -29,64 +40,48 @@ describe('MotivoDialogComponent', () => {
     const fixture = TestBed.createComponent(HospedeComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
-    const campo = () => host.querySelector('textarea') as HTMLTextAreaElement;
-    const abrir = () => {
-      fixture.componentInstance.aberto.set(true);
-      fixture.detectChanges();
+    return {
+      fixture,
+      host,
+      campo: host.querySelector('textarea') as HTMLTextAreaElement,
+      botao: host.querySelector('.btn--danger') as HTMLButtonElement,
     };
-    const confirmar = () => {
-      (host.querySelector('.btn--danger') as HTMLButtonElement).click();
-      fixture.detectChanges();
-    };
-    return { fixture, host, campo, abrir, confirmar };
   }
 
-  it('emite o motivo digitado, sem espaços nas pontas', () => {
-    const { fixture, campo, abrir, confirmar } = montar();
-    abrir();
-
-    campo().value = '  Saiu da função.  ';
-    campo().dispatchEvent(new Event('input'));
-    confirmar();
-
+  it('emite a confirmação com o motivo informado ao hospedeiro', () => {
+    const { fixture, campo, botao } = montar();
+    campo.value = '  Saiu da função.  ';
+    campo.dispatchEvent(new Event('input'));
+    botao.click();
     expect(fixture.componentInstance.motivos).toEqual(['Saiu da função.']);
   });
 
-  it('não marca o motivo preenchido como obrigatório quando só está enviando', () => {
-    const fixture = TestBed.createComponent(MotivoDialogComponent);
-    fixture.componentRef.setInput('heading', 'Revogar');
-    fixture.componentRef.setInput('confirmLabel', 'Revogar');
-    fixture.componentRef.setInput('enviando', true);
-    const dialogo = fixture.componentInstance as unknown as {
-      motivo: { setValue(v: string): void; errors: unknown };
-      confirmar(): void;
-    };
-    dialogo.motivo.setValue('Saiu da função.');
-
-    dialogo.confirmar();
-
-    expect(dialogo.motivo.errors).toBeNull();
+  it('apresenta a recusa do campo', () => {
+    const { fixture, host, campo } = montar();
+    fixture.componentInstance.motivo.setErrors({ backend: { message: 'Motivo recusado.' } });
+    fixture.componentInstance.motivo.markAsTouched();
+    fixture.componentInstance.tentou.set(true);
+    fixture.detectChanges();
+    expect(campo.getAttribute('aria-invalid')).toBe('true');
+    expect(host.textContent).toContain('Motivo recusado.');
   });
 
-  it('reabre sem o motivo nem o erro da vez anterior', () => {
-    const { fixture, host, campo, abrir, confirmar } = montar();
-    abrir();
-    campo().value = 'Motivo da concessão A';
-    campo().dispatchEvent(new Event('input'));
-    confirmar();
-    fixture.componentInstance.aberto.set(false);
+  it('bloqueia o fechamento, o campo e nova confirmação durante o envio', () => {
+    const { fixture, host, campo, botao } = montar();
+    fixture.componentInstance.motivo.setValue('Motivo');
+    fixture.componentInstance.enviando.set(true);
     fixture.detectChanges();
-
-    abrir();
-
-    expect(campo().value).toBe('');
-    confirmar();
-    expect(fixture.componentInstance.motivos).toEqual(['Motivo da concessão A']);
-    expect(host.textContent).toContain('Informe o motivo');
-
-    fixture.componentInstance.aberto.set(false);
+    expect(campo.matches(':disabled')).toBe(true);
+    expect(botao.getAttribute('aria-disabled')).toBe('true');
+    expect(botao.getAttribute('aria-busy')).toBe('true');
+    expect(host.querySelector('[role="status"]')?.textContent).toContain('Enviando decisão');
+    expect((host.querySelector('.btn--tertiary') as HTMLButtonElement).disabled).toBe(true);
+    botao.click();
+    (host.querySelector('dialog') as HTMLDialogElement).dispatchEvent(
+      new Event('cancel', { cancelable: true }),
+    );
     fixture.detectChanges();
-    abrir();
-    expect(host.textContent).not.toContain('Informe o motivo, em até');
+    expect(fixture.componentInstance.aberto()).toBe(true);
+    expect(fixture.componentInstance.motivos).toEqual([]);
   });
 });

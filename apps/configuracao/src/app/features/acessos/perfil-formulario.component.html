@@ -1,0 +1,118 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="emEdicao() ? 'Editar perfil' : 'Novo perfil'"
+  ariaLabel="Formulário de perfil de acesso"
+  position="right"
+>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+  <form
+    id="cfg-perfil-form"
+    class="form-drawer__form"
+    [formGroup]="form()"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <label class="field" [class.is-error]="invalido('nome')">
+        <span class="field__label is-required">Nome</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="nome"
+          [readOnly]="criacaoEmAberto()"
+          [attr.aria-invalid]="invalido('nome') ? 'true' : null"
+        />
+        @if (invalido('nome')) {
+          <span class="field__error">{{ mensagemDoCampo('nome') }}</span>
+        }
+      </label>
+      <label class="field" [class.is-error]="invalido('descricao')">
+        <span class="field__label is-required">Descrição</span>
+        <textarea
+          class="textarea"
+          formControlName="descricao"
+          [readOnly]="criacaoEmAberto()"
+          [attr.aria-invalid]="invalido('descricao') ? 'true' : null"
+        ></textarea>
+        @if (invalido('descricao')) {
+          <span class="field__error">{{ mensagemDoCampo('descricao') }}</span>
+        }
+      </label>
+
+      <fieldset class="field">
+        <legend class="form-section__title">Permissões</legend>
+        @if (erroDoCatalogo()) {
+          <ui-alert variant="warning" heading="Catálogo indisponível">
+            Não foi possível carregar o catálogo de permissões.
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="recarregarCatalogo.emit()"
+            >
+              Tentar novamente
+            </button>
+          </ui-alert>
+        }
+        @for (modulo of catalogo(); track modulo.modulo) {
+          @for (resource of modulo.resources; track resource.resource) {
+            <fieldset class="field">
+              <legend class="field__label cfg-form__grupo-titulo">
+                {{ modulo.modulo }} · {{ resource.resource }}
+              </legend>
+              @for (permissao of resource.permissoes; track permissao.codigo) {
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    [checked]="marcadas().includes(permissao.codigo)"
+                    [disabled]="criacaoEmAberto()"
+                    (change)="alternar.emit(permissao.codigo)"
+                  />
+                  <span class="checkbox__box" aria-hidden="true"></span>
+                  <span>
+                    {{ permissao.nome }}
+                    <span class="field__hint">
+                      · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                      <code class="ui-code">{{ permissao.codigo }}</code>
+                    </span>
+                  </span>
+                </label>
+              }
+            </fieldset>
+          }
+        }
+        <span class="field__hint"
+          >Permissão de dado pessoal ou sensível exige a aprovação da proteção de dados nos pedidos
+          deste perfil.</span
+        >
+      </fieldset>
+    </fieldset>
+  </form>
+  <span class="sr-only" role="status">{{ salvando() ? 'Salvando perfil…' : '' }}</span>
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="aberto.set(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-perfil-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ salvando() ? 'Salvando…' : 'Salvar perfil' }}
+    </button>
+  </div>
+</ui-drawer>

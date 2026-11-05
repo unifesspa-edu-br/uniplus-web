@@ -1,7 +1,17 @@
+import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
+import {
+  HttpHeaders,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import { map } from 'rxjs';
+import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
-import { of } from 'rxjs';
+import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { apiFailure } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
@@ -33,17 +43,26 @@ const PERFIL_DE_GOVERNANCA = {
   governanca: 'protecao-de-dados',
 };
 
-describe('PedirAcessoPage', () => {
+describe('PedirAcessoPage', async () => {
   const api = { criar: vi.fn(), perfisParaPedir: vi.fn() };
   const anexos = { anexar: vi.fn() };
   const notificacoes = { success: vi.fn(), warning: vi.fn() };
 
-  function montar() {
+  async function montar() {
     api.perfisParaPedir.mockReturnValue(
       of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL, PERFIL_DE_GOVERNANCA])),
     );
     TestBed.configureTestingModule({
       providers: [
+        { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+        provideHttpClient(
+          withInterceptors([
+            (_req) =>
+              api
+                .perfisParaPedir({ cursor: undefined, direction: 'next', limit: 100 })
+                .pipe(map((body: unknown) => new HttpResponse({ body }))),
+          ]),
+        ),
         provideRouter([]),
         { provide: PedidosDeConcessaoApi, useValue: api },
         { provide: AnexoDoPedidoService, useValue: anexos },
@@ -54,6 +73,8 @@ describe('PedirAcessoPage', () => {
     const router = TestBed.inject(Router);
     const navegar = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     const fixture = TestBed.createComponent(PedirAcessoPage);
+    fixture.detectChanges();
+    await fixture.whenStable();
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     const campo = <T extends HTMLElement>(seletor: string) => host.querySelector(seletor) as T;
@@ -75,8 +96,83 @@ describe('PedirAcessoPage', () => {
     vi.resetAllMocks();
   });
 
-  it('lista os perfis que a API oferece para pedir', () => {
-    const { host } = montar();
+  it('mantém os valores e o foco durante o envio e recusa nova submissão', async () => {
+    const resposta = new Subject<ReturnType<typeof ok<ReturnType<typeof pedido>>>>();
+    api.criar.mockReturnValue(resposta);
+    const { fixture, host, digitar, campo } = await montar();
+    digitar('select[formcontrolname="perfilId"]', 'perfil-2');
+    digitar('textarea[formcontrolname="justificativa"]', 'Preciso deste acesso para trabalhar.');
+    const botao = campo<HTMLButtonElement>('button[type="submit"]');
+    botao.focus();
+    botao.click();
+    fixture.detectChanges();
+
+    const justificativa = campo<HTMLTextAreaElement>('textarea[formcontrolname="justificativa"]');
+    expect(justificativa.matches(':disabled')).toBe(true);
+    expect(justificativa.value).toBe('Preciso deste acesso para trabalhar.');
+    expect(botao.getAttribute('aria-disabled')).toBe('true');
+    expect(botao.getAttribute('aria-busy')).toBe('true');
+    expect(document.activeElement).toBe(botao);
+    expect(host.querySelector('[role="status"]')?.textContent).toContain('Enviando pedido');
+    botao.click();
+    campo<HTMLFormElement>('form').dispatchEvent(new Event('submit', { cancelable: true }));
+    expect(api.criar).toHaveBeenCalledTimes(1);
+
+    resposta.next(ok(pedido()));
+    resposta.complete();
+    await fixture.whenStable();
+  });
+
+  it('apresenta a recusa no campo e leva o foco a ele', async () => {
+    api.criar.mockReturnValue(
+      of(
+        apiFailure(
+          {
+            type: 'x',
+            title: 'Dados inválidos',
+            status: 422,
+            code: 'validacao',
+            traceId: '',
+            errors: [
+              { field: 'Justificativa', code: 'invalida', message: 'Justificativa recusada.' },
+            ],
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { fixture, digitar, enviar, campo, host } = await montar();
+    digitar('select[formcontrolname="perfilId"]', 'perfil-2');
+    digitar('textarea', 'Preciso deste acesso para trabalhar.');
+    campo<HTMLButtonElement>('button[type="submit"]').focus();
+    await enviar();
+    await fixture.whenStable();
+    const justificativa = campo<HTMLTextAreaElement>('textarea');
+    expect(justificativa.getAttribute('aria-invalid')).toBe('true');
+    expect(host.textContent).toContain('Justificativa recusada.');
+    expect(document.activeElement).toBe(justificativa);
+  });
+
+  it('recusa chamadas concorrentes à classe de escrita', async () => {
+    const resposta = new Subject<ReturnType<typeof ok<ReturnType<typeof pedido>>>>();
+    api.criar.mockReturnValue(resposta);
+    const { fixture, digitar } = await montar();
+    digitar('select[formcontrolname="perfilId"]', 'perfil-2');
+    digitar('textarea', 'Preciso deste acesso para trabalhar.');
+    const edicao = fixture.debugElement.injector.get(EdicaoDoPedidoDeAcesso);
+    const primeira = edicao.enviar();
+    expect(edicao.enviando()).toBe(true);
+    await edicao.enviar();
+    expect(api.criar).toHaveBeenCalledTimes(1);
+    resposta.next(ok(pedido()));
+    resposta.complete();
+    await primeira;
+    expect(edicao.enviando()).toBe(false);
+  });
+
+  it('lista os perfis que a API oferece para pedir', async () => {
+    const { host } = await montar();
 
     const opcoes = Array.from(
       host.querySelectorAll('select[formcontrolname="perfilId"] option'),
@@ -90,13 +186,22 @@ describe('PedirAcessoPage', () => {
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });
 
-  it('mostra a recusa da leitura dos perfis, sem pedir o código do perfil', () => {
+  it('mostra a recusa da leitura dos perfis, sem pedir o código do perfil', async () => {
     api.perfisParaPedir.mockReturnValue(
       of(recusa('uniplus.autorizacao.pedido.solicitante_nao_institucional', 403)),
     );
-    const fixture = (() => {
+    const fixture = await (async () => {
       TestBed.configureTestingModule({
         providers: [
+          { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+          provideHttpClient(
+            withInterceptors([
+              (_req) =>
+                api
+                  .perfisParaPedir({ cursor: undefined, direction: 'next', limit: 100 })
+                  .pipe(map((body: unknown) => new HttpResponse({ body }))),
+            ]),
+          ),
           provideRouter([]),
           { provide: PedidosDeConcessaoApi, useValue: api },
           { provide: AnexoDoPedidoService, useValue: anexos },
@@ -105,6 +210,8 @@ describe('PedirAcessoPage', () => {
         ],
       });
       const criado = TestBed.createComponent(PedirAcessoPage);
+      criado.detectChanges();
+      await criado.whenStable();
       criado.detectChanges();
       return criado;
     })();
@@ -116,7 +223,7 @@ describe('PedirAcessoPage', () => {
   });
 
   it('não envia o pedido incompleto', async () => {
-    const { enviar, host } = montar();
+    const { enviar, host } = await montar();
 
     await enviar();
 
@@ -126,7 +233,7 @@ describe('PedirAcessoPage', () => {
   });
 
   it('liga cada mensagem de erro ao campo e leva o foco ao primeiro inválido', async () => {
-    const { enviar, host, fixture } = montar();
+    const { enviar, host, fixture } = await montar();
 
     await enviar();
     await fixture.whenStable();
@@ -139,15 +246,15 @@ describe('PedirAcessoPage', () => {
     expect(document.activeElement).toBe(perfil);
   });
 
-  describe('prazo sugerido', () => {
+  describe('prazo sugerido', async () => {
     const preencher = (digitar: (s: string, v: string) => void) => {
       digitar('select[formcontrolname="perfilId"]', 'perfil-1');
       digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
       digitar('textarea', 'Atendo a comissão do processo seletivo.');
     };
 
-    it('não oferece o campo ao perfil de governança', () => {
-      const { digitar, campo } = montar();
+    it('não oferece o campo ao perfil de governança', async () => {
+      const { digitar, campo } = await montar();
       expect(campo('input[formcontrolname="validaAteSugerida"]')).not.toBeNull();
 
       digitar('select[formcontrolname="perfilId"]', 'perfil-3');
@@ -156,7 +263,7 @@ describe('PedirAcessoPage', () => {
     });
 
     it('recusa data passada, liga o erro ao campo e não envia', async () => {
-      const { digitar, enviar, campo, host } = montar();
+      const { digitar, enviar, campo, host } = await montar();
       preencher(digitar);
       digitar('input[formcontrolname="validaAteSugerida"]', '2020-01-01');
 
@@ -173,7 +280,7 @@ describe('PedirAcessoPage', () => {
 
     it('envia o fim do dia escolhido, no fuso local e com deslocamento', async () => {
       api.criar.mockReturnValue(of(ok(pedido())));
-      const { digitar, enviar } = montar();
+      const { digitar, enviar } = await montar();
       preencher(digitar);
       digitar('input[formcontrolname="validaAteSugerida"]', '2099-06-15');
 
@@ -186,7 +293,7 @@ describe('PedirAcessoPage', () => {
 
     it('sem prazo, o corpo não leva validaAteSugerida', async () => {
       api.criar.mockReturnValue(of(ok(pedido())));
-      const { digitar, enviar } = montar();
+      const { digitar, enviar } = await montar();
       preencher(digitar);
 
       await enviar();
@@ -196,7 +303,7 @@ describe('PedirAcessoPage', () => {
   });
 
   it('bloqueia o envio de perfil de governança sem o PDF e liga a mensagem ao campo', async () => {
-    const { digitar, enviar, host, fixture } = montar();
+    const { digitar, enviar, host, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
     digitar('textarea', 'Designada para a proteção de dados da instituição.');
@@ -211,7 +318,7 @@ describe('PedirAcessoPage', () => {
   });
 
   it('no perfil de governança sem PDF e com justificativa inválida, o foco fica na justificativa', async () => {
-    const { digitar, enviar, host, fixture } = montar();
+    const { digitar, enviar, host, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
     await enviar();
@@ -226,13 +333,13 @@ describe('PedirAcessoPage', () => {
   it('envia o perfil de governança quando o PDF está anexado', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: true });
-    const { digitar, enviar, fixture } = montar();
+    const { digitar, enviar, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
     digitar('textarea', 'Designada para a proteção de dados da instituição.');
-    (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(
-      new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }),
-    );
+    fixture.debugElement.injector
+      .get(EdicaoDoPedidoDeAcesso)
+      .arquivo.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
     await enviar();
 
     expect(api.criar).toHaveBeenCalledTimes(1);
@@ -241,7 +348,7 @@ describe('PedirAcessoPage', () => {
 
   it('cria o pedido para si, na unidade escolhida, e abre o pedido criado', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
-    const { digitar, enviar, navegar } = montar();
+    const { digitar, enviar, navegar } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -260,7 +367,7 @@ describe('PedirAcessoPage', () => {
 
   it('pede o e-mail do beneficiário e dispensa a unidade no perfil institucional', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
-    const { digitar, enviar, campo, host } = montar();
+    const { digitar, enviar, campo, host } = await montar();
 
     campo<HTMLInputElement>('input[value="outra"]').click();
     digitar('select[formcontrolname="perfilId"]', 'perfil-2');
@@ -276,7 +383,7 @@ describe('PedirAcessoPage', () => {
   });
 
   it('rejeita o e-mail inválido do beneficiário', async () => {
-    const { digitar, enviar, campo, host } = montar();
+    const { digitar, enviar, campo, host } = await montar();
 
     campo<HTMLInputElement>('input[value="outra"]').click();
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
@@ -291,7 +398,7 @@ describe('PedirAcessoPage', () => {
 
   it('mostra a recusa da API e não segue para o pedido', async () => {
     api.criar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.pedido_duplicado', 409)));
-    const { digitar, enviar, navegar, host } = montar();
+    const { digitar, enviar, navegar, host } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -306,7 +413,7 @@ describe('PedirAcessoPage', () => {
     api.criar
       .mockReturnValueOnce(of(recusa('uniplus.client.network_error', 0)))
       .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
-    const { digitar, enviar, navegar, host, campo } = montar();
+    const { digitar, enviar, navegar, host, campo } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -314,7 +421,7 @@ describe('PedirAcessoPage', () => {
     await enviar();
 
     expect(host.textContent).toContain('Não foi possível saber se o pedido foi registrado');
-    expect(campo<HTMLTextAreaElement>('textarea').disabled).toBe(true);
+    expect(campo<HTMLTextAreaElement>('textarea').matches(':disabled')).toBe(true);
     await enviar();
 
     const [primeira, segunda] = api.criar.mock.calls;
@@ -325,7 +432,7 @@ describe('PedirAcessoPage', () => {
 
   it('depois de recusa definitiva, o pedido corrigido sai sob chave nova', async () => {
     api.criar.mockReturnValue(of(recusa('uniplus.autorizacao.pedido.pedido_duplicado', 409)));
-    const { digitar, enviar } = montar();
+    const { digitar, enviar } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -346,15 +453,15 @@ describe('PedirAcessoPage', () => {
       .mockReturnValueOnce(of(recusa('uniplus.client.network_error', 0)))
       .mockReturnValueOnce(of(recusa('uniplus.autorizacao.pedido.pedido_duplicado', 409)))
       .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
-    const { digitar, enviar, campo } = montar();
+    const { digitar, enviar, campo } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
     digitar('textarea', 'Atendo a comissão do processo seletivo.');
     await enviar();
-    expect(campo<HTMLTextAreaElement>('textarea').disabled).toBe(true);
+    expect(campo<HTMLTextAreaElement>('textarea').matches(':disabled')).toBe(true);
     await enviar();
-    expect(campo<HTMLTextAreaElement>('textarea').disabled).toBe(false);
+    expect(campo<HTMLTextAreaElement>('textarea').matches(':disabled')).toBe(false);
     digitar('textarea', 'Atendo a comissão do processo seletivo 2027.');
     await enviar();
 
@@ -367,9 +474,9 @@ describe('PedirAcessoPage', () => {
   it('anexa o documento ao pedido criado e segue para ele', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: true });
-    const { fixture, digitar, enviar, navegar } = montar();
+    const { fixture, digitar, enviar, navegar } = await montar();
     const pdf = new File(['%PDF'], 'designacao.pdf', { type: 'application/pdf' });
-    (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(pdf);
+    fixture.debugElement.injector.get(EdicaoDoPedidoDeAcesso).arquivo.set(pdf);
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -387,10 +494,10 @@ describe('PedirAcessoPage', () => {
   it('avisa quando o pedido nasce mas o documento falha', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: false, mensagem: 'Falha ao enviar o arquivo.' });
-    const { fixture, digitar, enviar, navegar } = montar();
-    (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(
-      new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }),
-    );
+    const { fixture, digitar, enviar, navegar } = await montar();
+    fixture.debugElement.injector
+      .get(EdicaoDoPedidoDeAcesso)
+      .arquivo.set(new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -407,10 +514,10 @@ describe('PedirAcessoPage', () => {
   it('segue para o pedido criado, sem erro de envio, quando o anexo lança exceção', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockRejectedValue(new Error('rede'));
-    const { fixture, digitar, enviar, navegar } = montar();
-    (fixture.componentInstance as unknown as { arquivo: { set(f: File): void } }).arquivo.set(
-      new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }),
-    );
+    const { fixture, digitar, enviar, navegar } = await montar();
+    fixture.debugElement.injector
+      .get(EdicaoDoPedidoDeAcesso)
+      .arquivo.set(new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');

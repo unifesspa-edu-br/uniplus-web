@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { FormControl, Validators } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
@@ -30,7 +31,10 @@ const concessao: ConcessaoDto = {
     [concessao]="concessao"
     escopoDaConcessao="CEPS"
     [erroDoEmail]="erroDoEmail()"
-    (confirmado)="enviados.push($event)"
+    [email]="email"
+    [motivo]="motivo"
+    [tentou]="tentou()"
+    (confirmado)="confirmar()"
   />`,
 })
 class HospedeComponent {
@@ -38,6 +42,19 @@ class HospedeComponent {
   readonly concessao = concessao;
   readonly erroDoEmail = signal<string | null>(null);
   readonly enviados: ConfirmacaoDaRevogacao[] = [];
+  readonly email = new FormControl('', { nonNullable: true });
+  readonly motivo = new FormControl('', { nonNullable: true, validators: [Validators.required] });
+  readonly tentou = signal(false);
+
+  confirmar(): void {
+    this.tentou.set(true);
+    const motivo = this.motivo.value.trim();
+    if (!motivo) {
+      this.motivo.setErrors({ required: true });
+      return;
+    }
+    this.enviados.push({ motivo, confirmacaoEmail: this.email.value.trim() });
+  }
 }
 
 describe('RevogarConcessaoDialogComponent', () => {

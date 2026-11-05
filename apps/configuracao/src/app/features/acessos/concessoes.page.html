@@ -1,0 +1,54 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Concessões de acesso</h1>
+    <p class="page-header__desc">
+      Quem tem acesso a quê, a trilha de cada concessão e a revogação, que tem efeito imediato.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alert variant="danger" heading="Não foi possível carregar as concessões">
+  {{ mensagem }}
+  <div>
+    <button type="button" class="btn btn--secondary btn--sm" (click)="store.recarregar()">
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-concessoes-lista
+  [concessoes]="store.itens()"
+  [carregando]="store.carregando()"
+  [erro]="store.mensagemDeErro()"
+  [situacao]="store.situacao()"
+  [nomeDoEscopo]="escopo.nome"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  (filtrar)="store.filtrarPor($event)"
+  (verTrilha)="abrirTrilha($event)"
+  (revogar)="revogacao.pedirRevogacao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+
+<cfg-concessao-trilha
+  [(aberto)]="trilhaAberta"
+  [carregando]="store.carregandoTrilha()"
+  [erro]="store.erroDaTrilha()"
+  [eventos]="store.trilha()"
+/>
+
+<cfg-revogar-concessao-dialog
+  [(visible)]="revogacao.revogando"
+  [concessao]="revogacao.concessaoARevogar()"
+  [escopoDaConcessao]="escopoDaRevogacao()"
+  [erro]="revogacao.erroDaRevogacao()"
+  [erroDoEmail]="revogacao.erroDoEmail()"
+  [enviando]="revogacao.enviando()"
+  [email]="revogacao.email"
+  [motivo]="revogacao.motivo"
+  [tentou]="revogacao.tentou()"
+  (confirmado)="revogacao.confirmar()"
+/>

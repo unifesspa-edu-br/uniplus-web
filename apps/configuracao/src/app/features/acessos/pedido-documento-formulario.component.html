@@ -1,0 +1,15 @@
+<ui-file-upload
+  [fieldLabel]="exigeDocumento() ? 'Documento de designação' : 'Documento (opcional)'"
+  [isRequired]="exigeDocumento()"
+  acceptedFileTypes=".pdf"
+  acceptLabel="PDF de até 10 MB"
+  [allowedMimeTypes]="['application/pdf']"
+  [maxSizeMb]="10"
+  [disabled]="desabilitado()"
+  [mensagemExterna]="erroDoDocumento()"
+  [(selectedFile)]="arquivo"
+/>
+<p class="field__hint">
+  O documento de designação é obrigatório para os perfis de gestor de acessos e de proteção de
+  dados. O pedido só segue para aprovação depois que o documento é verificado.
+</p>

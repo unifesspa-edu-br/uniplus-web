@@ -1,18 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  input,
-  model,
-  output,
-  signal,
-  untracked,
-} from '@angular/core';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
+import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { autorDoEvento } from './trilha-de-acesso.component';
 
 /** O que a pessoa digitou para confirmar a revogação. */
@@ -61,49 +53,70 @@ export interface ConfirmacaoDaRevogacao {
             </div>
           </dl>
         }
-        <label class="field" [class.is-error]="erroDoEmail() !== null">
-          <span class="field__label is-required">E-mail do beneficiário</span>
-          <input
-            class="input"
-            type="email"
-            autocomplete="off"
-            [formControl]="email"
-            [attr.aria-invalid]="erroDoEmail() !== null ? 'true' : null"
-            aria-describedby="cfg-revogar-email-ajuda"
-          />
-          <span id="cfg-revogar-email-ajuda" class="field__hint"
-            >Digite o e-mail institucional do beneficiário para confirmar a revogação.</span
+        <fieldset
+          role="none"
+          [disabled]="enviando()"
+          style="border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1rem"
+        >
+          <label
+            class="field"
+            [class.is-error]="erroDoEmail() !== null || (tentou() && email().invalid)"
           >
-          @if (erroDoEmail(); as mensagem) {
-            <span class="field__error">{{ mensagem }}</span>
-          }
-        </label>
-        <label class="field" [class.is-error]="tentou() && motivo.invalid">
-          <span class="field__label is-required">Motivo</span>
-          <textarea
-            class="textarea"
-            [formControl]="motivo"
-            [attr.maxlength]="limite"
-            [attr.aria-invalid]="tentou() && motivo.invalid ? 'true' : null"
-            aria-describedby="cfg-revogar-motivo-ajuda"
-          ></textarea>
-          <span id="cfg-revogar-motivo-ajuda" class="field__hint"
-            >A revogação vale na hora, não precisa de aprovação e o motivo fica na trilha.</span
-          >
-          @if (tentou() && motivo.invalid) {
-            <span class="field__error">Informe o motivo, em até {{ limite }} caracteres.</span>
-          }
-        </label>
+            <span class="field__label is-required">E-mail do beneficiário</span>
+            <input
+              class="input"
+              type="email"
+              autocomplete="off"
+              [formControl]="email()"
+              [attr.aria-invalid]="
+                erroDoEmail() !== null || (tentou() && email().invalid) ? 'true' : null
+              "
+              aria-describedby="cfg-revogar-email-ajuda"
+            />
+            <span id="cfg-revogar-email-ajuda" class="field__hint"
+              >Digite o e-mail institucional do beneficiário para confirmar a revogação.</span
+            >
+            @if (erroDoEmail() || mensagem(email()); as mensagem) {
+              <span class="field__error">{{ mensagem }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="tentou() && motivo().invalid">
+            <span class="field__label is-required">Motivo</span>
+            <textarea
+              class="textarea"
+              [formControl]="motivo()"
+              [attr.maxlength]="limite"
+              [attr.aria-invalid]="tentou() && motivo().invalid ? 'true' : null"
+              aria-describedby="cfg-revogar-motivo-ajuda"
+            ></textarea>
+            <span id="cfg-revogar-motivo-ajuda" class="field__hint"
+              >A revogação vale na hora, não precisa de aprovação e o motivo fica na trilha.</span
+            >
+            @if (tentou() && motivo().invalid) {
+              <span class="field__error">{{
+                mensagem(motivo()) || 'Informe o motivo, em até ' + limite + ' caracteres.'
+              }}</span>
+            }
+          </label>
+        </fieldset>
       </div>
+      <p role="status" class="sr-only">{{ enviando() ? 'Revogando concessão…' : '' }}</p>
       <ng-container uiDialogFooter>
-        <button type="button" class="btn btn--tertiary btn--rect" (click)="visible.set(false)">
+        <button
+          type="button"
+          class="btn btn--tertiary btn--rect"
+          [disabled]="enviando()"
+          (click)="visible.set(false)"
+        >
           Cancelar
         </button>
         <button
           type="button"
           class="btn btn--danger"
-          [disabled]="enviando() || !emailPreenchido()"
-          (click)="confirmar()"
+          [disabled]="!enviando() && !email().value.trim()"
+          [attr.aria-disabled]="enviando() ? 'true' : null"
+          [attr.aria-busy]="enviando()"
+          (click)="confirmar($event)"
         >
           @if (enviando()) {
             <ui-spinner size="sm" />
@@ -123,42 +136,22 @@ export class RevogarConcessaoDialogComponent {
   /** A recusa da API ao e-mail informado, mostrada no próprio campo. */
   readonly erroDoEmail = input<string | null>(null);
   readonly enviando = input(false);
-  readonly confirmado = output<ConfirmacaoDaRevogacao>();
+  readonly confirmado = output<void>();
+  readonly email = input.required<FormControl<string>>();
+  readonly motivo = input.required<FormControl<string>>();
+  readonly tentou = input(false);
 
   protected readonly limite = LIMITE_DO_MOTIVO;
-  protected readonly tentou = signal(false);
-  protected readonly emailPreenchido = signal(false);
-  protected readonly email = new FormControl('', { nonNullable: true });
-  protected readonly motivo = new FormControl('', {
-    nonNullable: true,
-    validators: [Validators.required, Validators.maxLength(LIMITE_DO_MOTIVO)],
-  });
-
-  constructor() {
-    this.email.valueChanges.subscribe((valor) => this.emailPreenchido.set(valor.trim() !== ''));
-    // O diálogo mantém o conteúdo entre aberturas: cada abertura começa sem o que a anterior digitou.
-    effect(() => {
-      if (!this.visible()) return;
-      untracked(() => {
-        this.email.reset('');
-        this.motivo.reset('');
-        this.tentou.set(false);
-      });
-    });
-  }
-
+  protected readonly mensagem = mensagemDeErroDoControle;
   protected pessoa(concessao: ConcessaoDto): string {
     return autorDoEvento(concessao.beneficiario);
   }
 
-  protected confirmar(): void {
-    this.tentou.set(true);
-    const motivo = this.motivo.value.trim();
-    const confirmacaoEmail = this.email.value.trim();
-    if (motivo === '' || confirmacaoEmail === '' || this.enviando()) {
-      this.motivo.setErrors(motivo === '' ? { required: true } : null);
+  protected confirmar(evento: Event): void {
+    if (this.enviando() || !this.email().value.trim()) {
+      evento.preventDefault();
       return;
     }
-    this.confirmado.emit({ motivo, confirmacaoEmail });
+    this.confirmado.emit();
   }
 }

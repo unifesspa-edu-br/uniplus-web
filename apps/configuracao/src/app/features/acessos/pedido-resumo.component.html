@@ -1,0 +1,80 @@
+<section class="panel" aria-labelledby="cfg-pedido-resumo">
+  <div class="panel-head">
+    <h2 id="cfg-pedido-resumo" class="panel-head__title">Resumo</h2>
+    <ui-tag [variant]="rotuloDaSituacao().variante">{{ rotuloDaSituacao().texto }}</ui-tag>
+  </div>
+  <dl class="cfg-descricao panel-body">
+    <dt>Perfil</dt>
+    <dd>{{ pedido().perfil.nome }}</dd>
+    <dt>Escopo</dt>
+    <dd>{{ escopo.nome(pedido().escopo) }}</dd>
+    <dt>Beneficiário</dt>
+    <dd>{{ pedido().beneficiario.nome ?? pedido().beneficiario.email }}</dd>
+    <dt>E-mail do beneficiário</dt>
+    <dd>{{ pedido().beneficiario.email }}</dd>
+    <dt>Pedido em</dt>
+    <dd>{{ pedido().criadoEm | dateBr: 'datetime' }}</dd>
+    @if (pedido().etapaAtual) {
+      <dt>Etapa atual</dt>
+      <dd>{{ etapaAtual() }}</dd>
+    }
+    <dt>Justificativa</dt>
+    <dd>{{ pedido().justificativa }}</dd>
+    @if (pedido().validaAteSugerida) {
+      <dt>Prazo sugerido pelo solicitante</dt>
+      <dd>{{ pedido().validaAteSugerida | dateBr }}</dd>
+    }
+    @if (pedido().validaAte) {
+      <dt>Fim de vigência definido pelo gestor</dt>
+      <dd>{{ pedido().validaAte | dateBr }}</dd>
+    }
+  </dl>
+
+  @if (informaPrazo()) {
+    <div class="panel-body">
+      <label class="field" [class.is-error]="prazoInvalido()">
+        <span class="field__label">Fim de vigência (opcional)</span>
+        <input
+          class="input"
+          #campoPrazo
+          type="date"
+          [formControl]="prazo()"
+          [min]="hoje()"
+          [attr.aria-invalid]="prazoInvalido() ? 'true' : null"
+          [attr.aria-describedby]="
+            'cfg-pedido-prazo-dica' + (prazoInvalido() ? ' cfg-pedido-prazo-erro' : '')
+          "
+        />
+        <span class="field__hint" id="cfg-pedido-prazo-dica"
+          >Último dia de validade da concessão. Deixe em branco para um acesso sem fim
+          previsto.</span
+        >
+        @if (prazoInvalido()) {
+          <span class="field__error" id="cfg-pedido-prazo-erro">{{ mensagemDoPrazo }}</span>
+        }
+      </label>
+    </div>
+  }
+
+  <div class="cfg-acoes panel-body">
+    @if (podeAceitar()) {
+      <button type="button" class="btn btn--primary" (click)="confirmar('aceitar')">
+        Aceitar o pedido
+      </button>
+    }
+    @if (podeDecidir()) {
+      <button type="button" class="btn btn--primary" (click)="confirmar('aprovar')">Aprovar</button>
+      <button type="button" class="btn btn--danger" (click)="recusar.emit()">Recusar</button>
+    }
+    @if (aguardandoDocumento() && podeAnexar()) {
+      <button type="button" class="btn btn--primary" (click)="irParaAnexo.emit()">
+        Anexar o documento
+      </button>
+    }
+    @if (podeCancelar()) {
+      <button type="button" class="btn btn--tertiary" (click)="confirmar('cancelar')">
+        Cancelar o pedido
+      </button>
+    }
+  </div>
+</section>
