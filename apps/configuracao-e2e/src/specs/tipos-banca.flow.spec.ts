@@ -164,7 +164,12 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     page,
   }) => {
     const capturado = novoCapturado();
-    await mockApi(page, capturado, [bancaSeed], [{ id: 'f1', codigo: 'AVALIACAO', nome: 'Avaliação' }]);
+    await mockApi(
+      page,
+      capturado,
+      [bancaSeed],
+      [{ id: 'f1', codigo: 'AVALIACAO', nome: 'Avaliação' }],
+    );
     await abrirPagina(page);
 
     await page
@@ -196,5 +201,53 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
     expect(capturado.deletedIds[0]).toBe(BANCA_ID);
     expect(capturado.posts).toHaveLength(0);
+  });
+  test('gravação pendente mantém o foco e bloqueia fechamento e novo envio', async ({ page }) => {
+    const capturado = novoCapturado();
+    await mockApi(page, capturado, [bancaSeed]);
+    let liberar: () => void = () => undefined;
+    const pendente = new Promise<void>((resolve) => (liberar = resolve));
+    let envios = 0;
+    await page.route(/\/api\/configuracao\/admin\/tipos-banca\/[^/?]+$/, async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      envios += 1;
+      await pendente;
+      await route.fulfill({ status: 204, headers: CORS_HEADERS });
+    });
+    await abrirPagina(page);
+    const acionador = page.getByRole('button', {
+      name: `Editar tipo de banca ${bancaSeed.codigo}`,
+    });
+    await acionador.focus();
+    await acionador.click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de banca' });
+    const nome = drawer.locator('[formcontrolname="nome"]');
+    await nome.fill('Banca revisada');
+    const salvar = drawer.getByRole('button', { name: 'Salvar tipo de banca' });
+    await salvar.focus();
+    await salvar.click();
+    const salvando = drawer.getByRole('button', { name: 'Salvando...' });
+    await expect(salvando).toBeFocused();
+    await expect(salvando).toHaveAttribute('aria-disabled', 'true');
+    await expect(nome).toBeDisabled();
+    await expect(drawer.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+    await expect(drawer.getByRole('button', { name: 'Fechar' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(drawer).toBeVisible();
+    await page.mouse.click(1, 1);
+    await expect(drawer).toBeVisible();
+    await salvando.focus();
+    await salvando.dispatchEvent('click');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(resolve)));
+    expect(envios).toBe(1);
+    liberar();
+    await expect(drawer).toBeHidden();
+    await expect(acionador).toBeFocused();
+    expect(envios).toBe(1);
   });
 });

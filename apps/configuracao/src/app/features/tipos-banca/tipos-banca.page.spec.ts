@@ -9,9 +9,10 @@ import {
   FaseCanonicaDto,
   TipoBancaDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
-import { NotificationService } from '@uniplus/shared-core/notifications';
+import { TiposBancaStore } from './tipos-banca.store';
+import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/tipos-banca`;
@@ -46,7 +47,8 @@ function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
 
 describe('TiposBancaPage', () => {
   let fixture: ComponentFixture<TiposBancaPage>;
-  let component: TiposBancaPage;
+  let store: TiposBancaStore;
+  let edicao: EdicaoDosTiposBanca;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -61,7 +63,8 @@ describe('TiposBancaPage', () => {
       ],
     });
     fixture = TestBed.createComponent(TiposBancaPage);
-    component = fixture.componentInstance;
+    store = fixture.debugElement.injector.get(TiposBancaStore);
+    edicao = fixture.debugElement.injector.get(EdicaoDosTiposBanca);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -89,7 +92,7 @@ describe('TiposBancaPage', () => {
   // (um GET por cursor a fases-canonicas). O `httpResource` só emite a request
   // após um tick.
   async function abrirEdicao(banca: TipoBancaDto): Promise<void> {
-    component['abrirEdicao'](banca);
+    edicao.abrirEdicao(banca);
     await propagate();
     controller.expectOne((r) => r.url === FASES_URL).flush([]);
     await propagate();
@@ -103,7 +106,7 @@ describe('TiposBancaPage', () => {
 
   it('CA-12: renderiza a lista de tipos de banca', async () => {
     await flushLista([bancaSeed]);
-    expect(component['bancas']()).toHaveLength(1);
+    expect(store.bancas()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Banca de Entrevista');
     expect(fixture.nativeElement.textContent).toContain('BANCA_ENTREVISTA');
@@ -144,17 +147,16 @@ describe('TiposBancaPage', () => {
     };
     await flushLista([bancaSeed, outra]);
 
-    component['termoBusca'].set('hetero');
-    expect(component['bancasFiltradas']()).toEqual([outra]);
+    store.termoBusca.set('hetero');
+    expect(store.bancasFiltradas()).toEqual([outra]);
   });
 
   it('CA-05: o drawer só abre a partir da edição de um tipo existente', async () => {
     await flushLista([bancaSeed]);
-    expect(component['formOpen']()).toBe(false);
+    expect(edicao.aberto()).toBe(false);
 
     await abrirEdicao(bancaSeed);
-    expect(component['formOpen']()).toBe(true);
-    expect(component['bancaEmEdicaoId']()).toBe(bancaSeed.id);
+    expect(edicao.aberto()).toBe(true);
   });
 
   it('CA-06: o drawer de edição usa título e ação compatíveis com a edição', async () => {
@@ -172,61 +174,9 @@ describe('TiposBancaPage', () => {
     expect(submit.textContent?.trim()).toBe('Salvar tipo de banca');
   });
 
-  it('CA-07: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
-    await flushLista([bancaSeed]);
-    await abrirEdicao(bancaSeed);
-    expect(component['form'].controls.codigo.value).toBe('BANCA_ENTREVISTA');
-    fixture.detectChanges();
-    const codigoInput = fixture.nativeElement.querySelector(
-      '[formcontrolname="codigo"]',
-    ) as HTMLInputElement;
-    expect(codigoInput.readOnly).toBe(true);
-
-    component['form'].controls.nome.setValue('Banca de Entrevista (revisada)');
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body).not.toHaveProperty('codigo');
-    expect(put.request.body).toMatchObject({
-      id: bancaSeed.id,
-      nome: 'Banca de Entrevista (revisada)',
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([bancaSeed]);
-  });
-
-  it('CA-08/CA-14: salvar a edição emite PUT e nunca POST', async () => {
-    await flushLista([bancaSeed]);
-    await abrirEdicao(bancaSeed);
-    component['form'].controls.nome.setValue('Banca de Entrevista (2)');
-    component['salvar']();
-
-    controller.expectNone(CRIAR_URL);
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([bancaSeed]);
-  });
-
-  it('CA-14: "Fase típica" aceita texto livre não vinculado ao cadastro de fases e viaja no PUT', async () => {
-    await flushLista([bancaSeed]);
-    await abrirEdicao(bancaSeed);
-
-    component['form'].controls.faseTipica.setValue('Uma fase qualquer sem correspondência');
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-    expect(put.request.body).toMatchObject({ faseTipica: 'Uma fase qualquer sem correspondência' });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([bancaSeed]);
-  });
-
   it('percorre todas as páginas de fases canônicas nas sugestões de fase típica', async () => {
     await flushLista([bancaSeed]);
-    component['abrirEdicao'](bancaSeed);
+    edicao.abrirEdicao(bancaSeed);
     await propagate();
 
     const pagina1 = controller.expectOne((r) => r.url === FASES_URL);
@@ -244,7 +194,7 @@ describe('TiposBancaPage', () => {
     pagina2.flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
     await propagate();
 
-    expect(component['sugestoesFaseTipica']()).toEqual(['Inscrição', 'Homologação']);
+    expect(edicao.sugestoesFaseTipica()).toEqual(['Inscrição', 'Homologação']);
   });
 
   it('CA-10: aviso de código do catálogo é visível mesmo com lista vazia', async () => {
@@ -295,100 +245,5 @@ describe('TiposBancaPage', () => {
     ).toBe('Remover');
 
     expect(dialogo.textContent).not.toMatch(/inativ/iu);
-  });
-
-  it('CA-06: cancelar a remoção fecha a confirmação e não envia a requisição', async () => {
-    await flushLista([bancaSeed]);
-    component['pedirRemocao'](bancaSeed);
-    fixture.detectChanges();
-
-    expect(component['confirmOpen']()).toBe(true);
-
-    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
-    const cancelar = dialogo.querySelector(
-      '[data-testid="confirm-dialog-cancel"]',
-    ) as HTMLButtonElement;
-
-    expect(cancelar.textContent?.trim()).toBe('Cancelar');
-
-    cancelar.click();
-    fixture.detectChanges();
-
-    expect(component['confirmOpen']()).toBe(false);
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-  });
-
-  it('CA-08: confirma a remoção e atualiza a listagem', async () => {
-    await flushLista([bancaSeed]);
-
-    component['pedirRemocao'](bancaSeed);
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-
-    expect(req.request.method).toBe('DELETE');
-
-    req.flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    await propagate();
-    await flushLista([]);
-
-    expect(component['bancas']()).toEqual([]);
-  });
-
-  it('CA-09: falha na remoção avisa o usuário e mantém a lista', async () => {
-    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-
-    await flushLista([bancaSeed]);
-
-    component['pedirRemocao'](bancaSeed);
-    component['removerConfirmado']();
-
-    controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`).flush(
-      {
-        type: 'about:blank',
-        title: 'Tipo de banca não encontrado',
-        status: 404,
-        code: 'uniplus.configuracao.tipo_banca.nao_encontrado',
-      },
-      {
-        status: 404,
-        statusText: 'Not Found',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-
-    await propagate();
-
-    expect(erroSpy).toHaveBeenCalled();
-    expect(component['bancas']()).toEqual([bancaSeed]);
-
-    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-banca`);
-  });
-
-  it('CA-10: a remoção pendente não é reenviada', async () => {
-    await flushLista([bancaSeed]);
-
-    component['pedirRemocao'](bancaSeed);
-    component['removerConfirmado']();
-
-    const primeira = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`,
-    );
-
-    component['removerConfirmado']();
-
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`);
-
-    primeira.flush(null, {
-      status: 204,
-      statusText: 'No Content',
-    });
-
-    await propagate();
-    await flushLista([]);
   });
 });

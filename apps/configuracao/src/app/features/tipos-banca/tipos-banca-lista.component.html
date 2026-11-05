@@ -1,0 +1,109 @@
+<section class="panel" aria-labelledby="cfg-tipos-banca-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      @if (removendo()) {
+        <span aria-hidden="true">Removendo...</span>
+      }
+      <h2 id="cfg-tipos-banca-list-title">Tipos de banca</h2>
+      @if (carregando()) {
+        <span class="cfg-tipos-banca__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar tipos de banca"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar tipos de banca"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="removendo() ? '' : null"
+  />
+
+  @if (bancas().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Tipos de banca do catálogo institucional, com código e fase típica de atuação
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Fase típica</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (banca of bancas(); track banca.id) {
+            <tr>
+              <td data-label="Código">
+                <code>{{ banca.codigo }}</code>
+              </td>
+              <td data-label="Nome">{{ banca.nome }}</td>
+              <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <button
+                  type="button"
+                  class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
+                  [attr.aria-label]="'Editar tipo de banca ' + banca.codigo"
+                  data-tooltip="Editar tipo de banca"
+                  data-tooltip-position="left"
+                  [attr.aria-disabled]="carregando() || removendo() ? 'true' : null"
+                  (click)="acionarEdicao(banca)"
+                >
+                  <i class="pi pi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
+                  [attr.aria-label]="'Remover tipo de banca ' + banca.codigo"
+                  data-tooltip="Remover tipo de banca"
+                  data-tooltip-position="left"
+                  [attr.aria-disabled]="carregando() || removendo() ? 'true' : null"
+                  (click)="acionarRemocao(banca)"
+                >
+                  <i class="pi pi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhum tipo de banca encontrado"
+        description="Ajuste a busca para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="removendo()"
+          (click)="termoBusca.set('')"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum tipo de banca disponível"
+        description="O catálogo de tipos de banca é definido institucionalmente. Os tipos passam a aparecer aqui assim que forem disponibilizados pelo catálogo."
+      />
+    }
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de tipos de banca"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando() || removendo()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>
+
+<span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>

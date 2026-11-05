@@ -29,7 +29,6 @@
 815 apps/configuracao/src/app/features/reserva-demografica/reserva-demografica-list.page.ts
 804 apps/configuracao/src/app/features/termos-consentimento/termos-consentimento-detail.page.ts
 1048 apps/configuracao/src/app/features/tipos-ato/tipos-ato.page.ts
-643 apps/configuracao/src/app/features/tipos-banca/tipos-banca.page.ts
 785 apps/configuracao/src/app/features/tipos-deficiencia/tipos-deficiencia-list.page.ts
 1550 apps/configuracao/src/app/features/tipos-documento/tipos-documento-list.page.ts
 790 apps/configuracao/src/app/features/tipos-etapa/tipos-etapa.page.ts

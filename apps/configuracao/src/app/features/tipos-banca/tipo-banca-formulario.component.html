@@ -1,0 +1,111 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  heading="Editar tipo de banca"
+  ariaLabel="Formulário de tipo de banca"
+  position="right"
+>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-tipo-banca-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-banca-identificacao">
+        <h3 id="cfg-banca-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          <label class="field" [class.is-error]="erroDoCampo('codigo')">
+            <span class="field__label is-required">Código</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="codigo"
+              readonly
+              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+            />
+            <span class="field__hint">Imutável após criação.</span>
+            @if (erroDoCampo('codigo')) {
+              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            />
+            @if (erroDoCampo('nome')) {
+              <span class="field__error">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('faseTipica')">
+            <span class="field__label">Fase típica</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="faseTipica"
+              list="cfg-fase-tipica-sugestoes"
+              [attr.aria-invalid]="erroDoCampo('faseTipica') ? 'true' : null"
+            />
+            <datalist id="cfg-fase-tipica-sugestoes">
+              @for (nome of sugestoesFaseTipica(); track nome) {
+                <option [value]="nome"></option>
+              }
+            </datalist>
+            @if (erroDoCampo('faseTipica')) {
+              <span class="field__error">{{ erroDoCampo('faseTipica') }}</span>
+            }
+            <span class="field__hint">
+              Fase em que a banca usualmente atua — rótulo orientativo, não é vínculo com o cadastro
+              de fases. Aceita qualquer texto.
+            </span>
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('descricao')">
+            <span class="field__label">Descrição</span>
+            <textarea
+              class="textarea"
+              formControlName="descricao"
+              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+            ></textarea>
+            @if (erroDoCampo('descricao')) {
+              <span class="field__error">{{ erroDoCampo('descricao') }}</span>
+            }
+          </label>
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-tipo-banca-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Salvar tipo de banca' }}
+    </button>
+  </div>
+</ui-drawer>
