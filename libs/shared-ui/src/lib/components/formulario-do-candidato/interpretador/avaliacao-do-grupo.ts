@@ -55,12 +55,20 @@ export function avaliarGrupo(
     avaliarOuVerdadeiro(grupo.exibicao, fatos),
   );
   const obrigatorio = obrigatorioSeVisivel(visivel, grupo.obrigatoriedade, fatos);
-  const avaliacao: FabricaDoGrupo = (
-    estado,
-    ocorrencias,
-    contagemValida = true,
-    ocorrenciaDoCandidatoValida = true,
-  ) => ({
+  const avaliacao = fabricaDoGrupo(etapa, grupo, { visivel, obrigatorio });
+
+  if (visivel === FALSO) return avaliacao(NAO_APLICAVEL, []);
+  if (visivel === INDETERMINADO) return avaliacao(INDETERMINADO, []);
+  return avaliarOcorrenciasDoGrupo({ etapa, grupo, entrada, fatos, obrigatorio, avaliacao });
+}
+
+/** O grupo avaliado, com o que já se sabe dele; falta dizer o estado e as ocorrências. */
+function fabricaDoGrupo(
+  etapa: DefinicaoEtapa,
+  grupo: DefinicaoGrupo,
+  { visivel, obrigatorio }: { visivel: Ternario; obrigatorio: Ternario },
+): FabricaDoGrupo {
+  return (estado, ocorrencias, contagemValida = true, ocorrenciaDoCandidatoValida = true) => ({
     codigo: grupo.codigo,
     etapaCodigo: etapa.codigo,
     visivel,
@@ -70,10 +78,6 @@ export function avaliarGrupo(
     ocorrenciaDoCandidatoValida,
     ocorrencias,
   });
-
-  if (visivel === FALSO) return avaliacao(NAO_APLICAVEL, []);
-  if (visivel === INDETERMINADO) return avaliacao(INDETERMINADO, []);
-  return avaliarOcorrenciasDoGrupo({ etapa, grupo, entrada, fatos, obrigatorio, avaliacao });
 }
 
 function avaliarOcorrenciasDoGrupo(contexto: ContextoDoGrupo): GrupoAvaliadoInterno {

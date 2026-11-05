@@ -28,35 +28,28 @@ export class RecusasVigentes {
   private ultimaListaDeErros: readonly ErroDoServidor[] = [];
 
   constructor(fontes: FontesDasRecusas) {
-    const { recebidas, decisoes } = fontes;
-    this.erros = computed(() => {
-      const todas = recebidas();
-      if (!todas.some((e) => ehCampoDeDocumento(e.campo))) return todas;
-      const atendidas = new Set(
-        Object.entries(decisoes.situacoes())
-          .filter(([, situacao]) => situacao === 'SATISFEITA')
-          .map(([chave]) => chave),
-      );
-      const arvore = decisoes.documentosDaAvaliacao()?.arvore ?? [];
-      return todas.filter(
-        (e) =>
-          !ehCampoDeDocumento(e.campo) ||
-          !exigenciaAtendida(chaveDoCampoDeDocumento(e.campo), arvore, atendidas),
-      );
-    });
+    this.erros = computed(() => recusasQueValem(fontes.recebidas(), fontes.decisoes));
     effect(() => {
       const erros = fontes.doServidor();
       const aposDoHost = fontes.passoDaRecusa() !== null;
-      untracked(() => {
-        // Só a lista nova leva a algum lugar: a mudança de `passoDaRecusa` sozinha não move ninguém.
-        if (erros === this.ultimaListaDeErros) return;
-        this.ultimaListaDeErros = erros;
-        // A recusa que quem hospeda já apontou no passo dele prevalece: as demais seguem marcadas
-        // nas seções, mas o candidato não é levado para longe do passo que o hospedeiro mostrou.
-        const [primeiro] = erros;
-        if (primeiro && !aposDoHost) fontes.irAoCampo(primeiro.campo);
-      });
+      untracked(() => this.levarAoPrimeiroCampo(erros, aposDoHost, fontes.irAoCampo));
     });
+  }
+
+  /**
+   * Só a lista nova leva a algum lugar: a mudança de `passoDaRecusa` sozinha não move ninguém. A recusa
+   * que quem hospeda já apontou no passo dele prevalece: as demais seguem marcadas nas seções, mas o
+   * candidato não é levado para longe do passo que o hospedeiro mostrou.
+   */
+  private levarAoPrimeiroCampo(
+    erros: readonly ErroDoServidor[],
+    aposDoHost: boolean,
+    irAoCampo: (campo: string) => void,
+  ): void {
+    if (erros === this.ultimaListaDeErros) return;
+    this.ultimaListaDeErros = erros;
+    const [primeiro] = erros;
+    if (primeiro && !aposDoHost) irAoCampo(primeiro.campo);
   }
 
   /** As recusas do campo, grupo ou termo de código dado, ou de dentro dele. */
@@ -68,4 +61,23 @@ export class RecusasVigentes {
   daSecao(passo: PassoDoFormulario): number {
     return this.erros().filter((e) => contemOCampo(passo, e.campo)).length;
   }
+}
+
+/** A recusa de uma exigência documental deixa de valer quando a avaliação a dá por atendida. */
+function recusasQueValem(
+  todas: readonly ErroDoServidor[],
+  decisoes: DecisoesDaAvaliacao,
+): readonly ErroDoServidor[] {
+  if (!todas.some((e) => ehCampoDeDocumento(e.campo))) return todas;
+  const atendidas = new Set(
+    Object.entries(decisoes.situacoes())
+      .filter(([, situacao]) => situacao === 'SATISFEITA')
+      .map(([chave]) => chave),
+  );
+  const arvore = decisoes.documentosDaAvaliacao()?.arvore ?? [];
+  return todas.filter(
+    (e) =>
+      !ehCampoDeDocumento(e.campo) ||
+      !exigenciaAtendida(chaveDoCampoDeDocumento(e.campo), arvore, atendidas),
+  );
 }
