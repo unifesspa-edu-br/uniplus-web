@@ -144,6 +144,7 @@ export function nomeComUf(nome: string, uf: string): string {
         [disabled]="disabled()"
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
+        [obrigatorio]="obrigatorio()"
         [descritoPor]="descritoPor()"
         [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
@@ -160,6 +161,7 @@ export function nomeComUf(nome: string, uf: string): string {
         [disabled]="disabled()"
         [estadoDaBusca]="estadoDaBusca()"
         [invalido]="invalido()"
+        [obrigatorio]="obrigatorio()"
         [descritoPor]="descritoPor()"
         [contagemVisivel]="contagemVisivel()"
         (buscaChange)="buscar($event)"
@@ -180,6 +182,7 @@ export class ValorDeMunicipioComponent {
   readonly multiplo = input<boolean>(false);
   readonly disabled = input<boolean>(false);
   readonly invalido = input<boolean>(false);
+  readonly obrigatorio = input<boolean>(false);
   readonly descritoPor = input<string | null>(null);
   /** A contagem de municípios achados aparece sob o campo; sem ela, só o leitor de tela a anuncia. */
   readonly contagemVisivel = input<boolean>(true);

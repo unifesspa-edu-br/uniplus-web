@@ -95,6 +95,7 @@ export class EnderecoGeoComponent implements ControlValueAccessor, Validator {
   readonly erroExterno = input<string | null>(null);
   /** Marca a legenda como de resposta obrigatória. */
   readonly obrigatorio = input(false);
+  readonly cidadeObrigatoria = input(false);
   /** A legenda como título de seção do cadastro, ou como rótulo de um campo entre outros. */
   readonly aparencia = input<'secao' | 'campo'>('secao');
   /**

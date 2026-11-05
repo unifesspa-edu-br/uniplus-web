@@ -132,6 +132,7 @@
           [uf]="conducao.ufDaCidade() || null"
           [disabled]="conducao.disabled() || conducao.ufDaCidade() === ''"
           [invalido]="!!erroExterno()"
+          [obrigatorio]="cidadeObrigatoria()"
           [descritoPor]="erroExterno() ? id('erro') : conducao.ufDaCidade() === '' ? id('cidade-uf') : null"
           [contagemVisivel]="false"
           (valuesChange)="selecionarCidade($event.at(0) ?? '')"

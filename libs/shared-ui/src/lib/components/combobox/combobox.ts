@@ -76,6 +76,7 @@ export class ComboboxComponent {
   readonly estadoDaBusca = input<string | null>(null);
   /** A resposta não vale: o campo se anuncia inválido. */
   readonly invalido = input<boolean>(false);
+  readonly obrigatorio = input<boolean>(false);
   /** Ids de fora que descrevem o campo — o erro dele, por exemplo —, somados à contagem da lista. */
   readonly descritoPor = input<string | null>(null);
   protected readonly descricoes = computed(() =>

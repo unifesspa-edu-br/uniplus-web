@@ -40,12 +40,14 @@ class AnfitriaoComponent {
     idPrefix="t"
     [erroExterno]="erro()"
     [descritoPor]="ajuda()"
+    [cidadeObrigatoria]="cidadeObrigatoria()"
   />`,
 })
 class AnfitriaoComErroComponent {
   readonly controle = new FormControl<EnderecoEstruturado | null>(null);
   readonly erro = signal<string | null>(null);
   readonly ajuda = signal<string | null>(null);
+  readonly cidadeObrigatoria = signal(false);
   readonly endereco = viewChild.required(EnderecoGeoComponent);
 }
 
@@ -519,6 +521,20 @@ describe('EnderecoGeoComponent: foco na recusa externa', () => {
   }
 
   const mensagem = () => fixture.nativeElement.querySelector('#t-erro') as HTMLElement;
+
+  it('comunica a obrigatoriedade apenas quando solicitada pelo hospedeiro', async () => {
+    fixture.componentInstance.controle.setValue(endereco('manual', marata));
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const cidade = fixture.nativeElement.querySelector(
+      'ui-valor-de-municipio input',
+    ) as HTMLInputElement;
+    expect(cidade.getAttribute('aria-required')).toBeNull();
+    fixture.componentInstance.cidadeObrigatoria.set(true);
+    fixture.detectChanges();
+    expect(cidade.getAttribute('aria-required')).toBe('true');
+  });
 
   it('sem recusa externa, não mexe no foco', () => {
     const antes = document.activeElement;
