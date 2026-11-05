@@ -200,7 +200,6 @@ export {
   type DecidirProtecaoDoCatalogoRequest,
   type DecisaoDaProtecao,
   type DecisaoDaProtecaoDto,
-  type DecisoesQuery,
   type DetalheDaProtecaoDoCatalogoDto,
   type DetalheDoFatoDto,
   type DetalheDoTipoDeDocumentoDto,

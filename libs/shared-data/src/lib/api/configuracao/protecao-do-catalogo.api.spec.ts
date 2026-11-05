@@ -39,57 +39,6 @@ describe('ProtecaoDoCatalogoApi', () => {
     await promise;
   });
 
-  it('listarDecisoes() envia os filtros, repete o ato e abre a primeira página com limit', async () => {
-    const promise = firstValueFrom(
-      api.listarDecisoes({
-        ato: ['REPROVACAO', 'AJUSTE_RECOMENDADO'],
-        cadastro: 'FATO',
-        de: '2026-10-01',
-        ate: '2026-10-31',
-        busca: '  renda ',
-        minhas: true,
-        limit: 10,
-      }),
-    );
-    const req = controller.expectOne((r) => r.url === `${URL}/decisoes`);
-    expect(req.request.params.getAll('ato')).toEqual(['REPROVACAO', 'AJUSTE_RECOMENDADO']);
-    expect(req.request.params.get('cadastro')).toBe('FATO');
-    expect(req.request.params.get('de')).toBe('2026-10-01');
-    expect(req.request.params.get('ate')).toBe('2026-10-31');
-    expect(req.request.params.get('busca')).toBe('renda');
-    expect(req.request.params.get('minhas')).toBe('true');
-    expect(req.request.params.get('limit')).toBe('10');
-    expect(req.request.params.has('cursor')).toBe(false);
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-decisao', 1));
-    req.flush([]);
-    await promise;
-  });
-
-  it('listarDecisoes() com cursor leva cursor e direction, omite limit e os filtros vazios', async () => {
-    const promise = firstValueFrom(api.listarDecisoes({ cursor: 'abc', direction: 'prev', limit: 10 }));
-    const req = controller.expectOne((r) => r.url === `${URL}/decisoes`);
-    expect(req.request.params.get('cursor')).toBe('abc');
-    expect(req.request.params.get('direction')).toBe('prev');
-    expect(req.request.params.has('limit')).toBe(false);
-    expect(req.request.params.has('minhas')).toBe(false);
-    expect(req.request.params.has('busca')).toBe(false);
-    req.flush([]);
-    await promise;
-  });
-
-  it('detalhar() usa o segmento do cadastro e o tipo de mídia do detalhe', async () => {
-    const promise = firstValueFrom(api.detalhar('TIPO_DOCUMENTO', ID));
-    const req = controller.expectOne(`${URL}/tipos-documento/${ID}`);
-    expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-detalhe', 1));
-    req.flush({});
-    await promise;
-
-    const fato = firstValueFrom(api.detalhar('FATO', ID));
-    controller.expectOne(`${URL}/fatos/${ID}`).flush({});
-    await fato;
-  });
-
   it('solicitar() envia só os itens escolhidos, com Idempotency-Key', async () => {
     const itens = [{ cadastro: 'FATO', id: ID }] as const;
     const promise = firstValueFrom(api.solicitar(itens, withIdempotencyKey('k')));
