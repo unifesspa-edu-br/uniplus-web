@@ -1,3 +1,4 @@
+import { EdicaoDosTiposProcesso } from './edicao-dos-tipos-processo';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef, signal } from '@angular/core';
@@ -8,6 +9,7 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposProcessoPage } from './tipos-processo.page';
+import { TiposProcessoStore } from './tipos-processo.store';
 
 const BASE = 'http://localhost:5000';
 
@@ -35,7 +37,6 @@ const ADMIN_LISTA = `${BASE}/api/configuracao/admin/tipos-processo`;
 
 describe('TiposProcessoPage', () => {
   let fixture: ComponentFixture<TiposProcessoPage>;
-  let component: TiposProcessoPage;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -55,7 +56,6 @@ describe('TiposProcessoPage', () => {
       ],
     });
     fixture = TestBed.createComponent(TiposProcessoPage);
-    component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -92,12 +92,50 @@ describe('TiposProcessoPage', () => {
 
   it('renderiza a lista de tipos de processo com a situação de cada um', async () => {
     await flushLista([tipoSeed, tipoInativo]);
-    expect(component['tipos']()).toHaveLength(2);
+    expect(fixture.debugElement.injector.get(TiposProcessoStore).tipos()).toHaveLength(2);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('SiSU');
     expect(fixture.nativeElement.textContent).toContain('SISU');
     expect(fixture.nativeElement.textContent).toContain('Ativo');
     expect(fixture.nativeElement.textContent).toContain('Inativo');
+  });
+
+  it('filtra por código ou nome apenas na página carregada', async () => {
+    await flushLista([tipoSeed, tipoInativo]);
+    const store = fixture.debugElement.injector.get(TiposProcessoStore);
+    store.termoBusca.set('  tradicional  ');
+    expect(store.tiposFiltrados()).toEqual([tipoInativo]);
+    store.termoBusca.set('sisu');
+    expect(store.tiposFiltrados()).toEqual([tipoSeed]);
+    store.limparFiltros();
+    expect(store.tiposFiltrados()).toHaveLength(2);
+  });
+
+  it('preserva a página e seus cursores quando a navegação falha e permite tentar novamente', async () => {
+    const store = fixture.debugElement.injector.get(TiposProcessoStore);
+    controller
+      .expectOne((r) => r.url === ADMIN_LISTA)
+      .flush([tipoSeed], {
+        headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
+      });
+    await propagate();
+    store.proximaPagina();
+    await propagate();
+    const requisicao = controller.expectOne((r) => r.url === ADMIN_LISTA);
+    expect(requisicao.request.params.get('cursor')).toBe('abc');
+    expect(requisicao.request.params.get('direction')).toBe('next');
+    expect(requisicao.request.params.has('limit')).toBe(false);
+    requisicao.flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Indisponível' });
+    await propagate();
+    expect(store.tipos()).toEqual([tipoSeed]);
+    expect(store.proximo()).not.toBeNull();
+    store.tentarNovamente();
+    await propagate();
+    controller
+      .expectOne((r) => r.url === ADMIN_LISTA && r.params.get('cursor') === 'abc')
+      .flush([tipoInativo]);
+    await propagate();
+    expect(store.tipos()).toEqual([tipoInativo]);
   });
 
   it('estado vazio convida a cadastrar só a quem pode manter', async () => {
@@ -137,14 +175,14 @@ describe('TiposProcessoPage', () => {
 
   it('CA-01: cria um tipo de processo com código, nome e descrição', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['abrirCadastro']();
 
-    component['form'].setValue({
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['form'].setValue({
       codigo: 'ENEM',
       nome: 'ENEM',
       descricao: 'Ingresso via nota do ENEM.',
     });
-    component['salvar']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo`);
     expect(post.request.method).toBe('POST');
@@ -157,22 +195,26 @@ describe('TiposProcessoPage', () => {
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([tipoSeed]);
-    expect(component['formOpen']()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['formOpen']()).toBe(false);
   });
 
   it('CA-02: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
     await flushLista([tipoSeed]);
-    component['abrirEdicao'](tipoSeed);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['abrirEdicao'](tipoSeed);
 
-    expect(component['form'].controls.codigo.value).toBe('SISU');
+    expect(
+      fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['form'].controls.codigo.value,
+    ).toBe('SISU');
     fixture.detectChanges();
     const codigoInput = fixture.nativeElement.querySelector(
       '[formcontrolname="codigo"]',
     ) as HTMLInputElement;
     expect(codigoInput.readOnly).toBe(true);
 
-    component['form'].controls.nome.setValue('Sistema de Seleção Unificada');
-    component['salvar']();
+    fixture.debugElement.injector
+      .get(EdicaoDosTiposProcesso)
+      ['form'].controls.nome.setValue('Sistema de Seleção Unificada');
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['salvar']();
 
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-processo/${tipoSeed.id}`,
@@ -190,10 +232,12 @@ describe('TiposProcessoPage', () => {
 
   it('CA-03: código duplicado (409) é rejeitado com erro no campo sem fechar o drawer', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['abrirCadastro']();
 
-    component['form'].setValue({ codigo: 'SISU', nome: 'SiSU (dup)', descricao: '' });
-    component['salvar']();
+    fixture.debugElement.injector
+      .get(EdicaoDosTiposProcesso)
+      ['form'].setValue({ codigo: 'SISU', nome: 'SiSU (dup)', descricao: '' });
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['salvar']();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo`);
     post.flush(
@@ -211,15 +255,17 @@ describe('TiposProcessoPage', () => {
     );
     await propagate();
 
-    expect(component['formOpen']()).toBe(true);
-    expect(component['erroDoCampo']('codigo')).toContain('já está reservado');
-    expect(component['formError']()).toBeNull();
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['formOpen']()).toBe(true);
+    expect(
+      fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['erroDoCampo']('codigo'),
+    ).toContain('já está reservado');
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['formError']()).toBeNull();
   });
 
   it('CA-04: inativa um tipo de processo após confirmação e recarrega a lista', async () => {
     await flushLista([tipoSeed]);
-    component['pedirRemocao'](tipoSeed);
-    component['removerConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['pedirRemocao'](tipoSeed);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['removerConfirmado']();
 
     const req = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-processo/${tipoSeed.id}`,
@@ -228,13 +274,13 @@ describe('TiposProcessoPage', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
-    expect(component['confirmOpen']()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmOpen']()).toBe(false);
   });
 
   it('tipo já desativado (422) mantém o diálogo aberto com a mensagem da API', async () => {
     await flushLista([tipoSeed]);
-    component['pedirRemocao'](tipoSeed);
-    component['removerConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['pedirRemocao'](tipoSeed);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['removerConfirmado']();
 
     const req = controller.expectOne(
       `${BASE}/api/configuracao/admin/tipos-processo/${tipoSeed.id}`,
@@ -254,14 +300,16 @@ describe('TiposProcessoPage', () => {
     );
     await propagate();
 
-    expect(component['confirmOpen']()).toBe(true);
-    expect(component['confirmMessage']()).toContain('já está desativado');
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmOpen']()).toBe(true);
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmMessage']()).toContain(
+      'já está desativado',
+    );
   });
 
   it('reativa um tipo inativo após confirmação (POST .../ativacao com Idempotency-Key)', async () => {
     await flushLista([tipoInativo]);
-    component['pedirReativacao'](tipoInativo);
-    component['reativarConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['pedirReativacao'](tipoInativo);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['reativarConfirmado']();
 
     const req = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
     expect(req.request.method).toBe('POST');
@@ -269,13 +317,15 @@ describe('TiposProcessoPage', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([{ ...tipoInativo, ativo: true }]);
-    expect(component['confirmReativarOpen']()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmReativarOpen']()).toBe(
+      false,
+    );
   });
 
   it('reativação de tipo já ativo (422) mantém o diálogo com a mensagem da API', async () => {
     await flushLista([tipoInativo]);
-    component['pedirReativacao'](tipoInativo);
-    component['reativarConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['pedirReativacao'](tipoInativo);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['reativarConfirmado']();
 
     const req = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
     req.flush(
@@ -293,14 +343,18 @@ describe('TiposProcessoPage', () => {
     );
     await propagate();
 
-    expect(component['confirmReativarOpen']()).toBe(true);
-    expect(component['confirmReativarMessage']()).toContain('já está ativo');
+    expect(fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmReativarOpen']()).toBe(
+      true,
+    );
+    expect(
+      fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['confirmReativarMessage'](),
+    ).toContain('já está ativo');
   });
 
   it('reativação com falha 5xx mantém a mesma Idempotency-Key (retry seguro do mesmo comando)', async () => {
     await flushLista([tipoInativo]);
-    component['pedirReativacao'](tipoInativo);
-    component['reativarConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['pedirReativacao'](tipoInativo);
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['reativarConfirmado']();
 
     const primeiraReq = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
     const chaveOriginal = primeiraReq.request.headers.get('Idempotency-Key');
@@ -314,11 +368,89 @@ describe('TiposProcessoPage', () => {
     );
     await propagate();
 
-    component['reativarConfirmado']();
+    fixture.debugElement.injector.get(EdicaoDosTiposProcesso)['reativarConfirmado']();
     const segundaReq = controller.expectOne(`${ADMIN_LISTA}/${tipoInativo.id}/ativacao`);
     expect(segundaReq.request.headers.get('Idempotency-Key')).toBe(chaveOriginal);
     segundaReq.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([{ ...tipoInativo, ativo: true }]);
+  });
+  it('bloqueia operações concorrentes durante o envio e até o fim da recarga', async () => {
+    await flushLista([tipoSeed]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposProcesso);
+    edicao.pedirRemocao(tipoSeed);
+    edicao.abrirCadastro();
+    edicao.form.setValue({ codigo: 'ENEM', nome: 'ENEM', descricao: '' });
+    edicao.salvar();
+    const post = controller.expectOne((r) => r.url === ADMIN_LISTA && r.method === 'POST');
+    edicao.salvar();
+    edicao.removerConfirmado();
+    controller.expectNone((r) => r.method === 'DELETE' || r.method === 'POST');
+    edicao.alterarAbertura(false);
+    expect(edicao.formOpen()).toBe(true);
+    post.flush('id', { status: 201, statusText: 'Created' });
+    await propagate();
+    expect(edicao.gravando()).toBe(true);
+    edicao.removerConfirmado();
+    controller.expectNone((r) => r.method === 'DELETE');
+    await flushLista([tipoSeed]);
+    expect(edicao.gravando()).toBe(false);
+  });
+
+  it('mantém os campos desabilitados durante o envio e apresenta recusa de campo', async () => {
+    await flushLista([]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposProcesso);
+    edicao.abrirCadastro();
+    edicao.form.setValue({ codigo: 'ENEM', nome: 'ENEM', descricao: '' });
+    edicao.salvar();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('[formcontrolname="nome"]:disabled')).not.toBeNull();
+    expect(host.querySelector('[type="submit"]')?.getAttribute('aria-disabled')).toBe('true');
+    const post = controller.expectOne((r) => r.url === ADMIN_LISTA && r.method === 'POST');
+    post.flush(
+      {
+        type: 'https://uniplus.dev/erros/uniplus.validacao',
+        title: 'Inválido',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: 'test-trace',
+        errors: [{ field: 'Nome', code: 'invalido', message: 'Nome recusado.' }],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    fixture.detectChanges();
+    expect(edicao.erroDoCampo('nome')).toBe('Nome recusado.');
+    const nome = host.querySelector('[formcontrolname="nome"]');
+    expect(nome?.getAttribute('aria-invalid')).toBe('true');
+    expect(nome?.getAttribute('aria-describedby')).toBe('cfg-tproc-nome-erro');
+    expect(host.querySelector('#cfg-tproc-nome-erro')?.textContent).toContain('Nome recusado.');
+  });
+  it('libera a trava se a recarga falha e permite nova tentativa', async () => {
+    await flushLista([tipoSeed]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposProcesso);
+    const store = fixture.debugElement.injector.get(TiposProcessoStore);
+    edicao.pedirRemocao(tipoSeed);
+    edicao.removerConfirmado();
+    controller
+      .expectOne((r) => r.method === 'DELETE')
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    controller
+      .expectOne((r) => r.url === ADMIN_LISTA)
+      .flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Indisponível' });
+    await propagate();
+    expect(edicao.gravando()).toBe(false);
+    fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tentar novamente');
+    store.tentarNovamente();
+    await propagate();
+    await flushLista([]);
+    expect(edicao.gravando()).toBe(false);
   });
 });

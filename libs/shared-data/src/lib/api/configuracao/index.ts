@@ -95,7 +95,6 @@ export {
   type AtualizarTipoProcessoCommand,
   type CriarTipoProcessoCommand,
   type TipoProcessoDto,
-  type TiposProcessoManutencaoQuery,
   type TiposProcessoQuery,
 } from './tipos-processo.api';
 export {

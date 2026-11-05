@@ -17,15 +17,6 @@ export interface TiposProcessoQuery {
 }
 
 /**
- * Filtro da listagem de manutenção (`admin/tipos-processo`). `apenasAtivos`
- * default `false` no contrato — a tela de cadastro traz ativos e desativados
- * para permitir a reativação.
- */
-export interface TiposProcessoManutencaoQuery extends TiposProcessoQuery {
-  readonly apenasAtivos?: boolean;
-}
-
-/**
  * Cliente Angular standalone do recurso Tipo de Processo Seletivo (módulo
  * Configuração, UNI-REQ-0098).
  *
@@ -57,38 +48,6 @@ export class TiposProcessoApi {
 
     return this.http.get<ApiResult<readonly TipoProcessoDto[]>>(
       `${this.basePath}/api/configuracao/tipos-processo`,
-      { params, context: withVendorMime('tipo-processo', 1) },
-    );
-  }
-
-  /** GET `/api/configuracao/tipos-processo/{id}` — detalhe de um Tipo de Processo. */
-  obter(id: string): Observable<ApiResult<TipoProcessoDto>> {
-    return this.http.get<ApiResult<TipoProcessoDto>>(
-      `${this.basePath}/api/configuracao/tipos-processo/${encodeURIComponent(id)}`,
-      { context: withVendorMime('tipo-processo', 1) },
-    );
-  }
-
-  /**
-   * GET `/api/configuracao/admin/tipos-processo` — listagem de manutenção
-   * (plataforma-admin), inclui os tipos desativados. Paginação por cursor
-   * (ADR-0026); `apenasAtivos` default `false`.
-   */
-  listarParaManutencao(
-    query: TiposProcessoManutencaoQuery = {},
-  ): Observable<ApiResult<readonly TipoProcessoDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-    if (query.apenasAtivos !== undefined) {
-      params = params.set('apenasAtivos', String(query.apenasAtivos));
-    }
-
-    return this.http.get<ApiResult<readonly TipoProcessoDto[]>>(
-      `${this.basePath}/api/configuracao/admin/tipos-processo`,
       { params, context: withVendorMime('tipo-processo', 1) },
     );
   }

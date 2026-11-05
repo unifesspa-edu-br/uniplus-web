@@ -76,18 +76,6 @@ describe('TiposProcessoApi', () => {
     await promise;
   });
 
-  it('obter() faz GET /api/configuracao/tipos-processo/{id} com Accept versionado', async () => {
-    const promise = firstValueFrom(api.obter(ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/tipos-processo/${ID}`);
-
-    expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('tipo-processo', 1));
-    req.flush(tipoSeed);
-
-    const result = (await promise) as ApiResult<TipoProcessoDto>;
-    expect(isApiOk(result)).toBe(true);
-  });
-
   it('criar() faz POST /api/configuracao/admin/tipos-processo com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-processo`);
@@ -129,33 +117,6 @@ describe('TiposProcessoApi', () => {
 
     const result = (await promise) as ApiResult<void>;
     expect(isApiOk(result)).toBe(true);
-  });
-
-  it('listarParaManutencao() faz GET admin com limit, Accept versionado e sem apenasAtivos por padrão', async () => {
-    const promise = firstValueFrom(api.listarParaManutencao({ limit: 50 }));
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/configuracao/admin/tipos-processo`,
-    );
-
-    expect(req.request.method).toBe('GET');
-    expect(req.request.params.get('limit')).toBe('50');
-    expect(req.request.params.has('apenasAtivos')).toBe(false);
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('tipo-processo', 1));
-    req.flush([tipoSeed]);
-
-    const result = (await promise) as ApiResult<readonly TipoProcessoDto[]>;
-    expect(isApiOk(result)).toBe(true);
-  });
-
-  it('listarParaManutencao({ apenasAtivos: true }) envia o filtro', async () => {
-    const promise = firstValueFrom(api.listarParaManutencao({ apenasAtivos: true }));
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/configuracao/admin/tipos-processo`,
-    );
-
-    expect(req.request.params.get('apenasAtivos')).toBe('true');
-    req.flush([tipoSeed]);
-    await promise;
   });
 
   it('reativar() faz POST .../{id}/ativacao com Idempotency-Key', async () => {

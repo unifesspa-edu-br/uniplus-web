@@ -1,0 +1,82 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Tipo de Processo Seletivo</h1>
+    <p class="page-header__desc">
+      Cadastro institucional dos tipos de processo seletivo (SiSU, ENEM, vestibular, ...) — código,
+      nome e descrição. Alimenta o passo de tipo do wizard de Processo Seletivo no módulo Seleção.
+      UNI-REQ-0098.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
+  O código é a chave natural do tipo de processo — definido só na criação e exibido como somente
+  leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o mesmo código
+  continua sendo recusado. Um tipo desativado pode ser reativado a qualquer momento.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os tipos de processo">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="store.carregando() || edicao.gravando()"
+      (click)="!store.carregando() && !edicao.gravando() && store.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
+<cfg-tipos-processo-lista
+  [tipos]="store.tiposFiltrados()"
+  [carregando]="store.carregando()"
+  [ocupada]="store.carregando() || edicao.gravando()"
+  [rotuloEmAndamento]="edicao.rotuloEmAndamento()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [descricaoVazia]="descricaoDoEstadoVazio()"
+  [emAndamento]="edicao.tipoEmAndamento()"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (reativar)="edicao.pedirReativacao($event)"
+  (limpar)="store.limparFiltros()"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-tipo-processo-formulario
+  [aberto]="edicao.formOpen()"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.formHeading()"
+  [erro]="edicao.formError()"
+  [salvando]="edicao.saving()"
+  (abertura)="edicao.alterarAbertura($event)"
+  (salvar)="edicao.salvar()"
+/>
+<cfg-tipo-processo-confirmacao
+  [(aberto)]="edicao.confirmOpen"
+  titulo="Inativar tipo de processo"
+  rotulo="Inativar"
+  [mensagem]="edicao.confirmMessage()"
+  [erro]="edicao.confirmError()"
+  [ocupada]="edicao.gravando()"
+  (confirmar)="edicao.removerConfirmado()"
+/>
+<cfg-tipo-processo-confirmacao
+  [(aberto)]="edicao.confirmReativarOpen"
+  titulo="Reativar tipo de processo"
+  rotulo="Reativar"
+  [mensagem]="edicao.confirmReativarMessage()"
+  [erro]="edicao.confirmReativarError()"
+  [ocupada]="edicao.gravando()"
+  (confirmar)="edicao.reativarConfirmado()"
+/>

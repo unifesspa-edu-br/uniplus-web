@@ -1,0 +1,128 @@
+<ui-drawer
+  class="form-drawer"
+  [visible]="aberto()"
+  (visibleChange)="alterarAbertura($event)"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de tipo de processo"
+  position="right"
+>
+  <span class="sr-only" role="status">{{
+    salvando()
+      ? 'Salvando tipo de processo.'
+      : erro() || erroDoCampo('codigo') || erroDoCampo('nome') || erroDoCampo('descricao')
+  }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-tipo-processo-form"
+    (ngSubmit)="enviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-tipo-processo-identificacao">
+        <h3 id="cfg-tipo-processo-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          @let erroCampoCodigo = erroDoCampo('codigo');
+          <label class="field" [class.is-error]="erroCampoCodigo">
+            <span class="field__label is-required">Código</span>
+            <input
+              class="input cfg-input-uppercase"
+              type="text"
+              placeholder="Ex.: SISU"
+              formControlName="codigo"
+              aria-required="true"
+              [readonly]="modo() === 'editar'"
+              [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+              [attr.aria-describedby]="
+                erroCampoCodigo
+                  ? 'cfg-tproc-codigo-dica cfg-tproc-codigo-erro'
+                  : 'cfg-tproc-codigo-dica'
+              "
+            />
+            <span class="field__hint" id="cfg-tproc-codigo-dica">
+              @if (modo() === 'criar') {
+                Chave natural do cadastro: caixa alta, começando por letra, com letras, números e
+                sublinhado. Imutável após a criação e não reutilizável — sugerido a partir do nome e
+                editável antes de salvar.
+              } @else {
+                Imutável após a criação. Para corrigir, inative este tipo e cadastre outro.
+              }
+            </span>
+            @if (erroCampoCodigo) {
+              <span class="field__error" id="cfg-tproc-codigo-erro">{{ erroCampoCodigo }}</span>
+            }
+          </label>
+
+          <label class="field" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              aria-required="true"
+              [attr.aria-describedby]="erroDoCampo('nome') ? 'cfg-tproc-nome-erro' : null"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            />
+            @if (erroDoCampo('nome')) {
+              <span class="field__error" id="cfg-tproc-nome-erro">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+
+          <label class="field" [class.is-error]="erroDoCampo('descricao')">
+            <span class="field__label">Descrição</span>
+            <textarea
+              class="textarea"
+              rows="3"
+              formControlName="descricao"
+              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-tproc-descricao-erro' : null"
+            ></textarea>
+            <span class="field__hint">
+              Texto orientativo exibido ao operador ao escolher o tipo de um Processo Seletivo.
+            </span>
+            @if (erroDoCampo('descricao')) {
+              <span class="field__error" id="cfg-tproc-descricao-erro">{{
+                erroDoCampo('descricao')
+              }}</span>
+            }
+          </label>
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="alterarAbertura(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-tipo-processo-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando()"
+      [attr.aria-busy]="salvando()"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{
+        salvando()
+          ? 'Salvando...'
+          : modo() === 'criar'
+            ? 'Criar tipo de processo'
+            : 'Salvar tipo de processo'
+      }}
+    </button>
+  </div>
+</ui-drawer>
