@@ -6,16 +6,17 @@ import { EditorDeCondicoesComponent } from './editor-de-condicoes';
 import {
   clausulasDe,
   comClausulaEm,
-  deClausulasDoWire,
-  fatoEscolhivel,
-  fatosEscolhiveis,
-  problemasDeCondicoes,
-  paraClausulasDoWire,
   semCondicaoEm,
   type CondicaoEmClausula,
+} from './condicoes/condicoes-em-clausulas';
+import { deClausulasDoWire, paraClausulasDoWire } from './condicoes/condicoes-no-wire';
+import { problemasDeCondicoes } from './condicoes/conferencia-da-condicao';
+import {
+  fatoEscolhivel,
+  fatosEscolhiveis,
   type FatoDoCatalogo,
   type FatoEscolhivel,
-} from './condicoes-de-fatos';
+} from './condicoes/fatos-escolhiveis';
 
 const CATALOGO: readonly FatoDoCatalogo[] = [
   {
@@ -208,7 +209,9 @@ describe('EditorDeCondicoesComponent', () => {
 
     it('a condição nova não nasce citando o fato pendente', () => {
       // O fato pendente vem primeiro na lista: é ele que uma condição nova receberia sem o filtro.
-      fixture.componentInstance.fatos.set([...PENDENTES].sort((a) => (a.codigo === 'PCD' ? -1 : 1)));
+      fixture.componentInstance.fatos.set(
+        [...PENDENTES].sort((a) => (a.codigo === 'PCD' ? -1 : 1)),
+      );
       fixture.componentInstance.condicoes.set([condicao(1, 'SEXO')]);
       fixture.detectChanges();
 

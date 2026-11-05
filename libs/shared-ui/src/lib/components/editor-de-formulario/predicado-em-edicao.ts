@@ -1,10 +1,10 @@
+import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
 import {
   deClausulasDoWire,
   paraClausulasDoWire,
-  problemaDaCondicao,
-  type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+} from '../editor-de-condicoes/condicoes/condicoes-no-wire';
+import { problemaDaCondicao } from '../editor-de-condicoes/condicoes/conferencia-da-condicao';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import type { PredicadoNoWire } from './modelo/tipos';
 
 /** O predicado na forma da API; sem condição, nulo — é como a API diz "sempre". */

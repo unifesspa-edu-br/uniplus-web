@@ -2,7 +2,7 @@ import {
   fatosEscolhiveis,
   nomesDoCatalogo,
   type FatoEscolhivel,
-} from '../../editor-de-condicoes/condicoes-de-fatos';
+} from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { fatosDeMembroParaAcrescentar, fatosParaAcrescentar } from './catalogo-de-campos';
 import {
   comFatosConhecidosAntes,

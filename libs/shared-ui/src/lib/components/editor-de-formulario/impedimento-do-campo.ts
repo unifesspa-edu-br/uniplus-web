@@ -13,8 +13,8 @@ import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-con
 import {
   condicaoNova,
   type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+} from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { alternativaSemOProprioCampo, comImpedimento } from './modelo/impedimento';
 import { type ItemDoFormulario, type PredicadoNoWire } from './modelo/tipos';
 import { focarDepois } from './foco';

@@ -1,8 +1,6 @@
 import type { DocumentoExigidoDoFormulario } from '../../editor-de-documentos-exigidos/documentos-exigidos';
-import {
-  type CondicaoNoWire,
-  type FatoDoCatalogo,
-} from '../../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoNoWire } from '../../editor-de-condicoes/condicoes/condicoes-no-wire';
+import { type FatoDoCatalogo } from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
 
 /**
  * O conteúdo de um formulário — o do modelo, na Configuração, e o do processo, na Seleção — na

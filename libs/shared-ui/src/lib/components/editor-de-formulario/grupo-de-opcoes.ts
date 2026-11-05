@@ -8,10 +8,8 @@ import {
 } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import {
-  type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { problemaDoGrupoDeOpcoes } from './modelo/problemas-da-restricao';
 import { type OpcoesCondicionadas, type PredicadoNoWire } from './modelo/tipos';
 import {

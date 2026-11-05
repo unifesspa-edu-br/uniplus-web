@@ -7,11 +7,11 @@ import {
   output,
 } from '@angular/core';
 
+import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
 import {
   nomesDoCatalogo,
-  type CondicaoEmClausula,
   type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+} from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
 import { TagComponent } from '../tag/tag';
 import { CamposDoGrupoComponent } from './grupo/campos-do-grupo';

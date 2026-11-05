@@ -3,21 +3,20 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
 import { ValorDeMunicipioComponent } from './valor-de-municipio';
+import { alcanceDaCondicao } from './condicoes/conferencia-da-condicao';
+import { rotuloDoValor, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
 import {
   RESPOSTAS_BOOLEANAS,
-  alcanceDaCondicao,
   comOperador,
   comValorEscalar,
   comValoresDeLista,
   comparaComLista,
   operadoresDoFato,
-  rotuloDoValor,
+  type CondicaoDeFato,
+  type OperadorEscolhivel,
   valorEscalarDe,
   valoresDeListaDe,
-  type CondicaoDeFato,
-  type FatoEscolhivel,
-  type OperadorEscolhivel,
-} from './condicoes-de-fatos';
+} from './condicoes/valor-da-condicao';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /**

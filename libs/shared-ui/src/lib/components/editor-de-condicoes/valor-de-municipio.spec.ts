@@ -9,10 +9,10 @@ import type { ApiResult } from '@uniplus/shared-core/http';
 import { CondicaoDeFatoComponent } from './condicao-de-fato';
 import {
   fatosEscolhiveis,
-  type CondicaoDeFato,
   type FatoDoCatalogo,
   type FatoEscolhivel,
-} from './condicoes-de-fatos';
+} from './condicoes/fatos-escolhiveis';
+import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
 import {
   BUSCA_DE_MUNICIPIOS,
   NomesDeMunicipios,

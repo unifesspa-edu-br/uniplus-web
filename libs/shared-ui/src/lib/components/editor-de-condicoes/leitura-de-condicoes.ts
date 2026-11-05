@@ -3,21 +3,22 @@
  * nome do fato, a comparação como o editor a oferece e o valor pela descrição do cadastro.
  */
 
+import { clausulasDe, type CondicaoEmClausula } from './condicoes/condicoes-em-clausulas';
+import {
+  fatoEscolhivel,
+  rotuloDoValor,
+  type FatoDoCatalogo,
+  type FatoEscolhivel,
+} from './condicoes/fatos-escolhiveis';
 import {
   VALOR_FALSO,
   VALOR_VERDADEIRO,
-  clausulasDe,
   comparaComLista,
-  fatoEscolhivel,
   operadoresDoFato,
-  rotuloDoValor,
+  type CondicaoDeFato,
   valorEscalarDe,
   valoresDeListaDe,
-  type CondicaoDeFato,
-  type CondicaoEmClausula,
-  type FatoDoCatalogo,
-  type FatoEscolhivel,
-} from './condicoes-de-fatos';
+} from './condicoes/valor-da-condicao';
 
 /** A condição como frase: o fato, a comparação que o editor oferece e o valor escolhido. */
 export function descreverCondicao(

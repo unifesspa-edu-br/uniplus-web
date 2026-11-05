@@ -8,10 +8,10 @@ import {
   comCondicaoTrocadaEm,
   semClausulaEm,
   semCondicaoEm,
-  type CondicaoDeFato,
   type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from './condicoes-de-fatos';
+} from './condicoes/condicoes-em-clausulas';
+import { type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
+import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
 
 /**
  * O editor de um predicado sobre fatos do candidato em forma normal disjuntiva.
@@ -118,7 +118,9 @@ export class EditorDeCondicoesComponent {
   readonly condicoes = input.required<readonly CondicaoEmClausula[]>();
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   /** Os fatos que uma condição nova pode citar: o que aguarda a aprovação da proteção de dados só se mantém onde já está. */
-  protected readonly disponiveis = computed(() => this.fatos().filter((fato) => fato.aguardaProtecao !== true));
+  protected readonly disponiveis = computed(() =>
+    this.fatos().filter((fato) => fato.aguardaProtecao !== true),
+  );
   /** Prefixo dos ids dos controles — único na tela, para os rótulos apontarem para eles. */
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);

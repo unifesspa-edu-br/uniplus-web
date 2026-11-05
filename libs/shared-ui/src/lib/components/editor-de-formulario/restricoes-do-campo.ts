@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
-import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { GrupoDeOpcoesComponent } from './grupo-de-opcoes';
 import { problemaDaRestricao } from './modelo/problemas-da-restricao';
 import {

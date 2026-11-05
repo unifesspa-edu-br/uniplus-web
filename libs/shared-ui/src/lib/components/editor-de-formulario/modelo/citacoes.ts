@@ -1,9 +1,11 @@
 import {
-  OPERADOR_DIFERENTE,
-  OPERADOR_NAO_EM,
   fatosEscolhiveis,
   type FatoEscolhivel,
-} from '../../editor-de-condicoes/condicoes-de-fatos';
+} from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
+import {
+  OPERADOR_DIFERENTE,
+  OPERADOR_NAO_EM,
+} from '../../editor-de-condicoes/condicoes/valor-da-condicao';
 import { primeiraOrdemDaEtapa } from './ordem-das-entradas';
 import { ConteudoDoFormulario, FatoDoFormulario, ItemDoFormulario, PredicadoNoWire } from './tipos';
 

@@ -8,10 +8,8 @@ import {
 } from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import {
-  type CondicaoEmClausula,
-  type FatoEscolhivel,
-} from '../editor-de-condicoes/condicoes-de-fatos';
+import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
+import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { LIMITES_DO_FORMULARIO } from './modelo/constantes';
 import { type EtapaDoFormulario, type PredicadoNoWire } from './modelo/tipos';
 import {

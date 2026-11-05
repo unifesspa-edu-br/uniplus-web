@@ -9,7 +9,10 @@ import {
   signal,
 } from '@angular/core';
 
-import { fatoEscolhivel, nomesDoCatalogo } from '../../editor-de-condicoes/condicoes-de-fatos';
+import {
+  fatoEscolhivel,
+  nomesDoCatalogo,
+} from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { focarDepois } from '../foco';
 import { ItemDoFormularioComponent } from '../item-do-formulario';
 import { fatosDeMembroParaAcrescentar } from '../modelo/catalogo-de-campos';

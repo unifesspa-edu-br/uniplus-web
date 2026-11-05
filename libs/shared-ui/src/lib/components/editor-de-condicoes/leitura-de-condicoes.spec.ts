@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fatoEscolhivel, type CondicaoEmClausula, type FatoEscolhivel } from './condicoes-de-fatos';
+import { type CondicaoEmClausula } from './condicoes/condicoes-em-clausulas';
+import { fatoEscolhivel, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
 import {
   QUEM_ATENDE_AS_CONDICOES,
   TODOS_OS_CANDIDATOS,

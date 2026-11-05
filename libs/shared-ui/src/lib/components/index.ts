@@ -38,7 +38,11 @@ export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmente
 export { SelectComponent, type UiSelectOption } from './select/select';
 export { CondicaoDeFatoComponent } from './editor-de-condicoes/condicao-de-fato';
 export { EditorDeCondicoesComponent } from './editor-de-condicoes/editor-de-condicoes';
-export * from './editor-de-condicoes/condicoes-de-fatos';
+export { type ClausulaDeCondicoes, type CondicaoEmClausula, type CondicaoPosicionada, clausulasDe, comClausulaEm, comCondicaoEm, comCondicaoTrocadaEm, condicaoNova, numerosDeClausula, renumerarClausulas, semClausulaEm, semCondicaoEm } from './editor-de-condicoes/condicoes/condicoes-em-clausulas';
+export { type CondicaoNoWire, deClausulasDoWire, paraClausulasDoWire } from './editor-de-condicoes/condicoes/condicoes-no-wire';
+export { alcanceDaCondicao, problemaDaCondicao, problemasDeCondicoes } from './editor-de-condicoes/condicoes/conferencia-da-condicao';
+export { FONTE_GEO_MUNICIPIO, type FatoDoCatalogo, type FatoEscolhivel, type TipoDeDominio, type ValorDoCatalogo, fatoEscolhivel, fatosEscolhiveis, nomesDoCatalogo, rotuloDoValor } from './editor-de-condicoes/condicoes/fatos-escolhiveis';
+export { type CondicaoDeFato, OPERADOR_DIFERENTE, OPERADOR_EM, OPERADOR_IGUAL, OPERADOR_MAIOR_IGUAL, OPERADOR_MENOR_IGUAL, OPERADOR_NAO_EM, type OperadorEscolhivel, RESPOSTAS_BOOLEANAS, VALOR_FALSO, VALOR_VERDADEIRO, comOperador, comValorEscalar, comValoresDeLista, comparaComLista, operadoresDoFato, valorEscalarDe, valoresDeListaDe } from './editor-de-condicoes/condicoes/valor-da-condicao';
 export * from './editor-de-condicoes/leitura-de-condicoes';
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
 export { comCandidatoComoMembro, type ContextoDoParentesco } from './editor-de-formulario/modelo/candidato-como-membro';
