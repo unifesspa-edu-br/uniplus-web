@@ -196,13 +196,16 @@ export class ComboboxComponent {
     }
     const estado = this.estadoDaBusca();
     if (this.buscaExterna() && estado !== null) return estado;
-    // Na busca externa, a lista vazia pode ser busca em curso ou termo curto demais, e só o
-    // hospedeiro sabe dizer qual.
+    return this.contagemDaBusca(total, termo);
+  });
+
+  private contagemDaBusca(total: number, termo: string): string {
+    // Na busca externa, só o hospedeiro sabe por que uma lista está vazia.
     if (total === 0 && this.exibidas() > 0) return `Nenhuma opção disponível para “${termo}”.`;
     if (total === 0)
       return this.buscaExterna() ? this.textoSemResultado() : `Nada encontrado para “${termo}”.`;
     return total === 1 ? `1 opção casa com “${termo}”.` : `${total} opções casam com “${termo}”.`;
-  });
+  }
 
   /** A lista, achatada na ordem em que aparece — é por ela que as setas andam. */
   private readonly navegaveis = computed<readonly string[]>(() =>
@@ -250,53 +253,62 @@ export class ComboboxComponent {
 
   protected teclar(evento: KeyboardEvent): void {
     if (evento.isComposing || evento.keyCode === 229) return;
-
-    if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
-      evento.preventDefault();
-      if (!this.aberto()) {
-        // Pela mesma porta do foco: a seta reabre a lista, e reabrir devolve o campo vazio.
-        // Fechada com Escape sem tirar o foco, ela era reaberta aqui com o rótulo escolhido
-        // ainda no input, e a consulta seguinte era digitada dentro dele.
-        this.abrir();
-        return;
-      }
-      this.andar(evento.key === 'ArrowDown' ? 1 : -1);
-      return;
-    }
-
-    if (evento.key === 'Home' || evento.key === 'End') {
-      if (!this.aberto()) return;
-      evento.preventDefault();
-      const lista = this.navegaveis();
-      this.destacada.set((evento.key === 'Home' ? lista[0] : lista[lista.length - 1]) ?? null);
-      return;
-    }
-
-    if (evento.key === 'Enter') {
-      const alvo = this.destacada();
-      if (!this.aberto()) return;
-      if (alvo === null) {
-        // Sem opção ativa o Enter não escolhe nada: fecha a lista e devolve o texto do valor
-        // escolhido, e o formulário envia com o que o campo mostra.
+    switch (evento.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        this.navegarComSetas(evento);
+        break;
+      case 'Home':
+      case 'End':
+        this.irAoExtremo(evento);
+        break;
+      case 'Enter':
+        this.escolherComEnter(evento);
+        break;
+      case 'Escape':
+        this.fecharComEscape(evento);
+        break;
+      case 'Tab':
         this.fechar();
-        return;
-      }
-      evento.preventDefault();
-      // A opção apontada pode ter ficado indisponível depois de apontada; a marcada segue removível.
-      const opcao = this.todasAsOpcoes().find((candidata) => candidata.value === alvo);
-      if (opcao === undefined || this.indisponivel(opcao)) return;
-      this.escolher(alvo);
+        break;
+    }
+  }
+
+  private navegarComSetas(evento: KeyboardEvent): void {
+    evento.preventDefault();
+    if (!this.aberto()) {
+      // Reabrir pela mesma porta do foco devolve o campo vazio para a próxima busca.
+      this.abrir();
       return;
     }
+    this.andar(evento.key === 'ArrowDown' ? 1 : -1);
+  }
 
-    if (evento.key === 'Escape') {
-      // Fecha sem escolher, e devolve o campo ao que ele mostrava antes da busca.
-      evento.preventDefault();
+  private irAoExtremo(evento: KeyboardEvent): void {
+    if (!this.aberto()) return;
+    evento.preventDefault();
+    const lista = this.navegaveis();
+    this.destacada.set((evento.key === 'Home' ? lista[0] : lista[lista.length - 1]) ?? null);
+  }
+
+  private escolherComEnter(evento: KeyboardEvent): void {
+    const alvo = this.destacada();
+    if (!this.aberto()) return;
+    if (alvo === null) {
+      // Sem opção ativa, fecha e devolve o texto escolhido antes de enviar o formulário.
       this.fechar();
       return;
     }
+    evento.preventDefault();
+    // A opção apontada pode ter ficado indisponível; a marcada segue removível.
+    const opcao = this.todasAsOpcoes().find((candidata) => candidata.value === alvo);
+    if (opcao === undefined || this.indisponivel(opcao)) return;
+    this.escolher(alvo);
+  }
 
-    if (evento.key === 'Tab') this.fechar();
+  private fecharComEscape(evento: KeyboardEvent): void {
+    evento.preventDefault();
+    this.fechar();
   }
 
   private andar(passo: number): void {
