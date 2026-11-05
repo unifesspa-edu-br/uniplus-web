@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
 import { type CampoNoPasso, type GrupoNoPasso } from './passos-do-formulario';
+import { type OcorrenciaNaTela, ocorrenciasNaTela } from './ocorrencias-na-tela';
 import { fatoDaUf } from './regras-do-campo';
 import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
 import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
@@ -9,7 +10,6 @@ import {
   FATO_PARENTESCO,
   indiceDaOcorrenciaDoCandidato,
   PROPRIO_CANDIDATO,
-  titulosDasOcorrencias,
 } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
 import {
@@ -17,14 +17,6 @@ import {
   rotuloGravadoDa,
   type MunicipiosGravados,
 } from './valor-de-municipio-gravado';
-
-interface OcorrenciaNaTela {
-  readonly id: string;
-  readonly titulo: string;
-  readonly doCandidato: boolean;
-  readonly campos: readonly CampoNoPasso[];
-  readonly respostas: Readonly<Record<string, ValorJson>>;
-}
 
 /**
  * Um grupo repetível, como a composição familiar: cada ocorrência com os campos dela, e acrescentar ou
@@ -204,60 +196,9 @@ export class GrupoDoCandidatoComponent {
   });
 
   /** Cada ocorrência com os campos que aparecem nela, na ordem do grupo. */
-  protected readonly naTela = computed<readonly OcorrenciaNaTela[]>(() => {
-    const { grupo, avaliado, regras } = this.noPasso();
-    const subitens = [...grupo.subitens].sort((a, b) => a.ordem - b.ordem);
-    const indiceDoCandidato = this.indiceDoCandidato();
-    const titulos = titulosDasOcorrencias(
-      grupo.incluiCandidato,
-      this.lista().map((o) => o.respostas),
-    );
-    return this.lista().map((ocorrencia, i) => {
-      const doCandidato = i === indiceDoCandidato;
-      const avaliados = new Map(
-        (avaliado.ocorrencias[i]?.campos ?? []).map((c) => [c.fatoCodigo, c]),
-      );
-      return {
-        id: ocorrencia.id,
-        titulo: titulos[i],
-        doCandidato,
-        respostas: ocorrencia.respostas ?? {},
-        campos: subitens.flatMap((campo): CampoNoPasso[] => {
-          const avaliadoDoCampo = avaliados.get(campo.fatoCodigo);
-          // O parentesco da ocorrência do candidato é fixo: não se pergunta.
-          if (doCandidato && campo.fatoCodigo === FATO_PARENTESCO) return [];
-          if (!avaliadoDoCampo || avaliadoDoCampo.visivel !== 'VERDADEIRO') return [];
-          // Com o candidato já na lista, o parentesco dos outros integrantes não oferece o próprio candidato.
-          const semOCandidato = indiceDoCandidato !== null && campo.fatoCodigo === FATO_PARENTESCO;
-          return [
-            {
-              campo: semOCandidato
-                ? {
-                    ...campo,
-                    valoresSelecionaveis: campo.valoresSelecionaveis?.filter(
-                      (v) => v.codigo !== PROPRIO_CANDIDATO,
-                    ),
-                  }
-                : campo,
-              avaliado:
-                semOCandidato && avaliadoDoCampo.opcoes
-                  ? {
-                      ...avaliadoDoCampo,
-                      opcoes: {
-                        ...avaliadoDoCampo.opcoes,
-                        codigos: avaliadoDoCampo.opcoes.codigos?.filter(
-                          (c) => c !== PROPRIO_CANDIDATO,
-                        ),
-                      },
-                    }
-                  : avaliadoDoCampo,
-              regra: regras.get(campo.fatoCodigo) ?? null,
-            },
-          ];
-        }),
-      };
-    });
-  });
+  protected readonly naTela = computed(() =>
+    ocorrenciasNaTela(this.noPasso(), this.lista(), this.indiceDoCandidato()),
+  );
 
   protected readonly problemas = computed(() => {
     const { avaliado } = this.noPasso();

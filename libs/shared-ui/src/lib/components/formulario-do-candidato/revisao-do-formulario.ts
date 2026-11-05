@@ -44,15 +44,14 @@ export class RevisaoDoFormulario {
     return avaliacao?.modalidades?.derivada ? avaliacao : null;
   });
   readonly fatorNaRevisao = computed(() =>
-    resumoDoFator(
-      this.fontes.passos(),
-      this.fontes.respostas(),
-      this.fontes.municipios,
-      this.fontes.municipiosGravados(),
-      this.fontes.formulario().dependenciasDoFator,
-      this.fontes.grupos(),
-      this.fontes.respostasFixas(),
-    ),
+    resumoDoFator(this.fontes.passos(), {
+      respostas: this.fontes.respostas(),
+      municipios: this.fontes.municipios,
+      gravados: this.fontes.municipiosGravados(),
+      dependencias: this.fontes.formulario().dependenciasDoFator,
+      ocorrencias: this.fontes.grupos(),
+      fixas: this.fontes.respostasFixas(),
+    }),
   );
   /** As seções cujas respostas definem as modalidades: onde levar o candidato que quer corrigir. */
   readonly secoesQueDefinem = computed(() =>

@@ -64,36 +64,63 @@ export function avaliarConfirmacoes(
   passos: readonly PassoDoFormulario[],
   entrada: EntradaDasConfirmacoes,
 ): ReadonlyMap<string, ProblemaDaConfirmacao> {
-  const problemas = new Map<string, ProblemaDaConfirmacao>();
-  const conferir = (
-    caminho: string,
-    campo: CampoRenderizavel,
-    fixa: boolean,
-    resposta: ValorJson | undefined,
-  ): void => {
-    if (!pedeConfirmacao(campo, fixa)) return;
-    const problema = problemaDaConfirmacao(campo, resposta, entrada.confirmacoes[caminho] ?? '');
-    if (problema) problemas.set(caminho, problema);
-  };
+  return new Map(
+    passos.flatMap((passo) => [
+      ...problemasDosCampos(passo, entrada),
+      ...problemasDosGrupos(passo, entrada),
+    ]),
+  );
+}
 
-  for (const passo of passos) {
-    for (const { campo } of passo.campos) {
-      const fato = campo.fatoCodigo;
-      conferir(fato, campo, !!entrada.fixas[fato], entrada.respostas[fato]);
-    }
-    for (const { grupo, avaliado } of passo.grupos) {
-      for (const ocorrencia of avaliado.ocorrencias) {
-        const atuais = entrada.grupos[grupo.codigo]?.find((o) => o.id === ocorrencia.id)?.respostas;
-        for (const avaliadoDoSubitem of ocorrencia.campos) {
-          const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
-          if (!subitem || avaliadoDoSubitem.visivel !== VERDADEIRO) continue;
-          const fato = subitem.fatoCodigo;
-          conferir(`${grupo.codigo}.${ocorrencia.id}.${fato}`, subitem, false, atuais?.[fato]);
-        }
-      }
-    }
-  }
-  return problemas;
+/** Um campo e a resposta que a confirmação confere, pelo código com que a tela o marca. */
+interface CampoConfirmavel {
+  readonly caminho: string;
+  readonly campo: CampoRenderizavel;
+  readonly fixa: boolean;
+  readonly resposta: ValorJson | undefined;
+}
+
+function conferir(
+  { caminho, campo, fixa, resposta }: CampoConfirmavel,
+  entrada: EntradaDasConfirmacoes,
+): [string, ProblemaDaConfirmacao][] {
+  if (!pedeConfirmacao(campo, fixa)) return [];
+  const problema = problemaDaConfirmacao(campo, resposta, entrada.confirmacoes[caminho] ?? '');
+  return problema ? [[caminho, problema]] : [];
+}
+
+function problemasDosCampos(
+  passo: PassoDoFormulario,
+  entrada: EntradaDasConfirmacoes,
+): [string, ProblemaDaConfirmacao][] {
+  return passo.campos.flatMap(({ campo }) => {
+    const fato = campo.fatoCodigo;
+    return conferir(
+      { caminho: fato, campo, fixa: !!entrada.fixas[fato], resposta: entrada.respostas[fato] },
+      entrada,
+    );
+  });
+}
+
+function problemasDosGrupos(
+  passo: PassoDoFormulario,
+  entrada: EntradaDasConfirmacoes,
+): [string, ProblemaDaConfirmacao][] {
+  return passo.grupos.flatMap(({ grupo, avaliado }) =>
+    avaliado.ocorrencias.flatMap((ocorrencia) => {
+      const atuais = entrada.grupos[grupo.codigo]?.find((o) => o.id === ocorrencia.id)?.respostas;
+      return ocorrencia.campos.flatMap((avaliadoDoSubitem) => {
+        const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
+        if (!subitem || avaliadoDoSubitem.visivel !== VERDADEIRO) return [];
+        const fato = subitem.fatoCodigo;
+        const caminho = `${grupo.codigo}.${ocorrencia.id}.${fato}`;
+        return conferir(
+          { caminho, campo: subitem, fixa: false, resposta: atuais?.[fato] },
+          entrada,
+        );
+      });
+    }),
+  );
 }
 
 function mesmoValor(a: ValorJson | undefined, b: ValorJson | undefined): boolean {
