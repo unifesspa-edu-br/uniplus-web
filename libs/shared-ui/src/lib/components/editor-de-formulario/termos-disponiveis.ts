@@ -1,6 +1,6 @@
 import { formatarDataBr } from '@uniplus/shared-utils';
 
-import type { TermoDisponivel } from './formulario-editavel';
+import type { TermoDisponivel } from './modelo/tipos';
 
 /** O termo de consentimento como o cadastro o devolve, só no que o editor usa. */
 export interface TermoComVersoes {
@@ -19,6 +19,9 @@ export function termoDisponivelDe(termo: TermoComVersoes): TermoDisponivel {
     nome: termo.nome,
     versoes: [...termo.versoes]
       .sort((a, b) => b.promovidaEm.localeCompare(a.promovidaEm))
-      .map((versao) => ({ versaoId: versao.id, rotulo: `Versão de ${formatarDataBr(versao.promovidaEm, 'datetime')}` })),
+      .map((versao) => ({
+        versaoId: versao.id,
+        rotulo: `Versão de ${formatarDataBr(versao.promovidaEm, 'datetime')}`,
+      })),
   };
 }

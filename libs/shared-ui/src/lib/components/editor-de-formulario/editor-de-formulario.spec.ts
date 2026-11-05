@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { EditorDeFormularioComponent } from './editor-de-formulario';
-import { distribuirRecusas, type ConteudoDoFormulario, type FatoDoFormulario, type ItemDoFormulario, type RecusasDoConteudo } from './formulario-editavel';
+import { distribuirRecusas, type RecusasDoConteudo } from './modelo/recusas';
+import {
+  type ConteudoDoFormulario,
+  type FatoDoFormulario,
+  type ItemDoFormulario,
+} from './modelo/tipos';
 
 const fato = (codigo: string): FatoDoFormulario => ({
   codigo,
@@ -18,7 +23,11 @@ const fato = (codigo: string): FatoDoFormulario => ({
   ativo: true,
 });
 
-const item = (fatoCodigo: string, ordem: number, extra: Partial<ItemDoFormulario> = {}): ItemDoFormulario => ({
+const item = (
+  fatoCodigo: string,
+  ordem: number,
+  extra: Partial<ItemDoFormulario> = {},
+): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
   rotulo: `Campo ${fatoCodigo}`,
@@ -32,8 +41,22 @@ const item = (fatoCodigo: string, ordem: number, extra: Partial<ItemDoFormulario
 
 const conteudo: ConteudoDoFormulario = {
   titulo: null,
-  etapas: [{ codigo: 'S1', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Escolaridade', descricao: null, aviso: null }],
-  itens: [item('A', 0), item('B', 1, { precondicao: [[{ fato: 'A', operador: 'IGUAL', valor: true }]] }), item('C', 2)],
+  etapas: [
+    {
+      codigo: 'S1',
+      ordem: 0,
+      tipo: 'SECAO',
+      bloco: null,
+      titulo: 'Escolaridade',
+      descricao: null,
+      aviso: null,
+    },
+  ],
+  itens: [
+    item('A', 0),
+    item('B', 1, { precondicao: [[{ fato: 'A', operador: 'IGUAL', valor: true }]] }),
+    item('C', 2),
+  ],
   termos: [],
   pressupostos: [],
   grupos: [],
@@ -59,7 +82,8 @@ describe('EditorDeFormularioComponent', () => {
 
   const tela = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const status = (): string => tela().querySelector('[role="status"]')?.textContent?.trim() ?? '';
-  const clicar = (id: string): void => (tela().querySelector(`#${id}`) as HTMLButtonElement).click();
+  const clicar = (id: string): void =>
+    (tela().querySelector(`#${id}`) as HTMLButtonElement).click();
   /** Abre a busca de fatos, filtrada pelo termo quando há um, e devolve os nomes que ela oferece. */
   const ofertadosEm = (id: string, termo = ''): string[] => {
     const campo = tela().querySelector(`#${id} [role="combobox"]`) as HTMLInputElement;
@@ -69,15 +93,23 @@ describe('EditorDeFormularioComponent', () => {
       campo.dispatchEvent(new Event('input'));
     }
     fixture.detectChanges();
-    return [...tela().querySelectorAll(`#${id} [role="option"]`)].map((opcao) => opcao.textContent?.trim() ?? '');
+    return [...tela().querySelectorAll(`#${id} [role="option"]`)].map(
+      (opcao) => opcao.textContent?.trim() ?? '',
+    );
   };
   const escolherEm = (id: string, nome: string, termo = ''): void => {
     ofertadosEm(id, termo);
-    [...tela().querySelectorAll(`#${id} [role="option"]`)].find((opcao) => opcao.textContent?.trim() === nome)?.dispatchEvent(new MouseEvent('mousedown'));
+    [...tela().querySelectorAll(`#${id} [role="option"]`)]
+      .find((opcao) => opcao.textContent?.trim() === nome)
+      ?.dispatchEvent(new MouseEvent('mousedown'));
     fixture.detectChanges();
   };
   const acrescentarCampo = (): void => {
-    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar campo')) as HTMLButtonElement).click();
+    (
+      [...tela().querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Acrescentar campo'),
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
   };
 
@@ -90,12 +122,21 @@ describe('EditorDeFormularioComponent', () => {
   });
 
   it('o fato que aguarda a aprovação da proteção de dados aparece indisponível, com o motivo, e não se escolhe', () => {
-    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('RENDA'), protecaoAprovada: false }]);
+    fixture.componentRef.setInput('catalogo', [
+      fato('A'),
+      fato('B'),
+      fato('C'),
+      { ...fato('RENDA'), protecaoAprovada: false },
+    ]);
     fixture.detectChanges();
 
     const ofertados = ofertadosEm('f-etapa-S1-acrescentar');
     expect(ofertados).toEqual(['RENDA — aguarda a aprovação da proteção de dados']);
-    expect(tela().querySelector('#f-etapa-S1-acrescentar [role="option"]')?.getAttribute('aria-disabled')).toBe('true');
+    expect(
+      tela()
+        .querySelector('#f-etapa-S1-acrescentar [role="option"]')
+        ?.getAttribute('aria-disabled'),
+    ).toBe('true');
 
     escolherEm('f-etapa-S1-acrescentar', 'RENDA — aguarda a aprovação da proteção de dados');
     acrescentarCampo();
@@ -107,8 +148,17 @@ describe('EditorDeFormularioComponent', () => {
       ...conteudo,
       grupos: [
         {
-          codigo: 'FAMILIA', ordem: 3, rotulo: 'Família', etapaCodigo: 'S1', minimo, maximo, exibicao: null, obrigatoriedade: 'SEMPRE',
-          predicadoObrigatoriedade: null, incluiCandidato: false, subitens: [],
+          codigo: 'FAMILIA',
+          ordem: 3,
+          rotulo: 'Família',
+          etapaCodigo: 'S1',
+          minimo,
+          maximo,
+          exibicao: null,
+          obrigatoriedade: 'SEMPRE',
+          predicadoObrigatoriedade: null,
+          incluiCandidato: false,
+          subitens: [],
         },
       ],
     });
@@ -154,7 +204,10 @@ describe('EditorDeFormularioComponent', () => {
   });
 
   it('ligar o impedimento cita a resposta do próprio campo e torna o campo obrigatório', () => {
-    const opcional: ConteudoDoFormulario = { ...conteudo, itens: [item('A', 0, { obrigatoriedade: 'NUNCA' })] };
+    const opcional: ConteudoDoFormulario = {
+      ...conteudo,
+      itens: [item('A', 0, { obrigatoriedade: 'NUNCA' })],
+    };
     fixture.componentRef.setInput('conteudo', opcional);
     fixture.detectChanges();
 
@@ -170,31 +223,48 @@ describe('EditorDeFormularioComponent', () => {
   });
 
   describe('opções que dependem das respostas anteriores', () => {
-    const curso = (codigo: string, valores: readonly string[], cardinalidade = 'MULTIVALORADO'): FatoDoFormulario => ({
+    const curso = (
+      codigo: string,
+      valores: readonly string[],
+      cardinalidade = 'MULTIVALORADO',
+    ): FatoDoFormulario => ({
       ...fato(codigo),
       dominio: 'CATEGORICO',
       cardinalidade,
       fonteValores: 'GLOBAL',
       valoresDominio: valores,
     });
-    const restricaoDe = (fatoCodigo: string): HTMLElement => tela().querySelector(`[aria-labelledby="f-item-${fatoCodigo}-titulo"]`) as HTMLElement;
+    const restricaoDe = (fatoCodigo: string): HTMLElement =>
+      tela().querySelector(`[aria-labelledby="f-item-${fatoCodigo}-titulo"]`) as HTMLElement;
     const grupoDeOpcoes = (numero: number): HTMLElement =>
-      [...restricaoDe('ESPERA').querySelectorAll('fieldset')].find((f) => f.querySelector('legend')?.textContent?.trim() === `Grupo de opções ${numero}`) as HTMLElement;
+      [...restricaoDe('ESPERA').querySelectorAll('fieldset')].find(
+        (f) => f.querySelector('legend')?.textContent?.trim() === `Grupo de opções ${numero}`,
+      ) as HTMLElement;
     const botao = (dentro: HTMLElement, texto: string): HTMLButtonElement =>
-      [...dentro.querySelectorAll('button')].find((b) => b.textContent?.trim() === texto) as HTMLButtonElement;
+      [...dentro.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === texto,
+      ) as HTMLButtonElement;
     const caixa = (dentro: HTMLElement, texto: string): HTMLInputElement =>
-      [...dentro.querySelectorAll('label.checkbox')].find((l) => l.textContent?.trim() === texto)?.querySelector('input') as HTMLInputElement;
-    const restricoesEmitidas = (): unknown => emitidos.at(-1)?.itens?.find((i) => i.fatoCodigo === 'ESPERA')?.restricoes;
+      [...dentro.querySelectorAll('label.checkbox')]
+        .find((l) => l.textContent?.trim() === texto)
+        ?.querySelector('input') as HTMLInputElement;
+    const restricoesEmitidas = (): unknown =>
+      emitidos.at(-1)?.itens?.find((i) => i.fatoCodigo === 'ESPERA')?.restricoes;
 
     const comOpcoesPermitidas = (): void => {
-      fixture.componentRef.setInput('catalogo', [fato('A'), curso('ESPERA', ['MED', 'DIR'], 'ESCALAR')]);
+      fixture.componentRef.setInput('catalogo', [
+        fato('A'),
+        curso('ESPERA', ['MED', 'DIR'], 'ESCALAR'),
+      ]);
       fixture.componentRef.setInput('conteudo', {
         ...conteudo,
         itens: [
           item('A', 0),
           item('ESPERA', 1, {
             tipoRenderizacao: 'SELECAO_UNICA',
-            restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MED'] }] }],
+            restricoes: [
+              { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MED'] }] },
+            ],
           }),
         ],
       });
@@ -211,7 +281,9 @@ describe('EditorDeFormularioComponent', () => {
       caixa(grupoDeOpcoes(2), 'DIR').click();
       fixture.detectChanges();
 
-      const [restricao] = restricoesEmitidas() as { entradas: { quando: { fato: string }[][] | null; valores: string[] }[] }[];
+      const [restricao] = restricoesEmitidas() as {
+        entradas: { quando: { fato: string }[][] | null; valores: string[] }[];
+      }[];
       expect(restricao.entradas[0]).toEqual({ quando: null, valores: ['MED'] });
       expect(restricao.entradas[1].quando?.[0]?.[0]?.fato).toBe('A');
       expect(restricao.entradas[1].valores).toEqual(['DIR']);
@@ -219,7 +291,12 @@ describe('EditorDeFormularioComponent', () => {
 
     const recusaNoGrupo = (grupo: number): RecusasDoConteudo =>
       distribuirRecusas(
-        [{ field: `conteudo.itens[1].restricoes[0].entradas[${grupo}].quando`, message: 'Condição inválida.' }],
+        [
+          {
+            field: `conteudo.itens[1].restricoes[0].entradas[${grupo}].quando`,
+            message: 'Condição inválida.',
+          },
+        ],
         fixture.componentInstance.conteudo(),
       );
 
@@ -232,8 +309,13 @@ describe('EditorDeFormularioComponent', () => {
     });
 
     it('removido o grupo recusado, a recusa não passa para o grupo que ficou na posição dele', () => {
-      const quando = (valor: boolean): [[{ fato: string; operador: string; valor: boolean }]] => [[{ fato: 'A', operador: 'IGUAL', valor }]];
-      fixture.componentRef.setInput('catalogo', [fato('A'), curso('ESPERA', ['MED', 'DIR'], 'ESCALAR')]);
+      const quando = (valor: boolean): [[{ fato: string; operador: string; valor: boolean }]] => [
+        [{ fato: 'A', operador: 'IGUAL', valor }],
+      ];
+      fixture.componentRef.setInput('catalogo', [
+        fato('A'),
+        curso('ESPERA', ['MED', 'DIR'], 'ESCALAR'),
+      ]);
       fixture.componentRef.setInput('conteudo', {
         ...conteudo,
         itens: [
@@ -264,7 +346,11 @@ describe('EditorDeFormularioComponent', () => {
     });
 
     it('as opções das respostas escolhem entre os campos anteriores cujas opções cabem nas do campo', () => {
-      fixture.componentRef.setInput('catalogo', [curso('OPCOES', ['MED', 'DIR']), curso('OUTRO', ['XYZ']), curso('ESPERA', ['MED', 'DIR', 'ENG'], 'ESCALAR')]);
+      fixture.componentRef.setInput('catalogo', [
+        curso('OPCOES', ['MED', 'DIR']),
+        curso('OUTRO', ['XYZ']),
+        curso('ESPERA', ['MED', 'DIR', 'ENG'], 'ESCALAR'),
+      ]);
       fixture.componentRef.setInput('conteudo', {
         ...conteudo,
         itens: [
@@ -281,8 +367,12 @@ describe('EditorDeFormularioComponent', () => {
       botao(restricaoDe('ESPERA'), 'Acrescentar restrição').click();
       fixture.detectChanges();
 
-      const fontes = restricaoDe('ESPERA').querySelector('[aria-label="Campos de onde vêm as opções de Campo ESPERA"]') as HTMLElement;
-      expect([...fontes.querySelectorAll('label.checkbox')].map((l) => l.textContent?.trim())).toEqual(['OPCOES']);
+      const fontes = restricaoDe('ESPERA').querySelector(
+        '[aria-label="Campos de onde vêm as opções de Campo ESPERA"]',
+      ) as HTMLElement;
+      expect(
+        [...fontes.querySelectorAll('label.checkbox')].map((l) => l.textContent?.trim()),
+      ).toEqual(['OPCOES']);
 
       caixa(fontes, 'OPCOES').click();
       fixture.detectChanges();
@@ -293,15 +383,19 @@ describe('EditorDeFormularioComponent', () => {
 
   describe('faixa de datas', () => {
     const data = (codigo: string): FatoDoFormulario => ({ ...fato(codigo), dominio: 'DATA' });
-    const faixaDe = (fatoCodigo: string): HTMLElement => tela().querySelector(`[aria-labelledby="f-item-${fatoCodigo}-titulo"]`) as HTMLElement;
+    const faixaDe = (fatoCodigo: string): HTMLElement =>
+      tela().querySelector(`[aria-labelledby="f-item-${fatoCodigo}-titulo"]`) as HTMLElement;
     const limite = (fatoCodigo: string, nome: string): HTMLElement =>
-      [...faixaDe(fatoCodigo).querySelectorAll('fieldset')].find((f) => f.querySelector('legend')?.textContent?.trim() === nome) as HTMLElement;
+      [...faixaDe(fatoCodigo).querySelectorAll('fieldset')].find(
+        (f) => f.querySelector('legend')?.textContent?.trim() === nome,
+      ) as HTMLElement;
     const trocar = (controle: HTMLInputElement | HTMLSelectElement, valor: string): void => {
       controle.value = valor;
       controle.dispatchEvent(new Event('change'));
       fixture.detectChanges();
     };
-    const emitida = (fatoCodigo: string): unknown => emitidos.at(-1)?.itens?.find((i) => i.fatoCodigo === fatoCodigo)?.restricoes;
+    const emitida = (fatoCodigo: string): unknown =>
+      emitidos.at(-1)?.itens?.find((i) => i.fatoCodigo === fatoCodigo)?.restricoes;
     const comData = (restricoes?: ItemDoFormulario['restricoes']): void => {
       fixture.componentRef.setInput('catalogo', [fato('A'), data('NASCIMENTO')]);
       fixture.componentRef.setInput('conteudo', {
@@ -311,15 +405,26 @@ describe('EditorDeFormularioComponent', () => {
       fixture.detectChanges();
     };
     const acrescentarFaixa = (): void => {
-      trocar(tela().querySelector('#f-item-NASCIMENTO-restricao') as HTMLSelectElement, 'FAIXA_DE_DATA');
-      ([...faixaDe('NASCIMENTO').querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Acrescentar restrição') as HTMLButtonElement).click();
+      trocar(
+        tela().querySelector('#f-item-NASCIMENTO-restricao') as HTMLSelectElement,
+        'FAIXA_DE_DATA',
+      );
+      (
+        [...faixaDe('NASCIMENTO').querySelectorAll('button')].find(
+          (b) => b.textContent?.trim() === 'Acrescentar restrição',
+        ) as HTMLButtonElement
+      ).click();
       fixture.detectChanges();
     };
 
     it('só o campo de data oferece a faixa', () => {
       comData();
       const opcoes = (codigo: string): string[] =>
-        [...(tela().querySelectorAll(`#f-item-${codigo}-restricao option`) as NodeListOf<HTMLOptionElement>)].map((o) => o.value);
+        [
+          ...(tela().querySelectorAll(
+            `#f-item-${codigo}-restricao option`,
+          ) as NodeListOf<HTMLOptionElement>),
+        ].map((o) => o.value);
 
       expect(opcoes('NASCIMENTO')).toContain('FAIXA_DE_DATA');
       expect(tela().querySelector('#f-item-A-restricao')).toBeNull();
@@ -329,35 +434,86 @@ describe('EditorDeFormularioComponent', () => {
       comData();
       acrescentarFaixa();
 
-      expect(emitida('NASCIMENTO')).toEqual([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null }]);
+      expect(emitida('NASCIMENTO')).toEqual([
+        { tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null },
+      ]);
       expect(faixaDe('NASCIMENTO').textContent).toContain('Informe ao menos um limite.');
     });
 
     it('declara o limite como data fixa ou como o dia do envio deslocado, com número negativo', () => {
       comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null }]);
 
-      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora') as HTMLSelectElement, 'ENVIO');
-      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement, '−120');
-      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-ancora') as HTMLSelectElement, 'DATA_FIXA');
-      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-data') as HTMLInputElement, '2030-12-31');
+      trocar(
+        tela().querySelector(
+          '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora',
+        ) as HTMLSelectElement,
+        'ENVIO',
+      );
+      trocar(
+        tela().querySelector(
+          '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos',
+        ) as HTMLInputElement,
+        '−120',
+      );
+      trocar(
+        tela().querySelector(
+          '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-ancora',
+        ) as HTMLSelectElement,
+        'DATA_FIXA',
+      );
+      trocar(
+        tela().querySelector(
+          '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMaxima-data',
+        ) as HTMLInputElement,
+        '2030-12-31',
+      );
 
       expect(emitida('NASCIMENTO')).toEqual([
-        { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 }, dataMaxima: { ancora: 'DATA_FIXA', data: '2030-12-31' } },
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 },
+          dataMaxima: { ancora: 'DATA_FIXA', data: '2030-12-31' },
+        },
       ]);
     });
 
     it('volta o limite a sem limite', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' },
+          dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
+        },
+      ]);
 
-      trocar(tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora') as HTMLSelectElement, '');
+      trocar(
+        tela().querySelector(
+          '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-ancora',
+        ) as HTMLSelectElement,
+        '',
+      );
 
-      expect(emitida('NASCIMENTO')).toEqual([{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+      expect(emitida('NASCIMENTO')).toEqual([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: null,
+          dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
+        },
+      ]);
     });
 
     it('rotula os controles e liga a dica da faixa a eles por aria-describedby', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 } }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'DATA_FIXA', data: '2000-01-01' },
+          dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
+        },
+      ]);
       const dica = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dica') as HTMLElement;
-      const controles = [...faixaDe('NASCIMENTO').querySelectorAll('select, input')].filter((c) => c.closest('.editor-formulario__limite')) as HTMLElement[];
+      const controles = [...faixaDe('NASCIMENTO').querySelectorAll('select, input')].filter((c) =>
+        c.closest('.editor-formulario__limite'),
+      ) as HTMLElement[];
 
       expect(dica.textContent).toContain('dia do envio');
       expect(controles.length).toBe(5);
@@ -368,19 +524,37 @@ describe('EditorDeFormularioComponent', () => {
     });
 
     it('os deslocamentos do dia do envio aceitam o sinal de menos no teclado do aparelho', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: -18, dias: 0 }, dataMaxima: null }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: -18, dias: 0 },
+          dataMaxima: null,
+        },
+      ]);
 
       for (const parte of ['anos', 'dias']) {
-        const campo = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement;
+        const campo = tela().querySelector(
+          `#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`,
+        ) as HTMLInputElement;
         expect(campo.hasAttribute('inputmode'), parte).toBe(false);
       }
     });
 
     it('mostra o problema do limite no controle dele, associado e marcado como inválido', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 'abc', dias: 0 }, dataMaxima: null }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: 'abc', dias: 0 },
+          dataMaxima: null,
+        },
+      ]);
 
-      const erro = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos-erro') as HTMLElement;
-      const anos = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement;
+      const erro = tela().querySelector(
+        '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos-erro',
+      ) as HTMLElement;
+      const anos = tela().querySelector(
+        '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos',
+      ) as HTMLInputElement;
 
       expect(erro.textContent).toContain('Os anos são um número inteiro.');
       expect(anos.getAttribute('aria-describedby')).toContain(erro.id);
@@ -389,11 +563,21 @@ describe('EditorDeFormularioComponent', () => {
     });
 
     it('dá a cada deslocamento a mensagem do próprio problema', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 151, dias: 1.5 }, dataMaxima: null }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: 151, dias: 1.5 },
+          dataMaxima: null,
+        },
+      ]);
 
       const texto = (parte: string): string => {
-        const campo = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement;
-        const ids = (campo.getAttribute('aria-describedby') ?? '').split(' ').filter((id) => id.endsWith(`-${parte}-erro`));
+        const campo = tela().querySelector(
+          `#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`,
+        ) as HTMLInputElement;
+        const ids = (campo.getAttribute('aria-describedby') ?? '')
+          .split(' ')
+          .filter((id) => id.endsWith(`-${parte}-erro`));
         return ids.map((id) => tela().querySelector(`#${id}`)?.textContent).join('|');
       };
 
@@ -405,7 +589,13 @@ describe('EditorDeFormularioComponent', () => {
       fixture.componentRef.setInput('catalogo', [fato('A'), data('IDADE')]);
       fixture.componentRef.setInput('conteudo', {
         ...conteudo,
-        itens: [item('A', 0), item('IDADE', 1, { tipoRenderizacao: 'TEXTO', restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: 20 }] })],
+        itens: [
+          item('A', 0),
+          item('IDADE', 1, {
+            tipoRenderizacao: 'TEXTO',
+            restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: 20 }],
+          }),
+        ],
       });
       fixture.detectChanges();
 
@@ -422,11 +612,23 @@ describe('EditorDeFormularioComponent', () => {
     });
 
     it('marca só o deslocamento que não é número, e a mensagem dele fica ligada só a ele', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 0, dias: 'dez' }, dataMaxima: null }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: 0, dias: 'dez' },
+          dataMaxima: null,
+        },
+      ]);
 
-      const anos = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos') as HTMLInputElement;
-      const dias = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias') as HTMLInputElement;
-      const erro = tela().querySelector('#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias-erro') as HTMLElement;
+      const anos = tela().querySelector(
+        '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-anos',
+      ) as HTMLInputElement;
+      const dias = tela().querySelector(
+        '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias',
+      ) as HTMLInputElement;
+      const erro = tela().querySelector(
+        '#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-dias-erro',
+      ) as HTMLElement;
 
       expect(anos.getAttribute('aria-invalid')).toBeNull();
       expect(dias.getAttribute('aria-invalid')).toBe('true');
@@ -439,37 +641,78 @@ describe('EditorDeFormularioComponent', () => {
       ['dias fracionários', 0, 1.5, 'dias'],
       ['anos acima do limite', 100000, 0, 'anos'],
       ['dias acima do limite', 0, 10000000, 'dias'],
-    ])('marca só o deslocamento com problema próprio: %s', (_nome, anosDigitados, diasDigitados, marcado) => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: anosDigitados, dias: diasDigitados }, dataMaxima: null }]);
+    ])(
+      'marca só o deslocamento com problema próprio: %s',
+      (_nome, anosDigitados, diasDigitados, marcado) => {
+        comData([
+          {
+            tipo: 'FAIXA_DE_DATA',
+            dataMinima: { ancora: 'ENVIO', anos: anosDigitados, dias: diasDigitados },
+            dataMaxima: null,
+          },
+        ]);
 
-      const marca = (parte: string): string | null =>
-        (tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`) as HTMLInputElement).getAttribute('aria-invalid');
-      const outro = marcado === 'anos' ? 'dias' : 'anos';
+        const marca = (parte: string): string | null =>
+          (
+            tela().querySelector(
+              `#f-item-NASCIMENTO-FAIXA_DE_DATA-dataMinima-${parte}`,
+            ) as HTMLInputElement
+          ).getAttribute('aria-invalid');
+        const outro = marcado === 'anos' ? 'dias' : 'anos';
 
-      expect(limite('NASCIMENTO', 'Data mínima').querySelector('.field__error')).not.toBeNull();
-      expect(marca(marcado)).toBe('true');
-      expect(marca(outro)).toBeNull();
-    });
+        expect(limite('NASCIMENTO', 'Data mínima').querySelector('.field__error')).not.toBeNull();
+        expect(marca(marcado)).toBe('true');
+        expect(marca(outro)).toBeNull();
+      },
+    );
 
     it('mostra a mínima depois da máxima no controle da data máxima', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'DATA_FIXA', data: '2030-01-02' }, dataMaxima: { ancora: 'DATA_FIXA', data: '2030-01-01' } }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'DATA_FIXA', data: '2030-01-02' },
+          dataMaxima: { ancora: 'DATA_FIXA', data: '2030-01-01' },
+        },
+      ]);
 
-      expect(limite('NASCIMENTO', 'Data máxima').textContent).toContain('A data mínima fica depois da data máxima.');
-      expect(limite('NASCIMENTO', 'Data mínima').textContent).not.toContain('A data mínima fica depois da data máxima.');
+      expect(limite('NASCIMENTO', 'Data máxima').textContent).toContain(
+        'A data mínima fica depois da data máxima.',
+      );
+      expect(limite('NASCIMENTO', 'Data mínima').textContent).not.toContain(
+        'A data mínima fica depois da data máxima.',
+      );
     });
 
     it('a recusa de mínimo maior que o máximo aparece no controle da data máxima', () => {
-      comData([{ tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: 0, dias: 5 }, dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 1 } }]);
+      comData([
+        {
+          tipo: 'FAIXA_DE_DATA',
+          dataMinima: { ancora: 'ENVIO', anos: 0, dias: 5 },
+          dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 1 },
+        },
+      ]);
       fixture.componentRef.setInput(
         'recusas',
-        distribuirRecusas([{ field: 'conteudo.itens[1].restricoes[0]', message: 'A data mínima fica depois da data máxima.' }], fixture.componentInstance.conteudo()),
+        distribuirRecusas(
+          [
+            {
+              field: 'conteudo.itens[1].restricoes[0]',
+              message: 'A data mínima fica depois da data máxima.',
+            },
+          ],
+          fixture.componentInstance.conteudo(),
+        ),
       );
       fixture.detectChanges();
 
-      const recusa = limite('NASCIMENTO', 'Data máxima').querySelector('.editor-formulario__erros') as HTMLElement;
+      const recusa = limite('NASCIMENTO', 'Data máxima').querySelector(
+        '.editor-formulario__erros',
+      ) as HTMLElement;
       expect(recusa.textContent).toContain('A data mínima fica depois da data máxima.');
       for (const limite of ['dataMinima', 'dataMaxima']) {
-        const controle = tela().querySelector(`#f-item-NASCIMENTO-FAIXA_DE_DATA-${limite}-ancora`) as HTMLSelectElement;
+        const controle = tela().querySelector(
+          `#f-item-NASCIMENTO-FAIXA_DE_DATA-${limite}-ancora`,
+        ) as HTMLSelectElement;
         expect(controle.getAttribute('aria-describedby'), limite).toContain(recusa.id);
       }
     });
@@ -495,12 +738,21 @@ describe('EditorDeFormularioComponent', () => {
       });
       fixture.detectChanges();
 
-      expect([...tela().querySelectorAll('select option')].some((o) => (o as HTMLOptionElement).value === 'FAIXA_DE_DATA')).toBe(true);
+      expect(
+        [...tela().querySelectorAll('select option')].some(
+          (o) => (o as HTMLOptionElement).value === 'FAIXA_DE_DATA',
+        ),
+      ).toBe(true);
     });
   });
 
   it('recusa acrescentar município sem campo de UF antes, dizendo o que fazer', () => {
-    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }]);
+    fixture.componentRef.setInput('catalogo', [
+      fato('A'),
+      fato('B'),
+      fato('C'),
+      { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' },
+    ]);
     fixture.detectChanges();
     escolherEm('f-etapa-S1-acrescentar', 'MUNICIPIO');
     acrescentarCampo();
@@ -510,23 +762,47 @@ describe('EditorDeFormularioComponent', () => {
   });
 
   it('acrescenta o campo escolhido pela busca, que só oferece os fatos cujo nome casa com o termo', () => {
-    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('RENDA_FAMILIAR'), fato('RENDA_PROPRIA'), fato('ESCOLA')]);
+    fixture.componentRef.setInput('catalogo', [
+      fato('A'),
+      fato('B'),
+      fato('C'),
+      fato('RENDA_FAMILIAR'),
+      fato('RENDA_PROPRIA'),
+      fato('ESCOLA'),
+    ]);
     fixture.detectChanges();
 
-    expect(ofertadosEm('f-etapa-S1-acrescentar', 'renda')).toEqual(['RENDA_FAMILIAR', 'RENDA_PROPRIA']);
+    expect(ofertadosEm('f-etapa-S1-acrescentar', 'renda')).toEqual([
+      'RENDA_FAMILIAR',
+      'RENDA_PROPRIA',
+    ]);
     expect(ofertadosEm('f-etapa-S1-acrescentar', 'inexistente')).toEqual([]);
-    expect(tela().querySelector('#f-etapa-S1-acrescentar')?.textContent).toContain('Nenhum fato do candidato casa com o que você digitou.');
+    expect(tela().querySelector('#f-etapa-S1-acrescentar')?.textContent).toContain(
+      'Nenhum fato do candidato casa com o que você digitou.',
+    );
 
     escolherEm('f-etapa-S1-acrescentar', 'RENDA_PROPRIA', 'propria');
     acrescentarCampo();
 
-    expect(emitidos.at(-1)?.itens?.map((i) => i.fatoCodigo)).toEqual(['A', 'B', 'C', 'RENDA_PROPRIA']);
+    expect(emitidos.at(-1)?.itens?.map((i) => i.fatoCodigo)).toEqual([
+      'A',
+      'B',
+      'C',
+      'RENDA_PROPRIA',
+    ]);
     expect(status()).toBe('Campo “RENDA_PROPRIA” acrescentado ao fim de Escolaridade.');
   });
 
   it('o pressuposto é escolhido pela busca, entre os fatos que podem ser pressupostos, e o foco volta ao campo', async () => {
     fixture.componentRef.setInput('finalidade', 'ISENCAO');
-    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE'), { ...fato('INATIVO'), ativo: false }]);
+    fixture.componentRef.setInput('catalogo', [
+      fato('A'),
+      fato('B'),
+      fato('C'),
+      fato('DE_OUTRA'),
+      fato('LIVRE'),
+      { ...fato('INATIVO'), ativo: false },
+    ]);
     fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
     fixture.detectChanges();
 
@@ -535,17 +811,33 @@ describe('EditorDeFormularioComponent', () => {
     expect(ofertadosEm('f-etapa-S1-acrescentar')).toEqual(['LIVRE']);
 
     escolherEm('f-pressuposto', 'LIVRE', 'liv');
-    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar pressuposto')) as HTMLButtonElement).click();
+    (
+      [...tela().querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Acrescentar pressuposto'),
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
     await fixture.whenStable();
 
     expect(emitidos.at(-1)?.pressupostos).toEqual(['LIVRE']);
-    expect(document.activeElement, 'o foco vai ao campo de texto, não ao hospedeiro do combobox').toBe(tela().querySelector('#f-pressuposto [role="combobox"]'));
+    expect(
+      document.activeElement,
+      'o foco vai ao campo de texto, não ao hospedeiro do combobox',
+    ).toBe(tela().querySelector('#f-pressuposto [role="combobox"]'));
   });
 
   it('cria o grupo pela seção e, ao incluir o candidato, põe o parentesco primeiro e o mínimo em um', () => {
-    const membro = (codigo: string): FatoDoFormulario => ({ ...fato(codigo), escopo: 'MEMBRO_GRUPO' });
-    fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), membro('RENDA'), { ...membro('PARENTESCO'), dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO'] }]);
+    const membro = (codigo: string): FatoDoFormulario => ({
+      ...fato(codigo),
+      escopo: 'MEMBRO_GRUPO',
+    });
+    fixture.componentRef.setInput('catalogo', [
+      fato('A'),
+      fato('B'),
+      fato('C'),
+      membro('RENDA'),
+      { ...membro('PARENTESCO'), dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO'] },
+    ]);
     fixture.detectChanges();
 
     const rotulo = tela().querySelector('#f-etapa-S1-grupo-rotulo') as HTMLInputElement;
@@ -555,12 +847,18 @@ describe('EditorDeFormularioComponent', () => {
     campo.value = 'RENDA';
     campo.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-    ([...tela().querySelectorAll('button')].find((b) => b.textContent?.includes('Acrescentar grupo repetível')) as HTMLButtonElement).click();
+    (
+      [...tela().querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Acrescentar grupo repetível'),
+      ) as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
 
     const grupo = emitidos.at(-1)?.grupos?.[0];
     expect(grupo?.codigo).toBe('COMPOSICAO_FAMILIAR');
-    expect(status()).toBe('Grupo repetível “Composição familiar” acrescentado ao fim de Escolaridade.');
+    expect(status()).toBe(
+      'Grupo repetível “Composição familiar” acrescentado ao fim de Escolaridade.',
+    );
 
     const incluir = [...tela().querySelectorAll('input[type="checkbox"]')].find((c) =>
       c.parentElement?.textContent?.includes('O próprio candidato é um dos membros'),
@@ -574,11 +872,26 @@ describe('EditorDeFormularioComponent', () => {
   });
 
   it('a caixa do candidato como membro volta a desmarcada quando a inclusão é recusada', () => {
-    const grupoDe = (codigo: string, campos: string[]): NonNullable<ConteudoDoFormulario['grupos']>[number] => ({
-      codigo, ordem: 3, rotulo: codigo, etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null, obrigatoriedade: 'SEMPRE',
-      predicadoObrigatoriedade: null, incluiCandidato: false, subitens: campos.map((c, i) => item(c, i, { etapaCodigo: null })),
+    const grupoDe = (
+      codigo: string,
+      campos: string[],
+    ): NonNullable<ConteudoDoFormulario['grupos']>[number] => ({
+      codigo,
+      ordem: 3,
+      rotulo: codigo,
+      etapaCodigo: 'S1',
+      minimo: 0,
+      maximo: null,
+      exibicao: null,
+      obrigatoriedade: 'SEMPRE',
+      predicadoObrigatoriedade: null,
+      incluiCandidato: false,
+      subitens: campos.map((c, i) => item(c, i, { etapaCodigo: null })),
     });
-    fixture.componentRef.setInput('conteudo', { ...conteudo, grupos: [grupoDe('A_GRUPO', ['PARENTESCO']), { ...grupoDe('B_GRUPO', ['RENDA']), ordem: 4 }] });
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      grupos: [grupoDe('A_GRUPO', ['PARENTESCO']), { ...grupoDe('B_GRUPO', ['RENDA']), ordem: 4 }],
+    });
     fixture.detectChanges();
 
     const caixas = [...tela().querySelectorAll('input[type="checkbox"]')].filter((c) =>
@@ -594,44 +907,70 @@ describe('EditorDeFormularioComponent', () => {
   describe('no processo', () => {
     it('as condições citam os fatos da inscrição, que não são gravados, e a seção de pressupostos some', () => {
       fixture.componentRef.setInput('finalidade', 'HABILITACAO');
-      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DA_INSCRICAO')]);
+      fixture.componentRef.setInput('catalogo', [
+        fato('A'),
+        fato('B'),
+        fato('C'),
+        fato('DA_INSCRICAO'),
+      ]);
       fixture.componentRef.setInput('fatosDaInscricao', ['DA_INSCRICAO']);
       fixture.detectChanges();
 
       // O campo A é o primeiro: só o fato da inscrição é conhecido antes dele, e a condição nova nasce sobre ele.
-      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
-        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0].querySelector(
+        'ui-editor-de-condicoes:last-of-type button:last-of-type',
+      ) as HTMLButtonElement;
       alternativa.click();
       fixture.detectChanges();
 
       const editado = emitidos.at(-1);
-      expect(editado?.itens?.find((i) => i.fatoCodigo === 'A')?.precondicao?.[0]?.[0]?.fato).toBe('DA_INSCRICAO');
+      expect(editado?.itens?.find((i) => i.fatoCodigo === 'A')?.precondicao?.[0]?.[0]?.fato).toBe(
+        'DA_INSCRICAO',
+      );
       expect(editado?.pressupostos ?? [], 'o fato da inscrição não é gravado').toEqual([]);
       expect(tela().textContent).not.toContain('Fatos pressupostos');
-      expect(ofertadosEm('f-etapa-S1-acrescentar'), 'o fato que a inscrição coleta não é oferecido como campo').not.toContain('DA_INSCRICAO');
+      expect(
+        ofertadosEm('f-etapa-S1-acrescentar'),
+        'o fato que a inscrição coleta não é oferecido como campo',
+      ).not.toContain('DA_INSCRICAO');
     });
 
     it('o campo de membro de um grupo da inscrição não é citável nas outras finalidades', () => {
       fixture.componentRef.setInput('finalidade', 'HABILITACAO');
-      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), { ...fato('PARENTESCO'), escopo: 'MEMBRO_GRUPO' }]);
+      fixture.componentRef.setInput('catalogo', [
+        fato('A'),
+        fato('B'),
+        fato('C'),
+        { ...fato('PARENTESCO'), escopo: 'MEMBRO_GRUPO' },
+      ]);
       fixture.componentRef.setInput('fatosDaInscricao', ['PARENTESCO']);
       fixture.detectChanges();
 
-      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
-        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0].querySelector(
+        'ui-editor-de-condicoes:last-of-type button:last-of-type',
+      ) as HTMLButtonElement;
 
-      expect(alternativa.disabled, 'só o fato de membro viria antes, e ele não é citável').toBe(true);
+      expect(alternativa.disabled, 'só o fato de membro viria antes, e ele não é citável').toBe(
+        true,
+      );
 
-      const grupoNovo = [...(tela().querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement | null)?.options ?? []].map((o) => o.value);
-      expect(grupoNovo, 'nem por isso o fato de membro da inscrição volta a ser coletável aqui').not.toContain('PARENTESCO');
+      const grupoNovo = [
+        ...((tela().querySelector('#f-etapa-S1-grupo-campo') as HTMLSelectElement | null)
+          ?.options ?? []),
+      ].map((o) => o.value);
+      expect(
+        grupoNovo,
+        'nem por isso o fato de membro da inscrição volta a ser coletável aqui',
+      ).not.toContain('PARENTESCO');
     });
 
     it('na própria inscrição, os fatos dela não viram conhecidos antes: o primeiro campo não cita o que vem depois', () => {
       fixture.componentRef.setInput('fatosDaInscricao', ['A', 'B', 'C']);
       fixture.detectChanges();
 
-      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0]
-        .querySelector('ui-editor-de-condicoes:last-of-type button:last-of-type') as HTMLButtonElement;
+      const alternativa = [...tela().querySelectorAll('ui-item-do-formulario')][0].querySelector(
+        'ui-editor-de-condicoes:last-of-type button:last-of-type',
+      ) as HTMLButtonElement;
 
       expect(alternativa.disabled, 'nada vem antes do primeiro campo da inscrição').toBe(true);
     });
@@ -640,37 +979,66 @@ describe('EditorDeFormularioComponent', () => {
       fixture.componentRef.setInput('fatosQueExigemRespostaPorFora', ['C']);
       fixture.detectChanges();
 
-      const opcional = (tela().querySelector('#f-item-C-obrigatoriedade') as HTMLSelectElement).querySelector('option[value="NUNCA"]') as HTMLOptionElement;
+      const opcional = (
+        tela().querySelector('#f-item-C-obrigatoriedade') as HTMLSelectElement
+      ).querySelector('option[value="NUNCA"]') as HTMLOptionElement;
       expect(opcional.disabled).toBe(true);
     });
 
     it('o fato de outra finalidade não é oferecido, e o campo travado não sai e diz por quê', () => {
-      fixture.componentRef.setInput('catalogo', [fato('A'), fato('B'), fato('C'), fato('DE_OUTRA'), fato('LIVRE')]);
+      fixture.componentRef.setInput('catalogo', [
+        fato('A'),
+        fato('B'),
+        fato('C'),
+        fato('DE_OUTRA'),
+        fato('LIVRE'),
+      ]);
       fixture.componentRef.setInput('fatosIndisponiveis', ['DE_OUTRA']);
-      fixture.componentRef.setInput('remocoesTravadas', new Map([['A', 'Uma exigência documental cita este campo.']]));
+      fixture.componentRef.setInput(
+        'remocoesTravadas',
+        new Map([['A', 'Uma exigência documental cita este campo.']]),
+      );
       fixture.detectChanges();
 
       const ofertados = ofertadosEm('f-etapa-S1-acrescentar');
       expect(ofertados).toContain('LIVRE');
       expect(ofertados).not.toContain('DE_OUTRA');
 
-      const remover = [...tela().querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Remover o campo Campo A') as HTMLButtonElement;
+      const remover = [...tela().querySelectorAll('button')].find(
+        (b) => b.getAttribute('aria-label') === 'Remover o campo Campo A',
+      ) as HTMLButtonElement;
       expect(remover.disabled).toBe(true);
       expect(tela().textContent).toContain('Uma exigência documental cita este campo.');
     });
 
     it('o grupo cujo campo está travado não pode ser removido, e diz por quê', () => {
       const grupo = {
-        codigo: 'FAMILIA', ordem: 3, rotulo: 'Família', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
-        obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, incluiCandidato: false, subitens: [item('RENDA', 0, { etapaCodigo: null })],
+        codigo: 'FAMILIA',
+        ordem: 3,
+        rotulo: 'Família',
+        etapaCodigo: 'S1',
+        minimo: 0,
+        maximo: null,
+        exibicao: null,
+        obrigatoriedade: 'SEMPRE',
+        predicadoObrigatoriedade: null,
+        incluiCandidato: false,
+        subitens: [item('RENDA', 0, { etapaCodigo: null })],
       };
       fixture.componentRef.setInput('conteudo', { ...conteudo, grupos: [grupo] });
-      fixture.componentRef.setInput('remocoesTravadas', new Map([['RENDA', 'Uma exigência documental cita a renda.']]));
+      fixture.componentRef.setInput(
+        'remocoesTravadas',
+        new Map([['RENDA', 'Uma exigência documental cita a renda.']]),
+      );
       fixture.detectChanges();
 
-      const remover = [...tela().querySelectorAll('button')].find((b) => b.getAttribute('aria-label') === 'Remover o grupo Família') as HTMLButtonElement;
+      const remover = [...tela().querySelectorAll('button')].find(
+        (b) => b.getAttribute('aria-label') === 'Remover o grupo Família',
+      ) as HTMLButtonElement;
       expect(remover.disabled).toBe(true);
-      expect(tela().textContent).toContain('O grupo não pode ser removido: Uma exigência documental cita a renda.');
+      expect(tela().textContent).toContain(
+        'O grupo não pode ser removido: Uma exigência documental cita a renda.',
+      );
     });
   });
 
@@ -681,7 +1049,9 @@ describe('EditorDeFormularioComponent', () => {
     expect(cabecalho.contains(subir)).toBe(true);
     expect(subir.textContent?.trim()).toBe('Subir');
     expect(subir.getAttribute('aria-label')).toBe('Subir a seção Escolaridade');
-    const nomesAcessiveis = [...tela().querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label') ?? '');
+    const nomesAcessiveis = [...tela().querySelectorAll('[aria-label]')].map(
+      (e) => e.getAttribute('aria-label') ?? '',
+    );
     expect([tela().textContent ?? '', ...nomesAcessiveis].join(' ')).not.toMatch(/\betapas?\b/i);
   });
 
@@ -700,7 +1070,9 @@ describe('EditorDeFormularioComponent', () => {
     expect(alternar.getAttribute('aria-expanded')).toBe('true');
     expect(alternar.getAttribute('aria-controls')).toBe('f-etapa-S1-corpo');
     expect(corpo.hidden).toBe(false);
-    expect(tela().querySelector('.editor-formulario__resumo')?.textContent?.trim()).toBe('3 campos');
+    expect(tela().querySelector('.editor-formulario__resumo')?.textContent?.trim()).toBe(
+      '3 campos',
+    );
 
     alternar.click();
     fixture.detectChanges();
@@ -719,10 +1091,19 @@ describe('EditorDeFormularioComponent', () => {
 
 describe('EditorDeFormularioComponent com a busca de municípios', () => {
   it('oferece o impedimento no campo de município, com a condição sobre a resposta dele', () => {
-    TestBed.configureTestingModule({ providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: () => EMPTY }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: BUSCA_DE_MUNICIPIOS, useValue: () => EMPTY }],
+    });
     const fixture = TestBed.createComponent(EditorDeFormularioComponent);
-    const municipio: FatoDoFormulario = { ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' };
-    fixture.componentRef.setInput('conteudo', { ...conteudo, itens: [item('MUNICIPIO', 0, { tipoRenderizacao: 'MUNICIPIO' })] });
+    const municipio: FatoDoFormulario = {
+      ...fato('MUNICIPIO'),
+      dominio: 'CATEGORICO',
+      fonteValores: 'GEO_MUNICIPIO',
+    };
+    fixture.componentRef.setInput('conteudo', {
+      ...conteudo,
+      itens: [item('MUNICIPIO', 0, { tipoRenderizacao: 'MUNICIPIO' })],
+    });
     fixture.componentRef.setInput('catalogo', [municipio]);
     fixture.componentRef.setInput('finalidade', 'INSCRICAO');
     fixture.componentRef.setInput('idBase', 'f');
@@ -730,11 +1111,15 @@ describe('EditorDeFormularioComponent com a busca de municípios', () => {
     fixture.componentInstance.conteudoChange.subscribe((novo) => emitidos.push(novo));
     fixture.detectChanges();
 
-    const caixa = [...(fixture.nativeElement as HTMLElement).querySelectorAll('input[type="checkbox"]')].find((c) =>
-      c.parentElement?.textContent?.includes('Impedir a inscrição'),
-    ) as HTMLInputElement | undefined;
+    const caixa = [
+      ...(fixture.nativeElement as HTMLElement).querySelectorAll('input[type="checkbox"]'),
+    ].find((c) => c.parentElement?.textContent?.includes('Impedir a inscrição')) as
+      | HTMLInputElement
+      | undefined;
     caixa?.click();
 
-    expect(emitidos.at(-1)?.itens?.[0]?.impedimento?.quando).toEqual([[{ fato: 'MUNICIPIO', operador: 'IGUAL', valor: '' }]]);
+    expect(emitidos.at(-1)?.itens?.[0]?.impedimento?.quando).toEqual([
+      [{ fato: 'MUNICIPIO', operador: 'IGUAL', valor: '' }],
+    ]);
   });
 });

@@ -1,10 +1,28 @@
-import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Injector,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { condicaoNova, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
-import { alternativaSemOProprioCampo, comImpedimento, type ItemDoFormulario, type PredicadoNoWire } from './formulario-editavel';
+import {
+  condicaoNova,
+  type CondicaoEmClausula,
+  type FatoEscolhivel,
+} from '../editor-de-condicoes/condicoes-de-fatos';
+import { alternativaSemOProprioCampo, comImpedimento } from './modelo/impedimento';
+import { type ItemDoFormulario, type PredicadoNoWire } from './modelo/tipos';
 import { focarDepois } from './foco';
-import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
 
 /** O tamanho da mensagem ao candidato (`FormaDoItem.MensagemDoImpedimentoMaxLength`). */
 const MENSAGEM_MAX = 500;
@@ -25,8 +43,8 @@ const MENSAGEM_MAX = 500;
 
       @if (!permitido()) {
         <p class="field__error" [id]="idBase() + '-impedimento-nota'">
-          O impedimento só cabe na inscrição, em campo de sim ou não, número, seleção de valores conhecidos ou município.
-          Desligue-o para salvar.
+          O impedimento só cabe na inscrição, em campo de sim ou não, número, seleção de valores
+          conhecidos ou município. Desligue-o para salvar.
         </p>
       }
 
@@ -53,11 +71,16 @@ const MENSAGEM_MAX = 500;
           (condicoesChange)="trocarCondicoes($event)"
         />
         @if (semOProprioCampo()) {
-          <p class="field__error">Cada alternativa cita a resposta deste campo: o bloqueio só por resposta anterior é da exibição.</p>
+          <p class="field__error">
+            Cada alternativa cita a resposta deste campo: o bloqueio só por resposta anterior é da
+            exibição.
+          </p>
         }
 
         <div class="field" [class.is-error]="mensagemVazia()">
-          <label class="field__label is-required" [for]="idBase() + '-impedimento-mensagem'">Mensagem ao candidato</label>
+          <label class="field__label is-required" [for]="idBase() + '-impedimento-mensagem'"
+            >Mensagem ao candidato</label
+          >
           <textarea
             class="textarea"
             rows="2"
@@ -69,8 +92,15 @@ const MENSAGEM_MAX = 500;
             [attr.aria-describedby]="idBase() + '-impedimento-mensagem-nota'"
             (input)="trocarMensagem($event)"
           ></textarea>
-          <span [class]="mensagemVazia() ? 'field__error' : 'field__hint'" [id]="idBase() + '-impedimento-mensagem-nota'">
-            {{ mensagemVazia() ? 'Obrigatória: explica por que a inscrição não é possível.' : 'Explica por que a inscrição não é possível.' }}
+          <span
+            [class]="mensagemVazia() ? 'field__error' : 'field__hint'"
+            [id]="idBase() + '-impedimento-mensagem-nota'"
+          >
+            {{
+              mensagemVazia()
+                ? 'Obrigatória: explica por que a inscrição não é possível.'
+                : 'Explica por que a inscrição não é possível.'
+            }}
           </span>
         </div>
       }
@@ -92,9 +122,13 @@ export class ImpedimentoDoCampoComponent {
 
   protected readonly mensagemMax = MENSAGEM_MAX;
   protected readonly ligado = computed(() => this.item().impedimento != null);
-  protected readonly mensagemVazia = computed(() => this.ligado() && (this.item().impedimento?.mensagem ?? '').trim() === '');
+  protected readonly mensagemVazia = computed(
+    () => this.ligado() && (this.item().impedimento?.mensagem ?? '').trim() === '',
+  );
   protected readonly semOProprioCampo = computed(
-    () => this.ligado() && alternativaSemOProprioCampo(this.item().impedimento?.quando ?? null, this.item().fatoCodigo),
+    () =>
+      this.ligado() &&
+      alternativaSemOProprioCampo(this.item().impedimento?.quando ?? null, this.item().fatoCodigo),
   );
 
   protected readonly condicoes = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
@@ -102,7 +136,9 @@ export class ImpedimentoDoCampoComponent {
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly problemas = computed(() => problemasDasCondicoes(this.condicoes(), this.fatos()));
+  protected readonly problemas = computed(() =>
+    problemasDasCondicoes(this.condicoes(), this.fatos()),
+  );
 
   /** Ligar põe a condição sobre o próprio campo e torna o campo obrigatório; desligar tira o impedimento inteiro. */
   protected alternar(): void {
@@ -120,11 +156,20 @@ export class ImpedimentoDoCampoComponent {
 
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
-    this.itemChange.emit({ ...this.item(), impedimento: { quando: paraPredicado(condicoes), mensagem: this.item().impedimento?.mensagem ?? '' } });
+    this.itemChange.emit({
+      ...this.item(),
+      impedimento: {
+        quando: paraPredicado(condicoes),
+        mensagem: this.item().impedimento?.mensagem ?? '',
+      },
+    });
   }
 
   protected trocarMensagem(evento: Event): void {
     const mensagem = (evento.target as HTMLTextAreaElement).value;
-    this.itemChange.emit({ ...this.item(), impedimento: { quando: this.item().impedimento?.quando ?? null, mensagem } });
+    this.itemChange.emit({
+      ...this.item(),
+      impedimento: { quando: this.item().impedimento?.quando ?? null, mensagem },
+    });
   }
 }

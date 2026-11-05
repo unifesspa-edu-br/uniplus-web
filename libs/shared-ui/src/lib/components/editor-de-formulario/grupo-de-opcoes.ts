@@ -1,9 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
-import { problemaDoGrupoDeOpcoes, type OpcoesCondicionadas, type PredicadoNoWire } from './formulario-editavel';
-import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import {
+  type CondicaoEmClausula,
+  type FatoEscolhivel,
+} from '../editor-de-condicoes/condicoes-de-fatos';
+import { problemaDoGrupoDeOpcoes } from './modelo/problemas-da-restricao';
+import { type OpcoesCondicionadas, type PredicadoNoWire } from './modelo/tipos';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
 
 /**
  * Um grupo das opções permitidas de um campo de seleção: a condição sobre respostas anteriores em
@@ -31,10 +46,21 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
         (condicoesChange)="trocarCondicoes($event)"
       />
 
-      <div class="editor-formulario__opcoes" role="group" [attr.aria-label]="'Valores que o grupo de opções ' + posicao() + ' oferece em ' + nomeDoCampo()">
+      <div
+        class="editor-formulario__opcoes"
+        role="group"
+        [attr.aria-label]="
+          'Valores que o grupo de opções ' + posicao() + ' oferece em ' + nomeDoCampo()
+        "
+      >
         @for (valor of valores(); track valor) {
           <label class="checkbox">
-            <input type="checkbox" [checked]="entrada().valores.includes(valor)" [disabled]="disabled()" (change)="alternarValor(valor)" />
+            <input
+              type="checkbox"
+              [checked]="entrada().valores.includes(valor)"
+              [disabled]="disabled()"
+              (change)="alternarValor(valor)"
+            />
             <span class="checkbox__box" aria-hidden="true"></span>
             {{ valor }}
           </label>
@@ -53,7 +79,12 @@ import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './
       }
 
       @if (removivel()) {
-        <button class="btn btn--tertiary btn--sm" type="button" [disabled]="disabled()" (click)="remover.emit()">
+        <button
+          class="btn btn--tertiary btn--sm"
+          type="button"
+          [disabled]="disabled()"
+          (click)="remover.emit()"
+        >
           Remover o grupo de opções {{ posicao() }}
         </button>
       }
@@ -84,7 +115,9 @@ export class GrupoDeOpcoesComponent {
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly problemas = computed(() => problemasDasCondicoes(this.condicoes(), this.fatos()));
+  protected readonly problemas = computed(() =>
+    problemasDasCondicoes(this.condicoes(), this.fatos()),
+  );
   protected readonly problema = computed(() => problemaDoGrupoDeOpcoes(this.entrada()));
   /** O valor gravado fora do domínio conhecido aparece também, para não sair sem ser visto. */
   protected readonly valores = computed(() => [
@@ -92,7 +125,10 @@ export class GrupoDeOpcoesComponent {
     ...this.entrada().valores.filter((valor) => !this.valoresConhecidos().includes(valor)),
   ]);
   protected readonly descricao = computed(() => {
-    const ids = [this.problema() === null ? null : `${this.idBase()}-erro`, this.recusas().length > 0 ? `${this.idBase()}-recusas` : null];
+    const ids = [
+      this.problema() === null ? null : `${this.idBase()}-erro`,
+      this.recusas().length > 0 ? `${this.idBase()}-recusas` : null,
+    ];
     return ids.filter((id) => id !== null).join(' ') || null;
   });
 
@@ -103,6 +139,9 @@ export class GrupoDeOpcoesComponent {
 
   protected alternarValor(valor: string): void {
     const atual = this.entrada().valores;
-    this.entradaChange.emit({ ...this.entrada(), valores: atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor] });
+    this.entradaChange.emit({
+      ...this.entrada(),
+      valores: atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor],
+    });
   }
 }

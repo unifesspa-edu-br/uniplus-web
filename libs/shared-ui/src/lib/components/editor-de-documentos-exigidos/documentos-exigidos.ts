@@ -1,4 +1,4 @@
-import type { PredicadoNoWire } from '../editor-de-formulario/formulario-editavel';
+import type { PredicadoNoWire } from '../editor-de-formulario/modelo/tipos';
 import {
   ABRANGENCIA_PADRAO,
   CONSEQUENCIAS_ESCOLHIVEIS,

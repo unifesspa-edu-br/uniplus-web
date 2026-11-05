@@ -3,35 +3,14 @@ import { ChangeDetectionStrategy, Component, Injector, computed, inject, input, 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
 import { fatoEscolhivel, type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
 import { TagComponent } from '../tag/tag';
-import {
-  FATO_PARENTESCO,
-  LIMITES_DO_FORMULARIO,
-  MAXIMO_DE_CAMPOS_DO_GRUPO,
-  OBRIGATORIEDADES,
-  OBRIGATORIEDADE_QUANDO,
-  OBRIGATORIEDADE_SEMPRE,
-  acrescentarCampoAoGrupo,
-  camposDoGrupo,
-  comCampoDoGrupo,
-  comCandidatoComoMembro,
-  fatosCitaveisPeloCampoDoGrupo,
-  fatosCitaveisPeloGrupo,
-  fatosOferecidos,
-  fatosDeMembroParaAcrescentar,
-  fontesDasOpcoes,
-  predicadosSobreRespostasAnteriores,
-  motivoDaRemocaoTravadaDoGrupo,
-  quantidadeNoTeto,
-  moverCampoNoGrupo,
-  removerCampoDoGrupo,
-  type ConteudoDoFormulario,
-  type FatoDoFormulario,
-  type GrupoDoFormulario,
-  type ItemDoFormulario,
-  type PredicadoNoWire,
-  type RecusaDaRestricao,
-  type ResultadoDoGrupo,
-} from './formulario-editavel';
+import { comCandidatoComoMembro } from './modelo/candidato-como-membro';
+import { fatosDeMembroParaAcrescentar } from './modelo/catalogo-de-campos';
+import { fatosOferecidos, predicadosSobreRespostasAnteriores } from './modelo/citacoes';
+import { LIMITES_DO_FORMULARIO, OBRIGATORIEDADES, OBRIGATORIEDADE_QUANDO, OBRIGATORIEDADE_SEMPRE } from './modelo/constantes';
+import { FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, acrescentarCampoAoGrupo, camposDoGrupo, comCampoDoGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo } from './modelo/grupos';
+import { type RecusaDaRestricao } from './modelo/recusas';
+import { fontesDasOpcoes } from './modelo/restricoes-de-valor';
+import { type ConteudoDoFormulario, type FatoDoFormulario, type GrupoDoFormulario, type ItemDoFormulario, type PredicadoNoWire, type ResultadoDoGrupo } from './modelo/tipos';
 import { focarDepois } from './foco';
 import { ItemDoFormularioComponent } from './item-do-formulario';
 import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
@@ -455,7 +434,7 @@ export class GrupoDoFormularioComponent {
     // O navegador marca a caixa antes da recusa: ela volta ao estado real, que só muda se a edição for aceita.
     (evento.target as HTMLInputElement).checked = this.grupo().incluiCandidato;
     this.aplicar(
-      comCandidatoComoMembro(this.conteudo(), this.grupo(), !this.grupo().incluiCandidato, this.catalogo(), this.nomes(), this.fatosIndisponiveis()),
+      comCandidatoComoMembro(this.conteudo(), this.grupo(), !this.grupo().incluiCandidato, { catalogo: this.catalogo(), nomes: this.nomes(), indisponiveis: this.fatosIndisponiveis() }),
       (grupo) =>
       grupo.incluiCandidato
         ? 'O candidato passa a ser um dos membros: o parentesco é o primeiro campo, sempre obrigatório.'

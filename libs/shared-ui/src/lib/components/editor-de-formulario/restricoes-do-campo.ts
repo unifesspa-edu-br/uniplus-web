@@ -1,33 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
-import {
-  ANCORA_DATA_FIXA,
-  ANCORA_ENVIO,
-  RESTRICAO_FAIXA_DE_DATA,
-  RESTRICAO_FAIXA_NUMERICA,
-  RESTRICAO_MUNICIPIOS_DA_UF,
-  RESTRICAO_OPCOES_DAS_RESPOSTAS,
-  RESTRICAO_OPCOES_PERMITIDAS,
-  RESTRICAO_TAMANHO_TEXTO,
-  RESTRICOES,
-  entradaDeOpcoesNova,
-  limiteDeDataNovo,
-  numeroDigitadoInvalido,
-  problemaDaRestricao,
-  problemaDoLimiteDeData,
-  problemaDosAnos,
-  problemaDosDias,
-  recusasDaRestricao,
-  recusasDoGrupoDeOpcoes,
-  restricaoNova,
-  restricoesParaAcrescentar,
-  type ItemDoFormulario,
-  type LimiteDeDataNoWire,
-  type OpcoesCondicionadas,
-  type RecusaDaRestricao,
-  type RestricaoDeValor,
-} from './formulario-editavel';
+import { numeroDigitadoInvalido } from './modelo/envio';
+import { problemaDaRestricao, problemaDoLimiteDeData, problemaDosAnos, problemaDosDias } from './modelo/problemas-da-restricao';
+import { recusasDaRestricao, recusasDoGrupoDeOpcoes, type RecusaDaRestricao } from './modelo/recusas';
+import { ANCORA_DATA_FIXA, ANCORA_ENVIO, RESTRICAO_FAIXA_DE_DATA, RESTRICAO_FAIXA_NUMERICA, RESTRICAO_MUNICIPIOS_DA_UF, RESTRICAO_OPCOES_DAS_RESPOSTAS, RESTRICAO_OPCOES_PERMITIDAS, RESTRICAO_TAMANHO_TEXTO, RESTRICOES, entradaDeOpcoesNova, limiteDeDataNovo, restricaoNova, restricoesParaAcrescentar } from './modelo/restricoes-de-valor';
+import { type ItemDoFormulario, type LimiteDeDataNoWire, type OpcoesCondicionadas, type RestricaoDeValor } from './modelo/tipos';
 import { GrupoDeOpcoesComponent } from './grupo-de-opcoes';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 

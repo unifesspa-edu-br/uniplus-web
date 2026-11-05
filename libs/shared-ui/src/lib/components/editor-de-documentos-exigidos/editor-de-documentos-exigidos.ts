@@ -20,7 +20,7 @@ import {
   problemasDasCondicoes,
   recopiarSeMudouPorFora,
 } from '../editor-de-formulario/predicado-em-edicao';
-import type { PredicadoNoWire } from '../editor-de-formulario/formulario-editavel';
+import type { PredicadoNoWire } from '../editor-de-formulario/modelo/tipos';
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,

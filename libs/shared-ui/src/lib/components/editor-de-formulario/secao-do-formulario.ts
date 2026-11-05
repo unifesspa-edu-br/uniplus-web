@@ -1,9 +1,24 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  linkedSignal,
+  output,
+} from '@angular/core';
 
 import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-condicoes';
-import { type CondicaoEmClausula, type FatoEscolhivel } from '../editor-de-condicoes/condicoes-de-fatos';
-import { LIMITES_DO_FORMULARIO, type EtapaDoFormulario, type PredicadoNoWire } from './formulario-editavel';
-import { paraPredicado, problemasDasCondicoes, recopiarSeMudouPorFora } from './predicado-em-edicao';
+import {
+  type CondicaoEmClausula,
+  type FatoEscolhivel,
+} from '../editor-de-condicoes/condicoes-de-fatos';
+import { LIMITES_DO_FORMULARIO } from './modelo/constantes';
+import { type EtapaDoFormulario, type PredicadoNoWire } from './modelo/tipos';
+import {
+  paraPredicado,
+  problemasDasCondicoes,
+  recopiarSeMudouPorFora,
+} from './predicado-em-edicao';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /**
@@ -60,7 +75,9 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           [attr.aria-describedby]="idDe('aviso-nota')"
           (input)="trocar({ aviso: textoOuNulo($event) })"
         ></textarea>
-        <span class="field__hint" [id]="idDe('aviso-nota')">Destacado no topo da seção, para o que o candidato não pode deixar de ler.</span>
+        <span class="field__hint" [id]="idDe('aviso-nota')"
+          >Destacado no topo da seção, para o que o candidato não pode deixar de ler.</span
+        >
       </div>
     </div>
 
@@ -94,7 +111,9 @@ export class SecaoDoFormularioComponent {
     computation: recopiarSeMudouPorFora,
   });
 
-  protected readonly problemas = computed(() => problemasDasCondicoes(this.condicoes(), this.fatos()));
+  protected readonly problemas = computed(() =>
+    problemasDasCondicoes(this.condicoes(), this.fatos()),
+  );
 
   protected idDe(parte: string): string {
     return `${this.idBase()}-${parte}`;

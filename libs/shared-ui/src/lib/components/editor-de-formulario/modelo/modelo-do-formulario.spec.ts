@@ -1,53 +1,67 @@
 import { describe, expect, it } from 'vitest';
 
+import { comCandidatoComoMembro } from './candidato-como-membro';
 import {
-  acrescentarCampo,
+  fatosParaAcrescentar,
+  pressupostosParaAcrescentar,
+  renderizacaoDe,
+} from './catalogo-de-campos';
+import { fatosCitaveisPeloItem, fatosQueExigemResposta } from './citacoes';
+import { conteudoParaEnvio, semDadosBasicos } from './envio';
+import {
   acrescentarCampoAoGrupo,
   acrescentarGrupo,
-  comCandidatoComoMembro,
   fatosCitaveisPeloCampoDoGrupo,
   moverCampoNoGrupo,
-  moverEntrada,
-  removerCampoDoGrupo,
-  acrescentarItem,
-  alternativaSemOProprioCampo,
-  comImpedimento,
-  impedimentoCabe,
-  problemaDaRestricao,
-  problemaDoLimiteDeData,
-  limiteDeDataNovo,
-  restricaoNova,
   quantidadeNoTeto,
-  restricoesParaAcrescentar,
-  acrescentarTermo,
-  pressupostosParaAcrescentar,
-  removerPressuposto,
-  acrescentarSecao,
-  distribuirRecusas,
-  fatosCitaveisPeloItem,
-  fontesDasOpcoes,
-  opcoesDaFonteCabemNoAlvo,
+  removerCampoDoGrupo,
+} from './grupos';
+import { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from './impedimento';
+import { acrescentarCampo, acrescentarItem, moverEntrada, moverItem, removerItem } from './itens';
+import { removerPressuposto } from './pressupostos';
+import {
+  problemaDaRestricao,
   problemaDoGrupoDeOpcoes,
+  problemaDoLimiteDeData,
+} from './problemas-da-restricao';
+import {
+  distribuirRecusas,
   recusasDaRestricao,
   recusasDoGrupoDeOpcoes,
   type RecusaDaRestricao,
-  fatosParaAcrescentar,
-  fatosQueExigemResposta,
-  moverEtapa,
-  moverItem,
-  removerItem,
-  renderizacaoDe,
-  semDadosBasicos,
-  conteudoParaEnvio,
+} from './recusas';
+import {
+  fontesDasOpcoes,
+  limiteDeDataNovo,
+  opcoesDaFonteCabemNoAlvo,
+  restricaoNova,
+  restricoesParaAcrescentar,
+} from './restricoes-de-valor';
+import { acrescentarSecao, moverEtapa } from './secoes';
+import { acrescentarTermo } from './termos';
+import {
   type ConteudoDoFormulario,
   type EtapaDoFormulario,
   type FatoDoFormulario,
   type GrupoDoFormulario,
   type ItemDoFormulario,
-} from './formulario-editavel';
+} from './tipos';
 
-function secao(codigo: string, ordem: number, exibicao: EtapaDoFormulario['exibicao'] = null): EtapaDoFormulario {
-  return { codigo, ordem, tipo: 'SECAO', bloco: null, titulo: codigo, descricao: null, aviso: null, exibicao };
+function secao(
+  codigo: string,
+  ordem: number,
+  exibicao: EtapaDoFormulario['exibicao'] = null,
+): EtapaDoFormulario {
+  return {
+    codigo,
+    ordem,
+    tipo: 'SECAO',
+    bloco: null,
+    titulo: codigo,
+    descricao: null,
+    aviso: null,
+    exibicao,
+  };
 }
 
 const REVISAO: EtapaDoFormulario = {
@@ -60,7 +74,12 @@ const REVISAO: EtapaDoFormulario = {
   aviso: null,
 };
 
-function item(fatoCodigo: string, ordem: number, etapaCodigo: string, extra: Partial<ItemDoFormulario> = {}): ItemDoFormulario {
+function item(
+  fatoCodigo: string,
+  ordem: number,
+  etapaCodigo: string,
+  extra: Partial<ItemDoFormulario> = {},
+): ItemDoFormulario {
   return {
     fatoCodigo,
     ordem,
@@ -74,10 +93,20 @@ function item(fatoCodigo: string, ordem: number, etapaCodigo: string, extra: Par
   };
 }
 
-const exibidoQuando = (fato: string, operador = 'IGUAL'): ItemDoFormulario['precondicao'] => [[{ fato, operador, valor: true }]];
+const exibidoQuando = (fato: string, operador = 'IGUAL'): ItemDoFormulario['precondicao'] => [
+  [{ fato, operador, valor: true }],
+];
 
 function conteudo(parcial: Partial<ConteudoDoFormulario>): ConteudoDoFormulario {
-  return { titulo: null, etapas: [], itens: [], termos: [], pressupostos: [], grupos: [], ...parcial };
+  return {
+    titulo: null,
+    etapas: [],
+    itens: [],
+    termos: [],
+    pressupostos: [],
+    grupos: [],
+    ...parcial,
+  };
 }
 
 function fato(codigo: string, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario {
@@ -123,9 +152,15 @@ describe('fatosParaAcrescentar', () => {
       fato('MUNICIPIO', { dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }),
       fato('NOMES', { dominio: 'TEXTO', cardinalidade: 'MULTIVALORADO' }),
     ];
-    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('JA_NO_FORMULARIO', 0, 'S1')] });
+    const atual = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('JA_NO_FORMULARIO', 0, 'S1')],
+    });
 
-    expect(fatosParaAcrescentar(atual, catalogo).map((f) => f.codigo)).toEqual(['MUNICIPIO', 'NOVO']);
+    expect(fatosParaAcrescentar(atual, catalogo).map((f) => f.codigo)).toEqual([
+      'MUNICIPIO',
+      'NOVO',
+    ]);
   });
 });
 
@@ -175,7 +210,11 @@ describe('numeração', () => {
 describe('moverItem', () => {
   const base = conteudo({
     etapas: [secao('S1', 0), REVISAO],
-    itens: [item('A', 0, 'S1'), item('B', 1, 'S1', { precondicao: exibidoQuando('A') }), item('C', 2, 'S1')],
+    itens: [
+      item('A', 0, 'S1'),
+      item('B', 1, 'S1', { precondicao: exibidoQuando('A') }),
+      item('C', 2, 'S1'),
+    ],
   });
 
   it('troca de lugar com o vizinho quando nenhuma citação se inverte', () => {
@@ -194,7 +233,10 @@ describe('moverItem', () => {
   ])('recusa mover %s, explicando quem cita quem', (_caso, fatoCodigo, direcao) => {
     const resultado = moverItem(base, fatoCodigo, direcao, NOMES);
 
-    expect(resultado).toEqual({ ok: false, recusa: '“B” cita “Campo A”, que ficaria depois. Mova primeiro o campo citado.' });
+    expect(resultado).toEqual({
+      ok: false,
+      recusa: '“B” cita “Campo A”, que ficaria depois. Mova primeiro o campo citado.',
+    });
   });
 
   it('recusa descer o campo para depois do grupo cujo campo o cita', () => {
@@ -225,19 +267,35 @@ describe('moverItem', () => {
   });
 
   it.each([
-    ['a condição de um grupo das opções permitidas', { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('A'), valores: ['X'] }] }],
-    ['o campo de onde vêm as opções formadas pelas respostas', { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['A'] }],
+    [
+      'a condição de um grupo das opções permitidas',
+      { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('A'), valores: ['X'] }] },
+    ],
+    [
+      'o campo de onde vêm as opções formadas pelas respostas',
+      { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['A'] },
+    ],
   ])('recusa pôr o campo antes do que %s cita', (_caso, restricao) => {
     const atual = conteudo({
       etapas: [secao('S1', 0), REVISAO],
-      itens: [item('A', 0, 'S1'), item('B', 1, 'S1', { tipoRenderizacao: 'SELECAO_UNICA', restricoes: [restricao] })],
+      itens: [
+        item('A', 0, 'S1'),
+        item('B', 1, 'S1', { tipoRenderizacao: 'SELECAO_UNICA', restricoes: [restricao] }),
+      ],
     });
 
-    expect(moverItem(atual, 'B', -1, NOMES)).toEqual({ ok: false, recusa: '“B” cita “Campo A”, que ficaria depois. Mova primeiro o campo citado.' });
+    expect(moverItem(atual, 'B', -1, NOMES)).toEqual({
+      ok: false,
+      recusa: '“B” cita “Campo A”, que ficaria depois. Mova primeiro o campo citado.',
+    });
   });
 
   it('o pressuposto é conhecido antes de todo item e não trava o movimento', () => {
-    const comPressuposto = conteudo({ ...base, pressupostos: ['A'], itens: [item('B', 0, 'S1', { precondicao: exibidoQuando('A') }), item('C', 1, 'S1')] });
+    const comPressuposto = conteudo({
+      ...base,
+      pressupostos: ['A'],
+      itens: [item('B', 0, 'S1', { precondicao: exibidoQuando('A') }), item('C', 1, 'S1')],
+    });
 
     expect(moverItem(comPressuposto, 'B', 1, NOMES).ok).toBe(true);
   });
@@ -247,7 +305,10 @@ describe('moverEtapa', () => {
   it('recusa pôr antes a seção cujo item cita fato da seção que fica depois', () => {
     const atual = conteudo({
       etapas: [secao('S1', 0), secao('S2', 1), REVISAO],
-      itens: [item('A', 0, 'S1'), item('B', 1, 'S2', { predicadoObrigatoriedade: exibidoQuando('A') })],
+      itens: [
+        item('A', 0, 'S1'),
+        item('B', 1, 'S2', { predicadoObrigatoriedade: exibidoQuando('A') }),
+      ],
     });
 
     expect(moverEtapa(atual, 'S2', -1, NOMES).ok).toBe(false);
@@ -287,7 +348,10 @@ describe('removerItem', () => {
       ],
     });
 
-    expect(removerItem(atual, 'A', NOMES)).toEqual({ ok: false, recusa: 'Não é possível remover “Campo A”: o campo “B” cita esse campo.' });
+    expect(removerItem(atual, 'A', NOMES)).toEqual({
+      ok: false,
+      recusa: 'Não é possível remover “Campo A”: o campo “B” cita esse campo.',
+    });
     expect(removerItem(atual, 'B', NOMES).ok).toBe(true);
   });
 
@@ -328,7 +392,14 @@ describe('regras espelhadas', () => {
   it('o campo citado por negação ou com impedimento precisa de resposta; o citado por igualdade não', () => {
     const atual = conteudo({
       itens: [
-        item('X', 0, 'S1', { precondicao: [[{ fato: 'NEGADO', operador: 'NAO_EM', valor: ['A'] }, { fato: 'IGUAL', operador: 'IGUAL', valor: true }]] }),
+        item('X', 0, 'S1', {
+          precondicao: [
+            [
+              { fato: 'NEGADO', operador: 'NAO_EM', valor: ['A'] },
+              { fato: 'IGUAL', operador: 'IGUAL', valor: true },
+            ],
+          ],
+        }),
         item('IMPEDIDO', 1, 'S1', { impedimento: { quando: null, mensagem: null } }),
       ],
     });
@@ -351,7 +422,10 @@ describe('regras espelhadas', () => {
 
 describe('distribuirRecusas', () => {
   it('leva a recusa ao item e à etapa pelo índice enviado, e a sem índice ao resumo', () => {
-    const enviado = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1'), item('B', 1, 'S1')] });
+    const enviado = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('A', 0, 'S1'), item('B', 1, 'S1')],
+    });
 
     const recusas = distribuirRecusas(
       [
@@ -369,7 +443,14 @@ describe('distribuirRecusas', () => {
 });
 
 describe('termos e pressupostos', () => {
-  const lgpd = { termoId: 'T1', nome: 'Consentimento à LGPD', versoes: [{ versaoId: 'V2', rotulo: 'nova' }, { versaoId: 'V1', rotulo: 'antiga' }] };
+  const lgpd = {
+    termoId: 'T1',
+    nome: 'Consentimento à LGPD',
+    versoes: [
+      { versaoId: 'V2', rotulo: 'nova' },
+      { versaoId: 'V1', rotulo: 'antiga' },
+    ],
+  };
 
   it('exige o termo na versão mais nova, com código do nome sem acento e sem repetir o de outro termo', () => {
     const comUm = acrescentarTermo(conteudo({}), lgpd);
@@ -389,7 +470,17 @@ describe('termos e pressupostos', () => {
 
   it('o termo novo vem depois da maior ordem gravada, mesmo com buraco na numeração', () => {
     const gravado = conteudo({
-      termos: [{ codigo: 'A', ordem: 2, termoId: 'TA', versaoId: 'VA', exibicao: null, obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null }],
+      termos: [
+        {
+          codigo: 'A',
+          ordem: 2,
+          termoId: 'TA',
+          versaoId: 'VA',
+          exibicao: null,
+          obrigatoriedade: 'SEMPRE',
+          predicadoObrigatoriedade: null,
+        },
+      ],
     });
 
     expect(acrescentarTermo(gravado, lgpd).termos?.at(-1)?.ordem).toBe(3);
@@ -400,11 +491,17 @@ describe('termos e pressupostos', () => {
     const catalogo = [fato('A'), fato('B')];
 
     expect(pressupostosParaAcrescentar(atual, catalogo, 'INSCRICAO')).toEqual([]);
-    expect(pressupostosParaAcrescentar(atual, catalogo, 'HABILITACAO').map((f) => f.codigo)).toEqual(['B']);
+    expect(
+      pressupostosParaAcrescentar(atual, catalogo, 'HABILITACAO').map((f) => f.codigo),
+    ).toEqual(['B']);
   });
 
   it('recusa retirar o pressuposto que uma regra cita', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], pressupostos: ['P'], itens: [item('A', 0, 'S1', { precondicao: exibidoQuando('P') })] });
+    const atual = conteudo({
+      etapas: [secao('S1', 0)],
+      pressupostos: ['P'],
+      itens: [item('A', 0, 'S1', { precondicao: exibidoQuando('P') })],
+    });
 
     expect(removerPressuposto(atual, 'P', new Map([['P', 'Forma de conclusão']]))).toEqual({
       ok: false,
@@ -418,11 +515,23 @@ describe('restrições, município e impedimento', () => {
     [{ tipo: 'FAIXA_NUMERICA', minimo: null, maximo: null }, 'Informe ao menos um limite.'],
     [{ tipo: 'FAIXA_NUMERICA', minimo: 10, maximo: 5 }, 'O mínimo é maior que o máximo.'],
     [{ tipo: 'FAIXA_NUMERICA', minimo: 0.12345, maximo: null }, 'Use no máximo 4 casas decimais.'],
-    [{ tipo: 'FAIXA_NUMERICA', minimo: 0.0000001, maximo: null }, 'Use no máximo 4 casas decimais.'],
-    [{ tipo: 'TAMANHO_TEXTO', minimo: 1.5, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
-    [{ tipo: 'TAMANHO_TEXTO', minimo: -1, maximo: null }, 'Os limites são números inteiros, a partir de zero.'],
+    [
+      { tipo: 'FAIXA_NUMERICA', minimo: 0.0000001, maximo: null },
+      'Use no máximo 4 casas decimais.',
+    ],
+    [
+      { tipo: 'TAMANHO_TEXTO', minimo: 1.5, maximo: null },
+      'Os limites são números inteiros, a partir de zero.',
+    ],
+    [
+      { tipo: 'TAMANHO_TEXTO', minimo: -1, maximo: null },
+      'Os limites são números inteiros, a partir de zero.',
+    ],
     [{ tipo: 'OPCOES_PERMITIDAS', entradas: [] }, 'Declare ao menos um grupo de opções.'],
-    [{ tipo: 'OPCOES_DAS_RESPOSTAS', fatos: [] }, 'Escolha ao menos um campo de onde vêm as opções.'],
+    [
+      { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: [] },
+      'Escolha ao menos um campo de onde vêm as opções.',
+    ],
   ])('a restrição %o é recusada antes de ir à API', (restricao, problema) => {
     expect(problemaDaRestricao(restricao)).toBe(problema);
   });
@@ -436,34 +545,90 @@ describe('restrições, município e impedimento', () => {
     const numero = item('IDADE', 0, 'S1', { tipoRenderizacao: 'NUMERO' });
     const selecao = item('COR', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' });
 
-    expect(restricoesParaAcrescentar(numero, false).map((r) => r.valor)).toEqual(['FAIXA_NUMERICA']);
-    expect(restricoesParaAcrescentar({ ...numero, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 0 }] }, false)).toEqual([]);
-    expect(restricoesParaAcrescentar(selecao, false), 'sem valores conhecidos não há o que marcar').toEqual([]);
-    expect(restricoesParaAcrescentar(selecao, true).map((r) => r.valor)).toEqual(['OPCOES_PERMITIDAS']);
+    expect(restricoesParaAcrescentar(numero, false).map((r) => r.valor)).toEqual([
+      'FAIXA_NUMERICA',
+    ]);
+    expect(
+      restricoesParaAcrescentar(
+        { ...numero, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 0 }] },
+        false,
+      ),
+    ).toEqual([]);
+    expect(
+      restricoesParaAcrescentar(selecao, false),
+      'sem valores conhecidos não há o que marcar',
+    ).toEqual([]);
+    expect(restricoesParaAcrescentar(selecao, true).map((r) => r.valor)).toEqual([
+      'OPCOES_PERMITIDAS',
+    ]);
   });
 
   it('oferece as opções das respostas anteriores na seleção só quando há campo anterior de onde elas venham', () => {
     const selecao = item('LISTA_DE_ESPERA', 1, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' });
 
     expect(restricoesParaAcrescentar(selecao, false, false)).toEqual([]);
-    expect(restricoesParaAcrescentar(selecao, false, true).map((r) => r.valor)).toEqual(['OPCOES_DAS_RESPOSTAS']);
+    expect(restricoesParaAcrescentar(selecao, false, true).map((r) => r.valor)).toEqual([
+      'OPCOES_DAS_RESPOSTAS',
+    ]);
   });
 
   it('cada grupo das opções permitidas precisa de ao menos um valor, com ou sem condição', () => {
-    expect(problemaDoGrupoDeOpcoes({ quando: exibidoQuando('A'), valores: [] })).toBe('Escolha ao menos um valor permitido.');
+    expect(problemaDoGrupoDeOpcoes({ quando: exibidoQuando('A'), valores: [] })).toBe(
+      'Escolha ao menos um valor permitido.',
+    );
   });
 
   describe('de onde vêm as opções formadas pelas respostas', () => {
-    const curso = (codigo: string, valores: readonly string[] | null, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario =>
-      fato(codigo, { dominio: 'CATEGORICO', cardinalidade: 'MULTIVALORADO', fonteValores: 'GLOBAL', valoresDominio: valores, ...extra });
+    const curso = (
+      codigo: string,
+      valores: readonly string[] | null,
+      extra: Partial<FatoDoFormulario> = {},
+    ): FatoDoFormulario =>
+      fato(codigo, {
+        dominio: 'CATEGORICO',
+        cardinalidade: 'MULTIVALORADO',
+        fonteValores: 'GLOBAL',
+        valoresDominio: valores,
+        ...extra,
+      });
 
     it.each([
-      ['os valores da fonte estão entre os do alvo', true, curso('ESPERA', ['MED', 'DIR', 'ENG']), curso('OPCOES', ['MED', 'DIR'])],
-      ['a fonte tem valor que o alvo não oferece', false, curso('ESPERA', ['MED']), curso('OPCOES', ['MED', 'DIR'])],
-      ['o domínio é outro', false, curso('ESPERA', ['MED']), curso('OPCOES', ['MED'], { dominio: 'TEXTO' })],
-      ['nenhum enumera e a fonte dos valores é a mesma', true, curso('ESPERA', null, { fonteValores: 'PROCESSO' }), curso('OPCOES', null, { fonteValores: 'PROCESSO' })],
-      ['nenhum enumera e a fonte dos valores é outra', false, curso('ESPERA', null, { fonteValores: 'PROCESSO' }), curso('OPCOES', null, { fonteValores: 'GEO_UF' })],
-      ['só um enumera', false, curso('ESPERA', ['MED']), curso('OPCOES', null, { fonteValores: 'PROCESSO' })],
+      [
+        'os valores da fonte estão entre os do alvo',
+        true,
+        curso('ESPERA', ['MED', 'DIR', 'ENG']),
+        curso('OPCOES', ['MED', 'DIR']),
+      ],
+      [
+        'a fonte tem valor que o alvo não oferece',
+        false,
+        curso('ESPERA', ['MED']),
+        curso('OPCOES', ['MED', 'DIR']),
+      ],
+      [
+        'o domínio é outro',
+        false,
+        curso('ESPERA', ['MED']),
+        curso('OPCOES', ['MED'], { dominio: 'TEXTO' }),
+      ],
+      [
+        'nenhum enumera e a fonte dos valores é a mesma',
+        true,
+        curso('ESPERA', null, { fonteValores: 'PROCESSO' }),
+        curso('OPCOES', null, { fonteValores: 'PROCESSO' }),
+      ],
+      [
+        'nenhum enumera e a fonte dos valores é outra',
+        false,
+        curso('ESPERA', null, { fonteValores: 'PROCESSO' }),
+        curso('OPCOES', null, { fonteValores: 'GEO_UF' }),
+      ],
+      [
+        'só um enumera',
+        false,
+        curso('ESPERA', ['MED']),
+        curso('OPCOES', null, { fonteValores: 'PROCESSO' }),
+      ],
     ])('%s: cabe = %s', (_caso, cabe, alvo, fonte) => {
       expect(opcoesDaFonteCabemNoAlvo(alvo, fonte)).toBe(cabe);
     });
@@ -472,7 +637,16 @@ describe('restrições, município e impedimento', () => {
       const alvo = curso('ESPERA', null, { fonteValores: 'PROCESSO' });
       const fonte = curso('OPCOES', null, { fonteValores: 'PROCESSO' });
 
-      expect(opcoesDaFonteCabemNoAlvo(alvo, fonte, new Map([['ESPERA', ['MED']], ['OPCOES', ['MED', 'DIR']]]))).toBe(false);
+      expect(
+        opcoesDaFonteCabemNoAlvo(
+          alvo,
+          fonte,
+          new Map([
+            ['ESPERA', ['MED']],
+            ['OPCOES', ['MED', 'DIR']],
+          ]),
+        ),
+      ).toBe(false);
     });
 
     it('oferece só os citáveis pelo campo cujas opções cabem nas dele, nunca o próprio', () => {
@@ -483,7 +657,11 @@ describe('restrições, município e impedimento', () => {
         curso('OUTRO_DOMINIO', ['XYZ']),
       ];
 
-      const fontes = fontesDasOpcoes(catalogo, new Set(['OPCOES', 'OUTRO_DOMINIO', 'ESPERA']), 'ESPERA');
+      const fontes = fontesDasOpcoes(
+        catalogo,
+        new Set(['OPCOES', 'OUTRO_DOMINIO', 'ESPERA']),
+        'ESPERA',
+      );
 
       expect(fontes.map((fonte) => fonte.codigo)).toEqual(['OPCOES']);
     });
@@ -493,32 +671,46 @@ describe('restrições, município e impedimento', () => {
   const municipio = fato('MUNICIPIO', { dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' });
 
   it('o município nasce restrito à UF respondida antes', () => {
-    const comUf = conteudo({ etapas: [secao('S1', 0)], itens: [item('UF', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' })] });
+    const comUf = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('UF', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA' })],
+    });
 
-    const resultado = acrescentarCampo(comUf, municipio, 'S1', [uf, municipio]);
+    const resultado = acrescentarCampo(comUf, municipio, 'S1', { catalogo: [uf, municipio] });
 
-    expect(resultado.ok && resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes).toEqual([
-      { tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] },
-    ]);
+    expect(
+      resultado.ok &&
+        resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes,
+    ).toEqual([{ tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] }]);
   });
 
   it('a UF conhecida antes do formulário — pressuposto ou coletada pela inscrição — também serve ao município', () => {
     const semUf = conteudo({ etapas: [secao('S1', 0)] });
 
-    const resultado = acrescentarCampo(semUf, municipio, 'S1', [uf, municipio], ['UF']);
+    const resultado = acrescentarCampo(semUf, municipio, 'S1', {
+      catalogo: [uf, municipio],
+      fatosConhecidosAntes: ['UF'],
+    });
 
-    expect(resultado.ok && resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes).toEqual([
-      { tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] },
-    ]);
-    expect(resultado.ok && resultado.conteudo.pressupostos, 'o fato conhecido antes não entra no conteúdo').toEqual([]);
+    expect(
+      resultado.ok &&
+        resultado.conteudo.itens?.find((i) => i.fatoCodigo === 'MUNICIPIO')?.restricoes,
+    ).toEqual([{ tipo: 'MUNICIPIOS_DA_UF', fatos: ['UF'] }]);
+    expect(
+      resultado.ok && resultado.conteudo.pressupostos,
+      'o fato conhecido antes não entra no conteúdo',
+    ).toEqual([]);
   });
 
   it('sem campo de UF antes, o município é recusado com a orientação', () => {
-    const resultado = acrescentarCampo(conteudo({ etapas: [secao('S1', 0)] }), municipio, 'S1', [uf, municipio]);
+    const resultado = acrescentarCampo(conteudo({ etapas: [secao('S1', 0)] }), municipio, 'S1', {
+      catalogo: [uf, municipio],
+    });
 
     expect(resultado).toEqual({
       ok: false,
-      recusa: 'Acrescente antes o campo de UF: “MUNICIPIO” escolhe entre os municípios da UF respondida antes.',
+      recusa:
+        'Acrescente antes o campo de UF: “MUNICIPIO” escolhe entre os municípios da UF respondida antes.',
     });
   });
 
@@ -534,7 +726,10 @@ describe('restrições, município e impedimento', () => {
   });
 
   it('ligar o impedimento deixa o campo obrigatório sempre na mesma edição', () => {
-    const opcional = item('VINCULO', 0, 'S1', { obrigatoriedade: 'QUANDO', predicadoObrigatoriedade: exibidoQuando('X') });
+    const opcional = item('VINCULO', 0, 'S1', {
+      obrigatoriedade: 'QUANDO',
+      predicadoObrigatoriedade: exibidoQuando('X'),
+    });
 
     const ligado = comImpedimento(opcional, exibidoQuando('VINCULO'));
 
@@ -542,8 +737,18 @@ describe('restrições, município e impedimento', () => {
   });
 
   it('acusa a alternativa do impedimento que não cita o próprio campo', () => {
-    expect(alternativaSemOProprioCampo([[{ fato: 'V', operador: 'IGUAL', valor: true }]], 'V')).toBe(false);
-    expect(alternativaSemOProprioCampo([[{ fato: 'V', operador: 'IGUAL', valor: true }], [{ fato: 'X', operador: 'IGUAL', valor: true }]], 'V')).toBe(true);
+    expect(
+      alternativaSemOProprioCampo([[{ fato: 'V', operador: 'IGUAL', valor: true }]], 'V'),
+    ).toBe(false);
+    expect(
+      alternativaSemOProprioCampo(
+        [
+          [{ fato: 'V', operador: 'IGUAL', valor: true }],
+          [{ fato: 'X', operador: 'IGUAL', valor: true }],
+        ],
+        'V',
+      ),
+    ).toBe(true);
     expect(alternativaSemOProprioCampo(null, 'V')).toBe(true);
   });
 
@@ -552,8 +757,17 @@ describe('restrições, município e impedimento', () => {
       itens: [item('A', 0, 'S1')],
       grupos: [
         {
-          codigo: 'G', ordem: 1, rotulo: 'G', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
-          obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')], incluiCandidato: false,
+          codigo: 'G',
+          ordem: 1,
+          rotulo: 'G',
+          etapaCodigo: 'S1',
+          minimo: 0,
+          maximo: null,
+          exibicao: null,
+          obrigatoriedade: 'SEMPRE',
+          predicadoObrigatoriedade: null,
+          subitens: [item('M1', 0, 'S1'), item('M2', 1, 'S1')],
+          incluiCandidato: false,
         },
       ],
     });
@@ -563,14 +777,29 @@ describe('restrições, município e impedimento', () => {
 });
 
 describe('grupos repetíveis', () => {
-  const membro = (codigo: string, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario => fato(codigo, { escopo: 'MEMBRO_GRUPO', ...extra });
-  const parentesco = membro('PARENTESCO', { dominio: 'CATEGORICO', valoresDominio: ['PROPRIO_CANDIDATO', 'MAE'] });
+  const membro = (codigo: string, extra: Partial<FatoDoFormulario> = {}): FatoDoFormulario =>
+    fato(codigo, { escopo: 'MEMBRO_GRUPO', ...extra });
+  const parentesco = membro('PARENTESCO', {
+    dominio: 'CATEGORICO',
+    valoresDominio: ['PROPRIO_CANDIDATO', 'MAE'],
+  });
 
   function grupo(extra: Partial<GrupoDoFormulario> = {}): GrupoDoFormulario {
     return {
-      codigo: 'FAMILIA', ordem: 1, rotulo: 'Composição familiar', etapaCodigo: 'S1', minimo: 0, maximo: null, exibicao: null,
-      obrigatoriedade: 'SEMPRE', predicadoObrigatoriedade: null, incluiCandidato: false,
-      subitens: [item('RENDA', 0, 'S1', { etapaCodigo: null }), item('IDADE', 1, 'S1', { etapaCodigo: null })],
+      codigo: 'FAMILIA',
+      ordem: 1,
+      rotulo: 'Composição familiar',
+      etapaCodigo: 'S1',
+      minimo: 0,
+      maximo: null,
+      exibicao: null,
+      obrigatoriedade: 'SEMPRE',
+      predicadoObrigatoriedade: null,
+      incluiCandidato: false,
+      subitens: [
+        item('RENDA', 0, 'S1', { etapaCodigo: null }),
+        item('IDADE', 1, 'S1', { etapaCodigo: null }),
+      ],
       ...extra,
     };
   }
@@ -578,7 +807,11 @@ describe('grupos repetíveis', () => {
   it('o grupo nasce com o primeiro campo, sem seção própria, e com código do rótulo que não colide com fato', () => {
     const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')] });
 
-    const resultado = acrescentarGrupo(atual, 'Renda', 'S1', membro('RENDA'), [fato('RENDA'), membro('RENDA')]);
+    const resultado = acrescentarGrupo(
+      atual,
+      { rotulo: 'Renda', etapaCodigo: 'S1', primeiroCampo: membro('RENDA') },
+      [fato('RENDA'), membro('RENDA')],
+    );
 
     const novo = resultado.ok ? resultado.conteudo.grupos?.[0] : undefined;
     expect(novo?.codigo, 'RENDA é código de fato').toBe('RENDA_2');
@@ -587,7 +820,13 @@ describe('grupos repetíveis', () => {
   });
 
   it('o grupo sem rótulo é recusado antes de existir', () => {
-    expect(acrescentarGrupo(conteudo({ etapas: [secao('S1', 0)] }), '  ', 'S1', membro('RENDA'), []).ok).toBe(false);
+    expect(
+      acrescentarGrupo(
+        conteudo({ etapas: [secao('S1', 0)] }),
+        { rotulo: '  ', etapaCodigo: 'S1', primeiroCampo: membro('RENDA') },
+        [],
+      ).ok,
+    ).toBe(false);
   });
 
   it('incluir o candidato põe o parentesco primeiro, obrigatório, sem exibição e com o próprio candidato entre as opções fixas', () => {
@@ -598,55 +837,100 @@ describe('grupos repetíveis', () => {
           etapaCodigo: null,
           obrigatoriedade: 'NUNCA',
           precondicao: exibidoQuando('X'),
-          restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MAE'] }] }],
+          restricoes: [
+            { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['MAE'] }] },
+          ],
         }),
       ],
     });
 
-    const resultado = comCandidatoComoMembro(conteudo({ grupos: [comParentescoCondicional] }), comParentescoCondicional, true, [parentesco], new Map());
+    const resultado = comCandidatoComoMembro(
+      conteudo({ grupos: [comParentescoCondicional] }),
+      comParentescoCondicional,
+      true,
+      { catalogo: [parentesco], nomes: new Map() },
+    );
 
     const ligado = resultado.ok ? resultado.grupo : undefined;
     expect(ligado?.minimo).toBe(1);
-    expect(ligado?.subitens[0]).toMatchObject({ fatoCodigo: 'PARENTESCO', ordem: 0, obrigatoriedade: 'SEMPRE', precondicao: null });
-    expect(ligado?.subitens[0].restricoes?.[0].entradas?.[0].valores).toEqual(['MAE', 'PROPRIO_CANDIDATO']);
+    expect(ligado?.subitens[0]).toMatchObject({
+      fatoCodigo: 'PARENTESCO',
+      ordem: 0,
+      obrigatoriedade: 'SEMPRE',
+      precondicao: null,
+    });
+    expect(ligado?.subitens[0].restricoes?.[0].entradas?.[0].valores).toEqual([
+      'MAE',
+      'PROPRIO_CANDIDATO',
+    ]);
   });
 
   it('incluir o candidato acrescenta o parentesco quando o grupo não o tem', () => {
-    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [parentesco], new Map());
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, {
+      catalogo: [parentesco],
+      nomes: new Map(),
+    });
 
-    expect(resultado.ok && resultado.grupo.subitens.map((c) => c.fatoCodigo)).toEqual(['PARENTESCO', 'RENDA', 'IDADE']);
+    expect(resultado.ok && resultado.grupo.subitens.map((c) => c.fatoCodigo)).toEqual([
+      'PARENTESCO',
+      'RENDA',
+      'IDADE',
+    ]);
   });
 
   it('recusa remover o último campo e o parentesco do grupo que inclui o candidato', () => {
     const nomes = new Map<string, string>();
-    expect(removerCampoDoGrupo(grupo({ subitens: [item('RENDA', 0, 'S1')] }), 'RENDA', nomes).ok).toBe(false);
-    const comCandidato = grupo({ incluiCandidato: true, subitens: [item('PARENTESCO', 0, 'S1'), item('RENDA', 1, 'S1')] });
+    expect(
+      removerCampoDoGrupo(grupo({ subitens: [item('RENDA', 0, 'S1')] }), 'RENDA', nomes).ok,
+    ).toBe(false);
+    const comCandidato = grupo({
+      incluiCandidato: true,
+      subitens: [item('PARENTESCO', 0, 'S1'), item('RENDA', 1, 'S1')],
+    });
     expect(removerCampoDoGrupo(comCandidato, 'PARENTESCO', nomes).ok).toBe(false);
     expect(removerCampoDoGrupo(comCandidato, 'RENDA', nomes).ok).toBe(true);
   });
 
   it('recusa mover dentro do grupo o campo que passaria a citar outro que vem depois', () => {
-    const citante = grupo({ subitens: [item('RENDA', 0, 'S1'), item('IDADE', 1, 'S1', { precondicao: exibidoQuando('RENDA') })] });
+    const citante = grupo({
+      subitens: [
+        item('RENDA', 0, 'S1'),
+        item('IDADE', 1, 'S1', { precondicao: exibidoQuando('RENDA') }),
+      ],
+    });
 
     expect(moverCampoNoGrupo(citante, 'IDADE', -1, new Map()).ok).toBe(false);
     expect(moverCampoNoGrupo(grupo(), 'IDADE', -1, new Map()).ok).toBe(true);
   });
 
   it('o campo do grupo cita o conhecido antes do grupo e os campos anteriores da ocorrência', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1'), item('DEPOIS', 2, 'S1')], grupos: [grupo()] });
+    const atual = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('A', 0, 'S1'), item('DEPOIS', 2, 'S1')],
+      grupos: [grupo()],
+    });
 
-    expect([...fatosCitaveisPeloCampoDoGrupo(atual, grupo(), 'IDADE')].sort()).toEqual(['A', 'RENDA']);
+    expect([...fatosCitaveisPeloCampoDoGrupo(atual, grupo(), 'IDADE')].sort()).toEqual([
+      'A',
+      'RENDA',
+    ]);
   });
 
   it('o grupo chega ao teto de trinta campos', () => {
     const cheio = grupo({ subitens: Array.from({ length: 30 }, (_, i) => item(`C${i}`, i, 'S1')) });
-    expect(acrescentarCampoAoGrupo(conteudo({ grupos: [cheio] }), cheio, membro('NOVO')).ok).toBe(false);
+    expect(acrescentarCampoAoGrupo(conteudo({ grupos: [cheio] }), cheio, membro('NOVO')).ok).toBe(
+      false,
+    );
   });
 
   it('o campo novo vai ao fim do grupo mesmo quando a ordem gravada começa acima de zero', () => {
     const gravado = grupo({ subitens: [item('RENDA', 1, 'S1'), item('IDADE', 2, 'S1')] });
 
-    const resultado = acrescentarCampoAoGrupo(conteudo({ grupos: [gravado] }), gravado, membro('NOVO'));
+    const resultado = acrescentarCampoAoGrupo(
+      conteudo({ grupos: [gravado] }),
+      gravado,
+      membro('NOVO'),
+    );
 
     expect(resultado.ok && resultado.grupo.subitens.map((c) => [c.fatoCodigo, c.ordem])).toEqual([
       ['RENDA', 0],
@@ -659,11 +943,17 @@ describe('grupos repetíveis', () => {
     const itens = Array.from({ length: 197 }, (_, i) => item(`I${i}`, i, 'S1'));
     const noTeto = conteudo({ itens, grupos: [grupo()] });
 
-    expect(acrescentarCampoAoGrupo(noTeto, grupo(), membro('NOVO')).ok, '197 itens + grupo + 2 campos = 200').toBe(false);
+    expect(
+      acrescentarCampoAoGrupo(noTeto, grupo(), membro('NOVO')).ok,
+      '197 itens + grupo + 2 campos = 200',
+    ).toBe(false);
   });
 
   it('não acrescenta o parentesco desativado no catálogo', () => {
-    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [{ ...parentesco, ativo: false }], new Map());
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, {
+      catalogo: [{ ...parentesco, ativo: false }],
+      nomes: new Map(),
+    });
 
     expect(resultado.ok).toBe(false);
   });
@@ -671,34 +961,66 @@ describe('grupos repetíveis', () => {
   it('não repete o parentesco que já é campo de outro grupo do formulário', () => {
     const outro = grupo({ codigo: 'OUTRO', subitens: [item('PARENTESCO', 0, 'S1')] });
 
-    const resultado = comCandidatoComoMembro(conteudo({ grupos: [outro, grupo()] }), grupo(), true, [parentesco], new Map());
+    const resultado = comCandidatoComoMembro(
+      conteudo({ grupos: [outro, grupo()] }),
+      grupo(),
+      true,
+      { catalogo: [parentesco], nomes: new Map() },
+    );
 
     expect(resultado.ok).toBe(false);
   });
 
   it('não acrescenta o parentesco que outra finalidade do processo já coleta', () => {
-    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, [parentesco], new Map(), ['PARENTESCO']);
+    const resultado = comCandidatoComoMembro(conteudo({ grupos: [grupo()] }), grupo(), true, {
+      catalogo: [parentesco],
+      nomes: new Map(),
+      indisponiveis: ['PARENTESCO'],
+    });
 
     expect(resultado).toEqual({
       ok: false,
-      recusa: 'O parentesco é respondido em outro formulário — o anterior ou outra finalidade do processo — e por isso não pode ser coletado aqui.',
+      recusa:
+        'O parentesco é respondido em outro formulário — o anterior ou outra finalidade do processo — e por isso não pode ser coletado aqui.',
     });
   });
 
   it('recusa pôr o parentesco em primeiro quando ele cita um campo anterior do grupo', () => {
     const citante = grupo({
-      subitens: [item('RENDA', 0, 'S1'), item('PARENTESCO', 1, 'S1', { precondicao: null, restricoes: [{ tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: exibidoQuando('RENDA'), valores: ['MAE'] }] }] })],
+      subitens: [
+        item('RENDA', 0, 'S1'),
+        item('PARENTESCO', 1, 'S1', {
+          precondicao: null,
+          restricoes: [
+            {
+              tipo: 'OPCOES_PERMITIDAS',
+              entradas: [{ quando: exibidoQuando('RENDA'), valores: ['MAE'] }],
+            },
+          ],
+        }),
+      ],
     });
 
-    expect(comCandidatoComoMembro(conteudo({ grupos: [citante] }), citante, true, [parentesco], new Map()).ok).toBe(false);
+    expect(
+      comCandidatoComoMembro(conteudo({ grupos: [citante] }), citante, true, {
+        catalogo: [parentesco],
+        nomes: new Map(),
+      }).ok,
+    ).toBe(false);
   });
 
   it('o grupo troca de lugar com o item vizinho como qualquer entrada da seção', () => {
-    const atual = conteudo({ etapas: [secao('S1', 0)], itens: [item('A', 0, 'S1')], grupos: [grupo()] });
+    const atual = conteudo({
+      etapas: [secao('S1', 0)],
+      itens: [item('A', 0, 'S1')],
+      grupos: [grupo()],
+    });
 
     const resultado = moverEntrada(atual, { tipo: 'grupo', codigo: 'FAMILIA' }, -1, new Map());
 
-    expect(resultado.ok && [resultado.conteudo.grupos?.[0].ordem, resultado.conteudo.itens?.[0].ordem]).toEqual([0, 1]);
+    expect(
+      resultado.ok && [resultado.conteudo.grupos?.[0].ordem, resultado.conteudo.itens?.[0].ordem],
+    ).toEqual([0, 1]);
   });
 
   it('a recusa da API no campo do grupo vai ao campo, e a do grupo, ao grupo', () => {
@@ -722,14 +1044,25 @@ describe('grupos repetíveis', () => {
     const quandoB = { quando: exibidoQuando('B'), valores: ['ENG'] };
     const opcoes = { tipo: 'OPCOES_PERMITIDAS', entradas: [sempre, quandoA, quandoB] };
     const dasRespostas = { tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['OPCOES'] };
-    const enviado = conteudo({ itens: [item('ESPERA', 0, 'S1', { tipoRenderizacao: 'SELECAO_UNICA', restricoes: [opcoes, dasRespostas] })] });
+    const enviado = conteudo({
+      itens: [
+        item('ESPERA', 0, 'S1', {
+          tipoRenderizacao: 'SELECAO_UNICA',
+          restricoes: [opcoes, dasRespostas],
+        }),
+      ],
+    });
     const recusasDe = (field: string): readonly RecusaDaRestricao[] =>
-      distribuirRecusas([{ field, message: 'Recusada.' }], enviado).porRestricao.get('ESPERA') ?? [];
+      distribuirRecusas([{ field, message: 'Recusada.' }], enviado).porRestricao.get('ESPERA') ??
+      [];
 
     it('vai ao grupo de opções que ela aponta, e a da restrição inteira, à restrição — não ao resumo do campo', () => {
       const recusas = distribuirRecusas(
         [
-          { field: 'conteudo.itens[0].restricoes[0].entradas[1].quando', message: 'Condição inválida.' },
+          {
+            field: 'conteudo.itens[0].restricoes[0].entradas[1].quando',
+            message: 'Condição inválida.',
+          },
           { field: 'Conteudo.Itens[0].Restricoes[1].Fatos', message: 'Opções de outro domínio.' },
         ],
         enviado,
@@ -738,7 +1071,9 @@ describe('grupos repetíveis', () => {
 
       expect(recusasDoGrupoDeOpcoes(doCampo, quandoA)).toEqual(['Condição inválida.']);
       expect(recusasDoGrupoDeOpcoes(doCampo, sempre)).toEqual([]);
-      expect(recusasDaRestricao(doCampo, 'OPCOES_DAS_RESPOSTAS')).toEqual(['Opções de outro domínio.']);
+      expect(recusasDaRestricao(doCampo, 'OPCOES_DAS_RESPOSTAS')).toEqual([
+        'Opções de outro domínio.',
+      ]);
       expect(recusas.porItem.size).toBe(0);
     });
 
@@ -746,7 +1081,9 @@ describe('grupos repetíveis', () => {
       const recusas = recusasDe('conteudo.itens[0].restricoes[0].entradas[1].quando');
 
       // Sem o grupo apontado, o grupo seguinte passa a ser o segundo.
-      expect([sempre, quandoB].flatMap((grupo) => recusasDoGrupoDeOpcoes(recusas, grupo))).toEqual([]);
+      expect([sempre, quandoB].flatMap((grupo) => recusasDoGrupoDeOpcoes(recusas, grupo))).toEqual(
+        [],
+      );
     });
 
     it('não passa para a restrição que ocupou a posição da restrição apontada, removida depois da recusa', () => {
@@ -757,49 +1094,108 @@ describe('grupos repetíveis', () => {
     });
 
     it('a recusa no campo do grupo repetível vai à restrição do campo', () => {
-      const comGrupo = conteudo({ grupos: [{ ...grupo(), subitens: [item('IDADE', 0, 'S1', { restricoes: [opcoes] })] }] });
+      const comGrupo = conteudo({
+        grupos: [{ ...grupo(), subitens: [item('IDADE', 0, 'S1', { restricoes: [opcoes] })] }],
+      });
 
-      const recusas = distribuirRecusas([{ field: 'conteudo.grupos[0].subitens[0].restricoes[0].entradas[0].valores', message: 'Fora do domínio.' }], comGrupo);
+      const recusas = distribuirRecusas(
+        [
+          {
+            field: 'conteudo.grupos[0].subitens[0].restricoes[0].entradas[0].valores',
+            message: 'Fora do domínio.',
+          },
+        ],
+        comGrupo,
+      );
 
-      expect(recusasDoGrupoDeOpcoes(recusas.porRestricao.get('IDADE') ?? [], sempre)).toEqual(['Fora do domínio.']);
+      expect(recusasDoGrupoDeOpcoes(recusas.porRestricao.get('IDADE') ?? [], sempre)).toEqual([
+        'Fora do domínio.',
+      ]);
     });
   });
 });
 
 describe('faixa de datas', () => {
   const dataFixa = (data: string | null) => ({ ancora: 'DATA_FIXA', data });
-  const doEnvio = (anos: number | string, dias: number | string) => ({ ancora: 'ENVIO', anos, dias });
+  const doEnvio = (anos: number | string, dias: number | string) => ({
+    ancora: 'ENVIO',
+    anos,
+    dias,
+  });
 
   it('é oferecida só no campo de data, uma por tipo', () => {
     const data = item('NASCIMENTO', 0, 'S1', { tipoRenderizacao: 'DATA' });
 
     expect(restricoesParaAcrescentar(data, false).map((r) => r.valor)).toEqual(['FAIXA_DE_DATA']);
-    expect(restricoesParaAcrescentar({ ...data, restricoes: [restricaoNova('FAIXA_DE_DATA')] }, false)).toEqual([]);
+    expect(
+      restricoesParaAcrescentar({ ...data, restricoes: [restricaoNova('FAIXA_DE_DATA')] }, false),
+    ).toEqual([]);
     for (const tipo of ['NUMERO', 'TEXTO', 'BOOLEANO', 'SELECAO_UNICA']) {
-      expect(restricoesParaAcrescentar(item('X', 0, 'S1', { tipoRenderizacao: tipo }), true, true).map((r) => r.valor)).not.toContain('FAIXA_DE_DATA');
+      expect(
+        restricoesParaAcrescentar(item('X', 0, 'S1', { tipoRenderizacao: tipo }), true, true).map(
+          (r) => r.valor,
+        ),
+      ).not.toContain('FAIXA_DE_DATA');
     }
   });
 
   it('nasce sem limite, e o limite novo nasce na âncora escolhida', () => {
-    expect(restricaoNova('FAIXA_DE_DATA')).toEqual({ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null });
+    expect(restricaoNova('FAIXA_DE_DATA')).toEqual({
+      tipo: 'FAIXA_DE_DATA',
+      dataMinima: null,
+      dataMaxima: null,
+    });
     expect(limiteDeDataNovo('DATA_FIXA')).toEqual({ ancora: 'DATA_FIXA', data: null });
     expect(limiteDeDataNovo('ENVIO')).toEqual({ ancora: 'ENVIO', anos: 0, dias: 0 });
   });
 
   it.each([
     [{ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: null }, 'Informe ao menos um limite.'],
-    [{ tipo: 'FAIXA_DE_DATA', dataMinima: dataFixa('2030-01-02'), dataMaxima: dataFixa('2030-01-01') }, 'A data mínima fica depois da data máxima.'],
-    [{ tipo: 'FAIXA_DE_DATA', dataMinima: doEnvio(0, 1), dataMaxima: doEnvio(0, -1) }, 'A data mínima fica depois da data máxima.'],
-    [{ tipo: 'FAIXA_DE_DATA', dataMinima: doEnvio(1, 0), dataMaxima: doEnvio(0, 0) }, 'A data mínima fica depois da data máxima.'],
+    [
+      {
+        tipo: 'FAIXA_DE_DATA',
+        dataMinima: dataFixa('2030-01-02'),
+        dataMaxima: dataFixa('2030-01-01'),
+      },
+      'A data mínima fica depois da data máxima.',
+    ],
+    [
+      { tipo: 'FAIXA_DE_DATA', dataMinima: doEnvio(0, 1), dataMaxima: doEnvio(0, -1) },
+      'A data mínima fica depois da data máxima.',
+    ],
+    [
+      { tipo: 'FAIXA_DE_DATA', dataMinima: doEnvio(1, 0), dataMaxima: doEnvio(0, 0) },
+      'A data mínima fica depois da data máxima.',
+    ],
   ])('a faixa %o é recusada antes de ir à API', (restricao, problema) => {
     expect(problemaDaRestricao(restricao)).toBe(problema);
   });
 
   it('aceita um limite só, a ordem que depende do dia do envio e datas iguais', () => {
-    expect(problemaDaRestricao({ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: doEnvio(0, 0) })).toBeNull();
-    expect(problemaDaRestricao({ tipo: 'FAIXA_DE_DATA', dataMinima: dataFixa('2030-01-01'), dataMaxima: doEnvio(0, 0) })).toBeNull();
-    expect(problemaDaRestricao({ tipo: 'FAIXA_DE_DATA', dataMinima: doEnvio(-120, 0), dataMaxima: doEnvio(0, 0) })).toBeNull();
-    expect(problemaDaRestricao({ tipo: 'FAIXA_DE_DATA', dataMinima: dataFixa('2030-01-01'), dataMaxima: dataFixa('2030-01-01') })).toBeNull();
+    expect(
+      problemaDaRestricao({ tipo: 'FAIXA_DE_DATA', dataMinima: null, dataMaxima: doEnvio(0, 0) }),
+    ).toBeNull();
+    expect(
+      problemaDaRestricao({
+        tipo: 'FAIXA_DE_DATA',
+        dataMinima: dataFixa('2030-01-01'),
+        dataMaxima: doEnvio(0, 0),
+      }),
+    ).toBeNull();
+    expect(
+      problemaDaRestricao({
+        tipo: 'FAIXA_DE_DATA',
+        dataMinima: doEnvio(-120, 0),
+        dataMaxima: doEnvio(0, 0),
+      }),
+    ).toBeNull();
+    expect(
+      problemaDaRestricao({
+        tipo: 'FAIXA_DE_DATA',
+        dataMinima: dataFixa('2030-01-01'),
+        dataMaxima: dataFixa('2030-01-01'),
+      }),
+    ).toBeNull();
   });
 
   it.each([
@@ -822,7 +1218,11 @@ describe('faixa de datas', () => {
   });
 
   it('leva a recusa da API à restrição da faixa, no item e no campo de grupo', () => {
-    const faixa = { tipo: 'FAIXA_DE_DATA', dataMinima: dataFixa('2030-01-02'), dataMaxima: dataFixa('2030-01-01') };
+    const faixa = {
+      tipo: 'FAIXA_DE_DATA',
+      dataMinima: dataFixa('2030-01-02'),
+      dataMaxima: dataFixa('2030-01-01'),
+    };
     const enviado = conteudo({
       etapas: [secao('S1', 0)],
       itens: [item('NASCIMENTO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })],
@@ -845,25 +1245,43 @@ describe('faixa de datas', () => {
 
     const recusas = distribuirRecusas(
       [
-        { field: 'conteudo.itens[0].restricoes[0]', message: 'A data mínima fica depois da data máxima.' },
-        { field: 'Conteudo.Grupos[0].Subitens[0].Restricoes[0]', message: 'A faixa de data precisa de ao menos um limite.' },
+        {
+          field: 'conteudo.itens[0].restricoes[0]',
+          message: 'A data mínima fica depois da data máxima.',
+        },
+        {
+          field: 'Conteudo.Grupos[0].Subitens[0].Restricoes[0]',
+          message: 'A faixa de data precisa de ao menos um limite.',
+        },
       ],
       enviado,
     );
 
-    expect(recusasDaRestricao(recusas.porRestricao.get('NASCIMENTO') ?? [], 'FAIXA_DE_DATA')).toEqual(['A data mínima fica depois da data máxima.']);
-    expect(recusasDaRestricao(recusas.porRestricao.get('FILHO') ?? [], 'FAIXA_DE_DATA')).toEqual(['A faixa de data precisa de ao menos um limite.']);
+    expect(
+      recusasDaRestricao(recusas.porRestricao.get('NASCIMENTO') ?? [], 'FAIXA_DE_DATA'),
+    ).toEqual(['A data mínima fica depois da data máxima.']);
+    expect(recusasDaRestricao(recusas.porRestricao.get('FILHO') ?? [], 'FAIXA_DE_DATA')).toEqual([
+      'A faixa de data precisa de ao menos um limite.',
+    ]);
   });
 });
 
 describe('conteudoParaEnvio', () => {
-  const comLimites = (minimo: number | string, anos: number | string, minimoDoGrupo: number | string = 1) =>
+  const comLimites = (
+    minimo: number | string,
+    anos: number | string,
+    minimoDoGrupo: number | string = 1,
+  ) =>
     conteudo({
       itens: [
         item('IDADE', 0, 'S1', {
           restricoes: [
             { tipo: 'FAIXA_NUMERICA', minimo, maximo: null },
-            { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos, dias: 0 }, dataMaxima: null },
+            {
+              tipo: 'FAIXA_DE_DATA',
+              dataMinima: { ancora: 'ENVIO', anos, dias: 0 },
+              dataMaxima: null,
+            },
           ],
         }),
       ],

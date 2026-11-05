@@ -15,68 +15,19 @@ import { fatosEscolhiveis, nomesDoCatalogo, type FatoEscolhivel } from '../edito
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
 import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { TagComponent } from '../tag/tag';
-import {
-  BLOCO_COMPROVACAO_DOCUMENTAL,
-  BLOCO_MODALIDADES_CALCULADAS,
-  BLOCO_REVISAO_E_ACEITE,
-  LIMITES_DO_FORMULARIO,
-  SECAO_DADOS_BASICOS,
-  TIPO_SECAO,
-  FINALIDADE_INSCRICAO,
-  acrescentarBloco,
-  acrescentarPressuposto,
-  acrescentarTermo,
-  comTermo,
-  fatosCitaveisPelosTermos,
-  moverTermo,
-  pressupostosParaAcrescentar,
-  removerPressuposto,
-  removerTermo,
-  termosEmOrdem,
-  termosParaAcrescentar,
-  ESCOPO_CANDIDATO,
-  comFatosConhecidosAntes,
-  motivoDaRemocaoTravadaDoGrupo,
-  fatosDeMembroParaAcrescentar,
-  acrescentarCampo,
-  acrescentarGrupo,
-  comGrupo,
-  moverEntrada,
-  podeMoverEntrada,
-  removerGrupo,
-  fatosOferecidos,
-  fontesDasOpcoes,
-  impedimentoCabe,
-  predicadosSobreRespostasAnteriores,
-  quantidadeNoTeto,
-  ufsAnteriores,
-  acrescentarSecao,
-  blocosAdmitidos,
-  comEtapa,
-  comItem,
-  entradasDaSecao,
-  etapaFixa,
-  etapasEmOrdem,
-  fatosCitaveisPelaSecao,
-  fatosCitaveisPeloItem,
-  fatosParaAcrescentar,
-  fatosQueExigemResposta,
-  moverEtapa,
-  moverItem,
-  podeMoverEtapa,
-  podeMoverItem,
-  removerEtapa,
-  removerItem,
-  type ConteudoDoFormulario,
-  type EtapaDoFormulario,
-  type FatoDoFormulario,
-  type ItemDoFormulario,
-  type PredicadoNoWire,
-  type RecusaDaRestricao,
-  type RecusasDoConteudo,
-  type ResultadoDaEdicao,
-  type TermoDisponivel,
-} from './formulario-editavel';
+import { fatosDeMembroParaAcrescentar, fatosParaAcrescentar, pressupostosParaAcrescentar } from './modelo/catalogo-de-campos';
+import { comFatosConhecidosAntes, fatosCitaveisPelaSecao, fatosCitaveisPeloItem, fatosCitaveisPelosTermos, fatosOferecidos, fatosQueExigemResposta, predicadosSobreRespostasAnteriores } from './modelo/citacoes';
+import { BLOCO_COMPROVACAO_DOCUMENTAL, BLOCO_MODALIDADES_CALCULADAS, BLOCO_REVISAO_E_ACEITE, FINALIDADE_INSCRICAO, LIMITES_DO_FORMULARIO, SECAO_DADOS_BASICOS, TIPO_SECAO, blocosAdmitidos } from './modelo/constantes';
+import { acrescentarGrupo, comGrupo, motivoDaRemocaoTravadaDoGrupo, quantidadeNoTeto, removerGrupo } from './modelo/grupos';
+import { impedimentoCabe } from './modelo/impedimento';
+import { acrescentarCampo, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from './modelo/itens';
+import { entradasDaSecao, etapasEmOrdem } from './modelo/ordem-das-entradas';
+import { acrescentarPressuposto, removerPressuposto } from './modelo/pressupostos';
+import { type RecusaDaRestricao, type RecusasDoConteudo } from './modelo/recusas';
+import { fontesDasOpcoes } from './modelo/restricoes-de-valor';
+import { acrescentarBloco, acrescentarSecao, comEtapa, etapaFixa, moverEtapa, podeMoverEtapa, removerEtapa } from './modelo/secoes';
+import { acrescentarTermo, comTermo, moverTermo, removerTermo, termosEmOrdem, termosParaAcrescentar } from './modelo/termos';
+import { ESCOPO_CANDIDATO, type ConteudoDoFormulario, type EtapaDoFormulario, type FatoDoFormulario, type ItemDoFormulario, type PredicadoNoWire, type ResultadoDaEdicao, type TermoDisponivel } from './modelo/tipos';
 import { focarDepois } from './foco';
 import { GrupoDoFormularioComponent } from './grupo-do-formulario';
 import { ItemDoFormularioComponent } from './item-do-formulario';
@@ -847,7 +798,7 @@ export class EditorDeFormularioComponent {
   protected acrescentarOItem(etapa: EtapaDoFormulario): void {
     const fato = this.paraAcrescentar().find((f) => f.codigo === this.escolhaDe(etapa.codigo));
     if (fato === undefined) return;
-    this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, this.catalogo(), this.conteudoParaCitacoes().pressupostos ?? []), () => {
+    this.aplicar(acrescentarCampo(this.conteudo(), fato, etapa.codigo, { catalogo: this.catalogo(), fatosConhecidosAntes: this.conteudoParaCitacoes().pressupostos ?? [] }), () => {
       this.escolhas.update((escolhas) => new Map(escolhas).set(etapa.codigo, ''));
       this.anuncio.set(`Campo “${fato.nome}” acrescentado ao fim de ${etapa.titulo}.`);
       focarDepois(this.injector, `${this.idDoItem({ fatoCodigo: fato.codigo })}-rotulo`);
@@ -879,7 +830,7 @@ export class EditorDeFormularioComponent {
     const rotulo = this.escolhaLivre(`#grupo-rotulo:${etapa.codigo}`);
     const fato = this.fatosDeMembro().find((f) => f.codigo === this.escolhaDeMembro(etapa.codigo));
     if (fato === undefined) return;
-    this.aplicar(acrescentarGrupo(this.conteudo(), rotulo, etapa.codigo, fato, this.catalogo()), (conteudo) => {
+    this.aplicar(acrescentarGrupo(this.conteudo(), { rotulo, etapaCodigo: etapa.codigo, primeiroCampo: fato }, this.catalogo()), (conteudo) => {
       const novo = (conteudo.grupos ?? []).find((grupo) => !(this.conteudo().grupos ?? []).some((g) => g.codigo === grupo.codigo));
       this.escolhas.update((escolhas) => new Map(escolhas).set(`#grupo-rotulo:${etapa.codigo}`, '').set(`#grupo-campo:${etapa.codigo}`, ''));
       this.anuncio.set(`Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${etapa.titulo}.`);

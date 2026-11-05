@@ -5,7 +5,7 @@ import {
   type CondicaoEmClausula,
   type FatoEscolhivel,
 } from '../editor-de-condicoes/condicoes-de-fatos';
-import type { PredicadoNoWire } from './formulario-editavel';
+import type { PredicadoNoWire } from './modelo/tipos';
 
 /** O predicado na forma da API; sem condição, nulo — é como a API diz "sempre". */
 export function paraPredicado(condicoes: readonly CondicaoEmClausula[]): PredicadoNoWire {
@@ -21,7 +21,10 @@ export function recopiarSeMudouPorFora(
   predicado: PredicadoNoWire,
   anterior: { readonly value: readonly CondicaoEmClausula[] } | undefined,
 ): readonly CondicaoEmClausula[] {
-  if (anterior !== undefined && JSON.stringify(paraPredicado(anterior.value)) === JSON.stringify(predicado)) {
+  if (
+    anterior !== undefined &&
+    JSON.stringify(paraPredicado(anterior.value)) === JSON.stringify(predicado)
+  ) {
     return anterior.value;
   }
   return deClausulasDoWire(predicado);
