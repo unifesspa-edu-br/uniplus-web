@@ -63,8 +63,22 @@
       </button>
     }
     @if (podeDecidir()) {
-      <button type="button" class="btn btn--primary" (click)="confirmar('aprovar')">Aprovar</button>
-      <button type="button" class="btn btn--danger" (click)="recusar.emit()">Recusar</button>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="decisaoIndisponivel() ? 'true' : null"
+        (click)="confirmar('aprovar')"
+      >
+        Aprovar
+      </button>
+      <button
+        type="button"
+        class="btn btn--danger"
+        [attr.aria-disabled]="decisaoIndisponivel() ? 'true' : null"
+        (click)="pedirRecusa()"
+      >
+        Recusar
+      </button>
     }
     @if (aguardandoDocumento() && podeAnexar()) {
       <button type="button" class="btn btn--primary" (click)="irParaAnexo.emit()">

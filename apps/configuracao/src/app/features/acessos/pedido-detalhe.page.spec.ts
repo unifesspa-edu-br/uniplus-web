@@ -490,6 +490,51 @@ describe('PedidoDetalhePage', () => {
     expect(api.obter).toHaveBeenCalledTimes(2);
   });
 
+  it.each(['aprovar', 'recusar'] as const)(
+    'fecha o diálogo de %s quando a recarga falha e permite tentar novamente',
+    async (acao) => {
+      const { fixture, host, pagina } = await abrir([GESTOR]);
+      document.body.append(host);
+      const recarga = new Subject<ReturnType<typeof ok>>();
+      api.obter.mockReturnValue(recarga);
+      api[acao].mockReturnValue(of(recusa('uniplus.autorizacao.pedido.situacao_invalida')));
+      if (acao === 'aprovar') {
+        pagina.pedirConfirmacao('aprovar');
+        fixture.detectChanges();
+        await pagina.executar();
+      } else {
+        pagina.abrirRecusa();
+        pagina.motivo.setValue('Motivo');
+        fixture.detectChanges();
+        await pagina.recusar();
+      }
+      await esperar(fixture);
+      const decisoes = [...host.querySelectorAll<HTMLButtonElement>('cfg-pedido-resumo .btn')];
+      expect(decisoes.map((botao) => botao.getAttribute('aria-disabled'))).toEqual([
+        'true',
+        'true',
+      ]);
+      decisoes.forEach((botao) => botao.click());
+      fixture.detectChanges();
+      expect(api[acao]).toHaveBeenCalledTimes(1);
+
+      recarga.error(new Error('rede'));
+      await esperar(fixture);
+      await esperar(fixture);
+      const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
+      expect(host.querySelector('ui-dialog dialog[open]')).toBeNull();
+      expect(host.querySelector('cfg-motivo-dialog dialog[open]')).toBeNull();
+      expect(host.querySelector('ui-alert')?.textContent).toContain(pagina.erro());
+      expect(document.activeElement).toBe(tentar);
+      api.obter.mockReturnValue(of(ok(pedido())));
+      tentar?.click();
+      await esperar(fixture);
+      expect(api.obter).toHaveBeenCalledTimes(3);
+      expect(host.querySelector('#tentar-pedido')).toBeNull();
+      host.remove();
+    },
+  );
+
   it('ao reabrir a recusa limpa o motivo e a validação anterior', async () => {
     const { fixture, host, pagina } = await abrir([GESTOR]);
     pagina.abrirRecusa();

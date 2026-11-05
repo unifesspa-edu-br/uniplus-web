@@ -3,6 +3,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -55,6 +58,8 @@ export class PedidoDetalhePage {
   private readonly anexos = inject(AnexoDoPedidoService);
   private readonly permissoes = inject(PermissoesService);
   private readonly usuario = inject(UserContextService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   /** A lista de onde a pessoa veio; o retorno não a manda para os próprios pedidos se ela veio de outra. */
   protected readonly origem = origemDaFila(
@@ -66,6 +71,10 @@ export class PedidoDetalhePage {
   protected readonly pedido = this.store.pedido;
   protected readonly trilha = this.store.trilha;
   protected readonly carregando = this.store.carregando;
+  protected readonly erroDeCarga = this.store.erro;
+  protected readonly decisaoIndisponivel = computed(
+    () => this.enviando() || this.erroDeCarga() !== null,
+  );
   protected readonly enviando = computed(() => this.edicao.enviando() || this.store.carregando());
   protected readonly anexando = this.edicao.anexando;
   protected readonly erro = this.edicao.erro;
@@ -141,7 +150,7 @@ export class PedidoDetalhePage {
       const pedido = this.store.pedido();
       const erro = this.store.erro();
       untracked(() => {
-        if (erro) this.erro.set(erro);
+        if (erro) this.exibirErroDeCarga(erro);
         if (pedido && this.prazo.pristine) {
           const sugerido = diaDoInstante(pedido.validaAteSugerida);
           this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
@@ -157,6 +166,16 @@ export class PedidoDetalhePage {
       this.podeCancelar();
       if (!carregando && !erro && pedido) untracked(() => this.reavaliarDialogos());
     });
+  }
+
+  private exibirErroDeCarga(erro: string): void {
+    this.erro.set(erro);
+    this.confirmando.set(false);
+    this.recusando.set(false);
+    afterNextRender(
+      () => this.host.nativeElement.querySelector<HTMLButtonElement>('#tentar-pedido')?.focus(),
+      { injector: this.injector },
+    );
   }
 
   private acompanharId(): void {
@@ -209,6 +228,11 @@ export class PedidoDetalhePage {
     if (this.store.carregando() || this.store.erro()) return false;
     if (acao === 'aprovar') return this.podeDecidir();
     return acao === 'aceitar' ? this.podeAceitar() : this.podeCancelar();
+  }
+
+  protected recarregar(): void {
+    this.erro.set(null);
+    this.store.recarregar();
   }
 
   protected irParaOAnexo(): void {

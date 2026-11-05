@@ -29,6 +29,7 @@ export class PedidoResumoComponent {
   readonly informaPrazo = input.required<boolean>();
   readonly podeAceitar = input.required<boolean>();
   readonly podeDecidir = input.required<boolean>();
+  readonly decisaoIndisponivel = input.required<boolean>();
   readonly podeCancelar = input.required<boolean>();
   readonly podeAnexar = input.required<boolean>();
   readonly aguardandoDocumento = input.required<boolean>();
@@ -48,6 +49,11 @@ export class PedidoResumoComponent {
   }
 
   protected confirmar(acao: Acao): void {
+    if (this.decisaoIndisponivel()) return;
     this.confirmacao.emit({ acao, campo: this.campoPrazo()?.nativeElement });
+  }
+
+  protected pedirRecusa(): void {
+    if (!this.decisaoIndisponivel()) this.recusar.emit();
   }
 }

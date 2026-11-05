@@ -8,7 +8,13 @@
 </div>
 
 @if (erro() && !confirmando()) {
-<ui-alert variant="danger" heading="Não foi possível concluir">{{ erro() }}</ui-alert>
+<ui-alert variant="danger" heading="Não foi possível concluir">
+  {{ erro() }} @if (erroDeCarga()) {
+  <button id="tentar-pedido" type="button" class="btn btn--tertiary" (click)="recarregar()">
+    Tentar novamente
+  </button>
+  }
+</ui-alert>
 } @if (carregando()) {
 <p role="status"><ui-spinner size="sm" /> Carregando o pedido…</p>
 } @if (pedido(); as p) { @if (aguardandoDocumento()) {
@@ -24,6 +30,7 @@
   [informaPrazo]="informaPrazo()"
   [podeAceitar]="podeAceitar()"
   [podeDecidir]="podeDecidir()"
+  [decisaoIndisponivel]="decisaoIndisponivel()"
   [podeCancelar]="podeCancelar()"
   [podeAnexar]="podeAnexar()"
   [aguardandoDocumento]="aguardandoDocumento()"
