@@ -11,12 +11,9 @@ import {
 } from './envio-de-documentos';
 import { type ErroDoServidor, mensagemDosErros } from './formulario-do-candidato.model';
 import { ListaDeDocumentosComponent } from '../lista-de-documentos/lista-de-documentos';
-import {
-  AGUARDE_A_VERIFICACAO,
-  type DocumentoNaTela,
-  type NoDeDocumentos,
-  textoDoGrupo,
-} from './documentos-avaliados';
+import { AGUARDE_A_VERIFICACAO } from './documentos-avaliados';
+import { type DocumentoNaTela, type NoDeDocumentos } from './arvore-de-documentos';
+import { textoDoGrupo } from './textos-da-arvore-de-documentos';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
 
 type GrupoDeDocumentos = Exclude<NoDeDocumentos, { tipo: 'DOCUMENTO' }>;

@@ -429,9 +429,7 @@ describe('Bloco de documentos da inscrição', () => {
       const [laudo, atestado] = [...bloco(tela).querySelectorAll('ui-envio-do-documento')];
       expect(laudo.querySelector('ui-tag')?.textContent?.trim()).toBe('Satisfeita');
       expect(atestado.querySelector('ui-tag')?.textContent?.trim()).toBe('Pendente');
-      expect(laudo.querySelector('.uni-uploader__item-name')?.textContent).toContain(
-        'Arquivo 1',
-      );
+      expect(laudo.querySelector('.uni-uploader__item-name')?.textContent).toContain('Arquivo 1');
       expect(laudo.textContent).toContain('Envie 2 arquivos');
       expect(laudo.textContent).toContain('PDF, JPG - tamanho máximo: 3MB');
       expect(laudo.closest('li')?.querySelector('.lista-de-documentos__meta')?.textContent).toMatch(

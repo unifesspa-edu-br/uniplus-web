@@ -43,17 +43,10 @@ import {
 } from './passos-do-formulario';
 import { fatoDaUf } from './regras-do-campo';
 import { type PendenciaDoPasso, pendenciasDo, termoSemAceite } from './pendencias-do-passo';
-import {
-  AGUARDE_A_VERIFICACAO,
-  aguardaVerificacaoDeObrigatorio,
-  anunciarMudancaDosDocumentos,
-  haArquivoEmVerificacao,
-  arvoreDeDocumentos,
-  documentosDoFormulario,
-  exigenciaAtendida,
-  situacoesEArquivosDosDocumentos,
-  type NoDeDocumentos,
-} from './documentos-avaliados';
+import { AGUARDE_A_VERIFICACAO, aguardaVerificacaoDeObrigatorio, haArquivoEmVerificacao, documentosDoFormulario, situacoesEArquivosDosDocumentos } from './documentos-avaliados';
+import { anunciarMudancaDosDocumentos } from './anuncio-dos-documentos';
+import { arvoreDeDocumentos, type NoDeDocumentos } from './arvore-de-documentos';
+import { exigenciaAtendida } from './atendimento-das-exigencias';
 import { DocumentosDaInscricaoComponent } from './documentos-da-inscricao';
 import {
   chaveDoCampoDeDocumento,

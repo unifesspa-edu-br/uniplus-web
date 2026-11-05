@@ -1,13 +1,12 @@
+import { anunciarMudancaDosDocumentos } from './anuncio-dos-documentos';
+import { arvoreDeDocumentos, type NoDeDocumentos } from './arvore-de-documentos';
 import {
-  anunciarMudancaDosDocumentos,
-  arvoreDeDocumentos,
   type DocumentoAvaliado,
   documentosDoFormulario,
   type DocumentosAvaliados,
   type GrupoDoDocumento,
-  type NoDeDocumentos,
-  textoDoGrupo,
 } from './documentos-avaliados';
+import { textoDoGrupo } from './textos-da-arvore-de-documentos';
 import type { GrupoRenderizavel } from './formulario-do-candidato.model';
 
 const documento = (nome: string, outros: Partial<DocumentoAvaliado> = {}): DocumentoAvaliado => ({
