@@ -89,16 +89,6 @@ describe('ModalidadesApi', () => {
     await promise;
   });
 
-  it('obter() faz GET /api/configuracao/modalidades/{id} com Accept versionado', async () => {
-    const promise = firstValueFrom(api.obter(ID));
-    const req = controller.expectOne(`${BASE}/api/configuracao/modalidades/${ID}`);
-    expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('modalidade', 1));
-    req.flush(modalidadeSeed);
-    const result = (await promise) as ApiResult<ModalidadeDto>;
-    expect(isApiOk(result)).toBe(true);
-  });
-
   it('criar() faz POST /api/configuracao/admin/modalidades com Idempotency-Key e Accept JSON', async () => {
     const promise = firstValueFrom(api.criar(criarCommand, withIdempotencyKey('k')));
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/modalidades`);

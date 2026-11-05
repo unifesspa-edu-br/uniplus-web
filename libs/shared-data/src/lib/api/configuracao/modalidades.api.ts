@@ -113,14 +113,6 @@ export class ModalidadesApi {
     );
   }
 
-  /** GET `/api/configuracao/modalidades/{id}` — detalhe de uma Modalidade. */
-  obter(id: string): Observable<ApiResult<ModalidadeDto>> {
-    return this.http.get<ApiResult<ModalidadeDto>>(
-      `${this.basePath}/api/configuracao/modalidades/${encodeURIComponent(id)}`,
-      { context: withVendorMime('modalidade', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/modalidades` — cria. Idempotency-Key obrigatório (ADR-0027). */
   criar(command: CriarModalidadeCommand, context: HttpContext): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
