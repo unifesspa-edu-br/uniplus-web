@@ -233,11 +233,11 @@ describe('ProcessosSeletivosListaPage', () => {
     await propagate();
   });
 
-  it('desabilita a navegação quando o header Link não traz cursor algum', async () => {
+  it('deixa a navegação indisponível quando o header Link não traz cursor algum', async () => {
     await flushLista([processo()]);
 
-    expect(host().querySelector('[data-pager="next"]')?.hasAttribute('disabled')).toBe(true);
-    expect(host().querySelector('[data-pager="prev"]')?.hasAttribute('disabled')).toBe(true);
+    expect(host().querySelector('[data-pager="next"]')?.getAttribute('aria-disabled')).toBe('true');
+    expect(host().querySelector('[data-pager="prev"]')?.getAttribute('aria-disabled')).toBe('true');
   });
 
   /**

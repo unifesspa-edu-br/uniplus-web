@@ -41,9 +41,11 @@ describe('ListFooterComponent (rodapé de lista paginada)', () => {
     fixture.componentRef.setInput('pageSize', 25);
     fixture.detectChanges();
 
-    expect(fixture.debugElement.query(By.css('[data-pager="prev"]')).nativeElement.disabled).toBe(
-      false,
-    );
+    expect(
+      fixture.debugElement
+        .query(By.css('[data-pager="prev"]'))
+        .nativeElement.getAttribute('aria-disabled'),
+    ).toBeNull();
     const select = fixture.debugElement.query(By.css('[data-pager="page-size"]'))
       .nativeElement as HTMLSelectElement;
     expect(select.value).toBe('25');

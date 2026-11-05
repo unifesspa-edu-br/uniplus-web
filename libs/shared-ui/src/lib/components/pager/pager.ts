@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 
 @Component({
   selector: 'ui-pager',
@@ -11,14 +11,17 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
       viola o SC 2.5.3, porque a flexão de gênero quebra a contenção e quem
       usa comando de voz diz o que lê na tela. O contexto de que se trata de
       paginação vem do aria-label do <nav>, não de cada botão.
+
+      Indisponível = aria-disabled + recusa no handler, não disabled: ao chegar
+      na última página o botão acionado não pode perder o foco do teclado.
     -->
     <nav class="pager" [attr.aria-label]="navigationLabel()">
       <button
         type="button"
         class="pager__btn"
         data-pager="prev"
-        [disabled]="!hasPrevious() || isDisabled()"
-        (click)="previous.emit()"
+        [attr.aria-disabled]="anteriorIndisponivel() ? 'true' : null"
+        (click)="acionarAnterior()"
       >
         Anterior
       </button>
@@ -48,8 +51,8 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
         type="button"
         class="pager__btn"
         data-pager="next"
-        [disabled]="!hasNext() || isDisabled()"
-        (click)="next.emit()"
+        [attr.aria-disabled]="proximoIndisponivel() ? 'true' : null"
+        (click)="acionarProximo()"
       >
         Próximo
       </button>
@@ -74,6 +77,19 @@ export class PagerComponent {
   readonly pageSize = model<number | null>(null);
   readonly previous = output<void>();
   readonly next = output<void>();
+
+  protected readonly anteriorIndisponivel = computed(
+    () => !this.hasPrevious() || this.isDisabled(),
+  );
+  protected readonly proximoIndisponivel = computed(() => !this.hasNext() || this.isDisabled());
+
+  protected acionarAnterior(): void {
+    if (!this.anteriorIndisponivel()) this.previous.emit();
+  }
+
+  protected acionarProximo(): void {
+    if (!this.proximoIndisponivel()) this.next.emit();
+  }
 
   protected aoTrocarLimite(event: Event): void {
     const valor = Number((event.target as HTMLSelectElement).value);
