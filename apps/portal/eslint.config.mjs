@@ -18,11 +18,10 @@ export default [
       ],
       '@angular-eslint/component-selector': [
         'error',
-        {
-          type: 'element',
-          prefix: 'ptl',
-          style: 'kebab-case',
-        },
+        [
+          { type: 'element', prefix: 'ptl', style: 'kebab-case' },
+          { type: 'attribute', prefix: 'ptl', style: 'camelCase' },
+        ],
       ],
     },
   },
