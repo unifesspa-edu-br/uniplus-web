@@ -118,6 +118,36 @@ button, input, select, textarea {
 /* Prose container — limita linha a 70ch (WCAG 1.4.8 AAA) ----------------- */
 .u-prose { max-width: var(--measure-prose); }
 
+/* Conteúdo de leitura ----------------------------------------------------
+ * O reset do Tailwind (preflight) zera marcador e recuo de ul/ol, e a moldura e o respiro de fieldset.
+ * Lista de texto corrido (recusa, problema, item de detalhe, ajuda) declara o papel com `.u-list`;
+ * lista de navegação ou de componente tem estilo próprio e não usa a classe. `.field-group` é o grupo de
+ * campos com legenda. Estilo próprio do componente, na mesma especificidade, vem depois e prevalece. */
+.u-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding-inline-start: var(--space-5);
+  list-style: disc;
+}
+.u-list:first-child { margin-top: 0; }
+.u-list--ordered { list-style: decimal; }
+
+.field-group {
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+.field-group + .field-group { margin-top: var(--space-3); }
+.field-group > legend {
+  padding-inline: var(--space-2);
+  color: var(--text-heading);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
 /* ---------- 6. Layout containers (responsive) ---------- */
 .container {
   width: 100%;
