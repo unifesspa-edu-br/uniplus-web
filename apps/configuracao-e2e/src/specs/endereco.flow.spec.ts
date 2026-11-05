@@ -115,8 +115,9 @@ test.describe('Endereço estruturado — fluxos do formulário (#412)', () => {
     const cep = page.locator('#campus-endereco-cep');
 
     await cep.fill('68507590');
-    await page.getByRole('button', { name: 'Buscar CEP' }).focus();
-    await page.keyboard.press('Enter');
+    // Sair do campo com o CEP completo já inicia a busca: a pessoa de teclado digita e dá Tab. O
+    // botão mantém o foco enquanto a busca corre e, ao resolver, muda de papel para "Trocar CEP".
+    await page.keyboard.press('Tab');
     const trocar = page.getByRole('button', { name: 'Trocar CEP' });
     await expect(trocar).toBeFocused();
 
