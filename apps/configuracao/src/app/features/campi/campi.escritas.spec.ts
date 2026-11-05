@@ -305,6 +305,44 @@ describe('CampiPage — escritas pela interface', () => {
     expect(erro.textContent?.trim()).toBe('A cidade não corresponde ao CEP informado.');
   });
 
+  describe('campo desabilitado por regra de negócio', () => {
+    it('continua desabilitado depois do sucesso e fora da requisição que o libera', async () => {
+      await preencherNovoCampus();
+      edicao.form.controls.codigoEmec.disable();
+      edicao.salvar();
+      expect(edicao.form.controls.codigoEmec.disabled).toBe(true);
+      expect(edicao.form.controls.sigla.disabled).toBe(true);
+
+      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
+      await propagar();
+
+      expect(edicao.form.controls.codigoEmec.disabled).toBe(true);
+      expect(edicao.form.controls.sigla.enabled).toBe(true);
+      controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+
+    it('continua desabilitado depois da recusa do servidor', async () => {
+      await preencherNovoCampus();
+      edicao.form.controls.codigoEmec.disable();
+      edicao.salvar();
+
+      recusar({
+        type: 'about:blank',
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: 'test-trace',
+        errors: [
+          { field: 'Sigla', code: 'uniplus.configuracao.campus.invalido', message: 'Recusado.' },
+        ],
+      });
+      await propagar();
+
+      expect(edicao.form.controls.codigoEmec.disabled).toBe(true);
+      expect(edicao.form.controls.sigla.errors?.['backend']).toBeDefined();
+    });
+  });
+
   describe('ativação enquanto o envio corre', () => {
     it('clique e envio do formulário não chamam salvar de novo', async () => {
       const salvarDaClasse = vi.spyOn(edicao, 'salvar');

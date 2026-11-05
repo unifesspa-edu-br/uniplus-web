@@ -270,6 +270,44 @@ describe('CursosPage — escritas pela interface', () => {
     expect(elemento('input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe('true');
   });
 
+  describe('campo desabilitado por regra de negócio', () => {
+    it('continua desabilitado depois do sucesso e fora da requisição que o libera', async () => {
+      await preencherNovoCurso();
+      edicao.form.controls.grau.disable();
+      edicao.salvar();
+      expect(edicao.form.controls.grau.disabled).toBe(true);
+      expect(edicao.form.controls.nome.disabled).toBe(true);
+
+      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
+      await propagar();
+
+      expect(edicao.form.controls.grau.disabled).toBe(true);
+      expect(edicao.form.controls.nome.enabled).toBe(true);
+      await responderLista([cursoSeed]);
+    });
+
+    it('continua desabilitado depois da recusa do servidor', async () => {
+      await preencherNovoCurso();
+      edicao.form.controls.grau.disable();
+      edicao.salvar();
+
+      recusar({
+        type: 'about:blank',
+        title: 'Dados inválidos',
+        status: 422,
+        code: 'uniplus.validacao',
+        traceId: 'test-trace',
+        errors: [
+          { field: 'Nome', code: 'uniplus.configuracao.curso.invalido', message: 'Recusado.' },
+        ],
+      });
+      await propagar();
+
+      expect(edicao.form.controls.grau.disabled).toBe(true);
+      expect(edicao.form.controls.nome.errors?.['backend']).toBeDefined();
+    });
+  });
+
   describe('ativação enquanto o envio corre', () => {
     it('clique e envio do formulário não chamam salvar de novo', async () => {
       const salvarDaClasse = vi.spyOn(edicao, 'salvar');
