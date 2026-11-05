@@ -1,0 +1,143 @@
+<div data-scope class="cfg-unidades-scope">
+  <div class="filter-bar" role="search" aria-label="Filtrar tipos de deficiência">
+    <div class="filter-bar__row">
+      <div class="input-group">
+        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
+        <input
+          type="search"
+          class="input"
+          placeholder="Buscar por código ou nome..."
+          aria-label="Buscar tipos de deficiência"
+          [value]="termoBusca()"
+          [attr.aria-disabled]="ocupado() ? 'true' : null"
+          (input)="buscar($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="btn btn--tertiary btn--sm btn--rect"
+        [attr.aria-disabled]="ocupado() ? 'true' : null"
+        (click)="limpar()"
+      >
+        Limpar
+      </button>
+    </div>
+  </div>
+
+  <section class="panel" aria-labelledby="cfg-unidades-list-title">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-unidades-list-title">Tipos de deficiência</h2>
+        <span class="list-count" aria-label="Total de tipos de deficiências carregadas">
+          {{ tipos().length }}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="ocupado() ? 'true' : null"
+        (click)="cadastrar()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Novo tipo
+      </button>
+    </div>
+
+    @if (tipos().length > 0) {
+      <div class="table-responsive">
+        <table>
+          <caption class="sr-only">
+            Tipos de deficiência, com código, nome e descrição
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Código</th>
+              <th scope="col">Nome</th>
+              <th scope="col">Descrição</th>
+              <th scope="col"><span class="sr-only">Ações</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tipoDeficiencia of tipos(); track tipoDeficiencia.id) {
+              <tr>
+                <td data-label="Código">
+                  <code>{{ tipoDeficiencia.codigo }}</code>
+                </td>
+                <td data-label="Nome">
+                  <div class="table-responsive__primary">{{ tipoDeficiencia.nome }}</div>
+                </td>
+                <td data-label="Descrição">{{ tipoDeficiencia.descricao }}</td>
+                <td class="table-responsive__actions" data-label="Ações">
+                  @if (idEmAndamento() === tipoDeficiencia.id) {
+                    <span aria-hidden="true">{{ rotuloEmAndamento() }}</span>
+                  }
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                    [attr.aria-label]="'Editar tipo de deficiência ' + tipoDeficiencia.codigo"
+                    data-tooltip="Editar tipo de deficiência"
+                    [attr.aria-disabled]="ocupado() ? 'true' : null"
+                    (click)="editarTipo(tipoDeficiencia)"
+                  >
+                    <i class="pi pi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
+                    [attr.aria-label]="'Remover tipo de deficiência ' + tipoDeficiencia.codigo"
+                    data-tooltip="Remover tipo de deficiência"
+                    [attr.aria-disabled]="ocupado() ? 'true' : null"
+                    (click)="removerTipo(tipoDeficiencia)"
+                  >
+                    <i class="pi pi-trash" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!carregando() && !erro()) {
+      @if (temFiltro()) {
+        <ui-empty-state
+          heading="Nenhum tipo de deficiência encontrado"
+          description="Ajuste a busca para ver resultados."
+        >
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="ocupado() ? 'true' : null"
+            (click)="limpar()"
+          >
+            Limpar filtros
+          </button>
+        </ui-empty-state>
+      } @else {
+        <ui-empty-state
+          heading="Nenhum tipo de deficiência carregado"
+          description="Cadastre um tipo de deficiência para iniciar a estrutura institucional."
+        >
+          <button
+            type="button"
+            class="btn btn--primary"
+            [attr.aria-disabled]="ocupado() ? 'true' : null"
+            (click)="cadastrar()"
+          >
+            Novo tipo
+          </button>
+        </ui-empty-state>
+      }
+    }
+    @if (temAnterior() || temProximo()) {
+      <ui-pager
+        statusText="Navegação por páginas"
+        navigationLabel="Paginação de tipo de deficiência"
+        [hasPrevious]="temAnterior()"
+        [hasNext]="temProximo()"
+        [isDisabled]="ocupado()"
+        (previous)="anterior.emit()"
+        (next)="proximo.emit()"
+      />
+    }
+  </section>
+</div>

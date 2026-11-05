@@ -4,15 +4,12 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
-import {
-  CONFIGURACAO_BASE_PATH,
-  TipoDeficienciaDto,
-} from '@uniplus/shared-data/configuracao';
+import { CONFIGURACAO_BASE_PATH, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
+import { TiposDeficienciaStore } from './tipos-deficiencia.store';
+import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import {
-  TiposDeficienciaListPage,
-} from './tipos-deficiencia-list.page';
+import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
 
 const BASE = 'http://localhost:5000';
 const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -102,6 +99,28 @@ describe('TiposDeficienciaListPage', () => {
     control.markAsTouched();
   }
 
+  it('navega pelo cursor e preserva os itens se a página seguinte falhar', async () => {
+    const store = fixture.debugElement.injector.get(TiposDeficienciaStore);
+    const primeira = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
+    );
+    primeira.flush([tipoDeficienciaSeed], {
+      headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
+    });
+    await propagate();
+
+    store.proximaPagina();
+    await propagate();
+    const seguinte = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
+    );
+    expect(seguinte.request.params.get('cursor')).toBe('abc');
+    expect(seguinte.request.params.get('direction')).toBe('next');
+    seguinte.flush(null, { status: 500, statusText: 'Error' });
+    await propagate();
+    expect(store.tiposDeficiencia()).toEqual([tipoDeficienciaSeed]);
+  });
+
   it('drawer mostra empty-state quando tipos de deficiência não tem ofertas vivas', async () => {
     await flushLista([]);
 
@@ -153,35 +172,35 @@ describe('TiposDeficienciaListPage', () => {
   });
 
   it('cria tipo de deficiência com nome único, descrição válidos', async () => {
-      await flushLista([]);
+    await flushLista([]);
 
-      component['abrirDrawerCriacao']();
-      component['form'].setValue({
-        codigo: 'VISUAL',
-        nome: 'Visual',
-        descricao: 'Inclui baixa visão e cegueira',
-      });
-      const key = component['idempotencyKeyAtual']();
+    component['abrirDrawerCriacao']();
+    component['form'].setValue({
+      codigo: 'VISUAL',
+      nome: 'Visual',
+      descricao: 'Inclui baixa visão e cegueira',
+    });
+    const key = component['idempotencyKeyAtual']();
 
-      component['salvar']();
+    component['salvar']();
 
-      const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-      expect(post.request.method).toBe('POST');
-      expect(post.request.headers.get('Idempotency-Key')).toBe(key);
-      expect(post.request.body).toMatchObject({
-        nome: 'Visual',
-        descricao: 'Inclui baixa visão e cegueira',
-      });
-      post.flush('new-id', { status: 201, statusText: 'Created' });
-      await propagate();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    expect(post.request.method).toBe('POST');
+    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
+    expect(post.request.body).toMatchObject({
+      nome: 'Visual',
+      descricao: 'Inclui baixa visão e cegueira',
+    });
+    post.flush('new-id', { status: 201, statusText: 'Created' });
+    await propagate();
 
-      expect(component['formOpen']()).toBe(false);
-      expect(component['modo']()).toBe('criar');
-      await flushLista([tipoDeficienciaSeed]);
+    expect(component['formOpen']()).toBe(false);
+    expect(component['modo']()).toBe('criar');
+    await flushLista([tipoDeficienciaSeed]);
   });
 
   it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
+    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
     req.flush(null, { status: 500, statusText: 'Error' });
     await propagate();
     const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
@@ -221,20 +240,20 @@ describe('TiposDeficienciaListPage', () => {
     });
     component['salvar']();
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-      post.flush(
-        JSON.stringify({
-          type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
-          title: 'Já existe um tipo de deficiência ativo com este nome',
-          status: 409,
-          code: 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
-          traceId: 'test-trace',
-        }),
-        {
-          status: 409,
-          statusText: 'Conflict',
-          headers: { 'content-type': 'application/problem+json' },
-        },
-      );
+    post.flush(
+      JSON.stringify({
+        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
+        title: 'Já existe um tipo de deficiência ativo com este nome',
+        status: 409,
+        code: 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
+        traceId: 'test-trace',
+      }),
+      {
+        status: 409,
+        statusText: 'Conflict',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
     await propagate();
 
     expect(component['formOpen']()).toBe(true);
@@ -247,9 +266,9 @@ describe('TiposDeficienciaListPage', () => {
       id: '2',
       codigo: 'AUDITIVA',
       nome: 'Auditiva',
-      descricao: 'inclui surdez e surdocegueira.'
+      descricao: 'inclui surdez e surdocegueira.',
     };
-    await flushLista([tipoDeficienciaSeed, outroTipoDeficiencia,]);
+    await flushLista([tipoDeficienciaSeed, outroTipoDeficiencia]);
 
     component['termoBusca'].set('Visual');
     fixture.detectChanges();
@@ -259,41 +278,47 @@ describe('TiposDeficienciaListPage', () => {
   });
 
   it('edita campos de nome', async () => {
-      const NOVO_NOME = 'Visual e Auditiva';
-      const tipo_deficiencia: TipoDeficienciaDto = {
-        ...tipoDeficienciaSeed,
-        nome: NOVO_NOME,
-      };
+    const NOVO_NOME = 'Visual e Auditiva';
+    const tipo_deficiencia: TipoDeficienciaDto = {
+      ...tipoDeficienciaSeed,
+      nome: NOVO_NOME,
+    };
 
-      await flushLista([tipoDeficienciaSeed]);
+    await flushLista([tipoDeficienciaSeed]);
 
-      component['abrirEdicao'](tipoDeficienciaSeed);
-      await propagate();
+    component['abrirEdicao'](tipoDeficienciaSeed);
+    await propagate();
 
-      component['form'].controls.nome.setValue(NOVO_NOME);
-      component['salvar']();
+    component['form'].controls.nome.setValue(NOVO_NOME);
+    component['salvar']();
 
-      const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`);
-      expect(put.request.method).toBe('PUT');
-      expect(put.request.body.nome).toBe(NOVO_NOME);
-      put.flush(null, { status: 204, statusText: 'No Content' });
-      await flushRecarregarLista([tipo_deficiencia]);
-    });
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
+    );
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body.nome).toBe(NOVO_NOME);
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await flushRecarregarLista([tipo_deficiencia]);
+  });
   it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
     // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
     await flushLista([tipoDeficienciaSeed]);
     fixture.detectChanges();
     expect(component['loading']()).toBe(false);
-    expect(getEditarButtonEl().disabled).toBe(false);
-    expect(getRemoverButtonEl().disabled).toBe(false);
+    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBeNull();
+    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBeNull();
 
     // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
     component['tentarNovamente']();
     await propagate();
     fixture.detectChanges();
     expect(component['loading']()).toBe(true);
-    expect(getEditarButtonEl().disabled).toBe(true);
-    expect(getRemoverButtonEl().disabled).toBe(true);
+    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBe('true');
+    getEditarButtonEl().click();
+    expect(component['formOpen']()).toBe(false);
+    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBe('true');
+    getRemoverButtonEl().click();
+    expect(component['confirmOpen']()).toBe(false);
 
     // Encerra o GET pendente para o controller.verify() do afterEach.
     controller
@@ -584,7 +609,9 @@ describe('TiposDeficienciaListPage', () => {
 
     principal().click();
     fixture.detectChanges();
-    expect(principal().disabled).toBe(true);
+    expect(principal().getAttribute('aria-disabled')).toBe('true');
+    expect(dialogo.querySelector('[role=status]')?.textContent).toContain('Removendo');
+    principal().click();
     expect(principal().textContent?.trim()).toBe('Removendo...');
 
     controller
@@ -624,5 +651,72 @@ describe('TiposDeficienciaListPage', () => {
     expect(component['confirmOpen']()).toBe(true);
     expect(component['saving']()).toBe(false);
     controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
+  });
+  it('mantém a trava entre a escrita e o fim da recarga', async () => {
+    await flushLista([tipoDeficienciaSeed]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposDeficiencia);
+    edicao.abrirEdicao(tipoDeficienciaSeed);
+    edicao.salvar();
+    edicao.salvar();
+    edicao.abrirRemoverTipoDeficiencia(tipoDeficienciaSeed);
+    edicao.removerConfirmado();
+    expect(edicao.salvando()).toBe(true);
+    expect(edicao.tipoDeficienciaParaRemover()).toBeNull();
+    const put = controller.expectOne(
+      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
+    );
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    expect(edicao.gravando()).toBe(true);
+    edicao.abrirEdicao(tipoDeficienciaSeed);
+    expect(edicao.formOpen()).toBe(false);
+    await propagate();
+    const recarga = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
+    );
+    expect(edicao.gravando()).toBe(true);
+    recarga.flush([tipoDeficienciaSeed]);
+    await propagate();
+    expect(edicao.gravando()).toBe(false);
+  });
+
+  it('protege o formulário durante o envio e foca o campo recusado', async () => {
+    await flushLista([]);
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposDeficiencia);
+    edicao.abrirDrawerCriacao();
+    edicao.form.setValue({ nome: 'Visual', codigo: 'VISUAL', descricao: 'Baixa visão' });
+    await propagate();
+    const botao = getSalvarOuEditarButtonEl();
+    botao.focus();
+    edicao.salvar();
+    await propagate();
+    expect(botao.getAttribute('aria-busy')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelector('input[formControlName="nome"]:disabled'),
+    ).not.toBeNull();
+    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+    post.flush(
+      {
+        type: 'about:blank',
+        title: 'Inválido',
+        status: 422,
+        code: 'uniplus.configuracao.tipo_deficiencia.invalido',
+        errors: [
+          {
+            field: 'nome',
+            code: 'uniplus.configuracao.tipo_deficiencia.invalido',
+            message: 'Nome recusado',
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    await propagate();
+    expect(edicao.form.controls.nome.hasError('backend')).toBe(true);
+    expect(document.activeElement?.getAttribute('formControlName')).toBe('nome');
   });
 });

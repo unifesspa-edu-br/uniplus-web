@@ -1,0 +1,103 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Tipo de Deficiência</h1>
+    <p class="page-header__desc">
+      Tipos de deficiência reconhecidos — cadastro independente, identificado pelo código ·
+      UNI-REQ-0012.
+    </p>
+  </div>
+</div>
+<ui-alert variant="info" heading="Cadastro independente" [dynamic]="false">
+  Aqui o tipo de deficiência é um cadastro <strong>simples e independente</strong> — não há vínculo
+  com condições ou recursos. A regra de que um tipo de deficiência só é ofertado sob a condição
+  <strong>PCD</strong> vale apenas no momento em que um processo seletivo oferta o atendimento
+  (Módulo Seleção), não neste cadastro.
+</ui-alert>
+
+@if (errorMessage()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os tipos de deficiência">
+  {{ errorMessage() }}
+  <div class="cfg-campi__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="loading() || submitting() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @if (loading() && tiposDeficiencia().length === 0) {
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+}
+
+<cfg-tipos-deficiencia-lista
+  [tipos]="tiposDeficienciaFiltrados()"
+  [carregando]="loading()"
+  [ocupado]="loading() || submitting()"
+  [erro]="errorMessage()"
+  [temFiltro]="temFiltro()"
+  [temAnterior]="prevCursor() !== null"
+  [temProximo]="nextCursor() !== null"
+  [(termoBusca)]="termoBusca"
+  [idEmAndamento]="edicao.idEmAndamento()"
+  [rotuloEmAndamento]="edicao.rotuloEmAndamento()"
+  (novo)="abrirDrawerCriacao()"
+  (editar)="abrirEdicao($event)"
+  (remover)="abrirRemoverTipoDeficiencia($event)"
+  (anterior)="paginaAnterior()"
+  (proximo)="proximaPagina()"
+/>
+<cfg-tipo-deficiencia-formulario
+  [(aberto)]="formOpen"
+  [form]="form"
+  [modo]="modo()"
+  [titulo]="formHeading()"
+  [erro]="formError()"
+  [salvando]="edicao.salvando()"
+  [anuncio]="edicao.anuncio()"
+  (salvar)="salvar()"
+/>
+@if (!confirmOpen() && !formOpen()) {
+<span class="sr-only" role="status">{{ edicao.anuncio() }}</span> }
+<ui-dialog
+  [(visible)]="confirmOpen"
+  heading="Remover tipo de deficiência?"
+  [dismissible]="!edicao.removendo()"
+  (closed)="confirmOpen.set(false)"
+>
+  <span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
+  <p>
+    Você está prestes a remover o tipo de deficiência
+    <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>
+    — <strong>{{ tipoDeficienciaParaRemover()?.nome }}.</strong>
+  </p>
+  <p>
+    A remoção impede novos editais de utilizá-lo, mas
+    <strong>não altera ofertas já congeladas</strong>
+    — a cópia por valor de cada processo permanece íntegra.
+  </p>
+  <div uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary"
+      [disabled]="edicao.removendo()"
+      (click)="confirmOpen.set(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      [attr.aria-disabled]="saving() ? 'true' : null"
+      [attr.aria-busy]="saving()"
+      (click)="removerConfirmado()"
+    >
+      @if (edicao.removendo()) {
+      <ui-spinner size="sm" />
+      } {{ edicao.removendo() ? 'Removendo...' : 'Remover' }}
+    </button>
+  </div>
+</ui-dialog>

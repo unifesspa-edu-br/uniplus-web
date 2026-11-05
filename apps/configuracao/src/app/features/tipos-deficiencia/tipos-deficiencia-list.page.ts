@@ -1,785 +1,85 @@
-import { HttpParams } from "@angular/common/http";
-import {
-  Component,
-  computed,
-  DestroyRef,
-  effect,
-  inject,
-  linkedSignal,
-  signal,
-  untracked,
-} from '@angular/core';
-import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-
-import {
-  ApiResult,
-  Cursor,
-  CursorPagina,
-  cursorToString,
-  extractNextCursor,
-  extractPrevCursor,
-  ProblemDetails,
-  ProblemI18nService,
-  ProblemValidationError,
-  STATUS_HTTP,
-  useApiResource,
-  withVendorMime,
-} from '@uniplus/shared-core/http';
-import {
-  deveRotacionarIdempotencyKey,
-  IDEMPOTENCY_PROBLEM_CODES,
-  idempotencyKey,
-  withIdempotencyKey,
-} from '@uniplus/shared-core/idempotency';
-import {NotificationService } from "@uniplus/shared-core/notifications";
-import {
-  CODIGO_CADASTRO_FORMATO,
-  CODIGO_CADASTRO_TAMANHO_MAXIMO,
-} from "@uniplus/shared-utils";
-import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import {
-  AtualizarTipoDeficienciaCommand,
-  CONFIGURACAO_BASE_PATH,
-  CriarTipoDeficienciaCommand,
-  TipoDeficienciaApi,
-  TipoDeficienciaDto,
-} from "@uniplus/shared-data/configuracao";
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
   SkeletonComponent,
-  EmptyStateComponent,
-  DrawerComponent,
   SpinnerComponent,
   DialogComponent,
-  FilterBarComponent,
-  PagerComponent,
-  IconButtonComponent,
-} from "@uniplus/shared-ui/components";
-
-type ModoFormulario = "criar" | "editar";
-
-interface TipoDeficienciaForm {
-  nome: FormControl<string>;
-  descricao: FormControl<string>;
-  codigo: FormControl<string>;
-}
-
-const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
-  'nome',
-  'descricao',
-  'codigo',
-]);
-
-/**
- * Conflitos de unicidade (409) que pertencem a um campo do formulário. Só eles
- * precisam do vendor code literal: violação de unicidade não é erro de validação
- * de campo, então o corpo não traz `errors[]` e não há outra chave que diga a
- * qual campo o conflito se refere. Todo erro que chega em `errors[]` é ancorado
- * pelo `field` que o próprio contrato manda — sem repetir código aqui.
- */
-const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof TipoDeficienciaForm> = new Map([
-  ['uniplus.configuracao.tipo_deficiencia.codigo_ja_existe', 'codigo' as const],
-  ['uniplus.configuracao.tipo_deficiencia.nome_ja_existe', 'nome' as const],
-]);
-
-function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return TIPO_DEFICIENCIA_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof TipoDeficienciaForm) : null;
-}
-
-/** Tamanho de página ao esgotar o cursor (ADR-0015/0026). */
-const PAGE_SIZE = 50;
+} from '@uniplus/shared-ui/components';
+import { TiposDeficienciaListaComponent } from './tipos-deficiencia-lista.component';
+import { TipoDeficienciaFormularioComponent } from './tipo-deficiencia-formulario.component';
+import { TiposDeficienciaStore } from './tipos-deficiencia.store';
+import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
 
 @Component({
   selector: 'cfg-tipos-deficiencia-list',
   imports: [
     AlertComponent,
     SkeletonComponent,
-    EmptyStateComponent,
-    DrawerComponent,
     SpinnerComponent,
-    ReactiveFormsModule,
     DialogComponent,
-    FilterBarComponent,
-    PagerComponent,
-    IconButtonComponent,
+    TiposDeficienciaListaComponent,
+    TipoDeficienciaFormularioComponent,
   ],
-  template: `
-    <div class="page-header">
-      <div class="page-header__content">
-        <h1 class="page-header__title">Tipo de Deficiência</h1>
-        <p class="page-header__desc">
-          Tipos de deficiência reconhecidos — cadastro independente, identificado pelo código ·
-          UNI-REQ-0012.
-        </p>
-      </div>
-    </div>
-    <ui-alert variant="info" heading="Cadastro independente" [dynamic]="false">
-      Aqui o tipo de deficiência é um cadastro <strong>simples e independente</strong> — não há
-      vínculo com condições ou recursos. A regra de que um tipo de deficiência só é ofertado sob a
-      condição <strong>PCD</strong> vale apenas no momento em que um processo seletivo oferta o
-      atendimento (Módulo Seleção), não neste cadastro.
-    </ui-alert>
-
-    @if (errorMessage()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar os tipos de deficiência">
-        {{ errorMessage() }}
-        <div class="cfg-campi__retry">
-          <button
-            type="button"
-            class="btn btn--secondary btn--sm"
-            [disabled]="loading()"
-            (click)="tentarNovamente()"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </ui-alert>
-    }
-
-    @if (loading() && tiposDeficiencia().length === 0) {
-      <ui-skeleton skeletonKind="card" blockSize="10rem" />
-      <ui-skeleton skeletonKind="card" blockSize="10rem" />
-    }
-
-    <div data-scope class="cfg-unidades-scope">
-      <ui-filter-bar
-        ariaLabel="Filtrar tipos de deficiência"
-        searchPlaceholder="Buscar por código ou nome..."
-        searchAriaLabel="Buscar tipos de deficiência"
-        [(searchValue)]="termoBusca"
-      >
-        <button
-          uiFilterBarActions
-          type="button"
-          class="btn btn--tertiary btn--sm btn--rect"
-          (click)="limparFiltros()"
-        >
-          Limpar
-        </button>
-      </ui-filter-bar>
-
-      <section class="panel" aria-labelledby="cfg-unidades-list-title">
-        <div class="panel-head">
-          <div class="panel-head__title">
-            <h2 id="cfg-unidades-list-title">Tipos de deficiência</h2>
-            <span class="list-count" aria-label="Total de tipos de deficiências carregadas">
-              {{ tiposDeficienciaFiltrados().length }}
-            </span>
-          </div>
-          <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
-            <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-            Novo tipo
-          </button>
-        </div>
-
-        @if (tiposDeficienciaFiltrados().length > 0) {
-          <div class="table-responsive">
-            <table>
-              <caption class="sr-only">
-                Tipos de deficiência, com código, nome e descrição
-              </caption>
-              <thead>
-                <tr>
-                  <th scope="col">Código</th>
-                  <th scope="col">Nome</th>
-                  <th scope="col">Descrição</th>
-                  <th scope="col"><span class="sr-only">Ações</span></th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (tipoDeficiencia of tiposDeficienciaFiltrados(); track tipoDeficiencia.id) {
-                  <tr>
-                    <td data-label="Código">
-                      <code>{{ tipoDeficiencia.codigo }}</code>
-                    </td>
-                    <td data-label="Nome">
-                      <div class="table-responsive__primary">
-                        {{ tipoDeficiencia.nome }}
-                      </div>
-                    </td>
-                    <td data-label="Descrição">
-                      {{ tipoDeficiencia.descricao }}
-                    </td>
-                    <td class="table-responsive__actions" data-label="Ações">
-                      <ui-icon-button
-                        icon="pi-pencil"
-                        [accessibleName]="'Editar tipo de deficiência ' + tipoDeficiencia.codigo"
-                        tooltip="Editar tipo de deficiência"
-                        [isDisabled]="loading() || submitting()"
-                        (triggered)="abrirEdicao(tipoDeficiencia)"
-                      />
-                      <ui-icon-button
-                        icon="pi-trash"
-                        [accessibleName]="'Remover tipo de deficiência ' + tipoDeficiencia.codigo"
-                        tooltip="Remover tipo de deficiência"
-                        [isDisabled]="loading() || submitting()"
-                        (triggered)="abrirRemoverTipoDeficiencia(tipoDeficiencia)"
-                      />
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else if (!loading() && !errorMessage()) {
-          @if (temFiltro()) {
-            <ui-empty-state
-              heading="Nenhum tipo de deficiência encontrado"
-              description="Ajuste a busca para ver resultados."
-            >
-              <button type="button" class="btn btn--secondary" (click)="limparFiltros()">
-                Limpar filtros
-              </button>
-            </ui-empty-state>
-          } @else {
-            <ui-empty-state
-              heading="Nenhum tipo de deficiência carregado"
-              description="Cadastre um tipo de deficiência para iniciar a estrutura institucional."
-            >
-              <button type="button" class="btn btn--primary" (click)="abrirDrawerCriacao()">
-                Novo tipo
-              </button>
-            </ui-empty-state>
-          }
-        }
-        @if (prevCursor() !== null || nextCursor() !== null) {
-          <ui-pager
-            statusText="Navegação por páginas"
-            navigationLabel="Paginação de tipo de deficiência"
-            [hasPrevious]="prevCursor() !== null"
-            [hasNext]="nextCursor() !== null"
-            [isDisabled]="loading()"
-            (previous)="paginaAnterior()"
-            (next)="proximaPagina()"
-          />
-        }
-      </section>
-    </div>
-
-    <ui-drawer
-      class="form-drawer"
-      [(visible)]="formOpen"
-      [heading]="formHeading()"
-      ariaLabel="Formulário do tipo de deficiência"
-      position="right"
-    >
-      @if (formError()) {
-        <ui-alert variant="danger" heading="Não foi possível salvar">
-          {{ formError() }}
-        </ui-alert>
-      }
-      <form
-        [formGroup]="form"
-        id="cfg-tipo-deficiencia-form"
-        (ngSubmit)="salvar()"
-        novalidate
-        class="form-drawer__form"
-      >
-        <section aria-labelledby="cfg-form-identificadores">
-          <div class="form-grid">
-            <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
-              <span class="field__label is-required">Nome</span>
-              <input
-                class="input"
-                type="text"
-                placeholder="Ex.: Visual"
-                formControlName="nome"
-                [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-                [attr.aria-describedby]="
-                  erroDoCampo('nome') ? 'cfg-td-nome-dica cfg-td-nome-erro' : 'cfg-td-nome-dica'
-                "
-              />
-              <span class="field__hint" id="cfg-td-nome-dica">
-                Rótulo legível do tipo de deficiência — único entre os tipos ativos. Impede
-                duplicatas como dois "Visual".
-              </span>
-              @if (erroDoCampo('nome')) {
-                <span class="field__error" id="cfg-td-nome-erro">{{ erroDoCampo('nome') }}</span>
-              }
-            </label>
-            @let erroCampoCodigo = erroDoCampo('codigo');
-            <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
-              <span class="field__label is-required">Código</span>
-              <input
-                class="input"
-                type="text"
-                placeholder="Ex.: VISUAL"
-                formControlName="codigo"
-                style="text-transform: uppercase;"
-                [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
-                [attr.aria-describedby]="
-                  erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
-                "
-              />
-              <span class="field__hint" id="cfg-td-codigo-dica">
-                Identidade do cadastro: caixa alta, começando por letra, com letras, números e
-                sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos.
-                Sugerido a partir do nome e editável antes de salvar.
-              </span>
-              @if (erroCampoCodigo) {
-                <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
-              }
-            </label>
-            <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
-              <span class="field__label is-required">Descrição</span>
-              <textarea
-                class="input"
-                type="text"
-                placeholder="Ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
-                formControlName="descricao"
-                [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
-                [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-td-descricao-erro' : null"
-              ></textarea>
-              @if (erroDoCampo('descricao')) {
-                <span class="field__error" id="cfg-td-descricao-erro">{{
-                  erroDoCampo('descricao')
-                }}</span>
-              }
-            </label>
-          </div>
-        </section>
-      </form>
-
-      <div class="form-drawer__footer">
-        <button type="button" class="btn btn--tertiary btn--rect" (click)="formOpen.set(false)">
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          form="cfg-tipo-deficiencia-form"
-          class="btn btn--primary"
-          [disabled]="saving() || form.invalid"
-        >
-          @if (saving()) {
-            <ui-spinner size="sm" />
-          }
-          {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar tipo' : 'Salvar tipo' }}
-        </button>
-      </div>
-    </ui-drawer>
-    <ui-dialog
-      [(visible)]="confirmOpen"
-      heading="Remover tipo de deficiência?"
-      (closed)="confirmOpen.set(false)"
-    >
-      <p>
-        Você está prestes a remover o tipo de deficiência
-        <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>
-        — <strong>{{ tipoDeficienciaParaRemover()?.nome }}.</strong>
-      </p>
-      <p>
-        A remoção impede novos editais de utilizá-lo, mas
-        <strong>não altera ofertas já congeladas</strong>
-        — a cópia por valor de cada processo permanece íntegra.
-      </p>
-      <div uiDialogFooter>
-        <button type="button" class="btn btn--tertiary" (click)="confirmOpen.set(false)">
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="btn btn--danger"
-          [disabled]="saving()"
-          (click)="removerConfirmado()"
-        >
-          @if (saving()) {
-            <ui-spinner size="sm" />
-          }
-          {{ saving() ? 'Removendo...' : 'Remover' }}
-        </button>
-      </div>
-    </ui-dialog>
-  `,
+  templateUrl: './tipos-deficiencia-list.page.html',
+  providers: [TiposDeficienciaStore, EdicaoDosTiposDeficiencia],
   host: { class: 'cfg-page' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TiposDeficienciaListPage {
-  private readonly api = inject(TipoDeficienciaApi);
-  private readonly problemI18n = inject(ProblemI18nService);
-  private readonly notifications = inject(NotificationService);
-  private readonly destroyRef = inject(DestroyRef);
-  protected readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-
-  private readonly pagina = signal<CursorPagina | undefined>(undefined);
-  private readonly lista = useApiResource<readonly TipoDeficienciaDto[]>(() => ({
-    url: `${this.basePath}/api/configuracao/tipos-deficiencia`,
-    params: this.montarParams(),
-    context: withVendorMime('tipo-deficiencia', 1),
-  }));
-  protected readonly termoBusca = signal('');
-  protected readonly loading = this.lista.isLoading;
-  private readonly cursores = linkedSignal<
-    ApiResult<readonly TipoDeficienciaDto[]> | undefined,
-    { readonly prev: Cursor | null; readonly next: Cursor | null }
-  >({
-    source: () => this.lista.value(),
-    computation: (envelope, previous) => {
-      const atual = previous?.value ?? { prev: null, next: null };
-      if (envelope === undefined) {
-        return atual;
-      }
-      const primeiraPagina = untracked(() => this.pagina() === undefined);
-      if (!envelope.ok) {
-        return primeiraPagina ? { prev: null, next: null } : atual;
-      }
-      const link = untracked(() => this.lista.headers()?.get('Link') ?? null);
-      return { prev: extractPrevCursor(link), next: extractNextCursor(link) };
-    },
-  });
-  protected readonly prevCursor = computed(() => this.cursores().prev);
-  protected readonly nextCursor = computed(() => this.cursores().next);
-  protected readonly tiposDeficiencia = linkedSignal<
-    ApiResult<readonly TipoDeficienciaDto[]> | undefined,
-    readonly TipoDeficienciaDto[]
-  >({
-    source: () => this.lista.value(),
-    computation: (envelope, previous) => {
-      const atual = previous?.value ?? [];
-      if (envelope === undefined) {
-        return atual;
-      }
-      const primeiraPagina = untracked(() => this.pagina() === undefined);
-      if (!envelope.ok) {
-        return primeiraPagina ? [] : atual;
-      }
-      return [...envelope.data];
-    },
-  });
-  // Busca client-side sobre a página carregada: o backend só pagina
-  // por cursor, sem filtro de texto/código/nome no contrato.
-  protected readonly tiposDeficienciaFiltrados = computed(() => {
-    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    if (termo.length === 0) {
-      return this.tiposDeficiencia();
-    }
-    return this.tiposDeficiencia().filter(
-      (tiposDeficiencia) =>
-        tiposDeficiencia.nome.toLocaleLowerCase('pt-BR').includes(termo) ||
-        tiposDeficiencia.codigo.toLocaleLowerCase('pt-BR').includes(termo),
-    );
-  });
+  protected readonly store = inject(TiposDeficienciaStore);
+  protected readonly edicao = inject(EdicaoDosTiposDeficiencia);
+  protected readonly termoBusca = this.store.termoBusca;
+  protected readonly loading = this.store.carregando;
+  protected readonly prevCursor = this.store.anterior;
+  protected readonly nextCursor = this.store.proximo;
+  protected readonly tiposDeficiencia = this.store.tiposDeficiencia;
+  protected readonly tiposDeficienciaFiltrados = this.store.tiposDeficienciaFiltrados;
+  protected readonly errorMessage = this.store.mensagemDeErro;
+  protected readonly temFiltro = this.store.temFiltro;
   protected readonly formHeading = computed(() =>
     this.modo() === 'criar' ? 'Novo tipo de deficiência' : 'Editar tipo de deficiência',
   );
-  protected readonly errorMessage = computed<string | null>(() => {
-    const problem = this.lista.problem();
-    if (problem) {
-      return this.problemI18n.resolve(problem).title;
-    }
-    return this.lista.error() ? 'Erro inesperado ao carregar tipos de deficiência.' : null;
-  });
-  readonly modo = signal<ModoFormulario>('criar');
-  protected readonly formOpen = signal(false);
-  protected readonly saving = signal(false);
+  readonly modo = this.edicao.modo;
+  readonly form = this.edicao.form;
+  readonly formOpen = this.edicao.formOpen;
+  readonly saving = this.edicao.saving;
+  readonly submitting = this.edicao.gravando;
+  readonly formError = this.edicao.formError;
+  readonly idempotencyKeyAtual = this.edicao.idempotencyKeyAtual;
+  readonly tipoDeficienciaParaRemover = this.edicao.tipoDeficienciaParaRemover;
+  readonly confirmOpen = this.edicao.confirmOpen;
   readonly drawerOpen = signal(false);
-  readonly submitting = signal(false);
-  readonly tipoDeficienciaParaRemover = signal<TipoDeficienciaDto | null>(null);
-  readonly confirmOpen = signal(false);
-  readonly form = new FormGroup<TipoDeficienciaForm>({
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      // `Validators.required` aceita uma string só de espaços, que o `trim()`
-      // do payload reduziria a vazio e o backend recusaria com 422; o padrão
-      // exige ao menos um caractere significativo.
-      validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
-    }),
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-  });
-  private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
-    this.form.controls,
-    () => this.modo() === 'criar',
-  );
-  protected readonly formError = signal<string | null>(null);
-  readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  /** Classificação de permanência do registro em edição — lida, não editável aqui. */
-  private readonly permanenteEmEdicao = signal<boolean | null>(null);
-  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
-
-  constructor() {
-    effect(() => {
-      const problem = this.lista.problem();
-      if (problem && problem.status >= 500) {
-        const titulo = this.problemI18n.resolve(problem).title;
-        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
-      }
-    });
-  }
-
-  private montarParams(): HttpParams {
-    const pagina = this.pagina();
-    if (pagina === undefined) {
-      return new HttpParams().set('limit', String(PAGE_SIZE));
-    }
-    return new HttpParams()
-      .set('cursor', cursorToString(pagina.cursor))
-      .set('direction', pagina.direction);
-  }
 
   tentarNovamente(): void {
-    if (!this.loading()) {
-      this.lista.reload();
-    }
+    if (!this.edicao.gravando() && !this.store.carregando()) this.store.tentarNovamente();
   }
-
   limparFiltroBusca(): void {
     this.termoBusca.set('');
   }
-
   limparFiltros(): void {
     this.limparFiltroBusca();
   }
-
-  abrirDrawerCriacao() {
-    this.modo.set('criar');
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      nome: '',
-      descricao: '',
-      codigo: '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
+  abrirDrawerCriacao(): void {
+    this.edicao.abrirDrawerCriacao();
   }
-
-  protected abrirEdicao(tipoDeficiencia: TipoDeficienciaDto): void {
-    this.modo.set('editar');
-    this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
-    this.permanenteEmEdicao.set(tipoDeficiencia.permanente);
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      codigo: tipoDeficiencia.codigo,
-      nome: tipoDeficiencia.nome,
-      descricao: tipoDeficiencia.descricao ?? '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
+  protected abrirEdicao(tipo: TipoDeficienciaDto): void {
     this.drawerOpen.set(false);
-    this.formOpen.set(true);
+    this.edicao.abrirEdicao(tipo);
   }
-
-  abrirRemoverTipoDeficiencia(tipoDeficiencia: TipoDeficienciaDto): void {
-    this.tipoDeficienciaParaRemover.set(tipoDeficiencia);
-    this.confirmOpen.set(true);
+  abrirRemoverTipoDeficiencia(tipo: TipoDeficienciaDto): void {
+    this.edicao.abrirRemoverTipoDeficiencia(tipo);
   }
-
   protected salvar(): void {
-    if (this.saving()) {
-      return;
-    }
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    this.saving.set(true);
-    this.formError.set(null);
-
-    if (this.modo() === 'criar') {
-      this.api
-        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
-      return;
-    }
-
-    this.api
-      .atualizar(
-        this.tipoDeficienciaEmEdicaoId() ?? '',
-        this.atualizarCommand(),
-        withIdempotencyKey(this.idempotencyKeyAtual()),
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.handleSalvarResult(result));
+    this.edicao.salvar();
   }
-
-  /**
-   * O PUT substitui o registro inteiro: campo omitido é campo apagado. Como esta
-   * tela não edita a classificação de permanência, ela reenvia o valor lido para
-   * não zerá-la em toda atualização de nome, código ou descrição.
-   */
-  private atualizarCommand(): AtualizarTipoDeficienciaCommand {
-    return {
-      id: this.tipoDeficienciaEmEdicaoId() ?? '',
-      ...this.criarCommand(),
-      permanente: this.permanenteEmEdicao(),
-    };
-  }
-
-  protected erroDoCampo(nome: keyof TipoDeficienciaForm): string | null {
-    const control = this.form.controls[nome];
-    const shouldShowError = control.touched || control.dirty;
-    if (!shouldShowError || control.errors === null) {
-      return null;
-    }
-    if (control.errors['backend']) {
-      const backend = control.errors['backend'] as { code: string; message: string };
-      return backend.message;
-    }
-    if (control.errors['required']) return 'Campo obrigatório.';
-    if (control.errors['minlength'])
-      return `Informe ao menos ${control.errors['minlength']['requiredLength']} caracteres.`;
-    if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    // O `pattern` significa coisas diferentes por campo: formato fechado no código,
-    // "não pode ser só espaços" na descrição.
-    if (control.errors['pattern']) {
-      return nome === 'codigo'
-        ? 'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra (ex.: VISUAL, DEFICIENCIA_VISUAL).'
-        : 'Informe um texto — apenas espaços não valem.';
-    }
-    return 'Valor inválido.';
-  }
-
-  private recarregar(): void {
-    if (this.pagina() === undefined) {
-      this.lista.reload();
-    } else {
-      this.pagina.set(undefined);
-    }
-  }
-
-  private criarCommand(): CriarTipoDeficienciaCommand {
-    const raw = this.form.getRawValue();
-    return {
-      codigo: raw.codigo.trim(),
-      nome: raw.nome.trim(),
-      descricao: raw.descricao.trim(),
-    };
-  }
-
-  private renovarIdempotencyKey(): void {
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-  }
-
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const erro of errors) {
-      const controlName = controlNameFromBackendField(erro.field);
-      if (controlName === null) continue;
-      const control = this.form.controls[controlName];
-      control.setErrors({ backend: { code: erro.code, message: erro.message } });
-      control.markAsTouched();
-      aplicouAlgum = true;
-    }
-
-    if (aplicouAlgum) {
-      this.formError.set(null);
-      return;
-    }
-    this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
-  }
-
-  private aplicarFalha(problem: ProblemDetails): void {
-    if (deveRotacionarIdempotencyKey(problem)) {
-      this.renovarIdempotencyKey();
-    }
-
-    // A validação do backend acumula toda violação de campo em `errors[]` e só
-    // repete a primeira na raiz do problema (ADR-0125). Percorrer o array é o que
-    // ancora cada erro no seu campo; ler apenas `problem.code` marcaria um campo
-    // e deixaria os demais sem indicação.
-    if (problem.errors && problem.errors.length > 0) {
-      this.notifications.errorFromProblem(problem);
-      this.aplicarErrosDeValidacao(problem.errors);
-      return;
-    }
-
-    const campoDoConflito = CAMPO_POR_CONFLITO.get(problem.code);
-    if (campoDoConflito) {
-      this.notifications.errorFromProblem(problem);
-      const control = this.form.controls[campoDoConflito];
-      control.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      control.markAsTouched();
-      return;
-    }
-
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH
-    ) {
-      this.notifications.errorFromProblem(problem);
-    }
-
-    this.formError.set(this.problemI18n.resolve(problem).title);
-    if (problem.status >= 500) {
-      this.notifications.errorFromProblem(problem);
-    }
-  }
-
-  private handleSalvarResult(result: ApiResult<string | void>): void {
-    this.saving.set(false);
-    if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Tipo de deficiência criado' : 'Tipo de deficiência atualizado',
-      );
-      this.formOpen.set(false);
-      this.idempotencyKeyAtual.set(idempotencyKey.create());
-      this.recarregar();
-      return;
-    }
-    this.aplicarFalha(result.problem);
-  }
-
-  private handleRemoverResult(result: ApiResult<void>): void {
-    this.saving.set(false);
-    if (result.ok) {
-      this.notifications.success('Tipo de deficiência removido');
-      this.formOpen.set(false);
-      this.confirmOpen.set(false);
-      this.tipoDeficienciaParaRemover.set(null);
-      this.recarregar();
-      return;
-    }
-    // A falha da remoção é mostrada no toast: aplicarFalha() escreve no formulário,
-    // que está fechado enquanto o diálogo de confirmação está aberto.
-    this.notifications.errorFromProblem(result.problem);
-  }
-
   protected proximaPagina(): void {
-    const proximo = this.nextCursor();
-    if (proximo !== null && !this.loading()) {
-      this.pagina.set({ cursor: proximo, direction: 'next' });
-    }
+    this.store.proximaPagina();
   }
-
   protected paginaAnterior(): void {
-    const anterior = this.prevCursor();
-    if (anterior !== null && !this.loading()) {
-      this.pagina.set({ cursor: anterior, direction: 'prev' });
-    }
+    this.store.paginaAnterior();
   }
-
   protected removerConfirmado(): void {
-    const tipoDeficiencia = this.tipoDeficienciaParaRemover();
-    if (tipoDeficiencia === null || this.saving()) {
-      return;
-    }
-
-    this.saving.set(true);
-    this.api
-      .remover(tipoDeficiencia.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.handleRemoverResult(result));
+    this.edicao.removerConfirmado();
   }
 }

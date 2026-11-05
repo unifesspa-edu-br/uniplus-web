@@ -37,14 +37,6 @@ export class TipoDeficienciaApi {
     );
   }
 
-  /** GET `/api/configuracao/tipos-deficiencia{id}` — detalhe. */
-  obter(id: string): Observable<ApiResult<TipoDeficienciaDto>> {
-    return this.http.get<ApiResult<TipoDeficienciaDto>>(
-      `${this.basePath}/api/configuracao/tipos-deficiencia/${encodeURIComponent(id)}`,
-      { context: withVendorMime('tipo-deficiencia', 1) },
-    );
-  }
-
   /** POST `/api/configuracao/admin/tipos-deficiencia{` — cria. Idempotency-Key (ADR-0027). */
   criar(command: CriarTipoDeficienciaCommand, context: HttpContext): Observable<ApiResult<string>> {
     return this.http.post<ApiResult<string>>(
