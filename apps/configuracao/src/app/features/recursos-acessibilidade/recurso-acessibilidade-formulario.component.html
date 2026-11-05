@@ -28,6 +28,7 @@
               type="text"
               placeholder="Ex.: Ledor"
               formControlName="nome"
+              aria-required="true"
               [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
             />
             <span class="field__hint">
@@ -46,6 +47,7 @@
               type="text"
               placeholder="Ex.: LEDOR"
               formControlName="codigo"
+              aria-required="true"
               style="text-transform: uppercase"
               [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
               [attr.aria-describedby]="

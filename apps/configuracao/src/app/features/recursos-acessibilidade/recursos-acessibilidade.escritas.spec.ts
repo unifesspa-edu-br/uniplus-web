@@ -113,6 +113,14 @@ describe('Recursos de acessibilidade — escritas', () => {
   });
   afterEach(() => controller.verify());
 
+  it('informa ao leitor de tela que nome e código são obrigatórios', async () => {
+    await preencher();
+    for (const campo of ['nome', 'codigo']) {
+      const input = elemento<HTMLInputElement>(`input[formcontrolname="${campo}"]`);
+      expect(input.getAttribute('aria-required')).toBe('true');
+    }
+  });
+
   it('mantém valores e foco, desabilita campos e impede fechar durante o envio', async () => {
     await preencher();
     const botao = salvar();
