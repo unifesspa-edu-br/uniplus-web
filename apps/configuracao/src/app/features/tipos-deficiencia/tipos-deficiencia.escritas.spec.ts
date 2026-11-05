@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { apiResultInterceptor, ProblemI18nService } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
@@ -194,7 +194,10 @@ describe('TiposDeficienciaListPage — escritas', () => {
   });
 
   it('anuncia remoção e recusa acionadores até terminar a recarga', async () => {
+    const status = elemento('span[role="status"]');
+    expect(status.textContent?.trim()).toBe('');
     await remover();
+    expect(elemento('span[role="status"]')).toBe(status);
     const requisicao = controller.expectOne(`${ESCRITA}/${tipo.id}`);
     expect(edicao.salvando()).toBe(false);
     expect(elemento('ui-dialog [role="status"]').textContent).toContain(
@@ -212,9 +215,39 @@ describe('TiposDeficienciaListPage — escritas', () => {
     expect(edicao.formOpen()).toBe(false);
     await lista();
     expect(edicao.gravando()).toBe(false);
-    expect(elemento('span[role="status"]').textContent).toContain(
-      'Tipo de deficiência Visual removido.',
-    );
+    expect(elemento('span[role="status"]')).toBe(status);
+    expect(status.textContent).toContain('Tipo de deficiência Visual removido.');
+  });
+
+  it('exibe e anuncia o motivo resolvido da recusa no diálogo', async () => {
+    const codigo = 'uniplus.configuracao.tipo_deficiencia.em_uso';
+    TestBed.inject(ProblemI18nService).register(codigo, { title: 'Tipo em uso.' });
+    await remover();
+    const alerta = elemento('ui-dialog [role="alert"]');
+    expect(alerta.textContent?.trim()).toBe('');
+    controller
+      .expectOne(`${ESCRITA}/${tipo.id}`)
+      .flush(
+        JSON.stringify({ type: 'about:blank', title: 'Conflito', status: 409, code: codigo }),
+        {
+          status: 409,
+          statusText: 'Conflict',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+    expect(edicao.confirmOpen()).toBe(true);
+    expect(elemento('ui-dialog [role="alert"]')).toBe(alerta);
+    expect(alerta.textContent?.trim()).toBe('Tipo em uso.');
+    elemento<HTMLButtonElement>('ui-dialog .btn--danger').click();
+    await propagar();
+    expect(alerta.textContent?.trim()).toBe('');
+    controller
+      .expectOne(`${ESCRITA}/${tipo.id}`)
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    await lista();
+    TestBed.inject(ProblemI18nService).unregister(codigo);
   });
 
   it('bloqueia nova tentativa de listagem durante remoção', async () => {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -49,22 +49,14 @@ export class TiposDeficienciaListPage {
   readonly idempotencyKeyAtual = this.edicao.idempotencyKeyAtual;
   readonly tipoDeficienciaParaRemover = this.edicao.tipoDeficienciaParaRemover;
   readonly confirmOpen = this.edicao.confirmOpen;
-  readonly drawerOpen = signal(false);
 
   tentarNovamente(): void {
     if (!this.edicao.gravando() && !this.store.carregando()) this.store.tentarNovamente();
-  }
-  limparFiltroBusca(): void {
-    this.termoBusca.set('');
-  }
-  limparFiltros(): void {
-    this.limparFiltroBusca();
   }
   abrirDrawerCriacao(): void {
     this.edicao.abrirDrawerCriacao();
   }
   protected abrirEdicao(tipo: TipoDeficienciaDto): void {
-    this.drawerOpen.set(false);
     this.edicao.abrirEdicao(tipo);
   }
   abrirRemoverTipoDeficiencia(tipo: TipoDeficienciaDto): void {

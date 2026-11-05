@@ -60,8 +60,9 @@
   [anuncio]="edicao.anuncio()"
   (salvar)="salvar()"
 />
-@if (!confirmOpen() && !formOpen()) {
-<span class="sr-only" role="status">{{ edicao.anuncio() }}</span> }
+<span class="sr-only" role="status">
+  {{ !confirmOpen() && !formOpen() ? edicao.anuncio() : '' }}
+</span>
 <ui-dialog
   [(visible)]="confirmOpen"
   heading="Remover tipo de deficiência?"
@@ -69,6 +70,7 @@
   (closed)="confirmOpen.set(false)"
 >
   <span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
+  <p role="alert">{{ edicao.erroDaRemocao() }}</p>
   <p>
     Você está prestes a remover o tipo de deficiência
     <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>

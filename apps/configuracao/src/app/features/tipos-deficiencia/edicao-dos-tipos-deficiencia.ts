@@ -81,6 +81,7 @@ export class EdicaoDosTiposDeficiencia {
   readonly saving = this.gravando;
   readonly idEmAndamento = signal<string | null>(null);
   readonly anuncio = signal('');
+  readonly erroDaRemocao = signal('');
   readonly rotuloEmAndamento = computed(() =>
     this.removendo()
       ? 'Removendo...'
@@ -175,6 +176,7 @@ export class EdicaoDosTiposDeficiencia {
 
   abrirRemoverTipoDeficiencia(tipoDeficiencia: TipoDeficienciaDto): void {
     if (this.gravando()) return;
+    this.erroDaRemocao.set('');
     this.tipoDeficienciaParaRemover.set(tipoDeficiencia);
     this.confirmOpen.set(true);
   }
@@ -311,8 +313,7 @@ export class EdicaoDosTiposDeficiencia {
       this.recarregar();
       return;
     }
-    // A falha da remoção é mostrada no toast: aplicarFalha() escreve no formulário,
-    // que está fechado enquanto o diálogo de confirmação está aberto.
+    this.erroDaRemocao.set(this.problemI18n.resolve(result.problem).title);
     this.anuncio.set('Não foi possível remover o tipo de deficiência.');
     this.notifications.errorFromProblem(result.problem);
   }
@@ -320,6 +321,7 @@ export class EdicaoDosTiposDeficiencia {
   removerConfirmado(): void {
     const tipo = this.tipoDeficienciaParaRemover();
     if (tipo === null || this.gravando()) return;
+    this.erroDaRemocao.set('');
     this.idEmAndamento.set(tipo.id);
     this.anuncio.set(`Removendo o tipo de deficiência ${tipo.nome}.`);
     this.gravar('removendo', this.api.remover(tipo.id), (result) =>
