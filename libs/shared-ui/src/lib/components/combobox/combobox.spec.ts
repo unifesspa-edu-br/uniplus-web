@@ -237,6 +237,25 @@ describe('ComboboxComponent', () => {
     expect(evento.defaultPrevented).toBe(false);
   });
 
+  it('Enter durante a composição de IME mantém a lista aberta e a busca', () => {
+    fixture.componentInstance.escolhido.set('rg');
+    fixture.detectChanges();
+    digitar('CP');
+
+    const evento = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      bubbles: true,
+      cancelable: true,
+      isComposing: true,
+    });
+    campo().dispatchEvent(evento);
+    fixture.detectChanges();
+
+    expect(campo().getAttribute('aria-expanded')).toBe('true');
+    expect(campo().value).toBe('CP');
+    expect(evento.defaultPrevented).toBe(false);
+  });
+
   it('a lista aberta fecha quando um fieldset desabilita o campo', () => {
     const fieldset = document.createElement('fieldset');
     nativo.parentElement?.appendChild(fieldset);
