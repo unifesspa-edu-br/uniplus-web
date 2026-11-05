@@ -1,0 +1,299 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  heading="Editar fase canônica"
+  ariaLabel="Formulário de fase canônica"
+  position="right"
+  [closable]="!salvando()"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-fase-canonica-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-fase-identificacao">
+        <h3 id="cfg-fase-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          <label class="field" [class.is-error]="erroDoCampo('codigo')">
+            <span class="field__label is-required">Código</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="codigo"
+              readonly
+              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('codigo') ? 'cfg-fase-erro-codigo' : null"
+              aria-required="true"
+            />
+            <span class="field__hint">Imutável após criação.</span>
+            @if (erroDoCampo('codigo')) {
+              <span class="field__error" id="cfg-fase-erro-codigo">{{
+                erroDoCampo('codigo')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('unidadeSugeridaId')">
+            <span class="field__label">Unidade sugerida</span>
+            <select
+              class="select"
+              formControlName="unidadeSugeridaId"
+              [attr.aria-invalid]="erroDoCampo('unidadeSugeridaId') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('unidadeSugeridaId') ? 'cfg-fase-erro-unidadeSugeridaId' : null
+              "
+            >
+              <option value="">Nenhuma</option>
+              @for (unidade of unidadesParaEscolha(); track unidade.id) {
+                <option [value]="unidade.id">
+                  {{ unidade.rotulo }}{{ unidade.inativa ? ' (inativa)' : '' }}
+                </option>
+              }
+            </select>
+            <span class="field__hint">
+              Opcional. Vira a unidade responsável inicial desta fase quando ela é acrescentada ao
+              cronograma de um processo; o cronograma continua permitindo trocá-la.
+            </span>
+            @if (erroUnidades()) {
+              <span class="field__error" role="alert">
+                Não foi possível carregar as unidades.
+                <button type="button" class="cfg-link-button" (click)="recarregarUnidades.emit()">
+                  Tentar novamente
+                </button>
+              </span>
+            }
+            @if (erroDoCampo('unidadeSugeridaId')) {
+              <span class="field__error" id="cfg-fase-erro-unidadeSugeridaId">{{
+                erroDoCampo('unidadeSugeridaId')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('nome') ? 'cfg-fase-erro-nome' : null"
+              aria-required="true"
+            />
+            @if (erroDoCampo('nome')) {
+              <span class="field__error" id="cfg-fase-erro-nome">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('descricao')">
+            <span class="field__label">Descrição</span>
+            <textarea
+              class="textarea"
+              formControlName="descricao"
+              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-fase-erro-descricao' : null"
+            ></textarea>
+            @if (erroDoCampo('descricao')) {
+              <span class="field__error" id="cfg-fase-erro-descricao">{{
+                erroDoCampo('descricao')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('origemData')">
+            <span class="field__label is-required">Origem da data</span>
+            <select
+              class="select"
+              formControlName="origemData"
+              [attr.aria-invalid]="erroDoCampo('origemData') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('origemData') ? 'cfg-fase-erro-origemData' : null
+              "
+              aria-required="true"
+            >
+              <option value="" disabled>Selecione a origem da data</option>
+              @for (origem of origensData; track origem) {
+                <option [value]="origem">{{ rotuloDaOrigem(origem) }}</option>
+              }
+            </select>
+            <span class="field__hint">
+              Fixada no edital: a data consta do edital e a janela é obrigatória. Definida na
+              execução: a unidade responsável pela fase define a data durante o processo.
+            </span>
+            @if (erroDoCampo('origemData')) {
+              <span class="field__error" id="cfg-fase-erro-origemData">{{
+                erroDoCampo('origemData')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
+            <span class="field__label">Base legal</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="baseLegal"
+              [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
+              placeholder="Ex.: Lei 9.784/1999, art. 56"
+              [attr.aria-describedby]="erroDoCampo('baseLegal') ? 'cfg-fase-erro-baseLegal' : null"
+            />
+            <span class="field__hint">Dispositivo legal aplicável. Opcional.</span>
+            @if (erroDoCampo('baseLegal')) {
+              <span class="field__error" id="cfg-fase-erro-baseLegal">{{
+                erroDoCampo('baseLegal')
+              }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Inscrição</legend>
+        <div class="form-grid form-grid--1col">
+          @if (!ehFaseDeIsencao() || erroDoCampo('coletaInscricao')) {
+            <label
+              class="field"
+              [class.is-error]="erroDoCampo('coletaInscricao')"
+              aria-live="polite"
+            >
+              <span class="field__label">Coleta inscrição</span>
+              <select
+                class="select"
+                formControlName="coletaInscricao"
+                [attr.aria-invalid]="erroDoCampo('coletaInscricao') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('coletaInscricao') ? 'cfg-fase-erro-coletaInscricao' : null
+                "
+              >
+                <option [ngValue]="true">Sim</option>
+                <option [ngValue]="false">Não</option>
+              </select>
+              <span class="field__hint">A fase recebe inscrições de candidatos.</span>
+              @if (erroDoCampo('coletaInscricao')) {
+                <span class="field__error" id="cfg-fase-erro-coletaInscricao">{{
+                  erroDoCampo('coletaInscricao')
+                }}</span>
+              }
+            </label>
+          }
+          <label
+            class="field"
+            [class.is-error]="erroDoCampo('coletaSolicitacaoIsencao')"
+            aria-live="polite"
+          >
+            <span class="field__label">Coleta solicitação de isenção</span>
+            <input
+              class="input"
+              type="text"
+              data-testid="cfg-fase-coleta-isencao"
+              [attr.aria-invalid]="erroDoCampo('coletaSolicitacaoIsencao') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('coletaSolicitacaoIsencao')
+                  ? 'cfg-fase-erro-coletaSolicitacaoIsencao'
+                  : null
+              "
+              [value]="ehFaseDeIsencao() ? 'Sim' : 'Não'"
+              readonly
+            />
+            @if (erroDoCampo('coletaSolicitacaoIsencao')) {
+              <span class="field__error" id="cfg-fase-erro-coletaSolicitacaoIsencao">{{
+                erroDoCampo('coletaSolicitacaoIsencao')
+              }}</span>
+            }
+            <span class="field__hint">
+              Derivado do código: só a fase {{ codigoSolicitacaoIsencao }} recebe pedidos de isenção
+              da taxa, e ela não coleta inscrição — são janelas com prazos distintos.
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      @if (showGrupoAgrupa() || erroDoCampo('agrupaEtapas')) {
+        <fieldset
+          id="cfg-fase-grupo-agrupa"
+          class="form-section"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <legend class="form-section__title">Agrupamento de etapas</legend>
+          <label class="field" [class.is-error]="erroDoCampo('agrupaEtapas')">
+            <span class="field__label">Agrupa etapas</span>
+            <select
+              class="select"
+              formControlName="agrupaEtapas"
+              [attr.aria-invalid]="erroDoCampo('agrupaEtapas') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('agrupaEtapas') ? 'cfg-fase-erro-agrupaEtapas' : null
+              "
+            >
+              <option [ngValue]="true">Sim</option>
+              <option [ngValue]="false">Não</option>
+            </select>
+            <span class="field__hint">Aplicável apenas à fase AVALIACAO.</span>
+            @if (erroDoCampo('agrupaEtapas')) {
+              <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
+                erroDoCampo('agrupaEtapas')
+              }}</span>
+            }
+          </label>
+        </fieldset>
+      }
+      @if (showGrupoCompl() || erroDoCampo('permiteComplementacao')) {
+        <fieldset
+          id="cfg-fase-grupo-compl"
+          class="form-section"
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <legend class="form-section__title">Complementação de documentos</legend>
+          <label class="field" [class.is-error]="erroDoCampo('permiteComplementacao')">
+            <span class="field__label">Permite complementação</span>
+            <select
+              class="select"
+              formControlName="permiteComplementacao"
+              [attr.aria-invalid]="erroDoCampo('permiteComplementacao') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('permiteComplementacao') ? 'cfg-fase-erro-permiteComplementacao' : null
+              "
+            >
+              <option [ngValue]="true">Sim</option>
+              <option [ngValue]="false">Não</option>
+            </select>
+            <span class="field__hint">Aplicável apenas às fases HOMOLOGACAO e RECURSOS.</span>
+            @if (erroDoCampo('permiteComplementacao')) {
+              <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
+                erroDoCampo('permiteComplementacao')
+              }}</span>
+            }
+          </label>
+        </fieldset>
+      }
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-fase-canonica-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="salvando() ? $event.preventDefault() : null"
+    >
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Salvar fase canônica' }}
+    </button>
+  </div>
+</ui-drawer>

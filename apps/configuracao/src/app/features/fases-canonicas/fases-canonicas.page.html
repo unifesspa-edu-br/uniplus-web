@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Fase Canônica</h1>
+    <p class="page-header__desc">
+      Vocabulário de cronograma — momentos do ciclo de vida do processo seletivo · UNI-REQ-0064.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="info" heading="Códigos definidos pelo catálogo institucional" [dynamic]="false">
+  As fases canônicas pertencem a um vocabulário fixo, provisionado pela instituição no seed da API e
+  congelado por snapshot nos cronogramas dos editais. Esta tela não cria fases nem altera o código
+  de uma fase — aqui você apenas edita os atributos de fases existentes ou as remove.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as fases canônicas">
+  {{ store.mensagemDeErro() }}
+  <div class="cfg-fases-canonicas__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="store.carregando() || edicao.gravando()"
+      (click)="store.tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-fases-canonicas-lista
+  [fases]="store.fasesFiltradas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-fase-canonica-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [salvando]="edicao.salvando()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [erroUnidades]="store.unidades.comErro()"
+  [unidadesParaEscolha]="edicao.unidadesParaEscolha()"
+  [showGrupoAgrupa]="edicao.showGrupoAgrupa()"
+  [showGrupoCompl]="edicao.showGrupoCompl()"
+  [ehFaseDeIsencao]="edicao.ehFaseDeIsencao()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (recarregarUnidades)="store.unidades.recarregar()"
+/>
+<cfg-fase-canonica-remocao
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

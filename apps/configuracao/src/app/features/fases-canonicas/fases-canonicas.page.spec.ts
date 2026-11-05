@@ -9,6 +9,9 @@ import { CONFIGURACAO_BASE_PATH, FaseCanonicaDto } from '@uniplus/shared-data/co
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FasesCanonicasPage } from './fases-canonicas.page';
+import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { EdicaoDasFasesCanonicas } from './edicao-das-fases-canonicas';
+import { FasesCanonicasStore } from './fases-canonicas.store';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/fases-canonicas`;
@@ -40,7 +43,8 @@ const urlRemocao = (fase: FaseCanonicaDto): string =>
 
 describe('FasesCanonicasPage', () => {
   let fixture: ComponentFixture<FasesCanonicasPage>;
-  let component: FasesCanonicasPage;
+  let store: FasesCanonicasStore;
+  let edicao: EdicaoDasFasesCanonicas;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -56,7 +60,8 @@ describe('FasesCanonicasPage', () => {
       ],
     });
     fixture = TestBed.createComponent(FasesCanonicasPage);
-    component = fixture.componentInstance;
+    store = fixture.debugElement.injector.get(FasesCanonicasStore);
+    edicao = fixture.debugElement.injector.get(EdicaoDasFasesCanonicas);
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -94,7 +99,7 @@ describe('FasesCanonicasPage', () => {
 
   it('CA-12: renderiza a lista de fases canônicas', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    expect(component['fases']()).toHaveLength(1);
+    expect(store.fases()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Avaliação');
     expect(fixture.nativeElement.textContent).toContain('AVALIACAO');
@@ -129,22 +134,59 @@ describe('FasesCanonicasPage', () => {
     const faseMatricula: FaseCanonicaDto = { ...faseAvaliacaoSeed, id: 'f2', codigo: 'MATRICULA' };
     await flushLista([faseAvaliacaoSeed, faseMatricula]);
 
-    component['termoBusca'].set('matric');
-    expect(component['fasesFiltradas']()).toEqual([faseMatricula]);
+    store.termoBusca.set('matric');
+    expect(store.fasesFiltradas()).toEqual([faseMatricula]);
+  });
+
+  it('navega pelo cursor e volta à primeira página ao recarregar', async () => {
+    const primeira = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/fases-canonicas`,
+    );
+    primeira.flush([faseAvaliacaoSeed], {
+      headers: {
+        Link: '</api/configuracao/fases-canonicas?cursor=abc&direction=next>; rel="next"',
+      },
+    });
+    controller
+      .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
+      .forEach((r) => r.flush([]));
+    await propagate();
+
+    store.proximaPagina();
+    await propagate();
+    const segunda = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/fases-canonicas`,
+    );
+    expect(segunda.request.params.get('cursor')).toBe('abc');
+    expect(segunda.request.params.get('direction')).toBe('next');
+    segunda.flush([faseRecursoSeed]);
+    await propagate();
+    expect(store.fases()).toEqual([faseRecursoSeed]);
+
+    store.recarregar();
+    await propagate();
+    const recarga = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/fases-canonicas`,
+    );
+    expect(recarga.request.params.get('limit')).toBe('50');
+    expect(recarga.request.params.has('cursor')).toBe(false);
+    recarga.flush([faseAvaliacaoSeed]);
+    await propagate();
+    expect(store.fases()).toEqual([faseAvaliacaoSeed]);
   });
 
   it('CA-05: o drawer só abre a partir da edição de uma fase existente', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    expect(component['formOpen']()).toBe(false);
+    expect(edicao.aberto()).toBe(false);
 
-    component['abrirEdicao'](faseAvaliacaoSeed);
-    expect(component['formOpen']()).toBe(true);
-    expect(component['faseEmEdicaoId']()).toBe(faseAvaliacaoSeed.id);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    expect(edicao.aberto()).toBe(true);
+    expect(edicao.form.controls.codigo.value).toBe(faseAvaliacaoSeed.codigo);
   });
 
   it('CA-06: o drawer de edição usa título e ação compatíveis com a edição', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    component['abrirEdicao'](faseAvaliacaoSeed);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
     fixture.detectChanges();
 
     const texto: string = fixture.nativeElement.textContent;
@@ -159,16 +201,16 @@ describe('FasesCanonicasPage', () => {
 
   it('CA-07: código é readonly na edição e o payload de atualização não inclui o campo codigo', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    component['abrirEdicao'](faseAvaliacaoSeed);
-    expect(component['form'].controls.codigo.value).toBe('AVALIACAO');
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    expect(edicao.form.controls.codigo.value).toBe('AVALIACAO');
     fixture.detectChanges();
     const codigoInput = fixture.nativeElement.querySelector(
       '[formcontrolname="codigo"]',
     ) as HTMLInputElement;
     expect(codigoInput.readOnly).toBe(true);
 
-    component['form'].controls.nome.setValue('Avaliação (revisada)');
-    component['salvar']();
+    edicao.form.controls.nome.setValue('Avaliação (revisada)');
+    edicao.salvar();
 
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseAvaliacaoSeed.id}`,
@@ -186,9 +228,9 @@ describe('FasesCanonicasPage', () => {
 
   it('CA-08/CA-14: salvar a edição emite PUT e nunca POST', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    component['abrirEdicao'](faseAvaliacaoSeed);
-    component['form'].controls.nome.setValue('Avaliação (2)');
-    component['salvar']();
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    edicao.form.controls.nome.setValue('Avaliação (2)');
+    edicao.salvar();
 
     controller.expectNone(CRIAR_URL);
     const put = controller.expectOne(
@@ -208,13 +250,13 @@ describe('FasesCanonicasPage', () => {
     };
     await flushLista([faseAvaliacaoSeed, faseHomologacao]);
 
-    component['abrirEdicao'](faseAvaliacaoSeed);
-    expect(component['showGrupoAgrupa']()).toBe(true);
-    expect(component['showGrupoCompl']()).toBe(false);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    expect(edicao.showGrupoAgrupa()).toBe(true);
+    expect(edicao.showGrupoCompl()).toBe(false);
 
-    component['abrirEdicao'](faseHomologacao);
-    expect(component['showGrupoAgrupa']()).toBe(false);
-    expect(component['showGrupoCompl']()).toBe(true);
+    edicao.abrirEdicao(faseHomologacao);
+    expect(edicao.showGrupoAgrupa()).toBe(false);
+    expect(edicao.showGrupoCompl()).toBe(true);
   });
 
   it('editar a fase de isenção deriva a marca de isenção e esconde a coleta de inscrição', async () => {
@@ -228,15 +270,15 @@ describe('FasesCanonicasPage', () => {
     };
     await flushLista([faseIsencao]);
 
-    component['abrirEdicao'](faseIsencao);
+    edicao.abrirEdicao(faseIsencao);
     fixture.detectChanges();
     // O agregado exige a marca verdadeira nessa fase e recusa a coleta de
     // inscrição na mesma fase — as duas janelas são exclusivas.
-    expect(component['ehFaseDeIsencao']()).toBe(true);
-    expect(component['form'].controls.coletaSolicitacaoIsencao.value).toBe(true);
+    expect(edicao.ehFaseDeIsencao()).toBe(true);
+    expect(edicao.form.controls.coletaSolicitacaoIsencao.value).toBe(true);
     expect(fixture.nativeElement.querySelector('[formControlName="coletaInscricao"]')).toBeNull();
 
-    component['salvar']();
+    edicao.salvar();
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseIsencao.id}`,
     );
@@ -257,11 +299,11 @@ describe('FasesCanonicasPage', () => {
     };
     await flushLista([faseComColeta]);
 
-    component['abrirEdicao'](faseComColeta);
-    expect(component['form'].controls.origemData.value).toBe('NA_EXECUCAO');
-    expect(component['form'].controls.coletaInscricao.value).toBe(true);
+    edicao.abrirEdicao(faseComColeta);
+    expect(edicao.form.controls.origemData.value).toBe('NA_EXECUCAO');
+    expect(edicao.form.controls.coletaInscricao.value).toBe(true);
 
-    component['salvar']();
+    edicao.salvar();
     const put = controller.expectOne(
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseComColeta.id}`,
     );
@@ -276,7 +318,7 @@ describe('FasesCanonicasPage', () => {
 
   it('oferece a origem da data pelos rótulos novos, e a ajuda não cita terceiro, MEC nem SiSU', async () => {
     await flushLista([faseAvaliacaoSeed]);
-    component['abrirEdicao'](faseAvaliacaoSeed);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
     fixture.detectChanges();
 
     const select: HTMLSelectElement = fixture.nativeElement.querySelector(
@@ -306,7 +348,7 @@ describe('FasesCanonicasPage', () => {
       `${BASE}/api/configuracao/admin/fases-canonicas/${fase.id}`;
 
     async function salvarComSucesso(fase: FaseCanonicaDto): Promise<unknown> {
-      component['salvar']();
+      edicao.salvar();
       const put = controller.expectOne(urlPut(fase));
       put.flush(null, { status: 204, statusText: 'No Content' });
       await propagate();
@@ -329,8 +371,8 @@ describe('FasesCanonicasPage', () => {
 
     it('escolher a unidade no campo a leva ao comando de atualização', async () => {
       await flushLista([faseAvaliacaoSeed], [CGA]);
-      component['abrirEdicao'](faseAvaliacaoSeed);
-      component['form'].controls.unidadeSugeridaId.setValue(CGA.id);
+      edicao.abrirEdicao(faseAvaliacaoSeed);
+      edicao.form.controls.unidadeSugeridaId.setValue(CGA.id);
 
       expect(await salvarComSucesso(faseAvaliacaoSeed)).toMatchObject({
         unidadeSugeridaId: CGA.id,
@@ -340,8 +382,8 @@ describe('FasesCanonicasPage', () => {
     it('limpar a unidade sugerida envia nulo, que retira a sugestão', async () => {
       const fase = comSugestao();
       await flushLista([fase], [CGA]);
-      component['abrirEdicao'](fase);
-      component['form'].controls.unidadeSugeridaId.setValue('');
+      edicao.abrirEdicao(fase);
+      edicao.form.controls.unidadeSugeridaId.setValue('');
 
       expect(await salvarComSucesso(fase)).toMatchObject({ unidadeSugeridaId: null });
     });
@@ -349,13 +391,11 @@ describe('FasesCanonicasPage', () => {
     it('a unidade gravada fora das ativas continua como opção, marcada "(inativa)"', async () => {
       const fase = comSugestao('01960000-0000-7000-0000-0000000000a9');
       await flushLista([fase], [CGA]);
-      component['abrirEdicao'](fase);
+      edicao.abrirEdicao(fase);
 
-      const [primeira] = component['unidadesParaEscolha']();
+      const [primeira] = edicao.unidadesParaEscolha();
       expect(primeira).toMatchObject({ rotulo: 'CGA — Centro de Gestão Acadêmica', inativa: true });
-      expect(component['form'].controls.unidadeSugeridaId.value).toBe(
-        fase.unidadeSugerida?.origemId,
-      );
+      expect(edicao.form.controls.unidadeSugeridaId.value).toBe(fase.unidadeSugerida?.origemId);
     });
 
     it('não afirma que a unidade está inativa quando o cadastro de unidades não carregou', async () => {
@@ -366,17 +406,17 @@ describe('FasesCanonicasPage', () => {
         .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
         .forEach((r) => r.flush(null, { status: 500, statusText: 'Server Error' }));
       await propagate();
-      component['abrirEdicao'](fase);
+      edicao.abrirEdicao(fase);
 
-      expect(component['unidadesParaEscolha']()[0]?.inativa).toBe(false);
+      expect(edicao.unidadesParaEscolha()[0]?.inativa).toBe(false);
     });
 
     it('a recusa por unidade inexistente ou inativa aparece no campo', async () => {
       await flushLista([faseAvaliacaoSeed], [CGA]);
-      component['abrirEdicao'](faseAvaliacaoSeed);
-      component['form'].controls.unidadeSugeridaId.setValue(CGA.id);
+      edicao.abrirEdicao(faseAvaliacaoSeed);
+      edicao.form.controls.unidadeSugeridaId.setValue(CGA.id);
 
-      component['salvar']();
+      edicao.salvar();
       controller.expectOne(urlPut(faseAvaliacaoSeed)).flush(
         {
           type: 'about:blank',
@@ -401,7 +441,7 @@ describe('FasesCanonicasPage', () => {
       await propagate();
       fixture.detectChanges();
 
-      expect(component['erroDoCampo']('unidadeSugeridaId')).toBe(
+      expect(mensagemDeErroDoControle(edicao.form.controls.unidadeSugeridaId)).toBe(
         'A unidade sugerida não está entre as unidades ativas.',
       );
       expect(
@@ -423,8 +463,8 @@ describe('FasesCanonicasPage', () => {
   it('CA-08/CA-09/CA-10: remove uma fase canônica após confirmação e recarrega a lista', async () => {
     const sucessoSpy = vi.spyOn(TestBed.inject(NotificationService), 'success');
     await flushLista([faseAvaliacaoSeed]);
-    component['pedirRemocao'](faseAvaliacaoSeed);
-    component['removerConfirmado']();
+    edicao.pedirRemocao(faseAvaliacaoSeed);
+    edicao.removerConfirmado();
 
     const req = controller.expectOne(
       `${BASE}/api/configuracao/admin/fases-canonicas/${faseAvaliacaoSeed.id}`,
@@ -448,7 +488,7 @@ describe('FasesCanonicasPage', () => {
 
     lixeira.click();
     fixture.detectChanges();
-    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
+    const dialogo = fixture.nativeElement.querySelector('cfg-fase-canonica-remocao') as HTMLElement;
     expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover fase canônica');
     expect(dialogo.querySelector('.uni-dialog__body')?.textContent).toContain(
       'Deseja remover a fase AVALIACAO?',
@@ -462,8 +502,8 @@ describe('FasesCanonicasPage', () => {
   it('CA-11: falha na remoção avisa o usuário e mantém a lista', async () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
     await flushLista([faseAvaliacaoSeed]);
-    component['pedirRemocao'](faseAvaliacaoSeed);
-    component['removerConfirmado']();
+    edicao.pedirRemocao(faseAvaliacaoSeed);
+    edicao.removerConfirmado();
 
     controller.expectOne(urlRemocao(faseAvaliacaoSeed)).flush(
       {
@@ -481,34 +521,120 @@ describe('FasesCanonicasPage', () => {
     await propagate();
 
     expect(erroSpy).toHaveBeenCalled();
-    expect(component['savingRemover']()).toBe(false);
+    expect(edicao.removendo()).toBe(false);
     controller.expectNone((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
   });
 
-  it('CA-12: a remoção pendente não é reenviada e não descarta a remoção de outra fase', async () => {
+  it('CA-12: impede remoções concorrentes e mantém a trava durante a recarga', async () => {
     await flushLista([faseAvaliacaoSeed, faseRecursoSeed]);
-    component['pedirRemocao'](faseAvaliacaoSeed);
-    component['removerConfirmado']();
-    // O diálogo fecha ao confirmar; a lixeira continua acionável durante o DELETE.
-    component['confirmOpen'].set(false);
-    const deleteAvaliacao = controller.expectOne(urlRemocao(faseAvaliacaoSeed));
-
-    component['pedirRemocao'](faseAvaliacaoSeed);
-    expect(component['confirmOpen']()).toBe(false);
-
-    component['pedirRemocao'](faseRecursoSeed);
-    component['removerConfirmado']();
-    const deleteRecurso = controller.expectOne(urlRemocao(faseRecursoSeed));
-
-    deleteAvaliacao.flush(null, { status: 204, statusText: 'No Content' });
+    edicao.pedirRemocao(faseAvaliacaoSeed);
+    edicao.removerConfirmado();
+    edicao.confirmando.set(false);
+    const primeira = controller.expectOne(urlRemocao(faseAvaliacaoSeed));
+    edicao.pedirRemocao(faseAvaliacaoSeed);
+    expect(edicao.confirmando()).toBe(false);
+    edicao.pedirRemocao(faseRecursoSeed);
+    edicao.removerConfirmado();
+    controller.expectNone(urlRemocao(faseRecursoSeed));
+    primeira.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
+    edicao.pedirRemocao(faseRecursoSeed);
+    expect(edicao.confirmando()).toBe(false);
     await flushLista([faseRecursoSeed]);
-    expect(component['faseParaRemover']()).toEqual(faseRecursoSeed);
-
-    deleteRecurso.flush(null, { status: 204, statusText: 'No Content' });
+    edicao.pedirRemocao(faseRecursoSeed);
+    edicao.removerConfirmado();
+    controller
+      .expectOne(urlRemocao(faseRecursoSeed))
+      .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
-    expect(component['faseParaRemover']()).toBeNull();
+    expect(edicao.mensagemDaConfirmacao()).toBe('Deseja remover esta fase canônica?');
+  });
+
+  it('bloqueia o formulário durante o envio e foca o campo recusado', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    fixture.detectChanges();
+    const form = fixture.nativeElement.querySelector('#cfg-fase-canonica-form') as HTMLFormElement;
+    edicao.salvar();
+    fixture.detectChanges();
+    expect(form.querySelector('fieldset.form-drawer__campos:disabled')).not.toBeNull();
+    expect(
+      fixture.nativeElement
+        .querySelector('button[form="cfg-fase-canonica-form"]')
+        .getAttribute('aria-disabled'),
+    ).toBe('true');
+    edicao.fechar();
+    expect(edicao.aberto()).toBe(true);
+    edicao.salvar();
+    edicao.pedirRemocao(faseRecursoSeed);
+    controller.expectNone(urlRemocao(faseRecursoSeed));
+    const requisicao = controller.expectOne(urlRemocao(faseAvaliacaoSeed));
+    requisicao.flush(
+      {
+        type: 'about:blank',
+        status: 422,
+        title: 'Recusa',
+        code: 'uniplus.validacao',
+        traceId: '00000000000000000000000000000001',
+        errors: [
+          {
+            field: 'Nome',
+            code: 'uniplus.configuracao.fase_canonica.invalida',
+            message: 'Nome recusado.',
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const nome = form.querySelector('[formcontrolname="nome"]') as HTMLInputElement;
+    expect(nome.getAttribute('aria-invalid')).toBe('true');
+    expect(form.textContent).toContain('Nome recusado.');
+    expect(document.activeElement).toBe(nome);
+  });
+
+  it('libera as ações se a recarga falha e permite nova leitura', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    edicao.abrirEdicao(faseAvaliacaoSeed);
+    edicao.form.controls.descricao.disable();
+    edicao.salvar();
+    controller
+      .expectOne(urlRemocao(faseAvaliacaoSeed))
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    expect(edicao.form.controls.descricao.disabled).toBe(true);
+    edicao.pedirRemocao(faseRecursoSeed);
+    expect(edicao.confirmando()).toBe(false);
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
+      .flush(
+        {
+          type: 'about:blank',
+          title: 'Erro',
+          status: 500,
+          code: 'uniplus.erro',
+          traceId: '00000000000000000000000000000001',
+        },
+        {
+          status: 500,
+          statusText: 'Server Error',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagate();
+    expect(edicao.gravando()).toBe(false);
+    fixture.debugElement.injector.get(FasesCanonicasStore).tentarNovamente();
+    await propagate();
+    await flushLista([faseAvaliacaoSeed]);
+    expect(edicao.gravando()).toBe(false);
   });
 
   it('expõe legenda acessível descrevendo a tabela', async () => {

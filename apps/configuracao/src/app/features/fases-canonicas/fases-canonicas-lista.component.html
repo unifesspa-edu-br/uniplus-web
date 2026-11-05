@@ -1,0 +1,127 @@
+<section class="panel" aria-labelledby="cfg-fases-canonicas-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-fases-canonicas-list-title" tabindex="-1">Fases canônicas</h2>
+      @if (carregando() || removendo()) {
+        <span class="cfg-fases-canonicas__loading"
+          ><ui-spinner size="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar fases canônicas"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar fase canônica"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
+  />
+
+  @if (fases().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Fases canônicas, com unidade sugerida, agrupamento de etapas e permissão de complementação
+          documental
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Unidade sugerida</th>
+            <th scope="col">Agrupa etapas</th>
+            <th scope="col">Permite compl.</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fase of fases(); track fase.id) {
+            <tr>
+              <td data-label="Código">
+                <code>{{ fase.codigo }}</code>
+                @if (fase.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
+                }
+              </td>
+              <td data-label="Nome">{{ fase.nome }}</td>
+              <td data-label="Unidade sugerida">
+                @if (fase.unidadeSugerida; as unidade) {
+                  <span class="tag" [attr.title]="unidade.nome">{{ unidade.sigla }}</span>
+                  <span class="sr-only">, {{ unidade.nome }}</span>
+                } @else {
+                  <span aria-hidden="true">—</span>
+                  <span class="sr-only">Sem unidade sugerida</span>
+                }
+              </td>
+              <td data-label="Agrupa etapas">
+                @if (fase.agrupaEtapas) {
+                  <span class="tag tag--success">Sim</span>
+                } @else {
+                  <span aria-label="Não aplicável">—</span>
+                }
+              </td>
+              <td data-label="Permite compl.">
+                @if (fase.permiteComplementacao) {
+                  <span class="tag tag--success">Sim</span>
+                } @else if (fase.codigo === 'HABILITACAO') {
+                  <span class="tag" title="Vedação SiSU">Não</span>
+                } @else {
+                  <span aria-label="Não aplicável">—</span>
+                }
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="nomeDaAcao('editar', fase.codigo)"
+                  tooltip="Editar fase canônica"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('editar', fase)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="nomeDaAcao('remover', fase.codigo)"
+                  tooltip="Remover fase canônica"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('remover', fase)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhuma fase encontrada"
+        description="Ajuste a busca para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="indisponivel()"
+          (click)="termoBusca.set('')"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhuma fase canônica disponível"
+        description="O catálogo de fases é definido institucionalmente. As fases aparecem aqui quando o backend as provisiona."
+      />
+    }
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de fases canônicas"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>
