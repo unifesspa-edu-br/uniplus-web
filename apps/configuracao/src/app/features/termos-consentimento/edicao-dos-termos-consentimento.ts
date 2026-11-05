@@ -154,6 +154,7 @@ export class EdicaoDosTermosConsentimento {
 
   pedirRemocao(): void {
     if (this.processando() || !this.podeRemover()) return;
+    this.acaoErro.set(null);
     this.confirmRemoverAberto.set(true);
   }
 
@@ -168,8 +169,8 @@ export class EdicaoDosTermosConsentimento {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.acaoEmAndamento.set(null);
-        this.confirmRemoverAberto.set(false);
         if (result.ok) {
+          this.confirmRemoverAberto.set(false);
           this.notifications.success('Termo removido', this.termo()?.nome);
           void this.router.navigate(['/termos-consentimento']);
           return;

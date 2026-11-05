@@ -29,7 +29,7 @@
     </button>
   </div>
 </ui-alert>
-} @else { @if (acaoErro()) {
+} @else { @if (acaoErro() && !confirmRemoverAberto()) {
 <ui-alert variant="danger" heading="Não foi possível concluir a ação">
   {{ acaoErro() }}
   <div class="cfg-termo-consentimento__retry">
@@ -64,6 +64,7 @@
 <cfg-termo-consentimento-remocao
   [(aberto)]="confirmRemoverAberto"
   [nome]="termo()?.nome ?? ''"
+  [erro]="acaoErro()"
   [processando]="processando()"
   (confirmado)="removerConfirmado()"
 />

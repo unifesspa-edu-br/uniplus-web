@@ -46,9 +46,9 @@ import {
           <p id="termo-remocao-mensagem">
             Remover o termo {{ nome() }}? Essa ação não pode ser desfeita.
           </p>
-          <span class="sr-only" role="status">{{
-            processando() ? 'Removendo o termo ' + nome() + '.' : ''
-          }}</span>
+          <p role="status">
+            {{ erro() || (processando() ? 'Removendo o termo ' + nome() + '.' : '') }}
+          </p>
           @if (processando()) {
             <span aria-hidden="true">Removendo...</span>
           }
@@ -83,6 +83,7 @@ export class TermoConsentimentoRemocaoComponent {
   readonly aberto = model(false);
   readonly nome = input.required<string>();
   readonly processando = input.required<boolean>();
+  readonly erro = input<string | null>(null);
   readonly confirmado = output<void>();
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
   private readonly fechar = viewChild<ElementRef<HTMLButtonElement>>('fechar');

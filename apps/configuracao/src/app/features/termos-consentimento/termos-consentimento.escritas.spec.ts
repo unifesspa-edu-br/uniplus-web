@@ -128,6 +128,58 @@ describe('TermosConsentimentoDetailPage — escritas pela interface', () => {
     expect(document.activeElement).toBe(texto);
   });
 
+  it('associa os erros e as dicas aos campos do rascunho', async () => {
+    for (const controle of Object.values(edicao.rascunhoForm.controls)) {
+      controle.setErrors({ backend: { message: 'Campo recusado.' } });
+      controle.markAsTouched();
+    }
+    await propagar();
+    for (const nome of ['texto', 'baseLegal', 'formaAceite']) {
+      const campo = elemento<HTMLElement>(`[formcontrolname="${nome}"]`);
+      const ids = campo.getAttribute('aria-describedby')?.split(' ') ?? [];
+      expect(ids.map((id) => document.getElementById(id)?.textContent).join(' ')).toContain(
+        'Campo recusado.',
+      );
+      if (nome !== 'baseLegal') expect(ids).toHaveLength(2);
+    }
+  });
+
+  it('mantém a recusa no diálogo e permite tentar novamente ou cancelar', async () => {
+    await abrirRemocao();
+    const dialog = elemento<HTMLDialogElement>('dialog');
+    const confirmar = elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]');
+    confirmar.click();
+    controller
+      .expectOne(`${ESCRITA}/${ID}`)
+      .flush(
+        { type: 'about:blank', title: 'Remoção recusada', status: 422, code: 'uniplus.validacao' },
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector('[role="status"]')?.textContent).toContain('Remoção recusada');
+    confirmar.click();
+    const tentativa = controller.expectOne(`${ESCRITA}/${ID}`);
+    await propagar();
+    expect(dialog.querySelector('[role="status"]')?.textContent).toContain('Removendo');
+    tentativa.flush(
+      { type: 'about:blank', title: 'Remoção recusada', status: 422, code: 'uniplus.validacao' },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagar();
+    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-cancel"]').click();
+    await propagar();
+    expect(dialog.open).toBe(false);
+  });
+
   it('remoção anuncia o andamento e impede confirmar ou fechar novamente', async () => {
     await abrirRemocao();
     const dialog = elemento<HTMLDialogElement>('dialog');
@@ -218,6 +270,23 @@ describe('TermosConsentimentoDetailPage — criação pela interface', () => {
     expect(el, seletor).not.toBeNull();
     return el as T;
   }
+
+  it('associa os erros e as dicas aos campos da criação', () => {
+    const edicao = fixture.debugElement.injector.get(EdicaoDosTermosConsentimento);
+    for (const controle of Object.values(edicao.criarForm.controls)) {
+      controle.setErrors({ backend: { message: 'Campo recusado.' } });
+      controle.markAsTouched();
+    }
+    fixture.detectChanges();
+    for (const nome of ['nome', 'texto', 'baseLegal', 'formaAceite']) {
+      const campo = elemento<HTMLElement>(`[formcontrolname="${nome}"]`);
+      const ids = campo.getAttribute('aria-describedby')?.split(' ') ?? [];
+      expect(ids.map((id) => document.getElementById(id)?.textContent).join(' ')).toContain(
+        'Campo recusado.',
+      );
+      if (nome === 'texto' || nome === 'formaAceite') expect(ids).toHaveLength(2);
+    }
+  });
 
   it('mantém campos e navegação indisponíveis durante a criação e recusa reenvios', async () => {
     const root = fixture.nativeElement as HTMLElement;

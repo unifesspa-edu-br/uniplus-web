@@ -26,11 +26,19 @@
             class="textarea"
             rows="8"
             formControlName="texto"
+            [attr.aria-describedby]="
+              'termo-rascunho-texto-dica' +
+              (erroDoCampo(form().controls.texto) ? ' termo-rascunho-texto-erro' : '')
+            "
             [attr.aria-invalid]="erroDoCampo(form().controls.texto) ? 'true' : null"
           ></textarea>
-          <span class="field__hint">Até {{ textoMax }} caracteres.</span>
+          <span id="termo-rascunho-texto-dica" class="field__hint"
+            >Até {{ textoMax }} caracteres.</span
+          >
           @if (erroDoCampo(form().controls.texto)) {
-            <span class="field__error">{{ erroDoCampo(form().controls.texto) }}</span>
+            <span id="termo-rascunho-texto-erro" class="field__error">{{
+              erroDoCampo(form().controls.texto)
+            }}</span>
           }
         </label>
 
@@ -40,10 +48,15 @@
             class="input"
             type="text"
             formControlName="baseLegal"
+            [attr.aria-describedby]="
+              erroDoCampo(form().controls.baseLegal) ? 'termo-rascunho-baseLegal-erro' : null
+            "
             [attr.aria-invalid]="erroDoCampo(form().controls.baseLegal) ? 'true' : null"
           />
           @if (erroDoCampo(form().controls.baseLegal)) {
-            <span class="field__error">{{ erroDoCampo(form().controls.baseLegal) }}</span>
+            <span id="termo-rascunho-baseLegal-erro" class="field__error">{{
+              erroDoCampo(form().controls.baseLegal)
+            }}</span>
           }
         </label>
 
@@ -52,6 +65,10 @@
           <select
             class="select"
             formControlName="formaAceite"
+            [attr.aria-describedby]="
+              'termo-rascunho-formaAceite-dica' +
+              (erroDoCampo(form().controls.formaAceite) ? ' termo-rascunho-formaAceite-erro' : '')
+            "
             [attr.aria-invalid]="erroDoCampo(form().controls.formaAceite) ? 'true' : null"
           >
             @for (opcao of formasAceite; track opcao.value) {
@@ -59,9 +76,12 @@
             }
           </select>
           @if (erroDoCampo(form().controls.formaAceite)) {
-            <span class="field__error">{{ erroDoCampo(form().controls.formaAceite) }}</span>
+            <span id="termo-rascunho-formaAceite-erro" class="field__error">{{
+              erroDoCampo(form().controls.formaAceite)
+            }}</span>
           }
           <span
+            id="termo-rascunho-formaAceite-dica"
             class="field__hint"
             title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
           >
