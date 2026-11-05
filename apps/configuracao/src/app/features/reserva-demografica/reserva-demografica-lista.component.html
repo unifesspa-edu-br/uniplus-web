@@ -38,8 +38,8 @@
       <button
         type="button"
         class="btn btn--primary"
-        [attr.aria-disabled]="bloqueado()"
-        (click)="!bloqueado() && cadastrar.emit()"
+        [attr.aria-disabled]="loading() || bloqueado()"
+        (click)="!loading() && !bloqueado() && cadastrar.emit()"
       >
         <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
         Novo censo

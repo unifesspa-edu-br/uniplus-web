@@ -31,7 +31,7 @@ export class ReservaDemograficaStore {
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly recarregando = signal(false);
-  private observouRecarga = false;
+  private recargaPendente = false;
   readonly busca = signal('');
   readonly carregando = this.lista.isLoading;
   readonly referencias = this.navegacao.itens;
@@ -52,11 +52,11 @@ export class ReservaDemograficaStore {
 
   constructor() {
     effect(() => {
-      if (!this.recarregando()) return;
-      if (this.carregando()) {
-        this.observouRecarga = true;
-      } else if (this.observouRecarga) {
-        this.observouRecarga = false;
+      if (!this.recarregando() || this.carregando()) return;
+      if (this.recargaPendente) {
+        this.recargaPendente = false;
+        this.iniciarRecarga();
+      } else {
         this.recarregando.set(false);
       }
     });
@@ -82,8 +82,15 @@ export class ReservaDemograficaStore {
   }
 
   recarregar(): void {
-    this.observouRecarga = false;
     this.recarregando.set(true);
+    if (this.carregando()) {
+      this.recargaPendente = true;
+      return;
+    }
+    this.iniciarRecarga();
+  }
+
+  private iniciarRecarga(): void {
     if (this.pagina() === undefined) {
       this.lista.reload();
     } else {

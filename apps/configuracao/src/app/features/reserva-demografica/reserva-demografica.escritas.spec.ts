@@ -231,4 +231,75 @@ describe('Reserva demográfica — escritas pela interface', () => {
     expect(campo.getAttribute('aria-describedby')).toBe('erro-censoReferencia');
     http.expectNone(ESCRITA);
   });
+  it('envia o formulário pelo clique no botão de criação', async () => {
+    await preencher();
+    elemento<HTMLButtonElement>('button[form="cfg-reserva-form"]').click();
+    const post = http.expectOne(ESCRITA);
+    expect(post.request.body.censoReferencia).toBe('2010');
+    post.flush('id', { status: 201, statusText: 'Created' });
+    await concluir();
+  });
+
+  it('mostra e foca a recusa do censo desabilitado na edição', async () => {
+    elemento<HTMLButtonElement>(
+      'button[aria-label="Editar reserva demográfica do censo 2022"]',
+    ).click();
+    await propagar();
+    enviar();
+    http
+      .expectOne(`${ESCRITA}/${referencia.id}`)
+      .flush(
+        JSON.stringify({
+          status: 422,
+          title: 'Dados inválidos',
+          code: 'uniplus.validacao',
+          errors: [
+            {
+              field: 'CensoReferencia',
+              code: 'uniplus.censo.invalido',
+              message: 'Censo recusado.',
+            },
+          ],
+        }),
+        {
+          status: 422,
+          statusText: 'Unprocessable Entity',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+    await propagar();
+    const erro = elemento<HTMLElement>('#cfg-reserva-erro');
+    expect(erro.textContent).toContain('Censo recusado.');
+    expect(document.activeElement).toBe(erro);
+  });
+
+  it('limpa o anúncio ao fechar e abrir novamente o formulário', async () => {
+    await preencher();
+    enviar();
+    http
+      .expectOne(ESCRITA)
+      .flush(JSON.stringify({ status: 500, title: 'Falha', code: 'uniplus.erro' }), {
+        status: 500,
+        statusText: 'Error',
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    await propagar();
+    expect(edicao.anuncioFormulario()).not.toBe('');
+    edicao.fechar();
+    expect(edicao.anuncioFormulario()).toBe('');
+    edicao.anuncioFormulario.set('anúncio antigo');
+    edicao.abrirCadastro();
+    expect(edicao.anuncioFormulario()).toBe('');
+  });
+
+  it('limpa erro geral antes de validar um novo envio', async () => {
+    await abrir();
+    edicao.formError.set('Erro anterior');
+    enviar();
+    await propagar();
+    expect(edicao.formError()).toBeNull();
+    expect(document.activeElement).toBe(elemento('[formcontrolname="censoReferencia"]'));
+    http.expectNone(ESCRITA);
+  });
 });

@@ -531,4 +531,27 @@ describe('ReservaDemograficaListPage', () => {
     await flushLista([seed]);
     expect(component['edicao'].gravando()).toBe(false);
   });
+  it.each([true, false])(
+    'aguarda leitura em curso e libera a recarga após sucesso ou erro (%s)',
+    async (sucesso) => {
+      const store = fixture.debugElement.injector.get(ReservaDemograficaStore);
+      const leitura = controller.expectOne((r) => r.url === URL);
+      const novo = fixture.nativeElement.querySelector(
+        '.panel-head .btn--primary',
+      ) as HTMLButtonElement;
+      expect(novo.getAttribute('aria-disabled')).toBe('true');
+      novo.click();
+      expect(component['formOpen']()).toBe(false);
+      store.recarregar();
+      await propagate();
+      leitura.flush([]);
+      await propagate();
+      const recarga = controller.expectOne((r) => r.url === URL);
+      expect(store.recarregando()).toBe(true);
+      if (sucesso) recarga.flush([seed]);
+      else recarga.flush('Erro', { status: 500, statusText: 'Error' });
+      await propagate();
+      expect(store.recarregando()).toBe(false);
+    },
+  );
 });

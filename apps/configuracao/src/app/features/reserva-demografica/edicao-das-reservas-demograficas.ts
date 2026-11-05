@@ -118,7 +118,8 @@ export class EdicaoDasReservasDemograficas {
   });
 
   abrirCadastro(): void {
-    if (this.gravando()) return;
+    if (this.gravando() || this.store.carregando()) return;
+    this.anuncioFormulario.set('');
     this.idAfetado.set(null);
     this.modo.set('criar');
     this.idEmEdicao.set(null);
@@ -136,7 +137,8 @@ export class EdicaoDasReservasDemograficas {
   }
 
   abrirEdicao(ref: ReferenciaReservaDemograficaDto): void {
-    if (this.gravando()) return;
+    if (this.gravando() || this.store.carregando()) return;
+    this.anuncioFormulario.set('');
     this.idAfetado.set(ref.id);
     this.modo.set('editar');
     this.idEmEdicao.set(ref.id);
@@ -216,6 +218,7 @@ export class EdicaoDasReservasDemograficas {
     if (this.gravando()) {
       return;
     }
+    this.formError.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.focarErro();
@@ -223,7 +226,6 @@ export class EdicaoDasReservasDemograficas {
     }
     this.anuncioFormulario.set('Salvando referência.');
     this.escrita.set('salvando');
-    this.formError.set(null);
 
     if (this.modo() === 'criar') {
       this.api
@@ -253,6 +255,7 @@ export class EdicaoDasReservasDemograficas {
       this.notifications.success(
         this.modo() === 'criar' ? 'Referência criada' : 'Referência atualizada',
       );
+      this.anuncioFormulario.set('');
       this.formOpen.set(false);
       this.idempotencyKeyAtual.set(idempotencyKey.create());
       this.store.recarregar();
@@ -320,14 +323,16 @@ export class EdicaoDasReservasDemograficas {
       const controlName = controlNameFromBackendField(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
+      if (control.disabled) {
+        this.formError.set(erro.message);
+        aplicouAlgum = true;
+        continue;
+      }
       control.setErrors({ backend: { code: erro.code, message: erro.message } });
       control.markAsTouched();
       aplicouAlgum = true;
     }
-    if (aplicouAlgum) {
-      this.formError.set(null);
-      return;
-    }
+    if (aplicouAlgum) return;
     this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
   }
 
@@ -346,15 +351,20 @@ export class EdicaoDasReservasDemograficas {
     return { id: this.idEmEdicao() ?? '', ...this.criarCommand() };
   }
   fechar(): void {
-    if (!this.gravando()) this.formOpen.set(false);
+    if (this.gravando()) return;
+    this.anuncioFormulario.set('');
+    this.formOpen.set(false);
   }
 
   private focarErro(): void {
     afterNextRender(
-      () =>
-        this.host.nativeElement
-          .querySelector<HTMLElement>('#cfg-reserva-form [aria-invalid="true"]')
-          ?.focus(),
+      () => {
+        const host = this.host.nativeElement;
+        const campo = host.querySelector<HTMLElement>(
+          '#cfg-reserva-form [aria-invalid="true"]:not(:disabled)',
+        );
+        (campo ?? host.querySelector<HTMLElement>('#cfg-reserva-erro'))?.focus();
+      },
       { injector: this.injector },
     );
   }

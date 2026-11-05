@@ -9,7 +9,13 @@
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (formError()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar">{{ formError() }}</ui-alert>
+    <ui-alert
+      id="cfg-reserva-erro"
+      tabindex="-1"
+      variant="danger"
+      heading="Não foi possível salvar"
+      >{{ formError() }}</ui-alert
+    >
   }
 
   <form
@@ -160,7 +166,7 @@
       class="btn btn--primary"
       [attr.aria-disabled]="salvando()"
       [attr.aria-busy]="salvando()"
-      (click)="salvando() && $event.preventDefault()"
+      (click)="salvando() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
         <ui-spinner size="sm" />
