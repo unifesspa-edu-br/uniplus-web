@@ -1,0 +1,145 @@
+<ui-drawer
+  class="form-drawer"
+  [visible]="aberto()"
+  (visibleChange)="abertoChange.emit($event)"
+  [closable]="!salvando()"
+  heading="Novo modelo de formulário"
+  ariaLabel="Novo modelo de formulário"
+  position="right"
+>
+  @if (aberto()) {
+    <form
+      [formGroup]="form()"
+      id="cfg-modelo-criacao"
+      class="form-drawer__form"
+      (ngSubmit)="!salvando() && criar.emit()"
+      novalidate
+    >
+      <ui-alert variant="info" heading="O modelo nasce desativado" [dynamic]="false">
+        Monte o formulário com calma: o modelo só é oferecido a processos novos depois de ativado na
+        lista.
+      </ui-alert>
+      @if (erroDaCriacao()) {
+        <ui-alert variant="danger" heading="Não foi possível criar o modelo">{{
+          erroDaCriacao()
+        }}</ui-alert>
+      }
+
+      <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+        <label class="field" [class.is-error]="erro('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="nome"
+            maxlength="200"
+            [attr.aria-invalid]="erro('nome') ? 'true' : null"
+            [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-nome-erro' : null"
+          />
+          @if (erro('nome')) {
+            <span class="field__error" id="cfg-modelo-nome-erro">{{ erro('nome') }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erro('codigo')">
+          <span class="field__label is-required">Código</span>
+          <input
+            class="input cfg-input-uppercase"
+            type="text"
+            formControlName="codigo"
+            [attr.aria-invalid]="erro('codigo') ? 'true' : null"
+            aria-describedby="cfg-modelo-codigo-nota cfg-modelo-codigo-erro"
+          />
+          <span class="field__hint" id="cfg-modelo-codigo-nota"
+            >Caixa alta, com letras, números e sublinhado. Não muda depois de criado.</span
+          >
+          @if (erro('codigo')) {
+            <span class="field__error" id="cfg-modelo-codigo-erro">{{ erro('codigo') }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erro('finalidade')">
+          <span class="field__label is-required">Finalidade</span>
+          <select
+            class="select"
+            formControlName="finalidade"
+            [attr.aria-invalid]="erro('finalidade') ? 'true' : null"
+            [attr.aria-describedby]="erro('finalidade') ? 'cfg-modelo-finalidade-erro' : null"
+          >
+            <option value="">Escolha a finalidade</option>
+            @for (finalidade of finalidades; track finalidade.valor) {
+              <option [value]="finalidade.valor">{{ finalidade.rotulo }}</option>
+            }
+          </select>
+          @if (erro('finalidade')) {
+            <span class="field__error" id="cfg-modelo-finalidade-erro">{{
+              erro('finalidade')
+            }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erro('tipoProcessoCodigo')">
+          <span class="field__label">Tipo de processo</span>
+          <select
+            class="select"
+            formControlName="tipoProcessoCodigo"
+            [attr.aria-invalid]="erro('tipoProcessoCodigo') ? 'true' : null"
+            aria-describedby="cfg-modelo-tipo-nota cfg-modelo-tipo-erro"
+          >
+            <option value="">Qualquer tipo de processo</option>
+            @for (tipo of tiposDeProcesso(); track tipo.codigo) {
+              <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+            }
+          </select>
+          <span class="field__hint" id="cfg-modelo-tipo-nota"
+            >O modelo só é oferecido a processos do tipo escolhido.</span
+          >
+          @if (erro('tipoProcessoCodigo')) {
+            <span class="field__error" id="cfg-modelo-tipo-erro">{{
+              erro('tipoProcessoCodigo')
+            }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erro('descricao')">
+          <span class="field__label">Descrição</span>
+          <textarea
+            class="textarea"
+            formControlName="descricao"
+            rows="3"
+            maxlength="1000"
+            [attr.aria-invalid]="erro('descricao') ? 'true' : null"
+            [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-descricao-erro' : null"
+          ></textarea>
+          @if (erro('descricao')) {
+            <span class="field__error" id="cfg-modelo-descricao-erro">{{ erro('descricao') }}</span>
+          }
+        </label>
+      </fieldset>
+    </form>
+
+    <div class="form-drawer__footer">
+      <button
+        type="button"
+        class="btn btn--tertiary btn--rect"
+        [disabled]="salvando()"
+        (click)="abertoChange.emit(false)"
+      >
+        Cancelar
+      </button>
+      <button
+        type="submit"
+        form="cfg-modelo-criacao"
+        class="btn btn--primary"
+        [attr.aria-disabled]="salvando()"
+        [attr.aria-busy]="salvando()"
+        (click)="salvando() && $event.preventDefault()"
+      >
+        @if (salvando()) {
+          <ui-spinner size="sm" />
+        }
+        {{ salvando() ? 'Criando...' : 'Criar e montar o formulário' }}
+      </button>
+    </div>
+  }
+</ui-drawer>

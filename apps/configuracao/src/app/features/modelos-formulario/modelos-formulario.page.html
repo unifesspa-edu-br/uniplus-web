@@ -1,0 +1,55 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Modelo de Formulário</h1>
+    <p class="page-header__desc">
+      Formulários prontos por tipo de processo e finalidade. O processo parte de um modelo e recebe
+      uma cópia, que edita à vontade; mudar o modelo depois não muda o processo. UNI-REQ-0144.
+    </p>
+  </div>
+</div>
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaSituacao() }}</span>
+
+@if (errorMessage()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os modelos">
+  {{ errorMessage() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [disabled]="loading()"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-modelos-formulario-lista
+  [(termoBusca)]="store.termoBusca"
+  [(filtroFinalidade)]="store.filtroFinalidade"
+  [(filtroSituacao)]="store.filtroSituacao"
+  [(filtroTipo)]="store.filtroTipo"
+  [tiposDeProcesso]="store.tiposDeProcesso()"
+  [modelosBuscados]="store.modelosBuscados()"
+  [loading]="store.carregando()"
+  [errorMessage]="store.mensagemDeErro()"
+  [prevCursor]="store.anterior()"
+  [nextCursor]="store.proximo()"
+  [gravando]="edicao.gravando()"
+  (criar)="edicao.abrirCriacao()"
+  (ativar)="edicao.ativar($event)"
+  (desativar)="edicao.desativar($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-modelo-formulario-criacao
+  [form]="edicao.form"
+  [aberto]="edicao.drawerAberto()"
+  [salvando]="edicao.salvando()"
+  [erroDaCriacao]="edicao.erroDaCriacao()"
+  [tiposDeProcesso]="store.tiposDeProcesso()"
+  (abertoChange)="edicao.fechar($event)"
+  (criar)="edicao.criar()"
+/>

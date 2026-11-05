@@ -265,6 +265,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(conteudo.grupos).toEqual(modelo.conteudo.grupos);
     expect(req.request.headers.get('Idempotency-Key')).not.toBeNull();
     req.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
     controller.expectOne(MODELO).flush(modelo);
   });
 
@@ -322,6 +323,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     });
     expect(documentos[1]).toMatchObject({ faseCodigo: 'INSCRICAO', quando: null });
     req.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
     controller.expectOne(MODELO).flush(modelo);
   });
 
@@ -465,6 +467,7 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(documento).toMatchObject({ faseCodigo: 'HOMOLOGACAO' });
     expect(documento.consequenciaIndeferimento).not.toBe('PENDENCIA_REENVIO');
     req.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
     controller.expectOne(MODELO).flush(modelo);
   });
 

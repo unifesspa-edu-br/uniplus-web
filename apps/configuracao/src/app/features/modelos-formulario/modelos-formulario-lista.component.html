@@ -1,0 +1,146 @@
+<ui-filter-bar
+  ariaLabel="Filtrar modelos de formulário"
+  searchPlaceholder="Buscar por código ou nome…"
+  searchAriaLabel="Buscar modelo de formulário"
+  [(searchValue)]="termoBusca"
+  [filtrosAtivos]="filtrosAtivos()"
+>
+  <ng-container uiFilterBarSecondary>
+    <span class="u-eyebrow">Finalidade</span>
+    <ui-filter-chips
+      [options]="finalidadeChips"
+      [(selected)]="filtroFinalidade"
+      ariaLabel="Filtrar por finalidade"
+    />
+    <span class="u-eyebrow">Situação</span>
+    <ui-filter-chips
+      [options]="situacaoChips"
+      [(selected)]="filtroSituacao"
+      ariaLabel="Filtrar por situação"
+    />
+    <label class="field">
+      <span class="u-eyebrow">Tipo de processo</span>
+      <select class="select" [value]="filtroTipo()" (change)="filtroTipo.set(valorDe($event))">
+        <option value="">Todos</option>
+        @for (tipo of tiposDeProcesso(); track tipo.codigo) {
+          <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+        }
+      </select>
+    </label>
+  </ng-container>
+</ui-filter-bar>
+
+<section class="panel" aria-labelledby="cfg-modelos-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-modelos-list-title">Modelos de formulário</h2>
+      @if (loading()) {
+        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <button
+      *authTemPermissao="permissaoDeManter"
+      type="button"
+      class="btn btn--primary"
+      (click)="criar.emit()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo modelo
+    </button>
+  </div>
+
+  @if (modelosBuscados().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Modelos de formulário, com finalidade, tipo de processo e situação
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Finalidade</th>
+            <th scope="col">Tipo de processo</th>
+            <th scope="col">Situação</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (modelo of modelosBuscados(); track modelo.id) {
+            <tr>
+              <td data-label="Código">
+                <code>{{ modelo.codigo }}</code>
+              </td>
+              <td data-label="Nome">{{ modelo.nome }}</td>
+              <td data-label="Finalidade">{{ rotuloDaFinalidade(modelo.finalidade) }}</td>
+              <td data-label="Tipo de processo">
+                @if (modelo.tipoProcessoCodigo; as codigo) {
+                  <code [attr.title]="rotuloDoTipo(codigo)">{{ codigo }}</code>
+                } @else {
+                  Qualquer tipo
+                }
+              </td>
+              <td data-label="Situação">
+                <ui-tag [variant]="modelo.ativo ? 'success' : 'neutral'">{{
+                  modelo.ativo ? 'Ativo' : 'Desativado'
+                }}</ui-tag>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  *authTemPermissao="permissaoDeManter"
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar o modelo ' + modelo.codigo"
+                  tooltip="Editar modelo"
+                  [link]="[modelo.id]"
+                />
+                <ui-icon-button
+                  icon="pi-play"
+                  [accessibleName]="'Simular o modelo ' + modelo.codigo + ' (abre em nova aba)'"
+                  tooltip="Simular formulário"
+                  [link]="['/simulador-de-formulario']"
+                  [queryParams]="{ modelo: modelo.id }"
+                  novaAba
+                />
+                <ng-container *authTemPermissao="permissaoDeManter">
+                  @if (modelo.ativo) {
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Desativar o modelo ' + modelo.codigo"
+                      tooltip="Desativar: deixa de ser oferecido a processos novos"
+                      [isDisabled]="gravando()"
+                      (triggered)="desativar.emit(modelo)"
+                    />
+                  } @else {
+                    <ui-icon-button
+                      icon="pi-replay"
+                      [accessibleName]="'Ativar o modelo ' + modelo.codigo"
+                      tooltip="Ativar: volta a ser oferecido a processos novos"
+                      [isDisabled]="gravando()"
+                      (triggered)="ativar.emit(modelo)"
+                    />
+                  }
+                </ng-container>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!loading() && !errorMessage()) {
+    <ui-empty-state
+      heading="Nenhum modelo encontrado"
+      description="Ajuste a busca ou os filtros, ou crie o primeiro modelo."
+    />
+  }
+  @if (prevCursor() !== null || nextCursor() !== null) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de modelos de formulário"
+      [hasPrevious]="prevCursor() !== null"
+      [hasNext]="nextCursor() !== null"
+      [isDisabled]="loading()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

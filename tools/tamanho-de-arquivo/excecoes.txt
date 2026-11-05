@@ -15,8 +15,6 @@
 756 apps/configuracao/src/app/features/locais-oferta/locais-oferta.page.ts
 1067 apps/configuracao/src/app/features/modalidades/modalidade-form.page.ts
 634 apps/configuracao/src/app/features/modalidades/modalidades-list.page.ts
-561 apps/configuracao/src/app/features/modelos-formulario/modelo-formulario-edicao.page.ts
-762 apps/configuracao/src/app/features/modelos-formulario/modelos-formulario.page.ts
 1595 apps/configuracao/src/app/features/ofertas-curso/ofertas-curso.page.ts
 1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
 1059 apps/configuracao/src/app/features/precedencias-fase/precedencias-fase.page.ts

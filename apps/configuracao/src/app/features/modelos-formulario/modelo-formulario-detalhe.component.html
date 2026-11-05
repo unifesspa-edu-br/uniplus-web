@@ -1,0 +1,198 @@
+<div class="page-header page-header--form">
+  <a class="btn btn--tertiary btn--sm btn--rect cfg-voltar" routerLink="/modelos-formulario">
+    <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 class="page-header__title">{{ modelo()?.nome ?? 'Modelo de formulário' }}</h1>
+    @if (modelo(); as m) {
+      <p class="page-header__desc">
+        <code>{{ m.codigo }}</code> · {{ rotuloDaFinalidade(m.finalidade) }}
+        <ui-tag [variant]="m.ativo ? 'success' : 'neutral'">{{
+          m.ativo ? 'Ativo' : 'Desativado'
+        }}</ui-tag>
+      </p>
+    }
+  </div>
+</div>
+
+@if (carregando()) {
+  <div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando o modelo...</div>
+} @else if (erroAoCarregar()) {
+  <ui-alert variant="danger" heading="Não foi possível carregar o modelo">
+    {{ erroAoCarregar() }}
+    <div class="list-state__retry">
+      <button type="button" class="btn btn--secondary btn--sm" (click)="recarregar.emit()">
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+} @else if (modelo(); as m) {
+  <div id="cfg-modelo-resumo" class="cfg-modelo-resumo" tabindex="-1">
+    @if (recusasGerais().length > 0) {
+      <ui-alert variant="danger" heading="A API recusou a gravação">
+        <ul class="u-list">
+          @for (recusa of recusasGerais(); track $index) {
+            <li>{{ recusa }}</li>
+          }
+        </ul>
+      </ui-alert>
+    }
+  </div>
+
+  @if (termosComErro()) {
+    <ui-alert variant="warning" heading="Termos de consentimento não carregados">
+      Sem a lista de termos não é possível exigir um termo novo nem trocar a versão.
+      <div class="list-state__retry">
+        <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarTermos.emit()">
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  @if (catalogoComErro()) {
+    <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
+      Sem o catálogo não é possível acrescentar campos nem declarar condições.
+      <div class="list-state__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          (click)="recarregarCatalogo.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-modelo-edicao"
+    class="cfg-modelo-cabecalho"
+    (ngSubmit)="salvar.emit()"
+    novalidate
+  >
+    <fieldset class="form-grid" role="none" [disabled]="salvando()">
+      <label class="field" [class.is-error]="erro('nome')">
+        <span class="field__label is-required">Nome</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="nome"
+          maxlength="200"
+          [attr.aria-invalid]="erro('nome') ? 'true' : null"
+          [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-ed-nome-erro' : null"
+        />
+        @if (erro('nome')) {
+          <span class="field__error" id="cfg-modelo-ed-nome-erro">{{ erro('nome') }}</span>
+        }
+      </label>
+      <label class="field" [class.is-error]="erro('tipoProcessoCodigo')">
+        <span class="field__label">Tipo de processo</span>
+        <select
+          class="select"
+          formControlName="tipoProcessoCodigo"
+          [attr.aria-invalid]="erro('tipoProcessoCodigo') ? 'true' : null"
+          [attr.aria-describedby]="erro('tipoProcessoCodigo') ? 'cfg-modelo-ed-tipo-erro' : null"
+        >
+          <option value="">Qualquer tipo de processo</option>
+          @for (tipo of tiposDeProcesso(); track tipo.codigo) {
+            <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+          }
+        </select>
+        @if (erro('tipoProcessoCodigo')) {
+          <span class="field__error" id="cfg-modelo-ed-tipo-erro">{{
+            erro('tipoProcessoCodigo')
+          }}</span>
+        }
+      </label>
+      <label class="field form-grid__full" [class.is-error]="erro('descricao')">
+        <span class="field__label">Descrição</span>
+        <textarea
+          class="textarea"
+          formControlName="descricao"
+          rows="2"
+          maxlength="1000"
+          [attr.aria-invalid]="erro('descricao') ? 'true' : null"
+          [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-ed-descricao-erro' : null"
+        ></textarea>
+        @if (erro('descricao')) {
+          <span class="field__error" id="cfg-modelo-ed-descricao-erro">{{
+            erro('descricao')
+          }}</span>
+        }
+      </label>
+    </fieldset>
+  </form>
+
+  @if (vocabularioDosDocumentosComErro()) {
+    <ui-alert variant="warning" heading="Fases ou tipos de documento não carregados">
+      Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos.
+      <div class="list-state__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          (click)="recarregarVocabulario.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  @if (conteudo(); as c) {
+    <ui-editor-de-formulario
+      idBase="cfg-modelo"
+      [conteudo]="c"
+      [catalogo]="fatos()"
+      [finalidade]="m.finalidade"
+      [disabled]="salvando()"
+      [recusas]="recusas()"
+      [termosDisponiveis]="termosDisponiveis()"
+      (conteudoChange)="conteudoChange.emit($event)"
+    />
+
+    <ui-editor-de-documentos-exigidos
+      idBase="cfg-modelo-docs"
+      [documentos]="documentosExigidos()"
+      [fases]="fases()"
+      [tipos]="tiposDeDocumento()"
+      [fatos]="fatosDosDocumentos()"
+      [citaveis]="fatosCitaveisDosDocumentos()"
+      [disabled]="salvando()"
+      [recusas]="recusasDosDocumentos().porDocumento"
+      [recusasGerais]="recusasDosDocumentos().gerais"
+      (documentosChange)="documentosChange.emit($event)"
+    />
+  }
+
+  <p>
+    <a
+      class="btn btn--secondary"
+      routerLink="/simulador-de-formulario"
+      [queryParams]="{ modelo: m.id }"
+      target="_blank"
+      rel="noopener"
+    >
+      <i class="pi pi-play" aria-hidden="true"></i>
+      Simular o modelo
+      <span class="sr-only">(abre em nova aba)</span>
+    </a>
+    @if (conteudoAlterado()) {
+      <span class="field__hint"
+        >A simulação usa o modelo gravado: grave as alterações para simulá-las.</span
+      >
+    }
+  </p>
+
+  <div class="form-drawer__footer">
+    <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario">Voltar sem salvar</a>
+    <button type="submit" form="cfg-modelo-edicao" class="btn btn--primary" [disabled]="salvando()">
+      @if (salvando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Salvar modelo' }}
+    </button>
+  </div>
+}

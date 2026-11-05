@@ -34,8 +34,8 @@ export interface ModelosFormularioQuery {
  * que o processo copia ao partir de um modelo (ADR-0136, UNI-REQ-0144).
  *
  * A listagem paginada da manutenção é lida pela página com `useApiResource`; aqui ficam a
- * listagem filtrada por página e por inteiro, para quem oferece a escolha de um modelo, a leitura
- * de um modelo e as escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
+ * listagem filtrada por página e por inteiro, para quem oferece a escolha de um modelo, e as
+ * escritas. O PUT substitui o conteúdo inteiro, e o DELETE desativa — o modelo
  * desativado deixa de ser oferecido a processo novo, e a ativação o devolve.
  *
  * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em `ApiResult<T>`;
@@ -74,13 +74,6 @@ export class ModelosFormularioApi {
     query: Omit<ModelosFormularioQuery, 'cursor'> = {},
   ): Observable<ApiResult<readonly ModeloFormularioView[]>> {
     return coletarPaginas((cursor) => this.listar({ ...query, cursor }));
-  }
-
-  /** GET `/api/configuracao/admin/modelos-formulario/{id}` — o modelo com o conteúdo. */
-  obter(id: string): Observable<ApiResult<ModeloFormularioView>> {
-    return this.http.get<ApiResult<ModeloFormularioView>>(this.admin(id), {
-      context: withVendorMime('modelo-formulario', 1),
-    });
   }
 
   /** POST `/api/configuracao/admin/modelos-formulario` — cria o modelo, já ativo. */

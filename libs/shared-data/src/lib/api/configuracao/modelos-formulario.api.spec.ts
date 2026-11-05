@@ -103,17 +103,6 @@ describe('ModelosFormularioApi', () => {
     expect(resultado.ok).toBe(false);
   });
 
-  it('obter() pede o media type do modelo, sem o qual a API responde 406', async () => {
-    const promise = firstValueFrom(api.obter(ID));
-    const req = controller.expectOne(`${ADMIN}/${ID}`);
-    expect(req.request.context.get(VENDOR_MIME_TOKEN)).toEqual({
-      resource: 'modelo-formulario',
-      version: 1,
-    });
-    req.flush({});
-    await promise;
-  });
-
   it('obterRenderizavel() pede o formulário v2 do modelo', async () => {
     const promise = firstValueFrom(api.obterRenderizavel(ID));
     const req = controller.expectOne(`${ADMIN}/${ID}/renderizavel`);
