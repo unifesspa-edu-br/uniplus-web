@@ -256,6 +256,26 @@ describe('ComboboxComponent', () => {
     expect(evento.defaultPrevented).toBe(false);
   });
 
+  it('Enter com keyCode 229 mantém a lista aberta e a busca mesmo sem isComposing', () => {
+    fixture.componentInstance.escolhido.set('rg');
+    fixture.detectChanges();
+    digitar('CP');
+
+    const evento = new KeyboardEvent('keydown', {
+      key: 'Enter',
+      keyCode: 229,
+      isComposing: false,
+      bubbles: true,
+      cancelable: true,
+    });
+    campo().dispatchEvent(evento);
+    fixture.detectChanges();
+
+    expect(campo().getAttribute('aria-expanded')).toBe('true');
+    expect(campo().value).toBe('CP');
+    expect(evento.defaultPrevented).toBe(false);
+  });
+
   it('a lista aberta fecha quando um fieldset desabilita o campo', () => {
     const fieldset = document.createElement('fieldset');
     nativo.parentElement?.appendChild(fieldset);

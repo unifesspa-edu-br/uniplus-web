@@ -249,7 +249,7 @@ export class ComboboxComponent {
   }
 
   protected teclar(evento: KeyboardEvent): void {
-    if (evento.isComposing) return;
+    if (evento.isComposing || evento.keyCode === 229) return;
 
     if (evento.key === 'ArrowDown' || evento.key === 'ArrowUp') {
       evento.preventDefault();
