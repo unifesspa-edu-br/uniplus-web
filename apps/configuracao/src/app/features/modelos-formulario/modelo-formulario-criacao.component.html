@@ -133,7 +133,7 @@
         class="btn btn--primary"
         [attr.aria-disabled]="salvando()"
         [attr.aria-busy]="salvando()"
-        (click)="salvando() && $event.preventDefault()"
+        (click)="salvando() ? $event.preventDefault() : null"
       >
         @if (salvando()) {
           <ui-spinner size="sm" />

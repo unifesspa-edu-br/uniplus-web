@@ -68,7 +68,7 @@
       class="btn btn--primary"
       [routerLink]="loading() ? null : 'novo'"
       [attr.aria-disabled]="loading()"
-      (click)="loading() && $event.preventDefault()"
+      (click)="loading() ? $event.preventDefault() : null"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo termo
@@ -143,7 +143,7 @@
           class="btn btn--primary"
           [routerLink]="loading() ? null : 'novo'"
           [attr.aria-disabled]="loading()"
-          (click)="loading() && $event.preventDefault()"
+          (click)="loading() ? $event.preventDefault() : null"
           >Novo termo</a
         >
       </ui-empty-state>

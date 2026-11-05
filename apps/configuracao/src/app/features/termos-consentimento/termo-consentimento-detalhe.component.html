@@ -97,7 +97,7 @@
         class="btn btn--primary"
         [attr.aria-disabled]="processando()"
         [attr.aria-busy]="acaoEmAndamento() === 'rascunho'"
-        (click)="processando() && $event.preventDefault()"
+        (click)="processando() ? $event.preventDefault() : null"
       >
         @if (acaoEmAndamento() === 'rascunho') {
           <ui-spinner size="sm" />

@@ -3,7 +3,7 @@
     class="btn btn--tertiary btn--sm btn--rect cfg-voltar"
     routerLink="/termos-consentimento"
     [attr.aria-disabled]="processando() ? 'true' : null"
-    (click)="processando() && $event.preventDefault()"
+    (click)="processando() ? $event.preventDefault() : null"
   >
     <i class="pi pi-chevron-left" aria-hidden="true"></i>
     Voltar à lista
