@@ -43,6 +43,7 @@ let dialogIdSeed = 0;
         </div>
         <div class="uni-dialog__body">
           <p [id]="messageId()">{{ message() }}</p>
+          <ng-content />
         </div>
         <div class="uni-dialog__footer">
           <button
@@ -63,8 +64,8 @@ let dialogIdSeed = 0;
           >
             {{ confirmLabel() }}
           </button>
-          </div>
         </div>
+      </div>
     </dialog>
   `,
 })
@@ -133,9 +134,8 @@ export class ConfirmDialogComponent {
 
   private openDialog(dialog: HTMLDialogElement): void {
     if (dialog.open) return;
-    this.lastFocusedElement = document.activeElement instanceof HTMLElement
-      ? document.activeElement
-      : null;
+    this.lastFocusedElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     if (typeof dialog.showModal === 'function') {
       dialog.showModal();
     } else {
