@@ -1,0 +1,206 @@
+<section aria-labelledby="cfg-termo-rascunho" class="form-section">
+  <h2 id="cfg-termo-rascunho" class="form-section__title">Rascunho corrente</h2>
+
+  <ui-alert [variant]="termo()?.revisado ? 'success' : 'warning'" [heading]="statusLabel()">
+    {{
+      termo()?.revisado
+        ? 'A revisão vale para o conteúdo exato promovido a seguir — editar o
+    rascunho de novo reverte automaticamente para "Em elaboração".'
+        : 'Preencha texto e base legal e
+    marque como revisado antes de promover uma versão.'
+    }}
+  </ui-alert>
+
+  <form
+    [formGroup]="form()"
+    (ngSubmit)="!processando() && salvar.emit()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="cfg-termo-consentimento__campos" [disabled]="processando()">
+      <legend class="sr-only">Campos do rascunho</legend>
+      <div class="form-grid">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.texto)">
+          <span class="field__label">Texto</span>
+          <textarea
+            class="textarea"
+            rows="8"
+            formControlName="texto"
+            [attr.aria-invalid]="erroDoCampo(form().controls.texto) ? 'true' : null"
+          ></textarea>
+          <span class="field__hint">Até {{ textoMax }} caracteres.</span>
+          @if (erroDoCampo(form().controls.texto)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.texto) }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erroDoCampo(form().controls.baseLegal)">
+          <span class="field__label">Base legal</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="baseLegal"
+            [attr.aria-invalid]="erroDoCampo(form().controls.baseLegal) ? 'true' : null"
+          />
+          @if (erroDoCampo(form().controls.baseLegal)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.baseLegal) }}</span>
+          }
+        </label>
+
+        <label class="field">
+          <span class="field__label">Forma de aceite</span>
+          <select
+            class="select"
+            formControlName="formaAceite"
+            [attr.aria-invalid]="erroDoCampo(form().controls.formaAceite) ? 'true' : null"
+          >
+            @for (opcao of formasAceite; track opcao.value) {
+              <option [value]="opcao.value">{{ opcao.label }}</option>
+            }
+          </select>
+          @if (erroDoCampo(form().controls.formaAceite)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.formaAceite) }}</span>
+          }
+          <span
+            class="field__hint"
+            title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
+          >
+            &quot;A definir&quot; é válido até a promoção final do processo.
+          </span>
+        </label>
+      </div>
+    </fieldset>
+
+    <div class="form-drawer__footer">
+      <button
+        type="submit"
+        class="btn btn--primary"
+        [attr.aria-disabled]="processando()"
+        [attr.aria-busy]="acaoEmAndamento() === 'rascunho'"
+        (click)="processando() && $event.preventDefault()"
+      >
+        @if (acaoEmAndamento() === 'rascunho') {
+          <ui-spinner size="sm" />
+        }
+        {{ acaoEmAndamento() === 'rascunho' ? 'Salvando...' : 'Salvar rascunho' }}
+      </button>
+      <span
+        [attr.role]="motivoRevisaoIndisponivel() === null ? null : 'group'"
+        [attr.tabindex]="motivoRevisaoIndisponivel() === null ? null : 0"
+        [attr.aria-label]="
+          motivoRevisaoIndisponivel() === null ? null : 'Marcar como revisado indisponível'
+        "
+        [attr.aria-describedby]="
+          motivoRevisaoIndisponivel() === null ? null : 'cfg-termo-consentimento-motivo-revisao'
+        "
+        [attr.data-tooltip]="motivoRevisaoIndisponivel()"
+      >
+        <button
+          type="button"
+          class="btn btn--secondary btn--rect"
+          [disabled]="processando() || !podeRevisar()"
+          [attr.aria-disabled]="processando() || !podeRevisar() ? 'true' : null"
+          (click)="revisar.emit()"
+        >
+          @if (acaoEmAndamento() === 'revisar') {
+            <ui-spinner size="sm" />
+          }
+          {{ acaoEmAndamento() === 'revisar' ? 'Marcando...' : 'Marcar como revisado' }}
+        </button>
+      </span>
+      @if (motivoRevisaoIndisponivel(); as motivo) {
+        <span id="cfg-termo-consentimento-motivo-revisao" class="sr-only">{{ motivo }}</span>
+      }
+      <span
+        [attr.role]="motivoPromocaoIndisponivel() === null ? null : 'group'"
+        [attr.tabindex]="motivoPromocaoIndisponivel() === null ? null : 0"
+        [attr.aria-label]="
+          motivoPromocaoIndisponivel() === null ? null : 'Promover a versão indisponível'
+        "
+        [attr.aria-describedby]="
+          motivoPromocaoIndisponivel() === null ? null : 'cfg-termo-consentimento-motivo-promocao'
+        "
+        [attr.data-tooltip]="motivoPromocaoIndisponivel()"
+      >
+        <button
+          type="button"
+          class="btn btn--secondary btn--rect"
+          [disabled]="processando() || !podePromover()"
+          [attr.aria-disabled]="processando() || !podePromover() ? 'true' : null"
+          (click)="promover.emit()"
+        >
+          @if (acaoEmAndamento() === 'promover') {
+            <ui-spinner size="sm" />
+          }
+          {{ acaoEmAndamento() === 'promover' ? 'Promovendo...' : 'Promover a versão' }}
+        </button>
+      </span>
+      @if (motivoPromocaoIndisponivel(); as motivo) {
+        <span id="cfg-termo-consentimento-motivo-promocao" class="sr-only">{{ motivo }}</span>
+      }
+    </div>
+    <p class="field__hint">
+      "Marcar como revisado" e "Promover a versão" agem sobre o rascunho já salvo no servidor — se
+      você editou os campos acima, salve antes.
+    </p>
+  </form>
+</section>
+
+<section aria-labelledby="cfg-termo-versoes" class="form-section">
+  <h2 id="cfg-termo-versoes" class="form-section__title">Versões promovidas</h2>
+  @if ((termo()?.versoes?.length ?? 0) > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Versões promovidas deste termo de consentimento
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Promovida em</th>
+            <th scope="col">Forma de aceite</th>
+            <th scope="col">Hash</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (v of termo()?.versoes; track v.id) {
+            <tr>
+              <td data-label="Promovida em">{{ formatarData(v.promovidaEm) }}</td>
+              <td data-label="Forma de aceite">{{ formaAceiteLabel(v.formaAceite) }}</td>
+              <td data-label="Hash">
+                <code [title]="v.hash">{{ hashTruncado(v.hash) }}</code>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="cfg-meta">Nenhuma versão promovida ainda.</p>
+  }
+</section>
+
+<section aria-labelledby="cfg-termo-remocao" class="form-section">
+  <h2 id="cfg-termo-remocao" class="form-section__title">Remover termo</h2>
+  <span
+    [attr.role]="motivoRemocaoIndisponivel() === null ? null : 'group'"
+    [attr.tabindex]="motivoRemocaoIndisponivel() === null ? null : 0"
+    [attr.aria-label]="motivoRemocaoIndisponivel() === null ? null : 'Remover termo indisponível'"
+    [attr.aria-describedby]="
+      motivoRemocaoIndisponivel() === null ? null : 'cfg-termo-consentimento-motivo-remocao'
+    "
+    [attr.data-tooltip]="motivoRemocaoIndisponivel()"
+  >
+    <button
+      type="button"
+      class="btn btn--danger btn--rect"
+      [disabled]="processando() || !podeRemover()"
+      [attr.aria-disabled]="processando() || !podeRemover() ? 'true' : null"
+      (click)="remover.emit()"
+    >
+      Remover
+    </button>
+  </span>
+  @if (motivoRemocaoIndisponivel(); as motivo) {
+    <span id="cfg-termo-consentimento-motivo-remocao" class="sr-only">{{ motivo }}</span>
+  }
+</section>

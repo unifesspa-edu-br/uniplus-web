@@ -1,0 +1,91 @@
+<form
+  [formGroup]="form()"
+  (ngSubmit)="!criando() && salvar.emit()"
+  novalidate
+  class="form-drawer__form"
+>
+  <fieldset class="form-drawer__campos" role="none" [disabled]="criando()">
+    <section aria-labelledby="cfg-termo-novo" class="form-section">
+      <h2 id="cfg-termo-novo" class="form-section__title">Novo termo</h2>
+      <div class="form-grid">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.nome)">
+          <span class="field__label is-required">Nome</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="nome"
+            aria-required="true"
+            [attr.aria-invalid]="erroDoCampo(form().controls.nome) ? 'true' : null"
+          />
+          @if (erroDoCampo(form().controls.nome)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.nome) }}</span>
+          }
+        </label>
+
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.texto)">
+          <span class="field__label">Texto do rascunho</span>
+          <textarea
+            class="textarea"
+            rows="6"
+            formControlName="texto"
+            [attr.aria-invalid]="erroDoCampo(form().controls.texto) ? 'true' : null"
+          ></textarea>
+          <span class="field__hint">Até {{ textoMax }} caracteres. Pode nascer vazio.</span>
+          @if (erroDoCampo(form().controls.texto)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.texto) }}</span>
+          }
+        </label>
+
+        <label class="field" [class.is-error]="erroDoCampo(form().controls.baseLegal)">
+          <span class="field__label">Base legal do rascunho</span>
+          <input
+            class="input"
+            type="text"
+            formControlName="baseLegal"
+            [attr.aria-invalid]="erroDoCampo(form().controls.baseLegal) ? 'true' : null"
+          />
+          @if (erroDoCampo(form().controls.baseLegal)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.baseLegal) }}</span>
+          }
+        </label>
+
+        <label class="field">
+          <span class="field__label">Forma de aceite do rascunho</span>
+          <select
+            class="select"
+            formControlName="formaAceite"
+            [attr.aria-invalid]="erroDoCampo(form().controls.formaAceite) ? 'true' : null"
+          >
+            @for (opcao of formasAceite; track opcao.value) {
+              <option [value]="opcao.value">{{ opcao.label }}</option>
+            }
+          </select>
+          @if (erroDoCampo(form().controls.formaAceite)) {
+            <span class="field__error">{{ erroDoCampo(form().controls.formaAceite) }}</span>
+          }
+          <span
+            class="field__hint"
+            title="A recusa por forma não resolvida é regra de publicação do processo, não deste cadastro."
+          >
+            &quot;A definir&quot; é um valor legítimo até a promoção final do processo.
+          </span>
+        </label>
+      </div>
+    </section>
+  </fieldset>
+
+  <div class="form-drawer__footer">
+    <button
+      type="submit"
+      class="btn btn--primary"
+      [attr.aria-disabled]="criando()"
+      [attr.aria-busy]="criando()"
+      (click)="criando() && $event.preventDefault()"
+    >
+      @if (criando()) {
+        <ui-spinner size="sm" />
+      }
+      {{ criando() ? 'Criando...' : 'Criar termo' }}
+    </button>
+  </div>
+</form>

@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -8,6 +9,7 @@ import {
   TermoConsentimentoResumoDto,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TermosConsentimentoStore } from './termos-consentimento.store';
 import { TermosConsentimentoListPage } from './termos-consentimento-list.page';
 
 const BASE = 'http://localhost:5000';
@@ -29,7 +31,7 @@ const USO_IMAGEM = termoResumo({ id: 'id-uso-imagem', nome: 'Uso de Imagem', rev
 
 describe('TermosConsentimentoListPage', () => {
   let fixture: ComponentFixture<TermosConsentimentoListPage>;
-  let component: TermosConsentimentoListPage;
+  let store: TermosConsentimentoStore;
   let controller: HttpTestingController;
 
   beforeEach(() => {
@@ -49,97 +51,120 @@ describe('TermosConsentimentoListPage', () => {
     controller.verify();
   });
 
-  function montar(
+  async function propagar(): Promise<void> {
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    fixture.detectChanges();
+  }
+
+  async function montar(
     itens: readonly TermoConsentimentoResumoDto[] = [LGPD, USO_IMAGEM],
     headers?: Record<string, string>,
-  ): void {
+  ): Promise<void> {
     fixture = TestBed.createComponent(TermosConsentimentoListPage);
-    component = fixture.componentInstance;
+    store = fixture.debugElement.injector.get(TermosConsentimentoStore);
     controller = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
     const req = controller.expectOne((r) => r.url === URL && r.params.get('limit') === '50');
     req.flush([...itens], { headers });
+    await propagar();
+    await propagar();
   }
 
-  it('carrega a lista inicial de termos de consentimento', () => {
-    montar();
-    expect(component['termosFiltrados']().length).toBe(2);
-    expect(component['termosFiltrados']()[0].nome).toBe('Termo LGPD');
+  it('carrega a lista inicial de termos de consentimento', async () => {
+    await montar();
+    expect(store.termos().length).toBe(2);
+    expect(store.termos()[0].nome).toBe('Termo LGPD');
   });
 
-  it('aplica debounce de 300ms e normaliza com trim ao alterar a busca', () => {
+  it('aplica debounce de 300ms e normaliza com trim ao alterar a busca', async () => {
     vi.useFakeTimers();
-    montar();
+    await montar();
 
-    component['alterarBusca']('  lgpd  ');
+    store.alterarBusca('  lgpd  ');
 
     vi.advanceTimersByTime(200);
+    await propagar();
     controller.expectNone((r) => r.url === URL && r.params.has('q'));
 
     vi.advanceTimersByTime(100);
+    await propagar();
     const req = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd');
     req.flush([LGPD]);
+    await propagar();
 
-    expect(component['termosFiltrados']().length).toBe(1);
+    expect(store.termos().length).toBe(1);
   });
 
-  it('limpa filtros, cancela o debounce pendente e permite repetir o mesmo termo', () => {
+  it('limpa filtros, cancela o debounce pendente e permite repetir o mesmo termo', async () => {
     vi.useFakeTimers();
-    montar();
+    await montar();
 
-    component['alterarBusca']('lgpd');
+    store.alterarBusca('lgpd');
     vi.advanceTimersByTime(150);
+    await propagar();
 
-    component['limparFiltros']();
+    store.limparFiltros();
+    await propagar();
 
     const req = controller.expectOne((r) => r.url === URL && !r.params.has('q'));
     req.flush([LGPD, USO_IMAGEM]);
+    await propagar();
 
     vi.advanceTimersByTime(150);
+    await propagar();
     controller.expectNone((r) => r.url === URL && r.params.get('q') === 'lgpd');
-    expect(component['busca']()).toBe('');
+    expect(store.busca()).toBe('');
 
-    component['alterarBusca']('lgpd');
+    store.alterarBusca('lgpd');
     vi.advanceTimersByTime(300);
+    await propagar();
 
     controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd').flush([LGPD]);
   });
 
-  it('ignora disparos se o termo normalizado for idêntico', () => {
+  it('ignora disparos se o termo normalizado for idêntico', async () => {
     vi.useFakeTimers();
-    montar();
+    await montar();
 
-    component['alterarBusca']('lgpd');
+    store.alterarBusca('lgpd');
     vi.advanceTimersByTime(300);
+    await propagar();
     controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd').flush([LGPD]);
 
-    component['alterarBusca']('lgpd ');
+    store.alterarBusca('lgpd ');
     vi.advanceTimersByTime(300);
+    await propagar();
 
     controller.expectNone((r) => r.url === URL && r.params.get('q') === 'lgpd');
   });
 
-  it('zera cursores e lista imediatamente ao aplicar um novo filtro', () => {
-    montar();
+  it('zera cursores e lista imediatamente ao aplicar um novo filtro', async () => {
+    await montar();
 
-    component['aplicarNovoFiltro']('novo-termo');
+    vi.useFakeTimers();
+    store.alterarBusca('novo-termo');
+    vi.advanceTimersByTime(300);
+    await propagar();
 
-    expect(component['prevCursor']()).toBeNull();
-    expect(component['nextCursor']()).toBeNull();
-    expect(component['termosFiltrados']()).toEqual([]);
+    expect(store.prevCursor()).toBeNull();
+    expect(store.nextCursor()).toBeNull();
+    expect(store.termos()).toEqual([]);
 
     const req = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'novo-termo');
     req.flush([LGPD]);
+    await propagar();
   });
 
-  it('navega pelas páginas utilizando cursores obtidos do header Link', () => {
+  it('navega pelas páginas utilizando cursores obtidos do header Link', async () => {
     const linkHeader =
       '<http://localhost:5000/api/configuracao/termos-consentimento?cursor=next-123&direction=next>; rel="next"';
-    montar([LGPD], { Link: linkHeader });
+    await montar([LGPD], { Link: linkHeader });
 
-    expect(component['nextCursor']()).toBe('next-123');
+    expect(store.nextCursor()).toBe('next-123');
 
-    component['proximaPagina']();
+    store.proximaPagina();
+    await propagar();
     const req = controller.expectOne(
       (r) =>
         r.url === URL &&
@@ -152,15 +177,17 @@ describe('TermosConsentimentoListPage', () => {
       },
     });
 
-    expect(component['prevCursor']()).toBe('prev-456');
+    await propagar();
+    expect(store.prevCursor()).toBe('prev-456');
   });
 
-  it('preserva o filtro ao navegar para a próxima página', () => {
+  it('preserva o filtro ao navegar para a próxima página', async () => {
     vi.useFakeTimers();
-    montar();
+    await montar();
 
-    component['alterarBusca']('lgpd');
+    store.alterarBusca('lgpd');
     vi.advanceTimersByTime(300);
+    await propagar();
     controller
       .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd')
       .flush([LGPD], {
@@ -168,8 +195,10 @@ describe('TermosConsentimentoListPage', () => {
           Link: '<http://localhost:5000/api/configuracao/termos-consentimento?cursor=next-filtered&direction=next>; rel="next"',
         },
       });
+    await propagar();
 
-    component['proximaPagina']();
+    store.proximaPagina();
+    await propagar();
 
     controller
       .expectOne(
@@ -182,27 +211,30 @@ describe('TermosConsentimentoListPage', () => {
       .flush([]);
   });
 
-  it('ignora resposta atrasada de um filtro anterior', () => {
+  it('ignora resposta atrasada de um filtro anterior', async () => {
     vi.useFakeTimers();
-    montar();
+    await montar();
 
-    component['alterarBusca']('lgpd');
+    store.alterarBusca('lgpd');
     vi.advanceTimersByTime(300);
+    await propagar();
     const reqAnterior = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd');
 
-    component['alterarBusca']('imagem');
+    store.alterarBusca('imagem');
     vi.advanceTimersByTime(300);
+    await propagar();
     const reqAtual = controller.expectOne((r) => r.url === URL && r.params.get('q') === 'imagem');
 
     reqAtual.flush([USO_IMAGEM]);
-    reqAnterior.flush([LGPD]);
+    await propagar();
+    expect(reqAnterior.cancelled).toBe(true);
 
-    expect(component['termosFiltrados']()).toEqual([USO_IMAGEM]);
+    expect(store.termos()).toEqual([USO_IMAGEM]);
   });
 
-  it('exibe erro ao falhar carregamento e permite tentar novamente', () => {
+  it('exibe erro ao falhar carregamento e permite tentar novamente', async () => {
     fixture = TestBed.createComponent(TermosConsentimentoListPage);
-    component = fixture.componentInstance;
+    store = fixture.debugElement.injector.get(TermosConsentimentoStore);
     controller = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
 
@@ -216,17 +248,20 @@ describe('TermosConsentimentoListPage', () => {
       },
     );
 
-    expect(component['errorMessage']()).toBeTruthy();
+    await propagar();
+    expect(store.errorMessage()).toBeTruthy();
 
-    component['tentarNovamente']();
+    store.tentarNovamente();
+    await propagar();
     const req2 = controller.expectOne((r) => r.url === URL);
     req2.flush([LGPD]);
+    await propagar();
 
-    expect(component['errorMessage']()).toBeNull();
-    expect(component['termosFiltrados']().length).toBe(1);
+    expect(store.errorMessage()).toBeNull();
+    expect(store.termos().length).toBe(1);
   });
-  it('expõe legenda acessível descrevendo a tabela', () => {
-    montar();
+  it('expõe legenda acessível descrevendo a tabela', async () => {
+    await montar();
     fixture.detectChanges();
 
     const caption = fixture.nativeElement.querySelector('table > caption');
@@ -237,8 +272,8 @@ describe('TermosConsentimentoListPage', () => {
     );
   });
 
-  it('a ação de abrir possui ícone, tooltip, nome acessível e leva ao termo', () => {
-    montar();
+  it('a ação de abrir possui ícone, tooltip, nome acessível e leva ao termo', async () => {
+    await montar();
     fixture.detectChanges();
 
     const link = fixture.nativeElement.querySelector(

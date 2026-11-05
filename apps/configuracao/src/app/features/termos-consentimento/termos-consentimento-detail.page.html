@@ -1,0 +1,70 @@
+<div class="page-header page-header--form">
+  <a
+    class="btn btn--tertiary btn--sm btn--rect cfg-voltar"
+    routerLink="/termos-consentimento"
+    [attr.aria-disabled]="processando() ? 'true' : null"
+    (click)="processando() && $event.preventDefault()"
+  >
+    <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 #tituloPagina class="page-header__title" tabindex="-1">{{ titulo() }}</h1>
+    <p class="page-header__desc">
+      O texto e a base legal do rascunho continuam editáveis mesmo depois de promovido — editar de
+      novo é o início da próxima versão. Quem revisou ou promoveu não é exibido aqui (a leitura é
+      anônima); só a data.
+    </p>
+  </div>
+</div>
+
+@if (carregando()) {
+<div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando termo...</div>
+} @else if (erroCarregar(); as erro) {
+<ui-alert variant="danger" heading="Não foi possível carregar o termo">
+  {{ erro }}
+  <div class="cfg-termo-consentimento__retry">
+    <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarTermo()">
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @else { @if (acaoErro()) {
+<ui-alert variant="danger" heading="Não foi possível concluir a ação">
+  {{ acaoErro() }}
+  <div class="cfg-termo-consentimento__retry">
+    <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarTermo()">
+      Recarregar dados
+    </button>
+  </div>
+</ui-alert>
+} @if (!modoEdicao()) { @if (formError()) {
+<ui-alert variant="danger" heading="Não foi possível criar o termo">{{ formError() }}</ui-alert> }
+<cfg-termo-consentimento-formulario
+  [form]="criarForm"
+  [criando]="criando()"
+  [tentouSalvar]="tentouSalvar()"
+  (salvar)="criar()"
+/>
+} @else {
+<cfg-termo-consentimento-detalhe
+  [form]="rascunhoForm"
+  [termo]="termo()"
+  [processando]="processando()"
+  [acaoEmAndamento]="acaoEmAndamento()"
+  [tentouSalvar]="tentouSalvar()"
+  [podeRevisar]="podeRevisar()"
+  [podePromover]="podePromover()"
+  [podeRemover]="podeRemover()"
+  (salvar)="salvarRascunho()"
+  (revisar)="marcarRevisado()"
+  (promover)="promoverVersao()"
+  (remover)="pedirRemocao()"
+/>
+<cfg-termo-consentimento-remocao
+  [(aberto)]="confirmRemoverAberto"
+  [nome]="termo()?.nome ?? ''"
+  [processando]="processando()"
+  (confirmado)="removerConfirmado()"
+/>
+} }

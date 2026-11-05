@@ -1,0 +1,164 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Termo de Consentimento</h1>
+    <p class="page-header__desc">
+      Catálogo administrável de termos de consentimento/declaração (declaração de veracidade,
+      consentimento LGPD, declaração de residência para cota territorial) que um Processo Seletivo
+      pode vir a exigir do candidato — o texto de um termo nunca é digitado livre no processo,
+      sempre vem deste cadastro.
+    </p>
+  </div>
+</div>
+
+@if (errorMessage()) {
+  <ui-alert variant="danger" heading="Não foi possível carregar os termos de consentimento">
+    {{ errorMessage() }}
+    <div class="cfg-termos-consentimento__retry">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [disabled]="loading()"
+        (click)="tentar.emit()"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+}
+
+<div class="filter-bar" role="search" aria-label="Filtrar termos de consentimento">
+  <div class="filter-bar__row">
+    <div class="input-group">
+      <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
+      <input
+        type="search"
+        class="input"
+        placeholder="Buscar por nome..."
+        aria-label="Buscar por nome"
+        maxlength="200"
+        [value]="busca()"
+        [readOnly]="loading()"
+        [attr.aria-disabled]="loading()"
+        (input)="!loading() && buscaAlterada.emit(inputValue($event))"
+      />
+    </div>
+    <button
+      type="button"
+      class="btn btn--tertiary btn--sm btn--rect"
+      [attr.aria-disabled]="loading()"
+      (click)="!loading() && limpar.emit()"
+    >
+      Limpar
+    </button>
+  </div>
+</div>
+
+<section class="panel" aria-labelledby="cfg-termos-consentimento-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-termos-consentimento-title">Termos de consentimento</h2>
+      <span class="list-count" aria-label="Total de termos de consentimento exibidos">
+        {{ termosFiltrados().length }}
+      </span>
+      @if (loading()) {
+        <span class="cfg-termos-consentimento__loading"><ui-spinner size="sm" /> Carregando</span>
+      }
+    </div>
+    <a
+      class="btn btn--primary"
+      [routerLink]="loading() ? null : 'novo'"
+      [attr.aria-disabled]="loading()"
+      (click)="loading() && $event.preventDefault()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo termo
+    </a>
+  </div>
+
+  @if (termosFiltrados().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Termos de consentimento, com forma de aceite e status de revisão
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Nome</th>
+            <th scope="col">Forma de aceite</th>
+            <th scope="col">Status de revisão</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of termosFiltrados(); track t.id) {
+            <tr>
+              <td data-label="Nome">
+                <div class="table-responsive__primary">{{ t.nome }}</div>
+              </td>
+              <td data-label="Forma de aceite">
+                <ui-tag [variant]="formaAceiteVariante(t.formaAceiteRascunho)">
+                  {{ formaAceiteLabel(t.formaAceiteRascunho) }}
+                </ui-tag>
+              </td>
+              <td data-label="Status de revisão">
+                <ui-tag [variant]="t.revisado ? 'success' : 'warning'">
+                  {{ t.revisado ? 'Revisado' : 'Em elaboração' }}
+                </ui-tag>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-folder-open"
+                  [accessibleName]="'Abrir termo de consentimento ' + t.nome"
+                  tooltip="Abrir termo de consentimento"
+                  [link]="[t.id]"
+                  [isDisabled]="loading()"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!loading() && !errorMessage()) {
+    @if (temFiltroAtivo()) {
+      <ui-empty-state
+        heading="Nenhum termo encontrado"
+        description="Ajuste a busca por nome para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [attr.aria-disabled]="loading()"
+          (click)="!loading() && limpar.emit()"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum termo de consentimento cadastrado"
+        description="Cadastre o primeiro termo para disponibilizá-lo ao catálogo institucional."
+      >
+        <a
+          class="btn btn--primary"
+          [routerLink]="loading() ? null : 'novo'"
+          [attr.aria-disabled]="loading()"
+          (click)="loading() && $event.preventDefault()"
+          >Novo termo</a
+        >
+      </ui-empty-state>
+    }
+  }
+
+  @if (prevCursor() !== null || nextCursor() !== null) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de termos de consentimento"
+      [hasPrevious]="prevCursor() !== null"
+      [hasNext]="nextCursor() !== null"
+      [isDisabled]="loading()"
+      (previous)="!loading() && anterior.emit()"
+      (next)="!loading() && proximo.emit()"
+    />
+  }
+</section>

@@ -103,6 +103,7 @@ describe('TermosConsentimentoDetailPage', () => {
     const tentarNovamente = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
     expect(tentarNovamente?.textContent).toContain('Tentar novamente');
     tentarNovamente?.click();
+    await propagate();
 
     controller.expectOne(DETALHE_PATH).flush(termo());
     await propagate();
@@ -128,6 +129,34 @@ describe('TermosConsentimentoDetailPage', () => {
     salvar.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     controller.expectOne(DETALHE_PATH).flush(termo({ textoRascunho: 'Texto revisado' }));
+    await propagate();
+  });
+
+  it('mantém o diálogo aberto e anuncia a remoção enquanto recusa novas ações', async () => {
+    await carregarTermo();
+    const remover = fixture.nativeElement.querySelector('.btn--danger') as HTMLButtonElement;
+    remover.click();
+    await propagate();
+    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
+    const confirmar = dialog.querySelector(
+      '[data-testid="confirm-dialog-confirm"]',
+    ) as HTMLButtonElement;
+    confirmar.click();
+    await propagate();
+    const requisicao = controller.expectOne(
+      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}`,
+    );
+    expect(dialog.open).toBe(true);
+    expect(dialog.querySelector('[role="status"]')?.textContent).toContain('Removendo o termo');
+    expect(confirmar.getAttribute('aria-disabled')).toBe('true');
+    confirmar.click();
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    expect(dialog.open).toBe(true);
+    controller.expectNone(`${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}`);
+    requisicao.flush(
+      problem('uniplus.configuracao.termo_consentimento.invalido', 'Não foi possível remover'),
+      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
+    );
     await propagate();
   });
 
@@ -159,7 +188,7 @@ describe('TermosConsentimentoDetailPage', () => {
     await propagate();
   });
 
-  it('descarta a leitura antiga quando salvar e revisar terminam em sequência', async () => {
+  it('aguarda a recarga do salvamento antes de permitir revisar', async () => {
     await carregarTermo();
 
     component['salvarRascunho']();
@@ -171,6 +200,12 @@ describe('TermosConsentimentoDetailPage', () => {
     const leituraDoSalvamento = controller.expectOne(DETALHE_PATH);
 
     component['marcarRevisado']();
+    controller.expectNone(
+      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
+    );
+    leituraDoSalvamento.flush(termo());
+    await propagate();
+    component['marcarRevisado']();
     const revisar = controller.expectOne(
       `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
     );
@@ -180,10 +215,42 @@ describe('TermosConsentimentoDetailPage', () => {
 
     leituraDaRevisao.flush(termo({ revisado: true, revisadoEm: '2026-08-11T13:00:00Z' }));
     await propagate();
-    leituraDoSalvamento.flush(termo({ revisado: false, revisadoEm: null }));
+    expect(leituraDoSalvamento.cancelled).toBe(true);
     await propagate();
 
     expect(component['termo']()?.revisado).toBe(true);
+  });
+
+  it('apresenta a recusa do rascunho no campo e direciona o foco', async () => {
+    await carregarTermo();
+    const salvar = fixture.nativeElement.querySelector(
+      'button[type="submit"]',
+    ) as HTMLButtonElement;
+    salvar.focus();
+    salvar.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    controller
+      .expectOne(`${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`)
+      .flush(
+        {
+          ...problem('uniplus.configuracao.termo_consentimento.invalido', 'Dados inválidos'),
+          errors: [
+            {
+              field: 'textoRascunho',
+              code: 'uniplus.configuracao.termo_consentimento.invalido',
+              message: 'Texto recusado.',
+            },
+          ],
+        },
+        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
+      );
+    await propagate();
+    await new Promise((resolve) => setTimeout(resolve));
+    const texto = fixture.nativeElement.querySelector(
+      'textarea[formControlName="texto"]',
+    ) as HTMLTextAreaElement;
+    expect(texto.getAttribute('aria-invalid')).toBe('true');
+    expect(fixture.nativeElement.textContent).toContain('Texto recusado.');
+    expect(document.activeElement).toBe(texto);
   });
 
   it('expõe o motivo dos botões indisponíveis por tooltip focável', async () => {
