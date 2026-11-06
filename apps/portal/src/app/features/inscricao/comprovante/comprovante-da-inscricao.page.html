@@ -28,18 +28,13 @@
     }
   </div>
 
+  <ui-falha-de-leitura titulo="Não foi possível abrir o comprovante" [leitura]="leitura" />
+
   @switch (estado()) { @case ('carregando') {
-  <div role="status" aria-busy="true">
+  <div [uiIndicadorDaLeitura]="leitura" aria-busy="true">
     <span class="sr-only">Carregando o comprovante…</span>
     <ui-skeleton skeletonKind="card" blockSize="10rem" />
   </div>
-  } @case ('erro') {
-  <ui-alert variant="danger" heading="Não foi possível abrir o comprovante">
-    {{ erro() }}
-    <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
-      Tentar novamente
-    </button>
-  </ui-alert>
   } @case ('pronto') { @if (carregado(); as c) {
   <ui-secao-de-documento [titulo]="nomeDoProcesso()" largura="inteira">
     <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>

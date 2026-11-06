@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Injector,
   afterNextRender,
   computed,
@@ -23,11 +24,14 @@ import {
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
 import {
+  acompanharLeitura,
   AlertComponent,
   CodigoDeVerificacaoComponent,
   DadoDirective,
   DadoRevelavelComponent,
   DocumentoComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   ListaDeDadosComponent,
   SecaoDeDocumentoComponent,
   SkeletonComponent,
@@ -89,6 +93,8 @@ function noFuso(instante: string, fuso: ComprovanteInscricaoDto['fusoHorario']):
     DadoDirective,
     DadoRevelavelComponent,
     DocumentoComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ListaDeDadosComponent,
     RouterLink,
     SecaoDeDocumentoComponent,
@@ -103,6 +109,7 @@ export class ComprovanteDaInscricaoPage {
   private readonly problemas = inject(ProblemI18nService);
   private readonly usuario = inject(UserContextService);
   private readonly injector = inject(Injector);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly tentativa = signal(0);
   private readonly documento = viewChild.required(DocumentoComponent);
 
@@ -113,6 +120,12 @@ export class ComprovanteDaInscricaoPage {
   protected readonly estado = signal<Estado>('carregando');
   protected readonly erro = signal<string | null>(null);
   protected readonly carregado = signal<Carregado | null>(null);
+  protected readonly leitura = acompanharLeitura({
+    falha: computed(() => (this.estado() === 'erro' ? this.erro() : null)),
+    pendente: computed(() => this.estado() === 'carregando'),
+    recarregar: () => this.carregar(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+  });
 
   protected readonly nomeDoProcesso = computed(
     () => this.carregado()?.inscricao.nomeDoProcesso ?? 'Processo seletivo',
@@ -285,7 +298,11 @@ export class ComprovanteDaInscricaoPage {
     if (leitura.tipo === 'pronto') {
       this.carregado.set(leitura.carregado);
       this.estado.set('pronto');
-      afterNextRender(() => this.documento().focar(), { injector: this.injector });
+      // Numa nova tentativa pedida pela pessoa, quem leva o foco ao título (ou anuncia a conclusão,
+      // se ela o tirou do botão) é o acompanhamento da leitura; focar aqui também somaria os dois.
+      if (this.leitura.fase() !== 'tentando') {
+        afterNextRender(() => this.documento().focar(), { injector: this.injector });
+      }
       return;
     }
     if (leitura.tipo === 'nao-encontrado' || leitura.falha.status === 404) {

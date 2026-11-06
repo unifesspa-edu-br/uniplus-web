@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { type Observable, of } from 'rxjs';
+import { type Observable, of, Subject } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
@@ -13,6 +13,7 @@ import {
   type MinhaInscricaoDto,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
@@ -447,6 +448,100 @@ describe('ComprovanteDaInscricaoPage', () => {
 
     expect(tela.textContent).not.toContain('Imprimir comprovante');
     expect(tela.textContent).toContain('Tentar novamente');
+  });
+
+  describe('nova tentativa depois do erro', () => {
+    const indisponivel = (): ApiResult<CertamePublicadoDto> =>
+      apiFailure(
+        {
+          type: 'about:blank',
+          title: 'Serviço indisponível',
+          status: 503,
+          code: 'indisponivel',
+          traceId: '',
+        },
+        503,
+        SEM_CABECALHOS,
+      );
+    const situacao = (tela: HTMLElement): string =>
+      tela.querySelector('ui-situacao-da-nova-tentativa')?.textContent ?? '';
+    const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
+
+    it('a leitura que dá certo tira o alerta e deixa o foco no título do documento', async () => {
+      vi.spyOn(servico, 'certame').mockReturnValueOnce(of(indisponivel()));
+      const tela = await abrir();
+      const tentar = Array.from(tela.querySelectorAll('button')).find(
+        (botao) => botao.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+      tentar.focus();
+
+      tentar.click();
+      await atualizar();
+      await macrotarefa();
+      await atualizar();
+
+      expect(tela.querySelector('.alert__title')).toBeNull();
+      expect(tela.textContent).toContain('Imprimir comprovante');
+      expect(document.activeElement).toBe(tela.querySelector('h1'));
+    });
+
+    it('a leitura que dá certo move o foco ao título e não soma o aviso de conclusão', async () => {
+      vi.spyOn(servico, 'certame').mockReturnValueOnce(of(indisponivel()));
+      const tela = await abrir();
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+      const tentar = Array.from(tela.querySelectorAll('button')).find(
+        (botao) => botao.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+      tentar.focus();
+
+      tentar.click();
+      await atualizar();
+      await macrotarefa();
+      await atualizar();
+
+      expect(document.activeElement).toBe(tela.querySelector('h1'));
+      expect(anunciar).not.toHaveBeenCalled();
+    });
+
+    it('com a leitura em curso, o aviso da falha segue na tela ao lado do esqueleto de carregamento', async () => {
+      const resposta = new Subject<ApiResult<CertamePublicadoDto>>();
+      vi.spyOn(servico, 'certame')
+        .mockReturnValueOnce(of(indisponivel()))
+        .mockReturnValueOnce(resposta);
+      const tela = await abrir();
+
+      Array.from(tela.querySelectorAll('button'))
+        .find((botao) => botao.textContent?.trim() === 'Tentar novamente')
+        ?.click();
+      await atualizar();
+
+      expect(situacao(tela)).toBe('Tentando novamente…');
+      expect(tela.querySelector('ui-skeleton')).not.toBeNull();
+      expect(tela.querySelectorAll('[role="status"]')).toHaveLength(1);
+      expect(tela.querySelector('.alert__title')?.textContent).toContain(
+        'Não foi possível abrir o comprovante',
+      );
+    });
+
+    it('a leitura que recusa na hora passa por "tentando" e termina em "também falhou", com o alerta no lugar', async () => {
+      const tela = await abrir('3');
+      const vistos: string[] = [];
+      const observador = new MutationObserver(() => vistos.push(situacao(tela)));
+      observador.observe(tela, { childList: true, characterData: true, subtree: true });
+      const tentar = Array.from(tela.querySelectorAll('button')).find(
+        (botao) => botao.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+
+      tentar.click();
+      await atualizar();
+      await macrotarefa();
+      await atualizar();
+      observador.disconnect();
+
+      expect(vistos).toContain('Tentando novamente…');
+      expect(situacao(tela)).toBe('A nova tentativa também falhou.');
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+    });
   });
 
   it('um número que a inscrição não emitiu não abre comprovante nenhum', async () => {
