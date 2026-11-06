@@ -1,495 +1,287 @@
-import { ApplicationRef } from '@angular/core';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Subject } from 'rxjs';
+import {
+  DIA_ESTADUAL,
+  DIA_MUNICIPAL,
+  DIA_NACIONAL_JANEIRO,
+  LEITURA,
+  PaginaDoDetalhe,
+  calendarioCom,
+  montarDetalhe,
+  problema,
+} from './calendario-dias-uteis.testing';
 
-import { CalendarioDiasUteisDetalhePage } from './calendario-dias-uteis-detalhe.page';
+const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
 
-const BASE = 'http://localhost:5000';
-const CALENDARIO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
-const URL = `${BASE}/api/configuracao/calendarios-dias-uteis/${CALENDARIO_ID}`;
+describe('CalendarioDiasUteisDetalhePage — leitura', () => {
+  let p: PaginaDoDetalhe;
 
-const DIA_MUNICIPAL = {
-  id: '019f41cf-69fd-759a-ac6d-09acabc1b100',
-  abrangencia: 'MUNICIPAL',
-  municipioIbge: '1504208',
-  municipioNome: 'Marabá',
-  municipioUf: 'PA',
-  uf: null,
-  data: '2026-04-05',
-  descricao: 'Aniversário de Marabá',
-};
-
-const DIA_ESTADUAL = {
-  id: '019f41cf-69fd-759a-ac6d-09acabc1b101',
-  abrangencia: 'ESTADUAL',
-  municipioIbge: null,
-  municipioNome: null,
-  municipioUf: null,
-  uf: 'PA',
-  data: '2026-08-15',
-  descricao: 'Adesão do Grão-Pará à Independência',
-};
-
-const DIA_NACIONAL_JANEIRO = {
-  id: '019f41cf-69fd-759a-ac6d-09acabc1b102',
-  abrangencia: 'NACIONAL',
-  municipioIbge: null,
-  municipioNome: null,
-  municipioUf: null,
-  uf: null,
-  data: '2027-01-01',
-  descricao: 'Confraternização Universal',
-};
-
-describe('CalendarioDiasUteisDetalhePage', () => {
-  let fixture: ComponentFixture<CalendarioDiasUteisDetalhePage>;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
-  let routeParams$: Subject<{ id: string }>;
-
-  beforeEach(() => {
-    routeParams$ = new Subject<{ id: string }>();
-    TestBed.configureTestingModule({
-      imports: [CalendarioDiasUteisDetalhePage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: GEO_BASE_PATH, useValue: BASE },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { paramMap: convertToParamMap({ id: CALENDARIO_ID }) },
-            params: routeParams$,
-          },
-        },
-      ],
-    });
-    fixture = TestBed.createComponent(CalendarioDiasUteisDetalhePage);
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-  });
-
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-  };
-
-  const carregar = async (diasNaoUteis: readonly unknown[], vigente = false): Promise<void> => {
-    controller.expectOne(URL).flush({
-      id: CALENDARIO_ID,
-      versaoDataset: '2026.1',
-      vigente,
-      criadoEm: '2026-08-13T00:00:00Z',
-      diasNaoUteis,
-    });
-    await propagate();
-  };
+  afterEach(() => p.http.verify());
 
   const botaoDoDia = (data: string): HTMLButtonElement => {
-    const botao = (fixture.nativeElement as HTMLElement).querySelector(
-      `button.cfg-calendario-mensal__dia--feriado[aria-label^="${data.split('-')[2].replace(/^0/, '')} de "]`,
+    const dia = String(Number(data.split('-')[2]));
+    return p.elemento(`button.cfg-calendario-mensal__dia--feriado[aria-label^="${dia} de "]`);
+  };
+  const titulosDosMeses = (): (string | undefined)[] =>
+    [...p.fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo')].map(
+      (elemento: Element) => elemento.textContent?.trim(),
     );
-    if (!botao) throw new Error(`Nenhum botão de dia encontrado para ${data}`);
-    return botao as HTMLButtonElement;
-  };
+  const painel = (): HTMLDialogElement => p.elemento('cfg-ocorrencias-do-dia dialog');
 
+  describe('com o calendário carregado', () => {
+    beforeEach(async () => {
+      p = await montarDetalhe([DIA_MUNICIPAL, DIA_ESTADUAL]);
+    });
 
-  const POST_URL = `${BASE}/api/configuracao/admin/calendarios-dias-uteis/${CALENDARIO_ID}/dias-nao-uteis`;
+    it('não renderiza controles de formulário para o dataset', () => {
+      const raiz = p.fixture.nativeElement as HTMLElement;
+      expect(raiz.querySelectorAll('input')).toHaveLength(0);
+      expect(raiz.querySelectorAll('select')).toHaveLength(0);
+      expect(raiz.querySelectorAll('textarea')).toHaveLength(0);
+    });
 
-  const botaoDoDiaVazio = (rotuloInicio: string): HTMLButtonElement => {
-    const botao = (fixture.nativeElement as HTMLElement).querySelector(
-      `button.cfg-calendario-mensal__dia:not(.cfg-calendario-mensal__dia--feriado)[aria-label^="${rotuloInicio}"]`,
-    );
-    if (!botao) throw new Error(`Nenhum dia sem ocorrência encontrado para ${rotuloInicio}`);
-    return botao as HTMLButtonElement;
-  };
+    it('apresenta a versão, a situação de vigência e o total no resumo', () => {
+      const resumo = p.elemento('.cfg-calendario-resumo').textContent as string;
 
-  const abrirCadastroDoDia = async (rotuloInicio: string): Promise<void> => {
-    botaoDoDiaVazio(rotuloInicio).click();
-    fixture.detectChanges();
-    const abrir = Array.from(
-      fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.textContent?.includes('Adicionar feriado')) as HTMLButtonElement;
-    abrir.click();
-    fixture.detectChanges();
-    await propagate();
-  };
+      expect(resumo).toContain('2026.1');
+      expect(resumo).toContain('Não vigente');
+      const total = [...p.fixture.nativeElement.querySelectorAll('.cfg-calendario-resumo__item')]
+        .find((item) => item.querySelector('dt')?.textContent?.trim() === 'Dias não úteis')
+        ?.querySelector('dd');
+      expect(total?.textContent?.trim()).toBe('2');
+    });
 
-  const preencherDescricao = (texto: string): void => {
-    const campo = (fixture.nativeElement as HTMLElement).querySelector(
-      '[formcontrolname="descricao"]',
-    ) as HTMLInputElement;
-    campo.value = texto;
-    campo.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-  };
+    it('abre o painel com o nome da data e o conteúdo do dia ao ativar o botão', async () => {
+      botaoDoDia(DIA_MUNICIPAL.data).click();
+      await p.propagar();
 
-  const submeter = (): void => {
-    const adicionar = Array.from(
-      fixture.nativeElement.querySelectorAll('dialog button') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.textContent?.trim() === 'Adicionar') as HTMLButtonElement;
-    adicionar.click();
-    fixture.detectChanges();
-  };
+      expect(p.selecao.painelAberto()).toBe(true);
+      expect(painel().getAttribute('aria-label')).toBe('5 de abril de 2026');
+      expect(painel().textContent).toContain('Aniversário de Marabá');
+    });
 
-  const campoDescricao = (): HTMLInputElement | null =>
-    (fixture.nativeElement as HTMLElement).querySelector('[formcontrolname="descricao"]');
+    it('apresenta o município pelo snapshot gravado, com o código IBGE como apoio, sem consultar a Geo', async () => {
+      botaoDoDia(DIA_MUNICIPAL.data).click();
+      await p.propagar();
 
-  it('exibe erro de carregamento e permite tentar novamente', async () => {
-    controller
-      .expectOne(URL)
-      .flush(mockProblemDetails({ status: 404, title: 'Calendário não encontrado' }), {
-        status: 404,
-        statusText: 'Not Found',
-        headers: { 'Content-Type': 'application/problem+json' },
-      });
-    await propagate();
+      expect(painel().textContent).toContain('Marabá — PA');
+      expect(painel().textContent).toContain('Código IBGE: 1504208');
+      p.http.expectNone((r) => r.url.includes('/api/cidades'));
+    });
 
-    expect(fixture.nativeElement.textContent).toContain('Calendário não encontrado');
-    expect(fixture.nativeElement.querySelector('.cfg-calendario-resumo')).toBeNull();
+    it('apresenta a abrangência estadual com a UF por extenso e sem o token técnico', async () => {
+      botaoDoDia(DIA_ESTADUAL.data).click();
+      await p.propagar();
 
-    const retry = fixture.nativeElement.querySelector(
-      '.cfg-calendario-dias-uteis__retry button',
-    ) as HTMLButtonElement;
-    retry.click();
-    fixture.detectChanges();
+      expect(painel().textContent).toContain('Pará — PA');
+      expect(painel().textContent).toContain('Estadual');
+      expect(painel().textContent).not.toContain('ESTADUAL');
+    });
 
-    await carregar([]);
+    it('fecha a prévia junto com o painel, para a devolução de foco não a reabrir', async () => {
+      const botao = botaoDoDia(DIA_MUNICIPAL.data);
+      botao.click();
+      botao.dispatchEvent(new MouseEvent('mouseenter'));
+      await p.propagar();
+      expect(p.selecao.previa()).toBe(DIA_MUNICIPAL.data);
 
-    expect(fixture.nativeElement.textContent).toContain('2026.1');
+      p.elemento<HTMLButtonElement>('.uni-drawer__header button').click();
+      await p.propagar();
+
+      expect(p.selecao.previa()).toBeNull();
+    });
+
+    it('a prévia aparece com o mouse e o Esc a dispensa', async () => {
+      const botao = botaoDoDia(DIA_MUNICIPAL.data);
+
+      botao.dispatchEvent(new MouseEvent('mouseenter'));
+      await p.propagar();
+      expect(p.elemento('.cfg-calendario-mensal__preview').textContent).toContain(
+        'Aniversário de Marabá — Municipal',
+      );
+
+      botao.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      await p.propagar();
+      expect(p.fixture.nativeElement.querySelector('.cfg-calendario-mensal__preview')).toBeNull();
+    });
+
+    it('o mouse que sai do botão com o foco do teclado não esconde a prévia', async () => {
+      const botao = botaoDoDia(DIA_MUNICIPAL.data);
+      botao.focus();
+      await p.propagar();
+
+      botao.dispatchEvent(new MouseEvent('mouseleave'));
+      await p.propagar();
+
+      expect(p.selecao.previa()).toBe(DIA_MUNICIPAL.data);
+    });
+
+    it('reseta o painel ao trocar de rota :id sem passar pela lista', async () => {
+      botaoDoDia(DIA_MUNICIPAL.data).click();
+      p.selecao.previa.set(DIA_MUNICIPAL.data);
+      await p.propagar();
+      expect(p.selecao.painelAberto()).toBe(true);
+
+      p.parametros.next({ id: OUTRO_ID });
+      await p.propagar();
+
+      expect(p.selecao.painelAberto()).toBe(false);
+      expect(p.selecao.dia()).toBeNull();
+      expect(p.selecao.previa()).toBeNull();
+      p.http
+        .expectOne(`${LEITURA.replace(/[^/]+$/, OUTRO_ID)}`)
+        .flush({ ...calendarioCom([DIA_ESTADUAL]), id: OUTRO_ID, versaoDataset: '2027.1' });
+      await p.propagar();
+      expect(p.selecao.painelAberto()).toBe(false);
+      expect(p.fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
+    });
   });
 
-  it('não renderiza controles de formulário para o dataset (CA-01)', async () => {
-    await carregar([DIA_MUNICIPAL, DIA_ESTADUAL]);
+  describe('a grade', () => {
+    it('exibe os 12 meses do ano em ordem cronológica', async () => {
+      p = await montarDetalhe([DIA_ESTADUAL]);
 
-    const raiz = fixture.nativeElement as HTMLElement;
-    expect(raiz.querySelectorAll('input')).toHaveLength(0);
-    expect(raiz.querySelectorAll('select')).toHaveLength(0);
-    expect(raiz.querySelectorAll('textarea')).toHaveLength(0);
+      expect(titulosDosMeses()).toEqual([
+        'Janeiro de 2026',
+        'Fevereiro de 2026',
+        'Março de 2026',
+        'Abril de 2026',
+        'Maio de 2026',
+        'Junho de 2026',
+        'Julho de 2026',
+        'Agosto de 2026',
+        'Setembro de 2026',
+        'Outubro de 2026',
+        'Novembro de 2026',
+        'Dezembro de 2026',
+      ]);
+    });
+
+    it('preserva os 12 meses de cada ano quando o dataset atravessa a virada do ano', async () => {
+      p = await montarDetalhe([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
+
+      const titulos = titulosDosMeses();
+      expect(titulos).toHaveLength(24);
+      expect(titulos[0]).toBe('Janeiro de 2026');
+      expect(titulos[11]).toBe('Dezembro de 2026');
+      expect(titulos[12]).toBe('Janeiro de 2027');
+      expect(titulos[23]).toBe('Dezembro de 2027');
+
+      botaoDoDia(DIA_NACIONAL_JANEIRO.data).click();
+      await p.propagar();
+      expect(painel().textContent).toContain('Confraternização Universal');
+    });
+
+    it('conta as ocorrências do dataset no resumo e mantém uma célula por data', async () => {
+      const outraNoMesmoDia = { ...DIA_MUNICIPAL, id: 'outro-id', abrangencia: 'INSTITUCIONAL' };
+      p = await montarDetalhe([DIA_MUNICIPAL, outraNoMesmoDia, DIA_ESTADUAL]);
+
+      expect(p.elemento('.cfg-calendario-resumo').textContent).toContain('3');
+      expect(
+        p.fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__dia--feriado'),
+      ).toHaveLength(2);
+    });
+
+    it('lista todas as ocorrências quando há mais de um feriado na mesma data', async () => {
+      const segunda = {
+        ...DIA_MUNICIPAL,
+        id: 'segunda-ocorrencia',
+        abrangencia: 'INSTITUCIONAL',
+        descricao: 'Aniversário da Unifesspa',
+      };
+      p = await montarDetalhe([DIA_MUNICIPAL, segunda]);
+
+      const botao = botaoDoDia(DIA_MUNICIPAL.data);
+      expect(
+        botao.querySelector('.cfg-calendario-mensal__contador')?.getAttribute('data-contador'),
+      ).toBe('2');
+      botao.click();
+      await p.propagar();
+
+      expect(painel().querySelectorAll('.cfg-calendario-mensal__ocorrencia')).toHaveLength(2);
+      expect(painel().textContent).toContain('Aniversário de Marabá');
+      expect(painel().textContent).toContain('Aniversário da Unifesspa');
+    });
+
+    it('não escreve "null" quando o dia municipal é anterior ao snapshot', async () => {
+      p = await montarDetalhe([{ ...DIA_MUNICIPAL, municipioNome: null, municipioUf: null }]);
+
+      botaoDoDia(DIA_MUNICIPAL.data).click();
+      await p.propagar();
+
+      expect(painel().textContent).not.toContain('null');
+      expect(painel().textContent).toContain('Código IBGE: 1504208');
+    });
+
+    it('o dia sem ocorrência é acionável, e o painel diz que não há feriados', async () => {
+      p = await montarDetalhe([DIA_ESTADUAL]);
+
+      p.botaoDoDia('16 de setembro de 2026').click();
+      await p.propagar();
+
+      expect(painel().textContent).toContain('Não há feriados cadastrados.');
+    });
   });
 
-  it('apresenta versão, situação de vigência e total de dias não úteis no resumo (CA-02)', async () => {
-    await carregar([DIA_MUNICIPAL, DIA_ESTADUAL], true);
+  describe('falha de leitura', () => {
+    beforeEach(async () => {
+      p = await montarDetalhe([DIA_ESTADUAL]);
+    });
 
-    const texto = fixture.nativeElement.textContent as string;
-    expect(texto).toContain('2026.1');
-    expect(texto).toContain('Vigente');
-  });
-
-  it('conta as ocorrências do dataset no resumo, não as datas (CA-02)', async () => {
-    const segundaOcorrenciaNoMesmoDia = {
-      ...DIA_MUNICIPAL,
-      id: 'outro-id',
-      abrangencia: 'INSTITUCIONAL',
+    const falharALeitura = async (status: number, corpo: object = {}): Promise<void> => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne(LEITURA).flush(...problema(status, corpo));
+      await p.propagar();
     };
-    await carregar([DIA_MUNICIPAL, segundaOcorrenciaNoMesmoDia, DIA_ESTADUAL]);
 
-    const resumo = fixture.nativeElement.querySelector('.cfg-calendario-resumo') as HTMLElement;
-    expect(resumo.textContent).toContain('3');
-  });
+    it('exibe o erro de carregamento e permite tentar novamente, devolvendo o foco ao título', async () => {
+      await falharALeitura(404, { title: 'Calendário não encontrado' });
 
-  it('mantém uma célula por data mesmo com mais de uma ocorrência', async () => {
-    const segundaOcorrenciaNoMesmoDia = {
-      ...DIA_MUNICIPAL,
-      id: 'outro-id',
-      abrangencia: 'INSTITUCIONAL',
-    };
-    await carregar([DIA_MUNICIPAL, segundaOcorrenciaNoMesmoDia]);
+      expect(p.fixture.nativeElement.textContent).toContain('Calendário não encontrado');
+      expect(p.fixture.nativeElement.querySelector('.cfg-calendario-resumo')).toBeNull();
+      expect(p.erros).not.toHaveBeenCalled();
 
-    expect(
-      fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__dia--feriado'),
-    ).toHaveLength(1);
-  });
+      const tentar = p.elemento<HTMLButtonElement>('.list-state__retry button');
+      tentar.focus();
+      tentar.click();
+      await p.propagar();
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      await p.carregar([]);
+      await p.propagar();
 
-  it('exibe os 12 meses do ano em ordem cronológica de janeiro a dezembro (CA01, CA02, CA03)', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    const titulos = [
-      ...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo'),
-    ].map((elemento: Element) => elemento.textContent?.trim());
-    expect(titulos).toEqual([
-      'Janeiro de 2026',
-      'Fevereiro de 2026',
-      'Março de 2026',
-      'Abril de 2026',
-      'Maio de 2026',
-      'Junho de 2026',
-      'Julho de 2026',
-      'Agosto de 2026',
-      'Setembro de 2026',
-      'Outubro de 2026',
-      'Novembro de 2026',
-      'Dezembro de 2026',
-    ]);
-  });
-
-  it('preserva os 12 meses de cada ano quando o dataset atravessa a virada do ano (CA05)', async () => {
-    await carregar([DIA_ESTADUAL, DIA_NACIONAL_JANEIRO]);
-
-    const titulos = [
-      ...fixture.nativeElement.querySelectorAll('.cfg-calendario-mensal__titulo'),
-    ].map((elemento: Element) => elemento.textContent?.trim());
-    expect(titulos).toHaveLength(24);
-    expect(titulos[0]).toBe('Janeiro de 2026');
-    expect(titulos[11]).toBe('Dezembro de 2026');
-    expect(titulos[12]).toBe('Janeiro de 2027');
-    expect(titulos[23]).toBe('Dezembro de 2027');
-
-    botaoDoDia(DIA_NACIONAL_JANEIRO.data).click();
-    fixture.detectChanges();
-
-    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
-    expect(dialogo.textContent).toContain('Confraternização Universal');
-  });
-
-  it('abre o drawer com heading e conteúdo do dia ao ativar o botão (CA-07)', async () => {
-    await carregar([DIA_MUNICIPAL]);
-
-    botaoDoDia(DIA_MUNICIPAL.data).click();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
-    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
-    expect(dialogo.getAttribute('aria-label')).toBe('5 de abril de 2026');
-    expect(dialogo.textContent).toContain('Aniversário de Marabá');
-  });
-
-  it('lista todas as ocorrências quando há mais de um feriado na mesma data (CA-09)', async () => {
-    const segunda_ocorrencia = {
-      ...DIA_MUNICIPAL,
-      id: 'segunda-ocorrencia',
-      abrangencia: 'INSTITUCIONAL',
-      descricao: 'Aniversário da Unifesspa',
-    };
-    await carregar([DIA_MUNICIPAL, segunda_ocorrencia]);
-
-    const botao = botaoDoDia(DIA_MUNICIPAL.data);
-    expect(
-      botao.querySelector('.cfg-calendario-mensal__contador')?.getAttribute('data-contador'),
-    ).toBe('2');
-
-    botao.click();
-    fixture.detectChanges();
-
-    const dialogo = fixture.nativeElement.querySelector('dialog') as HTMLElement;
-    expect(dialogo.querySelectorAll('.cfg-calendario-mensal__ocorrencia')).toHaveLength(2);
-    expect(dialogo.textContent).toContain('Aniversário de Marabá');
-    expect(dialogo.textContent).toContain('Aniversário da Unifesspa');
-  });
-
-  it('apresenta o município pelo snapshot persistido, com o código IBGE como apoio', async () => {
-    await carregar([DIA_MUNICIPAL]);
-
-    botaoDoDia(DIA_MUNICIPAL.data).click();
-    fixture.detectChanges();
-
-    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
-    expect(texto).toContain('Marabá — PA');
-    expect(texto).toContain('Código IBGE: 1504208');
-    controller.expectNone((request) => request.url.includes('/api/cidades'));
-  });
-
-  it('não escreve "null" quando o dia municipal é anterior ao snapshot', async () => {
-    await carregar([{ ...DIA_MUNICIPAL, municipioNome: null, municipioUf: null }]);
-
-    botaoDoDia(DIA_MUNICIPAL.data).click();
-    fixture.detectChanges();
-
-    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
-    expect(texto).not.toContain('null');
-    expect(texto).toContain('Código IBGE: 1504208');
-  });
-
-  it('apresenta a abrangência estadual com a UF por extenso', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    botaoDoDia(DIA_ESTADUAL.data).click();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('dialog')?.textContent).toContain('Pará — PA');
-  });
-
-  it('fecha a prévia junto com o drawer, evitando que a restauração de foco a reabra (CA-06/CA-08)', async () => {
-    await carregar([DIA_MUNICIPAL]);
-
-    const botao = botaoDoDia(DIA_MUNICIPAL.data);
-    botao.click();
-    fixture.detectChanges();
-    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
-
-    fixture.componentInstance['mostrarPreview'](DIA_MUNICIPAL.data);
-    fixture.detectChanges();
-    expect(fixture.componentInstance['diaEmPreview']()).toBe(DIA_MUNICIPAL.data);
-
-    const botaoFechar = fixture.nativeElement.querySelector(
-      '.uni-drawer__header button',
-    ) as HTMLButtonElement;
-    botaoFechar.click();
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance['diaEmPreview']()).toBeNull();
-  });
-
-  it('não expõe abrangência como token técnico cru (CA-10)', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    botaoDoDia(DIA_ESTADUAL.data).click();
-    fixture.detectChanges();
-
-    const texto = fixture.nativeElement.querySelector('dialog')?.textContent as string;
-    expect(texto).toContain('Estadual');
-    expect(texto).not.toContain('ESTADUAL');
-  });
-
-  it('reseta o drawer ao trocar de rota :id sem passar pela lista (reaproveitamento de componente pelo Router)', async () => {
-    await carregar([DIA_MUNICIPAL]);
-
-    const botao = botaoDoDia(DIA_MUNICIPAL.data);
-    botao.click();
-    fixture.componentInstance['mostrarPreview'](DIA_MUNICIPAL.data);
-    fixture.detectChanges();
-    expect(fixture.componentInstance['drawerVisivel']()).toBe(true);
-    expect(fixture.componentInstance['diaEmPreview']()).toBe(DIA_MUNICIPAL.data);
-
-    const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
-    routeParams$.next({ id: OUTRO_ID });
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance['drawerVisivel']()).toBe(false);
-    expect(fixture.componentInstance['diaSelecionado']()).toBeNull();
-    expect(fixture.componentInstance['diaEmPreview']()).toBeNull();
-
-    controller.expectOne(`${BASE}/api/configuracao/calendarios-dias-uteis/${OUTRO_ID}`).flush({
-      id: OUTRO_ID,
-      versaoDataset: '2027.1',
-      vigente: false,
-      criadoEm: '2026-08-13T00:00:00Z',
-      diasNaoUteis: [DIA_ESTADUAL],
+      expect(p.fixture.nativeElement.textContent).toContain('2026.1');
+      expect(document.activeElement).toBe(p.elemento('#cfg-calendario-detalhe-title'));
     });
-    await propagate();
 
-    expect(fixture.componentInstance['drawerVisivel']()).toBe(false);
-    expect(fixture.nativeElement.querySelector('dialog[open]')).toBeNull();
-  });
+    it('a falha do servidor na leitura avisa por toast', async () => {
+      await falharALeitura(503, { code: 'uniplus.indisponivel' });
 
-  it('não herda a descrição da inclusão anterior ao abrir outra data (CA-06/CA-07)', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    await abrirCadastroDoDia('16 de setembro de 2026');
-    preencherDescricao('Primeira data');
-    submeter();
-
-    controller.expectOne(POST_URL).flush({
-      id: CALENDARIO_ID,
-      versaoDataset: '2026.1',
-      vigente: false,
-      criadoEm: '2026-08-13T00:00:00Z',
-      diasNaoUteis: [DIA_ESTADUAL],
+      expect(p.erros).toHaveBeenCalledTimes(1);
     });
-    await propagate();
-    // A gravação dispara a recarga do dataset.
-    await carregar([DIA_ESTADUAL]);
 
-    await abrirCadastroDoDia('23 de setembro de 2026');
+    it('"Tentar novamente" não dispara outra leitura enquanto uma está em curso', async () => {
+      await falharALeitura(500);
+      const tentar = p.elemento<HTMLButtonElement>('.list-state__retry button');
+      tentar.click();
+      await p.propagar();
+      const leitura = p.http.expectOne(LEITURA);
 
-    expect(campoDescricao()?.value).toBe('');
-    expect(fixture.componentInstance.form.controls.descricao.value).toBe('');
-  });
+      tentar.click();
+      await p.propagar();
 
-  it('mantém a grade à vista durante a recarga que sucede a inclusão (CA-13)', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    const diasAntes = (fixture.nativeElement as HTMLElement).querySelectorAll(
-      'button.cfg-calendario-mensal__dia',
-    ).length;
-    expect(diasAntes).toBeGreaterThan(0);
-
-    await abrirCadastroDoDia('16 de setembro de 2026');
-    preencherDescricao('Data qualquer');
-    submeter();
-
-    controller.expectOne(POST_URL).flush({
-      id: CALENDARIO_ID,
-      versaoDataset: '2026.1',
-      vigente: false,
-      criadoEm: '2026-08-13T00:00:00Z',
-      diasNaoUteis: [DIA_ESTADUAL],
+      p.http.expectNone(LEITURA);
+      leitura.flush(calendarioCom([]));
+      await p.propagar();
     });
-    await propagate();
-
-    // Recarga em curso: o dataset novo ainda não chegou.
-    const raiz = fixture.nativeElement as HTMLElement;
-    expect(raiz.querySelector('.cfg-loading')).toBeNull();
-    expect(raiz.querySelectorAll('button.cfg-calendario-mensal__dia').length).toBe(diasAntes);
-
-    await carregar([DIA_ESTADUAL]);
   });
 
-  it('mostra a recusa por data duplicada no próprio formulário (CA-11)', async () => {
-    await carregar([DIA_ESTADUAL]);
+  it('mostra o carregamento até a primeira resposta', async () => {
+    p = await montarDetalhe([]);
+    p.parametros.next({ id: OUTRO_ID });
+    await p.propagar();
 
-    await abrirCadastroDoDia('16 de setembro de 2026');
-    preencherDescricao('Repetida');
-    submeter();
-
-    controller.expectOne(POST_URL).flush(
-      mockProblemDetails({
-        status: 422,
-        title: 'Data duplicada',
-        code: 'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset',
-        detail: 'Data duplicada no dataset (mesma abrangência, município e UF).',
-      }),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    const dialogo = (fixture.nativeElement as HTMLElement).querySelector(
-      '#cfg-calendario-dias-uteis-form',
-    ) as HTMLElement;
-    expect(dialogo.textContent).toContain('duplicada');
-    expect(dialogo.textContent).toContain('abrangência');
+    expect(p.elemento('.list-state__loading').textContent).toContain('Carregando calendário');
+    p.http.expectOne(LEITURA.replace(/[^/]+$/, OUTRO_ID)).flush(calendarioCom([]));
+    await p.propagar();
   });
-
-  it('não se deixa dispensar enquanto a gravação está em curso (CA-16)', async () => {
-    await carregar([DIA_ESTADUAL]);
-
-    await abrirCadastroDoDia('16 de setembro de 2026');
-    preencherDescricao('Em voo');
-    submeter();
-
-    const dialogoDeCadastro = (fixture.nativeElement as HTMLElement)
-      .querySelector('#cfg-calendario-dias-uteis-form')
-      ?.closest('dialog') as HTMLElement;
-    const fechar = Array.from(
-      dialogoDeCadastro.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.getAttribute('aria-label') === 'Fechar') as HTMLButtonElement;
-    expect(fechar.disabled).toBe(true);
-
-    controller.expectOne(POST_URL).flush({
-      id: CALENDARIO_ID,
-      versaoDataset: '2026.1',
-      vigente: false,
-      criadoEm: '2026-08-13T00:00:00Z',
-      diasNaoUteis: [DIA_ESTADUAL],
-    });
-    await propagate();
-    await carregar([DIA_ESTADUAL]);
-  });
-
 });

@@ -116,6 +116,24 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     });
   });
 
+  test('drawer e diálogo fechados não ocupam espaço entre os blocos', async ({ page }) => {
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+    await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
+    const pagina = page.locator('.cfg-page');
+    const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
+    const mensal = await pagina.locator('cfg-calendario-mensal').boundingBox();
+    const resumo = await pagina.locator('dl.cfg-calendario-resumo').boundingBox();
+    const geoPagina = await pagina.boundingBox();
+    if (!mensal || !resumo || !geoPagina) throw new Error('Elemento sem geometria visível.');
+    expect(Math.abs(mensal.y - (resumo.y + resumo.height) - gap)).toBeLessThanOrEqual(1);
+    expect(
+      Math.abs(geoPagina.y + geoPagina.height - (mensal.y + mensal.height)),
+    ).toBeLessThanOrEqual(1);
+    for (const sobreposicao of ['cfg-ocorrencias-do-dia', 'cfg-dia-nao-util-dialogo']) {
+      await expect(pagina.locator(sobreposicao)).toHaveCSS('position', 'absolute');
+    }
+  });
+
   test('detalhe não tem violações serious/critical', async ({ page }) => {
     await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
     await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
@@ -125,21 +143,24 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
 });
 
 async function mockCalendarioApi(page: Page): Promise<void> {
-  await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route, request) => {
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (request.method() !== 'GET') {
-      await route.continue();
-      return;
-    }
-    await route.fulfill({
-      status: 200,
-      headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
-      body: JSON.stringify(CALENDARIO),
-    });
-  });
+  await page.route(
+    /\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/,
+    async (route, request) => {
+      if (request.method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      if (request.method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        headers: { ...CORS_HEADERS, 'content-type': 'application/json' },
+        body: JSON.stringify(CALENDARIO),
+      });
+    },
+  );
 }
 
 /** Registra qualquer leitura do módulo Geo — o detalhe não pode fazer nenhuma. */

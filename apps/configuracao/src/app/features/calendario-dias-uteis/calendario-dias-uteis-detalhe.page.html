@@ -1,0 +1,75 @@
+<div class="page-header--form">
+  <a class="btn btn--tertiary btn--sm btn--rect cfg-voltar" routerLink="/calendario-dias-uteis">
+    <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 id="cfg-calendario-detalhe-title" class="page-header__title" tabindex="-1">Detalhes</h1>
+  </div>
+</div>
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar o calendário">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="store.carregando() ? 'true' : null"
+      [attr.aria-busy]="store.carregando() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @else if (store.carregandoPrimeiraVez()) {
+<div class="list-state__loading" role="status">
+  <ui-spinner spinnerSize="sm" /> Carregando calendário
+</div>
+} @else if (store.calendario(); as calendario) {
+<dl class="cfg-calendario-resumo">
+  <div class="cfg-calendario-resumo__item">
+    <dt>Versão do dataset</dt>
+    <dd>{{ calendario.versaoDataset }}</dd>
+  </div>
+  <div class="cfg-calendario-resumo__item">
+    <dt>Situação</dt>
+    <dd>
+      @if (calendario.vigente) {
+      <ui-tag variant="success">Vigente</ui-tag>
+      } @else {
+      <ui-tag>Não vigente</ui-tag>
+      }
+    </dd>
+  </div>
+  <div class="cfg-calendario-resumo__item">
+    <dt>Dias não úteis</dt>
+    <dd>{{ store.totalDiasNaoUteis() }}</dd>
+  </div>
+</dl>
+
+<cfg-calendario-mensal
+  [meses]="store.meses()"
+  [(previa)]="selecao.previa"
+  (diaEscolhido)="selecao.abrir($event)"
+/>
+<cfg-ocorrencias-do-dia
+  [(aberto)]="selecao.painelAberto"
+  [titulo]="selecao.titulo()"
+  [ocorrencias]="selecao.ocorrencias()"
+  (adicionar)="edicao.abrirCadastro()"
+  (fechado)="selecao.aoFecharPainel()"
+/>
+<cfg-dia-nao-util-dialogo
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncio()"
+  [salvando]="edicao.salvando()"
+  [busca]="buscaDoDia()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (alteracao)="busca.aplicar(edicao.form, $event)"
+  (fechado)="edicao.reiniciar()"
+/>
+}

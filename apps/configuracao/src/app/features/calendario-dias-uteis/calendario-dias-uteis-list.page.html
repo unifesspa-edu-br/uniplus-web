@@ -1,0 +1,61 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Calendários</h1>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os calendários de dias úteis">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-calendarios-lista
+  [calendarios]="store.calendarios()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  (remover)="edicao.pedirRemocao($event)"
+  (marcarVigente)="edicao.pedirVigencia($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover calendário?"
+  rotulo="Confirmar remoção"
+  [(aberto)]="edicao.confirmandoRemocao"
+  [item]="edicao.itemDaRemocao()"
+  mensagem="Tem certeza que deseja remover o calendário atual?"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Marcar calendário como vigente?"
+  rotulo="Marcar vigente"
+  variante="primary"
+  [(aberto)]="edicao.confirmandoVigencia"
+  [item]="edicao.itemDaVigencia()"
+  mensagem="O calendário vigente atual, se houver, deixa de ser vigente: só um calendário é vigente por vez."
+  [removendo]="edicao.marcando()"
+  [erro]="edicao.erroVigencia()"
+  [anuncio]="edicao.anuncioDaVigencia()"
+  (confirmar)="edicao.marcarConfirmado()"
+/>

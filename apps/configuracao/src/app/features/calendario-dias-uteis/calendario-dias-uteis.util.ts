@@ -43,14 +43,6 @@ export interface MunicipioBuscaRequest {
 export const DATA_DUPLICADA_DATASET_CODE =
   'uniplus.configuracao.calendario_dias_uteis.data_duplicada_no_dataset';
 
-/**
- * Prefixo dos erros que o backend devolve ao validar a referência de cidade do
- * Geo (`uniplus.cidade_referencia.*`, ADR-0090): código obrigatório/inválido,
- * nome obrigatório/longo demais, UF obrigatória/incoerente com o prefixo. É
- * prefixo, e não uma lista fechada, porque o registro cresce no backend.
- */
-export const CIDADE_REFERENCIA_CODE_PREFIX = 'uniplus.cidade_referencia.';
-
 export const DATA_DUPLICADA_MESSAGE = 'Esta data está duplicada para a mesma abrangência e região.';
 export const MUNICIPIO_OBRIGATORIO_MESSAGE = 'Selecione um município na busca.';
 
@@ -110,11 +102,6 @@ export const MUNICIPIO_BUSCA_VAZIA: MunicipioBuscaState = {
 
 export const PARA_SIGLA = 'PA';
 
-export function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
 export function textoNormalizado(maxLength: number): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const value = typeof control.value === 'string' ? control.value.trim() : '';
@@ -139,16 +126,21 @@ export function snapshotMunicipalCoerente(control: AbstractControl): ValidationE
     return null;
   }
 
-  const codigo = grupo.controls.codigoMunicipio.value?.trim() ?? '';
-  const nome = grupo.controls.municipioNome.value?.trim() ?? '';
-  const uf = grupo.controls.municipioUf.value?.trim().toUpperCase() ?? '';
-  if (!CODIGO_MUNICIPIO_PATTERN.test(codigo) || nome.length === 0) {
-    return { snapshotMunicipal: true };
-  }
+  const codigo = textoAparado(grupo.controls.codigoMunicipio);
+  const nome = textoAparado(grupo.controls.municipioNome);
+  const uf = textoAparado(grupo.controls.municipioUf).toUpperCase();
+  const completo = CODIGO_MUNICIPIO_PATTERN.test(codigo) && nome.length > 0;
 
-  return PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2) ? null : { snapshotMunicipal: true };
+  return completo && PREFIXO_IBGE_POR_UF[uf] === codigo.slice(0, 2)
+    ? null
+    : { snapshotMunicipal: true };
 }
 
-export const DATA_PATTERN = /\d{4}-\d{2}-\d{2}/;
+function textoAparado(controle: FormControl<string | null>): string {
+  return controle.value?.trim() ?? '';
+}
+
 export const MUNICIPIOS_LIMIT = 20;
+/** Quantas letras a busca de município exige antes de consultar a Geo. */
+export const TAMANHO_MINIMO_DA_BUSCA_DE_MUNICIPIO = 2;
 export const MUNICIPIO_BUSCA_DEBOUNCE_MS = 300;

@@ -1,0 +1,23 @@
+<div class="page-header page-header--form">
+  <a routerLink="/calendario-dias-uteis" class="btn btn--tertiary btn--sm btn--rect cfg-voltar">
+    <i aria-hidden="true" class="pi pi-chevron-left"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 tabindex="-1" class="page-header__title">Novo calendário</h1>
+    <p class="page-header__desc">
+      Defina a versão do dataset e organize os dias não úteis por abrangência.
+    </p>
+  </div>
+</div>
+<cfg-calendario-formulario
+  [form]="edicao.form"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncio()"
+  [salvando]="edicao.salvando()"
+  [buscas]="busca.buscas()"
+  (salvar)="edicao.salvar()"
+  (adicionarDia)="edicao.adicionarDia()"
+  (removerDia)="edicao.removerDia($event)"
+  (alteracao)="busca.aplicar($event.grupo, $event.alteracao)"
+/>

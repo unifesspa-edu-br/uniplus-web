@@ -1,0 +1,60 @@
+<ui-dialog
+  heading="Adicionar novo feriado ao calendário"
+  [(visible)]="aberto"
+  [hasFooter]="true"
+  [dismissible]="!salvando()"
+  (closed)="fechado.emit()"
+>
+  @if (aberto()) {
+    <span class="sr-only" role="status">{{ anuncio() }}</span>
+    <form
+      id="cfg-calendario-dias-uteis-form"
+      [formGroup]="form()"
+      class="form-drawer__form cfg-calendario-form"
+      novalidate
+      (ngSubmit)="aoEnviar()"
+    >
+      @if (erro()) {
+        <ui-alert variant="danger" heading="Não foi possível adicionar a data">
+          {{ erro() }}
+        </ui-alert>
+      }
+      <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+        <section class="form-section cfg-calendario-dias">
+          <article class="cfg-dia-card">
+            <cfg-dia-nao-util-campos
+              class="form-grid form-grid--1col"
+              sufixoDeId="novo"
+              [grupo]="form()"
+              [busca]="busca()"
+              (alteracao)="alteracao.emit($event)"
+            />
+          </article>
+        </section>
+      </fieldset>
+    </form>
+  }
+  <ng-container uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-calendario-dias-uteis-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Adicionar' }}
+    </button>
+  </ng-container>
+</ui-dialog>

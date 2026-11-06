@@ -1,3 +1,7 @@
+.cfg-dia-card__municipio {
+  min-width: 0;
+}
+
 .cfg-municipio-busca {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -22,8 +26,15 @@
   padding-left: calc(var(--space-3) + 1.25rem);
 }
 
-/* Campo de busca e seletor lado a lado só quando há largura para os dois; em
-   tela estreita a regra de uma coluna acima é que vale. */
+.cfg-dia-card__descricao {
+  min-height: 5rem;
+}
+
+.cfg-dia-card__descricao-field {
+  grid-column: 1 / -1;
+}
+
+/* Campo de busca e seletor lado a lado só quando há largura para os dois. */
 @media (min-width: 720px) {
   .cfg-municipio-busca {
     grid-template-columns: repeat(2, minmax(0, 1fr));

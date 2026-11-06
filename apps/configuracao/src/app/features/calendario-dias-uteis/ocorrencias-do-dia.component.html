@@ -1,0 +1,45 @@
+<ui-drawer
+  [(visible)]="aberto"
+  [heading]="titulo()"
+  [ariaLabel]="titulo()"
+  (closed)="fechado.emit()"
+>
+  @for (ocorrencia of ocorrencias(); track ocorrencia.id) {
+    <article class="cfg-calendario-mensal__ocorrencia">
+      <h3>{{ ocorrencia.descricao }}</h3>
+      <dl>
+        <div>
+          <dt>Abrangência</dt>
+          <dd>{{ abrangenciaLegivel(ocorrencia.abrangencia) }}</dd>
+        </div>
+        <div>
+          <dt>Data</dt>
+          <dd>{{ formatarData(ocorrencia.data) }}</dd>
+        </div>
+        @if (ocorrencia.abrangencia === 'MUNICIPAL') {
+          <div>
+            <dt>Município</dt>
+            <dd>
+              <span>{{ municipioLegivel(ocorrencia) }}</span>
+              <span class="field__hint">Código IBGE: {{ ocorrencia.municipioIbge }}</span>
+            </dd>
+          </div>
+        }
+        @if (ocorrencia.abrangencia === 'ESTADUAL') {
+          <div>
+            <dt>Unidade Federativa (UF)</dt>
+            <dd>{{ ufLegivel(ocorrencia.uf) }}</dd>
+          </div>
+        }
+      </dl>
+    </article>
+  } @empty {
+    <div class="cfg-calendario-mensal__ocorrencia-vazia">Não há feriados cadastrados.</div>
+  }
+  <div class="cfg-calendario-mensal__actions">
+    <button type="button" class="btn btn--primary btn--rect" (click)="adicionar.emit()">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+      Adicionar feriado
+    </button>
+  </div>
+</ui-drawer>

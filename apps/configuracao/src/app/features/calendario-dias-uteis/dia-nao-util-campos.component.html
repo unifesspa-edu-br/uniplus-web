@@ -1,0 +1,152 @@
+<ng-container [formGroup]="grupo()">
+  <label
+    class="field form-grid__full"
+    [class.is-error]="erros().abrangencia"
+    [attr.for]="'abrangencia-' + sufixoDeId()"
+  >
+    <span class="field__label is-required">Abrangência</span>
+    <select
+      class="select"
+      formControlName="abrangencia"
+      aria-required="true"
+      [id]="'abrangencia-' + sufixoDeId()"
+      [attr.aria-invalid]="erros().abrangencia ? 'true' : null"
+      (change)="alteracao.emit({ tipo: 'abrangencia' })"
+    >
+      @for (abrangencia of abrangencias; track abrangencia.value) {
+        <option [value]="abrangencia.value">{{ abrangencia.label }}</option>
+      }
+    </select>
+    @if (erros().abrangencia) {
+      <span class="field__error">{{ erros().abrangencia }}</span>
+    }
+  </label>
+
+  @if (abrangenciaAtual() === 'MUNICIPAL' || abrangenciaAtual() === 'ESTADUAL') {
+    <label class="field form-grid__full" [class.is-error]="erros().uf">
+      <span class="field__label is-required">
+        {{ abrangenciaAtual() === 'MUNICIPAL' ? 'Estado para busca' : 'Unidade Federativa (UF)' }}
+      </span>
+      <select
+        class="select"
+        formControlName="uf"
+        aria-required="true"
+        [id]="'uf-' + sufixoDeId()"
+        [attr.aria-invalid]="erros().uf ? 'true' : null"
+        (change)="alteracao.emit({ tipo: 'uf' })"
+      >
+        @for (unidadeFederativa of unidadesFederativas; track unidadeFederativa.id) {
+          <option [value]="unidadeFederativa.sigla">
+            {{ unidadeFederativa.nome }} - {{ unidadeFederativa.sigla }}
+          </option>
+        }
+      </select>
+      @if (erros().uf) {
+        <span class="field__error">{{ erros().uf }}</span>
+      }
+    </label>
+  }
+
+  @if (abrangenciaAtual() === 'MUNICIPAL') {
+    <div
+      class="field form-grid__full cfg-dia-card__municipio"
+      [class.is-error]="erros().codigoMunicipio"
+    >
+      <label [for]="'busca-municipio-' + sufixoDeId()" class="field__label is-required">
+        Município
+      </label>
+      <div class="cfg-municipio-busca">
+        <div class="cfg-municipio-busca__input">
+          <i class="pi pi-search" aria-hidden="true"></i>
+          <input
+            type="search"
+            autocomplete="off"
+            class="input"
+            formControlName="buscaMunicipio"
+            placeholder="Digite ao menos 2 letras"
+            [id]="'busca-municipio-' + sufixoDeId()"
+            (input)="aoDigitarABusca($event)"
+          />
+        </div>
+        <select
+          class="select"
+          formControlName="codigoMunicipio"
+          aria-label="Selecionar município"
+          aria-required="true"
+          [id]="'codigo-municipio-' + sufixoDeId()"
+          [attr.aria-invalid]="erros().codigoMunicipio ? 'true' : null"
+          (change)="alteracao.emit({ tipo: 'municipio' })"
+        >
+          <option value="" disabled>
+            {{ busca().carregando ? 'Buscando…' : 'Selecione o município' }}
+          </option>
+          @for (municipio of busca().opcoes; track municipio.codigoIbge) {
+            <option [value]="municipio.codigoIbge">
+              {{ municipio.nome }} — {{ municipio.uf }}
+            </option>
+          }
+        </select>
+      </div>
+      @if (busca().carregando) {
+        <span class="field__hint" role="status">Consultando a API Geo…</span>
+      } @else if (busca().erro) {
+        <span class="field__error" role="alert">
+          Não foi possível buscar os municípios.
+          <button
+            type="button"
+            class="cfg-link-button"
+            (click)="alteracao.emit({ tipo: 'novaTentativa' })"
+          >
+            Tentar novamente
+          </button>
+        </span>
+      } @else if (buscaSemResultado()) {
+        <span class="field__hint">Nenhum município encontrado para essa busca.</span>
+      } @else if (municipioSelecionado(); as municipio) {
+        <span class="field__hint">Selecionado: {{ municipio.nome }} — {{ municipio.uf }}</span>
+      } @else {
+        <span class="field__hint">
+          A busca usa o nome; o código IBGE é preenchido automaticamente.
+        </span>
+      }
+      @if (erros().codigoMunicipio) {
+        <span class="field__error">{{ erros().codigoMunicipio }}</span>
+      }
+    </div>
+  }
+
+  <label class="field" [class.is-error]="erros().data">
+    <span class="field__label is-required">Data</span>
+    <input
+      class="input"
+      type="date"
+      formControlName="data"
+      aria-required="true"
+      [id]="'data-' + sufixoDeId()"
+      [attr.aria-invalid]="erros().data ? 'true' : null"
+    />
+    <span class="field__hint">Não repita a mesma data, abrangência e região.</span>
+    @if (erros().data) {
+      <span class="field__error">{{ erros().data }}</span>
+    }
+  </label>
+
+  <label
+    class="field form-grid__full cfg-dia-card__descricao-field"
+    [class.is-error]="erros().descricao"
+  >
+    <span class="field__label is-required">Descrição</span>
+    <textarea
+      class="textarea cfg-dia-card__descricao"
+      formControlName="descricao"
+      aria-required="true"
+      placeholder="Ex.: Aniversário do município"
+      [id]="'descricao-' + sufixoDeId()"
+      [attr.aria-invalid]="erros().descricao ? 'true' : null"
+    ></textarea>
+    <span class="field__hint">Até 200 caracteres.</span>
+    @if (erros().descricao) {
+      <span class="field__error">{{ erros().descricao }}</span>
+    }
+  </label>
+</ng-container>

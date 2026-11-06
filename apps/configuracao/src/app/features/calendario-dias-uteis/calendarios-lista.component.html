@@ -1,0 +1,119 @@
+<section class="panel" aria-labelledby="cfg-calendario-dias-uteis-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-calendario-dias-uteis-list-title" tabindex="-1">Calendários</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+      <span aria-label="Total de calendários carregados" class="list-count">
+        {{ calendarios().length }}</span
+      >
+    </div>
+    <a
+      class="btn btn--primary"
+      [routerLink]="gravando() ? null : ['novo']"
+      [attr.aria-disabled]="gravando() ? 'true' : null"
+      [attr.role]="gravando() ? 'link' : null"
+      [attr.tabindex]="gravando() ? 0 : null"
+      (click)="recusarSeIndisponivel($event)"
+    >
+      <i aria-hidden="true" class="pi pi-plus btn__icon"></i>
+      Novo dataset
+    </a>
+  </div>
+
+  @if (calendarios().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Calendários de dias úteis, com versão, período de vigência e data de criação
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Versão</th>
+            <th scope="col">Vigência</th>
+            <th scope="col">Criado em</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (calendario of calendarios(); track calendario.id) {
+            <tr [attr.data-calendario-id]="calendario.id">
+              <td data-label="Versão">
+                {{ calendario.versaoDataset }}
+                @if (calendario.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
+                }
+              </td>
+              <td data-label="Vigência">
+                @if (calendario.vigente) {
+                  <span class="tag tag--success">Vigente</span>
+                } @else {
+                  —
+                }
+              </td>
+              <td data-label="Data de Criação">
+                {{ calendario.criadoEm | dateBr: 'short' }}
+              </td>
+              <td data-label="Ações" class="table-responsive__actions">
+                <ui-icon-button
+                  icon="pi-eye"
+                  [accessibleName]="'Visualizar calendário ' + calendario.versaoDataset"
+                  tooltip="Visualizar calendário"
+                  [link]="[calendario.id]"
+                  [isDisabled]="gravando()"
+                />
+                <ui-icon-button
+                  icon="pi-check-circle"
+                  [accessibleName]="'Marcar vigente ' + calendario.versaoDataset"
+                  [tooltip]="calendario.vigente ? dicaDoVigente : 'Marcar vigente'"
+                  [description]="calendario.vigente ? dicaDoVigente : ''"
+                  [isDisabled]="indisponivel() || calendario.vigente"
+                  (triggered)="acionarMarcarVigente(calendario)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover calendário ' + calendario.versaoDataset"
+                  [tooltip]="calendario.vigente ? dicaDaRemocaoDoVigente : 'Remover calendário'"
+                  [description]="calendario.vigente ? dicaDaRemocaoDoVigente : ''"
+                  [isDisabled]="indisponivel() || calendario.vigente"
+                  (triggered)="acionarRemover(calendario)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state
+      heading="Nenhum calendário encontrado"
+      description="Cadastre o primeiro calendário de dias úteis."
+    >
+      <a
+        class="btn btn--primary"
+        [routerLink]="gravando() ? null : ['/calendario-dias-uteis/novo']"
+        [attr.aria-disabled]="gravando() ? 'true' : null"
+        [attr.role]="gravando() ? 'link' : null"
+        [attr.tabindex]="gravando() ? 0 : null"
+        (click)="recusarSeIndisponivel($event)"
+      >
+        <i aria-hidden="true" class="pi pi-plus btn__icon"></i>
+        Novo dataset
+      </a>
+    </ui-empty-state>
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de calendários de dias úteis"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

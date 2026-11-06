@@ -101,29 +101,24 @@ function agruparPorAnoMes(
   return porMes;
 }
 
-function construirMes(
-  chave: string,
+function celulasDoMes(
+  ano: string,
+  mes: string,
   porDiaDoMes: Map<number, DiaNaoUtilDto[]>,
-): MesCalendarioMensal {
-  const [anoStr, mesStr] = chave.split('-');
-  const ano = Number(anoStr);
-  const mes = Number(mesStr);
-
+): (CelulaCalendarioMensal | null)[] {
   const primeiroDia = new Date(0);
-  primeiroDia.setUTCFullYear(ano, mes - 1, 1);
-  const primeiroDiaSemana = primeiroDia.getUTCDay();
+  primeiroDia.setUTCFullYear(Number(ano), Number(mes) - 1, 1);
 
   const ultimoDiaDoMes = new Date(0);
-  ultimoDiaDoMes.setUTCFullYear(ano, mes, 0);
-  const totalDias = ultimoDiaDoMes.getUTCDate();
+  ultimoDiaDoMes.setUTCFullYear(Number(ano), Number(mes), 0);
 
   const celulas: (CelulaCalendarioMensal | null)[] = [
-    ...Array.from({ length: primeiroDiaSemana }, () => null),
-    ...Array.from({ length: totalDias }, (_, indice) => {
+    ...Array.from({ length: primeiroDia.getUTCDay() }, () => null),
+    ...Array.from({ length: ultimoDiaDoMes.getUTCDate() }, (_, indice) => {
       const dia = indice + 1;
       return {
         dia,
-        data: `${anoStr}-${mesStr}-${String(dia).padStart(2, '0')}`,
+        data: `${ano}-${mes}-${String(dia).padStart(2, '0')}`,
         ocorrencias: porDiaDoMes.get(dia) ?? [],
       };
     }),
@@ -131,6 +126,17 @@ function construirMes(
 
   const totalCelulas = Math.ceil(celulas.length / 7) * 7;
   while (celulas.length < totalCelulas) celulas.push(null);
+  return celulas;
+}
+
+function construirMes(
+  chave: string,
+  porDiaDoMes: Map<number, DiaNaoUtilDto[]>,
+): MesCalendarioMensal {
+  const [anoStr, mesStr] = chave.split('-');
+  const ano = Number(anoStr);
+  const mes = Number(mesStr);
+  const celulas = celulasDoMes(anoStr, mesStr, porDiaDoMes);
 
   const semanas: (CelulaCalendarioMensal | null)[][] = [];
   for (let inicio = 0; inicio < celulas.length; inicio += 7) {

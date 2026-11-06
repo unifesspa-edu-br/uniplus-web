@@ -1,0 +1,130 @@
+@if (erro()) {
+  <ui-alert variant="danger" heading="Não foi possível criar o calendário">{{ erro() }}</ui-alert>
+}
+<span class="sr-only" role="status">{{ anuncio() }}</span>
+
+<form
+  id="cfg-calendario-dias-uteis-form"
+  [formGroup]="form()"
+  class="form-drawer__form cfg-calendario-form"
+  novalidate
+  (ngSubmit)="aoEnviar()"
+>
+  <fieldset
+    class="form-drawer__campos cfg-calendario-form__campos"
+    role="none"
+    [disabled]="salvando()"
+  >
+    <section
+      class="form-section cfg-calendario-form__identificacao"
+      aria-labelledby="cfg-sec-dados-gerais"
+    >
+      <h2 id="cfg-sec-dados-gerais" class="form-section__title">Dados Gerais</h2>
+      <div class="form-grid cfg-calendario-form__versao">
+        <label class="field form-grid__full" [class.is-error]="erroDaVersao()">
+          <span class="field__label is-required">Versão do dataset</span>
+          <input
+            type="text"
+            autocapitalize="characters"
+            class="input"
+            formControlName="versaoDataset"
+            aria-required="true"
+            [attr.aria-invalid]="erroDaVersao() ? 'true' : null"
+          />
+          <span class="field__hint">Texto livre. Ex.: 2027.1</span>
+          @if (erroDaVersao()) {
+            <span class="field__error">{{ erroDaVersao() }}</span>
+          }
+        </label>
+      </div>
+    </section>
+
+    <section class="form-section cfg-calendario-dias" aria-labelledby="cfg-mod-dias-nao-uteis">
+      <div class="cfg-calendario-dias__header">
+        <div>
+          <h2 id="cfg-mod-dias-nao-uteis" class="form-section__title">Dias não úteis</h2>
+          <p class="cfg-calendario-dias__descricao">
+            Cada cartão representa uma data e a região em que ela não é útil.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn--primary btn--rect"
+          id="cfg-calendario-adicionar-dia"
+          (click)="adicionarDia.emit()"
+        >
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Adicionar dia
+        </button>
+      </div>
+      <ng-container formArrayName="diasNaoUteis">
+        @if (form().controls.diasNaoUteis.length === 0) {
+          <div class="cfg-calendario-dias__empty">
+            <i class="pi pi-calendar" aria-hidden="true"></i>
+            <div>
+              <strong>Nenhum dia adicionado</strong>
+              <span>Adicione ao menos um dia não útil para criar o calendário.</span>
+            </div>
+          </div>
+        }
+        @for (dia of form().controls.diasNaoUteis.controls; track dia; let indice = $index) {
+          <article
+            class="cfg-dia-card"
+            [formGroupName]="indice"
+            [attr.aria-labelledby]="'cfg-dia-nao-util-' + indice"
+          >
+            <header class="cfg-dia-card__header">
+              <div class="cfg-dia-card__titulo">
+                <span class="cfg-dia-card__numero" aria-hidden="true">{{ indice + 1 }}</span>
+                <div>
+                  <h3 class="u-h4" [id]="'cfg-dia-nao-util-' + indice">
+                    Dia não útil {{ indice + 1 }}
+                  </h3>
+                  <span>Informe quando e onde a regra será aplicada.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="btn btn--tertiary btn--sm btn--rect cfg-dia-card__remover"
+                [attr.aria-label]="'Remover dia não útil ' + (indice + 1)"
+                (click)="remover(dia, indice)"
+              >
+                <i class="pi pi-trash" aria-hidden="true"></i>
+                <span>Remover</span>
+              </button>
+            </header>
+            <cfg-dia-nao-util-campos
+              class="cfg-dia-card__grid"
+              [grupo]="dia"
+              [sufixoDeId]="'' + indice"
+              [busca]="buscaDo(dia)"
+              [dataDuplicada]="dataDuplicada(dia)"
+              (alteracao)="alteracao.emit({ grupo: dia, alteracao: $event })"
+            />
+          </article>
+        }
+      </ng-container>
+    </section>
+  </fieldset>
+</form>
+
+<div class="form-drawer__footer cfg-calendario-form__footer">
+  @if (salvando()) {
+    <button type="button" class="btn btn--tertiary btn--rect" disabled>Cancelar</button>
+  } @else {
+    <a routerLink="/calendario-dias-uteis" class="btn btn--tertiary btn--rect">Cancelar</a>
+  }
+  <button
+    type="submit"
+    form="cfg-calendario-dias-uteis-form"
+    class="btn btn--primary"
+    [attr.aria-disabled]="salvando() ? 'true' : null"
+    [attr.aria-busy]="salvando() ? 'true' : null"
+    (click)="aoClicarEmSalvar($event)"
+  >
+    @if (salvando()) {
+      <ui-spinner spinnerSize="sm" />
+    }
+    {{ salvando() ? 'Salvando...' : 'Criar calendário' }}
+  </button>
+</div>

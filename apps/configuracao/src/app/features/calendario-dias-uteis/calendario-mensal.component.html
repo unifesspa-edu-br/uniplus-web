@@ -1,0 +1,79 @@
+<div class="cfg-calendario-mensal__lista">
+  @for (mes of meses(); track mes.chave) {
+    <section class="cfg-calendario-mensal" [attr.aria-labelledby]="'cfg-mes-titulo-' + mes.chave">
+      <h2 [id]="'cfg-mes-titulo-' + mes.chave" class="cfg-calendario-mensal__titulo">
+        {{ mes.rotulo }}
+      </h2>
+      <table class="cfg-calendario-mensal__tabela">
+        <caption class="sr-only">
+          Calendário de
+          {{
+            mes.rotulo
+          }}
+        </caption>
+        <thead>
+          <tr>
+            @for (diaSemana of diasSemana; track diaSemana.abrev) {
+              <th scope="col">
+                <span aria-hidden="true">{{ diaSemana.abrev }}</span>
+                <span class="sr-only">{{ diaSemana.nome }}</span>
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (semana of mes.semanas; track $index) {
+            <tr>
+              @for (celula of semana; track $index) {
+                <td>
+                  @if (celula) {
+                    @if (celula.ocorrencias.length > 0) {
+                      <button
+                        type="button"
+                        class="cfg-calendario-mensal__dia cfg-calendario-mensal__dia--feriado"
+                        [attr.data-dia]="celula.data"
+                        [attr.aria-label]="rotuloDoDia(celula)"
+                        (click)="diaEscolhido.emit(celula)"
+                        (mouseenter)="previa.set(celula.data)"
+                        (mouseleave)="aoSairComMouse($event)"
+                        (focus)="previa.set(celula.data)"
+                        (blur)="aoPerderOFoco($event)"
+                        (keydown.escape)="previa.set(null)"
+                      >
+                        <span aria-hidden="true">{{ celula.dia }}</span>
+                        <span class="cfg-calendario-mensal__marcador" aria-hidden="true"></span>
+                        @if (celula.ocorrencias.length > 1) {
+                          <!-- O contador é pintado em ::before (SC 2.5.3). -->
+                          <span
+                            class="cfg-calendario-mensal__contador"
+                            aria-hidden="true"
+                            [attr.data-contador]="celula.ocorrencias.length"
+                          ></span>
+                        }
+                        @if (previa() === celula.data) {
+                          <span class="cfg-calendario-mensal__preview" aria-hidden="true">
+                            {{ textoDaPrevia(celula) }}
+                          </span>
+                        }
+                      </button>
+                    } @else {
+                      <button
+                        type="button"
+                        class="cfg-calendario-mensal__dia"
+                        [attr.data-dia]="celula.data"
+                        [attr.aria-label]="rotuloDoDiaSemOcorrencia(celula)"
+                        (click)="diaEscolhido.emit(celula)"
+                      >
+                        {{ celula.dia }}
+                      </button>
+                    }
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+</div>
