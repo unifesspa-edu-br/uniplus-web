@@ -422,10 +422,11 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
 
   describe('foco do envio e da nova tentativa', () => {
     const campoNome = (): HTMLInputElement => elemento('input[formcontrolname="nome"]');
-    const submeter = (): void =>
+    const submeter = (): void => {
       elemento<HTMLFormElement>('#cfg-fase-canonica-form').dispatchEvent(
         new Event('submit', { cancelable: true }),
       );
+    };
 
     it('Enter num campo leva o foco ao botão de salvar e a falha do servidor o mantém ali', async () => {
       await abrir();

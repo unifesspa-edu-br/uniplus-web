@@ -348,8 +348,12 @@ describe('Escritas de locais de oferta', () => {
 
   it('no endereço manual sem UF, leva o foco à mensagem da recusa do endereço', async () => {
     await abrir();
+    const atual = edicao.form.controls.endereco.getRawValue();
+    if (atual === null) {
+      throw new Error('o local em edição deveria ter endereço');
+    }
     edicao.form.controls.endereco.setValue({
-      ...edicao.form.controls.endereco.getRawValue(),
+      ...atual,
       cidade: null,
       origem: 'manual',
       nivelResolucao: null,

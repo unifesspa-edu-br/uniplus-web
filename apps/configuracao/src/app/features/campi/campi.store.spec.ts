@@ -24,7 +24,7 @@ const campus: CampusDto = {
 
 const falha = (
   status: number,
-): [string, { status: number; statusText: string; headers: object }] => [
+): [string, { status: number; statusText: string; headers: Record<string, string> }] => [
   JSON.stringify({ type: 'about:blank', title: 'Indisponível', status, code: 'uniplus.x' }),
   { status, statusText: 'Erro', headers: { 'content-type': 'application/problem+json' } },
 ];

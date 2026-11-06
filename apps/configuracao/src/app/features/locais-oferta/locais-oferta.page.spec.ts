@@ -86,10 +86,11 @@ describe('LocaisOfertaPage', () => {
     elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
   const abrirEdicao = (): void =>
     elemento<HTMLButtonElement>('button[aria-label^="Editar local de oferta"]').click();
-  const enviar = (): void =>
+  const enviar = (): void => {
     elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
+  };
 
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
