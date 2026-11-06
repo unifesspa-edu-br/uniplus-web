@@ -1,0 +1,167 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de aresta de precedência"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  @if (falhaAoCarregarFases()) {
+    <ui-alert variant="warning" heading="Nomes das fases indisponíveis">
+      Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem só com
+      o código. O cadastro da aresta continua disponível.
+      <div class="list-state__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="carregandoFases() ? 'true' : null"
+          [attr.aria-busy]="carregandoFases() ? 'true' : null"
+          (click)="recarregarFases.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-precedencia-fase-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-precedencia-par">
+        <h3 id="cfg-precedencia-par" class="form-section__title" tabindex="-1">Par de fases</h3>
+        <div class="form-grid form-grid--1col">
+          @if (modo() === 'criar') {
+            <label class="field" [class.is-error]="erroDaAntecessora()">
+              <span class="field__label is-required">Fase antecessora</span>
+              <select
+                id="cfg-precedencia-antecessora"
+                class="select"
+                formControlName="antecessoraCodigo"
+                aria-required="true"
+                aria-describedby="cfg-precedencia-antecessora-hint"
+                [attr.aria-invalid]="erroDaAntecessora() ? 'true' : null"
+              >
+                <option value="" disabled>Selecione a fase antecessora</option>
+                @for (opcao of opcoesDeFase(); track opcao.codigo) {
+                  <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+                }
+              </select>
+              <span id="cfg-precedencia-antecessora-hint" class="field__hint">
+                Fase que precede. Imutável após a criação.
+              </span>
+              @if (erroDaAntecessora()) {
+                <span class="field__error" role="alert">{{ erroDaAntecessora() }}</span>
+              }
+            </label>
+            <label class="field" [class.is-error]="erroDaSucessora()">
+              <span class="field__label is-required">Fase sucessora</span>
+              <select
+                id="cfg-precedencia-sucessora"
+                class="select"
+                formControlName="sucessoraCodigo"
+                aria-required="true"
+                aria-describedby="cfg-precedencia-sucessora-hint"
+                [attr.aria-invalid]="erroDaSucessora() ? 'true' : null"
+              >
+                <option value="" disabled>Selecione a fase sucessora</option>
+                @for (opcao of opcoesDeFase(); track opcao.codigo) {
+                  <option [value]="opcao.codigo">{{ opcao.rotulo }}</option>
+                }
+              </select>
+              <span id="cfg-precedencia-sucessora-hint" class="field__hint">
+                Fase que sucede. Não pode ser igual à antecessora.
+              </span>
+              @if (erroDaSucessora()) {
+                <span class="field__error" role="alert">{{ erroDaSucessora() }}</span>
+              }
+            </label>
+          } @else {
+            <label class="field">
+              <span class="field__label is-required">Fase antecessora</span>
+              <input
+                id="cfg-precedencia-antecessora"
+                class="input"
+                type="text"
+                formControlName="antecessoraCodigo"
+                readonly
+                aria-required="true"
+                aria-describedby="cfg-precedencia-antecessora-hint"
+              />
+              <span id="cfg-precedencia-antecessora-hint" class="field__hint">
+                O par de fases é a chave da aresta e não muda.
+              </span>
+            </label>
+            <label class="field">
+              <span class="field__label is-required">Fase sucessora</span>
+              <input
+                id="cfg-precedencia-sucessora"
+                class="input"
+                type="text"
+                formControlName="sucessoraCodigo"
+                readonly
+                aria-required="true"
+                aria-describedby="cfg-precedencia-sucessora-hint"
+              />
+              <span id="cfg-precedencia-sucessora-hint" class="field__hint">
+                O par de fases é a chave da aresta e não muda.
+              </span>
+            </label>
+          }
+        </div>
+      </section>
+
+      <fieldset class="form-section">
+        <legend class="form-section__title">Sobreposição</legend>
+        <label class="field">
+          <span class="field__label">Permite sobreposição</span>
+          <select
+            id="cfg-precedencia-sobreposicao"
+            class="select"
+            formControlName="permiteSobreposicao"
+            aria-describedby="cfg-precedencia-sobreposicao-hint"
+          >
+            <option [ngValue]="true">Sim</option>
+            <option [ngValue]="false">Não</option>
+          </select>
+          <span id="cfg-precedencia-sobreposicao-hint" class="field__hint">
+            Define se as duas fases podem coexistir no tempo. O padrão é não sobrepor.
+          </span>
+        </label>
+      </fieldset>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-precedencia-fase-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar aresta' : 'Salvar aresta' }}
+    </button>
+  </div>
+</ui-drawer>

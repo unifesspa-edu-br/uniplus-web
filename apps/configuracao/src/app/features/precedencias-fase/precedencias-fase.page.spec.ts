@@ -1,624 +1,287 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { NotificationService } from '@uniplus/shared-core/notifications';
-import {
-  CODIGOS_FASE_CANONICA,
-  CONFIGURACAO_BASE_PATH,
-  FaseCanonicaDto,
-  PrecedenciaFaseDto,
-} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PrecedenciasFasePage } from './precedencias-fase.page';
-
-const BASE = 'http://localhost:5000';
-const ARESTA_ID = '01960000-0000-7000-0000-0000000000a1';
-
-const arestaSeed: PrecedenciaFaseDto = {
-  id: ARESTA_ID,
-  antecessoraCodigo: 'INSCRICAO',
-  sucessoraCodigo: 'HOMOLOGACAO',
-  permiteSobreposicao: false,
-  criadoEm: '2026-07-15T12:00:00Z',
-};
-
-function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
-  return {
-    id: `fase-${codigo}`,
-    codigo,
-    nome,
-    descricao: null,
-    unidadeSugerida: null,
-    agrupaEtapas: false,
-    permiteComplementacao: false,
-    coletaInscricao: false,
-    coletaSolicitacaoIsencao: false,
-    origemData: 'NO_EDITAL',
-    baseLegal: null,
-    criadoEm: '2026-06-10T12:00:00Z',
-  };
-}
-
-function problem(code: string, title: string, status = 422): Record<string, unknown> {
-  return { type: `https://uniplus.dev/erros/${code}`, title, status, code };
-}
-
-const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
+import {
+  ESCRITA,
+  FASES,
+  LISTA,
+  Pagina,
+  avaliacaoClassificacao,
+  criado,
+  faseCanonica,
+  inscricaoHomologacao,
+  montarPagina,
+  sucesso,
+} from './precedencias-fase.testing';
 
 describe('PrecedenciasFasePage', () => {
-  let fixture: ComponentFixture<PrecedenciasFasePage>;
-  let component: PrecedenciasFasePage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let p: Pagina;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [PrecedenciasFasePage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(PrecedenciasFasePage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-  });
-
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
+  const linhas = (): HTMLElement[] => [...p.fixture.nativeElement.querySelectorAll('tbody tr')];
+  const buscar = async (termo: string): Promise<void> => {
+    const busca = p.elemento<HTMLInputElement>('input[type="search"]');
+    busca.value = termo;
+    busca.dispatchEvent(new Event('input'));
+    await p.propagar();
   };
+  const opcoesDe = (campo: string): string[] =>
+    [...p.campo(campo).querySelectorAll('option')].map((o) => o.textContent?.trim() ?? '');
 
-  /** O GET do cadastro de fases só alimenta rótulos; roda uma vez por página. */
-  async function flushFases(itens: readonly FaseCanonicaDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
-    req.flush(itens);
-    await propagate();
-  }
-
-  async function falharFases(): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
-    req.flush(problem('uniplus.erro', 'Serviço indisponível', 503), {
-      status: 503,
-      statusText: 'Service Unavailable',
-      headers: PROBLEM_HEADERS,
+  describe('com as fases cadastradas', () => {
+    beforeEach(async () => {
+      p = await montarPagina(
+        [inscricaoHomologacao, avaliacaoClassificacao],
+        [faseCanonica('AVALIACAO', 'Avaliação')],
+      );
     });
-    await propagate();
-  }
+    afterEach(() => p.http.verify());
 
-  async function flushLista(itens: readonly PrecedenciaFaseDto[]): Promise<void> {
-    const req = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/precedencias-fase`,
-    );
-    expect(req.request.params.get('limit')).toBe('100');
-    req.flush(itens);
-    await propagate();
-  }
-
-  async function abrirCriacaoValida(): Promise<void> {
-    component['abrirCadastro']();
-    component['form'].setValue({
-      antecessoraCodigo: 'AVALIACAO',
-      sucessoraCodigo: 'CLASSIFICACAO',
-      permiteSobreposicao: false,
-    });
-  }
-
-  it('CA-01: lista as arestas vivas com antecessora, sucessora e sobreposição', async () => {
-    await flushFases([faseCanonica('INSCRICAO', 'Inscrição')]);
-    await flushLista([arestaSeed]);
-
-    expect(component['arestas']()).toHaveLength(1);
-    fixture.detectChanges();
-    const texto = fixture.nativeElement.textContent;
-    expect(texto).toContain('INSCRICAO');
-    expect(texto).toContain('HOMOLOGACAO');
-    expect(texto).toContain('Não');
-  });
-
-  it('percorre todas as páginas de fases canônicas sem truncar', async () => {
-    const fasesUrl = `${BASE}/api/configuracao/fases-canonicas`;
-
-    const pagina1 = controller.expectOne((r) => r.url === fasesUrl);
-    pagina1.flush([faseCanonica('INSCRICAO', 'Inscrição')], {
-      headers: { Link: `<${fasesUrl}?cursor=pagina-2&direction=next>; rel="next"` },
-    });
-    await propagate();
-
-    const pagina2 = controller.expectOne(
-      (r) => r.url === fasesUrl && r.params.get('cursor') === 'pagina-2',
-    );
-    pagina2.flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
-    await propagate();
-
-    await flushLista([arestaSeed]);
-
-    expect(component['nomeDaFase']('INSCRICAO')).toBe('Inscrição');
-    expect(component['nomeDaFase']('HOMOLOGACAO')).toBe('Homologação');
-  });
-
-  it('CA-01: busca filtra por código e por nome da fase', async () => {
-    const outra: PrecedenciaFaseDto = {
-      ...arestaSeed,
-      id: 'b2',
-      antecessoraCodigo: 'AVALIACAO',
-      sucessoraCodigo: 'CLASSIFICACAO',
-    };
-    await flushFases([faseCanonica('AVALIACAO', 'Avaliação')]);
-    await flushLista([arestaSeed, outra]);
-
-    component['termoBusca'].set('CLASSIFICACAO');
-    expect(component['arestasFiltradas']()).toEqual([outra]);
-
-    // Casa pelo nome enriquecido, não só pelo código.
-    component['termoBusca'].set('Avaliação');
-    expect(component['arestasFiltradas']()).toEqual([outra]);
-
-    component['termoBusca'].set('INSCRICAO');
-    expect(component['arestasFiltradas']()).toEqual([arestaSeed]);
-  });
-
-  it('CA-03: self-loop é bloqueado no client e não chega a disparar POST', async () => {
-    await flushFases([]);
-    await flushLista([]);
-
-    component['abrirCadastro']();
-    component['form'].setValue({
-      antecessoraCodigo: 'AVALIACAO',
-      sucessoraCodigo: 'AVALIACAO',
-      permiteSobreposicao: false,
+    it('lista as arestas com antecessora, sucessora, nome da fase e sobreposição', () => {
+      expect(linhas()).toHaveLength(2);
+      const texto = linhas()[0].textContent ?? '';
+      expect(texto).toContain('INSCRICAO');
+      expect(texto).toContain('HOMOLOGACAO');
+      expect(texto).toContain('Não');
+      expect(linhas()[1].textContent).toContain('Avaliação');
     });
 
-    component['salvar']();
-
-    controller.expectNone(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    expect(component['form'].hasError('selfLoop')).toBe(true);
-    expect(component['erroDoCampo']('sucessoraCodigo')).toBe(
-      'A fase sucessora não pode ser igual à antecessora.',
-    );
-    expect(component['formOpen']()).toBe(true);
-  });
-
-  it('CA-03: self-loop recusado pelo backend (422) aparece no campo sucessora', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.self_loop',
-        'A fase antecessora não pode ser igual à fase sucessora',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['erroDoCampo']('sucessoraCodigo')).toContain(
-      'não pode ser igual à fase sucessora',
-    );
-  });
-
-  it('CA-04: aresta duplicada (422) é mapeada no campo sucessora e o drawer continua aberto', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['erroDoCampo']('sucessoraCodigo')).toContain('Já existe uma aresta');
-    expect(component['formError']()).toBeNull();
-  });
-
-  it('CA-05: ciclo detectado (422) vira banner geral, não erro de campo', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.ciclo_detectado',
-        'A aresta fecharia um ciclo no grafo de precedências',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['formError']()).toContain('fecharia um ciclo');
-    expect(component['erroDoCampo']('sucessoraCodigo')).toBeNull();
-    expect(component['erroDoCampo']('antecessoraCodigo')).toBeNull();
-  });
-
-  it('renova a Idempotency-Key após 422 para que a correção seja um comando novo', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const primeiro = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    const chaveInicial = primeiro.request.headers.get('Idempotency-Key');
-    expect(chaveInicial).toBeTruthy();
-    primeiro.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    // O filtro de idempotência do backend guarda a resposta de qualquer status
-    // abaixo de 500: reenviar o corpo corrigido com a chave anterior devolveria
-    // `body_mismatch` em vez de processar o comando.
-    component['form'].controls.sucessoraCodigo.setValue('RESULTADO_PRELIMINAR');
-    component['salvar']();
-
-    const segundo = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    expect(segundo.request.headers.get('Idempotency-Key')).not.toBe(chaveInicial);
-    segundo.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-
-    expect(component['formOpen']()).toBe(false);
-    await flushLista([]);
-  });
-
-  it('CA-06: na edição o par é somente leitura e o PUT leva apenas id e permiteSobreposicao', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-
-    component['abrirEdicao'](arestaSeed);
-    fixture.detectChanges();
-
-    const antecessora = fixture.nativeElement.querySelector(
-      '#cfg-precedencia-antecessora',
-    ) as HTMLInputElement;
-    const sucessora = fixture.nativeElement.querySelector(
-      '#cfg-precedencia-sucessora',
-    ) as HTMLInputElement;
-    // `readonly` não tem efeito em <select>, por isso a edição troca o controle
-    // por <input readonly>.
-    expect(antecessora.tagName).toBe('INPUT');
-    expect(antecessora.readOnly).toBe(true);
-    expect(sucessora.tagName).toBe('INPUT');
-    expect(sucessora.readOnly).toBe(true);
-
-    component['form'].controls.permiteSobreposicao.setValue(true);
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase/${ARESTA_ID}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body).toEqual({ id: ARESTA_ID, permiteSobreposicao: true });
-    expect(put.request.body).not.toHaveProperty('antecessoraCodigo');
-    expect(put.request.body).not.toHaveProperty('sucessoraCodigo');
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([arestaSeed]);
-  });
-
-  it('CA-07: remove a aresta após confirmação', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-
-    component['pedirRemocao'](arestaSeed);
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase/${ARESTA_ID}`);
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-
-    expect(component['confirmOpen']()).toBe(false);
-    await flushLista([]);
-  });
-
-  it('edição de aresta já removida por outro administrador (404) fecha o drawer e recarrega', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-
-    component['abrirEdicao'](arestaSeed);
-    component['form'].controls.permiteSobreposicao.setValue(true);
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase/${ARESTA_ID}`);
-    put.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.nao_encontrada',
-        'Aresta de precedência não encontrada',
-        404,
-      ),
-      { status: 404, statusText: 'Not Found', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(false);
-    await flushLista([]);
-  });
-
-  it('remoção de aresta já removida (404) fecha o modal e recarrega', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-
-    component['pedirRemocao'](arestaSeed);
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase/${ARESTA_ID}`);
-    req.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.nao_encontrada',
-        'Aresta de precedência não encontrada',
-        404,
-      ),
-      { status: 404, statusText: 'Not Found', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    expect(component['confirmOpen']()).toBe(false);
-    await flushLista([]);
-  });
-
-  it('opções cobrem o roster canônico e marcam as fases ainda não cadastradas', async () => {
-    await flushFases([faseCanonica('INSCRICAO', 'Inscrição')]);
-    await flushLista([]);
-
-    const opcoes = component['opcoesDeFase']();
-    expect(opcoes).toHaveLength(CODIGOS_FASE_CANONICA.length);
-    expect(opcoes.find((o) => o.codigo === 'INSCRICAO')?.rotulo).toBe('INSCRICAO — Inscrição');
-    expect(opcoes.find((o) => o.codigo === 'MATRICULA')?.rotulo).toBe('MATRICULA — (não cadastrada)');
-  });
-
-  it('falha ao consultar o cadastro de fases degrada os rótulos sem se confundir com "não cadastrada"', async () => {
-    await falharFases();
-    await flushLista([arestaSeed]);
-
-    expect(component['falhaAoCarregarFases']()).toBe(true);
-    // Indisponibilidade do cadastro não pode ser apresentada como ausência dele.
-    const opcoes = component['opcoesDeFase']();
-    expect(opcoes.every((o) => !o.rotulo.includes('não cadastrada'))).toBe(true);
-    expect(opcoes.find((o) => o.codigo === 'INSCRICAO')?.rotulo).toBe('INSCRICAO');
-    // A lista principal segue utilizável.
-    expect(component['arestas']()).toHaveLength(1);
-    expect(component['errorMessage']()).toBeNull();
-  });
-
-  it('corrigir a antecessora limpa o erro de par vindo do backend e libera o reenvio', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const primeiro = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    primeiro.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-    expect(component['erroDoCampo']('sucessoraCodigo')).toContain('Já existe uma aresta');
-
-    // A correção acontece do outro lado do par: o erro é da dupla, então
-    // precisa sumir mesmo sem tocar na sucessora — senão o formulário fica
-    // travado com uma combinação que já mudou.
-    component['form'].controls.antecessoraCodigo.setValue('RECURSOS');
-    expect(component['erroDoCampo']('sucessoraCodigo')).toBeNull();
-    expect(component['form'].valid).toBe(true);
-
-    component['salvar']();
-    const segundo = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    expect(segundo.request.body).toEqual({
-      antecessoraCodigo: 'RECURSOS',
-      sucessoraCodigo: 'CLASSIFICACAO',
-      permiteSobreposicao: false,
+    it('pede a primeira página com o limite da tela', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      const req = p.http.expectOne((r) => r.url === LISTA);
+      expect(req.request.params.get('limit')).toBe('100');
+      req.flush([inscricaoHomologacao]);
+      await p.propagar();
     });
-    segundo.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
+
+    it('a busca casa pelo código e pelo nome da fase', async () => {
+      await buscar('CLASSIFICACAO');
+      expect(linhas()).toHaveLength(1);
+      expect(linhas()[0].textContent).toContain('AVALIACAO');
+
+      await buscar('Avaliação');
+      expect(linhas()).toHaveLength(1);
+
+      await buscar('INSCRICAO');
+      expect(linhas()[0].textContent).toContain('HOMOLOGACAO');
+
+      await buscar('nada');
+      expect(p.fixture.nativeElement.textContent).toContain('Nenhuma aresta encontrada');
+    });
+
+    it('as opções cobrem o roster canônico e marcam as fases ainda não cadastradas', async () => {
+      p.novo().click();
+      await p.propagar();
+
+      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — (não cadastrada)');
+    });
+
+    it('identifica as duas fases como obrigatórias para tecnologias assistivas', async () => {
+      p.novo().click();
+      await p.propagar();
+      for (const nome of ['antecessoraCodigo', 'sucessoraCodigo']) {
+        expect(p.campo(nome).getAttribute('aria-required')).toBe('true');
+      }
+    });
+
+    it('descreve a tabela por uma legenda acessível', () => {
+      expect(p.elemento('caption.sr-only').textContent).toContain('Precedências entre fases');
+    });
+
+    it('cria a aresta, avisa o sucesso e anuncia o desfecho na página', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      expect(post.request.method).toBe('POST');
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      expect(post.request.body).toEqual({
+        antecessoraCodigo: 'AVALIACAO',
+        sucessoraCodigo: 'CLASSIFICACAO',
+        permiteSobreposicao: false,
+      });
+      post.flush(...criado());
+      await p.recarregarCom([inscricaoHomologacao]);
+
+      expect(p.edicao.aberto()).toBe(false);
+      expect(p.sucessos).toHaveBeenCalledWith('Aresta criada');
+      expect(p.statusDaPagina()).toBe('Aresta criada.');
+    });
+
+    it('na edição o par é somente leitura e a atualização leva só a sobreposição', async () => {
+      await p.abrirEdicao(inscricaoHomologacao);
+      const antecessora = p.campo('antecessoraCodigo') as HTMLInputElement;
+      const sucessora = p.campo('sucessoraCodigo') as HTMLInputElement;
+      expect([antecessora.readOnly, antecessora.value]).toEqual([true, 'INSCRICAO']);
+      expect([sucessora.readOnly, sucessora.value]).toEqual([true, 'HOMOLOGACAO']);
+
+      p.selecionar('permiteSobreposicao', 'Sim');
+      const put = await p.enviar(`${ESCRITA}/${inscricaoHomologacao.id}`);
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.body).toEqual({ id: inscricaoHomologacao.id, permiteSobreposicao: true });
+      put.flush(...sucesso());
+      await p.recarregarCom([inscricaoHomologacao, avaliacaoClassificacao]);
+
+      expect(p.sucessos).toHaveBeenCalledWith('Aresta atualizada');
+      expect(p.statusDaPagina()).toBe('Aresta atualizada.');
+    });
+
+    it('o cadastro aberto depois de uma edição não herda o par nem o id da aresta editada', async () => {
+      await p.abrirEdicao(inscricaoHomologacao);
+      p.elemento<HTMLButtonElement>('.form-drawer__footer button').click();
+      await p.propagar();
+      await p.abrirCadastro();
+
+      expect(p.campo('antecessoraCodigo').tagName).toBe('SELECT');
+      const post = await p.enviar();
+      expect(post.request.method).toBe('POST');
+      expect(post.request.body).toEqual({
+        antecessoraCodigo: 'AVALIACAO',
+        sucessoraCodigo: 'CLASSIFICACAO',
+        permiteSobreposicao: false,
+      });
+      post.flush(...criado());
+      await p.recarregarCom([inscricaoHomologacao]);
+    });
+
+    it('pede confirmação nomeando o par da linha, sem enviar nada, e a cancela', async () => {
+      p.remover().click();
+      await p.propagar();
+
+      const dialogo = p.elemento('cfg-confirmacao-de-remocao');
+      expect(dialogo.textContent).toContain('Remover aresta de precedência');
+      expect(dialogo.textContent).toContain(
+        'Deseja remover a aresta de INSCRICAO para HOMOLOGACAO?',
+      );
+      expect(p.confirmar().textContent?.trim()).toBe('Remover');
+      p.http.expectNone(`${ESCRITA}/${inscricaoHomologacao.id}`);
+      p.cancelarDaConfirmacao().click();
+      await p.propagar();
+      expect(p.edicao.confirmando()).toBe(false);
+    });
+
+    it('remove após a confirmação, avisa e anuncia o desfecho na página', async () => {
+      const del = await p.confirmarRemocao(inscricaoHomologacao);
+      expect(del.request.method).toBe('DELETE');
+      del.flush(...sucesso());
+      await p.recarregarCom([avaliacaoClassificacao]);
+
+      expect(p.edicao.confirmando()).toBe(false);
+      expect(p.sucessos).toHaveBeenCalledWith('Aresta removida', 'INSCRICAO → HOMOLOGACAO');
+      expect(p.statusDaPagina()).toBe('Aresta INSCRICAO → HOMOLOGACAO removida.');
+    });
+
+    it('cada ação mostra seu ícone e sua dica', () => {
+      expect(p.editar().querySelector('i')?.className).toContain('pi-pencil');
+      expect(p.editar().getAttribute('data-tooltip')).toBe('Editar precedência');
+      expect(p.remover().querySelector('i')?.className).toContain('pi-trash');
+      expect(p.remover().getAttribute('data-tooltip')).toBe('Remover precedência');
+    });
+
+    it('segue pelo cursor e volta à primeira página ao recarregar', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush([inscricaoHomologacao], {
+          headers: { Link: '</api/precedencias-fase?cursor=abc&direction=next>; rel="next"' },
+        });
+      await p.propagar();
+
+      p.store.proximaPagina();
+      await p.propagar();
+      const proxima = p.http.expectOne((r) => r.params.get('cursor') === 'abc');
+      expect(proxima.request.params.get('direction')).toBe('next');
+      proxima.flush([avaliacaoClassificacao]);
+      await p.propagar();
+      expect(p.store.arestas()).toEqual([avaliacaoClassificacao]);
+
+      p.store.recarregar();
+      await p.propagar();
+      const primeira = p.http.expectOne((r) => r.url === LISTA);
+      expect(primeira.request.params.has('cursor')).toBe(false);
+      primeira.flush([inscricaoHomologacao]);
+      await p.propagar();
+      expect(p.store.arestas()).toEqual([inscricaoHomologacao]);
+    });
   });
 
-  it('conflito de processamento (409) preserva a chave para o retry do mesmo comando', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
+  describe('cadastro de fases', () => {
+    afterEach(() => p.http.verify());
 
-    component['salvar']();
-    const primeiro = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    const chaveInicial = primeiro.request.headers.get('Idempotency-Key');
-    primeiro.flush(
-      problem(
-        'uniplus.idempotency.processing_conflict',
-        'Request com a mesma Idempotency-Key ainda em processamento; tentar novamente em alguns segundos',
-        409,
-      ),
-      { status: 409, statusText: 'Conflict', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
+    it('percorre todas as páginas de fases canônicas sem truncar', async () => {
+      p = await montarPagina(
+        [inscricaoHomologacao],
+        [faseCanonica('INSCRICAO', 'Inscrição')],
+        `<${FASES}?cursor=pagina-2&direction=next>; rel="next"`,
+      );
+      p.http
+        .expectOne((r) => r.url === FASES && r.params.get('cursor') === 'pagina-2')
+        .flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
+      await p.propagar();
 
-    // A execução anterior ainda pode concluir: reenviar com chave nova viraria
-    // um segundo comando em vez de recuperar o resultado do primeiro.
-    component['salvar']();
-    const retry = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    expect(retry.request.headers.get('Idempotency-Key')).toBe(chaveInicial);
-    retry.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
+      expect(p.fasesDoGrafo.nomeDaFase('INSCRICAO')).toBe('Inscrição');
+      expect(p.fasesDoGrafo.nomeDaFase('HOMOLOGACAO')).toBe('Homologação');
+    });
 
-  it('formulário fica congelado durante a gravação e é reabilitado ao fim', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
+    it('a falha ao consultar as fases degrada os rótulos sem se confundir com a da lista', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      p.novo().click();
+      await p.propagar();
 
-    component['salvar']();
-    // Congelado impede que a dupla mude sob a request em voo.
-    expect(component['form'].disabled).toBe(true);
+      expect(p.store.mensagemDeErro()).toBeNull();
+      expect(p.elemento('ui-drawer ui-alert').textContent).toContain(
+        'Nomes das fases indisponíveis',
+      );
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
+      expect(opcoesDe('antecessoraCodigo')).not.toContain('INSCRICAO — (não cadastrada)');
+    });
 
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
+    it('enquanto as fases carregam, as opções mostram só o código, sem "(não cadastrada)"', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'pendente');
+      p.novo().click();
+      await p.propagar();
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
+      expect(opcoesDe('antecessoraCodigo')).not.toContain('INSCRICAO — (não cadastrada)');
 
-    expect(component['form'].disabled).toBe(false);
-    // O erro sobrevive à reabilitação — `enable()` revalida e apagaria um erro
-    // gravado antes dele.
-    expect(component['erroDoCampo']('sucessoraCodigo')).toContain('Já existe uma aresta');
-  });
+      await p.responderFases([faseCanonica('AVALIACAO', 'Avaliação')]);
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — (não cadastrada)');
+      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
+    });
 
-  it('remoção não é bloqueada por uma gravação de formulário em curso', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-    await abrirCriacaoValida();
+    it('a falha das fases avisa junto da lista e "Tentar novamente" recarrega e devolve o foco ao título', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      const aviso = (): HTMLElement | null =>
+        [
+          ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+            ':scope > ui-alert',
+          ),
+        ].find((a) => a.textContent?.includes('Nomes das fases indisponíveis')) ?? null;
+      const tentar = (): HTMLButtonElement => aviso()?.querySelector('button') as HTMLButtonElement;
+      expect(aviso()?.textContent).toContain('Nomes das fases indisponíveis');
+      expect(aviso()?.textContent).toContain('a busca por nome não encontra');
 
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
+      tentar().focus();
+      tentar().click();
+      await p.propagar();
+      expect(tentar().getAttribute('aria-disabled')).toBe('true');
+      p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
+      await p.propagar();
+      await p.propagar();
 
-    // Com o estado de gravação compartilhado, esta confirmação sumiria sem
-    // enviar nada — o diálogo fecha ao confirmar, independentemente do guard.
-    component['pedirRemocao'](arestaSeed);
-    component['removerConfirmado']();
-    const del = controller.expectOne(
-      `${BASE}/api/configuracao/admin/precedencias-fase/${ARESTA_ID}`,
-    );
-    expect(del.request.method).toBe('DELETE');
-    del.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([]);
+      expect(aviso()).toBeNull();
+      expect(p.fasesDoGrafo.nomeDaFase('INSCRICAO')).toBe('Inscrição');
+      expect(document.activeElement).toBe(p.elemento('#cfg-precedencias-fase-list-title'));
+    });
 
-    post.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
+    it('a nova tentativa das fases também está no alerta do formulário', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      p.novo().click();
+      await p.propagar();
 
-  it('falha que chega com o drawer já fechado vira notificação em vez de sumir', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
+      p.elemento<HTMLButtonElement>('ui-drawer ui-alert button').click();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
+      await p.propagar();
 
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-
-    // O botão Cancelar respeita `saving`, mas o X do cabeçalho e o Esc do
-    // <dialog> fecham o drawer mesmo assim. Com o formulário fora da tela, o
-    // erro de campo não seria visto por ninguém.
-    component['formOpen'].set(false);
-
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    const erros = TestBed.inject(NotificationService)
-      .notifications()
-      .filter((n) => n.type === 'error');
-    expect(erros).toHaveLength(1);
-    expect(erros[0].title).toContain('Já existe uma aresta');
-    await flushLista([]);
-  });
-
-  it('busca lê o valor do input sem passar por cast no template', async () => {
-    await flushFases([]);
-    await flushLista([arestaSeed]);
-    fixture.detectChanges();
-
-    const input = fixture.nativeElement.querySelector(
-      'input[type="search"]',
-    ) as HTMLInputElement;
-    input.value = 'HOMOLOGACAO';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-
-    expect(component['termoBusca']()).toBe('HOMOLOGACAO');
-  });
-
-  it('sucesso de uma abertura anterior recarrega a lista sem fechar o formulário atual', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-
-    component['abrirEdicao'](arestaSeed);
-    post.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-
-    // O servidor mudou, então a lista precisa ser recarregada de qualquer forma;
-    // o drawer aberto depois é que não pode ser fechado pela resposta antiga.
-    expect(component['formOpen']()).toBe(true);
-    expect(component['modo']()).toBe('editar');
-    await flushLista([arestaSeed]);
-  });
-
-  it('resposta tardia de uma abertura anterior não fecha o formulário aberto depois', async () => {
-    await flushFases([]);
-    await flushLista([]);
-    await abrirCriacaoValida();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/precedencias-fase`);
-
-    // Enquanto a resposta não chega, o administrador abre outro formulário.
-    component['abrirEdicao'](arestaSeed);
-
-    post.flush(
-      problem(
-        'uniplus.configuracao.precedencia_fase.aresta_duplicada',
-        'Já existe uma aresta de precedência viva com este par de fases',
-      ),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
-
-    // O erro pertencia à abertura anterior: não contamina o formulário atual.
-    expect(component['formOpen']()).toBe(true);
-    expect(component['modo']()).toBe('editar');
-    expect(component['formError']()).toBeNull();
-    expect(component['erroDoCampo']('sucessoraCodigo')).toBeNull();
-  });
-
-  it('expõe legenda acessível descrevendo a tabela', async () => {
-    await flushFases([faseCanonica('INSCRICAO', 'Inscrição')]);
-    await flushLista([arestaSeed]);
-    fixture.detectChanges();
-
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption).not.toBeNull();
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
-      'Precedências entre fases, com fase antecessora, fase sucessora e permissão de sobreposição',
-    );
+      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
+    });
   });
 });
