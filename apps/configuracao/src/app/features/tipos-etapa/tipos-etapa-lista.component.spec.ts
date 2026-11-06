@@ -130,12 +130,19 @@ describe('TiposEtapaListaComponent', () => {
     expect(raiz().querySelector('td[data-label="Código"]')?.textContent).not.toContain('...');
   });
 
-  it('não oferece remover o tipo inativo e o descreve como inativo', () => {
-    montar([{ ...tipo, ativo: false }]);
-    expect(raiz().querySelector('[aria-label^="Remover"]')).toBeNull();
-    expect(raiz().textContent).toContain('Desativado');
-    expect(raiz().textContent).toContain('Só compor a nota final');
-  });
+  it.each([
+    [true, false, 'Só compor a nota final'],
+    [false, true, 'Só eliminar'],
+    [true, true, 'Compor a nota final e eliminar'],
+  ])(
+    'descreve o que admite (pontuação %s, eliminação %s) como "%s"',
+    (admitePontuacao, admiteEliminacao, esperado) => {
+      montar([{ ...tipo, admitePontuacao, admiteEliminacao }]);
+      expect(raiz().querySelector('td[data-label="O que admite"]')?.textContent?.trim()).toBe(
+        esperado,
+      );
+    },
+  );
 
   it('marca o título da lista como destino de foco programático', () => {
     montar([tipo]);

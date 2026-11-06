@@ -10,8 +10,6 @@ import {
   sucesso,
 } from './tipos-etapa.testing';
 
-const inativa = { ...prova, ativo: false };
-
 describe('TiposEtapaPage', () => {
   let p: Pagina;
 
@@ -111,18 +109,6 @@ describe('TiposEtapaPage', () => {
     });
   });
 
-  it('mostra a situação e não oferece remover o que já está inativo', async () => {
-    p.store.recarregar();
-    await p.recarregarCom([analiseDocumental, inativa]);
-
-    expect(linhaDe('ANALISE_DOCUMENTAL').textContent).toContain('Ativo');
-    expect(linhaDe('PROVA').textContent).toContain('Desativado');
-    expect(
-      p.fixture.nativeElement.querySelector('[aria-label="Remover tipo de etapa PROVA"]'),
-    ).toBeNull();
-    expect(p.editar(inativa)).toBeTruthy();
-  });
-
   it('cada ação mostra seu ícone e sua dica', () => {
     const editar = p.editar(analiseDocumental);
     const remover = p.remover(analiseDocumental);
@@ -158,7 +144,7 @@ describe('TiposEtapaPage', () => {
     const del = await p.confirmarRemocao(prova);
     expect(del.request.method).toBe('DELETE');
     del.flush(...sucesso());
-    await p.recarregarCom([analiseDocumental, inativa]);
+    await p.recarregarCom([analiseDocumental]);
 
     expect(p.edicao.confirmando()).toBe(false);
     expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa removido', 'PROVA');

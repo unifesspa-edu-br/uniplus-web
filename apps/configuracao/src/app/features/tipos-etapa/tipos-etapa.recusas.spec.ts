@@ -260,12 +260,6 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
-    it('remoção concluída leva o foco ao título quando a linha segue inativa, sem o botão', async () => {
-      (await p.confirmarRemocao(prova)).flush(...sucesso());
-      await p.recarregarCom([{ ...prova, ativo: false }]);
-      expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
-    });
-
     it('escrita com falha na recarga leva o foco ao título da lista', async () => {
       (await p.confirmarRemocao(prova)).flush(...sucesso());
       await p.propagar();

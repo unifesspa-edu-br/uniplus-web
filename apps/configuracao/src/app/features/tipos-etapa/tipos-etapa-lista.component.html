@@ -36,7 +36,6 @@
             <th scope="col">Código</th>
             <th scope="col">Nome</th>
             <th scope="col">O que admite</th>
-            <th scope="col">Situação</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -51,13 +50,6 @@
               </td>
               <td data-label="Nome">{{ tipo.nome }}</td>
               <td data-label="O que admite">{{ resumoDoQueAdmite(tipo) }}</td>
-              <td data-label="Situação">
-                @if (tipo.ativo) {
-                  <span class="tag tag--success">Ativo</span>
-                } @else {
-                  <span class="tag">Desativado</span>
-                }
-              </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"
@@ -66,15 +58,13 @@
                   [isDisabled]="indisponivel()"
                   (triggered)="acionarEditar(tipo)"
                 />
-                @if (tipo.ativo) {
-                  <ui-icon-button
-                    icon="pi-trash"
-                    [accessibleName]="'Remover tipo de etapa ' + tipo.codigo"
-                    tooltip="Remover tipo de etapa"
-                    [isDisabled]="indisponivel()"
-                    (triggered)="acionarRemover(tipo)"
-                  />
-                }
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover tipo de etapa ' + tipo.codigo"
+                  tooltip="Remover tipo de etapa"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemover(tipo)"
+                />
               </td>
             </tr>
           }

@@ -60,7 +60,7 @@ const RECUSA_DE_NOME = {
   ],
 };
 
-type Recarga = 'com-o-item' | 'sem-o-item' | 'inativo' | 'com-falha';
+type Recarga = 'com-o-item' | 'sem-o-item' | 'com-falha';
 type Resposta = { status: number; corpo?: unknown };
 const CRIADO: Resposta = { status: 201 };
 const SALVO: Resposta = { status: 204 };
@@ -104,7 +104,7 @@ async function mockApi(
       });
       return;
     }
-    const itens = { 'com-o-item': [TIPO], 'sem-o-item': [], inativo: [{ ...TIPO, ativo: false }] };
+    const itens = { 'com-o-item': [TIPO], 'sem-o-item': [] };
     await route.fulfill({ status: 200, headers: CORS_HEADERS, json: itens[recarga] });
   });
   const escrita = async (route: Route) => {
@@ -354,7 +354,7 @@ test.describe('Tipo de etapa — escritas', () => {
     await expect(dialogo).toBeHidden();
   });
 
-  for (const recarga of ['sem-o-item', 'inativo', 'com-falha'] as const) {
+  for (const recarga of ['sem-o-item', 'com-falha'] as const) {
     test(`remoção concluída, com a recarga ${recarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
