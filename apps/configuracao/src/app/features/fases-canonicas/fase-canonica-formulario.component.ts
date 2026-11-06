@@ -26,7 +26,7 @@ export class FaseCanonicaFormularioComponent {
   readonly anuncio = input.required<string>();
   readonly erroUnidades = input.required<boolean>();
   readonly unidadesParaEscolha =
-    input.required<readonly { id: string; rotulo: string; inativa: boolean }[]>();
+    input.required<readonly { id: string; rotulo: string; removida: boolean }[]>();
   readonly showGrupoAgrupa = input.required<boolean>();
   readonly showGrupoCompl = input.required<boolean>();
   readonly ehFaseDeIsencao = input.required<boolean>();

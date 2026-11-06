@@ -73,6 +73,15 @@ describe('FasesCanonicasPage', () => {
     controller.verify();
   });
 
+  const opcoesDaUnidade = (): string[] => {
+    const opcoes: HTMLOptionElement[] = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll(
+        'select[formControlName="unidadeSugeridaId"] option',
+      ),
+    );
+    return opcoes.map((opcao) => opcao.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+  };
+
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
     appRef.tick();
@@ -388,17 +397,22 @@ describe('FasesCanonicasPage', () => {
       expect(await salvarComSucesso(fase)).toMatchObject({ unidadeSugeridaId: null });
     });
 
-    it('a unidade gravada fora das ativas continua como opção, marcada "(inativa)"', async () => {
+    it('a unidade gravada fora das ativas continua como opção, marcada "(removida)"', async () => {
       const fase = comSugestao('01960000-0000-7000-0000-0000000000a9');
       await flushLista([fase], [CGA]);
       edicao.abrirEdicao(fase);
 
       const [primeira] = edicao.unidadesParaEscolha();
-      expect(primeira).toMatchObject({ rotulo: 'CGA — Centro de Gestão Acadêmica', inativa: true });
+      expect(primeira).toMatchObject({
+        rotulo: 'CGA — Centro de Gestão Acadêmica',
+        removida: true,
+      });
       expect(edicao.form.controls.unidadeSugeridaId.value).toBe(fase.unidadeSugerida?.origemId);
+      await propagate();
+      expect(opcoesDaUnidade()).toContain('CGA — Centro de Gestão Acadêmica (removida)');
     });
 
-    it('não afirma que a unidade está inativa quando o cadastro de unidades não carregou', async () => {
+    it('não afirma que a unidade está removida quando o cadastro de unidades não carregou', async () => {
       const fase = comSugestao();
       const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
       req.flush([fase]);
@@ -408,10 +422,12 @@ describe('FasesCanonicasPage', () => {
       await propagate();
       edicao.abrirEdicao(fase);
 
-      expect(edicao.unidadesParaEscolha()[0]?.inativa).toBe(false);
+      expect(edicao.unidadesParaEscolha()[0]?.removida).toBe(false);
+      await propagate();
+      expect(opcoesDaUnidade().join()).not.toContain('(removida)');
     });
 
-    it('a recusa por unidade inexistente ou inativa aparece no campo', async () => {
+    it('a recusa por unidade inexistente ou removida aparece no campo', async () => {
       await flushLista([faseAvaliacaoSeed], [CGA]);
       edicao.abrirEdicao(faseAvaliacaoSeed);
       edicao.form.controls.unidadeSugeridaId.setValue(CGA.id);

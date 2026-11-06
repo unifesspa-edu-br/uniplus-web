@@ -104,22 +104,22 @@ export class EdicaoDasFasesCanonicas {
   });
 
   /**
-   * O cadastro e, quando faltar, a unidade já sugerida pela fase em edição, marcada como inativa:
+   * O cadastro e, quando faltar, a unidade já sugerida pela fase em edição, marcada como removida:
    * o campo não esvazia sem aviso, e a API recusa salvar com ela. Sem o cadastro carregado não
    * se afirma que a unidade saiu dele.
    */
   readonly unidadesParaEscolha = computed<
-    readonly { id: string; rotulo: string; inativa: boolean }[]
+    readonly { id: string; rotulo: string; removida: boolean }[]
   >(() => {
     const cadastro = this.store.unidades
       .opcoes()
-      .map((unidade) => ({ id: unidade.id, rotulo: rotuloDaUnidade(unidade), inativa: false }));
+      .map((unidade) => ({ id: unidade.id, rotulo: rotuloDaUnidade(unidade), removida: false }));
     const fase = this.store.fases().find((item) => item.id === this.faseEmEdicaoId());
     const sugerida = fase?.unidadeSugerida;
     if (!sugerida || cadastro.some((unidade) => unidade.id === sugerida.origemId)) return cadastro;
     const cadastroCarregado = !this.store.unidades.pendente() && !this.store.unidades.comErro();
     return [
-      { id: sugerida.origemId, rotulo: rotuloDaUnidade(sugerida), inativa: cadastroCarregado },
+      { id: sugerida.origemId, rotulo: rotuloDaUnidade(sugerida), removida: cadastroCarregado },
       ...cadastro,
     ];
   });
