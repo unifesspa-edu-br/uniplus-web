@@ -1,0 +1,40 @@
+<div class="panel-head__title">
+  <h2 [id]="idDoTitulo()">Pesos — {{ resolucao() }}</h2>
+  <ui-tag [variant]="vigente() ? 'success' : 'neutral'">
+    {{ vigente() ? 'Vigente' : 'Anterior' }}
+  </ui-tag>
+</div>
+<div class="button-actions">
+  @if (vigente()) {
+    <button
+      class="btn btn--secondary btn--sm"
+      type="button"
+      [attr.aria-disabled]="cadastroIndisponivel() ? 'true' : null"
+      (click)="aoCadastrar()"
+    >
+      Cadastrar nova resolução
+    </button>
+  }
+  <button
+    class="btn btn--primary btn--sm"
+    type="button"
+    [id]="idDaEdicao()"
+    [attr.aria-expanded]="editando()"
+    [disabled]="gravando()"
+    (click)="aoEditar()"
+  >
+    <i aria-hidden="true" class="pi pi-pen-to-square btn__icon"></i>
+    Editar parâmetros
+  </button>
+  <button
+    class="btn btn--tertiary btn--sm"
+    type="button"
+    [id]="idDaRemocao()"
+    [attr.aria-label]="'Remover resolução ' + resolucao()"
+    [disabled]="gravando()"
+    (click)="aoRemover()"
+  >
+    <i aria-hidden="true" class="pi pi-trash btn__icon"></i>
+    Remover resolução
+  </button>
+</div>

@@ -1,0 +1,33 @@
+<div cfgPesosEnemColunas [areas]="areas()"></div>
+@for (linha of linhas(); track linha.id; let gi = $index) {
+  @let grupo = rotuloDoGrupo(linha.grupoCurso);
+  <div class="num-grid__row">
+    <div>
+      <strong class="cell-label--group-label">{{ grupo }}</strong>
+    </div>
+    @for (area of areas(); track area.codigo; let ai = $index) {
+      @let valor = valorDaArea(linha, area.codigo);
+      @let corte = corteExibido(valor);
+      @let idLeitura = idCampoLeitura(resolucao(), gi, ai);
+      <div class="num-cell">
+        <span class="pe-cell-rotulo" aria-hidden="true">{{ area.rotulo }}</span>
+        <label class="sr-only" [for]="idLeitura">
+          {{ rotuloDoPeso(area, grupo) }}
+        </label>
+        <!-- O corte é anunciado junto do peso: fica ligado ao campo como descrição. -->
+        <input
+          [id]="idLeitura"
+          class="num-input"
+          type="number"
+          [value]="valor?.peso"
+          [attr.aria-describedby]="corte !== null ? idLeitura + '-corte' : null"
+          readonly
+        />
+        @if (corte !== null) {
+          <span class="pe-corte" [id]="idLeitura + '-corte'">Corte: {{ corte }}</span>
+        }
+      </div>
+    }
+  </div>
+}
+<p cfgPesosEnemNota></p>

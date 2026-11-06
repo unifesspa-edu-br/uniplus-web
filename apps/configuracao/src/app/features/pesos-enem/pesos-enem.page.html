@@ -1,0 +1,143 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" id="cfg-pesos-enem-titulo" tabindex="-1">Peso por Área</h1>
+    <p class="page-header__desc">
+      Pesos das áreas do ENEM por grupo de curso, versionados por resolução do Consepe.
+    </p>
+  </div>
+  @if (store.estadoDaTabela() === 'vazia') {
+  <div class="page-header__actions">
+    <button
+      type="button"
+      class="btn btn--primary"
+      [attr.aria-disabled]="cadastroIndisponivel() ? 'true' : null"
+      (click)="abrirCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Cadastrar nova resolução
+    </button>
+  </div>
+  }
+</div>
+
+<ui-alert variant="info" heading="Chave composta: resolução + grupo de curso" [dynamic]="false">
+  Cada linha representa um grupo de curso de uma resolução do Consepe. Os pesos das áreas são
+  definidos pela instituição em cada processo seletivo — não há soma fixa; o sistema registra os
+  valores informados sem bloquear. O corte de uma área é a nota mínima exigida nela: é opcional e
+  não entra em cálculo de soma. Estes parâmetros também são congelados por processo seletivo.
+</ui-alert>
+
+<!-- Um alerta e um "Tentar novamente" por lista. -->
+@if (store.listaAreas.falhou()) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar as áreas do ENEM"
+  [mensagem]="store.mensagemFalhaAreas()"
+  [pendente]="store.listaAreas.pendente()"
+  [tentativasSemSucesso]="store.listaAreas.tentativasSemSucesso()"
+  idBotao="cfg-pesos-enem-areas-tentar"
+  (tentar)="tentarCarregarAreas()"
+/>
+} @if (store.catalogoGrupos.falhou()) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar os grupos de área do ENEM"
+  [mensagem]="store.mensagemFalhaGrupos()"
+  [pendente]="store.catalogoGrupos.pendente()"
+  [tentativasSemSucesso]="store.catalogoGrupos.tentativasSemSucesso()"
+  idBotao="cfg-pesos-enem-grupos-tentar"
+  (tentar)="tentarCarregarGrupos()"
+/>
+} @if (store.mensagemDeErro(); as erro) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar os pesos do ENEM"
+  [mensagem]="erro"
+  [pendente]="listagemPendente()"
+  [tentativasSemSucesso]="store.falhasDaListagem.valor()"
+  idBotao="cfg-pesos-enem-registros-tentar"
+  (tentar)="tentarNovamente()"
+/>
+}
+
+<span class="sr-only" role="status">{{ gravacao.anuncio() }}</span>
+
+@if (store.estadoDaTabela() === 'carregando') {
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+<ui-skeleton skeletonKind="card" blockSize="10rem" />
+} @for (resolucao of store.resolucoesExibiveis(); track resolucao; let first = $first) { @let
+emEdicao = edicao.emEdicao() === resolucao;
+<section
+  class="panel"
+  [attr.data-resolucao]="resolucao"
+  [attr.aria-labelledby]="'cfg-pesos-enem-title-' + slug(resolucao)"
+>
+  <cfg-pesos-enem-cabecalho
+    [resolucao]="resolucao"
+    [vigente]="first"
+    [editando]="emEdicao"
+    [gravando]="gravacao.gravando()"
+    [podeCadastrar]="store.podeCadastrar()"
+    (cadastrar)="abrirCadastro()"
+    (editar)="edicao.pedirEdicao(resolucao)"
+    (remover)="pedirRemocao(resolucao)"
+  />
+  @if (emEdicao && edicao.form(); as form) {
+  <div
+    cfgPesosEnemEdicao
+    [resolucao]="resolucao"
+    [areas]="store.areas()"
+    [form]="form"
+    [estadoLinhas]="edicao.estadoLinhas()"
+    [erro]="edicao.erro()"
+    [gravando]="gravacao.gravando()"
+    [salvando]="gravacao.salvandoEdicao()"
+    (salvar)="edicao.salvar()"
+    (cancelar)="edicao.cancelar()"
+  ></div>
+  } @else {
+  <div
+    cfgPesosEnemLeitura
+    [resolucao]="resolucao"
+    [areas]="store.areas()"
+    [linhas]="store.porResolucao().get(resolucao) ?? []"
+  ></div>
+  }
+</section>
+} @empty { @if (store.estadoDaTabela() === 'vazia') {
+<ui-empty-state
+  heading="Nenhuma resolução cadastrada"
+  description="Cadastre a primeira resolução de pesos do ENEM por grupo de curso."
+>
+  <button
+    type="button"
+    class="btn btn--primary"
+    [attr.aria-disabled]="cadastroIndisponivel() ? 'true' : null"
+    (click)="abrirCadastro()"
+  >
+    Cadastrar nova resolução
+  </button>
+</ui-empty-state>
+} }
+
+<cfg-confirmacao-de-remocao
+  titulo="Remover resolução?"
+  rotulo="Confirmar remoção"
+  [(aberto)]="remocao.confirmando"
+  [mensagem]="remocao.mensagem()"
+  [removendo]="gravacao.gravando()"
+  [erro]="remocao.erro()"
+  [anuncio]="remocao.anuncio()"
+  (abertoChange)="aoMudarConfirmacao($event)"
+  (confirmar)="confirmarRemocao()"
+/>
+
+<cfg-pesos-enem-formulario
+  [(aberto)]="criacao.aberto"
+  [form]="criacao.form"
+  [areas]="store.areas()"
+  [estadoGrupos]="criacao.estadoGrupos()"
+  [erro]="criacao.erro()"
+  [anuncio]="criacao.anuncio()"
+  [salvando]="gravacao.criando()"
+  (salvar)="criacao.criar()"
+  (cancelar)="criacao.fechar()"
+  (fechado)="criacao.aoFechar()"
+/>

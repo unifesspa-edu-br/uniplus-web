@@ -1,0 +1,182 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  heading="Cadastrar nova resolução"
+  ariaLabel="Formulário de nova resolução de pesos do ENEM"
+  position="right"
+  (closed)="fechado.emit()"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro(); as mensagem) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">
+      {{ mensagem }}
+    </ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-pesos-enem-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <div class="form-grid">
+        @let erroResolucao = erroDoCampo('resolucao');
+        <label class="field form-grid__full" [class.is-error]="erroResolucao">
+          <span class="field__label is-required">Número/ano da resolução</span>
+          <input
+            class="input"
+            type="text"
+            placeholder="Ex.: Res. 805/2024"
+            formControlName="resolucao"
+            aria-required="true"
+            [attr.aria-invalid]="erroResolucao ? 'true' : null"
+          />
+          <span class="field__hint">
+            Identificador da resolução do Consepe. Parte da chave composta — não pode ser alterado
+            após a criação.
+          </span>
+          @if (erroResolucao) {
+            <span class="field__error" role="alert">{{ erroResolucao }}</span>
+          }
+        </label>
+        @let erroBaseGlobal = erroDoCampo('baseLegalGlobal');
+        <label class="field form-grid__full" [class.is-error]="erroBaseGlobal">
+          <span class="field__label is-required">Base legal (padrão para todos os grupos)</span>
+          <input
+            class="input"
+            type="text"
+            placeholder="Ex.: Res. 805/2024 Anexo I"
+            formControlName="baseLegalGlobal"
+            aria-required="true"
+            [attr.aria-invalid]="erroBaseGlobal ? 'true' : null"
+          />
+          <span class="field__hint">
+            Aplicada a todos os grupos como valor pré-preenchido — cada grupo permanece editável.
+          </span>
+          @if (erroBaseGlobal) {
+            <span class="field__error" role="alert">{{ erroBaseGlobal }}</span>
+          }
+        </label>
+      </div>
+
+      <div formArrayName="grupos">
+        @for (grupo of form().controls.grupos.controls; track grupo; let gi = $index) {
+          @let nomeDoGrupo = rotuloDoGrupo(grupo.controls.grupoCurso.value);
+          @let criado = estadoGrupos().get(gi) === 'ok';
+          <fieldset [formGroupName]="gi" class="field-group" [disabled]="criado">
+            <legend>
+              {{ nomeDoGrupo }}
+              @if (criado) {
+                <ui-tag variant="success">Criado</ui-tag>
+              }
+            </legend>
+            <div class="form-grid">
+              @for (
+                area of grupo.controls.areas.controls;
+                track area.controls.codigo.value;
+                let ai = $index
+              ) {
+                @let rotulo = rotuloDaArea(area.controls.codigo.value);
+                @let erroPeso = erroDaArea(area, 'peso');
+                @let erroCorte = erroDaArea(area, 'corte');
+                @let idPesoErro = idDrawer(gi, ai, 'peso-erro');
+                @let idCorteDica = idDrawer(gi, ai, 'corte-dica');
+                @let idCorteErro = idDrawer(gi, ai, 'corte-erro');
+                <label class="field" [formGroup]="area">
+                  <span class="field__label is-required">Peso de {{ rotulo }}</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="PESO_MAXIMO"
+                    step="0.05"
+                    formControlName="peso"
+                    cfgNumeroDigitadoValido
+                    aria-required="true"
+                    [attr.aria-label]="
+                      rotuloDoCampo('peso', area.controls.codigo.value, nomeDoGrupo)
+                    "
+                    [attr.aria-describedby]="descritoPor(erroPeso ? idPesoErro : null)"
+                    [attr.aria-invalid]="erroPeso ? 'true' : null"
+                  />
+                  @if (erroPeso) {
+                    <span class="field__error" role="alert" [id]="idPesoErro">{{ erroPeso }}</span>
+                  }
+                </label>
+                <label class="field" [formGroup]="area">
+                  <span class="field__label">Corte de {{ rotulo }}</span>
+                  <input
+                    class="input"
+                    type="number"
+                    min="0"
+                    [attr.max]="CORTE_MAXIMO"
+                    step="10"
+                    placeholder="Sem corte"
+                    formControlName="corte"
+                    cfgNumeroDigitadoValido
+                    [attr.aria-label]="
+                      rotuloDoCampo('corte', area.controls.codigo.value, nomeDoGrupo)
+                    "
+                    [attr.aria-describedby]="
+                      descritoPor(idCorteDica, erroCorte ? idCorteErro : null)
+                    "
+                    [attr.aria-invalid]="erroCorte ? 'true' : null"
+                  />
+                  <span class="field__hint" [id]="idCorteDica">
+                    Opcional — em branco, a área fica sem corte.
+                  </span>
+                  @if (erroCorte) {
+                    <span class="field__error" role="alert" [id]="idCorteErro">{{
+                      erroCorte
+                    }}</span>
+                  }
+                </label>
+              }
+              @let erroBase = erroDaBaseLegal(gi);
+              <label class="field form-grid__full">
+                <span class="field__label is-required">Base legal</span>
+                <input
+                  class="input"
+                  type="text"
+                  formControlName="baseLegal"
+                  aria-required="true"
+                  [attr.aria-invalid]="erroBase ? 'true' : null"
+                />
+                @if (erroBase) {
+                  <span class="field__error" role="alert">{{ erroBase }}</span>
+                }
+              </label>
+            </div>
+          </fieldset>
+        }
+      </div>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--secondary"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-pesos-enem-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ rotuloDoBotao() }}
+    </button>
+  </div>
+</ui-drawer>

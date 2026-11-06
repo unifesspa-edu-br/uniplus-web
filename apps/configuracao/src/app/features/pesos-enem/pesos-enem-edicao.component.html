@@ -1,0 +1,107 @@
+<div cfgPesosEnemColunas [areas]="areas()"></div>
+<fieldset class="pe-campos" role="none" [disabled]="salvando()">
+  @for (grupo of form().controls; track grupo.controls.id.value; let gi = $index) {
+    @let nomeDoGrupo = rotuloDoGrupo(grupo.controls.grupoCurso.value);
+    <div class="num-grid__row">
+      <div>
+        <strong class="cell-label--group-label">{{ nomeDoGrupo }}</strong>
+        <span class="field__hint">Chave composta — não editável</span>
+        @if (estadoLinhas().get(grupo.controls.id.value) === 'ok') {
+          <ui-tag variant="success">Salvo</ui-tag>
+        }
+      </div>
+      @for (
+        area of grupo.controls.areas.controls;
+        track area.controls.codigo.value;
+        let ai = $index
+      ) {
+        @let idPeso = idCampo(resolucao(), gi, ai, 'peso');
+        @let idCorte = idCampo(resolucao(), gi, ai, 'corte');
+        @let erroPeso = erroDaArea(area, 'peso');
+        @let erroCorte = erroDaArea(area, 'corte');
+        @let sufixoDoNome = sufixo(area.controls.codigo.value, nomeDoGrupo);
+        <div class="num-cell" [formGroup]="area">
+          <span class="pe-cell-rotulo" aria-hidden="true">{{
+            rotuloDaArea(area.controls.codigo.value)
+          }}</span>
+          <!-- Rótulo visível curto; o restante do nome acessível (área e grupo) fica só para o
+               leitor de tela e continua o texto visível. -->
+          <label class="pe-campo-rotulo" [for]="idPeso">
+            Peso<span class="sr-only">{{ sufixoDoNome }}</span>
+          </label>
+          <input
+            [id]="idPeso"
+            class="num-input"
+            type="number"
+            min="0"
+            [attr.max]="PESO_MAXIMO"
+            step="0.05"
+            formControlName="peso"
+            cfgNumeroDigitadoValido
+            aria-required="true"
+            [attr.aria-describedby]="descritoPor(erroPeso ? idPeso + '-erro' : null)"
+            [attr.aria-invalid]="erroPeso ? 'true' : null"
+          />
+          @if (erroPeso) {
+            <span class="field__error" role="alert" [id]="idPeso + '-erro'">{{ erroPeso }}</span>
+          }
+          <label class="pe-campo-rotulo" [for]="idCorte">
+            Corte<span class="sr-only">{{ sufixoDoNome }}</span>
+          </label>
+          <input
+            [id]="idCorte"
+            class="num-input"
+            type="number"
+            min="0"
+            [attr.max]="CORTE_MAXIMO"
+            step="10"
+            placeholder="Sem corte"
+            formControlName="corte"
+            cfgNumeroDigitadoValido
+            [attr.aria-describedby]="
+              descritoPor(idCorte + '-dica', erroCorte ? idCorte + '-erro' : null)
+            "
+            [attr.aria-invalid]="erroCorte ? 'true' : null"
+          />
+          <span class="sr-only" [id]="idCorte + '-dica'">
+            Opcional — em branco, a área fica sem corte.
+          </span>
+          @if (erroCorte) {
+            <span class="field__error" role="alert" [id]="idCorte + '-erro'">{{ erroCorte }}</span>
+          }
+        </div>
+      }
+    </div>
+  }
+</fieldset>
+<div class="grid-editbar" id="grid-pe-bar">
+  @if (erro(); as mensagem) {
+    <!-- Região viva (role="alert"): recusas sem campo na tela só aparecem aqui. -->
+    <ui-alert variant="danger" heading="Não foi possível salvar todos os grupos">
+      {{ mensagem }}
+    </ui-alert>
+  }
+  <button
+    class="btn btn--secondary"
+    type="button"
+    [disabled]="gravando()"
+    (click)="cancelar.emit()"
+  >
+    Cancelar
+  </button>
+  <button
+    class="btn btn--primary"
+    type="button"
+    [attr.aria-disabled]="gravando() ? 'true' : null"
+    [attr.aria-busy]="salvando() ? 'true' : null"
+    (click)="aoSalvar()"
+  >
+    @if (salvando()) {
+      <ui-spinner spinnerSize="sm" />
+      Salvando...
+    } @else {
+      Salvar
+    }
+  </button>
+</div>
+<p cfgPesosEnemNota></p>

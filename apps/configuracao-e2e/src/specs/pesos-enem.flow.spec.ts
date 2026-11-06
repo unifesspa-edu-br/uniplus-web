@@ -6,7 +6,7 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * Convenção do repo: runtime-config e API mockados por `page.route`; autenticação
  * real (Keycloak) via projeto `fluxo-chromium` (auth-setup + storageState).
  * Cada resolução materializa 4 linhas — os mocks capturam as 4 chamadas
- * concorrentes por operação (criar/atualizar/inativar).
+ * concorrentes por operação (criar/atualizar/remover).
  */
 
 const CORS_HEADERS = {
@@ -113,16 +113,20 @@ async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown
     }
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
-  await page.route(/\/api\/configuracao\/pesos-area-enem\/areas$/, (route) => jsonRoute(route, AREAS));
-  await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) => jsonRoute(route, GRUPOS));
-  await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, (route) => jsonRoute(route, lista));
+  await page.route(/\/api\/configuracao\/pesos-area-enem\/areas$/, (route) =>
+    jsonRoute(route, AREAS),
+  );
+  await page.route(/\/api\/configuracao\/vocabularios\/grupos-area-enem$/, (route) =>
+    jsonRoute(route, GRUPOS),
+  );
+  await page.route(/\/api\/configuracao\/pesos-area-enem(\?.*)?$/, (route) =>
+    jsonRoute(route, lista),
+  );
 }
 
 async function abrirPagina(page: Page): Promise<void> {
   await page.goto('/pesos-por-area');
-  await expect(
-    page.getByRole('heading', { name: 'Peso por Área', level: 1 }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Peso por Área', level: 1 })).toBeVisible();
 }
 
 test.describe('Peso ENEM — CRUD (#395)', () => {
@@ -145,7 +149,9 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, novoCapturado(), SEED);
     await abrirPagina(page);
 
-    await expect(page.getByLabel('Peso de Matemática e suas Tecnologias — Tecnológica')).toHaveValue('2.5');
+    await expect(
+      page.getByLabel('Peso de Matemática e suas Tecnologias — Tecnológica'),
+    ).toHaveValue('2.5');
     await expect(page.getByText('Corte: 400').first()).toBeVisible();
     await expect(page.getByText('Corte de redação')).toHaveCount(0);
   });
@@ -162,7 +168,10 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, capturado, []);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Cadastrar nova resolução', exact: true, }).first().click();
+    await page
+      .getByRole('button', { name: 'Cadastrar nova resolução', exact: true })
+      .first()
+      .click();
     await page.locator('[formControlName="resolucao"]').fill('Res. 900/2026');
     await page.locator('[formControlName="baseLegalGlobal"]').fill('Res. 900/2026 Anexo I');
 
@@ -170,7 +179,7 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     // O corte não é exclusivo da Redação: vai no item da própria área.
     await page.getByLabel('Corte de Matemática e suas Tecnologias — Tecnológica').fill('450');
 
-    await page.getByRole('button', { name: 'Criar resolução', exact: true, }).click();
+    await page.getByRole('button', { name: 'Criar resolução', exact: true }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(4);
     const posts = capturado.posts as ReadonlyArray<{
@@ -183,7 +192,9 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     expect(posts.map((post) => post.baseLegal)).toEqual(Array(4).fill('Res. 900/2026 Anexo I'));
     // O grupo vai pelo código; o rótulo é só da tela. Os quatro POSTs saem juntos e
     // chegam em qualquer ordem: a comparação não depende dela.
-    expect(posts.map((post) => post.grupoCurso).sort()).toEqual(GRUPOS.map((grupo) => grupo.codigo).sort());
+    expect(posts.map((post) => post.grupoCurso).sort()).toEqual(
+      GRUPOS.map((grupo) => grupo.codigo).sort(),
+    );
     const tecnologica = posts.find((post) => post.grupoCurso === 'TECNOLOGICA');
     expect(tecnologica?.areas).toEqual([
       { codigo: 'REDACAO', peso: 0, corte: null },
@@ -199,17 +210,21 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     await mockApi(page, capturado, SEED);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: 'Editar parâmetros', exact: true, }).click();
+    await page.getByRole('button', { name: 'Editar parâmetros', exact: true }).click();
     await page.getByLabel('Corte de Matemática e suas Tecnologias — Tecnológica').fill('450');
-    await page.getByRole('button', { name: 'Salvar', exact: true, }).click();
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(4);
-    type CorpoDoPut = { areas: ReadonlyArray<{ codigo: string; peso: number; corte: number | null }> };
+    type CorpoDoPut = {
+      areas: ReadonlyArray<{ codigo: string; peso: number; corte: number | null }>;
+    };
     const corteDeMatematica = (id: string): number | null | undefined =>
       (capturado.puts.find((put) => put.id === id)?.corpo as CorpoDoPut | undefined)?.areas.find(
         (area) => area.codigo === 'MATEMATICA',
       )?.corte;
-    const tecnologica = capturado.puts.find((put) => put.id === String(SEED[0]?.['id']))?.corpo as CorpoDoPut | undefined;
+    const tecnologica = capturado.puts.find((put) => put.id === String(SEED[0]?.['id']))?.corpo as
+      | CorpoDoPut
+      | undefined;
     expect(tecnologica?.areas).toEqual([
       { codigo: 'REDACAO', peso: 1, corte: 400 },
       { codigo: 'CIENCIAS_DA_NATUREZA', peso: 1, corte: null },
@@ -223,15 +238,15 @@ test.describe('Peso ENEM — CRUD (#395)', () => {
     }
   });
 
-  test('CA-07: inativar resolução remove o panel após confirmação', async ({ page }) => {
+  test('CA-07: remover resolução remove o panel após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, SEED);
     await abrirPagina(page);
 
-    await page.getByRole('button', { name: `Inativar resolução ${RESOLUCAO}`, exact: true, }).click();
+    await page.getByRole('button', { name: `Remover resolução ${RESOLUCAO}`, exact: true }).click();
     await page
       .locator('dialog.uni-dialog')
-      .getByRole('button', { name: 'Confirmar inativação', exact: true, })
+      .getByRole('button', { name: 'Confirmar remoção', exact: true })
       .click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(4);
@@ -252,7 +267,9 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
    * painel tem `overflow: hidden`, que esconde do documento o transbordo das linhas —
    * por isso painel e linhas são medidos à parte.
    */
-  async function medirTransbordo(page: Page): Promise<{ documento: number; paineis: number; linhas: number }> {
+  async function medirTransbordo(
+    page: Page,
+  ): Promise<{ documento: number; paineis: number; linhas: number }> {
     return page.evaluate(() => {
       const excesso = (el: Element): number => el.scrollWidth - el.clientWidth;
       const maximo = (seletor: string): number =>
@@ -267,7 +284,9 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
     });
   }
 
-  test('cartão empilhado não transborda na horizontal, na leitura e na edição', async ({ page }) => {
+  test('cartão empilhado não transborda na horizontal, na leitura e na edição', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 320, height: 900 });
     await mockApi(page, novoCapturado(), SEED);
     await abrirPagina(page);
@@ -275,8 +294,8 @@ test.describe('Peso por Área — reflow em 320 px (WCAG 1.4.10)', () => {
 
     expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
 
-    await page.getByRole('button', { name: 'Editar parâmetros', exact: true, }).click();
-    await expect(page.getByRole('button', { name: 'Salvar', exact: true, })).toBeVisible();
+    await page.getByRole('button', { name: 'Editar parâmetros', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Salvar', exact: true })).toBeVisible();
     expect(await medirTransbordo(page)).toEqual({ documento: 0, paineis: 0, linhas: 0 });
   });
 });
@@ -290,7 +309,7 @@ test.describe('Peso por Área — identificação (#689)', () => {
     await mockApi(page, novoCapturado(), SEED);
     await abrirPagina(page);
 
-    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true, });
+    const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true });
     await expect(breadcrumb.getByText('Peso por Área', { exact: true })).toBeVisible();
   });
 });

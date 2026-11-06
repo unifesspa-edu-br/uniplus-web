@@ -1,0 +1,12 @@
+/* Envolve as linhas para torná-las somente leitura durante o envio, sem caixa própria. */
+.pe-campos {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+
+/* Sem o fieldset, a última linha não teria borda: a barra de ações abre com a sua. */
+.pe-campos .num-grid__row:last-child {
+  border-bottom: 1px solid var(--border-subtle);
+}
