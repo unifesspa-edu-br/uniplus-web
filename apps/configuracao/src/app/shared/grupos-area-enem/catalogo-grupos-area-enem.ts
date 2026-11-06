@@ -9,7 +9,7 @@ import { listaDeReferencia } from '../lista-de-referencia';
  * Vocabulário fechado de Grupo de área do ENEM, usado pelos cadastros de Cursos e de
  * Pesos por Área.
  *
- * Vive no injector raiz pelo mesmo motivo de `CatalogoTiposInstrumentoNormativo`:
+ * Vive no injector raiz porque é
  * dado de referência de baixo volume que não muda entre navegações — a instância
  * root evita repetir a requisição a cada tela que o usa.
  *
