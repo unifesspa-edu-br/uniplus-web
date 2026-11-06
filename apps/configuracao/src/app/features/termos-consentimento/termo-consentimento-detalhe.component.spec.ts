@@ -87,7 +87,9 @@ describe('TermoConsentimentoDetalheComponent', () => {
     });
     ACOES.forEach((acao) => expect(botao(fixture, acao).matches(':disabled')).toBe(true));
     const texto = (fixture.nativeElement as HTMLElement).textContent;
-    expect(texto).toContain('Termo com versão promovida não pode ser removido.');
+    expect(texto).toContain(
+      'Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova versão.',
+    );
     expect(texto).toContain('Marque o rascunho como revisado antes de promover.');
   });
 

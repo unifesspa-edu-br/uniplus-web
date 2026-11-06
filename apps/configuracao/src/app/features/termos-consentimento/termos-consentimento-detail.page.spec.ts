@@ -119,7 +119,9 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
       'Preencha texto e base legal do rascunho salvo antes de marcar como revisado.',
     );
     expect(motivo('Promover a versão')).toBe('Marque o rascunho como revisado antes de promover.');
-    expect(motivo('Remover termo')).toBe('Termo com versão promovida não pode ser removido.');
+    expect(motivo('Remover termo')).toBe(
+      'Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova versão.',
+    );
     const promocao = cena.elemento('[aria-label="Promover a versão indisponível"]');
     expect(promocao.getAttribute('tabindex')).toBe('0');
     expect(promocao.getAttribute('aria-describedby')).toBe(

@@ -50,7 +50,7 @@ export class TermoConsentimentoDetalheComponent {
   });
   protected readonly motivoRemocaoIndisponivel = computed(() =>
     (this.termo()?.versoes.length ?? 0) > 0
-      ? 'Termo com versão promovida não pode ser removido.'
+      ? 'Termo com versão promovida não pode ser removido — edite o rascunho e promova uma nova versão.'
       : null,
   );
   protected formatarData(value: string): string {
