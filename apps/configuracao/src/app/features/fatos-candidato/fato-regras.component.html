@@ -1,0 +1,97 @@
+@if (fato(); as f) {
+  @if (leitura.temRegras()) {
+    <section aria-labelledby="cfg-fato-regras">
+      <h3 id="cfg-fato-regras" class="form-section__title">Regras padrão</h3>
+      @if (leitura.catalogo.falhou()) {
+        <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
+          Sem o catálogo, as condições das regras não podem ser escritas nem conferidas.
+          <div class="list-state__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="leitura.catalogo.recarregar()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+      <p class="u-caption">
+        O processo copia estas regras ao citar o fato e pode alterá-las na cópia.
+        @if (f.dominio === 'BOOLEANO') {
+          O fato vale "sim" quando alguma regra se cumpre.
+        } @else {
+          Cada regra que se cumpre acrescenta o valor dela ao fato.
+        }
+      </p>
+      @for (regra of regras.regras(); track $index; let i = $index) {
+        <fieldset class="field form-grid__full">
+          <legend class="field__label">Regra {{ i + 1 }}</legend>
+          @if (f.dominio === 'CATEGORICO') {
+            <label class="field">
+              <span class="field__label is-required">Valor que a regra acrescenta</span>
+              <select
+                class="select"
+                aria-required="true"
+                [disabled]="bloqueado()"
+                [attr.aria-invalid]="regras.contribuicoesFaltando().has(i) ? 'true' : null"
+                [attr.aria-describedby]="
+                  regras.contribuicoesFaltando().has(i) ? 'cfg-fato-regra-' + i + '-erro' : null
+                "
+                (change)="trocarContribuicao(i, $event)"
+              >
+                <option value="" [selected]="!regra.contribui">Selecione…</option>
+                @for (opcao of opcoesDeContribuicao(regra.contribui); track opcao.valor) {
+                  <option [value]="opcao.valor" [selected]="opcao.valor === regra.contribui">
+                    {{ opcao.rotulo }}
+                  </option>
+                }
+              </select>
+            </label>
+          }
+          <ui-editor-de-condicoes
+            [condicoes]="regra.condicoes"
+            [fatos]="leitura.fatosDaRegra()"
+            [idBase]="'cfg-fato-regra-' + i"
+            legenda="Quando"
+            [disabled]="bloqueado()"
+            [erros]="regras.errosDasCondicoes()[i] ?? {}"
+            (condicoesChange)="trocarCondicoes(i, $event)"
+          />
+          @if (regras.errosDasRegras()[i]; as erro) {
+            <span class="field__error" role="alert" [id]="'cfg-fato-regra-' + i + '-erro'">{{
+              erro
+            }}</span>
+          }
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm"
+            [disabled]="bloqueado()"
+            (click)="regras.remover(i)"
+          >
+            Remover a regra {{ i + 1 }}
+          </button>
+        </fieldset>
+      }
+      <div class="cfg-form-actions">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [disabled]="bloqueado()"
+          (click)="acrescentar()"
+        >
+          Acrescentar regra
+        </button>
+        <button
+          type="button"
+          class="btn btn--primary btn--sm"
+          [attr.aria-disabled]="bloqueado() ? 'true' : null"
+          [attr.aria-busy]="bloqueado() ? 'true' : null"
+          (click)="salvar()"
+        >
+          Salvar regras
+        </button>
+      </div>
+    </section>
+  }
+}

@@ -1,0 +1,285 @@
+@if (fato(); as f) {
+  @if (temValores() || f.valores.length > 0) {
+    <ui-recolhivel titulo="Valores">
+      @if (f.valores.length > 0) {
+        <div class="table-responsive">
+          <table>
+            <caption class="sr-only">
+              Valores do fato, com a situação de cada um
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Código</th>
+                <th scope="col">Descrição</th>
+                <th scope="col">Situação</th>
+                <th scope="col"><span class="sr-only">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (valor of f.valores; track valor.codigo) {
+                <tr>
+                  <td data-label="Código">
+                    <code>{{ valor.codigo }}</code>
+                  </td>
+                  <td data-label="Descrição">
+                    @if (editando() === valor.codigo) {
+                      <form
+                        class="cfg-fato-formulario"
+                        [formGroup]="correcao"
+                        [id]="idDoValor(valor.codigo, 'form')"
+                        (ngSubmit)="edicao.salvarEdicaoDoValor(valor.codigo)"
+                        novalidate
+                      >
+                        <fieldset
+                          class="form-drawer__campos cfg-fato-formulario"
+                          role="none"
+                          [disabled]="bloqueado()"
+                        >
+                          @let erroDescricao = erroDaCorrecao('descricao');
+                          <label class="field" [class.is-error]="erroDescricao">
+                            <span
+                              class="field__label"
+                              [class.is-required]="f.origem === 'DECLARADO'"
+                              >Descrição<span class="sr-only">
+                                do valor {{ valor.codigo }}</span
+                              ></span
+                            >
+                            <input
+                              class="input"
+                              type="text"
+                              formControlName="descricao"
+                              [id]="idDoValor(valor.codigo, 'descricao')"
+                              [attr.aria-required]="f.origem === 'DECLARADO' ? 'true' : null"
+                              [attr.aria-invalid]="erroDescricao ? 'true' : null"
+                              [attr.aria-describedby]="
+                                erroDescricao
+                                  ? idDoValor(valor.codigo, 'aviso') +
+                                    ' ' +
+                                    idDoValor(valor.codigo, 'descricao-erro')
+                                  : idDoValor(valor.codigo, 'aviso')
+                              "
+                            />
+                            @if (erroDescricao) {
+                              <span
+                                class="field__error"
+                                [id]="idDoValor(valor.codigo, 'descricao-erro')"
+                                >{{ erroDescricao }}</span
+                              >
+                            }
+                          </label>
+                          @let erroOrientacao = erroDaCorrecao('orientacao');
+                          <label class="field" [class.is-error]="erroOrientacao">
+                            <span class="field__label"
+                              >Orientação ao candidato<span class="sr-only">
+                                do valor {{ valor.codigo }}</span
+                              ></span
+                            >
+                            <textarea
+                              class="textarea"
+                              rows="2"
+                              formControlName="orientacao"
+                              [attr.aria-invalid]="erroOrientacao ? 'true' : null"
+                              [attr.aria-describedby]="
+                                erroOrientacao ? idDoValor(valor.codigo, 'orientacao-erro') : null
+                              "
+                            ></textarea>
+                            @if (erroOrientacao) {
+                              <span
+                                class="field__error"
+                                [id]="idDoValor(valor.codigo, 'orientacao-erro')"
+                                >{{ erroOrientacao }}</span
+                              >
+                            }
+                          </label>
+                          <p class="field__hint" [id]="idDoValor(valor.codigo, 'aviso')">
+                            A descrição é texto de catálogo: corrija a redação, não o sentido da
+                            opção. Para mudar o sentido, desative este valor e acrescente um valor
+                            novo. A correção vale para os rascunhos e para a próxima retificação dos
+                            processos publicados.
+                          </p>
+                        </fieldset>
+                      </form>
+                    } @else {
+                      {{ valor.descricao || '—' }}
+                      @if (valor.orientacao) {
+                        <p class="cfg-muted">{{ valor.orientacao }}</p>
+                      }
+                    }
+                  </td>
+                  <td data-label="Situação">
+                    <ui-tag [variant]="valor.ativo ? 'success' : 'neutral'">{{
+                      valor.ativo ? 'Ativo' : 'Desativado'
+                    }}</ui-tag>
+                  </td>
+                  <td class="table-responsive__actions" data-label="Ações">
+                    @if (temValores()) {
+                      @if (editando() === valor.codigo) {
+                        <button
+                          type="submit"
+                          class="btn btn--primary btn--sm"
+                          [attr.form]="idDoValor(valor.codigo, 'form')"
+                          [attr.aria-disabled]="bloqueado() ? 'true' : null"
+                          [attr.aria-busy]="bloqueado() ? 'true' : null"
+                          (click)="aoClicarEmEnviar($event)"
+                        >
+                          Salvar<span class="sr-only"> a correção do valor {{ valor.codigo }}</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn--tertiary btn--sm"
+                          [disabled]="bloqueado()"
+                          (click)="edicao.cancelarEdicaoDoValor(valor.codigo)"
+                        >
+                          Cancelar<span class="sr-only">
+                            a correção do valor {{ valor.codigo }}</span
+                          >
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn--tertiary btn--sm"
+                          [id]="idDoValor(valor.codigo, 'editar')"
+                          [disabled]="bloqueado() || editando() !== null"
+                          (click)="edicao.editarValor(valor.codigo)"
+                        >
+                          Editar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm"
+                        [id]="idDoValor(valor.codigo, 'subir')"
+                        [disabled]="bloqueado() || editando() !== null || $first"
+                        (click)="edicao.moverValor(valor.codigo, -1)"
+                      >
+                        Subir<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn--tertiary btn--sm"
+                        [id]="idDoValor(valor.codigo, 'descer')"
+                        [disabled]="bloqueado() || editando() !== null || $last"
+                        (click)="edicao.moverValor(valor.codigo, 1)"
+                      >
+                        Descer<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                      </button>
+                      @if (valor.ativo) {
+                        <button
+                          type="button"
+                          class="btn btn--tertiary btn--sm"
+                          [id]="idDaAcao(valor.codigo)"
+                          [disabled]="bloqueado() || editando() !== null"
+                          (click)="edicao.desativarValor(valor.codigo)"
+                        >
+                          Desativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                        </button>
+                      } @else {
+                        <button
+                          type="button"
+                          class="btn btn--tertiary btn--sm"
+                          [id]="idDaAcao(valor.codigo)"
+                          [disabled]="bloqueado() || editando() !== null"
+                          (click)="edicao.reativarValor(valor.codigo)"
+                        >
+                          Reativar<span class="sr-only"> o valor {{ valor.codigo }}</span>
+                        </button>
+                      }
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="u-caption">Nenhum valor cadastrado.</p>
+      }
+
+      @if (temValores()) {
+        <form
+          class="cfg-fato-formulario"
+          id="cfg-fato-novo-valor"
+          [formGroup]="novoValor"
+          (ngSubmit)="edicao.acrescentarValor()"
+          novalidate
+        >
+          <fieldset class="form-drawer__campos" role="none" [disabled]="bloqueado()">
+            <div class="form-grid">
+              @let erroCodigo = erroDoNovoValor('codigo');
+              <label class="field" [class.is-error]="erroCodigo">
+                <span class="field__label is-required">Código do valor</span>
+                <input
+                  class="input cfg-input-uppercase"
+                  type="text"
+                  formControlName="codigo"
+                  aria-required="true"
+                  [attr.aria-invalid]="erroCodigo ? 'true' : null"
+                  [attr.aria-describedby]="erroCodigo ? 'cfg-fato-valor-codigo-erro' : null"
+                />
+                @if (erroCodigo) {
+                  <span class="field__error" id="cfg-fato-valor-codigo-erro">{{ erroCodigo }}</span>
+                }
+              </label>
+              @let erroNovaDescricao = erroDoNovoValor('descricao');
+              <label class="field" [class.is-error]="erroNovaDescricao">
+                <span class="field__label" [class.is-required]="f.origem === 'DECLARADO'"
+                  >Descrição</span
+                >
+                <input
+                  class="input"
+                  type="text"
+                  formControlName="descricao"
+                  [attr.aria-required]="f.origem === 'DECLARADO' ? 'true' : null"
+                  [attr.aria-invalid]="erroNovaDescricao ? 'true' : null"
+                  [attr.aria-describedby]="
+                    erroNovaDescricao ? 'cfg-fato-valor-descricao-erro' : null
+                  "
+                />
+                @if (erroNovaDescricao) {
+                  <span class="field__error" id="cfg-fato-valor-descricao-erro">{{
+                    erroNovaDescricao
+                  }}</span>
+                }
+              </label>
+              @let erroNovaOrientacao = erroDoNovoValor('orientacao');
+              <label class="field form-grid__full" [class.is-error]="erroNovaOrientacao">
+                <span class="field__label">Orientação ao candidato</span>
+                <textarea
+                  class="textarea"
+                  rows="2"
+                  formControlName="orientacao"
+                  [attr.aria-describedby]="
+                    erroNovaOrientacao
+                      ? 'cfg-fato-valor-orientacao-ajuda cfg-fato-valor-orientacao-erro'
+                      : 'cfg-fato-valor-orientacao-ajuda'
+                  "
+                  [attr.aria-invalid]="erroNovaOrientacao ? 'true' : null"
+                ></textarea>
+                <span class="field__hint" id="cfg-fato-valor-orientacao-ajuda"
+                  >Aparece abaixo da opção, no formulário. Use só quando o candidato precisa saber
+                  algo sobre ela.</span
+                >
+                @if (erroNovaOrientacao) {
+                  <span class="field__error" id="cfg-fato-valor-orientacao-erro">{{
+                    erroNovaOrientacao
+                  }}</span>
+                }
+              </label>
+            </div>
+          </fieldset>
+          <div class="cfg-form-actions">
+            <button
+              type="submit"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-disabled]="bloqueado() ? 'true' : null"
+              [attr.aria-busy]="bloqueado() ? 'true' : null"
+              (click)="aoClicarEmEnviar($event)"
+            >
+              Acrescentar valor
+            </button>
+          </div>
+        </form>
+      }
+    </ui-recolhivel>
+  }
+}

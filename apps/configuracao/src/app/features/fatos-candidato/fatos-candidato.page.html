@@ -1,0 +1,92 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Fato do Candidato</h1>
+    <p class="page-header__desc">
+      O que se sabe de cada candidato e que formulários, exigências documentais e critérios citam:
+      os dados que ele declara, os derivados por regra e os que o sistema resolve. UNI-REQ-0143.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os fatos">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-fatos-candidato-lista
+  [fatos]="store.fatosBuscados()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [emSobreposicao]="edicao.emSobreposicao()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [podeSolicitar]="aprovacao.solicitaveis().length > 0"
+  [falhasDeApoio]="falhasDeApoio()"
+  [(termoBusca)]="store.termoBusca"
+  [(filtroOrigem)]="store.filtroOrigem"
+  [(filtroSituacao)]="store.filtroSituacao"
+  (cadastrar)="edicao.abrirCriacao()"
+  (solicitar)="solicitacaoAberta.set(true)"
+  (detalhar)="detalhe.abrir($event)"
+  (editar)="edicao.abrirEdicao($event.id)"
+  (desativar)="edicao.pedirAtivacao($event, 'DESATIVAR')"
+  (reativar)="edicao.pedirAtivacao($event, 'REATIVAR')"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-fato-detalhe
+  [(aberto)]="detalhe.aberto"
+  [fato]="detalhe.fato()"
+  [regras]="detalhe.regrasEmProsa()"
+  [indisponivel]="pendente()"
+  [catalogoFalhou]="detalhe.catalogoFalhou()"
+  [catalogoPendente]="detalhe.catalogoPendente()"
+  [mensagemDoCatalogo]="detalhe.mensagemDoCatalogo()"
+  (tentarCatalogo)="tentarCatalogoDoDetalhe()"
+  (editar)="editarDoDetalhe($event)"
+  (aceitar)="aceitarDoDetalhe($event)"
+/>
+<cfg-fato-drawer />
+<cfg-confirmacao-de-remocao
+  [titulo]="edicao.tituloDaConfirmacao()"
+  [rotulo]="edicao.pedido()?.acao === 'REATIVAR' ? 'Reativar' : 'Desativar'"
+  [variante]="edicao.pedido()?.acao === 'REATIVAR' ? 'primary' : 'danger'"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.gravando()"
+  [erro]="edicao.erroDaAtivacao()"
+  [anuncio]="edicao.anuncioDaAtivacao()"
+  (confirmar)="edicao.confirmarAtivacao()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Aceitar a recomendação"
+  rotulo="Aceitar recomendação"
+  variante="primary"
+  [(aberto)]="edicao.confirmandoAceite"
+  [mensagem]="edicao.mensagemDoAceite()"
+  [removendo]="edicao.gravando()"
+  [erro]="edicao.erroDoAceite()"
+  [anuncio]="edicao.anuncioDoAceite()"
+  (confirmar)="edicao.confirmarAceite()"
+/>
+<cfg-solicitacao-da-protecao-dialog
+  [(visible)]="solicitacaoAberta"
+  [pendentes]="aprovacao.solicitaveis()"
+  (enviada)="aposEnviarSolicitacao()"
+  (desatualizada)="aprovacao.carregar()"
+/>

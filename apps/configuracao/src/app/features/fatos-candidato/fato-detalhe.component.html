@@ -1,0 +1,160 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [heading]="fato()?.nome ?? 'Fato do candidato'"
+  ariaLabel="Detalhe do fato do candidato"
+  focoInicial="titulo"
+  position="right"
+>
+  @if (aberto() && fato(); as f) {
+    <div
+      class="form-drawer__form"
+      role="region"
+      tabindex="0"
+      aria-label="Dados do fato do candidato"
+    >
+      <div class="cfg-detalhe-situacoes">
+        <cfg-situacao-da-aprovacao
+          [situacao]="f.aprovacao.situacao"
+          [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada"
+          [justificativa]="f.aprovacao.justificativa"
+        />
+        <ui-tag [variant]="f.ativo ? 'success' : 'neutral'">{{
+          f.ativo ? 'Ativo' : 'Desativado'
+        }}</ui-tag>
+        @if (f.sistema) {
+          <ui-tag variant="primary">Sistema</ui-tag>
+        }
+      </div>
+      <section class="cfg-detalhe-secao">
+        <h3 class="cfg-detalhe-secao__titulo">O fato</h3>
+        <dl class="cfg-detalhe">
+          <div>
+            <dt>Código</dt>
+            <dd>
+              <code>{{ f.codigo }}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>Descrição</dt>
+            <dd>{{ f.descricao || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Origem</dt>
+            <dd>{{ rotulo(origens, f.origem) }}</dd>
+          </div>
+          <div>
+            <dt>Tipo de dado</dt>
+            <dd>{{ rotulo(dominios, f.dominio) }}</dd>
+          </div>
+          <div>
+            <dt>Cardinalidade</dt>
+            <dd>{{ rotulo(cardinalidades, f.cardinalidade) }}</dd>
+          </div>
+          @if (f.fonteValores) {
+            <div>
+              <dt>Fonte dos valores</dt>
+              <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+            </div>
+          }
+          @if (f.formato) {
+            <div>
+              <dt>Formato do texto</dt>
+              <dd>{{ rotulo(formatos, f.formato) }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Escopo</dt>
+            <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+          </div>
+          <div>
+            <dt>Componente de exibição</dt>
+            <dd>
+              {{
+                f.componenteExibicao ? rotulo(componentes, f.componenteExibicao) : rotuloDoPadrao
+              }}
+            </dd>
+          </div>
+        </dl>
+      </section>
+      @if (f.valores.length > 0) {
+        <section class="cfg-detalhe-secao">
+          <h3 class="cfg-detalhe-secao__titulo">Valores possíveis</h3>
+          <ul class="cfg-detalhe-valores">
+            @for (valor of f.valores; track valor.codigo) {
+              <li>
+                <div>
+                  <code>{{ valor.codigo }}</code>
+                  @if (valor.descricao) {
+                    — {{ valor.descricao }}
+                  }
+                  @if (!valor.ativo) {
+                    <ui-tag variant="neutral">Desativado</ui-tag>
+                  }
+                </div>
+                @if (valor.orientacao) {
+                  <p class="cfg-detalhe-valores__orientacao">{{ valor.orientacao }}</p>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+      @if (regras().length > 0) {
+        <section class="cfg-detalhe-secao">
+          <h3 class="cfg-detalhe-secao__titulo" [id]="idDasRegras" tabindex="-1">Regras padrão</h3>
+          @if (catalogoFalhou()) {
+            <ui-alert variant="warning" heading="Os nomes dos fatos não foram carregados">
+              {{ mensagemDoCatalogo() }} As regras aparecem com os códigos dos fatos.
+              <div class="list-state__retry">
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  [attr.aria-disabled]="catalogoPendente() ? 'true' : null"
+                  [attr.aria-busy]="catalogoPendente() ? 'true' : null"
+                  (click)="tentarCatalogoNovamente()"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            </ui-alert>
+          }
+          <ul class="cfg-detalhe-valores">
+            @for (regra of regras(); track $index) {
+              <li>{{ regra }}</li>
+            }
+          </ul>
+        </section>
+      }
+      <cfg-detalhe-da-protecao [protecao]="f" />
+      <ng-container *authTemPermissao="permissaoDeConsultar">
+        <cfg-historico-da-protecao cadastro="FATO" [itemId]="f.id" />
+      </ng-container>
+    </div>
+    <div class="form-drawer__footer">
+      <button type="button" class="btn btn--tertiary btn--rect" (click)="aberto.set(false)">
+        Fechar
+      </button>
+      <ng-container *authTemPermissao="permissaoDeManter">
+        @if (f.aprovacao.situacao === 'AJUSTE_RECOMENDADO') {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [disabled]="indisponivel()"
+            (click)="aceitar.emit(f)"
+          >
+            Aceitar recomendação
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="indisponivel()"
+          (click)="editar.emit(f)"
+        >
+          Editar
+        </button>
+      </ng-container>
+    </div>
+  }
+</ui-drawer>

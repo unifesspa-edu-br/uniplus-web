@@ -1,0 +1,60 @@
+<span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
+<div class="form-drawer__form">
+  @if (leitura.fato(); as f) {
+    @if (f.sistema) {
+      <ui-alert variant="info" heading="Fato de sistema">
+        Este fato é resolvido pelo próprio sistema. Só o nome, a descrição, o componente de exibição
+        e a proteção de dados podem ser alterados; a proteção passa pela aprovação da proteção de
+        dados.
+      </ui-alert>
+    }
+    <div class="cfg-fato-aprovacao" [id]="idDoInicio" tabindex="-1">
+      <span class="field__label">Aprovação da proteção de dados</span>
+      <cfg-situacao-da-aprovacao
+        [situacao]="f.aprovacao.situacao"
+        [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada"
+        [justificativa]="f.aprovacao.justificativa"
+      />
+    </div>
+    <cfg-fato-descritivo
+      [form]="edicao.descritivo"
+      [bloqueado]="edicao.bloqueado()"
+      (salvar)="edicao.salvarDescritivo()"
+    />
+    <cfg-fato-definicao />
+    <cfg-fato-valores />
+    <cfg-fato-regras />
+    @if (edicao.erro()) {
+      <ui-alert variant="danger" heading="Não foi possível salvar">{{ edicao.erro() }}</ui-alert>
+    }
+  } @else if (leitura.erroDeCarga()) {
+    <div id="cfg-fato-erro-de-carga" tabindex="-1">
+      <ui-alert variant="danger" heading="Não foi possível carregar o fato">
+        {{ leitura.erroDeCarga() }}
+        <div class="list-state__retry">
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [attr.aria-disabled]="leitura.carregando() ? 'true' : null"
+            [attr.aria-busy]="leitura.carregando() ? 'true' : null"
+            (click)="tentarNovamente()"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </ui-alert>
+    </div>
+  } @else if (leitura.carregando()) {
+    <p><ui-spinner spinnerSize="sm" /> Carregando o fato…</p>
+  }
+</div>
+<div class="form-drawer__footer">
+  <button
+    type="button"
+    class="btn btn--secondary btn--rect"
+    [disabled]="edicao.bloqueado()"
+    (click)="fechar()"
+  >
+    Fechar
+  </button>
+</div>

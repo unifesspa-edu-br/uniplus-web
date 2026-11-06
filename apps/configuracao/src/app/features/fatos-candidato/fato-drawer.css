@@ -1,0 +1,12 @@
+/* O corpo do drawer não rola: o host fica fora do fluxo e o .form-drawer__form de dentro é o único
+   container de rolagem, com o recuo do conteúdo. */
+:host {
+  display: contents;
+}
+
+.cfg-fato-aprovacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}

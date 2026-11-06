@@ -1,0 +1,17 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="edicao.aberto"
+  [closable]="fechavel()"
+  [heading]="edicao.tituloDoDrawer()"
+  ariaLabel="Fato do candidato"
+  position="right"
+>
+  <!-- O conteúdo só existe com o drawer aberto: reabrir o mesmo fato recarrega do servidor e descarta o rascunho fechado. -->
+  @if (edicao.aberto()) {
+    @if (edicao.modo() === 'criar') {
+      <cfg-fato-criacao />
+    } @else {
+      <cfg-fato-edicao />
+    }
+  }
+</ui-drawer>

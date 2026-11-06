@@ -1,0 +1,69 @@
+<form
+  class="cfg-fato-formulario"
+  [formGroup]="form()"
+  id="cfg-fato-descritivo"
+  (ngSubmit)="salvar.emit()"
+  novalidate
+>
+  <fieldset class="form-drawer__campos cfg-fato-formulario" role="none" [disabled]="bloqueado()">
+    @let erroNome = erroDoCampo('nome');
+    <label class="field" [class.is-error]="erroNome">
+      <span class="field__label is-required">Nome</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="nome"
+        aria-required="true"
+        [attr.aria-invalid]="erroNome ? 'true' : null"
+        [attr.aria-describedby]="erroNome ? 'cfg-fato-ed-nome-erro' : null"
+      />
+      @if (erroNome) {
+        <span class="field__error" id="cfg-fato-ed-nome-erro">{{ erroNome }}</span>
+      }
+    </label>
+    @let erroDescricao = erroDoCampo('descricao');
+    <label class="field" [class.is-error]="erroDescricao">
+      <span class="field__label is-required">Descrição</span>
+      <textarea
+        class="textarea"
+        rows="3"
+        formControlName="descricao"
+        aria-required="true"
+        [attr.aria-invalid]="erroDescricao ? 'true' : null"
+        [attr.aria-describedby]="erroDescricao ? 'cfg-fato-ed-descricao-erro' : null"
+      ></textarea>
+      @if (erroDescricao) {
+        <span class="field__error" id="cfg-fato-ed-descricao-erro">{{ erroDescricao }}</span>
+      }
+    </label>
+    @let erroComponente = erroDoCampo('componenteExibicao');
+    <label class="field" [class.is-error]="erroComponente">
+      <span class="field__label">Componente de exibição</span>
+      <select
+        class="select"
+        formControlName="componenteExibicao"
+        [attr.aria-invalid]="erroComponente ? 'true' : null"
+        [attr.aria-describedby]="erroComponente ? 'cfg-fato-ed-componente-erro' : null"
+      >
+        <option value="">{{ rotuloDoPadrao }}</option>
+        @for (opcao of componentes; track opcao.valor) {
+          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      @if (erroComponente) {
+        <span class="field__error" id="cfg-fato-ed-componente-erro">{{ erroComponente }}</span>
+      }
+    </label>
+  </fieldset>
+  <div class="cfg-form-actions">
+    <button
+      type="submit"
+      class="btn btn--primary btn--sm"
+      [attr.aria-disabled]="bloqueado() ? 'true' : null"
+      [attr.aria-busy]="bloqueado() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      Salvar nome, descrição e componente
+    </button>
+  </div>
+</form>

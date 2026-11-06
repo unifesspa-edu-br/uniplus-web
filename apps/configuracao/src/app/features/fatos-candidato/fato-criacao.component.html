@@ -1,0 +1,382 @@
+<span class="sr-only" role="status">{{ anuncio() }}</span>
+@if (erro()) {
+  <ui-alert variant="danger" heading="Não foi possível criar o fato">{{ erro() }}</ui-alert>
+}
+@if (fases.falhou()) {
+  <ui-alert variant="warning" heading="Fases não carregadas">
+    Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido.
+    <div class="list-state__retry">
+      <button type="button" class="btn btn--secondary btn--sm" (click)="fases.recarregar()">
+        Tentar novamente
+      </button>
+    </div>
+  </ui-alert>
+}
+<form
+  [formGroup]="form"
+  id="cfg-fato-criacao"
+  class="form-drawer__form"
+  (ngSubmit)="aoEnviar()"
+  novalidate
+>
+  <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+    <fieldset class="field form-grid__full">
+      <legend class="field__label is-required">O que o fato é</legend>
+      <label class="radio">
+        <input type="radio" formControlName="tipo" name="tipo" value="DECLARADO" />
+        <span class="radio__dot" aria-hidden="true"></span>
+        Perguntado ao candidato num formulário
+      </label>
+      <label class="radio">
+        <input type="radio" formControlName="tipo" name="tipo" value="DERIVADO" />
+        <span class="radio__dot" aria-hidden="true"></span>
+        Derivado por regra de outros fatos
+      </label>
+      <label class="radio">
+        <input type="radio" formControlName="tipo" name="tipo" value="AGREGADO" />
+        <span class="radio__dot" aria-hidden="true"></span>
+        Resumo das respostas dos membros de um grupo (ex.: composição familiar)
+      </label>
+    </fieldset>
+
+    <div class="form-grid">
+      @let erroNome = erroDoCampo('nome');
+      <label class="field" [class.is-error]="erroNome">
+        <span class="field__label is-required">Nome</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="nome"
+          aria-required="true"
+          [attr.aria-invalid]="erroNome ? 'true' : null"
+          [attr.aria-describedby]="erroNome ? 'cfg-fato-nome-erro' : null"
+        />
+        @if (erroNome) {
+          <span class="field__error" id="cfg-fato-nome-erro">{{ erroNome }}</span>
+        }
+      </label>
+      @let erroCodigo = erroDoCampo('codigo');
+      <label class="field" [class.is-error]="erroCodigo">
+        <span class="field__label is-required">Código</span>
+        <input
+          class="input cfg-input-uppercase"
+          type="text"
+          formControlName="codigo"
+          aria-required="true"
+          [attr.aria-invalid]="erroCodigo ? 'true' : null"
+          [attr.aria-describedby]="
+            erroCodigo ? 'cfg-fato-codigo-dica cfg-fato-codigo-erro' : 'cfg-fato-codigo-dica'
+          "
+        />
+        <span class="field__hint" id="cfg-fato-codigo-dica">
+          Caixa alta, letras, números e sublinhado. Nunca se reutiliza.
+        </span>
+        @if (erroCodigo) {
+          <span class="field__error" id="cfg-fato-codigo-erro">{{ erroCodigo }}</span>
+        }
+      </label>
+    </div>
+
+    @let erroDescricao = erroDoCampo('descricao');
+    <label class="field form-grid__full" [class.is-error]="erroDescricao">
+      <span class="field__label is-required">Descrição</span>
+      <textarea
+        class="textarea"
+        rows="2"
+        formControlName="descricao"
+        aria-required="true"
+        [attr.aria-invalid]="erroDescricao ? 'true' : null"
+        [attr.aria-describedby]="erroDescricao ? 'cfg-fato-descricao-erro' : null"
+      ></textarea>
+      @if (erroDescricao) {
+        <span class="field__error" id="cfg-fato-descricao-erro">{{ erroDescricao }}</span>
+      }
+    </label>
+
+    @let erroComponente = erroDoCampo('componenteExibicao');
+    <label class="field form-grid__full" [class.is-error]="erroComponente">
+      <span class="field__label">Componente de exibição</span>
+      <select
+        class="select"
+        formControlName="componenteExibicao"
+        [attr.aria-invalid]="erroComponente ? 'true' : null"
+        [attr.aria-describedby]="erroComponente ? 'cfg-fato-componente-erro' : null"
+      >
+        <option value="">{{ rotuloDoPadrao }}</option>
+        @for (opcao of componentes; track opcao.valor) {
+          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      @if (erroComponente) {
+        <span class="field__error" id="cfg-fato-componente-erro">{{ erroComponente }}</span>
+      }
+    </label>
+
+    @if (dep.agregado()) {
+      @if (catalogo.falhou()) {
+        <ui-alert variant="warning" heading="Fatos de membro não carregados">
+          Sem o catálogo de fatos não é possível escolher o fato de membro que o agregado resume.
+          <div class="list-state__retry">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              (click)="catalogo.recarregar()"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        </ui-alert>
+      }
+      @let erroMembro = erroDoCampo('fatoDeMembro');
+      <label class="field form-grid__full" [class.is-error]="erroMembro">
+        <span class="field__label is-required">Fato de membro resumido</span>
+        <select
+          id="cfg-fato-fatoDeMembro"
+          class="select"
+          formControlName="fatoDeMembro"
+          aria-required="true"
+          [attr.aria-busy]="catalogo.pendente() ? 'true' : null"
+          [attr.aria-invalid]="erroMembro ? 'true' : null"
+          [attr.aria-describedby]="
+            erroMembro ? 'cfg-fato-membro-dica cfg-fato-fatoDeMembro-erro' : 'cfg-fato-membro-dica'
+          "
+        >
+          <option value="">Selecione…</option>
+          @for (membro of fatosDeMembro(); track membro.codigo) {
+            <option [value]="membro.codigo">{{ membro.nome }} ({{ membro.codigo }})</option>
+          }
+        </select>
+        <span class="field__hint" id="cfg-fato-membro-dica" aria-live="polite">
+          @if (membroEscolhido(); as membro) {
+            {{ resumo(membro.dominio) }} O fato de membro é conhecido a partir da fase
+            {{ nomeDaFase(membro.pontoResolucao) }}; o agregado não pode ser conhecido antes dela
+            nem ter proteção de dados mais fraca.
+          } @else if (!catalogo.pendente() && !catalogo.falhou() && fatosDeMembro().length === 0) {
+            Nenhum fato de membro de grupo ativo, de sim ou não ou de lista de valores, no catálogo.
+          } @else {
+            Fatos declarados de membro de grupo, de sim ou não ou de lista de valores.
+          }
+        </span>
+        @if (erroMembro) {
+          <span class="field__error" id="cfg-fato-fatoDeMembro-erro">{{ erroMembro }}</span>
+        }
+      </label>
+    }
+
+    <div class="form-grid">
+      @if (!dep.agregado()) {
+        @let erroDominio = erroDoCampo('dominio');
+        <label class="field" [class.is-error]="erroDominio">
+          <span class="field__label is-required">Tipo de dado</span>
+          <select
+            class="select"
+            formControlName="dominio"
+            aria-required="true"
+            [attr.aria-invalid]="erroDominio ? 'true' : null"
+            [attr.aria-describedby]="erroDominio ? 'cfg-fato-dominio-erro' : null"
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of dep.dominios(); track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroDominio) {
+            <span class="field__error" id="cfg-fato-dominio-erro">{{ erroDominio }}</span>
+          }
+        </label>
+      }
+      @if (dep.declarado()) {
+        @let erroCardinalidade = erroDoCampo('cardinalidade');
+        <label class="field" [class.is-error]="erroCardinalidade">
+          <span class="field__label is-required">Quantos valores</span>
+          <select
+            class="select"
+            formControlName="cardinalidade"
+            [attr.aria-invalid]="erroCardinalidade ? 'true' : null"
+            [attr.aria-describedby]="erroCardinalidade ? 'cfg-fato-cardinalidade-erro' : null"
+          >
+            @for (opcao of cardinalidades; track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroCardinalidade) {
+            <span class="field__error" id="cfg-fato-cardinalidade-erro">{{
+              erroCardinalidade
+            }}</span>
+          }
+        </label>
+      }
+      @if (dep.declarado() && dep.temFonte()) {
+        @let erroFonte = erroDoCampo('fonteValores');
+        <label class="field" [class.is-error]="erroFonte">
+          <span class="field__label is-required">De onde vêm os valores</span>
+          <select
+            class="select"
+            formControlName="fonteValores"
+            aria-required="true"
+            [attr.aria-invalid]="erroFonte ? 'true' : null"
+            [attr.aria-describedby]="erroFonte ? 'cfg-fato-fonteValores-erro' : null"
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of fontes; track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroFonte) {
+            <span class="field__error" id="cfg-fato-fonteValores-erro">{{ erroFonte }}</span>
+          }
+        </label>
+      }
+      @if (dep.declarado() && dep.temFormatoDeTexto()) {
+        @let erroFormato = erroDoCampo('formato');
+        <label class="field" [class.is-error]="erroFormato">
+          <span class="field__label is-required">Formato do texto</span>
+          <select
+            class="select"
+            formControlName="formato"
+            aria-required="true"
+            [attr.aria-invalid]="erroFormato ? 'true' : null"
+            [attr.aria-describedby]="erroFormato ? 'cfg-fato-formato-erro' : null"
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of formatos; track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroFormato) {
+            <span class="field__error" id="cfg-fato-formato-erro">{{ erroFormato }}</span>
+          }
+        </label>
+      }
+      @if (!dep.agregado()) {
+        @let erroEscopo = erroDoCampo('escopo');
+        <label class="field" [class.is-error]="erroEscopo">
+          <span class="field__label is-required">De quem é o dado</span>
+          <select
+            class="select"
+            formControlName="escopo"
+            [attr.aria-invalid]="erroEscopo ? 'true' : null"
+            [attr.aria-describedby]="erroEscopo ? 'cfg-fato-escopo-erro' : null"
+          >
+            @for (opcao of escopos; track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroEscopo) {
+            <span class="field__error" id="cfg-fato-escopo-erro">{{ erroEscopo }}</span>
+          }
+        </label>
+      }
+      @let erroFase = erroDoCampo('pontoResolucao');
+      <label class="field" [class.is-error]="erroFase">
+        <span class="field__label is-required">Conhecido a partir da fase</span>
+        <select
+          id="cfg-fato-pontoResolucao"
+          class="select"
+          formControlName="pontoResolucao"
+          aria-required="true"
+          [attr.aria-busy]="fases.pendente() ? 'true' : null"
+          [attr.aria-invalid]="erroFase ? 'true' : null"
+          [attr.aria-describedby]="erroFase ? 'cfg-fato-pontoResolucao-erro' : null"
+        >
+          <option value="">Selecione…</option>
+          @for (fase of fases.itens(); track fase.id) {
+            <option [value]="fase.codigo">{{ fase.nome }}</option>
+          }
+        </select>
+        @if (erroFase) {
+          <span class="field__error" id="cfg-fato-pontoResolucao-erro">{{ erroFase }}</span>
+        }
+      </label>
+    </div>
+
+    <fieldset class="field form-grid__full">
+      <legend class="form-section__title">Proteção de dados (LGPD)</legend>
+      <div class="form-grid">
+        @let erroClassificacao = erroDoCampo('classificacaoProtecao');
+        <label class="field" [class.is-error]="erroClassificacao">
+          <span class="field__label is-required">Classificação</span>
+          <select
+            class="select"
+            formControlName="classificacaoProtecao"
+            aria-required="true"
+            [attr.aria-invalid]="erroClassificacao ? 'true' : null"
+            [attr.aria-describedby]="
+              erroClassificacao ? 'cfg-fato-classificacaoProtecao-erro' : null
+            "
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of dep.classificacoes(); track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroClassificacao) {
+            <span class="field__error" id="cfg-fato-classificacaoProtecao-erro">{{
+              erroClassificacao
+            }}</span>
+          }
+        </label>
+        @let erroHipotese = erroDoCampo('hipoteseLegal');
+        <label class="field" [class.is-error]="erroHipotese">
+          <span class="field__label is-required">Hipótese legal</span>
+          <select
+            class="select"
+            formControlName="hipoteseLegal"
+            aria-required="true"
+            [attr.aria-invalid]="erroHipotese ? 'true' : null"
+            [attr.aria-describedby]="erroHipotese ? 'cfg-fato-hipoteseLegal-erro' : null"
+          >
+            <option value="">Selecione…</option>
+            @for (opcao of dep.hipoteses(); track opcao.valor) {
+              <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+            }
+          </select>
+          @if (erroHipotese) {
+            <span class="field__error" id="cfg-fato-hipoteseLegal-erro">{{ erroHipotese }}</span>
+          }
+        </label>
+      </div>
+      @let erroFinalidade = erroDoCampo('finalidadeTratamento');
+      <label class="field form-grid__full" [class.is-error]="erroFinalidade">
+        <span class="field__label is-required">Finalidade do tratamento</span>
+        <textarea
+          class="textarea"
+          rows="2"
+          formControlName="finalidadeTratamento"
+          aria-required="true"
+          [attr.aria-invalid]="erroFinalidade ? 'true' : null"
+          [attr.aria-describedby]="erroFinalidade ? 'cfg-fato-finalidadeTratamento-erro' : null"
+        ></textarea>
+        @if (erroFinalidade) {
+          <span class="field__error" id="cfg-fato-finalidadeTratamento-erro">{{
+            erroFinalidade
+          }}</span>
+        }
+      </label>
+    </fieldset>
+  </fieldset>
+</form>
+
+<div class="form-drawer__footer">
+  <button
+    type="button"
+    class="btn btn--tertiary btn--rect"
+    [disabled]="salvando()"
+    (click)="cancelar()"
+  >
+    Cancelar
+  </button>
+  <button
+    type="submit"
+    form="cfg-fato-criacao"
+    class="btn btn--primary"
+    [attr.aria-disabled]="salvando() ? 'true' : null"
+    [attr.aria-busy]="salvando() ? 'true' : null"
+    (click)="aoClicarEmCriar($event)"
+  >
+    @if (salvando()) {
+      <ui-spinner spinnerSize="sm" />
+    }
+    {{ rotuloDoBotao() }}
+  </button>
+</div>

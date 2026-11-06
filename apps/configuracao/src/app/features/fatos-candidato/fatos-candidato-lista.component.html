@@ -1,0 +1,189 @@
+<ui-filter-bar
+  [attr.inert]="gravando() ? '' : null"
+  ariaLabel="Filtrar fatos do candidato"
+  searchPlaceholder="Buscar por código ou nome…"
+  searchAriaLabel="Buscar fato do candidato"
+  [(searchValue)]="termoBusca"
+  [filtrosAtivos]="filtrosAtivos()"
+>
+  <ng-container uiFilterBarSecondary>
+    <span class="u-eyebrow">Origem</span>
+    <ui-filter-chips
+      [options]="chipsDeOrigem"
+      [(selected)]="filtroOrigem"
+      ariaLabel="Filtrar por origem"
+    />
+    <span class="u-eyebrow">Situação</span>
+    <ui-filter-chips
+      [options]="chipsDeSituacao"
+      [(selected)]="filtroSituacao"
+      ariaLabel="Filtrar por situação"
+    />
+  </ng-container>
+</ui-filter-bar>
+
+<section class="panel" aria-labelledby="cfg-fatos-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 #titulo [id]="idDoTitulo" tabindex="-1">Fatos do candidato</h2>
+      @if (carregando() || andamento()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ andamento() ? 'Gravando' : 'Carregando' }}</span
+        >
+      }
+    </div>
+    <div class="panel-head__actions">
+      <ng-container *authTemPermissao="permissaoDeManter">
+        @if (podeSolicitar()) {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="indisponivel() ? 'true' : null"
+            (click)="indisponivel() || solicitar.emit()"
+          >
+            Enviar solicitação
+          </button>
+        }
+        <button
+          type="button"
+          [id]="idDoCadastro"
+          class="btn btn--primary"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
+        >
+          <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+          Novo fato
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <ui-lookup-alert [falhas]="falhasDeApoio()" />
+
+  @if (fatos().length > 0) {
+    <div
+      class="table-responsive table-responsive--acoes-fixas table-responsive--compacta"
+      role="region"
+      tabindex="0"
+      aria-label="Lista de fatos do candidato"
+    >
+      <table>
+        <caption class="sr-only">
+          Fatos do candidato, com origem, tipo de dado, situação, sensibilidade e aprovação da
+          proteção de dados. Use o nome para abrir o detalhe.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Origem</th>
+            <th scope="col">Tipo de dado</th>
+            <th scope="col">Situação</th>
+            <th scope="col">Sensibilidade</th>
+            <th scope="col">Aprovação</th>
+            <th scope="col" class="table-responsive__actions">
+              <span class="sr-only">Ações</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (fato of fatos(); track fato.id) {
+            <tr [attr.data-fato-id]="fato.id">
+              <td data-label="Código">
+                <code>{{ fato.codigo }}</code>
+              </td>
+              <td data-label="Nome">
+                <button
+                  type="button"
+                  class="table-responsive__alvo"
+                  [attr.aria-label]="'Ver o detalhe de ' + fato.nome"
+                  (click)="detalhar.emit(fato)"
+                >
+                  {{ fato.nome }}
+                </button>
+                @if (fato.sistema) {
+                  <ui-tag variant="primary">Sistema</ui-tag>
+                }
+              </td>
+              <td data-label="Origem">{{ rotulo(origens, fato.origem) }}</td>
+              <td data-label="Tipo de dado">{{ rotulo(dominios, fato.dominio) }}</td>
+              <td data-label="Situação" class="u-nowrap-desktop">
+                @if (fato.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
+                } @else {
+                  <ui-tag [variant]="fato.ativo ? 'success' : 'neutral'">{{
+                    fato.ativo ? 'Ativo' : 'Desativado'
+                  }}</ui-tag>
+                }
+              </td>
+              <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                {{ rotulo(classificacoes, fato.classificacaoProtecao) }}
+              </td>
+              <td data-label="Aprovação" class="u-nowrap-desktop">
+                <cfg-situacao-da-aprovacao [situacao]="fato.aprovacao.situacao" [emLista]="true" />
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ng-container *authTemPermissao="permissaoDeManter">
+                  <ui-icon-button
+                    icon="pi-pencil"
+                    [accessibleName]="'Editar o fato ' + fato.codigo"
+                    tooltip="Editar fato"
+                    [isDisabled]="indisponivel()"
+                    (triggered)="acionarEditar(fato)"
+                  />
+                  @if (fato.sistema) {
+                    <!-- O fato de sistema não se desativa: o botão fica, desabilitado, com o porquê. -->
+                    <ui-icon-button
+                      icon="pi-power-off"
+                      [accessibleName]="'Desativar o fato ' + fato.codigo"
+                      tooltip="Fato de sistema: não pode ser desativado"
+                      description="Fato de sistema não pode ser desativado; só o nome e a descrição se alteram."
+                      [isDisabled]="true"
+                    />
+                  }
+                  @switch (acaoDeAtivacao(fato)) {
+                    @case ('DESATIVAR') {
+                      <ui-icon-button
+                        icon="pi-power-off"
+                        [accessibleName]="'Desativar o fato ' + fato.codigo"
+                        tooltip="Desativar fato"
+                        [isDisabled]="indisponivel()"
+                        (triggered)="acionarSituacao(fato, 'desativar')"
+                      />
+                    }
+                    @case ('REATIVAR') {
+                      <ui-icon-button
+                        icon="pi-replay"
+                        [accessibleName]="'Reativar o fato ' + fato.codigo"
+                        tooltip="Reativar fato"
+                        [isDisabled]="indisponivel()"
+                        (triggered)="acionarSituacao(fato, 'reativar')"
+                      />
+                    }
+                  }
+                </ng-container>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state
+      heading="Nenhum fato encontrado"
+      description="Ajuste a busca ou os filtros para ver resultados."
+    />
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de fatos do candidato"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

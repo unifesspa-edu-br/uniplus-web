@@ -14,7 +14,10 @@ import {
   resumoDoAgregado,
 } from './fato-candidato.regras';
 
-const fato = (binding: string, extra: Partial<{ sistema: boolean; dominio: string; fonteValores: string | null }> = {}) => ({
+const fato = (
+  binding: string,
+  extra: Partial<{ sistema: boolean; dominio: string; fonteValores: string | null }> = {},
+) => ({
   binding,
   sistema: false,
   dominio: 'CATEGORICO',
@@ -26,15 +29,26 @@ describe('o que cada fato deixa manter', () => {
   it('valores: declarado e derivado por regra categóricos de fonte global do administrador', () => {
     expect(podeTerValores(fato('CAMPO_INSCRICAO:COR'))).toBe(true);
     expect(podeTerValores(fato('REGRA_DERIVACAO:PERFIL'))).toBe(true);
-    expect(podeTerValores(fato('AGREGACAO_GRUPO:RENDA')), 'o agregado herda os valores do membro').toBe(false);
-    expect(podeTerValores(fato('CAMPO_INSCRICAO:COR', { sistema: true })), 'o de sistema só muda por versão').toBe(false);
+    expect(
+      podeTerValores(fato('AGREGACAO_GRUPO:RENDA')),
+      'o agregado herda os valores do membro',
+    ).toBe(false);
+    expect(
+      podeTerValores(fato('CAMPO_INSCRICAO:COR', { sistema: true })),
+      'o de sistema só muda por versão',
+    ).toBe(false);
     expect(podeTerValores(fato('CAMPO_INSCRICAO:OPCAO', { fonteValores: 'PROCESSO' }))).toBe(false);
-    expect(podeTerValores(fato('CAMPO_INSCRICAO:IDADE', { dominio: 'NUMERICO', fonteValores: null }))).toBe(false);
+    expect(
+      podeTerValores(fato('CAMPO_INSCRICAO:IDADE', { dominio: 'NUMERICO', fonteValores: null })),
+    ).toBe(false);
   });
 
   it('regras padrão: só o derivado por regra do administrador', () => {
     expect(podeTerRegras(fato('REGRA_DERIVACAO:PERFIL'))).toBe(true);
-    expect(podeTerRegras(fato('AGREGACAO_GRUPO:RENDA')), 'o agregado também é derivado, mas não tem regra').toBe(false);
+    expect(
+      podeTerRegras(fato('AGREGACAO_GRUPO:RENDA')),
+      'o agregado também é derivado, mas não tem regra',
+    ).toBe(false);
     expect(podeTerRegras(fato('REGRA_DERIVACAO:MODALIDADE', { sistema: true }))).toBe(false);
   });
 });
@@ -66,7 +80,12 @@ describe('o que a API recusa e a tela não oferece', () => {
 
 describe('agregado de grupo', () => {
   it('resume só fato declarado ativo de membro de grupo, sim ou não ou lista de valores', () => {
-    const membro = { ativo: true, escopo: 'MEMBRO_GRUPO', origem: 'DECLARADO', dominio: 'BOOLEANO' };
+    const membro = {
+      ativo: true,
+      escopo: 'MEMBRO_GRUPO',
+      origem: 'DECLARADO',
+      dominio: 'BOOLEANO',
+    };
     const catalogo = [
       { ...membro, codigo: 'TRABALHA' },
       { ...membro, codigo: 'PARENTESCO', dominio: 'CATEGORICO' },
@@ -75,7 +94,10 @@ describe('agregado de grupo', () => {
       { ...membro, codigo: 'QUILOMBOLA', escopo: 'CANDIDATO' },
       { ...membro, codigo: 'IDOSO', origem: 'DERIVADO' },
     ];
-    expect(fatosDeMembroAgregaveis(catalogo).map((f) => f.codigo)).toEqual(['TRABALHA', 'PARENTESCO']);
+    expect(fatosDeMembroAgregaveis(catalogo).map((f) => f.codigo)).toEqual([
+      'TRABALHA',
+      'PARENTESCO',
+    ]);
   });
 
   it('o membro sim ou não dá "existe membro que…"; o de lista de valores, os valores presentes', () => {
@@ -94,19 +116,41 @@ describe('ativação do fato', () => {
 
 describe('a definição que o administrador altera', () => {
   const v = {
-    dominio: 'TEXTO', cardinalidade: 'ESCALAR', fonteValores: 'GLOBAL', formato: 'CPF', escopo: 'CANDIDATO',
-    pontoResolucao: 'INSCRICAO', classificacaoProtecao: 'IDENTIFICADOR', finalidadeTratamento: ' Identificar. ', hipoteseLegal: 'CONSENTIMENTO',
+    dominio: 'TEXTO',
+    cardinalidade: 'ESCALAR',
+    fonteValores: 'GLOBAL',
+    formato: 'CPF',
+    escopo: 'CANDIDATO',
+    pontoResolucao: 'INSCRICAO',
+    classificacaoProtecao: 'IDENTIFICADOR',
+    finalidadeTratamento: ' Identificar. ',
+    hipoteseLegal: 'CONSENTIMENTO',
   };
 
   it('declarado de texto leva o formato e a fonte nula; o de lista leva a fonte e o formato nulo', () => {
-    expect(corpoDaDefinicao('DECLARADO', v)).toMatchObject({ formato: 'CPF', fonteValores: null, cardinalidade: 'ESCALAR', finalidadeTratamento: 'Identificar.' });
-    expect(corpoDaDefinicao('DECLARADO', { ...v, dominio: 'CATEGORICO' })).toMatchObject({ formato: null, fonteValores: 'GLOBAL' });
+    expect(corpoDaDefinicao('DECLARADO', v)).toMatchObject({
+      formato: 'CPF',
+      fonteValores: null,
+      cardinalidade: 'ESCALAR',
+      finalidadeTratamento: 'Identificar.',
+    });
+    expect(corpoDaDefinicao('DECLARADO', { ...v, dominio: 'CATEGORICO' })).toMatchObject({
+      formato: null,
+      fonteValores: 'GLOBAL',
+    });
   });
 
   it('derivado e agregado não levam os eixos que o tipo não aceita', () => {
-    expect(Object.keys(corpoDaDefinicao('DERIVADO_POR_REGRA', v))).not.toEqual(expect.arrayContaining(['cardinalidade']));
+    expect(Object.keys(corpoDaDefinicao('DERIVADO_POR_REGRA', v))).not.toEqual(
+      expect.arrayContaining(['cardinalidade']),
+    );
     expect(corpoDaDefinicao('DERIVADO_POR_REGRA', v)).not.toHaveProperty('fonteValores');
-    expect(Object.keys(corpoDaDefinicao('AGREGADO', v)).sort()).toEqual(['classificacaoProtecao', 'finalidadeTratamento', 'hipoteseLegal', 'pontoResolucao']);
+    expect(Object.keys(corpoDaDefinicao('AGREGADO', v)).sort()).toEqual([
+      'classificacaoProtecao',
+      'finalidadeTratamento',
+      'hipoteseLegal',
+      'pontoResolucao',
+    ]);
   });
 
   it('o fato de sistema e o de vínculo desconhecido não se editam', () => {
