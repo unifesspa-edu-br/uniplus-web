@@ -2,6 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 
 export type UiAlertVariant = 'success' | 'warning' | 'danger' | 'info';
 
+/**
+ * Caixa de aviso. A região viva (`role="alert"`) cobre o título e a mensagem. O que tem estado
+ * próprio, como o botão e a situação de uma nova tentativa, entra no slot `alertaAcoes`: fica
+ * dentro da caixa, mas fora da região viva, para a mudança de estado não reler o aviso.
+ */
 @Component({
   selector: 'ui-alert',
   standalone: true,
@@ -13,15 +18,16 @@ export type UiAlertVariant = 'success' | 'warning' | 'danger' | 'info';
       [class.alert--warning]="variant() === 'warning'"
       [class.alert--danger]="variant() === 'danger'"
       [class.alert--info]="variant() === 'info'"
-      [attr.role]="role()"
-      [attr.aria-live]="ariaLive()"
     >
       <span class="alert__icon" aria-hidden="true">{{ icon() }}</span>
       <div class="alert__body">
-        @if (heading()) {
-          <p class="alert__title">{{ heading() }}</p>
-        }
-        <p class="alert__msg"><ng-content /></p>
+        <div [attr.role]="role()" [attr.aria-live]="ariaLive()">
+          @if (heading()) {
+            <p class="alert__title">{{ heading() }}</p>
+          }
+          <p class="alert__msg"><ng-content /></p>
+        </div>
+        <ng-content select="[alertaAcoes]" />
       </div>
     </div>
   `,
