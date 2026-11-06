@@ -37,7 +37,8 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     return router.url;
   }
 
-  it('abre a tela cuja permissão a pessoa tem', async () => {
+  // A primeira navegação carrega a rota preguiçosa, o que passa do tempo padrão com a máquina cheia.
+  it('abre a tela cuja permissão a pessoa tem', { timeout: 20_000 }, async () => {
     concedidas.set(['configuracao:campi:manter']);
 
     expect(await ir('/campi')).toBe('/campi');

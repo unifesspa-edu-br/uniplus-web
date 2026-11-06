@@ -108,7 +108,9 @@ const editar = (page: Page, nome = /^Editar local de oferta/) =>
   page.getByRole('button', { name: nome });
 const remover = (page: Page) => page.getByRole('button', { name: /^Remover local de oferta/ });
 const novo = (page: Page) => page.getByRole('button', { name: 'Novo local de oferta' }).first();
-const regiaoDeStatus = (page: Page) => page.locator('cfg-locais-oferta-page > [role="status"]');
+/** A primeira região anuncia as escritas; a segunda, a leitura dos campi. */
+const regiaoDeStatus = (page: Page) =>
+  page.locator('cfg-locais-oferta-page > [role="status"]').first();
 
 async function abrirEdicao(page: Page): Promise<Locator> {
   await page.goto('/locais-oferta');

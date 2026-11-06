@@ -84,6 +84,8 @@ async function irParaCampi(page: Page): Promise<void> {
   await mockCampiApi(page);
   await page.goto('/campi');
   await expect(page.getByRole('heading', { name: 'Campi', level: 1 })).toBeVisible();
+  // A rolagem só existe depois de a lista chegar: o título aparece antes dela.
+  await expect(page.getByRole('row', { name: new RegExp(ULTIMO_CAMPUS) })).toBeAttached();
 }
 
 /** Métricas de rolagem das duas regiões + documento. */
