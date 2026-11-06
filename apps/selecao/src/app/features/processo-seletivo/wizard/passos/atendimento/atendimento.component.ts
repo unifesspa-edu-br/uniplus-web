@@ -31,6 +31,7 @@ import {
   comoCondicaoSelecionada,
   ehPcd,
 } from './oferta-de-atendimento';
+import { ReferenciasRemovidasComponent } from './referencias-removidas.component';
 import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removidas';
 
 /**
@@ -50,7 +51,7 @@ import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removid
 @Component({
   selector: 'sel-step-atendimento',
   standalone: true,
-  imports: [ValorEmConsultaComponent],
+  imports: [ReferenciasRemovidasComponent, ValorEmConsultaComponent],
   templateUrl: './atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeAtendimento, provePassoDoWizard(AtendimentoPassoComponent)],
@@ -211,7 +212,7 @@ export class AtendimentoPassoComponent {
     this.store.patchObjectSection('atendimento', { tiposDeficiencia: proximo });
   }
 
-  /** O que mudou, para quem não vê a tela: a remoção de uma referência removida tirava a linha do DOM em silêncio. */
+  /** O que mudou, para quem não vê a tela: a linha retirada da oferta some do DOM sem aviso próprio. */
   readonly anuncio = signal('');
 
   private readonly injector = inject(Injector);
@@ -233,7 +234,7 @@ export class AtendimentoPassoComponent {
     });
   }
 
-  removerCondicaoRemovida(id: string): void {
+  retirarCondicaoDaOferta(id: string): void {
     const atual = this.atendimento().condicoes;
     this.anunciar(this.condicoesRemovidas(), {
       id,
@@ -244,7 +245,7 @@ export class AtendimentoPassoComponent {
     this.store.patchObjectSection('atendimento', aposRemover(atual, id));
   }
 
-  removerRecursoRemovido(id: string): void {
+  retirarRecursoDaOferta(id: string): void {
     const atual = this.atendimento().recursos;
     this.anunciar(this.recursosRemovidos(), {
       id,
@@ -257,7 +258,7 @@ export class AtendimentoPassoComponent {
     });
   }
 
-  removerTipoDeficienciaRemovido(id: string): void {
+  retirarTipoDeficienciaDaOferta(id: string): void {
     const atual = this.atendimento().tiposDeficiencia;
     this.anunciar(this.tiposDeficienciaRemovidos(), {
       id,

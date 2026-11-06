@@ -73,29 +73,13 @@
           <span>{{ condicao.nome }}</span>
         </label>
       }
-      <!--
-        Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
-        ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
-        "caixa de seleção, marcada" e fazia parecer reversível o que não é.
-      -->
-      @for (removida of condicoesRemovidas(); track removida.id) {
-        <div class="check-item">
-          <span
-            >{{ removida.nome }}
-            <span class="tag tag--warning">{{ rotuloDeSituacaoRemovida() }}</span></span
-          >
-          <button
-            class="btn btn--tertiary btn--sm"
-            type="button"
-            [id]="'atend-cond-removida-' + $index"
-            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-            [attr.aria-label]="'Remover definitivamente ' + removida.nome"
-            (click)="removerCondicaoRemovida(removida.id)"
-          >
-            Remover
-          </button>
-        </div>
-      }
+      <sel-referencias-removidas
+        [itens]="condicoesRemovidas()"
+        prefixoDoId="atend-cond-removida"
+        [situacao]="rotuloDeSituacaoRemovida()"
+        [desabilitado]="!store.aceitaEdicao() || !catalogoConfirmado()"
+        (retirar)="retirarCondicaoDaOferta($event)"
+      />
     </div>
   } @else if (catalogoConfirmado()) {
     <p class="field__hint">
@@ -150,29 +134,13 @@
               <span>{{ tipo.nome }}</span>
             </label>
           }
-          <!--
-            Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
-            ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
-            "caixa de seleção, marcada" e fazia parecer reversível o que não é.
-          -->
-          @for (removido of tiposDeficienciaRemovidos(); track removido.id) {
-            <div class="check-item">
-              <span
-                >{{ removido.nome }}
-                <span class="tag tag--warning">{{ rotuloDeSituacaoRemovida() }}</span></span
-              >
-              <button
-                class="btn btn--tertiary btn--sm"
-                type="button"
-                [id]="'atend-tipo-removido-' + $index"
-                [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-                [attr.aria-label]="'Remover definitivamente ' + removido.nome"
-                (click)="removerTipoDeficienciaRemovido(removido.id)"
-              >
-                Remover
-              </button>
-            </div>
-          }
+          <sel-referencias-removidas
+            [itens]="tiposDeficienciaRemovidos()"
+            prefixoDoId="atend-tipo-removido"
+            [situacao]="rotuloDeSituacaoRemovida()"
+            [desabilitado]="!store.aceitaEdicao() || !catalogoConfirmado()"
+            (retirar)="retirarTipoDeficienciaDaOferta($event)"
+          />
         </div>
       } @else if (catalogoConfirmado()) {
         <p class="field__hint">
@@ -222,29 +190,13 @@
           <span>{{ recurso.nome }}</span>
         </label>
       }
-      <!--
-        Botão, não caixa de seleção: a ação é REMOVER, e é definitiva — o item saiu do cadastro
-        ativo, então não há como marcá-lo de novo por esta tela. Uma caixa marcada anunciava
-        "caixa de seleção, marcada" e fazia parecer reversível o que não é.
-      -->
-      @for (removido of recursosRemovidos(); track removido.id) {
-        <div class="check-item">
-          <span
-            >{{ removido.nome }}
-            <span class="tag tag--warning">{{ rotuloDeSituacaoRemovida() }}</span></span
-          >
-          <button
-            class="btn btn--tertiary btn--sm"
-            type="button"
-            [id]="'atend-rec-removido-' + $index"
-            [disabled]="!store.aceitaEdicao() || !catalogoConfirmado()"
-            [attr.aria-label]="'Remover definitivamente ' + removido.nome"
-            (click)="removerRecursoRemovido(removido.id)"
-          >
-            Remover
-          </button>
-        </div>
-      }
+      <sel-referencias-removidas
+        [itens]="recursosRemovidos()"
+        prefixoDoId="atend-rec-removido"
+        [situacao]="rotuloDeSituacaoRemovida()"
+        [desabilitado]="!store.aceitaEdicao() || !catalogoConfirmado()"
+        (retirar)="retirarRecursoDaOferta($event)"
+      />
     </div>
   } @else if (catalogoConfirmado()) {
     <p class="field__hint">

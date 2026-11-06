@@ -110,7 +110,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(elemento.textContent).toContain('Ledor');
   });
 
-  it('com a condição PcD cadastrada e desmarcada, a seção orienta a marcá-la (CA-02)', () => {
+  it('com a condição PcD cadastrada e desmarcada, a seção orienta a marcá-la', () => {
     expect(elemento.textContent).toContain('Tipos de deficiência reconhecidos');
     expect(elemento.querySelector('#atend-aviso-pcd-desmarcada')?.textContent).toContain(
       'Marque a condição "Pessoa com deficiência"',
@@ -119,7 +119,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(elemento.textContent).not.toContain('Deficiência visual');
   });
 
-  it('sem a condição PcD no cadastro, a seção nomeia o que falta e onde cadastrar (CA-01)', () => {
+  it('sem a condição PcD no cadastro, a seção nomeia o que falta e onde cadastrar', () => {
     componente.catalogos.condicoes.set([CONDICOES[1]]);
     detectar();
 
@@ -190,7 +190,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Em `removerCondicaoRemovida()`, desmarcar uma
+   * Em `retirarCondicaoDaOferta()`, desmarcar uma
    * condição PcD só pode esvaziar os tipos de deficiência quando, depois da
    * desmarcação, não resta nenhuma outra condição de código PcD marcada — se
    * o operador tinha uma condição PcD hidratada (removida) e marcou também a
@@ -251,7 +251,7 @@ describe('AtendimentoPassoComponent', () => {
     await expect(gravacao).resolves.toEqual({ valid: true });
   });
 
-  it('grava listas vazias quando nada está selecionado (CA-05)', async () => {
+  it('grava listas vazias quando nada está selecionado', async () => {
     const gravacao = componente.persistir();
 
     const requisicao = controller.expectOne(ROTA_ATENDIMENTO);
@@ -355,7 +355,7 @@ describe('AtendimentoPassoComponent', () => {
     });
     detectar();
 
-    componente.removerCondicaoRemovida('id-antigo-pcd');
+    componente.retirarCondicaoDaOferta('id-antigo-pcd');
     detectar();
 
     expect(store.draft().atendimento.condicoes).toEqual([]);
@@ -379,7 +379,7 @@ describe('AtendimentoPassoComponent', () => {
     });
     detectar();
 
-    componente.removerCondicaoRemovida('id-antigo-pcd');
+    componente.retirarCondicaoDaOferta('id-antigo-pcd');
     detectar();
 
     expect(store.draft().atendimento.condicoes).toEqual([
@@ -424,6 +424,93 @@ describe('AtendimentoPassoComponent', () => {
     expect(elemento.textContent).not.toContain('Removido do cadastro');
   });
 
+  describe.each([
+    {
+      secao: 'condições',
+      lista: 'condicoes',
+      prefixo: 'atend-cond-removida',
+      titulo: 'atend-secao-condicoes',
+    },
+    {
+      secao: 'recursos',
+      lista: 'recursos',
+      prefixo: 'atend-rec-removido',
+      titulo: 'atend-secao-recursos',
+    },
+    {
+      secao: 'tipos de deficiência',
+      lista: 'tiposDeficiencia',
+      prefixo: 'atend-tipo-removido',
+      titulo: 'atend-secao-tipos',
+    },
+  ] as const)('retirar da oferta, na seção de $secao', ({ lista, prefixo, titulo }) => {
+    const removidas = (nome: string) => [
+      { id: `${nome}-a`, codigo: 'ANTIGO', nome: `${nome} A` },
+      { id: `${nome}-b`, codigo: 'ANTIGO', nome: `${nome} B` },
+    ];
+
+    function comReferenciasRemovidasEmTodasAsSecoes(): void {
+      store.patchObjectSection('atendimento', {
+        condicoes: [
+          { id: PCD_ID, codigo: 'PCD', nome: 'Pessoa com deficiência' },
+          ...removidas('condicoes'),
+        ],
+        recursos: removidas('recursos'),
+        tiposDeficiencia: removidas('tiposDeficiencia'),
+      });
+      detectar();
+    }
+
+    it('retirado o último item da lista, o foco vai ao título da seção', async () => {
+      store.patchObjectSection('atendimento', {
+        condicoes: [
+          { id: PCD_ID, codigo: 'PCD', nome: 'Pessoa com deficiência' },
+          ...removidas('condicoes').slice(0, 1),
+        ],
+        recursos: removidas('recursos').slice(0, 1),
+        tiposDeficiencia: removidas('tiposDeficiencia').slice(0, 1),
+      });
+      detectar();
+
+      elemento.querySelector<HTMLButtonElement>(`#${prefixo}-0`)?.click();
+      detectar();
+      await fixture.whenStable();
+      detectar();
+
+      expect(document.activeElement?.id).toBe(titulo);
+    });
+
+    it('o botão clicado tira só o item da própria seção e devolve o foco ao item anterior', async () => {
+      comReferenciasRemovidasEmTodasAsSecoes();
+      const antes = {
+        condicoes: store.draft().atendimento.condicoes.length,
+        recursos: store.draft().atendimento.recursos.length,
+        tiposDeficiencia: store.draft().atendimento.tiposDeficiencia.length,
+      };
+
+      elemento.querySelector<HTMLButtonElement>(`#${prefixo}-1`)?.click();
+      detectar();
+      await fixture.whenStable();
+      detectar();
+
+      const depois = store.draft().atendimento;
+      expect(depois[lista].map((item) => item.id)).not.toContain(`${lista}-b`);
+      expect(depois[lista].map((item) => item.id)).toContain(`${lista}-a`);
+      for (const outra of ['condicoes', 'recursos', 'tiposDeficiencia'] as const) {
+        if (outra !== lista) expect(depois[outra]).toHaveLength(antes[outra]);
+      }
+      expect(document.activeElement?.id).toBe(`${prefixo}-0`);
+    });
+
+    it('o botão fica desabilitado enquanto uma gravação está em andamento', () => {
+      comReferenciasRemovidasEmTodasAsSecoes();
+      store.salvando.set(true);
+      detectar();
+
+      expect(elemento.querySelector<HTMLButtonElement>(`#${prefixo}-1`)?.disabled).toBe(true);
+    });
+  });
+
   it('mantém referência removida visível e permite removê-la', () => {
     // Simula hidratação de um recurso que já foi removido do cadastro.
     store.patchObjectSection('atendimento', {
@@ -434,7 +521,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(elemento.textContent).toContain('Recurso descontinuado');
     expect(elemento.textContent).toContain('Removido do cadastro');
 
-    componente.removerRecursoRemovido('id-antigo');
+    componente.retirarRecursoDaOferta('id-antigo');
     detectar();
 
     expect(store.draft().atendimento.recursos).toEqual([]);
@@ -479,11 +566,10 @@ describe('AtendimentoPassoComponent', () => {
    * Com o catálogo indisponível,
    * `condicoesRemovidas()`/`recursosRemovidos()`/`tiposDeficienciaRemovidos()`
    * comparam contra um catálogo ativo vazio — não porque nada está ativo,
-   * mas porque a tela ainda não sabe — e a validação (introduzida para
-   * recusar referência genuinamente removida) classificava TODA seleção
-   * gravada como removida, mandando o operador apagar uma oferta válida e
-   * inalterada por causa de uma indisponibilidade temporária. Seguir a
-   * instrução esvaziaria as três listas e apagaria a oferta ao gravar.
+   * mas porque a tela ainda não sabe. Classificar TODA seleção gravada como
+   * removida mandaria o operador apagar uma oferta válida por causa de uma
+   * indisponibilidade temporária, e seguir a instrução esvaziaria as três
+   * listas e apagaria a oferta ao gravar.
    */
   it('não recusa nem propõe remoção de um rascunho hidratado quando o catálogo está indisponível', () => {
     store.patchObjectSection('atendimento', {
@@ -547,18 +633,10 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Fechar
-   * `validar()` atrás de `catalogoConfirmado()` impede que a tela *mande*
-   * apagar a oferta, mas os checkboxes de remoção continuavam habilitados —
-   * o operador ainda *conseguia* desmarcar um item sem querer, sem opção de
-   * catálogo que o restaure, e o próximo avanço persistiria a lista
-   * reduzida. Nenhum controle que muta as três listas pode ficar habilitado
-   * enquanto a tela não sabe distinguir "saiu do cadastro" de "não sei
-   * ainda" — nem os de marcar/desmarcar (vazios nesse estado, mas por
-   * defesa), nem os de remover referência removida. E as seleções gravadas
-   * seguem visíveis tanto carregando quanto em falha (achado seguinte, na
-   * mesma linha): esconder tudo atrás de "Carregando…" seria o mesmo beco
-   * sem saída do estado de erro, só que na porta de entrada.
+   * Nenhum controle que muta as três listas pode ficar habilitado enquanto a tela não sabe
+   * distinguir "saiu do cadastro" de "não sei ainda": o item retirado sem querer não tem catálogo
+   * que o restaure, e o próximo avanço gravaria a lista reduzida. As seleções gravadas seguem
+   * visíveis carregando e em falha, para o estado de espera não virar beco sem saída.
    */
   it('desabilita todos os controles que mutam as três listas enquanto o catálogo carrega ou falha', () => {
     store.patchObjectSection('atendimento', {
@@ -568,34 +646,41 @@ describe('AtendimentoPassoComponent', () => {
     });
     detectar();
 
-    function checkboxes(): HTMLInputElement[] {
+    function controles(): (HTMLInputElement | HTMLButtonElement)[] {
       return Array.from(
-        elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>,
+        elemento.querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+          'input[type="checkbox"], button[aria-label^="Remover definitivamente"]',
+        ),
       );
     }
 
-    // Ainda carregando: o rascunho gravado segue visível (achado seguinte),
-    // mas nenhum controle pode ficar disponível para alterá-lo.
+    function botoesDeRetirada(): HTMLButtonElement[] {
+      return controles().filter(
+        (controle): controle is HTMLButtonElement => controle instanceof HTMLButtonElement,
+      );
+    }
+
+    // Ainda carregando: o rascunho gravado segue visível, mas nenhum controle o altera.
     componente.catalogos.carregando.set(true);
     detectar();
-    expect(checkboxes().length).toBeGreaterThan(0);
-    expect(checkboxes().every((input) => input.disabled)).toBe(true);
+    expect(botoesDeRetirada()).toHaveLength(3);
+    expect(controles().every((controle) => controle.disabled)).toBe(true);
 
-    // Falha de carga: a tela volta a mostrar o rascunho gravado (achado
-    // anterior), mas nenhum controle pode ficar disponível para alterá-lo.
+    // Falha de carga: o rascunho gravado segue visível, mas nenhum controle o altera.
     componente.catalogos.carregando.set(false);
     componente.catalogos.erro.set(
       'Não foi possível carregar os catálogos de ofertas, modalidades e regras. Tente novamente.',
     );
     detectar();
-    expect(checkboxes().length).toBeGreaterThan(0);
-    expect(checkboxes().every((input) => input.disabled)).toBe(true);
+    expect(botoesDeRetirada()).toHaveLength(3);
+    expect(controles().every((controle) => controle.disabled)).toBe(true);
 
     // Catálogo confirmado: os controles voltam a ficar disponíveis.
     componente.catalogos.erro.set(null);
     detectar();
-    expect(checkboxes().length).toBeGreaterThan(0);
-    expect(checkboxes().every((input) => input.disabled)).toBe(false);
+    expect(botoesDeRetirada()).toHaveLength(3);
+    expect(botoesDeRetirada().some((botao) => botao.disabled)).toBe(false);
+    expect(controles().some((controle) => controle.disabled)).toBe(false);
   });
 
   /**
@@ -735,7 +820,7 @@ describe('AtendimentoPassoComponent', () => {
     return checkbox;
   }
 
-  it('CA-01: marca todas as condições ativas pelo checkbox real da tela', () => {
+  it('marca todas as condições ativas pelo checkbox real da tela', () => {
     const checkbox = marcarTodasCheckbox();
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
@@ -749,7 +834,7 @@ describe('AtendimentoPassoComponent', () => {
     ).toEqual([PCD_ID, OUTRA_CONDICAO_ID].sort());
   });
 
-  it('CA-02: marca todos os recursos ativos pelo checkbox real da tela', () => {
+  it('marca todos os recursos ativos pelo checkbox real da tela', () => {
     const checkbox = marcarTodosCheckbox();
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event('change'));
@@ -758,7 +843,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(store.draft().atendimento.recursos).toEqual([{ id: RECURSO_ID, nome: 'Ledor' }]);
   });
 
-  it('CA-03: desmarca todas as condições ativas em uma única ação quando todas estão marcadas', () => {
+  it('desmarca todas as condições ativas em uma única ação quando todas estão marcadas', () => {
     componente.marcarTodasAsCondicoes(true);
     detectar();
     expect(componente.todasAsCondicoesSelecionadas()).toBe(true);
@@ -769,7 +854,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(store.draft().atendimento.condicoes).toEqual([]);
   });
 
-  it('CA-04: apresenta estado indeterminado quando só parte das condições ativas está marcada', () => {
+  it('apresenta estado indeterminado quando só parte das condições ativas está marcada', () => {
     componente.toggleCondicao(CONDICOES[0], true);
     detectar();
 
@@ -778,7 +863,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(marcarTodasCheckbox().indeterminate).toBe(true);
   });
 
-  it('CA-05: sincroniza "Marcar todas" ao marcar cada condição ativa individualmente', () => {
+  it('sincroniza "Marcar todas" ao marcar cada condição ativa individualmente', () => {
     componente.toggleCondicao(CONDICOES[0], true);
     detectar();
     expect(componente.todasAsCondicoesSelecionadas()).toBe(false);
@@ -791,7 +876,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(marcarTodasCheckbox().checked).toBe(true);
   });
 
-  it('CA-06: preserva referência removida ao marcar e ao desmarcar todas as condições', () => {
+  it('preserva referência removida ao marcar e ao desmarcar todas as condições', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-antigo-lact', codigo: 'LACTANTE', nome: 'Lactante (antiga)' }],
     });
@@ -809,7 +894,7 @@ describe('AtendimentoPassoComponent', () => {
     ]);
   });
 
-  it('CA-06: preserva referência removida ao marcar e ao desmarcar todos os recursos', () => {
+  it('preserva referência removida ao marcar e ao desmarcar todos os recursos', () => {
     store.patchObjectSection('atendimento', {
       recursos: [{ id: 'id-antigo', nome: 'Recurso descontinuado' }],
     });
@@ -839,7 +924,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(store.draft().atendimento.tiposDeficiencia).toEqual([]);
   });
 
-  it('CA-07: os checkboxes "Marcar todas"/"Marcar todos" ficam desabilitados enquanto o catálogo carrega ou falha', () => {
+  it('os checkboxes "Marcar todas"/"Marcar todos" ficam desabilitados enquanto o catálogo carrega ou falha', () => {
     componente.catalogos.carregando.set(true);
     detectar();
     expect(marcarTodasCheckbox().disabled).toBe(true);
@@ -857,7 +942,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(marcarTodosCheckbox().disabled).toBe(false);
   });
 
-  it('CA-09: cada checkbox "Marcar todas"/"Marcar todos" nomeia a seção correspondente', () => {
+  it('cada checkbox "Marcar todas"/"Marcar todos" nomeia a seção correspondente', () => {
     expect(marcarTodasCheckbox().closest('label')?.textContent).toContain('condições aceitas');
     expect(marcarTodosCheckbox().closest('label')?.textContent).toContain(
       'recursos de acessibilidade',
