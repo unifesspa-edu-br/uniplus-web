@@ -30,7 +30,7 @@ import {
 
 /** A grade de uma resolução em edição: o peso e o corte de cada área, por grupo de curso. */
 @Component({
-  selector: 'div[cfgPesosEnemEdicao]',
+  selector: 'cfg-pesos-enem-edicao',
   standalone: true,
   imports: [
     AlertComponent,

@@ -13,7 +13,7 @@ import {
 
 /** A grade de uma resolução em leitura: uma linha por grupo de curso, peso e corte por área. */
 @Component({
-  selector: 'div[cfgPesosEnemLeitura]',
+  selector: 'cfg-pesos-enem-leitura',
   standalone: true,
   imports: [PesosEnemColunasComponent, PesosEnemNotaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,

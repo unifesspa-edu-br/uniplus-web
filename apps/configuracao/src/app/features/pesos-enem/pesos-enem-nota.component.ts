@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 /** O aviso sob a grade: pesos definidos por processo seletivo, sem soma fixa, e o que é o corte. */
 @Component({
-  selector: 'p[cfgPesosEnemNota]',
+  selector: 'cfg-pesos-enem-nota',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -10,6 +10,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
     o sistema registra os valores informados sem bloquear. O corte de uma área é a nota mínima
     exigida nela: aparece abaixo do peso quando existe e não entra em cálculo de soma.
   `,
+  styles: ':host { display: block; }',
   host: { class: 'grid-note' },
 })
 export class PesosEnemNotaComponent {}

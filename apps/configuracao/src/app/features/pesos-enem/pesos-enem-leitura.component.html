@@ -1,4 +1,4 @@
-<div cfgPesosEnemColunas [areas]="areas()"></div>
+<cfg-pesos-enem-colunas [areas]="areas()" />
 @for (linha of linhas(); track linha.id; let gi = $index) {
   @let grupo = rotuloDoGrupo(linha.grupoCurso);
   <div class="num-grid__row">
@@ -30,4 +30,4 @@
     }
   </div>
 }
-<p cfgPesosEnemNota></p>
+<cfg-pesos-enem-nota />

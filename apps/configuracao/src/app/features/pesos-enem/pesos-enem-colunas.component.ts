@@ -3,7 +3,7 @@ import { AreaPesoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 
 /** O cabeçalho da grade: o grupo de curso e uma coluna por área, na ordem da API. */
 @Component({
-  selector: 'div[cfgPesosEnemColunas]',
+  selector: 'cfg-pesos-enem-colunas',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `

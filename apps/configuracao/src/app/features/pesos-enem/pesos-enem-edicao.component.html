@@ -1,4 +1,4 @@
-<div cfgPesosEnemColunas [areas]="areas()"></div>
+<cfg-pesos-enem-colunas [areas]="areas()" />
 <fieldset class="pe-campos" role="none" [disabled]="salvando()">
   @for (grupo of form().controls; track grupo.controls.id.value; let gi = $index) {
     @let nomeDoGrupo = rotuloDoGrupo(grupo.controls.grupoCurso.value);
@@ -104,4 +104,4 @@
     }
   </button>
 </div>
-<p cfgPesosEnemNota></p>
+<cfg-pesos-enem-nota />

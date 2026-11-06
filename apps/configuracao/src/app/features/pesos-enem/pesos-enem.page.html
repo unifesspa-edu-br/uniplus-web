@@ -80,8 +80,7 @@ emEdicao = edicao.emEdicao() === resolucao;
     (remover)="pedirRemocao(resolucao)"
   />
   @if (emEdicao && edicao.form(); as form) {
-  <div
-    cfgPesosEnemEdicao
+  <cfg-pesos-enem-edicao
     [resolucao]="resolucao"
     [areas]="store.areas()"
     [form]="form"
@@ -91,14 +90,13 @@ emEdicao = edicao.emEdicao() === resolucao;
     [salvando]="gravacao.salvandoEdicao()"
     (salvar)="edicao.salvar()"
     (cancelar)="edicao.cancelar()"
-  ></div>
+  />
   } @else {
-  <div
-    cfgPesosEnemLeitura
+  <cfg-pesos-enem-leitura
     [resolucao]="resolucao"
     [areas]="store.areas()"
     [linhas]="store.porResolucao().get(resolucao) ?? []"
-  ></div>
+  />
   }
 </section>
 } @empty { @if (store.estadoDaTabela() === 'vazia') {
