@@ -4,33 +4,3 @@
 # A lista só diminui: arquivo novo não entra aqui, e arquivo listado não pode crescer.
 # Ao dividir um arquivo até 400 linhas ou menos, remova a entrada (ou rode
 # `npm run check:tamanho -- --atualizar`, que só reduz números e remove entradas).
-1362 apps/configuracao/src/app/features/fatos-candidato/fato-candidato-edicao.component.ts
-1277 apps/configuracao/src/app/features/fatos-candidato/fatos-candidato.page.ts
-1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
-1550 apps/configuracao/src/app/features/tipos-documento/tipos-documento-list.page.ts
-1693 apps/configuracao/src/app/features/unidades/unidades.page.ts
-947 apps/portal/src/app/features/inscricao/formulario/inscricao-do-candidato.page.ts
-514 apps/portal/src/app/features/processos/processos.ts
-466 apps/selecao/src/app/features/inscricoes/detalhe-da-inscricao.page.ts
-551 apps/selecao/src/app/features/processo-seletivo/publicacoes/publicar-documento.component.ts
-430 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.html
-583 apps/selecao/src/app/features/processo-seletivo/steps/steps/desempate/desempate.component.ts
-416 apps/selecao/src/app/features/processo-seletivo/steps/shared/anexo-edital/anexo-edital.component.ts
-769 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/publicacao-para-comando.ts
-481 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.html
-834 apps/selecao/src/app/features/processo-seletivo/steps/steps/revisao/revisao.component.ts
-760 apps/selecao/src/styles.css
-637 libs/shared-ui/src/lib/components/editor-de-condicoes/condicoes-de-fatos.ts
-572 libs/shared-ui/src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos.ts
-993 libs/shared-ui/src/lib/components/editor-de-formulario/editor-de-formulario.ts
-1610 libs/shared-ui/src/lib/components/editor-de-formulario/formulario-editavel.ts
-506 libs/shared-ui/src/lib/components/editor-de-formulario/grupo-do-formulario.ts
-428 libs/shared-ui/src/lib/components/editor-de-formulario/restricoes-do-campo.ts
-411 libs/shared-ui/src/lib/components/formulario-do-candidato/arquivo-do-formulario.ts
-609 libs/shared-ui/src/lib/components/formulario-do-candidato/campo-do-candidato.ts
-700 libs/shared-ui/src/lib/components/formulario-do-candidato/documentos-avaliados.ts
-584 libs/shared-ui/src/lib/components/formulario-do-candidato/formulario-do-candidato.model.ts
-1328 libs/shared-ui/src/lib/components/formulario-do-candidato/formulario-do-candidato.ts
-507 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/avaliador.ts
-613 libs/shared-ui/src/lib/components/formulario-do-candidato/interpretador/leitura.ts
-552 libs/shared-ui/src/styles/tokens.css

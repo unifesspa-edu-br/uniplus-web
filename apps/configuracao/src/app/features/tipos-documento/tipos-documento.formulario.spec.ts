@@ -178,11 +178,11 @@ describe('TiposDocumentoPage — formulário', () => {
   });
 
   it.each([
-    ['codigo', 51, 'Valor acima do tamanho permitido.'],
-    ['nome', 201, 'Valor acima do tamanho permitido.'],
-    ['descricao', 1001, 'Valor acima do tamanho permitido.'],
-    ['tipoEquivalente', 51, 'Valor acima do tamanho permitido.'],
-    ['finalidadeTratamento', 501, 'Valor acima do tamanho permitido.'],
+    ['codigo', 51, 'Informe no máximo 50 caracteres.'],
+    ['nome', 201, 'Informe no máximo 200 caracteres.'],
+    ['descricao', 1001, 'Informe no máximo 1000 caracteres.'],
+    ['tipoEquivalente', 51, 'Informe no máximo 50 caracteres.'],
+    ['finalidadeTratamento', 501, 'Informe no máximo 500 caracteres.'],
   ] as const)(
     'o limite de %s (%i caracteres) é recusado no cliente',
     async (campo, tamanho, texto) => {
