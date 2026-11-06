@@ -6,6 +6,7 @@
   ariaLabel="Formulário de curso"
   position="right"
 >
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
   <form
     [formGroup]="form()"
     id="cfg-curso-form"
@@ -159,7 +160,7 @@
       (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar curso' : 'Salvar curso' }}
     </button>

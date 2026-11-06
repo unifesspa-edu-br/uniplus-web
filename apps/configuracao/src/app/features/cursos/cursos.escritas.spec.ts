@@ -1,385 +1,310 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CursosPage } from './cursos.page';
-import { CursosStore } from './cursos.store';
-import { EdicaoDosCursos } from './edicao-dos-cursos';
+import { By } from '@angular/platform-browser';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CursoFormularioComponent } from './curso-formulario.component';
+import {
+  ESCRITA,
+  LISTA,
+  Pagina,
+  criado,
+  direito,
+  engCiv,
+  montarPagina,
+  problema,
+  recusaDeCampo,
+  sucesso,
+} from './cursos.testing';
 
-const BASE = 'http://localhost:5000';
-const LISTA_URL = `${BASE}/api/configuracao/cursos`;
-const ESCRITA_URL = `${BASE}/api/configuracao/admin/cursos`;
-const GRUPOS_URL = `${BASE}/api/configuracao/vocabularios/grupos-area-enem`;
-
-const cursoSeed: CursoDto = {
-  id: '01960000-0000-7000-0000-0000000000c1',
-  codigo: 'ENG-CIV',
-  nome: 'Engenharia Civil',
-  grau: 'Bacharelado',
-  nivelEnsino: 'Graduação',
-  grupoAreaEnem: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-/** Escritas de cursos atravessando os componentes da página: cliques e digitação, como o operador. */
 describe('CursosPage — escritas pela interface', () => {
-  let fixture: ComponentFixture<CursosPage>;
-  let edicao: EdicaoDosCursos;
-  let store: CursosStore;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let p: Pagina;
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({
-      imports: [CursosPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(CursosPage);
-    edicao = fixture.debugElement.injector.get(EdicaoDosCursos);
-    store = fixture.debugElement.injector.get(CursosStore);
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-    await responderLista([cursoSeed]);
+    p = await montarPagina([engCiv, direito]);
   });
+  afterEach(() => p.encerrar());
 
-  afterEach(() => {
-    controller.match(GRUPOS_URL).forEach((pedido) => pedido.flush([]));
-    controller.verify();
-  });
-
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-    fixture.detectChanges();
+  const drawer = (): HTMLDialogElement => p.elemento('dialog[aria-label="Formulário de curso"]');
+  const submeter = (): void => {
+    p.formulario().dispatchEvent(new Event('submit', { cancelable: true }));
   };
+  const cancelarDoFormulario = (): HTMLButtonElement =>
+    [...p.fixture.nativeElement.querySelectorAll('.form-drawer__footer button')].find(
+      (b) => (b as HTMLElement).textContent?.trim() === 'Cancelar',
+    ) as HTMLButtonElement;
 
-  async function responderLista(itens: readonly CursoDto[]): Promise<void> {
-    controller.expectOne((r) => r.url === LISTA_URL).flush(itens);
-    await propagar();
-  }
-
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const el = fixture.nativeElement.querySelector(seletor) as T | null;
-    expect(el, seletor).not.toBeNull();
-    return el as T;
-  };
-
-  const digitar = (seletor: string, valor: string): void => {
-    const input = elemento<HTMLInputElement>(seletor);
-    input.value = valor;
-    input.dispatchEvent(new Event('input'));
-  };
-
-  async function preencherNovoCurso(): Promise<void> {
-    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-    await propagar();
-    digitar('input[formcontrolname="codigo"]', 'DIR');
-    digitar('input[formcontrolname="nome"]', 'Direito');
-    digitar('input[formcontrolname="grau"]', 'Bacharelado');
-    digitar('input[formcontrolname="nivelEnsino"]', 'Graduação');
-  }
-
-  const enviarFormulario = (): void =>
-    elemento<HTMLButtonElement>('button[form="cfg-curso-form"]').click();
-
-  async function pedirRemocao(): Promise<void> {
-    elemento<HTMLButtonElement>('button[aria-label="Remover curso ENG-CIV"]').click();
-    await propagar();
-    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-    await propagar();
-  }
-
-  function recusar(corpo: object): void {
-    controller.expectOne(ESCRITA_URL).flush(JSON.stringify(corpo), {
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: { 'content-type': 'application/problem+json' },
-    });
-  }
-
-  const botao = (seletor: string, texto: string): HTMLButtonElement => {
-    const achado = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(seletor),
-    ].find((b) => b.textContent?.trim() === texto);
-    expect(achado, `${seletor} "${texto}"`).toBeDefined();
-    return achado as HTMLButtonElement;
-  };
-
-  const drawerDoFormulario = (): HTMLDialogElement =>
-    elemento<HTMLDialogElement>('dialog[aria-label="Formulário de curso"]');
-
-  it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
-    await preencherNovoCurso();
+  it('identifica os campos obrigatórios de input nativo para tecnologias assistivas', async () => {
+    await p.abrirCadastro();
     for (const campo of ['codigo', 'nome', 'grau', 'nivelEnsino']) {
-      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
-        'true',
-      );
+      expect(p.campo(campo).getAttribute('aria-required')).toBe('true');
     }
+    expect(p.campo('grupoAreaEnem').getAttribute('aria-required')).toBeNull();
   });
 
-  it('gravação pendente deixa o formulário somente leitura e impede fechar', async () => {
-    await preencherNovoCurso();
-    const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
-    salvar.focus();
-    salvar.click();
-    const post = controller.expectOne(ESCRITA_URL);
-    await propagar();
+  describe('gravação pendente', () => {
+    it('deixa o formulário somente leitura, com foco no botão, sem fechar por Cancelar, X nem Esc', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      const botao = p.salvar();
 
-    // Somente leitura: os valores ficam, os campos não aceitam edição e o foco segue no botão.
-    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').matches(':disabled')).toBe(
-      true,
-    );
-    expect(elemento<HTMLInputElement>('input[formcontrolname="codigo"]').value).toBe('DIR');
-    expect(salvar.getAttribute('aria-disabled')).toBe('true');
-    expect(salvar.getAttribute('aria-busy')).toBe('true');
-    expect(salvar.textContent).toContain('Salvando...');
-    expect(document.activeElement).toBe(salvar);
-    // Cancelar, X e Esc ficam indisponíveis.
-    expect(botao('.form-drawer__footer button', 'Cancelar').disabled).toBe(true);
-    expect(
-      drawerDoFormulario().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')
-        ?.disabled,
-    ).toBe(true);
-    drawerDoFormulario().dispatchEvent(new Event('cancel', { cancelable: true }));
-    await propagar();
-    expect(edicao.aberto()).toBe(true);
+      expect(p.campo('codigo').matches(':disabled')).toBe(true);
+      expect(p.campo('codigo').value).toBe('DIR');
+      expect(botao.getAttribute('aria-disabled')).toBe('true');
+      expect(botao.getAttribute('aria-busy')).toBe('true');
+      expect(botao.textContent).toContain('Salvando...');
+      expect(document.activeElement).toBe(botao);
+      expect(drawer().querySelector('[role="status"]')?.textContent).toContain('Salvando');
+      expect(
+        drawer().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled,
+      ).toBe(true);
+      expect(cancelarDoFormulario().matches(':disabled')).toBe(true);
+      drawer().dispatchEvent(new Event('cancel', { cancelable: true }));
+      await p.propagar();
+      expect(p.edicao.aberto()).toBe(true);
 
-    post.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagar();
-    expect(edicao.aberto()).toBe(false);
-    await responderLista([cursoSeed]);
+      post.flush(...criado());
+      await p.recarregarCom([engCiv]);
+      expect(p.edicao.aberto()).toBe(false);
+    });
+
+    it('clique e submissão repetidos não geram segundo envio', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
+      p.salvar().dispatchEvent(clique);
+      submeter();
+      await p.propagar();
+
+      expect(clique.defaultPrevented).toBe(true);
+      p.http.expectNone(ESCRITA);
+      post.flush(...criado());
+      await p.recarregarCom([engCiv]);
+    });
+
+    it('a submissão repetida nem chega a pedir o salvamento ao formulário', async () => {
+      await p.abrirCadastro();
+      const pedidos: string[] = [];
+      p.fixture.debugElement
+        .query(By.directive(CursoFormularioComponent))
+        .componentInstance.salvar.subscribe(() => pedidos.push('salvar'));
+      const post = await p.enviar();
+      expect(pedidos).toEqual(['salvar']);
+
+      submeter();
+      await p.propagar();
+
+      expect(pedidos).toEqual(['salvar']);
+      post.flush(...criado());
+      await p.recarregarCom([engCiv]);
+    });
+
+    it('o salvamento não se apresenta como remoção, nem durante a espera pela recarga', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      expect(p.edicao.salvando()).toBe(true);
+      expect(p.edicao.removendo()).toBe(false);
+      expect(p.elemento('cfg-cursos-lista').textContent).not.toContain('Removendo');
+
+      post.flush(...criado());
+      await p.propagar();
+      expect(p.edicao.gravando()).toBe(true);
+      expect(p.edicao.removendo()).toBe(false);
+      expect(p.elemento('cfg-cursos-lista').textContent).not.toContain('Removendo');
+      await p.recarregarCom([engCiv]);
+    });
+
+    it('Enter num campo leva o foco ao botão e, na falha 500, o envio segue disponível', async () => {
+      await p.abrirCadastro();
+      p.campo('nome').focus();
+      submeter();
+      await p.propagar();
+      const post = p.http.expectOne(ESCRITA);
+
+      expect(p.campo('nome').matches(':disabled')).toBe(true);
+      expect(document.activeElement).toBe(p.salvar());
+      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.campo('nome').matches(':disabled')).toBe(false);
+      expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Falha');
+      expect(document.activeElement).toBe(p.salvar());
+      expect(p.salvar().getAttribute('aria-disabled')).toBeNull();
+      submeter();
+      p.http.expectOne(ESCRITA).flush(...criado());
+      await p.recarregarCom([engCiv]);
+    });
+
+    it('outra edição não abre enquanto o envio corre', async () => {
+      await p.abrirEdicao(engCiv);
+      p.preencher('nome', 'Engenharia Civil revisada');
+      const put = await p.enviar(`${ESCRITA}/${engCiv.id}`);
+
+      p.edicao.abrirEdicao(direito);
+      p.edicao.abrirCadastro();
+      expect(p.campo('codigo').value).toBe('ENG-CIV');
+
+      put.flush(...sucesso());
+      await p.recarregarCom([engCiv]);
+    });
   });
 
-  it('remoção pendente mostra "Removendo", indisponibiliza os acionadores e não vira salvamento', async () => {
-    await pedirRemocao();
-    const remocao = controller.expectOne(`${ESCRITA_URL}/${cursoSeed.id}`);
-    await propagar();
+  describe('remoção pendente', () => {
+    it('anuncia o andamento e deixa os acionadores indisponíveis, sem virar salvamento', async () => {
+      const del = await p.confirmarRemocao(engCiv);
 
-    expect(elemento('.panel-head').textContent).toContain('Removendo');
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
-      'Removendo o curso ENG-CIV.',
-    );
-    expect(edicao.salvando()).toBe(false);
-    expect(edicao.removendo()).toBe(true);
-    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(true);
-    expect(elemento<HTMLButtonElement>('button[aria-label="Editar curso ENG-CIV"]').disabled).toBe(
-      true,
-    );
-    expect(elemento<HTMLButtonElement>('button[aria-label="Remover curso ENG-CIV"]').disabled).toBe(
-      true,
-    );
-
-    remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await responderLista([]);
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Curso ENG-CIV removido.');
-    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
-  });
-
-  it('com remoção pendente e a listagem falhando, o "Tentar novamente" da página fica indisponível', async () => {
-    await pedirRemocao();
-    const remocao = controller.expectOne(`${ESCRITA_URL}/${cursoSeed.id}`);
-    store.recarregar();
-    await propagar();
-    controller
-      .expectOne((r) => r.url === LISTA_URL)
-      .flush(
-        JSON.stringify({
-          type: 'about:blank',
-          title: 'Indisponível',
-          status: 503,
-          code: 'uniplus.indisponivel',
-          traceId: 'test-trace',
-        }),
-        {
-          status: 503,
-          statusText: 'Service Unavailable',
-          headers: { 'content-type': 'application/problem+json' },
-        },
+      expect(p.edicao.removendo()).toBe(true);
+      expect(p.edicao.salvando()).toBe(false);
+      expect(p.elemento('.panel-head').textContent).toContain('Removendo');
+      expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
+        'Removendo o curso ENG-CIV.',
       );
-    await propagar();
+      for (const botao of [p.novo(), p.editar(engCiv), p.remover(engCiv), p.verOfertas(engCiv)]) {
+        expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(
+          true,
+        );
+        botao.click();
+      }
+      await p.propagar();
+      expect(p.edicao.aberto()).toBe(false);
+      expect(p.ofertas.aberto()).toBe(false);
+      expect(p.confirmar().getAttribute('aria-disabled')).toBe('true');
+      expect(p.confirmar().getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(p.confirmar());
 
-    expect(botao('ui-alert button', 'Tentar novamente').disabled).toBe(true);
+      del.flush(...sucesso());
+      await p.propagar();
+      expect(p.edicao.gravando()).toBe(true);
+      await p.recarregarCom([direito]);
+      expect(p.edicao.gravando()).toBe(false);
+      expect(p.statusDaPagina()).toBe('Curso ENG-CIV removido.');
+      expect(p.novo().getAttribute('aria-disabled')).toBeNull();
+    });
 
-    remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await responderLista([]);
-    await propagar();
+    it('não fecha por Cancelar, X nem Esc, e o segundo clique não envia', async () => {
+      const del = await p.confirmarRemocao(engCiv);
+      const dialogo = p.elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
+
+      expect(p.cancelarDaConfirmacao().matches(':disabled')).toBe(true);
+      expect(
+        dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled,
+      ).toBe(true);
+      dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
+      p.confirmar().click();
+      await p.propagar();
+      expect(p.edicao.confirmando()).toBe(true);
+      p.http.expectNone(`${ESCRITA}/${engCiv.id}`);
+
+      del.flush(...sucesso());
+      await p.recarregarCom([direito]);
+    });
+
+    it('"Tentar novamente" fica indisponível com a leitura falha enquanto remove', async () => {
+      const del = await p.confirmarRemocao(engCiv);
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+      await p.propagar();
+
+      const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      tentar.click();
+      await p.propagar();
+      p.http.expectNone((r) => r.url === LISTA);
+
+      del.flush(...sucesso());
+      await p.recarregarCom([direito]);
+    });
   });
 
-  describe('trava da classe de edição contra chamadas concorrentes', () => {
-    it('uma segunda submissão não parte enquanto a primeira corre', async () => {
-      await preencherNovoCurso();
-      edicao.salvar();
-      edicao.salvar();
+  describe('chamadas concorrentes', () => {
+    it('salvar durante a gravação, remover durante o salvamento e salvar durante a remoção não geram requisição', async () => {
+      await p.abrirCadastro();
+      p.edicao.salvar();
+      p.edicao.salvar();
+      p.edicao.pedirRemocao(engCiv);
+      p.edicao.removerConfirmado();
+      p.http.expectNone(`${ESCRITA}/${engCiv.id}`);
+      p.http.expectOne(ESCRITA).flush(...criado());
+      await p.propagar();
 
-      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
-      await propagar();
-      await responderLista([cursoSeed]);
+      p.edicao.abrirCadastro();
+      p.edicao.salvar();
+      p.http.expectNone(ESCRITA);
+      await p.recarregarCom([engCiv]);
+
+      p.edicao.pedirRemocao(engCiv);
+      p.edicao.removerConfirmado();
+      p.edicao.salvar();
+      p.http.expectNone(ESCRITA);
+      p.http.expectOne(`${ESCRITA}/${engCiv.id}`).flush(...sucesso());
+      await p.recarregarCom([direito]);
     });
 
-    it('a remoção não parte enquanto uma gravação corre', async () => {
-      await preencherNovoCurso();
-      edicao.salvar();
-      edicao.pedirRemocao(cursoSeed);
-      edicao.removerConfirmado();
-
-      controller.expectNone(`${ESCRITA_URL}/${cursoSeed.id}`);
-      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
-      await propagar();
-      await responderLista([cursoSeed]);
-    });
-
-    it('a submissão não parte enquanto uma remoção corre', async () => {
-      edicao.pedirRemocao(cursoSeed);
-      edicao.removerConfirmado();
-      await preencherNovoCurso();
-      edicao.salvar();
-
-      controller.expectNone(ESCRITA_URL);
-      controller
-        .expectOne(`${ESCRITA_URL}/${cursoSeed.id}`)
-        .flush(null, { status: 204, statusText: 'No Content' });
-      await propagar();
-      await responderLista([]);
+    it('confirmar sem ter pedido a remoção não envia nada', () => {
+      p.edicao.removerConfirmado();
+      p.http.expectNone((r) => r.method === 'DELETE');
     });
   });
 
-  it('recusa do servidor é mostrada no campo recusado', async () => {
-    await preencherNovoCurso();
-    enviarFormulario();
-    recusar({
-      type: 'about:blank',
-      title: 'Dados inválidos',
-      status: 422,
-      code: 'uniplus.validacao',
-      traceId: 'test-trace',
-      errors: [
-        {
-          field: 'Nome',
-          code: 'uniplus.configuracao.curso.nome_invalido',
-          message: 'Nome fora do padrão do catálogo.',
-        },
-      ],
-    });
-    await propagar();
+  describe('recarga depois da escrita', () => {
+    it('mantém as ações indisponíveis até a lista refletir o que foi gravado', async () => {
+      await p.abrirEdicao(engCiv);
+      (await p.enviar(`${ESCRITA}/${engCiv.id}`)).flush(...sucesso());
+      await p.propagar();
 
-    const campo = elemento('input[formcontrolname="nome"]').closest('label') as HTMLElement;
-    expect(campo.querySelector('.field__error')?.textContent?.trim()).toBe(
-      'Nome fora do padrão do catálogo.',
+      expect(p.edicao.salvando()).toBe(false);
+      expect(p.edicao.gravando()).toBe(true);
+      expect(p.editar(engCiv).matches(':disabled')).toBe(true);
+      await p.recarregarCom([engCiv]);
+      expect(p.edicao.gravando()).toBe(false);
+      expect(p.editar(engCiv).matches(':disabled')).toBe(false);
+    });
+
+    it.each(['salvar', 'remover'] as const)(
+      'libera as ações e permite nova leitura se a recarga após %s falhar',
+      async (operacao) => {
+        if (operacao === 'salvar') {
+          await p.abrirCadastro();
+          (await p.enviar()).flush(...criado());
+        } else {
+          (await p.confirmarRemocao(engCiv)).flush(...sucesso());
+        }
+        await p.propagar();
+        p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+        await p.propagar();
+
+        expect(p.edicao.gravando()).toBe(false);
+        const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
+        expect(tentar.getAttribute('aria-disabled')).toBeNull();
+        tentar.click();
+        await p.propagar();
+        await p.recarregarCom([engCiv]);
+        expect(p.store.mensagemDeErro()).toBeNull();
+      },
     );
-    expect(elemento('input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe('true');
   });
 
   describe('campo desabilitado por regra de negócio', () => {
-    it('continua desabilitado depois do sucesso, e os demais seguem habilitados no modelo', async () => {
-      await preencherNovoCurso();
-      edicao.form.controls.grau.disable();
-      edicao.salvar();
-      expect(edicao.form.controls.grau.disabled).toBe(true);
-      expect(edicao.form.controls.nome.enabled).toBe(true);
+    it('continua desabilitado depois do sucesso, e os demais seguem habilitados', async () => {
+      await p.abrirCadastro();
+      p.edicao.form.controls.grau.disable();
+      const post = await p.enviar();
+      expect(p.campo('grau').matches(':disabled')).toBe(true);
+      post.flush(...criado());
+      await p.recarregarCom([engCiv]);
 
-      controller.expectOne(ESCRITA_URL).flush('id', { status: 201, statusText: 'Created' });
-      await propagar();
-
-      expect(edicao.form.controls.grau.disabled).toBe(true);
-      expect(edicao.form.controls.nome.enabled).toBe(true);
-      await responderLista([cursoSeed]);
+      expect(p.edicao.form.controls.grau.disabled).toBe(true);
+      expect(p.edicao.form.controls.nome.enabled).toBe(true);
     });
 
     it('continua desabilitado depois da recusa do servidor', async () => {
-      await preencherNovoCurso();
-      edicao.form.controls.grau.disable();
-      edicao.salvar();
+      await p.abrirCadastro();
+      p.edicao.form.controls.grau.disable();
+      (await p.enviar()).flush(...recusaDeCampo('Nome', 'Recusado.'));
+      await p.propagar();
 
-      recusar({
-        type: 'about:blank',
-        title: 'Dados inválidos',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: 'test-trace',
-        errors: [
-          { field: 'Nome', code: 'uniplus.configuracao.curso.invalido', message: 'Recusado.' },
-        ],
-      });
-      await propagar();
-
-      expect(edicao.form.controls.grau.disabled).toBe(true);
-      expect(edicao.form.controls.nome.errors?.['backend']).toBeDefined();
-    });
-  });
-
-  describe('ativação enquanto o envio corre', () => {
-    it('clique e envio do formulário não chamam salvar de novo', async () => {
-      const salvarDaClasse = vi.spyOn(edicao, 'salvar');
-      await preencherNovoCurso();
-      enviarFormulario();
-      const post = controller.expectOne(ESCRITA_URL);
-      await propagar();
-
-      enviarFormulario();
-      elemento<HTMLFormElement>('#cfg-curso-form').dispatchEvent(
-        new Event('submit', { cancelable: true }),
-      );
-      await propagar();
-
-      expect(salvarDaClasse).toHaveBeenCalledTimes(1);
-      post.flush('novo-id', { status: 201, statusText: 'Created' });
-      await propagar();
-      await responderLista([cursoSeed]);
-    });
-  });
-
-  describe('foco', () => {
-    it('após a recusa, vai do botão de salvar ao primeiro campo recusado', async () => {
-      await preencherNovoCurso();
-      const salvar = elemento<HTMLButtonElement>('button[form="cfg-curso-form"]');
-      salvar.focus();
-      salvar.click();
-      await propagar();
-      recusar({
-        type: 'about:blank',
-        title: 'Dados inválidos',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: 'test-trace',
-        errors: [
-          {
-            field: 'Nome',
-            code: 'uniplus.configuracao.curso.invalido',
-            message: 'Nome fora do padrão do catálogo.',
-          },
-        ],
-      });
-      await propagar();
-      await propagar();
-
-      expect(document.activeElement).toBe(elemento('input[formcontrolname="nome"]'));
-    });
-
-    it('após o sucesso, volta ao botão que abriu o drawer', async () => {
-      const acionador = elemento<HTMLButtonElement>('.panel-head .btn--primary');
-      acionador.focus();
-      await preencherNovoCurso();
-      elemento<HTMLButtonElement>('button[form="cfg-curso-form"]').focus();
-      enviarFormulario();
-      controller.expectOne(ESCRITA_URL).flush('novo-id', { status: 201, statusText: 'Created' });
-      await propagar();
-      await propagar();
-
-      expect(edicao.aberto()).toBe(false);
-      expect(document.activeElement).toBe(acionador);
-      await responderLista([cursoSeed]);
+      expect(p.campo('grau').matches(':disabled')).toBe(true);
+      expect(p.campo('nome').matches(':disabled')).toBe(false);
+      expect(p.campo('nome').getAttribute('aria-invalid')).toBe('true');
     });
   });
 });

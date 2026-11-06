@@ -16,6 +16,7 @@ import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { CursosPage } from './cursos.page';
 import { CursosStore } from './cursos.store';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
+import { GruposDoCurso } from './grupos-do-curso';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 const BASE = 'http://localhost:5000';
@@ -139,13 +140,11 @@ describe('CursosPage', () => {
       nivelEnsino: 'Graduação',
       grupoAreaEnem: '',
     });
-    const key = edicao['chaveDeIdempotencia']();
-
     edicao.salvar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/cursos`);
     expect(post.request.method).toBe('POST');
-    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
+    expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
     expect(post.request.body).toMatchObject({
       codigo: 'ADM',
       nome: 'Administração',
@@ -234,9 +233,6 @@ describe('CursosPage', () => {
     await flushLista([cursoSeed]);
     edicao.pedirRemocao(cursoSeed);
     edicao.removerConfirmado();
-    // Reproduz o fechamento síncrono que o `ui-confirm-dialog` real faz ao
-    // emitir `confirmed` — antes desta resposta HTTP assíncrona chegar.
-    edicao.confirmando.set(false);
 
     const req = controller.expectOne(`${BASE}/api/configuracao/admin/cursos/${cursoSeed.id}`);
     req.flush(
@@ -255,8 +251,7 @@ describe('CursosPage', () => {
     );
     await propagate();
 
-    // O confirm não reabre; abre o drawer de Ofertas com a mensagem que a API
-    // devolveu (sem acoplar a UI ao vendor code — ramifica por status 409).
+    // O confirm não reabre; abre o drawer de Ofertas com a mensagem que a API devolveu.
     expect(edicao.confirmando()).toBe(false);
     expect(ofertasDoCurso.aberto()).toBe(true);
     expect(ofertasDoCurso.bloqueio()).toBe(
@@ -544,11 +539,11 @@ describe('CursosPage', () => {
     const req = controller.expectOne((r) => r.url === CURSOS_URL && r.params.has('q'));
     req.flush(
       JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.consulta.busca_muito_longa',
+        type: 'https://uniplus.dev/erros/uniplus.consulta.busca_muito_longa',
         title: 'Busca inválida',
         detail: 'O texto pesquisado excede 200 caracteres.',
         status: 422,
-        code: 'uniplus.configuracao.consulta.busca_muito_longa',
+        code: 'uniplus.consulta.busca_muito_longa',
         traceId: 'test-trace',
       }),
       {
@@ -667,7 +662,7 @@ describe('CursosPage', () => {
         JSON.stringify({
           title: 'Serviço indisponível',
           status: 503,
-          code: 'uniplus.indisponivel',
+          code: 'uniplus.internal.unexpected',
           traceId: 'trace-fundo',
         }),
         {
@@ -695,13 +690,17 @@ describe('CursosPage', () => {
       expect(erroSpy).not.toHaveBeenCalled();
     });
 
-    it('com o formulário aberto, a falha dos grupos continua sendo apresentada', async () => {
+    it('com o formulário aberto, a nova falha dos grupos é apresentada uma única vez', async () => {
       const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
       falha503();
       await flushLista([cursoSeed]);
       expect(erroSpy).not.toHaveBeenCalled();
 
       edicao.abrirCadastro();
+      fixture.detectChanges();
+      await propagate();
+      expect(erroSpy).not.toHaveBeenCalled();
+
       falha503();
       fixture.detectChanges();
       await propagate();
@@ -712,6 +711,24 @@ describe('CursosPage', () => {
       ).not.toBeNull();
     });
 
+    it('com o formulário aberto, a lista que chega depois da falha de fundo não gera aviso', async () => {
+      const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+      falha503();
+      await flushLista([cursoSeed]);
+
+      edicao.abrirCadastro();
+      fixture.detectChanges();
+      await propagate();
+      controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
+      fixture.detectChanges();
+      await propagate();
+
+      expect(erroSpy).not.toHaveBeenCalled();
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector('#cfg-curso-grupos-falha'),
+      ).toBeNull();
+    });
+
     it('grupo do curso sem código e sem rótulo não gera opção vazia', async () => {
       const semGrupo = { ...cursoSeed, grupoAreaEnem: { codigo: ' ', rotulo: ' ' } };
       await flushLista([semGrupo]);
@@ -719,7 +736,9 @@ describe('CursosPage', () => {
       controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
       fixture.detectChanges();
 
-      expect(edicao.grupos().foraDasOpcoes).toBeNull();
+      expect(
+        fixture.debugElement.injector.get(GruposDoCurso).formulario().foraDasOpcoes,
+      ).toBeNull();
       expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
     });
 
@@ -736,7 +755,9 @@ describe('CursosPage', () => {
       fixture.detectChanges();
 
       expect(opcoes()).toEqual(['', ...GRUPOS.map((g) => g.codigo)]);
-      expect(edicao.grupos().foraDasOpcoes).toBeNull();
+      expect(
+        fixture.debugElement.injector.get(GruposDoCurso).formulario().foraDasOpcoes,
+      ).toBeNull();
       expect(edicao.form.controls.grupoAreaEnem.value).toBe('TECNOLOGICA');
 
       edicao.salvar();
@@ -1005,7 +1026,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
 
   it('a edição mostra o grupo do curso pelo rótulo da API, e o alerta oferece tentar de novo', () => {
     edicao.abrirEdicao(cursoSeed);
-    // A lista de grupos, pedida ao abrir o formulário, não chega.
+    // A lista de grupos, pedida ao abrir a página, não chega.
     indisponivel();
     fixture.detectChanges();
 
@@ -1313,7 +1334,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
       JSON.stringify({
         title: 'Serviço indisponível',
         status: 503,
-        code: 'uniplus.indisponivel',
+        code: 'uniplus.internal.unexpected',
         traceId: 'trace-grupos',
       }),
       {
@@ -1339,7 +1360,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     const semPermissao = {
       title: 'Acesso negado',
       status: 403,
-      code: 'uniplus.autorizacao.acesso_negado',
+      code: 'uniplus.auth.forbidden',
       traceId: 't',
     };
     controller.expectOne(GRUPOS_URL).flush(JSON.stringify(semPermissao), {

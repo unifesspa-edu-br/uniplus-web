@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import {
   OfertaCursoDto,
   PROGRAMAS_DE_OFERTA,
@@ -48,6 +48,12 @@ export class OfertasDoCursoComponent {
   readonly recarregar = output<void>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
+
+  protected readonly descricaoSemOfertas = computed(() =>
+    this.bloqueio()
+      ? 'Nenhuma oferta ativa foi encontrada agora. Tente remover o curso de novo.'
+      : 'Este curso não possui ofertas de curso vivas — a remoção não será bloqueada.',
+  );
 
   protected programaLabel(token: OfertaCursoDto['programaDeOferta']): string {
     return PROGRAMA_LABELS.get(token) ?? token;

@@ -8,14 +8,14 @@ import {
   ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CursoDto, CursosApi, type GrupoAreaEnemDto } from '@uniplus/shared-data/configuracao';
-import { focarAposNovaTentativa } from '../../shared/foco';
-import { nullIfBlank } from '../../shared/formulario';
-import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
-import { motivoDaFalha } from '../../shared/lista-de-referencia';
-import { comPontoFinal } from '../../shared/texto';
+import { CursoDto, CursosApi } from '@uniplus/shared-data/configuracao';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
 import {
   CURSO_EM_BRANCO,
   comandoDeAtualizacao,
@@ -25,30 +25,24 @@ import {
   valoresDoCurso,
 } from './curso-form';
 import { CursosStore } from './cursos.store';
+import { GruposDoCurso } from './grupos-do-curso';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 
 type ModoFormulario = 'criar' | 'editar';
 
 type Escrita = 'salvando' | 'removendo';
 
-/** O que o formulário precisa saber do vocabulário de grupos de área do ENEM. */
-export interface GruposDoFormulario {
-  readonly falhou: boolean;
-  readonly pendente: boolean;
-  readonly tentativasSemSucesso: number;
-  readonly opcoes: readonly GrupoAreaEnemDto[];
-  readonly mensagemDeFalha: string;
-  readonly foraDasOpcoes: GrupoAreaEnemDto | null;
-}
-
-/** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 Conflict). */
+/** Vendor code do DomainError `Curso.CodigoJaExiste` (uniplus-api, 409 em POST e PUT). */
 const CURSO_CODIGO_JA_EXISTE_CODE = 'uniplus.configuracao.curso.codigo_ja_existe';
 
+/** Vendor code do DomainError `Curso.RemocaoBloqueadaPorOfertaCurso` (uniplus-api, 409 em DELETE). */
+const REMOCAO_BLOQUEADA_POR_OFERTA_CODE =
+  'uniplus.configuracao.curso.remocao_bloqueada_por_oferta_curso';
+
 /**
- * As escritas de curso: o formulário de cadastro e edição (abertura, validação, recusas do
- * servidor e o grupo de área do ENEM, cuja lista vem da API) e a remoção com confirmação. Salvar
- * e remover compartilham um só indicador, então enquanto uma escrita está em curso a outra não
- * parte.
+ * As escritas de curso: o formulário de cadastro e edição (abertura, validação e recusas do
+ * servidor) e a remoção com confirmação. Salvar e remover compartilham um só indicador, então
+ * enquanto uma escrita está em curso a outra não parte.
  */
 @Injectable()
 export class EdicaoDosCursos {
@@ -58,39 +52,57 @@ export class EdicaoDosCursos {
   private readonly destroyRef = inject(DestroyRef);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
-  private readonly vocabulario = inject(CatalogoGruposAreaEnem);
+  private readonly grupos = inject(GruposDoCurso);
 
   readonly form = criarFormularioDeCurso();
   private readonly escrita = signal<Escrita | null>(null);
-  /** Há escrita em curso, de qualquer tipo: enquanto durar, outra não parte. */
-  readonly gravando = computed(() => this.escrita() !== null);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
+  /** Há escrita em curso ou a lista ainda não refletiu o que foi gravado: outra não parte. */
+  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
   /** O formulário está sendo enviado. */
   readonly salvando = computed(() => this.escrita() === 'salvando');
   /** Uma remoção está em curso; o formulário não foi enviado. */
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  /** Texto da região de status: anuncia o início e o fim da remoção. */
-  readonly anuncioDaRemocao = computed(() => {
-    const curso = this.cursoParaRemover();
-    if (this.removendo() && curso !== null) {
-      return `Removendo o curso ${curso.codigo}.`;
-    }
-    return this.resultadoDaRemocao();
-  });
-  readonly aberto = signal(false);
+  /** O mesmo sinal que a leitura dos grupos observa para saber se o drawer está aberto. */
+  readonly aberto = this.grupos.formularioAberto;
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly titulo = computed(() => (this.modo() === 'criar' ? 'Novo curso' : 'Editar curso'));
 
-  private readonly resultadoDaRemocao = signal('');
   readonly confirmando = signal(false);
-  readonly cursoParaRemover = signal<CursoDto | null>(null);
-  private readonly erroDaRemocao = signal<string | null>(null);
+  readonly erroDaRemocao = signal<string | null>(null);
+  private readonly cursoParaRemover = signal<CursoDto | null>(null);
+  private readonly recusaDoSalvamento = signal('');
+  private readonly resultadoDoSalvamento = signal('');
+  private readonly resultadoDaRemocao = signal('');
+
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDaRemocao = computed(() => {
+    const curso = this.cursoParaRemover();
+    if (curso === null) {
+      return '';
+    }
+    if (this.removendo()) {
+      return `Removendo o curso ${curso.codigo}.`;
+    }
+    const motivo = this.erroDaRemocao();
+    return motivo ? `Não foi possível remover o curso ${curso.codigo}. ${motivo}` : '';
+  });
+  /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDoSalvamento = computed(() =>
+    this.salvando() ? 'Salvando curso.' : this.recusaDoSalvamento(),
+  );
+  /** Na página: o desfecho, anunciado quando nenhuma sobreposição está aberta para dizê-lo. */
+  readonly anuncioDaPagina = computed(() =>
+    this.confirmando() || this.aberto()
+      ? ''
+      : this.resultadoDaRemocao() || this.resultadoDoSalvamento(),
+  );
 
   readonly mensagemDaConfirmacao = computed(() => {
-    const erro = this.erroDaRemocao();
-    if (erro !== null) {
-      return erro;
-    }
     const curso = this.cursoParaRemover();
     return curso
       ? `Deseja remover ${curso.codigo} — ${curso.nome}? A remoção é lógica (soft-delete) e preserva o histórico. Se o curso for a matriz de uma oferta de curso ativa, a remoção será bloqueada.`
@@ -99,96 +111,59 @@ export class EdicaoDosCursos {
 
   private readonly cursoEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
-  /** Grupo que o curso em edição já tem, como a tela o mostra. */
-  private readonly grupoDoCursoEmEdicao = signal<GrupoAreaEnemDto | null>(null);
-
-  // Carga de fundo da tabela: só avisa quando o formulário, que depende dos grupos, está aberto.
-  private readonly motivoFalhaGrupos = motivoDaFalha(this.vocabulario, () => this.aberto());
-
-  private readonly mensagemFalhaGrupos = computed(() => {
-    const semLista = 'Sem a lista de grupos não é possível classificar o curso.';
-    const motivo = nullIfBlank(this.motivoFalhaGrupos());
-    return motivo ? `${comPontoFinal(motivo)} ${semLista}` : semLista;
-  });
-
-  /**
-   * Grupo do curso em edição que a lista da API não oferece — a lista ainda não chegou ou falhou.
-   * Sem uma option com esse código o select apareceria em branco, mas o controle continuaria com
-   * o grupo do curso, e salvar reenviaria um grupo que o operador nunca viu selecionado. A opção
-   * depende do grupo original do curso, e não do valor escolhido: trocar para "Não classificado"
-   * não a tira, e dá para voltar a ele.
-   */
-  private readonly grupoForaDasOpcoes = computed<GrupoAreaEnemDto | null>(() => {
-    const doCurso = this.grupoDoCursoEmEdicao();
-    if (doCurso === null || this.vocabulario.porCodigo().has(doCurso.codigo)) {
-      return null;
-    }
-    // Sem código não há o que selecionar nem gravar: o "—" é só da tabela.
-    return nullIfBlank(doCurso.codigo) === null ? null : doCurso;
-  });
-
-  readonly grupos = computed<GruposDoFormulario>(() => ({
-    falhou: this.vocabulario.falhou(),
-    pendente: this.vocabulario.pendente(),
-    tentativasSemSucesso: this.vocabulario.tentativasSemSucesso(),
-    opcoes: this.vocabulario.opcoes(),
-    mensagemDeFalha: this.mensagemFalhaGrupos(),
-    foraDasOpcoes: this.grupoForaDasOpcoes(),
-  }));
-
-  /**
-   * A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai ao select
-   * que a lista alimenta, sem sair do formulário.
-   */
-  private readonly novaTentativaDosGrupos = focarAposNovaTentativa(
-    this.vocabulario.pendente,
-    this.vocabulario.falhou,
-    () => document.getElementById('cfg-curso-grupo-area-enem'),
-  );
 
   abrirCadastro(): void {
+    if (this.gravando()) {
+      return;
+    }
     this.modo.set('criar');
     this.cursoEmEdicaoId.set(null);
     this.form.reset(CURSO_EM_BRANCO);
-    this.grupoDoCursoEmEdicao.set(null);
+    this.grupos.preparar(null);
     this.abrir();
   }
 
   abrirEdicao(curso: CursoDto): void {
+    if (this.gravando()) {
+      return;
+    }
     this.modo.set('editar');
     this.cursoEmEdicaoId.set(curso.id);
     this.form.reset(valoresDoCurso(curso));
-    this.grupoDoCursoEmEdicao.set(
-      curso.grupoAreaEnem ? this.vocabulario.exibivel(curso.grupoAreaEnem) : null,
-    );
+    this.grupos.preparar(curso.grupoAreaEnem);
     this.abrir();
   }
 
   fechar(): void {
-    this.aberto.set(false);
-  }
-
-  tentarCarregarGrupos(): void {
-    this.novaTentativaDosGrupos.executar(() => this.vocabulario.tentarDeNovo());
+    if (!this.salvando()) {
+      this.aberto.set(false);
+    }
   }
 
   salvar(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+    this.descartarRecusasDoServidor();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    this.erro.set(null);
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
     const valores = this.form.getRawValue();
     const id = this.cursoEmEdicaoId();
+    const modo = this.modo();
     const operacao: Observable<ApiResult<string | void>> =
-      this.modo() === 'criar'
+      modo === 'criar'
         ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(id ?? '', comandoDeAtualizacao(id ?? '', valores), chave);
-    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result));
+    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result, modo));
   }
 
   pedirRemocao(curso: CursoDto): void {
+    if (this.gravando()) {
+      return;
+    }
+    this.limparResultados();
     this.cursoParaRemover.set(curso);
     this.erroDaRemocao.set(null);
     this.confirmando.set(true);
@@ -199,13 +174,10 @@ export class EdicaoDosCursos {
     if (curso === null) {
       return;
     }
+    this.erroDaRemocao.set(null);
     this.gravar('removendo', this.api.remover(curso.id), (result) => {
       if (result.ok) {
-        this.resultadoDaRemocao.set(`Curso ${curso.codigo} removido.`);
-        this.notifications.success('Curso removido', curso.codigo);
-        this.confirmando.set(false);
-        this.cursoParaRemover.set(null);
-        this.store.recarregar();
+        this.concluirRemocao(curso);
         return;
       }
       this.recusarRemocao(curso, result.problem);
@@ -222,47 +194,66 @@ export class EdicaoDosCursos {
     }
     this.escrita.set(tipo);
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      this.escrita.set(null);
       aoConcluir(result);
+      this.escrita.set(null);
     });
+  }
+
+  private concluirRemocao(curso: CursoDto): void {
+    this.resultadoDaRemocao.set(`Curso ${curso.codigo} removido.`);
+    this.notifications.success('Curso removido', curso.codigo);
+    this.confirmando.set(false);
+    this.cursoParaRemover.set(null);
+    this.recarregar();
   }
 
   private recusarRemocao(curso: CursoDto, problem: ProblemDetails): void {
     const titulo = this.problemI18n.resolve(problem).title;
-    this.resultadoDaRemocao.set(`Não foi possível remover o curso ${curso.codigo}.`);
-    // 409 é o único conflito possível no DELETE do curso: referenciado por oferta viva. Em vez de
-    // só reexibir o texto, abre o drawer de ofertas com as que bloqueiam a remoção.
-    if (problem.status === STATUS_HTTP.CONFLITO) {
+    // Só a oferta viva bloqueia a remoção com 409: em vez de reexibir o texto, abre o drawer de
+    // ofertas com as que a impedem. Qualquer outra recusa mantém a confirmação aberta.
+    if (problem.code === REMOCAO_BLOQUEADA_POR_OFERTA_CODE) {
+      this.resultadoDaRemocao.set(`Não foi possível remover o curso ${curso.codigo}.`);
       this.confirmando.set(false);
       this.cursoParaRemover.set(null);
       this.ofertas.abrirPorBloqueio(curso, titulo);
       return;
     }
-    // Demais falhas (5xx, rede): mantém a confirmação aberta com a mensagem. O diálogo fecha a si
-    // mesmo de forma síncrona ao emitir `confirmed`; reabrir explicitamente mantém o erro visível.
     this.erroDaRemocao.set(titulo);
-    this.confirmando.set(true);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem, { title: titulo });
     }
   }
 
   private abrir(): void {
-    this.vocabulario.garantirCarregado();
+    this.limparResultados();
     this.erro.set(null);
+    this.recusaDoSalvamento.set('');
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
   }
 
-  private concluirGravacao(result: ApiResult<string | void>): void {
+  private concluirGravacao(result: ApiResult<string | void>, modo: ModoFormulario): void {
     if (!result.ok) {
       this.aplicarFalha(result.problem);
+      this.recusaDoSalvamento.set(this.erro() ? '' : 'Revise os campos indicados.');
       return;
     }
-    this.notifications.success(this.modo() === 'criar' ? 'Curso criado' : 'Curso atualizado');
+    const criado = modo === 'criar';
+    this.resultadoDoSalvamento.set(criado ? 'Curso criado.' : 'Curso atualizado.');
+    this.notifications.success(criado ? 'Curso criado' : 'Curso atualizado');
     this.aberto.set(false);
     this.renovarChaveDeIdempotencia();
+    this.recarregar();
+  }
+
+  private recarregar(): void {
+    this.recarga.iniciar();
     this.store.recarregar();
+  }
+
+  private limparResultados(): void {
+    this.resultadoDaRemocao.set('');
+    this.resultadoDoSalvamento.set('');
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
@@ -279,15 +270,20 @@ export class EdicaoDosCursos {
       this.marcarCodigoJaExistente(problem);
       return;
     }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    ) {
+    // O outro 409 do envio é `processing_conflict`: pede repetir o mesmo comando com a mesma chave.
+    if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarChaveDeIdempotencia();
     }
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
+    }
+  }
+
+  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
+  private descartarRecusasDoServidor(): void {
+    for (const controle of Object.values(this.form.controls)) {
+      controle.updateValueAndValidity();
     }
   }
 

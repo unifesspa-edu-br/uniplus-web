@@ -11,12 +11,13 @@
 @if (store.mensagemDeErro()) {
 <ui-alert variant="danger" heading="Não foi possível carregar os cursos">
   {{ store.mensagemDeErro() }}
-  <div class="cfg-cursos__retry">
+  <div class="list-state__retry">
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="store.carregando() || edicao.removendo()"
-      (click)="store.tentarNovamente()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -24,11 +25,12 @@
 </ui-alert>
 }
 
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-cursos-lista
   [cursos]="store.cursosExibidos()"
   [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
   [removendo]="edicao.removendo()"
-  [anuncioDaRemocao]="edicao.anuncioDaRemocao()"
   [mensagemDeErro]="store.mensagemDeErro()"
   [temBusca]="store.temBusca()"
   [limite]="store.limite()"
@@ -50,20 +52,22 @@
   [modo]="edicao.modo()"
   [titulo]="edicao.titulo()"
   [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
   [salvando]="edicao.salvando()"
-  [grupos]="edicao.grupos()"
+  [grupos]="grupos.formulario()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (tentarGrupos)="edicao.tentarCarregarGrupos()"
+  (tentarGrupos)="grupos.tentarDeNovo()"
 />
 
-<ui-confirm-dialog
-  [(visible)]="edicao.confirmando"
-  heading="Remover curso"
-  [message]="edicao.mensagemDaConfirmacao()"
-  confirmLabel="Remover"
-  confirmVariant="danger"
-  (confirmed)="edicao.removerConfirmado()"
+<cfg-confirmacao-de-remocao
+  titulo="Remover curso"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
 />
 
 <cfg-ofertas-do-curso
@@ -75,8 +79,8 @@
   [ofertas]="ofertas.itens()"
   [temAnterior]="ofertas.anterior() !== null"
   [temProximo]="ofertas.proximo() !== null"
-  (fechado)="ofertas.aoFechar()"
-  (recarregar)="ofertas.recarregar()"
+  (fechado)="aoFecharOfertas()"
+  (recarregar)="recarregarOfertas()"
   (anterior)="ofertas.paginaAnterior()"
   (proximo)="ofertas.proximaPagina()"
 />

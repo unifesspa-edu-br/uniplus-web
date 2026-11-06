@@ -8,7 +8,10 @@
 >
   @if (bloqueio()) {
     <ui-alert variant="danger" heading="Remoção bloqueada">
-      {{ bloqueio() }} Remova as ofertas abaixo antes de excluir o curso.
+      {{ bloqueio() }}
+      @if (ofertas().length > 0) {
+        Remova as ofertas abaixo antes de excluir o curso.
+      }
     </ui-alert>
   } @else {
     <ui-alert variant="info" [dynamic]="false" heading="Ofertas vivas deste curso">
@@ -20,11 +23,13 @@
   @if (mensagemDeErro()) {
     <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
       {{ mensagemDeErro() }}
-      <div class="cfg-ofertas__retry">
+      <div class="list-state__retry">
         <button
           type="button"
+          id="cfg-ofertas-tentar"
           class="btn btn--secondary btn--sm"
-          [disabled]="carregando()"
+          [attr.aria-disabled]="carregando() ? 'true' : null"
+          [attr.aria-busy]="carregando() ? 'true' : null"
           (click)="recarregar.emit()"
         >
           Tentar novamente
@@ -34,7 +39,7 @@
   }
 
   @if (carregando()) {
-    <p class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando ofertas…</p>
+    <p class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando ofertas…</p>
   }
 
   @if (ofertas().length > 0) {
@@ -53,10 +58,7 @@
       }
     </ul>
   } @else if (!carregando() && !mensagemDeErro()) {
-    <ui-empty-state
-      heading="Nenhuma oferta ativa"
-      description="Este curso não possui ofertas de curso vivas — a remoção não será bloqueada."
-    />
+    <ui-empty-state heading="Nenhuma oferta ativa" [description]="descricaoSemOfertas()" />
   }
 
   <ui-list-footer

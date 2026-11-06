@@ -1,5 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import {
   CursorPagina,
   ProblemI18nService,
@@ -7,6 +7,7 @@ import {
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   CursoDto,
@@ -24,6 +25,7 @@ const PAGE_SIZE = 5;
 @Injectable()
 export class OfertasDoCursoStore {
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   readonly aberto = signal(false);
@@ -60,10 +62,23 @@ export class OfertasDoCursoStore {
     return this.lista.error() ? 'Erro inesperado ao carregar as ofertas do curso.' : null;
   });
 
+  /** O curso cujas ofertas o drawer mostra; `null` com o drawer fechado. */
+  readonly cursoId = computed(() => this.curso()?.id ?? null);
+
   readonly titulo = computed(() => {
     const curso = this.curso();
     return curso ? `Ofertas de ${curso.codigo}` : 'Ofertas do curso';
   });
+
+  constructor() {
+    effect(() => {
+      const problem = this.lista.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
+  }
 
   /** Abre o drawer com as ofertas vivas do curso (inspeção proativa, sem contexto de bloqueio). */
   abrir(curso: CursoDto): void {

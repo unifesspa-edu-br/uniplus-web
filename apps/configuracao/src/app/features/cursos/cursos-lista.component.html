@@ -1,22 +1,19 @@
 <section class="panel" aria-labelledby="cfg-cursos-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-cursos-list-title">Cursos</h2>
-      @if (carregando()) {
-        <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Carregando</span>
-      }
-      @if (removendo()) {
-        <span class="cfg-cursos__loading" aria-hidden="true"
-          ><ui-spinner size="sm" /> Removendo</span
+      <h2 id="cfg-cursos-list-title" tabindex="-1">Cursos</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
         >
       }
-      <span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>
     </div>
     <button
       type="button"
+      id="cfg-cursos-novo"
       class="btn btn--primary"
-      [disabled]="removendo()"
-      (click)="cadastrar.emit()"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      (click)="acionarCadastro()"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo curso
@@ -27,7 +24,9 @@
     ariaLabel="Filtrar cursos"
     searchPlaceholder="Buscar por código ou nome..."
     searchAriaLabel="Buscar curso"
+    [searchMaxLength]="200"
     [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
   />
 
   @if (cursos().length > 0) {
@@ -48,7 +47,7 @@
         </thead>
         <tbody>
           @for (curso of cursos(); track curso.id) {
-            <tr>
+            <tr [attr.data-curso-id]="curso.id">
               <td data-label="Código">
                 <code>{{ curso.codigo }}</code>
               </td>
@@ -63,22 +62,22 @@
                   icon="pi-briefcase"
                   [accessibleName]="'Ofertas de ' + curso.codigo"
                   tooltip="Ofertas do curso"
-                  [isDisabled]="carregando() || removendo()"
+                  [isDisabled]="indisponivel()"
                   (triggered)="verOfertas.emit(curso)"
                 />
                 <ui-icon-button
                   icon="pi-pencil"
                   [accessibleName]="'Editar curso ' + curso.codigo"
                   tooltip="Editar curso"
-                  [isDisabled]="carregando() || removendo()"
-                  (triggered)="editar.emit(curso)"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEditar(curso)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
                   [accessibleName]="'Remover curso ' + curso.codigo"
                   tooltip="Remover curso"
-                  [isDisabled]="carregando() || removendo()"
-                  (triggered)="remover.emit(curso)"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemover(curso)"
                 />
               </td>
             </tr>
@@ -95,7 +94,7 @@
         <button
           type="button"
           class="btn btn--secondary"
-          [disabled]="removendo()"
+          [disabled]="indisponivel()"
           (click)="termoBusca.set('')"
         >
           Limpar busca
@@ -109,8 +108,8 @@
         <button
           type="button"
           class="btn btn--primary"
-          [disabled]="removendo()"
-          (click)="cadastrar.emit()"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
         >
           Novo curso
         </button>
@@ -126,7 +125,7 @@
     [hasRows]="cursos().length > 0"
     [hasPrevious]="temAnterior()"
     [hasNext]="temProximo()"
-    [isDisabled]="carregando() || removendo()"
+    [isDisabled]="indisponivel()"
     (previous)="anterior.emit()"
     (next)="proximo.emit()"
   />
