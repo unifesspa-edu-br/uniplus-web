@@ -4,6 +4,6 @@ export const BASE_LEGAL_BONUS_REGIONAL_ROUTES: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./base-legal-bonus-regional-list.page').then((m) => m.BaseLegalBonusRegionalListPage),
+      import('./base-legal-bonus-regional.page').then((m) => m.BaseLegalBonusRegionalPage),
   },
 ];

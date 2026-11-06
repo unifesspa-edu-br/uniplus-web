@@ -1,0 +1,84 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Base Legal de Bônus Regional</h1>
+    <p class="page-header__desc">
+      Documento formal (Lei, Decreto, Portaria, Resolução, Instrução Normativa ou Parecer) e os
+      municípios que ele beneficia com o bônus regional. O Passo 8 do Processo Seletivo referencia
+      este cadastro e congela um snapshot no momento da configuração.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as bases legais">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+} @if (tipos.falhou()) {
+<cfg-alerta-nova-tentativa
+  variante="warning"
+  titulo="Tipos de instrumento não carregados"
+  [mensagem]="tipos.mensagemNaPagina()"
+  [pendente]="tipos.pendente()"
+  [tentativasSemSucesso]="tipos.tentativasSemSucesso()"
+  idBotao="cfg-blbr-tipos-tentar-pagina"
+  (tentar)="tipos.tentarDeNovoNaPagina()"
+/>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-base-legal-bonus-regional-lista
+  [bases]="store.basesFiltradas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [rotuloDoTipo]="rotuloDoTipo"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-base-legal-bonus-regional-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.tituloDoFormulario()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [tipos]="tipos.formulario()"
+  [municipios]="municipios.campo()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (tentarTipos)="tipos.tentarDeNovoNoFormulario()"
+  (buscarMunicipio)="municipios.buscar($event)"
+  (adicionarMunicipio)="municipios.adicionar($event)"
+  (removerMunicipio)="municipios.remover($event)"
+  (tentarMunicipios)="municipios.buscarDeNovo()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover base legal"
+  rotulo="Remover"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

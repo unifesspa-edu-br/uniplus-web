@@ -1,0 +1,79 @@
+<div class="field" [class.is-error]="campo().erro !== null">
+  <span class="field__label is-required" id="cfg-blbr-municipios-label">Municípios</span>
+  <div class="cfg-municipio-busca">
+    <div class="cfg-municipio-busca__input">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        #busca
+        id="cfg-blbr-municipios-busca"
+        class="input"
+        type="text"
+        autocomplete="off"
+        placeholder="Digite o nome completo do município…"
+        aria-labelledby="cfg-blbr-municipios-label"
+        aria-required="true"
+        [attr.maxlength]="maximoDaBusca"
+        [attr.aria-invalid]="campo().erro !== null || campo().buscaFalhou ? 'true' : null"
+        [attr.aria-describedby]="descritoPor()"
+        [value]="campo().termo"
+        (input)="buscar.emit(valorDoCampo($event))"
+        (keydown.enter)="$event.preventDefault()"
+      />
+    </div>
+    @if (campo().buscando) {
+      <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Buscando</span>
+    }
+    @if (campo().buscaFalhou) {
+      <span class="field__error" id="cfg-blbr-municipio-busca-erro" role="alert">
+        Não foi possível buscar municípios.
+      </span>
+      <div class="list-state__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="campo().buscando ? 'true' : null"
+          [attr.aria-busy]="campo().buscando ? 'true' : null"
+          (click)="tentarBuscaDeNovo.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    } @else if (!campo().buscando && campo().resultados.length > 0) {
+      <ul class="cfg-municipio-resultados">
+        @for (cidade of campo().resultados; track cidade.codigoIbge) {
+          <li>
+            <button type="button" class="btn btn--tertiary btn--sm" (click)="aoAdicionar(cidade)">
+              {{ cidade.nome }} — {{ cidade.uf }}
+            </button>
+          </li>
+        }
+      </ul>
+    } @else if (campo().semResultado) {
+      <span class="field__hint">Nenhum município encontrado.</span>
+    }
+  </div>
+
+  @if (campo().selecionados.length > 0) {
+    <ul class="cfg-municipio-selecionados" aria-label="Municípios selecionados">
+      @for (municipio of campo().selecionados; track municipio.codigoIbge) {
+        <li>
+          <span>{{ municipio.nome }} — {{ municipio.uf }}</span>
+          <button
+            type="button"
+            class="btn btn--tertiary btn--sm btn--rect"
+            [attr.aria-label]="'Remover ' + municipio.nome"
+            (click)="aoRemover(municipio.codigoIbge, $event)"
+          >
+            Remover
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <span class="field__hint">Nenhum município adicionado ainda.</span>
+  }
+
+  @if (campo().erro; as erro) {
+    <span class="field__error" id="cfg-blbr-municipios-erro" role="alert">{{ erro }}</span>
+  }
+</div>

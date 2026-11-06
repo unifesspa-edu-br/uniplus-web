@@ -1,0 +1,137 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de base legal de bônus regional"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <!-- Só com o formulário aberto: o drawer fechado não repete o alerta da página. -->
+  @if (aberto() && tipos().falhou) {
+    <cfg-alerta-nova-tentativa
+      variante="warning"
+      titulo="Tipos de instrumento não carregados"
+      [mensagem]="tipos().mensagemDeFalha"
+      [pendente]="tipos().pendente"
+      [tentativasSemSucesso]="tipos().tentativasSemSucesso"
+      idBotao="cfg-blbr-tipos-tentar"
+      idMensagem="cfg-blbr-tipos-falha"
+      (tentar)="tentarTipos.emit()"
+    />
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-base-legal-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <div class="form-grid">
+        <label class="field" [class.is-error]="erroDoCampo('tipoInstrumento')">
+          <span class="field__label is-required">Tipo de instrumento</span>
+          <select
+            id="cfg-blbr-tipo"
+            class="select"
+            formControlName="tipoInstrumento"
+            aria-required="true"
+            [attr.aria-busy]="tipos().pendente ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('tipoInstrumento') ? 'true' : null"
+            [attr.aria-describedby]="descricaoDoTipo()"
+          >
+            <option value="">Selecione…</option>
+            @if (tipos().foraDasOpcoes; as foraDasOpcoes) {
+              <option [value]="foraDasOpcoes.codigo">{{ foraDasOpcoes.rotulo }}</option>
+            }
+            @for (opcao of tipos().opcoes; track opcao.codigo) {
+              <option [value]="opcao.codigo">{{ opcao.nome }}</option>
+            }
+          </select>
+          @if (erroDoCampo('tipoInstrumento')) {
+            <span class="field__error" id="cfg-blbr-tipo-erro" role="alert">{{
+              erroDoCampo('tipoInstrumento')
+            }}</span>
+          }
+        </label>
+
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('identificacao')">
+          <span class="field__label is-required">Identificação</span>
+          <input
+            class="input"
+            type="text"
+            placeholder="Ex.: Portaria Unifesspa nº 2514/2023"
+            formControlName="identificacao"
+            aria-required="true"
+            [attr.aria-invalid]="erroDoCampo('identificacao') ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDoCampo('identificacao') ? 'cfg-blbr-identificacao-erro' : null
+            "
+          />
+          @if (erroDoCampo('identificacao')) {
+            <span class="field__error" id="cfg-blbr-identificacao-erro" role="alert">{{
+              erroDoCampo('identificacao')
+            }}</span>
+          }
+        </label>
+
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
+          <span class="field__label is-required">Descrição</span>
+          <textarea
+            class="textarea"
+            rows="3"
+            formControlName="descricao"
+            aria-required="true"
+            [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-blbr-descricao-erro' : null"
+          ></textarea>
+          @if (erroDoCampo('descricao')) {
+            <span class="field__error" id="cfg-blbr-descricao-erro" role="alert">{{
+              erroDoCampo('descricao')
+            }}</span>
+          }
+        </label>
+
+        <cfg-campo-de-municipios
+          class="form-grid__full"
+          [campo]="municipios()"
+          (buscar)="buscarMunicipio.emit($event)"
+          (adicionar)="adicionarMunicipio.emit($event)"
+          (remover)="removerMunicipio.emit($event)"
+          (tentarBuscaDeNovo)="tentarMunicipios.emit()"
+        />
+      </div>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-base-legal-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{
+        salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar base legal' : 'Salvar base legal'
+      }}
+    </button>
+  </div>
+</ui-drawer>

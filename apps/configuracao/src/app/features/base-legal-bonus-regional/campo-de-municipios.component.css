@@ -1,0 +1,46 @@
+.cfg-municipio-busca {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.cfg-municipio-busca__input {
+  position: relative;
+}
+
+.cfg-municipio-busca__input > i {
+  position: absolute;
+  top: 50%;
+  left: var(--space-3);
+  z-index: 1;
+  color: var(--text-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.cfg-municipio-busca__input .input {
+  padding-left: calc(var(--space-3) + 1.25rem);
+}
+
+.cfg-municipio-resultados,
+.cfg-municipio-selecionados {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cfg-municipio-selecionados {
+  margin-top: var(--space-2);
+}
+
+.cfg-municipio-selecionados li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+}

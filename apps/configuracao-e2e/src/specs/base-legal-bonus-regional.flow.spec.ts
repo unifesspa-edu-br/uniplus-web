@@ -147,9 +147,7 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  test('CA-05: remover uma Base Legal exige confirmação antes do soft-delete', async ({
-    page,
-  }) => {
+  test('CA-05: remover uma Base Legal exige confirmação antes do soft-delete', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [portariaSeed]);
     await abrirPagina(page);

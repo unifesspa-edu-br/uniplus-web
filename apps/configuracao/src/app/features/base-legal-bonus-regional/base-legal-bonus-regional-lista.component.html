@@ -1,0 +1,118 @@
+<section class="panel" aria-labelledby="cfg-base-legal-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-base-legal-list-title" tabindex="-1">Bases legais</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+    <button
+      type="button"
+      id="cfg-base-legal-novo"
+      class="btn btn--primary"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Nova base legal
+    </button>
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar bases legais de bônus regional"
+    searchPlaceholder="Buscar por identificação…"
+    searchAriaLabel="Buscar base legal"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
+  />
+
+  @if (bases().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Bases legais do bônus regional, com tipo de instrumento, identificação e quantidade de
+          municípios beneficiados
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Tipo</th>
+            <th scope="col">Identificação</th>
+            <th scope="col">Municípios</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (base of bases(); track base.id) {
+            <tr [attr.data-base-legal-id]="base.id">
+              <td data-label="Tipo">
+                <ui-lookup-label [resolucao]="rotuloDoTipo()(base.tipoInstrumento)" />
+              </td>
+              <td data-label="Identificação">{{ base.identificacao }}</td>
+              <td data-label="Municípios" class="u-caption">{{ base.municipios.length }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar base legal ' + base.identificacao"
+                  tooltip="Editar base legal"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEditar(base)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover base legal de bônus regional ' + base.identificacao"
+                  tooltip="Remover base legal de bônus regional"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemover(base)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhuma base legal encontrada"
+        description="Ajuste a busca para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="indisponivel()"
+          (click)="termoBusca.set('')"
+        >
+          Limpar busca
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhuma base legal cadastrada"
+        description="Cadastre a primeira base legal para referenciá-la no bônus regional de um processo."
+      >
+        <button
+          type="button"
+          class="btn btn--primary"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
+        >
+          Cadastrar a primeira base legal
+        </button>
+      </ui-empty-state>
+    }
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de bases legais de bônus regional"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>
