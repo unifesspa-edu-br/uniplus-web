@@ -1,0 +1,107 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Tipo de Documento</h1>
+    <p class="page-header__desc">
+      Cadastro classificatório dos documentos que um candidato pode anexar a uma inscrição — código,
+      nome, categoria, formatos aceitos e tamanho máximo. Não define regra material sobre o
+      documento (validade, assinatura, idade de emissão); isso pertence à exigência documental do
+      edital. UNI-REQ-0013.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os tipos de documento">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-tipos-documento-filtros
+  [categorias]="store.categoriaChips()"
+  [filtrosAtivos]="store.filtrosAtivos()"
+  [inerte]="edicao.gravando()"
+  [(termoBusca)]="store.termoBusca"
+  [(categoria)]="store.filtroCategoria"
+/>
+<cfg-tipos-documento-lista
+  [linhas]="store.linhas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [podeSolicitar]="aprovacao.solicitaveis().length > 0"
+  [lookupsComFalha]="lookupsComFalha()"
+  (cadastrar)="cadastrar()"
+  (detalhar)="store.abrirDetalhe($event)"
+  (editar)="editar($event)"
+  (remover)="remover($event)"
+  (solicitar)="solicitacaoAberta.set(true)"
+  (limparFiltros)="store.limparFiltros()"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-tipo-documento-detalhe
+  [(aberto)]="store.detalheAberto"
+  [tipo]="store.detalhe()"
+  [categoria]="store.categoriaDoDetalhe()"
+  [situacao]="store.situacaoDoDetalhe()"
+  [indisponivel]="pendente()"
+  (editar)="editarDoDetalhe($event)"
+  (aceitar)="aceitarDoDetalhe($event)"
+/>
+<cfg-tipo-documento-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [categorias]="edicao.categorias()"
+  [hipoteses]="edicao.hipotesesPermitidas()"
+  [decisao]="edicao.decididoEmEdicao()"
+  [avisaNovaAprovacao]="edicao.avisaNovaAprovacao()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (recarregarCategorias)="recarregarCategoriasDoFormulario()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover tipo de documento"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Aceitar a recomendação"
+  rotulo="Aceitar recomendação"
+  variante="primary"
+  [(aberto)]="edicao.confirmandoAceite"
+  [mensagem]="edicao.mensagemDoAceite()"
+  [removendo]="edicao.gravando()"
+  [erro]="edicao.erroAceite()"
+  [anuncio]="edicao.anuncioDoAceite()"
+  (confirmar)="edicao.aceitarConfirmado()"
+/>
+<cfg-solicitacao-da-protecao-dialog
+  [(visible)]="solicitacaoAberta"
+  [pendentes]="aprovacao.solicitaveis()"
+  (enviada)="aposEnviarSolicitacao()"
+  (desatualizada)="aprovacao.carregar()"
+/>

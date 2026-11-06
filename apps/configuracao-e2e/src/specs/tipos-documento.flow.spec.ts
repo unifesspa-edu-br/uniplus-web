@@ -127,7 +127,11 @@ test.describe('Tipo de Documento — CRUD (#392)', () => {
     await expect(
       page.getByText('O tipo equivalente não pode ser igual ao próprio código.'),
     ).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Criar tipo de documento' })).toBeDisabled();
+    await page.getByRole('button', { name: 'Criar tipo de documento' }).click();
+    await expect(page.locator('[formControlName="tipoEquivalente"]')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
     expect(capturado.posts).toHaveLength(0);
   });
 

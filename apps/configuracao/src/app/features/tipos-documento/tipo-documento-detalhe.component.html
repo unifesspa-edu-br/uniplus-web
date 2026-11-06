@@ -1,0 +1,99 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [heading]="tipo()?.nome ?? 'Tipo de documento'"
+  ariaLabel="Detalhe do tipo de documento"
+  focoInicial="titulo"
+  position="right"
+>
+  @if (aberto() && tipo(); as tipo) {
+    <div
+      class="form-drawer__form"
+      role="region"
+      tabindex="0"
+      aria-label="Dados do tipo de documento"
+    >
+      @if (situacao(); as aprovacao) {
+        <cfg-situacao-da-aprovacao
+          [situacao]="aprovacao.situacao"
+          [classificacaoRecomendada]="aprovacao.classificacaoRecomendada"
+          [justificativa]="aprovacao.justificativa"
+        />
+      }
+      <section class="cfg-detalhe-secao">
+        <h3 class="cfg-detalhe-secao__titulo">O documento</h3>
+        <dl class="cfg-detalhe">
+          <div>
+            <dt>Código</dt>
+            <dd>
+              <code>{{ tipo.codigo }}</code>
+            </dd>
+          </div>
+          <div>
+            <dt>Descrição</dt>
+            <dd>{{ tipo.descricao || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Categoria</dt>
+            <dd>
+              @if (categoria(); as resolucao) {
+                <ui-lookup-label [resolucao]="resolucao" />
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Tipo equivalente</dt>
+            <dd>
+              @if (tipo.tipoEquivalente) {
+                <code>{{ tipo.tipoEquivalente }}</code>
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Formatos aceitos</dt>
+            <dd>{{ tipo.formatosAceitos || '—' }}</dd>
+          </div>
+          <div>
+            <dt>Tamanho máximo</dt>
+            <dd>{{ tamanhoLabel(tipo.tamanhoMaximoMb) }}</dd>
+          </div>
+          <div>
+            <dt>Cadastrado em</dt>
+            <dd>{{ formatarData(tipo.criadoEm) }}</dd>
+          </div>
+        </dl>
+      </section>
+      <cfg-detalhe-da-protecao [protecao]="tipo" />
+      <ng-container *authTemPermissao="permissaoDeManter">
+        <cfg-historico-da-protecao cadastro="TIPO_DOCUMENTO" [itemId]="tipo.id" />
+      </ng-container>
+    </div>
+    <div class="form-drawer__footer">
+      <button type="button" class="btn btn--tertiary btn--rect" (click)="aberto.set(false)">
+        Fechar
+      </button>
+      <ng-container *authTemPermissao="permissaoDeManter">
+        @if (situacao()?.situacao === 'AJUSTE_RECOMENDADO') {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="indisponivel() ? 'true' : null"
+            (click)="indisponivel() ? null : aceitar.emit(tipo)"
+          >
+            Aceitar recomendação
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn--primary"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="indisponivel() ? null : editar.emit(tipo)"
+        >
+          Editar
+        </button>
+      </ng-container>
+    </div>
+  }
+</ui-drawer>

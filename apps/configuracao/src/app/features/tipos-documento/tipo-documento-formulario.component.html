@@ -1,0 +1,280 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de tipo de documento"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  @if (categorias().comErro) {
+    <ui-alert variant="warning" heading="Categorias não carregadas">
+      Sem o catálogo de categorias não é possível classificar o tipo de documento.
+      <div class="list-state__retry">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [disabled]="salvando()"
+          (click)="recarregarCategorias.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  }
+
+  <cfg-tipo-documento-avisos [decisao]="decisao()" [avisaNovaAprovacao]="avisaNovaAprovacao()" />
+
+  <form
+    [formGroup]="form()"
+    id="cfg-tipo-documento-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <div class="form-grid">
+        @let erroCampoCodigo = erroDoCampo('codigo');
+        <label class="field" [class.is-error]="erroCampoCodigo">
+          <span class="field__label is-required">Código</span>
+          <input
+            class="input cfg-input-uppercase"
+            type="text"
+            placeholder="Ex.: LAUDO_MEDICO"
+            formControlName="codigo"
+            aria-required="true"
+            [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+            [attr.aria-describedby]="
+              erroCampoCodigo ? 'cfg-tdoc-codigo-dica cfg-tdoc-codigo-erro' : 'cfg-tdoc-codigo-dica'
+            "
+          />
+          <span class="field__hint" id="cfg-tdoc-codigo-dica">
+            Identidade do cadastro: caixa alta, começando por letra, com letras, números e
+            sublinhado, de 2 a 50 caracteres. Único entre os tipos ativos. Sugerido a partir do nome
+            e editável antes de salvar.
+          </span>
+          @if (erroCampoCodigo) {
+            <span class="field__error" id="cfg-tdoc-codigo-erro">{{ erroCampoCodigo }}</span>
+          }
+        </label>
+        @let erroCategoria = erroDoCampo('categoria');
+        <label class="field" [class.is-error]="erroCategoria">
+          <span class="field__label is-required">Categoria</span>
+          <select
+            class="select"
+            formControlName="categoria"
+            aria-required="true"
+            [attr.aria-busy]="categorias().pendente ? 'true' : null"
+            [attr.aria-invalid]="erroCategoria ? 'true' : null"
+            [attr.aria-describedby]="
+              erroCategoria
+                ? 'cfg-td-categoria-dica cfg-td-categoria-erro'
+                : 'cfg-td-categoria-dica'
+            "
+          >
+            <option value="">Selecione…</option>
+            @if (categorias().foraDasOpcoes; as codigoAtual) {
+              <option [value]="codigoAtual">{{ categorias().rotuloForaDasOpcoes }}</option>
+            }
+            @for (opcao of categorias().opcoes; track opcao.id) {
+              <option [value]="opcao.codigo">{{ opcao.nome }}</option>
+            }
+          </select>
+          <span class="field__hint" id="cfg-td-categoria-dica">{{ categorias().dica }}</span>
+          @if (erroCategoria) {
+            <span class="field__error" id="cfg-td-categoria-erro">{{ erroCategoria }}</span>
+          }
+        </label>
+      </div>
+
+      @let erroNome = erroDoCampo('nome');
+      <label class="field form-grid__full" [class.is-error]="erroNome">
+        <span class="field__label is-required">Nome</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="nome"
+          aria-required="true"
+          [attr.aria-invalid]="erroNome ? 'true' : null"
+          [attr.aria-describedby]="erroNome ? 'cfg-tdoc-nome-erro' : null"
+        />
+        @if (erroNome) {
+          <span class="field__error" id="cfg-tdoc-nome-erro">{{ erroNome }}</span>
+        }
+      </label>
+
+      @let erroDescricao = erroDoCampo('descricao');
+      <label class="field form-grid__full" [class.is-error]="erroDescricao">
+        <span class="field__label">Descrição</span>
+        <textarea
+          class="textarea"
+          rows="3"
+          formControlName="descricao"
+          [attr.aria-invalid]="erroDescricao ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDescricao
+              ? 'cfg-tdoc-descricao-dica cfg-tdoc-descricao-erro'
+              : 'cfg-tdoc-descricao-dica'
+          "
+        ></textarea>
+        <span class="field__hint" id="cfg-tdoc-descricao-dica">
+          Observação classificatória — não inclui regra material (validade, assinatura, idade de
+          emissão).
+        </span>
+        @if (erroDescricao) {
+          <span class="field__error" id="cfg-tdoc-descricao-erro">{{ erroDescricao }}</span>
+        }
+      </label>
+
+      @let erroEquivalente = erroDoCampo('tipoEquivalente');
+      <label class="field form-grid__full" [class.is-error]="erroEquivalente">
+        <span class="field__label">Tipo equivalente</span>
+        <input
+          class="input cfg-input-uppercase"
+          type="text"
+          formControlName="tipoEquivalente"
+          [attr.aria-invalid]="erroEquivalente ? 'true' : null"
+          [attr.aria-describedby]="
+            erroEquivalente
+              ? 'cfg-tdoc-equivalente-dica cfg-tdoc-equivalente-erro'
+              : 'cfg-tdoc-equivalente-dica'
+          "
+        />
+        <span class="field__hint" id="cfg-tdoc-equivalente-dica">
+          Código de outro tipo equivalente (apenas rótulo classificatório, sem vínculo). Não pode
+          ser igual ao próprio código.
+        </span>
+        @if (erroEquivalente) {
+          <span class="field__error" id="cfg-tdoc-equivalente-erro">{{ erroEquivalente }}</span>
+        }
+      </label>
+
+      <fieldset class="field form-grid__full">
+        <legend class="field__label">Formatos aceitos</legend>
+        <div class="cfg-tipo-documento-formatos">
+          @for (opcao of formatos; track opcao.key) {
+            <label class="checkbox">
+              <input type="checkbox" [formControlName]="opcao.key" />
+              <span class="checkbox__box"></span>
+              {{ opcao.label }}
+            </label>
+          }
+        </div>
+        <span class="field__hint">
+          Orientativo — extensões de arquivo aceitas para o upload deste documento.
+        </span>
+      </fieldset>
+
+      @let erroTamanho = erroDoCampo('tamanhoMaximoMb');
+      <label class="field" [class.is-error]="erroTamanho">
+        <span class="field__label">Tamanho máximo (MB)</span>
+        <input
+          class="input"
+          type="number"
+          min="1"
+          step="1"
+          formControlName="tamanhoMaximoMb"
+          [attr.aria-invalid]="erroTamanho ? 'true' : null"
+          [attr.aria-describedby]="
+            erroTamanho ? 'cfg-tdoc-tamanho-dica cfg-tdoc-tamanho-erro' : 'cfg-tdoc-tamanho-dica'
+          "
+        />
+        <span class="field__hint" id="cfg-tdoc-tamanho-dica"
+          >Quando informado, deve ser um inteiro positivo (≥ 1).</span
+        >
+        @if (erroTamanho) {
+          <span class="field__error" id="cfg-tdoc-tamanho-erro">{{ erroTamanho }}</span>
+        }
+      </label>
+
+      <fieldset class="field form-grid__full">
+        <legend class="form-section__title">Proteção de dados (LGPD)</legend>
+        <div class="form-grid">
+          @let erroClassificacao = erroDoCampo('classificacaoProtecao');
+          <label class="field" [class.is-error]="erroClassificacao">
+            <span class="field__label is-required">Classificação</span>
+            <select
+              class="select"
+              formControlName="classificacaoProtecao"
+              aria-required="true"
+              [attr.aria-invalid]="erroClassificacao ? 'true' : null"
+              [attr.aria-describedby]="erroClassificacao ? 'cfg-tdoc-classificacao-erro' : null"
+            >
+              <option value="">Selecione…</option>
+              @for (opcao of classificacoes; track opcao.valor) {
+                <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+              }
+            </select>
+            @if (erroClassificacao) {
+              <span class="field__error" id="cfg-tdoc-classificacao-erro">{{
+                erroClassificacao
+              }}</span>
+            }
+          </label>
+          @let erroHipotese = erroDoCampo('hipoteseLegal');
+          <label class="field" [class.is-error]="erroHipotese">
+            <span class="field__label is-required">Hipótese legal</span>
+            <select
+              class="select"
+              formControlName="hipoteseLegal"
+              aria-required="true"
+              [attr.aria-invalid]="erroHipotese ? 'true' : null"
+              [attr.aria-describedby]="erroHipotese ? 'cfg-tdoc-hipotese-erro' : null"
+            >
+              <option value="">Selecione…</option>
+              @for (opcao of hipoteses(); track opcao.valor) {
+                <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+              }
+            </select>
+            @if (erroHipotese) {
+              <span class="field__error" id="cfg-tdoc-hipotese-erro">{{ erroHipotese }}</span>
+            }
+          </label>
+        </div>
+        @let erroFinalidade = erroDoCampo('finalidadeTratamento');
+        <label class="field form-grid__full" [class.is-error]="erroFinalidade">
+          <span class="field__label is-required">Finalidade do tratamento</span>
+          <textarea
+            class="textarea"
+            rows="2"
+            formControlName="finalidadeTratamento"
+            aria-required="true"
+            [attr.aria-invalid]="erroFinalidade ? 'true' : null"
+            [attr.aria-describedby]="erroFinalidade ? 'cfg-tdoc-finalidade-erro' : null"
+          ></textarea>
+          @if (erroFinalidade) {
+            <span class="field__error" id="cfg-tdoc-finalidade-erro">{{ erroFinalidade }}</span>
+          }
+        </label>
+      </fieldset>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-tipo-documento-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ rotuloDoBotao() }}
+    </button>
+  </div>
+</ui-drawer>

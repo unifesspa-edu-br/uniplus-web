@@ -143,6 +143,9 @@ async function mockLeitura(page: Page, lista: readonly TipoDocumentoDto[]): Prom
   await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (route) =>
     jsonRoute(route, categoriasSeed),
   );
+  await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, (route) =>
+    jsonRoute(route, []),
+  );
 }
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {

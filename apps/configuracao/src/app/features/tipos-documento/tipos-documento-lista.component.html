@@ -1,0 +1,172 @@
+<section class="panel" aria-labelledby="cfg-tipos-documento-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-tipos-documento-list-title" tabindex="-1">Tipos de documento</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+    <div class="panel-head__actions">
+      <ng-container *authTemPermissao="permissaoDeManter">
+        @if (podeSolicitar()) {
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [attr.aria-disabled]="indisponivel() ? 'true' : null"
+            (click)="indisponivel() ? null : solicitar.emit()"
+          >
+            Enviar solicitação
+          </button>
+        }
+      </ng-container>
+      <button
+        type="button"
+        id="cfg-tipos-documento-novo"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Novo tipo
+      </button>
+    </div>
+  </div>
+
+  <ui-lookup-alert [falhas]="lookupsComFalha()" />
+
+  @if (linhas().length > 0) {
+    <div
+      class="table-responsive table-responsive--acoes-fixas table-responsive--compacta"
+      role="region"
+      tabindex="0"
+      aria-label="Lista de tipos de documento"
+    >
+      <table>
+        <caption class="sr-only">
+          Tipos de documento, com categoria, formatos aceitos, sensibilidade e situação da
+          aprovação. Use o nome para abrir o detalhe.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Categoria</th>
+            <th scope="col">Formatos aceitos</th>
+            <th scope="col">Sensibilidade</th>
+            <th scope="col">Situação</th>
+            <th scope="col" class="table-responsive__actions">
+              <span class="sr-only">Ações</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linha of linhas(); track linha.tipo.id) {
+            <tr [attr.data-tipo-documento-id]="linha.tipo.id">
+              <td data-label="Código">
+                <code>{{ linha.tipo.codigo }}</code>
+              </td>
+              <td data-label="Nome">
+                <button
+                  type="button"
+                  class="table-responsive__alvo"
+                  [attr.aria-label]="'Ver o detalhe de ' + linha.tipo.nome"
+                  (click)="detalhar.emit(linha.tipo)"
+                >
+                  {{ linha.tipo.nome }}
+                </button>
+                @if (linha.tipo.tipoEquivalente) {
+                  <div class="table-responsive__meta">
+                    Equiv.: <code>{{ linha.tipo.tipoEquivalente }}</code>
+                  </div>
+                }
+              </td>
+              <td data-label="Categoria" class="u-nowrap-desktop">
+                <ui-tag>
+                  <ui-lookup-label [resolucao]="linha.categoria" />
+                </ui-tag>
+              </td>
+              <td data-label="Formatos aceitos" class="u-caption u-nowrap-desktop">
+                {{ linha.tipo.formatosAceitos || '—' }}
+              </td>
+              <td data-label="Sensibilidade" class="u-nowrap-desktop">
+                {{ rotuloDaSensibilidade(linha.tipo.classificacaoProtecao) }}
+              </td>
+              <td data-label="Situação" class="u-nowrap-desktop">
+                @if (linha.situacao === 'ilegivel') {
+                  <span class="u-caption">Não foi possível ler a situação</span>
+                } @else if (linha.situacao) {
+                  <cfg-situacao-da-aprovacao
+                    [situacao]="linha.situacao.situacao"
+                    [emLista]="true"
+                  />
+                } @else {
+                  <span class="u-caption">—</span>
+                }
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar tipo de documento ' + linha.tipo.codigo"
+                  tooltip="Editar tipo de documento"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="editar.emit(linha.tipo)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover tipo de documento ' + linha.tipo.codigo"
+                  tooltip="Remover tipo de documento"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="remover.emit(linha.tipo)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhum tipo de documento encontrado"
+        description="Ajuste a busca ou a categoria para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="indisponivel()"
+          (click)="limparFiltros.emit()"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum tipo de documento cadastrado"
+        description="Cadastre o primeiro tipo de documento para compor exigências documentais de editais."
+      >
+        <button
+          type="button"
+          class="btn btn--primary"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
+        >
+          Novo tipo
+        </button>
+      </ui-empty-state>
+    }
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de tipos de documento"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>
