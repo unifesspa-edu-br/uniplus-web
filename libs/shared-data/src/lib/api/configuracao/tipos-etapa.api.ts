@@ -25,8 +25,8 @@ export interface TiposEtapaQuery {
  * `TipoEtapaNaoEncontradoOuInativo` o que não existe ou não está ativo.
  *
  * **A listagem traz só os tipos ativos**, e o endpoint aceita apenas paginação.
- * Uma etapa gravada pode citar um tipo que já saiu da listagem: quem consome
- * trata o id sem correspondência, sem deixar o vínculo existente sem rótulo.
+ * Uma etapa gravada pode citar um tipo que já saiu da listagem: o nome desse tipo
+ * está na cópia que o processo congelou, não no cadastro.
  *
  * Cada tipo declara também se admite compor a nota final e se admite eliminar
  * candidato. É desse par que o wizard tira quais caracteres oferecer numa etapa

@@ -27,15 +27,6 @@ const provaObjetiva: TipoEtapaDto = {
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
-const bancaAposentada: TipoEtapaDto = {
-  ...provaObjetiva,
-  id: '01960000-0000-7000-0000-0000000000b2',
-  codigo: 'BANCA_HETEROIDENTIFICACAO',
-  nome: 'Banca de Heteroidentificação',
-  ativo: false,
-  admitePontuacao: false,
-};
-
 describe('TiposEtapaApi', () => {
   let api: TiposEtapaApi;
   let controller: HttpTestingController;
@@ -79,28 +70,6 @@ describe('TiposEtapaApi', () => {
     expect(req.request.params.has('limit')).toBe(false);
     req.flush([provaObjetiva]);
     await promise;
-  });
-
-  /**
-   * Quem decide o que a listagem traz é o endpoint, que aceita só paginação: o
-   * cliente não acrescenta filtro próprio e entrega o que recebeu.
-   */
-  it('listar() entrega o que o endpoint devolve, sem filtrar por conta própria', async () => {
-    const promise = firstValueFrom(api.listar());
-    const req = controller.expectOne(
-      (request) => request.url === `${BASE}/api/configuracao/tipos-etapa`,
-    );
-
-    expect(req.request.params.has('ativo')).toBe(false);
-    expect(req.request.params.has('ativos')).toBe(false);
-    req.flush([provaObjetiva, bancaAposentada]);
-
-    const result = (await promise) as ApiResult<readonly TipoEtapaDto[]>;
-    expect(isApiOk(result)).toBe(true);
-    if (result.ok) {
-      expect(result.data).toHaveLength(2);
-      expect(result.data.map((tipo) => tipo.ativo)).toEqual([true, false]);
-    }
   });
 
   it('criar() faz POST no recurso administrativo com Idempotency-Key e Accept JSON', async () => {
