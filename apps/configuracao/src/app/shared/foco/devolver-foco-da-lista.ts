@@ -8,7 +8,8 @@ const SELETOR_DA_ACAO: Readonly<Record<AcaoDaLinha, string>> = {
   editar: 'button[aria-label^="Editar "]',
   remover: 'button[aria-label^="Remover "]',
   revogar: 'button[aria-label^="Revogar "]',
-  situacao: ':is(button[aria-label^="Ativar "], button[aria-label^="Desativar "])',
+  situacao:
+    ':is(button[aria-label^="Ativar "], button[aria-label^="Desativar "], button[aria-label^="Reativar "])',
 };
 
 /** O valor como literal entre aspas duplas de um seletor de atributo. */

@@ -19,7 +19,9 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
             <button type="button" [attr.aria-label]="'Revogar item ' + id">v</button>
             <button
               type="button"
-              [attr.aria-label]="(ativos().includes(id) ? 'Desativar item ' : 'Ativar item ') + id"
+              [attr.aria-label]="
+                (ativos().includes(id) ? 'Desativar item ' : rotuloDoInativo()) + id
+              "
             >
               s
             </button>
@@ -32,6 +34,7 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
 class ListaDeTesteComponent {
   readonly ids = input.required<readonly string[]>();
   readonly ativos = input<readonly string[]>([]);
+  readonly rotuloDoInativo = input('Ativar item ');
   readonly gravando = input.required<boolean>();
   readonly carregando = input.required<boolean>();
   readonly foco = devolverFocoDaLista({
@@ -125,6 +128,19 @@ describe('devolverFocoDaLista', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect(document.activeElement).toBe(botao('Ativar item b'));
+  });
+
+  it('a situação também acha o botão "Reativar" da linha acionada', async () => {
+    fixture.componentRef.setInput('rotuloDoInativo', 'Reativar item ');
+    fixture.componentRef.setInput('ativos', ['b']);
+    fixture.detectChanges();
+    fixture.componentInstance.foco.registrar({ acao: 'situacao', id: 'b' });
+    await escrever({ aposGravar: true });
+    fixture.componentRef.setInput('ativos', []);
+    fixture.componentRef.setInput('carregando', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(botao('Reativar item b'));
   });
 
   it('espera a recarga terminar antes de devolver o foco', async () => {
