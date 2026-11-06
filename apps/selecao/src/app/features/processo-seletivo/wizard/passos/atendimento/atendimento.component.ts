@@ -31,7 +31,7 @@ import {
   comoCondicaoSelecionada,
   ehPcd,
 } from './oferta-de-atendimento';
-import { mensagemDeInativos, referenciasInativas } from './referencias-inativas';
+import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removidas';
 
 /**
  * A oferta de atendimento especializado do processo (UNI-REQ-0012), gravada
@@ -78,7 +78,7 @@ export class AtendimentoPassoComponent {
 
   /*
    * Em consulta, a oferta lida é a gravada: o rascunho guarda o nome de cada referência, e o
-   * catálogo vivo, que pode ter inativado alguma, não muda o que o processo publicou.
+   * catálogo vivo, que pode ter removido alguma, não muda o que o processo publicou.
    */
   readonly nomesDasCondicoes = computed(() =>
     this.atendimento().condicoes.map((item) => item.nome),
@@ -93,7 +93,7 @@ export class AtendimentoPassoComponent {
   /**
    * A condição PcD está entre as selecionadas: é o que libera tipos de deficiência (ADR-0067).
    * Deriva do **rascunho**, não do catálogo ativo: depender de `catalogos.condicaoPcd()` faria a
-   * seção de tipos sumir, e `validar()` recusar sem saída, assim que a condição fosse inativada
+   * seção de tipos sumir, e `validar()` recusar sem saída, assim que a condição fosse removida
    * ou o carregamento falhasse, mesmo com ela marcada e visível na tela.
    */
   readonly pcdSelecionada = computed(() =>
@@ -102,7 +102,7 @@ export class AtendimentoPassoComponent {
 
   /**
    * O catálogo confirmou sucesso: só então a tela sabe distinguir "saiu do cadastro" de "ainda não
-   * sei". Enquanto carregando ou depois de uma falha, as listas de inativas capturam tudo que está
+   * sei". Enquanto carregando ou depois de uma falha, as listas de removidas capturam tudo que está
    * selecionado, e qualquer controle que as mutasse nesse estado apagaria parte de uma oferta
    * gravada sem possibilidade de desfazer.
    */
@@ -111,19 +111,19 @@ export class AtendimentoPassoComponent {
   );
 
   /** Referências que o rascunho guarda mas o cadastro ativo já não tem: seguem visíveis, sem opção de escolher de novo. */
-  readonly condicoesInativas = computed(() =>
-    referenciasInativas(this.atendimento().condicoes, this.catalogos.condicoes()),
+  readonly condicoesRemovidas = computed(() =>
+    referenciasRemovidas(this.atendimento().condicoes, this.catalogos.condicoes()),
   );
 
-  readonly recursosInativos = computed(() =>
-    referenciasInativas(this.atendimento().recursos, this.catalogos.recursos()),
+  readonly recursosRemovidos = computed(() =>
+    referenciasRemovidas(this.atendimento().recursos, this.catalogos.recursos()),
   );
 
-  readonly tiposDeficienciaInativos = computed(() =>
-    referenciasInativas(this.atendimento().tiposDeficiencia, this.catalogos.tiposDeficiencia()),
+  readonly tiposDeficienciaRemovidos = computed(() =>
+    referenciasRemovidas(this.atendimento().tiposDeficiencia, this.catalogos.tiposDeficiencia()),
   );
 
-  /** "Marcar todas" só olha para as condições ativas: referências inativas não entram na conta. */
+  /** "Marcar todas" só olha para as condições ativas: referências removidas não entram na conta. */
   readonly todasAsCondicoesSelecionadas = computed(() => {
     const ativas = this.catalogos.condicoes();
     return ativas.length > 0 && ativas.every((item) => this.condicaoMarcada(item.id));
@@ -174,14 +174,14 @@ export class AtendimentoPassoComponent {
   }
 
   /**
-   * Marca ou desmarca de uma vez só as condições ativas do catálogo. Referências inativas
+   * Marca ou desmarca de uma vez só as condições ativas do catálogo. Referências removidas
    * preservadas no rascunho não são tocadas: seguem removíveis apenas individualmente.
    */
   marcarTodasAsCondicoes(marcar: boolean): void {
     this.store.patchObjectSection(
       'atendimento',
       aposMarcarTodas(
-        this.condicoesInativas(),
+        this.condicoesRemovidas(),
         this.catalogos.condicoes().map(comoCondicaoSelecionada),
         marcar,
       ),
@@ -189,17 +189,17 @@ export class AtendimentoPassoComponent {
   }
 
   /**
-   * Marca ou desmarca de uma vez só os recursos ativos do catálogo. Referências inativas
+   * Marca ou desmarca de uma vez só os recursos ativos do catálogo. Referências removidas
    * preservadas no rascunho não são tocadas.
    */
   marcarTodosOsRecursos(marcar: boolean): void {
-    const inativos = this.recursosInativos();
+    const removidos = this.recursosRemovidos();
     const proximo = marcar
       ? [
-          ...inativos,
+          ...removidos,
           ...this.catalogos.recursos().map((item) => ({ id: item.id, nome: item.nome })),
         ]
-      : [...inativos];
+      : [...removidos];
     this.store.patchObjectSection('atendimento', { recursos: proximo });
   }
 
@@ -211,13 +211,13 @@ export class AtendimentoPassoComponent {
     this.store.patchObjectSection('atendimento', { tiposDeficiencia: proximo });
   }
 
-  /** O que mudou, para quem não vê a tela: a remoção de uma referência inativa tirava a linha do DOM em silêncio. */
+  /** O que mudou, para quem não vê a tela: a remoção de uma referência removida tirava a linha do DOM em silêncio. */
   readonly anuncio = signal('');
 
   private readonly injector = inject(Injector);
 
   private anunciar(
-    inativas: readonly ReferenciaDeAtendimento[],
+    removidas: readonly ReferenciaDeAtendimento[],
     remocao: {
       readonly id: string;
       readonly nome: string | undefined;
@@ -228,28 +228,28 @@ export class AtendimentoPassoComponent {
     anunciarRemocao(this.anuncio, this.injector, {
       nome: remocao.nome,
       prefixoDoId: remocao.prefixoDoId,
-      indice: inativas.findIndex((item) => item.id === remocao.id),
+      indice: removidas.findIndex((item) => item.id === remocao.id),
       tituloDaSecao: remocao.tituloDaSecao,
     });
   }
 
-  removerCondicaoInativa(id: string): void {
+  removerCondicaoRemovida(id: string): void {
     const atual = this.atendimento().condicoes;
-    this.anunciar(this.condicoesInativas(), {
+    this.anunciar(this.condicoesRemovidas(), {
       id,
       nome: atual.find((item) => item.id === id)?.nome,
-      prefixoDoId: 'atend-cond-inativa',
+      prefixoDoId: 'atend-cond-removida',
       tituloDaSecao: 'atend-secao-condicoes',
     });
     this.store.patchObjectSection('atendimento', aposRemover(atual, id));
   }
 
-  removerRecursoInativo(id: string): void {
+  removerRecursoRemovido(id: string): void {
     const atual = this.atendimento().recursos;
-    this.anunciar(this.recursosInativos(), {
+    this.anunciar(this.recursosRemovidos(), {
       id,
       nome: atual.find((item) => item.id === id)?.nome,
-      prefixoDoId: 'atend-rec-inativo',
+      prefixoDoId: 'atend-rec-removido',
       tituloDaSecao: 'atend-secao-recursos',
     });
     this.store.patchObjectSection('atendimento', {
@@ -257,12 +257,12 @@ export class AtendimentoPassoComponent {
     });
   }
 
-  removerTipoDeficienciaInativo(id: string): void {
+  removerTipoDeficienciaRemovido(id: string): void {
     const atual = this.atendimento().tiposDeficiencia;
-    this.anunciar(this.tiposDeficienciaInativos(), {
+    this.anunciar(this.tiposDeficienciaRemovidos(), {
       id,
       nome: atual.find((item) => item.id === id)?.nome,
-      prefixoDoId: 'atend-tipo-inativo',
+      prefixoDoId: 'atend-tipo-removido',
       tituloDaSecao: 'atend-secao-tipos',
     });
     this.store.patchObjectSection('atendimento', {
@@ -271,13 +271,13 @@ export class AtendimentoPassoComponent {
   }
 
   /**
-   * "Inativo no cadastro" só se sustenta quando o catálogo carregou com sucesso: carregando ou em
+   * "Removido do cadastro" só se sustenta quando o catálogo carregou com sucesso: carregando ou em
    * falha, o catálogo comparado está vazio, e não é porque os itens saíram dele. "Ainda não sei"
    * não é "não existe mais", nem no rótulo.
    */
-  rotuloDeSituacaoInativa(): string {
+  rotuloDeSituacaoRemovida(): string {
     if (this.catalogos.carregando()) return 'Carregando catálogo…';
-    return this.catalogos.erro() !== null ? 'Catálogo indisponível' : 'Inativo no cadastro';
+    return this.catalogos.erro() !== null ? 'Catálogo indisponível' : 'Removido do cadastro';
   }
 
   rotuloDeAvanco(): string {
@@ -331,23 +331,24 @@ export class AtendimentoPassoComponent {
       );
     }
 
-    // A checagem de referência inativa só é confiável depois que os três catálogos carregaram:
+    // A checagem de referência removida só é confiável depois que os três catálogos carregaram:
     // antes disso eles estão vazios, e "não sei ainda" seria confundido com "não existe mais",
     // mandando o operador apagar uma oferta válida por causa de uma indisponibilidade temporária.
     // O erro de carga já está no banner do template.
-    if (this.catalogoConfirmado()) mensagens.push(...this.mensagensDeInativos());
+    if (this.catalogoConfirmado()) mensagens.push(...this.mensagensDeRemovidos());
 
     return mensagens.length > 0 ? { valid: false, messages: mensagens } : { valid: true };
   }
 
-  private mensagensDeInativos(): string[] {
+  private mensagensDeRemovidos(): string[] {
     return [
-      mensagemDeInativos('a condição', 'as condições', this.condicoesInativas()),
-      mensagemDeInativos('o recurso', 'os recursos', this.recursosInativos()),
-      mensagemDeInativos(
+      mensagemDeRemovidos('a condição', 'as condições', this.condicoesRemovidas(), 'feminino'),
+      mensagemDeRemovidos('o recurso', 'os recursos', this.recursosRemovidos(), 'masculino'),
+      mensagemDeRemovidos(
         'o tipo de deficiência',
         'os tipos de deficiência',
-        this.tiposDeficienciaInativos(),
+        this.tiposDeficienciaRemovidos(),
+        'masculino',
       ),
     ].filter((mensagem): mensagem is string => mensagem !== undefined);
   }

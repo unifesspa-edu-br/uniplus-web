@@ -11,7 +11,7 @@ export interface AtendimentoCondicaoSelecionada {
 
 /**
  * Um recurso de acessibilidade ou tipo de deficiência que o processo oferta, por id do cadastro
- * de Configuração. O `nome` acompanha o id para a referência já inativada continuar legível.
+ * de Configuração. O `nome` acompanha o id para a referência já removida do cadastro continuar legível.
  */
 export interface ReferenciaDeAtendimento {
   readonly id: string;

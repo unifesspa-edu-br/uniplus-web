@@ -21,11 +21,29 @@ const RECURSO_ID = '01960000-0000-7000-0000-0000000000e1';
 const TIPO_ID = '01960000-0000-7000-0000-0000000000f1';
 
 const CONDICOES = [
-  { id: PCD_ID, codigo: 'PCD', nome: 'Pessoa com deficiência', descricao: null, criadoEm: '2026-09-01T00:00:00Z' },
-  { id: OUTRA_CONDICAO_ID, codigo: 'LACTANTE', nome: 'Lactante', descricao: null, criadoEm: '2026-09-01T00:00:00Z' },
+  {
+    id: PCD_ID,
+    codigo: 'PCD',
+    nome: 'Pessoa com deficiência',
+    descricao: null,
+    criadoEm: '2026-09-01T00:00:00Z',
+  },
+  {
+    id: OUTRA_CONDICAO_ID,
+    codigo: 'LACTANTE',
+    nome: 'Lactante',
+    descricao: null,
+    criadoEm: '2026-09-01T00:00:00Z',
+  },
 ];
 const RECURSOS = [
-  { id: RECURSO_ID, codigo: 'LEDOR', nome: 'Ledor', descricao: 'Auxílio para leitura', criadoEm: '2026-09-01T00:00:00Z' },
+  {
+    id: RECURSO_ID,
+    codigo: 'LEDOR',
+    nome: 'Ledor',
+    descricao: 'Auxílio para leitura',
+    criadoEm: '2026-09-01T00:00:00Z',
+  },
 ];
 const TIPOS_DEFICIENCIA = [
   {
@@ -172,10 +190,10 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * Em `removerCondicaoInativa()`, desmarcar uma
+   * Em `removerCondicaoRemovida()`, desmarcar uma
    * condição PcD só pode esvaziar os tipos de deficiência quando, depois da
    * desmarcação, não resta nenhuma outra condição de código PcD marcada — se
-   * o operador tinha uma condição PcD hidratada (inativa) e marcou também a
+   * o operador tinha uma condição PcD hidratada (removida) e marcou também a
    * ativa, desmarcar a ativa não pode apagar uma seleção que o pré-requisito
    * do ADR-0067 ainda sustenta.
    */
@@ -287,10 +305,12 @@ describe('AtendimentoPassoComponent', () => {
     detectar();
 
     const gravacao = componente.persistir();
-    controller.expectOne(ROTA_ATENDIMENTO).flush(
-      { type: 'about:blank', title: 'Recusado.', status: 422, traceId: 't' },
-      { status: 422, statusText: 'Unprocessable Entity' },
-    );
+    controller
+      .expectOne(ROTA_ATENDIMENTO)
+      .flush(
+        { type: 'about:blank', title: 'Recusado.', status: 422, traceId: 't' },
+        { status: 422, statusText: 'Unprocessable Entity' },
+      );
     await gravacao;
     expect(componente.erroDeGravacao()).not.toBeNull();
 
@@ -302,18 +322,18 @@ describe('AtendimentoPassoComponent', () => {
 
   /**
    * A condição PcD segue marcada no rascunho,
-   * mas o catálogo ativo não a tem mais (inativada, ou falhou ao carregar) —
+   * mas o catálogo ativo não a tem mais (removida, ou falhou ao carregar) —
    * `pcdSelecionada()` não pode depender do catálogo, senão a seção de tipos
    * de deficiência some sem que o operador tenha como corrigir pela tela.
    *
    * Isso não torna o registro gravável do jeito que está: a mesma condição
-   * inativa também aparece em `condicoesInativas()`, e o
+   * removida também aparece em `condicoesRemovidas()`, e o
    * `DefinirOfertaAtendimentoCommandHandler` recusaria o id dela com 422 —
    * `validar()` precisa dizer isso antes da ida ao servidor, nomeando a
    * condição, sem esconder a seção de tipos de deficiência que o operador
    * ainda precisa revisar.
    */
-  it('mantém a seção de tipos de deficiência visível, mas recusa gravar enquanto a condição PcD estiver inativa', () => {
+  it('mantém a seção de tipos de deficiência visível, mas recusa gravar enquanto a condição PcD estiver removida', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-antigo-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência' }],
       tiposDeficiencia: [{ id: TIPO_ID, nome: 'Deficiência visual' }],
@@ -328,14 +348,14 @@ describe('AtendimentoPassoComponent', () => {
     expect(resultado.messages?.some((m) => m.includes('Pessoa com deficiência'))).toBe(true);
   });
 
-  it('remover a condição PcD inativa também esvazia os tipos de deficiência', () => {
+  it('remover a condição PcD removida também esvazia os tipos de deficiência', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-antigo-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência (antiga)' }],
       tiposDeficiencia: [{ id: TIPO_ID, nome: 'Deficiência visual' }],
     });
     detectar();
 
-    componente.removerCondicaoInativa('id-antigo-pcd');
+    componente.removerCondicaoRemovida('id-antigo-pcd');
     detectar();
 
     expect(store.draft().atendimento.condicoes).toEqual([]);
@@ -344,12 +364,12 @@ describe('AtendimentoPassoComponent', () => {
 
   /**
    * Se o operador já marcou a condição PcD
-   * ativa que substituiu a inativa (mesmo código, id novo), o pré-requisito
+   * ativa que substituiu a removida (mesmo código, id novo), o pré-requisito
    * do ADR-0067 continua satisfeito depois da remoção — esvaziar os tipos
    * de deficiência apagaria uma seleção válida sem motivo, só porque a
    * condição removida também era codificada como PCD.
    */
-  it('não esvazia os tipos de deficiência ao remover a condição PcD inativa quando outra condição PcD segue marcada', () => {
+  it('não esvazia os tipos de deficiência ao remover a condição PcD removida quando outra condição PcD segue marcada', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [
         { id: 'id-antigo-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência (antiga)' },
@@ -359,7 +379,7 @@ describe('AtendimentoPassoComponent', () => {
     });
     detectar();
 
-    componente.removerCondicaoInativa('id-antigo-pcd');
+    componente.removerCondicaoRemovida('id-antigo-pcd');
     detectar();
 
     expect(store.draft().atendimento.condicoes).toEqual([
@@ -383,7 +403,7 @@ describe('AtendimentoPassoComponent', () => {
   it('em consulta, lista a oferta gravada como texto, sem caixa de seleção', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: PCD_ID, codigo: 'PCD', nome: 'Pessoa com deficiência' }],
-      tiposDeficiencia: [{ id: 'id-antigo', nome: 'Tipo já inativado' }],
+      tiposDeficiencia: [{ id: 'id-antigo', nome: 'Tipo já removido' }],
       recursos: [],
     });
     store.remoteSnapshot.set({ status: 'publicado' } as never);
@@ -396,28 +416,29 @@ describe('AtendimentoPassoComponent', () => {
         (li) => li.textContent?.trim() ?? '',
       );
     expect(lida('atend-secao-condicoes')).toEqual(['Pessoa com deficiência']);
-    // O processo publicou o tipo; o catálogo tê-lo inativado depois não muda a leitura.
-    expect(lida('atend-secao-tipos')).toEqual(['Tipo já inativado']);
+    // O processo publicou o tipo; o catálogo tê-lo removido depois não muda a leitura.
+    expect(lida('atend-secao-tipos')).toEqual(['Tipo já removido']);
     expect(
       elemento.querySelector('[aria-labelledby="atend-secao-recursos"]')?.textContent?.trim(),
     ).toBe('Nenhum recurso de acessibilidade oferecido');
-    expect(elemento.textContent).not.toContain('Inativo no cadastro');
+    expect(elemento.textContent).not.toContain('Removido do cadastro');
   });
 
-  it('mantém referência inativa visível e permite removê-la', () => {
-    // Simula hidratação de um recurso que já saiu do cadastro ativo.
+  it('mantém referência removida visível e permite removê-la', () => {
+    // Simula hidratação de um recurso que já foi removido do cadastro.
     store.patchObjectSection('atendimento', {
       recursos: [{ id: 'id-antigo', nome: 'Recurso descontinuado' }],
     });
     detectar();
 
     expect(elemento.textContent).toContain('Recurso descontinuado');
-    expect(elemento.textContent).toContain('Inativo no cadastro');
+    expect(elemento.textContent).toContain('Removido do cadastro');
 
-    componente.removerRecursoInativo('id-antigo');
+    componente.removerRecursoRemovido('id-antigo');
     detectar();
 
     expect(store.draft().atendimento.recursos).toEqual([]);
+    expect(componente.anuncio()).toBe('Removido da oferta: Recurso descontinuado.');
   });
 
   /**
@@ -429,11 +450,11 @@ describe('AtendimentoPassoComponent', () => {
    * indisponibilidade de catálogo, que é exatamente o cenário para o qual
    * os snapshots embutidos existem.
    *
-   * "Inativo no cadastro" também não pode aparecer aqui: sem catálogo
+   * "Removido do cadastro" também não pode aparecer aqui: sem catálogo
    * carregado, não há como confirmar se o item realmente saiu de lá —
    * "Catálogo indisponível" é o que a tela sabe de fato.
    */
-  it('mostra as seleções já gravadas ao lado do erro de catálogo, sem tratá-las como inativas', () => {
+  it('mostra as seleções já gravadas ao lado do erro de catálogo, sem tratá-las como removidas', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-condicao-gravada', codigo: 'PCD', nome: 'Pessoa com deficiência' }],
       recursos: [{ id: 'id-recurso-gravado', nome: 'Ledor' }],
@@ -451,16 +472,16 @@ describe('AtendimentoPassoComponent', () => {
     expect(elemento.textContent).toContain('Ledor');
     expect(elemento.textContent).toContain('Deficiência visual');
     expect(elemento.textContent).toContain('Catálogo indisponível');
-    expect(elemento.textContent).not.toContain('Inativo no cadastro');
+    expect(elemento.textContent).not.toContain('Removido do cadastro');
   });
 
   /**
    * Com o catálogo indisponível,
-   * `condicoesInativas()`/`recursosInativos()`/`tiposDeficienciaInativos()`
+   * `condicoesRemovidas()`/`recursosRemovidos()`/`tiposDeficienciaRemovidos()`
    * comparam contra um catálogo ativo vazio — não porque nada está ativo,
    * mas porque a tela ainda não sabe — e a validação (introduzida para
-   * recusar referência genuinamente inativa) classificava TODA seleção
-   * gravada como inativa, mandando o operador apagar uma oferta válida e
+   * recusar referência genuinamente removida) classificava TODA seleção
+   * gravada como removida, mandando o operador apagar uma oferta válida e
    * inalterada por causa de uma indisponibilidade temporária. Seguir a
    * instrução esvaziaria as três listas e apagaria a oferta ao gravar.
    */
@@ -534,7 +555,7 @@ describe('AtendimentoPassoComponent', () => {
    * reduzida. Nenhum controle que muta as três listas pode ficar habilitado
    * enquanto a tela não sabe distinguir "saiu do cadastro" de "não sei
    * ainda" — nem os de marcar/desmarcar (vazios nesse estado, mas por
-   * defesa), nem os de remover referência inativa. E as seleções gravadas
+   * defesa), nem os de remover referência removida. E as seleções gravadas
    * seguem visíveis tanto carregando quanto em falha (achado seguinte, na
    * mesma linha): esconder tudo atrás de "Carregando…" seria o mesmo beco
    * sem saída do estado de erro, só que na porta de entrada.
@@ -581,11 +602,11 @@ describe('AtendimentoPassoComponent', () => {
    * As seleções hidratadas renderizam
    * enquanto `carregando()` é `true` —
    * mas o catálogo ativo ainda está vazio nesse momento, então
-   * `rotuloDeSituacaoInativa()` não pode dizer "Inativo no cadastro" (uma
+   * `rotuloDeSituacaoRemovida()` não pode dizer "Removido do cadastro" (uma
    * afirmação que só o catálogo carregado sustenta). "Ainda não sei" não é
    * "não existe mais", nem no rótulo.
    */
-  it('não rotula como "Inativo no cadastro" uma seleção hidratada enquanto o catálogo ainda está carregando', () => {
+  it('não rotula como "Removido do cadastro" uma seleção hidratada enquanto o catálogo ainda está carregando', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-condicao-gravada', codigo: 'PCD', nome: 'Pessoa com deficiência' }],
     });
@@ -594,8 +615,8 @@ describe('AtendimentoPassoComponent', () => {
     componente.catalogos.carregando.set(true);
     detectar();
 
-    expect(componente.rotuloDeSituacaoInativa()).not.toBe('Inativo no cadastro');
-    expect(elemento.textContent).not.toContain('Inativo no cadastro');
+    expect(componente.rotuloDeSituacaoRemovida()).not.toBe('Removido do cadastro');
+    expect(elemento.textContent).not.toContain('Removido do cadastro');
     expect(elemento.textContent).toContain('Pessoa com deficiência');
   });
 
@@ -642,10 +663,10 @@ describe('AtendimentoPassoComponent', () => {
    * O `DefinirOfertaAtendimentoCommandHandler`
    * resolve cada id no cadastro vivo e recusa com 422 quando uma referência
    * já saiu de lá — sem este diagnóstico local, "Gravar e avançar" falharia
-   * sempre que o rascunho guardasse uma referência inativa, e nada na tela
+   * sempre que o rascunho guardasse uma referência removida, e nada na tela
    * apontaria qual item é a causa.
    */
-  it('recusa validar com referência inativa marcada, nomeando o item, sem chamar o servidor', async () => {
+  it('recusa validar com referência removida marcada, nomeando o item, sem chamar o servidor', async () => {
     store.patchObjectSection('atendimento', {
       recursos: [{ id: 'id-antigo', nome: 'Recurso descontinuado' }],
     });
@@ -662,7 +683,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /** As três listas acumulam pendências — não é só a primeira encontrada. */
-  it('nomeia todas as referências inativas de uma vez, em mais de uma lista', () => {
+  it('nomeia todas as referências removidas de uma vez, em mais de uma lista', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-antigo-lact', codigo: 'LACTANTE', nome: 'Lactante (antiga)' }],
       recursos: [
@@ -676,9 +697,9 @@ describe('AtendimentoPassoComponent', () => {
 
     expect(resultado.valid).toBe(false);
     expect(resultado.messages?.some((m) => m.includes('Lactante (antiga)'))).toBe(true);
-    expect(resultado.messages?.some((m) => m.includes('Recurso A') && m.includes('Recurso B'))).toBe(
-      true,
-    );
+    expect(
+      resultado.messages?.some((m) => m.includes('Recurso A') && m.includes('Recurso B')),
+    ).toBe(true);
   });
 
   it('marca a condição pelo checkbox real da tela, no DOM', () => {
@@ -700,7 +721,8 @@ describe('AtendimentoPassoComponent', () => {
     const checkbox = Array.from(
       elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>,
     ).find((input) => input.closest('label')?.textContent?.includes('Marcar todas as'));
-    if (checkbox === undefined) throw new Error('Checkbox "Marcar todas" (condições) não encontrado.');
+    if (checkbox === undefined)
+      throw new Error('Checkbox "Marcar todas" (condições) não encontrado.');
     return checkbox;
   }
 
@@ -708,7 +730,8 @@ describe('AtendimentoPassoComponent', () => {
     const checkbox = Array.from(
       elemento.querySelectorAll('input[type="checkbox"]') as NodeListOf<HTMLInputElement>,
     ).find((input) => input.closest('label')?.textContent?.includes('Marcar todos os'));
-    if (checkbox === undefined) throw new Error('Checkbox "Marcar todos" (recursos) não encontrado.');
+    if (checkbox === undefined)
+      throw new Error('Checkbox "Marcar todos" (recursos) não encontrado.');
     return checkbox;
   }
 
@@ -718,9 +741,12 @@ describe('AtendimentoPassoComponent', () => {
     checkbox.dispatchEvent(new Event('change'));
     detectar();
 
-    expect(store.draft().atendimento.condicoes.map((item) => item.id).sort()).toEqual(
-      [PCD_ID, OUTRA_CONDICAO_ID].sort(),
-    );
+    expect(
+      store
+        .draft()
+        .atendimento.condicoes.map((item) => item.id)
+        .sort(),
+    ).toEqual([PCD_ID, OUTRA_CONDICAO_ID].sort());
   });
 
   it('CA-02: marca todos os recursos ativos pelo checkbox real da tela', () => {
@@ -765,7 +791,7 @@ describe('AtendimentoPassoComponent', () => {
     expect(marcarTodasCheckbox().checked).toBe(true);
   });
 
-  it('CA-06: preserva referência inativa ao marcar e ao desmarcar todas as condições', () => {
+  it('CA-06: preserva referência removida ao marcar e ao desmarcar todas as condições', () => {
     store.patchObjectSection('atendimento', {
       condicoes: [{ id: 'id-antigo-lact', codigo: 'LACTANTE', nome: 'Lactante (antiga)' }],
     });
@@ -783,7 +809,7 @@ describe('AtendimentoPassoComponent', () => {
     ]);
   });
 
-  it('CA-06: preserva referência inativa ao marcar e ao desmarcar todos os recursos', () => {
+  it('CA-06: preserva referência removida ao marcar e ao desmarcar todos os recursos', () => {
     store.patchObjectSection('atendimento', {
       recursos: [{ id: 'id-antigo', nome: 'Recurso descontinuado' }],
     });

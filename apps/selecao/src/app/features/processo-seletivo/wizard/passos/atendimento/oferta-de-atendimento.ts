@@ -27,7 +27,7 @@ function restaPcd(condicoes: readonly AtendimentoCondicaoSelecionada[]): boolean
 
 /**
  * Desmarcar a condição PcD esvazia os tipos de deficiência: sem ela o servidor recusa qualquer
- * tipo ofertado. Só quando, depois da desmarcação, não resta outra condição PcD (a inativa
+ * tipo ofertado. Só quando, depois da desmarcação, não resta outra condição PcD (a removida
  * hidratada e a ativa que a substituiu satisfazem o pré-requisito juntas).
  */
 export function aposMarcarCondicao(
@@ -45,20 +45,20 @@ export function aposMarcarCondicao(
 }
 
 /**
- * Marca ou desmarca de uma vez só as condições ativas. As inativas preservadas no rascunho não são
+ * Marca ou desmarca de uma vez só as condições ativas. As removidas preservadas no rascunho não são
  * tocadas, e os tipos de deficiência saem se, depois da alteração, nenhuma condição PcD restar.
  */
 export function aposMarcarTodas(
-  inativas: readonly AtendimentoCondicaoSelecionada[],
+  removidas: readonly AtendimentoCondicaoSelecionada[],
   ativas: readonly AtendimentoCondicaoSelecionada[],
   marcar: boolean,
 ): AlteracaoDaOferta {
-  const condicoes = marcar ? [...inativas, ...ativas] : [...inativas];
+  const condicoes = marcar ? [...removidas, ...ativas] : [...removidas];
   return restaPcd(condicoes) ? { condicoes } : { condicoes, tiposDeficiencia: [] };
 }
 
 /**
- * Remover uma condição inativa também esvazia os tipos de deficiência quando ela era a PcD e
+ * Remover uma condição removida também esvazia os tipos de deficiência quando ela era a PcD e
  * nenhuma outra condição PcD resta: sem isso a validação continuaria recusando o passo sem nenhum
  * controle na tela capaz de desfazer a causa.
  */

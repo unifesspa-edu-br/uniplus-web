@@ -20,7 +20,7 @@ export function anunciarRemocao(
   },
 ): void {
   anuncio.set(
-    remocao.nome === undefined ? 'Item removido.' : `${remocao.nome} removido da oferta.`,
+    remocao.nome === undefined ? 'Item removido.' : `Removido da oferta: ${remocao.nome}.`,
   );
 
   // Removido o último da lista, o foco volta ao título da seção, que existe sempre e diz onde a

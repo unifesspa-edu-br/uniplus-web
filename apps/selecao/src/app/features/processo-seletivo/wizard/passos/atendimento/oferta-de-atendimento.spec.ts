@@ -29,7 +29,7 @@ describe('regra do PcD na oferta de atendimento', () => {
     expect(aposMarcarTodas([PCD], [PPI], true)).toEqual({ condicoes: [PCD, PPI] });
   });
 
-  it('remover a condição PcD inativa esvazia os tipos só se nenhuma outra resta', () => {
+  it('remover a condição PcD removida esvazia os tipos só se nenhuma outra resta', () => {
     expect(aposRemover([PCD, PPI], PCD.id)).toEqual({ condicoes: [PPI], tiposDeficiencia: [] });
     expect(aposRemover([PCD, OUTRA_PCD], PCD.id)).toEqual({ condicoes: [OUTRA_PCD] });
   });

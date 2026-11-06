@@ -27,7 +27,7 @@ export const CODIGO_CONDICAO_PCD = 'PCD';
  *
  * Carrega os três por cursor até o fim — uma escolha só sabe o que oferecer
  * quando conhece todas as opções — e só lista os cadastros **vivos**: um item
- * já inativado não volta a ser oferecido como escolha nova, mas uma
+ * já removido não volta a ser oferecido como escolha nova, mas uma
  * referência anterior a ele permanece no rascunho e é exibida a partir do
  * snapshot que o próprio rascunho guarda, não deste catálogo.
  */
@@ -51,9 +51,7 @@ export class CatalogosDeAtendimento {
    * carregou ou não tem a condição canônica cadastrada.
    */
   readonly condicaoPcd = computed(() =>
-    this.condicoes().find(
-      (condicao) => condicao.codigo.toUpperCase() === CODIGO_CONDICAO_PCD,
-    ),
+    this.condicoes().find((condicao) => condicao.codigo.toUpperCase() === CODIGO_CONDICAO_PCD),
   );
 
   private buscaIniciada = false;
