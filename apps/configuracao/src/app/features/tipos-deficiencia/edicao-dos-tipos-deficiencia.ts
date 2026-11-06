@@ -1,7 +1,6 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
-
+import { Observable } from 'rxjs';
 import {
   ApiResult,
   ProblemDetails,
@@ -11,340 +10,267 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
-  IDEMPOTENCY_PROBLEM_CODES,
   idempotencyKey,
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
-import { Observable } from 'rxjs';
-import { TiposDeficienciaStore } from './tipos-deficiencia.store';
+import { TipoDeficienciaApi, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
 import {
-  AtualizarTipoDeficienciaCommand,
-  CriarTipoDeficienciaCommand,
-  TipoDeficienciaApi,
-  TipoDeficienciaDto,
-} from '@uniplus/shared-data/configuracao';
+  TIPO_EM_BRANCO,
+  TipoDeficienciaForm,
+  ValoresDoTipoDeficiencia,
+  comandoDeAtualizacao,
+  comandoDeCriacao,
+  controleDoCampoDoServidor,
+  criarFormularioDeTipoDeficiencia,
+  valoresDoTipoDeficiencia,
+} from './tipo-deficiencia-form';
+import { TiposDeficienciaStore } from './tipos-deficiencia.store';
 
 type ModoFormulario = 'criar' | 'editar';
-
-export interface TipoDeficienciaForm {
-  nome: FormControl<string>;
-  descricao: FormControl<string>;
-  codigo: FormControl<string>;
-}
-
-const TIPO_DEFICIENCIA_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof TipoDeficienciaForm>([
-  'nome',
-  'descricao',
-  'codigo',
-]);
+type Escrita = 'salvando' | 'removendo';
 
 /**
- * Conflitos de unicidade (409) que pertencem a um campo do formulário. Só eles
- * precisam do vendor code literal: violação de unicidade não é erro de validação
- * de campo, então o corpo não traz `errors[]` e não há outra chave que diga a
- * qual campo o conflito se refere. Todo erro que chega em `errors[]` é ancorado
- * pelo `field` que o próprio contrato manda — sem repetir código aqui.
+ * Conflitos de unicidade (409) que pertencem a um campo do formulário: o corpo não traz
+ * `errors[]`, então só o código de wire diz a qual campo o conflito se refere.
  */
 const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof TipoDeficienciaForm> = new Map([
   ['uniplus.configuracao.tipo_deficiencia.codigo_ja_existe', 'codigo' as const],
   ['uniplus.configuracao.tipo_deficiencia.nome_ja_existe', 'nome' as const],
 ]);
 
-function controlNameFromBackendField(field: string): keyof TipoDeficienciaForm | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return TIPO_DEFICIENCIA_CONTROL_NAMES.has(camelCase)
-    ? (camelCase as keyof TipoDeficienciaForm)
-    : null;
+const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {
+  salvando: 'Salvando...',
+  removendo: 'Removendo...',
+};
+
+/** O tipo que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
+export interface AndamentoDaEscrita {
+  readonly id: string;
+  readonly rotulo: string;
 }
 
+/**
+ * Todas as escritas da tela de tipos de deficiência: o formulário, o salvamento e a
+ * remoção com confirmação. É a única dona do indicador de gravação, então uma escrita impede a
+ * outra.
+ */
 @Injectable()
 export class EdicaoDosTiposDeficiencia {
   private readonly api = inject(TipoDeficienciaApi);
+  private readonly store = inject(TiposDeficienciaStore);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly store = inject(TiposDeficienciaStore);
-  readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  private readonly escrita = signal<'salvando' | 'removendo' | null>(null);
-  private readonly recarregando = signal(false);
-  readonly gravando = computed(() => this.escrita() !== null || this.recarregando());
+
+  readonly form = criarFormularioDeTipoDeficiencia();
+  private readonly escrita = signal<Escrita | null>(null);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
+  private readonly emAndamento = signal<AndamentoDaEscrita | null>(null);
+  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
+  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
   readonly salvando = computed(() => this.escrita() === 'salvando');
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  readonly saving = this.gravando;
-  readonly idEmAndamento = signal<string | null>(null);
-  readonly anuncio = signal('');
-  readonly erroDaRemocao = signal('');
-  readonly rotuloEmAndamento = computed(() =>
-    this.removendo()
-      ? 'Removendo...'
-      : this.salvando()
-        ? 'Salvando...'
-        : this.recarregando()
-          ? 'Recarregando...'
-          : '',
-  );
+  readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
+
+  readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
-  readonly formOpen = signal(false);
-  readonly tipoDeficienciaParaRemover = signal<TipoDeficienciaDto | null>(null);
-  readonly confirmOpen = signal(false);
-  readonly form = new FormGroup<TipoDeficienciaForm>({
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      // `Validators.required` aceita uma string só de espaços, que o `trim()`
-      // do payload reduziria a vazio e o backend recusaria com 422; o padrão
-      // exige ao menos um caractere significativo.
-      validators: [Validators.required, Validators.pattern(/\S/), Validators.maxLength(1000)],
-    }),
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-  });
+  readonly erro = signal<string | null>(null);
+  readonly confirmando = signal(false);
+  readonly erroDaRemocao = signal<string | null>(null);
+  private readonly tipoEmEdicaoId = signal<string | null>(null);
+  /** Classificação de permanência do registro em edição: lida, reenviada, não editável aqui. */
+  private readonly permanenteEmEdicao = signal<boolean | null>(null);
+  private readonly tipoParaRemover = signal<TipoDeficienciaDto | null>(null);
+  private readonly resultadoDaRemocao = signal('');
+  private readonly chave = signal(idempotencyKey.create());
   private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
   );
-  readonly formError = signal<string | null>(null);
-  readonly tipoDeficienciaEmEdicaoId = signal<string | null>(null);
-  /** Classificação de permanência do registro em edição — lida, não editável aqui. */
-  private readonly permanenteEmEdicao = signal<boolean | null>(null);
-  constructor() {
-    let iniciou = false;
-    effect(() => {
-      if (!this.recarregando()) {
-        iniciou = false;
-        return;
-      }
-      if (this.store.carregando()) {
-        iniciou = true;
-        return;
-      }
-      if (iniciou) {
-        this.recarregando.set(false);
-        this.idEmAndamento.set(null);
-      }
-    });
+
+  readonly titulo = computed(() =>
+    this.modo() === 'criar' ? 'Novo tipo de deficiência' : 'Editar tipo de deficiência',
+  );
+  readonly mensagemDaConfirmacao = computed(() => {
+    const tipo = this.tipoParaRemover();
+    return tipo
+      ? `Você está prestes a remover o tipo de deficiência ${tipo.nome}. A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.`
+      : 'Deseja remover este tipo de deficiência?';
+  });
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDaRemocao = computed(() => {
+    const tipo = this.tipoParaRemover();
+    if (tipo === null) return '';
+    if (this.removendo()) return `Removendo o tipo de deficiência ${tipo.nome}.`;
+    const motivo = this.erroDaRemocao();
+    return motivo ? `Não foi possível remover o tipo de deficiência ${tipo.nome}. ${motivo}` : '';
+  });
+  /** Dentro do drawer: o andamento, que só faz sentido com ele aberto. */
+  readonly anuncioDoSalvamento = computed(() =>
+    this.salvando() ? 'Salvando tipo de deficiência.' : '',
+  );
+  /** Na página: a remoção concluída, anunciada quando o diálogo já não está aberto para dizê-la. */
+  readonly anuncioDaPagina = computed(() => (this.confirmando() ? '' : this.resultadoDaRemocao()));
+
+  abrirCadastro(): void {
+    if (this.gravando()) return;
+    this.preparar('criar', null, TIPO_EM_BRANCO, null);
   }
 
-  abrirDrawerCriacao(): void {
+  abrirEdicao(tipo: TipoDeficienciaDto): void {
     if (this.gravando()) return;
-    this.modo.set('criar');
-    this.tipoDeficienciaEmEdicaoId.set(null);
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      nome: '',
-      descricao: '',
-      codigo: '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
+    this.preparar('editar', tipo.id, valoresDoTipoDeficiencia(tipo), tipo.permanente);
   }
 
-  abrirEdicao(tipoDeficiencia: TipoDeficienciaDto): void {
-    if (this.gravando()) return;
-    this.modo.set('editar');
-    this.tipoDeficienciaEmEdicaoId.set(tipoDeficiencia.id);
-    this.permanenteEmEdicao.set(tipoDeficiencia.permanente);
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      codigo: tipoDeficiencia.codigo,
-      nome: tipoDeficiencia.nome,
-      descricao: tipoDeficiencia.descricao ?? '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
+  fechar(): void {
+    if (!this.salvando()) this.aberto.set(false);
   }
 
-  abrirRemoverTipoDeficiencia(tipoDeficiencia: TipoDeficienciaDto): void {
+  pedirRemocao(tipo: TipoDeficienciaDto): void {
     if (this.gravando()) return;
-    this.erroDaRemocao.set('');
-    this.tipoDeficienciaParaRemover.set(tipoDeficiencia);
-    this.confirmOpen.set(true);
+    this.resultadoDaRemocao.set('');
+    this.erroDaRemocao.set(null);
+    this.tipoParaRemover.set(tipo);
+    this.confirmando.set(true);
   }
 
   salvar(): void {
-    this.formError.set(null);
+    this.erro.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-
-    const operacao =
-      this.modo() === 'criar'
-        ? this.api.criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
+    const id = this.tipoEmEdicaoId();
+    const valores = this.form.getRawValue();
+    const chave = withIdempotencyKey(this.chave());
+    const operacao: Observable<ApiResult<string | void>> =
+      id === null
+        ? this.api.criar(comandoDeCriacao(valores), chave)
         : this.api.atualizar(
-            this.tipoDeficienciaEmEdicaoId() ?? '',
-            this.atualizarCommand(),
-            withIdempotencyKey(this.idempotencyKeyAtual()),
+            id,
+            comandoDeAtualizacao(id, valores, this.permanenteEmEdicao()),
+            chave,
           );
-    if (!this.gravando()) {
-      this.idEmAndamento.set(this.tipoDeficienciaEmEdicaoId());
-      this.anuncio.set('Salvando tipo de deficiência.');
+    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result));
+  }
+
+  removerConfirmado(): void {
+    const tipo = this.tipoParaRemover();
+    if (tipo === null) return;
+    this.erroDaRemocao.set(null);
+    this.gravar('removendo', tipo.id, this.api.remover(tipo.id), (result) =>
+      this.concluirRemocao(tipo, result),
+    );
+  }
+
+  private preparar(
+    modo: ModoFormulario,
+    id: string | null,
+    valores: ValoresDoTipoDeficiencia,
+    permanente: boolean | null,
+  ): void {
+    this.modo.set(modo);
+    this.tipoEmEdicaoId.set(id);
+    this.permanenteEmEdicao.set(permanente);
+    this.ligacaoDoCodigo.reiniciar();
+    this.form.reset(valores);
+    this.erro.set(null);
+    this.renovarChave();
+    this.aberto.set(true);
+  }
+
+  private gravar<T>(
+    tipo: Escrita,
+    id: string | null,
+    operacao: Observable<ApiResult<T>>,
+    concluir: (result: ApiResult<T>) => void,
+  ): void {
+    if (this.gravando()) return;
+    this.escrita.set(tipo);
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      concluir(result);
+      this.escrita.set(null);
+    });
+  }
+
+  private concluirSalvamento(result: ApiResult<string | void>): void {
+    if (!result.ok) {
+      this.aplicarFalha(result.problem);
+      return;
     }
-    this.gravar<string | void>('salvando', operacao, (result) => this.handleSalvarResult(result));
+    this.notifications.success(
+      this.modo() === 'criar' ? 'Tipo de deficiência criado' : 'Tipo de deficiência atualizado',
+    );
+    this.aberto.set(false);
+    this.renovarChave();
+    this.recarregar();
   }
 
-  /**
-   * O PUT substitui o registro inteiro: campo omitido é campo apagado. Como esta
-   * tela não edita a classificação de permanência, ela reenvia o valor lido para
-   * não zerá-la em toda atualização de nome, código ou descrição.
-   */
-  private atualizarCommand(): AtualizarTipoDeficienciaCommand {
-    return {
-      id: this.tipoDeficienciaEmEdicaoId() ?? '',
-      ...this.criarCommand(),
-      permanente: this.permanenteEmEdicao(),
-    };
+  private concluirRemocao(tipo: TipoDeficienciaDto, result: ApiResult<void>): void {
+    if (!result.ok) {
+      const titulo = this.problemI18n.resolve(result.problem).title;
+      this.erroDaRemocao.set(titulo);
+      if (result.problem.status >= 500) {
+        this.notifications.errorFromProblem(result.problem, { title: titulo });
+      }
+      return;
+    }
+    this.resultadoDaRemocao.set(`Tipo de deficiência ${tipo.nome} removido.`);
+    this.notifications.success('Tipo de deficiência removido');
+    this.confirmando.set(false);
+    this.tipoParaRemover.set(null);
+    this.recarregar();
   }
 
-  private criarCommand(): CriarTipoDeficienciaCommand {
-    const raw = this.form.getRawValue();
-    return {
-      codigo: raw.codigo.trim(),
-      nome: raw.nome.trim(),
-      descricao: raw.descricao.trim(),
-    };
+  private recarregar(): void {
+    this.recarga.iniciar();
+    this.store.recarregar();
   }
 
-  private renovarIdempotencyKey(): void {
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
+  private aplicarFalha(problem: ProblemDetails): void {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
+      this.renovarChave();
+      this.aplicarErrosDeValidacao(problem.errors);
+      return;
+    }
+    const campo = CAMPO_POR_CONFLITO.get(problem.code);
+    if (campo !== undefined) {
+      this.renovarChave();
+      this.marcarCampo(campo, problem.code, this.problemI18n.resolve(problem).title);
+      return;
+    }
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
+    this.erro.set(this.problemI18n.resolve(problem).title);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     let aplicouAlgum = false;
-    for (const erro of errors) {
-      const controlName = controlNameFromBackendField(erro.field);
-      if (controlName === null) continue;
-      const control = this.form.controls[controlName];
-      control.setErrors({ backend: { code: erro.code, message: erro.message } });
-      control.markAsTouched();
+    for (const recusa of errors) {
+      const nome = controleDoCampoDoServidor(recusa.field);
+      if (nome === null) continue;
+      this.marcarCampo(nome, recusa.code, recusa.message);
       aplicouAlgum = true;
     }
-
-    if (aplicouAlgum) {
-      this.formError.set(null);
-      return;
-    }
-    this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
-  }
-
-  private aplicarFalha(problem: ProblemDetails): void {
-    if (deveRotacionarIdempotencyKey(problem)) {
-      this.renovarIdempotencyKey();
-    }
-
-    // A validação do backend acumula toda violação de campo em `errors[]` e só
-    // repete a primeira na raiz do problema (ADR-0125). Percorrer o array é o que
-    // ancora cada erro no seu campo; ler apenas `problem.code` marcaria um campo
-    // e deixaria os demais sem indicação.
-    if (problem.errors && problem.errors.length > 0) {
-      this.notifications.errorFromProblem(problem);
-      this.aplicarErrosDeValidacao(problem.errors);
-      return;
-    }
-
-    const campoDoConflito = CAMPO_POR_CONFLITO.get(problem.code);
-    if (campoDoConflito) {
-      this.notifications.errorFromProblem(problem);
-      const control = this.form.controls[campoDoConflito];
-      control.setErrors({
-        backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-      });
-      control.markAsTouched();
-      return;
-    }
-
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === IDEMPOTENCY_PROBLEM_CODES.BODY_MISMATCH
-    ) {
-      this.notifications.errorFromProblem(problem);
-    }
-
-    this.formError.set(this.problemI18n.resolve(problem).title);
-    if (problem.status >= 500) {
-      this.notifications.errorFromProblem(problem);
+    if (!aplicouAlgum) {
+      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
     }
   }
 
-  private handleSalvarResult(result: ApiResult<string | void>): void {
-    if (result.ok) {
-      this.anuncio.set('Tipo de deficiência salvo.');
-      this.notifications.success(
-        this.modo() === 'criar' ? 'Tipo de deficiência criado' : 'Tipo de deficiência atualizado',
-      );
-      this.formOpen.set(false);
-      this.idempotencyKeyAtual.set(idempotencyKey.create());
-      this.recarregar();
-      return;
-    }
-    this.anuncio.set('Não foi possível salvar o tipo de deficiência.');
-    this.aplicarFalha(result.problem);
+  private marcarCampo(nome: keyof TipoDeficienciaForm, code: string, message: string): void {
+    const controle = this.form.controls[nome];
+    controle.setErrors({ backend: { code, message } });
+    controle.markAsTouched();
   }
 
-  private handleRemoverResult(result: ApiResult<void>): void {
-    if (result.ok) {
-      this.anuncio.set(
-        `Tipo de deficiência ${this.tipoDeficienciaParaRemover()?.nome ?? ''} removido.`,
-      );
-      this.notifications.success('Tipo de deficiência removido');
-      this.formOpen.set(false);
-      this.confirmOpen.set(false);
-      this.tipoDeficienciaParaRemover.set(null);
-      this.recarregar();
-      return;
-    }
-    this.erroDaRemocao.set(this.problemI18n.resolve(result.problem).title);
-    this.anuncio.set('Não foi possível remover o tipo de deficiência.');
-    this.notifications.errorFromProblem(result.problem);
-  }
-
-  removerConfirmado(): void {
-    const tipo = this.tipoDeficienciaParaRemover();
-    if (tipo === null || this.gravando()) return;
-    this.erroDaRemocao.set('');
-    this.idEmAndamento.set(tipo.id);
-    this.anuncio.set(`Removendo o tipo de deficiência ${tipo.nome}.`);
-    this.gravar('removendo', this.api.remover(tipo.id), (result) =>
-      this.handleRemoverResult(result),
-    );
-  }
-
-  private gravar<T>(
-    tipo: 'salvando' | 'removendo',
-    operacao: Observable<ApiResult<T>>,
-    concluir: (resultado: ApiResult<T>) => void,
-  ): void {
-    if (this.gravando()) return;
-    this.escrita.set(tipo);
-    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
-      concluir(resultado);
-      this.escrita.set(null);
-      if (!this.recarregando()) this.idEmAndamento.set(null);
-    });
-  }
-
-  private recarregar(): void {
-    this.recarregando.set(true);
-    this.store.recarregar();
+  private renovarChave(): void {
+    this.chave.set(idempotencyKey.create());
   }
 }

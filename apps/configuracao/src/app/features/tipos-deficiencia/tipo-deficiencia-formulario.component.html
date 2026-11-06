@@ -1,89 +1,89 @@
 <ui-drawer
   class="form-drawer"
   [(visible)]="aberto"
+  [closable]="!salvando()"
   [heading]="titulo()"
   ariaLabel="Formulário do tipo de deficiência"
   position="right"
-  [closable]="!salvando()"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar"> {{ erro() }} </ui-alert>
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
+
   <form
     [formGroup]="form()"
     id="cfg-tipo-deficiencia-form"
-    (ngSubmit)="!salvando() && salvar.emit()"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="form-drawer__form"
   >
     <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
-      <section aria-labelledby="cfg-form-identificadores">
-        <div class="form-grid">
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
-            <span class="field__label is-required">Nome</span>
-            <input
-              class="input"
-              type="text"
-              placeholder="Ex.: Visual"
-              formControlName="nome"
-              aria-required="true"
-              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-              [attr.aria-describedby]="
-                erroDoCampo('nome') ? 'cfg-td-nome-dica cfg-td-nome-erro' : 'cfg-td-nome-dica'
-              "
-            />
-            <span class="field__hint" id="cfg-td-nome-dica">
-              Rótulo legível do tipo de deficiência — único entre os tipos ativos. Impede duplicatas
-              como dois "Visual".
-            </span>
-            @if (erroDoCampo('nome')) {
-              <span class="field__error" id="cfg-td-nome-erro">{{ erroDoCampo('nome') }}</span>
-            }
-          </label>
-          @let erroCampoCodigo = erroDoCampo('codigo');
-          <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
-            <span class="field__label is-required">Código</span>
-            <input
-              class="input"
-              type="text"
-              placeholder="Ex.: VISUAL"
-              formControlName="codigo"
-              aria-required="true"
-              style="text-transform: uppercase"
-              [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
-              [attr.aria-describedby]="
-                erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
-              "
-            />
-            <span class="field__hint" id="cfg-td-codigo-dica">
-              Identidade do cadastro: caixa alta, começando por letra, com letras, números e
-              sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos. Sugerido
-              a partir do nome e editável antes de salvar.
-            </span>
-            @if (erroCampoCodigo) {
-              <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
-            }
-          </label>
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
-            <span class="field__label is-required">Descrição</span>
-            <textarea
-              class="input"
-              type="text"
-              placeholder="Ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
-              formControlName="descricao"
-              aria-required="true"
-              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
-              [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-td-descricao-erro' : null"
-            ></textarea>
-            @if (erroDoCampo('descricao')) {
-              <span class="field__error" id="cfg-td-descricao-erro">{{
-                erroDoCampo('descricao')
-              }}</span>
-            }
-          </label>
-        </div>
-      </section>
+      <div class="form-grid">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            placeholder="Ex.: Visual"
+            formControlName="nome"
+            [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            [attr.aria-describedby]="
+              erroDoCampo('nome') ? 'cfg-td-nome-dica cfg-td-nome-erro' : 'cfg-td-nome-dica'
+            "
+          />
+          <span class="field__hint" id="cfg-td-nome-dica">
+            Rótulo legível do tipo de deficiência — único entre os tipos ativos. Impede duplicatas
+            como dois "Visual".
+          </span>
+          @if (erroDoCampo('nome')) {
+            <span class="field__error" id="cfg-td-nome-erro">{{ erroDoCampo('nome') }}</span>
+          }
+        </label>
+
+        @let erroCampoCodigo = erroDoCampo('codigo');
+        <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
+          <span class="field__label is-required">Código</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            style="text-transform: uppercase"
+            placeholder="Ex.: VISUAL"
+            formControlName="codigo"
+            [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+            [attr.aria-describedby]="
+              erroCampoCodigo ? 'cfg-td-codigo-dica cfg-td-codigo-erro' : 'cfg-td-codigo-dica'
+            "
+          />
+          <span class="field__hint" id="cfg-td-codigo-dica">
+            Identidade do cadastro: caixa alta, começando por letra, com letras, números e
+            sublinhado, de 2 a 50 caracteres. Único entre os tipos de deficiência ativos. Sugerido a
+            partir do nome e editável antes de salvar.
+          </span>
+          @if (erroCampoCodigo) {
+            <span class="field__error" id="cfg-td-codigo-erro">{{ erroCampoCodigo }}</span>
+          }
+        </label>
+
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
+          <span class="field__label is-required">Descrição</span>
+          <textarea
+            aria-required="true"
+            class="input"
+            placeholder="Ex.: abrangência ou base legal (TEA: Lei 12.764/2012)."
+            formControlName="descricao"
+            [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-td-descricao-erro' : null"
+          ></textarea>
+          @if (erroDoCampo('descricao')) {
+            <span class="field__error" id="cfg-td-descricao-erro">{{
+              erroDoCampo('descricao')
+            }}</span>
+          }
+        </label>
+      </div>
     </fieldset>
   </form>
 
@@ -92,7 +92,7 @@
       type="button"
       class="btn btn--tertiary btn--rect"
       [disabled]="salvando()"
-      (click)="aberto.set(false)"
+      (click)="cancelar.emit()"
     >
       Cancelar
     </button>
@@ -100,15 +100,14 @@
       type="submit"
       form="cfg-tipo-deficiencia-form"
       class="btn btn--primary"
-      [disabled]="form().invalid && !salvando()"
-      [attr.aria-disabled]="salvando()"
-      [attr.aria-busy]="salvando()"
-      (click)="aoClicarEmSalvar($event)"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="salvando() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
-      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar tipo' : 'Salvar tipo' }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>

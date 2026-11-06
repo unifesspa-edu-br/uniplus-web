@@ -1,32 +1,41 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ApplicationRef } from '@angular/core';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { CONFIGURACAO_BASE_PATH, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
-import { TiposDeficienciaStore } from './tipos-deficiencia.store';
-import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { NotificationService } from '@uniplus/shared-core/notifications';
+import { CONFIGURACAO_BASE_PATH, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
 import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
+import { TiposDeficienciaStore } from './tipos-deficiencia.store';
 
 const BASE = 'http://localhost:5000';
-const TIPO_DEFICIENCIA_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
-const tipoDeficienciaSeed: TipoDeficienciaDto = {
-  id: TIPO_DEFICIENCIA_ID,
+const LISTA = `${BASE}/api/configuracao/tipos-deficiencia`;
+const ESCRITA = `${BASE}/api/configuracao/admin/tipos-deficiencia`;
+const visual: TipoDeficienciaDto = {
+  id: '019f41cf-69fd-759a-ac6d-09acabc1b027',
   codigo: 'VISUAL',
   nome: 'Visual',
-  permanente: null,
-  descricao: 'Inclui baixa visão e cegueira',
+  descricao: 'Inclui baixa visão e cegueira.',
+  permanente: true,
   criadoEm: '2026-07-07T13:23:42.707136+00:00',
+};
+const auditiva: TipoDeficienciaDto = {
+  ...visual,
+  id: '2',
+  codigo: 'AUDITIVA',
+  nome: 'Auditiva',
+  descricao: 'Perda auditiva.',
+  permanente: null,
 };
 
 describe('TiposDeficienciaListPage', () => {
   let fixture: ComponentFixture<TiposDeficienciaListPage>;
-  let component: TiposDeficienciaListPage;
   let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let app: ApplicationRef;
+  let store: TiposDeficienciaStore;
+  let edicao: EdicaoDosTiposDeficiencia;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -39,684 +48,243 @@ describe('TiposDeficienciaListPage', () => {
       ],
     });
     fixture = TestBed.createComponent(TiposDeficienciaListPage);
-    component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
+    app = TestBed.inject(ApplicationRef);
+    store = fixture.debugElement.injector.get(TiposDeficienciaStore);
+    edicao = fixture.debugElement.injector.get(EdicaoDosTiposDeficiencia);
     fixture.detectChanges();
   });
-
   afterEach(() => controller.verify());
 
-  const propagate = async (): Promise<void> => {
+  const propagar = async (): Promise<void> => {
     await Promise.resolve();
-    appRef.tick();
+    app.tick();
+    fixture.detectChanges();
+  };
+  const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const texto = (): string => raiz().textContent ?? '';
+  const elemento = <T extends HTMLElement>(seletor: string): T => {
+    const achado = raiz().querySelector<T>(seletor);
+    expect(achado, seletor).not.toBeNull();
+    return achado as T;
+  };
+  const listar = async (itens: readonly TipoDeficienciaDto[]): Promise<void> => {
+    const req = controller.expectOne((r) => r.url === LISTA);
+    expect(req.request.params.get('limit')).toBe('50');
+    req.flush(itens);
+    await propagar();
+  };
+  const falharLista = async (): Promise<void> => {
+    controller
+      .expectOne((r) => r.url === LISTA)
+      .flush(null, { status: 500, statusText: 'Server Error' });
+    await propagar();
+  };
+  const acao = (verbo: string): HTMLButtonElement =>
+    elemento(`td.table-responsive__actions button[aria-label^="${verbo} tipo de deficiência"]`);
+  const linkProxima = {
+    headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
   };
 
-  async function flushLista(items: readonly TipoDeficienciaDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
-    expect(req.request.params.get('limit')).toBe('50');
-    req.flush(items);
-    await propagate();
-  }
+  it('sem tipos, mostra o estado vazio', async () => {
+    await listar([]);
+    expect(texto()).toContain('Nenhum tipo de deficiência carregado');
+  });
 
-  // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
-  // os lookups de Tipos de Deficiência já estão em cache e não recarregam.
-  async function flushRecarregarLista(items: readonly TipoDeficienciaDto[]): Promise<void> {
-    await propagate();
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
-      .flush(items);
-    await propagate();
-  }
+  it('lista código, nome e descrição, e a busca encontra pelo código ou pelo nome', async () => {
+    await listar([visual, auditiva]);
+    expect(texto()).toContain('AUDITIVA');
+    expect(texto()).toContain('Inclui baixa visão e cegueira.');
+    store.termoBusca.set('audit');
+    await propagar();
+    expect(store.tiposDeficienciaFiltrados()).toEqual([auditiva]);
+    store.termoBusca.set('visual');
+    await propagar();
+    expect(store.tiposDeficienciaFiltrados()).toEqual([visual]);
+  });
 
-  function getSalvarOuEditarButtonEl() {
-    return fixture.nativeElement.querySelector(
-      'button[form="cfg-tipo-deficiencia-form"]',
-    ) as HTMLButtonElement;
-  }
+  it('busca sem resultado mostra o estado de filtro, não o de lista vazia', async () => {
+    await listar([visual]);
+    store.termoBusca.set('inexistente');
+    await propagar();
+    expect(texto()).toContain('Nenhum tipo de deficiência encontrado');
+    expect(texto()).toContain('Ajuste a busca para ver resultados.');
+    expect(texto()).not.toContain('Nenhum tipo de deficiência carregado');
+  });
 
-  function getRemoverButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Remover tipo de deficiência"]',
-    ) as HTMLButtonElement;
-  }
-
-  function getEditarButtonEl(): HTMLButtonElement {
-    return fixture.nativeElement.querySelector(
-      'td.table-responsive__actions button[aria-label^="Editar tipo de deficiência"]',
-    ) as HTMLButtonElement;
-  }
-
-  /**
-   * Escreve num campo como o operador escreveria: um controle por vez, marcado
-   * como sujo. `form.setValue` em bloco não representa digitação — atualiza todos
-   * os controles de uma vez, na ordem das chaves do objeto.
-   */
-  function digitar(campo: 'nome' | 'codigo' | 'descricao', valor: string): void {
-    const control = component['form'].controls[campo];
-    control.setValue(valor);
-    control.markAsDirty();
-    control.markAsTouched();
-  }
-
-  it('navega pelo cursor e preserva os itens se a página seguinte falhar', async () => {
-    const store = fixture.debugElement.injector.get(TiposDeficienciaStore);
-    const primeira = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
-    );
-    primeira.flush([tipoDeficienciaSeed], {
-      headers: { Link: '</api/itens?cursor=abc&direction=next>; rel="next"' },
-    });
-    await propagate();
-
+  it('navega pelo cursor e, depois de uma escrita, volta à primeira página', async () => {
+    controller.expectOne((r) => r.url === LISTA).flush([visual], linkProxima);
+    await propagar();
     store.proximaPagina();
-    await propagate();
-    const seguinte = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
-    );
-    expect(seguinte.request.params.get('cursor')).toBe('abc');
-    expect(seguinte.request.params.get('direction')).toBe('next');
-    seguinte.flush(null, { status: 500, statusText: 'Error' });
-    await propagate();
-    expect(store.tiposDeficiencia()).toEqual([tipoDeficienciaSeed]);
+    await propagar();
+    const pagina = controller.expectOne((r) => r.url === LISTA);
+    expect(pagina.request.params.get('cursor')).toBe('abc');
+    expect(pagina.request.params.get('direction')).toBe('next');
+    pagina.flush([auditiva]);
+    await propagar();
+    store.recarregar();
+    await propagar();
+    const primeira = controller.expectOne((r) => r.url === LISTA);
+    expect(primeira.request.params.has('cursor')).toBe(false);
+    primeira.flush([visual]);
+    await propagar();
   });
 
-  it('drawer mostra empty-state quando tipos de deficiência não tem ofertas vivas', async () => {
-    await flushLista([]);
-
-    await propagate();
-
-    expect(component['tiposDeficiencia']()).toHaveLength(0);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Nenhum tipo de deficiência carregado');
+  it('a falha de carga mostra o alerta e "Tentar novamente" refaz a carga uma única vez', async () => {
+    await falharLista();
+    expect(texto()).toContain('Não foi possível carregar os tipos de deficiência');
+    const tentar = elemento<HTMLButtonElement>('.list-state__retry button');
+    tentar.click();
+    tentar.click();
+    await propagar();
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    await listar([visual]);
+    expect(store.tiposDeficiencia()).toEqual([visual]);
+    expect(texto()).not.toContain('Não foi possível carregar');
   });
 
-  it('busca sem resultado mostra o empty-state de filtro, não o de lista vazia', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['termoBusca'].set('tipo-deficiencia-inexistente');
-    fixture.detectChanges();
-
-    expect(component['tiposDeficienciaFiltrados']()).toHaveLength(0);
-    expect(fixture.nativeElement.textContent).toContain('Nenhum tipo de deficiência encontrado');
-    expect(fixture.nativeElement.textContent).toContain('Ajuste a busca para ver resultados.');
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhum tipo de deficiência carregado');
+  it('as ações da linha ficam indisponíveis durante a recarga da lista', async () => {
+    await listar([visual]);
+    expect(acao('Editar').matches(':disabled')).toBe(false);
+    store.tentarNovamente();
+    await propagar();
+    expect(acao('Editar').matches(':disabled')).toBe(true);
+    expect(acao('Remover').matches(':disabled')).toBe(true);
+    acao('Editar').click();
+    expect(edicao.aberto()).toBe(false);
+    await listar([visual]);
   });
 
-  it('renderiza a lista de tipos de deficiência', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    expect(component['tiposDeficiencia']()).toHaveLength(1);
-
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Visual');
-    expect(fixture.nativeElement.textContent).toContain('Inclui baixa visão e cegueira');
+  it('abrir o cadastro leva ao formulário em branco e abrir a edição traz os valores do tipo', async () => {
+    await listar([visual]);
+    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+    await propagar();
+    expect(edicao.modo()).toBe('criar');
+    expect(edicao.titulo()).toBe('Novo tipo de deficiência');
+    expect(edicao.form.getRawValue()).toEqual({ nome: '', codigo: '', descricao: '' });
+    edicao.fechar();
+    acao('Editar').click();
+    await propagar();
+    expect(edicao.modo()).toBe('editar');
+    expect(edicao.titulo()).toBe('Editar tipo de deficiência');
+    expect(edicao.form.controls.nome.value).toBe('Visual');
   });
 
-  it('descrição em branco barra o envio e não vira null no payload', async () => {
-    await flushLista([]);
-
-    component['abrirDrawerCriacao']();
-    component['form'].setValue({ codigo: 'VISUAL', nome: 'Visual', descricao: '   ' });
-
-    // O contrato exige descrição não vazia: sem ela o formulário não envia a request.
-    component['salvar']();
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-
-    component['form'].controls.descricao.setValue('Inclui baixa visão e cegueira');
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    expect(post.request.body).toMatchObject({ descricao: 'Inclui baixa visão e cegueira' });
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
+  it('no cadastro, o código acompanha o nome em caixa alta e deixa de acompanhar depois de editado', async () => {
+    await listar([]);
+    edicao.abrirCadastro();
+    edicao.form.controls.nome.setValue('Auditiva');
+    expect(edicao.form.controls.codigo.value).toBe('AUDITIVA');
+    edicao.form.controls.codigo.setValue('apoio');
+    expect(edicao.form.controls.codigo.value).toBe('APOIO');
+    edicao.form.controls.nome.setValue('Outro nome');
+    expect(edicao.form.controls.codigo.value).toBe('APOIO');
   });
 
-  it('cria tipo de deficiência com nome único, descrição válidos', async () => {
-    await flushLista([]);
+  it('na edição, o código vigente não acompanha o nome', async () => {
+    await listar([visual]);
+    edicao.abrirEdicao(visual);
+    edicao.form.controls.nome.setValue('Visual e auditiva');
+    expect(edicao.form.controls.codigo.value).toBe('VISUAL');
+  });
 
-    component['abrirDrawerCriacao']();
-    component['form'].setValue({
-      codigo: 'VISUAL',
-      nome: 'Visual',
-      descricao: 'Inclui baixa visão e cegueira',
-    });
-    const key = component['idempotencyKeyAtual']();
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
+  it('cria com o texto sem os brancos, o código em caixa alta e a chave de idempotência', async () => {
+    await listar([]);
+    edicao.abrirCadastro();
+    edicao.form.setValue({ nome: ' Visual ', codigo: 'def_visual', descricao: ' Baixa visão ' });
+    edicao.salvar();
+    const post = controller.expectOne(ESCRITA);
     expect(post.request.method).toBe('POST');
-    expect(post.request.headers.get('Idempotency-Key')).toBe(key);
-    expect(post.request.body).toMatchObject({
+    expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+    expect(post.request.body).toEqual({
+      codigo: 'DEF_VISUAL',
       nome: 'Visual',
-      descricao: 'Inclui baixa visão e cegueira',
+      descricao: 'Baixa visão',
     });
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-
-    expect(component['formOpen']()).toBe(false);
-    expect(component['modo']()).toBe('criar');
-    await flushLista([tipoDeficienciaSeed]);
+    post.flush('novo-id', { status: 201, statusText: 'Created' });
+    await propagar();
+    expect(edicao.aberto()).toBe(false);
+    await listar([visual]);
   });
 
-  it('simula cenário que a primeira requisição falha e tenta novamente com sucesso', async () => {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
-    req.flush(null, { status: 500, statusText: 'Error' });
-    await propagate();
-    const tentarNovamenteButtonEl = fixture.nativeElement.querySelector(
-      '.cfg-campi__retry > button',
-    ) as HTMLButtonElement;
-    expect(tentarNovamenteButtonEl).toBeTruthy();
-
-    tentarNovamenteButtonEl.dispatchEvent(new Event('click'));
-    fixture.detectChanges();
-    await flushRecarregarLista([tipoDeficienciaSeed]);
-    expect(component['tiposDeficiencia']()).toHaveLength(1);
+  it('descrição só com espaços barra o envio e a obrigatoriedade aparece no campo', async () => {
+    await listar([]);
+    edicao.abrirCadastro();
+    edicao.form.setValue({ nome: 'Visual', codigo: 'VISUAL', descricao: '   ' });
+    edicao.salvar();
+    await propagar();
+    controller.expectNone(ESCRITA);
+    expect(elemento('[formcontrolname="descricao"]').getAttribute('aria-invalid')).toBe('true');
+    expect(elemento('#cfg-td-descricao-erro').textContent).toContain('apenas espaços');
   });
 
-  it('bloqueia botão de salvar quando os campos obrigatórios estão vazios', async () => {
-    await flushLista([]);
-    component['abrirDrawerCriacao']();
-    fixture.detectChanges();
-
-    const submit = getSalvarOuEditarButtonEl();
-    component['salvar']();
-
-    expect(submit.disabled).toBe(true);
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    expect(component['modo']()).toBe('criar');
-  });
-
-  it('nome duplicado (409) é mapeado ao campo Nome sem fechar o drawer', async () => {
-    await flushLista([]);
-
-    component['abrirDrawerCriacao']();
-    component['form'].setValue({
-      codigo: 'VISUAL',
-      nome: 'Visual',
-      // A descrição é obrigatória no contrato: sem valor, o submit
-      // nem chegaria a disparar a request que este teste inspeciona.
-      descricao: 'Inclui baixa visão e cegueira',
-    });
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    post.flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
-        title: 'Já existe um tipo de deficiência ativo com este nome',
-        status: 409,
-        code: 'uniplus.configuracao.tipo_deficiencia.nome_ja_existe',
-        traceId: 'test-trace',
-      }),
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['form'].controls.nome.errors?.['backend']).toBeTruthy();
-  });
-
-  it('filtra a lista client-side por nome', async () => {
-    const outroTipoDeficiencia: TipoDeficienciaDto = {
-      ...tipoDeficienciaSeed,
-      id: '2',
-      codigo: 'AUDITIVA',
-      nome: 'Auditiva',
-      descricao: 'inclui surdez e surdocegueira.',
-    };
-    await flushLista([tipoDeficienciaSeed, outroTipoDeficiencia]);
-
-    component['termoBusca'].set('Visual');
-    fixture.detectChanges();
-
-    expect(component['tiposDeficienciaFiltrados']()).toHaveLength(1);
-    expect(component['tiposDeficienciaFiltrados']()[0].nome).toBe('Visual');
-  });
-
-  it('edita campos de nome', async () => {
-    const NOVO_NOME = 'Visual e Auditiva';
-    const tipo_deficiencia: TipoDeficienciaDto = {
-      ...tipoDeficienciaSeed,
-      nome: NOVO_NOME,
-    };
-
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirEdicao'](tipoDeficienciaSeed);
-    await propagate();
-
-    component['form'].controls.nome.setValue(NOVO_NOME);
-    component['salvar']();
-
-    const put = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
-    );
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body.nome).toBe(NOVO_NOME);
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([tipo_deficiencia]);
-  });
-  it('desabilita as ações da linha (Editar e Remover) durante a recarga da lista', async () => {
-    // Estado estável: lista carregada, nada em voo — os botões da linha estão habilitados.
-    await flushLista([tipoDeficienciaSeed]);
-    fixture.detectChanges();
-    expect(component['loading']()).toBe(false);
-    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBeNull();
-    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBeNull();
-
-    // Recarga real: reload() deixa loading()=true com o GET em voo, preservando a linha.
-    component['tentarNovamente']();
-    await propagate();
-    fixture.detectChanges();
-    expect(component['loading']()).toBe(true);
-    expect(getEditarButtonEl().getAttribute('aria-disabled')).toBe('true');
-    getEditarButtonEl().click();
-    expect(component['formOpen']()).toBe(false);
-    expect(getRemoverButtonEl().getAttribute('aria-disabled')).toBe('true');
-    getRemoverButtonEl().click();
-    expect(component['confirmOpen']()).toBe(false);
-
-    // Encerra o GET pendente para o controller.verify() do afterEach.
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`)
-      .flush([tipoDeficienciaSeed]);
-    await propagate();
-  });
-
-  it('código duplicado (409) é mapeado ao campo código sem fechar o drawer', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirDrawerCriacao']();
-    component['form'].setValue({
-      codigo: 'VISUAL',
-      nome: 'Deficiência Visual',
-      descricao: 'Inclui baixa visão e cegueira',
-    });
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    post.flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.codigo_ja_existe',
-        title: 'Já existe um tipo de deficiência ativo com este código',
-        status: 409,
-        code: 'uniplus.configuracao.tipo_deficiencia.codigo_ja_existe',
-        traceId: 'test-trace',
-      }),
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
-  });
-
-  /**
-   * `aria-invalid` diz que há erro; sozinho, não diz **qual**. WCAG 2.1 AA
-   * (3.3.1 Identificação de Erro) pede que a mensagem esteja associada ao
-   * campo, e é o `aria-describedby` que faz o leitor de tela lê-la ao focar.
-   */
   it('associa a dica e a mensagem de erro ao campo de código para leitor de tela', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    component['abrirDrawerCriacao']();
-    await propagate();
-    fixture.detectChanges();
-
-    const campoCodigo: HTMLInputElement = fixture.nativeElement.querySelector(
-      'input[formControlName="codigo"]',
-    );
-
-    // Sem erro, o campo aponta só para a dica.
-    expect(campoCodigo.getAttribute('aria-describedby')).toBe('cfg-td-codigo-dica');
-    expect(campoCodigo.getAttribute('aria-invalid')).toBeNull();
-    expect(fixture.nativeElement.querySelector('#cfg-td-codigo-dica')).not.toBeNull();
-
-    digitar('codigo', '1VISUAL');
-    digitar('nome', 'Deficiência Visual');
-    digitar('descricao', 'Inclui baixa visão e cegueira');
-    component['salvar']();
-    await propagate();
-    fixture.detectChanges();
-
-    // Com erro, passa a apontar também para a mensagem — e ela existe no DOM
-    // com o id anunciado, senão o leitor de tela não lê nada.
-    expect(campoCodigo.getAttribute('aria-invalid')).toBe('true');
-    expect(campoCodigo.getAttribute('aria-describedby')).toBe(
-      'cfg-td-codigo-dica cfg-td-codigo-erro',
-    );
-    const mensagem: HTMLElement = fixture.nativeElement.querySelector('#cfg-td-codigo-erro');
-    expect(mensagem.textContent?.trim()).not.toBe('');
-  });
-
-  it('previne submeter código inválido sem fechar o drawer', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirDrawerCriacao']();
-    component['form'].setValue({
-      codigo: '1VISUAL',
-      nome: 'Deficiência Visual',
-      descricao: 'Inclui baixa visão e cegueira',
-    });
-    component['salvar']();
-    controller.expectNone(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-  });
-
-  it('sugere o código a partir do nome na criação', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirDrawerCriacao']();
-    digitar('nome', 'Deficiência visual');
-
-    expect(component['form'].controls.codigo.value).toBe('DEFICIENCIA_VISUAL');
-  });
-
-  it('sugestão acompanha o nome até o operador escrever o próprio código', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirDrawerCriacao']();
-    digitar('nome', 'Deficiência');
-    // Enquanto o campo tem apenas o que a sugestão pôs, ela continua acompanhando.
-    digitar('nome', 'Deficiência visual');
-    expect(component['form'].controls.codigo.value).toBe('DEFICIENCIA_VISUAL');
-
-    digitar('codigo', 'DEF_VISUAL');
-    digitar('nome', 'Deficiência visual total');
-
-    expect(component['form'].controls.codigo.value).toBe('DEF_VISUAL');
-  });
-
-  it('edição carrega o código salvo e a sugestão nunca o substitui', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-
-    component['abrirEdicao'](tipoDeficienciaSeed);
-    expect(component['form'].controls.codigo.value).toBe('VISUAL');
-
-    digitar('nome', 'Deficiência visual e auditiva');
-
-    expect(component['form'].controls.codigo.value).toBe('VISUAL');
-  });
-
-  it('envia o código em caixa alta mesmo digitado em caixa baixa', async () => {
-    await flushLista([]);
-
-    component['abrirDrawerCriacao']();
-    digitar('nome', 'Visual');
-    digitar('descricao', 'Inclui baixa visão e cegueira');
-    digitar('codigo', 'def_visual');
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    expect(post.request.body.codigo).toBe('DEF_VISUAL');
-    post.flush('new-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([]);
-  });
-
-  it('422 acumulado ancora um erro em cada campo, não só no primeiro', async () => {
-    await flushLista([]);
-
-    component['abrirDrawerCriacao']();
-    digitar('nome', 'Visual');
-    digitar('descricao', 'Inclui baixa visão e cegueira');
-    digitar('codigo', 'VISUAL');
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    // O backend acumula toda violação em `errors[]` e repete só a primeira na raiz.
-    post.flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
-        title: 'Código do tipo de deficiência deve iniciar com letra maiúscula',
-        status: 422,
-        code: 'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
-        traceId: 'test-trace',
-        errors: [
-          {
-            field: 'codigo',
-            code: 'uniplus.configuracao.tipo_deficiencia.codigo_formato_invalido',
-            message: 'Código do tipo de deficiência deve iniciar com letra maiúscula.',
-          },
-          {
-            field: 'descricao',
-            code: 'uniplus.configuracao.tipo_deficiencia.descricao_obrigatoria',
-            message: 'Descrição do tipo de deficiência é obrigatória.',
-          },
-        ],
-      }),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['formOpen']()).toBe(true);
-    expect(component['form'].controls.codigo.errors?.['backend']).toBeTruthy();
-    expect(component['form'].controls.descricao.errors?.['backend']).toBeTruthy();
-  });
-
-  it('filtra a lista client-side por código', async () => {
-    const outroTipoDeficiencia: TipoDeficienciaDto = {
-      ...tipoDeficienciaSeed,
-      id: '2',
-      codigo: 'AUDITIVA',
-      nome: 'Auditiva',
-    };
-    await flushLista([tipoDeficienciaSeed, outroTipoDeficiencia]);
-
-    component['termoBusca'].set('AUDITIVA');
-    fixture.detectChanges();
-
-    expect(component['tiposDeficienciaFiltrados']()).toHaveLength(1);
-    expect(component['tiposDeficienciaFiltrados']()[0].codigo).toBe('AUDITIVA');
-  });
-
-  it('atualização preserva a classificação de permanência do registro', async () => {
-    const tipoPermanente: TipoDeficienciaDto = { ...tipoDeficienciaSeed, permanente: true };
-    await flushLista([tipoPermanente]);
-
-    component['abrirEdicao'](tipoPermanente);
-    await propagate();
-    digitar('nome', 'Visual e auditiva');
-    component['salvar']();
-
-    const put = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
-    );
-    // O PUT substitui o registro inteiro: omitir `permanente` apagaria a
-    // classificação a cada edição de nome.
-    expect(put.request.body.permanente).toBe(true);
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([tipoPermanente]);
-  });
-
-  it('conflito de processamento preserva a Idempotency-Key para o retry', async () => {
-    await flushLista([]);
-
-    component['abrirDrawerCriacao']();
-    digitar('nome', 'Visual');
-    digitar('descricao', 'Inclui baixa visão e cegueira');
-    const chave = component['idempotencyKeyAtual']();
-
-    component['salvar']();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    post.flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.idempotency.processing_conflict',
-        title: 'Requisição anterior com a mesma chave ainda em processamento',
-        status: 409,
-        code: 'uniplus.idempotency.processing_conflict',
-        traceId: 'test-trace',
-      }),
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    // O backend pede retry do MESMO comando: chave nova viraria um comando novo.
-    expect(component['idempotencyKeyAtual']()).toBe(chave);
-  });
-  it('expõe legenda acessível descrevendo a tabela', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    fixture.detectChanges();
-
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption).not.toBeNull();
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
-      'Tipos de deficiência, com código, nome e descrição',
-    );
-  });
-
-  it('CA-13/CA-14: a tabela não tem a coluna Status e preserva as demais', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    fixture.detectChanges();
-    const cabecalhos = Array.from(
-      fixture.nativeElement.querySelectorAll('thead th') as NodeListOf<HTMLElement>,
-    ).map((th) => th.textContent?.trim());
-    expect(cabecalhos).toEqual(['Código', 'Nome', 'Descrição', 'Ações']);
-  });
-
-  it('CA-04/CA-06: botão e diálogo falam em remover, com o botão principal travado durante a remoção', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    fixture.detectChanges();
-    expect(getRemoverButtonEl().getAttribute('data-tooltip')).toBe('Remover tipo de deficiência');
-
-    getRemoverButtonEl().click();
-    fixture.detectChanges();
-    const dialogo = (
-      Array.from(fixture.nativeElement.querySelectorAll('dialog')) as HTMLElement[]
-    ).find((d) => d.textContent?.includes('prestes a')) as HTMLElement;
-    expect(dialogo.textContent).toContain('Remover tipo de deficiência?');
-    expect(dialogo.textContent).toContain('Você está prestes a remover o tipo de deficiência');
-    const principal = () =>
-      Array.from(
-        dialogo.querySelectorAll('button.btn--danger') as NodeListOf<HTMLButtonElement>,
-      )[0];
-    expect(principal().textContent?.trim()).toBe('Remover');
-
-    principal().click();
-    fixture.detectChanges();
-    expect(principal().getAttribute('aria-disabled')).toBe('true');
-    expect(dialogo.querySelector('[role=status]')?.textContent).toContain('Removendo');
-    principal().click();
-    expect(principal().textContent?.trim()).toBe('Removendo...');
-
-    controller
-      .expectOne(
-        (r) =>
-          r.url === `${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}` &&
-          r.method === 'DELETE',
-      )
-      .flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([]);
-  });
-
-  it('CA-11: falha na remoção avisa o usuário e mantém o registro e o diálogo', async () => {
-    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-    await flushLista([tipoDeficienciaSeed]);
-    component['abrirRemoverTipoDeficiencia'](tipoDeficienciaSeed);
-    component['removerConfirmado']();
-
-    controller
-      .expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia/${tipoDeficienciaSeed.id}`)
-      .flush(
-        {
-          type: 'about:blank',
-          title: 'Tipo de deficiência não encontrado',
-          status: 404,
-          code: 'uniplus.configuracao.tipo_deficiencia.nao_encontrado',
-        },
-        {
-          status: 404,
-          statusText: 'Not Found',
-          headers: { 'content-type': 'application/problem+json' },
-        },
-      );
-    await propagate();
-
-    expect(erroSpy).toHaveBeenCalled();
-    expect(component['confirmOpen']()).toBe(true);
-    expect(component['saving']()).toBe(false);
-    controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`);
-  });
-  it('mantém a trava entre a escrita e o fim da recarga', async () => {
-    await flushLista([tipoDeficienciaSeed]);
-    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposDeficiencia);
-    edicao.abrirEdicao(tipoDeficienciaSeed);
+    await listar([]);
+    edicao.abrirCadastro();
+    await propagar();
+    const codigo = elemento<HTMLInputElement>('[formcontrolname="codigo"]');
+    expect(codigo.getAttribute('aria-describedby')).toBe('cfg-td-codigo-dica');
+    expect(codigo.getAttribute('aria-invalid')).toBeNull();
+    edicao.form.setValue({ nome: 'Deficiência Visual', codigo: '1VISUAL', descricao: 'Texto' });
     edicao.salvar();
-    edicao.salvar();
-    edicao.abrirRemoverTipoDeficiencia(tipoDeficienciaSeed);
-    edicao.removerConfirmado();
-    expect(edicao.salvando()).toBe(true);
-    expect(edicao.tipoDeficienciaParaRemover()).toBeNull();
-    const put = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-deficiencia/${TIPO_DEFICIENCIA_ID}`,
-    );
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    expect(edicao.gravando()).toBe(true);
-    edicao.abrirEdicao(tipoDeficienciaSeed);
-    expect(edicao.formOpen()).toBe(false);
-    await propagate();
-    const recarga = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/tipos-deficiencia`,
-    );
-    expect(edicao.gravando()).toBe(true);
-    recarga.flush([tipoDeficienciaSeed]);
-    await propagate();
-    expect(edicao.gravando()).toBe(false);
+    await propagar();
+    expect(codigo.getAttribute('aria-invalid')).toBe('true');
+    expect(codigo.getAttribute('aria-describedby')).toBe('cfg-td-codigo-dica cfg-td-codigo-erro');
+    expect(elemento('#cfg-td-codigo-erro').textContent?.trim()).not.toBe('');
   });
 
-  it('protege o formulário durante o envio e foca o campo recusado', async () => {
-    await flushLista([]);
-    const edicao = fixture.debugElement.injector.get(EdicaoDosTiposDeficiencia);
-    edicao.abrirDrawerCriacao();
+  it('a recusa acumulada do servidor ancora um erro em cada campo', async () => {
+    await listar([]);
+    edicao.abrirCadastro();
     edicao.form.setValue({ nome: 'Visual', codigo: 'VISUAL', descricao: 'Baixa visão' });
-    await propagate();
-    const botao = getSalvarOuEditarButtonEl();
-    botao.focus();
     edicao.salvar();
-    await propagate();
-    expect(botao.getAttribute('aria-busy')).toBe('true');
-    expect(
-      fixture.nativeElement.querySelector('input[formControlName="nome"]:disabled'),
-    ).not.toBeNull();
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-deficiencia`);
-    post.flush(
-      {
+    controller.expectOne(ESCRITA).flush(
+      JSON.stringify({
         type: 'about:blank',
-        title: 'Inválido',
+        title: 'Dados inválidos',
         status: 422,
-        code: 'uniplus.configuracao.tipo_deficiencia.invalido',
+        code: 'uniplus.validacao',
         errors: [
-          {
-            field: 'nome',
-            code: 'uniplus.configuracao.tipo_deficiencia.invalido',
-            message: 'Nome recusado',
-          },
+          { field: 'codigo', code: 'x', message: 'Código recusado.' },
+          { field: 'descricao', code: 'y', message: 'Descrição recusada.' },
         ],
-      },
+      }),
       {
         status: 422,
         statusText: 'Unprocessable Entity',
         headers: { 'content-type': 'application/problem+json' },
       },
     );
-    await propagate();
-    await propagate();
-    expect(edicao.form.controls.nome.hasError('backend')).toBe(true);
-    expect(document.activeElement?.getAttribute('formControlName')).toBe('nome');
+    await propagar();
+    expect(edicao.aberto()).toBe(true);
+    expect(elemento('[formcontrolname="codigo"]').getAttribute('aria-invalid')).toBe('true');
+    expect(elemento('[formcontrolname="descricao"]').getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('atualiza pelo id do tipo, inclusive o código trocado', async () => {
+    await listar([visual]);
+    edicao.abrirEdicao(visual);
+    edicao.form.controls.codigo.setValue('VISUAL_V2');
+    edicao.salvar();
+    const put = controller.expectOne(`${ESCRITA}/${visual.id}`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toMatchObject({
+      id: visual.id,
+      codigo: 'VISUAL_V2',
+      nome: 'Visual',
+      permanente: true,
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    await listar([visual]);
+  });
+
+  it('o envio com campo inválido não chama a API e marca os campos', async () => {
+    await listar([]);
+    edicao.abrirCadastro();
+    edicao.salvar();
+    controller.expectNone(ESCRITA);
+    expect(edicao.form.controls.nome.touched).toBe(true);
+    expect(edicao.form.controls.codigo.touched).toBe(true);
   });
 });

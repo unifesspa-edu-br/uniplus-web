@@ -18,33 +18,31 @@ export class TiposDeficienciaStore {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
-
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
-
   private readonly lista = useApiResource<readonly TipoDeficienciaDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/tipos-deficiencia`,
     params: this.montarParams(),
     context: withVendorMime('tipo-deficiencia', 1),
   }));
-
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly termoBusca = signal('');
-  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
-  readonly tiposDeficienciaFiltrados = computed(() => {
-    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
-    return this.tiposDeficiencia().filter(
-      (tipo) =>
-        tipo.nome.toLocaleLowerCase('pt-BR').includes(termo) ||
-        tipo.codigo.toLocaleLowerCase('pt-BR').includes(termo),
-    );
-  });
-
   readonly carregando = this.lista.isLoading;
   readonly tiposDeficiencia = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
-
+  readonly tiposDeficienciaFiltrados = computed(() => {
+    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
+    if (termo.length === 0) {
+      return this.tiposDeficiencia();
+    }
+    return this.tiposDeficiencia().filter(
+      (tipo) =>
+        tipo.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
+        tipo.nome.toLocaleLowerCase('pt-BR').includes(termo),
+    );
+  });
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly mensagemDeErro = computed<string | null>(() => {
     const problem = this.lista.problem();
     if (problem) {

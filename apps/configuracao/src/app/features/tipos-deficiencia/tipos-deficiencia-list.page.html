@@ -14,92 +14,58 @@
   (Módulo Seleção), não neste cadastro.
 </ui-alert>
 
-@if (errorMessage()) {
+@if (store.mensagemDeErro()) {
 <ui-alert variant="danger" heading="Não foi possível carregar os tipos de deficiência">
-  {{ errorMessage() }}
-  <div class="cfg-campi__retry">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="loading() || submitting() ? 'true' : null"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
       (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
   </div>
 </ui-alert>
-} @if (loading() && tiposDeficiencia().length === 0) {
-<ui-skeleton skeletonKind="card" blockSize="10rem" />
-<ui-skeleton skeletonKind="card" blockSize="10rem" />
 }
 
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-tipos-deficiencia-lista
-  [tipos]="tiposDeficienciaFiltrados()"
-  [carregando]="loading()"
-  [ocupado]="loading() || submitting()"
-  [erro]="errorMessage()"
-  [temFiltro]="temFiltro()"
-  [temAnterior]="prevCursor() !== null"
-  [temProximo]="nextCursor() !== null"
-  [(termoBusca)]="termoBusca"
-  [idEmAndamento]="edicao.idEmAndamento()"
-  [rotuloEmAndamento]="edicao.rotuloEmAndamento()"
-  (novo)="abrirDrawerCriacao()"
-  (editar)="abrirEdicao($event)"
-  (remover)="abrirRemoverTipoDeficiencia($event)"
-  (anterior)="paginaAnterior()"
-  (proximo)="proximaPagina()"
+  [tipos]="store.tiposDeficienciaFiltrados()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
 />
 <cfg-tipo-deficiencia-formulario
-  [(aberto)]="formOpen"
-  [form]="form"
-  [modo]="modo()"
-  [titulo]="formHeading()"
-  [erro]="formError()"
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [modo]="edicao.modo()"
   [salvando]="edicao.salvando()"
-  [anuncio]="edicao.anuncio()"
-  (salvar)="salvar()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
 />
-<span class="sr-only" role="status">
-  {{ !confirmOpen() && !formOpen() ? edicao.anuncio() : '' }}
-</span>
-<ui-dialog
-  [(visible)]="confirmOpen"
-  heading="Remover tipo de deficiência?"
-  [dismissible]="!edicao.removendo()"
-  (closed)="confirmOpen.set(false)"
->
-  <span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
-  <p role="alert">{{ edicao.erroDaRemocao() }}</p>
-  <p>
-    Você está prestes a remover o tipo de deficiência
-    <code>{{ tipoDeficienciaParaRemover()?.codigo }}</code>
-    — <strong>{{ tipoDeficienciaParaRemover()?.nome }}.</strong>
-  </p>
-  <p>
-    A remoção impede novos editais de utilizá-lo, mas
-    <strong>não altera ofertas já congeladas</strong>
-    — a cópia por valor de cada processo permanece íntegra.
-  </p>
-  <div uiDialogFooter>
-    <button
-      type="button"
-      class="btn btn--tertiary"
-      [disabled]="edicao.removendo()"
-      (click)="confirmOpen.set(false)"
-    >
-      Cancelar
-    </button>
-    <button
-      type="button"
-      class="btn btn--danger"
-      [attr.aria-disabled]="saving() ? 'true' : null"
-      [attr.aria-busy]="saving()"
-      (click)="removerConfirmado()"
-    >
-      @if (edicao.removendo()) {
-      <ui-spinner size="sm" />
-      } {{ edicao.removendo() ? 'Removendo...' : 'Remover' }}
-    </button>
-  </div>
-</ui-dialog>
+<cfg-confirmacao-de-remocao
+  titulo="Remover tipo de deficiência?"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>
