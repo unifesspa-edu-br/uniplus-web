@@ -25,23 +25,19 @@ import {
   valoresEmBrancoDaEtapa,
 } from './tipo-etapa-form';
 import { TiposEtapaStore } from './tipos-etapa.store';
+import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoEtapa.CodigoJaExiste` (409 Conflict). */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.tipo_etapa.codigo_ja_existe';
 
 type Escrita = 'salvando' | 'removendo';
 type ModoFormulario = 'criar' | 'editar';
-
-/** O tipo que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
-}
-
-const ROTULO_DA_ESCRITA: Record<Escrita, string> = {
-  salvando: 'Salvando...',
-  removendo: 'Removendo...',
-};
 
 /**
  * Todas as escritas da tela de tipos de etapa: o formulário, o salvamento e a remoção com
@@ -131,7 +127,7 @@ export class EdicaoDosTiposEtapa {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -179,7 +175,7 @@ export class EdicaoDosTiposEtapa {
   ): void {
     if (this.gravando()) return;
     this.escrita.set(tipo);
-    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULOS_PADRAO_DA_ESCRITA[tipo] });
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       concluir(result);
       this.escrita.set(null);
@@ -245,30 +241,12 @@ export class EdicaoDosTiposEtapa {
   /** O código reservado é um DomainError único (409, sem `errors[]`): o vínculo com o campo é feito aqui. */
   private marcarCodigoJaExistente(problem: ProblemDetails): void {
     const codigo = this.form.controls.codigo;
-    codigo.setErrors({
-      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-    });
-    codigo.markAsTouched();
+    marcarRecusaDoServidor(codigo, problem.code, this.problemI18n.resolve(problem).title);
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const erro of errors) {
-      const nome = controleDoCampoDoServidor(erro.field);
-      if (nome === null) continue;
-      const controle = this.form.controls[nome];
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
-      aplicouAlgum = true;
-    }
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) controle.updateValueAndValidity();
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private renovarChave(): void {

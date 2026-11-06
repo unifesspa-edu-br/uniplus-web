@@ -8,7 +8,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
-import type { AndamentoDaEscrita } from './edicao-das-precedencias';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 @Component({
   selector: 'cfg-precedencias-fase-lista',

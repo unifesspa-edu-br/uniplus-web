@@ -32,6 +32,13 @@ import {
   valoresDoRecurso,
 } from './recurso-acessibilidade-form';
 import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
+import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 type Escrita = 'salvando' | 'removendo';
@@ -44,17 +51,6 @@ const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof RecursoAcessibilidadeForm> =
   ['uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe', 'codigo' as const],
   ['uniplus.configuracao.recurso_acessibilidade.nome_ja_existe', 'nome' as const],
 ]);
-
-const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {
-  salvando: 'Salvando...',
-  removendo: 'Removendo...',
-};
-
-/** O recurso que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
-}
 
 /**
  * Todas as escritas da tela de recursos de acessibilidade: o formulário, o salvamento e a
@@ -151,6 +147,7 @@ export class EdicaoDosRecursosAcessibilidade {
 
   salvar(): void {
     this.erro.set(null);
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -192,7 +189,7 @@ export class EdicaoDosRecursosAcessibilidade {
   ): void {
     if (this.gravando()) return;
     this.escrita.set(tipo);
-    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULOS_PADRAO_DA_ESCRITA[tipo] });
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       concluir(result);
       this.escrita.set(null);
@@ -253,22 +250,13 @@ export class EdicaoDosRecursosAcessibilidade {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const recusa of errors) {
-      const nome = controleDoCampoDoServidor(recusa.field);
-      if (nome === null) continue;
-      this.marcarCampo(nome, recusa.code, recusa.message);
-      aplicouAlgum = true;
-    }
-    if (!aplicouAlgum) {
-      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
-    }
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarCampo(nome: keyof RecursoAcessibilidadeForm, code: string, message: string): void {
     const controle = this.form.controls[nome];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

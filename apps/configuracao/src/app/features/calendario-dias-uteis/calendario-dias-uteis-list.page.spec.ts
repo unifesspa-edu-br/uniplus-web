@@ -122,7 +122,7 @@ describe('CalendarioDiasUteisListPage', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
-        .flush(...problema(503, { code: 'uniplus.indisponivel', title: 'Indisponível' }));
+        .flush(...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }));
       await p.propagar();
 
       expect(p.elemento('ui-alert').textContent).toContain('Indisponível');

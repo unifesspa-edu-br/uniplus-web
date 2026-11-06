@@ -28,6 +28,11 @@ import {
 import { OfertasCursoStore } from './ofertas-curso.store';
 import { acompanharRegrasDaOferta } from './regras-do-formulario-da-oferta';
 import { VinculosDaOferta } from './vinculos-da-oferta';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -145,7 +150,7 @@ export class EdicaoDasOfertasCurso {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -287,27 +292,12 @@ export class EdicaoDasOfertasCurso {
 
   /** Marca cada campo recusado com a própria mensagem; devolve se algum erro pôde ser mapeado. */
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): boolean {
-    let aplicouAlgum = false;
-    for (const recusa of errors) {
-      const nome = controleDoCampoDoServidor(recusa.field);
-      if (nome === null) continue;
-      this.marcarCampo(nome, recusa.code, recusa.message);
-      aplicouAlgum = true;
-    }
-    return aplicouAlgum;
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) {
-      controle.updateValueAndValidity({ emitEvent: false });
-    }
+    return marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
   }
 
   private marcarCampo(campo: keyof OfertaCursoForm, code: string, message: string): void {
     const controle = this.form.controls[campo];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChaveDeIdempotencia(): void {

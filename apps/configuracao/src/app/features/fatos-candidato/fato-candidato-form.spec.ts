@@ -8,7 +8,6 @@ import {
   ligarDependenciasDaCriacao,
   mensagemDoCampo,
 } from './fato-candidato-form';
-import { descartarRecusasDoServidor } from './fato-candidato.regras';
 
 const ligado = () => {
   const form = criarFormularioDeFato();
@@ -101,23 +100,5 @@ describe('o formulário de criação do fato', () => {
     form.patchValue({ tipo: 'AGREGADO' });
     TestBed.tick();
     expect(form.controls.fatoDeMembro.hasError('required')).toBe(true);
-  });
-
-  describe('descartarRecusasDoServidor', () => {
-    it('tira a recusa do servidor revalidando sem emitir, e deixa os outros controles quietos', () => {
-      const form = criarFormularioDeFato();
-      form.controls.nome.setErrors({ backend: 'Nome já usado.' });
-      form.controls.codigo.setErrors({ required: true });
-      let emissoes = 0;
-      form.controls.nome.valueChanges.subscribe(() => emissoes++);
-      form.controls.nome.statusChanges.subscribe(() => emissoes++);
-      form.valueChanges.subscribe(() => emissoes++);
-
-      descartarRecusasDoServidor(form);
-
-      expect(emissoes).toBe(0);
-      expect(form.controls.nome.hasError('backend')).toBe(false);
-      expect(form.controls.codigo.hasError('required')).toBe(true);
-    });
   });
 });

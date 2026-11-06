@@ -26,6 +26,7 @@ import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { fimDoDia, prazoNoPassado } from './prazo-de-vigencia';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 /** Decisões e envio de documentos de um pedido. */
 @Injectable()
@@ -200,8 +201,7 @@ export class EdicaoDoPedido {
   private aplicarErroDoMotivo(problema: ProblemDetails): boolean {
     const erro = problema.errors?.find((item) => item.field.toLowerCase() === 'motivo');
     if (!erro) return false;
-    this.motivo.setErrors({ backend: { code: erro.code, message: erro.message } });
-    this.motivo.markAsTouched();
+    marcarRecusaDoServidor(this.motivo, erro.code, erro.message);
     this.tentouRecusar.set(true);
     this.focarErroDoMotivo();
     return true;

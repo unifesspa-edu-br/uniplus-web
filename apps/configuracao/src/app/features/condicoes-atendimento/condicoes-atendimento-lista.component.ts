@@ -9,7 +9,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
 import { CODIGO_RESERVADO } from './condicao-atendimento-form';
-import type { AndamentoDaEscrita } from './edicao-das-condicoes-atendimento';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 type Acao = 'editar' | 'remover';
 

@@ -9,6 +9,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { comandoDeCriacao, regraDesabilitada } from './modalidade-form';
@@ -238,6 +239,18 @@ describe('ModalidadeFormPage', () => {
     // Unicidade entre vivas carregadas.
     codigo.setValue('AC');
     edicao.verificarCodigoDuplicado();
+    expect(codigo.hasError('duplicado')).toBe(true);
+  });
+
+  it('ModalidadeForm_Salvar_DescartaARecusaDoServidorSemPerderOCodigoRepetido', async () => {
+    await montar();
+    const codigo = edicao.form.controls.codigo;
+    codigo.setValue('AC');
+    marcarRecusaDoServidor(codigo, 'uniplus.configuracao.modalidade.codigo_ja_existe', 'Recusado.');
+
+    edicao.salvar();
+
+    expect(codigo.hasError('backend')).toBe(false);
     expect(codigo.hasError('duplicado')).toBe(true);
   });
 

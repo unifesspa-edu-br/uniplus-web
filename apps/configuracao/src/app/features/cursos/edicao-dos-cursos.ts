@@ -27,6 +27,11 @@ import {
 import { CursosStore } from './cursos.store';
 import { GruposDoCurso } from './grupos-do-curso';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -143,7 +148,7 @@ export class EdicaoDosCursos {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -280,18 +285,12 @@ export class EdicaoDosCursos {
     }
   }
 
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) {
-      controle.updateValueAndValidity();
-    }
-  }
-
   private marcarCodigoJaExistente(problem: ProblemDetails): void {
-    this.form.controls.codigo.setErrors({
-      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-    });
-    this.form.controls.codigo.markAsTouched();
+    marcarRecusaDoServidor(
+      this.form.controls.codigo,
+      problem.code,
+      this.problemI18n.resolve(problem).title,
+    );
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
@@ -299,9 +298,7 @@ export class EdicaoDosCursos {
     for (const erro of errors) {
       aplicouAlgum = this.marcarControle(erro) || aplicouAlgum;
     }
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarControle(erro: ProblemValidationError): boolean {
@@ -310,8 +307,7 @@ export class EdicaoDosCursos {
       return false;
     }
     const control = this.form.controls[nome];
-    control.setErrors({ backend: { code: erro.code, message: erro.message } });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, erro.code, erro.message);
     return true;
   }
 

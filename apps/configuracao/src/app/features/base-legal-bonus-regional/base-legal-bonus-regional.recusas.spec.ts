@@ -231,6 +231,18 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
       expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
     });
 
+    it('a recusa dos municípios some no reenvio, mesmo que ele falhe por outro motivo', async () => {
+      await p.abrirCadastro();
+      (await p.enviar()).flush(...recusaDeCampo('municipios', 'Município inválido.'));
+      await p.propagar();
+      expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).not.toBeNull();
+
+      (await p.enviar()).flush(...problema(500, corpoDaFalha(500)));
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.querySelector('#cfg-blbr-municipios-erro')).toBeNull();
+    });
+
     it('reenviar depois de recusa corrigida emite o POST com chave nova, fecha e devolve o foco', async () => {
       await p.abrirCadastro();
       const primeira = await p.enviar();

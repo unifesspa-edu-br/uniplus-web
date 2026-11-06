@@ -8,7 +8,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
-import type { AndamentoDaEscrita } from './edicao-das-reservas-demograficas';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 type Acao = 'editar' | 'remover';
 

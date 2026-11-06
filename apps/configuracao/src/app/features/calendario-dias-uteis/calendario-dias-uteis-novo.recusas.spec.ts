@@ -150,7 +150,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       const post = await p.enviar();
       const chave = chaveDe(post);
 
-      post.flush(...problema(503, { code: 'uniplus.indisponivel', title: 'Indisponível' }));
+      post.flush(...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }));
       await p.propagar();
 
       expect(p.elemento('ui-alert').textContent).toContain('Indisponível');
@@ -159,6 +159,26 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       expect(chaveDe(repeticao)).toBe(chave);
       repeticao.flush(...criado());
       await p.fixture.whenStable();
+    });
+  });
+
+  describe('recusa que não se repete', () => {
+    it('a recusa de um campo some da tela quando o reenvio falha por outro motivo', async () => {
+      await diaNacional();
+      (await p.enviar()).flush(
+        ...recusaDeCampo('diasNaoUteis[0].descricao', DESCRICAO_TAMANHO, 'Descrição recusada.'),
+      );
+      await p.propagar();
+      await p.propagar();
+      expect(p.dia(0, 'descricao').getAttribute('aria-invalid')).toBe('true');
+
+      (await reenviar()).flush(
+        ...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }),
+      );
+      await p.propagar();
+
+      expect(p.dia(0, 'descricao').getAttribute('aria-invalid')).not.toBe('true');
+      expect(p.fixture.nativeElement.textContent).not.toContain('Descrição recusada.');
     });
   });
 

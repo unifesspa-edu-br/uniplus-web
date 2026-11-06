@@ -27,6 +27,7 @@ import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedirAcessoStore } from './pedir-acesso.store';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 type ParaQuem = 'mim' | 'outra';
 
@@ -213,8 +214,7 @@ export class EdicaoDoPedidoDeAcesso {
       );
       if (!nome) continue;
       const controle = this.form.controls[nome];
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
+      marcarRecusaDoServidor(controle, erro.code, erro.message);
       aplicado = true;
     }
     if (aplicado) this.focarPrimeiroInvalido();

@@ -30,23 +30,18 @@ import {
   valoresDaReserva,
 } from './reserva-demografica-form';
 import { ReservaDemograficaStore } from './reserva-demografica.store';
+import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 type Escrita = 'salvando' | 'removendo';
 
 const CODIGO_CENSO_JA_EXISTE =
   'uniplus.configuracao.referencia_reserva_demografica.censo_ja_existe';
-
-const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {
-  salvando: 'Salvando...',
-  removendo: 'Removendo...',
-};
-
-/** A referência que a escrita em curso afeta e o que a linha dela mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
-}
 
 /**
  * Todas as escritas da tela de reserva demográfica: o formulário, o salvamento e a remoção com
@@ -149,6 +144,7 @@ export class EdicaoDasReservasDemograficas {
 
   salvar(): void {
     this.erro.set(null);
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -191,7 +187,7 @@ export class EdicaoDasReservasDemograficas {
   ): void {
     if (this.gravando()) return;
     this.escrita.set(tipo);
-    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULOS_PADRAO_DA_ESCRITA[tipo] });
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       concluir(result);
       this.escrita.set(null);
@@ -261,9 +257,7 @@ export class EdicaoDasReservasDemograficas {
       this.marcarCampo(nome, recusa.code, recusa.message);
       aplicouAlgum = true;
     }
-    if (!aplicouAlgum) {
-      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
-    }
+    if (!aplicouAlgum) this.erro.set(MENSAGEM_SEM_MAPEAMENTO);
   }
 
   /** Um campo desabilitado não pode ser corrigido nem fica inválido: a recusa vira mensagem geral. */
@@ -273,8 +267,7 @@ export class EdicaoDasReservasDemograficas {
       this.erro.set(message);
       return;
     }
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

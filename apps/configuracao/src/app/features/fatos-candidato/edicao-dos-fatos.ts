@@ -26,8 +26,10 @@ import {
   criarNaApi,
   ligarDependenciasDaCriacao,
 } from './fato-candidato-form';
-import { descartarRecusasDoServidor, type AcaoDeAtivacao } from './fato-candidato.regras';
+import type { AcaoDeAtivacao } from './fato-candidato.regras';
 import { FatosCandidatoStore } from './fatos-candidato.store';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
+import { descartarRecusasDoServidor } from '../../shared/formulario';
 
 type Escrita = 'criando' | 'ativando' | 'aceitando';
 type Modo = 'criar' | 'editar';
@@ -39,12 +41,6 @@ const MENSAGEM_DE_CONCORRENCIA =
 export interface PedidoDeAtivacao {
   readonly fato: FatoCandidatoDto;
   readonly acao: AcaoDeAtivacao;
-}
-
-/** O fato que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
 }
 
 /**

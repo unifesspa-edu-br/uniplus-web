@@ -33,6 +33,11 @@ import {
   type ValoresDaUnidade,
 } from './unidade-form';
 import { UnidadesStore } from './unidades.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
 type ModoFormulario = 'criar' | 'editar';
@@ -155,7 +160,7 @@ export class EdicaoDasUnidades {
     this.erro.set(null);
     this.erroDaCidade.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -290,21 +295,13 @@ export class EdicaoDasUnidades {
       aplicouAlgum = true;
     }
     if (!aplicouAlgum) {
-      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
+      this.erro.set(MENSAGEM_SEM_MAPEAMENTO);
     }
   }
 
   private marcarCampo(nome: keyof UnidadeForm, code: string, message: string): void {
     const controle = this.form.controls[nome];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) {
-      if (controle.hasError('backend')) controle.updateValueAndValidity({ emitEvent: false });
-    }
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

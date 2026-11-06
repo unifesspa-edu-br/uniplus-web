@@ -104,13 +104,3 @@ export function aplicarRecusaDoGrupo(
   }
   return ehRecusaAcionavelPeloOperador(problem) ? [tituloDaRecusa(problem)] : [];
 }
-
-/** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra.
- *  Sem `emitEvent`, o descarte não passa por `valueChanges` como se fosse uma edição. */
-export function descartarRecusasDoServidor(controle: AbstractControl): void {
-  if (controle instanceof FormGroup || controle instanceof FormArray) {
-    Object.values(controle.controls).forEach(descartarRecusasDoServidor);
-  } else if (controle.hasError('backend')) {
-    controle.updateValueAndValidity({ emitEvent: false });
-  }
-}

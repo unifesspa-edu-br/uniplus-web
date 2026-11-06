@@ -8,10 +8,10 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { aguardarRecarga, focarPrimeiroCampoInvalido } from '../../shared/foco';
 import { ChavesDeIdempotencia } from './chaves-do-fato';
 import { ehConflitoDeConcorrencia } from './conflitos-do-fato';
-import { descartarRecusasDoServidor } from './fato-candidato.regras';
 import { FatoEmEdicaoStore } from './fato-em-edicao.store';
 import { FatosCandidatoStore } from './fatos-candidato.store';
 import { idDoValor } from './ids-do-fato';
+import { descartarRecusasDoServidor } from '../../shared/formulario';
 
 const MENSAGEM_DE_CONCORRENCIA =
   'Outra pessoa alterou este fato enquanto você editava. A versão atual foi carregada: refaça a alteração.';

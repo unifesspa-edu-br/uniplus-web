@@ -20,7 +20,12 @@ import {
   BaseLegalBonusRegionalMunicipioDto,
 } from '@uniplus/shared-data/configuracao';
 import { aguardarRecarga } from '../../shared/foco';
-import { nullIfBlank } from '../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+  nullIfBlank,
+} from '../../shared/formulario';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
 import {
   CampoDoServidor,
@@ -123,7 +128,8 @@ export class EdicaoDasBasesLegais {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
+    this.municipios.descartarRecusa();
     this.municipios.exigir();
     if (this.form.invalid || this.municipios.vazia()) {
       this.form.markAllAsTouched();
@@ -243,9 +249,7 @@ export class EdicaoDasBasesLegais {
       this.marcarCampo(campo, recusa);
       aplicouAlgum = true;
     }
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarCampo(campo: CampoDoServidor, recusa: ProblemValidationError): void {
@@ -254,16 +258,7 @@ export class EdicaoDasBasesLegais {
       return;
     }
     const controle = this.form.controls[campo];
-    controle.setErrors({ backend: { code: recusa.code, message: recusa.message } });
-    controle.markAsTouched();
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    this.municipios.descartarRecusa();
-    for (const controle of Object.values(this.form.controls)) {
-      if (controle.hasError('backend')) controle.updateValueAndValidity({ emitEvent: false });
-    }
+    marcarRecusaDoServidor(controle, recusa.code, recusa.message);
   }
 
   private renovarChave(): void {

@@ -8,7 +8,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
-import type { AndamentoDaEscrita } from './edicao-dos-tipos-etapa';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 @Component({
   selector: 'cfg-tipos-etapa-lista',

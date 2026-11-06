@@ -21,6 +21,11 @@ import {
   criarFormularioDeBanca,
   valoresDaBanca,
 } from './tipo-banca-form';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 type Escrita = 'salvando' | 'removendo';
 
 const CORPO_DIVERGENTE = 'uniplus.idempotency.body_mismatch';
@@ -106,6 +111,7 @@ export class EdicaoDosTiposBanca {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -192,13 +198,10 @@ export class EdicaoDosTiposBanca {
       const nome = controleDoCampoDoServidor(erro.field);
       if (nome === null) continue;
       const controle = this.form.controls[nome];
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
+      marcarRecusaDoServidor(controle, erro.code, erro.message);
       aplicou = true;
     }
-    this.erro.set(
-      aplicou ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
   private renovarChave(): void {
     this.chave.set(idempotencyKey.create());

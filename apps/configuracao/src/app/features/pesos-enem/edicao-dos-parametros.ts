@@ -23,9 +23,10 @@ import {
   comandoDeAtualizacao,
   criarGrupoDeEdicao,
 } from './pesos-enem-form';
-import { aplicarRecusaDoGrupo, descartarRecusasDoServidor } from './pesos-enem-recusas';
+import { aplicarRecusaDoGrupo } from './pesos-enem-recusas';
 import { idCampo, idDoBotaoDeEdicao, rotuloDoGrupo } from './pesos-enem-rotulos';
 import { PesosEnemStore } from './pesos-enem.store';
+import { descartarRecusasDoServidor } from '../../shared/formulario';
 
 export type EstadoOperacao = 'ok' | 'erro';
 

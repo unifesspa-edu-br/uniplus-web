@@ -645,6 +645,45 @@ describe('FasesCanonicasPage', () => {
     expect(document.activeElement).toBe(nome);
   });
 
+  it('a recusa que ficou em um campo não impede corrigir o outro e reenviar', async () => {
+    await flushLista([faseAvaliacaoSeed]);
+    edicao.abrirEdicao({ ...faseAvaliacaoSeed, coletaInscricao: true });
+    edicao.salvar();
+    controller.expectOne(urlRemocao(faseAvaliacaoSeed)).flush(
+      {
+        type: 'about:blank',
+        status: 422,
+        title: 'Recusa',
+        code: 'uniplus.configuracao.fase_canonica.coleta_inscricao_e_isencao_mutuamente_exclusivas',
+        traceId: '00000000000000000000000000000001',
+        errors: [
+          {
+            field: 'coletaSolicitacaoIsencao',
+            code: 'uniplus.configuracao.fase_canonica.coleta_inscricao_e_isencao_mutuamente_exclusivas',
+            message: 'Uma fase não coleta inscrição e solicitação de isenção ao mesmo tempo.',
+          },
+        ],
+      },
+      {
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+    expect(edicao.form.controls.coletaSolicitacaoIsencao.hasError('backend')).toBe(true);
+
+    edicao.form.controls.coletaInscricao.setValue(false);
+    edicao.salvar();
+
+    controller
+      .expectOne(urlRemocao(faseAvaliacaoSeed))
+      .flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    expect(edicao.aberto()).toBe(false);
+    controller.match((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
+  });
+
   it('libera as ações se a recarga falha e permite nova leitura', async () => {
     await flushLista([faseAvaliacaoSeed]);
     edicao.abrirEdicao(faseAvaliacaoSeed);

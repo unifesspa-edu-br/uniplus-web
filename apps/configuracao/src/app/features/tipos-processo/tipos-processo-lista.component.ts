@@ -11,7 +11,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
-import type { AndamentoDaEscrita } from './edicao-dos-tipos-processo';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 @Component({
   selector: 'cfg-tipos-processo-lista',

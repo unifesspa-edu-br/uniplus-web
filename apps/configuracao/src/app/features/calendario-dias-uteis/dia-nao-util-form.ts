@@ -196,10 +196,3 @@ export function apontarRecusa(controle: AbstractControl, codigo: string, mensage
   controle.setErrors({ ...controle.errors, backend: { code: codigo, message: mensagem } });
   controle.markAsTouched();
 }
-
-/** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-export function descartarRecusasDoServidor(grupo: GrupoDoDia): void {
-  for (const controle of Object.values(grupo.controls)) {
-    controle.updateValueAndValidity();
-  }
-}

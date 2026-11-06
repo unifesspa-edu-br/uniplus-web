@@ -31,6 +31,11 @@ import {
   valoresEmBrancoDaInstituicao,
 } from './instituicao-form';
 import { InstituicaoStore } from './instituicao.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 /**
  * Mensagem do alerta quando o backend recusa uma segunda criação (409 singleton).
@@ -38,8 +43,6 @@ import { InstituicaoStore } from './instituicao.store';
 const SINGLETON_CONFLITO_MSG =
   'Já existe uma instituição cadastrada nesta instância da plataforma. ' +
   'Para criar uma nova, primeiro remova a existente.';
-
-const MENSAGEM_SEM_MAPEAMENTO = 'Não foi possível mapear os erros de validação. Revise os campos.';
 
 /** Recusas que dizem que a tela mostra um estado que o servidor já não tem: a leitura é refeita. */
 const DIVERGENCIAS_DO_ESTADO_DA_TELA: ReadonlySet<string> = new Set([
@@ -137,7 +140,7 @@ export class EdicaoDaInstituicao {
     this.erro.set(null);
     this.erroDoEndereco.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -299,17 +302,7 @@ export class EdicaoDaInstituicao {
 
   private marcarCampo(nome: keyof InstituicaoForm, code: string, message: string): void {
     const controle = this.form.controls[nome];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) {
-      if (controle.hasError('backend')) {
-        controle.updateValueAndValidity({ emitEvent: false });
-      }
-    }
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

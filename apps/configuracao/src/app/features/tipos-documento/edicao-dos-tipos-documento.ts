@@ -36,6 +36,12 @@ import {
   mensagemDoAceite,
 } from './tipos-documento.mensagens';
 import { TiposDocumentoStore } from './tipos-documento.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoDocumento.CodigoJaExiste` (409, sem `errors[]`). */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.tipo_documento.codigo_ja_existe';
@@ -181,7 +187,7 @@ export class EdicaoDosTiposDocumento {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -333,29 +339,13 @@ export class EdicaoDosTiposDocumento {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const recusa of errors) {
-      const nome = controleDoCampoDoServidor(recusa.field);
-      if (nome === null) continue;
-      this.marcarCampo(nome, recusa.code, recusa.message);
-      aplicouAlgum = true;
-    }
-    if (!aplicouAlgum) {
-      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
-    }
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarCampo(nome: keyof TipoDocumentoForm, code: string, message: string): void {
     const controle = this.form.controls[nome];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) {
-      if (controle.hasError('backend')) controle.updateValueAndValidity({ emitEvent: false });
-    }
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

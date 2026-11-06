@@ -21,6 +21,7 @@ import {
 import type { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
 import { aguardarRecarga } from '../../shared/foco';
 import { CalendariosStore } from './calendarios.store';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 type Escrita = 'removendo' | 'marcando';
 
@@ -28,12 +29,6 @@ type Escrita = 'removendo' | 'marcando';
 export interface AcionadorDaConfirmacao {
   readonly acao: 'remover' | 'marcar';
   readonly id: string;
-}
-
-/** O calendário que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
 }
 
 const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {

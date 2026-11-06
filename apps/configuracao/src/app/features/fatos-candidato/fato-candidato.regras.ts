@@ -2,7 +2,6 @@ import {
   Validators,
   type AbstractControl,
   type FormControl,
-  type FormGroup,
   type ValidationErrors,
 } from '@angular/forms';
 import type {
@@ -357,14 +356,4 @@ export function exigirSe(controle: FormControl<string>, exigido: boolean, limpar
     }
   }
   if (mudou) controle.updateValueAndValidity({ emitEvent: false });
-}
-
-/**
- * Tira dos controles a recusa que a API devolveu no envio anterior: a causa pode ter sido corrigida
- * em outro campo, e quem confere de novo é a API, no próximo envio.
- */
-export function descartarRecusasDoServidor(formulario: FormGroup): void {
-  for (const controle of Object.values(formulario.controls)) {
-    if (controle.hasError('backend')) controle.updateValueAndValidity({ emitEvent: false });
-  }
 }

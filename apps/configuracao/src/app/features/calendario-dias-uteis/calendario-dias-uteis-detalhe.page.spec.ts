@@ -254,7 +254,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
     });
 
     it('a falha do servidor na leitura avisa por toast', async () => {
-      await falharALeitura(503, { code: 'uniplus.indisponivel' });
+      await falharALeitura(503, { code: 'uniplus.internal.unexpected' });
 
       expect(p.erros).toHaveBeenCalledTimes(1);
     });

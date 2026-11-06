@@ -151,7 +151,7 @@ describe('CalendarioDiasUteisDetalhePage — recusas do servidor', () => {
     const post = await p.enviar();
     const chave = post.request.headers.get('Idempotency-Key');
 
-    post.flush(...problema(503, { code: 'uniplus.indisponivel', title: 'Indisponível' }));
+    post.flush(...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }));
     await p.propagar();
 
     expect(alerta()).toContain('Indisponível');
@@ -159,6 +159,29 @@ describe('CalendarioDiasUteisDetalhePage — recusas do servidor', () => {
     const repeticao = await reenviar();
     expect(repeticao.request.headers.get('Idempotency-Key')).toBe(chave);
     await terminar(repeticao);
+  });
+
+  it('a recusa de um campo some da tela quando o reenvio falha por outro motivo', async () => {
+    const primeira = await p.enviar();
+    primeira.flush(
+      ...problema(422, {
+        code: DESCRICAO_TAMANHO,
+        errors: [{ field: 'descricao', code: DESCRICAO_TAMANHO, message: 'Descrição recusada.' }],
+      }),
+    );
+    await p.propagar();
+    await p.propagar();
+    expect(p.campo('descricao').getAttribute('aria-invalid')).toBe('true');
+
+    p.salvar().click();
+    await p.propagar();
+    p.http
+      .expectOne(ESCRITA_DO_DIA)
+      .flush(...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }));
+    await p.propagar();
+
+    expect(p.campo('descricao').getAttribute('aria-invalid')).not.toBe('true');
+    expect(p.dialogo().querySelector('.field__error')).toBeNull();
   });
 
   it('a recusa antiga some no início do envio seguinte', async () => {

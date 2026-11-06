@@ -12,7 +12,7 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CalendarioDiasUteisApi } from '@uniplus/shared-data/configuracao';
-import { controlNameFromBackendField } from '../../shared/formulario';
+import { controlNameFromBackendField, descartarRecusasDoServidor } from '../../shared/formulario';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import {
   CalendarioForm,
@@ -23,7 +23,6 @@ import {
   aplicarErroNoDia,
   apontarRecusa,
   criarGrupoDeDiaNaoUtil,
-  descartarRecusasDoServidor,
   GrupoDoDia,
   indiceDoDiaNoServidor,
 } from './dia-nao-util-form';
@@ -72,7 +71,9 @@ export class EdicaoDoCalendario {
   salvar(): void {
     this.erro.set(null);
     this.recusa.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
+    // A tela do campo reavalia os erros por evento do grupo do dia, e o descarte não emite.
+    this.form.controls.diasNaoUteis.controls.forEach((dia) => dia.updateValueAndValidity());
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -135,11 +136,5 @@ export class EdicaoDoCalendario {
     }
     apontarRecusa(this.form.controls.versaoDataset, erro.code, erro.message);
     return true;
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    this.form.controls.versaoDataset.updateValueAndValidity();
-    this.form.controls.diasNaoUteis.controls.forEach(descartarRecusasDoServidor);
   }
 }

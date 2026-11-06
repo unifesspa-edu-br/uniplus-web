@@ -20,6 +20,7 @@ import {
   criarFormularioDePerfil,
   valoresDoPerfil,
 } from './perfil-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 interface CorpoDoPerfil {
   readonly nome: string;
@@ -240,7 +241,6 @@ export class EdicaoDosPerfis {
 
   private marcar(nome: 'nome' | 'descricao', code: string, message: string): void {
     const controle = this.form.controls[nome];
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
+    marcarRecusaDoServidor(controle, code, message);
   }
 }

@@ -32,6 +32,11 @@ import {
   valoresDoLocal,
 } from './local-oferta-form';
 import { LocaisOfertaStore } from './locais-oferta.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -188,6 +193,7 @@ export class EdicaoDosLocaisOferta {
     }
     this.formError.set(null);
     this.enderecoErro.set(null);
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.enderecoErro.set(pendenciaDaCidade(this.form.controls.endereco, 'o local'));
@@ -277,8 +283,7 @@ export class EdicaoDosLocaisOferta {
       const controlName = controleDoCampoDoServidor(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
-      control.setErrors({ backend: { code: erro.code, message: erro.message } });
-      control.markAsTouched();
+      marcarRecusaDoServidor(control, erro.code, erro.message);
       aplicouAlgum = true;
     }
 
@@ -288,6 +293,6 @@ export class EdicaoDosLocaisOferta {
       this.formError.set(null);
       return;
     }
-    this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
+    this.formError.set(MENSAGEM_SEM_MAPEAMENTO);
   }
 }

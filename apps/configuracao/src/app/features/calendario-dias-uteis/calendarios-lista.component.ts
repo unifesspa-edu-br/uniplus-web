@@ -9,7 +9,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { devolverFocoDaLista } from '../../shared/foco';
-import type { AndamentoDaEscrita } from './edicao-dos-calendarios';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 
 @Component({
   selector: 'cfg-calendarios-lista',

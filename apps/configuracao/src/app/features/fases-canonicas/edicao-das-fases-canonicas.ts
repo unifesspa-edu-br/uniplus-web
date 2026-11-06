@@ -28,19 +28,14 @@ import {
 } from './fase-canonica-form';
 import { aguardarRecarga } from '../../shared/foco';
 import { FasesCanonicasStore } from './fases-canonicas.store';
+import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusasDosCampos,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
-
-/** A fase que a escrita em curso afeta e o que a linha dela mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
-}
-
-const ROTULO_DA_ESCRITA: Record<Escrita, string> = {
-  salvando: 'Salvando...',
-  removendo: 'Removendo...',
-};
 
 /**
  * Todas as escritas da tela de fases canônicas: o formulário, o salvamento e a remoção com
@@ -165,6 +160,7 @@ export class EdicaoDasFasesCanonicas {
   salvar(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -195,7 +191,7 @@ export class EdicaoDasFasesCanonicas {
   ): void {
     if (this.gravando()) return;
     this.escrita.set(tipo);
-    this.emAndamento.set({ id: faseId, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    this.emAndamento.set({ id: faseId, rotulo: ROTULOS_PADRAO_DA_ESCRITA[tipo] });
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       if (!result.ok) this.emAndamento.set(null);
       concluir(result);
@@ -254,18 +250,8 @@ export class EdicaoDasFasesCanonicas {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const erro of errors) {
-      const nome = controleDoCampoDoServidor(erro.field);
-      if (nome === null) continue;
-      const controle = this.form.controls[nome];
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
-      aplicouAlgum = true;
-    }
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private renovarChave(): void {

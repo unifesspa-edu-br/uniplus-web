@@ -34,7 +34,7 @@ import {
   SituacaoDaAprovacaoComponent,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import type { AndamentoDaEscrita } from './edicao-dos-fatos';
+import type { AndamentoDaEscrita } from '../../shared/escrita';
 import { ID_DO_CADASTRO, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
 import { DOMINIOS, ORIGENS, acaoDeAtivacao } from './fato-candidato.regras';
 

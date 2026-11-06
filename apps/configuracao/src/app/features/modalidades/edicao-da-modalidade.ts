@@ -39,6 +39,11 @@ import {
 } from './modalidade-form';
 import { ModalidadeFormStore } from './modalidade-form.store';
 import type { OpcaoDeReferencia } from './opcao-de-referencia';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.modalidade.codigo_ja_existe';
 const CORPO_DIVERGENTE = 'uniplus.idempotency.body_mismatch';
@@ -163,6 +168,7 @@ export class EdicaoDaModalidade {
     this.erro.set(null);
     this.aplicabilidade.recusas.set([]);
     this.conferencias.update((n) => n + 1);
+    descartarRecusasDoServidor(this.form);
     this.verificarCodigoDuplicado();
     const regraValida = this.aplicabilidade.conferir();
     if (this.form.invalid || !regraValida) {
@@ -224,10 +230,7 @@ export class EdicaoDaModalidade {
 
   private recusarCodigoRepetido(problem: ProblemDetails): void {
     const control = this.form.controls.codigo;
-    control.setErrors({
-      backend: { code: problem.code, message: 'Código já utilizado por outra modalidade viva.' },
-    });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, problem.code, 'Código já utilizado por outra modalidade viva.');
     this.erro.set(null);
   }
 
@@ -243,17 +246,14 @@ export class EdicaoDaModalidade {
       }
     }
     this.aplicabilidade.recusas.set(recusasDaRegra);
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarControle(erro: ProblemValidationError): boolean {
     const nome = controleDoCampoDoServidor(erro.field);
     if (nome === null) return false;
     const control = this.form.controls[nome];
-    control.setErrors({ backend: { code: erro.code, message: erro.message } });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, erro.code, erro.message);
     return true;
   }
 

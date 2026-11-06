@@ -29,6 +29,7 @@ import {
   criarFormularioRascunho,
   valoresDoRascunho,
 } from './termo-consentimento-form';
+import { marcarRecusaDoServidor, MENSAGEM_SEM_MAPEAMENTO } from '../../shared/formulario';
 
 type Escrita = AcaoTermo | 'criar';
 
@@ -41,8 +42,6 @@ const ANUNCIO_DO_ANDAMENTO: Readonly<Record<Exclude<Escrita, 'remover'>, string>
 
 const CODIGO_DE_CONFLITO_DE_CONCORRENCIA =
   'uniplus.configuracao.termo_consentimento.conflito_de_concorrencia';
-
-const MENSAGEM_SEM_CAMPO = 'Não foi possível mapear os erros de validação. Revise os campos.';
 
 /**
  * Todas as escritas do termo de consentimento: criação, rascunho, revisão, promoção e remoção.
@@ -286,12 +285,11 @@ export class EdicaoDosTermosConsentimento {
       const nome = controleDoCampoDoServidor(erro.field);
       const controle = nome === null ? undefined : controles[nome];
       if (controle === undefined) continue;
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
+      marcarRecusaDoServidor(controle, erro.code, erro.message);
       aplicouAlgum = true;
     }
     (escrita === 'criar' ? this.formError : this.acaoErro).set(
-      aplicouAlgum ? null : MENSAGEM_SEM_CAMPO,
+      aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO,
     );
   }
 

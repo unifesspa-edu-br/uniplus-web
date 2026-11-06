@@ -14,10 +14,11 @@ import {
   criarFormularioDeResolucao,
   criarGrupoDeCriacao,
 } from './pesos-enem-form';
-import { aplicarRecusaDoGrupo, descartarRecusasDoServidor } from './pesos-enem-recusas';
+import { aplicarRecusaDoGrupo } from './pesos-enem-recusas';
 import { rotuloDoGrupo } from './pesos-enem-rotulos';
 import { PesosEnemStore } from './pesos-enem.store';
 import type { EstadoOperacao } from './edicao-dos-parametros';
+import { descartarRecusasDoServidor } from '../../shared/formulario';
 
 /** Vendor code do DomainError de par resolução + grupo já cadastrado (409 Conflict). */
 const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';

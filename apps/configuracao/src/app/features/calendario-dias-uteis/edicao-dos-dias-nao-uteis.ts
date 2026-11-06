@@ -14,14 +14,10 @@ import { aguardarRecarga } from '../../shared/foco';
 import { PARA_SIGLA, DATA_DUPLICADA_MESSAGE } from './calendario-dias-uteis.util';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import { CalendarioStore } from './calendario.store';
-import {
-  aplicarErroNoDia,
-  comandoDoDiaNaoUtil,
-  criarGrupoDeDiaNaoUtil,
-  descartarRecusasDoServidor,
-} from './dia-nao-util-form';
+import { aplicarErroNoDia, comandoDoDiaNaoUtil, criarGrupoDeDiaNaoUtil } from './dia-nao-util-form';
 import { aplicarPoliticaDaFalha, TipoDeFalha } from './falha-do-calendario';
 import { SelecaoDoDia } from './selecao-do-dia';
+import { descartarRecusasDoServidor } from '../../shared/formulario';
 
 const ORIENTACAO_DA_DUPLICIDADE =
   'Escolha outra abrangência ou região, ou cancele para manter o que já está cadastrado.';
@@ -99,6 +95,8 @@ export class EdicaoDosDiasNaoUteis {
     this.erro.set(null);
     this.recusa.set('');
     descartarRecusasDoServidor(this.form);
+    // A tela do campo reavalia os erros por evento do grupo, e o descarte não emite.
+    this.form.updateValueAndValidity();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;

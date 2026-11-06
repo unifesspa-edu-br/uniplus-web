@@ -30,20 +30,16 @@ import {
   valoresEmBrancoDaPrecedencia,
 } from './precedencia-form';
 import { PrecedenciasFaseStore } from './precedencias-fase.store';
+import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
 type ModoFormulario = 'criar' | 'editar';
-
-/** A aresta que a escrita em curso afeta e o que a linha dela mostra enquanto isso. */
-export interface AndamentoDaEscrita {
-  readonly id: string;
-  readonly rotulo: string;
-}
-
-const ROTULO_DA_ESCRITA: Record<Escrita, string> = {
-  salvando: 'Salvando...',
-  removendo: 'Removendo...',
-};
 
 const descreverAresta = (aresta: PrecedenciaFaseDto): string =>
   `${aresta.antecessoraCodigo} → ${aresta.sucessoraCodigo}`;
@@ -161,7 +157,7 @@ export class EdicaoDasPrecedencias {
     if (this.gravando()) return;
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
-    this.descartarRecusasDoServidor();
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -210,7 +206,7 @@ export class EdicaoDasPrecedencias {
   ): void {
     if (this.gravando()) return;
     this.escrita.set(tipo);
-    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULOS_PADRAO_DA_ESCRITA[tipo] });
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
       concluir(result);
       this.escrita.set(null);
@@ -301,26 +297,12 @@ export class EdicaoDasPrecedencias {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const erro of errors) {
-      const nome = controleDoCampoDoServidor(erro.field);
-      if (nome === null) continue;
-      this.marcarRecusa(this.form.controls[nome], erro.code, erro.message);
-      aplicouAlgum = true;
-    }
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarRecusa(controle: AbstractControl, code: string, message: string): void {
-    controle.setErrors({ backend: { code, message } });
-    controle.markAsTouched();
-  }
-
-  /** A recusa do servidor vale para o envio que a causou: ao reenviar, só a validação local barra. */
-  private descartarRecusasDoServidor(): void {
-    for (const controle of Object.values(this.form.controls)) controle.updateValueAndValidity();
+    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

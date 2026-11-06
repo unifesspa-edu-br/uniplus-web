@@ -270,7 +270,7 @@ describe('CalendarioDiasUteisListPage — escritas pela interface', () => {
       const post = await p.confirmarVigencia();
       const chave = chaveDe(post);
 
-      post.flush(...problema(503, { code: 'uniplus.indisponivel', title: 'Indisponível' }));
+      post.flush(...problema(503, { code: 'uniplus.internal.unexpected', title: 'Indisponível' }));
       await p.propagar();
 
       expect(textoDoDialogo('vigencia')).toContain('Indisponível');

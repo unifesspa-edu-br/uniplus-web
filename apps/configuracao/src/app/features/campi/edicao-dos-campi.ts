@@ -30,6 +30,11 @@ import {
   criarFormularioDeCampus,
   valoresDoCampus,
 } from './campus-form';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
 
@@ -119,6 +124,7 @@ export class EdicaoDosCampi {
   salvar(): void {
     this.erro.set(null);
     this.erroDoEndereco.set(null);
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.recusarFormularioInvalido();
       return;
@@ -233,10 +239,7 @@ export class EdicaoDosCampi {
   /** A duplicidade vem como um erro de domínio único (409, sem `errors[]`): vai ao campo da sigla. */
   private marcarSiglaJaExistente(problem: ProblemDetails): void {
     const sigla = this.form.controls.sigla;
-    sigla.setErrors({
-      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-    });
-    sigla.markAsTouched();
+    marcarRecusaDoServidor(sigla, problem.code, this.problemI18n.resolve(problem).title);
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
@@ -251,9 +254,7 @@ export class EdicaoDosCampi {
       aplicouAlgum = this.marcarControle(erro) || aplicouAlgum;
     }
     this.erroDoEndereco.set(erroEndereco);
-    this.erro.set(
-      aplicouAlgum ? null : 'Não foi possível mapear os erros de validação. Revise os campos.',
-    );
+    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private marcarControle(erro: ProblemValidationError): boolean {
@@ -262,8 +263,7 @@ export class EdicaoDosCampi {
       return false;
     }
     const control = this.form.controls[nome];
-    control.setErrors({ backend: { code: erro.code, message: erro.message } });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, erro.code, erro.message);
     return true;
   }
 
