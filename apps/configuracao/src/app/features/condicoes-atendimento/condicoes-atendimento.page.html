@@ -1,0 +1,72 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Condição de Atendimento</h1>
+    <p class="page-header__desc">
+      Condições que habilitam o candidato a solicitar atendimento especializado — cadastro
+      independente, identificado por código · UNI-REQ-0012.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="info" heading="Código editável, com exceção do PCD" [dynamic]="false">
+  O código de uma condição é editável (com nova checagem de unicidade entre as ativas) — as ofertas
+  já congeladas em editais permanecem intactas. A única exceção é o código PCD (Pessoa com
+  Deficiência), reservado e protegido: não pode ser renomeado nem removido, pois a regra de oferta
+  de atendimento o referencia literalmente.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as condições de atendimento">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
+<cfg-condicoes-atendimento-lista
+  [condicoes]="store.condicoesFiltradas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-condicao-atendimento-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [modo]="edicao.modo()"
+  [salvando]="edicao.salvando()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover condição de atendimento?"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

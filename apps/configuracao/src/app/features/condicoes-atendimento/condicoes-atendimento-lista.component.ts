@@ -1,47 +1,72 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { CondicaoAtendimentoDto } from '@uniplus/shared-data/configuracao';
-import { EmptyStateComponent, PagerComponent } from '@uniplus/shared-ui/components';
+import {
+  EmptyStateComponent,
+  FilterBarComponent,
+  IconButtonComponent,
+  PagerComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
+import { CODIGO_RESERVADO } from './condicao-atendimento-form';
+import type { AndamentoDaEscrita } from './edicao-das-condicoes-atendimento';
+
+type Acao = 'editar' | 'remover';
+
+const VERBO_DA_ACAO: Readonly<Record<Acao, string>> = { editar: 'Editar', remover: 'Remover' };
 
 @Component({
   selector: 'cfg-condicoes-atendimento-lista',
-  imports: [EmptyStateComponent, PagerComponent],
+  standalone: true,
+  imports: [
+    EmptyStateComponent,
+    FilterBarComponent,
+    IconButtonComponent,
+    PagerComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './condicoes-atendimento-lista.component.html',
 })
 export class CondicoesAtendimentoListaComponent {
-  readonly condicoesFiltradas = input.required<readonly CondicaoAtendimentoDto[]>();
+  readonly condicoes = input.required<readonly CondicaoAtendimentoDto[]>();
   readonly carregando = input.required<boolean>();
-  readonly indisponivel = input.required<boolean>();
-  readonly mensagemDeErro = input.required<string | null>();
-  readonly termoBusca = input.required<string>();
+  readonly gravando = input.required<boolean>();
+  readonly removendo = input.required<boolean>();
+  readonly andamento = input.required<AndamentoDaEscrita | null>();
+  readonly erro = input.required<string | null>();
   readonly temFiltro = input.required<boolean>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
-  readonly linhaEmAndamento = input.required<string | null>();
-  readonly rotuloAndamento = input.required<string>();
-  readonly buscaAlterada = output<string>();
+  readonly termoBusca = model.required<string>();
   readonly cadastrar = output<void>();
   readonly editar = output<CondicaoAtendimentoDto>();
   readonly remover = output<CondicaoAtendimentoDto>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
 
-  protected aoDigitar(evento: Event): void {
-    this.alterarBusca((evento.target as HTMLInputElement).value);
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
+  protected readonly codigoReservado = CODIGO_RESERVADO;
+
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-condicao-id',
+    idDoTitulo: 'cfg-condicoes-atendimento-list-title',
+    idDoCadastro: 'cfg-condicoes-atendimento-novo',
+  });
+
+  protected acionarCadastro(): void {
+    this.foco.registrar(null);
+    this.cadastrar.emit();
   }
-  protected alterarBusca(valor: string): void {
-    if (!this.indisponivel()) this.buscaAlterada.emit(valor);
+
+  protected acionar(acao: Acao, condicao: CondicaoAtendimentoDto): void {
+    this.foco.registrar({ acao, id: condicao.id });
+    (acao === 'editar' ? this.editar : this.remover).emit(condicao);
   }
-  protected limparBusca(): void {
-    this.alterarBusca('');
-  }
-  protected cadastrarCondicao(): void {
-    if (!this.indisponivel()) this.cadastrar.emit();
-  }
-  protected editarCondicao(condicao: CondicaoAtendimentoDto): void {
-    if (!this.indisponivel()) this.editar.emit(condicao);
-  }
-  protected removerCondicao(condicao: CondicaoAtendimentoDto): void {
-    if (!this.indisponivel() && condicao.codigo !== 'PCD') this.remover.emit(condicao);
+
+  protected nomeDaAcao(acao: Acao, codigo: string): string {
+    return `${VERBO_DA_ACAO[acao]} condição de atendimento ${codigo}`;
   }
 }

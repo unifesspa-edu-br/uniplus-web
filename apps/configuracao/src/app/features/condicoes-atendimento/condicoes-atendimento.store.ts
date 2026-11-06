@@ -31,6 +31,7 @@ export class CondicoesAtendimentoStore {
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly termoBusca = signal('');
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly condicoesFiltradas = computed(() => {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     if (termo.length === 0) return this.condicoes();

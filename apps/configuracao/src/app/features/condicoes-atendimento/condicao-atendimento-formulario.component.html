@@ -6,73 +6,70 @@
   ariaLabel="Formulário da condição de atendimento"
   position="right"
 >
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar"> {{ erro() }} </ui-alert>
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
   <form
     [formGroup]="form()"
-    id="cfg-unidade-form"
+    id="cfg-condicao-atendimento-form"
     (ngSubmit)="aoEnviar()"
     novalidate
     class="form-drawer__form"
   >
     <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
-      <section aria-labelledby="cfg-form-identificadores">
-        <div class="form-grid">
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
-            <span class="field__label is-required">Código</span>
-            <input
-              aria-required="true"
-              class="input"
-              type="text"
-              style="text-transform: uppercase"
-              inputmode="text"
-              placeholder="Ex.: DISLEXIA"
-              formControlName="codigo"
-              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
-              [aria-label]="form().controls['codigo']?.value === 'PCD' ? 'Código reservado' : null"
-            />
-            <span class="field__hint"
-              >Caixa alta, iniciando por letra; letras, números e sublinhado (^[A-Z][A-Z0-9_]+$).
-              Único entre as condições ativas. Editável, exceto o código PCD (reservado).
-            </span>
-            @if (erroDoCampo('codigo')) {
-              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
-            }
-          </label>
+      <div class="form-grid">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigo')">
+          <span class="field__label is-required">Código</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            style="text-transform: uppercase"
+            inputmode="text"
+            placeholder="Ex.: DISLEXIA"
+            formControlName="codigo"
+            [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+          />
+          <span class="field__hint"
+            >Caixa alta, iniciando por letra; letras, números e sublinhado. Único entre as condições
+            ativas. Editável, exceto o código {{ codigoReservado }} (reservado).
+          </span>
+          @if (erroDoCampo('codigo')) {
+            <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+          }
+        </label>
 
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
-            <span class="field__label is-required">Nome</span>
-            <input
-              aria-required="true"
-              class="input"
-              type="text"
-              placeholder="Ex.: Dislexia"
-              formControlName="nome"
-              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-            />
-            <span class="field__hint"> Rótulo legível da condição, distinto do código curto. </span>
-            @if (erroDoCampo('nome')) {
-              <span class="field__error">{{ erroDoCampo('nome') }}</span>
-            }
-          </label>
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            placeholder="Ex.: Dislexia"
+            formControlName="nome"
+            [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+          />
+          <span class="field__hint">Rótulo legível da condição, distinto do código curto.</span>
+          @if (erroDoCampo('nome')) {
+            <span class="field__error">{{ erroDoCampo('nome') }}</span>
+          }
+        </label>
 
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
-            <span class="field__label">Descrição</span>
-            <textarea
-              class="input"
-              type="text"
-              placeholder="Texto opcional — ex.: base legal ou observações da condição."
-              formControlName="descricao"
-              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
-            ></textarea>
-            @if (erroDoCampo('descricao')) {
-              <span class="field__error">{{ erroDoCampo('descricao') }}</span>
-            }
-          </label>
-        </div>
-      </section>
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
+          <span class="field__label">Descrição</span>
+          <textarea
+            class="input"
+            placeholder="Texto opcional — ex.: base legal ou observações da condição."
+            formControlName="descricao"
+            [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+          ></textarea>
+          @if (erroDoCampo('descricao')) {
+            <span class="field__error">{{ erroDoCampo('descricao') }}</span>
+          }
+        </label>
+      </div>
     </fieldset>
   </form>
 
@@ -87,17 +84,16 @@
     </button>
     <button
       type="submit"
-      form="cfg-unidade-form"
+      form="cfg-condicao-atendimento-form"
       class="btn btn--primary"
-      [disabled]="!salvando() && form().invalid"
       [attr.aria-disabled]="salvando() ? 'true' : null"
       [attr.aria-busy]="salvando() ? 'true' : null"
-      (click)="aoClicarEmSalvar($event)"
+      (click)="salvando() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
         <ui-spinner size="sm" />
       }
-      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar condição' : 'Salvar condição' }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>
