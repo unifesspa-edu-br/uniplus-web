@@ -78,7 +78,7 @@ export class TiposProcessoApi {
    * DELETE `/api/configuracao/admin/tipos-processo/{id}` — desativação (soft-delete).
    * Sem `Idempotency-Key` (o contrato não o exige). Responde 422
    * (`uniplus.configuracao.tipo_processo.ja_desativado`) quando o tipo já está
-   * inativo e 409 (`...conflito_de_concorrencia`) sob alteração concorrente.
+   * inativo e 409 (`uniplus.concorrencia.conflito`) sob alteração concorrente.
    */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
