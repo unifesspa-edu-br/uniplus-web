@@ -27,6 +27,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
+import { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import { CatalogoDeFases } from './catalogos/catalogo-de-fases.service';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogos/catalogo-de-unidades-do-cadastro.service';
@@ -143,6 +144,43 @@ describe('CronogramaPassoComponent', () => {
   });
 
   afterEach(() => controller.verify());
+
+  describe('falha dos catálogos exigidos', () => {
+    const botaoDeTentar = (): HTMLButtonElement =>
+      Array.from(nativo.querySelectorAll('button')).find(
+        (botao) => botao.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+    const situacao = (): string =>
+      nativo.querySelector('ui-situacao-da-nova-tentativa')?.textContent ?? '';
+
+    function recusarOsCatalogos(): void {
+      TestBed.inject(CatalogoDeBancas).erro.set('Não foi possível carregar as bancas.');
+      detectar();
+    }
+
+    it('a falha troca o editor pelo aviso, e a nova tentativa o mantém ao lado da espera', async () => {
+      recusarOsCatalogos();
+      expect(nativo.querySelector('ui-alert .alert__title')?.textContent).toBe(
+        'Não foi possível carregar os catálogos',
+      );
+      expect(nativo.querySelector('sel-nova-fase')).toBeNull();
+
+      botaoDeTentar().click();
+      detectar();
+
+      expect(situacao()).toBe('Tentando novamente…');
+      expect(nativo.querySelector('ui-alert')).not.toBeNull();
+      expect(nativo.textContent).toContain('Carregando fases, bancas, atos e regras…');
+      expect(nativo.querySelectorAll('[role="status"]')).toHaveLength(1);
+
+      for (const requisicao of controller.match(() => true)) requisicao.flush([]);
+      await proximoPasso();
+      detectar();
+
+      expect(nativo.querySelector('ui-alert')).toBeNull();
+      expect(nativo.textContent).not.toContain('Carregando fases, bancas, atos e regras…');
+    });
+  });
 
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));

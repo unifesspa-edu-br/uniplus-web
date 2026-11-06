@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
 
 import { type ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { FasePassoComponent } from '../fase/fase.component';
@@ -29,6 +34,8 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 @Component({
   selector: 'sel-step-cronograma',
   imports: [
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ValorEmConsultaComponent,
     ReactiveFormsModule,
     FasePassoComponent,
@@ -59,6 +66,12 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 export class CronogramaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
+  protected readonly leituraDosCatalogos = acompanharLeitura({
+    falha: this.situacao.erro,
+    pendente: this.situacao.carregando,
+    recarregar: () => this.situacao.recarregar(),
+    destino: () => document.getElementById('sel-cronograma-subtitulo'),
+  });
   protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);

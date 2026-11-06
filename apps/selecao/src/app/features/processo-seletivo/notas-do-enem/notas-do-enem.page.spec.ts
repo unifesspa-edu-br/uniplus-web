@@ -13,6 +13,7 @@ import {
   processo,
   providersDaTela,
   snapshotVigente,
+  tick,
   type Card,
 } from './notas-do-enem.testing';
 
@@ -128,6 +129,68 @@ describe('NotasDoEnemPage', () => {
     await antiga;
 
     expect(notas.processo().estado).toBe('lido');
+  });
+
+  describe('nova tentativa da leitura do processo, que espera a resposta com await', () => {
+    const botaoDeTentar = (): HTMLButtonElement =>
+      Array.from(host.querySelectorAll('button')).find(
+        (botao) => botao.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+    const situacao = (): string =>
+      host.querySelector('ui-situacao-da-nova-tentativa')?.textContent ?? '';
+
+    async function abrirComProcessoRecusado(): Promise<void> {
+      fixture = TestBed.createComponent(NotasDoEnemPage);
+      host = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+      controller
+        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio')
+        .flush([]);
+      controller
+        .expectOne((r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'retorno')
+        .flush([]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('a tentativa em curso mantém o aviso, mostra a espera e some quando o processo chega', async () => {
+      await abrirComProcessoRecusado();
+      expect(texto()).toContain('Não foi possível carregar o processo seletivo');
+
+      botaoDeTentar().click();
+      fixture.detectChanges();
+
+      expect(situacao()).toBe('Tentando novamente…');
+      expect(texto()).toContain('Carregando o processo seletivo…');
+      expect(texto()).toContain('Não foi possível carregar o processo seletivo');
+      expect(host.querySelectorAll('[role="status"]')).toHaveLength(1);
+      controller.expectOne(ROTA_PROCESSO).flush(processo({ status: 'rascunho' }));
+      await tick();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(texto()).not.toContain('Não foi possível carregar o processo seletivo');
+      expect(texto()).toContain('O processo ainda não foi divulgado');
+    });
+
+    it('a recusa de novo passa a "também falhou" e mantém o botão', async () => {
+      await abrirComProcessoRecusado();
+
+      botaoDeTentar().click();
+      fixture.detectChanges();
+      controller
+        .expectOne(ROTA_PROCESSO)
+        .flush(null, { status: 503, statusText: 'Service Unavailable' });
+      await tick();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(situacao()).toBe('A nova tentativa também falhou.');
+      expect(botaoDeTentar()).toBeTruthy();
+    });
   });
 
   it('a releitura do histórico invalida a leitura anterior que ainda não voltou', async () => {

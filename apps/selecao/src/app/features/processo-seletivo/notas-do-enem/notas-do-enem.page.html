@@ -12,18 +12,15 @@
 </ui-page-header>
 
 @let processo = notas.processo();
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar o processo seletivo"
+  [leitura]="leituraDoProcesso"
+/>
 @if (processo.estado === 'falha') {
-  <ui-alert variant="danger" heading="Não foi possível carregar o processo seletivo">
-    {{ processo.mensagem }}
-    <span class="notas__tentar">
-      <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarProcesso()">
-        Tentar novamente
-      </button>
-    </span>
-  </ui-alert>
+  <!-- A falha e a nova tentativa ficam no aviso acima. -->
 } @else if (processo.estado === 'lendo') {
-  <p class="notas__lendo" role="status">
-    <ui-spinner spinnerSize="sm" />
+  <p class="notas__lendo" [uiIndicadorDaLeitura]="leituraDoProcesso">
+    <ui-spinner spinnerSize="sm" [decorativo]="true" />
     Carregando o processo seletivo…
   </p>
 } @else {

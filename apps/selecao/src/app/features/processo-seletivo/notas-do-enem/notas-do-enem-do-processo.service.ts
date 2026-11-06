@@ -45,6 +45,8 @@ class HistoricoDaEdicao<T> {
   private leituraAtual = 0;
   readonly edicao = signal('');
   readonly leitura = signal<Leitura<T>>(LENDO);
+  /** Uma leitura corre: a recarga mantém a falha à vista, e este sinal é o que diz que há espera. */
+  readonly relendo = signal(false);
   readonly escolhido: Signal<EscopoEscolhido | null>;
 
   constructor(
@@ -59,6 +61,7 @@ class HistoricoDaEdicao<T> {
     this.leituraAtual++;
     this.edicao.set('');
     this.leitura.set(LENDO);
+    this.relendo.set(false);
   }
 
   async escolher(edicao: string): Promise<void> {
@@ -71,10 +74,15 @@ class HistoricoDaEdicao<T> {
   async ler(): Promise<void> {
     const leitura = ++this.leituraAtual;
     const escolhido = this.escolhido();
-    if (escolhido === null) return;
+    if (escolhido === null) {
+      this.relendo.set(false);
+      return;
+    }
+    this.relendo.set(true);
     const resultado = await firstValueFrom(this.listar(escolhido));
     if (leitura !== this.leituraAtual) return;
     this.leitura.set(this.comoLeitura(resultado));
+    this.relendo.set(false);
   }
 }
 
@@ -136,6 +144,8 @@ export class NotasDoEnemDoProcesso {
   readonly edicaoDeRetorno = this.historicoDeLotes.edicao.asReadonly();
   readonly envios = this.historicoDeEnvios.leitura.asReadonly();
   readonly lotes = this.historicoDeLotes.leitura.asReadonly();
+  readonly relendoEnvios = this.historicoDeEnvios.relendo.asReadonly();
+  readonly relendoLotes = this.historicoDeLotes.relendo.asReadonly();
   /** O escopo completo para as rotas do envio, quando processo, etapa e edição estão definidos. */
   readonly escolhidoDeEnvio = this.historicoDeEnvios.escolhido;
   /** O mesmo para a importação, que tem a própria edição. */

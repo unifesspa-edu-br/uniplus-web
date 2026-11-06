@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
+  acompanharLeitura,
   AlertComponent,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   PageHeaderComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -28,6 +31,8 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
     AlertComponent,
     EmptyStateComponent,
     EnvioAoInepComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ImportacaoDeNotasComponent,
     PageHeaderComponent,
     SpinnerComponent,
@@ -39,7 +44,17 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
 })
 export class NotasDoEnemPage {
   private readonly rota = inject(ActivatedRoute);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly notas = inject(NotasDoEnemDoProcesso);
+  protected readonly leituraDoProcesso = acompanharLeitura({
+    falha: computed(() => {
+      const processo = this.notas.processo();
+      return processo.estado === 'falha' ? processo.mensagem : null;
+    }),
+    pendente: computed(() => this.notas.processo().estado === 'lendo'),
+    recarregar: () => void this.notas.recarregarProcesso(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+  });
 
   constructor() {
     this.rota.paramMap.pipe(takeUntilDestroyed()).subscribe((parametros) => {

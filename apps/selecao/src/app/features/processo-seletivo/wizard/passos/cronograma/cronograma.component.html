@@ -1,18 +1,17 @@
-<p class="step-subtitle">
+<p id="sel-cronograma-subtitulo" class="step-subtitle" tabindex="-1">
   A linha do tempo do certame. Cada fase vem do catálogo institucional e pede só o que os seus
   atributos exigem. Qualquer fase pode subdividir-se em etapas — e é a etapa que diz a que fase
   pertence.
 </p>
 
+<ui-falha-de-leitura titulo="Não foi possível carregar os catálogos" [leitura]="leituraDosCatalogos" />
+
 @if (situacao.carregando()) {
-  <p class="field__hint" role="status">Carregando fases, bancas, atos e regras…</p>
-} @else if (situacao.erro(); as erro) {
-  <div class="field__erro" role="alert">
-    <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="situacao.recarregar()">
-      Tentar novamente
-    </button>
-  </div>
+  <p class="field__hint" [uiIndicadorDaLeitura]="leituraDosCatalogos">
+    Carregando fases, bancas, atos e regras…
+  </p>
+} @else if (situacao.erro()) {
+  <!-- A falha e a nova tentativa ficam no aviso acima. -->
 } @else if (store.emConsulta()) {
   @if (linhaDoTempo().length === 0) {
     <p class="field__hint">Nenhuma fase na linha do tempo.</p>
