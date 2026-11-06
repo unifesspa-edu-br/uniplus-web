@@ -232,7 +232,7 @@ describe('TiposBancaPage', () => {
     lixeira.click();
     fixture.detectChanges();
 
-    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
+    const dialogo = fixture.nativeElement.querySelector('cfg-tipo-banca-remocao') as HTMLElement;
 
     expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover tipo de banca');
 

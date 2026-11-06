@@ -4,7 +4,7 @@
       @if (removendo()) {
         <span aria-hidden="true">Removendo...</span>
       }
-      <h2 id="cfg-tipos-banca-list-title">Tipos de banca</h2>
+      <h2 id="cfg-tipos-banca-list-title" tabindex="-1">Tipos de banca</h2>
       @if (carregando()) {
         <span class="cfg-tipos-banca__loading"><ui-spinner size="sm" /> Carregando</span>
       }
@@ -16,7 +16,7 @@
     searchPlaceholder="Buscar por código ou nome…"
     searchAriaLabel="Buscar tipos de banca"
     [(searchValue)]="termoBusca"
-    [attr.inert]="removendo() ? '' : null"
+    [attr.inert]="gravando() ? '' : null"
   />
 
   @if (bancas().length > 0) {
@@ -45,22 +45,22 @@
                 <button
                   type="button"
                   class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
-                  [attr.aria-label]="'Editar tipo de banca ' + banca.codigo"
+                  [attr.aria-label]="nomeDaAcao('editar', banca.codigo)"
                   data-tooltip="Editar tipo de banca"
                   data-tooltip-position="left"
-                  [attr.aria-disabled]="carregando() || removendo() ? 'true' : null"
-                  (click)="acionarEdicao(banca)"
+                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
+                  (click)="acionar('editar', banca)"
                 >
                   <i class="pi pi-pencil" aria-hidden="true"></i>
                 </button>
                 <button
                   type="button"
                   class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
-                  [attr.aria-label]="'Remover tipo de banca ' + banca.codigo"
+                  [attr.aria-label]="nomeDaAcao('remover', banca.codigo)"
                   data-tooltip="Remover tipo de banca"
                   data-tooltip-position="left"
-                  [attr.aria-disabled]="carregando() || removendo() ? 'true' : null"
-                  (click)="acionarRemocao(banca)"
+                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
+                  (click)="acionar('remover', banca)"
                 >
                   <i class="pi pi-trash" aria-hidden="true"></i>
                 </button>
@@ -79,7 +79,7 @@
         <button
           type="button"
           class="btn btn--secondary"
-          [disabled]="removendo()"
+          [disabled]="indisponivel()"
           (click)="termoBusca.set('')"
         >
           Limpar filtros
@@ -99,11 +99,9 @@
       navigationLabel="Paginação de tipos de banca"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando() || removendo()"
+      [isDisabled]="indisponivel()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />
   }
 </section>
-
-<span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>

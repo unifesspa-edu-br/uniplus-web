@@ -29,6 +29,7 @@ export class TipoBancaFormularioComponent {
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<BancaForm>>();
   readonly erro = input.required<string | null>();
+  readonly anuncio = input.required<string>();
   readonly salvando = input.required<boolean>();
   readonly sugestoesFaseTipica = input.required<readonly string[]>();
   readonly salvar = output<void>();
@@ -36,11 +37,26 @@ export class TipoBancaFormularioComponent {
   constructor() {
     let estavaSalvando = false;
     effect(() => {
+      const comecou = !estavaSalvando && this.salvando();
       const terminou = estavaSalvando && !this.salvando();
       estavaSalvando = this.salvando();
+      if (comecou && this.focoEstaNosCampos()) this.levarFocoAoSalvar();
       if (terminou) afterNextRender(() => this.focarInvalido(), { injector: this.injector });
     });
   }
+  private focoEstaNosCampos(): boolean {
+    return (
+      this.raiz.nativeElement.querySelector('fieldset')?.contains(document.activeElement) ?? false
+    );
+  }
+
+  private levarFocoAoSalvar(): void {
+    afterNextRender(
+      () => this.raiz.nativeElement.querySelector<HTMLElement>('button[type="submit"]')?.focus(),
+      { injector: this.injector },
+    );
+  }
+
   private focarInvalido(): void {
     if (this.aberto())
       this.raiz.nativeElement

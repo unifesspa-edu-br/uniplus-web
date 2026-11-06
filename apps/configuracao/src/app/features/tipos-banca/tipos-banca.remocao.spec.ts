@@ -73,9 +73,9 @@ describe('TiposBancaPage — remoção', () => {
 
     expect(edicao.confirmando()).toBe(true);
 
-    const dialogo = fixture.nativeElement.querySelector('ui-confirm-dialog') as HTMLElement;
-    const cancelar = dialogo.querySelector(
-      '[data-testid="confirm-dialog-cancel"]',
+    const dialogo = fixture.nativeElement.querySelector('cfg-tipo-banca-remocao') as HTMLElement;
+    const cancelar = [...dialogo.querySelectorAll('button')].find(
+      (botao) => botao.textContent?.trim() === 'Cancelar',
     ) as HTMLButtonElement;
 
     expect(cancelar.textContent?.trim()).toBe('Cancelar');

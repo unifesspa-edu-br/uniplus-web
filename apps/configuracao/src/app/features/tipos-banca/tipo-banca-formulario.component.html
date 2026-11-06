@@ -6,6 +6,7 @@
   ariaLabel="Formulário de tipo de banca"
   position="right"
 >
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }

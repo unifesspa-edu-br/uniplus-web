@@ -20,8 +20,9 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="store.carregando() || edicao.removendo()"
-      (click)="store.tentarNovamente()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -29,12 +30,13 @@
 </ui-alert>
 }
 
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-tipos-banca-lista
   [bancas]="store.bancasFiltradas()"
   [carregando]="store.carregando()"
   [erro]="store.mensagemDeErro()"
+  [gravando]="edicao.gravando()"
   [removendo]="edicao.removendo()"
-  [anuncioDaRemocao]="edicao.anuncioDaRemocao()"
   [temFiltro]="store.temFiltro()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
@@ -48,16 +50,17 @@
   [(aberto)]="edicao.aberto"
   [form]="edicao.form"
   [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
   [salvando]="edicao.salvando()"
   [sugestoesFaseTipica]="edicao.sugestoesFaseTipica()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />
-<ui-confirm-dialog
-  [(visible)]="edicao.confirmando"
-  heading="Remover tipo de banca"
-  [message]="edicao.mensagemDaConfirmacao()"
-  confirmLabel="Remover"
-  confirmVariant="danger"
-  (confirmed)="edicao.removerConfirmado()"
+<cfg-tipo-banca-remocao
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
 />

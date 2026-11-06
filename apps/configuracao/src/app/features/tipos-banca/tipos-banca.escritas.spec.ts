@@ -80,7 +80,9 @@ describe('TiposBancaPage — escritas', () => {
     await flushLista([bancaSeed]);
     await abrirEdicao(bancaSeed);
     for (const campo of ['codigo', 'nome']) {
-      const controle = (fixture.nativeElement as HTMLElement).querySelector(`[formcontrolname="${campo}"]`);
+      const controle = (fixture.nativeElement as HTMLElement).querySelector(
+        `[formcontrolname="${campo}"]`,
+      );
       expect(controle?.getAttribute('aria-required')).toBe('true');
     }
   });
@@ -192,8 +194,10 @@ describe('TiposBancaPage — escritas', () => {
     );
     await propagate();
     fixture.detectChanges();
-    const status = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
-    expect(status.textContent).toContain('Removendo o tipo de banca BANCA_ENTREVISTA');
+    const statusDoDialogo = fixture.nativeElement.querySelector(
+      'cfg-tipo-banca-remocao [role="status"]',
+    ) as HTMLElement;
+    expect(statusDoDialogo.textContent).toContain('Removendo o tipo de banca BANCA_ENTREVISTA');
     expect(edicao.salvando()).toBe(false);
     expect(
       (
@@ -206,7 +210,10 @@ describe('TiposBancaPage — escritas', () => {
     await propagate();
     await flushLista([]);
     fixture.detectChanges();
-    expect(status.textContent).toContain('Tipo de banca BANCA_ENTREVISTA removido');
+    const statusDaPagina = fixture.nativeElement.querySelector(
+      ':scope > span.sr-only[role="status"]',
+    ) as HTMLElement;
+    expect(statusDaPagina.textContent).toContain('Tipo de banca BANCA_ENTREVISTA removido');
   });
   it('apresenta a recusa no campo e preserva controle desabilitado', async () => {
     await flushLista([bancaSeed]);
@@ -301,7 +308,8 @@ describe('TiposBancaPage — escritas', () => {
     const tentar = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
       (botao) => botao.textContent?.trim() === 'Tentar novamente',
     );
-    expect(tentar?.disabled).toBe(true);
+    expect(tentar?.getAttribute('aria-disabled')).toBe('true');
+    expect(tentar?.matches(':disabled')).toBe(false);
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);

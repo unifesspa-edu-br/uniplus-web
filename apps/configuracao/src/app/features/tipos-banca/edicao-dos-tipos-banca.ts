@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
@@ -21,6 +21,9 @@ import {
   valoresDaBanca,
 } from './tipo-banca-form';
 type Escrita = 'salvando' | 'removendo';
+
+const CORPO_DIVERGENTE = 'uniplus.idempotency.body_mismatch';
+
 @Injectable()
 export class EdicaoDosTiposBanca {
   private readonly api = inject(TiposBancaApi);
@@ -36,33 +39,64 @@ export class EdicaoDosTiposBanca {
   readonly sugestoesFaseTipica = computed(() => this.fases.opcoes().map((fase) => fase.nome));
   readonly form = criarFormularioDeBanca();
   private readonly escrita = signal<Escrita | null>(null);
-  readonly gravando = computed(() => this.escrita() !== null);
+  private readonly aguardandoRecarga = signal(false);
+  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
+  readonly gravando = computed(() => this.escrita() !== null || this.aguardandoRecarga());
   readonly salvando = computed(() => this.escrita() === 'salvando');
   readonly removendo = computed(() => this.escrita() === 'removendo');
   readonly aberto = signal(false);
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
+  readonly erroRemocao = signal<string | null>(null);
   private readonly bancaParaRemover = signal<TipoBancaDto | null>(null);
+  private readonly recusaDoSalvamento = signal('');
+  private readonly resultadoDoSalvamento = signal('');
   private readonly resultadoDaRemocao = signal('');
   private readonly bancaEmEdicaoId = signal<string | null>(null);
   private readonly chave = signal(idempotencyKey.create());
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const banca = this.bancaParaRemover();
-    return this.removendo() && banca
-      ? `Removendo o tipo de banca ${banca.codigo}.`
-      : this.resultadoDaRemocao();
+    if (!banca) return '';
+    if (this.removendo()) return `Removendo o tipo de banca ${banca.codigo}.`;
+    const motivo = this.erroRemocao();
+    return motivo ? `Não foi possível remover o tipo de banca ${banca.codigo}. ${motivo}` : '';
   });
+  /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDoSalvamento = computed(() =>
+    this.salvando() ? 'Salvando tipo de banca.' : this.recusaDoSalvamento(),
+  );
+  /** Na página: o desfecho, anunciado quando nenhuma sobreposição está aberta para dizê-lo. */
+  readonly anuncioDaPagina = computed(() =>
+    this.confirmando() || this.aberto()
+      ? ''
+      : this.resultadoDaRemocao() || this.resultadoDoSalvamento(),
+  );
   readonly mensagemDaConfirmacao = computed(() => {
     const banca = this.bancaParaRemover();
     return banca
       ? `Deseja remover o tipo de banca ${banca.codigo}? A remoção impede novos editais de requerer esta banca, mas não altera bancas já congeladas — a cópia por valor permanece íntegra.`
       : 'Deseja remover este tipo de banca?';
   });
+  constructor() {
+    let iniciou = false;
+    effect(() => {
+      if (!this.aguardandoRecarga()) {
+        iniciou = false;
+        return;
+      }
+      if (this.store.carregando()) iniciou = true;
+      else if (iniciou || this.store.mensagemDeErro()) this.aguardandoRecarga.set(false);
+    });
+  }
+
   abrirEdicao(banca: TipoBancaDto): void {
     if (this.gravando()) return;
+    this.limparResultados();
     this.bancaEmEdicaoId.set(banca.id);
     this.form.reset(valoresDaBanca(banca));
     this.erro.set(null);
+    this.recusaDoSalvamento.set('');
     this.renovarChave();
     this.fases.recarregar();
     this.aberto.set(true);
@@ -72,11 +106,14 @@ export class EdicaoDosTiposBanca {
   }
   pedirRemocao(banca: TipoBancaDto): void {
     if (this.gravando()) return;
+    this.limparResultados();
+    this.erroRemocao.set(null);
     this.bancaParaRemover.set(banca);
     this.confirmando.set(true);
   }
   salvar(): void {
     this.erro.set(null);
+    this.recusaDoSalvamento.set('');
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -91,21 +128,12 @@ export class EdicaoDosTiposBanca {
   removerConfirmado(): void {
     const banca = this.bancaParaRemover();
     if (!banca) return;
-    this.gravar('removendo', this.api.remover(banca.id), (result) => {
-      if (!result.ok) {
-        this.resultadoDaRemocao.set(`Não foi possível remover o tipo de banca ${banca.codigo}.`);
-        this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
-        });
-        return;
-      }
-      this.resultadoDaRemocao.set(`Tipo de banca ${banca.codigo} removido.`);
-      this.notifications.success('Tipo de banca removido', banca.codigo);
-      this.confirmando.set(false);
-      this.bancaParaRemover.set(null);
-      this.store.recarregar();
-    });
+    this.erroRemocao.set(null);
+    this.gravar('removendo', this.api.remover(banca.id), (result) =>
+      this.concluirRemocao(banca, result),
+    );
   }
+
   private gravar<T>(
     tipo: Escrita,
     operacao: Observable<ApiResult<T>>,
@@ -114,19 +142,45 @@ export class EdicaoDosTiposBanca {
     if (this.gravando()) return;
     this.escrita.set(tipo);
     operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
-      this.escrita.set(null);
       concluir(result);
+      this.escrita.set(null);
     });
   }
   private concluirSalvamento(result: ApiResult<void>): void {
     if (!result.ok) {
       this.aplicarFalha(result.problem);
+      this.recusaDoSalvamento.set(this.erro() ? '' : 'Revise os campos indicados.');
       return;
     }
+    this.resultadoDoSalvamento.set('Tipo de banca atualizado.');
     this.notifications.success('Tipo de banca atualizado');
     this.aberto.set(false);
     this.renovarChave();
+    this.recarregar();
+  }
+
+  private concluirRemocao(banca: TipoBancaDto, result: ApiResult<void>): void {
+    if (!result.ok) {
+      const titulo = this.problemI18n.resolve(result.problem).title;
+      this.erroRemocao.set(titulo);
+      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      return;
+    }
+    this.resultadoDaRemocao.set(`Tipo de banca ${banca.codigo} removido.`);
+    this.notifications.success('Tipo de banca removido', banca.codigo);
+    this.confirmando.set(false);
+    this.bancaParaRemover.set(null);
+    this.recarregar();
+  }
+
+  private recarregar(): void {
+    this.aguardandoRecarga.set(true);
     this.store.recarregar();
+  }
+
+  private limparResultados(): void {
+    this.resultadoDaRemocao.set('');
+    this.resultadoDoSalvamento.set('');
   }
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
@@ -134,11 +188,7 @@ export class EdicaoDosTiposBanca {
       this.aplicarErros(problem.errors);
       return;
     }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    )
-      this.renovarChave();
+    if (problem.code === CORPO_DIVERGENTE) this.renovarChave();
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
