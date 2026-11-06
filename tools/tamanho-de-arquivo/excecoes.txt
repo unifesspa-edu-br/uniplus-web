@@ -7,7 +7,6 @@
 1110 apps/configuracao/src/app/features/base-legal-bonus-regional/base-legal-bonus-regional-list.page.ts
 1362 apps/configuracao/src/app/features/fatos-candidato/fato-candidato-edicao.component.ts
 1277 apps/configuracao/src/app/features/fatos-candidato/fatos-candidato.page.ts
-1595 apps/configuracao/src/app/features/ofertas-curso/ofertas-curso.page.ts
 1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
 1550 apps/configuracao/src/app/features/tipos-documento/tipos-documento-list.page.ts
 1693 apps/configuracao/src/app/features/unidades/unidades.page.ts

@@ -89,7 +89,7 @@ describe('formulário de oferta de curso', () => {
     );
     form.controls.regimeDeFuncionamento.setValue('x'.repeat(31));
     expect(mensagemDeErroDaOferta(form.controls.regimeDeFuncionamento)).toBe(
-      'Valor acima do tamanho permitido.',
+      'Informe no máximo 30 caracteres.',
     );
     form.controls.cursoId.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.cursoId)).not.toBeNull();
