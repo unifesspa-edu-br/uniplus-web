@@ -34,7 +34,7 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
 class ListaDeTesteComponent {
   readonly ids = input.required<readonly string[]>();
   readonly ativos = input<readonly string[]>([]);
-  readonly rotuloDoInativo = input('Ativar item ');
+  readonly rotuloDoInativo = input('Reativar item ');
   readonly gravando = input.required<boolean>();
   readonly carregando = input.required<boolean>();
   readonly foco = devolverFocoDaLista({
@@ -127,11 +127,11 @@ describe('devolverFocoDaLista', () => {
     fixture.componentRef.setInput('carregando', false);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(document.activeElement).toBe(botao('Ativar item b'));
+    expect(document.activeElement).toBe(botao('Reativar item b'));
   });
 
-  it('a situação também acha o botão "Reativar" da linha acionada', async () => {
-    fixture.componentRef.setInput('rotuloDoInativo', 'Reativar item ');
+  it('a situação também acha o botão "Ativar" da primeira ativação da linha acionada', async () => {
+    fixture.componentRef.setInput('rotuloDoInativo', 'Ativar item ');
     fixture.componentRef.setInput('ativos', ['b']);
     fixture.detectChanges();
     fixture.componentInstance.foco.registrar({ acao: 'situacao', id: 'b' });
@@ -140,7 +140,7 @@ describe('devolverFocoDaLista', () => {
     fixture.componentRef.setInput('carregando', false);
     fixture.detectChanges();
     await fixture.whenStable();
-    expect(document.activeElement).toBe(botao('Reativar item b'));
+    expect(document.activeElement).toBe(botao('Ativar item b'));
   });
 
   it('espera a recarga terminar antes de devolver o foco', async () => {
