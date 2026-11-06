@@ -4,7 +4,6 @@
 # A lista só diminui: arquivo novo não entra aqui, e arquivo listado não pode crescer.
 # Ao dividir um arquivo até 400 linhas ou menos, remova a entrada (ou rode
 # `npm run check:tamanho -- --atualizar`, que só reduz números e remove entradas).
-1110 apps/configuracao/src/app/features/base-legal-bonus-regional/base-legal-bonus-regional-list.page.ts
 1362 apps/configuracao/src/app/features/fatos-candidato/fato-candidato-edicao.component.ts
 1277 apps/configuracao/src/app/features/fatos-candidato/fatos-candidato.page.ts
 1753 apps/configuracao/src/app/features/pesos-enem/pesos-enem.page.ts
