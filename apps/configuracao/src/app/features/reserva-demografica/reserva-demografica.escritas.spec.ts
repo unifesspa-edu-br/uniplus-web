@@ -238,6 +238,18 @@ describe('Reserva demográfica — escritas pela interface', () => {
       await concluirRecarga();
     });
 
+    it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+      await preencher();
+      await enviar();
+      controller.expectOne(ESCRITA).flush(...recusaDoPercentual);
+      await aguardarFoco();
+
+      await enviar();
+
+      controller.expectOne(ESCRITA).flush(...recusaDoPercentual);
+      await aguardarFoco();
+    });
+
     it('o censo travado na edição continua travado depois da recusa e do sucesso', async () => {
       edicao.abrirEdicao(referencia);
       edicao.salvar();

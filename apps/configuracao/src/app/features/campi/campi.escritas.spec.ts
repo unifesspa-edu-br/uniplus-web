@@ -441,6 +441,32 @@ describe('CampiPage — escritas pela interface', () => {
     expect(elemento('input[formcontrolname="sigla"]').getAttribute('aria-invalid')).toBe('true');
   });
 
+  it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+    const recusaDaSigla = {
+      type: 'about:blank',
+      title: 'Dados inválidos',
+      status: 422,
+      code: 'uniplus.validacao',
+      traceId: 'test-trace',
+      errors: [
+        {
+          field: 'Sigla',
+          code: 'uniplus.configuracao.campus.sigla_ja_existe',
+          message: 'Sigla já cadastrada.',
+        },
+      ],
+    };
+    await preencherNovoCampus();
+    enviarFormulario();
+    recusar(recusaDaSigla);
+    await propagar();
+
+    enviarFormulario();
+    await propagar();
+
+    recusar(recusaDaSigla);
+  });
+
   it('recusa do servidor sobre o endereço é mostrada no bloco do endereço', async () => {
     await preencherNovoCampus();
     enviarFormulario();

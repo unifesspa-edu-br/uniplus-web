@@ -157,6 +157,25 @@ describe('TiposBancaPage — recusas e foco', () => {
       segunda.flush(...sucesso());
       await recarregarCom([banca]);
     });
+
+    it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+      const recusaDoNome = problema(422, {
+        code: 'uniplus.validacao',
+        errors: [
+          {
+            field: 'Nome',
+            code: 'uniplus.configuracao.tipo_banca.nome_tamanho',
+            message: 'Nome longo.',
+          },
+        ],
+      });
+      await abrirEdicao();
+      (await enviar()).flush(...recusaDoNome);
+      await propagar();
+
+      (await enviar()).flush(...recusaDoNome);
+      await propagar();
+    });
   });
 
   describe('escrita em curso', () => {

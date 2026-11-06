@@ -234,6 +234,18 @@ describe('Condições de atendimento — escritas pela interface', () => {
       await concluirRecarga();
     });
 
+    it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+      await preencher();
+      await enviar();
+      controller.expectOne(ESCRITA).flush(...recusaDoCodigo);
+      await aguardarFoco();
+
+      await enviar();
+
+      controller.expectOne(ESCRITA).flush(...recusaDoCodigo);
+      await aguardarFoco();
+    });
+
     it('a edição do código reservado continua travada depois da recusa e do sucesso', async () => {
       edicao.abrirEdicao(pcd);
       edicao.salvar();

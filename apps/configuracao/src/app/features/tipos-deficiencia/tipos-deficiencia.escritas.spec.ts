@@ -240,6 +240,18 @@ describe('Tipos de deficiência — escritas pela interface', () => {
       expect(document.activeElement).toBe(novo());
     });
 
+    it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+      await preencher();
+      await enviar();
+      controller.expectOne(ESCRITA).flush(...recusaDoCodigo);
+      await aguardarFoco();
+
+      await enviar();
+
+      controller.expectOne(ESCRITA).flush(...recusaDoCodigo);
+      await aguardarFoco();
+    });
+
     it('com Enter num campo e falha 500, leva o foco ao botão, notifica e mantém a chave para o reenvio', async () => {
       await preencher();
       campo('nome').focus();

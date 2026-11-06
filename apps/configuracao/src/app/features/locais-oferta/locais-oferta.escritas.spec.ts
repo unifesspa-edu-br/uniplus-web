@@ -637,6 +637,25 @@ describe('Escritas de locais de oferta', () => {
     expect(edicao.gravando()).toBe(false);
   });
 
+  it('reenviar sem editar o campo recusado volta a enviar o formulário à API', async () => {
+    const recusaDoCodigo = {
+      code: 'uniplus.validacao',
+      errors: [
+        {
+          field: 'CodigoEmec',
+          code: 'uniplus.configuracao.local.codigo_invalido',
+          message: 'Código inválido.',
+        },
+      ],
+    };
+    await enviarRecusado(422, recusaDoCodigo);
+
+    edicao.salvar();
+    await propagar();
+
+    recusar(422, recusaDoCodigo);
+  });
+
   it('avisa quando a recusa 422 não aponta nenhum campo conhecido', async () => {
     await enviarRecusado(422, {
       code: 'uniplus.validacao',
