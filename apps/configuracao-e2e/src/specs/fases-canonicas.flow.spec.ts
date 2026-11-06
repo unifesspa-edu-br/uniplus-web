@@ -190,15 +190,14 @@ test.describe('Fase canônica — sem criação pela interface (#698)', () => {
     expect(capturado.posts).toHaveLength(0);
   });
 
-  for (const [origem, rotulo] of [
-    ['NO_EDITAL', 'Fixada no edital'],
-    ['NA_EXECUCAO', 'Definida na execução'],
+  for (const [origem, rotulo, outra] of [
+    ['NO_EDITAL', 'Fixada no edital', 'NA_EXECUCAO'],
+    ['NA_EXECUCAO', 'Definida na execução', 'NO_EDITAL'],
   ] as const) {
     test(`a origem da data ${rotulo} segue no comando de atualização como ${origem}`, async ({
       page,
     }) => {
       const capturado = novoCapturado();
-      const outra = origem === 'NO_EDITAL' ? 'NA_EXECUCAO' : 'NO_EDITAL';
       await mockApi(page, capturado, [{ ...faseSeed, origemData: outra }]);
       await abrirPagina(page);
 

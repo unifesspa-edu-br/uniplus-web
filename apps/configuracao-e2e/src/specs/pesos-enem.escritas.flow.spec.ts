@@ -118,9 +118,10 @@ test.describe('Peso por Área — cadastro e edição', () => {
   });
 
   for (const inicial of [undefined, []] as const) {
-    test(`cadastro concluído, ${inicial ? 'com a lista inicialmente vazia' : 'com a resolução nova vigente na recarga'}, leva o foco ao título`, async ({
-      page,
-    }) => {
+    const situacaoDaLista = inicial
+      ? 'com a lista inicialmente vazia'
+      : 'com a resolução nova vigente na recarga';
+    test(`cadastro concluído, ${situacaoDaLista}, leva o foco ao título`, async ({ page }) => {
       const { liberar } = await mockApi(page, {
         respostas: [CRIADO],
         recarga: 'com-a-nova',

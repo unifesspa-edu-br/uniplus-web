@@ -140,7 +140,7 @@ async function mockApi(
 const NOME_DO_PAR = `precedência entre ${ARESTA.antecessoraCodigo} e ${ARESTA.sucessoraCodigo}`;
 const titulo = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Arestas de precedência', level: 2 });
-const novo = (page: Page): Locator => page.getByRole('button', { name: 'Nova aresta' });
+const novo = (page: Page): Locator => page.locator('#cfg-precedencias-fase-nova');
 const editar = (page: Page): Locator => page.getByRole('button', { name: `Editar ${NOME_DO_PAR}` });
 const lixeira = (page: Page): Locator =>
   page.getByRole('button', { name: `Remover ${NOME_DO_PAR}` });
@@ -374,28 +374,40 @@ test.describe('Precedência de fase — escritas', () => {
     });
   }
 
-  for (const recusa of [
-    { status: 403, corpo: PROBLEMA_403_REMOCAO },
-    { status: 500, corpo: PROBLEMA_500 },
-  ]) {
-    test(`remoção recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão, que volta a aceitar o clique`, async ({
+  test('remoção recusada (403) leva à página de acesso negado', async ({ page }) => {
+    const { liberar } = await mockApi(
       page,
-    }) => {
-      const { liberar, envios } = await mockApi(page, [recusa, SALVO], 'sem-o-item');
-      const { dialogo, remover } = await abrirRemocao(page);
-      await remover.click();
-      liberar();
-      const mensagem = dialogo.locator('.field__error');
-      await expect(mensagem).toContainText(recusa.corpo.title);
-      await expect(remover).not.toHaveAttribute('aria-disabled', 'true');
-      await expect(remover).toBeFocused();
-      await expect(dialogo.getByRole('status')).toContainText('Não foi possível remover');
-      await remover.click();
-      await expect(mensagem).toBeHidden();
-      await expect(dialogo).toBeHidden();
-      expect(envios).toEqual(['DELETE', 'DELETE']);
-    });
-  }
+      [{ status: 403, corpo: PROBLEMA_403_REMOCAO }],
+      'sem-o-item',
+    );
+    const { dialogo, remover } = await abrirRemocao(page);
+    await remover.click();
+    liberar();
+    await expect(page).toHaveURL(/\/acesso-negado$/);
+    await expect(dialogo).toBeHidden();
+  });
+
+  test('remoção recusada (500) mantém o diálogo, a mensagem e o foco no botão, que volta a aceitar o clique', async ({
+    page,
+  }) => {
+    const { liberar, envios } = await mockApi(
+      page,
+      [{ status: 500, corpo: PROBLEMA_500 }, SALVO],
+      'sem-o-item',
+    );
+    const { dialogo, remover } = await abrirRemocao(page);
+    await remover.click();
+    liberar();
+    const mensagem = dialogo.locator('.field__error');
+    await expect(mensagem).toContainText(PROBLEMA_500.title);
+    await expect(remover).not.toHaveAttribute('aria-disabled', 'true');
+    await expect(remover).toBeFocused();
+    await expect(dialogo.getByRole('status')).toContainText('Não foi possível remover');
+    await remover.click();
+    await expect(mensagem).toBeHidden();
+    await expect(dialogo).toBeHidden();
+    expect(envios).toEqual(['DELETE', 'DELETE']);
+  });
 
   test('aresta já removida por outra pessoa (404) mantém a mensagem no diálogo, que ainda pode ser cancelado', async ({
     page,

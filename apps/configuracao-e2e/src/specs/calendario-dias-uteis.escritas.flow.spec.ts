@@ -306,6 +306,10 @@ test.describe('Calendário de dias úteis — escritas', () => {
 
   for (const recarga of ['ok', 'com-falha'] as const) {
     const destino = recarga === 'ok' ? 'ao botão do dia' : 'ao título';
+    const focado = (page: Page): Locator =>
+      recarga === 'ok'
+        ? page.getByRole('button', { name: /^8 de setembro de 2026/ })
+        : page.getByRole('heading', { name: 'Detalhes', level: 1 });
     test(`inclusão concluída, com a recarga ${recarga}, fecha o diálogo e leva o foco ${destino}`, async ({
       page,
     }) => {
@@ -314,11 +318,7 @@ test.describe('Calendário de dias úteis — escritas', () => {
       await dialogo.getByRole('button', { name: 'Adicionar', exact: true }).click();
       liberar();
       await expect(dialogo).toBeHidden();
-      const focado =
-        recarga === 'ok'
-          ? page.getByRole('button', { name: /^8 de setembro de 2026/ })
-          : page.getByRole('heading', { name: 'Detalhes', level: 1 });
-      await expect(focado).toBeFocused();
+      await expect(focado(page)).toBeFocused();
     });
   }
 

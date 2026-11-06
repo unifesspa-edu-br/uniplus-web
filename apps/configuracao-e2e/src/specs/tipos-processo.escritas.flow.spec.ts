@@ -377,7 +377,8 @@ test.describe('Tipo de processo — escritas', () => {
   });
 
   for (const recarga of [SEM_O_ATIVO, 'falha'] as const) {
-    test(`edição concluída, com a recarga ${recarga === 'falha' ? 'com falha' : 'sem o item'}, leva o foco ao título da lista`, async ({
+    const situacaoDaRecarga = recarga === 'falha' ? 'com falha' : 'sem o item';
+    test(`edição concluída, com a recarga ${situacaoDaRecarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
       const { liberar } = await mockApi(page, [SALVO], recarga);
@@ -426,7 +427,8 @@ test.describe('Tipo de processo — escritas', () => {
   });
 
   for (const recarga of [SEM_O_ATIVO, 'falha'] as const) {
-    test(`desativação concluída, com a recarga ${recarga === 'falha' ? 'com falha' : 'sem o item'}, leva o foco ao título da lista`, async ({
+    const situacaoDaRecarga = recarga === 'falha' ? 'com falha' : 'sem o item';
+    test(`desativação concluída, com a recarga ${situacaoDaRecarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
       const { liberar } = await mockApi(page, [SALVO], recarga);

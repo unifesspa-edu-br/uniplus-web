@@ -60,7 +60,10 @@ async function responder(route: Route, status: number, corpo?: unknown): Promise
 type Resposta = { status: number; corpo?: unknown };
 type Recarga = 'sem-o-anterior' | 'com-o-anterior' | 'com-falha';
 
-/** Cada escrita consome a próxima resposta e fica retida até `liberar`. */
+/**
+ * Cada escrita consome a próxima resposta e fica retida até `liberar`. A retenção só se renova
+ * depois que a escrita passou: liberar antes de o pedido chegar não deixa o pedido preso.
+ */
 async function mockApi(
   page: Page,
   respostas: readonly Resposta[],
@@ -100,13 +103,11 @@ async function mockApi(
       chave: route.request().headers()['idempotency-key'],
     });
     await retida;
+    retida = new Promise<void>((resolve) => (liberar = resolve));
     await responder(route, resposta.status, resposta.corpo);
   });
   return {
-    liberar: () => {
-      liberar();
-      retida = new Promise<void>((resolve) => (liberar = resolve));
-    },
+    liberar: () => liberar(),
     envios,
   };
 }

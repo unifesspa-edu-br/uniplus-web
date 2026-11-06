@@ -220,6 +220,8 @@ export async function mockApiDeAcesso(
         };
         estado.criacoes.push(corpo);
         const sub = subDe(route);
+        const perfil = PERFIS.find((p) => p.id === corpo.perfilId);
+        if (!perfil) throw new Error(`Perfil fora do seed: ${corpo.perfilId}`);
         const novo = pedidoSeed({
           id: '01960000-0000-7000-0000-00000000cc99',
           solicitante: { emissor: 'unifesspa', sub },
@@ -228,7 +230,7 @@ export async function mockApiDeAcesso(
             identidade: { emissor: 'unifesspa', sub },
             nome: 'Fernanda Teste',
           },
-          perfil: PERFIS.find((p) => p.id === corpo.perfilId) ?? PERFIS[0]!,
+          perfil,
           escopo: { tipo: 'unidade', unidadeId: corpo.unidadeId },
           justificativa: corpo.justificativa,
           validaAteSugerida: corpo.validaAteSugerida ?? null,

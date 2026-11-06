@@ -12,7 +12,13 @@ export default [
       // helper.
       'playwright/expect-expect': [
         'warn',
-        { assertFunctionNames: ['assertSemViolacoesGraves', 'assertReflowContract'] },
+        {
+          assertFunctionNames: [
+            'assertSemViolacoesGraves',
+            'assertReflowContract',
+            'expectSemViolacoes',
+          ],
+        },
       ],
     },
   },

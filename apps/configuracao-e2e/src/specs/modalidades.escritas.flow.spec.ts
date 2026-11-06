@@ -135,7 +135,8 @@ test.describe('Modalidade — escrita', () => {
       await expect(link).toHaveCSS('cursor', 'not-allowed');
       await link.focus();
       await expect(link).toBeFocused();
-      await link.click({ force: true });
+      // O Playwright não clica em elemento aria-disabled; o evento é entregue ao tratador mesmo assim.
+      await link.dispatchEvent('click');
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(/\/modalidades\/novo$/);
     }

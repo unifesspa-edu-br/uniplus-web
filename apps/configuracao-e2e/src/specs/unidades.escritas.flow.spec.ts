@@ -125,7 +125,7 @@ async function mockApi(
       await respostaDeProblema(route, 500, PROBLEMA_500);
       return;
     }
-    if (gravou) {
+    if (gravou || (primeiraConsulta === 'falha' && consultas > 1)) {
       await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
     }
     if (!gravou) {
@@ -270,7 +270,9 @@ test.describe('Unidade — escritas', () => {
     const enviar = formulario.getByRole('button', { name: 'Criar unidade' });
     await enviar.click();
     liberar();
-    await expect(formulario.locator('.alert__msg')).toContainText('Escrita em processamento');
+    await expect(
+      formulario.locator('ui-alert').filter({ hasText: 'Escrita em processamento' }),
+    ).toBeVisible();
     await expect(formulario.locator('.field.is-error')).toHaveCount(0);
     await expect(enviar).not.toHaveAttribute('aria-disabled', 'true');
     await enviar.click();
@@ -354,7 +356,8 @@ test.describe('Unidade — escritas', () => {
   });
 
   for (const recarga of [SEM_A_REITORIA, 'falha'] as const) {
-    test(`edição concluída, com a recarga ${recarga === 'falha' ? 'com falha' : 'sem o item'}, leva o foco ao título da lista`, async ({
+    const situacaoDaRecarga = recarga === 'falha' ? 'com falha' : 'sem o item';
+    test(`edição concluída, com a recarga ${situacaoDaRecarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
       const { liberar } = await mockApi(page, [SALVO], recarga);
@@ -402,7 +405,8 @@ test.describe('Unidade — escritas', () => {
   });
 
   for (const recarga of [SEM_A_REITORIA, 'falha'] as const) {
-    test(`remoção concluída, com a recarga ${recarga === 'falha' ? 'com falha' : 'sem o item'}, leva o foco ao título da lista`, async ({
+    const situacaoDaRecarga = recarga === 'falha' ? 'com falha' : 'sem o item';
+    test(`remoção concluída, com a recarga ${situacaoDaRecarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
       const { liberar } = await mockApi(page, [SALVO], recarga);

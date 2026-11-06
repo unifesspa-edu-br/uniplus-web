@@ -155,7 +155,9 @@ const editar = (page: Page) => page.getByRole('button', { name: 'Editar o fato T
 const desativar = (page: Page) => page.getByRole('button', { name: 'Desativar o fato TRABALHA' });
 
 async function preencherCriacao(page: Page): Promise<void> {
-  await page.locator('input[type="radio"][value="DERIVADO"]').check();
+  // O input do rádio é escondido pelo estilo; quem recebe o clique é o rótulo.
+  await page.getByText('Derivado por regra de outros fatos').click();
+  await expect(page.locator('input[type="radio"][value="DERIVADO"]')).toBeChecked();
   await page.locator('input[formcontrolname="nome"]').fill('Perfil socioeconômico');
   await page.locator('input[formcontrolname="codigo"]').fill('PERFIL');
   await page.locator('textarea[formcontrolname="descricao"]').fill('Perfil que define a reserva.');
@@ -260,9 +262,11 @@ test.describe('Fato do candidato — escritas', () => {
     await editar(page).click();
     const drawer = formulario(page);
     const salvar = drawer.getByRole('button', { name: 'Salvar nome, descrição e componente' });
+    // O fieldset desabilitado trava os campos dentro dele; o fieldset em si não é controle nativo.
+    const nome = page.locator('#cfg-fato-descritivo input[formcontrolname="nome"]');
     await salvar.click();
 
-    await expect(page.locator('#cfg-fato-descritivo fieldset')).toBeDisabled();
+    await expect(nome).toBeDisabled();
     await expect(salvar).toHaveAttribute('aria-busy', 'true');
     await expect(salvar).toHaveCSS('cursor', 'not-allowed');
     await expect(
@@ -277,7 +281,7 @@ test.describe('Fato do candidato — escritas', () => {
     expect(envios).toEqual(['PUT']);
 
     liberar();
-    await expect(page.locator('#cfg-fato-descritivo fieldset')).toBeEnabled({
+    await expect(nome).toBeEnabled({
       timeout: ATRASO_DA_RECARGA_EM_MS * 3,
     });
     await expect(drawer).toBeVisible();

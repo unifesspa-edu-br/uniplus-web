@@ -413,21 +413,18 @@ test.describe('Oferta de curso — escritas', () => {
     await expect(remover(page)).toBeFocused();
   });
 
-  test('remoção recusada por falta de permissão mantém o diálogo com a mensagem', async ({
+  test('remoção recusada por falta de permissão leva à página de acesso negado', async ({
     page,
   }) => {
     const { liberar } = await mockApi(page, { status: 403, corpo: SEM_PERMISSAO });
     await page.goto('/ofertas-curso');
     await remover(page).click();
     const dialogo = confirmacao(page);
-    const confirmar = dialogo.getByRole('button', { name: 'Remover', exact: true });
-    await confirmar.click();
+    await dialogo.getByRole('button', { name: 'Remover', exact: true }).click();
     liberar();
 
-    await expect(dialogo.locator('.field__error')).toHaveText('Sem permissão');
-    await expect(confirmar).toBeFocused();
-    await dialogo.getByRole('button', { name: 'Cancelar' }).click();
-    await expect(remover(page)).toBeFocused();
+    await expect(page).toHaveURL(/\/acesso-negado$/);
+    await expect(dialogo).toBeHidden();
   });
 
   test('remoção com recarga que falha leva o foco ao título da lista', async ({ page }) => {
