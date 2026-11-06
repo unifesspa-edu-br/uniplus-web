@@ -2,19 +2,20 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { DialogComponent } from '@uniplus/shared-ui/components';
 
 /**
- * A confirmação de remoção de local de oferta. Fica aberta durante a remoção, com o botão
+ * A confirmação de remoção de um cadastro. Fica aberta durante a remoção, com o botão
  * indisponível e ainda focado, e com a recusa do servidor, para o foco nunca ficar sem destino.
  */
 @Component({
-  selector: 'cfg-local-oferta-remocao',
+  selector: 'cfg-confirmacao-de-remocao',
   standalone: true,
   imports: [DialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  templateUrl: './local-oferta-remocao.component.html',
-  styleUrl: '../../shared/sobreposicao/sobreposicao.css',
+  templateUrl: './confirmacao-de-remocao.component.html',
+  styleUrl: '../sobreposicao/sobreposicao.css',
 })
-export class LocalOfertaRemocaoComponent {
+export class ConfirmacaoDeRemocaoComponent {
   readonly aberto = model.required<boolean>();
+  readonly titulo = input.required<string>();
   readonly removendo = input.required<boolean>();
   readonly mensagem = input.required<string>();
   readonly erro = input.required<string | null>();
@@ -22,12 +23,17 @@ export class LocalOfertaRemocaoComponent {
   readonly anuncio = input.required<string>();
   readonly confirmar = output<void>();
 
-  /** Enquanto remove, o botão está indisponível: o clique (e Enter ou Espaço) não remove de novo. */
+  /**
+   * Enquanto remove, o botão está indisponível: o clique (e Enter ou Espaço) não remove de novo.
+   * Ao confirmar, o foco fica no botão: nem todo navegador o dá ao clique, e o foco não pode se
+   * perder quando o resto do diálogo se desabilita.
+   */
   protected aoConfirmar(evento: Event): void {
     if (this.removendo()) {
       evento.preventDefault();
       return;
     }
+    (evento.currentTarget as HTMLElement).focus();
     this.confirmar.emit();
   }
 }

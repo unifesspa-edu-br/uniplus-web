@@ -1,166 +1,56 @@
-<div
-  data-scope
-  class="cfg-modalidades-scope"
-  [attr.inert]="removendo() ? '' : null"
-  [attr.aria-disabled]="removendo() ? 'true' : null"
->
-  <ui-filter-bar
-    ariaLabel="Filtrar modalidades"
-    searchPlaceholder="Buscar por código ou descrição..."
-    searchAriaLabel="Buscar modalidade"
-    [(searchValue)]="busca"
-    [filtrosAtivos]="filtrosAtivos()"
-    secondaryRole="group"
-    secondaryAriaLabel="Filtrar por natureza legal"
-  >
-    <button
-      uiFilterBarActions
-      type="button"
-      class="btn btn--tertiary btn--sm btn--rect"
-      [disabled]="removendo()"
-      (click)="limpar.emit()"
-    >
-      Limpar
-    </button>
-    <ng-container uiFilterBarSecondary>
-      <span class="u-eyebrow">Natureza</span>
-      <ui-filter-chips
-        [options]="chipsNatureza()"
-        [(selected)]="naturezaSelecionada"
-        ariaLabel="Filtrar por natureza"
-      />
-    </ng-container>
-  </ui-filter-bar>
-
-  <section class="panel" aria-labelledby="cfg-modalidades-title">
-    <div class="panel-head">
-      <div class="panel-head__title">
-        <h2 id="cfg-modalidades-title" #titulo tabindex="-1">Modalidades</h2>
-        <span class="list-count" aria-label="Total de modalidades exibidas">
-          {{ modalidadesFiltradas().length }}
-        </span>
-        @if (loading()) {
-          <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
-        }
-      </div>
-      <a class="btn btn--primary" routerLink="novo">
-        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-        Nova modalidade
-      </a>
-    </div>
-
-    @if (modalidadesFiltradas().length > 0) {
-      <div class="table-responsive">
-        <table>
-          <caption class="sr-only">
-            Modalidades de concorrência, com quem concorre em cada uma, natureza, composição de
-            vagas, remanejamento e modalidades que a referenciam
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Código</th>
-              <th scope="col">Quem concorre</th>
-              <th scope="col">Natureza</th>
-              <th scope="col">Composição de vagas</th>
-              <th scope="col">Remanejamento</th>
-              <th scope="col">Referenciada por</th>
-              <th scope="col"><span class="sr-only">Ações</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (m of modalidadesFiltradas(); track m.id) {
-              <tr [attr.data-codigo]="m.codigo">
-                <td data-label="Código">
-                  <code>{{ m.codigo }}</code>
-                  @if (removendo() && modalidadeEmRemocao()?.id === m.id) {
-                    <span aria-hidden="true">Removendo...</span>
-                  }
-                  @if (m.descricao) {
-                    <span class="cfg-meta">{{ m.descricao }}</span>
-                  }
-                </td>
-                <td data-label="Quem concorre">{{ quemConcorre().get(m.id) }}</td>
-                <td data-label="Natureza">
-                  <ui-tag [variant]="naturezaVariante(m.naturezaLegal)">
-                    {{ naturezaLabel(m.naturezaLegal) }}
-                  </ui-tag>
-                </td>
-                <td data-label="Composição de vagas">
-                  {{ composicaoLabel(m.composicaoVagas) }}
-                  @if (m.composicaoOrigem) {
-                    <code>{{ m.composicaoOrigem }}</code>
-                  }
-                </td>
-                <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>
-                <td data-label="Referenciada por">
-                  @if (referenciadaPor(m.codigo); as refs) {
-                    @if (refs.length > 0) {
-                      <span class="cfg-refs">
-                        @for (r of refs; track r.id) {
-                          <code class="cfg-ref-chip">{{ r.codigo }}</code>
-                        }
-                      </span>
-                    } @else {
-                      <span class="cfg-meta">Nenhuma</span>
-                    }
-                  }
-                </td>
-                <td class="table-responsive__actions" data-label="Ações">
-                  <ui-icon-button
-                    icon="pi-pencil"
-                    [accessibleName]="'Editar modalidade ' + m.codigo"
-                    tooltip="Editar modalidade"
-                    [link]="[m.id]"
-                    [isDisabled]="loading() || removendo()"
-                  />
-                  <ui-icon-button
-                    icon="pi-trash"
-                    [accessibleName]="'Remover modalidade ' + m.codigo"
-                    tooltip="Remover modalidade"
-                    [isDisabled]="loading() || removendo()"
-                    (triggered)="remover.emit(m)"
-                  />
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    } @else if (!loading() && !errorMessage()) {
-      @if (temFiltroAtivo()) {
-        <ui-empty-state
-          heading="Nenhuma modalidade encontrada"
-          description="Ajuste a busca ou os filtros de natureza para ver resultados."
-        >
-          <button
-            type="button"
-            class="btn btn--secondary"
-            [disabled]="removendo()"
-            (click)="limpar.emit()"
-          >
-            Limpar filtros
-          </button>
-        </ui-empty-state>
-      } @else {
-        <ui-empty-state
-          heading="Nenhuma modalidade cadastrada"
-          description="Cadastre a primeira modalidade para configurar a disputa de vagas dos processos."
-        >
-          <a class="btn btn--primary" routerLink="novo">Nova modalidade</a>
-        </ui-empty-state>
+<section class="panel" aria-labelledby="cfg-modalidades-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-modalidades-title" #titulo tabindex="-1">Modalidades</h2>
+      <span class="list-count" aria-label="Total de modalidades exibidas">
+        {{ total() }}
+      </span>
+      @if (loading()) {
+        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
       }
-    }
+    </div>
+    <a class="btn btn--primary" routerLink="novo">
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Nova modalidade
+    </a>
+  </div>
 
-    @if (prevCursor() !== null || nextCursor() !== null) {
-      <ui-pager
-        statusText="Navegação por páginas"
-        navigationLabel="Paginação de modalidades"
-        [hasPrevious]="prevCursor() !== null"
-        [hasNext]="nextCursor() !== null"
-        [isDisabled]="loading() || removendo()"
-        (previous)="anterior.emit()"
-        (next)="proximo.emit()"
-      />
+  <ng-content />
+
+  @if (total() === 0 && !loading() && !errorMessage()) {
+    @if (temFiltroAtivo()) {
+      <ui-empty-state
+        heading="Nenhuma modalidade encontrada"
+        description="Ajuste a busca ou os filtros de natureza para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="removendo()"
+          (click)="limpar.emit()"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhuma modalidade cadastrada"
+        description="Cadastre a primeira modalidade para configurar a disputa de vagas dos processos."
+      >
+        <a class="btn btn--primary" routerLink="novo">Nova modalidade</a>
+      </ui-empty-state>
     }
-  </section>
-</div>
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de modalidades"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="loading() || removendo()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

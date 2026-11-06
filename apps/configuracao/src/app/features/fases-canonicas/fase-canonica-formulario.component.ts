@@ -1,15 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Injector,
-  afterNextRender,
-  effect,
-  inject,
-  input,
-  model,
-  output,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
   ORIGENS_DATA_FASE,
@@ -17,6 +6,7 @@ import {
   OrigemDataFase,
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CODIGO_FASE_SOLICITACAO_ISENCAO, FaseForm } from './fase-canonica-form';
 
@@ -29,8 +19,6 @@ import { CODIGO_FASE_SOLICITACAO_ISENCAO, FaseForm } from './fase-canonica-form'
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class FaseCanonicaFormularioComponent {
-  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<FaseForm>>();
   readonly salvando = input.required<boolean>();
@@ -53,24 +41,11 @@ export class FaseCanonicaFormularioComponent {
   protected erroDoCampo(nome: keyof FaseForm): string | null {
     return mensagemDeErroDoControle(this.form().controls[nome]);
   }
+  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+
   protected aoEnviar(): void {
-    if (!this.salvando()) this.salvar.emit();
-  }
-  constructor() {
-    let estavaSalvando = false;
-    effect(() => {
-      const terminou = estavaSalvando && !this.salvando();
-      estavaSalvando = this.salvando();
-      if (terminou && this.aberto())
-        afterNextRender(
-          () =>
-            this.raiz.nativeElement
-              .querySelector<HTMLElement>(
-                '.field.is-error :is(input, select, textarea):not(:disabled)',
-              )
-              ?.focus(),
-          { injector: this.injector },
-        );
-    });
+    if (this.salvando()) return;
+    this.salvar.emit();
+    if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }
 }

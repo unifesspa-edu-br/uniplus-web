@@ -36,7 +36,10 @@ describe('focarAposNovaTentativa', () => {
   /** Simula a renderização que tira o alerta: o botão sai da tela antes do foco ser
    *  conferido, como acontece com o template da página. */
   function renderizarRemovendoOBotao(): void {
-    afterNextRender({ earlyRead: () => botao.remove() }, { injector: TestBed.inject(ApplicationRef).injector });
+    afterNextRender(
+      { earlyRead: () => botao.remove() },
+      { injector: TestBed.inject(ApplicationRef).injector },
+    );
     appRef.tick();
   }
 

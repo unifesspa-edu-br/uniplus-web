@@ -195,7 +195,7 @@ describe('TiposBancaPage — escritas', () => {
     await propagate();
     fixture.detectChanges();
     const statusDoDialogo = fixture.nativeElement.querySelector(
-      'cfg-tipo-banca-remocao [role="status"]',
+      'cfg-confirmacao-de-remocao [role="status"]',
     ) as HTMLElement;
     expect(statusDoDialogo.textContent).toContain('Removendo o tipo de banca BANCA_ENTREVISTA');
     expect(edicao.salvando()).toBe(false);

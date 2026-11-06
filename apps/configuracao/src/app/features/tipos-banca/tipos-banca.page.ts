@@ -3,7 +3,7 @@ import { AlertComponent } from '@uniplus/shared-ui/components';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { TiposBancaListaComponent } from './tipos-banca-lista.component';
 import { TipoBancaFormularioComponent } from './tipo-banca-formulario.component';
-import { TipoBancaRemocaoComponent } from './tipo-banca-remocao.component';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { TiposBancaStore } from './tipos-banca.store';
 import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
 
@@ -14,7 +14,7 @@ import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
     AlertComponent,
     TiposBancaListaComponent,
     TipoBancaFormularioComponent,
-    TipoBancaRemocaoComponent,
+    ConfirmacaoDeRemocaoComponent,
   ],
   providers: [TiposBancaStore, EdicaoDosTiposBanca],
   changeDetection: ChangeDetectionStrategy.OnPush,

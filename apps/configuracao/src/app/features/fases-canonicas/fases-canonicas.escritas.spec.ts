@@ -207,14 +207,14 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     expect(elemento<HTMLFieldSetElement>('.form-drawer__campos').disabled).toBe(false);
     expect(salvar().textContent).toContain('Salvar fase canônica');
     expect(elemento('td[data-label="Código"]').textContent).toContain('Removendo...');
-    const dialogo = elemento<HTMLDialogElement>('cfg-fase-canonica-remocao dialog');
+    const dialogo = elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
     expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
       true,
     );
     dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
     await propagar();
     expect(edicao.confirmando()).toBe(true);
-    expect(elemento('cfg-fase-canonica-remocao [role="status"]').textContent).toContain(
+    expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
       'Removendo a fase AVALIACAO.',
     );
     const editar = elemento<HTMLButtonElement>(
@@ -294,11 +294,48 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     expect(elemento('ui-drawer [role="status"]').textContent?.trim()).toBe('');
   });
 
+  describe('chave de idempotência após recusa do servidor', () => {
+    async function chavesDoEnvioRecusado(status: number, corpo: object): Promise<[string, string]> {
+      await abrir();
+      salvar().click();
+      const primeira = controller.expectOne(ESCRITA);
+      const chaveEnviada = primeira.request.headers.get('Idempotency-Key') as string;
+      primeira.flush(...problema(status, corpo));
+      await propagar();
+      salvar().click();
+      const segunda = controller.expectOne(ESCRITA);
+      const chaveReenviada = segunda.request.headers.get('Idempotency-Key') as string;
+      segunda.flush(...falhaDoServidor());
+      await propagar();
+      return [chaveEnviada, chaveReenviada];
+    }
+
+    it('mantém a chave quando a execução anterior ainda corre (409 de processamento)', async () => {
+      const [enviada, reenviada] = await chavesDoEnvioRecusado(409, {
+        code: 'uniplus.idempotency.processing_conflict',
+      });
+      expect(enviada).toBeTruthy();
+      expect(reenviada).toBe(enviada);
+    });
+
+    it('renova a chave após recusa definitiva do servidor, mesmo com 409', async () => {
+      const [enviada, reenviada] = await chavesDoEnvioRecusado(409, {
+        code: 'uniplus.configuracao.conflito',
+      });
+      expect(reenviada).not.toBe(enviada);
+    });
+
+    it('mantém a chave quando o servidor falha (5xx)', async () => {
+      const [enviada, reenviada] = await chavesDoEnvioRecusado(500, { code: 'uniplus.erro' });
+      expect(reenviada).toBe(enviada);
+    });
+  });
+
   it('não repete na página a falha da remoção depois de Cancelar', async () => {
     await remover();
     controller.expectOne(ESCRITA).flush(...falhaDoServidor());
     await propagar();
-    const dialogo = elemento('cfg-fase-canonica-remocao dialog');
+    const dialogo = elemento('cfg-confirmacao-de-remocao dialog');
     expect(dialogo.querySelector('[role="status"]')?.textContent).toContain(
       'Não foi possível remover a fase AVALIACAO.',
     );
@@ -326,7 +363,7 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
   it('fecha o diálogo de remoção quando o navegador o fecha', async () => {
     elemento<HTMLButtonElement>('button[aria-label="Remover fase canônica AVALIACAO"]').click();
     await propagar();
-    const dialogo = elemento<HTMLDialogElement>('cfg-fase-canonica-remocao dialog');
+    const dialogo = elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
     dialogo.dispatchEvent(new Event('close'));
     await propagar();
     expect(edicao.confirmando()).toBe(false);
@@ -378,8 +415,63 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     await propagar();
     controller.expectOne((r) => r.url === LISTA).flush(...falhaDoServidor());
     await propagar();
-    expect(botaoPorTexto('Tentar novamente')?.disabled).toBe(true);
+    expect(botaoPorTexto('Tentar novamente')?.getAttribute('aria-disabled')).toBe('true');
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await concluirRecarga();
+  });
+
+  describe('foco do envio e da nova tentativa', () => {
+    const campoNome = (): HTMLInputElement => elemento('input[formcontrolname="nome"]');
+    const submeter = (): void =>
+      elemento<HTMLFormElement>('#cfg-fase-canonica-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+
+    it('Enter num campo leva o foco ao botão de salvar e a falha do servidor o mantém ali', async () => {
+      await abrir();
+      campoNome().focus();
+      submeter();
+      await propagar();
+      expect(campoNome().matches(':disabled')).toBe(true);
+      expect(document.activeElement).toBe(salvar());
+
+      controller.expectOne(ESCRITA).flush(...falhaDoServidor());
+      await propagar();
+      await propagar();
+
+      expect(edicao.aberto()).toBe(true);
+      expect(document.activeElement).toBe(salvar());
+    });
+
+    it('envio barrado com o foco no botão de salvar leva o foco ao primeiro campo inválido', async () => {
+      await abrir();
+      edicao.form.controls.nome.setValue('');
+      edicao.form.controls.origemData.setValue('');
+      salvar().focus();
+      submeter();
+      await propagar();
+      await propagar();
+      controller.expectNone(ESCRITA);
+      expect(document.activeElement).toBe(campoNome());
+    });
+
+    it('"Tentar novamente" que dá certo leva o foco, que estava no botão, ao título da lista', async () => {
+      store.recarregar();
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(...falhaDoServidor());
+      await propagar();
+      const tentar = botaoPorTexto('Tentar novamente') as HTMLButtonElement;
+      tentar.focus();
+      tentar.click();
+      await propagar();
+      expect(tentar.getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(tentar);
+
+      controller.expectOne((r) => r.url === LISTA).flush([fase]);
+      await propagar();
+      await propagar();
+
+      expect(document.activeElement).toBe(elemento('#cfg-fases-canonicas-list-title'));
+    });
   });
 });

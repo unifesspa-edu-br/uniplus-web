@@ -143,6 +143,7 @@ describe('Escritas de locais de oferta', () => {
     elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
+    await propagar();
     controller.expectOne(ESCRITA).flush(
       JSON.stringify({
         type: 'about:blank',
@@ -180,6 +181,7 @@ describe('Escritas de locais de oferta', () => {
     elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
+    await propagar();
     controller.expectOne(ESCRITA).flush(
       JSON.stringify({
         type: 'about:blank',
@@ -281,6 +283,69 @@ describe('Escritas de locais de oferta', () => {
     });
   });
 
+  describe('envio barrado localmente com o endereço em branco', () => {
+    const campoCep = (): HTMLInputElement =>
+      elemento<HTMLInputElement>('ui-endereco-geo input[id$="-cep"]');
+    const pendenciaDaCidade = (): boolean =>
+      raiz().textContent?.includes('Selecione a cidade') ?? false;
+
+    async function abrirEmBranco(tipo: string): Promise<void> {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/campi`).flush([]);
+      edicao.form.controls.tipo.setValue(tipo);
+      await propagar();
+    }
+    async function enviarBarrado(): Promise<void> {
+      elemento<HTMLButtonElement>('button[form="cfg-local-form"]').focus();
+      elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+      await propagar();
+      controller.expectNone(ESCRITA);
+    }
+
+    it('leva o foco ao primeiro campo inválido', async () => {
+      await abrirEmBranco('');
+      await enviarBarrado();
+      expect(document.activeElement).toBe(elemento('select[formcontrolname="tipo"]'));
+    });
+
+    it('com o CEP pendente num cadastro novo, leva o foco ao CEP e não diz que falta a cidade', async () => {
+      await abrirEmBranco(TipoLocalOferta.poloEad);
+      campoCep().value = '12345';
+      campoCep().dispatchEvent(new Event('input'));
+      await propagar();
+      await enviarBarrado();
+      expect(document.activeElement).toBe(campoCep());
+      expect(pendenciaDaCidade()).toBe(false);
+    });
+
+    it('sem CEP, diz que falta a cidade e a mensagem sai da tela quando a cidade é preenchida', async () => {
+      await abrirEmBranco(TipoLocalOferta.poloEad);
+      await enviarBarrado();
+      expect(pendenciaDaCidade()).toBe(true);
+
+      edicao.form.controls.endereco.setValue({
+        cep: '68507590',
+        logradouro: 'Folha 31',
+        numero: null,
+        complemento: null,
+        bairro: 'Nova Marabá',
+        distrito: null,
+        cidade: local.cidade,
+        latitude: null,
+        longitude: null,
+        nivelResolucao: 'logradouro',
+        origem: 'geo-api',
+      });
+      await propagar();
+
+      expect(pendenciaDaCidade()).toBe(false);
+    });
+  });
+
   it('no endereço manual sem UF, leva o foco à mensagem da recusa do endereço', async () => {
     await abrir();
     edicao.form.controls.endereco.setValue({
@@ -353,7 +418,7 @@ describe('Escritas de locais de oferta', () => {
     await propagar();
   }
   const dialogoDaRemocao = (): HTMLDialogElement =>
-    elemento<HTMLDialogElement>('cfg-local-oferta-remocao dialog');
+    elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
   const confirmarRemocao = (): HTMLButtonElement =>
     elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]');
 
@@ -364,7 +429,7 @@ describe('Escritas de locais de oferta', () => {
     confirmarRemocao().click();
     await propagar();
     expect(edicao.saving()).toBe(false);
-    expect(elemento('cfg-local-oferta-remocao [role="status"]').textContent?.trim()).toBe(
+    expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent?.trim()).toBe(
       'Removendo o local de oferta.',
     );
     expect(confirmarRemocao().getAttribute('aria-disabled')).toBe('true');
@@ -424,8 +489,8 @@ describe('Escritas de locais de oferta', () => {
 
     async function conferirDialogoComARecusa(titulo: string): Promise<void> {
       expect(dialogoDaRemocao().hasAttribute('open')).toBe(true);
-      expect(elemento('cfg-local-oferta-remocao .field__error').textContent?.trim()).toBe(titulo);
-      expect(elemento('cfg-local-oferta-remocao [role="status"]').textContent).toContain(
+      expect(elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim()).toBe(titulo);
+      expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
         `Não foi possível remover o local de oferta. ${titulo}`,
       );
       expect(confirmarRemocao().getAttribute('aria-disabled')).toBeNull();
@@ -464,7 +529,7 @@ describe('Escritas de locais de oferta', () => {
       edicao.confirmOpen.set(false);
       edicao.pedirRemocao(local);
       await propagar();
-      expect(raiz().querySelector('cfg-local-oferta-remocao .field__error')).toBeNull();
+      expect(raiz().querySelector('cfg-confirmacao-de-remocao .field__error')).toBeNull();
     });
   });
 
@@ -482,6 +547,7 @@ describe('Escritas de locais de oferta', () => {
     await abrir();
     const chave = edicao.idempotencyKeyAtual();
     edicao.salvar();
+    await propagar();
     recusar(status, corpo);
     await propagar();
     return chave;

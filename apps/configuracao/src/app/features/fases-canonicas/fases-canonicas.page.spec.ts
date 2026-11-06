@@ -488,7 +488,9 @@ describe('FasesCanonicasPage', () => {
 
     lixeira.click();
     fixture.detectChanges();
-    const dialogo = fixture.nativeElement.querySelector('cfg-fase-canonica-remocao') as HTMLElement;
+    const dialogo = fixture.nativeElement.querySelector(
+      'cfg-confirmacao-de-remocao',
+    ) as HTMLElement;
     expect(dialogo.querySelector('h3')?.textContent?.trim()).toBe('Remover fase canônica');
     expect(dialogo.querySelector('.uni-dialog__body')?.textContent).toContain(
       'Deseja remover a fase AVALIACAO?',

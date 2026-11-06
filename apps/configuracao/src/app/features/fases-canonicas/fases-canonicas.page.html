@@ -20,8 +20,9 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="store.carregando() || edicao.gravando()"
-      (click)="store.tentarNovamente()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -61,7 +62,8 @@
   (cancelar)="edicao.fechar()"
   (recarregarUnidades)="store.unidades.recarregar()"
 />
-<cfg-fase-canonica-remocao
+<cfg-confirmacao-de-remocao
+  titulo="Remover fase canônica"
   [(aberto)]="edicao.confirmando"
   [mensagem]="edicao.mensagemDaConfirmacao()"
   [removendo]="edicao.removendo()"

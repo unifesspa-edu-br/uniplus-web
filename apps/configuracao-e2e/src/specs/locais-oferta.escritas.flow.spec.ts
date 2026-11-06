@@ -187,6 +187,33 @@ test.describe('Local de oferta — escritas', () => {
     expect(envios).toEqual(['PUT']);
   });
 
+  test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
+    const { envios } = await mockApi(page, [{ status: 201 }], 'com-o-local');
+    await page.goto('/locais-oferta');
+    await novo(page).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de local de oferta' });
+    await drawer.getByRole('button', { name: 'Criar local' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(drawer.locator('select[formcontrolname="tipo"]')).toBeFocused();
+    expect(envios).toEqual([]);
+  });
+
+  test('cadastro novo com o CEP pendente leva o foco ao CEP e não afirma que falta a cidade', async ({
+    page,
+  }) => {
+    const { envios } = await mockApi(page, [{ status: 201 }], 'com-o-local');
+    await page.goto('/locais-oferta');
+    await novo(page).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de local de oferta' });
+    await drawer.locator('select[formcontrolname="tipo"]').selectOption({ index: 1 });
+    const cep = drawer.locator('ui-endereco-geo input[id$="-cep"]');
+    await cep.fill('68507');
+    await drawer.getByRole('button', { name: 'Criar local' }).click();
+    await expect(cep).toBeFocused();
+    await expect(drawer.getByText('Selecione a cidade do endereço')).toHaveCount(0);
+    expect(envios).toEqual([]);
+  });
+
   test('edição concluída devolve o foco ao botão da linha depois da recarga', async ({ page }) => {
     const { liberar } = await mockApi(page, [{ status: 204 }], 'com-o-local');
     const drawer = await abrirEdicao(page);

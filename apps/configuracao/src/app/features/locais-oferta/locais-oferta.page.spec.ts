@@ -297,6 +297,7 @@ describe('LocaisOfertaPage', () => {
     ) as HTMLInputElement;
     const foco = vi.spyOn(campo, 'focus');
     enviar();
+    await propagate();
     controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`).flush(
       JSON.stringify({
         type: 'about:blank',

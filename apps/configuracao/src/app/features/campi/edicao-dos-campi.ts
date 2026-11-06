@@ -15,7 +15,11 @@ import {
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampiApi, CampusDto } from '@uniplus/shared-data/configuracao';
-import { ehErroDeEndereco } from '../../shared/endereco';
+import {
+  ehErroDeEndereco,
+  limparPendenciaDaCidadeAoPreencher,
+  pendenciaDaCidade,
+} from '../../shared/endereco';
 import { CampiStore } from './campi.store';
 import {
   CAMPUS_EM_BRANCO,
@@ -85,6 +89,14 @@ export class EdicaoDosCampi {
 
   private readonly campusEmEdicaoId = signal<string | null>(null);
   private readonly chaveDeIdempotencia = signal(idempotencyKey.create());
+
+  constructor() {
+    limparPendenciaDaCidadeAoPreencher(
+      this.form.controls.endereco,
+      this.erroDoEndereco,
+      this.destroyRef,
+    );
+  }
 
   abrirCadastro(): void {
     this.modo.set('criar');
@@ -177,9 +189,7 @@ export class EdicaoDosCampi {
 
   private recusarFormularioInvalido(): void {
     this.form.markAllAsTouched();
-    if (this.form.controls.endereco.hasError('cidadeObrigatoria')) {
-      this.erroDoEndereco.set('Selecione a cidade do endereço (obrigatória para o campus).');
-    }
+    this.erroDoEndereco.set(pendenciaDaCidade(this.form.controls.endereco, 'o campus'));
   }
 
   private concluirGravacao(result: ApiResult<string | void>): void {

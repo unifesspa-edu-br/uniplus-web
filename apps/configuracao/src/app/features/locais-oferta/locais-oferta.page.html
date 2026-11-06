@@ -58,7 +58,8 @@
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />
-<cfg-local-oferta-remocao
+<cfg-confirmacao-de-remocao
+  titulo="Remover local de oferta"
   [(aberto)]="edicao.confirmOpen"
   [mensagem]="edicao.confirmMessage()"
   [removendo]="edicao.removendo()"

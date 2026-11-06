@@ -140,6 +140,18 @@ describe('FasesCanonicasListaComponent', () => {
       expect(document.activeElement).toBe(remover());
     });
 
+    it('localiza a linha pelo id, ainda que a recarga troque o código mostrado', async () => {
+      montar([fase], {});
+      acionar(editar());
+      fixture.componentRef.setInput('gravando', true);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('fases', [{ ...fase, codigo: 'OUTRO_CODIGO' }]);
+      fixture.componentRef.setInput('gravando', false);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      expect(document.activeElement).toBe(botao('Editar fase canônica OUTRO_CODIGO'));
+    });
+
     it('leva o foco ao título da lista quando a linha do acionador não existe mais', async () => {
       montar([fase], {});
       acionar(remover());

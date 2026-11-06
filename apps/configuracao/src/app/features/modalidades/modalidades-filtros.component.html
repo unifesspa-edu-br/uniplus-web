@@ -1,0 +1,27 @@
+<ui-filter-bar
+  ariaLabel="Filtrar modalidades"
+  searchPlaceholder="Buscar por código ou descrição..."
+  searchAriaLabel="Buscar modalidade"
+  [(searchValue)]="busca"
+  [filtrosAtivos]="filtrosAtivos()"
+  secondaryRole="group"
+  secondaryAriaLabel="Filtrar por natureza legal"
+>
+  <button
+    uiFilterBarActions
+    type="button"
+    class="btn btn--tertiary btn--sm btn--rect"
+    [disabled]="removendo()"
+    (click)="limpar.emit()"
+  >
+    Limpar
+  </button>
+  <ng-container uiFilterBarSecondary>
+    <span class="u-eyebrow">Natureza</span>
+    <ui-filter-chips
+      [options]="chipsNatureza()"
+      [(selected)]="naturezaSelecionada"
+      ariaLabel="Filtrar por natureza"
+    />
+  </ng-container>
+</ui-filter-bar>

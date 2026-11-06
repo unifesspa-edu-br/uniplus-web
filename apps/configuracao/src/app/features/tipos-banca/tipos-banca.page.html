@@ -56,7 +56,8 @@
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />
-<cfg-tipo-banca-remocao
+<cfg-confirmacao-de-remocao
+  titulo="Remover tipo de banca"
   [(aberto)]="edicao.confirmando"
   [mensagem]="edicao.mensagemDaConfirmacao()"
   [removendo]="edicao.removendo()"

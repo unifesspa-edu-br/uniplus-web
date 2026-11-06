@@ -72,7 +72,7 @@ describe('TiposBancaPage — recusas e foco', () => {
     elemento(`button[aria-label="Remover tipo de banca ${banca.codigo}"]`);
   const salvar = (): HTMLButtonElement => elemento('button[form="cfg-tipo-banca-form"]');
   const confirmar = (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]');
-  const dialogo = (): HTMLElement => elemento('cfg-tipo-banca-remocao');
+  const dialogo = (): HTMLElement => elemento('cfg-confirmacao-de-remocao');
   const botaoDoDialogo = (nome: string): HTMLButtonElement =>
     [...dialogo().querySelectorAll('button')].find(
       (botao) => botao.textContent?.trim() === nome || botao.getAttribute('aria-label') === nome,
@@ -279,6 +279,19 @@ describe('TiposBancaPage — recusas e foco', () => {
       expect(document.activeElement).toBe(campoNome());
     });
 
+    it('envio barrado com o foco no botão de salvar leva o foco ao primeiro campo inválido', async () => {
+      await abrirEdicao();
+      edicao.form.controls.nome.setValue('');
+      salvar().focus();
+      elemento<HTMLFormElement>('#cfg-tipo-banca-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+      await propagar();
+      controller.expectNone(ESCRITA);
+      expect(document.activeElement).toBe(campoNome());
+    });
+
     it('cancelar devolve o foco ao botão que abriu o drawer', async () => {
       await abrirEdicao();
       const cancelar = [...fixture.nativeElement.querySelectorAll('button')].find(
@@ -323,12 +336,14 @@ describe('TiposBancaPage — recusas e foco', () => {
       expect(confirmar().getAttribute('aria-busy')).toBe('true');
       expect(botaoDoDialogo('Cancelar').matches(':disabled')).toBe(true);
       expect(botaoDoDialogo('Fechar').matches(':disabled')).toBe(true);
-      elemento('cfg-tipo-banca-remocao dialog').dispatchEvent(
+      elemento('cfg-confirmacao-de-remocao dialog').dispatchEvent(
         new Event('cancel', { cancelable: true }),
       );
       await propagar();
       expect(edicao.confirmando()).toBe(true);
-      expect(elemento('cfg-tipo-banca-remocao [role="status"]').textContent).toContain('Removendo');
+      expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
+        'Removendo',
+      );
       confirmar().click();
       controller.expectNone(ESCRITA);
       requisicao.flush(...sucesso());
@@ -342,10 +357,10 @@ describe('TiposBancaPage — recusas e foco', () => {
         primeira.flush(...problema(status, { code: 'uniplus.idempotency.processing_conflict' }));
         await propagar();
         expect(edicao.confirmando()).toBe(true);
-        expect(elemento('cfg-tipo-banca-remocao .field__error').textContent).toContain(
+        expect(elemento('cfg-confirmacao-de-remocao .field__error').textContent).toContain(
           edicao.erroRemocao(),
         );
-        expect(elemento('cfg-tipo-banca-remocao [role="status"]').textContent).toContain(
+        expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
           'Não foi possível remover',
         );
         expect(confirmar().getAttribute('aria-disabled')).toBeNull();
@@ -354,10 +369,11 @@ describe('TiposBancaPage — recusas e foco', () => {
         confirmar().click();
         await propagar();
         expect(
-          fixture.nativeElement.querySelector('cfg-tipo-banca-remocao .field__error'),
+          fixture.nativeElement.querySelector('cfg-confirmacao-de-remocao .field__error'),
         ).toBeNull();
         controller.expectOne(ESCRITA).flush(...sucesso());
         await recarregarCom([]);
+        expect(document.activeElement).toBe(elemento(TITULO_DA_LISTA));
       },
     );
 

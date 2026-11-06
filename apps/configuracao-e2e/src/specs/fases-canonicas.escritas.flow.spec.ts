@@ -25,10 +25,17 @@ const FASE = {
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o drawer fecha. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;
 
+const ERRO_INTERNO = {
+  type: 'about:blank',
+  title: 'Erro interno',
+  status: 500,
+  code: 'uniplus.erro_interno',
+};
+
 async function responder(route: Route, status: number, corpo: unknown): Promise<void> {
   await route.fulfill({
     status,
-    contentType: status === 422 ? 'application/problem+json' : 'application/json',
+    contentType: status >= 400 ? 'application/problem+json' : 'application/json',
     headers: CORS_HEADERS,
     body: status === 204 ? undefined : JSON.stringify(corpo),
   });
@@ -40,6 +47,7 @@ async function mockApi(
   page: Page,
   resposta: { status: number; corpo?: unknown },
   recarga: Recarga = 'com-a-fase',
+  primeiraConsulta: 'ok' | 'falha' = 'ok',
 ) {
   let liberar: () => void = () => undefined;
   const retida = new Promise<void>((resolve) => (liberar = resolve));
@@ -48,6 +56,10 @@ async function mockApi(
   let consultas = 0;
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, async (route) => {
     consultas += 1;
+    if (primeiraConsulta === 'falha' && consultas === 1) {
+      await responder(route, 500, ERRO_INTERNO);
+      return;
+    }
     if (consultas > 1) await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
     if (consultas > 1 && recarga === 'com-falha') {
       await responder(route, 500, {
@@ -132,6 +144,54 @@ test.describe('Fase canônica — escritas', () => {
     await expect(nome).toBeFocused();
     await expect(nome).toHaveAttribute('aria-invalid', 'true');
     await expect(drawer.getByText('Nome fora do padrão.')).toBeVisible();
+  });
+
+  test('Enter no campo leva o foco ao botão de salvar e, na falha 500, o envio segue disponível', async ({
+    page,
+  }) => {
+    const { liberar, envios } = await mockApi(page, { status: 500, corpo: ERRO_INTERNO });
+    await page.goto('/fases-canonicas');
+    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    const nome = drawer.locator('input[formcontrolname="nome"]');
+    await nome.focus();
+    await page.keyboard.press('Enter');
+    await expect(nome).toBeDisabled();
+    await expect(drawer.getByRole('button', { name: 'Salvando...' })).toBeFocused();
+    liberar();
+    await expect(drawer.getByText('Erro interno')).toBeVisible();
+    await expect(nome).toBeEnabled();
+    await expect(drawer.getByRole('button', { name: 'Salvar fase canônica' })).toBeFocused();
+    expect(envios).toEqual(['PUT']);
+  });
+
+  test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
+    const { envios } = await mockApi(page, { status: 204 });
+    await page.goto('/fases-canonicas');
+    await page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }).click();
+    const drawer = page.getByRole('dialog', { name: 'Formulário de fase canônica' });
+    const nome = drawer.locator('input[formcontrolname="nome"]');
+    await nome.fill('');
+    await drawer.getByRole('button', { name: 'Salvar fase canônica' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(nome).toBeFocused();
+    await expect(nome).toHaveAttribute('aria-invalid', 'true');
+    expect(envios).toEqual([]);
+  });
+
+  test('"Tentar novamente" fica focado e indisponível durante a carga e leva o foco ao título', async ({
+    page,
+  }) => {
+    await mockApi(page, { status: 204 }, 'com-a-fase', 'falha');
+    await page.goto('/fases-canonicas');
+    const tentar = page.getByRole('button', { name: 'Tentar novamente' });
+    await tentar.click();
+    await expect(tentar).toBeFocused();
+    await expect(tentar).toHaveAttribute('aria-disabled', 'true');
+    await expect(
+      page.getByRole('button', { name: 'Editar fase canônica AVALIACAO' }),
+    ).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Fases canônicas', level: 2 })).toBeFocused();
   });
 
   test('edição concluída devolve o foco ao acionador', async ({ page }) => {

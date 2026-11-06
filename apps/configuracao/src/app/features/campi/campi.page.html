@@ -46,7 +46,8 @@
   (cancelar)="edicao.fechar()"
 />
 
-<cfg-campus-remocao
+<cfg-confirmacao-de-remocao
+  titulo="Remover campus"
   [(aberto)]="edicao.confirmando"
   [mensagem]="edicao.mensagemDaConfirmacao()"
   [removendo]="edicao.removendo()"

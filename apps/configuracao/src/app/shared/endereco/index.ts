@@ -8,3 +8,4 @@ export {
   type EnderecoGeoLeitura,
 } from './endereco.model';
 export { ENDERECO_NO_GEO } from './provedores-do-geo';
+export { limparPendenciaDaCidadeAoPreencher, pendenciaDaCidade } from './pendencia-da-cidade';

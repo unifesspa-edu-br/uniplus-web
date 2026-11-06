@@ -37,7 +37,7 @@
         </thead>
         <tbody>
           @for (fase of fases(); track fase.id) {
-            <tr>
+            <tr [attr.data-fase-id]="fase.id">
               <td data-label="Código">
                 <code>{{ fase.codigo }}</code>
                 @if (fase.id === andamento()?.id) {

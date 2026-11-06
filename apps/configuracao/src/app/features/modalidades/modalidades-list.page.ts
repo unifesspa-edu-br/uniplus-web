@@ -22,7 +22,10 @@ import {
   resumoDaRegra,
 } from '@uniplus/shared-ui/components';
 
+import { focarAposNovaTentativa } from '../../shared/foco';
+import { ModalidadesFiltrosComponent } from './modalidades-filtros.component';
 import { ModalidadesListaComponent } from './modalidades-lista.component';
+import { ModalidadesTabelaComponent } from './modalidades-tabela.component';
 import { EdicaoDasModalidades } from './edicao-das-modalidades';
 import { ModalidadesStore } from './modalidades.store';
 
@@ -30,7 +33,14 @@ import { ModalidadesStore } from './modalidades.store';
   selector: 'cfg-modalidades-list-page',
   providers: [ModalidadesStore, EdicaoDasModalidades],
   standalone: true,
-  imports: [ModalidadesListaComponent, AlertComponent, DialogComponent, SpinnerComponent],
+  imports: [
+    ModalidadesFiltrosComponent,
+    ModalidadesListaComponent,
+    ModalidadesTabelaComponent,
+    AlertComponent,
+    DialogComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './modalidades-list.page.html',
   host: { class: 'cfg-page' },
@@ -140,6 +150,18 @@ export class ModalidadesListPage {
   });
 
   protected readonly errorMessage = this.store.mensagemDeErro;
+  /** A lista carrega ou uma remoção corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
+  protected readonly indisponivel = computed(() => this.loading() || this.removendo());
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.indisponivel,
+    computed(() => this.errorMessage() !== null),
+    () => document.getElementById('cfg-modalidades-title'),
+  );
+
+  /** A linha da modalidade cuja remoção corre, para sinalizá-la. */
+  protected readonly removendoId = computed(() =>
+    this.removendo() ? (this.modalidadeParaRemover()?.id ?? null) : null,
+  );
 
   constructor() {
     effect(() => {
@@ -160,7 +182,7 @@ export class ModalidadesListPage {
     this.store.paginaAnterior();
   }
   protected tentarNovamente(): void {
-    this.store.tentarNovamente();
+    this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 
   protected limparFiltros(): void {

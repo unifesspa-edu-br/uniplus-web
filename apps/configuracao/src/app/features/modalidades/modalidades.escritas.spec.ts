@@ -91,11 +91,46 @@ describe('Modalidades — remoção pela interface', () => {
     const retry = [
       ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
     ].find((b) => b.textContent?.trim() === 'Tentar novamente');
-    expect(retry?.disabled).toBe(true);
+    expect(retry?.getAttribute('aria-disabled')).toBe('true');
+    expect(retry?.disabled).toBe(false);
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne((r) => r.url === LISTA).flush([]);
     await propagar();
+  });
+
+  it('"Tentar novamente" que dá certo leva o foco, que estava no botão, ao título da lista', async () => {
+    const raiz = fixture.nativeElement as HTMLElement;
+    fixture.debugElement.injector.get(ModalidadesStore).recarregar();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === LISTA)
+      .flush(
+        { type: 'about:blank', title: 'Indisponível', status: 503, code: 'erro' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    await propagar();
+    const tentar = [...raiz.querySelectorAll<HTMLButtonElement>('button')].find(
+      (b) => b.textContent?.trim() === 'Tentar novamente',
+    ) as HTMLButtonElement;
+    tentar.focus();
+    tentar.click();
+    await propagar();
+    expect(tentar.getAttribute('aria-busy')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+
+    controller.expectOne((r) => r.url === LISTA).flush([modalidade]);
+    await propagar();
+    await propagar();
+    expect(document.activeElement).toBe(raiz.querySelector('#cfg-modalidades-title'));
+  });
+
+  it('o diálogo de remoção põe os botões direto no rodapé, sem contêiner entre eles', async () => {
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.click();
+    await propagar();
+    const botoes = [...raiz.querySelectorAll<HTMLButtonElement>('dialog .uni-dialog__footer > button')];
+    expect(botoes.map((b) => b.textContent?.trim())).toEqual(['Cancelar', 'Remover']);
   });
 
   it('anuncia a remoção e mantém a trava até terminar a recarga', async () => {

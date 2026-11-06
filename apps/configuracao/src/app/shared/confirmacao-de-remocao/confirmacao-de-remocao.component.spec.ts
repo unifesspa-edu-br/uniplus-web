@@ -1,17 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { LocalOfertaRemocaoComponent } from './local-oferta-remocao.component';
+import { ConfirmacaoDeRemocaoComponent } from './confirmacao-de-remocao.component';
 
-describe('LocalOfertaRemocaoComponent', () => {
-  let fixture: ComponentFixture<LocalOfertaRemocaoComponent>;
+describe('ConfirmacaoDeRemocaoComponent', () => {
+  let fixture: ComponentFixture<ConfirmacaoDeRemocaoComponent>;
   let confirmacoes: number;
 
   beforeEach(() => {
     confirmacoes = 0;
-    TestBed.configureTestingModule({ imports: [LocalOfertaRemocaoComponent] });
-    fixture = TestBed.createComponent(LocalOfertaRemocaoComponent);
+    TestBed.configureTestingModule({ imports: [ConfirmacaoDeRemocaoComponent] });
+    fixture = TestBed.createComponent(ConfirmacaoDeRemocaoComponent);
     fixture.componentRef.setInput('aberto', true);
-    fixture.componentRef.setInput('mensagem', 'Deseja remover este local?');
+    fixture.componentRef.setInput('titulo', 'Remover cadastro');
+    fixture.componentRef.setInput('mensagem', 'Deseja remover este cadastro?');
     fixture.componentRef.setInput('erro', null);
     fixture.componentRef.setInput('anuncio', '');
     fixture.componentInstance.confirmar.subscribe(() => (confirmacoes += 1));
@@ -20,12 +21,15 @@ describe('LocalOfertaRemocaoComponent', () => {
   const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const confirmar = (): HTMLButtonElement =>
     raiz().querySelector('[data-testid="confirm-dialog-confirm"]') as HTMLButtonElement;
+  const cancelar = (): HTMLButtonElement =>
+    raiz().querySelector('[data-testid="confirm-dialog-cancel"]') as HTMLButtonElement;
 
-  it('confirma uma vez e, com a remoção em curso, o clique é cancelado e não confirma de novo', () => {
+  it('confirma uma vez, mantém o foco no botão e, com a remoção em curso, o clique é cancelado', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.detectChanges();
     confirmar().click();
     expect(confirmacoes).toBe(1);
+    expect(document.activeElement).toBe(confirmar());
 
     fixture.componentRef.setInput('removendo', true);
     fixture.detectChanges();
@@ -42,9 +46,7 @@ describe('LocalOfertaRemocaoComponent', () => {
 
     expect(confirmar().getAttribute('aria-disabled')).toBe('true');
     expect(confirmar().getAttribute('aria-busy')).toBe('true');
-    expect(
-      raiz().querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-cancel"]')?.disabled,
-    ).toBe(true);
+    expect(cancelar().disabled).toBe(true);
     expect(raiz().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
       true,
     );
@@ -52,13 +54,31 @@ describe('LocalOfertaRemocaoComponent', () => {
 
   it('mostra a recusa e o botão volta a aceitar a confirmação', () => {
     fixture.componentRef.setInput('removendo', false);
-    fixture.componentRef.setInput('erro', 'Local em uso');
+    fixture.componentRef.setInput('erro', 'Cadastro em uso');
     fixture.detectChanges();
 
-    expect(raiz().querySelector('.field__error')?.textContent).toBe('Local em uso');
+    expect(raiz().querySelector('.field__error')?.textContent).toBe('Cadastro em uso');
     expect(confirmar().getAttribute('aria-disabled')).toBeNull();
-    expect(
-      raiz().querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-cancel"]')?.disabled,
-    ).toBe(false);
+    expect(cancelar().disabled).toBe(false);
+  });
+
+  it('o título do diálogo vem de quem o usa', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.componentRef.setInput('titulo', 'Remover campus');
+    fixture.detectChanges();
+
+    expect(raiz().querySelector('dialog')?.getAttribute('aria-labelledby')).not.toBeNull();
+    expect(raiz().textContent).toContain('Remover campus');
+  });
+
+  it('Cancelar fecha o diálogo sem confirmar', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+
+    cancelar().click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.aberto()).toBe(false);
+    expect(confirmacoes).toBe(0);
   });
 });

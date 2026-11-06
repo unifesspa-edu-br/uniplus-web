@@ -263,6 +263,51 @@ test.describe('Campus — escritas', () => {
     expect(envios).toEqual(['PUT']);
   });
 
+  test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
+    const { envios } = await mockApi(page, [{ status: 201, corpo: 'novo-id' }]);
+    await page.goto('/campi');
+    await page.getByRole('button', { name: 'Novo campus' }).first().click();
+    const formulario = drawer(page);
+    await formulario.locator('[formControlName="nome"]').fill('Campus de Parauapebas');
+    await formulario.getByRole('button', { name: 'Criar campus' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(formulario.locator('[formControlName="sigla"]')).toBeFocused();
+    expect(envios).toEqual([]);
+  });
+
+  test('cadastro novo com o CEP pendente leva o foco ao CEP e não afirma que falta a cidade', async ({
+    page,
+  }) => {
+    const { envios } = await mockApi(page, [{ status: 201, corpo: 'novo-id' }]);
+    await page.goto('/campi');
+    await page.getByRole('button', { name: 'Novo campus' }).first().click();
+    const formulario = drawer(page);
+    await formulario.locator('[formControlName="sigla"]').fill('PARAUAPEBAS');
+    await formulario.locator('[formControlName="nome"]').fill('Campus de Parauapebas');
+    await page.locator('#campus-endereco-cep').fill('68507');
+    await formulario.getByRole('button', { name: 'Criar campus' }).click();
+    await expect(page.locator('#campus-endereco-cep')).toBeFocused();
+    await expect(formulario.getByText('Selecione a cidade do endereço')).toHaveCount(0);
+    expect(envios).toEqual([]);
+  });
+
+  test('a pendência da cidade sai da tela quando a busca do CEP preenche a cidade', async ({
+    page,
+  }) => {
+    await mockApi(page, [{ status: 201, corpo: 'novo-id' }]);
+    await page.goto('/campi');
+    await page.getByRole('button', { name: 'Novo campus' }).first().click();
+    const formulario = drawer(page);
+    await formulario.locator('[formControlName="sigla"]').fill('PARAUAPEBAS');
+    await formulario.locator('[formControlName="nome"]').fill('Campus de Parauapebas');
+    await formulario.getByRole('button', { name: 'Criar campus' }).click();
+    await expect(formulario.getByText('Selecione a cidade do endereço')).toBeVisible();
+    await page.locator('#campus-endereco-cep').fill('68507590');
+    await page.getByRole('button', { name: 'Buscar CEP' }).click();
+    await expect(page.locator('#campus-endereco-logradouro')).toHaveValue('Rua Folha 31, Quadra 7');
+    await expect(formulario.getByText('Selecione a cidade do endereço')).toHaveCount(0);
+  });
+
   test('cancelar o formulário devolve o foco ao acionador sem enviar', async ({ page }) => {
     const { envios } = await mockApi(page, [{ status: 204 }]);
     const { acionador, formulario } = await abrirEdicao(page);

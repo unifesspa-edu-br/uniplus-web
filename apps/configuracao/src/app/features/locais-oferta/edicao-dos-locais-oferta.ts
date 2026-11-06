@@ -1,14 +1,4 @@
-import {
-  DestroyRef,
-  ElementRef,
-  Injectable,
-  Injector,
-  afterNextRender,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ApiResult,
@@ -28,7 +18,11 @@ import {
   LocalOfertaDto,
   TIPOS_LOCAL_OFERTA,
 } from '@uniplus/shared-data/configuracao';
-import { ehErroDeEndereco } from '../../shared/endereco';
+import {
+  ehErroDeEndereco,
+  limparPendenciaDaCidadeAoPreencher,
+  pendenciaDaCidade,
+} from '../../shared/endereco';
 import {
   LOCAL_EM_BRANCO,
   comandoDeAtualizacao,
@@ -48,15 +42,12 @@ export class EdicaoDosLocaisOferta {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly recarregando = signal(false);
   private viuCarregamento = false;
   private readonly escrita = signal<'salvando' | 'removendo' | null>(null);
   readonly gravando = computed(() => this.escrita() !== null || this.recarregando());
   readonly saving = computed(() => this.escrita() === 'salvando');
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  focarEndereco: () => void = () => undefined;
   readonly localAfetadoId = signal<string | null>(null);
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
@@ -102,6 +93,11 @@ export class EdicaoDosLocaisOferta {
   readonly form = criarFormularioDeLocalOferta();
 
   constructor() {
+    limparPendenciaDaCidadeAoPreencher(
+      this.form.controls.endereco,
+      this.enderecoErro,
+      this.destroyRef,
+    );
     effect(() => {
       if (!this.recarregando()) return;
       if (this.leitura.carregando()) this.viuCarregamento = true;
@@ -122,20 +118,6 @@ export class EdicaoDosLocaisOferta {
     this.leitura.recarregar();
   }
 
-  private focarErro(): void {
-    afterNextRender(
-      () => {
-        const campos = this.host.nativeElement.querySelectorAll<HTMLElement>(
-          '#cfg-local-form [aria-invalid="true"]',
-        );
-        const campo = [...campos].find((c) => c.closest('ui-endereco-geo') === null);
-        if (campo) campo.focus();
-        else if (this.enderecoErro()) this.focarEndereco();
-        else campos[0]?.focus();
-      },
-      { injector: this.injector },
-    );
-  }
   abrirCadastro(): void {
     if (this.gravando()) return;
     this.modo.set('criar');
@@ -206,10 +188,7 @@ export class EdicaoDosLocaisOferta {
     this.enderecoErro.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      if (this.form.controls.endereco.hasError('cidadeObrigatoria')) {
-        this.enderecoErro.set('Selecione a cidade do endereço (obrigatória para o local).');
-      }
-      this.focarErro();
+      this.enderecoErro.set(pendenciaDaCidade(this.form.controls.endereco, 'o local'));
       return;
     }
     this.localAfetadoId.set(this.localEmEdicaoId());
@@ -271,7 +250,6 @@ export class EdicaoDosLocaisOferta {
       this.renovarIdempotencyKey();
       this.enderecoErro.set(this.problemI18n.resolve(problem).title);
       this.formError.set(null);
-      this.focarErro();
       return;
     }
     if (deveRotacionarIdempotencyKey(problem)) this.renovarIdempotencyKey();
@@ -305,7 +283,6 @@ export class EdicaoDosLocaisOferta {
     this.enderecoErro.set(erroEndereco);
 
     if (aplicouAlgum) {
-      this.focarErro();
       this.formError.set(null);
       return;
     }

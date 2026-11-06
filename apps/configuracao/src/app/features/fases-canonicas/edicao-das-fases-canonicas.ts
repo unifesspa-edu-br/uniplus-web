@@ -8,7 +8,11 @@ import {
   ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { FaseCanonicaDto, FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
 import { rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
@@ -250,12 +254,7 @@ export class EdicaoDasFasesCanonicas {
       this.aplicarErrosDeValidacao(problem.errors);
       return;
     }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    ) {
-      this.renovarChave();
-    }
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }

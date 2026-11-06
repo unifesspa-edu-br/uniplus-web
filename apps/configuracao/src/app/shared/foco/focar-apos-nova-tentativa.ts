@@ -37,7 +37,8 @@ export function focarAposNovaTentativa(
   let acionado: Element | null | undefined;
 
   const concluir = (): void => {
-    const focoSeguiaNoBotao = acionado !== null && acionado !== undefined && document.activeElement === acionado;
+    const focoSeguiaNoBotao =
+      acionado !== null && acionado !== undefined && document.activeElement === acionado;
     acionado = undefined;
     if (untracked(falhou) || !focoSeguiaNoBotao) {
       return;

@@ -1,0 +1,76 @@
+<div class="table-responsive">
+  <table>
+    <caption class="sr-only">
+      Modalidades de concorrência, com quem concorre em cada uma, natureza, composição de vagas,
+      remanejamento e modalidades que a referenciam
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Código</th>
+        <th scope="col">Quem concorre</th>
+        <th scope="col">Natureza</th>
+        <th scope="col">Composição de vagas</th>
+        <th scope="col">Remanejamento</th>
+        <th scope="col">Referenciada por</th>
+        <th scope="col"><span class="sr-only">Ações</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (m of modalidades(); track m.id) {
+        <tr [attr.data-codigo]="m.codigo">
+          <td data-label="Código">
+            <code>{{ m.codigo }}</code>
+            @if (removendoId() === m.id) {
+              <span aria-hidden="true">Removendo...</span>
+            }
+            @if (m.descricao) {
+              <span class="cfg-meta">{{ m.descricao }}</span>
+            }
+          </td>
+          <td data-label="Quem concorre">{{ quemConcorre().get(m.id) }}</td>
+          <td data-label="Natureza">
+            <ui-tag [variant]="naturezaVariante(m.naturezaLegal)">
+              {{ naturezaLabel(m.naturezaLegal) }}
+            </ui-tag>
+          </td>
+          <td data-label="Composição de vagas">
+            {{ composicaoLabel(m.composicaoVagas) }}
+            @if (m.composicaoOrigem) {
+              <code>{{ m.composicaoOrigem }}</code>
+            }
+          </td>
+          <td data-label="Remanejamento">{{ remanejamentoResumo(m) }}</td>
+          <td data-label="Referenciada por">
+            @if (referenciadaPor(m.codigo); as refs) {
+              @if (refs.length > 0) {
+                <span class="cfg-refs">
+                  @for (r of refs; track r.id) {
+                    <code class="cfg-ref-chip">{{ r.codigo }}</code>
+                  }
+                </span>
+              } @else {
+                <span class="cfg-meta">Nenhuma</span>
+              }
+            }
+          </td>
+          <td class="table-responsive__actions" data-label="Ações">
+            <ui-icon-button
+              icon="pi-pencil"
+              [accessibleName]="'Editar modalidade ' + m.codigo"
+              tooltip="Editar modalidade"
+              [link]="[m.id]"
+              [isDisabled]="indisponivel()"
+            />
+            <ui-icon-button
+              icon="pi-trash"
+              [accessibleName]="'Remover modalidade ' + m.codigo"
+              tooltip="Remover modalidade"
+              [isDisabled]="indisponivel()"
+              (triggered)="remover.emit(m)"
+            />
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

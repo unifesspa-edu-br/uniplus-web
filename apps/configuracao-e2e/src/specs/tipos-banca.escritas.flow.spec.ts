@@ -205,6 +205,18 @@ test.describe('Tipo de banca — escritas', () => {
     expect(envios).toEqual(['PUT']);
   });
 
+  test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
+    const { envios } = await mockApi(page, [{ status: 204 }], 'com-o-item');
+    const formulario = await abrirEdicao(page);
+    const nome = formulario.locator('input[formcontrolname="nome"]');
+    await nome.fill('');
+    await formulario.getByRole('button', { name: 'Salvar tipo de banca' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(nome).toBeFocused();
+    await expect(nome).toHaveAttribute('aria-invalid', 'true');
+    expect(envios).toEqual([]);
+  });
+
   test('edição concluída devolve o foco ao acionador depois da recarga', async ({ page }) => {
     const { liberar } = await mockApi(page, [{ status: 204 }], 'com-o-item');
     const formulario = await abrirEdicao(page);

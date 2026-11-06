@@ -1,4 +1,4 @@
-<ui-dialog heading="Remover fase canônica" [(visible)]="aberto" [dismissible]="!removendo()">
+<ui-dialog [heading]="titulo()" [(visible)]="aberto" [dismissible]="!removendo()">
   <p>{{ mensagem() }}</p>
   <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
@@ -8,6 +8,7 @@
     <button
       type="button"
       class="btn btn--tertiary"
+      data-testid="confirm-dialog-cancel"
       [disabled]="removendo()"
       (click)="aberto.set(false)"
     >

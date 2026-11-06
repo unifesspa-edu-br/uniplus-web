@@ -5,7 +5,7 @@ import { focarAposNovaTentativa } from '../../shared/foco';
 import { CampiListaComponent } from './campi-lista.component';
 import { CampiStore } from './campi.store';
 import { CampusFormularioComponent } from './campus-formulario.component';
-import { CampusRemocaoComponent } from './campus-remocao.component';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { EdicaoDosCampi } from './edicao-dos-campi';
 
 /** Cadastro de campi: compõe a lista, o formulário e a confirmação de remoção. */
@@ -17,7 +17,7 @@ import { EdicaoDosCampi } from './edicao-dos-campi';
     AlertaNovaTentativaComponent,
     CampiListaComponent,
     CampusFormularioComponent,
-    CampusRemocaoComponent,
+    ConfirmacaoDeRemocaoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campi.page.html',

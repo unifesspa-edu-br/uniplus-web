@@ -25,7 +25,8 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="loading() || removendo()"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      [attr.aria-busy]="indisponivel() ? 'true' : null"
       (click)="tentarNovamente()"
     >
       Tentar novamente
@@ -34,26 +35,45 @@
 </ui-alert>
 }
 
-<cfg-modalidades-lista
-  [(busca)]="busca"
-  [(naturezaSelecionada)]="naturezaSelecionada"
-  [filtrosAtivos]="filtrosAtivos()"
-  [chipsNatureza]="chipsNatureza()"
-  [modalidadesFiltradas]="modalidadesFiltradas()"
-  [quemConcorre]="quemConcorre()"
-  [referencias]="referenciasReversas()"
-  [loading]="loading()"
-  [errorMessage]="errorMessage()"
-  [temFiltroAtivo]="temFiltroAtivo()"
-  [prevCursor]="prevCursor()"
-  [nextCursor]="nextCursor()"
-  [removendo]="removendo()"
-  [modalidadeEmRemocao]="modalidadeParaRemover()"
-  (limpar)="limparFiltros()"
-  (remover)="pedirRemocao($event)"
-  (anterior)="paginaAnterior()"
-  (proximo)="proximaPagina()"
-/>
+<div
+  data-scope
+  class="cfg-modalidades-scope"
+  [attr.inert]="removendo() ? '' : null"
+  [attr.aria-disabled]="removendo() ? 'true' : null"
+>
+  <cfg-modalidades-filtros
+    [(busca)]="busca"
+    [(naturezaSelecionada)]="naturezaSelecionada"
+    [filtrosAtivos]="filtrosAtivos()"
+    [chipsNatureza]="chipsNatureza()"
+    [removendo]="removendo()"
+    (limpar)="limparFiltros()"
+  />
+  <cfg-modalidades-lista
+    [total]="modalidadesFiltradas().length"
+    [loading]="loading()"
+    [errorMessage]="errorMessage()"
+    [temFiltroAtivo]="temFiltroAtivo()"
+    [temAnterior]="prevCursor() !== null"
+    [temProximo]="nextCursor() !== null"
+    [removendo]="removendo()"
+    [emRemocao]="modalidadeParaRemover() !== null"
+    (limpar)="limparFiltros()"
+    (anterior)="paginaAnterior()"
+    (proximo)="proximaPagina()"
+  >
+    @if (modalidadesFiltradas().length > 0) {
+    <cfg-modalidades-tabela
+      [modalidades]="modalidadesFiltradas()"
+      [quemConcorre]="quemConcorre()"
+      [referencias]="referenciasReversas()"
+      [indisponivel]="loading() || removendo()"
+      [removendoId]="removendoId()"
+      (remover)="pedirRemocao($event)"
+    />
+    }
+  </cfg-modalidades-lista>
+</div>
 
 <ui-dialog
   [(visible)]="dialogAberto"
@@ -91,7 +111,7 @@
   </p>
   } }
 
-  <div uiDialogFooter>
+  <ng-container uiDialogFooter>
     @if (remocaoBloqueada()) {
     <button
       #entendi
@@ -124,5 +144,5 @@
       } {{ removendo() ? 'Removendo...' : 'Remover' }}
     </button>
     }
-  </div>
+  </ng-container>
 </ui-dialog>

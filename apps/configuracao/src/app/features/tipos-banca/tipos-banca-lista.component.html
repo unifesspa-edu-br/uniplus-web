@@ -35,7 +35,7 @@
         </thead>
         <tbody>
           @for (banca of bancas(); track banca.id) {
-            <tr>
+            <tr [attr.data-tipo-banca-id]="banca.id">
               <td data-label="Código">
                 <code>{{ banca.codigo }}</code>
               </td>

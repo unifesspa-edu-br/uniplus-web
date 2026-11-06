@@ -181,20 +181,22 @@ describe('CampiPage — escritas pela interface', () => {
     await propagar();
 
     expect(elemento('.panel-head').textContent).toContain('Removendo');
-    expect(elemento('cfg-campus-remocao [role="status"]').textContent?.trim()).toBe(
+    expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent?.trim()).toBe(
       'Removendo o campus MARABA.',
     );
     const confirmar = elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]');
     expect(confirmar.getAttribute('aria-disabled')).toBe('true');
     expect(confirmar.getAttribute('aria-busy')).toBe('true');
-    const dialogo = elemento<HTMLDialogElement>('cfg-campus-remocao dialog');
+    const dialogo = elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
     expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
       true,
     );
     dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
     await propagar();
     expect(edicao.confirmando()).toBe(true);
-    expect(elemento<HTMLElement>('cfg-campus-remocao dialog').hasAttribute('open')).toBe(true);
+    expect(elemento<HTMLElement>('cfg-confirmacao-de-remocao dialog').hasAttribute('open')).toBe(
+      true,
+    );
     confirmar.click();
     controller.expectNone(`${ESCRITA_URL}/${campusSeed.id}`);
     expect(edicao.salvando()).toBe(false);
@@ -371,9 +373,9 @@ describe('CampiPage — escritas pela interface', () => {
         titulo,
       );
 
-      expect(elemento('cfg-campus-remocao dialog').hasAttribute('open')).toBe(true);
-      expect(elemento('cfg-campus-remocao .field__error').textContent?.trim()).toBe(titulo);
-      expect(elemento('cfg-campus-remocao [role="status"]').textContent).toContain(
+      expect(elemento('cfg-confirmacao-de-remocao dialog').hasAttribute('open')).toBe(true);
+      expect(elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim()).toBe(titulo);
+      expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
         'Não foi possível remover o campus MARABA.',
       );
       const confirmar = elemento('[data-testid="confirm-dialog-confirm"]');
@@ -393,7 +395,9 @@ describe('CampiPage — escritas pela interface', () => {
       edicao.pedirRemocao(campusSeed);
       await propagar();
 
-      expect(fixture.nativeElement.querySelector('cfg-campus-remocao .field__error')).toBeNull();
+      expect(
+        fixture.nativeElement.querySelector('cfg-confirmacao-de-remocao .field__error'),
+      ).toBeNull();
     });
   });
 
@@ -531,6 +535,55 @@ describe('CampiPage — escritas pela interface', () => {
       await enviarComEnter();
       controller.expectNone(ESCRITA_URL);
       expect(document.activeElement).toBe(campoNome());
+    });
+  });
+
+  describe('envio barrado localmente', () => {
+    const campoCep = (): HTMLInputElement =>
+      elemento<HTMLInputElement>('ui-endereco-geo input[id$="-cep"]');
+    const pendenciaDaCidade = (): boolean =>
+      (fixture.nativeElement as HTMLElement).textContent?.includes('Selecione a cidade') ?? false;
+
+    async function abrirNovoCampus(): Promise<void> {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      digitar('input[formcontrolname="sigla"]', 'PARAUAPEBAS');
+      digitar('input[formcontrolname="nome"]', 'Campus de Parauapebas');
+    }
+    async function enviarBarrado(): Promise<void> {
+      elemento<HTMLButtonElement>('button[form="cfg-campus-form"]').focus();
+      enviarFormulario();
+      await propagar();
+      await propagar();
+      controller.expectNone(ESCRITA_URL);
+    }
+
+    it('leva o foco ao primeiro campo inválido', async () => {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      digitar('input[formcontrolname="nome"]', 'Campus de Parauapebas');
+      await enviarBarrado();
+      expect(document.activeElement).toBe(elemento('input[formcontrolname="sigla"]'));
+    });
+
+    it('com o CEP pendente num cadastro novo, leva o foco ao CEP e não diz que falta a cidade', async () => {
+      await abrirNovoCampus();
+      digitar('ui-endereco-geo input[id$="-cep"]', '12345');
+      await propagar();
+      await enviarBarrado();
+      expect(document.activeElement).toBe(campoCep());
+      expect(pendenciaDaCidade()).toBe(false);
+    });
+
+    it('sem CEP, diz que falta a cidade e a mensagem sai da tela quando a cidade é preenchida', async () => {
+      await abrirNovoCampus();
+      await enviarBarrado();
+      expect(pendenciaDaCidade()).toBe(true);
+
+      edicao.form.controls.endereco.setValue(enderecoResolvido);
+      await propagar();
+
+      expect(pendenciaDaCidade()).toBe(false);
     });
   });
 

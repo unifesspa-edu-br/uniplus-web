@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { LocalOfertaDto } from '@uniplus/shared-data/configuracao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
 import { LocaisOfertaListaComponent } from './locais-oferta-lista.component';
 import { LocalOfertaFormularioComponent } from './local-oferta-formulario.component';
-import { LocalOfertaRemocaoComponent } from './local-oferta-remocao.component';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
 import { focarAposNovaTentativa } from '../../shared/foco';
 import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
@@ -17,7 +17,7 @@ import { LocaisOfertaStore } from './locais-oferta.store';
     AlertComponent,
     LocaisOfertaListaComponent,
     LocalOfertaFormularioComponent,
-    LocalOfertaRemocaoComponent,
+    ConfirmacaoDeRemocaoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './locais-oferta.page.html',
@@ -36,11 +36,6 @@ export class LocaisOfertaPage {
     computed(() => this.leitura.mensagemDeErro() !== null),
     () => document.getElementById('cfg-locais-list-title'),
   );
-  private readonly formulario = viewChild(LocalOfertaFormularioComponent);
-
-  constructor() {
-    this.edicao.focarEndereco = () => this.formulario()?.focarEndereco();
-  }
 
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.leitura.tentarNovamente());
