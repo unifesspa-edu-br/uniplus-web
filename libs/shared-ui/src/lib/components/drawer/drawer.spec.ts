@@ -62,6 +62,19 @@ describe('DrawerComponent', () => {
     expect(dialog.open).toBe(true);
   });
 
+  it('pede ao navegador que não o feche quando closable é false', () => {
+    const dialog = fixture.debugElement.query(By.css('dialog')).nativeElement as HTMLDialogElement;
+    expect(dialog.hasAttribute('closedby')).toBe(false);
+
+    fixture.componentRef.setInput('closable', false);
+    fixture.detectChanges();
+    expect(dialog.getAttribute('closedby')).toBe('none');
+
+    fixture.componentRef.setInput('closable', true);
+    fixture.detectChanges();
+    expect(dialog.hasAttribute('closedby')).toBe(false);
+  });
+
   it('usa o id informado pelo consumidor em vez do autogerado', () => {
     fixture.componentRef.setInput('id', 'meu-drawer-fixo');
     fixture.detectChanges();

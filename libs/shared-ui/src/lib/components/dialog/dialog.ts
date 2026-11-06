@@ -23,6 +23,8 @@ let dialogIdSeed = 0;
       role="dialog"
       aria-modal="true"
       [attr.aria-labelledby]="headingId"
+      [attr.aria-describedby]="describedBy()"
+      [attr.closedby]="dismissible() ? null : 'none'"
       (cancel)="close($event)"
       (close)="onNativeClose()"
     >
@@ -56,6 +58,11 @@ export class DialogComponent {
   readonly visible = model<boolean>(false);
   readonly heading = input<string>('Janela');
   readonly hasFooter = input<boolean>(true);
+  /**
+   * `id` do texto, dentro do conteúdo projetado, que explica o diálogo. O leitor de tela o lê
+   * depois do título, ao abrir. Cabe a quem usa garantir que o `id` seja único na página.
+   */
+  readonly describedBy = input<string | null>(null);
   /** `largo` alarga o painel para o diálogo que traz uma tabela (até 60 rem em tela larga). */
   readonly size = input<'padrao' | 'largo'>('padrao');
 

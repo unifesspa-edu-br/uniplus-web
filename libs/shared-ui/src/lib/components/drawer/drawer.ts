@@ -25,6 +25,7 @@ let openDrawerCount = 0;
       [class.uni-drawer--right]="position() === 'right'"
       [id]="drawerId()"
       [attr.aria-label]="ariaLabel()"
+      [attr.closedby]="closable() ? null : 'none'"
       (cancel)="close($event)"
       (close)="onNativeClose()"
     >

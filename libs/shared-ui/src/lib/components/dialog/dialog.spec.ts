@@ -56,6 +56,29 @@ describe('DialogComponent', () => {
     expect(botaoFechar().disabled).toBe(true);
   });
 
+  /** Sem isto, o Esc tardio fecha o elemento sem passar pelo `cancel`: o navegador não o recusa. */
+  it('pede ao navegador que não o feche quando não é dispensável', () => {
+    fixture.detectChanges();
+    expect(elementoDialogo().hasAttribute('closedby')).toBe(false);
+
+    fixture.componentRef.setInput('dismissible', false);
+    fixture.detectChanges();
+    expect(elementoDialogo().getAttribute('closedby')).toBe('none');
+
+    fixture.componentRef.setInput('dismissible', true);
+    fixture.detectChanges();
+    expect(elementoDialogo().hasAttribute('closedby')).toBe(false);
+  });
+
+  it('associa o texto de descrição por aria-describedby', () => {
+    fixture.detectChanges();
+    expect(elementoDialogo().getAttribute('aria-describedby')).toBeNull();
+
+    fixture.componentRef.setInput('describedBy', 'texto-explicativo');
+    fixture.detectChanges();
+    expect(elementoDialogo().getAttribute('aria-describedby')).toBe('texto-explicativo');
+  });
+
   /** Quem abriu continua no controle: fechar pelo `visible` sempre funciona. */
   it('fecha pelo visible mesmo quando não é dispensável', () => {
     fixture.componentRef.setInput('dismissible', false);
