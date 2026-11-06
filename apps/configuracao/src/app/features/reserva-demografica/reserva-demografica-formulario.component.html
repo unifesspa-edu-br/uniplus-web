@@ -1,27 +1,20 @@
 <ui-drawer
   class="form-drawer"
-  [visible]="aberto()"
-  (visibleChange)="$event ? null : fechar.emit()"
+  [(visible)]="aberto"
   [closable]="!salvando()"
-  [heading]="formHeading()"
+  [heading]="titulo()"
   ariaLabel="Formulário de referência demográfica"
   position="right"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
-  @if (formError()) {
-    <ui-alert
-      id="cfg-reserva-erro"
-      tabindex="-1"
-      variant="danger"
-      heading="Não foi possível salvar"
-      >{{ formError() }}</ui-alert
-    >
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
   <form
     [formGroup]="form()"
     id="cfg-reserva-form"
-    (ngSubmit)="!salvando() && salvar.emit()"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="form-drawer__form"
   >
@@ -40,7 +33,6 @@
               [attr.aria-describedby]="
                 erroDoCampo('censoReferencia') ? 'erro-censoReferencia' : null
               "
-              [readonly]="modo() === 'editar'"
               [attr.aria-invalid]="erroDoCampo('censoReferencia') ? 'true' : null"
               (blur)="verificarCenso.emit()"
             />
@@ -156,7 +148,7 @@
       type="button"
       class="btn btn--tertiary btn--rect"
       [disabled]="salvando()"
-      (click)="fechar.emit()"
+      (click)="cancelar.emit()"
     >
       Cancelar
     </button>
@@ -164,21 +156,14 @@
       type="submit"
       form="cfg-reserva-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando()"
-      [attr.aria-busy]="salvando()"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
       (click)="salvando() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
-      {{
-        salvando()
-          ? 'Salvando...'
-          : modo() === 'criar'
-            ? 'Criar referência'
-            : 'Salvar
-      referência'
-      }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>

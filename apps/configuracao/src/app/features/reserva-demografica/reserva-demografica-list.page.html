@@ -16,15 +16,16 @@
   12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
 </ui-alert>
 
-@if (errorMessage()) {
+@if (store.mensagemDeErro()) {
 <ui-alert variant="danger" heading="Não foi possível carregar as referências">
-  {{ errorMessage() }}
-  <div class="cfg-reserva__retry">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="edicao.gravando() || loading()"
-      (click)="!edicao.gravando() && tentarNovamente()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -32,70 +33,42 @@
 </ui-alert>
 }
 
-<span class="sr-only" role="status"
-  >{{ formOpen() || confirmOpen() ? '' : edicao.anuncioDaRemocao() }}</span
->
+<p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
 <cfg-reserva-demografica-lista
-  [referenciasFiltradas]="referenciasFiltradas()"
-  [busca]="busca()"
-  [loading]="loading()"
-  [bloqueado]="edicao.gravando()"
-  [errorMessage]="errorMessage()"
-  [prevCursor]="prevCursor()"
-  [nextCursor]="nextCursor()"
-  [idAfetado]="edicao.idAfetado()"
+  [referencias]="store.referenciasFiltradas()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
   [andamento]="edicao.andamento()"
-  (alterarBusca)="busca.set($event)"
-  (cadastrar)="abrirCadastro()"
-  (editar)="abrirEdicao($event)"
-  (remover)="pedirRemocao($event)"
-  (anterior)="paginaAnterior()"
-  (proximo)="proximaPagina()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
 />
 <cfg-reserva-demografica-formulario
-  [form]="form"
-  [aberto]="formOpen()"
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [modo]="edicao.modo()"
   [salvando]="edicao.salvando()"
-  [modo]="modo()"
-  [formError]="formError()"
-  [formHeading]="formHeading()"
-  [anuncio]="edicao.anuncioFormulario()"
-  (fechar)="edicao.fechar()"
-  (salvar)="salvar()"
-  (verificarCenso)="verificarCensoDuplicado()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (verificarCenso)="edicao.verificarCensoDuplicado()"
 />
-<ui-dialog
-  [visible]="confirmOpen()"
-  (visibleChange)="edicao.alterarConfirmacao($event)"
-  heading="Remover referência demográfica"
-  [dismissible]="!edicao.gravando()"
->
-  <p>{{ mensagemRemocao() }}</p>
-  @if (edicao.erroRemocao()) {
-  <ui-alert variant="danger" heading="Não foi possível remover"
-    >{{ edicao.erroRemocao() }}</ui-alert
-  >
-  }
-  <span class="sr-only" role="status">{{ edicao.anuncioDaRemocao() }}</span>
-  <ng-container uiDialogFooter>
-    <button
-      type="button"
-      class="btn btn--tertiary"
-      data-testid="confirm-dialog-cancel"
-      [attr.aria-disabled]="edicao.gravando()"
-      (click)="edicao.alterarConfirmacao(false)"
-    >
-      Cancelar
-    </button>
-    <button
-      type="button"
-      class="btn btn--danger"
-      data-testid="confirm-dialog-confirm"
-      [attr.aria-disabled]="edicao.gravando()"
-      [attr.aria-busy]="edicao.gravando()"
-      (click)="removerConfirmado()"
-    >
-      Remover
-    </button>
-  </ng-container>
-</ui-dialog>
+<cfg-confirmacao-de-remocao
+  titulo="Remover referência demográfica"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

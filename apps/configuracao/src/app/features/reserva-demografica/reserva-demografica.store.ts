@@ -30,15 +30,14 @@ export class ReservaDemograficaStore {
   }));
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly recarregando = signal(false);
-  private recargaPendente = false;
-  readonly busca = signal('');
   readonly carregando = this.lista.isLoading;
   readonly referencias = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
+  readonly termoBusca = signal('');
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly referenciasFiltradas = computed(() => {
-    const termo = this.busca().trim().toLocaleLowerCase('pt-BR');
+    const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     if (termo.length === 0) return this.referencias();
     return this.referencias().filter((ref) =>
       ref.censoReferencia.toLocaleLowerCase('pt-BR').includes(termo),
@@ -51,15 +50,6 @@ export class ReservaDemograficaStore {
   });
 
   constructor() {
-    effect(() => {
-      if (!this.recarregando() || this.carregando()) return;
-      if (this.recargaPendente) {
-        this.recargaPendente = false;
-        this.iniciarRecarga();
-      } else {
-        this.recarregando.set(false);
-      }
-    });
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -81,16 +71,8 @@ export class ReservaDemograficaStore {
     if (!this.carregando()) this.lista.reload();
   }
 
+  /** Volta à primeira página, para a lista refletir o que acabou de ser gravado. */
   recarregar(): void {
-    this.recarregando.set(true);
-    if (this.carregando()) {
-      this.recargaPendente = true;
-      return;
-    }
-    this.iniciarRecarga();
-  }
-
-  private iniciarRecarga(): void {
     if (this.pagina() === undefined) {
       this.lista.reload();
     } else {

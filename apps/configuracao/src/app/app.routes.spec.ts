@@ -49,6 +49,14 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     expect(await ir('/cursos')).toBe('/acesso-negado');
   });
 
+  it('abre a reserva demográfica só com a permissão de manter as referências', async () => {
+    concedidas.set(['configuracao:campi:manter']);
+    expect(await ir('/reserva-demografica')).toBe('/acesso-negado');
+
+    concedidas.set(['configuracao:referencias-reserva-demografica:manter']);
+    expect(await ir('/reserva-demografica')).toBe('/reserva-demografica');
+  });
+
   it('abre o cadastro de Tipo de Ato pela permissão de Publicações', async () => {
     concedidas.set(['publicacoes:tipos-ato:manter']);
 
