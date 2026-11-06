@@ -62,4 +62,33 @@ describe('LookupAlertComponent', () => {
       ]).textContent,
     ).toContain('As colunas afetadas mostram');
   });
+
+  it('mantém o botão da nova tentativa em curso, indisponível, sem chamar de novo', () => {
+    const cursos = { nome: 'cursos', pendente: true, recarregar: vi.fn() };
+    const host = render([cursos, { nome: 'campi', recarregar: vi.fn() }]);
+    const [emCurso, livre] = [...host.querySelectorAll<HTMLButtonElement>('.lookup-alert__retry')];
+
+    expect(emCurso.getAttribute('aria-disabled')).toBe('true');
+    expect(emCurso.getAttribute('aria-busy')).toBe('true');
+    expect(livre.getAttribute('aria-disabled')).toBeNull();
+    expect(livre.getAttribute('aria-busy')).toBeNull();
+
+    emCurso.click();
+    expect(cursos.recarregar).not.toHaveBeenCalled();
+  });
+
+  it('não perde o foco do botão quando a nova tentativa começa', () => {
+    const host = render([{ nome: 'cursos', pendente: false, recarregar: vi.fn() }]);
+    const botao = host.querySelector<HTMLButtonElement>(
+      '.lookup-alert__retry',
+    ) as HTMLButtonElement;
+    document.body.append(host);
+    botao.focus();
+
+    render([{ nome: 'cursos', pendente: true, recarregar: vi.fn() }]);
+
+    expect(host.querySelector('.lookup-alert__retry')).toBe(botao);
+    expect(document.activeElement).toBe(botao);
+    host.remove();
+  });
 });

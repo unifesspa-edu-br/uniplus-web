@@ -40,3 +40,7 @@
   text-decoration: underline;
   cursor: pointer;
 }
+.lookup-alert__retry[aria-disabled='true'] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}

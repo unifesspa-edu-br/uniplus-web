@@ -6,6 +6,11 @@ import { AlertComponent } from '../alert/alert';
 export interface UiLookupFalho {
   /** Nome do catálogo como aparece na frase de nova tentativa ("cursos"). */
   readonly nome: string;
+  /**
+   * A nova tentativa está em curso. Quem informa mantém o catálogo na lista enquanto dura, para o
+   * botão que a pediu não sair da tela com o foco; o botão fica indisponível, sem perdê-lo.
+   */
+  readonly pendente?: boolean;
   recarregar(): void;
 }
 
@@ -30,7 +35,13 @@ export interface UiLookupFalho {
         {{ mensagem() }}
         <span class="lookup-alert__acoes">
           @for (falha of falhas(); track falha.nome) {
-            <button type="button" class="lookup-alert__retry" (click)="falha.recarregar()">
+            <button
+              type="button"
+              class="lookup-alert__retry"
+              [attr.aria-disabled]="falha.pendente ? 'true' : null"
+              [attr.aria-busy]="falha.pendente ? 'true' : null"
+              (click)="tentar(falha)"
+            >
               Recarregar {{ falha.nome }}
             </button>
           }
@@ -41,6 +52,10 @@ export interface UiLookupFalho {
 })
 export class LookupAlertComponent {
   readonly falhas = input.required<readonly UiLookupFalho[]>();
+
+  protected tentar(falha: UiLookupFalho): void {
+    if (!falha.pendente) falha.recarregar();
+  }
 
   protected readonly mensagem = computed(() =>
     this.falhas().length === 1
