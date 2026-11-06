@@ -2,7 +2,6 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6);
-  margin: 0 0 var(--space-6);
   padding: var(--space-4) var(--space-5);
   background: var(--surface-card);
   border: 1px solid var(--border-subtle);

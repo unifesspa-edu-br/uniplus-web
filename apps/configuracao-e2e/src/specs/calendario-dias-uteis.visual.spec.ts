@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
 
@@ -121,14 +121,11 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await expect(page.getByRole('button', { name: /^5 de abril de 2026/ })).toBeVisible();
     const pagina = page.locator('.cfg-page');
     const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
-    const mensal = await pagina.locator('cfg-calendario-mensal').boundingBox();
-    const resumo = await pagina.locator('dl.cfg-calendario-resumo').boundingBox();
-    const geoPagina = await pagina.boundingBox();
-    if (!mensal || !resumo || !geoPagina) throw new Error('Elemento sem geometria visível.');
-    expect(Math.abs(mensal.y - (resumo.y + resumo.height) - gap)).toBeLessThanOrEqual(1);
-    expect(
-      Math.abs(geoPagina.y + geoPagina.height - (mensal.y + mensal.height)),
-    ).toBeLessThanOrEqual(1);
+    const mensal = await caixa(pagina.locator('cfg-calendario-mensal'));
+    const resumo = await caixa(pagina.locator('dl.cfg-calendario-resumo'));
+    const geoPagina = await caixa(pagina);
+    expect(Math.abs(mensal.y - resumo.base - gap)).toBeLessThanOrEqual(1);
+    expect(Math.abs(geoPagina.base - mensal.base)).toBeLessThanOrEqual(1);
     for (const sobreposicao of ['cfg-ocorrencias-do-dia', 'cfg-dia-nao-util-dialogo']) {
       await expect(pagina.locator(sobreposicao)).toHaveCSS('position', 'absolute');
     }
@@ -141,6 +138,12 @@ test.describe('Calendário de dias úteis — localidade no detalhe (#524)', () 
     await assertSemViolacoesGraves(page);
   });
 });
+
+async function caixa(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('Elemento sem geometria visível.');
+  return { y: box.y, base: box.y + box.height };
+}
 
 async function mockCalendarioApi(page: Page): Promise<void> {
   await page.route(
