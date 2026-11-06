@@ -255,7 +255,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
   });
 
   describe('cor dos botões de confirmação', () => {
-    it('desativar confirma em perigo e reativar confirma em primário', async () => {
+    it('desativar confirma em perigo, não em primário', async () => {
       await p.confirmarDesativacao(sisu);
       expect(p.confirmar('desativar').classList.contains('btn--danger')).toBe(true);
       expect(p.confirmar('desativar').classList.contains('btn--primary')).toBe(false);

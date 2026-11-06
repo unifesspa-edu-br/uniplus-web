@@ -54,7 +54,7 @@
               <option value="">Nenhuma</option>
               @for (unidade of unidadesParaEscolha(); track unidade.id) {
                 <option [value]="unidade.id">
-                  {{ unidade.rotulo }}{{ unidade.removida ? ' (removida)' : '' }}
+                  {{ unidade.rotulo }}{{ unidade.removida ? ' (removida do cadastro)' : '' }}
                 </option>
               }
             </select>

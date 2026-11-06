@@ -397,7 +397,7 @@ describe('FasesCanonicasPage', () => {
       expect(await salvarComSucesso(fase)).toMatchObject({ unidadeSugeridaId: null });
     });
 
-    it('a unidade gravada fora das ativas continua como opção, marcada "(removida)"', async () => {
+    it('a unidade gravada fora das ativas continua como opção, marcada "(removida do cadastro)"', async () => {
       const fase = comSugestao('01960000-0000-7000-0000-0000000000a9');
       await flushLista([fase], [CGA]);
       edicao.abrirEdicao(fase);
@@ -409,7 +409,9 @@ describe('FasesCanonicasPage', () => {
       });
       expect(edicao.form.controls.unidadeSugeridaId.value).toBe(fase.unidadeSugerida?.origemId);
       await propagate();
-      expect(opcoesDaUnidade()).toContain('CGA — Centro de Gestão Acadêmica (removida)');
+      expect(opcoesDaUnidade()).toContain(
+        'CGA — Centro de Gestão Acadêmica (removida do cadastro)',
+      );
     });
 
     it('não afirma que a unidade está removida quando o cadastro de unidades não carregou', async () => {
@@ -424,7 +426,7 @@ describe('FasesCanonicasPage', () => {
 
       expect(edicao.unidadesParaEscolha()[0]?.removida).toBe(false);
       await propagate();
-      expect(opcoesDaUnidade().join()).not.toContain('(removida)');
+      expect(opcoesDaUnidade().join()).not.toContain('(removida do cadastro)');
     });
 
     it('"Tentar novamente" das unidades fica indisponível, mantém o foco e leva ao campo quando dá certo', async () => {
