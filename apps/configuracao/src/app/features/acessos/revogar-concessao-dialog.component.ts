@@ -22,7 +22,10 @@ export interface ConfirmacaoDaRevogacao {
   standalone: true,
   imports: [ReactiveFormsModule, AlertComponent, DialogComponent, SpinnerComponent, DateBrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: './revogar-concessao-dialog.component.css',
+  styleUrls: [
+    '../../shared/sobreposicao/sobreposicao.css',
+    './revogar-concessao-dialog.component.css',
+  ],
   template: `
     <ui-dialog [(visible)]="visible" heading="Revogar a concessão" [dismissible]="!enviando()">
       <div class="cfg-dialog-form">
@@ -58,10 +61,7 @@ export interface ConfirmacaoDaRevogacao {
           [disabled]="enviando()"
           style="border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1rem"
         >
-          <label
-            class="field"
-            [class.is-error]="erroDoEmail() !== null || (tentou() && email().invalid)"
-          >
+          <label class="field" [class.is-error]="tentou() && email().invalid">
             <span class="field__label is-required">E-mail do beneficiário</span>
             <input
               aria-required="true"
@@ -69,15 +69,13 @@ export interface ConfirmacaoDaRevogacao {
               type="email"
               autocomplete="off"
               [formControl]="email()"
-              [attr.aria-invalid]="
-                erroDoEmail() !== null || (tentou() && email().invalid) ? 'true' : null
-              "
+              [attr.aria-invalid]="tentou() && email().invalid ? 'true' : null"
               aria-describedby="cfg-revogar-email-ajuda"
             />
             <span id="cfg-revogar-email-ajuda" class="field__hint"
               >Digite o e-mail institucional do beneficiário para confirmar a revogação.</span
             >
-            @if (erroDoEmail() || mensagem(email()); as mensagem) {
+            @if (mensagem(email()); as mensagem) {
               <span class="field__error">{{ mensagem }}</span>
             }
           </label>
@@ -135,8 +133,6 @@ export class RevogarConcessaoDialogComponent {
   /** Nome do escopo (sigla da unidade ou Instituição), que quem hospeda sabe resolver. */
   readonly escopoDaConcessao = input('');
   readonly erro = input<string | null>(null);
-  /** A recusa da API ao e-mail informado, mostrada no próprio campo. */
-  readonly erroDoEmail = input<string | null>(null);
   readonly enviando = input(false);
   readonly confirmado = output<void>();
   readonly email = input.required<FormControl<string>>();

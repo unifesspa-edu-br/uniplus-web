@@ -54,9 +54,10 @@ describe('PedidosPage', () => {
     expect(store.itens()).toHaveLength(0);
   });
 
-  it('apresenta recusa e permite tentar novamente', async () => {
+  it('apresenta recusa e permite tentar novamente, com o botão indisponível e focado durante a carga e o foco no título depois', async () => {
     const fixture = TestBed.createComponent(PedidosPage);
-    fixture.componentRef.setInput('fila', 'gestor');
+    const host = fixture.nativeElement as HTMLElement;
+    document.body.appendChild(host);
     fixture.detectChanges();
     http
       .expectOne((r) => r.url === URL)
@@ -75,12 +76,26 @@ describe('PedidosPage', () => {
         },
       );
     await atualizar();
-    expect(fixture.nativeElement.textContent).toContain('Sem permissão para a fila');
-    expect(fixture.nativeElement.textContent).toContain('Tentar novamente');
-    (fixture.nativeElement.querySelector('ui-alert button') as HTMLButtonElement).click();
+    expect(host.textContent).toContain('Sem permissão para a fila');
+    const tentar = host.querySelector<HTMLButtonElement>('ui-alert button');
+    expect(tentar?.getAttribute('aria-disabled')).toBeNull();
+
+    tentar?.focus();
+    tentar?.click();
     await atualizar();
-    http.expectOne((r) => r.url === URL).flush([]);
+    expect(tentar?.getAttribute('aria-disabled')).toBe('true');
+    expect(tentar?.getAttribute('aria-busy')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+    tentar?.click();
     await atualizar();
+    const nova = http.expectOne((r) => r.url === URL);
+    nova.flush([]);
+    await atualizar();
+    await atualizar();
+
+    expect(host.querySelector('ui-alert')).toBeNull();
+    expect(document.activeElement).toBe(host.querySelector('#cfg-pedidos-titulo'));
+    host.remove();
   });
 
   it('lista os próprios pedidos com escopo, situação e acesso ao cadastro', async () => {
@@ -182,5 +197,38 @@ describe('PedidosPage', () => {
     await atualizar();
     (fixture.nativeElement.querySelector('td.table-responsive__actions a') as HTMLElement).click();
     expect(navegar).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['meus', null],
+    ['gestor', { origem: 'gestor' }],
+  ] as const)('abre o pedido da fila %s levando a origem', async (fila, query) => {
+    const fixture = TestBed.createComponent(PedidosPage);
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    fixture.componentRef.setInput('fila', fila);
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === URL).flush([pedido()]);
+    await atualizar();
+
+    (fixture.nativeElement.querySelector('tbody tr') as HTMLElement).click();
+
+    expect(navegar).toHaveBeenCalledWith(['/acessos/pedidos', 'pedido-1'], { queryParams: query });
+  });
+
+  it('nomeia o escopo da unidade pela sigla e o da instituição sem unidade', async () => {
+    const fixture = TestBed.createComponent(PedidosPage);
+    fixture.detectChanges();
+    http
+      .expectOne((r) => r.url === URL)
+      .flush([
+        pedido(),
+        pedido({ id: 'pedido-2', escopo: { tipo: 'instituicao', unidadeId: null } }),
+      ]);
+    await atualizar();
+
+    const escopos = [...fixture.nativeElement.querySelectorAll('td[data-label="Escopo"]')].map(
+      (celula) => celula.textContent.trim(),
+    );
+    expect(escopos).toEqual(['CEPS', 'Instituição']);
   });
 });

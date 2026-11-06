@@ -12,7 +12,6 @@ import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import type { Acao } from './confirmacoes-do-pedido';
-import { nomesDeEscopo } from './nomes-de-escopo';
 import { PRAZO_NO_PASSADO, hojeNoFuso } from './prazo-de-vigencia';
 import { etapa, situacaoDoPedido } from './rotulos-de-acesso';
 
@@ -25,6 +24,7 @@ import { etapa, situacaoDoPedido } from './rotulos-de-acesso';
 })
 export class PedidoResumoComponent {
   readonly pedido = input.required<PedidoDeConcessaoDto>();
+  readonly nomeDoEscopo = input.required<(escopo: PedidoDeConcessaoDto['escopo']) => string>();
   readonly prazo = input.required<FormControl<string>>();
   readonly informaPrazo = input.required<boolean>();
   readonly podeAceitar = input.required<boolean>();
@@ -37,7 +37,6 @@ export class PedidoResumoComponent {
   readonly recusar = output<void>();
   readonly irParaAnexo = output<void>();
   private readonly campoPrazo = viewChild<ElementRef<HTMLInputElement>>('campoPrazo');
-  protected readonly escopo = nomesDeEscopo();
   protected readonly hoje = hojeNoFuso;
   protected readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
   protected readonly rotuloDaSituacao = computed(() => situacaoDoPedido(this.pedido().situacao));

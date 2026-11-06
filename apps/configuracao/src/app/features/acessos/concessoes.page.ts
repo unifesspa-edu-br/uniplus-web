@@ -1,12 +1,16 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { ConcessaoTrilhaComponent } from './concessao-trilha.component';
+import { devolverFocoAoAcionador, entreAspas } from './devolucao-de-foco';
 import { ConcessoesListaComponent } from './concessoes-lista.component';
 import { ConcessoesStore } from './concessoes.store';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { RevogacaoDeConcessoes } from './revogacao-de-concessoes';
 import { RevogarConcessaoDialogComponent } from './revogar-concessao-dialog.component';
+
+const ID_DO_TITULO = 'cfg-concessoes-titulo';
 
 @Component({
   selector: 'cfg-concessoes-page',
@@ -31,6 +35,32 @@ export class ConcessoesPage {
     const concessao = this.revogacao.concessaoARevogar();
     return concessao === null ? '' : this.escopo.nome(concessao.escopo);
   });
+
+  protected readonly pendente = computed(
+    () => this.store.carregando() || this.revogacao.gravando(),
+  );
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.pendente,
+    computed(() => this.store.mensagemDeErro() !== null),
+    () => document.getElementById(ID_DO_TITULO),
+  );
+
+  private readonly foco = devolverFocoAoAcionador({
+    gravando: computed(() => this.revogacao.gravando() || this.revogacao.revogando()),
+    carregando: this.store.carregando,
+    idDoTitulo: ID_DO_TITULO,
+  });
+
+  protected tentarNovamente(): void {
+    this.novaTentativa.executar(() => this.store.recarregar());
+  }
+
+  protected revogar(concessao: ConcessaoDto): void {
+    this.foco.registrar(
+      `tr[data-concessao-id="${entreAspas(concessao.id)}"] ui-icon-button[data-acao="revogar"] button`,
+    );
+    this.revogacao.pedirRevogacao(concessao);
+  }
 
   protected abrirTrilha(concessao: ConcessaoDto): void {
     this.trilhaAberta.set(true);

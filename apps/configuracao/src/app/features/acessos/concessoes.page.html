@@ -11,7 +11,13 @@
 <ui-alert variant="danger" heading="Não foi possível carregar as concessões">
   {{ mensagem }}
   <div>
-    <button type="button" class="btn btn--secondary btn--sm" (click)="store.recarregar()">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
       Tentar novamente
     </button>
   </div>
@@ -21,6 +27,7 @@
 <cfg-concessoes-lista
   [concessoes]="store.itens()"
   [carregando]="store.carregando()"
+  [gravando]="revogacao.gravando()"
   [erro]="store.mensagemDeErro()"
   [situacao]="store.situacao()"
   [nomeDoEscopo]="escopo.nome"
@@ -28,7 +35,7 @@
   [temProximo]="store.proximo() !== null"
   (filtrar)="store.filtrarPor($event)"
   (verTrilha)="abrirTrilha($event)"
-  (revogar)="revogacao.pedirRevogacao($event)"
+  (revogar)="revogar($event)"
   (anterior)="store.paginaAnterior()"
   (proximo)="store.proximaPagina()"
 />
@@ -45,7 +52,6 @@
   [concessao]="revogacao.concessaoARevogar()"
   [escopoDaConcessao]="escopoDaRevogacao()"
   [erro]="revogacao.erroDaRevogacao()"
-  [erroDoEmail]="revogacao.erroDoEmail()"
   [enviando]="revogacao.enviando()"
   [email]="revogacao.email"
   [motivo]="revogacao.motivo"

@@ -1,7 +1,7 @@
 <section class="panel" aria-labelledby="cfg-concessoes-titulo" [attr.aria-busy]="carregando()">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-concessoes-titulo">Concessões</h2>
+      <h2 id="cfg-concessoes-titulo" tabindex="-1">Concessões</h2>
       @if (carregando()) {
         <span><ui-spinner size="sm" /> Carregando</span>
       }
@@ -35,7 +35,7 @@
         </thead>
         <tbody>
           @for (concessao of concessoes(); track concessao.id) {
-            <tr>
+            <tr [attr.data-concessao-id]="concessao.id">
               <td data-label="Pessoa">
                 {{ pessoa(concessao) }}
               </td>
@@ -69,6 +69,8 @@
                 />
                 @if (concessao.ativa) {
                   <ui-icon-button
+                    data-acao="revogar"
+                    [isDisabled]="indisponivel()"
                     icon="pi-ban"
                     [accessibleName]="'Revogar a concessão de ' + concessao.perfil.nome"
                     tooltip="Revogar concessão"

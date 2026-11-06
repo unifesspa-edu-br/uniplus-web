@@ -11,6 +11,7 @@
   [form]="edicao.form"
   [perfis]="edicao.perfis()"
   [perfisIndisponiveis]="edicao.perfisIndisponiveis()"
+  [carregandoPerfis]="edicao.carregandoPerfis()"
   [perfilSelecionado]="edicao.perfilSelecionado()"
   [unidades]="edicao.unidades()"
   [paraQuem]="edicao.paraQuem()"
@@ -24,4 +25,5 @@
   [mensagemDoPrazo]="edicao.mensagemDoPrazo"
   [(arquivo)]="edicao.arquivo"
   (enviar)="edicao.enviar()"
+  (tentarPerfisNovamente)="edicao.tentarPerfisNovamente()"
 />

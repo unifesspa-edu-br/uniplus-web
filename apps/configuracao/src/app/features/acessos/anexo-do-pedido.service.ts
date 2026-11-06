@@ -9,8 +9,9 @@ import {
   type ProblemDetails,
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
-import { textoDaRecusa } from './mensagens-de-acesso';
+import { mensagemDaRecusa } from './falha-de-servidor';
 
 export type FaseDoEnvio = 'registrando' | 'enviando' | 'confirmando';
 
@@ -36,6 +37,7 @@ export class AnexoDoPedidoService {
   private readonly api = inject(PedidosDeConcessaoApi);
   private readonly armazenamento = inject(SignedUploadClient);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly notificacoes = inject(NotificationService);
 
   async anexar(
     pedidoId: string,
@@ -86,6 +88,6 @@ export class AnexoDoPedidoService {
   }
 
   private texto(problema: ProblemDetails): string {
-    return textoDaRecusa(this.problemas.resolve(problema));
+    return mensagemDaRecusa(this.problemas, this.notificacoes, problema);
   }
 }

@@ -7,18 +7,21 @@ import {
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
   type PerfilDto,
   type ModuloDoCatalogoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { notificarFalhasDeLeitura } from './falha-de-servidor';
 import { textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PerfisStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly notificacoes = inject(NotificationService);
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
   private readonly lista = useApiResource<readonly PerfilDto[]>(() => {
     const pagina = this.pagina();
@@ -47,6 +50,7 @@ export class PerfisStore {
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly carregando = this.lista.isLoading;
+  readonly carregandoCatalogo = this.consultaCatalogo.isLoading;
   readonly catalogo = computed(() => this.consultaCatalogo.data() ?? []);
   readonly erroDoCatalogo = computed(
     () => !!(this.consultaCatalogo.problem() || this.consultaCatalogo.error()),
@@ -59,6 +63,13 @@ export class PerfisStore {
         ? 'Não foi possível carregar a lista. Tente novamente.'
         : null;
   });
+
+  constructor() {
+    notificarFalhasDeLeitura(this.problemas, this.notificacoes, [
+      this.lista.problem,
+      this.consultaCatalogo.problem,
+    ]);
+  }
 
   proximaPagina(): void {
     this.navegacao.irParaProxima();

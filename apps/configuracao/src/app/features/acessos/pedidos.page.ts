@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } f
 import { Router, RouterLink } from '@angular/router';
 import { type FilaDePedidos, type PedidoResumoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { PedidosListaComponent } from './pedidos-lista.component';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedidosStore } from './pedidos.store';
@@ -53,6 +54,11 @@ export class PedidosPage implements OnInit {
 
   protected readonly store = inject(PedidosStore);
   private readonly router = inject(Router);
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+    () => document.getElementById('cfg-pedidos-titulo'),
+  );
 
   private readonly escopo = nomesDeEscopo();
   protected readonly nomesDosEscopos = computed(() => {
@@ -80,13 +86,12 @@ export class PedidosPage implements OnInit {
 
   /** A linha inteira abre o detalhe, como nas demais listas; o ícone da linha segue para quem navega por ele. */
   protected abrir(pedido: PedidoResumoDto): void {
-    if (this.store.carregando()) return;
     void this.router.navigate(['/acessos/pedidos', pedido.id], {
       queryParams: this.origemDoLink(),
     });
   }
 
   protected recarregar(): void {
-    this.store.recarregar();
+    this.novaTentativa.executar(() => this.store.recarregar());
   }
 }

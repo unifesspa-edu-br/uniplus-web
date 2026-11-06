@@ -9,8 +9,9 @@
     <button
       type="button"
       class="btn btn--primary"
+      [id]="idDoCadastro"
       [disabled]="edicao.gravando()"
-      (click)="edicao.abrirCriacao()"
+      (click)="criar()"
     >
       Novo perfil
     </button>
@@ -21,7 +22,13 @@
 <ui-alert variant="danger" heading="Não foi possível carregar os perfis">
   {{ mensagem }}
   <div>
-    <button type="button" class="btn btn--secondary btn--sm" (click)="store.recarregar()">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
       Tentar novamente
     </button>
   </div>
@@ -30,6 +37,7 @@
 <ui-alert variant="danger" heading="Não foi possível concluir">{{ edicao.erroDaAcao() }}</ui-alert>
 }
 
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-perfis-lista
   [perfis]="store.itens()"
   [carregando]="store.carregando()"
@@ -37,8 +45,8 @@
   [gravando]="edicao.gravando()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
-  (editar)="edicao.abrirEdicao($event)"
-  (alternarAtivacao)="edicao.alternarAtivacao($event)"
+  (editar)="editar($event)"
+  (alternarAtivacao)="alternarAtivacao($event)"
   (anterior)="store.paginaAnterior()"
   (proximo)="store.proximaPagina()"
 />
@@ -51,8 +59,9 @@
   [erro]="edicao.erroDoForm()"
   [catalogo]="store.catalogo()"
   [erroDoCatalogo]="store.erroDoCatalogo()"
+  [carregandoCatalogo]="store.carregandoCatalogo()"
   [marcadas]="permissoesMarcadas()"
   (salvar)="edicao.aoEnviar()"
   (alternar)="edicao.alternar($event)"
-  (recarregarCatalogo)="store.carregarCatalogo()"
+  (recarregarCatalogo)="tentarCatalogoNovamente()"
 />

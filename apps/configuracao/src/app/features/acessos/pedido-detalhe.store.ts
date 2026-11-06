@@ -1,16 +1,19 @@
 import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
   type EventoDaTrilhaDto,
   type PedidoDeConcessaoDto,
 } from '@uniplus/shared-data/autorizacao';
+import { notificarFalhasDeLeitura } from './falha-de-servidor';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PedidoDetalheStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly notificacoes = inject(NotificationService);
   readonly id = signal<string | undefined>(undefined);
   private readonly pedidoResource = useApiResource<PedidoDeConcessaoDto>(() => {
     const id = this.id();
@@ -31,6 +34,13 @@ export class PedidoDetalheStore {
         };
   });
   readonly pedido = linkedSignal(() => this.pedidoResource.data());
+
+  constructor() {
+    notificarFalhasDeLeitura(this.problemas, this.notificacoes, [
+      this.pedidoResource.problem,
+      this.trilhaResource.problem,
+    ]);
+  }
 
   aplicarPedido(pedido: PedidoDeConcessaoDto): void {
     this.pedido.set(pedido);

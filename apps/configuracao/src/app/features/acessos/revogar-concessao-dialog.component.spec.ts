@@ -30,7 +30,6 @@ const concessao: ConcessaoDto = {
     [(visible)]="aberto"
     [concessao]="concessao"
     escopoDaConcessao="CEPS"
-    [erroDoEmail]="erroDoEmail()"
     [email]="email"
     [motivo]="motivo"
     [tentou]="tentou()"
@@ -40,7 +39,6 @@ const concessao: ConcessaoDto = {
 class HospedeComponent {
   readonly aberto = signal(false);
   readonly concessao = concessao;
-  readonly erroDoEmail = signal<string | null>(null);
   readonly enviados: ConfirmacaoDaRevogacao[] = [];
   readonly email = new FormControl('', { nonNullable: true });
   readonly motivo = new FormControl('', { nonNullable: true, validators: [Validators.required] });
@@ -120,10 +118,15 @@ describe('RevogarConcessaoDialogComponent', () => {
     expect(host.textContent).toContain('Informe o motivo');
   });
 
-  it('mostra no campo de e-mail a recusa por divergência', () => {
+  it('mostra no campo de e-mail a recusa do servidor por divergência', () => {
     const { fixture, host } = montar();
+    const { email, tentou } = fixture.componentInstance;
 
-    fixture.componentInstance.erroDoEmail.set('O e-mail informado não é o do beneficiário.');
+    email.setErrors({
+      backend: { code: 'x', message: 'O e-mail informado não é o do beneficiário.' },
+    });
+    email.markAsTouched();
+    tentou.set(true);
     fixture.detectChanges();
 
     expect(host.querySelector('.field__error')?.textContent).toContain('não é o do beneficiário');

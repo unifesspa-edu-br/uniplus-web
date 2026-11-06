@@ -46,12 +46,15 @@ const PERFIL_DE_GOVERNANCA = {
 describe('PedirAcessoPage', async () => {
   const api = { criar: vi.fn(), perfisParaPedir: vi.fn() };
   const anexos = { anexar: vi.fn() };
-  const notificacoes = { success: vi.fn(), warning: vi.fn() };
+  const notificacoes = { success: vi.fn(), warning: vi.fn(), errorFromProblem: vi.fn() };
 
-  async function montar() {
+  async function montar(primeiraLeituraDosPerfis?: ReturnType<typeof recusa>) {
     api.perfisParaPedir.mockReturnValue(
       of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL, PERFIL_DE_GOVERNANCA])),
     );
+    if (primeiraLeituraDosPerfis) {
+      api.perfisParaPedir.mockReturnValueOnce(of(primeiraLeituraDosPerfis));
+    }
     TestBed.configureTestingModule({
       providers: [
         { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
@@ -102,9 +105,9 @@ describe('PedirAcessoPage', async () => {
     campo<HTMLInputElement>('input[value="outra"]').click();
     fixture.detectChanges();
     for (const campo of ['perfilId', 'justificativa', 'unidadeId', 'beneficiarioEmail']) {
-      expect(host.querySelector(`[formcontrolname="${campo}"]`)?.getAttribute('aria-required')).toBe(
-        'true',
-      );
+      expect(
+        host.querySelector(`[formcontrolname="${campo}"]`)?.getAttribute('aria-required'),
+      ).toBe('true');
     }
   });
 
@@ -164,6 +167,37 @@ describe('PedirAcessoPage', async () => {
     expect(justificativa.getAttribute('aria-invalid')).toBe('true');
     expect(host.textContent).toContain('Justificativa recusada.');
     expect(document.activeElement).toBe(justificativa);
+    expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
+  });
+
+  it('Enter num campo leva o foco ao botão de enviar e, na falha 500, o foco fica nele e a falha é notificada', async () => {
+    const resposta = new Subject<ReturnType<typeof recusa>>();
+    api.criar.mockReturnValue(resposta);
+    const { fixture, host, digitar, campo } = await montar();
+    digitar('select[formcontrolname="perfilId"]', 'perfil-2');
+    digitar('textarea', 'Preciso deste acesso para trabalhar.');
+    const justificativa = campo<HTMLTextAreaElement>('textarea');
+    justificativa.focus();
+
+    campo<HTMLFormElement>('form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const botao = campo<HTMLButtonElement>('button[type="submit"]');
+    expect(justificativa.matches(':disabled')).toBe(true);
+    expect(document.activeElement).toBe(botao);
+
+    resposta.next(recusa('uniplus.erro_interno', 500, 'Erro interno'));
+    resposta.complete();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.textContent).toContain('Erro interno');
+    expect(document.activeElement).toBe(botao);
+    expect(botao.getAttribute('aria-disabled')).toBeNull();
+    expect(api.criar).toHaveBeenCalledTimes(1);
+    expect(notificacoes.errorFromProblem).toHaveBeenCalledOnce();
+    expect(notificacoes.errorFromProblem.mock.calls[0]?.[1]).toEqual({ title: 'Erro interno' });
   });
 
   it('recusa chamadas concorrentes à classe de escrita', async () => {
@@ -232,6 +266,43 @@ describe('PedirAcessoPage', async () => {
     expect(host.textContent).toContain('Não foi possível listar os perfis de acesso');
     expect(host.querySelector('select[formcontrolname="perfilId"]')).toBeNull();
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
+  });
+
+  describe('perfis indisponíveis', () => {
+    const indisponiveis = () => recusa('uniplus.erro_interno', 503, 'Indisponível');
+    const tentar = (host: HTMLElement) =>
+      [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Tentar novamente'));
+
+    it('"Tentar novamente" lê os perfis de novo e leva o foco ao seletor de perfil', async () => {
+      const { fixture, host } = await montar(indisponiveis());
+      expect(host.querySelector('select[formcontrolname="perfilId"]')).toBeNull();
+      const consultas = api.perfisParaPedir.mock.calls.length;
+      tentar(host)?.focus();
+
+      tentar(host)?.click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(api.perfisParaPedir.mock.calls.length).toBe(consultas + 1);
+      expect(tentar(host)).toBeUndefined();
+      expect(document.activeElement).toBe(host.querySelector('select[formcontrolname="perfilId"]'));
+    });
+
+    it('o botão fica indisponível enquanto os perfis carregam e não pede de novo', async () => {
+      const { fixture, host } = await montar(indisponiveis());
+      const resposta = new Subject<ReturnType<typeof ok>>();
+      api.perfisParaPedir.mockReturnValue(resposta);
+      const botao = tentar(host);
+      botao?.click();
+      fixture.detectChanges();
+      const consultas = api.perfisParaPedir.mock.calls.length;
+
+      expect(botao?.getAttribute('aria-disabled')).toBe('true');
+      expect(botao?.getAttribute('aria-busy')).toBe('true');
+      botao?.click();
+      expect(api.perfisParaPedir.mock.calls.length).toBe(consultas);
+    });
   });
 
   it('não envia o pedido incompleto', async () => {

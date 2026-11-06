@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
 import type { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
 import { PedidoDocumentoFormularioComponent } from './pedido-documento-formulario.component';
 
@@ -25,6 +26,7 @@ export class PedirAcessoFormularioComponent {
   readonly form = input.required<Edicao['form']>();
   readonly perfis = input.required<ReturnType<Edicao['perfis']>>();
   readonly perfisIndisponiveis = input.required<string | null>();
+  readonly carregandoPerfis = input.required<boolean>();
   readonly perfilSelecionado = input.required<ReturnType<Edicao['perfilSelecionado']>>();
   readonly unidades = input.required<ReturnType<Edicao['unidades']>>();
   readonly paraQuem = input.required<ReturnType<Edicao['paraQuem']>>();
@@ -38,6 +40,12 @@ export class PedirAcessoFormularioComponent {
   readonly mensagemDoPrazo = input.required<string>();
   readonly arquivo = model.required<File | null>();
   readonly enviar = output<void>();
+  readonly tentarPerfisNovamente = output<void>();
+
+  constructor() {
+    // O formulário ocupa a página inteira: não há sobreposição a fechar.
+    acompanharFocoDoEnvio({ salvando: this.enviando, aberto: computed(() => true) });
+  }
 
   protected invalido(nome: Campo): boolean {
     const controle = this.form().controls[nome];

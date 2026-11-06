@@ -1,4 +1,12 @@
-import { ElementRef, Injectable, Injector, afterNextRender, inject, signal } from '@angular/core';
+import {
+  ElementRef,
+  Injectable,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import {
   ChaveDeSubstituicao,
@@ -8,11 +16,17 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ConcessoesApi, type ConcessaoDto } from '@uniplus/shared-data/autorizacao';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { mensagemDaRecusa } from './falha-de-servidor';
+import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { ConcessoesStore } from './concessoes.store';
 
-const CODIGO_EMAIL_DIVERGENTE = 'uniplus.autorizacao.concessao.confirmacao_divergente';
+/** Recusas que mostram que a lista está desatualizada: a concessão já não está como a tela a exibe. */
+const CODIGOS_DE_LISTA_DESATUALIZADA: ReadonlySet<string> = new Set([
+  'uniplus.autorizacao.concessao.ja_revogada',
+  'uniplus.autorizacao.concessao.nao_encontrada',
+]);
 
 /** Revogação de concessões e suas recusas. */
 @Injectable()
@@ -32,22 +46,24 @@ export class RevogacaoDeConcessoes {
   readonly tentou = signal(false);
   readonly revogando = signal(false);
   readonly enviando = signal(false);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
+  /** Inclui a espera pela recarga: o foco só volta à lista quando ela reflete a revogação. */
+  readonly gravando = computed(() => this.enviando() || this.recarga.aguardando());
   readonly erroDaRevogacao = signal<string | null>(null);
-  readonly erroDoEmail = signal<string | null>(null);
   readonly concessaoARevogar = signal<ConcessaoDto | null>(null);
   pedirRevogacao(concessao: ConcessaoDto): void {
-    if (this.enviando()) return;
     this.email.reset('');
     this.motivo.reset('');
     this.tentou.set(false);
     this.concessaoARevogar.set(concessao);
     this.erroDaRevogacao.set(null);
-    this.erroDoEmail.set(null);
     this.revogando.set(true);
   }
 
   confirmar(): void {
-    if (this.enviando()) return;
     this.tentou.set(true);
     const motivo = this.motivo.value.trim();
     const email = this.email.value.trim();
@@ -64,31 +80,38 @@ export class RevogacaoDeConcessoes {
     if (concessao === null || this.enviando()) return;
     this.enviando.set(true);
     this.erroDaRevogacao.set(null);
-    this.erroDoEmail.set(null);
     try {
       const corpo = { motivo, confirmacaoEmail };
       const { resultado } = await comChave(this.chave, { id: concessao.id, ...corpo }, (contexto) =>
         this.api.revogar(concessao.id, corpo, contexto),
       );
-      if (!resultado.ok) {
-        const texto = textoDaRecusa(this.problemas.resolve(resultado.problem));
-        if (resultado.problem.code === CODIGO_EMAIL_DIVERGENTE) {
-          this.erroDoEmail.set(texto);
-          this.focarErro();
-        } else if (!this.aplicarErrosDeCampo(resultado.problem)) {
-          this.erroDaRevogacao.set(texto);
-        }
-        return;
-      }
-      this.revogando.set(false);
-      this.notificacoes.success('Concessão revogada');
-      this.store.recarregar();
+      if (resultado.ok) this.concluirRevogacao();
+      else this.mostrarRecusa(resultado.problem);
     } catch {
       this.erroDaRevogacao.set(FALHA_INESPERADA);
     } finally {
       this.enviando.set(false);
     }
   }
+
+  private concluirRevogacao(): void {
+    this.revogando.set(false);
+    this.notificacoes.success('Concessão revogada');
+    this.recarregarLista();
+  }
+
+  private mostrarRecusa(problema: ProblemDetails): void {
+    const texto = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
+    if (this.aplicarErrosDeCampo(problema)) return;
+    this.erroDaRevogacao.set(texto);
+    if (CODIGOS_DE_LISTA_DESATUALIZADA.has(problema.code)) this.recarregarLista();
+  }
+
+  private recarregarLista(): void {
+    this.recarga.iniciar();
+    this.store.recarregar();
+  }
+
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = false;
     for (const erro of problema.errors ?? []) {

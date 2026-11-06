@@ -26,9 +26,10 @@
           formControlName="nome"
           [readOnly]="criacaoEmAberto()"
           [attr.aria-invalid]="invalido('nome') ? 'true' : null"
+          [attr.aria-describedby]="invalido('nome') ? 'cfg-perfil-erro-nome' : null"
         />
         @if (invalido('nome')) {
-          <span class="field__error">{{ mensagemDoCampo('nome') }}</span>
+          <span class="field__error" id="cfg-perfil-erro-nome">{{ mensagemDoCampo('nome') }}</span>
         }
       </label>
       <label class="field" [class.is-error]="invalido('descricao')">
@@ -39,13 +40,16 @@
           formControlName="descricao"
           [readOnly]="criacaoEmAberto()"
           [attr.aria-invalid]="invalido('descricao') ? 'true' : null"
+          [attr.aria-describedby]="invalido('descricao') ? 'cfg-perfil-erro-descricao' : null"
         ></textarea>
         @if (invalido('descricao')) {
-          <span class="field__error">{{ mensagemDoCampo('descricao') }}</span>
+          <span class="field__error" id="cfg-perfil-erro-descricao">{{
+            mensagemDoCampo('descricao')
+          }}</span>
         }
       </label>
 
-      <fieldset class="field">
+      <fieldset class="field" [id]="idDasPermissoes" tabindex="-1">
         <legend class="form-section__title">Permissões</legend>
         @if (erroDoCatalogo()) {
           <ui-alert variant="warning" heading="Catálogo indisponível">
@@ -53,6 +57,8 @@
             <button
               type="button"
               class="btn btn--secondary btn--sm"
+              [attr.aria-disabled]="carregandoCatalogo() ? 'true' : null"
+              [attr.aria-busy]="carregandoCatalogo() ? 'true' : null"
               (click)="recarregarCatalogo.emit()"
             >
               Tentar novamente

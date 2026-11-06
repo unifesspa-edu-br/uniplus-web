@@ -1,5 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import type { Type } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -28,7 +29,7 @@ describe('Paginação dos acessos', () => {
         tipo,
       ],
     });
-    const store = TestBed.inject(tipo);
+    const store = TestBed.inject(tipo as Type<PedidosStore | ConcessoesStore | PerfisStore>);
     if (store instanceof PedidosStore) store.fila.set('meus');
     const http = TestBed.inject(HttpTestingController);
     const atualizar = async () => {
@@ -79,4 +80,37 @@ describe('Paginação dos acessos', () => {
     expect(store.proximo()).toBeNull();
     http.verify();
   });
+
+  it.each([
+    ['pedidos-de-concessao', PedidosStore],
+    ['concessoes', ConcessoesStore],
+  ] as const)(
+    '%s: escolher a situação que já está escolhida recarrega a lista',
+    async (rota, tipo) => {
+      TestBed.configureTestingModule({
+        providers: [
+          provideHttpClient(withInterceptors([apiResultInterceptor])),
+          provideHttpClientTesting(),
+          { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+          tipo,
+        ],
+      });
+      const store = TestBed.inject(tipo as Type<PedidosStore | ConcessoesStore>);
+      if (store instanceof PedidosStore) store.fila.set('meus');
+      const http = TestBed.inject(HttpTestingController);
+      const atualizar = async () => {
+        await Promise.resolve();
+        TestBed.tick();
+      };
+      await atualizar();
+      http.expectOne((req) => req.url === `${BASE}/${rota}`).flush([]);
+      await atualizar();
+
+      store.filtrarPor(store.situacao() as never);
+      await atualizar();
+
+      http.expectOne((req) => req.url === `${BASE}/${rota}`).flush([]);
+      http.verify();
+    },
+  );
 });

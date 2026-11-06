@@ -8,13 +8,16 @@ import {
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { AUTORIZACAO_BASE_PATH, type PerfilParaPedidoDto } from '@uniplus/shared-data/autorizacao';
+import { notificarFalhasDeLeitura } from './falha-de-servidor';
 import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PedirAcessoStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly notificacoes = inject(NotificationService);
   private readonly cursor = signal<Cursor | undefined>(undefined);
   private readonly acumulados = signal<readonly PerfilParaPedidoDto[]>([]);
   private readonly consulta = useApiResource<readonly PerfilParaPedidoDto[]>(() => {
@@ -28,6 +31,7 @@ export class PedirAcessoStore {
     };
   });
   readonly perfis = signal<readonly PerfilParaPedidoDto[]>([]);
+  readonly carregandoPerfis = this.consulta.isLoading;
   readonly perfisIndisponiveis = computed(() => {
     const problema = this.consulta.problem();
     return problema
@@ -36,7 +40,12 @@ export class PedirAcessoStore {
         ? FALHA_INESPERADA
         : null;
   });
+  recarregarPerfis(): void {
+    this.consulta.reload();
+  }
+
   constructor() {
+    notificarFalhasDeLeitura(this.problemas, this.notificacoes, [this.consulta.problem]);
     effect(() => {
       const resultado = this.consulta.value();
       if (!resultado?.ok) return;

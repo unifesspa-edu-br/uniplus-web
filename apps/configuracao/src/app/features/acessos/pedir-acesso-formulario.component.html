@@ -43,9 +43,20 @@
       </label>
     }
     @if (perfisIndisponiveis(); as indisponivel) {
-      <ui-alert variant="danger" heading="Não foi possível listar os perfis de acesso">{{
-        indisponivel
-      }}</ui-alert>
+      <ui-alert variant="danger" heading="Não foi possível listar os perfis de acesso">
+        {{ indisponivel }}
+        <div>
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [attr.aria-disabled]="carregandoPerfis() ? 'true' : null"
+            [attr.aria-busy]="carregandoPerfis() ? 'true' : null"
+            (click)="tentarPerfisNovamente.emit()"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </ui-alert>
     } @else {
       <label class="field" [class.is-error]="invalido('perfilId')">
         <span class="field__label is-required">Perfil de acesso</span>

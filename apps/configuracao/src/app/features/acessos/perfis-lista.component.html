@@ -1,7 +1,7 @@
 <section class="panel" aria-labelledby="cfg-perfis-titulo" [attr.aria-busy]="carregando()">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-perfis-titulo">Perfis</h2>
+      <h2 id="cfg-perfis-titulo" tabindex="-1">Perfis</h2>
       @if (carregando()) {
         <span><ui-spinner size="sm" /> Carregando</span>
       }
@@ -32,7 +32,7 @@
         </thead>
         <tbody>
           @for (perfil of perfis(); track perfil.id) {
-            <tr>
+            <tr [attr.data-perfil-id]="perfil.id">
               <td data-label="Nome">
                 <div>
                   {{ perfil.nome }}
@@ -52,14 +52,16 @@
               <td class="table-responsive__actions" data-label="Ações">
                 @if (!perfil.governanca) {
                   <ui-icon-button
-                    [isDisabled]="gravando()"
+                    data-acao="editar"
+                    [isDisabled]="indisponivel()"
                     icon="pi-pencil"
                     [accessibleName]="'Editar o perfil ' + perfil.nome"
                     tooltip="Editar perfil"
                     (triggered)="editar.emit(perfil)"
                   />
                   <ui-icon-button
-                    [isDisabled]="gravando()"
+                    data-acao="alternar"
+                    [isDisabled]="indisponivel()"
                     icon="pi-power-off"
                     [accessibleName]="
                       (perfil.ativo ? 'Desativar' : 'Ativar') + ' o perfil ' + perfil.nome
@@ -83,7 +85,7 @@
       navigationLabel="Paginação de perfis"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando()"
+      [isDisabled]="indisponivel()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />

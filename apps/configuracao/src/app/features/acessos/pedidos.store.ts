@@ -7,18 +7,21 @@ import {
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
   type FilaDePedidos,
   type PedidoResumoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { notificarFalhasDeLeitura } from './falha-de-servidor';
 import { textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PedidosStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly notificacoes = inject(NotificationService);
   readonly fila = signal<FilaDePedidos | undefined>(undefined);
   readonly situacao = signal('');
   private readonly pagina = linkedSignal<string, CursorPagina | undefined>({
@@ -48,6 +51,10 @@ export class PedidosStore {
         ? 'Não foi possível carregar a lista. Tente novamente.'
         : null;
   });
+  constructor() {
+    notificarFalhasDeLeitura(this.problemas, this.notificacoes, [this.lista.problem]);
+  }
+
   proximaPagina(): void {
     this.navegacao.irParaProxima();
   }

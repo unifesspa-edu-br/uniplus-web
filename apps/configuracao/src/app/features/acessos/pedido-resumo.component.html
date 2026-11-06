@@ -7,7 +7,7 @@
     <dt>Perfil</dt>
     <dd>{{ pedido().perfil.nome }}</dd>
     <dt>Escopo</dt>
-    <dd>{{ escopo.nome(pedido().escopo) }}</dd>
+    <dd>{{ nomeDoEscopo()(pedido().escopo) }}</dd>
     <dt>Beneficiário</dt>
     <dd>{{ pedido().beneficiario.nome ?? pedido().beneficiario.email }}</dd>
     <dt>E-mail do beneficiário</dt>
@@ -58,7 +58,12 @@
 
   <div class="cfg-acoes panel-body">
     @if (podeAceitar()) {
-      <button type="button" class="btn btn--primary" (click)="confirmar('aceitar')">
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="decisaoIndisponivel() ? 'true' : null"
+        (click)="confirmar('aceitar')"
+      >
         Aceitar o pedido
       </button>
     }
@@ -86,7 +91,12 @@
       </button>
     }
     @if (podeCancelar()) {
-      <button type="button" class="btn btn--tertiary" (click)="confirmar('cancelar')">
+      <button
+        type="button"
+        class="btn btn--tertiary"
+        [attr.aria-disabled]="decisaoIndisponivel() ? 'true' : null"
+        (click)="confirmar('cancelar')"
+      >
         Cancelar o pedido
       </button>
     }

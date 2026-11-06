@@ -1,6 +1,6 @@
 <div class="page-header">
   <div class="page-header__content">
-    <h1 class="page-header__title">Pedido de acesso</h1>
+    <h1 id="cfg-pedido-titulo" class="page-header__title" tabindex="-1">Pedido de acesso</h1>
     <p class="page-header__desc">
       <a [routerLink]="origem.rota">{{ origem.voltar }}</a>
     </p>
@@ -26,6 +26,7 @@
 }
 <cfg-pedido-resumo
   [pedido]="p"
+  [nomeDoEscopo]="escopo.nome"
   [prazo]="prazo"
   [informaPrazo]="informaPrazo()"
   [podeAceitar]="podeAceitar()"

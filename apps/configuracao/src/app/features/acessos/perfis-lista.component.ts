@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
 import {
   EmptyStateComponent,
@@ -34,4 +34,5 @@ export class PerfisListaComponent {
   readonly anterior = output<void>();
   readonly proximo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
 }

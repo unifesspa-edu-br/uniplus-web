@@ -2,9 +2,16 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { ReactiveFormsModule } from '@angular/forms';
 import type { ModuloDoCatalogoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { mensagemDeErroDoControle } from '../../shared/formulario';
-import { criarFormularioDePerfil } from './perfil-form';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
+import {
+  type CampoDoPerfil,
+  criarFormularioDePerfil,
+  mensagemDoCampoDoPerfil,
+} from './perfil-form';
 import { sensibilidade } from './rotulos-de-acesso';
+
+/** Destino do foco quando o catálogo volta a carregar depois de uma falha. */
+export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
 
 @Component({
   selector: 'cfg-perfil-formulario',
@@ -23,26 +30,29 @@ export class PerfilFormularioComponent {
   readonly erro = input.required<string | null>();
   readonly catalogo = input.required<readonly ModuloDoCatalogoDto[]>();
   readonly erroDoCatalogo = input.required<boolean>();
+  readonly carregandoCatalogo = input.required<boolean>();
   readonly marcadas = input.required<readonly string[]>();
   readonly salvar = output<void>();
   readonly alternar = output<string>();
   readonly recarregarCatalogo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
+  protected readonly idDasPermissoes = ID_DAS_PERMISSOES;
 
-  protected invalido(nome: 'nome' | 'descricao'): boolean {
+  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+
+  protected invalido(nome: CampoDoPerfil): boolean {
     const controle = this.form().controls[nome];
     return controle.invalid && (controle.touched || controle.dirty);
   }
 
-  protected mensagemDoCampo(nome: 'nome' | 'descricao'): string | null {
-    const controle = this.form().controls[nome];
-    if (controle.hasError('required'))
-      return nome === 'nome' ? 'Informe o nome do perfil.' : 'Descreva o perfil.';
-    return mensagemDeErroDoControle(controle);
+  protected mensagemDoCampo(nome: CampoDoPerfil): string | null {
+    return mensagemDoCampoDoPerfil(nome, this.form().controls[nome]);
   }
 
   protected aoEnviar(): void {
-    if (!this.salvando()) this.salvar.emit();
+    if (this.salvando()) return;
+    this.salvar.emit();
+    if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }
 
   protected aoClicarEmSalvar(evento: Event): void {

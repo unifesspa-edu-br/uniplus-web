@@ -1,26 +1,25 @@
-import {
-  ElementRef,
-  Injectable,
-  Injector,
-  afterNextRender,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import {
   ChaveDeSubstituicao,
   ProblemI18nService,
   comChave,
   proximaChave,
+  type ProblemDetails,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PerfisApi, type PerfilDto } from '@uniplus/shared-data/autorizacao';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { mensagemDaRecusa } from './falha-de-servidor';
+import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { PerfisStore } from './perfis.store';
-import { criarFormularioDePerfil, valoresDoPerfil } from './perfil-form';
-import { controlNameFromBackendField, mensagemDeErroDoControle } from '../../shared/formulario';
+import {
+  CODIGO_NOME_DUPLICADO,
+  controleDoCampoDoServidor,
+  criarFormularioDePerfil,
+  valoresDoPerfil,
+} from './perfil-form';
 
 interface CorpoDoPerfil {
   readonly nome: string;
@@ -35,8 +34,6 @@ export class EdicaoDosPerfis {
   private readonly api = inject(PerfisApi);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   private readonly chave = new ChaveDeSubstituicao();
   private chaveDaCriacao = idempotencyKey.create();
   /**
@@ -48,26 +45,25 @@ export class EdicaoDosPerfis {
 
   readonly formAberto = signal(false);
   private readonly escrita = signal<'salvando' | 'ativando' | null>(null);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
   readonly salvando = computed(() => this.escrita() === 'salvando');
-  readonly gravando = computed(() => this.escrita() !== null);
+  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
+  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
   readonly erroDoForm = signal<string | null>(null);
   readonly erroDaAcao = signal<string | null>(null);
   readonly emEdicao = signal<PerfilDto | null>(null);
+  private readonly andamentoDaAtivacao = signal('');
+  private readonly resultadoDaAtivacao = signal('');
+  /** Na página: o andamento e o desfecho da mudança de situação, que não tem sobreposição para dizê-los. */
+  readonly anuncioDaPagina = computed(
+    () => this.andamentoDaAtivacao() || this.resultadoDaAtivacao(),
+  );
   private readonly marcadas = signal<ReadonlySet<string>>(new Set());
 
   readonly form = criarFormularioDePerfil();
-
-  invalido(nome: 'nome' | 'descricao'): boolean {
-    const controle = this.form.controls[nome];
-    return controle.invalid && (controle.touched || controle.dirty);
-  }
-
-  mensagemDoCampo(nome: 'nome' | 'descricao'): string | null {
-    if (this.form.controls[nome].hasError('required')) {
-      return nome === 'nome' ? 'Informe o nome do perfil.' : 'Descreva o perfil.';
-    }
-    return mensagemDeErroDoControle(this.form.controls[nome]);
-  }
 
   marcada(codigo: string): boolean {
     return this.marcadas().has(codigo);
@@ -87,10 +83,6 @@ export class EdicaoDosPerfis {
     this.abrirForm(perfil);
   }
 
-  aoClicarEmSalvar(evento: Event): void {
-    if (this.salvando()) evento.preventDefault();
-  }
-
   aoEnviar(): void {
     if (!this.salvando()) void this.salvar();
   }
@@ -100,7 +92,6 @@ export class EdicaoDosPerfis {
     this.erroDoForm.set(null);
     if (this.form.invalid && !this.criacaoEmAberto()) {
       this.form.markAllAsTouched();
-      this.focarErro();
       return;
     }
     this.escrita.set('salvando');
@@ -129,6 +120,10 @@ export class EdicaoDosPerfis {
     if (this.gravando()) return;
     this.escrita.set('ativando');
     this.erroDaAcao.set(null);
+    this.resultadoDaAtivacao.set('');
+    this.andamentoDaAtivacao.set(
+      `${perfil.ativo ? 'Desativando' : 'Ativando'} o perfil ${perfil.nome}.`,
+    );
     try {
       const { resultado } = await comChave(
         this.chave,
@@ -138,17 +133,22 @@ export class EdicaoDosPerfis {
             ? this.api.desativar(perfil.id, contexto)
             : this.api.ativar(perfil.id, contexto),
       );
-      if (!resultado.ok) {
-        this.erroDaAcao.set(this.texto(resultado.problem));
-        return;
-      }
-      this.notificacoes.success(perfil.ativo ? 'Perfil desativado' : 'Perfil ativado');
-      this.store.recarregar();
+      if (resultado.ok) this.concluirAtivacao(perfil);
+      else this.erroDaAcao.set(this.texto(resultado.problem));
     } catch {
       this.erroDaAcao.set(FALHA_INESPERADA);
     } finally {
+      this.andamentoDaAtivacao.set('');
       this.escrita.set(null);
     }
+  }
+
+  private concluirAtivacao(perfil: PerfilDto): void {
+    this.notificacoes.success(perfil.ativo ? 'Perfil desativado' : 'Perfil ativado');
+    this.resultadoDaAtivacao.set(
+      `Perfil ${perfil.nome} ${perfil.ativo ? 'desativado' : 'ativado'}.`,
+    );
+    this.recarregar();
   }
 
   private async atualizar(perfil: PerfilDto, base: CorpoDoPerfil): Promise<void> {
@@ -163,7 +163,7 @@ export class EdicaoDosPerfis {
     }
     this.formAberto.set(false);
     this.notificacoes.success('Perfil atualizado');
-    this.store.recarregar();
+    this.recarregar();
   }
 
   private async criar(corpo: CorpoDoPerfil): Promise<void> {
@@ -188,6 +188,11 @@ export class EdicaoDosPerfis {
     this.reiniciarCriacao();
     this.formAberto.set(false);
     this.notificacoes.success('Perfil criado');
+    this.recarregar();
+  }
+
+  private recarregar(): void {
+    this.recarga.iniciar();
     this.store.recarregar();
   }
 
@@ -200,6 +205,7 @@ export class EdicaoDosPerfis {
   private abrirForm(perfil: PerfilDto | null): void {
     if (this.gravando()) return;
     this.reiniciarCriacao();
+    this.resultadoDaAtivacao.set('');
     this.emEdicao.set(perfil);
     this.erroDoForm.set(null);
     this.form.reset(valoresDoPerfil(perfil));
@@ -208,35 +214,33 @@ export class EdicaoDosPerfis {
     this.formAberto.set(true);
   }
 
-  private texto(problema: Parameters<ProblemI18nService['resolve']>[0]): string {
-    return textoDaRecusa(this.problemas.resolve(problema));
+  private texto(problema: ProblemDetails): string {
+    return mensagemDaRecusa(this.problemas, this.notificacoes, problema);
   }
 
-  private aplicarRecusa(problema: Parameters<ProblemI18nService['resolve']>[0]): void {
+  private aplicarRecusa(problema: ProblemDetails): void {
     if (!this.aplicarErrosDeCampo(problema)) this.erroDoForm.set(this.texto(problema));
   }
 
-  private aplicarErrosDeCampo(problema: Parameters<ProblemI18nService['resolve']>[0]): boolean {
+  /** Marca o campo recusado: o que o servidor aponta em `errors` e o nome já existente (409). */
+  private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = false;
-    for (const erro of problema.errors ?? []) {
-      const nome = controlNameFromBackendField<'nome' | 'descricao'>(
-        erro.field,
-        new Set(['nome', 'descricao']),
-      );
-      if (nome === null) continue;
-      const controle = this.form.controls[nome];
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
+    if (problema.code === CODIGO_NOME_DUPLICADO) {
+      this.marcar('nome', problema.code, this.texto(problema));
       aplicado = true;
     }
-    if (aplicado) this.focarErro();
+    for (const erro of problema.errors ?? []) {
+      const nome = controleDoCampoDoServidor(erro.field);
+      if (nome === null) continue;
+      this.marcar(nome, erro.code, erro.message);
+      aplicado = true;
+    }
     return aplicado;
   }
 
-  private focarErro(): void {
-    afterNextRender(
-      () => this.host.nativeElement.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
-      { injector: this.injector },
-    );
+  private marcar(nome: 'nome' | 'descricao', code: string, message: string): void {
+    const controle = this.form.controls[nome];
+    controle.setErrors({ backend: { code, message } });
+    controle.markAsTouched();
   }
 }

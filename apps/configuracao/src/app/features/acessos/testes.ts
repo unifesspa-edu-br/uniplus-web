@@ -1,6 +1,4 @@
 import { HttpHeaders } from '@angular/common/http';
-import { signal } from '@angular/core';
-import { of } from 'rxjs';
 import { apiFailure, apiOk, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 
@@ -21,18 +19,8 @@ export function recusa(code: string, status = 422, title = 'Recusado'): ApiResul
   return apiFailure(problem, status, new HttpHeaders());
 }
 
-export function emissao<T>(resultado: ApiResult<T>) {
-  return of(resultado);
-}
-
 export function concedidas(...codigos: string[]) {
-  const lista = signal<readonly string[]>(codigos);
-  return {
-    garantir: () => Promise.resolve(),
-    tem: (codigo: string) => lista().includes(codigo),
-    temAlguma: (...c: string[]) => c.some((codigo) => lista().includes(codigo)),
-    definir: (...codigos: string[]) => lista.set(codigos),
-  };
+  return { tem: (codigo: string) => codigos.includes(codigo) };
 }
 
 export function pedido(parcial: Partial<PedidoDeConcessaoDto> = {}): PedidoDeConcessaoDto {

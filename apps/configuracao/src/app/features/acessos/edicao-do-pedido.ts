@@ -20,7 +20,8 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi, type PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
+import { mensagemDaRecusa } from './falha-de-servidor';
+import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
@@ -39,6 +40,8 @@ export class EdicaoDoPedido {
   private readonly router = inject(Router);
   readonly chave = new ChaveDeSubstituicao();
   readonly enviando = signal(false);
+  /** Uma decisão foi aceita e o pedido ainda será relido; a página devolve o foco ao fim da leitura. */
+  readonly decisaoConcluida = signal(false);
   readonly anexando = signal(false);
   readonly erro = signal<string | null>(null);
   readonly erroDaRecusa = signal<string | null>(null);
@@ -179,6 +182,7 @@ export class EdicaoDoPedido {
       this.store.aplicarPedido(resultado.data);
       this.notificacoes.success('Pedido atualizado');
       this.prazo.reset('');
+      this.decisaoConcluida.set(true);
       this.store.recarregar();
       return true;
     } catch {
@@ -214,6 +218,6 @@ export class EdicaoDoPedido {
   }
 
   private texto(problema: ProblemDetails): string {
-    return textoDaRecusa(this.problemas.resolve(problema));
+    return mensagemDaRecusa(this.problemas, this.notificacoes, problema);
   }
 }

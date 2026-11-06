@@ -15,6 +15,7 @@ export const LIMITE_DO_MOTIVO = 500;
   standalone: true,
   imports: [ReactiveFormsModule, AlertComponent, DialogComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: '../../shared/sobreposicao/sobreposicao.css',
   template: `
     <ui-dialog [(visible)]="visible" [heading]="heading()" [dismissible]="!enviando()">
       @if (erro()) {

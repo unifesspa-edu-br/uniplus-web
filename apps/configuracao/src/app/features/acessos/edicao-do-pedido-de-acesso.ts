@@ -21,9 +21,11 @@ import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempot
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
 import { AnexoDoPedidoService, type FaseDoEnvio } from './anexo-do-pedido.service';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
+import { mensagemDaRecusa } from './falha-de-servidor';
+import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedirAcessoStore } from './pedir-acesso.store';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
 
 type ParaQuem = 'mim' | 'outra';
@@ -68,6 +70,12 @@ export class EdicaoDoPedidoDeAcesso {
 
   readonly perfis = this.store.perfis;
   readonly perfisIndisponiveis = this.store.perfisIndisponiveis;
+  readonly carregandoPerfis = this.store.carregandoPerfis;
+  private readonly novaTentativaDosPerfis = focarAposNovaTentativa(
+    this.store.carregandoPerfis,
+    computed(() => this.store.perfisIndisponiveis() !== null),
+    () => this.host.nativeElement.querySelector<HTMLElement>('select[formcontrolname="perfilId"]'),
+  );
   private readonly escopo = nomesDeEscopo();
 
   readonly form = new FormGroup({
@@ -112,6 +120,10 @@ export class EdicaoDoPedidoDeAcesso {
 
   constructor() {
     this.form.controls.paraQuem.valueChanges.subscribe((valor) => this.aoMudarParaQuem(valor));
+  }
+
+  tentarPerfisNovamente(): void {
+    this.novaTentativaDosPerfis.executar(() => this.store.recarregarPerfis());
   }
 
   invalido(nome: keyof typeof this.form.controls): boolean {
@@ -185,7 +197,7 @@ export class EdicaoDoPedidoDeAcesso {
     this.corpoPendente = inconclusiva ? corpo : null;
     this.aguardandoConfirmacao.set(inconclusiva);
     if (!inconclusiva && this.aplicarErrosDeCampo(resultado.problem)) return;
-    const motivo = textoDaRecusa(this.problemas.resolve(resultado.problem));
+    const motivo = mensagemDaRecusa(this.problemas, this.notificacoes, resultado.problem);
     this.erro.set(
       inconclusiva
         ? `${motivo} Não foi possível saber se o pedido foi registrado. Confira a lista de pedidos; se ele não aparecer, envie de novo: o pedido é o mesmo e não se repete.`

@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignedUploadClient } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { ok, recusa } from './testes';
@@ -62,6 +63,20 @@ describe('AnexoDoPedidoService', () => {
 
     expect(desfecho).toEqual({ ok: false, mensagem: 'Recusado' });
     expect(armazenamento.enviar).not.toHaveBeenCalled();
+  });
+
+  it('a falha de servidor do registro vira notificação; a recusa 4xx fica só na mensagem', async () => {
+    const notificacoes = TestBed.inject(NotificationService);
+    const servico = TestBed.inject(AnexoDoPedidoService);
+    api.iniciarAnexo.mockReturnValueOnce(of(recusa('uniplus.autorizacao.pedido.anexo_invalido')));
+
+    await servico.anexar('p1', arquivo, () => undefined);
+    expect(notificacoes.notifications()).toEqual([]);
+
+    api.iniciarAnexo.mockReturnValueOnce(of(recusa('uniplus.erro_interno', 503, 'Indisponível')));
+    await servico.anexar('p1', arquivo, () => undefined);
+    expect(notificacoes.notifications()).toHaveLength(1);
+    expect(notificacoes.notifications()[0]).toMatchObject({ type: 'error', title: 'Indisponível' });
   });
 
   it('explica a falha do armazenamento e a URL vencida', async () => {

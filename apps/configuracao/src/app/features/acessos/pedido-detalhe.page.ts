@@ -16,12 +16,14 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { focoEstaLivre } from '../../shared/foco';
 import { ehOBeneficiario } from './beneficiario-do-pedido';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { MotivoDialogComponent } from './motivo-dialog.component';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { origemDaFila } from './origens-do-pedido';
 import { diaDoInstante, diaNoPassado } from './prazo-de-vigencia';
+import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedidoResumoComponent } from './pedido-resumo.component';
 import { PedidoDocumentosComponent } from './pedido-documentos.component';
 import { PedidoHistoricoComponent } from './pedido-historico.component';
@@ -66,8 +68,11 @@ export class PedidoDetalhePage {
     inject(ActivatedRoute).snapshot.queryParamMap.get('origem'),
   );
   private readonly destruido = signal(false);
+  /** A pessoa pediu "Tentar novamente" e a carga ainda não terminou. */
+  private novaTentativaPedida = false;
   private readonly chave = this.edicao.chave;
 
+  protected readonly escopo = nomesDeEscopo();
   protected readonly pedido = this.store.pedido;
   protected readonly trilha = this.store.trilha;
   protected readonly carregando = this.store.carregando;
@@ -164,11 +169,36 @@ export class PedidoDetalhePage {
       this.podeDecidir();
       this.podeAceitar();
       this.podeCancelar();
-      if (!carregando && !erro && pedido) untracked(() => this.reavaliarDialogos());
+      if (!carregando && !erro && pedido) {
+        untracked(() => {
+          this.reavaliarDialogos();
+          this.focarTituloAposNovaTentativa();
+        });
+      }
     });
   }
 
+  /**
+   * Terminada a carga que seguiu uma nova tentativa ou uma decisão, o botão que tinha o foco (o do
+   * alerta, o da decisão) saiu da tela: o foco vai ao título, se ninguém o tomou.
+   */
+  private focarTituloAposNovaTentativa(): void {
+    if (!this.novaTentativaPedida && !this.edicao.decisaoConcluida()) return;
+    this.novaTentativaPedida = false;
+    this.edicao.decisaoConcluida.set(false);
+    afterNextRender(
+      () => {
+        if (focoEstaLivre()) {
+          this.host.nativeElement.querySelector<HTMLElement>('#cfg-pedido-titulo')?.focus();
+        }
+      },
+      { injector: this.injector },
+    );
+  }
+
   private exibirErroDeCarga(erro: string): void {
+    this.novaTentativaPedida = false;
+    this.edicao.decisaoConcluida.set(false);
     this.erro.set(erro);
     this.confirmando.set(false);
     this.recusando.set(false);
@@ -195,12 +225,14 @@ export class PedidoDetalhePage {
       if (this.erroDaRecusa() && !this.podeDecidir()) {
         this.erro.set(this.erroDaRecusa());
         this.recusando.set(false);
+        this.novaTentativaPedida = true;
       } else if (this.motivo.hasError('backend')) {
         this.edicao.focarErroDoMotivo();
       }
     }
     if (this.confirmando() && !this.acaoPermitida(this.acaoPendente())) {
       this.confirmando.set(false);
+      this.novaTentativaPedida = true;
     }
   }
 
@@ -232,6 +264,7 @@ export class PedidoDetalhePage {
 
   protected recarregar(): void {
     this.erro.set(null);
+    this.novaTentativaPedida = true;
     this.store.recarregar();
   }
 

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { ConcessaoDto, SituacaoDaConcessao } from '@uniplus/shared-data/autorizacao';
 import {
@@ -29,6 +29,7 @@ import { autorDoEvento } from './trilha-de-acesso.component';
 export class ConcessoesListaComponent {
   readonly concessoes = input.required<readonly ConcessaoDto[]>();
   readonly carregando = input.required<boolean>();
+  readonly gravando = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly situacao = input.required<SituacaoDaConcessao>();
   readonly nomeDoEscopo = input.required<(escopo: ConcessaoDto['escopo']) => string>();
@@ -39,6 +40,7 @@ export class ConcessoesListaComponent {
   readonly revogar = output<ConcessaoDto>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
   protected readonly situacoes: readonly {
     readonly value: SituacaoDaConcessao;
     readonly label: string;

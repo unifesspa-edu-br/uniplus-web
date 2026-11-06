@@ -4,7 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiFailure, apiResultInterceptor } from '@uniplus/shared-core/http';
 import { HttpHeaders } from '@angular/common/http';
@@ -15,9 +15,29 @@ import {
   type ConcessaoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { ConcessoesPage } from './concessoes.page';
 import { ConcessoesStore } from './concessoes.store';
 import { ok, recusa, UNIDADES } from './testes';
+
+const DIVERGENCIA_DE_EMAIL = apiFailure(
+  {
+    type: 'x',
+    title: 'Dados inválidos',
+    status: 422,
+    code: 'uniplus.validacao',
+    traceId: '',
+    errors: [
+      {
+        field: 'confirmacaoEmail',
+        code: 'uniplus.autorizacao.concessao.confirmacao_divergente',
+        message: 'O e-mail informado não é o do beneficiário da concessão.',
+      },
+    ],
+  },
+  422,
+  new HttpHeaders(),
+);
 
 const URL = 'http://api.test/api/autorizacao/concessoes';
 const ativa: ConcessaoDto = {
@@ -37,7 +57,7 @@ const ativa: ConcessaoDto = {
 describe('ConcessoesPage', () => {
   let http: HttpTestingController;
   const api = { revogar: vi.fn() };
-  const notificacoes = { success: vi.fn() };
+  const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
   beforeEach(() => {
     vi.resetAllMocks();
     TestBed.configureTestingModule({
@@ -176,30 +196,77 @@ describe('ConcessoesPage', () => {
     expect(store.trilha()[0]?.tipo).toBe('revogada');
   });
 
-  it.each([
-    ['uniplus.autorizacao.concessao.minimo_de_gestores', false],
-    ['uniplus.autorizacao.concessao.confirmacao_divergente', true],
-  ])('mantém o diálogo aberto e apresenta a recusa %s', async (codigo, noEmail) => {
-    api.revogar.mockReturnValue(of(recusa(codigo)));
-    const fixture = TestBed.createComponent(ConcessoesPage);
-    fixture.detectChanges();
-    http.expectOne((r) => r.url === URL).flush([ativa]);
-    await atualizar();
-    (
-      fixture.nativeElement.querySelector(
-        'button[aria-label^="Revogar a concessão"]',
-      ) as HTMLButtonElement
-    ).click();
-    fixture.detectChanges();
-    const pagina = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
-    await pagina.revogar(
-      'Saiu da função.',
-      noEmail ? 'outra@uniplus-test.local' : 'betina@uniplus-test.local',
+  describe('recusa da revogação', () => {
+    async function revogarComRecusa(
+      resposta: ReturnType<typeof recusa>,
+      email = 'betina@uniplus-test.local',
+    ) {
+      api.revogar.mockReturnValue(of(resposta));
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      (
+        fixture.nativeElement.querySelector(
+          'button[aria-label^="Revogar a concessão"]',
+        ) as HTMLButtonElement
+      ).click();
+      fixture.detectChanges();
+      const pagina = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+      await pagina.revogar('Saiu da função.', email);
+      return { fixture, pagina };
+    }
+
+    it('mantém o diálogo aberto e apresenta a recusa de negócio', async () => {
+      const { pagina } = await revogarComRecusa(
+        recusa('uniplus.autorizacao.concessao.minimo_de_gestores'),
+      );
+
+      expect(pagina.revogando()).toBe(true);
+      expect(pagina.erroDaRevogacao()).toBe('Recusado');
+      expect(notificacoes.success).not.toHaveBeenCalled();
+      await atualizar();
+    });
+
+    it('a divergência do e-mail chega em errors[] e fica no campo, sem alerta geral', async () => {
+      const { pagina } = await revogarComRecusa(DIVERGENCIA_DE_EMAIL, 'outra@uniplus-test.local');
+
+      expect(pagina.revogando()).toBe(true);
+      expect(pagina.email.errors?.['backend'].message).toBe(
+        'O e-mail informado não é o do beneficiário da concessão.',
+      );
+      expect(pagina.erroDaRevogacao()).toBeNull();
+      expect(notificacoes.success).not.toHaveBeenCalled();
+    });
+
+    it.each(['ja_revogada', 'nao_encontrada'])(
+      'a recusa %s mostra o motivo e recarrega a lista desatualizada',
+      async (codigo) => {
+        const { fixture, pagina } = await revogarComRecusa(
+          recusa(`uniplus.autorizacao.concessao.${codigo}`, 409),
+        );
+
+        expect(pagina.revogando()).toBe(true);
+        expect(pagina.erroDaRevogacao()).toBe('Recusado');
+        await atualizar();
+        http.expectOne((r) => r.url === URL).flush([]);
+        await atualizar();
+        expect(
+          fixture.nativeElement.querySelector('button[aria-label^="Revogar a concessão"]'),
+        ).toBeNull();
+      },
     );
-    expect(pagina.revogando()).toBe(true);
-    expect(pagina.erroDoEmail()).toBe(noEmail ? 'Recusado' : null);
-    expect(pagina.erroDaRevogacao()).toBe(noEmail ? null : 'Recusado');
-    expect(notificacoes.success).not.toHaveBeenCalled();
+
+    it('a falha de servidor da revogação vira notificação; a recusa 4xx, não', async () => {
+      await revogarComRecusa(recusa('uniplus.erro_interno', 500, 'Erro interno'));
+      expect(notificacoes.errorFromProblem).toHaveBeenCalledOnce();
+      expect(notificacoes.errorFromProblem.mock.calls[0]?.[1]).toEqual({ title: 'Erro interno' });
+    });
+
+    it('a recusa 4xx da revogação não vira notificação', async () => {
+      await revogarComRecusa(recusa('uniplus.autorizacao.concessao.minimo_de_gestores', 422));
+      expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
+    });
   });
 
   it('mantém o diálogo somente leitura durante a revogação e impede envios concorrentes', async () => {
@@ -240,7 +307,7 @@ describe('ConcessoesPage', () => {
   });
 
   it('foca o e-mail recusado pela API', async () => {
-    api.revogar.mockReturnValue(of(recusa('uniplus.autorizacao.concessao.confirmacao_divergente')));
+    api.revogar.mockReturnValue(of(DIVERGENCIA_DE_EMAIL));
     const fixture = TestBed.createComponent(ConcessoesPage);
     fixture.detectChanges();
     http.expectOne((r) => r.url === URL).flush([ativa]);
@@ -317,5 +384,204 @@ describe('ConcessoesPage', () => {
     expect(filtro.request.params.get('situacao')).toBe('todas');
     filtro.flush([]);
     await atualizar();
+  });
+
+  describe('foco e "Tentar novamente" durante a revogação', () => {
+    const botaoDeRevogar = (host: HTMLElement) =>
+      host.querySelector<HTMLButtonElement>('button[aria-label^="Revogar a concessão"]');
+
+    it('depois de revogar, com a linha ausente da recarga, o foco vai ao título da lista', async () => {
+      api.revogar.mockReturnValue(of(ok(undefined)));
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      const host = fixture.nativeElement as HTMLElement;
+      document.body.appendChild(host);
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      botaoDeRevogar(host)?.focus();
+      botaoDeRevogar(host)?.click();
+      await atualizar();
+      const edicao = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+
+      await edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+      await atualizar();
+      http.expectOne((r) => r.url === URL).flush([]);
+      await atualizar();
+      await atualizar();
+
+      expect(document.activeElement).toBe(host.querySelector('#cfg-concessoes-titulo'));
+      host.remove();
+    });
+
+    it('depois de revogar, com a linha ainda na recarga, o foco volta ao botão dela', async () => {
+      api.revogar.mockReturnValue(of(ok(undefined)));
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      const host = fixture.nativeElement as HTMLElement;
+      document.body.appendChild(host);
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      botaoDeRevogar(host)?.focus();
+      botaoDeRevogar(host)?.click();
+      await atualizar();
+      const edicao = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+
+      await edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+      await atualizar();
+      expect(botaoDeRevogar(host)?.disabled).toBe(true);
+      // O navegador tira o foco de um botão que se desabilita; o jsdom não, então o teste o tira.
+      const provisorio = host.appendChild(document.createElement('button'));
+      provisorio.focus();
+      provisorio.remove();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      await atualizar();
+
+      expect(botaoDeRevogar(host)?.disabled).toBe(false);
+      expect(document.activeElement).toBe(botaoDeRevogar(host));
+      host.remove();
+    });
+
+    it.each(['ja_revogada', 'nao_encontrada'])(
+      'com a recusa %s, o foco só volta ao fechar o diálogo e vai ao título se a linha saiu',
+      async (codigo) => {
+        api.revogar.mockReturnValue(of(recusa(`uniplus.autorizacao.concessao.${codigo}`, 409)));
+        const fixture = TestBed.createComponent(ConcessoesPage);
+        const host = fixture.nativeElement as HTMLElement;
+        document.body.appendChild(host);
+        fixture.detectChanges();
+        http.expectOne((r) => r.url === URL).flush([ativa]);
+        await atualizar();
+        botaoDeRevogar(host)?.focus();
+        botaoDeRevogar(host)?.click();
+        await atualizar();
+        const edicao = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+
+        await edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+        await atualizar();
+        http.expectOne((r) => r.url === URL).flush([]);
+        await atualizar();
+        await atualizar();
+        const titulo = host.querySelector('#cfg-concessoes-titulo');
+        expect(edicao.revogando()).toBe(true);
+        expect(document.activeElement).not.toBe(titulo);
+
+        edicao.revogando.set(false);
+        await atualizar();
+        await atualizar();
+
+        expect(document.activeElement).toBe(titulo);
+        host.remove();
+      },
+    );
+
+    it('com a revogação pendente, "Revogar" fica indisponível mesmo sem a lista carregar', async () => {
+      api.revogar.mockReturnValue(new Subject());
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      const host = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      expect(botaoDeRevogar(host)?.disabled).toBe(false);
+
+      const edicao = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+      edicao.pedirRevogacao(ativa);
+      void edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+      await atualizar();
+
+      expect(botaoDeRevogar(host)?.disabled).toBe(true);
+    });
+
+    it('com a lista carregando sem escrita, "Revogar" fica indisponível', async () => {
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      const host = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+
+      fixture.debugElement.injector.get(ConcessoesStore).recarregar();
+      await atualizar();
+
+      expect(botaoDeRevogar(host)?.disabled).toBe(true);
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      expect(botaoDeRevogar(host)?.disabled).toBe(false);
+    });
+
+    it('com a revogação pendente, "Tentar novamente" fica indisponível e não recarrega', async () => {
+      api.revogar.mockReturnValue(new Subject());
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      const host = fixture.nativeElement as HTMLElement;
+      fixture.detectChanges();
+      http
+        .expectOne((r) => r.url === URL)
+        .flush({ title: 'Erro' }, { status: 500, statusText: 'Erro' });
+      await atualizar();
+      const tentar = [...host.querySelectorAll('button')].find((b) =>
+        b.textContent?.includes('Tentar novamente'),
+      );
+      expect(tentar?.getAttribute('aria-disabled')).toBeNull();
+
+      const edicao = fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+      edicao.pedirRevogacao(ativa);
+      void edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+      await atualizar();
+      expect(tentar?.getAttribute('aria-disabled')).toBe('true');
+      expect(tentar?.getAttribute('aria-busy')).toBe('true');
+      tentar?.click();
+      await atualizar();
+      http.expectNone((r) => r.url === URL);
+    });
+  });
+
+  describe('confirmação da revogação', () => {
+    async function aberta() {
+      const fixture = TestBed.createComponent(ConcessoesPage);
+      fixture.detectChanges();
+      http.expectOne((r) => r.url === URL).flush([ativa]);
+      await atualizar();
+      (
+        fixture.nativeElement.querySelector(
+          'button[aria-label^="Revogar a concessão"]',
+        ) as HTMLElement
+      ).click();
+      await atualizar();
+      return fixture.debugElement.injector.get(RevogacaoDeConcessoes);
+    }
+
+    it('sem motivo, não envia e marca o motivo', async () => {
+      const edicao = await aberta();
+      edicao.email.setValue('betina@uniplus-test.local');
+      edicao.motivo.setValue('   ');
+
+      edicao.confirmar();
+
+      expect(api.revogar).not.toHaveBeenCalled();
+      expect(edicao.tentou()).toBe(true);
+      expect(edicao.motivo.hasError('required')).toBe(true);
+      expect(edicao.enviando()).toBe(false);
+    });
+
+    it('sem e-mail, não envia, mesmo com o motivo preenchido', async () => {
+      const edicao = await aberta();
+      edicao.motivo.setValue('Saiu da função.');
+
+      edicao.confirmar();
+
+      expect(api.revogar).not.toHaveBeenCalled();
+      expect(edicao.tentou()).toBe(true);
+      expect(edicao.enviando()).toBe(false);
+    });
+
+    it('uma falha que não veio da API libera o diálogo e explica', async () => {
+      api.revogar.mockReturnValue(throwError(() => new Error('rede')));
+      const edicao = await aberta();
+
+      await edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
+
+      expect(edicao.erroDaRevogacao()).toBe(FALHA_INESPERADA);
+      expect(edicao.enviando()).toBe(false);
+      expect(edicao.revogando()).toBe(true);
+    });
   });
 });
