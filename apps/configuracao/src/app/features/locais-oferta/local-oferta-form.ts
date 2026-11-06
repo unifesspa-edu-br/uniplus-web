@@ -38,7 +38,10 @@ const CONTROLES_DO_SERVIDOR: ReadonlySet<string> = new Set<keyof LocalOfertaForm
 export function criarFormularioDeLocalOferta(): FormGroup<LocalOfertaForm> {
   return new FormGroup<LocalOfertaForm>({
     tipo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    codigoEmec: new FormControl('', { nonNullable: true }),
+    codigoEmec: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(20)],
+    }),
     campusResponsavelId: new FormControl('', { nonNullable: true }),
     endereco: new FormControl<EnderecoEstruturado | null>(null, {
       validators: [cidadeObrigatoriaValidator],

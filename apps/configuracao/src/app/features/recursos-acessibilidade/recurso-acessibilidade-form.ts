@@ -34,7 +34,7 @@ export function criarFormularioDeRecurso(): FormGroup<RecursoAcessibilidadeForm>
   return new FormGroup<RecursoAcessibilidadeForm>({
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
+      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(200)],
     }),
     codigo: new FormControl('', {
       nonNullable: true,

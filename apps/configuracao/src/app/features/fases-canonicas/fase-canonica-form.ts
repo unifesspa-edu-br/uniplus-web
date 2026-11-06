@@ -34,14 +34,23 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof FaseForm>([
 
 export function criarFormularioDeFase(): FormGroup<FaseForm> {
   return new FormGroup<FaseForm>({
-    codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(60)],
+    }),
     unidadeSugeridaId: new FormControl('', { nonNullable: true }),
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(255)],
+      validators: [Validators.required, Validators.maxLength(200)],
     }),
-    descricao: new FormControl('', { nonNullable: true }),
-    baseLegal: new FormControl('', { nonNullable: true }),
+    descricao: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(300)],
+    }),
+    baseLegal: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(500)],
+    }),
     agrupaEtapas: new FormControl(false, { nonNullable: true }),
     permiteComplementacao: new FormControl(false, { nonNullable: true }),
     origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),

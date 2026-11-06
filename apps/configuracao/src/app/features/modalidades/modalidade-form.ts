@@ -19,9 +19,15 @@ import {
 } from '../../shared/formulario';
 
 const CODIGO_REGEX = /^[A-Z0-9_]+$/u;
+const CODIGO_TAMANHO_MAX = 60;
 const DESCRICAO_MAX = 300;
 const BASE_LEGAL_MAX = 500;
 const CODIGO_REFERENCIA_MAX = 60;
+const VALIDADORES_DO_CODIGO = [
+  Validators.required,
+  Validators.maxLength(CODIGO_TAMANHO_MAX),
+  Validators.pattern(CODIGO_REGEX),
+];
 
 export type RegraSelecao = RegraRemanejamentoToken | '';
 export type AcaoSelecao = AcaoQuandoIndeferidoToken | '';
@@ -72,7 +78,7 @@ export function criarFormularioDeModalidade(): FormGroup<ModalidadeForm> {
   return new FormGroup<ModalidadeForm>({
     codigo: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.pattern(CODIGO_REGEX)],
+      validators: VALIDADORES_DO_CODIGO,
     }),
     descricao: new FormControl('', {
       nonNullable: true,

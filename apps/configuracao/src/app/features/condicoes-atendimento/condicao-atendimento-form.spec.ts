@@ -77,7 +77,7 @@ describe('formulário de condição de atendimento', () => {
       expect(tocar('x'.repeat(1001), 'descricao')).toBe('Informe no máximo 1000 caracteres.');
       expect(tocar('9', 'codigo')).toContain('Informe ao menos');
       expect(tocar('9X', 'codigo')).toContain('Formato inválido');
-      expect(tocar('A'.repeat(300), 'codigo')).toBe('Informe no máximo 255 caracteres.');
+      expect(tocar('A'.repeat(300), 'codigo')).toBe('Informe no máximo 50 caracteres.');
     });
 
     it('cai na mensagem genérica para outra regra violada', () => {

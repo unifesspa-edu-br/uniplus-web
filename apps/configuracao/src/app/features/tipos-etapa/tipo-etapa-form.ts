@@ -26,14 +26,20 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof EtapaForm>([
 
 export function criarFormularioDeEtapa(): FormGroup<EtapaForm> {
   return new FormGroup<EtapaForm>({
-    codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(64)],
+    }),
     nome: new FormControl('', {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(200)],
     }),
     admitePontuacao: new FormControl(true, { nonNullable: true }),
     admiteEliminacao: new FormControl(true, { nonNullable: true }),
-    descricao: new FormControl('', { nonNullable: true }),
+    descricao: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(1000)],
+    }),
   });
 }
 

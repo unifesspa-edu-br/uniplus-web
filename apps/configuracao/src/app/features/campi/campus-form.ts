@@ -41,13 +41,16 @@ export function criarFormularioDeCampus(): FormGroup<CampusForm> {
   return new FormGroup<CampusForm>({
     sigla: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(50)],
+      validators: [Validators.required, Validators.maxLength(20)],
     }),
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(250)],
+      validators: [Validators.required, Validators.maxLength(200)],
     }),
-    codigoEmec: new FormControl('', { nonNullable: true }),
+    codigoEmec: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(20)],
+    }),
     endereco: new FormControl<EnderecoEstruturado | null>(null, {
       validators: [cidadeObrigatoriaValidator],
     }),

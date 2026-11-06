@@ -57,7 +57,7 @@ export function criarFormularioDeReserva(): FormGroup<ReservaForm> {
     pcdPercentual: percentual(),
     baseLegal: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(255)],
+      validators: [Validators.required, Validators.maxLength(500)],
     }),
   });
 }

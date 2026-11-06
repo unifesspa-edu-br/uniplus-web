@@ -15,13 +15,22 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof BancaForm>([
 ]);
 export function criarFormularioDeBanca(): FormGroup<BancaForm> {
   return new FormGroup<BancaForm>({
-    codigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(60)],
+    }),
     nome: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(255)],
+      validators: [Validators.required, Validators.maxLength(200)],
     }),
-    faseTipica: new FormControl('', { nonNullable: true }),
-    descricao: new FormControl('', { nonNullable: true }),
+    faseTipica: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(60)],
+    }),
+    descricao: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.maxLength(300)],
+    }),
   });
 }
 export function valoresDaBanca(banca: TipoBancaDto) {
