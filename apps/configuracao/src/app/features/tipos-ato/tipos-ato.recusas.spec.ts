@@ -261,7 +261,7 @@ describe('TiposAtoPage — recusas do servidor', () => {
       p.http.expectNone(ESCRITA);
       const mensagem = (nome: string) =>
         p.campo(nome).closest('.field')?.querySelector('.field__error')?.textContent?.trim();
-      expect(mensagem('baseLegal')).toBe('Valor acima do tamanho permitido.');
+      expect(mensagem('baseLegal')).toBe('Informe no máximo 500 caracteres.');
       expect(mensagem('nome')).toBe('Informe ao menos 2 caracteres.');
     });
   });
