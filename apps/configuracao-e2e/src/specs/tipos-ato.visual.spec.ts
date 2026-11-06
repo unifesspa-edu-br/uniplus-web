@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { assertReflowContract, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -112,10 +112,30 @@ test.describe('Tipo de ato — lista e formulário', () => {
     await expect(rodape.getByRole('button', { name: 'Salvar tipo de ato' })).toBeVisible();
   });
 
+  // Os hospedeiros do drawer e do diálogo são itens do flex da página: fechados, não podem consumir
+  // espaçamento entre os blocos.
+  test('drawer e diálogo fechados não ocupam espaço entre os blocos', async ({ page }) => {
+    const pagina = page.locator('.cfg-page');
+    const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
+    const geoAviso = await caixa(page.locator('ui-alert').first());
+    const geoPainel = await caixa(page.locator('.panel'));
+    const geoPagina = await caixa(pagina);
+    expect(Math.abs(geoPainel.y - geoAviso.base - gap)).toBeLessThanOrEqual(TOLERANCIA);
+    expect(Math.abs(geoPagina.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
+  });
+
   test('a página cumpre o contrato de reflow do viewport', async ({ page }) => {
     await assertReflowContract(page);
   });
 });
+
+const TOLERANCIA = 1;
+
+async function caixa(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('Elemento sem geometria visível.');
+  return { y: box.y, base: box.y + box.height };
+}
 
 async function mockTiposAtoApi(page: Page): Promise<void> {
   await page.route(/\/api\/publicacoes\/tipos-ato(\?.*)?$/, async (route, request) => {

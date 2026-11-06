@@ -153,7 +153,7 @@ async function preencherCadastro(page: Page): Promise<void> {
 
 /** A ajuda dos dois grupos cita "Não"; só o rótulo da opção tem esse texto inteiro. */
 async function responderNao(page: Page, pergunta: string): Promise<void> {
-  const grupo = page.getByRole('group', { name: pergunta });
+  const grupo = page.getByRole('radiogroup', { name: pergunta });
   await grupo.getByText('Não', { exact: true }).click();
   await expect(grupo.getByRole('radio', { name: 'Não', exact: true })).toBeChecked();
 }

@@ -1,0 +1,76 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Tipo de Ato</h1>
+    <p class="page-header__desc">
+      Vocabulário de publicação — os tipos de ato que um processo seletivo pode publicar, e o que
+      cada um determina.
+    </p>
+  </div>
+</div>
+
+<ui-alert
+  variant="info"
+  heading="Um tipo por vigência, e o código agrupa a série"
+  [dynamic]="false"
+>
+  Cada linha é uma <strong>vigência</strong> de um código, e o código não muda depois de criado:
+  para alterar o que um tipo significa a partir de certa data, cadastre uma vigência nova e encerre
+  a anterior. Duas vigências do mesmo código não podem se sobrepor. A data de fim é o
+  <strong>primeiro dia sem validade</strong>: uma vigência que termina em 30/06 já não vale no dia
+  30.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar os tipos de ato">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-tipos-ato-lista
+  [atos]="store.atosFiltrados()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [erro]="store.mensagemDeErro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  [(somenteEmVigor)]="store.somenteEmVigor"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-tipo-ato-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.tituloDoFormulario()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+<cfg-confirmacao-de-remocao
+  titulo="Remover vigência"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

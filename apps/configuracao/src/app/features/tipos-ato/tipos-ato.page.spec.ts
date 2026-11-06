@@ -1,591 +1,440 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { PUBLICACOES_BASE_PATH, TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TiposAtoPage } from './tipos-ato.page';
-
-const BASE = 'http://localhost:5000';
-const LISTA_URL = `${BASE}/api/publicacoes/tipos-ato`;
-const ADMIN_URL = `${BASE}/api/publicacoes/admin/tipos-ato`;
-const PROBLEM_JSON = { 'Content-Type': 'application/problem+json' };
-
-const preliminar: TipoAtoPublicadoDto = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  codigo: 'RESULTADO_PRELIMINAR_INSCRICAO',
-  nome: 'Resultado preliminar da inscrição',
-  congelaConfiguracao: true,
-  unicoPorObjeto: false,
-  efeitoIrreversivel: false,
-  ehResultado: true,
-  publicavelComoAvulso: false,
-  exigeAtoCorrigido: false,
-  vigenciaInicio: '2026-01-01',
-  vigenciaFim: null,
-  baseLegal: null,
-  criadoEm: '2026-08-30T12:00:00Z',
-};
-
-const aviso: TipoAtoPublicadoDto = {
-  ...preliminar,
-  id: '01960000-0000-7000-0000-0000000000a2',
-  codigo: 'AVISO',
-  nome: 'Aviso',
-  congelaConfiguracao: false,
-  ehResultado: false,
-  publicavelComoAvulso: true,
-  exigeAtoCorrigido: false,
-  vigenciaFim: '2026-06-30',
-};
+import {
+  ESCRITA,
+  LISTA,
+  Pagina,
+  aviso,
+  criado,
+  montarPagina,
+  preliminar,
+  problema,
+  sucesso,
+} from './tipos-ato.testing';
 
 describe('TiposAtoPage', () => {
-  let fixture: ComponentFixture<TiposAtoPage>;
-  let component: TiposAtoPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let p: Pagina;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [TiposAtoPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(TiposAtoPage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
+  beforeEach(async () => {
+    p = await montarPagina([preliminar, aviso]);
   });
+  afterEach(() => p.http.verify());
 
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
+  const linhaDe = (codigo: string): HTMLElement => {
+    const linhas = [...p.fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
+    const linha = linhas.find((item) => item.textContent?.includes(codigo));
+    expect(linha, `linha de ${codigo}`).toBeTruthy();
+    return linha as HTMLElement;
   };
-
-  async function flushLista(itens: readonly TipoAtoPublicadoDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === LISTA_URL);
-    req.flush(itens);
-    await propagate();
-  }
-
-  function preencherFormulario(): void {
-    component['form'].setValue({
-      codigo: 'resultado_preliminar_inscricao',
-      nome: 'Resultado preliminar da inscrição',
-      vigenciaInicio: '2026-01-01',
-      vigenciaFim: '',
-      congelaConfiguracao: true,
-      unicoPorObjeto: false,
-      efeitoIrreversivel: false,
-      ehResultado: true,
-      publicavelComoAvulso: false,
-      exigeAtoCorrigido: true,
-      baseLegal: '',
-    });
-  }
+  const celula = (linha: HTMLElement, rotulo: string): string =>
+    (linha.querySelector(`[data-label="${rotulo}"]`)?.textContent ?? '').trim();
 
   /**
-   * O padrão do servidor é só o que vale hoje, e numa tela de administração isso
-   * esconde tanto o que terminou quanto o que ainda vai começar — inclusive a
-   * vigência futura que o operador acabou de criar.
+   * O padrão do servidor é só o que vale hoje, e numa tela de administração isso esconde tanto o
+   * que terminou quanto o que ainda vai começar, inclusive a vigência futura recém-criada.
    */
   it('a listagem de administração pede a série completa por padrão', async () => {
-    const req = controller.expectOne((r) => r.url === LISTA_URL);
+    p.store.recarregar();
+    await p.propagar();
+    const req = p.http.expectOne((r) => r.url === LISTA);
     expect(req.request.params.get('limit')).toBe('100');
     expect(req.request.params.get('vigentes')).toBe('false');
     req.flush([preliminar]);
-    await propagate();
+    await p.propagar();
   });
 
-  it('a listagem mostra, por linha, se o ato determina a situação do candidato', async () => {
-    await flushLista([preliminar, aviso]);
-    fixture.detectChanges();
+  it('mostra, por linha, se o ato determina a situação, se é avulso e se corrige outro ato', async () => {
+    const errata = { ...aviso, codigo: 'ERRATA', exigeAtoCorrigido: true };
+    p.store.recarregar();
+    await p.recarregarCom([preliminar, errata]);
 
-    const linhas = Array.from(
-      fixture.nativeElement.querySelectorAll('tbody tr'),
-    ) as HTMLTableRowElement[];
-    const celulaResultado = (linha: HTMLTableRowElement): string =>
-      (linha.querySelector('[data-label="Resultado"]')?.textContent ?? '').trim();
-
-    expect(celulaResultado(linhas[0])).toBe('Sim');
-    expect(celulaResultado(linhas[1])).toBe('Não');
+    const resultado = linhaDe('RESULTADO_PRELIMINAR_INSCRICAO');
+    const outra = linhaDe('ERRATA');
+    expect([celula(resultado, 'Resultado'), celula(resultado, 'Avulso')]).toEqual(['Sim', 'Não']);
+    expect(celula(resultado, 'Corrige outro ato')).toBe('Não');
+    expect([celula(outra, 'Resultado'), celula(outra, 'Avulso')]).toEqual(['Não', 'Sim']);
+    expect(celula(outra, 'Corrige outro ato')).toBe('Sim');
   });
 
-  it('a listagem mostra se o tipo é publicável como avulso e se corrige outro ato', async () => {
-    const errata = {
-      ...aviso,
-      codigo: 'ERRATA',
-      publicavelComoAvulso: true,
-      exigeAtoCorrigido: true,
-    };
-    await flushLista([preliminar, errata]);
-    fixture.detectChanges();
-
-    const linhas = Array.from(
-      fixture.nativeElement.querySelectorAll('tbody tr'),
-    ) as HTMLTableRowElement[];
-    const celula = (linha: HTMLTableRowElement, rotulo: string): string =>
-      (linha.querySelector(`[data-label="${rotulo}"]`)?.textContent ?? '').trim();
-
-    expect([celula(linhas[0], 'Avulso'), celula(linhas[0], 'Corrige outro ato')]).toEqual([
-      'Não',
-      'Não',
-    ]);
-    expect([celula(linhas[1], 'Avulso'), celula(linhas[1], 'Corrige outro ato')]).toEqual([
-      'Sim',
-      'Sim',
-    ]);
+  it('apresenta a vigência em pt-BR, aberta ou encerrada', () => {
+    expect(celula(linhaDe('RESULTADO_PRELIMINAR_INSCRICAO'), 'Vigência')).toBe('Desde 01/01/2026');
+    expect(celula(linhaDe('AVISO'), 'Vigência')).toBe('De 01/01/2026 até antes de 30/06/2026');
   });
 
-  it('a vigência é apresentada em pt-BR, aberta ou encerrada', async () => {
-    await flushLista([preliminar, aviso]);
-    fixture.detectChanges();
-    const texto: string = fixture.nativeElement.textContent;
-    expect(texto).toContain('Desde 01/01/2026');
-    expect(texto).toContain('De 01/01/2026 até antes de 30/06/2026');
-  });
-
-  it('restringir às vigências em vigor declara vigentes=true', async () => {
-    await flushLista([preliminar, aviso]);
-
-    component['alternarSomenteEmVigor']();
-    await propagate();
-
-    const req = controller.expectOne((r) => r.url === LISTA_URL);
-    expect(req.request.params.get('vigentes')).toBe('true');
-    req.flush([preliminar]);
-    await propagate();
-  });
-
-  it('cadastrar emite POST com Idempotency-Key, código em maiúsculas e o sinalizador de resultado', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['salvar']();
-
-    const post = controller.expectOne(ADMIN_URL);
-    expect(post.request.method).toBe('POST');
-    expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
-    expect(post.request.body).toMatchObject({
-      codigo: 'RESULTADO_PRELIMINAR_INSCRICAO',
-      ehResultado: true,
-      publicavelComoAvulso: false,
-      exigeAtoCorrigido: true,
-      vigenciaInicio: '2026-01-01',
-      vigenciaFim: null,
-      baseLegal: null,
-    });
-
-    post.flush(preliminar.id, { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([preliminar]);
-  });
-
-  it('não salva um novo tipo sem declarar os dois atributos de publicação', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    fixture.detectChanges();
-    preencherFormulario();
-    component['form'].controls.publicavelComoAvulso.setValue(null);
-    component['salvar']();
-    controller.expectNone(ADMIN_URL);
-    expect(component['erroDoCampo']('publicavelComoAvulso')).toBe('Campo obrigatório.');
-    fixture.detectChanges();
-    const primeiroRadio = fixture.nativeElement.querySelector(
-      'input[type="radio"][formcontrolname="publicavelComoAvulso"]',
-    );
-    expect(document.activeElement).toBe(primeiroRadio);
-
-    component['form'].controls.publicavelComoAvulso.setValue(true);
-    component['form'].controls.exigeAtoCorrigido.setValue(null);
-    component['salvar']();
-    controller.expectNone(ADMIN_URL);
-    expect(component['erroDoCampo']('exigeAtoCorrigido')).toBe('Campo obrigatório.');
-  });
-
-  it('Sim e Não do mesmo atributo formam um grupo de rádio nativo', async () => {
-    await flushLista([]);
-    component['abrirCriacao']();
-    fixture.detectChanges();
-
-    const radios = Array.from(
-      fixture.nativeElement.querySelectorAll('input[type="radio"]'),
-    ) as HTMLInputElement[];
-    const nomes = radios.map((radio) => radio.name);
-    expect(nomes).toEqual([
-      'publicavelComoAvulso',
-      'publicavelComoAvulso',
-      'exigeAtoCorrigido',
-      'exigeAtoCorrigido',
-    ]);
-  });
-
-  it('declarar "não" conta como resposta e viaja como false', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['form'].patchValue({ publicavelComoAvulso: false, exigeAtoCorrigido: false });
-    component['salvar']();
-
-    const post = controller.expectOne(ADMIN_URL);
-    expect(post.request.body).toMatchObject({
-      publicavelComoAvulso: false,
-      exigeAtoCorrigido: false,
-    });
-    post.flush(preliminar.id, { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([preliminar]);
-  });
-
-  it('a edição preserva os dois atributos lidos e reenvia no PUT', async () => {
-    const errata = { ...preliminar, publicavelComoAvulso: true, exigeAtoCorrigido: true };
-    await flushLista([errata]);
-
-    component['abrirEdicao'](errata);
-    component['form'].controls.nome.setValue('Errata');
-    component['salvar']();
-
-    const put = controller.expectOne(`${ADMIN_URL}/${errata.id}`);
-    expect(put.request.body).toMatchObject({
-      publicavelComoAvulso: true,
-      exigeAtoCorrigido: true,
-    });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([errata]);
-  });
-
-  it('na edição o código é readonly e o PUT reapresenta id e código sem Idempotency-Key', async () => {
-    await flushLista([preliminar]);
-
-    component['abrirEdicao'](preliminar);
-    fixture.detectChanges();
-    const codigoInput = fixture.nativeElement.querySelector(
-      '[formcontrolname="codigo"]',
-    ) as HTMLInputElement;
-    expect(codigoInput.readOnly).toBe(true);
-
-    component['form'].controls.nome.setValue('Resultado preliminar das inscrições');
-    component['salvar']();
-
-    const put = controller.expectOne(`${ADMIN_URL}/${preliminar.id}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.headers.has('Idempotency-Key')).toBe(false);
-    expect(put.request.body).toMatchObject({
-      id: preliminar.id,
-      codigo: preliminar.codigo,
-      nome: 'Resultado preliminar das inscrições',
-    });
-
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([preliminar]);
-  });
-
-  it('a sobreposição de vigência explica a saída e renova a chave de idempotência', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    const chaveInicial = component['idempotencyKeyAtual']();
-    preencherFormulario();
-    component['salvar']();
-
-    controller.expectOne(ADMIN_URL).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.publicacoes.tipo_ato.vigencia_sobreposta',
-        title: 'Vigência sobreposta',
-        status: 409,
-        code: 'uniplus.publicacoes.tipo_ato.vigencia_sobreposta',
-        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-      },
-      { status: 409, statusText: 'Conflict', headers: PROBLEM_JSON },
-    );
-    await propagate();
-
-    expect(component['formError']()).toContain('Encerre a anterior ou escolha outro início');
-    expect(component['idempotencyKeyAtual']()).not.toBe(chaveInicial);
-    expect(component['formOpen']()).toBe(true);
-  });
-
-  it('a recusa de validação marca o campo correspondente em vez do erro geral', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['salvar']();
-
-    controller.expectOne(ADMIN_URL).flush(
-      {
-        title: 'Requisição inválida',
-        status: 422,
-        code: 'uniplus.validacao.requisicao_invalida',
-        traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
-        errors: [
-          { field: 'Codigo', code: 'formato_invalido', message: 'Use apenas letras e underscore.' },
-        ],
-      },
-      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-    );
-    await propagate();
-
-    expect(component['formError']()).toBeNull();
-    expect(component['erroDoCampo']('codigo')).toBe('Use apenas letras e underscore.');
-  });
-
-  it('remover emite DELETE após a confirmação', async () => {
-    await flushLista([preliminar]);
-
-    component['pedirRemocao'](preliminar);
-    expect(component['confirmMessage']()).toContain('RESULTADO_PRELIMINAR_INSCRICAO');
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${ADMIN_URL}/${preliminar.id}`);
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([]);
-  });
-
-  it('a busca filtra por código ou nome sobre a página carregada', async () => {
-    await flushLista([preliminar, aviso]);
-
-    component['termoBusca'].set('aviso');
-    expect(component['atosFiltrados']()).toEqual([aviso]);
-  });
-
-  it('o estado vazio explica a consequência de não haver tipo de ato', async () => {
-    await flushLista([]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain(
-      'nem o resultado contra o qual cabe recurso',
-    );
-  });
-
-  /**
-   * Sem isto o formulário recusa em silêncio: `salvar()` marca os controles como
-   * tocados e volta, e o campo sem mensagem deixa o botão parecendo morto.
-   */
-  it('o excesso de tamanho da base legal aparece no campo que o causou', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['form'].controls.baseLegal.setValue('x'.repeat(501));
-    component['salvar']();
-
-    expect(component['erroDoCampo']('baseLegal')).toBe('Valor acima do tamanho permitido.');
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Valor acima do tamanho permitido.');
-  });
-
-  /**
-   * Com as vigências encerradas à mostra o mesmo código ocupa várias linhas, e
-   * o nome da ação precisa dizer QUAL período ela remove.
-   */
-  it('as ações de linha têm nome acessível distinto por vigência do mesmo código', async () => {
-    const outraVigencia: TipoAtoPublicadoDto = {
-      ...aviso,
-      id: '01960000-0000-7000-0000-0000000000a3',
-      vigenciaInicio: '2026-07-01',
-      vigenciaFim: null,
-    };
-    await flushLista([aviso, outraVigencia]);
-    fixture.detectChanges();
-
-    const nomes = Array.from(
-      fixture.nativeElement.querySelectorAll('button[aria-label^="Remover vigência"]'),
-    ).map((b) => (b as HTMLButtonElement).getAttribute('aria-label'));
-
-    expect(nomes).toEqual([
-      'Remover vigência do tipo de ato AVISO, vigência iniciada em 01/01/2026',
-      'Remover vigência do tipo de ato AVISO, vigência iniciada em 01/07/2026',
-    ]);
-    expect(new Set(nomes).size).toBe(nomes.length);
-  });
-
-  /**
-   * Cancelar durante uma gravação em voo e abrir outro formulário faria a
-   * resposta antiga agir sobre o registro novo — fechando a gaveta recém-aberta
-   * ou marcando nela os erros do anterior.
-   */
-  it('não deixa abrir nem cancelar formulário enquanto há gravação em voo', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['salvar']();
-    fixture.detectChanges();
-
-    expect(component['saving']()).toBe(true);
-    const cadastrar = fixture.nativeElement.querySelector(
-      '.panel-head .btn--primary',
-    ) as HTMLButtonElement;
-    const cancelar = Array.from(
-      fixture.nativeElement.querySelectorAll('.form-drawer__footer button'),
-    ).find((b) => (b as HTMLButtonElement).textContent?.trim() === 'Cancelar') as HTMLButtonElement;
-
-    expect(cadastrar.disabled).toBe(true);
-    expect(cancelar.disabled).toBe(true);
-
-    controller.expectOne(ADMIN_URL).flush(preliminar.id, { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([preliminar]);
-  });
-
-  /**
-   * Desabilitar botão fecha a entrada que existe hoje. A guarda no método fecha
-   * também o X da gaveta, o Escape e qualquer entrada que venha depois.
-   */
-  it('a guarda contra troca de formulário está no método, não só nos botões', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['salvar']();
-    expect(component['saving']()).toBe(true);
-
-    // Simula fechar pela gaveta e tentar reabrir: sem a guarda, o formulário
-    // seria zerado no meio da gravação em voo.
-    component['formOpen'].set(false);
-    component['form'].controls.nome.setValue('Outro nome qualquer');
-    component['abrirCriacao']();
-
-    expect(component['formOpen']()).toBe(false);
-    expect(component['form'].controls.nome.value).toBe('Outro nome qualquer');
-
-    controller.expectOne(ADMIN_URL).flush(preliminar.id, { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([preliminar]);
-  });
-
-  /**
-   * A janela é semiaberta no domínio — `[início, fim)`. A tela precisa dizer
-   * isso, senão quem quer validade até 30/06 informa 30/06 e encurta a vigência
-   * em um dia sem perceber.
-   */
-  it('a tela diz que a data de fim é o primeiro dia sem validade', async () => {
-    await flushLista([preliminar]);
-    component['abrirCriacao']();
-    fixture.detectChanges();
-
-    const texto: string = fixture.nativeElement.textContent;
-    expect(texto).toContain('primeiro dia sem validade');
-    expect(texto).toContain('a data informada já fica fora da vigência');
-  });
-
-  /**
-   * Submeter pelo rodapé com o campo recusado acima da dobra deixava o foco no
-   * botão, e a mensagem não é região viva: ninguém era avisado do que travou.
-   */
-  it('o foco vai para o primeiro campo recusado ao submeter', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    fixture.detectChanges();
-    component['form'].controls.nome.setValue('Só o nome');
-    component['salvar']();
-    fixture.detectChanges();
-
-    const codigo = fixture.nativeElement.querySelector('[formcontrolname="codigo"]');
-    expect(document.activeElement).toBe(codigo);
-  });
-
-  it('o formulário fica indisponível enquanto a gravação está em voo', async () => {
-    await flushLista([]);
-
-    component['abrirCriacao']();
-    preencherFormulario();
-    component['salvar']();
-
-    expect(component['form'].disabled).toBe(true);
-
-    controller.expectOne(ADMIN_URL).flush(preliminar.id, { status: 201, statusText: 'Created' });
-    await propagate();
-    expect(component['form'].disabled).toBe(false);
-    await flushLista([preliminar]);
-  });
-
-  /**
-   * Recorte vazio não é catálogo vazio: oferecer cadastro quando o filtro é que
-   * escondeu tudo convida o operador a criar uma duplicata.
-   */
-  it('restringir às em vigor conta como filtro no estado vazio', async () => {
-    await flushLista([preliminar]);
-
-    component['alternarSomenteEmVigor']();
-    await propagate();
-    controller.expectOne((r) => r.url === LISTA_URL).flush([]);
-    await propagate();
-    fixture.detectChanges();
-
-    expect(component['temFiltro']()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Nenhum tipo de ato encontrado');
-    expect(fixture.nativeElement.textContent).not.toContain('Nenhum tipo de ato cadastrado');
-
-    component['limparFiltros']();
-    await propagate();
-    expect(component['somenteEmVigor']()).toBe(false);
-    controller.expectOne((r) => r.url === LISTA_URL).flush([preliminar]);
-    await propagate();
-  });
-
-  /**
-   * O contrato da listagem não tem parâmetro de busca, então o recorte é local.
-   * Enquanto tudo cabe numa página isso responde pelo catálogo; havendo outra
-   * página, a tela precisa dizer que a busca não a alcança.
-   */
-  it('avisa quando a busca não alcança o catálogo inteiro', async () => {
-    const req = controller.expectOne((r) => r.url === LISTA_URL);
-    req.flush([preliminar, aviso], {
-      headers: { Link: `<${LISTA_URL}?cursor=PROXIMA&direction=next>; rel="next"` },
-    });
-    await propagate();
-
-    expect(component['buscaLimitadaAPagina']()).toBe(false);
-
-    component['termoBusca'].set('inexistente');
-    fixture.detectChanges();
-
-    expect(component['buscaLimitadaAPagina']()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('a busca alcança só a que está carregada');
-  });
-
-  it('expõe legenda acessível descrevendo a tabela', async () => {
-    await flushLista([preliminar]);
-    fixture.detectChanges();
-
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
+  it('descreve a tabela para tecnologias assistivas', () => {
+    const legenda = p.elemento('table > caption');
+    expect(legenda.classList.contains('sr-only')).toBe(true);
+    expect(legenda.textContent?.replace(/\s+/gu, ' ').trim()).toBe(
       'Tipos de ato publicáveis, com vigência e o que cada um determina',
     );
   });
 
-  it('o botão de criação fica no cabeçalho da tabela, com ícone e o texto padronizado', async () => {
-    await flushLista([preliminar]);
-    fixture.detectChanges();
-
-    const botao = fixture.nativeElement.querySelector(
-      '.panel-head .btn--primary',
-    ) as HTMLButtonElement;
+  it('o botão de criação fica no cabeçalho, com ícone e o texto padronizado, e não se duplica', () => {
+    const botao = p.elemento('.panel-head .btn--primary');
     expect(botao.textContent?.replace(/\s+/gu, ' ').trim()).toBe('Novo tipo de ato');
     expect(botao.querySelector('i.pi-plus')).not.toBeNull();
-    expect(fixture.nativeElement.textContent).not.toContain('Cadastrar tipo de ato');
-    const botoesDeCriacao = Array.from(
-      fixture.nativeElement.querySelectorAll('.btn--primary') as NodeListOf<HTMLButtonElement>,
-    ).filter((b) => b.textContent?.replace(/\s+/gu, ' ').trim() === 'Novo tipo de ato');
-    expect(botoesDeCriacao.length).toBe(1);
+    const criacao = [...p.fixture.nativeElement.querySelectorAll('.btn--primary')].filter(
+      (b) => (b as HTMLElement).textContent?.replace(/\s+/gu, ' ').trim() === 'Novo tipo de ato',
+    );
+    expect(criacao).toHaveLength(1);
+  });
+
+  it('restringir às vigências em vigor declara vigentes=true e volta à primeira página', async () => {
+    p.elemento<HTMLElement>('.panel label.checkbox').click();
+    await p.propagar();
+
+    const req = p.http.expectOne((r) => r.url === LISTA);
+    expect(req.request.params.get('vigentes')).toBe('true');
+    expect(req.request.params.has('cursor')).toBe(false);
+    req.flush([preliminar]);
+    await p.propagar();
+    expect(p.store.somenteEmVigor()).toBe(true);
+  });
+
+  it('a busca filtra por código ou nome sobre a página carregada', async () => {
+    const busca = p.elemento<HTMLInputElement>('input[type="search"]');
+    busca.value = 'aviso';
+    busca.dispatchEvent(new Event('input'));
+    await p.propagar();
+
+    expect(p.fixture.nativeElement.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(linhaDe('AVISO')).toBeTruthy();
+  });
+
+  describe('estado vazio', () => {
+    it('explica a consequência de não haver tipo de ato', async () => {
+      p.store.recarregar();
+      await p.recarregarCom([]);
+      expect(p.fixture.nativeElement.textContent).toContain(
+        'nem o resultado contra o qual cabe recurso',
+      );
+      expect(p.fixture.nativeElement.textContent).toContain('Nenhum tipo de ato cadastrado');
+    });
+
+    /** Recorte vazio não é catálogo vazio: oferecer cadastro quando o filtro escondeu tudo convida à duplicata. */
+    it('restringir às em vigor conta como filtro e "Limpar filtros" desfaz o recorte', async () => {
+      p.elemento<HTMLElement>('.panel label.checkbox').click();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush([]);
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.textContent).toContain('Nenhum tipo de ato encontrado');
+      expect(p.fixture.nativeElement.textContent).not.toContain('Nenhum tipo de ato cadastrado');
+
+      const limpar = [...p.fixture.nativeElement.querySelectorAll('button')].find((b) =>
+        (b as HTMLElement).textContent?.includes('Limpar filtros'),
+      ) as HTMLButtonElement;
+      limpar.click();
+      await p.propagar();
+      expect(p.store.somenteEmVigor()).toBe(false);
+      p.http.expectOne((r) => r.url === LISTA).flush([preliminar]);
+      await p.propagar();
+    });
+  });
+
+  describe('formulário', () => {
+    it('identifica como obrigatórios o código, o nome, o início e os dois atributos de publicação', async () => {
+      await p.abrirCadastro();
+      for (const nome of ['codigo', 'nome', 'vigenciaInicio']) {
+        expect(p.campo(nome).getAttribute('aria-required'), nome).toBe('true');
+      }
+      const grupos = p.fixture.nativeElement.querySelectorAll('fieldset[role="radiogroup"]');
+      expect(grupos).toHaveLength(2);
+      for (const grupo of grupos) expect(grupo.getAttribute('aria-required')).toBe('true');
+    });
+
+    it('Sim e Não do mesmo atributo formam um grupo de rádio nativo', async () => {
+      await p.abrirCadastro();
+      const nomes = [...p.fixture.nativeElement.querySelectorAll('input[type="radio"]')].map(
+        (radio) => (radio as HTMLInputElement).name,
+      );
+      expect(nomes).toEqual([
+        'publicavelComoAvulso',
+        'publicavelComoAvulso',
+        'exigeAtoCorrigido',
+        'exigeAtoCorrigido',
+      ]);
+    });
+
+    /** A janela é semiaberta: quem quer validade até 30/06 informa 30/06 e encurta a vigência em um dia sem perceber. */
+    it('diz que a data de fim é o primeiro dia sem validade', async () => {
+      await p.abrirCadastro();
+      const texto = p.fixture.nativeElement.textContent;
+      expect(texto).toContain('primeiro dia sem validade');
+      expect(texto).toContain('a data informada já fica fora da vigência');
+    });
+  });
+
+  describe('cadastro', () => {
+    it('envia o POST com Idempotency-Key e o código em maiúsculas, anuncia e avisa o sucesso', async () => {
+      await p.abrirCadastro();
+      p.elemento<HTMLInputElement>('input[aria-describedby="ehResultado-ajuda"]').click();
+      p.responder('exigeAtoCorrigido', true);
+      const post = await p.enviar();
+
+      expect(post.request.method).toBe('POST');
+      expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+      expect(post.request.body).toEqual({
+        codigo: 'RESULTADO_PRELIMINAR_INSCRICAO',
+        nome: 'Resultado preliminar da inscrição',
+        congelaConfiguracao: false,
+        unicoPorObjeto: false,
+        efeitoIrreversivel: false,
+        ehResultado: true,
+        publicavelComoAvulso: false,
+        exigeAtoCorrigido: true,
+        vigenciaInicio: '2026-01-01',
+        vigenciaFim: null,
+        baseLegal: null,
+      });
+      post.flush(...criado());
+      await p.recarregarCom([preliminar]);
+
+      expect(p.edicao.aberto()).toBe(false);
+      expect(p.sucessos).toHaveBeenCalledWith('Tipo de ato cadastrado');
+      expect(p.statusDaPagina()).toBe('Tipo de ato cadastrado.');
+    });
+
+    it('declarar "não" conta como resposta e viaja como false', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      expect(post.request.body).toMatchObject({
+        publicavelComoAvulso: false,
+        exigeAtoCorrigido: false,
+      });
+      post.flush(...criado());
+      await p.recarregarCom([preliminar]);
+    });
+
+    it.each(['publicavelComoAvulso', 'exigeAtoCorrigido'] as const)(
+      'não envia sem declarar %s, mesmo com o outro atributo respondido, e leva o foco a ele',
+      async (nome) => {
+        await p.abrirCadastro();
+        p.edicao.form.controls[nome].setValue(null);
+        p.salvar().click();
+        await p.propagar();
+        await p.propagar();
+
+        p.http.expectNone(ESCRITA);
+        const primeiroRadio = (n: string) =>
+          p.elemento<HTMLInputElement>(`input[type="radio"][formcontrolname="${n}"]`);
+        const outro =
+          nome === 'publicavelComoAvulso' ? 'exigeAtoCorrigido' : 'publicavelComoAvulso';
+        const primeiro = primeiroRadio(nome);
+        expect(primeiro.getAttribute('aria-invalid')).toBe('true');
+        expect(primeiroRadio(outro).getAttribute('aria-invalid')).toBeNull();
+        expect(document.activeElement).toBe(primeiro);
+      },
+    );
+  });
+
+  describe('edição', () => {
+    it('o código é somente leitura e o PUT reapresenta id e código, sem Idempotency-Key', async () => {
+      await p.abrirEdicao(preliminar);
+      expect(p.campo('codigo').readOnly).toBe(true);
+      expect(p.campo('codigo').value).toBe(preliminar.codigo);
+      p.preencher('nome', 'Resultado preliminar das inscrições');
+      const put = await p.enviar(`${ESCRITA}/${preliminar.id}`);
+
+      expect(put.request.method).toBe('PUT');
+      expect(put.request.headers.has('Idempotency-Key')).toBe(false);
+      expect(put.request.body).toMatchObject({
+        id: preliminar.id,
+        codigo: preliminar.codigo,
+        nome: 'Resultado preliminar das inscrições',
+      });
+      put.flush(...sucesso());
+      await p.recarregarCom([preliminar]);
+      expect(p.sucessos).toHaveBeenCalledWith('Tipo de ato atualizado');
+      expect(p.statusDaPagina()).toBe('Tipo de ato atualizado.');
+    });
+
+    it('preserva os dois atributos lidos e os reenvia no PUT', async () => {
+      const errata = { ...preliminar, publicavelComoAvulso: true, exigeAtoCorrigido: true };
+      p.store.recarregar();
+      await p.recarregarCom([errata]);
+      await p.abrirEdicao(errata);
+      p.preencher('nome', 'Errata');
+      const put = await p.enviar(`${ESCRITA}/${errata.id}`);
+
+      expect(put.request.body).toMatchObject({
+        publicavelComoAvulso: true,
+        exigeAtoCorrigido: true,
+      });
+      put.flush(...sucesso());
+      await p.recarregarCom([errata]);
+    });
+
+    it('o cadastro seguinte abre em branco, sem herdar a edição', async () => {
+      await p.abrirEdicao(preliminar);
+      p.elemento<HTMLButtonElement>('.form-drawer__footer button').click();
+      await p.propagar();
+      p.novo().click();
+      await p.propagar();
+
+      expect(p.campo('codigo').value).toBe('');
+      expect(p.campo('codigo').readOnly).toBe(false);
+      expect(p.edicao.form.getRawValue()).toMatchObject({
+        publicavelComoAvulso: null,
+        exigeAtoCorrigido: null,
+      });
+    });
+  });
+
+  describe('remoção de vigência', () => {
+    it('as ações de linha têm nome acessível distinto por vigência do mesmo código', async () => {
+      const outraVigencia = {
+        ...aviso,
+        id: 'outra',
+        vigenciaInicio: '2026-07-01',
+        vigenciaFim: null,
+      };
+      p.store.recarregar();
+      await p.recarregarCom([aviso, outraVigencia]);
+
+      const nomes = [
+        ...p.fixture.nativeElement.querySelectorAll('button[aria-label^="Remover vigência"]'),
+      ].map((b) => (b as HTMLButtonElement).getAttribute('aria-label'));
+      expect(nomes).toEqual([
+        'Remover vigência do tipo de ato AVISO, vigência iniciada em 01/01/2026',
+        'Remover vigência do tipo de ato AVISO, vigência iniciada em 01/07/2026',
+      ]);
+    });
+
+    it('pede confirmação nomeando a vigência da linha, sem enviar nada', async () => {
+      p.remover(preliminar).click();
+      await p.propagar();
+
+      const dialogo = p.elemento('cfg-confirmacao-de-remocao');
+      expect(dialogo.textContent).toContain('Remover vigência');
+      expect(dialogo.textContent).toContain(
+        'RESULTADO_PRELIMINAR_INSCRICAO iniciada em 01/01/2026',
+      );
+      p.http.expectNone(`${ESCRITA}/${preliminar.id}`);
+      p.cancelarDaConfirmacao().click();
+      await p.propagar();
+      expect(p.edicao.confirmando()).toBe(false);
+    });
+
+    it('remove após a confirmação, avisa e anuncia o desfecho na página', async () => {
+      const del = await p.confirmarRemocao(preliminar);
+      expect(del.request.method).toBe('DELETE');
+      del.flush(...sucesso());
+      await p.recarregarCom([aviso]);
+
+      expect(p.edicao.confirmando()).toBe(false);
+      expect(p.sucessos).toHaveBeenCalledWith(
+        'Vigência removida',
+        'RESULTADO_PRELIMINAR_INSCRICAO',
+      );
+      expect(p.statusDaPagina()).toBe(
+        'Vigência RESULTADO_PRELIMINAR_INSCRICAO iniciada em 01/01/2026 removida.',
+      );
+    });
+  });
+
+  describe('paginação', () => {
+    it('avisa quando a busca não alcança o catálogo inteiro', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush([preliminar, aviso], {
+          headers: { Link: `<${LISTA}?cursor=PROXIMA&direction=next>; rel="next"` },
+        });
+      await p.propagar();
+      expect(p.fixture.nativeElement.textContent).not.toContain('a busca alcança só a que está');
+
+      const busca = p.elemento<HTMLInputElement>('input[type="search"]');
+      busca.value = 'inexistente';
+      busca.dispatchEvent(new Event('input'));
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.textContent).toContain(
+        'a busca alcança só a que está carregada',
+      );
+      expect(p.fixture.nativeElement.textContent).toContain(
+        'A busca alcança só a página carregada — ajuste o termo ou navegue pelas páginas.',
+      );
+    });
+
+    it('segue pelo cursor e volta à primeira página ao recarregar', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush([preliminar], {
+          headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
+        });
+      await p.propagar();
+
+      p.store.proximaPagina();
+      await p.propagar();
+      const proxima = p.http.expectOne((r) => r.params.get('cursor') === 'abc');
+      expect(proxima.request.params.get('direction')).toBe('next');
+      expect(proxima.request.params.get('vigentes')).toBe('false');
+      proxima.flush([aviso]);
+      await p.propagar();
+      expect(p.store.atos()).toEqual([aviso]);
+
+      p.store.recarregar();
+      await p.propagar();
+      const primeira = p.http.expectOne((r) => r.url === LISTA);
+      expect(primeira.request.params.has('cursor')).toBe(false);
+      primeira.flush([preliminar]);
+      await p.propagar();
+      expect(p.store.atos()).toEqual([preliminar]);
+    });
+    it.each([
+      [400, 'uniplus.cursor.invalido', 'A paginação foi reiniciada porque a consulta mudou.'],
+      [
+        410,
+        'uniplus.cursor.expirado',
+        'A listagem ficou aberta tempo demais e a consulta expirou.',
+      ],
+    ] as const)(
+      'cursor recusado (%s) recomeça do início, avisa e não mostra o alerta de falha',
+      async (status, code, aviso) => {
+        p.store.recarregar();
+        await p.propagar();
+        p.http
+          .expectOne((r) => r.url === LISTA)
+          .flush([preliminar], {
+            headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
+          });
+        await p.propagar();
+        p.store.proximaPagina();
+        await p.propagar();
+        p.http
+          .expectOne((r) => r.params.get('cursor') === 'abc')
+          .flush(...problema(status, { code }));
+        await p.propagar();
+
+        expect(p.store.mensagemDeErro()).toBeNull();
+        expect(p.informacoes).toHaveBeenCalledWith(aviso, 'Recarregamos a listagem do começo.');
+        const recarga = p.http.expectOne((r) => r.url === LISTA);
+        expect(recarga.request.params.has('cursor')).toBe(false);
+        recarga.flush([preliminar]);
+        await p.propagar();
+      },
+    );
+
+    it('volta à página anterior pelo cursor que a resposta indicou', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush([preliminar], {
+          headers: { Link: `<${LISTA}?cursor=ant&direction=prev>; rel="prev"` },
+        });
+      await p.propagar();
+
+      p.store.paginaAnterior();
+      await p.propagar();
+      const anterior = p.http.expectOne((r) => r.params.get('cursor') === 'ant');
+      expect(anterior.request.params.get('direction')).toBe('prev');
+      anterior.flush([aviso]);
+      await p.propagar();
+      expect(p.store.atos()).toEqual([aviso]);
+    });
   });
 });

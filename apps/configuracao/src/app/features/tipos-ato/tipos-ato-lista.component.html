@@ -1,0 +1,165 @@
+<section class="panel" aria-labelledby="cfg-tipos-ato-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-tipos-ato-list-title" tabindex="-1">Tipos de ato</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+    <button
+      type="button"
+      id="cfg-tipos-ato-novo"
+      class="btn btn--primary"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo tipo de ato
+    </button>
+  </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar tipos de ato"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar tipos de ato"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
+  />
+
+  @if (buscaLimitadaAPagina()) {
+    <p class="field__hint cfg-tipos-ato__historico" role="status">
+      O catálogo tem mais de uma página e a busca alcança só a que está carregada — navegue pelas
+      páginas para procurar no restante.
+    </p>
+  }
+
+  <div class="field cfg-tipos-ato__historico" [attr.inert]="gravando() ? '' : null">
+    <label class="checkbox">
+      <input
+        type="checkbox"
+        [checked]="somenteEmVigor()"
+        (change)="somenteEmVigor.set(!somenteEmVigor())"
+        aria-describedby="cfg-ato-em-vigor-ajuda"
+      />
+      <span class="checkbox__box" aria-hidden="true"></span>
+      Mostrar apenas as vigências em vigor hoje
+    </label>
+    <span class="field__hint" id="cfg-ato-em-vigor-ajuda">
+      Por padrão a lista traz a série completa de cada código — o que já terminou e o que ainda vai
+      começar.
+    </span>
+  </div>
+
+  @if (atos().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Tipos de ato publicáveis, com vigência e o que cada um determina
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Vigência</th>
+            <th scope="col">Resultado</th>
+            <th scope="col">Avulso</th>
+            <th scope="col">Corrige outro ato</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ato of atos(); track ato.id) {
+            <tr [attr.data-tipo-ato-id]="ato.id">
+              <td data-label="Código">
+                <code>{{ ato.codigo }}</code>
+              </td>
+              <td data-label="Nome">{{ ato.nome }}</td>
+              <td data-label="Vigência">{{ periodo(ato) }}</td>
+              <td data-label="Resultado">
+                <span [class]="ato.ehResultado ? 'tag tag--success' : 'tag'">
+                  {{ ato.ehResultado ? 'Sim' : 'Não' }}
+                </span>
+              </td>
+              <td data-label="Avulso">
+                <span [class]="ato.publicavelComoAvulso ? 'tag tag--success' : 'tag'">
+                  {{ ato.publicavelComoAvulso ? 'Sim' : 'Não' }}
+                </span>
+              </td>
+              <td data-label="Corrige outro ato">
+                <span [class]="ato.exigeAtoCorrigido ? 'tag tag--success' : 'tag'">
+                  {{ ato.exigeAtoCorrigido ? 'Sim' : 'Não' }}
+                </span>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar tipo de ato ' + identificacaoDaVigencia(ato)"
+                  tooltip="Editar tipo de ato"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEditar(ato)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="
+                    'Remover vigência do tipo de ato ' + identificacaoDaVigencia(ato)
+                  "
+                  tooltip="Remover esta vigência"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemover(ato)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhum tipo de ato encontrado"
+        [description]="
+          buscaLimitadaAPagina()
+            ? 'A busca alcança só a página carregada — ajuste o termo ou navegue pelas páginas.'
+            : 'Ajuste os filtros para ver resultados.'
+        "
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="indisponivel()"
+          (click)="limparFiltros()"
+        >
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum tipo de ato cadastrado"
+        description="Sem tipo de ato, um processo seletivo não consegue declarar o que publica — nem o resultado contra o qual cabe recurso."
+      >
+        <button
+          type="button"
+          class="btn btn--primary"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
+        >
+          Novo tipo de ato
+        </button>
+      </ui-empty-state>
+    }
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de tipos de ato"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

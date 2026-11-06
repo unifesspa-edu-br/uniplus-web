@@ -1,0 +1,207 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de tipo de ato"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-tipo-ato-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-ato-identificacao">
+        <h3 id="cfg-ato-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          <label class="field" [class.is-error]="erroDoCampo('codigo')">
+            <span class="field__label is-required">Código</span>
+            <input
+              class="input cfg-input-uppercase"
+              type="text"
+              formControlName="codigo"
+              aria-required="true"
+              [readonly]="modo() === 'editar'"
+              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+            />
+            <span class="field__hint">
+              @if (modo() === 'editar') {
+                Imutável: é a identidade da série de vigências.
+              } @else {
+                Em maiúsculas, separado por underscore — por exemplo, RESULTADO_PRELIMINAR.
+              }
+            </span>
+            @if (erroDoCampo('codigo')) {
+              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('nome')">
+            <span class="field__label is-required">Nome</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="nome"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+            />
+            @if (erroDoCampo('nome')) {
+              <span class="field__error">{{ erroDoCampo('nome') }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section aria-labelledby="cfg-ato-vigencia">
+        <h3 id="cfg-ato-vigencia" class="form-section__title">Vigência</h3>
+        <div class="form-grid form-grid--2col">
+          <label class="field" [class.is-error]="erroDoCampo('vigenciaInicio')">
+            <span class="field__label is-required">Início</span>
+            <input
+              class="input"
+              type="date"
+              formControlName="vigenciaInicio"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('vigenciaInicio') ? 'true' : null"
+            />
+            @if (erroDoCampo('vigenciaInicio')) {
+              <span class="field__error">{{ erroDoCampo('vigenciaInicio') }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('vigenciaFim')">
+            <span class="field__label">Fim</span>
+            <input
+              class="input"
+              type="date"
+              formControlName="vigenciaFim"
+              [attr.aria-invalid]="erroDoCampo('vigenciaFim') ? 'true' : null"
+            />
+            <span class="field__hint">
+              Primeiro dia em que o tipo deixa de valer — a data informada já fica fora da vigência.
+              Em branco, não tem fim previsto.
+            </span>
+            @if (erroDoCampo('vigenciaFim')) {
+              <span class="field__error">{{ erroDoCampo('vigenciaFim') }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section aria-labelledby="cfg-ato-sinalizadores">
+        <h3 id="cfg-ato-sinalizadores" class="form-section__title">O que este ato determina</h3>
+        <div class="form-grid form-grid--1col">
+          @for (sinalizador of sinalizadores; track sinalizador.controle) {
+            <div class="field" [class.is-error]="erroDoCampo(sinalizador.controle)">
+              <label class="checkbox">
+                <input
+                  type="checkbox"
+                  [formControlName]="sinalizador.controle"
+                  [attr.aria-invalid]="erroDoCampo(sinalizador.controle) ? 'true' : null"
+                  [attr.aria-describedby]="descricaoDoCampo(sinalizador.controle)"
+                />
+                <span class="checkbox__box" aria-hidden="true"></span>
+                {{ sinalizador.rotulo }}
+              </label>
+              <span class="field__hint" [id]="sinalizador.controle + '-ajuda'">
+                {{ sinalizador.ajuda }}
+              </span>
+              @if (erroDoCampo(sinalizador.controle)) {
+                <span class="field__error" [id]="sinalizador.controle + '-erro'">
+                  {{ erroDoCampo(sinalizador.controle) }}
+                </span>
+              }
+            </div>
+          }
+          @for (declaracao of declaracoes; track declaracao.controle) {
+            <fieldset
+              class="field"
+              role="radiogroup"
+              aria-required="true"
+              [attr.aria-labelledby]="declaracao.controle + '-legenda'"
+              [class.is-error]="erroDoCampo(declaracao.controle)"
+              [attr.aria-describedby]="descricaoDoCampo(declaracao.controle)"
+            >
+              <legend class="field__label is-required" [id]="declaracao.controle + '-legenda'">
+                {{ declaracao.legenda }}
+              </legend>
+              <label class="radio">
+                <input
+                  type="radio"
+                  [formControlName]="declaracao.controle"
+                  [attr.name]="declaracao.controle"
+                  [attr.formcontrolname]="declaracao.controle"
+                  [value]="true"
+                  [attr.aria-invalid]="erroDoCampo(declaracao.controle) ? 'true' : null"
+                />
+                <span class="radio__dot" aria-hidden="true"></span>
+                Sim
+              </label>
+              <label class="radio">
+                <input
+                  type="radio"
+                  [formControlName]="declaracao.controle"
+                  [attr.name]="declaracao.controle"
+                  [attr.formcontrolname]="declaracao.controle"
+                  [value]="false"
+                  [attr.aria-invalid]="erroDoCampo(declaracao.controle) ? 'true' : null"
+                />
+                <span class="radio__dot" aria-hidden="true"></span>
+                Não
+              </label>
+              <span class="field__hint" [id]="declaracao.controle + '-ajuda'">
+                {{ declaracao.ajuda }}
+              </span>
+              @if (erroDoCampo(declaracao.controle)) {
+                <span class="field__error" [id]="declaracao.controle + '-erro'">
+                  {{ erroDoCampo(declaracao.controle) }}
+                </span>
+              }
+            </fieldset>
+          }
+          <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
+            <span class="field__label">Base legal</span>
+            <textarea
+              class="textarea"
+              formControlName="baseLegal"
+              [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
+            ></textarea>
+            @if (erroDoCampo('baseLegal')) {
+              <span class="field__error">{{ erroDoCampo('baseLegal') }}</span>
+            }
+          </label>
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-tipo-ato-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Salvar tipo de ato' }}
+    </button>
+  </div>
+</ui-drawer>
