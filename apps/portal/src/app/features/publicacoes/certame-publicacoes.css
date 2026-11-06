@@ -244,12 +244,8 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   color: var(--text-link);
+  text-decoration: none;
   overflow-wrap: anywhere;
-}
-
-.publicacao-timeline__link-nome {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
 }
 
 .publicacao-timeline__link-meta {
@@ -257,8 +253,10 @@
   color: var(--text-secondary);
 }
 
-.publicacao-timeline__link:hover {
+.publicacao-timeline__link:hover .publicacao-timeline__link-nome,
+.publicacao-timeline__link:focus-visible .publicacao-timeline__link-nome {
   text-decoration: underline;
+  text-underline-offset: 0.2em;
 }
 
 .publicacao-timeline__link:focus-visible {
