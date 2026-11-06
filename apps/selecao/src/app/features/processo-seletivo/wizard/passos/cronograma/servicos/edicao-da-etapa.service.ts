@@ -23,12 +23,7 @@ import {
   trocarRegraDeConsolidacao,
   trocarTipoDaEtapa,
 } from '../edicao-da-etapa';
-import {
-  dataHoraLida,
-  etapaLida,
-  nomeDaEtapa,
-  type CatalogosDaLeitura,
-} from '../leitura-da-etapa';
+import { dataHoraLida, etapaLida, nomeDaEtapa, type CatalogosDaLeitura } from '../leitura-da-etapa';
 import {
   acrescentarProduto,
   escolherAtoDoProduto,
@@ -71,32 +66,25 @@ export class EdicaoDaEtapa {
   readonly mensagemDaInstanciaSuperiorEmAberto = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
 
   /**
-   * Tipos que o seletor de uma etapa oferece: os ativos, mais o que ela já
-   * referencia quando esse saiu de atividade.
+   * Tipos que o seletor de uma etapa oferece: os do cadastro, mais o que ela já referencia quando
+   * o cadastro não o tem mais.
    *
-   * Um tipo inativo não volta a ser escolha nova, mas continua descrevendo a
-   * etapa que o gravou. Sem ele na lista, nenhuma opção casa e o campo aparece
-   * em branco — o operador não veria qual classificação está configurada, e
-   * gravaria por cima dela sem perceber.
+   * Sem o referenciado na lista, nenhuma opção casa e o campo aparece em branco — o operador não
+   * veria que há um tipo gravado e gravaria por cima dele sem perceber. "Removido do cadastro" só
+   * se afirma com o catálogo carregado: antes disso, ou em falha, a ausência não prova remoção.
    */
   tiposEscolhiveisPara(grupo: FormGroup<EtapaForm>): readonly { id: string; nome: string }[] {
     const referenciado = grupo.controls.tipoEtapaOrigemId.value;
-    const ativos = this.catalogoDeTiposDeEtapa
-      .tiposEtapaAtivos()
-      .map((tipo) => ({ id: tipo.id, nome: tipo.nome }));
+    const catalogo = this.catalogoDeTiposDeEtapa;
+    const tipos = catalogo.tiposEtapa().map((tipo) => ({ id: tipo.id, nome: tipo.nome }));
 
-    if (referenciado === '' || ativos.some((tipo) => tipo.id === referenciado)) {
-      return ativos;
+    if (referenciado === '' || tipos.some((tipo) => tipo.id === referenciado)) {
+      return tipos;
     }
 
-    const rotulo = this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa().get(referenciado);
-    return [
-      ...ativos,
-      {
-        id: referenciado,
-        nome: rotulo === undefined ? 'Tipo fora do catálogo atual' : `${rotulo} (inativo)`,
-      },
-    ];
+    const catalogoConfirmado = !catalogo.carregando() && catalogo.erro() === null;
+    const nome = catalogoConfirmado ? 'Tipo removido do cadastro' : 'Tipo fora do catálogo atual';
+    return [...tipos, { id: referenciado, nome }];
   }
 
   /** O que o cabeçalho recolhido diz sobre as janelas recursais da etapa. */
@@ -203,7 +191,9 @@ export class EdicaoDaEtapa {
   marcasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
     const marcas: string[] = [];
 
-    const tipo = this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa().get(grupo.controls.tipoEtapaOrigemId.value);
+    const tipo = this.catalogoDeTiposDeEtapa
+      .rotuloDoTipoEtapa()
+      .get(grupo.controls.tipoEtapaOrigemId.value);
     if (tipo !== undefined) marcas.push(tipo);
 
     const publicacoes = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;

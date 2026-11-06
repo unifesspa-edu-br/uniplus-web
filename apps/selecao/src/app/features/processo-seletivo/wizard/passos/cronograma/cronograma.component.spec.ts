@@ -31,6 +31,7 @@ import { CatalogoDeFases } from './catalogos/catalogo-de-fases.service';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogos/catalogo-de-unidades-do-cadastro.service';
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos/catalogos-do-cronograma';
+import { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { CronogramaPassoComponent } from './cronograma.component';
 import type { EtapaForm } from './cronograma-form';
@@ -2404,20 +2405,42 @@ describe('CronogramaPassoComponent', () => {
   });
 
   /**
-   * Um tipo inativo não volta a ser escolha nova, mas continua descrevendo a
-   * etapa que o gravou — sem ele na lista o campo aparece em branco, e o
-   * operador grava por cima sem ver o que estava configurado.
+   * Um tipo removido do cadastro continua descrevendo a etapa que o gravou — sem ele na lista o
+   * campo aparece em branco, e o operador grava por cima sem ver o que estava configurado. O
+   * catálogo do spec devolve só `TIPOS_ETAPA`, sem o tipo referenciado.
    */
-  it('mantém no seletor o tipo de etapa inativo que a etapa já referencia', () => {
-    const inativo = '01960000-0000-7000-0000-0000000000e9';
-    comFases(ID_AVALIACAO);
-    comUmaEtapa();
-    cronograma.etapas.at(0).controls.tipoEtapaOrigemId.setValue(inativo);
+  describe('tipo de etapa que o cadastro não tem', () => {
+    const removido = '01960000-0000-7000-0000-0000000000e9';
 
-    const oferecidos = edicao.tiposEscolhiveisPara(cronograma.etapas.at(0)).map((tipo) => tipo.id);
+    function oferecidos() {
+      comFases(ID_AVALIACAO);
+      comUmaEtapa();
+      cronograma.etapas.at(0).controls.tipoEtapaOrigemId.setValue(removido);
+      return edicao.tiposEscolhiveisPara(cronograma.etapas.at(0));
+    }
 
-    expect(oferecidos).toContain(inativo);
-    expect(oferecidos).toContain(TIPO_ETAPA);
+    it('mantém no seletor o tipo referenciado e o nomeia como removido do cadastro', () => {
+      const tipos = oferecidos();
+
+      expect(tipos.find((tipo) => tipo.id === removido)?.nome).toBe('Tipo removido do cadastro');
+      expect(tipos.map((tipo) => tipo.id)).toContain(TIPO_ETAPA);
+    });
+
+    it('não afirma a remoção enquanto o catálogo carrega', () => {
+      TestBed.inject(CatalogoDeTiposDeEtapa).carregando.set(true);
+
+      expect(oferecidos().find((tipo) => tipo.id === removido)?.nome).toBe(
+        'Tipo fora do catálogo atual',
+      );
+    });
+
+    it('não afirma a remoção quando o catálogo falhou', () => {
+      TestBed.inject(CatalogoDeTiposDeEtapa).erro.set('Falha');
+
+      expect(oferecidos().find((tipo) => tipo.id === removido)?.nome).toBe(
+        'Tipo fora do catálogo atual',
+      );
+    });
   });
 
   /**

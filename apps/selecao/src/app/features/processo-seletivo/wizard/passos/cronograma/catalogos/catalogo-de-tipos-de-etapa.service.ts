@@ -5,30 +5,21 @@ import { TipoEtapaDto, TiposEtapaApi } from '@uniplus/shared-data/configuracao';
 
 import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 
-/** Os tipos de etapa do cadastro de Configuração, ativos e inativos, carregados até o fim. */
+/** Os tipos de etapa do cadastro de Configuração, carregados até o fim. A API só devolve os que ainda existem no cadastro. */
 @Injectable()
 export class CatalogoDeTiposDeEtapa {
   private readonly tiposEtapaApi = inject(TiposEtapaApi);
 
   readonly tiposEtapa = signal<readonly TipoEtapaDto[]>([]);
 
-  /**
-   * Tipos de etapa escolhíveis. O catálogo devolve ativos e inativos juntos, e
-   * um inativo não volta a ser opção nova — mas continua exibível quando já
-   * referenciado, o que `rotuloDoTipoEtapa` resolve.
-   */
-  readonly tiposEtapaAtivos = computed(() => this.tiposEtapa().filter((tipo) => tipo.ativo));
-
-  /** Rótulo de um tipo de etapa, ativo ou não — um vínculo gravado precisa de nome. */
+  /** Rótulo de cada tipo de etapa do cadastro, pelo id. */
   readonly rotuloDoTipoEtapa = computed<ReadonlyMap<string, string>>(
     () => new Map(this.tiposEtapa().map((tipo) => [tipo.id, tipo.nome])),
   );
 
   /**
-   * O tipo de etapa pelo id, ativo ou não. É por aqui que a tela sabe quais caracteres aquele
-   * tipo admite — e, por consequência, se a etapa pode ter peso e nota mínima. A série completa
-   * importa: uma etapa já gravada num tipo desde então desativado continua tendo de exibir o
-   * que aquele tipo admitia.
+   * O tipo de etapa pelo id. É por aqui que a tela sabe quais caracteres aquele tipo admite — e,
+   * por consequência, se a etapa pode ter peso e nota mínima.
    */
   readonly tipoEtapaPorId = computed<ReadonlyMap<string, TipoEtapaDto>>(
     () => new Map(this.tiposEtapa().map((tipo) => [tipo.id, tipo])),
