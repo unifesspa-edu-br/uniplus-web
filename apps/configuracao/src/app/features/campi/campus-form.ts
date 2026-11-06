@@ -12,6 +12,9 @@ import {
 } from '../../shared/endereco';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
+/** Código de wire do 409 de sigla duplicada. */
+export const CAMPUS_SIGLA_JA_EXISTE_CODE = 'uniplus.configuracao.campus.sigla_ja_existe';
+
 export interface CampusForm {
   sigla: FormControl<string>;
   nome: FormControl<string>;

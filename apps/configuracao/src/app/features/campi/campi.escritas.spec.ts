@@ -134,9 +134,9 @@ describe('CampiPage — escritas pela interface', () => {
   it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
     await preencherNovoCampus();
     for (const campo of ['sigla', 'nome']) {
-      expect(elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
-        'true',
-      );
+      expect(
+        elemento<HTMLElement>(`[formcontrolname="${campo}"]`).getAttribute('aria-required'),
+      ).toBe('true');
     }
   });
 
@@ -156,6 +156,8 @@ describe('CampiPage — escritas pela interface', () => {
     expect(salvar.getAttribute('aria-disabled')).toBe('true');
     expect(salvar.getAttribute('aria-busy')).toBe('true');
     expect(salvar.textContent).toContain('Salvando...');
+    expect(edicao.removendo()).toBe(false);
+    expect(elemento('.panel-head').textContent).not.toContain('Removendo');
     expect(document.activeElement).toBe(salvar);
     // Cancelar, X e Esc ficam indisponíveis.
     expect(botao('.form-drawer__footer button', 'Cancelar').disabled).toBe(true);
@@ -179,25 +181,36 @@ describe('CampiPage — escritas pela interface', () => {
     await propagar();
 
     expect(elemento('.panel-head').textContent).toContain('Removendo');
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
+    expect(elemento('cfg-campus-remocao [role="status"]').textContent?.trim()).toBe(
       'Removendo o campus MARABA.',
     );
+    const confirmar = elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]');
+    expect(confirmar.getAttribute('aria-disabled')).toBe('true');
+    expect(confirmar.getAttribute('aria-busy')).toBe('true');
+    const dialogo = elemento<HTMLDialogElement>('cfg-campus-remocao dialog');
+    expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
+      true,
+    );
+    dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
+    await propagar();
+    expect(edicao.confirmando()).toBe(true);
+    expect(elemento<HTMLElement>('cfg-campus-remocao dialog').hasAttribute('open')).toBe(true);
+    confirmar.click();
+    controller.expectNone(`${ESCRITA_URL}/${campusSeed.id}`);
     expect(edicao.salvando()).toBe(false);
     expect(edicao.removendo()).toBe(true);
-    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(true);
-    expect(elemento<HTMLButtonElement>('button[aria-label="Editar campus MARABA"]').disabled).toBe(
-      true,
-    );
-    expect(elemento<HTMLButtonElement>('button[aria-label="Remover campus MARABA"]').disabled).toBe(
-      true,
-    );
+    expect(elemento('.panel-head .btn--primary').matches(':disabled')).toBe(true);
+    expect(elemento('button[aria-label="Editar campus MARABA"]').matches(':disabled')).toBe(true);
+    expect(elemento('button[aria-label="Remover campus MARABA"]').matches(':disabled')).toBe(true);
 
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
     controller.expectOne((r) => r.url === LISTA_URL).flush([]);
     await propagar();
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe('Campus MARABA removido.');
-    expect(elemento<HTMLButtonElement>('.panel-head .btn--primary').disabled).toBe(false);
+    expect(elemento('.panel-head [role="status"]').textContent?.trim()).toBe(
+      'Campus MARABA removido.',
+    );
+    expect(elemento('.panel-head .btn--primary').matches(':disabled')).toBe(false);
   });
 
   it('com remoção pendente e a listagem falhando, o "Tentar novamente" da página fica indisponível', async () => {
@@ -223,7 +236,11 @@ describe('CampiPage — escritas pela interface', () => {
       );
     await propagar();
 
-    expect(botao('ui-alert button', 'Tentar novamente').disabled).toBe(true);
+    const tentar = botao('ui-alert button', 'Tentar novamente');
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    tentar.click();
+    await propagar();
+    controller.expectNone((r) => r.url === LISTA_URL);
 
     remocao.flush(null, { status: 204, statusText: 'No Content' });
     await propagar();
@@ -266,6 +283,117 @@ describe('CampiPage — escritas pela interface', () => {
         .flush(null, { status: 204, statusText: 'No Content' });
       await propagar();
       controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    });
+  });
+
+  /** Recusa o envio em curso e devolve a chave de idempotência com que ele partiu. */
+  function falhar(status: number, code: string, title: string): string | null {
+    const envio = controller.expectOne(ESCRITA_URL);
+    envio.flush(JSON.stringify({ type: 'about:blank', title, status, code }), {
+      status,
+      statusText: 'Conflict',
+      headers: { 'content-type': 'application/problem+json' },
+    });
+    return envio.request.headers.get('Idempotency-Key');
+  }
+
+  const chaveDoEnvio = (): string | null =>
+    controller.expectOne(ESCRITA_URL).request.headers.get('Idempotency-Key');
+
+  describe('conflito (409) no salvamento', () => {
+    it('sigla já cadastrada marca o campo da sigla, com aria-invalid', async () => {
+      await preencherNovoCampus();
+      enviarFormulario();
+      falhar(
+        409,
+        'uniplus.configuracao.campus.sigla_ja_existe',
+        'Já existe um campus com esta sigla',
+      );
+      await propagar();
+
+      const campo = elemento('input[formcontrolname="sigla"]');
+      expect(campo.getAttribute('aria-invalid')).toBe('true');
+      expect(campo.closest('label')?.querySelector('.field__error')?.textContent?.trim()).toBe(
+        'Já existe um campus com esta sigla',
+      );
+      expect(edicao.erro()).toBeNull();
+    });
+
+    it('processamento em curso mostra a mensagem em erro e reenvia com a mesma chave', async () => {
+      await preencherNovoCampus();
+      enviarFormulario();
+      const primeira = falhar(
+        409,
+        'uniplus.idempotency.processing_conflict',
+        'Requisição em processamento',
+      );
+      await propagar();
+
+      expect(edicao.erro()).toBe('Requisição em processamento');
+      expect(elemento('input[formcontrolname="sigla"]').getAttribute('aria-invalid')).toBeNull();
+      enviarFormulario();
+      await propagar();
+      expect(primeira).not.toBeNull();
+      expect(chaveDoEnvio()).toBe(primeira);
+    });
+
+    it('sigla já cadastrada renova a chave do próximo envio', async () => {
+      await preencherNovoCampus();
+      enviarFormulario();
+      const primeira = falhar(409, 'uniplus.configuracao.campus.sigla_ja_existe', 'Já existe');
+      await propagar();
+
+      digitar('input[formcontrolname="sigla"]', 'OUTRA');
+      enviarFormulario();
+      await propagar();
+      expect(chaveDoEnvio()).not.toBe(primeira);
+    });
+  });
+
+  describe('remoção recusada', () => {
+    async function recusarRemocao(status: number, code: string, title: string): Promise<void> {
+      await pedirRemocao();
+      controller
+        .expectOne(`${ESCRITA_URL}/${campusSeed.id}`)
+        .flush(JSON.stringify({ type: 'about:blank', title, status, code }), {
+          status,
+          statusText: 'Erro',
+          headers: { 'content-type': 'application/problem+json' },
+        });
+      await propagar();
+    }
+
+    it('mantém o diálogo aberto com a recusa e o botão disponível para nova tentativa', async () => {
+      const titulo = 'Não é possível remover um campus responsável por locais de oferta ativos';
+      await recusarRemocao(
+        409,
+        'uniplus.configuracao.campus.remocao_bloqueada_por_local_oferta',
+        titulo,
+      );
+
+      expect(elemento('cfg-campus-remocao dialog').hasAttribute('open')).toBe(true);
+      expect(elemento('cfg-campus-remocao .field__error').textContent?.trim()).toBe(titulo);
+      expect(elemento('cfg-campus-remocao [role="status"]').textContent).toContain(
+        'Não foi possível remover o campus MARABA.',
+      );
+      const confirmar = elemento('[data-testid="confirm-dialog-confirm"]');
+      expect(confirmar.getAttribute('aria-disabled')).toBeNull();
+      confirmar.click();
+      controller.expectOne(`${ESCRITA_URL}/${campusSeed.id}`).flush(null, {
+        status: 204,
+        statusText: 'No Content',
+      });
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    });
+
+    it('a recusa não aparece ao abrir a confirmação de novo', async () => {
+      await recusarRemocao(500, 'uniplus.erro_interno', 'Falha ao remover');
+      edicao.confirmando.set(false);
+      edicao.pedirRemocao(campusSeed);
+      await propagar();
+
+      expect(fixture.nativeElement.querySelector('cfg-campus-remocao .field__error')).toBeNull();
     });
   });
 
@@ -368,10 +496,41 @@ describe('CampiPage — escritas pela interface', () => {
       );
       await propagar();
 
+      const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
+      elemento<HTMLButtonElement>('button[form="cfg-campus-form"]').dispatchEvent(clique);
+      expect(clique.defaultPrevented).toBe(true);
+
       expect(salvarDaClasse).toHaveBeenCalledTimes(1);
       post.flush('novo-id', { status: 201, statusText: 'Created' });
       await propagar();
       controller.expectOne((r) => r.url === LISTA_URL).flush([campusSeed]);
+    });
+  });
+
+  describe('foco ao enviar com Enter', () => {
+    const campoNome = (): HTMLInputElement => elemento('input[formcontrolname="nome"]');
+    const enviarComEnter = async (): Promise<void> => {
+      campoNome().focus();
+      elemento<HTMLFormElement>('#cfg-campus-form').dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+    };
+
+    it('com o envio em curso, leva o foco do campo ao botão de salvar', async () => {
+      await preencherNovoCampus();
+      await enviarComEnter();
+      controller.expectOne(ESCRITA_URL);
+      expect(campoNome().matches(':disabled')).toBe(true);
+      expect(document.activeElement).toBe(elemento('button[form="cfg-campus-form"]'));
+    });
+
+    it('com o envio barrado pela validação, mantém o foco no campo', async () => {
+      await preencherNovoCampus();
+      edicao.form.controls.nome.setValue('');
+      await enviarComEnter();
+      controller.expectNone(ESCRITA_URL);
+      expect(document.activeElement).toBe(campoNome());
     });
   });
 

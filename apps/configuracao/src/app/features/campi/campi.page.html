@@ -7,27 +7,23 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar os campi">
-  {{ store.mensagemDeErro() }}
-  <div class="cfg-campi__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [disabled]="store.carregando() || edicao.removendo()"
-      (click)="store.tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar os campi"
+  [mensagem]="mensagem"
+  [pendente]="indisponivel()"
+  [tentativasSemSucesso]="store.tentativasSemSucesso()"
+  idBotao="cfg-campi-tentar-novamente"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <cfg-campi-lista
   [campi]="store.campi()"
   [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
   [removendo]="edicao.removendo()"
-  [anuncioDaRemocao]="edicao.anuncioDaRemocao()"
+  [anuncioDoResultado]="edicao.anuncioDaPagina()"
   [mensagemDeErro]="store.mensagemDeErro()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
@@ -50,11 +46,11 @@
   (cancelar)="edicao.fechar()"
 />
 
-<ui-confirm-dialog
-  [(visible)]="edicao.confirmando"
-  heading="Remover campus"
-  [message]="edicao.mensagemDaConfirmacao()"
-  confirmLabel="Remover"
-  confirmVariant="danger"
-  (confirmed)="edicao.removerConfirmado()"
+<cfg-campus-remocao
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
 />

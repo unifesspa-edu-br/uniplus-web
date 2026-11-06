@@ -53,23 +53,37 @@ export class CampusFormularioComponent {
   readonly cancelar = output<void>();
 
   constructor() {
-    this.focarPrimeiroCampoInvalidoAposRecusa();
+    this.acompanharFocoDoEnvio();
   }
 
   /**
-   * Depois de uma recusa (o envio terminou e o drawer continua aberto), o foco, que estava no
-   * botão de salvar, vai ao primeiro campo recusado. Se a recusa não é de campo, fica onde estava.
+   * Ao começar o envio com o foco num campo (Enter, por exemplo), o fieldset desabilita o campo e
+   * o foco iria ao `body`: leva-o ao botão de salvar. Ao terminar com o drawer aberto, o foco vai
+   * ao primeiro campo recusado; se a recusa não é de campo, fica no botão de salvar.
    */
-  private focarPrimeiroCampoInvalidoAposRecusa(): void {
+  private acompanharFocoDoEnvio(): void {
     let estavaSalvando = false;
     effect(() => {
       const salvando = this.salvando();
+      const comecou = !estavaSalvando && salvando;
       const terminou = estavaSalvando && !salvando;
       estavaSalvando = salvando;
+      if (comecou && this.focoEstaNosCampos()) {
+        afterNextRender(() => this.focarBotaoDeSalvar(), { injector: this.injector });
+      }
       if (terminou) {
         afterNextRender(() => this.focarPrimeiroInvalido(), { injector: this.injector });
       }
     });
+  }
+
+  private focoEstaNosCampos(): boolean {
+    const campos = this.raiz.nativeElement.querySelector('fieldset');
+    return campos?.contains(document.activeElement) ?? false;
+  }
+
+  private focarBotaoDeSalvar(): void {
+    this.raiz.nativeElement.querySelector<HTMLElement>('button[type="submit"]')?.focus();
   }
 
   private focarPrimeiroInvalido(): void {

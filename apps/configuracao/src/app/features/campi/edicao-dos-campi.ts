@@ -8,13 +8,18 @@ import {
   ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampiApi, CampusDto } from '@uniplus/shared-data/configuracao';
 import { ehErroDeEndereco } from '../../shared/endereco';
 import { CampiStore } from './campi.store';
 import {
   CAMPUS_EM_BRANCO,
+  CAMPUS_SIGLA_JA_EXISTE_CODE,
   comandoDeAtualizacao,
   comandoDeCriacao,
   controleDoCampoDoServidor,
@@ -47,14 +52,20 @@ export class EdicaoDosCampi {
   readonly salvando = computed(() => this.escrita() === 'salvando');
   /** Uma remoção está em curso; o formulário não foi enviado. */
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  /** Texto da região de status: anuncia o início e o fim da remoção. */
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const campus = this.campusParaRemover();
-    if (this.removendo() && campus !== null) {
+    if (campus === null) {
+      return '';
+    }
+    if (this.removendo()) {
       return `Removendo o campus ${campus.sigla}.`;
     }
-    return this.resultadoDaRemocao();
+    const motivo = this.erroDaRemocao();
+    return motivo ? `Não foi possível remover o campus ${campus.sigla}. ${motivo}` : '';
   });
+  /** Na página: a remoção concluída, anunciada quando o diálogo já não está aberto para dizê-lo. */
+  readonly anuncioDaPagina = computed(() => (this.confirmando() ? '' : this.resultadoDaRemocao()));
   readonly aberto = signal(false);
   readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
@@ -63,6 +74,7 @@ export class EdicaoDosCampi {
 
   private readonly resultadoDaRemocao = signal('');
   readonly confirmando = signal(false);
+  readonly erroDaRemocao = signal<string | null>(null);
   readonly campusParaRemover = signal<CampusDto | null>(null);
   readonly mensagemDaConfirmacao = computed(() => {
     const campus = this.campusParaRemover();
@@ -110,6 +122,8 @@ export class EdicaoDosCampi {
   }
 
   pedirRemocao(campus: CampusDto): void {
+    this.resultadoDaRemocao.set('');
+    this.erroDaRemocao.set(null);
     this.campusParaRemover.set(campus);
     this.confirmando.set(true);
   }
@@ -119,20 +133,24 @@ export class EdicaoDosCampi {
     if (campus === null) {
       return;
     }
-    this.gravar('removendo', this.api.remover(campus.id), (result) => {
-      if (result.ok) {
-        this.resultadoDaRemocao.set(`Campus ${campus.sigla} removido.`);
-        this.notifications.success('Campus removido', campus.sigla);
-        this.confirmando.set(false);
-        this.campusParaRemover.set(null);
-        this.store.recarregar();
-        return;
-      }
-      this.resultadoDaRemocao.set(`Não foi possível remover o campus ${campus.sigla}.`);
-      this.notifications.errorFromProblem(result.problem, {
-        title: this.problemI18n.resolve(result.problem).title,
-      });
-    });
+    this.erroDaRemocao.set(null);
+    this.gravar('removendo', this.api.remover(campus.id), (result) =>
+      this.concluirRemocao(campus, result),
+    );
+  }
+
+  private concluirRemocao(campus: CampusDto, result: ApiResult<void>): void {
+    if (!result.ok) {
+      const titulo = this.problemI18n.resolve(result.problem).title;
+      this.erroDaRemocao.set(titulo);
+      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      return;
+    }
+    this.resultadoDaRemocao.set(`Campus ${campus.sigla} removido.`);
+    this.notifications.success('Campus removido', campus.sigla);
+    this.confirmando.set(false);
+    this.campusParaRemover.set(null);
+    this.store.recarregar();
   }
 
   private gravar<T>(
@@ -177,28 +195,36 @@ export class EdicaoDosCampi {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
+    if (deveRotacionarIdempotencyKey(problem)) {
+      this.renovarChaveDeIdempotencia();
+    }
     const errosDeCampo = problem.errors ?? [];
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
-      this.renovarChaveDeIdempotencia();
       this.aplicarErrosDeValidacao(errosDeCampo);
       return;
     }
     if (ehErroDeEndereco(problem.code)) {
-      this.renovarChaveDeIdempotencia();
       this.erroDoEndereco.set(this.problemI18n.resolve(problem).title);
       this.erro.set(null);
       return;
     }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    ) {
-      this.renovarChaveDeIdempotencia();
+    if (problem.code === CAMPUS_SIGLA_JA_EXISTE_CODE) {
+      this.marcarSiglaJaExistente(problem);
+      return;
     }
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
     }
+  }
+
+  /** A duplicidade vem como um erro de domínio único (409, sem `errors[]`): vai ao campo da sigla. */
+  private marcarSiglaJaExistente(problem: ProblemDetails): void {
+    const sigla = this.form.controls.sigla;
+    sigla.setErrors({
+      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
+    });
+    sigla.markAsTouched();
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {

@@ -1,7 +1,7 @@
 <section class="panel" aria-labelledby="cfg-campi-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-campi-list-title">Campi</h2>
+      <h2 id="cfg-campi-list-title" tabindex="-1">Campi</h2>
       @if (carregando()) {
         <span class="cfg-campi__loading"><ui-spinner size="sm" /> Carregando</span>
       }
@@ -10,13 +10,13 @@
           ><ui-spinner size="sm" /> Removendo</span
         >
       }
-      <span class="sr-only" role="status">{{ anuncioDaRemocao() }}</span>
+      <span class="sr-only" role="status">{{ anuncioDoResultado() }}</span>
     </div>
     <button
       type="button"
       class="btn btn--primary"
       [disabled]="removendo()"
-      (click)="cadastrar.emit()"
+      (click)="pedirCadastro()"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo campus
@@ -40,7 +40,7 @@
         </thead>
         <tbody>
           @for (campus of campi(); track campus.id) {
-            <tr>
+            <tr [attr.data-campus-id]="campus.id">
               <td data-label="Sigla">
                 <code>{{ campus.sigla }}</code>
               </td>
@@ -50,17 +50,17 @@
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"
-                  [accessibleName]="'Editar campus ' + campus.sigla"
+                  [accessibleName]="nomeDaAcao('editar', campus.sigla)"
                   tooltip="Editar campus"
-                  [isDisabled]="carregando() || removendo()"
-                  (triggered)="editar.emit(campus)"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('editar', campus)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
-                  [accessibleName]="'Remover campus ' + campus.sigla"
+                  [accessibleName]="nomeDaAcao('remover', campus.sigla)"
                   tooltip="Remover campus"
-                  [isDisabled]="carregando() || removendo()"
-                  (triggered)="remover.emit(campus)"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('remover', campus)"
                 />
               </td>
             </tr>
@@ -77,7 +77,7 @@
         type="button"
         class="btn btn--primary"
         [disabled]="removendo()"
-        (click)="cadastrar.emit()"
+        (click)="pedirCadastro()"
       >
         Novo campus
       </button>
@@ -90,7 +90,7 @@
       navigationLabel="Paginação de campi"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando() || removendo()"
+      [isDisabled]="indisponivel()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />
