@@ -1,0 +1,28 @@
+<ui-dialog heading="Remover local de oferta" [(visible)]="aberto" [dismissible]="!removendo()">
+  <p>{{ mensagem() }}</p>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <p class="field__error">{{ erro() }}</p>
+  }
+  <ng-container uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary"
+      data-testid="confirm-dialog-cancel"
+      [disabled]="removendo()"
+      (click)="aberto.set(false)"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--danger"
+      data-testid="confirm-dialog-confirm"
+      [attr.aria-disabled]="removendo() ? 'true' : null"
+      [attr.aria-busy]="removendo() ? 'true' : null"
+      (click)="aoConfirmar($event)"
+    >
+      Remover
+    </button>
+  </ng-container>
+</ui-dialog>

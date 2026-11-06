@@ -1,4 +1,16 @@
-import { ChangeDetectionStrategy, Component, input, output, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  viewChild,
+} from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CampusDto, TIPOS_LOCAL_OFERTA } from '@uniplus/shared-data/configuracao';
 import {
@@ -8,7 +20,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
-import { LocalOfertaForm } from './edicao-dos-locais-oferta';
+import { LocalOfertaForm } from './local-oferta-form';
 
 @Component({
   selector: 'cfg-local-oferta-formulario',
@@ -25,6 +37,8 @@ import { LocalOfertaForm } from './edicao-dos-locais-oferta';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class LocalOfertaFormularioComponent {
+  private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
   readonly aberto = input.required<boolean>();
   readonly form = input.required<FormGroup<LocalOfertaForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
@@ -38,8 +52,16 @@ export class LocalOfertaFormularioComponent {
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
   readonly recarregarCampi = output<void>();
+  protected readonly rotuloDoBotao = computed(() => {
+    if (this.salvando()) return 'Salvando...';
+    return this.modo() === 'criar' ? 'Criar local' : 'Salvar local';
+  });
   protected readonly tipoOptions = TIPOS_LOCAL_OFERTA;
   private readonly endereco = viewChild(EnderecoGeoComponent);
+  constructor() {
+    this.acompanharFocoDoEnvio();
+  }
+
   focarEndereco(): void {
     this.endereco()?.focarErro();
   }
@@ -48,5 +70,30 @@ export class LocalOfertaFormularioComponent {
   }
   protected aoEnviar(): void {
     if (!this.salvando()) this.salvar.emit();
+  }
+
+  /**
+   * Ao começar o envio com o foco num campo (Enter, por exemplo), o fieldset desabilita o campo e
+   * o foco iria ao `body`: leva-o ao botão de salvar.
+   */
+  private acompanharFocoDoEnvio(): void {
+    let estavaSalvando = false;
+    effect(() => {
+      const salvando = this.salvando();
+      const comecou = !estavaSalvando && salvando;
+      estavaSalvando = salvando;
+      if (comecou && this.focoEstaNosCampos()) {
+        afterNextRender(() => this.focarBotaoDeSalvar(), { injector: this.injector });
+      }
+    });
+  }
+
+  private focoEstaNosCampos(): boolean {
+    const campos = this.raiz.nativeElement.querySelector('fieldset');
+    return campos?.contains(document.activeElement) ?? false;
+  }
+
+  private focarBotaoDeSalvar(): void {
+    this.raiz.nativeElement.querySelector<HTMLElement>('button[type="submit"]')?.focus();
   }
 }

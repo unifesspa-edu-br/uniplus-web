@@ -119,14 +119,7 @@
       @if (salvando()) {
         <ui-spinner size="sm" />
       }
-      {{
-        salvando()
-          ? 'Salvando...'
-          : modo() === 'criar'
-            ? 'Criar local'
-            : 'Salvar
-      local'
-      }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>

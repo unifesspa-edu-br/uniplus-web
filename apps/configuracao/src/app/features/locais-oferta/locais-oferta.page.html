@@ -15,8 +15,9 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="leitura.carregando() || edicao.gravando() ? 'true' : null"
-      (click)="!edicao.gravando() && leitura.tentarNovamente()"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      [attr.aria-busy]="indisponivel() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -24,11 +25,11 @@
 </ui-alert>
 }
 
-<p class="sr-only" role="status">{{ edicao.anuncio() }}</p>
+<p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
 <cfg-locais-oferta-lista
   [locais]="leitura.locais()"
   [carregando]="leitura.carregando()"
-  [indisponivel]="edicao.gravando()"
+  [gravando]="edicao.gravando()"
   [mensagemDeErro]="leitura.mensagemDeErro()"
   [temAnterior]="leitura.anterior() !== null"
   [temProximo]="leitura.proximo() !== null"
@@ -57,11 +58,11 @@
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />
-<ui-confirm-dialog
-  [(visible)]="edicao.confirmOpen"
-  heading="Remover local de oferta"
-  [message]="edicao.confirmMessage()"
-  confirmLabel="Remover"
-  confirmVariant="danger"
-  (confirmed)="edicao.removerConfirmado()"
+<cfg-local-oferta-remocao
+  [(aberto)]="edicao.confirmOpen"
+  [mensagem]="edicao.confirmMessage()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
 />

@@ -4,10 +4,11 @@ import {
   TestRequest,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, Type } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   LocalOfertaDto,
@@ -15,6 +16,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
 import { LocaisOfertaPage } from './locais-oferta.page';
 import { LocaisOfertaStore } from './locais-oferta.store';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
@@ -51,7 +53,6 @@ const enderecoResolvido: EnderecoEstruturado = {
 
 describe('LocaisOfertaPage', () => {
   let fixture: ComponentFixture<LocaisOfertaPage>;
-  let component: LocaisOfertaPage;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -67,13 +68,28 @@ describe('LocaisOfertaPage', () => {
       ],
     });
     fixture = TestBed.createComponent(LocaisOfertaPage);
-    component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
   });
 
   afterEach(() => controller.verify());
+
+  const injetar = <T>(token: Type<T>): T => fixture.debugElement.injector.get(token);
+  const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const elemento = <T extends HTMLElement>(seletor: string): T => {
+    const achado = raiz().querySelector<T>(seletor);
+    expect(achado, seletor).not.toBeNull();
+    return achado as T;
+  };
+  const abrirCadastro = (): void =>
+    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+  const abrirEdicao = (): void =>
+    elemento<HTMLButtonElement>('button[aria-label^="Editar local de oferta"]').click();
+  const enviar = (): void =>
+    elemento<HTMLFormElement>('#cfg-local-form').dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
 
   const propagate = async (): Promise<void> => {
     await Promise.resolve();
@@ -105,7 +121,7 @@ describe('LocaisOfertaPage', () => {
 
   it('pede o máximo de uma página da API no lookup de campi responsáveis', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    abrirCadastro();
     await propagate();
     const campi = expectLookup(`${BASE}/api/configuracao/campi`);
     campi.flush([]);
@@ -117,12 +133,12 @@ describe('LocaisOfertaPage', () => {
 
   it('cancela o lookup de campi anterior ao clicar "Tentar novamente" antes da resposta chegar', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    abrirCadastro();
     await propagate();
 
     const primeira = expectLookup(`${BASE}/api/configuracao/campi`);
 
-    fixture.debugElement.injector.get(LocaisOfertaStore).campi.recarregar();
+    injetar(LocaisOfertaStore).campi.recarregar();
     await propagate();
 
     // A primeira travessia precisa ter sido cancelada de verdade (não só
@@ -144,7 +160,7 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(fixture.debugElement.injector.get(LocaisOfertaStore).campi.opcoes()).toHaveLength(1);
+    expect(injetar(LocaisOfertaStore).campi.opcoes()).toHaveLength(1);
 
     // Se a primeira ainda estivesse "viva", flush aqui explodiria (request já
     // consumido) ou reabriria uma disputa — confirma que não sobra nada pendente.
@@ -153,14 +169,14 @@ describe('LocaisOfertaPage', () => {
 
   it('renderiza a lista com tipo e cidade', async () => {
     await flushLista([localSeed]);
-    expect(fixture.debugElement.injector.get(LocaisOfertaStore).locais()).toHaveLength(1);
+    expect(injetar(LocaisOfertaStore).locais()).toHaveLength(1);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Polo EAD');
     expect(fixture.nativeElement.textContent).toContain('Marabá — PA');
   });
 
   it('navega pelo cursor e volta à primeira página ao recarregar', async () => {
-    const store = fixture.debugElement.injector.get(LocaisOfertaStore);
+    const store = injetar(LocaisOfertaStore);
     const primeira = controller.expectOne(
       (r) => r.url === `${BASE}/api/configuracao/locais-oferta`,
     );
@@ -189,16 +205,16 @@ describe('LocaisOfertaPage', () => {
   it('CA-04: cria local de oferta com tipo + endereço aninhado', async () => {
     await flushLista([]);
 
-    component['abrirCadastro']();
+    abrirCadastro();
     await flushCampiLookup();
-    component['edicao'].form.setValue({
+    injetar(EdicaoDosLocaisOferta).form.setValue({
       tipo: TipoLocalOferta.poloEad,
       codigoEmec: '999',
       campusResponsavelId: '',
       endereco: enderecoResolvido,
     });
 
-    component['edicao'].salvar();
+    enviar();
 
     const post = controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`);
     expect(post.request.method).toBe('POST');
@@ -211,16 +227,16 @@ describe('LocaisOfertaPage', () => {
     post.flush('new-id', { status: 201, statusText: 'Created' });
     await propagate();
     await flushLista([localSeed]);
-    expect(component['edicao'].formOpen()).toBe(false);
+    expect(injetar(EdicaoDosLocaisOferta).formOpen()).toBe(false);
   });
 
   it('bloqueia ações durante a gravação e a recarga, liberando após receber a lista', async () => {
     await flushLista([localSeed]);
-    component['abrirEdicao'](localSeed);
+    abrirEdicao();
     await flushCampiLookup();
-    const edicao = component['edicao'];
+    const edicao = injetar(EdicaoDosLocaisOferta);
     edicao.form.controls.endereco.setValue(enderecoResolvido);
-    edicao.salvar();
+    enviar();
     const escrita = controller.expectOne((r) => r.method === 'PUT');
     edicao.fechar();
     edicao.pedirRemocao(localSeed);
@@ -230,28 +246,28 @@ describe('LocaisOfertaPage', () => {
     escrita.flush(null);
     await propagate();
     expect(edicao.gravando()).toBe(true);
-    component['abrirCadastro']();
+    abrirCadastro();
     expect(edicao.formOpen()).toBe(false);
     await flushLista([localSeed]);
     expect(edicao.gravando()).toBe(false);
-    component['abrirCadastro']();
+    abrirCadastro();
     expect(edicao.formOpen()).toBe(true);
   });
 
   it('mantém ações indisponíveis e anuncia o salvamento dentro do drawer', async () => {
     await flushLista([localSeed]);
-    component['abrirEdicao'](localSeed);
+    abrirEdicao();
     await flushCampiLookup();
-    const edicao = component['edicao'];
+    const edicao = injetar(EdicaoDosLocaisOferta);
     edicao.form.controls.endereco.setValue(enderecoResolvido);
-    edicao.salvar();
+    enviar();
     const escrita = controller.expectOne((r) => r.method === 'PUT');
     await propagate();
     const host = fixture.nativeElement as HTMLElement;
     const acao = host.querySelector<HTMLButtonElement>(
       'cfg-locais-oferta-lista button[aria-label^="Remover"]',
     );
-    expect(acao?.getAttribute('aria-disabled')).toBe('true');
+    expect(acao?.disabled).toBe(true);
     expect(
       host.querySelector('cfg-local-oferta-formulario dialog p[role="status"]')?.textContent,
     ).toContain('Salvando');
@@ -267,9 +283,9 @@ describe('LocaisOfertaPage', () => {
 
   it('marca o campo recusado pelo servidor e leva o foco até ele', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    abrirCadastro();
     await flushCampiLookup();
-    const edicao = component['edicao'];
+    const edicao = injetar(EdicaoDosLocaisOferta);
     edicao.form.setValue({
       tipo: TipoLocalOferta.poloEad,
       codigoEmec: '999',
@@ -280,7 +296,7 @@ describe('LocaisOfertaPage', () => {
       'input[formcontrolname="codigoEmec"]',
     ) as HTMLInputElement;
     const foco = vi.spyOn(campo, 'focus');
-    edicao.salvar();
+    enviar();
     controller.expectOne(`${BASE}/api/configuracao/admin/locais-oferta`).flush(
       JSON.stringify({
         type: 'about:blank',
@@ -411,7 +427,7 @@ describe('LocaisOfertaPage', () => {
 
   it('percorre todas as páginas do lookup de campi sem truncar', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    abrirCadastro();
     await propagate();
 
     const pagina1 = expectLookup(`${BASE}/api/configuracao/campi`);
@@ -453,7 +469,7 @@ describe('LocaisOfertaPage', () => {
     ]);
     await propagate();
 
-    expect(fixture.debugElement.injector.get(LocaisOfertaStore).campi.opcoes()).toHaveLength(2);
+    expect(injetar(LocaisOfertaStore).campi.opcoes()).toHaveLength(2);
     expect(
       fixture.debugElement.injector
         .get(LocaisOfertaStore)
@@ -470,12 +486,12 @@ describe('LocaisOfertaPage', () => {
 
   it('exige tipo e cidade — bloqueia salvar inválido', async () => {
     await flushLista([]);
-    component['abrirCadastro']();
+    abrirCadastro();
     await flushCampiLookup();
     // sem tipo nem cidade
-    component['edicao'].salvar();
+    enviar();
     controller.expectNone(`${BASE}/api/configuracao/admin/locais-oferta`);
-    expect(component['edicao'].enderecoErro()).toContain('cidade');
+    expect(injetar(EdicaoDosLocaisOferta).enderecoErro()).toContain('cidade');
   });
 
   it('expõe legenda acessível descrevendo a tabela', async () => {
@@ -489,5 +505,95 @@ describe('LocaisOfertaPage', () => {
     expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Locais de oferta, com tipo, cidade, campus responsável e código e-MEC',
     );
+  });
+
+  it('volta à página anterior pelo cursor que a API devolveu', async () => {
+    const store = injetar(LocaisOfertaStore);
+    const url = `${BASE}/api/configuracao/locais-oferta`;
+    controller
+      .expectOne((r) => r.url === url)
+      .flush([localSeed], {
+        headers: new HttpHeaders({ Link: `<${url}?cursor=p2&direction=next>; rel="next"` }),
+      });
+    await propagate();
+    store.proximaPagina();
+    await propagate();
+    controller
+      .expectOne((r) => r.url === url)
+      .flush([localSeed], {
+        headers: new HttpHeaders({ Link: `<${url}?cursor=p1&direction=prev>; rel="prev"` }),
+      });
+    await propagate();
+    store.paginaAnterior();
+    await propagate();
+    const anterior = controller.expectOne((r) => r.url === url);
+    expect(anterior.request.params.get('cursor')).toBe('p1');
+    expect(anterior.request.params.get('direction')).toBe('prev');
+    anterior.flush([localSeed]);
+    await propagate();
+  });
+
+  it('notifica a falha do servidor na listagem e mostra o alerta com a mensagem', async () => {
+    const notificar = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`)
+      .flush(
+        JSON.stringify({ type: 'about:blank', title: 'Erro interno', status: 500, code: 'x' }),
+        {
+          status: 500,
+          statusText: 'Server Error',
+          headers: { 'content-type': 'application/problem+json' },
+        },
+      );
+    await propagate();
+    expect(notificar).toHaveBeenCalledTimes(1);
+    expect(fixture.nativeElement.querySelector('ui-alert')?.textContent).toContain(
+      injetar(LocaisOfertaStore).mensagemDeErro(),
+    );
+  });
+
+  it('"Tentar novamente" que dá certo leva o foco, que estava no botão, ao título da lista', async () => {
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/locais-oferta`)
+      .flush(JSON.stringify({ type: 'about:blank', title: 'Falha', status: 400, code: 'x' }), {
+        status: 400,
+        statusText: 'Bad',
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    await propagate();
+    const tentar = elemento<HTMLButtonElement>('.cfg-locais__retry button');
+    tentar.focus();
+    tentar.click();
+    await propagate();
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    await flushLista([localSeed]);
+    await propagate();
+    expect(raiz().querySelector('.cfg-locais__retry')).toBeNull();
+    expect(document.activeElement).toBe(elemento('#cfg-locais-list-title'));
+  });
+
+  it('ignora "Tentar novamente" enquanto a listagem ainda carrega', () => {
+    const store = injetar(LocaisOfertaStore);
+    store.tentarNovamente();
+    const pendentes = controller.match((r) => r.url === `${BASE}/api/configuracao/locais-oferta`);
+    expect(pendentes).toHaveLength(1);
+  });
+
+  it('não abre a edição com uma gravação em curso', async () => {
+    await flushLista([localSeed]);
+    abrirEdicao();
+    await flushCampiLookup();
+    const edicao = injetar(EdicaoDosLocaisOferta);
+    edicao.form.controls.endereco.setValue(enderecoResolvido);
+    enviar();
+    const escrita = controller.expectOne((r) => r.method === 'PUT');
+    const iniciarCampi = vi.spyOn(injetar(LocaisOfertaStore), 'iniciarCampi');
+    edicao.fechar();
+    abrirEdicao();
+    expect(iniciarCampi).not.toHaveBeenCalled();
+    expect(edicao.localEmEdicaoId()).toBe(localSeed.id);
+    escrita.flush(null);
+    await propagate();
+    await flushLista([localSeed]);
   });
 });

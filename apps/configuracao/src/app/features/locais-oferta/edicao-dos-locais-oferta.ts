@@ -10,7 +10,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   ApiResult,
   ProblemDetails,
@@ -18,32 +17,29 @@ import {
   ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  AtualizarLocalOfertaCommand,
-  CriarLocalOfertaCommand,
   LocaisOfertaApi,
   LocalOfertaDto,
   TIPOS_LOCAL_OFERTA,
-  TipoLocalOferta,
 } from '@uniplus/shared-data/configuracao';
-import { EnderecoEstruturado } from '@uniplus/shared-ui/components';
+import { ehErroDeEndereco } from '../../shared/endereco';
 import {
-  cidadeObrigatoriaValidator,
-  ehErroDeEndereco,
-  enderecoEstruturadoDe,
-  enderecoParaCommand,
-} from '../../shared/endereco';
+  LOCAL_EM_BRANCO,
+  comandoDeAtualizacao,
+  comandoDeCriacao,
+  controleDoCampoDoServidor,
+  criarFormularioDeLocalOferta,
+  valoresDoLocal,
+} from './local-oferta-form';
 import { LocaisOfertaStore } from './locais-oferta.store';
 
 type ModoFormulario = 'criar' | 'editar';
-export interface LocalOfertaForm {
-  tipo: FormControl<string>;
-  codigoEmec: FormControl<string>;
-  campusResponsavelId: FormControl<string>;
-  endereco: FormControl<EnderecoEstruturado | null>;
-}
 
 @Injectable()
 export class EdicaoDosLocaisOferta {
@@ -62,7 +58,17 @@ export class EdicaoDosLocaisOferta {
   readonly removendo = computed(() => this.escrita() === 'removendo');
   focarEndereco: () => void = () => undefined;
   readonly localAfetadoId = signal<string | null>(null);
-  readonly anuncio = signal('');
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDaRemocao = computed(() => {
+    const local = this.localParaRemover();
+    if (local === null) return '';
+    if (this.removendo()) return 'Removendo o local de oferta.';
+    const motivo = this.erroDaRemocao();
+    return motivo ? `Não foi possível remover o local de oferta. ${motivo}` : '';
+  });
+  /** Na página: a remoção concluída, anunciada quando o diálogo já não está aberto para dizê-lo. */
+  readonly anuncioDaPagina = computed(() => (this.confirmOpen() ? '' : this.resultadoDaRemocao()));
+  private readonly resultadoDaRemocao = signal('');
   readonly andamento = computed(() =>
     this.removendo()
       ? 'Removendo…'
@@ -78,6 +84,7 @@ export class EdicaoDosLocaisOferta {
   readonly enderecoErro = signal<string | null>(null);
   readonly modo = signal<ModoFormulario>('criar');
   readonly localEmEdicaoId = signal<string | null>(null);
+  readonly erroDaRemocao = signal<string | null>(null);
   readonly localParaRemover = signal<LocalOfertaDto | null>(null);
   readonly idempotencyKeyAtual = signal(idempotencyKey.create());
 
@@ -92,14 +99,7 @@ export class EdicaoDosLocaisOferta {
       : 'Deseja remover este local de oferta?';
   });
 
-  readonly form: FormGroup<LocalOfertaForm> = new FormGroup<LocalOfertaForm>({
-    tipo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    codigoEmec: new FormControl('', { nonNullable: true }),
-    campusResponsavelId: new FormControl('', { nonNullable: true }),
-    endereco: new FormControl<EnderecoEstruturado | null>(null, {
-      validators: [cidadeObrigatoriaValidator],
-    }),
-  });
+  readonly form = criarFormularioDeLocalOferta();
 
   constructor() {
     effect(() => {
@@ -125,11 +125,13 @@ export class EdicaoDosLocaisOferta {
   private focarErro(): void {
     afterNextRender(
       () => {
-        const campo = this.host.nativeElement.querySelector<HTMLElement>(
+        const campos = this.host.nativeElement.querySelectorAll<HTMLElement>(
           '#cfg-local-form [aria-invalid="true"]',
         );
+        const campo = [...campos].find((c) => c.closest('ui-endereco-geo') === null);
         if (campo) campo.focus();
         else if (this.enderecoErro()) this.focarEndereco();
+        else campos[0]?.focus();
       },
       { injector: this.injector },
     );
@@ -138,7 +140,7 @@ export class EdicaoDosLocaisOferta {
     if (this.gravando()) return;
     this.modo.set('criar');
     this.localEmEdicaoId.set(null);
-    this.form.reset({ tipo: '', codigoEmec: '', campusResponsavelId: '', endereco: null });
+    this.form.reset(LOCAL_EM_BRANCO);
     this.formError.set(null);
     this.enderecoErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -149,12 +151,7 @@ export class EdicaoDosLocaisOferta {
     if (this.gravando()) return;
     this.modo.set('editar');
     this.localEmEdicaoId.set(local.id);
-    this.form.reset({
-      tipo: local.tipo,
-      codigoEmec: local.codigoEmec ?? '',
-      campusResponsavelId: local.campusResponsavelId ?? '',
-      endereco: enderecoEstruturadoDe(local.cidade, local.endereco),
-    });
+    this.form.reset(valoresDoLocal(local));
     this.formError.set(null);
     this.enderecoErro.set(null);
     this.idempotencyKeyAtual.set(idempotencyKey.create());
@@ -163,6 +160,8 @@ export class EdicaoDosLocaisOferta {
 
   pedirRemocao(local: LocalOfertaDto): void {
     if (this.gravando()) return;
+    this.resultadoDaRemocao.set('');
+    this.erroDaRemocao.set(null);
     this.localParaRemover.set(local);
     this.confirmOpen.set(true);
   }
@@ -172,28 +171,31 @@ export class EdicaoDosLocaisOferta {
     if (local === null || this.gravando()) {
       return;
     }
+    this.erroDaRemocao.set(null);
     this.localAfetadoId.set(local.id);
-    this.anuncio.set('Removendo local de oferta.');
     this.escrita.set('removendo');
     this.api
       .remover(local.id)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.escrita.set(null);
-        if (result.ok) {
-          this.anuncio.set('Local de oferta removido.');
-          this.notifications.success('Local de oferta removido');
-          this.confirmOpen.set(false);
-          this.localParaRemover.set(null);
-          this.recarregar();
-          return;
-        }
-        this.anuncio.set('Não foi possível remover o local de oferta.');
-        this.localAfetadoId.set(null);
-        this.notifications.errorFromProblem(result.problem, {
-          title: this.problemI18n.resolve(result.problem).title,
-        });
+        this.concluirRemocao(result);
       });
+  }
+
+  private concluirRemocao(result: ApiResult<void>): void {
+    if (!result.ok) {
+      const titulo = this.problemI18n.resolve(result.problem).title;
+      this.localAfetadoId.set(null);
+      this.erroDaRemocao.set(titulo);
+      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      return;
+    }
+    this.resultadoDaRemocao.set('Local de oferta removido.');
+    this.notifications.success('Local de oferta removido');
+    this.confirmOpen.set(false);
+    this.localParaRemover.set(null);
+    this.recarregar();
   }
 
   salvar(): void {
@@ -216,7 +218,10 @@ export class EdicaoDosLocaisOferta {
 
     if (this.modo() === 'criar') {
       this.api
-        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
+        .criar(
+          comandoDeCriacao(this.form.getRawValue()),
+          withIdempotencyKey(this.idempotencyKeyAtual()),
+        )
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe((result) => this.handleSalvarResult(result));
       return;
@@ -229,7 +234,7 @@ export class EdicaoDosLocaisOferta {
     this.api
       .atualizar(
         this.localEmEdicaoId() ?? '',
-        this.atualizarCommand(),
+        comandoDeAtualizacao(this.localEmEdicaoId() ?? '', this.form.getRawValue()),
         withIdempotencyKey(this.idempotencyKeyAtual()),
       )
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -269,12 +274,7 @@ export class EdicaoDosLocaisOferta {
       this.focarErro();
       return;
     }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    ) {
-      this.renovarIdempotencyKey();
-    }
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarIdempotencyKey();
     this.formError.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
@@ -294,7 +294,7 @@ export class EdicaoDosLocaisOferta {
         aplicouAlgum = true;
         continue;
       }
-      const controlName = controlNameFromBackendField(erro.field);
+      const controlName = controleDoCampoDoServidor(erro.field);
       if (controlName === null) continue;
       const control = this.form.controls[controlName];
       control.setErrors({ backend: { code: erro.code, message: erro.message } });
@@ -311,43 +311,4 @@ export class EdicaoDosLocaisOferta {
     }
     this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
   }
-
-  private criarCommand(): CriarLocalOfertaCommand {
-    const raw = this.form.getRawValue();
-    const { cidadeCodigoIbge, cidadeNome, cidadeUf, endereco } = enderecoParaCommand(raw.endereco);
-    return {
-      tipo: raw.tipo as TipoLocalOferta,
-      codigoEmec: nullIfBlank(raw.codigoEmec),
-      campusResponsavelId: nullIfBlank(raw.campusResponsavelId),
-      cidadeCodigoIbge,
-      cidadeNome,
-      cidadeUf,
-      endereco,
-    };
-  }
-
-  private atualizarCommand(): AtualizarLocalOfertaCommand {
-    return { id: this.localEmEdicaoId() ?? '', ...this.criarCommand() };
-  }
-}
-
-const LOCAL_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof LocalOfertaForm>([
-  'tipo',
-  'codigoEmec',
-  'campusResponsavelId',
-]);
-
-function controlNameFromBackendField(field: string): keyof LocalOfertaForm | null {
-  const normalized =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  const camelCase = normalized.charAt(0).toLocaleLowerCase('pt-BR') + normalized.slice(1);
-  return LOCAL_CONTROL_NAMES.has(camelCase) ? (camelCase as keyof LocalOfertaForm) : null;
-}
-
-function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
 }

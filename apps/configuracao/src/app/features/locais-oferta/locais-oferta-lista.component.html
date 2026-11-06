@@ -1,15 +1,16 @@
 <section class="panel" aria-labelledby="cfg-locais-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-locais-list-title">Locais de oferta</h2>
+      <h2 id="cfg-locais-list-title" tabindex="-1">Locais de oferta</h2>
       @if (carregando()) {
         <span class="cfg-locais__loading"><ui-spinner size="sm" /> Carregando</span>
       }
     </div>
     <button
+      id="cfg-locais-novo"
       type="button"
       class="btn btn--primary"
-      [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+      [disabled]="indisponivel()"
       (click)="acionarCadastro()"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
@@ -25,7 +26,7 @@
           <button
             type="button"
             class="lookup-alert__retry"
-            [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+            [disabled]="indisponivel()"
             (click)="recarregar(falha)"
           >
             Recarregar {{ falha.nome }}
@@ -52,7 +53,7 @@
         </thead>
         <tbody>
           @for (local of locais(); track local.id) {
-            <tr>
+            <tr [attr.data-local-id]="local.id">
               <td data-label="Tipo">
                 <span class="tag">{{ tipoLabel(local.tipo) }}</span>
               </td>
@@ -69,28 +70,20 @@
                 @if (localAfetadoId() === local.id && andamento()) {
                   <span aria-hidden="true">{{ andamento() }}</span>
                 }
-                <button
-                  type="button"
-                  class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
-                  [attr.aria-label]="
-                    'Editar local de oferta ' + tipoLabel(local.tipo) + ' — ' + cidadeLabel(local)
-                  "
-                  [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
-                  (click)="acionarEdicao(local)"
-                >
-                  <i class="pi pi-pencil" aria-hidden="true"></i>
-                </button>
-                <button
-                  type="button"
-                  class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
-                  [attr.aria-label]="
-                    'Remover local de oferta ' + tipoLabel(local.tipo) + ' — ' + cidadeLabel(local)
-                  "
-                  [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
-                  (click)="acionarRemocao(local)"
-                >
-                  <i class="pi pi-trash" aria-hidden="true"></i>
-                </button>
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="nomeDaAcao('editar', local)"
+                  tooltip="Editar local de oferta"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEdicao(local)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="nomeDaAcao('remover', local)"
+                  tooltip="Remover local de oferta"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemocao(local)"
+                />
               </td>
             </tr>
           }
@@ -105,7 +98,7 @@
       <button
         type="button"
         class="btn btn--primary"
-        [attr.aria-disabled]="indisponivel() || carregando() ? 'true' : null"
+        [disabled]="indisponivel()"
         (click)="acionarCadastro()"
       >
         Novo local de oferta
@@ -118,7 +111,7 @@
       navigationLabel="Paginação de locais de oferta"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando() || indisponivel()"
+      [isDisabled]="indisponivel()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />
