@@ -1,5 +1,6 @@
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
+import { blocoDaLeituraNosModelos } from '../../tools/eslint/leitura-acompanhada.mjs';
 import { SELETORES_DE_COMPONENTE } from '../../tools/eslint/seletor-de-componente.mjs';
 
 // Listas de valores de catálogo institucional não se declaram no wizard: vêm dos clientes da API.
@@ -112,9 +113,5 @@ export default [
       'no-restricted-syntax': ['error', ...DO_WIZARD, ...NAO_INJETA_HTTP_CLIENT],
     },
   },
-  {
-    files: ['**/*.html'],
-    // Override or add rules here
-    rules: {},
-  },
+  blocoDaLeituraNosModelos('warn'),
 ];
