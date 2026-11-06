@@ -26,7 +26,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
   const submeter = (): void => {
     p.formulario().dispatchEvent(new Event('submit', { cancelable: true }));
   };
-  const dialogoDe = (qual: 'desativar' | 'ativar'): HTMLDialogElement =>
+  const dialogoDe = (qual: 'desativar' | 'reativar'): HTMLDialogElement =>
     p.confirmacao(qual).querySelector('dialog') as HTMLDialogElement;
   const marcado = (seletor: string): string | null =>
     p.elemento(seletor).getAttribute('aria-required');
@@ -196,7 +196,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
       expect(p.confirmacao('desativar').querySelector('[role="status"]')?.textContent).toContain(
         'Desativando o tipo de processo SISU.',
       );
-      for (const botao of [p.novo(), p.editar(sisu), p.desativar(sisu), p.ativar(vestibular)]) {
+      for (const botao of [p.novo(), p.editar(sisu), p.desativar(sisu), p.reativar(vestibular)]) {
         expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(
           true,
         );
@@ -255,31 +255,31 @@ describe('TiposProcessoPage — escritas pela interface', () => {
   });
 
   describe('cor dos botões de confirmação', () => {
-    it('desativar confirma em perigo e ativar confirma em primário', async () => {
+    it('desativar confirma em perigo e reativar confirma em primário', async () => {
       await p.confirmarDesativacao(sisu);
       expect(p.confirmar('desativar').classList.contains('btn--danger')).toBe(true);
       expect(p.confirmar('desativar').classList.contains('btn--primary')).toBe(false);
     });
 
-    it('ativar confirma em primário, não em perigo', async () => {
-      await p.confirmarAtivacao(vestibular);
-      expect(p.confirmar('ativar').classList.contains('btn--primary')).toBe(true);
-      expect(p.confirmar('ativar').classList.contains('btn--danger')).toBe(false);
+    it('reativar confirma em primário, não em perigo', async () => {
+      await p.confirmarReativacao(vestibular);
+      expect(p.confirmar('reativar').classList.contains('btn--primary')).toBe(true);
+      expect(p.confirmar('reativar').classList.contains('btn--danger')).toBe(false);
     });
   });
 
-  describe('ativação pendente', () => {
+  describe('reativação pendente', () => {
     it('anuncia o andamento, rotula a linha e mantém o foco no botão do diálogo', async () => {
-      const post = await p.confirmarAtivacao(vestibular);
+      const post = await p.confirmarReativacao(vestibular);
 
       expect(p.edicao.reativando()).toBe(true);
       expect(p.edicao.removendo()).toBe(false);
-      expect(p.fixture.nativeElement.textContent).toContain('Ativando...');
-      expect(p.confirmacao('ativar').querySelector('[role="status"]')?.textContent).toContain(
-        'Ativando o tipo de processo VESTIBULAR_TRAD.',
+      expect(p.fixture.nativeElement.textContent).toContain('Reativando...');
+      expect(p.confirmacao('reativar').querySelector('[role="status"]')?.textContent).toContain(
+        'Reativando o tipo de processo VESTIBULAR_TRAD.',
       );
-      expect(p.confirmar('ativar').getAttribute('aria-busy')).toBe('true');
-      expect(document.activeElement).toBe(p.confirmar('ativar'));
+      expect(p.confirmar('reativar').getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(p.confirmar('reativar'));
       expect(p.editar(sisu).matches(':disabled')).toBe(true);
 
       post.flush(...sucesso());
@@ -288,11 +288,11 @@ describe('TiposProcessoPage — escritas pela interface', () => {
     });
 
     it('não fecha por Cancelar nem Esc e o segundo clique não envia', async () => {
-      const post = await p.confirmarAtivacao(vestibular);
+      const post = await p.confirmarReativacao(vestibular);
 
-      expect(p.cancelarDaConfirmacao('ativar').matches(':disabled')).toBe(true);
-      dialogoDe('ativar').dispatchEvent(new Event('cancel', { cancelable: true }));
-      p.confirmar('ativar').click();
+      expect(p.cancelarDaConfirmacao('reativar').matches(':disabled')).toBe(true);
+      dialogoDe('reativar').dispatchEvent(new Event('cancel', { cancelable: true }));
+      p.confirmar('reativar').click();
       await p.propagar();
       expect(p.edicao.confirmandoReativacao()).toBe(true);
       p.http.expectNone((r) => r.url.endsWith('/ativacao'));
@@ -329,7 +329,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
       await p.recarregarCom([vestibular]);
     });
 
-    it('confirmar sem ter pedido a desativação ou a ativação não envia nada', () => {
+    it('confirmar sem ter pedido a desativação ou a reativação não envia nada', () => {
       p.edicao.removerConfirmado();
       p.edicao.reativarConfirmado();
       p.http.expectNone((r) => r.method === 'DELETE' || r.method === 'POST');
@@ -350,7 +350,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
       expect(p.editar(sisu).matches(':disabled')).toBe(false);
     });
 
-    it.each(['salvar', 'desativar', 'ativar'] as const)(
+    it.each(['salvar', 'desativar', 'reativar'] as const)(
       'libera as ações e permite nova leitura se a recarga após %s falhar',
       async (operacao) => {
         if (operacao === 'salvar') {
@@ -359,7 +359,7 @@ describe('TiposProcessoPage — escritas pela interface', () => {
         } else if (operacao === 'desativar') {
           (await p.confirmarDesativacao(sisu)).flush(...sucesso());
         } else {
-          (await p.confirmarAtivacao(vestibular)).flush(...sucesso());
+          (await p.confirmarReativacao(vestibular)).flush(...sucesso());
         }
         await p.propagar();
         p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush(...problema(503));

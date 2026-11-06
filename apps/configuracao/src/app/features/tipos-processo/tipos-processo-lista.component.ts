@@ -68,13 +68,13 @@ export class TiposProcessoListaComponent {
     this.editar.emit(tipo);
   }
 
-  /** Os nomes de desativar e de ativar começam por "Desativar " e "Ativar ": é o que a devolução de foco procura na linha. */
+  /** Os nomes de desativar e de reativar começam por "Desativar " e "Reativar ": é o que a devolução de foco procura na linha. */
   protected acionarDesativar(tipo: TipoProcessoDto): void {
     this.foco.registrar({ acao: 'situacao', id: tipo.id });
     this.remover.emit(tipo);
   }
 
-  protected acionarAtivar(tipo: TipoProcessoDto): void {
+  protected acionarReativar(tipo: TipoProcessoDto): void {
     this.foco.registrar({ acao: 'situacao', id: tipo.id });
     this.reativar.emit(tipo);
   }

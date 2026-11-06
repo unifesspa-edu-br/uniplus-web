@@ -175,14 +175,14 @@ const editar = (page: Page): Locator =>
   page.getByRole('button', { name: `Editar tipo de processo ${ATIVO.codigo}` });
 const lixeira = (page: Page): Locator =>
   page.getByRole('button', { name: `Desativar tipo de processo ${ATIVO.codigo}` });
-const ativar = (page: Page): Locator =>
-  page.getByRole('button', { name: `Ativar tipo de processo ${DESATIVADO.codigo}` });
+const reativar = (page: Page): Locator =>
+  page.getByRole('button', { name: `Reativar tipo de processo ${DESATIVADO.codigo}` });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de tipo de processo' });
 const confirmacaoDeDesativar = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Desativar tipo de processo', exact: true });
-const confirmacaoDeAtivar = (page: Page): Locator =>
-  page.getByRole('dialog', { name: 'Ativar tipo de processo', exact: true });
+const confirmacaoDeReativar = (page: Page): Locator =>
+  page.getByRole('dialog', { name: 'Reativar tipo de processo', exact: true });
 
 async function abrirCadastro(page: Page): Promise<Locator> {
   await page.goto('/tipos-processo');
@@ -201,11 +201,11 @@ async function abrirEdicao(page: Page): Promise<Locator> {
   return formulario;
 }
 
-async function abrirConfirmacao(page: Page, qual: 'desativar' | 'ativar') {
+async function abrirConfirmacao(page: Page, qual: 'desativar' | 'reativar') {
   await page.goto('/tipos-processo');
-  await (qual === 'desativar' ? lixeira(page) : ativar(page)).click();
-  const dialogo = qual === 'desativar' ? confirmacaoDeDesativar(page) : confirmacaoDeAtivar(page);
-  const nome = qual === 'desativar' ? 'Desativar' : 'Ativar';
+  await (qual === 'desativar' ? lixeira(page) : reativar(page)).click();
+  const dialogo = qual === 'desativar' ? confirmacaoDeDesativar(page) : confirmacaoDeReativar(page);
+  const nome = qual === 'desativar' ? 'Desativar' : 'Reativar';
   return { dialogo, confirmar: dialogo.getByRole('button', { name: nome, exact: true }) };
 }
 
@@ -412,7 +412,7 @@ test.describe('Tipo de processo — escritas', () => {
     await expect(dialogo).toBeHidden();
   });
 
-  test('desativação concluída, com o tipo ainda na lista, leva o foco ao botão de ativar da linha', async ({
+  test('desativação concluída, com o tipo ainda na lista, leva o foco ao botão de reativar da linha', async ({
     page,
   }) => {
     const { liberar } = await mockApi(page, [SALVO], ATIVO_DESATIVADO);
@@ -421,7 +421,7 @@ test.describe('Tipo de processo — escritas', () => {
     liberar();
     await expect(dialogo).toBeHidden();
     await expect(
-      page.getByRole('button', { name: `Ativar tipo de processo ${ATIVO.codigo}` }),
+      page.getByRole('button', { name: `Reativar tipo de processo ${ATIVO.codigo}` }),
     ).toBeFocused();
   });
 
@@ -462,16 +462,16 @@ test.describe('Tipo de processo — escritas', () => {
     });
   }
 
-  test('ativação pendente mantém o foco no botão, recusa reenvio, Esc e Cancelar e anuncia o andamento', async ({
+  test('reativação pendente mantém o foco no botão, recusa reenvio, Esc e Cancelar e anuncia o andamento', async ({
     page,
   }) => {
     const { liberar, envios } = await mockApi(page, [SALVO], DESATIVADO_ATIVADO);
-    const { dialogo, confirmar } = await abrirConfirmacao(page, 'ativar');
+    const { dialogo, confirmar } = await abrirConfirmacao(page, 'reativar');
     await confirmar.click();
     await expect(confirmar).toBeFocused();
     await expect(confirmar).toHaveAttribute('aria-disabled', 'true');
     await expect(confirmar).toHaveCSS('cursor', 'not-allowed');
-    await expect(dialogo.getByRole('status')).toContainText('Ativando');
+    await expect(dialogo.getByRole('status')).toContainText('Reativando');
     await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(dialogo).toBeVisible();
@@ -482,9 +482,9 @@ test.describe('Tipo de processo — escritas', () => {
     await expect(dialogo).toBeHidden();
   });
 
-  test('ativação concluída leva o foco ao botão de desativar da linha', async ({ page }) => {
+  test('reativação concluída leva o foco ao botão de desativar da linha', async ({ page }) => {
     const { liberar } = await mockApi(page, [SALVO], DESATIVADO_ATIVADO);
-    const { dialogo, confirmar } = await abrirConfirmacao(page, 'ativar');
+    const { dialogo, confirmar } = await abrirConfirmacao(page, 'reativar');
     await confirmar.click();
     liberar();
     await expect(dialogo).toBeHidden();
@@ -497,17 +497,17 @@ test.describe('Tipo de processo — escritas', () => {
     { status: 422, corpo: PROBLEMA_422_JA_ATIVO },
     { status: 409, corpo: PROBLEMA_409_PROCESSANDO },
   ]) {
-    test(`ativação recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão`, async ({
+    test(`reativação recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão`, async ({
       page,
     }) => {
       const { liberar, envios } = await mockApi(page, [recusa, SALVO], DESATIVADO_ATIVADO);
-      const { dialogo, confirmar } = await abrirConfirmacao(page, 'ativar');
+      const { dialogo, confirmar } = await abrirConfirmacao(page, 'reativar');
       await confirmar.click();
       liberar();
       await expect(dialogo.locator('.field__error')).toContainText(recusa.corpo.title);
       await expect(confirmar).not.toHaveAttribute('aria-disabled', 'true');
       await expect(confirmar).toBeFocused();
-      await expect(dialogo.getByRole('status')).toContainText('Não foi possível ativar');
+      await expect(dialogo.getByRole('status')).toContainText('Não foi possível reativar');
       await confirmar.click();
       await expect(dialogo).toBeHidden();
       expect(envios).toEqual(['POST', 'POST']);
@@ -522,13 +522,13 @@ test.describe('Tipo de processo — escritas', () => {
     await expect(lixeira(page)).toBeFocused();
   });
 
-  test('cancelar a confirmação de ativação devolve o foco ao botão de ativar da linha', async ({
+  test('cancelar a confirmação de reativação devolve o foco ao botão de reativar da linha', async ({
     page,
   }) => {
     await mockApi(page, [], DESATIVADO_ATIVADO);
-    const { dialogo } = await abrirConfirmacao(page, 'ativar');
+    const { dialogo } = await abrirConfirmacao(page, 'reativar');
     await dialogo.getByRole('button', { name: 'Cancelar' }).click();
     await expect(dialogo).toBeHidden();
-    await expect(ativar(page)).toBeFocused();
+    await expect(reativar(page)).toBeFocused();
   });
 });

@@ -119,11 +119,11 @@ describe('TiposProcessoPage', () => {
       expect(raiz.querySelectorAll('td.table-responsive__actions ui-icon-button')).toHaveLength(0);
     });
 
-    it('com a permissão de manter, oferece editar e desativar ao ativo, e ativar ao desativado', async () => {
+    it('com a permissão de manter, oferece editar e desativar ao ativo, e reativar ao desativado', async () => {
       p = await montarPagina();
       expect(p.editar(sisu)).toBeTruthy();
       expect(p.desativar(sisu)).toBeTruthy();
-      expect(p.ativar(vestibular)).toBeTruthy();
+      expect(p.reativar(vestibular)).toBeTruthy();
       expect(
         p.fixture.nativeElement.querySelector(
           '[aria-label="Editar tipo de processo VESTIBULAR_TRAD"]',
@@ -179,15 +179,15 @@ describe('TiposProcessoPage', () => {
       expect(p.statusDaPagina()).toContain('Tipo de processo SISU desativado.');
     });
 
-    it('ativa após a confirmação, com Idempotency-Key, e recarrega a lista', async () => {
+    it('reativa após a confirmação, com Idempotency-Key, e recarrega a lista', async () => {
       p = await montarPagina();
-      const req = await p.confirmarAtivacao(vestibular);
+      const req = await p.confirmarReativacao(vestibular);
       expect(req.request.method).toBe('POST');
       expect(req.request.headers.get('Idempotency-Key')).toBeTruthy();
       req.flush(...sucesso());
       await p.recarregarCom([sisu, { ...vestibular, ativo: true }]);
       expect(p.edicao.confirmandoReativacao()).toBe(false);
-      expect(p.statusDaPagina()).toContain('Tipo de processo VESTIBULAR_TRAD ativado.');
+      expect(p.statusDaPagina()).toContain('Tipo de processo VESTIBULAR_TRAD reativado.');
     });
 
     it('não anuncia o desfecho na página enquanto o diálogo está aberto', async () => {

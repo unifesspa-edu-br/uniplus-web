@@ -12,7 +12,7 @@
 <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
   O código é a chave natural do tipo de processo — definido só na criação e exibido como somente
   leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o mesmo código
-  continua sendo recusado. Um tipo desativado pode ser ativado de novo a qualquer momento.
+  continua sendo recusado. Um tipo desativado pode ser reativado a qualquer momento.
 </ui-alert>
 
 @if (store.mensagemDeErro()) {
@@ -74,8 +74,8 @@
   (confirmar)="edicao.removerConfirmado()"
 />
 <cfg-confirmacao-de-remocao
-  titulo="Ativar tipo de processo"
-  rotulo="Ativar"
+  titulo="Reativar tipo de processo"
+  rotulo="Reativar"
   variante="primary"
   [(aberto)]="edicao.confirmandoReativacao"
   [mensagem]="edicao.mensagemDaReativacao()"

@@ -62,9 +62,9 @@
                     [isDisabled]="indisponivel()"
                     icon="pi-power-off"
                     [accessibleName]="
-                      (perfil.ativo ? 'Desativar' : 'Ativar') + ' o perfil ' + perfil.nome
+                      (perfil.ativo ? 'Desativar' : 'Reativar') + ' o perfil ' + perfil.nome
                     "
-                    [tooltip]="perfil.ativo ? 'Desativar perfil' : 'Ativar perfil'"
+                    [tooltip]="perfil.ativo ? 'Desativar perfil' : 'Reativar perfil'"
                     (triggered)="alternarAtivacao.emit(perfil)"
                   />
                 }

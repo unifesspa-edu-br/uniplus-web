@@ -218,7 +218,7 @@ const tituloDePerfis = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Perfis', level: 2, exact: true });
 const editar = (page: Page): Locator =>
   page.getByRole('button', { name: `Editar o perfil ${PERFIL.nome}` });
-const alternar = (page: Page, verbo: 'Ativar' | 'Desativar'): Locator =>
+const alternar = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
   page.getByRole('button', { name: `${verbo} o perfil ${PERFIL.nome}`, exact: true });
 const novo = (page: Page): Locator => page.getByRole('button', { name: 'Novo perfil' });
 const drawer = (page: Page): Locator =>
@@ -413,7 +413,7 @@ test.describe('Acessos — escritas', () => {
       await expect(
         page.getByRole('status').filter({ hasText: 'Perfil Operador de inscrições desativado.' }),
       ).toBeAttached();
-      await expect(alternar(page, 'Ativar')).toBeFocused();
+      await expect(alternar(page, 'Reativar')).toBeFocused();
     });
 
     test('mudança de situação concluída, com a linha ausente da recarga, leva o foco ao título', async ({

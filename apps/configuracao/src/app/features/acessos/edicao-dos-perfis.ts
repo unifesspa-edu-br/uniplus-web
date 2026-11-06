@@ -122,7 +122,7 @@ export class EdicaoDosPerfis {
     this.erroDaAcao.set(null);
     this.resultadoDaAtivacao.set('');
     this.andamentoDaAtivacao.set(
-      `${perfil.ativo ? 'Desativando' : 'Ativando'} o perfil ${perfil.nome}.`,
+      `${perfil.ativo ? 'Desativando' : 'Reativando'} o perfil ${perfil.nome}.`,
     );
     try {
       const { resultado } = await comChave(
@@ -144,9 +144,9 @@ export class EdicaoDosPerfis {
   }
 
   private concluirAtivacao(perfil: PerfilDto): void {
-    this.notificacoes.success(perfil.ativo ? 'Perfil desativado' : 'Perfil ativado');
+    this.notificacoes.success(perfil.ativo ? 'Perfil desativado' : 'Perfil reativado');
     this.resultadoDaAtivacao.set(
-      `Perfil ${perfil.nome} ${perfil.ativo ? 'desativado' : 'ativado'}.`,
+      `Perfil ${perfil.nome} ${perfil.ativo ? 'desativado' : 'reativado'}.`,
     );
     this.recarregar();
   }

@@ -81,10 +81,10 @@
                   } @else {
                     <ui-icon-button
                       icon="pi-replay"
-                      [accessibleName]="'Ativar tipo de processo ' + tipo.codigo"
-                      tooltip="Ativar tipo de processo"
+                      [accessibleName]="'Reativar tipo de processo ' + tipo.codigo"
+                      tooltip="Reativar tipo de processo"
                       [isDisabled]="indisponivel()"
-                      (triggered)="acionarAtivar(tipo)"
+                      (triggered)="acionarReativar(tipo)"
                     />
                   }
                 </ng-container>

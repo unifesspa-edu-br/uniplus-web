@@ -99,7 +99,7 @@ export async function montarPagina(
     campo.value = valor;
     campo.dispatchEvent(new Event('input'));
   };
-  const confirmacao = (qual: 'desativar' | 'ativar'): HTMLElement =>
+  const confirmacao = (qual: 'desativar' | 'reativar'): HTMLElement =>
     elemento(`cfg-confirmacao-de-remocao:nth-of-type(${qual === 'desativar' ? 1 : 2})`);
   const acionar = async (botao: HTMLButtonElement): Promise<void> => {
     botao.focus();
@@ -129,14 +129,14 @@ export async function montarPagina(
     editar: (t: TipoProcessoDto = sisu) => pelaEtiqueta(`Editar tipo de processo ${t.codigo}`),
     desativar: (t: TipoProcessoDto = sisu) =>
       pelaEtiqueta(`Desativar tipo de processo ${t.codigo}`),
-    ativar: (t: TipoProcessoDto = vestibular) =>
-      pelaEtiqueta(`Ativar tipo de processo ${t.codigo}`),
+    reativar: (t: TipoProcessoDto = vestibular) =>
+      pelaEtiqueta(`Reativar tipo de processo ${t.codigo}`),
     salvar: (): HTMLButtonElement => elemento('button[form="cfg-tipo-processo-form"]'),
-    confirmar: (qual: 'desativar' | 'ativar' = 'desativar'): HTMLButtonElement =>
+    confirmar: (qual: 'desativar' | 'reativar' = 'desativar'): HTMLButtonElement =>
       confirmacao(qual).querySelector(
         '[data-testid="confirm-dialog-confirm"]',
       ) as HTMLButtonElement,
-    cancelarDaConfirmacao: (qual: 'desativar' | 'ativar' = 'desativar'): HTMLButtonElement =>
+    cancelarDaConfirmacao: (qual: 'desativar' | 'reativar' = 'desativar'): HTMLButtonElement =>
       confirmacao(qual).querySelector('[data-testid="confirm-dialog-cancel"]') as HTMLButtonElement,
     campo: (nome: string): HTMLInputElement => elemento(`[formcontrolname="${nome}"]`),
     statusDaPagina: (): string =>
@@ -163,8 +163,8 @@ export async function montarPagina(
       await propagar();
       return http.expectOne(`${LISTA}/${tipo.id}`);
     },
-    async confirmarAtivacao(tipo: TipoProcessoDto = vestibular) {
-      await acionar(pelaEtiqueta(`Ativar tipo de processo ${tipo.codigo}`));
+    async confirmarReativacao(tipo: TipoProcessoDto = vestibular) {
+      await acionar(pelaEtiqueta(`Reativar tipo de processo ${tipo.codigo}`));
       elemento<HTMLButtonElement>(
         'cfg-confirmacao-de-remocao:nth-of-type(2) [data-testid="confirm-dialog-confirm"]',
       ).click();

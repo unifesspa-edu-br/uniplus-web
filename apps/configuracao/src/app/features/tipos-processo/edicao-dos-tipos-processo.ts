@@ -34,7 +34,7 @@ const CODIGO_JA_EXISTE = 'uniplus.configuracao.tipo_processo.codigo_ja_existe';
 
 type Escrita = 'salvando' | 'removendo' | 'reativando';
 type ModoFormulario = 'criar' | 'editar';
-type Verbo = 'desativar' | 'ativar';
+type Verbo = 'desativar' | 'reativar';
 
 /** O tipo que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
 export interface AndamentoDaEscrita {
@@ -45,7 +45,7 @@ export interface AndamentoDaEscrita {
 const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {
   salvando: 'Salvando...',
   removendo: 'Desativando...',
-  reativando: 'Ativando...',
+  reativando: 'Reativando...',
 };
 
 /** O que o diálogo de confirmação anuncia: o andamento e a recusa, que só fazem sentido com ele aberto. */
@@ -57,14 +57,14 @@ function anuncioDaConfirmacao(
 ): string {
   if (tipo === null) return '';
   if (emCurso) {
-    return `${verbo === 'desativar' ? 'Desativando' : 'Ativando'} o tipo de processo ${tipo.codigo}.`;
+    return `${verbo === 'desativar' ? 'Desativando' : 'Reativando'} o tipo de processo ${tipo.codigo}.`;
   }
   return motivo ? `Não foi possível ${verbo} o tipo de processo ${tipo.codigo}. ${motivo}` : '';
 }
 
 /**
  * Todas as escritas da tela de tipos de processo: o formulário, o salvamento, a desativação e a
- * ativação com confirmação. É a única dona do indicador de gravação, então uma escrita impede a
+ * reativação com confirmação. É a única dona do indicador de gravação, então uma escrita impede a
  * outra.
  */
 @Injectable()
@@ -114,14 +114,14 @@ export class EdicaoDosTiposProcesso {
   readonly mensagemDaConfirmacao = computed(() => {
     const tipo = this.tipoParaRemover();
     return tipo
-      ? `Deseja desativar o tipo de processo ${tipo.codigo}? Ele deixa de ser oferecido na criação de novos Processos Seletivos. Processos já criados que o referenciam não são afetados. Um novo cadastro com o mesmo código continua sendo recusado, mas o tipo pode ser ativado de novo depois.`
+      ? `Deseja desativar o tipo de processo ${tipo.codigo}? Ele deixa de ser oferecido na criação de novos Processos Seletivos. Processos já criados que o referenciam não são afetados. Um novo cadastro com o mesmo código continua sendo recusado, mas o tipo pode ser reativado depois.`
       : 'Deseja desativar este tipo de processo?';
   });
   readonly mensagemDaReativacao = computed(() => {
     const tipo = this.tipoParaReativar();
     return tipo
-      ? `Deseja ativar o tipo de processo ${tipo.codigo}? Ele volta a ser oferecido na criação de novos Processos Seletivos. Processos e versões de configuração já produzidos não são alterados.`
-      : 'Deseja ativar este tipo de processo?';
+      ? `Deseja reativar o tipo de processo ${tipo.codigo}? Ele volta a ser oferecido na criação de novos Processos Seletivos. Processos e versões de configuração já produzidos não são alterados.`
+      : 'Deseja reativar este tipo de processo?';
   });
   readonly anuncioDaRemocao = computed(() =>
     anuncioDaConfirmacao(this.tipoParaRemover(), this.removendo(), this.erroRemocao(), 'desativar'),
@@ -131,7 +131,7 @@ export class EdicaoDosTiposProcesso {
       this.tipoParaReativar(),
       this.reativando(),
       this.erroReativacao(),
-      'ativar',
+      'reativar',
     ),
   );
   /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
@@ -275,8 +275,8 @@ export class EdicaoDosTiposProcesso {
       this.erroReativacao.set(this.recusarConfirmacao(result.problem));
       return;
     }
-    this.resultado.set(`Tipo de processo ${tipo.codigo} ativado.`);
-    this.notifications.success('Tipo de processo ativado', tipo.codigo);
+    this.resultado.set(`Tipo de processo ${tipo.codigo} reativado.`);
+    this.notifications.success('Tipo de processo reativado', tipo.codigo);
     this.confirmandoReativacao.set(false);
     this.tipoParaReativar.set(null);
     this.recarregar();

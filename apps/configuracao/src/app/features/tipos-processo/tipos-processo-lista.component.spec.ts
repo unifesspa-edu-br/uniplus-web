@@ -56,7 +56,7 @@ describe('TiposProcessoListaComponent', () => {
   };
   const editar = (): HTMLButtonElement => porNome('Editar tipo de processo SISU');
   const desativar = (): HTMLButtonElement => porNome('Desativar tipo de processo SISU');
-  const ativar = (): HTMLButtonElement => porNome('Ativar tipo de processo ENEM');
+  const reativar = (): HTMLButtonElement => porNome('Reativar tipo de processo ENEM');
   const novo = (): HTMLButtonElement =>
     raiz().querySelector('#cfg-tipos-processo-novo') as HTMLButtonElement;
   const atualizar = (nome: string, valor: unknown): void => {
@@ -95,29 +95,29 @@ describe('TiposProcessoListaComponent', () => {
     montar([ativo, desativado], { carregando: true });
     const editados: TipoProcessoDto[] = [];
     const desativados: TipoProcessoDto[] = [];
-    const ativados: TipoProcessoDto[] = [];
+    const reativados: TipoProcessoDto[] = [];
     let cadastros = 0;
     fixture.componentInstance.editar.subscribe((item) => editados.push(item));
     fixture.componentInstance.remover.subscribe((item) => desativados.push(item));
-    fixture.componentInstance.reativar.subscribe((item) => ativados.push(item));
+    fixture.componentInstance.reativar.subscribe((item) => reativados.push(item));
     fixture.componentInstance.cadastrar.subscribe(() => (cadastros += 1));
 
-    for (const botao of [editar(), desativar(), ativar()]) {
+    for (const botao of [editar(), desativar(), reativar()]) {
       expect(botao.matches(':disabled')).toBe(true);
       botao.click();
     }
     expect(novo().getAttribute('aria-disabled')).toBe('true');
     novo().click();
-    expect([editados, desativados, ativados, cadastros]).toEqual([[], [], [], 0]);
+    expect([editados, desativados, reativados, cadastros]).toEqual([[], [], [], 0]);
 
     atualizar('carregando', false);
     editar().click();
     desativar().click();
-    ativar().click();
+    reativar().click();
     novo().click();
     expect(editados).toEqual([ativo]);
     expect(desativados).toEqual([ativo]);
-    expect(ativados).toEqual([desativado]);
+    expect(reativados).toEqual([desativado]);
     expect(cadastros).toBe(1);
   });
 
@@ -136,9 +136,9 @@ describe('TiposProcessoListaComponent', () => {
     expect(situacoes[1].textContent).not.toContain('...');
   });
 
-  it('oferece desativar ao tipo ativo e ativar ao desativado, e descreve a situação de cada um', () => {
+  it('oferece desativar ao tipo ativo e reativar ao desativado, e descreve a situação de cada um', () => {
     montar([ativo, desativado]);
-    expect(raiz().querySelector('[aria-label="Ativar tipo de processo SISU"]')).toBeNull();
+    expect(raiz().querySelector('[aria-label="Reativar tipo de processo SISU"]')).toBeNull();
     expect(raiz().querySelector('[aria-label="Desativar tipo de processo ENEM"]')).toBeNull();
     expect(raiz().querySelector('[aria-label="Editar tipo de processo ENEM"]')).toBeNull();
     expect(raiz().textContent).toContain('Ativo');
@@ -181,11 +181,11 @@ describe('TiposProcessoListaComponent', () => {
       expect(document.activeElement).toBe(desativar());
     });
 
-    it('devolve o foco ao botão de ativar, pelo mesmo nome do template', async () => {
+    it('devolve o foco ao botão de reativar, pelo mesmo nome do template', async () => {
       montar([desativado]);
-      acionar(ativar());
+      acionar(reativar());
       await concluirEscrita();
-      expect(document.activeElement).toBe(ativar());
+      expect(document.activeElement).toBe(reativar());
     });
 
     it('devolve o foco ao botão de cadastro quando a escrita partiu dele', async () => {

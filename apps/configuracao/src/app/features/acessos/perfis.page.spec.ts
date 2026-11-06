@@ -587,7 +587,7 @@ describe('PerfisPage', async () => {
     expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
   });
 
-  it('desativa o perfil ativo e ativa o desativado', async () => {
+  it('desativa o perfil ativo e reativa o desativado', async () => {
     const { fixture, pagina } = await abrir();
     api.desativar.mockReturnValue(of(ok(undefined)));
     api.ativar.mockReturnValue(of(ok(undefined)));
@@ -600,7 +600,7 @@ describe('PerfisPage', async () => {
     expect(api.desativar.mock.calls[0]?.[0]).toBe('p1');
     expect(api.ativar.mock.calls[0]?.[0]).toBe('p1');
     expect(notificacoes.success).toHaveBeenCalledWith('Perfil desativado');
-    expect(notificacoes.success).toHaveBeenCalledWith('Perfil ativado');
+    expect(notificacoes.success).toHaveBeenCalledWith('Perfil reativado');
   });
 
   it('mostra a recusa da mudança de situação', async () => {
@@ -683,7 +683,32 @@ describe('PerfisPage', async () => {
       expect(api.listar.mock.calls.length).toBe(consultas);
     });
 
-    it('depois de ativar, devolve o foco ao botão da mesma linha', async () => {
+    it('depois de reativar, devolve o foco ao botão da mesma linha', async () => {
+      vi.resetAllMocks();
+      api.listar.mockReturnValue(of(ok([{ ...COMUM, ativo: false }, GOVERNANCA])));
+      api.catalogoDePermissoes.mockReturnValue(of(ok(CATALOGO)));
+      const { fixture, host } = await abrirComListagem();
+      const resposta = new Subject<ReturnType<typeof ok<void>>>();
+      api.ativar.mockReturnValue(resposta);
+      const acionador = botaoDaLinha(host, 'Reativar o perfil Operador de inscrições');
+      acionador.focus();
+      acionador.click();
+      fixture.detectChanges();
+      expect(acionador.disabled).toBe(true);
+      perderOFoco(host);
+
+      api.listar.mockReturnValue(of(ok([COMUM, GOVERNANCA])));
+      resposta.next(ok(undefined));
+      resposta.complete();
+      await assentar(fixture);
+
+      expect(api.ativar.mock.calls[0]?.[0]).toBe('p1');
+      const reativado = botaoDaLinha(host, 'Desativar o perfil Operador de inscrições');
+      expect(document.activeElement).toBe(reativado);
+      expect(reativado.closest('tr')?.textContent).toContain('Operador de inscrições');
+    });
+
+    it('depois de desativar, devolve o foco ao botão da mesma linha', async () => {
       const { fixture, host } = await abrir();
       const resposta = new Subject<ReturnType<typeof ok<void>>>();
       api.desativar.mockReturnValue(resposta);

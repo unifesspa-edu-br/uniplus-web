@@ -45,7 +45,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
   const chaveDe = (req: { request: { headers: { get(n: string): string | null } } }) =>
     req.request.headers.get('Idempotency-Key');
   const alertaDoDrawer = (): HTMLElement => p.elemento('ui-drawer ui-alert');
-  const urlDaAtivacao = `${LISTA}/${vestibular.id}/ativacao`;
+  const urlDaReativacao = `${LISTA}/${vestibular.id}/ativacao`;
 
   describe('ao salvar', () => {
     it.each([
@@ -244,12 +244,12 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       await p.recarregarCom([{ ...sisu, ativo: false }, vestibular]);
       expect(p.sucessos).toHaveBeenLastCalledWith('Tipo de processo desativado', 'SISU');
 
-      (await p.confirmarAtivacao(vestibular)).flush(...sucesso());
+      (await p.confirmarReativacao(vestibular)).flush(...sucesso());
       await p.recarregarCom([
         { ...sisu, ativo: false },
         { ...vestibular, ativo: true },
       ]);
-      expect(p.sucessos).toHaveBeenLastCalledWith('Tipo de processo ativado', 'VESTIBULAR_TRAD');
+      expect(p.sucessos).toHaveBeenLastCalledWith('Tipo de processo reativado', 'VESTIBULAR_TRAD');
       expect(p.erros).not.toHaveBeenCalled();
     });
   });
@@ -301,9 +301,9 @@ describe('TiposProcessoPage — recusas do servidor', () => {
     });
   });
 
-  describe('ao ativar', () => {
+  describe('ao reativar', () => {
     const lerMensagem = (): string | undefined =>
-      p.confirmacao('ativar').querySelector('.field__error')?.textContent?.trim();
+      p.confirmacao('reativar').querySelector('.field__error')?.textContent?.trim();
 
     it.each([
       ['422 de tipo já ativo', 422, JA_ATIVO],
@@ -311,14 +311,14 @@ describe('TiposProcessoPage — recusas do servidor', () => {
     ] as const)(
       'recusa %s mantém o diálogo, a mensagem e o foco no botão, sem toast',
       async (_nome, status, corpo) => {
-        (await p.confirmarAtivacao(vestibular)).flush(...problema(status, corpo));
+        (await p.confirmarReativacao(vestibular)).flush(...problema(status, corpo));
         await p.propagar();
 
         expect(lerMensagem()).toBe(corpo.title);
         expect(p.edicao.confirmandoReativacao()).toBe(true);
-        expect(document.activeElement).toBe(p.confirmar('ativar'));
-        expect(p.confirmacao('ativar').querySelector('[role="status"]')?.textContent).toContain(
-          'Não foi possível ativar o tipo de processo VESTIBULAR_TRAD.',
+        expect(document.activeElement).toBe(p.confirmar('reativar'));
+        expect(p.confirmacao('reativar').querySelector('[role="status"]')?.textContent).toContain(
+          'Não foi possível reativar o tipo de processo VESTIBULAR_TRAD.',
         );
         expect(p.erros).not.toHaveBeenCalled();
       },
@@ -328,22 +328,22 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       ['o conflito de processamento mantém', problema(409, PROCESSANDO), true],
       ['a falha 5xx mantém', problema(500, { code: 'uniplus.erro_interno' }), true],
       ['a recusa de negócio renova', problema(422, JA_ATIVO), false],
-    ] as const)('%s a chave no reenvio da ativação', async (_nome, recusa, mantem) => {
-      const primeira = await p.confirmarAtivacao(vestibular);
+    ] as const)('%s a chave no reenvio da reativação', async (_nome, recusa, mantem) => {
+      const primeira = await p.confirmarReativacao(vestibular);
       const chave = chaveDe(primeira);
       primeira.flush(...recusa);
       await p.propagar();
 
-      p.confirmar('ativar').click();
+      p.confirmar('reativar').click();
       await p.propagar();
-      const segunda = p.http.expectOne(urlDaAtivacao);
+      const segunda = p.http.expectOne(urlDaReativacao);
       expect(chaveDe(segunda) === chave).toBe(mantem);
       segunda.flush(...sucesso());
       await p.recarregarCom([sisu, { ...vestibular, ativo: true }]);
     });
 
-    it('a falha 5xx da ativação avisa por toast uma vez', async () => {
-      (await p.confirmarAtivacao(vestibular)).flush(
+    it('a falha 5xx da reativação avisa por toast uma vez', async () => {
+      (await p.confirmarReativacao(vestibular)).flush(
         ...problema(500, { code: 'uniplus.erro_interno' }),
       );
       await p.propagar();
@@ -351,12 +351,12 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       expect(lerMensagem()).toBe('Falha');
     });
 
-    it('cancelar a confirmação devolve o foco ao botão de ativar da linha', async () => {
-      await p.confirmarAtivacao(vestibular).then((req) => req.flush(...problema(422, JA_ATIVO)));
+    it('cancelar a confirmação devolve o foco ao botão de reativar da linha', async () => {
+      await p.confirmarReativacao(vestibular).then((req) => req.flush(...problema(422, JA_ATIVO)));
       await p.propagar();
-      p.cancelarDaConfirmacao('ativar').click();
+      p.cancelarDaConfirmacao('reativar').click();
       await p.propagar();
-      expect(document.activeElement).toBe(p.ativar(vestibular));
+      expect(document.activeElement).toBe(p.reativar(vestibular));
     });
   });
 
@@ -375,14 +375,14 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.editar(sisu));
     });
 
-    it('desativação concluída leva o foco ao botão de ativar da mesma linha', async () => {
+    it('desativação concluída leva o foco ao botão de reativar da mesma linha', async () => {
       (await p.confirmarDesativacao(sisu)).flush(...sucesso());
       await p.recarregarCom([{ ...sisu, ativo: false }, vestibular]);
-      expect(document.activeElement).toBe(p.ativar({ ...sisu, ativo: false }));
+      expect(document.activeElement).toBe(p.reativar({ ...sisu, ativo: false }));
     });
 
-    it('ativação concluída leva o foco ao botão de desativar da mesma linha', async () => {
-      (await p.confirmarAtivacao(vestibular)).flush(...sucesso());
+    it('reativação concluída leva o foco ao botão de desativar da mesma linha', async () => {
+      (await p.confirmarReativacao(vestibular)).flush(...sucesso());
       await p.recarregarCom([sisu, { ...vestibular, ativo: true }]);
       expect(document.activeElement).toBe(p.desativar({ ...vestibular, ativo: true }));
     });

@@ -56,7 +56,7 @@ export class CalendariosListaComponent {
     this.remover.emit(calendario);
   }
 
-  /** O nome da ação não começa por "Ativar " nem "Desativar ": a devolução de foco leva ao título. */
+  /** O nome da ação não começa por "Ativar ", "Desativar " nem "Reativar ": a devolução de foco leva ao título. */
   protected acionarMarcarVigente(calendario: CalendarioDiasUteisResumoDto): void {
     this.foco.registrar({ acao: 'situacao', id: calendario.id });
     this.marcarVigente.emit(calendario);

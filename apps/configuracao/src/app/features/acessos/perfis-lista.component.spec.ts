@@ -48,13 +48,13 @@ describe('PerfisListaComponent', () => {
     fixture = TestBed.createComponent(PerfisListaComponent);
   });
 
-  it('oferece editar e ativar ou desativar, e nada para o perfil de governança', () => {
+  it('oferece editar e reativar ou desativar, e nada para o perfil de governança', () => {
     entradas({});
 
     expect(
       raiz().querySelector('button[aria-label="Desativar o perfil Operador de inscrições"]'),
     ).not.toBeNull();
-    expect(raiz().querySelector('button[aria-label="Ativar o perfil Consulta"]')).not.toBeNull();
+    expect(raiz().querySelector('button[aria-label="Reativar o perfil Consulta"]')).not.toBeNull();
     expect(raiz().querySelector('tr[data-perfil-id="p2"] button')).toBeNull();
     expect(raiz().textContent).toContain('Governança');
   });
@@ -94,7 +94,7 @@ describe('PerfisListaComponent', () => {
       .querySelector<HTMLButtonElement>('button[aria-label="Editar o perfil Consulta"]')
       ?.click();
     raiz()
-      .querySelector<HTMLButtonElement>('button[aria-label="Ativar o perfil Consulta"]')
+      .querySelector<HTMLButtonElement>('button[aria-label="Reativar o perfil Consulta"]')
       ?.click();
 
     expect(editados).toEqual([DESATIVADO]);
