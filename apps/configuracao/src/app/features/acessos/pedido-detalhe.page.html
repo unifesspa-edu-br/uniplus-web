@@ -50,11 +50,16 @@
 <cfg-pedido-historico [pedido]="p" [trilha]="trilha()" />
 }
 
-<ui-dialog [(visible)]="confirmando" [heading]="confirmacao().titulo" [dismissible]="!enviando()">
+<ui-dialog
+  [(visible)]="confirmando"
+  [heading]="confirmacao().titulo"
+  [dismissible]="!enviando()"
+  describedBy="cfg-pedido-confirmacao-mensagem"
+>
   @if (erro()) {
   <ui-alert variant="danger" heading="Não foi possível concluir">{{ erro() }}</ui-alert>
   }
-  <p>{{ confirmacao().mensagem }}</p>
+  <p id="cfg-pedido-confirmacao-mensagem">{{ confirmacao().mensagem }}</p>
   <p role="status" class="sr-only">{{ enviando() ? 'Enviando decisão…' : '' }}</p>
   <ng-container uiDialogFooter>
     <button

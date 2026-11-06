@@ -32,6 +32,7 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
       [(visible)]="visible"
       heading="Enviar solicitação de aprovação"
       size="largo"
+      describedBy="cfg-solicitacao-descricao"
       [dismissible]="!enviando()"
     >
       @if (erro()) {

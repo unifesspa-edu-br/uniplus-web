@@ -87,6 +87,15 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
     expect(raiz().querySelector('strong')).toBeNull();
   });
 
+  it('a mensagem descreve o diálogo para o leitor de tela', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+
+    const idDaDescricao = raiz().querySelector('dialog')?.getAttribute('aria-describedby');
+    expect(idDaDescricao).toBeTruthy();
+    expect(raiz().querySelector(`#${idDaDescricao}`)?.textContent).toBe('Deseja remover este cadastro?');
+  });
+
   it('o título do diálogo vem de quem o usa', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.componentRef.setInput('titulo', 'Remover campus');

@@ -93,9 +93,10 @@
 
 <ui-dialog
   heading="Descartar as alterações não salvas?"
+  describedBy="cfg-termo-recarga-descricao"
   [(visible)]="edicao.confirmRecarregarAberto"
 >
-  <p>
+  <p id="cfg-termo-recarga-descricao">
     Recarregar os dados substitui o texto, a base legal e a forma de aceite digitados pelo que está
     gravado. As alterações não salvas serão descartadas.
   </p>

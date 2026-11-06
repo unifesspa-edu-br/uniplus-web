@@ -78,6 +78,7 @@
 <ui-dialog
   [(visible)]="dialogAberto"
   [dismissible]="!removendo()"
+  [describedBy]="modalidadeParaRemover() ? 'cfg-modalidade-remocao-descricao' : null"
   [heading]="remocaoBloqueada() ? 'Remoção bloqueada' : 'Remover modalidade'"
   (closed)="aoFecharDialog()"
 >
@@ -87,7 +88,12 @@
     >{{ mensagemBloqueioServidor() }}</ui-alert
   >
   } @if (modalidadeParaRemover(); as alvo) { @if (remocaoBloqueada()) {
-  <ui-alert variant="warning" [heading]="tituloDoBloqueio()" [dynamic]="false">
+  <ui-alert
+    id="cfg-modalidade-remocao-descricao"
+    variant="warning"
+    [heading]="tituloDoBloqueio()"
+    [dynamic]="false"
+  >
     @if (mensagemBloqueioServidor()) {
     <p>{{ mensagemBloqueioServidor() }}</p>
     } @if (referenciadaPor(alvo.codigo).length > 0) { A modalidade
@@ -105,7 +111,7 @@
     { {{ mensagemBloqueioPadrao }} }
   </ui-alert>
   } @else {
-  <p>
+  <p id="cfg-modalidade-remocao-descricao">
     A modalidade <code>{{ alvo.codigo }}</code> é removida (soft-delete) e mantida na trilha de
     auditoria. Cópias congeladas por snapshot em processos publicados não são afetadas. Confirma?
   </p>

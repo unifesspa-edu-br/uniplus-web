@@ -7,12 +7,13 @@
       : 'Recomendar ajuste da proteção de dados'
   "
   [dismissible]="!decidindo()"
+  [describedBy]="detalhe() ? 'cfg-decisao-item-descricao' : null"
 >
   @if (detalhe(); as d) {
     @if (erro()) {
       <ui-alert variant="danger" heading="A decisão não foi registrada">{{ erro() }}</ui-alert>
     }
-    <p>
+    <p id="cfg-decisao-item-descricao">
       {{ cadastro(d.tipo) }}: <strong>{{ d.nome }}</strong
       >. A classificação proposta é {{ rotulo(classificacoes, d.classificacaoProtecao) }}.
     </p>

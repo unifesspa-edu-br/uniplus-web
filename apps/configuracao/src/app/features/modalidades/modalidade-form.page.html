@@ -82,9 +82,10 @@
 <ui-dialog
   [(visible)]="edicao.confirmandoReset"
   heading="Redefinir remanejamento?"
+  describedBy="cfg-modalidade-reset-descricao"
   (closed)="edicao.cancelarResetNatureza()"
 >
-  <p>
+  <p id="cfg-modalidade-reset-descricao">
     A natureza escolhida é incompatível com a regra de remanejamento atual. Se continuar, a regra e
     seus argumentos (destino, par e fallback) serão limpos.
   </p>

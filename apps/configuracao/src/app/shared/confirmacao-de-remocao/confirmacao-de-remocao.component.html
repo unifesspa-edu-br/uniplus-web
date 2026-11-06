@@ -1,4 +1,9 @@
-<ui-dialog [heading]="titulo()" [(visible)]="aberto" [dismissible]="!removendo()">
+<ui-dialog
+  [heading]="titulo()"
+  [(visible)]="aberto"
+  [dismissible]="!removendo()"
+  [describedBy]="idDaMensagem"
+>
   @if (item(); as nomeado) {
     <p>
       {{ nomeado.abertura }}
@@ -8,7 +13,7 @@
       <strong>{{ nomeado.nome }}.</strong>
     </p>
   }
-  <p>{{ mensagem() }}</p>
+  <p [id]="idDaMensagem">{{ mensagem() }}</p>
   <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
     <p class="field__error">{{ erro() }}</p>

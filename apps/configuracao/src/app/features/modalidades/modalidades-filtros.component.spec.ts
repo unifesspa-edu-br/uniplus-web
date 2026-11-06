@@ -33,6 +33,27 @@ describe('ModalidadesFiltrosComponent', () => {
     expect(pedidos).toEqual([]);
   });
 
+  it('com remoção em curso, o chip de natureza fica indisponível e o clique não filtra', () => {
+    fixture.componentRef.setInput('removendo', true);
+    fixture.detectChanges();
+    const chip = raiz.querySelector<HTMLButtonElement>('.filter-chip');
+
+    chip?.click();
+    fixture.detectChanges();
+
+    expect(chip?.getAttribute('aria-disabled')).toBe('true');
+    expect(fixture.componentInstance.naturezaSelecionada()).toBeNull();
+  });
+
+  it('sem remoção, o chip de natureza filtra', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+
+    raiz.querySelector<HTMLButtonElement>('.filter-chip')?.click();
+
+    expect(fixture.componentInstance.naturezaSelecionada()).toBe('AMPLA');
+  });
+
   it('sem remoção, "Limpar" pede a limpeza dos filtros', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.detectChanges();
