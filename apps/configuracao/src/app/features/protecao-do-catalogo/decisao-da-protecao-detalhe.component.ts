@@ -41,7 +41,7 @@ export class DecisaoDaProtecaoDetalheComponent {
   readonly carregandoHistorico = input.required<boolean>();
   readonly erroDoHistorico = input.required<string | null>();
   readonly itemInexistente = input.required<boolean>();
-  readonly recarregar = output<DecisaoDaProtecaoDto>();
+  readonly recarregar = output<void>();
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;
   protected readonly rotuloDoAto = rotuloDoAto;

@@ -1,6 +1,7 @@
 import { HttpParams } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   type CadastroDoCatalogo,
@@ -12,6 +13,7 @@ import { LeituraDoDetalhe } from '../../shared/detalhe-do-catalogo';
 export class ProtecaoDoCatalogoStore {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly ativa = signal(false);
   private readonly versaoDaConsulta = signal(0);
   private readonly lista = useApiResource<readonly ItemDaProtecaoDoCatalogoDto[]>(() => {
@@ -48,9 +50,24 @@ export class ProtecaoDoCatalogoStore {
   readonly erroDoDetalhe = this.leituraDoDetalhe.erro;
   readonly naoEncontrado = this.leituraDoDetalhe.naoEncontrado;
 
+  constructor() {
+    effect(() => {
+      const problem = this.lista.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
+  }
+
   carregar(): void {
     if (this.ativa()) this.versaoDaConsulta.update((versao) => versao + 1);
     else this.ativa.set(true);
+  }
+
+  /** Repete a leitura que falhou sem apagar o alerta, para o botão acionado seguir na tela. */
+  tentarNovamente(): void {
+    if (!this.carregando()) this.lista.reload();
   }
 
   abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {

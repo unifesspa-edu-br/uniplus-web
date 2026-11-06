@@ -1,10 +1,11 @@
-import { computed, inject, signal } from '@angular/core';
+import { computed, effect, inject, signal, untracked } from '@angular/core';
 import {
   ProblemI18nService,
   STATUS_HTTP,
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   type CadastroDoCatalogo,
@@ -21,10 +22,11 @@ const SEGMENTOS: Readonly<Record<CadastroDoCatalogo, string>> = {
   FATO: 'fatos',
 };
 
-/** Leitura reativa do detalhe de um item do catálogo. */
+/** Leitura reativa do detalhe de um item do catálogo; a falha do servidor (5xx) também é avisada. */
 export class LeituraDoDetalhe {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly pedido = signal<Pedido | null>(null);
   private readonly recurso = useApiResource<DetalheDaProtecaoDoCatalogoDto>(() => {
     const pedido = this.pedido();
@@ -46,6 +48,14 @@ export class LeituraDoDetalhe {
     if (this.naoEncontrado()) return 'O item não existe mais no catálogo.';
     if (problem) return this.problemI18n.resolve(problem).title;
     return this.recurso.error() ? 'Não foi possível carregar o detalhe.' : null;
+  });
+
+  private readonly avisoDoServidor = effect(() => {
+    const problem = this.recurso.problem();
+    if (problem && problem.status >= 500) {
+      const titulo = this.problemI18n.resolve(problem).title;
+      untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+    }
   });
 
   ler(cadastro: CadastroDoCatalogo, id: string): void {

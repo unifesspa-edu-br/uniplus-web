@@ -20,6 +20,7 @@ import {
   type UiFiltroAtivo,
 } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { DecisoesDaProtecaoListaComponent } from './decisoes-da-protecao-lista.component';
 import { DecisaoDaProtecaoDetalheComponent } from './decisao-da-protecao-detalhe.component';
 import { DecisoesDaProtecaoStore } from './decisoes-da-protecao.store';
@@ -107,6 +108,17 @@ export class DecisoesDaProtecaoComponent {
   protected readonly erroDoHistorico = this.pagina.erroDoHistorico;
   protected readonly itemInexistente = this.pagina.itemInexistente;
 
+  private readonly novaTentativaDaLista = focarAposNovaTentativa(
+    this.pagina.carregando,
+    computed(() => this.mensagemDeErro() !== null),
+    () => document.getElementById('cfg-decisoes-titulo'),
+  );
+  private readonly novaTentativaDoHistorico = focarAposNovaTentativa(
+    this.carregandoHistorico,
+    computed(() => this.erroDoHistorico() !== null),
+    () => document.getElementById('cfg-decisao-dados'),
+  );
+
   /** A busca que a tela mandou para a URL: a que volta dela não reescreve o campo enquanto a pessoa digita. */
   private buscaEnviada = this.filtros().busca;
 
@@ -135,7 +147,7 @@ export class DecisoesDaProtecaoComponent {
   }
 
   protected carregar(): void {
-    this.pagina.carregar();
+    this.novaTentativaDaLista.executar(() => this.pagina.carregar());
   }
 
   protected aoTrocarLimite(valor: number | null): void {
@@ -184,5 +196,9 @@ export class DecisoesDaProtecaoComponent {
 
   protected lerHistorico(decisao: DecisaoDaProtecaoDto): void {
     this.pagina.lerHistorico(decisao);
+  }
+
+  protected tentarOHistoricoDeNovo(): void {
+    this.novaTentativaDoHistorico.executar(() => this.pagina.recarregarHistorico());
   }
 }

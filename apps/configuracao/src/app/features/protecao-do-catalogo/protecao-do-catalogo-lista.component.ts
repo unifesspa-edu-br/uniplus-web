@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
 import { EmptyStateComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
 import {
   CLASSIFICACOES_DE_PROTECAO,
   nomeDoCadastro,
@@ -17,9 +18,23 @@ import {
 export class ProtecaoDoCatalogoListaComponent {
   readonly itens = input.required<readonly ItemDaProtecaoDoCatalogoDto[]>();
   readonly carregando = input.required<boolean>();
+  readonly gravando = input.required<boolean>();
   readonly erroDeCarga = input.required<string | null>();
   readonly abrir = output<ItemDaProtecaoDoCatalogoDto>();
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly cadastro = nomeDoCadastro;
   protected readonly rotulo = rotuloDe;
+
+  /** O item decidido sai da fila: ao fim da gravação e da recarga o foco livre vai ao título. */
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-item-id',
+    idDoTitulo: 'cfg-protecao-titulo',
+  });
+
+  protected abrirItem(item: ItemDaProtecaoDoCatalogoDto): void {
+    this.foco.registrar(null);
+    this.abrir.emit(item);
+  }
 }

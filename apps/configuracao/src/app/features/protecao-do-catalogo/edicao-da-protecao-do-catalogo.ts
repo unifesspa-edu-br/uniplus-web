@@ -1,13 +1,4 @@
-import { DOCUMENT } from '@angular/common';
-import {
-  DestroyRef,
-  Injectable,
-  Injector,
-  afterNextRender,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { map } from 'rxjs';
@@ -25,6 +16,7 @@ import {
   type DetalheDaProtecaoDoCatalogoDto,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import {
   JUSTIFICATIVA_MAXIMA,
@@ -34,8 +26,15 @@ import {
   comandoDeJustificativa,
 } from './decisao-da-protecao-form';
 
-const ITEM_FORA_DE_SOLICITACAO =
-  'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao';
+/** Recusas que dizem que o item já não está como a tela o mostrou: a fila é relida e a decisão se refaz. */
+const RECUSAS_QUE_RELEEM_A_FILA: ReadonlySet<string> = new Set([
+  'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao',
+  'uniplus.configuracao.protecao_do_catalogo.conflito_de_concorrencia',
+  'uniplus.configuracao.protecao_do_catalogo.protecao_mudou',
+  'uniplus.configuracao.fato_candidato.conflito_de_concorrencia',
+  'uniplus.configuracao.tipo_documento.nao_encontrado',
+  'uniplus.configuracao.fato_candidato.nao_encontrado',
+]);
 
 @Injectable()
 export class EdicaoDaProtecaoDoCatalogo {
@@ -44,11 +43,15 @@ export class EdicaoDaProtecaoDoCatalogo {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
-  private readonly documento = inject(DOCUMENT);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.erroDeCarga() !== null),
+  );
   readonly detalheAberto = signal(false);
   readonly erroDaDecisao = signal<string | null>(null);
   readonly decidindo = signal(false);
+  /** A decisão está sendo gravada ou a fila que a segue ainda é relida. */
+  readonly gravando = computed(() => this.decidindo() || this.recarga.aguardando());
   readonly decisaoAberta = signal(false);
   readonly decisaoEmCurso = signal<DecisaoDaProtecao>('APROVAR');
   readonly erroDaDecisaoNoDialogo = signal<string | null>(null);
@@ -113,19 +116,12 @@ export class EdicaoDaProtecaoDoCatalogo {
     this.tentouDecidir.set(true);
     const decisao = this.decisaoEmCurso();
     const justificativa = this.justificativa.value.trim();
-    if (justificativa.length > JUSTIFICATIVA_MAXIMA) {
-      this.focarDepois('cfg-campo-justificativa');
-      return;
-    }
+    if (justificativa.length > JUSTIFICATIVA_MAXIMA) return;
     if (decisao === 'RECOMENDAR_AJUSTE' && this.recomendada.value === '') {
       this.recomendada.setErrors({ required: true });
-      this.focarDepois('cfg-campo-recomendacao');
       return;
     }
-    if (decisao === 'REPROVAR' && justificativa.length === 0) {
-      this.focarDepois('cfg-campo-justificativa');
-      return;
-    }
+    if (decisao === 'REPROVAR' && justificativa.length === 0) return;
     const comando = comandoDeJustificativa(item, decisao, justificativa, this.recomendada.value);
     this.decidir(item, comando, decisao === 'REPROVAR' ? 'Item reprovado' : 'Ajuste recomendado');
   }
@@ -138,22 +134,16 @@ export class EdicaoDaProtecaoDoCatalogo {
     if (!this.decidindo()) this.decisaoAberta.set(false);
   }
 
-  private focarDepois(id: string): void {
-    afterNextRender(() => this.documento.getElementById(id)?.focus(), { injector: this.injector });
-  }
-
   /**
-   * Registra a decisão. No sucesso o item sai da lista, o drawer fecha e o foco vai ao título, porque o
-   * botão que o tinha desaparece com a linha. Na recusa a mensagem da API fica junto de onde a decisão
-   * foi tomada; quando a proteção mudou ou outra gravação venceu, a lista é relida, porque repetir a
-   * mesma decisão não dá certo.
+   * Registra a decisão. No sucesso o item sai da fila e o drawer fecha. Na recusa a mensagem da API
+   * fica junto de onde a decisão foi tomada; quando a proteção mudou ou outra gravação venceu, a fila
+   * é relida, porque repetir a mesma decisão não dá certo.
    */
   private decidir(
     item: DetalheDaProtecaoDoCatalogoDto,
     comando: DecidirProtecaoDoCatalogoRequest,
     sucesso: string,
   ): void {
-    if (this.decidindo()) return;
     this.decidindo.set(true);
     this.erroDaDecisao.set(null);
     this.erroDaDecisaoNoDrawer.set(null);
@@ -168,8 +158,7 @@ export class EdicaoDaProtecaoDoCatalogo {
           this.notifications.success(sucesso, item.nome);
           this.decisaoAberta.set(false);
           this.detalheAberto.set(false);
-          this.store.carregar();
-          this.focarDepois('cfg-protecao-titulo');
+          this.relerAFila();
           return;
         }
         if (deveRotacionarIdempotencyKey(resultado.problem)) this.intencaoDaDecisao = null;
@@ -188,18 +177,19 @@ export class EdicaoDaProtecaoDoCatalogo {
 
   private recusar(problem: ProblemDetails): void {
     const mensagem = this.problemI18n.resolve(problem).title;
-    if (problem.status === 409 || problem.status === 422) {
-      if (problem.status === 422 && problem.code !== ITEM_FORA_DE_SOLICITACAO)
-        return this.mostrarRecusa(mensagem, problem);
-      this.decisaoAberta.set(false);
-      this.detalheAberto.set(false);
-      this.erroDaDecisao.set(
-        `${mensagem}. A lista foi atualizada; confira o item e decida de novo.`,
-      );
-      this.store.carregar();
+    if (!RECUSAS_QUE_RELEEM_A_FILA.has(problem.code)) {
+      this.mostrarRecusa(mensagem, problem);
       return;
     }
-    this.mostrarRecusa(mensagem, problem);
+    this.decisaoAberta.set(false);
+    this.detalheAberto.set(false);
+    this.erroDaDecisao.set(`${mensagem}. A lista foi atualizada; confira o item e decida de novo.`);
+    this.relerAFila();
+  }
+
+  private relerAFila(): void {
+    this.recarga.iniciar();
+    this.store.carregar();
   }
 
   private mostrarRecusa(mensagem: string, problem: ProblemDetails): void {

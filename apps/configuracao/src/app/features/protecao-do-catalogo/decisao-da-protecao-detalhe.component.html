@@ -8,6 +8,7 @@
 >
   @if (drawerAberto() && selecionada(); as decisao) {
     <div
+      id="cfg-decisao-dados"
       class="form-drawer__form"
       role="region"
       tabindex="0"
@@ -60,7 +61,9 @@
       <section class="cfg-detalhe-secao">
         <h3 class="cfg-detalhe-secao__titulo">Histórico do item</h3>
         @if (carregandoHistorico()) {
-          <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o histórico</span>
+          <span class="list-state__loading"
+            ><ui-spinner spinnerSize="sm" /> Carregando o histórico</span
+          >
         }
         @if (erroDoHistorico(); as erro) {
           <ui-alert
@@ -75,7 +78,9 @@
                 <button
                   type="button"
                   class="btn btn--secondary btn--sm"
-                  (click)="recarregar.emit(decisao)"
+                  [attr.aria-disabled]="carregandoHistorico() ? 'true' : null"
+                  [attr.aria-busy]="carregandoHistorico() ? 'true' : null"
+                  (click)="recarregar.emit()"
                 >
                   Tentar novamente
                 </button>

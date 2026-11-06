@@ -76,7 +76,8 @@
       <button
         type="button"
         class="btn btn--secondary btn--sm"
-        [disabled]="pagina.carregando()"
+        [attr.aria-disabled]="pagina.carregando() ? 'true' : null"
+        [attr.aria-busy]="pagina.carregando() ? 'true' : null"
         (click)="carregar()"
       >
         Tentar novamente
@@ -107,5 +108,5 @@
   [carregandoHistorico]="carregandoHistorico()"
   [erroDoHistorico]="erroDoHistorico()"
   [itemInexistente]="itemInexistente()"
-  (recarregar)="lerHistorico($event)"
+  (recarregar)="tentarOHistoricoDeNovo()"
 />

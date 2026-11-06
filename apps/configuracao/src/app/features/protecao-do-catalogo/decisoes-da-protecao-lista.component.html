@@ -1,9 +1,9 @@
 <section class="panel" aria-labelledby="cfg-decisoes-titulo" [attr.aria-busy]="carregando()">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-decisoes-titulo">Decisões registradas</h2>
+      <h2 id="cfg-decisoes-titulo" tabindex="-1">Decisões registradas</h2>
       @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
       }
     </div>
   </div>

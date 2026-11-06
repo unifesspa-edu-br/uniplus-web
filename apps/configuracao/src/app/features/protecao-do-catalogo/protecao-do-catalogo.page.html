@@ -26,7 +26,8 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="carregando()"
+      [attr.aria-disabled]="filaPendente() ? 'true' : null"
+      [attr.aria-busy]="filaPendente() ? 'true' : null"
       (click)="carregar()"
     >
       Tentar novamente
@@ -42,6 +43,7 @@
 <cfg-protecao-do-catalogo-lista
   [itens]="itens()"
   [carregando]="carregando()"
+  [gravando]="edicao.gravando()"
   [erroDeCarga]="erroDeCarga()"
   (abrir)="abrirDetalhe($event)"
 />
@@ -58,14 +60,19 @@
 >
   @if (edicao.detalheAberto()) {
   <div
+    id="cfg-protecao-dados-do-item"
     class="form-drawer__form"
     role="region"
     tabindex="0"
     aria-label="Dados do item"
     [attr.aria-busy]="carregandoDetalhe()"
   >
+    <span class="sr-only" role="status"
+      >{{ edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR' ? 'Registrando a decisão.' :
+      '' }}</span
+    >
     @if (carregandoDetalhe()) {
-    <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o item</span>
+    <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando o item</span>
     } @if (edicao.erroDaDecisaoNoDrawer()) {
     <ui-alert variant="danger" heading="A decisão não foi registrada"
       >{{ edicao.erroDaDecisaoNoDrawer() }}</ui-alert
@@ -77,7 +84,13 @@
     >
       {{ erro }} @if (!naoEncontrado()) {
       <div class="list-state__retry">
-        <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarDetalhe()">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="carregandoDetalhe() ? 'true' : null"
+          [attr.aria-busy]="carregandoDetalhe() ? 'true' : null"
+          (click)="recarregarDetalhe()"
+        >
           Tentar novamente
         </button>
       </div>
@@ -118,11 +131,12 @@
       <button
         type="button"
         class="btn btn--primary"
-        [disabled]="edicao.decidindo()"
+        [attr.aria-disabled]="edicao.decidindo() ? 'true' : null"
+        [attr.aria-busy]="edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR' ? 'true' : null"
         (click)="edicao.aprovar()"
       >
         @if (edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR') {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
         } Aprovar
       </button>
       }

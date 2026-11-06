@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  untracked,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
@@ -13,6 +20,7 @@ import {
   type UiSegmentedOption,
 } from '@uniplus/shared-ui/components';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import { DecisoesDaProtecaoComponent } from './decisoes-da-protecao.component';
 import { DecisaoDaProtecaoDialogoComponent } from './decisao-da-protecao-dialogo.component';
@@ -81,6 +89,18 @@ export class ProtecaoDoCatalogoPage {
   protected readonly carregandoDetalhe = this.store.carregandoDetalhe;
   protected readonly erroDoDetalhe = this.store.erroDoDetalhe;
   protected readonly naoEncontrado = this.store.naoEncontrado;
+  protected readonly filaPendente = computed(() => this.carregando() || this.edicao.gravando());
+
+  private readonly novaTentativaDaFila = focarAposNovaTentativa(
+    this.filaPendente,
+    computed(() => this.erroDeCarga() !== null),
+    () => document.getElementById('cfg-protecao-titulo'),
+  );
+  private readonly novaTentativaDoDetalhe = focarAposNovaTentativa(
+    this.carregandoDetalhe,
+    computed(() => this.erroDoDetalhe() !== null),
+    () => document.getElementById('cfg-protecao-dados-do-item'),
+  );
 
   constructor() {
     effect(() => {
@@ -107,7 +127,7 @@ export class ProtecaoDoCatalogoPage {
   }
 
   protected carregar(): void {
-    this.store.carregar();
+    this.novaTentativaDaFila.executar(() => this.store.tentarNovamente());
   }
 
   protected abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
@@ -116,6 +136,6 @@ export class ProtecaoDoCatalogoPage {
   }
 
   protected recarregarDetalhe(): void {
-    this.store.recarregarDetalhe();
+    this.novaTentativaDoDetalhe.executar(() => this.store.recarregarDetalhe());
   }
 }

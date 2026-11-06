@@ -23,6 +23,7 @@
           <select
             id="cfg-campo-recomendacao"
             class="select"
+            aria-required="true"
             [formControl]="recomendada()"
             [attr.aria-invalid]="tentouDecidir() && recomendada().invalid ? 'true' : null"
             [attr.aria-describedby]="
@@ -106,10 +107,10 @@
       [class.btn--primary]="decisao() !== 'REPROVAR'"
       [attr.aria-disabled]="decidindo()"
       [attr.aria-busy]="decidindo()"
-      (click)="decidindo() ? $event.preventDefault() : confirmar.emit()"
+      (click)="decidindo() ? $event.preventDefault() : enviar()"
     >
       @if (decidindo()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{
         decidindo()

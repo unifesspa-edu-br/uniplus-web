@@ -3,7 +3,7 @@
     <div class="panel-head__title">
       <h2 id="cfg-protecao-titulo" tabindex="-1">Itens aguardando a sua decisão</h2>
       @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
       }
     </div>
   </div>
@@ -29,14 +29,14 @@
         </thead>
         <tbody>
           @for (item of itens(); track item.id) {
-            <tr>
+            <tr [attr.data-item-id]="item.id">
               <td data-label="Cadastro" class="u-nowrap-desktop">{{ cadastro(item.tipo) }}</td>
               <td data-label="Item" class="u-nowrap-desktop">
                 <button
                   type="button"
                   class="table-responsive__alvo"
                   [attr.aria-label]="'Ver o detalhe de ' + item.nome"
-                  (click)="abrir.emit(item)"
+                  (click)="abrirItem(item)"
                 >
                   {{ item.nome }}
                 </button>

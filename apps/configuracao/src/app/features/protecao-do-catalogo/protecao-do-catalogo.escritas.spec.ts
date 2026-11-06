@@ -149,8 +149,11 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     const post = controller.expectOne((r) => r.url === URL && r.method === 'POST');
     edicao.confirmarDecisao();
     edicao.aprovar();
+    edicao.abrirDetalhe(detalhe);
     edicao.fecharDecisao();
     edicao.fecharDetalhe();
+    expect(edicao.decisaoEmCurso()).toBe('REPROVAR');
+    controller.expectNone(`${URL}/tipos-documento/${detalhe.id}`);
     expect(edicao.decisaoAberta()).toBe(true);
     expect(edicao.detalheAberto()).toBe(true);
     controller.expectNone((r) => r.url === URL && r.method === 'POST');

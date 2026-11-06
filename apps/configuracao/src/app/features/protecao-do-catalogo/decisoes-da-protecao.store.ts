@@ -21,6 +21,7 @@ import {
   type UseApiResourceRef,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   type CadastroDoCatalogo,
@@ -36,6 +37,7 @@ export class DecisoesDaProtecaoStore {
   private readonly route = inject(ActivatedRoute);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly injector = inject(Injector);
   readonly filtros = toSignal(this.route.queryParamMap.pipe(map(filtrosDaUrl)), {
     initialValue: filtrosDaUrl(this.route.snapshot.queryParamMap),
@@ -74,6 +76,13 @@ export class DecisoesDaProtecaoStore {
   readonly itemInexistente = this.leituraDoItem.naoEncontrado;
 
   constructor() {
+    effect(() => {
+      const problem = this.lista()?.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
     effect((aoLimpar) => {
       if (this.periodoInvalido()) return;
       const lista = untracked(() =>
@@ -106,6 +115,11 @@ export class DecisoesDaProtecaoStore {
   }
   lerHistorico(decisao: DecisaoDaProtecaoDto): void {
     this.leituraDoItem.ler(decisao.cadastro as CadastroDoCatalogo, decisao.itemId);
+  }
+
+  /** Repete a leitura do histórico que falhou sem apagar o alerta, para o botão acionado seguir na tela. */
+  recarregarHistorico(): void {
+    this.leituraDoItem.recarregar();
   }
 
   private montarParams(): HttpParams {

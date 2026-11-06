@@ -5,6 +5,7 @@ import {
   type DetalheDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
 import {
   CLASSIFICACOES_DE_PROTECAO,
   nomeDoCadastro,
@@ -38,4 +39,12 @@ export class DecisaoDaProtecaoDialogoComponent {
   protected readonly cadastro = nomeDoCadastro;
   protected readonly rotulo = rotuloDe;
   protected readonly justificativaMaxima = JUSTIFICATIVA_MAXIMA;
+
+  private readonly foco = acompanharFocoDoEnvio({ salvando: this.decidindo, aberto: this.aberto });
+
+  /** Confirmar barrado por um campo inválido leva o foco ao primeiro deles, na ordem da tela. */
+  protected enviar(): void {
+    this.confirmar.emit();
+    this.foco.focarPrimeiroInvalido();
+  }
 }

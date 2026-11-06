@@ -14,6 +14,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ProtecaoDoCatalogoPage } from './protecao-do-catalogo.page';
+import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/admin/protecao-do-catalogo`;
@@ -92,7 +93,6 @@ const recusa = (status: number, code: string, title: string) =>
 
 describe('ProtecaoDoCatalogoPage', () => {
   let fixture: ComponentFixture<ProtecaoDoCatalogoPage>;
-  let component: ProtecaoDoCatalogoPage;
   let controller: HttpTestingController;
   let appRef: ApplicationRef;
 
@@ -112,7 +112,6 @@ describe('ProtecaoDoCatalogoPage', () => {
       ],
     });
     fixture = TestBed.createComponent(ProtecaoDoCatalogoPage);
-    component = fixture.componentInstance;
     controller = TestBed.inject(HttpTestingController);
     appRef = TestBed.inject(ApplicationRef);
     fixture.detectChanges();
@@ -122,6 +121,11 @@ describe('ProtecaoDoCatalogoPage', () => {
     controller.match((r) => r.url === URL_CATEGORIAS).forEach((req) => req.flush([]));
     controller.verify();
   });
+
+  function clicar(alvo: HTMLElement | null | undefined): void {
+    expect(alvo, 'o alvo do clique existe').toBeTruthy();
+    (alvo as HTMLElement).click();
+  }
 
   const assentar = async (): Promise<void> => {
     await Promise.resolve();
@@ -143,9 +147,11 @@ describe('ProtecaoDoCatalogoPage', () => {
     item: ItemDaProtecaoDoCatalogoDto,
     detalhe: DetalheDaProtecaoDoCatalogoDto,
   ): Promise<void> {
-    tela
-      .querySelector<HTMLButtonElement>(`td button[aria-label="Ver o detalhe de ${item.nome}"]`)
-      ?.click();
+    clicar(
+      tela.querySelector<HTMLButtonElement>(
+        `td button[aria-label="Ver o detalhe de ${item.nome}"]`,
+      ),
+    );
     fixture.detectChanges();
     const segmento = item.tipo === 'FATO' ? 'fatos' : 'tipos-documento';
     controller.expectOne(`${URL}/${segmento}/${item.id}`).flush(detalhe);
@@ -205,7 +211,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     expect(alvo?.tagName).toBe('BUTTON');
     expect(alvo?.tabIndex).toBeGreaterThanOrEqual(0);
 
-    alvo?.click();
+    clicar(alvo);
     fixture.detectChanges();
     const pedido = controller.expectOne(`${URL}/tipos-documento/${laudo.id}`);
     expect(pedido.request.headers.get('Accept')).toBe(
@@ -257,7 +263,7 @@ describe('ProtecaoDoCatalogoPage', () => {
 
   it('item inexistente mostra "Item não encontrado" no próprio drawer, sem ações de decisão', async () => {
     const tela = await carregar([laudo]);
-    tela.querySelector<HTMLButtonElement>('td .table-responsive__alvo')?.click();
+    clicar(tela.querySelector<HTMLButtonElement>('td .table-responsive__alvo'));
     fixture.detectChanges();
     controller
       .expectOne(`${URL}/tipos-documento/${laudo.id}`)
@@ -291,7 +297,7 @@ describe('ProtecaoDoCatalogoPage', () => {
   it('aprovar leva a proteção conferida, com Idempotency-Key; o drawer fecha e a lista é relida', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    botaoDoRodape(tela, 'Aprovar')?.click();
+    clicar(botaoDoRodape(tela, 'Aprovar'));
 
     const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
@@ -309,7 +315,9 @@ describe('ProtecaoDoCatalogoPage', () => {
     controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([]);
     await assentar();
     expect(tela.textContent).toContain('Nenhum item aguardando a sua decisão');
-    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(
+      false,
+    );
     expect(document.activeElement?.id).toBe('cfg-protecao-titulo');
   });
 
@@ -338,7 +346,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     const abrirDialogo = async (item = laudo, detalhe = detalheDoLaudo): Promise<HTMLElement> => {
       const tela = await carregar([item]);
       await abrir(tela, item, detalhe);
-      botaoDoRodape(tela, 'Recomendar ajuste')?.click();
+      clicar(botaoDoRodape(tela, 'Recomendar ajuste'));
       fixture.detectChanges();
       return tela;
     };
@@ -347,7 +355,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       const tela = await abrirDialogo();
       await assentar();
 
-      confirmar(tela, 'Recomendar ajuste')?.click();
+      clicar(confirmar(tela, 'Recomendar ajuste'));
       fixture.detectChanges();
       await assentar();
 
@@ -417,7 +425,7 @@ describe('ProtecaoDoCatalogoPage', () => {
         .recomendada.setValue('SENSIVEL');
       digitar(campoDaJustificativa(tela), '  O laudo traz dado de saúde.  ');
 
-      confirmar(tela, 'Recomendar ajuste')?.click();
+      clicar(confirmar(tela, 'Recomendar ajuste'));
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body).toMatchObject({
@@ -438,7 +446,7 @@ describe('ProtecaoDoCatalogoPage', () => {
         .recomendada.setValue('SENSIVEL');
       digitar(campoDaJustificativa(tela), '   ');
 
-      confirmar(tela, 'Recomendar ajuste')?.click();
+      clicar(confirmar(tela, 'Recomendar ajuste'));
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body.justificativa).toBeNull();
@@ -450,7 +458,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('a recusa da API fica no diálogo, com a mensagem, e a lista não é relida', async () => {
       const tela = await abrirDialogo();
       fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).recomendada.setValue('PUBLICO');
-      confirmar(tela, 'Recomendar ajuste')?.click();
+      clicar(confirmar(tela, 'Recomendar ajuste'));
 
       controller
         .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -476,7 +484,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     const abrirDialogo = async (): Promise<HTMLElement> => {
       const tela = await carregar([laudo]);
       await abrir(tela, laudo, detalheDoLaudo);
-      botaoDoRodape(tela, 'Reprovar')?.click();
+      clicar(botaoDoRodape(tela, 'Reprovar'));
       fixture.detectChanges();
       return tela;
     };
@@ -511,7 +519,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '   ');
 
-      confirmar(tela, 'Reprovar item')?.click();
+      clicar(confirmar(tela, 'Reprovar item'));
       fixture.detectChanges();
       await assentar();
 
@@ -543,7 +551,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), 'a'.repeat(2001));
 
-      confirmar(tela, 'Reprovar item')?.click();
+      clicar(confirmar(tela, 'Reprovar item'));
       fixture.detectChanges();
 
       controller.expectNone((r) => r.method === 'POST');
@@ -556,7 +564,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       const tela = await abrirDialogo();
       digitar(campoDaJustificativa(tela), '  Falta a base legal.  ');
 
-      confirmar(tela, 'Reprovar item')?.click();
+      clicar(confirmar(tela, 'Reprovar item'));
 
       const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
       expect(post.request.body).toMatchObject({
@@ -579,30 +587,32 @@ describe('ProtecaoDoCatalogoPage', () => {
   });
 
   it('a leitura nova cancela a em voo: a resposta velha não prevalece', async () => {
-    await carregar([]);
-    component['carregar']();
+    const tela = await carregar([]);
+    const store = fixture.debugElement.injector.get(ProtecaoDoCatalogoStore);
+    store.carregar();
     await assentar();
     const velha = controller.expectOne((r) => r.method === 'GET' && r.url === URL);
-    component['carregar']();
+    store.carregar();
     await assentar();
     expect(velha.cancelled).toBe(true);
     controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([laudo]);
     await assentar();
 
-    expect(component['itens']()).toEqual([laudo]);
+    expect(tela.querySelectorAll('tbody tr')).toHaveLength(1);
+    expect(tela.querySelector('tbody')?.textContent).toContain(laudo.nome);
   });
 
   it('quando a proteção mudou, não repete a decisão: relê a lista e avisa para decidir de novo', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    botaoDoRodape(tela, 'Aprovar')?.click();
+    clicar(botaoDoRodape(tela, 'Aprovar'));
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
       .flush(
         ...recusa(
           409,
-          'uniplus.configuracao.protecao_do_catalogo.protecao_alterada',
+          'uniplus.configuracao.protecao_do_catalogo.protecao_mudou',
           'A proteção do item mudou desde a leitura',
         ),
       );
@@ -614,14 +624,16 @@ describe('ProtecaoDoCatalogoPage', () => {
     await assentar();
     expect(tela.textContent).toContain('A proteção do item mudou desde a leitura');
     expect(tela.textContent).toContain('Pessoal sensível');
-    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(false);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(
+      false,
+    );
     controller.expectNone((r) => r.method === 'POST');
   });
 
   it('item que já saiu da solicitação (decidido por outra pessoa) relê a lista em vez de manter os botões', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    botaoDoRodape(tela, 'Aprovar')?.click();
+    clicar(botaoDoRodape(tela, 'Aprovar'));
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -642,7 +654,7 @@ describe('ProtecaoDoCatalogoPage', () => {
   it('a recusa de uma aprovação fica no drawer, sem fechá-lo', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    botaoDoRodape(tela, 'Aprovar')?.click();
+    clicar(botaoDoRodape(tela, 'Aprovar'));
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -655,7 +667,9 @@ describe('ProtecaoDoCatalogoPage', () => {
       );
     await assentar();
 
-    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(true);
+    expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(
+      true,
+    );
     expect(drawer(tela)?.textContent).toContain('A hipótese legal não cabe na classificação');
   });
 
@@ -668,7 +682,7 @@ describe('ProtecaoDoCatalogoPage', () => {
         { status, statusText: 'Falha', headers: { 'content-type': 'application/problem+json' } },
       ] as const;
     const postar = () => {
-      botaoDoRodape(tela, 'Aprovar')?.click();
+      clicar(botaoDoRodape(tela, 'Aprovar'));
       return controller.expectOne((r) => r.method === 'POST' && r.url === URL);
     };
 
@@ -730,7 +744,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       const botao = Array.from(
         (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('button'),
       ).find((b) => b.textContent?.trim() === 'Aguardando decisão');
-      botao?.click();
+      clicar(botao);
       await new Promise((resolve) => setTimeout(resolve, 0));
       await assentar();
       await assentar();
@@ -899,7 +913,7 @@ describe('ProtecaoDoCatalogoPage', () => {
         .flush([decisaoDoFato]);
       await assentar();
 
-      tela.querySelector<HTMLInputElement>('.checkbox input')?.click();
+      clicar(tela.querySelector<HTMLInputElement>('.checkbox input'));
       await navegar();
       controller
         .expectOne((r) => r.url === DECISOES && r.params.get('minhas') === 'true')
@@ -990,7 +1004,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('pagina pelo cursor do Link, reenviando os filtros, e volta pelo anterior', async () => {
       const tela = await abrirAba('?aba=decisoes&cadastro=FATO', [decisaoDoFato], { Link: LINK });
 
-      botoes(tela, 'Próximo')[0]?.click();
+      clicar(botoes(tela, 'Próximo')[0]);
       await assentar();
       const proxima = controller.expectOne((r) => r.url === DECISOES);
       expect(proxima.request.params.get('cursor')).toBe('PROX');
@@ -1003,7 +1017,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       await assentar();
       expect(tela.querySelector('tbody')?.textContent).toContain('Laudo médico complementar');
 
-      botoes(tela, 'Anterior')[0]?.click();
+      clicar(botoes(tela, 'Anterior')[0]);
       await assentar();
       const anterior = controller.expectOne((r) => r.url === DECISOES);
       expect(anterior.request.params.get('cursor')).toBe('ANT');
@@ -1061,7 +1075,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('clicar na linha abre a decisão, a proteção conferida e o histórico completo lido do detalhe', async () => {
       const tela = await abrirAba('?aba=decisoes', [decisaoDoTipo]);
 
-      tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
+      clicar(tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo'));
       await assentar();
       const detalhe = controller.expectOne(`${URL}/tipos-documento/${laudo.id}`);
       expect(detalhe.request.headers.get('Accept')).toBe(
@@ -1114,7 +1128,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     it('se o item não existe mais, mantém a decisão e explica no histórico', async () => {
       const tela = await abrirAba('?aba=decisoes', [decisaoDoTipo]);
 
-      tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo')?.click();
+      clicar(tela.querySelector<HTMLButtonElement>('tbody .table-responsive__alvo'));
       await assentar();
       controller
         .expectOne(`${URL}/tipos-documento/${laudo.id}`)
