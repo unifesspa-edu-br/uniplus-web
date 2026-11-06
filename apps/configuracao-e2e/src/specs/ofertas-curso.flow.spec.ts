@@ -227,9 +227,9 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
-    await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
-    await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
-    await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
+    await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
+    await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await marcarTurno(page, 'Matutino');
     await page.getByRole('button', { name: 'Criar oferta' }).click();
@@ -251,9 +251,9 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
-    await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
-    await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
-    await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
+    await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
+    await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="programaDeOferta"]').selectOption('PARFOR');
     await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await marcarTurno(page, 'Matutino');
@@ -276,9 +276,9 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
-    await page.locator('[formControlName="cursoId"]').selectOption(CURSO_ID);
-    await page.locator('[formControlName="localOfertaId"]').selectOption(LOCAL_ID);
-    await page.locator('[formControlName="unidadeOfertanteOrigemId"]').selectOption(UNIDADE_ID);
+    await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
+    await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
+    await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
     await page.locator('[formControlName="regimeDeFuncionamento"]').selectOption('EXTENSIVO');
     await page.locator('[formControlName="regimeDeTurno"]').selectOption('INTEGRAL');
 
@@ -345,7 +345,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
       })
       .click();
 
-    await expect(page.locator('[formControlName="cursoId"]')).toHaveCount(0);
+    await expect(page.locator('#cfg-oferta-curso-id')).toHaveCount(0);
     await expect(page.getByText('Bacharelado · Graduação')).toBeVisible();
 
     await page.locator('[formControlName="eMecCodigo"]').fill('999999');

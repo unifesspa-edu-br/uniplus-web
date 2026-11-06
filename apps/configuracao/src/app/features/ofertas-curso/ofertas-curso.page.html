@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Oferta de curso</h1>
+    <p class="page-header__desc">
+      Instância regulatória que liga um Curso a um Local de oferta e à unidade ofertante ·
+      UNI-REQ-0010 · UNI-REQ-0137.
+    </p>
+  </div>
+</div>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar as ofertas de curso">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-ofertas-curso-lista
+  [linhas]="store.linhas()"
+  [total]="store.total()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [mensagemDeErro]="store.mensagemDeErro()"
+  [falhas]="vinculos.lookupsComFalha()"
+  [limite]="store.limite()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (remover)="edicao.pedirRemocao($event)"
+  (trocarLimite)="store.aoTrocarLimite($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+
+<cfg-oferta-curso-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [vinculos]="edicao.vinculosDoFormulario()"
+  [regras]="edicao.regras()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (tentarVinculo)="vinculos.tentarNoCampo($event)"
+/>
+
+<cfg-confirmacao-de-remocao
+  titulo="Remover oferta de curso"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

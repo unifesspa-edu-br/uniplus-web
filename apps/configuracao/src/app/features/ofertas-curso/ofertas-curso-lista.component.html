@@ -1,0 +1,119 @@
+<section class="panel" [attr.aria-labelledby]="idDoTitulo">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 [id]="idDoTitulo" tabindex="-1">Ofertas de curso</h2>
+      @if (total() !== null) {
+        <span class="list-count">Total de ofertas cadastradas: {{ total() }}</span>
+      }
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+    <button
+      type="button"
+      id="cfg-ofertas-novo"
+      class="btn btn--primary"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Nova oferta de curso
+    </button>
+  </div>
+
+  <ui-lookup-alert [falhas]="falhas()" />
+
+  @if (linhas().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e
+          turno, e vagas e-MEC
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Curso</th>
+            <th scope="col">Grau</th>
+            <th scope="col">Local de oferta</th>
+            <th scope="col">Unidade ofertante</th>
+            <th scope="col">Programa</th>
+            <th scope="col">Modalidade de ensino</th>
+            <th scope="col">Regime de funcionamento</th>
+            <th scope="col">Regime de turno</th>
+            <th scope="col">Turnos</th>
+            <th scope="col">Vagas e-MEC</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (linha of linhas(); track linha.oferta.id) {
+            @let oferta = linha.oferta;
+            <tr [attr.data-oferta-id]="oferta.id">
+              <td data-label="Curso"><ui-lookup-label [resolucao]="linha.curso" /></td>
+              <td data-label="Grau">{{ linha.grau }}</td>
+              <td data-label="Local de oferta"><ui-lookup-label [resolucao]="linha.local" /></td>
+              <td data-label="Unidade ofertante">{{ oferta.unidadeOfertante.sigla }}</td>
+              <td data-label="Programa">
+                <span class="tag">{{ programa(oferta.programaDeOferta) }}</span>
+              </td>
+              <td data-label="Modalidade de ensino">{{ formato(oferta.formatoPedagogico) }}</td>
+              <td data-label="Regime de funcionamento">
+                {{ regimeDeFuncionamento(oferta.regimeDeFuncionamento) }}
+              </td>
+              <td data-label="Regime de turno">
+                <span class="tag">{{ regimeDeTurno(oferta.regimeDeTurno) }}</span>
+              </td>
+              <td data-label="Turnos">{{ turnos(oferta.turnos) }}</td>
+              <td data-label="Vagas e-MEC">{{ oferta.vagasAnuaisAutorizadas ?? '—' }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar oferta de curso ' + linha.identificador"
+                  tooltip="Editar oferta de curso"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEditar(oferta)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="'Remover oferta de curso ' + linha.identificador"
+                  tooltip="Remover oferta de curso"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarRemover(oferta)"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !mensagemDeErro()) {
+    <ui-empty-state
+      heading="Nenhuma oferta de curso cadastrada"
+      description="Cadastre a primeira oferta para vincular curso, local e unidade ofertante."
+    >
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        Nova oferta de curso
+      </button>
+    </ui-empty-state>
+  }
+
+  <ui-list-footer
+    navigationLabel="Paginação de ofertas de curso"
+    [pageSizeOptions]="opcoesLimite"
+    [pageSize]="limite()"
+    (pageSizeChange)="trocarLimite.emit($event)"
+    [hasRows]="linhas().length > 0"
+    [hasPrevious]="temAnterior()"
+    [hasNext]="temProximo()"
+    [isDisabled]="indisponivel()"
+    (previous)="anterior.emit()"
+    (next)="proximo.emit()"
+  />
+</section>

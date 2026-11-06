@@ -1,0 +1,338 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de oferta de curso"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  <form
+    [formGroup]="form()"
+    id="cfg-oferta-curso-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    @if (erro()) {
+      <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+    }
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-oferta-vinculos">
+        <h3 id="cfg-oferta-vinculos" class="form-section__title">Vínculos</h3>
+        <div class="form-grid form-grid--1col">
+          @if (modo() === 'criar') {
+            @for (vinculo of selecoes; track vinculo.nome) {
+              @let catalogo = vinculos()[vinculo.chave];
+              @let erroDoVinculo = erroDoCampo(vinculo.nome);
+              <label class="field" [class.is-error]="erroDoVinculo">
+                <span class="field__label is-required">{{ vinculo.rotulo }}</span>
+                <select
+                  class="select"
+                  [id]="vinculo.id"
+                  [formControlName]="vinculo.nome"
+                  aria-required="true"
+                  [attr.aria-busy]="catalogo.pendente ? 'true' : null"
+                  [attr.aria-invalid]="erroDoVinculo ? 'true' : null"
+                  [attr.aria-describedby]="descritoPor(vinculo.nome)"
+                >
+                  <option value="" disabled>Selecione…</option>
+                  @for (opcao of catalogo.opcoes; track opcao.valor) {
+                    <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+                  }
+                </select>
+                @if (catalogo.contexto) {
+                  <span class="field__hint">{{ catalogo.contexto }}</span>
+                }
+                @if (vinculo.apoio) {
+                  <span class="field__hint">{{ vinculo.apoio }}</span>
+                }
+                @if (catalogo.falhou) {
+                  <span class="field__error" role="alert">
+                    {{ vinculo.falha }}
+                    <button
+                      type="button"
+                      class="cfg-link-button"
+                      [attr.aria-disabled]="catalogo.pendente ? 'true' : null"
+                      (click)="tentarVinculo.emit(vinculo.chave)"
+                    >
+                      Tentar novamente
+                    </button>
+                  </span>
+                }
+                @if (erroDoVinculo) {
+                  <span class="field__error" [id]="idDoErro(vinculo.nome)">{{
+                    erroDoVinculo
+                  }}</span>
+                }
+              </label>
+            }
+          } @else {
+            <div class="field">
+              <span class="field__label">Curso</span>
+              <p>{{ vinculos().edicao.curso }}</p>
+            </div>
+            <div class="field">
+              <span class="field__label">Local de oferta</span>
+              <p>{{ vinculos().edicao.local }}</p>
+            </div>
+            <div class="field">
+              <span class="field__label">Unidade ofertante</span>
+              <p>{{ vinculos().edicao.unidade }}</p>
+              <span class="field__hint">
+                Identidade congelada no ato de criação (ADR-0061). Alterações na unidade de origem
+                não são refletidas aqui.
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+
+      <section aria-labelledby="cfg-oferta-regime">
+        <h3 id="cfg-oferta-regime" class="form-section__title">Regime de oferta</h3>
+        <div class="form-grid">
+          <label class="field" [class.is-error]="erroDoCampo('programaDeOferta')">
+            <span class="field__label is-required">Programa de oferta</span>
+            <select
+              class="select"
+              formControlName="programaDeOferta"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('programaDeOferta') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('programaDeOferta')"
+            >
+              @for (opcao of programas; track opcao.value) {
+                <option [value]="opcao.value">{{ opcao.label }}</option>
+              }
+            </select>
+            @if (erroDoCampo('programaDeOferta')) {
+              <span class="field__error" [id]="idDoErro('programaDeOferta')">{{
+                erroDoCampo('programaDeOferta')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('formatoPedagogico')">
+            <span class="field__label is-required">Formato pedagógico</span>
+            <select
+              class="select"
+              formControlName="formatoPedagogico"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('formatoPedagogico') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('formatoPedagogico')"
+            >
+              @for (opcao of formatos; track opcao.value) {
+                <option [value]="opcao.value">{{ opcao.label }}</option>
+              }
+            </select>
+            @if (erroDoCampo('formatoPedagogico')) {
+              <span class="field__error" [id]="idDoErro('formatoPedagogico')">{{
+                erroDoCampo('formatoPedagogico')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('regimeDeFuncionamento')">
+            <span class="field__label is-required">Regime de funcionamento</span>
+            <select
+              class="select"
+              formControlName="regimeDeFuncionamento"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('regimeDeFuncionamento') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('regimeDeFuncionamento')"
+            >
+              @for (opcao of regimesDeFuncionamento; track opcao.value) {
+                <option [value]="opcao.value">{{ opcao.label }}</option>
+              }
+            </select>
+            @if (erroDoCampo('regimeDeFuncionamento')) {
+              <span class="field__error" [id]="idDoErro('regimeDeFuncionamento')">{{
+                erroDoCampo('regimeDeFuncionamento')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('regimeDeTurno')">
+            <span class="field__label is-required">Regime de turno</span>
+            <select
+              class="select"
+              formControlName="regimeDeTurno"
+              aria-required="true"
+              [attr.aria-invalid]="erroDoCampo('regimeDeTurno') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('regimeDeTurno')"
+            >
+              @if (regras().regimeNaoReconhecido; as token) {
+                <option [value]="token">{{ token }} — não reconhecido por esta versão</option>
+              }
+              @for (opcao of regimesDeTurno; track opcao.value) {
+                <option [value]="opcao.value">{{ opcao.label }}</option>
+              }
+            </select>
+            <span class="field__hint">{{ regras().regimeDescricao }}</span>
+            @if (erroDoCampo('regimeDeTurno')) {
+              <span class="field__error" [id]="idDoErro('regimeDeTurno')">{{
+                erroDoCampo('regimeDeTurno')
+              }}</span>
+            }
+          </label>
+          @let erroDosTurnos = erroDoCampo('turnos');
+          <fieldset class="field cfg-oferta-turnos" [class.is-error]="erroDosTurnos">
+            <legend class="field__label is-required">Turnos</legend>
+            <div class="cfg-oferta-turnos__opcoes">
+              @for (opcao of regras().opcoesDeTurno; track opcao.value) {
+                <label class="checkbox">
+                  <input
+                    type="checkbox"
+                    [value]="opcao.value"
+                    [checked]="regras().turnosMarcados.includes(opcao.value)"
+                    [attr.aria-invalid]="erroDosTurnos ? 'true' : null"
+                    [attr.aria-describedby]="descritoPor('turnos', 'cfg-oferta-turnos-hint')"
+                    (change)="marcarTurno(opcao.value)"
+                  />
+                  <span class="checkbox__box" aria-hidden="true"></span>
+                  <span>{{ opcao.label }}</span>
+                </label>
+              }
+            </div>
+            <span class="field__hint" id="cfg-oferta-turnos-hint">{{ regras().turnosHint }}</span>
+            @if (erroDosTurnos) {
+              <span class="field__error" [id]="idDoErro('turnos')">{{ erroDosTurnos }}</span>
+            }
+          </fieldset>
+          <label class="field" [class.is-error]="erroDoCampo('vagasAnuaisAutorizadas')">
+            <span class="field__label">Vagas anuais autorizadas</span>
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="1"
+              formControlName="vagasAnuaisAutorizadas"
+              [attr.aria-invalid]="erroDoCampo('vagasAnuaisAutorizadas') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('vagasAnuaisAutorizadas')"
+            />
+            <span class="field__hint"
+              >Teto anual autorizado pelo e-MEC — não as vagas do certame.</span
+            >
+            @if (erroDoCampo('vagasAnuaisAutorizadas')) {
+              <span class="field__error" [id]="idDoErro('vagasAnuaisAutorizadas')">{{
+                erroDoCampo('vagasAnuaisAutorizadas')
+              }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      <section aria-labelledby="cfg-oferta-codigos">
+        <h3 id="cfg-oferta-codigos" class="form-section__title">Códigos externos</h3>
+        <div class="form-grid form-grid--pair">
+          <label class="field" [class.is-error]="erroDoCampo('eMecCodigo')">
+            <span class="field__label">Código e-MEC</span>
+            <input
+              class="input"
+              type="text"
+              inputmode="numeric"
+              formControlName="eMecCodigo"
+              [attr.aria-invalid]="erroDoCampo('eMecCodigo') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('eMecCodigo')"
+            />
+            @if (erroDoCampo('eMecCodigo')) {
+              <span class="field__error" [id]="idDoErro('eMecCodigo')">{{
+                erroDoCampo('eMecCodigo')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('codigoSga')">
+            <span class="field__label">Código SGA</span>
+            <input
+              class="input"
+              type="text"
+              formControlName="codigoSga"
+              [attr.aria-invalid]="erroDoCampo('codigoSga') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('codigoSga')"
+            />
+            @if (erroDoCampo('codigoSga')) {
+              <span class="field__error" [id]="idDoErro('codigoSga')">{{
+                erroDoCampo('codigoSga')
+              }}</span>
+            }
+          </label>
+        </div>
+        <div class="form-grid form-grid--1col">
+          <label class="field" [class.is-error]="erroDoCampo('atoAutorizacaoMec')">
+            <span class="field__label">Ato de autorização (e-MEC)</span>
+            <input
+              class="input"
+              type="text"
+              placeholder="Ex.: Portaria SERES/MEC nº 270/2021"
+              formControlName="atoAutorizacaoMec"
+              [attr.aria-invalid]="erroDoCampo('atoAutorizacaoMec') ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('atoAutorizacaoMec')"
+            />
+            <span class="field__hint">
+              Independente do programa — vale para qualquer oferta, inclusive Regular.
+            </span>
+            @if (erroDoCampo('atoAutorizacaoMec')) {
+              <span class="field__error" [id]="idDoErro('atoAutorizacaoMec')">{{
+                erroDoCampo('atoAutorizacaoMec')
+              }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
+      @if (regras().exigeBaseLegal) {
+        <fieldset
+          class="form-section"
+          aria-live="polite"
+          aria-atomic="true"
+          aria-labelledby="cfg-oferta-base-legal"
+        >
+          <legend id="cfg-oferta-base-legal" class="form-section__title">
+            Base legal
+            <span class="tag tag--warning">Base legal obrigatória</span>
+          </legend>
+          <div class="form-grid form-grid--1col">
+            <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
+              <span class="field__label is-required">Base legal</span>
+              <input
+                class="input"
+                type="text"
+                placeholder="Ex.: Convênio Forma Pará nº 004/2020"
+                formControlName="baseLegal"
+                aria-required="true"
+                [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
+                [attr.aria-describedby]="descritoPor('baseLegal')"
+              />
+              <span class="field__hint">Norma do programa-mãe: tipo + número + ano.</span>
+              @if (erroDoCampo('baseLegal')) {
+                <span class="field__error" [id]="idDoErro('baseLegal')">{{
+                  erroDoCampo('baseLegal')
+                }}</span>
+              }
+            </label>
+          </div>
+        </fieldset>
+      }
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-oferta-curso-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar oferta' : 'Salvar oferta' }}
+    </button>
+  </div>
+</ui-drawer>

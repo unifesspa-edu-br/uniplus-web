@@ -1,1412 +1,449 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  TestRequest,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { TestBed } from '@angular/core/testing';
+import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
+import { CursoDto, LocalOfertaDto, OfertaCursoDto } from '@uniplus/shared-data/configuracao';
+import { UnidadeDto } from '@uniplus/shared-data/organizacao';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  CONFIGURACAO_BASE_PATH,
-  CursoDto,
-  LocalOfertaDto,
-  OfertaCursoDto,
-  TipoLocalOferta,
-} from '@uniplus/shared-data/configuracao';
-import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { OfertasCursoPage } from './ofertas-curso.page';
+  CURSOS,
+  ERRO_INTERNO,
+  LIMITE_MAXIMO_API,
+  LISTA,
+  LOCAIS,
+  Pagina,
+  SEM_PERMISSAO,
+  TITULO_DA_LISTA,
+  UNIDADES,
+  engCiv,
+  engMinas,
+  identificador,
+  ige,
+  maraba,
+  montarPagina,
+  oferta,
+  problema,
+} from './ofertas-curso.testing';
 
-const BASE = 'http://localhost:5000';
-// Teto de página aceito pela API (ADR-0026 do uniplus-api): `limit` fora da
-// faixa 1..100 responde 422 `uniplus.cursor.limit_invalido`, e o lookup
-// rejeitado deixa o select vazio e a listagem sem rótulo resolvido.
-const LIMITE_MAXIMO_API = 100;
-const CURSO_ID = '01960000-0000-7000-0000-0000000000c1';
-const LOCAL_ID = '01960000-0000-7000-0000-0000000000e1';
-const UNIDADE_ID = '01960000-0000-7000-0000-0000000000f1';
-const OFERTA_ID = '01960000-0000-7000-0000-0000000000d1';
+const mesmaOferta = (id: string, mudancas: Partial<OfertaCursoDto> = {}): OfertaCursoDto => ({
+  ...oferta,
+  id,
+  ...mudancas,
+});
 
-const cursoSeed: CursoDto = {
-  id: CURSO_ID,
-  codigo: 'ENG-CIV',
-  nome: 'Engenharia Civil',
-  grau: 'Bacharelado',
-  nivelEnsino: 'Graduação',
-  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+describe('OfertasCursoPage — catálogos de vínculo', () => {
+  let p: Pagina;
+  afterEach(() => p.encerrar());
 
-const localSeed: LocalOfertaDto = {
-  id: LOCAL_ID,
-  tipo: TipoLocalOferta.campusSede,
-  campusResponsavelId: null,
-  cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  endereco: null,
-  codigoEmec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const unidadeSeed: UnidadeDto = {
-  id: UNIDADE_ID,
-  nome: 'Instituto de Geociências e Engenharias',
-  alias: null,
-  slug: 'ige',
-  sigla: 'IGE',
-  codigo: 'IGE',
-  unidadeSuperiorId: null,
-  tipo: 'Instituto',
-  unidadeAcademica: true,
-  vigenciaInicio: '2020-01-01',
-  vigenciaFim: null,
-} as UnidadeDto;
-
-const ofertaSeed: OfertaCursoDto = {
-  id: OFERTA_ID,
-  cursoId: CURSO_ID,
-  localOfertaId: LOCAL_ID,
-  unidadeOfertante: {
-    origemId: UNIDADE_ID,
-    sigla: 'IGE',
-    nome: 'Instituto de Geociências e Engenharias',
-    tipo: 'Instituto',
-  },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeTurno: 'REGULAR',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  turnos: ['MATUTINO'],
-  eMecCodigo: '123456',
-  codigoSga: null,
-  vagasAnuaisAutorizadas: 40,
-  baseLegal: null,
-  atoAutorizacaoMec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-// Segundo curso e segunda oferta no mesmo local e na mesma unidade que
-// `ofertaSeed` — a listagem não é escopada a um curso (`ofertas-curso.routes.ts`
-// não tem parâmetro de curso), então as duas linhas convivem na mesma página.
-// Usados para provar que o identificador da linha as distingue.
-const CURSO_ID_2 = '01960000-0000-7000-0000-0000000000c2';
-
-const cursoSeed2: CursoDto = {
-  id: CURSO_ID_2,
-  codigo: 'ENG-MIN',
-  nome: 'Engenharia de Minas',
-  grau: 'Bacharelado',
-  nivelEnsino: 'Graduação',
-  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const ofertaSeed2: OfertaCursoDto = {
-  ...ofertaSeed,
-  id: '01960000-0000-7000-0000-0000000000d2',
-  cursoId: CURSO_ID_2,
-};
-
-describe('OfertasCursoPage', () => {
-  let fixture: ComponentFixture<OfertasCursoPage>;
-  let component: OfertasCursoPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [OfertasCursoPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(OfertasCursoPage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-  });
-
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-  };
-
-  // Casa a requisição de lookup exigindo `limit` dentro da faixa aceita pela
-  // API. Comparar só `r.url` não basta: a query string não entra nele quando os
-  // parâmetros vêm de `HttpParams`, então um limite inválido passaria batido.
-  const expectLookup = (url: string): TestRequest => {
-    const req = controller.expectOne((r) => r.url === url);
-    const limit = Number(req.request.params.get('limit'));
-    expect(limit).toBeGreaterThanOrEqual(1);
-    expect(limit).toBeLessThanOrEqual(LIMITE_MAXIMO_API);
-    return req;
-  };
-
-  async function flushCargaInicial(ofertas: readonly OfertaCursoDto[]): Promise<void> {
-    const listaReq = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/ofertas-curso`,
-    );
-    listaReq.flush(ofertas);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-  }
-
-  // Pós-mutação, `recarregar()` só dá reload no resource da lista principal —
-  // os lookups de Curso/Local de oferta já estão em cache e não recarregam.
-  async function flushRecarregarLista(ofertas: readonly OfertaCursoDto[]): Promise<void> {
-    await propagate();
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush(ofertas);
-    await propagate();
-  }
-
-  // `abrirCadastro()` ativa o lookup lazy de Unidade (cross-módulo) — consumida
-  // aqui para não deixar request pendente em `controller.verify()`.
-  async function flushUnidades(itens: readonly UnidadeDto[] = [unidadeSeed]): Promise<void> {
-    await propagate();
-    expectLookup(`${BASE}/api/organizacao/unidades`).flush(itens);
-    await propagate();
-  }
-
-  // O nome acessível é o único texto do botão (o `<i>` é `aria-hidden`), então
-  // localizar por `aria-label` exato é o equivalente de `getByRole('button',
-  // { name, exact: true })` no Playwright.
-  const botaoAcao = (rotulo: string): HTMLButtonElement | null =>
-    fixture.nativeElement.querySelector(`button[aria-label="${rotulo}"]`);
-
-  it('pede o máximo de uma página da API nos lookups de Curso, Local de oferta e Unidade', async () => {
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
-    const cursos = expectLookup(`${BASE}/api/configuracao/cursos`);
-    const locais = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
-    cursos.flush([cursoSeed]);
-    locais.flush([localSeed]);
-    await propagate();
-
-    component['abrirCadastro']();
-    await propagate();
-    const unidades = expectLookup(`${BASE}/api/organizacao/unidades`);
-    unidades.flush([unidadeSeed]);
-    await propagate();
-
-    // O valor pedido é o teto da API, não um número escolhido à toa: acima
-    // dele a resposta é 422 e os três campos ficam sem opção.
-    for (const req of [cursos, locais, unidades]) {
-      expect(req.request.params.get('limit')).toBe(String(LIMITE_MAXIMO_API));
+  it('pede o teto de uma página da API nos catálogos de curso, local e unidade, com o tipo de mídia de cada um', async () => {
+    p = await montarPagina([]);
+    const unidades = await abrirEPegarUnidades();
+    expect(p.http.match(() => false)).toEqual([]);
+    for (const requisicao of [p.vinculos.cursos, p.vinculos.locais]) {
+      expect(requisicao.pendente()).toBe(false);
     }
+    expect(unidades.request.params.get('limit')).toBe(String(LIMITE_MAXIMO_API));
+    expect(unidades.request.headers.get('Accept')).toContain('unidade');
+    unidades.flush([ige]);
   });
 
-  it('cancela o lookup de cursos anterior ao clicar "Tentar novamente" antes da resposta chegar', async () => {
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
-    const primeira = expectLookup(`${BASE}/api/configuracao/cursos`);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
+  async function abrirEPegarUnidades() {
+    p.novo().click();
+    await p.propagar();
+    return p.doCatalogo(UNIDADES);
+  }
 
-    component['cursos'].recarregar();
-    await propagate();
+  it('pede à API as ofertas no tipo de mídia próprio, com o limite padrão e o total', async () => {
+    p = await montarPagina([]);
+    p.store.recarregar();
+    await p.propagar();
+    const pedido = p.http.expectOne((r) => r.url === LISTA);
+    expect(pedido.request.headers.get('Accept')).toBe(buildVendorMimeAccept('oferta-curso', 1));
+    expect(pedido.request.params.get('limit')).toBe(String(p.store.limite()));
+    expect(pedido.request.params.get('include_total')).toBe('true');
+    pedido.flush([]);
+    await p.propagar();
+  });
 
-    // A primeira travessia precisa ter sido cancelada de verdade (não só
-    // ignorada) — senão ela ainda pode ganhar a corrida se responder por
-    // último, sobrescrevendo o resultado da segunda com dado obsoleto.
+  it('cancela a busca de cursos anterior ao pedir de novo antes de a resposta chegar', async () => {
+    p = await montarPagina();
+    p.vinculos.cursos.recarregar();
+    const primeira = p.doCatalogo(CURSOS);
+    p.vinculos.cursos.recarregar();
+    await p.propagar();
+
     expect(primeira.cancelled).toBe(true);
-
-    const segunda = expectLookup(`${BASE}/api/configuracao/cursos`);
-    segunda.flush([cursoSeed]);
-    await propagate();
-
-    expect(component['cursos'].opcoes()).toHaveLength(1);
-    expect(component['cursos'].opcoes()[0].id).toBe(CURSO_ID);
+    p.doCatalogo(CURSOS).flush([engCiv]);
+    await p.propagar();
+    expect(p.vinculos.cursos.opcoes().map((curso) => curso.id)).toEqual([engCiv.id]);
   });
 
-  it('percorre todas as páginas dos lookups de Curso e Local de oferta sem truncar (issue #580)', async () => {
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`).flush([]);
-
-    const cursosPagina1 = expectLookup(`${BASE}/api/configuracao/cursos`);
-    cursosPagina1.flush([cursoSeed], {
-      headers: {
-        Link: `<${BASE}/api/configuracao/cursos?cursor=pagina-2&direction=next>; rel="next"`,
-      },
+  it('percorre todas as páginas dos catálogos de curso, local e unidade sem truncar', async () => {
+    p = await montarPagina([]);
+    const proxima = (url: string) => ({
+      headers: { Link: `<${url}?cursor=pagina-2&direction=next>; rel="next"` },
     });
-    const locaisPagina1 = expectLookup(`${BASE}/api/configuracao/locais-oferta`);
-    locaisPagina1.flush([localSeed], {
-      headers: {
-        Link: `<${BASE}/api/configuracao/locais-oferta?cursor=pagina-2&direction=next>; rel="next"`,
-      },
-    });
-    await propagate();
-
-    const outroCurso: CursoDto = {
-      ...cursoSeed,
-      id: '01960000-0000-7000-0000-0000000000c2',
-      codigo: 'DIR',
-      nome: 'Direito',
-    };
-    const cursosPagina2 = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/cursos`);
-    expect(cursosPagina2.request.params.get('cursor')).toBe('pagina-2');
-    cursosPagina2.flush([outroCurso]);
-
+    p.vinculos.cursos.recarregar();
+    p.vinculos.locais.recarregar();
+    p.novo().click();
+    await p.propagar();
+    const outraUnidade = { ...ige, id: 'u2', sigla: 'ICH' } as UnidadeDto;
+    const outroCurso: CursoDto = { ...engCiv, id: 'c9', codigo: 'DIR', nome: 'Direito' };
     const outroLocal: LocalOfertaDto = {
-      ...localSeed,
-      id: '01960000-0000-7000-0000-0000000000e2',
-      cidade: { codigoIbge: '1508084', nome: 'Xinguara', uf: 'PA' },
+      ...maraba,
+      id: 'e9',
+      cidade: { ...maraba.cidade, nome: 'Xinguara' },
     };
-    const locaisPagina2 = controller.expectOne(
-      (r) => r.url === `${BASE}/api/configuracao/locais-oferta`,
-    );
-    expect(locaisPagina2.request.params.get('cursor')).toBe('pagina-2');
-    locaisPagina2.flush([outroLocal]);
-    await propagate();
 
-    expect(component['cursos'].opcoes()).toHaveLength(2);
-    expect(component['cursos'].opcoes().map((c) => c.codigo)).toEqual(['ENG-CIV', 'DIR']);
-    expect(component['locaisOferta'].opcoes()).toHaveLength(2);
-    expect(component['locaisOferta'].opcoes().map((l) => l.cidade?.nome)).toEqual([
-      'Marabá',
-      'Xinguara',
-    ]);
+    p.doCatalogo(CURSOS).flush([engCiv], proxima(CURSOS));
+    p.doCatalogo(LOCAIS).flush([maraba], proxima(LOCAIS));
+    p.doCatalogo(UNIDADES).flush([ige], proxima(UNIDADES));
+    await p.propagar();
+    for (const [url, itens] of [
+      [CURSOS, [outroCurso]],
+      [LOCAIS, [outroLocal]],
+      [UNIDADES, [outraUnidade]],
+    ] as const) {
+      const segunda = p.http.expectOne((r) => r.url === url);
+      expect(segunda.request.params.get('cursor')).toBe('pagina-2');
+      segunda.flush(itens);
+    }
+    await p.propagar();
+
+    expect(p.vinculos.cursos.opcoes().map((curso) => curso.codigo)).toEqual(['ENG-CIV', 'DIR']);
+    expect(p.vinculos.locais.opcoes()).toHaveLength(2);
+    expect(p.vinculos.unidades.opcoes().map((unidade) => unidade.sigla)).toEqual(['IGE', 'ICH']);
   });
 
-  // Unidade é o único lookup cross-módulo (Organização, ADR-0056) e o que mais
-  // cresce: o truncamento aqui esconderia unidades ofertantes inteiras do
-  // select de criação.
-  it('percorre todas as páginas do lookup de Unidade sem truncar (issue #580)', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await propagate();
+  it('lê as unidades uma só vez, na primeira abertura do cadastro', async () => {
+    p = await montarPagina([]);
+    p.novo().click();
+    await p.responderUnidades();
+    p.edicao.fechar();
+    await p.propagar();
+    p.novo().click();
+    await p.propagar();
+    p.http.expectNone((r) => r.url === UNIDADES);
+    expect(p.vinculos.unidades.opcoes()).toHaveLength(1);
+  });
 
-    const unidadesPagina1 = expectLookup(`${BASE}/api/organizacao/unidades`);
-    unidadesPagina1.flush([unidadeSeed], {
-      headers: {
-        Link: `<${BASE}/api/organizacao/unidades?cursor=pagina-2&direction=next>; rel="next"`,
-      },
+  describe('falha de leitura', () => {
+    it('o catálogo de cursos recusado sinaliza só a coluna Curso e oferece recarregar só esse catálogo', async () => {
+      p = await montarPagina([oferta], { cursos: 'falha' });
+      const celula = p.elemento('td[data-label="Curso"]');
+      expect(celula.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
+        'Não carregado',
+      );
+      expect(p.elemento('td[data-label="Local de oferta"]').textContent).toContain('Marabá');
+      expect(p.elemento('td[data-label="Grau"]').textContent?.trim()).toBe('—');
+      expect(
+        p.editar('Não carregado · IGE · Campus sede — Marabá · Regular · Matutino'),
+      ).toBeTruthy();
+      expect(p.erros).toHaveBeenCalledTimes(1);
+
+      const alerta = p.elemento('.alert--warning');
+      expect(alerta.textContent).toContain('Recarregar cursos');
+      expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
+      p.elemento<HTMLButtonElement>('.alert--warning button').click();
+      await p.propagar();
+      p.doCatalogo(CURSOS).flush([engCiv]);
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
+      expect(celula.textContent).toContain('Engenharia Civil');
+      expect(p.editar()).toBeTruthy();
     });
-    await propagate();
 
-    const outraUnidade: UnidadeDto = {
-      ...unidadeSeed,
-      id: '01960000-0000-7000-0000-0000000000f2',
-      sigla: 'ICH',
-      nome: 'Instituto de Ciências Humanas',
-      slug: 'ich',
-      codigo: 'ICH',
-    };
-    const unidadesPagina2 = controller.expectOne(
-      (r) => r.url === `${BASE}/api/organizacao/unidades`,
-    );
-    expect(unidadesPagina2.request.params.get('cursor')).toBe('pagina-2');
-    unidadesPagina2.flush([outraUnidade]);
-    await propagate();
+    it('o catálogo de locais recusado sinaliza a própria coluna e o nome acessível das ações', async () => {
+      p = await montarPagina([oferta], { locais: 'falha' });
+      const celula = p.elemento('td[data-label="Local de oferta"]');
+      expect(celula.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
+        'Não carregado',
+      );
+      expect(p.elemento('td[data-label="Curso"]').textContent).toContain('Engenharia Civil');
+      const nome = 'Engenharia Civil · IGE · Não carregado · Regular · Matutino';
+      expect(p.editar(nome)).toBeTruthy();
+      expect(p.remover(nome)).toBeTruthy();
+      expect(p.elemento('.alert--warning').textContent).toContain('Recarregar locais de oferta');
+    });
 
-    expect(component['unidades'].opcoes()).toHaveLength(2);
-    expect(component['unidades'].opcoes().map((u) => u.sigla)).toEqual(['IGE', 'ICH']);
+    it('a nova tentativa mantém o aviso e o foco no botão até terminar, e leva o foco ao título quando dá certo', async () => {
+      p = await montarPagina([oferta], { cursos: 'falha' });
+      const recarregar = p.elemento<HTMLButtonElement>('.alert--warning button');
+      recarregar.focus();
+      recarregar.click();
+      await p.propagar();
+
+      expect(p.elemento('.alert--warning button')).toBe(recarregar);
+      expect(document.activeElement).toBe(recarregar);
+      recarregar.click();
+      p.doCatalogo(CURSOS).flush([engCiv]);
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
+      expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
+    });
+
+    it('a nova tentativa que falha de novo mantém o aviso e o foco', async () => {
+      p = await montarPagina([oferta], { locais: 'falha' });
+      const recarregar = p.elemento<HTMLButtonElement>('.alert--warning button');
+      recarregar.focus();
+      recarregar.click();
+      await p.propagar();
+      p.doCatalogo(LOCAIS).flush(...problema(503, { code: ERRO_INTERNO }));
+      await p.propagar();
+
+      expect(p.elemento('.alert--warning button')).toBe(recarregar);
+      expect(document.activeElement).toBe(recarregar);
+      expect(p.erros).toHaveBeenCalledTimes(2);
+    });
+
+    it('recusa 4xx de um catálogo sinaliza a coluna sem avisar por toast', async () => {
+      p = await montarPagina([oferta], { cursos: [] });
+      p.vinculos.cursos.recarregar();
+      p.doCatalogo(CURSOS).flush(...problema(403, { code: SEM_PERMISSAO }));
+      await p.propagar();
+
+      expect(p.elemento('.lookup-label--failed')).toBeTruthy();
+      expect(p.erros).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('OfertasCursoPage — listagem', () => {
+  let p: Pagina;
+  afterEach(() => p.encerrar());
+
+  it('resolve o curso pelo nome, sem o código, e a unidade pela sigla, sem o nome', async () => {
+    p = await montarPagina();
+    const curso = p.elemento('td[data-label="Curso"]');
+    expect(curso.textContent?.trim()).toBe('Engenharia Civil');
+    expect(curso.textContent).not.toContain('ENG-CIV');
+    const unidade = p.elemento('td[data-label="Unidade ofertante"]');
+    expect(unidade.textContent?.trim()).toBe('IGE');
+    expect(unidade.textContent).not.toContain('Instituto');
+    expect(p.elemento('td[data-label="Local de oferta"]').textContent).toContain('Marabá');
   });
 
-  it('renderiza a lista resolvendo rótulos de Curso e Local via lookup', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Engenharia Civil');
-    expect(fixture.nativeElement.textContent).toContain('Marabá');
-    expect(fixture.nativeElement.textContent).toContain('IGE');
-  });
-
-  // Asserção por igualdade, não por continência: `toContain('Engenharia Civil')`
-  // também passaria com o rótulo `ENG-CIV — Engenharia Civil`, e o que estas
-  // colunas precisam provar é justamente o que deixou de ser exibido.
-  it('CA-01/CA-02 (#696): a coluna Curso exibe o nome do curso sem o código', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    const celulaCurso: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Curso"]');
-    expect(celulaCurso.textContent?.trim()).toBe('Engenharia Civil');
-    expect(celulaCurso.textContent).not.toContain('ENG-CIV');
-  });
-
-  it('CA-01/CA-02 (#697): a coluna Unidade ofertante exibe a sigla sem o nome', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    const celulaUnidade: HTMLElement = fixture.nativeElement.querySelector(
-      'td[data-label="Unidade ofertante"]',
-    );
-    expect(celulaUnidade.textContent?.trim()).toBe('IGE');
-    expect(celulaUnidade.textContent).not.toContain('Instituto de Geociências e Engenharias');
-  });
-
-  // Enxugar a coluna não pode enxugar as mensagens. Aqui o curso
-  // aparece sozinho, sem as demais colunas da linha, e o código é o que
-  // distingue cursos de nome semelhante numa remoção.
-  it('CA-11 (#696): a confirmação de remoção identifica o curso pelo código e nome', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    component['pedirRemocao'](ofertaSeed);
-
-    expect(component['confirmMessage']()).toContain('ENG-CIV — Engenharia Civil');
-  });
-
-  it('a listagem mostra os regimes por rótulo, não pelo token do contrato', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    const texto = fixture.nativeElement.textContent as string;
-    expect(texto).toContain('Extensivo');
+  it('mostra os regimes e o programa pelo rótulo, não pelo token do contrato', async () => {
+    p = await montarPagina([mesmaOferta('x', { regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA' })]);
+    const texto = p.fixture.nativeElement.textContent as string;
+    expect(texto).toContain('Alternância Pedagógica');
     expect(texto).toContain('Regular');
+    expect(texto).not.toContain('ALTERNANCIA_PEDAGOGICA');
     expect(texto).not.toContain('EXTENSIVO');
   });
 
-  it('CA-01/CA-02: o campo oferece Alternância Pedagógica sem remover Intensivo e Extensivo', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-    fixture.detectChanges();
-
-    const select = fixture.nativeElement.querySelector(
-      'select[formControlName="regimeDeFuncionamento"]',
-    ) as HTMLSelectElement;
-    const opcoes = Array.from(select.options).map((o) => [o.value, o.textContent?.trim()]);
-    expect(opcoes).toEqual([
-      ['INTENSIVO', 'Intensivo'],
-      ['EXTENSIVO', 'Extensivo'],
-      ['ALTERNANCIA_PEDAGOGICA', 'Alternância Pedagógica'],
-    ]);
-  });
-
-  it('CA-09: a listagem mostra Alternância Pedagógica por rótulo, não pelo token', async () => {
-    const oferta: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
-    };
-    await flushCargaInicial([oferta]);
-    fixture.detectChanges();
-
-    const texto = fixture.nativeElement.textContent as string;
-    expect(texto).toContain('Alternância Pedagógica');
-    expect(texto).not.toContain('ALTERNANCIA_PEDAGOGICA');
-  });
-
-  it.each(['REGULAR', 'INTEGRAL'])(
-    'CA-03/CA-07: cria oferta em ALTERNANCIA_PEDAGOGICA com regime de turno %s',
-    async (regimeDeTurno) => {
-      await flushCargaInicial([]);
-      component['abrirCadastro']();
-      await flushUnidades();
-
-      component['form'].patchValue({
-        cursoId: CURSO_ID,
-        localOfertaId: LOCAL_ID,
-        unidadeOfertanteOrigemId: UNIDADE_ID,
-        programaDeOferta: 'REGULAR',
-        formatoPedagogico: 'PRESENCIAL',
-        regimeDeTurno,
-        regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
-      });
-      component['alternarTurno']('MATUTINO');
-      if (regimeDeTurno === 'INTEGRAL') component['alternarTurno']('VESPERTINO');
-      await propagate();
-
-      expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeNull();
-      component['salvar']();
-
-      const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
-      expect(post.request.body).toMatchObject({
-        regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
-        regimeDeTurno,
-      });
-      post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
-      await flushRecarregarLista([ofertaSeed]);
-    },
-  );
-
-  it('CA-04/CA-05/CA-08: edição preserva ALTERNANCIA_PEDAGOGICA selecionada e não mexe em turno', async () => {
-    const oferta: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeFuncionamento: 'ALTERNANCIA_PEDAGOGICA',
-    };
-    await flushCargaInicial([oferta]);
-    component['abrirEdicao'](oferta);
-    await propagate();
-
-    expect(component['form'].controls.regimeDeFuncionamento.value).toBe('ALTERNANCIA_PEDAGOGICA');
-
-    component['form'].controls.regimeDeFuncionamento.setValue('EXTENSIVO');
-    component['form'].controls.regimeDeFuncionamento.setValue('ALTERNANCIA_PEDAGOGICA');
-    await propagate();
-    expect(component['form'].controls.regimeDeTurno.value).toBe('REGULAR');
-    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO']);
-
-    component['salvar']();
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
-    expect(put.request.body.regimeDeFuncionamento).toBe('ALTERNANCIA_PEDAGOGICA');
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([oferta]);
-  });
-
-  it('CA-06: programa REGULAR não exige base legal; programa != REGULAR exige', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    expect(component['exigeBaseLegal']()).toBe(false);
-
-    component['form'].controls.programaDeOferta.setValue('PARFOR');
-    await propagate();
-    expect(component['exigeBaseLegal']()).toBe(true);
-    expect(component['form'].controls.baseLegal.hasError('required')).toBe(true);
-
-    component['form'].controls.programaDeOferta.setValue('REGULAR');
-    await propagate();
-    expect(component['exigeBaseLegal']()).toBe(false);
-    expect(component['form'].controls.baseLegal.hasError('required')).toBe(false);
-  });
-
-  it('voltar para REGULAR limpa baseLegal (evita maxlength oculto travando o submit), mas preserva atoAutorizacaoMec', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].controls.programaDeOferta.setValue('PARFOR');
-    await propagate();
-    component['form'].controls.baseLegal.setValue('X'.repeat(600));
-    component['form'].controls.atoAutorizacaoMec.setValue('Portaria SERES/MEC nº 270/2021');
-    expect(component['form'].controls.baseLegal.hasError('maxlength')).toBe(true);
-
-    component['form'].controls.programaDeOferta.setValue('REGULAR');
-    await propagate();
-
-    expect(component['form'].controls.baseLegal.value).toBe('');
-    expect(component['form'].controls.baseLegal.valid).toBe(true);
-    // atoAutorizacaoMec é dado factual independente do programa (a API não o
-    // vincula a REGULAR) — não deve ser apagado pela troca de programa.
-    expect(component['form'].controls.atoAutorizacaoMec.value).toBe(
-      'Portaria SERES/MEC nº 270/2021',
-    );
-  });
-
-  it('edição de oferta REGULAR com atoAutorizacaoMec preexistente preserva o valor no payload', async () => {
-    const ofertaRegularComAto: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeFuncionamento: 'EXTENSIVO',
-      programaDeOferta: 'REGULAR',
-      baseLegal: null,
-      atoAutorizacaoMec: 'Portaria SERES/MEC nº 270/2021',
-    };
-    await flushCargaInicial([ofertaRegularComAto]);
-    component['abrirEdicao'](ofertaRegularComAto);
-    await propagate();
-
-    expect(component['form'].controls.atoAutorizacaoMec.value).toBe(
-      'Portaria SERES/MEC nº 270/2021',
-    );
-
-    component['form'].controls.eMecCodigo.setValue('999999');
-    component['salvar']();
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
-    expect(put.request.body.atoAutorizacaoMec).toBe('Portaria SERES/MEC nº 270/2021');
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([ofertaRegularComAto]);
-  });
-
-  it('CA-04: cria oferta enviando unidadeOfertanteOrigemId (não o id do DTO de leitura)', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-      regimeDeFuncionamento: 'EXTENSIVO',
-      turnos: ['MATUTINO'],
-      vagasAnuaisAutorizadas: 40,
+  it('mostra a coluna Grau logo após Curso, com o grau de cada curso', async () => {
+    const licenciatura: CursoDto = { ...engMinas, grau: 'Licenciatura' };
+    p = await montarPagina([oferta, mesmaOferta('y', { cursoId: engMinas.id })], {
+      cursos: [engCiv, licenciatura],
     });
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
-    expect(post.request.method).toBe('POST');
-    expect(post.request.body).toMatchObject({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      regimeDeFuncionamento: 'EXTENSIVO',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-      turnos: ['MATUTINO'],
-      vagasAnuaisAutorizadas: 40,
-    });
-    post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
-    await flushRecarregarLista([ofertaSeed]);
-    expect(component['formOpen']()).toBe(false);
-  });
-
-  it('CA-04/edição: os 3 vínculos ficam desabilitados e o payload de atualização não os inclui', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    component['abrirEdicao'](ofertaSeed);
-
-    expect(component['form'].controls.cursoId.disabled).toBe(true);
-    expect(component['form'].controls.localOfertaId.disabled).toBe(true);
-    expect(component['form'].controls.unidadeOfertanteOrigemId.disabled).toBe(true);
-
-    component['form'].controls.eMecCodigo.setValue('999999');
-    component['salvar']();
-
-    const put = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
-    expect(put.request.method).toBe('PUT');
-    expect(put.request.body.cursoId).toBeUndefined();
-    expect(put.request.body.localOfertaId).toBeUndefined();
-    expect(put.request.body.unidadeOfertanteOrigemId).toBeUndefined();
-    expect(put.request.body.eMecCodigo).toBe('999999');
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([ofertaSeed]);
-  });
-
-  it('bloqueia salvar sem os campos obrigatórios (curso/local/unidade/programa)', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-    component['salvar']();
-    controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
-  });
-
-  it('CA-07: vagas anuais negativas são rejeitadas pelo form', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-    component['form'].controls.vagasAnuaisAutorizadas.setValue(-5);
-    expect(component['form'].controls.vagasAnuaisAutorizadas.hasError('min')).toBe(true);
-  });
-
-  it('remove uma oferta de curso sem bloqueio (soft-delete livre)', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    component['pedirRemocao'](ofertaSeed);
-    component['removerConfirmado']();
-
-    const req = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${OFERTA_ID}`);
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await flushRecarregarLista([]);
-    expect(component['confirmOpen']()).toBe(false);
-  });
-
-  it('CA-05: contexto de Curso e Local aparece abaixo dos selects ao selecionar', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].controls.cursoId.setValue(CURSO_ID);
-    await propagate();
-    expect(component['cursoContexto']()).toBe('Bacharelado · Graduação');
-
-    component['form'].controls.localOfertaId.setValue(LOCAL_ID);
-    await propagate();
-    expect(component['localContexto']()).toContain('Marabá');
-  });
-
-  it('trocar o regime para INTEGRAL passa a exigir dois turnos, e um só não salva', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-    });
-    component['alternarTurno']('MATUTINO');
-    await propagate();
-    expect(component['form'].controls.turnos.valid).toBe(true);
-
-    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
-    await propagate();
-
-    expect(component['turnosExigidos']()).toBe(2);
-    expect(component['form'].controls.turnos.valid).toBe(false);
-    expect(component['erroDoCampo']('turnos')).toContain('INTEGRAL');
-
-    component['salvar']();
-    controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
-  });
-
-  it('voltar de INTEGRAL para REGULAR mantém o turno marcado por último', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
-    await propagate();
-    component['alternarTurno']('VESPERTINO');
-    component['alternarTurno']('MATUTINO');
-    await propagate();
-    expect(component['form'].controls.turnos.value).toEqual(['VESPERTINO', 'MATUTINO']);
-
-    component['form'].controls.regimeDeTurno.setValue('REGULAR');
-    await propagate();
-
-    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO']);
-    expect(component['form'].controls.turnos.valid).toBe(true);
-  });
-
-  it('sob INTEGRAL, um terceiro turno descarta o mais antigo em vez de zerar a seleção', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].controls.regimeDeTurno.setValue('INTEGRAL');
-    await propagate();
-    component['alternarTurno']('MATUTINO');
-    component['alternarTurno']('VESPERTINO');
-    component['alternarTurno']('NOTURNO');
-    await propagate();
-
-    expect(component['form'].controls.turnos.value).toEqual(['VESPERTINO', 'NOTURNO']);
-    expect(component['form'].controls.turnos.valid).toBe(true);
-  });
-
-  it('sob REGULAR, marcar outro turno substitui o anterior em vez de somar', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['alternarTurno']('MATUTINO');
-    component['alternarTurno']('NOTURNO');
-    await propagate();
-
-    expect(component['form'].controls.turnos.value).toEqual(['NOTURNO']);
-  });
-
-  it('envia regimeDeTurno e os turnos em ordem canônica, qualquer que seja a ordem de marcação', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'INTEGRAL',
-      regimeDeFuncionamento: 'EXTENSIVO',
-    });
-    component['alternarTurno']('NOTURNO');
-    component['alternarTurno']('VESPERTINO');
-    await propagate();
-
-    component['salvar']();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`);
-    expect(post.request.body).toMatchObject({
-      regimeDeTurno: 'INTEGRAL',
-      turnos: ['VESPERTINO', 'NOTURNO'],
-    });
-    post.flush(OFERTA_ID, { status: 201, statusText: 'Created' });
-    await flushRecarregarLista([ofertaSeed]);
-  });
-
-  it('a recusa de cardinalidade da API aparece junto ao campo de turnos e preserva o formulário', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-      regimeDeFuncionamento: 'EXTENSIVO',
-    });
-    component['alternarTurno']('MATUTINO');
-    await propagate();
-
-    component['salvar']();
-
-    controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
-        title: 'Quantidade de turnos incompatível com o regime declarado',
-        status: 422,
-        code: 'uniplus.configuracao.oferta_curso.cardinalidade_turnos_incompativel_com_regime',
-        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Content',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
+    const cabecalhos = [...p.fixture.nativeElement.querySelectorAll('th')].map((th) =>
+      (th as HTMLElement).textContent?.trim(),
     );
-    await propagate();
-
-    expect(component['erroDoCampo']('turnos')).toBeTruthy();
-    expect(component['formOpen']()).toBe(true);
-    expect(component['form'].controls.cursoId.value).toBe(CURSO_ID);
-  });
-
-  it('a recusa de regime de funcionamento sobrevive à edição de outro campo', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-      regimeDeFuncionamento: 'EXTENSIVO',
-    });
-    component['alternarTurno']('MATUTINO');
-    await propagate();
-
-    component['salvar']();
-
-    controller.expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`).flush(
-      {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.configuracao.oferta_curso.regime_de_funcionamento_invalido',
-        title: 'Regime de funcionamento inválido',
-        status: 422,
-        code: 'uniplus.configuracao.oferta_curso.regime_de_funcionamento_invalido',
-        traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Content',
-        headers: { 'Content-Type': 'application/problem+json' },
-      },
+    expect(cabecalhos.slice(0, 2)).toEqual(['Curso', 'Grau']);
+    const graus = [...p.fixture.nativeElement.querySelectorAll('td[data-label="Grau"]')].map((td) =>
+      (td as HTMLElement).textContent?.trim(),
     );
-    await propagate();
-
-    expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeTruthy();
-
-    // Editar um campo sem relação nenhuma não pode varrer a recusa da tela.
-    component['form'].controls.eMecCodigo.setValue('999999');
-    await propagate();
-
-    expect(component['erroDoCampo']('regimeDeFuncionamento')).toBeTruthy();
+    expect(graus).toEqual(['Bacharelado', 'Licenciatura']);
   });
 
-  it('regime desconhecido pelo frontend não trunca os turnos vindos da API', async () => {
-    // Um regime introduzido por um backend mais novo: a UI não conhece a
-    // cardinalidade e não pode reduzir a seleção — a decisão fica com a API.
-    const ofertaComRegimeNovo: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeTurno: 'ROTATIVO',
-      turnos: ['MATUTINO', 'VESPERTINO'],
-    };
-    await flushCargaInicial([ofertaComRegimeNovo]);
-    component['abrirEdicao'](ofertaComRegimeNovo);
-    await propagate();
-
-    expect(component['turnosExigidos']()).toBeNull();
-    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
-    expect(component['form'].controls.turnos.valid).toBe(true);
-
-    // O seletor precisa mostrar o token: sem opção correspondente ele
-    // renderizaria em branco enquanto o modelo guarda o valor.
-    expect(component['regimeNaoReconhecido']()).toBe('ROTATIVO');
-    const opcoes = fixture.nativeElement.querySelectorAll(
-      'select[formControlName="regimeDeTurno"] option',
-    ) as NodeListOf<HTMLOptionElement>;
-    expect(Array.from(opcoes).map((o) => o.value)).toContain('ROTATIVO');
+  it('mostra "—" no Grau quando o curso não está no catálogo', async () => {
+    p = await montarPagina([mesmaOferta('z', { cursoId: 'desconhecido' })]);
+    expect(p.elemento('td[data-label="Grau"]').textContent?.trim()).toBe('—');
   });
 
-  it('turno desconhecido pela versão aparece no grupo, marcado', async () => {
-    const ofertaComTurnoNovo: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeTurno: 'INTEGRAL',
-      turnos: ['MATUTINO', 'MADRUGADA'],
-    };
-    await flushCargaInicial([ofertaComTurnoNovo]);
-    component['abrirEdicao'](ofertaComTurnoNovo);
-    await propagate();
-
-    expect(component['opcoesDeTurno']().map((o) => o.value)).toEqual([
-      'MATUTINO',
-      'VESPERTINO',
-      'NOTURNO',
-      'MADRUGADA',
-    ]);
-    expect(component['turnoMarcado']('MADRUGADA')).toBe(true);
-    expect(component['form'].controls.turnos.value).toContain('MADRUGADA');
-  });
-
-  it('oferta sem turno desconhecido não ganha opção extra no grupo', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    component['abrirEdicao'](ofertaSeed);
-    await propagate();
-
-    expect(component['opcoesDeTurno']()).toHaveLength(3);
-  });
-
-  it('regime conhecido não ganha opção de fallback no seletor', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    component['abrirEdicao'](ofertaSeed);
-    await propagate();
-
-    expect(component['regimeNaoReconhecido']()).toBeNull();
-  });
-
-  it('editar uma oferta integral carrega os dois turnos marcados', async () => {
-    const ofertaIntegral: OfertaCursoDto = {
-      ...ofertaSeed,
-      regimeDeTurno: 'INTEGRAL',
-      turnos: ['VESPERTINO', 'MATUTINO'],
-    };
-    await flushCargaInicial([ofertaIntegral]);
-    component['abrirEdicao'](ofertaIntegral);
-    await propagate();
-
-    expect(component['form'].controls.regimeDeTurno.value).toBe('INTEGRAL');
-    expect(component['form'].controls.turnos.value).toEqual(['MATUTINO', 'VESPERTINO']);
-    expect(component['turnoMarcado']('NOTURNO')).toBe(false);
-  });
-
-  // O rótulo resolvido e o fallback de lookup falho são indistinguíveis quando
-  // a falha só troca o texto da célula: o teste cobra a diferença.
-  it('lookup de Curso recusado sinaliza a coluna e oferece recarregar só esse catálogo', async () => {
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush([ofertaSeed]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush(
-      {},
-      { status: 500, statusText: 'Server Error' },
-    );
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    const celulaCurso: HTMLElement = fixture.nativeElement.querySelector('td[data-label="Curso"]');
-    expect(celulaCurso.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
-      'Não carregado',
-    );
-
-    // A coluna cujo lookup respondeu segue exibindo o rótulo real: a falha de
-    // um catálogo não pode contaminar o outro.
-    expect(
-      fixture.nativeElement.querySelector('td[data-label="Local de oferta"]').textContent,
-    ).toContain('Marabá');
-
-    // O nome acessível do botão repete o que a célula já mostra — não
-    // "Vinculado", que faria a falha de rede soar como dado legítimo.
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Não carregado · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-
-    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
-    expect(alerta.textContent).toContain('Recarregar cursos');
-    expect(alerta.textContent).not.toContain('Recarregar locais de oferta');
-
-    const botaoRecarregar: HTMLButtonElement =
-      fixture.nativeElement.querySelector('.alert--warning button');
-    botaoRecarregar.click();
-    await propagate();
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('.alert--warning')).toBeNull();
-    expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
-      'Engenharia Civil',
-    );
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-  });
-
-  it('lookup de Local de oferta recusado sinaliza a própria coluna', async () => {
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush([ofertaSeed]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush(
-      {},
-      { status: 500, statusText: 'Server Error' },
-    );
-    await propagate();
-    fixture.detectChanges();
-
-    const celulaLocal: HTMLElement = fixture.nativeElement.querySelector(
-      'td[data-label="Local de oferta"]',
-    );
-    expect(celulaLocal.querySelector('.lookup-label--failed')?.textContent?.trim()).toBe(
-      'Não carregado',
-    );
-    expect(fixture.nativeElement.querySelector('td[data-label="Curso"]').textContent).toContain(
-      'Engenharia Civil',
-    );
-
-    // O botão repete o marcador da célula: a falha do catálogo não pode soar
-    // como um local legítimo para quem usa leitor de tela.
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Engenharia Civil · IGE · Não carregado · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-    expect(
-      botaoAcao(
-        'Remover oferta de curso Engenharia Civil · IGE · Não carregado · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-
-    const alerta: HTMLElement = fixture.nativeElement.querySelector('.alert--warning');
-    expect(alerta.textContent).toContain('Recarregar locais de oferta');
-    expect(alerta.textContent).not.toContain('Recarregar cursos');
-  });
-
-  it('nome acessível das ações identifica a oferta pelas colunas da linha, não pelo id técnico (#835)', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-    expect(
-      botaoAcao(
-        'Remover oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-
-    const botoesDaLinha: NodeListOf<HTMLButtonElement> = fixture.nativeElement.querySelectorAll(
-      '[aria-label*="oferta de curso"]',
-    );
-    expect(botoesDaLinha.length).toBeGreaterThan(0);
-    for (const botao of Array.from(botoesDaLinha)) {
-      expect(botao.getAttribute('aria-label')).not.toContain(OFERTA_ID);
-    }
-  });
-
-  it('duas ofertas no mesmo local e na mesma unidade, mas em cursos diferentes, têm nomes acessíveis distintos (#835)', async () => {
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush([ofertaSeed, ofertaSeed2]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed, cursoSeed2]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    // Sem o curso na composição, unidade e local sozinhos não distinguem
-    // estas duas linhas: mesmo `localOfertaId`, mesmo `unidadeOfertante`.
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-    expect(
-      botaoAcao(
-        'Editar oferta de curso Engenharia de Minas · IGE · Campus sede — Marabá · Regular · Matutino',
-      ),
-    ).not.toBeNull();
-  });
-
-  it('ofertas do mesmo curso, local e unidade em turnos ou programas diferentes têm nomes acessíveis distintos (#835)', async () => {
-    const noturno: OfertaCursoDto = {
-      ...ofertaSeed,
-      id: '01960000-0000-7000-0000-0000000000d3',
-      turnos: ['NOTURNO'],
-    };
-    const parfor: OfertaCursoDto = {
-      ...ofertaSeed,
-      id: '01960000-0000-7000-0000-0000000000d4',
-      programaDeOferta: 'PARFOR',
-      baseLegal: 'Decreto 6.755/2009',
-    };
-    await flushCargaInicial([ofertaSeed, noturno, parfor]);
-    fixture.detectChanges();
-
-    const nomes = Array.from(
-      fixture.nativeElement.querySelectorAll(
-        'button[aria-label^="Editar oferta de curso"]',
-      ) as NodeListOf<HTMLButtonElement>,
-    ).map((botao) => botao.getAttribute('aria-label'));
-
-    expect(nomes).toEqual([
-      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino',
-      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · Regular · Noturno',
-      'Editar oferta de curso Engenharia Civil · IGE · Campus sede — Marabá · PARFOR · Matutino',
-    ]);
-  });
-
-  it('ofertas que coincidem em todas as colunas do nome ganham ordinal, e o nome continua único (#835)', async () => {
-    const ead: OfertaCursoDto = {
-      ...ofertaSeed,
-      id: '01960000-0000-7000-0000-0000000000d5',
-      formatoPedagogico: 'EAD',
-    };
-    await flushCargaInicial([ofertaSeed, ead]);
-    fixture.detectChanges();
-
-    const nome = 'Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino';
-    expect(botaoAcao(`Editar oferta de curso ${nome} (1 de 2)`)).not.toBeNull();
-    expect(botaoAcao(`Remover oferta de curso ${nome} (1 de 2)`)).not.toBeNull();
-    expect(botaoAcao(`Editar oferta de curso ${nome} (2 de 2)`)).not.toBeNull();
-    expect(botaoAcao(`Remover oferta de curso ${nome} (2 de 2)`)).not.toBeNull();
-  });
-
-  it('evita submissão de formulário quando regime de funcionamento INTENSIVO e regime de turno REGULAR', async () => {
-    await flushCargaInicial([]);
-    component['abrirCadastro']();
-    await flushUnidades();
-
-    component['form'].patchValue({
-      cursoId: CURSO_ID,
-      localOfertaId: LOCAL_ID,
-      unidadeOfertanteOrigemId: UNIDADE_ID,
-      programaDeOferta: 'REGULAR',
-      formatoPedagogico: 'PRESENCIAL',
-      regimeDeTurno: 'REGULAR',
-      regimeDeFuncionamento: 'INTENSIVO',
-    });
-    component['alternarTurno']('NOTURNO');
-    await propagate();
-    component['salvar']();
-
-    controller.expectNone(`${BASE}/api/configuracao/admin/ofertas-curso`);
-    expect(component['erroDoCampo']('regimeDeFuncionamento')).toContain('INTENSIVO');
-  });
-
-  it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
-    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
-    await flushCargaInicial([ofertaSeed]);
-
-    component['aoTrocarLimite'](50);
-    await propagate();
-
-    const req = controller.expectOne((r) => r.url === LISTA_URL);
-    expect(req.request.params.get('limit')).toBe('50');
-    expect(req.request.params.has('cursor')).toBe(false);
-    req.flush([ofertaSeed]);
-    await propagate();
-    expect(component['limite']()).toBe(50);
-  });
-
-  it('CA-02/CA-14a: a listagem não envia sort e apresenta as linhas na ordem alfabética que a API devolve', async () => {
-    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
-    const listaReq = controller.expectOne((r) => r.url === LISTA_URL);
-    expect(listaReq.request.params.has('sort')).toBe(false);
-
-    const cursoZoo: CursoDto = {
-      ...cursoSeed,
-      id: '01960000-0000-7000-0000-0000000000c9',
-      codigo: 'ZOO',
-      nome: 'Zootecnia',
-    };
-    const cursoAdm: CursoDto = {
-      ...cursoSeed,
-      id: '01960000-0000-7000-0000-0000000000c8',
-      codigo: 'ADM',
-      nome: 'Administração',
-    };
-    // A API já devolve por nome do curso; a Web não reordena a página.
-    listaReq.flush([
-      { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d8', cursoId: cursoAdm.id },
-      { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d9', cursoId: cursoZoo.id },
-    ]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoZoo, cursoAdm]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    const celulasCurso = Array.from(
-      fixture.nativeElement.querySelectorAll(
-        'td[data-label="Curso"]',
-      ) as NodeListOf<HTMLTableCellElement>,
-    ).map((td) => td.textContent?.trim());
-    expect(celulasCurso).toEqual(['Administração', 'Zootecnia']);
-  });
-
-  it('CA-14c: cursor recusado (400) na navegação recarrega a listagem do início', async () => {
-    const notifications = TestBed.inject(NotificationService);
-    const info = vi.spyOn(notifications, 'info');
-
-    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
-    const p1 = controller.expectOne((r) => r.url === LISTA_URL);
-    p1.flush([ofertaSeed], {
-      headers: { Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"` },
-    });
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-
-    component['proximaPagina']();
-    await propagate();
-    const p2 = controller.expectOne((r) => r.url === LISTA_URL);
-    expect(p2.request.params.get('cursor')).toBe('p2');
-    p2.flush(
-      JSON.stringify({
-        type: 'https://uniplus.dev/erros/uniplus.cursor.invalido',
-        title: 'Cursor de paginação inválido',
-        status: 400,
-        code: 'uniplus.cursor.invalido',
-        traceId: 'test-trace',
-      }),
-      {
-        status: 400,
-        statusText: 'Bad Request',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    const recarga = controller.expectOne((r) => r.url === LISTA_URL);
-    expect(recarga.request.params.has('cursor')).toBe(false);
-    recarga.flush([ofertaSeed]);
-    await propagate();
-    expect(component['errorMessage']()).toBeNull();
-    // 400 (uniplus.cursor.invalido) é "consulta mudou", não "expirou" — a
-    // distinção que o aoRecuperar do composable precisa preservar.
-    expect(info).toHaveBeenCalledExactlyOnceWith(
-      'A paginação foi reiniciada porque a consulta mudou.',
-      'Recarregamos a listagem do começo.',
-    );
-  });
-
-  it('CA-01, CA-02, CA-03 e CA-07: apresenta a coluna Grau logo após Curso com valor resolvido e data-label', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    const headers = Array.from(
-      fixture.nativeElement.querySelectorAll('th') as NodeListOf<HTMLTableCellElement>,
-    ).map((th) => th.textContent?.trim());
-
-    expect(headers[0]).toBe('Curso');
-    expect(headers[1]).toBe('Grau');
-
-    const celulaGrau: HTMLElement | null =
-      fixture.nativeElement.querySelector('td[data-label="Grau"]');
-    expect(celulaGrau).toBeTruthy();
-    expect(celulaGrau?.textContent?.trim()).toBe('Bacharelado');
-  });
-
-  it('Cenário BDD: exibe graus diferentes para cada curso relacionado na tabela', async () => {
-    const cursoLicenciatura: CursoDto = {
-      ...cursoSeed,
-      id: '01960000-0000-7000-0000-0000000000c2',
-      codigo: 'LET-POR',
-      nome: 'Letras - Língua Portuguesa',
-      grau: 'Licenciatura',
-    };
-
-    const oferta2: OfertaCursoDto = {
-      ...ofertaSeed,
-      id: '01960000-0000-7000-0000-0000000000d2',
-      cursoId: cursoLicenciatura.id,
-    };
-
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush([ofertaSeed, oferta2]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed, cursoLicenciatura]);
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    const celulasGrau = Array.from(
-      fixture.nativeElement.querySelectorAll(
-        'td[data-label="Grau"]',
-      ) as NodeListOf<HTMLTableCellElement>,
-    ).map((td) => td.textContent?.trim());
-
-    expect(celulasGrau).toEqual(['Bacharelado', 'Licenciatura']);
-  });
-
-  it('CA-06: apresenta "—" na coluna Grau quando o cursoId não puder ser resolvido no lookup', async () => {
-    const ofertaComCursoInexistente: OfertaCursoDto = {
-      ...ofertaSeed,
-      cursoId: '01960000-0000-7000-0000-0000000000c9',
-    };
-
-    await flushCargaInicial([ofertaComCursoInexistente]);
-    fixture.detectChanges();
-
-    const celulaGrau: HTMLElement | null =
-      fixture.nativeElement.querySelector('td[data-label="Grau"]');
-    expect(celulaGrau?.textContent?.trim()).toBe('—');
-  });
-
-  it('CA-06: apresenta "—" na coluna Grau quando a requisição do lookup de Cursos falhar', async () => {
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/ofertas-curso`)
-      .flush([ofertaSeed]);
-    expectLookup(`${BASE}/api/configuracao/cursos`).flush(
-      {},
-      { status: 500, statusText: 'Server Error' },
-    );
-    expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-    await propagate();
-    fixture.detectChanges();
-
-    const celulaGrau: HTMLElement | null =
-      fixture.nativeElement.querySelector('td[data-label="Grau"]');
-    expect(celulaGrau?.textContent?.trim()).toBe('—');
-  });
-
-  it('expõe legenda acessível descrevendo a tabela', async () => {
-    await flushCargaInicial([ofertaSeed]);
-    fixture.detectChanges();
-
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption).not.toBeNull();
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+  it('descreve a tabela por uma legenda acessível', async () => {
+    p = await montarPagina();
+    const legenda = p.elemento('table > caption');
+    expect(legenda.classList.contains('sr-only')).toBe(true);
+    expect(legenda.textContent?.replace(/\s+/g, ' ').trim()).toBe(
       'Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e turno, e vagas e-MEC',
     );
   });
 
-  describe('indicador de total de ofertas cadastradas (#789)', () => {
-    const LISTA_URL = `${BASE}/api/configuracao/ofertas-curso`;
-    const ofertaB: OfertaCursoDto = { ...ofertaSeed, id: '01960000-0000-7000-0000-0000000000d2' };
+  it('apresenta as linhas na ordem que a API devolve, sem pedir ordenação', async () => {
+    const zoo: CursoDto = { ...engCiv, id: 'z', codigo: 'ZOO', nome: 'Zootecnia' };
+    const adm: CursoDto = { ...engCiv, id: 'a', codigo: 'ADM', nome: 'Administração' };
+    p = await montarPagina(
+      [mesmaOferta('1', { cursoId: adm.id }), mesmaOferta('2', { cursoId: zoo.id })],
+      {
+        cursos: [zoo, adm],
+      },
+    );
+    const nomes = [...p.fixture.nativeElement.querySelectorAll('td[data-label="Curso"]')].map(
+      (td) => (td as HTMLElement).textContent?.trim(),
+    );
+    expect(nomes).toEqual(['Administração', 'Zootecnia']);
+    p.store.recarregar();
+    await p.propagar();
+    const pedido = p.http.expectOne((r) => r.url === LISTA);
+    expect(pedido.request.params.has('sort')).toBe(false);
+    pedido.flush([]);
+  });
 
-    const indicador = (): string | null => {
-      fixture.detectChanges();
-      const el: HTMLElement | null = fixture.nativeElement.querySelector(
-        '.panel-head__title .list-count',
-      );
-      return el?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+  describe('nome acessível das ações', () => {
+    it('identifica a oferta pelas colunas da linha, nunca pelo id técnico', async () => {
+      p = await montarPagina();
+      expect(p.editar(identificador)).toBeTruthy();
+      expect(p.remover(identificador)).toBeTruthy();
+      for (const botao of p.fixture.nativeElement.querySelectorAll(
+        '[aria-label*="oferta de curso"]',
+      )) {
+        expect(botao.getAttribute('aria-label')).not.toContain(oferta.id);
+      }
+    });
+
+    it('distingue ofertas de cursos diferentes no mesmo local e unidade', async () => {
+      p = await montarPagina([oferta, mesmaOferta('b', { cursoId: engMinas.id })], {
+        cursos: [engCiv, engMinas],
+      });
+      expect(p.editar(identificador)).toBeTruthy();
+      expect(
+        p.editar(identificador.replace('Engenharia Civil', 'Engenharia de Minas')),
+      ).toBeTruthy();
+    });
+
+    it('distingue ofertas do mesmo curso em turnos ou programas diferentes', async () => {
+      p = await montarPagina([
+        oferta,
+        mesmaOferta('b', { turnos: ['NOTURNO'] }),
+        mesmaOferta('c', { programaDeOferta: 'PARFOR', baseLegal: 'Decreto 6.755/2009' }),
+      ]);
+      const nomes = [
+        ...p.fixture.nativeElement.querySelectorAll('button[aria-label^="Editar oferta de curso"]'),
+      ].map((botao) => botao.getAttribute('aria-label'));
+      expect(nomes).toEqual([
+        `Editar oferta de curso ${identificador}`,
+        `Editar oferta de curso ${identificador.replace('Matutino', 'Noturno')}`,
+        `Editar oferta de curso ${identificador.replace('Regular · Matutino', 'PARFOR · Matutino')}`,
+      ]);
+    });
+
+    it('acrescenta o ordinal quando todas as colunas do nome coincidem', async () => {
+      p = await montarPagina([oferta, mesmaOferta('b', { formatoPedagogico: 'EAD' })]);
+      for (const ordem of ['1 de 2', '2 de 2']) {
+        expect(p.editar(`${identificador} (${ordem})`)).toBeTruthy();
+        expect(p.remover(`${identificador} (${ordem})`)).toBeTruthy();
+      }
+    });
+  });
+
+  describe('paginação e total', () => {
+    const comTotal = (total: string, proxima = false) => ({
+      headers: {
+        'X-Total-Count': total,
+        ...(proxima ? { Link: `<${LISTA}?cursor=p2&direction=next>; rel="next"` } : {}),
+      },
+    });
+    const indicador = (): string | null =>
+      p.fixture.nativeElement
+        .querySelector('.panel-head__title .list-count')
+        ?.textContent?.trim() ?? null;
+    const recarregarPrimeira = async (total: string, proxima = false): Promise<void> => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush([oferta], comTotal(total, proxima));
+      await p.propagar();
     };
 
-    async function flushPrimeiraPagina(
-      ofertas: readonly OfertaCursoDto[],
-      headers: Record<string, string>,
-    ): Promise<TestRequest> {
-      const req = controller.expectOne((r) => r.url === LISTA_URL);
-      req.flush(ofertas, { headers });
-      expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-      expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-      await propagate();
-      return req;
-    }
-
-    it('CA-01/CA-10: pede include_total na primeira página e exibe o X-Total-Count no formato da issue', async () => {
-      const req = await flushPrimeiraPagina([ofertaSeed], { 'X-Total-Count': '120' });
-
-      expect(req.request.params.get('include_total')).toBe('true');
+    it('exibe o total informado pela API no formato da issue', async () => {
+      p = await montarPagina();
+      await recarregarPrimeira('120');
       expect(indicador()).toBe('Total de ofertas cadastradas: 120');
     });
 
-    it('CA-09: exibe zero quando a API informa que não há ofertas', async () => {
-      await flushPrimeiraPagina([], { 'X-Total-Count': '0' });
-
+    it('exibe zero quando a API informa que não há ofertas', async () => {
+      p = await montarPagina();
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush([], comTotal('0'));
+      await p.propagar();
       expect(indicador()).toBe('Total de ofertas cadastradas: 0');
     });
 
-    it('CA-05: a troca de página não pede nem altera o total', async () => {
-      await flushPrimeiraPagina([ofertaSeed], {
-        'X-Total-Count': '120',
-        Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"`,
+    it('a troca de página não pede nem altera o total', async () => {
+      p = await montarPagina();
+      await recarregarPrimeira('120', true);
+      p.store.proximaPagina();
+      await p.propagar();
+      const segunda = p.http.expectOne((r) => r.url === LISTA);
+      expect(segunda.request.params.get('cursor')).toBe('p2');
+      expect(segunda.request.params.has('include_total')).toBe(false);
+      segunda.flush([mesmaOferta('b')], {
+        headers: { Link: `<${LISTA}?cursor=p1&direction=prev>; rel="prev"` },
       });
-
-      component['proximaPagina']();
-      await propagate();
-      expect(indicador()).toBe('Total de ofertas cadastradas: 120');
-      const p2 = controller.expectOne((r) => r.url === LISTA_URL);
-      expect(p2.request.params.get('cursor')).toBe('p2');
-      expect(p2.request.params.has('include_total')).toBe(false);
-      p2.flush([ofertaB], {
-        headers: { Link: `<${LISTA_URL}?cursor=p1&direction=prev>; rel="prev"` },
-      });
-      await propagate();
+      await p.propagar();
       expect(indicador()).toBe('Total de ofertas cadastradas: 120');
 
-      component['paginaAnterior']();
-      await propagate();
-      const p1 = controller.expectOne((r) => r.url === LISTA_URL);
-      expect(p1.request.params.get('direction')).toBe('prev');
-      expect(p1.request.params.has('include_total')).toBe(false);
-      p1.flush([ofertaSeed], {
-        headers: { Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"` },
-      });
-      await propagate();
+      p.store.paginaAnterior();
+      await p.propagar();
+      const primeira = p.http.expectOne((r) => r.url === LISTA);
+      expect(primeira.request.params.get('direction')).toBe('prev');
+      primeira.flush([oferta], comTotal('120', true));
+      await p.propagar();
       expect(indicador()).toBe('Total de ofertas cadastradas: 120');
     });
 
-    it('CA-12: sem X-Total-Count na resposta, o indicador não afirma um total', async () => {
-      await flushPrimeiraPagina([ofertaSeed], {});
-
+    it('sem X-Total-Count o indicador não afirma um total', async () => {
+      p = await montarPagina();
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush([oferta]);
+      await p.propagar();
       expect(indicador()).toBeNull();
     });
 
-    it('CA-12: falha na consulta esconde o indicador em vez de exibir zero', async () => {
-      controller
-        .expectOne((r) => r.url === LISTA_URL)
-        .flush({}, { status: 500, statusText: 'Server Error' });
-      expectLookup(`${BASE}/api/configuracao/cursos`).flush([cursoSeed]);
-      expectLookup(`${BASE}/api/configuracao/locais-oferta`).flush([localSeed]);
-      await propagate();
-
-      expect(component['errorMessage']()).not.toBeNull();
+    it('a falha da consulta esconde o indicador em vez de exibir zero', async () => {
+      p = await montarPagina();
+      await recarregarPrimeira('5');
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503, { code: ERRO_INTERNO }));
+      await p.propagar();
+      expect(p.store.mensagemDeErro()).not.toBeNull();
       expect(indicador()).toBeNull();
     });
 
-    it('CA-06: após criar uma oferta, consulta o total de novo e exibe o novo valor', async () => {
-      await flushPrimeiraPagina([ofertaSeed], { 'X-Total-Count': '1' });
-      component['abrirCadastro']();
-      await flushUnidades();
-      component['form'].patchValue({
-        cursoId: CURSO_ID,
-        localOfertaId: LOCAL_ID,
-        unidadeOfertanteOrigemId: UNIDADE_ID,
-        turnos: ['MATUTINO'],
-        vagasAnuaisAutorizadas: 40,
-      });
-      component['salvar']();
-      controller
-        .expectOne(`${BASE}/api/configuracao/admin/ofertas-curso`)
-        .flush(ofertaB.id, { status: 201, statusText: 'Created' });
-      await propagate();
+    it('trocar o limite volta à primeira página com o novo limit', async () => {
+      p = await montarPagina();
+      await recarregarPrimeira('120', true);
+      p.store.proximaPagina();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush([oferta]);
+      await p.propagar();
 
-      // Durante o refetch o valor anterior se mantém — não pisca "0".
-      expect(indicador()).toBe('Total de ofertas cadastradas: 1');
-      const recarga = controller.expectOne((r) => r.url === LISTA_URL);
-      expect(recarga.request.params.get('include_total')).toBe('true');
-      recarga.flush([ofertaSeed, ofertaB], { headers: { 'X-Total-Count': '2' } });
-      await propagate();
-
-      expect(indicador()).toBe('Total de ofertas cadastradas: 2');
+      p.store.aoTrocarLimite(50);
+      await p.propagar();
+      const pedido = p.http.expectOne((r) => r.url === LISTA);
+      expect(pedido.request.params.get('limit')).toBe('50');
+      expect(pedido.request.params.has('cursor')).toBe(false);
+      pedido.flush([oferta]);
+      await p.propagar();
+      expect(p.store.limite()).toBe(50);
     });
 
-    it('CA-07: após remover uma oferta numa página adiante, volta ao início e exibe o novo total', async () => {
-      await flushPrimeiraPagina([ofertaSeed], {
-        'X-Total-Count': '2',
-        Link: `<${LISTA_URL}?cursor=p2&direction=next>; rel="next"`,
-      });
-      component['proximaPagina']();
-      await propagate();
-      controller.expectOne((r) => r.url === LISTA_URL).flush([ofertaB]);
-      await propagate();
+    it('cursor recusado (400) na navegação recarrega do início e avisa que a consulta mudou', async () => {
+      p = await montarPagina();
+      const informar = vi.spyOn(TestBed.inject(NotificationService), 'info');
+      await recarregarPrimeira('2', true);
+      p.store.proximaPagina();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush(...problema(400, { code: 'uniplus.cursor.invalido' }));
+      await p.propagar();
 
-      component['pedirRemocao'](ofertaB);
-      component['removerConfirmado']();
-      controller
-        .expectOne(`${BASE}/api/configuracao/admin/ofertas-curso/${ofertaB.id}`)
-        .flush(null, { status: 204, statusText: 'No Content' });
-      await propagate();
-
-      const recarga = controller.expectOne((r) => r.url === LISTA_URL);
+      const recarga = p.http.expectOne((r) => r.url === LISTA);
       expect(recarga.request.params.has('cursor')).toBe(false);
-      expect(recarga.request.params.get('include_total')).toBe('true');
-      recarga.flush([ofertaSeed], { headers: { 'X-Total-Count': '1' } });
-      await propagate();
-
-      expect(indicador()).toBe('Total de ofertas cadastradas: 1');
+      recarga.flush([oferta]);
+      await p.propagar();
+      expect(p.store.mensagemDeErro()).toBeNull();
+      expect(informar).toHaveBeenCalledExactlyOnceWith(
+        'A paginação foi reiniciada porque a consulta mudou.',
+        'Recarregamos a listagem do começo.',
+      );
     });
   });
 });
