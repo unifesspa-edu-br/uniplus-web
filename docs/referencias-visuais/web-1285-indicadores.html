@@ -1,0 +1,1596 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Uni+ · Painel e acompanhamento com três indicadores — referência visual</title>
+  <style>
+    /*
+      REFERÊNCIA VISUAL ISOLADA — NÃO É CÓDIGO DE PRODUÇÃO.
+      Tokens semânticos e anatomia espelhados de:
+      uniplus-web/libs/shared-ui/src/styles/{tokens,base,components}.css
+      uniplus-ds/ui_kits/admin/{index.html,kit.css}
+      A Web deve reutilizar ui-app-shell/ui-page-header/ui-card/ui-button/ui-list-footer
+      e ui-empty-state em vez de copiar este protótipo HTML.
+      Nenhuma fonte, recurso remoto, API ou dado de usuário é carregado.
+    */
+    :root {
+      color-scheme: light;
+      --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
+      --color-primary-50:#f0f5ff; --color-primary-100:#d6e4ff;
+      --color-primary-600:#1351b4; --color-primary-700:#0c4194;
+      --color-primary-800:#0c326f; --color-primary-900:#071d41;
+      --color-primary:var(--color-primary-600);
+      --color-warning-500:#ffcd07;
+      --color-danger-50:#fcf0ee; --color-danger-600:#8a1f1f;
+      --color-danger-700:#7f1d1d;
+      --surface-page:#f8fafc; --surface-card:#ffffff;
+      --surface-subtle:#f1f5f9; --surface-elevated:#ffffff;
+      --surface-inverse:#071d41; --surface-disabled:#e2e8f0;
+      --border-subtle:#e2e8f0; --border-default:#cbd5e1;
+      --border-strong:#64748b; --text-primary:#333333;
+      --text-secondary:#475569; --text-muted:#475569;
+      --text-disabled:#94a3b8; --text-placeholder:#8493a8;
+      --text-heading:#0c326f; --text-link:#1351b4;
+      --text-on-primary:#ffffff; --text-on-primary-tint:#0c4194;
+      --text-on-inverse:#ffffff; --focus-ring-color:#3b82f6;
+      --skeleton-from:#f1f5f9; --skeleton-to:#e2e8f0;
+      --text-xs:.75rem; --text-sm:.875rem; --text-base:1rem;
+      --text-md:clamp(1rem,.95rem + .25vw,1.125rem);
+      --text-lg:clamp(1.125rem,1rem + .5vw,1.25rem);
+      --text-2xl:clamp(1.5rem,1.2rem + 1.5vw,2rem);
+      --leading-tight:1.15; --leading-snug:1.3; --leading-normal:1.5;
+      --weight-medium:500; --weight-semibold:600; --weight-bold:700;
+      --space-1:.25rem; --space-2:.5rem; --space-3:.75rem;
+      --space-4:1rem; --space-5:1.25rem; --space-6:1.5rem;
+      --space-7:2rem; --space-8:2.5rem; --space-9:3rem;
+      --radius-sm:4px; --radius-md:8px; --radius-lg:12px;
+      --radius-pill:9999px; --radius-circle:50%;
+      --shadow-1:0 1px 2px rgba(7,29,65,.06);
+      --shadow-2:0 4px 12px rgba(7,29,65,.08);
+      --touch-min:44px; --touch-comfortable:48px;
+    }
+    html[data-theme="dark"] {
+      color-scheme:dark;
+      --color-primary-50:#1e293b; --color-primary-100:#1e3a5f;
+      --color-primary-600:#60a5fa; --color-primary-700:#3b82f6;
+      --color-primary-800:#2563eb; --color-primary-900:#1e3a8a;
+      --color-primary:var(--color-primary-600);
+      --color-warning-500:#fbbf24;
+      --color-danger-50:#450a0a; --color-danger-600:#fecaca;
+      --color-danger-700:#fecaca;
+      --surface-page:#0f172a; --surface-card:#1e293b;
+      --surface-subtle:#334155; --surface-elevated:#28344a;
+      --surface-inverse:#020617; --surface-disabled:#2d3a52;
+      --border-subtle:#3f4d65; --border-default:#475569;
+      --border-strong:#94a3b8; --text-primary:#f1f5f9;
+      --text-secondary:#e2e8f0; --text-muted:#cbd5e1;
+      --text-disabled:#64748b; --text-placeholder:#94a3b8;
+      --text-heading:#dbe9ff; --text-link:#93c5fd;
+      --text-on-primary:#0f172a; --text-on-primary-tint:#93c5fd;
+      --skeleton-from:#2d3a52; --skeleton-to:#3f4d68;
+      --focus-ring-color:#93c5fd;
+      --shadow-1:0 1px 3px rgba(0,0,0,.45);
+      --shadow-2:0 4px 12px rgba(0,0,0,.55);
+    }
+    *, *::before, *::after { box-sizing:border-box; }
+    html { -webkit-text-size-adjust:100%; }
+    body { margin:0; font-family:var(--font-sans); font-size:var(--text-base);
+      line-height:var(--leading-normal); background:var(--surface-page); color:var(--text-primary); }
+    button,select { font:inherit; color:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:not-allowed; }
+    a { color:var(--text-link); }
+    h1,h2,h3,p { margin:0; }
+    :where(button,select,a,[tabindex]):focus-visible { outline:3px solid var(--focus-ring-color); outline-offset:3px; }
+    [hidden] { display:none!important; }
+    .sr-only { position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0; }
+    .skip-link { position:fixed;top:-65px;left:16px;z-index:1000;padding:12px 16px;
+      background:var(--color-primary);color:var(--text-on-primary);border-radius:var(--radius-md); }
+    .skip-link:focus { top:12px; }
+
+    /* Faixa de revisão — externa ao produto. */
+    .review-bar { background:var(--surface-card);border-bottom:1px solid var(--border-default);
+      padding:16px clamp(16px,3vw,40px); }
+    .review-content { max-width:1320px;margin:auto;display:flex;flex-direction:column;gap:14px; }
+    .review-heading { display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px; }
+    .review-kicker { color:var(--text-secondary);font-size:var(--text-xs);text-transform:uppercase;
+      font-weight:700;letter-spacing:.09em; }
+    .review-title { color:var(--text-heading);font-size:1.15rem;font-weight:700; }
+    .review-sub { color:var(--text-secondary);font-size:var(--text-sm);max-width:95ch; }
+    .review-chip { display:inline-block;padding:5px 10px;border:1px solid var(--border-default);
+      border-radius:var(--radius-pill);font-size:var(--text-xs);color:var(--text-secondary);font-weight:600; }
+    .review-controls { display:flex;align-items:end;flex-wrap:wrap;gap:12px; }
+    .review-field { display:flex;flex-direction:column;gap:4px;flex:1 1 210px;max-width:420px; }
+    .review-field--small { flex:0 1 155px; }
+    .review-field label { font-weight:600;font-size:var(--text-sm); }
+    .review-field select { min-height:44px;border:1px solid var(--border-default);
+      border-radius:var(--radius-md);padding:8px 12px;background:var(--surface-card); }
+    .review-notice { max-width:1320px;margin:12px auto 0;padding:0 16px;
+      color:var(--text-secondary);font-size:var(--text-xs); }
+    .preview-frame { padding:16px;max-width:1370px;margin:0 auto 30px; }
+    .preview-window { margin:0 auto; width:100%; overflow:hidden;
+      border:1px solid var(--border-default);border-radius:var(--radius-lg);
+      background:var(--surface-page);box-shadow:var(--shadow-2);transition:max-width .15s ease; }
+    .preview-window.is-mobile { max-width:360px; }
+    .preview-window.is-mobile-320 { max-width:320px; }
+
+
+/* Painel demonstrativo — situações operacionais do inventário da Web #1248.
+   Não integra a entrega básica Web #1307 / Feature #1382. */
+.panel-statuses-note {margin:18px 0 -4px;color:var(--text-secondary);font-size:13px;line-height:1.55;max-width:95ch}
+.panel-statuses-note strong {color:var(--text-heading)}
+.panel-statuses {display:flex;flex-wrap:wrap;align-items:flex-start;gap:7px;margin-top:2px}
+.panel-status {display:inline-flex;align-items:center;border:1px solid var(--border-default);border-radius:var(--radius-pill);background:var(--surface-subtle);color:var(--text-primary);padding:5px 11px;font-size:12px;font-weight:600;line-height:1.35;max-width:100%;overflow-wrap:anywhere}
+.panel-status--fase {background:var(--color-primary-50);border-color:var(--color-primary-100);color:var(--text-heading)}
+.panel-status--recurso {background:var(--surface-subtle);border-color:var(--border-strong);color:var(--text-primary)}
+.panel-status--espera {background:var(--surface-subtle);border-color:var(--border-default);color:var(--text-secondary)}
+.panel-status--encerrado {background:var(--surface-card);border-color:var(--border-strong);color:var(--text-primary)}
+.panel-status--cancelado {background:var(--color-danger-50);border-color:var(--color-danger-600);color:var(--color-danger-700)}
+.panel-statuses:has(.panel-status + .panel-status) {padding-left:10px;border-left:3px solid var(--color-primary);}
+@media(max-width:440px) {.panel-status{font-size:11px;padding:5px 9px}.panel-statuses-note{font-size:12px}}
+
+    /* Shell simulado somente para contexto visual — ui-app-shell é externo ao painel real. */
+    .gov-bar { display:flex;align-items:center;gap:9px;min-height:40px;padding:8px 20px;
+      background:var(--color-primary-900);color:#fff;font-size:12px; }
+    .gov-brand { font-weight:700; }
+    .gov-separator { opacity:.55; }
+    .gov-right { margin-left:auto;opacity:.8; }
+    .app-layout { min-height:660px;display:grid;grid-template-columns:248px minmax(0,1fr); }
+    .app-sidebar { display:flex;flex-direction:column;gap:20px;padding:24px 0;
+      background:var(--surface-inverse);color:var(--text-on-inverse);min-width:0; }
+    .side-brand { display:flex;align-items:center;gap:12px;padding:0 18px 21px;
+      border-bottom:1px solid rgba(255,255,255,.14); }
+    .side-logo { flex:0 0 36px;height:36px;display:grid;place-items:center;border-radius:8px;
+      background:#fff;color:#071d41;font-weight:800;font-size:13px; }
+    .side-brand b { display:block;font-size:14px;line-height:1.3; }
+    .side-brand small { display:block;font-size:12px;opacity:.8; }
+    .side-label { padding:0 20px 6px;font-size:11px;letter-spacing:.07em;
+      font-weight:700;text-transform:uppercase;opacity:.66; }
+    .side-link { display:flex;align-items:center;min-height:46px;padding:9px 20px;
+      gap:10px;color:#fff;text-decoration:none;font-size:14px;border-left:3px solid var(--color-warning-500);
+      background:rgba(255,255,255,.12);font-weight:600; }
+    .side-link:hover { background:rgba(255,255,255,.18); }
+    .side-text { padding:4px 20px;font-size:12px;opacity:.7;line-height:1.5; }
+    .side-foot { margin-top:auto;padding:14px 20px 0;border-top:1px solid rgba(255,255,255,.15);
+      display:flex;align-items:center;gap:10px;font-size:12px; }
+    .avatar { display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;
+      background:#fff;color:#071d41;font-size:12px;font-weight:700; }
+    /* Menu e perfil preservados da referência Web #1308 / Web #1285. */
+    .side-label { padding:14px 20px 8px;font-size:12px;letter-spacing:.08em;
+       font-weight:700;text-transform:uppercase;color:#9fb2c9;opacity:1; }
+    .side-link { display:flex;align-items:center;min-height:44px;padding:9px 20px;
+       gap:12px;color:#edf3fb;text-decoration:none;font-size:14px;
+       border-left:3px solid transparent;background:transparent;font-weight:400; }
+    .side-link svg { width:18px;height:18px;flex-shrink:0; }
+    .side-link.active { background:#29405c;border-left-color:#ffcd07;color:#fff;font-weight:600; }
+    .side-link:not(.active):hover { background:rgba(255,255,255,.09); }
+    .side-link--static { cursor:default; }
+    .side-foot { margin-top:auto;padding:20px 20px 0;border-top:1px solid #294466;
+       display:flex;align-items:center;gap:10px;font-size:13px; }
+    .avatar { display:grid;place-items:center;width:34px;height:34px;flex:none;border-radius:50%;
+       background:#d6e4ff;color:#0c326f;font-size:12px;font-weight:700; }
+    .topbar-user { display:flex;align-items:center;gap:10px;flex-shrink:0; }
+    .topbar-avatar { display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
+       background:#d6e4ff;color:#0c326f;font-size:12px;font-weight:700; }
+    .app-main { min-width:0;display:flex;flex-direction:column; }
+    .app-topbar { min-height:64px;display:flex;align-items:center;justify-content:space-between;
+      padding:10px 28px;gap:10px;background:var(--surface-card);border-bottom:1px solid var(--border-subtle); }
+    .breadcrumb { font-size:14px;color:var(--text-secondary); }
+    .breadcrumb strong { color:var(--text-primary);font-weight:600; }
+    .topbar-tag { font-size:12px;border-radius:var(--radius-pill);padding:5px 10px;
+      background:var(--surface-subtle);color:var(--text-secondary); }
+    .hamburger { display:none;width:44px;height:44px;align-items:center;justify-content:center;
+      border:1px solid var(--border-default);border-radius:8px;background:var(--surface-card); }
+    .hamburger svg { width:20px;height:20px; }
+    .app-content { padding:30px clamp(18px,3vw,42px) 46px;flex:1;min-width:0; }
+    .page-header { display:flex;flex-direction:column;gap:12px; }
+    .page-header__title { font-size:var(--text-2xl);line-height:var(--leading-tight);
+      color:var(--text-heading);font-weight:700; }
+    .results { margin-top:26px;min-height:300px; }
+    .cards { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr));
+      gap:20px;align-items:stretch; }
+    .card { background:var(--surface-card);border:1px solid var(--border-subtle);
+      border-radius:var(--radius-lg);padding:24px;display:flex;flex-direction:column;gap:16px;
+      min-height:182px; }
+    .card__title { font-size:var(--text-lg);line-height:var(--leading-snug);
+      color:var(--text-heading);font-weight:700;overflow-wrap:anywhere; }
+    .card__footer { margin-top:auto;padding-top:14px;border-top:1px solid var(--border-subtle);
+      display:flex;align-items:center;justify-content:flex-start; }
+    .btn { --btn-bg:var(--color-primary); --btn-fg:var(--text-on-primary);
+      --btn-bd:transparent; --btn-bg-hover:var(--color-primary-700);
+      min-height:var(--touch-min);display:inline-flex;align-items:center;justify-content:center;
+      gap:8px;padding:0 20px;border:1px solid var(--btn-bd);border-radius:var(--radius-pill);
+      color:var(--btn-fg);background:var(--btn-bg);font-size:14px;font-weight:500;
+      text-decoration:none;white-space:normal;text-align:center;line-height:1.2; }
+    .btn:hover:not(:disabled) { background:var(--btn-bg-hover); }
+    .btn:disabled { background:var(--surface-disabled);color:var(--text-disabled);border-color:transparent; }
+    .btn--secondary { --btn-bg:transparent;--btn-fg:var(--color-primary);
+      --btn-bd:var(--color-primary);--btn-bg-hover:var(--color-primary-50); }
+    .btn--secondary:hover:not(:disabled) { color:var(--text-on-primary-tint); }
+    .btn--rect { border-radius:var(--radius-md); }
+    .card .btn { width:100%; }
+    .list-footer { margin-top:24px; }
+    .pager { display:flex;align-items:center;justify-content:space-between;gap:12px;
+      flex-wrap:wrap;padding:14px 16px;background:var(--surface-page);
+      border-top:1px solid var(--border-subtle);font-size:14px;color:var(--text-secondary); }
+    .pager__btn { min-height:44px;min-width:44px;padding:0 16px;background:var(--surface-card);
+      border:1px solid var(--border-default);border-radius:var(--radius-md);
+      font-size:14px;font-weight:500;color:var(--text-primary); }
+    .pager__btn:hover:not(:disabled) { background:var(--surface-subtle);border-color:var(--color-primary); }
+    .pager__btn:disabled { opacity:.6;background:var(--surface-disabled);
+      color:var(--text-disabled);border-color:transparent; }
+    .pager__status { text-align:center;flex:1 1 auto; }
+    .pager__per-page { display:inline-flex;align-items:center;gap:8px;font-size:14px; }
+    .pager__per-page select { min-height:44px;padding:0 12px;border:1px solid var(--border-default);
+      border-radius:var(--radius-sm);background:var(--surface-card); }
+    .empty-state { padding:46px 18px;max-width:480px;margin:auto;text-align:center;
+      display:flex;align-items:center;flex-direction:column;gap:13px; }
+    .empty-state__icon { width:56px;height:56px;border-radius:50%;display:grid;
+      place-items:center;background:var(--surface-subtle);color:var(--text-secondary); }
+    .empty-state__icon svg { width:27px;height:27px; }
+    .empty-state__title { font-size:var(--text-lg);font-weight:700;line-height:1.3;color:var(--text-heading); }
+    .empty-state__desc { max-width:42ch;font-size:14px;color:var(--text-secondary); }
+    .empty-state--error .empty-state__icon { color:var(--color-danger-600);background:var(--color-danger-50); }
+    .empty-state--error .empty-state__title { color:var(--color-danger-700); }
+    .empty-state .btn { margin-top:8px; }
+    .message { display:flex;align-items:start;justify-content:space-between;gap:12px;
+      border-left:4px solid var(--color-danger-600);background:var(--color-danger-50);
+      padding:16px;border-radius:8px;margin-bottom:20px; }
+    .message strong { display:block;line-height:1.4;font-size:14px; }
+    .message small { display:block;font-size:13px;margin-top:5px; }
+    .message button { flex:none; }
+    .skeleton-card { min-height:182px; }
+    .skeleton { height:16px;width:75%;border-radius:4px;background:linear-gradient(90deg,var(--skeleton-from),var(--skeleton-to),var(--skeleton-from));
+      background-size:200% 100%;animation:shimmer 1.5s infinite; }
+    .skeleton--short { width:46%; }
+    .skeleton--button { height:44px;width:100%;border-radius:24px;margin-top:auto; }
+    @keyframes shimmer { from{background-position:100% 0}to{background-position:-100% 0} }
+    .demo-toast { margin-top:24px;padding:13px 16px;border:1px solid var(--border-default);
+      border-radius:var(--radius-md);background:var(--surface-card);
+      color:var(--text-primary);font-size:14px; }
+    .help-line { margin-top:16px;font-size:12px;color:var(--text-muted); }
+    .preview-window.is-mobile .gov-bar, .preview-window.is-mobile-320 .gov-bar { padding:8px 12px; }
+    .preview-window.is-mobile .app-layout,.preview-window.is-mobile-320 .app-layout { grid-template-columns:1fr;min-height:580px; }
+    .preview-window.is-mobile .app-sidebar,.preview-window.is-mobile-320 .app-sidebar { display:none; }
+    .preview-window.is-mobile .hamburger,.preview-window.is-mobile-320 .hamburger { display:inline-flex; }
+    .preview-window.is-mobile .app-topbar,.preview-window.is-mobile-320 .app-topbar { padding:8px 12px;min-height:58px; }
+    .preview-window.is-mobile .topbar-tag,.preview-window.is-mobile-320 .topbar-tag { display:none; }
+    .preview-window.is-mobile .app-content,.preview-window.is-mobile-320 .app-content { padding:20px 14px 26px; }
+    .preview-window.is-mobile .cards,.preview-window.is-mobile-320 .cards { grid-template-columns:minmax(0,1fr);gap:14px; }
+    .preview-window.is-mobile .card,.preview-window.is-mobile-320 .card { padding:20px;min-height:160px; }
+    .preview-window.is-mobile .pager,.preview-window.is-mobile-320 .pager { justify-content:center; }
+    .preview-window.is-mobile .pager__status,.preview-window.is-mobile-320 .pager__status { order:-1;flex-basis:100%; }
+    .preview-window.is-mobile .message,.preview-window.is-mobile-320 .message { flex-direction:column; }
+    .preview-window.is-mobile .review-kicker,.preview-window.is-mobile-320 .review-kicker { font-size:10px; }
+    @media (max-width:850px) {
+      .app-layout { grid-template-columns:1fr; }
+      .app-sidebar { display:none; }
+      .hamburger { display:inline-flex; }
+      .app-topbar { padding:10px 16px; }
+      .app-content { padding:24px 18px 40px; }
+    }
+    @media (max-width:440px) {
+      .preview-frame { padding:9px; }
+      .gov-right { display:none; }
+      .pager__status { order:-1;flex-basis:100%; }
+      .cards { grid-template-columns:minmax(0,1fr); }
+      .message { flex-direction:column; }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms!important;transition:none!important;scroll-behavior:auto!important; } }
+
+/* Integração das referências #1308 e #1285, preservando os tokens do painel #1307. */
+.detail-controls { display:flex;flex-wrap:wrap;align-items:end;gap:12px; }
+.detail-longname { min-height:44px;display:flex;align-items:center;gap:8px;font-size:13px; }
+.detail-longname input { width:18px;height:18px;accent-color:var(--color-primary); }
+.breadcrumb a { color:var(--text-link);text-decoration:none; }
+.breadcrumb a:hover { text-decoration:underline; }
+.detail-page-header { display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap; }
+.detail-page-header__copy { min-width:0;flex:1 1 260px; }
+.detail-eyebrow { color:var(--text-secondary);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:0 0 6px; }
+.detail-page-subtitle { font-size:14px;color:var(--text-secondary);margin-top:8px; }
+.detail-section { margin-top:26px;padding:24px;background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg); }
+.detail-section-header { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px; }
+.detail-section-header h3 { font-size:21px;color:var(--text-heading);line-height:1.3;font-weight:700; }
+.detail-section-tools { display:flex;flex-wrap:wrap;align-items:center;gap:12px; }
+.detail-section-tools span { font-size:12px;color:var(--text-secondary); }
+.detail-section-tools .btn { flex-shrink:0; }
+.detail-summary-cards { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px; }
+.detail-stat-card { background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:21px 22px;min-width:0; }
+.detail-stat-label { font-size:13px;font-weight:700;color:var(--text-secondary); }
+.detail-stat-value { font-size:35px;font-weight:700;letter-spacing:-.04em;line-height:1.18;color:var(--text-heading);margin:10px 0 7px;font-variant-numeric:tabular-nums; }
+.detail-stat-note { font-size:12px;color:var(--text-secondary); }
+.detail-distribution { margin-top:30px; }
+.detail-distribution h4 { font-size:21px;color:var(--text-heading);margin:0 0 6px; }
+.detail-distribution-desc { color:var(--text-secondary);font-size:13px;margin-bottom:16px; }
+.detail-offer { border:1px solid var(--border-subtle);border-radius:var(--radius-lg);background:var(--surface-card);overflow:hidden;margin-bottom:13px; }
+.detail-offer-title { border-bottom:1px solid var(--border-subtle);padding:16px 20px;display:flex;align-items:center;flex-wrap:wrap;gap:9px;color:var(--text-heading);font-size:15px;font-weight:700; }
+.detail-offer-title small { font-size:13px;font-weight:500;color:var(--text-secondary); }
+.detail-course-icon { display:grid;place-items:center;flex:0 0 31px;height:31px;border-radius:7px;background:var(--color-primary-50);border:1px solid var(--color-primary-100);color:var(--text-link); }
+.detail-option-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;padding:20px; }
+.detail-option h5 { font-size:14px;color:var(--text-heading);margin:0 0 10px; }
+.detail-option-label { display:inline-block;background:var(--color-primary-50);color:var(--text-link);padding:4px 11px;border-radius:6px; }
+.detail-table-scroll { overflow-x:auto;border:1px solid var(--border-subtle);border-radius:8px; }
+.detail-table { border-collapse:collapse;width:100%;font-size:13px; }
+.detail-table th { text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);background:var(--surface-page);padding:12px 14px;border-bottom:1px solid var(--border-subtle); }
+.detail-table td { padding:12px 14px;border-bottom:1px solid var(--border-subtle); }
+.detail-table tr:last-child td { border-bottom:0; }
+.detail-table td:last-child,.detail-table th:last-child { text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums; }
+.detail-notice { display:flex;align-items:flex-start;gap:11px;background:var(--color-primary-50);border:1px solid var(--color-primary-100);border-radius:8px;padding:12px 16px;color:var(--text-heading);font-size:12px;line-height:1.6;margin-top:13px; }
+.detail-notice--warning { border-color:var(--color-warning-500);background:var(--surface-subtle);color:var(--text-primary);margin-bottom:18px;align-items:center;flex-wrap:wrap; }
+.detail-notice--warning .btn { margin-left:auto; }
+.detail-info-icon { border:1.5px solid var(--text-link);border-radius:50%;color:var(--text-link);width:17px;height:17px;display:inline-grid;place-items:center;flex-shrink:0;font-size:11px;font-weight:700;margin-top:1px; }
+.detail-empty { min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:36px 20px;border:1px solid var(--border-subtle);border-radius:var(--radius-lg);background:var(--surface-card); }
+.detail-empty__icon { display:grid;place-items:center;height:56px;width:56px;border-radius:50%;background:var(--surface-subtle);color:var(--text-secondary);font-size:23px;font-weight:700; }
+.detail-empty--error .detail-empty__icon { background:var(--color-danger-50);color:var(--color-danger-700); }
+.detail-empty__title { font-size:20px;font-weight:700;color:var(--text-heading); }
+.detail-empty__desc { max-width:560px;font-size:14px;color:var(--text-secondary); }
+.detail-empty--error .detail-empty__title { color:var(--color-danger-700); }
+.detail-skeleton { background:linear-gradient(90deg,var(--skeleton-from),var(--skeleton-to),var(--skeleton-from));background-size:200% 100%;border-radius:5px;height:20px;animation:shimmer 1.5s infinite; }
+.detail-skeleton-card { min-height:158px;display:flex;flex-direction:column;gap:16px; }
+.detail-skeleton-card .detail-skeleton:nth-child(1) { width:54%; }
+.detail-skeleton-card .detail-skeleton:nth-child(2) { width:40%;height:38px; }
+.detail-skeleton-card .detail-skeleton:nth-child(3) { width:75%; }
+.detail-skeleton-offer { margin-top:20px;background:var(--surface-card);border:1px solid var(--border-subtle);padding:22px;border-radius:var(--radius-lg);display:flex;flex-direction:column;gap:15px; }
+.detail-busy-note { color:var(--text-secondary);font-size:13px;margin-top:12px; }
+.detail-disclaimer { color:var(--text-muted);font-size:12px;line-height:1.6;margin-top:16px; }
+#detail-feedback { margin-top:12px; }
+@media(max-width:1120px) { .detail-summary-cards { gap:10px; }.detail-stat-card { padding:17px; }.detail-option-grid { gap:12px; } }
+@media(max-width:800px) { .detail-summary-cards,.detail-option-grid { grid-template-columns:minmax(0,1fr); } }
+@media(max-width:580px) { .detail-section {padding:16px;} .detail-section-tools {width:100%;} .detail-page-header .btn {width:100%;} .detail-offer-title {align-items:flex-start;} .detail-option-grid {padding:12px;} .detail-distribution h4 {font-size:19px;} }
+
+/* Demonstração de 50 ofertas: busca e expansão acessíveis, somente para o 2º processo. */
+.detail-course-toolbar {display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between;margin:12px 0 16px;padding:14px 16px;border:1px solid var(--border-subtle);background:var(--surface-card);border-radius:var(--radius-lg)}
+.detail-course-search-field {display:flex;flex-direction:column;gap:6px;flex:1 1 280px;min-width:0;max-width:500px;font-size:13px;font-weight:600;color:var(--text-secondary)}
+.detail-course-search-field input {min-height:44px;padding:10px 13px;border-radius:var(--radius-md);border:1px solid var(--border-default);font:inherit;color:var(--text-primary);background:var(--surface-card);width:100%}
+.detail-course-search-field input:focus-visible {outline:3px solid var(--focus-ring-color);outline-offset:2px}
+.detail-course-toolbar-actions {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.detail-course-toolbar-actions .btn {min-width:130px}
+.detail-course-count {font-size:13px;color:var(--text-secondary);font-weight:600;margin:0 0 12px}
+.detail-course-empty {font-size:14px;color:var(--text-secondary);padding:20px;border:1px dashed var(--border-default);border-radius:var(--radius-md);background:var(--surface-card)}
+.detail-offer--collapsible > summary.detail-offer-title {list-style:none;cursor:pointer;min-height:62px;user-select:none}
+.detail-offer--collapsible > summary.detail-offer-title::-webkit-details-marker {display:none}
+.detail-offer--collapsible > summary.detail-offer-title:hover {background:var(--surface-subtle)}
+.detail-offer--collapsible > summary.detail-offer-title:focus-visible {outline:3px solid var(--focus-ring-color);outline-offset:-3px}
+.detail-offer--collapsible:not([open]) > summary.detail-offer-title {border-bottom:0}
+.detail-offer-toggle {margin-left:auto;color:var(--text-link);font-size:12px;font-weight:600;white-space:nowrap}
+.detail-offer-toggle::before {content:'▾';display:inline-block;transform:rotate(-90deg);transition:transform .15s ease;margin-right:5px}
+.detail-offer--collapsible[open] .detail-offer-toggle::before {transform:rotate(0deg)}
+.detail-offer-toggle .when-open {display:none}
+.detail-offer--collapsible[open] .detail-offer-toggle .when-open {display:inline}
+.detail-offer--collapsible[open] .detail-offer-toggle .when-closed {display:none}
+@media(max-width:580px) {.detail-course-toolbar {padding:12px}.detail-course-search-field{flex-basis:100%}.detail-course-toolbar-actions {width:100%}.detail-course-toolbar-actions .btn {flex:1 1 125px;min-width:0}}
+@media(prefers-reduced-motion:reduce){.detail-offer-toggle::before {transition:none}}
+
+/* A escolha de 320/360 px simula o próprio canvas, independente da janela do navegador. */
+.preview-window.is-mobile .detail-page-header .btn,.preview-window.is-mobile-320 .detail-page-header .btn {width:100%;}
+.preview-window.is-mobile .detail-section,.preview-window.is-mobile-320 .detail-section {padding:13px;}
+.preview-window.is-mobile .detail-summary-cards,.preview-window.is-mobile-320 .detail-summary-cards,.preview-window.is-mobile .detail-option-grid,.preview-window.is-mobile-320 .detail-option-grid {grid-template-columns:minmax(0,1fr);gap:11px;}
+.preview-window.is-mobile .detail-option-grid,.preview-window.is-mobile-320 .detail-option-grid {padding:11px;}
+.preview-window.is-mobile .detail-stat-card,.preview-window.is-mobile-320 .detail-stat-card {padding:15px;}
+.preview-window.is-mobile .detail-stat-value,.preview-window.is-mobile-320 .detail-stat-value {font-size:29px;}
+.preview-window.is-mobile .detail-section-tools,.preview-window.is-mobile-320 .detail-section-tools {width:100%;}
+.preview-window.is-mobile .detail-offer-title,.preview-window.is-mobile-320 .detail-offer-title {align-items:flex-start;}
+@media(prefers-reduced-motion:reduce) { .detail-skeleton {animation:none;} }
+
+
+    /* Em telas estreitas, o botão de menu permite ver a navegação ilustrativa. */
+    .app-layout.menu-open { grid-template-columns:minmax(0,1fr); }
+    .app-layout.menu-open .app-sidebar { display:flex; grid-row:1; }
+    .app-layout.menu-open .app-main { grid-row:2; }
+    .preview-window.is-mobile .app-layout.menu-open .app-sidebar,
+    .preview-window.is-mobile-320 .app-layout.menu-open .app-sidebar { display:flex; }
+    @media(max-width:850px) { .topbar-user {margin-left:auto;} .topbar-avatar{display:none;} }
+    .preview-window.is-mobile .topbar-avatar,.preview-window.is-mobile-320 .topbar-avatar { display:none; }
+
+/* Navegação demonstrativa por curso até uma lista nominal similar à da Seleção. */
+.detail-course-link { color:var(--text-link);font:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px;line-height:1.45;border-radius:2px; }
+.detail-course-link:hover {color:var(--color-primary-700);text-decoration-thickness:2px}
+.detail-course-link:focus-visible {outline:3px solid var(--focus-ring-color);outline-offset:3px}
+.course-header {display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;margin-bottom:22px}
+.course-header h2 {font-size:var(--text-2xl);font-weight:700;color:var(--text-heading);line-height:1.18}
+.course-header p {margin:9px 0 0;font-size:14px;color:var(--text-secondary)}
+.course-context {background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:16px 20px;margin-bottom:18px;display:flex;gap:8px 20px;flex-wrap:wrap;align-items:baseline}
+.course-context strong {color:var(--text-heading);font-size:17px}
+.course-context span {font-size:13px;color:var(--text-secondary)}
+.course-panel {border:1px solid var(--border-subtle);background:var(--surface-card);border-radius:var(--radius-lg);overflow:hidden}
+.course-panel-head {display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:20px;border-bottom:1px solid var(--border-subtle)}
+.course-panel-head h3 {font-size:19px;color:var(--text-heading)}
+.course-panel-head small {color:var(--text-secondary);font-size:13px}
+.course-filter-row {display:flex;gap:12px;flex-wrap:wrap;align-items:end;padding:14px 20px;background:var(--surface-page);border-bottom:1px solid var(--border-subtle)}
+.course-filter-row label {display:flex;flex-direction:column;gap:6px;color:var(--text-secondary);font-size:13px;font-weight:600;flex:1 1 185px}
+.course-filter-row label:first-child {flex:2 1 260px}
+.course-filter-row input,.course-filter-row select {min-height:44px;border:1px solid var(--border-default);border-radius:var(--radius-md);padding:9px 12px;color:var(--text-primary);background:var(--surface-card);font:inherit;width:100%}
+.course-table-scroll {overflow-x:auto;width:100%}
+.course-table {border-collapse:collapse;width:100%;font-size:13px;min-width:890px}
+.course-table th {text-transform:uppercase;letter-spacing:.03em;color:var(--text-secondary);font-size:11px;font-weight:700;text-align:left;white-space:nowrap;padding:13px 14px;background:var(--surface-page);border-bottom:1px solid var(--border-subtle)}
+.course-table td {padding:13px 14px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}
+.course-table tbody tr:hover {background:var(--surface-subtle)}
+.course-table tbody tr:last-child td {border-bottom:0}
+.course-table .course-name {font-weight:600}
+.course-table .course-cpf {white-space:nowrap;font-variant-numeric:tabular-nums}
+.course-table .course-option {font-size:12px;white-space:nowrap}
+.course-row-status {display:inline-flex;border-radius:var(--radius-pill);padding:3px 9px;border:1px solid var(--color-primary-100);background:var(--color-primary-50);color:var(--text-heading);white-space:nowrap;font-size:12px;font-weight:600}
+/* Mesmo padrão de ação da lista real: ui-icon-button com pi-folder-open,
+   link de navegação, título e nome acessível. O SVG é um equivalente local
+   do PrimeIcon para funcionar sem carregar a fonte PrimeIcons. */
+.course-open-inscription {display:inline-flex;justify-content:center;align-items:center;
+  width:36px;height:36px;min-width:36px;border:1px solid transparent;border-radius:var(--radius-md);
+  background:transparent;color:var(--text-link);text-decoration:none;position:relative}
+.course-open-inscription:hover {background:var(--color-primary-50);color:var(--color-primary-700)}
+.course-open-inscription svg {width:18px;height:18px;display:block}
+.course-table td:last-child {text-align:center;width:68px}
+.registration-page-header {display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:20px;margin-bottom:24px}
+.registration-page-header h2 {font-size:var(--text-2xl);line-height:1.18;font-weight:700;color:var(--text-heading)}
+.registration-page-header p {font-size:14px;color:var(--text-secondary);margin-top:8px}
+.registration-panel {background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:23px}
+.registration-panel__heading {padding:16px 20px;border-bottom:1px solid var(--border-subtle);font-size:20px;color:var(--text-heading);font-weight:700}
+.registration-data {padding:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px}
+.registration-field {min-width:0;display:flex;flex-direction:column;gap:5px}
+.registration-field dt {font-size:13px;color:var(--text-secondary);font-weight:600}
+.registration-field dd {font-size:15px;color:var(--text-primary);margin:0;overflow-wrap:anywhere}
+.registration-field--wide {grid-column:1/-1}
+.registration-selected-offers {margin:0;padding-left:23px}
+.registration-selected-offers li {margin:3px 0}
+.registration-demo-note {border:1px solid var(--color-primary-100);background:var(--color-primary-50);border-radius:var(--radius-md);color:var(--text-heading);font-size:13px;padding:13px 16px;line-height:1.5}
+@media(max-width:650px){.registration-data{grid-template-columns:1fr;padding:16px}.registration-panel__heading{padding:13px 16px}.registration-page-header .btn{width:100%}}
+.preview-window.is-mobile .registration-data,.preview-window.is-mobile-320 .registration-data {grid-template-columns:1fr;padding:12px}
+.preview-window.is-mobile .registration-page-header .btn,.preview-window.is-mobile-320 .registration-page-header .btn{width:100%}
+.course-pager {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:15px 20px;border-top:1px solid var(--border-subtle);color:var(--text-secondary);font-size:13px}
+.course-pager > span {flex:1;text-align:center}
+.course-pager button {min-height:42px;border:1px solid var(--border-default);padding:0 15px;border-radius:var(--radius-md);background:var(--surface-card);color:var(--text-primary);font:inherit}
+.course-pager button:disabled {opacity:.45;cursor:not-allowed}
+.course-pager select {background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:7px;color:var(--text-primary)}
+.course-empty-message {padding:32px;text-align:center;color:var(--text-secondary);font-size:14px}
+.course-note {margin:16px 0 0;padding:14px 18px;border:1px solid var(--color-primary-100);border-radius:var(--radius-md);background:var(--color-primary-50);color:var(--text-heading);font-size:13px;line-height:1.6}
+.preview-window.is-mobile .course-header .btn,.preview-window.is-mobile-320 .course-header .btn {width:100%}
+.preview-window.is-mobile .course-panel-head,.preview-window.is-mobile-320 .course-panel-head {padding:14px}
+.preview-window.is-mobile .course-filter-row,.preview-window.is-mobile-320 .course-filter-row {padding:12px}
+.preview-window.is-mobile .course-pager,.preview-window.is-mobile-320 .course-pager {justify-content:center}
+.preview-window.is-mobile .course-pager > span,.preview-window.is-mobile-320 .course-pager > span {flex:1 1 100%;order:-1}
+@media(max-width:580px){.course-header .btn{width:100%}.course-context{padding:14px}.course-pager{justify-content:center}.course-pager > span{flex:1 1 100%;order:-1}}
+
+  
+/* Integração: estilos adicionais reutilizam os tokens e as classes existentes. */
+.merge-field{display:flex;flex-direction:column;gap:5px;min-width:min(100%,185px)}
+.merge-field span,.merge-status-controls>span{font-size:12px;font-weight:650;color:var(--text-secondary)}
+.merge-field input,.merge-field select{min-height:44px;border:1px solid var(--border-default);border-radius:8px;padding:8px 11px;color:var(--text-primary);background:var(--surface-card)}
+.merge-map{align-self:end}.merge-filter-panel{display:flex;flex-direction:column;gap:12px;padding:16px 0 8px}
+.merge-filter-panel .merge-field{width:min(100%,410px)}.merge-status-controls{display:flex;flex-direction:column;gap:8px}
+.merge-chips{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.merge-chip{min-height:39px;padding:7px 12px;border:1px solid var(--border-default);border-radius:999px;background:var(--surface-card);color:var(--text-secondary);font-size:12px;cursor:pointer}
+.merge-chip[aria-pressed="true"]{background:var(--color-primary-50);border-color:var(--color-primary-600);color:var(--text-link);font-weight:750}
+.merge-subnote{font-size:12px;color:var(--text-secondary);margin:8px 0 0}.merge-card-stats{display:flex;flex-wrap:wrap;gap:12px;margin:4px 0 0}
+.merge-card-stats div{min-width:85px}.merge-card-stats small{display:block;color:var(--text-secondary);font-size:11px}.merge-card-stats strong{display:block;font-size:19px;color:var(--text-heading)}
+.merge-process-meta{padding:11px 0 17px}.merge-meta-line{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.merge-tabs{display:flex;align-items:center;overflow-x:auto;gap:4px;border-bottom:1px solid var(--border-default);margin:0 0 17px;scrollbar-width:thin}
+.merge-tabs button{min-height:48px;padding:10px 17px;border:0;border-bottom:3px solid transparent;color:var(--text-secondary);font-weight:700;background:transparent;cursor:pointer;white-space:nowrap}
+.merge-tabs button[aria-selected="true"]{border-color:var(--color-primary-600);color:var(--text-link)}.merge-tabs button:hover{background:var(--surface-subtle)}
+.merge-below{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:18px 0}
+.merge-future-panel{background:var(--surface-card);border:1px solid var(--border-subtle);padding:22px;border-radius:12px}
+.merge-future-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.merge-future-title h3{font-size:19px;color:var(--text-heading)}.merge-future-title p{color:var(--text-secondary);font-size:13px;margin-top:6px}
+.merge-pill{display:inline-flex;align-items:center;border:1px solid var(--border-default);border-radius:999px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--text-secondary)}
+.merge-box{background:var(--surface-card);border:1px solid var(--border-subtle);border-radius:10px;padding:17px;min-width:0}.merge-box h4{margin:0 0 9px;color:var(--text-heading);font-size:16px}
+.merge-box p,.merge-box li{font-size:13px;color:var(--text-secondary)}.merge-box ul{padding-left:20px;margin:8px 0}.merge-box .panel-statuses{margin:8px 0}
+.merge-toolbar{display:flex;align-items:end;flex-wrap:wrap;gap:12px;margin:15px 0}.merge-toolbar .merge-field{flex:1 1 160px}
+.merge-toolbar .merge-field:first-child{flex:2 1 220px}.merge-toolbar select{width:100%}
+.merge-table-scroll{overflow-x:auto;width:100%;border:1px solid var(--border-subtle);border-radius:8px}
+.merge-table{width:100%;border-collapse:collapse;font-size:12px}.merge-table th{text-align:left;padding:11px 12px;background:var(--surface-subtle);color:var(--text-secondary);white-space:nowrap;border-bottom:1px solid var(--border-default)}
+.merge-table td{padding:11px 12px;border-bottom:1px solid var(--border-subtle);vertical-align:middle}.merge-table tr:last-child td{border-bottom:none}
+.merge-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary)}
+.merge-pager button{border:1px solid var(--border-default);padding:9px 13px;border-radius:8px;background:var(--surface-card);color:var(--text-link);cursor:pointer}.merge-pager button:disabled{opacity:.45;cursor:not-allowed}
+.merge-icon-link{min-width:38px;min-height:38px;border-radius:8px;display:inline-grid;place-items:center;color:var(--text-link);text-decoration:none}.merge-icon-link:hover{background:var(--color-primary-50)}
+.merge-icon-link svg{width:19px;height:19px}.merge-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.merge-report-item{display:flex;flex-direction:column;gap:12px}.merge-report-item>p{flex:1}
+.merge-future-note{font-size:12px;color:var(--text-secondary);margin-top:14px}.merge-actions{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0 13px}
+.merge-checkbox{width:18px;height:18px;accent-color:var(--color-primary-600)}
+.merge-dialog{padding:0;width:min(650px,calc(100vw - 26px));max-height:calc(100vh - 60px);border:1px solid var(--border-default);border-radius:12px;background:var(--surface-card);color:var(--text-primary);box-shadow:0 16px 45px rgba(7,29,65,.22)}
+.merge-dialog::backdrop{background:rgba(7,29,65,.6)}.merge-dialog-header,.merge-dialog-foot{padding:15px 18px;border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;gap:12px}.merge-dialog-foot{border-bottom:none;border-top:1px solid var(--border-subtle);justify-content:flex-end}
+.merge-dialog-content{padding:18px;max-height:55vh;overflow-y:auto}.merge-dialog-content p{margin:0 0 12px}.merge-dialog-content .merge-field{width:100%;margin-bottom:13px}
+.merge-dialog-header h3{font-size:18px;color:var(--text-heading)}.merge-warning{padding:12px 14px;border:1px solid var(--border-default);background:var(--surface-subtle);color:var(--text-secondary);border-radius:8px;font-size:12px;margin-bottom:12px}
+.merge-warning strong{color:var(--text-heading)}
+html[data-theme="contrast"]{color-scheme:dark;--color-primary-50:#00265c;--color-primary-100:#003a84;--color-primary-600:#ffe600;--color-primary-700:#fff;--surface-page:#000;--surface-card:#000;--surface-subtle:#151515;--surface-inverse:#000;--surface-disabled:#333;--border-default:#fff;--border-subtle:#aaa;--border-strong:#fff;--text-primary:#fff;--text-secondary:#fff;--text-heading:#fff;--text-link:#ffe600;--text-on-primary:#000;--text-on-primary-tint:#ffe600;--focus-ring-color:#ffe600}
+html[data-theme="contrast"] .app-sidebar{border-right:1px solid #fff}html[data-theme="contrast"] .side-link.active{outline:1px solid #ffe600}
+@media(max-width:940px){.merge-below{grid-template-columns:1fr}.merge-report-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.merge-filter-panel{padding-top:11px}.merge-future-panel{padding:13px}.merge-tabs button{padding:10px 12px}.merge-report-grid{grid-template-columns:1fr}.merge-toolbar{flex-direction:column;align-items:stretch}.merge-toolbar .merge-field{flex:auto;width:100%}.merge-pager{justify-content:center}.merge-pager>span{order:-1;flex-basis:100%;text-align:center}}
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#demo-title">Pular para o painel demonstrativo</a>
+  <section class="review-bar" aria-labelledby="review-title">
+    <div class="review-content">
+      <div class="review-heading">
+        <div>
+          <p class="review-kicker">Uni+ · Referência visual · Web #1307 + #1308 + #1285 / Epic #1248</p>
+          <h1 class="review-title" id="review-title">Proposta visual — Painel e acompanhamento com três indicadores</h1>
+        </div>
+        <span class="review-chip">Escopo 1 + indicadores da Web #1285 · proposta para revisão LT/Web</span>
+      </div>
+      <p class="review-sub">Referência visual composta por <strong>escopo 1 (primeira entrega estrutural aprovada pelo PO)</strong>, mais <strong>três indicadores quantitativos</strong> da Feature Web #1384 / Story Web #1285: Inscrições, Inscritos e Rascunhos. O painel, a identificação do processo, a navegação e a seção Acompanhamento são preservados. Distribuições, situações operacionais, filtros por situação, inscrições nominais, prazos e demais funções ficam fora desta proposta.</p>
+      <div class="review-controls">
+        <div class="review-field merge-field">
+          <label for="merge-scope">Composição visual</label>
+          <select id="merge-scope"><option value="indicators" selected>Estrutura básica + três indicadores</option><option value="initial">Comparar: somente a estrutura básica</option></select>
+        </div>
+        <div class="review-field review-field--small">
+          <label for="merge-role">Perfil de acesso simulado</label>
+          <select id="merge-role"><option value="ceps">CEPS</option><option value="cga">CGA (sem permissão presumida)</option></select>
+        </div>
+        <button class="btn btn--secondary merge-map" id="merge-map" type="button" hidden>Mapa das funções</button>
+        <div class="review-field" id="panel-scenario-field">
+          <label for="scenario">Cenário da interface</label>
+          <select id="scenario">
+            <option value="normal">01 · Lista com processos</option>
+            <option value="long">02 · Nome de processo longo</option>
+            <option value="loading">03 · Carregamento inicial</option>
+            <option value="empty">04 · Resultado vazio</option>
+            <option value="error">05 · Falha inicial</option>
+            <option value="navError">06 · Falha ao mudar de página</option>
+            <option value="expired">07 · Cursor expirado</option>
+            <option value="denied">08 · Acesso negado</option>
+            <option value="paging">09 · Atualização de página em andamento</option>
+          </select>
+        </div>
+        <div class="review-field review-field--small">
+          <label for="viewport">Visualização</label>
+          <select id="viewport">
+            <option value="desktop">Largura disponível</option>
+            <option value="mobile">Mobile · 360 px</option>
+            <option value="mobile-320">Mobile · 320 px</option>
+          </select>
+        </div>
+        <div class="review-field review-field--small">
+          <label for="theme">Tema</label>
+          <select id="theme"><option value="light">Claro</option><option value="dark">Escuro</option><option value="contrast">Alto contraste</option></select>
+        </div>
+        <div class="detail-controls" id="detail-review-controls" hidden>
+          <div class="review-field review-field--small">
+            <label for="detail-process-state">Estado do processo</label>
+            <select id="detail-process-state">
+              <option value="ok">Carregado</option><option value="loading">Carregamento</option>
+              <option value="error">Falha inicial</option><option value="missing">Não encontrado</option>
+              <option value="denied">Acesso negado</option>
+            </select>
+          </div>
+          <div class="review-field review-field--small" id="merge-indicator-state-field">
+            <label for="detail-indicator-state">Estado dos indicadores</label>
+            <select id="detail-indicator-state">
+              <option value="success">Com dados</option><option value="loading">Carregamento</option>
+              <option value="empty">Sem inscrições</option><option value="error">Falha inicial</option>
+              <option value="refresh-error">Falha ao atualizar</option><option value="denied">Acesso negado</option>
+            </select>
+          </div>
+          <label class="detail-longname"><input type="checkbox" id="detail-long-name"> Simular título extenso</label>
+        </div>
+      </div>
+    </div>
+  </section>
+  <p class="review-notice"><strong>Escopo e validação:</strong> a primeira entrega estrutural já foi aprovada pelo PO; a apresentação dos três cartões é uma proposta de referência visual para revisão do LT/equipe Web. Todos os números são fictícios. Não há API real, autenticação ou concessão real de acesso. O produto deve reutilizar o Shared UI / Design System, não copiar o HTML deste protótipo.</p>
+  <div class="preview-frame">
+    <div class="preview-window" id="previewWindow">
+      <div class="gov-bar" aria-label="Faixa institucional simulada"><span class="gov-brand">gov.br</span><span class="gov-separator">|</span><span>UNIFESSPA · Administração</span><span class="gov-right">Ambiente ilustrativo</span></div>
+      <div class="app-layout">
+        <aside class="app-sidebar" id="demo-sidebar" aria-label="Navegação administrativa ilustrativa">
+          <div class="side-brand"><span class="side-logo" aria-hidden="true">U+</span><span><b>Uni+ Admin</b><small>Seleção</small></span></div>
+          <nav aria-label="Menu ilustrativo">
+            <div class="side-label">Acompanhamento</div>
+            <a class="side-link active" id="sidebar-panel-link" href="#painel" aria-current="page">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+              Painel de processos
+            </a>
+            <div class="side-label">Cadastro</div>
+            <span class="side-link side-link--static" aria-label="Processos seletivos (apenas referência visual)" title="Exemplo visual de menu; este protótipo não inclui o cadastro de processos">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M8 3H4v18h16V7l-4-4H8z"/><path d="M8 11h8M8 15h8"/></svg>
+              Processos seletivos
+            </span>
+          </nav>
+          <div class="side-foot"><span class="avatar" aria-hidden="true" id="merge-side-avatar">CE</span><span id="merge-side-user">Perfil administrativo<br><small style="opacity:.75">Exemplo visual · CEPS</small></span></div>
+        </aside>
+        <div class="app-main">
+          <header class="app-topbar">
+            <div style="display:flex;align-items:center;gap:12px;min-width:0">
+              <button type="button" class="hamburger" id="demo-menu-toggle" aria-label="Abrir menu ilustrativo" aria-expanded="false" aria-controls="demo-sidebar">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+              <span class="breadcrumb">Acompanhamento <span aria-hidden="true">›</span> <strong>Painel de processos</strong></span>
+            </div>
+            <div class="topbar-user" aria-label="Identificação ilustrativa do usuário"><span class="topbar-tag">Seleção</span><span class="topbar-avatar" aria-hidden="true" id="merge-top-avatar">CE</span></div>
+          </header>
+          <main class="app-content" id="demo-title" tabindex="-1">
+            <div id="panel-screen">
+              <div class="page-header"><div class="page-header__content"><h2 class="page-header__title">Painel de processos seletivos</h2></div></div>
+              <p class="panel-statuses-note" id="merge-panel-note"><strong>Painel estrutural:</strong> identificação dos processos e abertura do acompanhamento, sem status e sem indicadores nos cartões.</p>
+              <div class="merge-filter-panel" id="merge-panel-filters" role="search">
+                <label class="merge-field"><span>Buscar processo</span><input type="search" id="merge-process-search" placeholder="Nome do processo" autocomplete="off"></label>
+                <div class="merge-status-controls"><span>Filtrar por situação</span><div id="merge-status-chips" class="merge-chips" role="group" aria-label="Filtro por situação"></div></div>
+              </div>
+              <p class="merge-subnote" id="merge-panel-count" role="status"></p>
+              <div class="results" id="results" aria-live="polite" aria-atomic="false"></div>
+              <div class="demo-toast" id="demoToast" role="status" hidden></div>
+            </div>
+            <div id="detail-screen" hidden>
+              <div class="detail-page-header">
+                <div class="detail-page-header__copy">
+                  <h2 class="page-header__title" id="detail-process-title"></h2>
+                  <p class="detail-page-subtitle" id="detail-process-subtitle">Área de acompanhamento administrativo do processo seletivo</p>
+                </div>
+                <button class="btn btn--secondary" type="button" id="detail-back">← Voltar ao painel</button>
+              </div>
+              <div class="merge-process-meta" id="merge-process-meta" hidden></div>
+              <div class="merge-tabs" id="merge-tabs" role="tablist" aria-label="Funcionalidades do processo" hidden>
+                <button role="tab" aria-selected="true" data-merge-tab="acomp">Acompanhamento</button>
+                <button role="tab" aria-selected="false" data-merge-tab="insc">Inscrições</button>
+                <button role="tab" aria-selected="false" data-merge-tab="hom">Homologação</button>
+                <button role="tab" aria-selected="false" data-merge-tab="notas">Notas</button>
+                <button role="tab" aria-selected="false" data-merge-tab="reports">Relatórios</button>
+              </div>
+              <section class="detail-section" aria-labelledby="detail-section-title">
+                <header class="detail-section-header">
+                  <h3 id="detail-section-title">Acompanhamento</h3>
+                  <div class="detail-section-tools" id="detail-indicator-tools">
+                    <span id="detail-last-updated">Dados fictícios de demonstração</span>
+                    <button class="btn btn--secondary" type="button" id="detail-refresh">↻ Atualizar</button>
+                  </div>
+                </header>
+                <div id="detail-body" aria-live="polite"></div>
+              </section>
+              <div class="merge-below" id="merge-below" hidden></div>
+              <section class="merge-future-panel" id="merge-future-panel" hidden aria-live="polite"></section>
+              <p class="detail-disclaimer"><strong>Referência visual:</strong> estrutura da primeira entrega + apenas os três indicadores de acompanhamento. Inscrições = submetidas e não canceladas; Inscritos = pessoas únicas; Rascunhos = não enviados e não descartados. Valores inventados; a API #2105 ainda precisa de validação técnica. Distribuições e outras funcionalidades não são exibidas.</p>
+              <p id="detail-feedback" class="demo-toast" role="status" hidden></p>
+            </div>
+            <div id="course-screen" hidden>
+              <div class="course-header">
+                <div>
+                  <h2 id="course-title">Inscrições do curso</h2>
+                  <p id="course-description">Inscrições enviadas para o curso selecionado</p>
+                </div>
+                <a class="btn btn--secondary" id="course-back" href="#painel">← Voltar ao acompanhamento</a>
+              </div>
+              <div class="course-context" id="course-context"></div>
+              <section class="course-panel" aria-labelledby="course-list-heading">
+                <div class="course-panel-head">
+                  <h3 id="course-list-heading">Inscrições enviadas</h3>
+                  <small id="course-total" role="status" aria-live="polite"></small>
+                </div>
+                <div class="course-filter-row">
+                  <label>Buscar inscrição ou nome
+                    <input type="search" id="course-search" autocomplete="off" placeholder="Número ou nome fictício">
+                  </label>
+                  <label>Opção do curso
+                    <select id="course-option-filter">
+                      <option value="todas">Todas as opções</option>
+                      <option value="Primeira opção">Primeira opção</option>
+                      <option value="Segunda opção">Segunda opção</option>
+                    </select>
+                  </label>
+                </div>
+                <div id="course-list-body" aria-live="polite"></div>
+                <nav class="course-pager" id="course-pager" aria-label="Paginação das inscrições do curso"></nav>
+              </section>
+              <p class="course-note"><strong>Demonstração:</strong> lista e filtros de inscrições inteiramente fictícios. O Uni+ já possui listagem de inscrições enviadas por processo; o recorte por oferta/curso e a integração com o acompanhamento precisam ser especificados e autorizados pela API. Nenhuma informação pessoal real é consultada.</p>
+            </div>
+            <div id="registration-screen" hidden>
+              <header class="registration-page-header">
+                <div>
+                  <h2 id="registration-title">Inscrição</h2>
+                  <p id="registration-description"></p>
+                </div>
+                <a id="registration-back" class="btn btn--secondary" href="#painel">Voltar às inscrições</a>
+              </header>
+              <div id="registration-body" aria-live="polite"></div>
+              <p class="registration-demo-note"><strong>Referência demonstrativa:</strong> esta página reproduz a navegação e a organização do detalhe administrativo do Uni+ com registros inventados. No aplicativo real, identificação, respostas do formulário, dados derivados e arquivos aparecem somente quando autorizados e retornados pela API. Nenhum dado pessoal real é consultado.</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<template id="detail-tpl-process-loading">
+  <div class="detail-empty" role="status" aria-busy="true"><span class="detail-empty__icon" aria-hidden="true">⋯</span><h4 class="detail-empty__title">Carregando processo seletivo</h4><p class="detail-empty__desc">Consultando a identificação do processo (simulação).</p></div>
+</template>
+<template id="detail-tpl-process-error">
+  <div class="detail-empty detail-empty--error" role="alert"><span class="detail-empty__icon" aria-hidden="true">!</span><h4 class="detail-empty__title">Não foi possível carregar o processo seletivo</h4><p class="detail-empty__desc">A consulta ao processo falhou.</p><button class="btn btn--secondary" data-detail-action="retry-process">Tentar novamente</button></div>
+</template>
+<template id="detail-tpl-process-missing">
+  <div class="detail-empty detail-empty--error" role="status"><span class="detail-empty__icon" aria-hidden="true">!</span><h4 class="detail-empty__title">Processo seletivo não encontrado</h4><p class="detail-empty__desc">O processo solicitado não foi localizado.</p></div>
+</template>
+<template id="detail-tpl-process-denied">
+  <div class="detail-empty detail-empty--error" role="status"><span class="detail-empty__icon" aria-hidden="true">⊘</span><h4 class="detail-empty__title">Acesso negado ao processo</h4><p class="detail-empty__desc">Sua sessão não possui acesso a esta consulta.</p></div>
+</template>
+<template id="detail-tpl-indicator-loading">
+  <div class="detail-summary-cards" role="status" aria-busy="true" aria-label="Carregando indicadores">
+    <div class="detail-stat-card detail-skeleton-card"><span class="detail-skeleton"></span><span class="detail-skeleton"></span><span class="detail-skeleton"></span></div>
+    <div class="detail-stat-card detail-skeleton-card"><span class="detail-skeleton"></span><span class="detail-skeleton"></span><span class="detail-skeleton"></span></div>
+    <div class="detail-stat-card detail-skeleton-card"><span class="detail-skeleton"></span><span class="detail-skeleton"></span><span class="detail-skeleton"></span></div>
+  </div>
+  <p class="detail-busy-note">Carregando os três indicadores…</p>
+</template>
+<template id="detail-tpl-indicator-error">
+  <div class="detail-empty detail-empty--error" role="alert"><span class="detail-empty__icon" aria-hidden="true">!</span><h4 class="detail-empty__title">Não foi possível carregar o acompanhamento</h4><p class="detail-empty__desc">A falha na consulta não equivale a zero inscrições.</p><button class="btn btn--secondary" data-detail-action="retry-indicator">Tentar novamente</button></div>
+</template>
+<template id="detail-tpl-indicator-denied">
+  <div class="detail-empty" role="status"><span class="detail-empty__icon" aria-hidden="true">⊘</span><h4 class="detail-empty__title">Acesso negado aos indicadores</h4><p class="detail-empty__desc">A identificação básica do processo pode ser exibida quando autorizada, sem liberar os indicadores.</p></div>
+</template>
+
+  <script>
+    'use strict';
+    // Fixtures de demonstração, não dados do produto.
+    // Situações demonstrativas, mantidas como lista para ilustrar simultaneidade sem duplicar o processo.
+    // O segundo processo preserva suas 50 ofertas simuladas na tela de acompanhamento.
+    const fixtures = [
+      {id:'exemplo-001',nome:'Processo Seletivo — Medicina 2027',situacoes:['Em inscrição']},
+      {id:'exemplo-002',nome:'Processo Seletivo para Cursos de Graduação — 2027',situacoes:['Em inscrição']},
+      {id:'exemplo-003',nome:'Seleção de Pós-Graduação — Mestrado Acadêmico',situacoes:['Em avaliação','Em período de recurso']},
+      {id:'exemplo-004',nome:'Seleção Especial para Ingresso em Cursos de Graduação da Universidade Federal do Sul e Sudeste do Pará — Período Letivo 2027.1 — Modalidade de Ingresso por Processo Específico com Denominação Extensa',situacoes:['Em homologação']},
+      {id:'exemplo-005',nome:'Processo Seletivo — Especialização em Educação 2027',situacoes:['Aguardando início']},
+      {id:'exemplo-006',nome:'Seleção de Vagas Remanescentes — 2027.1',situacoes:['Em homologação','Em período de recurso']},
+      {id:'exemplo-007',nome:'Seleção de Doutorado em Ciências — 2027',situacoes:['Em avaliação']},
+      {id:'exemplo-008',nome:'Processo Seletivo — Licenciatura Intercultural 2027',situacoes:['Em período de recurso']},
+      {id:'exemplo-009',nome:'Seleção para Mobilidade Acadêmica — 2027',situacoes:['Entre etapas']},
+      {id:'exemplo-010',nome:'Processo Seletivo de Graduação — 2026.2',situacoes:['Encerrado']},
+      {id:'exemplo-011',nome:'Seleção Especial — Transferência 2026',situacoes:['Cancelado']},
+      {id:'exemplo-012',nome:'Processo Seletivo — Educação do Campo 2027',situacoes:['Em homologação']},
+      {id:'exemplo-013',nome:'Seleção para Cursos Técnicos — 2027',situacoes:['Em inscrição','Em período de recurso']}
+    ];
+    const situationClasses={
+      'Em inscrição':'fase', 'Em homologação':'fase','Em avaliação':'fase',
+      'Em período de recurso':'recurso','Aguardando início':'espera',
+      'Entre etapas':'espera','Encerrado':'encerrado','Cancelado':'cancelado'
+    };
+    const icons = {
+      folder:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3z"/></svg>',
+      error:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v6M12 17h.01"/></svg>',
+      lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+      refresh:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.5 6"/><path d="M20 5v6h-6"/></svg>'
+    };
+    const elResults = document.getElementById('results');
+    const elToast = document.getElementById('demoToast');
+    const scenario = document.getElementById('scenario');
+    const viewport = document.getElementById('viewport');
+    const theme = document.getElementById('theme');
+    let currentPage = 1;
+    let currentSize = 50;
+    let currentState = 'normal';
+    const esc = value => String(value).replace(/[&<>"']/g,ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    function toast(message) { elToast.textContent = message;elToast.hidden=false; }
+    let mergedScope='indicators';
+    let mergedRole='ceps';
+    let mergedProcessSearch='';
+    let mergedStatus='Todas';
+    function mergedVisibleFixtures(){
+      const q=normalizeCourseSearch(mergedProcessSearch);
+      return fixtures.filter(item=>
+        (!q || normalizeCourseSearch(item.nome).includes(q)) &&
+        (mergedScope!=='future'||mergedStatus==='Todas'||item.situacoes.includes(mergedStatus)));
+    }
+    function card(item) {
+      const badges=mergedScope==='future' ? '<div class="panel-statuses" role="group" aria-label="Situações de '+esc(item.nome)+'">'+item.situacoes.map(situacao=>
+        '<span class="panel-status panel-status--'+situationClasses[situacao]+'">'+esc(situacao)+'</span>').join('')+'</div>' : '';
+      const f=typeof detailFixtures==='undefined'?null:detailFixtures[item.id];
+      const mini=mergedScope==='future'&&mergedRole==='ceps'&&f?
+        '<div class="merge-card-stats"><div><small>Inscrições</small><strong>'+Number(f.inscricoes).toLocaleString('pt-BR')+'</strong></div><div><small>Inscritos</small><strong>'+Number(f.inscritos).toLocaleString('pt-BR')+'</strong></div></div>':'';
+      return '<article class="card"><h3 class="card__title">'+esc(item.nome)+'</h3>'+badges+mini+
+        '<div class="card__footer"><button class="btn btn--rect" type="button" data-action="open" data-id="'+esc(item.id)+'" aria-label="Abrir acompanhamento — '+esc(item.nome)+'">Abrir acompanhamento</button></div></article>';
+    }
+    function cards(items) { return '<div class="cards">'+items.map(card).join('')+'</div>'; }
+    function pageCount(){return Math.max(1,Math.ceil(mergedVisibleFixtures().length/currentSize));}
+    function pageItems(){return mergedVisibleFixtures().slice((currentPage-1)*currentSize,currentPage*currentSize);}
+    function pager(disabled=false) {
+      const maxPage=pageCount();
+      return '<div class="list-footer"><nav class="pager" aria-label="Paginação">'+
+        '<button class="pager__btn" type="button" data-action="previous" '+(disabled||currentPage===1?'disabled':'')+'>Anterior</button>'+
+        '<span class="pager__status">'+mergedVisibleFixtures().length+' processos demonstrativos · Página '+currentPage+' de '+maxPage+' <label class="pager__per-page">Itens por página <select id="pageSize" aria-label="Itens por página" '+(disabled?'disabled':'')+'>'+[10,25,50,100].map(n => '<option value="'+n+'" '+(n===currentSize?'selected':'')+'>'+n+'</option>').join('')+'</select></label></span>'+
+        '<button class="pager__btn" type="button" data-action="next" '+(disabled||currentPage>=maxPage?'disabled':'')+'>Próximo</button>'+
+        '</nav></div>';
+    }
+    function stateBox(icon,title,description,error=false,actionText='',action='') {
+      return '<section class="empty-state '+(error?'empty-state--error':'')+'" role="status"><div class="empty-state__icon">'+icon+'</div><h3 class="empty-state__title">'+title+'</h3>'+
+        (description?'<p class="empty-state__desc">'+description+'</p>':'')+
+        (actionText?'<button class="btn btn--rect" type="button" data-action="'+action+'">'+actionText+'</button>':'')+'</section>';
+    }
+    const notice = (title, detail,actionText,action) => '<div class="message" role="alert"><div><strong>'+title+'</strong><small>'+detail+'</small></div><button class="btn btn--secondary btn--rect" type="button" data-action="'+action+'">'+actionText+'</button></div>';
+    function render() {
+      let html='';
+      const visibleItems = pageItems();
+      switch (currentState) {
+        case 'normal': html=visibleItems.length ? cards(visibleItems)+pager() : stateBox(icons.folder,'Nenhum processo corresponde aos filtros','Altere a busca ou a situação selecionada.')+pager();break;
+        case 'long': html=cards([fixtures[3],fixtures[0]])+pager(true);break;
+        case 'loading': html='<div role="status" aria-busy="true"><p class="sr-only">Carregando processos seletivos</p><div class="cards">'+Array.from({length:3},()=>'<div class="card skeleton-card" aria-hidden="true"><span class="skeleton"></span><span class="skeleton skeleton--short"></span><span class="skeleton skeleton--button"></span></div>').join('')+'</div></div>';break;
+        case 'empty': html=stateBox(icons.folder,'Nenhum processo seletivo encontrado','Não há processos para apresentar nesta consulta.');break;
+        case 'error': html=stateBox(icons.error,'Não foi possível carregar os processos seletivos','Ocorreu uma falha na consulta.','true','Tentar novamente','retry');break;
+        case 'navError': html=notice('Não foi possível carregar a próxima página.','A última página válida continua visível.','Tentar novamente','retryPage')+cards(visibleItems)+pager();break;
+        case 'expired': html=notice('A navegação expirou.','Atualize a lista para iniciar uma nova consulta, sem utilizar o cursor vencido.','Atualizar lista','reset')+cards(visibleItems)+pager();break;
+        case 'denied': html=stateBox(icons.lock,'Acesso negado','Esta consulta não está disponível para a sessão atual.',true);break;
+        case 'paging': html='<p role="status" style="margin-bottom:16px;color:var(--text-secondary);font-size:14px">Carregando a próxima página…</p>'+cards(visibleItems)+pager(true);break;
+      }
+      elResults.innerHTML=html;
+    }
+
+// Navegação local por hash: funciona em arquivo .html, inclusive com Voltar/Avançar.
+// Exemplo de volume: 50 cursos hipotéticos para exercício visual. Não é um catálogo real da UNIFESSPA.
+const cursosGraduacao2027Demo = [
+  "Administração",
+  "Agronomia",
+  "Arquitetura e Urbanismo",
+  "Artes Visuais",
+  "Biblioteconomia",
+  "Biomedicina",
+  "Ciências Biológicas",
+  "Ciências Contábeis",
+  "Ciências Econômicas",
+  "Ciências Sociais",
+  "Ciência da Computação",
+  "Comunicação Social",
+  "Design",
+  "Direito",
+  "Educação Física",
+  "Enfermagem",
+  "Engenharia Ambiental",
+  "Engenharia Civil",
+  "Engenharia de Computação",
+  "Engenharia de Materiais",
+  "Engenharia de Minas",
+  "Engenharia de Produção",
+  "Engenharia Elétrica",
+  "Engenharia Florestal",
+  "Engenharia Mecânica",
+  "Engenharia Química",
+  "Estatística",
+  "Farmácia",
+  "Filosofia",
+  "Física",
+  "Fisioterapia",
+  "Geografia",
+  "Geologia",
+  "Gestão Pública",
+  "História",
+  "Jornalismo",
+  "Letras — Português",
+  "Letras — Inglês",
+  "Matemática",
+  "Medicina",
+  "Medicina Veterinária",
+  "Música",
+  "Nutrição",
+  "Odontologia",
+  "Pedagogia",
+  "Psicologia",
+  "Química",
+  "Serviço Social",
+  "Sistemas de Informação",
+  "Zootecnia"
+];
+// Rótulos genéricos para teste da disposição visual; NÃO representam códigos ou modalidades oficiais.
+const modalidadesReservaDemo = [
+  'Ampla concorrência',
+  'Reserva de vagas — modalidade A',
+  'Reserva de vagas — modalidade B',
+  'Reserva de vagas — modalidade C',
+  'Reserva de vagas — modalidade D',
+  'Reserva de vagas — modalidade E',
+  'Reserva de vagas — modalidade F',
+  'Reserva de vagas — modalidade G',
+  'Reserva de vagas — modalidade H'
+];
+function gerarOfertasGraduacaoDemo() {
+  // Graus ilustrativos apenas para avaliar a interface. Não são dados do catálogo oficial.
+  const licenciaturas = new Set([
+    'Artes Visuais', 'Ciências Biológicas', 'Ciências Sociais', 'Educação Física',
+    'Filosofia', 'Física', 'Geografia', 'História', 'Letras — Português',
+    'Letras — Inglês', 'Matemática', 'Música', 'Pedagogia', 'Química'
+  ]);
+  const grauDoCurso = curso => curso === 'Gestão Pública' ? 'Tecnológico'
+    : licenciaturas.has(curso) ? 'Licenciatura' : 'Bacharelado';
+  const turnos = ['Integral', 'Matutino', 'Noturno', 'Vespertino'];
+  return cursosGraduacao2027Demo.map((curso, i) => ({
+    curso,
+    grau: grauDoCurso(curso),
+    turno: turnos[(i + Math.floor(i / 5)) % turnos.length],
+    opcoes: [
+      {nome: 'Primeira opção', modalidades: modalidadesReservaDemo.map((modalidade, j) =>
+        [modalidade, j===0 ? 80+((i*37)%175) : 9+((i*17+j*19)%85)])},
+      {nome: 'Segunda opção', modalidades: modalidadesReservaDemo.map((modalidade, j) =>
+        [modalidade, j===0 ? 30+((i*23)%82) : 3+((i*11+j*13)%49)])}
+    ]
+  }));
+}
+const detailFixtures = {
+  'exemplo-001': {
+    inscricoes:1250, inscritos:1180, rascunhos:340,
+    ofertas:[{curso:'Medicina',grau:'Bacharelado',turno:'Integral',opcoes:[
+      {nome:'Primeira opção',modalidades:[['Ampla concorrência',500],['Reserva de vagas — modalidade A',180],['Reserva de vagas — modalidade B',90]]},
+      {nome:'Segunda opção',modalidades:[['Ampla concorrência',120],['Reserva de vagas — modalidade A',55]]}
+    ]}]
+  },
+  'exemplo-002': {
+    inscricoes:16000, inscritos:15240, rascunhos:2850,
+    ofertas:gerarOfertasGraduacaoDemo()
+  },
+  'exemplo-003': {
+    inscricoes:260, inscritos:252, rascunhos:47,
+    ofertas:[{curso:'Mestrado Acadêmico',grau:'Mestrado',turno:'Não se aplica',opcoes:[
+      {nome:'Primeira opção',modalidades:[['Ampla concorrência',190],['Reserva de vagas — modalidade A',42]]}
+    ]}]
+  },
+  'exemplo-004': {
+    inscricoes:415, inscritos:401, rascunhos:80,
+    ofertas:[{curso:'Graduação — oferta especial',grau:'Bacharelado',turno:'Integral',opcoes:[
+      {nome:'Primeira opção',modalidades:[['Ampla concorrência',235],['Reserva de vagas — modalidade A',82]]},
+      {nome:'Segunda opção',modalidades:[['Ampla concorrência',60],['Reserva de vagas — modalidade B',38]]}
+    ]}]
+  }
+};
+// Dados demonstrativos dos processos adicionais para preservar a navegação no protótipo.
+// Os totais e agrupamentos são independentes das situações acima, que não são calculadas.
+const outrosProcessosDemo = {
+  'exemplo-005':{inscricoes:0,inscritos:0,rascunhos:0,curso:'Especialização em Educação',grau:'Especialização'},
+  'exemplo-006':{inscricoes:892,inscritos:851,rascunhos:76,curso:'Vagas remanescentes — Graduação',grau:'Bacharelado'},
+  'exemplo-007':{inscricoes:184,inscritos:179,rascunhos:13,curso:'Doutorado em Ciências',grau:'Doutorado'},
+  'exemplo-008':{inscricoes:635,inscritos:621,rascunhos:104,curso:'Licenciatura Intercultural',grau:'Licenciatura'},
+  'exemplo-009':{inscricoes:310,inscritos:297,rascunhos:34,curso:'Mobilidade Acadêmica',grau:'Não especificado'},
+  'exemplo-010':{inscricoes:2200,inscritos:2101,rascunhos:0,curso:'Graduação 2026.2',grau:'Bacharelado'},
+  'exemplo-011':{inscricoes:155,inscritos:151,rascunhos:7,curso:'Transferência',grau:'Bacharelado'},
+  'exemplo-012':{inscricoes:1090,inscritos:1056,rascunhos:204,curso:'Educação do Campo',grau:'Licenciatura'},
+  'exemplo-013':{inscricoes:740,inscritos:722,rascunhos:120,curso:'Cursos Técnicos',grau:'Técnico'}
+};
+for(const [id,p] of Object.entries(outrosProcessosDemo)) {
+  detailFixtures[id]={inscricoes:p.inscricoes,inscritos:p.inscritos,rascunhos:p.rascunhos,
+    ofertas:p.inscricoes===0?[]:[{curso:p.curso,grau:p.grau,turno:'Não especificado',opcoes:[
+      {nome:'Primeira opção',modalidades:[['Ampla concorrência',Math.floor(p.inscricoes*.57)],['Reserva de vagas — modalidade A',Math.floor(p.inscricoes*.22)],['Reserva de vagas — modalidade B',Math.floor(p.inscricoes*.15)]]},
+      {nome:'Segunda opção',modalidades:[['Ampla concorrência',Math.floor(p.inscricoes*.2)],['Reserva de vagas — modalidade A',Math.floor(p.inscricoes*.09)]]}
+    ]}]};
+}
+let selectedProcessId = null;
+let selectedCourseIndex = null;
+let coursePage = 1;
+let coursePageSize = 50;
+let courseSearch = '';
+let courseOption = 'todas';
+let courseEntries = [];
+let previousScreen = "panel";
+let previousCourseKey = null;
+let detailRevision = 0;
+let lastDemoUpdate = 'Consulta de exemplo: 04/11/2026 às 10:30 (fictícia)';
+const detailProcessSelect = document.getElementById('detail-process-state');
+const detailIndicatorSelect = document.getElementById('detail-indicator-state');
+const detailNameCheck = document.getElementById('detail-long-name');
+const detailArea = document.getElementById('detail-body');
+const detailFeedback = document.getElementById('detail-feedback');
+const formatNum = x => Number(x).toLocaleString('pt-BR');
+
+function goToPanel() {
+  if(window.location.hash === '#painel') {applyRoute();return;}
+  window.location.hash = 'painel';
+}
+function goToDetail(id) {
+  if (!fixtures.some(x=>x.id === id)) return;
+  const hash = '#acompanhamento/' + encodeURIComponent(id);
+  if(window.location.hash === hash) applyRoute(); else window.location.hash = hash;
+}
+function routeData() {
+  const match = /^#(?:acompanhamento|inscricoes|inscricao)\/([^/?]+)/.exec(window.location.hash);
+  const id = match ? decodeURIComponent(match[1]) : null;
+  return fixtures.find(x=>x.id===id) || null;
+}
+function setBreadcrumb(item, courseIndex=null, registrationNumber=null) {
+  const breadcrumb = document.querySelector('.breadcrumb');
+  if(!item) {
+    breadcrumb.innerHTML = 'Acompanhamento <span aria-hidden="true">›</span> <strong aria-current="page">Painel de processos</strong>';
+  } else if(courseIndex !== null && detailFixtures[item.id]?.ofertas[courseIndex]) {
+    const offer=detailFixtures[item.id].ofertas[courseIndex];
+    const listCrumb = '<a href="#painel">Painel de processos</a> <span aria-hidden="true">›</span> <span>'+esc(item.nome)+'</span> <span aria-hidden="true">›</span> <a href="#acompanhamento/'+encodeURIComponent(item.id)+'">Acompanhamento</a> <span aria-hidden="true">›</span> ';
+    breadcrumb.innerHTML = registrationNumber===null
+      ? listCrumb+'<strong aria-current="page">Inscrições: '+esc(offer.curso)+'</strong>'
+      : listCrumb+'<a href="#inscricoes/'+encodeURIComponent(item.id)+'/'+courseIndex+'">Inscrições: '+esc(offer.curso)+'</a> <span aria-hidden="true">›</span> <strong aria-current="page">Inscrição '+esc(registrationNumber)+'</strong>';
+  } else {
+    breadcrumb.innerHTML = '<a href="#painel">Painel de processos</a> <span aria-hidden="true">›</span> <span>'+esc(item.nome)+'</span> <span aria-hidden="true">›</span> <strong aria-current="page">Acompanhamento</strong>';
+  }
+}
+function applyRoute() {
+  document.querySelector('.app-layout').classList.remove('menu-open');
+  document.getElementById('demo-menu-toggle').setAttribute('aria-expanded','false');
+  document.getElementById('demo-menu-toggle').setAttribute('aria-label','Abrir menu ilustrativo');
+  detailRevision += 1;
+  const item=routeData();
+  if(mergedScope!=='future' && (location.hash.startsWith('#inscricoes/')||location.hash.startsWith('#inscricao/'))) {
+    location.hash = '#acompanhamento/'+encodeURIComponent(item?.id||'exemplo-001');return;
+}
+  const courseMatch=/^#inscricoes\/[^/?]+\/(\d+)$/.exec(window.location.hash);
+  const registrationMatch=/^#inscricao\/[^/?]+\/(\d+)\/([^/?]+)$/.exec(window.location.hash);
+  const courseIndex=courseMatch ? Number(courseMatch[1]) : registrationMatch ? Number(registrationMatch[1]) : null;
+  const courseOffer=(item && courseIndex !== null) ? detailFixtures[item.id]?.ofertas[courseIndex] : null;
+  const inCourse=mergedScope==='future' && !!(item && courseOffer && courseMatch);
+  const inRegistration=mergedScope==='future' && !!(item && courseOffer && registrationMatch);
+  const inDetail=!!item && !inCourse && !inRegistration;
+  selectedProcessId=item?.id || null;
+  selectedCourseIndex=(inCourse || inRegistration) ? courseIndex : null;
+  document.getElementById('panel-screen').hidden=!!item;
+  document.getElementById('detail-screen').hidden=!inDetail;
+  document.getElementById('course-screen').hidden=!inCourse;
+  document.getElementById('registration-screen').hidden=!inRegistration;
+  document.getElementById('panel-scenario-field').hidden=!!item;
+  document.getElementById('detail-review-controls').hidden=!inDetail;
+  if(item) document.querySelector('#sidebar-panel-link').removeAttribute('aria-current');
+  else document.querySelector('#sidebar-panel-link').setAttribute('aria-current','page');
+  const key=item&&courseOffer ? item.id+'/'+courseIndex : null;
+  if(inCourse) {
+    // Voltar do detalhe preserva a pesquisa, os filtros e a página da lista.
+    if (previousScreen!=='registration' || previousCourseKey!==key) {
+      coursePage=1;coursePageSize=50;courseSearch='';courseOption='todas';
+      courseEntries=generateCourseEntries(item.id,courseIndex);
+      document.getElementById('course-search').value='';
+      document.getElementById('course-option-filter').value='todas';
+    }
+    renderCourseScreen(item,courseOffer);
+  }
+  let registrationRow=null;
+  if (inRegistration) {
+    const id=decodeURIComponent(registrationMatch[2]);
+    const entries=previousCourseKey===key ? courseEntries : generateCourseEntries(item.id,courseIndex);
+    registrationRow=entries.find(x=>x.id===id)||null;
+    renderRegistrationScreen(item,courseOffer,registrationRow,courseIndex);
+  }
+  setBreadcrumb(item,selectedCourseIndex,inRegistration ? registrationRow?.numero||'' : null);
+  if(inDetail) {
+    detailProcessSelect.value='ok';
+    detailIndicatorSelect.value='success';
+    detailNameCheck.checked=false;
+    lastDemoUpdate='Consulta de exemplo: 04/11/2026 às 10:30 (fictícia)';
+    detailFeedback.hidden=true;
+    renderDetail();
+  }
+  previousScreen=inRegistration?'registration':inCourse?'course':inDetail?'detail':'panel';
+  if (key) previousCourseKey=key;
+  // Para uso em navegador, não rolar até hash de identificação interna.
+  document.getElementById('demo-title').focus({preventScroll:true});
+}
+function currentDetailName() {
+  const item=fixtures.find(x=>x.id===selectedProcessId);
+  if(!item) return '';
+  return detailNameCheck.checked ? item.nome+' — Oferta de vagas e critérios de seleção do período letivo 2027.1 — Denominação expandida para avaliar a quebra de linhas e responsividade' : item.nome;
+}
+function renderDemoStats(isEmpty=false) {
+  const values=detailFixtures[selectedProcessId];
+  if(!values) return '';
+  const data=[
+    ['Inscrições', isEmpty ? 0 : values.inscricoes, 'Submetidas e não canceladas'],
+    ['Inscritos', isEmpty ? 0 : values.inscritos, 'Pessoas distintas com inscrição submetida e não cancelada'],
+    ['Rascunhos', isEmpty ? 0 : values.rascunhos, 'Ainda não enviados e não descartados']
+  ];
+  return '<div class="detail-summary-cards">'+data.map(([label,val,note])=>
+    '<article class="detail-stat-card"><div class="detail-stat-label">'+esc(label)+'</div><div class="detail-stat-value">'+formatNum(val)+'</div><p class="detail-stat-note">'+esc(note)+'</p></article>'
+  ).join('')+'</div>';
+}
+function renderDemoDistribution() {
+  const values=detailFixtures[selectedProcessId];
+  if(!values) return '';
+  if(values.ofertas.length===0) return '<div class="detail-empty" style="margin-top:20px"><span class="detail-empty__icon" aria-hidden="true">i</span><h4 class="detail-empty__title">Nenhuma distribuição disponível</h4><p class="detail-empty__desc">Não há ofertas com inscrições nesta simulação.</p></div>';
+  const manyCourses=selectedProcessId==='exemplo-002';
+  const renderOptions=offer=>'<div class="detail-option-grid">'+offer.opcoes.map(option=>
+    '<div class="detail-option"><h5><span class="detail-option-label">'+esc(option.nome)+'</span></h5><div class="detail-table-scroll"><table class="detail-table"><thead><tr><th scope="col">Modalidade</th><th scope="col">Quantidade</th></tr></thead><tbody>'+ 
+    option.modalidades.map(([m,q])=>'<tr><td>'+esc(m)+'</td><td>'+formatNum(q)+'</td></tr>').join('')+'</tbody></table></div></div>').join('')+'</div>';
+  const renderOffer=(offer,i)=>{
+    const link='#inscricoes/'+encodeURIComponent(selectedProcessId)+'/'+i;
+    const name='<span class="detail-course-icon" aria-hidden="true">▤</span><a class="detail-course-link" href="'+esc(link)+'" aria-label="Ver inscrições enviadas de '+esc(offer.curso)+' — '+esc(offer.grau)+' — '+esc(offer.turno)+'">'+esc(offer.curso)+'</a><small>— Grau '+esc(offer.grau)+' — '+esc(offer.turno)+'</small>';
+    if(!manyCourses) return '<article class="detail-offer"><header class="detail-offer-title">'+name+'</header>'+renderOptions(offer)+'</article>';
+    const searchable=esc([offer.curso,offer.grau,offer.turno].join(' '));
+    return '<details class="detail-offer detail-offer--collapsible" data-course-search="'+searchable+'" '+(i<2?'open':'')+'><summary class="detail-offer-title">'+name+'<span class="detail-offer-toggle"><span class="when-closed">Ver modalidades</span><span class="when-open">Ocultar modalidades</span></span></summary>'+renderOptions(offer)+'</details>';
+  };
+  const toolbar=manyCourses?
+    '<div class="detail-course-toolbar" role="group" aria-label="Explorar os cursos demonstrativos"><label class="detail-course-search-field" for="detail-course-search">Buscar curso, grau ou turno<input type="search" id="detail-course-search" placeholder="Ex.: Direito, Bacharelado, Noturno" autocomplete="off"></label><div class="detail-course-toolbar-actions"><button class="btn btn--secondary" type="button" data-detail-action="expand-offers">Expandir todos</button><button class="btn btn--secondary" type="button" data-detail-action="collapse-offers">Recolher todos</button></div></div><p class="detail-course-count" id="detail-course-count" role="status" aria-live="polite">Exibindo 50 de 50 cursos demonstrativos</p><p class="detail-course-empty" id="detail-course-empty" hidden>Nenhum curso corresponde à busca.</p>': '';
+  return '<div class="detail-distribution"><h4>Distribuição das inscrições</h4><p class="detail-distribution-desc">Agrupamento demonstrativo por oferta de curso, opção e modalidade.'+(manyCourses?' Este processo simula 50 cursos e nove tipos de modalidade em cada opção; nomes, quantidades e códigos são fictícios. Clique no NOME do curso para ver suas inscrições, ou em “Ver modalidades” para expandir as distribuições.':'')+'</p>'+toolbar+
+    values.ofertas.map(renderOffer).join('')+
+    '<div class="detail-notice"><span class="detail-info-icon" aria-hidden="true">i</span><span>Uma inscrição pode participar de várias modalidades. Por isso, somar as quantidades por modalidade ou opção pode superar o total de inscrições. Esses grupos não substituem os quantitativos globais calculados pela API.</span></div></div>';
+}
+function normalizeCourseSearch(value) {
+  return String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim();
+}
+function filterDemoCourses(query) {
+  const items=[...detailArea.querySelectorAll('.detail-offer--collapsible')];
+  const normalized=normalizeCourseSearch(query);
+  let shown=0;
+  for(const item of items) {
+    const match=normalizeCourseSearch(item.dataset.courseSearch).includes(normalized);
+    item.hidden=!match;
+    if(match) shown++;
+  }
+  const count=detailArea.querySelector('#detail-course-count');
+  if(count) count.textContent='Exibindo '+shown+' de '+items.length+' cursos demonstrativos';
+  const empty=detailArea.querySelector('#detail-course-empty');
+  if(empty) empty.hidden=shown>0;
+}
+function detailEmptyIndicators() {
+  return renderDemoStats(true)+'<div class="detail-empty" style="margin-top:20px"><span class="detail-empty__icon" aria-hidden="true">i</span><h4 class="detail-empty__title">Nenhum registro contabilizado</h4><p class="detail-empty__desc">Consulta válida: Inscrições, Inscritos e Rascunhos estão zerados. Isto não representa falha.</p></div>';
+}
+function detailTemplate(name) {
+  return document.getElementById('detail-tpl-'+name).innerHTML;
+}
+function renderDetail() {
+  if(!selectedProcessId)return;
+  const processState=detailProcessSelect.value;
+  const indicatorState=detailIndicatorSelect.value;
+  const loaded=processState==='ok';
+  detailIndicatorSelect.disabled=!loaded;
+  document.getElementById('detail-indicator-tools').hidden=!loaded || mergedScope==='initial';
+  document.getElementById('detail-process-title').textContent=loaded?currentDetailName():'Acompanhamento do processo';
+  document.getElementById('detail-process-subtitle').hidden=!loaded;
+  const item=fixtures.find(x=>x.id===selectedProcessId);
+  setBreadcrumb(loaded?{nome:currentDetailName()}:null);
+  if(!loaded) {
+    detailArea.innerHTML=detailTemplate('process-'+processState);
+  } else if(mergedScope==='initial') {
+    detailArea.innerHTML='<div class="detail-empty" role="status"><span class="detail-empty__icon" aria-hidden="true">i</span><h4 class="detail-empty__title">Não há informações de acompanhamento disponíveis no momento</h4><p class="detail-empty__desc">Escopo 1 aprovado: seção Acompanhamento sem valores. Selecione “Estrutura básica + três indicadores” na composição visual para avaliar os cartões da Web #1285.</p></div>';
+  } else if(indicatorState==='success') {
+    detailArea.innerHTML=renderDemoStats();
+  } else if(indicatorState==='empty') {
+    detailArea.innerHTML=detailEmptyIndicators();
+  } else if(indicatorState==='refresh-error') {
+    detailArea.innerHTML='<div class="detail-notice detail-notice--warning" role="alert"><span aria-hidden="true">⚠</span><span>Não foi possível atualizar. Os dados abaixo são da última consulta bem-sucedida (simulada).</span><button class="btn btn--secondary" data-detail-action="retry-indicator">Tentar novamente</button></div>'+renderDemoStats();
+  } else {
+    detailArea.innerHTML=detailTemplate('indicator-'+indicatorState);
+  }
+  document.getElementById('detail-refresh').disabled=!loaded||mergedScope==='initial'||indicatorState==='loading'||indicatorState==='denied';
+  document.getElementById('detail-last-updated').textContent=mergedScope==='initial'?'':(indicatorState==='loading'||indicatorState==='error'||indicatorState==='denied')?'Consulta indisponível':lastDemoUpdate;
+}
+function setDetailFeedback(message) {
+  detailFeedback.hidden=!message;
+  detailFeedback.textContent=message;
+}
+function fakeReload(kind) {
+  detailRevision += 1;
+  const myRevision=detailRevision;
+  const originalId=selectedProcessId;
+  if(kind==='process') detailProcessSelect.value='loading';
+  else detailIndicatorSelect.value='loading';
+  renderDetail();
+  setDetailFeedback('Consulta de demonstração em andamento…');
+  window.setTimeout(()=>{
+    if(detailRevision!==myRevision || originalId!==selectedProcessId)return;
+    if(kind==='process')detailProcessSelect.value='ok';
+    else {
+      detailIndicatorSelect.value='success';
+      lastDemoUpdate='Atualizado às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' (simulação)';
+    }
+    renderDetail();
+    setDetailFeedback('Consulta simulada concluída. Nenhuma API foi acessada.');
+  },650);
+}
+document.getElementById('demo-menu-toggle').addEventListener('click',()=>{
+  const layout=document.querySelector('.app-layout');
+  const isOpen=layout.classList.toggle('menu-open');
+  document.getElementById('demo-menu-toggle').setAttribute('aria-expanded',String(isOpen));
+  document.getElementById('demo-menu-toggle').setAttribute('aria-label',isOpen?'Fechar menu ilustrativo':'Abrir menu ilustrativo');
+});
+document.getElementById('sidebar-panel-link').addEventListener('click',()=>{
+  document.querySelector('.app-layout').classList.remove('menu-open');
+  document.getElementById('demo-menu-toggle').setAttribute('aria-expanded','false');
+});
+document.getElementById('detail-back').addEventListener('click',goToPanel);
+document.getElementById('detail-refresh').addEventListener('click',()=>fakeReload('indicator'));
+detailProcessSelect.addEventListener('change',()=>{detailRevision++;renderDetail();setDetailFeedback('');});
+detailIndicatorSelect.addEventListener('change',()=>{detailRevision++;renderDetail();setDetailFeedback('');});
+detailNameCheck.addEventListener('change',renderDetail);
+detailArea.addEventListener('click',event=>{
+  const btn=event.target.closest('[data-detail-action]');
+  if(!btn) return;
+  if(btn.dataset.detailAction==='retry-process')fakeReload('process');
+  else if(btn.dataset.detailAction==='retry-indicator')fakeReload('indicator');
+  else if(btn.dataset.detailAction==='expand-offers'||btn.dataset.detailAction==='collapse-offers') {
+    const open=btn.dataset.detailAction==='expand-offers';
+    detailArea.querySelectorAll('.detail-offer--collapsible:not([hidden])').forEach(offer=>{offer.open=open;});
+  }
+});
+detailArea.addEventListener('input',event=>{
+  if(event.target.id==='detail-course-search')filterDemoCourses(event.target.value);
+});
+
+// Somente demonstração: os nomes, inscrições, CPFs e datas abaixo são gerados localmente.
+// NÃO são os dados da API, nem inferidos das contagens por modalidade.
+const demoFirstNames=['Ana','Beatriz','Carlos','Daniela','Eduardo','Fernanda','Gabriel','Helena','Isabela','João','Larissa','Marcos','Natália','Otávio','Patrícia','Rafael','Sofia','Tiago','Vanessa','Yasmin','André','Camila','Diego','Elisa'];
+const demoLastNames=['Almeida','Barbosa','Costa','Dias','Ferreira','Gomes','Lima','Martins','Nascimento','Oliveira','Pereira','Ribeiro','Santos','Silva','Souza','Teixeira','Vieira','Araújo','Melo','Cardoso'];
+function generateCourseEntries(processoId,courseIndex) {
+  const idNumber=fixtures.findIndex(x=>x.id===processoId)+1;
+  const count=62+(courseIndex*19+idNumber*11)%77;
+  return Array.from({length:count},(_,idx)=>{
+    const k=idx+1;
+    const nome=demoFirstNames[(idx+courseIndex*3)%demoFirstNames.length]+' '+demoLastNames[(idx*7+courseIndex)%demoLastNames.length];
+    const opcao= idx%4===0 ? 'Segunda opção' : 'Primeira opção';
+    const modalidade=modalidadesReservaDemo[(idx*3+courseIndex)%modalidadesReservaDemo.length];
+    const numero=String(202700000+idNumber*100000+courseIndex*1000+k);
+    return {id:'insc-'+processoId+'-'+courseIndex+'-'+k,numero,nome,cpf:'***.***.***-'+String((idx*17+courseIndex*3)%100).padStart(2,'0'),opcao,modalidade,situacao:'Enviada',enviadaEm:String(1+idx%4).padStart(2,'0')+'/11/2026 '+String(8+idx%9).padStart(2,'0')+':'+String((idx*7)%60).padStart(2,'0')};
+  });
+}
+function courseFilteredRows() {
+  const q=normalizeCourseSearch(courseSearch);
+  return courseEntries.filter(r=>(courseOption==='todas'||r.opcao===courseOption)&&normalizeCourseSearch(r.numero+' '+r.nome).includes(q));
+}
+function renderCourseScreen(item,offer) {
+  document.getElementById('course-description').textContent=item.nome+' — inscrições enviadas vinculadas à oferta selecionada.';
+  document.getElementById('course-context').innerHTML='<strong>'+esc(offer.curso)+'</strong><span>Grau '+esc(offer.grau)+' · '+esc(offer.turno)+'</span>';
+  document.getElementById('course-back').href='#acompanhamento/'+encodeURIComponent(item.id);
+  renderCourseRows();
+}
+function renderCourseRows() {
+  const rows=courseFilteredRows();
+  const maxPage=Math.max(1,Math.ceil(rows.length/coursePageSize));
+  coursePage=Math.min(coursePage,maxPage);
+  const view=rows.slice((coursePage-1)*coursePageSize,coursePage*coursePageSize);
+  document.getElementById('course-total').textContent=rows.length+' inscrições fictícias encontradas';
+  const tbody=view.map(row=>'<tr><td>'+esc(row.numero)+'</td><td class="course-name">'+esc(row.nome)+'</td><td class="course-cpf">'+esc(row.cpf)+'</td><td class="course-option">'+esc(row.opcao)+'</td><td>'+esc(row.modalidade)+'</td><td><span class="course-row-status">'+esc(row.situacao)+'</span></td><td>'+esc(row.enviadaEm)+'</td><td><a class="course-open-inscription btn--tertiary btn--sm btn--rect btn--icon-only" href="#inscricao/'+encodeURIComponent(selectedProcessId)+'/'+selectedCourseIndex+'/'+encodeURIComponent(row.id)+'" aria-label="Abrir inscrição '+esc(row.numero)+'" title="Abrir inscrição" data-tooltip="Abrir inscrição" data-tooltip-position="left"><svg class="pi-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3.2 12h18l-3.4 8H5.6l-2.4-8Z"/></svg></a></td></tr>').join('');
+  document.getElementById('course-list-body').innerHTML = rows.length?
+    '<div class="course-table-scroll" role="region" tabindex="0" aria-label="Lista de inscrições enviadas para o curso"><table class="course-table"><caption class="sr-only">Inscrições demonstrativas por oferta de curso</caption><thead><tr><th scope="col">Inscrição</th><th scope="col">Nome</th><th scope="col">CPF</th><th scope="col">Opção</th><th scope="col">Modalidade</th><th scope="col">Situação</th><th scope="col">Enviada em</th><th scope="col">Ações</th></tr></thead><tbody>'+tbody+'</tbody></table></div>':
+    '<p class="course-empty-message">Nenhuma inscrição fictícia corresponde à busca ou à opção escolhida.</p>';
+  document.getElementById('course-pager').innerHTML='<button type="button" data-course-action="previous" '+(coursePage===1?'disabled':'')+'>Anterior</button><span>Página '+coursePage+' de '+maxPage+' · '+rows.length+' registros · <label>Itens por página <select id="course-page-size" aria-label="Itens por página">'+[10,25,50,100].map(n=>'<option value="'+n+'" '+(coursePageSize===n?'selected':'')+'>'+n+'</option>').join('')+'</select></label></span><button type="button" data-course-action="next" '+(coursePage===maxPage?'disabled':'')+'>Próximo</button>';
+}
+/* Mesmo destino da lista real: uma rota própria de detalhe, nunca um modal.
+   No Angular: /processo-seletivo/:id/inscricoes/:inscricaoId. No arquivo estático
+   usamos hash para conservar o fluxo, inclusive Voltar/Avançar do navegador. */
+function registrationField(label, value, wide=false) {
+  return '<div class="registration-field'+(wide?' registration-field--wide':'')+'"><dt>'+esc(label)+'</dt><dd>'+value+'</dd></div>';
+}
+function registrationPanel(title, content) {
+  return '<section class="registration-panel"><h3 class="registration-panel__heading">'+esc(title)+'</h3><dl class="registration-data">'+content+'</dl></section>';
+}
+function renderRegistrationScreen(item, offer, row, index) {
+  const title=document.getElementById('registration-title');
+  const desc=document.getElementById('registration-description');
+  document.getElementById('registration-back').href='#inscricoes/'+encodeURIComponent(item.id)+'/'+index;
+  if (!row) {
+    title.textContent='Inscrição';
+    desc.textContent='';
+    document.getElementById('registration-body').innerHTML='<div class="registration-panel"><div class="course-empty-message">Inscrição não encontrada na demonstração.</div></div>';
+    return;
+  }
+  title.textContent='Inscrição '+row.numero;
+  desc.textContent=item.nome+' — inscrição enviada neste processo seletivo.';
+  const escolha=esc(offer.curso)+' — Grau '+esc(offer.grau)+' — '+esc(offer.turno);
+  // Identificação: exatamente o recorte de dados que a página do Uni+ organiza.
+  const identificacao=registrationField('Número',esc(row.numero))+
+    registrationField('Situação','<span class="course-row-status">'+esc(row.situacao)+'</span>')+
+    registrationField('Oferta escolhida', escolha,true)+
+    registrationField('Enviada em',esc(row.enviadaEm));
+  // O sistema real só monta esta seção quando a API devolve respostas visíveis.
+  // Os exemplos abaixo vêm exclusivamente das fixtures locais.
+  const respostas=registrationField('Nome completo',esc(row.nome))+
+    registrationField('CPF',esc(row.cpf))+
+    registrationField('Opção escolhida',esc(row.opcao))+
+    registrationField('Modalidade informada (exemplo)',esc(row.modalidade));
+  document.getElementById('registration-body').innerHTML=registrationPanel('Inscrição',identificacao)+registrationPanel('Respostas do formulário',respostas);
+}
+const courseScreen=document.getElementById('course-screen');
+courseScreen.addEventListener('input',event=>{
+  if(event.target.id==='course-search'){courseSearch=event.target.value;coursePage=1;renderCourseRows();}
+});
+courseScreen.addEventListener('change',event=>{
+  if(event.target.id==='course-option-filter'){courseOption=event.target.value;coursePage=1;renderCourseRows();}
+  if(event.target.id==='course-page-size'){coursePageSize=Number(event.target.value);coursePage=1;renderCourseRows();}
+});
+courseScreen.addEventListener('click',event=>{
+  const btn=event.target.closest('[data-course-action]');
+  if(!btn||btn.disabled)return;
+  if(btn.dataset.courseAction==='next'){coursePage++;renderCourseRows();}
+  if(btn.dataset.courseAction==='previous'){coursePage--;renderCourseRows();}
+});
+// O clique no link NÃO pode acionar a expansão do elemento <details> que o envolve.
+detailArea.addEventListener('click',event=>{
+  const link=event.target.closest('.detail-course-link');
+  if(link)event.stopPropagation();
+});
+
+window.addEventListener('hashchange',applyRoute);
+applyRoute();
+
+    scenario.addEventListener('change',()=>{currentState=scenario.value;currentPage=1;elToast.hidden=true;render();document.getElementById('demo-title').focus({preventScroll:true});});
+    viewport.addEventListener('change',()=>{const win=document.getElementById('previewWindow');win.classList.toggle('is-mobile',viewport.value==='mobile');win.classList.toggle('is-mobile-320',viewport.value==='mobile-320');document.querySelector('.app-layout').classList.remove('menu-open');document.getElementById('demo-menu-toggle').setAttribute('aria-expanded','false');});
+    theme.addEventListener('change',()=>{document.documentElement.setAttribute('data-theme',theme.value);});
+    elResults.addEventListener('change',(event)=>{
+      if(event.target.id!=='pageSize') return;
+      currentSize=Number(event.target.value);currentPage=1;currentState='normal';scenario.value='normal';toast('Fixture: limite alterado para '+currentSize+'; consulta reiniciada sem cursor anterior.');render();
+    });
+    elResults.addEventListener('click',(event)=>{
+      const btn=event.target.closest('button[data-action]'); if(!btn || btn.disabled) return;
+      const action=btn.dataset.action;
+      if(action==='open') {goToDetail(btn.dataset.id);return;}
+      if(action==='next'||action==='previous') {currentPage=Math.min(pageCount(),Math.max(1,currentPage+(action==='next'?1:-1)));currentState='normal';scenario.value='normal';render();toast('Fixture: navegação para outra página. Nenhuma API foi consultada.');return;}
+      if(action==='retry'||action==='retryPage'||action==='reset') {currentPage=1;currentState='normal';scenario.value='normal';render();toast('Fixture: nova tentativa simulada com sucesso.');return;}
+    });
+    render();
+  </script>
+<dialog class="merge-dialog" id="merge-dialog" aria-labelledby="merge-dialog-title"><div class="merge-dialog-header"><h3 id="merge-dialog-title">Detalhes</h3><button class="btn btn--secondary" type="button" data-merge-action="close-dialog" aria-label="Fechar janela">Fechar</button></div><div class="merge-dialog-content" id="merge-dialog-content"></div><div class="merge-dialog-foot" id="merge-dialog-foot"></div></dialog>
+<script>
+/* UNI+ — Integração das propostas, sem chamadas HTTP ou persistência.
+   A listagem por curso e a página de inscrição vêm da referência detalhada anterior.
+   As funções complementares foram incorporadas como simulações independentes. */
+const mergedStatuses=['Todas','Em inscrição','Em homologação','Em avaliação','Em período de recurso','Aguardando início','Entre etapas','Encerrado','Cancelado'];
+let mergedTab='acomp', mergedLastProc=null;
+let mergedListQuery='', mergedListStatus='Todas', mergedListPage=1, mergedListLimit=12;
+let mergedHomStatus='Todas', mergedHomPage=1, mergedHomSelected=new Set();
+let mergedNotesQuery='', mergedNotesPage=1;
+const mergedDecisions=new Map();
+let mergedDialogKind='', mergedDialogData=null;
+const mergedReports=[
+ ['Pessoas candidatas inscritas por curso','Inscrições','Listagem nominal por oferta e modalidade'],
+ ['Pessoas candidatas homologadas','Inscrições','Situação e justificativas, inclusive após recursos'],
+ ['Resultado preliminar de aprovadas','Resultados','Classificadas e lista de espera'],
+ ['Resultado definitivo de aprovadas','Resultados','Resultado de recursos, quando houver'],
+ ['Solicitações de atendimento especializado','Atendimento e reservas','Requer atenção a informações protegidas'],
+ ['Pessoas com deficiência inscritas/homologadas','Atendimento e reservas','Dados sujeitos a autorização específica'],
+ ['Pessoas pretas e pardas inscritas/homologadas','Atendimento e reservas','Dados sujeitos a autorização específica'],
+ ['Pessoas quilombolas inscritas/homologadas','Atendimento e reservas','Dados sujeitos a autorização específica'],
+ ['Pessoas indígenas inscritas/homologadas','Atendimento e reservas','Dados sujeitos a autorização específica']
+];
+const mergedDeadlines={
+ 'exemplo-001':['Inscrições — 15/11/2026','Resultado preliminar — 25/11/2026'],
+ 'exemplo-002':['Recursos da avaliação — 12/11/2026','Resultado definitivo — 03/12/2026'],
+ 'exemplo-003':['Resultado preliminar — 20/11/2026'],
+ 'exemplo-005':['Abertura prevista — 01/12/2026'],
+ 'exemplo-006':['Próxima etapa — 18/11/2026']
+};
+const mergedNum=n=>Number(n).toLocaleString('pt-BR');
+const mergedRowsCache=new Map();
+function mergedRowsForProcess(){
+ const id=selectedProcessId;
+ if(!id)return [];
+ if(mergedRowsCache.has(id))return mergedRowsCache.get(id);
+ const f=detailFixtures[id];
+ const rows=[];
+ if(f){f.ofertas.forEach((o,i)=>{
+  // Limitar a projeção nominal fictícia; não buscar ou derivar das contagens agregadas.
+  generateCourseEntries(id,i).slice(0,25).forEach((r,k)=>rows.push({...r,curso:o.curso,grau:o.grau,turno:o.turno,ofertaIndex:i,parecer:(k+i)%7===0?'Indeferida':(k+i)%3===0?'Deferida':'Pendente'}));
+ });}
+ mergedRowsCache.set(id,rows);return rows;
+}
+function mergedMatch(text,q){return normalizeCourseSearch(text).includes(normalizeCourseSearch(q))}
+function mergedTopTag(t){return '<span class="merge-pill">'+esc(t)+'</span>'}
+function mergedUpdatePanelToolbar(){
+ const note=document.getElementById('merge-panel-note');
+ const toolbar=document.getElementById('merge-panel-filters');
+ const count=document.getElementById('merge-panel-count');
+ toolbar.hidden=true;
+ count.hidden=true;
+ note.innerHTML='<strong>Estrutura do painel — escopo 1:</strong> cartões com a identificação do processo seletivo, paginação e ação “Abrir acompanhamento”. Os três indicadores aparecem apenas após selecionar um processo, na seção Acompanhamento; não há status, filtros operacionais nem agregados nos cartões.';
+}
+function mergedSyncScopeControls(){
+ const initial=mergedScope==='initial';
+ const role=document.getElementById('merge-role');
+ role.querySelector('option[value="cga"]').disabled=initial;
+ if(initial && mergedRole!=='ceps'){mergedRole='ceps';role.value='ceps';}
+ document.getElementById('merge-indicator-state-field').hidden=initial;
+ document.getElementById('merge-scope').value=mergedScope;
+}
+
+function mergedUpdateIdentity(){
+ const isCga=mergedRole==='cga';
+ document.getElementById('merge-side-avatar').textContent=isCga?'CG':'CE';
+ document.getElementById('merge-top-avatar').textContent=isCga?'CG':'CE';
+ document.getElementById('merge-side-user').innerHTML='Perfil administrativo<small style="display:block;opacity:.75">Exemplo visual · '+(isCga?'CGA — acesso a definir':'CEPS')+'</small>';
+}
+function mergedRenderPanel(){
+ mergedUpdatePanelToolbar();
+ render();
+}
+function mergedRefreshViews(){
+ mergedUpdateIdentity();
+ if(!selectedProcessId){mergedRenderPanel();return;}
+ if(location.hash.startsWith('#inscricao/')||location.hash.startsWith('#inscricoes/'))return;
+ // Só a identificação do processo é presumida para o perfil CGA de demonstração.
+ if(mergedRole==='ceps')renderDetail();
+ mergedRenderProcessView();
+}
+function mergedResetForProcess(){
+ if(mergedLastProc!==selectedProcessId){mergedLastProc=selectedProcessId;mergedTab='acomp';mergedListPage=1;mergedListQuery='';mergedListStatus='Todas';mergedHomPage=1;mergedHomSelected.clear();mergedNotesPage=1;mergedNotesQuery='';}
+}
+function mergedRenderProcessView(){
+ const detail=document.getElementById('detail-screen');
+ if(detail.hidden)return;
+ mergedResetForProcess();
+ const loaded=detailProcessSelect.value==='ok';
+ const showTabs=loaded&&mergedScope==='future'&&mergedRole==='ceps';
+ const tabs=document.getElementById('merge-tabs');
+ const section=detail.querySelector('.detail-section');
+ const below=document.getElementById('merge-below');
+ const future=document.getElementById('merge-future-panel');
+ const meta=document.getElementById('merge-process-meta');
+ document.getElementById('detail-section-title').textContent='Acompanhamento';
+ document.getElementById('merge-indicator-state-field').hidden=mergedScope==='initial';
+ tabs.hidden=!showTabs;
+ if(!showTabs)mergedTab='acomp';
+ tabs.querySelectorAll('[data-merge-tab]').forEach(t=>{
+  const active=t.dataset.mergeTab===mergedTab;t.setAttribute('aria-selected',String(active));t.tabIndex=active?0:-1;
+ });
+ const inAcomp=mergedTab==='acomp';
+ section.hidden=!inAcomp;
+ future.hidden=!showTabs||inAcomp;
+ below.hidden=!showTabs||!inAcomp;
+ const p=fixtures.find(x=>x.id===selectedProcessId);
+ meta.hidden=true;
+ if(!meta.hidden){meta.innerHTML='';}
+ if(mergedRole==='cga'&&loaded&&mergedScope!=='initial'){
+  document.getElementById('detail-indicator-tools').hidden=true;
+  detailArea.innerHTML='<div class="detail-notice" role="status"><strong>Permissões de indicadores do CGA ainda não definidas.</strong> O painel pode ser compartilhado, mas o acesso aos quantitativos e inscrições não é presumido nesta simulação.</div>';
+ }
+ if(showTabs){if(inAcomp)mergedRenderTimeline();else mergedRenderFeature();}
+}
+function mergedRenderTimeline(){
+ const p=fixtures.find(x=>x.id===selectedProcessId);
+ const dates=mergedDeadlines[selectedProcessId]||[];
+ const box=document.getElementById('merge-below');
+ box.innerHTML='<section class="merge-box"><h4>Situação no cronograma</h4><div class="panel-statuses">'+(p?.situacoes||[]).map(s=>'<span class="panel-status panel-status--'+situationClasses[s]+'">'+esc(s)+'</span>').join('')+'</div><p>As situações exibidas são fictícias; não se pode inferir encerramento pelo cronograma sem regra validada.</p></section>'+
+ '<section class="merge-box"><h4>Próximos prazos (proposta)</h4>'+(dates.length?'<ul>'+dates.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Sem próximos prazos fictícios para este processo.</p>')+'<p>Datas exclusivamente demonstrativas; seleção dos prazos depende de refinamento.</p></section>';
+}
+function mergedTitle(title,desc,label='Etapa futura — proposta visual'){
+ return '<div class="merge-future-title"><div><h3>'+esc(title)+'</h3><p>'+esc(desc)+'</p></div>'+mergedTopTag(label)+'</div>';
+}
+function mergedButton(name,disabled=false){return '<button type="button" data-merge-action="'+name+'" '+(disabled?'disabled':'')+'>';}
+const mergedFolderIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9V6a2 2 0 0 1 2-2h5l2 3h7a2 2 0 0 1 2 2v2"/><path d="M3.2 12h18l-3.4 8H5.6l-2.4-8Z"/></svg>';
+function mergedRegistrationLink(r){
+ return '<a class="merge-icon-link" href="#inscricao/'+encodeURIComponent(selectedProcessId)+'/'+r.ofertaIndex+'/'+encodeURIComponent(r.id)+'" aria-label="Abrir inscrição '+esc(r.numero)+'" title="Abrir inscrição" data-tooltip="Abrir inscrição">'+mergedFolderIcon+'</a>';
+}
+function mergedPaginator(kind,page,total,pages){
+ return '<div class="merge-pager"><button data-merge-action="'+kind+'-prev" '+(page===1?'disabled':'')+'>Anterior</button><span>Página '+page+' de '+pages+' · '+total+' registro(s) fictícios</span><button data-merge-action="'+kind+'-next" '+(page===pages?'disabled':'')+'>Próximo</button></div>';
+}
+function mergedRenderInscricoes(){
+ const rows=mergedRowsForProcess().filter(r=>mergedMatch(r.numero+' '+r.nome+' '+r.curso,mergedListQuery)&&(mergedListStatus==='Todas'||r.opcao===mergedListStatus));
+ const pages=Math.max(1,Math.ceil(rows.length/mergedListLimit));mergedListPage=Math.min(mergedListPage,pages);
+ const slice=rows.slice((mergedListPage-1)*mergedListLimit,mergedListPage*mergedListLimit);
+ return mergedTitle('Consulta nominal de inscrições','Relação demonstrativa vinculada ao processo. Os itens seguem a oferta, sem deduzir números dos agregados.')+
+ '<div class="merge-warning"><strong>Recorte adicional.</strong> A listagem por curso e esta consulta global exigem filtros no backend, autorização por recurso e reutilização dos contratos aprovados.</div>'+
+ '<div class="merge-toolbar"><label class="merge-field"><span>Buscar por inscrição, pessoa ou curso</span><input id="merge-list-search" value="'+esc(mergedListQuery)+'" type="search" placeholder="Número, pessoa ou curso"></label>'+
+ '<label class="merge-field"><span>Opção</span><select id="merge-list-status">'+['Todas','Primeira opção','Segunda opção'].map(x=>'<option '+(x===mergedListStatus?'selected':'')+'>'+x+'</option>').join('')+'</select></label></div>'+
+ '<div class="merge-table-scroll"><table class="merge-table"><thead><tr><th>Inscrição</th><th>Nome</th><th>CPF</th><th>Oferta / Grau</th><th>Opção</th><th>Situação</th><th>Ações</th></tr></thead><tbody>'+
+ (slice.length?slice.map(r=>'<tr><td>'+esc(r.numero)+'</td><td>'+esc(r.nome)+'</td><td>'+esc(r.cpf)+'</td><td>'+esc(r.curso)+' <small>· '+esc(r.grau)+'</small></td><td>'+esc(r.opcao)+'</td><td>'+esc(r.situacao)+'</td><td>'+mergedRegistrationLink(r)+'</td></tr>').join(''):'<tr><td colspan="7">Nenhuma inscrição fictícia corresponde à busca.</td></tr>')+'</tbody></table></div>'+mergedPaginator('insc',mergedListPage,rows.length,pages);
+}
+function mergedRenderHomologacao(){
+ const rows=mergedRowsForProcess().filter(r=>mergedHomStatus==='Todas'||(mergedDecisions.get(r.id)||r.parecer)===mergedHomStatus);
+ const pages=Math.max(1,Math.ceil(rows.length/12));mergedHomPage=Math.min(mergedHomPage,pages);
+ const slice=rows.slice((mergedHomPage-1)*12,mergedHomPage*12);
+ const selected=rows.filter(r=>mergedHomSelected.has(r.id));
+ return mergedTitle('Fila de homologação','Exemplo de análise individual e deferimento em lote, sem decisões persistidas.')+
+ '<div class="merge-warning"><strong>Fluxo ainda em refinamento.</strong> Preliminar, recursos, definitiva, justificativas e integração INEP dependem de regras e permissões específicas. Nenhuma decisão é gravada.</div>'+
+ '<div class="merge-toolbar"><label class="merge-field"><span>Situação ilustrativa da homologação</span><select id="merge-hom-status">'+['Todas','Pendente','Deferida','Indeferida'].map(x=>'<option '+(mergedHomStatus===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label></div>'+
+ '<div class="merge-actions"><button type="button" class="btn btn--secondary" data-merge-action="batch" '+(!selected.length?'disabled':'')+'>Deferir selecionadas ('+selected.length+') — simulação</button><button type="button" class="btn btn--secondary" data-merge-action="inep">Retorno INEP (conceito)</button></div>'+
+ '<div class="merge-table-scroll"><table class="merge-table"><thead><tr><th><span class="sr-only">Seleção</span></th><th>Inscrição</th><th>Pessoa candidata</th><th>Grau</th><th>Parecer</th><th>Operação</th></tr></thead><tbody>'+
+ (slice.length?slice.map(r=>'<tr><td><input class="merge-checkbox" type="checkbox" data-merged-check="'+esc(r.id)+'" aria-label="Selecionar inscrição '+esc(r.numero)+'" '+(mergedHomSelected.has(r.id)?'checked':'')+'></td><td>'+esc(r.numero)+'</td><td>'+esc(r.nome)+'</td><td>'+esc(r.grau)+'</td><td>'+esc(mergedDecisions.get(r.id)||r.parecer)+'</td><td><button class="btn btn--secondary" data-merge-action="judge" data-id="'+esc(r.id)+'" type="button">Analisar</button></td></tr>').join(''):'<tr><td colspan="6">Sem registros para este filtro.</td></tr>')+'</tbody></table></div>'+mergedPaginator('hom',mergedHomPage,rows.length,pages);
+}
+function mergedRenderNotas(){
+ const rows=mergedRowsForProcess().filter(r=>mergedMatch(r.numero+' '+r.nome+' '+r.curso,mergedNotesQuery));
+ const pages=Math.max(1,Math.ceil(rows.length/12));mergedNotesPage=Math.min(mergedNotesPage,pages);
+ const slice=rows.slice((mergedNotesPage-1)*12,mergedNotesPage*12);
+ return mergedTitle('Consulta de notas','Visualização conceitual, distinta da importação do ENEM ou do lançamento de avaliações.')+
+ '<div class="merge-warning"><strong>Sem contrato de consulta aprovado neste protótipo.</strong> Notas, critérios e campos abaixo são inventados para análise de composição visual.</div>'+
+ '<div class="merge-toolbar"><label class="merge-field"><span>Buscar por inscrição ou pessoa</span><input id="merge-notes-search" type="search" value="'+esc(mergedNotesQuery)+'" placeholder="Inscrição ou pessoa"></label></div>'+
+ '<div class="merge-table-scroll"><table class="merge-table"><thead><tr><th>Inscrição</th><th>Nome</th><th>Oferta</th><th>Etapa fictícia</th><th>Nota fictícia</th></tr></thead><tbody>'+
+ (slice.length?slice.map((r,i)=>'<tr><td>'+esc(r.numero)+'</td><td>'+esc(r.nome)+'</td><td>'+esc(r.curso)+'</td><td>Avaliação</td><td>'+((52+(Number(r.numero.slice(-3))%43)) / 10).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'</td></tr>').join(''):'<tr><td colspan="5">Nenhum registro fictício encontrado.</td></tr>')+'</tbody></table></div>'+mergedPaginator('notas',mergedNotesPage,rows.length,pages);
+}
+function mergedRenderRelatorios(){
+ return mergedTitle('Relatórios administrativos','Catálogo fixo das nove necessidades iniciais apresentadas pelo PO.','Feature #1385 · refinamento')+
+ '<div class="merge-warning"><strong>Sem geração real.</strong> O acesso, os formatos, filtros, ordenação e campos finais precisam ser definidos. A consulta nominal não substitui os relatórios.</div>'+
+ '<div class="merge-report-grid">'+mergedReports.map((r,i)=>'<article class="merge-box merge-report-item"><div class="merge-meta-line">'+mergedTopTag(r[1])+(i>=4?mergedTopTag('Dados protegidos'):'')+'</div><h4>'+esc(r[0])+'</h4><p>'+esc(r[2])+'</p><button type="button" class="btn btn--secondary" data-merge-action="report" data-id="'+i+'">Ver filtros propostos</button></article>').join('')+'</div>';
+}
+function mergedRenderFeature(){
+ const node=document.getElementById('merge-future-panel');
+ if(mergedTab==='insc')node.innerHTML=mergedRenderInscricoes();
+ else if(mergedTab==='hom')node.innerHTML=mergedRenderHomologacao();
+ else if(mergedTab==='notas')node.innerHTML=mergedRenderNotas();
+ else if(mergedTab==='reports')node.innerHTML=mergedRenderRelatorios();
+}
+function mergedOpenDialog(title,body,footer='',kind='',data=null){
+ mergedDialogKind=kind;mergedDialogData=data;
+ document.getElementById('merge-dialog-title').textContent=title;
+ document.getElementById('merge-dialog-content').innerHTML=body;
+ document.getElementById('merge-dialog-foot').innerHTML=footer||'<button class="btn btn--secondary" data-merge-action="close-dialog" type="button">Fechar</button>';
+ document.getElementById('merge-dialog').showModal();
+}
+function mergedMap(){
+ const sections=[
+ ['Painel de processos','Listagem e abertura do acompanhamento','Feature #1382'],
+ ['Página contextual','Cabeçalho, trilha e seção Acompanhamento','Feature #1383'],
+ ['Indicadores e distribuições','Três quantitativos e grupos por oferta/opção/modalidade','Feature #1384'],
+ ['Consulta nominal','Filtro por curso e detalhe da inscrição existente','A refinar'],
+ ['Situações e prazos','Situações simultâneas, próximos prazos e filtros','A refinar'],
+ ['Homologação','Análise individual, lote e reconciliação INEP','A refinar'],
+ ['Notas','Consulta diferente do lançamento ou importação','A refinar'],
+ ['Relatórios fixos','Nove relatórios solicitados pelo PO','Feature #1385'],
+ ['Perfil CGA','Operações, consulta de convocados e encerramento','Levantamento pendente']
+ ];
+ mergedOpenDialog('Mapa das funcionalidades','<div class="merge-warning"><strong>Três escopos:</strong> (1) primeira entrega estrutural aprovada; (2) recorte em análise com indicadores e as experiências que viemos prototipando, incluindo funcionalidades ainda não aprovadas; (3) evolução futura. A diferença visual não altera nenhuma issue nem concede autorização.</div><div class="merge-report-grid">'+sections.map(r=>'<div class="merge-box"><h4>'+esc(r[0])+'</h4><p>'+esc(r[1])+'</p><p class="merge-future-note">'+esc(r[2])+'</p></div>').join('')+'</div>');
+}
+function mergedReport(id){
+ const r=mergedReports[Number(id)];if(!r)return;
+ const offers=detailFixtures[selectedProcessId]?.ofertas||[];
+ mergedOpenDialog(r[0],'<div class="merge-warning"><strong>Prévia de filtros não aprovada.</strong> Nenhuma busca ou exportação ocorre. Campos protegidos requerem autorização do servidor.</div>'+
+ '<label class="merge-field"><span>Curso / Grau</span><select><option>Todos os cursos</option>'+offers.map(o=>'<option>'+esc(o.curso)+' · '+esc(o.grau)+'</option>').join('')+'</select></label>'+
+ '<label class="merge-field"><span>Modalidade</span><select><option>Todas as modalidades</option>'+modalidadesReservaDemo.map(x=>'<option>'+esc(x)+'</option>').join('')+'</select></label><label class="merge-field"><span>Situação</span><select><option>Todas</option><option>Enviada</option><option>Homologada</option></select></label>',
+ '<button class="btn btn--secondary" data-merge-action="close-dialog" type="button">Voltar ao catálogo</button><button class="btn btn--secondary" data-merge-action="report-preview" type="button">Prévia (sem exportar)</button>','report',id);
+}
+function mergedJudge(id){
+ const r=mergedRowsForProcess().find(r=>r.id===id);if(!r)return;
+ mergedOpenDialog('Analisar inscrição '+r.numero,'<div class="merge-warning"><strong>Somente simulação.</strong> A homologação individual, os motivos válidos e os efeitos de recurso dependem de refinamento.</div><p>'+esc(r.nome)+' — '+esc(r.curso)+'</p><label class="merge-field"><span>Parecer / justificativa ilustrativa</span><textarea id="merge-parecer" rows="4" style="width:100%;min-height:90px;padding:10px;border:1px solid var(--border-default);border-radius:8px;background:var(--surface-card);color:var(--text-primary)" placeholder="Informe uma justificativa para simular a decisão"></textarea></label>',
+ '<button class="btn btn--secondary" data-merge-action="close-dialog" type="button">Cancelar</button><button class="btn btn--secondary" data-merge-action="judge-deny" type="button">Indeferir (simulação)</button><button class="btn" data-merge-action="judge-approve" type="button">Deferir (simulação)</button>','judge',id);
+}
+function mergedBatch(){
+ mergedOpenDialog('Confirmar homologação em lote','<div class="merge-warning"><strong>Operação local fictícia.</strong> Nenhuma API, cadastro real ou auditoria é acionada.</div><p>Inscrições selecionadas: <strong>'+mergedHomSelected.size+'</strong>.</p>',
+ '<button class="btn btn--secondary" data-merge-action="close-dialog" type="button">Cancelar</button><button class="btn" data-merge-action="batch-confirm" type="button">Confirmar simulação</button>','batch');
+}
+function mergedToast(text){toast(text)}
+function mergedCloseDialog(){document.getElementById('merge-dialog').close()}
+
+// Complementar os ciclos de navegação originais sem reconstruir as telas anteriores.
+document.getElementById('merge-status-chips').addEventListener('click',e=>{
+ const b=e.target.closest('[data-merged-status]');if(!b)return;
+ mergedStatus=b.dataset.mergedStatus;currentPage=1;currentState='normal';scenario.value='normal';mergedRenderPanel();
+});
+document.getElementById('merge-process-search').addEventListener('input',e=>{
+ mergedProcessSearch=e.target.value;currentPage=1;currentState='normal';scenario.value='normal';mergedRenderPanel();
+});
+document.getElementById('merge-scope').addEventListener('change',e=>{
+ mergedScope=e.target.value;mergedStatus='Todas';mergedProcessSearch='';document.getElementById('merge-process-search').value='';currentPage=1;
+ mergedTab='acomp';
+ mergedSyncScopeControls();
+ if(mergedScope!=='future' && (location.hash.startsWith('#inscricoes/')||location.hash.startsWith('#inscricao/'))) {
+   location.hash='#acompanhamento/'+encodeURIComponent(selectedProcessId);return;
+ }
+ mergedRefreshViews();
+});
+document.getElementById('merge-role').addEventListener('change',e=>{
+ mergedRole=e.target.value;mergedHomSelected.clear();mergedTab='acomp';
+ // Evitar demonstrar dados nominais ao perfil sem concessões definidas.
+ if(mergedRole==='cga'&&(location.hash.startsWith('#inscricao/')||location.hash.startsWith('#inscricoes/'))){location.hash='#acompanhamento/'+encodeURIComponent(selectedProcessId);return;}
+ mergedRefreshViews();
+});
+document.getElementById('merge-map').addEventListener('click',mergedMap);
+document.getElementById('merge-tabs').addEventListener('click',e=>{
+ const button=e.target.closest('[data-merge-tab]');if(!button||mergedRole==='cga')return;
+ mergedTab=button.dataset.mergeTab;mergedRenderProcessView();
+});
+document.getElementById('merge-future-panel').addEventListener('input',e=>{
+ const t=e.target;
+ if(t.id==='merge-list-search'){mergedListQuery=t.value;mergedListPage=1;const sel=t.selectionStart;mergedRenderFeature();const n=document.getElementById(t.id);n?.focus();n?.setSelectionRange(sel,sel);}
+ if(t.id==='merge-notes-search'){mergedNotesQuery=t.value;mergedNotesPage=1;const sel=t.selectionStart;mergedRenderFeature();const n=document.getElementById(t.id);n?.focus();n?.setSelectionRange(sel,sel);}
+});
+document.getElementById('merge-future-panel').addEventListener('change',e=>{
+ const t=e.target;
+ if(t.id==='merge-list-status'){mergedListStatus=t.value;mergedListPage=1;mergedRenderFeature();}
+ if(t.id==='merge-hom-status'){mergedHomStatus=t.value;mergedHomPage=1;mergedHomSelected.clear();mergedRenderFeature();}
+ if(t.dataset.mergedCheck){t.checked?mergedHomSelected.add(t.dataset.mergedCheck):mergedHomSelected.delete(t.dataset.mergedCheck);mergedRenderFeature();}
+});
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-merge-action]');if(!t)return;
+ const a=t.dataset.mergeAction;
+ if(a==='close-dialog'){mergedCloseDialog();return;}
+ if(a==='report-preview'){mergedToast('Filtros apresentados para revisão. Nenhuma exportação foi gerada.');return;}
+ if(a==='judge-approve'||a==='judge-deny'){
+  const p=document.getElementById('merge-parecer');if(!p?.value.trim()){mergedToast('Informe uma justificativa para a simulação.');p?.focus();return;}
+  mergedDecisions.set(mergedDialogData,a==='judge-approve'?'Deferida':'Indeferida');mergedCloseDialog();mergedRenderFeature();return;
+ }
+ if(a==='batch-confirm'){
+  mergedHomSelected.forEach(id=>mergedDecisions.set(id,'Deferida'));mergedHomSelected.clear();mergedCloseDialog();mergedRenderFeature();return;
+ }
+ if(a==='batch'){mergedBatch();return;}
+ if(a==='judge'){mergedJudge(t.dataset.id);return;}
+ if(a==='inep'){mergedOpenDialog('Retorno do INEP — conceito','<div class="merge-warning">Correspondência por CPF e ano, não localizados e operações em lote exigem refinamento. Não há upload nem cruzamento neste protótipo.</div>');return;}
+ if(a==='report'){mergedReport(t.dataset.id);return;}
+ const key=a.split('-')[0],dir=a.endsWith('-next')?1:-1;
+ if(key==='insc')mergedListPage+=dir;
+ if(key==='hom')mergedHomPage+=dir;
+ if(key==='notas')mergedNotesPage+=dir;
+ if(['insc','hom','notas'].includes(key)){mergedRenderFeature();return;}
+});
+// A função principal original aplica a rota; esta extensão só acrescenta a seção futura.
+window.addEventListener('hashchange',()=>{
+ if(mergedRole==='cga'&&(location.hash.startsWith('#inscricao/')||location.hash.startsWith('#inscricoes/'))){location.hash='#acompanhamento/'+encodeURIComponent(selectedProcessId);return;}
+ if(!selectedProcessId)mergedRenderPanel();
+ mergedRenderProcessView();
+});
+detailProcessSelect.addEventListener('change',mergedRenderProcessView);
+detailIndicatorSelect.addEventListener('change',mergedRenderProcessView);
+scenario.addEventListener('change',mergedUpdatePanelToolbar);
+// A área de indicadores também muda por atualização; sincronizar o acréscimo de prazos.
+document.getElementById('detail-refresh').addEventListener('click',()=>mergedRenderProcessView());
+mergedSyncScopeControls();mergedUpdateIdentity();mergedUpdatePanelToolbar();mergedRenderPanel();mergedRenderProcessView();
+</script>
+</body>
+</html>
