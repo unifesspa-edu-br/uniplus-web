@@ -326,7 +326,7 @@ describe('UnidadesPage — recusas do servidor', () => {
         p.http.expectNone(url);
         expect(p.campo(nome).getAttribute('aria-invalid')).toBe('true');
         expect(p.elemento(`#${idDoErro}`).textContent).toContain(
-          'Valor acima do tamanho permitido.',
+          `Informe no máximo ${limite} caracteres.`,
         );
       },
     );
