@@ -25,8 +25,11 @@
 .lookup-alert .alert {
   margin: var(--space-4) var(--space-5);
 }
+/* O slot de ações fica fora de `.alert__msg`: sem o tamanho aqui, o botão em forma de link herdaria
+ * o do corpo do alerta e ficaria maior que a mensagem ao lado. */
 .lookup-alert__acoes {
   display: flex;
+  font-size: var(--text-sm);
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-4);
   margin-top: var(--space-2);

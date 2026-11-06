@@ -44,3 +44,10 @@
 .list-state__retry .btn[aria-busy='true'] {
   cursor: progress;
 }
+
+/* Os avisos de falha de leitura decidem a visibilidade por dentro: sem falha, o host não ocupa
+ * caixa, e o elemento vizinho (grade, `gap`) não enxerga um filho vazio. */
+ui-falha-de-leitura,
+ui-falha-de-leitura-do-campo {
+  display: contents;
+}
