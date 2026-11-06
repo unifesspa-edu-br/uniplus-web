@@ -52,7 +52,6 @@
               <td class="table-responsive__actions" data-label="Ações">
                 @if (!perfil.governanca) {
                   <ui-icon-button
-                    data-acao="editar"
                     [isDisabled]="indisponivel()"
                     icon="pi-pencil"
                     [accessibleName]="'Editar o perfil ' + perfil.nome"
@@ -60,7 +59,6 @@
                     (triggered)="editar.emit(perfil)"
                   />
                   <ui-icon-button
-                    data-acao="alternar"
                     [isDisabled]="indisponivel()"
                     icon="pi-power-off"
                     [accessibleName]="

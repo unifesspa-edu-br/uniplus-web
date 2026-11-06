@@ -16,6 +16,7 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
           <td>
             <button type="button" [attr.aria-label]="'Editar item ' + id">e</button>
             <button type="button" [attr.aria-label]="'Remover item ' + id">r</button>
+            <button type="button" [attr.aria-label]="'Revogar item ' + id">v</button>
             <button
               type="button"
               [attr.aria-label]="(ativos().includes(id) ? 'Desativar item ' : 'Ativar item ') + id"
@@ -39,6 +40,26 @@ class ListaDeTesteComponent {
     atributoDaLinha: 'data-item-id',
     idDoTitulo: 'titulo-da-lista',
     idDoCadastro: 'novo',
+  });
+}
+
+@Component({
+  selector: 'cfg-lista-sem-cadastro-de-teste',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h2 id="titulo-da-lista" tabindex="-1">Itens</h2>
+    <button id="novo" type="button">Novo</button>
+  `,
+})
+class ListaSemCadastroDeTesteComponent {
+  readonly gravando = input.required<boolean>();
+  readonly carregando = input.required<boolean>();
+  readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-item-id',
+    idDoTitulo: 'titulo-da-lista',
   });
 }
 
@@ -75,6 +96,25 @@ describe('devolverFocoDaLista', () => {
     expect(document.activeElement).toBe(botao('Remover item b'));
   });
 
+  it('a revogação devolve o foco ao botão de revogar da linha acionada', async () => {
+    fixture.componentInstance.foco.registrar({ acao: 'revogar', id: 'b' });
+    await escrever();
+    expect(document.activeElement).toBe(botao('Revogar item b'));
+  });
+
+  it('localiza a linha cujo identificador tem aspas e barras', async () => {
+    const id = 'a"b\\c';
+    fixture.componentRef.setInput('ids', ['a', id]);
+    fixture.detectChanges();
+    fixture.componentInstance.foco.registrar({ acao: 'editar', id });
+    await escrever();
+    const esperado = Array.from(raiz().querySelectorAll('button')).find(
+      (b) => b.getAttribute('aria-label') === `Editar item ${id}`,
+    );
+    expect(esperado).toBeDefined();
+    expect(document.activeElement).toBe(esperado);
+  });
+
   it('a situação devolve o foco ao botão da linha, que agora oferece a ação oposta', async () => {
     fixture.componentRef.setInput('ativos', ['b']);
     fixture.detectChanges();
@@ -109,6 +149,26 @@ describe('devolverFocoDaLista', () => {
     fixture.componentInstance.foco.registrar(null);
     await escrever();
     expect(document.activeElement).toBe(raiz().querySelector('#novo'));
+  });
+
+  it('o cadastro sem botão de cadastro configurado leva o foco ao título da lista', async () => {
+    const outra = TestBed.createComponent(ListaSemCadastroDeTesteComponent);
+    const elemento = outra.nativeElement as HTMLElement;
+    document.body.appendChild(elemento);
+    try {
+      outra.componentRef.setInput('gravando', false);
+      outra.componentRef.setInput('carregando', false);
+      outra.detectChanges();
+      outra.componentInstance.foco.registrar(null);
+      outra.componentRef.setInput('gravando', true);
+      outra.detectChanges();
+      outra.componentRef.setInput('gravando', false);
+      outra.detectChanges();
+      await outra.whenStable();
+      expect(document.activeElement).toBe(elemento.querySelector('#titulo-da-lista'));
+    } finally {
+      elemento.remove();
+    }
   });
 
   it('não toma o foco de quem já o levou a outro controle', async () => {

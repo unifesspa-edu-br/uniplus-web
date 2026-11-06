@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa } from '../../shared/foco';
+import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
 import { ConcessaoTrilhaComponent } from './concessao-trilha.component';
-import { devolverFocoAoAcionador, entreAspas } from './devolucao-de-foco';
 import { ConcessoesListaComponent } from './concessoes-lista.component';
 import { ConcessoesStore } from './concessoes.store';
 import { nomesDeEscopo } from './nomes-de-escopo';
@@ -45,9 +44,10 @@ export class ConcessoesPage {
     () => document.getElementById(ID_DO_TITULO),
   );
 
-  private readonly foco = devolverFocoAoAcionador({
+  private readonly foco = devolverFocoDaLista({
     gravando: computed(() => this.revogacao.gravando() || this.revogacao.revogando()),
     carregando: this.store.carregando,
+    atributoDaLinha: 'data-concessao-id',
     idDoTitulo: ID_DO_TITULO,
   });
 
@@ -56,9 +56,7 @@ export class ConcessoesPage {
   }
 
   protected revogar(concessao: ConcessaoDto): void {
-    this.foco.registrar(
-      `tr[data-concessao-id="${entreAspas(concessao.id)}"] ui-icon-button[data-acao="revogar"] button`,
-    );
+    this.foco.registrar({ acao: 'revogar', id: concessao.id });
     this.revogacao.pedirRevogacao(concessao);
   }
 

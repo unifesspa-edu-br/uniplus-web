@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa } from '../../shared/foco';
-import { devolverFocoAoAcionador, entreAspas } from './devolucao-de-foco';
+import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { ID_DAS_PERMISSOES, PerfilFormularioComponent } from './perfil-formulario.component';
 import { PerfisListaComponent } from './perfis-lista.component';
@@ -10,9 +9,6 @@ import { PerfisStore } from './perfis.store';
 
 const ID_DO_TITULO = 'cfg-perfis-titulo';
 const ID_DO_CADASTRO = 'cfg-perfis-novo';
-
-const acionadorDaLinha = (acao: 'editar' | 'alternar', id: string): string =>
-  `tr[data-perfil-id="${entreAspas(id)}"] ui-icon-button[data-acao="${acao}"] button`;
 
 @Component({
   selector: 'cfg-perfis-page',
@@ -39,10 +35,12 @@ export class PerfisPage {
         ),
       ),
   );
-  private readonly foco = devolverFocoAoAcionador({
+  private readonly foco = devolverFocoDaLista({
     gravando: this.edicao.gravando,
     carregando: this.store.carregando,
+    atributoDaLinha: 'data-perfil-id',
     idDoTitulo: ID_DO_TITULO,
+    idDoCadastro: ID_DO_CADASTRO,
   });
   private readonly novaTentativa = focarAposNovaTentativa(
     this.pendente,
@@ -65,17 +63,17 @@ export class PerfisPage {
   }
 
   protected criar(): void {
-    this.foco.registrar(`#${ID_DO_CADASTRO}`);
+    this.foco.registrar(null);
     this.edicao.abrirCriacao();
   }
 
   protected editar(perfil: PerfilDto): void {
-    this.foco.registrar(acionadorDaLinha('editar', perfil.id));
+    this.foco.registrar({ acao: 'editar', id: perfil.id });
     this.edicao.abrirEdicao(perfil);
   }
 
   protected alternarAtivacao(perfil: PerfilDto): void {
-    this.foco.registrar(acionadorDaLinha('alternar', perfil.id));
+    this.foco.registrar({ acao: 'situacao', id: perfil.id });
     void this.edicao.alternarAtivacao(perfil);
   }
 }

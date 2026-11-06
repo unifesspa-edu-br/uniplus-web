@@ -69,7 +69,6 @@
                 />
                 @if (concessao.ativa) {
                   <ui-icon-button
-                    data-acao="revogar"
                     [isDisabled]="indisponivel()"
                     icon="pi-ban"
                     [accessibleName]="'Revogar a concessão de ' + concessao.perfil.nome"

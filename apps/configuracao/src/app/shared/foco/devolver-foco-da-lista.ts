@@ -1,12 +1,13 @@
 import { ElementRef, Injector, Signal, afterNextRender, effect, inject } from '@angular/core';
 import { focoEstaLivre } from './foco-livre';
 
-type AcaoDaLinha = 'editar' | 'remover' | 'situacao';
+type AcaoDaLinha = 'editar' | 'remover' | 'revogar' | 'situacao';
 
 /** O botão de cada ação dentro da linha; o da situação troca de rótulo ao ser acionado. */
 const SELETOR_DA_ACAO: Readonly<Record<AcaoDaLinha, string>> = {
   editar: 'button[aria-label^="Editar "]',
   remover: 'button[aria-label^="Remover "]',
+  revogar: 'button[aria-label^="Revogar "]',
   situacao: ':is(button[aria-label^="Ativar "], button[aria-label^="Desativar "])',
 };
 
@@ -25,7 +26,7 @@ export interface OpcoesDaDevolucaoDeFoco {
   readonly atributoDaLinha: string;
   /** `id` do título da lista, destino quando o acionador saiu da tela. */
   readonly idDoTitulo: string;
-  /** `id` do botão de cadastro, quando a lista o contém. */
+  /** `id` do botão de cadastro, dentro ou fora da lista; sem ele, o cadastro devolve o foco ao título. */
   readonly idDoCadastro?: string;
 }
 
@@ -87,7 +88,8 @@ class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
  * o conteúdo e pode se repetir), se ele ainda existir e se ninguém tomou o foco nesse intervalo;
  * sem ele (item removido, lista que falhou ao recarregar), vai ao título da lista.
  *
- * Chamar em contexto de injeção, no componente da lista.
+ * Chamar em contexto de injeção, no componente da lista ou da página que a contém (o botão de
+ * cadastro pode ficar fora da lista, desde que dentro dele).
  */
 export function devolverFocoDaLista(opcoes: OpcoesDaDevolucaoDeFoco): DevolucaoDeFoco {
   const raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
