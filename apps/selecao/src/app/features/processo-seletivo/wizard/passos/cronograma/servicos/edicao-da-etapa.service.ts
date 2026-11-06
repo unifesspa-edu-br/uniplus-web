@@ -16,6 +16,7 @@ import {
   etapaDeNotaDoEnem,
   etapaEhDeAvaliacaoHumana,
   etapaUsaEscalaDeAtendimento,
+  nomeDoTipoDaEtapaNoFormulario,
 } from '../declaracoes-da-etapa';
 import {
   trocarCaraterDaEtapa,
@@ -53,7 +54,6 @@ export class EdicaoDaEtapa {
   private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly catalogosDaLeitura: CatalogosDaLeitura = {
     rotuloDoAto: this.catalogoDeAtos.rotuloDoAto,
-    rotuloDoTipoEtapa: this.catalogoDeTiposDeEtapa.rotuloDoTipoEtapa,
     tipoEtapaPorId: this.catalogoDeTiposDeEtapa.tipoEtapaPorId,
     bancas: this.catalogoDeBancas.bancas,
   };
@@ -70,21 +70,24 @@ export class EdicaoDaEtapa {
    * o cadastro não o tem mais.
    *
    * Sem o referenciado na lista, nenhuma opção casa e o campo aparece em branco — o operador não
-   * veria que há um tipo gravado e gravaria por cima dele sem perceber. "Removido do cadastro" só
-   * se afirma com o catálogo carregado: antes disso, ou em falha, a ausência não prova remoção.
+   * veria que há um tipo gravado e gravaria por cima dele sem perceber. A opção referenciada leva
+   * o nome da cópia que o processo congelou, o mesmo que a linha fechada e a consulta mostram.
    */
   tiposEscolhiveisPara(grupo: FormGroup<EtapaForm>): readonly { id: string; nome: string }[] {
     const referenciado = grupo.controls.tipoEtapaOrigemId.value;
-    const catalogo = this.catalogoDeTiposDeEtapa;
-    const tipos = catalogo.tiposEtapa().map((tipo) => ({ id: tipo.id, nome: tipo.nome }));
+    const nomeDoReferenciado =
+      nomeDoTipoDaEtapaNoFormulario(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId()) ??
+      'Tipo removido do cadastro';
+    const tipos = this.catalogoDeTiposDeEtapa.tiposEtapa().map((tipo) => ({
+      id: tipo.id,
+      nome: tipo.id === referenciado ? nomeDoReferenciado : tipo.nome,
+    }));
 
     if (referenciado === '' || tipos.some((tipo) => tipo.id === referenciado)) {
       return tipos;
     }
 
-    const catalogoConfirmado = !catalogo.carregando() && catalogo.erro() === null;
-    const nome = catalogoConfirmado ? 'Tipo removido do cadastro' : 'Tipo fora do catálogo atual';
-    return [...tipos, { id: referenciado, nome }];
+    return [...tipos, { id: referenciado, nome: nomeDoReferenciado }];
   }
 
   /** O que o cabeçalho recolhido diz sobre as janelas recursais da etapa. */
@@ -191,9 +194,7 @@ export class EdicaoDaEtapa {
   marcasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
     const marcas: string[] = [];
 
-    const tipo = this.catalogoDeTiposDeEtapa
-      .rotuloDoTipoEtapa()
-      .get(grupo.controls.tipoEtapaOrigemId.value);
+    const tipo = nomeDoTipoDaEtapaNoFormulario(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
     if (tipo !== undefined) marcas.push(tipo);
 
     const publicacoes = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;

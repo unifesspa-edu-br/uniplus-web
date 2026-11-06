@@ -1004,7 +1004,11 @@ describe('CronogramaPassoComponent', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
-      etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
+      etapa.controls.tipoCongelado.setValue({
+        origemId: TIPO_ETAPA,
+        nome: 'Prova objetiva',
+        notaDeOrigemNoEnem: true,
+      });
       expect(edicao.etapaDeNotaDoEnem(etapa)).toBe(true);
     });
   });
@@ -1096,7 +1100,11 @@ describe('CronogramaPassoComponent', () => {
     it('não confere nem envia a escala herdada por etapa do ENEM', async () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       const etapa = etapaAberta();
-      etapa.controls.tipoCongelado.setValue({ origemId: TIPO_ETAPA, notaDeOrigemNoEnem: true });
+      etapa.controls.tipoCongelado.setValue({
+        origemId: TIPO_ETAPA,
+        nome: 'Prova objetiva',
+        notaDeOrigemNoEnem: true,
+      });
       etapa.controls.notaMaxima.setValue('0');
       etapa.controls.passoDoLancamento.setValue('0,5');
 
@@ -1566,6 +1574,59 @@ describe('CronogramaPassoComponent', () => {
     detectar();
 
     expect(edicao.resumoDosRecursos(etapa)).toBe('2 recursos');
+  });
+
+  it('o cabeçalho do bloco conta as publicações e ignora a linha sem ato', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = cronograma.etapas.at(0);
+
+    edicao.acrescentarProdutoNaEtapa(etapa);
+    expect(edicao.resumoDasPublicacoes(etapa)).toBe('não publica nada');
+
+    etapa.controls.produtos.setValue([{ atoCodigo: 'EDITAL', papel: null }]);
+    expect(edicao.resumoDasPublicacoes(etapa)).toBe('1 publicação');
+
+    etapa.controls.produtos.setValue([
+      { atoCodigo: 'EDITAL', papel: null },
+      { atoCodigo: 'RESULTADO', papel: null },
+    ]);
+    expect(edicao.resumoDasPublicacoes(etapa)).toBe('2 publicações');
+  });
+
+  it('a etapa fechada conta publicações, bancas, recursos e o parecer individual', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = cronograma.etapas.at(0);
+    etapa.controls.produtos.setValue([
+      { atoCodigo: 'EDITAL', papel: null },
+      { atoCodigo: 'RESULTADO', papel: null },
+    ]);
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    edicao.acrescentarRecursoNaEtapa(etapa);
+    edicao.acrescentarRecursoNaEtapa(etapa);
+    etapa.controls.emiteParecerIndividual.setValue(true);
+
+    expect(edicao.marcasDaEtapa(etapa)).toEqual([
+      'Prova objetiva',
+      '2 publicações',
+      '1 banca',
+      '2 recursos',
+      'parecer individual',
+    ]);
+  });
+
+  it('marcar a banca duas vezes não a repete, e desmarcar a retira', () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const etapa = cronograma.etapas.at(0);
+
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    expect(edicao.bancasDaEtapa(etapa)).toEqual([ID_BANCA_HETERO]);
+
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, false);
+    expect(edicao.bancasDaEtapa(etapa)).toEqual([]);
   });
 
   describe('instância superior da janela de recurso da etapa', () => {
@@ -2426,20 +2487,74 @@ describe('CronogramaPassoComponent', () => {
       expect(tipos.map((tipo) => tipo.id)).toContain(TIPO_ETAPA);
     });
 
-    it('não afirma a remoção enquanto o catálogo carrega', () => {
-      TestBed.inject(CatalogoDeTiposDeEtapa).carregando.set(true);
+    it('nomeia pelo que o processo congelou o tipo que o cadastro já não tem', () => {
+      comFases(ID_AVALIACAO);
+      comUmaEtapa();
+      const etapa = cronograma.etapas.at(0);
+      etapa.controls.tipoEtapaOrigemId.setValue(removido);
+      etapa.controls.tipoCongelado.setValue({
+        origemId: removido,
+        nome: 'Prova de redação',
+        notaDeOrigemNoEnem: false,
+      });
 
-      expect(oferecidos().find((tipo) => tipo.id === removido)?.nome).toBe(
-        'Tipo fora do catálogo atual',
+      expect(edicao.tiposEscolhiveisPara(etapa).find((tipo) => tipo.id === removido)?.nome).toBe(
+        'Prova de redação (removido do cadastro)',
       );
     });
 
-    it('não afirma a remoção quando o catálogo falhou', () => {
-      TestBed.inject(CatalogoDeTiposDeEtapa).erro.set('Falha');
-
+    it('sem cópia congelada, o tipo ausente do cadastro leva um texto genérico', () => {
       expect(oferecidos().find((tipo) => tipo.id === removido)?.nome).toBe(
-        'Tipo fora do catálogo atual',
+        'Tipo removido do cadastro',
       );
+    });
+
+    it('a opção referenciada leva o nome congelado, mesmo com o tipo renomeado no cadastro', () => {
+      comFases(ID_AVALIACAO);
+      comUmaEtapa();
+      const etapa = cronograma.etapas.at(0);
+      etapa.controls.tipoCongelado.setValue({
+        origemId: TIPO_ETAPA,
+        nome: 'Prova A',
+        notaDeOrigemNoEnem: false,
+      });
+
+      const tipos = edicao.tiposEscolhiveisPara(etapa);
+
+      expect(tipos.find((tipo) => tipo.id === TIPO_ETAPA)?.nome).toBe('Prova A');
+      expect(edicao.marcasDaEtapa(etapa)).toContain('Prova A');
+    });
+  });
+
+  /**
+   * "Removido do cadastro" só se afirma com o catálogo carregado: enquanto ele carrega ou falha, a
+   * página substitui a linha do tempo pela espera ou pelo erro, e nenhuma etapa chega à tela.
+   */
+  describe('etapas enquanto o catálogo de tipos não está confirmado', () => {
+    function comEtapaNaTela(): void {
+      comFases(ID_AVALIACAO);
+      comEtapasEmFases(['AVALIACAO']);
+      expansao.alternarFase(0);
+      detectar();
+      expect(nativo.querySelector('.etapa-resumo__marca')).not.toBeNull();
+    }
+
+    it('não renderiza etapa enquanto o catálogo carrega', () => {
+      comEtapaNaTela();
+      TestBed.inject(CatalogoDeTiposDeEtapa).carregando.set(true);
+      detectar();
+
+      expect(nativo.querySelector('.etapa-resumo__marca')).toBeNull();
+      expect(nativo.textContent).toContain('Carregando');
+    });
+
+    it('não renderiza etapa quando o catálogo falhou', () => {
+      comEtapaNaTela();
+      TestBed.inject(CatalogoDeTiposDeEtapa).erro.set('Falha');
+      detectar();
+
+      expect(nativo.querySelector('.etapa-resumo__marca')).toBeNull();
+      expect(nativo.querySelector('[role="alert"]')).not.toBeNull();
     });
   });
 
@@ -2602,7 +2717,7 @@ describe('CronogramaPassoComponent', () => {
 
   /**
    * O `RegraCatalogoDto` não tem `nome` nem `descricao` — inventar um mapa código→rótulo no
-   * frontend é achado bloqueante. A opção mostra o código e a versão, que são o que
+   * frontend contradiz o contrato: ele não inventa rótulo. A opção mostra o código e a versão, que são o que
    * identifica a convenção; a base legal saiu do rótulo porque as três convenções de
    * contagem do catálogo têm a MESMA, com quatrocentos e sessenta e nove caracteres, e
    * repeti-la em cada linha empurrava o código para fora da largura do campo.
@@ -2908,9 +3023,9 @@ describe('CronogramaPassoComponent', () => {
 
   /**
    * A prontidão do passo espelha a recusa da publicação sobre a norma da exigência. A
-   * conferência em si é função pura e já tinha teste; o que faltava — e por isso a ligação
-   * entre o rascunho e ela pôde quebrar em silêncio numa refatoração — era provar que o
-   * componente de fato ENXERGA as exigências declaradas.
+   * conferência em si é função pura e tem teste próprio; aqui se prova que o componente de fato
+   * ENXERGA as exigências declaradas, para a ligação entre o rascunho e ela não quebrar em
+   * silêncio.
    */
   describe('conferência da norma das exigências', () => {
     function comExigenciaDeclarada(
@@ -3518,6 +3633,20 @@ describe('CronogramaPassoComponent', () => {
       expect(leitura).toContain('Etapas desta fase');
       expect(leitura).toContain('Convenção de contagem de prazo');
       expect(leitura).not.toContain('Acrescentar');
+    });
+
+    it('nomeia pelo que o processo congelou o tipo da etapa que o cadastro já não tem', () => {
+      emConsulta();
+      const etapa = cronograma.etapas.at(0);
+      const removido = '01960000-0000-7000-0000-0000000000e9';
+      etapa.controls.tipoEtapaOrigemId.setValue(removido);
+      etapa.controls.tipoCongelado.setValue({
+        origemId: removido,
+        nome: 'Prova de redação',
+        notaDeOrigemNoEnem: false,
+      });
+
+      expect(edicao.etapaLida(etapa).tipo).toBe('Prova de redação (removido do cadastro)');
     });
 
     it('lê a janela da fase em dia e hora, não em texto de campo', () => {

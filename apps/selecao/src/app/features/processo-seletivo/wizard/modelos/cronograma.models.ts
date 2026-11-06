@@ -172,6 +172,7 @@ export interface EtapaPontuada {
 /** O que a etapa gravada congelou do tipo de etapa do cadastro. */
 export interface TipoCongeladoDaEtapa {
   readonly origemId: string;
+  readonly nome: string;
   readonly notaDeOrigemNoEnem: boolean;
 }
 

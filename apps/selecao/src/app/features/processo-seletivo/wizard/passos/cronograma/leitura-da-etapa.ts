@@ -17,13 +17,14 @@ import {
   etapaDeclaraNotaMaxima,
   etapaDeNotaDoEnem,
   etapaEhDeAvaliacaoHumana,
+  nomeDoTipoDaEtapaNoFormulario,
   etapaUsaEscalaDeAtendimento,
 } from './declaracoes-da-etapa';
 import { caracteresAdmitidos, eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
 /** O que a consulta da etapa lê dos catálogos, para nomear ato, tipo e banca. */
 export type CatalogosDaLeitura = Pick<CatalogoDeAtos, 'rotuloDoAto'> &
-  Pick<CatalogoDeTiposDeEtapa, 'rotuloDoTipoEtapa' | 'tipoEtapaPorId'> &
+  Pick<CatalogoDeTiposDeEtapa, 'tipoEtapaPorId'> &
   Pick<CatalogoDeBancas, 'bancas'>;
 
 /**
@@ -66,15 +67,22 @@ function itensLidos(grupo: FormGroup<EtapaForm>): {
   };
 }
 
+/** A unidade do prazo concorda com o valor: "1 hora", "2 horas", "1 dia útil", "2 dias úteis". */
+function nomeDaUnidade(unidade: string, valor: string): string {
+  const singular = valor.trim() === '1';
+  if (unidade === 'horas') return singular ? 'hora' : 'horas';
+  return singular ? 'dia útil' : 'dias úteis';
+}
+
 function recursoLido(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => string): string {
-  const unidade = (valor: string): string => (valor === 'horas' ? 'horas' : 'dias úteis');
-  const par = (valor: string, un: string): string =>
-    valor === '' ? '' : `${valor} ${unidade(un)}`;
+  const par = (valor: string, unidade: string): string =>
+    valor === '' ? '' : `${valor} ${nomeDaUnidade(unidade, valor)}`;
+  const prazo = par(recurso.prazoValor, recurso.prazoUnidade);
   const partes = [
     recurso.ancora === 'atoPublicado'
       ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
       : 'prazo corre da ciência do candidato',
-    `prazo de ${par(recurso.prazoValor, recurso.prazoUnidade) || 'não informado'}`,
+    prazo === '' ? 'prazo não informado' : `prazo de ${prazo}`,
   ];
   const primeira = par(
     recurso.suspensividadePrimeiraInstanciaValor,
@@ -122,7 +130,7 @@ function identificacaoLida(
 
   return {
     nome: nomeDaEtapa(grupo),
-    tipo: catalogos.rotuloDoTipoEtapa().get(controles.tipoEtapaOrigemId.value) ?? '',
+    tipo: nomeDoTipoDaEtapaNoFormulario(grupo, tipos) ?? '',
     carater: carater?.rotulo ?? '',
     peso: pontuaPorCarater(caraterAtual) ? controles.peso.value : null,
     notaMinima: eliminaPorCarater(caraterAtual) ? controles.notaMinima.value : null,

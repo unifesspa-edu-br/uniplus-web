@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CaraterEtapa } from '@uniplus/shared-data/selecao';
-import { declaraNotaDoEnem, componeNota, etapaComOQueDeclara } from './regras-da-etapa';
+import {
+  declaraNotaDoEnem,
+  componeNota,
+  etapaComOQueDeclara,
+  nomeDoTipoDaEtapa,
+} from './regras-da-etapa';
 import { tipoQueAdmiteTudo, tipoDoEnem, etapa } from './cronograma-do-certame.testing';
 
 describe('etapa que compõe a nota', () => {
@@ -76,15 +81,36 @@ describe('etapa de nota do ENEM', () => {
   });
 
   it('na etapa gravada vale o que o processo congelou, enquanto o tipo é o mesmo', () => {
-    const gravada = etapa({ tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true } });
+    const gravada = etapa({
+      tipoCongelado: { origemId: 'tipo-1', nome: 'Prova objetiva', notaDeOrigemNoEnem: true },
+    });
     expect(declaraNotaDoEnem(gravada, tipoQueAdmiteTudo())).toBe(true);
   });
 
   it('trocar o tipo desfaz o congelado, e vale o cadastro do tipo novo', () => {
     const trocada = etapa({
       tipoEtapaOrigemId: 'tipo-2',
-      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
+      tipoCongelado: { origemId: 'tipo-1', nome: 'Prova objetiva', notaDeOrigemNoEnem: true },
     });
     expect(declaraNotaDoEnem(trocada, tipoQueAdmiteTudo())).toBe(false);
+  });
+});
+
+describe('nome do tipo da etapa', () => {
+  const congelado = { origemId: 'tipo-1', nome: 'Prova', notaDeOrigemNoEnem: false };
+
+  it('vem da cópia que o processo congelou, também depois de o tipo sair do cadastro', () => {
+    const gravada = etapa({ tipoCongelado: congelado });
+    expect(nomeDoTipoDaEtapa(gravada, undefined)).toBe('Prova (removido do cadastro)');
+  });
+
+  it('na etapa gravada com o tipo no cadastro vale o nome congelado, sem situação', () => {
+    const gravada = etapa({ tipoCongelado: congelado });
+    expect(nomeDoTipoDaEtapa(gravada, tipoQueAdmiteTudo())).toBe('Prova');
+  });
+
+  it('trocar o tipo desfaz o congelado, e vale o nome do cadastro do tipo novo', () => {
+    const trocada = etapa({ tipoEtapaOrigemId: 'tipo-2', tipoCongelado: congelado });
+    expect(nomeDoTipoDaEtapa(trocada, tipoQueAdmiteTudo())).toBe(tipoQueAdmiteTudo().nome);
   });
 });

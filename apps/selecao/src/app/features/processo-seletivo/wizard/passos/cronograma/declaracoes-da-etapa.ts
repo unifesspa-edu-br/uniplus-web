@@ -6,6 +6,7 @@ import type { EtapaForm } from './cronograma-form';
 import {
   declaraNotaDoEnem,
   declaraNotaMaxima,
+  nomeDoTipoDaEtapa,
   type TipoDeEtapaDoCatalogo,
 } from './regras-da-etapa';
 
@@ -16,6 +17,15 @@ export type TiposDeEtapa = ReadonlyMap<string, TipoDeEtapaDoCatalogo>;
 export function etapaDeNotaDoEnem(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa): boolean {
   const etapa = grupo.getRawValue();
   return declaraNotaDoEnem(etapa, tipos.get(etapa.tipoEtapaOrigemId));
+}
+
+/** O nome do tipo da etapa, ou `undefined` quando nem a cópia congelada nem o cadastro o conhecem. */
+export function nomeDoTipoDaEtapaNoFormulario(
+  grupo: FormGroup<EtapaForm>,
+  tipos: TiposDeEtapa,
+): string | undefined {
+  const etapa = grupo.getRawValue();
+  return nomeDoTipoDaEtapa(etapa, tipos.get(etapa.tipoEtapaOrigemId));
 }
 
 /**

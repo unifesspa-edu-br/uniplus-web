@@ -12,11 +12,6 @@ export class CatalogoDeTiposDeEtapa {
 
   readonly tiposEtapa = signal<readonly TipoEtapaDto[]>([]);
 
-  /** Rótulo de cada tipo de etapa do cadastro, pelo id. */
-  readonly rotuloDoTipoEtapa = computed<ReadonlyMap<string, string>>(
-    () => new Map(this.tiposEtapa().map((tipo) => [tipo.id, tipo.nome])),
-  );
-
   /**
    * O tipo de etapa pelo id. É por aqui que a tela sabe quais caracteres aquele tipo admite — e,
    * por consequência, se a etapa pode ter peso e nota mínima.

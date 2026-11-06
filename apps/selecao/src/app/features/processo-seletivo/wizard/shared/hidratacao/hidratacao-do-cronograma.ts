@@ -124,6 +124,7 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
     tipoEtapaOrigemId: etapa.tipoEtapa.origemId,
     tipoCongelado: {
       origemId: etapa.tipoEtapa.origemId,
+      nome: etapa.tipoEtapa.nome,
       notaDeOrigemNoEnem: etapa.tipoEtapa.notaDeOrigemNoEnem,
     },
     peso: comoTexto(etapa.peso),

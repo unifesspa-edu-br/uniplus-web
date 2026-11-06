@@ -180,7 +180,7 @@ describe('problemas das etapas', () => {
       peso: '1',
       notaMaxima: '0',
       notaMinima: '5',
-      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
+      tipoCongelado: { origemId: 'tipo-1', nome: 'Prova objetiva', notaDeOrigemNoEnem: true },
     });
 
     const problemas = problemasDe([faseDeAvaliacao], [doEnem], catalogoDeFases, []);

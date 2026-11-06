@@ -270,9 +270,9 @@ describe('regra de recurso da fase no comando', () => {
   };
 
   it('envia a unidade responsável da fase, e nula quando ela não tem', () => {
-    expect(comoComandoDeFase({ ...fase, unidadeResponsavelId: 'unidade-cga' }).unidadeResponsavelId).toBe(
-      'unidade-cga',
-    );
+    expect(
+      comoComandoDeFase({ ...fase, unidadeResponsavelId: 'unidade-cga' }).unidadeResponsavelId,
+    ).toBe('unidade-cga');
     expect(comoComandoDeFase(fase).unidadeResponsavelId).toBeNull();
   });
 

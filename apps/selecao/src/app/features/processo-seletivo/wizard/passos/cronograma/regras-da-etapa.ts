@@ -1,7 +1,7 @@
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { escalaVale } from '../../shared/itens-de-avaliacao';
-import type { EtapaPontuada } from '../../processo-seletivo.models';
+import type { EtapaPontuada, TipoCongeladoDaEtapa } from '../../processo-seletivo.models';
 
 /** O caráter da etapa diz se ela entra na nota final. */
 export function pontuaPorCarater(carater: string): boolean {
@@ -33,11 +33,30 @@ export function declaraNotaDoEnem(
   etapa: Pick<EtapaPontuada, 'tipoEtapaOrigemId' | 'tipoCongelado'>,
   tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
 ): boolean {
+  const congelado = tipoCongeladoVigente(etapa);
+  return congelado?.notaDeOrigemNoEnem ?? tipoDoCadastro?.notaDeOrigemNoEnem ?? false;
+}
+
+/**
+ * O nome do tipo da etapa. O processo congela o tipo por cópia, então o nome gravado vale sobre o
+ * cadastro e continua conhecido depois que o tipo sai dele: nesse caso o nome vem com a situação.
+ * `undefined` quando a etapa não congelou o tipo e o cadastro não o tem.
+ */
+export function nomeDoTipoDaEtapa(
+  etapa: Pick<EtapaPontuada, 'tipoEtapaOrigemId' | 'tipoCongelado'>,
+  tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
+): string | undefined {
+  const congelado = tipoCongeladoVigente(etapa);
+  if (congelado === null) return tipoDoCadastro?.nome;
+  return tipoDoCadastro === undefined ? `${congelado.nome} (removido do cadastro)` : congelado.nome;
+}
+
+/** O que a etapa congelou, enquanto ela aponta para o mesmo tipo; trocar o tipo desfaz o vínculo. */
+function tipoCongeladoVigente(
+  etapa: Pick<EtapaPontuada, 'tipoEtapaOrigemId' | 'tipoCongelado'>,
+): TipoCongeladoDaEtapa | null {
   const congelado = etapa.tipoCongelado;
-  if (congelado != null && congelado.origemId === etapa.tipoEtapaOrigemId) {
-    return congelado.notaDeOrigemNoEnem;
-  }
-  return tipoDoCadastro?.notaDeOrigemNoEnem ?? false;
+  return congelado != null && congelado.origemId === etapa.tipoEtapaOrigemId ? congelado : null;
 }
 
 /**

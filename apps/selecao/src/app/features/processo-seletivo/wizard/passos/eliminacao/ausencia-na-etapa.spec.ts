@@ -32,7 +32,7 @@ describe('ausência na etapa, pelo passo', () => {
       id: 'etapa-enem',
       nome: 'Nota do ENEM',
       ordem: 2,
-      tipoCongelado: { origemId: 'tipo-1', notaDeOrigemNoEnem: true },
+      tipoCongelado: { origemId: 'tipo-1', nome: 'Prova objetiva', notaDeOrigemNoEnem: true },
     };
     const ETAPA_SEM_NOTA: EtapaPontuada = {
       ...ETAPA_PERSISTIDA,
