@@ -356,7 +356,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
   }) => {
     await mockApi(page, [], { recarga: 'com-o-item', falhasDoVocabulario: 1 });
     await page.goto('/base-legal-bonus-regional');
-    const aviso = page.locator('cfg-alerta-nova-tentativa');
+    const aviso = page.locator('ui-alerta-nova-tentativa');
     await expect(aviso).toContainText('Tipos de instrumento não carregados');
     const tentar = aviso.getByRole('button', { name: 'Tentar novamente' });
     await tentar.click();
@@ -373,7 +373,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
     await page.goto('/base-legal-bonus-regional');
     await novo(page).click();
     const formulario = drawer(page);
-    const aviso = formulario.locator('cfg-alerta-nova-tentativa');
+    const aviso = formulario.locator('ui-alerta-nova-tentativa');
     await expect(aviso).toContainText('Sem o vocabulário de tipos');
     await expect(formulario.locator('select[formcontrolname="tipoInstrumento"]')).toHaveAttribute(
       'aria-describedby',
