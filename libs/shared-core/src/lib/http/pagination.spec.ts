@@ -237,7 +237,7 @@ describe('ehCursorDePaginacaoObsoleto — cursor que não continua a consulta', 
 
   it('não casa 422 (erro de parâmetro: sort/q/limit) nem 5xx', () => {
     expect(
-      ehCursorDePaginacaoObsoleto(problem({ status: 422, code: 'uniplus.configuracao.consulta.busca_muito_longa' })),
+      ehCursorDePaginacaoObsoleto(problem({ status: 422, code: 'uniplus.consulta.busca_muito_longa' })),
     ).toBe(false);
     expect(ehCursorDePaginacaoObsoleto(problem({ status: 500, code: 'uniplus.x.y' }))).toBe(false);
   });

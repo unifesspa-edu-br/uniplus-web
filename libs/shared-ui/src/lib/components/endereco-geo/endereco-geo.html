@@ -39,7 +39,7 @@
           (click)="cepTravado() ? trocarCep() : conducao.resolverCep()"
         >
           @if (cepTravado()) { Trocar CEP } @else { @if (conducao.resolvendoCep()) {
-          <span aria-hidden="true"><ui-spinner size="sm" /></span>
+          <span aria-hidden="true"><ui-spinner spinnerSize="sm" /></span>
           } Buscar CEP }
         </button>
       </div>
