@@ -1,1 +1,4 @@
-export { ConfirmacaoDeRemocaoComponent } from './confirmacao-de-remocao.component';
+export {
+  ConfirmacaoDeRemocaoComponent,
+  type ItemDaConfirmacao,
+} from './confirmacao-de-remocao.component';

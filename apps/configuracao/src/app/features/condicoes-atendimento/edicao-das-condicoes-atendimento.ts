@@ -26,6 +26,7 @@ import {
   criarFormularioDeCondicao,
   valoresDaCondicao,
 } from './condicao-atendimento-form';
+import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
 import { CondicoesAtendimentoStore } from './condicoes-atendimento.store';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -79,12 +80,21 @@ export class EdicaoDasCondicoesAtendimento {
   readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Nova condição de atendimento' : 'Editar condição de atendimento',
   );
-  readonly mensagemDaConfirmacao = computed(() => {
+  readonly itemDaConfirmacao = computed<ItemDaConfirmacao | null>(() => {
     const condicao = this.condicaoParaRemover();
     return condicao
-      ? `Você está prestes a remover a condição ${condicao.nome}/${condicao.codigo}. A remoção impede novos editais de utilizá-la, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.`
-      : 'Deseja remover esta condição de atendimento?';
+      ? {
+          abertura: 'Você está prestes a remover a condição',
+          nome: condicao.nome,
+          codigo: condicao.codigo,
+        }
+      : null;
   });
+  readonly mensagemDaConfirmacao = computed(() =>
+    this.condicaoParaRemover()
+      ? 'A remoção impede novos editais de utilizá-la, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.'
+      : 'Deseja remover esta condição de atendimento?',
+  );
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const condicao = this.condicaoParaRemover();
@@ -200,7 +210,9 @@ export class EdicaoDasCondicoesAtendimento {
     if (!result.ok) {
       const titulo = this.problemI18n.resolve(result.problem).title;
       this.erroDaRemocao.set(titulo);
-      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      if (result.problem.status >= 500) {
+        this.notifications.errorFromProblem(result.problem, { title: titulo });
+      }
       return;
     }
     this.resultadoDaRemocao.set(`Condição de atendimento ${condicao.nome} removida.`);

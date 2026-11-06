@@ -3,6 +3,7 @@ import { TipoBancaDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
   FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -13,7 +14,13 @@ type Acao = 'editar' | 'remover';
 @Component({
   selector: 'cfg-tipos-banca-lista',
   standalone: true,
-  imports: [EmptyStateComponent, FilterBarComponent, PagerComponent, SpinnerComponent],
+  imports: [
+    EmptyStateComponent,
+    FilterBarComponent,
+    IconButtonComponent,
+    PagerComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tipos-banca-lista.component.html',
 })

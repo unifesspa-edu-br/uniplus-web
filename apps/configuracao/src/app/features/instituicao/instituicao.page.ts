@@ -142,7 +142,7 @@ interface InstituicaoForm {
     } @else if (isLoading()) {
       <section class="panel">
         <div class="cfg-panel-empty">
-          <span class="cfg-instituicao__loading"><ui-spinner size="sm" /> Carregando instituição</span>
+          <span class="cfg-instituicao__loading"><ui-spinner spinnerSize="sm" /> Carregando instituição</span>
         </div>
       </section>
     } @else if (instituicao(); as inst) {
@@ -578,7 +578,7 @@ interface InstituicaoForm {
           [disabled]="submitting() || removendo() || form.invalid"
         >
           @if (submitting()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ submitting() ? 'Salvando...' : 'Salvar instituição' }}
         </button>

@@ -73,37 +73,44 @@ export function enderecoEstruturadoDe(
   endereco: EnderecoGeoLeitura | null | undefined,
 ): EnderecoEstruturado | null {
   if (endereco) {
-    const cid = endereco.cidade ?? cidade ?? null;
-    return {
-      cep: coagirTexto(endereco.cep),
-      logradouro: coagirTexto(endereco.logradouro),
-      numero: coagirTexto(endereco.numero),
-      complemento: coagirTexto(endereco.complemento),
-      bairro: coagirTexto(endereco.bairro),
-      distrito: coagirTexto(endereco.distrito),
-      cidade: cid ? { codigoIbge: cid.codigoIbge, nome: cid.nome, uf: cid.uf } : null,
-      latitude: coordenadaComoTexto(endereco.latitude),
-      longitude: coordenadaComoTexto(endereco.longitude),
-      nivelResolucao: endereco.nivelResolucao ?? null,
-      origem: endereco.origem ?? null,
-    };
+    return enderecoDoDto(endereco, endereco.cidade ?? cidade ?? null);
   }
-  if (cidade) {
-    return {
-      cep: null,
-      logradouro: null,
-      numero: null,
-      complemento: null,
-      bairro: null,
-      distrito: null,
-      cidade: { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf },
-      latitude: null,
-      longitude: null,
-      nivelResolucao: null,
-      origem: ORIGEM_MANUAL,
-    };
-  }
-  return null;
+  return cidade ? soComCidade(cidade) : null;
+}
+
+function enderecoDoDto(
+  endereco: EnderecoGeoLeitura,
+  cidade: CidadeRef | null,
+): EnderecoEstruturado {
+  return {
+    cep: coagirTexto(endereco.cep),
+    logradouro: coagirTexto(endereco.logradouro),
+    numero: coagirTexto(endereco.numero),
+    complemento: coagirTexto(endereco.complemento),
+    bairro: coagirTexto(endereco.bairro),
+    distrito: coagirTexto(endereco.distrito),
+    cidade: cidade ? { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf } : null,
+    latitude: coordenadaComoTexto(endereco.latitude),
+    longitude: coordenadaComoTexto(endereco.longitude),
+    nivelResolucao: endereco.nivelResolucao ?? null,
+    origem: endereco.origem ?? null,
+  };
+}
+
+function soComCidade(cidade: CidadeRef): EnderecoEstruturado {
+  return {
+    cep: null,
+    logradouro: null,
+    numero: null,
+    complemento: null,
+    bairro: null,
+    distrito: null,
+    cidade: { codigoIbge: cidade.codigoIbge, nome: cidade.nome, uf: cidade.uf },
+    latitude: null,
+    longitude: null,
+    nivelResolucao: null,
+    origem: ORIGEM_MANUAL,
+  };
 }
 
 /**
@@ -122,28 +129,32 @@ export function enderecoParaCommand(e: EnderecoEstruturado | null): EnderecoComm
     nome: e.cidade.nome,
     uf: e.cidade.uf,
   };
-  const cepDigitos = (e.cep ?? '').replace(/\D/g, '');
-  const endereco: EnderecoGeoEnvio | null =
-    cepDigitos.length === 8
-      ? {
-          cep: cepDigitos,
-          logradouro: e.logradouro,
-          numero: e.numero,
-          complemento: e.complemento,
-          bairro: e.bairro,
-          distrito: e.distrito,
-          cidade,
-          latitude: coordenadaComoNumero(e.latitude),
-          longitude: coordenadaComoNumero(e.longitude),
-          nivelResolucao: e.nivelResolucao ?? 'cidade',
-          origem: e.origem ?? ORIGEM_MANUAL,
-        }
-      : null;
   return {
     cidadeCodigoIbge: cidade.codigoIbge,
     cidadeNome: cidade.nome,
     cidadeUf: cidade.uf,
-    endereco,
+    endereco: enderecoParaEnvio(e, cidade),
+  };
+}
+
+/** O `endereco` aninhado só vai com CEP de 8 dígitos; sem ele, persiste só a cidade. */
+function enderecoParaEnvio(e: EnderecoEstruturado, cidade: CidadeRef): EnderecoGeoEnvio | null {
+  const cepDigitos = (e.cep ?? '').replace(/\D/g, '');
+  if (cepDigitos.length !== 8) {
+    return null;
+  }
+  return {
+    cep: cepDigitos,
+    logradouro: e.logradouro,
+    numero: e.numero,
+    complemento: e.complemento,
+    bairro: e.bairro,
+    distrito: e.distrito,
+    cidade,
+    latitude: coordenadaComoNumero(e.latitude),
+    longitude: coordenadaComoNumero(e.longitude),
+    nivelResolucao: e.nivelResolucao ?? 'cidade',
+    origem: e.origem ?? ORIGEM_MANUAL,
   };
 }
 
@@ -173,5 +184,7 @@ export function ehErroDeEndereco(valor: string): boolean {
   return valor
     .toLocaleLowerCase('pt-BR')
     .split(/[._]/)
-    .some((segmento) => CHAVES_ENDERECO.some((chave) => segmento === chave || segmento.startsWith(chave)));
+    .some((segmento) =>
+      CHAVES_ENDERECO.some((chave) => segmento === chave || segmento.startsWith(chave)),
+    );
 }

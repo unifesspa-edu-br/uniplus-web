@@ -19,7 +19,8 @@ import {
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
+import { aguardarRecarga } from '../../shared/foco';
 import {
   RECURSO_EM_BRANCO,
   RecursoAcessibilidadeForm,
@@ -98,12 +99,17 @@ export class EdicaoDosRecursosAcessibilidade {
   readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Novo recurso de acessibilidade' : 'Editar recurso de acessibilidade',
   );
-  readonly mensagemDaConfirmacao = computed(() => {
+  readonly itemDaConfirmacao = computed<ItemDaConfirmacao | null>(() => {
     const recurso = this.recursoParaRemover();
     return recurso
-      ? `Você está prestes a remover o recurso ${recurso.nome}. A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.`
-      : 'Deseja remover este recurso de acessibilidade?';
+      ? { abertura: 'Você está prestes a remover o recurso', nome: recurso.nome }
+      : null;
   });
+  readonly mensagemDaConfirmacao = computed(() =>
+    this.recursoParaRemover()
+      ? 'A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.'
+      : 'Deseja remover este recurso de acessibilidade?',
+  );
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const recurso = this.recursoParaRemover();
@@ -212,7 +218,9 @@ export class EdicaoDosRecursosAcessibilidade {
     if (!result.ok) {
       const titulo = this.problemI18n.resolve(result.problem).title;
       this.erroDaRemocao.set(titulo);
-      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      if (result.problem.status >= 500) {
+        this.notifications.errorFromProblem(result.problem, { title: titulo });
+      }
       return;
     }
     this.resultadoDaRemocao.set(`Recurso de acessibilidade ${recurso.nome} removido.`);

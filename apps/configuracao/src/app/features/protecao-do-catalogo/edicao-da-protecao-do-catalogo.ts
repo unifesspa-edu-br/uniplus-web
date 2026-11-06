@@ -16,7 +16,7 @@ import {
   type DetalheDaProtecaoDoCatalogoDto,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import {
   JUSTIFICATIVA_MAXIMA,

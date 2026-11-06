@@ -41,7 +41,7 @@ describe('TiposBancaListaComponent', () => {
   const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
   const botoes = (): HTMLButtonElement[] => [...raiz().querySelectorAll('button')];
   const acionaveis = (): HTMLButtonElement[] =>
-    botoes().filter((b) => !b.disabled && b.getAttribute('aria-disabled') !== 'true');
+    botoes().filter((b) => !b.matches(':disabled') && b.getAttribute('aria-disabled') !== 'true');
 
   it('com remoção, deixa indisponíveis as ações das linhas e a paginação', () => {
     montar([banca], { removendo: true, gravando: true });
@@ -66,7 +66,7 @@ describe('TiposBancaListaComponent', () => {
     expect(raiz().querySelector('ui-filter-bar')?.hasAttribute('inert')).toBe(true);
   });
 
-  it('mantém as ações focáveis e recusa acionamentos durante a carga', () => {
+  it('deixa as ações indisponíveis durante a carga e as libera depois', () => {
     montar([banca], { carregando: true });
     const editados: TipoBancaDto[] = [];
     const removidos: TipoBancaDto[] = [];
@@ -75,10 +75,7 @@ describe('TiposBancaListaComponent', () => {
     const editar = raiz().querySelector('button[aria-label^="Editar"]') as HTMLButtonElement;
     const remover = raiz().querySelector('button[aria-label^="Remover"]') as HTMLButtonElement;
     for (const botao of [editar, remover]) {
-      expect(botao.matches(':disabled')).toBe(false);
-      expect(botao.getAttribute('aria-disabled')).toBe('true');
-      botao.focus();
-      expect(document.activeElement).toBe(botao);
+      expect(botao.matches(':disabled')).toBe(true);
       botao.click();
     }
     expect(editados).toEqual([]);

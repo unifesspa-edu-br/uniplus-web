@@ -242,7 +242,7 @@ const BACKEND_FIELD_TO_CONTROL = {
             Nova unidade
           </button>
           @if (loading()) {
-            <span class="cfg-unidades__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="cfg-unidades__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
 
@@ -702,7 +702,7 @@ const BACKEND_FIELD_TO_CONTROL = {
           [disabled]="saving() || form.invalid"
         >
           @if (saving()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar unidade' : 'Salvar unidade' }}
         </button>

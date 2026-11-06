@@ -16,7 +16,7 @@
   }
 </ui-alert>
 } @if (carregando()) {
-<p role="status"><ui-spinner size="sm" /> Carregando o pedido…</p>
+<p role="status"><ui-spinner spinnerSize="sm" /> Carregando o pedido…</p>
 } @if (pedido(); as p) { @if (aguardandoDocumento()) {
 <ui-alert variant="warning" heading="Falta o documento de designação">
   @if (ehSolicitante()) { Anexe o PDF do documento de designação em Documentos, abaixo. O pedido só
@@ -74,7 +74,7 @@
       [attr.aria-busy]="enviando() ? 'true' : null"
       (click)="executar()"
     >
-      @if (enviando()) { <ui-spinner size="sm" /> } {{ confirmacao().rotulo }}
+      @if (enviando()) { <ui-spinner spinnerSize="sm" /> } {{ confirmacao().rotulo }}
     </button>
   </ng-container>
 </ui-dialog>

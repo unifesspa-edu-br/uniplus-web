@@ -110,7 +110,7 @@ describe('TiposBancaPage — remoção', () => {
     expect(store.bancas()).toEqual([]);
   });
 
-  it('CA-09: falha na remoção avisa o usuário e mantém a lista', async () => {
+  it('CA-09: falha 4xx na remoção não notifica o servidor e mantém a lista', async () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
 
     await flushLista([bancaSeed]);
@@ -134,10 +134,39 @@ describe('TiposBancaPage — remoção', () => {
 
     await propagate();
 
-    expect(erroSpy).toHaveBeenCalled();
+    expect(erroSpy).not.toHaveBeenCalled();
     expect(store.bancas()).toEqual([bancaSeed]);
 
     controller.expectNone((r) => r.url === `${BASE}/api/configuracao/tipos-banca`);
+  });
+
+  it('CA-09: falha 5xx na remoção notifica o servidor com o título resolvido', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+
+    await flushLista([bancaSeed]);
+
+    edicao.pedirRemocao(bancaSeed);
+    edicao.removerConfirmado();
+
+    controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${bancaSeed.id}`).flush(
+      {
+        type: 'about:blank',
+        title: 'Erro interno',
+        status: 500,
+        code: 'uniplus.erro_interno',
+      },
+      {
+        status: 500,
+        statusText: 'Server Error',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ status: 500 }), {
+      title: expect.any(String),
+    });
   });
 
   it('CA-10: a remoção pendente não é reenviada', async () => {

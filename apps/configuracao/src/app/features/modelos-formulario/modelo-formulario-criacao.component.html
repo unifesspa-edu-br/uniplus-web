@@ -140,7 +140,7 @@
         (click)="salvando() ? $event.preventDefault() : null"
       >
         @if (salvando()) {
-          <ui-spinner size="sm" />
+          <ui-spinner spinnerSize="sm" />
         }
         {{ salvando() ? 'Criando...' : 'Criar e montar o formulário' }}
       </button>

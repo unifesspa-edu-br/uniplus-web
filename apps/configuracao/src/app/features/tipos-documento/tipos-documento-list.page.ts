@@ -210,7 +210,7 @@ interface TipoDocumentoForm {
         <div class="panel-head__title">
           <h2 #tituloDaLista id="cfg-tipos-documento-list-title" tabindex="-1">Tipos de documento</h2>
           @if (loading()) {
-            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <div class="panel-head__actions">
@@ -670,7 +670,7 @@ interface TipoDocumentoForm {
           [disabled]="saving() || tipoEquivalenteIgualCodigo()"
         >
           @if (saving()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{
             saving()

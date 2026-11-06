@@ -117,7 +117,7 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
         </button>
         <button type="button" class="btn btn--primary" [disabled]="enviando() || marcados().length === 0" (click)="enviar()">
           @if (enviando()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ rotuloDoEnvio() }}
         </button>

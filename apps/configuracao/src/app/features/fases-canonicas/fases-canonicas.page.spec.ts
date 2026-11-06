@@ -501,7 +501,7 @@ describe('FasesCanonicasPage', () => {
     expect(dialogo.textContent).not.toMatch(/inativ/iu);
   });
 
-  it('CA-11: falha na remoção avisa o usuário e mantém a lista', async () => {
+  it('CA-11: falha 4xx na remoção não notifica o servidor e mantém a lista', async () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
     await flushLista([faseAvaliacaoSeed]);
     edicao.pedirRemocao(faseAvaliacaoSeed);
@@ -522,9 +522,35 @@ describe('FasesCanonicasPage', () => {
     );
     await propagate();
 
-    expect(erroSpy).toHaveBeenCalled();
+    expect(erroSpy).not.toHaveBeenCalled();
     expect(edicao.removendo()).toBe(false);
     controller.expectNone((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`);
+  });
+
+  it('CA-11: falha 5xx na remoção notifica o servidor com o título resolvido', async () => {
+    const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    await flushLista([faseAvaliacaoSeed]);
+    edicao.pedirRemocao(faseAvaliacaoSeed);
+    edicao.removerConfirmado();
+
+    controller.expectOne(urlRemocao(faseAvaliacaoSeed)).flush(
+      {
+        type: 'about:blank',
+        title: 'Erro interno',
+        status: 500,
+        code: 'uniplus.erro_interno',
+      },
+      {
+        status: 500,
+        statusText: 'Server Error',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    await propagate();
+
+    expect(erroSpy).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ status: 500 }), {
+      title: expect.any(String),
+    });
   });
 
   it('CA-12: impede remoções concorrentes e mantém a trava durante a recarga', async () => {

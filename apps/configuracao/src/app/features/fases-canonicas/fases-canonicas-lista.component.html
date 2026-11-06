@@ -3,8 +3,8 @@
     <div class="panel-head__title">
       <h2 id="cfg-fases-canonicas-list-title" tabindex="-1">Fases canônicas</h2>
       @if (carregando() || removendo()) {
-        <span class="cfg-fases-canonicas__loading"
-          ><ui-spinner size="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
         >
       }
     </div>

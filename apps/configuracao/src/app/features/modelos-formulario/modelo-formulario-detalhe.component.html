@@ -34,7 +34,9 @@
     </div>
   </ui-alert>
 } @else if (carregando() && modelo() === null) {
-  <div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando o modelo...</div>
+  <div class="cfg-form__loading" role="status">
+    <ui-spinner spinnerSize="md" /> Carregando o modelo...
+  </div>
 } @else if (modelo(); as m) {
   <div id="cfg-modelo-resumo" class="cfg-modelo-resumo" tabindex="-1">
     @if (recusasGerais().length > 0) {
@@ -216,7 +218,7 @@
       (click)="somenteLeitura() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{ salvando() ? 'Salvando...' : 'Salvar modelo' }}
     </button>

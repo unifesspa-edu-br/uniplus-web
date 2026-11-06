@@ -62,6 +62,31 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
     expect(cancelar().disabled).toBe(false);
   });
 
+  it('nomeia o item em negrito, com o código quando houver', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.componentRef.setInput('item', {
+      abertura: 'Você está prestes a remover o campus',
+      nome: 'Marabá',
+      codigo: 'MAR',
+    });
+    fixture.detectChanges();
+
+    expect(raiz().querySelector('strong')?.textContent).toBe('Marabá.');
+    expect(raiz().querySelector('code')?.textContent).toBe('MAR');
+
+    fixture.componentRef.setInput('item', { abertura: 'Remover o recurso', nome: 'Ledor' });
+    fixture.detectChanges();
+    expect(raiz().querySelector('strong')?.textContent).toBe('Ledor.');
+    expect(raiz().querySelector('code')).toBeNull();
+  });
+
+  it('sem item, só a mensagem aparece', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+
+    expect(raiz().querySelector('strong')).toBeNull();
+  });
+
   it('o título do diálogo vem de quem o usa', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.componentRef.setInput('titulo', 'Remover campus');

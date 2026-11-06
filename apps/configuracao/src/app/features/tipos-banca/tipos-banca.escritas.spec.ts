@@ -204,8 +204,8 @@ describe('TiposBancaPage — escritas', () => {
         fixture.nativeElement.querySelector(
           'button[aria-label="Editar tipo de banca BANCA_ENTREVISTA"]',
         ) as HTMLButtonElement
-      ).getAttribute('aria-disabled'),
-    ).toBe('true');
+      ).matches(':disabled'),
+    ).toBe(true);
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([]);
@@ -336,7 +336,8 @@ describe('TiposBancaPage — escritas', () => {
       .flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await propagate();
-    expect(document.activeElement).toBe(editar);
     await flushLista([bancaSeed]);
+    await propagate();
+    expect(document.activeElement).toBe(editar);
   });
 });

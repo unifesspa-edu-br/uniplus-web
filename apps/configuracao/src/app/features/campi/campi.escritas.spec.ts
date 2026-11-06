@@ -4,10 +4,11 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CampusDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { CampiPage } from './campi.page';
 import { CampiStore } from './campi.store';
 import { EdicaoDosCampi } from './edicao-dos-campi';
@@ -353,6 +354,11 @@ describe('CampiPage — escritas pela interface', () => {
   });
 
   describe('remoção recusada', () => {
+    let erroDoServidor: MockInstance<NotificationService['errorFromProblem']>;
+    beforeEach(() => {
+      erroDoServidor = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+    });
+
     async function recusarRemocao(status: number, code: string, title: string): Promise<void> {
       await pedirRemocao();
       controller
@@ -373,6 +379,7 @@ describe('CampiPage — escritas pela interface', () => {
         titulo,
       );
 
+      expect(erroDoServidor).not.toHaveBeenCalled();
       expect(elemento('cfg-confirmacao-de-remocao dialog').hasAttribute('open')).toBe(true);
       expect(elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim()).toBe(titulo);
       expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
@@ -387,6 +394,15 @@ describe('CampiPage — escritas pela interface', () => {
       });
       await propagar();
       controller.expectOne((r) => r.url === LISTA_URL).flush([]);
+    });
+
+    it('com 500, notifica o servidor com o título resolvido', async () => {
+      await recusarRemocao(500, 'uniplus.erro_interno', 'Falha ao remover');
+
+      expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ status: 500, code: 'uniplus.erro_interno' }),
+        { title: 'Falha ao remover' },
+      );
     });
 
     it('a recusa não aparece ao abrir a confirmação de novo', async () => {

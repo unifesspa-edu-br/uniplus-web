@@ -62,7 +62,7 @@ export const LIMITE_DO_MOTIVO = 500;
           (click)="confirmar($event)"
         >
           @if (enviando()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ confirmLabel() }}
         </button>

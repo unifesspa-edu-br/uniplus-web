@@ -374,7 +374,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
                 (click)="salvarEdicao()"
               >
                 @if (salvandoEdicao()) {
-                  <ui-spinner size="sm" />
+                  <ui-spinner spinnerSize="sm" />
                   Salvando...
                 } @else {
                   Salvar
@@ -598,7 +598,7 @@ const CAMPOS_DE_PRIMEIRO_NIVEL: ReadonlySet<keyof DestinosDePrimeiroNivel> = new
           [disabled]="submitting()"
         >
           @if (submitting()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
             Salvando...
           } @else {
             Criar resolução

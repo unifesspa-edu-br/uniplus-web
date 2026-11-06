@@ -55,7 +55,7 @@ import {
     </div>
 
     @if (carregando()) {
-      <div role="status"><ui-spinner size="md" /> Carregando o formulário...</div>
+      <div role="status"><ui-spinner spinnerSize="md" /> Carregando o formulário...</div>
     } @else if (erroAoCarregar()) {
       <ui-alert variant="danger" heading="Não foi possível carregar o formulário">
         {{ erroAoCarregar() }}

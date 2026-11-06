@@ -80,7 +80,7 @@ const PAGE_SIZE = 50;
         <div class="panel-head__title">
           <h2 id="cfg-calendario-dias-uteis-list-title">Calendários</h2>
           @if (loading()) {
-            <span class="cfg-cursos__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="cfg-cursos__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
           <span aria-label="Total de calendários carregados" class="list-count">
             {{ calendarios().length }}</span

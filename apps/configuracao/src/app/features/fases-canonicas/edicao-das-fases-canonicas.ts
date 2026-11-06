@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
@@ -26,6 +26,7 @@ import {
   derivarMarcaDeIsencao,
   valoresDaFase,
 } from './fase-canonica-form';
+import { aguardarRecarga } from '../../shared/foco';
 import { FasesCanonicasStore } from './fases-canonicas.store';
 
 type Escrita = 'salvando' | 'removendo';
@@ -55,13 +56,16 @@ export class EdicaoDasFasesCanonicas {
 
   readonly form = criarFormularioDeFase();
   private readonly escrita = signal<Escrita | null>(null);
-  private readonly aguardandoRecarga = signal(false);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
   private readonly emAndamento = signal<AndamentoDaEscrita | null>(null);
   /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
-  readonly gravando = computed(() => this.escrita() !== null || this.aguardandoRecarga());
+  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
   readonly salvando = computed(() => this.escrita() === 'salvando');
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  readonly andamento = this.emAndamento.asReadonly();
+  readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
 
   readonly aberto = signal(false);
   readonly erro = signal<string | null>(null);
@@ -133,18 +137,6 @@ export class EdicaoDasFasesCanonicas {
     this.form.controls.codigo.valueChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((codigo) => derivarMarcaDeIsencao(this.form, codigo));
-    let iniciou = false;
-    effect(() => {
-      if (!this.aguardandoRecarga()) {
-        iniciou = false;
-        return;
-      }
-      if (this.store.carregando()) iniciou = true;
-      else if (iniciou || this.store.mensagemDeErro()) {
-        this.aguardandoRecarga.set(false);
-        this.emAndamento.set(null);
-      }
-    });
   }
 
   abrirEdicao(fase: FaseCanonicaDto): void {
@@ -228,7 +220,9 @@ export class EdicaoDasFasesCanonicas {
     if (!result.ok) {
       const titulo = this.problemI18n.resolve(result.problem).title;
       this.erroRemocao.set(titulo);
-      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      if (result.problem.status >= 500) {
+        this.notifications.errorFromProblem(result.problem, { title: titulo });
+      }
       return;
     }
     this.resultadoDaRemocao.set(`Fase ${fase.codigo} removida.`);
@@ -239,7 +233,7 @@ export class EdicaoDasFasesCanonicas {
   }
 
   private recarregar(): void {
-    this.aguardandoRecarga.set(true);
+    this.recarga.iniciar();
     this.store.recarregar();
   }
 

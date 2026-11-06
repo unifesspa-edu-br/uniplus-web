@@ -18,7 +18,7 @@ import {
   ReferenciaReservaDemograficaDto,
   ReservaDemograficaApi,
 } from '@uniplus/shared-data/configuracao';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import {
   RESERVA_EM_BRANCO,
   ReservaForm,

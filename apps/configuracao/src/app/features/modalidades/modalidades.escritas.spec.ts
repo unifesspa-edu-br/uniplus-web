@@ -8,6 +8,7 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
@@ -129,7 +130,9 @@ describe('Modalidades — remoção pela interface', () => {
     const raiz = fixture.nativeElement as HTMLElement;
     raiz.querySelector<HTMLButtonElement>('button[aria-label="Remover modalidade V"]')?.click();
     await propagar();
-    const botoes = [...raiz.querySelectorAll<HTMLButtonElement>('dialog .uni-dialog__footer > button')];
+    const botoes = [
+      ...raiz.querySelectorAll<HTMLButtonElement>('dialog .uni-dialog__footer > button'),
+    ];
     expect(botoes.map((b) => b.textContent?.trim())).toEqual(['Cancelar', 'Remover']);
   });
 
@@ -172,6 +175,26 @@ describe('Modalidades — remoção pela interface', () => {
     expect(raiz.querySelector('.sr-only[role="status"]')?.textContent).toContain(
       'Modalidade V removida.',
     );
+  });
+
+  describe.each([
+    { status: 422, avisa: false },
+    { status: 503, avisa: true },
+  ])('falha $status na remoção', ({ status, avisa }) => {
+    it(`${avisa ? 'avisa por toast' : 'não avisa por toast e mantém a mensagem no diálogo'}`, async () => {
+      const toast = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+      edicao.remover(modalidade);
+      controller
+        .expectOne(`${ESCRITA}/${modalidade.id}`)
+        .flush(
+          { type: 'about:blank', title: 'Recusada', status, code: 'erro' },
+          { status, statusText: 'Erro' },
+        );
+      await propagar();
+      expect(toast).toHaveBeenCalledTimes(avisa ? 1 : 0);
+      expect(edicao.mensagemBloqueioServidor()).not.toBeNull();
+      expect(edicao.removendo()).toBe(false);
+    });
   });
 });
 

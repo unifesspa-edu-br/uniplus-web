@@ -509,12 +509,14 @@ describe('Escritas de locais de oferta', () => {
     }
 
     it('com 409, mantém o diálogo aberto com o motivo e o botão pronto para nova tentativa', async () => {
+      const notificar = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
       const titulo = 'Local referenciado por oferta de curso ativa';
       await recusarRemocao(
         409,
         'uniplus.configuracao.local_oferta.remocao_bloqueada_por_oferta_curso',
         titulo,
       );
+      expect(notificar).not.toHaveBeenCalled();
       await conferirDialogoComARecusa(titulo);
     });
 

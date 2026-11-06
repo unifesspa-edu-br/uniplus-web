@@ -155,7 +155,9 @@ export class EdicaoDosCampi {
     if (!result.ok) {
       const titulo = this.problemI18n.resolve(result.problem).title;
       this.erroDaRemocao.set(titulo);
-      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      if (result.problem.status >= 500) {
+        this.notifications.errorFromProblem(result.problem, { title: titulo });
+      }
       return;
     }
     this.resultadoDaRemocao.set(`Campus ${campus.sigla} removido.`);

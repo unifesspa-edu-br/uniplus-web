@@ -25,7 +25,7 @@ import { AtosDaProtecaoComponent } from './atos-da-protecao';
     <section class="cfg-detalhe-secao" [attr.aria-busy]="carregando()">
       <h3 class="cfg-detalhe-secao__titulo">Histórico da proteção</h3>
       @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando o histórico</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando o histórico</span>
       }
       @if (erro(); as mensagem) {
         <ui-alert variant="danger" heading="Não foi possível carregar o histórico">

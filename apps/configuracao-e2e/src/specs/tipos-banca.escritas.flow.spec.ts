@@ -223,8 +223,8 @@ test.describe('Tipo de banca — escritas', () => {
     await formulario.getByRole('button', { name: 'Salvar tipo de banca' }).click();
     liberar();
     await expect(formulario).toBeHidden();
-    await expect(editar(page)).toHaveAttribute('aria-disabled', 'true');
-    await expect(editar(page)).not.toHaveAttribute('aria-disabled', 'true');
+    await expect(editar(page)).toBeDisabled();
+    await expect(editar(page)).toBeEnabled();
     await expect(editar(page)).toBeFocused();
   });
 

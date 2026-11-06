@@ -16,7 +16,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ConcessoesApi, type ConcessaoDto } from '@uniplus/shared-data/autorizacao';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';

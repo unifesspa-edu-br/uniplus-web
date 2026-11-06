@@ -181,7 +181,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
         <div class="panel-head__title">
           <h2 id="cfg-precedencias-fase-list-title">Arestas de precedência</h2>
           @if (loading()) {
-            <span class="cfg-precedencias-fase__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="cfg-precedencias-fase__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -448,7 +448,7 @@ function selfLoopValidator(grupo: AbstractControl): ValidationErrors | null {
           [disabled]="saving()"
         >
           @if (saving()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar aresta' : 'Salvar aresta' }}
         </button>

@@ -6,7 +6,7 @@
       }
       <h2 id="cfg-tipos-banca-list-title" tabindex="-1">Tipos de banca</h2>
       @if (carregando()) {
-        <span class="cfg-tipos-banca__loading"><ui-spinner size="sm" /> Carregando</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
       }
     </div>
   </div>
@@ -42,28 +42,20 @@
               <td data-label="Nome">{{ banca.nome }}</td>
               <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
               <td class="table-responsive__actions" data-label="Ações">
-                <button
-                  type="button"
-                  class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
-                  [attr.aria-label]="nomeDaAcao('editar', banca.codigo)"
-                  data-tooltip="Editar tipo de banca"
-                  data-tooltip-position="left"
-                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
-                  (click)="acionar('editar', banca)"
-                >
-                  <i class="pi pi-pencil" aria-hidden="true"></i>
-                </button>
-                <button
-                  type="button"
-                  class="btn btn--sm btn--rect btn--icon-only btn--tertiary"
-                  [attr.aria-label]="nomeDaAcao('remover', banca.codigo)"
-                  data-tooltip="Remover tipo de banca"
-                  data-tooltip-position="left"
-                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
-                  (click)="acionar('remover', banca)"
-                >
-                  <i class="pi pi-trash" aria-hidden="true"></i>
-                </button>
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="nomeDaAcao('editar', banca.codigo)"
+                  tooltip="Editar tipo de banca"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('editar', banca)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="nomeDaAcao('remover', banca.codigo)"
+                  tooltip="Remover tipo de banca"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('remover', banca)"
+                />
               </td>
             </tr>
           }

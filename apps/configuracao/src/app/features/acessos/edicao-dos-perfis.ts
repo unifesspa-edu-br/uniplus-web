@@ -10,7 +10,7 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PerfisApi, type PerfilDto } from '@uniplus/shared-data/autorizacao';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { PerfisStore } from './perfis.store';

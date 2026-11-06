@@ -199,7 +199,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
         <div class="panel-head__title">
           <h2 id="cfg-tipos-ato-list-title">Tipos de ato</h2>
           @if (loading()) {
-            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <button
@@ -533,7 +533,7 @@ const ATO_CONTROL_NAMES: ReadonlySet<string> = new Set<keyof AtoForm>([
           [disabled]="saving()"
         >
           @if (saving()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ saving() ? 'Salvando...' : 'Salvar tipo de ato' }}
         </button>

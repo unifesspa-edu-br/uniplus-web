@@ -20,7 +20,9 @@
 </div>
 
 @if (store.carregando()) {
-<div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando modalidade...</div>
+<div class="cfg-form__loading" role="status">
+  <ui-spinner spinnerSize="md" /> Carregando modalidade...
+</div>
 } @else { @if (store.erroCarregar()) {
 <ui-alert variant="danger" heading="Não foi possível carregar a modalidade">
   {{ store.erroCarregar() }}
@@ -86,7 +88,7 @@
     A natureza escolhida é incompatível com a regra de remanejamento atual. Se continuar, a regra e
     seus argumentos (destino, par e fallback) serão limpos.
   </p>
-  <div uiDialogFooter>
+  <ng-container uiDialogFooter>
     <button
       type="button"
       class="btn btn--tertiary btn--rect"
@@ -101,5 +103,5 @@
     >
       Redefinir campos
     </button>
-  </div>
+  </ng-container>
 </ui-dialog>

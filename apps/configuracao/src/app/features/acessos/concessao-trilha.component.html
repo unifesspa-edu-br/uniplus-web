@@ -6,7 +6,7 @@
   position="right"
 >
   @if (carregando()) {
-    <p role="status"><ui-spinner size="sm" /> Carregando a trilha…</p>
+    <p role="status"><ui-spinner spinnerSize="sm" /> Carregando a trilha…</p>
   }
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível carregar a trilha">{{ erro() }}</ui-alert>

@@ -602,7 +602,7 @@ const CODIGOS_DE_CONCORRENCIA: readonly string[] = [
         <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
       }
     } @else if (carregando()) {
-      <p><ui-spinner size="sm" /> Carregando o fato…</p>
+      <p><ui-spinner spinnerSize="sm" /> Carregando o fato…</p>
     } @else if (erroDeCarga()) {
       <ui-alert variant="danger" heading="Não foi possível carregar o fato">{{ erroDeCarga() }}</ui-alert>
     }

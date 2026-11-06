@@ -109,7 +109,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
 
       @if (carregando()) {
         <div class="cfg-form__loading" role="status">
-          <ui-spinner size="md" /> Carregando o modelo...
+          <ui-spinner spinnerSize="md" /> Carregando o modelo...
         </div>
       } @else if (erroAoCarregar()) {
         <ui-alert variant="danger" heading="Não foi possível carregar o modelo">

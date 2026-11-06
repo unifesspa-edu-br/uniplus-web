@@ -37,50 +37,50 @@ export function focarAposNovaTentativa(
   let acionado: Element | null | undefined;
 
   const concluir = (): void => {
-    const focoSeguiaNoBotao =
-      acionado !== null && acionado !== undefined && document.activeElement === acionado;
+    const focoSeguiaNoBotao = acionado instanceof Element && document.activeElement === acionado;
     acionado = undefined;
-    if (untracked(falhou) || !focoSeguiaNoBotao) {
-      return;
-    }
-    afterNextRender(
-      () => {
-        const ativo = document.activeElement;
-        if (ativo === null || ativo === document.body) {
-          destino()?.focus();
-        }
-      },
-      { injector },
-    );
+    if (!untracked(falhou) && focoSeguiaNoBotao) focarSeSemFoco(destino, injector);
   };
 
+  // O efeito roda antes da renderização que tira o alerta: o botão ainda está na tela, e
+  // dá para saber se o foco segue nele quando a tentativa do operador termina.
   effect(
     () => {
       const emCurso = pendente();
       falhou();
-      if (emCurso || acionado === undefined) {
-        return;
-      }
-      // A tentativa do operador terminou. O efeito roda antes da renderização que tira
-      // o alerta: o botão ainda está na tela, e dá para saber se o foco segue nele.
-      untracked(concluir);
+      if (!emCurso && acionado !== undefined) untracked(concluir);
     },
     { injector },
   );
 
   return {
     executar: (disparar) => {
-      if (untracked(pendente)) {
-        return;
-      }
-      const ativo = document.activeElement;
+      if (untracked(pendente)) return;
+      const ativo = elementoComFoco();
       disparar();
-      acionado = ativo === null || ativo === document.body ? null : ativo;
+      acionado = ativo;
       // A tentativa pode terminar dentro de `disparar` (erro síncrono): sem mudança de
       // `pendente` para o efeito ver, ela é concluída aqui.
-      if (!untracked(pendente)) {
-        concluir();
-      }
+      if (!untracked(pendente)) concluir();
     },
   };
+}
+
+/** O elemento focado, ou `null` quando o foco está no `body` (ou em lugar nenhum). */
+function elementoComFoco(): Element | null {
+  const ativo = document.activeElement;
+  return ativo === document.body ? null : ativo;
+}
+
+/** Depois da renderização que removeu o alerta, leva o foco ao destino se ele ficou sem dono. */
+function focarSeSemFoco(destino: () => HTMLElement | null | undefined, injector: Injector): void {
+  afterNextRender(
+    () => {
+      const ativo = document.activeElement;
+      if (ativo === null || ativo === document.body) {
+        destino()?.focus();
+      }
+    },
+    { injector },
+  );
 }

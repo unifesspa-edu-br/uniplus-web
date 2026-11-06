@@ -15,7 +15,7 @@ import {
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CursoDto, CursosApi } from '@uniplus/shared-data/configuracao';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import {
   CURSO_EM_BRANCO,
   comandoDeAtualizacao,

@@ -385,6 +385,15 @@ describe('Condições de atendimento — escritas pela interface', () => {
   });
 
   describe('remoção', () => {
+    it('o pedido de remoção nomeia a condição em negrito e mostra o código', async () => {
+      await pedirRemocao();
+      expect(elemento('ui-dialog').textContent).toMatch(
+        /Você está prestes a remover a condição\s+LEDOR\s+—\s+Ledor\./u,
+      );
+      expect(elemento('ui-dialog strong').textContent).toBe('Ledor.');
+      expect(elemento('ui-dialog code').textContent).toBe('LEDOR');
+    });
+
     it('pendente, anuncia o andamento, mantém o botão ocupado e deixa a tela indisponível', async () => {
       await confirmarRemocao();
       const delecao = controller.expectOne(URL_LEDOR);
@@ -450,14 +459,18 @@ describe('Condições de atendimento — escritas pela interface', () => {
       ['500', falhaInterna, 'Erro interno'],
     ])(
       'recusada (%s), mantém o diálogo aberto com o motivo, o foco no botão e aceita nova tentativa',
-      async (_nome, resposta, motivo) => {
+      async (nome, resposta, motivo) => {
         await confirmarRemocao();
         await responder(URL_LEDOR, resposta);
         expect(edicao.confirmando()).toBe(true);
-        expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
-          expect.objectContaining({ title: motivo }),
-          { title: motivo },
-        );
+        if (nome === '500') {
+          expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ title: motivo }),
+            { title: motivo },
+          );
+        } else {
+          expect(erroDoServidor).not.toHaveBeenCalled();
+        }
         expect(sucesso).not.toHaveBeenCalled();
         expect(elemento('ui-dialog .field__error').textContent).toBe(motivo);
         expect(elemento('ui-dialog [role="status"]').textContent).toContain(motivo);

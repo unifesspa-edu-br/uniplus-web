@@ -32,7 +32,7 @@ async function responder(route: Route, status: number, corpo?: unknown): Promise
     ...(corpo === undefined
       ? {}
       : {
-          contentType: status === 422 ? 'application/problem+json' : 'application/json',
+          contentType: status >= 400 ? 'application/problem+json' : 'application/json',
           body: JSON.stringify(corpo),
         }),
   });
@@ -180,5 +180,35 @@ test.describe('Modalidade — escrita', () => {
     await expect(
       page.getByRole('status').filter({ hasText: 'Modalidade AC removida.' }),
     ).toHaveCount(1);
+  });
+
+  test('"Tentar novamente" bem-sucedido tira o alerta e leva o foco ao título da lista', async ({
+    page,
+  }) => {
+    let consultas = 0;
+    await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (r) => responder(r, 200, []));
+    await page.route(/\/api\/configuracao\/modalidades(\?.*)?$/, async (route) => {
+      consultas += 1;
+      if (consultas === 1) {
+        await responder(route, 500, {
+          type: 'about:blank',
+          title: 'Erro interno',
+          status: 500,
+          code: 'uniplus.erro_interno',
+        });
+        return;
+      }
+      await responder(route, 200, [MODALIDADE]);
+    });
+    await page.goto('/modalidades');
+    const alerta = page.getByText('Não foi possível carregar as modalidades');
+    await expect(alerta).toBeVisible();
+    const tentar = page.getByRole('button', { name: 'Tentar novamente' });
+    await tentar.focus();
+    await tentar.click();
+    await expect(tentar).toBeHidden();
+    await expect(alerta).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Modalidades', level: 2 })).toBeFocused();
+    expect(consultas).toBe(2);
   });
 });

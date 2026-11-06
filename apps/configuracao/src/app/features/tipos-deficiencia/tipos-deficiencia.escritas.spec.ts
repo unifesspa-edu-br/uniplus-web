@@ -405,9 +405,11 @@ describe('Tipos de deficiência — escritas pela interface', () => {
   describe('remoção', () => {
     it('o pedido de remoção nomeia o tipo na confirmação', async () => {
       await pedirRemocao();
-      expect(elemento('ui-dialog').textContent).toContain(
-        'Você está prestes a remover o tipo de deficiência Visual',
+      expect(elemento('ui-dialog').textContent).toMatch(
+        /Você está prestes a remover o tipo de deficiência\s+VISUAL\s+—\s+Visual\./u,
       );
+      expect(elemento('ui-dialog strong').textContent).toBe('Visual.');
+      expect(elemento('ui-dialog code').textContent).toBe('VISUAL');
       confirmar().click();
       await propagar();
       controller.expectOne(URL_VISUAL).flush(...semConteudo);

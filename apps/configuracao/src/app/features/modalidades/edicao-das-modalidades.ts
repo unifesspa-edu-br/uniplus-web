@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModalidadeDto, ModalidadesApi } from '@uniplus/shared-data/configuracao';
 import { ModalidadesStore } from './modalidades.store';
@@ -68,14 +68,17 @@ export class EdicaoDasModalidades {
           this.anuncio.set(this.mensagemBloqueioServidor() ?? 'A remoção foi recusada.');
           this.recarregar();
         } else {
-          this.removendo.set(false);
-          this.mensagemBloqueioServidor.set(this.problemI18n.resolve(resultado.problem).title);
-          this.anuncio.set(this.mensagemBloqueioServidor() ?? 'A remoção foi recusada.');
-          this.notifications.errorFromProblem(resultado.problem, {
-            title: this.problemI18n.resolve(resultado.problem).title,
-          });
+          this.recusarRemocao(resultado.problem);
         }
       });
+  }
+
+  private recusarRemocao(problem: ProblemDetails): void {
+    const { title } = this.problemI18n.resolve(problem);
+    this.removendo.set(false);
+    this.mensagemBloqueioServidor.set(title);
+    this.anuncio.set(title ?? 'A remoção foi recusada.');
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem, { title });
   }
 
   private recarregar(): void {

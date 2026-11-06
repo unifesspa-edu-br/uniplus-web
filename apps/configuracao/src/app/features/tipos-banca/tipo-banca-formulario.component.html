@@ -106,7 +106,7 @@
       (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{ salvando() ? 'Salvando...' : 'Salvar tipo de banca' }}
     </button>

@@ -178,7 +178,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
         <div class="panel-head__title">
           <h2 id="cfg-base-legal-list-title">Bases legais</h2>
           @if (loading()) {
-            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -391,7 +391,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
                 />
               </div>
               @if (buscaMunicipioCarregando()) {
-                <span class="list-state__loading"><ui-spinner size="sm" /> Buscando</span>
+                <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Buscando</span>
               } @else if (buscaMunicipioErro()) {
                 <span class="field__error" id="cfg-blbr-municipio-busca-erro" role="alert">
                   Não foi possível buscar municípios.
@@ -462,7 +462,7 @@ function controlNameFromBackendField(field: string): keyof BaseLegalForm | null 
           [disabled]="savingForm()"
         >
           @if (savingForm()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{
             savingForm()

@@ -63,6 +63,7 @@
 <cfg-confirmacao-de-remocao
   titulo="Remover tipo de deficiência?"
   [(aberto)]="edicao.confirmando"
+  [item]="edicao.itemDaConfirmacao()"
   [mensagem]="edicao.mensagemDaConfirmacao()"
   [removendo]="edicao.removendo()"
   [erro]="edicao.erroDaRemocao()"

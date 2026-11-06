@@ -96,7 +96,7 @@ describe('CampiListaComponent — remoção em curso', () => {
     expect(raiz.querySelector('.sr-only[role="status"]')?.textContent?.trim()).toBe(
       'Campus MARABA removido.',
     );
-    expect(raiz.querySelector('.cfg-campi__loading')?.getAttribute('aria-hidden')).toBe('true');
+    expect(raiz.querySelector('.list-state__loading')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   describe('foco depois de uma escrita', () => {

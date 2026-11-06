@@ -3,11 +3,11 @@
     <div class="panel-head__title">
       <h2 id="cfg-campi-list-title" tabindex="-1">Campi</h2>
       @if (carregando()) {
-        <span class="cfg-campi__loading"><ui-spinner size="sm" /> Carregando</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
       }
       @if (removendo()) {
-        <span class="cfg-campi__loading" aria-hidden="true"
-          ><ui-spinner size="sm" /> Removendo</span
+        <span class="list-state__loading" aria-hidden="true"
+          ><ui-spinner spinnerSize="sm" /> Removendo</span
         >
       }
       <span class="sr-only" role="status">{{ anuncioDoResultado() }}</span>

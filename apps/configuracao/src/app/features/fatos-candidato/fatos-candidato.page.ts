@@ -198,7 +198,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
         <div class="panel-head__title">
           <h2 #tituloDaLista id="cfg-fatos-list-title" tabindex="-1">Fatos do candidato</h2>
           @if (loading()) {
-            <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <div class="panel-head__actions">
@@ -693,7 +693,7 @@ type CampoDaCriacao = Exclude<keyof CriacaoForm, 'tipo'>;
           <button type="button" class="btn btn--tertiary btn--rect" (click)="drawerAberto.set(false)">Cancelar</button>
           <button type="submit" form="cfg-fato-criacao" class="btn btn--primary" [disabled]="salvando()">
             @if (salvando()) {
-              <ui-spinner size="sm" />
+              <ui-spinner spinnerSize="sm" />
             }
             {{ salvando() ? 'Criando...' : 'Criar fato' }}
           </button>

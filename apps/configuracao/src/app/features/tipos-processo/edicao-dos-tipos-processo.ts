@@ -16,7 +16,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { aguardarRecarga } from '../../shared/foco';
 import {
   TipoProcessoForm,
   ValoresDoTipoProcesso,

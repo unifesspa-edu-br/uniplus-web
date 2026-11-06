@@ -169,7 +169,7 @@ interface OfertaCursoForm {
             <span class="list-count">Total de ofertas cadastradas: {{ totalOfertas() }}</span>
           }
           @if (loading()) {
-            <span class="cfg-ofertas__loading"><ui-spinner size="sm" /> Carregando</span>
+            <span class="cfg-ofertas__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
           }
         </div>
         <button type="button" class="btn btn--primary" (click)="abrirCadastro()">
@@ -583,7 +583,7 @@ interface OfertaCursoForm {
           [disabled]="saving()"
         >
           @if (saving()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ saving() ? 'Salvando...' : modo() === 'criar' ? 'Criar oferta' : 'Salvar oferta' }}
         </button>

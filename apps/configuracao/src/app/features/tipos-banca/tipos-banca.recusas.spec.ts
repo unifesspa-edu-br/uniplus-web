@@ -235,10 +235,10 @@ describe('TiposBancaPage — recusas e foco', () => {
       await propagar();
       expect(edicao.salvando()).toBe(false);
       expect(edicao.gravando()).toBe(true);
-      expect(editar().getAttribute('aria-disabled')).toBe('true');
+      expect(editar().matches(':disabled')).toBe(true);
       await recarregarCom([banca]);
       expect(edicao.gravando()).toBe(false);
-      expect(editar().getAttribute('aria-disabled')).toBeNull();
+      expect(editar().matches(':disabled')).toBe(false);
     });
 
     it('libera as ações quando a recarga falha', async () => {

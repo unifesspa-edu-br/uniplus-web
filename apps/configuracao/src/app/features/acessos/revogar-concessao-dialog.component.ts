@@ -119,7 +119,7 @@ export interface ConfirmacaoDaRevogacao {
           (click)="confirmar($event)"
         >
           @if (enviando()) {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           Revogar concessão
         </button>

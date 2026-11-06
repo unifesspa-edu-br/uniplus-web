@@ -16,7 +16,8 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { TipoDeficienciaApi, TipoDeficienciaDto } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
+import { aguardarRecarga } from '../../shared/foco';
 import {
   TIPO_EM_BRANCO,
   TipoDeficienciaForm,
@@ -97,12 +98,21 @@ export class EdicaoDosTiposDeficiencia {
   readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Novo tipo de deficiência' : 'Editar tipo de deficiência',
   );
-  readonly mensagemDaConfirmacao = computed(() => {
+  readonly itemDaConfirmacao = computed<ItemDaConfirmacao | null>(() => {
     const tipo = this.tipoParaRemover();
     return tipo
-      ? `Você está prestes a remover o tipo de deficiência ${tipo.nome}. A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.`
-      : 'Deseja remover este tipo de deficiência?';
+      ? {
+          abertura: 'Você está prestes a remover o tipo de deficiência',
+          nome: tipo.nome,
+          codigo: tipo.codigo,
+        }
+      : null;
   });
+  readonly mensagemDaConfirmacao = computed(() =>
+    this.tipoParaRemover()
+      ? 'A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.'
+      : 'Deseja remover este tipo de deficiência?',
+  );
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const tipo = this.tipoParaRemover();
