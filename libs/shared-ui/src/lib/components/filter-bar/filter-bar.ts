@@ -33,6 +33,7 @@ let sementeDaBarra = 0;
             class="input"
             [placeholder]="searchPlaceholder()"
             [attr.aria-label]="searchAriaLabel() || null"
+            [attr.maxlength]="searchMaxLength() ?? null"
             [value]="searchValue()"
             (input)="searchValue.set($any($event.target).value)"
           />
@@ -79,6 +80,8 @@ export class FilterBarComponent {
   readonly searchPlaceholder = input<string>('Buscar...');
   readonly searchAriaLabel = input<string>('');
   readonly searchValue = model<string>('');
+  /** Tamanho máximo do texto da busca, quando a API recusa acima dele. Sem ele, não há limite. */
+  readonly searchMaxLength = input<number | undefined>(undefined);
 
   readonly secondaryRole = input<string>();
   readonly secondaryAriaLabel = input<string>();

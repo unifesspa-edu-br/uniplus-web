@@ -77,6 +77,23 @@ describe('FilterBarComponent', () => {
     expect(getInputEl().getAttribute('aria-label')).toBe('Buscar unidade');
   });
 
+  it('não limita o campo de busca quando searchMaxLength não é informado', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.componentRef.setInput('ariaLabel', 'Filtrar unidades');
+    fixture.detectChanges();
+
+    expect(getInputEl().hasAttribute('maxlength')).toBe(false);
+  });
+
+  it('aplica o searchMaxLength recebido como maxlength do campo de busca', () => {
+    const { fixture, getInputEl } = setup();
+    fixture.componentRef.setInput('ariaLabel', 'Filtrar unidades');
+    fixture.componentRef.setInput('searchMaxLength', 200);
+    fixture.detectChanges();
+
+    expect(getInputEl().getAttribute('maxlength')).toBe('200');
+  });
+
   it('reflete searchValue recebido no value do input', () => {
     const { fixture, getInputEl } = setup();
     fixture.componentRef.setInput('ariaLabel', 'Filtrar unidades');
