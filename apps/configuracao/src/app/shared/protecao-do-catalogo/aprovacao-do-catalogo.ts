@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, switchMap } from 'rxjs';
+import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { PERMISSAO, PermissoesService, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 import {
   ProtecaoDoCatalogoApi,
@@ -46,9 +47,13 @@ export class AprovacaoDoCatalogo {
   private readonly _itens = signal<readonly ItemDaProtecaoDoCatalogoDto[]>([]);
   private readonly _carregado = signal(false);
   private readonly _comErro = signal(false);
+  private readonly _ultimoProblema = signal<ProblemDetails | null>(null);
 
   /** Verdadeiro quando a última leitura da lista falhou: a situação dos itens não é conhecida. */
   readonly comErro = this._comErro.asReadonly();
+
+  /** A recusa da API na última leitura; `null` quando deu certo ou falhou sem resposta da API. */
+  readonly ultimoProblema = this._ultimoProblema.asReadonly();
 
   /** Os itens pendentes que a solicitação leva: só dos cadastros que a pessoa pode manter. */
   readonly solicitaveis = computed(() =>
@@ -72,6 +77,7 @@ export class AprovacaoDoCatalogo {
       )
       .subscribe((resultado) => {
         if (resultado.ok) {
+          this._ultimoProblema.set(null);
           this._itens.set(resultado.data);
           this._carregado.set(true);
           return;
@@ -80,6 +86,7 @@ export class AprovacaoDoCatalogo {
         this._carregado.set(false);
         this._itens.set([]);
         this._comErro.set(true);
+        this._ultimoProblema.set(resultado.problem);
       });
   }
 

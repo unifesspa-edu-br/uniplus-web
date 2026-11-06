@@ -120,4 +120,27 @@ describe('CatalogoCategoriasDocumento', () => {
 
     controller.expectOne(URL).flush([identificacao, titulacao]);
   });
+
+  it('expõe a recusa da API da última tentativa e a limpa quando a seguinte dá certo', () => {
+    catalogo.garantirCarregado();
+    expect(catalogo.ultimoProblema()).toBeNull();
+    controller.expectOne(URL).flush(
+      JSON.stringify({
+        title: 'Indisponível',
+        status: 503,
+        code: 'uniplus.internal.unexpected',
+        traceId: 'trace-cat',
+      }),
+      {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: { 'content-type': 'application/problem+json' },
+      },
+    );
+    expect(catalogo.ultimoProblema()).toMatchObject({ status: 503, traceId: 'trace-cat' });
+
+    catalogo.recarregar();
+    controller.expectOne(URL).flush([identificacao]);
+    expect(catalogo.ultimoProblema()).toBeNull();
+  });
 });

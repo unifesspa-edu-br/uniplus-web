@@ -1,5 +1,6 @@
-import { DestroyRef, Injectable, Signal, computed, inject } from '@angular/core';
-import { lookupCompleto, type LookupCompleto } from '@uniplus/shared-core/http';
+import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { lookupCompleto, type LookupCompleto, type ProblemDetails } from '@uniplus/shared-core/http';
+import { tap } from 'rxjs';
 import {
   CategoriasDocumentoApi,
   type CategoriaDocumentoDto,
@@ -21,8 +22,15 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CatalogoCategoriasDocumento implements LookupCompleto<CategoriaDocumentoDto> {
   private readonly api = inject(CategoriasDocumentoApi);
+  private readonly problema = signal<ProblemDetails | null>(null);
   private readonly lookup = lookupCompleto<CategoriaDocumentoDto>(
-    () => this.api.listar(),
+    () =>
+      this.api.listar().pipe(
+        tap({
+          next: (resultado) => this.problema.set(resultado.ok ? null : resultado.problem),
+          error: () => this.problema.set(null),
+        }),
+      ),
     inject(DestroyRef),
   );
   private iniciado = false;
@@ -31,6 +39,8 @@ export class CatalogoCategoriasDocumento implements LookupCompleto<CategoriaDocu
   readonly opcoes: Signal<readonly CategoriaDocumentoDto[]> = this.lookup.opcoes;
   /** `true` quando a última tentativa não trouxe o catálogo. */
   readonly comErro: Signal<boolean> = this.lookup.comErro;
+  /** A recusa da API na última tentativa; `null` quando deu certo ou falhou sem resposta da API. */
+  readonly ultimoProblema: Signal<ProblemDetails | null> = this.problema.asReadonly();
   /** `true` antes da primeira busca e durante cada tentativa. */
   readonly pendente: Signal<boolean> = this.lookup.pendente;
 
