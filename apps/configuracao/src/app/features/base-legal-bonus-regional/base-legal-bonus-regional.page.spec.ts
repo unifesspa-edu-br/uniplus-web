@@ -11,6 +11,10 @@ import {
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const LINK_PROXIMA =
   '</api/configuracao/base-legal-bonus-regional?cursor=abc&direction=next>; rel="next"';
@@ -191,6 +195,7 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([portaria]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
@@ -254,7 +259,7 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
 
       expect(linhas()[0].querySelector('td')?.textContent).toContain('Não carregado');
       expect(p.erros).toHaveBeenCalledTimes(1);
-      const alerta = p.elemento('cfg-alerta-nova-tentativa');
+      const alerta = p.elemento('ui-alerta-nova-tentativa');
       expect(alerta.textContent).toContain('Tipos de instrumento não carregados');
       const tentar = alerta.querySelector('button') as HTMLButtonElement;
       tentar.focus();
@@ -266,7 +271,7 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
         .flush([{ codigo: 'PORTARIA', nome: 'Portaria' }]);
       await p.propagar();
 
-      expect(p.fixture.nativeElement.querySelector('cfg-alerta-nova-tentativa')).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
       expect(linhas()[0].querySelector('td')?.textContent).toContain('Portaria');
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
@@ -274,7 +279,7 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
     it('a falha por falta de permissão não gera toast', async () => {
       p = await montarPagina([portaria], { falha: 403 });
 
-      expect(p.elemento('cfg-alerta-nova-tentativa')).toBeTruthy();
+      expect(p.elemento('ui-alerta-nova-tentativa')).toBeTruthy();
       expect(p.erros).not.toHaveBeenCalled();
     });
   });

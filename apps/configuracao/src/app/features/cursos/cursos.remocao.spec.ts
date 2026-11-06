@@ -14,6 +14,10 @@ import {
   recusaDeCampo,
   sucesso,
 } from './cursos.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BLOQUEIO = 'Não é possível remover um curso referenciado por uma oferta de curso ativa';
 
@@ -219,6 +223,7 @@ describe('CursosPage — remoção, foco e leituras', () => {
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
       expect(tentar.getAttribute('aria-busy')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       await p.recarregarCom([engCiv]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });

@@ -15,6 +15,10 @@ import {
   problem,
   PaginaDeTeste,
 } from './pesos-enem.testing';
+import {
+  TEXTO_REPETIDA,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PesosEnemPage — lista de grupos', () => {
   let t: PaginaDeTeste;
@@ -25,7 +29,7 @@ describe('PesosEnemPage — lista de grupos', () => {
 
   afterEach(() => t.verificar());
 
-  it('PesosEnemPage_FalhaRepetidaDosGrupos_AnunciaNoAlertaDosGrupos', async () => {
+  it('PesosEnemPage_FalhaRepetidaDosGrupos_MostraEAnunciaNoAlertaDosGrupos', async () => {
     t.fixture.detectChanges();
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
@@ -41,8 +45,12 @@ describe('PesosEnemPage — lista de grupos', () => {
     t.fixture.detectChanges();
 
     expect(
-      raiz.querySelector('#cfg-pesos-enem-grupos-tentar')?.closest('ui-alert')?.textContent,
-    ).toContain('Tentativa 2 sem sucesso.');
+      situacaoDaNovaTentativa(
+        raiz
+          .querySelector('#cfg-pesos-enem-grupos-tentar')
+          ?.closest('ui-alerta-nova-tentativa') as HTMLElement,
+      ),
+    ).toBe(TEXTO_REPETIDA);
   });
 
   it('PesosEnemPage_ListaDeGruposVazia_TrataComoFalhaDeCarregamento', async () => {

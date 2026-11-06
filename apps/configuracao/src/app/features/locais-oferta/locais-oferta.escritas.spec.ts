@@ -13,6 +13,11 @@ import {
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
+import {
+  situacaoDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 import { LocaisOfertaPage } from './locais-oferta.page';
 
 const BASE = 'http://localhost:5000';
@@ -286,7 +291,7 @@ describe('Escritas de locais de oferta', () => {
   describe('falha ao carregar os campi do formulário', () => {
     const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
     const tentar = (): HTMLButtonElement | null =>
-      raiz().querySelector<HTMLButtonElement>('button.cfg-link-button');
+      raiz().querySelector<HTMLButtonElement>('button.link-button');
 
     it('"Tentar novamente" fica indisponível, mantém o foco e leva ao campo quando dá certo', async () => {
       elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
@@ -311,25 +316,58 @@ describe('Escritas de locais de oferta', () => {
     });
   });
 
-  describe('anúncio das tentativas de ler os campi', () => {
-    it('anuncia cada tentativa, também a segunda falha seguida', async () => {
-      const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
-      const anuncio = (): string =>
-        raiz().querySelectorAll('cfg-local-oferta-formulario p.sr-only[role="status"]')[1]
-          ?.textContent ?? '';
-      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-      await propagar();
+  describe('nova tentativa de ler os campi, na lista e no drawer', () => {
+    const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
+    const falharCampi = async (): Promise<void> => {
       controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
       await propagar();
+    };
+    const tentarNoDrawer = async (): Promise<void> => {
+      elemento<HTMLButtonElement>('cfg-local-oferta-formulario button.link-button').click();
+      await propagar();
+    };
 
-      for (let vez = 0; vez < 2; vez++) {
-        raiz().querySelector<HTMLButtonElement>('button.cfg-link-button')?.click();
-        await propagar();
-        expect(anuncio()).toBe('Lendo campi...');
-        controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
-        await propagar();
-        expect(anuncio()).toBe('Falha na leitura: campi.');
-      }
+    it('no drawer aberto, mostra e anuncia cada tentativa', async () => {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      await falharCampi();
+      const formulario = elemento('cfg-local-oferta-formulario');
+
+      await tentarNoDrawer();
+      expect(situacaoDaNovaTentativa(formulario)).toBe(textoTentandoDe('campi'));
+      await falharCampi();
+      expect(situacaoDaNovaTentativa(formulario)).toBe(textoRepetidaDe('campi'));
+    });
+
+    it('fechar o drawer no meio da leitura passa o mesmo aviso à lista, sem repetir', async () => {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      await falharCampi();
+      await tentarNoDrawer();
+
+      edicao.fechar();
+      await propagar();
+      expect(situacaoDaNovaTentativa(raiz())).toBe(textoTentandoDe('campi'));
+
+      await falharCampi();
+      expect(situacaoDaNovaTentativa(raiz())).toBe(textoRepetidaDe('campi'));
+    });
+
+    it('abrir o drawer no meio da leitura pedida na lista mostra o mesmo aviso no drawer', async () => {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      await falharCampi();
+      edicao.fechar();
+      await propagar();
+      elemento<HTMLButtonElement>('ui-lookup-alert .link-button').click();
+      await propagar();
+
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      expect(situacaoDaNovaTentativa(elemento('cfg-local-oferta-formulario'))).toBe(
+        textoTentandoDe('campi'),
+      );
+      controller.expectOne(CAMPI).flush([]);
     });
   });
 
@@ -711,7 +749,7 @@ describe('Escritas de locais de oferta', () => {
         headers: { 'content-type': 'application/problem+json' },
       });
     await propagar();
-    const tentar = elemento<HTMLButtonElement>('.cfg-locais__retry button');
+    const tentar = elemento<HTMLButtonElement>('ui-alerta-nova-tentativa button');
     expect(tentar.getAttribute('aria-disabled')).toBeNull();
     edicao.pedirRemocao(local);
     edicao.removerConfirmado();

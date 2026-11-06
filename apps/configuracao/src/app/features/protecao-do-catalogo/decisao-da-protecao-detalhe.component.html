@@ -66,27 +66,17 @@
           >
         }
         @if (erroDoHistorico(); as erro) {
-          <ui-alert
-            variant="danger"
-            [heading]="
-              itemInexistente() ? 'Item não encontrado' : 'Não foi possível carregar o histórico'
-            "
-          >
-            {{ erro }}
-            @if (!itemInexistente()) {
-              <div class="list-state__retry">
-                <button
-                  type="button"
-                  class="btn btn--secondary btn--sm"
-                  [attr.aria-disabled]="carregandoHistorico() ? 'true' : null"
-                  [attr.aria-busy]="carregandoHistorico() ? 'true' : null"
-                  (click)="recarregar.emit()"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            }
-          </ui-alert>
+          @if (itemInexistente()) {
+            <ui-alert variant="danger" heading="Item não encontrado">{{ erro }}</ui-alert>
+          } @else {
+            <ui-alerta-nova-tentativa
+              titulo="Não foi possível carregar o histórico"
+              [mensagem]="erro"
+              [pendente]="carregandoHistorico()"
+              [fase]="faseDoHistorico()"
+              (tentar)="recarregar.emit()"
+            />
+          }
         } @else if (historico(); as atos) {
           <cfg-atos-da-protecao [atos]="atos" ariaLabel="Histórico completo do item" />
         }

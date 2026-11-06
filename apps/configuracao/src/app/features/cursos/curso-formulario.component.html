@@ -99,12 +99,12 @@
           <!-- Só com o formulário aberto: a carga de fundo que falha não vira alerta
              escondido no formulário fechado. -->
           @if (aberto() && grupos().falhou) {
-            <cfg-alerta-nova-tentativa
+            <ui-alerta-nova-tentativa
               variante="warning"
               titulo="Grupos de área do ENEM não carregados"
               [mensagem]="grupos().mensagemDeFalha"
               [pendente]="grupos().pendente"
-              [tentativasSemSucesso]="grupos().tentativasSemSucesso"
+              [fase]="grupos().fase"
               idBotao="cfg-curso-grupos-tentar"
               idMensagem="cfg-curso-grupos-falha"
               (tentar)="tentarGrupos.emit()"

@@ -205,7 +205,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
     await p.propagar();
 
     const tentar = p.elemento<HTMLButtonElement>(
-      'cfg-campo-de-municipios .list-state__retry button',
+      'cfg-campo-de-municipios ui-nova-tentativa-do-campo button',
     );
     tentar.focus();
     tentar.click();

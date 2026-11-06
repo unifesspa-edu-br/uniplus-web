@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  ACESSO_NEGADO,
+  CONFLITO,
   ERRO_INTERNO,
   ESCRITA,
   LISTA,
@@ -13,6 +13,11 @@ import {
   recusaDeCampo,
   sucesso,
 } from './precedencias-fase.testing';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const CODIGO = 'uniplus.configuracao.precedencia_fase';
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
@@ -323,12 +328,12 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
     const lerMensagem = (): string | undefined =>
       p.elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim();
 
-    it('recusa (403) mantém o diálogo, a mensagem e o foco no botão, sem toast', async () => {
+    it('recusa (409) mantém o diálogo, a mensagem e o foco no botão, sem toast', async () => {
       const primeira = await p.confirmarRemocao(inscricaoHomologacao);
-      primeira.flush(...problema(403, ACESSO_NEGADO));
+      primeira.flush(...problema(409, CONFLITO));
       await p.propagar();
 
-      expect(lerMensagem()).toBe(ACESSO_NEGADO.title);
+      expect(lerMensagem()).toBe(CONFLITO.title);
       expect(p.edicao.confirmando()).toBe(true);
       expect(p.confirmar().getAttribute('aria-disabled')).toBeNull();
       expect(document.activeElement).toBe(p.confirmar());
@@ -453,29 +458,25 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
-    it('anuncia cada nova tentativa de ler as precedências, também a segunda falha seguida', async () => {
+    it('mostra e anuncia cada nova tentativa de ler as precedências', async () => {
       p.store.recarregar();
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
       await p.propagar();
-      const anuncio = (): string =>
-        p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
-          .textContent ?? '';
+      const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
 
-      for (let vez = 0; vez < 2; vez++) {
-        p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button').click();
-        await p.propagar();
-        expect(anuncio()).toBe('Lendo precedências...');
-        p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
-        await p.propagar();
-        expect(anuncio()).toBe('Falha na leitura: precedências.');
-      }
+      p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button').click();
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
 
     it('4xx mostra o alerta sem toast', async () => {
       p.store.recarregar();
       await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA).flush(...problema(403, ACESSO_NEGADO));
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(404, NAO_ENCONTRADA));
       await p.propagar();
       expect(p.elemento('ui-alert .list-state__retry button')).toBeTruthy();
       expect(p.erros).not.toHaveBeenCalled();

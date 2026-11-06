@@ -9,7 +9,6 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, CampusDto } from '@uniplus/shared-data/configuracao';
-import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -47,19 +46,7 @@ export class CampiStore {
     return this.lista.error() ? 'Erro inesperado ao carregar campi.' : null;
   });
 
-  private readonly falhas = contadorDeFalhas();
-  /** Falhas seguidas das tentativas do operador, para o alerta anunciar uma falha repetida. */
-  readonly tentativasSemSucesso = this.falhas.valor;
-  private tentativaPedida = false;
-
   constructor() {
-    effect(() => {
-      if (this.carregando()) {
-        return;
-      }
-      const falhou = this.mensagemDeErro() !== null;
-      untracked(() => this.registrarDesfecho(falhou));
-    });
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {
@@ -81,7 +68,6 @@ export class CampiStore {
     if (this.carregando()) {
       return;
     }
-    this.tentativaPedida = true;
     this.lista.reload();
   }
 
@@ -92,15 +78,6 @@ export class CampiStore {
     } else {
       this.pagina.set(undefined);
     }
-  }
-
-  private registrarDesfecho(falhou: boolean): void {
-    if (falhou) {
-      this.falhas.registrarFalha(this.tentativaPedida);
-    } else {
-      this.falhas.registrarSucesso();
-    }
-    this.tentativaPedida = false;
   }
 
   private montarParams(): HttpParams {

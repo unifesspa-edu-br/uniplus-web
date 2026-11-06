@@ -19,20 +19,14 @@
 </div>
 
 @if (store.mensagemDeErro(); as mensagem) {
-<ui-alert variant="danger" heading="Não foi possível carregar os perfis">
-  {{ mensagem }}
-  <div>
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os perfis"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 } @if (edicao.erroDaAcao()) {
 <ui-alert variant="danger" heading="Não foi possível concluir">{{ edicao.erroDaAcao() }}</ui-alert>
 }
@@ -60,6 +54,7 @@
   [catalogo]="store.catalogo()"
   [erroDoCatalogo]="store.erroDoCatalogo()"
   [carregandoCatalogo]="store.carregandoCatalogo()"
+  [faseDoCatalogo]="novaTentativaDoCatalogo.fase()"
   [marcadas]="permissoesMarcadas()"
   (salvar)="edicao.aoEnviar()"
   (alternar)="edicao.alternar($event)"

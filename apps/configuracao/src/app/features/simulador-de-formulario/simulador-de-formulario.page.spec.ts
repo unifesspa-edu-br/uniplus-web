@@ -9,6 +9,11 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimuladorDeFormularioPage } from './simulador-de-formulario.page';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 
@@ -380,7 +385,7 @@ describe('SimuladorDeFormularioPage', () => {
     expect(document.activeElement).toBe(tela().querySelector('select'));
   });
 
-  it('anuncia cada nova tentativa de carregar o modelo, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de carregar o modelo', async () => {
     await abrir(`/simulador?modelo=${ID}`);
     listaDeModelos();
     const falhar = (): void =>
@@ -392,19 +397,16 @@ describe('SimuladorDeFormularioPage', () => {
           headers: { 'Content-Type': 'application/problem+json' },
         },
       );
-    const anuncio = (): string =>
-      tela().querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+    const anuncio = (): string => situacaoDaNovaTentativa(tela());
     falhar();
     harness.detectChanges();
 
-    for (let vez = 0; vez < 2; vez++) {
-      botao('Tentar novamente').click();
-      harness.detectChanges();
-      expect(anuncio()).toBe('Lendo modelo...');
-      falhar();
-      await harness.fixture.whenStable();
-      harness.detectChanges();
-      expect(anuncio()).toBe('Falha na leitura: modelo.');
-    }
+    botao('Tentar novamente').click();
+    harness.detectChanges();
+    expect(anuncio()).toBe(TEXTO_TENTANDO);
+    falhar();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+    expect(anuncio()).toBe(TEXTO_REPETIDA);
   });
 });

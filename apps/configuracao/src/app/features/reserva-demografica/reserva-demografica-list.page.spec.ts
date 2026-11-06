@@ -12,6 +12,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EdicaoDasReservasDemograficas } from './edicao-das-reservas-demograficas';
 import { ReservaDemograficaListPage } from './reserva-demografica-list.page';
 import { ReservaDemograficaStore } from './reserva-demografica.store';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/referencias-reserva-demografica`;
@@ -148,6 +152,7 @@ describe('ReservaDemograficaListPage', () => {
     tentar.click();
     await propagar();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     await listar([censo2022]);
     expect(store.referencias()).toEqual([censo2022]);
     expect(texto()).not.toContain('Não foi possível carregar');

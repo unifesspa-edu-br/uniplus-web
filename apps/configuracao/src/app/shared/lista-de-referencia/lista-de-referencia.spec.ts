@@ -9,15 +9,19 @@ import { listaDeReferencia } from './lista-de-referencia';
 const SEGUNDA_PAGINA = '/itens?cursor=p2&direction=next';
 
 function pagina(itens: readonly string[], proxima?: string): ApiResult<readonly string[]> {
-  const headers = proxima === undefined ? new HttpHeaders() : new HttpHeaders({ Link: `<${proxima}>; rel="next"` });
+  const headers =
+    proxima === undefined
+      ? new HttpHeaders()
+      : new HttpHeaders({ Link: `<${proxima}>; rel="next"` });
   return apiOk<readonly string[]>(itens, 200, headers);
 }
 
 describe('listaDeReferencia', () => {
   it('recarga vazia mantém a lista completa anterior, com todas as páginas', () => {
-    let respostas: ((cursor?: Cursor) => ApiResult<readonly string[]>) = (cursor) =>
+    let respostas: (cursor?: Cursor) => ApiResult<readonly string[]> = (cursor) =>
       cursor === undefined ? pagina(['a', 'b'], SEGUNDA_PAGINA) : pagina(['c']);
-    const listar = (cursor?: Cursor): Observable<ApiResult<readonly string[]>> => of(respostas(cursor));
+    const listar = (cursor?: Cursor): Observable<ApiResult<readonly string[]>> =>
+      of(respostas(cursor));
     const lista = listaDeReferencia(listar, TestBed.inject(DestroyRef));
 
     lista.garantirCarregado();
@@ -30,7 +34,7 @@ describe('listaDeReferencia', () => {
     expect(lista.falhou()).toBe(false);
   });
 
-  it('conta as falhas seguidas do operador, inclusive síncronas, e recomeça na recarga automática', () => {
+  it('a falha síncrona deixa a lista como falha, e a nova tentativa que dá certo a limpa', () => {
     let falhar = true;
     const listar = (): Observable<ApiResult<readonly string[]>> =>
       falhar ? throwError(() => new Error('falha síncrona')) : of(pagina(['a']));
@@ -38,19 +42,14 @@ describe('listaDeReferencia', () => {
 
     lista.garantirCarregado();
     expect(lista.falhou()).toBe(true);
-    expect(lista.tentativasSemSucesso()).toBe(1);
+    expect(lista.pendente()).toBe(false);
 
     lista.tentarDeNovo();
-    expect(lista.tentativasSemSucesso()).toBe(2);
-    lista.tentarDeNovo();
-    expect(lista.tentativasSemSucesso()).toBe(3);
-
-    lista.recarregar();
-    expect(lista.tentativasSemSucesso()).toBe(1);
+    expect(lista.falhou()).toBe(true);
 
     falhar = false;
     lista.tentarDeNovo();
-    expect(lista.tentativasSemSucesso()).toBe(0);
     expect(lista.falhou()).toBe(false);
+    expect(lista.opcoes()).toEqual(['a']);
   });
 });

@@ -9,6 +9,11 @@ import {
   urlDoFato,
 } from './fatos-candidato.testing';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDoAlerta,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const DEFINICAO = '#cfg-fato-definicao';
 const campo = (nome: string): string => `${DEFINICAO} [formcontrolname="${nome}"]`;
@@ -395,6 +400,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
       p.atenderApoios();
       await p.propagar();
 
+      await p.acionar(p.botaoPeloTexto('Definição', p.drawerDoFato()) as HTMLButtonElement);
       expect(p.texto()).toContain('Fases não carregadas');
       const tentar = p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement;
       await p.acionar(tentar);
@@ -407,7 +413,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
       expect(document.activeElement).toBe(p.elemento('#cfg-fato-def-pontoResolucao'));
     });
 
-    it('anuncia cada nova tentativa de ler as fases, também a segunda falha seguida', async () => {
+    it('mostra e anuncia cada nova tentativa de ler as fases', async () => {
       p = await montarPagina([derivadoBooleano]);
       await p.acionar(p.editar(derivadoBooleano));
       p.http.expectOne(urlDoFato(derivadoBooleano)).flush(structuredClone(derivadoBooleano));
@@ -419,19 +425,13 @@ describe('FatosCandidatoPage — definição do fato', () => {
         p.atenderApoios();
         await p.propagar();
       };
-      const anuncio = (): string =>
-        p.drawerDoFato().querySelector('cfg-fato-definicao span.sr-only[role="status"]')
-          ?.textContent ?? '';
+      const anuncio = (): string => situacaoDoAlerta(p.drawerDoFato(), 'Fases não carregadas');
       await falhar();
 
-      for (let vez = 0; vez < 2; vez++) {
-        await p.acionar(
-          p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement,
-        );
-        expect(anuncio()).toBe('Lendo fases...');
-        await falhar();
-        expect(anuncio()).toBe('Falha na leitura: fases.');
-      }
+      await p.acionar(p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement);
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      await falhar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
   });
 

@@ -555,7 +555,7 @@ describe('ConcessoesPage', () => {
       void edicao.revogar('Saiu da função.', 'betina@uniplus-test.local');
       await atualizar();
       expect(tentar?.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar?.getAttribute('aria-busy')).toBe('true');
+      expect(tentar?.getAttribute('aria-busy')).toBeNull();
       tentar?.click();
       await atualizar();
       http.expectNone((r) => r.url === URL);

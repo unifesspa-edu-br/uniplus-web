@@ -1,4 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import {
+  type FaseDaNovaTentativa,
+  NovaTentativaDoCampoComponent,
+} from '@uniplus/shared-ui/components';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { TAMANHO_MAXIMO_DA_BUSCA } from './busca-de-unidades';
@@ -6,7 +10,7 @@ import { TAMANHO_MAXIMO_DA_BUSCA } from './busca-de-unidades';
 /** O campo "unidade superior": busca no servidor e select com as unidades encontradas. */
 @Component({
   selector: 'cfg-unidade-superior-campo',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NovaTentativaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './unidade-superior-campo.component.html',
 })
@@ -18,6 +22,7 @@ export class UnidadeSuperiorCampoComponent {
   readonly emEdicaoId = input.required<string | null>();
   readonly comErro = input.required<boolean>();
   readonly carregando = input.required<boolean>();
+  readonly fase = input.required<FaseDaNovaTentativa>();
   /** A recusa do servidor ou a regra violada, quando há. */
   readonly erro = input.required<string | null>();
   readonly recarregar = output<void>();
@@ -26,13 +31,5 @@ export class UnidadeSuperiorCampoComponent {
 
   protected aoDigitar(evento: Event): void {
     this.termo.set((evento.target as HTMLInputElement).value);
-  }
-
-  protected aoTentarNovamente(evento: Event): void {
-    if (this.carregando()) {
-      evento.preventDefault();
-      return;
-    }
-    this.recarregar.emit();
   }
 }

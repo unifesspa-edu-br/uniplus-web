@@ -5,6 +5,11 @@ import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-cor
 import { CONFIGURACAO_BASE_PATH, type AtoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { HistoricoDaProtecaoComponent } from './historico-da-protecao';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-0000000000d2';
@@ -38,7 +43,9 @@ describe('HistoricoDaProtecaoComponent', () => {
 
   afterEach(() => controller.verify());
 
-  function montar(cadastro: 'TIPO_DOCUMENTO' | 'FATO'): ComponentFixture<HistoricoDaProtecaoComponent> {
+  function montar(
+    cadastro: 'TIPO_DOCUMENTO' | 'FATO',
+  ): ComponentFixture<HistoricoDaProtecaoComponent> {
     const fixture = TestBed.createComponent(HistoricoDaProtecaoComponent);
     fixture.componentRef.setInput('cadastro', cadastro);
     fixture.componentRef.setInput('itemId', ID);
@@ -52,7 +59,9 @@ describe('HistoricoDaProtecaoComponent', () => {
   it('lê os atos do tipo de documento ao abrir e os mostra em ordem, com quem agiu e a justificativa', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
     const req = controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`);
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo-ato', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('protecao-do-catalogo-ato', 1),
+    );
     req.flush([
       ato({}),
       ato({
@@ -67,9 +76,9 @@ describe('HistoricoDaProtecaoComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    const itens = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-atos__item')).map(
-      (item) => item.textContent?.replace(/\s+/g, ' ').trim(),
-    );
+    const itens = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('.cfg-atos__item'),
+    ).map((item) => item.textContent?.replace(/\s+/g, ' ').trim());
     expect(itens).toHaveLength(3);
     expect(itens[0]).toContain('Solicitação');
     expect(itens[0]).toContain('30/10/2026');
@@ -83,7 +92,9 @@ describe('HistoricoDaProtecaoComponent', () => {
 
   it('lê os atos do fato na rota do fato', async () => {
     const fixture = montar('FATO');
-    controller.expectOne(`${ADMIN}/fatos-candidato/${ID}/protecao/atos`).flush([ato({ ato: 'REPROVACAO' })]);
+    controller
+      .expectOne(`${ADMIN}/fatos-candidato/${ID}/protecao/atos`)
+      .flush([ato({ ato: 'REPROVACAO' })]);
     await fixture.whenStable();
     fixture.detectChanges();
     expect(texto(fixture)).toContain('Reprovação');
@@ -107,8 +118,7 @@ describe('HistoricoDaProtecaoComponent', () => {
   ] as const;
 
   const anuncio = (fixture: ComponentFixture<unknown>): string =>
-    (fixture.nativeElement as HTMLElement).querySelector('[role="status"].sr-only')?.textContent ??
-    '';
+    situacaoDaNovaTentativa(fixture.nativeElement as HTMLElement);
 
   it('na recusa mostra o motivo, mantém o alerta durante a nova tentativa e leva o foco ao título quando dá certo', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
@@ -132,7 +142,7 @@ describe('HistoricoDaProtecaoComponent', () => {
     expect(document.activeElement).toBe(raiz.querySelector('h3'));
   });
 
-  it('anuncia a tentativa e a segunda falha seguida, que deixa o alerta com o mesmo texto', async () => {
+  it('mostra e anuncia a tentativa e a nova falha', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
     controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
     await fixture.whenStable();
@@ -143,18 +153,10 @@ describe('HistoricoDaProtecaoComponent', () => {
 
     botao?.click();
     fixture.detectChanges();
-    expect(anuncio(fixture)).toBe('Lendo histórico da proteção...');
+    expect(anuncio(fixture)).toBe(TEXTO_TENTANDO);
     controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(anuncio(fixture)).toBe('Falha na leitura: histórico da proteção.');
-
-    botao?.click();
-    fixture.detectChanges();
-    expect(anuncio(fixture)).toBe('Lendo histórico da proteção...');
-    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
-    await fixture.whenStable();
-    fixture.detectChanges();
-    expect(anuncio(fixture)).toBe('Falha na leitura: histórico da proteção.');
+    expect(anuncio(fixture)).toBe(TEXTO_REPETIDA);
   });
 });

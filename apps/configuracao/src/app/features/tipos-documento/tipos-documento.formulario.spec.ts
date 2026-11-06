@@ -12,6 +12,14 @@ import {
   rg,
   sucesso,
 } from './tipos-documento.testing';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+  situacoesDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('TiposDocumentoPage — formulário', () => {
   let p: Pagina;
@@ -350,23 +358,50 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.recarregarCom([rg]);
     });
 
-    it('anuncia cada nova tentativa do catálogo, também a segunda falha seguida', async () => {
+    it('mostra e anuncia, no drawer, cada nova tentativa do catálogo', async () => {
       p = await montarPagina([], { categorias: 'falha' });
       await p.acionarNovo();
       const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
       const anuncio = (): string =>
-        p.fixture.nativeElement.querySelectorAll('ui-drawer span.sr-only[role="status"]')[1]
-          ?.textContent ?? '';
+        situacaoDaNovaTentativa(p.elemento('cfg-tipo-documento-formulario'));
 
-      for (let vez = 0; vez < 2; vez++) {
-        tentar.click();
-        await p.propagar();
-        expect(anuncio()).toBe('Lendo categorias...');
-        p.atenderCategorias('falha');
-        await p.propagar();
-        expect(anuncio()).toBe('Falha na leitura: categorias.');
-        expect(document.activeElement).not.toBe(p.campo('categoria'));
-      }
+      tentar.click();
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      p.atenderCategorias('falha');
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
+      expect(document.activeElement).not.toBe(p.campo('categoria'));
+    });
+
+    it('fechar o drawer no meio da leitura passa o aviso à lista; abri-lo no meio, ao drawer', async () => {
+      p = await montarPagina([], { categorias: 'falha' });
+      await p.acionarNovo();
+      const formulario = p.elemento('cfg-tipo-documento-formulario');
+      p.elemento<HTMLButtonElement>(
+        'cfg-tipo-documento-formulario ui-alerta-nova-tentativa button',
+      ).click();
+      await p.propagar();
+      expect(situacaoDaNovaTentativa(formulario)).toBe(TEXTO_TENTANDO);
+
+      p.elemento<HTMLButtonElement>(
+        'cfg-tipo-documento-formulario button.btn--tertiary:not([aria-label])',
+      ).click();
+      await p.propagar();
+      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([
+        textoTentandoDe('categorias'),
+      ]);
+
+      p.atenderCategorias('falha');
+      await p.propagar();
+      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([
+        textoRepetidaDe('categorias'),
+      ]);
+
+      await p.acionarNovo();
+      expect(situacaoDaNovaTentativa(p.elemento('cfg-tipo-documento-formulario'))).toBe(
+        TEXTO_REPETIDA,
+      );
     });
 
     it('associa a dica e a mensagem de erro ao campo para leitor de tela', async () => {

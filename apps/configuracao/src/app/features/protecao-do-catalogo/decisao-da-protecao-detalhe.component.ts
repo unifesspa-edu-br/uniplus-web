@@ -4,8 +4,10 @@ import {
   type DecisaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
+  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
+  type FaseDaNovaTentativa,
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
@@ -24,6 +26,7 @@ import {
   standalone: true,
   imports: [
     AlertComponent,
+    AlertaNovaTentativaComponent,
     AtosDaProtecaoComponent,
     DetalheDaProtecaoComponent,
     DrawerComponent,
@@ -41,6 +44,7 @@ export class DecisaoDaProtecaoDetalheComponent {
   readonly carregandoHistorico = input.required<boolean>();
   readonly erroDoHistorico = input.required<string | null>();
   readonly itemInexistente = input.required<boolean>();
+  readonly faseDoHistorico = input.required<FaseDaNovaTentativa>();
   readonly recarregar = output<void>();
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;

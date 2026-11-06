@@ -2,7 +2,11 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, switchMap } from 'rxjs';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
-import { PERMISSAO, PermissoesService, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
+import {
+  PERMISSAO,
+  PermissoesService,
+  type CodigoDePermissao,
+} from '@uniplus/shared-auth/bootstrap';
 import {
   ProtecaoDoCatalogoApi,
   type AprovacaoDaProtecaoDto,
@@ -68,7 +72,9 @@ export class AprovacaoDoCatalogo {
     ),
   );
 
-  private readonly porId = computed(() => new Map(this._itens().map((item) => [item.id, item.aprovacao] as const)));
+  private readonly porId = computed(
+    () => new Map(this._itens().map((item) => [item.id, item.aprovacao] as const)),
+  );
 
   /** Cada leitura cancela a anterior: a resposta velha que chega depois não sobrescreve a nova. */
   private readonly leituras = new Subject<void>();
@@ -95,12 +101,13 @@ export class AprovacaoDoCatalogo {
       });
   }
 
-  /** Lê a lista só de quem pode vê-la: quem apenas consulta o cadastro não a pede. */
-  carregar(): void {
-    if (!PERMISSOES_DE_LEITURA.some((codigo) => this.permissoes.tem(codigo))) return;
+  /** Lê a lista só de quem pode vê-la: quem apenas consulta o cadastro não a pede. Devolve se leu. */
+  carregar(): boolean {
+    if (!PERMISSOES_DE_LEITURA.some((codigo) => this.permissoes.tem(codigo))) return false;
     this._comErro.set(false);
     this._pendente.set(true);
     this.leituras.next();
+    return true;
   }
 
   /** Onde o item está no circuito; `null` enquanto a lista não chegou ou quando a leitura falhou. */

@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Pagina, montarPagina, problema, reitoria, unifesspa } from './instituicao.testing';
+import {
+  situacaoDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('InstituicaoPage — leitura', () => {
   let p: Pagina;
@@ -82,7 +87,7 @@ describe('InstituicaoPage — leitura', () => {
       p.store.recarregar();
       await p.falharLeitura(503);
 
-      expect(p.elemento('cfg-alerta-nova-tentativa').textContent).toContain(
+      expect(p.elemento('ui-alerta-nova-tentativa').textContent).toContain(
         'Não foi possível carregar a instituição',
       );
       expect(p.fixture.nativeElement.querySelector('cfg-instituicao-painel')).toBeNull();
@@ -99,7 +104,7 @@ describe('InstituicaoPage — leitura', () => {
       p.store.recarregar();
       await p.falharLeitura(403);
 
-      expect(p.elemento('cfg-alerta-nova-tentativa')).toBeTruthy();
+      expect(p.elemento('ui-alerta-nova-tentativa')).toBeTruthy();
       expect(p.erros).not.toHaveBeenCalled();
     });
 
@@ -155,7 +160,7 @@ describe('InstituicaoPage — campos do formulário', () => {
 
   describe('quando as reitorias não vêm', () => {
     const tentar = (): HTMLButtonElement =>
-      p.elemento<HTMLButtonElement>('.field__error .cfg-link-button');
+      p.elemento<HTMLButtonElement>('.field__error .link-button');
     const aviso = (): string => p.elemento('#cfg-instituicao-reitorias-erro').textContent ?? '';
     const select = (): HTMLSelectElement => p.elemento('select[formcontrolname="unidadeRaizId"]');
 
@@ -173,7 +178,7 @@ describe('InstituicaoPage — campos do formulário', () => {
       await p.propagar();
       await p.propagar();
 
-      expect(p.fixture.nativeElement.querySelector('.field__error .cfg-link-button')).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('.field__error .link-button')).toBeNull();
       expect(p.fixture.nativeElement.querySelectorAll('select option')).toHaveLength(2);
       expect(document.activeElement).toBe(select());
     });
@@ -195,28 +200,25 @@ describe('InstituicaoPage — campos do formulário', () => {
       await p.propagar();
     });
 
-    it('a falha repetida anuncia a tentativa, avisa por toast e não tira o foco do botão', async () => {
+    it('a falha repetida mostra e anuncia a tentativa, avisa por toast e não tira o foco do botão', async () => {
       p = await montarPagina(null, 'falha');
       await p.abrirFormulario();
 
       tentar().focus();
       tentar().click();
       await p.propagar();
+      expect(situacaoDaNovaTentativa(p.elemento('#cfg-instituicao-reitorias-erro'))).toBe(
+        textoTentandoDe('unidades'),
+      );
       p.reitoriasRecarregadas().flush(...problema(503));
       await p.propagar();
       await p.propagar();
 
-      expect(aviso()).toContain('Tentativa 2 sem sucesso.');
+      expect(situacaoDaNovaTentativa(p.elemento('#cfg-instituicao-reitorias-erro'))).toBe(
+        textoRepetidaDe('unidades'),
+      );
       expect(p.erros).toHaveBeenCalledTimes(2);
       expect(document.activeElement).toBe(tentar());
-      expect(p.reitoriasStore.tentativasSemSucesso()).toBe(2);
-
-      tentar().click();
-      await p.propagar();
-      p.reitoriasRecarregadas().flush(...problema(503));
-      await p.propagar();
-      await p.propagar();
-      expect(aviso()).toContain('Tentativa 3 sem sucesso.');
     });
 
     it('explica a falha na ficha, fora do drawer, em vez de só dizer que não carregou', async () => {

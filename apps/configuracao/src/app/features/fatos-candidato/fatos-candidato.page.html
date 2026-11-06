@@ -8,25 +8,18 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar os fatos">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os fatos"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
-<span class="sr-only" role="status">{{ anuncioDeApoio() }}</span>
 <cfg-fatos-candidato-lista
   [fatos]="store.fatosBuscados()"
   [carregando]="store.carregando()"
@@ -58,6 +51,7 @@
   [catalogoFalhou]="detalhe.catalogoFalhou()"
   [catalogoPendente]="detalhe.catalogoPendente()"
   [mensagemDoCatalogo]="detalhe.mensagemDoCatalogo()"
+  [faseDoCatalogo]="novaTentativaDoCatalogo.fase()"
   (tentarCatalogo)="tentarCatalogoDoDetalhe()"
   (editar)="editarDoDetalhe($event)"
   (aceitar)="aceitarDoDetalhe($event)"

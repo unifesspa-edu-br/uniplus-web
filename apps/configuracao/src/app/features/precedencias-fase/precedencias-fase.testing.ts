@@ -54,8 +54,11 @@ export function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
   };
 }
 
-/** O 403 que a camada de autorização da API emite. */
-export const ACESSO_NEGADO = { code: 'uniplus.auth.forbidden', title: 'Acesso negado' } as const;
+/** Um 409 de conflito de estado, recusa 4xx que chega à tela (o 403 vai à página de acesso negado). */
+export const CONFLITO = {
+  code: 'uniplus.configuracao.conflito',
+  title: 'A aresta mudou desde a leitura.',
+} as const;
 /** O 500 que o middleware global de exceções da API emite. */
 export const ERRO_INTERNO = {
   code: 'uniplus.internal.unexpected',

@@ -5,7 +5,13 @@ import {
   ROTULO_ORIGEM_DATA_FASE,
   OrigemDataFase,
 } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DrawerComponent,
+  type FaseDaNovaTentativa,
+  NovaTentativaDoCampoComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CODIGO_FASE_SOLICITACAO_ISENCAO, FaseForm } from './fase-canonica-form';
@@ -13,7 +19,13 @@ import { CODIGO_FASE_SOLICITACAO_ISENCAO, FaseForm } from './fase-canonica-form'
 @Component({
   selector: 'cfg-fase-canonica-formulario',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, DrawerComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    NovaTentativaDoCampoComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fase-canonica-formulario.component.html',
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
@@ -24,8 +36,7 @@ export class FaseCanonicaFormularioComponent {
   readonly salvando = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
-  readonly anuncioDaLeitura = input('');
+  readonly faseDasUnidades = input.required<FaseDaNovaTentativa>();
   readonly erroUnidades = input.required<boolean>();
   /** As unidades estão sendo lidas: o "Tentar novamente" fica indisponível, sem perder o foco. */
   readonly carregandoUnidades = input.required<boolean>();

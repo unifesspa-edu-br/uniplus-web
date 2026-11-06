@@ -12,6 +12,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EdicaoDosRecursosAcessibilidade } from './edicao-dos-recursos-acessibilidade';
 import { RecursosAcessibilidadeListPage } from './recursos-acessibilidade-list.page';
 import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/recursos-acessibilidade`;
@@ -141,6 +145,7 @@ describe('RecursosAcessibilidadeListPage', () => {
     tentar.click();
     await propagar();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     await listar([ledor]);
     expect(store.recursos()).toEqual([ledor]);
     expect(texto()).not.toContain('Não foi possível carregar');

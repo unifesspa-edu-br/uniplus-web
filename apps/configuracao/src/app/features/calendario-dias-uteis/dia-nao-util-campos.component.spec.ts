@@ -1,7 +1,9 @@
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AlteracaoDoLocal } from './busca-de-municipios';
 import { DiaNaoUtilCamposComponent } from './dia-nao-util-campos.component';
+import { MUNICIPIO_BUSCA_VAZIA, type MunicipioBuscaState } from './calendario-dias-uteis.util';
 import { aplicarAbrangencia, criarGrupoDeDiaNaoUtil, type GrupoDoDia } from './dia-nao-util-form';
 
 describe('DiaNaoUtilCamposComponent', () => {
@@ -155,9 +157,13 @@ describe('DiaNaoUtilCamposComponent', () => {
     fixture.componentRef.setInput('busca', { opcoes: [], carregando: false, erro: true });
     fixture.detectChanges();
     expect(campo('[role="alert"]').textContent).toContain('Não foi possível buscar os municípios.');
-    campo<HTMLButtonElement>('[role="alert"] button').click();
+    campo<HTMLButtonElement>('ui-nova-tentativa-do-campo button').click();
     expect(alteracoes).toEqual([{ tipo: 'novaTentativa' }]);
-    expect(document.activeElement).toBe(campo('#busca-municipio-3'));
+
+    fixture.componentRef.setInput('busca', { opcoes: [], carregando: true, erro: false });
+    fixture.detectChanges();
+    expect(campo('ui-situacao-da-nova-tentativa').textContent).toBe('Recarregando municípios…');
+    expect(raiz().textContent).not.toContain('Consultando a API Geo…');
 
     const marabá = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
     fixture.componentRef.setInput('busca', { opcoes: [marabá], carregando: false, erro: false });
@@ -167,5 +173,59 @@ describe('DiaNaoUtilCamposComponent', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     expect(raiz().textContent).toContain('Selecionado: Marabá — PA');
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [DiaNaoUtilCamposComponent],
+  template: `<cfg-dia-nao-util-campos
+    [grupo]="grupo"
+    sufixoDeId="3"
+    [busca]="busca()"
+    (alteracao)="aoAlterar($event)"
+  />`,
+})
+class PaiDoDiaComponent {
+  readonly grupo = criarGrupoDeDiaNaoUtil();
+  readonly busca = signal<MunicipioBuscaState>(MUNICIPIO_BUSCA_VAZIA);
+
+  /** Como o pai real: grava o estado da busca na hora, e o filho só o vê na atualização da tela. */
+  protected aoAlterar(alteracao: AlteracaoDoLocal): void {
+    if (alteracao.tipo === 'novaTentativa') {
+      this.busca.set({ opcoes: [], carregando: true, erro: false });
+    }
+  }
+}
+
+describe('DiaNaoUtilCamposComponent — nova tentativa da busca com o pai real', () => {
+  it('a busca que dá certo depois do "Tentar novamente" leva o foco ao campo de busca', async () => {
+    TestBed.configureTestingModule({ imports: [PaiDoDiaComponent] });
+    const fixture = TestBed.createComponent(PaiDoDiaComponent);
+    const pai = fixture.componentInstance;
+    pai.grupo.controls.abrangencia.setValue('MUNICIPAL');
+    aplicarAbrangencia(pai.grupo);
+    pai.grupo.controls.buscaMunicipio.setValue('Zzz');
+    pai.busca.set({ opcoes: [], carregando: false, erro: true });
+    fixture.detectChanges();
+    const raiz = fixture.nativeElement as HTMLElement;
+    const tentar = raiz.querySelector('ui-nova-tentativa-do-campo button') as HTMLButtonElement;
+
+    tentar.focus();
+    tentar.click();
+    await new Promise((resolver) => setTimeout(resolver));
+    await fixture.whenStable();
+    expect(raiz.querySelector('ui-nova-tentativa-do-campo')?.textContent).toContain(
+      'Recarregando municípios…',
+    );
+    expect(document.activeElement).toBe(tentar);
+
+    pai.busca.set({ opcoes: [], carregando: false, erro: false });
+    await fixture.whenStable();
+    await new Promise((resolver) => setTimeout(resolver));
+    await fixture.whenStable();
+
+    expect(raiz.querySelector('ui-nova-tentativa-do-campo')).toBeNull();
+    expect(document.activeElement).toBe(raiz.querySelector('#busca-municipio-3'));
   });
 });

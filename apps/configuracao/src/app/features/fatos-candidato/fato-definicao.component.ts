@@ -1,8 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { AlertComponent, RecolhivelComponent } from '@uniplus/shared-ui/components';
-import { novaTentativaAnunciada } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  RecolhivelComponent,
+} from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import {
   CLASSIFICACOES_DE_PROTECAO,
@@ -34,6 +38,7 @@ type CampoDaDefinicao = keyof EdicaoDoFato['definicao']['controls'];
 @Component({
   selector: 'cfg-fato-definicao',
   imports: [
+    AlertaNovaTentativaComponent,
     NgTemplateOutlet,
     ReactiveFormsModule,
     AlertComponent,
@@ -55,14 +60,11 @@ export class FatoDefinicaoComponent {
   protected readonly citacoes = this.edicao.citacoes;
   protected readonly recusa = this.edicao.recusaDaDefinicao;
   protected readonly fases = this.leitura.fases;
-  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncioDaLeitura = signal('');
-  private readonly novaTentativaDasFases = novaTentativaAnunciada({
-    nome: 'fases',
+  protected readonly novaTentativaDasFases = acompanharNovaTentativa({
+    assunto: 'fases',
     pendente: this.fases.pendente,
     falhou: this.fases.falhou,
     destino: () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO),
-    anuncio: this.anuncioDaLeitura,
   });
   protected readonly eixosSomenteLeitura = computed(() =>
     eixosSomenteLeitura(this.fato(), this.leitura.tipo()),

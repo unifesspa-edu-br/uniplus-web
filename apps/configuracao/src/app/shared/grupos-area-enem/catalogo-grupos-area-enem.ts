@@ -37,8 +37,6 @@ export class CatalogoGruposAreaEnem implements LookupCompleto<GrupoAreaEnemDto> 
   readonly falhou: Signal<boolean> = this.lista.falhou;
   /** A recusa da API na última tentativa (ver `listaDeReferencia`). */
   readonly ultimoProblema: Signal<ProblemDetails | null> = this.lista.ultimoProblema;
-  /** Falhas seguidas das tentativas do operador (ver `listaDeReferencia`). */
-  readonly tentativasSemSucesso: Signal<number> = this.lista.tentativasSemSucesso;
 
   /** Índice por código — é por ele que cursos e pesos gravam o grupo. */
   readonly porCodigo = computed(

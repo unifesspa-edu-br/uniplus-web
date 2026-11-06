@@ -3,7 +3,6 @@ import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 
 /** Valor de `TipoUnidade` da Reitoria no roster fechado (`TIPOS_UNIDADE`). */
 const TIPO_REITORIA = '1';
@@ -43,22 +42,11 @@ export class ReitoriasStore {
       ? this.problemI18n.resolve(problem).title
       : 'Erro inesperado ao carregar as unidades.';
   });
-  private readonly falhas = contadorDeFalhas();
-  /** Falhas seguidas das tentativas do operador, para o aviso anunciar uma falha repetida. */
-  readonly tentativasSemSucesso = this.falhas.valor;
-  private tentativaPedida = false;
   private readonly porId = computed(
     () => new Map(this.reitorias().map((reitoria) => [reitoria.id, reitoria] as const)),
   );
 
   constructor() {
-    effect(() => {
-      if (this.carregando()) {
-        return;
-      }
-      const falhou = this.comErro();
-      untracked(() => this.registrarDesfecho(falhou));
-    });
     effect(() => {
       const problem = this.leitura.problem();
       if (problem && problem.status >= 500) {
@@ -92,16 +80,6 @@ export class ReitoriasStore {
     if (this.carregando()) {
       return;
     }
-    this.tentativaPedida = true;
     this.leitura.reload();
-  }
-
-  private registrarDesfecho(falhou: boolean): void {
-    if (falhou) {
-      this.falhas.registrarFalha(this.tentativaPedida);
-    } else {
-      this.falhas.registrarSucesso();
-    }
-    this.tentativaPedida = false;
   }
 }

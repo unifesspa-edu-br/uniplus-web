@@ -10,6 +10,10 @@ import {
   problema,
   semConteudo,
 } from './calendarios.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('CalendarioDiasUteisListPage', () => {
   let p: PaginaDaLista;
@@ -129,6 +133,7 @@ describe('CalendarioDiasUteisListPage', () => {
       expect(p.erros).toHaveBeenCalledTimes(1);
       const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
       await p.acionar(tentar);
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       await p.recarregarCom([CALENDARIO_ANTERIOR]);
       expect(p.store.mensagemDeErro()).toBeNull();
       expect(document.querySelector('ui-alert')).toBeNull();

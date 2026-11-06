@@ -14,41 +14,27 @@
   remova a aresta e crie outra.
 </ui-alert>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar as precedências">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar as precedências"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 } @if (fases.avisoDeFalha()) {
-<ui-alert variant="warning" heading="Nomes das fases indisponíveis">
-  Não foi possível consultar o cadastro de Fase Canônica agora. A lista mostra só os códigos das
-  fases, e a busca por nome não encontra as arestas existentes.
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="fases.pendente() ? 'true' : null"
-      [attr.aria-busy]="fases.pendente() ? 'true' : null"
-      (click)="tentarNovamenteAsFases()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+<ui-alerta-nova-tentativa
+  titulo="Nomes das fases indisponíveis"
+  mensagem="Não foi possível consultar o cadastro de Fase Canônica agora. A lista mostra só os códigos das fases, e a busca por nome não encontra as arestas existentes."
+  [pendente]="fases.pendente()"
+  [fase]="novaTentativaDasFases.fase()"
+  variante="warning"
+  (tentar)="tentarNovamenteAsFases()"
+/>
 }
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
-<span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
 <cfg-precedencias-fase-lista
   [arestas]="store.arestasFiltradas()"
   [nomesDasFases]="fases.nomes()"
@@ -77,12 +63,12 @@
   [carregandoFases]="fases.pendente()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [anuncioDaLeitura]="anuncioDoFormulario()"
+  [faseDasFases]="novaTentativaDasFases.fase()"
   [salvando]="edicao.salvando()"
   [gravando]="edicao.gravando()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (recarregarFases)="tentarNovamenteAsFasesNoFormulario()"
+  (recarregarFases)="tentarNovamenteAsFases()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover aresta de precedência"

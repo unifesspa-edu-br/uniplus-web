@@ -130,8 +130,10 @@ describe('PesosEnemPage — recusas no envio da edição', () => {
     await t.propagate();
     t.fixture.detectChanges();
 
-    const banner = (t.fixture.nativeElement as HTMLElement).querySelector('#grid-pe-bar .alert');
-    expect(banner?.getAttribute('role')).toBe('alert');
+    const banner = (t.fixture.nativeElement as HTMLElement).querySelector(
+      '#grid-pe-bar .alert [role="alert"]',
+    );
+    expect(banner).not.toBeNull();
     expect(banner?.textContent).toContain(t.edicao.erro() ?? '<sem mensagem>');
   });
 

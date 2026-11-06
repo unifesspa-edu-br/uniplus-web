@@ -13,6 +13,8 @@ import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
 import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
   SegmentedComponent,
@@ -20,7 +22,6 @@ import {
   type UiSegmentedOption,
 } from '@uniplus/shared-ui/components';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import { DecisoesDaProtecaoComponent } from './decisoes-da-protecao.component';
 import { DecisaoDaProtecaoDialogoComponent } from './decisao-da-protecao-dialogo.component';
@@ -45,6 +46,7 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
   selector: 'cfg-protecao-do-catalogo-page',
   standalone: true,
   imports: [
+    AlertaNovaTentativaComponent,
     TemPermissaoDirective,
     AlertComponent,
     DecisoesDaProtecaoComponent,
@@ -91,16 +93,18 @@ export class ProtecaoDoCatalogoPage {
   protected readonly naoEncontrado = this.store.naoEncontrado;
   protected readonly filaPendente = computed(() => this.carregando() || this.edicao.gravando());
 
-  private readonly novaTentativaDaFila = focarAposNovaTentativa(
-    this.filaPendente,
-    computed(() => this.erroDeCarga() !== null),
-    () => document.getElementById('cfg-protecao-titulo'),
-  );
-  private readonly novaTentativaDoDetalhe = focarAposNovaTentativa(
-    this.carregandoDetalhe,
-    computed(() => this.erroDoDetalhe() !== null),
-    () => document.getElementById('cfg-protecao-dados-do-item'),
-  );
+  protected readonly novaTentativaDaFila = acompanharNovaTentativa({
+    assunto: 'fila',
+    pendente: this.filaPendente,
+    falhou: computed(() => this.erroDeCarga() !== null),
+    destino: () => document.getElementById('cfg-protecao-titulo'),
+  });
+  protected readonly novaTentativaDoDetalhe = acompanharNovaTentativa({
+    assunto: 'detalhe do item',
+    pendente: this.carregandoDetalhe,
+    falhou: computed(() => this.erroDoDetalhe() !== null),
+    destino: () => document.getElementById('cfg-protecao-dados-do-item'),
+  });
 
   constructor() {
     effect(() => {

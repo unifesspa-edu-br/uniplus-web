@@ -78,21 +78,14 @@
             }
           </label>
           @if (reitoriasComErro()) {
-            <p
-              class="field__error form-grid__full"
-              id="cfg-instituicao-reitorias-erro"
-              role="alert"
-            >
-              {{ avisoDasReitorias() }}
-              <button
-                type="button"
-                class="cfg-link-button"
-                [attr.aria-disabled]="reitoriasCarregando() ? 'true' : null"
-                [attr.aria-busy]="reitoriasCarregando() ? 'true' : null"
-                (click)="aoTentarReitorias()"
-              >
-                Tentar novamente
-              </button>
+            <p class="field__error form-grid__full" id="cfg-instituicao-reitorias-erro">
+              <span role="alert">Não foi possível carregar as unidades para seleção.</span>
+              <ui-nova-tentativa-do-campo
+                [pendente]="reitoriasCarregando()"
+                [fase]="faseDasReitorias()"
+                assunto="unidades"
+                (tentar)="aoTentarReitorias()"
+              />
             </p>
           }
         </div>

@@ -23,20 +23,14 @@
 >
 
 @if (store.erro(); as erro) {
-<ui-alert variant="danger" heading="Não foi possível carregar o termo">
-  {{ erro }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="indisponivel() ? 'true' : null"
-      [attr.aria-busy]="store.carregando() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar o termo"
+  [mensagem]="erro"
+  [pendente]="store.carregando()"
+  [indisponivel]="indisponivel()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 } @else if (store.carregando()) {
 <div class="cfg-form__loading" role="status">
   <ui-spinner spinnerSize="md" /> Carregando termo...
@@ -113,7 +107,7 @@
       type="button"
       class="btn btn--danger"
       data-testid="recarga-descartar"
-      (click)="edicao.recarregarConfirmado()"
+      (click)="recarregarConfirmado()"
     >
       Descartar e recarregar
     </button>

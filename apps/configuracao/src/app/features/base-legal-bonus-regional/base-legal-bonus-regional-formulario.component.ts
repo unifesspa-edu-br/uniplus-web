@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import {
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DrawerComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoCampoComFormato } from '../../shared/formulario';
 import { BaseLegalForm } from './base-legal-form';

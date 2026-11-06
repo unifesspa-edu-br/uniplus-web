@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { acompanharNovaTentativa, type FaseDaNovaTentativa } from '@uniplus/shared-ui/components';
 import type { GrupoAreaEnemDto } from '@uniplus/shared-data/configuracao';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { nullIfBlank } from '../../shared/formulario';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { motivoDaFalha } from '../../shared/lista-de-referencia';
@@ -10,7 +10,7 @@ import { comPontoFinal } from '../../shared/texto';
 export interface GruposDoFormulario {
   readonly falhou: boolean;
   readonly pendente: boolean;
-  readonly tentativasSemSucesso: number;
+  readonly fase: FaseDaNovaTentativa;
   readonly opcoes: readonly GrupoAreaEnemDto[];
   readonly mensagemDeFalha: string;
   readonly foraDasOpcoes: GrupoAreaEnemDto | null;
@@ -63,7 +63,7 @@ export class GruposDoCurso {
   readonly formulario = computed<GruposDoFormulario>(() => ({
     falhou: this.vocabulario.falhou(),
     pendente: this.vocabulario.pendente(),
-    tentativasSemSucesso: this.vocabulario.tentativasSemSucesso(),
+    fase: this.novaTentativa.fase(),
     opcoes: this.vocabulario.opcoes(),
     mensagemDeFalha: this.mensagemDeFalha(),
     foraDasOpcoes: this.foraDasOpcoes(),
@@ -73,11 +73,12 @@ export class GruposDoCurso {
    * A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai ao select
    * que a lista alimenta, sem sair do formulário.
    */
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.vocabulario.pendente,
-    this.vocabulario.falhou,
-    () => document.getElementById('cfg-curso-grupo-area-enem'),
-  );
+  readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'grupos de área',
+    pendente: this.vocabulario.pendente,
+    falhou: this.vocabulario.falhou,
+    destino: () => document.getElementById('cfg-curso-grupo-area-enem'),
+  });
 
   /** Prepara a leitura para um formulário que abre: o grupo do curso (se houver) e a lista. */
   preparar(grupoDoCurso: GrupoAreaEnemDto | null | undefined): void {

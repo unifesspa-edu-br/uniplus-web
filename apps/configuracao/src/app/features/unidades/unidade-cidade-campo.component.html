@@ -29,17 +29,14 @@
       <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
     }
     @if (erroDaBusca(); as erro) {
-      <div class="field__error" id="cfg-unidade-cidade-busca-erro" role="alert">
-        <p>{{ erro }}</p>
-        <button
-          type="button"
-          class="cfg-link-button"
-          [attr.aria-disabled]="buscando() ? 'true' : null"
-          [attr.aria-busy]="buscando() ? 'true' : null"
-          (click)="tentarNovamente.emit()"
-        >
-          Tentar novamente
-        </button>
+      <div class="field__error" id="cfg-unidade-cidade-busca-erro">
+        <p role="alert">{{ erro }}</p>
+        <ui-nova-tentativa-do-campo
+          [pendente]="buscando()"
+          [fase]="fase()"
+          assunto="cidades"
+          (tentar)="tentarNovamente.emit()"
+        />
       </div>
     }
     @if (opcoes().length > 0) {

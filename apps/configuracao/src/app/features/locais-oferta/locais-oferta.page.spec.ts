@@ -17,6 +17,11 @@ import {
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
+import {
+  situacaoDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 import { LocaisOfertaPage } from './locais-oferta.page';
 import { LocaisOfertaStore } from './locais-oferta.store';
 import type { EnderecoEstruturado } from '@uniplus/shared-ui/components';
@@ -459,21 +464,17 @@ describe('LocaisOfertaPage', () => {
       expect(recarregarCampi().getAttribute('aria-disabled')).toBeNull();
     });
 
-    it('anuncia, fora do drawer, a nova tentativa acionada na lista, também a segunda falha seguida', async () => {
+    it('mostra e anuncia, na lista, a nova tentativa dos campi', async () => {
       await comCampiEmFalha();
-      const anuncio = (): string =>
-        fixture.nativeElement.querySelector(
-          ':scope > p.sr-only[role="status"] + p.sr-only[role="status"]',
-        )?.textContent ?? '';
 
-      for (let vez = 0; vez < 2; vez++) {
-        recarregarCampi().click();
-        await propagate();
-        expect(anuncio()).toBe('Lendo campi...');
-        expectLookup(CAMPI).flush({}, { status: 500, statusText: 'Server Error' });
-        await propagate();
-        expect(anuncio()).toBe('Falha na leitura: campi.');
-      }
+      recarregarCampi().click();
+      await propagate();
+      fixture.detectChanges();
+      expect(situacaoDaNovaTentativa(fixture.nativeElement)).toBe(textoTentandoDe('campi'));
+      expectLookup(CAMPI).flush({}, { status: 500, statusText: 'Server Error' });
+      await propagate();
+      fixture.detectChanges();
+      expect(situacaoDaNovaTentativa(fixture.nativeElement)).toBe(textoRepetidaDe('campi'));
     });
   });
 
@@ -644,14 +645,14 @@ describe('LocaisOfertaPage', () => {
         headers: { 'content-type': 'application/problem+json' },
       });
     await propagate();
-    const tentar = elemento<HTMLButtonElement>('.cfg-locais__retry button');
+    const tentar = elemento<HTMLButtonElement>('ui-alerta-nova-tentativa button');
     tentar.focus();
     tentar.click();
     await propagate();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
     await flushLista([localSeed]);
     await propagate();
-    expect(raiz().querySelector('.cfg-locais__retry')).toBeNull();
+    expect(raiz().querySelector('.list-state__retry')).toBeNull();
     expect(document.activeElement).toBe(elemento('#cfg-locais-list-title'));
   });
 

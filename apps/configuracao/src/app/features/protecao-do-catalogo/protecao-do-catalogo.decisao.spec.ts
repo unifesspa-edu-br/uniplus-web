@@ -15,6 +15,10 @@ import {
   problema,
   type PaginaMontada,
 } from './protecao-do-catalogo.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
 const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
@@ -366,6 +370,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
       await pagina.assentar();
       await pagina.assentar();
       expect(tentar.getAttribute('aria-busy')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(document.activeElement).toBe(tentar);
 
       leituraDaFila().flush([laudo]);

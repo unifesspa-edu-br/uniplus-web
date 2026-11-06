@@ -36,7 +36,7 @@
               }
             </select>
             @if (erroDoCampo('tipo')) {
-              <span class="field__error">{{ erroDoCampo('tipo') }}</span>
+              <span class="field__error"> {{ erroDoCampo('tipo') }}</span>
             }
           </label>
           <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
@@ -78,16 +78,13 @@
             <span class="field__hint">Vínculo opcional ao campus que administra este local.</span>
             @if (campiComErro()) {
               <span class="field__error">
-                Não foi possível carregar os campi para seleção.
-                <button
-                  type="button"
-                  class="cfg-link-button"
-                  [attr.aria-disabled]="carregandoCampi() ? 'true' : null"
-                  [attr.aria-busy]="carregandoCampi() ? 'true' : null"
-                  (click)="recarregarCampi.emit()"
-                >
-                  Tentar novamente
-                </button>
+                <span role="alert">Não foi possível carregar os campi para seleção.</span>
+                <ui-nova-tentativa-do-campo
+                  [pendente]="carregandoCampi()"
+                  [fase]="faseDosCampi()"
+                  assunto="campi"
+                  (tentar)="recarregarCampi.emit()"
+                />
               </span>
             }
           </label>
@@ -105,7 +102,6 @@
   </form>
 
   <p class="sr-only" role="status">{{ salvando() ? 'Salvando local de oferta…' : '' }}</p>
-  <p class="sr-only" role="status">{{ anuncioDaLeitura() }}</p>
   <div class="form-drawer__footer">
     <button
       type="button"

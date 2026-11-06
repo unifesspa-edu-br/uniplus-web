@@ -414,7 +414,7 @@ describe('UnidadesPage — buscas do formulário', () => {
       expect(p.erros).toHaveBeenCalledTimes(1);
       const aviso = p.elemento('cfg-unidade-superior-campo [role="alert"]');
       expect(aviso.textContent).toContain('Não foi possível carregar as unidades');
-      const tentar = aviso.querySelector('button') as HTMLButtonElement;
+      const tentar = p.elemento<HTMLButtonElement>('cfg-unidade-superior-campo button');
       tentar.focus();
       tentar.click();
       await p.propagar();

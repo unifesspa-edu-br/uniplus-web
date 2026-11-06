@@ -10,13 +10,16 @@ import {
   untracked,
 } from '@angular/core';
 import { TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, type UiLookupFalho } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  type UiLookupFalho,
+  destinoAcessivel,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import {
   devolverFocoDaLista,
-  focarAposNovaTentativa,
   avisoDeFalhaDoLookup,
-  novaTentativaAnunciada,
   focoEstaLivre,
   type AcionadorDaLista,
 } from '../../shared/foco';
@@ -39,13 +42,13 @@ const ID_DO_TITULO = 'cfg-tipos-documento-list-title';
   selector: 'cfg-tipos-documento-page',
   standalone: true,
   imports: [
-    AlertComponent,
     ConfirmacaoDeRemocaoComponent,
     SolicitacaoDaProtecaoDialogComponent,
     TipoDocumentoDetalheComponent,
     TipoDocumentoFormularioComponent,
     TiposDocumentoFiltrosComponent,
     TiposDocumentoListaComponent,
+    AlertaNovaTentativaComponent,
   ],
   providers: [AprovacaoDoCatalogo, TiposDocumentoStore, EdicaoDosTiposDocumento],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,11 +62,12 @@ export class TiposDocumentoPage {
   private readonly injector = inject(Injector);
   protected readonly solicitacaoAberta = signal(false);
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'tipos de documento',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
   private readonly devolucao = devolverFocoDaLista({
     gravando: this.edicao.gravando,
     carregando: this.store.carregando,
@@ -72,31 +76,23 @@ export class TiposDocumentoPage {
     idDoCadastro: 'cfg-tipos-documento-novo',
   });
 
-  /** O aviso mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncio = signal('');
-  /** O formulário é um drawer modal: o anúncio da tentativa acionada dentro dele tem região própria, dentro dele. */
-  protected readonly anuncioDoFormulario = signal('');
-  private readonly novaTentativaDasCategoriasNoFormulario = novaTentativaAnunciada({
-    nome: 'categorias',
+  /** O aviso das categorias está na lista e no formulário (um drawer): uma só tentativa, uma só fase. */
+  protected readonly novaTentativaDasCategorias = acompanharNovaTentativa({
+    assunto: 'categorias',
     pendente: this.store.categorias.pendente,
     falhou: this.edicao.avisoDasCategorias,
-    destino: () => document.querySelector<HTMLElement>('select[formcontrolname="categoria"]'),
-    anuncio: this.anuncioDoFormulario,
-  });
-  private readonly novaTentativaDasCategoriasNaLista = novaTentativaAnunciada({
-    nome: 'categorias',
-    pendente: this.store.categorias.pendente,
-    falhou: this.edicao.avisoDasCategorias,
-    destino: () => document.getElementById(ID_DO_TITULO),
-    anuncio: this.anuncio,
+    destino: () =>
+      destinoAcessivel(
+        document.querySelector<HTMLElement>('select[formcontrolname="categoria"]'),
+        document.getElementById(ID_DO_TITULO),
+      ),
   });
   private readonly avisoDaSituacao = avisoDeFalhaDoLookup(this.aprovacao);
-  private readonly novaTentativaDaSituacao = novaTentativaAnunciada({
-    nome: 'situação da proteção de dados',
+  protected readonly novaTentativaDaSituacao = acompanharNovaTentativa({
+    assunto: 'situação de aprovação',
     pendente: this.aprovacao.pendente,
     falhou: this.avisoDaSituacao,
     destino: () => document.getElementById(ID_DO_TITULO),
-    anuncio: this.anuncio,
   });
 
   /**
@@ -109,7 +105,8 @@ export class TiposDocumentoPage {
           {
             nome: 'categorias',
             pendente: this.store.categorias.pendente(),
-            recarregar: () => this.recarregarCategoriasDaLista(),
+            fase: this.novaTentativaDasCategorias.fase(),
+            recarregar: () => this.recarregarCategorias(),
           },
         ]
       : []),
@@ -118,6 +115,7 @@ export class TiposDocumentoPage {
           {
             nome: 'situação da proteção de dados',
             pendente: this.aprovacao.pendente(),
+            fase: this.novaTentativaDaSituacao.fase(),
             recarregar: () => this.recarregarSituacao(),
           },
         ]
@@ -135,10 +133,10 @@ export class TiposDocumentoPage {
     this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 
-  /** Pedido no formulário: o aviso fica até a leitura terminar, e dando certo o foco vai ao campo Categoria. */
-  protected recarregarCategoriasDoFormulario(): void {
+  /** Pedido na lista ou no formulário: o aviso fica até a leitura terminar, e dando certo o foco vai ao campo Categoria. */
+  protected recarregarCategorias(): void {
     if (this.edicao.salvando()) return;
-    this.novaTentativaDasCategoriasNoFormulario.executar(() => this.store.categorias.recarregar());
+    this.novaTentativaDasCategorias.executar(() => this.store.categorias.recarregar());
   }
 
   protected cadastrar(): void {
@@ -174,10 +172,6 @@ export class TiposDocumentoPage {
 
   private registrar(acionador: AcionadorDaLista): void {
     this.devolucao.registrar(acionador);
-  }
-
-  private recarregarCategoriasDaLista(): void {
-    this.novaTentativaDasCategoriasNaLista.executar(() => this.store.categorias.recarregar());
   }
 
   private recarregarSituacao(): void {

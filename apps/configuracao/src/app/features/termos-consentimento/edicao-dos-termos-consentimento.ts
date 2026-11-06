@@ -187,20 +187,26 @@ export class EdicaoDosTermosConsentimento {
     this.gravar('remover', this.api.remover(id), () => this.concluirRemocao());
   }
 
-  /** Com alterações não salvas no rascunho, a recarga só parte depois da confirmação. */
-  recarregarTermo(): void {
-    if (this.id() === null || this.processando()) return;
-    if (this.rascunhoForm.dirty) {
-      this.confirmRecarregarAberto.set(true);
-      return;
-    }
-    this.recarregar();
+  /**
+   * Com alterações não salvas no rascunho, a recarga só parte depois da confirmação: abre o
+   * diálogo e devolve `true`. Quem pede a recarga decide isso antes de contar uma leitura.
+   */
+  pedirConfirmacaoDaRecarga(): boolean {
+    if (!this.podeRecarregar() || !this.rascunhoForm.dirty) return false;
+    this.confirmRecarregarAberto.set(true);
+    return true;
   }
 
-  recarregarConfirmado(): void {
+  /** Devolve se a leitura começou: sem termo, em escrita ou à espera da confirmação, não começa. */
+  recarregarTermo(): boolean {
+    if (!this.podeRecarregar() || this.pedirConfirmacaoDaRecarga()) return false;
+    return this.recarregar();
+  }
+
+  /** Devolve se a leitura começou. */
+  recarregarConfirmado(): boolean {
     this.confirmRecarregarAberto.set(false);
-    if (this.id() === null || this.processando()) return;
-    this.recarregar();
+    return this.podeRecarregar() && this.recarregar();
   }
 
   /**
@@ -220,9 +226,14 @@ export class EdicaoDosTermosConsentimento {
     });
   }
 
-  private recarregar(): void {
+  private recarregar(): boolean {
     this.acaoErro.set(null);
     this.store.recarregar();
+    return true;
+  }
+
+  private podeRecarregar(): boolean {
+    return this.id() !== null && !this.processando();
   }
 
   private id(): string | null {

@@ -16,9 +16,12 @@ import {
   type AtoDaProtecaoDto,
   type CadastroDoCatalogo,
 } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
-import { anunciarLeitura, focarAposNovaTentativa } from '../foco';
 import { AtosDaProtecaoComponent } from './atos-da-protecao';
 
 let nextId = 0;
@@ -31,30 +34,26 @@ let nextId = 0;
 @Component({
   selector: 'cfg-historico-da-protecao',
   standalone: true,
-  imports: [AlertComponent, AtosDaProtecaoComponent, SpinnerComponent],
+  imports: [AlertaNovaTentativaComponent, AtosDaProtecaoComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cfg-detalhe-secao" [attr.aria-busy]="carregando()">
-      <span class="sr-only" role="status">{{ anuncio() }}</span>
-      <h3 class="cfg-detalhe-secao__titulo" [attr.id]="idDoTitulo" tabindex="-1">Histórico da proteção</h3>
+      <h3 class="cfg-detalhe-secao__titulo" [attr.id]="idDoTitulo" tabindex="-1">
+        Histórico da proteção
+      </h3>
       @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando o histórico</span>
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> Carregando o histórico</span
+        >
       }
       @if (erro(); as mensagem) {
-        <ui-alert variant="danger" heading="Não foi possível carregar o histórico">
-          {{ mensagem }}
-          <div class="list-state__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="carregando() ? 'true' : null"
-              [attr.aria-busy]="carregando() ? 'true' : null"
-              (click)="tentarNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
+        <ui-alerta-nova-tentativa
+          titulo="Não foi possível carregar o histórico"
+          [mensagem]="mensagem"
+          [pendente]="carregando()"
+          [fase]="novaTentativa.fase()"
+          (tentar)="tentarNovamente()"
+        />
       } @else if (atos(); as lidos) {
         <cfg-atos-da-protecao [atos]="lidos" />
       }
@@ -76,18 +75,13 @@ export class HistoricoDaProtecaoComponent {
   protected readonly erro = signal<string | null>(null);
 
   protected readonly idDoTitulo = `cfg-historico-da-protecao-${nextId++}`;
-  /** A falha mantida na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncio = signal('');
   private readonly falhou = computed(() => this.erro() !== null);
-  private readonly novaTentativa = focarAposNovaTentativa(this.carregando, this.falhou, () =>
-    document.getElementById(this.idDoTitulo),
-  );
-  private readonly anunciada = anunciarLeitura(
-    'histórico da proteção',
-    this.carregando,
-    this.falhou,
-    this.anuncio,
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'histórico',
+    pendente: this.carregando,
+    falhou: this.falhou,
+    destino: () => document.getElementById(this.idDoTitulo),
+  });
 
   constructor() {
     effect(() => {
@@ -100,10 +94,7 @@ export class HistoricoDaProtecaoComponent {
   }
 
   protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => {
-      this.anunciada.iniciar();
-      this.ler();
-    });
+    this.novaTentativa.executar(() => this.ler());
   }
 
   /** A falha fica na tela durante a nova tentativa, para o botão que a pediu não sumir. */
@@ -112,7 +103,8 @@ export class HistoricoDaProtecaoComponent {
     this.carregando.set(true);
     this.atos.set(null);
     const id = this.itemId();
-    const leitura = this.cadastro() === 'FATO' ? this.fatos.atosDaProtecao(id) : this.tipos.atosDaProtecao(id);
+    const leitura =
+      this.cadastro() === 'FATO' ? this.fatos.atosDaProtecao(id) : this.tipos.atosDaProtecao(id);
     this.leitura = leitura.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
       this.carregando.set(false);
       if (resultado.ok) {

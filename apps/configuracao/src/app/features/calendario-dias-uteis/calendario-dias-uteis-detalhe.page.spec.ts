@@ -9,6 +9,10 @@ import {
   montarDetalhe,
   problema,
 } from './calendario-dias-uteis.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b999';
 
@@ -246,6 +250,7 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       await p.carregar([]);
       await p.propagar();
 

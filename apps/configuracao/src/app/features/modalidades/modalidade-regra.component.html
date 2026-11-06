@@ -5,20 +5,14 @@
   <div class="field form-grid__full" [class.is-error]="recusas().length > 0">
     @switch (estadoDoCatalogo()) {
       @case ('erro') {
-        <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
-          Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita.
-          <div class="list-state__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="catalogoPendente() ? 'true' : null"
-              [attr.aria-busy]="catalogoPendente() ? 'true' : null"
-              (click)="recarregarCatalogo.emit()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
+        <ui-alerta-nova-tentativa
+          titulo="Catálogo de fatos não carregado"
+          mensagem="Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita."
+          [pendente]="catalogoPendente()"
+          [fase]="faseDoCatalogo()"
+          variante="warning"
+          (tentar)="recarregarCatalogo.emit()"
+        />
       }
       @case ('carregando') {
         <p class="field__hint" role="status">Carregando o catálogo de fatos...</p>

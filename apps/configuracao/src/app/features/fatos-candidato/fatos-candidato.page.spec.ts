@@ -11,6 +11,11 @@ import {
   trabalha,
   PROTECAO,
 } from './fatos-candidato.testing';
+import {
+  situacaoDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('FatosCandidatoPage — leitura', () => {
   let p: Pagina;
@@ -360,7 +365,7 @@ describe('FatosCandidatoPage — leitura', () => {
     expect(document.activeElement).toBe(p.elemento('#cfg-fatos-list-title'));
   });
 
-  it('anuncia cada nova tentativa de ler os itens que aguardam a proteção, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de ler os itens que aguardam a proteção', async () => {
     p = await montarPagina([trabalha]);
     p.store.recarregar();
     await p.propagar();
@@ -371,19 +376,15 @@ describe('FatosCandidatoPage — leitura', () => {
         .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
     };
-    const anuncio = (): string =>
-      p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
-        .textContent ?? '';
+    const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
     await falhar();
 
-    for (let vez = 0; vez < 2; vez++) {
-      await p.acionar(
-        p.botaoPeloTexto('Recarregar itens que aguardam a proteção de dados') as HTMLButtonElement,
-      );
-      expect(anuncio()).toBe('Lendo itens que aguardam a proteção de dados...');
-      await falhar();
-      expect(anuncio()).toBe('Falha na leitura: itens que aguardam a proteção de dados.');
-    }
+    await p.acionar(
+      p.botaoPeloTexto('Recarregar itens que aguardam a proteção de dados') as HTMLButtonElement,
+    );
+    expect(anuncio()).toBe(textoTentandoDe('itens que aguardam a proteção de dados'));
+    await falhar();
+    expect(anuncio()).toBe(textoRepetidaDe('itens que aguardam a proteção de dados'));
   });
 
   it('o catálogo de apoio não é pedido com a lista aberta e nenhum detalhe nem edição', async () => {

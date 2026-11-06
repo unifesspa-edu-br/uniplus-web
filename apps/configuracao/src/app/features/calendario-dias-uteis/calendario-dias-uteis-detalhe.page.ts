@@ -7,8 +7,12 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AlertComponent, SpinnerComponent, TagComponent } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  SpinnerComponent,
+  TagComponent,
+} from '@uniplus/shared-ui/components';
 import { devolverFocoDaGrade } from './foco-da-grade';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import { MUNICIPIO_BUSCA_VAZIA } from './calendario-dias-uteis.util';
@@ -24,7 +28,7 @@ import { SelecaoDoDia } from './selecao-do-dia';
   standalone: true,
   imports: [
     RouterLink,
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     SpinnerComponent,
     TagComponent,
     CalendarioMensalComponent,
@@ -45,11 +49,11 @@ export class CalendarioDiasUteisDetalhePage {
   protected readonly buscaDoDia = computed(
     () => this.busca.buscas().get(this.edicao.form) ?? MUNICIPIO_BUSCA_VAZIA,
   );
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.store.carregando,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-calendario-detalhe-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.store.carregando,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-calendario-detalhe-title'),
+  });
 
   constructor() {
     devolverFocoDaGrade({

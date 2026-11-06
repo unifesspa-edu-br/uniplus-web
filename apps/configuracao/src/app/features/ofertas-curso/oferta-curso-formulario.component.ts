@@ -6,7 +6,12 @@ import {
   REGIMES_DE_FUNCIONAMENTO,
   REGIMES_DE_TURNO,
 } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DrawerComponent,
+  NovaTentativaDoCampoComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { OfertaCursoForm, mensagemDeErroDaOferta } from './oferta-curso-form';
 import type { RegrasDoFormulario } from './regras-do-formulario-da-oferta';
@@ -55,7 +60,13 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
 @Component({
   selector: 'cfg-oferta-curso-formulario',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, DrawerComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    NovaTentativaDoCampoComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './oferta-curso-formulario.component.html',
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',

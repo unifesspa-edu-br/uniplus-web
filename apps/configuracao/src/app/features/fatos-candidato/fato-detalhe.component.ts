@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, TagComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertaNovaTentativaComponent,
+  DrawerComponent,
+  type FaseDaNovaTentativa,
+  TagComponent,
+} from '@uniplus/shared-ui/components';
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   HistoricoDaProtecaoComponent,
@@ -25,13 +30,13 @@ import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
 @Component({
   selector: 'cfg-fato-detalhe',
   imports: [
-    AlertComponent,
     TemPermissaoDirective,
     DetalheDaProtecaoComponent,
     DrawerComponent,
     HistoricoDaProtecaoComponent,
     SituacaoDaAprovacaoComponent,
     TagComponent,
+    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-detalhe.component.html',
@@ -48,10 +53,14 @@ export class FatoDetalheComponent {
   readonly catalogoFalhou = input.required<boolean>();
   readonly catalogoPendente = input.required<boolean>();
   readonly mensagemDoCatalogo = input.required<string | null>();
+  readonly faseDoCatalogo = input.required<FaseDaNovaTentativa>();
   readonly tentarCatalogo = output<void>();
   readonly editar = output<FatoCandidatoDto>();
   readonly aceitar = output<FatoCandidatoDto>();
 
+  protected readonly mensagemDoAlerta = computed(() =>
+    `${this.mensagemDoCatalogo() ?? ''} As regras aparecem com os códigos dos fatos.`.trim(),
+  );
   protected readonly idDasRegras = ID_DAS_REGRAS_DO_DETALHE;
   protected tentarCatalogoNovamente(): void {
     this.tentarCatalogo.emit();

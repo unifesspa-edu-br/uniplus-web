@@ -18,6 +18,10 @@ import { CursosStore } from './cursos.store';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
 import { GruposDoCurso } from './grupos-do-curso';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
+import {
+  TEXTO_REPETIDA,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const OFERTAS_URL = `${BASE}/api/configuracao/ofertas-curso`;
@@ -1110,7 +1114,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     expect(botao.getAttribute('aria-disabled')).toBeNull();
   });
 
-  it('nova falha pedida pelo operador é anunciada de novo, com o texto pontuado que descreve o select', async () => {
+  it('nova falha pedida pelo operador mostra e anuncia a fase, sem mudar o texto que descreve o select', async () => {
     edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
@@ -1119,12 +1123,15 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
     indisponivel();
     fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+    appRef.tick();
 
     const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
     const descricao = select?.getAttribute('aria-describedby') ?? '';
     expect(raiz.querySelector(`[id="${descricao}"]`)?.textContent?.trim()).toMatch(
-      /classificar o curso\. Tentativa 2 sem sucesso\.$/u,
+      /classificar o curso\.$/u,
     );
+    expect(situacaoDaNovaTentativa(raiz)).toBe(TEXTO_REPETIDA);
   });
 
   it('recusa sem título mostra só o texto padrão, sem ponto solto no início', () => {

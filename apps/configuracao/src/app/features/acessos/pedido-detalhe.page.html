@@ -7,23 +7,18 @@
   </div>
 </div>
 
-<span class="sr-only" role="status">{{ anuncio() }}</span>
-@if (erro() && !confirmando()) {
-<ui-alert variant="danger" heading="Não foi possível concluir">
-  {{ erro() }} @if (erroDeCarga()) {
-  <button
-    id="tentar-pedido"
-    type="button"
-    class="btn btn--tertiary"
-    [attr.aria-disabled]="carregando() ? 'true' : null"
-    [attr.aria-busy]="carregando() ? 'true' : null"
-    (click)="recarregar()"
-  >
-    Tentar novamente
-  </button>
-  }
-</ui-alert>
-} @if (carregando()) {
+@if (erro() && !confirmando()) { @if (erroDeCarga()) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível concluir"
+  [mensagem]="erro() ?? ''"
+  [pendente]="carregando()"
+  [fase]="novaTentativa.fase()"
+  idBotao="tentar-pedido"
+  (tentar)="recarregar()"
+/>
+} @else {
+<ui-alert variant="danger" heading="Não foi possível concluir">{{ erro() }}</ui-alert>
+} } @if (carregando() && !erroDeCarga()) {
 <p role="status"><ui-spinner spinnerSize="sm" /> Carregando o pedido…</p>
 } @if (pedido(); as p) { @if (aguardandoDocumento()) {
 <ui-alert variant="warning" heading="Falta o documento de designação">

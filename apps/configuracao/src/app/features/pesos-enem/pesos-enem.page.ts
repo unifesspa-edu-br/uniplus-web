@@ -10,13 +10,14 @@ import {
   untracked,
 } from '@angular/core';
 import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
   AlertComponent,
   EmptyStateComponent,
   SkeletonComponent,
 } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { devolverFocoDaLista, focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import { devolverFocoDaLista, focoEstaLivre } from '../../shared/foco';
 import { CriacaoDeResolucao } from './criacao-de-resolucao';
 import { EdicaoDosParametros } from './edicao-dos-parametros';
 import { GravacaoDosPesosEnem } from './gravacao-dos-pesos-enem';
@@ -103,24 +104,27 @@ export class PesosEnemPage {
 
   /** "Tentar novamente" de cada lista: a guarda é o pendente dela, o mesmo do `aria-disabled` do
    *  botão. Quando a lista chega, o foco passa ao título da página. */
-  private readonly novaTentativaDasAreas = focarAposNovaTentativa(
-    this.store.listaAreas.pendente,
-    this.store.listaAreas.falhou,
-    () => this.titulo(),
-  );
-  private readonly novaTentativaDosGrupos = focarAposNovaTentativa(
-    this.store.catalogoGrupos.pendente,
-    this.store.catalogoGrupos.falhou,
-    () => this.titulo(),
-  );
+  protected readonly novaTentativaDasAreas = acompanharNovaTentativa({
+    assunto: 'áreas',
+    pendente: this.store.listaAreas.pendente,
+    falhou: this.store.listaAreas.falhou,
+    destino: () => this.titulo(),
+  });
+  protected readonly novaTentativaDosGrupos = acompanharNovaTentativa({
+    assunto: 'grupos',
+    pendente: this.store.catalogoGrupos.pendente,
+    falhou: this.store.catalogoGrupos.falhou,
+    destino: () => this.titulo(),
+  });
   protected readonly listagemPendente = computed(
     () => this.store.carregando() || this.gravacao.gravando(),
   );
-  private readonly novaTentativaDaListagem = focarAposNovaTentativa(
-    this.listagemPendente,
-    computed(() => Boolean(this.store.mensagemDeErro())),
-    () => this.titulo(),
-  );
+  protected readonly novaTentativaDaListagem = acompanharNovaTentativa({
+    assunto: 'pesos',
+    pendente: this.listagemPendente,
+    falhou: computed(() => Boolean(this.store.mensagemDeErro())),
+    destino: () => this.titulo(),
+  });
 
   protected tentarNovamente(): void {
     this.novaTentativaDaListagem.executar(() => this.store.recarregar(true));

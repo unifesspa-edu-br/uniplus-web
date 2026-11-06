@@ -12,6 +12,10 @@ import {
   linhas805,
   problem,
 } from './pesos-enem.testing';
+import {
+  TEXTO_REPETIDA,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PesosEnemPage — falhas da listagem', () => {
   let t: PaginaDeTeste;
@@ -75,7 +79,8 @@ describe('PesosEnemPage — falhas da listagem', () => {
     const raiz = t.fixture.nativeElement as HTMLElement;
     const botao = (): HTMLButtonElement | null =>
       raiz.querySelector('#cfg-pesos-enem-registros-tentar') as HTMLButtonElement | null;
-    const textoAntes = botao()?.closest('ui-alert')?.textContent ?? '';
+    const alerta = (): HTMLElement => botao()?.closest('ui-alerta-nova-tentativa') as HTMLElement;
+    const textoAntes = alerta().textContent ?? '';
 
     botao()?.click();
     await t.propagate();
@@ -91,9 +96,8 @@ describe('PesosEnemPage — falhas da listagem', () => {
       await t.propagate();
     }
 
-    const textoDepois = botao()?.closest('ui-alert')?.textContent ?? '';
-    expect(textoDepois).not.toBe(textoAntes);
-    expect(textoDepois).toContain('Tentativa 2 sem sucesso.');
+    expect(alerta().textContent).not.toBe(textoAntes);
+    expect(situacaoDaNovaTentativa(alerta())).toBe(TEXTO_REPETIDA);
   });
 
   it('PesosEnemPage_ListagemVoltaDepoisDoTentarDeNovo_FocoVaiAoTitulo', async () => {
@@ -121,7 +125,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
     expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
   });
 
-  it('PesosEnemPage_ListagemComErroForaDoEnvelope_AlertaENovaTentativaContando', async () => {
+  it('PesosEnemPage_ListagemComErroForaDoEnvelope_AlertaENovaTentativaQueFalhaNaHora', async () => {
     t.fixture.detectChanges();
     t.expectAreas().flush([...AREAS]);
     t.expectGrupos().flush([...GRUPOS]);
@@ -139,6 +143,7 @@ describe('PesosEnemPage — falhas da listagem', () => {
     const tentar = async (): Promise<void> => {
       raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-registros-tentar')?.click();
       await t.propagate();
+      await new Promise((resolver) => setTimeout(resolver));
       t.fixture.detectChanges();
     };
 
@@ -146,14 +151,20 @@ describe('PesosEnemPage — falhas da listagem', () => {
     expect(t.store.carregando()).toBe(false);
     const botao = raiz.querySelector('#cfg-pesos-enem-registros-tentar');
     expect(botao?.getAttribute('aria-disabled')).toBeNull();
-    expect(botao?.closest('ui-alert')?.textContent).toContain('Tentativa 2 sem sucesso.');
+    expect(situacaoDaNovaTentativa(botao?.closest('ui-alerta-nova-tentativa') as HTMLElement)).toBe(
+      TEXTO_REPETIDA,
+    );
     // O erro não some: vai ao ErrorHandler da aplicação.
     expect(handleError).toHaveBeenCalledWith(erro);
 
     await tentar();
     expect(
-      raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.closest('ui-alert')?.textContent,
-    ).toContain('Tentativa 3 sem sucesso.');
+      situacaoDaNovaTentativa(
+        raiz
+          .querySelector('#cfg-pesos-enem-registros-tentar')
+          ?.closest('ui-alerta-nova-tentativa') as HTMLElement,
+      ),
+    ).toBe(TEXTO_REPETIDA);
   });
 
   it('PesosEnemPage_ErrorHandlerQueLanca_NaoPrendeACarga', async () => {
@@ -227,9 +238,11 @@ describe('PesosEnemPage — falhas da listagem', () => {
       await t.propagate();
       t.fixture.detectChanges();
     }
-    const alerta = raiz.querySelector('#cfg-pesos-enem-registros-tentar')?.closest('ui-alert');
+    const alerta = raiz
+      .querySelector('#cfg-pesos-enem-registros-tentar')
+      ?.closest('ui-alerta-nova-tentativa');
     expect(alerta).not.toBeNull();
-    expect(alerta?.textContent).not.toContain('Tentativa');
+    expect(situacaoDaNovaTentativa(alerta as HTMLElement)).toBe('');
   });
 
   it('PesosEnemPage_ListagemRecusadaSemTitulo_AlertaComTextoPadrao', async () => {

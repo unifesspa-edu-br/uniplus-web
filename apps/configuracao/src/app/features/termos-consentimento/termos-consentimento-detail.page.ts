@@ -10,9 +10,15 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DialogComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import { focoEstaLivre } from '../../shared/foco';
 import { devolverFocoDaAcao } from './devolver-foco-da-acao';
 import { EdicaoDosTermosConsentimento } from './edicao-dos-termos-consentimento';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
@@ -37,6 +43,7 @@ const ALERTA_DE_LEITURA_DEFASADA = {
     AlertComponent,
     DialogComponent,
     SpinnerComponent,
+    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './termos-consentimento-detail.page.html',
@@ -66,11 +73,11 @@ export class TermosConsentimentoDetailPage {
   });
 
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.store.carregando,
-    computed(() => this.store.erro() !== null),
-    () => this.tituloPagina()?.nativeElement,
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.store.carregando,
+    falhou: computed(() => this.store.erro() !== null),
+    destino: () => this.tituloPagina()?.nativeElement,
+  });
 
   private readonly injector = inject(Injector);
 
@@ -85,7 +92,12 @@ export class TermosConsentimentoDetailPage {
   }
 
   protected tentarNovamente(): void {
+    if (this.edicao.pedirConfirmacaoDaRecarga()) return;
     this.novaTentativa.executar(() => this.edicao.recarregarTermo());
+  }
+
+  protected recarregarConfirmado(): void {
+    this.novaTentativa.executar(() => this.edicao.recarregarConfirmado());
   }
 
   /**

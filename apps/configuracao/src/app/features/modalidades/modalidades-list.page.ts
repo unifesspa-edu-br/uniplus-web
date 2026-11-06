@@ -12,17 +12,18 @@ import {
 } from '@angular/core';
 import { ModalidadeDto, NATUREZAS_LEGAIS } from '@uniplus/shared-data/configuracao';
 import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
   AlertComponent,
-  DialogComponent,
-  SpinnerComponent,
-  type UiFiltroAtivo,
-  type UiFilterChipOption,
   deClausulasDoWire,
+  DialogComponent,
   fatosParaLeitura,
   resumoDaRegra,
+  SpinnerComponent,
+  type UiFilterChipOption,
+  type UiFiltroAtivo,
 } from '@uniplus/shared-ui/components';
 
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { ModalidadesFiltrosComponent } from './modalidades-filtros.component';
 import { ModalidadesListaComponent } from './modalidades-lista.component';
 import { ModalidadesTabelaComponent } from './modalidades-tabela.component';
@@ -34,6 +35,7 @@ import { ModalidadesStore } from './modalidades.store';
   providers: [ModalidadesStore, EdicaoDasModalidades],
   standalone: true,
   imports: [
+    AlertaNovaTentativaComponent,
     ModalidadesFiltrosComponent,
     ModalidadesListaComponent,
     ModalidadesTabelaComponent,
@@ -152,11 +154,11 @@ export class ModalidadesListPage {
   protected readonly errorMessage = this.store.mensagemDeErro;
   /** A lista carrega ou uma remoção corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
   protected readonly indisponivel = computed(() => this.loading() || this.removendo());
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.indisponivel,
-    computed(() => this.errorMessage() !== null),
-    () => document.getElementById('cfg-modalidades-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.indisponivel,
+    falhou: computed(() => this.errorMessage() !== null),
+    destino: () => document.getElementById('cfg-modalidades-title'),
+  });
 
   /** A linha da modalidade cuja remoção corre, para sinalizá-la. */
   protected readonly removendoId = computed(() =>

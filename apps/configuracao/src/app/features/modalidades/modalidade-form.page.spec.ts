@@ -15,6 +15,11 @@ import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { comandoDeCriacao, regraDesabilitada } from './modalidade-form';
 import { ModalidadeFormPage } from './modalidade-form.page';
 import { ModalidadeFormStore } from './modalidade-form.store';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
@@ -469,7 +474,7 @@ describe('ModalidadeFormPage', () => {
       expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#cfg-mod-regra'));
     });
 
-    it('anuncia cada nova tentativa do catálogo, também a segunda falha seguida', async () => {
+    it('mostra e anuncia cada nova tentativa do catálogo', async () => {
       usarRota(BONUS.id);
       await montar();
       controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
@@ -480,20 +485,17 @@ describe('ModalidadeFormPage', () => {
         fixture.detectChanges();
         TestBed.tick();
       };
-      const anuncio = (): string =>
-        fixture.nativeElement.querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+      const anuncio = (): string => situacaoDaNovaTentativa(fixture.nativeElement);
       await falhar();
 
-      for (let vez = 0; vez < 2; vez++) {
-        fixture.nativeElement
-          .querySelector('section[aria-labelledby="cfg-mod-regra"] button')
-          .click();
-        fixture.detectChanges();
-        TestBed.tick();
-        expect(anuncio()).toBe('Lendo catálogo de fatos...');
-        await falhar();
-        expect(anuncio()).toBe('Falha na leitura: catálogo de fatos.');
-      }
+      fixture.nativeElement
+        .querySelector('section[aria-labelledby="cfg-mod-regra"] button')
+        .click();
+      fixture.detectChanges();
+      TestBed.tick();
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      await falhar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
 
     it('lê a regra sem condição como todos os candidatos', async () => {

@@ -12,6 +12,12 @@ import {
   problema,
   sucesso,
 } from './precedencias-fase.testing';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+  situacoesDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PrecedenciasFasePage', () => {
   let p: Pagina;
@@ -228,7 +234,7 @@ describe('PrecedenciasFasePage', () => {
       await p.propagar();
 
       expect(p.store.mensagemDeErro()).toBeNull();
-      expect(p.elemento('ui-drawer ui-alert').textContent).toContain(
+      expect(p.elemento('ui-drawer ui-alerta-nova-tentativa').textContent).toContain(
         'Nomes das fases indisponíveis',
       );
       expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
@@ -252,7 +258,7 @@ describe('PrecedenciasFasePage', () => {
       const aviso = (): HTMLElement | null =>
         [
           ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-            ':scope > ui-alert',
+            ':scope > ui-alerta-nova-tentativa',
           ),
         ].find((a) => a.textContent?.includes('Nomes das fases indisponíveis')) ?? null;
       const tentar = (): HTMLButtonElement => aviso()?.querySelector('button') as HTMLButtonElement;
@@ -272,46 +278,68 @@ describe('PrecedenciasFasePage', () => {
       expect(document.activeElement).toBe(p.elemento('#cfg-precedencias-fase-list-title'));
     });
 
-    it('anuncia cada nova tentativa de ler as fases, também a segunda falha seguida', async () => {
+    it('mostra e anuncia cada nova tentativa de ler as fases', async () => {
       p = await montarPagina([inscricaoHomologacao], 'falha');
-      const anuncio = (): string =>
-        p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
-          .textContent ?? '';
+      const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
       const tentar = (): HTMLButtonElement =>
         [
           ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-            ':scope > ui-alert',
+            ':scope > ui-alerta-nova-tentativa',
           ),
         ]
           .find((a) => a.textContent?.includes('Nomes das fases indisponíveis'))
           ?.querySelector('button') as HTMLButtonElement;
 
-      for (let vez = 0; vez < 2; vez++) {
-        tentar().click();
-        await p.propagar();
-        expect(anuncio()).toBe('Lendo nomes das fases...');
-        p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
-        await p.propagar();
-        expect(anuncio()).toBe('Falha na leitura: nomes das fases.');
-      }
+      tentar().click();
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
 
-    it('anuncia, dentro do drawer, a nova tentativa acionada pelo alerta do formulário', async () => {
+    it('mostra e anuncia, dentro do drawer, a nova tentativa acionada pelo alerta do formulário', async () => {
       p = await montarPagina([inscricaoHomologacao], 'falha');
       p.novo().click();
       await p.propagar();
       const anuncio = (): string =>
-        p.fixture.nativeElement.querySelectorAll('ui-drawer span.sr-only[role="status"]')[1]
-          ?.textContent ?? '';
+        situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'));
 
-      for (let vez = 0; vez < 2; vez++) {
-        p.elemento<HTMLButtonElement>('ui-drawer ui-alert button').click();
-        await p.propagar();
-        expect(anuncio()).toBe('Lendo nomes das fases...');
-        p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
-        await p.propagar();
-        expect(anuncio()).toBe('Falha na leitura: nomes das fases.');
-      }
+      p.elemento<HTMLButtonElement>('ui-drawer ui-alerta-nova-tentativa button').click();
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_TENTANDO);
+      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
+      await p.propagar();
+      expect(anuncio()).toBe(TEXTO_REPETIDA);
+    });
+
+    it('fechar o drawer no meio da leitura passa o aviso à lista; abri-lo no meio, ao drawer', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      p.novo().click();
+      await p.propagar();
+      p.elemento<HTMLButtonElement>(
+        'cfg-precedencia-formulario ui-alerta-nova-tentativa button',
+      ).click();
+      await p.propagar();
+      expect(situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'))).toBe(
+        TEXTO_TENTANDO,
+      );
+
+      p.elemento<HTMLButtonElement>(
+        'cfg-precedencia-formulario button.btn--tertiary:not([aria-label])',
+      ).click();
+      await p.propagar();
+      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([TEXTO_TENTANDO]);
+
+      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
+      await p.propagar();
+      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([TEXTO_REPETIDA]);
+
+      p.novo().click();
+      await p.propagar();
+      expect(situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'))).toBe(
+        TEXTO_REPETIDA,
+      );
     });
 
     it('a nova tentativa das fases também está no alerta do formulário', async () => {
@@ -319,12 +347,14 @@ describe('PrecedenciasFasePage', () => {
       p.novo().click();
       await p.propagar();
 
-      p.elemento<HTMLButtonElement>('ui-drawer ui-alert button').click();
+      p.elemento<HTMLButtonElement>('ui-drawer ui-alerta-nova-tentativa button').click();
       await p.propagar();
       p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
       await p.propagar();
 
-      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
+      expect(
+        p.fixture.nativeElement.querySelector('ui-drawer ui-alerta-nova-tentativa'),
+      ).toBeNull();
     });
   });
 });

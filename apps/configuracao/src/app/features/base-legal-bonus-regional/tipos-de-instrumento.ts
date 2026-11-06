@@ -1,7 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+  acompanharNovaTentativa,
+  type FaseDaNovaTentativa,
+  destinoAcessivel,
+} from '@uniplus/shared-ui/components';
 import { ResolucaoDeVinculo, resolverVinculo } from '@uniplus/shared-core/http';
 import { type TipoInstrumentoNormativoVocabularioDto } from '@uniplus/shared-data/configuracao';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { nullIfBlank } from '../../shared/formulario';
 import { motivoDaFalha } from '../../shared/lista-de-referencia';
 import { comPontoFinal } from '../../shared/texto';
@@ -17,7 +21,7 @@ export interface TipoForaDasOpcoes {
 export interface TiposDoFormulario {
   readonly falhou: boolean;
   readonly pendente: boolean;
-  readonly tentativasSemSucesso: number;
+  readonly fase: FaseDaNovaTentativa;
   readonly opcoes: readonly TipoInstrumentoNormativoVocabularioDto[];
   readonly mensagemDeFalha: string;
   readonly foraDasOpcoes: TipoForaDasOpcoes | null;
@@ -36,7 +40,6 @@ export class TiposDeInstrumento {
 
   readonly falhou = this.lista.falhou;
   readonly pendente = this.lista.pendente;
-  readonly tentativasSemSucesso = this.lista.tentativasSemSucesso;
 
   private readonly porCodigo = computed(
     () => new Map(this.lista.opcoes().map((tipo) => [tipo.codigo, tipo] as const)),
@@ -68,7 +71,7 @@ export class TiposDeInstrumento {
   readonly formulario = computed<TiposDoFormulario>(() => ({
     falhou: this.falhou(),
     pendente: this.pendente(),
-    tentativasSemSucesso: this.tentativasSemSucesso(),
+    fase: this.novaTentativa.fase(),
     opcoes: this.lista.opcoes(),
     mensagemDeFalha: this.frase(
       'Sem o vocabulário de tipos não é possível classificar a base legal.',
@@ -76,15 +79,17 @@ export class TiposDeInstrumento {
     foraDasOpcoes: this.foraDasOpcoes(),
   }));
 
-  private readonly novaTentativaNaPagina = focarAposNovaTentativa(this.pendente, this.falhou, () =>
-    document.getElementById('cfg-base-legal-list-title'),
-  );
-
-  private readonly novaTentativaNoFormulario = focarAposNovaTentativa(
-    this.pendente,
-    this.falhou,
-    () => document.getElementById('cfg-blbr-tipo'),
-  );
+  /** O alerta da página e o do formulário (um drawer) dividem a leitura: uma só tentativa, uma só fase. */
+  readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'tipos de instrumento',
+    pendente: this.pendente,
+    falhou: this.falhou,
+    destino: () =>
+      destinoAcessivel(
+        document.getElementById('cfg-blbr-tipo'),
+        document.getElementById('cfg-base-legal-list-title'),
+      ),
+  });
 
   constructor() {
     this.lista.garantirCarregado();
@@ -101,11 +106,7 @@ export class TiposDeInstrumento {
     return resolverVinculo(this.lista, this.porCodigo().get(codigo), (tipo) => tipo.nome);
   }
 
-  tentarDeNovoNaPagina(): void {
-    this.novaTentativaNaPagina.executar(() => this.lista.tentarDeNovo());
-  }
-
-  tentarDeNovoNoFormulario(): void {
-    this.novaTentativaNoFormulario.executar(() => this.lista.tentarDeNovo());
+  tentarDeNovo(): void {
+    this.novaTentativa.executar(() => this.lista.tentarDeNovo());
   }
 }

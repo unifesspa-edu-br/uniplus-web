@@ -70,20 +70,13 @@
 </ui-filter-bar>
 
 @if (mensagemDeErro(); as mensagem) {
-  <ui-alert variant="danger" heading="Não foi possível carregar as decisões">
-    {{ mensagem }}
-    <div class="list-state__retry">
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        [attr.aria-disabled]="pagina.carregando() ? 'true' : null"
-        [attr.aria-busy]="pagina.carregando() ? 'true' : null"
-        (click)="carregar()"
-      >
-        Tentar novamente
-      </button>
-    </div>
-  </ui-alert>
+  <ui-alerta-nova-tentativa
+    titulo="Não foi possível carregar as decisões"
+    [mensagem]="mensagem"
+    [pendente]="pagina.carregando()"
+    [fase]="novaTentativaDaLista.fase()"
+    (tentar)="carregar()"
+  />
 }
 
 <cfg-decisoes-da-protecao-lista
@@ -108,5 +101,6 @@
   [carregandoHistorico]="carregandoHistorico()"
   [erroDoHistorico]="erroDoHistorico()"
   [itemInexistente]="itemInexistente()"
+  [faseDoHistorico]="novaTentativaDoHistorico.fase()"
   (recarregar)="tentarOHistoricoDeNovo()"
 />

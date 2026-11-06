@@ -7,9 +7,12 @@ import {
   computed,
   inject,
 } from '@angular/core';
-import { AlertComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import { focoEstaLivre } from '../../shared/foco';
 import { CursoFormularioComponent } from './curso-formulario.component';
 import { CursosListaComponent } from './cursos-lista.component';
 import { CursosStore } from './cursos.store';
@@ -24,7 +27,7 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
   standalone: true,
   providers: [CursosStore, EdicaoDosCursos, GruposDoCurso, OfertasDoCursoStore],
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
     CursoFormularioComponent,
     CursosListaComponent,
@@ -42,17 +45,20 @@ export class CursosPage {
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-cursos-list-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'cursos',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-cursos-list-title'),
+  });
 
-  private readonly novaTentativaDasOfertas = focarAposNovaTentativa(
-    this.ofertas.carregando,
-    computed(() => this.ofertas.mensagemDeErro() !== null),
-    () => this.raiz.querySelector<HTMLElement>('cfg-ofertas-do-curso button[aria-label="Fechar"]'),
-  );
+  protected readonly novaTentativaDasOfertas = acompanharNovaTentativa({
+    assunto: 'ofertas',
+    pendente: this.ofertas.carregando,
+    falhou: computed(() => this.ofertas.mensagemDeErro() !== null),
+    destino: () =>
+      this.raiz.querySelector<HTMLElement>('cfg-ofertas-do-curso button[aria-label="Fechar"]'),
+  });
 
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.store.tentarNovamente());

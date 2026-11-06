@@ -21,6 +21,11 @@ import { EdicaoDoPedido } from './edicao-do-pedido';
 import { PedidoDetalhePage } from './pedido-detalhe.page';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { EU, concedidas, ok, pedido, recusa, UNIDADES } from './testes';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -716,30 +721,27 @@ describe('PedidoDetalhePage', () => {
     },
   );
 
-  it('anuncia cada nova tentativa de carregar o pedido, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de carregar o pedido', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     document.body.append(host);
-    const anuncio = (): string =>
-      host.querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+    const anuncio = (): string => situacaoDaNovaTentativa(host);
     api.obter.mockReturnValue(throwError(() => new Error('rede')));
-    (fixture.componentInstance as unknown as { recarregar(): void }).recarregar();
+    fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
     await esperar(fixture);
     await esperar(fixture);
-    expect(anuncio()).toBe('Falha na leitura: pedido.');
+    expect(anuncio()).toBe('');
 
     const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
     expect(tentar).not.toBeNull();
-    for (let vez = 0; vez < 2; vez++) {
-      const pendente = new Subject<ReturnType<typeof ok>>();
-      api.obter.mockReturnValue(pendente);
-      tentar?.click();
-      await esperar(fixture);
-      expect(anuncio()).toBe('Lendo pedido...');
-      pendente.error(new Error('rede'));
-      await esperar(fixture);
-      await esperar(fixture);
-      expect(anuncio()).toBe('Falha na leitura: pedido.');
-    }
+    const pendente = new Subject<ReturnType<typeof ok>>();
+    api.obter.mockReturnValue(pendente);
+    tentar?.click();
+    await esperar(fixture);
+    expect(anuncio()).toBe(TEXTO_TENTANDO);
+    pendente.error(new Error('rede'));
+    await esperar(fixture);
+    await esperar(fixture);
+    expect(anuncio()).toBe(TEXTO_REPETIDA);
     host.remove();
   });
 

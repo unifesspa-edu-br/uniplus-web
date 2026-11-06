@@ -31,7 +31,6 @@ import {
   comRotuloExibivel,
   temCodigoUtilizavel,
 } from '../../shared/codigo-e-rotulo';
-import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 import { nullIfBlank } from '../../shared/formulario';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
 import { listaDeReferencia, motivoDaFalha } from '../../shared/lista-de-referencia';
@@ -93,8 +92,6 @@ export class PesosEnemStore {
   private readonly falha = signal<string | null>(null);
   readonly carregando = this.lendo.asReadonly();
   readonly mensagemDeErro = this.falha.asReadonly();
-  /** Falhas seguidas da listagem (ver `AlertaNovaTentativaComponent.tentativasSemSucesso`). */
-  readonly falhasDaListagem = contadorDeFalhas();
 
   private readonly ordemCongelada = signal(false);
   private readonly ordemDaLista = computed<ReadonlyMap<string, number>>(
@@ -229,10 +226,10 @@ export class PesosEnemStore {
           try {
             this.errorHandler.handleError(erro);
           } finally {
-            this.concluir(null, true, falhaRepetida, []);
+            this.concluir(null, true, []);
           }
         },
-        complete: () => this.concluir(coleta.falhou, false, falhaRepetida, coleta.acumulado),
+        complete: () => this.concluir(coleta.falhou, false, coleta.acumulado),
       });
   }
 
@@ -255,13 +252,11 @@ export class PesosEnemStore {
   private concluir(
     falhou: ProblemDetails | null,
     semResposta: boolean,
-    falhaRepetida: boolean,
     acumulado: readonly PesoAreaEnemDto[],
   ): void {
     this.lendo.set(false);
     if (falhou === null && !semResposta) {
       this.falha.set(null);
-      this.falhasDaListagem.registrarSucesso();
       this.linhas.set(acumulado);
       return;
     }
@@ -269,7 +264,6 @@ export class PesosEnemStore {
       nullIfBlank(falhou === null ? null : this.problemI18n.resolve(falhou).title) ??
         LISTAGEM_NAO_CARREGADA,
     );
-    this.falhasDaListagem.registrarFalha(falhaRepetida);
     if (falhou !== null && falhou.status >= 500) {
       this.notifications.errorFromProblem(falhou);
     }

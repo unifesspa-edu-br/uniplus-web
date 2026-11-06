@@ -13,21 +13,15 @@
   de uma fase — aqui você apenas edita os atributos de fases existentes ou as remove.
 </ui-alert>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar as fases canônicas">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar as fases canônicas"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
@@ -53,7 +47,7 @@
   [salvando]="edicao.salvando()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [anuncioDaLeitura]="anuncioDasUnidades()"
+  [faseDasUnidades]="novaTentativaDasUnidades.fase()"
   [erroUnidades]="avisoDasUnidades()"
   [carregandoUnidades]="store.unidades.pendente()"
   [unidadesParaEscolha]="edicao.unidadesParaEscolha()"

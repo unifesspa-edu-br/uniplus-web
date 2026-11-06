@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { AlertComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { CondicaoAtendimentoFormularioComponent } from './condicao-atendimento-formulario.component';
 import { CondicoesAtendimentoListaComponent } from './condicoes-atendimento-lista.component';
 import { CondicoesAtendimentoStore } from './condicoes-atendimento.store';
@@ -11,6 +14,7 @@ import { EdicaoDasCondicoesAtendimento } from './edicao-das-condicoes-atendiment
   selector: 'cfg-condicoes-atendimento-page',
   standalone: true,
   imports: [
+    AlertaNovaTentativaComponent,
     AlertComponent,
     CondicoesAtendimentoListaComponent,
     CondicaoAtendimentoFormularioComponent,
@@ -25,11 +29,11 @@ export class CondicoesAtendimentoPage {
   protected readonly store = inject(CondicoesAtendimentoStore);
   protected readonly edicao = inject(EdicaoDasCondicoesAtendimento);
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-condicoes-atendimento-list-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-condicoes-atendimento-list-title'),
+  });
 
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.store.tentarNovamente());

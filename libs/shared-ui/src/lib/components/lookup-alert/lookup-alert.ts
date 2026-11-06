@@ -1,16 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { AlertComponent } from '../alert/alert';
+import { FaseDaNovaTentativa } from '../alerta-nova-tentativa/nova-tentativa';
+import { NovaTentativaDoCampoComponent } from '../alerta-nova-tentativa/nova-tentativa-do-campo';
 
 /** Catálogo cuja busca foi recusada, com o gatilho para tentar de novo. */
 export interface UiLookupFalho {
   /** Nome do catálogo como aparece na frase de nova tentativa ("cursos"). */
   readonly nome: string;
   /**
-   * A nova tentativa está em curso. Quem informa mantém o catálogo na lista enquanto dura, para o
-   * botão que a pediu não sair da tela com o foco; o botão fica indisponível, sem perdê-lo.
+   * A nova tentativa deste catálogo está em curso. Quem informa mantém o catálogo na lista
+   * enquanto dura, para o botão que a pediu não sair da tela com o foco; o botão fica ocupado
+   * (`aria-busy`) e indisponível, sem perdê-lo.
    */
   readonly pendente?: boolean;
+  /** O botão não age agora por outro motivo (a lista está ocupada): só `aria-disabled`, sem `aria-busy`. */
+  readonly indisponivel?: boolean;
+  /** A fase da nova tentativa pedida; o alerta mostra e anuncia o mesmo texto (`acompanharNovaTentativa`). */
+  readonly fase: FaseDaNovaTentativa;
   recarregar(): void;
 }
 
@@ -26,24 +33,23 @@ export interface UiLookupFalho {
 @Component({
   selector: 'ui-lookup-alert',
   standalone: true,
-  imports: [AlertComponent],
+  imports: [AlertComponent, NovaTentativaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'lookup-alert' },
   template: `
     @if (falhas().length > 0) {
       <ui-alert variant="warning" heading="Rótulos não carregados">
         {{ mensagem() }}
-        <span class="lookup-alert__acoes">
+        <span alertaAcoes class="lookup-alert__acoes">
           @for (falha of falhas(); track falha.nome) {
-            <button
-              type="button"
-              class="lookup-alert__retry"
-              [attr.aria-disabled]="falha.pendente ? 'true' : null"
-              [attr.aria-busy]="falha.pendente ? 'true' : null"
-              (click)="tentar(falha)"
-            >
-              Recarregar {{ falha.nome }}
-            </button>
+            <ui-nova-tentativa-do-campo
+              [rotulo]="'Recarregar ' + falha.nome"
+              [assunto]="falha.nome"
+              [fase]="falha.fase"
+              [pendente]="falha.pendente ?? false"
+              [indisponivel]="falha.indisponivel ?? false"
+              (tentar)="falha.recarregar()"
+            />
           }
         </span>
       </ui-alert>
@@ -52,10 +58,6 @@ export interface UiLookupFalho {
 })
 export class LookupAlertComponent {
   readonly falhas = input.required<readonly UiLookupFalho[]>();
-
-  protected tentar(falha: UiLookupFalho): void {
-    if (!falha.pendente) falha.recarregar();
-  }
 
   protected readonly mensagem = computed(() =>
     this.falhas().length === 1

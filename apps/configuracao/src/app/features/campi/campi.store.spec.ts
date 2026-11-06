@@ -87,23 +87,6 @@ describe('CampiStore', () => {
     expect(erro).not.toHaveBeenCalled();
   });
 
-  it('conta as tentativas do operador que falham e zera quando a lista chega', async () => {
-    await propagar();
-    await falharLista(503);
-    expect(store.tentativasSemSucesso()).toBe(1);
-
-    store.tentarNovamente();
-    await propagar();
-    await falharLista(503);
-    expect(store.tentativasSemSucesso()).toBe(2);
-
-    store.tentarNovamente();
-    await propagar();
-    await responder([campus]);
-    expect(store.tentativasSemSucesso()).toBe(0);
-    expect(store.mensagemDeErro()).toBeNull();
-  });
-
   it('tentar novamente com a lista carregando não repete a consulta', async () => {
     await propagar();
     store.tentarNovamente();

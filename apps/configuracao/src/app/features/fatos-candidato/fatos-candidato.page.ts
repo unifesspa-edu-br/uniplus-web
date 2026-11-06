@@ -9,13 +9,13 @@ import {
   viewChild,
 } from '@angular/core';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, type UiLookupFalho } from '@uniplus/shared-ui/components';
-import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import {
-  avisoDeFalhaDoLookup,
-  focarAposNovaTentativa,
-  novaTentativaAnunciada,
-} from '../../shared/foco';
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  type UiLookupFalho,
+} from '@uniplus/shared-ui/components';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
+import { avisoDeFalhaDoLookup } from '../../shared/foco';
 import {
   AprovacaoDoCatalogo,
   SolicitacaoDaProtecaoDialogComponent,
@@ -37,7 +37,7 @@ import { ID_DAS_REGRAS_DO_DETALHE, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
 @Component({
   selector: 'cfg-fatos-candidato-page',
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
     FatoDetalheComponent,
     FatoDrawerComponent,
@@ -66,15 +66,12 @@ export class FatosCandidatoPage {
   private readonly lista = viewChild(FatosCandidatoListaComponent);
 
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  /** O aviso mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncioDeApoio = signal('');
   private readonly avisoDaAprovacao = avisoDeFalhaDoLookup(this.aprovacao);
-  private readonly novaTentativaDaAprovacao = novaTentativaAnunciada({
-    nome: 'itens que aguardam a proteção de dados',
+  protected readonly novaTentativaDaAprovacao = acompanharNovaTentativa({
+    assunto: 'situação de aprovação',
     pendente: this.aprovacao.pendente,
     falhou: this.avisoDaAprovacao,
     destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
-    anuncio: this.anuncioDeApoio,
   });
   protected readonly falhasDeApoio = computed<readonly UiLookupFalho[]>(() =>
     this.avisoDaAprovacao()
@@ -82,23 +79,26 @@ export class FatosCandidatoPage {
           {
             nome: 'itens que aguardam a proteção de dados',
             pendente: this.aprovacao.pendente(),
+            fase: this.novaTentativaDaAprovacao.fase(),
             recarregar: () =>
               this.novaTentativaDaAprovacao.executar(() => this.aprovacao.carregar()),
           },
         ]
       : [],
   );
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO_DA_LISTA),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'fatos',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
+  });
 
-  private readonly novaTentativaDoCatalogo = focarAposNovaTentativa(
-    this.detalhe.catalogoPendente,
-    this.detalhe.catalogoFalhou,
-    () => document.getElementById(ID_DAS_REGRAS_DO_DETALHE),
-  );
+  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
+    assunto: 'catálogo de fatos',
+    pendente: this.detalhe.catalogoPendente,
+    falhou: this.detalhe.catalogoFalhou,
+    destino: () => document.getElementById(ID_DAS_REGRAS_DO_DETALHE),
+  });
 
   protected tentarCatalogoDoDetalhe(): void {
     this.novaTentativaDoCatalogo.executar(() => this.detalhe.recarregarCatalogo());

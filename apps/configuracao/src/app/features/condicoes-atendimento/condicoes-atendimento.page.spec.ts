@@ -9,6 +9,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CondicoesAtendimentoPage } from './condicoes-atendimento.page';
 import { CondicoesAtendimentoStore } from './condicoes-atendimento.store';
 import { EdicaoDasCondicoesAtendimento } from './edicao-das-condicoes-atendimento';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/condicoes-atendimento`;
@@ -159,6 +163,7 @@ describe('CondicoesAtendimentoPage', () => {
     tentar.click();
     await propagar();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     await listar([pcd]);
     expect(store.condicoes()).toEqual([pcd]);
     expect(texto()).not.toContain('Não foi possível carregar');

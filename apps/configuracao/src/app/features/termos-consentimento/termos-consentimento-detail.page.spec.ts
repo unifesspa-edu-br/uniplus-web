@@ -17,6 +17,10 @@ import {
   termo,
   versao,
 } from './termos-consentimento.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 let cena: CenaDoDetalhe;
 afterEach(() => cena.controller.verify());
@@ -64,6 +68,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     await cena.propagar();
     expect(cena.botao('Tentar novamente')).toBe(tentar);
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     expect(tentar.getAttribute('aria-busy')).toBe('true');
     expect(document.activeElement).toBe(tentar);
     tentar.click();
@@ -72,6 +77,48 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     await cena.propagar();
     expect(cena.fixture.nativeElement.querySelector('form')).not.toBeNull();
     expect(document.activeElement).toBe(cena.titulo());
+  });
+
+  it('"Tentar novamente" com rascunho alterado só abre a confirmação: nenhuma leitura, nenhuma falha repetida', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
+    );
+    await cena.propagar();
+    cena.edicao.rascunhoForm.markAsDirty();
+
+    const tentar = cena.botao('Tentar novamente');
+    tentar.click();
+    await cena.propagar();
+
+    expect(cena.edicao.confirmRecarregarAberto()).toBe(true);
+    cena.controller.expectNone(LEITURA);
+    expect(situacaoDoBotao(tentar)).toBe('');
+    expect(tentar.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('a confirmação da recarga inicia a nova tentativa e mostra o andamento', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
+    );
+    await cena.propagar();
+    cena.edicao.rascunhoForm.markAsDirty();
+    cena.botao('Tentar novamente').click();
+    await cena.propagar();
+
+    cena.botao('Descartar e recarregar').click();
+    await cena.propagar();
+
+    cena.controller.expectOne(LEITURA);
+    expect(situacaoDoBotao(cena.botao('Tentar novamente'))).toBe(TEXTO_TENTANDO);
+    expect(cena.edicao.confirmRecarregarAberto()).toBe(false);
   });
 
   it('o foco levado a "Voltar à lista" durante a carga continua lá ao fim dela', async () => {

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
-import { AlertComponent } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { BaseLegalBonusRegionalFormularioComponent } from './base-legal-bonus-regional-formulario.component';
 import { BaseLegalBonusRegionalListaComponent } from './base-legal-bonus-regional-lista.component';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
@@ -16,7 +17,7 @@ import { TiposDeInstrumento } from './tipos-de-instrumento';
   selector: 'cfg-base-legal-bonus-regional-page',
   standalone: true,
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     AlertaNovaTentativaComponent,
     BaseLegalBonusRegionalFormularioComponent,
     BaseLegalBonusRegionalListaComponent,
@@ -38,11 +39,12 @@ export class BaseLegalBonusRegionalPage {
   protected readonly municipios = inject(MunicipiosDaBaseLegal);
   protected readonly tipos = inject(TiposDeInstrumento);
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-base-legal-list-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'bases legais',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-base-legal-list-title'),
+  });
 
   protected readonly rotuloDoTipo = (codigo: string): ResolucaoDeVinculo =>
     this.tipos.resolver(codigo);

@@ -8,25 +8,18 @@
   </div>
 </div>
 
-@if (leitura.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar os locais de oferta">
-  {{ leitura.mensagemDeErro() }}
-  <div class="cfg-locais__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="indisponivel() ? 'true' : null"
-      [attr.aria-busy]="indisponivel() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (leitura.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os locais de oferta"
+  [mensagem]="mensagem"
+  [pendente]="leitura.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
-<p class="sr-only" role="status">{{ anuncioDosCampi() }}</p>
 <cfg-locais-oferta-lista
   [locais]="leitura.locais()"
   [carregando]="leitura.carregando()"
@@ -56,7 +49,7 @@
   [campi]="leitura.campi.opcoes()"
   [campiComErro]="avisoDosCampi()"
   [carregandoCampi]="leitura.campi.pendente()"
-  [anuncioDaLeitura]="anuncioDosCampiNoFormulario()"
+  [faseDosCampi]="novaTentativaDosCampi.fase()"
   (recarregarCampi)="tentarNovamenteOsCampi()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"

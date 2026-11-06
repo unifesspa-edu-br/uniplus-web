@@ -13,6 +13,10 @@ import {
   problema,
   sucesso,
 } from './ofertas-curso.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('OfertasCursoPage — remoção, foco e leituras', () => {
   let p: Pagina;
@@ -141,6 +145,7 @@ describe('OfertasCursoPage — remoção, foco e leituras', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([oferta]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));

@@ -97,6 +97,7 @@ class ArvoreDeTesteComponent {
     gravando: this.gravando,
     carregando: this.carregando,
     sobreposicaoAberta: this.sobreposicaoAberta,
+    acionadorDeUsoUnico: true,
     atributoDaLinha: 'data-no-id',
     elementoDaLinha: 'li',
     idDoTitulo: 'titulo-da-lista',

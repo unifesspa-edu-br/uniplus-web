@@ -46,4 +46,21 @@ describe('avisoDeFalhaDoLookup', () => {
 
     expect(aviso()).toBe(false);
   });
+
+  it('uma recarga depois de uma falha já superada não traz o aviso de volta', () => {
+    const { comErro, pendente, aviso, assentar } = montar();
+    comErro.set(true);
+    pendente.set(false);
+    assentar();
+    comErro.set(false);
+    pendente.set(true);
+    assentar();
+    pendente.set(false);
+    assentar();
+
+    pendente.set(true);
+    assentar();
+
+    expect(aviso()).toBe(false);
+  });
 });

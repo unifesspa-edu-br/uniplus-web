@@ -9,9 +9,11 @@ import {
   inject,
   untracked,
 } from '@angular/core';
-import { AlertComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { CalendariosListaComponent } from './calendarios-lista.component';
 import { CalendariosStore } from './calendarios.store';
 import { AcionadorDaConfirmacao, EdicaoDosCalendarios } from './edicao-dos-calendarios';
@@ -25,7 +27,7 @@ const PREFIXO_DA_ACAO: Readonly<Record<AcionadorDaConfirmacao['acao'], string>> 
 @Component({
   selector: 'cfg-calendario-dias-uteis-list',
   standalone: true,
-  imports: [AlertComponent, CalendariosListaComponent, ConfirmacaoDeRemocaoComponent],
+  imports: [AlertaNovaTentativaComponent, CalendariosListaComponent, ConfirmacaoDeRemocaoComponent],
   providers: [CalendariosStore, EdicaoDosCalendarios],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calendario-dias-uteis-list.page.html',
@@ -37,11 +39,11 @@ export class CalendarioDiasUteisListPage {
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
 
   constructor() {
     effect(() => {

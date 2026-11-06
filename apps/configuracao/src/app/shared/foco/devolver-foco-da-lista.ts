@@ -29,10 +29,15 @@ export interface OpcoesDaDevolucaoDeFoco {
   readonly elementoDaLinha?: string;
   /**
    * Alguma sobreposição aberta a partir da lista (formulário, confirmação ou detalhe). Ao fechar
-   * sem gravar o foco também volta, e o acionador anotado vale uma vez só: abrir um detalhe que
-   * não anota o acionador não leva o foco a um acionador antigo.
+   * sem gravar o foco também volta ao acionador, como depois de gravar.
    */
   readonly sobreposicaoAberta?: Signal<boolean>;
+  /**
+   * O acionador anotado vale uma vez só. Sem isso, vale até a próxima anotação: a escrita refeita
+   * após uma recusa parte do mesmo acionador. Com uma sobreposição que pode abrir sem anotar
+   * (um detalhe), o uso único impede que o foco vá a um acionador antigo.
+   */
+  readonly acionadorDeUsoUnico?: boolean;
   /** `id` do título da lista, destino quando o acionador saiu da tela. */
   readonly idDoTitulo: string;
   /** `id` do botão de cadastro, dentro ou fora da lista; sem ele, o cadastro devolve o foco ao título. */
@@ -40,7 +45,7 @@ export interface OpcoesDaDevolucaoDeFoco {
 }
 
 export interface DevolucaoDeFoco {
-  /** Anota de onde a pessoa acionou; vale até a próxima anotação, pois a escrita refeita após uma recusa parte do mesmo acionador. */
+  /** Anota de onde a pessoa acionou; vale até a próxima anotação, ou uma vez só com `acionadorDeUsoUnico`. */
   registrar(acionador: AcionadorDaLista): void;
 }
 
@@ -69,7 +74,7 @@ class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
     }
     this.ocupada = false;
     const acionador = this.ultimo;
-    if (this.opcoes.sobreposicaoAberta) this.ultimo = undefined;
+    if (this.opcoes.acionadorDeUsoUnico) this.ultimo = undefined;
     if (acionador !== undefined) {
       afterNextRender(() => this.devolver(acionador), { injector: this.injector });
     }

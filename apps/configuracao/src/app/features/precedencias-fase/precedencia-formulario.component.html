@@ -7,27 +7,19 @@
   position="right"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
-  <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
   @if (falhaAoCarregarFases()) {
-    <ui-alert variant="warning" heading="Nomes das fases indisponíveis">
-      Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem só com
-      o código. O cadastro da aresta continua disponível.
-      <div class="list-state__retry">
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [attr.aria-disabled]="carregandoFases() ? 'true' : null"
-          [attr.aria-busy]="carregandoFases() ? 'true' : null"
-          (click)="recarregarFases.emit()"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    </ui-alert>
+    <ui-alerta-nova-tentativa
+      titulo="Nomes das fases indisponíveis"
+      mensagem="Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem só com o código. O cadastro da aresta continua disponível."
+      [pendente]="carregandoFases()"
+      [fase]="faseDasFases()"
+      variante="warning"
+      (tentar)="recarregarFases.emit()"
+    />
   }
 
   <form

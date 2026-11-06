@@ -15,21 +15,15 @@
   de atendimento o referencia literalmente.
 </ui-alert>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar as condições de atendimento">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar as condições de atendimento"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>

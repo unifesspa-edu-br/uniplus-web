@@ -8,14 +8,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
-import { SpinnerComponent } from '@uniplus/shared-ui/components';
+import { NovaTentativaDoCampoComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { BUSCA_MAXIMO_DE_CARACTERES, type CampoDeMunicipios } from './municipios-da-base-legal';
 
 /** O campo dos municípios da base legal: a busca na API de geografia e os municípios escolhidos. */
 @Component({
   selector: 'cfg-campo-de-municipios',
   standalone: true,
-  imports: [SpinnerComponent],
+  imports: [SpinnerComponent, NovaTentativaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campo-de-municipios.component.html',
   styleUrl: './campo-de-municipios.component.css',

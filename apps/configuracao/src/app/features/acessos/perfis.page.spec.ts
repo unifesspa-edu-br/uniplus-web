@@ -17,6 +17,10 @@ import { PerfisApi, type PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { PerfisPage } from './perfis.page';
 import { ok, recusa } from './testes';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -692,7 +696,6 @@ describe('PerfisPage', async () => {
       fixture.detectChanges();
       const consultas = api.listar.mock.calls.length;
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
       tentar.click();
       fixture.detectChanges();
       expect(api.listar.mock.calls.length).toBe(consultas);
@@ -856,7 +859,7 @@ describe('PerfisPage', async () => {
         const consultas = api.catalogoDePermissoes.mock.calls.length;
 
         expect(tentar.getAttribute('aria-disabled')).toBe('true');
-        expect(tentar.getAttribute('aria-busy')).toBe('true');
+        expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
         tentar.click();
         await new Promise((resolver) => setTimeout(resolver));
         fixture.detectChanges();

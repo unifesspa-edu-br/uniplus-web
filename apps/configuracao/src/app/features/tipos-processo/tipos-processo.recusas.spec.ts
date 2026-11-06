@@ -11,6 +11,10 @@ import {
   sucesso,
   vestibular,
 } from './tipos-processo.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
 const CONCORRENCIA = {
@@ -424,6 +428,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([sisu]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));

@@ -13,12 +13,12 @@
 
   <!-- Só com o formulário aberto: o drawer fechado não repete o alerta da página. -->
   @if (aberto() && tipos().falhou) {
-    <cfg-alerta-nova-tentativa
+    <ui-alerta-nova-tentativa
       variante="warning"
       titulo="Tipos de instrumento não carregados"
       [mensagem]="tipos().mensagemDeFalha"
       [pendente]="tipos().pendente"
-      [tentativasSemSucesso]="tipos().tentativasSemSucesso"
+      [fase]="tipos().fase"
       idBotao="cfg-blbr-tipos-tentar"
       idMensagem="cfg-blbr-tipos-falha"
       (tentar)="tentarTipos.emit()"

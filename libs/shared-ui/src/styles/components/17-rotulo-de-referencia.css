@@ -26,21 +26,8 @@
   margin: var(--space-4) var(--space-5);
 }
 .lookup-alert__acoes {
-  display: inline-flex;
+  display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
-}
-.lookup-alert__retry {
-  padding: 0;
-  color: inherit;
-  background: transparent;
-  border: 0;
-  font: inherit;
-  font-weight: var(--weight-semibold);
-  text-decoration: underline;
-  cursor: pointer;
-}
-.lookup-alert__retry[aria-disabled='true'] {
-  color: var(--text-disabled);
-  cursor: not-allowed;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2);
 }

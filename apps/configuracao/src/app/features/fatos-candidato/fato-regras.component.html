@@ -2,22 +2,15 @@
   @if (leitura.temRegras()) {
     <section aria-labelledby="cfg-fato-regras">
       <h3 id="cfg-fato-regras" class="form-section__title" tabindex="-1">Regras padrão</h3>
-      <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
       @if (leitura.catalogo.falhou()) {
-        <ui-alert variant="warning" heading="Catálogo de fatos não carregado">
-          Sem o catálogo, as condições das regras não podem ser escritas nem conferidas.
-          <div class="list-state__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="leitura.catalogo.pendente() ? 'true' : null"
-              [attr.aria-busy]="leitura.catalogo.pendente() ? 'true' : null"
-              (click)="tentarCatalogoNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
+        <ui-alerta-nova-tentativa
+          titulo="Catálogo de fatos não carregado"
+          mensagem="Sem o catálogo, as condições das regras não podem ser escritas nem conferidas."
+          [pendente]="leitura.catalogo.pendente()"
+          [fase]="novaTentativaDoCatalogo.fase()"
+          variante="warning"
+          (tentar)="tentarCatalogoNovamente()"
+        />
       }
       <p class="u-caption">
         O processo copia estas regras ao citar o fato e pode alterá-las na cópia.

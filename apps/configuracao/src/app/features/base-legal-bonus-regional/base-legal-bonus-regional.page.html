@@ -9,30 +9,24 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar as bases legais">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar as bases legais"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 } @if (tipos.falhou()) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   variante="warning"
   titulo="Tipos de instrumento não carregados"
   [mensagem]="tipos.mensagemNaPagina()"
   [pendente]="tipos.pendente()"
-  [tentativasSemSucesso]="tipos.tentativasSemSucesso()"
+  [fase]="tipos.novaTentativa.fase()"
   idBotao="cfg-blbr-tipos-tentar-pagina"
-  (tentar)="tipos.tentarDeNovoNaPagina()"
+  (tentar)="tipos.tentarDeNovo()"
 />
 }
 
@@ -66,7 +60,7 @@
   [municipios]="municipios.campo()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (tentarTipos)="tipos.tentarDeNovoNoFormulario()"
+  (tentarTipos)="tipos.tentarDeNovo()"
   (buscarMunicipio)="municipios.buscar($event)"
   (adicionarMunicipio)="municipios.adicionar($event)"
   (removerMunicipio)="municipios.remover($event)"

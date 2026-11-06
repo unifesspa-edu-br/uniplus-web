@@ -7,6 +7,7 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { acompanharNovaTentativa } from '@uniplus/shared-ui/components';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
@@ -25,7 +26,6 @@ import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedirAcessoStore } from './pedir-acesso.store';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 
@@ -72,11 +72,13 @@ export class EdicaoDoPedidoDeAcesso {
   readonly perfis = this.store.perfis;
   readonly perfisIndisponiveis = this.store.perfisIndisponiveis;
   readonly carregandoPerfis = this.store.carregandoPerfis;
-  private readonly novaTentativaDosPerfis = focarAposNovaTentativa(
-    this.store.carregandoPerfis,
-    computed(() => this.store.perfisIndisponiveis() !== null),
-    () => this.host.nativeElement.querySelector<HTMLElement>('select[formcontrolname="perfilId"]'),
-  );
+  readonly novaTentativaDosPerfis = acompanharNovaTentativa({
+    assunto: 'perfis',
+    pendente: this.store.carregandoPerfis,
+    falhou: computed(() => this.store.perfisIndisponiveis() !== null),
+    destino: () =>
+      this.host.nativeElement.querySelector<HTMLElement>('select[formcontrolname="perfilId"]'),
+  });
   private readonly escopo = nomesDeEscopo();
 
   readonly form = new FormGroup({

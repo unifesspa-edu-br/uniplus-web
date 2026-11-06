@@ -27,22 +27,15 @@
     @if (edicao.erro()) {
       <ui-alert variant="danger" heading="Não foi possível salvar">{{ edicao.erro() }}</ui-alert>
     }
-  } @else if (leitura.erroDeCarga()) {
+  } @else if (leitura.erroDeCarga(); as erroDeCarga) {
     <div id="cfg-fato-erro-de-carga" tabindex="-1">
-      <ui-alert variant="danger" heading="Não foi possível carregar o fato">
-        {{ leitura.erroDeCarga() }}
-        <div class="list-state__retry">
-          <button
-            type="button"
-            class="btn btn--secondary btn--sm"
-            [attr.aria-disabled]="leitura.carregando() ? 'true' : null"
-            [attr.aria-busy]="leitura.carregando() ? 'true' : null"
-            (click)="tentarNovamente()"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </ui-alert>
+      <ui-alerta-nova-tentativa
+        titulo="Não foi possível carregar o fato"
+        [mensagem]="erroDeCarga"
+        [pendente]="leitura.carregando()"
+        [fase]="novaTentativa.fase()"
+        (tentar)="tentarNovamente()"
+      />
     </div>
   } @else if (leitura.carregando()) {
     <p><ui-spinner spinnerSize="sm" /> Carregando o fato…</p>

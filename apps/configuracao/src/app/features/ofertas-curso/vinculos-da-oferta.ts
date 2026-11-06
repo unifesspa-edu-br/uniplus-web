@@ -1,13 +1,10 @@
+import { DestroyRef, Injectable, Signal, computed, inject } from '@angular/core';
 import {
-  DestroyRef,
-  Injectable,
-  Signal,
-  computed,
-  effect,
-  inject,
-  signal,
-  untracked,
-} from '@angular/core';
+  acompanharNovaTentativa,
+  type FaseDaNovaTentativa,
+  destinoAcessivel,
+} from '@uniplus/shared-ui/components';
+import { avisoDeFalhaDoLookup } from '../../shared/foco';
 import { Observable, tap } from 'rxjs';
 import {
   API_MAX_PAGE_SIZE,
@@ -23,7 +20,6 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CursosApi, LocaisOfertaApi, OfertaCursoDto } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import type { UiLookupFalho } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import {
   rotularCidadeETipo,
   rotularCursoCompleto,
@@ -37,14 +33,14 @@ export const ID_DO_TITULO_DA_LISTA = 'cfg-ofertas-list-title';
 
 export type ChaveDoVinculo = 'curso' | 'local' | 'unidade';
 
-/** Catálogo de chave estrangeira com o estado de falha que a tela mostra e as duas novas tentativas. */
+/** Catálogo de chave estrangeira com o estado de falha que a tela mostra e a nova tentativa. */
 export interface LeituraDoVinculo<T> extends LookupCompleto<T> {
   /** A busca falhou, ou o operador pediu nova tentativa e a falha anterior segue na tela até ela terminar. */
   readonly falhou: Signal<boolean>;
-  /** Nova tentativa pelo alerta da listagem: o foco, se perdido, vai ao título da lista. */
-  tentarNaLista(): void;
-  /** Nova tentativa pelo campo do formulário: o foco, se perdido, vai ao campo que o catálogo alimenta. */
-  tentarNoCampo(): void;
+  /** A fase da nova tentativa, a mesma na listagem e no campo do formulário. */
+  readonly fase: Signal<FaseDaNovaTentativa>;
+  /** Nova tentativa pela listagem ou pelo campo: o foco, se perdido, vai ao campo aberto ou ao título da lista. */
+  tentar(): void;
 }
 
 export interface VinculosEscolhidos {
@@ -63,6 +59,7 @@ export interface CatalogoDoFormulario {
   readonly opcoes: readonly OpcaoDeVinculo[];
   readonly falhou: boolean;
   readonly pendente: boolean;
+  readonly fase: FaseDaNovaTentativa;
   /** Descrição do item escolhido, abaixo do select. */
   readonly contexto: string | null;
 }
@@ -93,14 +90,17 @@ export class VinculosDaOferta {
   readonly cursos = this.ler(
     (cursor) => this.cursosApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     'cfg-oferta-curso-id',
+    'cursos',
   );
   readonly locais = this.ler(
     (cursor) => this.locaisApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     'cfg-oferta-local-id',
+    'locais de oferta',
   );
   readonly unidades = this.ler(
     (cursor) => this.unidadesApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
     'cfg-oferta-unidade-id',
+    'unidades',
   );
 
   private readonly cursosPorId = computed(
@@ -120,7 +120,8 @@ export class VinculosDaOferta {
           {
             nome: 'cursos',
             pendente: this.cursos.pendente(),
-            recarregar: () => this.cursos.tentarNaLista(),
+            fase: this.cursos.fase(),
+            recarregar: () => this.cursos.tentar(),
           },
         ]
       : []),
@@ -129,7 +130,8 @@ export class VinculosDaOferta {
           {
             nome: 'locais de oferta',
             pendente: this.locais.pendente(),
-            recarregar: () => this.locais.tentarNaLista(),
+            fase: this.locais.fase(),
+            recarregar: () => this.locais.tentar(),
           },
         ]
       : []),
@@ -143,7 +145,7 @@ export class VinculosDaOferta {
   /** Nova tentativa pedida no campo do vínculo, no formulário. */
   tentarNoCampo(vinculo: ChaveDoVinculo): void {
     const leituras = { curso: this.cursos, local: this.locais, unidade: this.unidades };
-    leituras[vinculo].tentarNoCampo();
+    leituras[vinculo].tentar();
   }
 
   /** Lê as unidades na primeira abertura do formulário de criação; as demais reaproveitam a lista. */
@@ -229,6 +231,7 @@ export class VinculosDaOferta {
       opcoes: leitura.opcoes().map((item) => ({ valor: item.id, rotulo: rotular(item) })),
       falhou: leitura.falhou(),
       pendente: leitura.pendente(),
+      fase: leitura.fase(),
       contexto,
     };
   }
@@ -236,31 +239,28 @@ export class VinculosDaOferta {
   private ler<T>(
     pagina: (cursor?: Cursor) => Observable<ApiResult<readonly T[]>>,
     idDoCampo: string,
+    assunto: string,
   ): LeituraDoVinculo<T> {
     const lookup = lookupCompleto<T>(
       (cursor) => pagina(cursor).pipe(tap((resultado) => this.avisarFalhaDoServidor(resultado))),
       this.destroyRef,
     );
-    const tentando = signal(false);
-    const falhou = computed(() => lookup.comErro() || (tentando() && lookup.pendente()));
-    effect(() => {
-      if (!lookup.pendente()) {
-        untracked(() => tentando.set(false));
-      }
+    const falhou = avisoDeFalhaDoLookup(lookup);
+    const novaTentativa = acompanharNovaTentativa({
+      assunto,
+      pendente: lookup.pendente,
+      falhou,
+      destino: () =>
+        destinoAcessivel(
+          document.getElementById(idDoCampo),
+          document.getElementById(ID_DO_TITULO_DA_LISTA),
+        ),
     });
-    const novaTentativa = (destino: () => HTMLElement | null): (() => void) => {
-      const tentativa = focarAposNovaTentativa(lookup.pendente, falhou, destino);
-      return () =>
-        tentativa.executar(() => {
-          tentando.set(true);
-          lookup.recarregar();
-        });
-    };
     return {
       ...lookup,
       falhou,
-      tentarNaLista: novaTentativa(() => document.getElementById(ID_DO_TITULO_DA_LISTA)),
-      tentarNoCampo: novaTentativa(() => document.getElementById(idDoCampo)),
+      fase: novaTentativa.fase,
+      tentar: () => novaTentativa.executar(() => lookup.recarregar()),
     };
   }
 

@@ -1,10 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import {
+  type FaseDaNovaTentativa,
+  NovaTentativaDoCampoComponent,
+} from '@uniplus/shared-ui/components';
 import type { CidadeResumoDto } from '@uniplus/shared-data/geo';
 import type { CidadeRef } from '@uniplus/shared-ui/components';
 
 /** O campo "cidade-sede": a cidade escolhida ou a busca na Geo com as opções encontradas. */
 @Component({
   selector: 'cfg-unidade-cidade-campo',
+  imports: [NovaTentativaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './unidade-cidade-campo.component.html',
 })
@@ -13,6 +18,7 @@ export class UnidadeCidadeCampoComponent {
   readonly termo = model.required<string>();
   readonly opcoes = input.required<readonly CidadeResumoDto[]>();
   readonly buscando = input.required<boolean>();
+  readonly fase = input.required<FaseDaNovaTentativa>();
   readonly erroDaBusca = input.required<string | null>();
   readonly semResultado = input.required<boolean>();
   /** A recusa da referência de cidade no salvamento. */

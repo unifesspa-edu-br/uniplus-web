@@ -25,6 +25,7 @@ describe('OfertasDoCursoComponent', () => {
       ofertas,
       temAnterior: false,
       temProximo: false,
+      fase: 'inicial',
     };
     for (const [nome, valor] of Object.entries({ ...padrao, ...entradas })) {
       fixture.componentRef.setInput(nome, valor);

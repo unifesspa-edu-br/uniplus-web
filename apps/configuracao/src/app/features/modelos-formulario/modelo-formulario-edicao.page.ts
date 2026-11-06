@@ -4,28 +4,39 @@ import {
   computed,
   Signal,
   inject,
-  signal,
   viewChild,
 } from '@angular/core';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
 import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
   AlertComponent,
   BUSCA_DE_MUNICIPIOS,
   EditorDeFormularioComponent,
+  type NovaTentativa,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
-import {
-  acompanharFocoDoEnvio,
-  novaTentativaAnunciada,
-  type NovaTentativa,
-} from '../../shared/foco';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { EdicaoDoConteudoDoModelo } from './edicao-do-conteudo-do-modelo';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 import { ModeloFormularioCabecalhoComponent } from './modelo-formulario-cabecalho.component';
 import { ModeloFormularioDocumentosComponent } from './modelo-formulario-documentos.component';
 import { ModeloFormularioIdentificacaoComponent } from './modelo-formulario-identificacao.component';
 import { ModeloFormularioRodapeComponent } from './modelo-formulario-rodape.component';
+
+/** O alerta da falha sai com o botão; o foco vai ao título, que a tela mantém. */
+function novaTentativaDoTitulo(
+  pendente: Signal<boolean>,
+  falhou: Signal<boolean>,
+  assunto: string,
+): NovaTentativa {
+  return acompanharNovaTentativa({
+    pendente,
+    falhou,
+    assunto,
+    destino: () => document.getElementById('cfg-modelo-titulo'),
+  });
+}
 
 @Component({
   selector: 'cfg-modelo-formulario-edicao-page',
@@ -53,26 +64,25 @@ export class ModeloFormularioEdicaoPage {
   protected readonly edicao = inject(EdicaoDoConteudoDoModelo);
   protected readonly comMunicipios = inject(BUSCA_DE_MUNICIPIOS, { optional: true }) !== null;
   private readonly editor = viewChild(EditorDeFormularioComponent);
-  protected readonly anuncio = signal('');
-  private readonly novaTentativaDoModelo = this.novaTentativa(
-    'modelo',
+  protected readonly novaTentativaDoModelo = novaTentativaDoTitulo(
     this.store.carregando,
     computed(() => this.store.erroAoCarregar() !== null),
+    'modelo',
   );
-  private readonly novaTentativaDosTermos = this.novaTentativa(
-    'termos de consentimento',
+  protected readonly novaTentativaDosTermos = novaTentativaDoTitulo(
     this.store.termosCarregando,
     this.store.termosComErro,
+    'termos',
   );
-  private readonly novaTentativaDoCatalogo = this.novaTentativa(
-    'catálogo de fatos',
+  protected readonly novaTentativaDoCatalogo = novaTentativaDoTitulo(
     this.store.catalogo.isLoading,
     this.store.catalogoComErro,
+    'catálogo',
   );
-  private readonly novaTentativaDoVocabulario = this.novaTentativa(
-    'fases e tipos de documento',
+  protected readonly novaTentativaDoVocabulario = novaTentativaDoTitulo(
     this.store.vocabularioDosDocumentosCarregando,
     this.store.vocabularioDosDocumentosComErro,
+    'vocabulário',
   );
 
   constructor() {
@@ -96,21 +106,6 @@ export class ModeloFormularioEdicaoPage {
 
   protected recarregarVocabulario(): void {
     this.novaTentativaDoVocabulario.executar(() => this.store.recarregarVocabularioDosDocumentos());
-  }
-
-  /** O alerta da falha sai com o botão; o foco vai ao título, que a tela mantém. */
-  private novaTentativa(
-    nome: string,
-    pendente: Signal<boolean>,
-    falhou: Signal<boolean>,
-  ): NovaTentativa {
-    return novaTentativaAnunciada({
-      nome,
-      pendente,
-      falhou,
-      destino: () => document.getElementById('cfg-modelo-titulo'),
-      anuncio: this.anuncio,
-    });
   }
 
   protected salvar(): void {

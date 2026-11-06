@@ -1,8 +1,12 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from '@angular/core';
 import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { AlertComponent } from '@uniplus/shared-ui/components';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
+import { devolverFocoDaLista } from '../../shared/foco';
 import { BuscaDeCidade } from './busca-de-cidade';
 import { DetalheDaUnidade } from './detalhe-da-unidade';
 import { EdicaoDasUnidades } from './edicao-das-unidades';
@@ -20,6 +24,7 @@ import { UnidadesStore } from './unidades.store';
   selector: 'cfg-unidades-page',
   standalone: true,
   imports: [
+    AlertaNovaTentativaComponent,
     AlertComponent,
     ConfirmacaoDeRemocaoComponent,
     UnidadeCidadeCampoComponent,
@@ -50,23 +55,26 @@ export class UnidadesPage {
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
   protected readonly indisponivel = this.pendente;
 
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-unidades-list-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'unidades',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-unidades-list-title'),
+  });
 
-  private readonly novaTentativaDaCidade = focarAposNovaTentativa(
-    this.cidade.buscando,
-    computed(() => this.cidade.erro() !== null),
-    () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-cidade-busca'),
-  );
+  protected readonly novaTentativaDaCidade = acompanharNovaTentativa({
+    assunto: 'cidades',
+    pendente: this.cidade.buscando,
+    falhou: computed(() => this.cidade.erro() !== null),
+    destino: () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-cidade-busca'),
+  });
 
-  private readonly novaTentativaDaSuperior = focarAposNovaTentativa(
-    this.superior.carregando,
-    this.superior.comErro,
-    () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-superior'),
-  );
+  protected readonly novaTentativaDaSuperior = acompanharNovaTentativa({
+    assunto: 'unidades superiores',
+    pendente: this.superior.carregando,
+    falhou: this.superior.comErro,
+    destino: () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-superior'),
+  });
 
   private readonly foco = devolverFocoDaLista({
     gravando: this.edicao.gravando,
@@ -78,6 +86,7 @@ export class UnidadesPage {
     sobreposicaoAberta: computed(
       () => this.edicao.aberto() || this.edicao.confirmando() || this.detalhe.aberto(),
     ),
+    acionadorDeUsoUnico: true,
   });
 
   protected tentarNovamente(): void {

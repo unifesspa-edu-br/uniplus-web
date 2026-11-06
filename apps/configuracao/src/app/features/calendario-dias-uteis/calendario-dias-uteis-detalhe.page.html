@@ -7,21 +7,14 @@
     <h1 id="cfg-calendario-detalhe-title" class="page-header__title" tabindex="-1">Detalhes</h1>
   </div>
 </div>
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar o calendário">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="store.carregando() ? 'true' : null"
-      [attr.aria-busy]="store.carregando() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar o calendário"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 } @else if (store.carregandoPrimeiraVez()) {
 <div class="list-state__loading" role="status">
   <ui-spinner spinnerSize="sm" /> Carregando calendário

@@ -52,18 +52,14 @@
       <fieldset class="field" [id]="idDasPermissoes" tabindex="-1">
         <legend class="form-section__title">Permissões</legend>
         @if (erroDoCatalogo()) {
-          <ui-alert variant="warning" heading="Catálogo indisponível">
-            Não foi possível carregar o catálogo de permissões.
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="carregandoCatalogo() ? 'true' : null"
-              [attr.aria-busy]="carregandoCatalogo() ? 'true' : null"
-              (click)="recarregarCatalogo.emit()"
-            >
-              Tentar novamente
-            </button>
-          </ui-alert>
+          <ui-alerta-nova-tentativa
+            titulo="Catálogo indisponível"
+            mensagem="Não foi possível carregar o catálogo de permissões."
+            [pendente]="carregandoCatalogo()"
+            [fase]="faseDoCatalogo()"
+            variante="warning"
+            (tentar)="recarregarCatalogo.emit()"
+          />
         }
         @for (modulo of catalogo(); track modulo.modulo) {
           @for (resource of modulo.resources; track resource.resource) {

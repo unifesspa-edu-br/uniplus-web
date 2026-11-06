@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import { Router, RouterLink } from '@angular/router';
 import { type FilaDePedidos, type PedidoResumoDto } from '@uniplus/shared-data/autorizacao';
-import { AlertComponent } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { PedidosListaComponent } from './pedidos-lista.component';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedidosStore } from './pedidos.store';
@@ -42,7 +44,7 @@ const APRESENTACAO: Readonly<Record<FilaDePedidos, Apresentacao>> = {
 @Component({
   selector: 'cfg-pedidos-page',
   standalone: true,
-  imports: [RouterLink, AlertComponent, PedidosListaComponent],
+  imports: [RouterLink, AlertaNovaTentativaComponent, PedidosListaComponent],
   providers: [PedidosStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },
@@ -54,11 +56,11 @@ export class PedidosPage implements OnInit {
 
   protected readonly store = inject(PedidosStore);
   private readonly router = inject(Router);
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.store.carregando,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-pedidos-titulo'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.store.carregando,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-pedidos-titulo'),
+  });
 
   private readonly escopo = nomesDeEscopo();
   protected readonly nomesDosEscopos = computed(() => {

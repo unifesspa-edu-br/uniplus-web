@@ -12,6 +12,10 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TermosConsentimentoStore } from './termos-consentimento.store';
 import { TermosConsentimentoListPage } from './termos-consentimento-list.page';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/termos-consentimento`;
@@ -333,6 +337,7 @@ describe('TermosConsentimentoListPage', () => {
     await propagar();
     expect(botao('Tentar novamente')).toBe(tentar);
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     expect(document.activeElement).toBe(tentar);
     tentar.click();
     controller.expectOne((r) => r.url === URL).flush([LGPD]);

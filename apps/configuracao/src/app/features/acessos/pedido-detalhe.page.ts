@@ -15,8 +15,14 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { anunciarLeitura, focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertComponent,
+  DialogComponent,
+  AlertaNovaTentativaComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { focoEstaLivre } from '../../shared/foco';
 import { ehOBeneficiario } from './beneficiario-do-pedido';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { MotivoDialogComponent } from './motivo-dialog.component';
@@ -45,6 +51,7 @@ import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
     PedidoResumoComponent,
     PedidoDocumentosComponent,
     PedidoHistoricoComponent,
+    AlertaNovaTentativaComponent,
   ],
   providers: [PedidoDetalheStore, EdicaoDoPedido],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,19 +81,12 @@ export class PedidoDetalhePage {
   private recargaPedida = false;
   private readonly chave = this.edicao.chave;
   private readonly falhaDaCarga = computed(() => this.store.erro() !== null);
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.store.carregando,
-    this.falhaDaCarga,
-    () => this.host.nativeElement.querySelector<HTMLElement>('#cfg-pedido-titulo'),
-  );
-  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncio = signal('');
-  private readonly leituraAnunciada = anunciarLeitura(
-    'pedido',
-    this.store.carregando,
-    this.falhaDaCarga,
-    this.anuncio,
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'pedido',
+    pendente: this.store.carregando,
+    falhou: this.falhaDaCarga,
+    destino: () => this.host.nativeElement.querySelector<HTMLElement>('#cfg-pedido-titulo'),
+  });
 
   protected readonly escopo = nomesDeEscopo();
   protected readonly pedido = this.store.pedido;
@@ -287,7 +287,6 @@ export class PedidoDetalhePage {
   protected recarregar(): void {
     this.novaTentativa.executar(() => {
       this.recargaPedida = true;
-      this.leituraAnunciada.iniciar();
       this.store.recarregar();
     });
   }

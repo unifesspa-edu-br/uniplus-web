@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { AlertComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertaNovaTentativaComponent,
+  type FaseDaNovaTentativa,
+} from '@uniplus/shared-ui/components';
 import type { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
 import { campoInvalido, mensagemDoCampo, type FormDoPedido } from './pedir-acesso-campo';
 
@@ -10,7 +13,7 @@ type Edicao = EdicaoDoPedidoDeAcesso;
 @Component({
   selector: 'cfg-pedir-acesso-perfil',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent],
+  imports: [ReactiveFormsModule, AlertaNovaTentativaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pedir-acesso-perfil.component.html',
   styleUrl: '../../shared/formulario/campos-do-formulario.css',
@@ -20,6 +23,7 @@ export class PedirAcessoPerfilComponent {
   readonly perfis = input.required<ReturnType<Edicao['perfis']>>();
   readonly perfisIndisponiveis = input.required<string | null>();
   readonly carregandoPerfis = input.required<boolean>();
+  readonly fasePerfis = input.required<FaseDaNovaTentativa>();
   readonly perfilSelecionado = input.required<ReturnType<Edicao['perfilSelecionado']>>();
   readonly unidades = input.required<ReturnType<Edicao['unidades']>>();
   readonly exigeUnidade = input.required<boolean>();

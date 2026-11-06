@@ -11,20 +11,13 @@
 </div>
 
 @if (store.errorMessage(); as mensagem) {
-<ui-alert variant="danger" heading="Não foi possível carregar os termos de consentimento">
-  {{ mensagem }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="store.loading() ? 'true' : null"
-      [attr.aria-busy]="store.loading() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os termos de consentimento"
+  [mensagem]="mensagem"
+  [pendente]="store.loading()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <cfg-termos-consentimento-lista

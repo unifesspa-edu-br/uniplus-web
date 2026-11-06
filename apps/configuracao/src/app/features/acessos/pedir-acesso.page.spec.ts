@@ -19,6 +19,10 @@ import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { PedirAcessoPage } from './pedir-acesso.page';
 import { ok, pedido, recusa, UNIDADES } from './testes';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const PERFIL_COMUM = {
   id: 'perfil-1',
@@ -300,6 +304,7 @@ describe('PedirAcessoPage', async () => {
 
       expect(botao?.getAttribute('aria-disabled')).toBe('true');
       expect(botao?.getAttribute('aria-busy')).toBe('true');
+      expect(situacaoDoBotao(botao as HTMLElement)).toBe(TEXTO_TENTANDO);
       botao?.click();
       expect(api.perfisParaPedir.mock.calls.length).toBe(consultas);
     });

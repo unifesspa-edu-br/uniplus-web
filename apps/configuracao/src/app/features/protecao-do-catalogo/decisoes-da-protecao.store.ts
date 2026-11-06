@@ -103,8 +103,12 @@ export class DecisoesDaProtecaoStore {
     });
   }
 
-  carregar(): void {
-    if (!periodoInvalido(this.filtros())) this.lista()?.reload();
+  /** Devolve se a leitura começou: um período inválido ou a falta da lista não leem nada. */
+  carregar(): boolean {
+    const lista = this.lista();
+    if (periodoInvalido(this.filtros()) || !lista) return false;
+    lista.reload();
+    return true;
   }
 
   proxima(): void {

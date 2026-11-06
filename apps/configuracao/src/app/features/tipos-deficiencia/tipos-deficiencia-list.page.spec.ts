@@ -9,6 +9,10 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { EdicaoDosTiposDeficiencia } from './edicao-dos-tipos-deficiencia';
 import { TiposDeficienciaListPage } from './tipos-deficiencia-list.page';
 import { TiposDeficienciaStore } from './tipos-deficiencia.store';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/tipos-deficiencia`;
@@ -138,6 +142,7 @@ describe('TiposDeficienciaListPage', () => {
     tentar.click();
     await propagar();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     await listar([visual]);
     expect(store.tiposDeficiencia()).toEqual([visual]);
     expect(texto()).not.toContain('Não foi possível carregar');

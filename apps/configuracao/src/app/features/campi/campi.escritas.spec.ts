@@ -12,6 +12,11 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { CampiPage } from './campi.page';
 import { CampiStore } from './campi.store';
 import { EdicaoDosCampi } from './edicao-dos-campi';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA_URL = `${BASE}/api/configuracao/campi`;
@@ -249,6 +254,39 @@ describe('CampiPage — escritas pela interface', () => {
     await propagar();
     controller.expectOne((r) => r.url === LISTA_URL).flush([]);
     await propagar();
+  });
+
+  it('a nova tentativa da listagem mostra o andamento no alerta e, ao falhar de novo, a falha repetida', async () => {
+    store.recarregar();
+    await propagar();
+    const falhar = async (): Promise<void> => {
+      controller
+        .expectOne((r) => r.url === LISTA_URL)
+        .flush(
+          JSON.stringify({
+            type: 'about:blank',
+            title: 'Indisponível',
+            status: 503,
+            code: 'uniplus.indisponivel',
+            traceId: 'test-trace',
+          }),
+          {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'content-type': 'application/problem+json' },
+          },
+        );
+      await propagar();
+    };
+    await falhar();
+    const tentar = botao('ui-alert button', 'Tentar novamente');
+
+    tentar.click();
+    await propagar();
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
+    await falhar();
+
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_REPETIDA);
   });
 
   describe('trava da classe de edição contra chamadas concorrentes', () => {

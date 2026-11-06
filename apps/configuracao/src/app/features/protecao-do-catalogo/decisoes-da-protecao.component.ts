@@ -13,14 +13,14 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { type AtoDeDecisao, type DecisaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import {
-  AlertComponent,
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
   FilterBarComponent,
   FilterChipsComponent,
   type UiFilterChipOption,
   type UiFiltroAtivo,
 } from '@uniplus/shared-ui/components';
 import { formatarDataBr } from '@uniplus/shared-utils';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { DecisoesDaProtecaoListaComponent } from './decisoes-da-protecao-lista.component';
 import { DecisaoDaProtecaoDetalheComponent } from './decisao-da-protecao-detalhe.component';
 import { DecisoesDaProtecaoStore } from './decisoes-da-protecao.store';
@@ -54,7 +54,7 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
   selector: 'cfg-decisoes-da-protecao',
   standalone: true,
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     DecisaoDaProtecaoDetalheComponent,
     DecisoesDaProtecaoListaComponent,
     FilterBarComponent,
@@ -108,16 +108,18 @@ export class DecisoesDaProtecaoComponent {
   protected readonly erroDoHistorico = this.pagina.erroDoHistorico;
   protected readonly itemInexistente = this.pagina.itemInexistente;
 
-  private readonly novaTentativaDaLista = focarAposNovaTentativa(
-    this.pagina.carregando,
-    computed(() => this.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-decisoes-titulo'),
-  );
-  private readonly novaTentativaDoHistorico = focarAposNovaTentativa(
-    this.carregandoHistorico,
-    computed(() => this.erroDoHistorico() !== null),
-    () => document.getElementById('cfg-decisao-dados'),
-  );
+  protected readonly novaTentativaDaLista = acompanharNovaTentativa({
+    assunto: 'decisões',
+    pendente: this.pagina.carregando,
+    falhou: computed(() => this.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-decisoes-titulo'),
+  });
+  protected readonly novaTentativaDoHistorico = acompanharNovaTentativa({
+    assunto: 'histórico',
+    pendente: this.carregandoHistorico,
+    falhou: computed(() => this.erroDoHistorico() !== null),
+    destino: () => document.getElementById('cfg-decisao-dados'),
+  });
 
   /** A busca que a tela mandou para a URL: a que volta dela não reescreve o campo enquanto a pessoa digita. */
   private buscaEnviada = this.filtros().busca;

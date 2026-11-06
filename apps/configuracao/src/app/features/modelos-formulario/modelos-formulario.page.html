@@ -10,21 +10,15 @@
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaSituacao() }}</span>
 
-@if (errorMessage()) {
-<ui-alert variant="danger" heading="Não foi possível carregar os modelos">
-  {{ errorMessage() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (errorMessage(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os modelos"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <cfg-modelos-formulario-lista

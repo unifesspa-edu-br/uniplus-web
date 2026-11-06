@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
-import { AlertComponent } from '@uniplus/shared-ui/components';
-import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+} from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { ID_DAS_PERMISSOES, PerfilFormularioComponent } from './perfil-formulario.component';
 import { PerfisListaComponent } from './perfis-lista.component';
@@ -13,7 +17,12 @@ const ID_DO_CADASTRO = 'cfg-perfis-novo';
 @Component({
   selector: 'cfg-perfis-page',
   standalone: true,
-  imports: [AlertComponent, PerfisListaComponent, PerfilFormularioComponent],
+  imports: [
+    AlertaNovaTentativaComponent,
+    AlertComponent,
+    PerfisListaComponent,
+    PerfilFormularioComponent,
+  ],
   providers: [PerfisStore, EdicaoDosPerfis],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },
@@ -42,17 +51,19 @@ export class PerfisPage {
     idDoTitulo: ID_DO_TITULO,
     idDoCadastro: ID_DO_CADASTRO,
   });
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'perfis',
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
 
-  private readonly novaTentativaDoCatalogo = focarAposNovaTentativa(
-    this.store.carregandoCatalogo,
-    this.store.erroDoCatalogo,
-    () => document.getElementById(ID_DAS_PERMISSOES),
-  );
+  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
+    assunto: 'permissões',
+    pendente: this.store.carregandoCatalogo,
+    falhou: this.store.erroDoCatalogo,
+    destino: () => document.getElementById(ID_DAS_PERMISSOES),
+  });
 
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.store.recarregar());

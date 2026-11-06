@@ -8,11 +8,14 @@ import {
   inject,
 } from '@angular/core';
 import { InstituicaoDto } from '@uniplus/shared-data/organizacao';
-import { AlertComponent } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
-import { devolverFocoDaLista, focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import { devolverFocoDaLista, focoEstaLivre } from '../../shared/foco';
 import { EdicaoDaInstituicao } from './edicao-da-instituicao';
 import { InstituicaoFormularioComponent } from './instituicao-formulario.component';
 import { InstituicaoPainelComponent } from './instituicao-painel.component';
@@ -52,16 +55,18 @@ export class InstituicaoPage {
   protected readonly indisponivel = computed(
     () => this.store.carregando() || this.edicao.gravando(),
   );
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.indisponivel,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO),
-  );
-  private readonly novaTentativaDasReitorias = focarAposNovaTentativa(
-    this.reitorias.carregando,
-    this.reitorias.comErro,
-    () => document.getElementById(ID_DO_SELECT_DA_UNIDADE_RAIZ),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'dados da instituição',
+    pendente: this.indisponivel,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
+  protected readonly novaTentativaDasReitorias = acompanharNovaTentativa({
+    assunto: 'reitorias',
+    pendente: this.reitorias.carregando,
+    falhou: this.reitorias.comErro,
+    destino: () => document.getElementById(ID_DO_SELECT_DA_UNIDADE_RAIZ),
+  });
   private readonly foco = devolverFocoDaLista({
     gravando: this.edicao.gravando,
     carregando: this.store.carregando,

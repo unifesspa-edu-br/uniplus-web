@@ -8,11 +8,12 @@
 </div>
 
 @if (store.mensagemDeErro(); as mensagem) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   titulo="Não foi possível carregar os campi"
   [mensagem]="mensagem"
-  [pendente]="indisponivel()"
-  [tentativasSemSucesso]="store.tentativasSemSucesso()"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.removendo()"
+  [fase]="novaTentativa.fase()"
   idBotao="cfg-campi-tentar-novamente"
   (tentar)="tentarNovamente()"
 />

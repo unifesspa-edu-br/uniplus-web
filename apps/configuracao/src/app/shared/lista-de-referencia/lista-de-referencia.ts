@@ -20,8 +20,6 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { Observable, tap } from 'rxjs';
 
-import { contadorDeFalhas, type ContadorDeFalhas } from '../contador-de-falhas';
-
 /**
  * Lista de referência que a tela precisa para funcionar (vocabulário, áreas): carga,
  * falha com alerta e "Tentar novamente".
@@ -42,10 +40,6 @@ export interface ListaDeReferencia<T> extends LookupCompleto<T> {
    *  permissão) e a tela avisar o erro de servidor com o traceId; `null` quando a
    *  última tentativa deu certo ou falhou sem resposta da API. */
   readonly ultimoProblema: Signal<ProblemDetails | null>;
-  /** Falhas seguidas: 1 na falha que abre o alerta, mais uma a cada "Tentar novamente"
-   *  que falha de novo; 0 depois de uma carga com itens. Recarga automática que falha
-   *  recomeça em 1. */
-  readonly tentativasSemSucesso: Signal<number>;
   /** Busca na primeira vez e reaproveita o que já está em memória; depois de uma
    *  falha, tenta outra vez. */
   garantirCarregado(): void;
@@ -64,26 +58,20 @@ interface EstadoDaLista<T> {
   /** A última lista completa com itens: continua valendo se a recarga voltar vazia. */
   readonly ultimaUtil: WritableSignal<readonly T[]>;
   readonly ultimoProblema: WritableSignal<ProblemDetails | null>;
-  readonly falhas: ContadorDeFalhas;
   /** A tentativa em curso foi pedida pelo operador em "Tentar novamente". */
   readonly doOperador: WritableSignal<boolean>;
   /** O alerta que estava na tela quando o operador pediu a tentativa em curso. */
   readonly falhaAntesDaTentativa: WritableSignal<boolean>;
-  registrarFalha(): void;
 }
 
 function estadoDaLista<T>(): EstadoDaLista<T> {
-  const falhas = contadorDeFalhas();
   const doOperador = signal(false);
   const falhaAntesDaTentativa = signal(false);
   return {
     ultimaUtil: signal<readonly T[]>([]),
     ultimoProblema: signal<ProblemDetails | null>(null),
-    falhas,
     doOperador,
     falhaAntesDaTentativa,
-    registrarFalha: () =>
-      falhas.registrarFalha(untracked(doOperador) && untracked(falhaAntesDaTentativa)),
   };
 }
 
@@ -100,7 +88,6 @@ function registrarPagina<T>(
 ): void {
   if (!resultado.ok) {
     estado.ultimoProblema.set(resultado.problem);
-    estado.registrarFalha();
     return;
   }
   estado.ultimoProblema.set(null);
@@ -113,9 +100,6 @@ function registrarPagina<T>(
   }
   if (coleta.itens.length > 0) {
     estado.ultimaUtil.set(coleta.itens);
-    estado.falhas.registrarSucesso();
-  } else {
-    estado.registrarFalha();
   }
 }
 
@@ -126,10 +110,7 @@ function lookupColetor<T>(
   destroyRef: DestroyRef,
 ): LookupCompleto<T> {
   const coleta: Coleta<T> = { itens: [] };
-  const aoFalhar = (): void => {
-    estado.ultimoProblema.set(null);
-    estado.registrarFalha();
-  };
+  const aoFalhar = (): void => estado.ultimoProblema.set(null);
   return lookupCompleto<T>((cursor) => {
     if (cursor === undefined) {
       coleta.itens = [];
@@ -218,7 +199,6 @@ export function listaDeReferencia<T>(
     ...acionamentosDaLista(lookup, estado, sinais),
     pendente: lookup.pendente,
     ultimoProblema: estado.ultimoProblema.asReadonly(),
-    tentativasSemSucesso: estado.falhas.valor,
   };
 }
 

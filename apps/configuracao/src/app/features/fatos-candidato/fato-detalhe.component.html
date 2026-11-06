@@ -104,20 +104,14 @@
         <section class="cfg-detalhe-secao">
           <h3 class="cfg-detalhe-secao__titulo" [id]="idDasRegras" tabindex="-1">Regras padrão</h3>
           @if (catalogoFalhou()) {
-            <ui-alert variant="warning" heading="Os nomes dos fatos não foram carregados">
-              {{ mensagemDoCatalogo() }} As regras aparecem com os códigos dos fatos.
-              <div class="list-state__retry">
-                <button
-                  type="button"
-                  class="btn btn--secondary btn--sm"
-                  [attr.aria-disabled]="catalogoPendente() ? 'true' : null"
-                  [attr.aria-busy]="catalogoPendente() ? 'true' : null"
-                  (click)="tentarCatalogoNovamente()"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            </ui-alert>
+            <ui-alerta-nova-tentativa
+              titulo="Os nomes dos fatos não foram carregados"
+              [mensagem]="mensagemDoAlerta()"
+              [pendente]="catalogoPendente()"
+              [fase]="faseDoCatalogo()"
+              variante="warning"
+              (tentar)="tentarCatalogoNovamente()"
+            />
           }
           <ul class="cfg-detalhe-valores">
             @for (regra of regras(); track $index) {

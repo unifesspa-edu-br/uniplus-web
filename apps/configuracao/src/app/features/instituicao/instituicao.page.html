@@ -16,11 +16,12 @@
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 @if (store.mensagemDeErro(); as mensagem) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   titulo="Não foi possível carregar a instituição"
   [mensagem]="mensagem"
-  [pendente]="indisponivel()"
-  [tentativasSemSucesso]="store.tentativasSemSucesso()"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
   idBotao="cfg-instituicao-tentar-novamente"
   (tentar)="tentarNovamente()"
 />
@@ -48,7 +49,7 @@
   [reitorias]="reitorias.reitorias()"
   [reitoriasComErro]="reitorias.comErro()"
   [reitoriasCarregando]="reitorias.carregando()"
-  [reitoriasTentativas]="reitorias.tentativasSemSucesso()"
+  [faseDasReitorias]="novaTentativaDasReitorias.fase()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
   (remover)="edicao.pedirRemocao()"

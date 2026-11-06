@@ -13,6 +13,12 @@ import {
   rg,
   sucesso,
 } from './tipos-documento.testing';
+import {
+  situacaoDaNovaTentativa,
+  situacoesDaNovaTentativa,
+  textoRepetidaDe,
+  textoTentandoDe,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('TiposDocumentoPage — leitura', () => {
   let p: Pagina;
@@ -202,8 +208,8 @@ describe('TiposDocumentoPage — leitura', () => {
     p = await montarPagina([diploma], { categorias: 'falha' });
 
     expect(textoDaPagina()).toContain('Rótulos não carregados');
-    const recarregar = [...p.fixture.nativeElement.querySelectorAll('.lookup-alert__retry')].find(
-      (b) => (b as HTMLElement).textContent?.includes('categorias'),
+    const recarregar = [...p.fixture.nativeElement.querySelectorAll('.link-button')].find((b) =>
+      (b as HTMLElement).textContent?.includes('categorias'),
     ) as HTMLButtonElement;
     recarregar.focus();
     recarregar.click();
@@ -223,41 +229,39 @@ describe('TiposDocumentoPage — leitura', () => {
     expect(document.activeElement).toBe(p.elemento('#cfg-tipos-documento-list-title'));
   });
 
-  it('anuncia cada nova tentativa de ler as categorias e a situação, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de ler as categorias e a situação', async () => {
     p = await montarPagina([diploma], { categorias: 'falha' });
-    const anuncio = (): string =>
-      p.fixture.nativeElement.querySelectorAll(':scope > span.sr-only[role="status"]')[1]
-        ?.textContent ?? '';
+    const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
     const botao = (nome: string): HTMLButtonElement =>
-      [...p.fixture.nativeElement.querySelectorAll('.lookup-alert__retry')].find((b) =>
+      [...p.fixture.nativeElement.querySelectorAll('.link-button')].find((b) =>
         (b as HTMLElement).textContent?.includes(nome),
       ) as HTMLButtonElement;
 
-    for (let vez = 0; vez < 2; vez++) {
-      botao('categorias').click();
-      await p.propagar();
-      expect(anuncio()).toBe('Lendo categorias...');
-      p.atenderCategorias('falha');
-      await p.propagar();
-      expect(anuncio()).toBe('Falha na leitura: categorias.');
-    }
+    botao('categorias').click();
+    await p.propagar();
+    expect(anuncio()).toBe(textoTentandoDe('categorias'));
+    p.atenderCategorias('falha');
+    await p.propagar();
+    expect(anuncio()).toBe(textoRepetidaDe('categorias'));
     p.atenderCategorias();
     await p.propagar();
 
     p.store.aprovacao.carregar();
     for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
     await p.propagar();
-    for (let vez = 0; vez < 2; vez++) {
-      botao('situação').focus();
-      botao('situação').click();
-      await p.propagar();
-      expect(botao('situação').getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(botao('situação'));
-      expect(anuncio()).toBe('Lendo situação da proteção de dados...');
-      for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
-      await p.propagar();
-      expect(anuncio()).toBe('Falha na leitura: situação da proteção de dados.');
-    }
+    botao('situação').focus();
+    botao('situação').click();
+    await p.propagar();
+    expect(botao('situação').getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(botao('situação'));
+    expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toContain(
+      textoTentandoDe('situação da proteção de dados'),
+    );
+    for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
+    await p.propagar();
+    expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toContain(
+      textoRepetidaDe('situação da proteção de dados'),
+    );
   });
 
   it('limpa o chip selecionado quando a categoria sai do cadastro', async () => {

@@ -18,21 +18,15 @@
   >{{ dialogAberto() ? '' : anuncio() }}</span
 >
 
-@if (errorMessage()) {
-<ui-alert variant="danger" heading="Não foi possível carregar as modalidades">
-  {{ errorMessage() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="indisponivel() ? 'true' : null"
-      [attr.aria-busy]="indisponivel() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (errorMessage(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar as modalidades"
+  [mensagem]="mensagem"
+  [pendente]="loading()"
+  [indisponivel]="removendo()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <div

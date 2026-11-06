@@ -5,6 +5,10 @@ import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import { throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AREAS, ERRO_500, GRUPOS, PaginaDeTeste, problem } from './pesos-enem.testing';
+import {
+  TEXTO_REPETIDA,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PesosEnemPage — lista de áreas', () => {
   let t: PaginaDeTeste;
@@ -15,7 +19,7 @@ describe('PesosEnemPage — lista de áreas', () => {
 
   afterEach(() => t.verificar());
 
-  it('PesosEnemPage_FalhaRepetidaDasAreas_AnunciaNoAlertaDasAreas', async () => {
+  it('PesosEnemPage_FalhaRepetidaDasAreas_MostraEAnunciaNoAlertaDasAreas', async () => {
     t.fixture.detectChanges();
     t.expectAreas().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
     t.expectGrupos().flush([...GRUPOS]);
@@ -31,8 +35,12 @@ describe('PesosEnemPage — lista de áreas', () => {
     t.fixture.detectChanges();
 
     expect(
-      raiz.querySelector('#cfg-pesos-enem-areas-tentar')?.closest('ui-alert')?.textContent,
-    ).toContain('Tentativa 2 sem sucesso.');
+      situacaoDaNovaTentativa(
+        raiz
+          .querySelector('#cfg-pesos-enem-areas-tentar')
+          ?.closest('ui-alerta-nova-tentativa') as HTMLElement,
+      ),
+    ).toBe(TEXTO_REPETIDA);
   });
 
   it('PesosEnemPage_AreasRecusadasSemTitulo_AlertaComTextoPadrao', async () => {
@@ -189,6 +197,7 @@ describe('PesosEnemPage — lista de áreas', () => {
     const raiz = t.fixture.nativeElement as HTMLElement;
     raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
     await t.propagate();
+    await new Promise((resolver) => setTimeout(resolver));
     t.fixture.detectChanges();
 
     // A carga não fica presa: o alerta continua, com o botão de tentar de novo habilitado.

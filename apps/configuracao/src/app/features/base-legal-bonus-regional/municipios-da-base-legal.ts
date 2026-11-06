@@ -1,10 +1,10 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
+import { acompanharNovaTentativa, type FaseDaNovaTentativa } from '@uniplus/shared-ui/components';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, of, switchMap, timer } from 'rxjs';
 import { BaseLegalBonusRegionalMunicipioDto } from '@uniplus/shared-data/configuracao';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
-import { focarAposNovaTentativa } from '../../shared/foco';
 
 /** Espera após a última tecla antes de buscar municípios (mesmo valor do calendário de dias úteis). */
 const BUSCA_ESPERA_EM_MS = 300;
@@ -26,6 +26,7 @@ export interface CampoDeMunicipios {
   readonly resultados: readonly CidadeResumoDto[];
   readonly buscando: boolean;
   readonly buscaFalhou: boolean;
+  readonly fase: FaseDaNovaTentativa;
   readonly semResultado: boolean;
 }
 
@@ -70,14 +71,18 @@ export class MunicipiosDaBaseLegal {
       resultados,
       buscando: this.buscando(),
       buscaFalhou,
+      fase: this.novaTentativa.fase(),
       semResultado: termoBuscavel && !this.buscando() && !buscaFalhou && resultados.length === 0,
     };
   });
 
   /** Ao dar certo a nova tentativa, o aviso sai levando o botão: o foco volta ao campo de busca. */
-  private readonly novaTentativa = focarAposNovaTentativa(this.buscando, this.buscaFalhou, () =>
-    document.getElementById('cfg-blbr-municipios-busca'),
-  );
+  readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'municípios',
+    pendente: this.buscando,
+    falhou: this.buscaFalhou,
+    destino: () => document.getElementById('cfg-blbr-municipios-busca'),
+  });
 
   constructor() {
     this.pedidos

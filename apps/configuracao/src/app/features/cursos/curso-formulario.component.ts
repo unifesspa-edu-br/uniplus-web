@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import {
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DrawerComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { CursoForm } from './curso-form';

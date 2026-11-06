@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { AprovacaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DrawerComponent,
+  type FaseDaNovaTentativa,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import {
   CLASSIFICACOES_DE_PROTECAO,
@@ -25,6 +31,7 @@ import {
     DrawerComponent,
     SpinnerComponent,
     TipoDocumentoAvisosComponent,
+    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tipo-documento-formulario.component.html',
@@ -36,8 +43,7 @@ export class TipoDocumentoFormularioComponent {
   readonly modo = input.required<'criar' | 'editar'>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
-  readonly anuncioDaLeitura = input('');
+  readonly faseDasCategorias = input.required<FaseDaNovaTentativa>();
   readonly salvando = input.required<boolean>();
   readonly categorias = input.required<CategoriasDoFormulario>();
   readonly hipoteses = input.required<readonly OpcaoDeVocabulario[]>();

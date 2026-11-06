@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
-import { focarAposNovaTentativa } from '../../shared/foco';
 import { CampiListaComponent } from './campi-lista.component';
 import { CampiStore } from './campi.store';
 import { CampusFormularioComponent } from './campus-formulario.component';
@@ -31,11 +33,11 @@ export class CampiPage {
   protected readonly indisponivel = computed(
     () => this.store.carregando() || this.edicao.removendo(),
   );
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.indisponivel,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById('cfg-campi-list-title'),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.indisponivel,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById('cfg-campi-list-title'),
+  });
 
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.store.tentarNovamente());

@@ -10,6 +10,11 @@ import {
   recusaDeCampo,
   trabalha,
 } from './fatos-candidato.testing';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDoAlerta,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
 const CRIACAO = '#cfg-fato-criacao';
@@ -134,7 +139,7 @@ describe('FatosCandidatoPage — criação do fato', () => {
     expect(document.activeElement).toBe(p.elemento('#cfg-fato-fatoDeMembro'));
   });
 
-  it('anuncia cada nova tentativa de ler as fases e o catálogo, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de ler as fases e o catálogo', async () => {
     p = await montarPagina([]);
     await p.acionar(p.novo());
     const fasesFalham = async (): Promise<void> => {
@@ -143,17 +148,14 @@ describe('FatosCandidatoPage — criação do fato', () => {
       }
       await p.propagar();
     };
-    const anuncio = (): string =>
-      p.elemento('cfg-fato-criacao').querySelectorAll(':scope > span.sr-only[role="status"]')[1]
-        ?.textContent ?? '';
+    const anuncio = (titulo: string): string =>
+      situacaoDoAlerta(p.elemento('cfg-fato-criacao'), titulo);
     await fasesFalham();
 
-    for (let vez = 0; vez < 2; vez++) {
-      await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
-      expect(anuncio()).toBe('Lendo fases...');
-      await fasesFalham();
-      expect(anuncio()).toBe('Falha na leitura: fases.');
-    }
+    await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
+    expect(anuncio('Fases não carregadas')).toBe(TEXTO_TENTANDO);
+    await fasesFalham();
+    expect(anuncio('Fases não carregadas')).toBe(TEXTO_REPETIDA);
 
     await p.acionar(p.elemento('input[type="radio"][value="AGREGADO"]'));
     const catalogoFalha = async (): Promise<void> => {
@@ -163,15 +165,13 @@ describe('FatosCandidatoPage — criação do fato', () => {
       await p.propagar();
     };
     await catalogoFalha();
-    for (let vez = 0; vez < 2; vez++) {
-      const botoes = [...p.elemento('cfg-fato-criacao').querySelectorAll('button')].filter((b) =>
-        b.textContent?.includes('Tentar novamente'),
-      );
-      await p.acionar(botoes.at(-1) as HTMLButtonElement);
-      expect(anuncio()).toBe('Lendo catálogo de fatos...');
-      await catalogoFalha();
-      expect(anuncio()).toBe('Falha na leitura: catálogo de fatos.');
-    }
+    const botoes = [...p.elemento('cfg-fato-criacao').querySelectorAll('button')].filter((b) =>
+      b.textContent?.includes('Tentar novamente'),
+    );
+    await p.acionar(botoes.at(-1) as HTMLButtonElement);
+    expect(anuncio('Fatos de membro não carregados')).toBe(TEXTO_TENTANDO);
+    await catalogoFalha();
+    expect(anuncio('Fatos de membro não carregados')).toBe(TEXTO_REPETIDA);
   });
 
   describe('o fato derivado', () => {

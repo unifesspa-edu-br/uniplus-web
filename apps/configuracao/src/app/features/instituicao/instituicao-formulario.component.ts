@@ -13,6 +13,8 @@ import {
   AlertComponent,
   DrawerComponent,
   EnderecoGeoComponent,
+  type FaseDaNovaTentativa,
+  NovaTentativaDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -20,8 +22,6 @@ import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { InstituicaoForm } from './instituicao-form';
 import { InstituicaoIdentificacaoComponent } from './instituicao-identificacao.component';
 import { InstituicaoRegulatorioComponent } from './instituicao-regulatorio.component';
-
-const AVISO_DAS_REITORIAS = 'Não foi possível carregar as unidades para seleção.';
 
 /** O drawer com o formulário de cadastro e edição da Instituição. */
 @Component({
@@ -35,6 +35,7 @@ const AVISO_DAS_REITORIAS = 'Não foi possível carregar as unidades para seleç
     InstituicaoIdentificacaoComponent,
     InstituicaoRegulatorioComponent,
     SpinnerComponent,
+    NovaTentativaDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './instituicao-formulario.component.html',
@@ -56,8 +57,7 @@ export class InstituicaoFormularioComponent {
   readonly reitoriasComErro = input.required<boolean>();
   /** A lista de reitorias está sendo lida: o "Tentar novamente" fica com `aria-disabled`. */
   readonly reitoriasCarregando = input.required<boolean>();
-  /** Falhas seguidas das tentativas do operador; a partir da segunda, o número entra no aviso. */
-  readonly reitoriasTentativas = input.required<number>();
+  readonly faseDasReitorias = input.required<FaseDaNovaTentativa>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
   readonly remover = output<void>();
@@ -66,13 +66,6 @@ export class InstituicaoFormularioComponent {
   protected readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Cadastrar instituição' : 'Editar instituição',
   );
-
-  protected readonly avisoDasReitorias = computed(() => {
-    const tentativas = this.reitoriasTentativas();
-    return tentativas < 2
-      ? AVISO_DAS_REITORIAS
-      : `${AVISO_DAS_REITORIAS} Tentativa ${tentativas} sem sucesso.`;
-  });
 
   private readonly foco = acompanharFocoDoEnvio({
     salvando: this.salvando,

@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import type { ModuloDoCatalogoDto } from '@uniplus/shared-data/autorizacao';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DrawerComponent,
+  type FaseDaNovaTentativa,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import {
   type CampoDoPerfil,
@@ -16,7 +22,13 @@ export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
 @Component({
   selector: 'cfg-perfil-formulario',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, DrawerComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    AlertaNovaTentativaComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './perfil-formulario.component.html',
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
@@ -31,6 +43,7 @@ export class PerfilFormularioComponent {
   readonly catalogo = input.required<readonly ModuloDoCatalogoDto[]>();
   readonly erroDoCatalogo = input.required<boolean>();
   readonly carregandoCatalogo = input.required<boolean>();
+  readonly faseDoCatalogo = input.required<FaseDaNovaTentativa>();
   readonly marcadas = input.required<readonly string[]>();
   readonly salvar = output<void>();
   readonly alternar = output<string>();

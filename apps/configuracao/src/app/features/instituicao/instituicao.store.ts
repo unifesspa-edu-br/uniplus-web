@@ -7,7 +7,6 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { InstituicaoDto, ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
-import { contadorDeFalhas } from '../../shared/contador-de-falhas';
 
 /**
  * A leitura da Instituição, que é singleton: há uma, ou o 404 diz que nenhuma foi cadastrada. O
@@ -40,19 +39,7 @@ export class InstituicaoStore {
     return this.leitura.error() ? 'Erro inesperado ao carregar a instituição.' : null;
   });
 
-  private readonly falhas = contadorDeFalhas();
-  /** Falhas seguidas das tentativas do operador, para o alerta anunciar uma falha repetida. */
-  readonly tentativasSemSucesso = this.falhas.valor;
-  private tentativaPedida = false;
-
   constructor() {
-    effect(() => {
-      if (this.carregando()) {
-        return;
-      }
-      const falhou = this.mensagemDeErro() !== null;
-      untracked(() => this.registrarDesfecho(falhou));
-    });
     effect(() => {
       const problem = this.leitura.problem();
       if (problem && problem.status >= 500) {
@@ -66,21 +53,11 @@ export class InstituicaoStore {
     if (this.carregando()) {
       return;
     }
-    this.tentativaPedida = true;
     this.leitura.reload();
   }
 
   /** Lê de novo, para a tela refletir o que acabou de ser gravado. */
   recarregar(): void {
     this.leitura.reload();
-  }
-
-  private registrarDesfecho(falhou: boolean): void {
-    if (falhou) {
-      this.falhas.registrarFalha(this.tentativaPedida);
-    } else {
-      this.falhas.registrarSucesso();
-    }
-    this.tentativaPedida = false;
   }
 }

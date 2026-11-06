@@ -11,6 +11,10 @@ import {
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
+import {
+  TEXTO_REPETIDA,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const ANTIGA = { ...portaria, tipoInstrumento: 'PARECER_ANTIGO' };
 
@@ -23,7 +27,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
   const opcoes = (): string[] =>
     [...select().options].map((opcao) => opcao.textContent?.trim() ?? '');
   const alertaDoDrawer = (): HTMLElement | null =>
-    p.fixture.nativeElement.querySelector('ui-drawer cfg-alerta-nova-tentativa');
+    p.fixture.nativeElement.querySelector('ui-drawer ui-alerta-nova-tentativa');
 
   /** Abrir o formulário tenta de novo o vocabulário que falhou; aqui a tentativa falha outra vez. */
   const abrirComVocabularioIndisponivel = async (): Promise<void> => {
@@ -109,7 +113,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
       expect(document.activeElement).toBe(select());
     });
 
-    it('a nova tentativa que falha de novo conta as tentativas e o aviso permanece', async () => {
+    it('a nova tentativa que falha de novo mostra e anuncia a falha repetida, e o aviso permanece', async () => {
       p = await montarPagina([portaria], { falha: 503 });
       await abrirComVocabularioIndisponivel();
       (alertaDoDrawer()?.querySelector('button') as HTMLButtonElement).click();
@@ -117,7 +121,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
       p.http.expectOne((r) => r.url === TIPOS_URL).flush(...problema(503, corpoDaFalha(503)));
       await p.propagar();
 
-      expect(alertaDoDrawer()?.textContent).toContain('Tentativa 2 sem sucesso.');
+      expect(situacaoDaNovaTentativa(alertaDoDrawer() as HTMLElement)).toBe(TEXTO_REPETIDA);
     });
 
     it('abrir o formulário tenta carregar de novo o vocabulário que falhou, sem exibir o aviso da vez anterior', async () => {
@@ -136,7 +140,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
       p = await montarPagina([portaria], { falha: 503 });
 
       expect(alertaDoDrawer()).toBeNull();
-      expect(p.elemento('cfg-alerta-nova-tentativa').textContent).toContain(
+      expect(p.elemento('ui-alerta-nova-tentativa').textContent).toContain(
         'A coluna Tipo mostra “Não carregado” até a busca ser refeita.',
       );
     });

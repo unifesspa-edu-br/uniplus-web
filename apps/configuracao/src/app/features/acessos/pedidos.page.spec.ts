@@ -11,6 +11,10 @@ import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { PedidosPage } from './pedidos.page';
 import { PedidosStore } from './pedidos.store';
 import { ok, pedido, UNIDADES } from './testes';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const URL = 'http://api.test/api/autorizacao/pedidos-de-concessao';
 
@@ -85,6 +89,7 @@ describe('PedidosPage', () => {
     await atualizar();
     expect(tentar?.getAttribute('aria-disabled')).toBe('true');
     expect(tentar?.getAttribute('aria-busy')).toBe('true');
+    expect(situacaoDoBotao(tentar as HTMLElement)).toBe(TEXTO_TENTANDO);
     expect(document.activeElement).toBe(tentar);
     tentar?.click();
     await atualizar();

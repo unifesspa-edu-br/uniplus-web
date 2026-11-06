@@ -11,21 +11,15 @@
 </div>
 
 @if (store.mensagemDeErro(); as mensagem) {
-<ui-alert variant="danger" heading="Não foi possível carregar os pedidos">
-  {{ mensagem }}
-  <div>
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="store.carregando() ? 'true' : null"
-      [attr.aria-busy]="store.carregando() ? 'true' : null"
-      (click)="recarregar()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os pedidos"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="recarregar()"
+/>
 }
+
 <cfg-pedidos-lista
   [pedidos]="store.itens()"
   [nomesDosEscopos]="nomesDosEscopos()"

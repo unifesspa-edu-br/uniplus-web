@@ -15,21 +15,22 @@ import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
 import {
-  AlertComponent,
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  type ArquivoDoFormulario,
+  type ConferenciaComOServidor,
+  type FormularioDoCandidato,
+  lerArquivoDoFormulario,
+  type NovaTentativa,
   SegmentedComponent,
   SelectComponent,
   SimulacaoDeFormularioComponent,
   SpinnerComponent,
-  lerArquivoDoFormulario,
-  type ArquivoDoFormulario,
-  type ConferenciaComOServidor,
-  type FormularioDoCandidato,
   type UiSegmentedOption,
   type UiSelectOption,
 } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
-import { novaTentativaAnunciada, type NovaTentativa } from '../../shared/foco';
 
 type Origem = 'modelo' | 'arquivo';
 
@@ -49,7 +50,7 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
   selector: 'cfg-simulador-de-formulario-page',
   standalone: true,
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     ReactiveFormsModule,
     SegmentedComponent,
     SelectComponent,
@@ -72,7 +73,6 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
       </div>
     </div>
 
-    <span class="sr-only" role="status">{{ anuncio() }}</span>
     <ui-segmented
       accessibleName="Origem do formulário"
       [choices]="origens"
@@ -100,37 +100,23 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
       </div>
 
       @if (erroAoListar(); as erro) {
-        <ui-alert variant="danger" heading="Não foi possível listar os modelos">
-          {{ erro }}
-          <div class="list-state__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="listando() ? 'true' : null"
-              [attr.aria-busy]="listando() ? 'true' : null"
-              (click)="tentarListarNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
+        <ui-alerta-nova-tentativa
+          titulo="Não foi possível listar os modelos"
+          [mensagem]="erro"
+          [pendente]="listando()"
+          [fase]="novaTentativaDaLista.fase()"
+          (tentar)="tentarListarNovamente()"
+        />
       }
 
-      @if (erroAoCarregar()) {
-        <ui-alert variant="danger" heading="Não foi possível carregar o modelo">
-          {{ erroAoCarregar() }}
-          <div class="list-state__retry">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [attr.aria-disabled]="carregando() ? 'true' : null"
-              [attr.aria-busy]="carregando() ? 'true' : null"
-              (click)="tentarCarregarNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        </ui-alert>
+      @if (erroAoCarregar(); as erroDoModelo) {
+        <ui-alerta-nova-tentativa
+          titulo="Não foi possível carregar o modelo"
+          [mensagem]="erroDoModelo"
+          [pendente]="carregando()"
+          [fase]="novaTentativaDoModelo.fase()"
+          (tentar)="tentarCarregarNovamente()"
+        />
       } @else if (carregando()) {
         <div class="cfg-form__loading" role="status">
           <ui-spinner spinnerSize="md" /> Carregando o modelo...
@@ -218,17 +204,15 @@ export class SimuladorDeFormularioPage {
     return arquivo && !arquivo.valido ? arquivo : null;
   });
 
-  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncio = signal('');
-  private readonly novaTentativaDaLista = this.novaTentativa(
-    'lista de modelos',
+  protected readonly novaTentativaDaLista = this.novaTentativaAoSeletor(
     this.listando,
     computed(() => this.erroAoListar() !== null),
+    'modelos',
   );
-  private readonly novaTentativaDoModelo = this.novaTentativa(
-    'modelo',
+  protected readonly novaTentativaDoModelo = this.novaTentativaAoSeletor(
     this.carregando,
     computed(() => this.erroAoCarregar() !== null),
+    'modelo',
   );
 
   protected readonly conferir: ConferenciaComOServidor = (simulacao) =>
@@ -254,12 +238,12 @@ export class SimuladorDeFormularioPage {
   }
 
   /** A falha fica na tela durante a nova tentativa, para o botão que a pediu não sumir. */
-  private iniciarCarga(): void {
+  private iniciarCarga(): boolean {
     this.carregamento?.unsubscribe();
     this.formulario.set(null);
     if (this.modeloId() === '') {
       this.carregando.set(false);
-      return;
+      return false;
     }
     this.carregando.set(true);
     this.carregamento = this.modelos
@@ -274,19 +258,20 @@ export class SimuladorDeFormularioPage {
         this.erroAoCarregar.set(null);
         this.formulario.set(resultado.data);
       });
+    return true;
   }
 
-  private novaTentativa(
-    nome: string,
+  /** Com o alerta da falha fora da tela, o foco vai ao seletor do modelo. */
+  private novaTentativaAoSeletor(
     pendente: Signal<boolean>,
     falhou: Signal<boolean>,
+    assunto: string,
   ): NovaTentativa {
-    return novaTentativaAnunciada({
-      nome,
+    return acompanharNovaTentativa({
       pendente,
       falhou,
+      assunto,
       destino: () => document.querySelector<HTMLElement>('.simulador-formulario__arquivo select'),
-      anuncio: this.anuncio,
     });
   }
 

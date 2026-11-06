@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  DrawerComponent,
+  type FaseDaNovaTentativa,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import type { OpcaoDeFase } from './fases-do-grafo.store';
@@ -9,7 +15,13 @@ import { PrecedenciaForm, mensagemDaSucessora } from './precedencia-form';
 @Component({
   selector: 'cfg-precedencia-formulario',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, DrawerComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    DrawerComponent,
+    SpinnerComponent,
+    AlertaNovaTentativaComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './precedencia-formulario.component.html',
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
@@ -24,8 +36,7 @@ export class PrecedenciaFormularioComponent {
   readonly carregandoFases = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
-  readonly anuncioDaLeitura = input('');
+  readonly faseDasFases = input.required<FaseDaNovaTentativa>();
   readonly salvando = input.required<boolean>();
   /** Há escrita em curso ou a lista ainda recarrega: salvar fica indisponível, sem perder o foco. */
   readonly gravando = input.required<boolean>();

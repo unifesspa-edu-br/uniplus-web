@@ -16,6 +16,11 @@ import {
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-0000000000a1';
@@ -923,44 +928,42 @@ describe('ModeloFormularioEdicaoPage', () => {
         urls: [`${URL_BASE}/fases-canonicas`, `${URL_BASE}/tipos-documento`],
       },
     ];
-    const alertaDe = (tela: HTMLElement, titulo: string): Element | undefined =>
-      Array.from(tela.querySelectorAll('ui-alert')).find((a) => a.textContent?.includes(titulo));
-    const anuncio = (tela: HTMLElement): string | null | undefined =>
-      tela.querySelector('span.sr-only[role="status"]')?.textContent?.trim();
+    const alertaDe = (tela: HTMLElement, titulo: string): HTMLElement | undefined =>
+      Array.from(tela.querySelectorAll<HTMLElement>('ui-alerta-nova-tentativa')).find((a) =>
+        a.textContent?.includes(titulo),
+      );
+    const anuncio = (tela: HTMLElement, titulo: string): string =>
+      situacaoDaNovaTentativa(alertaDe(tela, titulo) as HTMLElement);
 
     it.each(leituras)(
-      'a cada nova falha de $nome, anuncia o andamento e o resultado, uma vez',
-      async ({ nome, alerta, falhando, urls }) => {
+      'a cada nova falha de $nome, o alerta mostra e anuncia o andamento e o resultado',
+      async ({ alerta, falhando, urls }) => {
         const tela = await carregar(modelo, [], FASES, falhando);
-        expect(anuncio(tela)).toBe('');
-        const alertaInicial = alertaDe(tela, alerta);
+        expect(anuncio(tela, alerta)).toBe('');
 
         for (let tentativa = 0; tentativa < 2; tentativa++) {
           botaoTentarNovamente(tela, alerta).click();
           await propagar();
-          expect(anuncio(tela)).toBe(`Lendo ${nome}...`);
+          expect(anuncio(tela, alerta)).toBe(TEXTO_TENTANDO);
           for (const url of urls) {
             controller
               .expectOne((r) => r.url === url)
               .flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
           }
           await propagar();
-          expect(anuncio(tela)).toBe(`Falha na leitura: ${nome}.`);
-          expect(tela.textContent?.split(`Falha na leitura: ${nome}.`)).toHaveLength(2);
+          expect(anuncio(tela, alerta)).toBe(TEXTO_REPETIDA);
         }
-        // O alerta segue o mesmo, com o texto de antes: ele não reanuncia, só a região de status.
-        expect(alertaDe(tela, alerta)).toBe(alertaInicial);
       },
     );
 
-    it('anuncia a leitura concluída quando a nova tentativa dá certo', async () => {
+    it('o alerta sai da tela quando a nova tentativa dá certo', async () => {
       const tela = await carregar(modelo, [], FASES, ['termos']);
       botaoTentarNovamente(tela, 'Termos de consentimento não carregados').click();
       await propagar();
       controller.expectOne((r) => r.url === `${URL_BASE}/termos-consentimento`).flush([]);
       await propagar();
 
-      expect(anuncio(tela)).toBe('Leitura concluída: termos de consentimento.');
+      expect(alertaDe(tela, 'Termos de consentimento não carregados')).toBeUndefined();
     });
   });
 });

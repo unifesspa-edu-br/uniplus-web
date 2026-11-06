@@ -19,21 +19,15 @@
 
 @if (aba() === 'decisoes') {
 <cfg-decisoes-da-protecao />
-} @else { @if (erroDeCarga()) {
-<ui-alert variant="danger" heading="Não foi possível carregar os itens">
-  {{ erroDeCarga() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="filaPendente() ? 'true' : null"
-      [attr.aria-busy]="filaPendente() ? 'true' : null"
-      (click)="carregar()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+} @else { @if (erroDeCarga(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar os itens"
+  [mensagem]="mensagem"
+  [pendente]="carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativaDaFila.fase()"
+  (tentar)="carregar()"
+/>
 } @if (edicao.erroDaDecisao()) {
 <ui-alert variant="danger" heading="A decisão não foi registrada"
   >{{ edicao.erroDaDecisao() }}</ui-alert
@@ -77,26 +71,18 @@
     <ui-alert variant="danger" heading="A decisão não foi registrada"
       >{{ edicao.erroDaDecisaoNoDrawer() }}</ui-alert
     >
-    } @if (erroDoDetalhe(); as erro) {
-    <ui-alert
-      variant="danger"
-      [heading]="naoEncontrado() ? 'Item não encontrado' : 'Não foi possível carregar o item'"
-    >
-      {{ erro }} @if (!naoEncontrado()) {
-      <div class="list-state__retry">
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [attr.aria-disabled]="carregandoDetalhe() ? 'true' : null"
-          [attr.aria-busy]="carregandoDetalhe() ? 'true' : null"
-          (click)="recarregarDetalhe()"
-        >
-          Tentar novamente
-        </button>
-      </div>
-      }
-    </ui-alert>
-    } @if (detalhe(); as d) {
+    } @if (erroDoDetalhe(); as erro) { @if (naoEncontrado()) {
+    <ui-alert variant="danger" heading="Item não encontrado">{{ erro }}</ui-alert>
+    } @else {
+    <ui-alerta-nova-tentativa
+      titulo="Não foi possível carregar o item"
+      [mensagem]="erro"
+      [pendente]="carregandoDetalhe()"
+      [fase]="novaTentativaDoDetalhe.fase()"
+      [fase]="novaTentativaDoDetalhe.fase()"
+      (tentar)="recarregarDetalhe()"
+    />
+    } } @if (detalhe(); as d) {
     <cfg-item-da-protecao-detalhe [detalhe]="d" [categorias]="categorias.porCodigo()" />
     }
   </div>

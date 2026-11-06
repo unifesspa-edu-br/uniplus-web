@@ -2,6 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { switchMap } from 'rxjs';
+import {
+  acompanharNovaTentativa,
+  NovaTentativaDoCampoComponent,
+} from '@uniplus/shared-ui/components';
 import { ABRANGENCIAS, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
 import type { AlteracaoDoLocal } from './busca-de-municipios';
 import {
@@ -18,7 +22,7 @@ import { errosDoDia, type GrupoDoDia, municipioSelecionadoDe } from './dia-nao-u
 @Component({
   selector: 'cfg-dia-nao-util-campos',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NovaTentativaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dia-nao-util-campos.component.html',
   styleUrl: './dia-nao-util-campos.component.css',
@@ -80,13 +84,20 @@ export class DiaNaoUtilCamposComponent {
     this.saidasDeCampo.update((saidas) => saidas + 1);
   }
 
-  /**
-   * A nova tentativa troca o aviso, e o botão com ele, pelo "Consultando…": o foco vai ao campo
-   * de busca, de onde a pessoa pode continuar, em vez de cair no corpo da página.
-   */
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'municípios',
+    pendente: computed(() => this.busca().carregando),
+    falhou: computed(() => this.busca().erro),
+    destino: () => document.getElementById(`busca-municipio-${this.sufixoDeId()}`),
+  });
+
+  /** O aviso fica na tela durante a nova tentativa, com o botão que a pediu e o andamento. */
+  protected readonly falhaVisivel = computed(
+    () => this.busca().erro || this.novaTentativa.fase() === 'tentando',
+  );
+
   protected tentarNovamente(): void {
-    this.alteracao.emit({ tipo: 'novaTentativa' });
-    document.getElementById(`busca-municipio-${this.sufixoDeId()}`)?.focus();
+    this.novaTentativa.executar(() => this.alteracao.emit({ tipo: 'novaTentativa' }));
   }
 
   protected aoDigitarABusca(evento: Event): void {

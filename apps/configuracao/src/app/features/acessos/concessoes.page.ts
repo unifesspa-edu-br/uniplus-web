@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+} from '@uniplus/shared-ui/components';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
-import { AlertComponent } from '@uniplus/shared-ui/components';
-import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
+import { devolverFocoDaLista } from '../../shared/foco';
 import { ConcessaoTrilhaComponent } from './concessao-trilha.component';
 import { ConcessoesListaComponent } from './concessoes-lista.component';
 import { ConcessoesStore } from './concessoes.store';
@@ -15,7 +18,7 @@ const ID_DO_TITULO = 'cfg-concessoes-titulo';
   selector: 'cfg-concessoes-page',
   standalone: true,
   imports: [
-    AlertComponent,
+    AlertaNovaTentativaComponent,
     ConcessoesListaComponent,
     ConcessaoTrilhaComponent,
     RevogarConcessaoDialogComponent,
@@ -38,11 +41,11 @@ export class ConcessoesPage {
   protected readonly pendente = computed(
     () => this.store.carregando() || this.revogacao.gravando(),
   );
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.pendente,
-    computed(() => this.store.mensagemDeErro() !== null),
-    () => document.getElementById(ID_DO_TITULO),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    pendente: this.pendente,
+    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    destino: () => document.getElementById(ID_DO_TITULO),
+  });
 
   private readonly foco = devolverFocoDaLista({
     gravando: computed(() => this.revogacao.gravando() || this.revogacao.revogando()),

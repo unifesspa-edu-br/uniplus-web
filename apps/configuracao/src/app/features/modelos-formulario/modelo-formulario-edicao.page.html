@@ -1,10 +1,11 @@
 <cfg-modelo-formulario-cabecalho [modelo]="store.modelo()" />
 
 @if (store.erroAoCarregar(); as erro) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   titulo="Não foi possível carregar o modelo"
   [mensagem]="erro"
   [pendente]="store.carregando()"
+  [fase]="novaTentativaDoModelo.fase()"
   (tentar)="recarregarModelo()"
 />
 } @else if (store.carregando() && store.modelo() === null) {
@@ -25,19 +26,21 @@
 </div>
 
 @if (store.termosComErro()) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   variante="warning"
   titulo="Termos de consentimento não carregados"
   mensagem="Sem a lista de termos não é possível exigir um termo novo nem trocar a versão."
   [pendente]="store.termosCarregando()"
+  [fase]="novaTentativaDosTermos.fase()"
   (tentar)="recarregarTermos()"
 />
 } @if (store.catalogoComErro()) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   variante="warning"
   titulo="Catálogo de fatos não carregado"
   mensagem="Sem o catálogo não é possível acrescentar campos nem declarar condições."
   [pendente]="store.catalogo.isLoading()"
+  [fase]="novaTentativaDoCatalogo.fase()"
   (tentar)="recarregarCatalogo()"
 />
 }
@@ -50,11 +53,12 @@
 />
 
 @if (store.vocabularioDosDocumentosComErro()) {
-<cfg-alerta-nova-tentativa
+<ui-alerta-nova-tentativa
   variante="warning"
   titulo="Fases ou tipos de documento não carregados"
   mensagem="Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos."
   [pendente]="store.vocabularioDosDocumentosCarregando()"
+  [fase]="novaTentativaDoVocabulario.fase()"
   (tentar)="recarregarVocabulario()"
 />
 } @if (edicao.conteudo(); as c) {
@@ -88,4 +92,3 @@
   [somenteLeitura]="edicao.somenteLeitura()"
 />
 }
-<span class="sr-only" role="status">{{ anuncio() }}</span>

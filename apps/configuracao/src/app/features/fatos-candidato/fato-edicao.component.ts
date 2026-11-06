@@ -8,8 +8,13 @@ import {
   Injector,
   untracked,
 } from '@angular/core';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { focoEstaLivre } from '../../shared/foco';
 import { SituacaoDaAprovacaoComponent } from '../../shared/protecao-do-catalogo';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
 import { EdicaoDoFato } from './edicao-do-fato';
@@ -28,6 +33,7 @@ import { ID_DO_INICIO_DA_EDICAO } from './ids-do-fato';
 @Component({
   selector: 'cfg-fato-edicao',
   imports: [
+    AlertaNovaTentativaComponent,
     AlertComponent,
     FatoDefinicaoComponent,
     FatoDescritivoComponent,
@@ -57,11 +63,12 @@ export class FatoEdicaoComponent {
   });
 
   /** O alerta fica na tela durante a nova tentativa, com o foco no botão; ao dar certo, o foco vai ao início da edição. */
-  private readonly novaTentativa = focarAposNovaTentativa(
-    this.leitura.carregando,
-    computed(() => this.leitura.erroDeCarga() !== null),
-    () => document.getElementById(ID_DO_INICIO_DA_EDICAO),
-  );
+  protected readonly novaTentativa = acompanharNovaTentativa({
+    assunto: 'dados do fato',
+    pendente: this.leitura.carregando,
+    falhou: computed(() => this.leitura.erroDeCarga() !== null),
+    destino: () => document.getElementById(ID_DO_INICIO_DA_EDICAO),
+  });
   protected readonly idDoInicio = ID_DO_INICIO_DA_EDICAO;
 
   /** Criado o fato, o botão de criar sai da tela; o foco recomeça no início da edição quando o fato chega. */

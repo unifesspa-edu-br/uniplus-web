@@ -1,7 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { acompanharFocoDoEnvio, novaTentativaAnunciada } from '../../shared/foco';
+import {
+  acompanharNovaTentativa,
+  AlertaNovaTentativaComponent,
+  AlertComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { bloquearEnvio } from './bloquear-envio';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
 import { CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
@@ -25,7 +30,7 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
  */
 @Component({
   selector: 'cfg-fato-criacao',
-  imports: [ReactiveFormsModule, AlertComponent, SpinnerComponent],
+  imports: [AlertaNovaTentativaComponent, ReactiveFormsModule, AlertComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-criacao.component.html',
   styleUrl: './fato-drawer.css',
@@ -39,21 +44,17 @@ export class FatoCriacaoComponent {
   protected readonly fases = lerFasesCanonicas(() => true);
   protected readonly catalogo = lerCatalogoDeFatos(() => this.dep.agregado());
 
-  /** Os alertas mantidos na tela durante a tentativa não mudam de texto; esta região anuncia cada tentativa. */
-  protected readonly anuncioDaLeitura = signal('');
-  private readonly novaTentativaDasFases = novaTentativaAnunciada({
-    nome: 'fases',
+  protected readonly novaTentativaDasFases = acompanharNovaTentativa({
+    assunto: 'fases',
     pendente: this.fases.pendente,
     falhou: this.fases.falhou,
     destino: () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO),
-    anuncio: this.anuncioDaLeitura,
   });
-  private readonly novaTentativaDoCatalogo = novaTentativaAnunciada({
-    nome: 'catálogo de fatos',
+  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
+    assunto: 'fatos de membro',
     pendente: this.catalogo.pendente,
     falhou: this.catalogo.falhou,
     destino: () => document.getElementById(ID_DO_FATO_DE_MEMBRO),
-    anuncio: this.anuncioDaLeitura,
   });
 
   protected readonly cardinalidades = CARDINALIDADES;

@@ -7,26 +7,20 @@
   position="right"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
-  <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
   @if (categorias().comErro) {
-    <ui-alert variant="warning" heading="Categorias não carregadas">
-      Sem o catálogo de categorias não é possível classificar o tipo de documento.
-      <div class="list-state__retry">
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [attr.aria-disabled]="categorias().pendente || salvando() ? 'true' : null"
-          [attr.aria-busy]="categorias().pendente ? 'true' : null"
-          (click)="recarregarCategorias.emit()"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    </ui-alert>
+    <ui-alerta-nova-tentativa
+      titulo="Categorias não carregadas"
+      mensagem="Sem o catálogo de categorias não é possível classificar o tipo de documento."
+      [pendente]="categorias().pendente"
+      [indisponivel]="salvando()"
+      [fase]="faseDasCategorias()"
+      variante="warning"
+      (tentar)="recarregarCategorias.emit()"
+    />
   }
 
   <cfg-tipo-documento-avisos [decisao]="decisao()" [avisaNovaAprovacao]="avisaNovaAprovacao()" />

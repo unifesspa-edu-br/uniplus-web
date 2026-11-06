@@ -48,16 +48,14 @@
                   <span class="field__hint">{{ vinculo.apoio }}</span>
                 }
                 @if (catalogo.falhou) {
-                  <span class="field__error" role="alert">
-                    {{ vinculo.falha }}
-                    <button
-                      type="button"
-                      class="cfg-link-button"
-                      [attr.aria-disabled]="catalogo.pendente ? 'true' : null"
-                      (click)="tentarVinculo.emit(vinculo.chave)"
-                    >
-                      Tentar novamente
-                    </button>
+                  <span class="field__error">
+                    <span role="alert">{{ vinculo.falha }}</span>
+                    <ui-nova-tentativa-do-campo
+                      [pendente]="catalogo.pendente"
+                      [fase]="catalogo.fase"
+                      [assunto]="vinculo.nome"
+                      (tentar)="tentarVinculo.emit(vinculo.chave)"
+                    />
                   </span>
                 }
                 @if (erroDoVinculo) {

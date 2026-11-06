@@ -11,6 +11,11 @@ import {
   sucesso,
   urlDoFato,
 } from './fatos-candidato.testing';
+import {
+  TEXTO_REPETIDA,
+  TEXTO_TENTANDO,
+  situacaoDaNovaTentativa,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const perfil = {
   ...corRaca,
@@ -142,7 +147,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     expect(document.activeElement).toBe(p.elemento('#cfg-fato-regras'));
   });
 
-  it('anuncia cada nova tentativa de ler o catálogo, também a segunda falha seguida', async () => {
+  it('mostra e anuncia cada nova tentativa de ler o catálogo', async () => {
     p = await montarPagina([perfil]);
     await p.acionar(p.editar(perfil));
     p.http.expectOne(urlDoFato(perfil)).flush(structuredClone(perfil));
@@ -153,16 +158,13 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
       await p.propagar();
     };
     const anuncio = (): string =>
-      p.elemento('section[aria-labelledby="cfg-fato-regras"] > span.sr-only[role="status"]')
-        .textContent ?? '';
+      situacaoDaNovaTentativa(p.elemento('section[aria-labelledby="cfg-fato-regras"]'));
     await falhar();
 
-    for (let vez = 0; vez < 2; vez++) {
-      await acao('Tentar novamente');
-      expect(anuncio()).toBe('Lendo catálogo de fatos...');
-      await falhar();
-      expect(anuncio()).toBe('Falha na leitura: catálogo de fatos.');
-    }
+    await acao('Tentar novamente');
+    expect(anuncio()).toBe(TEXTO_TENTANDO);
+    await falhar();
+    expect(anuncio()).toBe(TEXTO_REPETIDA);
   });
 
   it('o erro da condição não passa para outra depois que a regra é editada', async () => {

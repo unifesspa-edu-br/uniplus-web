@@ -24,20 +24,15 @@
       <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Buscando</span>
     }
     @if (campo().buscaFalhou) {
-      <span class="field__error" id="cfg-blbr-municipio-busca-erro" role="alert">
-        Não foi possível buscar municípios.
+      <span class="field__error" id="cfg-blbr-municipio-busca-erro">
+        <span role="alert">Não foi possível buscar municípios.</span>
+        <ui-nova-tentativa-do-campo
+          [pendente]="campo().buscando"
+          [fase]="campo().fase"
+          assunto="municípios"
+          (tentar)="tentarBuscaDeNovo.emit()"
+        />
       </span>
-      <div class="list-state__retry">
-        <button
-          type="button"
-          class="btn btn--secondary btn--sm"
-          [attr.aria-disabled]="campo().buscando ? 'true' : null"
-          [attr.aria-busy]="campo().buscando ? 'true' : null"
-          (click)="tentarBuscaDeNovo.emit()"
-        >
-          Tentar novamente
-        </button>
-      </div>
     } @else if (!campo().buscando && campo().resultados.length > 0) {
       <ul class="cfg-municipio-resultados">
         @for (cidade of campo().resultados; track cidade.codigoIbge) {

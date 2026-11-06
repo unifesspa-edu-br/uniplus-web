@@ -30,20 +30,17 @@
     Digite para buscar entre todas as unidades. Não pode formar ciclo na hierarquia.
   </span>
   @if (erro()) {
-    <span class="field__error" id="cfg-unidade-superior-erro">{{ erro() }}</span>
+    <span class="field__error" id="cfg-unidade-superior-erro"> {{ erro() }}</span>
   }
   @if (comErro()) {
-    <span class="field__error" role="alert">
-      Não foi possível carregar as unidades para seleção.
-      <button
-        type="button"
-        class="cfg-link-button"
-        [attr.aria-disabled]="carregando() ? 'true' : null"
-        [attr.aria-busy]="carregando() ? 'true' : null"
-        (click)="aoTentarNovamente($event)"
-      >
-        Tentar novamente
-      </button>
+    <span class="field__error">
+      <span role="alert">Não foi possível carregar as unidades para seleção.</span>
+      <ui-nova-tentativa-do-campo
+        [pendente]="carregando()"
+        [fase]="fase()"
+        assunto="unidades"
+        (tentar)="recarregar.emit()"
+      />
     </span>
   }
 </div>

@@ -19,21 +19,15 @@
   bloqueiam.
 </ui-alert>
 
-@if (store.mensagemDeErro()) {
-<ui-alert variant="danger" heading="Não foi possível carregar unidades">
-  {{ store.mensagemDeErro() }}
-  <div class="list-state__retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="pendente() ? 'true' : null"
-      [attr.aria-busy]="pendente() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
+@if (store.mensagemDeErro(); as mensagem) {
+<ui-alerta-nova-tentativa
+  titulo="Não foi possível carregar unidades"
+  [mensagem]="mensagem"
+  [pendente]="store.carregando()"
+  [indisponivel]="edicao.gravando()"
+  [fase]="novaTentativa.fase()"
+  (tentar)="tentarNovamente()"
+/>
 }
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
@@ -86,6 +80,7 @@
     [emEdicaoId]="edicao.emEdicaoId()"
     [comErro]="superior.comErro()"
     [carregando]="superior.carregando()"
+    [fase]="novaTentativaDaSuperior.fase()"
     [erro]="erroDaSuperior()"
     (recarregar)="recarregarSuperior()"
   />
@@ -96,6 +91,7 @@
     [(termo)]="cidade.termo"
     [opcoes]="cidade.opcoes()"
     [buscando]="cidade.buscando()"
+    [fase]="novaTentativaDaCidade.fase()"
     [erroDaBusca]="cidade.erro()"
     [semResultado]="cidade.semResultado()"
     (tentarNovamente)="repetirBuscaDeCidade()"

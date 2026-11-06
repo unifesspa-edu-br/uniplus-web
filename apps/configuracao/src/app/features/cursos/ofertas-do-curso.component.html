@@ -20,22 +20,15 @@
     </ui-alert>
   }
 
-  @if (mensagemDeErro()) {
-    <ui-alert variant="danger" heading="Não foi possível carregar as ofertas">
-      {{ mensagemDeErro() }}
-      <div class="list-state__retry">
-        <button
-          type="button"
-          id="cfg-ofertas-tentar"
-          class="btn btn--secondary btn--sm"
-          [attr.aria-disabled]="carregando() ? 'true' : null"
-          [attr.aria-busy]="carregando() ? 'true' : null"
-          (click)="recarregar.emit()"
-        >
-          Tentar novamente
-        </button>
-      </div>
-    </ui-alert>
+  @if (mensagemDeErro(); as erro) {
+    <ui-alerta-nova-tentativa
+      titulo="Não foi possível carregar as ofertas"
+      [mensagem]="erro"
+      [pendente]="carregando()"
+      [fase]="fase()"
+      idBotao="cfg-ofertas-tentar"
+      (tentar)="recarregar.emit()"
+    />
   }
 
   @if (carregando()) {

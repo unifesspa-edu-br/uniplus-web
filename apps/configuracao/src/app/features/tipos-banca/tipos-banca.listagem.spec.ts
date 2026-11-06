@@ -11,6 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIPOS_BANCA_ROUTES } from './tipos-banca.routes';
 import { TiposBancaPage } from './tipos-banca.page';
 import { TiposBancaStore } from './tipos-banca.store';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoBotao,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/tipos-banca`;
@@ -102,9 +106,9 @@ describe('TiposBancaPage — listagem', () => {
     requisicao().flush(...indisponivel);
     await propagar();
     expect(notificar).toHaveBeenCalledTimes(1);
-    expect(
-      fixture.nativeElement.querySelector('ui-alert[variant="danger"]')?.textContent,
-    ).toContain(store.mensagemDeErro());
+    expect(fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')?.textContent).toContain(
+      store.mensagemDeErro(),
+    );
   });
 
   it('"Tentar novamente" recarrega e, ao dar certo, leva o foco ao título da lista', async () => {
@@ -117,6 +121,7 @@ describe('TiposBancaPage — listagem', () => {
     tentar.click();
     await propagar();
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     expect(tentar.getAttribute('aria-busy')).toBe('true');
     expect(document.activeElement).toBe(tentar);
     tentar.click();
