@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
@@ -7,7 +7,8 @@ import {
   FINALIDADES,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
-import { EdicaoDosModelosFormulario } from './edicao-dos-modelos-formulario';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { CampoDaCriacao, CriacaoForm, mensagemDoCampo } from './modelo-formulario-form';
 
 @Component({
   selector: 'cfg-modelo-formulario-criacao',
@@ -17,23 +18,24 @@ import { EdicaoDosModelosFormulario } from './edicao-dos-modelos-formulario';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class ModeloFormularioCriacaoComponent {
-  readonly form = input.required<EdicaoDosModelosFormulario['form']>();
+  readonly form = input.required<FormGroup<CriacaoForm>>();
   readonly aberto = input.required<boolean>();
   readonly salvando = input.required<boolean>();
   readonly erroDaCriacao = input.required<string | null>();
+  readonly anuncio = input.required<string>();
   readonly tiposDeProcesso = input.required<readonly TipoProcessoDto[]>();
   readonly abertoChange = output<boolean>();
   readonly criar = output<void>();
   protected readonly finalidades = FINALIDADES;
-  protected erro(campo: keyof EdicaoDosModelosFormulario['form']['controls']): string | null {
-    const controle = this.form().controls[campo];
-    if (!(controle.touched || controle.dirty) || controle.errors === null) return null;
-    const backend = controle.errors['backend'] as { message: string } | undefined;
-    if (backend) return backend.message;
-    if (controle.errors['required']) return 'Campo obrigatório.';
-    if (controle.errors['pattern'])
-      return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
-    if (controle.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    return 'Valor inválido.';
+  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+
+  protected erro(campo: CampoDaCriacao): string | null {
+    return mensagemDoCampo(this.form().controls[campo]);
+  }
+
+  protected aoEnviar(): void {
+    if (this.salvando()) return;
+    this.criar.emit();
+    if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }
 }

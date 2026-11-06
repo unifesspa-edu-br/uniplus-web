@@ -8,11 +8,12 @@
   position="right"
 >
   @if (aberto()) {
+    <span class="sr-only" role="status">{{ anuncio() }}</span>
     <form
       [formGroup]="form()"
       id="cfg-modelo-criacao"
       class="form-drawer__form"
-      (ngSubmit)="!salvando() && criar.emit()"
+      (ngSubmit)="aoEnviar()"
       novalidate
     >
       <ui-alert variant="info" heading="O modelo nasce desativado" [dynamic]="false">
@@ -134,8 +135,8 @@
         type="submit"
         form="cfg-modelo-criacao"
         class="btn btn--primary"
-        [attr.aria-disabled]="salvando()"
-        [attr.aria-busy]="salvando()"
+        [attr.aria-disabled]="salvando() ? 'true' : null"
+        [attr.aria-busy]="salvando() ? 'true' : null"
         (click)="salvando() ? $event.preventDefault() : null"
       >
         @if (salvando()) {

@@ -14,6 +14,7 @@ import {
   type UiFiltroAtivo,
   type UiFilterChipOption,
 } from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
 
 @Component({
   selector: 'cfg-modelos-formulario-lista',
@@ -42,13 +43,20 @@ export class ModelosFormularioListaComponent {
   readonly errorMessage = input.required<string | null>();
   readonly prevCursor = input.required<string | null>();
   readonly nextCursor = input.required<string | null>();
-  readonly ocupada = input.required<boolean>();
+  readonly gravando = input.required<boolean>();
   readonly emAndamento = input.required<string | null>();
   readonly criar = output<void>();
   readonly ativar = output<ModeloFormularioView>();
   readonly desativar = output<ModeloFormularioView>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
+  protected readonly ocupada = computed(() => this.loading() || this.gravando());
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.loading,
+    atributoDaLinha: 'data-modelo-id',
+    idDoTitulo: 'cfg-modelos-list-title',
+  });
   protected readonly permissaoDeManter = PERMISSAO.configuracao.modelosFormularioManter;
   protected readonly finalidadeChips: readonly UiFilterChipOption[] = [
     { value: '', label: 'Todas' },
@@ -83,6 +91,10 @@ export class ModelosFormularioListaComponent {
       return;
     }
     this.criar.emit();
+  }
+  protected trocarSituacao(modelo: ModeloFormularioView): void {
+    this.foco.registrar({ acao: 'situacao', id: modelo.id });
+    (modelo.ativo ? this.desativar : this.ativar).emit(modelo);
   }
   protected valorDe(evento: Event): string {
     return (evento.target as HTMLSelectElement).value;

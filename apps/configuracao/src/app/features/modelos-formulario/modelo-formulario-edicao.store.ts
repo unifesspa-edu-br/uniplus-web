@@ -82,22 +82,24 @@ export class ModeloFormularioEdicaoStore {
   );
   readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
   readonly termosComErro = signal(false);
+  readonly termosCarregando = signal(false);
+  readonly vocabularioDosDocumentosCarregando = computed(
+    () => this.fasesCanonicas.isLoading() || this.tiposDocumento.isLoading(),
+  );
 
   constructor() {
     this.carregarTermos();
   }
 
   carregarTermos(): void {
-    this.termosComErro.set(false);
+    this.termosCarregando.set(true);
     this.termosApi
       .listarComVersoes()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((termos) => {
-        if (!termos.ok) {
-          this.termosComErro.set(true);
-          return;
-        }
-        this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
+        this.termosCarregando.set(false);
+        this.termosComErro.set(!termos.ok);
+        if (termos.ok) this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
       });
   }
 

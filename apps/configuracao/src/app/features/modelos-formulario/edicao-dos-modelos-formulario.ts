@@ -1,15 +1,5 @@
-import { DOCUMENT } from '@angular/common';
-import {
-  DestroyRef,
-  Injectable,
-  Injector,
-  afterNextRender,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
   ApiResult,
@@ -24,26 +14,18 @@ import {
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModeloFormularioView, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
+import { sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
 import {
-  CODIGO_CADASTRO_FORMATO,
-  CODIGO_CADASTRO_TAMANHO_MAXIMO,
-  sugerirCodigoDeCadastro,
-} from '@uniplus/shared-utils';
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+  CampoDaCriacao,
+  campoDaRecusa,
+  comandoDeCriacao,
+  criarFormularioDeModelo,
+} from './modelo-formulario-form';
 import { ModelosFormularioStore } from './modelos-formulario.store';
 
 /** O código do modelo já existe — código de modelo nunca se reutiliza. */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.modelo_formulario.codigo_ja_existe';
-
-interface CriacaoForm {
-  codigo: FormControl<string>;
-  nome: FormControl<string>;
-  descricao: FormControl<string>;
-  finalidade: FormControl<string>;
-  tipoProcessoCodigo: FormControl<string>;
-}
-
-type CampoDaCriacao = keyof CriacaoForm;
+const REVISE_OS_CAMPOS = 'Revise os campos indicados.';
 
 @Injectable()
 export class EdicaoDosModelosFormulario {
@@ -52,35 +34,24 @@ export class EdicaoDosModelosFormulario {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly injector = inject(Injector);
-  private readonly documento = inject(DOCUMENT);
   private readonly store = inject(ModelosFormularioStore);
   readonly drawerAberto = signal(false);
   private readonly escrita = signal<'salvando' | 'situacao' | null>(null);
-  readonly gravando = computed(() => this.escrita() !== null);
+  private readonly aguardandoRecarga = signal(false);
+  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
+  readonly gravando = computed(() => this.escrita() !== null || this.aguardandoRecarga());
   readonly salvando = computed(() => this.escrita() === 'salvando');
   readonly erroDaCriacao = signal<string | null>(null);
+  private readonly recusaDaCriacao = signal('');
+  /** Dentro do drawer: o andamento e a recusa de campo, que só fazem sentido com ele aberto. */
+  readonly anuncioDaCriacao = computed(() =>
+    this.salvando() ? 'Criando o modelo.' : this.recusaDaCriacao(),
+  );
   readonly emAndamento = signal<string | null>(null);
   readonly anuncioDaSituacao = signal('');
   private chaveDaCriacao = idempotencyKey.create();
   private ultimaSugestao = '';
-  readonly form = new FormGroup<CriacaoForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
-    }),
-    descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-    finalidade: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    tipoProcessoCodigo: new FormControl('', { nonNullable: true }),
-  });
+  readonly form = criarFormularioDeModelo();
 
   constructor() {
     this.form.controls.nome.valueChanges
@@ -89,12 +60,14 @@ export class EdicaoDosModelosFormulario {
     this.form.controls.codigo.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((codigo) => this.normalizarCaixaDoCodigo(codigo));
+    this.acompanharRecarga();
   }
 
   abrirCriacao(): void {
     if (this.gravando()) return;
     this.form.reset();
     this.erroDaCriacao.set(null);
+    this.recusaDaCriacao.set('');
     this.ultimaSugestao = '';
     this.chaveDaCriacao = idempotencyKey.create();
     this.drawerAberto.set(true);
@@ -108,7 +81,6 @@ export class EdicaoDosModelosFormulario {
     if (this.gravando()) return;
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.focarCampoInvalido();
       return;
     }
     this.enviarCriacao();
@@ -117,24 +89,15 @@ export class EdicaoDosModelosFormulario {
   private enviarCriacao(): void {
     this.escrita.set('salvando');
     this.erroDaCriacao.set(null);
-    const v = this.form.getRawValue();
+    this.recusaDaCriacao.set('');
+    const codigo = this.form.controls.codigo.value.trim();
     this.api
-      .criar(
-        {
-          codigo: v.codigo.trim(),
-          nome: v.nome.trim(),
-          descricao: v.descricao.trim() || null,
-          finalidade: v.finalidade,
-          tipoProcessoCodigo: v.tipoProcessoCodigo || null,
-          conteudo: conteudoInicial(),
-        },
-        withIdempotencyKey(this.chaveDaCriacao),
-      )
+      .criar(comandoDeCriacao(this.form), withIdempotencyKey(this.chaveDaCriacao))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.escrita.set(null);
         if (resultado.ok) {
-          this.notifications.success('Modelo criado', v.codigo);
+          this.notifications.success('Modelo criado', codigo);
           this.drawerAberto.set(false);
           void this.router.navigate(['/modelos-formulario', resultado.data]);
           return;
@@ -165,31 +128,20 @@ export class EdicaoDosModelosFormulario {
       .subscribe((resultado) => this.aoTrocarSituacao(resultado, 'Modelo ativado', modelo));
   }
 
-  erro(campo: CampoDaCriacao): string | null {
-    const controle = this.form.controls[campo];
-    if (!(controle.touched || controle.dirty) || controle.errors === null) return null;
-    const backend = controle.errors['backend'] as { message: string } | undefined;
-    if (backend) return backend.message;
-    if (controle.errors['required']) return 'Campo obrigatório.';
-    if (controle.errors['pattern'])
-      return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
-    if (controle.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    return 'Valor inválido.';
-  }
-
   private aoTrocarSituacao(
     resultado: ApiResult<void>,
     mensagem: string,
     modelo: ModeloFormularioView,
   ): void {
     this.escrita.set(null);
-    this.emAndamento.set(null);
     if (resultado.ok) {
       this.anuncioDaSituacao.set(`${mensagem}: ${modelo.codigo}.`);
       this.notifications.success(mensagem, modelo.codigo);
+      this.aguardandoRecarga.set(true);
       this.store.recarregar();
       return;
     }
+    this.emAndamento.set(null);
     this.anuncioDaSituacao.set(`Não foi possível alterar a situação do modelo ${modelo.codigo}.`);
     this.notifications.errorFromProblem(resultado.problem, {
       title: this.problemI18n.resolve(resultado.problem).title,
@@ -202,9 +154,13 @@ export class EdicaoDosModelosFormulario {
     }
     if (problem.code === CODIGO_JA_EXISTE) {
       this.marcarCampo('codigo', this.problemI18n.resolve(problem).title);
+      this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
       return;
     }
-    if (this.aplicarErrosDeCampo(problem)) return;
+    if (this.aplicarErrosDeCampo(problem)) {
+      this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
+      return;
+    }
     this.erroDaCriacao.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
@@ -226,17 +182,22 @@ export class EdicaoDosModelosFormulario {
     const controle = this.form.controls[campo];
     controle.setErrors({ backend: { message: mensagem } });
     controle.markAsTouched();
-    this.focarCampoInvalido();
   }
 
-  private focarCampoInvalido(): void {
-    afterNextRender(
-      () =>
-        this.documento
-          .querySelector<HTMLElement>('#cfg-modelo-criacao [aria-invalid="true"]')
-          ?.focus(),
-      { injector: this.injector },
-    );
+  /** A linha mantém o andamento até a lista recarregada chegar, ou falhar. */
+  private acompanharRecarga(): void {
+    let iniciou = false;
+    effect(() => {
+      if (!this.aguardandoRecarga()) {
+        iniciou = false;
+        return;
+      }
+      if (this.store.carregando()) iniciou = true;
+      else if (iniciou || this.store.mensagemDeErro()) {
+        this.aguardandoRecarga.set(false);
+        this.emAndamento.set(null);
+      }
+    });
   }
 
   /** A API só aceita código em caixa alta; a caixa alta na tela é do estilo do campo. */
@@ -257,21 +218,4 @@ export class EdicaoDosModelosFormulario {
     this.ultimaSugestao = sugerirCodigoDeCadastro(nome);
     this.form.controls.codigo.setValue(this.ultimaSugestao, { emitEvent: false });
   }
-}
-
-/** O campo do drawer a que a recusa se refere, pelo último segmento; nulo quando é do conteúdo. */
-function campoDaRecusa(campo: string): CampoDaCriacao | null {
-  const ultimo = (campo.split('.').at(-1) ?? campo).replace(/^./u, (letra) =>
-    letra.toLocaleLowerCase('pt-BR'),
-  );
-  const campos: readonly CampoDaCriacao[] = [
-    'codigo',
-    'nome',
-    'descricao',
-    'finalidade',
-    'tipoProcessoCodigo',
-  ];
-  return campos.includes(ultimo as CampoDaCriacao) && !/conteudo/iu.test(campo)
-    ? (ultimo as CampoDaCriacao)
-    : null;
 }

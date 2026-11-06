@@ -16,6 +16,12 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
           <td>
             <button type="button" [attr.aria-label]="'Editar item ' + id">e</button>
             <button type="button" [attr.aria-label]="'Remover item ' + id">r</button>
+            <button
+              type="button"
+              [attr.aria-label]="(ativos().includes(id) ? 'Desativar item ' : 'Ativar item ') + id"
+            >
+              s
+            </button>
           </td>
         </tr>
       </table>
@@ -24,6 +30,7 @@ import { devolverFocoDaLista } from './devolver-foco-da-lista';
 })
 class ListaDeTesteComponent {
   readonly ids = input.required<readonly string[]>();
+  readonly ativos = input<readonly string[]>([]);
   readonly gravando = input.required<boolean>();
   readonly carregando = input.required<boolean>();
   readonly foco = devolverFocoDaLista({
@@ -68,6 +75,18 @@ describe('devolverFocoDaLista', () => {
     expect(document.activeElement).toBe(botao('Remover item b'));
   });
 
+  it('a situação devolve o foco ao botão da linha, que agora oferece a ação oposta', async () => {
+    fixture.componentRef.setInput('ativos', ['b']);
+    fixture.detectChanges();
+    fixture.componentInstance.foco.registrar({ acao: 'situacao', id: 'b' });
+    await escrever({ aposGravar: true });
+    fixture.componentRef.setInput('ativos', []);
+    fixture.componentRef.setInput('carregando', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(botao('Ativar item b'));
+  });
+
   it('espera a recarga terminar antes de devolver o foco', async () => {
     fixture.componentInstance.foco.registrar({ acao: 'editar', id: 'a' });
     await escrever({ aposGravar: true });
@@ -101,6 +120,27 @@ describe('devolverFocoDaLista', () => {
 
   it('uma escrita que ninguém acionou pela lista não move o foco', async () => {
     await escrever();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('uma recarga sem escrita anterior não move o foco', async () => {
+    fixture.componentRef.setInput('carregando', true);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('carregando', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('devolve uma vez só: a recarga seguinte não repete', async () => {
+    fixture.componentInstance.foco.registrar({ acao: 'editar', id: 'a' });
+    await escrever();
+    (document.activeElement as HTMLElement).blur();
+    fixture.componentRef.setInput('carregando', true);
+    fixture.detectChanges();
+    fixture.componentRef.setInput('carregando', false);
+    fixture.detectChanges();
+    await fixture.whenStable();
     expect(document.activeElement).toBe(document.body);
   });
 

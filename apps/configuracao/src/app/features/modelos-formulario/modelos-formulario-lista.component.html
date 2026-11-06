@@ -1,8 +1,4 @@
-<fieldset
-  role="none"
-  [disabled]="ocupada()"
-  style="border: 0; padding: 0; margin: 0; min-width: 0"
->
+<fieldset class="cfg-filtros" role="none" [disabled]="gravando()">
   <ui-filter-bar
     ariaLabel="Filtrar modelos de formulário"
     searchPlaceholder="Buscar por código ou nome…"
@@ -39,7 +35,7 @@
 <section class="panel" aria-labelledby="cfg-modelos-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-modelos-list-title">Modelos de formulário</h2>
+      <h2 id="cfg-modelos-list-title" tabindex="-1">Modelos de formulário</h2>
       @if (loading()) {
         <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
       }
@@ -48,7 +44,7 @@
       *authTemPermissao="permissaoDeManter"
       type="button"
       class="btn btn--primary"
-      [attr.aria-disabled]="ocupada()"
+      [attr.aria-disabled]="ocupada() ? 'true' : null"
       (click)="criarModelo($event)"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
@@ -74,7 +70,7 @@
         </thead>
         <tbody>
           @for (modelo of modelosBuscados(); track modelo.id) {
-            <tr>
+            <tr [attr.data-modelo-id]="modelo.id">
               <td data-label="Código">
                 <code>{{ modelo.codigo }}</code>
               </td>
@@ -123,7 +119,7 @@
                       [accessibleName]="'Desativar o modelo ' + modelo.codigo"
                       tooltip="Desativar: deixa de ser oferecido a processos novos"
                       [isDisabled]="ocupada()"
-                      (triggered)="desativar.emit(modelo)"
+                      (triggered)="trocarSituacao(modelo)"
                     />
                   } @else {
                     <ui-icon-button
@@ -131,7 +127,7 @@
                       [accessibleName]="'Ativar o modelo ' + modelo.codigo"
                       tooltip="Ativar: volta a ser oferecido a processos novos"
                       [isDisabled]="ocupada()"
-                      (triggered)="ativar.emit(modelo)"
+                      (triggered)="trocarSituacao(modelo)"
                     />
                   }
                 </ng-container>
@@ -153,7 +149,7 @@
       navigationLabel="Paginação de modelos de formulário"
       [hasPrevious]="prevCursor() !== null"
       [hasNext]="nextCursor() !== null"
-      [isDisabled]="loading() || ocupada()"
+      [isDisabled]="ocupada()"
       (previous)="anterior.emit()"
       (next)="proximo.emit()"
     />

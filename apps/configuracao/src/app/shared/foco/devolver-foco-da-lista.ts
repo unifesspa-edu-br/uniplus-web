@@ -1,11 +1,13 @@
 import { ElementRef, Injector, Signal, afterNextRender, effect, inject } from '@angular/core';
 import { focoEstaLivre } from './foco-livre';
 
-type AcaoDaLinha = 'editar' | 'remover';
+type AcaoDaLinha = 'editar' | 'remover' | 'situacao';
 
-const VERBO_DA_ACAO: Readonly<Record<AcaoDaLinha, string>> = {
-  editar: 'Editar',
-  remover: 'Remover',
+/** O botão de cada ação dentro da linha; o da situação troca de rótulo ao ser acionado. */
+const SELETOR_DA_ACAO: Readonly<Record<AcaoDaLinha, string>> = {
+  editar: 'button[aria-label^="Editar "]',
+  remover: 'button[aria-label^="Remover "]',
+  situacao: ':is(button[aria-label^="Ativar "], button[aria-label^="Desativar "])',
 };
 
 /** O valor como literal entre aspas duplas de um seletor de atributo. */
@@ -74,9 +76,7 @@ class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
       return idDoCadastro ? this.raiz.querySelector<HTMLElement>(`#${idDoCadastro}`) : null;
     }
     const linha = `tr[${this.opcoes.atributoDaLinha}="${entreAspas(acionador.id)}"]`;
-    return this.raiz.querySelector<HTMLElement>(
-      `${linha} button[aria-label^="${VERBO_DA_ACAO[acionador.acao]} "]`,
-    );
+    return this.raiz.querySelector<HTMLElement>(`${linha} ${SELETOR_DA_ACAO[acionador.acao]}`);
   }
 }
 

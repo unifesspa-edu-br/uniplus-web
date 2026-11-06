@@ -20,8 +20,18 @@ import {
   type ConteudoDoFormulario,
   type DocumentoExigidoDoFormulario,
 } from '@uniplus/shared-ui/components';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { mensagemDeErroDoControle } from '../../shared/formulario';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 import type { EdicaoDoConteudoDoModelo } from './edicao-do-conteudo-do-modelo';
+
+/** Uma leitura por recurso que a tela pode refazer a pedido da pessoa. */
+export interface LeiturasEmCurso {
+  readonly modelo: boolean;
+  readonly termos: boolean;
+  readonly catalogo: boolean;
+  readonly vocabulario: boolean;
+}
 
 @Component({
   selector: 'cfg-modelo-formulario-detalhe',
@@ -56,6 +66,10 @@ export class ModeloFormularioDetalheComponent {
   readonly form = input.required<EdicaoDoConteudoDoModelo['form']>();
   readonly conteudo = input.required<ConteudoDoFormulario | null>();
   readonly salvando = input.required<boolean>();
+  /** A gravação em curso e a espera pela recarga que a segue. */
+  readonly somenteLeitura = input.required<boolean>();
+  /** Quais leituras estão em curso: cada alerta se liga à do próprio recurso. */
+  readonly tentando = input.required<LeiturasEmCurso>();
   readonly recusas = input.required<ReturnType<EdicaoDoConteudoDoModelo['recusas']>>();
   readonly recusasGerais = input.required<readonly string[]>();
   readonly recusasDosDocumentos =
@@ -69,12 +83,12 @@ export class ModeloFormularioDetalheComponent {
   readonly conteudoChange = output<ConteudoDoFormulario>();
   readonly documentosChange = output<readonly DocumentoExigidoDoFormulario[]>();
   private readonly editor = viewChild(EditorDeFormularioComponent);
-  protected readonly documentosExigidos = computed(() => this.conteudo()?.documentosExigidos ?? []);
-  protected readonly fatosCitaveisDosDocumentos = computed(() => {
+  readonly documentosExigidos = computed(() => this.conteudo()?.documentosExigidos ?? []);
+  readonly fatosCitaveisDosDocumentos = computed(() => {
     const conteudo = this.conteudo();
     return conteudo === null ? new Set<string>() : fatosCitaveisPelosTermos(conteudo);
   });
-  protected readonly fatosDosDocumentos = computed(() =>
+  readonly fatosDosDocumentos = computed(() =>
     fatosOferecidos(
       this.fatos(),
       this.fatosCitaveisDosDocumentos(),
@@ -82,20 +96,21 @@ export class ModeloFormularioDetalheComponent {
       this.comMunicipios(),
     ),
   );
-  protected readonly conteudoAlterado = computed(
+  readonly conteudoAlterado = computed(
     () => JSON.stringify(this.conteudo()) !== JSON.stringify(this.modelo()?.conteudo ?? null),
   );
-  protected rotuloDaFinalidade(valor: string): string {
+  constructor() {
+    acompanharFocoDoEnvio({
+      salvando: this.somenteLeitura,
+      aberto: computed(() => this.modelo() !== null),
+    });
+  }
+
+  rotuloDaFinalidade(valor: string): string {
     return FINALIDADES.find((f) => f.valor === valor)?.rotulo ?? valor;
   }
   protected erro(campo: keyof EdicaoDoConteudoDoModelo['form']['controls']): string | null {
-    const controle = this.form().controls[campo];
-    if (!(controle.touched || controle.dirty) || controle.errors === null) return null;
-    const backend = controle.errors['backend'] as { message: string } | undefined;
-    if (backend) return backend.message;
-    if (controle.errors['required']) return 'Campo obrigatório.';
-    if (controle.errors['maxlength']) return 'Valor acima do tamanho permitido.';
-    return 'Valor inválido.';
+    return mensagemDeErroDoControle(this.form().controls[campo]);
   }
   focarPrimeiroCampoInvalido(): void {
     void this.editor()?.focarPrimeiroCampoInvalido();

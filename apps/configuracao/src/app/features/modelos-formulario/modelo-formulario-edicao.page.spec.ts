@@ -1,5 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
@@ -206,29 +210,52 @@ describe('ModeloFormularioEdicaoPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
+  const FALHA_500 = JSON.stringify({
+    status: 500,
+    title: 'Erro interno',
+    code: 'uniplus.erro_interno',
+  });
+
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
     fatosExtras: readonly FatoCandidatoView[] = [],
     fasesCanonicas: readonly object[] = FASES,
+    falhando: readonly string[] = [],
   ): Promise<HTMLElement> {
-    controller.expectOne(MODELO).flush(doModelo);
-    controller
-      .expectOne(`${BASE}/api/configuracao/fatos-candidato`)
-      .flush([fato('NOME'), fato('ESCOLA_PUBLICA'), fato('GESTANTE'), ...fatosExtras]);
+    const responder = (req: TestRequest, recurso: string, dados: object): void => {
+      if (falhando.includes(recurso)) {
+        req.flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
+      } else {
+        req.flush(dados);
+      }
+    };
+    responder(controller.expectOne(MODELO), 'modelo', doModelo);
+    responder(controller.expectOne(`${BASE}/api/configuracao/fatos-candidato`), 'fatos', [
+      fato('NOME'),
+      fato('ESCOLA_PUBLICA'),
+      fato('GESTANTE'),
+      ...fatosExtras,
+    ]);
     controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`)
-      .flush([]);
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
-      .flush(fasesCanonicas);
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`)
-      .flush([
+    responder(
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`),
+      'termos',
+      [],
+    );
+    responder(
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`),
+      'fases',
+      fasesCanonicas,
+    );
+    responder(
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`),
+      'tipos-documento',
+      [
         { id: '1', codigo: 'LAUDO_MEDICO', nome: 'Laudo médico' },
         { id: '2', codigo: 'CERTIDAO_NASCIMENTO', nome: 'Certidão de nascimento' },
         { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
-      ]);
+      ],
+    );
     return propagar();
   }
 
@@ -363,7 +390,9 @@ describe('ModeloFormularioEdicaoPage', () => {
   });
 
   function digitarNoMaximoDoGrupo(tela: HTMLElement, texto: string): HTMLInputElement {
-    const campo = tela.querySelector<HTMLInputElement>('input[id$="-FAMILIA-maximo"]') as HTMLInputElement;
+    const campo = tela.querySelector<HTMLInputElement>(
+      'input[id$="-FAMILIA-maximo"]',
+    ) as HTMLInputElement;
     campo.value = texto;
     campo.dispatchEvent(new Event('change'));
     return campo;
@@ -379,7 +408,9 @@ describe('ModeloFormularioEdicaoPage', () => {
 
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     const erro = tela.ownerDocument.getElementById(
-      (campo.getAttribute('aria-describedby') ?? '').split(' ').find((id) => id.endsWith('-maximo-erro')) ?? '',
+      (campo.getAttribute('aria-describedby') ?? '')
+        .split(' ')
+        .find((id) => id.endsWith('-maximo-erro')) ?? '',
     );
     expect(erro?.textContent).toContain('O máximo é um número inteiro, a partir de um.');
     expect(tela.ownerDocument.activeElement).toBe(campo);
@@ -392,13 +423,17 @@ describe('ModeloFormularioEdicaoPage', () => {
     await propagar();
     (tela.querySelector('#cfg-modelo-etapa-SECAO_1-nome button') as HTMLButtonElement).click();
     await propagar();
-    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(true);
+    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(
+      true,
+    );
 
     salvar(tela);
     await propagar();
     await new Promise((resolve) => setTimeout(resolve));
 
-    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(false);
+    expect((tela.querySelector('#cfg-modelo-etapa-SECAO_1-corpo') as HTMLElement).hidden).toBe(
+      false,
+    );
     expect(tela.ownerDocument.activeElement).toBe(campo);
     controller.expectNone((r) => r.method === 'PUT');
   });
@@ -499,5 +534,425 @@ describe('ModeloFormularioEdicaoPage', () => {
       (tela.querySelector('#cfg-modelo-docs-doc-0-consequencia') as HTMLSelectElement).options,
     ).map((opcao) => opcao.value);
     expect(valores).not.toContain('PENDENCIA_REENVIO');
+  });
+
+  const botaoTentarNovamente = (tela: HTMLElement, titulo: string): HTMLButtonElement =>
+    Array.from(tela.querySelectorAll('ui-alert'))
+      .find((alerta) => alerta.textContent?.includes(titulo))
+      ?.querySelector('button') as HTMLButtonElement;
+
+  it('não grava com o nome em branco: marca o campo, anuncia o motivo e leva o foco a ele', async () => {
+    const tela = await carregar();
+    const nome = tela.querySelector<HTMLInputElement>(
+      'input[formcontrolname="nome"]',
+    ) as HTMLInputElement;
+    nome.value = '';
+    nome.dispatchEvent(new Event('input'));
+
+    salvar(tela);
+    const depois = await propagar();
+    await propagar();
+
+    controller.expectNone((r) => r.method === 'PUT');
+    expect(nome.getAttribute('aria-invalid')).toBe('true');
+    expect(depois.querySelector('#cfg-modelo-ed-nome-erro')?.textContent).toBe(
+      'Campo obrigatório.',
+    );
+    expect(document.activeElement).toBe(nome);
+  });
+
+  it('mostra a recusa do nome junto do campo e resume que há recusas abaixo', async () => {
+    const tela = await carregar();
+    salvar(tela);
+
+    controller
+      .expectOne((r) => r.method === 'PUT')
+      .flush(
+        JSON.stringify({
+          status: 422,
+          title: 'Requisição inválida',
+          code: 'uniplus.validacao',
+          errors: [{ field: 'Nome', code: 'x', message: 'Nome já usado por outro modelo.' }],
+        }),
+        PROBLEMA,
+      );
+    const depois = await propagar();
+
+    expect(depois.querySelector('#cfg-modelo-ed-nome-erro')?.textContent).toBe(
+      'Nome já usado por outro modelo.',
+    );
+    expect(depois.querySelector('.cfg-modelo-resumo')?.textContent).toContain(
+      'Há recusas nos campos marcados abaixo.',
+    );
+  });
+
+  async function recusar(tela: HTMLElement, errors: readonly object[]): Promise<HTMLElement> {
+    salvar(tela);
+    const gravacao = controller.expectOne((r) => r.method === 'PUT');
+    await propagar();
+    gravacao.flush(
+      JSON.stringify({
+        status: 422,
+        title: 'Requisição inválida',
+        code: 'uniplus.validacao',
+        errors,
+      }),
+      PROBLEMA,
+    );
+    await propagar();
+    return propagar();
+  }
+
+  it('a recusa que aponta o campo do cabeçalho leva o foco a ele, não ao resumo', async () => {
+    const tela = await carregar();
+
+    const depois = await recusar(tela, [{ field: 'Nome', code: 'x', message: 'Nome já usado.' }]);
+
+    expect(document.activeElement).toBe(depois.querySelector('input[formcontrolname="nome"]'));
+  });
+
+  it('a recusa que não aponta campo leva o foco ao resumo', async () => {
+    const tela = await carregar();
+
+    const depois = await recusar(tela, [
+      { field: 'conteudo', code: 'y', message: 'O item cita fato que vem depois dele.' },
+    ]);
+
+    expect(document.activeElement).toBe(depois.querySelector('#cfg-modelo-resumo'));
+  });
+
+  it('a recusa de um item do conteúdo, mostrada junto dele, leva o foco ao resumo', async () => {
+    const tela = await carregar();
+
+    const depois = await recusar(tela, [
+      { field: 'conteudo.itens[0].rotulo', code: 'x', message: 'O rótulo passou do tamanho.' },
+    ]);
+
+    expect(document.activeElement).toBe(depois.querySelector('#cfg-modelo-resumo'));
+  });
+
+  it('numa falha 500, resume o motivo e mantém a gravação disponível', async () => {
+    const tela = await carregar();
+    salvar(tela);
+
+    controller
+      .expectOne((r) => r.method === 'PUT')
+      .flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
+    const depois = await propagar();
+
+    expect(depois.querySelector('.cfg-modelo-resumo')?.textContent).toContain('Erro interno');
+    expect(depois.querySelector<HTMLFieldSetElement>('fieldset.form-grid')?.disabled).toBe(false);
+  });
+
+  it('durante a gravação o cabeçalho fica somente leitura e o valor se mantém', async () => {
+    const tela = await carregar();
+    salvar(tela);
+    const requisicao = controller.expectOne((r) => r.method === 'PUT');
+    await propagar();
+
+    const nome = tela.querySelector<HTMLInputElement>('input[formcontrolname="nome"]');
+    expect(nome?.matches(':disabled')).toBe(true);
+    expect(nome?.value).toBe('Inscrição Medicina');
+
+    requisicao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    controller.expectOne(MODELO).flush(modelo);
+  });
+
+  const titulo = (): HTMLElement | null => document.getElementById('cfg-modelo-titulo');
+
+  async function tentarNovamenteComFoco(tela: HTMLElement, alerta: string): Promise<void> {
+    const botao = botaoTentarNovamente(tela, alerta);
+    botao.focus();
+    expect(document.activeElement).toBe(botao);
+    botao.click();
+    await propagar();
+    expect(botao.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(botao);
+  }
+
+  async function concluirANovaTentativa(): Promise<void> {
+    await propagar();
+    await propagar();
+    expect(document.activeElement).toBe(titulo());
+  }
+
+  it('falha ao carregar o modelo: mostra o motivo, a nova tentativa refaz a leitura e o foco vai ao título', async () => {
+    const tela = await carregar(modelo, [], FASES, ['modelo']);
+
+    expect(tela.textContent).toContain('Não foi possível carregar o modelo');
+    await tentarNovamenteComFoco(tela, 'Não foi possível carregar o modelo');
+    controller.expectOne(MODELO).flush(modelo);
+    await concluirANovaTentativa();
+    expect(tela.querySelector('ui-alert')).toBeNull();
+  });
+
+  it('falha ao carregar os termos: avisa, a nova tentativa os pede de novo e o foco vai ao título', async () => {
+    const tela = await carregar(modelo, [], FASES, ['termos']);
+
+    expect(tela.textContent).toContain('Termos de consentimento não carregados');
+    await tentarNovamenteComFoco(tela, 'Termos de consentimento não carregados');
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`)
+      .flush([]);
+    await concluirANovaTentativa();
+
+    expect(tela.textContent).not.toContain('Termos de consentimento não carregados');
+  });
+
+  it('falha ao carregar o catálogo de fatos: avisa, a nova tentativa o lê de novo e o foco vai ao título', async () => {
+    const tela = await carregar(modelo, [], FASES, ['fatos']);
+
+    expect(tela.textContent).toContain('Catálogo de fatos não carregado');
+    await tentarNovamenteComFoco(tela, 'Catálogo de fatos não carregado');
+    controller.expectOne(`${BASE}/api/configuracao/fatos-candidato`).flush([fato('NOME')]);
+    await concluirANovaTentativa();
+
+    expect(tela.textContent).not.toContain('Catálogo de fatos não carregado');
+  });
+
+  it('falha ao carregar o vocabulário dos documentos: a nova tentativa lê fases e tipos de novo e o foco vai ao título', async () => {
+    const tela = await carregar(modelo, [], FASES, ['fases', 'tipos-documento']);
+
+    await tentarNovamenteComFoco(tela, 'Fases ou tipos de documento não carregados');
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`).flush(FASES);
+    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-documento`).flush([]);
+    await concluirANovaTentativa();
+
+    expect(tela.textContent).not.toContain('Fases ou tipos de documento não carregados');
+  });
+
+  it('Enter no nome com a gravação pendente leva o foco ao botão de salvar', async () => {
+    const tela = await carregar();
+    const nome = tela.querySelector<HTMLInputElement>('input[formcontrolname="nome"]');
+    nome?.focus();
+
+    (tela.querySelector('#cfg-modelo-edicao') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    const requisicao = controller.expectOne((r) => r.method === 'PUT');
+    await propagar();
+    await propagar();
+
+    expect(nome?.matches(':disabled')).toBe(true);
+    expect(document.activeElement).toBe(tela.querySelector('button[type="submit"]'));
+    requisicao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    controller.expectOne(MODELO).flush(modelo);
+  });
+
+  it('gravado o modelo, o formulário segue montado e somente leitura até a recarga chegar', async () => {
+    const tela = await carregar();
+    const nome = tela.querySelector<HTMLInputElement>(
+      'input[formcontrolname="nome"]',
+    ) as HTMLInputElement;
+    nome.value = 'Inscrição revisada';
+    nome.dispatchEvent(new Event('input'));
+    nome.focus();
+    (tela.querySelector('#cfg-modelo-edicao') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    const gravacao = controller.expectOne((r) => r.method === 'PUT');
+    await propagar();
+    await propagar();
+
+    gravacao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    await propagar();
+    const recarga = controller.expectOne(MODELO);
+
+    const botao = tela.querySelector('button[type="submit"]') as HTMLButtonElement;
+    expect(tela.querySelector('input[formcontrolname="nome"]')).toBe(nome);
+    expect(tela.textContent).not.toContain('Carregando o modelo');
+    expect(nome.matches(':disabled')).toBe(true);
+    expect(nome.value).toBe('Inscrição revisada');
+    expect(botao.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(botao);
+
+    recarga.flush({ ...modelo, nome: 'Inscrição gravada' });
+    await propagar();
+    await propagar();
+
+    expect(tela.querySelector('input[formcontrolname="nome"]')).toBe(nome);
+    expect(nome.matches(':disabled')).toBe(false);
+    expect(nome.value).toBe('Inscrição gravada');
+    expect(botao.getAttribute('aria-disabled')).toBeNull();
+    expect(document.activeElement).toBe(botao);
+  });
+  it('gravado o modelo e falha a releitura, o foco vai ao título, que a tela mantém', async () => {
+    const tela = await carregar();
+    const nome = tela.querySelector<HTMLInputElement>(
+      'input[formcontrolname="nome"]',
+    ) as HTMLInputElement;
+    nome.focus();
+    (tela.querySelector('#cfg-modelo-edicao') as HTMLFormElement).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
+    const gravacao = controller.expectOne((r) => r.method === 'PUT');
+    await propagar();
+    await propagar();
+    gravacao.flush(null, { status: 204, statusText: 'No Content' });
+    await propagar();
+    await propagar();
+    expect(document.activeElement).toBe(tela.querySelector('button[type="submit"]'));
+
+    controller
+      .expectOne(MODELO)
+      .flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
+    await propagar();
+    await propagar();
+
+    expect(tela.querySelector('form#cfg-modelo-edicao')).toBeNull();
+    expect(tela.textContent).toContain('Não foi possível carregar o modelo');
+    expect(document.activeElement).toBe(titulo());
+  });
+
+  it('a primeira leitura falha: o foco não vai ao título, pois ninguém esperava a recarga', async () => {
+    const tela = await carregar(modelo, [], FASES, ['modelo']);
+    await propagar();
+
+    expect(tela.textContent).toContain('Não foi possível carregar o modelo');
+    expect(tela.querySelector('#cfg-modelo-titulo')).not.toBeNull();
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('gravado o modelo e falha a releitura, o foco que já foi a outro elemento fica onde está', async () => {
+    const tela = await carregar();
+    const fora = document.createElement('button');
+    document.body.appendChild(fora);
+    try {
+      (tela.querySelector('#cfg-modelo-edicao') as HTMLFormElement).dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      const gravacao = controller.expectOne((r) => r.method === 'PUT');
+      await propagar();
+      gravacao.flush(null, { status: 204, statusText: 'No Content' });
+      await propagar();
+      await propagar();
+      const recarga = controller.expectOne(MODELO);
+      fora.focus();
+      expect(document.activeElement).toBe(fora);
+
+      recarga.flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
+      await propagar();
+      await propagar();
+
+      expect(tela.querySelector('form#cfg-modelo-edicao')).toBeNull();
+      expect(tela.textContent).toContain('Não foi possível carregar o modelo');
+      expect(document.activeElement).toBe(fora);
+    } finally {
+      fora.remove();
+    }
+  });
+
+  describe('com os termos e o catálogo em falha', () => {
+    const urlDosTermos = `${BASE}/api/configuracao/termos-consentimento`;
+    const urlDoCatalogo = `${BASE}/api/configuracao/fatos-candidato`;
+    const TERMOS = 'Termos de consentimento não carregados';
+    const CATALOGO = 'Catálogo de fatos não carregado';
+
+    async function comAsDuasFalhas(): Promise<HTMLElement> {
+      return carregar(modelo, [], FASES, ['termos', 'fatos']);
+    }
+
+    it('o botão de um alerta fica disponível e funciona enquanto outro recurso carrega', async () => {
+      const tela = await comAsDuasFalhas();
+      botaoTentarNovamente(tela, TERMOS).click();
+      await propagar();
+
+      const doCatalogo = botaoTentarNovamente(tela, CATALOGO);
+      expect(doCatalogo.getAttribute('aria-disabled')).toBeNull();
+      expect(doCatalogo.getAttribute('aria-busy')).toBeNull();
+      doCatalogo.click();
+      await propagar();
+      const lerCatalogo = controller.expectOne(urlDoCatalogo);
+      controller.expectOne((r) => r.url === urlDosTermos).flush([]);
+      lerCatalogo.flush([fato('NOME')]);
+      await propagar();
+    });
+
+    it('o botão do recurso em curso fica barrado e não repete a leitura', async () => {
+      const tela = await comAsDuasFalhas();
+      const doTermos = botaoTentarNovamente(tela, TERMOS);
+      doTermos.click();
+      await propagar();
+
+      expect(doTermos.getAttribute('aria-disabled')).toBe('true');
+      expect(doTermos.getAttribute('aria-busy')).toBe('true');
+      expect(botaoTentarNovamente(tela, CATALOGO).getAttribute('aria-disabled')).toBeNull();
+      doTermos.click();
+      await propagar();
+      controller.expectOne((r) => r.url === urlDosTermos).flush([]);
+      await propagar();
+    });
+  });
+
+  describe('anúncio da nova tentativa', () => {
+    const URL_BASE = `${BASE}/api/configuracao`;
+    const leituras = [
+      {
+        nome: 'modelo',
+        alerta: 'Não foi possível carregar o modelo',
+        falhando: ['modelo'],
+        urls: [MODELO],
+      },
+      {
+        nome: 'termos de consentimento',
+        alerta: 'Termos de consentimento não carregados',
+        falhando: ['termos'],
+        urls: [`${URL_BASE}/termos-consentimento`],
+      },
+      {
+        nome: 'catálogo de fatos',
+        alerta: 'Catálogo de fatos não carregado',
+        falhando: ['fatos'],
+        urls: [`${URL_BASE}/fatos-candidato`],
+      },
+      {
+        nome: 'fases e tipos de documento',
+        alerta: 'Fases ou tipos de documento não carregados',
+        falhando: ['fases', 'tipos-documento'],
+        urls: [`${URL_BASE}/fases-canonicas`, `${URL_BASE}/tipos-documento`],
+      },
+    ];
+    const alertaDe = (tela: HTMLElement, titulo: string): Element | undefined =>
+      Array.from(tela.querySelectorAll('ui-alert')).find((a) => a.textContent?.includes(titulo));
+    const anuncio = (tela: HTMLElement): string | null | undefined =>
+      tela.querySelector('span.sr-only[role="status"]')?.textContent?.trim();
+
+    it.each(leituras)(
+      'a cada nova falha de $nome, anuncia o andamento e o resultado, uma vez',
+      async ({ nome, alerta, falhando, urls }) => {
+        const tela = await carregar(modelo, [], FASES, falhando);
+        expect(anuncio(tela)).toBe('');
+        const alertaInicial = alertaDe(tela, alerta);
+
+        for (let tentativa = 0; tentativa < 2; tentativa++) {
+          botaoTentarNovamente(tela, alerta).click();
+          await propagar();
+          expect(anuncio(tela)).toBe(`Lendo ${nome}...`);
+          for (const url of urls) {
+            controller
+              .expectOne((r) => r.url === url)
+              .flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
+          }
+          await propagar();
+          expect(anuncio(tela)).toBe(`Falha na leitura: ${nome}.`);
+          expect(tela.textContent?.split(`Falha na leitura: ${nome}.`)).toHaveLength(2);
+        }
+        // O alerta segue o mesmo, com o texto de antes: ele não reanuncia, só a região de status.
+        expect(alertaDe(tela, alerta)).toBe(alertaInicial);
+      },
+    );
+
+    it('anuncia a leitura concluída quando a nova tentativa dá certo', async () => {
+      const tela = await carregar(modelo, [], FASES, ['termos']);
+      botaoTentarNovamente(tela, 'Termos de consentimento não carregados').click();
+      await propagar();
+      controller.expectOne((r) => r.url === `${URL_BASE}/termos-consentimento`).flush([]);
+      await propagar();
+
+      expect(anuncio(tela)).toBe('Leitura concluída: termos de consentimento.');
+    });
   });
 });

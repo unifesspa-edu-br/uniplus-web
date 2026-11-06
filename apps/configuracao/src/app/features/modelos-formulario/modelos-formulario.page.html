@@ -17,7 +17,8 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [disabled]="loading() || edicao.gravando()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
       (click)="tentarNovamente()"
     >
       Tentar novamente
@@ -37,7 +38,7 @@
   [errorMessage]="store.mensagemDeErro()"
   [prevCursor]="store.anterior()"
   [nextCursor]="store.proximo()"
-  [ocupada]="edicao.gravando() || store.carregando()"
+  [gravando]="edicao.gravando()"
   [emAndamento]="edicao.emAndamento()"
   (criar)="edicao.abrirCriacao()"
   (ativar)="edicao.ativar($event)"
@@ -50,6 +51,7 @@
   [aberto]="edicao.drawerAberto()"
   [salvando]="edicao.salvando()"
   [erroDaCriacao]="edicao.erroDaCriacao()"
+  [anuncio]="edicao.anuncioDaCriacao()"
   [tiposDeProcesso]="store.tiposDeProcesso()"
   (abertoChange)="edicao.fechar($event)"
   (criar)="edicao.criar()"

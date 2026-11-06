@@ -4,7 +4,9 @@
     Voltar à lista
   </a>
   <div class="page-header__content">
-    <h1 class="page-header__title">{{ modelo()?.nome ?? 'Modelo de formulário' }}</h1>
+    <h1 id="cfg-modelo-titulo" class="page-header__title" tabindex="-1">
+      {{ modelo()?.nome ?? 'Modelo de formulário' }}
+    </h1>
     @if (modelo(); as m) {
       <p class="page-header__desc">
         <code>{{ m.codigo }}</code> · {{ rotuloDaFinalidade(m.finalidade) }}
@@ -16,17 +18,23 @@
   </div>
 </div>
 
-@if (carregando()) {
-  <div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando o modelo...</div>
-} @else if (erroAoCarregar()) {
+@if (erroAoCarregar()) {
   <ui-alert variant="danger" heading="Não foi possível carregar o modelo">
     {{ erroAoCarregar() }}
     <div class="list-state__retry">
-      <button type="button" class="btn btn--secondary btn--sm" (click)="recarregar.emit()">
+      <button
+        type="button"
+        class="btn btn--secondary btn--sm"
+        [attr.aria-disabled]="tentando().modelo ? 'true' : null"
+        [attr.aria-busy]="tentando().modelo ? 'true' : null"
+        (click)="recarregar.emit()"
+      >
         Tentar novamente
       </button>
     </div>
   </ui-alert>
+} @else if (carregando() && modelo() === null) {
+  <div class="cfg-form__loading" role="status"><ui-spinner size="md" /> Carregando o modelo...</div>
 } @else if (modelo(); as m) {
   <div id="cfg-modelo-resumo" class="cfg-modelo-resumo" tabindex="-1">
     @if (recusasGerais().length > 0) {
@@ -44,7 +52,13 @@
     <ui-alert variant="warning" heading="Termos de consentimento não carregados">
       Sem a lista de termos não é possível exigir um termo novo nem trocar a versão.
       <div class="list-state__retry">
-        <button type="button" class="btn btn--secondary btn--sm" (click)="recarregarTermos.emit()">
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="tentando().termos ? 'true' : null"
+          [attr.aria-busy]="tentando().termos ? 'true' : null"
+          (click)="recarregarTermos.emit()"
+        >
           Tentar novamente
         </button>
       </div>
@@ -58,6 +72,8 @@
         <button
           type="button"
           class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="tentando().catalogo ? 'true' : null"
+          [attr.aria-busy]="tentando().catalogo ? 'true' : null"
           (click)="recarregarCatalogo.emit()"
         >
           Tentar novamente
@@ -73,7 +89,7 @@
     (ngSubmit)="salvar.emit()"
     novalidate
   >
-    <fieldset class="form-grid" role="none" [disabled]="salvando()">
+    <fieldset class="form-grid" role="none" [disabled]="somenteLeitura()">
       <label class="field" [class.is-error]="erro('nome')">
         <span class="field__label is-required">Nome</span>
         <input
@@ -134,6 +150,8 @@
         <button
           type="button"
           class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="tentando().vocabulario ? 'true' : null"
+          [attr.aria-busy]="tentando().vocabulario ? 'true' : null"
           (click)="recarregarVocabulario.emit()"
         >
           Tentar novamente
@@ -148,7 +166,7 @@
       [conteudo]="c"
       [catalogo]="fatos()"
       [finalidade]="m.finalidade"
-      [disabled]="salvando()"
+      [disabled]="somenteLeitura()"
       [recusas]="recusas()"
       [termosDisponiveis]="termosDisponiveis()"
       (conteudoChange)="conteudoChange.emit($event)"
@@ -161,7 +179,7 @@
       [tipos]="tiposDeDocumento()"
       [fatos]="fatosDosDocumentos()"
       [citaveis]="fatosCitaveisDosDocumentos()"
-      [disabled]="salvando()"
+      [disabled]="somenteLeitura()"
       [recusas]="recusasDosDocumentos().porDocumento"
       [recusasGerais]="recusasDosDocumentos().gerais"
       (documentosChange)="documentosChange.emit($event)"
@@ -189,7 +207,14 @@
 
   <div class="form-drawer__footer">
     <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario">Voltar sem salvar</a>
-    <button type="submit" form="cfg-modelo-edicao" class="btn btn--primary" [disabled]="salvando()">
+    <button
+      type="submit"
+      form="cfg-modelo-edicao"
+      class="btn btn--primary"
+      [attr.aria-disabled]="somenteLeitura() ? 'true' : null"
+      [attr.aria-busy]="somenteLeitura() ? 'true' : null"
+      (click)="somenteLeitura() ? $event.preventDefault() : null"
+    >
       @if (salvando()) {
         <ui-spinner size="sm" />
       }
