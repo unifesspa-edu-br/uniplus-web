@@ -37,6 +37,7 @@ import {
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
+import { descartarRecusasDoServidor, marcarRecusasDosCampos } from '../../shared/formulario';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 interface CabecalhoForm {
@@ -112,6 +113,7 @@ export class EdicaoDoConteudoDoModelo {
   salvar(): boolean {
     const conteudo = this.conteudo();
     if (this.somenteLeitura() || conteudo === null) return false;
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.focarInvalido();
@@ -210,16 +212,7 @@ export class EdicaoDoConteudoDoModelo {
   }
 
   private marcarCamposDoCabecalho(erros: readonly ProblemValidationError[]): boolean {
-    let marcou = false;
-    for (const erro of erros) {
-      const campo = campoDoCabecalho(erro.field);
-      if (campo !== null) {
-        this.form.controls[campo].setErrors({ backend: { message: erro.message } });
-        this.form.controls[campo].markAsTouched();
-        marcou = true;
-      }
-    }
-    return marcou;
+    return marcarRecusasDosCampos(erros, this.form, campoDoCabecalho);
   }
 }
 

@@ -821,6 +821,38 @@ describe('PedidoDetalhePage', () => {
     expect(document.activeElement).toBe(campo);
   });
 
+  it('confirmar de novo sem editar o motivo recusado volta a enviar a recusa à API', async () => {
+    const { fixture, host } = await abrir([GESTOR]);
+    api.recusar.mockReturnValue(
+      of(
+        apiFailure(
+          {
+            type: 'x',
+            title: 'Dados inválidos',
+            status: 422,
+            code: 'uniplus.validacao',
+            traceId: '',
+            errors: [
+              {
+                field: 'Motivo',
+                code: 'uniplus.autorizacao.pedido.motivo_invalido',
+                message: 'Motivo recusado.',
+              },
+            ],
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    await recusarComMotivo(fixture, host, 'Motivo');
+    await esperar(fixture);
+
+    await confirmarRecusa(fixture, host);
+
+    expect(api.recusar).toHaveBeenCalledTimes(2);
+  });
+
   it('recusa com motivo e fecha o diálogo', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     api.recusar.mockReturnValue(of(ok(pedido({ situacao: 'recusado', etapaAtual: null }))));

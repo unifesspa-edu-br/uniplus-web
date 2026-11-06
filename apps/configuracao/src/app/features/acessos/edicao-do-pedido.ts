@@ -26,7 +26,7 @@ import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { fimDoDia, prazoNoPassado } from './prazo-de-vigencia';
-import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 
 /** Decisões e envio de documentos de um pedido. */
 @Injectable()
@@ -105,6 +105,7 @@ export class EdicaoDoPedido {
     if (this.indisponivel()) return;
     this.erroDaRecusa.set(null);
     this.tentouRecusar.set(true);
+    descartarRecusasDoServidor(this.motivo);
     const motivo = this.motivo.value.trim();
     if (!motivo || this.motivo.invalid) {
       if (!motivo) this.motivo.setErrors({ required: true });

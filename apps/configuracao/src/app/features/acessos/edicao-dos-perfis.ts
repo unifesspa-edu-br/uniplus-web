@@ -20,7 +20,7 @@ import {
   criarFormularioDePerfil,
   valoresDoPerfil,
 } from './perfil-form';
-import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 
 interface CorpoDoPerfil {
   readonly nome: string;
@@ -91,6 +91,7 @@ export class EdicaoDosPerfis {
   async salvar(): Promise<void> {
     if (this.gravando()) return;
     this.erroDoForm.set(null);
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid && !this.criacaoEmAberto()) {
       this.form.markAllAsTouched();
       return;

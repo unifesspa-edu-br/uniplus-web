@@ -39,6 +39,25 @@ const DIVERGENCIA_DE_EMAIL = apiFailure(
   new HttpHeaders(),
 );
 
+const RECUSA_DO_MOTIVO = apiFailure(
+  {
+    type: 'x',
+    title: 'Dados inválidos',
+    status: 422,
+    code: 'uniplus.validacao',
+    traceId: '',
+    errors: [
+      {
+        field: 'Motivo',
+        code: 'uniplus.autorizacao.concessao.motivo_invalido',
+        message: 'Motivo recusado.',
+      },
+    ],
+  },
+  422,
+  new HttpHeaders(),
+);
+
 const URL = 'http://api.test/api/autorizacao/concessoes';
 const ativa: ConcessaoDto = {
   id: 'c1',
@@ -228,6 +247,36 @@ describe('ConcessoesPage', () => {
       await atualizar();
     });
 
+    it('confirmar de novo sem editar o motivo recusado volta a enviar a revogação à API', async () => {
+      const { pagina } = await revogarComRecusa(RECUSA_DO_MOTIVO);
+      pagina.email.setValue('betina@uniplus-test.local');
+      pagina.motivo.setValue('Saiu da função.');
+      pagina.confirmar();
+      await atualizar();
+      expect(pagina.motivo.hasError('backend')).toBe(true);
+      api.revogar.mockClear();
+
+      pagina.confirmar();
+
+      expect(api.revogar).toHaveBeenCalledTimes(1);
+      await atualizar();
+    });
+
+    it('confirmar de novo apaga a recusa antiga do e-mail quando a nova resposta é uma falha do servidor', async () => {
+      const { pagina } = await revogarComRecusa(DIVERGENCIA_DE_EMAIL);
+      pagina.email.setValue('outra@uniplus-test.local');
+      pagina.motivo.setValue('Saiu da função.');
+      pagina.confirmar();
+      await atualizar();
+      expect(pagina.email.hasError('backend')).toBe(true);
+      api.revogar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+
+      pagina.confirmar();
+      await atualizar();
+
+      expect(pagina.email.hasError('backend')).toBe(false);
+    });
+
     it('a divergência do e-mail chega em errors[] e fica no campo, sem alerta geral', async () => {
       const { pagina } = await revogarComRecusa(DIVERGENCIA_DE_EMAIL, 'outra@uniplus-test.local');
 
@@ -327,28 +376,7 @@ describe('ConcessoesPage', () => {
   });
 
   it('mostra e foca a recusa do motivo enviada pela API', async () => {
-    api.revogar.mockReturnValue(
-      of(
-        apiFailure(
-          {
-            type: 'x',
-            title: 'Dados inválidos',
-            status: 422,
-            code: 'uniplus.validacao',
-            traceId: '',
-            errors: [
-              {
-                field: 'Motivo',
-                code: 'uniplus.autorizacao.concessao.motivo_invalido',
-                message: 'Motivo recusado.',
-              },
-            ],
-          },
-          422,
-          new HttpHeaders(),
-        ),
-      ),
-    );
+    api.revogar.mockReturnValue(of(RECUSA_DO_MOTIVO));
     const fixture = TestBed.createComponent(ConcessoesPage);
     fixture.detectChanges();
     http.expectOne((r) => r.url === URL).flush([ativa]);

@@ -220,6 +220,20 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     ).toContain('Revise os campos indicados.');
   });
 
+  it('reenviar sem editar o campo recusado volta a enviar o modelo à API', async () => {
+    await carregar();
+    await preencher();
+    enviar();
+    await propagar();
+    recusar();
+    await propagar();
+
+    enviar();
+    await propagar();
+
+    recusar();
+  });
+
   it('bloqueia criação e troca de situação concorrentes em ambos os sentidos', async () => {
     await carregar();
     await preencher();

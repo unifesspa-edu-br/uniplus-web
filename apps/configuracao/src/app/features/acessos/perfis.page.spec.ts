@@ -564,6 +564,21 @@ describe('PerfisPage', async () => {
     );
   });
 
+  it('reenviar sem editar o nome recusado volta a enviar a edição à API', async () => {
+    const { pagina } = await abrir();
+    api.atualizar
+      .mockReturnValueOnce(of(recusa('uniplus.autorizacao.perfil.nome_duplicado', 409)))
+      .mockReturnValueOnce(of(ok('comum')));
+
+    pagina.abrirEdicao(COMUM);
+    await pagina.salvar();
+    expect(pagina.form.controls.nome.hasError('backend')).toBe(true);
+
+    await pagina.salvar();
+
+    expect(api.atualizar).toHaveBeenCalledTimes(2);
+  });
+
   it('a edição com nome já existente marca o campo; o conflito de processamento mantém a chave e fala no alerta', async () => {
     const { pagina } = await abrir();
     api.atualizar

@@ -603,6 +603,14 @@ describe('ModeloFormularioEdicaoPage', () => {
     return propagar();
   }
 
+  it('salvar de novo sem editar o campo recusado volta a enviar o modelo à API', async () => {
+    const tela = await carregar();
+    const nomeJaUsado = [{ field: 'Nome', code: 'x', message: 'Nome já usado.' }];
+
+    await recusar(tela, nomeJaUsado);
+    await recusar(tela, nomeJaUsado);
+  });
+
   it('a recusa que aponta o campo do cabeçalho leva o foco a ele, não ao resumo', async () => {
     const tela = await carregar();
 

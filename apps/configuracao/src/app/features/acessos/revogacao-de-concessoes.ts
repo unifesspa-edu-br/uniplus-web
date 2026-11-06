@@ -17,6 +17,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ConcessoesApi, type ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { aguardarRecarga } from '../../shared/foco';
+import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
@@ -65,6 +66,8 @@ export class RevogacaoDeConcessoes {
 
   confirmar(): void {
     this.tentou.set(true);
+    descartarRecusasDoServidor(this.motivo);
+    descartarRecusasDoServidor(this.email);
     const motivo = this.motivo.value.trim();
     const email = this.email.value.trim();
     if (!motivo || this.motivo.invalid || !email) {
@@ -119,8 +122,7 @@ export class RevogacaoDeConcessoes {
       const controle =
         campo === 'motivo' ? this.motivo : campo === 'confirmacaoemail' ? this.email : null;
       if (!controle) continue;
-      controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-      controle.markAsTouched();
+      marcarRecusaDoServidor(controle, erro.code, erro.message);
       aplicado = true;
     }
     if (aplicado) {

@@ -15,13 +15,13 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ModeloFormularioView, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
 import { sugerirCodigoDeCadastro } from '@uniplus/shared-utils';
-import {
-  CampoDaCriacao,
-  campoDaRecusa,
-  comandoDeCriacao,
-  criarFormularioDeModelo,
-} from './modelo-formulario-form';
+import { campoDaRecusa, comandoDeCriacao, criarFormularioDeModelo } from './modelo-formulario-form';
 import { ModelosFormularioStore } from './modelos-formulario.store';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+} from '../../shared/formulario';
 
 /** O código do modelo já existe — código de modelo nunca se reutiliza. */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.modelo_formulario.codigo_ja_existe';
@@ -79,6 +79,7 @@ export class EdicaoDosModelosFormulario {
 
   criar(): void {
     if (this.gravando()) return;
+    descartarRecusasDoServidor(this.form);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -153,7 +154,11 @@ export class EdicaoDosModelosFormulario {
       this.chaveDaCriacao = idempotencyKey.create();
     }
     if (problem.code === CODIGO_JA_EXISTE) {
-      this.marcarCampo('codigo', this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls.codigo,
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
       return;
     }
@@ -166,22 +171,10 @@ export class EdicaoDosModelosFormulario {
   }
 
   private aplicarErrosDeCampo(problem: ProblemDetails): boolean {
-    if (problem.status !== STATUS_HTTP.RECUSA_DE_NEGOCIO) return false;
-    let aplicou = false;
-    for (const erro of problem.errors ?? []) {
-      const campo = campoDaRecusa(erro.field);
-      if (campo !== null) {
-        this.marcarCampo(campo, erro.message);
-        aplicou = true;
-      }
-    }
-    return aplicou;
-  }
-
-  private marcarCampo(campo: CampoDaCriacao, mensagem: string): void {
-    const controle = this.form.controls[campo];
-    controle.setErrors({ backend: { message: mensagem } });
-    controle.markAsTouched();
+    return (
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
+      marcarRecusasDosCampos(problem.errors ?? [], this.form, campoDaRecusa)
+    );
   }
 
   /** A linha mantém o andamento até a lista recarregada chegar, ou falhar. */
