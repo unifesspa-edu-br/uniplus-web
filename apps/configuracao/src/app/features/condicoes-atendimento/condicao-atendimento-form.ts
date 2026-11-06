@@ -6,7 +6,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
-  mensagemDeErroDoControle,
+  mensagemDeErroDoCampoComFormato,
   nullIfBlank,
 } from '../../shared/formulario';
 
@@ -83,13 +83,5 @@ export function comandoDeAtualizacao(
 
 /** A mensagem do campo: a do servidor ou a obrigatoriedade; no mais, a regra de tamanho ou formato violada. */
 export function mensagemDoCampo(control: AbstractControl): string | null {
-  const mensagem = mensagemDeErroDoControle(control);
-  const erros = control.errors;
-  if (mensagem === null || erros === null || erros['backend'] || erros['required']) {
-    return mensagem;
-  }
-  if (erros['minlength']) {
-    return `Informe ao menos ${erros['minlength'].requiredLength} caracteres.`;
-  }
-  return erros['pattern'] && !erros['maxlength'] ? MENSAGEM_DE_FORMATO : mensagem;
+  return mensagemDeErroDoCampoComFormato(control, MENSAGEM_DE_FORMATO);
 }

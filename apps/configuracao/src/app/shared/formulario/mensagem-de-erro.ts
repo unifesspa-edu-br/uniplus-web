@@ -17,3 +17,22 @@ export function mensagemDeErroDoControle(control: AbstractControl): string | nul
   if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
   return 'Valor inválido.';
 }
+
+/**
+ * A mensagem do campo de cadastro: a do servidor ou a obrigatoriedade; no mais, a regra de tamanho
+ * mínimo ou de formato violada, que usa a mensagem de formato recebida.
+ */
+export function mensagemDeErroDoCampoComFormato(
+  control: AbstractControl,
+  mensagemDeFormato: string,
+): string | null {
+  const mensagem = mensagemDeErroDoControle(control);
+  const erros = control.errors;
+  if (mensagem === null || erros === null || erros['backend'] || erros['required']) {
+    return mensagem;
+  }
+  if (erros['minlength']) {
+    return `Informe ao menos ${erros['minlength'].requiredLength} caracteres.`;
+  }
+  return erros['pattern'] && !erros['maxlength'] ? mensagemDeFormato : mensagem;
+}

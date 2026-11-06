@@ -1,83 +1,82 @@
 <ui-drawer
   class="form-drawer"
-  [visible]="aberto()"
-  (visibleChange)="$event ? abertoChange.emit(true) : fechar.emit()"
+  [(visible)]="aberto"
   [closable]="!salvando()"
-  [heading]="formHeading()"
+  [heading]="titulo()"
   ariaLabel="Formulário do recurso de acessibilidade"
   position="right"
 >
-  @if (formError()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar"> {{ formError() }} </ui-alert>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
   <form
     [formGroup]="form()"
-    id="cfg-unidade-form"
-    (ngSubmit)="!salvando() && salvar.emit()"
+    id="cfg-recurso-acessibilidade-form"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="form-drawer__form"
   >
     <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
-      <section aria-labelledby="cfg-form-identificadores">
-        <div class="form-grid">
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
-            <span class="field__label is-required">Nome</span>
-            <input
-              class="input"
-              type="text"
-              placeholder="Ex.: Ledor"
-              formControlName="nome"
-              aria-required="true"
-              [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
-            />
-            <span class="field__hint">
-              Rótulo legível do recurso — único entre os recursos ativos. Impede duplicatas como
-              dois "Ledor".
-            </span>
-            @if (erroDoCampo('nome')) {
-              <span class="field__error">{{ erroDoCampo('nome') }}</span>
-            }
-          </label>
-          @let erroCampoCodigo = erroDoCampo('codigo');
-          <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
-            <span class="field__label is-required">Código</span>
-            <input
-              class="input"
-              type="text"
-              placeholder="Ex.: LEDOR"
-              formControlName="codigo"
-              aria-required="true"
-              style="text-transform: uppercase"
-              [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
-              [attr.aria-describedby]="
-                erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica'
-              "
-            />
-            <span class="field__hint" id="cfg-ra-codigo-dica">
-              Identidade do recurso, que o candidato escolhe na inscrição: caixa alta, começando por
-              letra, com letras, números e sublinhado, de 2 a 50 caracteres. Único entre os recursos
-              ativos. Sugerido a partir do nome e editável.
-            </span>
-            @if (erroCampoCodigo) {
-              <span class="field__error" id="cfg-ra-codigo-erro">{{ erroCampoCodigo }}</span>
-            }
-          </label>
-          <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
-            <span class="field__label">Descrição</span>
-            <textarea
-              class="input"
-              type="text"
-              placeholder="Texto opcional — ex.: detalhes do recurso ofertado."
-              formControlName="descricao"
-              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
-            ></textarea>
-            @if (erroDoCampo('descricao')) {
-              <span class="field__error">{{ erroDoCampo('descricao') }}</span>
-            }
-          </label>
-        </div>
-      </section>
+      <div class="form-grid">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+          <span class="field__label is-required">Nome</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            placeholder="Ex.: Ledor"
+            formControlName="nome"
+            [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+          />
+          <span class="field__hint">
+            Rótulo legível do recurso — único entre os recursos ativos. Impede duplicatas como dois
+            "Ledor".
+          </span>
+          @if (erroDoCampo('nome')) {
+            <span class="field__error">{{ erroDoCampo('nome') }}</span>
+          }
+        </label>
+
+        @let erroCampoCodigo = erroDoCampo('codigo');
+        <label class="field form-grid__full" [class.is-error]="erroCampoCodigo">
+          <span class="field__label is-required">Código</span>
+          <input
+            aria-required="true"
+            class="input"
+            type="text"
+            style="text-transform: uppercase"
+            placeholder="Ex.: LEDOR"
+            formControlName="codigo"
+            [attr.aria-invalid]="erroCampoCodigo ? 'true' : null"
+            [attr.aria-describedby]="
+              erroCampoCodigo ? 'cfg-ra-codigo-dica cfg-ra-codigo-erro' : 'cfg-ra-codigo-dica'
+            "
+          />
+          <span class="field__hint" id="cfg-ra-codigo-dica">
+            Identidade do recurso, que o candidato escolhe na inscrição: caixa alta, começando por
+            letra, com letras, números e sublinhado, de 2 a 50 caracteres. Único entre os recursos
+            ativos. Sugerido a partir do nome e editável.
+          </span>
+          @if (erroCampoCodigo) {
+            <span class="field__error" id="cfg-ra-codigo-erro">{{ erroCampoCodigo }}</span>
+          }
+        </label>
+
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('descricao')">
+          <span class="field__label">Descrição</span>
+          <textarea
+            class="input"
+            placeholder="Texto opcional — ex.: detalhes do recurso ofertado."
+            formControlName="descricao"
+            [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+          ></textarea>
+          @if (erroDoCampo('descricao')) {
+            <span class="field__error">{{ erroDoCampo('descricao') }}</span>
+          }
+        </label>
+      </div>
     </fieldset>
   </form>
 
@@ -86,23 +85,22 @@
       type="button"
       class="btn btn--tertiary btn--rect"
       [disabled]="salvando()"
-      (click)="fechar.emit()"
+      (click)="cancelar.emit()"
     >
       Cancelar
     </button>
     <button
       type="submit"
-      form="cfg-unidade-form"
+      form="cfg-recurso-acessibilidade-form"
       class="btn btn--primary"
-      [disabled]="form().invalid && !salvando()"
-      [attr.aria-disabled]="salvando()"
-      [attr.aria-busy]="salvando()"
-      (click)="aoClicarEmSalvar($event)"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="salvando() ? $event.preventDefault() : null"
     >
       @if (salvando()) {
         <ui-spinner size="sm" />
       }
-      {{ salvando() ? 'Salvando...' : modo() === 'criar' ? 'Criar recurso' : 'Salvar recurso' }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>

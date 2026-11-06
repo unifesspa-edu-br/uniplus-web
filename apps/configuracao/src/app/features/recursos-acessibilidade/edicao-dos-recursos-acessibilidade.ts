@@ -1,6 +1,6 @@
-import { computed, DestroyRef, effect, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { Observable } from 'rxjs';
 import {
   ApiResult,
   ProblemDetails,
@@ -8,296 +8,262 @@ import {
   ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import {
-  AtualizarRecursoAcessibilidadeCommand,
-  CriarRecursoAcessibilidadeCommand,
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import {
   RecursoAcessibilidadeApi,
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import { aguardarRecarga } from '../../shared/foco/aguardar-recarga';
+import {
+  RECURSO_EM_BRANCO,
+  RecursoAcessibilidadeForm,
+  ValoresDoRecurso,
+  comandoDeAtualizacao,
+  comandoDeCriacao,
+  controleDoCampoDoServidor,
+  criarFormularioDeRecurso,
+  valoresDoRecurso,
+} from './recurso-acessibilidade-form';
 import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
 
 type ModoFormulario = 'criar' | 'editar';
-
-export interface RecursoAcessibilidadeForm {
-  nome: FormControl<string>;
-  codigo: FormControl<string>;
-  descricao: FormControl<string>;
-}
-
-const RECURSO_ACESSIBILIDADE_CONTROL_NAMES: ReadonlySet<string> = new Set<
-  keyof RecursoAcessibilidadeForm
->(['nome', 'codigo', 'descricao']);
+type Escrita = 'salvando' | 'removendo';
 
 /**
  * Conflitos de unicidade (409) que pertencem a um campo do formulário: o corpo não traz
- * `errors[]`, então só o vendor code diz a qual campo o conflito se refere.
+ * `errors[]`, então só o código de wire diz a qual campo o conflito se refere.
  */
 const CAMPO_POR_CONFLITO: ReadonlyMap<string, keyof RecursoAcessibilidadeForm> = new Map([
   ['uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe', 'codigo' as const],
   ['uniplus.configuracao.recurso_acessibilidade.nome_ja_existe', 'nome' as const],
 ]);
 
+const ROTULO_DA_ESCRITA: Readonly<Record<Escrita, string>> = {
+  salvando: 'Salvando...',
+  removendo: 'Removendo...',
+};
+
+/** O recurso que a escrita em curso afeta e o que a linha dele mostra enquanto isso. */
+export interface AndamentoDaEscrita {
+  readonly id: string;
+  readonly rotulo: string;
+}
+
+/**
+ * Todas as escritas da tela de recursos de acessibilidade: o formulário, o salvamento e a
+ * remoção com confirmação. É a única dona do indicador de gravação, então uma escrita impede a
+ * outra.
+ */
 @Injectable()
 export class EdicaoDosRecursosAcessibilidade {
   private readonly api = inject(RecursoAcessibilidadeApi);
+  private readonly store = inject(RecursosAcessibilidadeStore);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
-  readonly idempotencyKeyAtual = signal(idempotencyKey.create());
-  private readonly store = inject(RecursosAcessibilidadeStore);
-  readonly modo = signal<ModoFormulario>('criar');
-  readonly formOpen = signal(false);
-  private readonly escrita = signal<'salvando' | 'removendo' | null>(null);
-  readonly saving = computed(() => this.escrita() !== null);
+
+  readonly form = criarFormularioDeRecurso();
+  private readonly escrita = signal<Escrita | null>(null);
+  private readonly recarga = aguardarRecarga(
+    this.store.carregando,
+    computed(() => this.store.mensagemDeErro() !== null),
+  );
+  private readonly emAndamento = signal<AndamentoDaEscrita | null>(null);
+  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
+  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
   readonly salvando = computed(() => this.escrita() === 'salvando');
   readonly removendo = computed(() => this.escrita() === 'removendo');
-  readonly anuncioDaRemocao = signal('');
-  private recargaIniciada = false;
-  private readonly aguardandoRecarga = signal(false);
-  readonly recursoParaRemover = signal<RecursoAcessibilidadeDto | null>(null);
-  readonly confirmOpen = signal(false);
+  readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
 
-  readonly form = new FormGroup<RecursoAcessibilidadeForm>({
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.minLength(2), Validators.maxLength(255)],
-    }),
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.minLength(2),
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(1000)],
-    }),
-  });
+  readonly aberto = signal(false);
+  readonly modo = signal<ModoFormulario>('criar');
+  readonly erro = signal<string | null>(null);
+  readonly confirmando = signal(false);
+  readonly erroDaRemocao = signal<string | null>(null);
+  private readonly recursoEmEdicaoId = signal<string | null>(null);
+  private readonly recursoParaRemover = signal<RecursoAcessibilidadeDto | null>(null);
+  private readonly resultadoDaRemocao = signal('');
+  private readonly chave = signal(idempotencyKey.create());
   private readonly ligacaoDoCodigo = ligarCodigoDeCadastro(
     this.form.controls,
     () => this.modo() === 'criar',
   );
-  readonly formError = signal<string | null>(null);
-  readonly recursosAcessibilidadeEmEdicaoId = signal<string | null>(null);
-  readonly formHeading = computed(() =>
+
+  readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Novo recurso de acessibilidade' : 'Editar recurso de acessibilidade',
   );
+  readonly mensagemDaConfirmacao = computed(() => {
+    const recurso = this.recursoParaRemover();
+    return recurso
+      ? `Você está prestes a remover o recurso ${recurso.nome}. A remoção impede novos editais de utilizá-lo, mas não altera ofertas já congeladas — a cópia por valor de cada processo permanece íntegra.`
+      : 'Deseja remover este recurso de acessibilidade?';
+  });
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  readonly anuncioDaRemocao = computed(() => {
+    const recurso = this.recursoParaRemover();
+    if (recurso === null) return '';
+    if (this.removendo()) return `Removendo o recurso de acessibilidade ${recurso.nome}.`;
+    const motivo = this.erroDaRemocao();
+    return motivo
+      ? `Não foi possível remover o recurso de acessibilidade ${recurso.nome}. ${motivo}`
+      : '';
+  });
+  /** Dentro do drawer: o andamento, que só faz sentido com ele aberto. */
+  readonly anuncioDoSalvamento = computed(() =>
+    this.salvando() ? 'Salvando recurso de acessibilidade.' : '',
+  );
+  /** Na página: a remoção concluída, anunciada quando o diálogo já não está aberto para dizê-la. */
+  readonly anuncioDaPagina = computed(() => (this.confirmando() ? '' : this.resultadoDaRemocao()));
 
-  constructor() {
-    effect(() => {
-      const carregando = this.store.carregando();
-      if (!this.aguardandoRecarga()) return;
-      if (this.recargaIniciada && !carregando) {
-        this.recargaIniciada = false;
-        this.aguardandoRecarga.set(false);
-        this.escrita.set(null);
-      }
-      if (carregando) this.recargaIniciada = true;
-    });
-  }
-
-  fechar(): void {
-    if (!this.saving()) this.formOpen.set(false);
-  }
-
-  abrirDrawerCriacao() {
-    if (this.saving()) return;
-    this.modo.set('criar');
-    this.recursosAcessibilidadeEmEdicaoId.set(null);
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      nome: '',
-      codigo: '',
-      descricao: '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
-  }
-
-  abrirRemoverRecurso(recurso: RecursoAcessibilidadeDto): void {
-    if (this.saving()) return;
-    this.recursoParaRemover.set(recurso);
-    this.confirmOpen.set(true);
+  abrirCadastro(): void {
+    if (this.gravando()) return;
+    this.preparar('criar', null, RECURSO_EM_BRANCO);
   }
 
   abrirEdicao(recurso: RecursoAcessibilidadeDto): void {
-    if (this.saving()) return;
-    this.modo.set('editar');
-    this.recursosAcessibilidadeEmEdicaoId.set(recurso.id);
-    this.ligacaoDoCodigo.reiniciar();
-    this.form.reset({
-      nome: recurso.nome,
-      codigo: recurso.codigo,
-      descricao: recurso.descricao ?? '',
-    });
-    this.formError.set(null);
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-    this.formOpen.set(true);
+    if (this.gravando()) return;
+    this.preparar('editar', recurso.id, valoresDoRecurso(recurso));
   }
 
-  private criarCommand(): CriarRecursoAcessibilidadeCommand {
-    const raw = this.form.getRawValue();
-    return {
-      codigo: raw.codigo.trim(),
-      nome: nullIfBlank(raw.nome),
-      descricao: nullIfBlank(raw.descricao),
-    };
+  fechar(): void {
+    if (!this.salvando()) this.aberto.set(false);
+  }
+
+  pedirRemocao(recurso: RecursoAcessibilidadeDto): void {
+    if (this.gravando()) return;
+    this.resultadoDaRemocao.set('');
+    this.erroDaRemocao.set(null);
+    this.recursoParaRemover.set(recurso);
+    this.confirmando.set(true);
   }
 
   salvar(): void {
-    if (this.saving()) {
-      return;
-    }
-    this.formError.set(null);
+    this.erro.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-
-    this.escrita.set('salvando');
-
-    if (this.modo() === 'criar') {
-      this.api
-        .criar(this.criarCommand(), withIdempotencyKey(this.idempotencyKeyAtual()))
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((result) => this.handleSalvarResult(result));
-      return;
-    }
-
-    this.api
-      .atualizar(
-        this.recursosAcessibilidadeEmEdicaoId() ?? '',
-        this.atualizarCommand(),
-        withIdempotencyKey(this.idempotencyKeyAtual()),
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.handleSalvarResult(result));
-  }
-
-  private atualizarCommand(): AtualizarRecursoAcessibilidadeCommand {
-    return { id: this.recursosAcessibilidadeEmEdicaoId() ?? '', ...this.criarCommand() };
-  }
-
-  private renovarIdempotencyKey(): void {
-    this.idempotencyKeyAtual.set(idempotencyKey.create());
-  }
-
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicouAlgum = false;
-    for (const erro of errors) {
-      const controlName = controlNameFromBackendField<keyof RecursoAcessibilidadeForm>(
-        erro.field,
-        RECURSO_ACESSIBILIDADE_CONTROL_NAMES,
-      );
-      if (controlName === null) continue;
-      const control = this.form.controls[controlName];
-      control.setErrors({ backend: { code: erro.code, message: erro.message } });
-      control.markAsTouched();
-      aplicouAlgum = true;
-    }
-
-    if (aplicouAlgum) {
-      this.formError.set(null);
-      return;
-    }
-    this.formError.set('Não foi possível mapear os erros de validação. Revise os campos.');
-  }
-
-  private aplicarFalha(problem: ProblemDetails): void {
-    if (
-      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
-      problem.errors &&
-      problem.errors.length > 0
-    ) {
-      this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
-      this.aplicarErrosDeValidacao(problem.errors);
-      return;
-    }
-
-    if (this.aplicarConflitoDeCampo(problem)) {
-      return;
-    }
-    if (
-      problem.status === STATUS_HTTP.CONFLITO ||
-      problem.code === 'uniplus.idempotency.body_mismatch'
-    ) {
-      this.notifications.errorFromProblem(problem);
-      this.renovarIdempotencyKey();
-    }
-    this.formError.set(this.problemI18n.resolve(problem).title);
-    if (problem.status >= 500) {
-      this.notifications.errorFromProblem(problem);
-    }
-  }
-
-  private aplicarConflitoDeCampo(problem: ProblemDetails): boolean {
-    const campo = CAMPO_POR_CONFLITO.get(problem.code);
-    if (!campo) {
-      return false;
-    }
-    this.renovarIdempotencyKey();
-    const control = this.form.controls[campo];
-    control.setErrors({
-      backend: { code: problem.code, message: this.problemI18n.resolve(problem).title },
-    });
-    control.markAsTouched();
-    this.notifications.errorFromProblem(problem);
-    return true;
-  }
-
-  private handleSalvarResult(result: ApiResult<string | void>): void {
-    if (result.ok) {
-      this.notifications.success(
-        this.modo() === 'criar'
-          ? 'Recurso de acessibilidade criado'
-          : 'Recurso de acessibilidade atualizado',
-      );
-      this.formOpen.set(false);
-      this.idempotencyKeyAtual.set(idempotencyKey.create());
-      this.aguardandoRecarga.set(true);
-      this.store.recarregar();
-      return;
-    }
-    this.escrita.set(null);
-    this.aplicarFalha(result.problem);
-  }
-
-  private handleRemoverResult(result: ApiResult<void>): void {
-    const nome = this.recursoParaRemover()?.nome ?? '';
-    if (result.ok) {
-      this.anuncioDaRemocao.set(`Recurso de acessibilidade ${nome} removido.`);
-      this.notifications.success('Recurso de acessibilidade removido');
-      this.formOpen.set(false);
-      this.confirmOpen.set(false);
-      this.aguardandoRecarga.set(true);
-      this.store.recarregar();
-      return;
-    }
-    this.anuncioDaRemocao.set(`Não foi possível remover o recurso de acessibilidade ${nome}.`);
-    this.escrita.set(null);
-    this.notifications.errorFromProblem(result.problem);
+    const id = this.recursoEmEdicaoId();
+    const valores = this.form.getRawValue();
+    const chave = withIdempotencyKey(this.chave());
+    const operacao: Observable<ApiResult<string | void>> =
+      id === null
+        ? this.api.criar(comandoDeCriacao(valores), chave)
+        : this.api.atualizar(id, comandoDeAtualizacao(id, valores), chave);
+    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result));
   }
 
   removerConfirmado(): void {
     const recurso = this.recursoParaRemover();
-    if (recurso === null || this.saving()) {
+    if (recurso === null) return;
+    this.erroDaRemocao.set(null);
+    this.gravar('removendo', recurso.id, this.api.remover(recurso.id), (result) =>
+      this.concluirRemocao(recurso, result),
+    );
+  }
+
+  private preparar(modo: ModoFormulario, id: string | null, valores: ValoresDoRecurso): void {
+    this.modo.set(modo);
+    this.recursoEmEdicaoId.set(id);
+    this.ligacaoDoCodigo.reiniciar();
+    this.form.reset(valores);
+    this.erro.set(null);
+    this.renovarChave();
+    this.aberto.set(true);
+  }
+
+  private gravar<T>(
+    tipo: Escrita,
+    id: string | null,
+    operacao: Observable<ApiResult<T>>,
+    concluir: (result: ApiResult<T>) => void,
+  ): void {
+    if (this.gravando()) return;
+    this.escrita.set(tipo);
+    this.emAndamento.set(id === null ? null : { id, rotulo: ROTULO_DA_ESCRITA[tipo] });
+    operacao.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((result) => {
+      concluir(result);
+      this.escrita.set(null);
+    });
+  }
+
+  private concluirSalvamento(result: ApiResult<string | void>): void {
+    if (!result.ok) {
+      this.aplicarFalha(result.problem);
       return;
     }
-    this.escrita.set('removendo');
-    this.anuncioDaRemocao.set(`Removendo o recurso de acessibilidade ${recurso.nome}.`);
-    this.api
-      .remover(recurso.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((result) => this.handleRemoverResult(result));
+    this.notifications.success(
+      this.modo() === 'criar'
+        ? 'Recurso de acessibilidade criado'
+        : 'Recurso de acessibilidade atualizado',
+    );
+    this.aberto.set(false);
+    this.renovarChave();
+    this.recarregar();
+  }
+
+  private concluirRemocao(recurso: RecursoAcessibilidadeDto, result: ApiResult<void>): void {
+    if (!result.ok) {
+      const titulo = this.problemI18n.resolve(result.problem).title;
+      this.erroDaRemocao.set(titulo);
+      this.notifications.errorFromProblem(result.problem, { title: titulo });
+      return;
+    }
+    this.resultadoDaRemocao.set(`Recurso de acessibilidade ${recurso.nome} removido.`);
+    this.notifications.success('Recurso de acessibilidade removido');
+    this.confirmando.set(false);
+    this.recursoParaRemover.set(null);
+    this.recarregar();
+  }
+
+  private recarregar(): void {
+    this.recarga.iniciar();
+    this.store.recarregar();
+  }
+
+  private aplicarFalha(problem: ProblemDetails): void {
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
+      this.renovarChave();
+      this.aplicarErrosDeValidacao(problem.errors);
+      return;
+    }
+    const campo = CAMPO_POR_CONFLITO.get(problem.code);
+    if (campo !== undefined) {
+      this.renovarChave();
+      this.marcarCampo(campo, problem.code, this.problemI18n.resolve(problem).title);
+      return;
+    }
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
+    this.erro.set(this.problemI18n.resolve(problem).title);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+    let aplicouAlgum = false;
+    for (const recusa of errors) {
+      const nome = controleDoCampoDoServidor(recusa.field);
+      if (nome === null) continue;
+      this.marcarCampo(nome, recusa.code, recusa.message);
+      aplicouAlgum = true;
+    }
+    if (!aplicouAlgum) {
+      this.erro.set('Não foi possível mapear os erros de validação. Revise os campos.');
+    }
+  }
+
+  private marcarCampo(nome: keyof RecursoAcessibilidadeForm, code: string, message: string): void {
+    const controle = this.form.controls[nome];
+    controle.setErrors({ backend: { code, message } });
+    controle.markAsTouched();
+  }
+
+  private renovarChave(): void {
+    this.chave.set(idempotencyKey.create());
   }
 }

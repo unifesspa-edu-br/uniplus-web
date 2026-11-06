@@ -4,11 +4,12 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDosRecursosAcessibilidade } from './edicao-dos-recursos-acessibilidade';
 import { RecursosAcessibilidadeListPage } from './recursos-acessibilidade-list.page';
 import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
@@ -16,82 +17,67 @@ import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/recursos-acessibilidade`;
 const ESCRITA = `${BASE}/api/configuracao/admin/recursos-acessibilidade`;
-const recurso: RecursoAcessibilidadeDto = {
-  id: '019f41cf-69fd-759a-ac6d-09acabc1b027',
+const FORMULARIO = '#cfg-recurso-acessibilidade-form';
+const ledor: RecursoAcessibilidadeDto = {
+  id: '019f41cf-69fd-759a-ac6d-09acabc1b028',
   codigo: 'LEDOR',
   nome: 'Ledor',
-  descricao: 'Leitura da prova.',
-  criadoEm: '2026-07-07T13:23:42Z',
+  descricao: null,
+  criadoEm: '2026-07-07T13:23:42.707136+00:00',
 };
+const URL_LEDOR = `${ESCRITA}/${ledor.id}`;
+const TITULO = '#cfg-recursos-acessibilidade-list-title';
 
-describe('Recursos de acessibilidade — escritas', () => {
+function problema(status: number, code: string, title: string, errors?: unknown[]) {
+  const corpo = { type: 'about:blank', title, status, code, traceId: 't', errors };
+  return [
+    JSON.stringify(corpo),
+    {
+      status,
+      statusText: title,
+      headers: { 'content-type': 'application/problem+json' },
+    },
+  ] as const;
+}
+const recusaDoCodigo = problema(422, 'uniplus.validacao', 'Dados inválidos', [
+  {
+    field: 'Codigo',
+    code: 'uniplus.configuracao.recurso_acessibilidade.codigo_formato_invalido',
+    message: 'Código recusado.',
+  },
+]);
+const codigoDuplicado = problema(
+  409,
+  'uniplus.configuracao.recurso_acessibilidade.codigo_ja_existe',
+  'Já existe um recurso de acessibilidade ativo com este código',
+);
+const nomeDuplicado = problema(
+  409,
+  'uniplus.configuracao.recurso_acessibilidade.nome_ja_existe',
+  'Já existe um recurso de acessibilidade ativo com este nome',
+);
+const processando = problema(
+  409,
+  'uniplus.idempotency.processing_conflict',
+  'A requisição anterior ainda está em processamento',
+);
+const falhaInterna = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const criado = ['novo-id', { status: 201, statusText: 'Created' }] as const;
+const semConteudo = [null, { status: 204, statusText: 'No Content' }] as const;
+
+type RespostaSimulada = readonly [
+  string | null,
+  { status: number; statusText: string; headers?: Record<string, string> },
+];
+
+describe('Recursos de acessibilidade — escritas pela interface', () => {
   let fixture: ComponentFixture<RecursosAcessibilidadeListPage>;
-  let edicao: EdicaoDosRecursosAcessibilidade;
-  let store: RecursosAcessibilidadeStore;
   let controller: HttpTestingController;
   let app: ApplicationRef;
-
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = fixture.nativeElement.querySelector(seletor) as T | null;
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as T;
-  };
-  const salvar = (): HTMLButtonElement => elemento('button[form="cfg-unidade-form"]');
-  const lista = async (): Promise<void> => {
-    controller.expectOne((r) => r.url === LISTA).flush([recurso]);
-    await propagar();
-  };
-  const preencher = async (): Promise<void> => {
-    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-    await propagar();
-    const nome = elemento<HTMLInputElement>('input[formcontrolname="nome"]');
-    nome.value = 'Ledor';
-    nome.dispatchEvent(new Event('input'));
-    await propagar();
-  };
-  const iniciarRemocao = async (): Promise<void> => {
-    elemento<HTMLButtonElement>(
-      'button[aria-label="Remover recurso de acessibilidade Ledor"]',
-    ).click();
-    await propagar();
-    const botoes = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
-        'ui-dialog button',
-      ),
-    ];
-    const confirmar = botoes.find((botao) => botao.textContent?.trim() === 'Remover');
-    expect(confirmar).toBeDefined();
-    confirmar?.click();
-    await propagar();
-  };
-  const recusar = (): void => {
-    controller.expectOne(ESCRITA).flush(
-      JSON.stringify({
-        type: 'about:blank',
-        title: 'Dados inválidos',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: 'test-trace',
-        errors: [
-          {
-            field: 'Nome',
-            code: 'uniplus.configuracao.recurso_acessibilidade.invalido',
-            message: 'Nome recusado.',
-          },
-        ],
-      }),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-  };
+  let edicao: EdicaoDosRecursosAcessibilidade;
+  let store: RecursosAcessibilidadeStore;
+  let sucesso: MockInstance<NotificationService['success']>;
+  let erroDoServidor: MockInstance<NotificationService['errorFromProblem']>;
 
   beforeEach(async () => {
     TestBed.configureTestingModule({
@@ -104,182 +90,506 @@ describe('Recursos de acessibilidade — escritas', () => {
       ],
     });
     fixture = TestBed.createComponent(RecursosAcessibilidadeListPage);
-    edicao = fixture.debugElement.injector.get(EdicaoDosRecursosAcessibilidade);
-    store = fixture.debugElement.injector.get(RecursosAcessibilidadeStore);
     controller = TestBed.inject(HttpTestingController);
     app = TestBed.inject(ApplicationRef);
+    edicao = fixture.debugElement.injector.get(EdicaoDosRecursosAcessibilidade);
+    store = fixture.debugElement.injector.get(RecursosAcessibilidadeStore);
+    const notificacoes = TestBed.inject(NotificationService);
+    sucesso = vi.spyOn(notificacoes, 'success');
+    erroDoServidor = vi.spyOn(notificacoes, 'errorFromProblem');
     fixture.detectChanges();
-    await lista();
+    await listar([ledor]);
   });
   afterEach(() => controller.verify());
 
-  it('informa ao leitor de tela que nome e código são obrigatórios', async () => {
-    await preencher();
-    for (const campo of ['nome', 'codigo']) {
-      const input = elemento<HTMLInputElement>(`input[formcontrolname="${campo}"]`);
-      expect(input.getAttribute('aria-required')).toBe('true');
-    }
-  });
+  const propagar = async (): Promise<void> => {
+    await Promise.resolve();
+    app.tick();
+    fixture.detectChanges();
+  };
+  const aguardarFoco = async (): Promise<void> => {
+    await propagar();
+    await fixture.whenStable();
+    await propagar();
+  };
+  const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
+  const elemento = <T extends HTMLElement>(seletor: string): T => {
+    const achado = raiz().querySelector<T>(seletor);
+    expect(achado, seletor).not.toBeNull();
+    return achado as T;
+  };
+  const indisponivel = (seletor: string): boolean => elemento(seletor).matches(':disabled');
+  const salvar = (): HTMLButtonElement =>
+    elemento('button[form="cfg-recurso-acessibilidade-form"]');
+  const confirmar = (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]');
+  const campo = (nome: string): HTMLInputElement =>
+    elemento(`[formcontrolname="${nome}"]`) as HTMLInputElement;
+  const novo = (): HTMLButtonElement => elemento('.panel-head .btn--primary');
+  const acaoDaLinha = (verbo: 'Editar' | 'Remover'): HTMLButtonElement =>
+    elemento(`td.table-responsive__actions button[aria-label^="${verbo} recurso"]`);
+  const retentar = (): HTMLButtonElement => elemento('.list-state__retry button');
 
-  it('mantém valores e foco, desabilita campos e impede fechar durante o envio', async () => {
-    await preencher();
-    const botao = salvar();
-    botao.focus();
-    botao.click();
-    const post = controller.expectOne(ESCRITA);
+  async function listar(itens: readonly RecursoAcessibilidadeDto[]): Promise<void> {
+    controller.expectOne((r) => r.url === LISTA).flush(itens);
     await propagar();
-    const nome = elemento<HTMLInputElement>('input[formcontrolname="nome"]');
-    expect(nome.matches(':disabled')).toBe(true);
-    expect(nome.value).toBe('Ledor');
-    expect(botao.getAttribute('aria-disabled')).toBe('true');
-    expect(botao.getAttribute('aria-busy')).toBe('true');
-    expect(botao.textContent).toContain('Salvando...');
-    expect(document.activeElement).toBe(botao);
-    expect(elemento<HTMLButtonElement>('.form-drawer__footer button').disabled).toBe(true);
-    const dialogo = elemento<HTMLDialogElement>(
-      'dialog[aria-label="Formulário do recurso de acessibilidade"]',
-    );
-    expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
-      true,
-    );
-    dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
+  }
+  async function preencher(): Promise<void> {
+    novo().click();
     await propagar();
-    expect(edicao.formOpen()).toBe(true);
-    post.flush('id', { status: 201, statusText: 'Created' });
+    edicao.form.setValue({ nome: 'Sala de apoio', codigo: 'SALA_DE_APOIO', descricao: '' });
     await propagar();
-    expect(edicao.formOpen()).toBe(false);
-    await lista();
-  });
-
-  it('recusa clique e submit enquanto salva', async () => {
-    const chamada = vi.spyOn(edicao, 'salvar');
-    await preencher();
-    salvar().click();
-    const post = controller.expectOne(ESCRITA);
-    await propagar();
-    salvar().click();
-    elemento<HTMLFormElement>('#cfg-unidade-form').dispatchEvent(
-      new Event('submit', { cancelable: true }),
-    );
-    await propagar();
-    expect(chamada).toHaveBeenCalledTimes(1);
-    post.flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    await lista();
-  });
-
-  it('mostra a recusa no campo e leva o foco ao primeiro campo recusado', async () => {
-    await preencher();
+  }
+  async function enviar(): Promise<void> {
     salvar().focus();
-    salvar().click();
+    elemento<HTMLFormElement>(FORMULARIO).dispatchEvent(new Event('submit', { cancelable: true }));
     await propagar();
-    recusar();
+  }
+  async function responder(url: string, resposta: RespostaSimulada): Promise<void> {
+    controller.expectOne(url).flush(...resposta);
     await propagar();
+    await aguardarFoco();
+  }
+  async function concluirRecarga(
+    itens: readonly RecursoAcessibilidadeDto[] = [ledor],
+  ): Promise<void> {
     await propagar();
-    const nome = elemento<HTMLInputElement>('input[formcontrolname="nome"]');
-    expect(nome.getAttribute('aria-invalid')).toBe('true');
-    expect(nome.closest('label')?.querySelector('.field__error')?.textContent?.trim()).toBe(
-      'Nome recusado.',
+    await listar(itens);
+    await aguardarFoco();
+  }
+  async function pedirRemocao(): Promise<void> {
+    acaoDaLinha('Remover').click();
+    await propagar();
+  }
+  async function confirmarRemocao(): Promise<void> {
+    await pedirRemocao();
+    confirmar().click();
+    await propagar();
+  }
+
+  describe('formulário', () => {
+    it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
+      await preencher();
+      for (const nome of ['nome', 'codigo']) {
+        expect(campo(nome).getAttribute('aria-required')).toBe('true');
+      }
+    });
+
+    it('durante o envio fica somente leitura, mantém o foco no botão e recusa fechar', async () => {
+      await preencher();
+      await enviar();
+      const post = controller.expectOne(ESCRITA);
+      expect(elemento<HTMLFieldSetElement>('fieldset.form-drawer__campos').disabled).toBe(true);
+      for (const nome of ['nome', 'codigo', 'descricao']) {
+        expect(indisponivel(`[formcontrolname="${nome}"]`)).toBe(true);
+      }
+      expect(campo('codigo').value).toBe('SALA_DE_APOIO');
+      expect(edicao.salvando()).toBe(true);
+      expect(salvar().getAttribute('aria-disabled')).toBe('true');
+      expect(salvar().getAttribute('aria-busy')).toBe('true');
+      expect(salvar().textContent).toContain('Salvando...');
+      await aguardarFoco();
+      expect(document.activeElement).toBe(salvar());
+      expect(elemento('dialog .sr-only[role="status"]').textContent).toContain('Salvando');
+      expect(indisponivel('.form-drawer__footer .btn--tertiary')).toBe(true);
+      const dialog = elemento<HTMLDialogElement>(
+        'dialog[aria-label="Formulário do recurso de acessibilidade"]',
+      );
+      expect(dialog.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
+        true,
+      );
+      dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+      edicao.fechar();
+      await propagar();
+      expect(edicao.aberto()).toBe(true);
+      post.flush(...criado);
+      await concluirRecarga();
+      expect(edicao.aberto()).toBe(false);
+    });
+
+    it('recusa clique e submissão enquanto o envio está em curso', async () => {
+      const chamada = vi.spyOn(edicao, 'salvar');
+      await preencher();
+      await enviar();
+      const post = controller.expectOne(ESCRITA);
+      const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
+      salvar().dispatchEvent(clique);
+      elemento<HTMLFormElement>(FORMULARIO).dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+      expect(clique.defaultPrevented).toBe(true);
+      expect(chamada).toHaveBeenCalledTimes(1);
+      post.flush(...criado);
+      await concluirRecarga();
+    });
+
+    it('com a recusa do servidor, leva o foco ao campo recusado, renova a chave e não notifica', async () => {
+      await preencher();
+      await enviar();
+      const envio = controller.expectOne(ESCRITA);
+      const primeira = envio.request.headers.get('Idempotency-Key');
+      envio.flush(...recusaDoCodigo);
+      await aguardarFoco();
+      expect(campo('codigo').getAttribute('aria-invalid')).toBe('true');
+      expect(campo('codigo').closest('label')?.textContent).toContain('Código recusado.');
+      expect(erroDoServidor).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(campo('codigo'));
+      expect(indisponivel('[formcontrolname="codigo"]')).toBe(false);
+      edicao.form.controls.codigo.setValue('SALA_DE_APOIO_2');
+      await enviar();
+      const segunda = controller.expectOne(ESCRITA);
+      expect(segunda.request.headers.get('Idempotency-Key')).not.toBe(primeira);
+      segunda.flush(...criado);
+      await concluirRecarga();
+      expect(sucesso).toHaveBeenCalledExactlyOnceWith('Recurso de acessibilidade criado');
+      expect(document.activeElement).toBe(novo());
+    });
+
+    it('com Enter num campo e falha 500, leva o foco ao botão, notifica e mantém a chave para o reenvio', async () => {
+      await preencher();
+      campo('nome').focus();
+      elemento<HTMLFormElement>(FORMULARIO).dispatchEvent(
+        new Event('submit', { cancelable: true }),
+      );
+      await propagar();
+      await aguardarFoco();
+      expect(document.activeElement).toBe(salvar());
+      const requisicao = controller.expectOne(ESCRITA);
+      const chave = requisicao.request.headers.get('Idempotency-Key');
+      requisicao.flush(...falhaInterna);
+      await aguardarFoco();
+      expect(edicao.erro()).toBe('Erro interno');
+      expect(erroDoServidor).toHaveBeenCalledTimes(1);
+      expect(erroDoServidor.mock.calls[0][0]).toMatchObject({
+        status: 500,
+        code: 'uniplus.erro_interno',
+      });
+      expect(sucesso).not.toHaveBeenCalled();
+      expect(elemento('dialog ui-alert').textContent).toContain('Erro interno');
+      expect(indisponivel('[formcontrolname="nome"]')).toBe(false);
+      expect(salvar().getAttribute('aria-disabled')).toBeNull();
+      await enviar();
+      const reenvio = controller.expectOne(ESCRITA);
+      expect(reenvio.request.headers.get('Idempotency-Key')).toBe(chave);
+      reenvio.flush(...criado);
+      await concluirRecarga();
+    });
+
+    it.each<[string, RespostaSimulada]>([
+      ['sucesso', criado],
+      ['recusa', recusaDoCodigo],
+    ])('preserva o controle desabilitado por regra após %s', async (resultado, resposta) => {
+      await preencher();
+      edicao.form.controls.descricao.disable();
+      await propagar();
+      await enviar();
+      controller.expectOne(ESCRITA).flush(...resposta);
+      await propagar();
+      if (resultado === 'sucesso') await concluirRecarga();
+      else await aguardarFoco();
+      expect(edicao.form.controls.descricao.disabled).toBe(true);
+      expect(edicao.form.controls.nome.enabled).toBe(true);
+      if (resultado === 'recusa') {
+        expect(indisponivel('[formcontrolname="descricao"]')).toBe(true);
+        expect(indisponivel('[formcontrolname="nome"]')).toBe(false);
+        expect(edicao.aberto()).toBe(true);
+      }
+    });
+
+    it('o envio barrado leva o foco ao primeiro campo inválido', async () => {
+      novo().click();
+      await propagar();
+      await enviar();
+      await aguardarFoco();
+      controller.expectNone(ESCRITA);
+      expect(document.activeElement).toBe(campo('nome'));
+      expect(campo('nome').getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it.each<[string, RespostaSimulada, string, string]>([
+      [
+        'código',
+        codigoDuplicado,
+        'codigo',
+        'Já existe um recurso de acessibilidade ativo com este código',
+      ],
+      ['nome', nomeDuplicado, 'nome', 'Já existe um recurso de acessibilidade ativo com este nome'],
+    ])(
+      'a duplicidade de %s marca o campo certo, renova a chave e não notifica',
+      async (_rotulo, resposta, controle, mensagem) => {
+        await preencher();
+        await enviar();
+        const primeira = controller.expectOne(ESCRITA);
+        const chave = primeira.request.headers.get('Idempotency-Key');
+        primeira.flush(...resposta);
+        await aguardarFoco();
+        expect(campo(controle).getAttribute('aria-invalid')).toBe('true');
+        expect(campo(controle).closest('label')?.textContent).toContain(mensagem);
+        expect(document.activeElement).toBe(campo(controle));
+        expect(erroDoServidor).not.toHaveBeenCalled();
+        expect(edicao.erro()).toBeNull();
+        edicao.form.controls[controle as 'nome' | 'codigo'].setValue('OUTRO_VALOR');
+        await enviar();
+        const segunda = controller.expectOne(ESCRITA);
+        expect(segunda.request.headers.get('Idempotency-Key')).not.toBe(chave);
+        segunda.flush(...criado);
+        await concluirRecarga();
+      },
     );
-    expect(document.activeElement).toBe(nome);
+
+    it('o conflito de processamento mantém a chave, mostra a mensagem e não marca o campo', async () => {
+      await preencher();
+      await enviar();
+      const primeira = controller.expectOne(ESCRITA);
+      const chave = primeira.request.headers.get('Idempotency-Key');
+      primeira.flush(...processando);
+      await aguardarFoco();
+      expect(edicao.erro()).toBe('A requisição anterior ainda está em processamento');
+      expect(campo('codigo').getAttribute('aria-invalid')).toBeNull();
+      expect(campo('nome').getAttribute('aria-invalid')).toBeNull();
+      expect(erroDoServidor).not.toHaveBeenCalled();
+      await enviar();
+      const segunda = controller.expectOne(ESCRITA);
+      expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
+      segunda.flush(...criado);
+      await concluirRecarga();
+    });
+
+    it('a recusa sem campo reconhecido vira mensagem geral', async () => {
+      await preencher();
+      await enviar();
+      controller
+        .expectOne(ESCRITA)
+        .flush(
+          ...problema(422, 'uniplus.validacao', 'Dados inválidos', [
+            { field: 'Outro', code: 'x', message: 'Recusado.' },
+          ]),
+        );
+      await aguardarFoco();
+      expect(edicao.erro()).toContain('Não foi possível mapear');
+    });
   });
 
-  it('devolve o foco ao acionador depois do sucesso', async () => {
-    const acionador = elemento<HTMLButtonElement>('.panel-head .btn--primary');
-    acionador.focus();
-    await preencher();
-    salvar().focus();
-    salvar().click();
-    controller.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    await propagar();
-    expect(document.activeElement).toBe(acionador);
-    await lista();
+  describe('concorrência entre escritas', () => {
+    it('não inicia outra escrita durante o salvamento nem durante a recarga que o segue', async () => {
+      await preencher();
+      edicao.salvar();
+      edicao.salvar();
+      edicao.pedirRemocao(ledor);
+      edicao.removerConfirmado();
+      controller.expectNone(URL_LEDOR);
+      controller.expectOne(ESCRITA).flush(...criado);
+      await propagar();
+      expect(edicao.gravando()).toBe(true);
+      expect(edicao.salvando()).toBe(false);
+      edicao.salvar();
+      edicao.abrirCadastro();
+      edicao.abrirEdicao(ledor);
+      edicao.pedirRemocao(ledor);
+      edicao.removerConfirmado();
+      controller.expectNone(ESCRITA);
+      controller.expectNone(URL_LEDOR);
+      await concluirRecarga();
+      expect(edicao.gravando()).toBe(false);
+    });
+
+    it('não inicia salvamento nem outra remoção durante uma remoção', async () => {
+      await confirmarRemocao();
+      const delecao = controller.expectOne(URL_LEDOR);
+      edicao.form.setValue({ nome: 'Sala', codigo: 'SALA', descricao: '' });
+      edicao.salvar();
+      edicao.removerConfirmado();
+      edicao.abrirCadastro();
+      controller.expectNone(ESCRITA);
+      controller.expectNone(URL_LEDOR);
+      delecao.flush(...semConteudo);
+      await concluirRecarga([]);
+    });
   });
 
-  it.each(['sucesso', 'recusa'])('preserva controle desabilitado após %s', async (resultado) => {
-    await preencher();
-    edicao.form.controls.descricao.disable();
-    edicao.salvar();
-    expect(edicao.form.controls.nome.enabled).toBe(true);
-    if (resultado === 'sucesso') {
-      controller.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-    } else recusar();
-    await propagar();
-    expect(edicao.form.controls.descricao.disabled).toBe(true);
-    expect(edicao.form.controls.nome.enabled).toBe(true);
-    if (resultado === 'sucesso') await lista();
+  describe('remoção', () => {
+    it('o pedido de remoção nomeia o recurso na confirmação', async () => {
+      await pedirRemocao();
+      expect(elemento('ui-dialog').textContent).toContain(
+        'Você está prestes a remover o recurso Ledor',
+      );
+      confirmar().click();
+      await propagar();
+      controller.expectOne(URL_LEDOR).flush(...semConteudo);
+      await concluirRecarga([]);
+    });
+
+    it('pendente, anuncia o andamento, mantém o botão ocupado e deixa a tela indisponível', async () => {
+      await confirmarRemocao();
+      const delecao = controller.expectOne(URL_LEDOR);
+      expect(edicao.removendo()).toBe(true);
+      expect(edicao.salvando()).toBe(false);
+      expect(elemento('ui-dialog [role="status"]').textContent).toContain(
+        'Removendo o recurso de acessibilidade Ledor.',
+      );
+      expect(confirmar().getAttribute('aria-disabled')).toBe('true');
+      expect(confirmar().getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(confirmar());
+      expect(raiz().querySelector('tr span[aria-hidden="true"]')?.textContent).toContain(
+        'Removendo',
+      );
+      for (const botao of raiz().querySelectorAll<HTMLButtonElement>(
+        'cfg-recursos-acessibilidade-lista button',
+      )) {
+        expect(botao.matches(':disabled'), botao.textContent ?? '').toBe(true);
+      }
+      expect(indisponivel('[data-testid="confirm-dialog-cancel"]')).toBe(true);
+      novo().click();
+      expect(edicao.aberto()).toBe(false);
+      delecao.flush(...semConteudo);
+      await propagar();
+      expect(edicao.gravando()).toBe(true);
+      await concluirRecarga([]);
+      expect(edicao.gravando()).toBe(false);
+    });
+
+    it('concluída, notifica o sucesso, anuncia o resultado na página e leva o foco ao título da lista', async () => {
+      await confirmarRemocao();
+      controller.expectOne(URL_LEDOR).flush(...semConteudo);
+      await concluirRecarga([]);
+      expect(edicao.confirmando()).toBe(false);
+      expect(sucesso).toHaveBeenCalledExactlyOnceWith('Recurso de acessibilidade removido');
+      expect(erroDoServidor).not.toHaveBeenCalled();
+      expect(elemento(':scope > [role="status"]').textContent).toBe(
+        'Recurso de acessibilidade Ledor removido.',
+      );
+      expect(document.activeElement).toBe(elemento(TITULO));
+    });
+
+    it('concluída com a falha da recarga, leva o foco ao título da lista', async () => {
+      await confirmarRemocao();
+      controller.expectOne(URL_LEDOR).flush(...semConteudo);
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(null, { status: 500, statusText: 'Erro' });
+      await aguardarFoco();
+      expect(edicao.gravando()).toBe(false);
+      expect(document.activeElement).toBe(elemento(TITULO));
+    });
+
+    it.each([
+      [
+        '404',
+        problema(
+          404,
+          'uniplus.configuracao.recurso_acessibilidade.nao_encontrado',
+          'Recurso de acessibilidade não encontrado',
+        ),
+        'Recurso de acessibilidade não encontrado',
+      ],
+      ['500', falhaInterna, 'Erro interno'],
+    ])(
+      'recusada (%s), mantém o diálogo aberto com o motivo, o foco no botão e aceita nova tentativa',
+      async (_nome, resposta, motivo) => {
+        await confirmarRemocao();
+        await responder(URL_LEDOR, resposta);
+        expect(edicao.confirmando()).toBe(true);
+        expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
+          expect.objectContaining({ title: motivo }),
+          { title: motivo },
+        );
+        expect(sucesso).not.toHaveBeenCalled();
+        expect(elemento('ui-dialog .field__error').textContent).toBe(motivo);
+        expect(elemento('ui-dialog [role="status"]').textContent).toContain(motivo);
+        expect(confirmar().getAttribute('aria-disabled')).toBeNull();
+        expect(document.activeElement).toBe(confirmar());
+        expect(edicao.gravando()).toBe(false);
+        confirmar().click();
+        await propagar();
+        expect(raiz().querySelector('ui-dialog .field__error')).toBeNull();
+        controller.expectOne(URL_LEDOR).flush(...semConteudo);
+        await concluirRecarga([]);
+      },
+    );
+
+    it('o "Tentar novamente" da listagem fica indisponível com a remoção pendente', async () => {
+      await confirmarRemocao();
+      const delecao = controller.expectOne(URL_LEDOR);
+      store.tentarNovamente();
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(null, { status: 500, statusText: 'Erro' });
+      await propagar();
+      expect(retentar().getAttribute('aria-disabled')).toBe('true');
+      retentar().click();
+      controller.expectNone((r) => r.url === LISTA);
+      delecao.flush(...semConteudo);
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush([]);
+      await aguardarFoco();
+    });
   });
 
-  it('impede escritas concorrentes e mantém a trava durante a recarga', async () => {
-    await preencher();
-    edicao.salvar();
-    edicao.salvar();
-    edicao.abrirRemoverRecurso(recurso);
-    edicao.removerConfirmado();
-    controller.expectNone(`${ESCRITA}/${recurso.id}`);
-    controller.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    expect(edicao.saving()).toBe(true);
-    edicao.abrirDrawerCriacao();
-    edicao.salvar();
-    edicao.abrirRemoverRecurso(recurso);
-    edicao.removerConfirmado();
-    controller.expectNone(ESCRITA);
-    controller.expectNone(`${ESCRITA}/${recurso.id}`);
-    await lista();
-    expect(edicao.saving()).toBe(false);
+  describe('leitura', () => {
+    it('a falha 5xx da listagem notifica com o título resolvido', async () => {
+      store.tentarNovamente();
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(...falhaInterna);
+      await propagar();
+      expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ status: 500 }),
+        { title: 'Erro interno' },
+      );
+    });
+
+    it('a falha 4xx da listagem não notifica o servidor', async () => {
+      store.tentarNovamente();
+      await propagar();
+      controller
+        .expectOne((r) => r.url === LISTA)
+        .flush(...problema(403, 'uniplus.acesso_negado', 'Acesso negado'));
+      await propagar();
+      expect(erroDoServidor).not.toHaveBeenCalled();
+    });
+
+    it('"Tentar novamente" bem-sucedido tira o alerta e leva o foco ao título da lista', async () => {
+      store.tentarNovamente();
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(null, { status: 500, statusText: 'Erro' });
+      await propagar();
+      retentar().focus();
+      retentar().click();
+      await propagar();
+      await listar([ledor]);
+      await aguardarFoco();
+      expect(raiz().querySelector('.list-state__retry')).toBeNull();
+      expect(document.activeElement).toBe(elemento(TITULO));
+    });
   });
 
-  it('durante remoção recusa salvamento e bloqueia acionadores', async () => {
-    await preencher();
-    edicao.fechar();
-    await propagar();
-    await iniciarRemocao();
-    const exclusao = controller.expectOne(`${ESCRITA}/${recurso.id}`);
-    expect(edicao.salvando()).toBe(false);
-    expect(edicao.removendo()).toBe(true);
-    for (const botao of (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
-      'cfg-recursos-acessibilidade-lista button',
-    )) {
-      expect(botao.disabled || botao.getAttribute('aria-disabled') === 'true').toBe(true);
-      botao.click();
-    }
-    edicao.salvar();
-    controller.expectNone(ESCRITA);
-    expect(edicao.formOpen()).toBe(false);
-    exclusao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    expect(edicao.removendo()).toBe(true);
-    await lista();
-  });
+  describe('foco depois da recarga', () => {
+    it('a edição concluída notifica e devolve o foco ao botão da linha', async () => {
+      acaoDaLinha('Editar').click();
+      await propagar();
+      edicao.salvar();
+      controller.expectOne(URL_LEDOR).flush(...semConteudo);
+      await concluirRecarga();
+      expect(sucesso).toHaveBeenCalledExactlyOnceWith('Recurso de acessibilidade atualizado');
+      expect(erroDoServidor).not.toHaveBeenCalled();
+      expect(document.activeElement).toBe(acaoDaLinha('Editar'));
+    });
 
-  it('anuncia o início e o fim da remoção na região de status', async () => {
-    await iniciarRemocao();
-    const exclusao = controller.expectOne(`${ESCRITA}/${recurso.id}`);
-    expect(elemento('[role="status"]').textContent).toContain('Removendo');
-    exclusao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await lista();
-    expect(elemento('[role="status"]').textContent).toContain('removido');
-  });
+    it('a edição concluída, com falha na recarga, leva o foco ao título da lista', async () => {
+      acaoDaLinha('Editar').click();
+      await propagar();
+      edicao.salvar();
+      controller.expectOne(URL_LEDOR).flush(...semConteudo);
+      await propagar();
+      controller.expectOne((r) => r.url === LISTA).flush(null, { status: 500, statusText: 'Erro' });
+      await aguardarFoco();
+      expect(document.activeElement).toBe(elemento(TITULO));
+    });
 
-  it('recusa tentar novamente com remoção pendente e falha na listagem', async () => {
-    await iniciarRemocao();
-    const exclusao = controller.expectOne(`${ESCRITA}/${recurso.id}`);
-    store.recarregar();
-    await propagar();
-    controller
-      .expectOne((r) => r.url === LISTA)
-      .flush(null, { status: 503, statusText: 'Indisponível' });
-    await propagar();
-    const tentar = elemento<HTMLButtonElement>('ui-alert button');
-    expect(tentar.disabled || tentar.getAttribute('aria-disabled') === 'true').toBe(true);
-    tentar.click();
-    await propagar();
-    controller.expectNone((r) => r.url === LISTA);
-    exclusao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await lista();
+    it('o cadastro concluído notifica e devolve o foco ao botão de novo recurso', async () => {
+      await preencher();
+      edicao.salvar();
+      controller.expectOne(ESCRITA).flush(...criado);
+      await concluirRecarga();
+      expect(sucesso).toHaveBeenCalledExactlyOnceWith('Recurso de acessibilidade criado');
+      expect(document.activeElement).toBe(novo());
+    });
   });
 });

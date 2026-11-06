@@ -1,148 +1,134 @@
-<div data-scope class="cfg-unidades-scope">
-  <div class="filter-bar" role="search" aria-label="Filtrar recursos de acessibilidade">
-    <div class="filter-bar__row">
-      <div class="input-group">
-        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
-        <input
-          type="search"
-          class="input"
-          placeholder="Buscar por código ou nome..."
-          aria-label="Buscar recursos de acessibilidade"
-          [value]="termoBusca()"
-          [attr.aria-disabled]="indisponivel() ? 'true' : null"
-          (input)="alterarBusca($event)"
-        />
-      </div>
-      <button
-        type="button"
-        class="btn btn--tertiary btn--sm btn--rect"
-        [attr.aria-disabled]="indisponivel() ? 'true' : null"
-        (click)="limpar()"
-      >
-        Limpar
-      </button>
+<section class="panel" aria-labelledby="cfg-recursos-acessibilidade-list-title">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-recursos-acessibilidade-list-title" tabindex="-1">Recursos de acessibilidade</h2>
+      <span class="list-count" aria-label="Total de recursos carregados">
+        {{ recursos().length }}
+      </span>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner size="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
     </div>
-    <div class="filter-bar__group"></div>
+    <button
+      id="cfg-recursos-acessibilidade-novo"
+      type="button"
+      class="btn btn--primary"
+      [disabled]="indisponivel()"
+      (click)="acionarCadastro()"
+    >
+      <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+      Novo recurso
+    </button>
   </div>
 
-  <section class="panel" aria-labelledby="cfg-unidades-list-title">
-    <div class="panel-head">
-      <div class="panel-head__title">
-        <h2 id="cfg-unidades-list-title">Recursos de acessibilidade</h2>
-        <span class="list-count" aria-label="Total de recursos carregados">
-          {{ recursosFiltrados().length }}
-        </span>
-      </div>
-      <button
-        type="button"
-        class="btn btn--primary"
-        [attr.aria-disabled]="indisponivel() ? 'true' : null"
-        (click)="cadastrarRecurso()"
-      >
-        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
-        Novo recurso
-      </button>
-    </div>
+  <ui-filter-bar
+    ariaLabel="Filtrar recursos de acessibilidade"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar recursos de acessibilidade"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
+  >
+    <button
+      uiFilterBarActions
+      type="button"
+      class="btn btn--tertiary btn--sm btn--rect"
+      [disabled]="indisponivel()"
+      (click)="termoBusca.set('')"
+    >
+      Limpar
+    </button>
+  </ui-filter-bar>
 
-    @if (recursosFiltrados().length > 0) {
-      <div class="table-responsive">
-        <table>
-          <caption class="sr-only">
-            Recursos de acessibilidade, com código, nome e descrição
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Código</th>
-              <th scope="col">Nome</th>
-              <th scope="col">Descrição</th>
-              <th scope="col"><span class="sr-only">Ações</span></th>
+  @if (recursos().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Recursos de acessibilidade, com código, nome e descrição
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Código</th>
+            <th scope="col">Nome</th>
+            <th scope="col">Descrição</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (recurso of recursos(); track recurso.id) {
+            <tr [attr.data-recurso-id]="recurso.id">
+              <td data-label="Código">
+                <code>{{ recurso.codigo }}</code>
+              </td>
+              <td data-label="Nome">
+                <div class="table-responsive__primary">{{ recurso.nome }}</div>
+              </td>
+              <td data-label="Descrição">{{ recurso.descricao }}</td>
+              <td class="table-responsive__actions" data-label="Ações">
+                @if (recurso.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
+                }
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="nomeDaAcao('editar', recurso.codigo)"
+                  tooltip="Editar recurso de acessibilidade"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('editar', recurso)"
+                />
+                <ui-icon-button
+                  icon="pi-trash"
+                  [accessibleName]="nomeDaAcao('remover', recurso.codigo)"
+                  tooltip="Remover recurso de acessibilidade"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionar('remover', recurso)"
+                />
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            @for (recursoAcessibilidade of recursosFiltrados(); track recursoAcessibilidade.id) {
-              <tr>
-                <td data-label="Código">
-                  <code>{{ recursoAcessibilidade.codigo }}</code>
-                </td>
-                <td data-label="Nome">
-                  <div class="table-responsive__primary">{{ recursoAcessibilidade.nome }}</div>
-                </td>
-                <td data-label="Descrição">{{ recursoAcessibilidade.descricao }}</td>
-                <td class="table-responsive__actions" data-label="Ações">
-                  @if (recursoEmOperacaoId() === recursoAcessibilidade.id && saving()) {
-                    <span role="status">{{ removendo() ? 'Removendo...' : 'Salvando...' }}</span>
-                  }
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
-                    [attr.aria-label]="
-                      'Editar recurso de acessibilidade ' + recursoAcessibilidade.nome
-                    "
-                    data-tooltip="Editar recurso de acessibilidade"
-                    [attr.aria-disabled]="indisponivel() ? 'true' : null"
-                    (click)="editarRecurso(recursoAcessibilidade)"
-                  >
-                    <i class="pi pi-pencil" aria-hidden="true"></i>
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--sm btn--rect btn--icon-only"
-                    [attr.aria-label]="
-                      'Remover recurso de acessibilidade ' + recursoAcessibilidade.nome
-                    "
-                    data-tooltip="Remover recurso de acessibilidade"
-                    [attr.aria-disabled]="indisponivel() ? 'true' : null"
-                    (click)="removerRecurso(recursoAcessibilidade)"
-                  >
-                    <i class="pi pi-trash" aria-hidden="true"></i>
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
-    } @else if (!loading() && !errorMessage()) {
-      @if (temFiltro()) {
-        <ui-empty-state
-          heading="Nenhum recurso de acessibilidade encontrado"
-          description="Ajuste a busca para ver resultados."
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    @if (temFiltro()) {
+      <ui-empty-state
+        heading="Nenhum recurso de acessibilidade encontrado"
+        description="Ajuste a busca para ver resultados."
+      >
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="indisponivel()"
+          (click)="termoBusca.set('')"
         >
-          <button
-            type="button"
-            class="btn btn--secondary"
-            [attr.aria-disabled]="indisponivel() ? 'true' : null"
-            (click)="limpar()"
-          >
-            Limpar filtros
-          </button>
-        </ui-empty-state>
-      } @else {
-        <ui-empty-state
-          heading="Nenhum recurso de acessibilidade carregado"
-          description="Cadastre um recurso para iniciar a estrutura institucional."
+          Limpar filtros
+        </button>
+      </ui-empty-state>
+    } @else {
+      <ui-empty-state
+        heading="Nenhum recurso de acessibilidade carregado"
+        description="Cadastre um recurso para iniciar a estrutura institucional."
+      >
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="indisponivel()"
+          (click)="acionarCadastro()"
         >
-          <button
-            type="button"
-            class="btn btn--primary"
-            [attr.aria-disabled]="indisponivel() ? 'true' : null"
-            (click)="cadastrarRecurso()"
-          >
-            Novo recurso
-          </button>
-        </ui-empty-state>
-      }
+          Novo recurso
+        </button>
+      </ui-empty-state>
     }
-    @if (prevCursor() || nextCursor()) {
-      <ui-pager
-        statusText="Navegação por páginas"
-        navigationLabel="Paginação de recurso de acessibilidade"
-        [hasPrevious]="prevCursor()"
-        [hasNext]="nextCursor()"
-        [isDisabled]="indisponivel()"
-        (previous)="anterior.emit()"
-        (next)="proximo.emit()"
-      />
-    }
-  </section>
-</div>
+  }
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação de recurso de acessibilidade"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

@@ -1,46 +1,69 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { RecursoAcessibilidadeDto } from '@uniplus/shared-data/configuracao';
-import { EmptyStateComponent, PagerComponent } from '@uniplus/shared-ui/components';
+import {
+  EmptyStateComponent,
+  FilterBarComponent,
+  IconButtonComponent,
+  PagerComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
+import type { AndamentoDaEscrita } from './edicao-dos-recursos-acessibilidade';
+
+type Acao = 'editar' | 'remover';
+
+const VERBO_DA_ACAO: Readonly<Record<Acao, string>> = { editar: 'Editar', remover: 'Remover' };
 
 @Component({
   selector: 'cfg-recursos-acessibilidade-lista',
+  imports: [
+    EmptyStateComponent,
+    FilterBarComponent,
+    IconButtonComponent,
+    PagerComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [EmptyStateComponent, PagerComponent],
   templateUrl: './recursos-acessibilidade-lista.component.html',
 })
 export class RecursosAcessibilidadeListaComponent {
-  readonly recursosFiltrados = input.required<readonly RecursoAcessibilidadeDto[]>();
-  readonly termoBusca = input.required<string>();
-  readonly loading = input.required<boolean>();
-  readonly saving = input.required<boolean>();
+  readonly recursos = input.required<readonly RecursoAcessibilidadeDto[]>();
+  readonly carregando = input.required<boolean>();
+  readonly gravando = input.required<boolean>();
   readonly removendo = input.required<boolean>();
-  readonly recursoEmOperacaoId = input<string | null>(null);
-  readonly errorMessage = input.required<string | null>();
-  readonly prevCursor = input.required<boolean>();
-  readonly nextCursor = input.required<boolean>();
-  readonly buscaAlterada = output<string>();
+  readonly andamento = input.required<AndamentoDaEscrita | null>();
+  readonly erro = input.required<string | null>();
+  readonly temFiltro = input.required<boolean>();
+  readonly temAnterior = input.required<boolean>();
+  readonly temProximo = input.required<boolean>();
+  readonly termoBusca = model.required<string>();
   readonly cadastrar = output<void>();
   readonly editar = output<RecursoAcessibilidadeDto>();
   readonly remover = output<RecursoAcessibilidadeDto>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected readonly indisponivel = computed(() => this.loading() || this.saving());
-  protected readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
-  protected alterarBusca(evento: Event): void {
-    const campo = evento.target as HTMLInputElement;
-    if (this.indisponivel()) campo.value = this.termoBusca();
-    else this.buscaAlterada.emit(campo.value);
+
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
+
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-recurso-id',
+    idDoTitulo: 'cfg-recursos-acessibilidade-list-title',
+    idDoCadastro: 'cfg-recursos-acessibilidade-novo',
+  });
+
+  protected acionarCadastro(): void {
+    this.foco.registrar(null);
+    this.cadastrar.emit();
   }
-  protected limpar(): void {
-    if (!this.indisponivel()) this.buscaAlterada.emit('');
+
+  protected acionar(acao: Acao, recurso: RecursoAcessibilidadeDto): void {
+    this.foco.registrar({ acao, id: recurso.id });
+    (acao === 'editar' ? this.editar : this.remover).emit(recurso);
   }
-  protected cadastrarRecurso(): void {
-    if (!this.indisponivel()) this.cadastrar.emit();
-  }
-  protected editarRecurso(recurso: RecursoAcessibilidadeDto): void {
-    if (!this.indisponivel()) this.editar.emit(recurso);
-  }
-  protected removerRecurso(recurso: RecursoAcessibilidadeDto): void {
-    if (!this.indisponivel()) this.remover.emit(recurso);
+
+  protected nomeDaAcao(acao: Acao, codigo: string): string {
+    return `${VERBO_DA_ACAO[acao]} recurso de acessibilidade ${codigo}`;
   }
 }

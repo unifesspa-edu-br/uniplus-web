@@ -45,6 +45,7 @@ export class RecursosAcessibilidadeStore {
         recurso.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
+  readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
   readonly mensagemDeErro = computed<string | null>(() => {
     const problem = this.lista.problem();
     if (problem) {
