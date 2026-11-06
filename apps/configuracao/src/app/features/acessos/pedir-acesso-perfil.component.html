@@ -1,0 +1,62 @@
+<ng-container [formGroup]="form()">
+  @if (perfisIndisponiveis(); as indisponivel) {
+    <ui-alert variant="danger" heading="Não foi possível listar os perfis de acesso">
+      {{ indisponivel }}
+      <div>
+        <button
+          type="button"
+          class="btn btn--secondary btn--sm"
+          [attr.aria-disabled]="carregandoPerfis() ? 'true' : null"
+          [attr.aria-busy]="carregandoPerfis() ? 'true' : null"
+          (click)="tentarPerfisNovamente.emit()"
+        >
+          Tentar novamente
+        </button>
+      </div>
+    </ui-alert>
+  } @else {
+    <label class="field" [class.is-error]="invalidoPerfil()">
+      <span class="field__label is-required">Perfil de acesso</span>
+      <select
+        aria-required="true"
+        class="select"
+        formControlName="perfilId"
+        [attr.aria-invalid]="invalidoPerfil() ? 'true' : null"
+        [attr.aria-describedby]="invalidoPerfil() ? 'cfg-pedir-perfilId-erro' : null"
+      >
+        <option value="">Selecione um perfil</option>
+        @for (perfil of perfis(); track perfil.id) {
+          <option [value]="perfil.id">{{ perfil.nome }}</option>
+        }
+      </select>
+      @if (perfilSelecionado(); as perfil) {
+        <span class="field__hint">{{ perfil.descricao }}</span>
+      }
+      @if (invalidoPerfil()) {
+        <span class="field__error" id="cfg-pedir-perfilId-erro">{{ mensagemDoPerfil() }}</span>
+      }
+    </label>
+  }
+  @if (exigeUnidade()) {
+    <label class="field" [class.is-error]="invalidaUnidade()">
+      <span class="field__label is-required">Unidade</span>
+      <select
+        aria-required="true"
+        class="select"
+        formControlName="unidadeId"
+        [attr.aria-invalid]="invalidaUnidade() ? 'true' : null"
+        [attr.aria-describedby]="invalidaUnidade() ? 'cfg-pedir-unidadeId-erro' : null"
+      >
+        <option value="">Selecione a unidade</option>
+        @for (unidade of unidades(); track unidade.id) {
+          <option [value]="unidade.id">{{ unidade.sigla }} — {{ unidade.nome }}</option>
+        }
+      </select>
+      @if (invalidaUnidade()) {
+        <span class="field__error" id="cfg-pedir-unidadeId-erro">{{ mensagemDaUnidade() }}</span>
+      }
+    </label>
+  } @else {
+    <p class="field__hint">Este perfil vale para a instituição, sem unidade.</p>
+  }
+</ng-container>

@@ -1,0 +1,46 @@
+<ng-container [formGroup]="form()">
+  <label class="field" [class.is-error]="invalidaJustificativa()">
+    <span class="field__label is-required">Justificativa</span>
+    <textarea
+      aria-required="true"
+      class="textarea"
+      formControlName="justificativa"
+      [attr.aria-invalid]="invalidaJustificativa() ? 'true' : null"
+      [attr.aria-describedby]="invalidaJustificativa() ? 'cfg-pedir-justificativa-erro' : null"
+    ></textarea>
+    <span class="field__hint"
+      >Explique por que o trabalho exige o acesso (de 10 a 2000 caracteres).</span
+    >
+    @if (invalidaJustificativa()) {
+      <span class="field__error" id="cfg-pedir-justificativa-erro">{{
+        mensagemDaJustificativa()
+      }}</span>
+    }
+  </label>
+
+  @if (!exigeDocumento()) {
+    <label class="field" [class.is-error]="invalidoPrazo()">
+      <span class="field__label">Prazo sugerido (opcional)</span>
+      <input
+        class="input"
+        type="date"
+        formControlName="validaAteSugerida"
+        [min]="hoje()"
+        [attr.aria-invalid]="invalidoPrazo() ? 'true' : null"
+        [attr.aria-describedby]="
+          'cfg-pedir-validaAteSugerida-dica' +
+          (invalidoPrazo() ? ' cfg-pedir-validaAteSugerida-erro' : '')
+        "
+      />
+      <span class="field__hint" id="cfg-pedir-validaAteSugerida-dica"
+        >Último dia em que o acesso deve valer. O gestor de acessos decide o prazo; sem sugestão, o
+        acesso não tem fim previsto.</span
+      >
+      @if (invalidoPrazo()) {
+        <span class="field__error" id="cfg-pedir-validaAteSugerida-erro">{{
+          mensagemDoPrazoInvalido()
+        }}</span>
+      }
+    </label>
+  }
+</ng-container>

@@ -1,0 +1,36 @@
+<ng-container [formGroup]="form()">
+  <fieldset class="field">
+    <legend class="field__label">Para quem é o acesso</legend>
+    <label class="radio">
+      <input type="radio" formControlName="paraQuem" value="mim" />
+      <span class="radio__dot" aria-hidden="true"></span>
+      Para mim
+    </label>
+    <label class="radio">
+      <input type="radio" formControlName="paraQuem" value="outra" />
+      <span class="radio__dot" aria-hidden="true"></span>
+      Para outra pessoa
+    </label>
+  </fieldset>
+
+  @if (paraQuem() === 'outra') {
+    <label class="field" [class.is-error]="invalido()">
+      <span class="field__label is-required">E-mail institucional do beneficiário</span>
+      <input
+        aria-required="true"
+        class="input"
+        type="email"
+        autocomplete="off"
+        formControlName="beneficiarioEmail"
+        [attr.aria-invalid]="invalido() ? 'true' : null"
+        [attr.aria-describedby]="invalido() ? 'cfg-pedir-beneficiarioEmail-erro' : null"
+      />
+      <span class="field__hint"
+        >O pedido espera o aceite da pessoa antes de seguir para aprovação.</span
+      >
+      @if (invalido()) {
+        <span class="field__error" id="cfg-pedir-beneficiarioEmail-erro">{{ mensagem() }}</span>
+      }
+    </label>
+  }
+</ng-container>

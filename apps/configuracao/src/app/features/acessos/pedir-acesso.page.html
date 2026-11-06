@@ -9,21 +9,32 @@
 
 <cfg-pedir-acesso-formulario
   [form]="edicao.form"
-  [perfis]="edicao.perfis()"
-  [perfisIndisponiveis]="edicao.perfisIndisponiveis()"
-  [carregandoPerfis]="edicao.carregandoPerfis()"
-  [perfilSelecionado]="edicao.perfilSelecionado()"
-  [unidades]="edicao.unidades()"
-  [paraQuem]="edicao.paraQuem()"
-  [exigeUnidade]="edicao.exigeUnidade()"
-  [exigeDocumento]="edicao.exigeDocumento()"
-  [erroDoDocumento]="edicao.erroDoDocumento()"
   [enviando]="edicao.enviando()"
   [aguardandoConfirmacao]="edicao.aguardandoConfirmacao()"
   [faseDoEnvio]="edicao.faseDoEnvio()"
-  [hoje]="edicao.hoje()"
-  [mensagemDoPrazo]="edicao.mensagemDoPrazo"
-  [(arquivo)]="edicao.arquivo"
   (enviar)="edicao.enviar()"
-  (tentarPerfisNovamente)="edicao.tentarPerfisNovamente()"
-/>
+>
+  <cfg-pedir-acesso-beneficiario [form]="edicao.form" [paraQuem]="edicao.paraQuem()" />
+  <cfg-pedir-acesso-perfil
+    [form]="edicao.form"
+    [perfis]="edicao.perfis()"
+    [perfisIndisponiveis]="edicao.perfisIndisponiveis()"
+    [carregandoPerfis]="edicao.carregandoPerfis()"
+    [perfilSelecionado]="edicao.perfilSelecionado()"
+    [unidades]="edicao.unidades()"
+    [exigeUnidade]="edicao.exigeUnidade()"
+    (tentarPerfisNovamente)="edicao.tentarPerfisNovamente()"
+  />
+  <cfg-pedir-acesso-motivo
+    [form]="edicao.form"
+    [exigeDocumento]="edicao.exigeDocumento()"
+    [hoje]="edicao.hoje()"
+    [mensagemDoPrazo]="edicao.mensagemDoPrazo"
+  />
+  <cfg-pedido-documento-formulario
+    [exigeDocumento]="edicao.exigeDocumento()"
+    [desabilitado]="edicao.enviando() || edicao.aguardandoConfirmacao()"
+    [erroDoDocumento]="edicao.erroDoDocumento()"
+    [(arquivo)]="edicao.arquivo"
+  />
+</cfg-pedir-acesso-formulario>
