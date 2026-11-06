@@ -121,13 +121,14 @@
   [heading]="confirmacao()?.tipo === 'cancelar' ? 'Cancelar inscrição' : 'Descartar rascunho'"
   [(visible)]="dialogoAberto"
   [dismissible]="!executando()"
+  [describedBy]="confirmacao() ? 'inscricao-dialogo-descricao' : null"
   [restoreFocus]="devolveFocoAoGatilho()"
   (closed)="aoFecharDialogo()"
 >
   @if (confirmacao(); as atual) {
   <p class="inscricao-dialogo__processo">{{ atual.item.nome }}</p>
   @if (atual.tipo === 'cancelar') {
-  <p>
+  <p id="inscricao-dialogo-descricao">
     Para voltar a participar, você precisará fazer uma nova inscrição, preenchendo novamente todas
     as informações necessárias ao processo seletivo.
   </p>
@@ -138,7 +139,7 @@
     (ngModelChange)="motivo.set($event)"
   />
   } @else {
-  <p>
+  <p id="inscricao-dialogo-descricao">
     O rascunho e tudo o que você preencheu nele serão apagados. Esta ação não pode ser desfeita.
   </p>
   } @if (erroDaAcao(); as erro) {

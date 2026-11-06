@@ -208,6 +208,7 @@
   [visible]="confirmacaoPendente() !== null"
   [heading]="confirmacaoPendente()?.titulo ?? ''"
   [dismissible]="!store.salvando()"
+  [describedBy]="confirmacaoPendente() ? 'confirmacao-gravacao-aviso' : null"
   [restoreFocus]="restaurarFocoAoFechar()"
   (closed)="cancelarGravacao()"
 >
@@ -216,7 +217,7 @@
     <span class="alert__icon" aria-hidden="true">!</span>
     <div class="alert__body">
       <p class="alert__title">Atenção!</p>
-      <p class="alert__msg">{{ confirmacao.aviso }}</p>
+      <p id="confirmacao-gravacao-aviso" class="alert__msg">{{ confirmacao.aviso }}</p>
     </div>
   </div>
   <dl class="confirmacao-lista">
@@ -228,7 +229,7 @@
     }
   </dl>
   }
-  <div uiDialogFooter>
+  <ng-container uiDialogFooter>
     <button
       class="btn btn--tertiary"
       type="button"
@@ -252,5 +253,5 @@
     >
       @if (store.salvando()) { Gravando… } @else { {{ confirmacaoPendente()?.rotuloDeConfirmar }} }
     </button>
-  </div>
+  </ng-container>
 </ui-dialog>
