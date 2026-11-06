@@ -201,6 +201,33 @@ describe('OfertasCursoPage — catálogos de vínculo', () => {
       expect(p.erros).toHaveBeenCalledTimes(2);
     });
 
+    it('a nova tentativa pedida no campo do formulário mostra a mesma fase na listagem e sai das duas vistas quando dá certo', async () => {
+      p = await montarPagina([oferta], { cursos: 'falha' });
+      p.novo().click();
+      await p.propagar();
+      await p.responderUnidades();
+      const avisoDaListagem = (): Element | null =>
+        p.fixture.nativeElement.querySelector('.alert--warning');
+      const avisoDoCampo = (): HTMLElement => p.elemento('.field__error [role="alert"]');
+      const botaoDoCampo = p.elemento<HTMLButtonElement>('.field__error button');
+      expect(avisoDoCampo().textContent).toBe('Não foi possível carregar os cursos.');
+      expect(avisoDaListagem()?.textContent).toContain('Recarregar cursos');
+
+      botaoDoCampo.click();
+      await p.propagar();
+
+      const situacoes = [...p.fixture.nativeElement.querySelectorAll('[role="status"].list-state__status')]
+        .map((no) => (no as HTMLElement).textContent);
+      expect(situacoes).toEqual(['Recarregando cursos…', 'Recarregando cursos…']);
+      expect(avisoDoCampo().textContent).toBe('Não foi possível carregar os cursos.');
+      p.doCatalogo(CURSOS).flush([engCiv]);
+      await p.propagar();
+      await p.propagar();
+
+      expect(avisoDaListagem()).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('.field__error [role="alert"]')).toBeNull();
+    });
+
     it('recusa 4xx de um catálogo sinaliza a coluna sem avisar por toast', async () => {
       p = await montarPagina([oferta], { cursos: [] });
       p.vinculos.cursos.recarregar();

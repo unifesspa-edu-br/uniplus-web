@@ -32,7 +32,7 @@
                   [id]="vinculo.id"
                   [formControlName]="vinculo.nome"
                   aria-required="true"
-                  [attr.aria-busy]="catalogo.pendente ? 'true' : null"
+                  [attr.aria-busy]="catalogo.leitura.pendente() ? 'true' : null"
                   [attr.aria-invalid]="erroDoVinculo ? 'true' : null"
                   [attr.aria-describedby]="descritoPor(vinculo.nome)"
                 >
@@ -47,17 +47,7 @@
                 @if (vinculo.apoio) {
                   <span class="field__hint">{{ vinculo.apoio }}</span>
                 }
-                @if (catalogo.falhou) {
-                  <span class="field__error">
-                    <span role="alert">{{ vinculo.falha }}</span>
-                    <ui-nova-tentativa-do-campo
-                      [pendente]="catalogo.pendente"
-                      [fase]="catalogo.fase"
-                      [assunto]="vinculo.nome"
-                      (tentar)="tentarVinculo.emit(vinculo.chave)"
-                    />
-                  </span>
-                }
+                <ui-falha-de-leitura-do-campo [leitura]="catalogo.leitura" />
                 @if (erroDoVinculo) {
                   <span class="field__error" [id]="idDoErro(vinculo.nome)">{{
                     erroDoVinculo

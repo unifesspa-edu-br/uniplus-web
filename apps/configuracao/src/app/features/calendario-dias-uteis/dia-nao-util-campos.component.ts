@@ -2,10 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { switchMap } from 'rxjs';
-import {
-  acompanharNovaTentativa,
-  NovaTentativaDoCampoComponent,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraDoCampoComponent } from '@uniplus/shared-ui/components';
 import { ABRANGENCIAS, UNIDADES_FEDERATIVAS } from '@uniplus/shared-data/configuracao';
 import type { AlteracaoDoLocal } from './busca-de-municipios';
 import {
@@ -22,7 +19,7 @@ import { errosDoDia, type GrupoDoDia, municipioSelecionadoDe } from './dia-nao-u
 @Component({
   selector: 'cfg-dia-nao-util-campos',
   standalone: true,
-  imports: [ReactiveFormsModule, NovaTentativaDoCampoComponent],
+  imports: [ReactiveFormsModule, FalhaDeLeituraDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dia-nao-util-campos.component.html',
   styleUrl: './dia-nao-util-campos.component.css',
@@ -84,21 +81,13 @@ export class DiaNaoUtilCamposComponent {
     this.saidasDeCampo.update((saidas) => saidas + 1);
   }
 
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'municípios',
+    falha: computed(() => (this.busca().erro ? 'Não foi possível buscar os municípios.' : null)),
     pendente: computed(() => this.busca().carregando),
-    falhou: computed(() => this.busca().erro),
+    recarregar: () => this.alteracao.emit({ tipo: 'novaTentativa' }),
     destino: () => document.getElementById(`busca-municipio-${this.sufixoDeId()}`),
   });
-
-  /** O aviso fica na tela durante a nova tentativa, com o botão que a pediu e o andamento. */
-  protected readonly falhaVisivel = computed(
-    () => this.busca().erro || this.novaTentativa.fase() === 'tentando',
-  );
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.alteracao.emit({ tipo: 'novaTentativa' }));
-  }
 
   protected aoDigitarABusca(evento: Event): void {
     if (evento.target instanceof HTMLInputElement) {

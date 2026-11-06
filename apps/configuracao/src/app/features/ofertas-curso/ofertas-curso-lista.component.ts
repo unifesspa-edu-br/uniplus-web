@@ -8,7 +8,7 @@ import {
   LookupAlertComponent,
   LookupLabelComponent,
   SpinnerComponent,
-  type UiLookupFalho,
+  type CatalogoAcompanhado,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
 import type { LinhaDaOferta } from './linhas-da-oferta';
@@ -44,7 +44,7 @@ export class OfertasCursoListaComponent {
   readonly gravando = input.required<boolean>();
   readonly removendo = input.required<boolean>();
   readonly mensagemDeErro = input.required<string | null>();
-  readonly falhas = input.required<readonly UiLookupFalho[]>();
+  readonly leituras = input.required<readonly CatalogoAcompanhado[]>();
   readonly limite = input.required<number>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();

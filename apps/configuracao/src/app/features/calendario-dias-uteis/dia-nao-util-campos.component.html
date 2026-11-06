@@ -87,26 +87,19 @@
           }
         </select>
       </div>
-      @if (falhaVisivel()) {
-        <span class="field__error">
-          <span role="alert">Não foi possível buscar os municípios.</span>
-          <ui-nova-tentativa-do-campo
-            [pendente]="busca().carregando"
-            [fase]="novaTentativa.fase()"
-            assunto="municípios"
-            (tentar)="tentarNovamente()"
-          />
-        </span>
-      } @else if (busca().carregando) {
-        <span class="field__hint" role="status">Consultando a API Geo…</span>
-      } @else if (buscaSemResultado()) {
-        <span class="field__hint">Nenhum município encontrado para essa busca.</span>
-      } @else if (municipioSelecionado(); as municipio) {
-        <span class="field__hint">Selecionado: {{ municipio.nome }} — {{ municipio.uf }}</span>
-      } @else {
-        <span class="field__hint">
-          A busca usa o nome; o código IBGE é preenchido automaticamente.
-        </span>
+      <ui-falha-de-leitura-do-campo [leitura]="leitura" />
+      @if (!leitura.visivel()) {
+        @if (busca().carregando) {
+          <span class="field__hint" role="status">Consultando a API Geo…</span>
+        } @else if (buscaSemResultado()) {
+          <span class="field__hint">Nenhum município encontrado para essa busca.</span>
+        } @else if (municipioSelecionado(); as municipio) {
+          <span class="field__hint">Selecionado: {{ municipio.nome }} — {{ municipio.uf }}</span>
+        } @else {
+          <span class="field__hint">
+            A busca usa o nome; o código IBGE é preenchido automaticamente.
+          </span>
+        }
       }
       @if (erros().codigoMunicipio) {
         <span class="field__error">{{ erros().codigoMunicipio }}</span>

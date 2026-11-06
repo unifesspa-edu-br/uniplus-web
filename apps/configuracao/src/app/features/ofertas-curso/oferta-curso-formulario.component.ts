@@ -9,7 +9,7 @@ import {
 import {
   AlertComponent,
   DrawerComponent,
-  NovaTentativaDoCampoComponent,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -23,7 +23,6 @@ interface SelecaoDeVinculo {
   readonly nome: 'cursoId' | 'localOfertaId' | 'unidadeOfertanteOrigemId';
   readonly rotulo: string;
   readonly id: string;
-  readonly falha: string;
   readonly apoio: string | null;
 }
 
@@ -34,7 +33,6 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
     nome: 'cursoId',
     rotulo: 'Curso',
     id: 'cfg-oferta-curso-id',
-    falha: 'Não foi possível carregar os cursos.',
     apoio: null,
   },
   {
@@ -42,7 +40,6 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
     nome: 'localOfertaId',
     rotulo: 'Local de oferta',
     id: 'cfg-oferta-local-id',
-    falha: 'Não foi possível carregar os locais de oferta.',
     apoio: null,
   },
   {
@@ -50,7 +47,6 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
     nome: 'unidadeOfertanteOrigemId',
     rotulo: 'Unidade ofertante',
     id: 'cfg-oferta-unidade-id',
-    falha: 'Não foi possível carregar as unidades.',
     apoio:
       'Congelada por snapshot-copy ao criar — alterações posteriores na unidade de origem não afetam a oferta (ADR-0061).',
   },
@@ -65,7 +61,7 @@ const SELECOES_DE_VINCULO: readonly SelecaoDeVinculo[] = [
     AlertComponent,
     DrawerComponent,
     SpinnerComponent,
-    NovaTentativaDoCampoComponent,
+    FalhaDeLeituraDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './oferta-curso-formulario.component.html',
@@ -84,7 +80,6 @@ export class OfertaCursoFormularioComponent {
 
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly tentarVinculo = output<ChaveDoVinculo>();
 
   protected readonly selecoes = SELECOES_DE_VINCULO;
   protected readonly programas = PROGRAMAS_DE_OFERTA;

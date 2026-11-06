@@ -29,7 +29,7 @@ describe('OfertasCursoListaComponent', () => {
       gravando: false,
       removendo: false,
       mensagemDeErro: null,
-      falhas: [],
+      leituras: [],
       limite: 20,
       temAnterior: true,
       temProximo: true,

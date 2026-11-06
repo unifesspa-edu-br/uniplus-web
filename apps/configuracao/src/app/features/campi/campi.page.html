@@ -7,17 +7,11 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os campi"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.removendo()"
-  [fase]="novaTentativa.fase()"
   idBotao="cfg-campi-tentar-novamente"
-  (tentar)="tentarNovamente()"
+  [leitura]="leitura"
 />
-}
 
 <cfg-campi-lista
   [campi]="store.campi()"

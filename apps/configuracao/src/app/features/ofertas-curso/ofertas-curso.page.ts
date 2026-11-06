@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { EdicaoDasOfertasCurso } from './edicao-das-ofertas-curso';
 import { OfertaCursoFormularioComponent } from './oferta-curso-formulario.component';
@@ -16,8 +13,8 @@ import { ID_DO_TITULO_DA_LISTA, VinculosDaOferta } from './vinculos-da-oferta';
   standalone: true,
   providers: [VinculosDaOferta, OfertasCursoStore, EdicaoDasOfertasCurso],
   imports: [
-    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
+    FalhaDeLeituraComponent,
     OfertaCursoFormularioComponent,
     OfertasCursoListaComponent,
   ],
@@ -29,15 +26,11 @@ export class OfertasCursoPage {
   protected readonly store = inject(OfertasCursoStore);
   protected readonly edicao = inject(EdicaoDasOfertasCurso);
   protected readonly vinculos = inject(VinculosDaOferta);
-  /** A lista carrega ou uma escrita corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

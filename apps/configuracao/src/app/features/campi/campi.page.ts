@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
 import { CampiListaComponent } from './campi-lista.component';
 import { CampiStore } from './campi.store';
@@ -16,7 +13,7 @@ import { EdicaoDosCampi } from './edicao-dos-campi';
   providers: [ENDERECO_NO_GEO, CampiStore, EdicaoDosCampi],
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     CampiListaComponent,
     CampusFormularioComponent,
     ConfirmacaoDeRemocaoComponent,
@@ -29,17 +26,11 @@ export class CampiPage {
   protected readonly store = inject(CampiStore);
   protected readonly edicao = inject(EdicaoDosCampi);
 
-  /** A lista carrega ou uma remoção corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  protected readonly indisponivel = computed(
-    () => this.store.carregando() || this.edicao.removendo(),
-  );
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.indisponivel,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.removendo,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-campi-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }
