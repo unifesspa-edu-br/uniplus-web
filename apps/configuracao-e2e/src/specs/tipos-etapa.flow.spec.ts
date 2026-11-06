@@ -52,11 +52,7 @@ function novoCapturado(): Capturado {
   return { posts: [], puts: [], deletedIds: [] };
 }
 
-async function mockApi(
-  page: Page,
-  capturado: Capturado,
-  lista: readonly unknown[],
-): Promise<void> {
+async function mockApi(page: Page, capturado: Capturado, lista: readonly unknown[]): Promise<void> {
   await page.route(/\/api\/configuracao\/admin\/tipos-etapa\/[^/?]+$/, async (route) => {
     if (route.request().method() === 'DELETE') {
       const partes = route.request().url().split('/');
@@ -158,19 +154,19 @@ test.describe('Tipo de etapa — CRUD', () => {
     expect(capturado.puts[0]).toMatchObject({ admitePontuacao: true, admiteEliminacao: true });
   });
 
-  test('inativa um tipo após confirmação', async ({ page }) => {
+  test('desativa um tipo após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [analiseDocumental]);
     await abrirPagina(page);
 
     await page
       .getByRole('button', {
-        name: `Inativar tipo de etapa ${analiseDocumental.codigo}`,
+        name: `Desativar tipo de etapa ${analiseDocumental.codigo}`,
         exact: true,
       })
       .click();
-    const dialog = page.locator('dialog.uni-dialog');
-    await dialog.getByRole('button', { name: 'Inativar' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Desativar tipo de etapa' });
+    await dialog.getByRole('button', { name: 'Desativar', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds).toEqual([ANALISE_ID]);
   });

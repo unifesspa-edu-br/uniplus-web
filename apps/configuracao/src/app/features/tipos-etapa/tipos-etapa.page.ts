@@ -1,18 +1,20 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AlertComponent, ConfirmDialogComponent } from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { AlertComponent } from '@uniplus/shared-ui/components';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
+import { focarAposNovaTentativa } from '../../shared/foco';
 import { EdicaoDosTiposEtapa } from './edicao-dos-tipos-etapa';
-import { TiposEtapaStore } from './tipos-etapa.store';
-import { TiposEtapaListaComponent } from './tipos-etapa-lista.component';
 import { TipoEtapaFormularioComponent } from './tipo-etapa-formulario.component';
+import { TiposEtapaListaComponent } from './tipos-etapa-lista.component';
+import { TiposEtapaStore } from './tipos-etapa.store';
 
 @Component({
   selector: 'cfg-tipos-etapa-page',
   standalone: true,
   imports: [
     AlertComponent,
-    ConfirmDialogComponent,
     TiposEtapaListaComponent,
     TipoEtapaFormularioComponent,
+    ConfirmacaoDeRemocaoComponent,
   ],
   providers: [TiposEtapaStore, EdicaoDosTiposEtapa],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,9 +22,16 @@ import { TipoEtapaFormularioComponent } from './tipo-etapa-formulario.component'
   host: { class: 'cfg-page' },
 })
 export class TiposEtapaPage {
-  protected readonly edicao = inject(EdicaoDosTiposEtapa);
   protected readonly store = inject(TiposEtapaStore);
+  protected readonly edicao = inject(EdicaoDosTiposEtapa);
+  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.pendente,
+    computed(() => this.store.mensagemDeErro() !== null),
+    () => document.getElementById('cfg-tipos-etapa-list-title'),
+  );
+
   protected tentarNovamente(): void {
-    if (!this.edicao.saving() && !this.edicao.removendo()) this.store.tentarNovamente();
+    this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 }

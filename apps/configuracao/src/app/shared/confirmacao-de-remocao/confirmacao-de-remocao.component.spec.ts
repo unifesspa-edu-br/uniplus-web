@@ -71,6 +71,16 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
     expect(raiz().textContent).toContain('Remover campus');
   });
 
+  it('o botão de confirmação leva o rótulo de quem o usa, e "Remover" por padrão', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+    expect(confirmar().textContent?.trim()).toBe('Remover');
+
+    fixture.componentRef.setInput('rotulo', 'Desativar');
+    fixture.detectChanges();
+    expect(confirmar().textContent?.trim()).toBe('Desativar');
+  });
+
   it('Cancelar fecha o diálogo sem confirmar', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.detectChanges();

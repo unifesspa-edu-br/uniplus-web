@@ -1,334 +1,297 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EdicaoDosTiposEtapa } from './edicao-dos-tipos-etapa';
-import { TiposEtapaPage } from './tipos-etapa.page';
-import { TiposEtapaStore } from './tipos-etapa.store';
-
-const BASE = 'http://localhost:5000';
-const LISTA = `${BASE}/api/configuracao/tipos-etapa`;
-const ESCRITA = `${BASE}/api/configuracao/admin/tipos-etapa`;
-const tipo: TipoEtapaDto = {
-  id: '01960000-0000-7000-0000-0000000000e1',
-  codigo: 'PROVA',
-  nome: 'Prova',
-  descricao: null,
-  ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  criadoEm: '2026-08-11T00:00:00Z',
-};
+import { By } from '@angular/platform-browser';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TipoEtapaFormularioComponent } from './tipo-etapa-formulario.component';
+import {
+  ESCRITA,
+  LISTA,
+  Pagina,
+  analiseDocumental,
+  criado,
+  montarPagina,
+  problema,
+  prova,
+  recusaDeCampo,
+  sucesso,
+} from './tipos-etapa.testing';
 
 describe('TiposEtapaPage — escritas pela interface', () => {
-  let fixture: ComponentFixture<TiposEtapaPage>;
-  let edicao: EdicaoDosTiposEtapa;
-  let store: TiposEtapaStore;
-  let http: HttpTestingController;
-  let app: ApplicationRef;
+  let p: Pagina;
 
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const el = fixture.nativeElement.querySelector(seletor) as T | null;
-    expect(el, seletor).not.toBeNull();
-    return el as T;
-  };
-  const lista = async (): Promise<void> => {
-    http.expectOne((r) => r.url === LISTA).flush([tipo]);
-    await propagar();
-  };
-  const preencher = async (): Promise<void> => {
-    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-    await propagar();
-    for (const [nome, valor] of [
-      ['codigo', 'NOVA_PROVA'],
-      ['nome', 'Nova prova'],
-    ]) {
-      const campo = elemento<HTMLInputElement>(`input[formcontrolname="${nome}"]`);
-      campo.value = valor;
-      campo.dispatchEvent(new Event('input'));
-    }
-  };
-  const salvar = (): HTMLButtonElement =>
-    elemento<HTMLButtonElement>('button[form="cfg-tipo-etapa-form"]');
-  const inativar = async (): Promise<void> => {
-    elemento<HTMLButtonElement>('button[aria-label="Inativar tipo de etapa PROVA"]').click();
-    await propagar();
-    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-    await propagar();
-  };
-  const recusar = (campo = 'Nome', mensagem = 'Nome recusado.'): void => {
-    http.expectOne(ESCRITA).flush(
-      {
-        type: 'about:blank',
-        title: 'Dados inválidos',
-        status: 422,
-        code: 'uniplus.validacao',
-        errors: [
-          {
-            field: campo,
-            code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
-            message: mensagem,
-          },
-        ],
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-  };
   beforeEach(async () => {
-    TestBed.configureTestingModule({
-      imports: [TiposEtapaPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(TiposEtapaPage);
-    edicao = fixture.debugElement.injector.get(EdicaoDosTiposEtapa);
-    store = fixture.debugElement.injector.get(TiposEtapaStore);
-    http = TestBed.inject(HttpTestingController);
-    app = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-    await lista();
+    p = await montarPagina([prova, analiseDocumental]);
   });
-  afterEach(() => http.verify());
+  afterEach(() => p.http.verify());
 
-  it('mantém formulário somente leitura, foco e drawer aberto durante envio', async () => {
-    const acionador = elemento<HTMLButtonElement>('.panel-head .btn--primary');
-    acionador.focus();
-    await preencher();
-    const botao = salvar();
-    botao.focus();
-    botao.click();
-    const post = http.expectOne(ESCRITA);
-    await propagar();
-    const codigo = elemento<HTMLInputElement>('input[formcontrolname="codigo"]');
-    expect(codigo.matches(':disabled')).toBe(true);
-    expect(codigo.value).toBe('NOVA_PROVA');
-    expect(botao.getAttribute('aria-disabled')).toBe('true');
-    expect(botao.getAttribute('aria-busy')).toBe('true');
-    expect(botao.textContent).toContain('Salvando...');
-    expect(document.activeElement).toBe(botao);
-    const dialog = elemento<HTMLDialogElement>('dialog[aria-label="Formulário de tipo de etapa"]');
-    expect(dialog.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
-      true,
-    );
-    const botoes = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>(
-        '.form-drawer__footer button',
-      ),
-    ];
-    expect(botoes.find((b) => b.textContent?.trim() === 'Cancelar')?.disabled).toBe(true);
-    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
-    await propagar();
-    expect(edicao.formOpen()).toBe(true);
-    post.flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    await propagar();
-    expect(edicao.formOpen()).toBe(false);
-    expect(document.activeElement).toBe(acionador);
-    await lista();
-  });
-  it('recusa clique e submissão repetidos enquanto salva', async () => {
-    const espiao = vi.spyOn(edicao, 'salvar');
-    await preencher();
-    salvar().click();
-    const post = http.expectOne(ESCRITA);
-    await propagar();
-    salvar().click();
-    elemento<HTMLFormElement>('#cfg-tipo-etapa-form').dispatchEvent(
-      new Event('submit', { cancelable: true }),
-    );
-    await propagar();
-    expect(espiao).toHaveBeenCalledTimes(1);
-    post.flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    await lista();
-  });
-  it('mostra a recusa no campo e move o foco para ele', async () => {
-    await preencher();
-    salvar().focus();
-    salvar().click();
-    await propagar();
-    recusar();
-    await propagar();
-    await propagar();
-    const nome = elemento<HTMLInputElement>('input[formcontrolname="nome"]');
-    expect(nome.getAttribute('aria-invalid')).toBe('true');
-    expect(nome.closest('label')?.querySelector('.field__error')?.textContent?.trim()).toBe(
-      'Nome recusado.',
-    );
-    expect(document.activeElement).toBe(nome);
-  });
-  for (const [campo, seletor, idErro] of [
-    ['Descricao', 'textarea', 'cfg-etapa-descricao-erro'],
-    ['AdmitePontuacao', 'input', 'cfg-etapa-pontuacao-erro'],
-    ['AdmiteEliminacao', 'input', 'cfg-etapa-eliminacao-erro'],
-  ]) {
-    it(`associa e foca a recusa de ${campo}`, async () => {
-      await preencher();
-      salvar().focus();
-      salvar().click();
-      await propagar();
-      recusar(campo, 'Valor recusado.');
-      await propagar();
-      await propagar();
-      const nome = campo.charAt(0).toLowerCase() + campo.slice(1);
-      const controle = elemento<HTMLElement>(`${seletor}[formcontrolname="${nome}"]`);
-      expect(controle.getAttribute('aria-invalid')).toBe('true');
-      expect(controle.getAttribute('aria-describedby')?.split(' ')).toContain(idErro);
-      expect(elemento(`#${idErro}`).textContent?.trim()).toBe('Valor recusado.');
-      expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
-      if (campo !== 'Descricao') {
-        expect(controle.getAttribute('aria-describedby')?.split(' ')).toContain(
-          'cfg-etapa-admite-ajuda',
-        );
-      }
-      expect(document.activeElement).toBe(controle);
-    });
-  }
-  it('mantém a região externa e anuncia também no diálogo durante a inativação', async () => {
-    const externa = elemento<HTMLElement>(':scope > .sr-only[role="status"]');
-    elemento<HTMLButtonElement>('button[aria-label="Inativar tipo de etapa PROVA"]').click();
-    await propagar();
-    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
-    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-    await propagar();
-    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
-    expect(externa.textContent?.trim()).toBe('Inativando o tipo de etapa PROVA.');
-    expect(elemento('ui-confirm-dialog [role="status"]').textContent?.trim()).toBe(
-      'Inativando o tipo de etapa PROVA.',
-    );
-    http.expectOne(`${ESCRITA}/${tipo.id}`).flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    expect(elemento(':scope > .sr-only[role="status"]')).toBe(externa);
-    expect(externa.textContent?.trim()).toBe('Tipo de etapa PROVA inativado.');
-    await lista();
-  });
-  for (const operacao of ['salvar', 'inativar'] as const) {
-    it(`libera ações e permite nova leitura se a recarga após ${operacao} falhar`, async () => {
-      if (operacao === 'salvar') {
-        await preencher();
-        salvar().click();
-        http.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-      } else {
-        await inativar();
-        http
-          .expectOne(`${ESCRITA}/${tipo.id}`)
-          .flush(null, { status: 204, statusText: 'No Content' });
-      }
-      await propagar();
-      http
-        .expectOne((r) => r.url === LISTA)
-        .flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Erro' });
-      await propagar();
-      expect(edicao.gravando()).toBe(false);
-      const tentar = elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
-      expect(tentar.getAttribute('aria-disabled')).toBe('false');
-      tentar.click();
-      await propagar();
-      await lista();
-      expect(store.mensagemDeErro()).toBeNull();
-    });
-  }
-  for (const sucesso of [true, false]) {
-    it(`preserva controle desabilitado após ${sucesso ? 'sucesso' : 'recusa'}`, async () => {
-      await preencher();
-      edicao.form.controls.descricao.disable();
-      salvar().click();
-      expect(edicao.form.controls.descricao.disabled).toBe(true);
-      expect(edicao.form.controls.nome.enabled).toBe(true);
-      if (sucesso) http.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-      else recusar();
-      await propagar();
-      expect(edicao.form.controls.descricao.disabled).toBe(true);
-      expect(edicao.form.controls.nome.enabled).toBe(true);
-      if (sucesso) await lista();
-    });
-  }
-  it('anuncia inativação e recusa acionadores durante ela e a recarga', async () => {
-    await inativar();
-    const remocao = http.expectOne(`${ESCRITA}/${tipo.id}`);
-    expect(edicao.saving()).toBe(false);
-    expect(edicao.removendo()).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Inativando...');
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
-      'Inativando o tipo de etapa PROVA.',
-    );
-    for (const seletor of [
-      '.panel-head .btn--primary',
-      'button[aria-label="Editar tipo de etapa PROVA"]',
-      'button[aria-label="Inativar tipo de etapa PROVA"]',
-    ]) {
-      const botao = elemento<HTMLButtonElement>(seletor);
+  const drawer = (): HTMLDialogElement =>
+    p.elemento('dialog[aria-label="Formulário de tipo de etapa"]');
+  const submeter = (): void => {
+    p.formulario().dispatchEvent(new Event('submit', { cancelable: true }));
+  };
+
+  describe('gravação pendente', () => {
+    it('deixa o formulário somente leitura, com foco no botão, sem fechar por Cancelar, X nem Esc', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      const botao = p.salvar();
+
+      expect(p.campo('codigo').matches(':disabled')).toBe(true);
+      expect(p.campo('codigo').value).toBe('NOVA_PROVA');
       expect(botao.getAttribute('aria-disabled')).toBe('true');
-      botao.click();
-    }
-    expect(edicao.formOpen()).toBe(false);
-    expect(edicao.confirmOpen()).toBe(false);
-    remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    expect(edicao.gravando()).toBe(true);
-    expect(elemento('.sr-only[role="status"]').textContent?.trim()).toBe(
-      'Tipo de etapa PROVA inativado.',
+      expect(botao.getAttribute('aria-busy')).toBe('true');
+      expect(botao.textContent).toContain('Salvando...');
+      expect(document.activeElement).toBe(botao);
+      expect(drawer().querySelector('[role="status"]')?.textContent).toContain('Salvando');
+      expect(
+        drawer().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled,
+      ).toBe(true);
+      const cancelar = [
+        ...p.fixture.nativeElement.querySelectorAll('.form-drawer__footer button'),
+      ].find((b) => (b as HTMLElement).textContent?.trim() === 'Cancelar') as HTMLButtonElement;
+      expect(cancelar.matches(':disabled')).toBe(true);
+      drawer().dispatchEvent(new Event('cancel', { cancelable: true }));
+      await p.propagar();
+      expect(p.edicao.aberto()).toBe(true);
+
+      post.flush(...criado());
+      await p.recarregarCom([prova]);
+      expect(p.edicao.aberto()).toBe(false);
+    });
+
+    it('clique e submissão repetidos não geram segundo envio', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
+      p.salvar().dispatchEvent(clique);
+      submeter();
+      await p.propagar();
+
+      expect(clique.defaultPrevented).toBe(true);
+      p.http.expectNone(ESCRITA);
+      post.flush(...criado());
+      await p.recarregarCom([prova]);
+    });
+
+    it('a submissão repetida nem chega a pedir o salvamento ao formulário', async () => {
+      await p.abrirCadastro();
+      const pedidos: string[] = [];
+      p.fixture.debugElement
+        .query(By.directive(TipoEtapaFormularioComponent))
+        .componentInstance.salvar.subscribe(() => pedidos.push('salvar'));
+      const post = await p.enviar();
+      expect(pedidos).toEqual(['salvar']);
+
+      submeter();
+      await p.propagar();
+
+      expect(pedidos).toEqual(['salvar']);
+      post.flush(...criado());
+      await p.recarregarCom([prova]);
+    });
+
+    it('o salvamento não se apresenta como desativação, nem durante a espera pela recarga', async () => {
+      await p.abrirCadastro();
+      const post = await p.enviar();
+      expect(p.edicao.salvando()).toBe(true);
+      expect(p.edicao.removendo()).toBe(false);
+      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Desativando');
+
+      post.flush(...criado());
+      await p.propagar();
+      expect(p.edicao.gravando()).toBe(true);
+      expect(p.edicao.removendo()).toBe(false);
+      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Desativando');
+      await p.recarregarCom([prova]);
+    });
+
+    it('Enter num campo leva o foco ao botão e, na falha 500, o envio segue disponível', async () => {
+      await p.abrirCadastro();
+      p.campo('nome').focus();
+      submeter();
+      await p.propagar();
+      const post = p.http.expectOne(ESCRITA);
+
+      expect(p.campo('nome').matches(':disabled')).toBe(true);
+      expect(document.activeElement).toBe(p.salvar());
+      post.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.campo('nome').matches(':disabled')).toBe(false);
+      expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Falha');
+      expect(document.activeElement).toBe(p.salvar());
+      expect(p.salvar().getAttribute('aria-disabled')).toBeNull();
+      submeter();
+      p.http.expectOne(ESCRITA).flush(...criado());
+      await p.recarregarCom([prova]);
+    });
+
+    it('não abre outro editor nem fecha o drawer enquanto grava', async () => {
+      await p.abrirEdicao(prova);
+      p.preencher('nome', 'Prova revisada');
+      const put = await p.enviar(`${ESCRITA}/${prova.id}`);
+
+      p.edicao.abrirEdicao(analiseDocumental);
+      p.edicao.fechar();
+      await p.propagar();
+      expect(p.campo('codigo').value).toBe('PROVA');
+      expect(p.edicao.aberto()).toBe(true);
+
+      put.flush(...sucesso());
+      await p.recarregarCom([prova, analiseDocumental]);
+      expect(p.edicao.aberto()).toBe(false);
+    });
+  });
+
+  describe('campo desabilitado por regra de negócio', () => {
+    it.each(['sucesso', 'recusa'] as const)('continua desabilitado após %s', async (desfecho) => {
+      await p.abrirCadastro();
+      p.edicao.form.controls.descricao.disable();
+      const post = await p.enviar();
+      expect(p.edicao.form.controls.descricao.disabled).toBe(true);
+
+      if (desfecho === 'sucesso') post.flush(...criado());
+      else post.flush(...recusaDeCampo('Nome', 'Nome recusado.'));
+      await p.propagar();
+
+      expect(p.edicao.form.controls.descricao.disabled).toBe(true);
+      expect(p.edicao.form.controls.nome.enabled).toBe(true);
+      expect(p.campo('descricao').matches(':disabled')).toBe(true);
+      if (desfecho === 'sucesso') await p.recarregarCom([prova]);
+    });
+  });
+
+  describe('desativação pendente', () => {
+    it('anuncia o andamento, rotula a linha e deixa os acionadores indisponíveis', async () => {
+      const del = await p.confirmarDesativacao(prova);
+
+      expect(p.edicao.removendo()).toBe(true);
+      expect(p.edicao.salvando()).toBe(false);
+      expect(p.fixture.nativeElement.textContent).toContain('Desativando...');
+      expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
+        'Desativando o tipo de etapa PROVA.',
+      );
+      for (const botao of [p.novo(), p.editar(prova), p.desativar(prova)]) {
+        expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(
+          true,
+        );
+        botao.click();
+      }
+      await p.propagar();
+      expect(p.edicao.aberto()).toBe(false);
+      expect(p.confirmar().getAttribute('aria-disabled')).toBe('true');
+      expect(p.confirmar().getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(p.confirmar());
+
+      del.flush(...sucesso());
+      await p.propagar();
+      expect(p.edicao.gravando()).toBe(true);
+      p.novo().click();
+      expect(p.edicao.aberto()).toBe(false);
+      await p.recarregarCom([analiseDocumental]);
+      expect(p.edicao.gravando()).toBe(false);
+    });
+
+    it('não fecha por Cancelar, X nem Esc, e o segundo clique não envia', async () => {
+      const del = await p.confirmarDesativacao(prova);
+      const dialogo = p.elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
+
+      expect(p.cancelarDaConfirmacao().matches(':disabled')).toBe(true);
+      expect(
+        dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled,
+      ).toBe(true);
+      dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
+      p.confirmar().click();
+      await p.propagar();
+      expect(p.edicao.confirmando()).toBe(true);
+      p.http.expectNone(`${ESCRITA}/${prova.id}`);
+
+      del.flush(...sucesso());
+      await p.recarregarCom([analiseDocumental]);
+    });
+
+    it('"Tentar novamente" fica indisponível com a leitura falha enquanto desativa', async () => {
+      const del = await p.confirmarDesativacao(prova);
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+      await p.propagar();
+
+      const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      tentar.click();
+      await p.propagar();
+      p.http.expectNone((r) => r.url === LISTA);
+
+      del.flush(...sucesso());
+      await p.recarregarCom([analiseDocumental]);
+    });
+  });
+
+  describe('chamadas concorrentes', () => {
+    it('salvar durante a gravação, desativar durante o salvamento e salvar durante a desativação não geram requisição', async () => {
+      await p.abrirCadastro();
+      p.edicao.salvar();
+      p.edicao.salvar();
+      p.edicao.pedirRemocao(prova);
+      p.edicao.removerConfirmado();
+      p.http.expectNone(`${ESCRITA}/${prova.id}`);
+      p.http.expectOne(ESCRITA).flush(...criado());
+      await p.propagar();
+
+      p.edicao.abrirCadastro();
+      p.edicao.salvar();
+      p.http.expectNone(ESCRITA);
+      await p.recarregarCom([prova]);
+
+      p.edicao.pedirRemocao(prova);
+      p.edicao.removerConfirmado();
+      p.edicao.salvar();
+      p.http.expectNone(ESCRITA);
+      p.http.expectOne(`${ESCRITA}/${prova.id}`).flush(...sucesso());
+      await p.recarregarCom([analiseDocumental]);
+    });
+
+    it('confirmar sem ter pedido a desativação não envia nada', () => {
+      p.edicao.removerConfirmado();
+      p.http.expectNone((r) => r.method === 'DELETE');
+    });
+  });
+
+  describe('recarga depois da escrita', () => {
+    it('mantém as ações indisponíveis até a lista refletir o que foi gravado', async () => {
+      await p.abrirEdicao(prova);
+      (await p.enviar(`${ESCRITA}/${prova.id}`)).flush(...sucesso());
+      await p.propagar();
+
+      expect(p.edicao.salvando()).toBe(false);
+      expect(p.edicao.gravando()).toBe(true);
+      expect(p.editar(prova).matches(':disabled')).toBe(true);
+      await p.recarregarCom([prova]);
+      expect(p.edicao.gravando()).toBe(false);
+      expect(p.editar(prova).matches(':disabled')).toBe(false);
+    });
+
+    it.each(['salvar', 'desativar'] as const)(
+      'libera as ações e permite nova leitura se a recarga após %s falhar',
+      async (operacao) => {
+        if (operacao === 'salvar') {
+          await p.abrirCadastro();
+          (await p.enviar()).flush(...criado());
+        } else {
+          (await p.confirmarDesativacao(prova)).flush(...sucesso());
+        }
+        await p.propagar();
+        p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+        await p.propagar();
+
+        expect(p.edicao.gravando()).toBe(false);
+        const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
+        expect(tentar.getAttribute('aria-disabled')).toBeNull();
+        tentar.click();
+        await p.propagar();
+        await p.recarregarCom([prova]);
+        expect(p.store.mensagemDeErro()).toBeNull();
+      },
     );
-    elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-    expect(edicao.formOpen()).toBe(false);
-    await lista();
-    expect(edicao.gravando()).toBe(false);
-  });
-  it('recusa tentar novamente durante inativação com falha da lista', async () => {
-    await inativar();
-    const remocao = http.expectOne(`${ESCRITA}/${tipo.id}`);
-    store.recarregar();
-    await propagar();
-    http
-      .expectOne((r) => r.url === LISTA)
-      .flush({ title: 'Falha', status: 503 }, { status: 503, statusText: 'Erro' });
-    await propagar();
-    const botao = elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
-    expect(botao.getAttribute('aria-disabled')).toBe('true');
-    botao.click();
-    await propagar();
-    http.expectNone((r) => r.url === LISTA);
-    remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await lista();
-  });
-  it('bloqueia chamadas concorrentes entre salvar e inativar', async () => {
-    await preencher();
-    edicao.salvar();
-    edicao.salvar();
-    edicao.pedirRemocao(tipo);
-    edicao.removerConfirmado();
-    http.expectNone(`${ESCRITA}/${tipo.id}`);
-    http.expectOne(ESCRITA).flush('id', { status: 201, statusText: 'Created' });
-    await propagar();
-    edicao.abrirCadastro();
-    edicao.salvar();
-    http.expectNone(ESCRITA);
-    await lista();
-    edicao.pedirRemocao(tipo);
-    edicao.removerConfirmado();
-    edicao.salvar();
-    http.expectNone(ESCRITA);
-    http.expectOne(`${ESCRITA}/${tipo.id}`).flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    await lista();
   });
 });

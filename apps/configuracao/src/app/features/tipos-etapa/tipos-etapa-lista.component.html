@@ -1,15 +1,18 @@
 <section class="panel" aria-labelledby="cfg-tipos-etapa-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-tipos-etapa-list-title">Tipos de etapa</h2>
-      @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      <h2 id="cfg-tipos-etapa-list-title" tabindex="-1">Tipos de etapa</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Desativando' : 'Carregando' }}</span
+        >
       }
     </div>
     <button
       type="button"
+      id="cfg-tipos-etapa-novo"
       class="btn btn--primary"
-      [attr.aria-disabled]="bloqueado()"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
       (click)="acionarCadastro()"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
@@ -17,22 +20,13 @@
     </button>
   </div>
 
-  <div class="filter-bar" role="search" aria-label="Filtrar tipos de etapa">
-    <div class="filter-bar__row">
-      <div class="input-group">
-        <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
-        <input
-          type="search"
-          class="input"
-          placeholder="Buscar por código ou nome…"
-          aria-label="Buscar tipos de etapa"
-          [attr.aria-disabled]="bloqueado()"
-          [value]="termoBusca()"
-          (input)="aoBuscar($event)"
-        />
-      </div>
-    </div>
-  </div>
+  <ui-filter-bar
+    ariaLabel="Filtrar tipos de etapa"
+    searchPlaceholder="Buscar por código ou nome…"
+    searchAriaLabel="Buscar tipos de etapa"
+    [(searchValue)]="termoBusca"
+    [attr.inert]="gravando() ? '' : null"
+  />
 
   @if (tipos().length > 0) {
     <div class="table-responsive">
@@ -48,11 +42,11 @@
         </thead>
         <tbody>
           @for (tipo of tipos(); track tipo.id) {
-            <tr>
+            <tr [attr.data-tipo-etapa-id]="tipo.id">
               <td data-label="Código">
                 <code>{{ tipo.codigo }}</code>
-                @if (tipo.id === idEmAndamento()) {
-                  <span aria-hidden="true">{{ rotuloAndamento() }}</span>
+                @if (tipo.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
                 }
               </td>
               <td data-label="Nome">{{ tipo.nome }}</td>
@@ -61,33 +55,25 @@
                 @if (tipo.ativo) {
                   <span class="tag tag--success">Ativo</span>
                 } @else {
-                  <span class="tag">Inativo</span>
+                  <span class="tag">Desativado</span>
                 }
               </td>
               <td class="table-responsive__actions" data-label="Ações">
-                <button
-                  type="button"
-                  class="btn btn--tertiary btn--icon-only btn--rect"
-                  [attr.aria-label]="'Editar tipo de etapa ' + tipo.codigo"
-                  title="Editar tipo de etapa"
-                  data-tooltip="Editar tipo de etapa"
-                  [attr.aria-disabled]="bloqueado()"
-                  (click)="acionarEditar(tipo)"
-                >
-                  <i class="pi pi-pencil" aria-hidden="true"></i>
-                </button>
+                <ui-icon-button
+                  icon="pi-pencil"
+                  [accessibleName]="'Editar tipo de etapa ' + tipo.codigo"
+                  tooltip="Editar tipo de etapa"
+                  [isDisabled]="indisponivel()"
+                  (triggered)="acionarEditar(tipo)"
+                />
                 @if (tipo.ativo) {
-                  <button
-                    type="button"
-                    class="btn btn--tertiary btn--icon-only btn--rect"
-                    [attr.aria-label]="'Inativar tipo de etapa ' + tipo.codigo"
-                    title="Inativar tipo de etapa"
-                    data-tooltip="Inativar tipo de etapa"
-                    [attr.aria-disabled]="bloqueado()"
-                    (click)="acionarRemover(tipo)"
-                  >
-                    <i class="pi pi-power-off" aria-hidden="true"></i>
-                  </button>
+                  <ui-icon-button
+                    icon="pi-power-off"
+                    [accessibleName]="'Desativar tipo de etapa ' + tipo.codigo"
+                    tooltip="Desativar tipo de etapa"
+                    [isDisabled]="indisponivel()"
+                    (triggered)="acionarDesativar(tipo)"
+                  />
                 }
               </td>
             </tr>
@@ -104,8 +90,8 @@
         <button
           type="button"
           class="btn btn--secondary"
-          [attr.aria-disabled]="bloqueado()"
-          (click)="limpar()"
+          [disabled]="indisponivel()"
+          (click)="termoBusca.set('')"
         >
           Limpar filtros
         </button>
@@ -118,7 +104,7 @@
         <button
           type="button"
           class="btn btn--primary"
-          [attr.aria-disabled]="bloqueado()"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
           (click)="acionarCadastro()"
         >
           Novo tipo de etapa
@@ -132,9 +118,9 @@
       navigationLabel="Paginação de tipos de etapa"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="bloqueado()"
-      (previous)="acionarAnterior()"
-      (next)="acionarProximo()"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
     />
   }
 </section>

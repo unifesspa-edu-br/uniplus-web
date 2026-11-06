@@ -1,415 +1,207 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TiposEtapaPage } from './tipos-etapa.page';
-import { TiposEtapaStore } from './tipos-etapa.store';
+import {
+  ESCRITA,
+  LISTA,
+  Pagina,
+  analiseDocumental,
+  criado,
+  montarPagina,
+  prova,
+  sucesso,
+} from './tipos-etapa.testing';
 
-const BASE = 'http://localhost:5000';
-
-const analiseDocumental: TipoEtapaDto = {
-  id: '01960000-0000-7000-0000-0000000000e1',
-  codigo: 'ANALISE_DOCUMENTAL',
-  nome: 'Análise Documental',
-  descricao: null,
-  ativo: true,
-  admitePontuacao: false,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  criadoEm: '2026-08-11T00:00:00Z',
-};
-
-const provaObjetiva: TipoEtapaDto = {
-  id: '01960000-0000-7000-0000-0000000000e2',
-  codigo: 'PROVA_OBJETIVA',
-  nome: 'Prova Objetiva',
-  descricao: null,
-  ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  criadoEm: '2026-08-11T00:00:00Z',
-};
+const inativa = { ...prova, ativo: false };
 
 describe('TiposEtapaPage', () => {
-  let fixture: ComponentFixture<TiposEtapaPage>;
-  let component: TiposEtapaPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let p: Pagina;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [TiposEtapaPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(TiposEtapaPage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
+  beforeEach(async () => {
+    p = await montarPagina([analiseDocumental, prova]);
   });
+  afterEach(() => p.http.verify());
 
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-    fixture.detectChanges();
-  };
-
-  async function flushLista(itens: readonly TipoEtapaDto[]): Promise<void> {
-    const req = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`);
-    expect(req.request.params.get('limit')).toBe('50');
-    req.flush(itens);
-    await propagate();
-  }
-
-  /**
-   * As ações são botões de ícone: não há rótulo visível para procurar, e a posição
-   * dentro da célula muda quando a linha ganha outra ação. O nome acessível é o que
-   * identifica cada uma, e é por ele que o operador de leitor de tela a encontra.
-   */
-  function botaoDeAcao(linha: Element, acao: string): HTMLButtonElement {
-    return linha.querySelector(
-      `td.table-responsive__actions button[aria-label^="${acao} tipo de etapa "]`,
-    ) as HTMLButtonElement;
-  }
-
-  function linhaDe(codigo: string): HTMLElement {
-    const linhas = [...fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
-    const linha = linhas.find((l) => l.textContent?.includes(codigo));
+  const linhaDe = (codigo: string): HTMLElement => {
+    const linhas = [...p.fixture.nativeElement.querySelectorAll('tbody tr')] as HTMLElement[];
+    const linha = linhas.find((item) => item.textContent?.includes(codigo));
     expect(linha, `linha de ${codigo}`).toBeTruthy();
     return linha as HTMLElement;
-  }
+  };
 
-  it('renderiza a lista com o que cada tipo admite, em prosa', async () => {
-    await flushLista([analiseDocumental]);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('ANALISE_DOCUMENTAL');
-    expect(fixture.nativeElement.textContent).toContain('Só eliminar');
+  it('lista os tipos descrevendo em prosa o que cada um admite', () => {
+    expect(linhaDe('ANALISE_DOCUMENTAL').textContent).toContain('Só eliminar');
+    expect(linhaDe('PROVA').textContent).toContain('Compor a nota final e eliminar');
   });
 
-  it('cria tipo declarando o que ele admite', async () => {
-    await flushLista([]);
-    component['edicao'].abrirCadastro();
-    await propagate();
+  it('pede a primeira página com o limite da tela', async () => {
+    p.store.recarregar();
+    await p.propagar();
+    const req = p.http.expectOne((r) => r.url === LISTA);
+    expect(req.request.params.get('limit')).toBe('50');
+    req.flush([prova]);
+    await p.propagar();
+  });
 
-    component['edicao'].form.setValue({
-      codigo: 'ANALISE_SOCIOECONOMICA',
-      nome: 'Análise socioeconômica',
-      admitePontuacao: false,
-      admiteEliminacao: true,
-      descricao: '',
-    });
-    component['edicao'].salvar();
+  it('identifica código e nome como obrigatórios para tecnologias assistivas', async () => {
+    await p.abrirCadastro();
+    for (const nome of ['codigo', 'nome']) {
+      expect(p.campo(nome).getAttribute('aria-required')).toBe('true');
+    }
+  });
 
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`);
+  it('cria o tipo declarando o que ele admite, anuncia e avisa o sucesso', async () => {
+    await p.abrirCadastro();
+    p.elemento<HTMLElement>('label.checkbox').click();
+    const post = await p.enviar();
     expect(post.request.method).toBe('POST');
-    expect(post.request.body).toMatchObject({
-      codigo: 'ANALISE_SOCIOECONOMICA',
-      nome: 'Análise socioeconômica',
+    expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
+    expect(post.request.body).toEqual({
+      codigo: 'NOVA_PROVA',
+      nome: 'Nova prova',
       admitePontuacao: false,
       admiteEliminacao: true,
+      descricao: null,
     });
-    post.flush('novo-id', { status: 201, statusText: 'Created' });
-    await propagate();
-    await flushLista([analiseDocumental]);
-    expect(component['edicao'].formOpen()).toBe(false);
+    post.flush(...criado());
+    await p.recarregarCom([analiseDocumental, prova]);
+
+    expect(p.edicao.aberto()).toBe(false);
+    expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa criado');
+    expect(p.statusDaPagina()).toBe('Tipo de etapa criado.');
   });
 
-  it('o código é somente leitura na edição, e não vai no payload de atualização', async () => {
-    await flushLista([analiseDocumental]);
-    component['edicao'].abrirEdicao(analiseDocumental);
-    await propagate();
-    fixture.detectChanges();
+  it('na edição o código é somente leitura e não viaja na atualização', async () => {
+    await p.abrirEdicao(analiseDocumental);
+    expect(p.campo('codigo').readOnly).toBe(true);
+    expect(p.campo('codigo').value).toBe('ANALISE_DOCUMENTAL');
+    p.elemento<HTMLElement>('label.checkbox').click();
+    const put = await p.enviar(`${ESCRITA}/${analiseDocumental.id}`);
 
-    const codigoInput = fixture.nativeElement.querySelector(
-      '[formcontrolname="codigo"]',
-    ) as HTMLInputElement;
-    expect(codigoInput.readOnly).toBe(true);
-
-    component['edicao'].form.controls.admitePontuacao.setValue(true);
-    component['edicao'].salvar();
-
-    const put = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
-    );
     expect(put.request.method).toBe('PUT');
     expect(put.request.body).not.toHaveProperty('codigo');
-    expect(put.request.body).toMatchObject({ admitePontuacao: true, admiteEliminacao: true });
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([analiseDocumental]);
-  });
-
-  /**
-   * A regra de "ao menos um" vive no agregado, e a recusa dele nomeia o campo. Exibi-la no
-   * campo é o que evita a segunda fonte da mesma regra, que envelheceria à parte.
-   */
-  it('a recusa do servidor por nenhum caráter admitido aparece no campo', async () => {
-    await flushLista([]);
-    component['edicao'].abrirCadastro();
-    await propagate();
-
-    component['edicao'].form.setValue({
-      codigo: 'TIPO_INERTE',
-      nome: 'Tipo inerte',
-      admitePontuacao: false,
-      admiteEliminacao: false,
-      descricao: '',
+    expect(put.request.body).toMatchObject({
+      id: analiseDocumental.id,
+      admitePontuacao: true,
+      admiteEliminacao: true,
     });
-    component['edicao'].salvar();
-
-    const post = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`);
-    post.flush(
-      {
-        type: 'about:blank',
-        title: 'Tipo de etapa não admite nenhum caráter de etapa',
-        status: 422,
-        code: 'uniplus.configuracao.tipo_etapa.sem_carater_admitido',
-        errors: [
-          {
-            field: 'admitePontuacao',
-            code: 'uniplus.configuracao.tipo_etapa.sem_carater_admitido',
-            message:
-              'O tipo de etapa deve admitir compor a nota final, eliminar candidato, ou os dois.',
-          },
-        ],
-      },
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(fixture.nativeElement.textContent).toContain('deve admitir');
-    expect(component['edicao'].formOpen()).toBe(true);
+    put.flush(...sucesso());
+    await p.recarregarCom([analiseDocumental, prova]);
+    expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa atualizado');
+    expect(p.statusDaPagina()).toBe('Tipo de etapa atualizado.');
   });
 
-  /**
-   * O cadastro devolve ativos e inativos juntos. Renderizados iguais, o administrador não tem
-   * como saber quais estão disponíveis para processo novo — e a ação de inativar seguia
-   * oferecida para quem já estava inativo, mandando outro DELETE.
-   */
-  it('mostra a situação e não oferece inativar o que já está inativo', async () => {
-    await flushLista([analiseDocumental, { ...provaObjetiva, ativo: false }]);
-    fixture.detectChanges();
-
-    const ativa = linhaDe('ANALISE_DOCUMENTAL');
-    const inativa = linhaDe('PROVA_OBJETIVA');
-
-    expect(ativa.textContent).toContain('Ativo');
-    expect(inativa.textContent).toContain('Inativo');
-
-    expect(botaoDeAcao(ativa, 'Inativar')).toBeTruthy();
-    expect(botaoDeAcao(inativa, 'Inativar')).toBeNull();
-    expect(botaoDeAcao(inativa, 'Editar').getAttribute('aria-label')).toBe(
-      'Editar tipo de etapa PROVA_OBJETIVA',
-    );
-  });
-
-  /**
-   * As duas ações delegam ao `ui-icon-button`, que emite `(triggered)`. Acionar pela instância não
-   * exercita essa ligação: sem clicar no DOM, um binding trocado ou ausente passa por
-   * lint, teste e build sem nada acusar.
-   */
   it('o ícone de editar abre a edição do tipo daquela linha', async () => {
-    await flushLista([analiseDocumental, provaObjetiva]);
-    fixture.detectChanges();
-
-    botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Editar').click();
-    await propagate();
-
-    expect(component['edicao'].formOpen()).toBe(true);
-    expect(component['edicao'].form.controls.codigo.value).toBe('PROVA_OBJETIVA');
+    await p.abrirEdicao(prova);
+    expect(p.campo('codigo').value).toBe('PROVA');
+    expect(p.elemento('dialog[aria-label="Formulário de tipo de etapa"]').textContent).toContain(
+      'Editar tipo de etapa',
+    );
   });
 
-  it('o ícone de inativar pede confirmação para o tipo daquela linha', async () => {
-    await flushLista([analiseDocumental, provaObjetiva]);
-    fixture.detectChanges();
-
-    botaoDeAcao(linhaDe('PROVA_OBJETIVA'), 'Inativar').click();
-    await propagate();
-
-    expect(component['edicao'].confirmOpen()).toBe(true);
-    expect(component['edicao'].tipoParaRemover()?.codigo).toBe('PROVA_OBJETIVA');
+  it('o cadastro abre em branco, admitindo os dois caracteres', async () => {
+    await p.abrirEdicao(analiseDocumental);
+    p.elemento<HTMLButtonElement>('.form-drawer__footer button').click();
+    await p.propagar();
+    p.novo().click();
+    await p.propagar();
+    expect(p.campo('codigo').value).toBe('');
+    expect(p.campo('codigo').readOnly).toBe(false);
+    expect(p.edicao.form.getRawValue()).toMatchObject({
+      admitePontuacao: true,
+      admiteEliminacao: true,
+    });
   });
 
-  /**
-   * Sem rótulo visível, o glifo é a única pista de qual ação é qual para quem enxerga,
-   * e a dica é o que a nomeia no hover e no foco. Um erro de digitação em qualquer um
-   * dos dois rende um botão mudo que nenhum outro teste percebe.
-   */
-  it('cada ação mostra seu ícone e sua dica', async () => {
-    await flushLista([analiseDocumental]);
-    fixture.detectChanges();
+  it('mostra a situação e não oferece desativar o que já está inativo', async () => {
+    p.store.recarregar();
+    await p.recarregarCom([analiseDocumental, inativa]);
 
-    const linha = linhaDe('ANALISE_DOCUMENTAL');
-    const editar = botaoDeAcao(linha, 'Editar');
-    const inativar = botaoDeAcao(linha, 'Inativar');
+    expect(linhaDe('ANALISE_DOCUMENTAL').textContent).toContain('Ativo');
+    expect(linhaDe('PROVA').textContent).toContain('Desativado');
+    expect(
+      p.fixture.nativeElement.querySelector('[aria-label="Desativar tipo de etapa PROVA"]'),
+    ).toBeNull();
+    expect(p.editar(inativa)).toBeTruthy();
+  });
 
+  it('cada ação mostra seu ícone e sua dica', () => {
+    const editar = p.editar(analiseDocumental);
+    const desativar = p.desativar(analiseDocumental);
     expect(editar.querySelector('i')?.className).toContain('pi-pencil');
     expect(editar.getAttribute('data-tooltip')).toBe('Editar tipo de etapa');
-    expect(inativar.querySelector('i')?.className).toContain('pi-power-off');
-    expect(inativar.getAttribute('data-tooltip')).toBe('Inativar tipo de etapa');
+    expect(desativar.querySelector('i')?.className).toContain('pi-power-off');
+    expect(desativar.getAttribute('data-tooltip')).toBe('Desativar tipo de etapa');
   });
 
-  it('as ações ficam indisponíveis enquanto a lista recarrega', async () => {
-    await flushLista([analiseDocumental]);
-    fixture.detectChanges();
+  it('a confirmação nomeia a ação como desativação, e não como remoção', async () => {
+    p.desativar(prova).click();
+    await p.propagar();
 
-    const linha = linhaDe('ANALISE_DOCUMENTAL');
-    expect(botaoDeAcao(linha, 'Editar').getAttribute('aria-disabled')).toBe('false');
-    expect(botaoDeAcao(linha, 'Inativar').getAttribute('aria-disabled')).toBe('false');
-
-    component['tentarNovamente']();
-    await propagate();
-    fixture.detectChanges();
-
-    const recarregando = linhaDe('ANALISE_DOCUMENTAL');
-    expect(botaoDeAcao(recarregando, 'Editar').getAttribute('aria-disabled')).toBe('true');
-    expect(botaoDeAcao(recarregando, 'Inativar').getAttribute('aria-disabled')).toBe('true');
-
-    // Encerra o GET em voo para o controller.verify() do afterEach.
-    await flushLista([analiseDocumental]);
+    const dialogo = p.elemento('cfg-confirmacao-de-remocao');
+    expect(p.confirmar().textContent?.trim()).toBe('Desativar');
+    expect(dialogo.textContent).toContain('Desativar tipo de etapa');
+    expect(dialogo.textContent).not.toContain('Remover');
   });
 
-  it('inativar pede confirmação e chama o DELETE', async () => {
-    await flushLista([analiseDocumental]);
-    component['edicao'].pedirRemocao(analiseDocumental);
-    expect(component['edicao'].confirmOpen()).toBe(true);
+  it('o ícone de desativar pede confirmação nomeando o tipo da linha, sem enviar nada', async () => {
+    p.desativar(prova).click();
+    await p.propagar();
 
-    component['edicao'].removerConfirmado();
+    expect(p.elemento('cfg-confirmacao-de-remocao').textContent).toContain('PROVA');
+    p.http.expectNone(`${ESCRITA}/${prova.id}`);
+    p.cancelarDaConfirmacao().click();
+    await p.propagar();
+    expect(p.edicao.confirmando()).toBe(false);
+    p.http.expectNone(`${ESCRITA}/${prova.id}`);
+  });
 
-    const del = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
-    );
+  it('desativa após a confirmação, avisa e anuncia o desfecho na página', async () => {
+    const del = await p.confirmarDesativacao(prova);
     expect(del.request.method).toBe('DELETE');
-    del.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    await flushLista([]);
-    expect(component['edicao'].confirmOpen()).toBe(false);
-  });
-  it('bloqueia a abertura de outro editor durante a gravação', async () => {
-    await flushLista([analiseDocumental, provaObjetiva]);
+    del.flush(...sucesso());
+    await p.recarregarCom([analiseDocumental, inativa]);
 
-    component['edicao'].abrirEdicao(analiseDocumental);
-    await propagate();
-    component['edicao'].form.controls.nome.setValue('Análise Documental revisada');
-    component['edicao'].salvar();
-
-    const put = controller.expectOne(
-      `${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`,
-    );
-
-    component['edicao'].abrirEdicao(provaObjetiva);
-    await propagate();
-    expect(component['edicao'].tipoEmEdicaoId()).toBe(analiseDocumental.id);
-    component['edicao'].fechar();
-    expect(component['edicao'].formOpen()).toBe(true);
-
-    put.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-
-    expect(component['edicao'].formOpen()).toBe(false);
-    expect(component['edicao'].tipoEmEdicaoId()).toBe(analiseDocumental.id);
-    expect(component['edicao'].form.controls.nome.value).toBe('Análise Documental revisada');
-    expect(component['edicao'].gravando()).toBe(true);
-    component['edicao'].abrirEdicao(provaObjetiva);
-    expect(component['edicao'].formOpen()).toBe(false);
-    // O sucesso do primeiro relê a lista — o dado no servidor mudou de verdade.
-    await flushLista([analiseDocumental, provaObjetiva]);
-    expect(component['edicao'].gravando()).toBe(false);
-  });
-  it('libera a trava após falha da recarga e permite tentar novamente', async () => {
-    await flushLista([analiseDocumental]);
-    component['edicao'].pedirRemocao(analiseDocumental);
-    component['edicao'].removerConfirmado();
-    controller
-      .expectOne(`${BASE}/api/configuracao/admin/tipos-etapa/${analiseDocumental.id}`)
-      .flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    controller
-      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`)
-      .flush({ title: 'Falha', status: 500 }, { status: 500, statusText: 'Erro' });
-    await propagate();
-    expect(component['edicao'].gravando()).toBe(false);
-    expect(fixture.nativeElement.textContent).toContain('Tentar novamente');
-    component['tentarNovamente']();
-    await propagate();
-    await flushLista([]);
-    expect(component['edicao'].gravando()).toBe(false);
+    expect(p.edicao.confirmando()).toBe(false);
+    expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa desativado', 'PROVA');
+    expect(p.statusDaPagina()).toBe('Tipo de etapa PROVA desativado.');
   });
 
-  it('foca o campo recusado pelo servidor', async () => {
-    await flushLista([]);
-    component['edicao'].abrirCadastro();
-    component['edicao'].form.patchValue({ codigo: 'PROVA', nome: 'Prova' });
-    await propagate();
-    component['edicao'].salvar();
-    await propagate();
-    controller.expectOne(`${BASE}/api/configuracao/admin/tipos-etapa`).flush(
-      {
-        type: 'about:blank',
-        title: 'Recusa',
-        status: 422,
-        code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
-        errors: [
-          {
-            field: 'nome',
-            code: 'uniplus.configuracao.tipo_etapa.nome_invalido',
-            message: 'Nome recusado',
-          },
-        ],
-      },
-      {
-        status: 422,
-        statusText: 'Recusa',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-    await propagate();
-    expect(component['edicao'].form.controls.nome.errors).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('label.is-error input[formcontrolname=nome]'),
-    ).toBeTruthy();
-    expect(document.activeElement?.getAttribute('formcontrolname')).toBe('nome');
+  it('filtra a página atual pela busca e volta à primeira ao recarregar', async () => {
+    const busca = p.elemento<HTMLInputElement>('input[type="search"]');
+    busca.value = 'documental';
+    busca.dispatchEvent(new Event('input'));
+    await p.propagar();
+    expect(p.fixture.nativeElement.querySelectorAll('tbody tr').length).toBe(1);
+
+    busca.value = 'nada';
+    busca.dispatchEvent(new Event('input'));
+    await p.propagar();
+    expect(p.fixture.nativeElement.textContent).toContain('Nenhum tipo de etapa encontrado');
   });
 
-  it('filtra a página atual e volta à primeira página ao recarregar', async () => {
-    const store = fixture.debugElement.injector.get(TiposEtapaStore);
-    const primeira = controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-etapa`);
-    primeira.flush([analiseDocumental, provaObjetiva], {
-      headers: { Link: '</api/tipos-etapa?cursor=abc&direction=next>; rel="next"' },
-    });
-    await propagate();
+  it('segue pelo cursor e volta à primeira página ao recarregar', async () => {
+    p.store.recarregar();
+    await p.propagar();
+    p.http
+      .expectOne((r) => r.url === LISTA)
+      .flush([prova], {
+        headers: { Link: '</api/tipos-etapa?cursor=abc&direction=next>; rel="next"' },
+      });
+    await p.propagar();
 
-    store.termoBusca.set('objetiva');
-    expect(store.tiposFiltrados()).toEqual([provaObjetiva]);
-    store.proximaPagina();
-    await propagate();
-    const proxima = controller.expectOne((r) => r.params.get('cursor') === 'abc');
+    p.store.proximaPagina();
+    await p.propagar();
+    const proxima = p.http.expectOne((r) => r.params.get('cursor') === 'abc');
     expect(proxima.request.params.get('direction')).toBe('next');
     proxima.flush([analiseDocumental]);
-    await propagate();
-    expect(store.tiposFiltrados()).toEqual([]);
+    await p.propagar();
+    expect(p.store.tipos()).toEqual([analiseDocumental]);
 
-    store.recarregar();
-    await propagate();
-    await flushLista([provaObjetiva]);
-    expect(store.tiposFiltrados()).toEqual([provaObjetiva]);
+    p.store.recarregar();
+    await p.propagar();
+    const primeira = p.http.expectOne((r) => r.url === LISTA);
+    expect(primeira.request.params.has('cursor')).toBe(false);
+    primeira.flush([prova]);
+    await p.propagar();
+    expect(p.store.tipos()).toEqual([prova]);
   });
 });

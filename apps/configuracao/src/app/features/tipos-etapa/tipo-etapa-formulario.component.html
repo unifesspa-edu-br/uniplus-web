@@ -1,12 +1,12 @@
 <ui-drawer
   class="form-drawer"
-  [visible]="aberto()"
-  (visibleChange)="aoAlterarVisibilidade($event)"
+  [(visible)]="aberto"
   [closable]="!salvando()"
   [heading]="titulo()"
   ariaLabel="Formulário de tipo de etapa"
   position="right"
 >
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
@@ -33,7 +33,7 @@
               [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
             />
             <span class="field__hint">
-              Identifica o tipo para sempre — nem a inativação libera o código para reuso. Por
+              Identifica o tipo para sempre — nem a desativação libera o código para reuso. Por
               convenção, maiúsculas separadas por sublinhado, como ANALISE_DOCUMENTAL.
             </span>
             @if (erroDoCampo('codigo')) {
@@ -142,12 +142,12 @@
       type="submit"
       form="cfg-tipo-etapa-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando()"
-      [attr.aria-busy]="salvando()"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
       (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{
         salvando()

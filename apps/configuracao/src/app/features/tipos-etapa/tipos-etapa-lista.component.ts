@@ -1,65 +1,72 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
+  FilterBarComponent,
+  IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
+import type { AndamentoDaEscrita } from './edicao-dos-tipos-etapa';
 
 @Component({
   selector: 'cfg-tipos-etapa-lista',
   standalone: true,
-  imports: [EmptyStateComponent, PagerComponent, SpinnerComponent],
+  imports: [
+    EmptyStateComponent,
+    FilterBarComponent,
+    IconButtonComponent,
+    PagerComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tipos-etapa-lista.component.html',
 })
 export class TiposEtapaListaComponent {
   readonly tipos = input.required<readonly TipoEtapaDto[]>();
   readonly carregando = input.required<boolean>();
-  readonly indisponivel = input.required<boolean>();
+  readonly gravando = input.required<boolean>();
+  readonly removendo = input.required<boolean>();
+  readonly andamento = input.required<AndamentoDaEscrita | null>();
   readonly erro = input.required<string | null>();
   readonly temFiltro = input.required<boolean>();
-  readonly termoBusca = input.required<string>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
-  readonly idEmAndamento = input.required<string | null>();
-  readonly rotuloAndamento = input.required<string>();
-  readonly buscaAlterada = output<string>();
+  readonly termoBusca = model.required<string>();
   readonly cadastrar = output<void>();
   readonly editar = output<TipoEtapaDto>();
   readonly remover = output<TipoEtapaDto>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected readonly bloqueado = computed(() => this.carregando() || this.indisponivel());
-  protected aoBuscar(evento: Event): void {
-    const campo = evento.target as HTMLInputElement;
-    if (this.bloqueado()) {
-      campo.value = this.termoBusca();
-      return;
-    }
-    this.alterarBusca(campo.value);
-  }
-  protected alterarBusca(valor: string): void {
-    if (!this.bloqueado()) this.buscaAlterada.emit(valor);
-  }
-  protected limpar(): void {
-    this.alterarBusca('');
-  }
+
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
+
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-tipo-etapa-id',
+    idDoTitulo: 'cfg-tipos-etapa-list-title',
+    idDoCadastro: 'cfg-tipos-etapa-novo',
+  });
+
   protected acionarCadastro(): void {
-    if (!this.bloqueado()) this.cadastrar.emit();
+    if (this.indisponivel()) return;
+    this.foco.registrar(null);
+    this.cadastrar.emit();
   }
+
   protected acionarEditar(tipo: TipoEtapaDto): void {
-    if (!this.bloqueado()) this.editar.emit(tipo);
+    this.foco.registrar({ acao: 'editar', id: tipo.id });
+    this.editar.emit(tipo);
   }
-  protected acionarRemover(tipo: TipoEtapaDto): void {
-    if (!this.bloqueado()) this.remover.emit(tipo);
+
+  /** O nome começa por "Desativar ": é o prefixo que a devolução de foco procura na linha. */
+  protected acionarDesativar(tipo: TipoEtapaDto): void {
+    this.foco.registrar({ acao: 'situacao', id: tipo.id });
+    this.remover.emit(tipo);
   }
-  protected acionarAnterior(): void {
-    if (!this.bloqueado()) this.anterior.emit();
-  }
-  protected acionarProximo(): void {
-    if (!this.bloqueado()) this.proximo.emit();
-  }
+
   protected resumoDoQueAdmite(tipo: TipoEtapaDto): string {
     if (tipo.admitePontuacao && tipo.admiteEliminacao) return 'Compor a nota final e eliminar';
     return tipo.admitePontuacao ? 'Só compor a nota final' : 'Só eliminar';

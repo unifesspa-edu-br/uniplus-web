@@ -16,6 +16,8 @@ import { DialogComponent } from '@uniplus/shared-ui/components';
 export class ConfirmacaoDeRemocaoComponent {
   readonly aberto = model.required<boolean>();
   readonly titulo = input.required<string>();
+  /** O verbo do botão de confirmação. */
+  readonly rotulo = input('Remover');
   readonly removendo = input.required<boolean>();
   readonly mensagem = input.required<string>();
   readonly erro = input.required<string | null>();

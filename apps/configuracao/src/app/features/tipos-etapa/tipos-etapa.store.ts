@@ -30,7 +30,6 @@ export class TiposEtapaStore {
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly carregando = this.lista.isLoading;
-  readonly resultado = this.lista.value;
   readonly tipos = this.navegacao.itens;
   readonly termoBusca = signal('');
   readonly tiposFiltrados = computed(() => {
