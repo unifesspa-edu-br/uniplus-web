@@ -1,0 +1,116 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Unidades</h1>
+    <p class="page-header__desc">
+      Estrutura organizacional hierárquica da Unifesspa — identidade rica com histórico de
+      identificadores · UNI-REQ-0008.
+    </p>
+  </div>
+</div>
+
+<ui-alert
+  variant="info"
+  heading="Hierarquia de unidades — 11 tipos em domínio fechado"
+  [dynamic]="false"
+>
+  Cada unidade pode ter uma unidade superior do mesmo banco, sem ciclos. Sigla, Slug e Código são
+  únicos entre as unidades vivas; o Alias é livre. A remoção é bloqueada se a unidade for superior
+  de outra unidade viva ou a raiz da Instituição; referências por snapshot em outros módulos não
+  bloqueiam.
+</ui-alert>
+
+@if (store.mensagemDeErro()) {
+<ui-alert variant="danger" heading="Não foi possível carregar unidades">
+  {{ store.mensagemDeErro() }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-unidades-lista
+  [arvore]="store.arvore()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  [(tipoFiltro)]="store.tipoFiltro"
+  (cadastrar)="cadastrar()"
+  (detalhar)="detalhe.abrir($event)"
+  (editar)="editar($event)"
+  (remover)="remover($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+
+<cfg-unidade-detalhe
+  [(aberto)]="detalhe.aberto"
+  [unidade]="detalhe.unidade()"
+  [rotuloDaSuperior]="detalhe.rotuloDaSuperior()"
+  [indisponivel]="indisponivel()"
+  (editar)="editar($event)"
+  (remover)="remover($event)"
+/>
+
+<cfg-unidade-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [titulo]="edicao.titulo()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [tipoNaoReconhecido]="edicao.tipoNaoReconhecido()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+>
+  <cfg-unidade-superior-campo
+    campoDaSuperior
+    class="form-grid__full"
+    [controle]="edicao.form.controls.unidadeSuperiorId"
+    [(termo)]="superior.termo"
+    [opcoes]="superior.opcoes()"
+    [emEdicaoId]="edicao.emEdicaoId()"
+    [comErro]="superior.comErro()"
+    [carregando]="superior.carregando()"
+    [erro]="erroDaSuperior()"
+    (recarregar)="recarregarSuperior()"
+  />
+  <cfg-unidade-cidade-campo
+    campoDaCidade
+    class="form-grid__full"
+    [selecionada]="edicao.cidade()"
+    [(termo)]="cidade.termo"
+    [opcoes]="cidade.opcoes()"
+    [buscando]="cidade.buscando()"
+    [erroDaBusca]="cidade.erro()"
+    [semResultado]="cidade.semResultado()"
+    (tentarNovamente)="repetirBuscaDeCidade()"
+    [erroDoSalvamento]="edicao.erroDaCidade()"
+    (escolher)="edicao.selecionarCidade($event)"
+    (trocar)="edicao.trocarCidade()"
+  />
+</cfg-unidade-formulario>
+
+<cfg-confirmacao-de-remocao
+  titulo="Remover unidade"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

@@ -1,0 +1,77 @@
+<!--
+  Listas aninhadas, e não role de árvore: a hierarquia precisa ser programaticamente determinável
+  (WCAG SC 1.3.1), e ul/li já entregam isso — o leitor de tela anuncia o nível e o tamanho de cada
+  ramo. Declarar role="tree" levaria o leitor ao modo de widget, em que se espera navegação por
+  setas; esta tela opera por tabulação entre os botões de cada nó.
+-->
+<ul class="unit-tree" aria-label="Hierarquia de unidades da Unifesspa">
+  @for (no of arvore(); track no.unidade.id) {
+    <ng-container [ngTemplateOutlet]="noDaArvore" [ngTemplateOutletContext]="{ $implicit: no }" />
+  }
+</ul>
+
+<ng-template #noDaArvore let-no>
+  <li class="unit-node" [attr.data-unidade-id]="no.unidade.id">
+    <div class="unit-node__row">
+      @if (no.children.length > 0) {
+        <button
+          type="button"
+          class="unit-node__toggle"
+          [attr.aria-expanded]="expandido(no.unidade.id)"
+          [attr.aria-label]="
+            (expandido(no.unidade.id) ? 'Recolher ' : 'Expandir ') + no.unidade.sigla
+          "
+          (click)="alternar(no.unidade.id)"
+        >
+          <i
+            class="pi"
+            aria-hidden="true"
+            [class.pi-chevron-down]="expandido(no.unidade.id)"
+            [class.pi-chevron-right]="!expandido(no.unidade.id)"
+          ></i>
+        </button>
+      } @else {
+        <span class="unit-node__icon" aria-hidden="true">
+          <i class="pi pi-sitemap"></i>
+        </span>
+      }
+
+      <button
+        type="button"
+        class="unit-node__name"
+        [disabled]="indisponivel()"
+        (click)="detalhar.emit(no.unidade)"
+      >
+        {{ no.unidade.sigla }}
+      </button>
+      <span class="unit-node__type">{{ no.unidade.nome }}</span>
+      <span class="tag">{{ no.unidade.tipo }}</span>
+      <div class="unit-node__actions">
+        <ui-icon-button
+          icon="pi-pencil"
+          [accessibleName]="'Editar unidade ' + no.unidade.sigla"
+          tooltip="Editar unidade"
+          [isDisabled]="indisponivel()"
+          (triggered)="editar.emit(no.unidade)"
+        />
+        <ui-icon-button
+          icon="pi-trash"
+          [accessibleName]="'Remover unidade ' + no.unidade.sigla"
+          tooltip="Remover unidade"
+          [isDisabled]="indisponivel()"
+          (triggered)="remover.emit(no.unidade)"
+        />
+      </div>
+    </div>
+    @if (no.children.length > 0 && expandido(no.unidade.id)) {
+      <ul class="unit-node__children">
+        @for (filho of no.children; track filho.unidade.id) {
+          <ng-container
+            [ngTemplateOutlet]="noDaArvore"
+            [ngTemplateOutletContext]="{ $implicit: filho }"
+          />
+        }
+      </ul>
+    }
+  </li>
+</ng-template>

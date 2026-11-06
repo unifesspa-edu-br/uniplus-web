@@ -1,0 +1,21 @@
+<ui-filter-bar
+  ariaLabel="Filtrar unidades"
+  searchPlaceholder="Buscar por sigla ou nome..."
+  searchAriaLabel="Buscar unidade"
+  [searchMaxLength]="tamanhoMaximoDaBusca"
+  [(searchValue)]="termoBusca"
+  [filtrosAtivos]="filtrosAtivos()"
+>
+  <button
+    uiFilterBarActions
+    type="button"
+    class="btn btn--tertiary btn--sm btn--rect"
+    (click)="limpar()"
+  >
+    Limpar
+  </button>
+  <ng-container uiFilterBarSecondary>
+    <span class="u-eyebrow">Tipo</span>
+    <ui-filter-chips [options]="chips" [(selected)]="tipoFiltro" ariaLabel="Filtrar por tipo" />
+  </ng-container>
+</ui-filter-bar>

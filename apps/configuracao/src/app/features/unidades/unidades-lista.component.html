@@ -1,0 +1,73 @@
+<div data-scope class="cfg-unidades-scope">
+  <cfg-unidades-filtros
+    [attr.inert]="gravando() ? '' : null"
+    [(termoBusca)]="termoBusca"
+    [(tipoFiltro)]="tipoFiltro"
+  />
+
+  <section class="panel" aria-labelledby="cfg-unidades-list-title">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-unidades-list-title" tabindex="-1">Unidades</h2>
+      </div>
+      <button
+        type="button"
+        id="cfg-unidades-novo"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Nova unidade
+      </button>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
+        >
+      }
+    </div>
+
+    @if (arvore().length > 0) {
+      <cfg-unidades-arvore
+        [arvore]="arvore()"
+        [temFiltro]="temFiltro()"
+        [indisponivel]="indisponivel()"
+        (detalhar)="detalhar.emit($event)"
+        (editar)="editar.emit($event)"
+        (remover)="remover.emit($event)"
+      />
+      @if (temAnterior() || temProximo()) {
+        <ui-pager
+          statusText="Navegação por páginas"
+          navigationLabel="Paginação de unidades"
+          [hasPrevious]="temAnterior()"
+          [hasNext]="temProximo()"
+          [isDisabled]="indisponivel()"
+          (previous)="anterior.emit()"
+          (next)="proximo.emit()"
+        />
+      }
+    } @else if (!carregando() && !erro()) {
+      @if (temFiltro()) {
+        <ui-empty-state
+          heading="Nenhuma unidade encontrada"
+          description="Tente ajustar os termos de busca ou limpar os filtros."
+        >
+          <button
+            type="button"
+            class="btn btn--secondary btn--sm"
+            [disabled]="indisponivel()"
+            (click)="limparFiltros()"
+          >
+            Limpar filtros
+          </button>
+        </ui-empty-state>
+      } @else {
+        <ui-empty-state
+          heading="Nenhuma unidade cadastrada"
+          description="Nenhuma unidade cadastrada na estrutura organizacional."
+        />
+      }
+    }
+  </section>
+</div>

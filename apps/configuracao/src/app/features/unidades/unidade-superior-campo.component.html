@@ -1,0 +1,49 @@
+<div class="field form-grid__full" [class.is-error]="erro()">
+  <span class="field__label">Unidade superior</span>
+  <input
+    type="search"
+    class="input"
+    placeholder="Buscar por sigla ou nome..."
+    aria-label="Buscar unidade superior"
+    [maxLength]="tamanhoMaximoDaBusca"
+    [value]="termo()"
+    (input)="aoDigitar($event)"
+  />
+  <select
+    id="cfg-unidade-superior"
+    class="select"
+    aria-label="Unidade superior"
+    [formControl]="controle()"
+    [attr.aria-invalid]="erro() ? 'true' : null"
+    [attr.aria-describedby]="
+      erro() ? 'cfg-unidade-superior-dica cfg-unidade-superior-erro' : 'cfg-unidade-superior-dica'
+    "
+  >
+    <option value="">Raiz — sem superior</option>
+    @for (unidade of opcoes(); track unidade.id) {
+      <option [value]="unidade.id" [disabled]="unidade.id === emEdicaoId()">
+        {{ unidade.sigla }} — {{ unidade.nome }}
+      </option>
+    }
+  </select>
+  <span class="field__hint" id="cfg-unidade-superior-dica">
+    Digite para buscar entre todas as unidades. Não pode formar ciclo na hierarquia.
+  </span>
+  @if (erro()) {
+    <span class="field__error" id="cfg-unidade-superior-erro">{{ erro() }}</span>
+  }
+  @if (comErro()) {
+    <span class="field__error" role="alert">
+      Não foi possível carregar as unidades para seleção.
+      <button
+        type="button"
+        class="cfg-link-button"
+        [attr.aria-disabled]="carregando() ? 'true' : null"
+        [attr.aria-busy]="carregando() ? 'true' : null"
+        (click)="aoTentarNovamente($event)"
+      >
+        Tentar novamente
+      </button>
+    </span>
+  }
+</div>

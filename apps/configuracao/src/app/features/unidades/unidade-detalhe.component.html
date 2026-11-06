@@ -1,0 +1,48 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  heading="Detalhes da unidade"
+  ariaLabel="Detalhes da unidade selecionada"
+  position="right"
+>
+  @if (unidade(); as detalhe) {
+    <dl class="cfg-detail-list">
+      <dt>Nome</dt>
+      <dd>{{ detalhe.nome }}</dd>
+      <dt>Sigla</dt>
+      <dd>{{ detalhe.sigla }}</dd>
+      <dt>Código</dt>
+      <dd>{{ detalhe.codigo }}</dd>
+      <dt>Slug</dt>
+      <dd>{{ detalhe.slug }}</dd>
+      <dt>Tipo</dt>
+      <dd>{{ detalhe.tipo }}</dd>
+      <dt>Unidade superior</dt>
+      <dd>{{ rotuloDaSuperior() }}</dd>
+      <dt>Unidade acadêmica</dt>
+      <dd>{{ detalhe.unidadeAcademica ? 'Sim' : 'Não' }}</dd>
+      <dt>Cidade</dt>
+      <dd>{{ cidade(detalhe) }}</dd>
+      <dt>Vigência</dt>
+      <dd>{{ vigencia(detalhe) }}</dd>
+    </dl>
+    <div class="cfg-drawer-actions">
+      <button
+        type="button"
+        class="btn btn--tertiary btn--rect"
+        [disabled]="indisponivel()"
+        (click)="editar.emit(detalhe)"
+      >
+        Editar
+      </button>
+      <button
+        type="button"
+        class="btn btn--danger btn--rect"
+        [disabled]="indisponivel()"
+        (click)="remover.emit(detalhe)"
+      >
+        Remover
+      </button>
+    </div>
+  }
+</ui-drawer>

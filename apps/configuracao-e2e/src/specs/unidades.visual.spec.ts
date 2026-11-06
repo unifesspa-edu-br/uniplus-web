@@ -126,10 +126,12 @@ test.describe('Unidade — cobertura visual DS', () => {
     await toggleRaiz.click();
 
     await expect(
-      tree.getByRole('button', { name: 'Editar unidade PROEG', exact: true }),).toBeVisible();
+      tree.getByRole('button', { name: 'Editar unidade PROEG', exact: true }),
+    ).toBeVisible();
 
     await expect(
-      tree.getByRole('button', { name: 'Remover unidade PROEG', exact: true }),).toBeVisible();
+      tree.getByRole('button', { name: 'Remover unidade PROEG', exact: true }),
+    ).toBeVisible();
 
     await expect(
       tree.getByRole('button', {
@@ -312,6 +314,34 @@ test.describe('Unidade — cobertura visual DS', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Remover', exact: true }).click();
     await expect(removerReitoria).toBeDisabled();
     await expect(editarReitoria).toBeDisabled();
+  });
+
+  test('os drawers e diálogos fechados não ocupam espaço nem consomem o espaçamento entre os blocos', async ({
+    page,
+  }) => {
+    await page.goto('/unidades');
+    await expect(page.locator('.unit-tree')).toBeVisible();
+
+    const medir = (seletor: string) =>
+      page
+        .locator(seletor)
+        .first()
+        .evaluate((el) => {
+          const caixa = el.getBoundingClientRect();
+          return { topo: caixa.top, base: caixa.bottom };
+        });
+    const geoPagina = await medir('cfg-unidades-page');
+    const geoAlerta = await medir('cfg-unidades-page > ui-alert');
+    const geoLista = await medir('cfg-unidades-lista');
+    const espacamento = await page
+      .locator('cfg-unidades-page')
+      .evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
+
+    // Cabeçalho, alerta e lista são os blocos em fluxo: a lista começa um espaçamento abaixo do
+    // alerta e a página termina nela. Drawer ou diálogo fechado que virasse item do flex
+    // acrescentaria um espaçamento morto no fim da página.
+    expect(Math.abs(geoLista.topo - geoAlerta.base - espacamento)).toBeLessThanOrEqual(1);
+    expect(Math.abs(geoPagina.base - geoLista.base)).toBeLessThanOrEqual(1);
   });
 
   test('drawer de cadastro preserva footer, rolagem única e grid responsivo', async ({
