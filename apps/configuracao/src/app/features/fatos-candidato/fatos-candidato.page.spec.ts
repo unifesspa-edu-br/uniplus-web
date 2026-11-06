@@ -345,12 +345,45 @@ describe('FatosCandidatoPage — leitura', () => {
     await p.propagar();
 
     expect(p.texto()).toContain('itens que aguardam a proteção de dados');
-    await p.acionar(
-      p.botaoPeloTexto('Recarregar itens que aguardam a proteção de dados') as HTMLButtonElement,
-    );
+    const recarregar = p.botaoPeloTexto(
+      'Recarregar itens que aguardam a proteção de dados',
+    ) as HTMLButtonElement;
+    recarregar.focus();
+    await p.acionar(recarregar);
+    expect(recarregar.isConnected).toBe(true);
+    expect(recarregar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(recarregar);
     p.atenderPendencias();
     await p.propagar();
-    expect(p.texto()).not.toContain('itens que aguardam a proteção de dados');
+    await p.propagar();
+    expect(p.fixture.nativeElement.querySelector('ui-lookup-alert ui-alert')).toBeNull();
+    expect(document.activeElement).toBe(p.elemento('#cfg-fatos-list-title'));
+  });
+
+  it('anuncia cada nova tentativa de ler os itens que aguardam a proteção, também a segunda falha seguida', async () => {
+    p = await montarPagina([trabalha]);
+    p.store.recarregar();
+    await p.propagar();
+    p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
+    const falhar = async (): Promise<void> => {
+      p.http
+        .expectOne((r) => r.url === PROTECAO)
+        .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      await p.propagar();
+    };
+    const anuncio = (): string =>
+      p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
+        .textContent ?? '';
+    await falhar();
+
+    for (let vez = 0; vez < 2; vez++) {
+      await p.acionar(
+        p.botaoPeloTexto('Recarregar itens que aguardam a proteção de dados') as HTMLButtonElement,
+      );
+      expect(anuncio()).toBe('Lendo itens que aguardam a proteção de dados...');
+      await falhar();
+      expect(anuncio()).toBe('Falha na leitura: itens que aguardam a proteção de dados.');
+    }
   });
 
   it('o catálogo de apoio não é pedido com a lista aberta e nenhum detalhe nem edição', async () => {

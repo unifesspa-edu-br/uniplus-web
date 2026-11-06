@@ -7,6 +7,7 @@
   [closable]="!salvando()"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
+  <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
@@ -64,7 +65,13 @@
             @if (erroUnidades()) {
               <span class="field__error" role="alert">
                 Não foi possível carregar as unidades.
-                <button type="button" class="cfg-link-button" (click)="recarregarUnidades.emit()">
+                <button
+                  type="button"
+                  class="cfg-link-button"
+                  [attr.aria-disabled]="carregandoUnidades() ? 'true' : null"
+                  [attr.aria-busy]="carregandoUnidades() ? 'true' : null"
+                  (click)="recarregarUnidades.emit()"
+                >
                   Tentar novamente
                 </button>
               </span>

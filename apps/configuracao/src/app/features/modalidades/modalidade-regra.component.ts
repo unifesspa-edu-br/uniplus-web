@@ -26,6 +26,8 @@ export class ModalidadeRegraComponent {
   readonly fatos = input.required<readonly FatoEscolhivel[]>();
   readonly errosDasCondicoes = input.required<Readonly<Record<number, string>>>();
   readonly recusas = input.required<readonly string[]>();
+  /** O catálogo está sendo lido de novo: o "Tentar novamente" fica indisponível, sem perder o foco. */
+  readonly catalogoPendente = input.required<boolean>();
   readonly salvando = input.required<boolean>();
   readonly condicoesChange = output<readonly CondicaoEmClausula[]>();
   readonly recarregarCatalogo = output<void>();

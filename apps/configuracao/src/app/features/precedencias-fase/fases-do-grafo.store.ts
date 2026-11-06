@@ -1,6 +1,7 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject } from '@angular/core';
 import { API_MAX_PAGE_SIZE, lookupCompleto } from '@uniplus/shared-core/http';
 import { CODIGOS_FASE_CANONICA, FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
+import { avisoDeFalhaDoLookup } from '../../shared/foco';
 
 export interface OpcaoDeFase {
   readonly codigo: string;
@@ -28,9 +29,8 @@ export class FasesDoGrafoStore {
   /** Enquanto os nomes carregam, as opções aparecem só pelo código, sem afirmar que a fase não existe. */
   readonly pendente = this.fases.pendente;
 
-  private readonly houveFalha = signal(false);
   /** O aviso de falha fica na tela durante a nova tentativa, para o botão que a pediu não sumir. */
-  readonly avisoDeFalha = computed(() => this.falhou() || (this.pendente() && this.houveFalha()));
+  readonly avisoDeFalha = avisoDeFalhaDoLookup(this.fases);
 
   /**
    * O roster canônico completo, porque é contra ele que o servidor valida. Fase ainda não
@@ -47,10 +47,6 @@ export class FasesDoGrafoStore {
   );
 
   constructor() {
-    effect(() => {
-      if (this.falhou()) this.houveFalha.set(true);
-      else if (!this.pendente()) this.houveFalha.set(false);
-    });
     this.fases.recarregar();
   }
 

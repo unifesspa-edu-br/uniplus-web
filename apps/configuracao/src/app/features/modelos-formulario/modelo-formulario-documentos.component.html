@@ -1,0 +1,12 @@
+<ui-editor-de-documentos-exigidos
+  idBase="cfg-modelo-docs"
+  [documentos]="documentosExigidos()"
+  [fases]="fases()"
+  [tipos]="tiposDeDocumento()"
+  [fatos]="fatosDosDocumentos()"
+  [citaveis]="fatosCitaveis()"
+  [disabled]="somenteLeitura()"
+  [recusas]="recusas().porDocumento"
+  [recusasGerais]="recusas().gerais"
+  (documentosChange)="documentosChange.emit($event)"
+/>

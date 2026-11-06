@@ -25,6 +25,14 @@ export interface OpcoesDaDevolucaoDeFoco {
   readonly carregando: Signal<boolean>;
   /** Atributo da linha que guarda o id do item, como `data-campus-id`. */
   readonly atributoDaLinha: string;
+  /** Elemento que carrega o atributo da linha: `tr` na tabela, `li` na árvore. */
+  readonly elementoDaLinha?: string;
+  /**
+   * Alguma sobreposição aberta a partir da lista (formulário, confirmação ou detalhe). Ao fechar
+   * sem gravar o foco também volta, e o acionador anotado vale uma vez só: abrir um detalhe que
+   * não anota o acionador não leva o foco a um acionador antigo.
+   */
+  readonly sobreposicaoAberta?: Signal<boolean>;
   /** `id` do título da lista, destino quando o acionador saiu da tela. */
   readonly idDoTitulo: string;
   /** `id` do botão de cadastro, dentro ou fora da lista; sem ele, o cadastro devolve o foco ao título. */
@@ -38,7 +46,7 @@ export interface DevolucaoDeFoco {
 
 class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
   private ultimo: AcionadorDaLista | undefined;
-  private daGravacao: AcionadorDaLista | undefined;
+  private ocupada = false;
 
   constructor(
     private readonly raiz: HTMLElement,
@@ -52,16 +60,19 @@ class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
 
   /** Lê os sinais da lista; roda dentro de um `effect`. */
   acompanhar(): void {
-    if (this.opcoes.gravando()) {
-      this.daGravacao = this.ultimo;
+    if (this.opcoes.gravando() || this.opcoes.sobreposicaoAberta?.()) {
+      this.ocupada = true;
       return;
     }
-    if (this.opcoes.carregando() || this.daGravacao === undefined) {
+    if (this.opcoes.carregando() || !this.ocupada) {
       return;
     }
-    const acionador = this.daGravacao;
-    this.daGravacao = undefined;
-    afterNextRender(() => this.devolver(acionador), { injector: this.injector });
+    this.ocupada = false;
+    const acionador = this.ultimo;
+    if (this.opcoes.sobreposicaoAberta) this.ultimo = undefined;
+    if (acionador !== undefined) {
+      afterNextRender(() => this.devolver(acionador), { injector: this.injector });
+    }
   }
 
   private devolver(acionador: AcionadorDaLista): void {
@@ -77,15 +88,18 @@ class DevolucaoDeFocoDaLista implements DevolucaoDeFoco {
       const { idDoCadastro } = this.opcoes;
       return idDoCadastro ? this.raiz.querySelector<HTMLElement>(`#${idDoCadastro}`) : null;
     }
-    const linha = `tr[${this.opcoes.atributoDaLinha}="${entreAspas(acionador.id)}"]`;
-    return this.raiz.querySelector<HTMLElement>(`${linha} ${SELETOR_DA_ACAO[acionador.acao]}`);
+    const elemento = this.opcoes.elementoDaLinha ?? 'tr';
+    const linha = `${elemento}[${this.opcoes.atributoDaLinha}="${entreAspas(acionador.id)}"]`;
+    return this.raiz.querySelector<HTMLElement>(
+      `${linha} ${SELETOR_DA_ACAO[acionador.acao]}:not(:disabled)`,
+    );
   }
 }
 
 /**
  * As ações da lista ficam indisponíveis enquanto ela é gravada e recarregada, e um botão
  * indisponível não recebe o foco que a sobreposição fechada tenta devolver. Terminadas a escrita
- * e a recarga, o foco volta ao acionador, localizado pelo id da linha (o nome acessível muda com
+ * e a recarga, o foco volta ao acionador, localizado pelo id da linha ou do nó (o nome acessível muda com
  * o conteúdo e pode se repetir), se ele ainda existir e se ninguém tomou o foco nesse intervalo;
  * sem ele (item removido, lista que falhou ao recarregar), vai ao título da lista.
  *

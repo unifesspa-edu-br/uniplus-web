@@ -1,0 +1,19 @@
+<div class="page-header page-header--form">
+  <a class="btn btn--tertiary btn--sm btn--rect cfg-voltar" routerLink="/modelos-formulario">
+    <i class="pi pi-chevron-left" aria-hidden="true"></i>
+    Voltar à lista
+  </a>
+  <div class="page-header__content">
+    <h1 id="cfg-modelo-titulo" class="page-header__title" tabindex="-1">
+      {{ modelo()?.nome ?? 'Modelo de formulário' }}
+    </h1>
+    @if (modelo(); as m) {
+      <p class="page-header__desc">
+        <code>{{ m.codigo }}</code> · {{ rotuloDaFinalidade(m.finalidade) }}
+        <ui-tag [variant]="m.ativo ? 'success' : 'neutral'">{{
+          m.ativo ? 'Ativo' : 'Desativado'
+        }}</ui-tag>
+      </p>
+    }
+  </div>
+</div>

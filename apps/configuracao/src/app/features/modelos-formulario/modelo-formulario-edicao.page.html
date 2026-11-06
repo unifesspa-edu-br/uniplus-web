@@ -1,30 +1,91 @@
-<cfg-modelo-formulario-detalhe
-  [modelo]="store.modelo()"
-  [carregando]="store.carregando()"
-  [erroAoCarregar]="store.erroAoCarregar()"
-  [fatos]="store.fatos()"
-  [catalogoComErro]="store.catalogoComErro()"
+<cfg-modelo-formulario-cabecalho [modelo]="store.modelo()" />
+
+@if (store.erroAoCarregar(); as erro) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar o modelo"
+  [mensagem]="erro"
+  [pendente]="store.carregando()"
+  (tentar)="recarregarModelo()"
+/>
+} @else if (store.carregando() && store.modelo() === null) {
+<div class="cfg-form__loading" role="status">
+  <ui-spinner spinnerSize="md" /> Carregando o modelo...
+</div>
+} @else if (store.modelo(); as m) {
+<div id="cfg-modelo-resumo" class="cfg-modelo-resumo" tabindex="-1">
+  @if (edicao.recusasGerais().length > 0) {
+  <ui-alert variant="danger" heading="A API recusou a gravação">
+    <ul class="u-list">
+      @for (recusa of edicao.recusasGerais(); track $index) {
+      <li>{{ recusa }}</li>
+      }
+    </ul>
+  </ui-alert>
+  }
+</div>
+
+@if (store.termosComErro()) {
+<cfg-alerta-nova-tentativa
+  variante="warning"
+  titulo="Termos de consentimento não carregados"
+  mensagem="Sem a lista de termos não é possível exigir um termo novo nem trocar a versão."
+  [pendente]="store.termosCarregando()"
+  (tentar)="recarregarTermos()"
+/>
+} @if (store.catalogoComErro()) {
+<cfg-alerta-nova-tentativa
+  variante="warning"
+  titulo="Catálogo de fatos não carregado"
+  mensagem="Sem o catálogo não é possível acrescentar campos nem declarar condições."
+  [pendente]="store.catalogo.isLoading()"
+  (tentar)="recarregarCatalogo()"
+/>
+}
+
+<cfg-modelo-formulario-identificacao
+  [form]="edicao.form"
   [tiposDeProcesso]="store.tiposDeProcesso()"
+  [somenteLeitura]="edicao.somenteLeitura()"
+  (salvar)="salvar()"
+/>
+
+@if (store.vocabularioDosDocumentosComErro()) {
+<cfg-alerta-nova-tentativa
+  variante="warning"
+  titulo="Fases ou tipos de documento não carregados"
+  mensagem="Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos."
+  [pendente]="store.vocabularioDosDocumentosCarregando()"
+  (tentar)="recarregarVocabulario()"
+/>
+} @if (edicao.conteudo(); as c) {
+<ui-editor-de-formulario
+  idBase="cfg-modelo"
+  [conteudo]="c"
+  [catalogo]="store.fatos()"
+  [finalidade]="m.finalidade"
+  [disabled]="edicao.somenteLeitura()"
+  [recusas]="edicao.recusas()"
+  [termosDisponiveis]="store.termosDisponiveis()"
+  (conteudoChange)="edicao.conteudo.set($event)"
+/>
+
+<cfg-modelo-formulario-documentos
+  [conteudo]="c"
+  [fatos]="store.fatos()"
   [fases]="store.fases()"
   [tiposDeDocumento]="store.tiposDeDocumento()"
-  [vocabularioDosDocumentosComErro]="store.vocabularioDosDocumentosComErro()"
-  [termosDisponiveis]="store.termosDisponiveis()"
-  [termosComErro]="store.termosComErro()"
-  [form]="edicao.form"
+  [recusas]="edicao.recusasDosDocumentos()"
+  [somenteLeitura]="edicao.somenteLeitura()"
+  [comMunicipios]="comMunicipios"
+  (documentosChange)="edicao.trocarDocumentos($event)"
+/>
+}
+
+<cfg-modelo-formulario-rodape
+  [modelo]="m"
   [conteudo]="edicao.conteudo()"
   [salvando]="edicao.salvando()"
   [somenteLeitura]="edicao.somenteLeitura()"
-  [tentando]="tentando()"
-  [recusas]="edicao.recusas()"
-  [recusasGerais]="edicao.recusasGerais()"
-  [recusasDosDocumentos]="edicao.recusasDosDocumentos()"
-  [comMunicipios]="comMunicipios"
-  (salvar)="salvar()"
-  (recarregar)="recarregarModelo()"
-  (recarregarTermos)="recarregarTermos()"
-  (recarregarCatalogo)="recarregarCatalogo()"
-  (recarregarVocabulario)="recarregarVocabulario()"
-  (conteudoChange)="edicao.conteudo.set($event)"
-  (documentosChange)="edicao.trocarDocumentos($event)"
 />
+}
 <span class="sr-only" role="status">{{ anuncio() }}</span>

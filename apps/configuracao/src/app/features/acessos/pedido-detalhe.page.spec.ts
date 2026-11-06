@@ -690,17 +690,58 @@ describe('PedidoDetalhePage', () => {
       const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
       expect(dialogoAberto(host, 'ui-dialog')).toBe(false);
       expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(false);
-      expect(textoDoAlerta(host)).toContain(presente(edicaoDe(fixture).erro()));
+      const mensagemDaFalha = presente(edicaoDe(fixture).erro());
+      expect(textoDoAlerta(host)).toContain(mensagemDaFalha);
       expect(document.activeElement).toBe(tentar);
-      api.obter.mockReturnValue(of(ok(pedido())));
+      const nova = new Subject<ReturnType<typeof ok>>();
+      api.obter.mockReturnValue(nova);
       tentar?.click();
       await esperar(fixture);
       expect(api.obter).toHaveBeenCalledTimes(3);
+      expect(host.querySelector('#tentar-pedido')).toBe(tentar);
+      expect(tentar?.getAttribute('aria-disabled')).toBe('true');
+      expect(tentar?.getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(tentar);
+      tentar?.click();
+      expect(api.obter).toHaveBeenCalledTimes(3);
+
+      nova.next(ok(pedido()));
+      nova.complete();
+      await esperar(fixture);
+      await esperar(fixture);
       expect(host.querySelector('#tentar-pedido')).toBeNull();
+      expect(textoDoAlerta(host) ?? '').not.toContain(mensagemDaFalha);
       expect(document.activeElement).toBe(host.querySelector('#cfg-pedido-titulo'));
       host.remove();
     },
   );
+
+  it('anuncia cada nova tentativa de carregar o pedido, também a segunda falha seguida', async () => {
+    const { fixture, host } = await abrir([GESTOR]);
+    document.body.append(host);
+    const anuncio = (): string =>
+      host.querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+    api.obter.mockReturnValue(throwError(() => new Error('rede')));
+    (fixture.componentInstance as unknown as { recarregar(): void }).recarregar();
+    await esperar(fixture);
+    await esperar(fixture);
+    expect(anuncio()).toBe('Falha na leitura: pedido.');
+
+    const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
+    expect(tentar).not.toBeNull();
+    for (let vez = 0; vez < 2; vez++) {
+      const pendente = new Subject<ReturnType<typeof ok>>();
+      api.obter.mockReturnValue(pendente);
+      tentar?.click();
+      await esperar(fixture);
+      expect(anuncio()).toBe('Lendo pedido...');
+      pendente.error(new Error('rede'));
+      await esperar(fixture);
+      await esperar(fixture);
+      expect(anuncio()).toBe('Falha na leitura: pedido.');
+    }
+    host.remove();
+  });
 
   it('ao reabrir a recusa limpa o motivo e a validação anterior', async () => {
     const { fixture, host } = await abrir([GESTOR]);

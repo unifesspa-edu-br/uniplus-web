@@ -441,6 +441,61 @@ describe('ModalidadeFormPage', () => {
       expect(texto).not.toContain('"INDIGENA"');
     });
 
+    it('sem o catálogo, "Tentar novamente" fica indisponível, mantém o foco e leva à seção quando dá certo', async () => {
+      usarRota(BONUS.id);
+      await montar();
+      controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
+      TestBed.tick();
+      controller.expectOne(URL_CATALOGO).flush(null, { status: 500, statusText: 'Server Error' });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+      const tentar = (): HTMLButtonElement =>
+        fixture.nativeElement.querySelector('section[aria-labelledby="cfg-mod-regra"] button');
+
+      tentar().focus();
+      tentar().click();
+      fixture.detectChanges();
+      TestBed.tick();
+
+      expect(tentar().getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(tentar());
+      controller.expectOne(URL_CATALOGO).flush([...CATALOGO]);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+      TestBed.tick();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(textoDaRegra()).not.toContain('Catálogo de fatos não carregado');
+      expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#cfg-mod-regra'));
+    });
+
+    it('anuncia cada nova tentativa do catálogo, também a segunda falha seguida', async () => {
+      usarRota(BONUS.id);
+      await montar();
+      controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
+      TestBed.tick();
+      const falhar = async (): Promise<void> => {
+        controller.expectOne(URL_CATALOGO).flush(null, { status: 500, statusText: 'Server Error' });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        fixture.detectChanges();
+        TestBed.tick();
+      };
+      const anuncio = (): string =>
+        fixture.nativeElement.querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+      await falhar();
+
+      for (let vez = 0; vez < 2; vez++) {
+        fixture.nativeElement
+          .querySelector('section[aria-labelledby="cfg-mod-regra"] button')
+          .click();
+        fixture.detectChanges();
+        TestBed.tick();
+        expect(anuncio()).toBe('Lendo catálogo de fatos...');
+        await falhar();
+        expect(anuncio()).toBe('Falha na leitura: catálogo de fatos.');
+      }
+    });
+
     it('lê a regra sem condição como todos os candidatos', async () => {
       await editar(modalidade({ ...BONUS, regraDeAplicabilidade: [] }));
 

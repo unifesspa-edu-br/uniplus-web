@@ -1,0 +1,35 @@
+<p>
+  <a
+    class="btn btn--secondary"
+    routerLink="/simulador-de-formulario"
+    [queryParams]="{ modelo: modelo().id }"
+    target="_blank"
+    rel="noopener"
+  >
+    <i class="pi pi-play" aria-hidden="true"></i>
+    Simular o modelo
+    <span class="sr-only">(abre em nova aba)</span>
+  </a>
+  @if (conteudoAlterado()) {
+    <span class="field__hint"
+      >A simulação usa o modelo gravado: grave as alterações para simulá-las.</span
+    >
+  }
+</p>
+
+<div class="form-drawer__footer">
+  <a class="btn btn--tertiary btn--rect" routerLink="/modelos-formulario">Voltar sem salvar</a>
+  <button
+    type="submit"
+    form="cfg-modelo-edicao"
+    class="btn btn--primary"
+    [attr.aria-disabled]="somenteLeitura() ? 'true' : null"
+    [attr.aria-busy]="somenteLeitura() ? 'true' : null"
+    (click)="somenteLeitura() ? $event.preventDefault() : null"
+  >
+    @if (salvando()) {
+      <ui-spinner spinnerSize="sm" />
+    }
+    {{ salvando() ? 'Salvando...' : 'Salvar modelo' }}
+  </button>
+</div>

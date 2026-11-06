@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   CATEGORIAS,
+  CATEGORIAS_URL,
   ESCRITA,
   Pagina,
   PROTECAO_PREENCHIDA,
@@ -322,12 +323,50 @@ describe('TiposDocumentoPage — formulário', () => {
       tentar.focus();
       tentar.click();
       await p.propagar();
+      expect(tentar.isConnected).toBe(true);
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(tentar);
       p.atenderCategorias();
       await p.propagar();
       await p.propagar();
 
       expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
       expect(document.activeElement).toBe(p.campo('categoria'));
+    });
+
+    it('durante o salvamento o botão do aviso fica indisponível e não pede o catálogo', async () => {
+      p = await montarPagina([], { categorias: 'falha' });
+      await p.abrirCadastro();
+      p.edicao.form.controls.categoria.setValue('RENDA');
+      const post = await p.enviar();
+      const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
+
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      tentar.click();
+      await p.propagar();
+      p.http.expectNone((r) => r.url === CATEGORIAS_URL);
+
+      post.flush(...criado());
+      await p.recarregarCom([rg]);
+    });
+
+    it('anuncia cada nova tentativa do catálogo, também a segunda falha seguida', async () => {
+      p = await montarPagina([], { categorias: 'falha' });
+      await p.acionarNovo();
+      const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
+      const anuncio = (): string =>
+        p.fixture.nativeElement.querySelectorAll('ui-drawer span.sr-only[role="status"]')[1]
+          ?.textContent ?? '';
+
+      for (let vez = 0; vez < 2; vez++) {
+        tentar.click();
+        await p.propagar();
+        expect(anuncio()).toBe('Lendo categorias...');
+        p.atenderCategorias('falha');
+        await p.propagar();
+        expect(anuncio()).toBe('Falha na leitura: categorias.');
+        expect(document.activeElement).not.toBe(p.campo('categoria'));
+      }
     });
 
     it('associa a dica e a mensagem de erro ao campo para leitor de tela', async () => {

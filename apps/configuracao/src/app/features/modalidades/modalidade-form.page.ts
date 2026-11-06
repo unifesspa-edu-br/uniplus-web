@@ -3,12 +3,15 @@ import {
   Component,
   ElementRef,
   afterNextRender,
+  computed,
   inject,
+  signal,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 
+import { novaTentativaAnunciada } from '../../shared/foco';
 import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { EdicaoDaRegraDeAplicabilidade } from './edicao-da-regra-de-aplicabilidade';
 import { ModalidadeEnquadramentoComponent } from './modalidade-enquadramento.component';
@@ -45,11 +48,25 @@ export class ModalidadeFormPage {
   protected readonly aplicabilidade = inject(EdicaoDaRegraDeAplicabilidade);
   protected readonly titulo = this.edicao.modoEdicao ? 'Editar modalidade' : 'Nova modalidade';
 
+  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncioDaLeitura = signal('');
+  private readonly novaTentativaDoCatalogo = novaTentativaAnunciada({
+    nome: 'catálogo de fatos',
+    pendente: this.aplicabilidade.catalogoPendente,
+    falhou: computed(() => this.aplicabilidade.estadoDoCatalogo() === 'erro'),
+    destino: () => document.getElementById('cfg-mod-regra'),
+    anuncio: this.anuncioDaLeitura,
+  });
+
   private readonly tituloPagina =
     viewChild.required<ElementRef<HTMLHeadingElement>>('tituloPagina');
 
   constructor() {
     afterNextRender(() => this.tituloPagina().nativeElement.focus());
+  }
+
+  protected tentarCatalogoNovamente(): void {
+    this.novaTentativaDoCatalogo.executar(() => this.aplicabilidade.recarregarCatalogo());
   }
 
   /** Sair da página destruiria a assinatura da gravação em curso: o link fica indisponível, mas focável. */

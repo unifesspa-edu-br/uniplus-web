@@ -174,6 +174,8 @@ describe('OfertasCursoPage — catálogos de vínculo', () => {
       await p.propagar();
 
       expect(p.elemento('.alert--warning button')).toBe(recarregar);
+      expect(recarregar.getAttribute('aria-disabled')).toBe('true');
+      expect(recarregar.getAttribute('aria-busy')).toBe('true');
       expect(document.activeElement).toBe(recarregar);
       recarregar.click();
       p.doCatalogo(CURSOS).flush([engCiv]);
@@ -194,6 +196,7 @@ describe('OfertasCursoPage — catálogos de vínculo', () => {
       await p.propagar();
 
       expect(p.elemento('.alert--warning button')).toBe(recarregar);
+      expect(recarregar.getAttribute('aria-disabled')).toBeNull();
       expect(document.activeElement).toBe(recarregar);
       expect(p.erros).toHaveBeenCalledTimes(2);
     });

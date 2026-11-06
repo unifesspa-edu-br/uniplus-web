@@ -54,6 +54,14 @@ export function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
   };
 }
 
+/** O 403 que a camada de autorização da API emite. */
+export const ACESSO_NEGADO = { code: 'uniplus.auth.forbidden', title: 'Acesso negado' } as const;
+/** O 500 que o middleware global de exceções da API emite. */
+export const ERRO_INTERNO = {
+  code: 'uniplus.internal.unexpected',
+  title: 'Erro interno do servidor',
+} as const;
+
 export const problema = (status: number, corpo: object = {}) =>
   [
     JSON.stringify({ type: 'about:blank', title: 'Falha', status, ...corpo }),

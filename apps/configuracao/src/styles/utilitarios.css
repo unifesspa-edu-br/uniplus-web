@@ -8,8 +8,13 @@
   cursor: pointer;
 }
 
-.cfg-link-button:hover {
+.cfg-link-button:hover:not([aria-disabled='true']) {
   text-decoration: underline;
+}
+
+.cfg-link-button[aria-disabled='true'] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
 }
 
 .cfg-muted {

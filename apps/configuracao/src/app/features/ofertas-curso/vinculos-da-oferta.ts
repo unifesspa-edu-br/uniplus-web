@@ -116,10 +116,22 @@ export class VinculosDaOferta {
   /** Só os catálogos que a listagem precisa resolver: a unidade ofertante já vem congelada na oferta. */
   readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() => [
     ...(this.cursos.falhou()
-      ? [{ nome: 'cursos', recarregar: () => this.cursos.tentarNaLista() }]
+      ? [
+          {
+            nome: 'cursos',
+            pendente: this.cursos.pendente(),
+            recarregar: () => this.cursos.tentarNaLista(),
+          },
+        ]
       : []),
     ...(this.locais.falhou()
-      ? [{ nome: 'locais de oferta', recarregar: () => this.locais.tentarNaLista() }]
+      ? [
+          {
+            nome: 'locais de oferta',
+            pendente: this.locais.pendente(),
+            recarregar: () => this.locais.tentarNaLista(),
+          },
+        ]
       : []),
   ]);
 

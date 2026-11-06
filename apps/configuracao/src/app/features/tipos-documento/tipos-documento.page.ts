@@ -15,6 +15,8 @@ import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remoc
 import {
   devolverFocoDaLista,
   focarAposNovaTentativa,
+  avisoDeFalhaDoLookup,
+  novaTentativaAnunciada,
   focoEstaLivre,
   type AcionadorDaLista,
 } from '../../shared/foco';
@@ -70,13 +72,55 @@ export class TiposDocumentoPage {
     idDoCadastro: 'cfg-tipos-documento-novo',
   });
 
-  /** Os catálogos que rotulam a lista e falharam. O alerta some ao pedir de novo, e o foco vai ao título. */
+  /** O aviso mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncio = signal('');
+  /** O formulário é um drawer modal: o anúncio da tentativa acionada dentro dele tem região própria, dentro dele. */
+  protected readonly anuncioDoFormulario = signal('');
+  private readonly novaTentativaDasCategoriasNoFormulario = novaTentativaAnunciada({
+    nome: 'categorias',
+    pendente: this.store.categorias.pendente,
+    falhou: this.edicao.avisoDasCategorias,
+    destino: () => document.querySelector<HTMLElement>('select[formcontrolname="categoria"]'),
+    anuncio: this.anuncioDoFormulario,
+  });
+  private readonly novaTentativaDasCategoriasNaLista = novaTentativaAnunciada({
+    nome: 'categorias',
+    pendente: this.store.categorias.pendente,
+    falhou: this.edicao.avisoDasCategorias,
+    destino: () => document.getElementById(ID_DO_TITULO),
+    anuncio: this.anuncio,
+  });
+  private readonly avisoDaSituacao = avisoDeFalhaDoLookup(this.aprovacao);
+  private readonly novaTentativaDaSituacao = novaTentativaAnunciada({
+    nome: 'situação da proteção de dados',
+    pendente: this.aprovacao.pendente,
+    falhou: this.avisoDaSituacao,
+    destino: () => document.getElementById(ID_DO_TITULO),
+    anuncio: this.anuncio,
+  });
+
+  /**
+   * Os catálogos que rotulam a lista e falharam. Ficam na lista durante a nova tentativa, para o
+   * botão que a pediu manter o foco; dando certo, o foco vai ao título.
+   */
   protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() => [
-    ...(this.store.categorias.comErro()
-      ? [{ nome: 'categorias', recarregar: () => this.recarregarCategorias() }]
+    ...(this.edicao.avisoDasCategorias()
+      ? [
+          {
+            nome: 'categorias',
+            pendente: this.store.categorias.pendente(),
+            recarregar: () => this.recarregarCategoriasDaLista(),
+          },
+        ]
       : []),
-    ...(this.aprovacao.comErro()
-      ? [{ nome: 'situação da proteção de dados', recarregar: () => this.recarregarSituacao() }]
+    ...(this.avisoDaSituacao()
+      ? [
+          {
+            nome: 'situação da proteção de dados',
+            pendente: this.aprovacao.pendente(),
+            recarregar: () => this.recarregarSituacao(),
+          },
+        ]
       : []),
   ]);
 
@@ -91,9 +135,10 @@ export class TiposDocumentoPage {
     this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 
-  /** Pedido no formulário, em que o alerta some junto com o botão: o foco vai ao campo Categoria. */
+  /** Pedido no formulário: o aviso fica até a leitura terminar, e dando certo o foco vai ao campo Categoria. */
   protected recarregarCategoriasDoFormulario(): void {
-    this.recarregarCategorias('select[formcontrolname="categoria"]');
+    if (this.edicao.salvando()) return;
+    this.novaTentativaDasCategoriasNoFormulario.executar(() => this.store.categorias.recarregar());
   }
 
   protected cadastrar(): void {
@@ -131,17 +176,18 @@ export class TiposDocumentoPage {
     this.devolucao.registrar(acionador);
   }
 
-  private recarregarCategorias(destino = `#${ID_DO_TITULO}`): void {
-    this.store.categorias.recarregar();
-    this.focarNoProximoRender(destino);
+  private recarregarCategoriasDaLista(): void {
+    this.novaTentativaDasCategoriasNaLista.executar(() => this.store.categorias.recarregar());
   }
 
   private recarregarSituacao(): void {
-    this.aprovacao.carregar();
-    this.focarNoProximoRender(`#${ID_DO_TITULO}`);
+    this.novaTentativaDaSituacao.executar(() => this.aprovacao.carregar());
   }
 
-  /** O alerta que tinha o foco sai da tela ao pedir de novo: sem destino, o foco cairia no corpo. */
+  /**
+   * Depois de fechar uma sobreposição (solicitação enviada, aceite fechado), o foco livre vai ao
+   * elemento: o botão que a abriu pode ter saído da lista com a releitura, e o foco cairia no corpo.
+   */
   private focarNoProximoRender(seletor: string): void {
     afterNextRender(
       () => {

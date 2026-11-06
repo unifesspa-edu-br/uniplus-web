@@ -7,7 +7,7 @@ import { FileUploadComponent } from '@uniplus/shared-ui/components';
   imports: [FileUploadComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pedido-documento-formulario.component.html',
-  styleUrl: './pedido-documento-formulario.component.css',
+  styleUrl: '../../shared/formulario/campos-do-formulario.css',
 })
 export class PedidoDocumentoFormularioComponent {
   readonly exigeDocumento = input.required<boolean>();

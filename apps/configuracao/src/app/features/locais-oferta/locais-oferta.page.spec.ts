@@ -374,8 +374,14 @@ describe('LocaisOfertaPage', () => {
 
     const botaoRecarregar: HTMLButtonElement =
       fixture.nativeElement.querySelector('.alert--warning button');
+    botaoRecarregar.focus();
     botaoRecarregar.click();
     await propagate();
+    fixture.detectChanges();
+    expect(botaoRecarregar.isConnected).toBe(true);
+    expect(botaoRecarregar.getAttribute('aria-disabled')).toBe('true');
+    expect(botaoRecarregar.disabled).toBe(false);
+    expect(document.activeElement).toBe(botaoRecarregar);
     expectLookup(`${BASE}/api/configuracao/campi`).flush([
       {
         id: 'cmp1',
@@ -394,6 +400,81 @@ describe('LocaisOfertaPage', () => {
     expect(
       fixture.nativeElement.querySelector('td[data-label="Campus responsável"]').textContent,
     ).toContain('MAB — Campus de Marabá');
+    expect(document.activeElement).toBe(
+      fixture.nativeElement.querySelector('#cfg-locais-list-title'),
+    );
+  });
+
+  describe('"Recarregar campi" da lista com a lista ocupada', () => {
+    const CAMPI = `${BASE}/api/configuracao/campi`;
+    const recarregarCampi = (): HTMLButtonElement =>
+      fixture.nativeElement.querySelector('ui-lookup-alert button');
+
+    async function comCampiEmFalha(): Promise<void> {
+      await flushLista([{ ...localSeed, campusResponsavelId: 'cmp1' }]);
+      await propagate();
+      expectLookup(CAMPI).flush({}, { status: 500, statusText: 'Server Error' });
+      await propagate();
+      fixture.detectChanges();
+    }
+
+    it('com a gravação e a recarga pendentes, fica indisponível e não pede os campi', async () => {
+      await comCampiEmFalha();
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBeNull();
+      const edicao = injetar(EdicaoDosLocaisOferta);
+
+      edicao.pedirRemocao(localSeed);
+      edicao.removerConfirmado();
+      await propagate();
+      fixture.detectChanges();
+      expect(edicao.gravando()).toBe(true);
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBe('true');
+      recarregarCampi().click();
+      controller.expectNone((r) => r.url === CAMPI);
+
+      controller.expectOne((r) => r.method === 'DELETE').flush(null);
+      await propagate();
+      fixture.detectChanges();
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBe('true');
+      recarregarCampi().click();
+      controller.expectNone((r) => r.url === CAMPI);
+
+      await flushLista([localSeed]);
+      fixture.detectChanges();
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBeNull();
+    });
+
+    it('com a lista em carga, fica indisponível e não pede os campi', async () => {
+      await comCampiEmFalha();
+
+      injetar(LocaisOfertaStore).tentarNovamente();
+      await propagate();
+      fixture.detectChanges();
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBe('true');
+      recarregarCampi().click();
+      controller.expectNone((r) => r.url === CAMPI);
+
+      await flushLista([localSeed]);
+      fixture.detectChanges();
+      expect(recarregarCampi().getAttribute('aria-disabled')).toBeNull();
+    });
+
+    it('anuncia, fora do drawer, a nova tentativa acionada na lista, também a segunda falha seguida', async () => {
+      await comCampiEmFalha();
+      const anuncio = (): string =>
+        fixture.nativeElement.querySelector(
+          ':scope > p.sr-only[role="status"] + p.sr-only[role="status"]',
+        )?.textContent ?? '';
+
+      for (let vez = 0; vez < 2; vez++) {
+        recarregarCampi().click();
+        await propagate();
+        expect(anuncio()).toBe('Lendo campi...');
+        expectLookup(CAMPI).flush({}, { status: 500, statusText: 'Server Error' });
+        await propagate();
+        expect(anuncio()).toBe('Falha na leitura: campi.');
+      }
+    });
   });
 
   it('campus fora do catálogo carregado é "não identificado", não "não carregado"', async () => {

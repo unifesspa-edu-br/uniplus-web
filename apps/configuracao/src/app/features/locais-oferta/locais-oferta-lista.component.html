@@ -18,23 +18,7 @@
     </button>
   </div>
 
-  @if (falhas().length) {
-    <ui-alert variant="warning" heading="Rótulos não carregados">
-      A coluna afetada mostra “Não carregado” até a busca ser refeita.
-      <span class="lookup-alert__acoes">
-        @for (falha of falhas(); track falha.nome) {
-          <button
-            type="button"
-            class="lookup-alert__retry"
-            [disabled]="indisponivel()"
-            (click)="recarregar(falha)"
-          >
-            Recarregar {{ falha.nome }}
-          </button>
-        }
-      </span>
-    </ui-alert>
-  }
+  <ui-lookup-alert [falhas]="falhas()" />
 
   @if (locais().length > 0) {
     <div class="table-responsive">

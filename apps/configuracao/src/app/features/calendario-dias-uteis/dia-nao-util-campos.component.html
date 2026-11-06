@@ -92,11 +92,7 @@
       } @else if (busca().erro) {
         <span class="field__error" role="alert">
           Não foi possível buscar os municípios.
-          <button
-            type="button"
-            class="cfg-link-button"
-            (click)="alteracao.emit({ tipo: 'novaTentativa' })"
-          >
+          <button type="button" class="cfg-link-button" (click)="tentarNovamente()">
             Tentar novamente
           </button>
         </span>

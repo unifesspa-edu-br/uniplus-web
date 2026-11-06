@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { acompanharFocoDoEnvio, novaTentativaAnunciada } from '../../shared/foco';
 import { bloquearEnvio } from './bloquear-envio';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
 import { CampoDaCriacao, mensagemDoCampo } from './fato-candidato-form';
@@ -15,6 +15,7 @@ import {
   fatosDeMembroAgregaveis,
   resumoDoAgregado,
 } from './fato-candidato.regras';
+import { ID_DO_FATO_DE_MEMBRO, ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO } from './ids-do-fato';
 import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
 
 /**
@@ -37,6 +38,23 @@ export class FatoCriacaoComponent {
   protected readonly salvando = this.edicao.criando;
   protected readonly fases = lerFasesCanonicas(() => true);
   protected readonly catalogo = lerCatalogoDeFatos(() => this.dep.agregado());
+
+  /** Os alertas mantidos na tela durante a tentativa não mudam de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncioDaLeitura = signal('');
+  private readonly novaTentativaDasFases = novaTentativaAnunciada({
+    nome: 'fases',
+    pendente: this.fases.pendente,
+    falhou: this.fases.falhou,
+    destino: () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO),
+    anuncio: this.anuncioDaLeitura,
+  });
+  private readonly novaTentativaDoCatalogo = novaTentativaAnunciada({
+    nome: 'catálogo de fatos',
+    pendente: this.catalogo.pendente,
+    falhou: this.catalogo.falhou,
+    destino: () => document.getElementById(ID_DO_FATO_DE_MEMBRO),
+    anuncio: this.anuncioDaLeitura,
+  });
 
   protected readonly cardinalidades = CARDINALIDADES;
   protected readonly fontes = FONTES_DE_VALORES;
@@ -68,6 +86,14 @@ export class FatoCriacaoComponent {
 
   protected nomeDaFase(codigo: string): string {
     return this.fases.itens().find((fase) => fase.codigo === codigo)?.nome ?? codigo;
+  }
+
+  protected tentarFasesNovamente(): void {
+    this.novaTentativaDasFases.executar(() => this.fases.recarregar());
+  }
+
+  protected tentarCatalogoNovamente(): void {
+    this.novaTentativaDoCatalogo.executar(() => this.catalogo.recarregar());
   }
 
   protected cancelar(): void {

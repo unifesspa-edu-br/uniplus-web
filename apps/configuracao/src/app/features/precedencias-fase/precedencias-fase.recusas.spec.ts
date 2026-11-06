@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  ACESSO_NEGADO,
+  ERRO_INTERNO,
   ESCRITA,
   LISTA,
   Pagina,
@@ -240,10 +242,15 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       );
       await p.propagar();
       expect(p.edicao.gravando()).toBe(true);
+      expect(p.salvar().getAttribute('aria-disabled')).toBe('true');
+      expect(p.salvar().textContent).not.toContain('Salvando...');
 
+      const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
+      p.salvar().dispatchEvent(clique);
       p.edicao.salvar();
       await p.propagar();
 
+      expect(clique.defaultPrevented).toBe(true);
       p.http.expectNone(`${ESCRITA}/${inscricaoHomologacao.id}`);
       expect(alertaDoDrawer().textContent).toContain(NAO_ENCONTRADA.title);
       await p.recarregarCom([]);
@@ -253,7 +260,7 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       await p.abrirCadastro();
       const primeira = await p.enviar();
       const chave = chaveDe(primeira);
-      primeira.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      primeira.flush(...problema(500, ERRO_INTERNO));
       await p.propagar();
 
       expect(alertaDoDrawer()).toBeTruthy();
@@ -271,7 +278,7 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
 
     it('um novo envio, ainda que barrado pela validação, retira a recusa anterior da tela', async () => {
       await p.abrirCadastro();
-      (await p.enviar()).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      (await p.enviar()).flush(...problema(500, ERRO_INTERNO));
       await p.propagar();
       expect(alertaDoDrawer()).toBeTruthy();
 
@@ -318,12 +325,10 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
 
     it('recusa (403) mantém o diálogo, a mensagem e o foco no botão, sem toast', async () => {
       const primeira = await p.confirmarRemocao(inscricaoHomologacao);
-      primeira.flush(
-        ...problema(403, { code: 'uniplus.auth.forbidden', title: 'Remoção recusada' }),
-      );
+      primeira.flush(...problema(403, ACESSO_NEGADO));
       await p.propagar();
 
-      expect(lerMensagem()).toBe('Remoção recusada');
+      expect(lerMensagem()).toBe(ACESSO_NEGADO.title);
       expect(p.edicao.confirmando()).toBe(true);
       expect(p.confirmar().getAttribute('aria-disabled')).toBeNull();
       expect(document.activeElement).toBe(p.confirmar());
@@ -367,7 +372,9 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       (await p.confirmarRemocao(inscricaoHomologacao)).flush(...problema(404, NAO_ENCONTRADA));
       await p.propagar();
       expect(p.edicao.gravando()).toBe(true);
+      expect(p.confirmar().getAttribute('aria-disabled')).toBe('true');
 
+      p.confirmar().click();
       p.edicao.removerConfirmado();
       await p.propagar();
 
@@ -377,12 +384,10 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
     });
 
     it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {
-      (await p.confirmarRemocao(inscricaoHomologacao)).flush(
-        ...problema(500, { code: 'uniplus.internal.unexpected' }),
-      );
+      (await p.confirmarRemocao(inscricaoHomologacao)).flush(...problema(500, ERRO_INTERNO));
       await p.propagar();
 
-      expect(lerMensagem()).toBe('Falha');
+      expect(lerMensagem()).toBe(ERRO_INTERNO.title);
       expect(p.erros).toHaveBeenCalledTimes(1);
       expect(document.activeElement).toBe(p.confirmar());
       p.cancelarDaConfirmacao().click();
@@ -448,12 +453,29 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
+    it('anuncia cada nova tentativa de ler as precedências, também a segunda falha seguida', async () => {
+      p.store.recarregar();
+      await p.propagar();
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+      await p.propagar();
+      const anuncio = (): string =>
+        p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
+          .textContent ?? '';
+
+      for (let vez = 0; vez < 2; vez++) {
+        p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button').click();
+        await p.propagar();
+        expect(anuncio()).toBe('Lendo precedências...');
+        p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
+        await p.propagar();
+        expect(anuncio()).toBe('Falha na leitura: precedências.');
+      }
+    });
+
     it('4xx mostra o alerta sem toast', async () => {
       p.store.recarregar();
       await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush(...problema(403, { code: 'uniplus.auth.forbidden' }));
+      p.http.expectOne((r) => r.url === LISTA).flush(...problema(403, ACESSO_NEGADO));
       await p.propagar();
       expect(p.elemento('ui-alert .list-state__retry button')).toBeTruthy();
       expect(p.erros).not.toHaveBeenCalled();

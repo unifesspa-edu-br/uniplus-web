@@ -335,8 +335,76 @@ describe('SimuladorDeFormularioPage', () => {
     expect(tela().querySelector('ui-alert')?.textContent).toContain(
       'Não foi possível carregar o modelo',
     );
-    botao('Tentar novamente').click();
+    const tentar = botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    harness.detectChanges();
+
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
     renderizavel();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
     expect(tela().textContent).toContain('Nome social');
+    expect(document.activeElement).toBe(tela().querySelector('select'));
+  });
+
+  it('a falha ao listar os modelos oferece tentar de novo e leva o foco ao seletor quando dá certo', async () => {
+    await abrir('/simulador?origem=modelo');
+    http
+      .expectOne(
+        (r) =>
+          r.url === `${BASE}/api/configuracao/admin/modelos-formulario` && !r.params.has('ativo'),
+      )
+      .flush(
+        { type: 'about:blank', title: 'Falha ao listar', status: 503 },
+        {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+    harness.detectChanges();
+    const tentar = botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    harness.detectChanges();
+
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+    listaDeModelos();
+    await harness.fixture.whenStable();
+    harness.detectChanges();
+
+    expect(botao('Tentar novamente')).toBeUndefined();
+    expect(document.activeElement).toBe(tela().querySelector('select'));
+  });
+
+  it('anuncia cada nova tentativa de carregar o modelo, também a segunda falha seguida', async () => {
+    await abrir(`/simulador?modelo=${ID}`);
+    listaDeModelos();
+    const falhar = (): void =>
+      http.expectOne(`${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`).flush(
+        { type: 'about:blank', title: 'Modelo não encontrado', status: 404 },
+        {
+          status: 404,
+          statusText: 'Not Found',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+    const anuncio = (): string =>
+      tela().querySelector('span.sr-only[role="status"]')?.textContent ?? '';
+    falhar();
+    harness.detectChanges();
+
+    for (let vez = 0; vez < 2; vez++) {
+      botao('Tentar novamente').click();
+      harness.detectChanges();
+      expect(anuncio()).toBe('Lendo modelo...');
+      falhar();
+      await harness.fixture.whenStable();
+      harness.detectChanges();
+      expect(anuncio()).toBe('Falha na leitura: modelo.');
+    }
   });
 });

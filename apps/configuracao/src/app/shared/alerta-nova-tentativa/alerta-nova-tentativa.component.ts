@@ -47,8 +47,9 @@ export class AlertaNovaTentativaComponent {
   readonly pendente = input.required<boolean>();
   /** Falhas seguidas das tentativas pedidas pelo operador, contadas por quem faz a carga.
    *  A partir da segunda, o número entra no texto: uma nova falha com a mesma recusa
-   *  deixaria o texto idêntico, e o leitor de tela não anunciaria nada. */
-  readonly tentativasSemSucesso = input.required<number>();
+   *  deixaria o texto idêntico, e o leitor de tela não anunciaria nada. Quem não conta as
+   *  falhas não informa o número. */
+  readonly tentativasSemSucesso = input(0);
   readonly variante = input<'warning' | 'danger'>('danger');
   /** Id do botão, para o foco e para quem precisa referenciá-lo. */
   readonly idBotao = input<string | null>(null);

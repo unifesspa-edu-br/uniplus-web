@@ -157,6 +157,7 @@ describe('DiaNaoUtilCamposComponent', () => {
     expect(campo('[role="alert"]').textContent).toContain('Não foi possível buscar os municípios.');
     campo<HTMLButtonElement>('[role="alert"] button').click();
     expect(alteracoes).toEqual([{ tipo: 'novaTentativa' }]);
+    expect(document.activeElement).toBe(campo('#busca-municipio-3'));
 
     const marabá = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
     fixture.componentRef.setInput('busca', { opcoes: [marabá], carregando: false, erro: false });

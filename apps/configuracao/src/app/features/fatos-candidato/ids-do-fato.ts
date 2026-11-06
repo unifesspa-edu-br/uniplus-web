@@ -8,6 +8,7 @@ export const ID_DO_TITULO_DA_LISTA = 'cfg-fatos-list-title';
 export const ID_DO_CADASTRO = 'cfg-fatos-novo';
 export const ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO = 'cfg-fato-pontoResolucao';
 export const ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO = 'cfg-fato-def-pontoResolucao';
+export const ID_DAS_REGRAS_PADRAO = 'cfg-fato-regras';
 export const ID_DO_FATO_DE_MEMBRO = 'cfg-fato-fatoDeMembro';
 
 export function idDoValor(codigo: string, parte: string): string {

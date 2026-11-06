@@ -1,0 +1,58 @@
+<form
+  [formGroup]="form()"
+  id="cfg-modelo-edicao"
+  class="cfg-modelo-cabecalho"
+  (ngSubmit)="salvar.emit()"
+  novalidate
+>
+  <fieldset class="form-grid" role="none" [disabled]="somenteLeitura()">
+    <label class="field" [class.is-error]="erro('nome')">
+      <span class="field__label is-required">Nome</span>
+      <input
+        aria-required="true"
+        class="input"
+        type="text"
+        formControlName="nome"
+        maxlength="200"
+        [attr.aria-invalid]="erro('nome') ? 'true' : null"
+        [attr.aria-describedby]="erro('nome') ? 'cfg-modelo-ed-nome-erro' : null"
+      />
+      @if (erro('nome')) {
+        <span class="field__error" id="cfg-modelo-ed-nome-erro">{{ erro('nome') }}</span>
+      }
+    </label>
+    <label class="field" [class.is-error]="erro('tipoProcessoCodigo')">
+      <span class="field__label">Tipo de processo</span>
+      <select
+        class="select"
+        formControlName="tipoProcessoCodigo"
+        [attr.aria-invalid]="erro('tipoProcessoCodigo') ? 'true' : null"
+        [attr.aria-describedby]="erro('tipoProcessoCodigo') ? 'cfg-modelo-ed-tipo-erro' : null"
+      >
+        <option value="">Qualquer tipo de processo</option>
+        @for (tipo of tiposDeProcesso(); track tipo.codigo) {
+          <option [value]="tipo.codigo">{{ tipo.nome }}</option>
+        }
+      </select>
+      @if (erro('tipoProcessoCodigo')) {
+        <span class="field__error" id="cfg-modelo-ed-tipo-erro">{{
+          erro('tipoProcessoCodigo')
+        }}</span>
+      }
+    </label>
+    <label class="field form-grid__full" [class.is-error]="erro('descricao')">
+      <span class="field__label">Descrição</span>
+      <textarea
+        class="textarea"
+        formControlName="descricao"
+        rows="2"
+        maxlength="1000"
+        [attr.aria-invalid]="erro('descricao') ? 'true' : null"
+        [attr.aria-describedby]="erro('descricao') ? 'cfg-modelo-ed-descricao-erro' : null"
+      ></textarea>
+      @if (erro('descricao')) {
+        <span class="field__error" id="cfg-modelo-ed-descricao-erro">{{ erro('descricao') }}</span>
+      }
+    </label>
+  </fieldset>
+</form>

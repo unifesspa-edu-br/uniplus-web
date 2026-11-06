@@ -2,10 +2,9 @@ import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from
 import type { UnidadeDto } from '@uniplus/shared-data/organizacao';
 import { AlertComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
+import { devolverFocoDaLista, focarAposNovaTentativa } from '../../shared/foco';
 import { BuscaDeCidade } from './busca-de-cidade';
 import { DetalheDaUnidade } from './detalhe-da-unidade';
-import { devolverFocoDaArvore } from './devolver-foco-da-arvore';
 import { EdicaoDasUnidades } from './edicao-das-unidades';
 import { OpcoesDaUnidadeSuperior } from './opcoes-da-unidade-superior';
 import { UnidadeCidadeCampoComponent } from './unidade-cidade-campo.component';
@@ -69,9 +68,13 @@ export class UnidadesPage {
     () => this.raiz.querySelector<HTMLElement>('#cfg-unidade-superior'),
   );
 
-  private readonly foco = devolverFocoDaArvore({
+  private readonly foco = devolverFocoDaLista({
     gravando: this.edicao.gravando,
     carregando: this.store.carregando,
+    atributoDaLinha: 'data-unidade-id',
+    elementoDaLinha: 'li',
+    idDoTitulo: 'cfg-unidades-list-title',
+    idDoCadastro: 'cfg-unidades-novo',
     sobreposicaoAberta: computed(
       () => this.edicao.aberto() || this.edicao.confirmando() || this.detalhe.aberto(),
     ),

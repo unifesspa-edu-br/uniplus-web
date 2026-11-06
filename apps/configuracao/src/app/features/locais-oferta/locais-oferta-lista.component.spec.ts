@@ -60,15 +60,15 @@ describe('LocaisOfertaListaComponent', () => {
   };
 
   it('durante a gravação, deixa desabilitado todo botão, inclusive o do estado vazio e a paginação', () => {
-    montar([local], { gravando: true });
-    expect(botoes().length).toBeGreaterThanOrEqual(6);
+    montar([local], { gravando: true, falhas: [] });
+    expect(botoes().length).toBeGreaterThanOrEqual(5);
     expect(acionaveis()).toEqual([]);
-    montar([], { gravando: true });
+    montar([], { gravando: true, falhas: [] });
     expect(acionaveis()).toEqual([]);
   });
 
   it('durante a carga, deixa as ações indisponíveis', () => {
-    montar([local], { carregando: true });
+    montar([local], { carregando: true, falhas: [] });
     expect(acionaveis()).toEqual([]);
   });
 
@@ -82,6 +82,16 @@ describe('LocaisOfertaListaComponent', () => {
     botao('Editar').click();
     botao('Remover').click();
     expect(emitidos).toEqual(['cadastrar', 'editar:l1', 'remover:l1']);
+  });
+
+  it('mostra o botão do lookup em curso indisponível e não recarrega', () => {
+    let recarregou = 0;
+    montar([local], {
+      falhas: [{ nome: 'campi', pendente: true, recarregar: () => recarregou++ }],
+    });
+    expect(botao('Recarregar campi').getAttribute('aria-disabled')).toBe('true');
+    botao('Recarregar campi').click();
+    expect(recarregou).toBe(0);
   });
 
   it('recarrega o lookup que falhou', () => {

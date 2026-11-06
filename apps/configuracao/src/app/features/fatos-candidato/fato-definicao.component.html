@@ -115,11 +115,18 @@
           <p class="u-caption">Para mudá-los, altere o fato de membro.</p>
         }
       }
+      <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
       @if (fases.falhou()) {
         <ui-alert variant="warning" heading="Fases não carregadas">
           Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido.
           <div class="list-state__retry">
-            <button type="button" class="btn btn--secondary btn--sm" (click)="fases.recarregar()">
+            <button
+              type="button"
+              class="btn btn--secondary btn--sm"
+              [attr.aria-disabled]="fases.pendente() ? 'true' : null"
+              [attr.aria-busy]="fases.pendente() ? 'true' : null"
+              (click)="tentarFasesNovamente()"
+            >
               Tentar novamente
             </button>
           </div>

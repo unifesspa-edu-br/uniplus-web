@@ -11,7 +11,11 @@ import {
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, type UiLookupFalho } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
+import {
+  avisoDeFalhaDoLookup,
+  focarAposNovaTentativa,
+  novaTentativaAnunciada,
+} from '../../shared/foco';
 import {
   AprovacaoDoCatalogo,
   SolicitacaoDaProtecaoDialogComponent,
@@ -62,12 +66,24 @@ export class FatosCandidatoPage {
   private readonly lista = viewChild(FatosCandidatoListaComponent);
 
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
+  /** O aviso mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncioDeApoio = signal('');
+  private readonly avisoDaAprovacao = avisoDeFalhaDoLookup(this.aprovacao);
+  private readonly novaTentativaDaAprovacao = novaTentativaAnunciada({
+    nome: 'itens que aguardam a proteção de dados',
+    pendente: this.aprovacao.pendente,
+    falhou: this.avisoDaAprovacao,
+    destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
+    anuncio: this.anuncioDeApoio,
+  });
   protected readonly falhasDeApoio = computed<readonly UiLookupFalho[]>(() =>
-    this.aprovacao.comErro()
+    this.avisoDaAprovacao()
       ? [
           {
             nome: 'itens que aguardam a proteção de dados',
-            recarregar: () => this.aprovacao.carregar(),
+            pendente: this.aprovacao.pendente(),
+            recarregar: () =>
+              this.novaTentativaDaAprovacao.executar(() => this.aprovacao.carregar()),
           },
         ]
       : [],

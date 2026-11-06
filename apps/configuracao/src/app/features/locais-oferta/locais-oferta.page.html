@@ -26,6 +26,7 @@
 }
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
+<p class="sr-only" role="status">{{ anuncioDosCampi() }}</p>
 <cfg-locais-oferta-lista
   [locais]="leitura.locais()"
   [carregando]="leitura.carregando()"
@@ -33,7 +34,7 @@
   [mensagemDeErro]="leitura.mensagemDeErro()"
   [temAnterior]="leitura.anterior() !== null"
   [temProximo]="leitura.proximo() !== null"
-  [falhas]="leitura.lookupsComFalha()"
+  [falhas]="falhasDosCampi()"
   [resolucoes]="leitura.resolucoes()"
   [localAfetadoId]="edicao.localAfetadoId()"
   [andamento]="edicao.andamento()"
@@ -53,8 +54,10 @@
   [salvando]="edicao.saving()"
   [gravando]="edicao.gravando()"
   [campi]="leitura.campi.opcoes()"
-  [campiComErro]="leitura.campi.comErro()"
-  (recarregarCampi)="leitura.campi.recarregar()"
+  [campiComErro]="avisoDosCampi()"
+  [carregandoCampi]="leitura.campi.pendente()"
+  [anuncioDaLeitura]="anuncioDosCampiNoFormulario()"
+  (recarregarCampi)="tentarNovamenteOsCampi()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />

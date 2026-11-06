@@ -131,10 +131,38 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     await p.propagar();
 
     expect(p.texto()).toContain('Catálogo de fatos não carregado');
+    const tentar = p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement;
     await acao('Tentar novamente');
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
     p.atenderApoios([quilombola]);
     await p.propagar();
+    await p.propagar();
     expect(p.texto()).not.toContain('Catálogo de fatos não carregado');
+    expect(document.activeElement).toBe(p.elemento('#cfg-fato-regras'));
+  });
+
+  it('anuncia cada nova tentativa de ler o catálogo, também a segunda falha seguida', async () => {
+    p = await montarPagina([perfil]);
+    await p.acionar(p.editar(perfil));
+    p.http.expectOne(urlDoFato(perfil)).flush(structuredClone(perfil));
+    const falhar = async (): Promise<void> => {
+      p.http
+        .expectOne((r) => r.url === CATALOGO)
+        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
+      await p.propagar();
+    };
+    const anuncio = (): string =>
+      p.elemento('section[aria-labelledby="cfg-fato-regras"] > span.sr-only[role="status"]')
+        .textContent ?? '';
+    await falhar();
+
+    for (let vez = 0; vez < 2; vez++) {
+      await acao('Tentar novamente');
+      expect(anuncio()).toBe('Lendo catálogo de fatos...');
+      await falhar();
+      expect(anuncio()).toBe('Falha na leitura: catálogo de fatos.');
+    }
   });
 
   it('o erro da condição não passa para outra depois que a regra é editada', async () => {

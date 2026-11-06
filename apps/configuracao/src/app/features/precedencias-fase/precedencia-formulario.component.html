@@ -7,6 +7,7 @@
   position="right"
 >
   <span class="sr-only" role="status">{{ anuncio() }}</span>
+  <span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
@@ -154,8 +155,8 @@
       type="submit"
       form="cfg-precedencia-fase-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando() ? 'true' : null"
-      [attr.aria-busy]="salvando() ? 'true' : null"
+      [attr.aria-disabled]="gravando() ? 'true' : null"
+      [attr.aria-busy]="gravando() ? 'true' : null"
       (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {

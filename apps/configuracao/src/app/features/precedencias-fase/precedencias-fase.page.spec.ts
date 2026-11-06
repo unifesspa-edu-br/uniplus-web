@@ -9,6 +9,7 @@ import {
   faseCanonica,
   inscricaoHomologacao,
   montarPagina,
+  problema,
   sucesso,
 } from './precedencias-fase.testing';
 
@@ -269,6 +270,48 @@ describe('PrecedenciasFasePage', () => {
       expect(aviso()).toBeNull();
       expect(p.fasesDoGrafo.nomeDaFase('INSCRICAO')).toBe('Inscrição');
       expect(document.activeElement).toBe(p.elemento('#cfg-precedencias-fase-list-title'));
+    });
+
+    it('anuncia cada nova tentativa de ler as fases, também a segunda falha seguida', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      const anuncio = (): string =>
+        p.elemento(':scope > span.sr-only[role="status"] + span.sr-only[role="status"]')
+          .textContent ?? '';
+      const tentar = (): HTMLButtonElement =>
+        [
+          ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+            ':scope > ui-alert',
+          ),
+        ]
+          .find((a) => a.textContent?.includes('Nomes das fases indisponíveis'))
+          ?.querySelector('button') as HTMLButtonElement;
+
+      for (let vez = 0; vez < 2; vez++) {
+        tentar().click();
+        await p.propagar();
+        expect(anuncio()).toBe('Lendo nomes das fases...');
+        p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
+        await p.propagar();
+        expect(anuncio()).toBe('Falha na leitura: nomes das fases.');
+      }
+    });
+
+    it('anuncia, dentro do drawer, a nova tentativa acionada pelo alerta do formulário', async () => {
+      p = await montarPagina([inscricaoHomologacao], 'falha');
+      p.novo().click();
+      await p.propagar();
+      const anuncio = (): string =>
+        p.fixture.nativeElement.querySelectorAll('ui-drawer span.sr-only[role="status"]')[1]
+          ?.textContent ?? '';
+
+      for (let vez = 0; vez < 2; vez++) {
+        p.elemento<HTMLButtonElement>('ui-drawer ui-alert button').click();
+        await p.propagar();
+        expect(anuncio()).toBe('Lendo nomes das fases...');
+        p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
+        await p.propagar();
+        expect(anuncio()).toBe('Falha na leitura: nomes das fases.');
+      }
     });
 
     it('a nova tentativa das fases também está no alerta do formulário', async () => {

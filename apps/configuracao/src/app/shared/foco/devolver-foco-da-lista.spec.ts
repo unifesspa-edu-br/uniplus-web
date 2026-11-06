@@ -66,6 +66,44 @@ class ListaSemCadastroDeTesteComponent {
   });
 }
 
+@Component({
+  selector: 'cfg-arvore-de-teste',
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <h2 id="titulo-da-lista" tabindex="-1">Nós</h2>
+    <button id="novo" type="button">Novo</button>
+    <ul>
+      @for (id of ['a', 'b']; track id) {
+        <li [attr.data-no-id]="id">
+          <button
+            type="button"
+            [attr.aria-label]="'Editar nó ' + id"
+            [disabled]="editarIndisponivel()"
+          >
+            e
+          </button>
+        </li>
+      }
+    </ul>
+  `,
+})
+class ArvoreDeTesteComponent {
+  readonly sobreposicaoAberta = input.required<boolean>();
+  readonly editarIndisponivel = input(false);
+  readonly gravando = input(false);
+  readonly carregando = input(false);
+  readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    sobreposicaoAberta: this.sobreposicaoAberta,
+    atributoDaLinha: 'data-no-id',
+    elementoDaLinha: 'li',
+    idDoTitulo: 'titulo-da-lista',
+    idDoCadastro: 'novo',
+  });
+}
+
 describe('devolverFocoDaLista', () => {
   let fixture: ComponentFixture<ListaDeTesteComponent>;
   const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -246,6 +284,55 @@ describe('devolverFocoDaLista', () => {
       fixture.detectChanges();
       await fixture.whenStable();
       expect(document.activeElement).toBe(raiz().querySelector('#titulo-da-lista'));
+    });
+  });
+
+  describe('lista que não é tabela, com sobreposição aberta a partir dela', () => {
+    let arvore: ComponentFixture<ArvoreDeTesteComponent>;
+    const botaoDoNo = (id: string): HTMLElement =>
+      (arvore.nativeElement as HTMLElement).querySelector(
+        `li[data-no-id="${id}"] button`,
+      ) as HTMLElement;
+
+    beforeEach(() => {
+      arvore = TestBed.createComponent(ArvoreDeTesteComponent);
+      document.body.appendChild(arvore.nativeElement);
+      arvore.componentRef.setInput('sobreposicaoAberta', false);
+      arvore.detectChanges();
+    });
+    afterEach(() => (arvore.nativeElement as HTMLElement).remove());
+
+    async function abrirEFechar(): Promise<void> {
+      arvore.componentRef.setInput('sobreposicaoAberta', true);
+      arvore.detectChanges();
+      arvore.componentRef.setInput('sobreposicaoAberta', false);
+      arvore.detectChanges();
+      await arvore.whenStable();
+    }
+
+    it('fechar a sobreposição sem gravar devolve o foco ao botão do nó acionado', async () => {
+      arvore.componentInstance.foco.registrar({ acao: 'editar', id: 'b' });
+      await abrirEFechar();
+      expect(document.activeElement).toBe(botaoDoNo('b'));
+    });
+
+    it('o acionador vale uma vez: abrir outra sobreposição que não o anota não volta a ele', async () => {
+      arvore.componentInstance.foco.registrar({ acao: 'editar', id: 'b' });
+      await abrirEFechar();
+      (document.activeElement as HTMLElement).blur();
+
+      await abrirEFechar();
+
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('com o botão do nó indisponível, leva o foco ao título da lista', async () => {
+      arvore.componentRef.setInput('editarIndisponivel', true);
+      arvore.componentInstance.foco.registrar({ acao: 'editar', id: 'b' });
+      await abrirEFechar();
+      expect((arvore.nativeElement as HTMLElement).querySelector('#titulo-da-lista')).toBe(
+        document.activeElement,
+      );
     });
   });
 });

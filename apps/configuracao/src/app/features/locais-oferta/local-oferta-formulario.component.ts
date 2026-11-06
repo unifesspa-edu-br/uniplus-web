@@ -43,6 +43,10 @@ export class LocalOfertaFormularioComponent {
   readonly gravando = input.required<boolean>();
   readonly campi = input.required<readonly CampusDto[]>();
   readonly campiComErro = input.required<boolean>();
+  /** Os campi estão sendo lidos: o "Tentar novamente" fica indisponível, sem perder o foco. */
+  readonly carregandoCampi = input.required<boolean>();
+  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
+  readonly anuncioDaLeitura = input('');
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
   readonly recarregarCampi = output<void>();

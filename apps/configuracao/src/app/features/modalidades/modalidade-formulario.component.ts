@@ -13,6 +13,7 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 
+import { focarPrimeiroCampoInvalido } from '../../shared/foco';
 import type { ModalidadeForm } from './modalidade-form';
 
 /**
@@ -52,14 +53,10 @@ export class ModalidadeFormularioComponent {
   private focarPrimeiroCampoInvalidoAposConferencia(): void {
     effect(() => {
       if (this.conferencias() === 0) return;
-      afterNextRender(() => this.focarPrimeiroInvalido(), { injector: this.injector });
+      afterNextRender(() => focarPrimeiroCampoInvalido(this.raiz.nativeElement), {
+        injector: this.injector,
+      });
     });
-  }
-
-  private focarPrimeiroInvalido(): void {
-    this.raiz.nativeElement
-      .querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)')
-      ?.focus();
   }
 
   /** Enquanto grava, o botão está indisponível: o clique (e Enter ou Espaço, que o geram) não envia. */

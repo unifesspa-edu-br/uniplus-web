@@ -36,6 +36,8 @@ export class EdicaoDaRegraDeAplicabilidade {
     if (this.store.catalogoComErro()) return 'erro';
     return this.catalogo.data() === null ? 'carregando' : 'pronto';
   });
+  /** O catálogo está sendo lido de novo: o "Tentar novamente" fica indisponível, sem perder o foco. */
+  readonly catalogoPendente = this.catalogo.isLoading;
   readonly fatos = computed(() =>
     fatosDaRegraDeAplicabilidade(this.catalogo.data() ?? [], this.fatosJaCitados()),
   );

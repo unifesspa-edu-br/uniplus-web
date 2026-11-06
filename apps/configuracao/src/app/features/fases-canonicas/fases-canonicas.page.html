@@ -53,14 +53,16 @@
   [salvando]="edicao.salvando()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [erroUnidades]="store.unidades.comErro()"
+  [anuncioDaLeitura]="anuncioDasUnidades()"
+  [erroUnidades]="avisoDasUnidades()"
+  [carregandoUnidades]="store.unidades.pendente()"
   [unidadesParaEscolha]="edicao.unidadesParaEscolha()"
   [showGrupoAgrupa]="edicao.showGrupoAgrupa()"
   [showGrupoCompl]="edicao.showGrupoCompl()"
   [ehFaseDeIsencao]="edicao.ehFaseDeIsencao()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (recarregarUnidades)="store.unidades.recarregar()"
+  (recarregarUnidades)="tentarNovamenteAsUnidades()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover fase canônica"

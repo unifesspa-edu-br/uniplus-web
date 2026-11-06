@@ -396,9 +396,42 @@ describe('FatosCandidatoPage — definição do fato', () => {
       await p.propagar();
 
       expect(p.texto()).toContain('Fases não carregadas');
-      await p.acionar(p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement);
+      const tentar = p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement;
+      await p.acionar(tentar);
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(tentar);
       p.atenderApoios();
       await p.propagar();
+      await p.propagar();
+      expect(p.texto()).not.toContain('Fases não carregadas');
+      expect(document.activeElement).toBe(p.elemento('#cfg-fato-def-pontoResolucao'));
+    });
+
+    it('anuncia cada nova tentativa de ler as fases, também a segunda falha seguida', async () => {
+      p = await montarPagina([derivadoBooleano]);
+      await p.acionar(p.editar(derivadoBooleano));
+      p.http.expectOne(urlDoFato(derivadoBooleano)).flush(structuredClone(derivadoBooleano));
+      await p.propagar();
+      const falhar = async (): Promise<void> => {
+        for (const req of p.http.match((r) => r.url.endsWith('/fases-canonicas'))) {
+          req.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+        }
+        p.atenderApoios();
+        await p.propagar();
+      };
+      const anuncio = (): string =>
+        p.drawerDoFato().querySelector('cfg-fato-definicao span.sr-only[role="status"]')
+          ?.textContent ?? '';
+      await falhar();
+
+      for (let vez = 0; vez < 2; vez++) {
+        await p.acionar(
+          p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement,
+        );
+        expect(anuncio()).toBe('Lendo fases...');
+        await falhar();
+        expect(anuncio()).toBe('Falha na leitura: fases.');
+      }
     });
   });
 

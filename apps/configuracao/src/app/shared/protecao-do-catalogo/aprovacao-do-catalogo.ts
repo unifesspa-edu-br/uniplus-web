@@ -47,10 +47,14 @@ export class AprovacaoDoCatalogo {
   private readonly _itens = signal<readonly ItemDaProtecaoDoCatalogoDto[]>([]);
   private readonly _carregado = signal(false);
   private readonly _comErro = signal(false);
+  private readonly _pendente = signal(false);
   private readonly _ultimoProblema = signal<ProblemDetails | null>(null);
 
   /** Verdadeiro quando a última leitura da lista falhou: a situação dos itens não é conhecida. */
   readonly comErro = this._comErro.asReadonly();
+
+  /** Verdadeiro enquanto a lista é lida. */
+  readonly pendente = this._pendente.asReadonly();
 
   /** A recusa da API na última leitura; `null` quando deu certo ou falhou sem resposta da API. */
   readonly ultimoProblema = this._ultimoProblema.asReadonly();
@@ -76,6 +80,7 @@ export class AprovacaoDoCatalogo {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((resultado) => {
+        this._pendente.set(false);
         if (resultado.ok) {
           this._ultimoProblema.set(null);
           this._itens.set(resultado.data);
@@ -94,6 +99,7 @@ export class AprovacaoDoCatalogo {
   carregar(): void {
     if (!PERMISSOES_DE_LEITURA.some((codigo) => this.permissoes.tem(codigo))) return;
     this._comErro.set(false);
+    this._pendente.set(true);
     this.leituras.next();
   }
 

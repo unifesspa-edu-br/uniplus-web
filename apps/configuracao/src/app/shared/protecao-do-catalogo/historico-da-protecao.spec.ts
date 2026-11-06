@@ -97,23 +97,64 @@ describe('HistoricoDaProtecaoComponent', () => {
     expect(texto(fixture)).toContain('Este item ainda não passou pela proteção de dados.');
   });
 
-  it('na recusa mostra o motivo e relê ao tentar novamente', async () => {
+  const RECUSA = [
+    { type: 'about:blank', title: 'Sem permissão', status: 403, code: 'uniplus.auth.proibido' },
+    {
+      status: 403,
+      statusText: 'Forbidden',
+      headers: { 'Content-Type': 'application/problem+json' },
+    },
+  ] as const;
+
+  const anuncio = (fixture: ComponentFixture<unknown>): string =>
+    (fixture.nativeElement as HTMLElement).querySelector('[role="status"].sr-only')?.textContent ??
+    '';
+
+  it('na recusa mostra o motivo, mantém o alerta durante a nova tentativa e leva o foco ao título quando dá certo', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
-    controller
-      .expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`)
-      .flush(
-        { type: 'about:blank', title: 'Sem permissão', status: 403, code: 'uniplus.auth.proibido' },
-        { status: 403, statusText: 'Forbidden', headers: { 'Content-Type': 'application/problem+json' } },
-      );
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
     await fixture.whenStable();
     fixture.detectChanges();
     expect(texto(fixture)).toContain('Não foi possível carregar o histórico');
 
-    const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('button.btn--secondary');
+    const raiz = fixture.nativeElement as HTMLElement;
+    const botao = raiz.querySelector<HTMLButtonElement>('button.btn--secondary');
+    botao?.focus();
     botao?.click();
+    fixture.detectChanges();
+    expect(botao?.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(botao);
     controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush([ato({})]);
     await fixture.whenStable();
     fixture.detectChanges();
+    await fixture.whenStable();
     expect(texto(fixture)).toContain('Solicitação');
+    expect(document.activeElement).toBe(raiz.querySelector('h3'));
+  });
+
+  it('anuncia a tentativa e a segunda falha seguida, que deixa o alerta com o mesmo texto', async () => {
+    const fixture = montar('TIPO_DOCUMENTO');
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      'button.btn--secondary',
+    );
+
+    botao?.click();
+    fixture.detectChanges();
+    expect(anuncio(fixture)).toBe('Lendo histórico da proteção...');
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anuncio(fixture)).toBe('Falha na leitura: histórico da proteção.');
+
+    botao?.click();
+    fixture.detectChanges();
+    expect(anuncio(fixture)).toBe('Lendo histórico da proteção...');
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(anuncio(fixture)).toBe('Falha na leitura: histórico da proteção.');
   });
 });

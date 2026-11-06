@@ -283,6 +283,56 @@ describe('Escritas de locais de oferta', () => {
     });
   });
 
+  describe('falha ao carregar os campi do formulário', () => {
+    const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
+    const tentar = (): HTMLButtonElement | null =>
+      raiz().querySelector<HTMLButtonElement>('button.cfg-link-button');
+
+    it('"Tentar novamente" fica indisponível, mantém o foco e leva ao campo quando dá certo', async () => {
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
+      await propagar();
+
+      tentar()?.focus();
+      tentar()?.click();
+      await propagar();
+
+      expect(tentar()?.getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(tentar());
+      controller.expectOne(CAMPI).flush([]);
+      await propagar();
+      await propagar();
+
+      expect(tentar()).toBeNull();
+      expect(document.activeElement).toBe(
+        elemento('select[formcontrolname="campusResponsavelId"]'),
+      );
+    });
+  });
+
+  describe('anúncio das tentativas de ler os campi', () => {
+    it('anuncia cada tentativa, também a segunda falha seguida', async () => {
+      const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
+      const anuncio = (): string =>
+        raiz().querySelectorAll('cfg-local-oferta-formulario p.sr-only[role="status"]')[1]
+          ?.textContent ?? '';
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+      controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
+      await propagar();
+
+      for (let vez = 0; vez < 2; vez++) {
+        raiz().querySelector<HTMLButtonElement>('button.cfg-link-button')?.click();
+        await propagar();
+        expect(anuncio()).toBe('Lendo campi...');
+        controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
+        await propagar();
+        expect(anuncio()).toBe('Falha na leitura: campi.');
+      }
+    });
+  });
+
   describe('envio barrado localmente com o endereço em branco', () => {
     const campoCep = (): HTMLInputElement =>
       elemento<HTMLInputElement>('ui-endereco-geo input[id$="-cep"]');

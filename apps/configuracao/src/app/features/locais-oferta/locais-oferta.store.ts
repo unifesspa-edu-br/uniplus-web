@@ -17,7 +17,6 @@ import {
   CampusDto,
   LocalOfertaDto,
 } from '@uniplus/shared-data/configuracao';
-import { UiLookupFalho } from '@uniplus/shared-ui/components';
 import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
 
 const PAGE_SIZE = 50;
@@ -34,10 +33,6 @@ export class LocaisOfertaStore {
   );
   private readonly campiPorId = computed(
     () => new Map(this.campi.opcoes().map((campus) => [campus.id, campus] as const)),
-  );
-
-  readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() =>
-    this.campi.comErro() ? [{ nome: 'campi', recarregar: () => this.campi.recarregar() }] : [],
   );
 
   readonly resolucoes = computed(

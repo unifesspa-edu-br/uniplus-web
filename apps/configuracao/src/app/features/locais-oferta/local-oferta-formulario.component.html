@@ -79,7 +79,13 @@
             @if (campiComErro()) {
               <span class="field__error">
                 Não foi possível carregar os campi para seleção.
-                <button type="button" class="cfg-link-button" (click)="recarregarCampi.emit()">
+                <button
+                  type="button"
+                  class="cfg-link-button"
+                  [attr.aria-disabled]="carregandoCampi() ? 'true' : null"
+                  [attr.aria-busy]="carregandoCampi() ? 'true' : null"
+                  (click)="recarregarCampi.emit()"
+                >
                   Tentar novamente
                 </button>
               </span>
@@ -99,6 +105,7 @@
   </form>
 
   <p class="sr-only" role="status">{{ salvando() ? 'Salvando local de oferta…' : '' }}</p>
+  <p class="sr-only" role="status">{{ anuncioDaLeitura() }}</p>
   <div class="form-drawer__footer">
     <button
       type="button"

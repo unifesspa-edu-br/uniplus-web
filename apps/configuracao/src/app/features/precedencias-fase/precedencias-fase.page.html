@@ -48,6 +48,7 @@
 }
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
 <cfg-precedencias-fase-lista
   [arestas]="store.arestasFiltradas()"
   [nomesDasFases]="fases.nomes()"
@@ -76,7 +77,9 @@
   [carregandoFases]="fases.pendente()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
+  [anuncioDaLeitura]="anuncioDoFormulario()"
   [salvando]="edicao.salvando()"
+  [gravando]="edicao.gravando()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
   (recarregarFases)="tentarNovamenteAsFasesNoFormulario()"
@@ -86,7 +89,7 @@
   rotulo="Remover"
   [(aberto)]="edicao.confirmando"
   [mensagem]="edicao.mensagemDaConfirmacao()"
-  [removendo]="edicao.removendo()"
+  [removendo]="edicao.gravando()"
   [erro]="edicao.erroRemocao()"
   [anuncio]="edicao.anuncioDaRemocao()"
   (confirmar)="edicao.removerConfirmado()"

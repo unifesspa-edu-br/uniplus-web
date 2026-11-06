@@ -1,3 +1,4 @@
+<span class="sr-only" role="status">{{ anuncioDaLeitura() }}</span>
 <div class="page-header page-header--form">
   <a
     class="btn btn--tertiary btn--sm btn--rect cfg-voltar"
@@ -71,9 +72,10 @@
     [fatos]="aplicabilidade.fatos()"
     [errosDasCondicoes]="aplicabilidade.errosDasCondicoes()"
     [recusas]="aplicabilidade.recusas()"
+    [catalogoPendente]="aplicabilidade.catalogoPendente()"
     [salvando]="edicao.salvando()"
     (condicoesChange)="aplicabilidade.trocar($event)"
-    (recarregarCatalogo)="aplicabilidade.recarregarCatalogo()"
+    (recarregarCatalogo)="tentarCatalogoNovamente()"
   />
   <cfg-modalidade-enquadramento [form]="edicao.form" [conferencias]="edicao.conferencias()" />
 </cfg-modalidade-formulario>

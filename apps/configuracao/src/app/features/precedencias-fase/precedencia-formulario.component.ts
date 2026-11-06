@@ -24,18 +24,22 @@ export class PrecedenciaFormularioComponent {
   readonly carregandoFases = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
+  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
+  readonly anuncioDaLeitura = input('');
   readonly salvando = input.required<boolean>();
+  /** Há escrita em curso ou a lista ainda recarrega: salvar fica indisponível, sem perder o foco. */
+  readonly gravando = input.required<boolean>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
   readonly recarregarFases = output<void>();
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
   protected aoClicarEmSalvar(evento: Event): void {
-    if (this.salvando()) evento.preventDefault();
+    if (this.gravando()) evento.preventDefault();
   }
 
   protected aoEnviar(): void {
-    if (this.salvando()) return;
+    if (this.gravando()) return;
     this.salvar.emit();
     if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }

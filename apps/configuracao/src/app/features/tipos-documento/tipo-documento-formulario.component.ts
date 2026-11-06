@@ -36,6 +36,8 @@ export class TipoDocumentoFormularioComponent {
   readonly modo = input.required<'criar' | 'editar'>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
+  /** Andamento e desfecho da nova tentativa de ler o que o formulário usa; fica dentro do drawer, que torna a página inerte. */
+  readonly anuncioDaLeitura = input('');
   readonly salvando = input.required<boolean>();
   readonly categorias = input.required<CategoriasDoFormulario>();
   readonly hipoteses = input.required<readonly OpcaoDeVocabulario[]>();

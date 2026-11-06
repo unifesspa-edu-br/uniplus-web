@@ -6,9 +6,9 @@ import {
   TipoLocalOferta,
 } from '@uniplus/shared-data/configuracao';
 import {
-  AlertComponent,
   EmptyStateComponent,
   IconButtonComponent,
+  LookupAlertComponent,
   LookupLabelComponent,
   PagerComponent,
   SpinnerComponent,
@@ -24,9 +24,9 @@ const VERBO_DA_ACAO: Readonly<Record<Acao, string>> = { editar: 'Editar', remove
   selector: 'cfg-locais-oferta-lista',
   standalone: true,
   imports: [
-    AlertComponent,
     EmptyStateComponent,
     IconButtonComponent,
+    LookupAlertComponent,
     LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
@@ -72,10 +72,6 @@ export class LocaisOfertaListaComponent {
 
   protected nomeDaAcao(acao: Acao, local: LocalOfertaDto): string {
     return `${VERBO_DA_ACAO[acao]} local de oferta ${this.tipoLabel(local.tipo)} — ${this.cidadeLabel(local)}`;
-  }
-
-  protected recarregar(falha: UiLookupFalho): void {
-    falha.recarregar();
   }
 
   protected acionarCadastro(): void {

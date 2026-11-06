@@ -2,6 +2,7 @@ import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PrecedenciaFormularioComponent } from './precedencia-formulario.component';
 import {
+  ERRO_INTERNO,
   ESCRITA,
   LISTA,
   Pagina,
@@ -112,12 +113,12 @@ describe('PrecedenciasFasePage — escritas pela interface', () => {
 
       expect(p.campo('sucessoraCodigo').matches(':disabled')).toBe(true);
       expect(document.activeElement).toBe(p.salvar());
-      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      post.flush(...problema(500, ERRO_INTERNO));
       await p.propagar();
       await p.propagar();
 
       expect(p.campo('sucessoraCodigo').matches(':disabled')).toBe(false);
-      expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Falha');
+      expect(p.elemento('ui-drawer ui-alert').textContent).toContain(ERRO_INTERNO.title);
       expect(document.activeElement).toBe(p.salvar());
       expect(p.salvar().getAttribute('aria-disabled')).toBeNull();
       submeter();

@@ -1,5 +1,7 @@
 <section aria-labelledby="cfg-mod-regra" class="form-section">
-  <h2 id="cfg-mod-regra" class="form-section__title">Quem concorre nesta modalidade</h2>
+  <h2 id="cfg-mod-regra" class="form-section__title" tabindex="-1">
+    Quem concorre nesta modalidade
+  </h2>
   <div class="field form-grid__full" [class.is-error]="recusas().length > 0">
     @switch (estadoDoCatalogo()) {
       @case ('erro') {
@@ -9,6 +11,8 @@
             <button
               type="button"
               class="btn btn--secondary btn--sm"
+              [attr.aria-disabled]="catalogoPendente() ? 'true' : null"
+              [attr.aria-busy]="catalogoPendente() ? 'true' : null"
               (click)="recarregarCatalogo.emit()"
             >
               Tentar novamente

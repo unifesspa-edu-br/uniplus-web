@@ -80,6 +80,15 @@ export class DiaNaoUtilCamposComponent {
     this.saidasDeCampo.update((saidas) => saidas + 1);
   }
 
+  /**
+   * A nova tentativa troca o aviso, e o botão com ele, pelo "Consultando…": o foco vai ao campo
+   * de busca, de onde a pessoa pode continuar, em vez de cair no corpo da página.
+   */
+  protected tentarNovamente(): void {
+    this.alteracao.emit({ tipo: 'novaTentativa' });
+    document.getElementById(`busca-municipio-${this.sufixoDeId()}`)?.focus();
+  }
+
   protected aoDigitarABusca(evento: Event): void {
     if (evento.target instanceof HTMLInputElement) {
       this.alteracao.emit({ tipo: 'busca', termo: evento.target.value });

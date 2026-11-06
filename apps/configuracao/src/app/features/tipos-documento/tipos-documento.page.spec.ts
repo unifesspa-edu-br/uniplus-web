@@ -208,6 +208,11 @@ describe('TiposDocumentoPage — leitura', () => {
     recarregar.focus();
     recarregar.click();
     await p.propagar();
+
+    expect(recarregar.isConnected).toBe(true);
+    expect(recarregar.getAttribute('aria-disabled')).toBe('true');
+    expect(recarregar.getAttribute('aria-busy')).toBe('true');
+    expect(document.activeElement).toBe(recarregar);
     p.atenderCategorias();
     await p.propagar();
 
@@ -216,6 +221,43 @@ describe('TiposDocumentoPage — leitura', () => {
       'Titulação e experiência',
     );
     expect(document.activeElement).toBe(p.elemento('#cfg-tipos-documento-list-title'));
+  });
+
+  it('anuncia cada nova tentativa de ler as categorias e a situação, também a segunda falha seguida', async () => {
+    p = await montarPagina([diploma], { categorias: 'falha' });
+    const anuncio = (): string =>
+      p.fixture.nativeElement.querySelectorAll(':scope > span.sr-only[role="status"]')[1]
+        ?.textContent ?? '';
+    const botao = (nome: string): HTMLButtonElement =>
+      [...p.fixture.nativeElement.querySelectorAll('.lookup-alert__retry')].find((b) =>
+        (b as HTMLElement).textContent?.includes(nome),
+      ) as HTMLButtonElement;
+
+    for (let vez = 0; vez < 2; vez++) {
+      botao('categorias').click();
+      await p.propagar();
+      expect(anuncio()).toBe('Lendo categorias...');
+      p.atenderCategorias('falha');
+      await p.propagar();
+      expect(anuncio()).toBe('Falha na leitura: categorias.');
+    }
+    p.atenderCategorias();
+    await p.propagar();
+
+    p.store.aprovacao.carregar();
+    for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
+    await p.propagar();
+    for (let vez = 0; vez < 2; vez++) {
+      botao('situação').focus();
+      botao('situação').click();
+      await p.propagar();
+      expect(botao('situação').getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(botao('situação'));
+      expect(anuncio()).toBe('Lendo situação da proteção de dados...');
+      for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
+      await p.propagar();
+      expect(anuncio()).toBe('Falha na leitura: situação da proteção de dados.');
+    }
   });
 
   it('limpa o chip selecionado quando a categoria sai do cadastro', async () => {

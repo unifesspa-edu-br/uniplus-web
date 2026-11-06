@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import {
   AlertComponent,
   EditorDeCondicoesComponent,
   type CondicaoEmClausula,
 } from '@uniplus/shared-ui/components';
+import { novaTentativaAnunciada } from '../../shared/foco';
 import { EdicaoDoFato } from './edicao-do-fato';
+import { ID_DAS_REGRAS_PADRAO } from './ids-do-fato';
 
 /** As regras padrão do derivado: o valor que cada uma acrescenta e as condições em que vale. */
 @Component({
@@ -21,6 +23,19 @@ export class FatoRegrasComponent {
   protected readonly fato = this.leitura.fato;
   protected readonly bloqueado = this.edicao.bloqueado;
   protected readonly regras = this.edicao.regras;
+  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncioDaLeitura = signal('');
+  private readonly novaTentativaDoCatalogo = novaTentativaAnunciada({
+    nome: 'catálogo de fatos',
+    pendente: this.leitura.catalogo.pendente,
+    falhou: this.leitura.catalogo.falhou,
+    destino: () => document.getElementById(ID_DAS_REGRAS_PADRAO),
+    anuncio: this.anuncioDaLeitura,
+  });
+
+  protected tentarCatalogoNovamente(): void {
+    this.novaTentativaDoCatalogo.executar(() => this.leitura.catalogo.recarregar());
+  }
 
   protected opcoesDeContribuicao(
     contribui: string | null,

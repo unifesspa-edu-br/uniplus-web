@@ -8,19 +8,37 @@ import {
   viewChild,
 } from '@angular/core';
 import { buscaDeMunicipiosNoGeo } from '@uniplus/shared-data/geo';
-import { BUSCA_DE_MUNICIPIOS } from '@uniplus/shared-ui/components';
-import { focarAposNovaTentativa, type NovaTentativa } from '../../shared/foco';
-import { anunciarLeitura } from './anuncio-da-leitura';
+import {
+  AlertComponent,
+  BUSCA_DE_MUNICIPIOS,
+  EditorDeFormularioComponent,
+  SpinnerComponent,
+} from '@uniplus/shared-ui/components';
+import { AlertaNovaTentativaComponent } from '../../shared/alerta-nova-tentativa';
+import {
+  acompanharFocoDoEnvio,
+  novaTentativaAnunciada,
+  type NovaTentativa,
+} from '../../shared/foco';
 import { EdicaoDoConteudoDoModelo } from './edicao-do-conteudo-do-modelo';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
-import {
-  ModeloFormularioDetalheComponent,
-  type LeiturasEmCurso,
-} from './modelo-formulario-detalhe.component';
+import { ModeloFormularioCabecalhoComponent } from './modelo-formulario-cabecalho.component';
+import { ModeloFormularioDocumentosComponent } from './modelo-formulario-documentos.component';
+import { ModeloFormularioIdentificacaoComponent } from './modelo-formulario-identificacao.component';
+import { ModeloFormularioRodapeComponent } from './modelo-formulario-rodape.component';
 
 @Component({
   selector: 'cfg-modelo-formulario-edicao-page',
-  imports: [ModeloFormularioDetalheComponent],
+  imports: [
+    AlertComponent,
+    AlertaNovaTentativaComponent,
+    SpinnerComponent,
+    EditorDeFormularioComponent,
+    ModeloFormularioCabecalhoComponent,
+    ModeloFormularioDocumentosComponent,
+    ModeloFormularioIdentificacaoComponent,
+    ModeloFormularioRodapeComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     ModeloFormularioEdicaoStore,
@@ -28,19 +46,14 @@ import {
     { provide: BUSCA_DE_MUNICIPIOS, useFactory: buscaDeMunicipiosNoGeo },
   ],
   templateUrl: './modelo-formulario-edicao.page.html',
+  host: { class: 'cfg-page' },
 })
 export class ModeloFormularioEdicaoPage {
   protected readonly store = inject(ModeloFormularioEdicaoStore);
   protected readonly edicao = inject(EdicaoDoConteudoDoModelo);
   protected readonly comMunicipios = inject(BUSCA_DE_MUNICIPIOS, { optional: true }) !== null;
-  private readonly detalhe = viewChild(ModeloFormularioDetalheComponent);
+  private readonly editor = viewChild(EditorDeFormularioComponent);
   protected readonly anuncio = signal('');
-  protected readonly tentando = computed<LeiturasEmCurso>(() => ({
-    modelo: this.store.carregando(),
-    termos: this.store.termosCarregando(),
-    catalogo: this.store.catalogo.isLoading(),
-    vocabulario: this.store.vocabularioDosDocumentosCarregando(),
-  }));
   private readonly novaTentativaDoModelo = this.novaTentativa(
     'modelo',
     this.store.carregando,
@@ -61,6 +74,13 @@ export class ModeloFormularioEdicaoPage {
     this.store.vocabularioDosDocumentosCarregando,
     this.store.vocabularioDosDocumentosComErro,
   );
+
+  constructor() {
+    acompanharFocoDoEnvio({
+      salvando: this.edicao.somenteLeitura,
+      aberto: computed(() => this.store.modelo() !== null),
+    });
+  }
 
   protected recarregarModelo(): void {
     this.novaTentativaDoModelo.executar(() => this.store.recarregar());
@@ -84,20 +104,16 @@ export class ModeloFormularioEdicaoPage {
     pendente: Signal<boolean>,
     falhou: Signal<boolean>,
   ): NovaTentativa {
-    const foco = focarAposNovaTentativa(pendente, falhou, () =>
-      document.getElementById('cfg-modelo-titulo'),
-    );
-    const anunciada = anunciarLeitura(nome, pendente, falhou, this.anuncio);
-    return {
-      executar: (disparar) =>
-        foco.executar(() => {
-          anunciada.iniciar();
-          disparar();
-        }),
-    };
+    return novaTentativaAnunciada({
+      nome,
+      pendente,
+      falhou,
+      destino: () => document.getElementById('cfg-modelo-titulo'),
+      anuncio: this.anuncio,
+    });
   }
 
   protected salvar(): void {
-    if (this.edicao.salvar()) this.detalhe()?.focarPrimeiroCampoInvalido();
+    if (this.edicao.salvar()) void this.editor()?.focarPrimeiroCampoInvalido();
   }
 }

@@ -16,7 +16,7 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { focoEstaLivre } from '../../shared/foco';
+import { anunciarLeitura, focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
 import { ehOBeneficiario } from './beneficiario-do-pedido';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { MotivoDialogComponent } from './motivo-dialog.component';
@@ -70,7 +70,23 @@ export class PedidoDetalhePage {
   private readonly destruido = signal(false);
   /** A pessoa pediu "Tentar novamente" e a carga ainda não terminou. */
   private novaTentativaPedida = false;
+  /** A pessoa pediu "Tentar novamente" ao alerta de falha da carga, que segue na tela até a carga terminar. */
+  private recargaPedida = false;
   private readonly chave = this.edicao.chave;
+  private readonly falhaDaCarga = computed(() => this.store.erro() !== null);
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.store.carregando,
+    this.falhaDaCarga,
+    () => this.host.nativeElement.querySelector<HTMLElement>('#cfg-pedido-titulo'),
+  );
+  /** O alerta mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncio = signal('');
+  private readonly leituraAnunciada = anunciarLeitura(
+    'pedido',
+    this.store.carregando,
+    this.falhaDaCarga,
+    this.anuncio,
+  );
 
   protected readonly escopo = nomesDeEscopo();
   protected readonly pedido = this.store.pedido;
@@ -183,6 +199,11 @@ export class PedidoDetalhePage {
    * alerta, o da decisão) saiu da tela: o foco vai ao título, se ninguém o tomou.
    */
   private focarTituloAposNovaTentativa(): void {
+    if (this.recargaPedida) {
+      // O alerta da falha ficou na tela durante a tentativa; com a carga concluída, sai.
+      this.recargaPedida = false;
+      this.erro.set(null);
+    }
     if (!this.novaTentativaPedida && !this.edicao.decisaoConcluida()) return;
     this.novaTentativaPedida = false;
     this.edicao.decisaoConcluida.set(false);
@@ -198,6 +219,7 @@ export class PedidoDetalhePage {
 
   private exibirErroDeCarga(erro: string): void {
     this.novaTentativaPedida = false;
+    this.recargaPedida = false;
     this.edicao.decisaoConcluida.set(false);
     this.erro.set(erro);
     this.confirmando.set(false);
@@ -263,9 +285,11 @@ export class PedidoDetalhePage {
   }
 
   protected recarregar(): void {
-    this.erro.set(null);
-    this.novaTentativaPedida = true;
-    this.store.recarregar();
+    this.novaTentativa.executar(() => {
+      this.recargaPedida = true;
+      this.leituraAnunciada.iniciar();
+      this.store.recarregar();
+    });
   }
 
   protected irParaOAnexo(): void {

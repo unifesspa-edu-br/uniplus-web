@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { AlertComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { focarAposNovaTentativa } from '../../shared/foco';
+import { anunciarLeitura, avisoDeFalhaDoLookup, focarAposNovaTentativa } from '../../shared/foco';
 import { FaseCanonicaFormularioComponent } from './fase-canonica-formulario.component';
 import { FasesCanonicasListaComponent } from './fases-canonicas-lista.component';
 import { FasesCanonicasStore } from './fases-canonicas.store';
@@ -31,7 +31,29 @@ export class FasesCanonicasPage {
     () => document.getElementById('cfg-fases-canonicas-list-title'),
   );
 
+  protected readonly avisoDasUnidades = avisoDeFalhaDoLookup(this.store.unidades);
+  /** O aviso mantido na tela durante a tentativa não muda de texto; esta região anuncia cada tentativa. */
+  protected readonly anuncioDasUnidades = signal('');
+  private readonly leituraDasUnidades = anunciarLeitura(
+    'unidades',
+    this.store.unidades.pendente,
+    this.avisoDasUnidades,
+    this.anuncioDasUnidades,
+  );
+  private readonly novaTentativaDasUnidades = focarAposNovaTentativa(
+    this.store.unidades.pendente,
+    this.avisoDasUnidades,
+    () => document.querySelector<HTMLElement>('select[formcontrolname="unidadeSugeridaId"]'),
+  );
+
   protected tentarNovamente(): void {
     this.novaTentativa.executar(() => this.store.tentarNovamente());
+  }
+
+  protected tentarNovamenteAsUnidades(): void {
+    this.novaTentativaDasUnidades.executar(() => {
+      this.leituraDasUnidades.iniciar();
+      this.store.unidades.recarregar();
+    });
   }
 }
