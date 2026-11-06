@@ -82,12 +82,10 @@ describe('TiposEtapaApi', () => {
   });
 
   /**
-   * O endpoint não filtra por atividade, e o cliente não pode inventar o filtro:
-   * um tipo inativo já referenciado por uma etapa gravada precisa chegar à tela
-   * para que o vínculo existente tenha rótulo. Quem separa o que é escolhível do
-   * que é apenas exibível é o consumidor, pelo campo `ativo`.
+   * Quem decide o que a listagem traz é o endpoint, que aceita só paginação: o
+   * cliente não acrescenta filtro próprio e entrega o que recebeu.
    */
-  it('listar() devolve ativos e inativos, sem filtrar por conta própria', async () => {
+  it('listar() entrega o que o endpoint devolve, sem filtrar por conta própria', async () => {
     const promise = firstValueFrom(api.listar());
     const req = controller.expectOne(
       (request) => request.url === `${BASE}/api/configuracao/tipos-etapa`,

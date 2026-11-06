@@ -24,11 +24,9 @@ export interface TiposEtapaQuery {
  * snapshot independente do rótulo editorial da etapa, recusando com
  * `TipoEtapaNaoEncontradoOuInativo` o que não existe ou não está ativo.
  *
- * **A listagem não filtra por atividade** — o endpoint aceita só paginação, e
- * devolve ativos e inativos juntos. A separação é de quem consome, e ela tem
- * duas metades: um tipo inativo não pode ser oferecido como escolha nova, mas
- * precisa continuar visível quando já referenciado por uma etapa gravada, senão
- * a tela exibiria um vínculo existente sem rótulo.
+ * **A listagem traz só os tipos ativos**, e o endpoint aceita apenas paginação.
+ * Uma etapa gravada pode citar um tipo que já saiu da listagem: quem consome
+ * trata o id sem correspondência, sem deixar o vínculo existente sem rótulo.
  *
  * Cada tipo declara também se admite compor a nota final e se admite eliminar
  * candidato. É desse par que o wizard tira quais caracteres oferecer numa etapa
