@@ -18,7 +18,6 @@ import { TipoAtoPublicadoDto, TiposAtoApi } from '@uniplus/shared-data/publicaco
 import { formatIsoDateBr } from '@uniplus/shared-data/utils';
 import { aguardarRecarga } from '../../shared/foco';
 import {
-  AtoForm,
   ValoresDoAto,
   comandoDeAtualizacao,
   comandoDeCriacao,
@@ -31,7 +30,6 @@ import {
 import { TiposAtoStore } from './tipos-ato.store';
 import {
   descartarRecusasDoServidor,
-  marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   MENSAGEM_SEM_MAPEAMENTO,
 } from '../../shared/formulario';
@@ -246,11 +244,6 @@ export class EdicaoDosTiposAto {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarCampo(nome: keyof AtoForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

@@ -1,12 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
-import {
-  ApiResult,
-  ProblemDetails,
-  ProblemI18nService,
-  ProblemValidationError,
-} from '@uniplus/shared-core/http';
+import { ApiResult, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -17,7 +12,6 @@ import { OfertaCursoDto, OfertasCursoApi } from '@uniplus/shared-data/configurac
 import { aguardarRecarga } from '../../shared/foco';
 import {
   OFERTA_EM_BRANCO,
-  OfertaCursoForm,
   comandoDeAtualizacao,
   comandoDeCriacao,
   controleDoCampoDoServidor,
@@ -270,14 +264,21 @@ export class EdicaoDasOfertasCurso {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (problem.errors?.length && this.aplicarErrosDeValidacao(problem.errors)) {
+    if (
+      problem.errors?.length &&
+      marcarRecusasDosCampos(problem.errors, this.form, controleDoCampoDoServidor)
+    ) {
       this.renovarChaveDeIdempotencia();
       return;
     }
     const campo = controleDoCodigoDoServidor(problem.code);
     if (campo !== null) {
       this.renovarChaveDeIdempotencia();
-      this.marcarCampo(campo, problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls[campo],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     // O 409 do envio é `processing_conflict`: pede repetir o mesmo comando com a mesma chave.
@@ -288,16 +289,6 @@ export class EdicaoDasOfertasCurso {
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
     }
-  }
-
-  /** Marca cada campo recusado com a própria mensagem; devolve se algum erro pôde ser mapeado. */
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): boolean {
-    return marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
-  }
-
-  private marcarCampo(campo: keyof OfertaCursoForm, code: string, message: string): void {
-    const controle = this.form.controls[campo];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChaveDeIdempotencia(): void {

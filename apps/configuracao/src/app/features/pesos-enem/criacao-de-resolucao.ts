@@ -18,7 +18,7 @@ import { aplicarRecusaDoGrupo } from './pesos-enem-recusas';
 import { rotuloDoGrupo } from './pesos-enem-rotulos';
 import { PesosEnemStore } from './pesos-enem.store';
 import type { EstadoOperacao } from './edicao-dos-parametros';
-import { descartarRecusasDoServidor } from '../../shared/formulario';
+import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 
 /** Vendor code do DomainError de par resolução + grupo já cadastrado (409 Conflict). */
 const PAR_JA_EXISTE_CODE = 'uniplus.configuracao.peso_area_enem.par_ja_existe';
@@ -247,8 +247,7 @@ export class CriacaoDeResolucao {
    *  vai só ao banner. */
   private marcarResolucaoDuplicada(): void {
     const control = this.form.controls.resolucao;
-    control.setErrors({ backend: { code: PAR_JA_EXISTE_CODE, message: MENSAGEM_DE_DUPLICIDADE } });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, PAR_JA_EXISTE_CODE, MENSAGEM_DE_DUPLICIDADE);
   }
 }
 

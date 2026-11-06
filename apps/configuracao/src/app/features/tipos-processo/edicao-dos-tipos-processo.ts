@@ -18,7 +18,6 @@ import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configur
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
 import { aguardarRecarga } from '../../shared/foco';
 import {
-  TipoProcessoForm,
   ValoresDoTipoProcesso,
   comandoDeAtualizacao,
   comandoDeCriacao,
@@ -308,7 +307,11 @@ export class EdicaoDosTiposProcesso {
     }
     if (problem.code === CODIGO_JA_EXISTE) {
       this.renovarChave();
-      this.marcarCampo('codigo', problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls['codigo'],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
@@ -319,11 +322,6 @@ export class EdicaoDosTiposProcesso {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarCampo(nome: keyof TipoProcessoForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

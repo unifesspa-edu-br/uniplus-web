@@ -23,7 +23,7 @@ import {
 } from './tipo-banca-form';
 import {
   descartarRecusasDoServidor,
-  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
   MENSAGEM_SEM_MAPEAMENTO,
 } from '../../shared/formulario';
 type Escrita = 'salvando' | 'removendo';
@@ -193,14 +193,7 @@ export class EdicaoDosTiposBanca {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
   private aplicarErros(errors: ReadonlyArray<ProblemValidationError>): void {
-    let aplicou = false;
-    for (const erro of errors) {
-      const nome = controleDoCampoDoServidor(erro.field);
-      if (nome === null) continue;
-      const controle = this.form.controls[nome];
-      marcarRecusaDoServidor(controle, erro.code, erro.message);
-      aplicou = true;
-    }
+    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
   private renovarChave(): void {

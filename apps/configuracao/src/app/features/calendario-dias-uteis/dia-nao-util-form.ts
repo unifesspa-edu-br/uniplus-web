@@ -1,8 +1,9 @@
-import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { ProblemValidationError } from '@uniplus/shared-core/http';
 import type { DiaNaoUtilCommandItem } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
+  marcarRecusaDoServidor,
   mensagemDeErroDoControle,
   nullIfBlank,
 } from '../../shared/formulario';
@@ -188,11 +189,10 @@ export function aplicarErroNoDia(grupo: GrupoDoDia, erro: ProblemValidationError
   if (nome === null) {
     return false;
   }
-  apontarRecusa(grupo.controls[CONTROLE_DO_CAMPO_NO_SERVIDOR[nome]], erro.code, erro.message);
+  marcarRecusaDoServidor(
+    grupo.controls[CONTROLE_DO_CAMPO_NO_SERVIDOR[nome]],
+    erro.code,
+    erro.message,
+  );
   return true;
-}
-
-export function apontarRecusa(controle: AbstractControl, codigo: string, mensagem: string): void {
-  controle.setErrors({ ...controle.errors, backend: { code: codigo, message: mensagem } });
-  controle.markAsTouched();
 }

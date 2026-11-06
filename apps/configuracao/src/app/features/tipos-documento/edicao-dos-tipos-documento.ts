@@ -21,7 +21,6 @@ import type { ProtecaoDoItem } from '../../shared/protecao-do-catalogo';
 import { categoriasDoFormulario } from './categorias-do-formulario';
 import { protecaoNoFormulario } from './protecao-no-formulario';
 import {
-  TipoDocumentoForm,
   ValoresDoTipoDocumento,
   comandoDeAtualizacao,
   comandoDeCriacao,
@@ -332,7 +331,11 @@ export class EdicaoDosTiposDocumento {
     }
     if (problem.code === CODIGO_JA_EXISTE) {
       this.renovarChave();
-      this.marcarCampo('codigo', problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls['codigo'],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
@@ -343,11 +346,6 @@ export class EdicaoDosTiposDocumento {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarCampo(nome: keyof TipoDocumentoForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

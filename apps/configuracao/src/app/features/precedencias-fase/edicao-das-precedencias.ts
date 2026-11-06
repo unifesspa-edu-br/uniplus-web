@@ -286,7 +286,7 @@ export class EdicaoDasPrecedencias {
     }
     const controle = this.controleDaRecusa(problem.code);
     if (controle === null) return false;
-    this.marcarRecusa(controle, problem.code, this.problemI18n.resolve(problem).title);
+    marcarRecusaDoServidor(controle, problem.code, this.problemI18n.resolve(problem).title);
     return true;
   }
 
@@ -299,10 +299,6 @@ export class EdicaoDasPrecedencias {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarRecusa(controle: AbstractControl, code: string, message: string): void {
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

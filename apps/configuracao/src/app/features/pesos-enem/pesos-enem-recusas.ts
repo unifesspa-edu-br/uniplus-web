@@ -1,6 +1,6 @@
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import { ProblemDetails, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { controlNameFromBackendField } from '../../shared/formulario';
+import { controlNameFromBackendField, marcarRecusaDoServidor } from '../../shared/formulario';
 import type { AreaForm } from './pesos-enem-form';
 
 /** Campos de primeiro nível do pedido que o operador corrige no contexto atual. O que falta
@@ -77,8 +77,7 @@ function marcarCamposRecusados(
     }
   }
   for (const [control, { code, mensagens }] of porControle) {
-    control.setErrors({ backend: { code, message: mensagens.join(' ') } });
-    control.markAsTouched();
+    marcarRecusaDoServidor(control, code, mensagens.join(' '));
   }
   return semCampo;
 }

@@ -241,7 +241,11 @@ export class EdicaoDosRecursosAcessibilidade {
     const campo = CAMPO_POR_CONFLITO.get(problem.code);
     if (campo !== undefined) {
       this.renovarChave();
-      this.marcarCampo(campo, problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls[campo],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
@@ -252,11 +256,6 @@ export class EdicaoDosRecursosAcessibilidade {
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
     const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarCampo(nome: keyof RecursoAcessibilidadeForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

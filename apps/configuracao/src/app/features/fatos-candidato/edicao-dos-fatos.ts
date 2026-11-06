@@ -20,7 +20,6 @@ import { CLASSIFICACOES_DE_PROTECAO, rotuloDe } from '../../shared/protecao-do-c
 import { CODIGO_JA_EXISTE, ehConflitoDeConcorrencia } from './conflitos-do-fato';
 import { EdicaoDoFato } from './edicao-do-fato';
 import {
-  CampoDaCriacao,
   controleDoCampoDoServidor,
   criarFormularioDeFato,
   criarNaApi,
@@ -29,7 +28,11 @@ import {
 import type { AcaoDeAtivacao } from './fato-candidato.regras';
 import { FatosCandidatoStore } from './fatos-candidato.store';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
-import { descartarRecusasDoServidor } from '../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  marcarRecusasDosCampos,
+} from '../../shared/formulario';
 
 type Escrita = 'criando' | 'ativando' | 'aceitando';
 type Modo = 'criar' | 'editar';
@@ -312,7 +315,11 @@ export class EdicaoDosFatos {
   private recusarCriacao(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.chaveDaCriacao.set(idempotencyKey.create());
     if (problem.code === CODIGO_JA_EXISTE) {
-      this.marcarCampo('codigo', this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls.codigo,
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && this.marcarCamposRecusados(problem))
@@ -322,20 +329,7 @@ export class EdicaoDosFatos {
   }
 
   private marcarCamposRecusados(problem: ProblemDetails): boolean {
-    let aplicou = false;
-    for (const recusa of problem.errors ?? []) {
-      const campo = controleDoCampoDoServidor(recusa.field);
-      if (campo === null) continue;
-      this.marcarCampo(campo, recusa.message);
-      aplicou = true;
-    }
-    return aplicou;
-  }
-
-  private marcarCampo(campo: CampoDaCriacao, mensagem: string): void {
-    const controle = this.form.controls[campo];
-    controle.setErrors({ backend: { message: mensagem } });
-    controle.markAsTouched();
+    return marcarRecusasDosCampos(problem.errors ?? [], this.form, controleDoCampoDoServidor);
   }
 
   /** A mensagem da recusa para o diálogo; só a falha do servidor (5xx) avisa também por toast. */

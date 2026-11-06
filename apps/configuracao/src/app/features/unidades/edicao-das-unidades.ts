@@ -268,7 +268,11 @@ export class EdicaoDasUnidades {
     const campoDuplicado = CAMPO_DO_CONFLITO[problem.code];
     if (campoDuplicado !== undefined) {
       this.renovarChave();
-      this.marcarCampo(campoDuplicado, problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls[campoDuplicado],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
       return;
     }
     if (ehErroDeEndereco(problem.code)) {
@@ -291,17 +295,12 @@ export class EdicaoDasUnidades {
       }
       const nome = controleDoCampoDoServidor(recusa.field);
       if (nome === null) continue;
-      this.marcarCampo(nome, recusa.code, recusa.message);
+      marcarRecusaDoServidor(this.form.controls[nome], recusa.code, recusa.message);
       aplicouAlgum = true;
     }
     if (!aplicouAlgum) {
       this.erro.set(MENSAGEM_SEM_MAPEAMENTO);
     }
-  }
-
-  private marcarCampo(nome: keyof UnidadeForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

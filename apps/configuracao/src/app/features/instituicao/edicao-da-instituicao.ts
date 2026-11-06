@@ -20,7 +20,6 @@ import { aguardarRecarga } from '../../shared/foco';
 import {
   INSTITUICAO_JA_EXISTE_CODE,
   INSTITUICAO_NAO_ENCONTRADA_CODE,
-  InstituicaoForm,
   UNIDADE_RAIZ_INVALIDA_CODES,
   ValoresDaInstituicao,
   comandoDeAtualizacao,
@@ -259,7 +258,11 @@ export class EdicaoDaInstituicao {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.aplicarErrosDeValidacao(problem.errors);
     } else if (UNIDADE_RAIZ_INVALIDA_CODES.has(problem.code)) {
-      this.marcarCampo('unidadeRaizId', problem.code, this.problemI18n.resolve(problem).title);
+      marcarRecusaDoServidor(
+        this.form.controls['unidadeRaizId'],
+        problem.code,
+        this.problemI18n.resolve(problem).title,
+      );
     } else if (ehErroDeEndereco(problem.code)) {
       this.erroDoEndereco.set(this.problemI18n.resolve(problem).title);
     } else {
@@ -292,17 +295,12 @@ export class EdicaoDaInstituicao {
       }
       const nome = controleDoCampoDoServidor(recusa.field);
       if (nome !== null) {
-        this.marcarCampo(nome, recusa.code, recusa.message);
+        marcarRecusaDoServidor(this.form.controls[nome], recusa.code, recusa.message);
         aplicouAlgum = true;
       }
     }
     this.erroDoEndereco.set(erroEndereco);
     this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
-  }
-
-  private marcarCampo(nome: keyof InstituicaoForm, code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
   }
 
   private renovarChave(): void {

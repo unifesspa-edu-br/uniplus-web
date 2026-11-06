@@ -1,5 +1,6 @@
 import type { FormGroup } from '@angular/forms';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 import {
   campoDaRecusa,
   citacoesDaRecusa,
@@ -23,8 +24,7 @@ export function aplicarErrosNoFormulario(formulario: FormGroup, problem: Problem
   for (const erro of problem.errors ?? []) {
     const controle = formulario.get(campoDaRecusa(erro.field));
     if (controle === null) continue;
-    controle.setErrors({ backend: { code: erro.code, message: erro.message } });
-    controle.markAsTouched();
+    marcarRecusaDoServidor(controle, erro.code, erro.message);
     aplicou = true;
   }
   return aplicou;

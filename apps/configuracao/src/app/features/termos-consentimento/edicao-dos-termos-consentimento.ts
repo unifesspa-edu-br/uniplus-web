@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import {
@@ -21,7 +21,6 @@ import { TermoConsentimentoStore } from './termo-consentimento.store';
 import {
   AcaoTermo,
   CriarForm,
-  RascunhoForm,
   comandoDeCriacao,
   comandoDeRascunho,
   controleDoCampoDoServidor,
@@ -29,7 +28,11 @@ import {
   criarFormularioRascunho,
   valoresDoRascunho,
 } from './termo-consentimento-form';
-import { marcarRecusaDoServidor, MENSAGEM_SEM_MAPEAMENTO } from '../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  MENSAGEM_SEM_MAPEAMENTO,
+} from '../../shared/formulario';
 
 type Escrita = AcaoTermo | 'criar';
 
@@ -127,7 +130,7 @@ export class EdicaoDosTermosConsentimento {
 
   criar(): void {
     this.formError.set(null);
-    this.limparRecusas(this.criarForm);
+    descartarRecusasDoServidor(this.criarForm);
     if (this.criarForm.invalid) {
       this.criarForm.markAllAsTouched();
       return;
@@ -142,7 +145,7 @@ export class EdicaoDosTermosConsentimento {
     const id = this.id();
     if (id === null || this.termo() === null) return;
     this.acaoErro.set(null);
-    this.limparRecusas(this.rascunhoForm);
+    descartarRecusasDoServidor(this.rascunhoForm);
     if (this.rascunhoForm.invalid) {
       this.rascunhoForm.markAllAsTouched();
       return;
@@ -291,12 +294,6 @@ export class EdicaoDosTermosConsentimento {
     (escrita === 'criar' ? this.formError : this.acaoErro).set(
       aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO,
     );
-  }
-
-  private limparRecusas(form: FormGroup<CriarForm> | FormGroup<RascunhoForm>): void {
-    Object.values(form.controls).forEach((controle) => {
-      if (controle.hasError('backend')) controle.updateValueAndValidity();
-    });
   }
 
   private renovarChave(): void {

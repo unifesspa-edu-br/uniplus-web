@@ -12,7 +12,11 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CalendarioDiasUteisApi } from '@uniplus/shared-data/configuracao';
-import { controlNameFromBackendField, descartarRecusasDoServidor } from '../../shared/formulario';
+import {
+  controlNameFromBackendField,
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+} from '../../shared/formulario';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import {
   CalendarioForm,
@@ -21,7 +25,6 @@ import {
 } from './calendario-form';
 import {
   aplicarErroNoDia,
-  apontarRecusa,
   criarGrupoDeDiaNaoUtil,
   GrupoDoDia,
   indiceDoDiaNoServidor,
@@ -134,7 +137,7 @@ export class EdicaoDoCalendario {
     if (controlNameFromBackendField(erro.field, CAMPO_DA_VERSAO) === null) {
       return false;
     }
-    apontarRecusa(this.form.controls.versaoDataset, erro.code, erro.message);
+    marcarRecusaDoServidor(this.form.controls.versaoDataset, erro.code, erro.message);
     return true;
   }
 }
