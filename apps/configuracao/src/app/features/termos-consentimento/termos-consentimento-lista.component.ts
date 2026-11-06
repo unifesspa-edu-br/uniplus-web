@@ -2,8 +2,8 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { RouterLink } from '@angular/router';
 import { FORMAS_ACEITE } from '@uniplus/shared-data/configuracao';
 import {
-  AlertComponent,
   EmptyStateComponent,
+  FilterBarComponent,
   IconButtonComponent,
   PagerComponent,
   SpinnerComponent,
@@ -29,8 +29,8 @@ const FORMA_ACEITE_VARIANTE: Readonly<Record<string, UiTagVariant>> = {
   standalone: true,
   imports: [
     RouterLink,
-    AlertComponent,
     EmptyStateComponent,
+    FilterBarComponent,
     PagerComponent,
     SpinnerComponent,
     TagComponent,
@@ -49,12 +49,8 @@ export class TermosConsentimentoListaComponent {
   readonly errorMessage = input.required<string | null>();
   readonly buscaAlterada = output<string>();
   readonly limpar = output<void>();
-  readonly tentar = output<void>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
-  protected inputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
-  }
   protected formaAceiteLabel(token: string): string {
     return rotulo(FORMAS_ACEITE, token);
   }

@@ -11,16 +11,11 @@
     }}
   </ui-alert>
 
-  <form
-    [formGroup]="form()"
-    (ngSubmit)="!processando() && salvar.emit()"
-    novalidate
-    class="form-drawer__form"
-  >
+  <form [formGroup]="form()" (ngSubmit)="aoEnviar()" novalidate class="form-drawer__form">
     <fieldset class="cfg-termo-consentimento__campos" [disabled]="processando()">
       <legend class="sr-only">Campos do rascunho</legend>
       <div class="form-grid">
-        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.texto)">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('texto')">
           <span class="field__label">Texto</span>
           <textarea
             class="textarea"
@@ -28,34 +23,34 @@
             formControlName="texto"
             [attr.aria-describedby]="
               'termo-rascunho-texto-dica' +
-              (erroDoCampo(form().controls.texto) ? ' termo-rascunho-texto-erro' : '')
+              (erroDoCampo('texto') ? ' termo-rascunho-texto-erro' : '')
             "
-            [attr.aria-invalid]="erroDoCampo(form().controls.texto) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('texto') ? 'true' : null"
           ></textarea>
           <span id="termo-rascunho-texto-dica" class="field__hint"
             >Até {{ textoMax }} caracteres.</span
           >
-          @if (erroDoCampo(form().controls.texto)) {
+          @if (erroDoCampo('texto')) {
             <span id="termo-rascunho-texto-erro" class="field__error">{{
-              erroDoCampo(form().controls.texto)
+              erroDoCampo('texto')
             }}</span>
           }
         </label>
 
-        <label class="field" [class.is-error]="erroDoCampo(form().controls.baseLegal)">
+        <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
           <span class="field__label">Base legal</span>
           <input
             class="input"
             type="text"
             formControlName="baseLegal"
             [attr.aria-describedby]="
-              erroDoCampo(form().controls.baseLegal) ? 'termo-rascunho-baseLegal-erro' : null
+              erroDoCampo('baseLegal') ? 'termo-rascunho-baseLegal-erro' : null
             "
-            [attr.aria-invalid]="erroDoCampo(form().controls.baseLegal) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
           />
-          @if (erroDoCampo(form().controls.baseLegal)) {
+          @if (erroDoCampo('baseLegal')) {
             <span id="termo-rascunho-baseLegal-erro" class="field__error">{{
-              erroDoCampo(form().controls.baseLegal)
+              erroDoCampo('baseLegal')
             }}</span>
           }
         </label>
@@ -67,17 +62,17 @@
             formControlName="formaAceite"
             [attr.aria-describedby]="
               'termo-rascunho-formaAceite-dica' +
-              (erroDoCampo(form().controls.formaAceite) ? ' termo-rascunho-formaAceite-erro' : '')
+              (erroDoCampo('formaAceite') ? ' termo-rascunho-formaAceite-erro' : '')
             "
-            [attr.aria-invalid]="erroDoCampo(form().controls.formaAceite) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('formaAceite') ? 'true' : null"
           >
             @for (opcao of formasAceite; track opcao.value) {
               <option [value]="opcao.value">{{ opcao.label }}</option>
             }
           </select>
-          @if (erroDoCampo(form().controls.formaAceite)) {
+          @if (erroDoCampo('formaAceite')) {
             <span id="termo-rascunho-formaAceite-erro" class="field__error">{{
-              erroDoCampo(form().controls.formaAceite)
+              erroDoCampo('formaAceite')
             }}</span>
           }
           <span
@@ -95,12 +90,13 @@
       <button
         type="submit"
         class="btn btn--primary"
-        [attr.aria-disabled]="processando()"
-        [attr.aria-busy]="acaoEmAndamento() === 'rascunho'"
+        data-acao="rascunho"
+        [attr.aria-disabled]="processando() ? 'true' : null"
+        [attr.aria-busy]="acaoEmAndamento() === 'rascunho' ? 'true' : null"
         (click)="processando() ? $event.preventDefault() : null"
       >
         @if (acaoEmAndamento() === 'rascunho') {
-          <ui-spinner size="sm" />
+          <ui-spinner spinnerSize="sm" />
         }
         {{ acaoEmAndamento() === 'rascunho' ? 'Salvando...' : 'Salvar rascunho' }}
       </button>
@@ -118,12 +114,14 @@
         <button
           type="button"
           class="btn btn--secondary btn--rect"
-          [disabled]="processando() || !podeRevisar()"
-          [attr.aria-disabled]="processando() || !podeRevisar() ? 'true' : null"
-          (click)="revisar.emit()"
+          data-acao="revisar"
+          [disabled]="!podeRevisar()"
+          [attr.aria-disabled]="processando() ? 'true' : null"
+          [attr.aria-busy]="acaoEmAndamento() === 'revisar' ? 'true' : null"
+          (click)="!processando() && revisar.emit()"
         >
           @if (acaoEmAndamento() === 'revisar') {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ acaoEmAndamento() === 'revisar' ? 'Marcando...' : 'Marcar como revisado' }}
         </button>
@@ -145,12 +143,14 @@
         <button
           type="button"
           class="btn btn--secondary btn--rect"
-          [disabled]="processando() || !podePromover()"
-          [attr.aria-disabled]="processando() || !podePromover() ? 'true' : null"
-          (click)="promover.emit()"
+          data-acao="promover"
+          [disabled]="!podePromover()"
+          [attr.aria-disabled]="processando() ? 'true' : null"
+          [attr.aria-busy]="acaoEmAndamento() === 'promover' ? 'true' : null"
+          (click)="!processando() && promover.emit()"
         >
           @if (acaoEmAndamento() === 'promover') {
-            <ui-spinner size="sm" />
+            <ui-spinner spinnerSize="sm" />
           }
           {{ acaoEmAndamento() === 'promover' ? 'Promovendo...' : 'Promover a versão' }}
         </button>
@@ -213,9 +213,10 @@
     <button
       type="button"
       class="btn btn--danger btn--rect"
-      [disabled]="processando() || !podeRemover()"
-      [attr.aria-disabled]="processando() || !podeRemover() ? 'true' : null"
-      (click)="remover.emit()"
+      data-acao="remover"
+      [disabled]="!podeRemover()"
+      [attr.aria-disabled]="processando() ? 'true' : null"
+      (click)="!processando() && remover.emit()"
     >
       Remover
     </button>

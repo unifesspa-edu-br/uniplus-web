@@ -1,67 +1,12 @@
-<div class="page-header">
-  <div class="page-header__content">
-    <h1 class="page-header__title">Termo de Consentimento</h1>
-    <p class="page-header__desc">
-      Catálogo administrável de termos de consentimento/declaração (declaração de veracidade,
-      consentimento LGPD, declaração de residência para cota territorial) que um Processo Seletivo
-      pode vir a exigir do candidato — o texto de um termo nunca é digitado livre no processo,
-      sempre vem deste cadastro.
-    </p>
-  </div>
-</div>
-
-@if (errorMessage()) {
-  <ui-alert variant="danger" heading="Não foi possível carregar os termos de consentimento">
-    {{ errorMessage() }}
-    <div class="cfg-termos-consentimento__retry">
-      <button
-        type="button"
-        class="btn btn--secondary btn--sm"
-        [disabled]="loading()"
-        (click)="tentar.emit()"
-      >
-        Tentar novamente
-      </button>
-    </div>
-  </ui-alert>
-}
-
-<div class="filter-bar" role="search" aria-label="Filtrar termos de consentimento">
-  <div class="filter-bar__row">
-    <div class="input-group">
-      <span class="input-group__addon" aria-hidden="true"><i class="pi pi-search"></i></span>
-      <input
-        type="search"
-        class="input"
-        placeholder="Buscar por nome..."
-        aria-label="Buscar por nome"
-        maxlength="200"
-        [value]="busca()"
-        [readOnly]="loading()"
-        [attr.aria-disabled]="loading()"
-        (input)="!loading() && buscaAlterada.emit(inputValue($event))"
-      />
-    </div>
-    <button
-      type="button"
-      class="btn btn--tertiary btn--sm btn--rect"
-      [attr.aria-disabled]="loading()"
-      (click)="!loading() && limpar.emit()"
-    >
-      Limpar
-    </button>
-  </div>
-</div>
-
 <section class="panel" aria-labelledby="cfg-termos-consentimento-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-termos-consentimento-title">Termos de consentimento</h2>
+      <h2 id="cfg-termos-consentimento-title" tabindex="-1">Termos de consentimento</h2>
       <span class="list-count" aria-label="Total de termos de consentimento exibidos">
         {{ termosFiltrados().length }}
       </span>
       @if (loading()) {
-        <span class="cfg-termos-consentimento__loading"><ui-spinner size="sm" /> Carregando</span>
+        <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
       }
     </div>
     <a
@@ -74,6 +19,25 @@
       Novo termo
     </a>
   </div>
+
+  <ui-filter-bar
+    ariaLabel="Filtrar termos de consentimento"
+    searchPlaceholder="Buscar por nome..."
+    searchAriaLabel="Buscar por nome"
+    [searchMaxLength]="200"
+    [searchValue]="busca()"
+    (searchValueChange)="buscaAlterada.emit($event)"
+  >
+    <button
+      uiFilterBarActions
+      type="button"
+      class="btn btn--tertiary btn--sm btn--rect"
+      [attr.aria-disabled]="loading() ? 'true' : null"
+      (click)="!loading() && limpar.emit()"
+    >
+      Limpar
+    </button>
+  </ui-filter-bar>
 
   @if (termosFiltrados().length > 0) {
     <div class="table-responsive">

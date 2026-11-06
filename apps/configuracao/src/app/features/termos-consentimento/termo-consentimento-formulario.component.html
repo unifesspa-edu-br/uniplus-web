@@ -1,68 +1,54 @@
-<form
-  [formGroup]="form()"
-  (ngSubmit)="!criando() && salvar.emit()"
-  novalidate
-  class="form-drawer__form"
->
+<form [formGroup]="form()" (ngSubmit)="aoEnviar()" novalidate class="form-drawer__form">
   <fieldset class="form-drawer__campos" role="none" [disabled]="criando()">
     <section aria-labelledby="cfg-termo-novo" class="form-section">
       <h2 id="cfg-termo-novo" class="form-section__title">Novo termo</h2>
       <div class="form-grid">
-        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.nome)">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
           <span class="field__label is-required">Nome</span>
           <input
             class="input"
             type="text"
             formControlName="nome"
-            [attr.aria-describedby]="
-              erroDoCampo(form().controls.nome) ? 'termo-novo-nome-erro' : null
-            "
+            [attr.aria-describedby]="erroDoCampo('nome') ? 'termo-novo-nome-erro' : null"
             aria-required="true"
-            [attr.aria-invalid]="erroDoCampo(form().controls.nome) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
           />
-          @if (erroDoCampo(form().controls.nome)) {
-            <span id="termo-novo-nome-erro" class="field__error">{{
-              erroDoCampo(form().controls.nome)
-            }}</span>
+          @if (erroDoCampo('nome')) {
+            <span id="termo-novo-nome-erro" class="field__error">{{ erroDoCampo('nome') }}</span>
           }
         </label>
 
-        <label class="field form-grid__full" [class.is-error]="erroDoCampo(form().controls.texto)">
+        <label class="field form-grid__full" [class.is-error]="erroDoCampo('texto')">
           <span class="field__label">Texto do rascunho</span>
           <textarea
             class="textarea"
             rows="6"
             formControlName="texto"
             [attr.aria-describedby]="
-              'termo-novo-texto-dica' +
-              (erroDoCampo(form().controls.texto) ? ' termo-novo-texto-erro' : '')
+              'termo-novo-texto-dica' + (erroDoCampo('texto') ? ' termo-novo-texto-erro' : '')
             "
-            [attr.aria-invalid]="erroDoCampo(form().controls.texto) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('texto') ? 'true' : null"
           ></textarea>
           <span id="termo-novo-texto-dica" class="field__hint"
             >Até {{ textoMax }} caracteres. Pode nascer vazio.</span
           >
-          @if (erroDoCampo(form().controls.texto)) {
-            <span id="termo-novo-texto-erro" class="field__error">{{
-              erroDoCampo(form().controls.texto)
-            }}</span>
+          @if (erroDoCampo('texto')) {
+            <span id="termo-novo-texto-erro" class="field__error">{{ erroDoCampo('texto') }}</span>
           }
         </label>
 
-        <label class="field" [class.is-error]="erroDoCampo(form().controls.baseLegal)">
+        <label class="field" [class.is-error]="erroDoCampo('baseLegal')">
           <span class="field__label">Base legal do rascunho</span>
           <input
             class="input"
             type="text"
             formControlName="baseLegal"
-            [attr.aria-describedby]="
-              erroDoCampo(form().controls.baseLegal) ? 'termo-novo-baseLegal-erro' : null
-            "
-            [attr.aria-invalid]="erroDoCampo(form().controls.baseLegal) ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('baseLegal') ? 'termo-novo-baseLegal-erro' : null"
+            [attr.aria-invalid]="erroDoCampo('baseLegal') ? 'true' : null"
           />
-          @if (erroDoCampo(form().controls.baseLegal)) {
+          @if (erroDoCampo('baseLegal')) {
             <span id="termo-novo-baseLegal-erro" class="field__error">{{
-              erroDoCampo(form().controls.baseLegal)
+              erroDoCampo('baseLegal')
             }}</span>
           }
         </label>
@@ -74,17 +60,17 @@
             formControlName="formaAceite"
             [attr.aria-describedby]="
               'termo-novo-formaAceite-dica' +
-              (erroDoCampo(form().controls.formaAceite) ? ' termo-novo-formaAceite-erro' : '')
+              (erroDoCampo('formaAceite') ? ' termo-novo-formaAceite-erro' : '')
             "
-            [attr.aria-invalid]="erroDoCampo(form().controls.formaAceite) ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('formaAceite') ? 'true' : null"
           >
             @for (opcao of formasAceite; track opcao.value) {
               <option [value]="opcao.value">{{ opcao.label }}</option>
             }
           </select>
-          @if (erroDoCampo(form().controls.formaAceite)) {
+          @if (erroDoCampo('formaAceite')) {
             <span id="termo-novo-formaAceite-erro" class="field__error">{{
-              erroDoCampo(form().controls.formaAceite)
+              erroDoCampo('formaAceite')
             }}</span>
           }
           <span
@@ -103,12 +89,12 @@
     <button
       type="submit"
       class="btn btn--primary"
-      [attr.aria-disabled]="criando()"
-      [attr.aria-busy]="criando()"
+      [attr.aria-disabled]="criando() ? 'true' : null"
+      [attr.aria-busy]="criando() ? 'true' : null"
       (click)="criando() ? $event.preventDefault() : null"
     >
       @if (criando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
       {{ criando() ? 'Criando...' : 'Criar termo' }}
     </button>

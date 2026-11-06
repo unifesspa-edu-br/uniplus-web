@@ -1,5 +1,14 @@
 import { HttpParams } from '@angular/common/http';
-import { DestroyRef, Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   CursorPagina,
@@ -8,6 +17,7 @@ import {
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   TermoConsentimentoResumoDto,
@@ -19,6 +29,7 @@ import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
 export class TermosConsentimentoStore {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
   readonly busca = signal('');
   private readonly filtro = signal('');
@@ -47,6 +58,13 @@ export class TermosConsentimentoStore {
         : null;
   });
   constructor() {
+    effect(() => {
+      const problem = this.lista.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
     this.buscaAlterada
       .pipe(
         map((valor) => valor.trim()),

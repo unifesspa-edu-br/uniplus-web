@@ -1,338 +1,267 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { Router } from '@angular/router';
+import { TestBed } from '@angular/core/testing';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  CONFIGURACAO_BASE_PATH,
-  type TermoConsentimentoDto,
-} from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TermosConsentimentoDetailPage } from './termos-consentimento-detail.page';
+  CenaDoDetalhe,
+  CODIGOS,
+  ID,
+  LEITURA,
+  PROMOVER,
+  RASCUNHO,
+  REMOVER,
+  REVISADO,
+  REVISAR,
+  SEM_CONTEUDO,
+  montarDetalhe,
+  recusar,
+  termo,
+  versao,
+} from './termos-consentimento.testing';
 
-const BASE = 'http://localhost:5000';
-const TERMO_ID = '01960000-0000-7000-0000-0000000000a1';
-const DETALHE_PATH = `${BASE}/api/configuracao/termos-consentimento/${TERMO_ID}`;
+let cena: CenaDoDetalhe;
+afterEach(() => cena.controller.verify());
 
-function termo(overrides: Partial<TermoConsentimentoDto> = {}): TermoConsentimentoDto {
-  return {
-    id: TERMO_ID,
-    nome: 'Declaração de veracidade',
-    textoRascunho: 'Declaro que as informações são verdadeiras.',
-    baseLegalRascunho: 'Lei nº 13.709/2018',
-    formaAceiteRascunho: 'A_DEFINIR',
-    revisado: false,
-    revisadoEm: null,
-    versoes: [],
-    criadoEm: '2026-08-11T12:00:00Z',
-    ...overrides,
-  };
-}
-
-function problem(code: string, title: string): Record<string, unknown> {
-  return {
-    type: `https://uniplus.dev/erros/${code}`,
-    title,
-    status: 422,
-    code,
-  };
-}
-
-const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
-
-describe('TermosConsentimentoDetailPage', () => {
-  let fixture: ComponentFixture<TermosConsentimentoDetailPage>;
-  let component: TermosConsentimentoDetailPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
-
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [TermosConsentimentoDetailPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: TERMO_ID }) } },
-        },
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(TermosConsentimentoDetailPage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
+describe('TermosConsentimentoDetailPage — leitura', () => {
+  it('não exibe o rascunho se a leitura falhar e avisa só no 5xx', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
+    );
+    await cena.propagar();
+    expect(cena.fixture.nativeElement.querySelector('form')).toBeNull();
+    expect(cena.fixture.nativeElement.textContent).toContain('Serviço indisponível');
+    expect(cena.avisos()).toEqual(['Serviço indisponível']);
   });
 
-  afterEach(() => controller.verify());
-
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-    fixture.detectChanges();
-  };
-
-  async function carregarTermo(dados = termo()): Promise<void> {
-    controller.expectOne(DETALHE_PATH).flush(dados);
-    await propagate();
-  }
-
-  it('não exibe nem salva o rascunho se o carregamento inicial falhar', async () => {
-    controller.expectOne(DETALHE_PATH).flush(
-      {
-        type: 'https://uniplus.dev/erros/indisponivel',
-        title: 'Serviço indisponível',
-        status: 503,
-        code: 'uniplus.indisponivel',
-      },
-      { status: 503, statusText: 'Service Unavailable', headers: PROBLEM_HEADERS },
+  it('não avisa por toast quando a leitura é recusada com 4xx', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      404,
+      'uniplus.configuracao.termo_consentimento.nao_encontrado',
+      'Termo não encontrado',
     );
-    await propagate();
-
-    expect(fixture.nativeElement.querySelector('form')).toBeNull();
-
-    component['salvarRascunho']();
-    controller.expectNone(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`,
-    );
-
-    const tentarNovamente = fixture.nativeElement.querySelector('button') as HTMLButtonElement;
-    expect(tentarNovamente?.textContent).toContain('Tentar novamente');
-    tentarNovamente?.click();
-    await propagate();
-
-    controller.expectOne(DETALHE_PATH).flush(termo());
-    await propagate();
-
-    expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+    await cena.propagar();
+    expect(cena.fixture.nativeElement.textContent).toContain('Termo não encontrado');
+    expect(cena.avisos()).toEqual([]);
   });
 
-  it('desabilita os campos enquanto o rascunho está sendo salvo', async () => {
-    await carregarTermo();
-
-    component['rascunhoForm'].controls.texto.setValue('Texto revisado');
-    component['salvarRascunho']();
-    fixture.detectChanges();
-
-    const campos = fixture.nativeElement.querySelector(
-      '.cfg-termo-consentimento__campos',
-    ) as HTMLFieldSetElement;
-    expect(campos?.disabled).toBe(true);
-
-    const salvar = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`,
+  it('"Tentar novamente" fica indisponível durante a carga e, ao dar certo, leva o foco ao título', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
     );
-    salvar.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    controller.expectOne(DETALHE_PATH).flush(termo({ textoRascunho: 'Texto revisado' }));
-    await propagate();
+    await cena.propagar();
+    const tentar = cena.botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    await cena.propagar();
+    expect(cena.botao('Tentar novamente')).toBe(tentar);
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(tentar.getAttribute('aria-busy')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+    tentar.click();
+    cena.controller.expectOne(LEITURA).flush(termo());
+    await cena.propagar();
+    await cena.propagar();
+    expect(cena.fixture.nativeElement.querySelector('form')).not.toBeNull();
+    expect(document.activeElement).toBe(cena.titulo());
   });
 
-  it('mantém o diálogo aberto e anuncia a remoção enquanto recusa novas ações', async () => {
-    await carregarTermo();
-    const remover = fixture.nativeElement.querySelector('.btn--danger') as HTMLButtonElement;
-    remover.click();
-    await propagate();
-    const dialog = fixture.nativeElement.querySelector('dialog') as HTMLDialogElement;
-    const confirmar = dialog.querySelector(
-      '[data-testid="confirm-dialog-confirm"]',
-    ) as HTMLButtonElement;
-    confirmar.click();
-    await propagate();
-    const requisicao = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}`,
-    );
-    expect(dialog.open).toBe(true);
-    expect(dialog.querySelector('[role="status"]')?.textContent).toContain('Removendo o termo');
-    expect(confirmar.getAttribute('aria-disabled')).toBe('true');
-    confirmar.click();
-    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
-    expect(dialog.open).toBe(true);
-    controller.expectNone(`${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}`);
-    requisicao.flush(
-      problem('uniplus.configuracao.termo_consentimento.invalido', 'Não foi possível remover'),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await propagate();
+  it('o foco levado a "Voltar à lista" durante a carga continua lá ao fim dela', async () => {
+    cena = await montarDetalhe(ID, null);
+    const voltar = cena.elemento<HTMLAnchorElement>('a.cfg-voltar');
+    voltar.focus();
+    cena.controller.expectOne(LEITURA).flush(termo());
+    await cena.propagar();
+    await cena.propagar();
+    expect(cena.fixture.nativeElement.querySelector('form')).not.toBeNull();
+    expect(document.activeElement).toBe(voltar);
   });
 
-  it('renova a Idempotency-Key após 422 para repetir a revisão como novo comando', async () => {
-    await carregarTermo();
-
-    component['marcarRevisado']();
-    const primeira = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
+  it('"Tentar novamente" com nova falha mantém o foco no botão', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
     );
-    const chaveInicial = primeira.request.headers.get('Idempotency-Key');
-    primeira.flush(
-      problem('uniplus.configuracao.termo_consentimento.revisao_sem_texto', 'Rascunho inválido'),
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
+    await cena.propagar();
+    const tentar = cena.botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    await cena.propagar();
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
     );
-    await propagate();
-
-    component['marcarRevisado']();
-    const segunda = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
-    );
-    expect(chaveInicial).toBeTruthy();
-    expect(segunda.request.headers.get('Idempotency-Key')).not.toBe(chaveInicial);
-    segunda.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    controller
-      .expectOne(DETALHE_PATH)
-      .flush(termo({ revisado: true, revisadoEm: '2026-08-11T13:00:00Z' }));
-    await propagate();
+    await cena.propagar();
+    await cena.propagar();
+    expect(cena.botao('Tentar novamente')).toBe(tentar);
+    expect(tentar.getAttribute('aria-disabled')).toBeNull();
+    expect(document.activeElement).toBe(tentar);
   });
 
-  it('aguarda a recarga do salvamento antes de permitir revisar', async () => {
-    await carregarTermo();
-
-    component['salvarRascunho']();
-    const salvar = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`,
+  it('mostra os motivos dos botões indisponíveis, sem afirmar causa que o termo não tem', async () => {
+    cena = await montarDetalhe(ID, termo({ textoRascunho: null, versoes: [versao()] }));
+    const motivo = (nome: string): string | null =>
+      cena.elemento(`[aria-label="${nome} indisponível"]`).getAttribute('data-tooltip');
+    expect(motivo('Marcar como revisado')).toBe(
+      'Preencha texto e base legal do rascunho salvo antes de marcar como revisado.',
     );
-    salvar.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    const leituraDoSalvamento = controller.expectOne(DETALHE_PATH);
-
-    component['marcarRevisado']();
-    controller.expectNone(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
-    );
-    leituraDoSalvamento.flush(termo());
-    await propagate();
-    component['marcarRevisado']();
-    const revisar = controller.expectOne(
-      `${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/revisar`,
-    );
-    revisar.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    const leituraDaRevisao = controller.expectOne(DETALHE_PATH);
-
-    leituraDaRevisao.flush(termo({ revisado: true, revisadoEm: '2026-08-11T13:00:00Z' }));
-    await propagate();
-    expect(leituraDoSalvamento.cancelled).toBe(true);
-    await propagate();
-
-    expect(component['termo']()?.revisado).toBe(true);
-  });
-
-  it('apresenta a recusa do rascunho no campo e direciona o foco', async () => {
-    await carregarTermo();
-    const salvar = fixture.nativeElement.querySelector(
-      'button[type="submit"]',
-    ) as HTMLButtonElement;
-    salvar.focus();
-    salvar.closest('form')?.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    controller
-      .expectOne(`${BASE}/api/configuracao/admin/termos-consentimento/${TERMO_ID}/rascunho`)
-      .flush(
-        {
-          ...problem('uniplus.configuracao.termo_consentimento.invalido', 'Dados inválidos'),
-          errors: [
-            {
-              field: 'textoRascunho',
-              code: 'uniplus.configuracao.termo_consentimento.invalido',
-              message: 'Texto recusado.',
-            },
-          ],
-        },
-        { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-      );
-    await propagate();
-    await new Promise((resolve) => setTimeout(resolve));
-    const texto = fixture.nativeElement.querySelector(
-      'textarea[formControlName="texto"]',
-    ) as HTMLTextAreaElement;
-    expect(texto.getAttribute('aria-invalid')).toBe('true');
-    expect(fixture.nativeElement.textContent).toContain('Texto recusado.');
-    expect(document.activeElement).toBe(texto);
-  });
-
-  it('expõe o motivo dos botões indisponíveis por tooltip focável', async () => {
-    await carregarTermo(
-      termo({
-        versoes: [
-          {
-            id: '01960000-0000-7000-0000-0000000000a2',
-            texto: 'Declaro que as informações são verdadeiras.',
-            baseLegal: 'Lei nº 13.709/2018',
-            formaAceite: 'A_DEFINIR',
-            hash: 'abc123',
-            promovidaEm: '2026-08-11T13:00:00Z',
-          },
-        ],
-      }),
-    );
-
-    const promocao = fixture.nativeElement.querySelector(
-      '[aria-label="Promover a versão indisponível"]',
-    ) as HTMLElement;
-    expect(promocao?.getAttribute('tabindex')).toBe('0');
-    expect(promocao?.getAttribute('data-tooltip')).toContain('Marque o rascunho como revisado');
-    expect(promocao?.getAttribute('aria-describedby')).toBe(
+    expect(motivo('Promover a versão')).toBe('Marque o rascunho como revisado antes de promover.');
+    expect(motivo('Remover termo')).toBe('Termo com versão promovida não pode ser removido.');
+    const promocao = cena.elemento('[aria-label="Promover a versão indisponível"]');
+    expect(promocao.getAttribute('tabindex')).toBe('0');
+    expect(promocao.getAttribute('aria-describedby')).toBe(
       'cfg-termo-consentimento-motivo-promocao',
     );
-
-    const remocao = fixture.nativeElement.querySelector(
-      '[aria-label="Remover termo indisponível"]',
-    ) as HTMLElement;
-    expect(remocao?.getAttribute('tabindex')).toBe('0');
-    expect(remocao?.getAttribute('data-tooltip')).toContain('Termo com versão promovida');
-    expect(
-      fixture.nativeElement.querySelector('#cfg-termo-consentimento-motivo-remocao')?.textContent,
-    ).toContain('Termo com versão promovida');
+    expect(cena.elemento('#cfg-termo-consentimento-motivo-remocao').textContent).toContain(
+      'Termo com versão promovida',
+    );
+    for (const nome of ['Marcar como revisado', 'Promover a versão', 'Remover']) {
+      expect(cena.botao(nome).matches(':disabled')).toBe(true);
+    }
   });
 
-  it('expõe legenda acessível descrevendo a tabela de versões promovidas', async () => {
-    await carregarTermo(
+  it('libera revisar e remover num termo com texto e base legal e sem versão', async () => {
+    cena = await montarDetalhe(ID);
+    expect(cena.botao('Marcar como revisado').matches(':disabled')).toBe(false);
+    expect(cena.botao('Remover').matches(':disabled')).toBe(false);
+    expect(cena.botao('Promover a versão').matches(':disabled')).toBe(true);
+    expect(
+      cena.fixture.nativeElement.querySelector('[aria-label="Remover termo indisponível"]'),
+    ).toBeNull();
+    expect(
+      cena.fixture.nativeElement.querySelector('[aria-label="Marcar como revisado indisponível"]'),
+    ).toBeNull();
+  });
+
+  it('descreve a tabela de versões e mostra a promoção no fuso institucional', async () => {
+    cena = await montarDetalhe(
+      ID,
       termo({
-        versoes: [
-          {
-            id: '01960000-0000-7000-0000-0000000000a2',
-            texto: 'Declaro que as informações são verdadeiras.',
-            baseLegal: 'Lei nº 13.709/2018',
-            formaAceite: 'A_DEFINIR',
-            hash: 'abc123',
-            promovidaEm: '2026-08-11T13:00:00Z',
-          },
-        ],
+        versoes: [versao({ promovidaEm: '2018-12-01T02:30:00Z', hash: 'abcdef0123456789' })],
       }),
     );
-
-    const caption = fixture.nativeElement.querySelector('table > caption');
-    expect(caption).not.toBeNull();
-    expect(caption?.classList.contains('sr-only')).toBe(true);
-    expect(caption?.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+    expect(cena.elemento('table > caption').textContent?.trim()).toBe(
       'Versões promovidas deste termo de consentimento',
     );
+    expect(cena.elemento('td[data-label="Promovida em"]').textContent?.trim()).toBe(
+      '30/11/2018, 23:30',
+    );
+    expect(cena.elemento('td[data-label="Hash"] code').textContent).toBe('abcdef012345…');
+  });
+});
+
+describe('TermosConsentimentoDetailPage — ações sobre o termo', () => {
+  it('salva o rascunho com a chave de idempotência, avisa e relê o termo', async () => {
+    cena = await montarDetalhe(ID);
+    cena.edicao.rascunhoForm.controls.texto.setValue(' Texto revisado ');
+    cena.botao('Salvar rascunho').click();
+    const envio = cena.controller.expectOne(RASCUNHO);
+    expect(envio.request.method).toBe('PUT');
+    expect(envio.request.headers.get('Idempotency-Key')).toBeTruthy();
+    expect(envio.request.body).toMatchObject({
+      textoRascunho: 'Texto revisado',
+      formaAceiteRascunho: 'A_DEFINIR',
+    });
+    envio.flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    cena.controller.expectOne(LEITURA).flush(termo({ textoRascunho: 'Texto revisado' }));
+    await cena.propagar();
+    expect(cena.avisos()).toEqual(['Rascunho salvo']);
+    expect(cena.edicao.rascunhoForm.pristine).toBe(true);
   });
 
-  /**
-   * Em 01/12/2018, 02:30 UTC ainda era 30/11 em Belém e já era 01/12 em São Paulo, que observava
-   * horário de verão: a data da promoção não pode depender do fuso de quem abre o termo.
-   */
-  it('mostra a data da promoção no fuso institucional', async () => {
-    await carregarTermo(
-      termo({
-        versoes: [
-          {
-            id: '01960000-0000-7000-0000-0000000000a2',
-            texto: 'Declaro que as informações são verdadeiras.',
-            baseLegal: 'Lei nº 13.709/2018',
-            formaAceite: 'A_DEFINIR',
-            hash: 'abc123',
-            promovidaEm: '2018-12-01T02:30:00Z',
-          },
-        ],
-      }),
-    );
+  it('marca como revisado e anuncia o aviso de revisão', async () => {
+    cena = await montarDetalhe(ID);
+    cena.botao('Marcar como revisado').click();
+    cena.controller.expectOne(REVISAR).flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    cena.controller.expectOne(LEITURA).flush(REVISADO);
+    await cena.propagar();
+    expect(cena.avisos()).toEqual(['Termo marcado como revisado']);
+    expect(cena.fixture.nativeElement.textContent).toContain('Revisado em');
+  });
 
-    const promovidaEm = fixture.nativeElement.querySelector('td[data-label="Promovida em"]');
-    expect(promovidaEm?.textContent?.trim()).toBe('30/11/2018, 23:30');
+  it('promover devolve o foco ao título quando o botão fica indisponível', async () => {
+    cena = await montarDetalhe(ID, REVISADO);
+    const promover = cena.botao('Promover a versão');
+    promover.focus();
+    promover.click();
+    cena.controller.expectOne(PROMOVER).flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    cena.controller.expectOne(LEITURA).flush(termo({ versoes: [versao()] }));
+    await cena.propagar();
+    await cena.propagar();
+    expect(cena.avisos()).toEqual(['Nova versão promovida']);
+    expect(cena.botao('Promover a versão').matches(':disabled')).toBe(true);
+    expect(document.activeElement).toBe(cena.titulo());
+  });
+
+  it('revisar mantém o foco no botão depois da releitura', async () => {
+    cena = await montarDetalhe(ID);
+    const revisar = cena.botao('Marcar como revisado');
+    revisar.focus();
+    revisar.click();
+    cena.controller.expectOne(REVISAR).flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    cena.controller.expectOne(LEITURA).flush(REVISADO);
+    await cena.propagar();
+    await cena.propagar();
+    expect(document.activeElement).toBe(cena.botao('Marcar como revisado'));
+  });
+
+  it('releitura que falha após a ação mostra o erro com "Tentar novamente" e leva o foco ao título', async () => {
+    cena = await montarDetalhe(ID);
+    const revisar = cena.botao('Marcar como revisado');
+    revisar.focus();
+    revisar.click();
+    cena.controller.expectOne(REVISAR).flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    recusar(cena.controller.expectOne(LEITURA), 500, CODIGOS.erroInterno, 'Erro interno');
+    await cena.propagar();
+    await cena.propagar();
+    expect(cena.fixture.nativeElement.querySelector('form')).toBeNull();
+    expect(cena.botao('Tentar novamente').getAttribute('aria-disabled')).toBeNull();
+    expect(document.activeElement).toBe(cena.titulo());
+    expect(cena.avisos()).toEqual(['Termo marcado como revisado', 'Erro interno']);
+  });
+
+  it('remove o termo sem versão, avisa e volta à lista', async () => {
+    cena = await montarDetalhe(ID);
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    cena.botao('Remover').click();
+    await cena.propagar();
+    cena.elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
+    cena.controller.expectOne(REMOVER).flush(null, SEM_CONTEUDO);
+    await cena.propagar();
+    expect(cena.avisos()).toEqual(['Termo removido']);
+    expect(navegar).toHaveBeenCalledWith(['/termos-consentimento']);
+    expect(cena.elemento<HTMLDialogElement>('dialog').open).toBe(false);
+  });
+
+  it('cancelar a remoção fecha o diálogo e devolve o foco ao botão da página', async () => {
+    cena = await montarDetalhe(ID);
+    const remover = cena.botao('Remover');
+    remover.focus();
+    remover.click();
+    await cena.propagar();
+    expect(cena.elemento<HTMLDialogElement>('dialog').open).toBe(true);
+    cena.elemento<HTMLButtonElement>('[data-testid="confirm-dialog-cancel"]').click();
+    await cena.propagar();
+    expect(cena.elemento<HTMLDialogElement>('dialog').open).toBe(false);
+    expect(document.activeElement).toBe(remover);
+    cena.controller.expectNone(REMOVER);
   });
 });

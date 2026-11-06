@@ -1,12 +1,14 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, TermoConsentimentoDto } from '@uniplus/shared-data/configuracao';
 
 @Injectable()
 export class TermoConsentimentoStore {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemI18n = inject(ProblemI18nService);
+  private readonly notifications = inject(NotificationService);
   readonly id = signal<string | null>(inject(ActivatedRoute).snapshot.paramMap.get('id'));
   private readonly suspenso = signal(false);
   private readonly consulta = useApiResource<TermoConsentimentoDto>(() => {
@@ -36,13 +38,20 @@ export class TermoConsentimentoStore {
 
   constructor() {
     effect(() => {
+      const problem = this.consulta.problem();
+      if (problem && problem.status >= 500) {
+        const titulo = this.problemI18n.resolve(problem).title;
+        untracked(() => this.notifications.errorFromProblem(problem, { title: titulo }));
+      }
+    });
+    effect(() => {
       if (!this.atualizando()) return;
       if (this.consulta.isLoading()) {
         this.iniciouAtualizacao = true;
       } else if (this.iniciouAtualizacao) {
         this.iniciouAtualizacao = false;
         this.atualizando.set(false);
-        if (this.consulta.error()) this.silencioso.set(false);
+        if (this.consulta.error() || this.consulta.problem()) this.silencioso.set(false);
       }
     });
     effect(() => {

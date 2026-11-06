@@ -8,6 +8,7 @@ import {
   CONFIGURACAO_BASE_PATH,
   TermoConsentimentoResumoDto,
 } from '@uniplus/shared-data/configuracao';
+import { NotificationService } from '@uniplus/shared-core/notifications';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TermosConsentimentoStore } from './termos-consentimento.store';
 import { TermosConsentimentoListPage } from './termos-consentimento-list.page';
@@ -284,5 +285,167 @@ describe('TermosConsentimentoListPage', () => {
     expect(link?.querySelector('i')?.classList.contains('pi-folder-open')).toBe(true);
     expect(link?.getAttribute('data-tooltip')).toBe('Abrir termo de consentimento');
     expect(link?.getAttribute('href')).toMatch(/id-lgpd$/u);
+  });
+
+  const botao = (texto: string): HTMLButtonElement =>
+    [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
+      (item) => item.textContent?.trim() === texto,
+    ) as HTMLButtonElement;
+
+  async function montarComFalha(status: number): Promise<void> {
+    fixture = TestBed.createComponent(TermosConsentimentoListPage);
+    store = fixture.debugElement.injector.get(TermosConsentimentoStore);
+    controller = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    controller
+      .expectOne((r) => r.url === URL)
+      .flush(
+        { type: 'about:blank', title: 'Falha ao listar', status, code: 'uniplus.erro' },
+        {
+          status,
+          statusText: 'Erro',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      );
+    await propagar();
+  }
+  const avisos = (): string[] =>
+    TestBed.inject(NotificationService)
+      .notifications()
+      .map((item) => item.title);
+
+  it('avisa por toast quando a leitura falha com 5xx', async () => {
+    await montarComFalha(500);
+    expect(avisos()).toEqual(['Falha ao listar']);
+  });
+
+  it('não avisa por toast quando a leitura falha com 4xx', async () => {
+    await montarComFalha(404);
+    expect(avisos()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Falha ao listar');
+  });
+
+  it('"Tentar novamente" fica indisponível durante a carga e leva o foco ao título quando dá certo', async () => {
+    await montarComFalha(500);
+    const tentar = botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    await propagar();
+    expect(botao('Tentar novamente')).toBe(tentar);
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+    tentar.click();
+    controller.expectOne((r) => r.url === URL).flush([LGPD]);
+    await propagar();
+    await propagar();
+    expect(fixture.nativeElement.textContent).not.toContain('Falha ao listar');
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('h2[tabindex="-1"]'));
+  });
+
+  it('pagina e limpa a busca pelos botões da tela', async () => {
+    await montar([LGPD], {
+      Link: '<http://localhost:5000/x?cursor=next-1&direction=next>; rel="next"',
+    });
+    botao('Próximo').click();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === URL && r.params.get('cursor') === 'next-1')
+      .flush([USO_IMAGEM], {
+        headers: { Link: '<http://localhost:5000/x?cursor=prev-1&direction=prev>; rel="prev"' },
+      });
+    await propagar();
+    botao('Anterior').click();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === URL && r.params.get('direction') === 'prev')
+      .flush([LGPD]);
+    await propagar();
+    store.alterarBusca('lgpd');
+    botao('Limpar').click();
+    await propagar();
+    expect(store.busca()).toBe('');
+    controller.match((r) => r.url === URL).forEach((r) => r.flush([LGPD]));
+  });
+
+  const comProximo = (cursor: string): Record<string, string> => ({
+    Link: `<http://localhost:5000/x?cursor=${cursor}&direction=next>; rel="next"`,
+  });
+
+  it('não pede nada enquanto a lista carrega: página, nova tentativa e limpeza', async () => {
+    fixture = TestBed.createComponent(TermosConsentimentoListPage);
+    store = fixture.debugElement.injector.get(TermosConsentimentoStore);
+    controller = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
+    store.proximaPagina();
+    store.paginaAnterior();
+    store.tentarNovamente();
+    store.limparFiltros();
+    await propagar();
+    controller.expectOne((r) => r.url === URL).flush([LGPD]);
+    await propagar();
+  });
+
+  it('voltar à busca já aplicada não repete a consulta, mas na página seguinte volta à primeira', async () => {
+    vi.useFakeTimers();
+    await montar([LGPD], comProximo('n1'));
+    store.alterarBusca('lgpd');
+    vi.advanceTimersByTime(300);
+    await propagar();
+    controller
+      .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd')
+      .flush([LGPD], { headers: comProximo('n2') });
+    await propagar();
+    store.alterarBusca('x');
+    store.alterarBusca('lgpd');
+    vi.advanceTimersByTime(300);
+    await propagar();
+    controller.expectNone((r) => r.url === URL && r.params.has('q'));
+
+    store.proximaPagina();
+    await propagar();
+    controller.expectOne((r) => r.params.get('cursor') === 'n2').flush([USO_IMAGEM]);
+    await propagar();
+    store.alterarBusca('x');
+    store.alterarBusca('lgpd');
+    vi.advanceTimersByTime(300);
+    await propagar();
+    controller
+      .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd' && !r.params.has('cursor'))
+      .flush([LGPD]);
+  });
+
+  it('limpar a busca estando em outra página volta à primeira', async () => {
+    await montar([LGPD], comProximo('n1'));
+    store.proximaPagina();
+    await propagar();
+    controller.expectOne((r) => r.params.get('cursor') === 'n1').flush([USO_IMAGEM]);
+    await propagar();
+    store.alterarBusca('imagem');
+    store.limparFiltros();
+    await propagar();
+    controller
+      .expectOne((r) => r.url === URL && !r.params.has('cursor') && !r.params.has('q'))
+      .flush([LGPD]);
+  });
+
+  it('limpar sem busca nem filtro não consulta de novo', async () => {
+    await montar();
+    store.limparFiltros();
+    await propagar();
+  });
+
+  it('leva o foco ao título da lista quando a página abre sem foco', async () => {
+    (document.activeElement as HTMLElement | null)?.blur();
+    await montar();
+    expect(document.activeElement).toBe(fixture.nativeElement.querySelector('h2[tabindex="-1"]'));
+  });
+
+  it('não toma o foco de quem já o tem em outro controle', async () => {
+    const externo = document.createElement('button');
+    document.body.append(externo);
+    externo.focus();
+    await montar();
+    expect(document.activeElement).toBe(externo);
+    externo.remove();
   });
 });

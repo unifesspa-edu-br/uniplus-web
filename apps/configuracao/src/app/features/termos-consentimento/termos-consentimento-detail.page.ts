@@ -2,18 +2,29 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
   afterNextRender,
   computed,
+  effect,
   inject,
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { TermoConsentimentoStore } from './termo-consentimento.store';
+import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
+import { focarAposNovaTentativa, focoEstaLivre } from '../../shared/foco';
+import { devolverFocoDaAcao } from './devolver-foco-da-acao';
 import { EdicaoDosTermosConsentimento } from './edicao-dos-termos-consentimento';
-import { TermoConsentimentoFormularioComponent } from './termo-consentimento-formulario.component';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
-import { TermoConsentimentoRemocaoComponent } from './termo-consentimento-remocao.component';
+import { TermoConsentimentoFormularioComponent } from './termo-consentimento-formulario.component';
+import { TermoConsentimentoStore } from './termo-consentimento.store';
+
+const ID_DO_TITULO = 'cfg-termo-consentimento-titulo';
+
+const ALERTA_DE_LEITURA_DEFASADA = {
+  titulo: 'Os dados na tela podem estar desatualizados',
+  texto: 'O termo foi alterado por outra pessoa. Recarregue os dados antes de continuar.',
+};
 
 @Component({
   selector: 'cfg-termos-consentimento-detail-page',
@@ -21,9 +32,10 @@ import { TermoConsentimentoRemocaoComponent } from './termo-consentimento-remoca
   imports: [
     TermoConsentimentoFormularioComponent,
     TermoConsentimentoDetalheComponent,
-    TermoConsentimentoRemocaoComponent,
+    ConfirmacaoDeRemocaoComponent,
     RouterLink,
     AlertComponent,
+    DialogComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,40 +43,70 @@ import { TermoConsentimentoRemocaoComponent } from './termo-consentimento-remoca
   providers: [TermoConsentimentoStore, EdicaoDosTermosConsentimento],
 })
 export class TermosConsentimentoDetailPage {
-  private readonly store = inject(TermoConsentimentoStore);
+  protected readonly store = inject(TermoConsentimentoStore);
   protected readonly edicao = inject(EdicaoDosTermosConsentimento);
+  protected readonly idDoTitulo = ID_DO_TITULO;
+  protected readonly modoEdicao = computed(() => this.store.id() !== null);
+  protected readonly titulo = computed(
+    () => this.store.termo()?.nome ?? (this.modoEdicao() ? 'Termo de consentimento' : 'Novo termo'),
+  );
+  protected readonly mensagemDaRemocao = computed(
+    () => `Remover o termo ${this.store.termo()?.nome ?? ''}? Essa ação não pode ser desfeita.`,
+  );
+  protected readonly indisponivel = computed(
+    () => this.store.carregando() || this.edicao.processando(),
+  );
+
+  protected readonly alertaDaAcao = computed(() => {
+    const erro = this.edicao.acaoErro();
+    if (erro && !this.edicao.confirmRemoverAberto()) {
+      return { titulo: 'Não foi possível concluir a ação', texto: erro };
+    }
+    return this.edicao.leituraDefasada() ? ALERTA_DE_LEITURA_DEFASADA : null;
+  });
 
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
-
-  private readonly id = this.store.id;
-  protected readonly modoEdicao = computed(() => this.id() !== null);
-  protected readonly termo = this.store.termo;
-  protected readonly titulo = computed(
-    () => this.termo()?.nome ?? (this.modoEdicao() ? 'Termo de consentimento' : 'Novo termo'),
+  private readonly novaTentativa = focarAposNovaTentativa(
+    this.store.carregando,
+    computed(() => this.store.erro() !== null),
+    () => this.tituloPagina()?.nativeElement,
   );
-  protected readonly carregando = this.store.carregando;
-  protected readonly erroCarregar = this.store.erro;
-  protected readonly formError = this.edicao.formError;
-  protected readonly acaoErro = this.edicao.acaoErro;
-  protected readonly tentouSalvar = this.edicao.tentouSalvar;
-  protected readonly criando = this.edicao.criando;
-  protected readonly acaoEmAndamento = this.edicao.acaoEmAndamento;
-  protected readonly processando = this.edicao.processando;
-  protected readonly confirmRemoverAberto = this.edicao.confirmRemoverAberto;
-  protected readonly podeRevisar = this.edicao.podeRevisar;
-  protected readonly podePromover = this.edicao.podePromover;
-  protected readonly podeRemover = this.edicao.podeRemover;
-  protected readonly criarForm = this.edicao.criarForm;
-  protected readonly rascunhoForm = this.edicao.rascunhoForm;
-  protected readonly criar = this.edicao.criar.bind(this.edicao);
-  protected readonly salvarRascunho = this.edicao.salvarRascunho.bind(this.edicao);
-  protected readonly marcarRevisado = this.edicao.marcarRevisado.bind(this.edicao);
-  protected readonly promoverVersao = this.edicao.promoverVersao.bind(this.edicao);
-  protected readonly pedirRemocao = this.edicao.pedirRemocao.bind(this.edicao);
-  protected readonly removerConfirmado = this.edicao.removerConfirmado.bind(this.edicao);
-  protected readonly recarregarTermo = this.edicao.recarregarTermo.bind(this.edicao);
+
+  private readonly injector = inject(Injector);
 
   constructor() {
     afterNextRender(() => this.tituloPagina()?.nativeElement.focus());
+    this.levarFocoAoTituloAoFimDaCarga();
+    devolverFocoDaAcao({
+      processando: this.edicao.processando,
+      acao: this.edicao.acaoEmAndamento,
+      idDoTitulo: ID_DO_TITULO,
+    });
+  }
+
+  protected tentarNovamente(): void {
+    this.novaTentativa.executar(() => this.edicao.recarregarTermo());
+  }
+
+  /**
+   * A carga sai da tela junto com o alerta e o botão que a pediu, e o foco cai no `body`: ao fim
+   * dela, volta ao título, se ninguém o levou a outro lugar.
+   */
+  private levarFocoAoTituloAoFimDaCarga(): void {
+    let carregou = false;
+    effect(() => {
+      if (this.store.carregando()) {
+        carregou = true;
+        return;
+      }
+      if (!carregou) return;
+      carregou = false;
+      afterNextRender(
+        () => {
+          if (focoEstaLivre()) this.tituloPagina()?.nativeElement.focus();
+        },
+        { injector: this.injector },
+      );
+    });
   }
 }

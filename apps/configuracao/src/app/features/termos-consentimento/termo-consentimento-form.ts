@@ -1,4 +1,10 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import {
+  CriarTermoConsentimentoCommand,
+  EditarRascunhoTermoConsentimentoCommand,
+  TermoConsentimentoDto,
+} from '@uniplus/shared-data/configuracao';
+import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 export const NOME_MAX = 200;
 export const TEXTO_MAX = 20000;
@@ -20,18 +26,24 @@ export interface RascunhoForm {
   formaAceite: FormControl<string>;
 }
 
-export function nullIfBlank(value: string): string | null {
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
+/** O campo do servidor e o controle do formulário que o recebe. */
+const CONTROLE_DO_CAMPO: Readonly<Record<string, keyof CriarForm>> = {
+  nome: 'nome',
+  textoRascunho: 'texto',
+  baseLegalRascunho: 'baseLegal',
+  formaAceiteRascunho: 'formaAceite',
+};
+
+const CAMPOS_DO_SERVIDOR: ReadonlySet<string> = new Set(Object.keys(CONTROLE_DO_CAMPO));
+
+/** O controle que corresponde ao campo recusado pelo servidor, ou `null` se o formulário não o tem. */
+export function controleDoCampoDoServidor(field: string): keyof CriarForm | null {
+  const campo = controlNameFromBackendField<string>(field, CAMPOS_DO_SERVIDOR);
+  return campo === null ? null : CONTROLE_DO_CAMPO[campo];
 }
 
-export function ultimaChaveDoCaminho(field: string): string {
-  const normalizado =
-    field
-      .split('.')
-      .at(-1)
-      ?.replace(/\[\d+\]$/u, '') ?? field;
-  return normalizado.charAt(0).toLocaleLowerCase('pt-BR') + normalizado.slice(1);
+function controleDeTexto(maximo: number): FormControl<string> {
+  return new FormControl('', { nonNullable: true, validators: [Validators.maxLength(maximo)] });
 }
 
 export function criarFormulario(): FormGroup<CriarForm> {
@@ -40,28 +52,51 @@ export function criarFormulario(): FormGroup<CriarForm> {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(NOME_MAX)],
     }),
-    texto: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(TEXTO_MAX)],
-    }),
-    baseLegal: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(BASE_LEGAL_MAX)],
-    }),
+    texto: controleDeTexto(TEXTO_MAX),
+    baseLegal: controleDeTexto(BASE_LEGAL_MAX),
     formaAceite: new FormControl(FORMA_ACEITE_DEFAULT, { nonNullable: true }),
   });
 }
 
 export function criarFormularioRascunho(): FormGroup<RascunhoForm> {
   return new FormGroup<RascunhoForm>({
-    texto: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(TEXTO_MAX)],
-    }),
-    baseLegal: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(BASE_LEGAL_MAX)],
-    }),
+    texto: controleDeTexto(TEXTO_MAX),
+    baseLegal: controleDeTexto(BASE_LEGAL_MAX),
     formaAceite: new FormControl(FORMA_ACEITE_DEFAULT, { nonNullable: true }),
   });
+}
+
+export function valoresDoRascunho(termo: TermoConsentimentoDto): {
+  texto: string;
+  baseLegal: string;
+  formaAceite: string;
+} {
+  return {
+    texto: termo.textoRascunho ?? '',
+    baseLegal: termo.baseLegalRascunho ?? '',
+    formaAceite: termo.formaAceiteRascunho,
+  };
+}
+
+export function comandoDeCriacao(form: FormGroup<CriarForm>): CriarTermoConsentimentoCommand {
+  const valores = form.getRawValue();
+  return {
+    nome: nullIfBlank(valores.nome),
+    textoRascunho: nullIfBlank(valores.texto),
+    baseLegalRascunho: nullIfBlank(valores.baseLegal),
+    formaAceiteRascunho: valores.formaAceite,
+  };
+}
+
+export function comandoDeRascunho(
+  id: string,
+  form: FormGroup<RascunhoForm>,
+): EditarRascunhoTermoConsentimentoCommand {
+  const valores = form.getRawValue();
+  return {
+    id,
+    textoRascunho: nullIfBlank(valores.texto),
+    baseLegalRascunho: nullIfBlank(valores.baseLegal),
+    formaAceiteRascunho: valores.formaAceite,
+  };
 }

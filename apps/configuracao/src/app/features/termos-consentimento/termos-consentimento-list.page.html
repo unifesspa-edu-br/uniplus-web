@@ -1,0 +1,42 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Termo de Consentimento</h1>
+    <p class="page-header__desc">
+      Catálogo administrável de termos de consentimento/declaração (declaração de veracidade,
+      consentimento LGPD, declaração de residência para cota territorial) que um Processo Seletivo
+      pode vir a exigir do candidato — o texto de um termo nunca é digitado livre no processo,
+      sempre vem deste cadastro.
+    </p>
+  </div>
+</div>
+
+@if (store.errorMessage(); as mensagem) {
+<ui-alert variant="danger" heading="Não foi possível carregar os termos de consentimento">
+  {{ mensagem }}
+  <div class="list-state__retry">
+    <button
+      type="button"
+      class="btn btn--secondary btn--sm"
+      [attr.aria-disabled]="store.loading() ? 'true' : null"
+      [attr.aria-busy]="store.loading() ? 'true' : null"
+      (click)="tentarNovamente()"
+    >
+      Tentar novamente
+    </button>
+  </div>
+</ui-alert>
+}
+
+<cfg-termos-consentimento-lista
+  [busca]="store.busca()"
+  [loading]="store.loading()"
+  [termosFiltrados]="store.termos()"
+  [prevCursor]="store.prevCursor()"
+  [nextCursor]="store.nextCursor()"
+  [temFiltroAtivo]="store.temFiltroAtivo()"
+  [errorMessage]="store.errorMessage()"
+  (buscaAlterada)="store.alterarBusca($event)"
+  (limpar)="store.limparFiltros()"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
