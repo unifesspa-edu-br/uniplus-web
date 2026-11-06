@@ -111,39 +111,39 @@ describe('TiposEtapaPage', () => {
     });
   });
 
-  it('mostra a situação e não oferece desativar o que já está inativo', async () => {
+  it('mostra a situação e não oferece remover o que já está inativo', async () => {
     p.store.recarregar();
     await p.recarregarCom([analiseDocumental, inativa]);
 
     expect(linhaDe('ANALISE_DOCUMENTAL').textContent).toContain('Ativo');
     expect(linhaDe('PROVA').textContent).toContain('Desativado');
     expect(
-      p.fixture.nativeElement.querySelector('[aria-label="Desativar tipo de etapa PROVA"]'),
+      p.fixture.nativeElement.querySelector('[aria-label="Remover tipo de etapa PROVA"]'),
     ).toBeNull();
     expect(p.editar(inativa)).toBeTruthy();
   });
 
   it('cada ação mostra seu ícone e sua dica', () => {
     const editar = p.editar(analiseDocumental);
-    const desativar = p.desativar(analiseDocumental);
+    const remover = p.remover(analiseDocumental);
     expect(editar.querySelector('i')?.className).toContain('pi-pencil');
     expect(editar.getAttribute('data-tooltip')).toBe('Editar tipo de etapa');
-    expect(desativar.querySelector('i')?.className).toContain('pi-power-off');
-    expect(desativar.getAttribute('data-tooltip')).toBe('Desativar tipo de etapa');
+    expect(remover.querySelector('i')?.className).toContain('pi-trash');
+    expect(remover.getAttribute('data-tooltip')).toBe('Remover tipo de etapa');
   });
 
-  it('a confirmação nomeia a ação como desativação, e não como remoção', async () => {
-    p.desativar(prova).click();
+  it('a confirmação nomeia a ação como remoção, e não como desativação', async () => {
+    p.remover(prova).click();
     await p.propagar();
 
     const dialogo = p.elemento('cfg-confirmacao-de-remocao');
-    expect(p.confirmar().textContent?.trim()).toBe('Desativar');
-    expect(dialogo.textContent).toContain('Desativar tipo de etapa');
-    expect(dialogo.textContent).not.toContain('Remover');
+    expect(p.confirmar().textContent?.trim()).toBe('Remover');
+    expect(dialogo.textContent).toContain('Remover tipo de etapa');
+    expect(dialogo.textContent).not.toContain('Desativar');
   });
 
-  it('o ícone de desativar pede confirmação nomeando o tipo da linha, sem enviar nada', async () => {
-    p.desativar(prova).click();
+  it('o ícone de remover pede confirmação nomeando o tipo da linha, sem enviar nada', async () => {
+    p.remover(prova).click();
     await p.propagar();
 
     expect(p.elemento('cfg-confirmacao-de-remocao').textContent).toContain('PROVA');
@@ -154,15 +154,15 @@ describe('TiposEtapaPage', () => {
     p.http.expectNone(`${ESCRITA}/${prova.id}`);
   });
 
-  it('desativa após a confirmação, avisa e anuncia o desfecho na página', async () => {
-    const del = await p.confirmarDesativacao(prova);
+  it('remove após a confirmação, avisa e anuncia o desfecho na página', async () => {
+    const del = await p.confirmarRemocao(prova);
     expect(del.request.method).toBe('DELETE');
     del.flush(...sucesso());
     await p.recarregarCom([analiseDocumental, inativa]);
 
     expect(p.edicao.confirmando()).toBe(false);
-    expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa desativado', 'PROVA');
-    expect(p.statusDaPagina()).toBe('Tipo de etapa PROVA desativado.');
+    expect(p.sucessos).toHaveBeenCalledWith('Tipo de etapa removido', 'PROVA');
+    expect(p.statusDaPagina()).toBe('Tipo de etapa PROVA removido.');
   });
 
   it('filtra a página atual pela busca e volta à primeira ao recarregar', async () => {

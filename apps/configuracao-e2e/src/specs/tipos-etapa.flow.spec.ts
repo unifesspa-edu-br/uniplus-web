@@ -154,19 +154,19 @@ test.describe('Tipo de etapa — CRUD', () => {
     expect(capturado.puts[0]).toMatchObject({ admitePontuacao: true, admiteEliminacao: true });
   });
 
-  test('desativa um tipo após confirmação', async ({ page }) => {
+  test('remove um tipo após confirmação', async ({ page }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [analiseDocumental]);
     await abrirPagina(page);
 
     await page
       .getByRole('button', {
-        name: `Desativar tipo de etapa ${analiseDocumental.codigo}`,
+        name: `Remover tipo de etapa ${analiseDocumental.codigo}`,
         exact: true,
       })
       .click();
-    const dialog = page.getByRole('dialog', { name: 'Desativar tipo de etapa' });
-    await dialog.getByRole('button', { name: 'Desativar', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Remover tipo de etapa' });
+    await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds).toEqual([ANALISE_ID]);
   });

@@ -40,11 +40,11 @@ export interface AndamentoDaEscrita {
 
 const ROTULO_DA_ESCRITA: Record<Escrita, string> = {
   salvando: 'Salvando...',
-  removendo: 'Desativando...',
+  removendo: 'Removendo...',
 };
 
 /**
- * Todas as escritas da tela de tipos de etapa: o formulário, o salvamento e a desativação com
+ * Todas as escritas da tela de tipos de etapa: o formulário, o salvamento e a remoção com
  * confirmação. É a única dona do indicador de gravação, então uma escrita impede a outra.
  */
 @Injectable()
@@ -83,13 +83,13 @@ export class EdicaoDosTiposEtapa {
   readonly tituloDoFormulario = computed(() =>
     this.modo() === 'criar' ? 'Novo tipo de etapa' : 'Editar tipo de etapa',
   );
-  /** Dentro do diálogo de desativação: o andamento e a recusa, que só fazem sentido com ele aberto. */
+  /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const tipo = this.tipoParaRemover();
     if (!tipo) return '';
-    if (this.removendo()) return `Desativando o tipo de etapa ${tipo.codigo}.`;
+    if (this.removendo()) return `Removendo o tipo de etapa ${tipo.codigo}.`;
     const motivo = this.erroRemocao();
-    return motivo ? `Não foi possível desativar o tipo de etapa ${tipo.codigo}. ${motivo}` : '';
+    return motivo ? `Não foi possível remover o tipo de etapa ${tipo.codigo}. ${motivo}` : '';
   });
   /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDoSalvamento = computed(() =>
@@ -104,8 +104,8 @@ export class EdicaoDosTiposEtapa {
   readonly mensagemDaConfirmacao = computed(() => {
     const tipo = this.tipoParaRemover();
     return tipo
-      ? `Deseja desativar o tipo de etapa ${tipo.codigo}? A desativação impede que novos processos declarem etapas desse tipo, e não altera as etapas já gravadas — elas congelaram a própria cópia.`
-      : 'Deseja desativar este tipo de etapa?';
+      ? `Deseja remover o tipo de etapa ${tipo.codigo}? A remoção impede que novos processos usem esse tipo; as etapas já gravadas não mudam — elas congelaram a própria cópia.`
+      : 'Deseja remover este tipo de etapa?';
   });
 
   abrirCadastro(): void {
@@ -209,8 +209,8 @@ export class EdicaoDosTiposEtapa {
       }
       return;
     }
-    this.resultadoDaRemocao.set(`Tipo de etapa ${tipo.codigo} desativado.`);
-    this.notifications.success('Tipo de etapa desativado', tipo.codigo);
+    this.resultadoDaRemocao.set(`Tipo de etapa ${tipo.codigo} removido.`);
+    this.notifications.success('Tipo de etapa removido', tipo.codigo);
     this.confirmando.set(false);
     this.tipoParaRemover.set(null);
     this.recarregar();

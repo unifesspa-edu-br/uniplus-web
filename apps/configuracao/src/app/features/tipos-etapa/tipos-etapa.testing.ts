@@ -114,7 +114,7 @@ export async function montarPagina(itens: readonly TipoEtapaDto[] = [prova]) {
     formulario,
     novo: (): HTMLButtonElement => elemento('#cfg-tipos-etapa-novo'),
     editar: (t: TipoEtapaDto = prova) => pelaEtiqueta(`Editar tipo de etapa ${t.codigo}`),
-    desativar: (t: TipoEtapaDto = prova) => pelaEtiqueta(`Desativar tipo de etapa ${t.codigo}`),
+    remover: (t: TipoEtapaDto = prova) => pelaEtiqueta(`Remover tipo de etapa ${t.codigo}`),
     salvar: (): HTMLButtonElement => elemento('button[form="cfg-tipo-etapa-form"]'),
     confirmar: (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]'),
     cancelarDaConfirmacao: (): HTMLButtonElement =>
@@ -144,8 +144,8 @@ export async function montarPagina(itens: readonly TipoEtapaDto[] = [prova]) {
       await propagar();
       return http.expectOne(url);
     },
-    async confirmarDesativacao(tipo: TipoEtapaDto = prova) {
-      const lixeira = pelaEtiqueta(`Desativar tipo de etapa ${tipo.codigo}`);
+    async confirmarRemocao(tipo: TipoEtapaDto = prova) {
+      const lixeira = pelaEtiqueta(`Remover tipo de etapa ${tipo.codigo}`);
       lixeira.focus();
       lixeira.click();
       await propagar();

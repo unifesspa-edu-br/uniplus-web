@@ -4,7 +4,7 @@
       <h2 id="cfg-tipos-etapa-list-title" tabindex="-1">Tipos de etapa</h2>
       @if (carregando() || removendo()) {
         <span class="list-state__loading"
-          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Desativando' : 'Carregando' }}</span
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Removendo' : 'Carregando' }}</span
         >
       }
     </div>
@@ -68,11 +68,11 @@
                 />
                 @if (tipo.ativo) {
                   <ui-icon-button
-                    icon="pi-power-off"
-                    [accessibleName]="'Desativar tipo de etapa ' + tipo.codigo"
-                    tooltip="Desativar tipo de etapa"
+                    icon="pi-trash"
+                    [accessibleName]="'Remover tipo de etapa ' + tipo.codigo"
+                    tooltip="Remover tipo de etapa"
                     [isDisabled]="indisponivel()"
-                    (triggered)="acionarDesativar(tipo)"
+                    (triggered)="acionarRemover(tipo)"
                   />
                 }
               </td>

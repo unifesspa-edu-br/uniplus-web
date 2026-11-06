@@ -138,11 +138,11 @@ const novo = (page: Page): Locator => page.getByRole('button', { name: 'Novo tip
 const editar = (page: Page): Locator =>
   page.getByRole('button', { name: `Editar tipo de etapa ${TIPO.codigo}` });
 const lixeira = (page: Page): Locator =>
-  page.getByRole('button', { name: `Desativar tipo de etapa ${TIPO.codigo}` });
+  page.getByRole('button', { name: `Remover tipo de etapa ${TIPO.codigo}` });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de tipo de etapa' });
 const confirmacao = (page: Page): Locator =>
-  page.getByRole('dialog', { name: 'Desativar tipo de etapa' });
+  page.getByRole('dialog', { name: 'Remover tipo de etapa' });
 
 async function abrirCadastro(page: Page): Promise<Locator> {
   await page.goto('/tipos-etapa');
@@ -162,11 +162,11 @@ async function abrirEdicao(page: Page): Promise<Locator> {
   return formulario;
 }
 
-async function abrirDesativacao(page: Page) {
+async function abrirRemocao(page: Page) {
   await page.goto('/tipos-etapa');
   await lixeira(page).click();
   const dialogo = confirmacao(page);
-  return { dialogo, desativar: dialogo.getByRole('button', { name: 'Desativar', exact: true }) };
+  return { dialogo, remover: dialogo.getByRole('button', { name: 'Remover', exact: true }) };
 }
 
 test.describe('Tipo de etapa — escritas', () => {
@@ -331,22 +331,22 @@ test.describe('Tipo de etapa — escritas', () => {
     });
   }
 
-  test('desativação pendente mantém o foco no botão, recusa reenvio, Esc, X e Cancelar e anuncia o andamento', async ({
+  test('remoção pendente mantém o foco no botão, recusa reenvio, Esc, X e Cancelar e anuncia o andamento', async ({
     page,
   }) => {
     const { liberar, envios } = await mockApi(page, [SALVO], 'sem-o-item');
-    const { dialogo, desativar } = await abrirDesativacao(page);
-    await desativar.click();
-    await expect(desativar).toBeFocused();
-    await expect(desativar).toHaveAttribute('aria-disabled', 'true');
-    await expect(desativar).toHaveAttribute('aria-busy', 'true');
-    await expect(desativar).toHaveCSS('cursor', 'not-allowed');
-    await expect(dialogo.getByRole('status')).toContainText('Desativando');
+    const { dialogo, remover } = await abrirRemocao(page);
+    await remover.click();
+    await expect(remover).toBeFocused();
+    await expect(remover).toHaveAttribute('aria-disabled', 'true');
+    await expect(remover).toHaveAttribute('aria-busy', 'true');
+    await expect(remover).toHaveCSS('cursor', 'not-allowed');
+    await expect(dialogo.getByRole('status')).toContainText('Removendo');
     await expect(dialogo.getByRole('button', { name: 'Fechar' })).toBeDisabled();
     await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(dialogo).toBeVisible();
-    await desativar.dispatchEvent('click');
+    await remover.dispatchEvent('click');
     await page.keyboard.press('Enter');
     await page.keyboard.press('Space');
     expect(envios).toEqual(['DELETE']);
@@ -355,12 +355,12 @@ test.describe('Tipo de etapa — escritas', () => {
   });
 
   for (const recarga of ['sem-o-item', 'inativo', 'com-falha'] as const) {
-    test(`desativação concluída, com a recarga ${recarga}, leva o foco ao título da lista`, async ({
+    test(`remoção concluída, com a recarga ${recarga}, leva o foco ao título da lista`, async ({
       page,
     }) => {
       const { liberar } = await mockApi(page, [SALVO], recarga);
-      const { dialogo, desativar } = await abrirDesativacao(page);
-      await desativar.click();
+      const { dialogo, remover } = await abrirRemocao(page);
+      await remover.click();
       liberar();
       await expect(dialogo).toBeHidden();
       await expect(titulo(page)).toBeFocused();
@@ -371,28 +371,28 @@ test.describe('Tipo de etapa — escritas', () => {
     { status: 422, corpo: PROBLEMA_422_NOTA_DO_ENEM },
     { status: 500, corpo: PROBLEMA_500 },
   ]) {
-    test(`desativação recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão, que volta a aceitar o clique`, async ({
+    test(`remoção recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão, que volta a aceitar o clique`, async ({
       page,
     }) => {
       const { liberar, envios } = await mockApi(page, [recusa, SALVO], 'sem-o-item');
-      const { dialogo, desativar } = await abrirDesativacao(page);
-      await desativar.click();
+      const { dialogo, remover } = await abrirRemocao(page);
+      await remover.click();
       liberar();
       const mensagem = dialogo.locator('.field__error');
       await expect(mensagem).toContainText(recusa.corpo.title);
-      await expect(desativar).not.toHaveAttribute('aria-disabled', 'true');
-      await expect(desativar).toBeFocused();
-      await expect(dialogo.getByRole('status')).toContainText('Não foi possível desativar');
-      await desativar.click();
+      await expect(remover).not.toHaveAttribute('aria-disabled', 'true');
+      await expect(remover).toBeFocused();
+      await expect(dialogo.getByRole('status')).toContainText('Não foi possível remover');
+      await remover.click();
       await expect(mensagem).toBeHidden();
       await expect(dialogo).toBeHidden();
       expect(envios).toEqual(['DELETE', 'DELETE']);
     });
   }
 
-  test('cancelar a confirmação devolve o foco ao botão de desativar da linha', async ({ page }) => {
+  test('cancelar a confirmação devolve o foco ao botão de remover da linha', async ({ page }) => {
     await mockApi(page, [], 'sem-o-item');
-    const { dialogo } = await abrirDesativacao(page);
+    const { dialogo } = await abrirRemocao(page);
     await dialogo.getByRole('button', { name: 'Cancelar' }).click();
     await expect(dialogo).toBeHidden();
     await expect(lixeira(page)).toBeFocused();

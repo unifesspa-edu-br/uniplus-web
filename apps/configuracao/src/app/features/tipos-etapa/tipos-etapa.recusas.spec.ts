@@ -200,12 +200,12 @@ describe('TiposEtapaPage — recusas do servidor', () => {
     });
   });
 
-  describe('ao desativar', () => {
+  describe('ao remover', () => {
     const lerMensagem = (): string | undefined =>
       p.elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim();
 
     it('recusa de negócio (422) mantém o diálogo, a mensagem e o foco no botão, sem toast', async () => {
-      const primeira = await p.confirmarDesativacao(prova);
+      const primeira = await p.confirmarRemocao(prova);
       primeira.flush(...problema(422, NOTA_DO_ENEM));
       await p.propagar();
 
@@ -214,7 +214,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       expect(p.confirmar().getAttribute('aria-disabled')).toBeNull();
       expect(document.activeElement).toBe(p.confirmar());
       expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Não foi possível desativar o tipo de etapa PROVA.',
+        'Não foi possível remover o tipo de etapa PROVA.',
       );
       expect(p.erros).not.toHaveBeenCalled();
       expect(p.sucessos).not.toHaveBeenCalled();
@@ -227,9 +227,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
     });
 
     it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {
-      (await p.confirmarDesativacao(prova)).flush(
-        ...problema(500, { code: 'uniplus.erro_interno' }),
-      );
+      (await p.confirmarRemocao(prova)).flush(...problema(500, { code: 'uniplus.erro_interno' }));
       await p.propagar();
 
       expect(lerMensagem()).toBe('Falha');
@@ -237,7 +235,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.confirmar());
       p.cancelarDaConfirmacao().click();
       await p.propagar();
-      expect(document.activeElement).toBe(p.desativar(prova));
+      expect(document.activeElement).toBe(p.remover(prova));
     });
   });
 
@@ -256,33 +254,33 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       expect(document.activeElement).toBe(p.editar(prova));
     });
 
-    it('desativação concluída leva o foco ao título quando a linha some da recarga', async () => {
-      (await p.confirmarDesativacao(prova)).flush(...sucesso());
+    it('remoção concluída leva o foco ao título quando a linha some da recarga', async () => {
+      (await p.confirmarRemocao(prova)).flush(...sucesso());
       await p.recarregarCom([]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
-    it('desativação concluída leva o foco ao título quando a linha segue inativa, sem o botão', async () => {
-      (await p.confirmarDesativacao(prova)).flush(...sucesso());
+    it('remoção concluída leva o foco ao título quando a linha segue inativa, sem o botão', async () => {
+      (await p.confirmarRemocao(prova)).flush(...sucesso());
       await p.recarregarCom([{ ...prova, ativo: false }]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
     it('escrita com falha na recarga leva o foco ao título da lista', async () => {
-      (await p.confirmarDesativacao(prova)).flush(...sucesso());
+      (await p.confirmarRemocao(prova)).flush(...sucesso());
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
       await p.propagar();
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 
-    it('cancelar a confirmação devolve o foco ao botão de desativar da linha', async () => {
-      p.desativar(prova).focus();
-      p.desativar(prova).click();
+    it('cancelar a confirmação devolve o foco ao botão de remover da linha', async () => {
+      p.remover(prova).focus();
+      p.remover(prova).click();
       await p.propagar();
       p.cancelarDaConfirmacao().click();
       await p.propagar();
-      expect(document.activeElement).toBe(p.desativar(prova));
+      expect(document.activeElement).toBe(p.remover(prova));
     });
   });
 

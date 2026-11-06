@@ -61,9 +61,9 @@ export class TiposEtapaListaComponent {
     this.editar.emit(tipo);
   }
 
-  /** O nome começa por "Desativar ": é o prefixo que a devolução de foco procura na linha. */
-  protected acionarDesativar(tipo: TipoEtapaDto): void {
-    this.foco.registrar({ acao: 'situacao', id: tipo.id });
+  /** O nome começa por "Remover ": é o prefixo que a devolução de foco procura na linha. */
+  protected acionarRemover(tipo: TipoEtapaDto): void {
+    this.foco.registrar({ acao: 'remover', id: tipo.id });
     this.remover.emit(tipo);
   }
 

@@ -88,18 +88,18 @@ describe('TiposEtapaPage — escritas pela interface', () => {
       await p.recarregarCom([prova]);
     });
 
-    it('o salvamento não se apresenta como desativação, nem durante a espera pela recarga', async () => {
+    it('o salvamento não se apresenta como remoção, nem durante a espera pela recarga', async () => {
       await p.abrirCadastro();
       const post = await p.enviar();
       expect(p.edicao.salvando()).toBe(true);
       expect(p.edicao.removendo()).toBe(false);
-      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Desativando');
+      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Removendo');
 
       post.flush(...criado());
       await p.propagar();
       expect(p.edicao.gravando()).toBe(true);
       expect(p.edicao.removendo()).toBe(false);
-      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Desativando');
+      expect(p.elemento('cfg-tipos-etapa-lista').textContent).not.toContain('Removendo');
       await p.recarregarCom([prova]);
     });
 
@@ -160,17 +160,17 @@ describe('TiposEtapaPage — escritas pela interface', () => {
     });
   });
 
-  describe('desativação pendente', () => {
+  describe('remoção pendente', () => {
     it('anuncia o andamento, rotula a linha e deixa os acionadores indisponíveis', async () => {
-      const del = await p.confirmarDesativacao(prova);
+      const del = await p.confirmarRemocao(prova);
 
       expect(p.edicao.removendo()).toBe(true);
       expect(p.edicao.salvando()).toBe(false);
-      expect(p.fixture.nativeElement.textContent).toContain('Desativando...');
+      expect(p.fixture.nativeElement.textContent).toContain('Removendo...');
       expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Desativando o tipo de etapa PROVA.',
+        'Removendo o tipo de etapa PROVA.',
       );
-      for (const botao of [p.novo(), p.editar(prova), p.desativar(prova)]) {
+      for (const botao of [p.novo(), p.editar(prova), p.remover(prova)]) {
         expect(botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true').toBe(
           true,
         );
@@ -192,7 +192,7 @@ describe('TiposEtapaPage — escritas pela interface', () => {
     });
 
     it('não fecha por Cancelar, X nem Esc, e o segundo clique não envia', async () => {
-      const del = await p.confirmarDesativacao(prova);
+      const del = await p.confirmarRemocao(prova);
       const dialogo = p.elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
 
       expect(p.cancelarDaConfirmacao().matches(':disabled')).toBe(true);
@@ -209,8 +209,8 @@ describe('TiposEtapaPage — escritas pela interface', () => {
       await p.recarregarCom([analiseDocumental]);
     });
 
-    it('"Tentar novamente" fica indisponível com a leitura falha enquanto desativa', async () => {
-      const del = await p.confirmarDesativacao(prova);
+    it('"Tentar novamente" fica indisponível com a leitura falha enquanto remove', async () => {
+      const del = await p.confirmarRemocao(prova);
       p.store.recarregar();
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
@@ -228,7 +228,7 @@ describe('TiposEtapaPage — escritas pela interface', () => {
   });
 
   describe('chamadas concorrentes', () => {
-    it('salvar durante a gravação, desativar durante o salvamento e salvar durante a desativação não geram requisição', async () => {
+    it('salvar durante a gravação, remover durante o salvamento e salvar durante a remoção não geram requisição', async () => {
       await p.abrirCadastro();
       p.edicao.salvar();
       p.edicao.salvar();
@@ -251,7 +251,7 @@ describe('TiposEtapaPage — escritas pela interface', () => {
       await p.recarregarCom([analiseDocumental]);
     });
 
-    it('confirmar sem ter pedido a desativação não envia nada', () => {
+    it('confirmar sem ter pedido a remoção não envia nada', () => {
       p.edicao.removerConfirmado();
       p.http.expectNone((r) => r.method === 'DELETE');
     });
@@ -271,14 +271,14 @@ describe('TiposEtapaPage — escritas pela interface', () => {
       expect(p.editar(prova).matches(':disabled')).toBe(false);
     });
 
-    it.each(['salvar', 'desativar'] as const)(
+    it.each(['salvar', 'remover'] as const)(
       'libera as ações e permite nova leitura se a recarga após %s falhar',
       async (operacao) => {
         if (operacao === 'salvar') {
           await p.abrirCadastro();
           (await p.enviar()).flush(...criado());
         } else {
-          (await p.confirmarDesativacao(prova)).flush(...sucesso());
+          (await p.confirmarRemocao(prova)).flush(...sucesso());
         }
         await p.propagar();
         p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));

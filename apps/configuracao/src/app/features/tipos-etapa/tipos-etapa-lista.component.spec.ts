@@ -55,22 +55,22 @@ describe('TiposEtapaListaComponent', () => {
     return encontrado;
   };
   const editar = (): HTMLButtonElement => porNome('Editar tipo de etapa PROVA');
-  const desativar = (): HTMLButtonElement => porNome('Desativar tipo de etapa PROVA');
+  const remover = (): HTMLButtonElement => porNome('Remover tipo de etapa PROVA');
   const atualizar = (nome: string, valor: unknown): void => {
     fixture.componentRef.setInput(nome, valor);
     fixture.detectChanges();
   };
 
-  it('com a desativação em curso, todo botão fica indisponível, a busca sai e o título anuncia', () => {
+  it('com a remoção em curso, todo botão fica indisponível, a busca sai e o título anuncia', () => {
     montar([tipo], { removendo: true, gravando: true });
 
     expect(botoes().length).toBeGreaterThanOrEqual(5);
     expect(botoes().filter((b) => !indisponivel(b))).toEqual([]);
     expect(raiz().querySelector('ui-filter-bar')?.hasAttribute('inert')).toBe(true);
-    expect(raiz().textContent).toContain('Desativando');
+    expect(raiz().textContent).toContain('Removendo');
   });
 
-  it('no estado vazio, com a desativação em curso, "Limpar filtros" e "Novo" ficam indisponíveis', () => {
+  it('no estado vazio, com a remoção em curso, "Limpar filtros" e "Novo" ficam indisponíveis', () => {
     montar([], { removendo: true, gravando: true, temFiltro: true });
     const limpar = botoes().find((b) => b.textContent?.includes('Limpar filtros'));
     expect(limpar?.matches(':disabled')).toBe(true);
@@ -90,27 +90,27 @@ describe('TiposEtapaListaComponent', () => {
   it('desabilita as ações no DOM e recusa acionamentos durante a carga', () => {
     montar([tipo], { carregando: true });
     const editados: TipoEtapaDto[] = [];
-    const desativados: TipoEtapaDto[] = [];
+    const removidos: TipoEtapaDto[] = [];
     let cadastros = 0;
     fixture.componentInstance.editar.subscribe((item) => editados.push(item));
-    fixture.componentInstance.remover.subscribe((item) => desativados.push(item));
+    fixture.componentInstance.remover.subscribe((item) => removidos.push(item));
     fixture.componentInstance.cadastrar.subscribe(() => (cadastros += 1));
     const novo = raiz().querySelector<HTMLButtonElement>('#cfg-tipos-etapa-novo');
 
-    for (const botao of [editar(), desativar()]) {
+    for (const botao of [editar(), remover()]) {
       expect(botao.matches(':disabled')).toBe(true);
       botao.click();
     }
     expect(novo?.getAttribute('aria-disabled')).toBe('true');
     novo?.click();
-    expect([editados, desativados, cadastros]).toEqual([[], [], 0]);
+    expect([editados, removidos, cadastros]).toEqual([[], [], 0]);
 
     atualizar('carregando', false);
     editar().click();
-    desativar().click();
+    remover().click();
     novo?.click();
     expect(editados).toEqual([tipo]);
-    expect(desativados).toEqual([tipo]);
+    expect(removidos).toEqual([tipo]);
     expect(cadastros).toBe(1);
   });
 
@@ -124,17 +124,15 @@ describe('TiposEtapaListaComponent', () => {
   });
 
   it('rotula só a linha da escrita em curso', () => {
-    montar([tipo], { gravando: true, andamento: { id: 't1', rotulo: 'Desativando...' } });
-    expect(raiz().querySelector('td[data-label="Código"]')?.textContent).toContain(
-      'Desativando...',
-    );
+    montar([tipo], { gravando: true, andamento: { id: 't1', rotulo: 'Removendo...' } });
+    expect(raiz().querySelector('td[data-label="Código"]')?.textContent).toContain('Removendo...');
     atualizar('andamento', { id: 'outra', rotulo: 'Salvando...' });
     expect(raiz().querySelector('td[data-label="Código"]')?.textContent).not.toContain('...');
   });
 
-  it('não oferece desativar o tipo inativo e o descreve como inativo', () => {
+  it('não oferece remover o tipo inativo e o descreve como inativo', () => {
     montar([{ ...tipo, ativo: false }]);
-    expect(raiz().querySelector('[aria-label^="Desativar"]')).toBeNull();
+    expect(raiz().querySelector('[aria-label^="Remover"]')).toBeNull();
     expect(raiz().textContent).toContain('Desativado');
     expect(raiz().textContent).toContain('Só compor a nota final');
   });
@@ -168,11 +166,11 @@ describe('TiposEtapaListaComponent', () => {
       expect(document.activeElement).toBe(editar());
     });
 
-    it('devolve o foco ao botão de desativar, pelo mesmo nome do template', async () => {
+    it('devolve o foco ao botão de remover, pelo mesmo nome do template', async () => {
       montar([tipo]);
-      acionar(desativar());
+      acionar(remover());
       await concluirEscrita();
-      expect(document.activeElement).toBe(desativar());
+      expect(document.activeElement).toBe(remover());
     });
 
     it('devolve o foco ao botão de cadastro quando a escrita partiu dele', async () => {
@@ -185,7 +183,7 @@ describe('TiposEtapaListaComponent', () => {
 
     it('leva o foco ao título quando a linha do acionador não existe mais', async () => {
       montar([tipo]);
-      acionar(desativar());
+      acionar(remover());
       atualizar('gravando', true);
       atualizar('tipos', []);
       atualizar('gravando', false);
