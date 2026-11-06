@@ -1,0 +1,178 @@
+<ng-container [formGroup]="form()">
+  <section class="form-section" aria-labelledby="cfg-form-identificacao">
+    <h3 id="cfg-form-identificacao" class="form-section__title">Identificação</h3>
+    <div class="form-grid">
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('nome')">
+        <span class="field__label is-required">Nome oficial</span>
+        <input
+          aria-required="true"
+          class="input"
+          type="text"
+          formControlName="nome"
+          [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+          [attr.aria-describedby]="erroDoCampo('nome') ? 'cfg-instituicao-nome-erro' : null"
+        />
+        <span class="field__hint">Nome conforme ato de criação e cadastro e-MEC.</span>
+        @if (erroDoCampo('nome')) {
+          <span class="field__error" id="cfg-instituicao-nome-erro">{{ erroDoCampo('nome') }}</span>
+        }
+      </label>
+      <label class="field" [class.is-error]="erroDoCampo('sigla')">
+        <span class="field__label is-required">Sigla</span>
+        <input
+          aria-required="true"
+          class="input"
+          type="text"
+          formControlName="sigla"
+          [attr.aria-invalid]="erroDoCampo('sigla') ? 'true' : null"
+          [attr.aria-describedby]="erroDoCampo('sigla') ? 'cfg-instituicao-sigla-erro' : null"
+        />
+        @if (erroDoCampo('sigla')) {
+          <span class="field__error" id="cfg-instituicao-sigla-erro">{{
+            erroDoCampo('sigla')
+          }}</span>
+        }
+      </label>
+      <label class="field" [class.is-error]="erroDoCampo('codigoEmec')">
+        <span class="field__label is-required">Código e-MEC</span>
+        <input
+          aria-required="true"
+          class="input"
+          type="text"
+          inputmode="numeric"
+          formControlName="codigoEmec"
+          [attr.aria-invalid]="erroDoCampo('codigoEmec') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('codigoEmec') ? 'cfg-instituicao-codigoEmec-erro' : null
+          "
+        />
+        <span class="field__hint"
+          >Chave natural e-MEC da instituição — usada em integrações com INEP e MEC.</span
+        >
+        @if (erroDoCampo('codigoEmec')) {
+          <span class="field__error" id="cfg-instituicao-codigoEmec-erro">{{
+            erroDoCampo('codigoEmec')
+          }}</span>
+        }
+      </label>
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('cnpj')">
+        <span class="field__label">CNPJ</span>
+        <input
+          class="input"
+          type="text"
+          placeholder="NN.NNN.NNN/NNNN-NN"
+          formControlName="cnpj"
+          [attr.aria-invalid]="erroDoCampo('cnpj') ? 'true' : null"
+          [attr.aria-describedby]="erroDoCampo('cnpj') ? 'cfg-instituicao-cnpj-erro' : null"
+        />
+        <span class="field__hint">CNPJ da pessoa jurídica. Opcional.</span>
+        @if (erroDoCampo('cnpj')) {
+          <span class="field__error" id="cfg-instituicao-cnpj-erro">{{ erroDoCampo('cnpj') }}</span>
+        }
+      </label>
+    </div>
+  </section>
+  <section class="form-section" aria-labelledby="cfg-form-classificacao">
+    <h3 id="cfg-form-classificacao" class="form-section__title">Classificação e-MEC</h3>
+    <div class="form-grid">
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('organizacaoAcademica')">
+        <span class="field__label is-required">Organização acadêmica</span>
+        <input
+          aria-required="true"
+          class="input"
+          type="text"
+          list="cfg-organizacao-academica"
+          formControlName="organizacaoAcademica"
+          [attr.aria-invalid]="erroDoCampo('organizacaoAcademica') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('organizacaoAcademica') ? 'cfg-instituicao-organizacaoAcademica-erro' : null
+          "
+        />
+        <datalist id="cfg-organizacao-academica">
+          <option value="Universidade"></option>
+          <option value="Centro universitário"></option>
+          <option value="Faculdade"></option>
+          <option value="Instituto federal de educação, ciência e tecnologia"></option>
+        </datalist>
+        @if (erroDoCampo('organizacaoAcademica')) {
+          <span class="field__error" id="cfg-instituicao-organizacaoAcademica-erro">{{
+            erroDoCampo('organizacaoAcademica')
+          }}</span>
+        }
+      </label>
+      <label
+        class="field form-grid__full"
+        [class.is-error]="erroDoCampo('categoriaAdministrativa')"
+      >
+        <span class="field__label is-required">Categoria administrativa</span>
+        <input
+          aria-required="true"
+          class="input"
+          type="text"
+          list="cfg-categoria-administrativa"
+          formControlName="categoriaAdministrativa"
+          [attr.aria-invalid]="erroDoCampo('categoriaAdministrativa') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('categoriaAdministrativa')
+              ? 'cfg-instituicao-categoriaAdministrativa-erro'
+              : null
+          "
+        />
+        <datalist id="cfg-categoria-administrativa">
+          <option value="Pública Federal"></option>
+          <option value="Pública Estadual"></option>
+          <option value="Pública Municipal"></option>
+          <option value="Privada com fins lucrativos"></option>
+          <option value="Privada sem fins lucrativos"></option>
+        </datalist>
+        @if (erroDoCampo('categoriaAdministrativa')) {
+          <span class="field__error" id="cfg-instituicao-categoriaAdministrativa-erro">{{
+            erroDoCampo('categoriaAdministrativa')
+          }}</span>
+        }
+      </label>
+    </div>
+  </section>
+  <section class="form-section" aria-labelledby="cfg-form-mantenedora">
+    <h3 id="cfg-form-mantenedora" class="form-section__title">Mantenedora</h3>
+    <div class="form-grid">
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('mantenedora')">
+        <span class="field__label">Mantenedora</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="mantenedora"
+          [attr.aria-invalid]="erroDoCampo('mantenedora') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('mantenedora') ? 'cfg-instituicao-mantenedora-erro' : null
+          "
+        />
+        @if (erroDoCampo('mantenedora')) {
+          <span class="field__error" id="cfg-instituicao-mantenedora-erro">{{
+            erroDoCampo('mantenedora')
+          }}</span>
+        }
+      </label>
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('codigoMantenedoraEmec')">
+        <span class="field__label">Código mantenedora e-MEC</span>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          formControlName="codigoMantenedoraEmec"
+          [attr.aria-invalid]="erroDoCampo('codigoMantenedoraEmec') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('codigoMantenedoraEmec')
+              ? 'cfg-instituicao-codigoMantenedoraEmec-erro'
+              : null
+          "
+        />
+        @if (erroDoCampo('codigoMantenedoraEmec')) {
+          <span class="field__error" id="cfg-instituicao-codigoMantenedoraEmec-erro">{{
+            erroDoCampo('codigoMantenedoraEmec')
+          }}</span>
+        }
+      </label>
+    </div>
+  </section>
+</ng-container>

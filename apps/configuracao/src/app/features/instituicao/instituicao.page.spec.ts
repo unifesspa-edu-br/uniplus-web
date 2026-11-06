@@ -1,425 +1,230 @@
-import { HttpRequest, provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-  HttpTestingController,
-  TestRequest,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { InstituicaoDto, ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { InstituicaoPage } from './instituicao.page';
+import { afterEach, describe, expect, it } from 'vitest';
+import { Pagina, montarPagina, problema, reitoria, unifesspa } from './instituicao.testing';
 
-const BASE = 'http://localhost:5000';
-const ID = '01960000-0000-7000-0000-0000000000a1';
-const REITORIA_ID = '01960000-0000-7000-0000-000000000001';
+describe('InstituicaoPage — leitura', () => {
+  let p: Pagina;
+  afterEach(() => p.http.verify());
 
-const reitoriasSeed: readonly UnidadeDto[] = [
-  {
-    id: REITORIA_ID,
-    nome: 'Reitoria',
-    alias: null,
-    slug: 'reitoria',
-    sigla: 'REITORIA',
-    codigo: 'REITORIA',
-    unidadeSuperiorId: null,
-    tipo: 'Reitoria',
-    unidadeAcademica: false,
-    vigenciaInicio: '2026-01-01',
-    vigenciaFim: null,
-    cidadeCodigoIbge: null,
-    cidadeNome: null,
-    cidadeUf: null,
-    criadoEm: '2026-06-10T12:00:00Z',
-  },
-];
+  const texto = (): string => p.fixture.nativeElement.textContent as string;
+  const ficha = (): HTMLElement => p.elemento('.cfg-instituicao__ficha');
 
-const instituicaoSeed: InstituicaoDto = {
-  id: ID,
-  codigoEmec: '3990',
-  nome: 'Universidade Federal do Sul e Sudeste do Pará',
-  sigla: 'Unifesspa',
-  organizacaoAcademica: 'Universidade',
-  categoriaAdministrativa: 'Pública Federal',
-  cnpj: null,
-  mantenedora: null,
-  codigoMantenedoraEmec: null,
-  situacao: null,
-  atoCredenciamento: null,
-  atoRecredenciamento: null,
-  conceitoInstitucional: null,
-  igc: null,
-  website: null,
-  cidade: null,
-  endereco: null,
-  unidadeRaizId: REITORIA_ID,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+  it('mostra a ficha em sete seções, com o aviso de registro único e sem o convite ao cadastro', async () => {
+    p = await montarPagina(unifesspa);
 
-function problem(status: number, code: string, title: string): string {
-  return JSON.stringify({
-    type: `https://unifesspa-edu-br.github.io/uniplus-developers/erros/${code}`,
-    title,
-    status,
-    code,
-    traceId: 'test-trace',
+    expect(ficha().querySelectorAll('h3.form-section__title')).toHaveLength(7);
+    expect(texto()).toContain('Registro único');
+    expect(texto()).toContain(unifesspa.nome);
+    expect(texto()).not.toContain('Nenhuma instituição cadastrada');
+    expect(p.acao().textContent).toContain('Editar');
   });
-}
 
-describe('InstituicaoPage', () => {
-  let fixture: ComponentFixture<InstituicaoPage>;
-  let component: InstituicaoPage;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  it('sem instituição cadastrada, oferece o cadastro e não mostra a ficha', async () => {
+    p = await montarPagina(null);
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({
-      imports: [InstituicaoPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-        { provide: GEO_BASE_PATH, useValue: BASE },
-      ],
+    expect(p.fixture.nativeElement.querySelector('.cfg-instituicao__ficha')).toBeNull();
+    expect(p.elemento('ui-empty-state')).toBeTruthy();
+    expect(texto()).toContain('Nenhuma instituição cadastrada');
+    expect(p.acao().textContent).toContain('Cadastrar instituição');
+    expect(p.store.mensagemDeErro()).toBeNull();
+    expect(p.fixture.nativeElement.querySelector('ui-alert[variant="danger"]')).toBeNull();
+  });
+
+  it('mostra travessão no campo opcional vazio e o nome da unidade raiz carregada', async () => {
+    p = await montarPagina(unifesspa);
+
+    expect(ficha().textContent).toContain('—');
+    expect(ficha().textContent).toContain('REITORIA — Reitoria');
+  });
+
+  it('diz que a unidade raiz não foi carregada quando ela não veio na lista de reitorias', async () => {
+    p = await montarPagina(unifesspa, []);
+
+    expect(ficha().textContent).toContain('Não carregada');
+  });
+
+  it('mostra a cidade e o endereço da sede, com os campos opcionais preenchidos', async () => {
+    p = await montarPagina({
+      ...unifesspa,
+      cnpj: '11.222.333/0001-44',
+      website: 'https://unifesspa.edu.br',
+      cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+      endereco: {
+        cep: '68507590',
+        logradouro: 'Folha 31',
+        numero: '7',
+        complemento: null,
+        bairro: 'Nova Marabá',
+        distrito: null,
+        cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+        latitude: null,
+        longitude: null,
+        nivelResolucao: 'logradouro',
+        origem: 'geo-api',
+        displayAtualizadoEm: null,
+      },
     });
 
-    fixture = TestBed.createComponent(InstituicaoPage);
-    component = fixture.componentInstance;
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
+    expect(ficha().textContent).toContain('Marabá — PA');
+    expect(ficha().textContent).toContain('Folha 31, 7, Nova Marabá');
+    expect(ficha().textContent).toContain('68507590');
+    expect(ficha().textContent).toContain('11.222.333/0001-44');
   });
 
-  afterEach(() => controller.verify());
+  it('o 404 de nenhuma instituição não é falha de carga: não avisa por toast', async () => {
+    p = await montarPagina(null);
 
-  const propagate = async (): Promise<void> => {
-    await Promise.resolve();
-    appRef.tick();
-  };
+    expect(p.erros).not.toHaveBeenCalled();
+  });
 
-  function expectObter(): TestRequest {
-    const req = controller.expectOne(`${BASE}/api/organizacao/instituicao`);
-    expect(req.request.method).toBe('GET');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('instituicao', 1));
-    return req;
-  }
+  describe('quando a leitura falha', () => {
+    it('mostra o alerta no lugar do painel, avisa por toast no 5xx e permite tentar de novo', async () => {
+      p = await montarPagina();
+      p.store.recarregar();
+      await p.falharLeitura(503);
 
-  function expectReitorias(): TestRequest {
-    return controller.expectOne(
-      (r: HttpRequest<unknown>) =>
-        r.url === `${BASE}/api/organizacao/unidades` && r.method === 'GET' && r.params.get('tipo') === '1',
-    );
-  }
+      expect(p.elemento('cfg-alerta-nova-tentativa').textContent).toContain(
+        'Não foi possível carregar a instituição',
+      );
+      expect(p.fixture.nativeElement.querySelector('cfg-instituicao-painel')).toBeNull();
+      expect(p.erros).toHaveBeenCalledTimes(1);
 
-  // Carga inicial. `obter()` dispara no construtor; reitorias no detectChanges.
-  async function carregar(
-    instituicao: InstituicaoDto | null,
-    reitorias: readonly UnidadeDto[] = reitoriasSeed,
-  ): Promise<void> {
-    fixture.detectChanges();
-    const obter = expectObter();
-    if (instituicao) {
-      obter.flush(instituicao);
-    } else {
-      obter.flush(null, { status: 404, statusText: 'Not Found' });
+      p.elemento<HTMLButtonElement>('#cfg-instituicao-tentar-novamente').click();
+      await p.responderLeitura(unifesspa);
+      expect(p.store.mensagemDeErro()).toBeNull();
+      expect(p.elemento('cfg-instituicao-painel')).toBeTruthy();
+    });
+
+    it('a recusa 4xx da leitura aparece no alerta, sem toast', async () => {
+      p = await montarPagina();
+      p.store.recarregar();
+      await p.falharLeitura(403);
+
+      expect(p.elemento('cfg-alerta-nova-tentativa')).toBeTruthy();
+      expect(p.erros).not.toHaveBeenCalled();
+    });
+
+    it('o "Tentar novamente" fica indisponível durante a nova leitura e não a repete', async () => {
+      p = await montarPagina();
+      p.store.recarregar();
+      await p.falharLeitura(503);
+      const tentar = p.elemento<HTMLButtonElement>('#cfg-instituicao-tentar-novamente');
+
+      tentar.click();
+      await p.propagar();
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      tentar.click();
+      await p.propagar();
+      await p.responderLeitura(unifesspa);
+    });
+  });
+});
+
+describe('InstituicaoPage — campos do formulário', () => {
+  let p: Pagina;
+  afterEach(() => p.http.verify());
+
+  const marcado = (nome: string): string | null => p.campo(nome).getAttribute('aria-required');
+
+  it('marca os cinco campos obrigatórios para a tecnologia assistiva, e os opcionais não', async () => {
+    p = await montarPagina(null);
+    await p.abrirFormulario();
+
+    for (const nome of [
+      'nome',
+      'sigla',
+      'codigoEmec',
+      'organizacaoAcademica',
+      'categoriaAdministrativa',
+    ]) {
+      expect(marcado(nome), nome).toBe('true');
     }
-    expectReitorias().flush(reitorias);
-    await propagate();
-  }
+    for (const nome of ['cnpj', 'mantenedora', 'situacao', 'igc', 'website']) {
+      expect(marcado(nome), nome).toBeNull();
+    }
+  });
 
-  function preencherObrigatorios(): void {
-    component['form'].patchValue({
-      nome: 'Universidade Federal do Sul e Sudeste do Pará',
-      sigla: 'Unifesspa',
-      codigoEmec: '3990',
-      organizacaoAcademica: 'Universidade',
-      categoriaAdministrativa: 'Pública Federal',
+  it('oferece as reitorias carregadas no select de unidade raiz', async () => {
+    p = await montarPagina(null);
+    await p.abrirFormulario();
+
+    const opcoes = [...p.fixture.nativeElement.querySelectorAll('select option')].map((o) =>
+      (o as HTMLOptionElement).textContent?.trim(),
+    );
+    expect(opcoes).toEqual(['(Não vinculada)', 'REITORIA — Reitoria']);
+  });
+
+  describe('quando as reitorias não vêm', () => {
+    const tentar = (): HTMLButtonElement =>
+      p.elemento<HTMLButtonElement>('.field__error .cfg-link-button');
+    const aviso = (): string => p.elemento('#cfg-instituicao-reitorias-erro').textContent ?? '';
+    const select = (): HTMLSelectElement => p.elemento('select[formcontrolname="unidadeRaizId"]');
+
+    it('avisa, recarrega a lista a pedido e devolve o foco ao select quando dá certo', async () => {
+      p = await montarPagina(null, 'falha');
+      await p.abrirFormulario();
+
+      expect(aviso()).toContain('Não foi possível carregar as unidades para seleção.');
+      expect(select().getAttribute('aria-describedby')).toBe('cfg-instituicao-reitorias-erro');
+      expect(p.erros).toHaveBeenCalledTimes(1);
+      tentar().focus();
+      tentar().click();
+      await p.propagar();
+      p.reitoriasRecarregadas().flush([reitoria]);
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.querySelector('.field__error .cfg-link-button')).toBeNull();
+      expect(p.fixture.nativeElement.querySelectorAll('select option')).toHaveLength(2);
+      expect(document.activeElement).toBe(select());
     });
-  }
 
-  it('InstituicaoPage_ModoLeitura_Exibe7Secoes', async () => {
-    await carregar(instituicaoSeed);
+    it('durante a espera o botão fica aria-disabled, sem nova leitura, e segue com o foco', async () => {
+      p = await montarPagina(null, 'falha');
+      await p.abrirFormulario();
+      const botao = tentar();
 
-    const ficha = fixture.nativeElement.querySelector('.cfg-instituicao__ficha');
-    expect(ficha).not.toBeNull();
-    expect(ficha.querySelectorAll('h3.form-section__title')).toHaveLength(7);
-
-    const texto = fixture.nativeElement.textContent as string;
-    expect(texto).toContain('Registro único');
-    expect(texto).toContain('Universidade Federal do Sul e Sudeste do Pará');
-    expect(texto).not.toContain('Nenhuma instituição cadastrada');
-  });
-
-  it('InstituicaoPage_ModoCriacao_ExibeEmptyState', async () => {
-    await carregar(null);
-
-    expect(fixture.nativeElement.querySelector('.cfg-instituicao__ficha')).toBeNull();
-    expect(fixture.nativeElement.querySelector('ui-empty-state')).not.toBeNull();
-    const texto = fixture.nativeElement.textContent as string;
-    expect(texto).toContain('Registro único');
-    expect(texto).toContain('Nenhuma instituição cadastrada');
-  });
-
-  it('InstituicaoPage_CampoOpcionalVazio_ExibeDash', async () => {
-    await carregar(instituicaoSeed);
-
-    const ficha = fixture.nativeElement.querySelector('.cfg-instituicao__ficha') as HTMLElement;
-    // CNPJ é null no seed → exibe travessão.
-    expect(ficha.textContent).toContain('—');
-    // Unidade raiz resolve para o rótulo da reitoria carregada.
-    expect(ficha.textContent).toContain('REITORIA — Reitoria');
-  });
-
-  it('InstituicaoForm_SelectReitoria_PopulaOptions', async () => {
-    await carregar(null);
-    expect(component['reitorias']()).toHaveLength(1);
-    expect(component['reitorias']()[0]?.sigla).toBe('REITORIA');
-  });
-
-  it('InstituicaoForm_CamposObrigatorios_MarcaErros', async () => {
-    await carregar(null);
-    component['abrirCadastro']();
-    component['salvar']();
-    await propagate();
-
-    // Nenhuma request de POST disparada (form inválido).
-    controller.expectNone(`${BASE}/api/organizacao/admin/instituicao`);
-    expect(component['erroDoCampo']('nome')).toBe('Campo obrigatório.');
-    expect(component['erroDoCampo']('codigoEmec')).toBe('Campo obrigatório.');
-    expect(component['drawerAberto']()).toBe(true);
-  });
-
-  it('InstituicaoForm_ErroSingleton_ExibeBanner', async () => {
-    await carregar(null);
-    component['abrirCadastro']();
-    preencherObrigatorios();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
-    expect(req.request.method).toBe('POST');
-    req.flush(
-      problem(409, 'uniplus.organizacao.instituicao.ja_existe', 'Já existe'),
-      { status: 409, statusText: 'Conflict', headers: { 'content-type': 'application/problem+json' } },
-    );
-    await propagate();
-
-    expect(component['submitError']()).toContain('Já existe uma instituição cadastrada');
-    expect(component['drawerAberto']()).toBe(true);
-  });
-
-  it('InstituicaoForm_ErroUnidadeRaiz_MapeiaCampo', async () => {
-    await carregar(instituicaoSeed);
-    component['abrirEdicao']();
-    const chaveInicial = component['idempotencyKeyAtual']();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
-    expect(req.request.method).toBe('PUT');
-    req.flush(
-      problem(
-        422,
-        'uniplus.organizacao.instituicao.unidade_raiz_nao_eh_reitoria',
-        'A unidade informada como raiz da instituição deve ser do tipo reitoria',
-      ),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['erroDoCampo']('unidadeRaizId')).toContain('reitoria');
-    // Idempotency-Key é renovada após a falha (retry seguro com body corrigido).
-    expect(component['idempotencyKeyAtual']()).not.toBe(chaveInicial);
-  });
-
-  it('InstituicaoForm_ErroUnidadeRaizNaoEncontrada_MapeiaCampo', async () => {
-    await carregar(instituicaoSeed);
-    component['abrirEdicao']();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
-    // A reitoria escolhida foi removida entre a carga do select e o envio.
-    req.flush(
-      problem(
-        422,
-        'uniplus.organizacao.instituicao.unidade_raiz_nao_encontrada',
-        'A unidade informada como raiz não foi encontrada ou foi removida',
-      ),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['erroDoCampo']('unidadeRaizId')).toContain('não foi encontrada');
-    expect(component['submitError']()).toBeNull();
-  });
-
-  it('InstituicaoForm_CodeUnidadeRaizEmOutroAgregado_NaoAncoraNoControle', async () => {
-    await carregar(instituicaoSeed);
-    component['abrirEdicao']();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
-    // Code de outro agregado que também contém o trecho `unidade_raiz`, mas
-    // não é um dos codes exatos desta tela — não pode ser casado por substring.
-    req.flush(
-      problem(
-        422,
-        'uniplus.organizacao.unidade.unidade_raiz_orfa',
-        'Unidade raiz órfã em outro agregado',
-      ),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['erroDoCampo']('unidadeRaizId')).toBeNull();
-    expect(component['submitError']()).toContain('Unidade raiz órfã em outro agregado');
-  });
-
-  it('InstituicaoForm_Erro409ProcessingConflict_NaoConfundeComSingleton', async () => {
-    await carregar(null);
-    component['abrirCadastro']();
-    preencherObrigatorios();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
-    // 409 de conflito de idempotência em processamento — não é o singleton de
-    // Instituição, então deve preservar o title da API.
-    req.flush(
-      problem(
-        409,
-        'uniplus.idempotency.processing_conflict',
-        'Uma requisição idêntica ainda está em processamento',
-      ),
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    expect(component['submitError']()).toBe('Uma requisição idêntica ainda está em processamento');
-    expect(component['submitError']()).not.toContain('Já existe uma instituição cadastrada');
-  });
-
-  it('InstituicaoForm_Criar_RequisicaoCorreta', async () => {
-    await carregar(null);
-    component['abrirCadastro']();
-    preencherObrigatorios();
-    const chave = component['idempotencyKeyAtual']();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
-    expect(req.request.method).toBe('POST');
-    expect(req.request.headers.get('Idempotency-Key')).toBe(chave);
-    expect(req.request.body).toMatchObject({
-      codigoEmec: '3990',
-      nome: 'Universidade Federal do Sul e Sudeste do Pará',
-      sigla: 'Unifesspa',
-      organizacaoAcademica: 'Universidade',
-      categoriaAdministrativa: 'Pública Federal',
-      cnpj: null,
-      unidadeRaizId: null,
+      botao.focus();
+      botao.click();
+      await p.propagar();
+      expect(botao.getAttribute('aria-disabled')).toBe('true');
+      expect(botao.getAttribute('aria-busy')).toBe('true');
+      expect(document.activeElement).toBe(botao);
+      botao.click();
+      await p.propagar();
+      p.reitoriasRecarregadas().flush([reitoria]);
+      await p.propagar();
     });
-    req.flush(ID, { status: 201, statusText: 'Created' });
-    await propagate();
 
-    // Pós-sucesso: drawer fecha e recarrega o singleton (`obter()`); o resource
-    // de reitorias não re-dispara (params inalterados, sem reload).
-    expect(component['drawerAberto']()).toBe(false);
-    expectObter().flush(instituicaoSeed);
-    await propagate();
-    expect(component['instituicao']()?.sigla).toBe('Unifesspa');
-  });
+    it('a falha repetida anuncia a tentativa, avisa por toast e não tira o foco do botão', async () => {
+      p = await montarPagina(null, 'falha');
+      await p.abrirFormulario();
 
-  it('InstituicaoPage_Remocao_RetornaModoCriacao', async () => {
-    await carregar(instituicaoSeed);
-    component['abrirEdicao']();
-    component['pedirRemocao']();
-    expect(component['dialogRemover']()).toBe(true);
+      tentar().focus();
+      tentar().click();
+      await p.propagar();
+      p.reitoriasRecarregadas().flush(...problema(503));
+      await p.propagar();
+      await p.propagar();
 
-    component['removerConfirmado']();
-    await propagate();
+      expect(aviso()).toContain('Tentativa 2 sem sucesso.');
+      expect(p.erros).toHaveBeenCalledTimes(2);
+      expect(document.activeElement).toBe(tentar());
+      expect(p.reitoriasStore.tentativasSemSucesso()).toBe(2);
 
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
-    expect(req.request.method).toBe('DELETE');
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
+      tentar().click();
+      await p.propagar();
+      p.reitoriasRecarregadas().flush(...problema(503));
+      await p.propagar();
+      await p.propagar();
+      expect(aviso()).toContain('Tentativa 3 sem sucesso.');
+    });
 
-    expect(component['instituicao']()).toBeNull();
-    expect(component['drawerAberto']()).toBe(false);
-    expect(fixture.nativeElement.querySelector('ui-empty-state')).not.toBeNull();
-  });
+    it('explica a falha na ficha, fora do drawer, em vez de só dizer que não carregou', async () => {
+      p = await montarPagina(unifesspa, 'falha');
 
-  it('InstituicaoForm_RemocaoEmVoo_BloqueiaSalvar', async () => {
-    await carregar(instituicaoSeed);
-    component['abrirEdicao']();
-    component['pedirRemocao']();
-    component['removerConfirmado']();
-    await propagate();
-
-    // DELETE em voo (não flushado): removendo() = true.
-    const del = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao/${ID}`);
-    expect(del.request.method).toBe('DELETE');
-
-    // Tentar salvar nessa janela é no-op (guard de corrida): retorna antes de
-    // marcar submitting e não dispara PUT. Se um PUT fosse criado, o
-    // controller.verify() do afterEach acusaria a request não consumida.
-    component['salvar']();
-    await propagate();
-    expect(component['submitting']()).toBe(false);
-
-    del.flush(null, { status: 204, statusText: 'No Content' });
-    await propagate();
-    expect(component['instituicao']()).toBeNull();
-  });
-
-  it('InstituicaoForm_ErroCampoOpcional_MapeiaInline', async () => {
-    await carregar(null);
-    component['abrirCadastro']();
-    preencherObrigatorios();
-    component['salvar']();
-    await propagate();
-
-    const req = controller.expectOne(`${BASE}/api/organizacao/admin/instituicao`);
-    req.flush(
-      JSON.stringify({
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
-        title: 'Erro de validação',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: 'test-trace',
-        errors: [{ field: 'Cnpj', code: 'FormatoInvalido', message: 'CNPJ inválido.' }],
-      }),
-      {
-        status: 422,
-        statusText: 'Unprocessable Entity',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await propagate();
-
-    // Erro de campo opcional é mapeado ao controle e renderizado inline.
-    expect(component['erroDoCampo']('cnpj')).toBe('CNPJ inválido.');
-    expect(component['drawerAberto']()).toBe(true);
+      expect(p.elemento('.cfg-instituicao__ficha').textContent).toContain(
+        'Não carregada — Resposta inesperada do servidor',
+      );
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -51,6 +51,25 @@ const CORS_HEADERS = {
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
+
+const TOLERANCIA = 1;
+
+/** As sete seções do formulário, na ordem em que aparecem no drawer. */
+const SECOES_DO_FORMULARIO = [
+  'cfg-form-identificacao',
+  'cfg-form-classificacao',
+  'cfg-form-mantenedora',
+  'cfg-form-situacao',
+  'cfg-form-indicadores',
+  'cfg-form-contato',
+  'cfg-form-estrutura',
+];
+
+async function caixa(locator: Locator) {
+  const box = await locator.boundingBox();
+  if (!box) throw new Error('Elemento sem geometria visível.');
+  return { y: box.y, base: box.y + box.height };
+}
 
 test.describe('Instituição — cobertura visual DS', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -106,6 +125,21 @@ test.describe('Instituição — cobertura visual DS', () => {
     await attachScreenshot(page, testInfo, 'instituicao-leitura');
   });
 
+  test('drawer e diálogo fechados não ocupam espaço entre os blocos', async ({ page }) => {
+    await mockInstituicaoApi(page, { existe: true });
+    await page.goto('/instituicao');
+    await expect(page.locator('.cfg-instituicao__ficha')).toBeVisible();
+    const pagina = page.locator('.cfg-page');
+    const aviso = page.locator('ui-alert').first();
+    const painel = page.locator('.panel');
+    const gap = await pagina.evaluate((el) => Number.parseFloat(getComputedStyle(el).rowGap));
+    const geoAviso = await caixa(aviso);
+    const geoPainel = await caixa(painel);
+    const geoPagina = await caixa(pagina);
+    expect(Math.abs(geoPainel.y - geoAviso.base - gap)).toBeLessThanOrEqual(TOLERANCIA);
+    expect(Math.abs(geoPagina.base - geoPainel.base)).toBeLessThanOrEqual(TOLERANCIA);
+  });
+
   test('modo edição — drawer preserva footer, rolagem única e ação de remoção', async ({
     page,
   }, testInfo) => {
@@ -146,6 +180,24 @@ test.describe('Instituição — cobertura visual DS', () => {
     expect(metrics.formOverflowY).toBe('auto');
     expect(metrics.bodyOverflow).toBe('hidden');
     expect(metrics.footerInsideViewport).toBe(true);
+
+    const espacos = await drawer.locator('.form-drawer__campos').evaluate((campos, ids) => {
+      const base = Number.parseFloat(getComputedStyle(campos).rowGap);
+      const caixas = ids.map((id) => {
+        const secao = campos.querySelector(`section[aria-labelledby="${id}"]`);
+        if (!secao) throw new Error(`Seção ${id} ausente.`);
+        const { top, bottom } = secao.getBoundingClientRect();
+        return { top, bottom };
+      });
+      return {
+        base,
+        entreSecoes: caixas.slice(1).map((caixa, i) => caixa.top - caixas[i].bottom),
+      };
+    }, SECOES_DO_FORMULARIO);
+    expect(espacos.base).toBeGreaterThan(0);
+    for (const espaco of espacos.entreSecoes) {
+      expect(Math.abs(espaco - espacos.base)).toBeLessThanOrEqual(TOLERANCIA);
+    }
 
     await attachScreenshot(page, testInfo, 'instituicao-drawer');
 
@@ -264,7 +316,7 @@ async function assertNoHorizontalOverflow(page: Page): Promise<void> {
 
 async function assertSidebarInstituicaoAtiva(page: Page, viewport: VisualViewport): Promise<void> {
   const sidebar = page.locator('aside[aria-label="Painel administrativo"]');
-  const drawer = page.locator("dialog.uni-drawer[open]");
+  const drawer = page.locator('dialog.uni-drawer[open]');
   if (viewport === 'mobile') {
     await page.getByRole('button', { name: 'Abrir menu', exact: true }).click();
     await expect(drawer).toBeVisible();

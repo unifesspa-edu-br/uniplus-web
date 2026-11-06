@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* O gap da coluna já separa as seções; a margem do .form-section somaria a ele e dobraria o espaço. */
+.form-section {
+  margin-bottom: 0;
+}

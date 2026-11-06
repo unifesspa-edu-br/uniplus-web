@@ -1,0 +1,16 @@
+.cfg-panel-empty {
+  padding: var(--space-5);
+}
+
+/* O corpo do card da ficha: o panel-head já tem o seu padding, mas o body não tinha, e os títulos
+   de seção encostavam na divisória e na borda. O padding indenta; a lista de detalhes não repete o seu. */
+.cfg-instituicao__ficha {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-5);
+}
+
+.cfg-instituicao__ficha .cfg-detail-list {
+  padding: 0;
+}

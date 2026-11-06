@@ -75,7 +75,7 @@ describe('formulário de reserva demográfica', () => {
 
     it('diz a obrigatoriedade, a faixa e o tamanho', () => {
       expect(tocar('censoReferencia', '')).toBe('Campo obrigatório.');
-      expect(tocar('censoReferencia', '1'.repeat(21))).toBe('Valor acima do tamanho permitido.');
+      expect(tocar('censoReferencia', '1'.repeat(21))).toBe('Informe no máximo 20 caracteres.');
       expect(tocar('ppiPercentual', 101)).toBe('Informe um valor entre 0 e 100.');
       expect(tocar('ppiPercentual', -1)).toBe('Informe um valor entre 0 e 100.');
       expect(tocar('ppiPercentual', 50)).toBeNull();

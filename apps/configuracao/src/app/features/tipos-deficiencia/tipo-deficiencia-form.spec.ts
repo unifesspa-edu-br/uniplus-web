@@ -81,11 +81,11 @@ describe('formulário de tipo de deficiência', () => {
     it('descreve o tamanho mínimo, o excesso e o formato do código', () => {
       expect(tocar('A', 'nome')).toBe('Informe ao menos 2 caracteres.');
       expect(tocar('x'.repeat(200), 'nome')).toBeNull();
-      expect(tocar('x'.repeat(201), 'nome')).toBe('Valor acima do tamanho permitido.');
-      expect(tocar('x'.repeat(1001), 'descricao')).toBe('Valor acima do tamanho permitido.');
+      expect(tocar('x'.repeat(201), 'nome')).toBe('Informe no máximo 200 caracteres.');
+      expect(tocar('x'.repeat(1001), 'descricao')).toBe('Informe no máximo 1000 caracteres.');
       expect(tocar('9', 'codigo')).toContain('Informe ao menos');
       expect(tocar('9X', 'codigo')).toContain('Formato inválido');
-      expect(tocar('A'.repeat(60), 'codigo')).toBe('Valor acima do tamanho permitido.');
+      expect(tocar('A'.repeat(60), 'codigo')).toBe('Informe no máximo 50 caracteres.');
     });
 
     it('explica que a descrição só com espaços não vale', () => {

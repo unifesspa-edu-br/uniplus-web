@@ -1,0 +1,136 @@
+<ui-drawer
+  class="form-drawer"
+  [(visible)]="aberto"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário da instituição"
+  position="right"
+>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+
+  <form
+    [formGroup]="form()"
+    id="cfg-instituicao-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <cfg-instituicao-identificacao [form]="form()" />
+      <cfg-instituicao-regulatorio [form]="form()" />
+      <section aria-labelledby="cfg-form-contato">
+        <h3 id="cfg-form-contato" class="form-section__title">Contato e localização da sede</h3>
+        <div class="form-grid">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('website')">
+            <span class="field__label">Site institucional</span>
+            <input
+              class="input"
+              type="url"
+              formControlName="website"
+              [attr.aria-invalid]="erroDoCampo('website') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('website') ? 'cfg-instituicao-website-erro' : null
+              "
+            />
+            @if (erroDoCampo('website')) {
+              <span class="field__error" id="cfg-instituicao-website-erro">{{
+                erroDoCampo('website')
+              }}</span>
+            }
+          </label>
+        </div>
+        <ui-endereco-geo
+          formControlName="endereco"
+          idPrefix="inst-endereco"
+          legend="Endereço da sede"
+          [erroExterno]="erroDoEndereco()"
+        />
+      </section>
+
+      <section aria-labelledby="cfg-form-estrutura">
+        <h3 id="cfg-form-estrutura" class="form-section__title">Estrutura organizacional</h3>
+        <div class="form-grid">
+          <label class="field form-grid__full" [class.is-error]="erroDoCampo('unidadeRaizId')">
+            <span class="field__label">Unidade raiz (reitoria)</span>
+            <select
+              class="select"
+              id="cfg-instituicao-unidadeRaizId"
+              formControlName="unidadeRaizId"
+              [attr.aria-invalid]="erroDoCampo('unidadeRaizId') ? 'true' : null"
+              [attr.aria-describedby]="descricaoDaUnidadeRaiz()"
+            >
+              <option value="">(Não vinculada)</option>
+              @for (reitoria of reitorias(); track reitoria.id) {
+                <option [value]="reitoria.id">{{ reitoria.sigla }} — {{ reitoria.nome }}</option>
+              }
+            </select>
+            <span class="field__hint">
+              Aponta para a Unidade viva do tipo Reitoria. Pode ficar sem vínculo durante o cadastro
+              inicial da estrutura.
+            </span>
+            @if (erroDoCampo('unidadeRaizId')) {
+              <span class="field__error" id="cfg-instituicao-unidadeRaizId-erro">{{
+                erroDoCampo('unidadeRaizId')
+              }}</span>
+            }
+          </label>
+          @if (reitoriasComErro()) {
+            <p
+              class="field__error form-grid__full"
+              id="cfg-instituicao-reitorias-erro"
+              role="alert"
+            >
+              {{ avisoDasReitorias() }}
+              <button
+                type="button"
+                class="cfg-link-button"
+                [attr.aria-disabled]="reitoriasCarregando() ? 'true' : null"
+                [attr.aria-busy]="reitoriasCarregando() ? 'true' : null"
+                (click)="aoTentarReitorias()"
+              >
+                Tentar novamente
+              </button>
+            </p>
+          }
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    @if (modo() === 'editar') {
+      <button
+        type="button"
+        class="btn btn--danger-ghost btn--rect"
+        [disabled]="gravando()"
+        (click)="remover.emit()"
+      >
+        Remover
+      </button>
+    }
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-instituicao-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="gravando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ salvando() ? 'Salvando...' : 'Salvar instituição' }}
+    </button>
+  </div>
+</ui-drawer>

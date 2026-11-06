@@ -65,6 +65,6 @@ describe('TermoConsentimentoFormularioComponent', () => {
     const mensagens = [...raiz(fixture).querySelectorAll('.field__error')].map(
       (item) => item.textContent,
     );
-    expect(mensagens).toEqual(['Nome recusado.', 'Valor acima do tamanho permitido.']);
+    expect(mensagens).toEqual(['Nome recusado.', 'Informe no máximo 20000 caracteres.']);
   });
 });

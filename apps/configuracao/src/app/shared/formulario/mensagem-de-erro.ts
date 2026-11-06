@@ -14,7 +14,9 @@ export function mensagemDeErroDoControle(control: AbstractControl): string | nul
     return backend.message;
   }
   if (control.errors['required']) return 'Campo obrigatório.';
-  if (control.errors['maxlength']) return 'Valor acima do tamanho permitido.';
+  if (control.errors['maxlength']) {
+    return `Informe no máximo ${control.errors['maxlength'].requiredLength} caracteres.`;
+  }
   return 'Valor inválido.';
 }
 

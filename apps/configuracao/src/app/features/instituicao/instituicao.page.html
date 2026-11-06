@@ -1,0 +1,66 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Instituição</h1>
+    <p class="page-header__desc">
+      Cabeçalho institucional da plataforma — identificação e-MEC, situação regulatória e contato da
+      sede · UNI-REQ-0007.
+    </p>
+  </div>
+</div>
+
+<ui-alert variant="info" heading="Registro único" [dynamic]="false">
+  Cada instância da plataforma atende uma única instituição. Não é possível criar nem listar várias
+  — apenas editar a Instituição existente. A remoção é lógica e só ocorre em recadastramento
+  institucional.
+</ui-alert>
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+@if (store.mensagemDeErro(); as mensagem) {
+<cfg-alerta-nova-tentativa
+  titulo="Não foi possível carregar a instituição"
+  [mensagem]="mensagem"
+  [pendente]="indisponivel()"
+  [tentativasSemSucesso]="store.tentativasSemSucesso()"
+  idBotao="cfg-instituicao-tentar-novamente"
+  (tentar)="tentarNovamente()"
+/>
+} @else {
+<cfg-instituicao-painel
+  [instituicao]="store.instituicao()"
+  [naoCadastrada]="store.naoCadastrada()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [unidadeRaiz]="unidadeRaiz()"
+  (cadastrar)="cadastrar()"
+  (editar)="editar($event)"
+/>
+}
+
+<cfg-instituicao-formulario
+  [(aberto)]="edicao.aberto"
+  [form]="edicao.form"
+  [modo]="edicao.modo()"
+  [erro]="edicao.erro()"
+  [erroDoEndereco]="edicao.erroDoEndereco()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
+  [gravando]="edicao.gravando()"
+  [reitorias]="reitorias.reitorias()"
+  [reitoriasComErro]="reitorias.comErro()"
+  [reitoriasCarregando]="reitorias.carregando()"
+  [reitoriasTentativas]="reitorias.tentativasSemSucesso()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+  (remover)="edicao.pedirRemocao()"
+  (recarregarReitorias)="tentarNovamenteReitorias()"
+/>
+
+<cfg-confirmacao-de-remocao
+  titulo="Remover instituição"
+  [(aberto)]="edicao.confirmando"
+  mensagem="Você está removendo a Instituição desta plataforma. Esta operação preserva o histórico de auditoria e libera o cadastro de uma nova Instituição. Confirma a remoção?"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroDaRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
+  (confirmar)="edicao.removerConfirmado()"
+/>

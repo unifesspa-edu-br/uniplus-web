@@ -84,7 +84,7 @@ describe('formulário de criação do modelo', () => {
       form.controls.nome.setValue('a'.repeat(201));
       form.controls.nome.markAsTouched();
 
-      expect(mensagemDoCampo(form.controls.nome)).toBe('Valor acima do tamanho permitido.');
+      expect(mensagemDoCampo(form.controls.nome)).toBe('Informe no máximo 200 caracteres.');
     });
 
     it('a recusa do servidor vale mais que a regra local', () => {

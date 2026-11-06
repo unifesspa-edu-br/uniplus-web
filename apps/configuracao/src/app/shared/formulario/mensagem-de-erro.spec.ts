@@ -42,9 +42,12 @@ describe('mensagem do campo de cadastro com formato', () => {
 
   it('usa a mensagem de formato recebida, salvo se o tamanho máximo também foi violado', () => {
     expect(mensagemDeErroDoCampoComFormato(tocado({ pattern: {} }), FORMATO)).toBe(FORMATO);
-    expect(mensagemDeErroDoCampoComFormato(tocado({ pattern: {}, maxlength: {} }), FORMATO)).toBe(
-      'Valor acima do tamanho permitido.',
-    );
+    expect(
+      mensagemDeErroDoCampoComFormato(
+        tocado({ pattern: {}, maxlength: { requiredLength: 50 } }),
+        FORMATO,
+      ),
+    ).toBe('Informe no máximo 50 caracteres.');
   });
 
   it('cai na mensagem genérica para outra regra violada', () => {

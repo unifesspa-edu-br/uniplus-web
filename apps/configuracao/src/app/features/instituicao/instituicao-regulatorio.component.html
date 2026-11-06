@@ -1,0 +1,99 @@
+<ng-container [formGroup]="form()">
+  <section class="form-section" aria-labelledby="cfg-form-situacao">
+    <h3 id="cfg-form-situacao" class="form-section__title">Situação regulatória</h3>
+    <div class="form-grid">
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('situacao')">
+        <span class="field__label">Situação</span>
+        <input
+          class="input"
+          type="text"
+          formControlName="situacao"
+          [attr.aria-invalid]="erroDoCampo('situacao') ? 'true' : null"
+          [attr.aria-describedby]="erroDoCampo('situacao') ? 'cfg-instituicao-situacao-erro' : null"
+        />
+        <span class="field__hint">Situação regulatória atual junto ao MEC.</span>
+        @if (erroDoCampo('situacao')) {
+          <span class="field__error" id="cfg-instituicao-situacao-erro">{{
+            erroDoCampo('situacao')
+          }}</span>
+        }
+      </label>
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('atoCredenciamento')">
+        <span class="field__label">Ato de credenciamento</span>
+        <input
+          class="input"
+          type="text"
+          placeholder="Ex.: Lei nº 12.824, de 5 de junho de 2013"
+          formControlName="atoCredenciamento"
+          [attr.aria-invalid]="erroDoCampo('atoCredenciamento') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('atoCredenciamento') ? 'cfg-instituicao-atoCredenciamento-erro' : null
+          "
+        />
+        @if (erroDoCampo('atoCredenciamento')) {
+          <span class="field__error" id="cfg-instituicao-atoCredenciamento-erro">{{
+            erroDoCampo('atoCredenciamento')
+          }}</span>
+        }
+      </label>
+      <label class="field form-grid__full" [class.is-error]="erroDoCampo('atoRecredenciamento')">
+        <span class="field__label">Ato de recredenciamento</span>
+        <input
+          class="input"
+          type="text"
+          placeholder="Ex.: Portaria MEC nº …"
+          formControlName="atoRecredenciamento"
+          [attr.aria-invalid]="erroDoCampo('atoRecredenciamento') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('atoRecredenciamento') ? 'cfg-instituicao-atoRecredenciamento-erro' : null
+          "
+        />
+        @if (erroDoCampo('atoRecredenciamento')) {
+          <span class="field__error" id="cfg-instituicao-atoRecredenciamento-erro">{{
+            erroDoCampo('atoRecredenciamento')
+          }}</span>
+        }
+      </label>
+    </div>
+  </section>
+  <section class="form-section" aria-labelledby="cfg-form-indicadores">
+    <h3 id="cfg-form-indicadores" class="form-section__title">Indicadores de qualidade</h3>
+    <div class="form-grid form-grid--pair">
+      <label class="field" [class.is-error]="erroDoCampo('conceitoInstitucional')">
+        <span class="field__label">Conceito institucional (CI)</span>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          formControlName="conceitoInstitucional"
+          [attr.aria-invalid]="erroDoCampo('conceitoInstitucional') ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoCampo('conceitoInstitucional')
+              ? 'cfg-instituicao-conceitoInstitucional-erro'
+              : null
+          "
+        />
+        <span class="field__hint">Valor e-MEC (1–5).</span>
+        @if (erroDoCampo('conceitoInstitucional')) {
+          <span class="field__error" id="cfg-instituicao-conceitoInstitucional-erro">{{
+            erroDoCampo('conceitoInstitucional')
+          }}</span>
+        }
+      </label>
+      <label class="field" [class.is-error]="erroDoCampo('igc')">
+        <span class="field__label">Índice geral de cursos (IGC)</span>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          formControlName="igc"
+          [attr.aria-invalid]="erroDoCampo('igc') ? 'true' : null"
+          [attr.aria-describedby]="erroDoCampo('igc') ? 'cfg-instituicao-igc-erro' : null"
+        />
+        @if (erroDoCampo('igc')) {
+          <span class="field__error" id="cfg-instituicao-igc-erro">{{ erroDoCampo('igc') }}</span>
+        }
+      </label>
+    </div>
+  </section>
+</ng-container>

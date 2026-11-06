@@ -1,0 +1,145 @@
+@if (!lida()) {
+  <section class="panel">
+    <div class="cfg-panel-empty">
+      <span class="list-state__loading"
+        ><ui-spinner spinnerSize="sm" /> Carregando instituição</span
+      >
+    </div>
+  </section>
+} @else if (instituicao(); as inst) {
+  <section class="panel" aria-labelledby="cfg-instituicao-titulo">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-instituicao-titulo" tabindex="-1">{{ inst.nome }}</h2>
+        <span class="tag">{{ inst.sigla }}</span>
+        @if (carregando()) {
+          <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
+        }
+      </div>
+      <button
+        type="button"
+        id="cfg-instituicao-acao"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarEdicao(inst)"
+      >
+        <i class="pi pi-pencil btn__icon" aria-hidden="true"></i>
+        Editar
+      </button>
+    </div>
+
+    <div class="cfg-instituicao__ficha">
+      <section aria-labelledby="cfg-ficha-identificacao">
+        <h3 id="cfg-ficha-identificacao" class="form-section__title">Identificação</h3>
+        <dl class="cfg-detail-list">
+          <dt>Nome oficial</dt>
+          <dd>{{ inst.nome }}</dd>
+          <dt>Sigla</dt>
+          <dd>{{ inst.sigla }}</dd>
+          <dt>Código e-MEC</dt>
+          <dd>{{ inst.codigoEmec }}</dd>
+          <dt>CNPJ</dt>
+          <dd>{{ texto(inst.cnpj) }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-classificacao">
+        <h3 id="cfg-ficha-classificacao" class="form-section__title">Classificação e-MEC</h3>
+        <dl class="cfg-detail-list">
+          <dt>Organização acadêmica</dt>
+          <dd>{{ inst.organizacaoAcademica }}</dd>
+          <dt>Categoria administrativa</dt>
+          <dd>{{ inst.categoriaAdministrativa }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-mantenedora">
+        <h3 id="cfg-ficha-mantenedora" class="form-section__title">Mantenedora</h3>
+        <dl class="cfg-detail-list">
+          <dt>Mantenedora</dt>
+          <dd>{{ texto(inst.mantenedora) }}</dd>
+          <dt>Código mantenedora e-MEC</dt>
+          <dd>{{ texto(inst.codigoMantenedoraEmec) }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-situacao">
+        <h3 id="cfg-ficha-situacao" class="form-section__title">Situação regulatória</h3>
+        <dl class="cfg-detail-list">
+          <dt>Situação</dt>
+          <dd>{{ texto(inst.situacao) }}</dd>
+          <dt>Ato de credenciamento</dt>
+          <dd>{{ texto(inst.atoCredenciamento) }}</dd>
+          <dt>Ato de recredenciamento</dt>
+          <dd>{{ texto(inst.atoRecredenciamento) }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-indicadores">
+        <h3 id="cfg-ficha-indicadores" class="form-section__title">Indicadores de qualidade</h3>
+        <dl class="cfg-detail-list">
+          <dt>Conceito institucional (CI)</dt>
+          <dd>{{ texto(inst.conceitoInstitucional) }}</dd>
+          <dt>Índice geral de cursos (IGC)</dt>
+          <dd>{{ texto(inst.igc) }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-contato">
+        <h3 id="cfg-ficha-contato" class="form-section__title">Contato e localização da sede</h3>
+        <dl class="cfg-detail-list">
+          <dt>Site institucional</dt>
+          <dd>{{ texto(inst.website) }}</dd>
+          <dt>Cidade da sede</dt>
+          <dd>{{ cidade(inst) }}</dd>
+          <dt>CEP</dt>
+          <dd>{{ texto(inst.endereco?.cep) }}</dd>
+          <dt>Endereço da sede</dt>
+          <dd>{{ enderecoLinha(inst) }}</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="cfg-ficha-estrutura">
+        <h3 id="cfg-ficha-estrutura" class="form-section__title">Estrutura organizacional</h3>
+        <dl class="cfg-detail-list">
+          <dt>Unidade raiz (reitoria)</dt>
+          <dd>{{ texto(unidadeRaiz()) }}</dd>
+        </dl>
+      </section>
+    </div>
+  </section>
+} @else {
+  <section class="panel" aria-labelledby="cfg-instituicao-titulo">
+    <div class="panel-head">
+      <div class="panel-head__title">
+        <h2 id="cfg-instituicao-titulo" tabindex="-1">Nenhuma instituição cadastrada</h2>
+        @if (carregando()) {
+          <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando</span>
+        }
+      </div>
+      <button
+        type="button"
+        id="cfg-instituicao-acao"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
+        Cadastrar instituição
+      </button>
+    </div>
+    <ui-empty-state
+      heading="Cadastre a Instituição da plataforma"
+      description="Esta instância ainda não tem uma instituição cadastrada. Cadastre o cabeçalho institucional para vincular editais, comprovantes e a estrutura organizacional."
+    >
+      <button
+        type="button"
+        class="btn btn--primary"
+        [attr.aria-disabled]="indisponivel() ? 'true' : null"
+        (click)="acionarCadastro()"
+      >
+        Cadastrar instituição
+      </button>
+    </ui-empty-state>
+  </section>
+}
