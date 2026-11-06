@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  input,
-  model,
-  output,
-  OutputEmitterRef,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { TipoProcessoDto } from '@uniplus/shared-data/configuracao';
@@ -17,6 +10,8 @@ import {
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
+import { devolverFocoDaLista } from '../../shared/foco';
+import type { AndamentoDaEscrita } from './edicao-dos-tipos-processo';
 
 @Component({
   selector: 'cfg-tipos-processo-lista',
@@ -35,27 +30,52 @@ import {
 export class TiposProcessoListaComponent {
   readonly tipos = input.required<readonly TipoProcessoDto[]>();
   readonly carregando = input.required<boolean>();
-  readonly ocupada = input.required<boolean>();
-  readonly rotuloEmAndamento = input.required<string>();
+  readonly gravando = input.required<boolean>();
+  readonly removendo = input.required<boolean>();
+  readonly andamento = input.required<AndamentoDaEscrita | null>();
   readonly erro = input.required<string | null>();
   readonly temFiltro = input.required<boolean>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
   readonly descricaoVazia = input.required<string>();
-  readonly emAndamento = input.required<string | null>();
-  readonly termoBusca = model('');
+  readonly termoBusca = model.required<string>();
   readonly cadastrar = output<void>();
   readonly editar = output<TipoProcessoDto>();
   readonly remover = output<TipoProcessoDto>();
   readonly reativar = output<TipoProcessoDto>();
-  readonly limpar = output<void>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
+
   protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposProcessoManter;
-  protected acionar(saida: OutputEmitterRef<void>): void {
-    if (!this.ocupada()) saida.emit();
+  protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
+
+  private readonly foco = devolverFocoDaLista({
+    gravando: this.gravando,
+    carregando: this.carregando,
+    atributoDaLinha: 'data-tipo-processo-id',
+    idDoTitulo: 'cfg-tipos-processo-list-title',
+    idDoCadastro: 'cfg-tipos-processo-novo',
+  });
+
+  protected acionarCadastro(): void {
+    if (this.indisponivel()) return;
+    this.foco.registrar(null);
+    this.cadastrar.emit();
   }
-  protected acionarTipo(saida: OutputEmitterRef<TipoProcessoDto>, tipo: TipoProcessoDto): void {
-    if (!this.ocupada()) saida.emit(tipo);
+
+  protected acionarEditar(tipo: TipoProcessoDto): void {
+    this.foco.registrar({ acao: 'editar', id: tipo.id });
+    this.editar.emit(tipo);
+  }
+
+  /** Os nomes de desativar e de ativar começam por "Desativar " e "Ativar ": é o que a devolução de foco procura na linha. */
+  protected acionarDesativar(tipo: TipoProcessoDto): void {
+    this.foco.registrar({ acao: 'situacao', id: tipo.id });
+    this.remover.emit(tipo);
+  }
+
+  protected acionarAtivar(tipo: TipoProcessoDto): void {
+    this.foco.registrar({ acao: 'situacao', id: tipo.id });
+    this.reativar.emit(tipo);
   }
 }

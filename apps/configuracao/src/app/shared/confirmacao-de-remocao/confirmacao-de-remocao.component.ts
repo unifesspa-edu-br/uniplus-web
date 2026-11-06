@@ -18,6 +18,8 @@ export class ConfirmacaoDeRemocaoComponent {
   readonly titulo = input.required<string>();
   /** O verbo do botão de confirmação. */
   readonly rotulo = input('Remover');
+  /** A cor do botão de confirmação: `danger` para o que apaga, `primary` para o que restaura. */
+  readonly variante = input<'danger' | 'primary'>('danger');
   readonly removendo = input.required<boolean>();
   readonly mensagem = input.required<string>();
   readonly erro = input.required<string | null>();

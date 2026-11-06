@@ -70,10 +70,6 @@ export class TiposProcessoStore {
     });
   }
 
-  limparFiltros(): void {
-    this.termoBusca.set('');
-  }
-
   proximaPagina(): void {
     this.navegacao.irParaProxima();
   }

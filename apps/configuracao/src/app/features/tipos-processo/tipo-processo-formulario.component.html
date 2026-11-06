@@ -1,17 +1,12 @@
 <ui-drawer
   class="form-drawer"
-  [visible]="aberto()"
-  (visibleChange)="alterarAbertura($event)"
+  [(visible)]="aberto"
   [closable]="!salvando()"
   [heading]="titulo()"
   ariaLabel="Formulário de tipo de processo"
   position="right"
 >
-  <span class="sr-only" role="status">{{
-    salvando()
-      ? 'Salvando tipo de processo.'
-      : erro() || erroDoCampo('codigo') || erroDoCampo('nome') || erroDoCampo('descricao')
-  }}</span>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
   @if (erro()) {
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
@@ -19,7 +14,7 @@
   <form
     [formGroup]="form()"
     id="cfg-tipo-processo-form"
-    (ngSubmit)="enviar()"
+    (ngSubmit)="aoEnviar()"
     novalidate
     class="form-drawer__form"
   >
@@ -50,7 +45,7 @@
                 sublinhado. Imutável após a criação e não reutilizável — sugerido a partir do nome e
                 editável antes de salvar.
               } @else {
-                Imutável após a criação. Para corrigir, inative este tipo e cadastre outro.
+                Imutável após a criação. Para corrigir, desative este tipo e cadastre outro.
               }
             </span>
             @if (erroCampoCodigo) {
@@ -101,7 +96,7 @@
       type="button"
       class="btn btn--tertiary btn--rect"
       [disabled]="salvando()"
-      (click)="alterarAbertura(false)"
+      (click)="cancelar.emit()"
     >
       Cancelar
     </button>
@@ -109,20 +104,14 @@
       type="submit"
       form="cfg-tipo-processo-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando()"
-      [attr.aria-busy]="salvando()"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
       (click)="aoClicarEmSalvar($event)"
     >
       @if (salvando()) {
-        <ui-spinner size="sm" />
+        <ui-spinner spinnerSize="sm" />
       }
-      {{
-        salvando()
-          ? 'Salvando...'
-          : modo() === 'criar'
-            ? 'Criar tipo de processo'
-            : 'Salvar tipo de processo'
-      }}
+      {{ rotuloDoBotao() }}
     </button>
   </div>
 </ui-drawer>

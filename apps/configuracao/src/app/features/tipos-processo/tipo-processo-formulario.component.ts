@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
-import { TipoProcessoForm } from './tipo-processo-form';
-import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { TipoProcessoForm, mensagemDoCampo } from './tipo-processo-form';
 
 @Component({
   selector: 'cfg-tipo-processo-formulario',
@@ -12,32 +12,32 @@ import { mensagemDeErroDoControle } from '../../shared/formulario';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class TipoProcessoFormularioComponent {
-  readonly aberto = input.required<boolean>();
+  readonly aberto = model.required<boolean>();
   readonly form = input.required<FormGroup<TipoProcessoForm>>();
   readonly modo = input.required<'criar' | 'editar'>();
   readonly titulo = input.required<string>();
   readonly erro = input.required<string | null>();
+  readonly anuncio = input.required<string>();
   readonly salvando = input.required<boolean>();
-  readonly abertura = output<boolean>();
   readonly salvar = output<void>();
+  readonly cancelar = output<void>();
+  protected readonly rotuloDoBotao = computed(() => {
+    if (this.salvando()) return 'Salvando...';
+    return this.modo() === 'criar' ? 'Criar tipo de processo' : 'Salvar tipo de processo';
+  });
+  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+
   protected erroDoCampo(nome: keyof TipoProcessoForm): string | null {
-    const controle = this.form().controls[nome];
-    const mensagem = mensagemDeErroDoControle(controle);
-    if (nome === 'codigo' && mensagem === 'Valor inválido.') {
-      if (controle.hasError('minlength')) return 'Valor abaixo do tamanho mínimo.';
-      if (controle.hasError('pattern')) {
-        return 'Use caixa alta, começando por letra, com letras, números e sublinhado.';
-      }
-    }
-    return mensagem;
+    return mensagemDoCampo(this.form().controls[nome]);
   }
-  protected alterarAbertura(aberto: boolean): void {
-    if (!this.salvando()) this.abertura.emit(aberto);
-  }
-  protected enviar(): void {
-    if (!this.salvando()) this.salvar.emit();
-  }
+
   protected aoClicarEmSalvar(evento: Event): void {
     if (this.salvando()) evento.preventDefault();
+  }
+
+  protected aoEnviar(): void {
+    if (this.salvando()) return;
+    this.salvar.emit();
+    if (this.form().invalid) this.foco.focarPrimeiroInvalido();
   }
 }

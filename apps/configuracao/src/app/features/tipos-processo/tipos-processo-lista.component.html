@@ -1,17 +1,20 @@
 <section class="panel" aria-labelledby="cfg-tipos-processo-list-title">
   <div class="panel-head">
     <div class="panel-head__title">
-      <h2 id="cfg-tipos-processo-list-title">Tipos de processo</h2>
-      @if (carregando()) {
-        <span class="list-state__loading"><ui-spinner size="sm" /> Carregando</span>
+      <h2 id="cfg-tipos-processo-list-title" tabindex="-1">Tipos de processo</h2>
+      @if (carregando() || removendo()) {
+        <span class="list-state__loading"
+          ><ui-spinner spinnerSize="sm" /> {{ removendo() ? 'Desativando' : 'Carregando' }}</span
+        >
       }
     </div>
     <button
       *authTemPermissao="permissaoDeManter"
       type="button"
+      id="cfg-tipos-processo-novo"
       class="btn btn--primary"
-      [attr.aria-disabled]="ocupada()"
-      (click)="acionar(cadastrar)"
+      [attr.aria-disabled]="indisponivel() ? 'true' : null"
+      (click)="acionarCadastro()"
     >
       <i class="pi pi-plus btn__icon" aria-hidden="true"></i>
       Novo tipo de processo
@@ -19,8 +22,7 @@
   </div>
 
   <ui-filter-bar
-    [attr.inert]="ocupada() ? '' : null"
-    [attr.aria-disabled]="ocupada()"
+    [attr.inert]="gravando() ? '' : null"
     ariaLabel="Filtrar tipos de processo"
     searchPlaceholder="Buscar por código ou nome…"
     searchAriaLabel="Buscar tipos de processo"
@@ -44,19 +46,19 @@
         </thead>
         <tbody>
           @for (tipo of tipos(); track tipo.id) {
-            <tr>
+            <tr [attr.data-tipo-processo-id]="tipo.id">
               <td data-label="Código">
                 <code>{{ tipo.codigo }}</code>
               </td>
               <td data-label="Nome">{{ tipo.nome }}</td>
               <td data-label="Descrição" class="u-caption">{{ tipo.descricao || '—' }}</td>
               <td data-label="Situação">
-                @if (emAndamento() === tipo.id) {
-                  <span aria-hidden="true">{{ rotuloEmAndamento() }}</span>
+                @if (tipo.id === andamento()?.id) {
+                  <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
                 } @else if (tipo.ativo) {
                   <ui-tag variant="success">Ativo</ui-tag>
                 } @else {
-                  <ui-tag variant="danger">Inativo</ui-tag>
+                  <ui-tag variant="danger">Desativado</ui-tag>
                 }
               </td>
               <td class="table-responsive__actions" data-label="Ações">
@@ -66,23 +68,23 @@
                       icon="pi-pencil"
                       [accessibleName]="'Editar tipo de processo ' + tipo.codigo"
                       tooltip="Editar tipo de processo"
-                      [isDisabled]="carregando() || ocupada()"
-                      (triggered)="acionarTipo(editar, tipo)"
+                      [isDisabled]="indisponivel()"
+                      (triggered)="acionarEditar(tipo)"
                     />
                     <ui-icon-button
                       icon="pi-power-off"
-                      [accessibleName]="'Inativar tipo de processo ' + tipo.codigo"
-                      tooltip="Inativar tipo de processo"
-                      [isDisabled]="carregando() || ocupada()"
-                      (triggered)="acionarTipo(remover, tipo)"
+                      [accessibleName]="'Desativar tipo de processo ' + tipo.codigo"
+                      tooltip="Desativar tipo de processo"
+                      [isDisabled]="indisponivel()"
+                      (triggered)="acionarDesativar(tipo)"
                     />
                   } @else {
                     <ui-icon-button
                       icon="pi-replay"
-                      [accessibleName]="'Reativar tipo de processo ' + tipo.codigo"
-                      tooltip="Reativar tipo de processo"
-                      [isDisabled]="carregando() || ocupada()"
-                      (triggered)="acionarTipo(reativar, tipo)"
+                      [accessibleName]="'Ativar tipo de processo ' + tipo.codigo"
+                      tooltip="Ativar tipo de processo"
+                      [isDisabled]="indisponivel()"
+                      (triggered)="acionarAtivar(tipo)"
                     />
                   }
                 </ng-container>
@@ -101,8 +103,8 @@
         <button
           type="button"
           class="btn btn--secondary"
-          [attr.aria-disabled]="ocupada()"
-          (click)="acionar(limpar)"
+          [disabled]="indisponivel()"
+          (click)="termoBusca.set('')"
         >
           Limpar filtros
         </button>
@@ -113,8 +115,8 @@
           *authTemPermissao="permissaoDeManter"
           type="button"
           class="btn btn--primary"
-          [attr.aria-disabled]="ocupada()"
-          (click)="acionar(cadastrar)"
+          [attr.aria-disabled]="indisponivel() ? 'true' : null"
+          (click)="acionarCadastro()"
         >
           Novo tipo de processo
         </button>
@@ -127,9 +129,9 @@
       navigationLabel="Paginação de tipos de processo"
       [hasPrevious]="temAnterior()"
       [hasNext]="temProximo()"
-      [isDisabled]="carregando() || ocupada()"
-      (previous)="acionar(anterior)"
-      (next)="acionar(proximo)"
+      [isDisabled]="indisponivel()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
     />
   }
 </section>

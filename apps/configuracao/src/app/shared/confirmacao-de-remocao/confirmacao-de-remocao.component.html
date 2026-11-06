@@ -16,7 +16,9 @@
     </button>
     <button
       type="button"
-      class="btn btn--danger"
+      class="btn"
+      [class.btn--danger]="variante() === 'danger'"
+      [class.btn--primary]="variante() === 'primary'"
       data-testid="confirm-dialog-confirm"
       [attr.aria-disabled]="removendo() ? 'true' : null"
       [attr.aria-busy]="removendo() ? 'true' : null"

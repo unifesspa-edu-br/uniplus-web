@@ -12,7 +12,7 @@
 <ui-alert variant="warning" heading="Código imutável após criação" [dynamic]="false">
   O código é a chave natural do tipo de processo — definido só na criação e exibido como somente
   leitura na edição. Desativar um tipo não libera o código: um novo cadastro com o mesmo código
-  continua sendo recusado. Um tipo desativado pode ser reativado a qualquer momento.
+  continua sendo recusado. Um tipo desativado pode ser ativado de novo a qualquer momento.
 </ui-alert>
 
 @if (store.mensagemDeErro()) {
@@ -22,8 +22,9 @@
     <button
       type="button"
       class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="store.carregando() || edicao.gravando()"
-      (click)="!store.carregando() && !edicao.gravando() && store.tentarNovamente()"
+      [attr.aria-disabled]="pendente() ? 'true' : null"
+      [attr.aria-busy]="pendente() ? 'true' : null"
+      (click)="tentarNovamente()"
     >
       Tentar novamente
     </button>
@@ -31,52 +32,55 @@
 </ui-alert>
 }
 
-<span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-tipos-processo-lista
   [tipos]="store.tiposFiltrados()"
   [carregando]="store.carregando()"
-  [ocupada]="store.carregando() || edicao.gravando()"
-  [rotuloEmAndamento]="edicao.rotuloEmAndamento()"
+  [gravando]="edicao.gravando()"
+  [removendo]="edicao.removendo()"
+  [andamento]="edicao.andamento()"
   [erro]="store.mensagemDeErro()"
   [temFiltro]="store.temFiltro()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
   [descricaoVazia]="descricaoDoEstadoVazio()"
-  [emAndamento]="edicao.tipoEmAndamento()"
   [(termoBusca)]="store.termoBusca"
   (cadastrar)="edicao.abrirCadastro()"
   (editar)="edicao.abrirEdicao($event)"
   (remover)="edicao.pedirRemocao($event)"
   (reativar)="edicao.pedirReativacao($event)"
-  (limpar)="store.limparFiltros()"
   (anterior)="store.paginaAnterior()"
   (proximo)="store.proximaPagina()"
 />
 <cfg-tipo-processo-formulario
-  [aberto]="edicao.formOpen()"
+  [(aberto)]="edicao.aberto"
   [form]="edicao.form"
   [modo]="edicao.modo()"
-  [titulo]="edicao.formHeading()"
-  [erro]="edicao.formError()"
-  [salvando]="edicao.saving()"
-  (abertura)="edicao.alterarAbertura($event)"
+  [titulo]="edicao.tituloDoFormulario()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [salvando]="edicao.salvando()"
   (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
 />
-<cfg-tipo-processo-confirmacao
-  [(aberto)]="edicao.confirmOpen"
-  titulo="Inativar tipo de processo"
-  rotulo="Inativar"
-  [mensagem]="edicao.confirmMessage()"
-  [erro]="edicao.confirmError()"
-  [ocupada]="edicao.gravando()"
+<cfg-confirmacao-de-remocao
+  titulo="Desativar tipo de processo"
+  rotulo="Desativar"
+  [(aberto)]="edicao.confirmando"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.removendo()"
+  [erro]="edicao.erroRemocao()"
+  [anuncio]="edicao.anuncioDaRemocao()"
   (confirmar)="edicao.removerConfirmado()"
 />
-<cfg-tipo-processo-confirmacao
-  [(aberto)]="edicao.confirmReativarOpen"
-  titulo="Reativar tipo de processo"
-  rotulo="Reativar"
-  [mensagem]="edicao.confirmReativarMessage()"
-  [erro]="edicao.confirmReativarError()"
-  [ocupada]="edicao.gravando()"
+<cfg-confirmacao-de-remocao
+  titulo="Ativar tipo de processo"
+  rotulo="Ativar"
+  variante="primary"
+  [(aberto)]="edicao.confirmandoReativacao"
+  [mensagem]="edicao.mensagemDaReativacao()"
+  [removendo]="edicao.reativando()"
+  [erro]="edicao.erroReativacao()"
+  [anuncio]="edicao.anuncioDaReativacao()"
   (confirmar)="edicao.reativarConfirmado()"
 />

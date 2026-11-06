@@ -81,6 +81,18 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
     expect(confirmar().textContent?.trim()).toBe('Desativar');
   });
 
+  it('o botão de confirmação é de perigo por padrão e segue a variante de quem o usa', () => {
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+    expect(confirmar().classList.contains('btn--danger')).toBe(true);
+    expect(confirmar().classList.contains('btn--primary')).toBe(false);
+
+    fixture.componentRef.setInput('variante', 'primary');
+    fixture.detectChanges();
+    expect(confirmar().classList.contains('btn--primary')).toBe(true);
+    expect(confirmar().classList.contains('btn--danger')).toBe(false);
+  });
+
   it('Cancelar fecha o diálogo sem confirmar', () => {
     fixture.componentRef.setInput('removendo', false);
     fixture.detectChanges();
