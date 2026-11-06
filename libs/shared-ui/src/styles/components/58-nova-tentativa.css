@@ -1,0 +1,46 @@
+/* "Tentar novamente": o botão e, depois dele, a situação da tentativa. Fica aqui, e não no CSS
+ * administrativo, porque o alerta de nova tentativa serve a todo app. A situação vem depois do
+ * botão para ele não sair de baixo do ponteiro a cada fase. */
+.list-state__retry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.list-state__status {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* Botão em forma de link, para a nova tentativa de um campo ou de um catálogo. */
+.nova-tentativa-campo {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-1) var(--space-3);
+}
+
+.link-button {
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.link-button[aria-disabled='true'] {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+}
+
+/* Leitura em curso: o botão segue focável e indisponível, e o cursor diz que algo corre, em vez
+ * de "proibido". Em escrita (só aria-disabled) o cursor continua sendo o de indisponível. */
+.link-button[aria-busy='true'],
+.list-state__retry .btn[aria-busy='true'] {
+  cursor: progress;
+}

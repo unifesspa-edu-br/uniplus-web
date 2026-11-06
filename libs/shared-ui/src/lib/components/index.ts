@@ -1,5 +1,6 @@
 export { A11yMenuComponent } from './a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from './alert/alert';
+export { AlertaNovaTentativaComponent, AnuncioDaConclusao, NovaTentativaDoCampoComponent, SituacaoDaNovaTentativaComponent, acompanharNovaTentativa, destinoAcessivel, focarEmAlgum, podeReceberFoco, textoDaConclusao, textoDaNovaTentativa, type FaseDaNovaTentativa, type NovaTentativa, type OpcoesDaNovaTentativa } from './alerta-nova-tentativa';
 export { BackToTopComponent } from './back-to-top/back-to-top';
 export { BackToTopContainerDirective } from './back-to-top/back-to-top-container.directive';
 export { ValorLegivelDirective } from './valor-legivel/valor-legivel.directive';
