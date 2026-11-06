@@ -10,7 +10,7 @@ const IMPORTACAO_LOCAL = /^@import\s+(?:url\()?["'](\.\/[^"']+)["']\)?\s*;[ \t]*
  */
 export function lerFolha(caminho: string): string {
   const texto = readFileSync(caminho, 'utf-8');
-  return texto.replace(IMPORTACAO_LOCAL, (_importacao, relativo: string) =>
+  return texto.replace(IMPORTACAO_LOCAL, (_importacao: string, relativo: string) =>
     lerFolha(resolve(dirname(caminho), relativo)),
   );
 }
