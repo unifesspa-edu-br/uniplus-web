@@ -63,27 +63,9 @@ export function publicoDaExigencia(
   }
 
   const modalidades = recorteUniforme(exigencia);
-  // O recorte é a mesma cláusula `EM` em todas as alternativas: ele já aparece como
-  // "Modalidades …", e repeti-lo em cada alternativa só alongaria a frase. Fora do recorte, o
-  // `EM` é condição da própria alternativa e aparece descrito nela.
-  const ehORecorte = (condicao: CondicaoDeFato) =>
-    modalidades !== null &&
-    condicao.fato === FATO_MODALIDADE &&
-    condicao.operador === OPERADOR_EM &&
-    JSON.stringify(valoresDeListaDe(condicao)) === JSON.stringify(modalidades);
-
-  const clausulas = exigencia.condicoes.length === 0 ? [] : numerosDeClausula(exigencia.condicoes);
-  const porAlternativa = clausulas.map((numero) =>
-    exigencia.condicoes.filter((condicao) => condicao.clausula === numero),
-  );
+  const porAlternativa = condicoesPorAlternativa(exigencia);
   const descritas = porAlternativa.map((condicoes) =>
-    condicoes
-      .filter((condicao) => !ehORecorte(condicao))
-      .map((condicao) =>
-        condicao.fato === FATO_MODALIDADE
-          ? descreverCondicaoDeModalidade(condicao)
-          : descreverCondicao(condicao, fatoPorCodigo.get(condicao.fato)),
-      ),
+    descreverAlternativa(condicoes, modalidades, fatoPorCodigo),
   );
 
   // As alternativas se combinam por OU: com recorte uniforme, a que só tem o recorte já cobra o
@@ -96,6 +78,39 @@ export function publicoDaExigencia(
   );
 
   return { deTodos: false, modalidades, alternativas, independeDeOutroFato, alcancaModalidade };
+}
+
+function condicoesPorAlternativa(exigencia: ExigenciaDeDocumento): CondicaoDeFato[][] {
+  const clausulas = exigencia.condicoes.length === 0 ? [] : numerosDeClausula(exigencia.condicoes);
+  return clausulas.map((numero) =>
+    exigencia.condicoes.filter((condicao) => condicao.clausula === numero),
+  );
+}
+
+// O recorte é a mesma cláusula `EM` em todas as alternativas: ele já aparece como
+// "Modalidades …", e repeti-lo em cada alternativa só alongaria a frase. Fora do recorte, o
+// `EM` é condição da própria alternativa e aparece descrito nela.
+function descreverAlternativa(
+  condicoes: readonly CondicaoDeFato[],
+  modalidades: readonly string[] | null,
+  fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+): string[] {
+  return condicoes
+    .filter((condicao) => !ehORecorte(condicao, modalidades))
+    .map((condicao) =>
+      condicao.fato === FATO_MODALIDADE
+        ? descreverCondicaoDeModalidade(condicao)
+        : descreverCondicao(condicao, fatoPorCodigo.get(condicao.fato)),
+    );
+}
+
+function ehORecorte(condicao: CondicaoDeFato, modalidades: readonly string[] | null): boolean {
+  return (
+    modalidades !== null &&
+    condicao.fato === FATO_MODALIDADE &&
+    condicao.operador === OPERADOR_EM &&
+    JSON.stringify(valoresDeListaDe(condicao)) === JSON.stringify(modalidades)
+  );
 }
 
 /** A condição sobre a modalidade como frase, nos códigos do quadro de vagas. */

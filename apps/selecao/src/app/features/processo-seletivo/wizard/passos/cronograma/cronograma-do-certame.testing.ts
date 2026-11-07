@@ -4,7 +4,11 @@ import {
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../../processo-seletivo.models';
-import { problemasDoCronograma } from './cronograma-do-certame';
+import {
+  problemasDoCronograma,
+  type CatalogosDaConferencia,
+  type CronogramaConferido,
+} from './cronograma-do-certame';
 import { type ExigenciaDeclarada } from './conferencia-das-exigencias-declaradas';
 import { type TipoDeEtapaDoCatalogo } from './regras-da-etapa';
 import { type FaseCanonicaDto, type PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
@@ -25,23 +29,39 @@ export const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
   notaDeOrigemNoEnem: false,
 });
 
+/** Os catálogos da conferência: fases do teste, sem precedência nem ato, e tipo de etapa que admite tudo. */
+export function catalogosDeTeste(
+  parcial: Partial<CatalogosDaConferencia> = {},
+): CatalogosDaConferencia {
+  return {
+    fasePorId: catalogoDeFases,
+    precedencias: [],
+    atoPorCodigo: SEM_CATALOGO,
+    nomeDaBanca,
+    tipoDaEtapa: tipoQueAdmiteTudo,
+    ...parcial,
+  };
+}
+
 /** A conferência do cronograma, com os catálogos que ela consulta. */
 export function problemasDe(
-  fases: Parameters<typeof problemasDoCronograma>[0],
-  etapas: Parameters<typeof problemasDoCronograma>[1],
-  fasePorId: Parameters<typeof problemasDoCronograma>[2],
-  precedencias: Parameters<typeof problemasDoCronograma>[3],
+  fases: CronogramaConferido['fases'],
+  etapas: CronogramaConferido['etapas'],
+  fasePorId: CatalogosDaConferencia['fasePorId'],
+  precedencias: CatalogosDaConferencia['precedencias'],
 ): readonly string[] {
-  return problemasDoCronograma(
+  return problemasDoCronograma({
     fases,
     etapas,
-    fasePorId,
-    precedencias,
-    SEM_CATALOGO,
-    nomeDaBanca,
-    tipoQueAdmiteTudo,
-    [],
-  );
+    exigencias: [],
+    catalogos: {
+      fasePorId,
+      precedencias,
+      atoPorCodigo: SEM_CATALOGO,
+      nomeDaBanca,
+      tipoDaEtapa: tipoQueAdmiteTudo,
+    },
+  });
 }
 
 export function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {

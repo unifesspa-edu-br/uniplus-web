@@ -179,31 +179,36 @@ function documentoDe(
       valor: condicao.valor,
     })),
     basesLegais: dto.basesLegais.map(baseLegalDe),
-    idadeMaximaEmissao:
-      dto.idadeMaximaEmissao === null || dto.idadeMaximaEmissao === undefined
-        ? null
-        : {
-            valor: dto.idadeMaximaEmissao.valor ?? null,
-            unidade: dto.idadeMaximaEmissao.unidade,
-            referenciaTipo: dto.idadeMaximaEmissao.referenciaTipo,
-            data: dto.idadeMaximaEmissao.data,
-            referenciaFaseCodigo:
-              dto.idadeMaximaEmissao.referenciaFaseId === null ||
-              dto.idadeMaximaEmissao.referenciaFaseId === undefined
-                ? null
-                : (codigoPorFaseId.get(dto.idadeMaximaEmissao.referenciaFaseId) ?? null),
-          },
+    idadeMaximaEmissao: idadeMaximaDe(dto.idadeMaximaEmissao, codigoPorFaseId),
     formatosPermitidos: dto.formatosPermitidos,
     tamanhoMaximoBytes: dto.tamanhoMaximoBytes ?? null,
-    modelo:
-      dto.modelo === null || dto.modelo === undefined
-        ? null
-        : {
-            modeloId: dto.modelo.modeloId,
-            nomeArquivo: dto.modelo.nomeArquivo,
-            formato: dto.modelo.formato,
-            hashSha256: dto.modelo.hashSha256,
-          },
+    modelo: modeloDe(dto.modelo),
+  };
+}
+
+function idadeMaximaDe(
+  idade: DocumentoExigidoDto['idadeMaximaEmissao'],
+  codigoPorFaseId: ReadonlyMap<string, string>,
+): ExigenciaDeDocumento['idadeMaximaEmissao'] {
+  if (idade === null || idade === undefined) return null;
+  const faseId = idade.referenciaFaseId;
+  return {
+    valor: idade.valor ?? null,
+    unidade: idade.unidade,
+    referenciaTipo: idade.referenciaTipo,
+    data: idade.data,
+    referenciaFaseCodigo:
+      faseId === null || faseId === undefined ? null : (codigoPorFaseId.get(faseId) ?? null),
+  };
+}
+
+function modeloDe(modelo: DocumentoExigidoDto['modelo']): ExigenciaDeDocumento['modelo'] {
+  if (modelo === null || modelo === undefined) return null;
+  return {
+    modeloId: modelo.modeloId,
+    nomeArquivo: modelo.nomeArquivo,
+    formato: modelo.formato,
+    hashSha256: modelo.hashSha256,
   };
 }
 

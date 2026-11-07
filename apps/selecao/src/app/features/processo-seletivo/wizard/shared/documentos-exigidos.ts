@@ -79,6 +79,15 @@ export interface DocumentosDoFormulario {
   readonly semFormulario: number;
 }
 
+/** O formulário cujos documentos se lêem: a finalidade, a fase que o responde e o que a fase atende. */
+export interface FormularioNaFase {
+  readonly faseCodigo: string;
+  readonly finalidade: string;
+  readonly finalidadesDaFase: readonly string[];
+  /** As fases que o cronograma tem agora, onde o documento de todas as fases se materializa. */
+  readonly fasesVivas: readonly string[];
+}
+
 /**
  * Os documentos que o formulário da finalidade pede na fase dele: os da fase cujo formulário
  * efetivo é este. A fase que inscrição e isenção dividem leva cada documento ao formulário que o
@@ -87,11 +96,8 @@ export interface DocumentosDoFormulario {
  */
 export function documentosDoFormulario(
   exigencias: ExigenciasDoRascunho,
-  faseCodigo: string,
-  finalidade: string,
-  finalidadesDaFase: readonly string[],
+  { faseCodigo, finalidade, finalidadesDaFase, fasesVivas }: FormularioNaFase,
   vocabulario: VocabularioDosDocumentos,
-  fasesVivas: readonly string[],
 ): DocumentosDoFormulario {
   // O documento declarado para todas as fases só existe na fase acrescentada depois quando é
   // materializado, como na gravação.

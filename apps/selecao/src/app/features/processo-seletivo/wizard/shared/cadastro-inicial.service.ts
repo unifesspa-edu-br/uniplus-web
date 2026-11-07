@@ -227,8 +227,7 @@ export class CadastroInicial {
     desejado: FormularioParaGravar & { readonly faseId: string },
   ): Promise<ResultadoGravacao> {
     return gravarFormulario(
-      this.gravacao,
-      this.formulariosApi,
+      { gravacao: this.gravacao, api: this.formulariosApi },
       { processoSeletivoId, finalidade },
       servidor,
       desejado,

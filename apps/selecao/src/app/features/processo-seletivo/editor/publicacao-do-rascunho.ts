@@ -30,60 +30,11 @@ export async function publicar(conducao: ConducaoDoWizard): Promise<void> {
   // confirmação, cuja modalidade passa a impedir a edição por baixo.
   store.travamentoDeOrquestracao.set(true);
   try {
-    let pendentesAntesDeGravar = conducao.validarRascunho(store.totalDePassos - 1);
-    // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
-    // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se refaz.
-    // Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
-    if (pendentesAntesDeGravar.length > 0 && store.classificacao.gravadoPorReler()) {
-      await conducao.reler();
-      if (geracao !== store.geracao()) return;
-      pendentesAntesDeGravar = conducao.validarRascunho(store.totalDePassos - 1);
-    }
-    if (pendentesAntesDeGravar.length > 0) {
-      store.definirErroDoPasso(pendentesAntesDeGravar);
-      conducao.revelarErro();
-      return;
-    }
-
-    const falhasDeGravacao = await gravarPassosAnteriores(conducao);
-    if (geracao !== store.geracao()) return;
-    // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe em
-    // dia o que o processo congelou, com ou sem falha na varredura, e confirma a cópia que a
-    // gravação da classificação presumiu.
-    if (store.classificacao.gravadoPorReler()) await conducao.reler();
-    if (geracao !== store.geracao()) return;
-    // Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria
-    // com os que o servidor tinha antes.
-    const indiceDoDesempate = conducao.indiceDoPassoPosClassificacao();
-    if (
-      falhasDeGravacao.length === 0 &&
-      store.classificacao.desempatePendenteDeGravacao() &&
-      indiceDoDesempate >= 0
-    ) {
-      falhasDeGravacao.push(
-        conducao.pendenciaDoPasso(indiceDoDesempate, [DESEMPATE_AINDA_PENDENTE]),
-      );
-    }
-    if (falhasDeGravacao.length > 0) {
-      store.definirErroDoPasso(falhasDeGravacao);
-      conducao.revelarErro();
-      return;
-    }
-
-    // A Revisão fica de fora da varredura, porque o `persistir()` dela publica de verdade, mas o
-    // checklist que ela cacheia pode ter ficado desatualizado exatamente pelos passos gravados.
-    await conducao.passoNo(store.totalDePassos - 1)?.recarregarChecklist?.();
-    if (geracao !== store.geracao()) return;
-
-    const pendentes = conducao.validarRascunho();
-    if (pendentes.length > 0) {
-      store.definirErroDoPasso(pendentes);
-      conducao.revelarErro();
-      return;
-    }
+    if (!(await passosAnterioresCompletos(conducao, geracao))) return;
+    if (!(await passosAnterioresGravados(conducao, geracao))) return;
+    if (!(await rascunhoInteiroValido(conducao, geracao))) return;
 
     store.definirErroDoPasso(null);
-
     const validator = conducao.passoNo(store.passoAtual());
     const confirmacao = validator?.confirmacaoDeGravacao?.();
     if (confirmacao) {
@@ -95,6 +46,70 @@ export async function publicar(conducao: ConducaoDoWizard): Promise<void> {
   } finally {
     if (geracao === store.geracao()) store.travamentoDeOrquestracao.set(false);
   }
+}
+
+/** Mostra as pendências e barra a publicação; `false` quando não há pendência. */
+function barradaPelasPendencias(conducao: ConducaoDoWizard, pendencias: string[]): boolean {
+  if (pendencias.length === 0) return false;
+  conducao.store.definirErroDoPasso(pendencias);
+  conducao.revelarErro();
+  return true;
+}
+
+/** Primeira passada: só os passos anteriores à Revisão, sem rede; `false` barra a publicação. */
+async function passosAnterioresCompletos(
+  conducao: ConducaoDoWizard,
+  geracao: number,
+): Promise<boolean> {
+  const { store } = conducao;
+  let pendentes = conducao.validarRascunho(store.totalDePassos - 1);
+  // O Desempate recusa o critério por área enquanto não se sabe o que a classificação gravada
+  // tem. Com algo por reler, a recusa pode ser essa: a releitura decide e a validação se refaz.
+  // Sem nada por reler, o rascunho incompleto é barrado sem ir à rede.
+  if (pendentes.length > 0 && store.classificacao.gravadoPorReler()) {
+    await conducao.reler();
+    if (geracao !== store.geracao()) return false;
+    pendentes = conducao.validarRascunho(store.totalDePassos - 1);
+  }
+  return !barradaPelasPendencias(conducao, pendentes);
+}
+
+/** Grava os passos anteriores e põe o processo em dia; `false` barra a publicação. */
+async function passosAnterioresGravados(
+  conducao: ConducaoDoWizard,
+  geracao: number,
+): Promise<boolean> {
+  const { store } = conducao;
+  const falhas = await gravarPassosAnteriores(conducao);
+  if (geracao !== store.geracao()) return false;
+  // Os passos gravados na varredura não releem o detalhe um a um; uma leitura só, aqui, põe em
+  // dia o que o processo congelou, com ou sem falha na varredura, e confirma a cópia que a
+  // gravação da classificação presumiu.
+  if (store.classificacao.gravadoPorReler()) await conducao.reler();
+  if (geracao !== store.geracao()) return false;
+  if (falhas.length === 0) acrescentarDesempateAindaPendente(conducao, falhas);
+  return !barradaPelasPendencias(conducao, falhas);
+}
+
+/** Critérios que ainda esperam a classificação não podem ficar para trás: publicar seguiria com os que o servidor tinha antes. */
+function acrescentarDesempateAindaPendente(conducao: ConducaoDoWizard, falhas: string[]): void {
+  const indiceDoDesempate = conducao.indiceDoPassoPosClassificacao();
+  if (conducao.store.classificacao.desempatePendenteDeGravacao() && indiceDoDesempate >= 0) {
+    falhas.push(conducao.pendenciaDoPasso(indiceDoDesempate, [DESEMPATE_AINDA_PENDENTE]));
+  }
+}
+
+/** Segunda passada, com a Revisão incluída; `false` barra a publicação. */
+async function rascunhoInteiroValido(
+  conducao: ConducaoDoWizard,
+  geracao: number,
+): Promise<boolean> {
+  const { store } = conducao;
+  // A Revisão fica de fora da varredura, porque o `persistir()` dela publica de verdade, mas o
+  // checklist que ela cacheia pode ter ficado desatualizado exatamente pelos passos gravados.
+  await conducao.passoNo(store.totalDePassos - 1)?.recarregarChecklist?.();
+  if (geracao !== store.geracao()) return false;
+  return !barradaPelasPendencias(conducao, conducao.validarRascunho());
 }
 
 /**
@@ -116,43 +131,45 @@ async function gravarPassosAnteriores(conducao: ConducaoDoWizard): Promise<strin
   const geracao = store.geracao();
 
   for (let index = 0; index < store.totalDePassos - 1; index += 1) {
+    pendencias.push(...(await gravarPasso(conducao, index)));
     // O operador pode ter navegado para outro processo com a varredura ainda correndo: continuar
     // chamaria `persistir()` dos passos seguintes contra o rascunho do processo NOVO. Sai calada,
     // e `publicar()` confere a geração de novo ao voltar.
     if (geracao !== store.geracao()) return [];
-
-    const validator = conducao.passoNo(index);
-    if (validator === undefined) continue;
-
-    // Confere localmente antes de gravar, para não mandar ao servidor o comando de um passo que o
-    // operador ainda não terminou de preencher, e para manter a ordem e o texto de
-    // `validarRascunho()`: quem lê "Passo 1" quer o primeiro passo REALMENTE incompleto.
-    const conferencia = validator.validar();
-    if (!conferencia.valid) {
-      pendencias.push(conducao.pendenciaDoPasso(index, mensagensDe(conferencia)));
-      continue;
-    }
-
-    if (!validator.persistir) continue;
-
-    const commit = await validator
-      .persistir({ confirmadaPeloOperador: false })
-      .catch(falhaAoConcluir);
-
-    if (geracao !== store.geracao()) return [];
-
-    if (!commit.valid && commit.messages?.length !== 0) {
-      pendencias.push(conducao.pendenciaDoPasso(index, mensagensDe(commit)));
-    }
-    if (!commit.valid) continue;
-
-    const recusaDoDesempate = await conducao.gravarDesempatePendente();
-    if (geracao !== store.geracao()) return [];
-    if (recusaDoDesempate !== null && recusaDoDesempate.mensagens.length > 0) {
-      const { indice, mensagens } = recusaDoDesempate;
-      pendencias.push(conducao.pendenciaDoPasso(indice, mensagens));
-    }
   }
 
   return pendencias;
+}
+
+async function gravarPasso(conducao: ConducaoDoWizard, index: number): Promise<string[]> {
+  const { store } = conducao;
+  const validator = conducao.passoNo(index);
+  if (validator === undefined) return [];
+
+  // Confere localmente antes de gravar, para não mandar ao servidor o comando de um passo que o
+  // operador ainda não terminou de preencher, e para manter a ordem e o texto de
+  // `validarRascunho()`: quem lê "Passo 1" quer o primeiro passo REALMENTE incompleto.
+  const conferencia = validator.validar();
+  if (!conferencia.valid) return [conducao.pendenciaDoPasso(index, mensagensDe(conferencia))];
+
+  if (!validator.persistir) return [];
+
+  const geracao = store.geracao();
+  const commit = await validator
+    .persistir({ confirmadaPeloOperador: false })
+    .catch(falhaAoConcluir);
+  if (geracao !== store.geracao()) return [];
+
+  if (!commit.valid) {
+    return commit.messages?.length === 0
+      ? []
+      : [conducao.pendenciaDoPasso(index, mensagensDe(commit))];
+  }
+  return gravarDesempatePendente(conducao);
+}
+
+async function gravarDesempatePendente(conducao: ConducaoDoWizard): Promise<string[]> {
+  const recusa = await conducao.gravarDesempatePendente();
+  if (recusa === null || recusa.mensagens.length === 0) return [];
+  return [conducao.pendenciaDoPasso(recusa.indice, recusa.mensagens)];
 }

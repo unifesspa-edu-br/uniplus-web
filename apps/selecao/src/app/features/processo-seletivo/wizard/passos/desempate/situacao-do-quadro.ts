@@ -121,14 +121,37 @@ function situacaoContraAGravada(
     );
   }
 
+  return situacaoComAsDuasResolucoes(
+    { gravada, grupos, daGravada },
+    { escolhida, doCadastro },
+    cadastro,
+  );
+}
+
+interface QuadroGravado {
+  readonly gravada: string;
+  readonly grupos: readonly GrupoDoQuadro[];
+  readonly daGravada: readonly ColunaDoQuadro[];
+}
+
+interface QuadroEscolhido {
+  readonly escolhida: string;
+  readonly doCadastro: readonly GrupoDoQuadro[];
+}
+
+function situacaoComAsDuasResolucoes(
+  { gravada, grupos, daGravada }: QuadroGravado,
+  { escolhida, doCadastro }: QuadroEscolhido,
+  cadastro: LeituraDoCadastro,
+): SituacaoDoQuadro {
   const daEscolhida = new Set(areasComuns(doCadastro, cadastro).map((area) => area.codigo));
   const aceitas = daGravada.filter((area) => daEscolhida.has(area.codigo));
   if (aceitas.length === 0 && daGravada.length > 0) {
-    return { tipo: 'resolucoes-sem-area-em-comum', grupos, gravada, escolhida };
+    return { tipo: 'resolucoes-sem-area-em-comum', grupos, gravada, escolhida: escolhida };
   }
   const divergencia: Divergencia | null =
     escolhida !== gravada
-      ? { tipo: 'outra-resolucao', gravada, escolhida }
+      ? { tipo: 'outra-resolucao', gravada, escolhida: escolhida }
       : aceitas.length < daGravada.length
         ? { tipo: 'cadastro-alterado', gravada }
         : null;

@@ -1789,10 +1789,12 @@ describe('FasePassoComponent', () => {
       );
       const raizes = arvoreDeExigencias(
         store.draft().documentos,
-        new Map([['AVALIACAO', ID_AVALIACAO]]),
-        [],
-        new Set<string>(),
-        new Map([['AVALIACAO', ['INSCRICAO']]]),
+        {
+          faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
+          modalidadesOfertadas: [],
+          etapasVivas: new Set<string>(),
+          finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
+        },
       );
       expect(raizes[0].documento?.finalidade).toBe('ISENCAO_TAXA');
     });
@@ -1848,10 +1850,12 @@ describe('FasePassoComponent', () => {
 
       const raizes = arvoreDeExigencias(
         store.draft().documentos,
-        new Map([['AVALIACAO', ID_AVALIACAO]]),
-        [],
-        new Set<string>(),
-        new Map(),
+        {
+          faseIdPorCodigo: new Map([['AVALIACAO', ID_AVALIACAO]]),
+          modalidadesOfertadas: [],
+          etapasVivas: new Set<string>(),
+          finalidadesPorFase: new Map(),
+        },
       );
 
       expect(raizes[0].documento?.formatosPermitidos).toEqual(['PDF', 'JPEG']);

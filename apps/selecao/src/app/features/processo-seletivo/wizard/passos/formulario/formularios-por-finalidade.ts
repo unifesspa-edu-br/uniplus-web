@@ -245,6 +245,13 @@ const algumEm = (fatos: readonly string[], conjunto: ReadonlySet<string>): boole
  * resto vai na ordem das finalidades e a recusa da API aponta o conflito.
  */
 export function ordemDeGravacao(formularios: readonly FormularioNaGravacao[]): readonly string[] {
+  return ordenarPelasDependencias(formularios, dependenciasDeGravacao(formularios));
+}
+
+/** Para cada finalidade, as que precisam gravar antes dela. */
+type AntesDe = ReadonlyMap<string, ReadonlySet<string>>;
+
+function dependenciasDeGravacao(formularios: readonly FormularioNaGravacao[]): AntesDe {
   const antesDe = new Map<string, Set<string>>(
     formularios.map((formulario) => [formulario.finalidade, new Set<string>()]),
   );
@@ -252,25 +259,44 @@ export function ordemDeGravacao(formularios: readonly FormularioNaGravacao[]): r
     if (primeira !== depois) antesDe.get(depois)?.add(primeira);
   };
 
+  exigirSaidaAntesDaEntrada(formularios, exigir);
+  exigirOrdemEmTornoDaInscricao(formularios, exigir);
+  return antesDe;
+}
+
+function exigirSaidaAntesDaEntrada(
+  formularios: readonly FormularioNaGravacao[],
+  exigir: (primeira: string, depois: string) => void,
+): void {
   for (const perde of formularios) {
     const perdidos = diferenca(coletados(perde.servidor), coletados(perde.desejado));
     for (const ganha of formularios) {
       if (algumEm(perdidos, coletados(ganha.desejado))) exigir(perde.finalidade, ganha.finalidade);
     }
   }
+}
 
+function exigirOrdemEmTornoDaInscricao(
+  formularios: readonly FormularioNaGravacao[],
+  exigir: (primeira: string, depois: string) => void,
+): void {
   const inscricao = formularios.find(
     (formulario) => formulario.finalidade === FINALIDADE_INSCRICAO,
   );
-  if (inscricao !== undefined) {
-    const ganhos = diferenca(coletados(inscricao.desejado), coletados(inscricao.servidor));
-    const perdas = diferenca(coletados(inscricao.servidor), coletados(inscricao.desejado));
-    for (const outra of formularios) {
-      if (algumEm(ganhos, citados(outra.desejado))) exigir(FINALIDADE_INSCRICAO, outra.finalidade);
-      if (algumEm(perdas, citados(outra.servidor))) exigir(outra.finalidade, FINALIDADE_INSCRICAO);
-    }
-  }
+  if (inscricao === undefined) return;
 
+  const ganhos = diferenca(coletados(inscricao.desejado), coletados(inscricao.servidor));
+  const perdas = diferenca(coletados(inscricao.servidor), coletados(inscricao.desejado));
+  for (const outra of formularios) {
+    if (algumEm(ganhos, citados(outra.desejado))) exigir(FINALIDADE_INSCRICAO, outra.finalidade);
+    if (algumEm(perdas, citados(outra.servidor))) exigir(outra.finalidade, FINALIDADE_INSCRICAO);
+  }
+}
+
+function ordenarPelasDependencias(
+  formularios: readonly FormularioNaGravacao[],
+  antesDe: AntesDe,
+): readonly string[] {
   const pendentes = emOrdemDasFinalidades(formularios).map((formulario) => formulario.finalidade);
   const ordem: string[] = [];
   while (pendentes.length > 0) {

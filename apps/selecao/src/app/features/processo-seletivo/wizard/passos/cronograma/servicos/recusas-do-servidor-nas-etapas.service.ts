@@ -56,7 +56,19 @@ export class RecusasDoServidorNasEtapas {
     enviadas: readonly FormGroup<EtapaForm>[],
     erros: readonly { readonly field: string; readonly code: string }[],
   ): void {
-    const aplicadas = new Map<FormGroup<EtapaForm>, Map<CampoComRecusa, string>>();
+    for (const [grupo, recusas] of this.recusasDosErros(enviadas, erros)) {
+      this.descartar(grupo);
+      const assinatura = this.esquecerNaPrimeiraMudancaDe(grupo);
+      this.recusasPorEtapa.set(grupo, { recusas, assinatura });
+    }
+    this.cronograma.versao.update((versao) => versao + 1);
+  }
+
+  private recusasDosErros(
+    enviadas: readonly FormGroup<EtapaForm>[],
+    erros: readonly { readonly field: string; readonly code: string }[],
+  ): ReadonlyMap<FormGroup<EtapaForm>, ReadonlyMap<CampoComRecusa, string>> {
+    const porEtapa = new Map<FormGroup<EtapaForm>, Map<CampoComRecusa, string>>();
     for (const erro of erros) {
       const local = localDoErroDaEtapa(erro.field);
       const texto = recusaDoCampoDaEtapa(erro.code);
@@ -64,24 +76,23 @@ export class RecusasDoServidorNasEtapas {
       const grupo = local === null ? undefined : enviadas[local.indice];
       if (campo === null || texto === null || grupo === undefined) continue;
       if (!this.cronograma.etapas.controls.includes(grupo)) continue;
-      aplicadas.set(grupo, (aplicadas.get(grupo) ?? new Map()).set(campo, texto));
+      porEtapa.set(grupo, (porEtapa.get(grupo) ?? new Map()).set(campo, texto));
     }
-    for (const [grupo, recusas] of aplicadas) {
-      this.descartar(grupo);
-      const assinatura = merge(
-        grupo.controls.notaMinima.valueChanges,
-        grupo.controls.notaMaxima.valueChanges,
-        grupo.controls.passoDoLancamento.valueChanges,
-        grupo.controls.formaDeAvaliacao.valueChanges,
-        grupo.controls.regraConsolidacaoCodigo.valueChanges,
-        grupo.controls.itensDeAvaliacao.valueChanges,
-        grupo.controls.escalaDeAtendimento.valueChanges,
-      )
-        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-        .subscribe(() => this.esquecer(grupo));
-      this.recusasPorEtapa.set(grupo, { recusas, assinatura });
-    }
-    this.cronograma.versao.update((versao) => versao + 1);
+    return porEtapa;
+  }
+
+  private esquecerNaPrimeiraMudancaDe(grupo: FormGroup<EtapaForm>): Subscription {
+    return merge(
+      grupo.controls.notaMinima.valueChanges,
+      grupo.controls.notaMaxima.valueChanges,
+      grupo.controls.passoDoLancamento.valueChanges,
+      grupo.controls.formaDeAvaliacao.valueChanges,
+      grupo.controls.regraConsolidacaoCodigo.valueChanges,
+      grupo.controls.itensDeAvaliacao.valueChanges,
+      grupo.controls.escalaDeAtendimento.valueChanges,
+    )
+      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.esquecer(grupo));
   }
 
   private readonly recusasPorEtapa = new WeakMap<

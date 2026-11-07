@@ -52,17 +52,24 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
     atendimento: atendimentoDe(dto),
     documentos: exigenciasDe(dto),
     formulario: formularioDe(dto),
-    identificacao: {
-      ...draft.identificacao,
-      nome: dto.nome,
-      identificadorLegivel: dto.identificadorLegivel ?? '',
-      unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
-      origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
-      localidade: {
-        codigoIbge: dto.localidade.codigoIbge,
-        nome: dto.localidade.nome,
-        uf: dto.localidade.uf,
-      },
+    identificacao: identificacaoDe(draft.identificacao, dto),
+  };
+}
+
+function identificacaoDe(
+  identificacao: WizardDraft['identificacao'],
+  dto: ProcessoSeletivoDto,
+): WizardDraft['identificacao'] {
+  return {
+    ...identificacao,
+    nome: dto.nome,
+    identificadorLegivel: dto.identificadorLegivel ?? '',
+    unidadeAdministradoraId: dto.unidadeAdministradora.origemId,
+    origemCandidatos: decodificarOrigemCandidatos(dto.origemCandidatos),
+    localidade: {
+      codigoIbge: dto.localidade.codigoIbge,
+      nome: dto.localidade.nome,
+      uf: dto.localidade.uf,
     },
   };
 }
@@ -74,27 +81,33 @@ export function hidratarDraft(draft: WizardDraft, dto: ProcessoSeletivoDto): Wiz
  * a fase.
  */
 function formularioDe(dto: ProcessoSeletivoDto): FormularioDeInscricao {
-  const codigoPorFaseId = new Map((dto.cronogramaFases ?? []).map((f) => [f.id, f.codigo]));
-  const referencia = dto.referenciaTemporalFatos;
-
   return {
     ...formulariosDoServidor({
       formularios: dto.formularios ?? [],
       cronogramaFases: dto.cronogramaFases ?? [],
     }),
-    referenciaTemporal: {
-      tipo: referencia?.tipo ?? '',
-      data: referencia?.data ?? '',
-      faseCodigo:
-        referencia?.faseId === null || referencia?.faseId === undefined
-          ? ''
-          : (codigoPorFaseId.get(referencia.faseId) ?? ''),
-    },
+    referenciaTemporal: referenciaTemporalDe(dto),
     derivacao: (dto.regrasDerivacao ?? []).map((config) => ({
       codigoFato: config.codigoFato,
       regras: config.regras,
     })),
   };
+}
+
+function referenciaTemporalDe(
+  dto: ProcessoSeletivoDto,
+): FormularioDeInscricao['referenciaTemporal'] {
+  const referencia = dto.referenciaTemporalFatos;
+  return {
+    tipo: referencia?.tipo ?? '',
+    data: referencia?.data ?? '',
+    faseCodigo: codigoDaFaseDe(dto, referencia?.faseId),
+  };
+}
+
+function codigoDaFaseDe(dto: ProcessoSeletivoDto, faseId: string | null | undefined): string {
+  if (faseId === null || faseId === undefined) return '';
+  return (dto.cronogramaFases ?? []).find((fase) => fase.id === faseId)?.codigo ?? '';
 }
 
 /**

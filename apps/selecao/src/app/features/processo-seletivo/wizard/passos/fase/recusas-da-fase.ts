@@ -259,33 +259,39 @@ export function traduzirRecusa(
   if (erros.length === 0) return { porCampo, gerais: [problema.title] };
 
   for (const erro of erros) {
-    const indice = indiceDaFaseEm(erro.field);
-    if (erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA) {
-      const onde = indice === null ? 'No cronograma' : `Na fase ${nomeDaFase(indice)}`;
-      gerais.push(`${onde}: ${ORIENTACAO_DA_UNIDADE_NAO_ENCONTRADA}`);
+    const destino = destinoDoErro(erro, problema.title, indiceDaFaseAberta, nomeDaFase);
+    if ('geral' in destino) {
+      gerais.push(destino.geral);
       continue;
     }
-
-    const conhecido = MENSAGEM_POR_CODIGO.get(erro.code);
-    const texto = conhecido?.mensagem ?? problema.title;
-
-    if (indice === null || indice !== indiceDaFaseAberta) {
-      const onde = indice === null ? 'No cronograma' : `Na fase ${nomeDaFase(indice)}`;
-      gerais.push(`${onde}: ${texto}`);
-      continue;
-    }
-
-    if (conhecido === undefined) {
-      gerais.push(texto);
-      continue;
-    }
-
     // Uma fase mal declarada erra em vários itens da mesma coleção ao mesmo
     // tempo, e o campo é o mesmo para todos. A primeira é a que orienta.
-    if (!porCampo.has(conhecido.campo)) porCampo.set(conhecido.campo, conhecido.mensagem);
+    if (!porCampo.has(destino.campo)) porCampo.set(destino.campo, destino.mensagem);
   }
 
   return { porCampo, gerais };
+}
+
+type ErroDaRecusa = NonNullable<ProblemDetails['errors']>[number];
+
+type DestinoDoErro = { readonly geral: string } | { campo: CampoDaFase; mensagem: string };
+
+function destinoDoErro(
+  erro: ErroDaRecusa,
+  titulo: string,
+  indiceDaFaseAberta: number,
+  nomeDaFase: (indice: number) => string,
+): DestinoDoErro {
+  const indice = indiceDaFaseEm(erro.field);
+  const onde = indice === null ? 'No cronograma' : `Na fase ${nomeDaFase(indice)}`;
+  if (erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA) {
+    return { geral: `${onde}: ${ORIENTACAO_DA_UNIDADE_NAO_ENCONTRADA}` };
+  }
+
+  const conhecido = MENSAGEM_POR_CODIGO.get(erro.code);
+  const texto = conhecido?.mensagem ?? titulo;
+  if (indice === null || indice !== indiceDaFaseAberta) return { geral: `${onde}: ${texto}` };
+  return conhecido ?? { geral: texto };
 }
 
 /** A posição da fase no `field` da recusa, ou `null` quando ele não a nomeia. */

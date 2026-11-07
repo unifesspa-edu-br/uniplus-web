@@ -135,14 +135,12 @@ export class GatilhoDasExigenciasStore {
     for (const recusa of recusasDeFaseDoGatilho(exigencia, producao, nomes, doGrupo)) {
       erros[recusa.indice] = recusa.orientacao;
     }
-    const fatos = fatosDoGatilhoNaFase(
-      this.catalogoDeFatos.fatos(),
-      exigencia,
+    const fatos = fatosDoGatilhoNaFase(this.catalogoDeFatos.fatos(), exigencia, {
       producao,
-      this.dominiosDoGatilho(),
-      exigencia.condicoes.map((condicao) => condicao.fato),
-      doGrupo,
-    );
+      dominiosDinamicos: this.dominiosDoGatilho(),
+      citados: exigencia.condicoes.map((condicao) => condicao.fato),
+      camposDaRepeticao: doGrupo,
+    });
     return { fatos, erros };
   }
 

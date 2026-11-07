@@ -587,14 +587,14 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
   const na = (faseCodigo: string, finalidade: string | null = null) => ({ faseCodigo, finalidade });
 
   it('na habilitação, os fatos de todos os formulários e a modalidade da convocação, com as modalidades ofertadas', () => {
-    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('HABILITACAO'), PRODUCAO, DOMINIOS);
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('HABILITACAO'), { producao: PRODUCAO, dominiosDinamicos: DOMINIOS });
 
     expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE', 'MODALIDADE_CONVOCACAO']);
     expect(oferecidos.find((fato) => fato.codigo === 'MODALIDADE_CONVOCACAO')?.valores).toEqual(MODALIDADES);
   });
 
   it('na inscrição, só o que já é conhecido nela', () => {
-    expect(codigos(fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), PRODUCAO, DOMINIOS))).toEqual(['PCD']);
+    expect(codigos(fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), { producao: PRODUCAO, dominiosDinamicos: DOMINIOS }))).toEqual(['PCD']);
   });
 
   it('na fase que divide inscrição e isenção, o documento da inscrição não oferece o fato que só a isenção coleta', () => {
@@ -605,14 +605,14 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
       formularios: [...PRODUCAO.formularios, { finalidade: 'ISENCAO_TAXA', faseCodigo: 'INSCRICAO', fatos: new Set(['BOLSISTA']) }],
       catalogo: new Map([...PRODUCAO.catalogo, ['BOLSISTA', BOLSISTA]]),
     };
-    const oferecidos = (finalidade: string) => codigos(fatosDoGatilhoNaFase([...FATOS, BOLSISTA], na('INSCRICAO', finalidade), dividida, DOMINIOS));
+    const oferecidos = (finalidade: string) => codigos(fatosDoGatilhoNaFase([...FATOS, BOLSISTA], na('INSCRICAO', finalidade), { producao: dividida, dominiosDinamicos: DOMINIOS }));
 
     expect(oferecidos('INSCRICAO')).toEqual(['PCD']);
     expect(oferecidos('ISENCAO_TAXA')).toEqual(['PCD', 'BOLSISTA']);
   });
 
   it('o fato que a exigência já cita e não pode citar vem por último, marcado', () => {
-    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), PRODUCAO, DOMINIOS, ['LAUDO_RECENTE']);
+    const oferecidos = fatosDoGatilhoNaFase(FATOS, na('INSCRICAO'), { producao: PRODUCAO, dominiosDinamicos: DOMINIOS, citados: ['LAUDO_RECENTE'] });
 
     expect(codigos(oferecidos)).toEqual(['PCD', 'LAUDO_RECENTE']);
     expect(oferecidos[1]?.nome).toBe('Laudo recente (não citável nesta exigência)');
@@ -623,7 +623,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
     const catalogo = FATOS.map((fato) => (fato.codigo === 'PCD' ? pendente : fato));
     const producao: ProducaoDosFatos = { ...PRODUCAO, catalogo: new Map(catalogo.map((fato) => [fato.codigo, fato])) };
 
-    const oferecidos = fatosDoGatilhoNaFase(catalogo, na('INSCRICAO'), producao, DOMINIOS);
+    const oferecidos = fatosDoGatilhoNaFase(catalogo, na('INSCRICAO'), { producao, dominiosDinamicos: DOMINIOS });
 
     expect(codigos(oferecidos)).toEqual(['PCD']);
     expect(oferecidos[0]?.aguardaProtecao).toBe(true);
@@ -646,7 +646,7 @@ describe('os fatos que o gatilho oferece na fase da exigência', () => {
 
     it('só é oferecido ao documento que se repete pelo grupo que o coleta', () => {
       const oferecidos = (repeticao: ReadonlySet<string>) =>
-        codigos(fatosDoGatilhoNaFase([...FATOS, PARENTESCO], na('INSCRICAO'), comParentesco, DOMINIOS, [], repeticao));
+        codigos(fatosDoGatilhoNaFase([...FATOS, PARENTESCO], na('INSCRICAO'), { producao: comParentesco, dominiosDinamicos: DOMINIOS, camposDaRepeticao: repeticao }));
 
       expect(oferecidos(new Set())).toEqual(['PCD']);
       expect(oferecidos(new Set(['PARENTESCO']))).toEqual(['PCD', 'PARENTESCO']);

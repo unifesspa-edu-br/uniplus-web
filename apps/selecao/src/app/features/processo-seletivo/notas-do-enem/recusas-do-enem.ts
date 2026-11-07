@@ -149,40 +149,48 @@ export function explicarRecusa(
   contexto: ContextoDaRecusa,
   opcoes: OpcoesDaRecusa = {},
 ): RecusaExplicada {
-  const mapeado =
-    problem.code === `${PREFIXO}arquivo_fora_do_leiaute` && opcoes.variosLeiautes === false
-      ? ARQUIVO_FORA_DO_LEIAUTE_COM_UM
-      : POR_CODIGO[problem.code];
+  const mapeado = textoDoCodigo(problem, opcoes);
   if (mapeado !== undefined) return montar(mapeado, problem, contexto);
 
   const porStatus = textoPorStatus(problem.status, contexto);
   if (porStatus !== null) return montar(porStatus, problem, contexto);
 
-  if (falhaIncerta(problem)) {
-    return {
-      titulo: 'Não foi possível concluir a operação.',
-      explicacao: 'O servidor não respondeu como esperado.',
-      orientacao: ORIENTACAO_DA_INCERTEZA[contexto],
-      nivel: 'danger',
-      detalhe: null,
-      recarregarCatalogo: false,
-      traceId: problem.traceId === '' ? null : problem.traceId,
-    };
-  }
+  if (falhaIncerta(problem)) return recusaDeFalhaIncerta(problem, contexto);
 
+  return montar(textoDaRecusaSemMapa(problem, contexto), problem, contexto);
+}
+
+function textoDoCodigo(problem: ProblemDetails, opcoes: OpcoesDaRecusa): Texto | undefined {
+  return problem.code === `${PREFIXO}arquivo_fora_do_leiaute` && opcoes.variosLeiautes === false
+    ? ARQUIVO_FORA_DO_LEIAUTE_COM_UM
+    : POR_CODIGO[problem.code];
+}
+
+function recusaDeFalhaIncerta(
+  problem: ProblemDetails,
+  contexto: ContextoDaRecusa,
+): RecusaExplicada {
+  return {
+    titulo: 'Não foi possível concluir a operação.',
+    explicacao: 'O servidor não respondeu como esperado.',
+    orientacao: ORIENTACAO_DA_INCERTEZA[contexto],
+    nivel: 'danger',
+    detalhe: null,
+    recarregarCatalogo: false,
+    traceId: problem.traceId === '' ? null : problem.traceId,
+  };
+}
+
+function textoDaRecusaSemMapa(problem: ProblemDetails, contexto: ContextoDaRecusa): Texto {
   const doServidor =
     problem.code === CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE ? null : problem.title;
-  return montar(
-    {
-      explicacao: doServidor ?? 'A requisição foi recusada.',
-      orientacao:
-        contexto === 'importacao'
-          ? 'Confira o leiaute escolhido e o arquivo. Se persistir, acione a equipe técnica.'
-          : 'Se persistir, acione a equipe técnica.',
-    },
-    problem,
-    contexto,
-  );
+  return {
+    explicacao: doServidor ?? 'A requisição foi recusada.',
+    orientacao:
+      contexto === 'importacao'
+        ? 'Confira o leiaute escolhido e o arquivo. Se persistir, acione a equipe técnica.'
+        : 'Se persistir, acione a equipe técnica.',
+  };
 }
 
 function textoPorStatus(status: number, contexto: ContextoDaRecusa): Texto | null {

@@ -93,53 +93,74 @@ export class EnvioDeArquivo {
       return;
     }
 
-    let destino = this.destino;
-    if (destino === null || destinoExpirado(destino)) {
-      if (this.opcoes.tipoDeMidia === null) {
-        this.falhar(alvo, this.opcoes.recusaDoFormato);
-        return;
-      }
+    const destino = await this.destinoVigente(processoId, alvo);
+    if (destino === null) return;
+    if (!(await this.enviarAoStorage(alvo, destino))) return;
+    await this.confirmar(processoId, alvo, destino.documentoAPublicarId);
+  }
 
-      this.atualizar(alvo, { fase: 'iniciando', progress: 0, mensagemErro: undefined });
-      const { resultado } = await this.opcoes.envio.iniciar(processoId, {
-        finalidade: this.opcoes.finalidade,
-        nomeArquivo: this.opcoes.arquivo.name,
-        tipoDeMidia: this.opcoes.tipoDeMidia,
-      });
-      if (!this.vale) return;
-      if (!isApiOk(resultado)) {
-        this.falhar(alvo, this.opcoes.explicar(resultado.problem));
-        return;
-      }
-      destino = resultado.data;
-      this.destino = destino;
-      this.atualizar(alvo, {
-        documentoAPublicarId: destino.documentoAPublicarId,
-        expiraEm: destino.expiraEm,
-      });
+  /** O destino que o envio já tem ou, vencido ou ausente, um novo pedido à API; `null` quando falhou ou deixou de valer. */
+  private async destinoVigente(
+    processoId: string,
+    alvo: AlvoDoEnvio,
+  ): Promise<IniciarEnvioDoDocumentoAPublicarDto | null> {
+    const guardado = this.destino;
+    if (guardado !== null && !destinoExpirado(guardado)) return guardado;
+
+    if (this.opcoes.tipoDeMidia === null) {
+      this.falhar(alvo, this.opcoes.recusaDoFormato);
+      return null;
     }
 
+    this.atualizar(alvo, { fase: 'iniciando', progress: 0, mensagemErro: undefined });
+    const { resultado } = await this.opcoes.envio.iniciar(processoId, {
+      finalidade: this.opcoes.finalidade,
+      nomeArquivo: this.opcoes.arquivo.name,
+      tipoDeMidia: this.opcoes.tipoDeMidia,
+    });
+    if (!this.vale) return null;
+    if (!isApiOk(resultado)) {
+      this.falhar(alvo, this.opcoes.explicar(resultado.problem));
+      return null;
+    }
+    this.destino = resultado.data;
+    this.atualizar(alvo, {
+      documentoAPublicarId: resultado.data.documentoAPublicarId,
+      expiraEm: resultado.data.expiraEm,
+    });
+    return resultado.data;
+  }
+
+  /** O PUT direto ao storage; `false` quando falhou ou o envio deixou de valer. */
+  private async enviarAoStorage(
+    alvo: AlvoDoEnvio,
+    destino: IniciarEnvioDoDocumentoAPublicarDto,
+  ): Promise<boolean> {
     this.atualizar(alvo, { fase: 'enviando' });
     const envio = await this.opcoes.envio.enviarArquivo(destino, this.opcoes.arquivo, (progress) =>
       this.atualizar(alvo, { progress }),
     );
-    if (!this.vale) return;
+    if (!this.vale) return false;
     if (!envio.ok) {
-      // A assinatura recusada não volta a valer: a retentativa pede outra URL.
       if (envio.expirada) {
-        this.destino = null;
-        this.atualizar(alvo, { documentoAPublicarId: undefined, expiraEm: undefined });
+        this.descartarDestinoVencido(alvo);
         this.falhar(alvo, 'O endereço de envio não é mais válido. Tente novamente para obter um novo.');
-        return;
+      } else {
+        this.falhar(alvo, 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
       }
-      this.falhar(alvo, 'Falha ao enviar o arquivo. Verifique a conexão e tente novamente.');
-      return;
+      return false;
     }
 
     this.atualizar(alvo, { enviado: true, progress: 100 });
     // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
     this.destino = null;
-    await this.confirmar(processoId, alvo, destino.documentoAPublicarId);
+    return true;
+  }
+
+  /** A assinatura recusada não volta a valer: a retentativa pede outra URL. */
+  private descartarDestinoVencido(alvo: AlvoDoEnvio): void {
+    this.destino = null;
+    this.atualizar(alvo, { documentoAPublicarId: undefined, expiraEm: undefined });
   }
 
   private async confirmar(

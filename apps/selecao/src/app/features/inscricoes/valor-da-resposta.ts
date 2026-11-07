@@ -76,36 +76,39 @@ function hora(valor: string): string {
   return formatada === '' ? valor : formatada;
 }
 
+type Leitor = (valor: unknown) => ValorExibido | undefined;
+
+function dataLidaComo(formato: 'short' | 'datetime'): Leitor {
+  return (valor) => {
+    if (typeof valor !== 'string') return undefined;
+    const formatada = formatarDataBr(valor, formato);
+    return { valor: formatada === '' ? valor : formatada };
+  };
+}
+
+const LEITORES_POR_TIPO: Readonly<Record<string, Leitor>> = {
+  booleano: (valor) => (typeof valor === 'boolean' ? { valor } : undefined),
+  data: dataLidaComo('short'),
+  'data-hora': dataLidaComo('datetime'),
+  hora: (valor) => (typeof valor === 'string' ? { valor: hora(valor) } : undefined),
+  numero: (valor) =>
+    typeof valor === 'string' || typeof valor === 'number'
+      ? { valor: formatarDecimalExato(String(valor)) }
+      : undefined,
+  opcao: (valor) => {
+    const rotulo = opcaoRotulo(valor);
+    return rotulo === null ? undefined : { valor: rotulo };
+  },
+  opcoes: (valor) =>
+    Array.isArray(valor)
+      ? { valor: valor.map(opcaoRotulo).filter((r): r is string => r !== null) }
+      : undefined,
+  endereco: (valor) => (ehRegistro(valor) ? endereco(valor) : undefined),
+};
+
 /** O valor na forma que o `tipo` define; `undefined` quando o valor não tem essa forma. */
 function lidoPeloTipo(tipo: string, valor: unknown): ValorExibido | undefined {
-  switch (tipo) {
-    case 'booleano':
-      return typeof valor === 'boolean' ? { valor } : undefined;
-    case 'data':
-    case 'data-hora': {
-      if (typeof valor !== 'string') return undefined;
-      const formatada = formatarDataBr(valor, tipo === 'data' ? 'short' : 'datetime');
-      return { valor: formatada === '' ? valor : formatada };
-    }
-    case 'hora':
-      return typeof valor === 'string' ? { valor: hora(valor) } : undefined;
-    case 'numero':
-      return typeof valor === 'string' || typeof valor === 'number'
-        ? { valor: formatarDecimalExato(String(valor)) }
-        : undefined;
-    case 'opcao': {
-      const rotulo = opcaoRotulo(valor);
-      return rotulo === null ? undefined : { valor: rotulo };
-    }
-    case 'opcoes': {
-      if (!Array.isArray(valor)) return undefined;
-      return { valor: valor.map(opcaoRotulo).filter((r): r is string => r !== null) };
-    }
-    case 'endereco':
-      return ehRegistro(valor) ? endereco(valor) : undefined;
-    default:
-      return undefined;
-  }
+  return Object.hasOwn(LEITORES_POR_TIPO, tipo) ? LEITORES_POR_TIPO[tipo](valor) : undefined;
 }
 
 function lidoPeloComponente(componente: string, valor: unknown): ValorExibido | undefined {

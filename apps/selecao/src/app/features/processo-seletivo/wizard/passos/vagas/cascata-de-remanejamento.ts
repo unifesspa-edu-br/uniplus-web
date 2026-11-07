@@ -51,18 +51,24 @@ export function matrizDaRegra(esquemaArgs: unknown): MatrizDaRegra | null {
 
   const ordens: OrdemDaMatriz[] = [];
   for (const itemBruto of ordensBrutas) {
-    if (typeof itemBruto !== 'object' || itemBruto === null) return null;
-    const item = itemBruto as Record<string, unknown>;
-    const origem = item['origem'];
-    const destinosBrutos = item['destinos'];
-    if (typeof origem !== 'string' || !Array.isArray(destinosBrutos)) return null;
-    if (!destinosBrutos.every((destino): destino is string => typeof destino === 'string')) {
-      return null;
-    }
-    ordens.push({ origem, destinos: destinosBrutos });
+    const ordem = ordemDaMatriz(itemBruto);
+    if (ordem === null) return null;
+    ordens.push(ordem);
   }
 
   return { fallbackCodigo, ordens };
+}
+
+function ordemDaMatriz(itemBruto: unknown): OrdemDaMatriz | null {
+  if (typeof itemBruto !== 'object' || itemBruto === null) return null;
+  const item = itemBruto as Record<string, unknown>;
+  const origem = item['origem'];
+  const destinosBrutos = item['destinos'];
+  if (typeof origem !== 'string' || !Array.isArray(destinosBrutos)) return null;
+  if (!destinosBrutos.every((destino): destino is string => typeof destino === 'string')) {
+    return null;
+  }
+  return { origem, destinos: destinosBrutos };
 }
 
 /** A modalidade segue a cascata única do processo — vocabulário fechado do catálogo. */
@@ -156,46 +162,55 @@ export function problemasDaCascata(
   matriz: MatrizDaRegra,
 ): readonly ProblemaDaCascata[] {
   const destinosPorOrigem = new Map(matriz.ordens.map((ordem) => [ordem.origem, ordem.destinos]));
+
+  return [
+    ...ofertas
+      .filter(
+        (oferta) => ofertaExigeCascata(oferta, catalogo) && !ofertaForaDoRegimeFederal(oferta),
+      )
+      .flatMap((oferta) => problemasDaOferta(oferta, catalogo, matriz, destinosPorOrigem)),
+    ...problemasDeCoberturaDaMatriz(ofertas, catalogo, matriz),
+  ];
+}
+
+function problemasDaOferta(
+  oferta: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  matriz: MatrizDaRegra,
+  destinosPorOrigem: ReadonlyMap<string, readonly string[]>,
+): readonly ProblemaDaCascata[] {
   const problemas: ProblemaDaCascata[] = [];
+  const codigosDaOferta = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
 
-  for (const oferta of ofertas) {
-    if (!ofertaExigeCascata(oferta, catalogo) || ofertaForaDoRegimeFederal(oferta)) continue;
-
-    const codigosDaOferta = new Set(oferta.modalidades.map((modalidade) => modalidade.codigo));
-
-    if (!codigosDaOferta.has(matriz.fallbackCodigo)) {
-      problemas.push({
-        ofertaCursoId: oferta.ofertaCursoId,
-        mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
-      });
-    }
-
-    const origensDaOferta = oferta.modalidades.filter((modalidade) =>
-      segueCascata(modalidade.id, catalogo),
-    );
-
-    for (const origem of origensDaOferta) {
-      const destinos = destinosPorOrigem.get(origem.codigo);
-      if (destinos === undefined) {
-        problemas.push({
-          ofertaCursoId: oferta.ofertaCursoId,
-          mensagem: `A modalidade ${origem.codigo} segue a cascata, mas a regra escolhida não declara essa origem.`,
-        });
-        continue;
-      }
-
-      if (!destinos.some((destino) => codigosDaOferta.has(destino))) {
-        problemas.push({
-          ofertaCursoId: oferta.ofertaCursoId,
-          mensagem: `Nenhum destino de ${origem.codigo} (${destinos.join(', ')}) está selecionado no quadro de vagas desta oferta.`,
-        });
-      }
-    }
+  if (!codigosDaOferta.has(matriz.fallbackCodigo)) {
+    problemas.push({
+      ofertaCursoId: oferta.ofertaCursoId,
+      mensagem: `O destino final da cascata (${matriz.fallbackCodigo}) não está selecionado no quadro de vagas desta oferta.`,
+    });
   }
 
-  problemas.push(...problemasDeCoberturaDaMatriz(ofertas, catalogo, matriz));
+  const origensDaOferta = oferta.modalidades.filter((modalidade) =>
+    segueCascata(modalidade.id, catalogo),
+  );
+  for (const origem of origensDaOferta) {
+    const destinos = destinosPorOrigem.get(origem.codigo);
+    const mensagem = recusaDaOrigem(origem.codigo, destinos, codigosDaOferta);
+    if (mensagem !== null) problemas.push({ ofertaCursoId: oferta.ofertaCursoId, mensagem });
+  }
 
   return problemas;
+}
+
+function recusaDaOrigem(
+  origem: string,
+  destinos: readonly string[] | undefined,
+  codigosDaOferta: ReadonlySet<string>,
+): string | null {
+  if (destinos === undefined) {
+    return `A modalidade ${origem} segue a cascata, mas a regra escolhida não declara essa origem.`;
+  }
+  if (destinos.some((destino) => codigosDaOferta.has(destino))) return null;
+  return `Nenhum destino de ${origem} (${destinos.join(', ')}) está selecionado no quadro de vagas desta oferta.`;
 }
 
 /**
@@ -214,6 +229,28 @@ function problemasDeCoberturaDaMatriz(
   const codigosOfertados = new Set(
     ofertas.flatMap((oferta) => oferta.modalidades.map((modalidade) => modalidade.codigo)),
   );
+  return [
+    ...origensSemMarcaDeCascata(ofertas, catalogo, matriz),
+    ...destinosNaoOfertados(codigosOfertados, matriz),
+    ...(codigosOfertados.has(matriz.fallbackCodigo)
+      ? []
+      : [
+          semOferta(
+            `A regra declara ${matriz.fallbackCodigo} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
+          ),
+        ]),
+  ];
+}
+
+function semOferta(mensagem: string): ProblemaDaCascata {
+  return { ofertaCursoId: null, mensagem };
+}
+
+function origensSemMarcaDeCascata(
+  ofertas: readonly DistribuicaoDeVagas[],
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  matriz: MatrizDaRegra,
+): readonly ProblemaDaCascata[] {
   const origensSegueCascata = new Set(
     ofertas.flatMap((oferta) =>
       oferta.modalidades
@@ -221,41 +258,31 @@ function problemasDeCoberturaDaMatriz(
         .map((modalidade) => modalidade.codigo),
     ),
   );
+  return matriz.ordens
+    .filter((ordem) => !origensSegueCascata.has(ordem.origem))
+    .map((ordem) =>
+      semOferta(
+        `A regra declara a origem ${ordem.origem}, mas nenhuma oferta do processo a marca como SEGUE_CASCATA no quadro de vagas.`,
+      ),
+    );
+}
 
-  const problemas: ProblemaDaCascata[] = [];
-
-  for (const ordem of matriz.ordens) {
-    if (!origensSegueCascata.has(ordem.origem)) {
-      problemas.push({
-        ofertaCursoId: null,
-        mensagem: `A regra declara a origem ${ordem.origem}, mas nenhuma oferta do processo a marca como SEGUE_CASCATA no quadro de vagas.`,
-      });
-    }
-  }
-
-  // Uma mensagem por destino ausente, não por par origem-destino: no
-  // catálogo real cada origem repete os mesmos pares como destino umas das
-  // outras, e listar por origem duplicaria a mesma modalidade faltante uma
-  // vez por origem que a referencia.
+// Uma mensagem por destino ausente, não por par origem-destino: no
+// catálogo real cada origem repete os mesmos pares como destino umas das
+// outras, e listar por origem duplicaria a mesma modalidade faltante uma
+// vez por origem que a referencia.
+function destinosNaoOfertados(
+  codigosOfertados: ReadonlySet<string>,
+  matriz: MatrizDaRegra,
+): readonly ProblemaDaCascata[] {
   const destinosDaMatriz = new Set(matriz.ordens.flatMap((ordem) => ordem.destinos));
-  const destinosFaltantes = [...destinosDaMatriz].filter(
-    (destino) => !codigosOfertados.has(destino),
-  );
-  if (destinosFaltantes.length > 0) {
-    problemas.push({
-      ofertaCursoId: null,
-      mensagem: `A regra declara os destinos ${destinosFaltantes.join(', ')}, mas nenhuma oferta do processo os oferece no quadro de vagas.`,
-    });
-  }
-
-  if (!codigosOfertados.has(matriz.fallbackCodigo)) {
-    problemas.push({
-      ofertaCursoId: null,
-      mensagem: `A regra declara ${matriz.fallbackCodigo} como destino final, mas nenhuma oferta do processo o oferece no quadro de vagas.`,
-    });
-  }
-
-  return problemas;
+  const faltantes = [...destinosDaMatriz].filter((destino) => !codigosOfertados.has(destino));
+  if (faltantes.length === 0) return [];
+  return [
+    semOferta(
+      `A regra declara os destinos ${faltantes.join(', ')}, mas nenhuma oferta do processo os oferece no quadro de vagas.`,
+    ),
+  ];
 }
 
 /**

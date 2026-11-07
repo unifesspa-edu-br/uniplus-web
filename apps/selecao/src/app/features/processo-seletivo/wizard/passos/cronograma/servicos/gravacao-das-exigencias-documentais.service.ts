@@ -106,13 +106,14 @@ export class GravacaoDasExigenciasDocumentais {
    * documento.
    */
   private arvoreDoRascunho(processo: ProcessoSeletivoDto) {
-    return arvoreDeExigencias(
-      this.store.draft().documentos,
-      new Map(processo.cronogramaFases.map((f) => [f.codigo, f.id])),
-      this.store.modalidadesDoProcesso(),
-      new Set(processo.etapas.map((etapa) => etapa.id)),
-      new Map(processo.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)])),
-    );
+    return arvoreDeExigencias(this.store.draft().documentos, {
+      faseIdPorCodigo: new Map(processo.cronogramaFases.map((f) => [f.codigo, f.id])),
+      modalidadesOfertadas: this.store.modalidadesDoProcesso(),
+      etapasVivas: new Set(processo.etapas.map((etapa) => etapa.id)),
+      finalidadesPorFase: new Map(
+        processo.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
+      ),
+    });
   }
 
   /** Os fatos que as exigências e as regras de derivação citam. */

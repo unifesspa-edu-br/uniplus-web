@@ -50,6 +50,9 @@ function restricaoDoDto(restricao: FatoColetadoDto['restricoes'][number]): Restr
   };
 }
 
+type GrupoDoFormularioDto = FormularioDto['grupos'][number];
+type TermoDoFormularioDto = FormularioDto['termos'][number];
+
 function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
   return {
     fatoCodigo: fato.fatoCodigo,
@@ -70,6 +73,34 @@ function itemDoDto(fato: FatoColetadoDto): ItemDoFormulario {
   };
 }
 
+function grupoDoDto(grupo: GrupoDoFormularioDto): GrupoDoFormulario {
+  return {
+    codigo: grupo.codigo,
+    ordem: grupo.ordem,
+    rotulo: grupo.rotulo,
+    etapaCodigo: grupo.etapaCodigo,
+    minimo: grupo.minimo,
+    maximo: grupo.maximo,
+    exibicao: predicado(grupo.exibicao),
+    obrigatoriedade: grupo.obrigatoriedade.tipo,
+    predicadoObrigatoriedade: predicado(grupo.obrigatoriedade.predicado),
+    subitens: grupo.subitens.map(itemDoDto),
+    incluiCandidato: grupo.incluiCandidato,
+  };
+}
+
+function termoDoDto(termo: TermoDoFormularioDto): TermoDoFormulario {
+  return {
+    codigo: termo.codigo,
+    ordem: termo.ordem,
+    termoId: termo.termoId,
+    versaoId: termo.versaoId,
+    exibicao: predicado(termo.exibicao),
+    obrigatoriedade: termo.obrigatoriedade.tipo,
+    predicadoObrigatoriedade: predicado(termo.obrigatoriedade.predicado),
+  };
+}
+
 /** O formulário do processo na forma do editor. O processo não tem pressuposto: as outras finalidades citam a inscrição. */
 export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
   return {
@@ -80,32 +111,8 @@ export function conteudoDoFormulario(dto: FormularioDto): ConteudoDoFormulario {
       exibicao: predicado(etapa.exibicao),
     })),
     itens: dto.fatosColetados.map(itemDoDto),
-    grupos: dto.grupos.map(
-      (grupo): GrupoDoFormulario => ({
-        codigo: grupo.codigo,
-        ordem: grupo.ordem,
-        rotulo: grupo.rotulo,
-        etapaCodigo: grupo.etapaCodigo,
-        minimo: grupo.minimo,
-        maximo: grupo.maximo,
-        exibicao: predicado(grupo.exibicao),
-        obrigatoriedade: grupo.obrigatoriedade.tipo,
-        predicadoObrigatoriedade: predicado(grupo.obrigatoriedade.predicado),
-        subitens: grupo.subitens.map(itemDoDto),
-        incluiCandidato: grupo.incluiCandidato,
-      }),
-    ),
-    termos: dto.termos.map(
-      (termo): TermoDoFormulario => ({
-        codigo: termo.codigo,
-        ordem: termo.ordem,
-        termoId: termo.termoId,
-        versaoId: termo.versaoId,
-        exibicao: predicado(termo.exibicao),
-        obrigatoriedade: termo.obrigatoriedade.tipo,
-        predicadoObrigatoriedade: predicado(termo.obrigatoriedade.predicado),
-      }),
-    ),
+    grupos: dto.grupos.map(grupoDoDto),
+    termos: dto.termos.map(termoDoDto),
     pressupostos: [],
   };
 }
@@ -189,23 +196,27 @@ export function planoDeGravacao(
   servidor: FormularioParaGravar | null,
   desejado: FormularioParaGravar & { readonly faseId: string },
 ): readonly PassoDaGravacao[] {
+  const passos =
+    servidor === null
+      ? passosDaPrimeiraGravacao(desejado)
+      : passosDeAtualizacao(servidor, desejado);
   const termosMudaram = !mesmo(
     termosParaEnvio(desejado.conteudo),
     servidor === null ? { termos: [] } : termosParaEnvio(servidor.conteudo),
   );
-  const comTermos = (passos: readonly PassoDaGravacao[]): readonly PassoDaGravacao[] =>
-    termosMudaram ? [...passos, 'termos'] : passos;
+  return termosMudaram ? [...passos, 'termos'] : passos;
+}
 
-  if (servidor === null) {
-    const enviados = itensParaEnvio(desejado.conteudo);
-    return comTermos([
-      'cabecalho',
-      ...(enviados === null || enviados.itens.length + (enviados.grupos ?? []).length > 0
-        ? (['itens'] as const)
-        : []),
-    ]);
-  }
+function passosDaPrimeiraGravacao(desejado: FormularioParaGravar): readonly PassoDaGravacao[] {
+  const enviados = itensParaEnvio(desejado.conteudo);
+  const temItens = enviados === null || enviados.itens.length + (enviados.grupos ?? []).length > 0;
+  return temItens ? ['cabecalho', 'itens'] : ['cabecalho'];
+}
 
+function passosDeAtualizacao(
+  servidor: FormularioParaGravar,
+  desejado: FormularioParaGravar & { readonly faseId: string },
+): readonly PassoDaGravacao[] {
   const cabecalhoMudou = !mesmo(
     cabecalhoParaEnvio(desejado.faseId, desejado.conteudo),
     cabecalhoParaEnvio(servidor.faseId ?? '', servidor.conteudo),
@@ -217,16 +228,14 @@ export function planoDeGravacao(
   );
 
   if (etapasMudaram && itensMudaram) {
-    return comTermos(
-      soAcrescentouEtapas(servidor.conteudo, desejado.conteudo)
-        ? ['cabecalho', 'itens']
-        : ['itensSemSecao', 'cabecalho', 'itens'],
-    );
+    return soAcrescentouEtapas(servidor.conteudo, desejado.conteudo)
+      ? ['cabecalho', 'itens']
+      : ['itensSemSecao', 'cabecalho', 'itens'];
   }
-  return comTermos([
+  return [
     ...(cabecalhoMudou ? (['cabecalho'] as const) : []),
     ...(itensMudaram ? (['itens'] as const) : []),
-  ]);
+  ];
 }
 
 /** O formulário da finalidade, quando o processo o tem. */

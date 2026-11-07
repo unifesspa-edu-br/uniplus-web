@@ -1,11 +1,19 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
-import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
+import type {
+  EtapaPontuada,
+  FaseDoCronograma,
+  RecursoDaEtapa,
+  RecursoDaFase,
+} from '../../processo-seletivo.models';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
+
+type RegraDeRecursoDaFaseInput = NonNullable<FaseCronogramaInput['regraRecurso']>;
+type RecursoDaEtapaInput = NonNullable<EtapaProcessoInput['recursos']>[number];
 
 /**
  * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
@@ -47,26 +55,25 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
       tipoBancaId: banca.tipoBancaId,
       categoriasDocumentoIds: [...banca.categoriasDocumentoIds],
     })),
-    regraRecurso:
-      fase.regraRecurso === null
+    regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
+  };
+}
+
+function comoComandoDeRecursoDaFase(regra: RecursoDaFase): RegraDeRecursoDaFaseInput {
+  return {
+    regraCodigo: regra.regraCodigo,
+    regraVersao: regra.regraVersao,
+    prazoValor: decimalDoCampo(regra.prazoValor) ?? 0,
+    prazoUnidade: regra.prazoUnidade as RegraDeRecursoDaFaseInput['prazoUnidade'],
+    atoAncoraCodigo: regra.atoAncoraCodigo,
+    suspensividadePrimeiraInstanciaValor: decimalDoCampo(
+      regra.suspensividadePrimeiraInstanciaValor,
+    ),
+    suspensividadePrimeiraInstanciaUnidade:
+      regra.suspensividadePrimeiraInstanciaUnidade === ''
         ? null
-        : {
-            regraCodigo: fase.regraRecurso.regraCodigo,
-            regraVersao: fase.regraRecurso.regraVersao,
-            prazoValor: decimalDoCampo(fase.regraRecurso.prazoValor) ?? 0,
-            prazoUnidade: fase.regraRecurso.prazoUnidade as NonNullable<
-              FaseCronogramaInput['regraRecurso']
-            >['prazoUnidade'],
-            atoAncoraCodigo: fase.regraRecurso.atoAncoraCodigo,
-            suspensividadePrimeiraInstanciaValor: decimalDoCampo(
-              fase.regraRecurso.suspensividadePrimeiraInstanciaValor,
-            ),
-            suspensividadePrimeiraInstanciaUnidade:
-              fase.regraRecurso.suspensividadePrimeiraInstanciaUnidade === ''
-                ? null
-                : fase.regraRecurso.suspensividadePrimeiraInstanciaUnidade,
-            ...instanciaSuperiorParaComando(fase.regraRecurso),
-          },
+        : regra.suspensividadePrimeiraInstanciaUnidade,
+    ...instanciaSuperiorParaComando(regra),
   };
 }
 
@@ -83,7 +90,6 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
  * declarar que não conta para a nota.
  */
 export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
-  const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
   return {
     ...(etapa.id === null ? {} : { id: etapa.id }),
     nome: etapa.nome.trim(),
@@ -92,22 +98,7 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
     notaMaxima: decimalDoCampo(etapa.notaMaxima ?? ''),
-    // Regra e passo só existem na avaliação humana, e o servidor recusa os dois fora dela.
-    formaDeAvaliacao: textoOuNulo(etapa.formaDeAvaliacao),
-    regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
-    regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
-    passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,
-    // O id do item que a API devolveu volta com ele: é o que mantém o item o mesmo na retificação.
-    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
-      id: item.id,
-      rotulo: item.rotulo.trim(),
-      // A validação do passo recusa antes o que não é número.
-      pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? 0,
-    })),
-    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
-      rotulo: nivel.rotulo.trim(),
-      fracao: fracaoDoPercentual(nivel.percentual) ?? 0,
-    })),
+    ...comoComandoDaAvaliacaoDaEtapa(etapa),
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
     produtos: etapa.produtos.map((produto) => ({
@@ -126,27 +117,61 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
     // que ela ficou de fora é `problemasDasEtapas`, na prontidão do passo — sumir com o
     // trabalho do operador em silêncio era o defeito anterior.
-    recursos: etapa.recursos.filter(recursoResolvido).map((recurso) => ({
-      ancora: recurso.ancora as NonNullable<EtapaProcessoInput['recursos']>[number]['ancora'],
-      regraCodigo: recurso.regraCodigo,
-      regraVersao: recurso.regraVersao,
-      prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
-      prazoUnidade: recurso.prazoUnidade as NonNullable<
-        EtapaProcessoInput['recursos']
-      >[number]['prazoUnidade'],
-      atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
-      // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
-      // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a
-      // cada gravação do cronograma.
-      suspensividadePrimeiraInstanciaValor: decimalDoCampo(
-        recurso.suspensividadePrimeiraInstanciaValor,
-      ),
-      suspensividadePrimeiraInstanciaUnidade:
-        recurso.suspensividadePrimeiraInstanciaUnidade === ''
-          ? null
-          : recurso.suspensividadePrimeiraInstanciaUnidade,
-      ...instanciaSuperiorParaComando(recurso),
+    recursos: etapa.recursos.filter(recursoResolvido).map(comoComandoDeRecursoDaEtapa),
+  };
+}
+
+type AvaliacaoDaEtapaInput = Pick<
+  EtapaProcessoInput,
+  | 'formaDeAvaliacao'
+  | 'regraConsolidacaoCodigo'
+  | 'regraConsolidacaoVersao'
+  | 'passoDoLancamento'
+  | 'itensDeAvaliacao'
+  | 'escalaDeAtendimento'
+>;
+
+function comoComandoDaAvaliacaoDaEtapa(etapa: EtapaPontuada): AvaliacaoDaEtapaInput {
+  const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
+  return {
+    // Regra e passo só existem na avaliação humana, e o servidor recusa os dois fora dela.
+    formaDeAvaliacao: textoOuNulo(etapa.formaDeAvaliacao),
+    regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
+    regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
+    passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,
+    // O id do item que a API devolveu volta com ele: é o que mantém o item o mesmo na retificação.
+    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
+      id: item.id,
+      rotulo: item.rotulo.trim(),
+      // A validação do passo recusa antes o que não é número.
+      pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? 0,
     })),
+    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
+      rotulo: nivel.rotulo.trim(),
+      fracao: fracaoDoPercentual(nivel.percentual) ?? 0,
+    })),
+  };
+}
+
+function comoComandoDeRecursoDaEtapa(recurso: RecursoDaEtapa): RecursoDaEtapaInput {
+  return {
+    ancora: recurso.ancora as RecursoDaEtapaInput['ancora'],
+    regraCodigo: recurso.regraCodigo,
+    regraVersao: recurso.regraVersao,
+    prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
+    prazoUnidade: recurso.prazoUnidade as RecursoDaEtapaInput['prazoUnidade'],
+    atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
+    // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
+    // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a
+    // cada gravação do cronograma.
+    suspensividadePrimeiraInstanciaValor: decimalDoCampo(
+      recurso.suspensividadePrimeiraInstanciaValor,
+    ),
+    suspensividadePrimeiraInstanciaUnidade:
+      recurso.suspensividadePrimeiraInstanciaUnidade === ''
+        ? null
+        : recurso.suspensividadePrimeiraInstanciaUnidade,
+    ...instanciaSuperiorParaComando(recurso),
   };
 }
 

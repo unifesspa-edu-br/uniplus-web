@@ -146,10 +146,44 @@ export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
 
 export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
   return new FormGroup<EtapaForm>({
+    ...controlesDaIdentidadeDaEtapa(etapa),
+    ...controlesDaAvaliacaoDaEtapa(etapa),
+    ...controlesDoQueAEtapaDeclara(etapa),
+  });
+}
+
+function controlesDaIdentidadeDaEtapa(
+  etapa: EtapaPontuada,
+): Pick<EtapaForm, 'id' | 'nome' | 'tipoEtapaOrigemId' | 'tipoCongelado' | 'ordem' | 'faseCodigo'> {
+  return {
     id: controle<string | null>(etapa.id),
     nome: controle(etapa.nome),
-    carater: controle<CaraterEscolhido>(etapa.carater),
     tipoEtapaOrigemId: controle(etapa.tipoEtapaOrigemId),
+    tipoCongelado: controle<TipoCongeladoDaEtapa | null>(etapa.tipoCongelado ?? null),
+    ordem: controle(etapa.ordem),
+    // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
+    // "não declara fase", e undefined num FormControl quebraria a comparação.
+    faseCodigo: controle(etapa.faseCodigo ?? ''),
+  };
+}
+
+function controlesDaAvaliacaoDaEtapa(
+  etapa: EtapaPontuada,
+): Pick<
+  EtapaForm,
+  | 'carater'
+  | 'peso'
+  | 'notaMinima'
+  | 'notaMaxima'
+  | 'passoDoLancamento'
+  | 'formaDeAvaliacao'
+  | 'regraConsolidacaoCodigo'
+  | 'regraConsolidacaoVersao'
+  | 'itensDeAvaliacao'
+  | 'escalaDeAtendimento'
+> {
+  return {
+    carater: controle<CaraterEscolhido>(etapa.carater),
     peso: controle(etapa.peso),
     notaMinima: controle(etapa.notaMinima),
     notaMaxima: controle(etapa.notaMaxima ?? ''),
@@ -161,18 +195,24 @@ export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
     escalaDeAtendimento: controle<readonly NivelDeAtendimentoDaEtapa[]>(
       etapa.escalaDeAtendimento ?? [],
     ),
-    ordem: controle(etapa.ordem),
-    // Etapa vinda de rascunho anterior ao vínculo não traz o campo: '' é o estado
-    // "não declara fase", e undefined num FormControl quebraria a comparação.
-    faseCodigo: controle(etapa.faseCodigo ?? ''),
+  };
+}
+
+/** O que a etapa publica, quando acontece, quem a julga e como se recorre dela. */
+function controlesDoQueAEtapaDeclara(
+  etapa: EtapaPontuada,
+): Pick<
+  EtapaForm,
+  'produtos' | 'inicio' | 'fim' | 'emiteParecerIndividual' | 'bancas' | 'recursos'
+> {
+  return {
     produtos: controle<readonly ProdutoDaFase[]>(etapa.produtos ?? []),
     inicio: controle(etapa.inicio ?? ''),
     fim: controle(etapa.fim ?? ''),
     emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
     bancas: controle<readonly string[]>(etapa.bancas ?? []),
     recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
-    tipoCongelado: controle<TipoCongeladoDaEtapa | null>(etapa.tipoCongelado ?? null),
-  });
+  };
 }
 
 /** A fase como o rascunho a guarda: a hora de parede vira o instante do certame. */

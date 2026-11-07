@@ -417,7 +417,12 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
       ]),
     );
 
-    const raizes = arvoreDeExigencias(lido, FASES, ['AC'], ETAPAS_VIVAS, FINALIDADES_POR_FASE);
+    const raizes = arvoreDeExigencias(lido, {
+      faseIdPorCodigo: FASES,
+      modalidadesOfertadas: ['AC'],
+      etapasVivas: ETAPAS_VIVAS,
+      finalidadesPorFase: FINALIDADES_POR_FASE,
+    });
 
     expect(raizes[0].documento).toMatchObject({
       exigidoNaFaseId: ID_HABILITACAO,
@@ -442,7 +447,12 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
     };
     const lido = exigenciasDe(detalhe([folhaDto({ modelo })]));
 
-    const raizes = arvoreDeExigencias(lido, FASES, ['AC'], ETAPAS_VIVAS, FINALIDADES_POR_FASE);
+    const raizes = arvoreDeExigencias(lido, {
+      faseIdPorCodigo: FASES,
+      modalidadesOfertadas: ['AC'],
+      etapasVivas: ETAPAS_VIVAS,
+      finalidadesPorFase: FINALIDADES_POR_FASE,
+    });
 
     expect(raizes[0].documento?.modeloId).toBe(modelo.modeloId);
   });

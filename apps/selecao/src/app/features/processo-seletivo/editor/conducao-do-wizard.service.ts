@@ -99,17 +99,7 @@ export class ConducaoDoWizard {
     }
 
     const validator = this.passoNo(this.store.passoAtual());
-    const result = validator?.validar();
-
-    if (result && !result.valid) {
-      this.store.definirErroDoPasso(mensagensDe(result));
-      this.revelarErro();
-      return;
-    }
-
-    // O passo acabou de passar na conferência: o resumo que ainda estiver na tela descreve erros
-    // que já não existem. Uma recusa da gravação volta a preenchê-lo.
-    this.store.definirErroDoPasso(null);
+    if (!this.passoConferido(validator)) return;
 
     // A confirmação vem antes de qualquer requisição, quando o operador ainda pode desistir:
     // depois de gravado, o cadastro inicial não volta atrás pelo contrato desta tela.
@@ -120,6 +110,20 @@ export class ConducaoDoWizard {
     }
 
     await this.gravarEAvancar(validator);
+  }
+
+  /** Confere o passo em tela; recusado, mostra as pendências e traz o aviso para a vista. */
+  private passoConferido(validator: PassoDoWizard | undefined): boolean {
+    const result = validator?.validar();
+    if (result && !result.valid) {
+      this.store.definirErroDoPasso(mensagensDe(result));
+      this.revelarErro();
+      return false;
+    }
+    // O passo acabou de passar na conferência: o resumo que ainda estiver na tela descreve erros
+    // que já não existem. Uma recusa da gravação volta a preenchê-lo.
+    this.store.definirErroDoPasso(null);
+    return true;
   }
 
   /**
@@ -215,14 +219,9 @@ export class ConducaoDoWizard {
     const desempate = this.passos()[indice];
     if (desempate?.gravarAposAClassificacao === undefined) return null;
 
-    if (this.store.classificacao.motivoDaReleitura() !== null) {
-      const geracao = this.store.geracao();
-      await this.releitura.reler();
-      if (geracao !== this.store.geracao()) return { indice, mensagens: [] };
-    }
-    const gravada = this.store.classificacao.gravada().estado;
+    if (await this.relidaPorOutraTroca()) return { indice, mensagens: [] };
     // Ainda sem a classificação gravada com quadro: é o passo dela que vem antes.
-    if (gravada === 'nunca-gravada' || gravada === 'sem-quadro') return null;
+    if (this.classificacaoSemQuadroGravado()) return null;
     if (this.store.classificacao.copiaCongeladaEmVigor() === null) {
       return { indice, mensagens: [COPIA_NAO_CONFIRMADA] };
     }
@@ -230,6 +229,19 @@ export class ConducaoDoWizard {
     const commit = await desempate.gravarAposAClassificacao().catch(falhaAoConcluir);
     if (commit.valid) return null;
     return { indice, mensagens: commit.messages?.length === 0 ? [] : mensagensDe(commit) };
+  }
+
+  private classificacaoSemQuadroGravado(): boolean {
+    const { estado } = this.store.classificacao.gravada();
+    return estado === 'nunca-gravada' || estado === 'sem-quadro';
+  }
+
+  /** Relê o processo quando a classificação pede; `true` se a tela passou a outro processo durante a leitura. */
+  private async relidaPorOutraTroca(): Promise<boolean> {
+    if (this.store.classificacao.motivoDaReleitura() === null) return false;
+    const geracao = this.store.geracao();
+    await this.releitura.reler();
+    return geracao !== this.store.geracao();
   }
 
   /**

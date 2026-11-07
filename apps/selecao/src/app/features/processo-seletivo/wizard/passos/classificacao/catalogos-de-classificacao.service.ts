@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
-import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { ObservedValueOf, Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
+import { ApiResult, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import {
   AreaPesoAreaEnemDto,
@@ -20,6 +20,26 @@ const TIPO_REGRA_BONUS = 'regra_bonus';
 const TIPO_CRITERIO_DESEMPATE = 'criterio_desempate';
 
 const COMPARADOR_DE_RESOLUCAO = new Intl.Collator('pt-BR', { numeric: true, sensitivity: 'base' });
+
+function lerCatalogos(
+  lerRegras: (tipo: string) => ReturnType<typeof coletarPaginas<RegraCatalogoDto>>,
+) {
+  return forkJoin({
+    calculo: lerRegras(TIPO_REGRA_CALCULO),
+    arredondamento: lerRegras(TIPO_REGRA_ARREDONDAMENTO),
+    ordemAlocacao: lerRegras(TIPO_REGRA_ORDEM_ALOCACAO),
+    eliminacao: lerRegras(TIPO_REGRA_ELIMINACAO),
+    bonus: lerRegras(TIPO_REGRA_BONUS),
+    desempate: lerRegras(TIPO_CRITERIO_DESEMPATE),
+  });
+}
+
+interface LeituraDosPesos {
+  readonly linhas: ApiResult<readonly PesoAreaEnemDto[]>;
+  readonly areas: ApiResult<readonly AreaPesoAreaEnemDto[]> | null;
+}
+
+type CatalogosLidos = ObservedValueOf<ReturnType<typeof lerCatalogos>>;
 
 /**
  * Catálogos que os passos de Fórmula, Eliminação, Bônus e Desempate
@@ -113,54 +133,42 @@ export class CatalogosDeClassificacao {
     this.carregando.set(true);
     this.erro.set(null);
 
-    forkJoin({
-      calculo: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_CALCULO, cursor }),
-      ),
-      arredondamento: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ARREDONDAMENTO, cursor }),
-      ),
-      ordemAlocacao: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ORDEM_ALOCACAO, cursor }),
-      ),
-      eliminacao: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_ELIMINACAO, cursor }),
-      ),
-      bonus: coletarPaginas((cursor) => this.regrasApi.listar({ tipo: TIPO_REGRA_BONUS, cursor })),
-      desempate: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_CRITERIO_DESEMPATE, cursor }),
-      ),
-    })
+    lerCatalogos((tipo) => this.lerRegras(tipo))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (resultados) => {
-          const { calculo, arredondamento, ordemAlocacao, eliminacao, bonus, desempate } =
-            resultados;
-
-          // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
-          // o operador não teria como saber. Ou vêm todos, ou nenhum.
-          if (
-            !isApiOk(calculo) ||
-            !isApiOk(arredondamento) ||
-            !isApiOk(ordemAlocacao) ||
-            !isApiOk(eliminacao) ||
-            !isApiOk(bonus) ||
-            !isApiOk(desempate)
-          ) {
-            this.anunciarErro();
-            return;
-          }
-
-          this.regrasCalculo.set(calculo.data);
-          this.regrasArredondamento.set(arredondamento.data);
-          this.regrasOrdemAlocacao.set(ordemAlocacao.data);
-          this.regrasEliminacao.set(eliminacao.data);
-          this.regrasBonus.set(bonus.data);
-          this.criteriosDesempate.set(desempate.data);
-          this.carregando.set(false);
-        },
+        next: (resultados) => this.guardarCatalogos(resultados),
         error: () => this.anunciarErro(),
       });
+  }
+
+  private lerRegras(tipo: string) {
+    return coletarPaginas((cursor) => this.regrasApi.listar({ tipo, cursor }));
+  }
+
+  private guardarCatalogos(resultados: CatalogosLidos): void {
+    const { calculo, arredondamento, ordemAlocacao, eliminacao, bonus, desempate } = resultados;
+
+    // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
+    // o operador não teria como saber. Ou vêm todos, ou nenhum.
+    if (
+      !isApiOk(calculo) ||
+      !isApiOk(arredondamento) ||
+      !isApiOk(ordemAlocacao) ||
+      !isApiOk(eliminacao) ||
+      !isApiOk(bonus) ||
+      !isApiOk(desempate)
+    ) {
+      this.anunciarErro();
+      return;
+    }
+
+    this.regrasCalculo.set(calculo.data);
+    this.regrasArredondamento.set(arredondamento.data);
+    this.regrasOrdemAlocacao.set(ordemAlocacao.data);
+    this.regrasEliminacao.set(eliminacao.data);
+    this.regrasBonus.set(bonus.data);
+    this.criteriosDesempate.set(desempate.data);
+    this.carregando.set(false);
   }
 
   /** Lê o cadastro para a `marca` informada, se nenhuma leitura dela, ou posterior, já foi pedida. */
@@ -244,26 +252,35 @@ export class CatalogosDeClassificacao {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: ({ linhas, areas }) => {
-          // A lista das áreas vale por si: a falha das linhas não a descarta.
-          if (areas !== null && isApiOk(areas)) this.guardarAreas(areas.data);
-          if (!isApiOk(linhas)) {
-            this.anunciarFalhaDosPesos();
-            return;
-          }
-          this.pesosAreaEnem.set(linhas.data);
-          this.pesosLidosNaMarca.set(marca);
-          this.pesosLidosNaLeitura.set(numero);
-          this.pesosFalhou.set(false);
-          this.pesosCarregando.set(false);
-          leuAsLinhas = true;
-          const pendentes = this.aoLerPendentes.splice(0);
-          pendentes.forEach((depoisDeLer) => depoisDeLer());
+        next: (leitura) => {
+          leuAsLinhas = this.guardarPesosLidos(leitura, marca, numero);
         },
         // O erro que escapa do envelope `ApiResult` também encerra a leitura; sem isto o seletor
         // ficaria desabilitado para sempre.
         error: () => this.anunciarFalhaDosPesos(),
       });
+  }
+
+  /** Guarda o que a leitura trouxe e diz se as linhas do cadastro vieram. */
+  private guardarPesosLidos(
+    { linhas, areas }: LeituraDosPesos,
+    marca: number,
+    numero: number,
+  ): boolean {
+    // A lista das áreas vale por si: a falha das linhas não a descarta.
+    if (areas !== null && isApiOk(areas)) this.guardarAreas(areas.data);
+    if (!isApiOk(linhas)) {
+      this.anunciarFalhaDosPesos();
+      return false;
+    }
+    this.pesosAreaEnem.set(linhas.data);
+    this.pesosLidosNaMarca.set(marca);
+    this.pesosLidosNaLeitura.set(numero);
+    this.pesosFalhou.set(false);
+    this.pesosCarregando.set(false);
+    const pendentes = this.aoLerPendentes.splice(0);
+    pendentes.forEach((depoisDeLer) => depoisDeLer());
+    return true;
   }
 
   private guardarAreas(areas: readonly AreaPesoAreaEnemDto[]): void {

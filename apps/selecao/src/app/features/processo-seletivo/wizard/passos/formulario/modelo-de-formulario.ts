@@ -89,22 +89,45 @@ export function comAplicacaoDoServidor(
   const aplicado = formularioDoServidorNaFinalidade(servidor, relato.finalidade);
   if (aplicado === null) return rascunho;
 
-  let formulario = comFormulario(rascunho, {
+  const comAplicado = comFormulario(rascunho, {
     ...aplicado,
     faseCodigo: aplicado.faseCodigo === '' ? faseDaAba : aplicado.faseCodigo,
   });
+  const comOutrosFormularios = comFormulariosQueCederamFatos(
+    comAplicado,
+    rascunho,
+    servidor,
+    relato,
+  );
+  return comDerivacoesCopiadas(comOutrosFormularios, servidor, relato);
+}
 
+function comFormulariosQueCederamFatos(
+  formulario: FormularioDeInscricao,
+  rascunho: FormularioDeInscricao,
+  servidor: ProcessoAposAplicacao,
+  relato: AplicacaoDeModeloDto,
+): FormularioDeInscricao {
   const trazidos = new Set(relato.fatosTrazidosParaAInscricao);
-  for (const outro of formulariosDoRascunho(rascunho)) {
-    if (
-      outro.finalidade === relato.finalidade ||
-      !fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato))
-    )
-      continue;
-    const doServidor = formularioDoServidorNaFinalidade(servidor, outro.finalidade);
-    if (doServidor !== null) formulario = comFormulario(formulario, doServidor);
-  }
+  const cederam = formulariosDoRascunho(rascunho).filter(
+    (outro) =>
+      outro.finalidade !== relato.finalidade &&
+      fatosColetadosPor(outro.conteudo).some((fato) => trazidos.has(fato)),
+  );
 
+  let resultado = formulario;
+  for (const outro of cederam) {
+    const doServidor = formularioDoServidorNaFinalidade(servidor, outro.finalidade);
+    if (doServidor !== null) resultado = comFormulario(resultado, doServidor);
+  }
+  return resultado;
+}
+
+function comDerivacoesCopiadas(
+  formulario: FormularioDeInscricao,
+  servidor: ProcessoAposAplicacao,
+  relato: AplicacaoDeModeloDto,
+): FormularioDeInscricao {
   const copiadas = new Set(relato.derivacoesCopiadas);
   if (copiadas.size === 0) return formulario;
   return {
@@ -134,12 +157,23 @@ export function resumoDaAplicacao(
   nomeDoFato: (codigo: string) => string,
 ): readonly string[] {
   const nomes = (codigos: readonly string[]): string => codigos.map(nomeDoFato).join(', ');
-  const frases = [`O formulário passou a ser a cópia do modelo ${modelo}.`];
-  if (acrescentados.length > 0) {
-    frases.push(
-      `Acrescentados porque o processo os pressupõe (exigências documentais, derivação ou desempate): ${nomes(acrescentados)}. Grave o passo para levá-los ao processo.`,
-    );
-  }
+  return [
+    `O formulário passou a ser a cópia do modelo ${modelo}.`,
+    ...(acrescentados.length === 0
+      ? []
+      : [
+          `Acrescentados porque o processo os pressupõe (exigências documentais, derivação ou desempate): ${nomes(acrescentados)}. Grave o passo para levá-los ao processo.`,
+        ]),
+    ...frasesDosFatosDaInscricao(relato, nomes),
+    ...frasesDoCatalogo(relato, nomes, nomeDoFato),
+  ];
+}
+
+function frasesDosFatosDaInscricao(
+  relato: AplicacaoDeModeloDto,
+  nomes: (codigos: readonly string[]) => string,
+): readonly string[] {
+  const frases: string[] = [];
   if (relato.fatosTrazidosParaAInscricao.length > 0) {
     frases.push(
       `Trazidos de outro formulário para a inscrição: ${nomes(relato.fatosTrazidosParaAInscricao)}.`,
@@ -150,6 +184,15 @@ export function resumoDaAplicacao(
       `Mantidos no formulário de inscrição, que já os coleta, e fora desta cópia: ${nomes(relato.fatosMantidosNaInscricao)}. As condições deste formulário podem citá-los.`,
     );
   }
+  return frases;
+}
+
+function frasesDoCatalogo(
+  relato: AplicacaoDeModeloDto,
+  nomes: (codigos: readonly string[]) => string,
+  nomeDoFato: (codigo: string) => string,
+): readonly string[] {
+  const frases: string[] = [];
   if (relato.descartados.length > 0) {
     const partes = relato.descartados.map(
       (parte) =>

@@ -11,8 +11,6 @@ import {
 import { problemasDoCronograma } from './cronograma-do-certame';
 import { etapaComOQueDeclara } from './regras-da-etapa';
 import {
-  SEM_CATALOGO,
-  nomeDaBanca,
   tipoDoEnem,
   problemasDe,
   faseCanonica,
@@ -23,6 +21,7 @@ import {
   catalogoDeFases,
   etapaValida,
   faseDeAvaliacao,
+  catalogosDeTeste,
 } from './cronograma-do-certame.testing';
 
 describe('problemas das etapas', () => {
@@ -65,21 +64,19 @@ describe('problemas das etapas', () => {
       peso: '1',
     });
 
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [classificatoria],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      () => ({
-        nome: 'Análise Documental',
-        admitePontuacao: false,
-        admiteEliminacao: true,
-        notaDeOrigemNoEnem: false,
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [classificatoria],
+      exigencias: [],
+      catalogos: catalogosDeTeste({
+        tipoDaEtapa: () => ({
+          nome: 'Análise Documental',
+          admitePontuacao: false,
+          admiteEliminacao: true,
+          notaDeOrigemNoEnem: false,
+        }),
       }),
-      [],
-    );
+    });
 
     expect(problemas).toContainEqual(expect.stringContaining('não compõe a nota final'));
     expect(problemas).toContainEqual(expect.stringContaining('Análise documental'));
@@ -94,16 +91,12 @@ describe('problemas das etapas', () => {
       peso: '1',
     });
 
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [classificatoria],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      () => undefined,
-      [],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [classificatoria],
+      exigencias: [],
+      catalogos: catalogosDeTeste({ tipoDaEtapa: () => undefined }),
+    });
 
     expect(problemas).not.toContainEqual(expect.stringContaining('não compõe a nota final'));
   });
@@ -332,16 +325,15 @@ describe('etapa de nota do ENEM', () => {
   const faseDaEtapaDoEnem = fase({ faseCanonicaId: 'fase-1', codigo: 'AVALIACAO' });
 
   function problemasDaEnem(parcial: Partial<EtapaPontuada>): readonly string[] {
-    return problemasDoCronograma(
-      [faseDaEtapaDoEnem],
-      [etapa({ nome: 'Nota do ENEM', ...parcial })],
-      new Map([['fase-1', faseCanonica({ id: 'fase-1', codigo: 'AVALIACAO' })]]),
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoDoEnem,
-      [],
-    ).filter((problema) => problema.includes('nota do ENEM'));
+    return problemasDoCronograma({
+      fases: [faseDaEtapaDoEnem],
+      etapas: [etapa({ nome: 'Nota do ENEM', ...parcial })],
+      exigencias: [],
+      catalogos: catalogosDeTeste({
+        fasePorId: new Map([['fase-1', faseCanonica({ id: 'fase-1', codigo: 'AVALIACAO' })]]),
+        tipoDaEtapa: tipoDoEnem,
+      }),
+    }).filter((problema) => problema.includes('nota do ENEM'));
   }
 
   it('classificatória com peso não tem pendência', () => {

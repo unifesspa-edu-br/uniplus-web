@@ -62,16 +62,20 @@ export class ConferenciaDoCronograma {
   /** O que impede a gravação, como a validação do passo o relata. */
   readonly problemas = computed(() => {
     this.cronograma.versao();
-    return problemasDoCronograma(
-      this.cronograma.fases.controls.map(faseDoFormulario),
-      this.cronograma.etapasParaEnvio(),
-      this.catalogoDeFases.fasePorId(),
-      this.catalogoDeFases.precedencias(),
-      this.catalogoDeAtos.atoPorCodigo(),
-      (tipoBancaId) => this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
-      (tipoEtapaOrigemId) => this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(tipoEtapaOrigemId),
-      this.exigenciasDeclaradas(),
-    );
+    return problemasDoCronograma({
+      fases: this.cronograma.fases.controls.map(faseDoFormulario),
+      etapas: this.cronograma.etapasParaEnvio(),
+      exigencias: this.exigenciasDeclaradas(),
+      catalogos: {
+        fasePorId: this.catalogoDeFases.fasePorId(),
+        precedencias: this.catalogoDeFases.precedencias(),
+        atoPorCodigo: this.catalogoDeAtos.atoPorCodigo(),
+        nomeDaBanca: (tipoBancaId) =>
+          this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
+        tipoDaEtapa: (tipoEtapaOrigemId) =>
+          this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(tipoEtapaOrigemId),
+      },
+    });
   });
 
   /**

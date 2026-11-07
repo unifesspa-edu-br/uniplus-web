@@ -38,51 +38,51 @@ export interface ExigenciaDeclarada {
  * `faseFixada` e o `validar()` dela nunca é invocado pela página.
  */
 function problemasDeAncoragem(exigencias: readonly ExigenciaDeclarada[]): readonly string[] {
-  const problemas: string[] = [];
+  return [
+    ...problemaDosDocumentos(
+      exigencias.filter((e) => !e.faseViva),
+      (nomes) =>
+        `Há documento exigido numa fase que saiu do cronograma: ${nomes}. Declare-o em outra fase, ou remova a exigência.`,
+    ),
+    ...problemasDasExigenciasNaFase(exigencias.filter((e) => e.faseViva)),
+  ];
+}
 
-  const orfas = exigencias.filter((e) => !e.faseViva).map((e) => e.nome);
-  if (orfas.length > 0) {
-    problemas.push(
-      `Há documento exigido numa fase que saiu do cronograma: ${[...new Set(orfas)].join(', ')}. Declare-o em outra fase, ou remova a exigência.`,
-    );
-  }
+/** O que impede gravar a exigência cuja fase ainda está no cronograma. */
+function problemasDasExigenciasNaFase(vivas: readonly ExigenciaDeclarada[]): readonly string[] {
+  return [
+    ...(vivas.some((e) => !e.alcancaModalidade)
+      ? ['Todo documento exigido precisa valer para ao menos uma modalidade aceita.']
+      : []),
+    ...vivas
+      .filter((e) => e.problemasDeGatilho.length > 0)
+      .map(
+        (e) =>
+          `A condição de "${e.nome}" ainda não está completa: ${e.problemasDeGatilho.join('; ')}.`,
+      ),
+    ...problemaDosDocumentos(
+      vivas.filter((e) => e.semFormulario),
+      (nomes) =>
+        `Há documento exigido sem o formulário em que o candidato o apresenta: ${nomes}. Na fase dele, escolha o formulário.`,
+    ),
+    ...vivas.flatMap((e) =>
+      e.problemasDeFase.map((problema) => `Na condição de "${e.nome}": ${problema}`),
+    ),
+    ...problemaDosDocumentos(
+      vivas.filter((e) => e.reenvioSemComplementacao),
+      (nomes) =>
+        `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${nomes} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
+    ),
+  ];
+}
 
-  if (exigencias.some((e) => e.faseViva && !e.alcancaModalidade)) {
-    problemas.push('Todo documento exigido precisa valer para ao menos uma modalidade aceita.');
-  }
-
-  const comGatilhoIncompleto = exigencias.filter(
-    (e) => e.faseViva && e.problemasDeGatilho.length > 0,
-  );
-  for (const exigencia of comGatilhoIncompleto) {
-    problemas.push(
-      `A condição de "${exigencia.nome}" ainda não está completa: ${exigencia.problemasDeGatilho.join('; ')}.`,
-    );
-  }
-
-  const semFormulario = exigencias.filter((e) => e.faseViva && e.semFormulario).map((e) => e.nome);
-  if (semFormulario.length > 0) {
-    problemas.push(
-      `Há documento exigido sem o formulário em que o candidato o apresenta: ${[...new Set(semFormulario)].join(', ')}. Na fase dele, escolha o formulário.`,
-    );
-  }
-
-  for (const exigencia of exigencias.filter((e) => e.faseViva)) {
-    for (const problema of exigencia.problemasDeFase) {
-      problemas.push(`Na condição de "${exigencia.nome}": ${problema}`);
-    }
-  }
-
-  const semComplementacao = exigencias
-    .filter((e) => e.faseViva && e.reenvioSemComplementacao)
-    .map((e) => e.nome);
-  if (semComplementacao.length > 0) {
-    problemas.push(
-      `A consequência "abre pendência para reenvio" só vale em fase que admite complementação, e ${[...new Set(semComplementacao)].join(', ')} está em fase que não admite. Escolha outra consequência, ou declare o documento em outra fase.`,
-    );
-  }
-
-  return problemas;
+/** Um problema só para o conjunto de exigências afetadas, nomeando cada documento uma vez. */
+function problemaDosDocumentos(
+  afetadas: readonly ExigenciaDeclarada[],
+  mensagem: (nomes: string) => string,
+): readonly string[] {
+  if (afetadas.length === 0) return [];
+  return [mensagem([...new Set(afetadas.map((e) => e.nome))].join(', '))];
 }
 
 /**

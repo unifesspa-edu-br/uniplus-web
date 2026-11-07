@@ -136,29 +136,11 @@ function saidaPorOutroLugar(
   nomes: NomesDaOrientacao,
 ): readonly string[] {
   const emOrdem = [...producao.fases].sort((uma, outra) => uma.ordem - outra.ordem);
-  const aceitas = emOrdem
-    .map((fase) => {
-      const lugares = lugaresDaFase(fase);
-      const aceitos = lugares.filter(
-        (lugar) => recusaDeFaseDoGatilho(fato, lugar, producao) === null,
-      );
-      return { fase, aceitos, inteira: aceitos.length === lugares.length };
-    })
-    .filter(({ aceitos }) => aceitos.length > 0);
+  const aceitas = fasesQueAceitam(fato, emOrdem, producao);
   const [primeira] = aceitas;
   if (primeira === undefined) return [];
 
-  if (aceitas.some(({ inteira }) => !inteira)) {
-    const destinos = aceitas.flatMap(({ fase, aceitos, inteira }) =>
-      inteira
-        ? [`na fase ${nomes.fase(fase.codigo)}`]
-        : aceitos.map(
-            (lugar) =>
-              `no formulário de ${nomeDaFinalidade(lugar.finalidade ?? '')}, na fase ${nomes.fase(fase.codigo)}`,
-          ),
-    );
-    return [`exija o documento ${destinos.join(' ou ')}`];
-  }
+  if (aceitas.some(({ inteira }) => !inteira)) return [saidaPorFormulario(aceitas, nomes)];
   if (aceitas.length === 1)
     return [`exija o documento na fase ${nomes.fase(primeira.fase.codigo)}`];
 
@@ -168,6 +150,42 @@ function saidaPorOutroLugar(
     : [
         `exija o documento numa destas fases: ${aceitas.map(({ fase }) => nomes.fase(fase.codigo)).join(', ')}`,
       ];
+}
+
+/** Uma fase que aceita o fato em algum lugar, e se aceita em todos os formulários que responde. */
+interface FaseQueAceita {
+  readonly fase: FaseNoCronograma;
+  readonly aceitos: readonly LugarDaExigencia[];
+  readonly inteira: boolean;
+}
+
+function fasesQueAceitam(
+  fato: string,
+  fasesEmOrdem: readonly FaseNoCronograma[],
+  producao: ProducaoDosFatos,
+): readonly FaseQueAceita[] {
+  return fasesEmOrdem
+    .map((fase) => {
+      const lugares = lugaresDaFase(fase);
+      const aceitos = lugares.filter(
+        (lugar) => recusaDeFaseDoGatilho(fato, lugar, producao) === null,
+      );
+      return { fase, aceitos, inteira: aceitos.length === lugares.length };
+    })
+    .filter(({ aceitos }) => aceitos.length > 0);
+}
+
+/** Quando só alguns formulários da fase aceitam, a saída diz o formulário e a fase de cada um. */
+function saidaPorFormulario(aceitas: readonly FaseQueAceita[], nomes: NomesDaOrientacao): string {
+  const destinos = aceitas.flatMap(({ fase, aceitos, inteira }) =>
+    inteira
+      ? [`na fase ${nomes.fase(fase.codigo)}`]
+      : aceitos.map(
+          (lugar) =>
+            `no formulário de ${nomeDaFinalidade(lugar.finalidade ?? '')}, na fase ${nomes.fase(fase.codigo)}`,
+        ),
+  );
+  return `exija o documento ${destinos.join(' ou ')}`;
 }
 
 /** Os lugares de uma fase: um por formulário que ela responde, ou a fase só, quando não responde nenhum. */

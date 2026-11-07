@@ -41,5 +41,10 @@ export function comando(
   rascunhoDado: ExigenciasDoRascunho,
   modalidades: readonly string[] = ['AC'],
 ) {
-  return arvoreDeExigencias(rascunhoDado, FASES, modalidades, ETAPAS_VIVAS, FINALIDADES_POR_FASE);
+  return arvoreDeExigencias(rascunhoDado, {
+    faseIdPorCodigo: FASES,
+    modalidadesOfertadas: modalidades,
+    etapasVivas: ETAPAS_VIVAS,
+    finalidadesPorFase: FINALIDADES_POR_FASE,
+  });
 }

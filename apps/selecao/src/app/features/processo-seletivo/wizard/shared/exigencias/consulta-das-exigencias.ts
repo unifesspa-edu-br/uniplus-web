@@ -82,39 +82,64 @@ export function exigenciasLocalizadas(
   exigencias: ExigenciasDoRascunho,
 ): readonly ExigenciaLocalizada[] {
   const achados: ExigenciaLocalizada[] = [];
-
-  const visitar = (
-    nos: readonly NoDeExigencia[],
-    grupo: GrupoDaExigencia | null,
-    herdada: string | null,
-  ): void => {
-    for (const no of nos) {
-      if (no.tipo === 'FOLHA') {
-        if (no.documento !== null) {
-          const repeticao =
-            herdada !== null
-              ? { grupo: herdada, herdada: true }
-              : no.repetePorEntidade === null
-                ? null
-                : { grupo: no.repetePorEntidade, herdada: false };
-          achados.push({ documento: no.documento, grupo, repeticao });
-        }
-        continue;
-      }
-
-      const filhos = no.filhos ?? [];
-      // Conta TODOS os filhos, não só as folhas: um grupo pode reunir outros grupos, e contar
-      // só as folhas diretas diria "uma das 1 alternativas" onde há duas.
-      visitar(
-        filhos,
-        { tipo: no.tipo, quantidadeMinima: no.quantidadeMinima, alternativas: filhos.length },
-        herdada ?? no.repetePorEntidade,
-      );
-    }
-  };
-
-  visitar(exigencias.raizes, null, null);
+  localizarExigencias(exigencias.raizes, { grupo: null, herdada: null }, achados);
   return achados;
+}
+
+/** Onde a descida da árvore está: o grupo que contém os nós e a repetição que ele impõe a eles. */
+interface PosicaoNaArvore {
+  readonly grupo: GrupoDaExigencia | null;
+  readonly herdada: string | null;
+}
+
+function localizarExigencias(
+  nos: readonly NoDeExigencia[],
+  posicao: PosicaoNaArvore,
+  achados: ExigenciaLocalizada[],
+): void {
+  for (const no of nos) {
+    if (no.tipo === 'FOLHA') {
+      if (no.documento !== null) {
+        achados.push({
+          documento: no.documento,
+          grupo: posicao.grupo,
+          repeticao: repeticaoDaFolha(no, posicao.herdada),
+        });
+      }
+      continue;
+    }
+
+    const filhos = no.filhos ?? [];
+    localizarExigencias(
+      filhos,
+      posicaoDentroDoGrupo({ ...no, tipo: no.tipo }, filhos.length, posicao),
+      achados,
+    );
+  }
+}
+
+function posicaoDentroDoGrupo(
+  grupo: Pick<NoDeExigencia, 'quantidadeMinima' | 'repetePorEntidade'> &
+    Pick<GrupoDaExigencia, 'tipo'>,
+  alternativas: number,
+  fora: PosicaoNaArvore,
+): PosicaoNaArvore {
+  return {
+    // Conta TODOS os filhos, não só as folhas: um grupo pode reunir outros grupos, e contar
+    // só as folhas diretas diria "uma das 1 alternativas" onde há duas.
+    grupo: { tipo: grupo.tipo, quantidadeMinima: grupo.quantidadeMinima, alternativas },
+    herdada: fora.herdada ?? grupo.repetePorEntidade,
+  };
+}
+
+function repeticaoDaFolha(
+  folha: NoDeExigencia,
+  herdada: string | null,
+): RepeticaoDaExigencia | null {
+  if (herdada !== null) return { grupo: herdada, herdada: true };
+  return folha.repetePorEntidade === null
+    ? null
+    : { grupo: folha.repetePorEntidade, herdada: false };
 }
 
 /**

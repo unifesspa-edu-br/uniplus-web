@@ -4,6 +4,7 @@ import {
   ProblemI18nService,
   STATUS_HTTP,
   abrirAcessoEmNovaAba,
+  type DesfechoDaAbertura,
   useApiResource,
 } from '@uniplus/shared-core/http';
 import {
@@ -208,26 +209,30 @@ export class DetalheDaInscricao {
         () => firstValueFrom(this.arquivosApi.obterAcesso(processo, inscricao, arquivoId)),
         aindaVale,
       );
-      switch (desfecho.situacao) {
-        case 'aberta':
-          return { situacao: 'aberto' };
-        case 'abandonada':
-          return { situacao: 'abandonado' };
-        case 'bloqueada':
-          return { situacao: 'recusado', mensagem: ABERTURA_BLOQUEADA };
-        case 'recusada':
-          return {
-            situacao: 'recusado',
-            mensagem:
-              desfecho.problem.status === STATUS_HTTP.NAO_ENCONTRADO
-                ? ARQUIVO_NAO_DISPONIVEL
-                : this.problemI18n.resolve(desfecho.problem).title,
-          };
-      }
+      return this.desfechoDoAcesso(desfecho);
     } catch {
       return aindaVale()
         ? { situacao: 'recusado', mensagem: FALHA_AO_ABRIR }
         : { situacao: 'abandonado' };
+    }
+  }
+
+  private desfechoDoAcesso(desfecho: DesfechoDaAbertura): DesfechoDoAcessoAoArquivo {
+    switch (desfecho.situacao) {
+      case 'aberta':
+        return { situacao: 'aberto' };
+      case 'abandonada':
+        return { situacao: 'abandonado' };
+      case 'bloqueada':
+        return { situacao: 'recusado', mensagem: ABERTURA_BLOQUEADA };
+      case 'recusada':
+        return {
+          situacao: 'recusado',
+          mensagem:
+            desfecho.problem.status === STATUS_HTTP.NAO_ENCONTRADO
+              ? ARQUIVO_NAO_DISPONIVEL
+              : this.problemI18n.resolve(desfecho.problem).title,
+        };
     }
   }
 }

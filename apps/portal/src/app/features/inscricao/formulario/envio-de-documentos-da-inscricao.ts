@@ -12,7 +12,7 @@ import {
   enviarAoStorage,
   isApiOk,
 } from '@uniplus/shared-core/http';
-import { InscricoesApi } from '@uniplus/shared-data/selecao';
+import { type ArquivoDaApresentacaoDto, InscricoesApi } from '@uniplus/shared-data/selecao';
 import {
   type AlvoDoEnvio,
   type ArquivoEnviado,
@@ -33,13 +33,24 @@ const INSCRICAO_ALTERADA = 'uniplus.selecao.documento_da_inscricao.inscricao_alt
 /** O PUT falhou sem resposta do armazenamento: rede fora do ar. */
 const SEM_RESPOSTA = 0;
 
+type DestinoDoArquivo = DestinoPreAssinado & { readonly arquivoId: string };
+
+/** Um envio em andamento: o que se quer enviar, para onde e como avisar o andamento. */
+interface EnvioEmCurso {
+  readonly alvo: AlvoDoEnvio;
+  readonly arquivo: File;
+  readonly tipoDeMidia: string;
+  readonly tentativa: Tentativa;
+  readonly aoAndar: Parameters<EnvioDeDocumentos['enviar']>[2];
+}
+
 /** Onde um arquivo parou: o que já se sabe dele para a nova tentativa recomeçar do ponto certo. */
 interface Tentativa {
   /** A exigência para a qual a tentativa nasceu: o mesmo arquivo para outra exigência recomeça. */
   readonly chaveDoAlvo: string;
   readonly chaveDaIniciacao: ChaveDeSubstituicao;
   readonly chaveDaConfirmacao: ChaveDeSubstituicao;
-  destino: (DestinoPreAssinado & { readonly arquivoId: string }) | null;
+  destino: DestinoDoArquivo | null;
   /** Os bytes já chegaram ao armazenamento: só a confirmação falta. */
   enviado: boolean;
   /** O ETag do PUT, que a confirmação devolve à API para fixar a versão que o verificador confere. */
@@ -67,6 +78,25 @@ export class EnvioDeDocumentosDaInscricao {
     const mensagem = this.problemas.resolve(problema);
     return mensagem.detail ?? mensagem.title;
   }
+}
+
+function arquivoConfirmado(
+  alvo: AlvoDoEnvio,
+  arquivo: File,
+  confirmacao: ArquivoDaApresentacaoDto,
+): ArquivoEnviado {
+  return {
+    arquivoId: confirmacao.arquivoId,
+    apresentacaoId: confirmacao.apresentacaoId,
+    chave: alvo.chave,
+    tipoDeMidia: confirmacao.tipoDeMidia,
+    // A API só informa o tamanho depois da verificação: vale o do arquivo escolhido.
+    tamanhoBytes: arquivo.size,
+    situacao: confirmacao.situacao,
+    mensagem: confirmacao.mensagem,
+    rotulo: confirmacao.rotulo,
+    confirmadoEm: confirmacao.confirmadoEm,
+  };
 }
 
 class EnvioNoProcesso implements EnvioDeDocumentos {
@@ -131,56 +161,84 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     if (tipoDeMidia === null) {
       return { ok: false, mensagem: FORMATO_NAO_ACEITO, podeTentarDeNovo: false };
     }
-    const tentativa = this.tentativaDe(arquivo, alvo);
-
-    if (!tentativa.enviado) {
-      let destino = tentativa.destino;
-      if (destino === null || destinoExpirado(destino)) {
-        aoAndar('iniciando', 0);
-        const pedido = {
-          exigenciaId: alvo.exigenciaId,
-          ocorrenciaId: alvo.ocorrenciaId,
-          apresentacaoId: null,
-          tipoDeMidia,
-          tamanhoBytes: arquivo.size,
-        };
-        const { resultado, inconclusiva } = await this.naFila(() =>
-          comChave(tentativa.chaveDaIniciacao, pedido, (contexto) =>
-            this.api.iniciarEnvioDeDocumento(this.processoId, pedido, contexto),
-          ),
-        );
-        if (!isApiOk(resultado)) {
-          return this.recusa(resultado.problem, inconclusiva);
-        }
-        destino = resultado.data;
-        tentativa.destino = destino;
-        // Iniciar já avança a revisão da inscrição, mesmo que o envio não chegue ao fim.
-        this.contagemDeMudancas.update((n) => n + 1);
-      }
-
-      aoAndar('enviando', 0);
-      const envio = await enviarAoStorage(this.upload, destino, arquivo, (progresso) =>
-        aoAndar('enviando', progresso),
-      );
-      if (!envio.ok) {
-        // A assinatura recusada não volta a valer: a nova tentativa pede outra URL.
-        if (envio.expirada) tentativa.destino = null;
-        return {
-          ok: false,
-          mensagem: envio.expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO,
-          // O armazenamento que recusa o conteúdo (400, 413) recusará de novo; falha de rede e de servidor passam.
-          podeTentarDeNovo:
-            envio.expirada || envio.status === SEM_RESPOSTA || envio.status >= STATUS_DE_SERVIDOR,
-        };
-      }
-      // Sem o ETag a API não tem como fixar a versão do objeto que o verificador confere.
-      if (envio.etag === null) {
-        return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
-      }
-      tentativa.enviado = true;
-      tentativa.etag = envio.etag;
+    const envio: EnvioEmCurso = {
+      alvo,
+      arquivo,
+      tipoDeMidia,
+      tentativa: this.tentativaDe(arquivo, alvo),
+      aoAndar,
+    };
+    if (!envio.tentativa.enviado) {
+      const recusa = await this.levarOsBytes(envio);
+      if (recusa !== null) return recusa;
     }
+    return this.confirmarOEnvio(envio);
+  }
 
+  /** Nulo quando os bytes chegaram ao armazenamento; senão, o desfecho que encerra o envio. */
+  private async levarOsBytes(envio: EnvioEmCurso): Promise<DesfechoDoEnvio | null> {
+    const { arquivo, tentativa, aoAndar } = envio;
+    const obtido = await this.destinoDoEnvio(envio);
+    if ('recusa' in obtido) return obtido.recusa;
+
+    aoAndar('enviando', 0);
+    const armazenado = await enviarAoStorage(this.upload, obtido.destino, arquivo, (progresso) =>
+      aoAndar('enviando', progresso),
+    );
+    if (!armazenado.ok) {
+      // A assinatura recusada não volta a valer: a nova tentativa pede outra URL.
+      if (armazenado.expirada) tentativa.destino = null;
+      return {
+        ok: false,
+        mensagem: armazenado.expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO,
+        // O armazenamento que recusa o conteúdo (400, 413) recusará de novo; falha de rede e de servidor passam.
+        podeTentarDeNovo:
+          armazenado.expirada ||
+          armazenado.status === SEM_RESPOSTA ||
+          armazenado.status >= STATUS_DE_SERVIDOR,
+      };
+    }
+    // Sem o ETag a API não tem como fixar a versão do objeto que o verificador confere.
+    if (armazenado.etag === null) {
+      return { ok: false, mensagem: FALHA_NO_ARMAZENAMENTO, podeTentarDeNovo: true };
+    }
+    tentativa.enviado = true;
+    tentativa.etag = armazenado.etag;
+    return null;
+  }
+
+  /** O destino já pedido à API, ou um novo quando não há ou venceu. */
+  private async destinoDoEnvio(
+    envio: EnvioEmCurso,
+  ): Promise<{ destino: DestinoDoArquivo } | { recusa: DesfechoDoEnvio }> {
+    const { alvo, arquivo, tipoDeMidia, tentativa, aoAndar } = envio;
+    if (tentativa.destino !== null && !destinoExpirado(tentativa.destino)) {
+      return { destino: tentativa.destino };
+    }
+    aoAndar('iniciando', 0);
+    const pedido = {
+      exigenciaId: alvo.exigenciaId,
+      ocorrenciaId: alvo.ocorrenciaId,
+      apresentacaoId: null,
+      tipoDeMidia,
+      tamanhoBytes: arquivo.size,
+    };
+    const { resultado, inconclusiva } = await this.naFila(() =>
+      comChave(tentativa.chaveDaIniciacao, pedido, (contexto) =>
+        this.api.iniciarEnvioDeDocumento(this.processoId, pedido, contexto),
+      ),
+    );
+    if (!isApiOk(resultado)) {
+      return { recusa: this.recusa(resultado.problem, inconclusiva) };
+    }
+    tentativa.destino = resultado.data;
+    // Iniciar já avança a revisão da inscrição, mesmo que o envio não chegue ao fim.
+    this.contagemDeMudancas.update((n) => n + 1);
+    return { destino: resultado.data };
+  }
+
+  private async confirmarOEnvio(envio: EnvioEmCurso): Promise<DesfechoDoEnvio> {
+    const { alvo, arquivo, tentativa, aoAndar } = envio;
     // A URL cumpriu o papel; a confirmação só precisa do id do arquivo e do ETag que o PUT devolveu.
     const arquivoId = tentativa.destino?.arquivoId;
     if (arquivoId === undefined) {
@@ -196,18 +254,7 @@ class EnvioNoProcesso implements EnvioDeDocumentos {
     if (!isApiOk(resultado)) return this.recusa(resultado.problem, inconclusiva);
 
     this.tentativas.delete(arquivo);
-    const confirmado: ArquivoEnviado = {
-      arquivoId: resultado.data.arquivoId,
-      apresentacaoId: resultado.data.apresentacaoId,
-      chave: alvo.chave,
-      tipoDeMidia: resultado.data.tipoDeMidia,
-      // A API só informa o tamanho depois da verificação: vale o do arquivo escolhido.
-      tamanhoBytes: arquivo.size,
-      situacao: resultado.data.situacao,
-      mensagem: resultado.data.mensagem,
-      rotulo: resultado.data.rotulo,
-      confirmadoEm: resultado.data.confirmadoEm,
-    };
+    const confirmado = arquivoConfirmado(alvo, arquivo, resultado.data);
     this.confirmados.update((lista) => [...lista, confirmado]);
     this.contagemDeMudancas.update((n) => n + 1);
     return { ok: true, arquivo: confirmado };

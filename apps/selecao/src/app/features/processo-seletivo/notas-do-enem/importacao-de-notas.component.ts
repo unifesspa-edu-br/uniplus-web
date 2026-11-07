@@ -14,7 +14,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk } from '@uniplus/shared-core/http';
-import { NotasDoEnemApi, type LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
+import {
+  NotasDoEnemApi,
+  type RetornoDoInep,
+  type LoteDeNotasDoEnemDto,
+} from '@uniplus/shared-data/selecao';
 import { AlertComponent, FileUploadComponent } from '@uniplus/shared-ui/components';
 
 import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
@@ -24,7 +28,11 @@ import { SeletorDeEdicaoComponent } from './seletor-de-edicao.component';
 import { acompanharLeiautes, leiauteDaChave } from './leiautes';
 import { LoteDeNotasComponent } from './lote-de-notas.component';
 import { OrigemDoLoteComponent } from './origem-do-lote.component';
-import { NotasDoEnemDoProcesso, mesmoEscopo } from './notas-do-enem-do-processo.service';
+import {
+  NotasDoEnemDoProcesso,
+  mesmoEscopo,
+  type EscopoEscolhido,
+} from './notas-do-enem-do-processo.service';
 import { explicarRecusa, falhaIncerta, type RecusaExplicada } from './recusas-do-enem';
 import { fraseDoLote, totaisDoLote } from './resultado-do-lote';
 import { SeletorDeLeiauteComponent } from './seletor-de-leiaute.component';
@@ -121,55 +129,64 @@ export class ImportacaoDeNotasComponent {
     this.resultado.set(null);
 
     const escolhido = this.notas.escolhidoDeRetorno();
+    if (escolhido === null) return;
+    const pedido = this.pedidoCompleto();
+    if (pedido === null) return;
+
+    this.importando.set(true);
+    try {
+      await this.importarLote(escolhido, pedido);
+    } finally {
+      this.importando.set(false);
+    }
+  }
+
+  /** O leiaute e o arquivo da escolha; faltando um, avisa o que falta e leva o foco a ele. */
+  private pedidoCompleto(): RetornoDoInep | null {
     const catalogo = this.notas.leiautesDeRetorno();
     const leiaute =
       catalogo.estado === 'lido' ? leiauteDaChave(catalogo.dados, this.leiaute.value) : null;
     const arquivo = this.arquivo();
-    if (escolhido === null) return;
     if (leiaute === null || arquivo === null) {
       this.recusarPedidoIncompleto(leiaute === null, arquivo === null);
-      return;
+      return null;
     }
     this.erroDoLeiaute.set(null);
     this.erroDoArquivo.set(null);
+    return { leiaute, arquivo };
+  }
 
+  private async importarLote(escolhido: EscopoEscolhido, retorno: RetornoDoInep): Promise<void> {
     const lotes = this.notas.lotes();
     const haviaLoteAnterior = lotes.estado === 'lido' && lotes.dados.length > 0;
-    this.importando.set(true);
-    try {
-      const resposta = await firstValueFrom(
-        this.api.importarNotas(
-          escolhido.processoId,
-          escolhido.etapaId,
-          escolhido.edicao,
-          arquivo,
-          leiaute,
-        ),
+    const resposta = await firstValueFrom(
+      this.api.importarNotas(escolhido.processoId, escolhido.etapaId, escolhido.edicao, retorno),
+    );
+    // O arquivo sai da tela quando a importação dá certo; na recusa ele fica, para o operador
+    // trocar só o leiaute e reenviar.
+    if (isApiOk(resposta)) this.arquivo.set(null);
+    if (!mesmoEscopo(this.notas.escolhidoDeRetorno(), escolhido)) return;
+    if (isApiOk(resposta)) {
+      this.mostrarResultado({
+        lote: resposta.data,
+        criado: resposta.status === 201,
+        haviaLoteAnterior,
+      });
+    } else {
+      this.mostrarRecusa(
+        explicarRecusa(resposta.problem, 'importacao', { variosLeiautes: this.variosLeiautes() }),
       );
-      // O arquivo sai da tela quando a importação dá certo; na recusa ele fica, para o operador
-      // trocar só o leiaute e reenviar.
-      if (isApiOk(resposta)) this.arquivo.set(null);
-      if (!mesmoEscopo(this.notas.escolhidoDeRetorno(), escolhido)) return;
-      if (isApiOk(resposta)) {
-        this.resultado.set({
-          lote: resposta.data,
-          criado: resposta.status === 201,
-          haviaLoteAnterior,
-        });
-        void this.notas.recarregarLotes();
-        afterNextRender(() => this.tituloDoResultado()?.nativeElement.focus(), {
-          injector: this.injector,
-        });
-      } else {
-        this.mostrarRecusa(
-          explicarRecusa(resposta.problem, 'importacao', { variosLeiautes: this.variosLeiautes() }),
-        );
-        // Na falha incerta o lote pode ter sido gravado: o histórico é o que o operador confere.
-        if (falhaIncerta(resposta.problem)) void this.notas.recarregarLotes();
-      }
-    } finally {
-      this.importando.set(false);
+      // Na falha incerta o lote pode ter sido gravado: o histórico é o que o operador confere.
+      if (falhaIncerta(resposta.problem)) void this.notas.recarregarLotes();
     }
+  }
+
+  private mostrarResultado(resultado: ResultadoDaImportacao): void {
+    this.resultado.set(resultado);
+    void this.notas.recarregarLotes();
+    afterNextRender(() => this.tituloDoResultado()?.nativeElement.focus(), {
+      injector: this.injector,
+    });
   }
 
   private variosLeiautes(): boolean {

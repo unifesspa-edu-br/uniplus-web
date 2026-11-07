@@ -196,21 +196,8 @@ export class ModeloDaExigenciaComponent {
 
   /** Inicia, se preciso, e envia os bytes; devolve o modelo pendente, ou `null` se falhou. */
   private async enviarAoStorage(processoId: string, arquivo: File): Promise<string | null> {
-    let destino = this.destino;
-    if (destino === null || destinoExpirado(destino)) {
-      this.atualizar({ fase: 'iniciando', progresso: 0, erro: null });
-      const { resultado, inconclusiva } = await this.envioDoModelo.iniciar(processoId, {
-        nomeArquivo: arquivo.name,
-        formato: formatoDoArquivo(arquivo.name),
-      });
-      if (!this.aindaVale()) return null;
-      if (!isApiOk(resultado)) {
-        this.falhar(this.mensagemDaRecusa(resultado.problem), inconclusiva);
-        return null;
-      }
-      destino = resultado.data;
-      this.destino = destino;
-    }
+    const destino = await this.destinoDoEnvio(processoId, arquivo);
+    if (destino === null) return null;
 
     this.atualizar({ fase: 'enviando', erro: null });
     const envio = await this.envioDoModelo.enviarArquivo(destino, arquivo, (progresso) =>
@@ -232,6 +219,27 @@ export class ModeloDaExigenciaComponent {
     // A URL cumpriu o papel; some da memória para não ficar credencial viva à toa.
     this.destino = null;
     return destino.modeloDeDocumentoId;
+  }
+
+  /** O destino ainda válido do envio, ou um novo pedido ao servidor; `null` se não se obteve. */
+  private async destinoDoEnvio(
+    processoId: string,
+    arquivo: File,
+  ): Promise<IniciarEnvioDoModeloDeDocumentoDto | null> {
+    if (this.destino !== null && !destinoExpirado(this.destino)) return this.destino;
+
+    this.atualizar({ fase: 'iniciando', progresso: 0, erro: null });
+    const { resultado, inconclusiva } = await this.envioDoModelo.iniciar(processoId, {
+      nomeArquivo: arquivo.name,
+      formato: formatoDoArquivo(arquivo.name),
+    });
+    if (!this.aindaVale()) return null;
+    if (!isApiOk(resultado)) {
+      this.falhar(this.mensagemDaRecusa(resultado.problem), inconclusiva);
+      return null;
+    }
+    this.destino = resultado.data;
+    return resultado.data;
   }
 
   private async confirmar(processoId: string, modeloId: string): Promise<void> {

@@ -56,7 +56,33 @@ export function problemasDasEtapas(
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
   tipoDaEtapa: (tipoEtapaOrigemId: string) => TipoDeEtapaDoCatalogo | undefined,
 ): readonly string[] {
-  const problemas: string[] = [];
+  const doPar = problemasDoParDeFaseEEtapas(fases, etapas, fasePorId);
+  if (etapas.length === 0) return doPar;
+
+  return [
+    ...doPar,
+    ...problemasDeDeclaracaoDasEtapas(etapas),
+    ...problemasDeCaraterContraOTipo(etapas, tipoDaEtapa),
+    ...etapas
+      .filter((etapa) => declaraNotaDoEnem(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId)))
+      .flatMap(problemasDaEtapaDeNotaDoEnem),
+    ...(repetidos(etapas.map((etapa) => etapa.ordem)).length > 0
+      ? ['Duas etapas não podem ocupar a mesma posição.']
+      : []),
+    ...problemasDoPesoEDaNotaMinima(etapas),
+    ...etapas
+      .filter((etapa) => declaraNotaMaxima(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId)))
+      .flatMap(problemasDaEscalaDaEtapa),
+    ...problemasDaComposicaoDaNota(etapas),
+    ...problemasDosRecursosDasEtapas(etapas),
+  ];
+}
+
+function problemasDoParDeFaseEEtapas(
+  fases: readonly FaseDoCronograma[],
+  etapas: readonly EtapaPontuada[],
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): readonly string[] {
   // Pela mesma resolução da tela: uma fase de avaliação cuja entrada saiu do
   // catálogo continua agrupando as etapas do processo. Procurá-la só no catálogo
   // vivo faria as etapas dela parecerem órfãs, e a gravação nunca sairia.
@@ -70,39 +96,47 @@ export function problemasDasEtapas(
   const semFaseDeclarada = etapas.filter((etapa) => (etapa.faseCodigo ?? '') === '');
 
   if (faseQueAgrupa !== undefined && etapas.length === 0) {
-    problemas.push(
+    return [
       'A fase de avaliação agrupa as etapas pontuadas e precisa de ao menos uma. Declare a etapa, ou remova a fase.',
-    );
+    ];
   }
 
   if (faseQueAgrupa === undefined && semFaseDeclarada.length > 0) {
-    problemas.push(
+    return [
       'Estas etapas não dizem a que fase pertencem. Declare a fase de cada uma, ou remova-as.',
-    );
+    ];
   }
 
-  if (etapas.length === 0) return problemas;
+  return [];
+}
 
+function problemasDeDeclaracaoDasEtapas(etapas: readonly EtapaPontuada[]): readonly string[] {
+  const problemas: string[] = [];
   if (etapas.some((etapa) => etapa.nome.trim() === '')) {
     problemas.push('Toda etapa precisa de nome.');
   }
-
   if (etapas.some((etapa) => etapa.tipoEtapaOrigemId === '')) {
     problemas.push('Toda etapa precisa do tipo que diz de que natureza ela é.');
   }
-
   if (etapas.some((etapa) => etapa.carater === '')) {
     problemas.push('Toda etapa precisa declarar o caráter dela, entre os que o tipo admite.');
   }
+  return problemas;
+}
 
-  // Espelha a recusa do servidor, que confere o caráter declarado contra o que o tipo admite no
-  // cadastro. Sem isto a tela deixaria gravar para receber um 422 que a pessoa não pediu — e o
-  // caso acontece sem ninguém errar nada: basta o cadastro estreitar um tipo depois de a etapa
-  // ter sido declarada.
-  for (const etapa of etapas) {
+// Espelha a recusa do servidor, que confere o caráter declarado contra o que o tipo admite no
+// cadastro. Sem isto a tela deixaria gravar para receber um 422 que a pessoa não pediu — e o
+// caso acontece sem ninguém errar nada: basta o cadastro estreitar um tipo depois de a etapa
+// ter sido declarada.
+function problemasDeCaraterContraOTipo(
+  etapas: readonly EtapaPontuada[],
+  tipoDaEtapa: (tipoEtapaOrigemId: string) => TipoDeEtapaDoCatalogo | undefined,
+): readonly string[] {
+  return etapas.flatMap((etapa) => {
     const tipo = tipoDaEtapa(etapa.tipoEtapaOrigemId);
-    if (tipo === undefined || etapa.carater === '') continue;
+    if (tipo === undefined || etapa.carater === '') return [];
 
+    const problemas: string[] = [];
     if (pontuaPorCarater(etapa.carater) && !tipo.admitePontuacao) {
       problemas.push(
         `O tipo ${tipo.nome} não compõe a nota final: a etapa "${etapa.nome.trim()}" não pode ter caráter que pontua.`,
@@ -113,61 +147,68 @@ export function problemasDasEtapas(
         `O tipo ${tipo.nome} não elimina candidato: a etapa "${etapa.nome.trim()}" não pode ter caráter que reprova.`,
       );
     }
-  }
+    return problemas;
+  });
+}
 
-  for (const etapa of etapas) {
-    if (!declaraNotaDoEnem(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId))) continue;
-    problemas.push(...problemasDaEtapaDeNotaDoEnem(etapa));
-  }
-
-  if (repetidos(etapas.map((etapa) => etapa.ordem)).length > 0) {
-    problemas.push('Duas etapas não podem ocupar a mesma posição.');
-  }
-
-  // Texto que não converte vira `null` no comando, e `null` é o valor legítimo
-  // de "não declarado": sem esta conferência, `7,5,` digitado na nota mínima
-  // grava com sucesso e apaga o que estava lá, sem nada dizer.
+// Texto que não converte vira `null` no comando, e `null` é o valor legítimo
+// de "não declarado": sem esta conferência, `7,5,` digitado na nota mínima
+// grava com sucesso e apaga o que estava lá, sem nada dizer.
+function problemasDoPesoEDaNotaMinima(etapas: readonly EtapaPontuada[]): readonly string[] {
+  const problemas: string[] = [];
   if (etapas.some((etapa) => naoConverte(etapa.peso))) {
     problemas.push('O peso de uma etapa precisa ser um número, com ponto ou vírgula decimal.');
   }
-
   if (etapas.some((etapa) => naoConverte(etapa.notaMinima))) {
     problemas.push(
       'A nota mínima de uma etapa precisa ser um número, com ponto ou vírgula decimal.',
     );
   }
+  return problemas;
+}
 
-  // Só a etapa que pede nota máxima é conferida: um valor herdado em etapa que não a mostra
-  // bloquearia a gravação com mensagem sobre um campo que o operador não vê.
-  for (const etapa of etapas) {
-    if (!declaraNotaMaxima(etapa, tipoDaEtapa(etapa.tipoEtapaOrigemId))) continue;
-    const nome = `etapa "${etapa.nome.trim()}"`;
-    const maxima = etapa.notaMaxima ?? '';
-    if (naoConverte(maxima)) {
-      problemas.push(
-        `A nota máxima da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
-      );
-    } else if (pesoDeclaradoNaoPositivo(maxima)) {
-      problemas.push(`A nota máxima da ${nome}, quando declarada, precisa ser maior que zero.`);
-    } else if (notaMinimaAcimaDaMaxima(etapa)) {
-      // Só o servidor confere a escala inteira, mas recusar aqui evita gravar as fases e só
-      // então ter as etapas recusadas.
-      problemas.push(`A nota mínima da ${nome} não pode passar da nota máxima dela.`);
-    }
+// Só a etapa que pede nota máxima é conferida: um valor herdado em etapa que não a mostra
+// bloquearia a gravação com mensagem sobre um campo que o operador não vê.
+function problemasDaEscalaDaEtapa(etapa: EtapaPontuada): readonly string[] {
+  const nome = `etapa "${etapa.nome.trim()}"`;
+  return [
+    ...problemasDaNotaMaxima(etapa, nome),
+    ...problemasDoPassoDoLancamento(etapa, nome),
+    ...problemasDosItensEDaEscala(etapa, nome),
+  ];
+}
 
-    const passo = etapa.passoDoLancamento ?? '';
-    if (naoConverte(passo)) {
-      problemas.push(
-        `O passo do lançamento da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
-      );
-    } else if (pesoDeclaradoNaoPositivo(passo)) {
-      problemas.push(
-        `O passo do lançamento da ${nome}, quando declarado, precisa ser maior que zero.`,
-      );
-    }
-
-    problemas.push(...problemasDosItensEDaEscala(etapa, nome));
+function problemasDaNotaMaxima(etapa: EtapaPontuada, nome: string): readonly string[] {
+  const maxima = etapa.notaMaxima ?? '';
+  if (naoConverte(maxima)) {
+    return [`A nota máxima da ${nome} precisa ser um número, com ponto ou vírgula decimal.`];
   }
+  if (pesoDeclaradoNaoPositivo(maxima)) {
+    return [`A nota máxima da ${nome}, quando declarada, precisa ser maior que zero.`];
+  }
+  // Só o servidor confere a escala inteira, mas recusar aqui evita gravar as fases e só
+  // então ter as etapas recusadas.
+  if (notaMinimaAcimaDaMaxima(etapa)) {
+    return [`A nota mínima da ${nome} não pode passar da nota máxima dela.`];
+  }
+  return [];
+}
+
+function problemasDoPassoDoLancamento(etapa: EtapaPontuada, nome: string): readonly string[] {
+  const passo = etapa.passoDoLancamento ?? '';
+  if (naoConverte(passo)) {
+    return [
+      `O passo do lançamento da ${nome} precisa ser um número, com ponto ou vírgula decimal.`,
+    ];
+  }
+  if (pesoDeclaradoNaoPositivo(passo)) {
+    return [`O passo do lançamento da ${nome}, quando declarado, precisa ser maior que zero.`];
+  }
+  return [];
+}
+
+function problemasDaComposicaoDaNota(etapas: readonly EtapaPontuada[]): readonly string[] {
+  const problemas: string[] = [];
 
   // Zero converte, então a conferência de forma acima o deixa passar, e a
   // agregada também: basta outra etapa compor a nota. O domínio exige peso
@@ -186,8 +227,6 @@ export function problemasDasEtapas(
       'Ao menos uma etapa precisa compor a nota final: ser classificatória (ou ambas) e ter peso maior que zero.',
     );
   }
-
-  problemas.push(...problemasDosRecursosDasEtapas(etapas));
 
   return problemas;
 }

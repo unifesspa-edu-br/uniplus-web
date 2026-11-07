@@ -23,6 +23,12 @@ const LIMITE_QUE_NAO_E_NUMERO: ProblemDetails = {
 
 type FormularioDesejado = FormularioParaGravar & { readonly faseId: string };
 
+/** Por onde a gravação passa: o registro de idempotência e a API do formulário. */
+export interface DestinoDaGravacaoDoFormulario {
+  readonly gravacao: GravacaoDoProcesso;
+  readonly api: FormulariosDoProcessoApi;
+}
+
 interface AlvoDoFormulario {
   readonly processoSeletivoId: string;
   readonly finalidade: string;
@@ -37,8 +43,7 @@ interface AlvoDoFormulario {
  * finalidades é outro comando.
  */
 export async function gravarFormulario(
-  gravacao: GravacaoDoProcesso,
-  api: FormulariosDoProcessoApi,
+  destino: DestinoDaGravacaoDoFormulario,
   alvo: AlvoDoFormulario,
   servidor: FormularioParaGravar | null,
   desejado: FormularioDesejado,
@@ -48,15 +53,14 @@ export async function gravarFormulario(
     return { ok: false, problem: LIMITE_QUE_NAO_E_NUMERO };
   }
   for (const passo of planoDeGravacao(servidor, desejado)) {
-    const resultado = await gravarPasso(gravacao, api, alvo, passo, desejado);
+    const resultado = await gravarPasso(destino, alvo, passo, desejado);
     if (!resultado.ok) return resultado;
   }
   return { ok: true };
 }
 
 function gravarPasso(
-  gravacao: GravacaoDoProcesso,
-  api: FormulariosDoProcessoApi,
+  { gravacao, api }: DestinoDaGravacaoDoFormulario,
   { processoSeletivoId, finalidade }: AlvoDoFormulario,
   passo: PassoDaGravacao,
   desejado: FormularioDesejado,

@@ -179,14 +179,14 @@ export class LeituraDaInscricao {
   private iniciarAAvaliacao(processoId: string, carga: InscricaoCarregada): void {
     const { inscricao, formulario } = carga;
     const escolha = escolhaInicialDeOfertas(inscricao, carga.ofertas, carga.numeroDeOpcoes);
-    this.avaliacao.iniciar(
+    this.avaliacao.iniciar({
       processoId,
-      inscricao.avaliacao,
-      formulario.dependenciasDaAvaliacao,
-      carga.inicial,
-      escolha.oferta,
-      escolha.segunda,
-    );
+      avaliacao: inscricao.avaliacao,
+      dependencias: formulario.dependenciasDaAvaliacao,
+      simulacao: carga.inicial,
+      oferta: escolha.oferta,
+      segundaOferta: escolha.segunda,
+    });
   }
 
   private respostasIniciais(

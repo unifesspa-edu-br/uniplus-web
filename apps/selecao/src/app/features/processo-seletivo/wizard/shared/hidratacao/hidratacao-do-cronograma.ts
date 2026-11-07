@@ -3,6 +3,8 @@ import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import type {
   EtapaPontuada,
   FaseDoCronograma,
+  ProdutoDaFase,
+  RecursoDaEtapa,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import type { WizardDraft } from '../../processo-seletivo.models';
@@ -39,30 +41,47 @@ export function cronogramaDe(dto: ProcessoSeletivoDto): WizardDraft['cronograma'
   };
 }
 
-function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCronograma {
+type FaseDoDto = ProcessoSeletivoDto['cronogramaFases'][number];
+type EtapaDoDto = ProcessoSeletivoDto['etapas'][number];
+type ArgumentosDoRecurso = NonNullable<FaseDoDto['regraRecurso']>['args'];
+
+function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados']> {
+  return {
+    origemData: fase.origemData,
+    agrupaEtapas: fase.agrupaEtapas,
+    coletaInscricao: fase.coletaInscricao,
+    permiteComplementacao: fase.permiteComplementacao,
+    coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
+    bancas: fase.bancasRequeridas.map((banca) => ({
+      id: banca.tipoBancaOrigemId,
+      codigo: banca.codigo,
+    })),
+  };
+}
+
+function produtosDe(
+  produtos: readonly {
+    readonly atoCodigo: string;
+    readonly papel?: ProdutoDaFase['papel'] | null;
+  }[],
+): ProdutoDaFase[] {
+  return produtos.map((produto) => ({
+    atoCodigo: produto.atoCodigo,
+    papel: produto.papel ?? null,
+  }));
+}
+
+function faseDe(fase: FaseDoDto): FaseDoCronograma {
   return {
     faseCanonicaId: fase.faseCanonicaOrigemId,
     codigo: fase.codigo,
     // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
     // fase, e é isto que mantém a tela sabendo o que ela exige.
-    congelados: {
-      origemData: fase.origemData,
-      agrupaEtapas: fase.agrupaEtapas,
-      coletaInscricao: fase.coletaInscricao,
-      permiteComplementacao: fase.permiteComplementacao,
-      coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
-      bancas: fase.bancasRequeridas.map((banca) => ({
-        id: banca.tipoBancaOrigemId,
-        codigo: banca.codigo,
-      })),
-    },
+    congelados: congeladosDe(fase),
     ordem: comoInteiro(fase.ordem),
     inicio: fase.inicio,
     fim: fase.fim,
-    produtos: fase.produtos.map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel ?? null,
-    })),
+    produtos: produtosDe(fase.produtos),
     unidadeResponsavelId: fase.unidadeResponsavel?.origemId ?? null,
     faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
@@ -86,19 +105,27 @@ function faseDe(fase: ProcessoSeletivoDto['cronogramaFases'][number]): FaseDoCro
  * prazo de recurso passaria a contar de outra publicação em silêncio.
  */
 function recursoDe(
-  regra: ProcessoSeletivoDto['cronogramaFases'][number]['regraRecurso'],
-  produtos: ProcessoSeletivoDto['cronogramaFases'][number]['produtos'],
+  regra: FaseDoDto['regraRecurso'],
+  produtos: FaseDoDto['produtos'],
 ): RecursoDaFase | null {
   if (regra === null || regra === undefined) return null;
 
-  const args = regra.args;
   const ancora = produtos.find((produto) => produto.id === regra.produtoAncoraId);
   return {
     regraCodigo: regra.regra.codigo,
     regraVersao: regra.regra.versao,
+    atoAncoraCodigo: ancora?.atoCodigo ?? '',
+    ...argumentosDoRecursoDe(regra.args),
+  };
+}
+
+/** Os argumentos do recurso, que fase e etapa leem do mesmo jeito: o prazo e o efeito suspensivo. */
+function argumentosDoRecursoDe(
+  args: ArgumentosDoRecurso,
+): Omit<RecursoDaFase, 'regraCodigo' | 'regraVersao' | 'atoAncoraCodigo'> {
+  return {
     prazoValor: comoTexto(args.prazoValor),
     prazoUnidade: args.prazoUnidade,
-    atoAncoraCodigo: ancora?.atoCodigo ?? '',
     suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
     suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
     admiteInstanciaSuperior: args.admiteInstanciaSuperior,
@@ -116,7 +143,7 @@ export function etapasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
   return (dto.etapas ?? []).map(etapaDe);
 }
 
-function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
+function etapaDe(etapa: EtapaDoDto): EtapaPontuada {
   return {
     id: etapa.id,
     nome: etapa.nome,
@@ -127,6 +154,27 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
       nome: etapa.tipoEtapa.nome,
       notaDeOrigemNoEnem: etapa.tipoEtapa.notaDeOrigemNoEnem,
     },
+    ...avaliacaoDaEtapaDe(etapa),
+    ...agendaDaEtapaDe(etapa),
+  };
+}
+
+type AvaliacaoDaEtapa = Pick<
+  EtapaPontuada,
+  | 'peso'
+  | 'notaMinima'
+  | 'notaMaxima'
+  | 'passoDoLancamento'
+  | 'formaDeAvaliacao'
+  | 'regraConsolidacaoCodigo'
+  | 'regraConsolidacaoVersao'
+  | 'itensDeAvaliacao'
+  | 'escalaDeAtendimento'
+>;
+
+/** Como a etapa pontua: a escala da nota, a forma de avaliar e os itens e níveis de atendimento. */
+function avaliacaoDaEtapaDe(etapa: EtapaDoDto): AvaliacaoDaEtapa {
+  return {
     peso: comoTexto(etapa.peso),
     notaMinima: comoTexto(etapa.notaMinima),
     notaMaxima: comoTexto(etapa.notaMaxima),
@@ -143,37 +191,45 @@ function etapaDe(etapa: ProcessoSeletivoDto['etapas'][number]): EtapaPontuada {
       rotulo: nivel.rotulo,
       percentual: percentualDaFracao(nivel.fracao),
     })),
+  };
+}
+
+type AgendaDaEtapa = Pick<
+  EtapaPontuada,
+  | 'ordem'
+  | 'faseCodigo'
+  | 'produtos'
+  | 'inicio'
+  | 'fim'
+  | 'emiteParecerIndividual'
+  | 'bancas'
+  | 'recursos'
+>;
+
+/** Onde a etapa acontece: a fase, a janela, o que publica, as bancas e os recursos. */
+function agendaDaEtapaDe(etapa: EtapaDoDto): AgendaDaEtapa {
+  return {
     ordem: comoInteiro(etapa.ordem),
     faseCodigo: etapa.faseCodigo ?? '',
-    produtos: (etapa.produtos ?? []).map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel ?? null,
-    })),
-    inicio:
-      etapa.inicio === null || etapa.inicio === undefined ? '' : campoDoInstante(etapa.inicio),
-    fim: etapa.fim === null || etapa.fim === undefined ? '' : campoDoInstante(etapa.fim),
+    produtos: produtosDe(etapa.produtos ?? []),
+    inicio: instanteDe(etapa.inicio),
+    fim: instanteDe(etapa.fim),
     emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
     bancas: (etapa.bancas ?? []).map((banca) => banca.tipoBancaOrigemId),
-    recursos: (etapa.recursos ?? []).map((recurso) => ({
-      ancora: recurso.ancora as unknown as 'atoPublicado' | 'cienciaIndividual',
-      regraCodigo: recurso.regra.codigo,
-      regraVersao: recurso.regra.versao,
-      prazoValor: comoTexto(recurso.args.prazoValor),
-      prazoUnidade: recurso.args.prazoUnidade,
-      atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
-      // Mesma leitura que `recursoDe` faz para a fase. Sem ela, a gravação seguinte
-      // reenviava os quatro em branco e apagava o efeito suspensivo declarado.
-      suspensividadePrimeiraInstanciaValor: comoTexto(
-        recurso.args.suspensividadePrimeiraInstanciaValor,
-      ),
-      suspensividadePrimeiraInstanciaUnidade:
-        recurso.args.suspensividadePrimeiraInstanciaUnidade ?? '',
-      admiteInstanciaSuperior: recurso.args.admiteInstanciaSuperior,
-      suspensividadeSegundaInstanciaValor: comoTexto(
-        recurso.args.suspensividadeSegundaInstanciaValor,
-      ),
-      suspensividadeSegundaInstanciaUnidade:
-        recurso.args.suspensividadeSegundaInstanciaUnidade ?? '',
-    })),
+    recursos: (etapa.recursos ?? []).map(recursoDaEtapaDe),
+  };
+}
+
+function instanteDe(instante: string | null | undefined): string {
+  return instante === null || instante === undefined ? '' : campoDoInstante(instante);
+}
+
+function recursoDaEtapaDe(recurso: NonNullable<EtapaDoDto['recursos']>[number]): RecursoDaEtapa {
+  return {
+    ancora: recurso.ancora as unknown as RecursoDaEtapa['ancora'],
+    regraCodigo: recurso.regra.codigo,
+    regraVersao: recurso.regra.versao,
+    atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
+    ...argumentosDoRecursoDe(recurso.args),
   };
 }

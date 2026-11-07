@@ -48,33 +48,37 @@ export class FocoDoEditor {
       // O passo em tela sabe abrir a aba ou a seção que guarda o campo recusado.
       if (await passoAtual()?.revelarCampoInvalido?.()) return;
 
-      // Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista:
-      // foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live.
-      const campo = this.campoInvalidoParaFoco();
-      if (campo !== null) {
-        campo.scrollIntoView?.({ block: 'center' });
-        campo.focus({ preventScroll: true });
-        if (document.activeElement === campo) return;
-      }
+      if (this.focarCampoInvalido()) return;
 
-      // Sem campo inválido: quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`,
-      // então a reserva do topo (a barra de etapas do celular, que cobriria o aviso) entra à mão.
-      const scroller = this.raiz.closest<HTMLElement>('.page');
-      if (scroller) {
-        try {
-          const reservaTopo = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0;
-          const topoAlerta = alerta.getBoundingClientRect().top;
-          const topoScroller = scroller.getBoundingClientRect().top;
-          scroller.scrollTo({
-            top: scroller.scrollTop + (topoAlerta - topoScroller) - reservaTopo,
-            behavior: 'smooth',
-          });
-        } catch {
-          // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
-        }
-      }
+      this.rolarAteOAviso(alerta);
       alerta.focus({ preventScroll: true });
     });
+  }
+
+  /** Com campo inválido no passo em tela, o foco vai a ele e a rolagem o traz para a vista: foco fora da tela não é foco visível. O aviso segue anunciado pela região aria-live. */
+  private focarCampoInvalido(): boolean {
+    const campo = this.campoInvalidoParaFoco();
+    if (campo === null) return false;
+    campo.scrollIntoView?.({ block: 'center' });
+    campo.focus({ preventScroll: true });
+    return document.activeElement === campo;
+  }
+
+  /** Quem rola é o `.page` do shell. O `scrollTo` ignora o `scroll-padding`, então a reserva do topo (a barra de etapas do celular, que cobriria o aviso) entra à mão. */
+  private rolarAteOAviso(alerta: HTMLElement): void {
+    const scroller = this.raiz.closest<HTMLElement>('.page');
+    if (!scroller) return;
+    try {
+      const reservaTopo = parseFloat(getComputedStyle(scroller).scrollPaddingTop) || 0;
+      const topoAlerta = alerta.getBoundingClientRect().top;
+      const topoScroller = scroller.getBoundingClientRect().top;
+      scroller.scrollTo({
+        top: scroller.scrollTop + (topoAlerta - topoScroller) - reservaTopo,
+        behavior: 'smooth',
+      });
+    } catch {
+      // jsdom não implementa scrollTo(options); o foco não pode ser bloqueado.
+    }
   }
 
   /**

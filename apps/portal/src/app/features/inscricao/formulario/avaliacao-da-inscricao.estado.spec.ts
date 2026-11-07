@@ -67,7 +67,14 @@ describe('AvaliacaoDaInscricaoEstado', () => {
       ],
     });
     estado = TestBed.inject(AvaliacaoDaInscricaoEstado);
-    estado.iniciar(PROCESSO, avaliacao('Ampla concorrência'), DEPENDENCIAS, {}, null, null);
+    estado.iniciar({
+      processoId: PROCESSO,
+      avaliacao: avaliacao('Ampla concorrência'),
+      dependencias: DEPENDENCIAS,
+      simulacao: {},
+      oferta: null,
+      segundaOferta: null,
+    });
   });
 
   afterEach(() => vi.useRealTimers());

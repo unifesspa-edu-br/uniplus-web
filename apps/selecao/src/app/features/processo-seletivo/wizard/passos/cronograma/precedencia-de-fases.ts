@@ -27,30 +27,31 @@ export function violacoesDePrecedencia(
     const sucessora = porCodigo.get(aresta.sucessoraCodigo);
     if (antecessora === undefined || sucessora === undefined) continue;
 
-    if (antecessora.ordem >= sucessora.ordem) {
-      violacoes.push({
-        antecessora: aresta.antecessoraCodigo,
-        sucessora: aresta.sucessoraCodigo,
-        motivo: 'ordem',
-      });
-      continue;
-    }
-
-    if (
-      !aresta.permiteSobreposicao &&
-      antecessora.fim !== null &&
-      sucessora.inicio !== null &&
-      instanteDe(antecessora.fim) > instanteDe(sucessora.inicio)
-    ) {
-      violacoes.push({
-        antecessora: aresta.antecessoraCodigo,
-        sucessora: aresta.sucessoraCodigo,
-        motivo: 'sobreposicao',
-      });
-    }
+    const motivo = motivoDaViolacao(aresta, antecessora, sucessora);
+    if (motivo === null) continue;
+    violacoes.push({
+      antecessora: aresta.antecessoraCodigo,
+      sucessora: aresta.sucessoraCodigo,
+      motivo,
+    });
   }
 
   return violacoes;
+}
+
+function motivoDaViolacao(
+  aresta: PrecedenciaFaseDto,
+  antecessora: FaseDoCronograma,
+  sucessora: FaseDoCronograma,
+): ViolacaoDePrecedencia['motivo'] | null {
+  if (antecessora.ordem >= sucessora.ordem) return 'ordem';
+
+  const sobrepoe =
+    !aresta.permiteSobreposicao &&
+    antecessora.fim !== null &&
+    sucessora.inicio !== null &&
+    instanteDe(antecessora.fim) > instanteDe(sucessora.inicio);
+  return sobrepoe ? 'sobreposicao' : null;
 }
 
 /**
@@ -73,39 +74,77 @@ export function trocaFechaCiclo(
 ): boolean {
   const anteriores = new Map(antes.map((fase) => [fase.faseCanonicaId, fase]));
   const novas = new Map(depois.map((fase) => [fase.faseCanonicaId, fase]));
+  const troca: TrocaDeOrdens = {
+    anteriores,
+    novas,
+    retidaNaOrdem: ordensRetidas(anteriores, novas),
+  };
 
+  const estado = new Map<string, 'visitando' | 'concluido'>();
+  for (const inicial of anteriores.keys()) {
+    if (!estado.has(inicial) && cadeiaFechaCiclo(inicial, troca, estado)) return true;
+  }
+
+  return false;
+}
+
+interface TrocaDeOrdens {
+  readonly anteriores: ReadonlyMap<string, FaseDoCronograma>;
+  readonly novas: ReadonlyMap<string, FaseDoCronograma>;
+  /** A fase que continua no cronograma, por ordem que ela ocupava antes da troca. */
+  readonly retidaNaOrdem: ReadonlyMap<number, string>;
+}
+
+function ordensRetidas(
+  anteriores: ReadonlyMap<string, FaseDoCronograma>,
+  novas: ReadonlyMap<string, FaseDoCronograma>,
+): ReadonlyMap<number, string> {
   const retidaNaOrdem = new Map<number, string>();
   for (const [id, fase] of anteriores) {
     if (novas.has(id)) retidaNaOrdem.set(fase.ordem, id);
   }
+  return retidaNaOrdem;
+}
 
-  const estado = new Map<string, 'visitando' | 'concluido'>();
-  for (const inicial of anteriores.keys()) {
-    if (estado.has(inicial)) continue;
+/** A ordem nova da fase que mudou de lugar, ou `undefined` se ela ficou onde estava ou saiu. */
+function ordemNovaDaFaseMovida(id: string, troca: TrocaDeOrdens): number | undefined {
+  const nova = troca.novas.get(id);
+  const anterior = troca.anteriores.get(id);
+  if (nova === undefined || anterior === undefined || nova.ordem === anterior.ordem) {
+    return undefined;
+  }
+  return nova.ordem;
+}
 
-    const caminho: string[] = [];
-    let atual: string | undefined = inicial;
+/**
+ * Segue, de fase em fase, quem ocupa a ordem para onde a anterior se mudou. Voltar a uma fase
+ * ainda em visita é o ciclo; chegar a uma já concluída, ou a uma ordem livre, não é.
+ */
+function cadeiaFechaCiclo(
+  inicial: string,
+  troca: TrocaDeOrdens,
+  estado: Map<string, 'visitando' | 'concluido'>,
+): boolean {
+  const caminho: string[] = [];
+  let fechou = false;
 
-    while (atual !== undefined) {
-      const jaVisto = estado.get(atual);
-      if (jaVisto !== undefined) {
-        if (jaVisto === 'visitando') return true;
-        break;
-      }
-
-      const nova = novas.get(atual);
-      const anterior = anteriores.get(atual);
-      if (nova === undefined || anterior === undefined || nova.ordem === anterior.ordem) break;
-
-      estado.set(atual, 'visitando');
-      caminho.push(atual);
-      atual = retidaNaOrdem.get(nova.ordem);
+  for (let atual: string | undefined = inicial; atual !== undefined; ) {
+    const jaVisto = estado.get(atual);
+    if (jaVisto !== undefined) {
+      fechou = jaVisto === 'visitando';
+      break;
     }
 
-    for (const visitado of caminho) estado.set(visitado, 'concluido');
+    const ordemNova = ordemNovaDaFaseMovida(atual, troca);
+    if (ordemNova === undefined) break;
+
+    estado.set(atual, 'visitando');
+    caminho.push(atual);
+    atual = troca.retidaNaOrdem.get(ordemNova);
   }
 
-  return false;
+  for (const visitado of caminho) estado.set(visitado, 'concluido');
+  return fechou;
 }
 
 /**

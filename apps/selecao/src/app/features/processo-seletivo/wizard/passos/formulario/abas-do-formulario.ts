@@ -158,11 +158,13 @@ function conteudoDaAba(
     ),
     documentos: documentosDoFormulario(
       entrada.documentos,
-      escolhida,
-      formulario.finalidade,
-      finalidadesDaFase.get(escolhida) ?? [],
+      {
+        faseCodigo: escolhida,
+        finalidade: formulario.finalidade,
+        finalidadesDaFase: finalidadesDaFase.get(escolhida) ?? [],
+        fasesVivas: entrada.fasesDoCronograma.map((fase) => fase.codigo),
+      },
       entrada.vocabulario,
-      entrada.fasesDoCronograma.map((fase) => fase.codigo),
     ),
   };
 }

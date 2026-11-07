@@ -2,12 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { problemasDoCronograma } from './cronograma-do-certame';
 import { avisosDosGrupos } from './conferencia-das-exigencias-declaradas';
 import {
-  SEM_CATALOGO,
-  nomeDaBanca,
-  tipoQueAdmiteTudo,
   exigenciaDeclarada,
-  catalogoDeFases,
   faseDeAvaliacao,
+  catalogosDeTeste,
 } from './cronograma-do-certame.testing';
 
 describe('o que a publicação vai cobrar dos grupos', () => {
@@ -48,79 +45,61 @@ describe('o que a publicação vai cobrar dos grupos', () => {
 
 describe('conferência da ancoragem das exigências declaradas', () => {
   it('exigência que decide o resultado sem norma resolvida é acusada antes de gravar', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Histórico do ensino médio', decideResultado: true })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [
+        exigenciaDeclarada({ nome: 'Histórico do ensino médio', decideResultado: true }),
+      ],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContainEqual(expect.stringContaining('Histórico do ensino médio'));
     expect(problemas).toContainEqual(expect.stringContaining('norma'));
   });
 
   it('acusa a exigência cuja fase saiu do cronograma, nomeando o documento', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Comprovante de renda', faseViva: false })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ nome: 'Comprovante de renda', faseViva: false })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContainEqual(expect.stringContaining('saiu do cronograma'));
     expect(problemas).toContainEqual(expect.stringContaining('Comprovante de renda'));
   });
 
   it('acusa a exigência que não alcança modalidade nenhuma', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ alcancaModalidade: false })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ alcancaModalidade: false })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContainEqual(expect.stringContaining('modalidade'));
   });
 
   /** Exigência já acusada de órfã não é acusada de novo por não alcançar modalidade. */
   it('não repete a queixa de modalidade sobre exigência de fase morta', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ faseViva: false, alcancaModalidade: false })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ faseViva: false, alcancaModalidade: false })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).not.toContainEqual(expect.stringContaining('modalidade'));
   });
 
   it('acusa a exigência sem o formulário em que o documento é apresentado, nomeando o documento', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Comprovante de renda', semFormulario: true })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ nome: 'Comprovante de renda', semFormulario: true })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContainEqual(
       'Há documento exigido sem o formulário em que o candidato o apresenta: Comprovante de renda. Na fase dele, escolha o formulário.',
@@ -128,16 +107,12 @@ describe('conferência da ancoragem das exigências declaradas', () => {
   });
 
   it('acusa o reenvio declarado em fase que não admite complementação', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Contracheque', reenvioSemComplementacao: true })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ nome: 'Contracheque', reenvioSemComplementacao: true })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContainEqual(expect.stringContaining('complementação'));
     expect(problemas).toContainEqual(expect.stringContaining('Contracheque'));
@@ -146,32 +121,24 @@ describe('conferência da ancoragem das exigências declaradas', () => {
   it('acusa a condição que cita dado ainda não conhecido na fase, com o que fazer', () => {
     const orientacao =
       '“Laudo” só é conhecido na fase Habilitação. Como resolver: exija o documento na fase Habilitação.';
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Laudo médico', problemasDeFase: [orientacao] })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ nome: 'Laudo médico', problemasDeFase: [orientacao] })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).toContain(`Na condição de "Laudo médico": ${orientacao}`);
   });
 
   /** Controle negativo: exigência conforme não produz nenhuma das três queixas. */
   it('exigência ancorada, com modalidade e sem reenvio indevido não é acusada', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ normaResolvida: true })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ normaResolvida: true })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).not.toContainEqual(expect.stringContaining('saiu do cronograma'));
     expect(problemas).not.toContainEqual(expect.stringContaining('modalidade'));
@@ -179,16 +146,12 @@ describe('conferência da ancoragem das exigências declaradas', () => {
   });
 
   it('exigência que não decide o resultado segue sem norma', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [exigenciaDeclarada({ nome: 'Foto 3x4', decideResultado: false })],
-    );
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [],
+      exigencias: [exigenciaDeclarada({ nome: 'Foto 3x4', decideResultado: false })],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).not.toContainEqual(expect.stringContaining('norma'));
   });

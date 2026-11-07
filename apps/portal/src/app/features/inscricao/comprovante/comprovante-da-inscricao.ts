@@ -75,6 +75,40 @@ function respondidos(
     }));
 }
 
+function gruposDaEtapa(
+  formulario: FormularioRenderizavelDto,
+  comprovante: ComprovanteInscricaoDto,
+  etapaCodigo: string,
+): GrupoDoComprovante[] {
+  return pelaOrdem(formulario.grupos.filter((g) => g.etapaCodigo === etapaCodigo))
+    .map((grupo) => {
+      const ocorrencias = comprovante.grupos[grupo.codigo] ?? [];
+      const titulos = titulosDasOcorrencias(
+        grupo.incluiCandidato,
+        ocorrencias.map((o) => o.respostas),
+      );
+      return {
+        rotulo: grupo.rotulo,
+        ocorrencias: ocorrencias.map((o, i) => ({
+          titulo: titulos[i],
+          respostas: respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}),
+        })),
+      };
+    })
+    .filter((g) => g.ocorrencias.length > 0);
+}
+
+function respostasDaEtapa(
+  formulario: FormularioRenderizavelDto,
+  comprovante: ComprovanteInscricaoDto,
+  etapaCodigo: string,
+): RespostaDoComprovante[] {
+  const camposDaEtapa = formulario.fatosColetados.filter(
+    (c) => c.etapaCodigo === etapaCodigo && !FATOS_DO_CARTAO_DO_CANDIDATO.has(c.fatoCodigo),
+  );
+  return respondidos(pelaOrdem(camposDaEtapa), comprovante.respostas);
+}
+
 /** As respostas do comprovante pelas seções do formulário da versão fixada, com os rótulos de lá. */
 export function secoesDoComprovante(
   formulario: FormularioRenderizavelDto,
@@ -84,31 +118,8 @@ export function secoesDoComprovante(
     .map((etapa) => ({
       codigo: etapa.codigo,
       titulo: etapa.titulo,
-      respostas: respondidos(
-        pelaOrdem(
-          formulario.fatosColetados.filter(
-            (c) =>
-              c.etapaCodigo === etapa.codigo && !FATOS_DO_CARTAO_DO_CANDIDATO.has(c.fatoCodigo),
-          ),
-        ),
-        comprovante.respostas,
-      ),
-      grupos: pelaOrdem(formulario.grupos.filter((g) => g.etapaCodigo === etapa.codigo))
-        .map((grupo) => {
-          const ocorrencias = comprovante.grupos[grupo.codigo] ?? [];
-          const titulos = titulosDasOcorrencias(
-            grupo.incluiCandidato,
-            ocorrencias.map((o) => o.respostas),
-          );
-          return {
-            rotulo: grupo.rotulo,
-            ocorrencias: ocorrencias.map((o, i) => ({
-              titulo: titulos[i],
-              respostas: respondidos(pelaOrdem(grupo.subitens), o.respostas ?? {}),
-            })),
-          };
-        })
-        .filter((g) => g.ocorrencias.length > 0),
+      respostas: respostasDaEtapa(formulario, comprovante, etapa.codigo),
+      grupos: gruposDaEtapa(formulario, comprovante, etapa.codigo),
     }))
     .filter((s) => s.respostas.length > 0 || s.grupos.length > 0);
 }
@@ -147,6 +158,19 @@ export interface OpcaoDeCursoDoComprovante {
 const exibicaoDaOpcao = (curso: string | null, declarada: boolean): string =>
   declarada ? (curso ?? 'Curso não encontrado no certame') : 'Não declarada';
 
+function opcaoDeCurso(
+  processo: CertamePublicadoDto | null,
+  rotulo: string,
+  ofertaId: string | null | undefined,
+  modalidades: readonly string[] | null,
+): OpcaoDeCursoDoComprovante {
+  const oferta = ofertaId
+    ? processo?.ofertas.find((o) => o.ofertaCursoOrigemId === ofertaId)
+    : undefined;
+  const curso = oferta ? nomeDaOferta(oferta) : null;
+  return { rotulo, curso, exibicao: exibicaoDaOpcao(curso, !!ofertaId), modalidades };
+}
+
 /**
  * Os cursos que o envio declarou, pela ordem das opções. Com 2 opções admitidas, ou com a 2ª declarada, a
  * 2ª aparece sempre, e não declarada diz isso; com 1, o comprovante tem a única opção, como sempre teve.
@@ -155,35 +179,21 @@ export function opcoesDoComprovante(
   comprovante: ComprovanteInscricaoDto,
   processo: CertamePublicadoDto | null,
 ): readonly OpcaoDeCursoDoComprovante[] {
-  const nomeDe = (id: string | null | undefined): string | null => {
-    const oferta = id ? processo?.ofertas.find((o) => o.ofertaCursoOrigemId === id) : undefined;
-    return oferta ? nomeDaOferta(oferta) : null;
-  };
   const segundaDeclarada = !!comprovante.ofertaCursoSegundaOpcaoId;
   const admitePar = numeroDeOpcoesDeCurso(processo?.opcoesDeCurso.numero ?? 1) === 2;
-  const opcao = (
-    rotulo: string,
-    id: string | null | undefined,
-    modalidades: readonly string[] | null,
-  ): OpcaoDeCursoDoComprovante => {
-    const curso = nomeDe(id);
-    return { rotulo, curso, exibicao: exibicaoDaOpcao(curso, !!id), modalidades };
-  };
-  const primeira = opcao(
+  const primeira = opcaoDeCurso(
+    processo,
     segundaDeclarada || admitePar ? '1ª opção' : 'Curso',
     comprovante.ofertaCursoId,
     modalidadesDoComprovante(comprovante),
   );
   if (!segundaDeclarada && !admitePar) return [primeira];
+  const modalidadesDaSegunda = comprovante.modalidadesSegundaOpcao
+    ? nomesPelaOrdem(comprovante.modalidadesSegundaOpcao)
+    : null;
   return [
     primeira,
-    opcao(
-      '2ª opção',
-      comprovante.ofertaCursoSegundaOpcaoId,
-      comprovante.modalidadesSegundaOpcao
-        ? nomesPelaOrdem(comprovante.modalidadesSegundaOpcao)
-        : null,
-    ),
+    opcaoDeCurso(processo, '2ª opção', comprovante.ofertaCursoSegundaOpcaoId, modalidadesDaSegunda),
   ];
 }
 

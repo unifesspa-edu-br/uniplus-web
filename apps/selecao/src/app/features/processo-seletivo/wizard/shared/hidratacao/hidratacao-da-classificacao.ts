@@ -10,6 +10,7 @@ import type {
   RegraEliminacaoConfigurada,
   WizardDraft,
 } from '../../processo-seletivo.models';
+import { bonusInicial, classificacaoInicial } from '../../rascunho-inicial';
 import { edicoesDoEnemDe } from '../../passos/classificacao/edicoes-do-enem';
 import { escalaDaNotaFinalComoTexto } from '../../passos/classificacao/escala-da-nota-final';
 import { comoInteiro, comoTexto } from './campos-lidos';
@@ -23,20 +24,7 @@ import { comoInteiro, comoTexto } from './campos-lidos';
 export function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classificacao'] {
   const classificacao = dto.classificacao;
   if (classificacao === null || classificacao === undefined) {
-    return {
-      regraCalculoCodigo: '',
-      regraCalculoVersao: '',
-      regraArredondamentoCodigo: '',
-      regraArredondamentoVersao: '',
-      casasArredondamento: '',
-      regraOrdemAlocacaoCodigo: '',
-      regraOrdemAlocacaoVersao: '',
-      baseadoEmEnem: false,
-      escalaNotaFinal: '',
-      resolucaoPesoAreaEnem: '',
-      regrasEliminacao: [],
-      edicoesEnem: [],
-    };
+    return classificacaoInicial();
   }
 
   return {
@@ -76,15 +64,7 @@ export function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
   const aplica = dto.aplicaBonusRegional ?? null;
   const bonus = dto.bonusRegional;
   if (bonus === null || bonus === undefined) {
-    return {
-      aplica,
-      regraCodigo: '',
-      regraVersao: '',
-      fator: '',
-      teto: '',
-      baseLegalBonusRegionalId: '',
-      fatoElegibilidadeCodigo: '',
-    };
+    return { ...bonusInicial(), aplica };
   }
 
   return {

@@ -27,6 +27,16 @@ interface Consulta {
   readonly corpo: AvaliacaoDaInscricaoRequest;
 }
 
+/** O que a inscrição já traz para a avaliação começar sem consultar. */
+export interface InicioDaAvaliacao {
+  readonly processoId: string;
+  readonly avaliacao: AvaliacaoDaInscricaoDto;
+  readonly dependencias: DependenciasDaAvaliacao | null | undefined;
+  readonly simulacao: SimulacaoDoFormulario;
+  readonly oferta: string | null;
+  readonly segundaOferta: string | null;
+}
+
 /**
  * O que a API calcula das respostas da inscrição (ADR-0143), compartilhado pelos blocos que o mostram.
  * Consulta só quando muda uma resposta de que a avaliação depende, e guarda a revisão dessas respostas:
@@ -102,14 +112,8 @@ export class AvaliacaoDaInscricaoEstado {
   }
 
   /** Parte da avaliação que veio com a inscrição, sem consultar. */
-  iniciar(
-    processoId: string,
-    avaliacao: AvaliacaoDaInscricaoDto,
-    dependencias: DependenciasDaAvaliacao | null | undefined,
-    simulacao: SimulacaoDoFormulario,
-    oferta: string | null,
-    segundaOferta: string | null,
-  ): void {
+  iniciar(inicio: InicioDaAvaliacao): void {
+    const { processoId, avaliacao, dependencias, simulacao, oferta, segundaOferta } = inicio;
     this.processoId = processoId;
     this.oferta = oferta;
     this.segundaOferta = segundaOferta;

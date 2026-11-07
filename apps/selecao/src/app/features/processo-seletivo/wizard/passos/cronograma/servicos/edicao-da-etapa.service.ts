@@ -277,7 +277,7 @@ export class EdicaoDaEtapa {
     campo: keyof RecursoDaEtapa,
     valor: string,
   ): void {
-    alterarRecurso(grupo, posicao, campo, valor, this.catalogoDeRegras.regrasRecurso());
+    alterarRecurso(grupo, posicao, { campo, valor }, this.catalogoDeRegras.regrasRecurso());
   }
 
   readonly declararInstanciaSuperiorDaEtapa = declararInstanciaSuperior;

@@ -64,9 +64,21 @@ export interface FaseConfigForm {
   readonly congelados: FormControl<AtributosCongeladosDaFase | null>;
 }
 
-export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<FaseConfigForm> {
-  const recurso = fase.regraRecurso;
+/** O recurso de uma fase que ainda não admite recurso: tudo por responder. */
+const RECURSO_EM_BRANCO: RecursoDaFase = {
+  regraCodigo: '',
+  regraVersao: '',
+  prazoValor: '',
+  prazoUnidade: '',
+  atoAncoraCodigo: '',
+  suspensividadePrimeiraInstanciaValor: '',
+  suspensividadePrimeiraInstanciaUnidade: '',
+  admiteInstanciaSuperior: null,
+  suspensividadeSegundaInstanciaValor: '',
+  suspensividadeSegundaInstanciaUnidade: '',
+};
 
+export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<FaseConfigForm> {
   return new FormGroup<FaseConfigForm>({
     faseCanonicaId: controle(fase.faseCanonicaId),
     codigo: controle(fase.codigo),
@@ -78,28 +90,28 @@ export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<Fas
     faseConcluinteCodigo: controle(fase.faseConcluinteCodigo ?? ''),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
-    admiteRecurso: controle(recurso !== null),
-    recurso: new FormGroup<RecursoForm>({
-      regraCodigo: controle(recurso?.regraCodigo ?? ''),
-      regraVersao: controle(recurso?.regraVersao ?? ''),
-      prazoValor: controle(recurso?.prazoValor ?? ''),
-      prazoUnidade: controle<UnidadeEscolhida>(recurso?.prazoUnidade ?? ''),
-      atoAncoraCodigo: controle(recurso?.atoAncoraCodigo ?? ''),
-      suspensividadePrimeiraInstanciaValor: controle(
-        recurso?.suspensividadePrimeiraInstanciaValor ?? '',
-      ),
-      suspensividadePrimeiraInstanciaUnidade: controle<UnidadeEscolhida>(
-        recurso?.suspensividadePrimeiraInstanciaUnidade ?? '',
-      ),
-      admiteInstanciaSuperior: controle<boolean | null>(recurso?.admiteInstanciaSuperior ?? null),
-      suspensividadeSegundaInstanciaValor: controle(
-        recurso?.suspensividadeSegundaInstanciaValor ?? '',
-      ),
-      suspensividadeSegundaInstanciaUnidade: controle<UnidadeEscolhida>(
-        recurso?.suspensividadeSegundaInstanciaUnidade ?? '',
-      ),
-    }),
+    admiteRecurso: controle(fase.regraRecurso !== null),
+    recurso: grupoDoRecurso(fase.regraRecurso ?? RECURSO_EM_BRANCO),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
+  });
+}
+
+function grupoDoRecurso(recurso: RecursoDaFase): FormGroup<RecursoForm> {
+  return new FormGroup<RecursoForm>({
+    regraCodigo: controle(recurso.regraCodigo),
+    regraVersao: controle(recurso.regraVersao),
+    prazoValor: controle(recurso.prazoValor),
+    prazoUnidade: controle<UnidadeEscolhida>(recurso.prazoUnidade),
+    atoAncoraCodigo: controle(recurso.atoAncoraCodigo),
+    suspensividadePrimeiraInstanciaValor: controle(recurso.suspensividadePrimeiraInstanciaValor),
+    suspensividadePrimeiraInstanciaUnidade: controle<UnidadeEscolhida>(
+      recurso.suspensividadePrimeiraInstanciaUnidade,
+    ),
+    admiteInstanciaSuperior: controle<boolean | null>(recurso.admiteInstanciaSuperior),
+    suspensividadeSegundaInstanciaValor: controle(recurso.suspensividadeSegundaInstanciaValor),
+    suspensividadeSegundaInstanciaUnidade: controle<UnidadeEscolhida>(
+      recurso.suspensividadeSegundaInstanciaUnidade,
+    ),
   });
 }
 

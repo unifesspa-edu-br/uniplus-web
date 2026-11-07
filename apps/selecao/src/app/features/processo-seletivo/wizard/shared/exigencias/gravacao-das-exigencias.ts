@@ -13,6 +13,14 @@ import { APLICABILIDADE_GERAL } from './exigencias-documentais';
 import { finalidadeEnviada } from './formulario-da-exigencia';
 import { comRecorteDeModalidade, recorteDeModalidades } from './recorte-por-modalidade';
 
+/** O processo vivo contra o qual a árvore do rascunho é resolvida e podada. */
+export interface ProcessoVivoDasExigencias {
+  readonly faseIdPorCodigo: ReadonlyMap<string, string>;
+  readonly modalidadesOfertadas: readonly string[];
+  readonly etapasVivas: ReadonlySet<string>;
+  readonly finalidadesPorFase: ReadonlyMap<string, readonly string[]>;
+}
+
 /**
  * Serializa a árvore do rascunho no que o `PUT` recebe, resolvendo o que é declarado por
  * código contra o processo vivo e podando o que o cronograma invalidou.
@@ -24,20 +32,11 @@ import { comRecorteDeModalidade, recorteDeModalidades } from './recorte-por-moda
  */
 export function arvoreDeExigencias(
   exigencias: ExigenciasDoRascunho,
-  faseIdPorCodigo: ReadonlyMap<string, string>,
-  modalidadesOfertadas: readonly string[],
-  etapasVivas: ReadonlySet<string>,
-  finalidadesPorFase: ReadonlyMap<string, readonly string[]>,
+  processo: ProcessoVivoDasExigencias,
 ): readonly NoExigenciaInput[] {
-  const completas = comAlcanceDeTodasAsFases(exigencias, [...faseIdPorCodigo.keys()]);
+  const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
   return completas.raizes.flatMap((raiz) =>
-    podar(
-      [raiz],
-      faseIdPorCodigo,
-      modalidadesOfertadas,
-      etapasVivas,
-      finalidadeDaRaiz(raiz, faseIdPorCodigo, finalidadesPorFase),
-    ),
+    podar([raiz], processo, finalidadeDaRaiz(raiz, processo)),
   );
 }
 
@@ -45,24 +44,21 @@ export function arvoreDeExigencias(
  * O formulário da árvore de raiz, declarado na primeira folha que sobrevive à poda e herdado por
  * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
  */
-function finalidadeDaRaiz(
-  raiz: NoDeExigencia,
-  faseIdPorCodigo: ReadonlyMap<string, string>,
-  finalidadesPorFase: ReadonlyMap<string, readonly string[]>,
-): string | null {
+function finalidadeDaRaiz(raiz: NoDeExigencia, processo: ProcessoVivoDasExigencias): string | null {
   const declarante = documentosDe([raiz]).find((documento) =>
-    faseIdPorCodigo.has(documento.faseCodigo),
+    processo.faseIdPorCodigo.has(documento.faseCodigo),
   );
   return declarante === undefined
     ? null
-    : finalidadeEnviada(declarante.finalidade, finalidadesPorFase.get(declarante.faseCodigo) ?? []);
+    : finalidadeEnviada(
+        declarante.finalidade,
+        processo.finalidadesPorFase.get(declarante.faseCodigo) ?? [],
+      );
 }
 
 function podar(
   nos: readonly NoDeExigencia[],
-  faseIdPorCodigo: ReadonlyMap<string, string>,
-  modalidadesOfertadas: readonly string[],
-  etapasVivas: ReadonlySet<string>,
+  processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
 ): readonly NoExigenciaInput[] {
   const vivos: NoExigenciaInput[] = [];
@@ -71,23 +67,17 @@ function podar(
     if (no.tipo === 'FOLHA') {
       const documento = no.documento;
       // A fase saiu do cronograma depois de o documento ser marcado nela.
-      if (documento === null || !faseIdPorCodigo.has(documento.faseCodigo)) continue;
+      if (documento === null || !processo.faseIdPorCodigo.has(documento.faseCodigo)) continue;
 
       vivos.push({
         ...comoNo(no),
-        documento: folha(documento, faseIdPorCodigo, modalidadesOfertadas, etapasVivas, finalidade),
+        documento: folha(documento, processo, finalidade),
         filhos: null,
       });
       continue;
     }
 
-    const filhos = podar(
-      no.filhos ?? [],
-      faseIdPorCodigo,
-      modalidadesOfertadas,
-      etapasVivas,
-      finalidade,
-    );
+    const filhos = podar(no.filhos ?? [], processo, finalidade);
     // Grupo que perdeu todos os filhos deixa de existir — mandá-lo vazio derrubaria a
     // gravação inteira, e um grupo sem alternativa nenhuma não exige coisa alguma.
     if (filhos.length === 0) continue;
@@ -131,22 +121,15 @@ function comoBaseLegal(base: BaseLegalConfig): {
 
 function folha(
   documento: ExigenciaDeDocumento,
-  faseIdPorCodigo: ReadonlyMap<string, string>,
-  modalidadesOfertadas: readonly string[],
-  etapasVivas: ReadonlySet<string>,
+  processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
 ): ItemDocumentoExigidoInput {
-  const recorte = recorteDeModalidades(documento, modalidadesOfertadas);
-  // A etapa que coletava saiu do cronograma: o documento volta a ser da fase inteira em vez
-  // de referenciar um identificador que o processo não tem mais.
-  const etapaId =
-    documento.etapaId !== null && documento.etapaId !== '' && etapasVivas.has(documento.etapaId)
-      ? documento.etapaId
-      : null;
+  const { faseIdPorCodigo } = processo;
+  const recorte = recorteDeModalidades(documento, processo.modalidadesOfertadas);
 
   return {
     exigidoNaFaseId: faseIdPorCodigo.get(documento.faseCodigo) ?? '',
-    exigidoNaEtapaId: etapaId,
+    exigidoNaEtapaId: etapaViva(documento, processo.etapasVivas),
     finalidade,
     tipoDocumentoId: documento.tipoDocumentoId,
     // A aplicabilidade é DECLARADA, nunca inferida das condições (ADR-0071): "exigida de quem
@@ -175,6 +158,18 @@ function folha(
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
     modeloId: documento.modelo?.modeloId ?? null,
   };
+}
+
+/**
+ * A etapa que coletava saiu do cronograma: o documento volta a ser da fase inteira em vez de
+ * referenciar um identificador que o processo não tem mais.
+ */
+function etapaViva(
+  documento: ExigenciaDeDocumento,
+  etapasVivas: ReadonlySet<string>,
+): string | null {
+  const etapaId = documento.etapaId;
+  return etapaId !== null && etapaId !== '' && etapasVivas.has(etapaId) ? etapaId : null;
 }
 
 /**

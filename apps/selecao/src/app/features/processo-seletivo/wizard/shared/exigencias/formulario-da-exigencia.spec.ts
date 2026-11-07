@@ -66,10 +66,12 @@ describe('o formulário em que o documento é apresentado', () => {
 
     const raizes = arvoreDeExigencias(
       { raizes: [folhaDe(modelo)], emTodasAsFases: [ID_RG] },
-      fases,
-      ['AC'],
-      ETAPAS_VIVAS,
-      finalidades,
+      {
+        faseIdPorCodigo: fases,
+        modalidadesOfertadas: ['AC'],
+        etapasVivas: ETAPAS_VIVAS,
+        finalidadesPorFase: finalidades,
+      },
     );
 
     expect(

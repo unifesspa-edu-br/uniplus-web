@@ -3,20 +3,17 @@ import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import { type RecursoDaEtapa } from '../../processo-seletivo.models';
 import { problemasDoCronograma } from './cronograma-do-certame';
 import {
-  SEM_CATALOGO,
-  nomeDaBanca,
-  tipoQueAdmiteTudo,
   etapa,
   PRELIMINAR,
-  catalogoDeFases,
   faseDeAvaliacao,
+  catalogosDeTeste,
 } from './cronograma-do-certame.testing';
 
 describe('janela de recurso da etapa', () => {
   function comRecurso(patch: Partial<RecursoDaEtapa>): readonly string[] {
-    return problemasDoCronograma(
-      [faseDeAvaliacao],
-      [
+    return problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [
         etapa({
           nome: 'Prova Objetiva',
           faseCodigo: 'AVALIACAO',
@@ -38,13 +35,9 @@ describe('janela de recurso da etapa', () => {
           ],
         }),
       ],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [],
-    );
+      exigencias: [],
+      catalogos: catalogosDeTeste(),
+    });
   }
 
   /**
@@ -60,9 +53,9 @@ describe('janela de recurso da etapa', () => {
   });
 
   it('não acusa quando a etapa declara a publicação de que a janela corre', () => {
-    const problemas = problemasDoCronograma(
-      [faseDeAvaliacao],
-      [
+    const problemas = problemasDoCronograma({
+      fases: [faseDeAvaliacao],
+      etapas: [
         etapa({
           nome: 'Prova Objetiva',
           faseCodigo: 'AVALIACAO',
@@ -84,13 +77,9 @@ describe('janela de recurso da etapa', () => {
           ],
         }),
       ],
-      catalogoDeFases,
-      [],
-      SEM_CATALOGO,
-      nomeDaBanca,
-      tipoQueAdmiteTudo,
-      [],
-    );
+      exigencias: [],
+      catalogos: catalogosDeTeste(),
+    });
 
     expect(problemas).not.toContainEqual(
       expect.stringContaining('resultado preliminar que a etapa não declara mais'),

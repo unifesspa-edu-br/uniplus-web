@@ -72,28 +72,37 @@ export function descreverFase(
   fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
 ): DescricaoDaFase {
   const canonica = fasePorId.get(fase.faseCanonicaId);
-  const congelados = fase.congelados;
+  return {
+    nome: canonica?.nome ?? fase.codigo,
+    publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
+    ...atributosDaFase(fase, canonica),
+    foraDoCatalogo: canonica === undefined,
+  };
+}
 
+type AtributosDescritos = Pick<
+  DescricaoDaFase,
+  'coletaInscricao' | 'coletaSolicitacaoIsencao' | 'permiteComplementacao' | 'exigencias'
+>;
+
+function atributosDaFase(
+  fase: FaseDoCronograma,
+  canonica: FaseCanonicaDto | undefined,
+): AtributosDescritos {
+  const { congelados } = fase;
   if (congelados !== null) {
     return {
-      nome: canonica?.nome ?? fase.codigo,
-      publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
       coletaInscricao: congelados.coletaInscricao,
       coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
       permiteComplementacao: congelados.permiteComplementacao,
       exigencias: exigenciasDe(congelados, fase.produtos),
-      foraDoCatalogo: canonica === undefined,
     };
   }
-
   return {
-    nome: canonica?.nome ?? fase.codigo,
-    publicaResultadoDefinitivo: publicaResultadoDefinitivo(fase.produtos),
     coletaInscricao: canonica?.coletaInscricao ?? false,
     coletaSolicitacaoIsencao: canonica?.coletaSolicitacaoIsencao ?? false,
     permiteComplementacao: canonica?.permiteComplementacao ?? false,
     exigencias: canonica === undefined ? null : exigenciasDe(canonica, fase.produtos),
-    foraDoCatalogo: canonica === undefined,
   };
 }
 

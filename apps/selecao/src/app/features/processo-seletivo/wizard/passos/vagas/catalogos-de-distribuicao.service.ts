@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { forkJoin } from 'rxjs';
-import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { Observable, forkJoin } from 'rxjs';
+import { ApiResult, coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   CursoDto,
   CursosApi,
@@ -22,6 +22,17 @@ import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 const TIPO_REGRA_DISTRIBUICAO = 'regra_distribuicao_vagas';
 const TIPO_REGRA_AJUSTE = 'regra_ajuste_distribuicao_vagas';
 const TIPO_REGRA_CASCATA = 'criterio_remanejamento';
+
+/** As sete leituras de que a tela depende, cada uma com o desfecho próprio. */
+interface CatalogosLidos {
+  readonly ofertas: ApiResult<readonly OfertaCursoDto[]>;
+  readonly cursos: ApiResult<readonly CursoDto[]>;
+  readonly modalidades: ApiResult<readonly ModalidadeDto[]>;
+  readonly referencias: ApiResult<readonly ReferenciaReservaDemograficaDto[]>;
+  readonly distribuicao: ApiResult<readonly RegraCatalogoDto[]>;
+  readonly ajuste: ApiResult<readonly RegraCatalogoDto[]>;
+  readonly cascata: ApiResult<readonly RegraCatalogoDto[]>;
+}
 
 /**
  * Catálogos que a distribuição de vagas e a cascata de remanejamento
@@ -207,56 +218,58 @@ export class CatalogosDeDistribuicao {
     this.carregando.set(true);
     this.erro.set(null);
 
-    // Ofertas e cursos entram em ordem alfabética: a primeira página não manda
-    // `sort` e a API já devolve por nome; `coletarPaginas`
-    // segue o cursor, que carrega a ordenação assinada. Nada é reordenado aqui.
-    forkJoin({
+    this.lerCatalogos()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (resultados) => this.guardarCatalogos(resultados),
+        error: () => this.anunciarErro(),
+      });
+  }
+
+  // Ofertas e cursos entram em ordem alfabética: a primeira página não manda
+  // `sort` e a API já devolve por nome; `coletarPaginas`
+  // segue o cursor, que carrega a ordenação assinada. Nada é reordenado aqui.
+  private lerCatalogos(): Observable<CatalogosLidos> {
+    const lerRegras = (tipo: string) =>
+      coletarPaginas((cursor) => this.regrasApi.listar({ tipo, cursor }));
+
+    return forkJoin({
       ofertas: coletarPaginas((cursor) => this.ofertasApi.listar({ cursor })),
       cursos: coletarPaginas((cursor) => this.cursosApi.listar({ cursor })),
       modalidades: coletarPaginas((cursor) => this.modalidadesApi.listar({ cursor })),
       referencias: coletarPaginas((cursor) => this.reservaApi.listar({ cursor })),
-      distribuicao: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_DISTRIBUICAO, cursor }),
-      ),
-      ajuste: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_AJUSTE, cursor }),
-      ),
-      cascata: coletarPaginas((cursor) =>
-        this.regrasApi.listar({ tipo: TIPO_REGRA_CASCATA, cursor }),
-      ),
-    })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultados) => {
-          const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste, cascata } =
-            resultados;
+      distribuicao: lerRegras(TIPO_REGRA_DISTRIBUICAO),
+      ajuste: lerRegras(TIPO_REGRA_AJUSTE),
+      cascata: lerRegras(TIPO_REGRA_CASCATA),
+    });
+  }
 
-          // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
-          // o operador não teria como saber. Ou vêm todos, ou nenhum.
-          if (
-            !isApiOk(ofertas) ||
-            !isApiOk(cursos) ||
-            !isApiOk(modalidades) ||
-            !isApiOk(referencias) ||
-            !isApiOk(distribuicao) ||
-            !isApiOk(ajuste) ||
-            !isApiOk(cascata)
-          ) {
-            this.anunciarErro();
-            return;
-          }
+  private guardarCatalogos(resultados: CatalogosLidos): void {
+    const { ofertas, cursos, modalidades, referencias, distribuicao, ajuste, cascata } = resultados;
 
-          this.ofertas.set(ofertas.data);
-          this.cursos.set(cursos.data);
-          this.modalidades.set(modalidades.data);
-          this.referencias.set(referencias.data);
-          this.regrasDistribuicao.set(distribuicao.data);
-          this.regrasAjuste.set(ajuste.data);
-          this.regrasCascata.set(cascata.data);
-          this.carregando.set(false);
-        },
-        error: () => this.anunciarErro(),
-      });
+    // Um catálogo faltando deixa a tela oferecendo menos do que existe, e
+    // o operador não teria como saber. Ou vêm todos, ou nenhum.
+    if (
+      !isApiOk(ofertas) ||
+      !isApiOk(cursos) ||
+      !isApiOk(modalidades) ||
+      !isApiOk(referencias) ||
+      !isApiOk(distribuicao) ||
+      !isApiOk(ajuste) ||
+      !isApiOk(cascata)
+    ) {
+      this.anunciarErro();
+      return;
+    }
+
+    this.ofertas.set(ofertas.data);
+    this.cursos.set(cursos.data);
+    this.modalidades.set(modalidades.data);
+    this.referencias.set(referencias.data);
+    this.regrasDistribuicao.set(distribuicao.data);
+    this.regrasAjuste.set(ajuste.data);
+    this.regrasCascata.set(cascata.data);
+    this.carregando.set(false);
   }
 
   private anunciarErro(): void {

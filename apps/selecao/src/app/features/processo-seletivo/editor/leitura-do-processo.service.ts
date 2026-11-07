@@ -70,11 +70,10 @@ export class LeituraDoProcesso {
     if (!UUID.test(id)) {
       // A leitura anterior já foi superada pelo carimbo acima; sem encerrar o carregamento aqui,
       // voltar ao processo que estava aberto encontraria o editor preso no indicador de progresso.
-      this.store.hidratando.set(false);
-      this.store.falhaDeLeitura.set({
-        motivo: 'idInvalido',
-        mensagem: 'O endereço não aponta para um identificador de processo válido.',
-      });
+      this.encerrarLeituraComFalha(
+        'idInvalido',
+        'O endereço não aponta para um identificador de processo válido.',
+      );
       return;
     }
 
@@ -92,23 +91,36 @@ export class LeituraDoProcesso {
     if (superada()) return;
 
     if (!isApiOk(detalhe)) {
-      this.store.hidratando.set(false);
-      this.store.falhaDeLeitura.set({
-        motivo: motivoDe(detalhe.problem.status),
-        mensagem: this.problemI18n.resolve(detalhe.problem).title,
-      });
+      this.encerrarLeituraComFalha(
+        motivoDe(detalhe.problem.status),
+        this.problemI18n.resolve(detalhe.problem).title,
+      );
       return;
     }
 
-    this.store.hidratar(detalhe.data);
+    await this.restaurarProcesso(id, detalhe.data, superada);
+    if (superada()) return;
+
+    this.store.hidratando.set(false);
+  }
+
+  /** Põe o detalhe no editor e restaura o que ele não traz: o edital, o rascunho local e os passos concluídos. */
+  private async restaurarProcesso(
+    id: string,
+    detalhe: ProcessoSeletivoDto,
+    superada: () => boolean,
+  ): Promise<void> {
+    this.store.hidratar(detalhe);
     await this.restaurarDocumentoEdital(id, superada);
     if (superada()) return;
     await this.rascunho.restaurar(id, superada);
     if (superada()) return;
-    await this.derivarPassosConcluidos(detalhe.data, superada);
-    if (superada()) return;
+    await this.derivarPassosConcluidos(detalhe, superada);
+  }
 
+  private encerrarLeituraComFalha(motivo: MotivoFalhaDeLeitura, mensagem: string): void {
     this.store.hidratando.set(false);
+    this.store.falhaDeLeitura.set({ motivo, mensagem });
   }
 
   /** Invalida a leitura em voo e limpa o editor: o operador voltou ao cadastro novo. */

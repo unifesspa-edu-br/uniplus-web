@@ -1,4 +1,8 @@
-import { PAPEL_PRELIMINAR, type EtapaPontuada } from '../../processo-seletivo.models';
+import {
+  PAPEL_PRELIMINAR,
+  type EtapaPontuada,
+  type RecursoDaEtapa,
+} from '../../processo-seletivo.models';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { fracaoDeDiaUtil } from '../../shared/prazo-em-dias-uteis';
 import { recursoResolvido } from './cronograma-para-comando';
@@ -45,40 +49,22 @@ function problemasDoPrazoDaJanela(etapas: readonly EtapaPontuada[]): readonly st
 function problemasDeCoerenciaDaJanela(etapas: readonly EtapaPontuada[]): readonly string[] {
   return etapas.flatMap((etapa) => {
     const nome = nomeParaMensagem(etapa);
+    const resolvidos = etapa.recursos.filter(recursoResolvido);
     const problemas: string[] = [];
 
-    if (
-      etapa.recursos.some(
-        (r) => recursoResolvido(r) && fracaoDeDiaUtil(r.prazoValor, r.prazoUnidade),
-      )
-    ) {
+    if (resolvidos.some((r) => fracaoDeDiaUtil(r.prazoValor, r.prazoUnidade))) {
       problemas.push(
         `O prazo de recurso da etapa ${nome} está em fração de dia útil. Use valor inteiro, ou declare o prazo em horas.`,
       );
     }
 
-    if (etapa.recursos.some((r) => recursoResolvido(r) && r.admiteInstanciaSuperior === null)) {
+    if (resolvidos.some((r) => r.admiteInstanciaSuperior === null)) {
       problemas.push(
         `Responda, na janela de recurso da etapa ${nome}, se ela admite recurso em instância superior.`,
       );
     }
 
-    // O tempo de bloqueio da instância superior só vale quando a janela a admite: oculto, ele
-    // não é conferido nem enviado.
-    const suspensividadeQuebrada = etapa.recursos.some(
-      (r) =>
-        recursoResolvido(r) &&
-        (suspensividadeIncoerente(
-          r.suspensividadePrimeiraInstanciaValor,
-          r.suspensividadePrimeiraInstanciaUnidade,
-        ) ||
-          (r.admiteInstanciaSuperior === true &&
-            suspensividadeIncoerente(
-              r.suspensividadeSegundaInstanciaValor,
-              r.suspensividadeSegundaInstanciaUnidade,
-            ))),
-    );
-    if (suspensividadeQuebrada) {
+    if (resolvidos.some(suspensividadeQuebrada)) {
       problemas.push(
         `A suspensividade do recurso da etapa ${nome} exige valor e unidade juntos, e maior que zero — ou nenhum dos dois, que desativa aquela instância.`,
       );
@@ -86,6 +72,22 @@ function problemasDeCoerenciaDaJanela(etapas: readonly EtapaPontuada[]): readonl
 
     return problemas;
   });
+}
+
+// O tempo de bloqueio da instância superior só vale quando a janela a admite: oculto, ele
+// não é conferido nem enviado.
+function suspensividadeQuebrada(recurso: RecursoDaEtapa): boolean {
+  return (
+    suspensividadeIncoerente(
+      recurso.suspensividadePrimeiraInstanciaValor,
+      recurso.suspensividadePrimeiraInstanciaUnidade,
+    ) ||
+    (recurso.admiteInstanciaSuperior === true &&
+      suspensividadeIncoerente(
+        recurso.suspensividadeSegundaInstanciaValor,
+        recurso.suspensividadeSegundaInstanciaUnidade,
+      ))
+  );
 }
 
 // A janela ancorada em ato aponta para uma publicação preliminar DA PRÓPRIA etapa, e os

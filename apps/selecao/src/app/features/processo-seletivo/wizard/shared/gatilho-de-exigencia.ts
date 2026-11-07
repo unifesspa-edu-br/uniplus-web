@@ -127,6 +127,15 @@ export function dominiosDoGatilho(
 /** Como a opção nomeia o fato que a condição já cita e que esta exigência não pode citar. */
 const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
 
+/** O que o processo sabe ao oferecer os fatos de um gatilho. */
+export interface OfertaDoGatilho {
+  readonly producao: ProducaoDosFatos;
+  readonly dominiosDinamicos: ReadonlyMap<string, readonly string[]>;
+  /** Os fatos que a exigência já cita. */
+  readonly citados?: readonly string[];
+  /** Os campos de membro de grupo repetível que o documento pode citar. */
+  readonly camposDaRepeticao?: ReadonlySet<string>;
+}
 
 /**
  * Os fatos que o gatilho de uma exigência oferece onde ela é cobrada: os que o processo resolve — de
@@ -140,10 +149,12 @@ const MARCA_DO_FATO_NAO_CITAVEL = ' (não citável nesta exigência)';
 export function fatosDoGatilhoNaFase(
   fatos: readonly FatoComFase[],
   lugar: LugarDaExigencia,
-  producao: ProducaoDosFatos,
-  dominiosDinamicos: ReadonlyMap<string, readonly string[]>,
-  citados: readonly string[] = [],
-  camposDaRepeticao: ReadonlySet<string> = new Set(),
+  {
+    producao,
+    dominiosDinamicos,
+    citados = [],
+    camposDaRepeticao = new Set<string>(),
+  }: OfertaDoGatilho,
 ): readonly FatoEscolhivel[] {
   const citaveis = fatos.filter(
     (fato) =>

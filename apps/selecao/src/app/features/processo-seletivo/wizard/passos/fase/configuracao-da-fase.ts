@@ -74,44 +74,58 @@ function problemasDosProdutos(
   fase: FaseDoCronograma,
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
 ): readonly ProblemaDaFase[] {
-  const problemas: ProblemaDaFase[] = [];
+  return [
+    ...problemaDeProdutoEmBranco(fase),
+    ...problemaDePublicacaoRepetida(fase),
+    ...problemasDePapelEmAtoQueNaoEResultado(fase, atoPorCodigo),
+  ];
+}
 
-  if (fase.produtos.some((produto) => produto.atoCodigo === '')) {
-    problemas.push({
+function problemaDeProdutoEmBranco(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
+  if (!fase.produtos.some((produto) => produto.atoCodigo === '')) return [];
+  return [
+    {
       campo: 'produtos',
       mensagem: 'Escolha o tipo de ato de cada publicação declarada, ou remova a linha em branco.',
-    });
-  }
+    },
+  ];
+}
 
-  // A chave é o par ato + papel, e não o ato sozinho: o catálogo nomeia a matéria,
-  // e a mesma matéria é publicada uma vez como preliminar — que abre o ciclo
-  // recursal — e outra como definitiva, que o encerra.
+// A chave é o par ato + papel, e não o ato sozinho: o catálogo nomeia a matéria,
+// e a mesma matéria é publicada uma vez como preliminar — que abre o ciclo
+// recursal — e outra como definitiva, que o encerra.
+function problemaDePublicacaoRepetida(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
   const declarados = fase.produtos
     .filter((produto) => produto.atoCodigo !== '')
     .map((produto) => `${produto.atoCodigo}\u0000${produto.papel ?? ''}`);
-  if (repetidos(declarados).length > 0) {
-    problemas.push({
+  if (repetidos(declarados).length === 0) return [];
+  return [
+    {
       campo: 'produtos',
       mensagem: 'A fase não pode declarar a mesma publicação duas vezes no mesmo papel.',
-    });
-  }
+    },
+  ];
+}
 
-  // O catálogo é quem diz se um ato é resultado, e é essa marca que decide se a
-  // publicação pode receber papel. Ato que o catálogo carregado não conhece não
-  // é acusado aqui: quem arbitra é o servidor, e recusar por desconhecimento
-  // bloquearia a edição de um cronograma que ele aceita.
-  for (const produto of fase.produtos) {
-    if (produto.papel === null) continue;
+// O catálogo é quem diz se um ato é resultado, e é essa marca que decide se a
+// publicação pode receber papel. Ato que o catálogo carregado não conhece não
+// é acusado aqui: quem arbitra é o servidor, e recusar por desconhecimento
+// bloquearia a edição de um cronograma que ele aceita.
+function problemasDePapelEmAtoQueNaoEResultado(
+  fase: FaseDoCronograma,
+  atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
+): readonly ProblemaDaFase[] {
+  return fase.produtos.flatMap((produto) => {
+    if (produto.papel === null) return [];
     const ato = atoPorCodigo.get(produto.atoCodigo);
-    if (ato !== undefined && !ato.ehResultado) {
-      problemas.push({
-        campo: 'produtos',
+    if (ato === undefined || ato.ehResultado) return [];
+    return [
+      {
+        campo: 'produtos' as const,
         mensagem: `A publicação ${ato.nome} não é resultado no catálogo e não recebe papel preliminar nem definitivo.`,
-      });
-    }
-  }
-
-  return problemas;
+      },
+    ];
+  });
 }
 
 /**
@@ -133,66 +147,52 @@ function problemasDaConclusao(
   if (!publicaPreliminar) {
     return declarada === null
       ? []
-      : [
-          {
-            campo: 'faseConcluinteCodigo',
-            mensagem:
-              'Só fase que publica resultado preliminar declara quem conclui o ciclo recursal dela.',
-          },
-        ];
+      : recusaDaConclusao(
+          'Só fase que publica resultado preliminar declara quem conclui o ciclo recursal dela.',
+        );
   }
-
   if (declarada === null) {
     return publicaResultadoDefinitivo(fase.produtos)
       ? []
-      : [
-          {
-            campo: 'faseConcluinteCodigo',
-            mensagem:
-              'A fase publica resultado preliminar e não publica o definitivo: declare qual fase conclui o ciclo recursal.',
-          },
-        ];
+      : recusaDaConclusao(
+          'A fase publica resultado preliminar e não publica o definitivo: declare qual fase conclui o ciclo recursal.',
+        );
   }
+  return problemasDaFaseConcluinteDeclarada(fase, fases, declarada);
+}
 
+function problemasDaFaseConcluinteDeclarada(
+  fase: FaseDoCronograma,
+  fases: readonly FaseDoCronograma[],
+  declarada: string,
+): readonly ProblemaDaFase[] {
   if (declarada === fase.codigo) {
-    return [
-      {
-        campo: 'faseConcluinteCodigo',
-        mensagem:
-          'A fase não conclui a si mesma por declaração: para encerrar o próprio ciclo, ela publica o resultado definitivo.',
-      },
-    ];
+    return recusaDaConclusao(
+      'A fase não conclui a si mesma por declaração: para encerrar o próprio ciclo, ela publica o resultado definitivo.',
+    );
   }
 
   const concluinte = fases.find((outra) => outra.codigo === declarada);
   if (concluinte === undefined) {
-    return [
-      {
-        campo: 'faseConcluinteCodigo',
-        mensagem: `A fase ${declarada} não está no cronograma e não pode concluir o ciclo recursal desta.`,
-      },
-    ];
+    return recusaDaConclusao(
+      `A fase ${declarada} não está no cronograma e não pode concluir o ciclo recursal desta.`,
+    );
   }
-
   if (!publicaResultadoDefinitivo(concluinte.produtos)) {
-    return [
-      {
-        campo: 'faseConcluinteCodigo',
-        mensagem: `A fase ${declarada} não publica resultado definitivo e não conclui o ciclo recursal desta.`,
-      },
-    ];
+    return recusaDaConclusao(
+      `A fase ${declarada} não publica resultado definitivo e não conclui o ciclo recursal desta.`,
+    );
   }
-
   if (concluinte.ordem <= fase.ordem) {
-    return [
-      {
-        campo: 'faseConcluinteCodigo',
-        mensagem: `A fase ${declarada} vem antes desta na linha do tempo e não pode encerrar o ciclo recursal dela.`,
-      },
-    ];
+    return recusaDaConclusao(
+      `A fase ${declarada} vem antes desta na linha do tempo e não pode encerrar o ciclo recursal dela.`,
+    );
   }
-
   return [];
+}
+
+function recusaDaConclusao(mensagem: string): readonly ProblemaDaFase[] {
+  return [{ campo: 'faseConcluinteCodigo', mensagem }];
 }
 
 function problemasDoParecer(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
@@ -221,15 +221,24 @@ function problemasDasBancas(
   fase: FaseDoCronograma,
   nomeDaBanca: (tipoBancaId: string) => string,
 ): readonly ProblemaDaFase[] {
-  const problemas: ProblemaDaFase[] = [];
+  const emBranco: readonly ProblemaDaFase[] = fase.bancasRequeridas.some(
+    (banca) => banca.tipoBancaId === '',
+  )
+    ? [
+        {
+          campo: 'bancasRequeridas',
+          mensagem: 'Escolha o tipo de cada banca requerida, ou remova a linha em branco.',
+        },
+      ]
+    : [];
 
-  if (fase.bancasRequeridas.some((banca) => banca.tipoBancaId === '')) {
-    problemas.push({
-      campo: 'bancasRequeridas',
-      mensagem: 'Escolha o tipo de cada banca requerida, ou remova a linha em branco.',
-    });
-  }
+  const recortesPorTipo = [...recortesDeCompetenciaPorTipo(fase)].flatMap(
+    ([tipoBancaId, recortes]) => problemaDoRecorte(nomeDaBanca(tipoBancaId), recortes),
+  );
+  return [...emBranco, ...recortesPorTipo];
+}
 
+function recortesDeCompetenciaPorTipo(fase: FaseDoCronograma): ReadonlyMap<string, string[][]> {
   const porTipo = new Map<string, string[][]>();
   for (const banca of fase.bancasRequeridas) {
     if (banca.tipoBancaId === '') continue;
@@ -237,29 +246,29 @@ function problemasDasBancas(
     recortes.push([...banca.categoriasDocumentoIds].sort());
     porTipo.set(banca.tipoBancaId, recortes);
   }
+  return porTipo;
+}
 
-  for (const [tipoBancaId, recortes] of porTipo) {
-    if (recortes.length === 1) continue;
+function problemaDoRecorte(nome: string, recortes: readonly string[][]): readonly ProblemaDaFase[] {
+  if (recortes.length === 1) return [];
 
-    const nome = nomeDaBanca(tipoBancaId);
-    if (recortes.some((recorte) => recorte.length === 0)) {
-      problemas.push({
+  if (recortes.some((recorte) => recorte.length === 0)) {
+    return [
+      {
         campo: 'bancasRequeridas',
         mensagem: `A fase requer mais de uma banca de ${nome}: cada uma precisa declarar as categorias de documento que julga.`,
-      });
-      continue;
-    }
-
-    const assinaturas = recortes.map((recorte) => recorte.join('|'));
-    if (repetidos(assinaturas).length > 0) {
-      problemas.push({
-        campo: 'bancasRequeridas',
-        mensagem: `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`,
-      });
-    }
+      },
+    ];
   }
 
-  return problemas;
+  const assinaturas = recortes.map((recorte) => recorte.join('|'));
+  if (repetidos(assinaturas).length === 0) return [];
+  return [
+    {
+      campo: 'bancasRequeridas',
+      mensagem: `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`,
+    },
+  ];
 }
 
 /** Como a tela nomeia o papel de uma publicação nos seletores. */

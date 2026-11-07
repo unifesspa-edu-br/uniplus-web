@@ -13,14 +13,18 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { isApiOk, salvarArquivo } from '@uniplus/shared-core/http';
-import { NotasDoEnemApi } from '@uniplus/shared-data/selecao';
+import { NotasDoEnemApi, type LeiauteEscolhido } from '@uniplus/shared-data/selecao';
 
 import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
 import { HistoricoDeEnviosComponent } from './historico-de-envios.component';
 import { OrientacoesDoEnemComponent } from './orientacoes-do-enem.component';
 import { SeletorDeEdicaoComponent } from './seletor-de-edicao.component';
 import { acompanharLeiautes, leiauteDaChave } from './leiautes';
-import { NotasDoEnemDoProcesso, mesmoEscopo } from './notas-do-enem-do-processo.service';
+import {
+  NotasDoEnemDoProcesso,
+  mesmoEscopo,
+  type EscopoEscolhido,
+} from './notas-do-enem-do-processo.service';
 import { explicarRecusa, falhaIncerta, type RecusaExplicada } from './recusas-do-enem';
 import { SeletorDeLeiauteComponent } from './seletor-de-leiaute.component';
 
@@ -94,39 +98,50 @@ export class EnvioAoInepComponent {
     this.recusa.set(null);
 
     const escolhido = this.notas.escolhidoDeEnvio();
-    const catalogo = this.notas.leiautesDeEnvio();
-    const leiaute =
-      catalogo.estado === 'lido' ? leiauteDaChave(catalogo.dados, this.leiaute.value) : null;
     if (escolhido === null) return;
-    if (leiaute === null) {
-      this.erroDoLeiaute.set('Escolha o leiaute do arquivo de envio.');
-      this.seletor()?.focar();
-      return;
-    }
-    this.erroDoLeiaute.set(null);
+    const leiaute = this.leiauteEscolhido();
+    if (leiaute === null) return;
 
     this.gerando.set(true);
     try {
-      const resultado = await firstValueFrom(
-        this.api.gerarEnvio(escolhido.processoId, escolhido.etapaId, escolhido.edicao, leiaute),
-      );
-      if (isApiOk(resultado)) {
-        // O arquivo é da edição pedida, e o nome já a leva: baixa mesmo que a tela tenha mudado.
-        salvarArquivo(
-          new Blob([resultado.data], { type: 'text/plain;charset=utf-8' }),
-          this.nomeDoArquivo(escolhido.edicao),
-        );
-        if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
-          this.gerado.set(totalDeCpfs(resultado.data));
-          void this.notas.recarregarEnvios();
-        }
-      } else if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
-        this.mostrarRecusa(explicarRecusa(resultado.problem, 'envio'));
-        // Na falha incerta a geração pode ter sido registrada: o histórico é o que o operador confere.
-        if (falhaIncerta(resultado.problem)) void this.notas.recarregarEnvios();
-      }
+      await this.gerarEnvio(escolhido, leiaute);
     } finally {
       this.gerando.set(false);
+    }
+  }
+
+  /** O leiaute da escolha; sem escolha, avisa e leva o foco ao seletor. */
+  private leiauteEscolhido(): LeiauteEscolhido | null {
+    const catalogo = this.notas.leiautesDeEnvio();
+    const leiaute =
+      catalogo.estado === 'lido' ? leiauteDaChave(catalogo.dados, this.leiaute.value) : null;
+    if (leiaute === null) {
+      this.erroDoLeiaute.set('Escolha o leiaute do arquivo de envio.');
+      this.seletor()?.focar();
+      return null;
+    }
+    this.erroDoLeiaute.set(null);
+    return leiaute;
+  }
+
+  private async gerarEnvio(escolhido: EscopoEscolhido, leiaute: LeiauteEscolhido): Promise<void> {
+    const resultado = await firstValueFrom(
+      this.api.gerarEnvio(escolhido.processoId, escolhido.etapaId, escolhido.edicao, leiaute),
+    );
+    if (isApiOk(resultado)) {
+      // O arquivo é da edição pedida, e o nome já a leva: baixa mesmo que a tela tenha mudado.
+      salvarArquivo(
+        new Blob([resultado.data], { type: 'text/plain;charset=utf-8' }),
+        this.nomeDoArquivo(escolhido.edicao),
+      );
+      if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
+        this.gerado.set(totalDeCpfs(resultado.data));
+        void this.notas.recarregarEnvios();
+      }
+    } else if (mesmoEscopo(this.notas.escolhidoDeEnvio(), escolhido)) {
+      this.mostrarRecusa(explicarRecusa(resultado.problem, 'envio'));
+      // Na falha incerta a geração pode ter sido registrada: o histórico é o que o operador confere.
+      if (falhaIncerta(resultado.problem)) void this.notas.recarregarEnvios();
     }
   }
 
