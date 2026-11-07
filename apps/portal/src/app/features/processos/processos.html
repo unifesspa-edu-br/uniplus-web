@@ -21,9 +21,8 @@
     a cada estado faz o leitor de tela perder o anúncio.
   -->
   <span class="certames-count" role="status" aria-live="polite">
-    @if (vitrine.carregando()) { Carregando certames… } @else if (!vitrine.erro()) { {{
-    vitrine.certames().length }} {{ vitrine.certames().length === 1 ? 'certame nesta página' :
-    'certames nesta página' }} }
+    @if (!vitrine.carregando() && !leitura.visivel()) { {{ vitrine.certames().length }} {{
+    vitrine.certames().length === 1 ? 'certame nesta página' : 'certames nesta página' }} }
   </span>
   @if (!visao.isCompacto()) {
   <ui-segmented
@@ -70,26 +69,14 @@
   </ng-container>
 </ui-filter-bar>
 
-@if (vitrine.erro(); as mensagem) {
-<ui-alert variant="danger" heading="Não foi possível carregar os certames">
-  {{ mensagem }}
-  <div class="certames-retry">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="vitrine.carregando() ? 'true' : null"
-      [attr.aria-busy]="vitrine.carregando() ? 'true' : null"
-      (click)="vitrine.tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </div>
-</ui-alert>
-} @else if (vitrine.carregando()) {
-<div class="certames-loading" role="status">
-  <ui-spinner spinnerSize="sm" accessibleName="Carregando certames" />
+<ui-falha-de-leitura titulo="Não foi possível carregar os certames" [leitura]="leitura" />
+@if (vitrine.carregando()) {
+<div class="certames-loading" [uiIndicadorDaLeitura]="leitura">
+  <ui-spinner spinnerSize="sm" [decorativo]="true" />
   Carregando certames…
 </div>
+} @else if (leitura.visivel()) {
+<!-- A falha está no aviso acima. -->
 } @else if (vitrine.certames().length > 0) { @if (visao.visaoEfetiva() === 'lista') {
 <ul class="certames-list" role="list">
   @for (certame of vitrine.certames(); track certame.processoSeletivoId) {
@@ -98,6 +85,7 @@
     [certame]="certame"
     [abertura]="aberturaDe(certame)"
     [publicacoes]="publicacoes.porCertame().get(certame.processoSeletivoId)"
+    (recarregarPublicacoes)="publicacoes.recarregar(certame.processoSeletivoId)"
   ></li>
   }
 </ul>
@@ -108,6 +96,7 @@
     [certame]="certame"
     [abertura]="aberturaDe(certame)"
     [publicacoes]="publicacoes.porCertame().get(certame.processoSeletivoId)"
+    (recarregarPublicacoes)="publicacoes.recarregar(certame.processoSeletivoId)"
   />
   }
 </div>

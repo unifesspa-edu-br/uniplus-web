@@ -35,10 +35,6 @@
   font-size: var(--text-sm);
 }
 
-.certames-retry {
-  display: inline-flex;
-}
-
 .certames-list {
   list-style: none;
   margin: 0;

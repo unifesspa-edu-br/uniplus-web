@@ -38,4 +38,5 @@
   [publicacoes]="publicacoes()?.publicacoes"
   [carregando]="publicacoes()?.carregando ?? false"
   [erro]="publicacoes()?.erro ?? false"
+  (recarregar)="recarregarPublicacoes.emit()"
 />

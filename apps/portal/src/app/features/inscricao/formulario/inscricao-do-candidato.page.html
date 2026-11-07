@@ -10,19 +10,12 @@
 
 <p class="sr-only" aria-live="polite">{{ anuncio.aviso() }}</p>
 
+<ui-falha-de-leitura titulo="Não foi possível abrir a inscrição" [leitura]="acompanhamento" />
+
 @switch (leitura.estado()) { @case ('carregando') {
-<div class="inscricao-carregando" role="status" aria-busy="true">
-  <ui-spinner spinnerSize="md" /> Carregando a inscrição...
+<div class="inscricao-carregando" [uiIndicadorDaLeitura]="acompanhamento" aria-busy="true">
+  <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando a inscrição...
 </div>
-} @case ('erro') {
-<ui-alert variant="danger" heading="Não foi possível abrir a inscrição">
-  {{ leitura.erroAoCarregar() }}
-  <p>
-    <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
-      Tentar novamente
-    </button>
-  </p>
-</ui-alert>
 } @case ('pronto') { @if (gravacao.comprovante(); as enviado) {
 <ui-alert variant="success" heading="Inscrição enviada">
   Sua inscrição recebeu o número <strong>{{ enviado.numeroInscricao }}</strong>. Você pode

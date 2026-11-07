@@ -1,16 +1,18 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
 import type { CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
 import {
-  AlertComponent,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   FilterBarComponent,
   FilterChipsComponent,
+  IndicadorDaLeituraDirective,
   ListFooterComponent,
   PageHeaderComponent,
   SegmentedComponent,
   SpinnerComponent,
+  acompanharLeitura,
 } from '@uniplus/shared-ui/components';
 
 import { CertameEmCardComponent } from './certame-em-card.component';
@@ -33,14 +35,15 @@ import { VitrineDeCertames } from './vitrine-de-certames';
   standalone: true,
   imports: [
     RouterOutlet,
-    AlertComponent,
     CertameEmCardComponent,
     CertameEmLinhaComponent,
     ComoFuncionaComponent,
     DestaqueDoCertameComponent,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    IndicadorDaLeituraDirective,
     ListFooterComponent,
     PageHeaderComponent,
     SegmentedComponent,
@@ -53,11 +56,18 @@ import { VitrineDeCertames } from './vitrine-de-certames';
 })
 export class ProcessosComponent {
   private readonly relogio = inject(RELOGIO);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly vitrine = inject(VitrineDeCertames);
   protected readonly visao = inject(VisaoDosCertames);
   protected readonly publicacoes = inject(PublicacoesDaVitrine);
   protected readonly opcoesDeVisao = OPCOES_DE_VISAO;
+  protected readonly leitura = acompanharLeitura({
+    falha: this.vitrine.erro,
+    pendente: this.vitrine.carregando,
+    recarregar: () => this.vitrine.recarregar(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+  });
 
   protected aberturaDe(certame: CertameNaVitrineDto): string | null {
     return aberturaDoCertame(certame, this.relogio());

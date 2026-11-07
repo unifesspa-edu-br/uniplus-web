@@ -1,4 +1,5 @@
 <button
+  #botao
   type="button"
   class="publicacoes-toggle"
   [id]="botaoId()"
@@ -20,15 +21,15 @@
   [attr.aria-labelledby]="botaoId()"
   [hidden]="!aberto()"
 >
-  @if (aberto()) { @if (erro()) {
-  <ui-alert variant="danger" heading="Não foi possível carregar as publicações">
-    Recarregue a página para tentar outra vez.
-  </ui-alert>
-  } @else if (carregando()) {
-  <div class="publicacoes-loading" role="status">
-    <ui-spinner spinnerSize="sm" accessibleName="Carregando publicações" />
+  @if (aberto()) {
+  <ui-falha-de-leitura titulo="Não foi possível carregar as publicações" [leitura]="leitura" />
+  @if (carregando()) {
+  <div class="publicacoes-loading" [uiIndicadorDaLeitura]="leitura">
+    <ui-spinner spinnerSize="sm" [decorativo]="true" />
     Carregando publicações…
   </div>
+  } @else if (erro()) {
+  <!-- A falha está no aviso acima. -->
   } @else if (publicacoes(); as item) { @if (item.aviso; as aviso) {
   <ui-alert variant="warning" [dynamic]="false">{{ aviso }}</ui-alert>
   } @if (item.publicacoes.length > 0) {

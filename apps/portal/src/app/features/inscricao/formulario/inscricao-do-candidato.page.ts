@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   effect,
+  ElementRef,
   inject,
   input,
   type OnInit,
@@ -14,9 +15,12 @@ import { RouterLink } from '@angular/router';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import {
   AGUARDE_A_VERIFICACAO,
+  acompanharLeitura,
   AlertComponent,
   derivadosDoSistema,
+  FalhaDeLeituraComponent,
   FormularioDoCandidatoComponent,
+  IndicadorDaLeituraDirective,
   PageHeaderComponent,
   type PendenciaDaSecao,
   type SimulacaoDoFormulario,
@@ -48,7 +52,9 @@ import { respostasFixasDaConta } from './respostas-da-conta';
     AcoesDaInscricaoComponent,
     AlertComponent,
     EscolhaDoCursoComponent,
+    FalhaDeLeituraComponent,
     FormularioDoCandidatoComponent,
+    IndicadorDaLeituraDirective,
     PageHeaderComponent,
     RouterLink,
     SpinnerComponent,
@@ -69,12 +75,19 @@ import { respostasFixasDaConta } from './respostas-da-conta';
 export class InscricaoDoCandidatoPage implements OnInit {
   private readonly usuario = inject(UserContextService);
   private readonly reavaliacao = inject(ReavaliacaoDaInscricao);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly leitura = inject(LeituraDaInscricao);
   protected readonly escolha = inject(EscolhaDoCurso);
   protected readonly gravacao = inject(GravacaoDaInscricao);
   protected readonly avaliacao = inject(AvaliacaoDaInscricaoEstado);
   protected readonly anuncio = inject(AnuncioDaInscricao);
   protected readonly dia = inject(DiaDoEnvio);
+  protected readonly acompanhamento = acompanharLeitura({
+    falha: this.leitura.erroAoCarregar,
+    pendente: computed(() => this.leitura.estado() === 'carregando'),
+    recarregar: () => this.leitura.recarregar(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+  });
 
   readonly processoId = input.required<string>();
 

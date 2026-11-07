@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import type { CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
 import { TagComponent } from '@uniplus/shared-ui/components';
@@ -28,6 +28,8 @@ export class CertameEmCardComponent {
   /** Quando as inscrições abrem, se ainda vão abrir; `null` nos demais casos. */
   readonly abertura = input<string | null>(null);
   readonly publicacoes = input<PublicacoesDoItem | undefined>(undefined);
+  /** A pessoa pediu para ler de novo as publicações que falharam. */
+  readonly recarregarPublicacoes = output<void>();
 
   protected readonly rotuloDaSituacao = rotuloDaSituacao;
   protected readonly varianteDaSituacao = varianteDaSituacao;

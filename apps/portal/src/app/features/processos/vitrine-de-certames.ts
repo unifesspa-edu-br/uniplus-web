@@ -205,12 +205,11 @@ export class VitrineDeCertames {
    * Repete a consulta que falhou, seja ela qual for: `reload()` reexecuta com
    * os parâmetros reativos vigentes, preservando a página em que o candidato
    * estava. Voltar à primeira página é recuperação de cursor obsoleto, e quem
-   * cuida disso é `recuperandoDeCursorObsoleto`.
+   * cuida disso é `recuperandoDeCursorObsoleto`. Devolve `false` se a consulta
+   * já corre e nenhuma outra começou.
    */
-  tentarNovamente(): void {
-    if (!this.carregando()) {
-      this.lista.reload();
-    }
+  recarregar(): boolean {
+    return this.lista.reload();
   }
 
   private naPrimeiraPagina(): boolean {

@@ -160,8 +160,9 @@ describe('InscricaoListaPage', () => {
   // --- estados iniciais ---
 
   it('exibe estado de carregamento antes dos dados chegarem', () => {
-    const status = host().querySelector('[role="status"]');
-    expect(status?.textContent).toContain('Carregando inscrições');
+    const indicador = host().querySelector('.inscricao-spinner');
+    expect(indicador?.getAttribute('role')).toBe('status');
+    expect(indicador?.textContent).toContain('Carregando inscrições');
   });
 
   it('exibe ui-spinner durante o carregamento e o remove após os dados chegarem (CA-07)', async () => {
@@ -554,13 +555,28 @@ describe('InscricaoListaPage', () => {
 
   // Erro e recarregar ---
 
+  const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
+  const situacao = (): string =>
+    host().querySelector('ui-situacao-da-nova-tentativa')?.textContent ?? '';
+
   it('exibe alerta de erro com botão "Tentar novamente"', async () => {
     listagemService.rejeitar();
     await propagate();
     fixture.detectChanges();
 
-    expect(host().querySelector('ui-alert[variant="danger"]')).toBeTruthy();
+    expect(host().querySelector('.alert__title')?.textContent).toContain(
+      'Não foi possível carregar as inscrições',
+    );
     expect(botao('Tentar novamente')).toBeTruthy();
+  });
+
+  it('com o recurso em erro, a lista fica vazia em vez de lançar', async () => {
+    listagemService.rejeitar();
+    await propagate();
+    fixture.detectChanges();
+
+    expect(() => component['lista']()).not.toThrow();
+    expect(component['lista']()).toEqual([]);
   });
 
   it('"Tentar novamente" recarrega e exibe a lista ao ter sucesso', async () => {
@@ -575,9 +591,50 @@ describe('InscricaoListaPage', () => {
     listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
+    await macrotarefa();
+    fixture.detectChanges();
 
     expect(host().querySelector('ui-alert')).toBeFalsy();
     expect(host().querySelectorAll('li.inscricao-lista-item').length).toBe(INSCRICOES.length);
+  });
+
+  it('"Tentar novamente" não usa disabled e mantém o foco no botão enquanto a leitura corre', async () => {
+    listagemService.rejeitar();
+    await propagate();
+    fixture.detectChanges();
+    const tentar = botao('Tentar novamente') as HTMLButtonElement;
+    tentar.focus();
+
+    tentar.click();
+    await propagate();
+    fixture.detectChanges();
+
+    expect(tentar.disabled).toBe(false);
+    expect(tentar.getAttribute('aria-disabled')).toBe('true');
+    expect(document.activeElement).toBe(tentar);
+    expect(situacao()).toBe('Tentando novamente…');
+  });
+
+  it('a nova tentativa que dá certo leva o foco ao título, sem tê-lo movido ao clicar', async () => {
+    listagemService.rejeitar();
+    await propagate();
+    fixture.detectChanges();
+    const titulo = host().querySelector('h1');
+    const tentar = botao('Tentar novamente') as HTMLButtonElement;
+    tentar.focus();
+
+    tentar.click();
+    await propagate();
+    fixture.detectChanges();
+    expect(document.activeElement).not.toBe(titulo);
+
+    listagemService.flush(INSCRICOES);
+    await propagate();
+    fixture.detectChanges();
+    await macrotarefa();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(titulo);
   });
 
   // --- responsivo ---

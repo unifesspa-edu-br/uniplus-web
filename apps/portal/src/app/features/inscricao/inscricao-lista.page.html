@@ -11,9 +11,8 @@
     a cada estado faz o leitor de tela perder o anúncio.
   -->
   <span class="inscricoes-contagem-mensagem" role="status" aria-live="polite">
-    @if (loading()) { Carregando inscrições… } @else if (!errorMessage()) { {{
-    inscricoesFiltradas().length }} {{ inscricoesFiltradas().length === 1 ? 'inscrição nesta página'
-    : 'inscrições nesta página' }} }
+    @if (!loading() && !leitura.visivel()) { {{ inscricoesFiltradas().length }} {{
+    inscricoesFiltradas().length === 1 ? 'inscrição nesta página' : 'inscrições nesta página' }} }
   </span>
   @if (!isCompacto()) {
   <ui-segmented
@@ -48,25 +47,14 @@
   </button>
 </ui-filter-bar>
 
-@if (errorMessage(); as mensagem ) {
-<ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
-  {{ mensagem }}
-  <div class="ptl-inscricao__retry">
-    <ui-button
-      variant="secondary"
-      buttonSize="sm"
-      [isDisabled]="loading()"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </ui-button>
-  </div>
-</ui-alert>
-} @else if (loading()) {
-<div class="inscricao-spinner">
-  <ui-spinner spinnerSize="sm" accessibleName="Carregando inscrições" />
+<ui-falha-de-leitura titulo="Não foi possível carregar as inscrições" [leitura]="leitura" />
+@if (loading()) {
+<div class="inscricao-spinner" [uiIndicadorDaLeitura]="leitura">
+  <ui-spinner spinnerSize="sm" [decorativo]="true" />
   Carregando inscrições...
 </div>
+} @else if (leitura.visivel()) {
+<!-- A falha está no aviso acima. -->
 } @else if (inscricoesFiltradas().length > 0) { @if (visaoEfetiva() === 'lista') {
 <ul class="inscricao-lista" role="list">
   @for (inscricao of inscricoesFiltradas(); track inscricao.id) {

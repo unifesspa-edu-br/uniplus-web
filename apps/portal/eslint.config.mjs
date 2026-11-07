@@ -28,5 +28,5 @@ export default [
       'no-restricted-syntax': ['error', ...SELETORES_DE_COMPONENTE],
     },
   },
-  blocoDaLeituraNosModelos('warn'),
+  blocoDaLeituraNosModelos('error'),
 ];

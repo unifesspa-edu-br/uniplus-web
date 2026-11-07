@@ -263,6 +263,62 @@ describe('CertamePublicacoesComponent', () => {
     );
   });
 
+  describe('nova tentativa depois da falha', () => {
+    const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
+    const tentar = (): HTMLButtonElement =>
+      Array.from(host().querySelectorAll<HTMLButtonElement>('button')).find(
+        (el) => el.textContent?.trim() === 'Tentar novamente',
+      ) as HTMLButtonElement;
+
+    it('o alerta da falha oferece "Tentar novamente", que pede a leitura de novo', () => {
+      criar({ erro: true });
+      abrir();
+      const pedidos: unknown[] = [];
+      fixture.componentInstance.recarregar.subscribe((pedido) => pedidos.push(pedido));
+
+      tentar().click();
+
+      expect(pedidos).toHaveLength(1);
+    });
+
+    it('com a leitura em curso, o botão não usa disabled e o aviso da falha segue na tela', async () => {
+      criar({ erro: true });
+      abrir();
+      tentar().focus();
+      tentar().click();
+
+      fixture.componentRef.setInput('erro', false);
+      fixture.componentRef.setInput('carregando', true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(tentar().disabled).toBe(false);
+      expect(tentar().getAttribute('aria-disabled')).toBe('true');
+      expect(document.activeElement).toBe(tentar());
+      expect(host().querySelectorAll('[role="status"]')).toHaveLength(1);
+    });
+
+    it('a leitura que dá certo devolve o foco ao botão do accordion', async () => {
+      criar({ erro: true });
+      abrir();
+      tentar().focus();
+      tentar().click();
+      fixture.componentRef.setInput('erro', false);
+      fixture.componentRef.setInput('carregando', true);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.componentRef.setInput('carregando', false);
+      fixture.componentRef.setInput('publicacoes', medicina);
+      fixture.detectChanges();
+      await macrotarefa();
+      fixture.detectChanges();
+
+      expect(document.activeElement).toBe(botao());
+    });
+  });
+
   it('edital sem publicações registradas mostra estado vazio', () => {
     criar({});
     abrir();

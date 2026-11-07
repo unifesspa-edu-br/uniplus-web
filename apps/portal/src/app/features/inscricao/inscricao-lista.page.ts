@@ -15,11 +15,14 @@ import {
   ButtonComponent,
   DialogComponent,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   FilterBarComponent,
+  IndicadorDaLeituraDirective,
   SegmentedComponent,
   SpinnerComponent,
   TagComponent,
   TextareaComponent,
+  acompanharLeitura,
   type UiButtonVariant,
   type UiSegmentedOption,
   UiTagVariant,
@@ -129,8 +132,10 @@ interface Confirmacao {
     ButtonComponent,
     DialogComponent,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
     FilterBarComponent,
     FormsModule,
+    IndicadorDaLeituraDirective,
     NgTemplateOutlet,
     SegmentedComponent,
     SpinnerComponent,
@@ -173,11 +178,19 @@ export class InscricaoListaPage {
         }),
       ),
   });
-  protected readonly lista = computed(() => this.inscricoesResource.value() ?? []);
-  protected readonly loading = this.inscricoesResource.isLoading;
-  protected readonly errorMessage = computed(() =>
-    this.inscricoesResource.error() ? 'Tente novamente em alguns instantes.' : null,
+  // `value()` lança com o recurso em erro: a lista só lê o valor quando há um.
+  protected readonly lista = computed(() =>
+    this.inscricoesResource.hasValue() ? this.inscricoesResource.value() : [],
   );
+  protected readonly loading = this.inscricoesResource.isLoading;
+  protected readonly leitura = acompanharLeitura({
+    falha: computed(() =>
+      this.inscricoesResource.error() ? 'Tente novamente em alguns instantes.' : null,
+    ),
+    pendente: this.inscricoesResource.isLoading,
+    recarregar: () => this.inscricoesResource.reload(),
+    destino: () => this.paginaTitulo()?.nativeElement,
+  });
   protected readonly temFiltrosAtivos = computed(() => this.termoBusca().length > 0);
   protected readonly termoBusca = signal('');
   protected readonly viewOptions = VIEW_OPTIONS;
@@ -200,13 +213,6 @@ export class InscricaoListaPage {
 
   constructor() {
     effect(() => writeVisao(this.visao()));
-  }
-
-  protected tentarNovamente(): void {
-    if (!this.loading()) {
-      this.inscricoesResource.reload();
-      this.paginaTitulo()?.nativeElement?.focus();
-    }
   }
 
   /**

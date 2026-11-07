@@ -10,13 +10,15 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoCertame,
 } from '@uniplus/shared-data/selecao';
-import { delay, of } from 'rxjs';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { type Observable, Subject, delay, of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 
 import type { PublicacoesDoCertame } from '../publicacoes/publicacoes.model';
 import {
   type CertameParaPublicacoes,
   PublicacoesRepository,
+  type PublicacoesPorCertame,
 } from '../publicacoes/publicacoes.repository';
 import { ProcessosComponent } from './processos';
 import { VisaoDosCertames } from './visao-dos-certames';
@@ -189,8 +191,9 @@ describe('ProcessosComponent', () => {
 
   it('mostra o estado de carregando antes dos dados chegarem', async () => {
     expect(vitrine().carregando()).toBe(true);
-    const status = host().querySelector('.certames-count[role="status"]');
-    expect(status?.textContent).toContain('Carregando');
+    const indicador = host().querySelector('.certames-loading');
+    expect(indicador?.getAttribute('role')).toBe('status');
+    expect(indicador?.textContent).toContain('Carregando certames');
     await flushLista([], contadoresHeaders);
   });
 
@@ -583,6 +586,42 @@ describe('ProcessosComponent', () => {
     await propagate();
   });
 
+  it('"Tentar novamente" que dá certo leva o foco ao título, sem tê-lo movido ao clicar', async () => {
+    await flushLista([sisu], contadoresHeaders);
+    vitrine().situacaoSelecionada.set('INSCRICOES_ABERTAS');
+    await propagate();
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush(JSON.stringify({ title: 'Erro', status: 500, code: 'uniplus.infra.erro_interno' }), {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'content-type': 'application/problem+json' },
+      });
+    await propagate();
+    fixture.detectChanges();
+    const titulo = host().querySelector('h1');
+    const tentar = botao('Tentar novamente');
+    tentar?.focus();
+
+    tentar?.click();
+    await propagate();
+    fixture.detectChanges();
+    expect(document.activeElement).toBe(tentar);
+    expect(host().querySelector('ui-situacao-da-nova-tentativa')?.textContent).toBe(
+      'Tentando novamente…',
+    );
+
+    controller
+      .expectOne((r) => r.url === CERTAMES_URL)
+      .flush([sisu], { headers: contadoresHeaders });
+    await propagate();
+    await sleep(0);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(titulo);
+  });
+
   it('"Tentar novamente" repete a página em que o erro aconteceu, sem voltar à primeira', async () => {
     await flushLista([sisu], {
       ...contadoresHeaders,
@@ -652,6 +691,51 @@ describe('ProcessosComponent', () => {
     recarga.flush([sisu], { headers: contadoresHeaders });
     await propagate();
     expect(vitrine().erro()).toBeNull();
+  });
+
+  it('"Tentar novamente" que recebe cursor expirado (410) segue "tentando" até a recarga do início e só então devolve o foco', async () => {
+    const problema = (status: number, code: string): [string, object] => [
+      JSON.stringify({ title: 'Erro', status, code, traceId: 'test-trace' }),
+      { status, statusText: 'Erro', headers: { 'content-type': 'application/problem+json' } },
+    ];
+    await flushLista([sisu], {
+      ...contadoresHeaders,
+      Link: `<${CERTAMES_URL}?cursor=p2&direction=next>; rel="next"`,
+    });
+    vitrine().proximaPagina();
+    await propagate();
+    const [corpo500, opcoes500] = problema(500, 'uniplus.infra.erro_interno');
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush(corpo500, opcoes500);
+    await propagate();
+    fixture.detectChanges();
+    const tentar = botao('Tentar novamente');
+    tentar?.focus();
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+
+    tentar?.click();
+    await propagate();
+    const [corpo410, opcoes410] = problema(410, 'uniplus.cursor.expirado');
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush(corpo410, opcoes410);
+    await propagate();
+    await sleep(0);
+    await propagate();
+    fixture.detectChanges();
+
+    const recarga = controller.expectOne((r) => r.url === CERTAMES_URL);
+    expect(host().querySelector('ui-situacao-da-nova-tentativa')?.textContent).toBe(
+      'Tentando novamente…',
+    );
+    expect(document.activeElement).toBe(tentar);
+    expect(anunciar).not.toHaveBeenCalled();
+
+    recarga.flush([sisu], { headers: contadoresHeaders });
+    await propagate();
+    await sleep(0);
+    await propagate();
+    fixture.detectChanges();
+
+    expect(document.activeElement).toBe(host().querySelector('h1'));
+    expect(anunciar).not.toHaveBeenCalled();
   });
 
   it('abaixo de 600px o controle de alternância some e a lista é canônica', async () => {
@@ -868,6 +952,121 @@ describe('ProcessosComponent — sem documento de edital de abertura (CA-14)', (
       'Não foi possível carregar as publicações',
     );
     expect(host.querySelector('.certame-edital-link')).toBeNull();
+
+    controller.verify();
+  });
+  it('"Tentar novamente" nas publicações lê de novo e mostra a linha do tempo do certame', async () => {
+    const retorno = new Subject<Map<string, PublicacoesDoCertame | null>>();
+    const falhou = new Map([[semDocumento.processoSeletivoId, null]]);
+    // A primeira leitura é a da vitrine ainda vazia; as seguintes, a do certame e a nova tentativa.
+    const buscar = vi
+      .fn<(certames: readonly CertameParaPublicacoes[]) => Observable<PublicacoesPorCertame>>()
+      .mockReturnValueOnce(of(new Map()))
+      .mockReturnValueOnce(of(falhou))
+      .mockReturnValueOnce(retorno);
+    TestBed.configureTestingModule({
+      imports: [ProcessosComponent],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: PublicacoesRepository, useValue: { buscarPorCertames: buscar } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProcessosComponent);
+    const controller = TestBed.inject(HttpTestingController);
+    const appRef = TestBed.inject(ApplicationRef);
+    fixture.detectChanges();
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush([semDocumento]);
+    await Promise.resolve();
+    appRef.tick();
+    await new Promise((resolve) => setTimeout(resolve, 360));
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelector<HTMLButtonElement>('.publicacoes-toggle')?.click();
+    fixture.detectChanges();
+
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((el) => el.textContent?.trim() === 'Tentar novamente')
+      ?.click();
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+
+    expect(buscar).toHaveBeenCalledTimes(3);
+    expect(host.querySelector('.publicacoes-loading')).not.toBeNull();
+    expect(host.querySelector('ui-situacao-da-nova-tentativa')?.textContent).toBe(
+      'Tentando novamente…',
+    );
+
+    retorno.next(new Map([[semDocumento.processoSeletivoId, publicacoesDe(semDocumento)]]));
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+
+    expect(host.querySelector('.publicacao-timeline')).not.toBeNull();
+    expect(host.querySelector('.certame-edital-link')).not.toBeNull();
+
+    controller.verify();
+  });
+  it('a nova tentativa de um certame não tira a linha do tempo nem o edital de outro já carregado', async () => {
+    const retorno = new Subject<Map<string, PublicacoesDoCertame | null>>();
+    const buscar = vi
+      .fn<(certames: readonly CertameParaPublicacoes[]) => Observable<PublicacoesPorCertame>>()
+      .mockReturnValueOnce(of(new Map()))
+      .mockImplementationOnce((certames) =>
+        of(
+          new Map(
+            certames.map((c) => [
+              c.processoSeletivoId,
+              c.processoSeletivoId === sisu.processoSeletivoId ? null : publicacoesDe(c),
+            ]),
+          ),
+        ),
+      )
+      .mockReturnValueOnce(retorno);
+    TestBed.configureTestingModule({
+      imports: [ProcessosComponent],
+      providers: [
+        provideHttpClient(withInterceptors([apiResultInterceptor])),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: SELECAO_BASE_PATH, useValue: BASE },
+        { provide: PublicacoesRepository, useValue: { buscarPorCertames: buscar } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ProcessosComponent);
+    const controller = TestBed.inject(HttpTestingController);
+    const appRef = TestBed.inject(ApplicationRef);
+    fixture.detectChanges();
+    controller.expectOne((r) => r.url === CERTAMES_URL).flush([sisu, tecnicoEnfermagem]);
+    await Promise.resolve();
+    appRef.tick();
+    await new Promise((resolve) => setTimeout(resolve, 360));
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    host.querySelectorAll<HTMLButtonElement>('.publicacoes-toggle').forEach((b) => b.click());
+    fixture.detectChanges();
+    const linksAntes = host.querySelectorAll('.certame-edital-link').length;
+
+    Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
+      .find((el) => el.textContent?.trim() === 'Tentar novamente')
+      ?.click();
+    await Promise.resolve();
+    appRef.tick();
+    fixture.detectChanges();
+
+    expect(buscar.mock.calls.at(-1)?.[0].map((c) => c.processoSeletivoId)).toEqual([
+      sisu.processoSeletivoId,
+    ]);
+    expect(host.querySelectorAll('.publicacoes-loading')).toHaveLength(1);
+    expect(host.querySelectorAll('.certame-edital-link')).toHaveLength(linksAntes);
+    expect(linksAntes).toBeGreaterThan(0);
 
     controller.verify();
   });
