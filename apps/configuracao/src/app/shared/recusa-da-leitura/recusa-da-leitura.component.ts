@@ -12,6 +12,8 @@ import { tituloDaRecusa, type RecusaDaLeitura } from './recusa-da-leitura';
   standalone: true,
   imports: [AlertComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Sem recusa, o elemento vazio não pode virar item do grid da página e somar um espaço entre os blocos.
+  styles: ':host { display: contents; }',
   template: `
     @if (recusa(); as r) {
       <ui-alert variant="danger" [heading]="titulo()">
