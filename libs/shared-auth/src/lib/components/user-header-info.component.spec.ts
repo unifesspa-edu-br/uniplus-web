@@ -12,6 +12,8 @@ import { rotuloDoPerfil, type PerfilConcedido } from '../models/perfil-concedido
 import { PerfisDeAcessoService, type EstadoDosPerfis } from '../services/perfis-de-acesso.service';
 
 describe('UserHeaderInfoComponent', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   const profileData: UserProfile = {
     id: 'abc-123',
     username: 'candidato',

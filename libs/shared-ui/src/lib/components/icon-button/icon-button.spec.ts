@@ -63,17 +63,17 @@ describe('IconButtonComponent (ação só-ícone com dica)', () => {
   });
 
   it('description expõe um motivo via aria-describedby, sem alterar a dica visível', () => {
-    fixture.componentRef.setInput('tooltip', 'Inativar');
-    fixture.componentRef.setInput('description', 'A condição PCD não pode ser inativada.');
+    fixture.componentRef.setInput('tooltip', 'Desativar');
+    fixture.componentRef.setInput('description', 'A condição PCD não pode ser desativada.');
     fixture.detectChanges();
 
     const b = botao();
     const describedById = b.getAttribute('aria-describedby');
     expect(describedById).toBeTruthy();
-    expect(b.getAttribute('data-tooltip')).toBe('Inativar');
+    expect(b.getAttribute('data-tooltip')).toBe('Desativar');
 
     const descricao = fixture.nativeElement.querySelector(`#${describedById}`) as HTMLElement;
-    expect(descricao.textContent).toBe('A condição PCD não pode ser inativada.');
+    expect(descricao.textContent).toBe('A condição PCD não pode ser desativada.');
     expect(descricao.classList.contains('sr-only')).toBe(true);
   });
 

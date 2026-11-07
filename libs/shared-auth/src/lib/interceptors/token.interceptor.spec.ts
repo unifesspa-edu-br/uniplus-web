@@ -22,6 +22,8 @@ async function flushMicrotasks(times = 5): Promise<void> {
 }
 
 describe('tokenInterceptor — allowlist', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   const apiUrl = 'http://localhost:5000/api/v1';
   const issuerUrl = 'http://localhost:8080/realms/unifesspa';
   const externalUrl = 'https://evil.example.com/leak';
@@ -68,7 +70,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.get('Authorization')).toBe('Bearer fake-token');
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('anexa Bearer quando a URL está na allowlist (provedor OIDC)', async () => {
@@ -82,7 +83,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.get('Authorization')).toBe('Bearer fake-token');
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('NÃO anexa Bearer para URL fora da allowlist (domínio externo)', async () => {
@@ -94,7 +94,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('NÃO anexa Bearer quando allowlist está vazia (default conservador)', async () => {
@@ -106,7 +105,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('NÃO anexa Bearer para URL que apenas começa igual mas em outro host', async () => {
@@ -119,7 +117,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('dispara refreshToken() e anexa o Bearer quando o token está expirado', async () => {
@@ -141,7 +138,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.get('Authorization')).toBe('Bearer stale-token');
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('NÃO chama refreshToken() quando o token ainda é válido', async () => {
@@ -160,7 +156,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.get('Authorization')).toBe('Bearer fresh-token');
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 
   it('NÃO anexa Bearer quando não há token disponível, mesmo em URL permitida', async () => {
@@ -173,7 +168,6 @@ describe('tokenInterceptor — allowlist', () => {
     expect(req.request.headers.has('Authorization')).toBe(false);
     req.flush({});
     await promise;
-    httpMock.verify();
   });
 });
 

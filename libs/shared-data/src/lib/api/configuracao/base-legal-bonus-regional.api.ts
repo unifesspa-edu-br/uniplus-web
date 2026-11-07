@@ -88,7 +88,7 @@ export class BaseLegalBonusRegionalApi {
     );
   }
 
-  /** DELETE `/api/configuracao/admin/base-legal-bonus-regional/{id}` — inativação (soft-delete). */
+  /** DELETE `/api/configuracao/admin/base-legal-bonus-regional/{id}` — remoção (soft-delete). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
       `${this.basePath}/api/configuracao/admin/base-legal-bonus-regional/${encodeURIComponent(id)}`,

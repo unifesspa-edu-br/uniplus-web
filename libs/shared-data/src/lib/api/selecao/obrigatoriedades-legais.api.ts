@@ -94,7 +94,7 @@ export class ObrigatoriedadesLegaisApi {
     );
   }
 
-  /** DELETE `/api/selecao/admin/obrigatoriedades-legais/{id}` — inativação (soft-delete). */
+  /** DELETE `/api/selecao/admin/obrigatoriedades-legais/{id}` — desativação (soft-delete). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
       `${this.basePath}/api/selecao/admin/obrigatoriedades-legais/${encodeURIComponent(id)}`,

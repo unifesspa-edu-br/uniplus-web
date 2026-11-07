@@ -98,7 +98,7 @@ export class TiposDocumentoApi {
     );
   }
 
-  /** DELETE `/api/configuracao/admin/tipos-documento/{id}` — inativação (soft-delete); sem bloqueio por referência externa (congelamento na publicação, UNI-REQ-0019; ADR-0061). */
+  /** DELETE `/api/configuracao/admin/tipos-documento/{id}` — remoção (soft-delete); sem bloqueio por referência externa (congelamento na publicação, UNI-REQ-0019; ADR-0061). */
   remover(id: string): Observable<ApiResult<void>> {
     return this.http.delete<ApiResult<void>>(
       `${this.basePath}/api/configuracao/admin/tipos-documento/${encodeURIComponent(id)}`,

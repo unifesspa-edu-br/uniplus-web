@@ -27,7 +27,7 @@ export interface ReservaDemograficaQuery {
  * API thin (ADR-0013): tipos do `schema.ts`; resposta envelopada em
  * `ApiResult<T>` (ADR-0011); vendor MIME `referencia-reserva-demografica v1`
  * (ADR-0016/0028). **O GET lista apenas referências ativas** — soft-delete
- * (ADR-0055) não é listável; não há campo de status nem parâmetro para inativas.
+ * (ADR-0055) não é listável; não há campo de status nem parâmetro para desativadas.
  */
 @Injectable({ providedIn: 'root' })
 export class ReservaDemograficaApi {

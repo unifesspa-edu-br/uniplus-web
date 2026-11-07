@@ -135,7 +135,7 @@ describe('TermosConsentimentoApi', () => {
         type: 'about:blank',
         title: 'Indisponível.',
         status: 503,
-        code: 'uniplus.indisponivel',
+        code: 'uniplus.internal.unexpected',
         traceId: 't',
       },
       {

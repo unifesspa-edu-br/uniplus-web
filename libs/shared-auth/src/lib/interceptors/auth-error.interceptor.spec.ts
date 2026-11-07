@@ -18,6 +18,8 @@ const baseProblem: ProblemDetails = {
 };
 
 describe('authErrorInterceptor (consumindo ApiResult)', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   function setup() {
     const login = vi.fn();
     const navigate = vi.fn();
@@ -57,7 +59,6 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     expect(result.status).toBe(401);
     expect(login).toHaveBeenCalledTimes(1);
     expect(navigate).not.toHaveBeenCalled();
-    httpMock.verify();
   });
 
   it('403 (envelopado em ApiFailure) redireciona para /acesso-negado', async () => {
@@ -76,7 +77,6 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     expect(result.status).toBe(403);
     expect(navigate).toHaveBeenCalledWith(['/acesso-negado']);
     expect(login).not.toHaveBeenCalled();
-    httpMock.verify();
   });
 
   it('outros status (500, 404, 0) entregam ApiFailure ao consumer sem login nem navigate', async () => {
@@ -107,7 +107,6 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
 
     expect(login).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
-    httpMock.verify();
   });
 
   it('resposta 2xx envelopa em ApiOk sem disparar redirect', async () => {
@@ -123,6 +122,5 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     }
     expect(login).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
-    httpMock.verify();
   });
 });

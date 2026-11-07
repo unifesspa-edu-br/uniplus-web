@@ -13,7 +13,7 @@ export type UiTooltipPosition = 'top' | 'bottom' | 'left' | 'right';
 
 /**
  * Botão de ação só-ícone com dica (tooltip). Padroniza as células de "Ações"
- * das tabelas (editar, remover, inativar, etc.) e barras de ferramentas.
+ * das tabelas (editar, remover, desativar, etc.) e barras de ferramentas.
  *
  * Aparência fixa do Uni+ DS: `btn btn--tertiary btn--sm btn--rect
  * btn--icon-only`; `danger` troca para a variante destrutiva. O `<i>` é
@@ -99,7 +99,7 @@ export class IconButtonComponent {
   /**
    * Variante destrutiva. Disponível para uso fora de célula de tabela; nas
    * células de "Ações" o padrão do repo mantém `tertiary` mesmo em
-   * remover/inativar — o glifo (`pi-trash`/`pi-power-off`) já diferencia a
+   * remover/desativar — o glifo (`pi-trash`/`pi-power-off`) já diferencia a
    * ação, e pintar a linha inteira de vermelho polui a tabela.
    */
   readonly danger = input<boolean>(false);
