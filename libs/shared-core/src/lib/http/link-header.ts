@@ -51,7 +51,7 @@ export function parseLink(headerValue: string | null | undefined): Map<string, P
     return result;
   }
 
-  for (const segment of splitTopLevelCommas(trimmed)) {
+  for (const segment of splitTopLevel(trimmed, DELIMITA_LINK_VALUES)) {
     const linkValue = parseLinkValue(segment);
     if (linkValue === null) {
       continue;
@@ -70,50 +70,54 @@ export function parseLink(headerValue: string | null | undefined): Map<string, P
   return result;
 }
 
+type Contexto = 'livre' | 'aspas' | 'angulos';
+
+interface Varredura {
+  contexto: Contexto;
+  escapado: boolean;
+}
+
+/** Quais trechos o tokenizador atravessa sem tratar o separador como separador. */
+interface DelimitacaoDeSegmentos {
+  readonly separador: string;
+  /** `<URI>` é opaca: só o header inteiro (vírgula) a tem; os parameters (`;`) não. */
+  readonly protegeUri: boolean;
+}
+
+const DELIMITA_LINK_VALUES: DelimitacaoDeSegmentos = { separador: ',', protegeUri: true };
+const DELIMITA_PARAMETERS: DelimitacaoDeSegmentos = { separador: ';', protegeUri: false };
+
+function avancarVarredura(v: Varredura, ch: string, protegeUri: boolean): void {
+  if (v.escapado) {
+    v.escapado = false;
+  } else if (v.contexto === 'aspas') {
+    if (ch === '\\') v.escapado = true;
+    else if (ch === '"') v.contexto = 'livre';
+  } else if (v.contexto === 'angulos') {
+    if (ch === '>') v.contexto = 'livre';
+  } else if (ch === '"') {
+    v.contexto = 'aspas';
+  } else if (protegeUri && ch === '<') {
+    v.contexto = 'angulos';
+  }
+}
+
 /**
- * Tokenizador char-by-char que separa o header em link-values pela vírgula
- * de top-level — preserva vírgulas dentro de `<URI>` ou de quoted-strings
- * (suportando escape com `\`).
+ * Tokenizador char-by-char que separa o texto no separador de top-level — preserva o separador dentro
+ * de `<URI>` (quando a delimitação a protege) ou de quoted-strings (suportando escape com `\`).
  */
-function splitTopLevelCommas(input: string): string[] {
+function splitTopLevel(input: string, delimitacao: DelimitacaoDeSegmentos): string[] {
   const segments: string[] = [];
-  let inAngle = false;
-  let inQuotes = false;
-  let escapeNext = false;
+  const varredura: Varredura = { contexto: 'livre', escapado: false };
   let start = 0;
 
   for (let i = 0; i < input.length; i++) {
     const ch = input[i];
-    if (escapeNext) {
-      escapeNext = false;
-      continue;
-    }
-    if (inQuotes) {
-      if (ch === '\\') {
-        escapeNext = true;
-      } else if (ch === '"') {
-        inQuotes = false;
-      }
-      continue;
-    }
-    if (inAngle) {
-      if (ch === '>') {
-        inAngle = false;
-      }
-      continue;
-    }
-    if (ch === '<') {
-      inAngle = true;
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
-    }
-    if (ch === ',') {
+    if (varredura.contexto === 'livre' && !varredura.escapado && ch === delimitacao.separador) {
       segments.push(input.slice(start, i));
       start = i + 1;
     }
+    avancarVarredura(varredura, ch, delimitacao.protegeUri);
   }
   segments.push(input.slice(start));
   return segments.map((s) => s.trim()).filter((s) => s.length > 0);
@@ -133,67 +137,25 @@ function parseLinkValue(segment: string): ParsedLink | null {
   }
   const uri = segment.slice(1, closeIdx);
   const paramsRaw = segment.slice(closeIdx + 1).trim();
-
-  const params: Record<string, string> = {};
-  if (paramsRaw.length === 0) {
-    return { uri, params };
-  }
   // O remainder começa idealmente com `;`; remove o `;` líder.
   const tail = paramsRaw.startsWith(';') ? paramsRaw.slice(1) : paramsRaw;
-  for (const paramSegment of splitTopLevelSemicolons(tail)) {
+  return { uri, params: parseParameters(tail) };
+}
+
+function parseParameters(tail: string): Record<string, string> {
+  const params: Record<string, string> = {};
+  for (const paramSegment of splitTopLevel(tail, DELIMITA_PARAMETERS)) {
     const equalsIdx = paramSegment.indexOf('=');
-    if (equalsIdx < 0) {
-      // RFC 5988 permite param sem valor (flag) — guardamos como string vazia
-      // para que o consumer detecte presença sem precisar de tipo separado.
-      const key = paramSegment.trim().toLowerCase();
-      if (key.length > 0 && !(key in params)) {
-        params[key] = '';
-      }
-      continue;
-    }
-    const key = paramSegment.slice(0, equalsIdx).trim().toLowerCase();
+    // RFC 5988 permite param sem valor (flag) — guardamos como string vazia
+    // para que o consumer detecte presença sem precisar de tipo separado.
+    const hasValue = equalsIdx >= 0;
+    const key = (hasValue ? paramSegment.slice(0, equalsIdx) : paramSegment).trim().toLowerCase();
     if (key.length === 0 || key in params) {
       continue;
     }
-    params[key] = unquoteIfQuoted(paramSegment.slice(equalsIdx + 1).trim());
+    params[key] = hasValue ? unquoteIfQuoted(paramSegment.slice(equalsIdx + 1).trim()) : '';
   }
-  return { uri, params };
-}
-
-/**
- * Mesma semântica de `splitTopLevelCommas`, mas para `;` separando parameters.
- */
-function splitTopLevelSemicolons(input: string): string[] {
-  const segments: string[] = [];
-  let inQuotes = false;
-  let escapeNext = false;
-  let start = 0;
-
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i];
-    if (escapeNext) {
-      escapeNext = false;
-      continue;
-    }
-    if (inQuotes) {
-      if (ch === '\\') {
-        escapeNext = true;
-      } else if (ch === '"') {
-        inQuotes = false;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
-    }
-    if (ch === ';') {
-      segments.push(input.slice(start, i));
-      start = i + 1;
-    }
-  }
-  segments.push(input.slice(start));
-  return segments.map((s) => s.trim()).filter((s) => s.length > 0);
+  return params;
 }
 
 /**

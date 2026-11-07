@@ -1,6 +1,7 @@
 import {
   HttpHeaders,
   HttpResourceOptions,
+  HttpResourceRef,
   HttpResourceRequest,
   httpResource,
 } from '@angular/common/http';
@@ -93,6 +94,38 @@ export interface UseApiResourceRef<T> {
   destroy(): void;
 }
 
+function sinaisDoEnvelope<T>(
+  resource: HttpResourceRef<ApiResult<T> | undefined>,
+): Pick<UseApiResourceRef<T>, 'value' | 'data' | 'problem'> {
+  // `Resource.value()` **lança `ResourceValueError`** quando `status() ===
+  // 'error'` (caso real: interceptor não-HTTP que escapa do envelope `ApiResult`
+  // — vide ADR-0018 §"esta ADR não decide"). Sem o guard contra `error()`,
+  // `value()`/`data()`/`problem()` propagam a exceção durante change detection
+  // e a página crasha em vez de renderizar a mensagem de erro. O helper
+  // padroniza: em estado de erro, todos os derivados retornam ausência
+  // (`undefined`/`null`) e o caller diferencia via `error()` (que nunca lança).
+  const value: Signal<ApiResult<T> | undefined> = computed(() =>
+    resource.error() ? undefined : resource.value(),
+  );
+
+  const data: Signal<T | null> = computed(() => {
+    if (resource.error()) {
+      return null;
+    }
+    const envelope = resource.value();
+    return envelope?.ok ? envelope.data : null;
+  });
+
+  const problem: Signal<ProblemDetails | null> = computed(() => {
+    if (resource.error()) {
+      return null;
+    }
+    const envelope = resource.value();
+    return envelope && !envelope.ok ? envelope.problem : null;
+  });
+  return { value, data, problem };
+}
+
 /**
  * Cria um `UseApiResourceRef<T>` ancorado em `httpResource` + envelope
  * `ApiResult<T>`. Deve ser chamado em contexto de injeção (constructor de
@@ -138,32 +171,7 @@ export function useApiResource<T>(
     return typeof next === 'string' ? { url: next } : next;
   }, options);
 
-  // `Resource.value()` **lança `ResourceValueError`** quando `status() ===
-  // 'error'` (caso real: interceptor não-HTTP que escapa do envelope `ApiResult`
-  // — vide ADR-0018 §"esta ADR não decide"). Sem o guard contra `error()`,
-  // `value()`/`data()`/`problem()` propagam a exceção durante change detection
-  // e a página crasha em vez de renderizar a mensagem de erro. O helper
-  // padroniza: em estado de erro, todos os derivados retornam ausência
-  // (`undefined`/`null`) e o caller diferencia via `error()` (que nunca lança).
-  const value: Signal<ApiResult<T> | undefined> = computed(() =>
-    resource.error() ? undefined : resource.value(),
-  );
-
-  const data: Signal<T | null> = computed(() => {
-    if (resource.error()) {
-      return null;
-    }
-    const envelope = resource.value();
-    return envelope?.ok ? envelope.data : null;
-  });
-
-  const problem: Signal<ProblemDetails | null> = computed(() => {
-    if (resource.error()) {
-      return null;
-    }
-    const envelope = resource.value();
-    return envelope && !envelope.ok ? envelope.problem : null;
-  });
+  const { value, data, problem } = sinaisDoEnvelope(resource);
 
   return {
     value,

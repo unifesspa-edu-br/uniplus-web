@@ -43,6 +43,11 @@ export type ResultadoEnvio = { readonly ok: true; readonly etag: string | null }
  */
 const STATUS_ASSINATURA_RECUSADA_PELO_STORAGE = 403;
 
+function falhaDoEnvio(erro: unknown): EnvioFalhou {
+  const status = statusDe(erro);
+  return { ok: false, status, expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE };
+}
+
 /**
  * Envia o arquivo direto ao storage, relatando o progresso em percentual.
  *
@@ -66,14 +71,7 @@ export function enviarAoStorage(
           etag = (evento as HttpResponse<unknown>).headers.get('ETag');
         }
       },
-      error: (erro: unknown) => {
-        const status = statusDe(erro);
-        resolve({
-          ok: false,
-          status,
-          expirada: status === STATUS_ASSINATURA_RECUSADA_PELO_STORAGE,
-        });
-      },
+      error: (erro: unknown) => resolve(falhaDoEnvio(erro)),
       complete: () => {
         onProgresso(100);
         resolve({ ok: true, etag });

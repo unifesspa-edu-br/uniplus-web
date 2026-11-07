@@ -24,6 +24,43 @@ export interface LookupCompleto<T> {
   recarregar(): void;
 }
 
+class CatalogoCarregado<T> implements LookupCompleto<T> {
+  private readonly _opcoes = signal<readonly T[]>([]);
+  private readonly _comErro = signal(false);
+  private readonly _pendente = signal(true);
+  private emAndamento: Subscription | undefined;
+
+  readonly opcoes = this._opcoes.asReadonly();
+  readonly comErro = this._comErro.asReadonly();
+  readonly pendente = this._pendente.asReadonly();
+
+  constructor(
+    private readonly pagina: (cursor?: Cursor) => Observable<ApiResult<readonly T[]>>,
+    destroyRef: DestroyRef,
+  ) {
+    // O teardown é registrado uma vez, na construção: `takeUntilDestroyed` por
+    // chamada precisaria de um `DestroyRef` ainda vivo a cada nova tentativa.
+    destroyRef.onDestroy(() => this.emAndamento?.unsubscribe());
+  }
+
+  readonly recarregar = (): void => {
+    this.emAndamento?.unsubscribe();
+    this._comErro.set(false);
+    this._pendente.set(true);
+    this.emAndamento = coletarPaginas(this.pagina).subscribe({
+      next: (resultado) => {
+        if (resultado.ok) this._opcoes.set(resultado.data);
+        else this._comErro.set(true);
+      },
+      error: () => {
+        this._comErro.set(true);
+        this._pendente.set(false);
+      },
+      complete: () => this._pendente.set(false),
+    });
+  };
+}
+
 /**
  * Carrega o catálogo inteiro de um `select` de chave estrangeira e mantém o
  * estado que a tela precisa exibir.
@@ -41,39 +78,5 @@ export function lookupCompleto<T>(
   pagina: (cursor?: Cursor) => Observable<ApiResult<readonly T[]>>,
   destroyRef: DestroyRef,
 ): LookupCompleto<T> {
-  const opcoes = signal<readonly T[]>([]);
-  const comErro = signal(false);
-  const pendente = signal(true);
-  let emAndamento: Subscription | undefined;
-
-  // O teardown é registrado uma vez, na construção: `takeUntilDestroyed` por
-  // chamada precisaria de um `DestroyRef` ainda vivo a cada nova tentativa.
-  destroyRef.onDestroy(() => emAndamento?.unsubscribe());
-
-  const recarregar = (): void => {
-    emAndamento?.unsubscribe();
-    comErro.set(false);
-    pendente.set(true);
-    emAndamento = coletarPaginas(pagina).subscribe({
-      next: (resultado) => {
-        if (!resultado.ok) {
-          comErro.set(true);
-          return;
-        }
-        opcoes.set(resultado.data);
-      },
-      error: () => {
-        comErro.set(true);
-        pendente.set(false);
-      },
-      complete: () => pendente.set(false),
-    });
-  };
-
-  return {
-    opcoes: opcoes.asReadonly(),
-    comErro: comErro.asReadonly(),
-    pendente: pendente.asReadonly(),
-    recarregar,
-  };
+  return new CatalogoCarregado(pagina, destroyRef);
 }
