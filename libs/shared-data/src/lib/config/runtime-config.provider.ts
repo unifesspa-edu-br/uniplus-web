@@ -1,4 +1,9 @@
-import { APP_INITIALIZER, EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
+import {
+  APP_INITIALIZER,
+  EnvironmentProviders,
+  InjectionToken,
+  makeEnvironmentProviders,
+} from '@angular/core';
 import { HttpBackend, HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -74,17 +79,7 @@ export function provideRuntimeConfig(): EnvironmentProviders {
   return makeEnvironmentProviders([
     {
       provide: APP_INITIALIZER,
-      useFactory:
-        (backend: HttpBackend, store: AppConfigService, auth: AuthService) => async () => {
-          // HttpClient construído com HttpBackend direto não passa por
-          // nenhum interceptor — necessário porque o pipeline padrão
-          // depende de tokens que ainda não estão prontos neste momento.
-          const http = new HttpClient(backend);
-          const cfg = await firstValueFrom(http.get<AppConfig>(resolveRuntimeConfigPath()));
-          assertNaoEhPlaceholder(cfg);
-          store.load(cfg);
-          await auth.init(toAuthConfig(cfg));
-        },
+      useFactory: carregarRuntimeConfigEIniciarAutenticacao,
       deps: [HttpBackend, AppConfigService, AuthService],
       multi: true,
     },
@@ -93,52 +88,46 @@ export function provideRuntimeConfig(): EnvironmentProviders {
       useFactory: (store: AppConfigService): AuthConfig => toAuthConfig(store.get()),
       deps: [AppConfigService],
     },
-    {
-      provide: PROFILE_BASE_PATH,
+    ...TOKENS_NA_API_URL.map((token) => ({
+      provide: token,
       useFactory: (store: AppConfigService) => store.get().apiUrl,
       deps: [AppConfigService],
-    },
-    {
-      provide: AUTORIZACAO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: SELECAO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: INGRESSO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: ORGANIZACAO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: CONFIGURACAO_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: PUBLICACOES_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
-    {
-      provide: PORTAL_BASE_PATH,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    },
+    })),
     {
       provide: GEO_BASE_PATH,
       useFactory: resolveGeoBasePath,
       deps: [AppConfigService],
     },
   ]);
+}
+
+/** Os módulos que a API serve na mesma origem, a `apiUrl`. */
+const TOKENS_NA_API_URL: readonly InjectionToken<string>[] = [
+  PROFILE_BASE_PATH,
+  AUTORIZACAO_BASE_PATH,
+  SELECAO_BASE_PATH,
+  INGRESSO_BASE_PATH,
+  ORGANIZACAO_BASE_PATH,
+  CONFIGURACAO_BASE_PATH,
+  PUBLICACOES_BASE_PATH,
+  PORTAL_BASE_PATH,
+];
+
+function carregarRuntimeConfigEIniciarAutenticacao(
+  backend: HttpBackend,
+  store: AppConfigService,
+  auth: AuthService,
+): () => Promise<void> {
+  return async () => {
+    // HttpClient construído com HttpBackend direto não passa por
+    // nenhum interceptor — necessário porque o pipeline padrão
+    // depende de tokens que ainda não estão prontos neste momento.
+    const http = new HttpClient(backend);
+    const cfg = await firstValueFrom(http.get<AppConfig>(resolveRuntimeConfigPath()));
+    assertNaoEhPlaceholder(cfg);
+    store.load(cfg);
+    await auth.init(toAuthConfig(cfg));
+  };
 }
 
 export function toAuthConfig(cfg: AppConfig): AuthConfig {

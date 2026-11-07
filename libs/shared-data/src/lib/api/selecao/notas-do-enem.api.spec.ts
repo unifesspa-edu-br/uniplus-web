@@ -95,7 +95,9 @@ describe('NotasDoEnemApi', () => {
   describe('importarNotas', () => {
     it('envia o formulário multipart com os três campos e devolve o status', async () => {
       const arquivo = new File(['x'], 'retorno.txt', { type: 'text/plain' });
-      const promessa = firstValueFrom(api.importarNotas('p-1', 'e-1', '2025', arquivo, LEIAUTE));
+      const promessa = firstValueFrom(
+        api.importarNotas('p-1', 'e-1', '2025', { arquivo, leiaute: LEIAUTE }),
+      );
 
       const req = controller.expectOne(`${ESCOPO}/lotes-de-notas`);
       const corpo = req.request.body as FormData;

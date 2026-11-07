@@ -29,6 +29,7 @@ export {
   type GeracaoDeEnvioDto,
   type LeiauteDoInepDto,
   type LeiauteEscolhido,
+  type RetornoDoInep,
   type LoteDeNotasDoEnemDto,
   type OcorrenciaDoLoteDto,
   type AusenteDoLoteDto,

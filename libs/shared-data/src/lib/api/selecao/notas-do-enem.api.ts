@@ -12,6 +12,12 @@ export type AusenteDoLoteDto = components['schemas']['AusenteDoLoteDto'];
 export type OcorrenciaDoLoteDto = components['schemas']['OcorrenciaDoLoteDto'];
 export type LoteDeNotasDoEnemDto = components['schemas']['LoteDeNotasDoEnemDto'];
 
+/** O arquivo de retorno do INEP e o leiaute em que o operador diz que ele foi escrito. */
+export interface RetornoDoInep {
+  readonly arquivo: File;
+  readonly leiaute: LeiauteEscolhido;
+}
+
 /** O leiaute escolhido no catálogo: o par que a API usa para identificá-lo. */
 export interface LeiauteEscolhido {
   readonly leiauteCodigo: string;
@@ -85,9 +91,9 @@ export class NotasDoEnemApi {
     processoSeletivoId: string,
     etapaId: string,
     edicao: string,
-    arquivo: File,
-    leiaute: LeiauteEscolhido,
+    retorno: RetornoDoInep,
   ): Observable<ApiResult<LoteDeNotasDoEnemDto>> {
+    const { arquivo, leiaute } = retorno;
     const formulario = new FormData();
     formulario.append('arquivo', arquivo, arquivo.name);
     formulario.append('leiauteCodigo', leiaute.leiauteCodigo);
