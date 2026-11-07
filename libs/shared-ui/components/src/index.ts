@@ -105,6 +105,15 @@ export {
   type UiValorEmConsulta,
 } from '../../src/lib/components/valor-em-consulta/valor-em-consulta';
 export { ValorApresentadoComponent } from '../../src/lib/components/lista-de-dados/valor-apresentado';
+export {
+  rotuloDaSituacaoDaInscricao,
+  varianteDaSituacaoDaInscricao,
+} from '../../src/lib/components/lista-de-dados/situacao-da-inscricao';
+export {
+  valorExibido,
+  type ValorExibido,
+} from '../../src/lib/components/lista-de-dados/valor-da-resposta';
+export { RespostaExibidaComponent } from '../../src/lib/components/lista-de-dados/resposta-exibida.component';
 export { DadoDirective } from '../../src/lib/components/lista-de-dados/dado';
 export {
   ListaDeDadosComponent,

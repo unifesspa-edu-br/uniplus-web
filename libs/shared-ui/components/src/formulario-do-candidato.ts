@@ -43,10 +43,6 @@ export {
 } from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
 export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
 export {
-  type CampoExibido,
-  respostaExibida,
-} from '../../src/lib/components/formulario-do-candidato/resposta-exibida';
-export {
   separarMunicipiosGravados,
   type MunicipiosGravados,
   type MunicipiosSeparados,
@@ -69,7 +65,6 @@ export type {
   SimulacaoDoFormulario,
   ValorJson,
 } from '../../src/lib/components/formulario-do-candidato/interpretador/regras-do-formulario';
-export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export {
   detalheDoArquivoEnviado,
   regrasDoArquivo,
