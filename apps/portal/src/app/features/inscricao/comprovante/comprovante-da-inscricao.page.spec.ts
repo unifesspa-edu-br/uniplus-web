@@ -523,24 +523,68 @@ describe('ComprovanteDaInscricaoPage', () => {
       );
     });
 
-    it('a leitura que recusa na hora passa por "tentando" e termina em "também falhou", com o alerta no lugar', async () => {
-      const tela = await abrir('3');
-      const vistos: string[] = [];
-      const observador = new MutationObserver(() => vistos.push(situacao(tela)));
-      observador.observe(tela, { childList: true, characterData: true, subtree: true });
-      const tentar = Array.from(tela.querySelectorAll('button')).find(
+    const botaoDeTentar = (tela: HTMLElement): HTMLButtonElement | undefined =>
+      Array.from(tela.querySelectorAll('button')).find(
         (botao) => botao.textContent?.trim() === 'Tentar novamente',
-      ) as HTMLButtonElement;
+      );
 
-      tentar.click();
+    it('o 404 da API mostra o não encontrado, sem nova tentativa e com o caminho de volta', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValueOnce(of(NAO_ENCONTRADO) as never);
+
+      const tela = await abrir('2');
+
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(
+        Array.from(tela.querySelectorAll('a')).some(
+          (a) => a.textContent?.trim() === 'Voltar às minhas inscrições',
+        ),
+      ).toBe(true);
+    });
+
+    it('503 seguido de 404 da API termina no não encontrado, sem botão e sem aviso de conclusão', async () => {
+      vi.spyOn(servico, 'comprovante')
+        .mockReturnValueOnce(of(indisponivel()) as never)
+        .mockReturnValueOnce(of(NAO_ENCONTRADO) as never);
+      const tela = await abrir('2');
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+      expect(botaoDeTentar(tela)).toBeDefined();
+
+      botaoDeTentar(tela)?.click();
       await atualizar();
       await macrotarefa();
       await atualizar();
-      observador.disconnect();
 
-      expect(vistos).toContain('Tentando novamente…');
-      expect(situacao(tela)).toBe('A nova tentativa também falhou.');
       expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(anunciar).not.toHaveBeenCalled();
+    });
+
+    it('o número não emitido mostra o não encontrado, sem nova tentativa e com o caminho de volta', async () => {
+      const tela = await abrir('3');
+
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      const volta = Array.from(tela.querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Voltar às minhas inscrições',
+      );
+      expect(volta?.getAttribute('href')).toBe('/inscricao');
+    });
+
+    it('503 seguido de número não emitido termina no não encontrado, sem botão e sem aviso de conclusão', async () => {
+      vi.spyOn(servico, 'listar').mockReturnValueOnce(of(indisponivel() as never) as never);
+      const tela = await abrir('3');
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+      expect(botaoDeTentar(tela)).toBeDefined();
+
+      botaoDeTentar(tela)?.click();
+      await atualizar();
+      await macrotarefa();
+      await atualizar();
+
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(anunciar).not.toHaveBeenCalled();
     });
   });
 

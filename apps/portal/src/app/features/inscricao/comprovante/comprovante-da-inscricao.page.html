@@ -35,6 +35,10 @@
     <span class="sr-only">Carregando o comprovante…</span>
     <ui-skeleton skeletonKind="card" blockSize="10rem" />
   </div>
+  } @case ('nao-encontrado') {
+  <ui-alert variant="danger" heading="Comprovante não encontrado">
+    Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.
+  </ui-alert>
   } @case ('pronto') { @if (carregado(); as c) {
   <ui-secao-de-documento [titulo]="nomeDoProcesso()" largura="inteira">
     <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>

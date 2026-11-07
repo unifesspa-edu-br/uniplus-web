@@ -54,10 +54,7 @@ import {
 } from './comprovante-da-inscricao';
 import { nomesDoCandidato } from './resposta-exibida';
 
-type Estado = 'carregando' | 'erro' | 'pronto';
-
-const NAO_ENCONTRADO =
-  'Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.';
+type Estado = 'carregando' | 'erro' | 'nao-encontrado' | 'pronto';
 
 interface Carregado {
   readonly numero: number;
@@ -125,6 +122,7 @@ export class ComprovanteDaInscricaoPage {
     pendente: computed(() => this.estado() === 'carregando'),
     recarregar: () => this.carregar(),
     destino: () => this.host.nativeElement.querySelector('h1'),
+    recusada: computed(() => this.estado() === 'nao-encontrado'),
   });
 
   protected readonly nomeDoProcesso = computed(
@@ -306,10 +304,11 @@ export class ComprovanteDaInscricaoPage {
       return;
     }
     if (leitura.tipo === 'nao-encontrado' || leitura.falha.status === 404) {
-      this.erro.set(NAO_ENCONTRADO);
-    } else {
-      this.erro.set(this.problemas.resolve(leitura.falha.problem).title);
+      // Não há o que repetir: o endereço não leva a um comprovante.
+      this.estado.set('nao-encontrado');
+      return;
     }
+    this.erro.set(this.problemas.resolve(leitura.falha.problem).title);
     this.estado.set('erro');
   }
 }
