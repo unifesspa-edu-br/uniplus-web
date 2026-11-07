@@ -24,7 +24,7 @@ export class CatalogoDeTiposDeEtapa {
     buscar: () =>
       coletarPaginas((cursor) => this.tiposEtapaApi.listar({ cursor })).pipe(map(dadosOuNulo)),
     aplicar: (dados) => this.tiposEtapa.set(dados),
-    mensagemDeErro: 'Não foi possível carregar os tipos de etapa. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar os tipos de etapa.',
   });
 
   readonly carregando = this.leitura.carregando;

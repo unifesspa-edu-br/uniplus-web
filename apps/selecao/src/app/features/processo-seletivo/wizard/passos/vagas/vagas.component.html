@@ -3,15 +3,16 @@
   declara o que varia entre elas.
 </p>
 
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de ofertas, modalidades e regras" [leitura]="catalogos.leitura" />
+}
+
 @if (carregandoParaEditar()) {
-  <p class="field__hint" role="status">Carregando ofertas, modalidades e regras…</p>
-} @else if (erroParaEditar(); as erro) {
-  <div class="field__erro" role="alert">
-    <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
-      Tentar novamente
-    </button>
-  </div>
+  <p class="field__hint" [uiIndicadorDaLeitura]="catalogos.leitura">
+    Carregando ofertas, modalidades e regras…
+  </p>
+} @else if (erroParaEditar()) {
+  <!-- A falha e a nova tentativa ficam no aviso acima. -->
 } @else {
   <div class="step-card">
     <h2 class="form-section__title">Padrão desta distribuição</h2>

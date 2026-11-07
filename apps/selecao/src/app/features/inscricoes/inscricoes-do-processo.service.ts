@@ -154,7 +154,8 @@ export class InscricoesDoProcesso {
     this.pagina.set(undefined);
   }
 
-  tentarNovamente(): void {
-    this.lista.reload();
+  /** Repete a leitura da página em tela; `false` quando nenhuma leitura recomeçou. */
+  tentarNovamente(): boolean {
+    return this.lista.reload();
   }
 }

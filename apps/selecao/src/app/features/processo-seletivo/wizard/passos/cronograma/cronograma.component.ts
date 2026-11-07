@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  acompanharLeitura,
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   ValorEmConsultaComponent,
@@ -66,12 +65,6 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 export class CronogramaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
-  protected readonly leituraDosCatalogos = acompanharLeitura({
-    falha: this.situacao.erro,
-    pendente: this.situacao.carregando,
-    recarregar: () => this.situacao.recarregar(),
-    destino: () => document.getElementById('sel-cronograma-subtitulo'),
-  });
   protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
@@ -85,9 +78,6 @@ export class CronogramaPassoComponent {
   readonly linhaDoTempo = this.cronograma.linhaDoTempo;
   readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   readonly avisoDeReordenacao = this.cronograma.avisoDeReordenacao;
-  readonly releituraPendente = this.releituraDasEtapas.releituraPendente;
-  readonly relendo = this.releituraDasEtapas.relendo;
-  readonly erroDeReleitura = this.releituraDasEtapas.erroDeReleitura;
   private readonly versaoDoFormulario = this.cronograma.versao;
 
   constructor() {

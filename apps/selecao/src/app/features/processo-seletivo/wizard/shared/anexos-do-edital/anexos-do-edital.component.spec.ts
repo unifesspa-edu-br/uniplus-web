@@ -304,6 +304,20 @@ describe('AnexosDoEditalComponent', () => {
     expect(componente.publicados()?.estado).toBe('lido');
   });
 
+  it('sobe a espera dos anexos publicados antes da resposta e a derruba junto da falha', async () => {
+    fixture.componentRef.setInput('publicado', true);
+    fixture.componentRef.setInput('atoId', ATO_ID);
+    fixture.detectChanges();
+    await tick();
+    expect(componente.leituraDosPublicados.pendente()).toBe(true);
+
+    controller.expectOne(ROTA_ATOS).flush(null, { status: 500, statusText: 'x' });
+    await tick();
+
+    expect(componente.leituraDosPublicados.pendente()).toBe(false);
+    expect(componente.leituraDosPublicados.visivel()).toBe(true);
+  });
+
   describe('nome de exibição', () => {
     async function comAnexoConfirmado(): Promise<void> {
       componente.aoEscolherArquivos([arquivo('cronograma.pdf')]);

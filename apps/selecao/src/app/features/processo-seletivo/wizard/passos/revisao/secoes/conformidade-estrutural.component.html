@@ -1,12 +1,12 @@
 <div class="step-section__header">
-  <h2 id="revisao-estrutural-titulo">Checklist estrutural</h2>
-  <!-- Desabilitado durante a recarga: dois cliques pedem a mesma coisa. -->
+  <h2 id="revisao-estrutural-titulo" tabindex="-1">Checklist estrutural</h2>
+  <!-- Indisponível durante a recarga (dois cliques pedem a mesma coisa), sem sair da ordem de foco. -->
   @if (!store.emConsulta()) {
     <button
       class="btn btn--sm btn--ghost"
       type="button"
-      [disabled]="prontidao.carregando()"
-      (click)="conferencia.atualizar()"
+      [attr.aria-disabled]="prontidao.carregando() ? 'true' : null"
+      (click)="atualizar()"
     >
       {{ prontidao.carregando() ? 'Atualizando…' : 'Atualizar checklist' }}
     </button>

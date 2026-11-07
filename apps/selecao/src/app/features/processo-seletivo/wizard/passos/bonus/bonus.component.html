@@ -2,16 +2,12 @@
   Bônus regional. O processo declara se aplica o bônus ou não: a resposta é obrigatória para
   publicar, e "não aplica" é uma resposta válida.
 </p>
-@if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
-}
-@if (!store.emConsulta() && basesLegais.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">
-    {{ erro }}
-    <button type="button" class="btn btn--secondary btn--sm" (click)="basesLegais.carregar()">
-      Tentar novamente
-    </button>
-  </p>
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
+  <ui-falha-de-leitura
+    titulo="Bases legais do bônus regional"
+    [leitura]="basesLegais.leituraDasBasesLegais"
+  />
 }
 <div class="step-card">
   @if (store.emConsulta()) {
@@ -136,23 +132,7 @@
             @if (basesLegais.descricaoDaSelecionada(); as descricao) {
               <span class="field__hint">{{ descricao }}</span>
             }
-            @if (basesLegais.tiposInstrumentoErro(); as erro) {
-              <!--
-                `role="alert"` como o carregamento vizinho: sem ele, quem usa leitor de tela
-                clica em "Tentar novamente", a segunda tentativa falha, e nada o diz.
-              -->
-              <span class="field__hint" role="alert">
-                {{ erro }} O tipo de cada norma aparece pelo código até o catálogo responder.
-                <button
-                  class="btn btn--tertiary btn--sm"
-                  type="button"
-                  [disabled]="basesLegais.tiposInstrumentoCarregando()"
-                  (click)="basesLegais.carregarTiposDeInstrumento()"
-                >
-                  {{ basesLegais.tiposInstrumentoCarregando() ? 'Carregando…' : 'Tentar novamente' }}
-                </button>
-              </span>
-            }
+            <ui-falha-de-leitura-do-campo [leitura]="basesLegais.leituraDosTiposDeInstrumento" />
           </div>
           <div class="form-field">
             <label class="label" for="f-bonus-teto">Teto (opcional)</label

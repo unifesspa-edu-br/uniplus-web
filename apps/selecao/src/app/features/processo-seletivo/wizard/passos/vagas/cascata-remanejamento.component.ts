@@ -11,6 +11,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 import {
+  FalhaDeLeituraComponent,
   RolagemFocavelDirective,
   ValorLegivelDirective,
   ValorEmConsultaComponent,
@@ -63,6 +64,7 @@ import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-lista
     RolagemFocavelDirective,
     MatrizDaCascataComponent,
     RegraExplicadaComponent,
+    FalhaDeLeituraComponent,
   ],
   templateUrl: './cascata-remanejamento.component.html',
   providers: [LeituraDaVersaoForaDaListagem],
@@ -146,6 +148,7 @@ export class CascataRemanejamentoComponent {
 
   readonly regraNaoEncontrada = this.versaoDaRegra.regraNaoEncontrada;
   readonly falhaAoConsultarRegra = this.versaoDaRegra.falhaAoConsultarRegra;
+  readonly leituraDaRegra = this.versaoDaRegra.leitura;
 
   readonly regraExplicada = computed<RegraExplicada | null>(() =>
     explicarRegra(this.versaoDaRegra.regraEscolhida()),
@@ -239,10 +242,6 @@ export class CascataRemanejamentoComponent {
     this.regraControl.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((valor) => this.escolherRegra(valor));
-  }
-
-  tentarNovamenteRegra(): void {
-    this.versaoDaRegra.tentarNovamente();
   }
 
   /**

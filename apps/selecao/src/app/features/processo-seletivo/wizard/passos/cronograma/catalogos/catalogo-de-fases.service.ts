@@ -61,7 +61,7 @@ export class CatalogoDeFases {
       this.fases.set(dados.fases);
       this.precedencias.set(dados.precedencias);
     },
-    mensagemDeErro: 'Não foi possível carregar as fases. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar as fases.',
   });
 
   readonly carregando = this.leitura.carregando;

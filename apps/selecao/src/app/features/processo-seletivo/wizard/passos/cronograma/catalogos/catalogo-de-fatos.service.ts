@@ -19,7 +19,7 @@ export class CatalogoDeFatos {
   private readonly leitura = new LeituraDeCatalogo({
     buscar: () => this.fatosApi.listar().pipe(map(dadosOuNulo)),
     aplicar: (dados) => this.fatos.set(dados),
-    mensagemDeErro: 'Não foi possível carregar os fatos do candidato. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar os fatos do candidato.',
   });
 
   readonly carregando = this.leitura.carregando;

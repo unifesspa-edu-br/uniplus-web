@@ -8,10 +8,13 @@ import {
   type OfertaExibida,
 } from '@uniplus/shared-data/selecao';
 import {
+  acompanharLeitura,
   AlertComponent,
   DEFAULT_PAGE_SIZE_OPTIONS,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   IconButtonComponent,
+  IndicadorDaLeituraDirective,
   ListFooterComponent,
   PageHeaderComponent,
   SpinnerComponent,
@@ -72,7 +75,9 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
     AlertComponent,
     DateBrPipe,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
     IconButtonComponent,
+    IndicadorDaLeituraDirective,
     ListFooterComponent,
     OfertasEscolhidasComponent,
     PageHeaderComponent,
@@ -99,30 +104,19 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
           A página que você abriu não existe mais, porque a lista mudou.
         </ui-alert>
       }
-      @if (situacao.estado === 'falha') {
-        <ui-alert variant="danger" heading="Não foi possível carregar as inscrições">
-          {{ situacao.mensagem }}
-          <span class="insc-page__tentar">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              [disabled]="inscricoes.carregando()"
-              (click)="inscricoes.tentarNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </span>
-        </ui-alert>
-      }
+      <ui-falha-de-leitura
+        titulo="Não foi possível carregar as inscrições"
+        [leitura]="leitura"
+      />
 
       @if (situacao.estado !== 'falha' || inscricoes.inscricoes().length > 0) {
         <section class="panel" aria-labelledby="insc-page-titulo">
           <div class="panel-head">
             <div class="panel-head__title">
-              <h2 id="insc-page-titulo">Inscrições enviadas</h2>
+              <h2 id="insc-page-titulo" tabindex="-1">Inscrições enviadas</h2>
               @if (inscricoes.carregando()) {
-                <span class="insc-page__lendo">
-                  <ui-spinner spinnerSize="sm" />
+                <span class="insc-page__lendo" [uiIndicadorDaLeitura]="leitura">
+                  <ui-spinner spinnerSize="sm" [decorativo]="true" />
                   Carregando
                 </span>
               }
@@ -261,6 +255,17 @@ export class InscricoesDoProcessoPage {
   private readonly rota = inject(ActivatedRoute);
   protected readonly inscricoes = inject(InscricoesDoProcesso);
   protected readonly opcoesLimite = DEFAULT_PAGE_SIZE_OPTIONS;
+
+  protected readonly leitura = acompanharLeitura({
+    falha: computed(() => {
+      const situacao = this.inscricoes.situacao();
+      return situacao.estado === 'falha' ? situacao.mensagem : null;
+    }),
+    pendente: this.inscricoes.carregando,
+    recarregar: () => this.inscricoes.tentarNovamente(),
+    destino: () => document.getElementById('insc-page-titulo'),
+    recusada: computed(() => this.inscricoes.situacao().estado === 'nao-encontrado'),
+  });
 
   protected readonly rotuloDaSituacao = rotuloDaSituacao;
   protected readonly varianteDaSituacao = varianteDaSituacao;

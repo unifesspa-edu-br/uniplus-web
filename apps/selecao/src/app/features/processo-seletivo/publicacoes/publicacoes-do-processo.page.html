@@ -22,18 +22,15 @@
 </ui-page-header>
 
 @let processo = publicacoes.processo();
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar o processo seletivo"
+  [leitura]="leituraDoProcesso"
+/>
 @if (processo.estado === 'falha') {
-  <ui-alert variant="danger" heading="Não foi possível carregar o processo seletivo">
-    {{ processo.mensagem }}
-    <span class="pub-page__tentar">
-      <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarProcesso()">
-        Tentar novamente
-      </button>
-    </span>
-  </ui-alert>
+  <!-- A falha e a nova tentativa ficam no aviso acima. -->
 } @else if (processo.estado === 'lendo') {
-  <p class="pub-page__lendo" role="status">
-    <ui-spinner spinnerSize="sm" />
+  <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDoProcesso">
+    <ui-spinner spinnerSize="sm" [decorativo]="true" />
     Carregando o processo seletivo…
   </p>
 } @else if (emRascunho()) {
@@ -42,17 +39,11 @@
     processo. Conclua a publicação do processo para começar.
   </ui-alert>
 } @else {
-  @let tipos = publicacoes.tipos();
-  @if (tipos.estado === 'falha') {
-    <ui-alert variant="warning" heading="Não foi possível carregar os tipos de documento">
-      {{ tipos.mensagem }} Sem eles não é possível publicar um documento.
-      <span class="pub-page__tentar">
-        <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarTipos()">
-          Tentar novamente
-        </button>
-      </span>
-    </ui-alert>
-  }
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar os tipos de documento"
+    variante="warning"
+    [leitura]="leituraDosTipos"
+  />
 
   @if (existePendenciaAntiga()) {
     <ui-alert variant="warning" heading="Há documento em processamento há mais tempo que o normal">
@@ -68,27 +59,21 @@
   <section class="panel" aria-labelledby="pub-page-previstos-titulo">
     <div class="panel-head">
       <div class="panel-head__title">
-        <h2 id="pub-page-previstos-titulo">Previstos no edital</h2>
+        <h2 id="pub-page-previstos-titulo" tabindex="-1">Previstos no edital</h2>
       </div>
     </div>
 
     @let previstos = publicacoes.previstos();
+    <ui-falha-de-leitura
+      titulo="Não foi possível carregar os documentos previstos no edital"
+      [leitura]="leituraDosPrevistos"
+    />
     @switch (previstos.estado) {
       @case ('lendo') {
-        <p class="pub-page__lendo" role="status">
-          <ui-spinner spinnerSize="sm" />
+        <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosPrevistos">
+          <ui-spinner spinnerSize="sm" [decorativo]="true" />
           Carregando os documentos previstos no edital…
         </p>
-      }
-      @case ('falha') {
-        <ui-alert variant="danger" heading="Não foi possível carregar os documentos previstos no edital">
-          {{ previstos.mensagem }}
-          <span class="pub-page__tentar">
-            <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarPrevistos()">
-              Tentar novamente
-            </button>
-          </span>
-        </ui-alert>
       }
       @case ('lido') {
         <sel-previstos-no-edital
@@ -105,7 +90,7 @@
   <section class="panel" aria-labelledby="pub-page-atos-titulo">
     <div class="panel-head">
       <div class="panel-head__title">
-        <h2 id="pub-page-atos-titulo">Documentos publicados</h2>
+        <h2 id="pub-page-atos-titulo" tabindex="-1">Documentos publicados</h2>
         <span class="list-count" aria-label="Documentos publicados">
           {{ publicacoes.listaDeAtos().length }}
         </span>
@@ -113,22 +98,16 @@
     </div>
 
     @let atos = publicacoes.atos();
+    <ui-falha-de-leitura
+      titulo="Não foi possível carregar os documentos"
+      [leitura]="leituraDosAtos"
+    />
     @switch (atos.estado) {
       @case ('lendo') {
-        <p class="pub-page__lendo" role="status">
-          <ui-spinner spinnerSize="sm" />
+        <p class="pub-page__lendo" [uiIndicadorDaLeitura]="leituraDosAtos">
+          <ui-spinner spinnerSize="sm" [decorativo]="true" />
           Carregando os documentos…
         </p>
-      }
-      @case ('falha') {
-        <ui-alert variant="danger" heading="Não foi possível carregar os documentos">
-          {{ atos.mensagem }}
-          <span class="pub-page__tentar">
-            <button type="button" class="btn btn--secondary btn--sm" (click)="publicacoes.recarregarAtos()">
-              Tentar novamente
-            </button>
-          </span>
-        </ui-alert>
       }
       @case ('lido') {
         <sel-atos-do-processo

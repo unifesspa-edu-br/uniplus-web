@@ -19,6 +19,7 @@ import {
   type ItemDeRespostaDto,
 } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 
 import { DetalheDaInscricaoPage } from './detalhe-da-inscricao.page';
 import { DetalheDaInscricao } from './detalhe-da-inscricao.service';
@@ -425,7 +426,7 @@ describe('DetalheDaInscricaoPage', () => {
     parametros.next(convertToParamMap({ id: PROCESSO_ID }));
     await criarPagina();
 
-    expect(host().querySelector('[role="status"]')?.textContent?.trim()).toBe('');
+    expect(host().querySelector('.insc-det__lendo')).toBeNull();
     expect(texto()).not.toContain('Carregando a inscrição');
     expect(host().querySelector('.panel')).toBeNull();
   });
@@ -464,7 +465,7 @@ describe('DetalheDaInscricaoPage', () => {
     expect(subtitulo()).toContain('inscrição enviada neste processo seletivo');
   });
 
-  it('anuncia o carregamento na região viva quando a falha é relida', async () => {
+  it('anuncia a nova tentativa na região do aviso, sem repetir o carregamento', async () => {
     await criarPagina();
     doDetalhe().flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
     await propagar();
@@ -475,10 +476,10 @@ describe('DetalheDaInscricaoPage', () => {
     await propagar();
 
     expect(host().querySelector('[role="status"]')).toBe(regiao);
-    expect(regiao?.textContent).toContain('Carregando a inscrição');
+    expect(regiao?.textContent).toContain('Tentando novamente');
+    expect(host().querySelectorAll('[role="status"]')).toHaveLength(1);
     doDetalhe().flush(FERNANDA);
     await propagar();
-    expect(regiao?.textContent?.trim()).toBe('');
   });
 
   it('mostra a falha e relê ao tentar novamente', async () => {
@@ -494,6 +495,28 @@ describe('DetalheDaInscricaoPage', () => {
 
     expect(dado('Número')).toBe('2027-000101');
     expect(texto()).not.toContain('Não foi possível carregar a inscrição');
+  });
+
+  it('503, nova tentativa e 404: a recusa fica na tela e a conclusão não é anunciada', async () => {
+    await criarPagina();
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    doDetalhe().flush(
+      { title: 'Indisponível', status: 503 },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    await propagar();
+
+    botao('Tentar novamente').click();
+    await propagar();
+    doDetalhe().flush(
+      { title: 'Não encontrada', status: 404 },
+      { status: 404, statusText: 'Not Found' },
+    );
+    await propagar();
+    await propagar();
+
+    expect(texto()).toContain('Inscrição não encontrada');
+    expect(anunciar).not.toHaveBeenCalled();
   });
 
   it('com a releitura em curso, Tentar novamente mantém o foco e não parte outra leitura', async () => {
@@ -516,16 +539,16 @@ describe('DetalheDaInscricaoPage', () => {
     expect(dado('Número')).toBe('2027-000101');
   });
 
-  it('anuncia o carregamento numa região viva que já estava no DOM e a esvazia ao terminar', async () => {
+  it('anuncia o primeiro carregamento no indicador e o retira ao terminar', async () => {
     await criarPagina();
 
-    const regiao = host().querySelector('[role="status"]');
-    expect(regiao?.textContent).toContain('Carregando a inscrição');
+    expect(host().querySelector('[role="status"]')?.textContent).toContain(
+      'Carregando a inscrição',
+    );
     doDetalhe().flush(FERNANDA);
     await propagar();
 
-    expect(host().querySelector('[role="status"]')).toBe(regiao);
-    expect(regiao?.textContent?.trim()).toBe('');
+    expect(host().querySelector('.insc-det__lendo')).toBeNull();
   });
 
   it('numera as ofertas pela ordem da escolha, mesmo chegando invertidas', async () => {

@@ -7,6 +7,7 @@ import { NotasDoEnemDoProcesso } from './notas-do-enem-do-processo.service';
 import {
   PROCESSO_ID,
   ROTA_EDICAO,
+  ROTA_LEIAUTES,
   abrirTela,
   processo,
   providersDaTela,
@@ -120,5 +121,23 @@ describe('NotasDoEnemDoProcesso: leitura em curso do histórico', () => {
     await recarga;
 
     expect(notas.relendoLotes()).toBe(false);
+  });
+
+  it('a leitura de leiautes superada por outra não desfaz o resultado da mais nova', async () => {
+    const antiga = notas.recarregarLeiautes('envio');
+    const pedidoAntigo = controller.expectOne(
+      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio',
+    );
+    const recente = notas.recarregarLeiautes('envio');
+    const pedidoRecente = controller.expectOne(
+      (r) => r.url === ROTA_LEIAUTES && r.params.get('tipo') === 'envio',
+    );
+
+    pedidoRecente.flush([]);
+    await recente;
+    pedidoAntigo.flush({ title: 'Indisponível' }, { status: 503, statusText: 'x' });
+    await antiga;
+
+    expect(notas.leiautesDeEnvio().estado).toBe('lido');
   });
 });

@@ -13,7 +13,7 @@ import {
   type ProdutosPrevistosDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 
-import { LENDO, type Leitura } from '../leitura';
+import { LENDO, LeiturasEmOrdem, estaLendo, type Leitura } from '../leitura';
 import { hojeNoFusoInstitucional } from '../wizard/shared/fuso-institucional';
 import { atosQueAdmitemCorrecao } from './cadeia-de-correcao';
 import { codigosQueCongelam, tiposDeDocumentoAvulso } from './tipos-de-ato-avulso';
@@ -47,6 +47,14 @@ export class PublicacoesDoProcesso {
   readonly processoId = signal<string | null>(null);
   readonly processo = signal<Leitura<ProcessoSeletivoDto>>(LENDO);
   readonly atos = signal<Leitura<readonly AtoDoProcessoDto[]>>(LENDO);
+  /**
+   * Uma leitura dos atos corre. A recarga mantém a lista (ou a falha) à vista até a nova chegar, e
+   * este sinal é o que diz que há espera; cai na mesma tarefa em que `atos` recebe o desfecho.
+   */
+  private readonly relendoAtos = signal(false);
+  private readonly ordemDosAtos = new LeiturasEmOrdem();
+  private readonly ordemDosPrevistos = new LeiturasEmOrdem();
+  readonly lendoAtos = computed(() => estaLendo(this.atos()) || this.relendoAtos());
   readonly tipos = signal<Leitura<readonly TipoAtoPublicadoDto[]>>(LENDO);
   readonly previstos = signal<Leitura<PrevistosLidos>>(LENDO);
 
@@ -107,7 +115,7 @@ export class PublicacoesDoProcesso {
 
     await Promise.all([
       this.lerProcesso(processoId, leitura).then(() => this.lerPrevistosDoProcessoPublicado(processoId, leitura)),
-      this.lerAtos(processoId, leitura),
+      this.lerAtos(processoId),
       this.lerTipos(leitura),
     ]);
   }
@@ -124,7 +132,7 @@ export class PublicacoesDoProcesso {
   async recarregarAtos(): Promise<void> {
     const processoId = this.processoId();
     if (processoId === null) return;
-    await this.lerAtos(processoId, this.leituraAtual);
+    await this.lerAtos(processoId);
   }
 
   async recarregarTipos(): Promise<void> {
@@ -160,12 +168,13 @@ export class PublicacoesDoProcesso {
   }
 
   private async lerPrevistos(processoId: string, leitura: number): Promise<void> {
+    const aindaVale = this.ordemDosPrevistos.iniciar();
     const [consulta, campos, fases] = await Promise.all([
       firstValueFrom(this.documentosApi.obterProdutosPrevistos(processoId)),
       firstValueFrom(this.documentosApi.listarCamposDivulgacao()),
       firstValueFrom(coletarPaginas((cursor) => this.fasesApi.listar({ cursor }))),
     ]);
-    if (leitura !== this.leituraAtual) return;
+    if (leitura !== this.leituraAtual || !aindaVale()) return;
 
     // Sem a consulta não há o que publicar. Os nomes das fases e dos campos da política só
     // traduzem códigos: faltando um deles, a seção continua útil, com o código no lugar.
@@ -184,15 +193,18 @@ export class PublicacoesDoProcesso {
     }
   }
 
-  private async lerAtos(processoId: string, leitura: number): Promise<void> {
+  private async lerAtos(processoId: string): Promise<void> {
+    const aindaVale = this.ordemDosAtos.iniciar();
+    this.relendoAtos.set(true);
     const resultado = await firstValueFrom(this.documentosApi.listarAtosDoProcesso(processoId));
-    if (leitura !== this.leituraAtual) return;
+    if (!aindaVale()) return;
 
     this.atos.set(
       isApiOk(resultado)
         ? { estado: 'lido', dados: resultado.data }
         : { estado: 'falha', mensagem: this.problemI18n.resolve(resultado.problem).title },
     );
+    this.relendoAtos.set(false);
   }
 
   private async lerTipos(leitura: number): Promise<void> {

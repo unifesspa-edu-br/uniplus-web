@@ -22,4 +22,10 @@ export class ConformidadeEstruturalComponent {
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
 
   protected readonly rotuloDaDimensao = rotuloDaDimensao;
+
+  /** Dois cliques seguidos pedem a mesma leitura: o segundo espera a primeira. */
+  protected atualizar(): void {
+    if (this.prontidao.carregando()) return;
+    void this.conferencia.atualizar();
+  }
 }

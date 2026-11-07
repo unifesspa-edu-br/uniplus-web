@@ -8,7 +8,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -28,7 +32,12 @@ import { PublicacaoDoProcesso } from '../servicos/publicacao-do-processo.service
  */
 @Component({
   selector: 'sel-ato-da-publicacao',
-  imports: [ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [
+    ReactiveFormsModule,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './ato-da-publicacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -114,11 +123,6 @@ export class AtoDaPublicacaoComponent {
     this.habilitarFormularioConformeAEdicao();
     this.limparTipoDeAtoForaDoCatalogo();
     this.gravarFormularioNoRascunho();
-  }
-
-  protected tentarLerAtoDeNovo(): void {
-    const id = this.store.processoSeletivoId();
-    if (id !== null) void this.publicacao.lerAtoPublicado(id);
   }
 
   /**

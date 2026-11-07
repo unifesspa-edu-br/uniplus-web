@@ -687,6 +687,56 @@ describe('CronogramaPassoComponent', () => {
         expect(botaoAcrescentar().disabled).toBe(false);
       });
 
+      describe('falha das unidades com várias fases abertas', () => {
+        function abrirFases(): void {
+          comFases(ID_INSCRICAO, ID_AVALIACAO, ID_RESULTADO);
+          for (const indice of [0, 1, 2]) expansao.alternarFase(indice);
+          const catalogos = TestBed.inject(CatalogoDeUnidadesDoCadastro);
+          catalogos.erro.set('Não foi possível carregar as unidades.');
+          catalogos.carregando.set(false);
+          detectar();
+        }
+
+        const avisosDasUnidades = (): Element[] =>
+          Array.from(nativo.querySelectorAll('[role="alert"]')).filter((aviso) =>
+            aviso.textContent?.includes('Não foi possível carregar as unidades'),
+          );
+        const tentar = (): HTMLButtonElement[] =>
+          Array.from(nativo.querySelectorAll<HTMLButtonElement>('button')).filter((botao) =>
+            botao.textContent?.includes('Tentar novamente'),
+          );
+        const dicas = (): Element[] =>
+          Array.from(nativo.querySelectorAll('[id^="cr-unidade-sem-lista-"]'));
+
+        it('mostra um só aviso e um só botão, e uma dica sem papel em cada campo', () => {
+          abrirFases();
+
+          expect(avisosDasUnidades()).toHaveLength(1);
+          expect(tentar()).toHaveLength(1);
+          expect(dicas()).toHaveLength(3);
+          expect(dicas().every((dica) => !dica.hasAttribute('role'))).toBe(true);
+          expect(unidadeDoSelect(1).getAttribute('aria-describedby')).toContain(
+            'cr-unidade-sem-lista-1',
+          );
+        });
+
+        it('na nova tentativa que dá certo, leva o foco ao primeiro campo e tira as dicas', async () => {
+          abrirFases();
+          tentar()[0]?.focus();
+          tentar()[0]?.click();
+          detectar();
+          controller.expectOne((req) => req.url === ROTA_UNIDADES).flush([]);
+          await proximoPasso();
+          detectar();
+          await proximoPasso();
+          detectar();
+
+          expect(avisosDasUnidades()).toHaveLength(0);
+          expect(dicas()).toHaveLength(0);
+          expect(document.activeElement?.id).toBe('cr-unidade-0');
+        });
+      });
+
       function sugerindo(unidadeSugerida: { origemId: string } | null): void {
         const doCatalogo = FASES_CANONICAS.map((fase) =>
           fase.id === ID_AVALIACAO ? { ...fase, unidadeSugerida } : fase,
@@ -2213,6 +2263,28 @@ describe('CronogramaPassoComponent', () => {
     await proximoPasso();
     await gravouExigencias();
     await segunda;
+  });
+
+  it('a releitura que falha mantém o bloqueio, com o motivo e a nova tentativa', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    releituraDasEtapas.releituraPendente.set(true);
+    detectar();
+    const tela = (): HTMLElement => raiz.nativeElement as HTMLElement;
+    const alerta = (): string => tela().textContent ?? '';
+    expect(alerta()).toContain('a edição fica suspensa');
+
+    const tentar = Array.from(tela().querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Tentar novamente'),
+    );
+    tentar?.click();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await proximoPasso();
+    detectar();
+
+    expect(releituraDasEtapas.releituraPendente()).toBe(true);
+    expect(alerta()).toContain('Não foi possível reler as etapas agora');
   });
 
   /**

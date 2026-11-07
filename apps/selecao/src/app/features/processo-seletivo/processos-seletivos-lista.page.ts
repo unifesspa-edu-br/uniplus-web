@@ -23,10 +23,12 @@ import {
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
 import {
-  AlertComponent,
+  acompanharLeitura,
   DEFAULT_PAGE_SIZE_OPTIONS,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   IconButtonComponent,
+  IndicadorDaLeituraDirective,
   ListFooterComponent,
   SpinnerComponent,
   TagComponent,
@@ -82,8 +84,9 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
     RouterLink,
     IconButtonComponent,
     DateBrPipe,
-    AlertComponent,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ListFooterComponent,
     SpinnerComponent,
     TagComponent,
@@ -105,35 +108,23 @@ const STATUS_VARIANTE = new Map<string, UiTagVariant>([
       }
     </div>
 
-    @if (erro()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar os processos seletivos">
-        {{ erro() }}
-
-        <div class="list-state__retry">
-          <button
-            type="button"
-            class="btn btn--secondary btn--sm"
-            [disabled]="loading()"
-            (click)="tentarNovamente()"
-          >
-            Tentar novamente
-          </button>
-        </div>
-      </ui-alert>
-    }
+    <ui-falha-de-leitura
+      titulo="Não foi possível carregar os processos seletivos"
+      [leitura]="leitura"
+    />
 
     <section class="panel" aria-labelledby="sel-processos-seletivos-title">
       <div class="panel-head">
         <div class="panel-head__title">
-          <h2 id="sel-processos-seletivos-title">Processos Seletivos</h2>
+          <h2 id="sel-processos-seletivos-title" tabindex="-1">Processos Seletivos</h2>
 
           <span class="list-count" aria-label="Processos seletivos nesta página">
             {{ processos().length }}
           </span>
 
           @if (loading()) {
-            <span class="list-state__loading">
-              <ui-spinner spinnerSize="sm" />
+            <span class="list-state__loading" [uiIndicadorDaLeitura]="leitura">
+              <ui-spinner spinnerSize="sm" [decorativo]="true" />
               Carregando
             </span>
           }
@@ -267,6 +258,13 @@ export class ProcessosSeletivosListaPage {
   protected readonly loading = signal(false);
   protected readonly erro = signal<string | null>(null);
 
+  protected readonly leitura = acompanharLeitura({
+    falha: this.erro,
+    pendente: this.loading,
+    recarregar: () => this.tentarNovamente(),
+    destino: () => document.getElementById('sel-processos-seletivos-title'),
+  });
+
   protected readonly processos = this.itens.asReadonly();
   protected readonly prevCursor = computed(() => this.cursores().prev);
   protected readonly nextCursor = computed(() => this.cursores().next);
@@ -351,10 +349,10 @@ export class ProcessosSeletivosListaPage {
     }
   }
 
-  protected tentarNovamente(): void {
-    if (!this.loading()) {
-      this.carregarPagina();
-    }
+  protected tentarNovamente(): boolean {
+    if (this.loading()) return false;
+    this.carregarPagina();
+    return true;
   }
 
   protected statusLabel(status: string): string {

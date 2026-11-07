@@ -4,6 +4,7 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
+  computed,
   effect,
   inject,
   signal,
@@ -15,12 +16,15 @@ import { isApiOk } from '@uniplus/shared-core/http';
 import { NotasDoEnemApi, type LoteDeNotasDoEnemDto } from '@uniplus/shared-data/selecao';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import {
-  AlertComponent,
+  acompanharLeitura,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
 
+import { mensagemDaFalha } from '../leitura';
 import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
 import { LoteDeNotasComponent } from './lote-de-notas.component';
 import { OrigemDoLoteComponent } from './origem-do-lote.component';
@@ -38,10 +42,11 @@ type DetalheDoLote =
   selector: 'sel-historico-de-lotes',
   standalone: true,
   imports: [
-    AlertComponent,
     AlertaDeRecusaComponent,
     DateBrPipe,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     LoteDeNotasComponent,
     OrigemDoLoteComponent,
     SpinnerComponent,
@@ -57,6 +62,12 @@ export class HistoricoDeLotesComponent {
   private readonly injector = inject(Injector);
   protected readonly notas = inject(NotasDoEnemDoProcesso);
   protected readonly total = formatarTotal;
+  protected readonly leitura = acompanharLeitura({
+    falha: computed(() => mensagemDaFalha(this.notas.lotes())),
+    pendente: this.notas.relendoLotes,
+    recarregar: () => void this.notas.recarregarLotes(),
+    destino: () => this.elemento.nativeElement.querySelector('h3'),
+  });
 
   /** A contagem de um tipo de problema só pede atenção quando passa de zero. */
   protected readonly temOcorrencia = (valor: number): boolean => valor > 0;

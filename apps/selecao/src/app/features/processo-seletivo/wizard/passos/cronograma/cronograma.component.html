@@ -4,10 +4,15 @@
   pertence.
 </p>
 
-<ui-falha-de-leitura titulo="Não foi possível carregar os catálogos" [leitura]="leituraDosCatalogos" />
+<ui-falha-de-leitura titulo="Não foi possível carregar os catálogos" [leitura]="situacao.leitura" />
+
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar as unidades"
+  [leitura]="situacao.leituraDasUnidades"
+/>
 
 @if (situacao.carregando()) {
-  <p class="field__hint" [uiIndicadorDaLeitura]="leituraDosCatalogos">
+  <p class="field__hint" [uiIndicadorDaLeitura]="situacao.leitura">
     Carregando fases, bancas, atos e regras…
   </p>
 } @else if (situacao.erro()) {
@@ -33,30 +38,7 @@
   <form [formGroup]="formulario">
     <sel-nova-fase class="step-card"></sel-nova-fase>
 
-    @if (releituraPendente()) {
-      <div class="field__erro" role="alert">
-        <p>
-          As etapas foram gravadas, mas a tela não conseguiu reler quais identificadores o servidor
-          atribuiu a elas. Enquanto isso, a edição fica suspensa: gravar de novo agora recriaria as
-          etapas e desfaria as referências de desempate e eliminação.
-        </p>
-        <button
-          class="btn btn--tertiary"
-          type="button"
-          (click)="releituraDasEtapas.relerEtapas()"
-          [disabled]="relendo()"
-        >
-          @if (relendo()) {
-            Relendo as etapas…
-          } @else {
-            Reler as etapas
-          }
-        </button>
-        @if (erroDeReleitura(); as erro) {
-          <p>{{ erro }}</p>
-        }
-      </div>
-    }
+    <ui-falha-de-leitura titulo="Etapas sem identificadores" [leitura]="releituraDasEtapas.leitura" />
 
     @if (avisoDeReordenacao(); as aviso) {
       <div class="field__erro" role="alert">

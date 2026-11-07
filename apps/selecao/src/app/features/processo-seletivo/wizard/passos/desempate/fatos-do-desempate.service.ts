@@ -1,9 +1,17 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import { isApiOk, type ApiResult } from '@uniplus/shared-core/http';
 import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
+import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
+
+const MENSAGEM_DE_FALHA = 'Não foi possível carregar os dados do candidato que um critério pode citar.';
+const EFEITO_DA_FALHA =
+  'Sem esses dados, um critério que cita um fato do candidato aparece como desconhecido e a gravação do passo é recusada.';
+const EFEITO_DA_FALHA_EM_CONSULTA = 'Os critérios que citam um fato aparecem pelo código gravado.';
 
 /**
  * O vocabulário de fatos do candidato, como o critério de desempate pode citá-lo.
@@ -16,7 +24,7 @@ import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
 @Injectable()
 export class FatosDoDesempate {
   private readonly api = inject(FatosCandidatoApi);
-  private readonly problemI18n = inject(ProblemI18nService);
+  private readonly store = inject(ProcessoSeletivoStore);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
@@ -35,6 +43,21 @@ export class FatosDoDesempate {
    */
   readonly falha = signal<string | null>(null);
 
+  /** Uma busca do vocabulário corre; sobe antes da requisição e cai junto de `falha`. */
+  readonly pendente = signal(false);
+
+  /** A falha com o que ela causa no passo, que muda quando o processo está só em consulta. */
+  readonly leitura = acompanharLeitura({
+    falha: computed(() => {
+      const falha = this.falha();
+      if (falha === null) return null;
+      return `${falha} ${this.store.emConsulta() ? EFEITO_DA_FALHA_EM_CONSULTA : EFEITO_DA_FALHA}`;
+    }),
+    pendente: this.pendente,
+    recarregar: () => this.carregar(),
+    destino: tituloDoPasso,
+  });
+
   readonly escolhiveis = computed(() => fatosParaGatilho(this.catalogo()));
 
   readonly porCodigo = computed(
@@ -44,23 +67,23 @@ export class FatosDoDesempate {
   /** Busca o vocabulário. A tela oferece nova tentativa. */
   carregar(): void {
     this.falha.set(null);
+    this.pendente.set(true);
     this.api
       .listar()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (resultado) => {
-          if (isApiOk(resultado)) {
-            this.catalogo.set(resultado.data);
-            this.lido.set(true);
-            return;
-          }
-
-          this.falha.set(this.problemI18n.resolve(resultado.problem).title);
-        },
-        error: () =>
-          this.falha.set(
-            'Não foi possível carregar os dados do candidato que um critério pode citar. Tente novamente.',
-          ),
+        next: (resultado) => this.concluir(resultado),
+        error: () => this.concluir(null),
       });
+  }
+
+  private concluir(resultado: ApiResult<readonly FatoCandidatoView[]> | null): void {
+    if (resultado !== null && isApiOk(resultado)) {
+      this.catalogo.set(resultado.data);
+      this.lido.set(true);
+    } else {
+      this.falha.set(MENSAGEM_DE_FALHA);
+    }
+    this.pendente.set(false);
   }
 }

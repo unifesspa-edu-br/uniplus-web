@@ -18,7 +18,7 @@ import {
   type ProdutoPrevistoDto,
   type ProdutosPrevistosDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PublicacoesDoProcessoPage } from './publicacoes-do-processo.page';
 import { PublicarDocumentoComponent } from './publicar-documento.component';
@@ -268,6 +268,198 @@ describe('PublicacoesDoProcessoPage', () => {
     expect(linhas()).toHaveLength(2);
     expect(linhas()[0].textContent).toContain('Comunicado');
     expect(linhas()[0].textContent).toContain('Em processamento');
+  });
+
+  it('sobe a espera dos atos ao relê-los, com a lista à vista, e a derruba junto da falha', async () => {
+    await abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    const servico = fixture.componentInstance['publicacoes'];
+    expect(servico.lendoAtos()).toBe(false);
+
+    const formulario = fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
+    (formulario.componentInstance as PublicarDocumentoComponent).publicado.emit();
+
+    expect(servico.lendoAtos()).toBe(true);
+    expect(linhas()).toHaveLength(1);
+
+    controller
+      .expectOne(ROTA_ATOS)
+      .flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
+    responderPrevistos(previstos());
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(servico.lendoAtos()).toBe(false);
+    expect(servico.atos().estado).toBe('falha');
+  });
+
+  it('com duas releituras dos atos seguidas, a resposta da mais antiga não derruba a espera nem sobrepõe a nova', async () => {
+    await abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    const servico = fixture.componentInstance['publicacoes'];
+    const formulario = fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
+    const publicado = (formulario.componentInstance as PublicarDocumentoComponent).publicado;
+
+    publicado.emit();
+    publicado.emit();
+    const [antiga, nova] = controller.match(ROTA_ATOS);
+
+    antiga.flush([ato('antigo')]);
+    await tick();
+    expect(servico.lendoAtos()).toBe(true);
+
+    nova.flush([ato('novo')]);
+    controller.match(ROTA_PREVISTOS).forEach((r) => r.flush(previstos()));
+    controller.match(ROTA_CAMPOS).forEach((r) => r.flush(CAMPOS));
+    controller.match((r) => r.url === ROTA_FASES).forEach((r) => r.flush(FASES));
+    await tick();
+
+    expect(servico.lendoAtos()).toBe(false);
+    expect(servico.listaDeAtos().map((a) => a.id)).toEqual(['novo']);
+  });
+
+  it('oferece tentar de novo a falha dos atos e relê a lista ao tentar', async () => {
+    await abrir(StatusProcesso.publicado, [ato('aviso', { numero: '01/2026' })]);
+    const formulario = fixture.debugElement.query(By.directive(PublicarDocumentoComponent));
+    (formulario.componentInstance as PublicarDocumentoComponent).publicado.emit();
+    controller
+      .expectOne(ROTA_ATOS)
+      .flush({ title: 'Erro', status: 500 }, { status: 500, statusText: 'Server Error' });
+    responderPrevistos(previstos());
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const tentar = Array.from(host.querySelectorAll('button')).find(
+      (b) => b.textContent?.includes('Tentar novamente') && b.closest('section')?.querySelector('#pub-page-atos-titulo'),
+    );
+    expect(tentar).toBeDefined();
+    tentar?.click();
+    await tick();
+    controller.expectOne(ROTA_ATOS).flush([ato('aviso', { numero: '01/2026' })]);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(linhas()).toHaveLength(1);
+  });
+
+  const botaoDe = (texto: string): HTMLButtonElement | undefined =>
+    Array.from(host.querySelectorAll('button')).find((b) => b.textContent?.includes(texto));
+  const ERRO_503 = { status: 503, statusText: 'Service Unavailable' };
+
+  async function abrirPublicadoComFalhaEm(onde: 'tipos' | 'previstos'): Promise<void> {
+    fixture = TestBed.createComponent(PublicacoesDoProcessoPage);
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush({ id: PROCESSO_ID, nome: 'Medicina 2027', status: StatusProcesso.publicado } as ProcessoSeletivoDto);
+    controller.expectOne(ROTA_ATOS).flush([]);
+    const tipos = controller.expectOne((r) => r.url === ROTA_TIPOS);
+    if (onde === 'tipos') tipos.flush(null, ERRO_503);
+    else tipos.flush(TIPOS);
+    await tick();
+    if (onde === 'previstos') {
+      controller.expectOne(ROTA_PREVISTOS).flush(null, ERRO_503);
+      controller.expectOne(ROTA_CAMPOS).flush(CAMPOS);
+      controller.expectOne((r) => r.url === ROTA_FASES).flush(FASES);
+    } else {
+      responderPrevistos(previstos());
+    }
+    await fixture.whenStable();
+    fixture.detectChanges();
+  }
+
+  it('a falha do catálogo de tipos oferece tentar de novo e relê só os tipos', async () => {
+    await abrirPublicadoComFalhaEm('tipos');
+    expect(host.textContent).toContain('Sem eles não é possível publicar um documento');
+
+    botaoDe('Tentar novamente')?.click();
+    fixture.detectChanges();
+    controller.expectOne((r) => r.url === ROTA_TIPOS).flush(TIPOS);
+    await tick();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(host.textContent).not.toContain('Sem eles não é possível publicar um documento');
+  });
+
+  it('a falha da leitura do processo oferece tentar de novo e relê o processo', async () => {
+    fixture = TestBed.createComponent(PublicacoesDoProcessoPage);
+    host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    controller.expectOne(ROTA_ATOS).flush([]);
+    controller.expectOne((r) => r.url === ROTA_TIPOS).flush(TIPOS);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const tentar = Array.from(host.querySelectorAll('button')).find((b) =>
+      b.textContent?.includes('Tentar novamente'),
+    );
+    expect(tentar).toBeDefined();
+    tentar?.click();
+    controller
+      .expectOne(ROTA_PROCESSO)
+      .flush({ id: PROCESSO_ID, nome: 'Medicina 2027', status: StatusProcesso.rascunho } as ProcessoSeletivoDto);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.textContent).toContain('Medicina 2027');
+  });
+
+  it('a falha dos itens do edital oferece tentar de novo e relê só os itens', async () => {
+    await abrirPublicadoComFalhaEm('previstos');
+    expect(host.textContent).toContain('Não foi possível carregar os documentos previstos');
+
+    botaoDe('Tentar novamente')?.click();
+    await tick();
+    responderPrevistos(previstos(item('preliminar')));
+    await tick();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(host.textContent).not.toContain('Não foi possível carregar os documentos previstos');
+  });
+
+  describe('abrir o documento publicado', () => {
+    const abrirDocumento = (): void => {
+      const botaoDoDocumento = host.querySelector<HTMLButtonElement>('sel-arquivos-do-ato button');
+      botaoDoDocumento?.click();
+    };
+
+    afterEach(() => vi.restoreAllMocks());
+
+    it('diz que o navegador bloqueou a aba, sem pedir o acesso', async () => {
+      await abrir(StatusProcesso.publicado, [ato('aviso')]);
+      vi.spyOn(window, 'open').mockReturnValue(null);
+
+      abrirDocumento();
+      await tick();
+      fixture.detectChanges();
+
+      expect(host.textContent).toContain('O navegador bloqueou a abertura do documento');
+      controller.expectNone((r) => r.url.endsWith('/acesso'));
+    });
+
+    it('mostra a recusa do servidor ao pedir o acesso ao documento', async () => {
+      await abrir(StatusProcesso.publicado, [ato('aviso')]);
+      const aba = { close: vi.fn(), location: { href: '' }, opener: {} } as unknown as Window;
+      vi.spyOn(window, 'open').mockReturnValue(aba);
+
+      abrirDocumento();
+      controller
+        .expectOne((r) => r.url.endsWith('/documentos-a-publicar/doc-aviso/acesso'))
+        .flush(
+          { type: 'about:blank', title: 'Sem permissão para abrir o documento', status: 403 },
+          { status: 403, statusText: 'Forbidden' },
+        );
+      await tick();
+      fixture.detectChanges();
+
+      expect(host.textContent).toContain('Não foi possível abrir o documento');
+      expect(aba.close).toHaveBeenCalled();
+    });
   });
 
   it('lista os itens do edital por fase e libera "Publicar" só no que o servidor libera', async () => {

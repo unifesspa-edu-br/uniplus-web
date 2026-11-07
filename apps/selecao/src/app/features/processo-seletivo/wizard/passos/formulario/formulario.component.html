@@ -6,25 +6,18 @@
 
 <!-- O catálogo e os termos só servem para editar: em consulta, carga e falha deles não interessam. -->
 @if (!store.emConsulta()) {
+  <ui-falha-de-leitura
+    titulo="Dados que o candidato pode declarar"
+    [leitura]="dados.leituraDoCatalogo"
+  />
+  <ui-falha-de-leitura
+    titulo="Termos de consentimento"
+    variante="warning"
+    [leitura]="dados.leituraDosTermos"
+  />
   @if (dados.catalogoCarregando()) {
-    <p class="alert alert--info" role="status">
+    <p class="alert alert--info" [uiIndicadorDaLeitura]="dados.leituraDoCatalogo">
       Carregando os dados que o candidato pode declarar…
-    </p>
-  } @else if (dados.catalogoErro(); as erro) {
-    <p class="alert alert--danger" role="alert">
-      {{ erro }} Sem esses dados não é possível acrescentar campos nem declarar condições.
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="dados.carregarCatalogo()">
-        Tentar novamente
-      </button>
-    </p>
-  }
-  @if (dados.termosComErro()) {
-    <p class="alert alert--warning" role="alert">
-      Não foi possível carregar os termos de consentimento. Sem eles não é possível exigir um termo
-      novo nem trocar a versão.
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="dados.carregarTermos()">
-        Tentar novamente
-      </button>
     </p>
   }
 }

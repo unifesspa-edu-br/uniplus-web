@@ -73,15 +73,16 @@
     </p>
   }
 } @else {
-  @if (prontidao.erro(); as erro) {
-    <div class="alert alert--danger" role="alert">
-      <p>{{ erro }}</p>
-      <button class="btn btn--sm btn--secondary" type="button" (click)="conferencia.atualizar()">
-        Tentar novamente
-      </button>
-    </div>
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar o checklist de conformidade"
+    [leitura]="leituraDaProntidao"
+  />
+  @if (prontidao.erro()) {
+    <!-- A falha e a nova tentativa ficam no aviso acima. -->
   } @else if (prontidao.carregando() && conferencia.gruposEstruturais() === null) {
-    <p class="alert alert--info" role="status">Carregando o checklist de conformidade…</p>
+    <p class="alert alert--info" [uiIndicadorDaLeitura]="leituraDaProntidao">
+      Carregando o checklist de conformidade…
+    </p>
   } @else {
     @if (regrasDasModalidades().length > 0) {
       <section class="step-section" aria-labelledby="revisao-modalidades-titulo">

@@ -10,29 +10,16 @@
 </ui-page-header>
 
 @let situacao = detalhe.situacao();
-<p class="insc-det__lendo" role="status">
-  @if (detalhe.carregando()) {
-  <ui-spinner spinnerSize="sm" />
-  Carregando a inscrição }
+<ui-falha-de-leitura titulo="Não foi possível carregar a inscrição" [leitura]="leitura" />
+@if (detalhe.carregando()) {
+<p class="insc-det__lendo" [uiIndicadorDaLeitura]="leitura">
+  <ui-spinner spinnerSize="sm" [decorativo]="true" />
+  Carregando a inscrição
 </p>
+}
 @switch (situacao.estado) { @case ('nao-encontrada') {
 <ui-alert variant="danger" heading="Inscrição não encontrada">
   A inscrição não existe neste processo seletivo ou não está disponível para você.
-</ui-alert>
-} @case ('falha') {
-<ui-alert variant="danger" heading="Não foi possível carregar a inscrição">
-  {{ situacao.mensagem }}
-  <span class="insc-det__tentar">
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="detalhe.carregando() ? 'true' : null"
-      [attr.aria-busy]="detalhe.carregando() ? 'true' : null"
-      (click)="tentarNovamente()"
-    >
-      Tentar novamente
-    </button>
-  </span>
 </ui-alert>
 } @case ('lida') { @if (inscricao(); as insc) { @if (identificacao(); as ident) {
 <section class="panel" aria-labelledby="insc-det-identificacao">

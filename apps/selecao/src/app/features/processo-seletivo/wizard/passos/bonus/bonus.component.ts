@@ -10,6 +10,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import {
+  FalhaDeLeituraComponent,
+  FalhaDeLeituraDoCampoComponent,
   RolagemFocavelDirective,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
@@ -48,6 +50,8 @@ import {
   selector: 'sel-step-bonus',
   standalone: true,
   imports: [
+    FalhaDeLeituraComponent,
+    FalhaDeLeituraDoCampoComponent,
     ValorLegivelDirective,
     ReactiveFormsModule,
     RolagemFocavelDirective,

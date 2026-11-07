@@ -3,28 +3,19 @@
 
   @if (store.emConsulta()) {
     @if (publicado()) {
+      <ui-falha-de-leitura titulo="Anexos publicados" [leitura]="leituraDosPublicados" />
       @switch (publicados()?.estado) {
-        @case ('falha') {
-          <div class="alert alert--danger" role="alert">
-            <p>Não foi possível ler os anexos publicados deste processo.</p>
-            <button
-              class="btn btn--tertiary btn--sm"
-              type="button"
-              (click)="tentarLerPublicadosDeNovo()"
-            >
-              Tentar novamente
-            </button>
-          </div>
-        }
         @case ('lendo') {
-          <p class="step-hint" role="status">Lendo os anexos publicados…</p>
+          <p class="step-hint" [uiIndicadorDaLeitura]="leituraDosPublicados">
+            Lendo os anexos publicados…
+          </p>
         }
         @case ('lido') {
           @if (listaDeConsulta().length === 0) {
             <p class="step-hint">A versão vigente do edital não tem anexos.</p>
           }
         }
-        @default {
+        @case (undefined) {
           <p class="step-hint" role="status">Os anexos aparecem quando o ato publicado for lido.</p>
         }
       }

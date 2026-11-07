@@ -10,6 +10,9 @@ import {
   TipoDeficienciaApi,
   TipoDeficienciaDto,
 } from '@uniplus/shared-data/configuracao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
+
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 
 /**
  * Código canônico da condição PcD no cadastro de Configuração — linha
@@ -44,6 +47,13 @@ export class CatalogosDeAtendimento {
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
+
+  readonly leitura = acompanharLeitura({
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: tituloDoPasso,
+  });
 
   /**
    * A condição de código `PCD`, se o cadastro a tiver — é sobre ela que a
@@ -91,7 +101,7 @@ export class CatalogosDeAtendimento {
   private anunciarErro(): void {
     this.buscaIniciada = false;
     this.erro.set(
-      'Não foi possível carregar os cadastros de condições, recursos e tipos de deficiência. Tente novamente.',
+      'Não foi possível carregar os cadastros de condições, recursos e tipos de deficiência.',
     );
     this.carregando.set(false);
   }

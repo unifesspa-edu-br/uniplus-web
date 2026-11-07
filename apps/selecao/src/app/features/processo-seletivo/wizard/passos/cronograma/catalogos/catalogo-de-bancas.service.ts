@@ -21,7 +21,7 @@ export class CatalogoDeBancas {
     buscar: () =>
       coletarPaginas((cursor) => this.bancasApi.listar({ cursor })).pipe(map(dadosOuNulo)),
     aplicar: (dados) => this.bancas.set(dados),
-    mensagemDeErro: 'Não foi possível carregar as bancas. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar as bancas.',
   });
 
   readonly carregando = this.leitura.carregando;

@@ -70,6 +70,18 @@ describe('PagamentoPassoComponent', () => {
 
   afterEach(() => controller.verify());
 
+  it('sobe a espera dos fundamentos ao relê-los e a derruba junto da falha', () => {
+    componente.carregarFundamentos();
+    expect(componente.fundamentosCarregando()).toBe(true);
+    expect(componente.fundamentosErro()).toBeNull();
+
+    const falha = problema(503, 'uniplus.indisponivel', 'Indisponível');
+    controller.expectOne(ROTA_FUNDAMENTOS).flush(falha.body, falha.opts);
+
+    expect(componente.fundamentosCarregando()).toBe(false);
+    expect(componente.fundamentosErro()).not.toBeNull();
+  });
+
   function tick(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 0));
   }

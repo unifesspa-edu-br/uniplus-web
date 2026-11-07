@@ -1,4 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { acompanharLeitura, destinoAcessivel } from '@uniplus/shared-ui/components';
+
+import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 
 import { CatalogoDeAtos } from './catalogo-de-atos.service';
 import { CatalogoDeBancas } from './catalogo-de-bancas.service';
@@ -10,7 +13,7 @@ import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
 
 const MENSAGEM_DE_FALHA =
-  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos e regras. Tente novamente.';
+  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos e regras.';
 
 /**
  * O estado conjunto dos catálogos que o cronograma e a configuração de cada fase exigem para
@@ -38,6 +41,34 @@ export class SituacaoDosCatalogosDoCronograma {
   readonly erro = computed(() =>
     this.exigidos.some((catalogo) => catalogo.erro() !== null) ? MENSAGEM_DE_FALHA : null,
   );
+
+  /**
+   * A falha dos catálogos com a nova tentativa, uma só para o Cronograma e a Fase, que leem os
+   * mesmos catálogos. O foco volta ao subtítulo do Cronograma.
+   */
+  readonly leitura = acompanharLeitura({
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.recarregar(),
+    destino: () => document.getElementById('sel-cronograma-subtitulo'),
+  });
+
+  /**
+   * A falha das unidades com a nova tentativa, um aviso só para a tela inteira, e não um por fase.
+   * O foco vai ao primeiro campo de unidade da tela ou, sem ele, à nova fase e, por fim, ao título
+   * do passo.
+   */
+  readonly leituraDasUnidades = acompanharLeitura({
+    falha: this.unidades.erro,
+    pendente: this.unidades.carregando,
+    recarregar: () => this.unidades.recarregar(),
+    destino: () =>
+      destinoAcessivel(
+        document.querySelector<HTMLElement>('select[id^="cr-unidade-"]'),
+        document.getElementById('cr-nova-fase'),
+        tituloDoPasso(),
+      ),
+  });
 
   carregar(): void {
     this.unidades.carregar();

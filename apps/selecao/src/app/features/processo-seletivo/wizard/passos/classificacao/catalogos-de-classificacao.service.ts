@@ -2,12 +2,15 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import {
   AreaPesoAreaEnemDto,
   PesoAreaEnemDto,
   PesosEnemApi,
 } from '@uniplus/shared-data/configuracao';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 
 const TIPO_REGRA_CALCULO = 'regra_calculo';
 const TIPO_REGRA_ARREDONDAMENTO = 'regra_arredondamento';
@@ -51,6 +54,13 @@ export class CatalogosDeClassificacao {
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
+  /** A leitura dos seis catálogos de regras, uma só para os passos que os usam. */
+  readonly leitura = acompanharLeitura({
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: tituloDoPasso,
+  });
 
   /** As linhas vivas do cadastro de Peso por Área — uma por resolução e grupo de área. */
   readonly pesosAreaEnem = signal<readonly PesoAreaEnemDto[]>([]);
@@ -66,19 +76,14 @@ export class CatalogosDeClassificacao {
    */
   readonly pesosLeituraPedida = signal(0);
   readonly pesosLidosNaLeitura = signal(0);
-  private readonly pesosFalhas = signal(0);
+  private readonly pesosFalhou = signal(false);
 
-  /**
-   * O aviso da falha. A partir da segunda falha seguida o texto muda a cada tentativa: um alerta
-   * que volta idêntico não é anunciado de novo pelo leitor de tela, e quem acionou "Tentar
-   * novamente" ficaria sem saber que falhou outra vez.
-   */
-  readonly pesosErro = computed(() => {
-    const falhas = this.pesosFalhas();
-    if (falhas === 0) return null;
-    const tentativa = falhas > 1 ? ` (${falhas}ª tentativa)` : '';
-    return `Não foi possível carregar o cadastro de Peso por Área${tentativa}. Tente novamente.`;
-  });
+  /** O aviso da falha de leitura do cadastro; a nova tentativa que falha de novo é dita por quem a pede. */
+  readonly pesosErro = computed(() =>
+    this.pesosFalhou()
+      ? 'Não foi possível carregar o cadastro de Peso por Área.'
+      : null,
+  );
 
   /**
    * As resoluções do cadastro, cada uma uma vez — o que o processo escolhe é a resolução inteira.
@@ -175,7 +180,7 @@ export class CatalogosDeClassificacao {
     this.aoLerPendentes.length = 0;
     this.pesosAreaEnem.set([]);
     this.pesosLidosNaMarca.set(-1);
-    this.pesosFalhas.set(0);
+    this.pesosFalhou.set(false);
     this.pesosCarregando.set(false);
   }
 
@@ -249,7 +254,7 @@ export class CatalogosDeClassificacao {
           this.pesosAreaEnem.set(linhas.data);
           this.pesosLidosNaMarca.set(marca);
           this.pesosLidosNaLeitura.set(numero);
-          this.pesosFalhas.set(0);
+          this.pesosFalhou.set(false);
           this.pesosCarregando.set(false);
           leuAsLinhas = true;
           const pendentes = this.aoLerPendentes.splice(0);
@@ -268,7 +273,7 @@ export class CatalogosDeClassificacao {
 
   private anunciarFalhaDosPesos(): void {
     this.aoLerPendentes.length = 0;
-    this.pesosFalhas.update((falhas) => falhas + 1);
+    this.pesosFalhou.set(true);
     this.pesosCarregando.set(false);
   }
 
@@ -277,7 +282,7 @@ export class CatalogosDeClassificacao {
     // tela precisa de um caminho de volta que não seja recarregar a página.
     this.buscaIniciada = false;
     this.erro.set(
-      'Não foi possível carregar os catálogos de regras de classificação, bônus e desempate. Tente novamente.',
+      'Não foi possível carregar os catálogos de regras de classificação, bônus e desempate.',
     );
     this.carregando.set(false);
   }

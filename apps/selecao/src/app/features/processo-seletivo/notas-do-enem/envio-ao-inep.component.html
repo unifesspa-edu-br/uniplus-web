@@ -19,7 +19,7 @@
         [controle]="leiaute"
         [catalogo]="notas.leiautesDeEnvio()"
         [erro]="erroDoLeiaute()"
-        (recarregar)="recarregarCatalogo()"
+        [leitura]="leituraDosLeiautes"
       />
 
       @if (notas.leiautesDeEnvio(); as catalogo) {

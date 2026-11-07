@@ -38,7 +38,7 @@ export class CatalogoDeRegras {
       this.regrasContagem.set(dados.contagem);
       this.regrasConsolidacao.set(dados.consolidacao);
     },
-    mensagemDeErro: 'Não foi possível carregar as regras. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar as regras.',
   });
 
   readonly carregando = this.leitura.carregando;

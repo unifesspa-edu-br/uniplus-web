@@ -14,7 +14,10 @@ import {
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import {
+  acompanharLeitura,
   AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   DialogComponent,
   SpinnerComponent,
   StepsResponsivoComponent,
@@ -29,6 +32,7 @@ import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
 import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
+import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { EnvioDoEdital } from './wizard/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './wizard/shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from './wizard/shared/campos-pressupostos.service';
@@ -63,6 +67,8 @@ import {
     RouterLink,
     AlertComponent,
     DialogComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     SpinnerComponent,
     TipoProcessoPassoComponent,
     IdentificacaoPassoComponent,
@@ -121,6 +127,21 @@ export class ProcessoSeletivoPage {
   readonly avisoDoRascunho = this.rascunho.aviso;
   readonly salvandoRascunho = this.rascunho.salvando;
   readonly falhaDoRascunho = this.rascunho.falha;
+
+  /** Só a falha temporária admite repetir a leitura; as demais descrevem o endereço. */
+  protected readonly leituraDoProcesso = acompanharLeitura({
+    falha: computed(() => {
+      const falha = this.store.falhaDeLeitura();
+      return falha?.motivo === 'falhaTemporaria' ? falha.mensagem : null;
+    }),
+    pendente: this.store.hidratando,
+    recarregar: () => this.tentarNovamente(),
+    destino: tituloDoPasso,
+    recusada: computed(() => {
+      const falha = this.store.falhaDeLeitura();
+      return falha !== null && falha.motivo !== 'falhaTemporaria';
+    }),
+  });
 
   protected readonly itensDosPassos = computed<StepItem[]>(() =>
     this.store.labels.map((rotulo, index) => ({
@@ -326,9 +347,11 @@ export class ProcessoSeletivoPage {
   }
 
   /** Repete a leitura do endereço atual, para as falhas que admitem retentativa. */
-  protected tentarNovamente(): void {
+  protected tentarNovamente(): boolean {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id !== null && !this.store.hidratando()) void this.leitura.retomar(id);
+    if (id === null || this.store.hidratando()) return false;
+    void this.leitura.retomar(id);
+    return true;
   }
 
   previous(): void {

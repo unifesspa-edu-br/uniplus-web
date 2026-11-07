@@ -1,25 +1,16 @@
 <section class="notas__historico" aria-labelledby="notas-envios-titulo">
-  <h3 id="notas-envios-titulo" class="notas__subtitulo notas__subtitulo--secao">
+  <h3 id="notas-envios-titulo" class="notas__subtitulo notas__subtitulo--secao" tabindex="-1">
     Envios gerados desta edição
   </h3>
 
   @let envios = notas.envios();
+  <ui-falha-de-leitura titulo="Não foi possível carregar os envios" [leitura]="leitura" />
   @switch (envios.estado) {
     @case ('lendo') {
-      <p class="notas__lendo" role="status">
-        <ui-spinner spinnerSize="sm" />
+      <p class="notas__lendo" [uiIndicadorDaLeitura]="leitura">
+        <ui-spinner spinnerSize="sm" [decorativo]="true" />
         Carregando os envios…
       </p>
-    }
-    @case ('falha') {
-      <ui-alert variant="danger" heading="Não foi possível carregar os envios">
-        {{ envios.mensagem }}
-        <span class="notas__tentar">
-          <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarEnvios()">
-            Tentar novamente
-          </button>
-        </span>
-      </ui-alert>
     }
     @case ('lido') {
       @if (envios.dados.length === 0) {

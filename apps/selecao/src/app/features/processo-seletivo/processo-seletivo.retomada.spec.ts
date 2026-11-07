@@ -1,3 +1,4 @@
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -1354,6 +1355,37 @@ describe('ProcessoSeletivoPage — falhas de leitura', () => {
     expect(obter).toHaveBeenCalledTimes(2);
     expect(cenario.store.falhaDeLeitura()).toBeNull();
     expect(cenario.store.processoSeletivoId()).toBe(PROCESSO_ID);
+  });
+});
+
+describe('ProcessoSeletivoPage — recusa na nova tentativa', () => {
+  beforeEach(() => TestBed.resetTestingModule());
+
+  it.each([
+    ['404', 404],
+    ['403', 403],
+  ])('503 seguido de %s fica na tela da recusa, sem anunciar a conclusão', async (_, status) => {
+    const obter = vi
+      .fn()
+      .mockReturnValueOnce(of(errorResult(mockProblemDetails({ status: 503 }))))
+      .mockReturnValueOnce(of(errorResult(mockProblemDetails({ status }))));
+    const cenario = montar({ obter });
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    await propagar();
+    cenario.fixture.detectChanges();
+
+    const botao = Array.from(
+      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+    ).find((b) => b.textContent?.includes('Tentar novamente')) as HTMLButtonElement;
+    botao.click();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
+    await propagar();
+    cenario.fixture.detectChanges();
+
+    expect(cenario.store.falhaDeLeitura()?.motivo).not.toBe('falhaTemporaria');
+    expect(anunciar).not.toHaveBeenCalled();
   });
 });
 

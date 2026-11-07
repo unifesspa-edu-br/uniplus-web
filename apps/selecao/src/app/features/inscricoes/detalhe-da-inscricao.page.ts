@@ -1,9 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
+  acompanharLeitura,
   AlertComponent,
   DadoDirective,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   ListaDeDadosComponent,
   PageHeaderComponent,
   SpinnerComponent,
@@ -39,6 +42,8 @@ import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
     ArquivosDaInscricaoComponent,
     DadoDirective,
     DateBrPipe,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ListaDeDadosComponent,
     OfertasEscolhidasComponent,
     PageHeaderComponent,
@@ -54,6 +59,7 @@ import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 })
 export class DetalheDaInscricaoPage {
   private readonly rota = inject(ActivatedRoute);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly detalhe = inject(DetalheDaInscricao);
   protected readonly arquivoAberto = inject(AberturaDeArquivo);
 
@@ -61,6 +67,17 @@ export class DetalheDaInscricaoPage {
   protected readonly varianteDaSituacao = varianteDaSituacao;
 
   protected readonly inscricao = this.detalhe.inscricao;
+
+  protected readonly leitura = acompanharLeitura({
+    falha: computed(() => {
+      const situacao = this.detalhe.situacao();
+      return situacao.estado === 'falha' ? situacao.mensagem : null;
+    }),
+    pendente: this.detalhe.carregando,
+    recarregar: () => this.detalhe.tentarNovamente(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+    recusada: computed(() => this.detalhe.situacao().estado === 'nao-encontrada'),
+  });
 
   /** O nome do processo vem na própria inscrição; sem ela, o cabeçalho não descreve nada. */
   protected readonly descricaoDoCabecalho = computed(() => {
@@ -87,11 +104,6 @@ export class DetalheDaInscricaoPage {
       if (processo === null || inscricao === null) return;
       this.detalhe.abrir(processo, inscricao);
     });
-  }
-
-  /** Repete a leitura que falhou, uma por vez: com uma em curso o clique não parte outra. */
-  protected tentarNovamente(): void {
-    if (!this.detalhe.carregando()) this.detalhe.tentarNovamente();
   }
 
   protected ocultar(pedido: PedidoDeRevelacao): void {

@@ -1,7 +1,9 @@
 import { Injectable, Injector, computed, effect, inject, untracked } from '@angular/core';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { quadroDoCadastro, type GrupoDoQuadro } from '../../shared/quadro-de-pesos';
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 import { exigeResolucaoPesoAreaEnem } from './classificacao-para-comando';
 
@@ -50,6 +52,14 @@ export class LeituraDoCadastroDePesos {
   private readonly lido = computed(
     () => this.catalogos.pesosLidosNaMarca() === this.store.classificacao.versaoLida(),
   );
+
+  /** A falha do cadastro com a nova tentativa, uma só para os passos que o leem. */
+  readonly acompanhamento = acompanharLeitura({
+    falha: this.catalogos.pesosErro,
+    pendente: this.catalogos.pesosCarregando,
+    recarregar: () => this.relerCadastroAPedido(),
+    destino: tituloDoPasso,
+  });
 
   readonly leitura = computed<LeituraDoCadastro>(() => ({
     lido: this.lido(),
@@ -110,10 +120,10 @@ export class LeituraDoCadastroDePesos {
    * recusa guardada da resolução, que julgou o cadastro de antes, deixa de valer: a próxima
    * gravação julga de novo. `depoisDeLer` só roda quando a leitura dá certo.
    */
-  relerCadastroAPedido(depoisDeLer: () => void): void {
+  relerCadastroAPedido(depoisDeLer?: () => void): void {
     this.catalogos.recarregarPesosAreaEnem(this.store.classificacao.versaoLida(), () => {
       this.store.classificacao.recusaDaResolucaoPesoAreaEnem.set(null);
-      depoisDeLer();
+      depoisDeLer?.();
     });
   }
 }

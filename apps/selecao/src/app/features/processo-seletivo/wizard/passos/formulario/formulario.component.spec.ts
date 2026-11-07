@@ -1139,6 +1139,35 @@ describe('FormularioPassoComponent', () => {
           ?.map((m) => m.id),
       ).toEqual(['psiq']);
     });
+
+    it('a lista do primeiro pedido, chegando depois do segundo do mesmo tipo, não sobrepõe a nova', () => {
+      servicoDeModelos().carregarModelos();
+      servicoDeModelos().carregarModelos();
+      const [primeiro, segundo] = controller.match((r) => r.url === ROTA_MODELOS);
+
+      segundo.flush([modelo('novo', 'Inscrição nova', 'INSCRICAO')]);
+      primeiro.flush(MODELOS);
+
+      expect(
+        servicoDeModelos()
+          .modelos()
+          .get('INSCRICAO')
+          ?.map((m) => m.id),
+      ).toEqual(['novo']);
+      expect(servicoDeModelos().modelosCarregando()).toBe(false);
+    });
+
+    it('o tipo esvaziado com a lista em curso não deixa a espera presa', () => {
+      servicoDeModelos().carregarModelos();
+      const doTipoAnterior = controller.expectOne((r) => r.url === ROTA_MODELOS);
+      expect(servicoDeModelos().modelosCarregando()).toBe(true);
+
+      store.patchObjectSection('tipoProcesso', { codigo: '' });
+      fixture.detectChanges();
+      doTipoAnterior.flush(MODELOS);
+
+      expect(servicoDeModelos().modelosCarregando()).toBe(false);
+    });
   });
 
   describe('em consulta', () => {

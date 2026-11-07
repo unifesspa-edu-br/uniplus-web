@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { AppConfigService, resolveConfiguracaoWebUrl } from '@uniplus/shared-data/config';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { FalhaDeLeituraComponent, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import { formatarNumeroPtBr } from '@uniplus/shared-utils';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -57,7 +57,7 @@ const ID_DO_TITULO_DA_SECAO = 'peso-area-titulo';
  */
 @Component({
   selector: 'sel-peso-por-area',
-  imports: [ValorEmConsultaComponent],
+  imports: [FalhaDeLeituraComponent, ValorEmConsultaComponent],
   templateUrl: './peso-por-area.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -147,12 +147,15 @@ export class PesoPorAreaComponent {
       : null;
   });
 
+  /** A falha do cadastro de pesos, com a nova tentativa, que a Fórmula e o Desempate repartem. */
+  protected readonly leituraDoCadastro = this.cadastroDePesos.acompanhamento;
+
   /**
-   * A falha ao ler o cadastro de Peso por Área. Em consulta o quadro à vista é a cópia congelada
-   * no processo, que não depende do cadastro, e a falha dele não tem o que explicar.
+   * A falha ao ler o cadastro de Peso por Área importa menos em consulta: o quadro à vista é a
+   * cópia congelada no processo, que não depende do cadastro, e a falha dele não tem o que explicar.
    */
-  protected readonly falhaDosPesosQueImporta = computed(() =>
-    this.store.emConsulta() && this.mostraQuadroGravado() ? null : this.catalogos.pesosErro(),
+  protected readonly mostraFalhaDosPesos = computed(
+    () => !(this.store.emConsulta() && this.mostraQuadroGravado()),
   );
 
   protected readonly colunasDoQuadro = computed(() =>
@@ -248,16 +251,6 @@ export class PesoPorAreaComponent {
   }
 
   /**
-   * "Tentar novamente" do cadastro de pesos. O alerta, com o botão focado, fica na tela enquanto
-   * a nova tentativa corre — tirá-lo no clique jogaria o foco no `body`. Quando a lista chega e o
-   * alerta sai, o foco vai ao seletor da resolução, ou ao título da seção quando o processo não
-   * aceita edição.
-   */
-  protected tentarCarregarPesosDeNovo(): void {
-    this.cadastroDePesos.relerCadastroAPedido(() => this.focarDepoisDeReler());
-  }
-
-  /**
    * "Reler o processo" do aviso de quadro não relido. O aviso fica, com o botão focado, enquanto a
    * leitura corre; quando ela decide e o aviso sai, o foco vai ao título da seção. Uma leitura
    * superada por outra mais nova não mexe no foco: quem decide é a mais nova.
@@ -267,11 +260,6 @@ export class PesoPorAreaComponent {
     if (decidiu && !this.store.classificacao.porReler()) {
       this.focarQuemSobrou(ID_DO_TITULO_DA_SECAO);
     }
-  }
-
-  private focarDepoisDeReler(): void {
-    // Sem edição o seletor fica desabilitado e não recebe foco: o título da seção é o destino.
-    this.focarQuemSobrou(this.store.aceitaEdicao() ? ID_DO_CAMPO_RESOLUCAO : ID_DO_TITULO_DA_SECAO);
   }
 
   /**

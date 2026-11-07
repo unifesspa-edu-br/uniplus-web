@@ -37,7 +37,7 @@ describe('CatalogoDeUnidadesDoCadastro', () => {
 
     catalogo.carregar();
 
-    expect(catalogo.erro()).toBe('Não foi possível carregar as unidades. Tente novamente.');
+    expect(catalogo.erro()).toBe('Não foi possível carregar as unidades.');
     expect(catalogo.carregada()).toBe(false);
   });
 

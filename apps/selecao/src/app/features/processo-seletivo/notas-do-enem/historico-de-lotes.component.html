@@ -1,26 +1,17 @@
 <section class="notas__historico" aria-labelledby="notas-lotes-titulo">
-  <h3 id="notas-lotes-titulo" class="notas__subtitulo notas__subtitulo--secao">
+  <h3 id="notas-lotes-titulo" class="notas__subtitulo notas__subtitulo--secao" tabindex="-1">
     Lotes importados desta edição
   </h3>
 
   <div class="notas__historico-corpo">
     @let lotes = notas.lotes();
+    <ui-falha-de-leitura titulo="Não foi possível carregar os lotes" [leitura]="leitura" />
     @switch (lotes.estado) {
       @case ('lendo') {
-        <p class="notas__lendo" role="status">
-          <ui-spinner spinnerSize="sm" />
+        <p class="notas__lendo" [uiIndicadorDaLeitura]="leitura">
+          <ui-spinner spinnerSize="sm" [decorativo]="true" />
           Carregando os lotes…
         </p>
-      }
-      @case ('falha') {
-        <ui-alert variant="danger" heading="Não foi possível carregar os lotes">
-          {{ lotes.mensagem }}
-          <span class="notas__tentar">
-            <button type="button" class="btn btn--secondary btn--sm" (click)="notas.recarregarLotes()">
-              Tentar novamente
-            </button>
-          </span>
-        </ui-alert>
       }
       @case ('lido') {
         @if (lotes.dados.length === 0) {

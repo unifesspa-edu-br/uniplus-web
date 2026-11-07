@@ -62,7 +62,7 @@
 
   @if (cobra() === true) {
     <div class="step-card">
-      <h2 class="form-section__title" id="f-fundamentos-titulo">Fundamentos de isenção</h2>
+      <h2 class="form-section__title" id="f-fundamentos-titulo" tabindex="-1">Fundamentos de isenção</h2>
       <p class="field__hint" id="f-fundamentos-hint">
         Quais fundamentos este processo reconhece para isentar candidatos. Processo que cobra taxa
         reconhece ao menos um — é por eles que o candidato poderá pedir isenção.
@@ -76,17 +76,12 @@
         />
       } @else {
         @if (fundamentosCarregando()) {
-          <p class="field__hint" role="status" aria-live="polite">Carregando fundamentos…</p>
+          <p class="field__hint" [uiIndicadorDaLeitura]="leituraDosFundamentos">
+            Carregando fundamentos…
+          </p>
         }
 
-        @if (fundamentosErro(); as erro) {
-          <div class="field__erro" role="alert">
-            <p>{{ erro }}</p>
-            <button class="btn btn--tertiary" type="button" (click)="carregarFundamentos()">
-              Tentar novamente
-            </button>
-          </div>
-        }
+        <ui-falha-de-leitura-do-campo [leitura]="leituraDosFundamentos" />
 
         @if (fundamentosNaoSuportados().length > 0) {
           <p class="alert alert--warning" role="status">

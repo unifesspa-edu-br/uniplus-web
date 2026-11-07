@@ -1,4 +1,8 @@
+import { Signal, computed } from '@angular/core';
 import type { LeiauteDoInepDto, LeiauteEscolhido } from '@uniplus/shared-data/selecao';
+import { acompanharLeitura, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
+
+import { estaLendo, mensagemDaFalha, type Leitura } from '../leitura';
 
 /** O valor da opção no select: o par que identifica o leiaute no catálogo. */
 export function chaveDoLeiaute(leiaute: Pick<LeiauteDoInepDto, 'codigo' | 'versao'>): string {
@@ -18,4 +22,25 @@ export function leiauteDaChave(
   return leiaute === undefined
     ? null
     : { leiauteCodigo: leiaute.codigo, leiauteVersao: leiaute.versao };
+}
+
+/**
+ * A leitura do catálogo de leiautes de um card, com o aviso de falha e a nova tentativa. O foco
+ * volta ao campo do leiaute quando a nova tentativa dá certo. Chamar em contexto de injeção.
+ */
+export function acompanharLeiautes(opcoes: {
+  readonly catalogo: Signal<Leitura<readonly LeiauteDoInepDto[]>>;
+  readonly idDoCampo: string;
+  readonly recarregar: () => void;
+}): LeituraAcompanhada {
+  const { catalogo, idDoCampo, recarregar } = opcoes;
+  return acompanharLeitura({
+    falha: computed(() => {
+      const falha = mensagemDaFalha(catalogo());
+      return falha === null ? null : `${falha} Sem eles não é possível usar esta etapa.`;
+    }),
+    pendente: computed(() => estaLendo(catalogo())),
+    recarregar,
+    destino: () => document.getElementById(idDoCampo),
+  });
 }

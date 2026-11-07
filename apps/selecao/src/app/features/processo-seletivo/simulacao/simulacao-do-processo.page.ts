@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   computed,
   inject,
   signal,
@@ -16,10 +17,12 @@ import {
   type FormularioRenderizavelDto,
 } from '@uniplus/shared-data/selecao';
 import {
-  AlertComponent,
+  acompanharLeitura,
   BUSCA_DE_CEP,
   BUSCA_DE_MUNICIPIOS,
+  FalhaDeLeituraComponent,
   FINALIDADES,
+  IndicadorDaLeituraDirective,
   SimulacaoDeFormularioComponent,
   SpinnerComponent,
   type ConferenciaComOServidor,
@@ -35,7 +38,13 @@ import {
 @Component({
   selector: 'sel-simulacao-do-processo-page',
   standalone: true,
-  imports: [AlertComponent, RouterLink, SimulacaoDeFormularioComponent, SpinnerComponent],
+  imports: [
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    RouterLink,
+    SimulacaoDeFormularioComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // O campo de município escolhe o município pela busca no Geo, limitada à UF respondida.
   providers: [
@@ -45,7 +54,7 @@ import {
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title">Simulação do formulário de {{ nomeDaFinalidade() }}</h1>
+        <h1 class="page-header__title" tabindex="-1">Simulação do formulário de {{ nomeDaFinalidade() }}</h1>
         <p class="page-header__desc">
           Responda como o candidato responderia. Simula o processo gravado: o que foi alterado e
           ainda não foi gravado não entra.
@@ -54,17 +63,12 @@ import {
       </div>
     </div>
 
+    <ui-falha-de-leitura titulo="Não foi possível carregar o formulário" [leitura]="leitura" />
+
     @if (carregando()) {
-      <div role="status"><ui-spinner spinnerSize="md" /> Carregando o formulário...</div>
-    } @else if (erroAoCarregar()) {
-      <ui-alert variant="danger" heading="Não foi possível carregar o formulário">
-        {{ erroAoCarregar() }}
-        <p>
-          <button type="button" class="btn btn--secondary btn--sm" (click)="carregar()">
-            Tentar novamente
-          </button>
-        </p>
-      </ui-alert>
+      <div [uiIndicadorDaLeitura]="leitura">
+        <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o formulário...
+      </div>
     } @else if (formulario(); as renderizavel) {
       <ui-simulacao-de-formulario
         idBase="simulacao-processo"
@@ -82,6 +86,7 @@ export class SimulacaoDoProcessoPage {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly rota = inject(ActivatedRoute).snapshot.paramMap;
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly id = this.rota.get('id') ?? '';
   protected readonly finalidade = this.rota.get('finalidade') ?? '';
@@ -92,6 +97,12 @@ export class SimulacaoDoProcessoPage {
   );
   protected readonly carregando = signal(true);
   protected readonly erroAoCarregar = signal<string | null>(null);
+  protected readonly leitura = acompanharLeitura({
+    falha: this.erroAoCarregar,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: () => this.host.nativeElement.querySelector('h1'),
+  });
   /** O formulário com a comprovação documental, que só o processo tem. */
   private readonly lido = signal<FormularioRenderizavelDto | null>(null);
   /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */

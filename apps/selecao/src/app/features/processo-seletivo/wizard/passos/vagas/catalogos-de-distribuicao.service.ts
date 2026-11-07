@@ -13,7 +13,9 @@ import {
   ReservaDemograficaApi,
 } from '@uniplus/shared-data/configuracao';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /** Tipos do `rol_de_regras` que esta tela referencia. */
@@ -51,6 +53,13 @@ export class CatalogosDeDistribuicao {
 
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
+
+  readonly leitura = acompanharLeitura({
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: tituloDoPasso,
+  });
 
   /**
    * O que a leitura pode afirmar do catálogo. O estado vem da ausência dos dados, e não da flag
@@ -252,7 +261,7 @@ export class CatalogosDeDistribuicao {
 
   private anunciarErro(): void {
     this.erro.set(
-      'Não foi possível carregar os catálogos de ofertas, modalidades e regras. Tente novamente.',
+      'Não foi possível carregar os catálogos de ofertas, modalidades e regras.',
     );
     this.carregando.set(false);
   }

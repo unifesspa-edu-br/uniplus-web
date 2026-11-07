@@ -18,7 +18,7 @@ import {
   type TipoDeLeiaute,
 } from '@uniplus/shared-data/selecao';
 
-import { LENDO, type Leitura } from '../leitura';
+import { LENDO, LeiturasEmOrdem, type Leitura } from '../leitura';
 import { ESCOPO_DE_RASCUNHO, escopoDoEnem, type EscopoDoEnem } from './escopo-do-enem';
 
 /** O que identifica a edição de uma etapa na API: os três ids que toda rota de notas pede. */
@@ -42,7 +42,7 @@ export function mesmoEscopo(atual: EscopoEscolhido | null, pedido: EscopoEscolhi
  * que ficaram para trás: toda leitura, inclusive a de recarga, invalida as anteriores.
  */
 class HistoricoDaEdicao<T> {
-  private leituraAtual = 0;
+  private readonly leituras = new LeiturasEmOrdem();
   readonly edicao = signal('');
   readonly leitura = signal<Leitura<T>>(LENDO);
   /** Uma leitura corre: a recarga mantém a falha à vista, e este sinal é o que diz que há espera. */
@@ -58,7 +58,7 @@ class HistoricoDaEdicao<T> {
   }
 
   reiniciar(): void {
-    this.leituraAtual++;
+    this.leituras.descartar();
     this.edicao.set('');
     this.leitura.set(LENDO);
     this.relendo.set(false);
@@ -72,7 +72,7 @@ class HistoricoDaEdicao<T> {
 
   /** Relê sem esvaziar a lista em tela, que continua à vista até a nova chegar. */
   async ler(): Promise<void> {
-    const leitura = ++this.leituraAtual;
+    const aindaVale = this.leituras.iniciar();
     const escolhido = this.escolhido();
     if (escolhido === null) {
       this.relendo.set(false);
@@ -80,7 +80,7 @@ class HistoricoDaEdicao<T> {
     }
     this.relendo.set(true);
     const resultado = await firstValueFrom(this.listar(escolhido));
-    if (leitura !== this.leituraAtual) return;
+    if (!aindaVale()) return;
     this.leitura.set(this.comoLeitura(resultado));
     this.relendo.set(false);
   }
@@ -99,8 +99,11 @@ export class NotasDoEnemDoProcesso {
   private readonly problemI18n = inject(ProblemI18nService);
 
   /** Cada contador distingue a leitura mais recente da que ficou para trás quando o escopo muda. */
-  private leituraDoProcesso = 0;
-  private readonly leituraDosLeiautes: Record<TipoDeLeiaute, number> = { envio: 0, retorno: 0 };
+  private readonly ordemDoProcesso = new LeiturasEmOrdem();
+  private readonly ordemDosLeiautes: Record<TipoDeLeiaute, LeiturasEmOrdem> = {
+    envio: new LeiturasEmOrdem(),
+    retorno: new LeiturasEmOrdem(),
+  };
 
   readonly processoId = signal<string | null>(null);
   readonly processo = signal<Leitura<ProcessoSeletivoDto>>(LENDO);
@@ -153,7 +156,7 @@ export class NotasDoEnemDoProcesso {
 
   /** Lê o processo e o catálogo de leiautes, para o processo indicado. */
   async abrir(processoId: string): Promise<void> {
-    this.leituraDoProcesso++;
+    const aindaVale = this.ordemDoProcesso.iniciar();
     this.historicoDeEnvios.reiniciar();
     this.historicoDeLotes.reiniciar();
     this.processoId.set(processoId);
@@ -161,7 +164,7 @@ export class NotasDoEnemDoProcesso {
     this.escopoLido.set(null);
 
     await Promise.all([
-      this.lerProcesso(processoId),
+      this.lerProcesso(processoId, aindaVale),
       this.recarregarLeiautes('envio'),
       this.recarregarLeiautes('retorno'),
     ]);
@@ -170,18 +173,18 @@ export class NotasDoEnemDoProcesso {
   async recarregarProcesso(): Promise<void> {
     const processoId = this.processoId();
     if (processoId === null) return;
-    this.leituraDoProcesso++;
+    const aindaVale = this.ordemDoProcesso.iniciar();
     this.processo.set(LENDO);
-    await this.lerProcesso(processoId);
+    await this.lerProcesso(processoId, aindaVale);
   }
 
   async recarregarLeiautes(tipo: TipoDeLeiaute): Promise<void> {
-    const leitura = ++this.leituraDosLeiautes[tipo];
+    const aindaVale = this.ordemDosLeiautes[tipo].iniciar();
     const destino = tipo === 'envio' ? this.leiautesDeEnvio : this.leiautesDeRetorno;
     destino.set(LENDO);
 
     const resultado = await firstValueFrom(this.api.listarLeiautes(tipo));
-    if (leitura !== this.leituraDosLeiautes[tipo]) return;
+    if (!aindaVale()) return;
     destino.set(this.comoLeitura(resultado));
   }
 
@@ -210,17 +213,16 @@ export class NotasDoEnemDoProcesso {
     return this.problemI18n.resolve(resultado.problem).title;
   }
 
-  private async lerProcesso(processoId: string): Promise<void> {
-    const leitura = this.leituraDoProcesso;
+  private async lerProcesso(processoId: string, aindaVale: () => boolean): Promise<void> {
     const resultado = await firstValueFrom(this.processosApi.obter(processoId));
-    if (leitura !== this.leituraDoProcesso) return;
+    if (!aindaVale()) return;
     if (!isApiOk(resultado)) {
       this.processo.set(this.comoLeitura(resultado));
       return;
     }
 
     const escopo = await this.lerEscopo(processoId, resultado.data);
-    if (leitura !== this.leituraDoProcesso) return;
+    if (!aindaVale()) return;
     if ('ok' in escopo) {
       this.processo.set({ estado: 'falha', mensagem: this.mensagemDaFalha(escopo) });
       return;

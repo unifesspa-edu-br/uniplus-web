@@ -18,7 +18,13 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraDoCampoComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 
 import { ValidacaoDoPasso, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -31,6 +37,8 @@ import {
   formatarValorEmReais,
 } from '../../shared/valor-em-reais';
 
+const MENSAGEM_DOS_FUNDAMENTOS = 'Não foi possível carregar os fundamentos de isenção.';
+
 /**
  * Declaração de taxa de inscrição e dos fundamentos de isenção que o processo
  * reconhece — o que o comando de configuração recebe, nada além.
@@ -42,7 +50,13 @@ import {
 @Component({
   selector: 'sel-step-pagamento',
   standalone: true,
-  imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [
+    FalhaDeLeituraDoCampoComponent,
+    IndicadorDaLeituraDirective,
+    ValorLegivelDirective,
+    ReactiveFormsModule,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './pagamento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(PagamentoPassoComponent)],
@@ -60,6 +74,12 @@ export class PagamentoPassoComponent {
   readonly fundamentos = signal<readonly FundamentoOferecivel[]>([]);
   readonly fundamentosErro = signal<string | null>(null);
   readonly fundamentosCarregando = signal(true);
+  protected readonly leituraDosFundamentos = acompanharLeitura({
+    falha: this.fundamentosErro,
+    pendente: this.fundamentosCarregando,
+    recarregar: () => this.carregarFundamentos(),
+    destino: () => document.getElementById('f-fundamentos-titulo'),
+  });
 
   /**
    * Fundamento que o catálogo devolveu e este cliente não sabe enviar. Sem o
@@ -159,26 +179,25 @@ export class PagamentoPassoComponent {
       .listarFundamentosIsencao()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
+        if (isApiOk(resultado)) this.guardarFundamentos(resultado.data);
+        else this.fundamentosErro.set(MENSAGEM_DOS_FUNDAMENTOS);
         this.fundamentosCarregando.set(false);
-        if (!isApiOk(resultado)) {
-          this.fundamentosErro.set(
-            'Não foi possível carregar os fundamentos de isenção. Tente novamente.',
-          );
-          return;
-        }
-        const conhecidos: FundamentoOferecivel[] = [];
-        const desconhecidos: string[] = [];
-        for (const fundamento of resultado.data) {
-          const codigo = decodificarFundamento(fundamento.codigo);
-          if (codigo === null) {
-            desconhecidos.push(fundamento.nome);
-            continue;
-          }
-          conhecidos.push({ ...fundamento, codigo });
-        }
-        this.fundamentos.set(conhecidos);
-        this.fundamentosNaoSuportados.set(desconhecidos);
       });
+  }
+
+  private guardarFundamentos(oferecidos: readonly FundamentoIsencaoDto[]): void {
+    const conhecidos: FundamentoOferecivel[] = [];
+    const desconhecidos: string[] = [];
+    for (const fundamento of oferecidos) {
+      const codigo = decodificarFundamento(fundamento.codigo);
+      if (codigo === null) {
+        desconhecidos.push(fundamento.nome);
+        continue;
+      }
+      conhecidos.push({ ...fundamento, codigo });
+    }
+    this.fundamentos.set(conhecidos);
+    this.fundamentosNaoSuportados.set(desconhecidos);
   }
 
   estaSelecionado(codigo: FundamentoIsencaoCodigo): boolean {

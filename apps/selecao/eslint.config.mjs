@@ -113,5 +113,5 @@ export default [
       'no-restricted-syntax': ['error', ...DO_WIZARD, ...NAO_INJETA_HTTP_CLIENT],
     },
   },
-  blocoDaLeituraNosModelos('warn'),
+  blocoDaLeituraNosModelos('error'),
 ];

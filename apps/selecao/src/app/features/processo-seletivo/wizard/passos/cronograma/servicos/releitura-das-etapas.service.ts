@@ -1,10 +1,12 @@
-import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { isApiOk } from '@uniplus/shared-core/http';
 import { ProcessosSeletivosApi } from '@uniplus/shared-data/selecao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import { firstValueFrom } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { etapasDe } from '../../../shared/hidratacao';
+import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 
 /**
  * O que a tela responde enquanto as etapas gravadas estão sem os identificadores
@@ -13,6 +15,9 @@ import { etapasDe } from '../../../shared/hidratacao';
  */
 export const AGUARDA_RELEITURA =
   'As etapas foram gravadas, mas a tela ainda não recolheu os identificadores que o servidor atribuiu. Releia as etapas antes de gravar de novo: sem eles, a gravação seguinte recriaria as etapas e desfaria as referências de desempate e eliminação.';
+
+const ETAPAS_SEM_IDENTIFICADOR =
+  'As etapas foram gravadas, mas a tela não conseguiu reler quais identificadores o servidor atribuiu a elas. Enquanto isso, a edição fica suspensa: gravar de novo agora recriaria as etapas e desfaria as referências de desempate e eliminação.';
 
 /** As etapas gravadas à espera dos identificadores que o servidor atribuiu, e a releitura que os recolhe. */
 @Injectable()
@@ -37,6 +42,18 @@ export class ReleituraDasEtapas {
 
   /** Por que a última tentativa de releitura não destravou a tela. */
   readonly erroDeReleitura = signal<string | null>(null);
+
+  /** A releitura que destrava a tela: a falha é o bloqueio, dito com o motivo da última tentativa. */
+  readonly leitura = acompanharLeitura({
+    falha: computed(() => {
+      if (!this.releituraPendente()) return null;
+      const motivo = this.erroDeReleitura();
+      return motivo === null ? ETAPAS_SEM_IDENTIFICADOR : `${ETAPAS_SEM_IDENTIFICADOR} ${motivo}`;
+    }),
+    pendente: this.relendo,
+    recarregar: () => void this.relerEtapas(),
+    destino: tituloDoPasso,
+  });
 
   constructor() {
     // Outro processo entra em cena — por troca de rota ou por recomeço — e o
@@ -106,7 +123,7 @@ export class ReleituraDasEtapas {
       }
 
       this.erroDeReleitura.set(
-        'Não foi possível reler as etapas agora. Tente de novo em instantes; se continuar assim, recarregue o processo.',
+        'Não foi possível reler as etapas agora. Se continuar assim, recarregue o processo.',
       );
     } finally {
       this.relendo.set(false);

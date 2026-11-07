@@ -5,18 +5,7 @@
   </p>
 }
 
-@if (situacao.carregando()) {
-  <p class="field__hint" role="status">
-    Carregando fases, bancas, categorias de documento, atos e regras…
-  </p>
-} @else if (situacao.erro(); as erro) {
-  <div class="field__erro" role="alert">
-    <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="situacao.recarregar()">
-      Tentar novamente
-    </button>
-  </div>
-} @else if (fasesNoSeletor().length === 0) {
+@if (fasesNoSeletor().length === 0) {
   <p class="field__hint">
     Este processo ainda não tem cronograma. Defina as fases no passo Cronograma antes de configurar
     o que cada uma publica, julga e exige.

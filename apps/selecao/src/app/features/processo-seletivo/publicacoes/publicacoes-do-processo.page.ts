@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   inject,
   signal,
@@ -17,11 +18,15 @@ import {
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
 import {
+  acompanharLeitura,
   AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   PageHeaderComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 
+import { estaLendo, mensagemDaFalha } from '../leitura';
 import { AtosDoProcessoComponent } from './atos-do-processo.component';
 import type { ModoDaPublicacao } from './modo-da-publicacao';
 import { PrevistosNoEditalComponent } from './previstos-no-edital.component';
@@ -43,6 +48,8 @@ import { PublicarDocumentoComponent } from './publicar-documento.component';
     RouterLink,
     AlertComponent,
     AtosDoProcessoComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     PageHeaderComponent,
     PrevistosNoEditalComponent,
     PublicarDocumentoComponent,
@@ -58,7 +65,38 @@ export class PublicacoesDoProcessoPage {
   private readonly api = inject(DocumentosEAtosDoProcessoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly permissoes = inject(PermissoesService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly publicacoes = inject(PublicacoesDoProcesso);
+
+  private readonly tituloDaPagina = () => this.host.nativeElement.querySelector('h1');
+
+  protected readonly leituraDoProcesso = acompanharLeitura({
+    falha: computed(() => mensagemDaFalha(this.publicacoes.processo())),
+    pendente: computed(() => estaLendo(this.publicacoes.processo())),
+    recarregar: () => void this.publicacoes.recarregarProcesso(),
+    destino: this.tituloDaPagina,
+  });
+  protected readonly leituraDosTipos = acompanharLeitura({
+    falha: computed(() => {
+      const falha = mensagemDaFalha(this.publicacoes.tipos());
+      return falha === null ? null : `${falha} Sem eles não é possível publicar um documento.`;
+    }),
+    pendente: computed(() => estaLendo(this.publicacoes.tipos())),
+    recarregar: () => void this.publicacoes.recarregarTipos(),
+    destino: this.tituloDaPagina,
+  });
+  protected readonly leituraDosPrevistos = acompanharLeitura({
+    falha: computed(() => mensagemDaFalha(this.publicacoes.previstos())),
+    pendente: computed(() => estaLendo(this.publicacoes.previstos())),
+    recarregar: () => void this.publicacoes.recarregarPrevistos(),
+    destino: () => this.host.nativeElement.querySelector<HTMLElement>('#pub-page-previstos-titulo'),
+  });
+  protected readonly leituraDosAtos = acompanharLeitura({
+    falha: computed(() => mensagemDaFalha(this.publicacoes.atos())),
+    pendente: this.publicacoes.lendoAtos,
+    recarregar: () => void this.publicacoes.recarregarAtos(),
+    destino: () => this.host.nativeElement.querySelector<HTMLElement>('#pub-page-atos-titulo'),
+  });
 
   private readonly cabecalho = viewChild.required(PageHeaderComponent);
 

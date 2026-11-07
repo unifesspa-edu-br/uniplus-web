@@ -6,7 +6,18 @@ import {
   FatosCandidatoApi,
   TermosConsentimentoApi,
 } from '@uniplus/shared-data/configuracao';
-import { termoDisponivelDe, type TermoDisponivel } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  termoDisponivelDe,
+  type TermoDisponivel,
+} from '@uniplus/shared-ui/components';
+
+import { tituloDoPasso } from '../../../shared/titulo-do-passo';
+
+const CONSEQUENCIA_DO_CATALOGO =
+  'Sem esses dados não é possível acrescentar campos nem declarar condições.';
+const MENSAGEM_DOS_TERMOS =
+  'Não foi possível carregar os termos de consentimento. Sem eles não é possível exigir um termo novo nem trocar a versão.';
 
 /** O vocabulário de fatos do candidato e os termos de consentimento que o formulário pode exigir. */
 @Injectable()
@@ -21,7 +32,22 @@ export class CatalogosDoFormulario {
   readonly catalogoErro = signal<string | null>(null);
 
   readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
-  readonly termosComErro = signal(false);
+  readonly termosCarregando = signal(true);
+  readonly termosErro = signal<string | null>(null);
+
+  readonly leituraDoCatalogo = acompanharLeitura({
+    falha: this.catalogoErro,
+    pendente: this.catalogoCarregando,
+    recarregar: () => this.carregarCatalogo(),
+    destino: tituloDoPasso,
+  });
+
+  readonly leituraDosTermos = acompanharLeitura({
+    falha: this.termosErro,
+    pendente: this.termosCarregando,
+    recarregar: () => this.carregarTermos(),
+    destino: tituloDoPasso,
+  });
 
   /**
    * Busca o vocabulário de fatos. A tela oferece nova tentativa: sem ela, uma falha passageira
@@ -36,7 +62,9 @@ export class CatalogosDoFormulario {
       .subscribe((resultado) => {
         this.catalogoCarregando.set(false);
         if (!isApiOk(resultado)) {
-          this.catalogoErro.set(this.problemI18n.resolve(resultado.problem).title);
+          this.catalogoErro.set(
+            `${this.problemI18n.resolve(resultado.problem).title} ${CONSEQUENCIA_DO_CATALOGO}`,
+          );
           return;
         }
         this.catalogo.set(resultado.data);
@@ -45,13 +73,15 @@ export class CatalogosDoFormulario {
 
   /** Os termos de consentimento com as versões promovidas. */
   carregarTermos(): void {
-    this.termosComErro.set(false);
+    this.termosCarregando.set(true);
+    this.termosErro.set(null);
     this.termosApi
       .listarComVersoes()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((termos) => {
+        this.termosCarregando.set(false);
         if (!termos.ok) {
-          this.termosComErro.set(true);
+          this.termosErro.set(MENSAGEM_DOS_TERMOS);
           return;
         }
         this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));

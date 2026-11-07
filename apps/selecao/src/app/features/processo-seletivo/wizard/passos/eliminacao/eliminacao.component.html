@@ -2,8 +2,8 @@
   Regras de eliminação. Esta gravação envia junto a regra de cálculo, a precisão e a ordem de
   alocação do passo Fórmula — os quatro compõem um comando só.
 </p>
-@if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
 }
 
 @for (aviso of avisoDoDesempatePorArea(); track aviso; let primeiro = $first) {

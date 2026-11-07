@@ -22,11 +22,12 @@ export class CatalogoDeUnidadesDoCadastro {
     buscar: () =>
       coletarPaginas((cursor) => this.unidadesApi.listar({ cursor })).pipe(map(dadosOuNulo)),
     aplicar: (dados) => this.unidades.set(dados),
-    mensagemDeErro: 'Não foi possível carregar as unidades. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar as unidades.',
   });
 
   readonly carregando = this.leitura.carregando;
   readonly erro = this.leitura.erro;
+
   /** Verdadeiro só depois que o cadastro de unidades respondeu com sucesso. */
   readonly carregada = computed(() => !this.carregando() && this.erro() === null);
 

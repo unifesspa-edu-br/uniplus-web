@@ -58,14 +58,7 @@
       ></sel-identificador-legivel>
       <div class="form-field form-grid__full">
         <label class="label" for="f-unidade">Unidade administradora</label>
-        @if (unidades.erro(); as erro) {
-          <div class="field__erro" role="alert">
-            <p>{{ erro }}</p>
-            <button class="btn btn--tertiary" type="button" (click)="unidades.carregar()">
-              Tentar novamente
-            </button>
-          </div>
-        }
+        <ui-falha-de-leitura-do-campo [leitura]="unidades.leitura" />
         <select
           class="input"
           id="f-unidade"

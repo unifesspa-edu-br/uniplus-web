@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { FalhaDeLeituraComponent, IndicadorDaLeituraDirective } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import type { AbaDoFormulario } from '../abas-do-formulario';
@@ -10,6 +11,7 @@ import { AplicacaoDeModelo } from '../servicos/aplicacao-de-modelo.service';
  */
 @Component({
   selector: 'sel-modelo-do-formulario',
+  imports: [FalhaDeLeituraComponent, IndicadorDaLeituraDirective],
   templateUrl: './modelo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
@@ -17,6 +19,7 @@ import { AplicacaoDeModelo } from '../servicos/aplicacao-de-modelo.service';
 export class ModeloDoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly aplicacao = inject(AplicacaoDeModelo);
+  protected readonly leitura = this.aplicacao.leituraDosModelos;
 
   readonly aba = input.required<AbaDoFormulario>();
   /** A recusa do pedido de aplicação, para o leitor de tela ouvir. */

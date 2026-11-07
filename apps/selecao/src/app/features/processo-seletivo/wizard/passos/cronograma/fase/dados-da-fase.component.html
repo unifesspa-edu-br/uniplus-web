@@ -11,7 +11,8 @@
       [attr.aria-describedby]="
         'cr-unidade-dica-' +
         item.indice +
-        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '')
+        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '') +
+        (unidadesSemLista() ? ' cr-unidade-sem-lista-' + item.indice : '')
       "
       [attr.aria-invalid]="unidadeInvalida ? 'true' : null"
       [class.is-invalid]="unidadeInvalida"
@@ -21,13 +22,10 @@
         <option [value]="unidade.id">{{ unidade.rotulo }}</option>
       }
     </select>
-    @if (catalogoDeUnidades.erro(); as erroDeUnidades) {
-      <div class="field__erro" role="alert">
-        <p>{{ erroDeUnidades }}</p>
-        <button class="btn btn--tertiary" type="button" (click)="catalogoDeUnidades.recarregar()">
-          Tentar novamente
-        </button>
-      </div>
+    @if (unidadesSemLista()) {
+      <p class="field__hint" [attr.id]="'cr-unidade-sem-lista-' + item.indice">
+        As unidades não carregaram, e por isso a lista está incompleta.
+      </p>
     }
     @if (unidades.unidadeRecusada(item.grupo)) {
       <p class="field__erro" role="alert" [attr.id]="'cr-unidade-erro-' + item.indice">

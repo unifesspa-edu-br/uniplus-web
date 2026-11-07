@@ -19,7 +19,7 @@ import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
 import { HistoricoDeEnviosComponent } from './historico-de-envios.component';
 import { OrientacoesDoEnemComponent } from './orientacoes-do-enem.component';
 import { SeletorDeEdicaoComponent } from './seletor-de-edicao.component';
-import { leiauteDaChave } from './leiautes';
+import { acompanharLeiautes, leiauteDaChave } from './leiautes';
 import { NotasDoEnemDoProcesso, mesmoEscopo } from './notas-do-enem-do-processo.service';
 import { explicarRecusa, falhaIncerta, type RecusaExplicada } from './recusas-do-enem';
 import { SeletorDeLeiauteComponent } from './seletor-de-leiaute.component';
@@ -52,6 +52,11 @@ export class EnvioAoInepComponent {
   private readonly api = inject(NotasDoEnemApi);
   private readonly injector = inject(Injector);
   protected readonly notas = inject(NotasDoEnemDoProcesso);
+  protected readonly leituraDosLeiautes = acompanharLeiautes({
+    catalogo: this.notas.leiautesDeEnvio,
+    idDoCampo: 'notas-leiaute-envio',
+    recarregar: () => this.recarregarCatalogo(),
+  });
 
   protected readonly leiaute = new FormControl('', { nonNullable: true });
   protected readonly erroDoLeiaute = signal<string | null>(null);

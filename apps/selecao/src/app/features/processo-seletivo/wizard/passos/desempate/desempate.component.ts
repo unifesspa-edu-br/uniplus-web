@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Injector } from '@angular/core';
+import { FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 
 import { CriterioDesempateConfigurado, ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -32,7 +33,7 @@ import { mensagensDoDesempate } from './validacao-do-desempate';
   selector: 'sel-step-desempate',
   standalone: true,
   templateUrl: './desempate.component.html',
-  imports: [CriterioDeDesempateComponent],
+  imports: [CriterioDeDesempateComponent, FalhaDeLeituraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
     AreasDoDesempate,
@@ -70,14 +71,6 @@ export class DesempatePassoComponent {
     } else if (resultado === 'lida') {
       this.focarNoPrimeiroCriterioPorArea();
     }
-  }
-
-  /**
-   * O alerta, com o botão focado, fica na tela enquanto a nova tentativa corre. Quando a leitura dá
-   * certo e ele sai, o foco vai ao primeiro critério por área.
-   */
-  tentarLerOCadastroDeNovo(): void {
-    this.areas.relerCadastro(() => this.focarNoPrimeiroCriterioPorArea());
   }
 
   private focarNoPrimeiroCriterioPorArea(): void {

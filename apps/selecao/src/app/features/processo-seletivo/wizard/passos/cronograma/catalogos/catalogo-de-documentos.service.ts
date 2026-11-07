@@ -73,7 +73,7 @@ export class CatalogoDeDocumentos {
       this.categorias.set(dados.categorias);
       this.tiposDocumento.set(dados.tiposDocumento);
     },
-    mensagemDeErro: 'Não foi possível carregar os tipos de documento. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar os tipos de documento.',
   });
 
   readonly carregando = this.leitura.carregando;

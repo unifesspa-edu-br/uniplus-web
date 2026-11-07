@@ -2,6 +2,7 @@ import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
+import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import {
@@ -20,6 +21,14 @@ export class CatalogoDeUnidades {
   private readonly catalogo = signal<readonly OpcaoDeUnidade[]>([]);
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
+
+  readonly leitura = acompanharCatalogo({
+    assunto: 'unidades administradoras',
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: () => document.getElementById('f-unidade'),
+  });
 
   /**
    * Catálogo vivo mais, quando faltar, a unidade que o processo retomado declara.
@@ -59,7 +68,7 @@ export class CatalogoDeUnidades {
   }
 
   private exibirErro(): void {
+    this.erro.set('Não foi possível carregar as unidades administradoras.');
     this.carregando.set(false);
-    this.erro.set('Não foi possível carregar as unidades administradoras. Tente novamente.');
   }
 }

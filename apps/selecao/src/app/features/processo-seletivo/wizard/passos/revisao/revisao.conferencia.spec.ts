@@ -16,6 +16,7 @@ import {
   montarOCenario,
   prepararCamposLocais,
   CenarioDaRevisao,
+  clicarEm,
   textoDaTela,
   ROTA_PUBLICACAO,
 } from './revisao.testing';
@@ -47,6 +48,39 @@ describe('RevisaoPassoComponent — conferência', () => {
       controller
         .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
         .flush(CONFORMIDADE_LEGAL_VERDE);
+    });
+
+    it('a varredura de gravação relê o checklist mesmo com uma leitura em voo e valida com a leitura nova', async () => {
+      prepararCamposLocais(cenario);
+      await criarProcesso(cenario);
+      store.patchObjectSection('publicacao', { ato: atoCompleto() });
+
+      let terminou = false;
+      const varredura = componente.recarregarChecklist().then(() => (terminou = true));
+      await flushMicrotasks();
+      expect(terminou).toBe(false);
+      controller.match(ROTA_CONFORMIDADE).forEach((r) => r.flush(CONFORMIDADE_VERDE));
+      controller
+        .match((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
+        .forEach((r) => r.flush(CONFORMIDADE_LEGAL_VERDE));
+      await varredura;
+      await flushMicrotasks();
+
+      const mensagens = componente.validar().messages ?? [];
+      expect(mensagens.some((m) => m.includes('Aguarde o carregamento'))).toBe(false);
+    });
+
+    it('o duplo clique em "Atualizar checklist" pede uma só leitura', async () => {
+      await criarProcesso(cenario);
+      await flushProntidaoVerde(cenario);
+      fixture.detectChanges();
+
+      clicarEm(cenario, 'Atualizar checklist');
+      fixture.detectChanges();
+      clicarEm(cenario, 'Atualizando…');
+
+      expect(controller.match(ROTA_CONFORMIDADE)).toHaveLength(1);
+      controller.match((req) => req.url === ROTA_CONFORMIDADE_LEGAL);
     });
 
     it('recusa com checklist estrutural pendente', async () => {

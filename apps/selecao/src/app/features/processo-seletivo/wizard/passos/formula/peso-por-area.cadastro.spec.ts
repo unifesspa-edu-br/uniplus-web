@@ -137,7 +137,7 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
   });
 
   describe('falha do cadastro de Peso por Área', () => {
-    it('mantém o alerta durante a nova tentativa; quando a lista chega, leva o foco ao seletor', async () => {
+    it('mantém o alerta durante a nova tentativa e o tira quando a lista chega', async () => {
       const m = await montarSecao();
       marcarEnemComMediaPonderada(m);
       falharPesos(m);
@@ -152,13 +152,12 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
 
       expect(tentar?.isConnected).toBe(true);
       expect(tentar?.getAttribute('aria-disabled')).toBe('true');
-      expect(texto(tentar ?? null)).toBe('Carregando…');
+      expect(tentar?.getAttribute('aria-busy')).toBe('true');
 
       responderPesos(m);
       await m.fixture.whenStable();
 
       expect(m.el.querySelector('[role="alert"]')).toBeNull();
-      expect(document.activeElement?.id).toBe('f-resolucao-peso-area');
     });
 
     it('a nova tentativa que termina com o passo já desmontado não tenta focar', async () => {
@@ -185,39 +184,6 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
       expect(erroNaoTratado).not.toHaveBeenCalled();
     });
 
-    it('sem edição, a nova tentativa que dá certo leva o foco ao título da seção', async () => {
-      const m = await montarSecao();
-      marcarEnemComMediaPonderada(m);
-      falharPesos(m);
-      // Uma gravação em curso trava a edição: o seletor fica desabilitado.
-      m.store.salvando.set(true);
-      m.fixture.detectChanges();
-
-      const tentar = botao(m, 'Tentar novamente');
-      tentar?.focus();
-      tentar?.click();
-      m.fixture.detectChanges();
-      responderPesos(m);
-      await m.fixture.whenStable();
-
-      expect(document.activeElement?.id).toBe('peso-area-titulo');
-    });
-
-    it('reanuncia a falha quando a nova tentativa também falha', async () => {
-      const m = await montarSecao();
-      marcarEnemComMediaPonderada(m);
-      falharPesos(m);
-      const primeira = texto(m.el.querySelector('[role="alert"] p'));
-
-      botao(m, 'Tentar novamente')?.click();
-      m.fixture.detectChanges();
-      falharPesos(m);
-      const segunda = texto(m.el.querySelector('[role="alert"] p'));
-
-      expect(segunda).not.toBe(primeira);
-      expect(segunda).toContain('Não foi possível carregar o cadastro de Peso por Área');
-    });
-
     it('trata o erro que escapa do envelope da API como falha, com nova tentativa', async () => {
       const m = await montarSecao({
         pesosApi: {
@@ -228,7 +194,7 @@ describe('PesoPorAreaComponent — cadastro de Peso por Área', () => {
       marcarEnemComMediaPonderada(m);
 
       expect(catalogos().pesosCarregando()).toBe(false);
-      expect(texto(m.el.querySelector('[role="alert"]'))).toContain('Tentar novamente');
+      expect(botao(m, 'Tentar novamente')).toBeTruthy();
     });
   });
 });

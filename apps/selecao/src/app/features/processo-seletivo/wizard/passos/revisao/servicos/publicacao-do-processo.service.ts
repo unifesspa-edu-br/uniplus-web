@@ -2,6 +2,7 @@ import { computed, effect, inject, Injectable, signal, untracked } from '@angula
 import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import { AtoNormativoDto, AtosApi } from '@uniplus/shared-data/publicacoes';
 import { SnapshotVigenteDto, StatusProcesso } from '@uniplus/shared-data/selecao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import { firstValueFrom } from 'rxjs';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
@@ -51,6 +52,18 @@ export class PublicacaoDoProcesso {
   /** O ato vigente, para processo publicado; `null` enquanto não há o que ler. */
   readonly atoPublicado = signal<AtoPublicado | null>(null);
 
+  /** A falha de ler o ato vigente, com a nova tentativa; o foco volta ao título do bloco do ato. */
+  readonly leituraDoAto = acompanharLeitura({
+    falha: computed(() =>
+      this.atoPublicado()?.estado === 'falha'
+        ? 'Não foi possível ler o ato publicado deste processo.'
+        : null,
+    ),
+    pendente: computed(() => this.atoPublicado()?.estado === 'lendo'),
+    recarregar: () => this.relerAtoPublicado(),
+    destino: () => document.getElementById('revisao-documento-titulo'),
+  });
+
   /**
    * Se o processo tem versão publicada e, portanto, um ato vigente a mostrar no lugar do
    * formulário. Só `publicado` garante isso: cancelado ou encerrado não dizem se houve publicação,
@@ -82,6 +95,14 @@ export class PublicacaoDoProcesso {
       if (untracked(() => this.atoPublicado()) !== null) return;
       untracked(() => void this.lerAtoPublicado(id));
     });
+  }
+
+  /** Repete a leitura do ato vigente do processo aberto; `false` quando não há processo. */
+  private relerAtoPublicado(): boolean {
+    const id = this.store.processoSeletivoId();
+    if (id === null) return false;
+    void this.lerAtoPublicado(id);
+    return true;
   }
 
   /**

@@ -5,12 +5,17 @@ import {
   computed,
   effect,
   input,
-  output,
   viewChild,
 } from '@angular/core';
 import { ReactiveFormsModule, type FormControl } from '@angular/forms';
 import type { LeiauteDoInepDto } from '@uniplus/shared-data/selecao';
-import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  SpinnerComponent,
+  type LeituraAcompanhada,
+} from '@uniplus/shared-ui/components';
 
 import type { Leitura } from '../leitura';
 import { chaveDoLeiaute, rotuloDoLeiaute } from './leiautes';
@@ -24,7 +29,13 @@ import { chaveDoLeiaute, rotuloDoLeiaute } from './leiautes';
 @Component({
   selector: 'sel-seletor-de-leiaute',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './seletor-de-leiaute.component.html',
   styleUrl: './compartilhado.css',
@@ -35,8 +46,9 @@ export class SeletorDeLeiauteComponent {
   readonly rotulo = input.required<string>();
   readonly controle = input.required<FormControl<string>>();
   readonly catalogo = input.required<Leitura<readonly LeiauteDoInepDto[]>>();
+  /** A leitura do catálogo, com o aviso de falha e a nova tentativa. */
+  readonly leitura = input.required<LeituraAcompanhada>();
   readonly erro = input<string | null>(null);
-  readonly recarregar = output<void>();
 
   private readonly campo = viewChild<ElementRef<HTMLSelectElement>>('campo');
 

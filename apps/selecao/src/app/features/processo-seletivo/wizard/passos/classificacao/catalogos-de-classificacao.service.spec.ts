@@ -297,20 +297,6 @@ describe('CatalogosDeClassificacao', () => {
         'Não foi possível carregar o cadastro de Peso por Área',
       );
     });
-
-    it('muda o aviso a cada nova falha, para o leitor de tela anunciar de novo', () => {
-      const listarPesos = vi.fn(() => throwError(() => new Error('falha')));
-      const { servico } = montar(undefined, listarPesos);
-
-      servico.garantirPesosAreaEnem(0);
-      const primeira = servico.pesosErro();
-      servico.recarregarPesosAreaEnem(0);
-      const segunda = servico.pesosErro();
-
-      expect(segunda).not.toBeNull();
-      expect(segunda).not.toBe(primeira);
-      expect(segunda).toContain('2ª tentativa');
-    });
   });
 
   describe('lista canônica das áreas', () => {

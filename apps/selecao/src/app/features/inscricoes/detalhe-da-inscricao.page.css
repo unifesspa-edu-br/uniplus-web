@@ -12,26 +12,12 @@
   gap: var(--space-2);
 }
 
-.insc-det__tentar {
-  display: block;
-  margin-top: var(--space-2);
-}
-
 .insc-det__lendo {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   margin: 0;
   color: var(--text-secondary);
-}
-
-/* Região viva sempre no DOM, para o anúncio funcionar; vazia, não ocupa lugar na tela. */
-.insc-det__lendo:empty {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 
 .insc-det__corpo {

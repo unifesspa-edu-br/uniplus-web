@@ -21,7 +21,7 @@ import { AlertaDeRecusaComponent } from './alerta-de-recusa.component';
 import { HistoricoDeLotesComponent } from './historico-de-lotes.component';
 import { OrientacoesDoEnemComponent } from './orientacoes-do-enem.component';
 import { SeletorDeEdicaoComponent } from './seletor-de-edicao.component';
-import { leiauteDaChave } from './leiautes';
+import { acompanharLeiautes, leiauteDaChave } from './leiautes';
 import { LoteDeNotasComponent } from './lote-de-notas.component';
 import { OrigemDoLoteComponent } from './origem-do-lote.component';
 import { NotasDoEnemDoProcesso, mesmoEscopo } from './notas-do-enem-do-processo.service';
@@ -63,6 +63,11 @@ export class ImportacaoDeNotasComponent {
   private readonly api = inject(NotasDoEnemApi);
   private readonly injector = inject(Injector);
   protected readonly notas = inject(NotasDoEnemDoProcesso);
+  protected readonly leituraDosLeiautes = acompanharLeiautes({
+    catalogo: this.notas.leiautesDeRetorno,
+    idDoCampo: 'notas-leiaute-retorno',
+    recarregar: () => this.recarregarCatalogo(),
+  });
 
   protected readonly leiaute = new FormControl('', { nonNullable: true });
   protected readonly arquivo = signal<File | null>(null);

@@ -15,7 +15,11 @@ import {
   Validators,
 } from '@angular/forms';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraDoCampoComponent,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { OrigemCandidatosSelecionada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import type { ConfirmacaoDeGravacao } from '../../passo-do-wizard';
@@ -44,6 +48,7 @@ export const ORIGENS_CANDIDATOS: readonly {
   selector: 'sel-step-identificacao',
   standalone: true,
   imports: [
+    FalhaDeLeituraDoCampoComponent,
     ValorLegivelDirective,
     ReactiveFormsModule,
     ValorEmConsultaComponent,

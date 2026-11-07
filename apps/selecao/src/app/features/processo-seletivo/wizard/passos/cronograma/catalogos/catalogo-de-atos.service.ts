@@ -62,7 +62,7 @@ export class CatalogoDeAtos {
       this.diaDeReferencia.set(hojeNoFusoInstitucional());
       this.atos.set(dados);
     },
-    mensagemDeErro: 'Não foi possível carregar os atos publicados. Tente novamente.',
+    mensagemDeErro: 'Não foi possível carregar os atos publicados.',
   });
 
   readonly carregando = this.leitura.carregando;

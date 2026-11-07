@@ -8,15 +8,14 @@
     </p>
   }
 
+  <ui-falha-de-leitura titulo="Modelos de formulário" variante="warning" [leitura]="leitura" />
+
   @if (aplicacao.modelosCarregando()) {
-    <p class="field__hint" role="status">Carregando os modelos de formulário…</p>
-  } @else if (aplicacao.modelosErro(); as erro) {
-    <p class="alert alert--warning" role="alert">
-      Não foi possível carregar os modelos de formulário. {{ erro }}
-      <button type="button" class="btn btn--tertiary btn--sm" (click)="aplicacao.carregarModelos()">
-        Tentar novamente
-      </button>
+    <p class="field__hint" [uiIndicadorDaLeitura]="leitura">
+      Carregando os modelos de formulário…
     </p>
+  } @else if (aplicacao.modelosErro() !== null) {
+    <!-- A falha é do aviso acima. -->
   } @else if (aba().modelos.length === 0) {
     <p class="field__hint" [id]="aba().idBase + '-sem-modelo'">
       Não há modelo ativo de {{ aba().nome }} para o tipo deste processo.

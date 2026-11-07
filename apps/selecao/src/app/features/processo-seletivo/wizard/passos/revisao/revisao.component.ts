@@ -1,4 +1,9 @@
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+} from '@uniplus/shared-ui/components';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import {
   ChangeDetectionStrategy,
@@ -47,6 +52,8 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
   imports: [
     AnexoEditalComponent,
     AnexosDoEditalComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     RegrasDasModalidadesComponent,
     AvisosDaRevisaoComponent,
     TemPermissaoDirective,
@@ -72,6 +79,13 @@ export class RevisaoPassoComponent {
   private readonly catalogoDeFases = inject(CatalogoDeFases);
 
   protected readonly permissaoDePublicar = PERMISSAO.selecao.processosPublicar;
+
+  protected readonly leituraDaProntidao = acompanharLeitura({
+    falha: this.prontidao.erro,
+    pendente: this.prontidao.carregando,
+    recarregar: () => void this.conferencia.atualizar(),
+    destino: () => document.getElementById('revisao-estrutural-titulo'),
+  });
 
   /** Só quem publica vê o campo de anexo; a orientação de anexar não serve a quem não o vê. */
   protected readonly podePublicar = computed(() => this.permissoes.tem(this.permissaoDePublicar));

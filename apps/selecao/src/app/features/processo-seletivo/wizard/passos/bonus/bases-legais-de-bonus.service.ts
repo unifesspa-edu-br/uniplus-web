@@ -6,8 +6,11 @@ import {
   BaseLegalBonusRegionalDto,
   TiposInstrumentoNormativoApi,
 } from '@uniplus/shared-data/configuracao';
+import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+
+const MENSAGEM_DAS_BASES_LEGAIS = 'Não foi possível carregar as bases legais de bônus regional.';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
 export interface BaseLegalEscolhivel {
@@ -46,6 +49,17 @@ export class BasesLegaisDeBonus {
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
 
+  /** O foco volta ao seletor de base legal, que as duas leituras alimentam. */
+  private readonly destinoNoSeletor = () => document.getElementById('f-bonus-base-legal');
+
+  readonly leituraDasBasesLegais = acompanharCatalogo({
+    assunto: 'bases legais',
+    falha: this.erro,
+    pendente: this.carregando,
+    recarregar: () => this.carregar(),
+    destino: this.destinoNoSeletor,
+  });
+
   /**
    * Os rótulos dos tipos de instrumento normativo, indexados pelo código. O código é UPPER_SNAKE,
    * e exibi-lo cru numa tela em português mostra a grafia da máquina a quem monta o edital. A lista
@@ -61,6 +75,17 @@ export class BasesLegaisDeBonus {
 
   /** Se o vocabulário está sendo buscado — trava o botão e evita duas chamadas concorrentes. */
   readonly tiposInstrumentoCarregando = signal(false);
+
+  readonly leituraDosTiposDeInstrumento = acompanharCatalogo({
+    assunto: 'tipos de norma',
+    falha: computed(() => {
+      const erro = this.tiposInstrumentoErro();
+      return erro === null ? null : `${erro} O tipo de cada norma aparece pelo código até o catálogo responder.`;
+    }),
+    pendente: this.tiposInstrumentoCarregando,
+    recarregar: () => this.carregarTiposDeInstrumento(),
+    destino: this.destinoNoSeletor,
+  });
 
   /**
    * O catálogo ativo mais, quando faltar, a base legal que o processo já tem gravada: reabrir um
@@ -116,14 +141,8 @@ export class BasesLegaisDeBonus {
     coletarPaginas((cursor) => this.baseLegalApi.listar({ cursor, direction: 'next' }))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        if (!isApiOk(resultado)) {
-          this.erro.set(
-            'Não foi possível carregar as bases legais de bônus regional. Tente novamente.',
-          );
-          this.carregando.set(false);
-          return;
-        }
-        this.basesLegais.set(resultado.data);
+        if (isApiOk(resultado)) this.basesLegais.set(resultado.data);
+        else this.erro.set(MENSAGEM_DAS_BASES_LEGAIS);
         this.carregando.set(false);
       });
   }
@@ -139,20 +158,20 @@ export class BasesLegaisDeBonus {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (resultado) => {
-          this.tiposInstrumentoCarregando.set(false);
           if (isApiOk(resultado)) {
             this.rotuloDoTipoInstrumento.set(
               new Map(resultado.data.map((tipo) => [tipo.codigo, tipo.nome])),
             );
-            return;
+          } else {
+            this.tiposInstrumentoErro.set(this.problemI18n.resolve(resultado.problem).title);
           }
-          this.tiposInstrumentoErro.set(this.problemI18n.resolve(resultado.problem).title);
+          this.tiposInstrumentoCarregando.set(false);
         },
         error: () => {
-          this.tiposInstrumentoCarregando.set(false);
           this.tiposInstrumentoErro.set(
             'Não foi possível carregar como se lê o tipo de cada norma.',
           );
+          this.tiposInstrumentoCarregando.set(false);
         },
       });
   }

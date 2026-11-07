@@ -149,7 +149,7 @@ describe('TipoProcessoPassoComponent', () => {
     expect(host.querySelector('[role="status"]')?.textContent).toContain('Não há tipos');
   });
 
-  it('permite nova tentativa depois de falha na consulta', () => {
+  it('permite nova tentativa depois de falha na consulta', async () => {
     let attempts = 0;
     listar = () => {
       attempts += 1;
@@ -166,8 +166,10 @@ describe('TipoProcessoPassoComponent', () => {
 
     const retry = host.querySelector<HTMLButtonElement>('button');
     if (retry === null) throw new Error('Ação de nova tentativa ausente.');
-    expect(retry.className).toBe('btn btn--secondary');
+    expect(retry.textContent).toContain('Tentar novamente');
     retry.click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
 
     expect(attempts).toBe(2);
@@ -175,7 +177,7 @@ describe('TipoProcessoPassoComponent', () => {
     expect(host.querySelector('[role="alert"]')).toBeNull();
   });
 
-  it('permite nova tentativa depois de ApiFailure normalizado', () => {
+  it('permite nova tentativa depois de ApiFailure normalizado', async () => {
     let attempts = 0;
     listar = () => {
       attempts += 1;
@@ -205,6 +207,8 @@ describe('TipoProcessoPassoComponent', () => {
     const retry = host.querySelector<HTMLButtonElement>('button');
     if (retry === null) throw new Error('Ação de nova tentativa ausente.');
     retry.click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
 
     expect(attempts).toBe(2);

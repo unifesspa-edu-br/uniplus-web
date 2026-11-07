@@ -9,7 +9,11 @@ import {
   untracked,
 } from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+} from '@uniplus/shared-ui/components';
 import {
   CondicaoAtendimentoDto,
   RecursoAcessibilidadeDto,
@@ -51,7 +55,12 @@ import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removid
 @Component({
   selector: 'sel-step-atendimento',
   standalone: true,
-  imports: [ReferenciasRemovidasComponent, ValorEmConsultaComponent],
+  imports: [
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    ReferenciasRemovidasComponent,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './atendimento.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [CatalogosDeAtendimento, provePassoDoWizard(AtendimentoPassoComponent)],

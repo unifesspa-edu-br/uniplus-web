@@ -112,16 +112,8 @@ export class AreasDoDesempate {
   /** De onde vêm as áreas, ou por que não há nenhuma: a mesma dica para todo critério por área. */
   readonly dicaDaOrigem = computed(() => dicaDaSituacao(this.situacaoDoQuadro()));
 
-  /**
-   * A falha de leitura do cadastro, dita uma vez no passo, e só quando algum critério depende dele.
-   * Vem da falha, e não da situação: a nova tentativa em curso deixa a situação "carregando", e o
-   * alerta, com o botão focado, fica na tela até a leitura dar certo.
-   */
-  readonly falhaDoCadastroDePesos = computed(() => {
-    const tipo = this.situacaoDoQuadro().tipo;
-    const falha = this.cadastroDePesos.leitura().falha;
-    return (tipo === 'falha' || tipo === 'carregando') && this.temCriterioPorArea() ? falha : null;
-  });
+  /** A falha do cadastro de pesos, dita uma vez no passo; só importa quando algum critério depende dele. */
+  readonly leituraDoCadastro = this.cadastroDePesos.acompanhamento;
 
   /** O aviso no início do passo, com o botão que relê o processo, quando algum critério depende dele. */
   readonly avisoDaReleitura = computed(() => {
@@ -152,10 +144,5 @@ export class AreasDoDesempate {
   async relerProcesso(): Promise<ResultadoDaReleitura> {
     if (!(await relerProcessoAPedido(this.releitura, this.relendoProcesso))) return 'superada';
     return this.situacaoDoQuadro().tipo === 'por-reler' ? 'ainda-por-reler' : 'lida';
-  }
-
-  /** "Tentar novamente" do cadastro de pesos: `aoLer` roda quando a leitura dá certo. */
-  relerCadastro(aoLer: () => void): void {
-    this.cadastroDePesos.relerCadastroAPedido(aoLer);
   }
 }

@@ -4,7 +4,8 @@ import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
@@ -87,11 +88,48 @@ describe('LeituraDaVersaoForaDaListagem', () => {
       );
     expect(servico.falhaAoConsultarRegra()).toBe(true);
     expect(servico.regraEscolhida()).toBeUndefined();
+    expect(servico.leitura.pendente()).toBe(false);
 
-    servico.tentarNovamente();
+    expect(servico.tentarNovamente()).toBe(true);
+    expect(servico.leitura.pendente()).toBe(true);
     controller.expectOne(URL_V0).flush(REGRA_V0);
 
     expect(servico.falhaAoConsultarRegra()).toBe(false);
     expect(servico.regraEscolhida()?.versao).toBe('v0');
+  });
+
+  it('503, nova tentativa e 404: a ausência confirmada não anuncia a conclusão', async () => {
+    abandonarBuscaDeA();
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    controller
+      .expectOne(URL_V0)
+      .flush(
+        { type: 'about:blank', title: 'Erro interno.', status: 503, traceId: 't' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    TestBed.tick();
+
+    servico.leitura.tentar();
+    TestBed.tick();
+    controller
+      .expectOne(URL_V0)
+      .flush(
+        { type: 'about:blank', title: 'Não encontrada', status: 404, traceId: 't' },
+        { status: 404, statusText: 'Not Found' },
+      );
+    TestBed.tick();
+    await new Promise((resolver) => setTimeout(resolver));
+    TestBed.tick();
+
+    expect(servico.regraNaoEncontrada()).toBe(true);
+    expect(anunciar).not.toHaveBeenCalled();
+  });
+
+  it('não sobe a espera nem busca ao tentar de novo sem regra escolhida', () => {
+    store.patchObjectSection('vagas', { cascata: null });
+    TestBed.tick();
+
+    expect(servico.tentarNovamente()).toBe(false);
+    expect(servico.leitura.pendente()).toBe(false);
   });
 });

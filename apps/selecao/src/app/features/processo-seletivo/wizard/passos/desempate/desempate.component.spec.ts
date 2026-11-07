@@ -185,6 +185,8 @@ describe('DesempatePassoComponent', () => {
     (alerta()?.querySelector('button') as HTMLButtonElement).click();
     const retentativa = controllerLocal.expectOne((r) => r.url.includes('fatos-candidato'));
     retentativa.flush(FATOS);
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
     fixture.detectChanges();
 
     expect(alerta()).toBeNull();
@@ -249,8 +251,9 @@ describe('DesempatePassoComponent', () => {
     const host = fixture.nativeElement as HTMLElement;
     expect(host.textContent).toContain('RENDA_PER_CAPITA');
     expect(host.textContent).not.toContain('fora do catálogo');
-    expect(host.textContent).toContain('Não foi possível carregar os dados do candidato.');
-    expect(host.querySelector('button')).toBeNull();
+    expect(host.textContent).toContain('Não foi possível carregar os dados do candidato');
+    expect(host.textContent).toContain('Os critérios que citam um fato aparecem pelo código gravado');
+    expect(host.querySelector('button')?.textContent).toContain('Tentar novamente');
   });
 
   it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {

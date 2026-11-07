@@ -17,6 +17,7 @@
   <button
     class="btn btn--secondary"
     type="button"
+    [attr.aria-describedby]="unidadesSemLista() ? 'cr-nova-fase-sem-unidades' : null"
     (click)="cronograma.acrescentarFase()"
     [disabled]="
       !edicaoLiberada() ||
@@ -27,14 +28,11 @@
     Acrescentar à linha do tempo
   </button>
 </div>
-@if (catalogoDeUnidades.erro(); as erroDeUnidades) {
-  <div class="field__erro" role="alert">
-    <p>{{ erroDeUnidades }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="catalogoDeUnidades.recarregar()">
-      Tentar novamente
-    </button>
-  </div>
-} @else if (!catalogoDeUnidades.carregada()) {
+@if (unidadesSemLista()) {
+  <p class="field__hint" id="cr-nova-fase-sem-unidades">
+    As unidades não carregaram, e sem elas não é possível acrescentar fase.
+  </p>
+} @else if (catalogoDeUnidades.carregando()) {
   <p class="field__hint" role="status">Carregando unidades…</p>
 }
 <p class="field__hint escolher-e-acrescentar__ajuda" id="cr-nova-fase-ajuda">

@@ -6,23 +6,16 @@
     Com resultado importado, a lista já vem classificada e o desempate não é obrigatório.
   }
 </p>
-@if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
 }
 
-@if (!store.emConsulta() && areas.falhaDoCadastroDePesos(); as falha) {
-  <div class="alert alert--danger" role="alert">
-    <p>{{ falha }}</p>
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      id="desemp-areas-tentar"
-      [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
-      (click)="tentarLerOCadastroDeNovo()"
-    >
-      {{ catalogos.pesosCarregando() ? 'Carregando…' : 'Tentar novamente' }}
-    </button>
-  </div>
+@if (!store.emConsulta() && areas.temCriterioPorArea()) {
+  <ui-falha-de-leitura
+    titulo="Cadastro de Peso por Área"
+    idBotao="desemp-areas-tentar"
+    [leitura]="areas.leituraDoCadastro"
+  />
 }
 
 @if (areas.gravaComAClassificacao()) {
@@ -82,22 +75,11 @@
   </div>
 }
 
-@if (store.emConsulta() && fatos.falha()) {
-  <p class="alert alert--warning" role="status">
-    Não foi possível carregar os dados do candidato. Os critérios que citam um fato aparecem pelo
-    código gravado.
-  </p>
-}
-
-@if (!store.emConsulta() && fatos.falha(); as falha) {
-  <p class="alert alert--danger" role="alert">
-    {{ falha }} Sem esses dados, um critério que cita um fato do candidato aparece como
-    desconhecido e a gravação do passo é recusada.
-    <button type="button" class="btn btn--tertiary btn--sm" (click)="fatos.carregar()">
-      Tentar novamente
-    </button>
-  </p>
-}
+<ui-falha-de-leitura
+  titulo="Dados do candidato"
+  [variante]="store.emConsulta() ? 'warning' : 'danger'"
+  [leitura]="fatos.leitura"
+/>
 
 @if (regrasSemSuporte() > 0 && !store.emConsulta()) {
   <!--

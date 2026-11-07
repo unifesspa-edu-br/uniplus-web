@@ -1,17 +1,7 @@
 <h2 class="form-section__title" id="peso-area-titulo" tabindex="-1">Pesos das áreas do ENEM</h2>
 
-@if (falhaDosPesosQueImporta(); as erro) {
-  <div class="alert alert--danger field__erro" role="alert">
-    <p>{{ erro }}</p>
-    <button
-      type="button"
-      class="btn btn--secondary btn--sm"
-      [attr.aria-disabled]="catalogos.pesosCarregando() ? 'true' : null"
-      (click)="tentarCarregarPesosDeNovo()"
-    >
-      {{ catalogos.pesosCarregando() ? 'Carregando…' : 'Tentar novamente' }}
-    </button>
-  </div>
+@if (mostraFalhaDosPesos()) {
+  <ui-falha-de-leitura titulo="Cadastro de Peso por Área" [leitura]="leituraDoCadastro" />
 }
 
 <!-- Em consulta o cadastro não é lido: vale o nome gravado, sem "(fora do cadastro)". -->

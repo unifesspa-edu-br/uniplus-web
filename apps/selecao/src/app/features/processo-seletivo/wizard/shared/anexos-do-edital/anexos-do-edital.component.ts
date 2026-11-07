@@ -9,11 +9,18 @@ import {
   untracked,
 } from '@angular/core';
 import { ProblemI18nService, isApiOk, abrirAcessoEmNovaAba } from '@uniplus/shared-core/http';
-import { FileUploadComponent, type ArquivoEmEnvio } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
+  FileUploadComponent,
+  IndicadorDaLeituraDirective,
+  type ArquivoEmEnvio,
+} from '@uniplus/shared-ui/components';
 import { FinalidadeDoDocumento, type DocumentoDoAtoDto } from '@uniplus/shared-data/selecao';
 
 import type { AnexoDoEdital } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { tituloDoPasso } from '../titulo-do-passo';
 import { EnvioDeArquivo, soFaltaConfirmar, type AlvoDoEnvio } from '../envio-de-arquivo';
 import {
   EXTENSOES_DO_ANEXO,
@@ -56,7 +63,7 @@ interface AnexoEmConsulta {
 @Component({
   selector: 'sel-anexos-do-edital',
   standalone: true,
-  imports: [FileUploadComponent],
+  imports: [FileUploadComponent, FalhaDeLeituraComponent, IndicadorDaLeituraDirective],
   templateUrl: './anexos-do-edital.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [AnexosDoEdital],
@@ -79,6 +86,16 @@ export class AnexosDoEditalComponent {
   readonly abrindo = signal<string | null>(null);
   readonly erroDeAbertura = signal<string | null>(null);
   readonly publicados = signal<AnexosPublicados | null>(null);
+  readonly leituraDosPublicados = acompanharLeitura({
+    falha: computed(() =>
+      this.publicados()?.estado === 'falha'
+        ? 'Não foi possível ler os anexos publicados deste processo.'
+        : null,
+    ),
+    pendente: computed(() => this.publicados()?.estado === 'lendo'),
+    recarregar: () => this.tentarLerPublicadosDeNovo(),
+    destino: tituloDoPasso,
+  });
 
   /**
    * O envio de cada anexo, com o arquivo escolhido e onde o fluxo parou. Vive na memória do
@@ -315,10 +332,12 @@ export class AnexosDoEditalComponent {
     }
   }
 
-  tentarLerPublicadosDeNovo(): void {
+  tentarLerPublicadosDeNovo(): boolean {
     const id = this.store.processoSeletivoId();
     const atoId = this.atoId();
-    if (id !== null && atoId !== null) void this.lerPublicados(id, atoId);
+    if (id === null || atoId === null) return false;
+    void this.lerPublicados(id, atoId);
+    return true;
   }
 
   /** Os anexos do ato da versão vigente, entre os atos do processo. */

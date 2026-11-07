@@ -1,5 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraComponent,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 
 import { provePassoDoWizard } from '../../passo-do-wizard';
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -50,6 +54,7 @@ const ID_DO_CAMPO_ESCALA = 'f-escala-nota-final';
   selector: 'sel-step-formula',
   standalone: true,
   imports: [
+    FalhaDeLeituraComponent,
     ValorLegivelDirective,
     ValorEmConsultaComponent,
     EdicoesDoEnemComponent,

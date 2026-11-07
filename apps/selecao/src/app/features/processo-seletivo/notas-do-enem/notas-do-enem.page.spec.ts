@@ -103,6 +103,32 @@ describe('NotasDoEnemPage', () => {
     expect(seletor('envio').value).toBe('2025');
   });
 
+  it('o histórico de envios que falha oferece tentar de novo e relê só os envios', async () => {
+    await abrir(processo());
+    seletor('envio').value = '2025';
+    seletor('envio').dispatchEvent(new Event('change'));
+    controller
+      .expectOne(`${ROTA_EDICAO}/envios-ao-inep`)
+      .flush(null, { status: 503, statusText: 'Service Unavailable' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(texto()).toContain('Não foi possível carregar os envios');
+
+    const tentar = Array.from(host.querySelectorAll('button')).find(
+      (botao) => botao.textContent?.trim() === 'Tentar novamente',
+    );
+    tentar?.click();
+    fixture.detectChanges();
+    controller.expectOne(`${ROTA_EDICAO}/envios-ao-inep`).flush([]);
+    await tick();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    expect(texto()).toContain('Nenhum envio gerado para esta edição');
+    expect(texto()).not.toContain('Não foi possível carregar os envios');
+  });
+
   it('a leitura do processo que termina depois de uma mais nova não a sobrescreve', async () => {
     fixture = TestBed.createComponent(NotasDoEnemPage);
     fixture.detectChanges();

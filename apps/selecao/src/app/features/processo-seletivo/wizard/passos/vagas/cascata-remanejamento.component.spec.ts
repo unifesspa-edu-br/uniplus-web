@@ -439,7 +439,7 @@ describe('CascataRemanejamentoComponent', () => {
    * classificar como `nao_encontrada` transformaria uma indisponibilidade
    * transitória num veredito permanente, e a busca nunca mais tentaria de
    * novo (D2). `falhaAoConsultarRegra()` é o estado certo, com saída via
-   * `tentarNovamenteRegra()`.
+   * `leituraDaRegra.tentar()`.
    */
   it('marca falha ao consultar (não "não encontrada") quando a busca direta responde 5xx, e permite tentar de novo', () => {
     store.patchObjectSection('vagas', {
@@ -462,7 +462,7 @@ describe('CascataRemanejamentoComponent', () => {
     expect(componente.matriz()).toBeNull();
     expect(elemento.textContent).toContain('a consulta falhou, não a regra');
 
-    componente.tentarNovamenteRegra();
+    componente.leituraDaRegra.tentar();
     detectar();
 
     const retentativa = controller.expectOne(
@@ -590,7 +590,7 @@ describe('CascataRemanejamentoComponent', () => {
       controller.match(URL_DA_REGRA);
     });
 
-    it('na falha da consulta, diz que a regra não foi confirmada, sem botão de nova tentativa', () => {
+    it('na falha da consulta, diz que a regra gravada não foi confirmada e oferece tentar de novo', () => {
       controller
         .expectOne(URL_DA_REGRA)
         .flush(
@@ -602,8 +602,8 @@ describe('CascataRemanejamentoComponent', () => {
       expect(store.emConsulta()).toBe(true);
       expect(leitura()).toContain('REMANEJ-CASCATA-LEI-12711 · versão v0');
       expect(leitura()).toContain('Não foi possível confirmar a regra gravada');
-      expect(elemento.querySelectorAll('button')).toHaveLength(0);
-      expect(leitura()).not.toContain('Tentar novamente');
+      expect(elemento.querySelector('[role="alert"]')).not.toBeNull();
+      expect(leitura()).toContain('Tentar novamente');
     });
 
     it('com a regra fora do catálogo, descreve o que falta sem mandar escolher outra', () => {
@@ -676,7 +676,7 @@ describe('CascataRemanejamentoComponent', () => {
       expect(componente.falhaAoConsultarRegra()).toBe(true);
       expect(componente.matriz()).toBeNull();
 
-      componente.tentarNovamenteRegra();
+      componente.leituraDaRegra.tentar();
       detectar();
       controller.expectOne(URL_V0).flush(REGRA_CASCATA_INATIVADA);
       detectar();

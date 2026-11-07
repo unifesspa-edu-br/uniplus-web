@@ -3,6 +3,8 @@ import { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import { FormsModule } from '@angular/forms';
 import {
   ConfirmDialogComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   ValorEmConsultaComponent,
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
@@ -51,6 +53,8 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
 @Component({
   selector: 'sel-step-vagas',
   imports: [
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ValorLegivelDirective,
     ValorEmConsultaComponent,
     FormsModule,

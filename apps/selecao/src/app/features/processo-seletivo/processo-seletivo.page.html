@@ -1,5 +1,11 @@
-@if (store.falhaDeLeitura(); as falha) {
+@let falha = store.falhaDeLeitura();
+@if (falha !== null || store.hidratando() || leituraDoProcesso.visivel()) {
 <div class="panel ps-estado">
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar o processo seletivo"
+    [leitura]="leituraDoProcesso"
+  />
+  @if (falha !== null && falha.motivo !== 'falhaTemporaria') {
   <ui-alert
     variant="danger"
     [heading]="
@@ -7,27 +13,23 @@
           ? 'Processo seletivo não encontrado'
           : falha.motivo === 'idInvalido'
             ? 'Endereço inválido'
-            : falha.motivo === 'semPermissao'
-              ? 'Sem permissão para abrir este processo'
-              : 'Não foi possível carregar o processo seletivo'
+            : 'Sem permissão para abrir este processo'
       "
   >
     {{ falha.mensagem }}
   </ui-alert>
+  } @else if (falha === null) {
+  <p [uiIndicadorDaLeitura]="leituraDoProcesso">
+    <ui-spinner spinnerSize="md" [decorativo]="true" />
+    Carregando o processo seletivo…
+  </p>
+  }
 
+  @if (falha !== null || leituraDoProcesso.visivel()) {
   <div class="ps-estado__acoes">
-    @if (falha.motivo === 'falhaTemporaria') {
-    <button type="button" class="btn btn--secondary" (click)="tentarNovamente()">
-      Tentar novamente
-    </button>
-    }
     <a class="btn btn--primary" routerLink="/processo-seletivo">Voltar à listagem</a>
   </div>
-</div>
-} @else if (store.hidratando()) {
-<div class="panel ps-estado" role="status" aria-live="polite">
-  <ui-spinner spinnerSize="md" />
-  <p>Carregando o processo seletivo…</p>
+  }
 </div>
 } @else {
 <div class="wiz-shell">

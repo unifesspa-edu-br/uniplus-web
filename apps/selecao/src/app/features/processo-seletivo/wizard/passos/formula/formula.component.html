@@ -2,8 +2,8 @@
   Regra de cálculo da nota final, precisão e ordem de alocação — a regra de eliminação fica no
   próximo passo.
 </p>
-@if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <p class="alert alert--danger" role="alert">{{ erro }}</p>
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Catálogos de regras" [leitura]="catalogos.leitura" />
 }
 <div class="step-card">
   @if (store.emConsulta()) {

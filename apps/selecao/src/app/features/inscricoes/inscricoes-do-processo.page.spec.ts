@@ -16,7 +16,8 @@ import {
   type OfertaEscolhidaDto,
   type InscricaoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   InscricoesDoProcessoPage,
@@ -326,6 +327,28 @@ describe('InscricoesDoProcessoPage', () => {
     expect(host().querySelector('a.btn--tertiary')?.getAttribute('href')).toBe(
       '/processo-seletivo',
     );
+  });
+
+  it('503, nova tentativa e 404: a recusa fica na tela e a conclusão não é anunciada', async () => {
+    await criarPagina();
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    daLista().flush(
+      { title: 'Indisponível', status: 503 },
+      { status: 503, statusText: 'Service Unavailable' },
+    );
+    await propagar();
+
+    botao('Tentar novamente').click();
+    await propagar();
+    daLista().flush(
+      { title: 'Não encontrado', status: 404 },
+      { status: 404, statusText: 'Not Found' },
+    );
+    await propagar();
+    await propagar();
+
+    expect(host().textContent).toContain('Processo seletivo não encontrado');
+    expect(anunciar).not.toHaveBeenCalled();
   });
 
   it('volta à lista de processos, que quem só consulta inscrições também abre', async () => {

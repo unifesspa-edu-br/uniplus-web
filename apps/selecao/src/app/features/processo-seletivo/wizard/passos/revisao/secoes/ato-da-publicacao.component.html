@@ -1,4 +1,4 @@
-<h2 id="revisao-documento-titulo" class="step-section__title">Documento e ato de publicação</h2>
+<h2 id="revisao-documento-titulo" class="step-section__title" tabindex="-1">Documento e ato de publicação</h2>
 
 @if (conferencia.fasesSemUnidadeDaRecusa().length > 0) {
   <div class="alert alert--danger" role="alert">
@@ -36,15 +36,8 @@
 }
 
 @if (publicacao.jaPublicado()) {
+  <ui-falha-de-leitura titulo="Ato publicado" [leitura]="publicacao.leituraDoAto" />
   @switch (publicacao.atoPublicado()?.estado) {
-    @case ('falha') {
-      <div class="alert alert--danger" role="alert">
-        <p>Não foi possível ler o ato publicado deste processo.</p>
-        <button class="btn btn--tertiary btn--sm" type="button" (click)="tentarLerAtoDeNovo()">
-          Tentar novamente
-        </button>
-      </div>
-    }
     @case ('lido') {
       <dl class="confirmacao-lista" aria-label="Ato publicado">
         @for (item of resumoDoAto(); track item.rotulo) {
@@ -55,8 +48,8 @@
         }
       </dl>
     }
-    @default {
-      <p class="step-hint" role="status">Lendo o ato publicado…</p>
+    @case ('lendo') {
+      <p class="step-hint" [uiIndicadorDaLeitura]="publicacao.leituraDoAto">Lendo o ato publicado…</p>
     }
   }
 } @else if (store.emConsulta()) {

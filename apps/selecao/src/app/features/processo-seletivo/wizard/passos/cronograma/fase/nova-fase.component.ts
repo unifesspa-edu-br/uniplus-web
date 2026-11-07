@@ -3,6 +3,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
+import { SituacaoDosCatalogosDoCronograma } from '../catalogos/situacao-dos-catalogos-do-cronograma.service';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
@@ -16,6 +17,7 @@ import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.ser
 })
 export class NovaFaseComponent {
   protected readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
+  protected readonly unidadesSemLista = inject(SituacaoDosCatalogosDoCronograma).leituraDasUnidades.visivel;
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   protected readonly formulario = this.cronograma.formulario;

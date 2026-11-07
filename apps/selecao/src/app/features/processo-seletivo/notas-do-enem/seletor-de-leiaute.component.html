@@ -1,23 +1,14 @@
-@let leitura = catalogo();
-@switch (leitura.estado) {
+@let leiautes = catalogo();
+<ui-falha-de-leitura titulo="Não foi possível carregar os leiautes" [leitura]="leitura()" />
+@switch (leiautes.estado) {
   @case ('lendo') {
-    <p class="notas__lendo" role="status">
-      <ui-spinner spinnerSize="sm" />
+    <p class="notas__lendo" [uiIndicadorDaLeitura]="leitura()">
+      <ui-spinner spinnerSize="sm" [decorativo]="true" />
       Carregando os leiautes…
     </p>
   }
-  @case ('falha') {
-    <ui-alert variant="danger" heading="Não foi possível carregar os leiautes">
-      {{ leitura.mensagem }} Sem eles não é possível usar esta etapa.
-      <span class="notas__tentar">
-        <button type="button" class="btn btn--secondary btn--sm" (click)="recarregar.emit()">
-          Tentar novamente
-        </button>
-      </span>
-    </ui-alert>
-  }
   @case ('lido') {
-    @if (leitura.dados.length === 0) {
+    @if (leiautes.dados.length === 0) {
       <ui-alert variant="warning" heading="Nenhum leiaute disponível">
         Nenhum leiaute ativo no catálogo. Fale com a equipe técnica.
       </ui-alert>
@@ -33,7 +24,7 @@
           [attr.aria-describedby]="erro() !== null ? idDoCampo() + '-erro' : null"
         >
           <option value="" disabled>Selecione o leiaute</option>
-          @for (leiaute of leitura.dados; track chaveDoLeiaute(leiaute)) {
+          @for (leiaute of leiautes.dados; track chaveDoLeiaute(leiaute)) {
             <option [value]="chaveDoLeiaute(leiaute)">{{ rotuloDoLeiaute(leiaute) }}</option>
           }
         </select>

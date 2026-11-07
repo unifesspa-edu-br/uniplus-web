@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DestroyRef } from '@angular/core';
 import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
 import { ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
-import { FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FINALIDADE_INSCRICAO } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { LeiturasEmOrdem } from '../../../../leitura';
+import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 import {
   comAplicacaoDoServidor,
   modelosPorFinalidade,
@@ -41,6 +43,13 @@ export class AplicacaoDeModelo {
   readonly modelos = signal<ReadonlyMap<string, readonly ModeloOferecido[]>>(new Map());
   readonly modelosCarregando = signal(false);
   readonly modelosErro = signal<string | null>(null);
+  private readonly ordemDosModelos = new LeiturasEmOrdem();
+  readonly leituraDosModelos = acompanharLeitura({
+    falha: this.modelosErro,
+    pendente: this.modelosCarregando,
+    recarregar: () => this.carregarModelos(),
+    destino: tituloDoPasso,
+  });
   /** O modelo escolhido em cada aba, pelo id. */
   readonly escolhidos = signal<ReadonlyMap<string, string>>(new Map());
   /** A aplicação que aguarda confirmação: a finalidade e o modelo. */
@@ -64,7 +73,16 @@ export class AplicacaoDeModelo {
 
     // Os modelos só servem para editar, e dependem do tipo, que o passo 1 escolhe.
     effect(() => {
-      if (this.store.emConsulta() || this.tipoDoProcesso() === '') return;
+      if (this.store.emConsulta()) return;
+      // Sem tipo não há o que ler: a espera da leitura anterior não terminaria, pois a resposta
+      // dela é descartada abaixo.
+      if (this.tipoDoProcesso() === '') {
+        untracked(() => {
+          this.ordemDosModelos.descartar();
+          this.modelosCarregando.set(false);
+        });
+        return;
+      }
       untracked(() => this.carregarModelos());
     });
   }
@@ -93,17 +111,21 @@ export class AplicacaoDeModelo {
    */
   carregarModelos(): void {
     const tipo = this.tipoDoProcesso();
+    const aindaVale = this.ordemDosModelos.iniciar();
     this.modelosCarregando.set(true);
     this.modelosErro.set(null);
     this.modelosApi
       .listar({ tipoProcesso: tipo, ativo: true })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
-        // A resposta de um tipo já trocado chegaria por cima da do tipo atual.
-        if (tipo !== this.tipoDoProcesso()) return;
+        // A resposta de uma leitura anterior (outro tipo, ou o mesmo pedido de novo) chegaria por
+        // cima da atual.
+        if (!aindaVale()) return;
         this.modelosCarregando.set(false);
         if (!isApiOk(resultado)) {
-          this.modelosErro.set(this.problemI18n.resolve(resultado.problem).title);
+          this.modelosErro.set(
+            `Não foi possível carregar os modelos de formulário. ${this.problemI18n.resolve(resultado.problem).title}`,
+          );
           return;
         }
         this.modelos.set(modelosPorFinalidade(resultado.data));

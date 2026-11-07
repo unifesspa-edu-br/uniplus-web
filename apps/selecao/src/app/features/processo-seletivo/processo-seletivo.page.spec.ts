@@ -50,6 +50,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
 import { quadroCongelado } from './wizard/shared/quadro-de-pesos';
 import { ReleituraDoSnapshot } from './wizard/shared/releitura-do-snapshot.service';
@@ -241,7 +242,20 @@ describe('ProcessoSeletivoPage — estrutura', () => {
     });
   });
 
-  it('não declara landmark main próprio', () => {
+  it('o título do passo, destino do foco das leituras, existe uma vez e fora dos painéis ocultos', () => {
+  const fixture = TestBed.createComponent(ProcessoSeletivoPage);
+  fixture.detectChanges();
+  fixture.componentInstance.store.goTo(3);
+  fixture.detectChanges();
+
+  const titulo = tituloDoPasso();
+
+  expect(titulo?.textContent).toContain(ROTULOS_DOS_PASSOS[3]);
+  expect(titulo?.closest('[hidden]')).toBeNull();
+  expect(document.querySelectorAll('.step-head h1')).toHaveLength(1);
+});
+
+it('não declara landmark main próprio', () => {
     const fixture = TestBed.createComponent(ProcessoSeletivoPage);
     fixture.detectChanges();
 

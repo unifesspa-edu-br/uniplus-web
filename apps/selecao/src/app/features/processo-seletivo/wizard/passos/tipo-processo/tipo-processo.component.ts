@@ -9,16 +9,29 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { extractNextCursor, isApiOk } from '@uniplus/shared-core/http';
 import { TipoProcessoDto, TiposProcessoApi } from '@uniplus/shared-data/configuracao';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
+  ValorEmConsultaComponent,
+  ValorLegivelDirective,
+} from '@uniplus/shared-ui/components';
 import { TypeCardComponent } from '../../../components/type-card/type-card.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { ValidacaoDoPasso, TipoProcessoOption } from '../../processo-seletivo.models';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 
 @Component({
   selector: 'sel-step-tipo-processo',
   standalone: true,
-  imports: [ValorLegivelDirective, TypeCardComponent, ValorEmConsultaComponent],
+  imports: [
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    ValorLegivelDirective,
+    TypeCardComponent,
+    ValorEmConsultaComponent,
+  ],
   templateUrl: './tipo-processo.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [provePassoDoWizard(TipoProcessoPassoComponent)],
@@ -64,6 +77,12 @@ export class TipoProcessoPassoComponent {
   );
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  protected readonly leitura = acompanharLeitura({
+    falha: this.errorMessage,
+    pendente: this.loading,
+    recarregar: () => this.carregar(),
+    destino: tituloDoPasso,
+  });
   readonly query = signal('');
   readonly filteredOptions = computed(() => {
     const query = this.query().trim().toLocaleLowerCase('pt-BR');
@@ -144,7 +163,7 @@ export class TipoProcessoPassoComponent {
   }
 
   private exibirErro(): void {
+    this.errorMessage.set('Não foi possível carregar os tipos de processo.');
     this.loading.set(false);
-    this.errorMessage.set('Não foi possível carregar os tipos de processo. Tente novamente.');
   }
 }

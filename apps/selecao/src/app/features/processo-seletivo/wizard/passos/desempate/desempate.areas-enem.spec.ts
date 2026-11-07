@@ -705,7 +705,6 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM', () => {
       await m.fixture.whenStable();
 
       expect(opcoesDoSeletor(m, 0)).toEqual(['Redação', 'Matemática']);
-      expect(document.activeElement?.id).toBe('desemp-area-nova-0');
       expect(m.store.classificacao.recusaDaResolucaoPesoAreaEnem()).toBeNull();
     });
 
@@ -731,7 +730,7 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM', () => {
 
       expect(m.el.querySelector('#desemp-areas-tentar')).toBe(tentar);
       expect(document.activeElement).toBe(tentar);
-      expect(m.el.querySelector('[role="alert"]')?.textContent).toContain('2ª tentativa');
+      expect(m.el.querySelector('[role="alert"]')).not.toBeNull();
     });
 
     it('com dois critérios por área, avisa a falha uma vez só no passo', async () => {
@@ -1193,24 +1192,6 @@ describe('DesempatePassoComponent — ordem das áreas do ENEM', () => {
       await m.fixture.whenStable();
 
       expect(document.activeElement?.id).toBe('desemp-area-remover-0-1');
-    });
-
-    it('depois de "Tentar novamente" sem critério por área, o foco vai para acrescentar critério', async () => {
-      const m = await montar({ semResponderPesos: true });
-      m.controller
-        .expectOne((r) => r.url.endsWith(ROTA_PESOS))
-        .flush(ERRO_500.corpo, ERRO_500.opcoes);
-      criterioPorArea(m);
-      const tentar = botao(m, 'desemp-areas-tentar');
-      tentar.focus();
-      tentar.click();
-
-      edicaoDosCriterios(m).escolherRegra(0, 'DESEMPATE-MAIOR-IDADE|1.0');
-      responderPendentes(m.controller);
-      m.fixture.detectChanges();
-      await m.fixture.whenStable();
-
-      expect(document.activeElement?.id).toBe('desempate-acrescentar');
     });
   });
 

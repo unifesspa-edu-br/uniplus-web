@@ -3,20 +3,18 @@
   reconhece — vindos dos cadastros institucionais de Configuração.
 </p>
 
+@if (!store.emConsulta()) {
+  <ui-falha-de-leitura titulo="Cadastros de atendimento" [leitura]="catalogos.leitura" />
+}
+
 @if (catalogos.carregando() && !store.emConsulta()) {
-  <p class="field__hint" role="status">
+  <p class="field__hint" [uiIndicadorDaLeitura]="catalogos.leitura">
     Carregando condições, recursos e tipos de deficiência… O que já está gravado neste processo
     segue visível abaixo, sem alteração, enquanto o carregamento não confirma o que continua ativo.
   </p>
 }
 
-@if (!store.emConsulta() && catalogos.erro(); as erro) {
-  <div class="field__erro" role="alert">
-    <p>{{ erro }}</p>
-    <button class="btn btn--tertiary" type="button" (click)="catalogos.carregar()">
-      Tentar novamente
-    </button>
-  </div>
+@if (!store.emConsulta() && catalogos.erro()) {
   <p class="field__hint">
     O que já está gravado neste processo segue visível abaixo, sem alteração — sem o catálogo não é
     possível confirmar o que continua ativo, nem oferecer novas opções.

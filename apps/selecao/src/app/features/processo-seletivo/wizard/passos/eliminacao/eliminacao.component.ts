@@ -6,7 +6,7 @@ import {
   Injector,
   signal,
 } from '@angular/core';
-import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
+import { FalhaDeLeituraComponent, ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { EtapaPontuada, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -53,7 +53,7 @@ import { recusaPorCriterioGravadoSemQuadro } from '../desempate/recusas-do-desem
 @Component({
   selector: 'sel-step-eliminacao',
   standalone: true,
-  imports: [ValorEmConsultaComponent, RegraDeEliminacaoComponent],
+  imports: [FalhaDeLeituraComponent, ValorEmConsultaComponent, RegraDeEliminacaoComponent],
   templateUrl: './eliminacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GravacaoDaClassificacao, provePassoDoWizard(EliminacaoPassoComponent)],
@@ -261,7 +261,7 @@ export class EliminacaoPassoComponent {
 
   /** "Atualizar lista" do aviso: relê o cadastro, e o aviso se refaz com ele. */
   atualizarCadastroDePesos(): void {
-    this.cadastroDePesos.relerCadastroAPedido(() => undefined);
+    this.cadastroDePesos.relerCadastroAPedido();
   }
 
   /**

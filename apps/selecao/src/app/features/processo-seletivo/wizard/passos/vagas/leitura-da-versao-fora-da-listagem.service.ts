@@ -2,10 +2,12 @@ import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } f
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { type ApiResult, isApiOk, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { RegraCatalogoDto, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import { acompanharLeitura } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { regraPorChave } from '../../shared/regra-por-chave';
+import { tituloDoPasso } from '../../shared/titulo-do-passo';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 
 interface SelecaoDaRegra {
@@ -23,6 +25,9 @@ type BuscaDaVersao =
     }
   | { readonly estado: 'nao_encontrada'; readonly codigo: string; readonly versao: string }
   | { readonly estado: 'falha'; readonly codigo: string; readonly versao: string };
+
+const regraDaFalha = (emConsulta: boolean): string =>
+  `Não foi possível confirmar a regra ${emConsulta ? 'gravada' : 'selecionada'} — a consulta falhou, não a regra.`;
 
 /**
  * A regra de remanejamento escolhida, inclusive quando a listagem ativa já não a traz.
@@ -77,6 +82,17 @@ export class LeituraDaVersaoForaDaListagem {
    */
   readonly falhaAoConsultarRegra = computed(() => this.terminouEm('falha'));
 
+  /** A consulta direta da versão, com a mesma origem para a espera e para a falha. */
+  readonly leitura = acompanharLeitura({
+    falha: computed(() =>
+      this.falhaAoConsultarRegra() ? regraDaFalha(this.store.emConsulta()) : null,
+    ),
+    pendente: computed(() => this.busca()?.estado === 'buscando'),
+    recarregar: () => this.tentarNovamente(),
+    destino: tituloDoPasso,
+    recusada: this.regraNaoEncontrada,
+  });
+
   constructor() {
     // Só depois de a listagem terminar de carregar, para ela ter prioridade e não disparar uma
     // busca que a própria listagem resolveria a seguir.
@@ -88,14 +104,18 @@ export class LeituraDaVersaoForaDaListagem {
     });
   }
 
-  /** Limpa o estado anterior para que a falha não seja vista como "já tratada". */
-  tentarNovamente(): void {
+  /**
+   * Limpa o estado anterior para que a falha não seja vista como "já tratada". Devolve `false`
+   * quando não havia o que buscar (catálogo ainda carregando ou regra já na listagem).
+   */
+  tentarNovamente(): boolean {
     this.busca.set(null);
     this.buscarSePreciso(
       this.cascata(),
       this.catalogos.carregando(),
       this.catalogos.regrasCascata(),
     );
+    return this.busca() !== null;
   }
 
   private terminouEm(estado: 'nao_encontrada' | 'falha'): boolean {

@@ -183,9 +183,10 @@ export class DetalheDaInscricao {
     }
   }
 
-  tentarNovamente(): void {
+  /** Repete a leitura; `false` quando nenhuma leitura recomeçou. */
+  tentarNovamente(): boolean {
     this.esquecerRevelacoes();
-    this.detalhe.reload();
+    return this.detalhe.reload();
   }
 
   /**
