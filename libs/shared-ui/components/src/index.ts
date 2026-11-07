@@ -1,6 +1,19 @@
 export { A11yMenuComponent } from '../../src/lib/components/a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from '../../src/lib/components/alert/alert';
-export { AnuncioDaConclusao, FalhaDeLeituraComponent, FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, acompanharCatalogo, acompanharLeitura, destinoAcessivel, focarEmAlgum, podeReceberFoco, type CatalogoAcompanhado, type LeituraAcompanhada, type OpcoesDaLeitura } from '../../src/lib/components/alerta-nova-tentativa';
+export {
+  AnuncioDaConclusao,
+  FalhaDeLeituraComponent,
+  FalhaDeLeituraDoCampoComponent,
+  IndicadorDaLeituraDirective,
+  acompanharCatalogo,
+  acompanharLeitura,
+  destinoAcessivel,
+  focarEmAlgum,
+  podeReceberFoco,
+  type CatalogoAcompanhado,
+  type LeituraAcompanhada,
+  type OpcoesDaLeitura,
+} from '../../src/lib/components/alerta-nova-tentativa';
 export { BackToTopComponent } from '../../src/lib/components/back-to-top/back-to-top';
 export { BackToTopContainerDirective } from '../../src/lib/components/back-to-top/back-to-top-container.directive';
 export { BackToTopScrollService } from '../../src/lib/components/back-to-top/back-to-top.service';
@@ -71,113 +84,11 @@ export {
   type UiSegmentedOption,
 } from '../../src/lib/components/segmented/segmented';
 export { SelectComponent, type UiSelectOption } from '../../src/lib/components/select/select';
-export { CondicaoDeFatoComponent } from '../../src/lib/components/editor-de-condicoes/condicao-de-fato';
-export { EditorDeCondicoesComponent } from '../../src/lib/components/editor-de-condicoes/editor-de-condicoes';
-export * from '../../src/lib/components/editor-de-condicoes/motivo-da-protecao-pendente';
-export { type ClausulaDeCondicoes, type CondicaoEmClausula, type CondicaoPosicionada, clausulasDe, comClausulaEm, comCondicaoEm, comCondicaoTrocadaEm, condicaoNova, numerosDeClausula, renumerarClausulas, semClausulaEm, semCondicaoEm } from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-em-clausulas';
-export { type CondicaoNoWire, deClausulasDoWire, paraClausulasDoWire } from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-no-wire';
-export { alcanceDaCondicao, problemaDaCondicao, problemasDeCondicoes } from '../../src/lib/components/editor-de-condicoes/condicoes/conferencia-da-condicao';
-export { FONTE_GEO_MUNICIPIO, type FatoDoCatalogo, type FatoEscolhivel, type TipoDeDominio, type ValorDoCatalogo, fatoEscolhivel, fatosEscolhiveis, nomesDoCatalogo, rotuloDoValor } from '../../src/lib/components/editor-de-condicoes/condicoes/fatos-escolhiveis';
-export { type CondicaoDeFato, OPERADOR_DIFERENTE, OPERADOR_EM, OPERADOR_IGUAL, OPERADOR_MAIOR_IGUAL, OPERADOR_MENOR_IGUAL, OPERADOR_NAO_EM, type OperadorEscolhivel, RESPOSTAS_BOOLEANAS, VALOR_FALSO, VALOR_VERDADEIRO, comOperador, comValorEscalar, comValoresDeLista, comparaComLista, operadoresDoFato, valorEscalarDe, valoresDeListaDe } from '../../src/lib/components/editor-de-condicoes/condicoes/valor-da-condicao';
-export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
-export {
-  BUSCA_DE_MUNICIPIOS,
-  LEITURA_DE_MUNICIPIO_POR_CODIGO,
-  NomesDeMunicipios,
-  type BuscaDeMunicipios,
-  type LeituraDeMunicipio,
-  type MunicipioEncontrado,
-} from '../../src/lib/components/editor-de-condicoes/valor-de-municipio';
 export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
 export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
-export { EditorDeFormularioComponent } from '../../src/lib/components/editor-de-formulario/editor-de-formulario';
-export { ehColetavel, fatosDeMembroParaAcrescentar, fatosParaAcrescentar, pressupostosParaAcrescentar, renderizacaoDe } from '../../src/lib/components/editor-de-formulario/modelo/catalogo-de-campos';
-export { comFatosConhecidosAntes, fatosCitadosPeloConteudo, fatosCitaveisPelaSecao, fatosCitaveisPeloItem, fatosCitaveisPelosTermos, fatosOferecidos, fatosQueExigemResposta, predicadosSobreRespostasAnteriores, todosOsCampos } from '../../src/lib/components/editor-de-formulario/modelo/citacoes';
-export { BLOCOS, BLOCO_COMPROVACAO_DOCUMENTAL, BLOCO_MODALIDADES_CALCULADAS, BLOCO_REVISAO_E_ACEITE, FINALIDADES, FINALIDADE_INSCRICAO, LIMITES_DO_FORMULARIO, OBRIGATORIEDADES, OBRIGATORIEDADE_NUNCA, OBRIGATORIEDADE_QUANDO, OBRIGATORIEDADE_SEMPRE, SECAO_DADOS_BASICOS, TIPO_BLOCO, TIPO_SECAO, blocosAdmitidos, conteudoInicial } from '../../src/lib/components/editor-de-formulario/modelo/constantes';
-export { conteudoParaEnvio, numeroDigitadoInvalido, semDadosBasicos } from '../../src/lib/components/editor-de-formulario/modelo/envio';
-export { FATO_PARENTESCO, MAXIMO_DE_CAMPOS_DO_GRUPO, PROPRIO_CANDIDATO, acrescentarCampoAoGrupo, camposDoGrupo, comCampoDoGrupo, comGrupo, fatosCitaveisPeloCampoDoGrupo, fatosCitaveisPeloGrupo, motivoDaRemocaoTravadaDoGrupo, moverCampoNoGrupo, quantidadeNoTeto, removerCampoDoGrupo, removerGrupo } from '../../src/lib/components/editor-de-formulario/modelo/grupos';
-export { alternativaSemOProprioCampo, comImpedimento, impedimentoCabe } from '../../src/lib/components/editor-de-formulario/modelo/impedimento';
-export { acrescentarItem, comItem, moverEntrada, moverItem, podeMoverEntrada, podeMoverItem, removerItem, ufsAnteriores } from '../../src/lib/components/editor-de-formulario/modelo/itens';
-export { entradasDaSecao, etapasEmOrdem, renumerar } from '../../src/lib/components/editor-de-formulario/modelo/ordem-das-entradas';
-export { acrescentarPressuposto, removerPressuposto } from '../../src/lib/components/editor-de-formulario/modelo/pressupostos';
-export { problemaDaRestricao, problemaDoGrupoDeOpcoes, problemaDoLimiteDeData, problemaDosAnos, problemaDosDias } from '../../src/lib/components/editor-de-formulario/modelo/problemas-da-restricao';
-export { type RecusaDaRestricao, type RecusasDoConteudo, distribuirRecusas, recusasDaRestricao, recusasDoGrupoDeOpcoes } from '../../src/lib/components/editor-de-formulario/modelo/recusas';
-export { ANCORA_DATA_FIXA, ANCORA_ENVIO, RESTRICAO_FAIXA_DE_DATA, RESTRICAO_FAIXA_NUMERICA, RESTRICAO_MUNICIPIOS_DA_UF, RESTRICAO_OPCOES_DAS_RESPOSTAS, RESTRICAO_OPCOES_PERMITIDAS, RESTRICAO_TAMANHO_TEXTO, RESTRICOES, entradaDeOpcoesNova, fontesDasOpcoes, limiteDeDataNovo, opcoesDaFonteCabemNoAlvo, restricaoNova, restricoesParaAcrescentar } from '../../src/lib/components/editor-de-formulario/modelo/restricoes-de-valor';
-export { acrescentarBloco, acrescentarSecao, comEtapa, etapaFixa, moverEtapa, podeMoverEtapa, removerEtapa } from '../../src/lib/components/editor-de-formulario/modelo/secoes';
-export { acrescentarTermo, comTermo, moverTermo, removerTermo, termosEmOrdem, termosParaAcrescentar } from '../../src/lib/components/editor-de-formulario/modelo/termos';
-export { type ChaveDaEntrada, type ConteudoDoFormulario, ESCOPO_CANDIDATO, ESCOPO_MEMBRO, type EntradaDaSecao, type EscopoDoCampo, type EtapaDoFormulario, type FatoDoFormulario, type GrupoDoFormulario, type Impedimento, type ItemDoFormulario, type LimiteDeDataNoWire, type NumeroDigitado, type OpcaoDoFormulario, type OpcoesCondicionadas, type PredicadoNoWire, type RestricaoDeValor, type ResultadoDaEdicao, type ResultadoDoGrupo, type TermoDisponivel, type TermoDoFormulario } from '../../src/lib/components/editor-de-formulario/modelo/tipos';
 export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
 export { DocumentoExigidoComponent } from '../../src/lib/components/editor-de-documentos-exigidos/documento-exigido';
 export { EditorDeDocumentosExigidosComponent } from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
-export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
-export {
-  FormularioDoCandidatoComponent,
-  type PendenciaDaSecao,
-} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato';
-export type {
-  CampoRenderizavel,
-  DependenciasDaAvaliacao,
-  ErroDoServidor,
-  FormularioDoCandidato,
-  GrupoRenderizavel,
-  PressupostoDoFormulario,
-  PassoPrefixado,
-  RespostaFixa,
-  SecaoRenderizavel,
-  TermoRenderizavel,
-  ValorSelecionavel,
-} from '../../src/lib/components/formulario-do-candidato/formulario-do-candidato.model';
-export {
-  CONCORRE,
-  FALTA_RESPONDER,
-  NAO_CONCORRE,
-  nomesPelaOrdem,
-  type AvaliacaoNaTela,
-  type ModalidadesAvaliadas,
-} from '../../src/lib/components/formulario-do-candidato/modalidades-avaliadas';
-export { AGUARDE_A_VERIFICACAO, type DocumentosAvaliados } from '../../src/lib/components/formulario-do-candidato/documentos-avaliados';
-export {
-  derivadosDoSistema,
-  type DerivadoDoSistema,
-} from '../../src/lib/components/formulario-do-candidato/derivados-do-sistema';
-export {
-  casoDaSimulacao,
-  lerArquivoDoFormulario,
-  type ArquivoDoFormulario,
-} from '../../src/lib/components/formulario-do-candidato/arquivo-do-formulario';
-export {
-  SimulacaoDeFormularioComponent,
-  type ConferenciaComOServidor,
-  type SimulacaoParaConferir,
-} from '../../src/lib/components/formulario-do-candidato/simulacao-de-formulario';
-export { PressupostosDaSimulacaoComponent } from '../../src/lib/components/formulario-do-candidato/pressupostos-da-simulacao';
-export {
-  type CampoExibido,
-  respostaExibida,
-} from '../../src/lib/components/formulario-do-candidato/resposta-exibida';
-export {
-  separarMunicipiosGravados,
-  type MunicipiosGravados,
-  type MunicipiosSeparados,
-} from '../../src/lib/components/formulario-do-candidato/valor-de-municipio-gravado';
-export { baixarJson } from '../../src/lib/components/formulario-do-candidato/baixar-json';
-export {
-  divergenciasEntre,
-  type Divergencia,
-} from '../../src/lib/components/formulario-do-candidato/divergencias';
-export {
-  interpretarFormulario,
-  type InterpretacaoDoFormulario,
-} from '../../src/lib/components/formulario-do-candidato/interpretador/interpretador';
-export type { RegrasInvalidas } from '../../src/lib/components/formulario-do-candidato/interpretador/definicao-do-formulario';
-export type {
-  AvaliacaoDoFormulario,
-  CampoAvaliado,
-  EnvioDasRespostas,
-  RegrasDoFormulario,
-  SimulacaoDoFormulario,
-  ValorJson,
-} from '../../src/lib/components/formulario-do-candidato/interpretador/regras-do-formulario';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';
@@ -207,7 +118,6 @@ export {
 } from '../../src/lib/components/documento/secao-de-documento';
 export { CodigoDeVerificacaoComponent } from '../../src/lib/components/codigo-de-verificacao/codigo-de-verificacao';
 export { MarcaInstitucionalComponent } from '../../src/lib/components/marca-institucional/marca-institucional';
-export { titulosDasOcorrencias } from '../../src/lib/components/formulario-do-candidato/interpretador/ocorrencia-do-candidato';
 export { BulletComponent, type UiBulletVariant } from '../../src/lib/components/bullet/bullet';
 export {
   StepsComponent,
@@ -216,18 +126,6 @@ export {
   type StepsVariant,
 } from '../../src/lib/components/steps/steps.component';
 export { StepsResponsivoComponent } from '../../src/lib/components/steps-responsivo/steps-responsivo.component';
-export {
-  detalheDoArquivoEnviado,
-  regrasDoArquivo,
-  rotuloDoFormato,
-  tipoDeMidiaDoArquivo,
-  type AlvoDoEnvio,
-  type DadosDoArquivoEnviado,
-  type ArquivoEnviado,
-  type DesfechoDaRemocao,
-  type DesfechoDoDownload,
-  type DesfechoDoEnvio,
-  type EnvioDeDocumentos,
-  type SituacaoDaExigencia,
-  type SituacaoDoArquivo,
-} from '../../src/lib/components/formulario-do-candidato/envio-de-documentos';
+export * from './editor-de-condicoes';
+export * from './editor-de-formulario';
+export * from './formulario-do-candidato';
