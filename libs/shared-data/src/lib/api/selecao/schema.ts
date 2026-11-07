@@ -2521,7 +2521,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.comprovante-inscricao.v1+json": components["schemas"]["ComprovanteInscricaoDto"];
+                        readonly "application/vnd.uniplus.recibo-da-inscricao.v1+json": components["schemas"]["ReciboDaInscricaoDto"];
                     };
                 };
                 /** @description Bad Request */
@@ -2622,80 +2622,6 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/inscricao/comprovantes/{numero}": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                    readonly numero: number;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.comprovante-inscricao.v1+json": components["schemas"]["ComprovanteInscricaoDto"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Forbidden */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly put?: never;
-        readonly post?: never;
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
     readonly "/api/selecao/inscricoes/{inscricaoId}/comprovantes/{numero}": {
         readonly parameters: {
             readonly query?: never;
@@ -2721,7 +2647,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "application/vnd.uniplus.comprovante-inscricao.v1+json": components["schemas"]["ComprovanteInscricaoDto"];
+                        readonly "application/vnd.uniplus.comprovante-inscricao.v1+json": components["schemas"]["ComprovanteDaInscricaoDto"];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -2753,6 +2679,15 @@ export interface paths {
                 };
                 /** @description Not Acceptable */
                 readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -9577,6 +9512,12 @@ export interface components {
         readonly CancelamentoDaInscricaoRequest: {
             readonly motivo: null | string;
         };
+        readonly CandidatoDoComprovanteDto: {
+            readonly nomeCivil: string;
+            readonly nomeSocial: null | string;
+            readonly usaNomeSocial: boolean;
+            readonly cpfMascarado: string;
+        };
         /** @enum {string} */
         readonly CaraterEtapa: CaraterEtapa;
         readonly CategoriaJulgadaDto: {
@@ -9632,34 +9573,33 @@ export interface components {
             readonly situacao?: null | components["schemas"]["SituacaoDoCertame"];
             readonly editaisPublicados?: null | readonly components["schemas"]["EditalPublicadoCertameDto"][];
         };
-        readonly ComprovanteEmitidoDto: {
+        readonly ComprovanteDaInscricaoDto: {
+            /** Format: uuid */
+            readonly inscricaoId: string;
             /** Format: int32 */
             readonly numero: number;
-            /** Format: date-time */
-            readonly instante: string;
-        };
-        readonly ComprovanteInscricaoDto: {
-            readonly cpfMascarado: string;
-            readonly numeroInscricao: string;
-            /** Format: date-time */
-            readonly instante: string;
-            readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
-            readonly hashIntegridade: string;
+            /** Format: int32 */
+            readonly total: number;
+            readonly vale: boolean;
+            /** Format: int32 */
+            readonly numeroAnterior?: null | number;
+            /** Format: int32 */
+            readonly numeroSeguinte?: null | number;
             /** Format: uuid */
-            readonly ofertaCursoId: null | string;
-            /** Format: uuid */
-            readonly ofertaCursoSegundaOpcaoId: null | string;
-            /** @description As respostas por código do fato. O município vem como objeto { "codigo", "rotulo" }, com o nome que o Geo conferiu no envio; a cidade do endereço conferido pelo CEP traz o nome do Geo. */
-            readonly respostas: Record<string, never>;
-            /** @description O que o sistema calculou das respostas. O município de residência vem na mesma forma do município das respostas: { "codigo", "rotulo" } na inscrição enviada. */
-            readonly derivados: Record<string, never>;
-            readonly grupos: {
-                readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
-            };
-            readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
+            readonly processoSeletivoId: string;
+            readonly nomeDoProcesso: string;
+            readonly identificadorDoProcesso?: null | string;
+            readonly unidadeAdministradora: string;
+            readonly envio: components["schemas"]["EnvioDoComprovanteDto"];
+            readonly candidato: components["schemas"]["CandidatoDoComprovanteDto"];
+            readonly prazoDaCorrecao?: null | components["schemas"]["PrazoDaCorrecaoDto"];
+            /** Format: int32 */
+            readonly numeroDeOpcoesDeCurso: number;
+            readonly opcoesDeCurso: readonly components["schemas"]["OpcaoDeCursoDoComprovanteDto"][];
+            readonly secoes: readonly components["schemas"]["SecaoDoComprovanteDto"][];
+            readonly derivados: readonly components["schemas"]["ItemDoComprovanteDto"][];
+            readonly termosAceitos: readonly components["schemas"]["TermoAceitoDoComprovanteDto"][];
             readonly documentos: readonly components["schemas"]["DocumentoDoComprovanteDto"][];
-            readonly modalidades: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
-            readonly modalidadesSegundaOpcao: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
         };
         readonly CondicaoAtendimentoCertameDto: {
             readonly codigo: string;
@@ -10068,13 +10008,10 @@ export interface components {
             readonly hashSha256: null | string;
         };
         readonly DocumentoDoComprovanteDto: {
-            /** Format: uuid */
-            readonly exigenciaId: string;
-            readonly tipoDocumentoCodigo: string;
             readonly nome: string;
+            readonly integrante: null | string;
             readonly obrigatorio: boolean;
             readonly situacao: string;
-            readonly ocorrenciaId: null | string;
             readonly consequencia: null | string;
             readonly arquivos: readonly components["schemas"]["ArquivoDoComprovanteDto"][];
         };
@@ -10137,6 +10074,13 @@ export interface components {
             /** Format: uri */
             readonly urlDownload: string;
             readonly documentos: readonly components["schemas"]["DocumentoDoAtoCertameDto"][];
+        };
+        readonly EnvioDoComprovanteDto: {
+            readonly numeroInscricao: string;
+            /** Format: date-time */
+            readonly enviadoEm: string;
+            readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
+            readonly hashIntegridade: string;
         };
         readonly EtapaCertameDto: {
             readonly nome: string;
@@ -10503,6 +10447,11 @@ export interface components {
             readonly rotulo: string;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaDaInscricaoDto"][];
         };
+        readonly GrupoDoComprovanteDto: {
+            readonly codigo: string;
+            readonly rotulo: string;
+            readonly ocorrencias: readonly components["schemas"]["OcorrenciaDoComprovanteDto"][];
+        };
         readonly GrupoPesoAreaEnemCongeladoDto: {
             readonly grupoAreaEnem: components["schemas"]["GrupoAreaEnemSnapshotDto"];
             readonly baseLegal: string;
@@ -10719,6 +10668,13 @@ export interface components {
             readonly valor?: null | components["schemas"]["JsonElement"];
             readonly podeRevelar: boolean;
         };
+        readonly ItemDoComprovanteDto: {
+            readonly rotulo: string;
+            readonly descricao: string;
+            readonly tipo: string;
+            readonly componente: string;
+            readonly valor?: null | components["schemas"]["JsonElement"];
+        };
         readonly ItemDocumentoExigidoInput: {
             /** Format: uuid */
             readonly exigidoNaFaseId: string;
@@ -10843,7 +10799,8 @@ export interface components {
             readonly canceladaEm: null | string;
             readonly motivoDoCancelamento: null | string;
             readonly acoes: components["schemas"]["AcoesDaInscricaoDto"];
-            readonly comprovantes: readonly components["schemas"]["ComprovanteEmitidoDto"][];
+            /** Format: int32 */
+            readonly numeroDoUltimoComprovante: null | number;
         };
         readonly ModalidadeDaInscricaoDto: {
             readonly codigo: string;
@@ -10997,6 +10954,11 @@ export interface components {
             readonly id: string;
             readonly respostas: null | Record<string, never>;
         };
+        readonly OcorrenciaDoComprovanteDto: {
+            readonly id: string;
+            readonly titulo: string;
+            readonly itens: readonly components["schemas"]["ItemDoComprovanteDto"][];
+        };
         readonly OcorrenciaDoLoteDto: {
             readonly tipo: string;
             /** Format: uuid */
@@ -11071,6 +11033,12 @@ export interface components {
             readonly cursoNome: string;
             readonly cursoGrau: string;
         };
+        readonly OpcaoDeCursoDoComprovanteDto: {
+            /** Format: int32 */
+            readonly ordem: number;
+            readonly nome: null | string;
+            readonly modalidades: null | readonly components["schemas"]["ModalidadeDaInscricaoDto"][];
+        };
         readonly OpcaoDoProcessoDto: {
             readonly codigo: string;
             readonly rotulo: string;
@@ -11133,6 +11101,13 @@ export interface components {
             readonly inicio: string;
             /** Format: date-time */
             readonly fim: string;
+        };
+        readonly PrazoDaCorrecaoDto: {
+            /** Format: date-time */
+            readonly fim: string;
+            readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
+            /** @description Se o candidato pode corrigir a inscrição agora: inscrição enviada e período de inscrição aberto. */
+            readonly aberto: boolean;
         };
         readonly PredicadoObrigatoriedade: components["schemas"]["PredicadoObrigatoriedadeEtapaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeModalidadesMinimas"] | components["schemas"]["PredicadoObrigatoriedadeDesempateDeveIncluir"] | components["schemas"]["PredicadoObrigatoriedadeDocumentoObrigatorioParaModalidade"] | components["schemas"]["PredicadoObrigatoriedadeAtendimentoDisponivel"] | components["schemas"]["PredicadoObrigatoriedadeConcorrenciaDuplaObrigatoria"] | components["schemas"]["PredicadoObrigatoriedadeCustomizado"];
         readonly PredicadoObrigatoriedadeAtendimentoDisponivel: {
@@ -11346,6 +11321,15 @@ export interface components {
             /** Format: date-time */
             readonly salvoEm: string;
         };
+        readonly ReciboDaInscricaoDto: {
+            /** Format: uuid */
+            readonly inscricaoId: string;
+            readonly numeroInscricao: string;
+            /** Format: int32 */
+            readonly numeroDoComprovante: number;
+            /** Format: date-time */
+            readonly instante: string;
+        };
         readonly RecursoDaEtapaDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11557,6 +11541,12 @@ export interface components {
             readonly itens: readonly components["schemas"]["ItemDeRespostaDto"][];
             readonly grupos: readonly components["schemas"]["GrupoDaInscricaoDto"][];
         };
+        readonly SecaoDoComprovanteDto: {
+            readonly codigo: string;
+            readonly titulo?: null | string;
+            readonly itens: readonly components["schemas"]["ItemDoComprovanteDto"][];
+            readonly grupos: readonly components["schemas"]["GrupoDoComprovanteDto"][];
+        };
         readonly SecaoRenderizavel: {
             readonly codigo: string;
             readonly codigoNasRegras: null | string;
@@ -11599,6 +11589,13 @@ export interface components {
             readonly cobra: boolean;
             readonly valor: null | string;
             readonly fundamentos: readonly string[];
+        };
+        readonly TermoAceitoDoComprovanteDto: {
+            readonly codigo: string;
+            readonly nome: string;
+            /** Format: uuid */
+            readonly versaoId: string;
+            readonly hashVersao: string;
         };
         readonly TermoExigidoDto: {
             readonly codigo: string;

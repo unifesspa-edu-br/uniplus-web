@@ -10,12 +10,13 @@ import type {
   AvaliacaoDaInscricaoRequest,
   CancelamentoDaInscricaoRequest,
   ConfirmarEnvioDeDocumentoDaInscricaoRequest,
-  ComprovanteInscricaoDto,
+  ComprovanteDaInscricaoDto,
   IniciarEnvioDeDocumentoDaInscricaoDto,
   IniciarEnvioDeDocumentoDaInscricaoRequest,
   InscricaoDto,
   InscricaoRequest,
   MinhaInscricaoDto,
+  ReciboDaInscricaoDto,
 } from './inscricoes.contrato';
 import { formularioDaInscricaoRequest } from './formulario-da-inscricao.request';
 import type { FormularioRenderizavelDto } from './processos-seletivos.contrato';
@@ -79,20 +80,20 @@ export class InscricoesApi {
 
   /**
    * POST `…/inscricao/submissao` — envia ou corrige a inscrição. A Idempotency-Key vem do `context`
-   * de quem chama: repetir a mesma chave devolve o comprovante já emitido.
+   * de quem chama: repetir a mesma chave devolve o recibo já emitido.
    */
   submeter(
     processoSeletivoId: string,
     request: InscricaoRequest,
     eTag: string,
     context: HttpContext,
-  ): Observable<ApiResult<ComprovanteInscricaoDto>> {
-    return this.http.post<ApiResult<ComprovanteInscricaoDto>>(
+  ): Observable<ApiResult<ReciboDaInscricaoDto>> {
+    return this.http.post<ApiResult<ReciboDaInscricaoDto>>(
       `${this.url(processoSeletivoId)}/submissao`,
       request,
       {
         headers: { 'If-Match': eTag },
-        context: withVendorMime('comprovante-inscricao', 1).set(
+        context: withVendorMime('recibo-da-inscricao', 1).set(
           IDEMPOTENCY_KEY_TOKEN,
           context.get(IDEMPOTENCY_KEY_TOKEN),
         ),
@@ -138,8 +139,8 @@ export class InscricoesApi {
   obterComprovante(
     inscricaoId: string,
     numero: number,
-  ): Observable<ApiResult<ComprovanteInscricaoDto>> {
-    return this.http.get<ApiResult<ComprovanteInscricaoDto>>(
+  ): Observable<ApiResult<ComprovanteDaInscricaoDto>> {
+    return this.http.get<ApiResult<ComprovanteDaInscricaoDto>>(
       `${this.basePath}/api/selecao/inscricoes/${encodeURIComponent(inscricaoId)}/comprovantes/${numero}`,
       { context: withVendorMime('comprovante-inscricao', 1) },
     );

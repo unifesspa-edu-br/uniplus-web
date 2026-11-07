@@ -60,7 +60,7 @@ describe('InscricoesApi', () => {
     await promessa;
   });
 
-  it('envia com o If-Match, a Idempotency-Key de quem chama e o media type do comprovante', async () => {
+  it('envia com o If-Match, a Idempotency-Key de quem chama e o media type do recibo', async () => {
     const promessa = firstValueFrom(
       api.submeter(PROCESSO, REQUEST, ETAG, withIdempotencyKey('envio-1')),
     );
@@ -69,9 +69,7 @@ describe('InscricoesApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('If-Match')).toBe(ETAG);
     expect(req.request.headers.get('Idempotency-Key')).toBe('envio-1');
-    expect(req.request.headers.get('Accept')).toBe(
-      buildVendorMimeAccept('comprovante-inscricao', 1),
-    );
+    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('recibo-da-inscricao', 1));
     req.flush({});
     await promessa;
   });

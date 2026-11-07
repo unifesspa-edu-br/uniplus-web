@@ -29,14 +29,24 @@ export type InscricaoRequest = Omit<Schemas['InscricaoRequest'], 'respostas' | '
   readonly grupos: GruposDaInscricao | null;
 };
 
-export type ComprovanteInscricaoDto = Omit<
-  Schemas['ComprovanteInscricaoDto'],
-  'respostas' | 'derivados' | 'grupos'
-> & {
-  readonly respostas: RespostasDaInscricao;
-  readonly derivados: RespostasDaInscricao;
-  readonly grupos: GruposDaInscricao;
-};
+/**
+ * O comprovante de um envio, pronto para exibir: rótulos, seções, nomes de termos e de cursos são os
+ * da versão em que a inscrição foi enviada. A resposta de cada item vem em JSON; o `tipo` diz como lê-la.
+ */
+export type ComprovanteDaInscricaoDto = Schemas['ComprovanteDaInscricaoDto'];
+
+export type DocumentoDoComprovanteDto = Schemas['DocumentoDoComprovanteDto'];
+
+export type ArquivoDoComprovanteDto = Schemas['ArquivoDoComprovanteDto'];
+
+export type SecaoDoComprovanteDto = Schemas['SecaoDoComprovanteDto'];
+
+export type GrupoDoComprovanteDto = Schemas['GrupoDoComprovanteDto'];
+
+export type ItemDoComprovanteDto = Schemas['ItemDoComprovanteDto'];
+
+/** O que a submissão devolve: onde está o comprovante emitido, sem o documento. */
+export type ReciboDaInscricaoDto = Schemas['ReciboDaInscricaoDto'];
 
 export type MinhaInscricaoDto = Schemas['MinhaInscricaoDto'];
 
