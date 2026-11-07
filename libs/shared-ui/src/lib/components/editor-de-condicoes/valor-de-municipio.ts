@@ -208,29 +208,10 @@ export class ValorDeMunicipioComponent {
     // já trocado nunca chega a substituir a do atual.
     this.termos
       .pipe(
-        switchMap((termo) => {
-          if (termo.length < TERMO_MINIMO) return of(null);
-          const uf = this.uf();
-          return timer(ESPERA_DA_DIGITACAO_MS).pipe(
-            switchMap(() => (uf ? this.busca(termo, uf) : this.busca(termo))),
-          );
-        }),
+        switchMap((termo) => this.buscaDoTermo(termo)),
         takeUntilDestroyed(inject(DestroyRef)),
       )
-      .subscribe((resultado) => {
-        this.buscando.set(false);
-        if (resultado === null) {
-          this.encontrados.set([]);
-          return;
-        }
-        if (!resultado.ok) {
-          this.encontrados.set([]);
-          this.falha.set(this.problemI18n.resolve(resultado.problem).title);
-          return;
-        }
-        this.nomes.lembrar(resultado.data);
-        this.encontrados.set(resultado.data);
-      });
+      .subscribe((resultado) => this.mostrar(resultado));
 
     // Trocar a UF refaz a busca do termo na UF nova: os municípios achados na anterior não ficam
     // escolhíveis.
@@ -238,6 +219,29 @@ export class ValorDeMunicipioComponent {
       this.uf();
       untracked(() => this.buscar(this.termo()));
     });
+  }
+
+  private buscaDoTermo(
+    termo: string,
+  ): Observable<ApiResult<readonly MunicipioEncontrado[]> | null> {
+    if (termo.length < TERMO_MINIMO) return of(null);
+    const uf = this.uf();
+    return timer(ESPERA_DA_DIGITACAO_MS).pipe(
+      switchMap(() => (uf ? this.busca(termo, uf) : this.busca(termo))),
+    );
+  }
+
+  private mostrar(resultado: ApiResult<readonly MunicipioEncontrado[]> | null): void {
+    this.buscando.set(false);
+    if (resultado === null) {
+      this.encontrados.set([]);
+    } else if (resultado.ok) {
+      this.nomes.lembrar(resultado.data);
+      this.encontrados.set(resultado.data);
+    } else {
+      this.encontrados.set([]);
+      this.falha.set(this.problemI18n.resolve(resultado.problem).title);
+    }
   }
 
   protected readonly textoSemResultado = computed(() => {

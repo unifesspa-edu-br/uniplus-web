@@ -1,6 +1,7 @@
 import type {
   AvaliacaoDoFormulario,
   CampoAvaliado,
+  GrupoAvaliado,
   OcorrenciaAvaliada,
 } from './interpretador/regras-do-formulario';
 
@@ -26,93 +27,119 @@ const CAMPO: readonly (keyof CampoAvaliado)[] = [
   'opcoes',
 ];
 
+const GRUPO: readonly (keyof GrupoAvaliado)[] = [
+  'visivel',
+  'obrigatorio',
+  'estado',
+  'contagemValida',
+  'ocorrenciaDoCandidatoValida',
+];
+
+/** Dois lados da mesma coleção, casados pela chave; cada item sem par chega com o outro lado ausente. */
+interface Pareamento<T> {
+  readonly meus: readonly T[];
+  readonly deles: readonly T[];
+  readonly chave: (item: T) => string;
+  readonly rotulo: string;
+  readonly conferir: (onde: string, meu?: T, dele?: T) => void;
+}
+
+function parear<T>({ meus, deles, chave, rotulo, conferir }: Pareamento<T>): void {
+  const mapa = new Map(deles.map((item) => [chave(item), item]));
+  const vistos = new Set<string>();
+  for (const meu of meus) {
+    vistos.add(chave(meu));
+    conferir(`${rotulo} ${chave(meu)}`, meu, mapa.get(chave(meu)));
+  }
+  for (const dele of deles)
+    if (!vistos.has(chave(dele))) conferir(`${rotulo} ${chave(dele)}`, undefined, dele);
+}
+
+class ConferenciaDasAvaliacoes {
+  readonly divergencias: Divergencia[] = [];
+
+  etapas(meus: AvaliacaoDoFormulario['etapas'], deles: AvaliacaoDoFormulario['etapas']): void {
+    parear({
+      meus,
+      deles,
+      chave: (e) => e.codigo,
+      rotulo: 'Etapa',
+      conferir: (onde, meu, dele) => this.comparar(onde, 'visivel', meu?.visivel, dele?.visivel),
+    });
+  }
+
+  campos(prefixo: string, meus: readonly CampoAvaliado[], deles: readonly CampoAvaliado[]): void {
+    parear({
+      meus,
+      deles,
+      chave: (c) => c.fatoCodigo,
+      rotulo: `${prefixo}Campo`,
+      conferir: (onde, meu, dele) =>
+        CAMPO.forEach((p) => this.comparar(onde, p, meu?.[p], dele?.[p])),
+    });
+  }
+
+  grupos(meus: AvaliacaoDoFormulario['grupos'], deles: AvaliacaoDoFormulario['grupos']): void {
+    parear({
+      meus,
+      deles,
+      chave: (g) => g.codigo,
+      rotulo: 'Grupo',
+      conferir: (onde, meu, dele) => {
+        GRUPO.forEach((p) => this.comparar(onde, p, meu?.[p], dele?.[p]));
+        this.ocorrencias(onde, meu?.ocorrencias ?? [], dele?.ocorrencias ?? []);
+      },
+    });
+  }
+
+  termos(meus: AvaliacaoDoFormulario['termos'], deles: AvaliacaoDoFormulario['termos']): void {
+    parear({
+      meus,
+      deles,
+      chave: (t) => t.codigo,
+      rotulo: 'Termo',
+      conferir: (onde, meu, dele) => {
+        this.comparar(onde, 'visivel', meu?.visivel, dele?.visivel);
+        this.comparar(onde, 'obrigatorio', meu?.obrigatorio, dele?.obrigatorio);
+      },
+    });
+  }
+
+  private ocorrencias(
+    doGrupo: string,
+    meus: readonly OcorrenciaAvaliada[],
+    deles: readonly OcorrenciaAvaliada[],
+  ): void {
+    parear({
+      meus,
+      deles,
+      chave: (o) => o.id,
+      rotulo: `${doGrupo}, ocorrência`,
+      conferir: (daOcorrencia, minha, dela) => {
+        this.comparar(daOcorrencia, 'estado', minha?.estado, dela?.estado);
+        this.campos(`${daOcorrencia}, `, minha?.campos ?? [], dela?.campos ?? []);
+      },
+    });
+  }
+
+  private comparar(onde: string, propriedade: string, deLa: unknown, daqui: unknown): void {
+    const interpretador = JSON.stringify(normalizar(deLa)) ?? 'ausente';
+    const servidor = JSON.stringify(normalizar(daqui)) ?? 'ausente';
+    if (interpretador !== servidor)
+      this.divergencias.push({ onde, propriedade, interpretador, servidor });
+  }
+}
+
 export function divergenciasEntre(
   local: AvaliacaoDoFormulario,
   servidor: AvaliacaoDoFormulario,
 ): Divergencia[] {
-  const divergencias: Divergencia[] = [];
-  const comparar = (onde: string, propriedade: string, deLa: unknown, daqui: unknown): void => {
-    const interpretador = JSON.stringify(normalizar(deLa)) ?? 'ausente';
-    const doServidor = JSON.stringify(normalizar(daqui)) ?? 'ausente';
-    if (interpretador !== doServidor)
-      divergencias.push({ onde, propriedade, interpretador, servidor: doServidor });
-  };
-  const porChave = <T>(lista: readonly T[], chave: (item: T) => string): ReadonlyMap<string, T> =>
-    new Map(lista.map((item) => [chave(item), item]));
-  const juntos = <T>(
-    meus: readonly T[],
-    deles: readonly T[],
-    chave: (item: T) => string,
-    conferir: (onde: string, meu?: T, dele?: T) => void,
-    rotulo: string,
-  ): void => {
-    const mapa = porChave(deles, chave);
-    const vistos = new Set<string>();
-    for (const meu of meus) {
-      vistos.add(chave(meu));
-      conferir(`${rotulo} ${chave(meu)}`, meu, mapa.get(chave(meu)));
-    }
-    for (const dele of deles)
-      if (!vistos.has(chave(dele))) conferir(`${rotulo} ${chave(dele)}`, undefined, dele);
-  };
-  const campos = (
-    prefixo: string,
-    meus: readonly CampoAvaliado[],
-    deles: readonly CampoAvaliado[],
-  ): void =>
-    juntos(
-      meus,
-      deles,
-      (c) => c.fatoCodigo,
-      (onde, meu, dele) => CAMPO.forEach((p) => comparar(onde, p, meu?.[p], dele?.[p])),
-      `${prefixo}Campo`,
-    );
-
-  juntos(
-    local.etapas,
-    servidor.etapas,
-    (e) => e.codigo,
-    (onde, meu, dele) => comparar(onde, 'visivel', meu?.visivel, dele?.visivel),
-    'Etapa',
-  );
-  campos('', local.campos, servidor.campos);
-  juntos(
-    local.grupos,
-    servidor.grupos,
-    (g) => g.codigo,
-    (onde, meu, dele) => {
-      for (const p of [
-        'visivel',
-        'obrigatorio',
-        'estado',
-        'contagemValida',
-        'ocorrenciaDoCandidatoValida',
-      ] as const)
-        comparar(onde, p, meu?.[p], dele?.[p]);
-      juntos<OcorrenciaAvaliada>(
-        meu?.ocorrencias ?? [],
-        dele?.ocorrencias ?? [],
-        (o) => o.id,
-        (daOcorrencia, minha, dela) => {
-          comparar(daOcorrencia, 'estado', minha?.estado, dela?.estado);
-          campos(`${daOcorrencia}, `, minha?.campos ?? [], dela?.campos ?? []);
-        },
-        `${onde}, ocorrência`,
-      );
-    },
-    'Grupo',
-  );
-  juntos(
-    local.termos,
-    servidor.termos,
-    (t) => t.codigo,
-    (onde, meu, dele) => {
-      comparar(onde, 'visivel', meu?.visivel, dele?.visivel);
-      comparar(onde, 'obrigatorio', meu?.obrigatorio, dele?.obrigatorio);
-    },
-    'Termo',
-  );
-  return divergencias;
+  const conferencia = new ConferenciaDasAvaliacoes();
+  conferencia.etapas(local.etapas, servidor.etapas);
+  conferencia.campos('', local.campos, servidor.campos);
+  conferencia.grupos(local.grupos, servidor.grupos);
+  conferencia.termos(local.termos, servidor.termos);
+  return conferencia.divergencias;
 }
 
 /** As opções e as restrições violadas são conjuntos: a ordem não conta. */

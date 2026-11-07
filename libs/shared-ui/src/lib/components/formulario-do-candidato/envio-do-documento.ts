@@ -33,6 +33,28 @@ const NOME_DO_ARQUIVO_EM_ENVIO = 'Arquivo em envio';
 let proximoId = 0;
 
 /**
+ * A avaliação vem depois do envio e traz o resultado da verificação, na ordem em que a API a devolve: ela
+ * prevalece sobre o que o envio guardou ao confirmar, mas não conhece, enquanto não verificado, o tamanho.
+ * O que o envio confirmou e a avaliação ainda não trouxe vem em seguida.
+ */
+function arquivosConfirmados(
+  avaliados: readonly ArquivoEnviado[],
+  confirmadosPeloEnvio: ReadonlyMap<string, ArquivoEnviado>,
+  removidos: ReadonlySet<string>,
+): ArquivoEnviado[] {
+  const doServidor = new Map<string, ArquivoEnviado>();
+  for (const arquivo of avaliados) {
+    doServidor.set(
+      arquivo.arquivoId,
+      daAvaliacaoSobreOEnvio(arquivo, confirmadosPeloEnvio.get(arquivo.arquivoId)),
+    );
+  }
+  for (const [id, arquivo] of confirmadosPeloEnvio) if (!doServidor.has(id)) doServidor.set(id, arquivo);
+  for (const id of removidos) doServidor.delete(id);
+  return [...doServidor.values()];
+}
+
+/**
  * O envio dos arquivos de UMA exigência de documento: escolher por teclado ou arrastando, acompanhar o
  * progresso, ver o que foi enviado e remover enquanto a inscrição é rascunho. A tela não fala com a API:
  * o `EnvioDeDocumentos` de quem hospeda faz o caminho até o armazenamento.
@@ -140,28 +162,25 @@ export class EnvioDoDocumentoComponent {
   private readonly bytes = new Map<string, File>();
   private proximoLocal = 0;
 
+  private readonly confirmadosPeloEnvio = computed(
+    () =>
+      new Map(
+        this.envio()
+          .arquivos()
+          .filter((a) => a.chave === this.alvo().chave)
+          .map((a) => [a.arquivoId, a]),
+      ),
+  );
+
   protected readonly itensDaLista = computed<readonly ArquivoEmEnvio[]>(() => {
     const removendo = this.removendo();
-    const confirmadosPeloEnvio = new Map(
-      this.envio()
-        .arquivos()
-        .filter((a) => a.chave === this.alvo().chave)
-        .map((a) => [a.arquivoId, a]),
+    const doServidor = arquivosConfirmados(
+      this.arquivos(),
+      this.confirmadosPeloEnvio(),
+      this.removidos(),
     );
-    // A avaliação vem depois do envio e traz o resultado da verificação, na ordem em que a API a devolve: ela
-    // prevalece sobre o que o envio guardou ao confirmar, mas não conhece, enquanto não verificado, o tamanho.
-    // O que o envio confirmou e a avaliação ainda não trouxe vem em seguida.
-    const doServidor = new Map<string, ArquivoEnviado>();
-    for (const arquivo of this.arquivos()) {
-      doServidor.set(
-        arquivo.arquivoId,
-        daAvaliacaoSobreOEnvio(arquivo, confirmadosPeloEnvio.get(arquivo.arquivoId)),
-      );
-    }
-    for (const [id, arquivo] of confirmadosPeloEnvio) if (!doServidor.has(id)) doServidor.set(id, arquivo);
-    for (const id of this.removidos()) doServidor.delete(id);
     // O nome original não é guardado: o arquivo se identifica pelo rótulo da API e pela data do envio.
-    const confirmados = [...doServidor.values()].map(
+    const confirmados = doServidor.map(
       (arquivo): ArquivoEmEnvio => ({
         id: arquivo.arquivoId,
         nome: arquivo.rotulo,

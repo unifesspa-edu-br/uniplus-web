@@ -1,9 +1,9 @@
 import type { EnderecoEstruturado } from '../endereco-geo/endereco-geo.model';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
-type ObjetoJson = { readonly [chave: string]: ValorJson };
+export type ObjetoJson = { readonly [chave: string]: ValorJson };
 
-function comoObjeto(valor: ValorJson | undefined): ObjetoJson | null {
+export function comoObjeto(valor: ValorJson | undefined): ObjetoJson | null {
   return valor !== undefined && valor !== null && typeof valor === 'object' && !Array.isArray(valor)
     ? (valor as ObjetoJson)
     : null;

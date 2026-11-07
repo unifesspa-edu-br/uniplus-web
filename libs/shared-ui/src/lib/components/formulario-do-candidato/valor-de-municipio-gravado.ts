@@ -86,45 +86,49 @@ export function separarMunicipiosGravados(
   formulario: FormularioComMunicipios,
   entrada: RespostasComMunicipios,
 ): MunicipiosSeparados {
-  const gravados: Record<string, MunicipioGravado> = {};
-  const semNome: string[] = [];
-
-  const reduzir = (
-    campos: readonly CampoDoFormulario[],
-    respostas: Readonly<Record<string, ValorJson>>,
-    ocorrencia?: { grupo: string; id: string },
-  ): Readonly<Record<string, ValorJson>> => {
-    const reduzidas = { ...respostas };
-    for (const campo of campos.filter(deMunicipio)) {
-      const municipio = lerMunicipio(respostas[campo.fatoCodigo]);
-      if (!municipio) continue;
-      reduzidas[campo.fatoCodigo] = municipio.codigo;
-      if (municipio.rotulo === null) semNome.push(municipio.codigo);
-      else
-        gravados[chaveDaResposta(campo.fatoCodigo, ocorrencia)] = {
-          codigo: municipio.codigo,
-          rotulo: municipio.rotulo,
-        };
-    }
-    return reduzidas;
-  };
-
+  const separacao = new SeparacaoDeMunicipios();
   const subitensDe = new Map(formulario.grupos.map((g) => [g.codigo, g.subitens]));
   return {
-    respostas: reduzir(formulario.fatosColetados, entrada.respostas),
+    respostas: separacao.reduzir(formulario.fatosColetados, entrada.respostas),
     grupos: Object.fromEntries(
       Object.entries(entrada.grupos).map(([grupo, ocorrencias]) => [
         grupo,
         ocorrencias?.map((o) => ({
           ...o,
-          respostas: reduzir(subitensDe.get(grupo) ?? [], o.respostas ?? {}, {
+          respostas: separacao.reduzir(subitensDe.get(grupo) ?? [], o.respostas ?? {}, {
             grupo,
             id: o.id,
           }),
         })) ?? null,
       ]),
     ),
-    gravados,
-    semNome,
+    gravados: separacao.gravados,
+    semNome: separacao.semNome,
   };
+}
+
+/** Acumula, campo a campo, o nome gravado de cada município e os códigos que vieram sem nome. */
+class SeparacaoDeMunicipios {
+  readonly gravados: Record<string, MunicipioGravado> = {};
+  readonly semNome: string[] = [];
+
+  reduzir(
+    campos: readonly CampoDoFormulario[],
+    respostas: Readonly<Record<string, ValorJson>>,
+    ocorrencia?: { grupo: string; id: string },
+  ): Readonly<Record<string, ValorJson>> {
+    const reduzidas = { ...respostas };
+    for (const campo of campos.filter(deMunicipio)) {
+      const municipio = lerMunicipio(respostas[campo.fatoCodigo]);
+      if (!municipio) continue;
+      reduzidas[campo.fatoCodigo] = municipio.codigo;
+      if (municipio.rotulo === null) this.semNome.push(municipio.codigo);
+      else
+        this.gravados[chaveDaResposta(campo.fatoCodigo, ocorrencia)] = {
+          codigo: municipio.codigo,
+          rotulo: municipio.rotulo,
+        };
+    }
+    return reduzidas;
+  }
 }

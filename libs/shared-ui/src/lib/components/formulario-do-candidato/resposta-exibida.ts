@@ -24,30 +24,30 @@ interface EnderecoRespondido {
   readonly cidade?: CidadeDoEndereco | null;
 }
 
+type Exibicao = (campo: CampoExibido, valor: unknown) => string;
+
+const selecaoExibida: Exibicao = (campo, valor) =>
+  (Array.isArray(valor) ? valor : [valor]).map((c) => opcao(campo, String(c))).join(', ');
+
+const EXIBICAO_POR_TIPO: Readonly<Record<string, Exibicao>> = {
+  BOOLEANO: (_, valor) => (valor === true ? 'Sim' : 'Não'),
+  DATA: (_, valor) => formatarDataBr(String(valor)) || String(valor),
+  NUMERO: (_, valor) => Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 20 }),
+  SELECAO_UNICA: selecaoExibida,
+  SELECAO_MULTIPLA: selecaoExibida,
+  MUNICIPIO: (_, valor) => municipioExibido(valor),
+  ENDERECO: (_, valor) => endereco(valor as EnderecoRespondido),
+};
+
+const textoExibido: Exibicao = (campo, valor) =>
+  campo.formato === 'TELEFONE' ? formatarTelefone(String(valor)) : String(valor);
+
 /**
  * A resposta como texto, pelo tipo do campo; a opção aparece pelo nome quando o formulário o traz, e o
  * município pelo nome que ficou gravado no envio.
  */
 export function respostaExibida(campo: CampoExibido, valor: unknown): string {
-  switch (campo.tipoRenderizacao) {
-    case 'BOOLEANO':
-      return valor === true ? 'Sim' : 'Não';
-    case 'DATA':
-      return formatarDataBr(String(valor)) || String(valor);
-    case 'NUMERO':
-      return Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 20 });
-    case 'SELECAO_UNICA':
-    case 'SELECAO_MULTIPLA':
-      return (Array.isArray(valor) ? valor : [valor])
-        .map((c) => opcao(campo, String(c)))
-        .join(', ');
-    case 'MUNICIPIO':
-      return municipioExibido(valor);
-    case 'ENDERECO':
-      return endereco(valor as EnderecoRespondido);
-    default:
-      return campo.formato === 'TELEFONE' ? formatarTelefone(String(valor)) : String(valor);
-  }
+  return (EXIBICAO_POR_TIPO[campo.tipoRenderizacao ?? ''] ?? textoExibido)(campo, valor);
 }
 
 function municipioExibido(valor: unknown): string {

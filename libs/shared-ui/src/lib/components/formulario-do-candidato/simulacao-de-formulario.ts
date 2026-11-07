@@ -50,6 +50,20 @@ export type ConferenciaComOServidor = (
   simulacao: SimulacaoParaConferir,
 ) => Observable<ApiResult<AvaliacaoDoFormulario>>;
 
+function pedidoDeConferencia(
+  regras: FormularioDoCandidato['regras'],
+  simulacao: SimulacaoDoFormulario,
+): SimulacaoParaConferir {
+  return {
+    regras,
+    respostas: simulacao.respostas ?? null,
+    grupos: simulacao.grupos ?? null,
+    etapasConcluidas: simulacao.etapasConcluidas ?? null,
+    pressupostos: simulacao.pressupostos ?? null,
+    envio: simulacao.envio ?? null,
+  };
+}
+
 type Conferencia =
   | { readonly estado: 'conferindo' }
   | {
@@ -247,35 +261,32 @@ export class SimulacaoDeFormularioComponent {
     const simulacao = this.simulacao();
     this.conferencia.set({ estado: 'conferindo' });
     this.conferenciaEmVoo?.unsubscribe();
-    this.conferenciaEmVoo = this.conferir()({
-      regras,
-      respostas: simulacao.respostas ?? null,
-      grupos: simulacao.grupos ?? null,
-      etapasConcluidas: simulacao.etapasConcluidas ?? null,
-      pressupostos: simulacao.pressupostos ?? null,
-      envio: simulacao.envio ?? null,
-    })
+    this.conferenciaEmVoo = this.conferir()(pedidoDeConferencia(regras, simulacao))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        if (!resultado.ok) {
-          const mensagem = this.problemas.resolve(resultado.problem);
-          this.conferencia.set({ estado: 'falha', mensagem: mensagem.detail ?? mensagem.title });
-          return;
-        }
-        const local = interpretarFormulario(regras, simulacao);
-        this.conferencia.set(
-          local.valida
-            ? {
-                estado: 'feita',
-                simulacao,
-                divergencias: divergenciasEntre(local.avaliacao, resultado.data),
-              }
-            : {
-                estado: 'falha',
-                mensagem: `A simulação não interpreta as regras que o servidor aceitou: ${local.erro.mensagem} (em ${local.erro.caminho}).`,
-              },
-        );
-      });
+      .subscribe((resultado) => this.conferencia.set(this.desfechoDa(regras, simulacao, resultado)));
+  }
+
+  private desfechoDa(
+    regras: FormularioDoCandidato['regras'],
+    simulacao: SimulacaoDoFormulario,
+    resultado: ApiResult<AvaliacaoDoFormulario>,
+  ): Conferencia {
+    if (!resultado.ok) {
+      const mensagem = this.problemas.resolve(resultado.problem);
+      return { estado: 'falha', mensagem: mensagem.detail ?? mensagem.title };
+    }
+    const local = interpretarFormulario(regras, simulacao);
+    if (!local.valida) {
+      return {
+        estado: 'falha',
+        mensagem: `A simulação não interpreta as regras que o servidor aceitou: ${local.erro.mensagem} (em ${local.erro.caminho}).`,
+      };
+    }
+    return {
+      estado: 'feita',
+      simulacao,
+      divergencias: divergenciasEntre(local.avaliacao, resultado.data),
+    };
   }
 
   protected exportarFormulario(): void {

@@ -15,11 +15,9 @@ import {
 
 import { type StepItem, StepsComponent } from '../steps/steps.component';
 import { OverlayScrollService } from './overlay-scroll.service';
+import { ReservaDeRolagem } from './reserva-de-rolagem';
 
 let proximoId = 0;
-
-/** A altura visível do contêiner que rola, que a coluna lateral usa como teto. */
-const ALTURA_DA_AREA = '--ui-steps-area-altura';
 
 /**
  * A apresentação padrão dos passos: a coluna `lateral` do `ui-steps` em tela larga e, abaixo de 768 px,
@@ -141,47 +139,7 @@ export class StepsResponsivoComponent {
     effect((aoLimpar) => {
       const barra = this.barra()?.nativeElement;
       if (!barra || typeof ResizeObserver === 'undefined') return;
-      const reservar = this.reservarRolagem();
-      let area: HTMLElement | null = null;
-      let paddingAnterior = '';
-      let alturaAnterior = '';
-      const observador = new ResizeObserver(() => aplicar());
-      const largar = (): void => {
-        if (!area) return;
-        area.style.scrollPaddingTop = paddingAnterior;
-        if (alturaAnterior === '') area.style.removeProperty(ALTURA_DA_AREA);
-        else area.style.setProperty(ALTURA_DA_AREA, alturaAnterior);
-        area = null;
-      };
-      // O contêiner que rola muda com a largura da janela (o shell deixa de rolar em janela baixa), então
-      // é achado de novo a cada medida, e o anterior volta ao que era.
-      const aplicar = (): void => {
-        const nova = areaQueRola(barra);
-        if (nova !== area) {
-          largar();
-          area = nova;
-          paddingAnterior = nova.style.scrollPaddingTop;
-          alturaAnterior = nova.style.getPropertyValue(ALTURA_DA_AREA);
-          observador.disconnect();
-          observador.observe(barra);
-          observador.observe(nova);
-        }
-        // O campo focado por teclado não pode ficar sob a barra fixa (WCAG 2.4.11).
-        if (reservar) {
-          area.style.scrollPaddingTop =
-            barra.offsetHeight > 0 ? `${barra.offsetHeight}px` : paddingAnterior;
-        }
-        // A coluna lateral não passa da altura visível da área que rola.
-        area.style.setProperty(ALTURA_DA_AREA, `${area.clientHeight}px`);
-      };
-      const janela = barra.ownerDocument.defaultView;
-      janela?.addEventListener('resize', aplicar);
-      aplicar();
-      aoLimpar(() => {
-        observador.disconnect();
-        janela?.removeEventListener('resize', aplicar);
-        largar();
-      });
+      aoLimpar(new ReservaDeRolagem(barra, this.reservarRolagem()).iniciar());
     });
 
     // Com a lista aberta o fundo não rola; a limpeza também libera a rolagem se a peça for destruída
@@ -244,13 +202,4 @@ export class StepsResponsivoComponent {
       { injector: this.injector },
     );
   }
-}
-
-/** O ancestral que rola na vertical, ou o documento quando nenhum rola. */
-function areaQueRola(elemento: HTMLElement): HTMLElement {
-  for (let pai = elemento.parentElement; pai; pai = pai.parentElement) {
-    const rolagem = getComputedStyle(pai).overflowY;
-    if (rolagem === 'auto' || rolagem === 'scroll') return pai;
-  }
-  return elemento.ownerDocument.documentElement;
 }

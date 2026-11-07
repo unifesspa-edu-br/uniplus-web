@@ -1,3 +1,4 @@
+import { comoObjeto } from './endereco-do-campo';
 import type { ValorJson } from './interpretador/regras-do-formulario';
 
 /** Um fato que o sistema calcula das respostas: o valor e como ele aparece ao candidato. */
@@ -58,10 +59,9 @@ interface Cidade {
 }
 
 function cidadeDo(endereco: ValorJson | undefined): Cidade | null {
-  if (endereco === null || typeof endereco !== 'object' || Array.isArray(endereco)) return null;
-  const cidade = (endereco as { readonly [chave: string]: ValorJson })['cidade'];
-  if (cidade === null || typeof cidade !== 'object' || Array.isArray(cidade)) return null;
-  const { codigoIbge, nome, uf } = cidade as { readonly [chave: string]: ValorJson };
+  const cidade = comoObjeto(comoObjeto(endereco)?.['cidade']);
+  if (cidade === null) return null;
+  const { codigoIbge, nome, uf } = cidade;
   return typeof codigoIbge === 'string' && codigoIbge !== '' && typeof uf === 'string' && uf !== ''
     ? { codigoIbge, nome: typeof nome === 'string' ? nome : null, uf }
     : null;

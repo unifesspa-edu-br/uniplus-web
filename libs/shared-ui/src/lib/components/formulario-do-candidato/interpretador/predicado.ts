@@ -91,15 +91,21 @@ function avaliarCondicao(condicao: Condicao, fatos: Fatos): Ternario | typeof NA
   if (fato.estado !== RESOLVIDO || fato.valor === undefined || fato.valor === null)
     return INDETERMINADO;
 
-  const negar = condicao.operador === 'DIFERENTE' || condicao.operador === 'NAO_EM';
-  const base: Operador =
-    condicao.operador === 'DIFERENTE'
-      ? 'IGUAL'
-      : condicao.operador === 'NAO_EM'
-        ? 'EM'
-        : condicao.operador;
-  const resultado = avaliarOperador(base, fato.valor, condicao.valor);
-  if (!negar || resultado === INDETERMINADO) return resultado;
+  return avaliarComNegacao(condicao.operador, fato.valor, condicao.valor);
+}
+
+const OPERADOR_NEGADO: Partial<Record<Operador, Operador>> = { DIFERENTE: 'IGUAL', NAO_EM: 'EM' };
+
+/** A negação inverte o resultado do operador positivo; o indeterminado continua indeterminado. */
+function avaliarComNegacao(
+  operador: Operador,
+  candidato: ValorJson,
+  configurado: ValorJson,
+): Ternario {
+  const positivo = OPERADOR_NEGADO[operador];
+  if (positivo === undefined) return avaliarOperador(operador, candidato, configurado);
+  const resultado = avaliarOperador(positivo, candidato, configurado);
+  if (resultado === INDETERMINADO) return resultado;
   return resultado === VERDADEIRO ? FALSO : VERDADEIRO;
 }
 
@@ -112,21 +118,35 @@ function avaliarOperador(
   candidato: ValorJson,
   configurado: ValorJson,
 ): Ternario {
-  if (Array.isArray(candidato)) {
-    switch (operador) {
-      case 'IGUAL':
-        return comoTernario(candidato.some((item) => valoresIguais(item, configurado)));
-      case 'EM':
-        return comoTernario(
-          (configurado as readonly ValorJson[]).some((item) =>
-            candidato.some((dele) => valoresIguais(dele, item)),
-          ),
-        );
-      default:
-        return INDETERMINADO;
-    }
-  }
+  return Array.isArray(candidato)
+    ? avaliarSobreConjunto(operador, candidato, configurado)
+    : avaliarSobreValorUnico(operador, candidato, configurado);
+}
 
+function avaliarSobreConjunto(
+  operador: Operador,
+  candidato: readonly ValorJson[],
+  configurado: ValorJson,
+): Ternario {
+  switch (operador) {
+    case 'IGUAL':
+      return comoTernario(candidato.some((item) => valoresIguais(item, configurado)));
+    case 'EM':
+      return comoTernario(
+        (configurado as readonly ValorJson[]).some((item) =>
+          candidato.some((dele) => valoresIguais(dele, item)),
+        ),
+      );
+    default:
+      return INDETERMINADO;
+  }
+}
+
+function avaliarSobreValorUnico(
+  operador: Operador,
+  candidato: ValorJson,
+  configurado: ValorJson,
+): Ternario {
   switch (operador) {
     case 'IGUAL':
       return compararIgualdade(candidato, configurado);

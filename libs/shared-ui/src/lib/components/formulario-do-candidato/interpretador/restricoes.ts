@@ -218,6 +218,16 @@ export function minimaDepoisDaMaxima(minima: LimiteDeData, maxima: LimiteDeData)
   return false;
 }
 
+const diaDoLimiteOpcional = (limite: LimiteDeData | null, diaDoEnvio: string | null): string | null =>
+  limite === null ? null : diaDoLimite(limite, diaDoEnvio);
+
+const foraDosDias = (data: string, inicio: string | null, fim: string | null): boolean =>
+  (inicio !== null && data < inicio) || (fim !== null && data > fim);
+
+/** O limite existe, mas o dia dele não se sabe: depende do dia do envio. */
+const limiteSemDia = (limite: LimiteDeData | null, dia: string | null): boolean =>
+  limite !== null && dia === null;
+
 /**
  * A resposta de data dentro dos limites no dia do envio. O dia é comparado como `AAAA-MM-DD`, que
  * ordena como o calendário. A data fora de um limite conhecido viola em definitivo; dentro dos
@@ -230,12 +240,10 @@ export function faixaDeData(minima: LimiteDeData | null, maxima: LimiteDeData | 
     avaliar: (resposta, { diaDoEnvio }) => {
       const data = typeof resposta === 'string' ? diaDoCalendario(resposta) : null;
       if (data === null) return FALSO;
-      const inicio = minima === null ? null : diaDoLimite(minima, diaDoEnvio);
-      const fim = maxima === null ? null : diaDoLimite(maxima, diaDoEnvio);
-      if ((inicio !== null && data < inicio) || (fim !== null && data > fim)) return FALSO;
-      return (minima !== null && inicio === null) || (maxima !== null && fim === null)
-        ? INDETERMINADO
-        : VERDADEIRO;
+      const inicio = diaDoLimiteOpcional(minima, diaDoEnvio);
+      const fim = diaDoLimiteOpcional(maxima, diaDoEnvio);
+      if (foraDosDias(data, inicio, fim)) return FALSO;
+      return limiteSemDia(minima, inicio) || limiteSemDia(maxima, fim) ? INDETERMINADO : VERDADEIRO;
     },
     opcoes: semOpcoes,
   };
