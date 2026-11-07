@@ -28,4 +28,22 @@ export const STATUS_HTTP = {
   RECUSA_DE_NEGOCIO: 422,
 } as const;
 
+/** Sem credencial, sem permissão ou recurso inexistente: repetir a leitura não muda a resposta. */
+const RECUSAS_DEFINITIVAS: readonly number[] = [
+  STATUS_HTTP.NAO_AUTENTICADO,
+  STATUS_HTTP.SEM_PERMISSAO,
+  STATUS_HTTP.NAO_ENCONTRADO,
+];
+
+/**
+ * A leitura foi recusada em definitivo (401, 403 ou 404): a tela explica a recusa e não oferece
+ * nova tentativa. O 410 fica de fora: nas listagens paginadas é o cursor expirado, que a
+ * paginação resolve recomeçando.
+ */
+export function ehRecusaDefinitiva(
+  problema: { readonly status: number } | null | undefined,
+): boolean {
+  return problema != null && RECUSAS_DEFINITIVAS.includes(problema.status);
+}
+
 export type StatusHttp = (typeof STATUS_HTTP)[keyof typeof STATUS_HTTP];
