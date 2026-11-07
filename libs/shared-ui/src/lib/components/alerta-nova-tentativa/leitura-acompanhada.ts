@@ -20,6 +20,11 @@ export interface OpcoesDaLeitura {
   readonly indisponivel?: Signal<boolean>;
   /** O que é lido, quando a tela cuida de mais de uma leitura. */
   readonly assunto?: string;
+  /**
+   * A leitura terminou numa recusa que a própria tela mostra (recurso inexistente, sem permissão):
+   * não há falha a repetir nem conclusão a anunciar.
+   */
+  readonly recusada?: Signal<boolean>;
 }
 
 /** A leitura com tudo o que o aviso de falha mostra e a ação que ele oferece. */
@@ -46,13 +51,14 @@ export interface LeituraAcompanhada {
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function acompanharLeitura(opcoes: OpcoesDaLeitura): LeituraAcompanhada {
-  const { falha, pendente, recarregar, destino, assunto } = opcoes;
+  const { falha, pendente, recarregar, destino, assunto, recusada } = opcoes;
   const indisponivel = opcoes.indisponivel ?? signal(false);
   const tentativa = acompanharNovaTentativa({
     pendente: computed(() => pendente() || indisponivel()),
     falhou: computed(() => falha() !== null),
     destino,
     assunto,
+    recusada,
   });
   const ultimaMensagem = signal('');
   // Um efeito, e não um sinal derivado preguiçoso: a mensagem tem de ser guardada ainda que o aviso

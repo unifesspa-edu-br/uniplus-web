@@ -42,6 +42,12 @@ export interface OpcoesDaNovaTentativa {
   readonly destino: () => HTMLElement | null | undefined;
   /** O que é lido, quando a tela cuida de mais de uma leitura; entra no aviso de conclusão. */
   readonly assunto?: string;
+  /**
+   * A leitura terminou numa recusa que a própria tela mostra (recurso inexistente, sem permissão):
+   * não há falha a repetir nem conclusão a anunciar. O foco vai ao `destino` do mesmo modo, porque
+   * o botão saiu da tela.
+   */
+  readonly recusada?: Signal<boolean>;
 }
 
 /**
@@ -155,13 +161,15 @@ class ControleDaNovaTentativa {
  * Chamar em contexto de injeção (inicializador de campo ou construtor).
  */
 export function acompanharNovaTentativa(opcoes: OpcoesDaNovaTentativa): NovaTentativa {
-  const { pendente, falhou, destino, assunto } = opcoes;
+  const { pendente, falhou, destino, assunto, recusada } = opcoes;
   const injector = inject(Injector);
   const anuncio = inject(AnuncioDaConclusao);
   const foco = new FocoDaNovaTentativa(
     destino,
     (focoLevado) => {
-      if (!focoLevado) anuncio.anunciar(textoDaConclusao(assunto));
+      if (!focoLevado && !(recusada && untracked(recusada))) {
+        anuncio.anunciar(textoDaConclusao(assunto));
+      }
     },
     injector,
   );

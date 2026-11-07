@@ -19,6 +19,8 @@ import { acompanharLeitura } from './leitura-acompanhada';
 interface Busca {
   readonly carregando: boolean;
   readonly erro: boolean;
+  /** Terminou numa recusa que a tela mostra por conta própria. */
+  readonly recusada?: boolean;
 }
 
 const MENSAGEM = 'O servidor recusou a busca.';
@@ -42,6 +44,7 @@ class FilhoComponent {
     pendente: computed(() => this.busca().carregando),
     recarregar: () => this.alteracao.emit(),
     destino: () => document.getElementById('titulo-do-filho'),
+    recusada: computed(() => this.busca().recusada === true),
   });
 }
 
@@ -141,6 +144,31 @@ describe.each([
 
     expect(botao()).toBeNull();
     expect(anunciar).toHaveBeenCalledWith('Dados carregados.');
+  });
+
+  it('a tentativa que termina em recusa, com o foco fora do botão, não anuncia a conclusão', async () => {
+    botao()?.click();
+    await estabilizar();
+
+    pai.busca.set({ carregando: false, erro: false, recusada: true });
+    await fixture.whenStable();
+    await macrotarefa();
+
+    expect(botao()).toBeNull();
+    expect(anunciar).not.toHaveBeenCalled();
+  });
+
+  it('a tentativa que termina em recusa, com o foco no botão, leva o foco ao destino', async () => {
+    botao()?.focus();
+    botao()?.click();
+    await estabilizar();
+
+    pai.busca.set({ carregando: false, erro: false, recusada: true });
+    await fixture.whenStable();
+    await macrotarefa();
+
+    expect(document.activeElement).toBe(raiz.querySelector('#titulo-do-filho'));
+    expect(anunciar).not.toHaveBeenCalled();
   });
 
   it('a busca que falha de novo passa de "tentando" a "repetida" e mantém o alerta', async () => {
