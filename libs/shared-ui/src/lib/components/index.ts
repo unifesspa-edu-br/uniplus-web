@@ -1,6 +1,6 @@
 export { A11yMenuComponent } from './a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from './alert/alert';
-export { AlertaNovaTentativaComponent, AnuncioDaConclusao, FalhaDeLeituraComponent, FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, NovaTentativaDoCampoComponent, SituacaoDaNovaTentativaComponent, acompanharCatalogo, acompanharLeitura, acompanharNovaTentativa, destinoAcessivel, focarEmAlgum, podeReceberFoco, textoDaConclusao, textoDaNovaTentativa, type CatalogoAcompanhado, type FaseDaNovaTentativa, type LeituraAcompanhada, type NovaTentativa, type OpcoesDaLeitura, type OpcoesDaNovaTentativa } from './alerta-nova-tentativa';
+export { AnuncioDaConclusao, FalhaDeLeituraComponent, FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, acompanharCatalogo, acompanharLeitura, destinoAcessivel, focarEmAlgum, podeReceberFoco, type CatalogoAcompanhado, type LeituraAcompanhada, type OpcoesDaLeitura } from './alerta-nova-tentativa';
 export { BackToTopComponent } from './back-to-top/back-to-top';
 export { BackToTopContainerDirective } from './back-to-top/back-to-top-container.directive';
 export { ValorLegivelDirective } from './valor-legivel/valor-legivel.directive';
@@ -26,7 +26,7 @@ export { FormFieldComponent } from './form-field/form-field';
 export { IconButtonComponent, type UiTooltipPosition } from './icon-button/icon-button';
 export { InstitutionalBarComponent } from './institutional-bar/institutional-bar';
 export { LoadingOverlayComponent } from './loading-overlay/loading-overlay';
-export { LookupAlertComponent, type UiLookupFalho } from './lookup-alert/lookup-alert';
+export { LookupAlertComponent } from './lookup-alert/lookup-alert';
 export { LookupLabelComponent } from './lookup-label/lookup-label';
 export { PageHeaderComponent } from './page-header/page-header';
 export {

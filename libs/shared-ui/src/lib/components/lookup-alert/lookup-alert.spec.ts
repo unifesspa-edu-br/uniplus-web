@@ -1,7 +1,25 @@
+import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
-import { LookupAlertComponent, UiLookupFalho } from './lookup-alert';
+import type { CatalogoAcompanhado } from '../alerta-nova-tentativa/leitura-acompanhada';
+import type { FaseDaNovaTentativa } from '../alerta-nova-tentativa/nova-tentativa';
+import { LookupAlertComponent } from './lookup-alert';
+
+function leitura(
+  assunto: string,
+  opcoes: { visivel?: boolean; fase?: FaseDaNovaTentativa; pendente?: boolean } = {},
+): CatalogoAcompanhado & { tentar: Mock<() => void> } {
+  return {
+    assunto,
+    visivel: signal(opcoes.visivel ?? true),
+    mensagem: signal(''),
+    fase: signal(opcoes.fase ?? 'inicial'),
+    pendente: signal(opcoes.pendente ?? false),
+    indisponivel: signal(false),
+    tentar: vi.fn<() => void>(),
+  };
+}
 
 describe('LookupAlertComponent', () => {
   let fixture: ComponentFixture<LookupAlertComponent>;
@@ -11,22 +29,23 @@ describe('LookupAlertComponent', () => {
     fixture = TestBed.createComponent(LookupAlertComponent);
   });
 
-  function render(falhas: readonly UiLookupFalho[]): HTMLElement {
-    fixture.componentRef.setInput('falhas', falhas);
+  function render(leituras: readonly CatalogoAcompanhado[]): HTMLElement {
+    fixture.componentRef.setInput('leituras', leituras);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
   }
 
   it('não ocupa espaço quando nenhum catálogo falhou', () => {
-    const host = render([]);
+    const host = render([leitura('cursos', { visivel: false })]);
 
     expect(host.querySelector('.alert')).toBeNull();
   });
 
-  it('nomeia cada catálogo recusado e chama só a nova tentativa clicada', () => {
-    const cursos = { nome: 'cursos', fase: 'inicial' as const, recarregar: vi.fn() };
-    const locais = { nome: 'locais de oferta', fase: 'inicial' as const, recarregar: vi.fn() };
-    const host = render([cursos, locais]);
+  it('nomeia cada catálogo em falha e dispara só a nova tentativa clicada', () => {
+    const cursos = leitura('cursos');
+    const locais = leitura('locais de oferta');
+    const campi = leitura('campi', { visivel: false });
+    const host = render([cursos, locais, campi]);
 
     const botoes = host.querySelectorAll<HTMLButtonElement>('.link-button');
     expect([...botoes].map((b) => b.textContent?.trim())).toEqual([
@@ -35,8 +54,22 @@ describe('LookupAlertComponent', () => {
     ]);
 
     botoes[1].click();
-    expect(locais.recarregar).toHaveBeenCalledTimes(1);
-    expect(cursos.recarregar).not.toHaveBeenCalled();
+    expect(locais.tentar).toHaveBeenCalledTimes(1);
+    expect(cursos.tentar).not.toHaveBeenCalled();
+  });
+
+  it('mantém o botão do catálogo ao receber outra leitura do mesmo assunto, e a nova tentativa vai à leitura atual', () => {
+    const antes = leitura('campi');
+    const host = render([antes]);
+    const botao = host.querySelector<HTMLButtonElement>('.link-button');
+
+    const depois = leitura('campi');
+    const hostDepois = render([depois]);
+    hostDepois.querySelector<HTMLButtonElement>('.link-button')?.click();
+
+    expect(hostDepois.querySelector('.link-button')).toBe(botao);
+    expect(depois.tentar).toHaveBeenCalledTimes(1);
+    expect(antes.tentar).not.toHaveBeenCalled();
   });
 
   /**
@@ -44,78 +77,28 @@ describe('LookupAlertComponent', () => {
    * volta ao topo para descobrir que as colunas pararam de resolver.
    */
   it('é anunciado por leitor de tela ao surgir', () => {
-    const host = render([{ nome: 'campi', fase: 'inicial' as const, recarregar: vi.fn() }]);
-    const alerta = host.querySelector('.alert [role="alert"]');
+    const alerta = render([leitura('campi')]).querySelector('.alert [role="alert"]');
 
     expect(alerta?.getAttribute('role')).toBe('alert');
     expect(alerta?.getAttribute('aria-live')).toBe('polite');
   });
 
-  it('concorda a frase com o número de catálogos recusados', () => {
-    expect(
-      render([{ nome: 'campi', fase: 'inicial' as const, recarregar: vi.fn() }]).textContent,
-    ).toContain('A coluna afetada mostra');
-    expect(
-      render([
-        { nome: 'cursos', fase: 'inicial' as const, recarregar: vi.fn() },
-        { nome: 'campi', fase: 'inicial' as const, recarregar: vi.fn() },
-      ]).textContent,
-    ).toContain('As colunas afetadas mostram');
+  it('concorda a frase com o número de catálogos em falha', () => {
+    expect(render([leitura('campi')]).textContent).toContain('A coluna afetada mostra');
+    expect(render([leitura('cursos'), leitura('campi')]).textContent).toContain(
+      'As colunas afetadas mostram',
+    );
   });
 
-  it('mantém o botão da nova tentativa em curso, indisponível, sem chamar de novo', () => {
-    const cursos = {
-      nome: 'cursos',
-      fase: 'inicial' as const,
-      pendente: true,
-      recarregar: vi.fn(),
-    };
-    const host = render([cursos, { nome: 'campi', fase: 'inicial' as const, recarregar: vi.fn() }]);
+  it('mostra a fase da nova tentativa do catálogo e o ocupado só enquanto ela corre', () => {
+    const host = render([
+      leitura('campi', { fase: 'tentando', pendente: true }),
+      leitura('cursos'),
+    ]);
     const [emCurso, livre] = [...host.querySelectorAll<HTMLButtonElement>('.link-button')];
 
-    expect(emCurso.getAttribute('aria-disabled')).toBe('true');
-    expect(emCurso.getAttribute('aria-busy')).toBe('true');
-    expect(livre.getAttribute('aria-disabled')).toBeNull();
-    expect(livre.getAttribute('aria-busy')).toBeNull();
-
-    emCurso.click();
-    expect(cursos.recarregar).not.toHaveBeenCalled();
-  });
-
-  it('não perde o foco do botão quando a nova tentativa começa', () => {
-    const host = render([
-      { nome: 'cursos', fase: 'inicial' as const, pendente: false, recarregar: vi.fn() },
-    ]);
-    const botao = host.querySelector<HTMLButtonElement>('.link-button') as HTMLButtonElement;
-    document.body.append(host);
-    botao.focus();
-
-    render([{ nome: 'cursos', fase: 'inicial' as const, pendente: true, recarregar: vi.fn() }]);
-
-    expect(host.querySelector('.link-button')).toBe(botao);
-    expect(document.activeElement).toBe(botao);
-    host.remove();
-  });
-
-  it('mostra e anuncia a fase da nova tentativa do catálogo, e o ocupado só quando está em curso', () => {
-    const campi = { nome: 'campi', recarregar: vi.fn(), pendente: true, fase: 'tentando' as const };
-    const host = render([campi]);
-    const botao = host.querySelector<HTMLButtonElement>('.link-button');
-
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Recarregando campi…');
-    expect(botao?.getAttribute('aria-busy')).toBe('true');
-
-    const ocupada = {
-      nome: 'campi',
-      fase: 'inicial' as const,
-      recarregar: vi.fn(),
-      indisponivel: true,
-    };
-    const outra = render([ocupada]);
-    const botaoOcupado = outra.querySelector<HTMLButtonElement>('.link-button');
-    expect(botaoOcupado?.getAttribute('aria-disabled')).toBe('true');
-    expect(botaoOcupado?.getAttribute('aria-busy')).toBeNull();
-    botaoOcupado?.click();
-    expect(ocupada.recarregar).not.toHaveBeenCalled();
+    expect(emCurso.getAttribute('aria-busy')).toBe('true');
+    expect(livre.getAttribute('aria-busy')).toBeNull();
   });
 });

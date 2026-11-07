@@ -1,6 +1,6 @@
 export { A11yMenuComponent } from '../../src/lib/components/a11y-menu/a11y-menu';
 export { AlertComponent, type UiAlertVariant } from '../../src/lib/components/alert/alert';
-export { AlertaNovaTentativaComponent, AnuncioDaConclusao, FalhaDeLeituraComponent, FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, NovaTentativaDoCampoComponent, SituacaoDaNovaTentativaComponent, acompanharCatalogo, acompanharLeitura, acompanharNovaTentativa, destinoAcessivel, focarEmAlgum, podeReceberFoco, textoDaConclusao, textoDaNovaTentativa, type CatalogoAcompanhado, type FaseDaNovaTentativa, type LeituraAcompanhada, type NovaTentativa, type OpcoesDaLeitura, type OpcoesDaNovaTentativa } from '../../src/lib/components/alerta-nova-tentativa';
+export { AnuncioDaConclusao, FalhaDeLeituraComponent, FalhaDeLeituraDoCampoComponent, IndicadorDaLeituraDirective, acompanharCatalogo, acompanharLeitura, destinoAcessivel, focarEmAlgum, podeReceberFoco, type CatalogoAcompanhado, type LeituraAcompanhada, type OpcoesDaLeitura } from '../../src/lib/components/alerta-nova-tentativa';
 export { BackToTopComponent } from '../../src/lib/components/back-to-top/back-to-top';
 export { BackToTopContainerDirective } from '../../src/lib/components/back-to-top/back-to-top-container.directive';
 export { BackToTopScrollService } from '../../src/lib/components/back-to-top/back-to-top.service';
@@ -54,10 +54,7 @@ export {
   type UiTooltipPosition,
 } from '../../src/lib/components/icon-button/icon-button';
 export { LoadingOverlayComponent } from '../../src/lib/components/loading-overlay/loading-overlay';
-export {
-  LookupAlertComponent,
-  type UiLookupFalho,
-} from '../../src/lib/components/lookup-alert/lookup-alert';
+export { LookupAlertComponent } from '../../src/lib/components/lookup-alert/lookup-alert';
 export { LookupLabelComponent } from '../../src/lib/components/lookup-label/lookup-label';
 export { PageHeaderComponent } from '../../src/lib/components/page-header/page-header';
 export {
