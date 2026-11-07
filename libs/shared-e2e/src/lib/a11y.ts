@@ -352,7 +352,7 @@ export async function assertAaaVisualContract(
             // .tag/.filter-chip__count/.u-eyebrow: rótulos curtos e decorativos
             // (status, contagem, legenda em caixa alta), mesmo racional de .card__meta
             // e .u-caption — não são texto de corpo.
-            '.u-caption, .card__meta, .table-responsive__meta, .stepper__label, .institutional-bar, .institutional-bar *, .tag, .filter-chip__count, .u-eyebrow',
+            '.u-caption, .card__meta, .table-responsive__meta, .institutional-bar, .institutional-bar *, .tag, .filter-chip__count, .u-eyebrow',
           )
         ) {
           return 12;

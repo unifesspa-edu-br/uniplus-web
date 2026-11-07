@@ -33,8 +33,20 @@
   cursor: pointer;
 }
 
+/* O alvo do botão da dica do campo tem ao menos 24 px de altura (WCAG 2.5.8). O texto continua
+ * na mesma linha de base da dica: o botão cresce em torno dele, e não empurra o texto. */
+.nova-tentativa-campo .link-button {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+}
+
+/* Indisponível, o botão segue focável e lido: a cor é a do texto ao redor (que já tem contraste
+ * nos três temas), e o estado se mostra pelo cursor e pelo sublinhado pontilhado, não por
+ * apagar o texto. A regra vale só para este botão, o único que usa `.link-button`; a de
+ * `.btn[aria-disabled]` apaga o rótulo de propósito e não serve a um botão que a pessoa ainda lê. */
 .link-button[aria-disabled='true'] {
-  color: var(--text-disabled);
+  text-decoration-style: dotted;
   cursor: not-allowed;
 }
 
@@ -43,6 +55,15 @@
 .link-button[aria-busy='true'],
 .list-state__retry .btn[aria-busy='true'] {
   cursor: progress;
+}
+
+/* O botão indisponível continua legível: segue focável e é lido durante a espera, que o spinner
+ * do alerta mostra. A borda tracejada indica que o toque não terá efeito agora. */
+.list-state__retry .btn[aria-disabled='true'] {
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border-color: var(--btn-bd);
+  border-style: dashed;
 }
 
 /* Os avisos de falha de leitura decidem a visibilidade por dentro: sem falha, o host não ocupa

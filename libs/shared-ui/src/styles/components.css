@@ -41,15 +41,11 @@
 @import "./components/27-barra-superior.css";
 @import "./components/28-cabecalho-da-pagina.css";
 @import "./components/29-chip-do-usuario.css";
-@import "./components/30-stepper.css";
-@import "./components/31-trilho-de-passos.css";
 @import "./components/32-avatar.css";
 @import "./components/33-divisor.css";
 @import "./components/34-tabela-responsiva.css";
 @import "./components/35-dialogo.css";
 @import "./components/36-envio-de-arquivo.css";
-@import "./components/37-linha-do-tempo.css";
-@import "./components/38-validacao-de-formulario.css";
 @import "./components/39-toast.css";
 @import "./components/40-gaveta.css";
 @import "./components/41-voltar-ao-topo.css";
@@ -63,7 +59,6 @@
 @import "./components/49-controle-segmentado.css";
 @import "./components/50-linha-de-edital.css";
 @import "./components/51-barra-de-filtros.css";
-@import "./components/52-carrossel.css";
 @import "./components/53-casca-administrativa.css";
 @import "./components/54-recolhivel.css";
 @import "./components/55-marca-institucional.css";
