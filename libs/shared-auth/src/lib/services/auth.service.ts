@@ -206,18 +206,20 @@ export class AuthService {
     const claims = this.keycloak.tokenParsed as UniPlusTokenClaims | undefined;
     if (!claims) return;
 
-    const nomeCivil =
-      claims.name ?? `${claims.given_name ?? ''} ${claims.family_name ?? ''}`.trim();
-
-    this._userProfile.set({
-      id: this.keycloak.subject ?? claims.sub ?? '',
-      username: claims.preferred_username ?? '',
-      email: claims.email ?? '',
-      nomeCivil,
-      nomeSocial: claims.nomeSocial,
-      cpf: claims.cpf ?? '',
-    });
+    this._userProfile.set(perfilDosClaims(claims, this.keycloak.subject));
   }
+}
+
+function perfilDosClaims(claims: UniPlusTokenClaims, subject: string | undefined): UserProfile {
+  const nomeCivil = claims.name ?? `${claims.given_name ?? ''} ${claims.family_name ?? ''}`.trim();
+  return {
+    id: subject ?? claims.sub ?? '',
+    username: claims.preferred_username ?? '',
+    email: claims.email ?? '',
+    nomeCivil,
+    nomeSocial: claims.nomeSocial,
+    cpf: claims.cpf ?? '',
+  };
 }
 
 interface KeycloakConfig {

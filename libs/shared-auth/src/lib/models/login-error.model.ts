@@ -29,29 +29,55 @@ export interface LoginErrorDetails {
   rawDescription?: string;
 }
 
-const LOCKED_MARKERS = [
-  'account is disabled',
-  'account disabled',
-  'user is disabled',
-  'temporarily locked',
-  'temporarily disabled',
-  'account is temporarily locked',
-  'user is temporarily locked',
-  'too many',
-];
+/** Um tipo de erro de login e as marcas que o identificam na descrição do provedor. */
+interface ClassificacaoDoLogin {
+  readonly code: LoginErrorCode;
+  readonly message: string;
+  readonly markers: readonly string[];
+}
 
-const INVALID_CREDENTIALS_MARKERS = [
-  'invalid user credentials',
-  'invalid credentials',
-  'invalid grant',
-  'invalid username or password',
-];
-
-const UNAVAILABLE_MARKERS = [
-  'failed to fetch',
-  'network request failed',
-  'unable to connect',
-  'service unavailable',
+/** A primeira que casar vence: conta bloqueada antes de credencial inválida. */
+const CLASSIFICACOES: readonly ClassificacaoDoLogin[] = [
+  {
+    code: LoginErrorCode.UserLocked,
+    message:
+      'Conta temporariamente bloqueada por excesso de tentativas. Aguarde alguns minutos ou use "Esqueci a senha".',
+    markers: [
+      'account is disabled',
+      'account disabled',
+      'user is disabled',
+      'temporarily locked',
+      'temporarily disabled',
+      'account is temporarily locked',
+      'user is temporarily locked',
+      'too many',
+    ],
+  },
+  {
+    code: LoginErrorCode.InvalidCredentials,
+    message: 'Usuário ou senha inválidos. Confira os dados e tente novamente.',
+    markers: [
+      'invalid user credentials',
+      'invalid credentials',
+      'invalid grant',
+      'invalid username or password',
+    ],
+  },
+  {
+    code: LoginErrorCode.OidcProviderUnavailable,
+    message: 'Serviço de autenticação indisponível. Tente novamente em alguns instantes.',
+    markers: [
+      'failed to fetch',
+      'network request failed',
+      'unable to connect',
+      'service unavailable',
+    ],
+  },
+  {
+    code: LoginErrorCode.AccessDenied,
+    message: 'Acesso recusado. Você cancelou ou não autorizou o login.',
+    markers: ['access_denied'],
+  },
 ];
 
 /**
@@ -63,38 +89,9 @@ export function classifyLoginError(input: unknown): LoginErrorDetails {
   const raw = extractDescription(input);
   const normalized = raw.toLowerCase();
 
-  if (LOCKED_MARKERS.some((m) => normalized.includes(m))) {
-    return {
-      code: LoginErrorCode.UserLocked,
-      message:
-        'Conta temporariamente bloqueada por excesso de tentativas. Aguarde alguns minutos ou use "Esqueci a senha".',
-      rawDescription: raw,
-    };
-  }
-
-  if (INVALID_CREDENTIALS_MARKERS.some((m) => normalized.includes(m))) {
-    return {
-      code: LoginErrorCode.InvalidCredentials,
-      message: 'Usuário ou senha inválidos. Confira os dados e tente novamente.',
-      rawDescription: raw,
-    };
-  }
-
-  if (UNAVAILABLE_MARKERS.some((m) => normalized.includes(m))) {
-    return {
-      code: LoginErrorCode.OidcProviderUnavailable,
-      message:
-        'Serviço de autenticação indisponível. Tente novamente em alguns instantes.',
-      rawDescription: raw,
-    };
-  }
-
-  if (normalized.includes('access_denied')) {
-    return {
-      code: LoginErrorCode.AccessDenied,
-      message: 'Acesso recusado. Você cancelou ou não autorizou o login.',
-      rawDescription: raw,
-    };
+  const classificacao = CLASSIFICACOES.find((c) => c.markers.some((m) => normalized.includes(m)));
+  if (classificacao) {
+    return { code: classificacao.code, message: classificacao.message, rawDescription: raw };
   }
 
   return {

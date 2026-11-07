@@ -213,19 +213,7 @@ export class UserHeaderInfoComponent {
     if (!items.length) return;
 
     const currentIndex = items.indexOf(this.document.activeElement as HTMLElement);
-    const last = items.length - 1;
-    const nextIndex =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? last
-          : event.key === 'ArrowUp'
-            ? currentIndex <= 0
-              ? last
-              : currentIndex - 1
-            : currentIndex >= last
-              ? 0
-              : currentIndex + 1;
+    const nextIndex = proximoItemDoMenu(event.key, currentIndex, items.length - 1);
 
     items[nextIndex]?.focus();
   }
@@ -264,5 +252,19 @@ export class UserHeaderInfoComponent {
   @HostListener('document:keydown.escape')
   protected onDocumentEscape(): void {
     this.disclosure.closeOnEscape();
+  }
+}
+
+/** O item que a tecla de navegação alcança; as setas dão a volta nas pontas. */
+function proximoItemDoMenu(tecla: string, atual: number, ultimo: number): number {
+  switch (tecla) {
+    case 'Home':
+      return 0;
+    case 'End':
+      return ultimo;
+    case 'ArrowUp':
+      return atual <= 0 ? ultimo : atual - 1;
+    default:
+      return atual >= ultimo ? 0 : atual + 1;
   }
 }

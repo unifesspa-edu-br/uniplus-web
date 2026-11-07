@@ -84,9 +84,12 @@ export function formatarDataBr(
     lida.fuso,
     `${formato}|${lida.fuso}`,
   );
-  if (formato !== 'shortMonth') return intl.format(lida.instante);
-  // O Intl abrevia o mês com ponto ("jun."); a tela mostra "05 jun 2026".
-  const partes = new Map(intl.formatToParts(lida.instante).map((p) => [p.type, p.value]));
+  return formato === 'shortMonth' ? diaMesAbreviadoAno(intl, lida.instante) : intl.format(lida.instante);
+}
+
+/** O Intl abrevia o mês com ponto ("jun."); a tela mostra "05 jun 2026". */
+function diaMesAbreviadoAno(intl: Intl.DateTimeFormat, instante: Date): string {
+  const partes = new Map(intl.formatToParts(instante).map((p) => [p.type, p.value]));
   return `${partes.get('day') ?? ''} ${(partes.get('month') ?? '').replace('.', '')} ${partes.get('year') ?? ''}`;
 }
 
