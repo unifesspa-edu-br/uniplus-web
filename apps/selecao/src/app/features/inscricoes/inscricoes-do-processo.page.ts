@@ -19,12 +19,13 @@ import {
   PageHeaderComponent,
   SpinnerComponent,
   TagComponent,
+  rotuloDaSituacaoDaInscricao,
+  varianteDaSituacaoDaInscricao,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { OfertasEscolhidasComponent } from './ofertas-escolhidas.component';
 import { InscricoesDoProcesso } from './inscricoes-do-processo.service';
-import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 
 /** Nome do link de uma linha sem dado visível; começa pelo texto visível do botão (WCAG 2.5.3). */
 export const NOME_DA_INSCRICAO_SEM_DADOS = 'Abrir inscrição sem dados visíveis';
@@ -189,8 +190,8 @@ function nomeDoLink(linha: Omit<LinhaDaInscricao, 'nomeDoLink'>, posicao: number
                         @if (col.situacao) {
                           <td [attr.data-label]="linha.situacao !== null ? 'Situação' : null">
                             @if (linha.situacao !== null) {
-                              <ui-tag [variant]="varianteDaSituacao(linha.situacao)">
-                                {{ rotuloDaSituacao(linha.situacao) }}
+                              <ui-tag [variant]="varianteDaSituacaoDaInscricao(linha.situacao)">
+                                {{ rotuloDaSituacaoDaInscricao(linha.situacao) }}
                               </ui-tag>
                             }
                           </td>
@@ -267,8 +268,8 @@ export class InscricoesDoProcessoPage {
     recusada: computed(() => this.inscricoes.situacao().estado === 'nao-encontrado'),
   });
 
-  protected readonly rotuloDaSituacao = rotuloDaSituacao;
-  protected readonly varianteDaSituacao = varianteDaSituacao;
+  protected readonly rotuloDaSituacaoDaInscricao = rotuloDaSituacaoDaInscricao;
+  protected readonly varianteDaSituacaoDaInscricao = varianteDaSituacaoDaInscricao;
 
   protected readonly linhas = computed<readonly LinhaDaInscricao[]>(() =>
     this.inscricoes.inscricoes().map((inscricao, indice) => this.linha(inscricao, indice)),

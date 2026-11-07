@@ -1,44 +1,12 @@
-import { HttpClient, type HttpContext, HttpHeaders } from '@angular/common/http';
+import { type HttpContext, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom, of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { apiFailure, apiOk } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { InscricoesApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { InscricoesApi } from '@uniplus/shared-data/selecao';
 
 import { MinhasInscricoesService } from './minhas-inscricoes.service';
-
-describe('MinhasInscricoesService.certame', () => {
-  const falha = (status: number) =>
-    apiFailure(
-      { type: 'about:blank', title: 'Falha', status, code: 'falha', traceId: '' },
-      status,
-      new HttpHeaders(),
-    );
-
-  function certameCom(resposta: ReturnType<typeof falha>) {
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: HttpClient, useValue: { get: () => of(resposta) } },
-        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
-      ],
-    });
-    return firstValueFrom(TestBed.inject(MinhasInscricoesService).certame('processo-1'));
-  }
-
-  it('o certame não publicado (404) vem como nulo', async () => {
-    const certame = await certameCom(falha(404));
-
-    expect(certame.ok && certame.data).toBeNull();
-  });
-
-  it('a falha transitória segue como falha, não como certame não publicado', async () => {
-    const certame = await certameCom(falha(503));
-
-    expect(certame.ok).toBe(false);
-    expect(certame.status).toBe(503);
-  });
-});
 
 describe('MinhasInscricoesService.cancelar e descartar', () => {
   const semCabecalhos = new HttpHeaders();
@@ -52,11 +20,7 @@ describe('MinhasInscricoesService.cancelar e descartar', () => {
 
   function servico(api: Record<string, unknown>) {
     TestBed.configureTestingModule({
-      providers: [
-        { provide: InscricoesApi, useValue: api },
-        { provide: HttpClient, useValue: {} },
-        { provide: SELECAO_BASE_PATH, useValue: 'http://localhost:5000' },
-      ],
+      providers: [{ provide: InscricoesApi, useValue: api }],
     });
     return TestBed.inject(MinhasInscricoesService);
   }

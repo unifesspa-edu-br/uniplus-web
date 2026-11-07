@@ -513,6 +513,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await test.step('o comprovante mostra o nome social, o CPF mascarado, o município e a edição', async () => {
       await abrirComprovanteNaLista(page, processo);
       await expect(comprovante(page)).toContainText('É o que vale');
+      await expect(comprovante(page)).toContainText('Envio 1 de 1');
       await expect(comprovante(page)).toContainText('horário de Belém (PA)');
       await expect(comprovante(page)).toContainText('Uso do nome social');
       await expect(comprovante(page)).toContainText(PERSONA.nomeSocial);
@@ -602,8 +603,12 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(page.getByText('Inscrição enviada', { exact: true })).toBeVisible();
     });
 
-    await test.step('o comprovante novo traz a correção e o anterior continua igual', async () => {
-      await abrirComprovanteNaLista(page, processo);
+    await test.step('o aviso do envio leva ao comprovante novo, que traz a correção; o anterior continua igual', async () => {
+      await page.getByRole('link', { name: 'Ver o comprovante' }).click();
+      await expect(
+        page.getByRole('heading', { level: 1, name: 'Comprovante de inscrição' }),
+      ).toBeVisible();
+      await expect(comprovante(page)).toContainText('Envio 2 de 2');
       await expect(comprovante(page)).toContainText(PERSONA.fixo);
       const anterior = page.getByRole('link', { name: '‹ Envio anterior' });
       const destino = (await anterior.getAttribute('href')) ?? '';

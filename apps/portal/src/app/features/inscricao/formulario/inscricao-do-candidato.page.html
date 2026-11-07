@@ -16,10 +16,16 @@
 <div class="inscricao-carregando" [uiIndicadorDaLeitura]="acompanhamento" aria-busy="true">
   <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando a inscrição...
 </div>
-} @case ('pronto') { @if (gravacao.comprovante(); as enviado) {
+} @case ('pronto') { @if (gravacao.recibo(); as enviado) {
 <ui-alert variant="success" heading="Inscrição enviada">
   Sua inscrição recebeu o número <strong>{{ enviado.numeroInscricao }}</strong>. Você pode
   corrigi-la até o fim do período de inscrição.
+  <p>
+    <a
+      [routerLink]="['/inscricao', 'comprovante', enviado.inscricaoId, enviado.numeroDoComprovante]"
+      >Ver o comprovante</a
+    >
+  </p>
   <p><a routerLink="/inscricao">Ver minhas inscrições</a></p>
 </ui-alert>
 } @switch (leitura.motivoDoRecarregar()) { @case ('envio') {

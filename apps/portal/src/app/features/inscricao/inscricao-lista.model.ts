@@ -20,8 +20,8 @@ export interface ItemDaLista {
   readonly cursos: readonly CursoDaInscricao[];
   /** O que a API permite fazer agora; a lista não recalcula. */
   readonly acoes: AcoesDaInscricaoDto;
-  /** Só a inscrição que já foi enviada tem comprovante. */
-  readonly temComprovante: boolean;
+  /** O número do comprovante que vale, para abri-lo; a API o deixa nulo quando não há comprovante a emitir. */
+  readonly numeroDoComprovante: number | null;
 }
 
 /** Um curso escolhido: a ordem da opção e o nome com o grau. */
@@ -59,6 +59,6 @@ export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
       nome: `${o.cursoNome} (${o.cursoGrau})`,
     })),
     acoes: inscricao.acoes,
-    temComprovante: inscricao.situacao !== SituacaoInscricao.rascunho,
+    numeroDoComprovante: inscricao.numeroDoUltimoComprovante,
   };
 }

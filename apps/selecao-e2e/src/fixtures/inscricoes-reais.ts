@@ -278,7 +278,7 @@ export async function inscreverPersona(
       headers: cabecalho({
         'if-match': rascunho.eTag,
         'content-type': 'application/json',
-        accept: 'application/vnd.uniplus.comprovante-inscricao.v1+json',
+        accept: 'application/vnd.uniplus.recibo-da-inscricao.v1+json',
       }),
       body: JSON.stringify(corpo),
     }),

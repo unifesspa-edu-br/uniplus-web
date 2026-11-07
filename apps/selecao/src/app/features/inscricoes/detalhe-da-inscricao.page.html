@@ -34,8 +34,8 @@
       <ng-template uiDado rotulo="Número" [valor]="numero" />
       } @if (ident.situacao; as situacaoDaInscricao) {
       <ng-template uiDado rotulo="Situação">
-        <ui-tag [variant]="varianteDaSituacao(situacaoDaInscricao)">
-          {{ rotuloDaSituacao(situacaoDaInscricao) }}
+        <ui-tag [variant]="varianteDaSituacaoDaInscricao(situacaoDaInscricao)">
+          {{ rotuloDaSituacaoDaInscricao(situacaoDaInscricao) }}
         </ui-tag>
       </ng-template>
       } @if (ident.ofertas.length > 0) {

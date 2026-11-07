@@ -9,7 +9,7 @@ import {
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
-  type ComprovanteInscricaoDto,
+  type ReciboDaInscricaoDto,
   type InscricaoDto,
   type InscricaoRequest,
   InscricoesApi,
@@ -57,7 +57,7 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
     processoId: string,
     request: InscricaoRequest,
     eTag: string,
-  ): Observable<ApiResult<ComprovanteInscricaoDto>> {
+  ): Observable<ApiResult<ReciboDaInscricaoDto>> {
     const assinatura = assinaturaDoEnvio(processoId, request);
     if (this.envioEmCurso?.assinatura !== assinatura) {
       this.envioEmCurso = { chave: idempotencyKey.create(), assinatura };

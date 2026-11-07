@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, type Observable, defer, filter, map, tap } from 'rxjs';
 import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import {
-  type ComprovanteInscricaoDto,
+  type ReciboDaInscricaoDto,
   type InscricaoDto,
   type InscricaoRequest,
   SituacaoInscricao,
@@ -86,13 +86,12 @@ export class GravacaoDaInscricao {
   readonly errosDoServidor = signal<readonly ErroDoServidor[]>([]);
   readonly recusaGeral = signal<RecusaGeral | null>(null);
   readonly conflito = signal<string | null>(null);
-  readonly comprovante = signal<ComprovanteInscricaoDto | null>(null);
+  readonly recibo = signal<ReciboDaInscricaoDto | null>(null);
 
   /** A inscrição enviada só muda por novo envio, que emite novo comprovante: não há rascunho dela. */
   readonly enviada = computed(
     () =>
-      this.comprovante() !== null ||
-      this.leitura.inscricao()?.situacao === SituacaoInscricao.submetida,
+      this.recibo() !== null || this.leitura.inscricao()?.situacao === SituacaoInscricao.submetida,
   );
 
   salvar(formulario: FormularioParaGravar): void {
@@ -118,9 +117,9 @@ export class GravacaoDaInscricao {
       formulario,
       'enviando',
       (processoId, request, eTag) => this.servico.submeter(processoId, request, eTag),
-      (comprovante) => {
-        this.comprovante.set(comprovante);
-        this.anuncio.definir(`Inscrição enviada. Número ${comprovante.numeroInscricao}.`);
+      (recibo) => {
+        this.recibo.set(recibo);
+        this.anuncio.definir(`Inscrição enviada. Número ${recibo.numeroInscricao}.`);
         // O formulário só se libera com o ETag novo: antes disso, uma correção sairia com o velho.
         this.relerAGravada((lida) => {
           this.operacao.set(null);
@@ -204,7 +203,7 @@ export class GravacaoDaInscricao {
   }
 
   /**
-   * O envio devolve o comprovante, não a inscrição: sem reler, a próxima correção sairia com o ETag velho.
+   * O envio devolve o recibo, não a inscrição: sem reler, a próxima correção sairia com o ETag velho.
    * `aoTerminar` diz se a releitura trouxe a inscrição. Com `eTagDaTentativa`, a releitura só substitui
    * a inscrição e a avaliação da tela se o ETag mudou: com o mesmo, nada foi gravado, e a avaliação
    * gravada descreve respostas mais antigas que as da tela.

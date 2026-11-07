@@ -18,14 +18,14 @@
 
   <!-- A região fica sempre na página: trocar de envio só troca o conteúdo dela, e a troca é anunciada. -->
   <div aria-live="polite">
-    @if (substituido(); as envio) {
+    @if (comprovante(); as c) { @if (estado() === 'pronto' && !c.vale) {
     <ui-alert variant="info" [dynamic]="false">
       Este envio foi substituído por um mais recente. A inscrição que vale é a última enviada.
-      <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), envio.maisRecente]">
+      <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), c.total]">
         Ver o envio mais recente
       </a>
     </ui-alert>
-    }
+    } }
   </div>
 
   <ui-falha-de-leitura titulo="Não foi possível abrir o comprovante" [leitura]="leitura" />
@@ -35,56 +35,42 @@
     <span class="sr-only">Carregando o comprovante…</span>
     <ui-skeleton skeletonKind="card" blockSize="10rem" />
   </div>
-  } @case ('nao-encontrado') {
-  <ui-alert variant="danger" heading="Comprovante não encontrado">
-    Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.
-  </ui-alert>
-  } @case ('pronto') { @if (carregado(); as c) {
-  <ui-secao-de-documento [titulo]="nomeDoProcesso()" largura="inteira">
+  } @case ('recusado') { @if (recusa(); as recusa) {
+  <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
+  } } @case ('pronto') { @if (comprovante(); as c) {
+  <ui-secao-de-documento [titulo]="c.nomeDoProcesso" largura="inteira">
     <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>
-    @if (c.processo; as processo) {
     <p class="u-body-sm">
-      Processo {{ processo.identificadorLegivel }} · {{ processo.unidadeAdministradora.nome }}
+      @if (c.identificadorDoProcesso; as identificador) { Processo {{ identificador }} · } {{
+      c.unidadeAdministradora }}
     </p>
-    }
     <ui-lista-de-dados variante="destaque">
       <ng-template
         uiDado
         rotulo="Número da inscrição"
-        [valor]="c.comprovante.numeroInscricao"
+        [valor]="c.envio.numeroInscricao"
       ></ng-template>
-      @if (cancelada()) {
       <ng-template uiDado rotulo="Situação">
-        <ui-tag variant="neutral" [dot]="true">Cancelada</ui-tag>
-      </ng-template>
-      @if (canceladaEm(); as quando) {
-      <ng-template uiDado rotulo="Cancelada em" [valor]="quando"></ng-template>
-      } @if (c.inscricao.motivoDoCancelamento; as motivo) {
-      <ng-template uiDado rotulo="Motivo do cancelamento" [valor]="motivo"></ng-template>
-      } } @else if (envio(); as envio) {
-      <ng-template uiDado rotulo="Situação">
-        @if (envio.ehOQueVale) {
+        @if (c.vale) {
         <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
         } @else {
         <ui-tag variant="neutral" [dot]="true">Substituído</ui-tag>
         }
       </ng-template>
-      }
       <ng-template uiDado rotulo="Enviado em">
-        <time [attr.datetime]="c.comprovante.instante">{{ enviadoEm() }}</time>
+        <time [attr.datetime]="c.envio.enviadoEm">{{ enviadoEm() }}</time>
       </ng-template>
     </ui-lista-de-dados>
-    @if (envio(); as envio) {
     <nav aria-label="Envios desta inscrição">
       <p class="u-body-sm">
-        Envio {{ envio.ordem }} de {{ envio.total }} @if (c.vizinhos.anterior; as anterior) {
+        Envio {{ c.numero }} de {{ c.total }} @if (c.numeroAnterior; as anterior) {
         <span class="u-no-print">
           ·
           <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), anterior]"
             >‹ Envio anterior</a
           >
         </span>
-        } @if (c.vizinhos.seguinte; as seguinte) {
+        } @if (c.numeroSeguinte; as seguinte) {
         <span class="u-no-print">
           ·
           <a [routerLink]="['/inscricao', 'comprovante', inscricaoId(), seguinte]"
@@ -94,7 +80,6 @@
         }
       </p>
     </nav>
-    }
   </ui-secao-de-documento>
 
   @if (mostrarOpcoes()) {
@@ -108,23 +93,18 @@
   }
 
   <ui-secao-de-documento titulo="Modalidades em que você concorre" largura="inteira">
-    @if (modalidades(); as nomes) { @if (comDuasOpcoes()) { @for (opcao of opcoes(); track
-    opcao.rotulo) { @if (opcao.modalidades; as nomesDaOpcao) {
+    @if (modalidadesDefinidas()) { @for (opcao of opcoes(); track opcao.rotulo) { @if
+    (opcao.modalidades; as nomes) { @if (comDuasOpcoes()) {
     <p>
       <strong>{{ opcao.rotulo }}@if (opcao.curso) { — {{ opcao.curso }} }</strong>
     </p>
-    <ul class="u-list">
-      @for (nome of nomesDaOpcao; track nome) {
-      <li>{{ nome }}</li>
-      }
-    </ul>
-    } } } @else {
+    }
     <ul class="u-list">
       @for (nome of nomes; track nome) {
       <li>{{ nome }}</li>
       }
     </ul>
-    } } @else {
+    } } } @else {
     <p>
       Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o
       edital.
@@ -134,62 +114,41 @@
 
   <ui-secao-de-documento titulo="Candidato">
     <ui-lista-de-dados>
-      @if (nomes(); as nomes) { @if (nomes.usoDoNomeSocial !== null) {
-      <ng-template
-        uiDado
-        rotulo="Uso do nome social"
-        [valor]="nomes.usoDoNomeSocial ? 'Sim' : 'Não'"
-      ></ng-template>
-      } @if (nomes.social; as social) {
+      @if (c.candidato.usaNomeSocial) {
+      <ng-template uiDado rotulo="Uso do nome social" valor="Sim"></ng-template>
+      } @if (c.candidato.nomeSocial; as social) {
       <ng-template uiDado rotulo="Nome social" [valor]="social"></ng-template>
-      <ng-template uiDado rotulo="Nome civil" [valor]="nomes.civil"></ng-template>
+      <ng-template uiDado rotulo="Nome civil" [valor]="c.candidato.nomeCivil"></ng-template>
       } @else {
-      <ng-template uiDado rotulo="Nome" [valor]="nomes.civil"></ng-template>
-      } }
+      <ng-template uiDado rotulo="Nome" [valor]="c.candidato.nomeCivil"></ng-template>
+      }
       <ng-template uiDado rotulo="CPF">
         @if (cpf(); as revelavel) {
         <ui-dado-revelavel rotulo="CPF" [dado]="revelavel" />
-        } @else { {{ c.comprovante.cpfMascarado }} }
+        } @else { {{ c.candidato.cpfMascarado }} }
       </ng-template>
     </ui-lista-de-dados>
   </ui-secao-de-documento>
 
-  @if (!c.formulario) {
-  <ui-alert variant="info" [dynamic]="false">
-    As respostas desta inscrição não são exibidas porque ela foi cancelada. O número, a data do
-    envio e o código de verificação continuam valendo.
-  </ui-alert>
-  } @if (secoes().length > 0 || derivados().length > 0) {
+  @if (c.secoes.length > 0 || c.derivados.length > 0) {
   <ui-secao-de-documento titulo="Respostas da inscrição">
-    @for (secao of secoes(); track secao.codigo) {
-    <ui-secao-de-documento [titulo]="secao.titulo" [nivel]="3">
-      @if (secao.respostas.length > 0) {
-      <ui-lista-de-dados [colunas]="2">
-        @for (resposta of secao.respostas; track $index) {
-        <ng-template uiDado [rotulo]="resposta.rotulo" [valor]="resposta.valor"></ng-template>
-        }
-      </ui-lista-de-dados>
-      } @for (grupo of secao.grupos; track $index) {
+    @for (secao of c.secoes; track $index) {
+    <ui-secao-de-documento [titulo]="secao.titulo ?? 'Outras informações'" [nivel]="3">
+      @if (secao.itens.length > 0) {
+      <ptl-itens-do-comprovante [itens]="secao.itens" />
+      } @for (grupo of secao.grupos; track grupo.codigo) {
       <ui-secao-de-documento [titulo]="grupo.rotulo" [nivel]="4" largura="inteira">
-        @for (ocorrencia of grupo.ocorrencias; track $index) {
+        @for (ocorrencia of grupo.ocorrencias; track ocorrencia.id) {
         <ui-secao-de-documento [titulo]="ocorrencia.titulo" [nivel]="5">
-          <ui-lista-de-dados>
-            @for (resposta of ocorrencia.respostas; track $index) {
-            <ng-template uiDado [rotulo]="resposta.rotulo" [valor]="resposta.valor"></ng-template>
-            }
-          </ui-lista-de-dados>
+          <ptl-itens-do-comprovante [itens]="ocorrencia.itens" [colunas]="1" />
         </ui-secao-de-documento>
         }
       </ui-secao-de-documento>
       }
     </ui-secao-de-documento>
-    } @if (derivados().length > 0) {
+    } @if (c.derivados.length > 0) {
     <ui-secao-de-documento titulo="Calculado pelo sistema" [nivel]="3">
-      <ui-lista-de-dados [colunas]="2">
-        @for (derivado of derivados(); track $index) {
-        <ng-template uiDado [rotulo]="derivado.rotulo" [valor]="derivado.valor"></ng-template>
-        }
-      </ui-lista-de-dados>
+      <ptl-itens-do-comprovante [itens]="c.derivados" />
     </ui-secao-de-documento>
     }
   </ui-secao-de-documento>
@@ -231,11 +190,11 @@
     </ui-secao-de-documento>
     }
   </ui-secao-de-documento>
-  } @if (termos().length > 0) {
+  } @if (c.termosAceitos.length > 0) {
   <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
     <ul class="u-list">
-      @for (termo of termos(); track $index) {
-      <li>{{ termo }}</li>
+      @for (termo of c.termosAceitos; track termo.codigo) {
+      <li>{{ termo.nome }}</li>
       }
     </ul>
     <p class="u-body-sm">Aceitos no envio de {{ aceitosEm() }}.</p>
@@ -243,25 +202,22 @@
   }
 
   <ui-secao-de-documento titulo="Código de verificação" largura="inteira">
-    <ui-codigo-de-verificacao [codigo]="c.comprovante.hashIntegridade" />
+    <ui-codigo-de-verificacao [codigo]="c.envio.hashIntegridade" />
     <p class="u-body-sm">
       Este código identifica exatamente o conteúdo deste comprovante. Qualquer alteração no que foi
       enviado gera um código diferente.
     </p>
   </ui-secao-de-documento>
 
-  @if (prazo(); as prazo) {
+  @if (c.prazoDaCorrecao; as prazo) {
   <ui-secao-de-documento titulo="Próximos passos" largura="inteira">
     @if (prazo.aberto) {
     <p>
       Você pode corrigir a inscrição até
-      <time [attr.datetime]="prazo.fimIso">{{ prazo.fim }}</time>. A inscrição que vale é a última
+      <time [attr.datetime]="prazo.fim">{{ fimDoPrazo() }}</time>. A inscrição que vale é a última
       enviada.
     </p>
-    <a
-      class="btn btn--secondary u-no-print"
-      [routerLink]="['/inscricao', c.inscricao.processoSeletivoId]"
-    >
+    <a class="btn btn--secondary u-no-print" [routerLink]="['/inscricao', c.processoSeletivoId]">
       Corrigir dados
     </a>
     } @else {

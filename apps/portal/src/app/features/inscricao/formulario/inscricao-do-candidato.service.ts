@@ -3,7 +3,7 @@ import type { ApiResult } from '@uniplus/shared-core/http';
 import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
-  ComprovanteInscricaoDto,
+  ReciboDaInscricaoDto,
   InscricaoDto,
   InscricaoRequest,
 } from '@uniplus/shared-data/selecao';
@@ -31,5 +31,5 @@ export abstract class InscricaoDoCandidatoService {
     processoId: string,
     request: InscricaoRequest,
     eTag: string,
-  ): Observable<ApiResult<ComprovanteInscricaoDto>>;
+  ): Observable<ApiResult<ReciboDaInscricaoDto>>;
 }

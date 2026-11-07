@@ -11,7 +11,7 @@ import { type ApiResult, apiFailure, apiOk, apiResultInterceptor } from '@uniplu
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
-  type ComprovanteInscricaoDto,
+  type ReciboDaInscricaoDto,
   type FormularioRenderizavelDto,
   type InscricaoDto,
   type InscricaoRequest,
@@ -44,6 +44,13 @@ const DIREITO: OfertaDaInscricao = { id: 'oferta-2', nome: 'Direito — Marabá'
 const ENGENHARIA: OfertaDaInscricao = { id: 'oferta-3', nome: 'Engenharia da Computação — Marabá' };
 
 const ok = <T>(data: T): Observable<ApiResult<T>> => of(apiOk(data, 200, new HttpHeaders()));
+
+const RECIBO: ReciboDaInscricaoDto = {
+  inscricaoId: '0199e000-0000-7000-8000-0000000000e1',
+  numeroInscricao: '2027-000001',
+  numeroDoComprovante: 2,
+  instante: '2026-11-07T15:00:00Z',
+};
 
 const SEM_DOCUMENTOS: AvaliacaoDaInscricaoDto['documentos'] = { fases: [] };
 
@@ -154,7 +161,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   readonly salvos: InscricaoRequest[] = [];
   readonly enviados: InscricaoRequest[] = [];
   readonly avaliacoes: AvaliacaoDaInscricaoRequest[] = [];
-  recusaDoEnvio: ApiResult<ComprovanteInscricaoDto> | null = null;
+  recusaDoEnvio: ApiResult<ReciboDaInscricaoDto> | null = null;
 
   /** A inscrição como a API a devolve: com as ofertas e o número de opções da versão fixada. */
   private lida(): InscricaoDto {
@@ -182,7 +189,7 @@ class ServicoDublê extends InscricaoDoCandidatoService {
   };
   submeter = (_: string, request: InscricaoRequest) => {
     this.enviados.push(request);
-    return this.recusaDoEnvio ? of(this.recusaDoEnvio) : ok({} as ComprovanteInscricaoDto);
+    return this.recusaDoEnvio ? of(this.recusaDoEnvio) : ok(RECIBO);
   };
 }
 
@@ -913,7 +920,7 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.submeter = (_: string, request: InscricaoRequest, eTag?: string) => {
       eTags.push(eTag ?? '');
       servico.enviados.push(request);
-      return ok({} as ComprovanteInscricaoDto);
+      return ok(RECIBO);
     };
     await clicar(botao(tela, 'Enviar inscrição'));
 
@@ -1157,6 +1164,22 @@ describe('InscricaoDoCandidatoPage', () => {
     expect(tela.querySelector('#inscricao-correcao')).not.toBeNull();
   });
 
+  it('o envio feito mostra o número do recibo e leva ao comprovante emitido', async () => {
+    servico.inscricao = inscricao(RESPONDIDA);
+    const tela = await abrir();
+
+    await clicar(botao(tela, 'Enviar inscrição'));
+
+    expect(tela.textContent).toContain('Sua inscrição recebeu o número 2027-000001');
+    expect(tela.querySelector('[aria-live]')?.textContent).toBe(
+      'Inscrição enviada. Número 2027-000001.',
+    );
+    const link = Array.from(tela.querySelectorAll('a')).find(
+      (a) => a.textContent?.trim() === 'Ver o comprovante',
+    );
+    expect(link?.getAttribute('href')).toBe(`/inscricao/comprovante/${RECIBO.inscricaoId}/2`);
+  });
+
   it('a falha sem resposta cujo envio o servidor gravou não diz que a inscrição não foi gravada', async () => {
     servico.inscricao = inscricao(RESPONDIDA);
     const tela = await abrir();
@@ -1231,7 +1254,7 @@ describe('InscricaoDoCandidatoPage', () => {
     servico.submeter = (_: string, request: InscricaoRequest, eTag?: string) => {
       eTags.push(eTag ?? '');
       servico.enviados.push(request);
-      return ok({} as ComprovanteInscricaoDto);
+      return ok(RECIBO);
     };
     await clicar(botao(tela, 'Enviar inscrição'));
 

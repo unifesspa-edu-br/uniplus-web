@@ -37,7 +37,7 @@ function inscricao(
       podeCancelar: enviada && aberta,
       podeDescartar: rascunho && aberta,
     },
-    comprovantes: [],
+    numeroDoUltimoComprovante: rascunho || situacao === SituacaoInscricao.cancelada ? null : 3,
   };
 }
 
@@ -229,7 +229,7 @@ describe('InscricaoListaPage', () => {
     expect(btn?.classList.contains('btn--tertiary')).toBe(false);
   });
 
-  it('inscrição enviada exibe "Ver comprovante" e abre o comprovante da última submissão', async () => {
+  it('inscrição enviada exibe "Ver comprovante" e abre o último comprovante, pelo número que a API informa', async () => {
     listagemService.flush(INSCRICOES);
     await propagate();
     fixture.detectChanges();
@@ -240,7 +240,7 @@ describe('InscricaoListaPage', () => {
     expect(btn).toBeTruthy();
     btn?.click();
 
-    expect(navegar).toHaveBeenCalledWith(['/inscricao', 'comprovante', 'i-p2']);
+    expect(navegar).toHaveBeenCalledWith(['/inscricao', 'comprovante', 'i-p2', 3]);
   });
 
   it('as ações vêm das permissões da API: enviada com as inscrições abertas, rascunho e encerrada', async () => {
@@ -262,7 +262,7 @@ describe('InscricaoListaPage', () => {
     expect(rotulosDe(itens[3])).toEqual([]);
   });
 
-  it('a cancelada e a nova do mesmo processo aparecem as duas, cada uma com a sua chave', async () => {
+  it('sem número de comprovante da API, a cancelada mostra só os dados básicos, sem "Ver comprovante", e a nova do mesmo processo aparece ao lado, cada uma com a sua chave', async () => {
     const cancelada = {
       ...inscricao('p1', SituacaoInscricao.cancelada, 'Medicina 2027'),
       inscricaoId: 'i-velha',
@@ -279,7 +279,7 @@ describe('InscricaoListaPage', () => {
     expect(itens.length).toBe(2);
     expect(itens[0].textContent).toContain('Cancelada');
     expect(itens[0].textContent).toContain('Motivo: Mudei de curso');
-    expect(rotulosDe(itens[0])).toEqual(['Ver comprovante']);
+    expect(rotulosDe(itens[0])).toEqual([]);
     expect(rotulosDe(itens[1])).toEqual(['Continuar inscrição', 'Descartar rascunho']);
   });
 

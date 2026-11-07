@@ -11,6 +11,8 @@ import {
   PageHeaderComponent,
   SpinnerComponent,
   TagComponent,
+  rotuloDaSituacaoDaInscricao,
+  varianteDaSituacaoDaInscricao,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
@@ -24,7 +26,6 @@ import {
   type PedidoDeRevelacao,
 } from './respostas-da-inscricao.component';
 import { SecoesDaInscricaoComponent } from './secoes-da-inscricao.component';
-import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
 
 /**
  * O detalhe de uma inscrição enviada, para quem opera o processo, com os arquivos que o candidato
@@ -63,8 +64,8 @@ export class DetalheDaInscricaoPage {
   protected readonly detalhe = inject(DetalheDaInscricao);
   protected readonly arquivoAberto = inject(AberturaDeArquivo);
 
-  protected readonly rotuloDaSituacao = rotuloDaSituacao;
-  protected readonly varianteDaSituacao = varianteDaSituacao;
+  protected readonly rotuloDaSituacaoDaInscricao = rotuloDaSituacaoDaInscricao;
+  protected readonly varianteDaSituacaoDaInscricao = varianteDaSituacaoDaInscricao;
 
   protected readonly inscricao = this.detalhe.inscricao;
 

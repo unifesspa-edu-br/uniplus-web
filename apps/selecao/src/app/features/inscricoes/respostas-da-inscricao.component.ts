@@ -15,9 +15,11 @@ import {
   AlertComponent,
   DadoDirective,
   ListaDeDadosComponent,
-  TagComponent,
+  RespostaExibidaComponent,
   ValorApresentadoComponent,
   type UiValorEmConsulta,
+  valorExibido,
+  type ValorExibido,
 } from '@uniplus/shared-ui/components';
 
 import {
@@ -25,8 +27,6 @@ import {
   chaveDoCampo,
   type RevelacaoDoCampo,
 } from './detalhe-da-inscricao.service';
-import { rotuloDaSituacao, varianteDaSituacao } from './situacao-da-inscricao';
-import { valorExibido, type ValorExibido } from './valor-da-resposta';
 
 /** O pedido de revelar um campo: o fato e, quando o item está em grupo, a ocorrência. */
 export interface PedidoDeRevelacao {
@@ -41,9 +41,7 @@ interface RespostaExibida {
   readonly rotulo: string;
   readonly descricao: string;
   readonly podeRevelar: boolean;
-  readonly linhas: readonly string[] | null;
-  readonly situacao: string | null;
-  readonly valor: UiValorEmConsulta;
+  readonly exibido: ValorExibido;
   /** A forma mascarada, a única que vai para o papel. */
   readonly mascarado: UiValorEmConsulta;
   readonly revelacao: RevelacaoDoCampo | null;
@@ -73,14 +71,8 @@ function respostaExibida(
   const original = valorExibido(item.tipo, item.valor, item.componente);
   const mascarado = 'valor' in original ? original.valor : null;
   const valor = revelacao?.estado === 'revelado' ? revelacao.valor : item.valor;
-  const exibido: ValorExibido = valorExibido(item.tipo, valor, item.componente);
-  const pronto = { ...base, mascarado };
-  if ('linhas' in exibido)
-    return { ...pronto, linhas: exibido.linhas, situacao: null, valor: null };
-  if ('situacao' in exibido) {
-    return { ...pronto, linhas: null, situacao: exibido.situacao, valor: null };
-  }
-  return { ...pronto, linhas: null, situacao: null, valor: exibido.valor };
+  const exibido = valorExibido(item.tipo, valor, item.componente);
+  return { ...base, mascarado, exibido };
 }
 
 /**
@@ -97,7 +89,7 @@ function respostaExibida(
     AlertComponent,
     DadoDirective,
     ListaDeDadosComponent,
-    TagComponent,
+    RespostaExibidaComponent,
     ValorApresentadoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -111,17 +103,7 @@ function respostaExibida(
             [attr.tabindex]="resposta.podeRevelar ? -1 : null"
           >
             <span [class.u-no-print]="resposta.revelacao?.estado === 'revelado'">
-              @if (resposta.linhas; as linhas) {
-                @for (linha of linhas; track $index) {
-                  <span class="resposta__linha">{{ linha }}</span>
-                }
-              } @else if (resposta.situacao; as situacao) {
-                <ui-tag [variant]="varianteDaSituacao(situacao)">{{
-                  rotuloDaSituacao(situacao)
-                }}</ui-tag>
-              } @else {
-                <ui-valor-apresentado [valor]="resposta.valor" />
-              }
+              <ui-resposta-exibida [exibido]="resposta.exibido" />
             </span>
             @if (resposta.revelacao?.estado === 'revelado') {
               <span class="u-print-only" aria-hidden="true">
@@ -179,10 +161,6 @@ function respostaExibida(
     </ui-lista-de-dados>
   `,
   styles: `
-    .resposta__linha {
-      display: block;
-      overflow-wrap: anywhere;
-    }
     .resposta__revelar {
       margin-inline-start: var(--space-2);
     }
@@ -211,9 +189,6 @@ export class RespostasDaInscricaoComponent {
   readonly revelacoes = input<ReadonlyMap<string, RevelacaoDoCampo>>(new Map());
   readonly revelar = output<PedidoDeRevelacao>();
   readonly ocultar = output<PedidoDeRevelacao>();
-
-  protected readonly rotuloDaSituacao = rotuloDaSituacao;
-  protected readonly varianteDaSituacao = varianteDaSituacao;
 
   protected readonly respostas = computed(() => {
     const ocorrencia = this.ocorrenciaId();

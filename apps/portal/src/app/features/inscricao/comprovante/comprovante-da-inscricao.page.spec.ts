@@ -2,189 +2,159 @@ import { HttpHeaders } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { type Observable, of, Subject } from 'rxjs';
+import { type Observable, of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
-import {
-  type CertamePublicadoDto,
-  type ComprovanteInscricaoDto,
-  type FormularioRenderizavelDto,
-  type MinhaInscricaoDto,
-  SituacaoInscricao,
-} from '@uniplus/shared-data/selecao';
+import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
 import { ComprovanteDaInscricaoPage } from './comprovante-da-inscricao.page';
 
-const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
 const SEM_CABECALHOS = new HttpHeaders();
-/** O que o teste muda nas respostas do comprovante. */
-let respostasAlteradas: Record<string, unknown> = {};
+const INSCRICAO_ID = '0199e000-0000-7000-8000-0000000000e1';
+const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
+const HASH = 'f0e1d2c3b4a5968778695a4b3c2d1e0f00112233445566778899aabbccddeeff';
+const FUSO = { id: 'America/Belem', nome: 'Belém (PA)' };
 
 /** Fernanda Drumond, persona fictícia do portal de documentação. */
 const CPF_DA_CONTA = '69959836371';
 const cpfDoLogin = signal(CPF_DA_CONTA);
 const usuario = { user: () => ({ cpf: cpfDoLogin() }) };
 
-const FUSO = { id: 'America/Belem', nome: 'Belém (PA)' };
-
-const FORMULARIO = {
-  etapas: [{ codigo: 'DADOS_BASICOS', ordem: 0, tipo: 'SECAO', titulo: 'Dados do candidato' }],
-  fatosColetados: [
-    {
-      fatoCodigo: 'NOME',
-      ordem: 0,
-      rotulo: 'Nome completo',
-      tipoRenderizacao: 'TEXTO',
-      etapaCodigo: 'DADOS_BASICOS',
-    },
-    {
-      fatoCodigo: 'DESEJA_NOME_SOCIAL',
-      ordem: 1,
-      rotulo: 'Deseja usar nome social?',
-      tipoRenderizacao: 'BOOLEANO',
-      etapaCodigo: 'DADOS_BASICOS',
-    },
-    {
-      fatoCodigo: 'NOME_SOCIAL',
-      ordem: 2,
-      rotulo: 'Nome social',
-      tipoRenderizacao: 'TEXTO',
-      etapaCodigo: 'DADOS_BASICOS',
-    },
-    {
-      fatoCodigo: 'NATURALIDADE_MUNICIPIO',
-      ordem: 3,
-      rotulo: 'Município de nascimento',
-      tipoRenderizacao: 'MUNICIPIO',
-      etapaCodigo: 'DADOS_BASICOS',
-    },
-  ],
-  grupos: [],
-  termos: [{ codigo: 'VERACIDADE', nome: 'Declaração de veracidade' }],
-  pressupostos: [],
-} as unknown as FormularioRenderizavelDto;
-
-type ModalidadesDoComprovante = ComprovanteInscricaoDto['modalidades'];
-
-/** O primeiro envio concorre em duas modalidades, gravadas fora da ordem; a correção, em uma. */
-const MODALIDADES_POR_ENVIO: Record<number, ModalidadesDoComprovante> = {
-  1: [
-    { codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 1 },
-    { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 },
-  ],
-  2: [{ codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 }],
-};
-/** Nulo quando o processo não define pela inscrição as modalidades de concorrência. */
-let modalidadesDoEnvio = (numero: number): ModalidadesDoComprovante =>
-  MODALIDADES_POR_ENVIO[numero];
-
-/** A 2ª opção que o envio declarou e as modalidades dela; nulas quando o envio não a declarou. */
-let segundaOpcaoDoEnvio: { id: string; modalidades: ModalidadesDoComprovante } | null = null;
-/** Quantas opções de curso o processo admite. */
-let opcoesDoProcesso = 1;
-
-/** Os documentos que o envio registrou; vazio quando o processo não exigiu documento. */
-let documentosDoEnvio: ComprovanteInscricaoDto['documentos'] = [];
-
-/** Fernanda Drumond, persona fictícia do portal de documentação, que prefere o nome social. */
-function comprovante(numeroInscricao: string, numero: number): ComprovanteInscricaoDto {
+/** O envio 2 de 2 (o que vale) de Fernanda Drumond, que prefere o nome social. */
+function comprovanteBase(): ComprovanteDaInscricaoDto {
   return {
-    cpfMascarado: '***.598.363-**',
-    numeroInscricao,
-    instante: '2026-12-11T13:30:00Z',
-    fusoHorario: FUSO,
-    hashIntegridade: 'a'.repeat(64),
-    ofertaCursoId: 'o2',
-    ofertaCursoSegundaOpcaoId: segundaOpcaoDoEnvio?.id ?? null,
-    respostas: {
-      NOME: 'Fernanda Laura Nicole Drumond',
-      DESEJA_NOME_SOCIAL: true,
-      NOME_SOCIAL: 'Ariel Drumond',
-      NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },
-      ...respostasAlteradas,
+    inscricaoId: INSCRICAO_ID,
+    numero: 2,
+    total: 2,
+    vale: true,
+    numeroAnterior: 1,
+    numeroSeguinte: null,
+    processoSeletivoId: PROCESSO,
+    nomeDoProcesso: 'Medicina 2027',
+    identificadorDoProcesso: 'Edital 001/2026',
+    unidadeAdministradora: 'Centro de Processos Seletivos',
+    envio: {
+      numeroInscricao: '2027-000042',
+      enviadoEm: '2026-12-11T13:30:00Z',
+      fusoHorario: FUSO,
+      hashIntegridade: 'a'.repeat(64),
     },
-    derivados: {},
-    grupos: {},
-    aceites: [{ codigo: 'VERACIDADE', versaoId: 'v1', hashVersao: 'h1' }],
-    modalidades: modalidadesDoEnvio(numero),
-    modalidadesSegundaOpcao: segundaOpcaoDoEnvio?.modalidades ?? null,
-    documentos: documentosDoEnvio,
+    candidato: {
+      nomeCivil: 'Fernanda Laura Nicole Drumond',
+      nomeSocial: 'Ariel Drumond',
+      usaNomeSocial: true,
+      cpfMascarado: '***.598.363-**',
+    },
+    prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: true },
+    numeroDeOpcoesDeCurso: 1,
+    opcoesDeCurso: [
+      {
+        ordem: 1,
+        nome: 'Direito (Bacharelado) — Campus Marabá',
+        modalidades: [
+          { codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 1 },
+          { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 },
+        ],
+      },
+    ],
+    secoes: [
+      {
+        codigo: 'DADOS_BASICOS',
+        titulo: 'Dados do candidato',
+        itens: [
+          {
+            rotulo: 'Município de nascimento',
+            descricao: '',
+            tipo: 'opcao',
+            componente: 'padrao',
+            valor: { codigo: '2927408', rotulo: 'Salvador' },
+          },
+          {
+            rotulo: 'Data de nascimento',
+            descricao: '',
+            tipo: 'data',
+            componente: 'padrao',
+            valor: '2001-03-09',
+          },
+        ],
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            rotulo: 'Composição familiar',
+            ocorrencias: [
+              {
+                id: 'o1',
+                titulo: 'Você (candidato)',
+                itens: [
+                  {
+                    rotulo: 'Renda mensal',
+                    descricao: '',
+                    tipo: 'numero',
+                    componente: 'moeda',
+                    valor: '1234.5',
+                  },
+                ],
+              },
+              {
+                id: 'o2',
+                titulo: 'Integrante 1',
+                itens: [
+                  {
+                    rotulo: 'Renda mensal',
+                    descricao: '',
+                    tipo: 'numero',
+                    componente: 'moeda',
+                    valor: '800',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    derivados: [
+      {
+        rotulo: 'Faixa etária',
+        descricao: '',
+        tipo: 'texto',
+        componente: 'padrao',
+        valor: '25 a 29 anos',
+      },
+    ],
+    termosAceitos: [
+      { codigo: 'VERACIDADE', nome: 'Declaração de veracidade', versaoId: 'v1', hashVersao: 'h1' },
+    ],
+    documentos: [],
   };
 }
 
-const OFERTA_MEDICINA = {
-  ofertaCursoOrigemId: 'o1',
-  cursoNome: 'Medicina',
-  cursoGrau: 'Bacharelado',
-  unidadeOfertanteNome: 'Campus Marabá',
-  turnos: ['MATUTINO', 'VESPERTINO'],
-};
-const OFERTA_DIREITO = { ...OFERTA_MEDICINA, ofertaCursoOrigemId: 'o2', cursoNome: 'Direito' };
+let alteracoes: Partial<ComprovanteDaInscricaoDto> = {};
+const comprovanteDe = (): ComprovanteDaInscricaoDto => ({ ...comprovanteBase(), ...alteracoes });
 
-let ofertas: readonly (typeof OFERTA_MEDICINA)[] = [OFERTA_MEDICINA];
-/** O fim do período de inscrição, que decide se o envio ainda se corrige. */
-let fimDoPeriodo = '2999-12-31T02:59:00Z';
-/** O que a API diz sobre corrigir a inscrição agora; a tela não decide pelo relógio. */
-let alteracoesDaInscricao: Partial<MinhaInscricaoDto> = {};
-const NAO_ENCONTRADO = apiFailure(
-  {
-    type: 'about:blank',
-    title: 'Não encontrado',
-    status: 404,
-    code: 'nao_encontrado',
-    traceId: '',
-  },
-  404,
-  SEM_CABECALHOS,
-);
-
-/** Duas submissões: a primeira e a correção. */
-const INSCRICAO_ID = '0199e000-0000-7000-8000-0000000000e1';
-const INSCRICAO = {
-  inscricaoId: INSCRICAO_ID,
-  processoSeletivoId: PROCESSO,
-  nomeDoProcesso: 'Medicina 2027',
-  numeroInscricao: '00000042',
-  situacao: 'submetida',
-  opcoesDeCurso: [{ ordem: 1, cursoNome: 'Medicina', cursoGrau: 'Bacharelado' }],
-  canceladaEm: null,
-  motivoDoCancelamento: null,
-  acoes: { podeContinuar: false, podeCorrigir: true, podeCancelar: true, podeDescartar: false },
-  comprovantes: [
-    { numero: 1, instante: '2026-12-11T13:30:00Z' },
-    { numero: 2, instante: '2026-12-12T09:00:00Z' },
-  ],
-} as MinhaInscricaoDto;
+function falha(
+  status: number,
+  code: string,
+  title = 'Falha',
+): ApiResult<ComprovanteDaInscricaoDto> {
+  return apiFailure(
+    { type: 'about:blank', title, status, code, traceId: '' },
+    status,
+    SEM_CABECALHOS,
+  );
+}
 
 const servico = {
-  listar: () => of(apiOk([{ ...INSCRICAO, ...alteracoesDaInscricao }], 200, SEM_CABECALHOS)),
-  comprovante: (_: string, numero: number) =>
-    of(numero <= 2 ? apiOk(comprovante('00000042', numero), 200, SEM_CABECALHOS) : NAO_ENCONTRADO),
-  formulario: () => of(apiOk(FORMULARIO, 200, SEM_CABECALHOS)),
-  certame: (): Observable<ApiResult<CertamePublicadoDto | null>> =>
-    of(
-      apiOk(
-        {
-          nome: 'Medicina 2027',
-          identificadorLegivel: 'Edital 001/2026',
-          unidadeAdministradora: { nome: 'Centro de Processos Seletivos' },
-          periodo: { inicio: '2026-12-01T03:00:00Z', fim: fimDoPeriodo },
-          localidade: { fusoHorario: FUSO },
-          ofertas,
-          opcoesDeCurso: { numero: opcoesDoProcesso },
-        } as unknown as CertamePublicadoDto,
-        200,
-        SEM_CABECALHOS,
-      ),
-    ),
+  comprovante: (_: string, numero: number): Observable<ApiResult<ComprovanteDaInscricaoDto>> =>
+    of(apiOk({ ...comprovanteDe(), numero }, 200, SEM_CABECALHOS)),
 };
 
 let fixture: ComponentFixture<ComprovanteDaInscricaoPage>;
 
-async function abrir(numero?: string): Promise<HTMLElement> {
+async function abrir(numero = '2'): Promise<HTMLElement> {
   TestBed.configureTestingModule({
     imports: [ComprovanteDaInscricaoPage],
     providers: [
@@ -195,7 +165,7 @@ async function abrir(numero?: string): Promise<HTMLElement> {
   });
   fixture = TestBed.createComponent(ComprovanteDaInscricaoPage);
   fixture.componentRef.setInput('inscricaoId', INSCRICAO_ID);
-  if (numero) fixture.componentRef.setInput('numero', numero);
+  fixture.componentRef.setInput('numero', numero);
   await atualizar();
   return fixture.nativeElement as HTMLElement;
 }
@@ -206,8 +176,15 @@ async function atualizar(): Promise<void> {
   fixture.detectChanges();
 }
 
+const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
+
 const links = (tela: HTMLElement): string[] =>
   Array.from(tela.querySelectorAll('nav a')).map((a) => a.textContent?.trim() ?? '');
+
+const hrefDe = (tela: HTMLElement, texto: string): string | null | undefined =>
+  Array.from(tela.querySelectorAll('a'))
+    .find((a) => a.textContent?.trim() === texto)
+    ?.getAttribute('href');
 
 /** A seção do comprovante pelo título dela. */
 const secao = (tela: HTMLElement, titulo: string): HTMLElement | null =>
@@ -215,264 +192,468 @@ const secao = (tela: HTMLElement, titulo: string): HTMLElement | null =>
     (s) => s.querySelector('.secao-de-documento__titulo')?.textContent?.trim() === titulo,
   ) as HTMLElement | undefined) ?? null;
 
-const modalidadesNaTela = (tela: HTMLElement): string[] =>
-  Array.from(
-    secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul > li') ?? [],
-  ).map((li) => li.textContent?.trim() ?? '');
-
-const dado = (tela: HTMLElement, rotulo: string): string | null => {
+const dado = (tela: Element, rotulo: string): string | null => {
   const par = Array.from(tela.querySelectorAll('dl > div')).find(
     (d) => d.querySelector('dt')?.textContent?.trim() === rotulo,
   );
   return par?.querySelector('dd')?.textContent?.trim().replace(/\s+/g, ' ') ?? null;
 };
 
+const botaoDeTentar = (tela: HTMLElement): HTMLButtonElement | undefined =>
+  Array.from(tela.querySelectorAll('button')).find(
+    (botao) => botao.textContent?.trim() === 'Tentar novamente',
+  );
+
 describe('ComprovanteDaInscricaoPage', () => {
   afterEach(() => {
     cpfDoLogin.set(CPF_DA_CONTA);
-    fimDoPeriodo = '2999-12-31T02:59:00Z';
-    alteracoesDaInscricao = {};
-    modalidadesDoEnvio = (numero) => MODALIDADES_POR_ENVIO[numero];
-    respostasAlteradas = {};
-    segundaOpcaoDoEnvio = null;
-    opcoesDoProcesso = 1;
-    documentosDoEnvio = [];
+    alteracoes = {};
     vi.restoreAllMocks();
   });
 
-  const HASH = 'f0e1d2c3b4a5968778695a4b3c2d1e0f00112233445566778899aabbccddeeff';
+  describe('exibição do que a API devolve', () => {
+    it('lê o comprovante uma única vez, pelo id da inscrição e pelo número da rota', async () => {
+      const ler = vi.spyOn(servico, 'comprovante');
 
-  it('lista cada documento com a exigência, a situação, a consequência e o código de cada arquivo', async () => {
-    documentosDoEnvio = [
-      {
-        exigenciaId: 'e1',
-        tipoDocumentoCodigo: 'LAUDO',
-        nome: 'Laudo médico',
-        obrigatorio: true,
-        situacao: 'SATISFEITA',
-        ocorrenciaId: null,
-        consequencia: 'Indeferimento da inscrição',
-        arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
-      },
-      {
-        exigenciaId: 'e2',
-        tipoDocumentoCodigo: 'ATESTADO',
-        nome: 'Atestado',
-        obrigatorio: false,
-        situacao: 'DISPENSADA',
-        ocorrenciaId: null,
-        consequencia: null,
-        arquivos: [],
-      },
-    ];
-    const tela = await abrir();
+      await abrir('2');
 
-    const documentos = secao(tela, 'Documentos enviados') as HTMLElement;
-    const [laudo, atestado] = Array.from(documentos.querySelectorAll('ui-secao-de-documento'));
-    expect(laudo.textContent).toContain('Laudo médico');
-    expect(dado(laudo as HTMLElement, 'Exigência')).toBe('Obrigatório');
-    expect(dado(laudo as HTMLElement, 'Situação')).toBe('Atendido');
-    expect(dado(laudo as HTMLElement, 'Consequência de não atender')).toBe(
-      'Indeferimento da inscrição',
-    );
-    const arquivo = laudo.querySelector('li')?.textContent?.replace(/\s+/g, ' ');
-    expect(arquivo).toContain('PDF · 2,0 KB');
-    expect(laudo.querySelector('code[title]')?.textContent).toBe('f0e1d2c3…ccddeeff');
-    expect(laudo.querySelector('details code')?.textContent).toBe(HASH);
-    expect(dado(atestado as HTMLElement, 'Exigência')).toBe('Facultativo');
-    expect(dado(atestado as HTMLElement, 'Situação')).toBe('Dispensado');
-    expect(dado(atestado as HTMLElement, 'Consequência de não atender')).toBeNull();
-    expect(atestado.querySelector('li')).toBeNull();
-  });
+      expect(ler).toHaveBeenCalledExactlyOnceWith(INSCRICAO_ID, 2);
+    });
 
-  it('sem documento exigido, a seção não aparece', async () => {
-    const tela = await abrir();
-
-    expect(secao(tela, 'Documentos enviados')).toBeNull();
-  });
-
-  it('o titular revela o CPF do login para conferir, sem nova consulta', async () => {
-    const tela = await abrir();
-    const consultas = (Object.keys(servico) as (keyof typeof servico)[]).map((metodo) =>
-      vi.spyOn(servico, metodo),
-    );
-
-    (tela.querySelector('button[aria-label="Mostrar CPF"]') as HTMLButtonElement).click();
-    await atualizar();
-
-    expect(tela.querySelector('.dado-revelavel__tela')?.textContent?.trim()).toBe('699.598.363-71');
-    for (const consulta of consultas) expect(consulta).not.toHaveBeenCalled();
-  });
-
-  it('sem conferir com o CPF do comprovante, o do login não se revela', async () => {
-    // Kevin Carvalho, outra persona fictícia.
-    cpfDoLogin.set('33257350376');
-    const tela = await abrir();
-
-    expect(tela.querySelector('button[aria-label="Mostrar CPF"]')).toBeNull();
-    expect(tela.textContent).toContain('***.598.363-**');
-    expect(tela.textContent).not.toContain('332.573.503-76');
-  });
-
-  it('com nome social, ele vem em destaque e o nome civil em seguida, sem se repetirem nas respostas', async () => {
-    const tela = await abrir();
-
-    expect(dado(tela, 'Uso do nome social')).toBe('Sim');
-    expect(dado(tela, 'Nome social')).toBe('Ariel Drumond');
-    expect(dado(tela, 'Nome civil')).toBe('Fernanda Laura Nicole Drumond');
-    expect(dado(tela, 'Nome')).toBeNull();
-    expect(dado(tela, 'Nome completo')).toBeNull();
-    expect(dado(tela, 'Deseja usar nome social?')).toBeNull();
-  });
-
-  it('sem uso do nome social, o comprovante registra "Não" e não mostra nome social algum', async () => {
-    respostasAlteradas = { DESEJA_NOME_SOCIAL: false };
-    const tela = await abrir();
-
-    expect(dado(tela, 'Uso do nome social')).toBe('Não');
-    expect(dado(tela, 'Nome')).toBe('Fernanda Laura Nicole Drumond');
-    expect(dado(tela, 'Nome social')).toBeNull();
-    expect(tela.textContent).not.toContain('Ariel Drumond');
-  });
-
-  it('quando o formulário não coleta o uso do nome social, o comprovante não registra o dado', async () => {
-    respostasAlteradas = { DESEJA_NOME_SOCIAL: undefined, NOME_SOCIAL: undefined };
-    const tela = await abrir();
-
-    expect(dado(tela, 'Uso do nome social')).toBeNull();
-    expect(dado(tela, 'Nome')).toBe('Fernanda Laura Nicole Drumond');
-  });
-
-  it('o município de nascimento aparece pelo nome e pela UF, não pelo código', async () => {
-    const tela = await abrir();
-
-    expect(dado(tela, 'Município de nascimento')).toBe('Salvador');
-    expect(tela.textContent).not.toContain('2927408');
-  });
-
-  it('o envio sai no fuso do processo, com o nome dele', async () => {
-    const tela = await abrir();
-
-    expect(dado(tela, 'Enviado em')).toBe('11/12/2026, 10:30, horário de Belém (PA)');
-  });
-
-  it('o último envio é o que vale e se corrige até o fim do período', async () => {
-    const tela = await abrir();
-
-    expect(dado(tela, 'Situação')).toBe('É o que vale');
-    expect(tela.textContent).toContain('Envio 2 de 2');
-    expect(tela.textContent).toContain('Você pode corrigir a inscrição até');
-    expect(links(tela)).toEqual(['‹ Envio anterior']);
-    expect(tela.querySelector('.alert')).toBeNull();
-  });
-
-  it('o envio anterior foi substituído: avisa, aponta o mais recente e não oferece correção', async () => {
-    const tela = await abrir('1');
-
-    expect(dado(tela, 'Situação')).toBe('Substituído');
-    expect(tela.textContent).toContain('Envio 1 de 2');
-    expect(tela.querySelector('[aria-live="polite"] .alert')?.textContent).toContain(
-      'Este envio foi substituído por um mais recente.',
-    );
-    expect(tela.textContent).not.toContain('Corrigir dados');
-    expect(tela.textContent).not.toContain('Próximos passos');
-  });
-
-  it('sem a permissão de corrigir que a API dá, diz que não se corrige mais e não oferece correção', async () => {
-    fimDoPeriodo = '2026-01-16T02:59:00Z';
-    alteracoesDaInscricao = {
-      acoes: {
-        podeContinuar: false,
-        podeCorrigir: false,
-        podeCancelar: false,
-        podeDescartar: false,
-      },
-    };
-    const tela = await abrir();
-
-    expect(tela.textContent).toContain('Não é mais possível corrigir esta inscrição.');
-    expect(tela.textContent).not.toContain('Corrigir dados');
-  });
-
-  it('a inscrição cancelada mostra a etiqueta e o motivo, lê o comprovante pelo id e não usa o formulário do processo', async () => {
-    alteracoesDaInscricao = {
-      situacao: SituacaoInscricao.cancelada,
-      canceladaEm: '2026-12-13T12:00:00Z',
-      motivoDoCancelamento: 'Mudei de curso',
-      acoes: {
-        podeContinuar: false,
-        podeCorrigir: false,
-        podeCancelar: false,
-        podeDescartar: false,
-      },
-    };
-    const formulario = vi.spyOn(servico, 'formulario');
-    const comprovante = vi.spyOn(servico, 'comprovante');
-
-    const tela = await abrir('1');
-
-    expect(dado(tela, 'Situação')).toBe('Cancelada');
-    expect(tela.querySelector('[aria-live="polite"] .alert')).toBeNull();
-    expect(dado(tela, 'Motivo do cancelamento')).toBe('Mudei de curso');
-    expect(dado(tela, 'Cancelada em')).toBe('13/12/2026, 09:00, horário de Belém (PA)');
-    expect(tela.textContent).toContain('ela foi cancelada');
-    expect(tela.textContent).not.toContain('Corrigir dados');
-    expect(formulario).not.toHaveBeenCalled();
-    expect(comprovante).toHaveBeenCalledWith(INSCRICAO_ID, 1);
-  });
-
-  it('ao abrir, o foco vai ao título do documento', async () => {
-    const tela = await abrir();
-
-    expect(document.activeElement).toBe(tela.querySelector('h1'));
-  });
-
-  it('a falha transitória ao ler o certame leva ao erro com nova tentativa, não ao comprovante sem prazo', async () => {
-    vi.spyOn(servico, 'certame').mockReturnValue(
-      of(
-        apiFailure(
-          {
-            type: 'about:blank',
-            title: 'Serviço indisponível',
-            status: 503,
-            code: 'indisponivel',
-            traceId: '',
-          },
-          503,
-          SEM_CABECALHOS,
-        ),
-      ),
-    );
-
-    const tela = await abrir();
-
-    expect(tela.textContent).not.toContain('Imprimir comprovante');
-    expect(tela.textContent).toContain('Tentar novamente');
-  });
-
-  describe('nova tentativa depois do erro', () => {
-    const indisponivel = (): ApiResult<CertamePublicadoDto> =>
-      apiFailure(
-        {
-          type: 'about:blank',
-          title: 'Serviço indisponível',
-          status: 503,
-          code: 'indisponivel',
-          traceId: '',
-        },
-        503,
-        SEM_CABECALHOS,
-      );
-    const situacao = (tela: HTMLElement): string =>
-      tela.querySelector('ui-situacao-da-nova-tentativa')?.textContent ?? '';
-    const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
-
-    it('a leitura que dá certo tira o alerta e deixa o foco no título do documento', async () => {
-      vi.spyOn(servico, 'certame').mockReturnValueOnce(of(indisponivel()));
+    it('mostra o processo, o número da inscrição e o instante do envio no fuso, com o nome dele', async () => {
       const tela = await abrir();
-      const tentar = Array.from(tela.querySelectorAll('button')).find(
-        (botao) => botao.textContent?.trim() === 'Tentar novamente',
-      ) as HTMLButtonElement;
+
+      expect(tela.querySelector('.secao-de-documento__titulo')?.textContent).toContain(
+        'Medicina 2027',
+      );
+      expect(dado(tela, 'Número da inscrição')).toBe('2027-000042');
+      expect(dado(tela, 'Enviado em')).toBe('11/12/2026, 10:30, horário de Belém (PA)');
+    });
+
+    it('mostra o identificador do processo e a unidade administradora congelados', async () => {
+      const tela = await abrir();
+
+      expect(secao(tela, 'Medicina 2027')?.textContent?.replace(/\s+/g, ' ')).toContain(
+        'Processo Edital 001/2026 · Centro de Processos Seletivos',
+      );
+    });
+
+    it('sem identificador do processo, mostra só a unidade', async () => {
+      alteracoes = { identificadorDoProcesso: null };
+      const tela = await abrir();
+
+      const texto = secao(tela, 'Medicina 2027')?.textContent?.replace(/\s+/g, ' ') ?? '';
+      expect(texto).toContain('Centro de Processos Seletivos');
+      expect(texto).not.toContain('Processo ·');
+      expect(texto).not.toContain('Edital 001/2026');
+    });
+
+    it('mostra as seções e os grupos com o rótulo e o valor formatado pelo tipo, sem o código', async () => {
+      const tela = await abrir();
+
+      const dados = secao(tela, 'Dados do candidato') as HTMLElement;
+      expect(dado(dados, 'Município de nascimento')).toBe('Salvador');
+      expect(dado(dados, 'Data de nascimento')).toBe('09/03/2001');
+      expect(tela.textContent).not.toContain('2927408');
+      const familia = secao(tela, 'Composição familiar') as HTMLElement;
+      const ocorrencias = Array.from(familia.querySelectorAll('ui-secao-de-documento'));
+      expect(ocorrencias.map((o) => dado(o, 'Renda mensal'))).toEqual(['R$ 1.234,50', 'R$ 800,00']);
+      expect(familia.textContent).toContain('Integrante 1');
+    });
+
+    it('mostra o que o sistema calculou, sem a seção quando nada foi calculado', async () => {
+      const comCalculo = await abrir();
+      expect(dado(secao(comCalculo, 'Calculado pelo sistema') as HTMLElement, 'Faixa etária')).toBe(
+        '25 a 29 anos',
+      );
+      TestBed.resetTestingModule();
+
+      alteracoes = { derivados: [] };
+      const semCalculo = await abrir();
+
+      expect(secao(semCalculo, 'Calculado pelo sistema')).toBeNull();
+    });
+
+    it('lista os termos aceitos pelo nome e a data do aceite no fuso do envio', async () => {
+      const tela = await abrir();
+
+      const termos = secao(tela, 'Termos aceitos') as HTMLElement;
+      expect(termos.querySelector('li')?.textContent).toBe('Declaração de veracidade');
+      expect(termos.textContent).toContain('Aceitos no envio de 11/12/2026');
+    });
+
+    it('a seção sem título na API aparece como "Outras informações"', async () => {
+      const [secao0] = comprovanteBase().secoes;
+      alteracoes = { secoes: [{ ...secao0, titulo: null }] };
+      const tela = await abrir();
+
+      expect(secao(tela, 'Outras informações')).not.toBeNull();
+      expect(secao(tela, 'Dados do candidato')).toBeNull();
+    });
+
+    it('mostra o código de verificação do envio', async () => {
+      const tela = await abrir();
+
+      expect(secao(tela, 'Código de verificação')?.textContent).toContain('a'.repeat(64));
+    });
+
+    it('lista cada documento com a exigência, a situação, a consequência e o código de cada arquivo', async () => {
+      alteracoes = {
+        documentos: [
+          {
+            nome: 'Laudo médico',
+            integrante: 'Integrante 1',
+            obrigatorio: true,
+            situacao: 'Atendido',
+            consequencia: 'Indeferimento da inscrição',
+            arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
+          },
+          {
+            nome: 'Atestado',
+            integrante: null,
+            obrigatorio: false,
+            situacao: 'Dispensado',
+            consequencia: null,
+            arquivos: [],
+          },
+        ],
+      };
+      const tela = await abrir();
+
+      const documentos = secao(tela, 'Documentos enviados') as HTMLElement;
+      const [laudo, atestado] = Array.from(documentos.querySelectorAll('ui-secao-de-documento'));
+      expect(dado(laudo, 'Refere-se a')).toBe('Integrante 1');
+      expect(dado(laudo, 'Exigência')).toBe('Obrigatório');
+      expect(dado(laudo, 'Situação')).toBe('Atendido');
+      expect(dado(laudo, 'Consequência de não atender')).toBe('Indeferimento da inscrição');
+      expect(laudo.querySelector('li')?.textContent?.replace(/\s+/g, ' ')).toContain(
+        'PDF · 2,0 KB',
+      );
+      expect(laudo.querySelector('code[title]')?.textContent).toBe('f0e1d2c3…ccddeeff');
+      expect(laudo.querySelector('details code')?.textContent).toBe(HASH);
+      expect(dado(atestado, 'Exigência')).toBe('Facultativo');
+      expect(dado(atestado, 'Consequência de não atender')).toBeNull();
+      expect(atestado.querySelector('li')).toBeNull();
+    });
+
+    it('sem documento exigido, a seção não aparece', async () => {
+      const tela = await abrir();
+
+      expect(secao(tela, 'Documentos enviados')).toBeNull();
+    });
+
+    it('ao abrir, o foco vai ao título do documento', async () => {
+      const tela = await abrir();
+
+      expect(document.activeElement).toBe(tela.querySelector('h1'));
+    });
+
+    it('trocar o número na mesma página lê e mostra o outro envio', async () => {
+      const tela = await abrir('2');
+      const ler = vi.spyOn(servico, 'comprovante');
+
+      fixture.componentRef.setInput('numero', '1');
+      await atualizar();
+
+      expect(ler).toHaveBeenCalledExactlyOnceWith(INSCRICAO_ID, 1);
+      expect(tela.textContent).toContain('Envio 1 de 2');
+    });
+  });
+
+  describe('candidato', () => {
+    it('o titular revela o CPF do login para conferir, sem nova leitura', async () => {
+      const tela = await abrir();
+      const ler = vi.spyOn(servico, 'comprovante');
+
+      (tela.querySelector('button[aria-label="Mostrar CPF"]') as HTMLButtonElement).click();
+      await atualizar();
+
+      expect(tela.querySelector('.dado-revelavel__tela')?.textContent?.trim()).toBe(
+        '699.598.363-71',
+      );
+      expect(ler).not.toHaveBeenCalled();
+    });
+
+    it('sem conferir com o CPF do comprovante, o do login não se revela', async () => {
+      // Kevin Carvalho, outra persona fictícia.
+      cpfDoLogin.set('33257350376');
+      const tela = await abrir();
+
+      expect(tela.querySelector('button[aria-label="Mostrar CPF"]')).toBeNull();
+      expect(tela.textContent).toContain('***.598.363-**');
+      expect(tela.textContent).not.toContain('332.573.503-76');
+    });
+
+    it('com nome social, ele vem em destaque e o nome civil em seguida', async () => {
+      const tela = await abrir();
+
+      expect(dado(tela, 'Uso do nome social')).toBe('Sim');
+      expect(dado(tela, 'Nome social')).toBe('Ariel Drumond');
+      expect(dado(tela, 'Nome civil')).toBe('Fernanda Laura Nicole Drumond');
+      expect(dado(tela, 'Nome')).toBeNull();
+    });
+
+    it('sem nome social, mostra só o nome civil', async () => {
+      alteracoes = {
+        candidato: { ...comprovanteBase().candidato, usaNomeSocial: false, nomeSocial: null },
+      };
+      const tela = await abrir();
+
+      expect(dado(tela, 'Nome')).toBe('Fernanda Laura Nicole Drumond');
+      expect(dado(tela, 'Uso do nome social')).toBeNull();
+      expect(tela.textContent).not.toContain('Ariel Drumond');
+    });
+  });
+
+  describe('navegação entre os envios', () => {
+    it('mostra a posição pelo total da API e leva ao envio anterior pelo número que ela informa', async () => {
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('Envio 2 de 2');
+      expect(links(tela)).toEqual(['‹ Envio anterior']);
+      expect(hrefDe(tela, '‹ Envio anterior')).toBe(`/inscricao/comprovante/${INSCRICAO_ID}/1`);
+    });
+
+    it('no primeiro envio oferece só o seguinte', async () => {
+      alteracoes = { total: 3, numeroAnterior: null, numeroSeguinte: 2 };
+      const tela = await abrir('1');
+
+      expect(links(tela)).toEqual(['Envio seguinte ›']);
+      expect(hrefDe(tela, 'Envio seguinte ›')).toBe(`/inscricao/comprovante/${INSCRICAO_ID}/2`);
+    });
+
+    it('o envio que vale leva a etiqueta e não avisa que foi substituído', async () => {
+      const tela = await abrir();
+
+      expect(dado(tela, 'Situação')).toBe('É o que vale');
+      expect(tela.textContent).not.toContain('foi substituído');
+    });
+
+    it('o envio substituído avisa e aponta o último, pelo total, sem oferecer a correção', async () => {
+      alteracoes = {
+        vale: false,
+        numeroSeguinte: 2,
+        numeroAnterior: null,
+        total: 3,
+        prazoDaCorrecao: null,
+      };
+      const tela = await abrir('1');
+
+      expect(dado(tela, 'Situação')).toBe('Substituído');
+      expect(tela.textContent).toContain('Este envio foi substituído por um mais recente');
+      expect(hrefDe(tela, 'Ver o envio mais recente')).toBe(
+        `/inscricao/comprovante/${INSCRICAO_ID}/3`,
+      );
+      expect(secao(tela, 'Próximos passos')).toBeNull();
+    });
+  });
+
+  describe('prazo da correção', () => {
+    it('com o prazo aberto, diz até quando e leva à correção do processo', async () => {
+      const tela = await abrir();
+
+      const passos = secao(tela, 'Próximos passos') as HTMLElement;
+      expect(passos.textContent).toContain('19/12/2026, 23:59');
+      expect(passos.textContent).toContain('horário de Belém (PA)');
+      expect(hrefDe(tela, 'Corrigir dados')).toBe(`/inscricao/${PROCESSO}`);
+    });
+
+    it('com o prazo encerrado, diz que não se corrige mais e não oferece a correção', async () => {
+      alteracoes = {
+        prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: false },
+      };
+      const tela = await abrir();
+
+      expect(secao(tela, 'Próximos passos')?.textContent).toContain('Não é mais possível corrigir');
+      expect(hrefDe(tela, 'Corrigir dados')).toBeUndefined();
+    });
+
+    it('sem prazo na resposta, a seção não aparece', async () => {
+      alteracoes = { prazoDaCorrecao: null };
+      const tela = await abrir();
+
+      expect(secao(tela, 'Próximos passos')).toBeNull();
+    });
+  });
+
+  describe('cursos e modalidades', () => {
+    const modalidadesNaTela = (tela: HTMLElement): string[] =>
+      Array.from(
+        secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul > li') ?? [],
+      ).map((li) => li.textContent?.trim() ?? '');
+
+    it('o processo de uma opção cujo curso a versão não nomeia não mostra a seção "Sua inscrição"', async () => {
+      const [primeira] = comprovanteBase().opcoesDeCurso;
+      alteracoes = { opcoesDeCurso: [{ ...primeira, nome: null }] };
+      const tela = await abrir();
+
+      expect(secao(tela, 'Sua inscrição')).toBeNull();
+    });
+
+    it('mostra o curso pelo nome da API e as modalidades na ordem dela, sem o código', async () => {
+      const tela = await abrir();
+
+      expect(dado(tela, 'Curso')).toBe('Direito (Bacharelado) — Campus Marabá');
+      expect(modalidadesNaTela(tela)).toEqual([
+        'Ampla concorrência',
+        'Escola pública, independente de renda',
+      ]);
+      expect(tela.textContent).not.toContain('LI_EP');
+    });
+
+    it('com 2 opções, mostra a 1ª e a 2ª e as modalidades de cada uma', async () => {
+      const [primeira] = comprovanteBase().opcoesDeCurso;
+      alteracoes = {
+        numeroDeOpcoesDeCurso: 2,
+        opcoesDeCurso: [
+          primeira,
+          {
+            ordem: 2,
+            nome: 'Medicina (Bacharelado) — Campus Marabá',
+            modalidades: [{ codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 }],
+          },
+        ],
+      };
+      const tela = await abrir();
+
+      expect(dado(tela, '1ª opção')).toContain('Direito');
+      expect(dado(tela, '2ª opção')).toContain('Medicina');
+      expect(dado(tela, 'Curso')).toBeNull();
+      const listas = Array.from(
+        secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul') ?? [],
+      ).map((ul) => Array.from(ul.querySelectorAll('li')).map((li) => li.textContent?.trim()));
+      expect(listas).toEqual([
+        ['Ampla concorrência', 'Escola pública, independente de renda'],
+        ['Ampla concorrência'],
+      ]);
+    });
+
+    it('o processo de 2 opções com a 2ª vazia mostra "Não declarada" e as modalidades só da 1ª', async () => {
+      alteracoes = { numeroDeOpcoesDeCurso: 2 };
+      const tela = await abrir();
+
+      expect(dado(tela, '2ª opção')).toBe('Não declarada');
+      expect(secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul')).toHaveLength(
+        1,
+      );
+    });
+
+    it('o processo que não define as modalidades pela inscrição diz isso, sem lista', async () => {
+      const [primeira] = comprovanteBase().opcoesDeCurso;
+      alteracoes = { opcoesDeCurso: [{ ...primeira, modalidades: null }] };
+      const tela = await abrir();
+
+      const modalidades = secao(tela, 'Modalidades em que você concorre');
+      expect(modalidades?.querySelector('ul')).toBeNull();
+      expect(modalidades?.textContent?.replace(/\s+/g, ' ')).toContain(
+        'Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o edital.',
+      );
+    });
+  });
+
+  describe('recusas que a página explica', () => {
+    const voltaParaALista = (tela: HTMLElement): string | null | undefined =>
+      hrefDe(tela, 'Voltar às minhas inscrições');
+
+    it('a inscrição cancelada (422) explica que não há comprovante, sem nova tentativa nem impressão', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(
+        of(falha(422, 'uniplus.selecao.inscricao.comprovante_de_inscricao_cancelada')),
+      );
+
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('Esta inscrição foi cancelada');
+      expect(tela.textContent).toContain('não tem comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(tela.textContent).not.toContain('Imprimir comprovante');
+      expect(voltaParaALista(tela)).toBe('/inscricao');
+    });
+
+    it('a versão fixada ausente (422) diz que o comprovante não pôde ser montado, sem nova tentativa', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(
+        of(falha(422, 'uniplus.selecao.snapshot.vigente_ausente')),
+      );
+
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('Não foi possível montar o comprovante');
+      expect(tela.textContent).toContain('Sua inscrição continua registrada');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(voltaParaALista(tela)).toBe('/inscricao');
+    });
+
+    it('os textos das recusas não trazem código nem rótulo interno', async () => {
+      for (const code of [
+        'uniplus.selecao.inscricao.comprovante_de_inscricao_cancelada',
+        'uniplus.selecao.snapshot.vigente_ausente',
+      ]) {
+        TestBed.resetTestingModule();
+        vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(422, code)));
+
+        const tela = await abrir();
+
+        expect(tela.textContent).not.toMatch(/uniplus\.|snapshot|vigente|422/i);
+      }
+    });
+
+    it('o 404 mostra o não encontrado, sem nova tentativa e com o caminho de volta', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(404, 'nao_encontrado')));
+
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+      expect(voltaParaALista(tela)).toBe('/inscricao');
+    });
+
+    it('o 401 diz que o comprovante não está disponível para a conta, sem nova tentativa', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(401, 'nao_autenticado')));
+
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('não está disponível para a sua conta');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+    });
+
+    it('o 403 diz que o comprovante não é da conta, sem nova tentativa', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(403, 'proibido')));
+
+      const tela = await abrir();
+
+      expect(tela.textContent).toContain('não está disponível para a sua conta');
+      expect(botaoDeTentar(tela)).toBeUndefined();
+    });
+
+    it.each(['foo', '0', '-1', '1.5'])(
+      'o número %s, que não é de comprovante, não chega à API',
+      async (numero) => {
+        const ler = vi.spyOn(servico, 'comprovante');
+
+        const tela = await abrir(numero);
+
+        expect(tela.textContent).toContain('Não encontramos este comprovante');
+        expect(ler).not.toHaveBeenCalled();
+      },
+    );
+  });
+
+  describe('nova tentativa depois da falha', () => {
+    const indisponivel = () => falha(503, 'indisponivel', 'Serviço indisponível');
+
+    it('o 422 que a página não conhece segue como falha, com nova tentativa', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(422, 'uniplus.outra', 'Recusado')));
+
+      const tela = await abrir();
+
+      expect(botaoDeTentar(tela)).toBeDefined();
+      expect(tela.textContent).not.toContain('Imprimir comprovante');
+    });
+
+    it('a leitura que dá certo tira o alerta e deixa o foco no título, sem somar o aviso de conclusão', async () => {
+      vi.spyOn(servico, 'comprovante').mockReturnValueOnce(of(indisponivel()));
+      const tela = await abrir();
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+      const tentar = botaoDeTentar(tela) as HTMLButtonElement;
       tentar.focus();
 
       tentar.click();
@@ -483,70 +664,16 @@ describe('ComprovanteDaInscricaoPage', () => {
       expect(tela.querySelector('.alert__title')).toBeNull();
       expect(tela.textContent).toContain('Imprimir comprovante');
       expect(document.activeElement).toBe(tela.querySelector('h1'));
-    });
-
-    it('a leitura que dá certo move o foco ao título e não soma o aviso de conclusão', async () => {
-      vi.spyOn(servico, 'certame').mockReturnValueOnce(of(indisponivel()));
-      const tela = await abrir();
-      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
-      const tentar = Array.from(tela.querySelectorAll('button')).find(
-        (botao) => botao.textContent?.trim() === 'Tentar novamente',
-      ) as HTMLButtonElement;
-      tentar.focus();
-
-      tentar.click();
-      await atualizar();
-      await macrotarefa();
-      await atualizar();
-
-      expect(document.activeElement).toBe(tela.querySelector('h1'));
       expect(anunciar).not.toHaveBeenCalled();
     });
 
-    it('com a leitura em curso, o aviso da falha segue na tela ao lado do esqueleto de carregamento', async () => {
-      const resposta = new Subject<ApiResult<CertamePublicadoDto>>();
-      vi.spyOn(servico, 'certame')
-        .mockReturnValueOnce(of(indisponivel()))
-        .mockReturnValueOnce(resposta);
-      const tela = await abrir();
-
-      Array.from(tela.querySelectorAll('button'))
-        .find((botao) => botao.textContent?.trim() === 'Tentar novamente')
-        ?.click();
-      await atualizar();
-
-      expect(situacao(tela)).toBe('Tentando novamente…');
-      expect(tela.querySelector('ui-skeleton')).not.toBeNull();
-      expect(tela.querySelectorAll('[role="status"]')).toHaveLength(1);
-      expect(tela.querySelector('.alert__title')?.textContent).toContain(
-        'Não foi possível abrir o comprovante',
-      );
-    });
-
-    const botaoDeTentar = (tela: HTMLElement): HTMLButtonElement | undefined =>
-      Array.from(tela.querySelectorAll('button')).find(
-        (botao) => botao.textContent?.trim() === 'Tentar novamente',
-      );
-
-    it('o 404 da API mostra o não encontrado, sem nova tentativa e com o caminho de volta', async () => {
-      vi.spyOn(servico, 'comprovante').mockReturnValueOnce(of(NAO_ENCONTRADO) as never);
-
-      const tela = await abrir('2');
-
-      expect(tela.textContent).toContain('Não encontramos este comprovante');
-      expect(botaoDeTentar(tela)).toBeUndefined();
-      expect(
-        Array.from(tela.querySelectorAll('a')).some(
-          (a) => a.textContent?.trim() === 'Voltar às minhas inscrições',
-        ),
-      ).toBe(true);
-    });
-
-    it('503 seguido de 404 da API termina no não encontrado, sem botão e sem aviso de conclusão', async () => {
+    it('503 seguido de recusa termina na explicação, sem botão e sem aviso de conclusão', async () => {
       vi.spyOn(servico, 'comprovante')
-        .mockReturnValueOnce(of(indisponivel()) as never)
-        .mockReturnValueOnce(of(NAO_ENCONTRADO) as never);
-      const tela = await abrir('2');
+        .mockReturnValueOnce(of(indisponivel()))
+        .mockReturnValueOnce(
+          of(falha(422, 'uniplus.selecao.inscricao.comprovante_de_inscricao_cancelada')),
+        );
+      const tela = await abrir();
       const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
       expect(botaoDeTentar(tela)).toBeDefined();
 
@@ -555,138 +682,9 @@ describe('ComprovanteDaInscricaoPage', () => {
       await macrotarefa();
       await atualizar();
 
-      expect(tela.textContent).toContain('Não encontramos este comprovante');
+      expect(tela.textContent).toContain('Esta inscrição foi cancelada');
       expect(botaoDeTentar(tela)).toBeUndefined();
       expect(anunciar).not.toHaveBeenCalled();
     });
-
-    it('o número não emitido mostra o não encontrado, sem nova tentativa e com o caminho de volta', async () => {
-      const tela = await abrir('3');
-
-      expect(tela.textContent).toContain('Não encontramos este comprovante');
-      expect(botaoDeTentar(tela)).toBeUndefined();
-      const volta = Array.from(tela.querySelectorAll('a')).find(
-        (a) => a.textContent?.trim() === 'Voltar às minhas inscrições',
-      );
-      expect(volta?.getAttribute('href')).toBe('/inscricao');
-    });
-
-    it('503 seguido de número não emitido termina no não encontrado, sem botão e sem aviso de conclusão', async () => {
-      vi.spyOn(servico, 'listar').mockReturnValueOnce(of(indisponivel() as never) as never);
-      const tela = await abrir('3');
-      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
-      expect(botaoDeTentar(tela)).toBeDefined();
-
-      botaoDeTentar(tela)?.click();
-      await atualizar();
-      await macrotarefa();
-      await atualizar();
-
-      expect(tela.textContent).toContain('Não encontramos este comprovante');
-      expect(botaoDeTentar(tela)).toBeUndefined();
-      expect(anunciar).not.toHaveBeenCalled();
-    });
-  });
-
-  it('um número que a inscrição não emitiu não abre comprovante nenhum', async () => {
-    const tela = await abrir('3');
-
-    expect(tela.textContent).toContain('Não encontramos este comprovante');
-    expect(tela.textContent).not.toContain('Imprimir comprovante');
-  });
-
-  it.each(['foo', '0'])(
-    'o número %s, que não é de comprovante, não abre o mais recente nem o pede ao serviço',
-    async (numero) => {
-      const pedir = vi.spyOn(servico, 'comprovante');
-
-      const tela = await abrir(numero);
-
-      expect(tela.textContent).toContain('Não encontramos este comprovante');
-      expect(pedir).not.toHaveBeenCalled();
-    },
-  );
-
-  it('mostra o curso escolhido pelo nome congelado na publicação', async () => {
-    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
-    const tela = await abrir();
-    ofertas = [OFERTA_MEDICINA];
-
-    expect(dado(tela, 'Curso')).toBe(
-      'Direito (Bacharelado) — Campus Marabá — Matutino e Vespertino',
-    );
-  });
-
-  it('com 2 opções, mostra a 1ª e a 2ª e as modalidades concorridas em cada uma', async () => {
-    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
-    opcoesDoProcesso = 2;
-    segundaOpcaoDoEnvio = {
-      id: 'o1',
-      modalidades: [{ codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 0 }],
-    };
-    const tela = await abrir('1');
-    ofertas = [OFERTA_MEDICINA];
-
-    expect(dado(tela, '1ª opção')).toContain('Direito');
-    expect(dado(tela, '2ª opção')).toContain('Medicina');
-    expect(dado(tela, 'Curso')).toBeNull();
-    const modalidades = secao(tela, 'Modalidades em que você concorre');
-    const listas = [...(modalidades?.querySelectorAll('ul') ?? [])].map((ul) =>
-      [...ul.querySelectorAll('li')].map((li) => li.textContent?.trim()),
-    );
-    expect(listas).toEqual([
-      ['Ampla concorrência', 'Escola pública, independente de renda'],
-      ['Escola pública, independente de renda'],
-    ]);
-  });
-
-  it('o processo de 2 opções com a 2ª vazia mostra "Não declarada" e as modalidades só da 1ª', async () => {
-    ofertas = [OFERTA_MEDICINA, OFERTA_DIREITO];
-    opcoesDoProcesso = 2;
-    const tela = await abrir('1');
-    ofertas = [OFERTA_MEDICINA];
-
-    expect(dado(tela, '2ª opção')).toBe('Não declarada');
-    const modalidades = secao(tela, 'Modalidades em que você concorre');
-    expect(modalidades?.querySelectorAll('ul')).toHaveLength(1);
-  });
-
-  it('trocar o número na mesma página mostra o outro envio', async () => {
-    const tela = await abrir('2');
-
-    fixture.componentRef.setInput('numero', '1');
-    await atualizar();
-
-    expect(tela.textContent).toContain('Envio 1 de 2');
-    expect(links(tela)).toEqual(['Envio seguinte ›']);
-  });
-
-  it('lista as modalidades do envio pelo nome congelado, na ordem gravada, sem o código', async () => {
-    const tela = await abrir('1');
-
-    expect(modalidadesNaTela(tela)).toEqual([
-      'Ampla concorrência',
-      'Escola pública, independente de renda',
-    ]);
-    const texto = secao(tela, 'Modalidades em que você concorre')?.textContent ?? '';
-    expect(texto).not.toContain('LI_EP');
-    expect(texto).not.toMatch(/\bAC\b/);
-  });
-
-  it('o comprovante da correção mostra as modalidades que ela recalculou', async () => {
-    const tela = await abrir();
-
-    expect(modalidadesNaTela(tela)).toEqual(['Ampla concorrência']);
-  });
-
-  it('o processo que não define as modalidades pela inscrição diz isso, sem lista', async () => {
-    modalidadesDoEnvio = () => null;
-    const tela = await abrir();
-
-    const modalidades = secao(tela, 'Modalidades em que você concorre');
-    expect(modalidades?.querySelector('ul')).toBeNull();
-    expect(modalidades?.textContent?.replace(/\s+/g, ' ')).toContain(
-      'Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o edital.',
-    );
   });
 });

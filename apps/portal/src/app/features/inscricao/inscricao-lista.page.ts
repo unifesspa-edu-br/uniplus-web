@@ -228,7 +228,7 @@ export class InscricaoListaPage {
     return [
       ...(acoes.podeContinuar ? [ACAO.continuar] : []),
       ...(acoes.podeCorrigir ? [ACAO.corrigir] : []),
-      ...(item.temComprovante ? [comprovante] : []),
+      ...(item.numeroDoComprovante !== null ? [comprovante] : []),
       ...(acoes.podeCancelar ? [ACAO.cancelar] : []),
       ...(acoes.podeDescartar ? [ACAO.descartar] : []),
     ];
@@ -252,7 +252,7 @@ export class InscricaoListaPage {
         void this.router.navigate(['/inscricao', item.processoId]);
         return;
       case 'comprovante':
-        void this.router.navigate(['/inscricao', 'comprovante', item.id]);
+        void this.router.navigate(['/inscricao', 'comprovante', item.id, item.numeroDoComprovante]);
         return;
       case 'cancelar':
       case 'descartar':
