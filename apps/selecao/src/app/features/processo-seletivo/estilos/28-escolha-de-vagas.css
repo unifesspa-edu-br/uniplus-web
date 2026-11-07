@@ -67,6 +67,12 @@
   margin-top: var(--space-3);
 }
 
+/* A cascata nasce dentro do cartão do quadro, e não como irmã dele: o ritmo do passo não a
+ * alcança, e ela se separa da tabela pelo mesmo espaço dos blocos vizinhos. */
+sel-cascata-remanejamento > .step-card {
+  margin-block-start: var(--space-5);
+}
+
 /* O alerta é `div`, e não herda a margem que o reset dá ao parágrafo vizinho. */
 .vagas-estouro {
   margin: var(--space-4) 0;

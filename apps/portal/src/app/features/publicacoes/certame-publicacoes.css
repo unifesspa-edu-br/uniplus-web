@@ -71,7 +71,7 @@
   container-type: inline-size;
 }
 
-/* Linha do tempo: mesmo padrão do wizard (step-rail) — marcador verde nos passos
+/* Linha do tempo: marcador verde nos passos
    concluídos, azul + fundo tingido no atual (o evento mais recente). */
 .publicacao-timeline {
   list-style: none;

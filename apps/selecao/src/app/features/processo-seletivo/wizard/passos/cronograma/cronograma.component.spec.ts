@@ -720,6 +720,19 @@ describe('CronogramaPassoComponent', () => {
           );
         });
 
+        it('todo id que o campo cita em aria-describedby existe, e a dica da falha aparece junto', () => {
+          abrirFases();
+
+          for (const indice of [0, 1, 2]) {
+            const citados = (unidadeDoSelect(indice).getAttribute('aria-describedby') ?? '')
+              .split(' ')
+              .filter(Boolean);
+            expect(citados).toContain(`cr-unidade-dica-${indice}`);
+            expect(citados).toContain(`cr-unidade-sem-lista-${indice}`);
+            for (const id of citados) expect(nativo.querySelector(`[id="${id}"]`), id).not.toBeNull();
+          }
+        });
+
         it('na nova tentativa que dá certo, leva o foco ao primeiro campo e tira as dicas', async () => {
           abrirFases();
           tentar()[0]?.focus();
