@@ -2,16 +2,16 @@ export { resetPasswords, keycloakLogin, keycloakLogout, expectUserInHeader } fro
 export { createGlobalSetup, setupKeycloakAuth } from './lib/keycloak-auth-fixture';
 export type { KeycloakAuthSetupOptions } from './lib/keycloak-auth-fixture';
 export {
-  assertAaaVisualContract,
-  assertDocumentoSemRolagemVertical,
-  assertReflowContract,
-  assertTextSpacingResilience,
   runAxeWcagAA,
   runAxeWcagAAAApplicable,
   WCAG_A_AA_TAGS,
   WCAG_AAA_APPLICABLE_TAGS,
 } from './lib/a11y';
-export type { AaaVisualContractOptions, RunAxeOptions } from './lib/a11y';
+export type { RunAxeOptions } from './lib/a11y';
+export { assertAaaVisualContract } from './lib/a11y-contrato-visual';
+export type { AaaVisualContractOptions } from './lib/a11y-contrato-visual';
+export { assertDocumentoSemRolagemVertical, assertReflowContract } from './lib/a11y-reflow';
+export { assertTextSpacingResilience } from './lib/a11y-espacamento-de-texto';
 export { falharPermissoesEfetivas, mockPermissoesEfetivas } from './lib/permissoes-efetivas';
 export {
   ACESSOS_DA_SIMULACAO,
@@ -28,8 +28,8 @@ export {
   garantirConcessao,
   garantirPerfil,
   identidadeDoToken,
-  lerTopicoDoKafka,
   prepararAcessosDaSimulacao,
   tokenDaPersona,
 } from './lib/backend-real';
 export type { RespostaDaApi } from './lib/backend-real';
+export { lerTopicoDoKafka } from './lib/kafka-real';

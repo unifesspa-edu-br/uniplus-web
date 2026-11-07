@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import { expect, type Browser, type Page } from '@playwright/test';
 
 import { keycloakLogin } from './keycloak-login';
@@ -176,35 +175,45 @@ export async function garantirConcessao(
     (p) => p.id === perfilId,
   );
   const unidadeId = perfil?.escopo === 'unidade' ? unidadeDoCertame : null;
-  const tokenDoBeneficiario = await tokenDaPersona(beneficiario);
-  const { sub, email } = identidadeDoToken(tokenDoBeneficiario);
+  const { sub, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
 
+  if (await concessaoAtiva({ perfilId, sub, unidadeId })) {
+    return;
+  }
+  await pedirEAprovarConcessao({ beneficiario, email, perfilId, unidadeId });
+}
+
+async function concessaoAtiva(concessao: {
+  perfilId: string;
+  sub: string;
+  unidadeId: string | null;
+}): Promise<boolean> {
   const ativas = await chamarApi<ConcessaoExistente[]>(
     SEGUNDO_GESTOR_DE_ACESSOS,
     'GET',
-    `/api/autorizacao/concessoes?perfil=${perfilId}&situacao=ativa&limit=100`,
+    `/api/autorizacao/concessoes?perfil=${concessao.perfilId}&situacao=ativa&limit=100`,
   );
-  const jaTem = ativas.corpo.some(
-    (c) => c.ativa && c.beneficiario.sub === sub && (c.escopo.unidadeId ?? null) === unidadeId,
+  return ativas.corpo.some(
+    (c) =>
+      c.ativa &&
+      c.beneficiario.sub === concessao.sub &&
+      (c.escopo.unidadeId ?? null) === concessao.unidadeId,
   );
-  if (jaTem) {
-    return;
-  }
+}
 
-  const solicitante = [SOLICITANTE_DE_PEDIDOS, 'isabella.figueiredo'].find((u) => u !== beneficiario) ?? SOLICITANTE_DE_PEDIDOS;
+interface PedidoDeConcessao {
+  readonly beneficiario: string;
+  readonly email: string;
+  readonly perfilId: string;
+  readonly unidadeId: string | null;
+}
+
+async function pedirEAprovarConcessao(pedido: PedidoDeConcessao): Promise<void> {
+  const { beneficiario } = pedido;
   const gestor = beneficiario === GESTOR_DE_ACESSOS ? SEGUNDO_GESTOR_DE_ACESSOS : GESTOR_DE_ACESSOS;
   const protecao = beneficiario === PROTECAO_DE_DADOS ? 'caroline.jesus' : PROTECAO_DE_DADOS;
 
-  const pedido = await chamarApi<PedidoCriado>(solicitante, 'POST', '/api/autorizacao/pedidos-de-concessao', {
-    corpo: {
-      beneficiarioEmail: email,
-      perfilId,
-      unidadeId,
-      justificativa: 'Acesso para a simulação ponta a ponta da projeção por proteção.',
-    },
-  });
-  expect(pedido.status, `pedido de ${beneficiario}: ${JSON.stringify(pedido.corpo)}`).toBe(201);
-  const base = `/api/autorizacao/pedidos-de-concessao/${pedido.corpo.id}`;
+  const base = await solicitarConcessao(pedido);
   expect((await chamarApi(beneficiario, 'POST', `${base}/aceite`)).status).toBe(200);
   const funcional = await chamarApi<PedidoCriado>(gestor, 'POST', `${base}/aprovacoes`, { corpo: {} });
   expect(funcional.status, 'aprovação funcional').toBe(200);
@@ -212,6 +221,22 @@ export async function garantirConcessao(
     const dados = await chamarApi<PedidoCriado>(protecao, 'POST', `${base}/aprovacoes`, { corpo: {} });
     expect(dados.status, 'aprovação da proteção de dados').toBe(200);
   }
+}
+
+/** Um terceiro solicita a concessão; devolve a rota do pedido criado. */
+async function solicitarConcessao(pedido: PedidoDeConcessao): Promise<string> {
+  const { beneficiario, email, perfilId, unidadeId } = pedido;
+  const solicitante = [SOLICITANTE_DE_PEDIDOS, 'isabella.figueiredo'].find((u) => u !== beneficiario) ?? SOLICITANTE_DE_PEDIDOS;
+  const criado = await chamarApi<PedidoCriado>(solicitante, 'POST', '/api/autorizacao/pedidos-de-concessao', {
+    corpo: {
+      beneficiarioEmail: email,
+      perfilId,
+      unidadeId,
+      justificativa: 'Acesso para a simulação ponta a ponta da projeção por proteção.',
+    },
+  });
+  expect(criado.status, `pedido de ${beneficiario}: ${JSON.stringify(criado.corpo)}`).toBe(201);
+  return `/api/autorizacao/pedidos-de-concessao/${criado.corpo.id}`;
 }
 
 /**
@@ -232,30 +257,6 @@ export async function entrarComoPersona(
     expectRedirectTo: new RegExp(appBaseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
   });
   return pagina;
-}
-
-/**
- * Mensagens do tópico lidas com o consumidor do próprio container do Kafka, do início até
- * esgotar o tempo sem mensagem nova.
- */
-export function lerTopicoDoKafka(topico: string, esperaMs = 10_000): string[] {
-  const saida = execFileSync(
-    'docker',
-    [
-      'exec',
-      process.env['E2E_KAFKA_CONTAINER'] ?? 'uniplus-inscricao-kafka-1',
-      process.env['E2E_KAFKA_CONSUMER'] ?? '/opt/kafka/bin/kafka-console-consumer.sh',
-      '--bootstrap-server',
-      process.env['E2E_KAFKA_BOOTSTRAP'] ?? 'kafka:29092',
-      '--topic',
-      topico,
-      '--from-beginning',
-      '--timeout-ms',
-      String(esperaMs),
-    ],
-    { encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 },
-  );
-  return saida.split('\n').filter((linha) => linha.trim() !== '');
 }
 
 /** Unidade que administra o certame de Medicina nas bases locais (a mesma das concessões já feitas). */

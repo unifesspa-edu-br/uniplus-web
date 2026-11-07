@@ -24,63 +24,89 @@ export async function resetPasswords(
     const api = await playwrightRequest.newContext({ baseURL: KEYCLOAK_BASE });
 
     try {
-      // 1. Obter admin token (uma vez)
-      const tokenResp = await api.post('/realms/master/protocol/openid-connect/token', {
-        form: {
-          grant_type: 'password',
-          client_id: 'admin-cli',
-          username: KEYCLOAK_ADMIN_USER,
-          password: keycloakAdminPassword(),
-        },
-      });
-      const tokenData = await tokenResp.json();
-      const adminToken = tokenData.access_token;
-      if (!adminToken) throw new Error(`Falha ao obter admin token: ${JSON.stringify(tokenData)}`);
-
-      const authHeader = { Authorization: `Bearer ${adminToken}` };
-
-      // 2. Reset cada usuário sequencialmente (com retry para StaleStateException do Hibernate)
-      for (const { username, password } of users) {
-        const usersResp = await api.get(
-          `/admin/realms/${KEYCLOAK_REALM}/users?username=${username}&exact=true`,
-          { headers: authHeader },
-        );
-        const found = await usersResp.json();
-        if (!found.length)
-          throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
-        const userId = found[0].id as string;
-
-        await clearBruteForceFailures(api, authHeader, userId);
-
-        let lastStatus = 0;
-        for (let attempt = 0; attempt < RESET_PASSWORD_MAX_ATTEMPTS; attempt++) {
-          if (attempt > 0) await delay(250 * attempt);
-
-          const resetResp = await api.put(
-            `/admin/realms/${KEYCLOAK_REALM}/users/${userId}/reset-password`,
-            {
-              headers: { ...authHeader, 'Content-Type': 'application/json' },
-              data: JSON.stringify({ type: 'password', value: password, temporary: false }),
-            },
-          );
-          lastStatus = resetResp.status();
-          if (resetResp.ok()) break;
-          if (lastStatus !== 500) {
-            const body = await resetResp.text();
-            throw new Error(`Falha ao resetar senha de '${username}': ${lastStatus} ${body}`);
-          }
-        }
-        if (lastStatus === 500) {
-          throw new Error(
-            `Falha ao resetar senha de '${username}' após ${RESET_PASSWORD_MAX_ATTEMPTS} tentativas (500 — provável StaleStateException no Keycloak)`,
-          );
-        }
-        await clearBruteForceFailures(api, authHeader, userId);
+      const sessao: SessaoAdmin = { api, authHeader: await autenticarAdmin(api) };
+      // Reset cada usuário sequencialmente (com retry para StaleStateException do Hibernate)
+      for (const usuario of users) {
+        await redefinirSenha(sessao, usuario);
       }
     } finally {
       await api.dispose();
     }
   });
+}
+
+type ContextoDaApi = Awaited<ReturnType<typeof playwrightRequest.newContext>>;
+
+/** A sessão de admin aberta uma vez e reaproveitada por todos os usuários. */
+interface SessaoAdmin {
+  readonly api: ContextoDaApi;
+  readonly authHeader: { Authorization: string };
+}
+
+async function autenticarAdmin(api: ContextoDaApi): Promise<{ Authorization: string }> {
+  const tokenResp = await api.post('/realms/master/protocol/openid-connect/token', {
+    form: {
+      grant_type: 'password',
+      client_id: 'admin-cli',
+      username: KEYCLOAK_ADMIN_USER,
+      password: keycloakAdminPassword(),
+    },
+  });
+  const tokenData = await tokenResp.json();
+  const adminToken = tokenData.access_token;
+  if (!adminToken) throw new Error(`Falha ao obter admin token: ${JSON.stringify(tokenData)}`);
+  return { Authorization: `Bearer ${adminToken}` };
+}
+
+async function redefinirSenha(
+  sessao: SessaoAdmin,
+  { username, password }: { username: string; password: string },
+): Promise<void> {
+  const { api, authHeader } = sessao;
+  const usersResp = await api.get(
+    `/admin/realms/${KEYCLOAK_REALM}/users?username=${username}&exact=true`,
+    { headers: authHeader },
+  );
+  const found = await usersResp.json();
+  if (!found.length)
+    throw new Error(`Usuário '${username}' não encontrado no realm ${KEYCLOAK_REALM}`);
+  const userId = found[0].id as string;
+
+  await clearBruteForceFailures(api, authHeader, userId);
+
+  const lastStatus = await enviarNovaSenha(sessao, { userId, username, password });
+  if (lastStatus === 500) {
+    throw new Error(
+      `Falha ao resetar senha de '${username}' após ${RESET_PASSWORD_MAX_ATTEMPTS} tentativas (500 — provável StaleStateException no Keycloak)`,
+    );
+  }
+  await clearBruteForceFailures(api, authHeader, userId);
+}
+
+/** Tenta de novo enquanto o Keycloak responde 500; devolve o último status. */
+async function enviarNovaSenha(
+  { api, authHeader }: SessaoAdmin,
+  { userId, username, password }: { userId: string; username: string; password: string },
+): Promise<number> {
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < RESET_PASSWORD_MAX_ATTEMPTS; attempt++) {
+    if (attempt > 0) await delay(250 * attempt);
+
+    const resetResp = await api.put(
+      `/admin/realms/${KEYCLOAK_REALM}/users/${userId}/reset-password`,
+      {
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
+        data: JSON.stringify({ type: 'password', value: password, temporary: false }),
+      },
+    );
+    lastStatus = resetResp.status();
+    if (resetResp.ok()) break;
+    if (lastStatus !== 500) {
+      const body = await resetResp.text();
+      throw new Error(`Falha ao resetar senha de '${username}': ${lastStatus} ${body}`);
+    }
+  }
+  return lastStatus;
 }
 
 function keycloakAdminPassword(): string {
@@ -94,7 +120,7 @@ function keycloakAdminPassword(): string {
 }
 
 async function clearBruteForceFailures(
-  api: Awaited<ReturnType<typeof playwrightRequest.newContext>>,
+  api: ContextoDaApi,
   authHeader: { Authorization: string },
   userId: string,
 ): Promise<void> {
