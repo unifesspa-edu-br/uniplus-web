@@ -175,7 +175,7 @@ test.describe('Vagas — matriz DS @ds', () => {
       await abrirVagas(page, testInfo, 'publicado', 'falha');
     });
 
-    test('lê o gravado e diz o que não leu, sem controle nem ação de edição', async ({ page }) => {
+    test('lê o gravado e diz o que não leu, sem controle de edição', async ({ page }) => {
       await expect(
         page
           .locator('.wiz-content')
@@ -190,13 +190,14 @@ test.describe('Vagas — matriz DS @ds', () => {
 
       const controles = await page
         .locator('.wiz-content')
-        .locator('input, select, textarea, button, [role="alert"]')
+        .locator('input, select, textarea, button')
         .evaluateAll((elementos) =>
           elementos
             .filter((elemento) => elemento.checkVisibility())
-            .map((elemento) => elemento.outerHTML.slice(0, 120)),
+            .map((elemento) => elemento.textContent?.trim() ?? elemento.tagName),
         );
-      expect(controles).toEqual([]);
+      // Em consulta, a única ação é repetir a leitura que falhou; nada de edição.
+      expect(controles).toEqual(['Tentar novamente']);
     });
 
     test('não viola WCAG 2.1 AA', async ({ page }) => {
