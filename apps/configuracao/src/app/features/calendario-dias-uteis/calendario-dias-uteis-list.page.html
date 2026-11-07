@@ -34,6 +34,7 @@
   [erro]="edicao.erroRemocao()"
   [anuncio]="edicao.anuncioDaRemocao()"
   (confirmar)="edicao.removerConfirmado()"
+  (fechado)="aoFecharAConfirmacao()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Marcar calendário como vigente?"
@@ -46,4 +47,5 @@
   [erro]="edicao.erroVigencia()"
   [anuncio]="edicao.anuncioDaVigencia()"
   (confirmar)="edicao.marcarConfirmado()"
+  (fechado)="aoFecharAConfirmacao()"
 />

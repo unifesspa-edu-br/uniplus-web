@@ -14,7 +14,13 @@ const LINK =
   '</api/itens?cursor=abc&direction=next>; rel="next", </api/itens?cursor=xyz&direction=prev>; rel="prev"';
 
 describe('Paginação dos acessos', () => {
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    try {
+      TestBed.inject(HttpTestingController).verify();
+    } finally {
+      TestBed.resetTestingModule();
+    }
+  });
 
   it.each([
     ['pedidos-de-concessao', PedidosStore],
@@ -78,7 +84,6 @@ describe('Paginação dos acessos', () => {
     expect(store.itens()).toEqual([]);
     expect(store.anterior()).toBeNull();
     expect(store.proximo()).toBeNull();
-    http.verify();
   });
 
   it.each([
@@ -110,7 +115,6 @@ describe('Paginação dos acessos', () => {
       await atualizar();
 
       http.expectOne((req) => req.url === `${BASE}/${rota}`).flush([]);
-      http.verify();
     },
   );
 });

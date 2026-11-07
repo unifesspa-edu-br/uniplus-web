@@ -141,7 +141,7 @@ export class ExigenciasDaFaseStore {
       .flatMap((grupo) => grupo.docs)
       .filter((doc) => declarados.has(doc.id));
 
-    // O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
+    // O tipo removido do cadastro sai do catálogo vivo, e a exigência que o cita continua no
     // rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
     // tela: o operador não conseguia nem conferir nem remover o que continuava sendo exigido.
     const visiveis = new Set(doCatalogo.map((doc) => doc.id));

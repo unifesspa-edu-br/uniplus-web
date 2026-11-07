@@ -266,7 +266,7 @@ describe('TiposBancaPage — recusas e foco', () => {
       await propagar();
       controller
         .expectOne((r) => r.url === LISTA)
-        .flush(...problema(503, { code: 'uniplus.indisponivel' }));
+        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
       await propagar();
       expect(edicao.gravando()).toBe(false);
     });
@@ -341,7 +341,7 @@ describe('TiposBancaPage — recusas e foco', () => {
       await propagar();
       controller
         .expectOne((r) => r.url === LISTA)
-        .flush(...problema(503, { code: 'uniplus.indisponivel' }));
+        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
       await propagar();
       expect(document.activeElement).toBe(elemento(TITULO_DA_LISTA));
     });
@@ -411,7 +411,7 @@ describe('TiposBancaPage — recusas e foco', () => {
       await propagar();
       controller
         .expectOne((r) => r.url === LISTA)
-        .flush(...problema(503, { code: 'uniplus.indisponivel' }));
+        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
       await propagar();
       expect(document.activeElement).toBe(elemento(TITULO_DA_LISTA));
     });

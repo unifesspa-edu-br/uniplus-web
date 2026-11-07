@@ -21,7 +21,7 @@ const ERRO_INTERNO = {
   type: 'about:blank',
   title: 'Erro interno',
   status: 500,
-  code: 'uniplus.erro_interno',
+  code: 'uniplus.internal.unexpected',
 };
 
 /** Atraso da nova tentativa: o andamento só é observável com a resposta ainda pendente. */

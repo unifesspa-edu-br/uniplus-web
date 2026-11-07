@@ -218,7 +218,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
             type: 'about:blank',
             title: expirado ? 'Cursor de paginação expirado' : 'Erro interno',
             status: expirado ? 410 : 500,
-            code: expirado ? 'uniplus.cursor.expirado' : 'uniplus.erro_interno',
+            code: expirado ? 'uniplus.cursor.expirado' : 'uniplus.internal.unexpected',
             traceId: 'e2e',
           }),
         });

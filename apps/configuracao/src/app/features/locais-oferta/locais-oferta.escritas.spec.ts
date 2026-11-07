@@ -548,9 +548,9 @@ describe('Escritas de locais de oferta', () => {
 
     it('com 500, mantém o diálogo aberto com o motivo, notifica o servidor e permite nova tentativa', async () => {
       const notificar = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-      await recusarRemocao(500, 'uniplus.erro_interno', 'Erro interno');
+      await recusarRemocao(500, 'uniplus.internal.unexpected', 'Erro interno');
       expect(notificar).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 500, code: 'uniplus.erro_interno' }),
+        expect.objectContaining({ status: 500, code: 'uniplus.internal.unexpected' }),
         expect.objectContaining({ title: 'Erro interno' }),
       );
       await conferirDialogoComARecusa('Erro interno');
@@ -603,10 +603,10 @@ describe('Escritas de locais de oferta', () => {
 
   it('mantém a chave e notifica quando o servidor falha (5xx)', async () => {
     const notificar = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
-    const chave = await enviarRecusado(500, { code: 'uniplus.erro_interno' });
+    const chave = await enviarRecusado(500, { code: 'uniplus.internal.unexpected' });
     expect(notificar).toHaveBeenCalledTimes(1);
     expect(notificar).toHaveBeenCalledWith(
-      expect.objectContaining({ status: 500, code: 'uniplus.erro_interno' }),
+      expect.objectContaining({ status: 500, code: 'uniplus.internal.unexpected' }),
     );
     expect(edicao.idempotencyKeyAtual()).toBe(chave);
     expect(edicao.formError()).toBeTruthy();

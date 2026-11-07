@@ -37,6 +37,8 @@ export class ConfirmacaoDeRemocaoComponent {
   /** Texto da região de status: o andamento e a recusa, que só fazem sentido com o diálogo aberto. */
   readonly anuncio = input.required<string>();
   readonly confirmar = output<void>();
+  /** O diálogo terminou de fechar e já devolveu o foco a quem o abriu. */
+  readonly fechado = output<void>();
   /** O texto da mensagem, que o leitor de tela lê depois do título ao abrir o diálogo. */
   protected readonly idDaMensagem = `cfg-confirmacao-de-remocao-mensagem-${(sementeDoId += 1)}`;
 

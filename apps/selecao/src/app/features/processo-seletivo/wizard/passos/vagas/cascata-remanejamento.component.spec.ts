@@ -74,7 +74,7 @@ const REGRA_CASCATA = {
 };
 
 /** Uma versão anterior, que a listagem ativa não traz mais — só a busca direta a resolve. */
-const REGRA_CASCATA_INATIVADA = {
+const REGRA_CASCATA_ANTERIOR = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v0',
   tipo: 'criterio_remanejamento',
@@ -387,7 +387,7 @@ describe('CascataRemanejamentoComponent', () => {
       `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`,
     );
     expect(requisicao.request.method).toBe('GET');
-    requisicao.flush(REGRA_CASCATA_INATIVADA);
+    requisicao.flush(REGRA_CASCATA_ANTERIOR);
     detectar();
 
     expect(componente.esquemaNaoReconhecido()).toBe(false);
@@ -468,7 +468,7 @@ describe('CascataRemanejamentoComponent', () => {
     const retentativa = controller.expectOne(
       `${BASE}/api/selecao/regras-catalogo/REMANEJ-CASCATA-LEI-12711/versoes/v0`,
     );
-    retentativa.flush(REGRA_CASCATA_INATIVADA);
+    retentativa.flush(REGRA_CASCATA_ANTERIOR);
     detectar();
 
     expect(componente.falhaAoConsultarRegra()).toBe(false);
@@ -650,7 +650,7 @@ describe('CascataRemanejamentoComponent', () => {
     it('refaz a busca da versão ao voltar e resolve a regra e a matriz', () => {
       abandonarBuscaDeA();
 
-      controller.expectOne(URL_V0).flush(REGRA_CASCATA_INATIVADA);
+      controller.expectOne(URL_V0).flush(REGRA_CASCATA_ANTERIOR);
       detectar();
 
       expect(componente.regraNaoEncontrada()).toBe(false);
@@ -678,7 +678,7 @@ describe('CascataRemanejamentoComponent', () => {
 
       componente.leituraDaRegra.tentar();
       detectar();
-      controller.expectOne(URL_V0).flush(REGRA_CASCATA_INATIVADA);
+      controller.expectOne(URL_V0).flush(REGRA_CASCATA_ANTERIOR);
       detectar();
 
       expect(componente.falhaAoConsultarRegra()).toBe(false);

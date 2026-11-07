@@ -61,7 +61,7 @@ const TROCA_RECUSADA = problema(
   'uniplus.configuracao.modelo_formulario.troca_recusada',
   'O modelo não pode mudar de situação agora',
 );
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Falha ao gravar o modelo');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Falha ao gravar o modelo');
 
 type Recarga = 'com-a-situacao-trocada' | 'sem-o-modelo' | 'com-falha';
 type Resposta = { status: number; corpo?: unknown };

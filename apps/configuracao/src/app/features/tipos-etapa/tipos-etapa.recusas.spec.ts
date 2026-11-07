@@ -168,7 +168,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       await p.abrirCadastro();
       const primeira = await p.enviar();
       const chave = chaveDe(primeira);
-      primeira.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      primeira.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
 
       expect(alertaDoDrawer()).toBeTruthy();
@@ -178,7 +178,7 @@ describe('TiposEtapaPage — recusas do servidor', () => {
 
     it('um novo envio, ainda que barrado pela validação, retira a recusa anterior da tela', async () => {
       await p.abrirCadastro();
-      (await p.enviar()).flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      (await p.enviar()).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       expect(alertaDoDrawer()).toBeTruthy();
 
@@ -231,7 +231,9 @@ describe('TiposEtapaPage — recusas do servidor', () => {
     });
 
     it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {
-      (await p.confirmarRemocao(prova)).flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      (await p.confirmarRemocao(prova)).flush(
+        ...problema(500, { code: 'uniplus.internal.unexpected' }),
+      );
       await p.propagar();
 
       expect(lerMensagem()).toBe('Falha');

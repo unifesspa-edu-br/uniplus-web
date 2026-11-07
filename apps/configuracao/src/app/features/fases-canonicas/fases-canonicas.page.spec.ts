@@ -586,7 +586,7 @@ describe('FasesCanonicasPage', () => {
         type: 'about:blank',
         title: 'Erro interno',
         status: 500,
-        code: 'uniplus.erro_interno',
+        code: 'uniplus.internal.unexpected',
       },
       {
         status: 500,

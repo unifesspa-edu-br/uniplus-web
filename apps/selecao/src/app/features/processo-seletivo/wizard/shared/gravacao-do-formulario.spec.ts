@@ -4,12 +4,14 @@ import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { FormulariosDoProcessoApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { gravarFormulario } from './gravacao-do-formulario';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 
 describe('gravarFormulario', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   it('não envia nenhum passo quando um limite digitado não é número', async () => {
     TestBed.configureTestingModule({
       providers: [

@@ -156,7 +156,13 @@ describe('listas paginadas por cursor: cursor expirado', () => {
     });
     http = TestBed.inject(HttpTestingController);
   }
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    try {
+      http.verify();
+    } finally {
+      TestBed.resetTestingModule();
+    }
+  });
 
   async function atualizar(): Promise<void> {
     await Promise.resolve();
@@ -199,7 +205,6 @@ describe('listas paginadas por cursor: cursor expirado', () => {
       expect(info).toHaveBeenCalledTimes(1);
       // As leituras de apoio da loja (categorias, fatos, fases) não fazem parte do roteiro.
       for (const apoio of http.match(() => true)) apoio.flush([]);
-      http.verify();
     });
   });
 });

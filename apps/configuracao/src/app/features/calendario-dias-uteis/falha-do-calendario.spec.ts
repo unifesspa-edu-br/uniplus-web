@@ -85,7 +85,7 @@ describe('classificação da falha ao gravar o calendário', () => {
   });
 
   it('a falha do servidor mantém a chave, pois nada foi gravado, e pede o toast', () => {
-    expect(classificarFalha(problema(500, 'uniplus.erro_interno'))).toEqual({
+    expect(classificarFalha(problema(500, 'uniplus.internal.unexpected'))).toEqual({
       tipo: 'geral',
       rotacionarChave: false,
       doServidor: true,

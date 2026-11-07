@@ -40,6 +40,19 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
     expect(confirmacoes).toBe(1);
   });
 
+  it('avisa que o diálogo fechou só quando ele termina de fechar', () => {
+    let fechamentos = 0;
+    fixture.componentInstance.fechado.subscribe(() => (fechamentos += 1));
+    fixture.componentRef.setInput('removendo', false);
+    fixture.detectChanges();
+    expect(fechamentos).toBe(0);
+
+    fixture.componentRef.setInput('aberto', false);
+    fixture.detectChanges();
+
+    expect(fechamentos).toBe(1);
+  });
+
   it('durante a remoção, o botão fica ocupado e o diálogo não pode ser fechado', () => {
     fixture.componentRef.setInput('removendo', true);
     fixture.detectChanges();
@@ -93,7 +106,9 @@ describe('ConfirmacaoDeRemocaoComponent', () => {
 
     const idDaDescricao = raiz().querySelector('dialog')?.getAttribute('aria-describedby');
     expect(idDaDescricao).toBeTruthy();
-    expect(raiz().querySelector(`#${idDaDescricao}`)?.textContent).toBe('Deseja remover este cadastro?');
+    expect(raiz().querySelector(`#${idDaDescricao}`)?.textContent).toBe(
+      'Deseja remover este cadastro?',
+    );
   });
 
   it('o título do diálogo vem de quem o usa', () => {

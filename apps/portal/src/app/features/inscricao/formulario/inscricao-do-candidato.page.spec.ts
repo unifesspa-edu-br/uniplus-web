@@ -240,6 +240,7 @@ describe('InscricaoDoCandidatoPage', () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
+    TestBed.inject(HttpTestingController).verify();
   });
 
   /** Responde ao GET do formulário que a leitura pede depois de iniciar a inscrição. */
@@ -896,7 +897,6 @@ describe('InscricaoDoCandidatoPage', () => {
 
     expect(campoDe(tela, 'CPF').value).toBe('699.598.363-71');
     for (const consulta of consultas) expect(consulta).not.toHaveBeenCalled();
-    TestBed.inject(HttpTestingController).verify();
   });
 
   it('a correção depois do envio é um novo envio, com o ETag da inscrição relida', async () => {

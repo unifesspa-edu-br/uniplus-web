@@ -36,7 +36,7 @@ const PROBLEMA_500 = {
   type: 'about:blank',
   title: 'Falha ao remover a modalidade',
   status: 500,
-  code: 'uniplus.erro_interno',
+  code: 'uniplus.internal.unexpected',
 };
 
 type Recarga = 'com-a-modalidade' | 'sem-a-modalidade' | 'com-falha';

@@ -375,6 +375,16 @@ describe('FatosCandidatoPage — criação do fato', () => {
     expect(p.texto('#cfg-fato-fatoDeMembro-erro')).toBe('O fato está desativado.');
   });
 
+  it('os seletores de quantidade de valores e de escopo, marcados como obrigatórios, anunciam a obrigatoriedade', async () => {
+    p = await montarPagina([]);
+    await p.abrirCriacao();
+    await escolherTipo('DECLARADO');
+
+    for (const nome of ['cardinalidade', 'escopo']) {
+      expect(p.elemento(campo(nome)).getAttribute('aria-required'), nome).toBe('true');
+    }
+  });
+
   it('o declarado vai à API com a cardinalidade, e só os domínios com lista levam a fonte de valores', async () => {
     p = await montarPagina([]);
     await p.abrirCriacao();

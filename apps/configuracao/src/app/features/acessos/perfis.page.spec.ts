@@ -518,7 +518,7 @@ describe('PerfisPage', async () => {
     'a falha de servidor ao %s o perfil vira notificação, sem aviso de sucesso',
     async (operacao) => {
       const { pagina } = await abrir();
-      api[operacao].mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+      api[operacao].mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
 
       if (operacao === 'criar') pagina.abrirCriacao();
       else pagina.abrirEdicao(COMUM);
@@ -533,7 +533,7 @@ describe('PerfisPage', async () => {
 
   it('a falha de servidor ao mudar a situação vira notificação', async () => {
     const { pagina } = await abrir();
-    api.desativar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+    api.desativar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
 
     await pagina.alternarAtivacao(COMUM);
 
@@ -669,7 +669,7 @@ describe('PerfisPage', async () => {
 
     it('com a mudança de situação pendente, "Tentar novamente" fica indisponível e não recarrega', async () => {
       vi.resetAllMocks();
-      api.listar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+      api.listar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
       api.catalogoDePermissoes.mockReturnValue(of(ok(CATALOGO)));
       const { fixture, host, pagina } = await abrirComListagem();
       const resposta = new Subject<ReturnType<typeof ok<void>>>();
@@ -796,7 +796,7 @@ describe('PerfisPage', async () => {
       expect(nome.matches(':disabled')).toBe(true);
       expect(document.activeElement).toBe(botao);
 
-      resposta.next(recusa('uniplus.erro_interno', 500, 'Erro interno'));
+      resposta.next(recusa('uniplus.internal.unexpected', 500, 'Erro interno'));
       resposta.complete();
       await assentar(fixture);
       expect(host.textContent).toContain('Erro interno');
@@ -834,7 +834,7 @@ describe('PerfisPage', async () => {
         document.body.append(aberta.host);
         api.catalogoDePermissoes.mockReset();
         api.catalogoDePermissoes
-          .mockReturnValueOnce(of(recusa('uniplus.erro_interno', 503, 'Indisponível')))
+          .mockReturnValueOnce(of(recusa('uniplus.internal.unexpected', 503, 'Indisponível')))
           .mockReturnValue(of(ok(CATALOGO)));
         aberta.pagina.abrirCriacao();
         await assentar(aberta.fixture);

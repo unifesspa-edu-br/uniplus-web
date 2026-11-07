@@ -1,13 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  ElementRef,
-  Injector,
-  afterNextRender,
-  effect,
-  inject,
-  untracked,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject } from '@angular/core';
 import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { CalendariosListaComponent } from './calendarios-lista.component';
@@ -33,7 +24,6 @@ export class CalendarioDiasUteisListPage {
   protected readonly store = inject(CalendariosStore);
   protected readonly edicao = inject(EdicaoDosCalendarios);
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
-  private readonly injector = inject(Injector);
   protected readonly leitura = acompanharLeitura({
     falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,
@@ -42,17 +32,13 @@ export class CalendarioDiasUteisListPage {
     destino: () => document.getElementById(ID_DO_TITULO),
   });
 
-  constructor() {
-    effect(() => {
-      if (this.edicao.confirmandoRemocao() || this.edicao.confirmandoVigencia()) return;
-      const acionador = untracked(() => this.edicao.consumirAcionadorAposRecusa());
-      if (acionador === null) return;
-      // O diálogo devolve o foco ao botão que o abriu ao terminar de fechar, e esse botão pode ter
-      // sumido ou estar indisponível; o destino certo é escolhido depois disso.
-      afterNextRender(() => setTimeout(() => this.focarAposRecusa(acionador)), {
-        injector: this.injector,
-      });
-    });
+  /**
+   * O diálogo devolve o foco ao botão que o abriu ao terminar de fechar, e esse botão pode ter
+   * sumido ou estar indisponível; o destino certo é escolhido depois disso.
+   */
+  protected aoFecharAConfirmacao(): void {
+    const acionador = this.edicao.consumirAcionadorAposRecusa();
+    if (acionador !== null) this.focarAposRecusa(acionador);
   }
 
   /** O botão da linha, se a releitura o manteve habilitado; senão o título da lista. */

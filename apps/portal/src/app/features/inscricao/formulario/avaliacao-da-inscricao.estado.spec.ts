@@ -248,7 +248,7 @@ describe('AvaliacaoDaInscricaoEstado', () => {
           type: 'about:blank',
           title: 'Indisponível',
           status: 503,
-          code: 'uniplus.erro_interno',
+          code: 'uniplus.internal.unexpected',
           traceId: '',
         },
         503,

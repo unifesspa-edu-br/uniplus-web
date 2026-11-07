@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { type Observable, Subject, of } from 'rxjs';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { type ApiResult, apiFailure, apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import { RELOGIO } from '@uniplus/shared-core/relogio';
@@ -105,6 +105,8 @@ describe('InscricaoDoCandidatoPage: nova tentativa da leitura', () => {
       ],
     });
   });
+
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
 
   async function abrirComFalhaAoIniciar(): Promise<void> {
     iniciar.mockReturnValueOnce(of(INDISPONIVEL));

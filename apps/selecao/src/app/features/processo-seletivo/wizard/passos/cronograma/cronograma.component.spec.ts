@@ -450,7 +450,7 @@ describe('CronogramaPassoComponent', () => {
   });
 
   /**
-   * A fase inativada some do catálogo, mas continua no processo. Conferir só
+   * A fase removida some do catálogo, mas continua no processo. Conferir só
    * pelo catálogo vivo faria as etapas dela parecerem órfãs, e a gravação nunca
    * sairia.
    */

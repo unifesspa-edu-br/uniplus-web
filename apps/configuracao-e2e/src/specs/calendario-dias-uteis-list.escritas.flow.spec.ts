@@ -42,7 +42,7 @@ const PROCESSANDO = problema(
   'uniplus.idempotency.processing_conflict',
   'Escrita em processamento',
 );
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 async function responder(route: Route, status: number, corpo?: unknown): Promise<void> {
   await route.fulfill({

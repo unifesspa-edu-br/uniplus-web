@@ -3,6 +3,7 @@
   [(visible)]="aberto"
   [dismissible]="!removendo()"
   [describedBy]="idDaMensagem"
+  (closed)="fechado.emit()"
 >
   @if (item(); as nomeado) {
     <p>

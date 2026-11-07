@@ -75,7 +75,7 @@ describe('PagamentoPassoComponent', () => {
     expect(componente.fundamentosCarregando()).toBe(true);
     expect(componente.fundamentosErro()).toBeNull();
 
-    const falha = problema(503, 'uniplus.indisponivel', 'Indisponível');
+    const falha = problema(503, 'uniplus.internal.unexpected', 'Indisponível');
     controller.expectOne(ROTA_FUNDAMENTOS).flush(falha.body, falha.opts);
 
     expect(componente.fundamentosCarregando()).toBe(false);

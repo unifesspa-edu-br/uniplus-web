@@ -193,7 +193,7 @@ describe('CalendarioDiasUteisListPage — escritas pela interface', () => {
     it('a falha do servidor fica no diálogo, avisa por toast e não relê a lista', async () => {
       const del = await p.confirmarRemocao();
 
-      del.flush(...problema(500, { code: 'uniplus.erro_interno', title: 'Erro interno' }));
+      del.flush(...problema(500, { code: 'uniplus.internal.unexpected', title: 'Erro interno' }));
       await p.propagar();
 
       expect(textoDoDialogo('remocao')).toContain('Erro interno');
@@ -204,7 +204,9 @@ describe('CalendarioDiasUteisListPage — escritas pela interface', () => {
 
     it('a recusa antiga some ao confirmar de novo, e o sucesso seguinte fecha o diálogo', async () => {
       const primeira = await p.confirmarRemocao();
-      primeira.flush(...problema(500, { code: 'uniplus.erro_interno', title: 'Erro interno' }));
+      primeira.flush(
+        ...problema(500, { code: 'uniplus.internal.unexpected', title: 'Erro interno' }),
+      );
       await p.propagar();
 
       p.confirmar().click();

@@ -32,7 +32,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -65,7 +65,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -92,7 +92,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -117,7 +117,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -143,7 +143,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -164,7 +164,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -196,7 +196,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();
@@ -207,7 +207,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     recusar(
       cena.controller.expectOne(LEITURA),
       503,
-      'uniplus.indisponivel',
+      'uniplus.internal.unexpected',
       'Serviço indisponível',
     );
     await cena.propagar();

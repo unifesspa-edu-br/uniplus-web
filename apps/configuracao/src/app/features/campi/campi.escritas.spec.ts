@@ -233,7 +233,7 @@ describe('CampiPage — escritas pela interface', () => {
           type: 'about:blank',
           title: 'Indisponível',
           status: 503,
-          code: 'uniplus.indisponivel',
+          code: 'uniplus.internal.unexpected',
           traceId: 'test-trace',
         }),
         {
@@ -267,7 +267,7 @@ describe('CampiPage — escritas pela interface', () => {
             type: 'about:blank',
             title: 'Indisponível',
             status: 503,
-            code: 'uniplus.indisponivel',
+            code: 'uniplus.internal.unexpected',
             traceId: 'test-trace',
           }),
           {
@@ -435,16 +435,16 @@ describe('CampiPage — escritas pela interface', () => {
     });
 
     it('com 500, notifica o servidor com o título resolvido', async () => {
-      await recusarRemocao(500, 'uniplus.erro_interno', 'Falha ao remover');
+      await recusarRemocao(500, 'uniplus.internal.unexpected', 'Falha ao remover');
 
       expect(erroDoServidor).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ status: 500, code: 'uniplus.erro_interno' }),
+        expect.objectContaining({ status: 500, code: 'uniplus.internal.unexpected' }),
         { title: 'Falha ao remover' },
       );
     });
 
     it('a recusa não aparece ao abrir a confirmação de novo', async () => {
-      await recusarRemocao(500, 'uniplus.erro_interno', 'Falha ao remover');
+      await recusarRemocao(500, 'uniplus.internal.unexpected', 'Falha ao remover');
       edicao.confirmando.set(false);
       edicao.pedirRemocao(campusSeed);
       await propagar();
@@ -732,7 +732,7 @@ describe('CampiPage — escritas pela interface', () => {
           type: 'about:blank',
           title: 'Erro interno',
           status: 500,
-          code: 'uniplus.erro_interno',
+          code: 'uniplus.internal.unexpected',
           traceId: 'test-trace',
         }),
         {

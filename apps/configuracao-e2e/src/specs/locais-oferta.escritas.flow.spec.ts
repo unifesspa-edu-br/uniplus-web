@@ -31,7 +31,7 @@ const PROBLEMA_500 = {
   type: 'about:blank',
   title: 'Erro interno',
   status: 500,
-  code: 'uniplus.erro_interno',
+  code: 'uniplus.internal.unexpected',
 };
 
 const PROBLEMA_422 = {

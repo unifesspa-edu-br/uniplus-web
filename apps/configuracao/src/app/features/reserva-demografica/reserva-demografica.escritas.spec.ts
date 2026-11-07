@@ -62,7 +62,7 @@ const naoEncontrada = problema(
   'uniplus.configuracao.referencia_reserva_demografica.nao_encontrada',
   'Referência de reserva demográfica não encontrada',
 );
-const falhaInterna = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const falhaInterna = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 describe('Reserva demográfica — escritas pela interface', () => {
   let fixture: ComponentFixture<ReservaDemograficaListPage>;
@@ -287,7 +287,7 @@ describe('Reserva demográfica — escritas pela interface', () => {
       expect(erroDoServidor).toHaveBeenCalledTimes(1);
       expect(erroDoServidor.mock.calls[0][0]).toMatchObject({
         status: 500,
-        code: 'uniplus.erro_interno',
+        code: 'uniplus.internal.unexpected',
       });
       expect(sucesso).not.toHaveBeenCalled();
       expect(elemento('dialog ui-alert').textContent).toContain('Erro interno');

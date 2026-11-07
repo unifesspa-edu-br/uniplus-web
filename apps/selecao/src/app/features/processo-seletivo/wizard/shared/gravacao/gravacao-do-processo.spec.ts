@@ -10,7 +10,7 @@ import {
   ProcessosSeletivosApi,
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GravacaoDoProcesso, type RecursoDoProcesso } from './gravacao-do-processo';
 
@@ -46,6 +46,8 @@ describe('GravacaoDoProcesso', () => {
     formulariosApi = TestBed.inject(FormulariosDoProcessoApi);
     http = TestBed.inject(HttpTestingController);
   });
+
+  afterEach(() => http.verify());
 
   /** Duas gravações de recursos diferentes com o mesmo corpo vazio. */
   const gravarEtapas = () =>

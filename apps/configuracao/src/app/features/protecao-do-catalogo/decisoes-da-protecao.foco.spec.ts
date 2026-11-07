@@ -16,7 +16,7 @@ import {
 } from './protecao-do-catalogo.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 const decisao: DecisaoDaProtecaoDto = {
   cadastro: 'TIPO_DOCUMENTO',

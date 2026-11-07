@@ -181,7 +181,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
       await p.abrirCadastro();
       const primeira = await p.enviar();
       const chave = chaveDe(primeira);
-      primeira.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      primeira.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
 
       expect(alertaDoDrawer()).toBeTruthy();
@@ -191,7 +191,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
 
     it('um novo envio, ainda que barrado pela validação, retira a recusa anterior da tela', async () => {
       await p.abrirCadastro();
-      (await p.enviar()).flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      (await p.enviar()).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       expect(alertaDoDrawer()).toBeTruthy();
 
@@ -292,7 +292,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
 
     it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {
       (await p.confirmarDesativacao(sisu)).flush(
-        ...problema(500, { code: 'uniplus.erro_interno' }),
+        ...problema(500, { code: 'uniplus.internal.unexpected' }),
       );
       await p.propagar();
 
@@ -330,7 +330,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
 
     it.each([
       ['o conflito de processamento mantém', problema(409, PROCESSANDO), true],
-      ['a falha 5xx mantém', problema(500, { code: 'uniplus.erro_interno' }), true],
+      ['a falha 5xx mantém', problema(500, { code: 'uniplus.internal.unexpected' }), true],
       ['a recusa de negócio renova', problema(422, JA_ATIVO), false],
     ] as const)('%s a chave no reenvio da reativação', async (_nome, recusa, mantem) => {
       const primeira = await p.confirmarReativacao(vestibular);
@@ -348,7 +348,7 @@ describe('TiposProcessoPage — recusas do servidor', () => {
 
     it('a falha 5xx da reativação avisa por toast uma vez', async () => {
       (await p.confirmarReativacao(vestibular)).flush(
-        ...problema(500, { code: 'uniplus.erro_interno' }),
+        ...problema(500, { code: 'uniplus.internal.unexpected' }),
       );
       await p.propagar();
       expect(p.erros).toHaveBeenCalledTimes(1);

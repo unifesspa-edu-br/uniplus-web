@@ -51,7 +51,7 @@ export const ERRO_INTERNO = {
   type: 'about:blank',
   title: 'Erro interno',
   status: 500,
-  code: 'uniplus.erro_interno',
+  code: 'uniplus.internal.unexpected',
 };
 
 export const REMOCAO_BLOQUEADA = {

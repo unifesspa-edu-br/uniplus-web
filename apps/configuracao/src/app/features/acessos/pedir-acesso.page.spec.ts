@@ -188,7 +188,7 @@ describe('PedirAcessoPage', async () => {
     expect(justificativa.matches(':disabled')).toBe(true);
     expect(document.activeElement).toBe(botao);
 
-    resposta.next(recusa('uniplus.erro_interno', 500, 'Erro interno'));
+    resposta.next(recusa('uniplus.internal.unexpected', 500, 'Erro interno'));
     resposta.complete();
     await fixture.whenStable();
     fixture.detectChanges();
@@ -271,7 +271,7 @@ describe('PedirAcessoPage', async () => {
   });
 
   describe('perfis indisponíveis', () => {
-    const indisponiveis = () => recusa('uniplus.erro_interno', 503, 'Indisponível');
+    const indisponiveis = () => recusa('uniplus.internal.unexpected', 503, 'Indisponível');
     const tentar = (host: HTMLElement) =>
       [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Tentar novamente'));
 

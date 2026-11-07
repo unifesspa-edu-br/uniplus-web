@@ -19,6 +19,8 @@ interface Leitura {
   readonly store: Type<unknown>;
   readonly url: string;
   readonly iniciar?: (store: never) => void;
+  /** As outras leituras que a mesma loja faz ao iniciar, com o corpo no formato do DTO. */
+  readonly vizinhas?: readonly { readonly url: string; readonly corpo: object }[];
 }
 
 const LEITURAS: readonly Leitura[] = [
@@ -27,6 +29,7 @@ const LEITURAS: readonly Leitura[] = [
     nome: 'catálogo de permissões',
     store: PerfisStore,
     url: `${BASE}/permissoes`,
+    vizinhas: [{ url: `${BASE}/perfis`, corpo: [] }],
     iniciar: (store: PerfisStore) => store.carregarCatalogo(),
   },
   { nome: 'lista de concessões', store: ConcessoesStore, url: `${BASE}/concessoes` },
@@ -34,6 +37,7 @@ const LEITURAS: readonly Leitura[] = [
     nome: 'trilha da concessão',
     store: ConcessoesStore,
     url: `${BASE}/concessoes/c1/trilha`,
+    vizinhas: [{ url: `${BASE}/concessoes?situacao=ativa`, corpo: [] }],
     iniciar: (store: ConcessoesStore) => store.carregarTrilha('c1'),
   },
   {
@@ -46,12 +50,14 @@ const LEITURAS: readonly Leitura[] = [
     nome: 'pedido',
     store: PedidoDetalheStore,
     url: `${BASE}/pedidos-de-concessao/p1`,
+    vizinhas: [{ url: `${BASE}/pedidos-de-concessao/p1/trilha`, corpo: [] }],
     iniciar: (store: PedidoDetalheStore) => store.id.set('p1'),
   },
   {
     nome: 'trilha do pedido',
     store: PedidoDetalheStore,
     url: `${BASE}/pedidos-de-concessao/p1/trilha`,
+    vizinhas: [{ url: `${BASE}/pedidos-de-concessao/p1`, corpo: { id: 'p1' } }],
     iniciar: (store: PedidoDetalheStore) => store.id.set('p1'),
   },
   { nome: 'perfis para pedir acesso', store: PedirAcessoStore, url: `${BASE}/perfis-para-pedido` },
@@ -76,6 +82,11 @@ describe('falhas de leitura dos acessos', () => {
     leitura.iniciar?.(store as never);
     await Promise.resolve();
     TestBed.tick();
+    // As vizinhas são lidas junto, mas não fazem parte desta falha: respondem com sucesso, e só
+    // elas. Qualquer outra requisição fica pendente para o `verify` do `afterEach` acusar.
+    for (const { url, corpo } of leitura.vizinhas ?? []) {
+      http.expectOne((req) => req.urlWithParams === url).flush(corpo);
+    }
     http
       .expectOne((req) => req.url === leitura.url)
       .flush(
@@ -87,7 +98,13 @@ describe('falhas de leitura dos acessos', () => {
   };
 
   beforeEach(() => notificacoes.errorFromProblem.mockClear());
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    try {
+      http.verify();
+    } finally {
+      TestBed.resetTestingModule();
+    }
+  });
 
   it.each(LEITURAS)('$nome: a falha de servidor (5xx) vira notificação', async (leitura) => {
     await falhar(leitura, 503);

@@ -28,7 +28,7 @@ function presente<T>(valor: T | null | undefined): T {
 }
 
 const MENSAGEM_DA_FALHA = 'Servidor indisponível';
-const servidorIndisponivel = () => recusa('uniplus.erro_interno', 503, MENSAGEM_DA_FALHA);
+const servidorIndisponivel = () => recusa('uniplus.internal.unexpected', 503, MENSAGEM_DA_FALHA);
 
 const GESTOR = 'autorizacao:pedidos:aprovar-funcional';
 const PROTECAO_DE_DADOS = 'autorizacao:pedidos:aprovar-protecao-de-dados';
@@ -559,7 +559,7 @@ describe('PedidoDetalhePage', () => {
 
   it('a falha de servidor da decisão vira notificação, sem aviso de sucesso', async () => {
     const { host, fixture } = await abrir([GESTOR]);
-    api.aprovar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+    api.aprovar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
 
     await decidirNoResumo(fixture, host, 'Aprovar');
     await confirmarNoDialogo(fixture, host);
@@ -1018,7 +1018,7 @@ describe('PedidoDetalhePage', () => {
 
   it('a falha de servidor do cancelamento vira notificação', async () => {
     const { fixture, host } = await abrir([], solicitadoPorMim());
-    api.cancelar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+    api.cancelar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
 
     await decidirNoResumo(fixture, host, 'Cancelar o pedido');
     await confirmarNoDialogo(fixture, host);

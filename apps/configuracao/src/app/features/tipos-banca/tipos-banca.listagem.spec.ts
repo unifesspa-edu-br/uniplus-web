@@ -32,7 +32,7 @@ const indisponivel = [
     type: 'about:blank',
     title: 'Falha',
     status: 503,
-    code: 'uniplus.indisponivel',
+    code: 'uniplus.internal.unexpected',
   }),
   {
     status: 503,

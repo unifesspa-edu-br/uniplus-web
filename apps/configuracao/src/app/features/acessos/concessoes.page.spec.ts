@@ -336,7 +336,7 @@ describe('ConcessoesPage', () => {
       pagina.confirmar();
       await atualizar();
       expect(pagina.email.hasError('backend')).toBe(true);
-      api.revogar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
+      api.revogar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
 
       pagina.confirmar();
       await atualizar();
@@ -374,7 +374,7 @@ describe('ConcessoesPage', () => {
     );
 
     it('a falha de servidor da revogação vira notificação; a recusa 4xx, não', async () => {
-      await revogarComRecusa(recusa('uniplus.erro_interno', 500, 'Erro interno'));
+      await revogarComRecusa(recusa('uniplus.internal.unexpected', 500, 'Erro interno'));
       expect(notificacoes.errorFromProblem).toHaveBeenCalledOnce();
       expect(notificacoes.errorFromProblem.mock.calls[0]?.[1]).toEqual({ title: 'Erro interno' });
     });

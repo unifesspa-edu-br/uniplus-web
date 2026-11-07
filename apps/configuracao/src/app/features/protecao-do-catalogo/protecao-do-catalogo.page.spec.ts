@@ -1061,7 +1061,7 @@ describe('ProtecaoDoCatalogoPage', () => {
       await assentar();
       controller
         .expectOne((r) => r.url === DECISOES)
-        .flush(...recusa(503, 'uniplus.erro_interno', 'Servidor indisponível'));
+        .flush(...recusa(503, 'uniplus.internal.unexpected', 'Servidor indisponível'));
       await assentar();
       const tela = fixture.nativeElement as HTMLElement;
       expect(tela.textContent).toContain('Não foi possível carregar as decisões');

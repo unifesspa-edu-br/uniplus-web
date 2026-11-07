@@ -104,7 +104,7 @@ describe('EdicaoDosCampi', () => {
     edicao.salvar();
     recusar(`${ESCRITA_URL}/${campus.id}`, 500, {
       title: 'Falha ao gravar',
-      code: 'uniplus.erro_interno',
+      code: 'uniplus.internal.unexpected',
     });
 
     expect(edicao.erro()).toBe('Falha ao gravar');

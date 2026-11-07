@@ -73,7 +73,9 @@ describe('AnexoDoPedidoService', () => {
     await servico.anexar('p1', arquivo, () => undefined);
     expect(notificacoes.notifications()).toEqual([]);
 
-    api.iniciarAnexo.mockReturnValueOnce(of(recusa('uniplus.erro_interno', 503, 'Indisponível')));
+    api.iniciarAnexo.mockReturnValueOnce(
+      of(recusa('uniplus.internal.unexpected', 503, 'Indisponível')),
+    );
     await servico.anexar('p1', arquivo, () => undefined);
     expect(notificacoes.notifications()).toHaveLength(1);
     expect(notificacoes.notifications()[0]).toMatchObject({ type: 'error', title: 'Indisponível' });

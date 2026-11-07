@@ -69,7 +69,7 @@ const problema = (status: number, code: string, title: string, errors?: unknown[
   code,
   ...(errors ? { errors } : {}),
 });
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const RECUSA_DE_NOME = problema(422, 'uniplus.validacao', 'Dados inválidos', [
   {
     field: 'Nome',

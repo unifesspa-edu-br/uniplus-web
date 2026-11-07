@@ -54,7 +54,7 @@ const processando = problema(
   'uniplus.idempotency.processing_conflict',
   'A requisição anterior ainda está em processamento',
 );
-const falhaInterna = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const falhaInterna = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 describe('Condições de atendimento — escritas pela interface', () => {
   let fixture: ComponentFixture<CondicoesAtendimentoPage>;
@@ -285,7 +285,7 @@ describe('Condições de atendimento — escritas pela interface', () => {
       expect(erroDoServidor).toHaveBeenCalledTimes(1);
       expect(erroDoServidor.mock.calls[0][0]).toMatchObject({
         status: 500,
-        code: 'uniplus.erro_interno',
+        code: 'uniplus.internal.unexpected',
       });
       expect(sucesso).not.toHaveBeenCalled();
       expect(elemento('dialog ui-alert').textContent).toContain('Erro interno');

@@ -26,10 +26,12 @@ describe('BasesLegaisDeBonus', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => controller.match(() => true));
+  afterEach(() => controller.verify());
 
   it('trata como falha a resposta 500 das bases legais, sem deixar a espera presa', () => {
     const bases = TestBed.inject(BasesLegaisDeBonus);
+    // O serviço lê junto o vocabulário dos tipos de instrumento; ele não faz parte desta falha.
+    controller.expectOne((req) => req.url.includes('tipos-instrumento-normativo')).flush([]);
 
     controller
       .expectOne((req) => req.url.includes('base-legal-bonus-regional'))

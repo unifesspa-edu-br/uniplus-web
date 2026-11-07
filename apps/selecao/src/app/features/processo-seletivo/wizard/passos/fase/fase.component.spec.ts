@@ -1448,7 +1448,7 @@ describe('FasePassoComponent', () => {
       });
 
       /**
-       * O tipo inativado depois da publicação continua valendo: a consulta diz isso fora da
+       * O tipo removido depois da publicação continua valendo: a consulta diz isso fora da
        * descrição e sem a orientação de remover, que só a edição tem como cumprir.
        */
       it('em consulta, não manda remover o documento cujo tipo saiu do cadastro', () => {
@@ -1535,7 +1535,7 @@ describe('FasePassoComponent', () => {
     });
 
     /**
-     * O tipo inativado no cadastro sai do catálogo vivo, e a exigência que o cita continua no
+     * O tipo removido do cadastro sai do catálogo vivo, e a exigência que o cita continua no
      * rascunho — a gravação seguinte a reenvia inteira. Sem sintetizar a linha, ela sumia da
      * tela: não dava para conferir nem remover o que continuava sendo exigido.
      */
@@ -1550,7 +1550,7 @@ describe('FasePassoComponent', () => {
           .map((doc) => doc.id),
       ).toEqual([ID_CPF]);
 
-      // O cadastro inativa o tipo: ele deixa de vir no catálogo.
+      // O cadastro remove o tipo: ele deixa de vir no catálogo.
       TestBed.inject(CatalogoDeDocumentos).tiposDocumento.set(
         TIPOS_DOCUMENTO.filter((tipo) => tipo.id !== ID_CPF),
       );

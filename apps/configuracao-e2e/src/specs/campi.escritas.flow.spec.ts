@@ -73,7 +73,7 @@ const REMOCAO_BLOQUEADA = problema(
   'uniplus.configuracao.campus.remocao_bloqueada_por_local_oferta',
   'Não é possível remover um campus responsável por locais de oferta ativos',
 );
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Falha ao gravar o campus');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Falha ao gravar o campus');
 
 type Recarga = 'com-o-campus' | 'sem-o-campus' | 'com-falha';
 type Resposta = { status: number; corpo?: unknown };

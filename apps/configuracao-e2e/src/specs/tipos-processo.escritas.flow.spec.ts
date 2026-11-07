@@ -72,7 +72,7 @@ const PROBLEMA_422_JA_ATIVO = problema(
   'uniplus.configuracao.tipo_processo.ja_ativo',
   'Tipo de processo seletivo já está ativo',
 );
-const PROBLEMA_500 = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const PROBLEMA_500 = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const RECUSA_DE_NOME = {
   type: 'about:blank',
   title: 'Dados inválidos',

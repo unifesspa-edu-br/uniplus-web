@@ -31,7 +31,7 @@ const PROBLEMA_409 = problema(
   'uniplus.configuracao.condicao_atendimento.remocao_bloqueada_codigo_protegido',
   'A condição reservada não pode ser removida',
 );
-const PROBLEMA_500 = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const PROBLEMA_500 = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const PROBLEMA_422 = problema(422, 'uniplus.validacao', 'Dados inválidos', [
   {
     field: 'Nome',

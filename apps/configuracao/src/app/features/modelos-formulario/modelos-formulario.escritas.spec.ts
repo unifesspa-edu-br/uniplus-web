@@ -71,7 +71,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
   async function carregar(falha = false, tipos: readonly object[] = []): Promise<void> {
     const lista = controller.expectOne((r) => r.url === URL);
     if (falha) {
-      lista.flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+      lista.flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
         status: 500,
         statusText: 'Internal Server Error',
         headers: PROBLEMA,
@@ -141,7 +141,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
       controller.expectOne((r) => r.url === URL).flush([modelo]);
       controller
         .expectOne((r) => r.url === URL_DOS_TIPOS)
-        .flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+        .flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
           status: 500,
           statusText: 'Internal Server Error',
           headers: PROBLEMA,
@@ -414,7 +414,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     await propagar();
     expect(document.activeElement).toBe(salvar());
 
-    post.flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+    post.flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
       status: 500,
       statusText: 'Internal Server Error',
       headers: PROBLEMA,
@@ -558,7 +558,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     expect(desativar().disabled).toBe(true);
     (document.activeElement as HTMLElement).blur();
 
-    requisicao.flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+    requisicao.flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
       status: 500,
       statusText: 'Internal Server Error',
       headers: PROBLEMA,
@@ -620,7 +620,7 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
 
     controller
       .expectOne((r) => r.url === URL)
-      .flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+      .flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
         status: 500,
         statusText: 'Internal Server Error',
         headers: PROBLEMA,
@@ -697,7 +697,7 @@ describe('ModelosFormularioPage — "Tentar novamente"', () => {
     fixture.detectChanges();
     controller
       .expectOne((r) => r.url === URL)
-      .flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+      .flush(problema(500, 'uniplus.internal.unexpected', 'Erro interno'), {
         status: 500,
         statusText: 'Internal Server Error',
         headers: PROBLEMA,

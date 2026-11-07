@@ -213,7 +213,7 @@ describe('ModeloFormularioEdicaoPage', () => {
   const FALHA_500 = JSON.stringify({
     status: 500,
     title: 'Erro interno',
-    code: 'uniplus.erro_interno',
+    code: 'uniplus.internal.unexpected',
   });
 
   const FALHA_404 = JSON.stringify({

@@ -58,7 +58,7 @@ const PROBLEMA_409_PROCESSANDO = problema(
   'uniplus.idempotency.processing_conflict',
   'Escrita em processamento',
 );
-const PROBLEMA_500 = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const PROBLEMA_500 = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const VERSAO_TAMANHO = 'uniplus.configuracao.calendario_dias_uteis.versao_dataset_tamanho';
 const DESCRICAO_TAMANHO = 'uniplus.configuracao.calendario_dias_uteis.descricao_tamanho';
 const RECUSA_DE_VERSAO = problema(422, VERSAO_TAMANHO, 'Tamanho da versão do dataset inválido', [

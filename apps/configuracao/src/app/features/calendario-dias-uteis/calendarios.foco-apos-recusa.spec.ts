@@ -78,7 +78,7 @@ describe('CalendarioDiasUteisListPage — foco ao fechar a confirmação após r
 
   it('a recusa que não relê a lista deixa o foco com o diálogo ao fechar', async () => {
     const del = await p.confirmarRemocao();
-    del.flush(...problema(500, { code: 'uniplus.erro_interno', title: 'Erro interno' }));
+    del.flush(...problema(500, { code: 'uniplus.internal.unexpected', title: 'Erro interno' }));
     await p.propagar();
 
     await cancelar('remocao');

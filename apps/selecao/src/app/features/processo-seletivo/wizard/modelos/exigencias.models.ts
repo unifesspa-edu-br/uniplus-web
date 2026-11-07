@@ -58,7 +58,7 @@ export interface IdadeMaximaEmissaoConfig {
 export interface ExigenciaDeDocumento {
   readonly tipoDocumentoId: string;
   /**
-   * O nome que o processo guardou do tipo de documento. Cobre o tipo inativado depois de exigido:
+   * O nome que o processo guardou do tipo de documento. Cobre o tipo removido depois de exigido:
    * sem ele a linha sumiria da tela enquanto a gravação seguiria reenviando a exigência, invisível
    * e intocável. Ausente no que a tela acabou de declarar, porque aí o nome vem do catálogo.
    */

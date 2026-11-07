@@ -270,7 +270,7 @@ async function mockVitrine(
           type: 'https://uniplus.unifesspa.edu.br/problems/indisponivel',
           title: 'Serviço temporariamente indisponível',
           status: 503,
-          code: 'uniplus.indisponivel',
+          code: 'uniplus.internal.unexpected',
         }),
       });
     }

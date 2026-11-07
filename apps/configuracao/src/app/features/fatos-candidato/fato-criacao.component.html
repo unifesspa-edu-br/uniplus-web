@@ -173,6 +173,7 @@
           <span class="field__label is-required">Quantos valores</span>
           <select
             class="select"
+            aria-required="true"
             formControlName="cardinalidade"
             [attr.aria-invalid]="erroCardinalidade ? 'true' : null"
             [attr.aria-describedby]="erroCardinalidade ? 'cfg-fato-cardinalidade-erro' : null"
@@ -236,6 +237,7 @@
           <span class="field__label is-required">De quem é o dado</span>
           <select
             class="select"
+            aria-required="true"
             formControlName="escopo"
             [attr.aria-invalid]="erroEscopo ? 'true' : null"
             [attr.aria-describedby]="erroEscopo ? 'cfg-fato-escopo-erro' : null"

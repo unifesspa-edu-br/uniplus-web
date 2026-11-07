@@ -195,7 +195,7 @@ test.describe('Modalidade — escrita', () => {
           type: 'about:blank',
           title: 'Erro interno',
           status: 500,
-          code: 'uniplus.erro_interno',
+          code: 'uniplus.internal.unexpected',
         });
         return;
       }

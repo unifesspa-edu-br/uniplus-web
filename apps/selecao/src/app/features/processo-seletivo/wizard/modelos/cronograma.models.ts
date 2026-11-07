@@ -58,7 +58,7 @@ export const PAPEL_DEFINITIVO = 'DEFINITIVO';
 
 /**
  * O que a fase congelou do catálogo ao entrar no processo. O catálogo é vivo e o cronograma não:
- * a fase inativada depois continua valendo no edital, e sem estes atributos a tela esconderia do
+ * a fase removida depois continua valendo no edital, e sem estes atributos a tela esconderia do
  * operador a fase que ele precisa editar. O que a fase publica fica em `produtos`.
  */
 export interface AtributosCongeladosDaFase {

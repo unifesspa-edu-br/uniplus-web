@@ -37,7 +37,7 @@ export const CODIGOS = {
     'uniplus.configuracao.termo_consentimento.remocao_bloqueada_com_versao_promovida',
   conflitoDeConcorrencia: 'uniplus.configuracao.termo_consentimento.conflito_de_concorrencia',
   processingConflict: 'uniplus.idempotency.processing_conflict',
-  erroInterno: 'uniplus.erro_interno',
+  erroInterno: 'uniplus.internal.unexpected',
 } as const;
 
 export const SEM_CONTEUDO = { status: 204, statusText: 'No Content' } as const;

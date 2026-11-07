@@ -11,7 +11,7 @@ import {
   SELECAO_BASE_PATH,
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
@@ -134,6 +134,8 @@ const CLASSIFICACAO_LOCAL = {
 };
 
 describe('regra gravada no select, passo lido como texto em consulta', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   describe('Fórmula', () => {
     it('mostra as regras gravadas quando o catálogo chega depois do rascunho', async () => {
       const { fixture, host, store, catalogos } = await montar(FormulaPassoComponent);

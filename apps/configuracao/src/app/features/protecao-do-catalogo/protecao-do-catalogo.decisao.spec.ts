@@ -17,7 +17,7 @@ import {
 } from './protecao-do-catalogo.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
   let pagina: PaginaMontada;

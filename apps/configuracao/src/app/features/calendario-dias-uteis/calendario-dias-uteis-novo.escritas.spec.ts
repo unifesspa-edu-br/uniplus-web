@@ -105,7 +105,7 @@ describe('CalendarioDiasUteisNovoPage — escritas pela interface', () => {
 
       expect(p.versao().matches(':disabled')).toBe(true);
       expect(document.activeElement).toBe(p.salvar());
-      post.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       await p.propagar();
 

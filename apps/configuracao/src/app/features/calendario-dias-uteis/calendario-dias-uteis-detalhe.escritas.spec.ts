@@ -129,7 +129,7 @@ describe('CalendarioDiasUteisDetalhePage — inclusão de dia não útil', () =>
 
       expect(p.campo('descricao').matches(':disabled')).toBe(true);
       expect(document.activeElement).toBe(p.salvar());
-      post.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       await p.propagar();
 
@@ -188,7 +188,7 @@ describe('CalendarioDiasUteisDetalhePage — inclusão de dia não útil', () =>
     it('se a recarga falha e a grade sai da tela, o foco vai ao título da página', async () => {
       await incluir();
       await p.propagar();
-      p.http.expectOne(LEITURA).flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      p.http.expectOne(LEITURA).flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
 
       expect(p.fixture.nativeElement.querySelector('button[data-dia]')).toBeNull();
@@ -207,7 +207,7 @@ describe('CalendarioDiasUteisDetalhePage — inclusão de dia não útil', () =>
 
     it('a inclusão recusada deixa o foco no diálogo, sem devolvê-lo à grade', async () => {
       const post = await p.enviar();
-      post.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       await p.propagar();
       await p.propagar();
 
@@ -219,7 +219,7 @@ describe('CalendarioDiasUteisDetalhePage — inclusão de dia não útil', () =>
   describe('foco com a inclusão recusada e o foco livre', () => {
     it('não vai à grade que está atrás do diálogo, que segue aberto', async () => {
       const post = await p.enviar();
-      post.flush(...problema(500, { code: 'uniplus.erro_interno' }));
+      post.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
       (document.activeElement as HTMLElement).blur();
       await p.propagar();
       await p.propagar();

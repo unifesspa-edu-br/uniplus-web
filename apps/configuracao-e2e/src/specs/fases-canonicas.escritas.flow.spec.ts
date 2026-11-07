@@ -29,7 +29,7 @@ const ERRO_INTERNO = {
   type: 'about:blank',
   title: 'Erro interno',
   status: 500,
-  code: 'uniplus.erro_interno',
+  code: 'uniplus.internal.unexpected',
 };
 
 async function responder(route: Route, status: number, corpo: unknown): Promise<void> {
@@ -66,7 +66,7 @@ async function mockApi(
         type: 'about:blank',
         title: 'Erro interno',
         status: 500,
-        code: 'uniplus.erro_interno',
+        code: 'uniplus.internal.unexpected',
       });
       return;
     }

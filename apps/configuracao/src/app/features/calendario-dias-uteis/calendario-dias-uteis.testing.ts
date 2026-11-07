@@ -76,7 +76,7 @@ export const problema = (status: number, corpo: object = {}) =>
       type: 'about:blank',
       title: 'Falha',
       status,
-      code: 'uniplus.erro_interno',
+      code: 'uniplus.internal.unexpected',
       ...corpo,
     }),
     { status, statusText: 'Erro', headers: { 'content-type': 'application/problem+json' } },

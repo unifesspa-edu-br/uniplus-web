@@ -33,7 +33,7 @@ const regraDaFalha = (emConsulta: boolean): string =>
  * A regra de remanejamento escolhida, inclusive quando a listagem ativa já não a traz.
  *
  * Hidratação (ou uma gravação anterior) pode referenciar uma regra que saiu da listagem desde
- * então (inativada, ou nova versão publicada por cima). A seleção é imutável por código e versão,
+ * então (desativada, ou nova versão publicada por cima). A seleção é imutável por código e versão,
  * e item já referenciado permanece legível como snapshot: a busca é pela versão exata, nunca por
  * uma substituta.
  */

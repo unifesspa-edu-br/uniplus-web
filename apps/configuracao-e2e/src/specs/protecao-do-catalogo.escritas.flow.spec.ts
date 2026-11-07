@@ -57,7 +57,7 @@ const problema = (status: number, code: string, title: string) => ({
   status,
   code,
 });
-const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const CONCORRENCIA = problema(
   409,
   'uniplus.configuracao.protecao_do_catalogo.protecao_mudou',

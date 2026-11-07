@@ -30,7 +30,7 @@ const PROBLEMA_404 = problema(
   'uniplus.configuracao.recurso_acessibilidade.nao_encontrado',
   'Recurso de acessibilidade não encontrado',
 );
-const PROBLEMA_500 = problema(500, 'uniplus.erro_interno', 'Erro interno');
+const PROBLEMA_500 = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 const PROBLEMA_422 = problema(422, 'uniplus.validacao', 'Dados inválidos', [
   {
     field: 'Nome',

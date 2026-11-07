@@ -75,6 +75,14 @@ describe('FatosCandidatoPage — definição do fato', () => {
       await entregar(corRaca, pedido);
     });
 
+    it('os seletores de quantidade de valores e de escopo anunciam a obrigatoriedade', async () => {
+      await abrir(corRaca);
+
+      for (const nome of ['cardinalidade', 'escopo']) {
+        expect(p.elemento(campo(nome)).getAttribute('aria-required'), nome).toBe('true');
+      }
+    });
+
     it('o derivado por regra envia o tipo de dado e o escopo, sem cardinalidade, fonte nem formato', async () => {
       await abrir(derivadoBooleano);
       await enviar();

@@ -14,12 +14,14 @@ import {
   SELECAO_BASE_PATH,
 } from '@uniplus/shared-data/selecao';
 import { of } from 'rxjs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CadastroInicial } from './cadastro-inicial.service';
 import { GravacaoDoProcesso } from './gravacao/gravacao-do-processo';
 
 describe('CadastroInicial — descarte do cadastro em andamento', () => {
+  afterEach(() => TestBed.inject(HttpTestingController).verify());
+
   const ROTA = 'http://localhost:5000/api/selecao/processos-seletivos';
   const PROCESSO_ID = '01960000-0000-7000-0000-000000000515';
 
