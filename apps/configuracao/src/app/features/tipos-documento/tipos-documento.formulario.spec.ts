@@ -12,14 +12,6 @@ import {
   rg,
   sucesso,
 } from './tipos-documento.testing';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-  situacoesDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('TiposDocumentoPage — formulário', () => {
   let p: Pagina;
@@ -319,26 +311,24 @@ describe('TiposDocumentoPage — formulário', () => {
       p.atenderCategorias();
     });
 
-    it('a recusa do catálogo aparece no formulário e a nova tentativa leva o foco ao campo', async () => {
+    it('a recusa do catálogo aparece no campo Categoria e a nova tentativa leva o foco ao campo', async () => {
       p = await montarPagina([], { categorias: 'falha' });
       await p.acionarNovo();
 
-      expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Categorias não carregadas');
-      expect(p.elemento('#cfg-td-categoria-dica').textContent).toContain(
-        'não puderam ser carregadas',
+      const campo = p.campo('categoria').closest('.field') as HTMLElement;
+      expect(campo.querySelector('[role="alert"]')?.textContent).toContain(
+        'Não foi possível carregar as categorias.',
       );
-      const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
+      expect(p.elemento('#cfg-td-categoria-dica').textContent).not.toContain('não está mais');
+      const tentar = campo.querySelector<HTMLButtonElement>('button.link-button') as HTMLElement;
       tentar.focus();
       tentar.click();
       await p.propagar();
-      expect(tentar.isConnected).toBe(true);
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentar);
       p.atenderCategorias();
       await p.propagar();
       await p.propagar();
 
-      expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
+      expect(campo.querySelector('[role="alert"]')).toBeNull();
       expect(document.activeElement).toBe(p.campo('categoria'));
     });
 
@@ -347,7 +337,7 @@ describe('TiposDocumentoPage — formulário', () => {
       await p.abrirCadastro();
       p.edicao.form.controls.categoria.setValue('RENDA');
       const post = await p.enviar();
-      const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
+      const tentar = p.elemento<HTMLButtonElement>('ui-drawer button.link-button');
 
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
       tentar.click();
@@ -356,52 +346,6 @@ describe('TiposDocumentoPage — formulário', () => {
 
       post.flush(...criado());
       await p.recarregarCom([rg]);
-    });
-
-    it('mostra e anuncia, no drawer, cada nova tentativa do catálogo', async () => {
-      p = await montarPagina([], { categorias: 'falha' });
-      await p.acionarNovo();
-      const tentar = p.elemento<HTMLButtonElement>('ui-drawer .list-state__retry button');
-      const anuncio = (): string =>
-        situacaoDaNovaTentativa(p.elemento('cfg-tipo-documento-formulario'));
-
-      tentar.click();
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      p.atenderCategorias('falha');
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
-      expect(document.activeElement).not.toBe(p.campo('categoria'));
-    });
-
-    it('fechar o drawer no meio da leitura passa o aviso à lista; abri-lo no meio, ao drawer', async () => {
-      p = await montarPagina([], { categorias: 'falha' });
-      await p.acionarNovo();
-      const formulario = p.elemento('cfg-tipo-documento-formulario');
-      p.elemento<HTMLButtonElement>(
-        'cfg-tipo-documento-formulario ui-alerta-nova-tentativa button',
-      ).click();
-      await p.propagar();
-      expect(situacaoDaNovaTentativa(formulario)).toBe(TEXTO_TENTANDO);
-
-      p.elemento<HTMLButtonElement>(
-        'cfg-tipo-documento-formulario button.btn--tertiary:not([aria-label])',
-      ).click();
-      await p.propagar();
-      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([
-        textoTentandoDe('categorias'),
-      ]);
-
-      p.atenderCategorias('falha');
-      await p.propagar();
-      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([
-        textoRepetidaDe('categorias'),
-      ]);
-
-      await p.acionarNovo();
-      expect(situacaoDaNovaTentativa(p.elemento('cfg-tipo-documento-formulario'))).toBe(
-        TEXTO_REPETIDA,
-      );
     });
 
     it('associa a dica e a mensagem de erro ao campo para leitor de tela', async () => {

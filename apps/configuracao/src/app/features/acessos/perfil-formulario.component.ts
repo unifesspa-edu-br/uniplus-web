@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { ReactiveFormsModule } from '@angular/forms';
 import type { ModuloDoCatalogoDto } from '@uniplus/shared-data/autorizacao';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraComponent,
+  type LeituraAcompanhada,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -14,6 +14,7 @@ import {
   criarFormularioDePerfil,
   mensagemDoCampoDoPerfil,
 } from './perfil-form';
+import { RecusaDaLeituraComponent, type RecusaDaLeitura } from '../../shared/recusa-da-leitura';
 import { sensibilidade } from './rotulos-de-acesso';
 
 /** Destino do foco quando o catálogo volta a carregar depois de uma falha. */
@@ -26,8 +27,9 @@ export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
     ReactiveFormsModule,
     AlertComponent,
     DrawerComponent,
+    FalhaDeLeituraComponent,
+    RecusaDaLeituraComponent,
     SpinnerComponent,
-    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './perfil-formulario.component.html',
@@ -41,13 +43,11 @@ export class PerfilFormularioComponent {
   readonly criacaoEmAberto = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly catalogo = input.required<readonly ModuloDoCatalogoDto[]>();
-  readonly erroDoCatalogo = input.required<boolean>();
-  readonly carregandoCatalogo = input.required<boolean>();
-  readonly faseDoCatalogo = input.required<FaseDaNovaTentativa>();
+  readonly leituraDoCatalogo = input.required<LeituraAcompanhada>();
+  readonly recusaDoCatalogo = input.required<RecusaDaLeitura | null>();
   readonly marcadas = input.required<readonly string[]>();
   readonly salvar = output<void>();
   readonly alternar = output<string>();
-  readonly recarregarCatalogo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
   protected readonly idDasPermissoes = ID_DAS_PERMISSOES;
 

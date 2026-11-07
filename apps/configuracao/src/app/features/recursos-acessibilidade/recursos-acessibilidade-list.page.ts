@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { EdicaoDosRecursosAcessibilidade } from './edicao-dos-recursos-acessibilidade';
 import { RecursoAcessibilidadeFormularioComponent } from './recurso-acessibilidade-formulario.component';
@@ -14,7 +11,7 @@ import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
   selector: 'cfg-recurso-acessibilidade-list',
   providers: [RecursosAcessibilidadeStore, EdicaoDosRecursosAcessibilidade],
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     RecursosAcessibilidadeListaComponent,
     RecursoAcessibilidadeFormularioComponent,
     ConfirmacaoDeRemocaoComponent,
@@ -25,14 +22,11 @@ import { RecursosAcessibilidadeStore } from './recursos-acessibilidade.store';
 export class RecursosAcessibilidadeListPage {
   protected readonly store = inject(RecursosAcessibilidadeStore);
   protected readonly edicao = inject(EdicaoDosRecursosAcessibilidade);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-recursos-acessibilidade-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

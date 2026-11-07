@@ -51,16 +51,17 @@
 
       <fieldset class="field" [id]="idDasPermissoes" tabindex="-1">
         <legend class="form-section__title">Permissões</legend>
-        @if (erroDoCatalogo()) {
-          <ui-alerta-nova-tentativa
-            titulo="Catálogo indisponível"
-            mensagem="Não foi possível carregar o catálogo de permissões."
-            [pendente]="carregandoCatalogo()"
-            [fase]="faseDoCatalogo()"
-            variante="warning"
-            (tentar)="recarregarCatalogo.emit()"
-          />
-        }
+        <ui-falha-de-leitura
+          titulo="Catálogo indisponível"
+          variante="warning"
+          [leitura]="leituraDoCatalogo()"
+        />
+        <cfg-recusa-da-leitura
+          naoEncontrado="Catálogo de permissões não encontrado"
+          [recusa]="recusaDoCatalogo()"
+        >
+          Feche o formulário para voltar à lista de perfis.
+        </cfg-recusa-da-leitura>
         @for (modulo of catalogo(); track modulo.modulo) {
           @for (resource of modulo.resources; track resource.resource) {
             <fieldset class="field">

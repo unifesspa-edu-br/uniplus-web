@@ -4,7 +4,6 @@ import type { CategoriaDocumentoDto } from '@uniplus/shared-data/configuracao';
 export interface CategoriasDoFormulario {
   readonly opcoes: readonly CategoriaDocumentoDto[];
   readonly pendente: boolean;
-  readonly comErro: boolean;
   /** O código escolhido que o catálogo não oferece, para o `select` não renderizar em branco. */
   readonly foraDasOpcoes: string | null;
   /** O texto da opção do código fora do catálogo: sem rótulo inventado enquanto o catálogo não chega. */
@@ -20,10 +19,8 @@ interface LeituraDoCatalogo {
 
 function dicaDaCategoria(leitura: LeituraDoCatalogo, foraDasOpcoes: string | null): string {
   if (leitura.pendente) return 'Carregando as categorias do cadastro…';
-  if (leitura.comErro) {
-    return 'As categorias não puderam ser carregadas. Tente novamente para escolher uma.';
-  }
-  if (foraDasOpcoes !== null) {
+  // Sem o catálogo, nada indica que a categoria saiu do cadastro: o aviso do campo explica a falta.
+  if (foraDasOpcoes !== null && !leitura.comErro) {
     return 'A categoria atual não está mais no cadastro. Escolha uma das vigentes para substituí-la.';
   }
   return 'Vem do cadastro de categorias. Congelada no snapshot do edital.';

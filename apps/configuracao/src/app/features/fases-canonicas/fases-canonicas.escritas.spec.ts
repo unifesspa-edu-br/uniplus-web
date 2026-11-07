@@ -465,8 +465,6 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
       tentar.focus();
       tentar.click();
       await propagar();
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
-      expect(document.activeElement).toBe(tentar);
 
       controller.expectOne((r) => r.url === LISTA).flush([fase]);
       await propagar();

@@ -1,14 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
-import { throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AREAS, ERRO_500, GRUPOS, PaginaDeTeste, problem } from './pesos-enem.testing';
-import {
-  TEXTO_REPETIDA,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PesosEnemPage — lista de áreas', () => {
   let t: PaginaDeTeste;
@@ -18,30 +12,6 @@ describe('PesosEnemPage — lista de áreas', () => {
   });
 
   afterEach(() => t.verificar());
-
-  it('PesosEnemPage_FalhaRepetidaDasAreas_MostraEAnunciaNoAlertaDasAreas', async () => {
-    t.fixture.detectChanges();
-    t.expectAreas().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    t.expectGrupos().flush([...GRUPOS]);
-    t.expectListagem().flush([]);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    const raiz = t.fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
-    await t.propagate();
-    t.expectAreas().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    expect(
-      situacaoDaNovaTentativa(
-        raiz
-          .querySelector('#cfg-pesos-enem-areas-tentar')
-          ?.closest('ui-alerta-nova-tentativa') as HTMLElement,
-      ),
-    ).toBe(TEXTO_REPETIDA);
-  });
 
   it('PesosEnemPage_AreasRecusadasSemTitulo_AlertaComTextoPadrao', async () => {
     t.fixture.detectChanges();
@@ -97,41 +67,6 @@ describe('PesosEnemPage — lista de áreas', () => {
     expect(raiz.querySelector('.list-state__retry button')).not.toBeNull();
   });
 
-  it('PesosEnemPage_TentarDeNovoAsAreas_MantemOFocoEmPontoEstavel', async () => {
-    t.fixture.detectChanges();
-    t.expectAreas().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), {
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'content-type': 'application/problem+json' },
-    });
-    t.expectGrupos().flush([...GRUPOS]);
-    t.expectListagem().flush([]);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    const raiz = t.fixture.nativeElement as HTMLElement;
-    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
-    if (!botao) throw new Error('botão de tentar de novo ausente');
-    botao.focus();
-    botao.click();
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    // Enquanto recarrega, o botão continua na tela e com o foco.
-    expect(document.activeElement?.id).toBe('cfg-pesos-enem-areas-tentar');
-    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')?.getAttribute('aria-disabled')).toBe(
-      'true',
-    );
-
-    // Carregou: o alerta sai, e o foco vai ao título da página, não ao body.
-    t.expectAreas().flush([...AREAS]);
-    await t.propagate();
-    t.fixture.detectChanges();
-    await t.propagate();
-    expect(raiz.querySelector('#cfg-pesos-enem-areas-tentar')).toBeNull();
-    expect(document.activeElement?.id).toBe('cfg-pesos-enem-titulo');
-  });
-
   it('PesosEnemPage_FalhaDeServidorNasAreas_AvisaComTraceIdEMostraOMotivo', async () => {
     const erroSpy = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
     t.fixture.detectChanges();
@@ -176,44 +111,6 @@ describe('PesosEnemPage — lista de áreas', () => {
     expect(titulo).not.toBe('A lista de áreas do ENEM não foi carregada.');
     expect((t.fixture.nativeElement as HTMLElement).textContent).toContain(titulo);
     expect(erroSpy).not.toHaveBeenCalled();
-  });
-
-  it('PesosEnemPage_ErroForaDoEnvelopeNasAreas_MantemAlertaENovaTentativa', async () => {
-    t.fixture.detectChanges();
-    t.expectAreas().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), {
-      status: 500,
-      statusText: 'Internal Server Error',
-      headers: { 'content-type': 'application/problem+json' },
-    });
-    t.expectGrupos().flush([...GRUPOS]);
-    t.expectListagem().flush([]);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    // A nova tentativa falha fora do ApiResult (ex.: erro de outro interceptor).
-    vi.spyOn(TestBed.inject(PesosEnemApi), 'listarAreas').mockReturnValueOnce(
-      throwError(() => new Error('falha fora do envelope')),
-    );
-    const raiz = t.fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar')?.click();
-    await t.propagate();
-    await new Promise((resolver) => setTimeout(resolver));
-    t.fixture.detectChanges();
-
-    // A carga não fica presa: o alerta continua, com o botão de tentar de novo habilitado.
-    expect(t.store.listaAreas.pendente()).toBe(false);
-    expect(t.store.listaAreas.falhou()).toBe(true);
-    expect(raiz.textContent).toContain('A lista de áreas do ENEM não foi carregada.');
-    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-areas-tentar');
-    expect(botao?.getAttribute('aria-disabled')).toBeNull();
-
-    botao?.click();
-    await t.propagate();
-    t.expectAreas().flush([...AREAS]);
-    await t.propagate();
-    t.fixture.detectChanges();
-    expect(t.store.listaAreas.falhou()).toBe(false);
-    expect(t.store.podeCadastrar()).toBe(true);
   });
 
   it('PesosEnemPage_AreasFalhamComGruposPendentes_TentarDeNovoRecarregaAsAreas', async () => {

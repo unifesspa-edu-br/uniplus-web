@@ -7,11 +7,11 @@ import {
   ordenarTurnosCanonicamente,
 } from '@uniplus/shared-data/configuracao';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
   EmptyStateComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraComponent,
+  type LeituraAcompanhada,
   ListFooterComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -30,8 +30,8 @@ const REGIME_LABELS = new Map(REGIMES_DE_TURNO.map((opcao) => [opcao.value, opca
     DrawerComponent,
     EmptyStateComponent,
     ListFooterComponent,
+    FalhaDeLeituraComponent,
     SpinnerComponent,
-    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './ofertas-do-curso.component.html',
@@ -43,13 +43,12 @@ export class OfertasDoCursoComponent {
   readonly bloqueio = input.required<string | null>();
   readonly mensagemDeErro = input.required<string | null>();
   readonly carregando = input.required<boolean>();
-  readonly fase = input.required<FaseDaNovaTentativa>();
+  readonly leitura = input.required<LeituraAcompanhada>();
   readonly ofertas = input.required<readonly OfertaCursoDto[]>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
 
   readonly fechado = output<void>();
-  readonly recarregar = output<void>();
   readonly anterior = output<void>();
   readonly proximo = output<void>();
 

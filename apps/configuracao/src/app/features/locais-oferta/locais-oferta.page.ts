@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { LocalOfertaDto } from '@uniplus/shared-data/configuracao';
-import type { UiLookupFalho } from '@uniplus/shared-ui/components';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharCatalogo,
+  acompanharLeitura,
   destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { LocaisOfertaListaComponent } from './locais-oferta-lista.component';
 import { LocalOfertaFormularioComponent } from './local-oferta-formulario.component';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
-import { avisoDeFalhaDoLookup } from '../../shared/foco';
 import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
 import { LocaisOfertaStore } from './locais-oferta.store';
+
+const ID_DO_TITULO = 'cfg-locais-list-title';
 
 @Component({
   selector: 'cfg-locais-oferta-page',
@@ -22,72 +23,51 @@ import { LocaisOfertaStore } from './locais-oferta.store';
     LocaisOfertaListaComponent,
     LocalOfertaFormularioComponent,
     ConfirmacaoDeRemocaoComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './locais-oferta.page.html',
   host: { class: 'cfg-page' },
 })
 export class LocaisOfertaPage {
-  protected readonly leitura = inject(LocaisOfertaStore);
+  protected readonly store = inject(LocaisOfertaStore);
   protected readonly edicao = inject(EdicaoDosLocaisOferta);
 
-  /** A lista carrega ou uma escrita corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  protected readonly indisponivel = computed(
-    () => this.leitura.carregando() || this.edicao.gravando(),
-  );
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'locais de oferta',
-    pendente: this.indisponivel,
-    falhou: computed(() => this.leitura.mensagemDeErro() !== null),
-    destino: () => document.getElementById('cfg-locais-list-title'),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
+    destino: () => document.getElementById(ID_DO_TITULO),
   });
 
-  protected readonly avisoDosCampi = avisoDeFalhaDoLookup(this.leitura.campi);
-  /** O aviso dos campi está na lista e no formulário (um drawer): uma só tentativa, uma só fase. */
-  protected readonly novaTentativaDosCampi = acompanharNovaTentativa({
+  /** Os campi rotulam a lista e alimentam o campo do formulário (um drawer): uma só leitura. */
+  protected readonly leituraDosCampi = acompanharCatalogo({
     assunto: 'campi',
-    pendente: this.leitura.campi.pendente,
-    falhou: this.avisoDosCampi,
+    falha: computed(() =>
+      this.store.campi.comErro() ? 'Não foi possível carregar os campi.' : null,
+    ),
+    pendente: this.store.campi.pendente,
+    indisponivel: computed(() => this.store.carregando() || this.edicao.gravando()),
+    recarregar: () => this.store.campi.recarregar(),
     destino: () =>
       destinoAcessivel(
         document.querySelector<HTMLElement>('select[formcontrolname="campusResponsavelId"]'),
-        document.getElementById('cfg-locais-list-title'),
+        document.getElementById(ID_DO_TITULO),
       ),
   });
-
-  /** O aviso dos rótulos fica na lista durante a tentativa; a lista ocupada também o deixa indisponível. */
-  protected readonly falhasDosCampi = computed<readonly UiLookupFalho[]>(() =>
-    this.avisoDosCampi()
-      ? [
-          {
-            nome: 'campi',
-            pendente: this.leitura.campi.pendente(),
-            indisponivel: this.indisponivel(),
-            fase: this.novaTentativaDosCampi.fase(),
-            recarregar: () => this.tentarNovamenteOsCampi(),
-          },
-        ]
-      : [],
-  );
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.leitura.tentarNovamente());
-  }
-
-  protected tentarNovamenteOsCampi(): void {
-    this.novaTentativaDosCampi.executar(() => this.leitura.campi.recarregar());
-  }
+  protected readonly leiturasDaLista = [this.leituraDosCampi];
 
   protected abrirCadastro(): void {
     if (this.edicao.gravando()) return;
-    this.leitura.iniciarCampi();
+    this.store.iniciarCampi();
     this.edicao.abrirCadastro();
   }
 
   protected abrirEdicao(local: LocalOfertaDto): void {
     if (this.edicao.gravando()) return;
-    this.leitura.iniciarCampi();
+    this.store.iniciarCampi();
     this.edicao.abrirEdicao(local);
   }
 }

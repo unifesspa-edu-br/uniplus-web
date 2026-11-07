@@ -13,9 +13,9 @@ import {
   type PerfilDto,
   type ModuloDoCatalogoDto,
 } from '@uniplus/shared-data/autorizacao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
+import { desfechoDaLeitura } from './desfecho-da-leitura';
 import { notificarFalhasDeLeitura } from './falha-de-servidor';
-import { textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PerfisStore {
@@ -49,20 +49,29 @@ export class PerfisStore {
   readonly itens = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
-  readonly carregando = this.lista.isLoading;
+  /** Cursor recusado: a paginação recomeça sem cursor, e a nova tentativa não repete o cursor morto. */
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notificacoes,
+  });
+  /** Inclui o intervalo entre a resposta de cursor recusado e a nova leitura sem cursor. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
   readonly carregandoCatalogo = this.consultaCatalogo.isLoading;
   readonly catalogo = computed(() => this.consultaCatalogo.data() ?? []);
-  readonly erroDoCatalogo = computed(
-    () => !!(this.consultaCatalogo.problem() || this.consultaCatalogo.error()),
+  private readonly desfechoDaLista = desfechoDaLeitura([this.lista], this.problemas);
+  private readonly desfechoDoCatalogo = desfechoDaLeitura([this.consultaCatalogo], this.problemas);
+  readonly falha = computed(() =>
+    this.recuperandoDeCursorObsoleto() ? null : this.desfechoDaLista.falha(),
   );
-  readonly mensagemDeErro = computed(() => {
-    const problema = this.lista.problem();
-    return problema
-      ? textoDaRecusa(this.problemas.resolve(problema))
-      : this.lista.error()
-        ? 'Não foi possível carregar a lista. Tente novamente.'
-        : null;
-  });
+  readonly recusa = this.desfechoDaLista.recusa;
+  readonly mensagemDeErro = computed(() =>
+    this.recuperandoDeCursorObsoleto() ? null : this.desfechoDaLista.mensagem(),
+  );
+  readonly falhaDoCatalogo = this.desfechoDoCatalogo.falha;
+  readonly recusaDoCatalogo = this.desfechoDoCatalogo.recusa;
 
   constructor() {
     notificarFalhasDeLeitura(this.problemas, this.notificacoes, [
@@ -81,8 +90,15 @@ export class PerfisStore {
     if (this.pagina() === undefined) this.lista.reload();
     else this.pagina.set(undefined);
   }
+  /** Repete a leitura da página que falhou; devolve `false` se nenhuma leitura começou. */
+  tentarNovamente(): boolean {
+    return this.lista.reload();
+  }
   carregarCatalogo(): void {
     if (this.catalogoAtivo()) this.consultaCatalogo.reload();
     else this.catalogoAtivo.set(true);
+  }
+  tentarCatalogoNovamente(): boolean {
+    return this.consultaCatalogo.reload();
   }
 }

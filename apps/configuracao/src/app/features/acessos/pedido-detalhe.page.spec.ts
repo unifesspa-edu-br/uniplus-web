@@ -21,16 +21,14 @@ import { EdicaoDoPedido } from './edicao-do-pedido';
 import { PedidoDetalhePage } from './pedido-detalhe.page';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { EU, concedidas, ok, pedido, recusa, UNIDADES } from './testes';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
   return valor;
 }
+
+const MENSAGEM_DA_FALHA = 'Servidor indisponível';
+const servidorIndisponivel = () => recusa('uniplus.erro_interno', 503, MENSAGEM_DA_FALHA);
 
 const GESTOR = 'autorizacao:pedidos:aprovar-funcional';
 const PROTECAO_DE_DADOS = 'autorizacao:pedidos:aprovar-protecao-de-dados';
@@ -95,6 +93,10 @@ const dialogoAberto = (host: HTMLElement, seletor: string) =>
 const dialogoMotivoAlerta = (host: HTMLElement) =>
   host.querySelector('cfg-motivo-dialog ui-alert')?.textContent ?? undefined;
 const textoDoAlerta = (host: HTMLElement) => host.querySelector('ui-alert')?.textContent;
+const titulosDosAlertas = (host: HTMLElement) =>
+  Array.from(host.querySelectorAll('ui-alert .alert__title'), (titulo) =>
+    titulo.textContent?.trim(),
+  );
 
 async function selecionarArquivo(fixture: Cena, host: HTMLElement, arquivo: File): Promise<void> {
   const seletor = presente(
@@ -186,7 +188,8 @@ describe('PedidoDetalhePage', () => {
     fixture.componentRef.setInput('id', 'novo');
     fixture.detectChanges();
 
-    antigaObter.error(new Error('rede'));
+    antigaObter.next(servidorIndisponivel());
+    antigaObter.complete();
     await esperar(fixture);
 
     expect(host.querySelector('ui-alert')).toBeNull();
@@ -636,7 +639,8 @@ describe('PedidoDetalhePage', () => {
 
     it('se a recarga da decisão falha, a decisão não leva o foco ao título numa carga posterior', async () => {
       const cena = await decidirComRecargaPendente('aprovar');
-      cena.recarga.error(new Error('rede'));
+      cena.recarga.next(servidorIndisponivel());
+      cena.recarga.complete();
       await esperar(cena.fixture);
       await esperar(cena.fixture);
       presente(cena.host.querySelector<HTMLAnchorElement>('.page-header a')).focus();
@@ -689,14 +693,14 @@ describe('PedidoDetalhePage', () => {
       fixture.detectChanges();
       expect(api[acao]).toHaveBeenCalledTimes(1);
 
-      recarga.error(new Error('rede'));
+      recarga.next(servidorIndisponivel());
+      recarga.complete();
       await esperar(fixture);
       await esperar(fixture);
       const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
       expect(dialogoAberto(host, 'ui-dialog')).toBe(false);
       expect(dialogoAberto(host, 'cfg-motivo-dialog')).toBe(false);
-      const mensagemDaFalha = presente(edicaoDe(fixture).erro());
-      expect(textoDoAlerta(host)).toContain(mensagemDaFalha);
+      expect(textoDoAlerta(host)).toContain(MENSAGEM_DA_FALHA);
       expect(document.activeElement).toBe(tentar);
       const nova = new Subject<ReturnType<typeof ok>>();
       api.obter.mockReturnValue(nova);
@@ -715,34 +719,69 @@ describe('PedidoDetalhePage', () => {
       await esperar(fixture);
       await esperar(fixture);
       expect(host.querySelector('#tentar-pedido')).toBeNull();
-      expect(textoDoAlerta(host) ?? '').not.toContain(mensagemDaFalha);
+      expect(textoDoAlerta(host) ?? '').not.toContain(MENSAGEM_DA_FALHA);
       expect(document.activeElement).toBe(host.querySelector('#cfg-pedido-titulo'));
       host.remove();
     },
   );
 
-  it('mostra e anuncia cada nova tentativa de carregar o pedido', async () => {
+  it('a falha da trilha também é falha da leitura e a nova tentativa a lê de novo', async () => {
     const { fixture, host } = await abrir([GESTOR]);
     document.body.append(host);
-    const anuncio = (): string => situacaoDaNovaTentativa(host);
-    api.obter.mockReturnValue(throwError(() => new Error('rede')));
+    api.trilha.mockReturnValue(of(servidorIndisponivel()));
     fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
     await esperar(fixture);
     await esperar(fixture);
-    expect(anuncio()).toBe('');
 
     const tentar = host.querySelector<HTMLButtonElement>('#tentar-pedido');
-    expect(tentar).not.toBeNull();
-    const pendente = new Subject<ReturnType<typeof ok>>();
-    api.obter.mockReturnValue(pendente);
+    expect(textoDoAlerta(host)).toContain(MENSAGEM_DA_FALHA);
+    api.trilha.mockReturnValue(of(ok([])));
+    tentar?.focus();
     tentar?.click();
     await esperar(fixture);
-    expect(anuncio()).toBe(TEXTO_TENTANDO);
-    pendente.error(new Error('rede'));
     await esperar(fixture);
-    await esperar(fixture);
-    expect(anuncio()).toBe(TEXTO_REPETIDA);
+
+    expect(host.querySelector('#tentar-pedido')).toBeNull();
+    expect(document.activeElement).toBe(host.querySelector('#cfg-pedido-titulo'));
     host.remove();
+  });
+
+  it('o pedido inexistente mostra a recusa sem oferecer nova tentativa e mantém o caminho de volta', async () => {
+    const { fixture, host } = await abrir([GESTOR]);
+    api.obter.mockReturnValue(
+      of(recusa('uniplus.autorizacao.pedido.nao_encontrado', 404, 'Pedido não encontrado')),
+    );
+    fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
+    await esperar(fixture);
+    await esperar(fixture);
+
+    expect(titulosDosAlertas(host)).toEqual(['Pedido não encontrado']);
+    expect(host.querySelector('#tentar-pedido')).toBeNull();
+    expect(host.textContent).not.toContain('Tentar novamente');
+    expect(host.querySelector('ui-alert a')).not.toBeNull();
+  });
+
+  it('a trilha inexistente de um pedido lido não diz que o pedido não foi encontrado', async () => {
+    const { fixture, host } = await abrir([GESTOR]);
+    api.trilha.mockReturnValue(
+      of(recusa('uniplus.autorizacao.pedido.nao_encontrado', 404, 'Não encontrada')),
+    );
+    fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
+    await esperar(fixture);
+    await esperar(fixture);
+
+    expect(titulosDosAlertas(host)).toEqual(['Trilha do pedido não encontrada']);
+    expect(host.textContent).toContain('Betina Teste');
+  });
+
+  it('o pedido sem permissão de leitura não é chamado de não encontrado', async () => {
+    const { fixture, host } = await abrir([GESTOR]);
+    api.obter.mockReturnValue(of(recusa('uniplus.autorizacao.sem_permissao', 403, 'Sem acesso')));
+    fixture.debugElement.injector.get(PedidoDetalheStore).recarregar();
+    await esperar(fixture);
+    await esperar(fixture);
+
+    expect(titulosDosAlertas(host)).toEqual(['Acesso negado']);
   });
 
   it('ao reabrir a recusa limpa o motivo e a validação anterior', async () => {

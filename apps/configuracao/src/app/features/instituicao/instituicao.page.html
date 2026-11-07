@@ -15,17 +15,12 @@
 </ui-alert>
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar a instituição"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
   idBotao="cfg-instituicao-tentar-novamente"
-  (tentar)="tentarNovamente()"
+  [leitura]="leitura"
 />
-} @else {
+@if (!leitura.visivel()) {
 <cfg-instituicao-painel
   [instituicao]="store.instituicao()"
   [naoCadastrada]="store.naoCadastrada()"
@@ -47,13 +42,10 @@
   [salvando]="edicao.salvando()"
   [gravando]="edicao.gravando()"
   [reitorias]="reitorias.reitorias()"
-  [reitoriasComErro]="reitorias.comErro()"
-  [reitoriasCarregando]="reitorias.carregando()"
-  [faseDasReitorias]="novaTentativaDasReitorias.fase()"
+  [leituraDasReitorias]="leituraDasReitorias"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
   (remover)="edicao.pedirRemocao()"
-  (recarregarReitorias)="tentarNovamenteReitorias()"
 />
 
 <cfg-confirmacao-de-remocao

@@ -1,4 +1,6 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   Pagina,
   comValores,
@@ -213,23 +215,7 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
       expect(document.activeElement).toBe(p.elemento('#cfg-fato-edicao-inicio'));
     });
 
-    it('a nova falha com a mesma recusa mantém o foco no botão, que segue na tela durante a espera', async () => {
-      await falharALeitura();
-
-      await p.acionar(tentarNovamente());
-      expect(tentarNovamente().getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentarNovamente());
-      p.http
-        .expectOne(urlDoFato(corRaca))
-        .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
-      await p.propagar();
-
-      expect(p.texto()).toContain('Não foi possível carregar o fato');
-      expect(tentarNovamente().getAttribute('aria-disabled')).toBeNull();
-      expect(document.activeElement).toBe(tentarNovamente());
-    });
-
-    it('a falha 4xx não vira toast', async () => {
+    it('o fato que não existe mais mostra a recusa, sem nova tentativa e sem toast', async () => {
       p = await montarPagina([corRaca]);
       await p.acionar(p.editar(corRaca));
       p.http
@@ -237,7 +223,41 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
         .flush(...problema(404, { code: 'uniplus.configuracao.fato_candidato.nao_encontrado' }));
       await p.propagar();
 
+      expect(p.texto()).toContain('Fato não encontrado');
+      expect(p.botaoPeloTexto('Tentar novamente', p.drawerDoFato())).toBeUndefined();
+      expect(p.botaoPeloTexto('Fechar', p.drawerDoFato())).toBeDefined();
       expect(p.erros).not.toHaveBeenCalled();
+    });
+
+    it('a nova falha de leitura com o foco no "Tentar novamente" mantém o foco no botão', async () => {
+      await falharALeitura();
+      const botao = tentarNovamente();
+      botao.focus();
+
+      botao.click();
+      await p.propagar();
+      p.http.expectOne(urlDoFato(corRaca)).error(new ProgressEvent('error'));
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.texto()).toContain('Não foi possível carregar o fato');
+      expect(document.activeElement).toBe(tentarNovamente());
+    });
+
+    it('a nova tentativa que termina em fato inexistente não anuncia leitura concluída', async () => {
+      await falharALeitura();
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+
+      tentarNovamente().click();
+      await p.propagar();
+      p.http
+        .expectOne(urlDoFato(corRaca))
+        .flush(...problema(404, { code: 'uniplus.configuracao.fato_candidato.nao_encontrado' }));
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.texto()).toContain('Fato não encontrado');
+      expect(anunciar).not.toHaveBeenCalled();
     });
   });
 

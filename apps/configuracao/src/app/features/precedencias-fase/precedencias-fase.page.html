@@ -14,25 +14,12 @@
   remova a aresta e crie outra.
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar as precedências"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-} @if (fases.avisoDeFalha()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura titulo="Não foi possível carregar as precedências" [leitura]="leitura" />
+<ui-falha-de-leitura
   titulo="Nomes das fases indisponíveis"
-  mensagem="Não foi possível consultar o cadastro de Fase Canônica agora. A lista mostra só os códigos das fases, e a busca por nome não encontra as arestas existentes."
-  [pendente]="fases.pendente()"
-  [fase]="novaTentativaDasFases.fase()"
   variante="warning"
-  (tentar)="tentarNovamenteAsFases()"
+  [leitura]="leituraDasFases"
 />
-}
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-precedencias-fase-lista
@@ -59,16 +46,13 @@
   [modo]="edicao.modo()"
   [titulo]="edicao.tituloDoFormulario()"
   [opcoesDeFase]="fases.opcoes()"
-  [falhaAoCarregarFases]="fases.avisoDeFalha()"
-  [carregandoFases]="fases.pendente()"
+  [leituraDasFases]="leituraDasFases"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [faseDasFases]="novaTentativaDasFases.fase()"
   [salvando]="edicao.salvando()"
   [gravando]="edicao.gravando()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (recarregarFases)="tentarNovamenteAsFases()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover aresta de precedência"

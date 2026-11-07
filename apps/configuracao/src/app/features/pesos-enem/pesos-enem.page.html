@@ -27,36 +27,22 @@
   não entra em cálculo de soma. Estes parâmetros também são congelados por processo seletivo.
 </ui-alert>
 
-<!-- Um alerta e um "Tentar novamente" por lista. -->
-@if (store.listaAreas.falhou()) {
-<ui-alerta-nova-tentativa
+<!-- Um aviso e um "Tentar novamente" por lista. -->
+<ui-falha-de-leitura
   titulo="Não foi possível carregar as áreas do ENEM"
-  [mensagem]="store.mensagemFalhaAreas()"
-  [pendente]="store.listaAreas.pendente()"
-  [fase]="novaTentativaDasAreas.fase()"
   idBotao="cfg-pesos-enem-areas-tentar"
-  (tentar)="tentarCarregarAreas()"
+  [leitura]="leituraDasAreas"
 />
-} @if (store.catalogoGrupos.falhou()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os grupos de área do ENEM"
-  [mensagem]="store.mensagemFalhaGrupos()"
-  [pendente]="store.catalogoGrupos.pendente()"
-  [fase]="novaTentativaDosGrupos.fase()"
   idBotao="cfg-pesos-enem-grupos-tentar"
-  (tentar)="tentarCarregarGrupos()"
+  [leitura]="leituraDosGrupos"
 />
-} @if (store.mensagemDeErro(); as erro) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os pesos do ENEM"
-  [mensagem]="erro"
-  [pendente]="store.carregando()"
-  [indisponivel]="gravacao.gravando()"
-  [fase]="novaTentativaDaListagem.fase()"
   idBotao="cfg-pesos-enem-registros-tentar"
-  (tentar)="tentarNovamente()"
+  [leitura]="leituraDaListagem"
 />
-}
 
 <span class="sr-only" role="status">{{ gravacao.anuncio() }}</span>
 

@@ -9,9 +9,11 @@ import {
 } from '@angular/core';
 import { InstituicaoDto } from '@uniplus/shared-data/organizacao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharCatalogo,
+  acompanharLeitura,
   AlertComponent,
+  destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { ENDERECO_NO_GEO } from '../../shared/endereco';
@@ -33,7 +35,7 @@ const ID_DA_ACAO = 'cfg-instituicao-acao';
   standalone: true,
   imports: [
     AlertComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     ConfirmacaoDeRemocaoComponent,
     InstituicaoFormularioComponent,
     InstituicaoPainelComponent,
@@ -51,21 +53,27 @@ export class InstituicaoPage {
   protected readonly unidadeRaiz = computed(() =>
     this.reitorias.rotuloDaUnidadeRaiz(this.store.instituicao()?.unidadeRaizId ?? null),
   );
-  /** A leitura carrega ou há escrita em curso: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  protected readonly indisponivel = computed(
-    () => this.store.carregando() || this.edicao.gravando(),
-  );
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'dados da instituição',
-    pendente: this.indisponivel,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recusada: this.store.naoCadastrada,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
-  protected readonly novaTentativaDasReitorias = acompanharNovaTentativa({
-    assunto: 'reitorias',
+  protected readonly leituraDasReitorias = acompanharCatalogo({
+    assunto: 'unidades',
+    falha: computed(() =>
+      this.reitorias.comErro() ? 'Não foi possível carregar as unidades para seleção.' : null,
+    ),
     pendente: this.reitorias.carregando,
-    falhou: this.reitorias.comErro,
-    destino: () => document.getElementById(ID_DO_SELECT_DA_UNIDADE_RAIZ),
+    recarregar: () => this.reitorias.tentarNovamente(),
+    destino: () =>
+      destinoAcessivel(
+        document.getElementById(ID_DO_SELECT_DA_UNIDADE_RAIZ),
+        document.getElementById(ID_DO_TITULO),
+      ),
   });
   private readonly foco = devolverFocoDaLista({
     gravando: this.edicao.gravando,
@@ -92,14 +100,6 @@ export class InstituicaoPage {
       afterNextRender(() => this.focarSeOAcionadorSaiu(), { injector: this.injector });
     }
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
-  protected tentarNovamenteReitorias(): void {
-    this.novaTentativaDasReitorias.executar(() => this.reitorias.tentarNovamente());
-  }
 
   protected cadastrar(): void {
     this.acionador = document.activeElement;

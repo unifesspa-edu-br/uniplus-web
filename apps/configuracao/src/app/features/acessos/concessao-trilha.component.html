@@ -5,11 +5,16 @@
   ariaLabel="Trilha da concessão"
   position="right"
 >
-  @if (carregando()) {
-    <p role="status"><ui-spinner spinnerSize="sm" /> Carregando a trilha…</p>
-  }
-  @if (erro()) {
-    <ui-alert variant="danger" heading="Não foi possível carregar a trilha">{{ erro() }}</ui-alert>
-  }
-  <cfg-trilha-de-acesso [eventos]="eventos()" legenda="Trilha da concessão" />
+  <div [id]="idDaTrilha" tabindex="-1">
+    @if (leitura().pendente()) {
+      <p [uiIndicadorDaLeitura]="leitura()"><ui-spinner spinnerSize="sm" /> Carregando a trilha…</p>
+    }
+    <ui-falha-de-leitura titulo="Não foi possível carregar a trilha" [leitura]="leitura()" />
+    <cfg-recusa-da-leitura naoEncontrado="Trilha não encontrada" [recusa]="recusa()">
+      Feche o painel e escolha outra concessão.
+    </cfg-recusa-da-leitura>
+    @if (!leitura().pendente() && !leitura().visivel() && recusa() === null) {
+      <cfg-trilha-de-acesso [eventos]="eventos()" legenda="Trilha da concessão" />
+    }
+  </div>
 </ui-drawer>

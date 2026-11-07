@@ -279,6 +279,7 @@ describe('ProtecaoDoCatalogoPage', () => {
     const painel = drawer(tela);
     expect(painel?.textContent).toContain('Item não encontrado');
     expect(painel?.textContent).toContain('O item não existe mais no catálogo.');
+    expect(painel?.textContent).not.toContain('Tentar novamente');
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Fechar')).toBeDefined();
   });
@@ -1054,7 +1055,26 @@ describe('ProtecaoDoCatalogoPage', () => {
       expect(tela.textContent).toContain('Nenhuma decisão registrada');
     });
 
-    it('na falha mostra o motivo e tenta de novo', async () => {
+    it('na falha do servidor mostra o motivo e tenta de novo', async () => {
+      controller.expectOne((r) => r.url === URL).flush([]);
+      await router().navigateByUrl('/?aba=decisoes');
+      await assentar();
+      controller
+        .expectOne((r) => r.url === DECISOES)
+        .flush(...recusa(503, 'uniplus.erro_interno', 'Servidor indisponível'));
+      await assentar();
+      const tela = fixture.nativeElement as HTMLElement;
+      expect(tela.textContent).toContain('Não foi possível carregar as decisões');
+      expect(tela.textContent).toContain('Servidor indisponível');
+
+      botoes(tela, 'Tentar novamente')[0].click();
+      await assentar();
+      controller.expectOne((r) => r.url === DECISOES).flush([decisaoDoFato]);
+      await assentar();
+      expect(tela.querySelector('tbody')?.textContent).toContain('Renda familiar bruta');
+    });
+
+    it('na recusa por falta de permissão mostra o motivo sem oferecer nova tentativa', async () => {
       controller.expectOne((r) => r.url === URL).flush([]);
       await router().navigateByUrl('/?aba=decisoes');
       await assentar();
@@ -1063,13 +1083,9 @@ describe('ProtecaoDoCatalogoPage', () => {
         .flush(...recusa(403, 'uniplus.auth.proibido', 'Sem permissão'));
       await assentar();
       const tela = fixture.nativeElement as HTMLElement;
-      expect(tela.textContent).toContain('Não foi possível carregar as decisões');
 
-      botoes(tela, 'Tentar novamente')[0].click();
-      await assentar();
-      controller.expectOne((r) => r.url === DECISOES).flush([decisaoDoFato]);
-      await assentar();
-      expect(tela.querySelector('tbody')?.textContent).toContain('Renda familiar bruta');
+      expect(tela.textContent).toContain('Sem permissão');
+      expect(tela.textContent).not.toContain('Tentar novamente');
     });
 
     it('clicar na linha abre a decisão, a proteção conferida e o histórico completo lido do detalhe', async () => {
@@ -1141,6 +1157,7 @@ describe('ProtecaoDoCatalogoPage', () => {
           ?.textContent?.replace(/\s+/gu, ' ') ?? '';
       expect(texto).toContain('Decidido porCaroline Ribeiro');
       expect(texto).toContain('O item não existe mais no catálogo.');
+      expect(texto).not.toContain('Tentar novamente');
     });
   });
 });

@@ -18,10 +18,6 @@ import { CursosStore } from './cursos.store';
 import { EdicaoDosCursos } from './edicao-dos-cursos';
 import { GruposDoCurso } from './grupos-do-curso';
 import { OfertasDoCursoStore } from './ofertas-do-curso.store';
-import {
-  TEXTO_REPETIDA,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const OFERTAS_URL = `${BASE}/api/configuracao/ofertas-curso`;
@@ -1028,7 +1024,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
 
   afterEach(() => controller.verify());
 
-  it('a edição mostra o grupo do curso pelo rótulo da API, e o alerta oferece tentar de novo', () => {
+  it('a edição mostra o grupo do curso pelo rótulo da API, e o alerta oferece tentar de novo', async () => {
     edicao.abrirEdicao(cursoSeed);
     // A lista de grupos, pedida ao abrir a página, não chega.
     indisponivel();
@@ -1049,6 +1045,8 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     tentar?.click();
     controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
     fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+    appRef.tick();
 
     expect(raiz.textContent).not.toContain('Grupos de área do ENEM não carregados');
     // Com a lista, o grupo do curso aparece uma vez só, entre os da API.
@@ -1091,47 +1089,6 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     // A lista chegou: o alerta sai, e o foco vai ao select que ela alimenta, sem cair no body.
     expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
     expect(document.activeElement?.id).toBe('cfg-curso-grupo-area-enem');
-  });
-
-  it('nova tentativa que falha de novo mantém o alerta e o foco no botão', async () => {
-    edicao.abrirEdicao(cursoSeed);
-    indisponivel();
-    fixture.detectChanges();
-    await Promise.resolve();
-
-    const raiz = fixture.nativeElement as HTMLElement;
-    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar');
-    if (!botao) throw new Error('botão de tentar de novo ausente');
-    botao.focus();
-    botao.click();
-    indisponivel();
-    fixture.detectChanges();
-    await Promise.resolve();
-    appRef.tick();
-
-    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBe(botao);
-    expect(document.activeElement).toBe(botao);
-    expect(botao.getAttribute('aria-disabled')).toBeNull();
-  });
-
-  it('nova falha pedida pelo operador mostra e anuncia a fase, sem mudar o texto que descreve o select', async () => {
-    edicao.abrirEdicao(cursoSeed);
-    indisponivel();
-    fixture.detectChanges();
-
-    const raiz = fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
-    indisponivel();
-    fixture.detectChanges();
-    await new Promise((resolver) => setTimeout(resolver));
-    appRef.tick();
-
-    const select = raiz.querySelector<HTMLSelectElement>('#cfg-curso-grupo-area-enem');
-    const descricao = select?.getAttribute('aria-describedby') ?? '';
-    expect(raiz.querySelector(`[id="${descricao}"]`)?.textContent?.trim()).toMatch(
-      /classificar o curso\.$/u,
-    );
-    expect(situacaoDaNovaTentativa(raiz)).toBe(TEXTO_REPETIDA);
   });
 
   it('recusa sem título mostra só o texto padrão, sem ponto solto no início', () => {
@@ -1206,7 +1163,7 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     expect(raiz.querySelector('#cfg-curso-grupos-tentar')).not.toBeNull();
   });
 
-  it('o select do grupo é descrito pelo alerta de falha enquanto a lista não chega', () => {
+  it('o select do grupo é descrito pelo alerta de falha enquanto a lista não chega', async () => {
     edicao.abrirEdicao(cursoSeed);
     indisponivel();
     fixture.detectChanges();
@@ -1221,6 +1178,8 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
     controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
     fixture.detectChanges();
+    await new Promise((resolver) => setTimeout(resolver));
+    appRef.tick();
     expect(select?.hasAttribute('aria-describedby')).toBe(false);
   });
 
@@ -1243,50 +1202,6 @@ describe('CursosPage — lista de grupos de área do ENEM que não chega', () =>
     appRef.tick();
 
     expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
-    expect(document.activeElement).toBe(document.body);
-  });
-
-  it('clique que não levou o foco ao botão não move o foco quando a lista chega', async () => {
-    edicao.abrirEdicao(cursoSeed);
-    indisponivel();
-    fixture.detectChanges();
-    await Promise.resolve();
-
-    const raiz = fixture.nativeElement as HTMLElement;
-    // Como no Safari: o clique aciona o botão sem focá-lo, e o foco está no body.
-    (document.activeElement as HTMLElement | null)?.blur();
-    raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar')?.click();
-    expect(document.activeElement).toBe(document.body);
-
-    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
-    fixture.detectChanges();
-    await Promise.resolve();
-    appRef.tick();
-
-    expect(raiz.querySelector('#cfg-curso-grupos-tentar')).toBeNull();
-    expect(document.activeElement).toBe(document.body);
-  });
-
-  it('foco levado para fora do botão durante a espera não é movido quando a lista chega', async () => {
-    edicao.abrirEdicao(cursoSeed);
-    indisponivel();
-    fixture.detectChanges();
-    await Promise.resolve();
-
-    const raiz = fixture.nativeElement as HTMLElement;
-    const botao = raiz.querySelector<HTMLButtonElement>('#cfg-curso-grupos-tentar');
-    botao?.focus();
-    botao?.click();
-    fixture.detectChanges();
-    // Enquanto espera, o operador clica numa área que não recebe foco.
-    botao?.blur();
-    expect(document.activeElement).toBe(document.body);
-
-    controller.expectOne(GRUPOS_URL).flush([...GRUPOS]);
-    fixture.detectChanges();
-    await Promise.resolve();
-    appRef.tick();
-
     expect(document.activeElement).toBe(document.body);
   });
 

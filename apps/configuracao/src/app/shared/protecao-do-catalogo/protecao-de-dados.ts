@@ -35,14 +35,21 @@ export const HIPOTESES_LEGAIS: readonly OpcaoDeVocabulario[] = [
 ];
 
 /** O rótulo de um token, ou o próprio token quando o vocabulário não o conhece. */
-export function rotuloDe(vocabulario: readonly OpcaoDeVocabulario[], valor: string | null | undefined): string {
+export function rotuloDe(
+  vocabulario: readonly OpcaoDeVocabulario[],
+  valor: string | null | undefined,
+): string {
   if (valor === null || valor === undefined || valor === '') return '—';
   return vocabulario.find((opcao) => opcao.valor === valor)?.rotulo ?? valor;
 }
 
 // Só o art. 7º da LGPD prevê execução de contrato, interesse legítimo e proteção do crédito; só o
 // art. 11 prevê a prevenção à fraude. As demais hipóteses existem nos dois artigos.
-const SO_DO_DADO_COMUM = new Set(['EXECUCAO_CONTRATO', 'INTERESSE_LEGITIMO', 'PROTECAO_DO_CREDITO']);
+const SO_DO_DADO_COMUM = new Set([
+  'EXECUCAO_CONTRATO',
+  'INTERESSE_LEGITIMO',
+  'PROTECAO_DO_CREDITO',
+]);
 const SO_DO_DADO_SENSIVEL = new Set(['PREVENCAO_A_FRAUDE']);
 
 /** As hipóteses legais que cabem na classificação: as do art. 11 no dado sensível, as do art. 7º nos demais. */
@@ -71,7 +78,10 @@ export function protecaoMudou(atual: ProtecaoDoItem, nova: ProtecaoDoItem): bool
 }
 
 /** Esvazia a escolha que deixou de estar entre as opções: ficaria no controle, invisível, e só a API a recusaria. */
-export function esvaziarSeForaDas(controle: FormControl<string>, opcoes: readonly OpcaoDeVocabulario[]): void {
+export function esvaziarSeForaDas(
+  controle: FormControl<string>,
+  opcoes: readonly OpcaoDeVocabulario[],
+): void {
   if (controle.value !== '' && !opcoes.some((opcao) => opcao.valor === controle.value)) {
     controle.setValue('');
   }

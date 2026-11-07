@@ -17,11 +17,12 @@ import {
   type CadastroDoCatalogo,
 } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { Subscription } from 'rxjs';
+import { RecusaDaLeituraComponent, recusaDe, type RecusaDaLeitura } from '../recusa-da-leitura';
 import { AtosDaProtecaoComponent } from './atos-da-protecao';
 
 let nextId = 0;
@@ -34,7 +35,12 @@ let nextId = 0;
 @Component({
   selector: 'cfg-historico-da-protecao',
   standalone: true,
-  imports: [AlertaNovaTentativaComponent, AtosDaProtecaoComponent, SpinnerComponent],
+  imports: [
+    AtosDaProtecaoComponent,
+    FalhaDeLeituraComponent,
+    RecusaDaLeituraComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cfg-detalhe-secao" [attr.aria-busy]="carregando()">
@@ -46,15 +52,11 @@ let nextId = 0;
           ><ui-spinner spinnerSize="sm" /> Carregando o histórico</span
         >
       }
-      @if (erro(); as mensagem) {
-        <ui-alerta-nova-tentativa
-          titulo="Não foi possível carregar o histórico"
-          [mensagem]="mensagem"
-          [pendente]="carregando()"
-          [fase]="novaTentativa.fase()"
-          (tentar)="tentarNovamente()"
-        />
-      } @else if (atos(); as lidos) {
+      <ui-falha-de-leitura titulo="Não foi possível carregar o histórico" [leitura]="leitura" />
+      <cfg-recusa-da-leitura naoEncontrado="Histórico não encontrado" [recusa]="recusa()">
+        Feche o painel e confira a lista.
+      </cfg-recusa-da-leitura>
+      @if (recusa() === null && atos(); as lidos) {
         <cfg-atos-da-protecao [atos]="lidos" />
       }
     </section>
@@ -68,18 +70,21 @@ export class HistoricoDaProtecaoComponent {
   private readonly fatos = inject(FatosCandidatoApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
-  private leitura: Subscription | undefined;
+  private assinatura: Subscription | undefined;
 
   protected readonly atos = signal<readonly AtoDaProtecaoDto[] | null>(null);
   protected readonly carregando = signal(false);
   protected readonly erro = signal<string | null>(null);
+  /** Sem permissão ou item inexistente: repetir a leitura não muda a resposta. */
+  protected readonly recusa = signal<RecusaDaLeitura | null>(null);
 
   protected readonly idDoTitulo = `cfg-historico-da-protecao-${nextId++}`;
-  private readonly falhou = computed(() => this.erro() !== null);
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'histórico',
+    falha: computed(() => (this.recusa() ? null : this.erro())),
     pendente: this.carregando,
-    falhou: this.falhou,
+    recusada: computed(() => this.recusa() !== null),
+    recarregar: () => this.ler(),
     destino: () => document.getElementById(this.idDoTitulo),
   });
 
@@ -88,29 +93,30 @@ export class HistoricoDaProtecaoComponent {
       this.cadastro();
       this.itemId();
       this.erro.set(null);
+      this.recusa.set(null);
       this.ler();
     });
-    this.destroyRef.onDestroy(() => this.leitura?.unsubscribe());
+    this.destroyRef.onDestroy(() => this.assinatura?.unsubscribe());
   }
 
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.ler());
-  }
-
-  /** A falha fica na tela durante a nova tentativa, para o botão que a pediu não sumir. */
   private ler(): void {
-    this.leitura?.unsubscribe();
+    this.assinatura?.unsubscribe();
     this.carregando.set(true);
     this.atos.set(null);
     const id = this.itemId();
-    const leitura =
+    const busca =
       this.cadastro() === 'FATO' ? this.fatos.atosDaProtecao(id) : this.tipos.atosDaProtecao(id);
-    this.leitura = leitura.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
+    this.assinatura = busca.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
       this.carregando.set(false);
       if (resultado.ok) {
         this.erro.set(null);
+        this.recusa.set(null);
         this.atos.set(resultado.data);
-      } else this.erro.set(this.problemI18n.resolve(resultado.problem).title);
+      } else {
+        const texto = this.problemI18n.resolve(resultado.problem).title;
+        this.recusa.set(recusaDe(resultado.problem, texto));
+        this.erro.set(texto);
+      }
     });
   }
 }

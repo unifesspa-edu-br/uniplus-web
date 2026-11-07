@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   AlertComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
@@ -15,7 +15,7 @@ import { TiposAtoStore } from './tipos-ato.store';
   selector: 'cfg-tipos-ato-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     AlertComponent,
     TiposAtoListaComponent,
     TipoAtoFormularioComponent,
@@ -29,14 +29,11 @@ import { TiposAtoStore } from './tipos-ato.store';
 export class TiposAtoPage {
   protected readonly store = inject(TiposAtoStore);
   protected readonly edicao = inject(EdicaoDosTiposAto);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-tipos-ato-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

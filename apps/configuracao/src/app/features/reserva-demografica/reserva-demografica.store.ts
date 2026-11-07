@@ -12,7 +12,7 @@ import {
   CONFIGURACAO_BASE_PATH,
   ReferenciaReservaDemograficaDto,
 } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 const PAGE_SIZE = 100;
 
@@ -30,7 +30,6 @@ export class ReservaDemograficaStore {
   }));
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly referencias = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -43,7 +42,21 @@ export class ReservaDemograficaStore {
       ref.censoReferencia.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) return this.problemI18n.resolve(problem).title;
     return this.lista.error() ? 'Erro inesperado ao carregar referências.' : null;

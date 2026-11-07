@@ -8,16 +8,12 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os fatos"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+<ui-falha-de-leitura titulo="Não foi possível carregar os fatos" [leitura]="leitura" />
+<ui-falha-de-leitura
+  titulo="Não foi possível ler os itens que aguardam a proteção de dados"
+  variante="warning"
+  [leitura]="leituraDaAprovacao"
 />
-}
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-fatos-candidato-lista
@@ -30,7 +26,6 @@
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
   [podeSolicitar]="aprovacao.solicitaveis().length > 0"
-  [falhasDeApoio]="falhasDeApoio()"
   [(termoBusca)]="store.termoBusca"
   [(filtroOrigem)]="store.filtroOrigem"
   [(filtroSituacao)]="store.filtroSituacao"
@@ -48,11 +43,7 @@
   [fato]="detalhe.fato()"
   [regras]="detalhe.regrasEmProsa()"
   [indisponivel]="pendente()"
-  [catalogoFalhou]="detalhe.catalogoFalhou()"
-  [catalogoPendente]="detalhe.catalogoPendente()"
-  [mensagemDoCatalogo]="detalhe.mensagemDoCatalogo()"
-  [faseDoCatalogo]="novaTentativaDoCatalogo.fase()"
-  (tentarCatalogo)="tentarCatalogoDoDetalhe()"
+  [leituraDoCatalogo]="detalhe.leituraDoCatalogo"
   (editar)="editarDoDetalhe($event)"
   (aceitar)="aceitarDoDetalhe($event)"
 />

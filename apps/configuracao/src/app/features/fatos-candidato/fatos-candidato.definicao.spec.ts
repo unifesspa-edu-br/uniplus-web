@@ -9,11 +9,6 @@ import {
   urlDoFato,
 } from './fatos-candidato.testing';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDoAlerta,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const DEFINICAO = '#cfg-fato-definicao';
 const campo = (nome: string): string => `${DEFINICAO} [formcontrolname="${nome}"]`;
@@ -389,7 +384,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
       expect(opcoes.map((o) => o.value)).not.toContain('PUBLICO');
     });
 
-    it('sem a lista de fases, avisa e deixa tentar de novo', async () => {
+    it('sem a lista de fases, avisa e, na nova tentativa que dá certo, o foco vai ao campo da fase', async () => {
       p = await montarPagina([derivadoBooleano]);
       await p.acionar(p.editar(derivadoBooleano));
       p.http.expectOne(urlDoFato(derivadoBooleano)).flush(structuredClone(derivadoBooleano));
@@ -402,36 +397,12 @@ describe('FatosCandidatoPage — definição do fato', () => {
 
       await p.acionar(p.botaoPeloTexto('Definição', p.drawerDoFato()) as HTMLButtonElement);
       expect(p.texto()).toContain('Fases não carregadas');
-      const tentar = p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement;
-      await p.acionar(tentar);
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentar);
+      await p.acionar(p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement);
       p.atenderApoios();
       await p.propagar();
       await p.propagar();
       expect(p.texto()).not.toContain('Fases não carregadas');
       expect(document.activeElement).toBe(p.elemento('#cfg-fato-def-pontoResolucao'));
-    });
-
-    it('mostra e anuncia cada nova tentativa de ler as fases', async () => {
-      p = await montarPagina([derivadoBooleano]);
-      await p.acionar(p.editar(derivadoBooleano));
-      p.http.expectOne(urlDoFato(derivadoBooleano)).flush(structuredClone(derivadoBooleano));
-      await p.propagar();
-      const falhar = async (): Promise<void> => {
-        for (const req of p.http.match((r) => r.url.endsWith('/fases-canonicas'))) {
-          req.flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
-        }
-        p.atenderApoios();
-        await p.propagar();
-      };
-      const anuncio = (): string => situacaoDoAlerta(p.drawerDoFato(), 'Fases não carregadas');
-      await falhar();
-
-      await p.acionar(p.botaoPeloTexto('Tentar novamente', p.drawerDoFato()) as HTMLButtonElement);
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      await falhar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
   });
 

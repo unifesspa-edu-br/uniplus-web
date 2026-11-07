@@ -1,8 +1,18 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { fatosEscolhiveis } from '@uniplus/shared-ui/components';
+import { acompanharLeitura, fatosEscolhiveis } from '@uniplus/shared-ui/components';
+import {
+  ID_DAS_REGRAS_PADRAO,
+  ID_DO_INICIO_DA_EDICAO,
+  ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO,
+} from './ids-do-fato';
 import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
 import {
   fatoDeMembroDoBinding,
@@ -51,7 +61,22 @@ export class FatoEmEdicaoStore {
   );
   readonly erroDeCarga = computed(() => {
     const problem = this.recurso.problem();
-    return problem ? this.problemI18n.resolve(problem).title : null;
+    if (problem) return this.problemI18n.resolve(problem).title;
+    return this.recurso.error() ? 'Erro inesperado ao carregar o fato.' : null;
+  });
+  /** O fato não existe mais: não há o que tentar de novo, e a edição só pode ser fechada. */
+  readonly naoEncontrado = computed(
+    () => this.recurso.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
+  );
+
+  /** O aviso da falha ao ler o fato, com a nova tentativa. */
+  readonly leituraDoFato = acompanharLeitura({
+    falha: computed(() => (this.naoEncontrado() ? null : this.erroDeCarga())),
+    pendente: this.carregando,
+    recusada: this.naoEncontrado,
+    recarregar: () => this.recarregar(),
+    destino: () => document.getElementById(ID_DO_INICIO_DA_EDICAO),
+    assunto: 'dados do fato',
   });
 
   /** A falha do servidor (5xx) ao ler o fato é avisada também por toast, como toda falha de leitura. */
@@ -62,7 +87,11 @@ export class FatoEmEdicaoStore {
     }
   });
 
-  readonly catalogo = lerCatalogoDeFatos(() => this.id() !== null);
+  readonly catalogo = lerCatalogoDeFatos(() => this.id() !== null, {
+    assunto: 'catálogo de fatos',
+    consequencia: 'Sem o catálogo, as condições das regras não podem ser escritas nem conferidas.',
+    destino: () => document.getElementById(ID_DAS_REGRAS_PADRAO),
+  });
 
   /** O fato de sistema não edita eixo nenhum, qualquer seja o vínculo dele: só a proteção de dados. */
   readonly tipo = computed<TipoDoFato>(() => {
@@ -84,7 +113,10 @@ export class FatoEmEdicaoStore {
   });
 
   /** As fases do ponto de resolução: só pedidas quando o formulário da definição está na tela. */
-  readonly fases = lerFasesCanonicas(() => this.definicaoEditavel());
+  readonly fases = lerFasesCanonicas(
+    () => this.definicaoEditavel(),
+    () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO),
+  );
 
   /** A fase atual do fato entra nas opções mesmo se a lista não a traz: a escolha salva não some do select. */
   readonly fasesDaDefinicao = computed<readonly OpcaoDeFase[]>(() => {

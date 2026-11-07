@@ -151,3 +151,7 @@ export function textoDaRecusa(mensagem: { title: string; detail?: string }): str
 /** Falha que não veio da API (rede interrompida, resposta ilegível): a tela libera a ação e explica. */
 export const FALHA_INESPERADA =
   'Não foi possível concluir a operação. Verifique a conexão e tente de novo.';
+
+/** Leitura que não veio da API (rede interrompida, resposta ilegível). */
+export const FALHA_INESPERADA_DE_LEITURA =
+  'O servidor não respondeu como esperado. Verifique a conexão.';

@@ -4,7 +4,6 @@ import {
   CursorPagina,
   ProblemI18nService,
   cursorToString,
-  ehCursorDePaginacaoObsoleto,
   useApiResource,
   withVendorMime,
 } from '@uniplus/shared-core/http';
@@ -13,7 +12,7 @@ import {
   BaseLegalBonusRegionalDto,
   CONFIGURACAO_BASE_PATH,
 } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 50;
@@ -38,7 +37,6 @@ export class BaseLegalBonusRegionalStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly bases = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -55,7 +53,21 @@ export class BaseLegalBonusRegionalStore {
     );
   });
 
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) {
       return this.problemI18n.resolve(problem).title;
@@ -81,20 +93,10 @@ export class BaseLegalBonusRegionalStore {
     this.navegacao.irParaAnterior();
   }
 
-  /**
-   * Um cursor rejeitado (400/410) nunca volta a valer: repetir a mesma página travaria o
-   * "Tentar novamente" num laço de erro. Nesse caso a listagem recomeça do início.
-   */
   tentarNovamente(): void {
-    if (this.carregando()) {
-      return;
+    if (!this.carregando()) {
+      this.lista.reload();
     }
-    const problem = this.lista.problem();
-    if (problem && ehCursorDePaginacaoObsoleto(problem)) {
-      this.recarregar();
-      return;
-    }
-    this.lista.reload();
   }
 
   /** Volta à primeira página, para a lista refletir o que acabou de ser gravado. */

@@ -7,16 +7,10 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar as concessões"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="revogacao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar as concessões" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Lista de concessões não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
 
 <cfg-concessoes-lista
   [concessoes]="store.itens()"
@@ -36,8 +30,8 @@
 
 <cfg-concessao-trilha
   [(aberto)]="trilhaAberta"
-  [carregando]="store.carregandoTrilha()"
-  [erro]="store.erroDaTrilha()"
+  [leitura]="leituraDaTrilha"
+  [recusa]="store.recusaDaTrilha()"
   [eventos]="store.trilha()"
 />
 

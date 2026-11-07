@@ -7,7 +7,6 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { acompanharNovaTentativa } from '@uniplus/shared-ui/components';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
@@ -70,15 +69,8 @@ export class EdicaoDoPedidoDeAcesso {
   readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
 
   readonly perfis = this.store.perfis;
-  readonly perfisIndisponiveis = this.store.perfisIndisponiveis;
-  readonly carregandoPerfis = this.store.carregandoPerfis;
-  readonly novaTentativaDosPerfis = acompanharNovaTentativa({
-    assunto: 'perfis',
-    pendente: this.store.carregandoPerfis,
-    falhou: computed(() => this.store.perfisIndisponiveis() !== null),
-    destino: () =>
-      this.host.nativeElement.querySelector<HTMLElement>('select[formcontrolname="perfilId"]'),
-  });
+  readonly leituraDosPerfis = this.store.leituraDosPerfis;
+  readonly recusaDosPerfis = this.store.recusaDosPerfis;
   private readonly escopo = nomesDeEscopo();
 
   readonly form = new FormGroup({
@@ -123,10 +115,6 @@ export class EdicaoDoPedidoDeAcesso {
 
   constructor() {
     this.form.controls.paraQuem.valueChanges.subscribe((valor) => this.aoMudarParaQuem(valor));
-  }
-
-  tentarPerfisNovamente(): void {
-    this.novaTentativaDosPerfis.executar(() => this.store.recarregarPerfis());
   }
 
   invalido(nome: keyof typeof this.form.controls): boolean {

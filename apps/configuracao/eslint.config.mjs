@@ -47,5 +47,5 @@ export default [
       ],
     },
   },
-  blocoDaLeituraNosModelos('warn'),
+  blocoDaLeituraNosModelos('error'),
 ];

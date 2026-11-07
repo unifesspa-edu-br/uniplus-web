@@ -9,13 +9,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-  type UiLookupFalho,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { avisoDeFalhaDoLookup } from '../../shared/foco';
 import {
   AprovacaoDoCatalogo,
   SolicitacaoDaProtecaoDialogComponent,
@@ -28,7 +23,7 @@ import { FatoDrawerComponent } from './fato-drawer.component';
 import { FatoEmEdicaoStore } from './fato-em-edicao.store';
 import { FatosCandidatoListaComponent } from './fatos-candidato-lista.component';
 import { FatosCandidatoStore } from './fatos-candidato.store';
-import { ID_DAS_REGRAS_DO_DETALHE, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
+import { ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
 
 /**
  * O catálogo de fatos do candidato (ADR-0136): a lista com filtro por origem e situação, o detalhe,
@@ -37,8 +32,8 @@ import { ID_DAS_REGRAS_DO_DETALHE, ID_DO_TITULO_DA_LISTA } from './ids-do-fato';
 @Component({
   selector: 'cfg-fatos-candidato-page',
   imports: [
-    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
+    FalhaDeLeituraComponent,
     FatoDetalheComponent,
     FatoDrawerComponent,
     FatosCandidatoListaComponent,
@@ -66,47 +61,26 @@ export class FatosCandidatoPage {
   private readonly lista = viewChild(FatosCandidatoListaComponent);
 
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  private readonly avisoDaAprovacao = avisoDeFalhaDoLookup(this.aprovacao);
-  protected readonly novaTentativaDaAprovacao = acompanharNovaTentativa({
-    assunto: 'situação de aprovação',
-    pendente: this.aprovacao.pendente,
-    falhou: this.avisoDaAprovacao,
-    destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
-  });
-  protected readonly falhasDeApoio = computed<readonly UiLookupFalho[]>(() =>
-    this.avisoDaAprovacao()
-      ? [
-          {
-            nome: 'itens que aguardam a proteção de dados',
-            pendente: this.aprovacao.pendente(),
-            fase: this.novaTentativaDaAprovacao.fase(),
-            recarregar: () =>
-              this.novaTentativaDaAprovacao.executar(() => this.aprovacao.carregar()),
-          },
-        ]
-      : [],
-  );
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'fatos',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
   });
-
-  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
-    assunto: 'catálogo de fatos',
-    pendente: this.detalhe.catalogoPendente,
-    falhou: this.detalhe.catalogoFalhou,
-    destino: () => document.getElementById(ID_DAS_REGRAS_DO_DETALHE),
+  /** A situação de aprovação só decide o botão "Enviar solicitação"; a falha avisa que ele não pode aparecer. */
+  protected readonly leituraDaAprovacao = acompanharLeitura({
+    assunto: 'itens que aguardam a proteção de dados',
+    falha: computed(() =>
+      this.aprovacao.comErro()
+        ? 'O botão “Enviar solicitação” fica fora da tela até esta leitura ser refeita.'
+        : null,
+    ),
+    pendente: this.aprovacao.pendente,
+    recarregar: () => this.aprovacao.carregar(),
+    destino: () => document.getElementById(ID_DO_TITULO_DA_LISTA),
   });
-
-  protected tentarCatalogoDoDetalhe(): void {
-    this.novaTentativaDoCatalogo.executar(() => this.detalhe.recarregarCatalogo());
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 
   protected editarDoDetalhe(fato: FatoCandidatoDto): void {
     this.detalhe.fechar();

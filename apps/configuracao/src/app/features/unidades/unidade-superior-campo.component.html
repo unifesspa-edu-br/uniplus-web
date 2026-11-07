@@ -32,15 +32,5 @@
   @if (erro()) {
     <span class="field__error" id="cfg-unidade-superior-erro"> {{ erro() }}</span>
   }
-  @if (comErro()) {
-    <span class="field__error">
-      <span role="alert">Não foi possível carregar as unidades para seleção.</span>
-      <ui-nova-tentativa-do-campo
-        [pendente]="carregando()"
-        [fase]="fase()"
-        assunto="unidades"
-        (tentar)="recarregar.emit()"
-      />
-    </span>
-  }
+  <ui-falha-de-leitura-do-campo [leitura]="leitura()" />
 </div>

@@ -4,13 +4,9 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
-  computed,
   inject,
 } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { focoEstaLivre } from '../../shared/foco';
 import { CursoFormularioComponent } from './curso-formulario.component';
@@ -27,10 +23,10 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
   standalone: true,
   providers: [CursosStore, EdicaoDosCursos, GruposDoCurso, OfertasDoCursoStore],
   imports: [
-    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
     CursoFormularioComponent,
     CursosListaComponent,
+    FalhaDeLeituraComponent,
     OfertasDoCursoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,29 +40,23 @@ export class CursosPage {
   protected readonly ofertas = inject(OfertasDoCursoStore);
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'cursos',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-cursos-list-title'),
   });
 
-  protected readonly novaTentativaDasOfertas = acompanharNovaTentativa({
+  protected readonly leituraDasOfertas = acompanharLeitura({
     assunto: 'ofertas',
+    falha: this.ofertas.mensagemDeErro,
     pendente: this.ofertas.carregando,
-    falhou: computed(() => this.ofertas.mensagemDeErro() !== null),
+    recarregar: () => this.ofertas.recarregar(),
     destino: () =>
       this.raiz.querySelector<HTMLElement>('cfg-ofertas-do-curso button[aria-label="Fechar"]'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
-  protected recarregarOfertas(): void {
-    this.novaTentativaDasOfertas.executar(() => this.ofertas.recarregar());
-  }
 
   /**
    * Ao fechar as ofertas o drawer devolve o foco a quem o abriu. Quando a remoção bloqueada o

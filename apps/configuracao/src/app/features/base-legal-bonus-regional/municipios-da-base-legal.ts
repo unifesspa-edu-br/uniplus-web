@@ -1,5 +1,5 @@
 import { Injectable, Signal, computed, inject, signal } from '@angular/core';
-import { acompanharNovaTentativa, type FaseDaNovaTentativa } from '@uniplus/shared-ui/components';
+import { acompanharLeitura, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, of, switchMap, timer } from 'rxjs';
 import { BaseLegalBonusRegionalMunicipioDto } from '@uniplus/shared-data/configuracao';
@@ -25,8 +25,7 @@ export interface CampoDeMunicipios {
   readonly termo: string;
   readonly resultados: readonly CidadeResumoDto[];
   readonly buscando: boolean;
-  readonly buscaFalhou: boolean;
-  readonly fase: FaseDaNovaTentativa;
+  readonly leitura: LeituraAcompanhada;
   readonly semResultado: boolean;
 }
 
@@ -59,29 +58,29 @@ export class MunicipiosDaBaseLegal {
     return this.tocado() && this.vazia() ? 'Adicione ao menos um município.' : null;
   });
 
+  /** Ao dar certo a nova tentativa, o aviso sai levando o botão: o foco volta ao campo de busca. */
+  readonly leitura = acompanharLeitura({
+    assunto: 'municípios',
+    falha: computed(() => (this.buscaFalhou() ? 'Não foi possível buscar municípios.' : null)),
+    pendente: this.buscando,
+    recarregar: () => this.pedidos.next(this.termo()),
+    destino: () => document.getElementById('cfg-blbr-municipios-busca'),
+  });
+
   readonly campo = computed<CampoDeMunicipios>(() => {
     const codigos = new Set(this.escolhidos().map((municipio) => municipio.codigoIbge));
     const resultados = this.achados().filter((cidade) => !codigos.has(cidade.codigoIbge));
     const termoBuscavel = this.termo().trim().length >= BUSCA_MINIMO_DE_CARACTERES;
-    const buscaFalhou = this.buscaFalhou();
+    const buscaFalhou = this.leitura.visivel();
     return {
       selecionados: this.escolhidos(),
       erro: this.erro(),
       termo: this.termo(),
       resultados,
       buscando: this.buscando(),
-      buscaFalhou,
-      fase: this.novaTentativa.fase(),
+      leitura: this.leitura,
       semResultado: termoBuscavel && !this.buscando() && !buscaFalhou && resultados.length === 0,
     };
-  });
-
-  /** Ao dar certo a nova tentativa, o aviso sai levando o botão: o foco volta ao campo de busca. */
-  readonly novaTentativa = acompanharNovaTentativa({
-    assunto: 'municípios',
-    pendente: this.buscando,
-    falhou: this.buscaFalhou,
-    destino: () => document.getElementById('cfg-blbr-municipios-busca'),
   });
 
   constructor() {
@@ -121,11 +120,6 @@ export class MunicipiosDaBaseLegal {
   buscar(termo: string): void {
     this.termo.set(termo);
     this.pedidos.next(termo);
-  }
-
-  /** Repete a busca do termo que falhou, sem exigir que a pessoa o digite de novo. */
-  buscarDeNovo(): void {
-    this.novaTentativa.executar(() => this.pedidos.next(this.termo()));
   }
 
   adicionar(cidade: CidadeResumoDto): void {

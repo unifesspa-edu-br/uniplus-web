@@ -8,16 +8,7 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os cursos"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar os cursos" [leitura]="leitura" />
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-cursos-lista
@@ -51,7 +42,6 @@
   [grupos]="grupos.formulario()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (tentarGrupos)="grupos.tentarDeNovo()"
 />
 
 <cfg-confirmacao-de-remocao
@@ -70,12 +60,11 @@
   [bloqueio]="ofertas.bloqueio()"
   [mensagemDeErro]="ofertas.mensagemDeErro()"
   [carregando]="ofertas.carregando()"
-  [fase]="novaTentativaDasOfertas.fase()"
+  [leitura]="leituraDasOfertas"
   [ofertas]="ofertas.itens()"
   [temAnterior]="ofertas.anterior() !== null"
   [temProximo]="ofertas.proximo() !== null"
   (fechado)="aoFecharOfertas()"
-  (recarregar)="recarregarOfertas()"
   (anterior)="ofertas.paginaAnterior()"
   (proximo)="ofertas.proximaPagina()"
 />

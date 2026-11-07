@@ -22,20 +22,19 @@
   >{{ edicao.anuncioDaAcao() }}</span
 >
 
-@if (store.erro(); as erro) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar o termo"
-  [mensagem]="erro"
-  [pendente]="store.carregando()"
-  [indisponivel]="indisponivel()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
+<ui-falha-de-leitura titulo="Não foi possível carregar o termo" [leitura]="leitura" />
+@if (store.naoEncontrado()) {
+<ui-alert variant="danger" heading="Termo não encontrado">
+  Este endereço não leva a um termo de consentimento. Escolha um termo na lista.
+  <div alertaAcoes class="list-state__retry">
+    <a class="btn btn--secondary btn--sm" routerLink="/termos-consentimento">Ver os termos</a>
+  </div>
+</ui-alert>
 } @else if (store.carregando()) {
-<div class="cfg-form__loading" role="status">
+<div [uiIndicadorDaLeitura]="leitura" class="cfg-form__loading">
   <ui-spinner spinnerSize="md" /> Carregando termo...
 </div>
-} @else { @if (alertaDaAcao(); as alerta) {
+} @else if (store.erro() === null) { @if (alertaDaAcao(); as alerta) {
 <ui-alert variant="danger" [heading]="alerta.titulo">
   {{ alerta.texto }}
   <div class="list-state__retry">

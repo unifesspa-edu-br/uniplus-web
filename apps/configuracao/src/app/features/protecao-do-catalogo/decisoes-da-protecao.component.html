@@ -69,15 +69,10 @@
   </ng-container>
 </ui-filter-bar>
 
-@if (mensagemDeErro(); as mensagem) {
-  <ui-alerta-nova-tentativa
-    titulo="Não foi possível carregar as decisões"
-    [mensagem]="mensagem"
-    [pendente]="pagina.carregando()"
-    [fase]="novaTentativaDaLista.fase()"
-    (tentar)="carregar()"
-  />
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar as decisões" [leitura]="leituraDaLista" />
+<cfg-recusa-da-leitura naoEncontrado="Lista de decisões não encontrada" [recusa]="pagina.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
 
 <cfg-decisoes-da-protecao-lista
   [itens]="pagina.itens()"
@@ -98,9 +93,7 @@
   [(drawerAberto)]="drawerAberto"
   [selecionada]="selecionada()"
   [historico]="historico()"
-  [carregandoHistorico]="carregandoHistorico()"
+  [leitura]="leituraDoHistorico"
   [erroDoHistorico]="erroDoHistorico()"
   [itemInexistente]="itemInexistente()"
-  [faseDoHistorico]="novaTentativaDoHistorico.fase()"
-  (recarregar)="tentarOHistoricoDeNovo()"
 />

@@ -19,10 +19,6 @@ import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { PedirAcessoPage } from './pedir-acesso.page';
 import { ok, pedido, recusa, UNIDADES } from './testes';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const PERFIL_COMUM = {
   id: 'perfil-1',
@@ -236,7 +232,7 @@ describe('PedirAcessoPage', async () => {
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });
 
-  it('mostra a recusa da leitura dos perfis, sem pedir o código do perfil', async () => {
+  it('a recusa da leitura dos perfis não oferece nova tentativa nem pede o código do perfil', async () => {
     api.perfisParaPedir.mockReturnValue(
       of(recusa('uniplus.autorizacao.pedido.solicitante_nao_institucional', 403)),
     );
@@ -267,7 +263,9 @@ describe('PedirAcessoPage', async () => {
     })();
     const host = fixture.nativeElement as HTMLElement;
 
-    expect(host.textContent).toContain('Não foi possível listar os perfis de acesso');
+    expect(host.textContent).toContain('Acesso negado');
+    expect(host.textContent).toContain('Recusado');
+    expect(host.textContent).not.toContain('Tentar novamente');
     expect(host.querySelector('select[formcontrolname="perfilId"]')).toBeNull();
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });
@@ -304,7 +302,6 @@ describe('PedirAcessoPage', async () => {
 
       expect(botao?.getAttribute('aria-disabled')).toBe('true');
       expect(botao?.getAttribute('aria-busy')).toBe('true');
-      expect(situacaoDoBotao(botao as HTMLElement)).toBe(TEXTO_TENTANDO);
       botao?.click();
       expect(api.perfisParaPedir.mock.calls.length).toBe(consultas);
     });

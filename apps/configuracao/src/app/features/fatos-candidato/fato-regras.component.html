@@ -2,16 +2,11 @@
   @if (leitura.temRegras()) {
     <section aria-labelledby="cfg-fato-regras">
       <h3 id="cfg-fato-regras" class="form-section__title" tabindex="-1">Regras padrão</h3>
-      @if (leitura.catalogo.falhou()) {
-        <ui-alerta-nova-tentativa
-          titulo="Catálogo de fatos não carregado"
-          mensagem="Sem o catálogo, as condições das regras não podem ser escritas nem conferidas."
-          [pendente]="leitura.catalogo.pendente()"
-          [fase]="novaTentativaDoCatalogo.fase()"
-          variante="warning"
-          (tentar)="tentarCatalogoNovamente()"
-        />
-      }
+      <ui-falha-de-leitura
+        titulo="Catálogo de fatos não carregado"
+        variante="warning"
+        [leitura]="leitura.catalogo.leitura"
+      />
       <p class="u-caption">
         O processo copia estas regras ao citar o fato e pode alterá-las na cópia.
         @if (f.dominio === 'BOOLEANO') {

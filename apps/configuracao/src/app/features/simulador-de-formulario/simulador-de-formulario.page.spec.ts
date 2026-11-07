@@ -9,11 +9,6 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimuladorDeFormularioPage } from './simulador-de-formulario.page';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 
@@ -324,17 +319,21 @@ describe('SimuladorDeFormularioPage', () => {
     expect(tela().textContent).toContain('Nome social');
   });
 
-  it('a falha ao carregar o modelo mostra o alerta com a opção de tentar de novo', async () => {
-    await abrir(`/simulador?modelo=${ID}`);
-    listaDeModelos();
-    http.expectOne(`${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`).flush(
-      { type: 'about:blank', title: 'Modelo não encontrado', status: 404 },
+  const RENDERIZAVEL_URL = `${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`;
+  const recusar = (status: number, title: string): void =>
+    http.expectOne(RENDERIZAVEL_URL).flush(
+      { type: 'about:blank', title, status },
       {
-        status: 404,
-        statusText: 'Not Found',
+        status,
+        statusText: 'Recusa',
         headers: { 'Content-Type': 'application/problem+json' },
       },
     );
+
+  it('a falha ao carregar o modelo oferece tentar de novo e leva o foco ao seletor quando dá certo', async () => {
+    await abrir(`/simulador?modelo=${ID}`);
+    listaDeModelos();
+    recusar(503, 'Serviço indisponível');
     harness.detectChanges();
 
     expect(tela().querySelector('ui-alert')?.textContent).toContain(
@@ -344,14 +343,24 @@ describe('SimuladorDeFormularioPage', () => {
     tentar.focus();
     tentar.click();
     harness.detectChanges();
-
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
     renderizavel();
     await harness.fixture.whenStable();
     harness.detectChanges();
+
     expect(tela().textContent).toContain('Nome social');
+    expect(botao('Tentar novamente')).toBeUndefined();
     expect(document.activeElement).toBe(tela().querySelector('select'));
+  });
+
+  it('o modelo que não existe mais mostra a recusa, sem nova tentativa, e o seletor segue disponível', async () => {
+    await abrir(`/simulador?modelo=${ID}`);
+    listaDeModelos();
+    recusar(404, 'Modelo não encontrado');
+    harness.detectChanges();
+
+    expect(tela().querySelector('ui-alert')?.textContent).toContain('Modelo não encontrado');
+    expect(botao('Tentar novamente')).toBeUndefined();
+    expect(tela().querySelector('select')).not.toBeNull();
   });
 
   it('a falha ao listar os modelos oferece tentar de novo e leva o foco ao seletor quando dá certo', async () => {
@@ -374,39 +383,11 @@ describe('SimuladorDeFormularioPage', () => {
     tentar.focus();
     tentar.click();
     harness.detectChanges();
-
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
     listaDeModelos();
     await harness.fixture.whenStable();
     harness.detectChanges();
 
     expect(botao('Tentar novamente')).toBeUndefined();
     expect(document.activeElement).toBe(tela().querySelector('select'));
-  });
-
-  it('mostra e anuncia cada nova tentativa de carregar o modelo', async () => {
-    await abrir(`/simulador?modelo=${ID}`);
-    listaDeModelos();
-    const falhar = (): void =>
-      http.expectOne(`${BASE}/api/configuracao/admin/modelos-formulario/${ID}/renderizavel`).flush(
-        { type: 'about:blank', title: 'Modelo não encontrado', status: 404 },
-        {
-          status: 404,
-          statusText: 'Not Found',
-          headers: { 'Content-Type': 'application/problem+json' },
-        },
-      );
-    const anuncio = (): string => situacaoDaNovaTentativa(tela());
-    falhar();
-    harness.detectChanges();
-
-    botao('Tentar novamente').click();
-    harness.detectChanges();
-    expect(anuncio()).toBe(TEXTO_TENTANDO);
-    falhar();
-    await harness.fixture.whenStable();
-    harness.detectChanges();
-    expect(anuncio()).toBe(TEXTO_REPETIDA);
   });
 });

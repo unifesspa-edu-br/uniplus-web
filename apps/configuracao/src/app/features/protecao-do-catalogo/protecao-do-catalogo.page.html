@@ -19,16 +19,12 @@
 
 @if (aba() === 'decisoes') {
 <cfg-decisoes-da-protecao />
-} @else { @if (erroDeCarga(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os itens"
-  [mensagem]="mensagem"
-  [pendente]="carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativaDaFila.fase()"
-  (tentar)="carregar()"
-/>
-} @if (edicao.erroDaDecisao()) {
+} @else {
+<ui-falha-de-leitura titulo="Não foi possível carregar os itens" [leitura]="leituraDaFila" />
+<cfg-recusa-da-leitura naoEncontrado="Fila de itens não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+@if (edicao.erroDaDecisao()) {
 <ui-alert variant="danger" heading="A decisão não foi registrada"
   >{{ edicao.erroDaDecisao() }}</ui-alert
 >
@@ -71,18 +67,11 @@
     <ui-alert variant="danger" heading="A decisão não foi registrada"
       >{{ edicao.erroDaDecisaoNoDrawer() }}</ui-alert
     >
-    } @if (erroDoDetalhe(); as erro) { @if (naoEncontrado()) {
-    <ui-alert variant="danger" heading="Item não encontrado">{{ erro }}</ui-alert>
-    } @else {
-    <ui-alerta-nova-tentativa
-      titulo="Não foi possível carregar o item"
-      [mensagem]="erro"
-      [pendente]="carregandoDetalhe()"
-      [fase]="novaTentativaDoDetalhe.fase()"
-      [fase]="novaTentativaDoDetalhe.fase()"
-      (tentar)="recarregarDetalhe()"
-    />
-    } } @if (detalhe(); as d) {
+    }
+    <ui-falha-de-leitura titulo="Não foi possível carregar o item" [leitura]="leituraDoDetalhe" />
+    @if (naoEncontrado()) {
+    <ui-alert variant="danger" heading="Item não encontrado">{{ erroDoDetalhe() }}</ui-alert>
+    } @if (detalhe(); as d) {
     <cfg-item-da-protecao-detalhe [detalhe]="d" [categorias]="categorias.porCodigo()" />
     }
   </div>

@@ -374,7 +374,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
     await novo(page).click();
     const formulario = drawer(page);
     const aviso = formulario.locator('ui-alerta-nova-tentativa');
-    await expect(aviso).toContainText('Sem o vocabulário de tipos');
+    await expect(aviso).toContainText('sem o vocabulário de tipos');
     await expect(formulario.locator('select[formcontrolname="tipoInstrumento"]')).toHaveAttribute(
       'aria-describedby',
       'cfg-blbr-tipos-falha',

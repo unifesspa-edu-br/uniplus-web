@@ -61,17 +61,7 @@
               Opcional. Vira a unidade responsável inicial desta fase quando ela é acrescentada ao
               cronograma de um processo; o cronograma continua permitindo trocá-la.
             </span>
-            @if (erroUnidades()) {
-              <span class="field__error">
-                <span role="alert">Não foi possível carregar as unidades.</span>
-                <ui-nova-tentativa-do-campo
-                  [pendente]="carregandoUnidades()"
-                  [fase]="faseDasUnidades()"
-                  assunto="unidades"
-                  (tentar)="recarregarUnidades.emit()"
-                />
-              </span>
-            }
+            <ui-falha-de-leitura-do-campo [leitura]="leituraDasUnidades()" />
             @if (erroDoCampo('unidadeSugeridaId')) {
               <span class="field__error" id="cfg-fase-erro-unidadeSugeridaId">{{
                 erroDoCampo('unidadeSugeridaId')

@@ -2,16 +2,7 @@
 @if (erro()) {
   <ui-alert variant="danger" heading="Não foi possível criar o fato">{{ erro() }}</ui-alert>
 }
-@if (fases.falhou()) {
-  <ui-alerta-nova-tentativa
-    titulo="Fases não carregadas"
-    mensagem="Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido."
-    [pendente]="fases.pendente()"
-    [fase]="novaTentativaDasFases.fase()"
-    variante="warning"
-    (tentar)="tentarFasesNovamente()"
-  />
-}
+<ui-falha-de-leitura titulo="Fases não carregadas" variante="warning" [leitura]="fases.leitura" />
 <form
   [formGroup]="form"
   id="cfg-fato-criacao"
@@ -113,16 +104,11 @@
     </label>
 
     @if (dep.agregado()) {
-      @if (catalogo.falhou()) {
-        <ui-alerta-nova-tentativa
-          titulo="Fatos de membro não carregados"
-          mensagem="Sem o catálogo de fatos não é possível escolher o fato de membro que o agregado resume."
-          [pendente]="catalogo.pendente()"
-          [fase]="novaTentativaDoCatalogo.fase()"
-          variante="warning"
-          (tentar)="tentarCatalogoNovamente()"
-        />
-      }
+      <ui-falha-de-leitura
+        titulo="Fatos de membro não carregados"
+        variante="warning"
+        [leitura]="catalogo.leitura"
+      />
       @let erroMembro = erroDoCampo('fatoDeMembro');
       <label class="field form-grid__full" [class.is-error]="erroMembro">
         <span class="field__label is-required">Fato de membro resumido</span>

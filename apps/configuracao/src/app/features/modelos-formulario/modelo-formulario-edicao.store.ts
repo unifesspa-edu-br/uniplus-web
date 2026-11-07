@@ -1,8 +1,13 @@
 import { HttpParams } from '@angular/common/http';
-import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, Signal, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
-import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
   FatoCandidatoView,
@@ -13,10 +18,36 @@ import {
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
+  acompanharLeitura,
   termoDisponivelDe,
+  type LeituraAcompanhada,
   type OpcaoDoDocumento,
+  type OpcoesDaLeitura,
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
+
+/** O título do modelo fica na tela quando o aviso de falha sai com o botão: é para onde o foco volta. */
+const ID_DO_TITULO_DO_MODELO = 'cfg-modelo-titulo';
+
+/** Sem o item lido a tela não faz o que a mensagem diz. */
+const SEM_OS_TERMOS =
+  'Sem a lista de termos não é possível exigir um termo novo nem trocar a versão.';
+const SEM_O_CATALOGO = 'Sem o catálogo não é possível acrescentar campos nem declarar condições.';
+const SEM_OS_TIPOS =
+  'Sem os tipos de processo o campo Tipo de processo não lista as opções nem mostra o tipo do modelo.';
+const SEM_O_VOCABULARIO =
+  'Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos.';
+
+function leituraNoTitulo(opcoes: Omit<OpcoesDaLeitura, 'destino'>): LeituraAcompanhada {
+  return acompanharLeitura({
+    ...opcoes,
+    destino: () => document.getElementById(ID_DO_TITULO_DO_MODELO),
+  });
+}
+
+function falhaCom(falhou: Signal<boolean>, mensagem: string): Signal<string | null> {
+  return computed(() => (falhou() ? mensagem : null));
+}
 
 @Injectable()
 export class ModeloFormularioEdicaoStore {
@@ -60,11 +91,18 @@ export class ModeloFormularioEdicaoStore {
         ? 'Erro inesperado ao carregar o modelo.'
         : null;
   });
+  /** O modelo não existe: não há o que tentar de novo, e a saída é a volta à lista. */
+  readonly naoEncontrado = computed(
+    () => this.detalhe.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
+  );
   readonly fatos = computed(() => this.catalogo.data() ?? []);
   readonly catalogoComErro = computed(
     () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
   );
   readonly tiposDeProcesso = computed(() => this.tipos.data() ?? []);
+  readonly tiposComErro = computed(
+    () => this.tipos.problem() !== null || this.tipos.error() !== undefined,
+  );
   readonly fases = computed<readonly OpcaoDoDocumento[]>(() =>
     (this.fasesCanonicas.data() ?? []).map(({ codigo, nome, permiteComplementacao }) => ({
       codigo,
@@ -86,6 +124,38 @@ export class ModeloFormularioEdicaoStore {
   readonly vocabularioDosDocumentosCarregando = computed(
     () => this.fasesCanonicas.isLoading() || this.tiposDocumento.isLoading(),
   );
+
+  readonly leituraDoModelo = leituraNoTitulo({
+    assunto: 'modelo',
+    falha: computed(() => (this.naoEncontrado() ? null : this.erroAoCarregar())),
+    pendente: this.carregando,
+    recusada: this.naoEncontrado,
+    recarregar: () => this.recarregar(),
+  });
+  readonly leituraDosTermos = leituraNoTitulo({
+    assunto: 'termos',
+    falha: falhaCom(this.termosComErro, SEM_OS_TERMOS),
+    pendente: this.termosCarregando,
+    recarregar: () => this.carregarTermos(),
+  });
+  readonly leituraDoCatalogo = leituraNoTitulo({
+    assunto: 'catálogo',
+    falha: falhaCom(this.catalogoComErro, SEM_O_CATALOGO),
+    pendente: this.catalogo.isLoading,
+    recarregar: () => this.catalogo.reload(),
+  });
+  readonly leituraDosTipos = leituraNoTitulo({
+    assunto: 'tipos de processo',
+    falha: falhaCom(this.tiposComErro, SEM_OS_TIPOS),
+    pendente: this.tipos.isLoading,
+    recarregar: () => this.tipos.reload(),
+  });
+  readonly leituraDoVocabulario = leituraNoTitulo({
+    assunto: 'vocabulário',
+    falha: falhaCom(this.vocabularioDosDocumentosComErro, SEM_O_VOCABULARIO),
+    pendente: this.vocabularioDosDocumentosCarregando,
+    recarregar: () => this.recarregarVocabularioDosDocumentos(),
+  });
 
   constructor() {
     this.carregarTermos();

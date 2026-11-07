@@ -18,16 +18,11 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os perfis"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-} @if (edicao.erroDaAcao()) {
+<ui-falha-de-leitura titulo="Não foi possível carregar os perfis" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Lista de perfis não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+@if (edicao.erroDaAcao()) {
 <ui-alert variant="danger" heading="Não foi possível concluir">{{ edicao.erroDaAcao() }}</ui-alert>
 }
 
@@ -52,11 +47,9 @@
   [criacaoEmAberto]="edicao.criacaoEmAberto()"
   [erro]="edicao.erroDoForm()"
   [catalogo]="store.catalogo()"
-  [erroDoCatalogo]="store.erroDoCatalogo()"
-  [carregandoCatalogo]="store.carregandoCatalogo()"
-  [faseDoCatalogo]="novaTentativaDoCatalogo.fase()"
+  [leituraDoCatalogo]="leituraDoCatalogo"
+  [recusaDoCatalogo]="store.recusaDoCatalogo()"
   [marcadas]="permissoesMarcadas()"
   (salvar)="edicao.aoEnviar()"
   (alternar)="edicao.alternar($event)"
-  (recarregarCatalogo)="tentarCatalogoNovamente()"
 />

@@ -10,16 +10,12 @@
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaSituacao() }}</span>
 
-@if (errorMessage(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os modelos"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+<ui-falha-de-leitura titulo="Não foi possível carregar os modelos" [leitura]="leitura" />
+<ui-falha-de-leitura
+  titulo="Tipos de processo não carregados"
+  variante="warning"
+  [leitura]="leituraDosTipos"
 />
-}
 
 <cfg-modelos-formulario-lista
   [(termoBusca)]="store.termoBusca"
@@ -47,6 +43,7 @@
   [erroDaCriacao]="edicao.erroDaCriacao()"
   [anuncio]="edicao.anuncioDaCriacao()"
   [tiposDeProcesso]="store.tiposDeProcesso()"
+  [leituraDosTipos]="leituraDosTipos"
   (abertoChange)="edicao.fechar($event)"
   (criar)="edicao.criar()"
 />

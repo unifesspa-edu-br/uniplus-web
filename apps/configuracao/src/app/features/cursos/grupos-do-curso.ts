@@ -1,5 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { acompanharNovaTentativa, type FaseDaNovaTentativa } from '@uniplus/shared-ui/components';
+import { acompanharCatalogo, type CatalogoAcompanhado } from '@uniplus/shared-ui/components';
 import type { GrupoAreaEnemDto } from '@uniplus/shared-data/configuracao';
 import { nullIfBlank } from '../../shared/formulario';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
@@ -8,17 +8,15 @@ import { comPontoFinal } from '../../shared/texto';
 
 /** O que o formulário precisa saber do vocabulário de grupos de área do ENEM. */
 export interface GruposDoFormulario {
-  readonly falhou: boolean;
+  readonly leitura: CatalogoAcompanhado;
   readonly pendente: boolean;
-  readonly fase: FaseDaNovaTentativa;
   readonly opcoes: readonly GrupoAreaEnemDto[];
-  readonly mensagemDeFalha: string;
   readonly foraDasOpcoes: GrupoAreaEnemDto | null;
 }
 
 /**
- * Leitura dos grupos de área do ENEM que alimentam o select do formulário de curso: a falha, a
- * nova tentativa com foco e o grupo do curso em edição que a lista ainda não oferece.
+ * Leitura dos grupos de área do ENEM que alimentam o select do formulário de curso: a leitura
+ * acompanhada (falha, nova tentativa e foco) e o grupo do curso em edição que a lista ainda não oferece.
  */
 @Injectable()
 export class GruposDoCurso {
@@ -60,33 +58,28 @@ export class GruposDoCurso {
     return nullIfBlank(doCurso.codigo) === null ? null : doCurso;
   });
 
-  readonly formulario = computed<GruposDoFormulario>(() => ({
-    falhou: this.vocabulario.falhou(),
-    pendente: this.vocabulario.pendente(),
-    fase: this.novaTentativa.fase(),
-    opcoes: this.vocabulario.opcoes(),
-    mensagemDeFalha: this.mensagemDeFalha(),
-    foraDasOpcoes: this.foraDasOpcoes(),
-  }));
-
   /**
-   * A lista chegou depois do "Tentar novamente": o alerta sai com o botão, e o foco vai ao select
+   * A lista chegou depois do "Tentar novamente": o aviso sai com o botão, e o foco vai ao select
    * que a lista alimenta, sem sair do formulário.
    */
-  readonly novaTentativa = acompanharNovaTentativa({
+  readonly leitura: CatalogoAcompanhado = acompanharCatalogo({
     assunto: 'grupos de área',
+    falha: computed(() => (this.vocabulario.falhou() ? this.mensagemDeFalha() : null)),
     pendente: this.vocabulario.pendente,
-    falhou: this.vocabulario.falhou,
+    recarregar: () => this.vocabulario.tentarDeNovo(),
     destino: () => document.getElementById('cfg-curso-grupo-area-enem'),
   });
+
+  readonly formulario = computed<GruposDoFormulario>(() => ({
+    leitura: this.leitura,
+    pendente: this.vocabulario.pendente(),
+    opcoes: this.vocabulario.opcoes(),
+    foraDasOpcoes: this.foraDasOpcoes(),
+  }));
 
   /** Prepara a leitura para um formulário que abre: o grupo do curso (se houver) e a lista. */
   preparar(grupoDoCurso: GrupoAreaEnemDto | null | undefined): void {
     this.grupoDoCursoEmEdicao.set(grupoDoCurso ? this.vocabulario.exibivel(grupoDoCurso) : null);
     this.vocabulario.garantirCarregado();
-  }
-
-  tentarDeNovo(): void {
-    this.novaTentativa.executar(() => this.vocabulario.tentarDeNovo());
   }
 }

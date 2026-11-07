@@ -13,7 +13,10 @@ interface Cursores {
   readonly proximo: Cursor | null;
 }
 
-type ListaPaginada<T> = Pick<UseApiResourceRef<readonly T[]>, 'value' | 'headers' | 'isLoading' | 'error'>;
+type ListaPaginada<T> = Pick<
+  UseApiResourceRef<readonly T[]>,
+  'value' | 'headers' | 'isLoading' | 'error'
+>;
 
 const SEM_CURSORES: Cursores = { anterior: null, proximo: null };
 

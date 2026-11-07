@@ -12,4 +12,3 @@ export {
 } from './foco-do-envio';
 export { focoEstaLivre } from './foco-livre';
 export { aguardarRecarga, type EsperaDeRecarga } from './aguardar-recarga';
-export { avisoDeFalhaDoLookup, type LeituraDeCatalogo } from './aviso-de-falha-do-lookup';

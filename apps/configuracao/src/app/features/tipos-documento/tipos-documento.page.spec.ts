@@ -13,12 +13,6 @@ import {
   rg,
   sucesso,
 } from './tipos-documento.testing';
-import {
-  situacaoDaNovaTentativa,
-  situacoesDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('TiposDocumentoPage — leitura', () => {
   let p: Pagina;
@@ -204,21 +198,17 @@ describe('TiposDocumentoPage — leitura', () => {
     });
   });
 
-  it('a recusa do catálogo é comunicada fora do formulário, e a nova tentativa devolve o foco ao título', async () => {
+  it('a recusa das categorias é comunicada na lista, e a nova tentativa devolve o foco ao título', async () => {
     p = await montarPagina([diploma], { categorias: 'falha' });
 
     expect(textoDaPagina()).toContain('Rótulos não carregados');
+    expect(textoDaPagina()).not.toContain('A coluna de proteção de dados mostra');
     const recarregar = [...p.fixture.nativeElement.querySelectorAll('.link-button')].find((b) =>
       (b as HTMLElement).textContent?.includes('categorias'),
     ) as HTMLButtonElement;
     recarregar.focus();
     recarregar.click();
     await p.propagar();
-
-    expect(recarregar.isConnected).toBe(true);
-    expect(recarregar.getAttribute('aria-disabled')).toBe('true');
-    expect(recarregar.getAttribute('aria-busy')).toBe('true');
-    expect(document.activeElement).toBe(recarregar);
     p.atenderCategorias();
     await p.propagar();
 
@@ -229,39 +219,24 @@ describe('TiposDocumentoPage — leitura', () => {
     expect(document.activeElement).toBe(p.elemento('#cfg-tipos-documento-list-title'));
   });
 
-  it('mostra e anuncia cada nova tentativa de ler as categorias e a situação', async () => {
-    p = await montarPagina([diploma], { categorias: 'falha' });
-    const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
-    const botao = (nome: string): HTMLButtonElement =>
-      [...p.fixture.nativeElement.querySelectorAll('.link-button')].find((b) =>
-        (b as HTMLElement).textContent?.includes(nome),
-      ) as HTMLButtonElement;
-
-    botao('categorias').click();
-    await p.propagar();
-    expect(anuncio()).toBe(textoTentandoDe('categorias'));
-    p.atenderCategorias('falha');
-    await p.propagar();
-    expect(anuncio()).toBe(textoRepetidaDe('categorias'));
-    p.atenderCategorias();
-    await p.propagar();
-
+  it('a nova tentativa da situação da proteção devolve o foco ao título quando dá certo', async () => {
+    p = await montarPagina([rg]);
     p.store.aprovacao.carregar();
     for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
     await p.propagar();
-    botao('situação').focus();
-    botao('situação').click();
+    expect(textoDaPagina()).toContain('A coluna de proteção de dados mostra');
+    expect(textoDaPagina()).not.toContain('Rótulos não carregados');
+    const botao = [...p.fixture.nativeElement.querySelectorAll('ui-alerta-nova-tentativa')]
+      .find((aviso) => aviso.textContent?.includes('ler a situação da proteção de dados'))
+      ?.querySelector('button') as HTMLButtonElement;
+    botao.focus();
+    botao.click();
     await p.propagar();
-    expect(botao('situação').getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(botao('situação'));
-    expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toContain(
-      textoTentandoDe('situação da proteção de dados'),
-    );
-    for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush(...problema(403));
+    for (const req of p.http.match((r) => r.url === PROTECAO_URL)) req.flush([]);
     await p.propagar();
-    expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toContain(
-      textoRepetidaDe('situação da proteção de dados'),
-    );
+
+    expect(textoDaPagina()).not.toContain('A coluna de proteção de dados mostra');
+    expect(document.activeElement).toBe(p.elemento('#cfg-tipos-documento-list-title'));
   });
 
   it('limpa o chip selecionado quando a categoria sai do cadastro', async () => {
@@ -334,7 +309,6 @@ describe('TiposDocumentoPage — leitura', () => {
     tentar.focus();
     tentar.click();
     await p.propagar();
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
     await p.recarregarCom([rg]);
     expect(document.activeElement).toBe(p.elemento('#cfg-tipos-documento-list-title'));
   });

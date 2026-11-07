@@ -76,17 +76,7 @@
               }}</span>
             }
             <span class="field__hint">Vínculo opcional ao campus que administra este local.</span>
-            @if (campiComErro()) {
-              <span class="field__error">
-                <span role="alert">Não foi possível carregar os campi para seleção.</span>
-                <ui-nova-tentativa-do-campo
-                  [pendente]="carregandoCampi()"
-                  [fase]="faseDosCampi()"
-                  assunto="campi"
-                  (tentar)="recarregarCampi.emit()"
-                />
-              </span>
-            }
+            <ui-falha-de-leitura-do-campo [leitura]="leituraDosCampi()" />
           </label>
         </div>
       </section>

@@ -8,14 +8,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
-import { NovaTentativaDoCampoComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { FalhaDeLeituraDoCampoComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { BUSCA_MAXIMO_DE_CARACTERES, type CampoDeMunicipios } from './municipios-da-base-legal';
 
 /** O campo dos municípios da base legal: a busca na API de geografia e os municípios escolhidos. */
 @Component({
   selector: 'cfg-campo-de-municipios',
   standalone: true,
-  imports: [SpinnerComponent, NovaTentativaDoCampoComponent],
+  imports: [SpinnerComponent, FalhaDeLeituraDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './campo-de-municipios.component.html',
   styleUrl: './campo-de-municipios.component.css',
@@ -25,7 +25,6 @@ export class CampoDeMunicipiosComponent {
   readonly buscar = output<string>();
   readonly adicionar = output<CidadeResumoDto>();
   readonly remover = output<string>();
-  readonly tentarBuscaDeNovo = output<void>();
 
   private readonly busca = viewChild.required<ElementRef<HTMLInputElement>>('busca');
 
@@ -34,7 +33,7 @@ export class CampoDeMunicipiosComponent {
   /** Ids dos erros que descrevem o campo de busca; sem nenhum, o atributo some. */
   protected readonly descritoPor = computed<string | null>(() => {
     const ids = [
-      this.campo().buscaFalhou ? 'cfg-blbr-municipio-busca-erro' : null,
+      this.campo().leitura.visivel() ? 'cfg-blbr-municipio-busca-erro' : null,
       this.campo().erro !== null ? 'cfg-blbr-municipios-erro' : null,
     ].filter((id): id is string => id !== null);
     return ids.length > 0 ? ids.join(' ') : null;

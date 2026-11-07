@@ -2,9 +2,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
   AlertComponent,
+  FalhaDeLeituraComponent,
   RecolhivelComponent,
 } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -27,7 +26,7 @@ import {
   ORIGENS,
   ROTULO_DO_COMPONENTE_PADRAO,
 } from './fato-candidato.regras';
-import { ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO, ID_DO_SALVAR_DA_DEFINICAO } from './ids-do-fato';
+import { ID_DO_SALVAR_DA_DEFINICAO } from './ids-do-fato';
 
 type CampoDaDefinicao = keyof EdicaoDoFato['definicao']['controls'];
 
@@ -38,10 +37,10 @@ type CampoDaDefinicao = keyof EdicaoDoFato['definicao']['controls'];
 @Component({
   selector: 'cfg-fato-definicao',
   imports: [
-    AlertaNovaTentativaComponent,
     NgTemplateOutlet,
     ReactiveFormsModule,
     AlertComponent,
+    FalhaDeLeituraComponent,
     FatoProtecaoDaDefinicaoComponent,
     RecolhivelComponent,
   ],
@@ -60,12 +59,6 @@ export class FatoDefinicaoComponent {
   protected readonly citacoes = this.edicao.citacoes;
   protected readonly recusa = this.edicao.recusaDaDefinicao;
   protected readonly fases = this.leitura.fases;
-  protected readonly novaTentativaDasFases = acompanharNovaTentativa({
-    assunto: 'fases',
-    pendente: this.fases.pendente,
-    falhou: this.fases.falhou,
-    destino: () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_DEFINICAO),
-  });
   protected readonly eixosSomenteLeitura = computed(() =>
     eixosSomenteLeitura(this.fato(), this.leitura.tipo()),
   );
@@ -89,10 +82,6 @@ export class FatoDefinicaoComponent {
 
   protected descritor(campo: CampoDaDefinicao): string | null {
     return this.erroDoCampo(campo) ? `cfg-fato-def-${campo}-erro` : null;
-  }
-
-  protected tentarFasesNovamente(): void {
-    this.novaTentativaDasFases.executar(() => this.fases.recarregar());
   }
 
   protected salvar(): void {

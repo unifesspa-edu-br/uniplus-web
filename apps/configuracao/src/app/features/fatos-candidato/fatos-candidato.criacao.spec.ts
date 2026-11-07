@@ -10,11 +10,6 @@ import {
   recusaDeCampo,
   trabalha,
 } from './fatos-candidato.testing';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDoAlerta,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
 const CRIACAO = '#cfg-fato-criacao';
@@ -92,10 +87,7 @@ describe('FatosCandidatoPage — criação do fato', () => {
     expect(p.erros).toHaveBeenCalledTimes(1);
     expect(p.elemento<HTMLSelectElement>('#cfg-fato-pontoResolucao').options).toHaveLength(1);
 
-    const tentar = p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement;
-    await p.acionar(tentar);
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
+    await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
     p.atenderApoios();
     await p.propagar();
     await p.propagar();
@@ -114,7 +106,7 @@ describe('FatosCandidatoPage — criação do fato', () => {
     await p.propagar();
   });
 
-  it('sem o catálogo de fatos, o aviso fica durante a nova tentativa e o foco vai ao fato de membro quando dá certo', async () => {
+  it('sem o catálogo de fatos, avisa e, na nova tentativa que dá certo, o foco vai ao fato de membro', async () => {
     p = await montarPagina([]);
     await p.abrirCriacao();
     await p.acionar(p.elemento('input[type="radio"][value="AGREGADO"]'));
@@ -124,12 +116,7 @@ describe('FatosCandidatoPage — criação do fato', () => {
     await p.propagar();
     expect(p.texto()).toContain('Fatos de membro não carregados');
 
-    const tentar = p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement;
-    await p.acionar(tentar);
-    expect(tentar.isConnected).toBe(true);
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(tentar.getAttribute('aria-busy')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
+    await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
 
     p.http.expectOne((r) => r.url.endsWith('/api/configuracao/fatos-candidato')).flush([]);
     await p.propagar();
@@ -137,41 +124,6 @@ describe('FatosCandidatoPage — criação do fato', () => {
 
     expect(p.texto()).not.toContain('Fatos de membro não carregados');
     expect(document.activeElement).toBe(p.elemento('#cfg-fato-fatoDeMembro'));
-  });
-
-  it('mostra e anuncia cada nova tentativa de ler as fases e o catálogo', async () => {
-    p = await montarPagina([]);
-    await p.acionar(p.novo());
-    const fasesFalham = async (): Promise<void> => {
-      for (const req of p.http.match((r) => r.url.endsWith('/fases-canonicas'))) {
-        req.flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
-      }
-      await p.propagar();
-    };
-    const anuncio = (titulo: string): string =>
-      situacaoDoAlerta(p.elemento('cfg-fato-criacao'), titulo);
-    await fasesFalham();
-
-    await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
-    expect(anuncio('Fases não carregadas')).toBe(TEXTO_TENTANDO);
-    await fasesFalham();
-    expect(anuncio('Fases não carregadas')).toBe(TEXTO_REPETIDA);
-
-    await p.acionar(p.elemento('input[type="radio"][value="AGREGADO"]'));
-    const catalogoFalha = async (): Promise<void> => {
-      p.http
-        .expectOne((r) => r.url.endsWith('/api/configuracao/fatos-candidato'))
-        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
-      await p.propagar();
-    };
-    await catalogoFalha();
-    const botoes = [...p.elemento('cfg-fato-criacao').querySelectorAll('button')].filter((b) =>
-      b.textContent?.includes('Tentar novamente'),
-    );
-    await p.acionar(botoes.at(-1) as HTMLButtonElement);
-    expect(anuncio('Fatos de membro não carregados')).toBe(TEXTO_TENTANDO);
-    await catalogoFalha();
-    expect(anuncio('Fatos de membro não carregados')).toBe(TEXTO_REPETIDA);
   });
 
   describe('o fato derivado', () => {

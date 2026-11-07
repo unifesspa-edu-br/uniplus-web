@@ -19,16 +19,7 @@
   bloqueiam.
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar unidades"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar unidades" [leitura]="leitura" />
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-unidades-lista
@@ -78,11 +69,8 @@
     [(termo)]="superior.termo"
     [opcoes]="superior.opcoes()"
     [emEdicaoId]="edicao.emEdicaoId()"
-    [comErro]="superior.comErro()"
-    [carregando]="superior.carregando()"
-    [fase]="novaTentativaDaSuperior.fase()"
+    [leitura]="leituraDaSuperior"
     [erro]="erroDaSuperior()"
-    (recarregar)="recarregarSuperior()"
   />
   <cfg-unidade-cidade-campo
     campoDaCidade
@@ -91,10 +79,8 @@
     [(termo)]="cidade.termo"
     [opcoes]="cidade.opcoes()"
     [buscando]="cidade.buscando()"
-    [fase]="novaTentativaDaCidade.fase()"
-    [erroDaBusca]="cidade.erro()"
+    [leitura]="leituraDaCidade"
     [semResultado]="cidade.semResultado()"
-    (tentarNovamente)="repetirBuscaDeCidade()"
     [erroDoSalvamento]="edicao.erroDaCidade()"
     (escolher)="edicao.selecionarCidade($event)"
     (trocar)="edicao.trocarCidade()"

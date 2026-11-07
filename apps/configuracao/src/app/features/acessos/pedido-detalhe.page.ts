@@ -16,10 +16,11 @@ import {
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import {
-  acompanharNovaTentativa,
+  acompanharLeitura,
   AlertComponent,
   DialogComponent,
-  AlertaNovaTentativaComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
@@ -33,6 +34,7 @@ import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedidoResumoComponent } from './pedido-resumo.component';
 import { PedidoDocumentosComponent } from './pedido-documentos.component';
 import { PedidoHistoricoComponent } from './pedido-historico.component';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 
 const ENCERRADOS: readonly string[] = ['aprovado', 'recusado', 'cancelado'];
 
@@ -51,7 +53,9 @@ import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
     PedidoResumoComponent,
     PedidoDocumentosComponent,
     PedidoHistoricoComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
+    RecusaDaLeituraComponent,
   ],
   providers: [PedidoDetalheStore, EdicaoDoPedido],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,7 +66,7 @@ export class PedidoDetalhePage {
   /** Vem do parâmetro `:id` da rota. */
   readonly id = input.required<string>();
 
-  private readonly store = inject(PedidoDetalheStore);
+  protected readonly store = inject(PedidoDetalheStore);
   private readonly edicao = inject(EdicaoDoPedido);
   private readonly anexos = inject(AnexoDoPedidoService);
   private readonly permissoes = inject(PermissoesService);
@@ -75,16 +79,17 @@ export class PedidoDetalhePage {
     inject(ActivatedRoute).snapshot.queryParamMap.get('origem'),
   );
   private readonly destruido = signal(false);
-  /** A pessoa pediu "Tentar novamente" e a carga ainda não terminou. */
-  private novaTentativaPedida = false;
-  /** A pessoa pediu "Tentar novamente" ao alerta de falha da carga, que segue na tela até a carga terminar. */
-  private recargaPedida = false;
+  /**
+   * O botão que tinha o foco (o de uma decisão, o de um diálogo) saiu da tela: o foco volta ao título
+   * quando a leitura que se segue termina.
+   */
+  private focoDevidoAoTitulo = false;
   private readonly chave = this.edicao.chave;
-  private readonly falhaDaCarga = computed(() => this.store.erro() !== null);
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    assunto: 'pedido',
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.falha,
     pendente: this.store.carregando,
-    falhou: this.falhaDaCarga,
+    recusada: computed(() => this.store.recusa() !== null),
+    recarregar: () => this.store.recarregar(),
     destino: () => this.host.nativeElement.querySelector<HTMLElement>('#cfg-pedido-titulo'),
   });
 
@@ -171,7 +176,7 @@ export class PedidoDetalhePage {
       const pedido = this.store.pedido();
       const erro = this.store.erro();
       untracked(() => {
-        if (erro) this.exibirErroDeCarga(erro);
+        if (erro) this.aoFalharACarga();
         if (pedido && this.prazo.pristine) {
           const sugerido = diaDoInstante(pedido.validaAteSugerida);
           this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
@@ -188,24 +193,19 @@ export class PedidoDetalhePage {
       if (!carregando && !erro && pedido) {
         untracked(() => {
           this.reavaliarDialogos();
-          this.focarTituloAposNovaTentativa();
+          this.devolverFocoAoTitulo();
         });
       }
     });
   }
 
   /**
-   * Terminada a carga que seguiu uma nova tentativa ou uma decisão, o botão que tinha o foco (o do
-   * alerta, o da decisão) saiu da tela: o foco vai ao título, se ninguém o tomou.
+   * Terminada a carga que seguiu uma decisão, o botão que tinha o foco saiu da tela: o foco vai ao
+   * título, se ninguém o tomou.
    */
-  private focarTituloAposNovaTentativa(): void {
-    if (this.recargaPedida) {
-      // O alerta da falha ficou na tela durante a tentativa; com a carga concluída, sai.
-      this.recargaPedida = false;
-      this.erro.set(null);
-    }
-    if (!this.novaTentativaPedida && !this.edicao.decisaoConcluida()) return;
-    this.novaTentativaPedida = false;
+  private devolverFocoAoTitulo(): void {
+    if (!this.focoDevidoAoTitulo && !this.edicao.decisaoConcluida()) return;
+    this.focoDevidoAoTitulo = false;
     this.edicao.decisaoConcluida.set(false);
     afterNextRender(
       () => {
@@ -217,15 +217,25 @@ export class PedidoDetalhePage {
     );
   }
 
-  private exibirErroDeCarga(erro: string): void {
-    this.novaTentativaPedida = false;
-    this.recargaPedida = false;
+  /**
+   * A carga falhou: o que o pedido permitia deixa de valer e os diálogos fecham. Se um deles
+   * estava aberto, o foco vai ao aviso da falha, que o diálogo fechado deixou sem dono.
+   */
+  private aoFalharACarga(): void {
+    const haviaDialogo = this.confirmando() || this.recusando();
+    this.focoDevidoAoTitulo = false;
     this.edicao.decisaoConcluida.set(false);
-    this.erro.set(erro);
     this.confirmando.set(false);
     this.recusando.set(false);
+    if (!haviaDialogo) return;
     afterNextRender(
-      () => this.host.nativeElement.querySelector<HTMLButtonElement>('#tentar-pedido')?.focus(),
+      () => {
+        const host = this.host.nativeElement;
+        const alvo =
+          host.querySelector<HTMLElement>('#tentar-pedido') ??
+          host.querySelector<HTMLElement>('#cfg-pedido-titulo');
+        alvo?.focus();
+      },
       { injector: this.injector },
     );
   }
@@ -247,14 +257,14 @@ export class PedidoDetalhePage {
       if (this.erroDaRecusa() && !this.podeDecidir()) {
         this.erro.set(this.erroDaRecusa());
         this.recusando.set(false);
-        this.novaTentativaPedida = true;
+        this.focoDevidoAoTitulo = true;
       } else if (this.motivo.hasError('backend')) {
         this.edicao.focarErroDoMotivo();
       }
     }
     if (this.confirmando() && !this.acaoPermitida(this.acaoPendente())) {
       this.confirmando.set(false);
-      this.novaTentativaPedida = true;
+      this.focoDevidoAoTitulo = true;
     }
   }
 
@@ -282,13 +292,6 @@ export class PedidoDetalhePage {
     if (this.store.carregando() || this.store.erro()) return false;
     if (acao === 'aprovar') return this.podeDecidir();
     return acao === 'aceitar' ? this.podeAceitar() : this.podeCancelar();
-  }
-
-  protected recarregar(): void {
-    this.novaTentativa.executar(() => {
-      this.recargaPedida = true;
-      this.store.recarregar();
-    });
   }
 
   protected irParaOAnexo(): void {

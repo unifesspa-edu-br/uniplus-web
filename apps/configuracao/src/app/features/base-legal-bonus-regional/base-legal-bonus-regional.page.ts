@@ -1,8 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { BaseLegalBonusRegionalFormularioComponent } from './base-legal-bonus-regional-formulario.component';
@@ -17,11 +14,10 @@ import { TiposDeInstrumento } from './tipos-de-instrumento';
   selector: 'cfg-base-legal-bonus-regional-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
-    AlertaNovaTentativaComponent,
     BaseLegalBonusRegionalFormularioComponent,
     BaseLegalBonusRegionalListaComponent,
     ConfirmacaoDeRemocaoComponent,
+    FalhaDeLeituraComponent,
   ],
   providers: [
     BaseLegalBonusRegionalStore,
@@ -38,18 +34,15 @@ export class BaseLegalBonusRegionalPage {
   protected readonly edicao = inject(EdicaoDasBasesLegais);
   protected readonly municipios = inject(MunicipiosDaBaseLegal);
   protected readonly tipos = inject(TiposDeInstrumento);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'bases legais',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-base-legal-list-title'),
   });
 
   protected readonly rotuloDoTipo = (codigo: string): ResolucaoDeVinculo =>
     this.tipos.resolver(codigo);
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

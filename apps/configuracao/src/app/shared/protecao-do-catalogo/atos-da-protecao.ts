@@ -23,7 +23,10 @@ export function rotuloDoAto(ato: string): RotuloDoAto {
 }
 
 /** As decisões que a lista da proteção de dados filtra, com o texto da decisão tomada. */
-export const DECISOES_FILTRAVEIS: readonly { readonly valor: AtoDeDecisao; readonly rotulo: string }[] = [
+export const DECISOES_FILTRAVEIS: readonly {
+  readonly valor: AtoDeDecisao;
+  readonly rotulo: string;
+}[] = [
   { valor: 'APROVACAO', rotulo: 'Aprovado' },
   { valor: 'AJUSTE_RECOMENDADO', rotulo: 'Ajuste recomendado' },
   { valor: 'REPROVACAO', rotulo: 'Reprovado' },
@@ -73,5 +76,6 @@ export class AtosDaProtecaoComponent {
 
   protected readonly rotulo = rotuloDoAto;
   protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
-  protected readonly classificacao = (token: string): string => rotuloDe(CLASSIFICACOES_DE_PROTECAO, token);
+  protected readonly classificacao = (token: string): string =>
+    rotuloDe(CLASSIFICACOES_DE_PROTECAO, token);
 }

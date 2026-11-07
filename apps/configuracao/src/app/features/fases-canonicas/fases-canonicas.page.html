@@ -13,16 +13,7 @@
   de uma fase — aqui você apenas edita os atributos de fases existentes ou as remove.
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar as fases canônicas"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar as fases canônicas" [leitura]="leitura" />
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-fases-canonicas-lista
@@ -47,16 +38,13 @@
   [salvando]="edicao.salvando()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [faseDasUnidades]="novaTentativaDasUnidades.fase()"
-  [erroUnidades]="avisoDasUnidades()"
-  [carregandoUnidades]="store.unidades.pendente()"
+  [leituraDasUnidades]="leituraDasUnidades"
   [unidadesParaEscolha]="edicao.unidadesParaEscolha()"
   [showGrupoAgrupa]="edicao.showGrupoAgrupa()"
   [showGrupoCompl]="edicao.showGrupoCompl()"
   [ehFaseDeIsencao]="edicao.ehFaseDeIsencao()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (recarregarUnidades)="tentarNovamenteAsUnidades()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover fase canônica"

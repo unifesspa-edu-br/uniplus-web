@@ -1,6 +1,11 @@
 import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, TermoConsentimentoDto } from '@uniplus/shared-data/configuracao';
 
@@ -22,8 +27,12 @@ export class TermoConsentimentoStore {
   });
   readonly termo = signal<TermoConsentimentoDto | null>(null);
   readonly carregando = computed(() => !this.silencioso() && this.consulta.isLoading());
+  /** O termo não existe (404): repetir a leitura não muda nada, então não há falha a repetir. */
+  readonly naoEncontrado = computed(
+    () => !this.silencioso() && this.consulta.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
+  );
   readonly erro = computed(() => {
-    if (this.silencioso()) return null;
+    if (this.silencioso() || this.naoEncontrado()) return null;
     const problem = this.consulta.problem();
     return problem
       ? this.problemI18n.resolve(problem).title

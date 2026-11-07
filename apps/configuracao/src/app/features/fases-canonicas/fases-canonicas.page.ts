@@ -1,22 +1,25 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharCatalogo,
+  acompanharLeitura,
   AlertComponent,
+  destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import { avisoDeFalhaDoLookup } from '../../shared/foco';
 import { FaseCanonicaFormularioComponent } from './fase-canonica-formulario.component';
 import { FasesCanonicasListaComponent } from './fases-canonicas-lista.component';
 import { FasesCanonicasStore } from './fases-canonicas.store';
 import { EdicaoDasFasesCanonicas } from './edicao-das-fases-canonicas';
 
+const ID_DO_TITULO = 'cfg-fases-canonicas-list-title';
+
 @Component({
   selector: 'cfg-fases-canonicas-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
     AlertComponent,
+    FalhaDeLeituraComponent,
     FasesCanonicasListaComponent,
     FaseCanonicaFormularioComponent,
     ConfirmacaoDeRemocaoComponent,
@@ -29,28 +32,26 @@ import { EdicaoDasFasesCanonicas } from './edicao-das-fases-canonicas';
 export class FasesCanonicasPage {
   protected readonly store = inject(FasesCanonicasStore);
   protected readonly edicao = inject(EdicaoDasFasesCanonicas);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'fases canônicas',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
-    destino: () => document.getElementById('cfg-fases-canonicas-list-title'),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
+    destino: () => document.getElementById(ID_DO_TITULO),
   });
 
-  protected readonly avisoDasUnidades = avisoDeFalhaDoLookup(this.store.unidades);
-  protected readonly novaTentativaDasUnidades = acompanharNovaTentativa({
+  protected readonly leituraDasUnidades = acompanharCatalogo({
     assunto: 'unidades',
+    falha: computed(() =>
+      this.store.unidades.comErro() ? 'Não foi possível carregar as unidades.' : null,
+    ),
     pendente: this.store.unidades.pendente,
-    falhou: this.avisoDasUnidades,
+    recarregar: () => this.store.unidades.recarregar(),
     destino: () =>
-      document.querySelector<HTMLElement>('select[formcontrolname="unidadeSugeridaId"]'),
+      destinoAcessivel(
+        document.querySelector<HTMLElement>('select[formcontrolname="unidadeSugeridaId"]'),
+        document.getElementById(ID_DO_TITULO),
+      ),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
-  protected tentarNovamenteAsUnidades(): void {
-    this.novaTentativaDasUnidades.executar(() => this.store.unidades.recarregar());
-  }
 }

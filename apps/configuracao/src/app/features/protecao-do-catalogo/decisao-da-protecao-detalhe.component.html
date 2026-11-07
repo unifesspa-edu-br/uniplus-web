@@ -13,7 +13,7 @@
       role="region"
       tabindex="0"
       aria-label="Dados da decisão"
-      [attr.aria-busy]="carregandoHistorico()"
+      [attr.aria-busy]="leitura().pendente()"
     >
       <section class="cfg-detalhe-secao">
         <h3 class="cfg-detalhe-secao__titulo">A decisão</h3>
@@ -60,23 +60,16 @@
       <cfg-detalhe-da-protecao titulo="Proteção conferida" [protecao]="decisao" />
       <section class="cfg-detalhe-secao">
         <h3 class="cfg-detalhe-secao__titulo">Histórico do item</h3>
-        @if (carregandoHistorico()) {
+        @if (leitura().pendente()) {
           <span class="list-state__loading"
             ><ui-spinner spinnerSize="sm" /> Carregando o histórico</span
           >
         }
-        @if (erroDoHistorico(); as erro) {
-          @if (itemInexistente()) {
-            <ui-alert variant="danger" heading="Item não encontrado">{{ erro }}</ui-alert>
-          } @else {
-            <ui-alerta-nova-tentativa
-              titulo="Não foi possível carregar o histórico"
-              [mensagem]="erro"
-              [pendente]="carregandoHistorico()"
-              [fase]="faseDoHistorico()"
-              (tentar)="recarregar.emit()"
-            />
-          }
+        <ui-falha-de-leitura titulo="Não foi possível carregar o histórico" [leitura]="leitura()" />
+        @if (itemInexistente()) {
+          <ui-alert variant="danger" heading="Item não encontrado">{{
+            erroDoHistorico()
+          }}</ui-alert>
         } @else if (historico(); as atos) {
           <cfg-atos-da-protecao [atos]="atos" ariaLabel="Histórico completo do item" />
         }

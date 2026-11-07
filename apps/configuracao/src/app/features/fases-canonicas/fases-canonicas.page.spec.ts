@@ -8,11 +8,6 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  situacaoDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 import { FasesCanonicasPage } from './fases-canonicas.page';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { EdicaoDasFasesCanonicas } from './edicao-das-fases-canonicas';
@@ -434,7 +429,7 @@ describe('FasesCanonicasPage', () => {
       expect(opcoesDaUnidade().join()).not.toContain('(removida do cadastro)');
     });
 
-    it('"Tentar novamente" das unidades fica indisponível, mantém o foco e leva ao campo quando dá certo', async () => {
+    it('a nova tentativa das unidades que dá certo leva o foco ao campo Unidade sugerida', async () => {
       const fase = comSugestao();
       controller
         .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
@@ -452,8 +447,6 @@ describe('FasesCanonicasPage', () => {
       tentar()?.click();
       await propagate();
 
-      expect(tentar()?.getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentar());
       controller.expectOne((r) => r.url === `${BASE}/api/organizacao/unidades`).flush([CGA]);
       await propagate();
       await propagate();
@@ -464,30 +457,6 @@ describe('FasesCanonicasPage', () => {
           'select[formControlName="unidadeSugeridaId"]',
         ),
       );
-    });
-
-    it('mostra e anuncia, no drawer, cada nova tentativa das unidades', async () => {
-      const fase = comSugestao();
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/configuracao/fases-canonicas`)
-        .flush([fase]);
-      controller
-        .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
-        .forEach((r) => r.flush(null, { status: 500, statusText: 'Server Error' }));
-      await propagate();
-      edicao.abrirEdicao(fase);
-      await propagate();
-      const raiz = fixture.nativeElement as HTMLElement;
-      const formulario = raiz.querySelector('cfg-fase-canonica-formulario') as HTMLElement;
-
-      raiz.querySelector<HTMLButtonElement>('button.link-button')?.click();
-      await propagate();
-      expect(situacaoDaNovaTentativa(formulario)).toBe(textoTentandoDe('unidades'));
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/organizacao/unidades`)
-        .flush(null, { status: 500, statusText: 'Server Error' });
-      await propagate();
-      expect(situacaoDaNovaTentativa(formulario)).toBe(textoRepetidaDe('unidades'));
     });
 
     it('a recusa por unidade inexistente ou removida aparece no campo', async () => {

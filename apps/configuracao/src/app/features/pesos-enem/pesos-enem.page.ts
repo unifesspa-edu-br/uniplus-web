@@ -10,10 +10,10 @@ import {
   untracked,
 } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharCatalogo,
   AlertComponent,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   SkeletonComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
@@ -37,9 +37,9 @@ const ID_DO_TITULO = 'cfg-pesos-enem-titulo';
   standalone: true,
   imports: [
     AlertComponent,
-    AlertaNovaTentativaComponent,
     ConfirmacaoDeRemocaoComponent,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
     PesosEnemCabecalhoComponent,
     PesosEnemEdicaoComponent,
     PesosEnemFormularioComponent,
@@ -102,41 +102,34 @@ export class PesosEnemPage {
     idDoTitulo: ID_DO_TITULO,
   });
 
-  /** "Tentar novamente" de cada lista: a guarda é o pendente dela, o mesmo do `aria-disabled` do
-   *  botão. Quando a lista chega, o foco passa ao título da página. */
-  protected readonly novaTentativaDasAreas = acompanharNovaTentativa({
+  /** Uma leitura por lista, cada uma com o próprio aviso e "Tentar novamente". Quando a lista
+   *  chega, o foco passa ao título da página. */
+  protected readonly leituraDasAreas = acompanharCatalogo({
     assunto: 'áreas',
+    falha: computed(() =>
+      this.store.listaAreas.falhou() ? this.store.mensagemFalhaAreas() : null,
+    ),
     pendente: this.store.listaAreas.pendente,
-    falhou: this.store.listaAreas.falhou,
+    recarregar: () => this.store.tentarCarregarAreas(),
     destino: () => this.titulo(),
   });
-  protected readonly novaTentativaDosGrupos = acompanharNovaTentativa({
+  protected readonly leituraDosGrupos = acompanharCatalogo({
     assunto: 'grupos',
+    falha: computed(() =>
+      this.store.catalogoGrupos.falhou() ? this.store.mensagemFalhaGrupos() : null,
+    ),
     pendente: this.store.catalogoGrupos.pendente,
-    falhou: this.store.catalogoGrupos.falhou,
+    recarregar: () => this.store.tentarCarregarGrupos(),
     destino: () => this.titulo(),
   });
-  protected readonly listagemPendente = computed(
-    () => this.store.carregando() || this.gravacao.gravando(),
-  );
-  protected readonly novaTentativaDaListagem = acompanharNovaTentativa({
+  protected readonly leituraDaListagem = acompanharCatalogo({
     assunto: 'pesos',
-    pendente: this.listagemPendente,
-    falhou: computed(() => Boolean(this.store.mensagemDeErro())),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.gravacao.gravando,
+    recarregar: () => this.store.recarregar(),
     destino: () => this.titulo(),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativaDaListagem.executar(() => this.store.recarregar(true));
-  }
-
-  protected tentarCarregarAreas(): void {
-    this.novaTentativaDasAreas.executar(() => this.store.tentarCarregarAreas());
-  }
-
-  protected tentarCarregarGrupos(): void {
-    this.novaTentativaDosGrupos.executar(() => this.store.tentarCarregarGrupos());
-  }
 
   protected abrirCadastro(): void {
     if (this.cadastroIndisponivel()) {

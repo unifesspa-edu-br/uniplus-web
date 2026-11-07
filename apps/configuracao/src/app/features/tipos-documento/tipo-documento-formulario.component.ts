@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, input, model, output } fr
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { AprovacaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
+  type CatalogoAcompanhado,
   DrawerComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -31,7 +31,7 @@ import {
     DrawerComponent,
     SpinnerComponent,
     TipoDocumentoAvisosComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './tipo-documento-formulario.component.html',
@@ -43,7 +43,7 @@ export class TipoDocumentoFormularioComponent {
   readonly modo = input.required<'criar' | 'editar'>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  readonly faseDasCategorias = input.required<FaseDaNovaTentativa>();
+  readonly leituraDasCategorias = input.required<CatalogoAcompanhado>();
   readonly salvando = input.required<boolean>();
   readonly categorias = input.required<CategoriasDoFormulario>();
   readonly hipoteses = input.required<readonly OpcaoDeVocabulario[]>();
@@ -51,7 +51,6 @@ export class TipoDocumentoFormularioComponent {
   readonly avisaNovaAprovacao = input.required<boolean>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly recarregarCategorias = output<void>();
 
   protected readonly formatos = FORMATOS_ACEITOS_OPCOES;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;

@@ -10,15 +10,10 @@
   </div>
 </div>
 
-@if (store.errorMessage(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os termos de consentimento"
-  [mensagem]="mensagem"
-  [pendente]="store.loading()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+  [leitura]="leitura"
 />
-}
 
 <cfg-termos-consentimento-lista
   [busca]="store.busca()"

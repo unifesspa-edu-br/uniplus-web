@@ -211,20 +211,20 @@ describe('ModelosFormularioStore', () => {
     lista().flush([]);
   });
 
-  it('tentar novamente com a lista carregando não repete a consulta', async () => {
+  it('recarregar com a lista carregando não repete a consulta e diz que nada começou', async () => {
     await propagar();
     controller.expectOne((r) => r.url === URL_DOS_TIPOS).flush([]);
 
-    store.tentarNovamente();
+    expect(store.recarregar()).toBe(false);
     await propagar();
 
     await responder([]);
   });
 
-  it('tentar novamente com a lista parada refaz a consulta', async () => {
+  it('recarregar com a lista parada refaz a consulta', async () => {
     await iniciar();
 
-    store.tentarNovamente();
+    expect(store.recarregar()).toBe(true);
     await propagar();
 
     await responder([modelo('A', 'A')]);

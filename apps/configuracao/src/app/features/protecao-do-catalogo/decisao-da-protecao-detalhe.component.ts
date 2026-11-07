@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
 import {
   type AtoDaProtecaoDto,
   type DecisaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraComponent,
+  type LeituraAcompanhada,
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
@@ -26,10 +26,10 @@ import {
   standalone: true,
   imports: [
     AlertComponent,
-    AlertaNovaTentativaComponent,
     AtosDaProtecaoComponent,
     DetalheDaProtecaoComponent,
     DrawerComponent,
+    FalhaDeLeituraComponent,
     SpinnerComponent,
     TagComponent,
   ],
@@ -41,11 +41,9 @@ export class DecisaoDaProtecaoDetalheComponent {
   readonly drawerAberto = model.required<boolean>();
   readonly selecionada = input.required<DecisaoDaProtecaoDto | null>();
   readonly historico = input.required<readonly AtoDaProtecaoDto[] | null>();
-  readonly carregandoHistorico = input.required<boolean>();
+  readonly leitura = input.required<LeituraAcompanhada>();
   readonly erroDoHistorico = input.required<string | null>();
   readonly itemInexistente = input.required<boolean>();
-  readonly faseDoHistorico = input.required<FaseDaNovaTentativa>();
-  readonly recarregar = output<void>();
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly rotulo = rotuloDe;
   protected readonly rotuloDoAto = rotuloDoAto;

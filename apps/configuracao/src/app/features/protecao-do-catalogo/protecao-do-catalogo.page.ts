@@ -7,21 +7,22 @@ import {
   untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
   AlertComponent,
   DrawerComponent,
+  FalhaDeLeituraComponent,
   SegmentedComponent,
   SpinnerComponent,
   type UiSegmentedOption,
 } from '@uniplus/shared-ui/components';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import { DecisoesDaProtecaoComponent } from './decisoes-da-protecao.component';
 import { DecisaoDaProtecaoDialogoComponent } from './decisao-da-protecao-dialogo.component';
@@ -46,7 +47,7 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
   selector: 'cfg-protecao-do-catalogo-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     TemPermissaoDirective,
     AlertComponent,
     DecisoesDaProtecaoComponent,
@@ -55,6 +56,8 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
     ProtecaoDoCatalogoListaComponent,
     DrawerComponent,
     SegmentedComponent,
+    RecusaDaLeituraComponent,
+    RouterLink,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,18 +94,22 @@ export class ProtecaoDoCatalogoPage {
   protected readonly carregandoDetalhe = this.store.carregandoDetalhe;
   protected readonly erroDoDetalhe = this.store.erroDoDetalhe;
   protected readonly naoEncontrado = this.store.naoEncontrado;
-  protected readonly filaPendente = computed(() => this.carregando() || this.edicao.gravando());
 
-  protected readonly novaTentativaDaFila = acompanharNovaTentativa({
+  protected readonly leituraDaFila = acompanharLeitura({
     assunto: 'fila',
-    pendente: this.filaPendente,
-    falhou: computed(() => this.erroDeCarga() !== null),
+    falha: this.store.falhaDeCarga,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recusada: computed(() => this.store.recusa() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-protecao-titulo'),
   });
-  protected readonly novaTentativaDoDetalhe = acompanharNovaTentativa({
+  protected readonly leituraDoDetalhe = acompanharLeitura({
     assunto: 'detalhe do item',
+    falha: this.store.falhaDoDetalhe,
     pendente: this.carregandoDetalhe,
-    falhou: computed(() => this.erroDoDetalhe() !== null),
+    recusada: this.naoEncontrado,
+    recarregar: () => this.store.recarregarDetalhe(),
     destino: () => document.getElementById('cfg-protecao-dados-do-item'),
   });
 
@@ -130,16 +137,8 @@ export class ProtecaoDoCatalogoPage {
     });
   }
 
-  protected carregar(): void {
-    this.novaTentativaDaFila.executar(() => this.store.tentarNovamente());
-  }
-
   protected abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {
     if (item.tipo === 'TIPO_DOCUMENTO') this.categorias.garantirCarregado();
     this.edicao.abrirDetalhe(item);
-  }
-
-  protected recarregarDetalhe(): void {
-    this.novaTentativaDoDetalhe.executar(() => this.store.recarregarDetalhe());
   }
 }

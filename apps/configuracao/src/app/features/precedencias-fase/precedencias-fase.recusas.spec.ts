@@ -13,11 +13,6 @@ import {
   recusaDeCampo,
   sucesso,
 } from './precedencias-fase.testing';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const CODIGO = 'uniplus.configuracao.precedencia_fase';
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
@@ -452,25 +447,8 @@ describe('PrecedenciasFasePage — recusas do servidor', () => {
       tentar.focus();
       tentar.click();
       await p.propagar();
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([inscricaoHomologacao]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
-    });
-
-    it('mostra e anuncia cada nova tentativa de ler as precedências', async () => {
-      p.store.recarregar();
-      await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
-      await p.propagar();
-      const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
-
-      p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button').click();
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
 
     it('4xx mostra o alerta sem toast', async () => {

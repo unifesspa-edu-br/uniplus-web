@@ -3,13 +3,9 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH, type AtoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoricoDaProtecaoComponent } from './historico-da-protecao';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-0000000000d2';
@@ -108,24 +104,25 @@ describe('HistoricoDaProtecaoComponent', () => {
     expect(texto(fixture)).toContain('Este item ainda não passou pela proteção de dados.');
   });
 
-  const RECUSA = [
-    { type: 'about:blank', title: 'Sem permissão', status: 403, code: 'uniplus.auth.proibido' },
-    {
-      status: 403,
-      statusText: 'Forbidden',
-      headers: { 'Content-Type': 'application/problem+json' },
-    },
-  ] as const;
+  const resposta = (status: number, title: string) =>
+    [
+      { type: 'about:blank', title, status, code: 'uniplus.x' },
+      {
+        status,
+        statusText: 'Erro',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    ] as const;
+  const FALHA = resposta(503, 'Servidor indisponível');
+  const RECUSA = resposta(403, 'Sem permissão');
 
-  const anuncio = (fixture: ComponentFixture<unknown>): string =>
-    situacaoDaNovaTentativa(fixture.nativeElement as HTMLElement);
-
-  it('na recusa mostra o motivo, mantém o alerta durante a nova tentativa e leva o foco ao título quando dá certo', async () => {
+  it('na falha do servidor mostra o motivo, mantém o alerta durante a nova tentativa e leva o foco ao título quando dá certo', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
-    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...FALHA);
     await fixture.whenStable();
     fixture.detectChanges();
     expect(texto(fixture)).toContain('Não foi possível carregar o histórico');
+    expect(texto(fixture)).toContain('Servidor indisponível');
 
     const raiz = fixture.nativeElement as HTMLElement;
     const botao = raiz.querySelector<HTMLButtonElement>('button.btn--secondary');
@@ -142,21 +139,38 @@ describe('HistoricoDaProtecaoComponent', () => {
     expect(document.activeElement).toBe(raiz.querySelector('h3'));
   });
 
-  it('mostra e anuncia a tentativa e a nova falha', async () => {
+  it('a recusa por falta de permissão mostra o motivo sem oferecer nova tentativa', async () => {
     const fixture = montar('TIPO_DOCUMENTO');
     controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
     await fixture.whenStable();
     fixture.detectChanges();
-    const botao = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
-      'button.btn--secondary',
-    );
 
-    botao?.click();
-    fixture.detectChanges();
-    expect(anuncio(fixture)).toBe(TEXTO_TENTANDO);
-    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...RECUSA);
+    expect(texto(fixture)).toContain('Acesso negado');
+    expect(texto(fixture)).toContain('Sem permissão');
+    expect(texto(fixture)).not.toContain('Tentar novamente');
+  });
+
+  it('o histórico que deixou de existir mostra a recusa pelo desfecho e a nova tentativa que termina nela não anuncia leitura concluída', async () => {
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    const fixture = montar('TIPO_DOCUMENTO');
+    controller.expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`).flush(...FALHA);
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(anuncio(fixture)).toBe(TEXTO_REPETIDA);
+    const raiz = fixture.nativeElement as HTMLElement;
+    raiz.querySelector<HTMLButtonElement>('button.btn--secondary')?.click();
+    fixture.detectChanges();
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    controller
+      .expectOne(`${ADMIN}/tipos-documento/${ID}/protecao/atos`)
+      .flush(...resposta(404, 'Item não encontrado'));
+    await fixture.whenStable();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(texto(fixture)).toContain('Histórico não encontrado');
+    expect(texto(fixture)).toContain('Feche o painel e confira a lista.');
+    expect(texto(fixture)).not.toContain('Tentar novamente');
+    expect(anunciar).not.toHaveBeenCalled();
   });
 });

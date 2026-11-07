@@ -7,19 +7,24 @@
   </div>
 </div>
 
-@if (erro() && !confirmando()) { @if (erroDeCarga()) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível concluir"
-  [mensagem]="erro() ?? ''"
-  [pendente]="carregando()"
-  [fase]="novaTentativa.fase()"
+<ui-falha-de-leitura
+  titulo="Não foi possível carregar o pedido"
   idBotao="tentar-pedido"
-  (tentar)="recarregar()"
+  [leitura]="leitura"
 />
-} @else {
+<cfg-recusa-da-leitura naoEncontrado="Pedido não encontrado" [recusa]="store.recusaDoPedido()">
+  <a [routerLink]="origem.rota">{{ origem.voltar }}</a>.
+</cfg-recusa-da-leitura>
+<cfg-recusa-da-leitura
+  naoEncontrado="Trilha do pedido não encontrada"
+  [recusa]="store.recusaDaTrilha()"
+>
+  O pedido aparece sem o histórico de eventos.
+</cfg-recusa-da-leitura>
+@if (erro() && !confirmando()) {
 <ui-alert variant="danger" heading="Não foi possível concluir">{{ erro() }}</ui-alert>
-} } @if (carregando() && !erroDeCarga()) {
-<p role="status"><ui-spinner spinnerSize="sm" /> Carregando o pedido…</p>
+} @if (carregando()) {
+<p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando o pedido…</p>
 } @if (pedido(); as p) { @if (aguardandoDocumento()) {
 <ui-alert variant="warning" heading="Falta o documento de designação">
   @if (ehSolicitante()) { Anexe o PDF do documento de designação em Documentos, abaixo. O pedido só

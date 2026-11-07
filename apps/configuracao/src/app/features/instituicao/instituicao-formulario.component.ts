@@ -11,10 +11,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { UnidadeDto } from '@uniplus/shared-data/organizacao';
 import {
   AlertComponent,
+  type CatalogoAcompanhado,
   DrawerComponent,
   EnderecoGeoComponent,
-  type FaseDaNovaTentativa,
-  NovaTentativaDoCampoComponent,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -35,7 +35,7 @@ import { InstituicaoRegulatorioComponent } from './instituicao-regulatorio.compo
     InstituicaoIdentificacaoComponent,
     InstituicaoRegulatorioComponent,
     SpinnerComponent,
-    NovaTentativaDoCampoComponent,
+    FalhaDeLeituraDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './instituicao-formulario.component.html',
@@ -54,14 +54,10 @@ export class InstituicaoFormularioComponent {
   /** Há escrita em curso, de qualquer tipo: a remoção não parte durante o salvamento. */
   readonly gravando = input.required<boolean>();
   readonly reitorias = input.required<readonly UnidadeDto[]>();
-  readonly reitoriasComErro = input.required<boolean>();
-  /** A lista de reitorias está sendo lida: o "Tentar novamente" fica com `aria-disabled`. */
-  readonly reitoriasCarregando = input.required<boolean>();
-  readonly faseDasReitorias = input.required<FaseDaNovaTentativa>();
+  readonly leituraDasReitorias = input.required<CatalogoAcompanhado>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
   readonly remover = output<void>();
-  readonly recarregarReitorias = output<void>();
 
   protected readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Cadastrar instituição' : 'Editar instituição',
@@ -91,20 +87,9 @@ export class InstituicaoFormularioComponent {
     }
   }
 
-  /** Os avisos que o select aponta: a falha da lista e a recusa do servidor ao vínculo. */
+  /** A recusa do servidor ao vínculo é o que o select aponta; a falha da lista tem o próprio aviso. */
   protected descricaoDaUnidadeRaiz(): string | null {
-    const avisos = [
-      this.reitoriasComErro() ? 'cfg-instituicao-reitorias-erro' : null,
-      this.erroDoCampo('unidadeRaizId') ? 'cfg-instituicao-unidadeRaizId-erro' : null,
-    ].filter((id) => id !== null);
-    return avisos.length > 0 ? avisos.join(' ') : null;
-  }
-
-  /** Enquanto a lista é lida, o botão não dispara outra leitura; mantém o foco por ser `aria-disabled`. */
-  protected aoTentarReitorias(): void {
-    if (!this.reitoriasCarregando()) {
-      this.recarregarReitorias.emit();
-    }
+    return this.erroDoCampo('unidadeRaizId') ? 'cfg-instituicao-unidadeRaizId-erro' : null;
   }
 
   protected erroDoCampo(nome: keyof InstituicaoForm): string | null {

@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   AlertComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
@@ -14,7 +14,7 @@ import { EdicaoDasCondicoesAtendimento } from './edicao-das-condicoes-atendiment
   selector: 'cfg-condicoes-atendimento-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     AlertComponent,
     CondicoesAtendimentoListaComponent,
     CondicaoAtendimentoFormularioComponent,
@@ -28,14 +28,11 @@ import { EdicaoDasCondicoesAtendimento } from './edicao-das-condicoes-atendiment
 export class CondicoesAtendimentoPage {
   protected readonly store = inject(CondicoesAtendimentoStore);
   protected readonly edicao = inject(EdicaoDasCondicoesAtendimento);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-condicoes-atendimento-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

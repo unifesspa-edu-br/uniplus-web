@@ -1,5 +1,16 @@
 <span class="sr-only" role="status">{{ edicao.anuncio() }}</span>
 <div class="form-drawer__form">
+  <div id="cfg-fato-erro-de-carga" tabindex="-1">
+    <ui-falha-de-leitura
+      titulo="Não foi possível carregar o fato"
+      [leitura]="leitura.leituraDoFato"
+    />
+    @if (leitura.naoEncontrado()) {
+      <ui-alert variant="danger" heading="Fato não encontrado">
+        {{ leitura.erroDeCarga() }} Feche a edição e confira a lista.
+      </ui-alert>
+    }
+  </div>
   @if (leitura.fato(); as f) {
     @if (f.sistema) {
       <ui-alert variant="info" heading="Fato de sistema">
@@ -27,18 +38,10 @@
     @if (edicao.erro()) {
       <ui-alert variant="danger" heading="Não foi possível salvar">{{ edicao.erro() }}</ui-alert>
     }
-  } @else if (leitura.erroDeCarga(); as erroDeCarga) {
-    <div id="cfg-fato-erro-de-carga" tabindex="-1">
-      <ui-alerta-nova-tentativa
-        titulo="Não foi possível carregar o fato"
-        [mensagem]="erroDeCarga"
-        [pendente]="leitura.carregando()"
-        [fase]="novaTentativa.fase()"
-        (tentar)="tentarNovamente()"
-      />
-    </div>
   } @else if (leitura.carregando()) {
-    <p><ui-spinner spinnerSize="sm" /> Carregando o fato…</p>
+    <p [uiIndicadorDaLeitura]="leitura.leituraDoFato">
+      <ui-spinner spinnerSize="sm" [decorativo]="true" /> Carregando o fato…
+    </p>
   }
 </div>
 <div class="form-drawer__footer">

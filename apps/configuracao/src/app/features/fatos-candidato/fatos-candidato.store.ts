@@ -12,14 +12,12 @@ import {
   CursorPagina,
   ProblemI18nService,
   cursorToString,
-  ehCursorDePaginacaoExpirado,
   useApiResource,
-  useCursorObsoletoRecovery,
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 import { AprovacaoDoCatalogo } from '../../shared/protecao-do-catalogo';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -55,7 +53,6 @@ export class FatosCandidatoStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly fatos = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -73,18 +70,16 @@ export class FatosCandidatoStore {
    * Cursor recusado (consulta mudou ou expirou): reinicia a lista do começo, porque "Tentar
    * novamente" repetiria o mesmo cursor morto indefinidamente.
    */
-  private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
     problem: this.lista.problem,
     pagina: this.pagina,
-    reiniciarPagina: () => this.pagina.set(undefined),
-    aoRecuperar: (problem) =>
-      this.notifications.info(
-        problem && ehCursorDePaginacaoExpirado(problem)
-          ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
-          : 'A paginação foi reiniciada porque a consulta mudou.',
-        'Recarregamos a listagem do começo.',
-      ),
+    notificacoes: this.notifications,
   });
+
+  /** Inclui o intervalo entre a resposta de cursor recusado e a nova leitura sem cursor. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
 
   readonly mensagemDeErro = computed<string | null>(() => {
     const problem = this.lista.problem();
@@ -116,8 +111,8 @@ export class FatosCandidatoStore {
     this.navegacao.irParaAnterior();
   }
 
-  tentarNovamente(): void {
-    this.lista.reload();
+  tentarNovamente(): boolean {
+    return this.lista.reload();
   }
 
   /** Volta à primeira página e relê a situação de aprovação: criar ou editar muda o que a solicitação leva. */

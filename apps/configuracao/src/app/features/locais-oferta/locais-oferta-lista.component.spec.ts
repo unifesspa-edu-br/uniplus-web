@@ -33,7 +33,7 @@ describe('LocaisOfertaListaComponent', () => {
       mensagemDeErro: null,
       temAnterior: true,
       temProximo: true,
-      falhas: [{ nome: 'campi', recarregar: () => undefined }],
+      leituras: [],
       resolucoes: new Map<string, ResolucaoDeVinculo>(),
       localAfetadoId: null,
       andamento: '',
@@ -60,15 +60,15 @@ describe('LocaisOfertaListaComponent', () => {
   };
 
   it('durante a gravação, deixa desabilitado todo botão, inclusive o do estado vazio e a paginação', () => {
-    montar([local], { gravando: true, falhas: [] });
+    montar([local], { gravando: true });
     expect(botoes().length).toBeGreaterThanOrEqual(5);
     expect(acionaveis()).toEqual([]);
-    montar([], { gravando: true, falhas: [] });
+    montar([], { gravando: true });
     expect(acionaveis()).toEqual([]);
   });
 
   it('durante a carga, deixa as ações indisponíveis', () => {
-    montar([local], { carregando: true, falhas: [] });
+    montar([local], { carregando: true });
     expect(acionaveis()).toEqual([]);
   });
 
@@ -82,23 +82,6 @@ describe('LocaisOfertaListaComponent', () => {
     botao('Editar').click();
     botao('Remover').click();
     expect(emitidos).toEqual(['cadastrar', 'editar:l1', 'remover:l1']);
-  });
-
-  it('mostra o botão do lookup em curso indisponível e não recarrega', () => {
-    let recarregou = 0;
-    montar([local], {
-      falhas: [{ nome: 'campi', pendente: true, recarregar: () => recarregou++ }],
-    });
-    expect(botao('Recarregar campi').getAttribute('aria-disabled')).toBe('true');
-    botao('Recarregar campi').click();
-    expect(recarregou).toBe(0);
-  });
-
-  it('recarrega o lookup que falhou', () => {
-    let recarregou = 0;
-    montar([local], { falhas: [{ nome: 'campi', recarregar: () => recarregou++ }] });
-    botao('Recarregar campi').click();
-    expect(recarregou).toBe(1);
   });
 
   it('mostra a cidade do endereço, o traço sem cidade e o rótulo do tipo desconhecido', () => {

@@ -60,6 +60,7 @@ describe('PedirAcessoStore', () => {
       );
     await atualizar();
     expect(store.perfis()).toEqual([]);
-    expect(store.perfisIndisponiveis()).toContain('Acesso negado');
+    expect(store.recusaDosPerfis()).toEqual({ texto: 'Acesso negado', status: 403 });
+    expect(store.leituraDosPerfis.visivel()).toBe(false);
   });
 });

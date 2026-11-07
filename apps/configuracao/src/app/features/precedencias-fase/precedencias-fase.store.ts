@@ -9,7 +9,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 import { FasesDoGrafoStore } from './fases-do-grafo.store';
 
 /**
@@ -36,7 +36,6 @@ export class PrecedenciasFaseStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly arestas = this.navegacao.itens;
   readonly termoBusca = signal('');
   /** O endpoint só aceita cursor e limite, sem filtro de texto: a busca casa código e nome na página carregada. */
@@ -58,7 +57,21 @@ export class PrecedenciasFaseStore {
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
 
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) {
       return this.problemI18n.resolve(problem).title;

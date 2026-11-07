@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  Signal,
   computed,
   inject,
   signal,
@@ -12,16 +11,17 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, type ParamMap } from '@angular/router';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import { AvaliacoesDeFormularioApi, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  AlertComponent,
   type ArquivoDoFormulario,
   type ConferenciaComOServidor,
+  FalhaDeLeituraComponent,
   type FormularioDoCandidato,
+  IndicadorDaLeituraDirective,
   lerArquivoDoFormulario,
-  type NovaTentativa,
   SegmentedComponent,
   SelectComponent,
   SimulacaoDeFormularioComponent,
@@ -50,7 +50,9 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
   selector: 'cfg-simulador-de-formulario-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    AlertComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     ReactiveFormsModule,
     SegmentedComponent,
     SelectComponent,
@@ -99,27 +101,19 @@ const ORIGENS: readonly UiSegmentedOption<Origem>[] = [
         }
       </div>
 
-      @if (erroAoListar(); as erro) {
-        <ui-alerta-nova-tentativa
-          titulo="Não foi possível listar os modelos"
-          [mensagem]="erro"
-          [pendente]="listando()"
-          [fase]="novaTentativaDaLista.fase()"
-          (tentar)="tentarListarNovamente()"
-        />
-      }
+      <ui-falha-de-leitura titulo="Não foi possível listar os modelos" [leitura]="leituraDaLista" />
+      <ui-falha-de-leitura
+        titulo="Não foi possível carregar o modelo"
+        [leitura]="leituraDoModelo"
+      />
 
-      @if (erroAoCarregar(); as erroDoModelo) {
-        <ui-alerta-nova-tentativa
-          titulo="Não foi possível carregar o modelo"
-          [mensagem]="erroDoModelo"
-          [pendente]="carregando()"
-          [fase]="novaTentativaDoModelo.fase()"
-          (tentar)="tentarCarregarNovamente()"
-        />
+      @if (modeloNaoEncontrado(); as recusa) {
+        <ui-alert variant="danger" heading="Modelo não encontrado">
+          {{ recusa }} Escolha outro modelo.
+        </ui-alert>
       } @else if (carregando()) {
-        <div class="cfg-form__loading" role="status">
-          <ui-spinner spinnerSize="md" /> Carregando o modelo...
+        <div class="cfg-form__loading" [uiIndicadorDaLeitura]="leituraDoModelo">
+          <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o modelo...
         </div>
       } @else if (formulario(); as renderizavel) {
         <ui-simulacao-de-formulario
@@ -182,7 +176,7 @@ export class SimuladorDeFormularioPage {
 
   protected readonly modeloEscolhido = new FormControl('', { nonNullable: true });
   protected readonly opcoesDeModelo = signal<readonly UiSelectOption[]>([]);
-  protected readonly erroAoListar = signal<string | null>(null);
+  private readonly erroAoListar = signal<string | null>(null);
   protected readonly listando = signal(false);
   private listaPedida = false;
   protected readonly ajudaDoModelo =
@@ -194,7 +188,14 @@ export class SimuladorDeFormularioPage {
   protected readonly modeloId = signal('');
   private carregamento?: Subscription;
   protected readonly carregando = signal(false);
-  protected readonly erroAoCarregar = signal<string | null>(null);
+  private readonly erroAoCarregar = signal<{ mensagem: string; naoEncontrado: boolean } | null>(
+    null,
+  );
+  /** O modelo da URL não existe: não há o que tentar de novo, e a saída é escolher outro. */
+  protected readonly modeloNaoEncontrado = computed(() => {
+    const erro = this.erroAoCarregar();
+    return erro?.naoEncontrado ? erro.mensagem : null;
+  });
   /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
   protected readonly formulario = signal<FormularioDoCandidato | null>(null);
 
@@ -204,16 +205,24 @@ export class SimuladorDeFormularioPage {
     return arquivo && !arquivo.valido ? arquivo : null;
   });
 
-  protected readonly novaTentativaDaLista = this.novaTentativaAoSeletor(
-    this.listando,
-    computed(() => this.erroAoListar() !== null),
-    'modelos',
-  );
-  protected readonly novaTentativaDoModelo = this.novaTentativaAoSeletor(
-    this.carregando,
-    computed(() => this.erroAoCarregar() !== null),
-    'modelo',
-  );
+  protected readonly leituraDaLista = acompanharLeitura({
+    assunto: 'modelos',
+    falha: this.erroAoListar,
+    pendente: this.listando,
+    recarregar: () => this.listarModelos(),
+    destino: seletorDoModelo,
+  });
+  protected readonly leituraDoModelo = acompanharLeitura({
+    assunto: 'modelo',
+    falha: computed(() => {
+      const erro = this.erroAoCarregar();
+      return erro?.naoEncontrado === false ? erro.mensagem : null;
+    }),
+    pendente: this.carregando,
+    recusada: computed(() => this.modeloNaoEncontrado() !== null),
+    recarregar: () => this.iniciarCarga(),
+    destino: seletorDoModelo,
+  });
 
   protected readonly conferir: ConferenciaComOServidor = (simulacao) =>
     this.avaliacoes.avaliar(simulacao);
@@ -252,35 +261,16 @@ export class SimuladorDeFormularioPage {
       .subscribe((resultado) => {
         this.carregando.set(false);
         if (!resultado.ok) {
-          this.erroAoCarregar.set(this.problemI18n.resolve(resultado.problem).title);
+          this.erroAoCarregar.set({
+            mensagem: this.problemI18n.resolve(resultado.problem).title,
+            naoEncontrado: resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO,
+          });
           return;
         }
         this.erroAoCarregar.set(null);
         this.formulario.set(resultado.data);
       });
     return true;
-  }
-
-  /** Com o alerta da falha fora da tela, o foco vai ao seletor do modelo. */
-  private novaTentativaAoSeletor(
-    pendente: Signal<boolean>,
-    falhou: Signal<boolean>,
-    assunto: string,
-  ): NovaTentativa {
-    return acompanharNovaTentativa({
-      pendente,
-      falhou,
-      assunto,
-      destino: () => document.querySelector<HTMLElement>('.simulador-formulario__arquivo select'),
-    });
-  }
-
-  protected tentarCarregarNovamente(): void {
-    this.novaTentativaDoModelo.executar(() => this.iniciarCarga());
-  }
-
-  protected tentarListarNovamente(): void {
-    this.novaTentativaDaLista.executar(() => this.listarModelos());
   }
 
   /** A URL é a fonte da origem e do modelo: a escolha na tela navega, e a navegação carrega. */
@@ -314,8 +304,8 @@ export class SimuladorDeFormularioPage {
     });
   }
 
-  protected listarModelos(): void {
-    if (this.listaPedida) return;
+  protected listarModelos(): boolean {
+    if (this.listaPedida) return false;
     this.listaPedida = true;
     this.listando.set(true);
     // Os desativados também: o Simular os oferece, e o modelo aberto precisa aparecer escolhido.
@@ -338,6 +328,7 @@ export class SimuladorDeFormularioPage {
           })),
         );
       });
+    return true;
   }
 
   /** O arquivo escolhido por último: uma leitura mais lenta de um arquivo anterior não o substitui. */
@@ -362,6 +353,11 @@ export class SimuladorDeFormularioPage {
     }
     if (esta === this.importacao) this.arquivo.set(lido);
   }
+}
+
+/** Com o aviso da falha fora da tela, o foco vai ao seletor do modelo. */
+function seletorDoModelo(): HTMLElement | null {
+  return document.querySelector<HTMLElement>('.simulador-formulario__arquivo select');
 }
 
 /** O texto do arquivo escolhido, lido no navegador. */

@@ -25,19 +25,12 @@
       [value]="termo()"
       (input)="aoDigitar($event)"
     />
-    @if (buscando()) {
-      <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
-    }
-    @if (erroDaBusca(); as erro) {
-      <div class="field__error" id="cfg-unidade-cidade-busca-erro">
-        <p role="alert">{{ erro }}</p>
-        <ui-nova-tentativa-do-campo
-          [pendente]="buscando()"
-          [fase]="fase()"
-          assunto="cidades"
-          (tentar)="tentarNovamente.emit()"
-        />
+    @if (leitura().visivel()) {
+      <div id="cfg-unidade-cidade-busca-erro">
+        <ui-falha-de-leitura-do-campo [leitura]="leitura()" />
       </div>
+    } @else if (buscando()) {
+      <p class="field__hint" role="status" aria-live="polite">Consultando a API Geo…</p>
     }
     @if (opcoes().length > 0) {
       <ul class="localidade-opcoes" aria-label="Cidades encontradas">

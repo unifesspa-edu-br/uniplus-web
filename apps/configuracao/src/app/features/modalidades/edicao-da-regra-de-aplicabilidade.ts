@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { ModalidadeDto } from '@uniplus/shared-data/configuracao';
 import {
+  acompanharCatalogo,
   deClausulasDoWire,
   descreverAlternativas,
   fatosParaLeitura,
@@ -11,8 +12,6 @@ import {
 
 import { ModalidadeFormStore } from './modalidade-form.store';
 import { fatosDaRegraDeAplicabilidade } from './regra-de-aplicabilidade';
-
-export type EstadoDoCatalogo = 'erro' | 'carregando' | 'pronto';
 
 /** A regra de aplicabilidade em edição: as condições, o que as impede de ser gravadas e as recusas da API. */
 @Injectable()
@@ -32,12 +31,19 @@ export class EdicaoDaRegraDeAplicabilidade {
   /** Os fatos que a regra salva cita, que o editor continua oferecendo mesmo desativados. */
   private readonly fatosJaCitados = signal<ReadonlySet<string>>(new Set());
 
-  readonly estadoDoCatalogo = computed<EstadoDoCatalogo>(() => {
-    if (this.store.catalogoComErro()) return 'erro';
-    return this.catalogo.data() === null ? 'carregando' : 'pronto';
+  /** O catálogo de fatos chegou; falha e espera têm o aviso da leitura. */
+  readonly catalogoCarregado = computed(() => this.catalogo.data() !== null);
+  readonly leituraDoCatalogo = acompanharCatalogo({
+    assunto: 'catálogo de fatos',
+    falha: computed(() =>
+      this.store.catalogoComErro()
+        ? 'Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita.'
+        : null,
+    ),
+    pendente: this.catalogo.isLoading,
+    recarregar: () => this.catalogo.reload(),
+    destino: () => document.getElementById('cfg-mod-regra'),
   });
-  /** O catálogo está sendo lido de novo: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  readonly catalogoPendente = this.catalogo.isLoading;
   readonly fatos = computed(() =>
     fatosDaRegraDeAplicabilidade(this.catalogo.data() ?? [], this.fatosJaCitados()),
   );
@@ -55,10 +61,6 @@ export class EdicaoDaRegraDeAplicabilidade {
     this.condicoes.set(condicoes);
     this.errosDasCondicoes.set({});
     this.recusas.set([]);
-  }
-
-  recarregarCatalogo(): void {
-    this.catalogo.reload();
   }
 
   paraOWire(): ReturnType<typeof paraClausulasDoWire> {

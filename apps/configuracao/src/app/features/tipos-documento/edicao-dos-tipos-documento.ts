@@ -16,7 +16,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { TipoDocumentoDto, TiposDocumentoApi } from '@uniplus/shared-data/configuracao';
 import { ligarCodigoDeCadastro } from '../../shared/codigo-de-cadastro';
-import { aguardarRecarga, avisoDeFalhaDoLookup } from '../../shared/foco';
+import { aguardarRecarga } from '../../shared/foco';
 import type { ProtecaoDoItem } from '../../shared/protecao-do-catalogo';
 import { categoriasDoFormulario } from './categorias-do-formulario';
 import { protecaoNoFormulario } from './protecao-no-formulario';
@@ -101,14 +101,12 @@ export class EdicaoDosTiposDocumento {
     },
   );
 
-  /** O aviso de categorias fica na tela durante a nova tentativa, para o botão que a pediu não sumir. */
-  readonly avisoDasCategorias = avisoDeFalhaDoLookup(this.store.categorias);
   readonly categorias = computed(() =>
     categoriasDoFormulario(
       {
         opcoes: this.store.categorias.opcoes(),
         pendente: this.store.categorias.pendente(),
-        comErro: this.avisoDasCategorias(),
+        comErro: this.store.categorias.comErro(),
       },
       this.valores().categoria,
     ),

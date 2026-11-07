@@ -98,16 +98,13 @@
           </label>
           <!-- Só com o formulário aberto: a carga de fundo que falha não vira alerta
              escondido no formulário fechado. -->
-          @if (aberto() && grupos().falhou) {
-            <ui-alerta-nova-tentativa
+          @if (aberto()) {
+            <ui-falha-de-leitura
               variante="warning"
               titulo="Grupos de área do ENEM não carregados"
-              [mensagem]="grupos().mensagemDeFalha"
-              [pendente]="grupos().pendente"
-              [fase]="grupos().fase"
               idBotao="cfg-curso-grupos-tentar"
               idMensagem="cfg-curso-grupos-falha"
-              (tentar)="tentarGrupos.emit()"
+              [leitura]="grupos().leitura"
             />
           }
           <label class="field" [class.is-error]="erroDoCampo('grupoAreaEnem')">

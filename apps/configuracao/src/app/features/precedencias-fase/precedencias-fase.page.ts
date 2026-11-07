@@ -9,10 +9,11 @@ import {
   untracked,
 } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharCatalogo,
+  acompanharLeitura,
   AlertComponent,
   destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { focoEstaLivre } from '../../shared/foco';
@@ -22,6 +23,10 @@ import { PrecedenciaFormularioComponent } from './precedencia-formulario.compone
 import { PrecedenciasFaseListaComponent } from './precedencias-fase-lista.component';
 import { PrecedenciasFaseStore } from './precedencias-fase.store';
 
+const ID_DO_TITULO = 'cfg-precedencias-fase-list-title';
+const MENSAGEM_DAS_FASES =
+  'Não foi possível consultar o cadastro de Fase Canônica. A lista, as opções do formulário e a busca mostram só os códigos das fases, e a busca por nome não encontra as arestas existentes.';
+
 @Component({
   selector: 'cfg-precedencias-fase-page',
   standalone: true,
@@ -30,7 +35,7 @@ import { PrecedenciasFaseStore } from './precedencias-fase.store';
     PrecedenciasFaseListaComponent,
     PrecedenciaFormularioComponent,
     ConfirmacaoDeRemocaoComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
   ],
   providers: [FasesDoGrafoStore, PrecedenciasFaseStore, EdicaoDasPrecedencias],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,24 +46,28 @@ export class PrecedenciasFasePage {
   protected readonly fases = inject(FasesDoGrafoStore);
   protected readonly store = inject(PrecedenciasFaseStore);
   protected readonly edicao = inject(EdicaoDasPrecedencias);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'precedências',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
-    destino: () => document.getElementById('cfg-precedencias-fase-list-title'),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
+    destino: () => document.getElementById(ID_DO_TITULO),
   });
 
-  /** O aviso das fases está na página e no formulário (um drawer): uma só tentativa, uma só fase. */
-  protected readonly novaTentativaDasFases = acompanharNovaTentativa({
+  /**
+   * Uma só leitura, com um aviso por superfície ativa: o da página e, com o drawer modal aberto
+   * (a página fica inerte atrás dele), o do campo do formulário.
+   */
+  protected readonly leituraDasFases = acompanharCatalogo({
     assunto: 'fases',
+    falha: computed(() => (this.fases.falhou() ? MENSAGEM_DAS_FASES : null)),
     pendente: this.fases.pendente,
-    falhou: this.fases.avisoDeFalha,
+    recarregar: () => this.fases.recarregar(),
     destino: () =>
       destinoAcessivel(
-        document.getElementById('cfg-precedencia-antecessora') ??
-          document.getElementById('cfg-precedencia-par'),
-        document.getElementById('cfg-precedencias-fase-list-title'),
+        document.querySelector<HTMLElement>('#cfg-precedencia-fase-form select'),
+        document.getElementById(ID_DO_TITULO),
       ),
   });
   private readonly injector = inject(Injector);
@@ -70,20 +79,11 @@ export class PrecedenciasFasePage {
         this.edicao.focoDevolvidoAoTitulo();
         afterNextRender(
           () => {
-            if (focoEstaLivre())
-              document.getElementById('cfg-precedencias-fase-list-title')?.focus();
+            if (focoEstaLivre()) document.getElementById(ID_DO_TITULO)?.focus();
           },
           { injector: this.injector },
         );
       });
     });
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
-  protected tentarNovamenteAsFases(): void {
-    this.novaTentativaDasFases.executar(() => this.fases.recarregar());
   }
 }

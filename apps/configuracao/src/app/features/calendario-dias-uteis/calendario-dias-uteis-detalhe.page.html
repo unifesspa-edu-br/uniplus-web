@@ -7,16 +7,16 @@
     <h1 id="cfg-calendario-detalhe-title" class="page-header__title" tabindex="-1">Detalhes</h1>
   </div>
 </div>
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar o calendário"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
+<ui-falha-de-leitura titulo="Não foi possível carregar o calendário" [leitura]="leitura" />
+@if (store.naoEncontrado()) {
+<ui-alert variant="danger" heading="Calendário não encontrado">
+  Este endereço não leva a um calendário de dias úteis. Escolha um calendário na lista.
+  <div alertaAcoes class="list-state__retry">
+    <a class="btn btn--secondary btn--sm" routerLink="/calendario-dias-uteis">Ver os calendários</a>
+  </div>
+</ui-alert>
 } @else if (store.carregandoPrimeiraVez()) {
-<div class="list-state__loading" role="status">
+<div [uiIndicadorDaLeitura]="leitura" class="list-state__loading">
   <ui-spinner spinnerSize="sm" /> Carregando calendário
 </div>
 } @else if (store.calendario(); as calendario) {

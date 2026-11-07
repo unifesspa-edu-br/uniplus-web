@@ -1,14 +1,13 @@
+import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { devolverFocoDaLista } from '../../shared/foco';
-import { ConcessaoTrilhaComponent } from './concessao-trilha.component';
+import { ConcessaoTrilhaComponent, ID_DA_TRILHA } from './concessao-trilha.component';
 import { ConcessoesListaComponent } from './concessoes-lista.component';
 import { ConcessoesStore } from './concessoes.store';
 import { nomesDeEscopo } from './nomes-de-escopo';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { RevogacaoDeConcessoes } from './revogacao-de-concessoes';
 import { RevogarConcessaoDialogComponent } from './revogar-concessao-dialog.component';
 
@@ -18,9 +17,11 @@ const ID_DO_TITULO = 'cfg-concessoes-titulo';
   selector: 'cfg-concessoes-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    RouterLink,
+    FalhaDeLeituraComponent,
     ConcessoesListaComponent,
     ConcessaoTrilhaComponent,
+    RecusaDaLeituraComponent,
     RevogarConcessaoDialogComponent,
   ],
   providers: [ConcessoesStore, RevogacaoDeConcessoes],
@@ -38,13 +39,22 @@ export class ConcessoesPage {
     return concessao === null ? '' : this.escopo.nome(concessao.escopo);
   });
 
-  protected readonly pendente = computed(
-    () => this.store.carregando() || this.revogacao.gravando(),
-  );
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    assunto: 'concessões',
+    falha: this.store.falha,
+    pendente: this.store.carregando,
+    indisponivel: this.revogacao.gravando,
+    recusada: computed(() => this.store.recusa() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
+  });
+  protected readonly leituraDaTrilha = acompanharLeitura({
+    assunto: 'trilha',
+    falha: this.store.falhaDaTrilha,
+    pendente: this.store.carregandoTrilha,
+    recusada: computed(() => this.store.recusaDaTrilha() !== null),
+    recarregar: () => this.store.tentarTrilhaNovamente(),
+    destino: () => document.getElementById(ID_DA_TRILHA),
   });
 
   private readonly foco = devolverFocoDaLista({
@@ -53,10 +63,6 @@ export class ConcessoesPage {
     atributoDaLinha: 'data-concessao-id',
     idDoTitulo: ID_DO_TITULO,
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.recarregar());
-  }
 
   protected revogar(concessao: ConcessaoDto): void {
     this.foco.registrar({ acao: 'revogar', id: concessao.id });

@@ -10,7 +10,7 @@ import {
   PagerComponent,
   SpinnerComponent,
   TagComponent,
-  type UiLookupFalho,
+  type CatalogoAcompanhado,
 } from '@uniplus/shared-ui/components';
 import {
   CLASSIFICACOES_DE_PROTECAO,
@@ -45,7 +45,7 @@ export class TiposDocumentoListaComponent {
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
   readonly podeSolicitar = input.required<boolean>();
-  readonly lookupsComFalha = input.required<readonly UiLookupFalho[]>();
+  readonly leituras = input.required<readonly CatalogoAcompanhado[]>();
   readonly cadastrar = output<void>();
   readonly detalhar = output<TipoDocumentoDto>();
   readonly editar = output<TipoDocumentoDto>();

@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -24,9 +24,9 @@ const MENSAGEM_DE_FORMATO = 'Valor inválido.';
   imports: [
     ReactiveFormsModule,
     AlertComponent,
-    AlertaNovaTentativaComponent,
     CampoDeMunicipiosComponent,
     DrawerComponent,
+    FalhaDeLeituraComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,11 +47,9 @@ export class BaseLegalBonusRegionalFormularioComponent {
 
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly tentarTipos = output<void>();
   readonly buscarMunicipio = output<string>();
   readonly adicionarMunicipio = output<CidadeResumoDto>();
   readonly removerMunicipio = output<string>();
-  readonly tentarMunicipios = output<void>();
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
@@ -80,7 +78,7 @@ export class BaseLegalBonusRegionalFormularioComponent {
   /** O select é descrito pela falha do vocabulário e pelo erro do campo, quando há. */
   protected descricaoDoTipo(): string | null {
     const ids = [
-      this.aberto() && this.tipos().falhou ? 'cfg-blbr-tipos-falha' : null,
+      this.aberto() && this.tipos().leitura.visivel() ? 'cfg-blbr-tipos-falha' : null,
       this.erroDoCampo('tipoInstrumento') ? 'cfg-blbr-tipo-erro' : null,
     ].filter((id): id is string => id !== null);
     return ids.length > 0 ? ids.join(' ') : null;

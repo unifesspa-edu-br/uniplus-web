@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -18,8 +18,8 @@ import type { GruposDoFormulario } from './grupos-do-curso';
   imports: [
     ReactiveFormsModule,
     AlertComponent,
-    AlertaNovaTentativaComponent,
     DrawerComponent,
+    FalhaDeLeituraComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,7 +39,6 @@ export class CursoFormularioComponent {
 
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly tentarGrupos = output<void>();
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
@@ -68,7 +67,7 @@ export class CursoFormularioComponent {
   /** O select do grupo é descrito pela falha da lista e pelo erro do campo, quando há. */
   protected descricaoDoGrupo(): string | null {
     const ids = [
-      this.aberto() && this.grupos().falhou ? 'cfg-curso-grupos-falha' : null,
+      this.aberto() && this.grupos().leitura.visivel() ? 'cfg-curso-grupos-falha' : null,
       this.erroDoCampo('grupoAreaEnem') ? 'cfg-curso-grupo-erro' : null,
     ].filter((id): id is string => id !== null);
     return ids.length > 0 ? ids.join(' ') : null;

@@ -25,7 +25,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import type { UiFilterChipOption, UiFiltroAtivo } from '@uniplus/shared-ui/components';
 import { CatalogoCategoriasDocumento } from '../../shared/categorias-documento';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 import { AprovacaoDoCatalogo } from '../../shared/protecao-do-catalogo';
 
 /** Tamanho da janela de cada página (cursor pagination, ADR-0026). */
@@ -70,7 +70,6 @@ export class TiposDocumentoStore {
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly termoBusca = signal('');
-  readonly carregando = this.lista.isLoading;
   readonly tipos = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -172,7 +171,21 @@ export class TiposDocumentoStore {
     () => this.termoBusca().trim().length > 0 || this.filtroCategoria() !== '',
   );
 
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) return this.problemI18n.resolve(problem).title;
     return this.lista.error() ? 'Erro inesperado ao carregar tipos de documento.' : null;

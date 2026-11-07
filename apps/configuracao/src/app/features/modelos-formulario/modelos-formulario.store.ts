@@ -12,9 +12,7 @@ import {
   CursorPagina,
   ProblemI18nService,
   cursorToString,
-  ehCursorDePaginacaoExpirado,
   useApiResource,
-  useCursorObsoletoRecovery,
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -23,7 +21,10 @@ import {
   ModeloFormularioView,
   TipoProcessoDto,
 } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
+
+const SEM_OS_TIPOS =
+  'Sem os tipos de processo, o filtro por tipo e o campo Tipo de processo não listam as opções.';
 
 @Injectable()
 export class ModelosFormularioStore {
@@ -51,21 +52,26 @@ export class ModelosFormularioStore {
     context: withVendorMime('tipo-processo', 1),
   }));
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
-  private readonly recuperando = useCursorObsoletoRecovery({
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
     problem: this.lista.problem,
     pagina: this.pagina,
-    reiniciarPagina: () => this.pagina.set(undefined),
-    aoRecuperar: (problem) =>
-      this.notifications.info(
-        problem && ehCursorDePaginacaoExpirado(problem)
-          ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
-          : 'A paginação foi reiniciada porque a consulta mudou.',
-        'Recarregamos a listagem do começo.',
-      ),
+    notificacoes: this.notifications,
   });
 
-  readonly carregando = this.lista.isLoading;
+  /** Inclui o intervalo entre a resposta de cursor recusado e a nova leitura sem cursor. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly tiposDeProcesso = computed(() => this.tipos.data() ?? []);
+  /** Sem os tipos o filtro e o campo "Tipo de processo" ficam sem opções. */
+  readonly falhaDosTipos = computed(() =>
+    this.tipos.problem() !== null || this.tipos.error() !== undefined ? SEM_OS_TIPOS : null,
+  );
+  readonly carregandoOsTipos = this.tipos.isLoading;
+  recarregarTipos(): boolean {
+    return this.tipos.reload();
+  }
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly modelosBuscados = computed(() => {
@@ -80,7 +86,7 @@ export class ModelosFormularioStore {
   });
   readonly mensagemDeErro = computed<string | null>(() => {
     const problem = this.lista.problem();
-    if (problem && this.recuperando()) return null;
+    if (problem && this.recuperandoDeCursorObsoleto()) return null;
     if (problem) return this.problemI18n.resolve(problem).title;
     return this.lista.error() ? 'Erro inesperado ao carregar os modelos.' : null;
   });
@@ -95,12 +101,8 @@ export class ModelosFormularioStore {
     });
   }
 
-  tentarNovamente(): void {
-    if (!this.carregando()) this.lista.reload();
-  }
-
-  recarregar(): void {
-    this.lista.reload();
+  recarregar(): boolean {
+    return this.lista.reload();
   }
 
   proximaPagina(): void {

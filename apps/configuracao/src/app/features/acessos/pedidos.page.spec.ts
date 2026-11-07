@@ -11,10 +11,6 @@ import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { PedidosPage } from './pedidos.page';
 import { PedidosStore } from './pedidos.store';
 import { ok, pedido, UNIDADES } from './testes';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const URL = 'http://api.test/api/autorizacao/pedidos-de-concessao';
 
@@ -58,29 +54,29 @@ describe('PedidosPage', () => {
     expect(store.itens()).toHaveLength(0);
   });
 
-  it('apresenta recusa e permite tentar novamente, com o botão indisponível e focado durante a carga e o foco no título depois', async () => {
+  const falhar = (
+    status: number,
+    title: string,
+    requisicao = http.expectOne((r) => r.url === URL),
+  ): void => {
+    requisicao.flush(
+      { title, status, code: 'uniplus.x', type: 'about:blank', traceId: '' },
+      {
+        status,
+        statusText: 'Erro',
+        headers: { 'Content-Type': 'application/problem+json' },
+      },
+    );
+  };
+
+  it('a falha do servidor permite tentar novamente, com o botão indisponível e focado durante a carga e o foco no título depois', async () => {
     const fixture = TestBed.createComponent(PedidosPage);
     const host = fixture.nativeElement as HTMLElement;
     document.body.appendChild(host);
     fixture.detectChanges();
-    http
-      .expectOne((r) => r.url === URL)
-      .flush(
-        {
-          title: 'Sem permissão para a fila',
-          status: 403,
-          code: 'uniplus.x',
-          type: 'about:blank',
-          traceId: '',
-        },
-        {
-          status: 403,
-          statusText: 'Forbidden',
-          headers: { 'Content-Type': 'application/problem+json' },
-        },
-      );
+    falhar(503, 'Servidor indisponível');
     await atualizar();
-    expect(host.textContent).toContain('Sem permissão para a fila');
+    expect(host.textContent).toContain('Servidor indisponível');
     const tentar = host.querySelector<HTMLButtonElement>('ui-alert button');
     expect(tentar?.getAttribute('aria-disabled')).toBeNull();
 
@@ -89,7 +85,6 @@ describe('PedidosPage', () => {
     await atualizar();
     expect(tentar?.getAttribute('aria-disabled')).toBe('true');
     expect(tentar?.getAttribute('aria-busy')).toBe('true');
-    expect(situacaoDoBotao(tentar as HTMLElement)).toBe(TEXTO_TENTANDO);
     expect(document.activeElement).toBe(tentar);
     tentar?.click();
     await atualizar();
@@ -101,6 +96,41 @@ describe('PedidosPage', () => {
     expect(host.querySelector('ui-alert')).toBeNull();
     expect(document.activeElement).toBe(host.querySelector('#cfg-pedidos-titulo'));
     host.remove();
+  });
+
+  it('a recusa por falta de permissão mostra o motivo sem oferecer nova tentativa', async () => {
+    const fixture = TestBed.createComponent(PedidosPage);
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    falhar(403, 'Sem permissão para a fila');
+    await atualizar();
+
+    expect(host.textContent).toContain('Sem permissão para a fila');
+    expect(host.querySelector('ui-alert button')).toBeNull();
+    expect(host.textContent).not.toContain('Tentar novamente');
+  });
+
+  it('a nova tentativa relê a página que falhou, e não a primeira', async () => {
+    const fixture = TestBed.createComponent(PedidosPage);
+    const host = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+    http
+      .expectOne((r) => r.url === URL)
+      .flush([pedido()], { headers: { Link: '</pedidos?cursor=proximo>; rel="next"' } });
+    await atualizar();
+    fixture.debugElement.injector.get(PedidosStore).proximaPagina();
+    await atualizar();
+    const segunda = http.expectOne((r) => r.url === URL);
+    expect(segunda.request.params.get('cursor')).toBe('proximo');
+    falhar(503, 'Servidor indisponível', segunda);
+    await atualizar();
+
+    host.querySelector<HTMLButtonElement>('ui-alert button')?.click();
+    await atualizar();
+
+    const nova = http.expectOne((r) => r.url === URL);
+    expect(nova.request.params.get('cursor')).toBe('proximo');
+    nova.flush([]);
   });
 
   it('lista os próprios pedidos com escopo, situação e acesso ao cadastro', async () => {

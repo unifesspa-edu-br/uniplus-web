@@ -8,14 +8,11 @@ import {
   corRaca,
   montarPagina,
   problema,
+  sucesso,
   trabalha,
   PROTECAO,
+  urlDoFato,
 } from './fatos-candidato.testing';
-import {
-  situacaoDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('FatosCandidatoPage — leitura', () => {
   let p: Pagina;
@@ -191,12 +188,36 @@ describe('FatosCandidatoPage — leitura', () => {
       tentar.focus();
       tentar.click();
       await p.propagar();
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
       p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
       await p.propagar();
       await p.propagar();
 
       expect(document.activeElement).toBe(p.titulo());
+    });
+
+    it('"Tentar novamente" fica indisponível, sem refazer a leitura, enquanto uma gravação corre', async () => {
+      p = await montarPagina([trabalha]);
+      p.edicao.pedirAtivacao(trabalha, 'DESATIVAR');
+      p.edicao.confirmarAtivacao();
+      const gravacao = p.http.expectOne(
+        (r) => r.method === 'DELETE' && r.url === urlDoFato(trabalha),
+      );
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA && r.method === 'GET')
+        .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
+      p.atenderPendencias();
+      await p.propagar();
+
+      const tentar = p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement;
+      tentar.click();
+      await p.propagar();
+
+      expect(tentar.getAttribute('aria-disabled')).toBe('true');
+      p.http.expectNone((r) => r.url === LISTA && r.method === 'GET');
+      gravacao.flush(...sucesso());
+      await p.recarregarCom([trabalha]);
     });
   });
 
@@ -349,42 +370,15 @@ describe('FatosCandidatoPage — leitura', () => {
       .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
     await p.propagar();
 
-    expect(p.texto()).toContain('itens que aguardam a proteção de dados');
-    const recarregar = p.botaoPeloTexto(
-      'Recarregar itens que aguardam a proteção de dados',
-    ) as HTMLButtonElement;
-    recarregar.focus();
-    await p.acionar(recarregar);
-    expect(recarregar.isConnected).toBe(true);
-    expect(recarregar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(recarregar);
+    expect(p.texto()).toContain('Não foi possível ler os itens que aguardam a proteção de dados');
+    expect(p.texto()).toContain('“Enviar solicitação” fica fora da tela');
+    expect(p.texto()).not.toContain('Não carregado');
+    await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
     p.atenderPendencias();
     await p.propagar();
     await p.propagar();
-    expect(p.fixture.nativeElement.querySelector('ui-lookup-alert ui-alert')).toBeNull();
+    expect(p.fixture.nativeElement.querySelector('ui-falha-de-leitura ui-alert')).toBeNull();
     expect(document.activeElement).toBe(p.elemento('#cfg-fatos-list-title'));
-  });
-
-  it('mostra e anuncia cada nova tentativa de ler os itens que aguardam a proteção', async () => {
-    p = await montarPagina([trabalha]);
-    p.store.recarregar();
-    await p.propagar();
-    p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
-    const falhar = async (): Promise<void> => {
-      p.http
-        .expectOne((r) => r.url === PROTECAO)
-        .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));
-      await p.propagar();
-    };
-    const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
-    await falhar();
-
-    await p.acionar(
-      p.botaoPeloTexto('Recarregar itens que aguardam a proteção de dados') as HTMLButtonElement,
-    );
-    expect(anuncio()).toBe(textoTentandoDe('itens que aguardam a proteção de dados'));
-    await falhar();
-    expect(anuncio()).toBe(textoRepetidaDe('itens que aguardam a proteção de dados'));
   });
 
   it('o catálogo de apoio não é pedido com a lista aberta e nenhum detalhe nem edição', async () => {

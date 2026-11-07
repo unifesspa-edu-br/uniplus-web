@@ -12,11 +12,11 @@ import {
 } from '@angular/core';
 import { ModalidadeDto, NATUREZAS_LEGAIS } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
   AlertComponent,
   deClausulasDoWire,
   DialogComponent,
+  FalhaDeLeituraComponent,
   fatosParaLeitura,
   resumoDaRegra,
   SpinnerComponent,
@@ -24,6 +24,7 @@ import {
   type UiFiltroAtivo,
 } from '@uniplus/shared-ui/components';
 
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { ModalidadesFiltrosComponent } from './modalidades-filtros.component';
 import { ModalidadesListaComponent } from './modalidades-lista.component';
 import { ModalidadesTabelaComponent } from './modalidades-tabela.component';
@@ -35,7 +36,8 @@ import { ModalidadesStore } from './modalidades.store';
   providers: [ModalidadesStore, EdicaoDasModalidades],
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
+    RecusaDaLeituraComponent,
     ModalidadesFiltrosComponent,
     ModalidadesListaComponent,
     ModalidadesTabelaComponent,
@@ -152,13 +154,25 @@ export class ModalidadesListPage {
   });
 
   protected readonly errorMessage = this.store.mensagemDeErro;
-  /** A lista carrega ou uma remoção corre: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  protected readonly indisponivel = computed(() => this.loading() || this.removendo());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.indisponivel,
-    falhou: computed(() => this.errorMessage() !== null),
+  protected readonly leitura = acompanharLeitura({
+    assunto: 'modalidades',
+    falha: this.errorMessage,
+    pendente: this.loading,
+    indisponivel: this.removendo,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-modalidades-title'),
   });
+
+  /** Os fatos nomeiam as condições da coluna "Quem concorre"; sem eles a linha diz só que há condições. */
+  protected readonly leituraDosFatos = acompanharLeitura({
+    assunto: 'fatos',
+    falha: this.store.falhaDosFatos,
+    pendente: this.store.catalogo.isLoading,
+    recusada: computed(() => this.store.recusaDosFatos() !== null),
+    recarregar: () => this.store.catalogo.reload(),
+    destino: () => document.getElementById('cfg-modalidades-title'),
+  });
+  protected readonly recusaDosFatos = this.store.recusaDosFatos;
 
   /** A linha da modalidade cuja remoção corre, para sinalizá-la. */
   protected readonly removendoId = computed(() =>
@@ -183,10 +197,6 @@ export class ModalidadesListPage {
   protected paginaAnterior(): void {
     this.store.paginaAnterior();
   }
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
   protected limparFiltros(): void {
     this.busca.set('');
     this.naturezaSelecionada.set(null);

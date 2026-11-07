@@ -13,7 +13,7 @@ import {
   CursoDto,
   OfertaCursoDto,
 } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 /** Janela da lista de ofertas do curso no drawer (cursor pagination, ADR-0026). */
 const PAGE_SIZE = 5;
@@ -49,12 +49,25 @@ export class OfertasDoCursoStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly itens = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
 
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) {
       return this.problemI18n.resolve(problem).title;

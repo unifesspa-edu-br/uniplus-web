@@ -10,15 +10,10 @@
   }
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os pedidos"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="recarregar()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar os pedidos" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Lista de pedidos não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
 
 <cfg-pedidos-lista
   [pedidos]="store.itens()"

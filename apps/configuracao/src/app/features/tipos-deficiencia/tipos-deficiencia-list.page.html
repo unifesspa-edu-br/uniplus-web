@@ -14,16 +14,10 @@
   (Módulo Seleção), não neste cadastro.
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os tipos de deficiência"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+  [leitura]="leitura"
 />
-}
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-tipos-deficiencia-lista

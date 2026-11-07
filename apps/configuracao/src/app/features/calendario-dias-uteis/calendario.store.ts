@@ -2,7 +2,12 @@ import { Injectable, computed, effect, inject, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'rxjs';
-import { ProblemI18nService, useApiResource, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  STATUS_HTTP,
+  useApiResource,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CalendarioDiasUteisDto, CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { agruparPorMes, anosDoCalendario } from './calendario-mensal.util';
@@ -35,7 +40,15 @@ export class CalendarioStore {
    */
   readonly carregandoPrimeiraVez = computed(() => this.carregando() && this.calendario() === null);
 
+  /** O calendário não existe (404): repetir a leitura não muda nada, então não há falha a repetir. */
+  readonly naoEncontrado = computed(
+    () => this.recurso.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.naoEncontrado()) {
+      return null;
+    }
     const problem = this.recurso.problem();
     if (problem) {
       return this.problemI18n.resolve(problem).title;

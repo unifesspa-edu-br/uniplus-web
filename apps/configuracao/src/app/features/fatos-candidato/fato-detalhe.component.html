@@ -103,16 +103,11 @@
       @if (regras().length > 0) {
         <section class="cfg-detalhe-secao">
           <h3 class="cfg-detalhe-secao__titulo" [id]="idDasRegras" tabindex="-1">Regras padrão</h3>
-          @if (catalogoFalhou()) {
-            <ui-alerta-nova-tentativa
-              titulo="Os nomes dos fatos não foram carregados"
-              [mensagem]="mensagemDoAlerta()"
-              [pendente]="catalogoPendente()"
-              [fase]="faseDoCatalogo()"
-              variante="warning"
-              (tentar)="tentarCatalogoNovamente()"
-            />
-          }
+          <ui-falha-de-leitura
+            titulo="Os nomes dos fatos não foram carregados"
+            variante="warning"
+            [leitura]="leituraDoCatalogo()"
+          />
           <ul class="cfg-detalhe-valores">
             @for (regra of regras(); track $index) {
               <li>{{ regra }}</li>

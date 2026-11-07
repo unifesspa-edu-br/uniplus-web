@@ -4,15 +4,23 @@ import { TipoProcessoDto } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
   DrawerComponent,
+  FalhaDeLeituraDoCampoComponent,
   FINALIDADES,
   SpinnerComponent,
+  type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { CampoDaCriacao, CriacaoForm, mensagemDoCampo } from './modelo-formulario-form';
 
 @Component({
   selector: 'cfg-modelo-formulario-criacao',
-  imports: [ReactiveFormsModule, AlertComponent, DrawerComponent, SpinnerComponent],
+  imports: [
+    ReactiveFormsModule,
+    AlertComponent,
+    DrawerComponent,
+    FalhaDeLeituraDoCampoComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './modelo-formulario-criacao.component.html',
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
@@ -24,6 +32,8 @@ export class ModeloFormularioCriacaoComponent {
   readonly erroDaCriacao = input.required<string | null>();
   readonly anuncio = input.required<string>();
   readonly tiposDeProcesso = input.required<readonly TipoProcessoDto[]>();
+  /** A leitura dos tipos, que o aviso da página deixa inerte atrás do drawer modal. */
+  readonly leituraDosTipos = input.required<LeituraAcompanhada>();
   readonly abertoChange = output<boolean>();
   readonly criar = output<void>();
   protected readonly finalidades = FINALIDADES;

@@ -1,5 +1,6 @@
 import { Router } from '@angular/router';
 import { TestBed } from '@angular/core/testing';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   CenaDoDetalhe,
@@ -40,7 +41,7 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
     expect(cena.avisos()).toEqual(['Serviço indisponível']);
   });
 
-  it('não avisa por toast quando a leitura é recusada com 4xx', async () => {
+  it('termo inexistente (404) mostra a recusa com a volta à lista, sem nova tentativa nem aviso', async () => {
     cena = await montarDetalhe(ID, null);
     recusar(
       cena.controller.expectOne(LEITURA),
@@ -49,8 +50,66 @@ describe('TermosConsentimentoDetailPage — leitura', () => {
       'Termo não encontrado',
     );
     await cena.propagar();
-    expect(cena.fixture.nativeElement.textContent).toContain('Termo não encontrado');
+
+    const aviso = cena.elemento('ui-alert');
+    expect(aviso.textContent).toContain('Termo não encontrado');
+    expect(aviso.querySelector('button')).toBeNull();
+    expect(aviso.querySelector('a')?.getAttribute('href')).toBe('/termos-consentimento');
+    expect(cena.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
+    expect(cena.fixture.nativeElement.querySelector('form')).toBeNull();
     expect(cena.avisos()).toEqual([]);
+  });
+
+  it('a nova tentativa que termina em 404 tira o botão e leva o foco ao título', async () => {
+    cena = await montarDetalhe(ID, null);
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
+    );
+    await cena.propagar();
+    const tentar = cena.botao('Tentar novamente');
+    tentar.focus();
+    tentar.click();
+    await cena.propagar();
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      404,
+      'uniplus.configuracao.termo_consentimento.nao_encontrado',
+      'Termo não encontrado',
+    );
+    await cena.propagar();
+    await cena.propagar();
+
+    expect(cena.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
+    expect(document.activeElement).toBe(cena.titulo());
+  });
+
+  it('a nova tentativa que termina em 404 não anuncia leitura concluída a quem tirou o foco do botão', async () => {
+    cena = await montarDetalhe(ID, null);
+    const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      503,
+      'uniplus.indisponivel',
+      'Serviço indisponível',
+    );
+    await cena.propagar();
+    cena.botao('Tentar novamente').click();
+    cena.elemento<HTMLAnchorElement>('a.cfg-voltar').focus();
+    await cena.propagar();
+    recusar(
+      cena.controller.expectOne(LEITURA),
+      404,
+      'uniplus.configuracao.termo_consentimento.nao_encontrado',
+      'Termo não encontrado',
+    );
+    await cena.propagar();
+    await cena.propagar();
+
+    expect(cena.elemento('ui-alert').textContent).toContain('Termo não encontrado');
+    expect(anunciar).not.toHaveBeenCalled();
   });
 
   it('"Tentar novamente" fica indisponível durante a carga e, ao dar certo, leva o foco ao título', async () => {

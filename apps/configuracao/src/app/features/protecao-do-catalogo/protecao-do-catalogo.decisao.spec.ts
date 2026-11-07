@@ -15,10 +15,6 @@ import {
   problema,
   type PaginaMontada,
 } from './protecao-do-catalogo.testing';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
 const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
@@ -370,7 +366,6 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
       await pagina.assentar();
       await pagina.assentar();
       expect(tentar.getAttribute('aria-busy')).toBe('true');
-      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(document.activeElement).toBe(tentar);
 
       leituraDaFila().flush([laudo]);
@@ -414,7 +409,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
       expect(avisoDeErro).toHaveBeenCalledTimes(1);
     });
 
-    it('recusa 4xx na releitura não avisa por toast, só no alerta da tela', async () => {
+    it('recusa 4xx na releitura não avisa por toast nem oferece nova tentativa, só no alerta da tela', async () => {
       pagina.fixture.debugElement.injector.get(ProtecaoDoCatalogoStore).carregar();
       await pagina.assentar();
       leituraDaFila().flush(...problema(403, 'uniplus.auth.proibido', 'Sem permissão'));
@@ -422,6 +417,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
 
       expect(avisoDeErro).not.toHaveBeenCalled();
       expect(pagina.tela.textContent).toContain('Sem permissão');
+      expect(pagina.tela.textContent).not.toContain('Tentar novamente');
     });
   });
 });

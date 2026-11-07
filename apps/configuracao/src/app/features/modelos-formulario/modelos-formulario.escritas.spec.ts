@@ -134,6 +134,66 @@ describe('ModelosFormularioPage — escritas pela interface', () => {
     );
   }
 
+  describe('tipos de processo em falha', () => {
+    const URL_DOS_TIPOS = `${BASE}/api/configuracao/tipos-processo`;
+
+    async function carregarComTiposEmFalha(): Promise<void> {
+      controller.expectOne((r) => r.url === URL).flush([modelo]);
+      controller
+        .expectOne((r) => r.url === URL_DOS_TIPOS)
+        .flush(problema(500, 'uniplus.erro_interno', 'Erro interno'), {
+          status: 500,
+          statusText: 'Internal Server Error',
+          headers: PROBLEMA,
+        });
+      await propagar();
+    }
+
+    it('a lista avisa que o filtro fica sem opções e a nova tentativa lê os tipos de novo', async () => {
+      await carregarComTiposEmFalha();
+      const texto = (fixture.nativeElement as HTMLElement).textContent;
+      expect(texto).toContain('Tipos de processo não carregados');
+      expect(texto).toContain('o filtro por tipo e o campo Tipo de processo não listam as opções');
+
+      elemento<HTMLButtonElement>('ui-falha-de-leitura button').click();
+      await propagar();
+      controller
+        .expectOne((r) => r.url === URL_DOS_TIPOS)
+        .flush([{ id: '1', codigo: 'GRADUACAO', nome: 'Graduação' }]);
+      await propagar();
+      await propagar();
+
+      expect((fixture.nativeElement as HTMLElement).textContent).not.toContain(
+        'Tipos de processo não carregados',
+      );
+    });
+
+    it('o drawer de criação traz a própria nova tentativa e leva o foco ao campo quando dá certo', async () => {
+      await carregarComTiposEmFalha();
+      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
+      await propagar();
+
+      const botao = elemento<HTMLButtonElement>('ui-drawer ui-falha-de-leitura-do-campo button');
+      botao.focus();
+      botao.click();
+      await propagar();
+      controller
+        .expectOne((r) => r.url === URL_DOS_TIPOS)
+        .flush([{ id: '1', codigo: 'GRADUACAO', nome: 'Graduação' }]);
+      await propagar();
+      await propagar();
+
+      expect(
+        (fixture.nativeElement as HTMLElement).querySelector(
+          'ui-drawer ui-falha-de-leitura-do-campo [role="alert"]',
+        ),
+      ).toBeNull();
+      expect(document.activeElement).toBe(
+        elemento('#cfg-modelo-criacao select[formcontrolname="tipoProcessoCodigo"]'),
+      );
+    });
+  });
+
   it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
     await carregar();
     await preencher();

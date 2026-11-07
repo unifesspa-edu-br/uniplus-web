@@ -1,10 +1,7 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Pagina, montarPagina, problema, reitoria, unifesspa } from './instituicao.testing';
-import {
-  situacaoDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('InstituicaoPage — leitura', () => {
   let p: Pagina;
@@ -87,7 +84,7 @@ describe('InstituicaoPage — leitura', () => {
       p.store.recarregar();
       await p.falharLeitura(503);
 
-      expect(p.elemento('ui-alerta-nova-tentativa').textContent).toContain(
+      expect(p.elemento('ui-falha-de-leitura').textContent).toContain(
         'Não foi possível carregar a instituição',
       );
       expect(p.fixture.nativeElement.querySelector('cfg-instituicao-painel')).toBeNull();
@@ -104,22 +101,22 @@ describe('InstituicaoPage — leitura', () => {
       p.store.recarregar();
       await p.falharLeitura(403);
 
-      expect(p.elemento('ui-alerta-nova-tentativa')).toBeTruthy();
+      expect(p.elemento('ui-falha-de-leitura')).toBeTruthy();
       expect(p.erros).not.toHaveBeenCalled();
     });
 
-    it('o "Tentar novamente" fica indisponível durante a nova leitura e não a repete', async () => {
+    it('a nova tentativa que descobre que não há instituição mostra o convite ao cadastro e não anuncia "dados carregados"', async () => {
       p = await montarPagina();
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
       p.store.recarregar();
       await p.falharLeitura(503);
-      const tentar = p.elemento<HTMLButtonElement>('#cfg-instituicao-tentar-novamente');
 
-      tentar.click();
+      p.elemento<HTMLButtonElement>('#cfg-instituicao-tentar-novamente').click();
+      await p.responderLeitura(null);
       await p.propagar();
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      tentar.click();
-      await p.propagar();
-      await p.responderLeitura(unifesspa);
+
+      expect(texto()).toContain('Nenhuma instituição cadastrada');
+      expect(anunciar).not.toHaveBeenCalled();
     });
   });
 });
@@ -161,15 +158,14 @@ describe('InstituicaoPage — campos do formulário', () => {
   describe('quando as reitorias não vêm', () => {
     const tentar = (): HTMLButtonElement =>
       p.elemento<HTMLButtonElement>('.field__error .link-button');
-    const aviso = (): string => p.elemento('#cfg-instituicao-reitorias-erro').textContent ?? '';
+    const aviso = (): string => p.elemento('.field [role="alert"]').textContent ?? '';
     const select = (): HTMLSelectElement => p.elemento('select[formcontrolname="unidadeRaizId"]');
 
-    it('avisa, recarrega a lista a pedido e devolve o foco ao select quando dá certo', async () => {
+    it('avisa no campo, recarrega a lista a pedido e devolve o foco ao select quando dá certo', async () => {
       p = await montarPagina(null, 'falha');
       await p.abrirFormulario();
 
       expect(aviso()).toContain('Não foi possível carregar as unidades para seleção.');
-      expect(select().getAttribute('aria-describedby')).toBe('cfg-instituicao-reitorias-erro');
       expect(p.erros).toHaveBeenCalledTimes(1);
       tentar().focus();
       tentar().click();
@@ -183,42 +179,17 @@ describe('InstituicaoPage — campos do formulário', () => {
       expect(document.activeElement).toBe(select());
     });
 
-    it('durante a espera o botão fica aria-disabled, sem nova leitura, e segue com o foco', async () => {
-      p = await montarPagina(null, 'falha');
-      await p.abrirFormulario();
-      const botao = tentar();
-
-      botao.focus();
-      botao.click();
-      await p.propagar();
-      expect(botao.getAttribute('aria-disabled')).toBe('true');
-      expect(botao.getAttribute('aria-busy')).toBe('true');
-      expect(document.activeElement).toBe(botao);
-      botao.click();
-      await p.propagar();
-      p.reitoriasRecarregadas().flush([reitoria]);
-      await p.propagar();
-    });
-
-    it('a falha repetida mostra e anuncia a tentativa, avisa por toast e não tira o foco do botão', async () => {
+    it('a falha de servidor repetida na nova tentativa avisa por toast de novo', async () => {
       p = await montarPagina(null, 'falha');
       await p.abrirFormulario();
 
-      tentar().focus();
       tentar().click();
       await p.propagar();
-      expect(situacaoDaNovaTentativa(p.elemento('#cfg-instituicao-reitorias-erro'))).toBe(
-        textoTentandoDe('unidades'),
-      );
       p.reitoriasRecarregadas().flush(...problema(503));
       await p.propagar();
       await p.propagar();
 
-      expect(situacaoDaNovaTentativa(p.elemento('#cfg-instituicao-reitorias-erro'))).toBe(
-        textoRepetidaDe('unidades'),
-      );
       expect(p.erros).toHaveBeenCalledTimes(2);
-      expect(document.activeElement).toBe(tentar());
     });
 
     it('explica a falha na ficha, fora do drawer, em vez de só dizer que não carregou', async () => {

@@ -44,7 +44,7 @@ describe('TiposDocumentoListaComponent', () => {
       temAnterior: false,
       temProximo: false,
       podeSolicitar: true,
-      lookupsComFalha: [],
+      leituras: [],
     };
     for (const [nome, valor] of Object.entries({ ...padrao, ...entradas })) {
       fixture.componentRef.setInput(nome, valor);

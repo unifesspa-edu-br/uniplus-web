@@ -10,6 +10,10 @@ import {
   problema,
   sucesso,
 } from './tipos-ato.testing';
+import {
+  TEXTO_TENTANDO,
+  situacaoDoAlerta,
+} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('TiposAtoPage', () => {
   let p: Pagina;
@@ -417,6 +421,37 @@ describe('TiposAtoPage', () => {
         await p.propagar();
       },
     );
+
+    it('a nova tentativa recusada por cursor expirado segue em andamento até a leitura do começo terminar', async () => {
+      const TITULO = 'Não foi possível carregar os tipos de ato';
+      p.store.recarregar();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.url === LISTA)
+        .flush([preliminar], {
+          headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
+        });
+      await p.propagar();
+      p.store.proximaPagina();
+      await p.propagar();
+      p.http.expectOne((r) => r.params.get('cursor') === 'abc').flush(...problema(500));
+      await p.propagar();
+
+      p.elemento<HTMLButtonElement>('ui-alerta-nova-tentativa button').click();
+      await p.propagar();
+      p.http
+        .expectOne((r) => r.params.get('cursor') === 'abc')
+        .flush(...problema(410, { code: 'uniplus.cursor.expirado' }));
+      await Promise.resolve();
+      expect(p.store.mensagemDeErro()).toBeNull();
+      expect(p.store.carregando()).toBe(true);
+      await p.propagar();
+
+      expect(situacaoDoAlerta(p.fixture.nativeElement, TITULO)).toBe(TEXTO_TENTANDO);
+      p.http.expectOne((r) => r.url === LISTA && !r.params.has('cursor')).flush([aviso]);
+      await p.propagar();
+      expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
+    });
 
     it('volta à página anterior pelo cursor que a resposta indicou', async () => {
       p.store.recarregar();

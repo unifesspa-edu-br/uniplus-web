@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import {
-  AlertaNovaTentativaComponent,
   AlertComponent,
   DrawerComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
+  type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -19,8 +19,8 @@ import { PrecedenciaForm, mensagemDaSucessora } from './precedencia-form';
     ReactiveFormsModule,
     AlertComponent,
     DrawerComponent,
+    FalhaDeLeituraDoCampoComponent,
     SpinnerComponent,
-    AlertaNovaTentativaComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './precedencia-formulario.component.html',
@@ -32,17 +32,15 @@ export class PrecedenciaFormularioComponent {
   readonly modo = input.required<'criar' | 'editar'>();
   readonly titulo = input.required<string>();
   readonly opcoesDeFase = input.required<readonly OpcaoDeFase[]>();
-  readonly falhaAoCarregarFases = input.required<boolean>();
-  readonly carregandoFases = input.required<boolean>();
+  /** Os nomes das fases: o aviso da página fica inerte atrás do drawer modal, e aqui está a nova tentativa. */
+  readonly leituraDasFases = input.required<LeituraAcompanhada>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  readonly faseDasFases = input.required<FaseDaNovaTentativa>();
   readonly salvando = input.required<boolean>();
   /** Há escrita em curso ou a lista ainda recarrega: salvar fica indisponível, sem perder o foco. */
   readonly gravando = input.required<boolean>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly recarregarFases = output<void>();
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
   protected aoClicarEmSalvar(evento: Event): void {

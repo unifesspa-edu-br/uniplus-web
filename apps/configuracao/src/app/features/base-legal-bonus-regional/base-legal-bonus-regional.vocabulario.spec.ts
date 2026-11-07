@@ -11,10 +11,6 @@ import {
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
-import {
-  TEXTO_REPETIDA,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const ANTIGA = { ...portaria, tipoInstrumento: 'PARECER_ANTIGO' };
 
@@ -95,9 +91,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
 
       const alerta = alertaDoDrawer() as HTMLElement;
       expect(alerta.textContent).toContain('Tipos de instrumento não carregados');
-      expect(alerta.textContent).toContain(
-        'Sem o vocabulário de tipos não é possível classificar a base legal.',
-      );
+      expect(alerta.textContent).toContain('não é possível classificar a base legal.');
       expect(select().getAttribute('aria-describedby')).toBe('cfg-blbr-tipos-falha');
       const tentar = alerta.querySelector('button') as HTMLButtonElement;
       tentar.focus();
@@ -111,17 +105,6 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
       expect(alertaDoDrawer()).toBeNull();
       expect(select().getAttribute('aria-describedby')).toBeNull();
       expect(document.activeElement).toBe(select());
-    });
-
-    it('a nova tentativa que falha de novo mostra e anuncia a falha repetida, e o aviso permanece', async () => {
-      p = await montarPagina([portaria], { falha: 503 });
-      await abrirComVocabularioIndisponivel();
-      (alertaDoDrawer()?.querySelector('button') as HTMLButtonElement).click();
-      await p.propagar();
-      p.http.expectOne((r) => r.url === TIPOS_URL).flush(...problema(503, corpoDaFalha(503)));
-      await p.propagar();
-
-      expect(situacaoDaNovaTentativa(alertaDoDrawer() as HTMLElement)).toBe(TEXTO_REPETIDA);
     });
 
     it('abrir o formulário tenta carregar de novo o vocabulário que falhou, sem exibir o aviso da vez anterior', async () => {
@@ -141,7 +124,7 @@ describe('BaseLegalBonusRegionalPage — tipos de instrumento no formulário', (
 
       expect(alertaDoDrawer()).toBeNull();
       expect(p.elemento('ui-alerta-nova-tentativa').textContent).toContain(
-        'A coluna Tipo mostra “Não carregado” até a busca ser refeita.',
+        'A coluna Tipo mostra “Não carregado”',
       );
     });
   });

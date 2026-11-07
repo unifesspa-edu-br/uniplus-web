@@ -8,8 +8,10 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
@@ -28,7 +30,9 @@ import { SelecaoDoDia } from './selecao-do-dia';
   standalone: true,
   imports: [
     RouterLink,
-    AlertaNovaTentativaComponent,
+    AlertComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
     SpinnerComponent,
     TagComponent,
     CalendarioMensalComponent,
@@ -49,10 +53,12 @@ export class CalendarioDiasUteisDetalhePage {
   protected readonly buscaDoDia = computed(
     () => this.busca.buscas().get(this.edicao.form) ?? MUNICIPIO_BUSCA_VAZIA,
   );
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-calendario-detalhe-title'),
+    recusada: this.store.naoEncontrado,
   });
 
   constructor() {
@@ -68,9 +74,5 @@ export class CalendarioDiasUteisDetalhePage {
       this.store.calendarioId();
       untracked(() => this.selecao.limpar());
     });
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 }

@@ -10,10 +10,10 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CampusDto, TIPOS_LOCAL_OFERTA } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
+  type CatalogoAcompanhado,
   DrawerComponent,
   EnderecoGeoComponent,
-  type FaseDaNovaTentativa,
-  NovaTentativaDoCampoComponent,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -29,7 +29,7 @@ import { LocalOfertaForm } from './local-oferta-form';
     DrawerComponent,
     EnderecoGeoComponent,
     SpinnerComponent,
-    NovaTentativaDoCampoComponent,
+    FalhaDeLeituraDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './local-oferta-formulario.component.html',
@@ -45,13 +45,9 @@ export class LocalOfertaFormularioComponent {
   readonly salvando = input.required<boolean>();
   readonly gravando = input.required<boolean>();
   readonly campi = input.required<readonly CampusDto[]>();
-  readonly campiComErro = input.required<boolean>();
-  /** Os campi estão sendo lidos: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  readonly carregandoCampi = input.required<boolean>();
-  readonly faseDosCampi = input.required<FaseDaNovaTentativa>();
+  readonly leituraDosCampi = input.required<CatalogoAcompanhado>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly recarregarCampi = output<void>();
   protected readonly rotuloDoBotao = computed(() => {
     if (this.salvando()) return 'Salvando...';
     return this.modo() === 'criar' ? 'Criar local' : 'Salvar local';

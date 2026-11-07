@@ -11,17 +11,6 @@
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
-  @if (falhaAoCarregarFases()) {
-    <ui-alerta-nova-tentativa
-      titulo="Nomes das fases indisponíveis"
-      mensagem="Não foi possível consultar o cadastro de Fase Canônica agora, então as opções aparecem só com o código. O cadastro da aresta continua disponível."
-      [pendente]="carregandoFases()"
-      [fase]="faseDasFases()"
-      variante="warning"
-      (tentar)="recarregarFases.emit()"
-    />
-  }
-
   <form
     [formGroup]="form()"
     id="cfg-precedencia-fase-form"
@@ -34,6 +23,7 @@
         <h3 id="cfg-precedencia-par" class="form-section__title" tabindex="-1">Par de fases</h3>
         <div class="form-grid form-grid--1col">
           @if (modo() === 'criar') {
+            <ui-falha-de-leitura-do-campo [leitura]="leituraDasFases()" />
             <label class="field" [class.is-error]="erroDaAntecessora()">
               <span class="field__label is-required">Fase antecessora</span>
               <select

@@ -15,11 +15,6 @@ import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { comandoDeCriacao, regraDesabilitada } from './modalidade-form';
 import { ModalidadeFormPage } from './modalidade-form.page';
 import { ModalidadeFormStore } from './modalidade-form.store';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const URL = `${BASE}/api/configuracao/modalidades`;
@@ -435,6 +430,137 @@ describe('ModalidadeFormPage', () => {
     });
   });
 
+  describe('leitura da modalidade em edição', () => {
+    const problema = (status: number, title: string) =>
+      [
+        { type: 'about:blank', title, status, code: 'erro' },
+        { status, statusText: title },
+      ] as const;
+    const titulo = (): HTMLElement =>
+      fixture.nativeElement.querySelector('#cfg-modalidade-form-titulo');
+    const formulario = (): HTMLElement | null =>
+      fixture.nativeElement.querySelector('cfg-modalidade-formulario');
+    const tentar = (): HTMLButtonElement | null =>
+      fixture.nativeElement.querySelector('ui-falha-de-leitura button');
+    const atualizar = async (): Promise<void> => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+      TestBed.tick();
+    };
+
+    it('a falha da leitura esconde o formulário em branco, e a nova tentativa o preenche e leva o foco ao título', async () => {
+      usarRota(BONUS.id);
+      await montar();
+      controller.expectOne(`${URL}/${BONUS.id}`).flush(...problema(503, 'Serviço indisponível'));
+      await atualizar();
+
+      expect(formulario()).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('Não foi possível carregar a modalidade');
+      tentar()?.focus();
+      tentar()?.click();
+      fixture.detectChanges();
+      TestBed.tick();
+      controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
+      await atualizar();
+      await atualizar();
+
+      expect(formulario()).not.toBeNull();
+      expect(edicao.form.controls.codigo.value).toBe(BONUS.codigo);
+      expect(document.activeElement).toBe(titulo());
+    });
+
+    it('a modalidade inexistente não oferece nova tentativa nem formulário e manda voltar à lista', async () => {
+      usarRota(BONUS.id);
+      await montar();
+      controller
+        .expectOne(`${URL}/${BONUS.id}`)
+        .flush(...problema(404, 'Modalidade não encontrada'));
+      await atualizar();
+
+      expect(tentar()).toBeNull();
+      expect(formulario()).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('Não foi possível abrir a modalidade');
+      expect(fixture.nativeElement.textContent).toContain('Volte à lista');
+    });
+  });
+
+  describe('opções de referência lidas por páginas', () => {
+    const problema = (status: number, code: string) =>
+      [
+        { type: 'about:blank', title: 'Erro', status, code },
+        { status, statusText: 'Erro', headers: { 'Content-Type': 'application/problem+json' } },
+      ] as const;
+    const comCursor = (r: { url: string; params: { get(n: string): string | null } }) =>
+      r.url === URL && r.params.get('cursor') === 'pagina-2';
+    const aviso = (): HTMLElement | null =>
+      [...fixture.nativeElement.querySelectorAll('ui-falha-de-leitura')].find((a: HTMLElement) =>
+        a.textContent?.includes('modalidades de referência'),
+      ) ?? null;
+    const atualizar = async (): Promise<void> => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      fixture.detectChanges();
+      TestBed.tick();
+    };
+
+    /** Primeira página lida, com continuação; a segunda responde com o desfecho dado. */
+    async function naSegundaPagina(
+      desfecho: ReturnType<typeof problema>,
+    ): Promise<ModalidadeFormStore> {
+      fixture = TestBed.createComponent(ModalidadeFormPage);
+      edicao = fixture.debugElement.injector.get(EdicaoDaModalidade);
+      controller = TestBed.inject(HttpTestingController);
+      TestBed.tick();
+      controller
+        .expectOne((r) => r.url === URL && r.params.get('limit') === '100')
+        .flush([AC], { headers: { Link: `<${URL}?cursor=pagina-2&direction=next>; rel="next"` } });
+      await atualizar();
+      controller.expectOne(comCursor).flush(desfecho[0], desfecho[1]);
+      await atualizar();
+      return fixture.debugElement.injector.get(ModalidadeFormStore);
+    }
+
+    it('a falha na segunda página avisa o que falta nos campos, e a nova tentativa completa as opções', async () => {
+      const store = await naSegundaPagina(problema(500, 'uniplus.erro'));
+
+      expect(aviso()?.textContent).toContain('Os campos Origem, Destino, Par e Fallback');
+      expect(store.opcoes()).toEqual([]);
+
+      aviso()?.querySelector('button')?.click();
+      await atualizar();
+      controller.expectOne(comCursor).flush([LB_PPI]);
+      await atualizar();
+
+      expect(aviso()).toBeNull();
+      expect(store.opcoes().map((m) => m.codigo)).toEqual(['AC', 'LB_PPI']);
+    });
+
+    it('o cursor expirado no meio do laço recomeça da primeira página sem duplicar opção', async () => {
+      const store = await naSegundaPagina(problema(410, 'uniplus.cursor.expirado'));
+
+      controller.expectOne((r) => r.url === URL && !r.params.has('cursor')).flush([AC]);
+      await atualizar();
+
+      expect(store.opcoes().map((m) => m.codigo)).toEqual(['AC']);
+      expect(aviso()).toBeNull();
+    });
+
+    it('com a lista em falha nada é marcado sobre o código, e o repetido é acusado quando ela chega', async () => {
+      await naSegundaPagina(problema(500, 'uniplus.erro'));
+      const codigo = edicao.form.controls.codigo;
+      codigo.setValue('AC');
+
+      edicao.verificarCodigoDuplicado();
+      expect(codigo.hasError('duplicado')).toBe(false);
+
+      aviso()?.querySelector('button')?.click();
+      await atualizar();
+      controller.expectOne(comCursor).flush([LB_PPI]);
+      await atualizar();
+      edicao.verificarCodigoDuplicado();
+      expect(codigo.hasError('duplicado')).toBe(true);
+    });
+  });
+
   describe('regra de aplicabilidade', () => {
     it('lê a regra salva em prosa, pelos nomes do catálogo, sem códigos', async () => {
       await editar(BONUS);
@@ -446,7 +572,7 @@ describe('ModalidadeFormPage', () => {
       expect(texto).not.toContain('"INDIGENA"');
     });
 
-    it('sem o catálogo, "Tentar novamente" fica indisponível, mantém o foco e leva à seção quando dá certo', async () => {
+    it('sem o catálogo, a nova tentativa que dá certo leva o foco à seção da regra', async () => {
       usarRota(BONUS.id);
       await montar();
       controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
@@ -462,8 +588,6 @@ describe('ModalidadeFormPage', () => {
       fixture.detectChanges();
       TestBed.tick();
 
-      expect(tentar().getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentar());
       controller.expectOne(URL_CATALOGO).flush([...CATALOGO]);
       await new Promise((resolve) => setTimeout(resolve, 0));
       fixture.detectChanges();
@@ -472,30 +596,6 @@ describe('ModalidadeFormPage', () => {
 
       expect(textoDaRegra()).not.toContain('Catálogo de fatos não carregado');
       expect(document.activeElement).toBe(fixture.nativeElement.querySelector('#cfg-mod-regra'));
-    });
-
-    it('mostra e anuncia cada nova tentativa do catálogo', async () => {
-      usarRota(BONUS.id);
-      await montar();
-      controller.expectOne(`${URL}/${BONUS.id}`).flush(BONUS);
-      TestBed.tick();
-      const falhar = async (): Promise<void> => {
-        controller.expectOne(URL_CATALOGO).flush(null, { status: 500, statusText: 'Server Error' });
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        fixture.detectChanges();
-        TestBed.tick();
-      };
-      const anuncio = (): string => situacaoDaNovaTentativa(fixture.nativeElement);
-      await falhar();
-
-      fixture.nativeElement
-        .querySelector('section[aria-labelledby="cfg-mod-regra"] button')
-        .click();
-      fixture.detectChanges();
-      TestBed.tick();
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      await falhar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
     });
 
     it('lê a regra sem condição como todos os candidatos', async () => {

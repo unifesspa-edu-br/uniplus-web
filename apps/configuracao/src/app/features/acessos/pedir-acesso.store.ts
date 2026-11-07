@@ -10,8 +10,10 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { AUTORIZACAO_BASE_PATH, type PerfilParaPedidoDto } from '@uniplus/shared-data/autorizacao';
+import { acompanharLeitura, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
+import { desfechoDaLeitura } from './desfecho-da-leitura';
 import { notificarFalhasDeLeitura } from './falha-de-servidor';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
+import { ID_DO_PERFIL } from './pedir-acesso-campo';
 
 @Injectable()
 export class PedirAcessoStore {
@@ -31,18 +33,16 @@ export class PedirAcessoStore {
     };
   });
   readonly perfis = signal<readonly PerfilParaPedidoDto[]>([]);
-  readonly carregandoPerfis = this.consulta.isLoading;
-  readonly perfisIndisponiveis = computed(() => {
-    const problema = this.consulta.problem();
-    return problema
-      ? textoDaRecusa(this.problemas.resolve(problema))
-      : this.consulta.error()
-        ? FALHA_INESPERADA
-        : null;
+  private readonly desfecho = desfechoDaLeitura([this.consulta], this.problemas);
+  readonly recusaDosPerfis = this.desfecho.recusa;
+  readonly leituraDosPerfis: LeituraAcompanhada = acompanharLeitura({
+    assunto: 'perfis',
+    falha: this.desfecho.falha,
+    pendente: this.consulta.isLoading,
+    recusada: computed(() => this.desfecho.recusa() !== null),
+    recarregar: () => this.consulta.reload(),
+    destino: () => document.getElementById(ID_DO_PERFIL),
   });
-  recarregarPerfis(): void {
-    this.consulta.reload();
-  }
 
   constructor() {
     notificarFalhasDeLeitura(this.problemas, this.notificacoes, [this.consulta.problem]);

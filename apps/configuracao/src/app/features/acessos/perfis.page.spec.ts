@@ -1,13 +1,9 @@
-import {
-  HttpErrorResponse,
-  HttpResponse,
-  provideHttpClient,
-  withInterceptors,
-} from '@angular/common/http';
+import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { map } from 'rxjs';
 import { AUTORIZACAO_BASE_PATH } from '@uniplus/shared-data/autorizacao';
 import { TestBed } from '@angular/core/testing';
-import { Subject, of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
+import { Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { apiFailure } from '@uniplus/shared-core/http';
@@ -17,10 +13,6 @@ import { PerfisApi, type PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { PerfisPage } from './perfis.page';
 import { ok, recusa } from './testes';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -160,6 +152,7 @@ describe('PerfisPage', async () => {
   async function abrirComListagem() {
     TestBed.configureTestingModule({
       providers: [
+        provideRouter([]),
         { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
         provideHttpClient(
           withInterceptors([
@@ -676,11 +669,7 @@ describe('PerfisPage', async () => {
 
     it('com a mudança de situação pendente, "Tentar novamente" fica indisponível e não recarrega', async () => {
       vi.resetAllMocks();
-      api.listar.mockReturnValue(
-        throwError(
-          () => new HttpErrorResponse({ status: 500, error: { status: 500, title: 'x' } }),
-        ),
-      );
+      api.listar.mockReturnValue(of(recusa('uniplus.erro_interno', 500, 'Erro interno')));
       api.catalogoDePermissoes.mockReturnValue(of(ok(CATALOGO)));
       const { fixture, host, pagina } = await abrirComListagem();
       const resposta = new Subject<ReturnType<typeof ok<void>>>();
@@ -816,6 +805,29 @@ describe('PerfisPage', async () => {
       expect(api.criar).toHaveBeenCalledTimes(1);
     });
 
+    it('a recusa da lista por falta de permissão não oferece nova tentativa', async () => {
+      vi.resetAllMocks();
+      api.listar.mockReturnValue(of(recusa('uniplus.x', 403, 'Sem permissão para os perfis')));
+      api.catalogoDePermissoes.mockReturnValue(of(ok(CATALOGO)));
+      const { host } = await abrirComListagem();
+
+      expect(host.textContent).toContain('Sem permissão para os perfis');
+      expect(host.textContent).not.toContain('Tentar novamente');
+    });
+
+    it('a recusa do catálogo por falta de permissão não oferece nova tentativa', async () => {
+      const { fixture, host, pagina } = await abrir();
+      api.catalogoDePermissoes.mockReset();
+      api.catalogoDePermissoes.mockReturnValue(
+        of(recusa('uniplus.x', 403, 'Sem permissão para o catálogo')),
+      );
+      pagina.abrirCriacao();
+      await assentar(fixture);
+
+      expect(host.textContent).toContain('Sem permissão para o catálogo');
+      expect(host.textContent).not.toContain('Tentar novamente');
+    });
+
     describe('catálogo de permissões indisponível', () => {
       async function abrirComCatalogoIndisponivel() {
         const aberta = await abrir();
@@ -859,7 +871,6 @@ describe('PerfisPage', async () => {
         const consultas = api.catalogoDePermissoes.mock.calls.length;
 
         expect(tentar.getAttribute('aria-disabled')).toBe('true');
-        expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
         tentar.click();
         await new Promise((resolver) => setTimeout(resolver));
         fixture.detectChanges();

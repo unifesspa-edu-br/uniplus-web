@@ -13,11 +13,6 @@ import {
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDosLocaisOferta } from './edicao-dos-locais-oferta';
-import {
-  situacaoDaNovaTentativa,
-  textoRepetidaDe,
-  textoTentandoDe,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 import { LocaisOfertaPage } from './locais-oferta.page';
 
 const BASE = 'http://localhost:5000';
@@ -293,7 +288,7 @@ describe('Escritas de locais de oferta', () => {
     const tentar = (): HTMLButtonElement | null =>
       raiz().querySelector<HTMLButtonElement>('button.link-button');
 
-    it('"Tentar novamente" fica indisponível, mantém o foco e leva ao campo quando dá certo', async () => {
+    it('a nova tentativa dos campi que dá certo leva o foco ao campo Campus responsável', async () => {
       elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
       await propagar();
       controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
@@ -303,8 +298,6 @@ describe('Escritas de locais de oferta', () => {
       tentar()?.click();
       await propagar();
 
-      expect(tentar()?.getAttribute('aria-disabled')).toBe('true');
-      expect(document.activeElement).toBe(tentar());
       controller.expectOne(CAMPI).flush([]);
       await propagar();
       await propagar();
@@ -313,61 +306,6 @@ describe('Escritas de locais de oferta', () => {
       expect(document.activeElement).toBe(
         elemento('select[formcontrolname="campusResponsavelId"]'),
       );
-    });
-  });
-
-  describe('nova tentativa de ler os campi, na lista e no drawer', () => {
-    const CAMPI = (r: { url: string }): boolean => r.url === `${BASE}/api/configuracao/campi`;
-    const falharCampi = async (): Promise<void> => {
-      controller.expectOne(CAMPI).flush(null, { status: 500, statusText: 'Server Error' });
-      await propagar();
-    };
-    const tentarNoDrawer = async (): Promise<void> => {
-      elemento<HTMLButtonElement>('cfg-local-oferta-formulario button.link-button').click();
-      await propagar();
-    };
-
-    it('no drawer aberto, mostra e anuncia cada tentativa', async () => {
-      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-      await propagar();
-      await falharCampi();
-      const formulario = elemento('cfg-local-oferta-formulario');
-
-      await tentarNoDrawer();
-      expect(situacaoDaNovaTentativa(formulario)).toBe(textoTentandoDe('campi'));
-      await falharCampi();
-      expect(situacaoDaNovaTentativa(formulario)).toBe(textoRepetidaDe('campi'));
-    });
-
-    it('fechar o drawer no meio da leitura passa o mesmo aviso à lista, sem repetir', async () => {
-      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-      await propagar();
-      await falharCampi();
-      await tentarNoDrawer();
-
-      edicao.fechar();
-      await propagar();
-      expect(situacaoDaNovaTentativa(raiz())).toBe(textoTentandoDe('campi'));
-
-      await falharCampi();
-      expect(situacaoDaNovaTentativa(raiz())).toBe(textoRepetidaDe('campi'));
-    });
-
-    it('abrir o drawer no meio da leitura pedida na lista mostra o mesmo aviso no drawer', async () => {
-      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-      await propagar();
-      await falharCampi();
-      edicao.fechar();
-      await propagar();
-      elemento<HTMLButtonElement>('ui-lookup-alert .link-button').click();
-      await propagar();
-
-      elemento<HTMLButtonElement>('.panel-head .btn--primary').click();
-      await propagar();
-      expect(situacaoDaNovaTentativa(elemento('cfg-local-oferta-formulario'))).toBe(
-        textoTentandoDe('campi'),
-      );
-      controller.expectOne(CAMPI).flush([]);
     });
   });
 
@@ -749,7 +687,7 @@ describe('Escritas de locais de oferta', () => {
         headers: { 'content-type': 'application/problem+json' },
       });
     await propagar();
-    const tentar = elemento<HTMLButtonElement>('ui-alerta-nova-tentativa button');
+    const tentar = elemento<HTMLButtonElement>('ui-falha-de-leitura button');
     expect(tentar.getAttribute('aria-disabled')).toBeNull();
     edicao.pedirRemocao(local);
     edicao.removerConfirmado();

@@ -29,7 +29,8 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { DEFAULT_PAGE_SIZE } from '@uniplus/shared-ui/components';
 import { LeituraDoDetalhe } from '../../shared/detalhe-do-catalogo';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
+import { recusaDe } from '../../shared/recusa-da-leitura';
 import { filtrosDaUrl, periodoInvalido } from './filtros-das-decisoes';
 
 @Injectable()
@@ -58,22 +59,38 @@ export class DecisoesDaProtecaoStore {
   private readonly navegacao = navegacaoPorCursor(this.recursoDaLista, this.pagina);
   private readonly leituraDoItem = new LeituraDoDetalhe();
   readonly itens = computed(() => (periodoInvalido(this.filtros()) ? [] : this.navegacao.itens()));
-  readonly carregando = this.recursoDaLista.isLoading;
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: computed(() => this.lista()?.problem() ?? null),
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.recursoDaLista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly mensagemDeErro = computed(() => {
-    if (periodoInvalido(this.filtros())) return null;
+    if (periodoInvalido(this.filtros()) || this.recuperandoDeCursorObsoleto()) return null;
     const problema = this.lista()?.problem();
     return problema
       ? this.problemI18n.resolve(problema).title
       : this.lista()?.error()
-        ? 'Não foi possível carregar a lista. Tente novamente.'
+        ? 'Erro inesperado ao carregar as decisões.'
         : null;
   });
+  /** A lista recusada em definitivo (sem permissão): repetir a leitura não muda a resposta. */
+  readonly recusa = computed(() => recusaDe(this.lista()?.problem(), this.mensagemDeErro() ?? ''));
+  /** A falha que uma nova tentativa pode resolver; a recusa tem aviso próprio. */
+  readonly falhaDaLista = computed(() => (this.recusa() ? null : this.mensagemDeErro()));
   readonly historico = computed(() => this.leituraDoItem.detalhe()?.atos ?? null);
   readonly carregandoHistorico = this.leituraDoItem.carregando;
   readonly erroDoHistorico = this.leituraDoItem.erro;
   readonly itemInexistente = this.leituraDoItem.naoEncontrado;
+  /** A falha do histórico que uma nova tentativa pode resolver; o item inexistente tem aviso próprio. */
+  readonly falhaDoHistorico = computed(() =>
+    this.itemInexistente() ? null : this.erroDoHistorico(),
+  );
 
   constructor() {
     effect(() => {
@@ -107,8 +124,7 @@ export class DecisoesDaProtecaoStore {
   carregar(): boolean {
     const lista = this.lista();
     if (periodoInvalido(this.filtros()) || !lista) return false;
-    lista.reload();
-    return true;
+    return lista.reload();
   }
 
   proxima(): void {
@@ -121,7 +137,7 @@ export class DecisoesDaProtecaoStore {
     this.leituraDoItem.ler(decisao.cadastro as CadastroDoCatalogo, decisao.itemId);
   }
 
-  /** Repete a leitura do histórico que falhou sem apagar o alerta, para o botão acionado seguir na tela. */
+  /** Repete a leitura do histórico que falhou. */
   recarregarHistorico(): void {
     this.leituraDoItem.recarregar();
   }

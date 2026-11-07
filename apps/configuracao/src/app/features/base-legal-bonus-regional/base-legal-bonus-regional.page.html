@@ -9,26 +9,13 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar as bases legais"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-} @if (tipos.falhou()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura titulo="Não foi possível carregar as bases legais" [leitura]="leitura" />
+<ui-falha-de-leitura
   variante="warning"
   titulo="Tipos de instrumento não carregados"
-  [mensagem]="tipos.mensagemNaPagina()"
-  [pendente]="tipos.pendente()"
-  [fase]="tipos.novaTentativa.fase()"
   idBotao="cfg-blbr-tipos-tentar-pagina"
-  (tentar)="tipos.tentarDeNovo()"
+  [leitura]="tipos.leitura"
 />
-}
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-base-legal-bonus-regional-lista
@@ -60,11 +47,9 @@
   [municipios]="municipios.campo()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (tentarTipos)="tipos.tentarDeNovo()"
   (buscarMunicipio)="municipios.buscar($event)"
   (adicionarMunicipio)="municipios.adicionar($event)"
   (removerMunicipio)="municipios.remover($event)"
-  (tentarMunicipios)="municipios.buscarDeNovo()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover base legal"

@@ -11,11 +11,6 @@ import {
   sucesso,
   urlDoFato,
 } from './fatos-candidato.testing';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const perfil = {
   ...corRaca,
@@ -126,7 +121,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     expect(p.erros).not.toHaveBeenCalled();
   });
 
-  it('sem o catálogo de fatos, as regras avisam e oferecem tentar de novo', async () => {
+  it('sem o catálogo de fatos, as regras avisam e, na nova tentativa que dá certo, o foco vai ao título das regras', async () => {
     p = await montarPagina([perfil]);
     await p.acionar(p.editar(perfil));
     p.http.expectOne(urlDoFato(perfil)).flush(structuredClone(perfil));
@@ -136,35 +131,12 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     await p.propagar();
 
     expect(p.texto()).toContain('Catálogo de fatos não carregado');
-    const tentar = p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement;
     await acao('Tentar novamente');
-    expect(tentar.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(tentar);
     p.atenderApoios([quilombola]);
     await p.propagar();
     await p.propagar();
     expect(p.texto()).not.toContain('Catálogo de fatos não carregado');
     expect(document.activeElement).toBe(p.elemento('#cfg-fato-regras'));
-  });
-
-  it('mostra e anuncia cada nova tentativa de ler o catálogo', async () => {
-    p = await montarPagina([perfil]);
-    await p.acionar(p.editar(perfil));
-    p.http.expectOne(urlDoFato(perfil)).flush(structuredClone(perfil));
-    const falhar = async (): Promise<void> => {
-      p.http
-        .expectOne((r) => r.url === CATALOGO)
-        .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
-      await p.propagar();
-    };
-    const anuncio = (): string =>
-      situacaoDaNovaTentativa(p.elemento('section[aria-labelledby="cfg-fato-regras"]'));
-    await falhar();
-
-    await acao('Tentar novamente');
-    expect(anuncio()).toBe(TEXTO_TENTANDO);
-    await falhar();
-    expect(anuncio()).toBe(TEXTO_REPETIDA);
   });
 
   it('o erro da condição não passa para outra depois que a regra é editada', async () => {

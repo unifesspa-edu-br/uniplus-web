@@ -347,4 +347,32 @@ test.describe('Calendário de dias úteis — escritas', () => {
     await expect(page.getByRole('button', { name: /^7 de setembro de 2026/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Detalhes', level: 1 })).toBeFocused();
   });
+
+  test('calendário inexistente (404) mostra a recusa, sem "Tentar novamente", e leva à lista', async ({
+    page,
+  }) => {
+    // A lista, aberta pelo link de saída, responde vazia; o detalhe, registrado depois, responde 404.
+    await mockApi(page, []);
+    await page.route(/\/api\/configuracao\/calendarios-dias-uteis\/[^/?]+$/, async (route) => {
+      if (route.request().method() === 'OPTIONS') {
+        await route.fulfill({ status: 204, headers: CORS_HEADERS });
+        return;
+      }
+      await responder(
+        route,
+        404,
+        problema(
+          404,
+          'uniplus.configuracao.calendario.nao_encontrado',
+          'Calendário não encontrado',
+        ),
+      );
+    });
+    await page.goto(`/calendario-dias-uteis/${CALENDARIO_ID}`);
+
+    await expect(page.getByText('Calendário não encontrado').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tentar novamente' })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Ver os calendários' }).click();
+    await expect(page).toHaveURL(/\/calendario-dias-uteis$/);
+  });
 });

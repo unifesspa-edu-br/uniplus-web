@@ -20,16 +20,11 @@
     </ui-alert>
   }
 
-  @if (mensagemDeErro(); as erro) {
-    <ui-alerta-nova-tentativa
-      titulo="Não foi possível carregar as ofertas"
-      [mensagem]="erro"
-      [pendente]="carregando()"
-      [fase]="fase()"
-      idBotao="cfg-ofertas-tentar"
-      (tentar)="recarregar.emit()"
-    />
-  }
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar as ofertas"
+    idBotao="cfg-ofertas-tentar"
+    [leitura]="leitura()"
+  />
 
   @if (carregando()) {
     <p class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando ofertas…</p>

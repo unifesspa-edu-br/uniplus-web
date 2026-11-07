@@ -23,7 +23,7 @@ import {
   TermoConsentimentoResumoDto,
 } from '@uniplus/shared-data/configuracao';
 import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 @Injectable()
 export class TermosConsentimentoStore {
@@ -44,12 +44,19 @@ export class TermosConsentimentoStore {
     context: withVendorMime('termo-consentimento', 1),
   }));
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
-  readonly loading = this.lista.isLoading;
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly loading = computed(() => this.lista.isLoading() || this.recuperandoDeCursorObsoleto());
   readonly termos = this.navegacao.itens;
   readonly prevCursor = this.navegacao.anterior;
   readonly nextCursor = this.navegacao.proximo;
   readonly temFiltroAtivo = computed(() => this.filtro().length > 0);
   readonly errorMessage = computed(() => {
+    if (this.recuperandoDeCursorObsoleto()) return null;
     const problem = this.lista.problem();
     return problem
       ? this.problemI18n.resolve(problem).title

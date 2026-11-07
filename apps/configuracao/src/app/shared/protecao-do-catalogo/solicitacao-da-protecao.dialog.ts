@@ -1,7 +1,23 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, model, output, signal, untracked } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  untracked,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
-import { deveRotacionarIdempotencyKey, idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import {
+  deveRotacionarIdempotencyKey,
+  idempotencyKey,
+  withIdempotencyKey,
+} from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ProtecaoDoCatalogoApi,
@@ -36,11 +52,13 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
       [dismissible]="!enviando()"
     >
       @if (erro()) {
-        <ui-alert variant="danger" heading="Não foi possível enviar a solicitação">{{ erro() }}</ui-alert>
+        <ui-alert variant="danger" heading="Não foi possível enviar a solicitação">{{
+          erro()
+        }}</ui-alert>
       }
       <p id="cfg-solicitacao-descricao">
-        Os itens marcados vão para a proteção de dados, que aprova, recomenda ajuste ou reprova cada um. O
-        item que não for aprovado não pode ser usado na configuração de um processo seletivo.
+        Os itens marcados vão para a proteção de dados, que aprova, recomenda ajuste ou reprova cada
+        um. O item que não for aprovado não pode ser usado na configuração de um processo seletivo.
       </p>
       <label class="checkbox cfg-marcar-todos-cartao">
         <input
@@ -56,7 +74,9 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
       </label>
       <div class="table-responsive">
         <table aria-describedby="cfg-solicitacao-descricao">
-          <caption class="sr-only">Itens que vão na solicitação, com a sensibilidade de cada um</caption>
+          <caption class="sr-only">
+            Itens que vão na solicitação, com a sensibilidade de cada um
+          </caption>
           <thead>
             <tr>
               <th scope="col" class="cfg-selecao">
@@ -113,10 +133,20 @@ const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${i
         </table>
       </div>
       <ng-container uiDialogFooter>
-        <button type="button" class="btn btn--tertiary btn--rect" [disabled]="enviando()" (click)="visible.set(false)">
+        <button
+          type="button"
+          class="btn btn--tertiary btn--rect"
+          [disabled]="enviando()"
+          (click)="visible.set(false)"
+        >
           Cancelar
         </button>
-        <button type="button" class="btn btn--primary" [disabled]="enviando() || marcados().length === 0" (click)="enviar()">
+        <button
+          type="button"
+          class="btn btn--primary"
+          [disabled]="enviando() || marcados().length === 0"
+          (click)="enviar()"
+        >
           @if (enviando()) {
             <ui-spinner spinnerSize="sm" />
           }
@@ -144,11 +174,19 @@ export class SolicitacaoDaProtecaoDialogComponent {
 
   /** As chaves dos itens que a pessoa deixou marcados; a cada abertura todos voltam marcados. */
   private readonly chavesMarcadas = signal<ReadonlySet<string>>(new Set());
-  protected readonly marcados = computed(() => this.pendentes().filter((item) => this.chavesMarcadas().has(chaveDe(item))));
+  protected readonly marcados = computed(() =>
+    this.pendentes().filter((item) => this.chavesMarcadas().has(chaveDe(item))),
+  );
   /** A coluna Cadastro só distingue os itens quando a solicitação mistura tipos de documento e fatos. */
-  protected readonly variosCadastros = computed(() => new Set(this.pendentes().map((item) => item.tipo)).size > 1);
-  protected readonly todosMarcados = computed(() => this.pendentes().length > 0 && this.marcados().length === this.pendentes().length);
-  protected readonly algunsMarcados = computed(() => this.marcados().length > 0 && !this.todosMarcados());
+  protected readonly variosCadastros = computed(
+    () => new Set(this.pendentes().map((item) => item.tipo)).size > 1,
+  );
+  protected readonly todosMarcados = computed(
+    () => this.pendentes().length > 0 && this.marcados().length === this.pendentes().length,
+  );
+  protected readonly algunsMarcados = computed(
+    () => this.marcados().length > 0 && !this.todosMarcados(),
+  );
   protected readonly rotuloDoEnvio = computed(() => {
     const total = this.marcados().length;
     return total === 1 ? 'Enviar 1 item' : `Enviar ${total} itens`;
@@ -208,7 +246,10 @@ export class SolicitacaoDaProtecaoDialogComponent {
   }
 
   protected enviar(): void {
-    const itens = this.marcados().map((item) => ({ cadastro: item.tipo as CadastroDoCatalogo, id: item.id }));
+    const itens = this.marcados().map((item) => ({
+      cadastro: item.tipo as CadastroDoCatalogo,
+      id: item.id,
+    }));
     if (this.enviando() || itens.length === 0) return;
     this.enviando.set(true);
     this.erro.set(null);
@@ -220,25 +261,36 @@ export class SolicitacaoDaProtecaoDialogComponent {
       .subscribe((resultado) => {
         this.enviando.set(false);
         if (resultado.ok) {
-          const { tiposDeDocumento, fatos } = resultado.data;
-          this.notifications.success('Solicitação enviada', `${tiposDeDocumento + fatos} item(ns) aguardam a proteção de dados.`);
-          this.visible.set(false);
-          this.enviada.emit(resultado.data);
+          this.concluirEnvio(resultado.data);
           return;
         }
         if (deveRotacionarIdempotencyKey(resultado.problem)) this.chave = idempotencyKey.create();
         const titulo = this.problemI18n.resolve(resultado.problem).title;
         this.marcarRecusados(resultado.problem, enviados);
         this.erro.set(titulo);
-        if (resultado.problem.status >= 500) this.notifications.errorFromProblem(resultado.problem, { title: titulo });
+        if (resultado.problem.status >= 500)
+          this.notifications.errorFromProblem(resultado.problem, { title: titulo });
       });
+  }
+
+  private concluirEnvio(data: SolicitacaoDaProtecaoDto): void {
+    const { tiposDeDocumento, fatos } = data;
+    this.notifications.success(
+      'Solicitação enviada',
+      `${tiposDeDocumento + fatos} item(ns) aguardam a proteção de dados.`,
+    );
+    this.visible.set(false);
+    this.enviada.emit(data);
   }
 
   /**
    * A API aponta o item recusado por `itens[i].id`, com `i` a posição dele na solicitação enviada. O item
    * recusado fica sinalizado na linha e sai da marcação, para a pessoa reenviar os demais.
    */
-  private marcarRecusados(problem: ProblemDetails, enviados: readonly ItemDaProtecaoDoCatalogoDto[]): void {
+  private marcarRecusados(
+    problem: ProblemDetails,
+    enviados: readonly ItemDaProtecaoDoCatalogoDto[],
+  ): void {
     const recusas = new Map<string, string>();
     for (const erro of problem.errors ?? []) {
       const indice = /^itens\[(\d+)\]\.id$/u.exec(erro.field)?.[1];
@@ -249,7 +301,9 @@ export class SolicitacaoDaProtecaoDialogComponent {
     this.recusas.set(recusas);
     // O corpo mudou: a mesma chave com outro corpo seria recusada.
     this.chave = idempotencyKey.create();
-    this.chavesMarcadas.update((chaves) => new Set([...chaves].filter((chave) => !recusas.has(chave))));
+    this.chavesMarcadas.update(
+      (chaves) => new Set([...chaves].filter((chave) => !recusas.has(chave))),
+    );
     this.desatualizada.emit();
   }
 }

@@ -215,24 +215,11 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
         await abrirComFalha(404);
 
         await p.acionar(tentar());
-        expect(tentar().getAttribute('aria-disabled')).toBe('true');
         p.http.expectOne((r) => r.url === CATALOGO).flush([quilombola]);
         await p.propagar();
 
         expect(p.botaoPeloTexto('Tentar novamente', p.detalhe())).toBeUndefined();
         expect(document.activeElement).toBe(p.elemento('#cfg-fato-detalhe-regras'));
-      });
-
-      it('uma nova falha mantém o aviso e o foco no botão', async () => {
-        await abrirComFalha(404);
-
-        await p.acionar(tentar());
-        p.http
-          .expectOne((r) => r.url === CATALOGO)
-          .flush(...problema(404, { code: 'uniplus.internal.unexpected' }));
-        await p.propagar();
-
-        expect(document.activeElement).toBe(tentar());
       });
     });
 

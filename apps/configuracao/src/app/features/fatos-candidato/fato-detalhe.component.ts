@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import {
-  AlertaNovaTentativaComponent,
   DrawerComponent,
-  type FaseDaNovaTentativa,
+  FalhaDeLeituraComponent,
+  type LeituraAcompanhada,
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
@@ -36,7 +36,7 @@ import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
     HistoricoDaProtecaoComponent,
     SituacaoDaAprovacaoComponent,
     TagComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-detalhe.component.html',
@@ -49,23 +49,12 @@ export class FatoDetalheComponent {
   readonly regras = input.required<readonly string[]>();
   /** A lista está sendo lida ou gravada: nada se abre a partir de uma lista que vai mudar. */
   readonly indisponivel = input.required<boolean>();
-  /** O catálogo que nomeia os fatos das regras falhou ao carregar. */
-  readonly catalogoFalhou = input.required<boolean>();
-  readonly catalogoPendente = input.required<boolean>();
-  readonly mensagemDoCatalogo = input.required<string | null>();
-  readonly faseDoCatalogo = input.required<FaseDaNovaTentativa>();
-  readonly tentarCatalogo = output<void>();
+  /** A leitura do catálogo que nomeia os fatos das regras. */
+  readonly leituraDoCatalogo = input.required<LeituraAcompanhada>();
   readonly editar = output<FatoCandidatoDto>();
   readonly aceitar = output<FatoCandidatoDto>();
 
-  protected readonly mensagemDoAlerta = computed(() =>
-    `${this.mensagemDoCatalogo() ?? ''} As regras aparecem com os códigos dos fatos.`.trim(),
-  );
   protected readonly idDasRegras = ID_DAS_REGRAS_DO_DETALHE;
-  protected tentarCatalogoNovamente(): void {
-    this.tentarCatalogo.emit();
-  }
-
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly permissaoDeConsultar = PERMISSAO.configuracao.fatosCandidatoConsultar;
   protected readonly origens = ORIGENS;

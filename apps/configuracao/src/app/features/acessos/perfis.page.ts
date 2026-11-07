@@ -1,14 +1,17 @@
+import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
   AlertComponent,
+  destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista } from '../../shared/foco';
 import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import { ID_DAS_PERMISSOES, PerfilFormularioComponent } from './perfil-formulario.component';
 import { PerfisListaComponent } from './perfis-lista.component';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { PerfisStore } from './perfis.store';
 
 const ID_DO_TITULO = 'cfg-perfis-titulo';
@@ -18,10 +21,12 @@ const ID_DO_CADASTRO = 'cfg-perfis-novo';
   selector: 'cfg-perfis-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    RouterLink,
     AlertComponent,
+    FalhaDeLeituraComponent,
     PerfisListaComponent,
     PerfilFormularioComponent,
+    RecusaDaLeituraComponent,
   ],
   providers: [PerfisStore, EdicaoDosPerfis],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,7 +37,6 @@ export class PerfisPage {
   protected readonly store = inject(PerfisStore);
   protected readonly edicao = inject(EdicaoDosPerfis);
   protected readonly idDoCadastro = ID_DO_CADASTRO;
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
   protected readonly permissoesMarcadas = computed(() =>
     this.store
       .catalogo()
@@ -51,27 +55,27 @@ export class PerfisPage {
     idDoTitulo: ID_DO_TITULO,
     idDoCadastro: ID_DO_CADASTRO,
   });
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'perfis',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.falha,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recusada: computed(() => this.store.recusa() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
-
-  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
+  protected readonly leituraDoCatalogo = acompanharLeitura({
     assunto: 'permissões',
+    falha: this.store.falhaDoCatalogo,
     pendente: this.store.carregandoCatalogo,
-    falhou: this.store.erroDoCatalogo,
-    destino: () => document.getElementById(ID_DAS_PERMISSOES),
+    recusada: computed(() => this.store.recusaDoCatalogo() !== null),
+    recarregar: () => this.store.tentarCatalogoNovamente(),
+    destino: () =>
+      destinoAcessivel(
+        document.getElementById(ID_DAS_PERMISSOES),
+        document.getElementById(ID_DO_TITULO),
+      ),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.recarregar());
-  }
-
-  protected tentarCatalogoNovamente(): void {
-    this.novaTentativaDoCatalogo.executar(() => this.store.carregarCatalogo());
-  }
 
   protected criar(): void {
     this.foco.registrar(null);

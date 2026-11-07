@@ -12,14 +12,12 @@ import {
   CursorPagina,
   ProblemI18nService,
   cursorToString,
-  ehCursorDePaginacaoExpirado,
   useApiResource,
-  useCursorObsoletoRecovery,
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PUBLICACOES_BASE_PATH, TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 /**
  * Janela de cada página (cursor pagination, ADR-0026), no teto que a API aceita. Acima dele a
@@ -56,7 +54,6 @@ export class TiposAtoStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly atos = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -78,19 +75,20 @@ export class TiposAtoStore {
    * cursor e avisa o operador, em vez de deixar a tela presa numa página que não existe mais,
    * cujo "Tentar novamente" repetiria o mesmo cursor indefinidamente.
    */
-  private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
     problem: this.lista.problem,
     pagina: this.pagina,
-    reiniciarPagina: () => this.pagina.set(undefined),
-    aoRecuperar: (problem) => {
-      this.notifications.info(
-        problem && ehCursorDePaginacaoExpirado(problem)
-          ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
-          : 'A paginação foi reiniciada porque a consulta mudou.',
-        'Recarregamos a listagem do começo.',
-      );
-    },
+    notificacoes: this.notifications,
   });
+
+  /**
+   * Inclui o intervalo entre a resposta de cursor recusado e a nova leitura sem cursor: nele a
+   * listagem já não está em falha (o aviso é a notificação) e a nova leitura ainda não começou,
+   * e a tentativa pedida pela pessoa não pode ser dada como concluída.
+   */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
 
   readonly mensagemDeErro = computed<string | null>(() => {
     // A recuperação de cursor obsoleto avisa por notificação; um alerta de "não foi possível

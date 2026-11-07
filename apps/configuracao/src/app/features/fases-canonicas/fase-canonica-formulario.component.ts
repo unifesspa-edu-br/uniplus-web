@@ -7,9 +7,9 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   AlertComponent,
+  type CatalogoAcompanhado,
   DrawerComponent,
-  type FaseDaNovaTentativa,
-  NovaTentativaDoCampoComponent,
+  FalhaDeLeituraDoCampoComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -24,7 +24,7 @@ import { CODIGO_FASE_SOLICITACAO_ISENCAO, FaseForm } from './fase-canonica-form'
     AlertComponent,
     DrawerComponent,
     SpinnerComponent,
-    NovaTentativaDoCampoComponent,
+    FalhaDeLeituraDoCampoComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fase-canonica-formulario.component.html',
@@ -36,10 +36,7 @@ export class FaseCanonicaFormularioComponent {
   readonly salvando = input.required<boolean>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
-  readonly faseDasUnidades = input.required<FaseDaNovaTentativa>();
-  readonly erroUnidades = input.required<boolean>();
-  /** As unidades estão sendo lidas: o "Tentar novamente" fica indisponível, sem perder o foco. */
-  readonly carregandoUnidades = input.required<boolean>();
+  readonly leituraDasUnidades = input.required<CatalogoAcompanhado>();
   readonly unidadesParaEscolha =
     input.required<readonly { id: string; rotulo: string; removida: boolean }[]>();
   readonly showGrupoAgrupa = input.required<boolean>();
@@ -47,7 +44,6 @@ export class FaseCanonicaFormularioComponent {
   readonly ehFaseDeIsencao = input.required<boolean>();
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
-  readonly recarregarUnidades = output<void>();
   protected readonly origensData = ORIGENS_DATA_FASE;
   protected readonly codigoSolicitacaoIsencao = CODIGO_FASE_SOLICITACAO_ISENCAO;
   protected rotuloDaOrigem(origem: OrigemDataFase): string {

@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import {
-  AlertaNovaTentativaComponent,
-  type FaseDaNovaTentativa,
-} from '@uniplus/shared-ui/components';
+import { FalhaDeLeituraComponent, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
 import type { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
-import { campoInvalido, mensagemDoCampo, type FormDoPedido } from './pedir-acesso-campo';
+import {
+  ID_DO_PERFIL,
+  campoInvalido,
+  mensagemDoCampo,
+  type FormDoPedido,
+} from './pedir-acesso-campo';
+import { RecusaDaLeituraComponent, type RecusaDaLeitura } from '../../shared/recusa-da-leitura';
 
 type Edicao = EdicaoDoPedidoDeAcesso;
 
@@ -13,7 +16,7 @@ type Edicao = EdicaoDoPedidoDeAcesso;
 @Component({
   selector: 'cfg-pedir-acesso-perfil',
   standalone: true,
-  imports: [ReactiveFormsModule, AlertaNovaTentativaComponent],
+  imports: [ReactiveFormsModule, FalhaDeLeituraComponent, RecusaDaLeituraComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pedir-acesso-perfil.component.html',
   styleUrl: '../../shared/formulario/campos-do-formulario.css',
@@ -21,13 +24,12 @@ type Edicao = EdicaoDoPedidoDeAcesso;
 export class PedirAcessoPerfilComponent {
   readonly form = input.required<FormDoPedido>();
   readonly perfis = input.required<ReturnType<Edicao['perfis']>>();
-  readonly perfisIndisponiveis = input.required<string | null>();
-  readonly carregandoPerfis = input.required<boolean>();
-  readonly fasePerfis = input.required<FaseDaNovaTentativa>();
+  readonly leitura = input.required<LeituraAcompanhada>();
+  readonly recusa = input.required<RecusaDaLeitura | null>();
   readonly perfilSelecionado = input.required<ReturnType<Edicao['perfilSelecionado']>>();
   readonly unidades = input.required<ReturnType<Edicao['unidades']>>();
   readonly exigeUnidade = input.required<boolean>();
-  readonly tentarPerfisNovamente = output<void>();
+  protected readonly idDoPerfil = ID_DO_PERFIL;
 
   protected invalidoPerfil(): boolean {
     return campoInvalido(this.form().controls.perfilId);

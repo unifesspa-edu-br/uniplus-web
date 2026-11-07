@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CLASSIFICACOES_DE_PROTECAO, hipotesesDaClassificacao, rotuloDe } from './protecao-de-dados';
+import {
+  CLASSIFICACOES_DE_PROTECAO,
+  hipotesesDaClassificacao,
+  rotuloDe,
+} from './protecao-de-dados';
 
 describe('a hipótese legal que cabe na classificação', () => {
   it('a hipótese legal segue o artigo da classificação', () => {

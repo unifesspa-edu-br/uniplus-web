@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DIA_ESTADUAL,
   DIA_MUNICIPAL,
@@ -238,12 +240,9 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
       await p.propagar();
     };
 
-    it('exibe o erro de carregamento e permite tentar novamente, devolvendo o foco ao título', async () => {
-      await falharALeitura(404, { title: 'Calendário não encontrado' });
-
-      expect(p.fixture.nativeElement.textContent).toContain('Calendário não encontrado');
+    it('a nova tentativa que dá certo mostra o calendário e devolve o foco ao título', async () => {
+      await falharALeitura(500);
       expect(p.fixture.nativeElement.querySelector('.cfg-calendario-resumo')).toBeNull();
-      expect(p.erros).not.toHaveBeenCalled();
 
       const tentar = p.elemento<HTMLButtonElement>('.list-state__retry button');
       tentar.focus();
@@ -256,6 +255,45 @@ describe('CalendarioDiasUteisDetalhePage — leitura', () => {
 
       expect(p.fixture.nativeElement.textContent).toContain('2026.1');
       expect(document.activeElement).toBe(p.elemento('#cfg-calendario-detalhe-title'));
+    });
+
+    it('calendário inexistente (404) mostra a recusa com a volta à lista e sem nova tentativa', async () => {
+      await falharALeitura(404, { title: 'Calendário não encontrado' });
+
+      const aviso = p.elemento('ui-alert');
+      expect(aviso.textContent).toContain('Calendário não encontrado');
+      expect(aviso.querySelector('button')).toBeNull();
+      expect(aviso.querySelector('a')?.getAttribute('href')).toBe('/calendario-dias-uteis');
+      expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
+      expect(p.fixture.nativeElement.querySelector('.cfg-calendario-resumo')).toBeNull();
+      expect(p.erros).not.toHaveBeenCalled();
+    });
+
+    it('a nova tentativa que termina em 404 tira o botão e leva o foco ao título', async () => {
+      await falharALeitura(500);
+      const tentar = p.elemento<HTMLButtonElement>('.list-state__retry button');
+      tentar.focus();
+      tentar.click();
+      await p.propagar();
+      p.http.expectOne(LEITURA).flush(...problema(404, { title: 'Calendário não encontrado' }));
+      await p.propagar();
+
+      expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
+      expect(document.activeElement).toBe(p.elemento('#cfg-calendario-detalhe-title'));
+    });
+
+    it('a nova tentativa que termina em 404 não anuncia leitura concluída a quem tirou o foco do botão', async () => {
+      const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
+      await falharALeitura(500);
+      p.elemento<HTMLButtonElement>('.list-state__retry button').click();
+      p.elemento<HTMLAnchorElement>('a.cfg-voltar').focus();
+      await p.propagar();
+      p.http.expectOne(LEITURA).flush(...problema(404, { title: 'Calendário não encontrado' }));
+      await p.propagar();
+      await p.propagar();
+
+      expect(p.elemento('ui-alert').textContent).toContain('Calendário não encontrado');
+      expect(anunciar).not.toHaveBeenCalled();
     });
 
     it('a falha do servidor na leitura avisa por toast', async () => {

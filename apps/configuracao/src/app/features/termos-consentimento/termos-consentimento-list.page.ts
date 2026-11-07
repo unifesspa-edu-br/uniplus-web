@@ -1,14 +1,5 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  afterNextRender,
-  computed,
-  inject,
-} from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { ChangeDetectionStrategy, Component, afterNextRender, inject } from '@angular/core';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
 import { TermosConsentimentoStore } from './termos-consentimento.store';
 import { TermosConsentimentoListaComponent } from './termos-consentimento-lista.component';
@@ -18,7 +9,7 @@ const ID_DO_TITULO = 'cfg-termos-consentimento-title';
 @Component({
   selector: 'cfg-termos-consentimento-list-page',
   standalone: true,
-  imports: [AlertaNovaTentativaComponent, TermosConsentimentoListaComponent],
+  imports: [FalhaDeLeituraComponent, TermosConsentimentoListaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './termos-consentimento-list.page.html',
   host: { class: 'cfg-page' },
@@ -26,9 +17,10 @@ const ID_DO_TITULO = 'cfg-termos-consentimento-title';
 })
 export class TermosConsentimentoListPage {
   protected readonly store = inject(TermosConsentimentoStore);
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.errorMessage,
     pendente: this.store.loading,
-    falhou: computed(() => this.store.errorMessage() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
 
@@ -38,9 +30,5 @@ export class TermosConsentimentoListPage {
     afterNextRender(() => {
       if (focoEstaLivre()) document.getElementById(ID_DO_TITULO)?.focus();
     });
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 }

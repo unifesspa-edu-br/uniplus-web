@@ -18,13 +18,11 @@
   <cfg-pedir-acesso-perfil
     [form]="edicao.form"
     [perfis]="edicao.perfis()"
-    [perfisIndisponiveis]="edicao.perfisIndisponiveis()"
-    [carregandoPerfis]="edicao.carregandoPerfis()"
-    [fasePerfis]="edicao.novaTentativaDosPerfis.fase()"
+    [leitura]="edicao.leituraDosPerfis"
+    [recusa]="edicao.recusaDosPerfis()"
     [perfilSelecionado]="edicao.perfilSelecionado()"
     [unidades]="edicao.unidades()"
     [exigeUnidade]="edicao.exigeUnidade()"
-    (tentarPerfisNovamente)="edicao.tentarPerfisNovamente()"
   />
   <cfg-pedir-acesso-motivo
     [form]="edicao.form"

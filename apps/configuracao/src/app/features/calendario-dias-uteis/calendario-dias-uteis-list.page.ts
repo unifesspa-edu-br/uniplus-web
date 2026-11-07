@@ -4,15 +4,11 @@ import {
   ElementRef,
   Injector,
   afterNextRender,
-  computed,
   effect,
   inject,
   untracked,
 } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { CalendariosListaComponent } from './calendarios-lista.component';
 import { CalendariosStore } from './calendarios.store';
@@ -27,7 +23,7 @@ const PREFIXO_DA_ACAO: Readonly<Record<AcionadorDaConfirmacao['acao'], string>> 
 @Component({
   selector: 'cfg-calendario-dias-uteis-list',
   standalone: true,
-  imports: [AlertaNovaTentativaComponent, CalendariosListaComponent, ConfirmacaoDeRemocaoComponent],
+  imports: [FalhaDeLeituraComponent, CalendariosListaComponent, ConfirmacaoDeRemocaoComponent],
   providers: [CalendariosStore, EdicaoDosCalendarios],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './calendario-dias-uteis-list.page.html',
@@ -36,12 +32,13 @@ const PREFIXO_DA_ACAO: Readonly<Record<AcionadorDaConfirmacao['acao'], string>> 
 export class CalendarioDiasUteisListPage {
   protected readonly store = inject(CalendariosStore);
   protected readonly edicao = inject(EdicaoDosCalendarios);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
   private readonly raiz = inject<ElementRef<HTMLElement>>(ElementRef).nativeElement;
   private readonly injector = inject(Injector);
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
 
@@ -56,10 +53,6 @@ export class CalendarioDiasUteisListPage {
         injector: this.injector,
       });
     });
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
   }
 
   /** O botão da linha, se a releitura o manteve habilitado; senão o título da lista. */

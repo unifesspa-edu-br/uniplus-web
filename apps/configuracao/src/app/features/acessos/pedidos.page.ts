@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, input } from '@angular/core';
-import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-} from '@uniplus/shared-ui/components';
+import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { Router, RouterLink } from '@angular/router';
 import { type FilaDePedidos, type PedidoResumoDto } from '@uniplus/shared-data/autorizacao';
 import { PedidosListaComponent } from './pedidos-lista.component';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedidosStore } from './pedidos.store';
 
@@ -44,7 +42,7 @@ const APRESENTACAO: Readonly<Record<FilaDePedidos, Apresentacao>> = {
 @Component({
   selector: 'cfg-pedidos-page',
   standalone: true,
-  imports: [RouterLink, AlertaNovaTentativaComponent, PedidosListaComponent],
+  imports: [RouterLink, FalhaDeLeituraComponent, PedidosListaComponent, RecusaDaLeituraComponent],
   providers: [PedidosStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },
@@ -56,9 +54,11 @@ export class PedidosPage implements OnInit {
 
   protected readonly store = inject(PedidosStore);
   private readonly router = inject(Router);
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.falha,
     pendente: this.store.carregando,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    recusada: computed(() => this.store.recusa() !== null),
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-pedidos-titulo'),
   });
 
@@ -91,9 +91,5 @@ export class PedidosPage implements OnInit {
     void this.router.navigate(['/acessos/pedidos', pedido.id], {
       queryParams: this.origemDoLink(),
     });
-  }
-
-  protected recarregar(): void {
-    this.novaTentativa.executar(() => this.store.recarregar());
   }
 }

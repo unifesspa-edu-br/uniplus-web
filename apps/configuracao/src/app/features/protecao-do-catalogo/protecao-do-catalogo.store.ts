@@ -8,6 +8,7 @@ import {
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 import { LeituraDoDetalhe } from '../../shared/detalhe-do-catalogo';
+import { recusaDe } from '../../shared/recusa-da-leitura';
 
 @Injectable()
 export class ProtecaoDoCatalogoStore {
@@ -42,6 +43,10 @@ export class ProtecaoDoCatalogoStore {
         ? 'Erro inesperado ao carregar os itens.'
         : null;
   });
+  /** A fila recusada em definitivo (sem permissão): repetir a leitura não muda a resposta. */
+  readonly recusa = computed(() => recusaDe(this.lista.problem(), this.erroDeCarga() ?? ''));
+  /** A falha que uma nova tentativa pode resolver; a recusa tem aviso próprio. */
+  readonly falhaDeCarga = computed(() => (this.recusa() ? null : this.erroDeCarga()));
   readonly itemAberto = computed(
     () => this.itens().find((item) => item.id === this.itemAbertoId()) ?? null,
   );
@@ -49,6 +54,10 @@ export class ProtecaoDoCatalogoStore {
   readonly carregandoDetalhe = this.leituraDoDetalhe.carregando;
   readonly erroDoDetalhe = this.leituraDoDetalhe.erro;
   readonly naoEncontrado = this.leituraDoDetalhe.naoEncontrado;
+  /** A falha do detalhe que uma nova tentativa pode resolver; o item inexistente tem aviso próprio. */
+  readonly falhaDoDetalhe = computed(() =>
+    this.naoEncontrado() ? null : this.leituraDoDetalhe.erro(),
+  );
 
   constructor() {
     effect(() => {
@@ -65,9 +74,9 @@ export class ProtecaoDoCatalogoStore {
     else this.ativa.set(true);
   }
 
-  /** Repete a leitura que falhou sem apagar o alerta, para o botão acionado seguir na tela. */
-  tentarNovamente(): void {
-    if (!this.carregando()) this.lista.reload();
+  /** Repete a leitura que falhou; devolve `false` se nenhuma leitura começou. */
+  tentarNovamente(): boolean {
+    return this.lista.reload();
   }
 
   abrirDetalhe(item: ItemDaProtecaoDoCatalogoDto): void {

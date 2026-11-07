@@ -14,10 +14,6 @@ import {
   problema,
   type PaginaMontada,
 } from './protecao-do-catalogo.testing';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
 const ERRO_INTERNO = problema(500, 'uniplus.erro_interno', 'Erro interno');
@@ -84,7 +80,6 @@ describe('Aba Decisões — leitura, nova tentativa e foco', () => {
 
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
     expect(tentar.getAttribute('aria-busy')).toBe('true');
-    expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
     expect(tentar.matches(':disabled')).toBe(false);
     expect(document.activeElement).toBe(tentar);
     clicar(tentar);

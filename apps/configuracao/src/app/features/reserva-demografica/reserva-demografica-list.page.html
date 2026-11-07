@@ -16,16 +16,7 @@
   12.711/2012, art. 10, III (atualizada pela Lei 14.723/2023).
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar as referências"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar as referências" [leitura]="leitura" />
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
 <cfg-reserva-demografica-lista

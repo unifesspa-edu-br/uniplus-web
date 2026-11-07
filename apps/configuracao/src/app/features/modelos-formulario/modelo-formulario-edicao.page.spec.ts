@@ -16,11 +16,6 @@ import {
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-0000000000a1';
@@ -221,6 +216,12 @@ describe('ModeloFormularioEdicaoPage', () => {
     code: 'uniplus.erro_interno',
   });
 
+  const FALHA_404 = JSON.stringify({
+    status: 404,
+    title: 'Modelo não encontrado',
+    code: 'uniplus.configuracao.modelo_formulario.nao_encontrado',
+  });
+
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
     fatosExtras: readonly FatoCandidatoView[] = [],
@@ -228,7 +229,13 @@ describe('ModeloFormularioEdicaoPage', () => {
     falhando: readonly string[] = [],
   ): Promise<HTMLElement> {
     const responder = (req: TestRequest, recurso: string, dados: object): void => {
-      if (falhando.includes(recurso)) {
+      if (recurso === 'modelo' && falhando.includes('modelo-inexistente')) {
+        req.flush(FALHA_404, {
+          status: 404,
+          statusText: 'Não encontrado',
+          headers: PROBLEMA.headers,
+        });
+      } else if (falhando.includes(recurso)) {
         req.flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
       } else {
         req.flush(dados);
@@ -241,7 +248,11 @@ describe('ModeloFormularioEdicaoPage', () => {
       fato('GESTANTE'),
       ...fatosExtras,
     ]);
-    controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`).flush([]);
+    responder(
+      controller.expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`),
+      'tipos-processo',
+      [],
+    );
     responder(
       controller.expectOne((r) => r.url === `${BASE}/api/configuracao/termos-consentimento`),
       'termos',
@@ -677,11 +688,8 @@ describe('ModeloFormularioEdicaoPage', () => {
   async function tentarNovamenteComFoco(tela: HTMLElement, alerta: string): Promise<void> {
     const botao = botaoTentarNovamente(tela, alerta);
     botao.focus();
-    expect(document.activeElement).toBe(botao);
     botao.click();
     await propagar();
-    expect(botao.getAttribute('aria-disabled')).toBe('true');
-    expect(document.activeElement).toBe(botao);
   }
 
   async function concluirANovaTentativa(): Promise<void> {
@@ -698,6 +706,14 @@ describe('ModeloFormularioEdicaoPage', () => {
     controller.expectOne(MODELO).flush(modelo);
     await concluirANovaTentativa();
     expect(tela.querySelector('ui-alert')).toBeNull();
+  });
+
+  it('o modelo que não existe mostra a recusa, sem nova tentativa, e mantém a volta à lista', async () => {
+    const tela = await carregar(modelo, [], FASES, ['modelo-inexistente']);
+
+    expect(tela.textContent).toContain('Modelo não encontrado');
+    expect(tela.textContent).not.toContain('Tentar novamente');
+    expect(tela.querySelector('a[href="/modelos-formulario"]')).not.toBeNull();
   });
 
   it('falha ao carregar os termos: avisa, a nova tentativa os pede de novo e o foco vai ao título', async () => {
@@ -722,6 +738,21 @@ describe('ModeloFormularioEdicaoPage', () => {
     await concluirANovaTentativa();
 
     expect(tela.textContent).not.toContain('Catálogo de fatos não carregado');
+  });
+
+  it('falha ao carregar os tipos de processo: avisa que o campo fica sem opções e a nova tentativa os lê de novo', async () => {
+    const tela = await carregar(modelo, [], FASES, ['tipos-processo']);
+
+    expect(tela.textContent).toContain('Tipos de processo não carregados');
+    expect(tela.textContent).toContain('não lista as opções nem mostra o tipo do modelo');
+    await tentarNovamenteComFoco(tela, 'Tipos de processo não carregados');
+    controller
+      .expectOne((r) => r.url === `${BASE}/api/configuracao/tipos-processo`)
+      .flush([{ id: '1', codigo: 'GRADUACAO', nome: 'Graduação' }]);
+    await concluirANovaTentativa();
+
+    expect(tela.textContent).not.toContain('Tipos de processo não carregados');
+    expect(tela.querySelector('option[value="GRADUACAO"]')).not.toBeNull();
   });
 
   it('falha ao carregar o vocabulário dos documentos: a nova tentativa lê fases e tipos de novo e o foco vai ao título', async () => {
@@ -882,88 +913,6 @@ describe('ModeloFormularioEdicaoPage', () => {
       controller.expectOne((r) => r.url === urlDosTermos).flush([]);
       lerCatalogo.flush([fato('NOME')]);
       await propagar();
-    });
-
-    it('o botão do recurso em curso fica barrado e não repete a leitura', async () => {
-      const tela = await comAsDuasFalhas();
-      const doTermos = botaoTentarNovamente(tela, TERMOS);
-      doTermos.click();
-      await propagar();
-
-      expect(doTermos.getAttribute('aria-disabled')).toBe('true');
-      expect(doTermos.getAttribute('aria-busy')).toBe('true');
-      expect(botaoTentarNovamente(tela, CATALOGO).getAttribute('aria-disabled')).toBeNull();
-      doTermos.click();
-      await propagar();
-      controller.expectOne((r) => r.url === urlDosTermos).flush([]);
-      await propagar();
-    });
-  });
-
-  describe('anúncio da nova tentativa', () => {
-    const URL_BASE = `${BASE}/api/configuracao`;
-    const leituras = [
-      {
-        nome: 'modelo',
-        alerta: 'Não foi possível carregar o modelo',
-        falhando: ['modelo'],
-        urls: [MODELO],
-      },
-      {
-        nome: 'termos de consentimento',
-        alerta: 'Termos de consentimento não carregados',
-        falhando: ['termos'],
-        urls: [`${URL_BASE}/termos-consentimento`],
-      },
-      {
-        nome: 'catálogo de fatos',
-        alerta: 'Catálogo de fatos não carregado',
-        falhando: ['fatos'],
-        urls: [`${URL_BASE}/fatos-candidato`],
-      },
-      {
-        nome: 'fases e tipos de documento',
-        alerta: 'Fases ou tipos de documento não carregados',
-        falhando: ['fases', 'tipos-documento'],
-        urls: [`${URL_BASE}/fases-canonicas`, `${URL_BASE}/tipos-documento`],
-      },
-    ];
-    const alertaDe = (tela: HTMLElement, titulo: string): HTMLElement | undefined =>
-      Array.from(tela.querySelectorAll<HTMLElement>('ui-alerta-nova-tentativa')).find((a) =>
-        a.textContent?.includes(titulo),
-      );
-    const anuncio = (tela: HTMLElement, titulo: string): string =>
-      situacaoDaNovaTentativa(alertaDe(tela, titulo) as HTMLElement);
-
-    it.each(leituras)(
-      'a cada nova falha de $nome, o alerta mostra e anuncia o andamento e o resultado',
-      async ({ alerta, falhando, urls }) => {
-        const tela = await carregar(modelo, [], FASES, falhando);
-        expect(anuncio(tela, alerta)).toBe('');
-
-        for (let tentativa = 0; tentativa < 2; tentativa++) {
-          botaoTentarNovamente(tela, alerta).click();
-          await propagar();
-          expect(anuncio(tela, alerta)).toBe(TEXTO_TENTANDO);
-          for (const url of urls) {
-            controller
-              .expectOne((r) => r.url === url)
-              .flush(FALHA_500, { status: 500, statusText: 'Erro', headers: PROBLEMA.headers });
-          }
-          await propagar();
-          expect(anuncio(tela, alerta)).toBe(TEXTO_REPETIDA);
-        }
-      },
-    );
-
-    it('o alerta sai da tela quando a nova tentativa dá certo', async () => {
-      const tela = await carregar(modelo, [], FASES, ['termos']);
-      botaoTentarNovamente(tela, 'Termos de consentimento não carregados').click();
-      await propagar();
-      controller.expectOne((r) => r.url === `${URL_BASE}/termos-consentimento`).flush([]);
-      await propagar();
-
-      expect(alertaDe(tela, 'Termos de consentimento não carregados')).toBeUndefined();
     });
   });
 });

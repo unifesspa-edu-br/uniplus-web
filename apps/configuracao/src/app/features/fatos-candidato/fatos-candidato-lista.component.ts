@@ -20,13 +20,11 @@ import {
   FilterBarComponent,
   FilterChipsComponent,
   IconButtonComponent,
-  LookupAlertComponent,
   PagerComponent,
   SpinnerComponent,
   TagComponent,
   type UiFilterChipOption,
   type UiFiltroAtivo,
-  type UiLookupFalho,
 } from '@uniplus/shared-ui/components';
 import { devolverFocoDaLista, focoEstaLivre } from '../../shared/foco';
 import {
@@ -60,7 +58,6 @@ const SITUACAO_PADRAO = 'true';
     FilterBarComponent,
     FilterChipsComponent,
     IconButtonComponent,
-    LookupAlertComponent,
     PagerComponent,
     SituacaoDaAprovacaoComponent,
     SpinnerComponent,
@@ -80,7 +77,6 @@ export class FatosCandidatoListaComponent {
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
   readonly podeSolicitar = input.required<boolean>();
-  readonly falhasDeApoio = input.required<readonly UiLookupFalho[]>();
   readonly termoBusca = model.required<string>();
   readonly filtroOrigem = model.required<string>();
   readonly filtroSituacao = model.required<string>();

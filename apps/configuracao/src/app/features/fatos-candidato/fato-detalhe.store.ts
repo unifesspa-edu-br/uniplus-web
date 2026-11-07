@@ -3,6 +3,7 @@ import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { deClausulasDoWire, fatosParaLeitura, resumoDaRegra } from '@uniplus/shared-ui/components';
 import { lerCatalogoDeFatos } from './leituras-do-fato';
 import { FatosCandidatoStore } from './fatos-candidato.store';
+import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
 
 type RegraPadrao = FatoCandidatoDto['regrasPadrao'][number];
 
@@ -22,11 +23,13 @@ export class FatoDetalheStore {
   private readonly comRegras = computed(
     () => this.aberto() && (this.fato()?.regrasPadrao.length ?? 0) > 0,
   );
-  private readonly catalogo = lerCatalogoDeFatos(() => this.comRegras());
+  private readonly catalogo = lerCatalogoDeFatos(() => this.comRegras(), {
+    assunto: 'catálogo de fatos',
+    consequencia: 'As regras aparecem com os códigos dos fatos.',
+    destino: () => document.getElementById(ID_DAS_REGRAS_DO_DETALHE),
+  });
   /** A falha do catálogo deixa as regras com os códigos no lugar dos nomes; a tela avisa e oferece nova tentativa. */
-  readonly catalogoFalhou = computed(() => this.comRegras() && this.catalogo.falhou());
-  readonly catalogoPendente = this.catalogo.pendente;
-  readonly mensagemDoCatalogo = this.catalogo.mensagemDeFalha;
+  readonly leituraDoCatalogo = this.catalogo.leitura;
   private readonly fatosNomeados = computed(() => {
     const catalogo = this.catalogo.itens();
     return catalogo.length === 0 ? null : fatosParaLeitura(catalogo);
@@ -43,10 +46,6 @@ export class FatoDetalheStore {
   abrir(fato: FatoCandidatoDto): void {
     this.id.set(fato.id);
     this.aberto.set(true);
-  }
-
-  recarregarCatalogo(): void {
-    this.catalogo.recarregar();
   }
 
   fechar(): void {

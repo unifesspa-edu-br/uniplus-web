@@ -52,6 +52,8 @@ export class SituacaoDaAprovacaoComponent {
   protected readonly rotulo = computed(() => rotuloDaSituacao(this.situacao()));
   protected readonly recomendada = computed(() => {
     const token = this.classificacaoRecomendada();
-    return this.situacao() === 'AJUSTE_RECOMENDADO' && token ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token) : null;
+    return this.situacao() === 'AJUSTE_RECOMENDADO' && token
+      ? rotuloDe(CLASSIFICACOES_DE_PROTECAO, token)
+      : null;
   });
 }

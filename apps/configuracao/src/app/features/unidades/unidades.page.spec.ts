@@ -10,10 +10,6 @@ import {
   problema,
   reitoria,
 } from './unidades.testing';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const ESPERA_DO_DEBOUNCE_MS = 360;
 const esperar = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
@@ -369,7 +365,6 @@ describe('UnidadesPage — leitura', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([reitoria]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));

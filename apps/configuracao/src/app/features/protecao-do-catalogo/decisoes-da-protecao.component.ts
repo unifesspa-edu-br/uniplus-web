@@ -9,12 +9,12 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { type AtoDeDecisao, type DecisaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   FilterBarComponent,
   FilterChipsComponent,
   type UiFilterChipOption,
@@ -29,6 +29,7 @@ import {
   nomeDoCadastro,
   rotuloDoAto,
 } from '../../shared/protecao-do-catalogo';
+import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import {
   ATOS_DE_DECISAO,
   CADASTROS,
@@ -54,11 +55,13 @@ const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) 
   selector: 'cfg-decisoes-da-protecao',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
     DecisaoDaProtecaoDetalheComponent,
     DecisoesDaProtecaoListaComponent,
+    FalhaDeLeituraComponent,
     FilterBarComponent,
     FilterChipsComponent,
+    RecusaDaLeituraComponent,
+    RouterLink,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './decisoes-da-protecao.component.html',
@@ -104,20 +107,23 @@ export class DecisoesDaProtecaoComponent {
   protected readonly drawerAberto = signal(false);
   protected readonly selecionada = signal<DecisaoDaProtecaoDto | null>(null);
   protected readonly historico = this.pagina.historico;
-  protected readonly carregandoHistorico = this.pagina.carregandoHistorico;
   protected readonly erroDoHistorico = this.pagina.erroDoHistorico;
   protected readonly itemInexistente = this.pagina.itemInexistente;
 
-  protected readonly novaTentativaDaLista = acompanharNovaTentativa({
+  protected readonly leituraDaLista = acompanharLeitura({
     assunto: 'decisões',
+    falha: this.pagina.falhaDaLista,
     pendente: this.pagina.carregando,
-    falhou: computed(() => this.mensagemDeErro() !== null),
+    recusada: computed(() => this.pagina.recusa() !== null),
+    recarregar: () => this.pagina.carregar(),
     destino: () => document.getElementById('cfg-decisoes-titulo'),
   });
-  protected readonly novaTentativaDoHistorico = acompanharNovaTentativa({
+  protected readonly leituraDoHistorico = acompanharLeitura({
     assunto: 'histórico',
-    pendente: this.carregandoHistorico,
-    falhou: computed(() => this.erroDoHistorico() !== null),
+    falha: this.pagina.falhaDoHistorico,
+    pendente: this.pagina.carregandoHistorico,
+    recusada: this.itemInexistente,
+    recarregar: () => this.pagina.recarregarHistorico(),
     destino: () => document.getElementById('cfg-decisao-dados'),
   });
 
@@ -146,10 +152,6 @@ export class DecisoesDaProtecaoComponent {
         this.buscaEnviada = busca;
         this.aplicar({ busca });
       });
-  }
-
-  protected carregar(): void {
-    this.novaTentativaDaLista.executar(() => this.pagina.carregar());
   }
 
   protected aoTrocarLimite(valor: number | null): void {
@@ -193,14 +195,6 @@ export class DecisoesDaProtecaoComponent {
   protected abrir(decisao: DecisaoDaProtecaoDto): void {
     this.selecionada.set(decisao);
     this.drawerAberto.set(true);
-    this.lerHistorico(decisao);
-  }
-
-  protected lerHistorico(decisao: DecisaoDaProtecaoDto): void {
     this.pagina.lerHistorico(decisao);
-  }
-
-  protected tentarOHistoricoDeNovo(): void {
-    this.novaTentativaDoHistorico.executar(() => this.pagina.recarregarHistorico());
   }
 }

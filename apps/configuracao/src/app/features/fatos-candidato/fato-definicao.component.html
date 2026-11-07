@@ -115,16 +115,11 @@
           <p class="u-caption">Para mudá-los, altere o fato de membro.</p>
         }
       }
-      @if (fases.falhou()) {
-        <ui-alerta-nova-tentativa
-          titulo="Fases não carregadas"
-          mensagem="Sem a lista de fases não é possível dizer a partir de quando o fato é conhecido."
-          [pendente]="fases.pendente()"
-          [fase]="novaTentativaDasFases.fase()"
-          variante="warning"
-          (tentar)="tentarFasesNovamente()"
-        />
-      }
+      <ui-falha-de-leitura
+        titulo="Fases não carregadas"
+        variante="warning"
+        [leitura]="fases.leitura"
+      />
       <form
         class="cfg-fato-formulario"
         [formGroup]="form"

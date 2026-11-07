@@ -13,7 +13,7 @@
         aria-labelledby="cfg-blbr-municipios-label"
         aria-required="true"
         [attr.maxlength]="maximoDaBusca"
-        [attr.aria-invalid]="campo().erro !== null || campo().buscaFalhou ? 'true' : null"
+        [attr.aria-invalid]="campo().erro !== null || campo().leitura.visivel() ? 'true' : null"
         [attr.aria-describedby]="descritoPor()"
         [value]="campo().termo"
         (input)="buscar.emit(valorDoCampo($event))"
@@ -23,15 +23,9 @@
     @if (campo().buscando) {
       <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Buscando</span>
     }
-    @if (campo().buscaFalhou) {
-      <span class="field__error" id="cfg-blbr-municipio-busca-erro">
-        <span role="alert">Não foi possível buscar municípios.</span>
-        <ui-nova-tentativa-do-campo
-          [pendente]="campo().buscando"
-          [fase]="campo().fase"
-          assunto="municípios"
-          (tentar)="tentarBuscaDeNovo.emit()"
-        />
+    @if (campo().leitura.visivel()) {
+      <span id="cfg-blbr-municipio-busca-erro">
+        <ui-falha-de-leitura-do-campo [leitura]="campo().leitura" />
       </span>
     } @else if (!campo().buscando && campo().resultados.length > 0) {
       <ul class="cfg-municipio-resultados">

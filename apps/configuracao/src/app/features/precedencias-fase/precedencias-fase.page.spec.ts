@@ -9,15 +9,8 @@ import {
   faseCanonica,
   inscricaoHomologacao,
   montarPagina,
-  problema,
   sucesso,
 } from './precedencias-fase.testing';
-import {
-  TEXTO_REPETIDA,
-  TEXTO_TENTANDO,
-  situacaoDaNovaTentativa,
-  situacoesDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PrecedenciasFasePage', () => {
   let p: Pagina;
@@ -234,9 +227,6 @@ describe('PrecedenciasFasePage', () => {
       await p.propagar();
 
       expect(p.store.mensagemDeErro()).toBeNull();
-      expect(p.elemento('ui-drawer ui-alerta-nova-tentativa').textContent).toContain(
-        'Nomes das fases indisponíveis',
-      );
       expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
       expect(opcoesDe('antecessoraCodigo')).not.toContain('INSCRICAO — (não cadastrada)');
     });
@@ -253,22 +243,20 @@ describe('PrecedenciasFasePage', () => {
       expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
     });
 
-    it('a falha das fases avisa junto da lista e "Tentar novamente" recarrega e devolve o foco ao título', async () => {
+    it('a falha das fases tem um só aviso, na página, e "Tentar novamente" recarrega e devolve o foco ao título', async () => {
       p = await montarPagina([inscricaoHomologacao], 'falha');
       const aviso = (): HTMLElement | null =>
         [
           ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-            ':scope > ui-alerta-nova-tentativa',
+            ':scope > ui-falha-de-leitura',
           ),
         ].find((a) => a.textContent?.includes('Nomes das fases indisponíveis')) ?? null;
-      const tentar = (): HTMLButtonElement => aviso()?.querySelector('button') as HTMLButtonElement;
-      expect(aviso()?.textContent).toContain('Nomes das fases indisponíveis');
       expect(aviso()?.textContent).toContain('a busca por nome não encontra');
 
-      tentar().focus();
-      tentar().click();
+      const tentar = aviso()?.querySelector('button') as HTMLButtonElement;
+      tentar.focus();
+      tentar.click();
       await p.propagar();
-      expect(tentar().getAttribute('aria-disabled')).toBe('true');
       p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
       await p.propagar();
       await p.propagar();
@@ -278,83 +266,24 @@ describe('PrecedenciasFasePage', () => {
       expect(document.activeElement).toBe(p.elemento('#cfg-precedencias-fase-list-title'));
     });
 
-    it('mostra e anuncia cada nova tentativa de ler as fases', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
-      const anuncio = (): string => situacaoDaNovaTentativa(p.fixture.nativeElement);
-      const tentar = (): HTMLButtonElement =>
-        [
-          ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-            ':scope > ui-alerta-nova-tentativa',
-          ),
-        ]
-          .find((a) => a.textContent?.includes('Nomes das fases indisponíveis'))
-          ?.querySelector('button') as HTMLButtonElement;
-
-      tentar().click();
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
-    });
-
-    it('mostra e anuncia, dentro do drawer, a nova tentativa acionada pelo alerta do formulário', async () => {
+    it('com o formulário aberto, a nova tentativa das fases está nele e a mesma leitura recarrega uma só vez', async () => {
       p = await montarPagina([inscricaoHomologacao], 'falha');
       p.novo().click();
       await p.propagar();
-      const anuncio = (): string =>
-        situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'));
 
-      p.elemento<HTMLButtonElement>('ui-drawer ui-alerta-nova-tentativa button').click();
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_TENTANDO);
-      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
-      await p.propagar();
-      expect(anuncio()).toBe(TEXTO_REPETIDA);
-    });
-
-    it('fechar o drawer no meio da leitura passa o aviso à lista; abri-lo no meio, ao drawer', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
-      p.novo().click();
-      await p.propagar();
-      p.elemento<HTMLButtonElement>(
-        'cfg-precedencia-formulario ui-alerta-nova-tentativa button',
-      ).click();
-      await p.propagar();
-      expect(situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'))).toBe(
-        TEXTO_TENTANDO,
+      const formulario = p.elemento('cfg-precedencia-formulario');
+      const tentar = formulario.querySelector<HTMLButtonElement>(
+        'ui-falha-de-leitura-do-campo button',
       );
-
-      p.elemento<HTMLButtonElement>(
-        'cfg-precedencia-formulario button.btn--tertiary:not([aria-label])',
-      ).click();
-      await p.propagar();
-      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([TEXTO_TENTANDO]);
-
-      p.http.expectOne((r) => r.url === FASES).flush(...problema(503));
-      await p.propagar();
-      expect(situacoesDaNovaTentativa(p.fixture.nativeElement)).toEqual([TEXTO_REPETIDA]);
-
-      p.novo().click();
-      await p.propagar();
-      expect(situacaoDaNovaTentativa(p.elemento('cfg-precedencia-formulario'))).toBe(
-        TEXTO_REPETIDA,
-      );
-    });
-
-    it('a nova tentativa das fases também está no alerta do formulário', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
-      p.novo().click();
-      await p.propagar();
-
-      p.elemento<HTMLButtonElement>('ui-drawer ui-alerta-nova-tentativa button').click();
+      expect(formulario.textContent).toContain('Tentar novamente');
+      tentar?.click();
       await p.propagar();
       p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
       await p.propagar();
+      await p.propagar();
 
-      expect(
-        p.fixture.nativeElement.querySelector('ui-drawer ui-alerta-nova-tentativa'),
-      ).toBeNull();
+      expect(formulario.querySelector('ui-falha-de-leitura-do-campo button')).toBeNull();
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
     });
   });
 });

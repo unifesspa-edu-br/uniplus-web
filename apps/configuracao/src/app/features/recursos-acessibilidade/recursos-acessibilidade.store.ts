@@ -12,7 +12,7 @@ import {
   CONFIGURACAO_BASE_PATH,
   RecursoAcessibilidadeDto,
 } from '@uniplus/shared-data/configuracao';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 const PAGE_SIZE = 50;
 
@@ -30,7 +30,6 @@ export class RecursosAcessibilidadeStore {
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly termoBusca = signal('');
-  readonly carregando = this.lista.isLoading;
   readonly recursos = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
@@ -46,7 +45,21 @@ export class RecursosAcessibilidadeStore {
     );
   });
   readonly temFiltro = computed(() => this.termoBusca().trim().length > 0);
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
+    problem: this.lista.problem,
+    pagina: this.pagina,
+    notificacoes: this.notifications,
+  });
+
+  /** Inclui o intervalo entre o cursor recusado e a nova leitura. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
+
   readonly mensagemDeErro = computed<string | null>(() => {
+    if (this.recuperandoDeCursorObsoleto()) {
+      return null;
+    }
     const problem = this.lista.problem();
     if (problem) {
       return this.problemI18n.resolve(problem).title;

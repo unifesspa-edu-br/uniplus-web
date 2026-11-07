@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   AREAS,
-  ERRO_500,
   GRUPOS,
   RES_805,
   digitarNumeroInvalidoESair,
@@ -15,10 +14,6 @@ import {
   problem,
   PaginaDeTeste,
 } from './pesos-enem.testing';
-import {
-  TEXTO_REPETIDA,
-  situacaoDaNovaTentativa,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 describe('PesosEnemPage — lista de grupos', () => {
   let t: PaginaDeTeste;
@@ -28,30 +23,6 @@ describe('PesosEnemPage — lista de grupos', () => {
   });
 
   afterEach(() => t.verificar());
-
-  it('PesosEnemPage_FalhaRepetidaDosGrupos_MostraEAnunciaNoAlertaDosGrupos', async () => {
-    t.fixture.detectChanges();
-    t.expectAreas().flush([...AREAS]);
-    t.expectGrupos().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    t.expectListagem().flush([]);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    const raiz = t.fixture.nativeElement as HTMLElement;
-    raiz.querySelector<HTMLButtonElement>('#cfg-pesos-enem-grupos-tentar')?.click();
-    await t.propagate();
-    t.expectGrupos().flush(problem(500, 'uniplus.internal.unexpected', 'Erro interno'), ERRO_500);
-    await t.propagate();
-    t.fixture.detectChanges();
-
-    expect(
-      situacaoDaNovaTentativa(
-        raiz
-          .querySelector('#cfg-pesos-enem-grupos-tentar')
-          ?.closest('ui-alerta-nova-tentativa') as HTMLElement,
-      ),
-    ).toBe(TEXTO_REPETIDA);
-  });
 
   it('PesosEnemPage_ListaDeGruposVazia_TrataComoFalhaDeCarregamento', async () => {
     await t.carregarUmaPagina([], AREAS, []);

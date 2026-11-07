@@ -11,18 +11,13 @@ import {
 } from '@angular/core';
 import { TipoDocumentoDto } from '@uniplus/shared-data/configuracao';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
-  type UiLookupFalho,
+  acompanharCatalogo,
+  acompanharLeitura,
   destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
-import {
-  devolverFocoDaLista,
-  avisoDeFalhaDoLookup,
-  focoEstaLivre,
-  type AcionadorDaLista,
-} from '../../shared/foco';
+import { devolverFocoDaLista, focoEstaLivre, type AcionadorDaLista } from '../../shared/foco';
 import { motivoDaFalha } from '../../shared/lista-de-referencia';
 import {
   AprovacaoDoCatalogo,
@@ -48,7 +43,7 @@ const ID_DO_TITULO = 'cfg-tipos-documento-list-title';
     TipoDocumentoFormularioComponent,
     TiposDocumentoFiltrosComponent,
     TiposDocumentoListaComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
   ],
   providers: [AprovacaoDoCatalogo, TiposDocumentoStore, EdicaoDosTiposDocumento],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,10 +57,12 @@ export class TiposDocumentoPage {
   private readonly injector = inject(Injector);
   protected readonly solicitacaoAberta = signal(false);
   protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  protected readonly leitura = acompanharLeitura({
     assunto: 'tipos de documento',
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
   private readonly devolucao = devolverFocoDaLista({
@@ -76,67 +73,42 @@ export class TiposDocumentoPage {
     idDoCadastro: 'cfg-tipos-documento-novo',
   });
 
-  /** O aviso das categorias está na lista e no formulário (um drawer): uma só tentativa, uma só fase. */
-  protected readonly novaTentativaDasCategorias = acompanharNovaTentativa({
+  /** A leitura das categorias alimenta o aviso da lista e o do campo do formulário (um drawer). */
+  protected readonly leituraDasCategorias = acompanharCatalogo({
     assunto: 'categorias',
+    falha: computed(() =>
+      this.store.categorias.comErro() ? 'Não foi possível carregar as categorias.' : null,
+    ),
     pendente: this.store.categorias.pendente,
-    falhou: this.edicao.avisoDasCategorias,
+    indisponivel: this.edicao.salvando,
+    recarregar: () => this.store.categorias.recarregar(),
     destino: () =>
       destinoAcessivel(
         document.querySelector<HTMLElement>('select[formcontrolname="categoria"]'),
         document.getElementById(ID_DO_TITULO),
       ),
   });
-  private readonly avisoDaSituacao = avisoDeFalhaDoLookup(this.aprovacao);
-  protected readonly novaTentativaDaSituacao = acompanharNovaTentativa({
-    assunto: 'situação de aprovação',
+  /** A situação decide só a coluna de proteção de dados, que passa a dizer que não pôde ser lida. */
+  protected readonly leituraDaSituacao = acompanharLeitura({
+    assunto: 'situação da proteção de dados',
+    falha: computed(() =>
+      this.aprovacao.comErro()
+        ? 'A coluna de proteção de dados mostra “Não foi possível ler a situação” até a leitura ser refeita.'
+        : null,
+    ),
     pendente: this.aprovacao.pendente,
-    falhou: this.avisoDaSituacao,
+    recarregar: () => this.aprovacao.carregar(),
     destino: () => document.getElementById(ID_DO_TITULO),
   });
 
-  /**
-   * Os catálogos que rotulam a lista e falharam. Ficam na lista durante a nova tentativa, para o
-   * botão que a pediu manter o foco; dando certo, o foco vai ao título.
-   */
-  protected readonly lookupsComFalha = computed<readonly UiLookupFalho[]>(() => [
-    ...(this.edicao.avisoDasCategorias()
-      ? [
-          {
-            nome: 'categorias',
-            pendente: this.store.categorias.pendente(),
-            fase: this.novaTentativaDasCategorias.fase(),
-            recarregar: () => this.recarregarCategorias(),
-          },
-        ]
-      : []),
-    ...(this.avisoDaSituacao()
-      ? [
-          {
-            nome: 'situação da proteção de dados',
-            pendente: this.aprovacao.pendente(),
-            fase: this.novaTentativaDaSituacao.fase(),
-            recarregar: () => this.recarregarSituacao(),
-          },
-        ]
-      : []),
-  ]);
+  /** O catálogo que rotula a coluna de categoria; o aviso da lista o nomeia quando falha. */
+  protected readonly leiturasDaLista = [this.leituraDasCategorias];
 
   constructor() {
     // A falha de servidor dos dois catálogos que rotulam a lista avisa por toast, uma vez por falha.
     motivoDaFalha(this.store.categorias);
     motivoDaFalha(this.aprovacao);
     this.focarTituloAoFecharAceite();
-  }
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
-
-  /** Pedido na lista ou no formulário: o aviso fica até a leitura terminar, e dando certo o foco vai ao campo Categoria. */
-  protected recarregarCategorias(): void {
-    if (this.edicao.salvando()) return;
-    this.novaTentativaDasCategorias.executar(() => this.store.categorias.recarregar());
   }
 
   protected cadastrar(): void {
@@ -172,10 +144,6 @@ export class TiposDocumentoPage {
 
   private registrar(acionador: AcionadorDaLista): void {
     this.devolucao.registrar(acionador);
-  }
-
-  private recarregarSituacao(): void {
-    this.novaTentativaDaSituacao.executar(() => this.aprovacao.carregar());
   }
 
   /**

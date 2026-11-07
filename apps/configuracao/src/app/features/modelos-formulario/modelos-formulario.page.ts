@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  destinoAcessivel,
+  FalhaDeLeituraComponent,
 } from '@uniplus/shared-ui/components';
 import { EdicaoDosModelosFormulario } from './edicao-dos-modelos-formulario';
 import { ModelosFormularioStore } from './modelos-formulario.store';
@@ -11,7 +12,7 @@ import { ModeloFormularioCriacaoComponent } from './modelo-formulario-criacao.co
 @Component({
   selector: 'cfg-modelos-formulario-page',
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     ModelosFormularioListaComponent,
     ModeloFormularioCriacaoComponent,
   ],
@@ -23,15 +24,25 @@ import { ModeloFormularioCriacaoComponent } from './modelo-formulario-criacao.co
 export class ModelosFormularioPage {
   protected readonly edicao = inject(EdicaoDosModelosFormulario);
   protected readonly store = inject(ModelosFormularioStore);
-  protected readonly errorMessage = this.store.mensagemDeErro;
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.recarregar(),
     destino: () => document.getElementById('cfg-modelos-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
+  /** Os tipos de processo alimentam o filtro da lista e o campo do drawer de criação: uma leitura só. */
+  protected readonly leituraDosTipos = acompanharLeitura({
+    assunto: 'tipos de processo',
+    falha: this.store.falhaDosTipos,
+    pendente: this.store.carregandoOsTipos,
+    recarregar: () => this.store.recarregarTipos(),
+    destino: () =>
+      destinoAcessivel(
+        document.querySelector<HTMLElement>(
+          '#cfg-modelo-criacao select[formcontrolname="tipoProcessoCodigo"]',
+        ),
+        document.getElementById('cfg-modelos-list-title'),
+      ),
+  });
 }

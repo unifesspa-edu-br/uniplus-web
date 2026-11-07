@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
   AlertComponent,
+  FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -30,7 +29,7 @@ import { lerCatalogoDeFatos, lerFasesCanonicas } from './leituras-do-fato';
  */
 @Component({
   selector: 'cfg-fato-criacao',
-  imports: [AlertaNovaTentativaComponent, ReactiveFormsModule, AlertComponent, SpinnerComponent],
+  imports: [ReactiveFormsModule, AlertComponent, FalhaDeLeituraComponent, SpinnerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './fato-criacao.component.html',
   styleUrl: './fato-drawer.css',
@@ -41,19 +40,14 @@ export class FatoCriacaoComponent {
   protected readonly form = this.edicao.form;
   protected readonly dep = this.edicao.dependencias;
   protected readonly salvando = this.edicao.criando;
-  protected readonly fases = lerFasesCanonicas(() => true);
-  protected readonly catalogo = lerCatalogoDeFatos(() => this.dep.agregado());
-
-  protected readonly novaTentativaDasFases = acompanharNovaTentativa({
-    assunto: 'fases',
-    pendente: this.fases.pendente,
-    falhou: this.fases.falhou,
-    destino: () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO),
-  });
-  protected readonly novaTentativaDoCatalogo = acompanharNovaTentativa({
+  protected readonly fases = lerFasesCanonicas(
+    () => true,
+    () => document.getElementById(ID_DO_PONTO_DE_RESOLUCAO_DA_CRIACAO),
+  );
+  protected readonly catalogo = lerCatalogoDeFatos(() => this.dep.agregado(), {
     assunto: 'fatos de membro',
-    pendente: this.catalogo.pendente,
-    falhou: this.catalogo.falhou,
+    consequencia:
+      'Sem o catálogo de fatos não é possível escolher o fato de membro que o agregado resume.',
     destino: () => document.getElementById(ID_DO_FATO_DE_MEMBRO),
   });
 
@@ -87,14 +81,6 @@ export class FatoCriacaoComponent {
 
   protected nomeDaFase(codigo: string): string {
     return this.fases.itens().find((fase) => fase.codigo === codigo)?.nome ?? codigo;
-  }
-
-  protected tentarFasesNovamente(): void {
-    this.novaTentativaDasFases.executar(() => this.fases.recarregar());
-  }
-
-  protected tentarCatalogoNovamente(): void {
-    this.novaTentativaDoCatalogo.executar(() => this.catalogo.recarregar());
   }
 
   protected cancelar(): void {

@@ -192,6 +192,65 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(/\/acesso-negado$/);
   });
 
+  test('o cursor expirado na nova tentativa recomeça a lista da primeira página e avisa', async ({
+    page,
+  }) => {
+    await mockApiDeAcesso(page, [pedidoSeed()]);
+    await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);
+    const cabecalhos = {
+      'access-control-allow-origin': '*',
+      'access-control-expose-headers': 'link',
+    };
+    const consultasComCursor: string[] = [];
+    const semCursor: string[] = [];
+    await page.route(/\/api\/autorizacao\/pedidos-de-concessao(\?.*)?$/u, async (route) => {
+      const requisicao = route.request();
+      if (requisicao.method() !== 'GET') return route.fallback();
+      const url = new URL(requisicao.url());
+      if (url.searchParams.has('cursor')) {
+        consultasComCursor.push(url.searchParams.get('cursor') ?? '');
+        const expirado = consultasComCursor.length > 1;
+        return route.fulfill({
+          status: expirado ? 410 : 500,
+          headers: cabecalhos,
+          contentType: 'application/problem+json',
+          body: JSON.stringify({
+            type: 'about:blank',
+            title: expirado ? 'Cursor de paginação expirado' : 'Erro interno',
+            status: expirado ? 410 : 500,
+            code: expirado ? 'uniplus.cursor.expirado' : 'uniplus.erro_interno',
+            traceId: 'e2e',
+          }),
+        });
+      }
+      semCursor.push(url.search);
+      const { id, situacao, etapaAtual, beneficiario, perfil, escopo, justificativa, criadoEm } =
+        pedidoSeed();
+      return route.fulfill({
+        status: 200,
+        headers: {
+          ...cabecalhos,
+          Link: `<${url.origin}${url.pathname}?cursor=pagina-2&direction=next>; rel="next"`,
+        },
+        json: [{ id, situacao, etapaAtual, beneficiario, perfil, escopo, justificativa, criadoEm }],
+      });
+    });
+
+    await page.goto('/acessos/pedidos');
+    await expect(page.getByText('Analista de documentos').first()).toBeVisible();
+    await page.locator('[data-pager="next"]').click();
+    const tentar = page.getByRole('button', { name: 'Tentar novamente' });
+    await expect(tentar).toBeVisible();
+
+    await tentar.click();
+
+    await expect(page.getByText('a consulta expirou', { exact: false })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tentar novamente' })).toHaveCount(0);
+    await expect(page.getByText('Analista de documentos').first()).toBeVisible();
+    expect(consultasComCursor).toEqual(['pagina-2', 'pagina-2']);
+    expect(semCursor).toHaveLength(2);
+  });
+
   test('as telas de acesso não têm violação de acessibilidade', async ({ page }) => {
     await mockApiDeAcesso(page, [pedidoSeed()]);
     await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);

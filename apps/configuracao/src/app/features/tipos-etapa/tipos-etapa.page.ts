@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   AlertComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
@@ -14,7 +14,7 @@ import { TiposEtapaStore } from './tipos-etapa.store';
   selector: 'cfg-tipos-etapa-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     AlertComponent,
     TiposEtapaListaComponent,
     TipoEtapaFormularioComponent,
@@ -28,14 +28,11 @@ import { TiposEtapaStore } from './tipos-etapa.store';
 export class TiposEtapaPage {
   protected readonly store = inject(TiposEtapaStore);
   protected readonly edicao = inject(EdicaoDosTiposEtapa);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-tipos-etapa-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

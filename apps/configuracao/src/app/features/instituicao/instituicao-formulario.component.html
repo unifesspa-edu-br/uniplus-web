@@ -71,23 +71,13 @@
               Aponta para a Unidade viva do tipo Reitoria. Pode ficar sem vínculo durante o cadastro
               inicial da estrutura.
             </span>
+            <ui-falha-de-leitura-do-campo [leitura]="leituraDasReitorias()" />
             @if (erroDoCampo('unidadeRaizId')) {
               <span class="field__error" id="cfg-instituicao-unidadeRaizId-erro">{{
                 erroDoCampo('unidadeRaizId')
               }}</span>
             }
           </label>
-          @if (reitoriasComErro()) {
-            <p class="field__error form-grid__full" id="cfg-instituicao-reitorias-erro">
-              <span role="alert">Não foi possível carregar as unidades para seleção.</span>
-              <ui-nova-tentativa-do-campo
-                [pendente]="reitoriasCarregando()"
-                [fase]="faseDasReitorias()"
-                assunto="unidades"
-                (tentar)="aoTentarReitorias()"
-              />
-            </p>
-          }
         </div>
       </section>
     </fieldset>

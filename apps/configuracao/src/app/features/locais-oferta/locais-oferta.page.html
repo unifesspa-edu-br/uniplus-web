@@ -8,34 +8,25 @@
   </div>
 </div>
 
-@if (leitura.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
-  titulo="Não foi possível carregar os locais de oferta"
-  [mensagem]="mensagem"
-  [pendente]="leitura.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
-/>
-}
+<ui-falha-de-leitura titulo="Não foi possível carregar os locais de oferta" [leitura]="leitura" />
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
 <cfg-locais-oferta-lista
-  [locais]="leitura.locais()"
-  [carregando]="leitura.carregando()"
+  [locais]="store.locais()"
+  [carregando]="store.carregando()"
   [gravando]="edicao.gravando()"
-  [mensagemDeErro]="leitura.mensagemDeErro()"
-  [temAnterior]="leitura.anterior() !== null"
-  [temProximo]="leitura.proximo() !== null"
-  [falhas]="falhasDosCampi()"
-  [resolucoes]="leitura.resolucoes()"
+  [mensagemDeErro]="store.mensagemDeErro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [leituras]="leiturasDaLista"
+  [resolucoes]="store.resolucoes()"
   [localAfetadoId]="edicao.localAfetadoId()"
   [andamento]="edicao.andamento()"
   (cadastrar)="abrirCadastro()"
   (editar)="abrirEdicao($event)"
   (remover)="edicao.pedirRemocao($event)"
-  (anterior)="leitura.paginaAnterior()"
-  (proximo)="leitura.proximaPagina()"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
 />
 <cfg-local-oferta-formulario
   [aberto]="edicao.formOpen()"
@@ -46,11 +37,8 @@
   [erroDoEndereco]="edicao.enderecoErro()"
   [salvando]="edicao.saving()"
   [gravando]="edicao.gravando()"
-  [campi]="leitura.campi.opcoes()"
-  [campiComErro]="avisoDosCampi()"
-  [carregandoCampi]="leitura.campi.pendente()"
-  [faseDosCampi]="novaTentativaDosCampi.fase()"
-  (recarregarCampi)="tentarNovamenteOsCampi()"
+  [campi]="store.campi.opcoes()"
+  [leituraDosCampi]="leituraDosCampi"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
 />

@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
   AlertComponent,
 } from '@uniplus/shared-ui/components';
 import { TiposBancaListaComponent } from './tipos-banca-lista.component';
@@ -14,7 +14,7 @@ import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
   selector: 'cfg-tipos-banca-page',
   standalone: true,
   imports: [
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
     AlertComponent,
     TiposBancaListaComponent,
     TipoBancaFormularioComponent,
@@ -28,14 +28,11 @@ import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
 export class TiposBancaPage {
   protected readonly store = inject(TiposBancaStore);
   protected readonly edicao = inject(EdicaoDosTiposBanca);
-  protected readonly pendente = computed(() => this.store.carregando() || this.edicao.gravando());
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    pendente: this.pendente,
-    falhou: computed(() => this.store.mensagemDeErro() !== null),
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.mensagemDeErro,
+    pendente: this.store.carregando,
+    indisponivel: this.edicao.gravando,
+    recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-tipos-banca-list-title'),
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.store.tentarNovamente());
-  }
 }

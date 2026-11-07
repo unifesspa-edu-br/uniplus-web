@@ -2,16 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   afterNextRender,
-  computed,
   effect,
   inject,
   Injector,
   untracked,
 } from '@angular/core';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
   AlertComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
@@ -33,12 +32,13 @@ import { ID_DO_INICIO_DA_EDICAO } from './ids-do-fato';
 @Component({
   selector: 'cfg-fato-edicao',
   imports: [
-    AlertaNovaTentativaComponent,
     AlertComponent,
+    FalhaDeLeituraComponent,
     FatoDefinicaoComponent,
     FatoDescritivoComponent,
     FatoRegrasComponent,
     FatoValoresComponent,
+    IndicadorDaLeituraDirective,
     SituacaoDaAprovacaoComponent,
     SpinnerComponent,
   ],
@@ -52,23 +52,23 @@ export class FatoEdicaoComponent {
   private readonly fatos = inject(EdicaoDosFatos);
   private readonly injector = inject(Injector);
 
-  /** A falha de leitura troca o formulário pelo alerta: o foco vai a ele, para não cair no corpo da página. */
-  private readonly focoNoAlerta = effect(() => {
+  /**
+   * A falha de leitura troca o formulário pelo aviso: o foco vai a ele, para não cair no corpo da
+   * página. Se o foco já está dentro do aviso (o "Tentar novamente" de uma nova falha), fica onde está.
+   */
+  private readonly focoNoAviso = effect(() => {
     if (this.leitura.erroDeCarga() === null) return;
     untracked(() =>
-      afterNextRender(() => document.getElementById('cfg-fato-erro-de-carga')?.focus(), {
-        injector: this.injector,
-      }),
+      afterNextRender(
+        () => {
+          const aviso = document.getElementById('cfg-fato-erro-de-carga');
+          if (!aviso?.contains(document.activeElement)) aviso?.focus();
+        },
+        { injector: this.injector },
+      ),
     );
   });
 
-  /** O alerta fica na tela durante a nova tentativa, com o foco no botão; ao dar certo, o foco vai ao início da edição. */
-  protected readonly novaTentativa = acompanharNovaTentativa({
-    assunto: 'dados do fato',
-    pendente: this.leitura.carregando,
-    falhou: computed(() => this.leitura.erroDeCarga() !== null),
-    destino: () => document.getElementById(ID_DO_INICIO_DA_EDICAO),
-  });
   protected readonly idDoInicio = ID_DO_INICIO_DA_EDICAO;
 
   /** Criado o fato, o botão de criar sai da tela; o foco recomeça no início da edição quando o fato chega. */
@@ -84,10 +84,6 @@ export class FatoEdicaoComponent {
       );
     });
   });
-
-  protected tentarNovamente(): void {
-    this.novaTentativa.executar(() => this.leitura.recarregar());
-  }
 
   protected fechar(): void {
     this.fatos.fechar();

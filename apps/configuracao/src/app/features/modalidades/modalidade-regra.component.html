@@ -3,21 +3,17 @@
     Quem concorre nesta modalidade
   </h2>
   <div class="field form-grid__full" [class.is-error]="recusas().length > 0">
-    @switch (estadoDoCatalogo()) {
-      @case ('erro') {
-        <ui-alerta-nova-tentativa
-          titulo="Catálogo de fatos não carregado"
-          mensagem="Sem o catálogo, a regra de aplicabilidade não pode ser lida nem escrita."
-          [pendente]="catalogoPendente()"
-          [fase]="faseDoCatalogo()"
-          variante="warning"
-          (tentar)="recarregarCatalogo.emit()"
-        />
-      }
-      @case ('carregando') {
-        <p class="field__hint" role="status">Carregando o catálogo de fatos...</p>
-      }
-      @default {
+    <ui-falha-de-leitura
+      titulo="Catálogo de fatos não carregado"
+      variante="warning"
+      [leitura]="leituraDoCatalogo()"
+    />
+    @if (!leituraDoCatalogo().visivel()) {
+      @if (!catalogoCarregado()) {
+        <p class="field__hint" [uiIndicadorDaLeitura]="leituraDoCatalogo()">
+          Carregando o catálogo de fatos...
+        </p>
+      } @else {
         <div>
           @if (leitura().length === 0) {
             <p>{{ todosOsCandidatos }}.</p>

@@ -1,6 +1,5 @@
 import {
   DestroyRef,
-  ErrorHandler,
   Injectable,
   Signal,
   computed,
@@ -54,7 +53,6 @@ export class PesosEnemStore {
   private readonly api = inject(PesosEnemApi);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
-  private readonly errorHandler = inject(ErrorHandler);
   private readonly destroyRef = inject(DestroyRef);
   readonly catalogoGrupos = inject(CatalogoGruposAreaEnem);
 
@@ -195,20 +193,13 @@ export class PesosEnemStore {
     );
   }
 
-  /**
-   * Exaustão de cursor (ADR-0015/0026). Na tentativa do operador, o alerta da falha anterior
-   * fica na tela até ela terminar, para não sair levando o botão com o foco; na recarga
-   * automática ele sai logo, porque a falha é de outro momento.
-   */
-  recarregar(pedidaPeloOperador = false): void {
+  /** Exaustão de cursor (ADR-0015/0026). */
+  recarregar(): void {
     if (this.lendo()) {
       return;
     }
-    const falhaRepetida = pedidaPeloOperador && this.falha() !== null;
     this.lendo.set(true);
-    if (!falhaRepetida) {
-      this.falha.set(null);
-    }
+    this.falha.set(null);
     const coleta = { acumulado: [] as PesoAreaEnemDto[], falhou: null as ProblemDetails | null };
     this.listarTodasAsPaginas()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -220,16 +211,7 @@ export class PesosEnemStore {
             coleta.falhou ??= result.problem;
           }
         },
-        // Erro fora do envelope ApiResult (ex.: de outro interceptor): também é falha, com
-        // alerta e nova tentativa, em vez de deixar a tela carregando.
-        error: (erro: unknown) => {
-          try {
-            this.errorHandler.handleError(erro);
-          } finally {
-            this.concluir(null, true, []);
-          }
-        },
-        complete: () => this.concluir(coleta.falhou, false, coleta.acumulado),
+        complete: () => this.concluir(coleta.falhou, coleta.acumulado),
       });
   }
 
@@ -249,22 +231,15 @@ export class PesosEnemStore {
     );
   }
 
-  private concluir(
-    falhou: ProblemDetails | null,
-    semResposta: boolean,
-    acumulado: readonly PesoAreaEnemDto[],
-  ): void {
+  private concluir(falhou: ProblemDetails | null, acumulado: readonly PesoAreaEnemDto[]): void {
     this.lendo.set(false);
-    if (falhou === null && !semResposta) {
+    if (falhou === null) {
       this.falha.set(null);
       this.linhas.set(acumulado);
       return;
     }
-    this.falha.set(
-      nullIfBlank(falhou === null ? null : this.problemI18n.resolve(falhou).title) ??
-        LISTAGEM_NAO_CARREGADA,
-    );
-    if (falhou !== null && falhou.status >= 500) {
+    this.falha.set(nullIfBlank(this.problemI18n.resolve(falhou).title) ?? LISTAGEM_NAO_CARREGADA);
+    if (falhou.status >= 500) {
       this.notifications.errorFromProblem(falhou);
     }
   }

@@ -11,10 +11,6 @@ import {
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
-import {
-  TEXTO_TENTANDO,
-  situacaoDoBotao,
-} from '../../shared/foco/situacao-da-nova-tentativa.testing';
 
 const LINK_PROXIMA =
   '</api/configuracao/base-legal-bonus-regional?cursor=abc&direction=next>; rel="next"';
@@ -155,7 +151,7 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
       expect(p.store.bases()).toEqual([portaria]);
     });
 
-    it('um cursor recusado reinicia a listagem do começo em vez de repetir a página quebrada', async () => {
+    it('um cursor recusado reinicia a listagem do começo, sem alerta, em vez de repetir a página quebrada', async () => {
       p = await montarPagina([portaria]);
       p.store.recarregar();
       await p.propagar();
@@ -170,11 +166,12 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
         .flush(...problema(410, { code: 'uniplus.cursor.expirado' }));
       await p.propagar();
 
-      p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button').click();
-      await p.propagar();
-
       const reiniciada = p.http.expectOne((r) => r.url === LISTA);
       expect(reiniciada.request.params.has('cursor')).toBe(false);
+      expect(p.store.carregando()).toBe(true);
+      expect(
+        p.fixture.nativeElement.querySelector('ui-alert .list-state__retry button'),
+      ).toBeNull();
       reiniciada.flush([portaria]);
       await p.propagar();
     });
@@ -195,7 +192,6 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(situacaoDoBotao(tentar)).toBe(TEXTO_TENTANDO);
       expect(tentar.getAttribute('aria-busy')).toBe('true');
       await p.recarregarCom([portaria]);
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));

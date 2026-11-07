@@ -1,19 +1,16 @@
 <ng-container [formGroup]="form()">
-  @if (perfisIndisponiveis(); as indisponivel) {
-    <ui-alerta-nova-tentativa
-      titulo="Não foi possível listar os perfis de acesso"
-      [mensagem]="indisponivel"
-      [pendente]="carregandoPerfis()"
-      [fase]="fasePerfis()"
-      (tentar)="tentarPerfisNovamente.emit()"
-    />
-  } @else {
+  <ui-falha-de-leitura titulo="Não foi possível listar os perfis de acesso" [leitura]="leitura()" />
+  <cfg-recusa-da-leitura naoEncontrado="Perfis de acesso não encontrados" [recusa]="recusa()">
+    Use “Cancelar” para voltar à lista de pedidos e tente pedir o acesso de novo.
+  </cfg-recusa-da-leitura>
+  @if (!leitura().visivel() && recusa() === null) {
     <label class="field" [class.is-error]="invalidoPerfil()">
       <span class="field__label is-required">Perfil de acesso</span>
       <select
         aria-required="true"
         class="select"
         formControlName="perfilId"
+        [id]="idDoPerfil"
         [attr.aria-invalid]="invalidoPerfil() ? 'true' : null"
         [attr.aria-describedby]="invalidoPerfil() ? 'cfg-pedir-perfilId-erro' : null"
       >

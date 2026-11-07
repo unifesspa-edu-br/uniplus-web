@@ -11,10 +11,11 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
-  acompanharNovaTentativa,
-  AlertaNovaTentativaComponent,
+  acompanharLeitura,
   AlertComponent,
   DialogComponent,
+  FalhaDeLeituraComponent,
+  IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
@@ -43,7 +44,8 @@ const ALERTA_DE_LEITURA_DEFASADA = {
     AlertComponent,
     DialogComponent,
     SpinnerComponent,
-    AlertaNovaTentativaComponent,
+    FalhaDeLeituraComponent,
+    IndicadorDaLeituraDirective,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './termos-consentimento-detail.page.html',
@@ -60,9 +62,6 @@ export class TermosConsentimentoDetailPage {
   protected readonly mensagemDaRemocao = computed(
     () => `Remover o termo ${this.store.termo()?.nome ?? ''}? Essa ação não pode ser desfeita.`,
   );
-  protected readonly indisponivel = computed(
-    () => this.store.carregando() || this.edicao.processando(),
-  );
 
   protected readonly alertaDaAcao = computed(() => {
     const erro = this.edicao.acaoErro();
@@ -73,10 +72,14 @@ export class TermosConsentimentoDetailPage {
   });
 
   private readonly tituloPagina = viewChild<ElementRef<HTMLHeadingElement>>('tituloPagina');
-  protected readonly novaTentativa = acompanharNovaTentativa({
+  /** O descarte do rascunho alterado já foi confirmado no diálogo: a recarga em curso não pergunta de novo. */
+  private descarteConfirmado = false;
+  protected readonly leitura = acompanharLeitura({
+    falha: this.store.erro,
     pendente: this.store.carregando,
-    falhou: computed(() => this.store.erro() !== null),
+    recarregar: () => this.recarregar(),
     destino: () => this.tituloPagina()?.nativeElement,
+    recusada: this.store.naoEncontrado,
   });
 
   private readonly injector = inject(Injector);
@@ -91,13 +94,20 @@ export class TermosConsentimentoDetailPage {
     });
   }
 
-  protected tentarNovamente(): void {
-    if (this.edicao.pedirConfirmacaoDaRecarga()) return;
-    this.novaTentativa.executar(() => this.edicao.recarregarTermo());
+  protected recarregarConfirmado(): void {
+    this.descarteConfirmado = true;
+    try {
+      this.leitura.tentar();
+    } finally {
+      this.descarteConfirmado = false;
+    }
   }
 
-  protected recarregarConfirmado(): void {
-    this.novaTentativa.executar(() => this.edicao.recarregarConfirmado());
+  /** Com alterações não salvas, `recarregarTermo` abre a confirmação e devolve `false`: nada é lido. */
+  private recarregar(): boolean {
+    return this.descarteConfirmado
+      ? this.edicao.recarregarConfirmado()
+      : this.edicao.recarregarTermo();
   }
 
   /**

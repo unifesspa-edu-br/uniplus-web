@@ -15,16 +15,14 @@ import {
   ProblemI18nService,
   STATUS_HTTP,
   cursorToString,
-  ehCursorDePaginacaoExpirado,
   useApiResource,
-  useCursorObsoletoRecovery,
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH, CursoDto } from '@uniplus/shared-data/configuracao';
 import { DEFAULT_PAGE_SIZE, DEFAULT_PAGE_SIZE_OPTIONS } from '@uniplus/shared-ui/components';
 import { CatalogoGruposAreaEnem } from '../../shared/grupos-area-enem';
-import { navegacaoPorCursor } from '../../shared/navegacao-por-cursor';
+import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
 /**
  * Debounce da busca textual — uma request por rajada de digitação, não por tecla (mesmo padrão de
@@ -81,7 +79,6 @@ export class CursosStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly carregando = this.lista.isLoading;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly cursos = this.navegacao.itens;
@@ -103,19 +100,16 @@ export class CursosStore {
    * Cursor que não continua esta consulta (400) ou que expirou (410): recomeça a paginação sem
    * cursor e avisa o operador, em vez de deixar a tela vazia ou presa numa página que não existe.
    */
-  private readonly recuperandoDeCursorObsoleto = useCursorObsoletoRecovery({
+  private readonly recuperandoDeCursorObsoleto = recuperarDeCursorObsoleto({
     problem: this.lista.problem,
     pagina: this.pagina,
-    reiniciarPagina: () => this.pagina.set(undefined),
-    aoRecuperar: (problem) => {
-      this.notifications.info(
-        problem && ehCursorDePaginacaoExpirado(problem)
-          ? 'A listagem ficou aberta tempo demais e a consulta expirou.'
-          : 'A paginação foi reiniciada porque a consulta mudou.',
-        'Recarregamos a listagem do começo.',
-      );
-    },
+    notificacoes: this.notifications,
   });
+
+  /** Inclui o intervalo entre a resposta de cursor recusado e a nova leitura sem cursor. */
+  readonly carregando = computed(
+    () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
+  );
 
   readonly mensagemDeErro = computed<string | null>(() => {
     // A recuperação de cursor obsoleto avisa por notificação; um alerta de "não foi possível

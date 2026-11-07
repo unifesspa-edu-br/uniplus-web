@@ -15,16 +15,10 @@
   de atendimento o referencia literalmente.
 </ui-alert>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar as condições de atendimento"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+  [leitura]="leitura"
 />
-}
 
 <p class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</p>
 <cfg-condicoes-atendimento-lista

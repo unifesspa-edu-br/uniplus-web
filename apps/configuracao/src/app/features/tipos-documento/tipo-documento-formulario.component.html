@@ -11,18 +11,6 @@
     <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
   }
 
-  @if (categorias().comErro) {
-    <ui-alerta-nova-tentativa
-      titulo="Categorias não carregadas"
-      mensagem="Sem o catálogo de categorias não é possível classificar o tipo de documento."
-      [pendente]="categorias().pendente"
-      [indisponivel]="salvando()"
-      [fase]="faseDasCategorias()"
-      variante="warning"
-      (tentar)="recarregarCategorias.emit()"
-    />
-  }
-
   <cfg-tipo-documento-avisos [decisao]="decisao()" [avisaNovaAprovacao]="avisaNovaAprovacao()" />
 
   <form
@@ -81,6 +69,7 @@
             }
           </select>
           <span class="field__hint" id="cfg-td-categoria-dica">{{ categorias().dica }}</span>
+          <ui-falha-de-leitura-do-campo [leitura]="leituraDasCategorias()" />
           @if (erroCategoria) {
             <span class="field__error" id="cfg-td-categoria-erro">{{ erroCategoria }}</span>
           }

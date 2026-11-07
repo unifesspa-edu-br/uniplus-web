@@ -136,6 +136,54 @@ describe('ModalidadesListPage', () => {
     );
   });
 
+  describe('fatos que nomeiam as condições', () => {
+    const quemConcorreDeV = () =>
+      (
+        fixture.nativeElement.querySelector(
+          'tr[data-codigo="V"] td[data-label="Quem concorre"]',
+        ) as HTMLElement
+      ).textContent?.trim();
+    const problemaDosFatos = (status: number) =>
+      [
+        { title: 'Erro', status, code: 'uniplus.x', type: 'about:blank', traceId: '' },
+        {
+          status,
+          statusText: 'Erro',
+          headers: { 'Content-Type': 'application/problem+json' },
+        },
+      ] as const;
+
+    async function listaComFatosRecusados(status: number): Promise<void> {
+      controller.expectOne((r) => r.url === URL).flush([AC, V]);
+      controller.expectOne(URL_CATALOGO).flush(...problemaDosFatos(status));
+      await propagate();
+    }
+
+    it('a falha dos fatos explica a coluna e a nova tentativa devolve os nomes das condições', async () => {
+      await listaComFatosRecusados(500);
+      expect(quemConcorreDeV()).toBe('Quem atende às condições da regra');
+      expect(fixture.nativeElement.textContent).toContain(
+        'A coluna “Quem concorre” mostra “Quem atende às condições da regra”',
+      );
+
+      fixture.nativeElement.querySelector('ui-falha-de-leitura button').click();
+      await propagate();
+      controller.expectOne(URL_CATALOGO).flush(CATALOGO);
+      await propagate();
+
+      expect(quemConcorreDeV()).toContain('Cursou o ensino médio em escola pública');
+      expect(fixture.nativeElement.querySelector('ui-falha-de-leitura ui-alert')).toBeNull();
+    });
+
+    it('os fatos que não existem mais explicam a coluna sem oferecer nova tentativa', async () => {
+      await listaComFatosRecusados(404);
+
+      expect(fixture.nativeElement.textContent).toContain('Fatos das regras não encontrados');
+      expect(fixture.nativeElement.querySelector('ui-falha-de-leitura ui-alert')).toBeNull();
+      expect(fixture.nativeElement.textContent).not.toContain('Tentar novamente');
+    });
+  });
+
   it('CA-01: chips de natureza contam por token e filtram client-side', async () => {
     await flushLista([AC, V]);
     const chips = component['chipsNatureza']();

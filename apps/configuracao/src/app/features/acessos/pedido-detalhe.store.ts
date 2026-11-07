@@ -6,8 +6,8 @@ import {
   type EventoDaTrilhaDto,
   type PedidoDeConcessaoDto,
 } from '@uniplus/shared-data/autorizacao';
+import { desfechoDaLeitura } from './desfecho-da-leitura';
 import { notificarFalhasDeLeitura } from './falha-de-servidor';
-import { FALHA_INESPERADA, textoDaRecusa } from './mensagens-de-acesso';
 
 @Injectable()
 export class PedidoDetalheStore {
@@ -49,16 +49,27 @@ export class PedidoDetalheStore {
   readonly carregando = computed(
     () => this.pedidoResource.isLoading() || this.trilhaResource.isLoading(),
   );
-  readonly erro = computed(() => {
-    const problema = this.pedidoResource.problem();
-    return problema
-      ? textoDaRecusa(this.problemas.resolve(problema))
-      : this.pedidoResource.error() || this.trilhaResource.error()
-        ? FALHA_INESPERADA
-        : null;
-  });
-  recarregar(): void {
-    this.pedidoResource.reload();
-    this.trilhaResource.reload();
+  private readonly desfecho = desfechoDaLeitura(
+    [this.pedidoResource, this.trilhaResource],
+    this.problemas,
+  );
+  /** A falha de qualquer das duas leituras que uma nova tentativa pode resolver. */
+  readonly falha = this.desfecho.falha;
+  readonly recusa = this.desfecho.recusa;
+  private readonly desfechoDoPedido = desfechoDaLeitura([this.pedidoResource], this.problemas);
+  private readonly desfechoDaTrilha = desfechoDaLeitura([this.trilhaResource], this.problemas);
+  /** O pedido não existe ou não é acessível. */
+  readonly recusaDoPedido = this.desfechoDoPedido.recusa;
+  /** Só a trilha foi recusada: o pedido está na tela, e o aviso não pode falar dele. */
+  readonly recusaDaTrilha = computed(() =>
+    this.recusaDoPedido() === null ? this.desfechoDaTrilha.recusa() : null,
+  );
+  readonly erro = this.desfecho.mensagem;
+
+  /** Relê o pedido e a trilha; devolve `false` se nenhuma leitura começou. */
+  recarregar(): boolean {
+    const pedido = this.pedidoResource.reload();
+    const trilha = this.trilhaResource.reload();
+    return pedido || trilha;
   }
 }

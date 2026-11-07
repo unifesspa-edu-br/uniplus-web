@@ -1,16 +1,16 @@
 <cfg-modelo-formulario-cabecalho [modelo]="store.modelo()" />
 
-@if (store.erroAoCarregar(); as erro) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar o modelo"
-  [mensagem]="erro"
-  [pendente]="store.carregando()"
-  [fase]="novaTentativaDoModelo.fase()"
-  (tentar)="recarregarModelo()"
+  [leitura]="store.leituraDoModelo"
 />
+@if (store.naoEncontrado()) {
+<ui-alert variant="danger" heading="Modelo não encontrado">
+  {{ store.erroAoCarregar() }} Volte à lista para escolher outro modelo.
+</ui-alert>
 } @else if (store.carregando() && store.modelo() === null) {
-<div class="cfg-form__loading" role="status">
-  <ui-spinner spinnerSize="md" /> Carregando o modelo...
+<div class="cfg-form__loading" [uiIndicadorDaLeitura]="store.leituraDoModelo">
+  <ui-spinner spinnerSize="md" [decorativo]="true" /> Carregando o modelo...
 </div>
 } @else if (store.modelo(); as m) {
 <div id="cfg-modelo-resumo" class="cfg-modelo-resumo" tabindex="-1">
@@ -25,25 +25,22 @@
   }
 </div>
 
-@if (store.termosComErro()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   variante="warning"
   titulo="Termos de consentimento não carregados"
-  mensagem="Sem a lista de termos não é possível exigir um termo novo nem trocar a versão."
-  [pendente]="store.termosCarregando()"
-  [fase]="novaTentativaDosTermos.fase()"
-  (tentar)="recarregarTermos()"
+  [leitura]="store.leituraDosTermos"
 />
-} @if (store.catalogoComErro()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   variante="warning"
   titulo="Catálogo de fatos não carregado"
-  mensagem="Sem o catálogo não é possível acrescentar campos nem declarar condições."
-  [pendente]="store.catalogo.isLoading()"
-  [fase]="novaTentativaDoCatalogo.fase()"
-  (tentar)="recarregarCatalogo()"
+  [leitura]="store.leituraDoCatalogo"
 />
-}
+
+<ui-falha-de-leitura
+  variante="warning"
+  titulo="Tipos de processo não carregados"
+  [leitura]="store.leituraDosTipos"
+/>
 
 <cfg-modelo-formulario-identificacao
   [form]="edicao.form"
@@ -52,16 +49,12 @@
   (salvar)="salvar()"
 />
 
-@if (store.vocabularioDosDocumentosComErro()) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   variante="warning"
   titulo="Fases ou tipos de documento não carregados"
-  mensagem="Sem as fases e os tipos de documento não é possível acrescentar documentos exigidos."
-  [pendente]="store.vocabularioDosDocumentosCarregando()"
-  [fase]="novaTentativaDoVocabulario.fase()"
-  (tentar)="recarregarVocabulario()"
+  [leitura]="store.leituraDoVocabulario"
 />
-} @if (edicao.conteudo(); as c) {
+@if (edicao.conteudo(); as c) {
 <ui-editor-de-formulario
   idBase="cfg-modelo"
   [conteudo]="c"

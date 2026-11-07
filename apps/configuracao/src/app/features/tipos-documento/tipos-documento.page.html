@@ -10,16 +10,16 @@
   </div>
 </div>
 
-@if (store.mensagemDeErro(); as mensagem) {
-<ui-alerta-nova-tentativa
+<ui-falha-de-leitura
   titulo="Não foi possível carregar os tipos de documento"
-  [mensagem]="mensagem"
-  [pendente]="store.carregando()"
-  [indisponivel]="edicao.gravando()"
-  [fase]="novaTentativa.fase()"
-  (tentar)="tentarNovamente()"
+  idBotao="cfg-tipos-documento-tentar-novamente"
+  [leitura]="leitura"
 />
-}
+<ui-falha-de-leitura
+  titulo="Não foi possível ler a situação da proteção de dados"
+  variante="warning"
+  [leitura]="leituraDaSituacao"
+/>
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-tipos-documento-filtros
@@ -39,7 +39,7 @@
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
   [podeSolicitar]="aprovacao.solicitaveis().length > 0"
-  [lookupsComFalha]="lookupsComFalha()"
+  [leituras]="leiturasDaLista"
   (cadastrar)="cadastrar()"
   (detalhar)="store.abrirDetalhe($event)"
   (editar)="editar($event)"
@@ -64,7 +64,7 @@
   [modo]="edicao.modo()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
-  [faseDasCategorias]="novaTentativaDasCategorias.fase()"
+  [leituraDasCategorias]="leituraDasCategorias"
   [salvando]="edicao.salvando()"
   [categorias]="edicao.categorias()"
   [hipoteses]="edicao.hipotesesPermitidas()"
@@ -72,7 +72,6 @@
   [avisaNovaAprovacao]="edicao.avisaNovaAprovacao()"
   (salvar)="edicao.salvar()"
   (cancelar)="edicao.fechar()"
-  (recarregarCategorias)="recarregarCategorias()"
 />
 <cfg-confirmacao-de-remocao
   titulo="Remover tipo de documento"
