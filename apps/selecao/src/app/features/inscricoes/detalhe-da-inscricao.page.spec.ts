@@ -148,6 +148,8 @@ const FERNANDA: InscricaoAdministrativaDto = {
     arquivo(LAUDO_ID, 'Laudo médico'),
     arquivo(COMPROVANTE_ID, 'Comprovante de residência', { exigenciaId: OUTRA_EXIGENCIA_ID }),
   ],
+  podeEmitirComprovante: false,
+  numeroDoUltimoComprovante: null,
 };
 
 describe('DetalheDaInscricaoPage', () => {
@@ -389,6 +391,8 @@ describe('DetalheDaInscricaoPage', () => {
       secoes: [],
       derivados: [],
       arquivos: [],
+      podeEmitirComprovante: false,
+      numeroDoUltimoComprovante: null,
     });
 
     expect(dado('Situação')).toBe('Enviada');
