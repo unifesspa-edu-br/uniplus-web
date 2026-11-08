@@ -14,9 +14,23 @@ import {
     <div class="page-header">
       <div class="page-header__content">
         @if (level() === 1) {
-          <h1 class="page-header__title" #titulo tabindex="-1">{{ heading() }}</h1>
+          <h1
+            class="page-header__title"
+            #titulo
+            tabindex="-1"
+            [attr.aria-describedby]="descritoPor()"
+          >
+            {{ heading() }}
+          </h1>
         } @else {
-          <h2 class="page-header__title" #titulo tabindex="-1">{{ heading() }}</h2>
+          <h2
+            class="page-header__title"
+            #titulo
+            tabindex="-1"
+            [attr.aria-describedby]="descritoPor()"
+          >
+            {{ heading() }}
+          </h2>
         }
         @if (description()) {
           <p class="page-header__desc">{{ description() }}</p>
@@ -32,6 +46,8 @@ export class PageHeaderComponent {
   readonly heading = input.required<string>();
   readonly description = input<string>('');
   readonly level = input<1 | 2>(1);
+  /** O `id` do que descreve a página (ex.: um aviso), lido junto com o título. */
+  readonly descritoPor = input<string | null>(null);
 
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
 

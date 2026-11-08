@@ -12,18 +12,20 @@ import { lerFolha } from '../../../styles/testing/ler-folha.testing';
   standalone: true,
   imports: [DocumentoComponent],
   template: `
-    <ui-documento titulo="Comprovante de inscrição">
+    <ui-documento titulo="Comprovante de inscrição" [aviso]="aviso">
       <button uiDocumentoAcoes type="button">Imprimir comprovante</button>
       <p id="corpo">Conteúdo</p>
     </ui-documento>
   `,
 })
 class DocumentoDeTeste {
+  aviso: string | null = null;
   readonly documento = viewChild.required(DocumentoComponent);
 }
 
-function montar() {
+function montar(aviso: string | null = null) {
   const fixture = TestBed.createComponent(DocumentoDeTeste);
+  fixture.componentInstance.aviso = aviso;
   fixture.detectChanges();
   return { fixture, tela: fixture.nativeElement as HTMLElement };
 }
@@ -88,6 +90,45 @@ describe('DocumentoComponent', () => {
   });
 });
 
+describe('DocumentoComponent — aviso', () => {
+  const AVISO = 'Inscrição cancelada em 10/10/2026';
+
+  it("sem aviso, não renderiza bloco nem marca d'água e o título não é descrito por nada", () => {
+    const { tela } = montar(null);
+
+    expect(tela.querySelector('.documento__aviso')).toBeNull();
+    expect(tela.querySelector('.documento__aviso-marca')).toBeNull();
+    expect(tela.querySelector('h1')?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('com aviso, mostra o bloco estático no topo do corpo, sem aria-live', () => {
+    const { tela } = montar(AVISO);
+    const bloco = tela.querySelector('.documento__corpo > :first-child') as HTMLElement;
+
+    expect(bloco.classList).toContain('documento__aviso');
+    expect(bloco.textContent?.trim()).toBe(AVISO);
+    expect(bloco.closest('[aria-live]')).toBeNull();
+    expect(bloco.hasAttribute('aria-live')).toBe(false);
+  });
+
+  it('o título é descrito pelo aviso', () => {
+    const { tela } = montar(AVISO);
+    const bloco = tela.querySelector('.documento__aviso') as HTMLElement;
+
+    expect(bloco.id).not.toBe('');
+    expect(tela.querySelector('h1')?.getAttribute('aria-describedby')).toBe(bloco.id);
+  });
+
+  it('a cópia de impressão é só do papel e fica fora da leitura de tela', () => {
+    const { tela } = montar(AVISO);
+    const marca = tela.querySelector('.documento__aviso-marca') as HTMLElement;
+
+    expect(marca.textContent?.trim()).toBe(AVISO);
+    expect(marca.getAttribute('aria-hidden')).toBe('true');
+    expect(marca.classList).toContain('u-print-only');
+  });
+});
+
 describe('components.css — papel do documento', () => {
   const folha = lerFolha(resolve(__dirname, '../../../styles/components.css')).replace(
     /\/\*[\s\S]*?\*\//gu,
@@ -109,6 +150,37 @@ describe('components.css — papel do documento', () => {
     expect(folha).not.toMatch(/@page\s*\{/u);
     // Na raiz: num descendente, os ancestrais ficariam na página padrão e abririam uma folha em branco.
     expect(folha).toMatch(/:root:has\(\.documento\)\s*\{[^}]*page:\s*documento/u);
+  });
+
+  it('solta a altura travada no viewport da cadeia inteira, para o documento de várias folhas não sair cortado', () => {
+    const regra = impressao.match(/(:root:has\(\.documento\),[^{]*)\{([^}]*)\}/u);
+    const seletores = regra?.[1] ?? '';
+    const declaracoes = regra?.[2] ?? '';
+
+    for (const parte of ['body', 'body > *', 'ui-app-shell', '.ui-app-shell', '.page']) {
+      expect(seletores).toContain(`:root:has(.documento) ${parte}`);
+    }
+    expect(declaracoes).toMatch(/height:\s*auto/u);
+    expect(declaracoes).toMatch(/max-height:\s*none/u);
+    expect(declaracoes).toMatch(/overflow:\s*visible/u);
+  });
+
+  it('o fragmento some da grade, e no papel as seções dele se espaçam como as do corpo', () => {
+    expect(folha).toMatch(/\.documento__fragmento\s*\{[^}]*display:\s*contents/u);
+    expect(impressao).toMatch(/\.documento__corpo > \.documento__fragmento > \*/u);
+  });
+
+  it("o aviso é bloco de texto e borda, sem fundo, e a cópia é marca d'água fixa em cinza claro", () => {
+    expect(folha).toMatch(/\.documento__aviso\s*\{[^}]*border:\s*0\.25rem solid/u);
+    expect(folha).not.toMatch(/\.documento__aviso\s*\{[^}]*background/u);
+    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*position:\s*fixed/u);
+    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*color:\s*#d1d5db/u);
+    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*mix-blend-mode:\s*multiply/u);
+    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*print-color-adjust:\s*exact/u);
+    expect(impressao).toMatch(
+      /\.documento__aviso-marca\s*\{[^}]*-webkit-print-color-adjust:\s*exact/u,
+    );
+    expect(impressao).toMatch(/\.documento__aviso-marca\s*\{[^}]*font-size:\s*28pt/u);
   });
 
   it('o título com foco programático não leva anel', () => {

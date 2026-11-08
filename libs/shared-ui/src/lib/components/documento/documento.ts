@@ -14,6 +14,8 @@ import { formatarDataBr } from '@uniplus/shared-utils';
 import { MarcaInstitucionalComponent } from '../marca-institucional/marca-institucional';
 import { PageHeaderComponent } from '../page-header/page-header';
 
+let proximoAviso = 0;
+
 /**
  * Um documento que o titular guarda ou imprime, como o comprovante de inscrição. É o dono do título
  * da página, das ações e do papel:
@@ -21,7 +23,11 @@ import { PageHeaderComponent } from '../page-header/page-header';
  * - na tela, o título e as ações (`[uiDocumentoAcoes]`) ficam no `ui-page-header`, que não sai no papel;
  * - no papel, o cabeçalho institucional traz a marca, o título e o instante da impressão, atualizado
  *   no `beforeprint` antes de o navegador montar a página;
- * - o corpo é a grade das `ui-secao-de-documento`.
+ * - o corpo é a grade das `ui-secao-de-documento`;
+ * - o `aviso`, quando há, é um bloco estático no topo do corpo, de alto contraste e sem depender de
+ *   fundo (a impressão padrão não imprime fundo), ligado ao título por `aria-describedby`. No papel,
+ *   uma cópia em marca d'água, fixa em todas as folhas, o repete sem reservar espaço e fora do que o
+ *   leitor de tela lê.
  *
  * As cores e a página A4 do papel são do CSS de impressão, sempre em fundo branco, seja qual for o
  * tema da tela.
@@ -46,19 +52,35 @@ import { PageHeaderComponent } from '../page-header/page-header';
         <p class="documento__papel-sistema">Sistema Uni+</p>
       </div>
     </header>
-    <ui-page-header class="u-no-print" [heading]="titulo()" [description]="descricao()" [level]="1">
+    <ui-page-header
+      class="u-no-print"
+      [heading]="titulo()"
+      [description]="descricao()"
+      [level]="1"
+      [descritoPor]="aviso() ? idDoAviso : null"
+    >
       <div uiPageActions class="documento__acoes">
         <ng-content select="[uiDocumentoAcoes]" />
       </div>
     </ui-page-header>
     <div class="documento__corpo">
+      @if (aviso(); as texto) {
+        <p class="documento__aviso" [id]="idDoAviso">{{ texto }}</p>
+      }
       <ng-content />
     </div>
+    @if (aviso(); as texto) {
+      <p class="documento__aviso-marca u-print-only" aria-hidden="true">{{ texto }}</p>
+    }
   `,
 })
 export class DocumentoComponent {
   readonly titulo = input.required<string>();
   readonly descricao = input<string>('');
+  /** Um aviso sobre o documento inteiro, como o de que ele foi cancelado. */
+  readonly aviso = input<string | null>(null);
+
+  protected readonly idDoAviso = `ui-documento-aviso-${proximoAviso++}`;
 
   private readonly janela = inject(DOCUMENT).defaultView;
   private readonly detector = inject(ChangeDetectorRef);

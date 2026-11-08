@@ -46,6 +46,25 @@
 .secao-de-documento--inteira {
   grid-column: 1 / -1;
 }
+/* Alto contraste só por texto e borda: a impressão padrão não imprime fundo. */
+.documento__aviso {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 0.25rem solid var(--text-heading);
+  border-radius: var(--radius-md);
+  color: var(--text-heading);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-bold);
+  line-height: var(--leading-snug);
+  break-inside: avoid;
+}
+/*
+ * Um componente que contribui seções ao corpo (como o comprovante) marca o host com este fragmento: o
+ * host some da grade e as seções dele se alinham como as do próprio corpo.
+ */
+.documento__fragmento {
+  display: contents;
+}
 .documento__corpo > .btn,
 .secao-de-documento__corpo > .btn {
   justify-self: start;
@@ -158,6 +177,21 @@ h5.secao-de-documento__titulo {
     background: #ffffff;
     color: #111111;
   }
+  /*
+   * A tela trava a altura no viewport e rola por dentro (html, body, host do app, casca e `.page`): no
+   * papel isso cortaria o que passa da primeira folha. O documento solta a cadeia inteira para o
+   * conteúdo se repartir nas folhas que precisar. `body > *` é o host de qualquer app.
+   */
+  :root:has(.documento),
+  :root:has(.documento) body,
+  :root:has(.documento) body > *,
+  :root:has(.documento) ui-app-shell,
+  :root:has(.documento) .ui-app-shell,
+  :root:has(.documento) .page {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
   .documento {
     gap: 4mm;
     font-size: 10pt;
@@ -191,9 +225,39 @@ h5.secao-de-documento__titulo {
   .secao-de-documento__corpo {
     display: block;
   }
+  /*
+   * Marca d'água: o elemento fixo se repete em todas as folhas sem ocupar espaço. Fica por cima do
+   * conteúdo e se mistura por multiplicação, para nenhum fundo branco a encobrir quando a impressão
+   * inclui planos de fundo e para o texto escuro do documento continuar escuro onde ela passa.
+   * A cor clara só chega ao papel com `print-color-adjust: exact`: na impressão econômica o Chrome
+   * escurece o texto claro e a marca passaria a cobrir o que está escrito.
+   */
+  .documento__aviso-marca {
+    position: fixed;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    z-index: 1;
+    mix-blend-mode: multiply;
+    inline-size: 80%;
+    margin: 0;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color: #d1d5db;
+    font-size: 28pt;
+    font-weight: var(--weight-bold);
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
   .documento__corpo > * + *,
+  .documento__corpo > .documento__fragmento > *,
   .secao-de-documento__corpo > * + * {
     margin-block-start: 3mm;
+  }
+  .documento__corpo > .documento__fragmento:first-child > :first-child {
+    margin-block-start: 0;
   }
   .secao-de-documento {
     padding: 3mm;
