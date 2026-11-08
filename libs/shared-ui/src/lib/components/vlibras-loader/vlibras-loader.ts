@@ -28,6 +28,7 @@ function resolveAssetPath(relativePath: string): string {
   selector: 'ui-vlibras-loader',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'u-no-print' },
   template: `
     <div vw class="enabled">
       <div vw-access-button class="active"></div>

@@ -64,7 +64,7 @@ let shellIdSeed = 0;
         class="admin-shell"
         [attr.data-sidebar-desktop]="sidebarDesktopOpen() ? 'open' : 'closed'"
       >
-        <aside class="sidebar" [id]="sidebarId" aria-label="Painel administrativo">
+        <aside class="sidebar u-no-print" [id]="sidebarId" aria-label="Painel administrativo">
           <div class="sidebar__brand">
             <div class="sidebar__mark" aria-hidden="true">U+</div>
             <div class="sidebar__brand-copy">
@@ -108,7 +108,7 @@ let shellIdSeed = 0;
         </aside>
 
         <div class="admin-main">
-          <header class="admin-topbar" role="banner">
+          <header class="admin-topbar u-no-print" role="banner">
             <button
               type="button"
               class="sidebar-toggle sidebar-toggle--compacto"

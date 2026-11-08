@@ -64,7 +64,7 @@ interface PortalFooterGroup {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './portal-shell.css',
   template: `
-    <ui-skip-link class="u-no-print" targetId="portal-main" />
+    <ui-skip-link targetId="portal-main" />
     <!--
       Decisão (issue #780): os links opcionais de "Mapa do site", "Acessibilidade"
       e "Privacidade" da faixa institucional ficam ocultos por ora — nenhuma
@@ -73,7 +73,7 @@ interface PortalFooterGroup {
       links quando as hrefs não são passadas; assim que as páginas existirem,
       basta preencher siteMapHref/accessibilityHref/privacyHref aqui.
     -->
-    <ui-institutional-bar class="u-no-print" organization="UNIFESSPA · Sistema Uni+" />
+    <ui-institutional-bar organization="UNIFESSPA · Sistema Uni+" />
 
     <header class="topbar portal-topbar u-no-print" role="banner">
       <!-- Sem aria-label: o nome acessível vem do texto visível (título + subtítulo),
@@ -150,11 +150,10 @@ interface PortalFooterGroup {
     </div>
 
     <ui-back-to-top
-      class="u-no-print"
       [defaultContainer]="rolaPelaPagina() ? paginaRaiz : portalScroll"
       [focoAoTopo]="portalScroll"
     />
-    <ui-vlibras-loader class="u-no-print" />
+    <ui-vlibras-loader />
   `,
 })
 export class PortalShellComponent {

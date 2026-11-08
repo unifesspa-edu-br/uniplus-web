@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
   selector: 'ui-institutional-bar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'u-no-print' },
   template: `
     <div class="institutional-bar" role="region" aria-label="Identificação institucional">
       <span class="institutional-bar__brand">gov.br</span>

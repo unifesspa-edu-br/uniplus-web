@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
   selector: 'ui-skip-link',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'u-no-print' },
   template: `<a class="skip-link" [href]="'#' + targetId()">{{ linkText() }}</a>`,
 })
 export class SkipLinkComponent {

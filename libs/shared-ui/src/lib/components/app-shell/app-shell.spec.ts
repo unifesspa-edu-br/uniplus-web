@@ -82,6 +82,23 @@ describe('AppShellComponent', () => {
     );
   });
 
+  it('tira do papel tudo o que só serve à tela e deixa o conteúdo', async () => {
+    const { host } = await montarShell();
+
+    for (const seletor of [
+      'ui-skip-link',
+      'ui-institutional-bar',
+      'aside.sidebar',
+      'header.admin-topbar',
+      'ui-a11y-menu',
+      'ui-back-to-top',
+      'ui-vlibras-loader',
+    ]) {
+      expect(host.querySelector(seletor)?.classList.contains('u-no-print'), seletor).toBe(true);
+    }
+    expect(host.querySelector('main.page')?.closest('.u-no-print')).toBeNull();
+  });
+
   it('arma o skip link com o id do main', async () => {
     const { host } = await montarShell();
     expect(host.querySelector('main.page')?.id).toBeTruthy();

@@ -30,6 +30,7 @@ const LIMITE_VISIBILIDADE = 0.3;
   selector: 'ui-back-to-top',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'u-no-print' },
   template: `
     <button
       type="button"

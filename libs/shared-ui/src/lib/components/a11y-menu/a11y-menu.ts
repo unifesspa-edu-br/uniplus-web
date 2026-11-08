@@ -26,6 +26,7 @@ type UiA11yState = {
   selector: 'ui-a11y-menu',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'u-no-print' },
   template: `
     <div class="a11y-menu" data-a11y-menu>
       <button
