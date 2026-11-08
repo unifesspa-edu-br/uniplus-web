@@ -16,26 +16,18 @@ import { map, type Observable, of, switchMap, tap } from 'rxjs';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
+import { ComprovanteDaInscricaoComponent } from '@uniplus/shared-inscricao/comprovante';
 import {
   acompanharLeitura,
   AlertComponent,
-  CodigoDeVerificacaoComponent,
-  DadoDirective,
-  DadoRevelavelComponent,
   DocumentoComponent,
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
-  ListaDeDadosComponent,
-  SecaoDeDocumentoComponent,
   SkeletonComponent,
-  TagComponent,
 } from '@uniplus/shared-ui/components';
-import { cpfRevelavel, formatarDataBr, textoMascarado } from '@uniplus/shared-utils';
+import { cpfRevelavel, textoMascarado } from '@uniplus/shared-utils';
 
 import { MinhasInscricoesService } from '../minhas-inscricoes.service';
-import { documentosExibidos } from './documentos-do-comprovante';
-import { ItensDoComprovanteComponent } from './itens-do-comprovante.component';
-import { opcoesDeCursoExibidas } from './opcoes-de-curso-do-comprovante';
 import {
   COMPROVANTE_NAO_ENCONTRADO,
   recusaDoComprovante,
@@ -49,32 +41,21 @@ type Leitura =
 
 type Estado = 'carregando' | 'erro' | 'recusado' | 'pronto';
 
-/** Um instante em pt-BR, no fuso que a API projeta, com o nome dele: "10/10/2026, 19:36, horário de Belém (PA)". */
-function noFuso(instante: string, fuso: ComprovanteDaInscricaoDto['envio']['fusoHorario']): string {
-  return `${formatarDataBr(instante, 'datetime', fuso.id)}, horário de ${fuso.nome}`;
-}
-
 /**
- * O comprovante de um envio da inscrição, como a API o emitiu: sem número de documento, com o CPF
- * mascarado e o código que prova que não mudou. A página só exibe; texto, seções e prazo vêm prontos.
+ * A página do comprovante de um envio da inscrição: lê a API, explica a recusa e entrega o documento
+ * ao corpo compartilhado (`insc-comprovante-da-inscricao`), que só exibe.
  */
 @Component({
   selector: 'ptl-comprovante-da-inscricao-page',
   standalone: true,
   imports: [
     AlertComponent,
-    CodigoDeVerificacaoComponent,
-    DadoDirective,
-    DadoRevelavelComponent,
+    ComprovanteDaInscricaoComponent,
     DocumentoComponent,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
-    ItensDoComprovanteComponent,
-    ListaDeDadosComponent,
     RouterLink,
-    SecaoDeDocumentoComponent,
     SkeletonComponent,
-    TagComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './comprovante-da-inscricao.page.html',
@@ -104,34 +85,17 @@ export class ComprovanteDaInscricaoPage {
     recusada: computed(() => this.estado() === 'recusado'),
   });
 
-  protected readonly enviadoEm = computed(() => {
-    const envio = this.comprovante()?.envio;
-    return envio ? noFuso(envio.enviadoEm, envio.fusoHorario) : '';
-  });
-  protected readonly aceitosEm = computed(() => {
-    const envio = this.comprovante()?.envio;
-    return envio ? formatarDataBr(envio.enviadoEm, 'short', envio.fusoHorario.id) : '';
-  });
-  protected readonly fimDoPrazo = computed(() => {
-    const prazo = this.comprovante()?.prazoDaCorrecao;
-    return prazo ? noFuso(prazo.fim, prazo.fusoHorario) : '';
-  });
-  protected readonly opcoes = computed(() => {
-    const c = this.comprovante();
-    return c ? opcoesDeCursoExibidas(c) : [];
-  });
-  /** O envio de um processo de 1 opção sem o nome do curso não tem o que mostrar na seção. */
-  protected readonly mostrarOpcoes = computed(() => {
-    const opcoes = this.opcoes();
-    return opcoes.length > 1 || opcoes[0]?.curso != null;
-  });
-  protected readonly comDuasOpcoes = computed(() => this.opcoes().length > 1);
-  protected readonly modalidadesDefinidas = computed(() =>
-    this.opcoes().some((o) => o.modalidades !== null),
+  /** O aviso do documento só vale com o comprovante à mostra: numa recusa, o anterior já não é o da tela. */
+  protected readonly aviso = computed(() =>
+    this.estado() === 'pronto' ? (this.comprovante()?.cancelamento?.aviso ?? null) : null,
   );
-  protected readonly documentos = computed(() =>
-    documentosExibidos(this.comprovante()?.documentos ?? []),
-  );
+  /** O destino do comprovante de outro envio desta inscrição. */
+  protected readonly rotaDoEnvio = (numero: number): readonly unknown[] => [
+    '/inscricao',
+    'comprovante',
+    this.inscricaoId(),
+    numero,
+  ];
   /**
    * O CPF que o titular revela vem do login, sem consulta; só quando confere com o do comprovante,
    * que chega mascarado.

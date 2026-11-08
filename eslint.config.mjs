@@ -57,11 +57,18 @@ export default [
                 'type:core',
                 'type:auth',
                 'type:data',
+                'type:domain-ui',
               ],
             },
             {
               sourceTag: 'type:ui',
               onlyDependOnLibsWithTags: ['type:util', 'type:core'],
+            },
+            {
+              // `type:domain-ui` é a apresentação de um agregado de domínio compartilhada entre apps
+              // (ADR-0030): usa o `type:ui` e lê `type:data` só por tipos, o que a lib reforça no lint.
+              sourceTag: 'type:domain-ui',
+              onlyDependOnLibsWithTags: ['type:ui', 'type:util', 'type:core', 'type:data'],
             },
             {
               // `type:data-access` admite `type:data` porque feature libs HTTP

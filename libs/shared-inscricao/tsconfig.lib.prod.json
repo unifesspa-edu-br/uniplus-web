@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.lib.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "paths": {
+      "@uniplus/shared-core": ["dist/libs/shared-core"],
+      "@uniplus/shared-data/selecao": ["dist/libs/shared-data/selecao"],
+      "@uniplus/shared-ui": ["dist/libs/shared-ui"],
+      "@uniplus/shared-ui/components": ["dist/libs/shared-ui/components"],
+      "@uniplus/shared-utils": ["dist/libs/shared-utils"]
+    }
+  },
+  "angularCompilerOptions": {}
+}

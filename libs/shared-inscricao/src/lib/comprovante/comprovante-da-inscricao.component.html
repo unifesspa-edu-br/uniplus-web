@@ -1,0 +1,202 @@
+@let c = comprovante();
+<ui-secao-de-documento [titulo]="c.nomeDoProcesso" largura="inteira">
+  <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>
+  <p class="u-body-sm">
+    @if (c.identificadorDoProcesso; as identificador) {
+      Processo {{ identificador }} ·
+    }
+    {{ c.unidadeAdministradora }}
+  </p>
+  <ui-lista-de-dados variante="destaque">
+    <ng-template
+      uiDado
+      rotulo="Número da inscrição"
+      [valor]="c.envio.numeroInscricao"
+    ></ng-template>
+    <ng-template uiDado rotulo="Situação">
+      @if (c.vale) {
+        <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
+      } @else {
+        <ui-tag variant="neutral" [dot]="true">Substituído</ui-tag>
+      }
+    </ng-template>
+    <ng-template uiDado rotulo="Enviado em">
+      <time [attr.datetime]="c.envio.enviadoEm">{{ enviadoEm() }}</time>
+    </ng-template>
+  </ui-lista-de-dados>
+  <nav aria-label="Envios desta inscrição">
+    <p class="u-body-sm">
+      Envio {{ c.numero }} de {{ c.total }}
+      @if (c.numeroAnterior; as anterior) {
+        <span class="u-no-print">
+          ·
+          <a [routerLink]="rotaDoEnvio()(anterior)">‹ Envio anterior</a>
+        </span>
+      }
+      @if (c.numeroSeguinte; as seguinte) {
+        <span class="u-no-print">
+          ·
+          <a [routerLink]="rotaDoEnvio()(seguinte)">Envio seguinte ›</a>
+        </span>
+      }
+    </p>
+  </nav>
+</ui-secao-de-documento>
+
+@if (mostrarOpcoes()) {
+  <ui-secao-de-documento titulo="Sua inscrição">
+    <ui-lista-de-dados>
+      @for (opcao of opcoes(); track opcao.rotulo) {
+        <ng-template uiDado [rotulo]="opcao.rotulo" [valor]="opcao.exibicao"></ng-template>
+      }
+    </ui-lista-de-dados>
+  </ui-secao-de-documento>
+}
+
+<ui-secao-de-documento titulo="Modalidades em que você concorre" largura="inteira">
+  @if (modalidadesDefinidas()) {
+    @for (opcao of opcoes(); track opcao.rotulo) {
+      @if (opcao.modalidades; as nomes) {
+        @if (comDuasOpcoes()) {
+          <p>
+            <strong
+              >{{ opcao.rotulo }}
+              @if (opcao.curso) {
+                — {{ opcao.curso }}
+              }
+            </strong>
+          </p>
+        }
+        <ul class="u-list">
+          @for (nome of nomes; track nome) {
+            <li>{{ nome }}</li>
+          }
+        </ul>
+      }
+    }
+  } @else {
+    <p>
+      Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o
+      edital.
+    </p>
+  }
+</ui-secao-de-documento>
+
+<ui-secao-de-documento titulo="Candidato">
+  <ui-lista-de-dados>
+    @if (c.candidato.usaNomeSocial) {
+      <ng-template uiDado rotulo="Uso do nome social" valor="Sim"></ng-template>
+    }
+    @if (c.candidato.nomeSocial; as social) {
+      <ng-template uiDado rotulo="Nome social" [valor]="social"></ng-template>
+      <ng-template uiDado rotulo="Nome civil" [valor]="c.candidato.nomeCivil"></ng-template>
+    } @else {
+      <ng-template uiDado rotulo="Nome" [valor]="c.candidato.nomeCivil"></ng-template>
+    }
+    <ng-template uiDado rotulo="CPF">
+      @if (cpf(); as revelavel) {
+        <ui-dado-revelavel rotulo="CPF" [dado]="revelavel" />
+      } @else {
+        {{ c.candidato.cpfMascarado }}
+      }
+    </ng-template>
+  </ui-lista-de-dados>
+</ui-secao-de-documento>
+
+@if (c.secoes.length > 0 || c.derivados.length > 0) {
+  <ui-secao-de-documento titulo="Respostas da inscrição">
+    @for (secao of c.secoes; track $index) {
+      <ui-secao-de-documento [titulo]="secao.titulo ?? 'Outras informações'" [nivel]="3">
+        @if (secao.itens.length > 0) {
+          <insc-itens-do-comprovante [itens]="secao.itens" />
+        }
+        @for (grupo of secao.grupos; track grupo.codigo) {
+          <ui-secao-de-documento [titulo]="grupo.rotulo" [nivel]="4" largura="inteira">
+            @for (ocorrencia of grupo.ocorrencias; track ocorrencia.id) {
+              <ui-secao-de-documento [titulo]="ocorrencia.titulo" [nivel]="5">
+                <insc-itens-do-comprovante [itens]="ocorrencia.itens" [colunas]="1" />
+              </ui-secao-de-documento>
+            }
+          </ui-secao-de-documento>
+        }
+      </ui-secao-de-documento>
+    }
+    @if (c.derivados.length > 0) {
+      <ui-secao-de-documento titulo="Calculado pelo sistema" [nivel]="3">
+        <insc-itens-do-comprovante [itens]="c.derivados" />
+      </ui-secao-de-documento>
+    }
+  </ui-secao-de-documento>
+}
+@if (documentos().length > 0) {
+  <ui-secao-de-documento titulo="Documentos enviados" largura="inteira">
+    @for (documento of documentos(); track $index) {
+      <ui-secao-de-documento [titulo]="documento.nome" [nivel]="3">
+        <ui-lista-de-dados [colunas]="2">
+          @if (documento.integrante; as integrante) {
+            <ng-template uiDado rotulo="Refere-se a" [valor]="integrante"></ng-template>
+          }
+          <ng-template uiDado rotulo="Exigência" [valor]="documento.obrigatoriedade"></ng-template>
+          <ng-template uiDado rotulo="Situação" [valor]="documento.situacao"></ng-template>
+          @if (documento.consequencia; as consequencia) {
+            <ng-template
+              uiDado
+              rotulo="Consequência de não atender"
+              [valor]="consequencia"
+            ></ng-template>
+          }
+        </ui-lista-de-dados>
+        @if (documento.arquivos.length > 0) {
+          <ul class="u-list">
+            @for (arquivo of documento.arquivos; track arquivo.codigo) {
+              <li>
+                {{ arquivo.formato }} · {{ arquivo.tamanho }} · Código de verificação:
+                <code class="u-no-print" [attr.title]="arquivo.codigo">{{
+                  arquivo.codigoAbreviado
+                }}</code>
+                <code class="u-print-only">{{ arquivo.codigo }}</code>
+                <details class="u-no-print">
+                  <summary>Ver o código completo</summary>
+                  <code>{{ arquivo.codigo }}</code>
+                </details>
+              </li>
+            }
+          </ul>
+        }
+      </ui-secao-de-documento>
+    }
+  </ui-secao-de-documento>
+}
+@if (c.termosAceitos.length > 0) {
+  <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
+    <ul class="u-list">
+      @for (termo of c.termosAceitos; track termo.codigo) {
+        <li>{{ termo.nome }}</li>
+      }
+    </ul>
+    <p class="u-body-sm">Aceitos no envio de {{ aceitosEm() }}.</p>
+  </ui-secao-de-documento>
+}
+
+<ui-secao-de-documento titulo="Código de verificação" largura="inteira">
+  <ui-codigo-de-verificacao [codigo]="c.envio.hashIntegridade" />
+  <p class="u-body-sm">
+    Este código identifica exatamente o conteúdo deste comprovante. Qualquer alteração no que foi
+    enviado gera um código diferente.
+  </p>
+</ui-secao-de-documento>
+
+@if (c.prazoDaCorrecao; as prazo) {
+  <ui-secao-de-documento titulo="Próximos passos" largura="inteira">
+    @if (prazo.aberto) {
+      <p>
+        Você pode corrigir a inscrição até
+        <time [attr.datetime]="prazo.fim">{{ fimDoPrazo() }}</time
+        >. A inscrição que vale é a última enviada.
+      </p>
+      <ng-content select="[inscAcaoDaCorrecao]" />
+    } @else {
+      <p>Não é mais possível corrigir esta inscrição.</p>
+    }
+  </ui-secao-de-documento>
+}

@@ -11,4 +11,5 @@
 
 @source './app/**/*.{ts,html}';
 @source '../../../libs/shared-ui/src/lib/**/*.{ts,html}';
+@source '../../../libs/shared-inscricao/src/lib/**/*.{ts,html}';
 @source '../../../libs/shared-auth/src/lib/**/*.{ts,html}';

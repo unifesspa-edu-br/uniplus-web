@@ -8,6 +8,7 @@
 
 @source './app/**/*.{ts,html}';
 @source '../../../libs/shared-ui/src/lib/**/*.{ts,html}';
+@source '../../../libs/shared-inscricao/src/lib/**/*.{ts,html}';
 @source '../../../libs/shared-auth/src/lib/**/*.{ts,html}';
 
 html,
@@ -26,14 +27,6 @@ ptl-root {
   height: 100vh;
   height: 100dvh;
   flex-direction: column;
-}
-
-/* A trava no viewport cortaria o que passa da primeira folha: no papel o host
-   volta ao fluxo normal e o conteúdo se reparte nas folhas que precisar. */
-@media print {
-  ptl-root {
-    height: auto;
-  }
 }
 
 .ptl-page {

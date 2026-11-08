@@ -1,0 +1,29 @@
+{
+  "name": "shared-inscricao",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-inscricao/src",
+  "prefix": "insc",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:domain-ui"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/shared-inscricao/ng-package.json",
+        "tsConfig": "libs/shared-inscricao/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/shared-inscricao/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "typecheck-spec": {}
+  }
+}

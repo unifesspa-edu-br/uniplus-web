@@ -9,7 +9,7 @@ import {
 
 /** As respostas de um trecho do comprovante, na ordem e com o rótulo que a API devolve. */
 @Component({
-  selector: 'ptl-itens-do-comprovante',
+  selector: 'insc-itens-do-comprovante',
   standalone: true,
   imports: [DadoDirective, ListaDeDadosComponent, RespostaExibidaComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,

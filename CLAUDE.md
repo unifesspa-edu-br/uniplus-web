@@ -35,6 +35,7 @@ libs/
   shared-auth/    → Autenticação OIDC (serviço, guards, interceptor e providers)
   shared-core/    → HTTP, interceptors, DOM e notificações transversais
   shared-data/    → Runtime config, DTOs e clientes API gerados por OpenAPI
+  shared-inscricao/ → Apresentação do domínio da inscrição comum a mais de um app (ADR-0030)
   shared-e2e/     → Fixtures, setup e utilitários compartilhados de Playwright
   shared-utils/   → Utilitários sem dependência de domínio
 
@@ -87,6 +88,7 @@ uniplus-ds CSS-only
 - `@uniplus/shared-auth` → `libs/shared-auth/src/index.ts`
 - `@uniplus/shared-core` → `libs/shared-core/src/index.ts`
 - `@uniplus/shared-data` → `libs/shared-data/src/index.ts`
+- `@uniplus/shared-inscricao/comprovante` → `libs/shared-inscricao/src/lib/comprovante/index.ts`
 - `@uniplus/shared-utils` → `libs/shared-utils/src/index.ts`
 - `@uniplus/shared-e2e` → `libs/shared-e2e/src/index.ts`
 

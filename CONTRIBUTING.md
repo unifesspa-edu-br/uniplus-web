@@ -101,7 +101,7 @@ libs/
 - **Plataforma** — todas as libs `shared-*` são propriedade do CTIC. Sem ownership por pró-reitoria. Decisões de evolução, refactor e versionamento ficam no time de plataforma; clientes institucionais não revisam código da plataforma.
 - **Produto** — cada app (`selecao`, `ingresso`, `portal`) é um produto institucional com stakeholder distinto (CEPS, CRCA, futuro PROEX/PROPIT). Stakeholders fornecem requisitos e validam aceite; não revisam código.
 
-### 2. Escopo canônico das 5 libs `shared-*`
+### 2. Escopo canônico das libs `shared-*`
 
 | Lib | Escopo |
 |---|---|
@@ -110,6 +110,7 @@ libs/
 | `@uniplus/shared-ui` | Componentes Angular standalone, pipes, shells e wrappers do Uni+ DS CSS-only; PrimeNG apenas quando encapsulado e justificado |
 | `@uniplus/shared-auth` | Integração OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
 | `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
+| `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md)) |
 
 ### 3. Regra de criação (rule of three + first-real-feature)
 
@@ -244,6 +245,7 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 | `shared-ui` | Componentes reutilizáveis do Uni+ DS (`libs/shared-ui/`) |
 | `shared-core` | Infra HTTP transversal, interceptors, notificações (`libs/shared-core/`) |
 | `shared-data` | API clients, DTOs, utilitários (`libs/shared-data/`) |
+| `shared-inscricao` | Apresentação do domínio da inscrição (`libs/shared-inscricao/`) |
 | `shared-auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
 | `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
 | `shared-e2e` | Fixtures e utilitários Playwright compartilhados (`libs/shared-e2e/`) |

@@ -283,3 +283,12 @@ export {
   type StepStatus,
   type StepsVariant,
 } from './steps/steps.component';
+export { DadoRevelavelComponent } from './dado-revelavel/dado-revelavel';
+export { DadoDirective } from './lista-de-dados/dado';
+export { ListaDeDadosComponent } from './lista-de-dados/lista-de-dados';
+export { RespostaExibidaComponent } from './lista-de-dados/resposta-exibida.component';
+export { valorExibido, type ValorExibido } from './lista-de-dados/valor-da-resposta';
+export { DocumentoComponent } from './documento/documento';
+export { SecaoDeDocumentoComponent } from './documento/secao-de-documento';
+export { CodigoDeVerificacaoComponent } from './codigo-de-verificacao/codigo-de-verificacao';
+export { nomesPelaOrdem } from './formulario-do-candidato/modalidades-avaliadas';
