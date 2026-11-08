@@ -1,12 +1,22 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
 
 import {
-  AlertComponent,
   DEFAULT_PAGE_SIZE_OPTIONS,
   EmptyStateComponent,
+  FalhaDeLeituraComponent,
   ListFooterComponent,
   PageHeaderComponent,
   SpinnerComponent,
+  acompanharLeitura,
+  type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 
 /** Itens por página iniciais do painel; o operador troca pelo seletor do rodapé. */
@@ -27,6 +37,11 @@ export type FalhaDoPainel = 'inicial' | 'navegacao';
 /** Condições em que a lista não pode ser mostrada, nem a paginação. */
 export type RestricaoDoPainel = 'cursor-expirado' | 'acesso-negado';
 
+const MENSAGENS_DA_FALHA: Readonly<Record<FalhaDoPainel, string>> = {
+  inicial: 'A lista de processos seletivos não foi carregada.',
+  navegacao: 'Os processos abaixo são os da última página carregada.',
+};
+
 /**
  * Apresentação do painel de processos seletivos (ADR-0017): recebe dados e estados de quem faz a
  * consulta e comunica as ações por outputs. Não consulta HTTP, não interpreta permissões nem
@@ -36,8 +51,8 @@ export type RestricaoDoPainel = 'cursor-expirado' | 'acesso-negado';
   selector: 'sel-painel-de-processos',
   standalone: true,
   imports: [
-    AlertComponent,
     EmptyStateComponent,
+    FalhaDeLeituraComponent,
     ListFooterComponent,
     PageHeaderComponent,
     SpinnerComponent,
@@ -77,38 +92,17 @@ export type RestricaoDoPainel = 'cursor-expirado' | 'acesso-negado';
               Atualizar lista
             </button>
           </ui-empty-state>
-        } @else if (falha() === 'inicial') {
-          <ui-empty-state
-            variant="error"
-            heading="Não foi possível carregar os processos seletivos"
-          >
-            <button
-              type="button"
-              class="btn btn--primary"
-              data-acao="tentar-novamente"
-              [attr.aria-disabled]="carregando() ? 'true' : null"
-              (click)="aoTentarNovamente()"
-            >
-              Tentar novamente
-            </button>
-          </ui-empty-state>
+        } @else if (leituraInicial.visivel()) {
+          <ui-falha-de-leitura
+            titulo="Não foi possível carregar os processos seletivos"
+            [leitura]="leituraInicial"
+          />
         } @else if (!aguardandoPrimeiraConsulta()) {
-          @if (falha() === 'navegacao') {
-            <ui-alert variant="warning" heading="Não foi possível carregar a outra página">
-              Os processos abaixo são os da última página carregada.
-              <div class="painel__nova-tentativa">
-                <button
-                  type="button"
-                  class="btn btn--secondary btn--sm"
-                  data-acao="tentar-novamente"
-                  [attr.aria-disabled]="carregando() ? 'true' : null"
-                  (click)="aoTentarNovamente()"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            </ui-alert>
-          }
+          <ui-falha-de-leitura
+            titulo="Não foi possível carregar a outra página"
+            variante="warning"
+            [leitura]="leituraDeNavegacao"
+          />
 
           @if (processos().length > 0) {
             <ul
@@ -132,7 +126,7 @@ export type RestricaoDoPainel = 'cursor-expirado' | 'acesso-negado';
                 </li>
               }
             </ul>
-          } @else if (falha() === null) {
+          } @else if (!leituraDeNavegacao.visivel()) {
             <ui-empty-state heading="Nenhum processo seletivo encontrado" />
           }
 
@@ -172,6 +166,15 @@ export class PainelDeProcessosComponent {
   readonly tentarNovamente = output<void>();
   readonly atualizarLista = output<void>();
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  /**
+   * Uma leitura por tipo de falha: cada aviso fica na tela até o desfecho da nova tentativa, ainda
+   * que quem consulta apague a falha ao recomeçar, e o foco volta ao título quando ela dá certo.
+   */
+  protected readonly leituraInicial = this.acompanharFalha('inicial');
+  protected readonly leituraDeNavegacao = this.acompanharFalha('navegacao');
+
   protected readonly opcoesDeTamanho = DEFAULT_PAGE_SIZE_OPTIONS;
 
   /** Espera inicial: sem nada para mostrar ainda, "vazio" seria resultado antecipado. */
@@ -179,10 +182,13 @@ export class PainelDeProcessosComponent {
     () => this.carregando() && this.processos().length === 0,
   );
 
-  protected aoTentarNovamente(): void {
-    if (!this.carregando()) {
-      this.tentarNovamente.emit();
-    }
+  private acompanharFalha(tipo: FalhaDoPainel): LeituraAcompanhada {
+    return acompanharLeitura({
+      falha: computed(() => (this.falha() === tipo ? MENSAGENS_DA_FALHA[tipo] : null)),
+      pendente: this.carregando,
+      recarregar: () => this.tentarNovamente.emit(),
+      destino: () => this.host.nativeElement.querySelector('h1'),
+    });
   }
 
   protected aoAtualizarLista(): void {

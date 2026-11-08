@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   PainelDeProcessosComponent,
@@ -288,6 +288,78 @@ describe('PainelDeProcessosComponent', () => {
     });
   });
 
+  describe.each([
+    { falha: 'inicial', titulo: 'Não foi possível carregar os processos seletivos' },
+    { falha: 'navegacao', titulo: 'Não foi possível carregar a outra página' },
+  ] as const)('nova tentativa após a falha $falha', ({ falha, titulo }) => {
+    const macrotarefa = (): Promise<void> => new Promise((resolver) => setTimeout(resolver));
+    const situacao = (): string =>
+      host().querySelector('ui-situacao-da-nova-tentativa')?.textContent?.trim() ?? '';
+
+    async function estabilizar(): Promise<void> {
+      await macrotarefa();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    /** Como quem consulta: ao recomeçar, apaga a falha e marca o carregamento. */
+    async function tentarNovamenteApagandoAFalha(): Promise<HTMLButtonElement> {
+      componente.tentarNovamente.subscribe(() => {
+        fixture.componentRef.setInput('falha', null);
+        fixture.componentRef.setInput('carregando', true);
+      });
+      const acao = botao('Tentar novamente') as HTMLButtonElement;
+      acao.focus();
+      acao.click();
+      await estabilizar();
+      return acao;
+    }
+
+    beforeEach(() => {
+      document.body.append(host());
+      entrada('processos', falha === 'navegacao' ? PROCESSOS_FICTICIOS : []);
+      entrada('falha', falha);
+    });
+
+    afterEach(() => host().remove());
+
+    it('mantém o aviso, o botão focado e o anúncio enquanto a falha está apagada', async () => {
+      const acao = await tentarNovamenteApagandoAFalha();
+
+      expect(texto()).toContain(titulo);
+      expect(botao('Tentar novamente')).toBe(acao);
+      expect(document.activeElement).toBe(acao);
+      expect(situacao()).toBe('Tentando novamente…');
+      expect(avisoDeEspera()).toContain('Carregando processos seletivos');
+    });
+
+    it('ao dar certo, tira o aviso e leva o foco ao título', async () => {
+      await tentarNovamenteApagandoAFalha();
+
+      entrada('processos', PROCESSOS_FICTICIOS);
+      entrada('carregando', false);
+      await estabilizar();
+
+      expect(texto()).not.toContain(titulo);
+      expect(botao('Tentar novamente')).toBeUndefined();
+      expect(document.activeElement).toBe(host().querySelector('h1'));
+    });
+
+    it('ao falhar de novo, mantém o aviso e o botão focado, com a nova falha anunciada', async () => {
+      const acao = await tentarNovamenteApagandoAFalha();
+
+      // Quem consulta grava o desfecho de uma vez: carregamento encerrado e falha de volta.
+      fixture.componentRef.setInput('carregando', false);
+      fixture.componentRef.setInput('falha', falha);
+      await estabilizar();
+
+      expect(texto()).toContain(titulo);
+      expect(botao('Tentar novamente')).toBe(acao);
+      expect(document.activeElement).toBe(acao);
+      expect(situacao()).toBe('A nova tentativa também falhou.');
+    });
+  });
+
   describe('cursor expirado', () => {
     beforeEach(() => {
       entrada('processos', PROCESSOS_FICTICIOS);
@@ -321,7 +393,8 @@ describe('PainelDeProcessosComponent', () => {
         expect(texto()).not.toContain(PROCESSOS_FICTICIOS[0].nome);
         expect(cartoes()).toHaveLength(0);
         expect(host().querySelector('.pager')).toBeNull();
-        expect(host().querySelector('button[data-acao]')).toBeNull();
+        expect(botao('Tentar novamente')).toBeUndefined();
+        expect(botao('Atualizar lista')).toBeUndefined();
         expect(regiaoDeStatus()).toBeNull();
       },
     );
