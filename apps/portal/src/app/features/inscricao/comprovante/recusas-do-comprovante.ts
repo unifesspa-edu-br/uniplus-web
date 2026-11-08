@@ -1,4 +1,4 @@
-import { STATUS_HTTP, ehRecusaDefinitiva, type ProblemDetails } from '@uniplus/shared-core/http';
+import { STATUS_HTTP, type ProblemDetails } from '@uniplus/shared-core/http';
 import type { RecusaDoComprovante } from '@uniplus/shared-inscricao/comprovante';
 
 const INSCRICAO_CANCELADA = 'uniplus.selecao.inscricao.comprovante_de_inscricao_cancelada';
@@ -7,12 +7,6 @@ const VERSAO_AUSENTE = 'uniplus.selecao.snapshot.vigente_ausente';
 export const COMPROVANTE_NAO_ENCONTRADO: RecusaDoComprovante = {
   titulo: 'Comprovante não encontrado',
   texto: 'Não encontramos este comprovante. Confira o endereço ou volte às suas inscrições.',
-};
-
-const SEM_ACESSO: RecusaDoComprovante = {
-  titulo: 'Acesso negado',
-  texto:
-    'Este comprovante não está disponível para a sua conta. Entre com a conta que fez a inscrição ou volte às suas inscrições.',
 };
 
 const RECUSAS_DE_NEGOCIO = new Map<string, RecusaDoComprovante>([
@@ -36,13 +30,11 @@ const RECUSAS_DE_NEGOCIO = new Map<string, RecusaDoComprovante>([
 
 /**
  * A explicação da recusa da leitura, quando repetir não adianta: o comprovante que não existe ou não
- * é do titular (404, 401 e 403) e as duas recusas de negócio que o comprovante tem. Qualquer outra
+ * é do titular (404) e as duas recusas de negócio que o comprovante tem. Qualquer outra
  * falha segue como falha, com "Tentar novamente".
  */
 export function recusaDoComprovante(problema: ProblemDetails): RecusaDoComprovante | null {
-  if (ehRecusaDefinitiva(problema)) {
-    return problema.status === STATUS_HTTP.NAO_ENCONTRADO ? COMPROVANTE_NAO_ENCONTRADO : SEM_ACESSO;
-  }
+  if (problema.status === STATUS_HTTP.NAO_ENCONTRADO) return COMPROVANTE_NAO_ENCONTRADO;
   return problema.status === STATUS_HTTP.RECUSA_DE_NEGOCIO
     ? (RECUSAS_DE_NEGOCIO.get(problema.code) ?? null)
     : null;

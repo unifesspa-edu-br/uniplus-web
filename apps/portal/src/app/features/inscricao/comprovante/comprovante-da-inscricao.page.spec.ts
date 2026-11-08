@@ -464,7 +464,9 @@ describe('ComprovanteDaInscricaoPage', () => {
       };
       const tela = await abrir();
 
-      expect(secao(tela, 'Prazo para correção')?.textContent).toContain('Não é mais possível corrigir');
+      expect(secao(tela, 'Prazo para correção')?.textContent).toContain(
+        'Não é mais possível corrigir',
+      );
       expect(hrefDe(tela, 'Corrigir dados')).toBeUndefined();
     });
 
@@ -478,9 +480,9 @@ describe('ComprovanteDaInscricaoPage', () => {
 
   describe('cursos e modalidades', () => {
     const modalidadesNaTela = (tela: HTMLElement): string[] =>
-      Array.from(
-        secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul > li') ?? [],
-      ).map((li) => li.textContent?.trim() ?? '');
+      Array.from(secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul > li') ?? []).map(
+        (li) => li.textContent?.trim() ?? '',
+      );
 
     it('o processo de uma opção cujo curso a versão não nomeia não mostra a seção "Inscrição"', async () => {
       const [primeira] = comprovanteBase().opcoesDeCurso;
@@ -533,9 +535,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       const tela = await abrir();
 
       expect(dado(tela, '2ª opção')).toBe('Não declarada');
-      expect(secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul')).toHaveLength(
-        1,
-      );
+      expect(secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul')).toHaveLength(1);
     });
 
     it('o processo que não define as modalidades pela inscrição diz isso, sem lista', async () => {
@@ -650,24 +650,6 @@ describe('ComprovanteDaInscricaoPage', () => {
       expect(tela.textContent).toContain('Não encontramos este comprovante');
       expect(botaoDeTentar(tela)).toBeUndefined();
       expect(voltaParaALista(tela)).toBe('/inscricao');
-    });
-
-    it('o 401 diz que o comprovante não está disponível para a conta, sem nova tentativa', async () => {
-      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(401, 'nao_autenticado')));
-
-      const tela = await abrir();
-
-      expect(tela.textContent).toContain('não está disponível para a sua conta');
-      expect(botaoDeTentar(tela)).toBeUndefined();
-    });
-
-    it('o 403 diz que o comprovante não é da conta, sem nova tentativa', async () => {
-      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(403, 'proibido')));
-
-      const tela = await abrir();
-
-      expect(tela.textContent).toContain('não está disponível para a sua conta');
-      expect(botaoDeTentar(tela)).toBeUndefined();
     });
 
     it.each(['foo', '0', '-1', '1.5'])(
