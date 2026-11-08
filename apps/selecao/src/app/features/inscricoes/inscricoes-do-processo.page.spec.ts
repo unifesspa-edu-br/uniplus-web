@@ -474,8 +474,9 @@ describe('InscricoesDoProcessoPage', () => {
     await abrir([FERNANDA]);
 
     const seletor = host().querySelector<HTMLSelectElement>('ui-list-footer select');
-    seletor!.value = '50';
-    seletor!.dispatchEvent(new Event('change'));
+    if (seletor === null) throw new Error('O seletor de itens por página não está no rodapé.');
+    seletor.value = '50';
+    seletor.dispatchEvent(new Event('change'));
     await propagar();
 
     controller.expectNone((r) => r.url === ROTA_LISTA);

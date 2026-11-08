@@ -11,7 +11,7 @@ import {
   PROCESSO_PUBLICADO_COMPLETO,
   SNAPSHOT_VIGENTE,
 } from '../fixtures/processo-publicado-completo';
-import { conferirObrigatoriedadeDoCampo } from '../support/consulta-do-formulario';
+import { conferirObrigatoriedadeSeInformada } from '../support/consulta-do-formulario';
 import { blocosColados, espacosEntreBlocos, ritmoDoPasso } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
@@ -117,9 +117,7 @@ test.describe('Varredura da consulta — todos os passos, matriz DS @ds', () => 
         await expect(
           page.locator('.wiz-content').getByText(passo.esperado, { exact: true }).first(),
         ).toBeVisible();
-        if (passo.obrigatoriedade) {
-          await conferirObrigatoriedadeDoCampo(page, passo.esperado, passo.obrigatoriedade);
-        }
+        await conferirObrigatoriedadeSeInformada(page, passo.esperado, passo.obrigatoriedade);
         expect(await controlesVisiveis(page)).toEqual([]);
         await expect(page.getByRole('button', { name: ACOES_DE_EDICAO })).toHaveCount(0);
       });

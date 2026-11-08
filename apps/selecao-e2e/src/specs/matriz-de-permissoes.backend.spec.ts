@@ -59,21 +59,77 @@ function itensDe(corpo: Resposta): readonly ItemDaResposta[] {
 // O catálogo não classifica nenhum fato como público: a permissão de dados públicos dá o cabeçalho
 // (situação e ofertas) e nenhuma resposta do formulário.
 const DADOS = [
-  { persona: 'cecilia.assis', permissao: 'selecao:dados-publicos:consultar', classes: [], mascarado: false, revela: false },
-  { persona: 'andre.barbosa', permissao: 'selecao:dados-internos:consultar', classes: ['INTERNO'], mascarado: false, revela: false },
-  { persona: 'ayla.luz', permissao: 'selecao:dados-pessoais:consultar', classes: ['PESSOAL'], mascarado: false, revela: false },
-  { persona: 'barbara.porto', permissao: 'selecao:dados-sensiveis:consultar', classes: ['SENSIVEL'], mascarado: false, revela: false },
-  { persona: 'helena.rezende', permissao: 'selecao:dados-identificadores:consultar', classes: ['IDENTIFICADOR'], mascarado: true, revela: false },
+  {
+    persona: 'cecilia.assis',
+    permissao: 'selecao:dados-publicos:consultar',
+    classes: [],
+    mascarado: false,
+    revela: false,
+  },
+  {
+    persona: 'andre.barbosa',
+    permissao: 'selecao:dados-internos:consultar',
+    classes: ['INTERNO'],
+    mascarado: false,
+    revela: false,
+  },
+  {
+    persona: 'ayla.luz',
+    permissao: 'selecao:dados-pessoais:consultar',
+    classes: ['PESSOAL'],
+    mascarado: false,
+    revela: false,
+  },
+  {
+    persona: 'barbara.porto',
+    permissao: 'selecao:dados-sensiveis:consultar',
+    classes: ['SENSIVEL'],
+    mascarado: false,
+    revela: false,
+  },
+  {
+    persona: 'helena.rezende',
+    permissao: 'selecao:dados-identificadores:consultar',
+    classes: ['IDENTIFICADOR'],
+    mascarado: true,
+    revela: false,
+  },
   // Revelar sozinho não dá a classe: sem consultar o identificador, nada dele chega e nada se oferece a revelar.
-  { persona: 'benjamin.drumond', permissao: 'selecao:dados-identificadores:revelar', classes: [], mascarado: false, revela: false },
+  {
+    persona: 'benjamin.drumond',
+    permissao: 'selecao:dados-identificadores:revelar',
+    classes: [],
+    mascarado: false,
+    revela: false,
+  },
 ] as const;
 
 const DOCUMENTOS = [
-  { persona: 'breno.novaes', permissao: 'selecao:documentos-publicos:consultar', mostraLaudo: false },
-  { persona: 'bruna.peixoto', permissao: 'selecao:documentos-internos:consultar', mostraLaudo: false },
-  { persona: 'calebe.souza', permissao: 'selecao:documentos-pessoais:consultar', mostraLaudo: false },
-  { persona: 'camila.nunes', permissao: 'selecao:documentos-identificadores:consultar', mostraLaudo: false },
-  { persona: 'catarina.rocha', permissao: 'selecao:documentos-sensiveis:consultar', mostraLaudo: true },
+  {
+    persona: 'breno.novaes',
+    permissao: 'selecao:documentos-publicos:consultar',
+    mostraLaudo: false,
+  },
+  {
+    persona: 'bruna.peixoto',
+    permissao: 'selecao:documentos-internos:consultar',
+    mostraLaudo: false,
+  },
+  {
+    persona: 'calebe.souza',
+    permissao: 'selecao:documentos-pessoais:consultar',
+    mostraLaudo: false,
+  },
+  {
+    persona: 'camila.nunes',
+    permissao: 'selecao:documentos-identificadores:consultar',
+    mostraLaudo: false,
+  },
+  {
+    persona: 'catarina.rocha',
+    permissao: 'selecao:documentos-sensiveis:consultar',
+    mostraLaudo: true,
+  },
 ] as const;
 
 test.describe('Matriz de permissões de dado e de arquivo', () => {
@@ -93,11 +149,10 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     }
     let proximo: string | null = '/api/configuracao/admin/fatos-candidato?limit=100';
     while (proximo !== null) {
-      const pagina: { corpo: { codigo: string; classificacaoProtecao: string }[]; cabecalhos: Headers } = await chamarApi(
-        'isabella.figueiredo',
-        'GET',
-        proximo,
-      );
+      const pagina: {
+        corpo: { codigo: string; classificacaoProtecao: string }[];
+        cabecalhos: Headers;
+      } = await chamarApi('isabella.figueiredo', 'GET', proximo);
       pagina.corpo.forEach((f) => classeDoFato.set(f.codigo, f.classificacaoProtecao));
       const link = /<([^>]+)>;\s*rel="next"/.exec(pagina.cabecalhos.get('link') ?? '');
       proximo = link === null ? null : (link[1] ?? '').replace(/^https?:\/\/[^/]+/, '');
@@ -122,9 +177,10 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
       expect(corpo.arquivos ?? []).toHaveLength(0);
       // Só a de consultar o identificador traz o valor mascarado; a revelação também exige a permissão de revelar.
       expect(itens.every((i) => i.podeRevelar === caso.revela)).toBe(true);
-      if (caso.mascarado) {
-        expect(itens.find((i) => i.fatoCodigo === 'CPF')?.valor).toBe('***.598.363-**');
-      }
+      const cpfMascarado = itens.some(
+        (i) => i.fatoCodigo === 'CPF' && i.valor === '***.598.363-**',
+      );
+      expect(cpfMascarado).toBe(caso.mascarado);
     });
   }
 
@@ -169,13 +225,23 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
         `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`,
       )
     ).corpo.numeroInscricao;
-    const linhaDe = async (persona: string, procurada: (l: Linha) => boolean): Promise<Linha | undefined> =>
-      acharNaListagem<Linha>(persona, `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes?limit=100`, procurada);
+    const linhaDe = async (
+      persona: string,
+      procurada: (l: Linha) => boolean,
+    ): Promise<Linha | undefined> =>
+      acharNaListagem<Linha>(
+        persona,
+        `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes?limit=100`,
+        procurada,
+      );
 
     const publico = await linhaDe('cecilia.assis', (l) => l.id === cenario.erick.inscricaoId);
     const interno = await linhaDe('andre.barbosa', (l) => l.numeroInscricao === numeroDoErick);
     const pessoal = await linhaDe('ayla.luz', (l) => l.id === cenario.erick.inscricaoId);
-    const identificador = await linhaDe('helena.rezende', (l) => l.id === cenario.erick.inscricaoId);
+    const identificador = await linhaDe(
+      'helena.rezende',
+      (l) => l.id === cenario.erick.inscricaoId,
+    );
 
     expect(publico?.situacao).toBeDefined();
     expect(publico?.ofertas?.length).toBeGreaterThan(0);
@@ -199,7 +265,11 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     );
 
     expect(pagina.corpo.length).toBeGreaterThan(0);
-    expect(pagina.corpo.every((linha) => linha.id !== undefined && linha.processo?.id === cenario.processoId)).toBe(true);
+    expect(
+      pagina.corpo.every(
+        (linha) => linha.id !== undefined && linha.processo?.id === cenario.processoId,
+      ),
+    ).toBe(true);
   });
 
   test('só a permissão de revelar, sem a classe do identificador, é recusada como campo não encontrado', async () => {

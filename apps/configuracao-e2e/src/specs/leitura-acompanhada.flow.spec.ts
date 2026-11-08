@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { CAMPUS, responder, simularCampi, simularOfertas } from '../support/respostas-lentas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -16,7 +17,7 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * - Nenhuma delas prova o que um leitor de tela fala: isso só a avaliação humana abaixo confere.
  *
  * Roteiro da avaliação humana (NVDA ou JAWS no Windows, VoiceOver no macOS com Safari e no
- * Chrome). `AVALIACAO_HUMANA=1` abre o navegador com as respostas lentas e pausa para a pessoa
+ * Chrome). `AVALIACAO_HUMANA=1` abre o navegador com as respostas lentas e mantém o navegador aberto para a pessoa
  * conduzir. Em cada passo, anotar o que foi falado, se o foco ficou onde se espera e se algo foi
  * dito duas vezes.
  *   A. Listagem dos campi (`/campi`)
@@ -50,77 +51,6 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  *         anunciado o texto novo, mesmo quando o texto da fase anterior era igual. Conferir que não há
  *         silêncio na segunda falha seguida.
  */
-
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type, accept',
-};
-
-const ERRO_INTERNO = {
-  type: 'about:blank',
-  title: 'Erro interno',
-  status: 500,
-  code: 'uniplus.internal.unexpected',
-};
-
-const CAMPUS = {
-  id: '01960000-0000-7000-0000-0000000000b1',
-  sigla: 'MARABA',
-  nome: 'Campus de Marabá',
-  codigoEmec: '12345',
-  cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  endereco: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const CURSO = {
-  id: '01960000-0000-7000-0000-0000000000c1',
-  codigo: 'ENG-CIV',
-  nome: 'Engenharia Civil',
-  grau: 'Bacharelado',
-  nivelEnsino: 'Graduação',
-  grupoAreaEnem: { codigo: 'TECNOLOGICA', rotulo: 'Tecnológica' },
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const ATRASO_EM_MS = Number(process.env['ATRASO_DA_NOVA_TENTATIVA_EM_MS'] ?? 800);
-
-async function responder(route: Route, falha: boolean, corpo: unknown): Promise<void> {
-  await route.fulfill({
-    status: falha ? 500 : 200,
-    headers: CORS_HEADERS,
-    contentType: falha ? 'application/problem+json' : 'application/json',
-    body: JSON.stringify(falha ? ERRO_INTERNO : corpo),
-  });
-}
-
-/** A primeira leitura falha; as seguintes demoram e seguem `desfecho`. */
-async function simularCampi(page: Page, desfecho: 'falha' | 'sucesso'): Promise<void> {
-  let consultas = 0;
-  await page.route(/\/api\/configuracao\/campi(\?.*)?$/, async (route) => {
-    consultas += 1;
-    if (consultas > 1) await new Promise((resolve) => setTimeout(resolve, ATRASO_EM_MS));
-    await responder(route, consultas === 1 || desfecho === 'falha', [CAMPUS]);
-  });
-}
-
-/** A listagem de ofertas abre com o catálogo de cursos em falha; as leituras seguintes demoram e a terceira dá certo. */
-async function simularOfertas(page: Page): Promise<void> {
-  await page.route(/\/api\/configuracao\/ofertas-curso(\?.*)?$/, (route) =>
-    responder(route, false, []),
-  );
-  await page.route(/\/api\/configuracao\/locais-oferta(\?.*)?$/, (route) =>
-    responder(route, false, []),
-  );
-  await page.route(/\/api\/organizacao\/unidades(\?.*)?$/, (route) => responder(route, false, []));
-  let consultasAosCursos = 0;
-  await page.route(/\/api\/configuracao\/cursos(\?.*)?$/, async (route) => {
-    consultasAosCursos += 1;
-    if (consultasAosCursos > 1) await new Promise((resolve) => setTimeout(resolve, ATRASO_EM_MS));
-    await responder(route, consultasAosCursos < 3, [CURSO]);
-  });
-}
 
 interface NoDaArvore {
   readonly nodeId: string;
@@ -368,32 +298,5 @@ test.describe('Aviso de falha de leitura — árvore de acessibilidade', () => {
       return medidos;
     });
     expect(cursores).toEqual({ indisponivelSemEspera: 'not-allowed', ocupado: 'progress' });
-  });
-});
-
-test.describe('Aviso de falha de leitura — avaliação humana', () => {
-  test.skip(
-    process.env['AVALIACAO_HUMANA'] !== '1',
-    'Só com AVALIACAO_HUMANA=1 e o navegador visível.',
-  );
-
-  test('tela dos campi com respostas lentas para ser conduzida com leitor de tela', async ({
-    page,
-  }) => {
-    test.setTimeout(0);
-    await mockConfiguracaoRuntimeConfig(page);
-    await simularCampi(page, 'sucesso');
-    await page.goto('/campi');
-    await page.pause();
-  });
-
-  test('campo em drawer e aviso dos catálogos com respostas lentas para ser conduzidos com leitor de tela', async ({
-    page,
-  }) => {
-    test.setTimeout(0);
-    await mockConfiguracaoRuntimeConfig(page);
-    await simularOfertas(page);
-    await page.goto('/ofertas-curso');
-    await page.pause();
   });
 });

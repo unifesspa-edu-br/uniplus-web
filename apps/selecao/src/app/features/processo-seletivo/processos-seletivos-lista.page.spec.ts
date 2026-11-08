@@ -221,8 +221,9 @@ describe('ProcessosSeletivosListaPage', () => {
     );
 
     const select = host().querySelector<HTMLSelectElement>('[data-pager="page-size"]');
-    select!.value = '25';
-    select!.dispatchEvent(new Event('change'));
+    if (select === null) throw new Error('O seletor de itens por página não está no rodapé.');
+    select.value = '25';
+    select.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     const req = controller.expectOne((r) => r.url === URL_LISTA);

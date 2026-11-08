@@ -16,3 +16,15 @@ export async function conferirObrigatoriedadeDoCampo(
   await expect(ajuda).toBeVisible();
   await expect(ajuda).toContainText(obrigatoriedade);
 }
+
+/**
+ * Só o passo Formulários tem obrigatoriedade a conferir; nos demais passos nada é verificado.
+ * Mantém a escolha fora do corpo do teste.
+ */
+export async function conferirObrigatoriedadeSeInformada(
+  page: Page,
+  campo: string,
+  obrigatoriedade: string | undefined,
+): Promise<void> {
+  if (obrigatoriedade) await conferirObrigatoriedadeDoCampo(page, campo, obrigatoriedade);
+}

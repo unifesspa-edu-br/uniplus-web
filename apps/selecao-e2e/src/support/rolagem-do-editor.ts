@@ -238,6 +238,12 @@ export async function rolarAteOMeio(page: Page): Promise<void> {
     .evaluate((area) => area.scrollTo({ top: (area.scrollHeight - area.clientHeight) / 2 }));
 }
 
+/** Abaixo de 768 px não há stepper lateral: a barra de etapas abre a lista das etapas. */
+async function conferirBarraDeEtapasNoLugarDoStepper(page: Page): Promise<void> {
+  await expect(page.locator('nav[aria-label="Etapas do cadastro"]')).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Abrir lista de etapas' })).toBeVisible();
+}
+
 /**
  * Com o stepper lateral à vista (a partir de 768 px), a coluna dele, com fundo e borda
  * próprios, cobre a altura visível da área de trabalho: num passo curto ou numa tela
@@ -246,6 +252,7 @@ export async function rolarAteOMeio(page: Page): Promise<void> {
 export async function conferirStepperNaAlturaDaArea(page: Page): Promise<void> {
   const largura = page.viewportSize()?.width ?? 0;
   if (largura < LARGURA_STEPPER_LATERAL) {
+    await conferirBarraDeEtapasNoLugarDoStepper(page);
     return;
   }
   await expect

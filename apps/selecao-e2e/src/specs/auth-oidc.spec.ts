@@ -37,6 +37,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
 
     test('redireciona para o provedor OIDC ao acessar a página de acesso negado sem sessão', async ({
       page,
+      baseURL,
     }) => {
       await page.goto('/acesso-negado');
       await page.waitForURL(/realms\/unifesspa\/protocol\/openid-connect/, {
@@ -44,8 +45,11 @@ test.describe('Autenticação OIDC — Seleção', () => {
       });
       await expect(page.locator('#kc-login')).toBeVisible();
       // O login volta à raiz do app, que escolhe a entrada pelas permissões.
-      const voltaDoLogin = new URL(page.url()).searchParams.get('redirect_uri') ?? '';
-      expect(new URL(voltaDoLogin).pathname).toBe('/');
+      const redirectUri = new URL(page.url()).searchParams.get('redirect_uri');
+      expect(redirectUri).not.toBeNull();
+      const voltaDoLogin = new URL(String(redirectUri));
+      expect(voltaDoLogin.origin).toBe(new URL(String(baseURL)).origin);
+      expect(voltaDoLogin.pathname).toBe('/');
     });
   });
 

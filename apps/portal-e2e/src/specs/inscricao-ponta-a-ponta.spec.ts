@@ -424,12 +424,51 @@ async function comJanelaDeAltura(
   await page.setViewportSize(janela);
 }
 
+/** Abre a tela Meu perfil pelo menu da conta. */
+async function abrirMeuPerfil(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
+  await page.getByTestId('auth-user-profile-item').click();
+}
+
+/** A atualização de perfil do Keycloak, aberta a partir de Meu perfil, e a volta ao portal. */
+async function gravarNomeSocialNaConta(page: Page, valor: string): Promise<void> {
+  const acao = page.getByTestId('auth-profile-nome-social-acao');
+  if (!(await acao.isVisible())) await abrirMeuPerfil(page);
+  await acao.click();
+  const nomeSocial = page.getByLabel('Nome social');
+  await expect(nomeSocial).toBeVisible();
+  // Na conta, o titular edita só o nome social: o nome civil e o e-mail ficam travados.
+  await expect(page.locator('input[name="firstName"]')).not.toBeEditable();
+  await expect(page.locator('input[name="email"]')).not.toBeEditable();
+  await nomeSocial.fill(valor);
+  await page.locator('[type="submit"]').first().click();
+  await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}`));
+}
+
+/**
+ * Uma rodada anterior interrompida pode ter deixado o nome social na conta: o cenário parte da
+ * conta sem ele.
+ */
+async function partirDaContaSemNomeSocial(page: Page): Promise<void> {
+  await abrirMeuPerfil(page);
+  const acao = page.getByTestId('auth-profile-nome-social-acao');
+  if ((await acao.textContent())?.includes('Alterar')) {
+    await gravarNomeSocialNaConta(page, '');
+    return;
+  }
+  await page.keyboard.press('Escape');
+  await expect(acao).toBeHidden();
+}
+
+/** Só o rascunho se salva: a inscrição já enviada muda apenas por um novo envio. */
+async function salvarRascunhoSeHouver(page: Page): Promise<void> {
+  const salvar = page.getByRole('button', { name: 'Salvar rascunho' });
+  if (!(await salvar.isVisible())) return;
+  await salvar.click();
+  await expect(page.getByText(/rascunho/i).first()).toBeVisible();
+}
+
 test.describe('Inscrição do candidato de ponta a ponta', () => {
-  test.skip(!PROCESSO_ID, 'Defina E2E_PROCESSO_ID com o processo que o roteiro da API publicou.');
-  test.skip(
-    ({ browserName }) => browserName !== 'chromium',
-    'A inscrição é única por candidato e processo: dois navegadores em paralelo disputariam a mesma.',
-  );
   test.setTimeout(180_000);
   // Os dois testes usam a mesma persona e a mesma inscrição: um depois do outro.
   test.describe.configure({ mode: 'serial' });
@@ -611,9 +650,10 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await expect(comprovante(page)).toContainText('Envio 2 de 2');
       await expect(comprovante(page)).toContainText(PERSONA.fixo);
       const anterior = page.getByRole('link', { name: '‹ Envio anterior' });
-      const destino = (await anterior.getAttribute('href')) ?? '';
+      const destino = await anterior.getAttribute('href');
+      expect(destino).not.toBeNull();
       await anterior.click();
-      await expect(page).toHaveURL(new RegExp(`${destino}$`));
+      await expect(page).toHaveURL(new RegExp(`${String(destino)}$`));
       await expect(page).toHaveURL(new RegExp('/inscricao/comprovante/[^/]+/\\d+$'));
       await expect(comprovante(page)).toContainText(PERSONA.celular);
       await expect(comprovante(page)).not.toContainText(PERSONA.fixo);
@@ -745,7 +785,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await expect(enviando).toBeFocused();
     await page.keyboard.press('Enter');
     await page.keyboard.press('Space');
-    await enviando.click({ force: true });
+    await enviando.dispatchEvent('click');
 
     expect(gravacao.pedidos()).toBe(1);
     gravacao.liberar();
@@ -766,7 +806,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     await expect(salvando).toBeFocused();
     await page.keyboard.press('Enter');
     await page.keyboard.press('Space');
-    await salvando.click({ force: true });
+    await salvando.dispatchEvent('click');
 
     expect(gravacao.pedidos()).toBe(1);
     gravacao.liberar();
@@ -782,40 +822,12 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
     const recusa =
       'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado.';
 
-    /** A atualização de perfil do Keycloak, aberta a partir de Meu perfil, e a volta ao portal. */
-    async function gravarNomeSocialNaConta(valor: string): Promise<void> {
-      const acao = page.getByTestId('auth-profile-nome-social-acao');
-      if (!(await acao.isVisible())) {
-        await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
-        await page.getByTestId('auth-user-profile-item').click();
-      }
-      await acao.click();
-      const nomeSocial = page.getByLabel('Nome social');
-      await expect(nomeSocial).toBeVisible();
-      // Na conta, o titular edita só o nome social: o nome civil e o e-mail ficam travados.
-      await expect(page.locator('input[name="firstName"]')).not.toBeEditable();
-      await expect(page.locator('input[name="email"]')).not.toBeEditable();
-      await nomeSocial.fill(valor);
-      await page.locator('[type="submit"]').first().click();
-      await expect(page).toHaveURL(new RegExp(`/inscricao/${PROCESSO_ID}`));
-    }
-
     await test.step('entra sem nome social na conta e escolhe usá-lo: o campo fica vazio e travado, com a orientação', async () => {
       await page.goto(`/inscricao/${PROCESSO_ID}`);
       await keycloakLogin(page, HELENA.usuario, HELENA.senha, {
         expectRedirectTo: new RegExp(`/inscricao/${PROCESSO_ID}`),
       });
-      // Uma rodada anterior interrompida pode ter deixado o nome social na conta: o cenário parte
-      // da conta sem ele.
-      await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
-      await page.getByTestId('auth-user-profile-item').click();
-      const acao = page.getByTestId('auth-profile-nome-social-acao');
-      if ((await acao.textContent())?.includes('Alterar')) {
-        await gravarNomeSocialNaConta('');
-      } else {
-        await page.keyboard.press('Escape');
-        await expect(acao).toBeHidden();
-      }
+      await partirDaContaSemNomeSocial(page);
       await preencherDadosDoCandidato(page, HELENA);
       await preencherRestante(page);
     });
@@ -825,15 +837,11 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
       await irParaSecao(page, 'Dados do candidato');
       await expect(page.getByText(recusa)).toBeVisible();
       // Só o rascunho se salva: a inscrição já enviada muda apenas por um novo envio.
-      const salvar = page.getByRole('button', { name: 'Salvar rascunho' });
-      if (await salvar.isVisible()) {
-        await salvar.click();
-        await expect(page.getByText(/rascunho/i).first()).toBeVisible();
-      }
+      await salvarRascunhoSeHouver(page);
     });
 
     await test.step('cadastra o nome social em Meu perfil e volta à inscrição com ele, sem novo login', async () => {
-      await gravarNomeSocialNaConta(NOME_SOCIAL_DA_HELENA);
+      await gravarNomeSocialNaConta(page, NOME_SOCIAL_DA_HELENA);
       await irParaSecao(page, 'Dados do candidato');
       const nomeSocial = campo(page, 'Nome social');
       await expect(nomeSocial).toHaveValue(NOME_SOCIAL_DA_HELENA);
@@ -851,7 +859,7 @@ test.describe('Inscrição do candidato de ponta a ponta', () => {
 
     await test.step('remove o nome social da conta, para o teste valer de novo', async () => {
       await page.goto(`/inscricao/${PROCESSO_ID}`);
-      await gravarNomeSocialNaConta('');
+      await gravarNomeSocialNaConta(page, '');
       await page.getByRole('button', { name: /^Abrir menu da conta de / }).click();
       await page.getByTestId('auth-user-profile-item').click();
       await expect(page.getByTestId('auth-profile-nome-social-acao')).toHaveText(

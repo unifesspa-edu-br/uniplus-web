@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page, type Route, type TestInfo } from '@playwright/test';
 import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
+import { conferirAlinhamentoDaObservacao } from '../support/alinhamento-da-observacao';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
@@ -12,9 +13,6 @@ import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
-
-/** Larguras em que a grade dos eixos da exigência tem de três a cinco colunas. */
-const LARGURAS_DA_GRADE_DOS_EIXOS = [1440, 1680, 1920, 2200] as const;
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -301,45 +299,7 @@ test.describe('Cronograma — matriz DS @ds', () => {
      * O viewport desktop da matriz (1366 px) tem menos colunas ainda, onde o rótulo cabe em
      * qualquer caso.
      */
-    if (testInfo.project.metadata['viewport'] === 'desktop') {
-      const original = page.viewportSize();
-      let larguraComVizinhos: number | null = null;
-      for (const largura of LARGURAS_DA_GRADE_DOS_EIXOS) {
-        await page.setViewportSize({ width: largura, height: 900 });
-        const alinhamento = await card.evaluate((elemento) => {
-          const topoDoInput = (campo: Element) =>
-            campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
-          const campo = elemento
-            .querySelector('[id*="-doc-obs-legal-"]')
-            ?.closest('.form-field') as Element;
-          const linha = campo.getBoundingClientRect().top;
-          const referencia = topoDoInput(campo) ?? 0;
-          const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
-            .filter((outro) => outro !== campo)
-            .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
-            .map(topoDoInput)
-            .filter((topo): topo is number => topo !== null);
-          return {
-            vizinhos: vizinhos.length,
-            diferencas: vizinhos.map((topo) => topo - referencia),
-          };
-        });
-        if (alinhamento.vizinhos === 0) continue;
-        larguraComVizinhos ??= largura;
-        for (const diferenca of alinhamento.diferencas) {
-          expect(
-            Math.abs(diferenca),
-            `o input da observação alinha com os vizinhos em ${largura} px`,
-          ).toBeLessThanOrEqual(1);
-        }
-      }
-      if (original) await page.setViewportSize(original);
-
-      expect(
-        larguraComVizinhos,
-        `a observação divide a linha com outros campos em alguma de ${LARGURAS_DA_GRADE_DOS_EIXOS.join(', ')} px`,
-      ).not.toBeNull();
-    }
+    await conferirAlinhamentoDaObservacao(page, card, testInfo);
 
     // O aviso segue a regra da publicação: alguma norma declarada E resolvida.
     const aviso = card.getByText('Sem uma norma declarada e identificada como "Resolvida"');

@@ -6,7 +6,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
-import { conferirObrigatoriedadeDoCampo } from '../support/consulta-do-formulario';
+import { conferirObrigatoriedadeSeInformada } from '../support/consulta-do-formulario';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
 import { irAoPasso } from '../support/navega-passo';
@@ -22,11 +22,18 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, accept',
 };
 
+interface Passo {
+  readonly rotulo: string;
+  readonly numero: number;
+  readonly valor: string;
+  readonly obrigatoriedade?: string;
+}
+
 /**
  * Cada passo lido como texto, a posição dele no wizard e um valor que a leitura tem de mostrar. No
  * passo Formulários o valor é o nome do campo, e a obrigatoriedade aparece na mesma linha.
  */
-const PASSOS = [
+const PASSOS: readonly Passo[] = [
   { rotulo: 'Tipo do processo', numero: 1, valor: 'Processo Seletivo de Medicina' },
   { rotulo: 'Identificação', numero: 2, valor: 'medicina-2027' },
   { rotulo: 'Pagamento', numero: 3, valor: 'R$ 120,50' },
@@ -37,11 +44,9 @@ const PASSOS = [
     valor: 'Renda familiar per capita igual ou inferior a um salário mínimo',
     obrigatoriedade: 'opcional',
   },
-] as const;
+];
 
-type Passo = (typeof PASSOS)[number];
-
-const passoPeloRotulo = (rotulo: Passo['rotulo']): Passo =>
+const passoPeloRotulo = (rotulo: string): Passo =>
   PASSOS.find((passo) => passo.rotulo === rotulo) as Passo;
 
 /**
@@ -72,9 +77,7 @@ test.describe('Consulta como texto — matriz DS @ds', () => {
         await expect(
           page.locator('.wiz-content').getByText(passo.valor, { exact: true }).first(),
         ).toBeVisible();
-        if ('obrigatoriedade' in passo) {
-          await conferirObrigatoriedadeDoCampo(page, passo.valor, passo.obrigatoriedade);
-        }
+        await conferirObrigatoriedadeSeInformada(page, passo.valor, passo.obrigatoriedade);
         expect(await visiveis(page, 'input, select, textarea, button')).toEqual([]);
       });
 

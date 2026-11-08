@@ -176,14 +176,13 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
     await conferirFocoForaDasFaixasFixas(page);
   });
 
-  /** Tipo do processo é curto: cabe inteiro na altura de cada project, sem rolagem. */
-  test('o stepper lateral cobre a altura visível da área de trabalho num passo curto', async ({
+  /**
+   * Tipo do processo é curto: cabe inteiro na altura de cada project, sem rolagem. Abaixo de
+   * 768 px o stepper lateral dá lugar à barra de etapas, e é ela que se confere.
+   */
+  test('o stepper lateral cobre a altura visível da área de trabalho num passo curto, ou a barra de etapas o substitui', async ({
     page,
-  }, testInfo) => {
-    test.skip(
-      larguraDoProjeto(testInfo) < LARGURA_STEPPER_LATERAL,
-      'Abaixo de 768 px o stepper lateral dá lugar à barra de etapas.',
-    );
+  }) => {
     await expect(page.locator('.wiz-content h1')).toContainText('Tipo do processo');
 
     await conferirStepperNaAlturaDaArea(page);

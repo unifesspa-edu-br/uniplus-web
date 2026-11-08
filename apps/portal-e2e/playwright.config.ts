@@ -17,6 +17,15 @@ const isGithubActions = !!process.env['GITHUB_ACTIONS'];
 
 const EXCLUDED_FROM_DEFAULT_PROJECTS = /.*\.aaa\.spec\.ts$/;
 
+const INSCRICAO_PONTA_A_PONTA = /inscricao-ponta-a-ponta\.spec\.ts$/;
+
+// O roteiro de ponta a ponta precisa do processo que o roteiro da API publicou (E2E_PROCESSO_ID).
+const SEM_PROCESSO_PUBLICADO = process.env['E2E_PROCESSO_ID'] ? [] : [INSCRICAO_PONTA_A_PONTA];
+
+// A inscrição é única por candidato e processo: dois navegadores em paralelo disputariam a mesma.
+// Só o chromium percorre o roteiro.
+const SOMENTE_NO_CHROMIUM = [INSCRICAO_PONTA_A_PONTA];
+
 const AAA_VIEWPORTS = [
   { name: '320', viewport: { width: 320, height: 720 }, isMobile: true, hasTouch: true },
   { name: '768', viewport: { width: 768, height: 1024 }, isMobile: true, hasTouch: true },
@@ -68,13 +77,13 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      testIgnore: EXCLUDED_FROM_DEFAULT_PROJECTS,
+      testIgnore: [EXCLUDED_FROM_DEFAULT_PROJECTS, ...SEM_PROCESSO_PUBLICADO],
       use: { ...devices['Desktop Chrome'] },
     },
 
     {
       name: 'firefox',
-      testIgnore: EXCLUDED_FROM_DEFAULT_PROJECTS,
+      testIgnore: [EXCLUDED_FROM_DEFAULT_PROJECTS, ...SOMENTE_NO_CHROMIUM],
       use: { ...devices['Desktop Firefox'] },
     },
 
@@ -82,7 +91,7 @@ export default defineConfig({
       ? [
           {
             name: 'webkit',
-            testIgnore: EXCLUDED_FROM_DEFAULT_PROJECTS,
+            testIgnore: [EXCLUDED_FROM_DEFAULT_PROJECTS, ...SOMENTE_NO_CHROMIUM],
             use: { ...devices['Desktop Safari'] },
           },
         ]
