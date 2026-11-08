@@ -74,7 +74,8 @@ test.describe('Administração de perfis de acesso', () => {
     }
     await pagina.getByRole('button', { name: 'Salvar perfil' }).click();
 
-    await expect(pagina.getByRole('cell', { name: nome }).first()).toBeVisible();
+    // A lista é paginada e o perfil novo pode cair noutra página; a confirmação da tela e a API bastam.
+    await expect(pagina.getByText('Perfil criado', { exact: true })).toBeVisible();
     const gravado = await acharNaListagem<PerfilGravado>('diogo.souza', '/api/autorizacao/perfis?limit=100', (p) => p.nome === nome);
     expect(gravado?.permissoes.map((p) => p.codigo).sort()).toEqual([
       'selecao:dados-identificadores:consultar',

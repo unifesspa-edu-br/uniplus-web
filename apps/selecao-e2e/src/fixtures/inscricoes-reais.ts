@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import * as path from 'node:path';
-import { API_URL, tokenDaPersona } from '@uniplus/shared-e2e';
+import { API_URL, PDF_MINIMO, enviarPelaUrlAssinada, tokenDaPersona } from '@uniplus/shared-e2e';
 
 /**
  * Inscrições de personas fictícias do portal num processo publicado, pelo caminho do próprio
@@ -9,20 +9,10 @@ import { API_URL, tokenDaPersona } from '@uniplus/shared-e2e';
  */
 
 const GEO_URL = process.env['E2E_GEO_URL'] ?? 'http://localhost:5400';
-const OFERTA_MEDICINA = '01a188d4-aed8-7488-b84d-6b3a3b1a5377';
 
 export const ARQUIVO_DE_PESSOAS =
   process.env['E2E_FAKE_PEOPLE'] ??
   path.resolve(__dirname, '../../../../../uniplus-developers/src/data/fake-people.json');
-
-/** PDF mínimo válido: a API confere a assinatura `%PDF-`. */
-const PDF_MINIMO = Buffer.from(
-  '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
-    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
-    '3 0 obj<</Type/Page/MediaBox[0 0 200 200]/Parent 2 0 R>>endobj\n' +
-    'trailer<</Root 1 0 R>>\n%%EOF\n',
-  'utf-8',
-);
 
 interface Pessoa {
   readonly nome: string;
@@ -180,6 +170,25 @@ async function aguardarVerificacaoDosArquivos(
 }
 
 /**
+ * A oferta de Medicina do processo, lida do próprio certame: o id da oferta muda a cada base.
+ * O critério é o nome do curso; mais de uma oferta de Medicina (turnos ou campi) fica com a
+ * primeira na ordem da API, e nenhuma é erro.
+ */
+async function ofertaDeMedicina(processoId: string): Promise<string> {
+  const certame = await json<{ ofertas: { ofertaCursoOrigemId: string; cursoNome: string }[] }>(
+    await fetch(`${API_URL}/api/selecao/certames/${processoId}`),
+    200,
+    `certame ${processoId}`,
+  );
+  const oferta = certame.ofertas.find((o) => o.cursoNome.toLowerCase().includes('medicina'));
+  if (oferta === undefined) {
+    const nomes = certame.ofertas.map((o) => o.cursoNome).join(', ') || 'nenhuma oferta';
+    throw new Error(`O processo ${processoId} não tem oferta de Medicina (ofertas: ${nomes}).`);
+  }
+  return oferta.ofertaCursoOrigemId;
+}
+
+/**
  * Inscreve a persona no processo. Com `comLaudo`, ela declara deficiência e envia o laudo
  * médico que o processo exige; devolve a inscrição já submetida. Repetir a chamada para quem
  * já tem inscrição enviada devolve a existente.
@@ -214,7 +223,7 @@ export async function inscreverPersona(
     'formulário de inscrição',
   );
   const corpo = {
-    ofertaCursoId: OFERTA_MEDICINA,
+    ofertaCursoId: await ofertaDeMedicina(processoId),
     ofertaCursoSegundaOpcaoId: null,
     respostas: await respostasDa(p, token, comLaudo),
     grupos: {},
@@ -251,19 +260,12 @@ export async function inscreverPersona(
         201,
         'iniciar o envio do laudo',
       );
-      const subida = await fetch(envio.urlUpload, {
-        method: 'PUT',
-        headers: { 'content-type': envio.contentTypeExigido },
-        body: PDF_MINIMO,
-      });
-      if (!subida.ok) {
-        throw new Error(`Envio do laudo ao armazenamento: ${subida.status}`);
-      }
+      const etag = await enviarPelaUrlAssinada(envio.urlUpload, envio.contentTypeExigido, PDF_MINIMO);
       await json(
         await fetch(`${base}/documentos/envios/${envio.arquivoId}/confirmacao`, {
           method: 'POST',
           headers: cabecalho({ 'content-type': 'application/json' }),
-          body: JSON.stringify({ etag: subida.headers.get('etag') ?? '' }),
+          body: JSON.stringify({ etag }),
         }),
         200,
         'confirmar o envio do laudo',

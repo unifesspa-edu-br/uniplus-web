@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import {
-  UNIDADE_DO_CERTAME,
+  unidadeDoCertame,
   acharNaListagem,
   chamarApi,
   garantirConcessao,
@@ -145,7 +145,7 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
         `Matriz de permissões: só ${permissao}, além do acesso às inscrições.`,
         ['selecao:inscricoes:consultar', permissao],
       );
-      await garantirConcessao(persona, perfil, UNIDADE_DO_CERTAME);
+      await garantirConcessao(persona, perfil, await unidadeDoCertame());
     }
     let proximo: string | null = '/api/configuracao/admin/fatos-candidato?limit=100';
     while (proximo !== null) {

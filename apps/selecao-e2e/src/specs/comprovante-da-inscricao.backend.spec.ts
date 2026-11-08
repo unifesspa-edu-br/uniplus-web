@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { UNIDADE_DO_CERTAME, chamarApi, entrarComoPersona, garantirConcessao, garantirPerfil } from '@uniplus/shared-e2e';
+import { chamarApi, entrarComoPersona, garantirConcessao, garantirPerfil, unidadeDoCertame } from '@uniplus/shared-e2e';
 import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-da-projecao';
 import { inscreverPersona, type InscricaoCriada } from '../fixtures/inscricoes-reais';
 
@@ -47,7 +47,7 @@ async function exigirSomente(persona: string, permitidas: readonly string[], qua
 async function conceder(persona: string, permissoes: readonly string[], nome: string): Promise<void> {
   await exigirSomente(persona, permissoes, 'antes da concessão');
   const perfil = await garantirPerfil(nome, `Spec do comprovante: ${persona}.`, permissoes);
-  await garantirConcessao(persona, perfil, UNIDADE_DO_CERTAME);
+  await garantirConcessao(persona, perfil, await unidadeDoCertame());
   expect(await permissoesDe(persona), `${persona} depois da concessão`).toEqual([...permissoes].sort());
 }
 

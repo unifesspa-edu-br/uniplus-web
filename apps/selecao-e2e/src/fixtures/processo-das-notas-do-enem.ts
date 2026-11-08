@@ -108,12 +108,11 @@ export async function processoDasNotasDoEnem(): Promise<string> {
   await aprovarCatalogoInicial();
   await definirSenhaDasCandidatas();
   const identificador = `e2e-psm-2027-notas-do-enem-${Date.now()}`;
-  const criado = rodarRoteiroDeProcesso(
+  const criado = await rodarRoteiroDeProcesso(
     'bash',
     ['-c', EXECUCAO_COM_INSCRICAO_CURTA, 'bash', ROTEIRO],
     {
       ...process.env,
-      ADMIN_USER: 'manoel.aparicio',
       ADMIN_PASS: SENHA_DAS_PERSONAS,
       IDENTIFICADOR_PROCESSO: identificador,
       NOME_PROCESSO: `${NOME_DO_PROCESSO} ${identificador}`,

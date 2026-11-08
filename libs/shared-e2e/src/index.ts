@@ -14,22 +14,27 @@ export { assertDocumentoSemRolagemVertical, assertReflowContract } from './lib/a
 export { assertTextSpacingResilience } from './lib/a11y-espacamento-de-texto';
 export { falharPermissoesEfetivas, mockPermissoesEfetivas } from './lib/permissoes-efetivas';
 export {
-  ACESSOS_DA_SIMULACAO,
   acharNaListagem,
-  aprovarCatalogoInicial,
   API_URL,
   GESTOR_DE_ACESSOS,
   PROTECAO_DE_DADOS,
   SEGUNDO_GESTOR_DE_ACESSOS,
-  SENHA_DAS_PERSONAS,
-  UNIDADE_DO_CERTAME,
   chamarApi,
   entrarComoPersona,
-  garantirConcessao,
   garantirPerfil,
   identidadeDoToken,
-  prepararAcessosDaSimulacao,
   tokenDaPersona,
 } from './lib/backend-real';
+export { garantirConcessao } from './lib/concessoes-reais';
+export { PDF_MINIMO, enviarPelaUrlAssinada } from './lib/envio-de-arquivo';
+export { SENHA_DAS_PERSONAS } from './lib/credenciais';
 export type { RespostaDaApi } from './lib/backend-real';
+export {
+  ACESSOS_DA_SIMULACAO,
+  aprovarCatalogoInicial,
+  garantirOperadorDoRoteiro,
+  OPERADOR_DO_ROTEIRO,
+  prepararAcessosDaSimulacao,
+  unidadeDoCertame,
+} from './lib/simulacao-real';
 export { lerTopicoDoKafka } from './lib/kafka-real';

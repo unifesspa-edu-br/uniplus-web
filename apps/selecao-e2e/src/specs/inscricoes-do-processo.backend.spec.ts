@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { UNIDADE_DO_CERTAME, entrarComoPersona, garantirConcessao, garantirPerfil } from '@uniplus/shared-e2e';
+import { entrarComoPersona, garantirConcessao, garantirPerfil, unidadeDoCertame } from '@uniplus/shared-e2e';
 import { cenarioDaProjecao, type CenarioDaProjecao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -83,7 +83,7 @@ test.describe('Inscrições do processo seletivo (listagem)', () => {
       `Matriz de permissões: só ${permissao}, além do acesso às inscrições.`,
       ['selecao:inscricoes:consultar', permissao],
     );
-    await garantirConcessao('andre.barbosa', perfil, UNIDADE_DO_CERTAME);
+    await garantirConcessao('andre.barbosa', perfil, await unidadeDoCertame());
     const pagina = await entrarComoPersona(browser, APP, 'andre.barbosa', `/processo-seletivo/${cenario.processoId}/inscricoes`);
 
     await expect(pagina.getByRole('heading', { level: 2, name: 'Inscrições enviadas' })).toBeVisible();

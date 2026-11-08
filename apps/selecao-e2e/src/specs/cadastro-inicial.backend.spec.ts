@@ -1,10 +1,10 @@
 import { test } from '@playwright/test';
 import {
-  SEGUNDO_GESTOR_DE_ACESSOS,
-  chamarApi,
   entrarComoPersona,
   garantirConcessao,
   garantirPerfil,
+  PDF_MINIMO,
+  unidadeDoCertame,
 } from '@uniplus/shared-e2e';
 import { expect } from '../fixtures/auth.fixture';
 
@@ -45,44 +45,9 @@ const APP = process.env['BASE_URL'] ?? 'http://localhost:4200';
 
 /** Persona fictícia do portal sem outra concessão nas specs de backend real. */
 const PERSONA = 'helena.rezende';
-const SIGLA_DO_CERTAME = 'CEPS';
 const PERMISSOES = ['selecao:processos:configurar', 'selecao:processos:publicar'];
 /** Institucional: o perfil não mistura com as de unidade. */
 const PERMISSOES_INSTITUCIONAIS = ['configuracao:modelos-formulario:consultar'];
-
-/**
- * Resolve o CEPS pela API, pela sigla, como o roteiro da stack o cria: o id muda a cada base.
- * `E2E_UNIDADE_ID`, quando definido, só é conferido contra o resultado.
- */
-async function resolverUnidadeDoCertame(): Promise<string> {
-  const resposta = await chamarApi<{ id: string; sigla: string }[]>(
-    SEGUNDO_GESTOR_DE_ACESSOS,
-    'GET',
-    '/api/organizacao/unidades?limit=100',
-  );
-  const unidade = Array.isArray(resposta.corpo)
-    ? resposta.corpo.find((u) => u.sigla === SIGLA_DO_CERTAME)
-    : undefined;
-  if (unidade === undefined) {
-    throw new Error(
-      `A unidade ${SIGLA_DO_CERTAME} não existe nesta base. Rode scripts/roteiro-processo-teste-inscricao.sh da uniplus-api antes da spec.`,
-    );
-  }
-  const informada = process.env['E2E_UNIDADE_ID'];
-  if (informada !== undefined && informada !== unidade.id) {
-    throw new Error(`E2E_UNIDADE_ID=${informada} não é o ${SIGLA_DO_CERTAME} desta base (${unidade.id}).`);
-  }
-  return unidade.id;
-}
-
-/** PDF mínimo válido: a API confere a assinatura `%PDF-` do conteúdo. */
-const PDF_MINIMO = Buffer.from(
-  '%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n' +
-    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n' +
-    '3 0 obj<</Type/Page/MediaBox[0 0 200 200]/Parent 2 0 R>>endobj\n' +
-    'trailer<</Root 1 0 R>>\n%%EOF\n',
-  'utf-8',
-);
 
 test.describe('Cadastro inicial do processo seletivo', () => {
   // O preparo de perfil e concessão é compartilhado e não é seguro rodar em dois workers ao mesmo tempo.
@@ -93,7 +58,7 @@ test.describe('Cadastro inicial do processo seletivo', () => {
   test.beforeAll(async () => {
     // O pedido de concessão passa por quatro personas e leva além dos 30 s padrão.
     test.setTimeout(180_000);
-    unidadeId = await resolverUnidadeDoCertame();
+    unidadeId = await unidadeDoCertame();
     const perfilId = await garantirPerfil(
       'E2E cadastro inicial — Configuração e publicação do CEPS',
       'Perfil da spec do cadastro inicial: cria o processo e anexa o edital.',

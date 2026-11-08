@@ -2,6 +2,7 @@ import * as path from 'node:path';
 import {
   aprovarCatalogoInicial,
   chamarApi,
+  OPERADOR_DO_ROTEIRO,
   prepararAcessosDaSimulacao,
   SENHA_DAS_PERSONAS,
 } from '@uniplus/shared-e2e';
@@ -51,12 +52,11 @@ async function garantirProcesso(nome: string, identificador: string, modelo: str
   if (existente !== undefined) {
     return existente;
   }
-  return rodarRoteiroDeProcesso(
+  return await rodarRoteiroDeProcesso(
     ROTEIRO,
     [],
     {
       ...process.env,
-      ADMIN_USER: 'manoel.aparicio',
       ADMIN_PASS: SENHA_DAS_PERSONAS,
       IDENTIFICADOR_PROCESSO: identificador,
       NOME_PROCESSO: nome,
@@ -101,7 +101,7 @@ const NOME_DO_RASCUNHO = 'Processo Seletivo Medicina 2027 (projeção, rascunho)
 
 /** Cria, com as funções do roteiro, um processo em rascunho só com o cronograma de fases. */
 const SNIPPET_DO_RASCUNHO = `set -euo pipefail
-export ADMIN_USER=manoel.aparicio ADMIN_PASS="$4" IDENTIFICADOR_PROCESSO="$1" NOME_PROCESSO="$2"
+export ADMIN_PASS="$4" IDENTIFICADOR_PROCESSO="$1" NOME_PROCESSO="$2"
 source "$3"
 obter_token; setup_publicacoes; setup_organizacao; setup_configuracao
 criar_processo; definir_cronograma_fases
@@ -111,17 +111,22 @@ echo "PROCESSO_ID=$PROCESSO_ID"`;
 export async function rascunhoParaConfiguracao(): Promise<{ readonly processoId: string; readonly faseHabilitacaoId: string }> {
   const id =
     (await listarProcessos()).find((p) => p.nome === NOME_DO_RASCUNHO && p.status === 'rascunho')?.id ??
-    rodarRoteiroDeProcesso(
+    (await rodarRoteiroDeProcesso(
       'bash',
       ['-c', SNIPPET_DO_RASCUNHO, 'bash', `psm-2027-projecao-rascunho-${Date.now()}`, NOME_DO_RASCUNHO, ROTEIRO, SENHA_DAS_PERSONAS],
       process.env,
       600_000,
-    );
-  const processo = await chamarApi<{ cronogramaFases: { id: string; codigo: string }[] }>(
-    'manoel.aparicio',
+    ));
+  const processo = await chamarApi<{ cronogramaFases?: { id: string; codigo: string }[] }>(
+    OPERADOR_DO_ROTEIRO,
     'GET',
     `/api/selecao/processos-seletivos/${id}`,
   );
+  if (processo.status !== 200 || processo.corpo.cronogramaFases === undefined) {
+    throw new Error(
+      `Ler o processo ${id} como ${OPERADOR_DO_ROTEIRO} respondeu ${processo.status} sem cronogramaFases: ${JSON.stringify(processo.corpo).slice(0, 300)}`,
+    );
+  }
   const fase = processo.corpo.cronogramaFases.find((f) => f.codigo === 'HABILITACAO');
   if (fase === undefined) {
     throw new Error('O rascunho não tem a fase de habilitação.');

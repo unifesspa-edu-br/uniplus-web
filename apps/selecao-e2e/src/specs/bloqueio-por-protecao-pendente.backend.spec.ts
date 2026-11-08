@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { chamarApi, entrarComoPersona, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
+import { OPERADOR_DO_ROTEIRO, chamarApi, entrarComoPersona, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -44,7 +44,7 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
 
   test('a API recusa exigir o tipo pendente', async () => {
     const resposta = await chamarApi<{ code: string }>(
-      'manoel.aparicio',
+      OPERADOR_DO_ROTEIRO,
       'PUT',
       `/api/selecao/processos-seletivos/${processoId}/documentos-exigidos`,
       {
@@ -72,7 +72,7 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
   });
 
   test('a tela oferece o tipo pendente como indisponível, aguardando a proteção de dados', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'manoel.aparicio', `/processo-seletivo/${processoId}`);
+    const pagina = await entrarComoPersona(browser, APP, OPERADOR_DO_ROTEIRO, `/processo-seletivo/${processoId}`);
     await pagina.getByRole('button', { name: /^Cronograma/ }).click();
     await expect(pagina.getByRole('heading', { name: /Passo 5/ })).toBeVisible();
     await pagina.getByText('3. Habilitação', { exact: true }).click();

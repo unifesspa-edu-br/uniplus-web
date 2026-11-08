@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { UNIDADE_DO_CERTAME, entrarComoPersona, garantirConcessao, garantirPerfil } from '@uniplus/shared-e2e';
+import { entrarComoPersona, garantirConcessao, garantirPerfil, unidadeDoCertame } from '@uniplus/shared-e2e';
 import type { Locator } from '@playwright/test';
 import { expect, test } from '../fixtures/auth.fixture';
 import {
@@ -54,7 +54,7 @@ test.describe('Notas do ENEM contra a API real', () => {
         'Acesso do operador à spec das notas do ENEM contra a API real.',
         perfil.permissoes,
       );
-      await garantirConcessao(OPERADOR, perfilId, UNIDADE_DO_CERTAME);
+      await garantirConcessao(OPERADOR, perfilId, await unidadeDoCertame());
     }
     processoId = await processoDasNotasDoEnem();
   });
