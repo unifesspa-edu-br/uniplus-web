@@ -28,4 +28,9 @@ export const PERMISSOES_DAS_INSCRICOES_DO_PROCESSO = [
   selecao.inscricoesConsultar,
 ] as const satisfies readonly CodigoDePermissao[];
 
+/** Permissão que abre o comprovante de uma inscrição do processo, em `…/inscricoes/:inscricaoId/comprovantes/:numero`. */
+export const PERMISSOES_DO_COMPROVANTE_DA_INSCRICAO = [
+  selecao.inscricoesEmitirComprovante,
+] as const satisfies readonly CodigoDePermissao[];
+
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;

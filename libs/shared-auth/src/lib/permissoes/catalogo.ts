@@ -57,6 +57,7 @@ export const PERMISSAO = {
     documentosSensiveisConsultar: 'selecao:documentos-sensiveis:consultar',
     enviosInepGerar: 'selecao:envios-inep:gerar',
     inscricoesConsultar: 'selecao:inscricoes:consultar',
+    inscricoesEmitirComprovante: 'selecao:inscricoes:emitir-comprovante',
     leiautesInepConsultar: 'selecao:leiautes-inep:consultar',
     motivosDecisaoIsencaoManter: 'selecao:motivos-decisao-isencao:manter',
     notasEnemImportar: 'selecao:notas-enem:importar',

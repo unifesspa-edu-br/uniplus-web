@@ -109,6 +109,24 @@ describe('appRoutes — permissões efetivas', () => {
       }
     });
 
+    it('abre o comprovante de uma inscrição só a quem também pode emitir', async () => {
+      const url = '/processo-seletivo/abc/inscricoes/i-1/comprovantes/1';
+
+      permissoes.set(['selecao:inscricoes:consultar']);
+      expect(await ir(url)).toBe('/acesso-negado');
+
+      permissoes.set(['selecao:inscricoes:consultar', 'selecao:inscricoes:emitir-comprovante']);
+      expect(await ir(url)).toBe(url);
+    });
+
+    it('nega o comprovante a quem só pode emitir, sem consultar as inscrições do processo', async () => {
+      permissoes.set(['selecao:inscricoes:emitir-comprovante']);
+
+      expect(await ir('/processo-seletivo/abc/inscricoes/i-1/comprovantes/1')).toBe(
+        '/acesso-negado',
+      );
+    });
+
     it('nega as inscrições do processo a quem só configura processos', async () => {
       permissoes.set(['selecao:processos:configurar']);
 

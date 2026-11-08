@@ -646,6 +646,33 @@ describe('DetalheDaInscricaoPage', () => {
     expect(texto()).not.toContain('ocorrência 3');
   });
 
+  describe('emitir o comprovante', () => {
+    const acao = (): HTMLAnchorElement | undefined =>
+      Array.from(host().querySelectorAll('a')).find(
+        (a) => a.textContent?.trim() === 'Emitir comprovante',
+      );
+
+    it('leva ao comprovante do último envio quando a API permite a emissão', async () => {
+      await abrir({ ...FERNANDA, podeEmitirComprovante: true, numeroDoUltimoComprovante: 3 });
+
+      expect(acao()?.getAttribute('href')).toBe(
+        `/processo-seletivo/${PROCESSO_ID}/inscricoes/${INSCRICAO_ID}/comprovantes/3`,
+      );
+    });
+
+    it('não aparece quando a conta não pode emitir, mesmo com comprovante', async () => {
+      await abrir({ ...FERNANDA, podeEmitirComprovante: false, numeroDoUltimoComprovante: 3 });
+
+      expect(acao()).toBeUndefined();
+    });
+
+    it('não aparece quando a inscrição não tem comprovante, mesmo com permissão', async () => {
+      await abrir({ ...FERNANDA, podeEmitirComprovante: true, numeroDoUltimoComprovante: null });
+
+      expect(acao()).toBeUndefined();
+    });
+  });
+
   describe('revelar o valor de um campo', () => {
     const CPF_DE_FERNANDA = '699.598.363-71';
     const PASSAPORTE_DE_ERICK = 'FJ849201';

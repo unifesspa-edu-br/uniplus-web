@@ -1,5 +1,8 @@
 <ui-page-header [heading]="titulo()" [description]="descricaoDoCabecalho()">
   <div uiPageActions class="insc-det__acoes">
+    @if (rotaDoComprovante(); as rota) {
+    <a class="btn btn--secondary" [routerLink]="rota"> Emitir comprovante </a>
+    }
     <a
       class="btn btn--tertiary"
       [routerLink]="['/processo-seletivo', detalhe.processoId(), 'inscricoes']"

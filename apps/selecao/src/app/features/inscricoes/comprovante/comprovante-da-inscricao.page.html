@@ -1,0 +1,12 @@
+<insc-comprovante-do-envio
+  titulo="Comprovante de inscrição"
+  descricao="Registro do que foi enviado nesta inscrição."
+  [fonte]="fonte()"
+  [numero]="numero()"
+  [recusas]="recusas"
+  [rotaDoEnvio]="rotaDoEnvio"
+>
+  <a inscAcaoDoDocumento class="btn btn--tertiary" [routerLink]="rotaDaInscricao()">
+    Voltar à inscrição
+  </a>
+</insc-comprovante-do-envio>

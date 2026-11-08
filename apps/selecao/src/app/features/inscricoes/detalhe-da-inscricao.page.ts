@@ -91,6 +91,21 @@ export class DetalheDaInscricaoPage {
     return numero ? `Inscrição ${numero}` : 'Inscrição';
   });
 
+  /** Só a API diz se a conta pode emitir e qual é o último envio; sem os dois, a ação não existe. */
+  protected readonly rotaDoComprovante = computed(() => {
+    const inscricao = this.inscricao();
+    const numero = inscricao?.numeroDoUltimoComprovante ?? null;
+    if (inscricao?.podeEmitirComprovante !== true || numero === null) return null;
+    return [
+      '/processo-seletivo',
+      this.detalhe.processoId(),
+      'inscricoes',
+      inscricao.id,
+      'comprovantes',
+      numero,
+    ];
+  });
+
   protected readonly identificacao = computed(() => identificacaoExibida(this.inscricao()));
   protected readonly arquivos = computed(() => arquivosExibidos(this.inscricao()));
 

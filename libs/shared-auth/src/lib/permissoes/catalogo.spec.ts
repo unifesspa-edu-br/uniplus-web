@@ -35,4 +35,10 @@ describe('PERMISSAO.selecao', () => {
     ]);
     expect(Object.values(PERMISSAO.selecao)).not.toContain('selecao:inscricoes:revelar-cpf');
   });
+
+  it('declara a emissão do comprovante da inscrição pela unidade', () => {
+    expect(PERMISSAO.selecao.inscricoesEmitirComprovante).toBe(
+      'selecao:inscricoes:emitir-comprovante',
+    );
+  });
 });
