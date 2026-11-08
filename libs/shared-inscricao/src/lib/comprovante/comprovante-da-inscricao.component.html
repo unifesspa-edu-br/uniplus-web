@@ -14,7 +14,9 @@
       [valor]="c.envio.numeroInscricao"
     ></ng-template>
     <ng-template uiDado rotulo="Situação">
-      @if (c.vale) {
+      @if (c.cancelamento) {
+        <ui-tag variant="danger" [dot]="true">Inscrição cancelada</ui-tag>
+      } @else if (c.vale) {
         <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
       } @else {
         <ui-tag variant="neutral" [dot]="true">Substituído</ui-tag>
@@ -43,8 +45,21 @@
   </nav>
 </ui-secao-de-documento>
 
+@if (c.cancelamento; as cancelamento) {
+  <ui-secao-de-documento titulo="Cancelamento">
+    <ui-lista-de-dados>
+      <ng-template uiDado rotulo="Cancelada em">
+        <time [attr.datetime]="cancelamento.canceladaEm">{{ canceladaEm() }}</time>
+      </ng-template>
+      @if (cancelamento.motivo; as motivo) {
+        <ng-template uiDado rotulo="Motivo" [valor]="motivo"></ng-template>
+      }
+    </ui-lista-de-dados>
+  </ui-secao-de-documento>
+}
+
 @if (mostrarOpcoes()) {
-  <ui-secao-de-documento titulo="Sua inscrição">
+  <ui-secao-de-documento titulo="Inscrição">
     <ui-lista-de-dados>
       @for (opcao of opcoes(); track opcao.rotulo) {
         <ng-template uiDado [rotulo]="opcao.rotulo" [valor]="opcao.exibicao"></ng-template>
@@ -53,7 +68,7 @@
   </ui-secao-de-documento>
 }
 
-<ui-secao-de-documento titulo="Modalidades em que você concorre" largura="inteira">
+<ui-secao-de-documento titulo="Modalidades de concorrência" largura="inteira">
   @if (modalidadesDefinidas()) {
     @for (opcao of opcoes(); track opcao.rotulo) {
       @if (opcao.modalidades; as nomes) {
@@ -187,10 +202,10 @@
 </ui-secao-de-documento>
 
 @if (c.prazoDaCorrecao; as prazo) {
-  <ui-secao-de-documento titulo="Próximos passos" largura="inteira">
+  <ui-secao-de-documento titulo="Prazo para correção" largura="inteira">
     @if (prazo.aberto) {
       <p>
-        Você pode corrigir a inscrição até
+        A inscrição pode ser corrigida até
         <time [attr.datetime]="prazo.fim">{{ fimDoPrazo() }}</time
         >. A inscrição que vale é a última enviada.
       </p>

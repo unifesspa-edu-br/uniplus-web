@@ -25,7 +25,7 @@ function noFuso(instante: string, fuso: ComprovanteDaInscricaoDto['envio']['fuso
  * o CPF mascarado e o código que prova que não mudou. Só exibe; texto, seções e prazo vêm prontos.
  * Vai dentro de um `ui-documento`, cujas seções ele contribui ao corpo.
  *
- * O que é de quem o hospeda entra por projeção: `[inscAcaoDaCorrecao]` fica em "Próximos passos",
+ * O que é de quem o hospeda entra por projeção: `[inscAcaoDaCorrecao]` fica em "Prazo para correção",
  * quando o prazo de correção está aberto.
  */
 @Component({
@@ -59,6 +59,12 @@ export class ComprovanteDaInscricaoComponent {
   protected readonly aceitosEm = computed(() => {
     const { enviadoEm, fusoHorario } = this.comprovante().envio;
     return formatarDataBr(enviadoEm, 'short', fusoHorario.id);
+  });
+  protected readonly canceladaEm = computed(() => {
+    const cancelamento = this.comprovante().cancelamento;
+    return cancelamento
+      ? noFuso(cancelamento.canceladaEm, this.comprovante().envio.fusoHorario)
+      : '';
   });
   protected readonly fimDoPrazo = computed(() => {
     const prazo = this.comprovante().prazoDaCorrecao;

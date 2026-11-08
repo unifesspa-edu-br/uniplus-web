@@ -1,50 +1,21 @@
-<ui-documento
+<insc-comprovante-do-envio
   titulo="Comprovante de inscrição"
   descricao="Guarde este comprovante. Ele registra o que você enviou nesta inscrição."
-  [aviso]="aviso()"
+  [fonte]="fonte()"
+  [numero]="numero()"
+  [recusas]="recusas"
+  [rotaDoEnvio]="rotaDoEnvio"
+  [cpf]="cpf()"
 >
-  @if (estado() === 'pronto') {
-  <button uiDocumentoAcoes type="button" class="btn btn--primary" (click)="imprimir()">
-    Imprimir comprovante
-  </button>
-  }
-  <a uiDocumentoAcoes class="btn btn--tertiary" routerLink="/inscricao">
+  <a inscAcaoDoDocumento class="btn btn--tertiary" routerLink="/inscricao">
     Voltar às minhas inscrições
   </a>
-  @if (estado() === 'pronto') {
-  <p uiDocumentoAcoes class="u-body-sm">
-    Para guardar em PDF, escolha salvar em PDF na janela de impressão.
-  </p>
-  }
-
-  <!-- A região fica sempre na página: trocar de envio só troca o conteúdo dela, e a troca é anunciada. -->
-  <div aria-live="polite">
-    @if (comprovante(); as c) { @if (estado() === 'pronto' && !c.vale) {
-    <ui-alert variant="info" [dynamic]="false">
-      Este envio foi substituído por um mais recente. A inscrição que vale é a última enviada.
-      <a [routerLink]="rotaDoEnvio(c.total)"> Ver o envio mais recente </a>
-    </ui-alert>
-    } }
-  </div>
-
-  <ui-falha-de-leitura titulo="Não foi possível abrir o comprovante" [leitura]="leitura" />
-
-  @switch (estado()) { @case ('carregando') {
-  <div [uiIndicadorDaLeitura]="leitura" aria-busy="true">
-    <span class="sr-only">Carregando o comprovante…</span>
-    <ui-skeleton skeletonKind="card" blockSize="10rem" />
-  </div>
-  } @case ('recusado') { @if (recusa(); as recusa) {
-  <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
-  } } @case ('pronto') { @if (comprovante(); as c) {
-  <insc-comprovante-da-inscricao [comprovante]="c" [cpf]="cpf()" [rotaDoEnvio]="rotaDoEnvio">
+  <ng-template inscAcaoDaCorrecao let-comprovante>
     <a
-      inscAcaoDaCorrecao
       class="btn btn--secondary u-no-print"
-      [routerLink]="['/inscricao', c.processoSeletivoId]"
+      [routerLink]="['/inscricao', comprovante.processoSeletivoId]"
     >
       Corrigir dados
     </a>
-  </insc-comprovante-da-inscricao>
-  } } }
-</ui-documento>
+  </ng-template>
+</insc-comprovante-do-envio>

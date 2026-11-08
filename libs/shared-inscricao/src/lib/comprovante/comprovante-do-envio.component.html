@@ -1,0 +1,61 @@
+<ui-documento [titulo]="titulo()" [descricao]="descricao()" [aviso]="aviso()">
+  @if (estado() === 'pronto') {
+    <button uiDocumentoAcoes type="button" class="btn btn--primary" (click)="imprimir()">
+      Imprimir comprovante
+    </button>
+  }
+  <ng-container ngProjectAs="[uiDocumentoAcoes]">
+    <ng-content select="[inscAcaoDoDocumento]" />
+  </ng-container>
+  @if (estado() === 'pronto') {
+    <p uiDocumentoAcoes class="u-body-sm">
+      Para guardar em PDF, escolha salvar em PDF na janela de impressão.
+    </p>
+  }
+
+  <!-- A região fica sempre na página: trocar de envio só troca o conteúdo dela, e a troca é anunciada. -->
+  <div aria-live="polite">
+    @if (comprovante(); as c) {
+      @if (estado() === 'pronto' && !c.vale) {
+        <ui-alert variant="info" [dynamic]="false">
+          Este envio foi substituído por um mais recente.
+          @if (!c.cancelamento) {
+            A inscrição que vale é a última enviada.
+          }
+          <a [routerLink]="rotaDoEnvio()(c.total)"> Ver o envio mais recente </a>
+        </ui-alert>
+      }
+    }
+  </div>
+
+  <ui-falha-de-leitura titulo="Não foi possível abrir o comprovante" [leitura]="leitura" />
+
+  @switch (estado()) {
+    @case ('carregando') {
+      <div [uiIndicadorDaLeitura]="leitura" aria-busy="true">
+        <span class="sr-only">Carregando o comprovante…</span>
+        <ui-skeleton skeletonKind="card" blockSize="10rem" />
+      </div>
+    }
+    @case ('recusado') {
+      @if (recusa(); as recusa) {
+        <ui-alert variant="danger" [heading]="recusa.titulo">{{ recusa.texto }}</ui-alert>
+      }
+    }
+    @case ('pronto') {
+      @if (comprovante(); as c) {
+        <insc-comprovante-da-inscricao
+          [comprovante]="c"
+          [cpf]="cpfConferido()"
+          [rotaDoEnvio]="rotaDoEnvio()"
+        >
+          <ng-container ngProjectAs="[inscAcaoDaCorrecao]">
+            @if (acaoDaCorrecao(); as acao) {
+              <ng-container *ngTemplateOutlet="acao.modelo; context: { $implicit: c }" />
+            }
+          </ng-container>
+        </insc-comprovante-da-inscricao>
+      }
+    }
+  }
+</ui-documento>

@@ -123,4 +123,60 @@ describe('ComprovanteDaInscricaoComponent', () => {
     expect(fechado.tela.textContent).toContain('Não é mais possível corrigir esta inscrição.');
     expect(fechado.tela.querySelector('[inscAcaoDaCorrecao]')).toBeNull();
   });
+
+  it('fala em voz neutra, porque a unidade também lê o corpo', () => {
+    const { tela } = montar();
+
+    expect(tela.textContent).not.toMatch(/\b(você|vocês|seu|sua|seus|suas)\b/i);
+    expect(tela.textContent).toContain('A inscrição pode ser corrigida até');
+  });
+
+  describe('cancelamento', () => {
+    const cancelamento = (motivo: string | null) => ({
+      canceladaEm: '2026-11-08T01:32:05Z',
+      motivo,
+      aviso: 'Documento sem validade: inscrição cancelada em 07/11/2026 às 22:32:05',
+    });
+    const dado = (tela: HTMLElement, rotulo: string): string | null => {
+      const par = [...tela.querySelectorAll('dl > div')].find(
+        (d) => d.querySelector('dt')?.textContent?.trim() === rotulo,
+      );
+      return par?.querySelector('dd')?.textContent?.trim().replace(/\s+/g, ' ') ?? null;
+    };
+
+    it('mostra quando foi cancelada, no fuso do envio, e o motivo quando informado', () => {
+      const { tela } = montar({ cancelamento: cancelamento('Pedido do candidato') });
+
+      expect(dado(tela, 'Cancelada em')).toBe('07/11/2026, 22:32, horário de Belém (PA)');
+      expect(dado(tela, 'Motivo')).toBe('Pedido do candidato');
+    });
+
+    it('sem motivo informado, não mostra o rótulo nem valor vazio', () => {
+      const { tela } = montar({ cancelamento: cancelamento(null) });
+
+      expect(dado(tela, 'Cancelada em')).not.toBeNull();
+      expect(dado(tela, 'Motivo')).toBeNull();
+      expect(tela.textContent).not.toContain('null');
+    });
+
+    it('sem cancelamento, a seção não existe', () => {
+      const { tela } = montar({ cancelamento: null });
+
+      expect(tela.textContent).not.toContain('Cancelada em');
+    });
+
+    it('a situação da cancelada diz que foi cancelada, e não que vale', () => {
+      const { tela } = montar({ vale: true, cancelamento: cancelamento(null) });
+
+      expect(dado(tela, 'Situação')).toBe('Inscrição cancelada');
+    });
+
+    it('sem cancelamento, o último envio é o que vale', () => {
+      expect(dado(montar({ vale: true, cancelamento: null }).tela, 'Situação')).toBe('É o que vale');
+    });
+
+    it('sem cancelamento, o envio anterior foi substituído', () => {
+      expect(dado(montar({ vale: false, cancelamento: null }).tela, 'Situação')).toBe('Substituído');
+    });
+  });
 });

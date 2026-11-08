@@ -1,10 +1,5 @@
 import { STATUS_HTTP, ehRecusaDefinitiva, type ProblemDetails } from '@uniplus/shared-core/http';
-
-/** Uma leitura que a página explica em vez de tentar de novo: o título e o texto para a pessoa. */
-export interface RecusaDoComprovante {
-  readonly titulo: string;
-  readonly texto: string;
-}
+import type { RecusaDoComprovante } from '@uniplus/shared-inscricao/comprovante';
 
 const INSCRICAO_CANCELADA = 'uniplus.selecao.inscricao.comprovante_de_inscricao_cancelada';
 const VERSAO_AUSENTE = 'uniplus.selecao.snapshot.vigente_ausente';

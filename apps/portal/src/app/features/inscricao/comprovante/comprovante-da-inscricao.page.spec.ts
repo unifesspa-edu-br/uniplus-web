@@ -444,7 +444,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       expect(hrefDe(tela, 'Ver o envio mais recente')).toBe(
         `/inscricao/comprovante/${INSCRICAO_ID}/3`,
       );
-      expect(secao(tela, 'Próximos passos')).toBeNull();
+      expect(secao(tela, 'Prazo para correção')).toBeNull();
     });
   });
 
@@ -452,7 +452,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     it('com o prazo aberto, diz até quando e leva à correção do processo', async () => {
       const tela = await abrir();
 
-      const passos = secao(tela, 'Próximos passos') as HTMLElement;
+      const passos = secao(tela, 'Prazo para correção') as HTMLElement;
       expect(passos.textContent).toContain('19/12/2026, 23:59');
       expect(passos.textContent).toContain('horário de Belém (PA)');
       expect(hrefDe(tela, 'Corrigir dados')).toBe(`/inscricao/${PROCESSO}`);
@@ -464,7 +464,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       };
       const tela = await abrir();
 
-      expect(secao(tela, 'Próximos passos')?.textContent).toContain('Não é mais possível corrigir');
+      expect(secao(tela, 'Prazo para correção')?.textContent).toContain('Não é mais possível corrigir');
       expect(hrefDe(tela, 'Corrigir dados')).toBeUndefined();
     });
 
@@ -472,22 +472,22 @@ describe('ComprovanteDaInscricaoPage', () => {
       alteracoes = { prazoDaCorrecao: null };
       const tela = await abrir();
 
-      expect(secao(tela, 'Próximos passos')).toBeNull();
+      expect(secao(tela, 'Prazo para correção')).toBeNull();
     });
   });
 
   describe('cursos e modalidades', () => {
     const modalidadesNaTela = (tela: HTMLElement): string[] =>
       Array.from(
-        secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul > li') ?? [],
+        secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul > li') ?? [],
       ).map((li) => li.textContent?.trim() ?? '');
 
-    it('o processo de uma opção cujo curso a versão não nomeia não mostra a seção "Sua inscrição"', async () => {
+    it('o processo de uma opção cujo curso a versão não nomeia não mostra a seção "Inscrição"', async () => {
       const [primeira] = comprovanteBase().opcoesDeCurso;
       alteracoes = { opcoesDeCurso: [{ ...primeira, nome: null }] };
       const tela = await abrir();
 
-      expect(secao(tela, 'Sua inscrição')).toBeNull();
+      expect(secao(tela, 'Inscrição')).toBeNull();
     });
 
     it('mostra o curso pelo nome da API e as modalidades na ordem dela, sem o código', async () => {
@@ -520,7 +520,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       expect(dado(tela, '2ª opção')).toContain('Medicina');
       expect(dado(tela, 'Curso')).toBeNull();
       const listas = Array.from(
-        secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul') ?? [],
+        secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul') ?? [],
       ).map((ul) => Array.from(ul.querySelectorAll('li')).map((li) => li.textContent?.trim()));
       expect(listas).toEqual([
         ['Ampla concorrência', 'Escola pública, independente de renda'],
@@ -533,7 +533,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       const tela = await abrir();
 
       expect(dado(tela, '2ª opção')).toBe('Não declarada');
-      expect(secao(tela, 'Modalidades em que você concorre')?.querySelectorAll('ul')).toHaveLength(
+      expect(secao(tela, 'Modalidades de concorrência')?.querySelectorAll('ul')).toHaveLength(
         1,
       );
     });
@@ -543,11 +543,57 @@ describe('ComprovanteDaInscricaoPage', () => {
       alteracoes = { opcoesDeCurso: [{ ...primeira, modalidades: null }] };
       const tela = await abrir();
 
-      const modalidades = secao(tela, 'Modalidades em que você concorre');
+      const modalidades = secao(tela, 'Modalidades de concorrência');
       expect(modalidades?.querySelector('ul')).toBeNull();
       expect(modalidades?.textContent?.replace(/\s+/g, ' ')).toContain(
         'Este processo seletivo não define pela inscrição as modalidades de concorrência. Consulte o edital.',
       );
+    });
+  });
+
+  describe('aviso de validade', () => {
+    const AVISO = 'Documento sem validade: inscrição cancelada em 07/11/2026 às 22:32:05';
+    const cancelamento = { canceladaEm: '2026-11-08T01:32:05Z', motivo: null, aviso: AVISO };
+    const avisoNaTela = (tela: HTMLElement): string | null =>
+      tela.querySelector('.documento__aviso')?.textContent?.trim() ?? null;
+
+    async function trocarPara(numero: string): Promise<void> {
+      fixture.componentRef.setInput('numero', numero);
+      await atualizar();
+    }
+
+    it('aparece quando o comprovante traz o cancelamento', async () => {
+      alteracoes = { cancelamento };
+
+      const tela = await abrir();
+
+      expect(avisoNaTela(tela)).toBe(AVISO);
+      expect(tela.querySelector('.documento__aviso-marca')?.textContent?.trim()).toBe(AVISO);
+    });
+
+    it('some ao trocar para um envio sem cancelamento', async () => {
+      alteracoes = { cancelamento };
+      const tela = await abrir('2');
+      expect(avisoNaTela(tela)).toBe(AVISO);
+
+      alteracoes = { cancelamento: null };
+      await trocarPara('1');
+
+      expect(avisoNaTela(tela)).toBeNull();
+      expect(tela.querySelector('.documento__aviso-marca')).toBeNull();
+    });
+
+    it('não sobrevive a uma recusa', async () => {
+      alteracoes = { cancelamento };
+      const tela = await abrir('2');
+      expect(avisoNaTela(tela)).toBe(AVISO);
+
+      vi.spyOn(servico, 'comprovante').mockReturnValue(of(falha(404, 'uniplus.nao_encontrado')));
+      await trocarPara('1');
+
+      expect(tela.textContent).toContain('Comprovante não encontrado');
+      expect(avisoNaTela(tela)).toBeNull();
+      expect(tela.querySelector('.documento__aviso-marca')).toBeNull();
     });
   });
 

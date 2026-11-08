@@ -2,8 +2,11 @@
   "name": "@uniplus/shared-inscricao",
   "version": "0.0.1",
   "peerDependencies": {
+    "@angular/common": "^21.2.0",
     "@angular/core": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@uniplus/shared-core": "*",
+    "rxjs": "~7.8.0",
     "@uniplus/shared-data": "*",
     "@uniplus/shared-ui": "*",
     "@uniplus/shared-utils": "*",
