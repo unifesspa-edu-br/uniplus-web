@@ -18,6 +18,7 @@ export { InscricoesApi } from './inscricoes.api';
 export { formularioDaInscricaoRequest } from './formulario-da-inscricao.request';
 export { ArquivosDaInscricaoDoProcessoApi } from './arquivos-da-inscricao-do-processo.api';
 export { CamposDaInscricaoDoProcessoApi } from './campos-da-inscricao-do-processo.api';
+export { ComprovanteDaInscricaoDoProcessoApi } from './comprovante-da-inscricao-do-processo.api';
 export { inscricaoAdministrativaRequest } from './inscricao-administrativa.request';
 export {
   inscricoesDoProcessoRequest,
