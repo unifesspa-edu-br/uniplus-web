@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import { mockPermissoesEfetivas, SENHA_DAS_PERSONAS } from '@uniplus/shared-e2e';
 import {
   resetPasswords,
   keycloakLogin,
@@ -8,9 +8,9 @@ import {
 } from '../support/keycloak-login';
 
 const USERS = {
-  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste' },
-  gestor: { username: 'gestor', password: 'E2eTest!123', displayName: 'Gestor Teste' },
-  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste' },
+  admin: { username: 'admin', password: SENHA_DAS_PERSONAS, displayName: 'Admin Teste' },
+  gestor: { username: 'gestor', password: SENHA_DAS_PERSONAS, displayName: 'Gestor Teste' },
+  candidato: { username: 'candidato', password: SENHA_DAS_PERSONAS, displayName: 'Candidato Teste' },
 };
 
 test.describe('Autenticação OIDC — Seleção', () => {

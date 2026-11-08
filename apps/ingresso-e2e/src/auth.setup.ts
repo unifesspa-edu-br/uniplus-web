@@ -4,8 +4,8 @@ import { mockPermissoesEfetivas, setupKeycloakAuth } from '@uniplus/shared-e2e';
 
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 
-// eslint-disable-next-line no-empty-pattern -- setup project não usa fixtures Playwright; segundo arg é o testInfo
-setup('autentica admin via OIDC e persiste storageState', async ({}, testInfo) => {
+setup('autentica admin via OIDC e persiste storageState', async () => {
+  const testInfo = setup.info();
   const baseURL =
     testInfo.config.projects[0]?.use.baseURL ??
     process.env['BASE_URL'] ??

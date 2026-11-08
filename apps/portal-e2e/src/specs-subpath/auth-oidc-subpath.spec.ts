@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { resetPasswords, keycloakLogin, expectUserInHeader } from '@uniplus/shared-e2e';
+import { resetPasswords, keycloakLogin, expectUserInHeader, SENHA_DAS_PERSONAS } from '@uniplus/shared-e2e';
 
 /**
  * Fecha o ciclo de validação da Feature #444 (uniplus-web#449): login OIDC
@@ -16,7 +16,7 @@ import { resetPasswords, keycloakLogin, expectUserInHeader } from '@uniplus/shar
  */
 const USER = {
   username: 'candidato',
-  password: 'E2eTest!123',
+  password: SENHA_DAS_PERSONAS,
   displayName: 'Candidato Teste',
 };
 

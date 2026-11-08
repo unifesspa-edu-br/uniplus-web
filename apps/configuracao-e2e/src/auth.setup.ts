@@ -4,8 +4,8 @@ import { setupKeycloakAuth } from '@uniplus/shared-e2e';
 import { ADMIN_USER, STORAGE_STATE_PATH_ADMIN } from './fixtures/auth.fixture';
 import { mockConfiguracaoRuntimeConfig } from './support/runtime-config';
 
-// eslint-disable-next-line no-empty-pattern -- setup project não consome fixtures Playwright.
-setup('autentica admin da Configuração e persiste storageState', async ({}, testInfo) => {
+setup('autentica admin da Configuração e persiste storageState', async () => {
+  const testInfo = setup.info();
   const baseURL =
     testInfo.config.projects[0]?.use.baseURL ??
     process.env['BASE_URL'] ??

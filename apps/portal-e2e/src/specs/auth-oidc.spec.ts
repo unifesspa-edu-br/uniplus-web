@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { SENHA_DAS_PERSONAS } from '@uniplus/shared-e2e';
 import {
   resetPasswords,
   keycloakLogin,
@@ -7,8 +8,8 @@ import {
 } from '../support/keycloak-login';
 
 const USERS = {
-  candidato: { username: 'candidato', password: 'E2eTest!123', displayName: 'Candidato Teste' },
-  admin: { username: 'admin', password: 'E2eTest!123', displayName: 'Admin Teste' },
+  candidato: { username: 'candidato', password: SENHA_DAS_PERSONAS, displayName: 'Candidato Teste' },
+  admin: { username: 'admin', password: SENHA_DAS_PERSONAS, displayName: 'Admin Teste' },
 };
 
 test.describe('Autenticação OIDC — Portal do Candidato', () => {

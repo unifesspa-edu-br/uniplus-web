@@ -1,5 +1,5 @@
 import { type APIRequestContext, expect, type Locator, type Page, test } from '@playwright/test';
-import { assertDocumentoSemRolagemVertical, runAxeWcagAA } from '@uniplus/shared-e2e';
+import { SENHA_DAS_PERSONAS, assertDocumentoSemRolagemVertical, runAxeWcagAA } from '@uniplus/shared-e2e';
 
 import { keycloakLogin } from '../support/keycloak-login';
 
@@ -36,7 +36,7 @@ interface Persona {
 /** Fernanda Drumond, persona fictícia do portal de documentação, que usa o nome social Ariel. */
 const PERSONA = {
   usuario: 'fernanda.drumond',
-  senha: process.env['E2E_SENHA_PERSONAS'] ?? 'Uni+Teste26',
+  senha: SENHA_DAS_PERSONAS,
   nome: 'Fernanda Laura Nicole Drumond',
   nomeSocial: 'Ariel Drumond',
   cpfMascarado: '***.598.363-**',
@@ -56,7 +56,7 @@ const PERSONA = {
 /** Helena Rezende, persona fictícia do portal de documentação, cuja conta começa sem nome social. */
 const HELENA: Persona = {
   usuario: 'helena.rezende',
-  senha: process.env['E2E_SENHA_PERSONAS'] ?? 'Uni+Teste26',
+  senha: SENHA_DAS_PERSONAS,
   nome: 'Helena Bianca Sueli Rezende',
   nomeSocial: null,
   cpfMascarado: '***.287.930-**',
