@@ -13,6 +13,10 @@
   <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a fila…</p>
 }
 
+@if (decisao.aviso(); as aviso) {
+  <ui-alert variant="warning" heading="A versão mudou">{{ aviso }}</ui-alert>
+}
+
 @for (item of store.itens(); track item.versao.versaoId) {
   <section class="panel" [attr.aria-labelledby]="'cfg-versao-' + item.versao.versaoId">
     <div class="panel-head">

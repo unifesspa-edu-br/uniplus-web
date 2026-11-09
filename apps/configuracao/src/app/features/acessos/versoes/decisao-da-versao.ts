@@ -17,6 +17,11 @@ import { mensagemDaRecusa } from '../falha-de-servidor';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 
+const RECUSAS_QUE_GRAVAM_ESTADO: readonly string[] = [
+  'uniplus.autorizacao.perfil.aprovacoes_descartadas',
+  'uniplus.autorizacao.perfil.versao_expirada',
+];
+
 /** Aprovar e recusar a versão que aguarda a etapa da fila; a recusa da API fica junto da versão. */
 @Injectable()
 export class DecisaoDaVersao {
@@ -29,6 +34,8 @@ export class DecisaoDaVersao {
   private readonly chave = new ChaveDeSubstituicao();
   /** O que a API recusou de cada versão, pela versão. */
   readonly erros = signal<ReadonlyMap<string, string>>(new Map());
+  /** O que explica a mudança que a recusa gravou; fica à vista mesmo que a versão saia da fila. */
+  readonly aviso = signal<string | null>(null);
   readonly recusando = signal<ItemDaFilaDeVersoesDto | null>(null);
   readonly erroDaRecusa = signal<string | null>(null);
   readonly tentouRecusar = signal(false);
@@ -44,11 +51,12 @@ export class DecisaoDaVersao {
       'decisao',
       async () => {
         this.limparErro(versaoId);
+        this.aviso.set(null);
         const { resultado } = await comChave(this.chave, { versaoId, etapa, tipo: 'aprovar' }, (c) =>
           this.api.aprovar(item.perfilId, versaoId, etapa, c),
         );
         if (resultado.ok) this.concluir('Versão aprovada', item);
-        else this.registrarErro(versaoId, this.texto(resultado.problem));
+        else this.recusadaNaAprovacao(item, resultado.problem);
       },
       (mensagem) => this.registrarErro(versaoId, mensagem),
     );
@@ -86,6 +94,7 @@ export class DecisaoDaVersao {
     motivo: string,
   ): Promise<void> {
     this.erroDaRecusa.set(null);
+    this.aviso.set(null);
     const { versaoId } = item.versao;
     const { resultado } = await comChave(this.chave, { versaoId, etapa, motivo }, (c) =>
       this.api.recusar(item.perfilId, versaoId, { etapa, motivo }, c),
@@ -93,9 +102,27 @@ export class DecisaoDaVersao {
     if (resultado.ok) {
       this.aberto.set(false);
       this.concluir('Versão recusada', item);
+    } else if (this.gravouEstado(resultado.problem)) {
+      this.aberto.set(false);
+      this.avisarEReler(item, resultado.problem);
     } else {
       this.recusaDoMotivo(resultado.problem);
     }
+  }
+
+  private recusadaNaAprovacao(item: ItemDaFilaDeVersoesDto, problema: ProblemDetails): void {
+    this.registrarErro(item.versao.versaoId, this.texto(problema));
+    if (this.gravouEstado(problema)) this.avisarEReler(item, problema);
+  }
+
+  private gravouEstado(problema: ProblemDetails): boolean {
+    return RECUSAS_QUE_GRAVAM_ESTADO.includes(problema.code);
+  }
+
+  /** A API gravou estado ao recusar: a fila é relida e a explicação continua visível. */
+  private avisarEReler(item: ItemDaFilaDeVersoesDto, problema: ProblemDetails): void {
+    this.aviso.set(`${item.perfilNome}: ${this.texto(problema)}`);
+    this.escrita.recarregar();
   }
 
   private concluir(titulo: string, item: ItemDaFilaDeVersoesDto): void {
