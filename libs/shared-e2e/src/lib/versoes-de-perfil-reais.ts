@@ -53,13 +53,33 @@ export async function lerPerfil(perfilId: string, quem = AUTOR_DAS_VERSOES): Pro
   return lido.corpo;
 }
 
+export interface RemocaoDaProposta {
+  readonly motivo: string;
+  readonly categoria: 'incidente' | 'erro_de_composicao' | 'mudanca_de_funcao';
+}
+
+const MOTIVO_DA_SIMULACAO = 'Recomposição do perfil pela simulação ponta a ponta.';
+const REMOCAO_DA_SIMULACAO: RemocaoDaProposta = { motivo: MOTIVO_DA_SIMULACAO, categoria: 'erro_de_composicao' };
+
+/** Os códigos das permissões em vigor do perfil, ou nenhum quando ainda não há versão em vigor. */
+export async function codigosEmVigor(perfilId: string): Promise<string[]> {
+  const perfil = await lerPerfil(perfilId);
+  return perfil.composicaoEmVigor?.permissoes.map((p) => p.codigo) ?? [];
+}
+
 /** Cria o perfil com a primeira versão pendente, ou propõe versão nova a um perfil que existe. */
-export async function proporVersao(dados: DadosDaVersao, perfilId: string | null): Promise<EnvioDaVersao> {
+export async function proporVersao(
+  dados: DadosDaVersao,
+  perfilId: string | null,
+  remocao: RemocaoDaProposta | null = null,
+): Promise<EnvioDaVersao> {
   const corpo = {
     ...dados,
     permissoes: ordenadas(dados.permissoes),
     tamanhoDoDocumento: PDF_MINIMO.length,
-    ...(perfilId === null ? {} : { motivoDaRemocao: null, categoriaDaRemocao: null }),
+    ...(perfilId === null
+      ? {}
+      : { motivoDaRemocao: remocao?.motivo ?? null, categoriaDaRemocao: remocao?.categoria ?? null }),
   };
   const resposta =
     perfilId === null
@@ -121,18 +141,50 @@ interface PerfilListado {
   readonly nome: string;
 }
 
-const mesmasPermissoes = (a: readonly string[], b: readonly string[]): boolean =>
-  JSON.stringify(ordenadas(a)) === JSON.stringify(ordenadas(b));
+export interface DiferencaDeComposicao {
+  readonly acrescimo: readonly string[];
+  readonly remocao: readonly string[];
+}
 
-function jaEmVigor(perfil: PerfilLido, permissoes: readonly string[]): boolean {
-  const emVigor = perfil.composicaoEmVigor?.permissoes.map((p) => p.codigo) ?? [];
-  return mesmasPermissoes(emVigor, permissoes);
+/** O que a composição desejada acrescenta e retira em relação à que está em vigor. */
+export function diferencaDeComposicao(
+  emVigor: readonly string[],
+  desejada: readonly string[],
+): DiferencaDeComposicao {
+  return {
+    acrescimo: ordenadas(desejada.filter((codigo) => !emVigor.includes(codigo))),
+    remocao: ordenadas(emVigor.filter((codigo) => !desejada.includes(codigo))),
+  };
+}
+
+/** Retira as permissões da versão em vigor, na hora e sem documento. */
+export async function removerPermissoes(
+  perfilId: string,
+  permissoes: readonly string[],
+  remocao: RemocaoDaProposta = REMOCAO_DA_SIMULACAO,
+): Promise<void> {
+  const removida = await chamarApi(AUTOR_DAS_VERSOES, 'POST', `${RAIZ}/${perfilId}/remocoes`, {
+    corpo: { permissoes: ordenadas(permissoes), ...remocao },
+  });
+  expect(removida.status, `remover permissões do perfil ${perfilId}: ${JSON.stringify(removida.corpo)}`).toBe(200);
+}
+
+async function proporEAprovar(
+  dados: DadosDaVersao,
+  perfilId: string | null,
+  remocao: RemocaoDaProposta | null,
+): Promise<string> {
+  const envio = await proporVersao(dados, perfilId, remocao);
+  await enviarDocumentoDaVersao(envio);
+  await aprovarVersaoPendente(envio.perfilId, await aguardarDocumentoVerificado(envio.perfilId));
+  return envio.perfilId;
 }
 
 /**
- * Garante um perfil com exatamente estas permissões em vigor: cria quando não existe e propõe
- * versão nova quando a composição difere, aprovando-a pelas etapas que ela exige. Pode rodar de
- * novo sobre a mesma base.
+ * Garante um perfil com exatamente estas permissões em vigor. Cria quando não existe; só retira
+ * (remoção imediata, sem documento) quando a diferença é só de retirada; com acréscimo propõe
+ * versão, levando o motivo e a categoria se também houver retirada, e a aprova pelas etapas que
+ * ela exige. Pode rodar de novo sobre a mesma base, inclusive com composição divergente.
  */
 export async function garantirPerfil(
   nome: string,
@@ -144,11 +196,17 @@ export async function garantirPerfil(
     '/api/autorizacao/perfis?limit=100',
     (perfil) => perfil.nome === nome,
   );
-  const perfil = existente === undefined ? null : await lerPerfil(existente.id);
-  if (perfil !== null && jaEmVigor(perfil, permissoes)) return perfil.id;
-  if (perfil?.versaoPendente) await cancelarVersaoPendente(perfil.id, perfil.versaoPendente.versaoId);
-  const envio = await proporVersao({ nome, descricao, permissoes, protocolo: `E2E-${Date.now()}` }, perfil?.id ?? null);
-  await enviarDocumentoDaVersao(envio);
-  await aprovarVersaoPendente(envio.perfilId, await aguardarDocumentoVerificado(envio.perfilId));
-  return envio.perfilId;
+  const dados = { nome, descricao, permissoes, protocolo: `E2E-${Date.now()}` };
+  if (existente === undefined) return proporEAprovar(dados, null, null);
+  const perfil = await lerPerfil(existente.id);
+  const emVigor = await codigosEmVigor(perfil.id);
+  const diferenca = diferencaDeComposicao(emVigor, permissoes);
+  if (diferenca.acrescimo.length === 0 && diferenca.remocao.length === 0) return perfil.id;
+  if (perfil.versaoPendente) await cancelarVersaoPendente(perfil.id, perfil.versaoPendente.versaoId);
+  if (diferenca.acrescimo.length === 0) {
+    await removerPermissoes(perfil.id, diferenca.remocao);
+    return perfil.id;
+  }
+  const remocao = diferenca.remocao.length > 0 ? REMOCAO_DA_SIMULACAO : null;
+  return proporEAprovar(dados, perfil.id, remocao);
 }
