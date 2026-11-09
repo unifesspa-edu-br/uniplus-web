@@ -293,6 +293,41 @@ describe('PerfilDetalhePage', () => {
       expect(notificacoes.success).not.toHaveBeenCalled();
     });
 
+    it('depois de falha no envio, relê a versão e oferece a tentativa do estado lido', async () => {
+      const recusado = versaoPendente({ situacaoDoDocumento: 'recusado' });
+      const { fixture, host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: recusado })));
+      const aguardando = versaoPendente({ situacaoDoDocumento: 'aguardando_envio' });
+      leitura.mockReturnValue(of(ok(perfilDoDetalhe({ versaoPendente: aguardando }))));
+      documento.reenviar.mockResolvedValue({ ok: false, mensagem: 'Falha ao enviar o arquivo.' });
+      const chamadasAntes = leitura.mock.calls.length;
+      const envio = fixture.debugElement.query(
+        (d) => d.name === 'ui-file-upload' && d.nativeElement.closest('cfg-versao-pendente') !== null,
+      );
+
+      envio.componentInstance.selectedFile.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
+      await assentar(fixture);
+
+      expect(leitura.mock.calls.length).toBeGreaterThan(chamadasAntes);
+      expect(host.textContent).toContain('Falta o documento instituidor');
+      expect(host.textContent).not.toContain('A verificação recusou o documento enviado.');
+    });
+
+    it('depois de confirmação sem resposta, relê e deixa de oferecer o envio quando já está em verificação', async () => {
+      const aguardando = versaoPendente({ situacaoDoDocumento: 'aguardando_envio' });
+      const { fixture, host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: aguardando })));
+      const emVerificacao = versaoPendente({ situacaoDoDocumento: 'em_verificacao' });
+      leitura.mockReturnValue(of(ok(perfilDoDetalhe({ versaoPendente: emVerificacao }))));
+      documento.reenviar.mockResolvedValue({ ok: false, mensagem: 'Não foi possível confirmar o envio.' });
+      const envio = fixture.debugElement.query(
+        (d) => d.name === 'ui-file-upload' && d.nativeElement.closest('cfg-versao-pendente') !== null,
+      );
+
+      envio.componentInstance.selectedFile.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
+      await assentar(fixture);
+
+      expect(host.textContent).not.toContain('Falta o documento instituidor');
+    });
+
     it('limpar a escolha do arquivo não envia nada', async () => {
       const pendente = versaoPendente({ situacaoDoDocumento: 'aguardando_envio' });
       const { fixture } = await abrir(ok(perfilDoDetalhe({ versaoPendente: pendente })));

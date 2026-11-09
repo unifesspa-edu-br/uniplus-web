@@ -4,7 +4,11 @@ import type { VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
 import { DocumentoDaVersaoService, type FaseDoEnvio } from './documento-da-versao.service';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 
-/** O envio do PDF de uma versão pendente cujo documento não seguiu: ainda sem arquivo ou recusado na verificação. */
+/**
+ * O envio do PDF de uma versão pendente cujo documento não seguiu: ainda sem arquivo ou recusado na
+ * verificação. Depois de qualquer falha a tela relê a versão, porque o documento pode já ter sido
+ * registrado ou confirmado, e a próxima tentativa segue o estado lido.
+ */
 @Injectable()
 export class ReenvioDoDocumento {
   private readonly documento = inject(DocumentoDaVersaoService);
@@ -28,14 +32,11 @@ export class ReenvioDoDocumento {
       const desfecho = await this.documento.reenviar(perfilId, versao, arquivo, (fase) =>
         this.fase.set(fase),
       );
-      if (!desfecho.ok) {
-        this.erro.set(desfecho.mensagem);
-        return;
-      }
-      this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
-      this.escrita.recarregar();
+      if (desfecho.ok) this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
+      else this.erro.set(desfecho.mensagem);
     } finally {
       this.fase.set(null);
+      this.escrita.recarregar();
     }
   }
 }
