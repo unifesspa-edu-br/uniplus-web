@@ -16,9 +16,16 @@ import { etapaDaVersao, etapasExigidas, resultadoDaDecisao } from './rotulos-da-
 })
 export class ResumoDaVersaoComponent {
   readonly versao = input.required<VersaoPendenteDto>();
+  /** O nome e a descrição em vigor, quando a tela os conhece, para comparar com os propostos. */
+  readonly nomeVigente = input<string | null>(null);
+  readonly descricaoVigente = input<string | null>(null);
   readonly abrirDocumento = output<void>();
   protected readonly etapa = etapaDaVersao;
   protected readonly etapas = etapasExigidas;
   protected readonly resultado = resultadoDaDecisao;
   protected readonly situacaoDoDocumento = situacaoDoAnexo;
+
+  protected mudou(proposto: string, vigente: string | null): boolean {
+    return vigente !== null && proposto !== vigente;
+  }
 }

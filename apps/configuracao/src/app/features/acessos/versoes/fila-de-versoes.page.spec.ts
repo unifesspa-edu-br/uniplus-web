@@ -117,6 +117,32 @@ describe('FilaDeVersoesPage', () => {
     expect(primeira.textContent).toContain('Aprovar processos');
   });
 
+  it('mostra o nome e a descrição propostos junto com o nome em vigor, e aprova a mudança só de texto', async () => {
+    const textual: ItemDaFilaDeVersoesDto = {
+      perfilId: 'p5',
+      perfilNome: 'Operador',
+      versao: versaoPendente({
+        versaoId: 'v9',
+        nome: 'Operador de processos',
+        descricao: 'Opera os processos seletivos.',
+        acrescimo: [],
+        remocao: [],
+      }),
+    };
+    const { fixture, host } = await abrir('gestao_de_acessos', ok([textual]));
+    versoes.aprovar.mockReturnValue(of(ok({})));
+
+    const area = secao(host, 'Operador');
+    expect(area.textContent).toContain('Operador de processos');
+    expect(area.textContent).toContain('(em vigor: Operador)');
+    expect(area.textContent).toContain('Opera os processos seletivos.');
+
+    presente(botao(area, 'Aprovar')).click();
+    await assentar(fixture);
+
+    expect(versoes.aprovar).toHaveBeenCalledWith('p5', 'v9', 'gestao_de_acessos', expect.anything());
+  });
+
   it('diz que a fila está vazia', async () => {
     const { host } = await abrir('protecao_de_dados', ok([]));
 

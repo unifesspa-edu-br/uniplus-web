@@ -57,6 +57,8 @@
   @if (p.versaoPendente; as pendente) {
     <cfg-versao-pendente
       [versao]="pendente"
+      [nomeVigente]="p.nome"
+      [descricaoVigente]="p.descricao"
       [acoes]="acoes()!"
       [indisponivel]="escrita.gravando()"
       [enviandoDocumento]="escrita.enviandoDocumento()"
