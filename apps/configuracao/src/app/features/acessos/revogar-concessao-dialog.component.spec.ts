@@ -13,6 +13,7 @@ const concessao: ConcessaoDto = {
   id: 'c1',
   beneficiario: { emissor: 'unifesspa', sub: '0123456789abcdef', nome: 'Betina Marina das Neves' },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
+  versao: 1,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
   origem: { tipo: 'pedido', id: 'pedido-1' },
   concedidaEm: '2026-10-28T12:00:00Z',

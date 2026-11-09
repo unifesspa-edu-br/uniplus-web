@@ -22,7 +22,6 @@
         <thead>
           <tr>
             <th scope="col">Nome</th>
-            <th scope="col">Permissões</th>
             <th scope="col">Sensibilidade</th>
             <th scope="col">Situação</th>
             <th scope="col" class="table-responsive__actions">
@@ -35,29 +34,22 @@
             <tr [attr.data-perfil-id]="perfil.id">
               <td data-label="Nome">
                 <div>
-                  {{ perfil.nome }}
+                  <a [routerLink]="['/acessos/perfis', perfil.id]">{{ perfil.nome }}</a>
                   @if (perfil.governanca) {
                     <ui-tag variant="info">Governança</ui-tag>
                   }
                   <div class="table-responsive__meta">{{ perfil.descricao }}</div>
                 </div>
               </td>
-              <td data-label="Permissões">{{ perfil.permissoes.length }}</td>
               <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
               <td data-label="Situação">
-                <ui-tag [variant]="perfil.ativo ? 'success' : 'neutral'">{{
-                  perfil.ativo ? 'Ativo' : 'Desativado'
-                }}</ui-tag>
+                @for (situacao of situacoes(perfil); track situacao.texto) {
+                  <ui-tag [variant]="situacao.variante">{{ situacao.texto }}</ui-tag>
+                }
               </td>
               <td class="table-responsive__actions" data-label="Ações">
-                @if (!perfil.governanca) {
-                  <ui-icon-button
-                    [isDisabled]="indisponivel()"
-                    icon="pi-pencil"
-                    [accessibleName]="'Editar o perfil ' + perfil.nome"
-                    tooltip="Editar perfil"
-                    (triggered)="editar.emit(perfil)"
-                  />
+                @let permitido = acoes(perfil);
+                @if (permitido.desativar || permitido.reativar) {
                   <ui-icon-button
                     [isDisabled]="indisponivel()"
                     icon="pi-power-off"

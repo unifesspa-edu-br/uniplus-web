@@ -1,19 +1,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
+import { provideRouter } from '@angular/router';
+import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PerfisListaComponent } from './perfis-lista.component';
 
-const COMUM: PerfilDto = {
+const COMUM: PerfilListadoDto = {
   id: 'p1',
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  permissoes: [],
+  temVersaoVigente: true,
+  temVersaoPendente: false,
 };
-const DESATIVADO: PerfilDto = { ...COMUM, id: 'p3', nome: 'Consulta', ativo: false };
-const GOVERNANCA: PerfilDto = {
+const COM_PENDENTE: PerfilListadoDto = { ...COMUM, id: 'p4', nome: 'Auditoria', temVersaoPendente: true };
+const DESATIVADO: PerfilListadoDto = { ...COMUM, id: 'p3', nome: 'Consulta', ativo: false };
+const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
   id: 'p2',
   nome: 'Gestor de acessos',
@@ -29,7 +32,7 @@ describe('PerfisListaComponent', () => {
     botao.matches(':disabled') || botao.getAttribute('aria-disabled') === 'true';
 
   function entradas(parcial: {
-    perfis?: readonly PerfilDto[];
+    perfis?: readonly PerfilListadoDto[];
     carregando?: boolean;
     gravando?: boolean;
     erro?: string | null;
@@ -45,10 +48,11 @@ describe('PerfisListaComponent', () => {
   }
 
   beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideRouter([])] });
     fixture = TestBed.createComponent(PerfisListaComponent);
   });
 
-  it('oferece editar e reativar ou desativar, e nada para o perfil de governança', () => {
+  it('oferece reativar ou desativar, e nada para o perfil de governança', () => {
     entradas({});
 
     expect(
@@ -65,7 +69,7 @@ describe('PerfisListaComponent', () => {
   ])('com %s, todo botão fica indisponível, inclusive a paginação', (_, estado) => {
     entradas(estado);
 
-    expect(botoes().length).toBeGreaterThan(4);
+    expect(botoes().length).toBeGreaterThan(2);
     expect(botoes().every(indisponivel)).toBe(true);
   });
 
@@ -73,7 +77,7 @@ describe('PerfisListaComponent', () => {
     entradas({});
 
     const dasLinhas = [...raiz().querySelectorAll<HTMLButtonElement>('tbody button')];
-    expect(dasLinhas.length).toBe(4);
+    expect(dasLinhas.length).toBe(2);
     expect(dasLinhas.some(indisponivel)).toBe(false);
   });
 
@@ -83,22 +87,34 @@ describe('PerfisListaComponent', () => {
     expect(raiz().querySelector('#cfg-perfis-titulo')?.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('emite o perfil da linha ao editar e ao alternar a situação', () => {
+  it('emite o perfil da linha ao alternar a situação', () => {
     entradas({});
-    const editados: PerfilDto[] = [];
-    const alternados: PerfilDto[] = [];
-    fixture.componentInstance.editar.subscribe((perfil) => editados.push(perfil));
+    const alternados: PerfilListadoDto[] = [];
     fixture.componentInstance.alternarAtivacao.subscribe((perfil) => alternados.push(perfil));
 
-    raiz()
-      .querySelector<HTMLButtonElement>('button[aria-label="Editar o perfil Consulta"]')
-      ?.click();
     raiz()
       .querySelector<HTMLButtonElement>('button[aria-label="Reativar o perfil Consulta"]')
       ?.click();
 
-    expect(editados).toEqual([DESATIVADO]);
     expect(alternados).toEqual([DESATIVADO]);
+  });
+
+  it('leva o nome do perfil ao detalhe dele', () => {
+    entradas({});
+
+    const ligacao = raiz().querySelector<HTMLAnchorElement>('tr[data-perfil-id="p1"] a');
+    expect(ligacao?.getAttribute('href')).toBe('/acessos/perfis/p1');
+  });
+
+  it('mostra as situações do perfil: em vigor, versão pendente, desativado e governança', () => {
+    entradas({ perfis: [COMUM, COM_PENDENTE, DESATIVADO, GOVERNANCA] });
+
+    const situacao = (id: string): string =>
+      raiz().querySelector(`tr[data-perfil-id="${id}"] td[data-label="Situação"]`)?.textContent ?? '';
+    expect(situacao('p1')).toContain('Em vigor');
+    expect(situacao('p4')).toContain('Versão pendente');
+    expect(situacao('p3')).toContain('Desativado');
+    expect(situacao('p2')).toContain('Ativo');
   });
 
   it('sem perfis, convida a criar o primeiro; com falha de carga, não afirma que está vazio', () => {

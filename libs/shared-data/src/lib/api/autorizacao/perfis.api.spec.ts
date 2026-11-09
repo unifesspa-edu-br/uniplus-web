@@ -30,15 +30,46 @@ describe('PerfisApi', () => {
 
   afterEach(() => controller.verify());
 
-  it('cria e atualiza com chave de idempotência', () => {
-    const comando = { nome: 'Operador', descricao: 'Opera.', permissoes: ['a:b:c'] };
+  it('cria o perfil com a primeira versão, sob chave de idempotência, e não tem mais o PUT', () => {
+    const comando = {
+      nome: 'Operador',
+      descricao: 'Opera.',
+      permissoes: ['a:b:c'],
+      protocolo: 'P-1',
+      tamanhoDoDocumento: 10,
+    };
     void firstValueFrom(api.criar(comando, withIdempotencyKey('k1')));
-    expect(controller.expectOne(RAIZ).request.method).toBe('POST');
+    const req = controller.expectOne(RAIZ);
 
-    void firstValueFrom(api.atualizar(ID, { id: ID, ...comando }, withIdempotencyKey('k2')));
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k1');
+    expect('atualizar' in api).toBe(false);
+  });
+
+  it('lê o perfil pelo tipo de mídia versionado', () => {
+    void firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${RAIZ}/${ID}`);
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.headers.get('Idempotency-Key')).toBe('k2');
+
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toContain('perfil');
+  });
+
+  it('remove permissões por POST em remocoes', () => {
+    void firstValueFrom(
+      api.remover(
+        ID,
+        { permissoes: ['a:b:c'], motivo: 'Excesso.', categoria: 'incidente' },
+        withIdempotencyKey('k5'),
+      ),
+    );
+    const req = controller.expectOne(`${RAIZ}/${ID}/remocoes`);
+
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      permissoes: ['a:b:c'],
+      motivo: 'Excesso.',
+      categoria: 'incidente',
+    });
   });
 
   it('ativa por POST e desativa por DELETE na mesma rota', () => {

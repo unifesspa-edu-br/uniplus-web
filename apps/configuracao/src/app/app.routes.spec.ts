@@ -108,6 +108,17 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     expect(await ir('/acessos/fila-da-protecao-de-dados')).toBe('/acesso-negado');
     expect(await ir('/acessos/concessoes')).toBe('/acesso-negado');
     expect(await ir('/acessos/perfis')).toBe('/acesso-negado');
+    expect(await ir('/acessos/versoes-de-perfil/gestao-de-acessos')).toBe('/acesso-negado');
+    expect(await ir('/acessos/versoes-de-perfil/protecao-de-dados')).toBe('/acesso-negado');
+  });
+
+  it('abre a fila de versões de perfil de cada etapa a quem tem a permissão dela', async () => {
+    concedidas.set(['autorizacao:perfis:aprovar-funcional']);
+
+    expect(await ir('/acessos/versoes-de-perfil/gestao-de-acessos')).toBe(
+      '/acessos/versoes-de-perfil/gestao-de-acessos',
+    );
+    expect(await ir('/acessos/versoes-de-perfil/protecao-de-dados')).toBe('/acesso-negado');
   });
 
   it('manda quem não tem sessão ao login', async () => {

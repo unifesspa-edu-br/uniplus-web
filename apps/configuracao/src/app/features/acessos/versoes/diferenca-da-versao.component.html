@@ -1,0 +1,44 @@
+@if (acrescimo().length === 0 && remocao().length === 0) {
+  <p class="cfg-muted">Nenhuma permissão acrescentada nem retirada.</p>
+} @else {
+  <div class="cfg-bloco">
+    @if (acrescimo().length > 0) {
+      <section>
+        <h3 class="form-section__title">Acrescentadas ({{ acrescimo().length }})</h3>
+        <ul class="cfg-lista">
+          @for (permissao of acrescimo(); track permissao.codigo) {
+            <li>
+              <ui-tag variant="success">Acrescentada</ui-tag>
+              <span>
+                {{ permissao.nome }}
+                <span class="cfg-meta">
+                  {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                  <code class="ui-code">{{ permissao.codigo }}</code>
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+    @if (remocao().length > 0) {
+      <section>
+        <h3 class="form-section__title">Removidas ({{ remocao().length }})</h3>
+        <ul class="cfg-lista">
+          @for (permissao of remocao(); track permissao.codigo) {
+            <li>
+              <ui-tag variant="danger">Removida</ui-tag>
+              <span>
+                {{ permissao.nome }}
+                <span class="cfg-meta">
+                  {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                  <code class="ui-code">{{ permissao.codigo }}</code>
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  </div>
+}

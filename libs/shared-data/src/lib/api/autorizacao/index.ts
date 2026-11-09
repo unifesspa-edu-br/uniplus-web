@@ -2,14 +2,30 @@ export { AUTORIZACAO_BASE_PATH } from './tokens';
 export type { PaginaQuery } from './paginacao';
 export {
   PerfisApi,
-  type AtualizarPerfilCommand,
-  type CriarPerfilCommand,
-  type PerfilDto,
+  type CategoriaDaRemocao,
+  type ComposicaoEmVigorDto,
+  type DadosDaVersaoRequest,
   type ModuloDoCatalogoDto,
+  type PerfilDto,
+  type PerfilListadoDto,
   type PermissaoDoCatalogoDto,
   type PermissaoDoPerfilDto,
+  type RemoverPermissoesRequest,
   type ResourceDoCatalogoDto,
+  type UltimaVersaoEncerradaSemVigorDto,
 } from './perfis.api';
+export {
+  VersoesDoPerfilApi,
+  type DecisaoDaVersaoDto,
+  type DocumentoDaVersaoDto,
+  type EnvioDoDocumentoDto,
+  type EtapaDaVersao,
+  type ItemDaFilaDeVersoesDto,
+  type LeituraDoDocumentoDaVersaoDto,
+  type ProporVersaoRequest,
+  type ResultadoDaProposta,
+  type VersaoPendenteDto,
+} from './versoes-do-perfil.api';
 export {
   ConcessoesApi,
   type ConcessaoDto,

@@ -6,6 +6,8 @@
   <dl class="cfg-descricao panel-body">
     <dt>Perfil</dt>
     <dd>{{ pedido().perfil.nome }}</dd>
+    <dt>Versão do perfil</dt>
+    <dd>{{ pedido().versao ?? 'Sem versão' }}</dd>
     <dt>Escopo</dt>
     <dd>{{ nomeDoEscopo()(pedido().escopo) }}</dd>
     <dt>Beneficiário</dt>

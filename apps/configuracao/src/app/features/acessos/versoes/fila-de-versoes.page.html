@@ -1,0 +1,72 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">{{ texto().titulo }}</h1>
+    <p class="page-header__desc">{{ texto().descricao }}</p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a fila" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Fila não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a fila…</p>
+}
+
+@for (item of store.itens(); track item.versao.versaoId) {
+  <section class="panel" [attr.aria-labelledby]="'cfg-versao-' + item.versao.versaoId">
+    <div class="panel-head">
+      <h2 class="panel-head__title" [id]="'cfg-versao-' + item.versao.versaoId">
+        <a [routerLink]="['/acessos/perfis', item.perfilId]">{{ item.perfilNome }}</a>
+        · versão {{ item.versao.numero }}
+      </h2>
+    </div>
+    <cfg-resumo-da-versao [versao]="item.versao" (abrirDocumento)="abrirDocumento(item)">
+      @if (decisao.erros().get(item.versao.versaoId); as erro) {
+        <div class="panel-body">
+          <ui-alert variant="danger" heading="Não foi possível concluir">{{ erro }}</ui-alert>
+        </div>
+      }
+      <div class="cfg-acoes panel-body">
+        @if (podeAprovar(item)) {
+          <button
+            type="button"
+            class="btn btn--primary"
+            [disabled]="escrita.gravando() || !documentoVerificado(item)"
+            [attr.aria-describedby]="ajuda(item) ? 'cfg-versao-ajuda-' + item.versao.versaoId : null"
+            (click)="aprovar(item)"
+          >
+            Aprovar
+          </button>
+        }
+        <button
+          type="button"
+          class="btn btn--danger btn--rect"
+          [disabled]="escrita.gravando()"
+          (click)="decisao.abrirRecusa(item)"
+        >
+          Recusar
+        </button>
+        @if (ajuda(item); as texto) {
+          <p class="cfg-muted" [id]="'cfg-versao-ajuda-' + item.versao.versaoId">{{ texto }}</p>
+        }
+      </div>
+    </cfg-resumo-da-versao>
+  </section>
+} @empty {
+  @if (!store.carregando() && !store.mensagemDeErro()) {
+    <p class="cfg-muted">Nenhuma versão aguarda a sua aprovação.</p>
+  }
+}
+
+<cfg-motivo-dialog
+  [(visible)]="decisao.aberto"
+  heading="Recusar a versão"
+  confirmLabel="Recusar versão"
+  ajuda="O motivo fica na trilha e explica a quem propôs por que a versão não entrou em vigor."
+  [erro]="decisao.erroDaRecusa()"
+  [enviando]="escrita.gravando()"
+  [motivo]="decisao.motivo"
+  [tentou]="decisao.tentouRecusar()"
+  (confirmado)="confirmarRecusa()"
+/>

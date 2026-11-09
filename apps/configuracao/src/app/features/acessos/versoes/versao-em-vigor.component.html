@@ -1,0 +1,54 @@
+<section class="panel" aria-labelledby="cfg-perfil-em-vigor">
+  <div class="panel-head">
+    <h2 id="cfg-perfil-em-vigor" class="panel-head__title">Versão em vigor</h2>
+  </div>
+  @if (composicao(); as vigor) {
+    <dl class="cfg-descricao panel-body">
+      @if (vigor.numero !== null) {
+        <dt>Versão</dt>
+        <dd>{{ vigor.numero }}</dd>
+        <dt>Em vigor desde</dt>
+        <dd>{{ vigor.desde | dateBr: 'datetime' }}</dd>
+        <dt>Protocolo</dt>
+        <dd>{{ vigor.protocolo }}</dd>
+        <dt>Documento verificado em</dt>
+        <dd>
+          {{ vigor.documentoVerificadoEm | dateBr: 'datetime' }}
+          @if (vigor.versaoId) {
+            <button
+              type="button"
+              class="btn btn--tertiary btn--sm"
+              (click)="abrirDocumento.emit(vigor.versaoId)"
+            >
+              Abrir documento
+            </button>
+          }
+        </dd>
+      } @else {
+        <dt>Versão</dt>
+        <dd>Perfil de governança, sem versões: a composição muda por migração do sistema.</dd>
+      }
+      <dt>Permissões</dt>
+      <dd>
+        <ul class="cfg-lista">
+          @for (permissao of vigor.permissoes; track permissao.codigo) {
+            <li>
+              <span>
+                {{ permissao.nome }}
+                <span class="cfg-meta">
+                  {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                  <code class="ui-code">{{ permissao.codigo }}</code>
+                </span>
+              </span>
+            </li>
+          }
+        </ul>
+      </dd>
+    </dl>
+  } @else {
+    <p class="cfg-muted panel-body">
+      O perfil ainda não tem versão em vigor. Enquanto a primeira versão não for aprovada, ninguém
+      pode pedi-lo.
+    </p>
+  }
+</section>
