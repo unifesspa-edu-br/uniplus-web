@@ -8,6 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
+  'access-control-expose-headers': 'etag',
 };
 
 const PERFIL = {
@@ -17,13 +18,24 @@ const PERFIL = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  permissoes: [
-    {
-      codigo: 'selecao:processos:configurar',
-      nome: 'Configurar processos',
-      sensibilidade: 'interno',
-    },
-  ],
+  temVersaoVigente: true,
+  temVersaoPendente: false,
+};
+
+const URL_DE_ENVIO = 'http://localhost:9000/uniplus-teste/documento-do-perfil.pdf';
+const ENVIO_DO_DOCUMENTO = {
+  perfilId: '01960000-0000-7000-0000-0000000000a2',
+  versaoId: '01960000-0000-7000-0000-0000000000b2',
+  documentoId: '01960000-0000-7000-0000-0000000000c2',
+  situacao: 'aguardando_envio',
+  urlDeEnvio: URL_DE_ENVIO,
+  tipoDeMidia: 'application/pdf',
+  expiraEm: '2099-01-01T00:00:00Z',
+};
+const PDF_DO_TESTE = {
+  name: 'portaria.pdf',
+  mimeType: 'application/pdf',
+  buffer: Buffer.from('%PDF-1.4\n%%EOF\n'),
 };
 
 const CATALOGO = [
@@ -49,6 +61,7 @@ const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',
   beneficiario: { emissor: 'unifesspa', sub: 'sub-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
+  versao: 1,
   escopo: { tipo: 'unidade', unidadeId: '01960000-0000-7000-0000-00000000aa01' },
   origem: { tipo: 'pedido', id: '01960000-0000-7000-0000-00000000cc01' },
   concedidaEm: '2026-10-28T12:00:00Z',
@@ -167,8 +180,21 @@ async function mockPerfis(
       gravou = true;
       if (requisicao.url().endsWith('/ativacao')) perfil.ativo = requisicao.method() === 'POST';
     }
-    await responder(route, resposta.status === 201 ? { status: 201, corpo: 'novo-id' } : resposta);
+    await responder(
+      route,
+      resposta.status === 201 ? { status: 201, corpo: ENVIO_DO_DOCUMENTO } : resposta,
+    );
   });
+  await page.route(URL_DE_ENVIO, (route) =>
+    route.fulfill({ status: 200, headers: { ...CORS_HEADERS, etag: '"etag-do-teste"' } }),
+  );
+  await page.route(/\/api\/autorizacao\/perfis\/[^/]+\/versoes\/[^/]+\/documento\/confirmacao$/, (route) =>
+    route.fulfill({
+      status: route.request().method() === 'OPTIONS' ? 204 : 200,
+      headers: CORS_HEADERS,
+      ...(route.request().method() === 'OPTIONS' ? {} : { json: {} }),
+    }),
+  );
   return { liberar, envios };
 }
 
@@ -216,29 +242,27 @@ async function mockConcessoes(
 
 const tituloDePerfis = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Perfis', level: 2, exact: true });
-const editar = (page: Page): Locator =>
-  page.getByRole('button', { name: `Editar o perfil ${PERFIL.nome}` });
+const linkDoPerfil = (page: Page): Locator => page.getByRole('link', { name: PERFIL.nome });
 const alternar = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
   page.getByRole('button', { name: `${verbo} o perfil ${PERFIL.nome}`, exact: true });
 const novo = (page: Page): Locator => page.getByRole('button', { name: 'Novo perfil' });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de perfil de acesso' });
 
-async function abrirEdicao(page: Page): Promise<Locator> {
-  await page.goto('/acessos/perfis');
-  await editar(page).click();
-  const formulario = drawer(page);
-  await expect(formulario).toBeVisible();
-  return formulario;
-}
-
-async function abrirCriacao(page: Page): Promise<Locator> {
+async function abrirCriacao(page: Page, completo = true): Promise<Locator> {
   await page.goto('/acessos/perfis');
   await novo(page).click();
   const formulario = drawer(page);
   await expect(formulario).toBeVisible();
   await formulario.locator('input[formcontrolname="nome"]').fill('Consulta');
   await formulario.locator('textarea[formcontrolname="descricao"]').fill('Só consulta.');
+  if (completo) {
+    await formulario.locator('input[formcontrolname="protocolo"]').fill('P-1/2026');
+    await formulario
+      .locator('label.checkbox', { hasText: 'selecao:processos:configurar' })
+      .click();
+    await formulario.locator('input[type="file"]').setInputFiles(PDF_DO_TESTE);
+  }
   return formulario;
 }
 
@@ -249,25 +273,22 @@ test.describe('Acessos — escritas', () => {
   });
 
   test.describe('perfis', () => {
-    test('edição pendente preserva foco e valores, ignora toda ativação e a recusa foca o campo', async ({
+    test('criação pendente preserva foco e valores, ignora toda ativação e a recusa foca o campo', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [{ status: 422, corpo: RECUSA_DE_NOME }]);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page);
       const nome = formulario.locator('input[formcontrolname="nome"]');
-      await nome.fill('Operador revisado');
+      await nome.fill('Consulta revisada');
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       const salvar = formulario.getByRole('button', { name: 'Salvando…' });
 
       await expect(nome).toBeDisabled();
-      await expect(nome).toHaveValue('Operador revisado');
+      await expect(nome).toHaveValue('Consulta revisada');
       await expect(salvar).toBeFocused();
       await expect(salvar).toHaveAttribute('aria-disabled', 'true');
       await expect(salvar).toHaveAttribute('aria-busy', 'true');
       await expect(salvar).toHaveCSS('cursor', 'not-allowed');
-      await expect(
-        formulario.getByRole('status').filter({ hasText: 'Salvando perfil' }),
-      ).toContainText('Salvando perfil');
       await expect(formulario.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
       await page.keyboard.press('Escape');
       await expect(formulario).toBeVisible();
@@ -275,21 +296,21 @@ test.describe('Acessos — escritas', () => {
       await salvar.dispatchEvent('click');
       await page.keyboard.press('Enter');
       await page.keyboard.press('Space');
-      expect(envios.map((envio) => envio.metodo)).toEqual(['PUT']);
+      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
 
       liberar();
       await expect(nome).toBeEnabled();
       await expect(nome).toBeFocused();
       await expect(nome).toHaveAttribute('aria-invalid', 'true');
       await expect(formulario.getByText('Nome fora do padrão.')).toBeVisible();
-      expect(envios.map((envio) => envio.metodo)).toEqual(['PUT']);
+      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
     });
 
     test('Enter no campo leva o foco ao botão de salvar e, na falha 500, o envio segue disponível', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }]);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page);
       const nome = formulario.locator('input[formcontrolname="nome"]');
       await nome.focus();
       await page.keyboard.press('Enter');
@@ -305,7 +326,7 @@ test.describe('Acessos — escritas', () => {
 
     test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
       const { envios } = await mockPerfis(page, []);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page, false);
       const nome = formulario.locator('input[formcontrolname="nome"]');
       await nome.fill('');
       await formulario.getByRole('button', { name: 'Salvar perfil' }).focus();
@@ -314,6 +335,7 @@ test.describe('Acessos — escritas', () => {
       await expect(nome).toBeFocused();
       await expect(nome).toHaveAttribute('aria-invalid', 'true');
       await expect(nome).toHaveAttribute('aria-required', 'true');
+      await expect(formulario.getByText('Anexe o PDF do documento instituidor.')).toBeVisible();
       expect(envios).toEqual([]);
     });
 
@@ -357,38 +379,29 @@ test.describe('Acessos — escritas', () => {
 
       await expect(tentar).toBeFocused();
       await expect(tentar).toHaveAttribute('aria-disabled', 'true');
-      await expect(editar(page)).toBeVisible();
+      await expect(linkDoPerfil(page)).toBeVisible();
       await expect(tituloDePerfis(page)).toBeFocused();
     });
 
-    test('edição concluída devolve o foco ao acionador, mesmo com a recarga atrasada', async ({
+    test('criação concluída envia o PDF, confirma o envio e devolve o foco ao botão Novo perfil', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [OK]);
-      const formulario = await abrirEdicao(page);
-      await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
-      liberar();
-
-      await expect(formulario).toBeHidden();
-      await expect(editar(page)).toBeDisabled();
-      await expect(editar(page)).toBeFocused();
-    });
-
-    test('criação concluída devolve o foco ao botão Novo perfil', async ({ page }) => {
       const { liberar } = await mockPerfis(page, [{ status: 201 }]);
+      const confirmacao = page.waitForRequest(/\/documento\/confirmacao$/);
       const formulario = await abrirCriacao(page);
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       liberar();
 
+      expect((await confirmacao).postDataJSON()).toEqual({ etag: '"etag-do-teste"' });
       await expect(formulario).toBeHidden();
       await expect(novo(page)).toBeFocused();
     });
 
-    test('edição concluída, com falha na recarga, leva o foco ao título da lista', async ({
+    test('criação concluída, com falha na recarga, leva o foco ao título da lista', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [OK], 'com-falha');
-      const formulario = await abrirEdicao(page);
+      const { liberar } = await mockPerfis(page, [{ status: 201 }], 'com-falha');
+      const formulario = await abrirCriacao(page);
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       liberar();
 
@@ -404,7 +417,6 @@ test.describe('Acessos — escritas', () => {
       await alternar(page, 'Desativar').click();
 
       await expect(alternar(page, 'Desativar')).toBeDisabled();
-      await expect(editar(page)).toBeDisabled();
       await expect(novo(page)).toBeDisabled();
       await expect(page.getByRole('status').filter({ hasText: 'Desativando' })).toBeAttached();
       expect(envios.map((envio) => envio.metodo)).toEqual(['DELETE']);

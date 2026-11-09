@@ -28,7 +28,8 @@ function perfil(id: string, nome: string, sensibilidade: string) {
     ativo: true,
     governanca: null,
     sensibilidade,
-    permissoes: [],
+    temVersaoVigente: true,
+    temVersaoPendente: false,
   };
 }
 
@@ -59,6 +60,7 @@ interface Concessao {
   id: string;
   beneficiario: { emissor: string; sub: string };
   perfil: { id: string; nome: string };
+  versao: number | null;
   escopo: { tipo: string; unidadeId: string | null };
   origem: { tipo: string; id: string };
   concedidaEm: string;
@@ -281,6 +283,7 @@ export async function mockApiDeAcesso(
             id: alvo.concessaoId,
             beneficiario: alvo.beneficiario.identidade ?? alvo.solicitante,
             perfil: alvo.perfil,
+            versao: 1,
             escopo: alvo.escopo,
             origem: { tipo: 'pedido', id: alvo.id },
             concedidaEm: '2026-10-29T10:00:00Z',
