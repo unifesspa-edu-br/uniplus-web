@@ -18,12 +18,14 @@ const PERFIL = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  permissoes: [],
+  temVersaoVigente: true,
+  temVersaoPendente: false,
 };
 const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',
   beneficiario: { emissor: 'unifesspa', sub: 'sub-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
+  versao: 1,
   escopo: { tipo: 'instituicao', unidadeId: null },
   origem: { tipo: 'pedido', id: '01960000-0000-7000-0000-00000000cc01' },
   concedidaEm: '2026-10-28T12:00:00Z',
@@ -120,7 +122,7 @@ test.describe('Acessos — geometria da página e do formulário', () => {
     page,
   }) => {
     await page.goto('/acessos/perfis');
-    await page.getByRole('button', { name: `Editar o perfil ${PERFIL.nome}` }).click();
+    await page.getByRole('button', { name: 'Novo perfil' }).click();
     const drawer = page.getByRole('dialog', { name: 'Formulário de perfil de acesso' });
     await expect(drawer).toBeVisible();
     await drawer.evaluate((el) =>
