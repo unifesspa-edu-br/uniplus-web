@@ -245,6 +245,37 @@ describe('FilaDeVersoesPage', () => {
     });
   });
 
+  it('relê a fila e mantém a explicação depois da aprovação recusada com aprovações descartadas', async () => {
+    const { fixture, host } = await abrir('gestao_de_acessos');
+    versoes.aprovar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.aprovacoes_descartadas', 409)));
+    const leiturasAntes = leitura.mock.calls.length;
+
+    presente(botao(secao(host, 'Operador de inscrições'), 'Aprovar')).click();
+    await assentar(fixture);
+
+    expect(leitura.mock.calls.length).toBeGreaterThan(leiturasAntes);
+    expect(host.textContent).toContain('as aprovações já dadas foram descartadas');
+    expect(notificacoes.success).not.toHaveBeenCalled();
+  });
+
+  it('relê a fila e mostra a explicação quando a versão expirou e sai da fila', async () => {
+    const { fixture, host, decisao } = await abrir('gestao_de_acessos');
+    versoes.recusar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.versao_expirada', 422)));
+    leitura.mockReturnValue(of(ok([OUTRO])));
+    const leiturasAntes = leitura.mock.calls.length;
+
+    presente(botao(secao(host, 'Operador de inscrições'), 'Recusar')).click();
+    decisao.motivo.setValue('Sem base.');
+    await decisao.recusar('gestao_de_acessos');
+    await assentar(fixture);
+
+    expect(leitura.mock.calls.length).toBeGreaterThan(leiturasAntes);
+    expect(decisao.aberto()).toBe(false);
+    expect(host.textContent).not.toContain('versão 2');
+    expect(host.textContent).toContain('Operador de inscrições: ');
+    expect(host.textContent).toContain('expirou sem entrar em vigor');
+  });
+
   it('fica indisponível durante a decisão', async () => {
     const { fixture, host } = await abrir('gestao_de_acessos');
     const resposta = new Subject<ReturnType<typeof ok<object>>>();
