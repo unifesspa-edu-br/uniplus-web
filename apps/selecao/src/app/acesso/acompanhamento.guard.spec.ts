@@ -1,137 +1,35 @@
-import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   ActivatedRouteSnapshot,
-  CanActivateFn,
   Router,
   RouterStateSnapshot,
   UrlTree,
   provideRouter,
 } from '@angular/router';
-import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { AppConfigService } from '@uniplus/shared-data/config';
-import { entradaDaSelecao, redirecionaEntradaAntigaParaPainel } from './acompanhamento.guard';
+import { redirecionaEntradaAntigaParaPainel } from './acompanhamento.guard';
 
-const permissoes = signal<readonly string[]>([]);
-const permissoesStub = {
-  garantir: (): Promise<void> => Promise.resolve(),
-  tem: (codigo: string) => permissoes().includes(codigo),
-  temAlguma: (...codigos: string[]) => codigos.some((codigo) => permissoes().includes(codigo)),
-};
-const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
-
-function executar(guard: CanActivateFn, url = '/', path = 'dashboard') {
-  const rotaDaEntrada = { routeConfig: { path } } as ActivatedRouteSnapshot;
-  return TestBed.runInInjectionContext(() => guard(rotaDaEntrada, { url } as RouterStateSnapshot));
+function executar(url: string, path: string) {
+  const rota = { routeConfig: { path } } as ActivatedRouteSnapshot;
+  return TestBed.runInInjectionContext(() =>
+    redirecionaEntradaAntigaParaPainel(rota, { url } as RouterStateSnapshot),
+  );
 }
 
-describe('guards de acompanhamento', () => {
-  beforeEach(() => {
-    permissoes.set([]);
-    configuracao.set(null);
-    permissoesStub.garantir = () => Promise.resolve();
-    TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        { provide: PermissoesService, useValue: permissoesStub },
-        { provide: AppConfigService, useValue: { config: configuracao } },
-      ],
-    });
-  });
+describe('redirecionaEntradaAntigaParaPainel', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));
 
   function destino(resultado: unknown): string {
     return TestBed.inject(Router).serializeUrl(resultado as UrlTree);
   }
 
-  describe('entradaDaSelecao', () => {
-    it('leva quem acompanha processos ao painel', async () => {
-      permissoes.set(['selecao:processos:acompanhar', 'selecao:processos:configurar']);
+  it.each(['/homologacao', '/homologacao/', '/homologacao?pagina=2', '/homologacao#topo'])(
+    'leva %s ao painel',
+    (url) => {
+      expect(destino(executar(url, 'homologacao'))).toBe('/dashboard');
+    },
+  );
 
-      expect(destino(await executar(entradaDaSelecao))).toBe('/dashboard');
-    });
-
-    it('leva quem só configura processos ao cadastro, não ao acesso negado', async () => {
-      permissoes.set(['selecao:processos:configurar']);
-
-      expect(destino(await executar(entradaDaSelecao))).toBe('/processo-seletivo');
-    });
-
-    it('leva quem só consulta inscrições à lista de processos, de onde chega às inscrições', async () => {
-      permissoes.set(['selecao:inscricoes:consultar']);
-
-      expect(destino(await executar(entradaDaSelecao))).toBe('/processo-seletivo');
-    });
-
-    it('leva quem só importa notas do ENEM às notas, não ao acesso negado', async () => {
-      permissoes.set(['selecao:notas-enem:importar']);
-
-      expect(destino(await executar(entradaDaSelecao))).toBe('/notas');
-    });
-
-    it('nega quem não tem permissão para nenhuma tela', async () => {
-      permissoes.set(['configuracao:campi:manter']);
-
-      expect(destino(await executar(entradaDaSelecao))).toBe('/acesso-negado');
-    });
-  });
-
-  describe('redirecionaEntradaAntigaParaPainel', () => {
-    const acompanha = () => permissoes.set(['selecao:processos:acompanhar']);
-
-    it('desligado, deixa a entrada antiga seguir', async () => {
-      acompanha();
-
-      expect(
-        await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao'),
-      ).toBe(true);
-    });
-
-    it('ligado, leva ao painel quem pode abri-lo', async () => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      acompanha();
-
-      expect(
-        destino(await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao')),
-      ).toBe('/dashboard');
-    });
-
-    it('ligado, leva ao painel quem só tem a permissão da entrada antiga, como o menu e a raiz', async () => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      permissoes.set(['selecao:notas-enem:importar']);
-
-      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, '/notas', 'notas'))).toBe(
-        '/dashboard',
-      );
-    });
-
-    it.each(['/homologacao/', '/homologacao?pagina=2'])('ligado, redireciona %s', async (url) => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      acompanha();
-
-      expect(destino(await executar(redirecionaEntradaAntigaParaPainel, url, 'homologacao'))).toBe(
-        '/dashboard',
-      );
-    });
-
-    it('ligado, não redireciona uma subrota da entrada antiga', async () => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      acompanha();
-
-      expect(
-        await executar(redirecionaEntradaAntigaParaPainel, '/homologacao/42', 'homologacao'),
-      ).toBe(true);
-    });
-
-    it('ligado, aguarda as permissões carregarem antes de decidir (entrada direta pela URL)', async () => {
-      configuracao.set({ acompanhamentoValidacaoHabilitada: true });
-      permissoesStub.garantir = () => {
-        acompanha();
-        return Promise.resolve();
-      };
-
-      expect(
-        destino(await executar(redirecionaEntradaAntigaParaPainel, '/homologacao', 'homologacao')),
-      ).toBe('/dashboard');
-    });
+  it.each(['/homologacao/42', '/homologacao/42?x=1'])('deixa a subrota %s seguir', (url) => {
+    expect(executar(url, 'homologacao')).toBe(true);
   });
 });
