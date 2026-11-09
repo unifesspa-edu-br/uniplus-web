@@ -303,6 +303,34 @@ describe('EdicaoDosPerfis', () => {
       expect(edicao.erroDoDocumento()).toBe('Anexe o PDF do documento instituidor.');
     });
 
+    it('leva ao resumo o erro de campo desconhecido sem perder o que foi para o campo', async () => {
+      edicao.alternar(APROVAR);
+      preencher({ protocolo: 'P-2' });
+      edicao.documento.set(PDF);
+      versoes.propor.mockReturnValue(
+        of({
+          ...recusa('validacao', 422),
+          problem: {
+            type: 'x',
+            title: 'Recusado',
+            status: 422,
+            code: 'validacao',
+            traceId: '',
+            errors: [
+              { field: 'Protocolo', code: 'protocolo_invalido', message: 'Protocolo recusado.' },
+              { field: 'CampoNovo', code: 'x', message: 'Campo novo recusado.' },
+            ],
+          },
+        }),
+      );
+
+      await edicao.salvar();
+
+      expect(edicao.form.controls.protocolo.errors).not.toBeNull();
+      expect(edicao.erroDoForm()).toBe('Campo novo recusado.');
+      expect(edicao.formAberto()).toBe(true);
+    });
+
     it('mostra no formulário a recusa de haver versão pendente', async () => {
       edicao.alternar(APROVAR);
       preencher({ protocolo: 'P-2' });
