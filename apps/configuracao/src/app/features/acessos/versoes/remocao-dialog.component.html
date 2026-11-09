@@ -4,75 +4,84 @@
   size="largo"
   [dismissible]="!enviando()"
 >
-  @if (remocao.erro()) {
-    <ui-alert variant="danger" heading="Não foi possível concluir">{{ remocao.erro() }}</ui-alert>
-  }
-  <p class="field__hint">
-    A remoção vale na hora para todas as concessões deste perfil, sem aprovação.
-    @if (cancelaPendente()) {
-      Ela cancela a versão pendente.
+  <div [id]="idDoCorpo">
+    @if (remocao.erro()) {
+      <div [id]="idDoAviso" tabindex="-1">
+        <ui-alert variant="danger" heading="Não foi possível concluir">{{
+          remocao.erro()
+        }}</ui-alert>
+      </div>
     }
-  </p>
-  <fieldset
-    role="none"
-    [disabled]="enviando()"
-    style="border: 0; margin: 0; padding: 0; min-width: 0"
-  >
+    <p class="field__hint">
+      A remoção vale na hora para todas as concessões deste perfil, sem aprovação.
+      @if (cancelaPendente()) {
+        Ela cancela a versão pendente.
+      }
+    </p>
     <fieldset
-      class="field"
-      [class.is-error]="remocao.erroDasPermissoes()"
-      [attr.aria-invalid]="remocao.erroDasPermissoes() ? 'true' : null"
-      [attr.aria-describedby]="remocao.erroDasPermissoes() ? 'cfg-remocao-erro-permissoes' : null"
+      role="none"
+      [disabled]="enviando()"
+      style="border: 0; margin: 0; padding: 0; min-width: 0"
     >
-      <legend class="form-section__title">Permissões a remover</legend>
-      @for (permissao of permissoes(); track permissao.codigo) {
-        <label class="checkbox">
-          <input
-            type="checkbox"
-            [checked]="remocao.selecionadas().has(permissao.codigo)"
-            (change)="remocao.alternar(permissao.codigo)"
-          />
-          <span class="checkbox__box" aria-hidden="true"></span>
-          <span>
-            {{ permissao.nome }}
-            <span class="field__hint">
-              · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
-              <code class="ui-code">{{ permissao.codigo }}</code>
+      <fieldset
+        class="field"
+        tabindex="-1"
+        [class.is-error]="remocao.erroDasPermissoes()"
+        [attr.aria-invalid]="remocao.erroDasPermissoes() ? 'true' : null"
+        [attr.aria-describedby]="remocao.erroDasPermissoes() ? 'cfg-remocao-erro-permissoes' : null"
+      >
+        <legend class="form-section__title">Permissões a remover</legend>
+        @for (permissao of permissoes(); track permissao.codigo) {
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              [checked]="remocao.selecionadas().has(permissao.codigo)"
+              (change)="remocao.alternar(permissao.codigo)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            <span>
+              {{ permissao.nome }}
+              <span class="field__hint">
+                · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                <code class="ui-code">{{ permissao.codigo }}</code>
+              </span>
             </span>
-          </span>
-        </label>
-      }
-      @if (remocao.erroDasPermissoes()) {
-        <span class="field__error" id="cfg-remocao-erro-permissoes">{{
-          remocao.erroDasPermissoes()
-        }}</span>
-      }
+          </label>
+        }
+        @if (remocao.erroDasPermissoes()) {
+          <span class="field__error" id="cfg-remocao-erro-permissoes">{{
+            remocao.erroDasPermissoes()
+          }}</span>
+        }
+      </fieldset>
+      <label class="field" [class.is-error]="motivoInvalido()">
+        <span class="field__label is-required">Motivo</span>
+        <textarea
+          aria-required="true"
+          class="textarea"
+          [formControl]="remocao.form.controls.motivo"
+          [attr.maxlength]="limite"
+          [attr.aria-invalid]="motivoInvalido() ? 'true' : null"
+          [attr.aria-describedby]="
+            'cfg-remocao-ajuda' + (motivoInvalido() ? ' cfg-remocao-erro' : '')
+          "
+        ></textarea>
+        <span id="cfg-remocao-ajuda" class="field__hint">O motivo fica registrado na trilha.</span>
+        @if (motivoInvalido()) {
+          <span class="field__error" id="cfg-remocao-erro">{{ mensagemDoMotivo() }}</span>
+        }
+      </label>
+      <ui-select
+        fieldLabel="Categoria"
+        placeholderText="Escolha a categoria"
+        [isRequired]="true"
+        [choices]="categorias"
+        [formControl]="remocao.form.controls.categoria"
+        [invalid]="categoriaInvalida()"
+        [errorMessage]="mensagemDaCategoria()"
+      />
     </fieldset>
-    <label class="field" [class.is-error]="motivoInvalido()">
-      <span class="field__label is-required">Motivo</span>
-      <textarea
-        aria-required="true"
-        class="textarea"
-        [formControl]="remocao.form.controls.motivo"
-        [attr.maxlength]="limite"
-        [attr.aria-invalid]="motivoInvalido() ? 'true' : null"
-        [attr.aria-describedby]="'cfg-remocao-ajuda' + (motivoInvalido() ? ' cfg-remocao-erro' : '')"
-      ></textarea>
-      <span id="cfg-remocao-ajuda" class="field__hint">O motivo fica registrado na trilha.</span>
-      @if (motivoInvalido()) {
-        <span class="field__error" id="cfg-remocao-erro">{{ mensagemDoMotivo() }}</span>
-      }
-    </label>
-    <ui-select
-      fieldLabel="Categoria"
-      placeholderText="Escolha a categoria"
-      [isRequired]="true"
-      [choices]="categorias"
-      [formControl]="remocao.form.controls.categoria"
-      [invalid]="categoriaInvalida()"
-      [errorMessage]="mensagemDaCategoria()"
-    />
-  </fieldset>
+  </div>
   <p role="status" class="sr-only">{{ enviando() ? 'Removendo as permissões…' : '' }}</p>
   <ng-container uiDialogFooter>
     <button
