@@ -246,14 +246,21 @@ export class EdicaoDosPerfis {
     return mensagemDaRecusa(this.problemas, this.notificacoes, problema);
   }
 
-  /** Marca o campo recusado: o que o servidor aponta em `errors` e o nome já existente (409). */
+  /**
+   * Marca o campo recusado: o que o servidor aponta em `errors` e o nome já existente (409). O erro
+   * de campo que o formulário não tem vai ao resumo, sem perder os que foram aos campos.
+   */
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = problema.code === CODIGO_NOME_DUPLICADO;
     if (aplicado) this.marcar('nome', problema.code, this.texto(problema));
+    const semCampo: string[] = [];
     for (const erro of problema.errors ?? []) {
-      aplicado = this.aplicarErro(erro.field, erro.code, erro.message) || aplicado;
+      const marcado = this.aplicarErro(erro.field, erro.code, erro.message);
+      if (!marcado) semCampo.push(erro.message);
+      aplicado = marcado || aplicado;
     }
-    return aplicado;
+    if (semCampo.length > 0) this.erroDoForm.set(semCampo.join(' '));
+    return aplicado || semCampo.length > 0;
   }
 
   private aplicarErro(campo: string, code: string, message: string): boolean {
