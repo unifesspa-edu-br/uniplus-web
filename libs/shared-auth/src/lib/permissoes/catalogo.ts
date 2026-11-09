@@ -7,6 +7,8 @@ export const PERMISSAO = {
     concessoesAdministrar: 'autorizacao:concessoes:administrar',
     pedidosAprovarFuncional: 'autorizacao:pedidos:aprovar-funcional',
     pedidosAprovarProtecaoDeDados: 'autorizacao:pedidos:aprovar-protecao-de-dados',
+    perfisAprovarFuncional: 'autorizacao:perfis:aprovar-funcional',
+    perfisAprovarProtecaoDeDados: 'autorizacao:perfis:aprovar-protecao-de-dados',
     perfisManter: 'autorizacao:perfis:manter',
   },
   configuracao: {

@@ -42,3 +42,15 @@ describe('PERMISSAO.selecao', () => {
     );
   });
 });
+
+describe('PERMISSAO.autorizacao', () => {
+  it('declara as permissões que aprovam a versão de um perfil em cada etapa', () => {
+    expect([
+      PERMISSAO.autorizacao.perfisAprovarFuncional,
+      PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados,
+    ]).toEqual([
+      'autorizacao:perfis:aprovar-funcional',
+      'autorizacao:perfis:aprovar-protecao-de-dados',
+    ]);
+  });
+});
