@@ -6,6 +6,9 @@ import {
   SEGUNDO_GESTOR_DE_ACESSOS,
   acharNaListagem,
   aguardarDocumentoVerificado,
+  codigosEmVigor,
+  diferencaDeComposicao,
+  garantirPerfil,
   entrarComoPersona,
   lerPerfil,
   prepararAcessosDaSimulacao,
@@ -77,5 +80,25 @@ test.describe('Perfil como versão aprovada', () => {
 
     const emVigor = (await lerPerfil(perfilId)).composicaoEmVigor;
     expect(emVigor?.permissoes.map((p) => p.codigo).sort()).toEqual([PERMISSAO_SENSIVEL, PERMISSAO_COMUM].sort());
+  });
+
+  test('garantirPerfil reexecuta sobre composição divergente: acrescenta, retira e só retira', async () => {
+    test.setTimeout(300_000);
+    const nome = `E2E versões — recomposição ${Date.now()}`;
+    const codigos = codigosEmVigor;
+
+    const id = await garantirPerfil(nome, 'Recomposição da simulação.', [PERMISSAO_COMUM]);
+    expect(await codigos(id)).toEqual([PERMISSAO_COMUM]);
+
+    const acrescentando = await garantirPerfil(nome, 'Recomposição da simulação.', [PERMISSAO_COMUM, PERMISSAO_SENSIVEL]);
+    expect(acrescentando).toBe(id);
+    expect((await codigos(id)).sort()).toEqual([PERMISSAO_COMUM, PERMISSAO_SENSIVEL].sort());
+
+    await garantirPerfil(nome, 'Recomposição da simulação.', [PERMISSAO_SENSIVEL]);
+    expect(await codigos(id)).toEqual([PERMISSAO_SENSIVEL]);
+
+    await garantirPerfil(nome, 'Recomposição da simulação.', [PERMISSAO_COMUM]);
+    expect(await codigos(id)).toEqual([PERMISSAO_COMUM]);
+    expect(diferencaDeComposicao([PERMISSAO_COMUM], [PERMISSAO_COMUM])).toEqual({ acrescimo: [], remocao: [] });
   });
 });
