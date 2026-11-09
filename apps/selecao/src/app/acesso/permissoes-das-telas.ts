@@ -4,9 +4,9 @@ import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 const { selecao } = PERMISSAO;
 
 /**
- * Permissões que abrem cada tela do app, por caminho de rota (basta uma). As rotas e a entrada da
- * raiz leem daqui, para que o destino da raiz seja sempre uma tela que a guarda da rota aceita.
- * A ordem é a da primeira tela oferecida a quem entra sem destino.
+ * Permissões que abrem cada tela protegida do app, por caminho de rota (basta uma). As rotas e o
+ * menu leem daqui, para que o menu só ofereça o que a guarda da rota aceita. O painel
+ * (`/dashboard`) não está aqui: basta a sessão, e ela não concede acesso a dados.
  *
  * `processo-seletivo` abre a lista de processos também a quem só consulta inscrições: ler o processo
  * publicado é aberto, e a lista leva às inscrições dele. As telas que configuram exigem
@@ -16,7 +16,6 @@ const { selecao } = PERMISSAO;
  * para elas.
  */
 export const PERMISSOES_DAS_TELAS = {
-  dashboard: [selecao.processosAcompanhar],
   'processo-seletivo': [selecao.processosConfigurar, selecao.inscricoesConsultar],
   homologacao: [selecao.processosAcompanhar],
   notas: [selecao.notasEnemImportar],

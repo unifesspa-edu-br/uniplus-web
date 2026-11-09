@@ -4,12 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
 import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { PerfisDaBarraComponent, UserHeaderInfoComponent } from '@uniplus/shared-auth/components';
-import { podeAbrirTela } from '../acesso/acompanhamento.guard';
-import type { CaminhoDeTela } from '../acesso/permissoes-das-telas';
-import {
-  AppConfigService,
-  resolveAcompanhamentoValidacaoHabilitada,
-} from '@uniplus/shared-data/config';
+import { PERMISSOES_DAS_TELAS, type CaminhoDeTela } from '../acesso/permissoes-das-telas';
 import {
   AppShellComponent,
   UiShellBreadcrumbItem,
@@ -21,7 +16,8 @@ interface SelNavItem {
   readonly icon: string;
   readonly routerLink?: string;
   readonly exact?: boolean;
-  readonly tela: CaminhoDeTela;
+  /** Tela protegida cuja permissão libera a entrada; ausente, basta a sessão. */
+  readonly tela?: CaminhoDeTela;
 }
 
 interface SelNavGroup {
@@ -63,7 +59,6 @@ interface SelNavGroup {
 export class LayoutComponent {
   private readonly permissoes = inject(PermissoesService);
   private readonly router = inject(Router);
-  private readonly appConfig = inject(AppConfigService);
   protected readonly userContext = inject(UserContextService);
 
   protected readonly breadcrumb = toSignal(
@@ -77,34 +72,8 @@ export class LayoutComponent {
 
   protected readonly sidebarUserInitials = computed(() => initials(this.userContext.displayName()));
 
+  /** Menu único do acompanhamento; Notas, Homologação e Classificação não têm entrada. */
   private readonly navGroupsDeclarados: readonly SelNavGroup[] = [
-    {
-      label: 'Painéis',
-      items: [
-        {
-          label: 'Painel de processos',
-          icon: 'pi-table',
-          routerLink: '/dashboard',
-          tela: 'dashboard',
-        },
-        {
-          label: 'Processo seletivo',
-          icon: 'pi-file',
-          routerLink: '/processo-seletivo',
-          tela: 'processo-seletivo',
-        },
-        {
-          label: 'Homologação',
-          icon: 'pi-sitemap',
-          routerLink: '/homologacao',
-          tela: 'homologacao',
-        },
-      ],
-    },
-  ];
-
-  /** Menu do modo de validação do acompanhamento; Notas e Classificação não ganham entrada. */
-  private readonly navGroupsAcompanhamento: readonly SelNavGroup[] = [
     {
       label: 'Acompanhamento',
       items: [
@@ -112,7 +81,6 @@ export class LayoutComponent {
           label: 'Painel de processos',
           icon: 'pi-table',
           routerLink: '/dashboard',
-          tela: 'dashboard',
         },
       ],
     },
@@ -129,20 +97,22 @@ export class LayoutComponent {
     },
   ];
 
-  protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() => {
-    const validacaoHabilitada = resolveAcompanhamentoValidacaoHabilitada(this.appConfig.config());
-    const declarados = validacaoHabilitada
-      ? this.navGroupsAcompanhamento
-      : this.navGroupsDeclarados;
-    return declarados
+  /**
+   * Segue as permissões efetivas: enquanto carregam ou se a consulta falha, o conjunto está vazio e
+   * só sobra o painel, que depende apenas da sessão. Grupos vazios não aparecem.
+   */
+  protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
+    this.navGroupsDeclarados
       .map((grupo) => ({
         ...grupo,
-        items: grupo.items.filter((item) =>
-          podeAbrirTela(this.permissoes, item.tela, validacaoHabilitada),
+        items: grupo.items.filter(
+          (item) =>
+            item.tela === undefined ||
+            this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[item.tela]),
         ),
       }))
-      .filter((grupo) => grupo.items.length > 0);
-  });
+      .filter((grupo) => grupo.items.length > 0),
+  );
 
   private breadcrumbDaRotaAtiva(): UiShellBreadcrumbItem[] {
     let route: ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root;
