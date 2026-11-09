@@ -80,6 +80,13 @@ describe('appRoutes — permissões efetivas', () => {
       expect(await ir(url)).toBe('/acesso-negado');
     });
 
+    it('não abre a rota protegida só pelo papel plataforma-admin', async () => {
+      Object.assign(authStub, { roles: signal(['plataforma-admin']), hasRole: () => true });
+      permissoes.set([]);
+
+      expect(await ir('/processo-seletivo')).toBe('/acesso-negado');
+    });
+
     it('abre o cadastro pela permissão efetiva, sem papel', async () => {
       permissoes.set(['selecao:processos:configurar']);
 

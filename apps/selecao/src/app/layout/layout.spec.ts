@@ -85,6 +85,22 @@ describe('LayoutComponent — navegação por permissão', () => {
     expect(rotulosDeNavegacao()).toEqual(['Painel de processos']);
   });
 
+  it('tira o cadastro do menu quando as permissões somem (troca de sessão ou falha da consulta)', () => {
+    concedidas.set(['selecao:processos:configurar']);
+    const fixture = TestBed.createComponent(LayoutComponent);
+    fixture.detectChanges();
+    const links = () =>
+      Array.from((fixture.nativeElement as HTMLElement).querySelectorAll(menuPrincipal)).map((a) =>
+        a.textContent?.trim(),
+      );
+    expect(links()).toEqual(['Painel de processos', 'Processos seletivos']);
+
+    concedidas.set([]);
+    fixture.detectChanges();
+
+    expect(links()).toEqual(['Painel de processos']);
+  });
+
   it('não cria entrada de Homologação, Notas nem Classificação', () => {
     concedidas.set([
       'selecao:processos:acompanhar',
