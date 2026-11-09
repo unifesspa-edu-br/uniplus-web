@@ -23,6 +23,8 @@ export class RemocaoDePermissoes {
   readonly erroDasPermissoes = signal<string | null>(null);
   readonly selecionadas = signal<ReadonlySet<string>>(new Set());
   readonly tentou = signal(false);
+  /** Cresce a cada conferência sem sucesso (local ou da API): a tela leva o foco ao que precisa de correção. */
+  readonly conferencias = signal(0);
   readonly form = new FormGroup({
     motivo: new FormControl('', {
       nonNullable: true,
@@ -55,11 +57,17 @@ export class RemocaoDePermissoes {
     descartarRecusasDoServidor(this.form);
     if (this.selecionadas().size === 0) this.erroDasPermissoes.set(SEM_PERMISSAO);
     if (this.form.invalid) this.form.markAllAsTouched();
-    if (this.form.invalid || this.selecionadas().size === 0) return Promise.resolve();
+    if (this.form.invalid || this.selecionadas().size === 0) {
+      this.conferencias.update((n) => n + 1);
+      return Promise.resolve();
+    }
     return this.escrita.executar(
       'remocao',
       () => this.remover(perfilId),
-      (mensagem) => this.erro.set(mensagem),
+      (mensagem) => {
+        this.erro.set(mensagem);
+        this.conferencias.update((n) => n + 1);
+      },
     );
   }
 
@@ -70,6 +78,7 @@ export class RemocaoDePermissoes {
     );
     if (desfecho.tipo === 'recusado') {
       this.recusar(desfecho.problema);
+      this.conferencias.update((n) => n + 1);
       return;
     }
     this.aberto.set(false);
@@ -98,7 +107,8 @@ export class RemocaoDePermissoes {
     const nome = campo.toLowerCase();
     if (nome === 'permissoes') this.erroDasPermissoes.set(message);
     else if (nome === 'motivo') marcarRecusaDoServidor(this.form.controls.motivo, code, message);
-    else if (nome === 'categoria') marcarRecusaDoServidor(this.form.controls.categoria, code, message);
+    else if (nome === 'categoria')
+      marcarRecusaDoServidor(this.form.controls.categoria, code, message);
     else this.erro.set(message);
   }
 }

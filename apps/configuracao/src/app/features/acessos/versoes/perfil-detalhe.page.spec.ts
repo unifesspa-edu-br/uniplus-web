@@ -274,6 +274,59 @@ describe('PerfilDetalhePage', () => {
       expect(dialogo.textContent).toContain('Campo obrigatório.');
       expect(remocao.aberto()).toBe(true);
       expect(perfis.remover).not.toHaveBeenCalled();
+      expect(document.activeElement?.closest('fieldset.field')?.textContent).toContain(
+        'Permissões a remover',
+      );
+    });
+
+    it('leva o foco ao campo que a API recusou', async () => {
+      const { fixture, host, remocao } = await abrir();
+      presente(botao(host, 'Remover permissões')).click();
+      await assentar(fixture);
+      remocao.alternar(LEITURA.codigo);
+      remocao.form.patchValue({ motivo: 'x', categoria: 'incidente' });
+      perfis.remover.mockReturnValue(
+        of({
+          ...recusa('validacao', 422),
+          problem: {
+            type: 'x',
+            title: 'Recusado',
+            status: 422,
+            code: 'validacao',
+            traceId: '',
+            errors: [{ field: 'Motivo', code: 'motivo_invalido', message: 'Motivo recusado.' }],
+          },
+        }),
+      );
+      const confirmar = presente(
+        [...host.querySelectorAll<HTMLButtonElement>('cfg-remocao-dialog button')].find((b) =>
+          b.textContent?.includes('Remover permissões'),
+        ),
+      );
+
+      confirmar.click();
+      await assentar(fixture);
+
+      expect(document.activeElement?.tagName).toBe('TEXTAREA');
+    });
+
+    it('leva o foco ao aviso quando a recusa não é de campo', async () => {
+      const { fixture, host, remocao } = await abrir();
+      presente(botao(host, 'Remover permissões')).click();
+      await assentar(fixture);
+      remocao.alternar(LEITURA.codigo);
+      remocao.form.patchValue({ motivo: 'x', categoria: 'incidente' });
+      perfis.remover.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.sem_versao_em_vigor', 422)));
+      const confirmar = presente(
+        [...host.querySelectorAll<HTMLButtonElement>('cfg-remocao-dialog button')].find((b) =>
+          b.textContent?.includes('Remover permissões'),
+        ),
+      );
+
+      confirmar.click();
+      await assentar(fixture);
+
+      expect(document.activeElement?.id).toBe('cfg-remocao-aviso');
     });
   });
 
