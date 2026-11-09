@@ -12,11 +12,13 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa } from '../testes';
+import { propostaPorQuemLe } from './autoria-da-versao';
 import { DecisaoDaVersao } from './decisao-da-versao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import { FilaDeVersoesPage } from './fila-de-versoes.page';
 import { versaoPendente } from './perfis.testing';
-import { PropostasDaSessao } from './propostas-da-sessao';
+
+vi.mock('./autoria-da-versao', () => ({ propostaPorQuemLe: vi.fn(() => false) }));
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -50,7 +52,6 @@ describe('FilaDeVersoesPage', () => {
   async function abrir(
     etapa: EtapaDaVersao,
     fila: unknown = ok([ITEM, OUTRO]),
-    propostas: readonly string[] = [],
   ) {
     leitura.mockReturnValue(of(fila));
     TestBed.configureTestingModule({
@@ -71,7 +72,6 @@ describe('FilaDeVersoesPage', () => {
         { provide: NotificationService, useValue: notificacoes },
       ],
     });
-    for (const id of propostas) TestBed.inject(PropostasDaSessao).registrar(id);
     const fixture = TestBed.createComponent(FilaDeVersoesPage);
     fixture.componentRef.setInput('etapa', etapa);
     await assentar(fixture);
@@ -136,7 +136,8 @@ describe('FilaDeVersoesPage', () => {
   });
 
   it('não oferece aprovar a versão que a própria pessoa propôs, e explica', async () => {
-    const { host } = await abrir('gestao_de_acessos', ok([ITEM, OUTRO]), ['v2']);
+    vi.mocked(propostaPorQuemLe).mockImplementation((item) => item.versao.versaoId === 'v2');
+    const { host } = await abrir('gestao_de_acessos');
 
     const propria = secao(host, 'Operador de inscrições');
     expect(botao(propria, 'Aprovar')).toBeUndefined();
@@ -166,9 +167,9 @@ describe('FilaDeVersoesPage', () => {
     await assentar(fixture);
 
     expect(secao(host, 'Operador de inscrições').textContent).toContain(
-      'Quem propôs a versão não a aprova.',
+      'Quem criou a versão não pode aprová-la nem recusá-la.',
     );
-    expect(secao(host, 'Auditoria').textContent).not.toContain('Quem propôs a versão não a aprova.');
+    expect(secao(host, 'Auditoria').textContent).not.toContain('Quem criou a versão não pode aprová-la nem recusá-la.');
     expect(notificacoes.success).not.toHaveBeenCalled();
   });
 
@@ -213,7 +214,7 @@ describe('FilaDeVersoesPage', () => {
       decisao.motivo.setValue('Sem base.');
       await decisao.recusar('gestao_de_acessos');
 
-      expect(decisao.erroDaRecusa()).toContain('Esta etapa já foi decidida.');
+      expect(decisao.erroDaRecusa()).toContain('A etapa já tem decisão para esta versão');
       expect(decisao.aberto()).toBe(true);
     });
   });

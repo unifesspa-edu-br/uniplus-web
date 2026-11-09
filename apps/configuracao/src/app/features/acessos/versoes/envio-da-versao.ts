@@ -9,7 +9,6 @@ import {
   type RemoverPermissoesRequest,
 } from '@uniplus/shared-data/autorizacao';
 import { DocumentoDaVersaoService, type AoAndar } from './documento-da-versao.service';
-import { PropostasDaSessao } from './propostas-da-sessao';
 
 /** O que a tela envia: um perfil novo, uma proposta de versão ou a retirada de permissões. */
 export type PlanoDeEnvio =
@@ -49,7 +48,6 @@ export class EnvioDaVersao {
   private readonly perfis = inject(PerfisApi);
   private readonly versoes = inject(VersoesDoPerfilApi);
   private readonly documento = inject(DocumentoDaVersaoService);
-  private readonly propostas = inject(PropostasDaSessao);
   private readonly chave = new ChaveDeSubstituicao();
 
   async executar(plano: PlanoDeEnvio, aoAndar: AoAndar): Promise<DesfechoDoEnvio> {
@@ -63,7 +61,6 @@ export class EnvioDaVersao {
       return { tipo: 'recusado', problema: resultado.problem, inconclusivo: inconclusiva };
     }
     if (plano.tipo === 'remocao' || !ehEnvio(resultado.data)) return { tipo: 'concluido' };
-    this.propostas.registrar(resultado.data.versaoId);
     return this.levarDocumento(resultado.data, plano.arquivo, aoAndar);
   }
 

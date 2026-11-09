@@ -61,14 +61,12 @@ test.describe('Perfil como versão aprovada', () => {
     const { id: perfilId } = criado as PerfilListado;
     expect((await lerPerfil(perfilId)).composicaoEmVigor).toBeNull();
 
-    // Quem propôs não vê o botão de aprovar na própria sessão, e a fila explica por quê.
+    await aguardarDocumentoVerificado(perfilId);
+
     await autor.getByRole('link', { name: 'Versões na gestão de acessos' }).click();
     const propria = autor.locator('section.panel', { hasText: nome });
-    await expect(propria).toBeVisible();
-    await expect(propria.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
-    await expect(propria.getByText('Você propôs esta versão. Outra pessoa precisa aprová-la.')).toBeVisible();
-
-    await aguardarDocumentoVerificado(perfilId);
+    await propria.getByRole('button', { name: 'Aprovar' }).click();
+    await expect(propria.getByText('Quem criou a versão não pode aprová-la nem recusá-la.')).toBeVisible();
 
     const gestao = await entrarComoPersona(browser, APP, GESTOR_DE_ACESSOS, '/acessos/versoes-de-perfil/gestao-de-acessos');
     await aprovarNaFila(gestao, '/acessos/versoes-de-perfil/gestao-de-acessos', nome);
