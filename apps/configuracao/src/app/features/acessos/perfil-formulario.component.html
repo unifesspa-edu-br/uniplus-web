@@ -7,7 +7,9 @@
   position="right"
 >
   @if (edicao.erroDoForm()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar">{{ edicao.erroDoForm() }}</ui-alert>
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{
+      edicao.erroDoForm()
+    }}</ui-alert>
   }
   @if (edicao.base() !== null) {
     <p class="field__hint">
@@ -107,13 +109,20 @@
         </section>
       }
 
-      @if (edicao.exigeDocumento()) {
+      @if (edicao.base() !== null || edicao.exigeDocumento()) {
         <section aria-labelledby="cfg-perfil-documento">
           <h3 id="cfg-perfil-documento" class="form-section__title">Documento instituidor</h3>
+          @if (!edicao.exigeDocumento()) {
+            <p class="field__hint">
+              Preencha o protocolo e anexe o PDF para substituir o documento instituidor.
+            </p>
+          }
           <label class="field" [class.is-error]="invalido('protocolo')">
-            <span class="field__label is-required">Protocolo do documento</span>
+            <span class="field__label" [class.is-required]="edicao.exigeDocumento()"
+              >Protocolo do documento</span
+            >
             <input
-              aria-required="true"
+              [attr.aria-required]="edicao.exigeDocumento() ? 'true' : null"
               class="input"
               type="text"
               formControlName="protocolo"
@@ -129,7 +138,7 @@
           </label>
           <ui-file-upload
             fieldLabel="Documento instituidor"
-            [isRequired]="true"
+            [isRequired]="edicao.exigeDocumento()"
             acceptedFileTypes=".pdf"
             acceptLabel="PDF de até 10 MB"
             [allowedMimeTypes]="['application/pdf']"
