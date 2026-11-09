@@ -152,6 +152,41 @@ describe('PerfilDetalhePage', () => {
     expect([...edicao.marcadas()].sort()).toEqual([ESCRITA.codigo, LEITURA.codigo].sort());
   });
 
+  it('propõe versão preenchendo só o protocolo e o PDF, sem mexer em nome, descrição nem permissões', async () => {
+    const { fixture, host } = await abrir();
+    versoes.propor.mockReturnValue(
+      of(ok({ perfilId: 'p1', versaoId: 'v3', urlDeEnvio: 'https://armazenamento.test/u', tipoDeMidia: 'application/pdf', expiraEm: '2026-11-10T12:00:00Z' })),
+    );
+    documento.enviar.mockResolvedValue({ ok: true });
+    presente(botao(host, 'Propor nova versão')).click();
+    await assentar(fixture);
+
+    const formulario = presente(host.querySelector<HTMLElement>('cfg-perfil-formulario'));
+    const protocolo = presente(formulario.querySelector<HTMLInputElement>('input[formcontrolname="protocolo"]'));
+    protocolo.value = 'P-9/2026';
+    protocolo.dispatchEvent(new Event('input'));
+    const envio = fixture.debugElement.query(
+      (d) => d.name === 'ui-file-upload' && d.nativeElement.closest('cfg-perfil-formulario') !== null,
+    );
+    envio.componentInstance.selectedFile.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
+    await assentar(fixture);
+    presente(
+      [...formulario.querySelectorAll<HTMLButtonElement>('button[type="submit"]')].find((b) => b.textContent?.includes('Enviar proposta')),
+    ).click();
+    await assentar(fixture);
+
+    expect(versoes.propor).toHaveBeenCalledWith(
+      'p1',
+      expect.objectContaining({
+        nome: 'Operador de inscrições',
+        protocolo: 'P-9/2026',
+        permissoes: [ESCRITA.codigo, LEITURA.codigo].sort(),
+      }),
+      expect.anything(),
+    );
+    expect(documento.enviar).toHaveBeenCalled();
+  });
+
   describe('cancelar a versão pendente', () => {
     const pendente = () => ok(perfilDoDetalhe({ versaoPendente: versaoPendente() }));
 
