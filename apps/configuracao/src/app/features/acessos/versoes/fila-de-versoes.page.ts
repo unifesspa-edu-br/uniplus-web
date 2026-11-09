@@ -25,7 +25,7 @@ import { EscritaDoPerfil } from './escrita-do-perfil';
 import { devolverFocoAoTitulo } from './foco-ao-titulo';
 import { FilaDeVersoesStore } from './fila-de-versoes.store';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
-import { PropostasDaSessao } from './propostas-da-sessao';
+import { propostaPorQuemLe } from './autoria-da-versao';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
 
 const ID_DO_TITULO = 'cfg-fila-de-versoes-titulo';
@@ -79,7 +79,6 @@ export class FilaDeVersoesPage {
   protected readonly escrita = inject(EscritaDoPerfil);
   protected readonly decisao = inject(DecisaoDaVersao);
   private readonly documentos = inject(DocumentoDaVersaoService);
-  private readonly propostas = inject(PropostasDaSessao);
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly texto = computed(() => APRESENTACAO[this.etapa()]);
   protected readonly leitura = acompanharLeitura({
@@ -102,9 +101,8 @@ export class FilaDeVersoesPage {
     devolverFocoAoTitulo(this.escrita.gravando, ID_DO_TITULO);
   }
 
-  /** A API recusa a aprovação de quem propôs; a tela nem a oferece à pessoa que acabou de propor. */
   protected podeAprovar(item: ItemDaFilaDeVersoesDto): boolean {
-    return !this.propostas.propos(item.versao.versaoId);
+    return !propostaPorQuemLe(item);
   }
 
   protected documentoVerificado(item: ItemDaFilaDeVersoesDto): boolean {

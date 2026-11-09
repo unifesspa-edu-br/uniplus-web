@@ -17,7 +17,6 @@ import { DocumentoDaVersaoService } from './versoes/documento-da-versao.service'
 import { EnvioDaVersao } from './versoes/envio-da-versao';
 import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 import { LeituraDosPerfis } from './versoes/leitura-dos-perfis';
-import { PropostasDaSessao } from './versoes/propostas-da-sessao';
 
 const LEITE = 'selecao:processos:consultar';
 const ESCREVER = 'selecao:processos:configurar';
@@ -128,7 +127,6 @@ describe('EdicaoDosPerfis', () => {
       expect(notificacoes.success).toHaveBeenCalledWith('Perfil criado');
       expect(edicao.formAberto()).toBe(false);
       expect(leitura.recarregar).toHaveBeenCalled();
-      expect(TestBed.inject(PropostasDaSessao).propos('v-nova')).toBe(true);
     });
 
     it('marca o nome já existente no campo e mantém o formulário aberto', async () => {
@@ -287,7 +285,7 @@ describe('EdicaoDosPerfis', () => {
 
       await edicao.salvar();
 
-      expect(edicao.erroDoForm()).toContain('O perfil já tem uma versão pendente de aprovação.');
+      expect(edicao.erroDoForm()).toContain('O perfil já tem uma versão aguardando aprovação.');
       expect(edicao.formAberto()).toBe(true);
     });
   });
