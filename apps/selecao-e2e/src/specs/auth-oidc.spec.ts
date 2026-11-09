@@ -70,7 +70,7 @@ test.describe('Autenticação OIDC — Seleção', () => {
     }) => {
       const user = USERS.gestor;
       await mockPermissoesEfetivas(page, ['selecao:inscricoes:consultar']);
-      await page.goto('/');
+      await page.goto('/processo-seletivo');
       await keycloakLogin(page, user.username, user.password);
 
       await expect(page).toHaveURL(/\/processo-seletivo$/);
@@ -79,13 +79,17 @@ test.describe('Autenticação OIDC — Seleção', () => {
   });
 
   test.describe('Controle de acesso por permissão', () => {
-    test('quem não tem permissão da Seleção é redirecionado para /acesso-negado', async ({
+    test('quem não tem permissão da Seleção entra no painel, mas é levado a /acesso-negado no cadastro', async ({
       page,
     }) => {
       const user = USERS.candidato;
       await mockPermissoesEfetivas(page, []);
       await page.goto('/dashboard');
       await keycloakLogin(page, user.username, user.password);
+
+      await expect(page).toHaveURL(/\/dashboard$/);
+
+      await page.goto('/processo-seletivo');
 
       await expect(page).toHaveURL(/acesso-negado/);
     });
