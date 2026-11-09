@@ -202,6 +202,18 @@ export class LayoutComponent {
           routerLink: '/acessos/perfis',
           exact: true,
         },
+        {
+          label: 'Versões na gestão de acessos',
+          icon: 'pi-check-circle',
+          routerLink: '/acessos/versoes-de-perfil/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Versões na proteção de dados',
+          icon: 'pi-lock',
+          routerLink: '/acessos/versoes-de-perfil/protecao-de-dados',
+          exact: true,
+        },
       ],
     },
   ];

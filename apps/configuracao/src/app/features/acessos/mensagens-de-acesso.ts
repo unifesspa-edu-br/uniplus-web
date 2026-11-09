@@ -1,10 +1,6 @@
 import { type EnvironmentProviders, inject, provideEnvironmentInitializer } from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-
-interface Mensagem {
-  readonly titulo: string;
-  readonly resolver: string;
-}
+import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
 
 const RAIZ = 'uniplus.autorizacao.';
 
@@ -12,7 +8,7 @@ const RAIZ = 'uniplus.autorizacao.';
  * As recusas do fluxo de acesso com o que a pessoa faz a seguir, como nas páginas de erro do
  * portal. O título é o da recusa; o detalhe, a orientação.
  */
-const MENSAGENS: Readonly<Record<string, Mensagem>> = {
+const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   'pedido.anexo_invalido': {
     titulo: 'O documento anexo é inválido.',
     resolver: 'Envie um PDF de até 10 MB e confirme o envio de novo.',
@@ -137,7 +133,7 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
 export function provideMensagensDeAcesso(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const problemas = inject(ProblemI18nService);
-    for (const [sufixo, { titulo, resolver }] of Object.entries(MENSAGENS)) {
+    for (const [sufixo, { titulo, resolver }] of Object.entries({ ...MENSAGENS, ...MENSAGENS_DE_VERSAO })) {
       problemas.register(RAIZ + sufixo, { title: titulo, detail: resolver });
     }
   });

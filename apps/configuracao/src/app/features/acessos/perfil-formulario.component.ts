@@ -1,24 +1,29 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import type { ModuloDoCatalogoDto } from '@uniplus/shared-data/autorizacao';
 import {
   AlertComponent,
   DrawerComponent,
-  FalhaDeLeituraComponent,
-  type LeituraAcompanhada,
+  FileUploadComponent,
+  SelectComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { EdicaoDosPerfis } from './edicao-dos-perfis';
 import {
+  CATEGORIAS_DA_REMOCAO,
   type CampoDoPerfil,
-  criarFormularioDePerfil,
   mensagemDoCampoDoPerfil,
 } from './perfil-form';
-import { RecusaDaLeituraComponent, type RecusaDaLeitura } from '../../shared/recusa-da-leitura';
-import { sensibilidade } from './rotulos-de-acesso';
+import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
+import { CatalogoDePermissoesStore } from './versoes/catalogo-de-permissoes.store';
+import { DiferencaDaVersaoComponent } from './versoes/diferenca-da-versao.component';
+import { PermissoesDoPerfilComponent } from './versoes/permissoes-do-perfil.component';
 
-/** Destino do foco quando o catálogo volta a carregar depois de uma falha. */
-export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
+const TEXTO_DA_FASE = {
+  registrando: 'Registrando a versão…',
+  enviando: 'Enviando o documento…',
+  confirmando: 'Confirmando o envio do documento…',
+} as const;
 
 @Component({
   selector: 'cfg-perfil-formulario',
@@ -26,9 +31,11 @@ export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
   imports: [
     ReactiveFormsModule,
     AlertComponent,
+    DiferencaDaVersaoComponent,
     DrawerComponent,
-    FalhaDeLeituraComponent,
-    RecusaDaLeituraComponent,
+    FileUploadComponent,
+    PermissoesDoPerfilComponent,
+    SelectComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,36 +43,44 @@ export const ID_DAS_PERMISSOES = 'cfg-perfil-permissoes';
   styleUrl: '../../shared/sobreposicao/sobreposicao.css',
 })
 export class PerfilFormularioComponent {
-  readonly aberto = model.required<boolean>();
-  readonly form = input.required<ReturnType<typeof criarFormularioDePerfil>>();
-  readonly emEdicao = input.required<boolean>();
-  readonly salvando = input.required<boolean>();
-  readonly criacaoEmAberto = input.required<boolean>();
-  readonly erro = input.required<string | null>();
-  readonly catalogo = input.required<readonly ModuloDoCatalogoDto[]>();
-  readonly leituraDoCatalogo = input.required<LeituraAcompanhada>();
-  readonly recusaDoCatalogo = input.required<RecusaDaLeitura | null>();
-  readonly marcadas = input.required<readonly string[]>();
-  readonly salvar = output<void>();
-  readonly alternar = output<string>();
-  protected readonly sensibilidadeDe = sensibilidade;
-  protected readonly idDasPermissoes = ID_DAS_PERMISSOES;
+  protected readonly edicao = inject(EdicaoDosPerfis);
+  private readonly escrita = inject(EscritaDoPerfil);
+  private readonly catalogo = inject(CatalogoDePermissoesStore);
+  protected readonly salvando = this.escrita.salvando;
+  protected readonly categorias = CATEGORIAS_DA_REMOCAO;
+  private readonly foco = acompanharFocoDoEnvio({
+    salvando: this.escrita.salvando,
+    aberto: this.edicao.formAberto,
+  });
 
-  private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
+  protected textoDaFase(): string {
+    const fase = this.edicao.fase();
+    return fase === null ? '' : TEXTO_DA_FASE[fase];
+  }
+
+  protected acrescimo() {
+    const porCodigo = this.catalogo.porCodigo();
+    return this.edicao.diferenca().acrescimo.flatMap((codigo) => porCodigo.get(codigo) ?? []);
+  }
+
+  protected remocao() {
+    const porCodigo = this.catalogo.porCodigo();
+    return this.edicao.diferenca().remocao.flatMap((codigo) => porCodigo.get(codigo) ?? []);
+  }
 
   protected invalido(nome: CampoDoPerfil): boolean {
-    const controle = this.form().controls[nome];
+    const controle = this.edicao.form.controls[nome];
     return controle.invalid && (controle.touched || controle.dirty);
   }
 
   protected mensagemDoCampo(nome: CampoDoPerfil): string | null {
-    return mensagemDoCampoDoPerfil(nome, this.form().controls[nome]);
+    return mensagemDoCampoDoPerfil(nome, this.edicao.form.controls[nome]);
   }
 
   protected aoEnviar(): void {
     if (this.salvando()) return;
-    this.salvar.emit();
-    if (this.form().invalid) this.foco.focarPrimeiroInvalido();
+    this.edicao.aoEnviar();
+    this.foco.focarPrimeiroInvalido();
   }
 
   protected aoClicarEmSalvar(evento: Event): void {

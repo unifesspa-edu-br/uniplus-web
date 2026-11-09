@@ -1,0 +1,48 @@
+<dl class="cfg-descricao panel-body">
+  <dt>Versão</dt>
+  <dd>{{ versao().numero }}</dd>
+  <dt>Proposta em</dt>
+  <dd>{{ versao().criadaEm | dateBr: 'datetime' }}</dd>
+  <dt>Prazo para decidir</dt>
+  <dd>{{ versao().expiraEm | dateBr: 'datetime' }}</dd>
+  <dt>Aprovações exigidas</dt>
+  <dd>{{ etapas(versao().exigeProtecaoDeDados) }}</dd>
+  <dt>Etapa atual</dt>
+  <dd>{{ etapa(versao().etapaAtual) }}</dd>
+  <dt>Protocolo</dt>
+  <dd>{{ versao().protocolo }}</dd>
+  <dt>Documento instituidor</dt>
+  <dd>
+    {{ situacaoDoDocumento(versao().situacaoDoDocumento) }}
+    @if (versao().situacaoDoDocumento === 'verificado') {
+      <button type="button" class="btn btn--tertiary btn--sm" (click)="abrirDocumento.emit()">
+        Abrir documento
+      </button>
+    }
+  </dd>
+</dl>
+<div class="panel-body">
+  <cfg-diferenca-da-versao [acrescimo]="versao().acrescimo" [remocao]="versao().remocao" />
+</div>
+@if (versao().decisoes.length > 0) {
+  <div class="panel-body">
+    <h3 class="form-section__title">Decisões desta rodada</h3>
+    <ul class="cfg-lista">
+      @for (decisao of versao().decisoes; track decisao.etapa) {
+        <li>
+          <ui-tag [variant]="decisao.resultado === 'aprovada' ? 'success' : 'danger'">{{
+            resultado(decisao.resultado)
+          }}</ui-tag>
+          <span>
+            {{ etapa(decisao.etapa) }} · {{ decisao.nome ?? 'Pessoa não identificada' }} ·
+            {{ decisao.instante | dateBr: 'datetime' }}
+            @if (decisao.temConcessao) {
+              · tem concessão deste perfil
+            }
+          </span>
+        </li>
+      }
+    </ul>
+  </div>
+}
+<ng-content />

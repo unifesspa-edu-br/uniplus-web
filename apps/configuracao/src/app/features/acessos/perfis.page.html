@@ -2,7 +2,7 @@
   <div class="page-header__content">
     <h1 class="page-header__title">Perfis de acesso</h1>
     <p class="page-header__desc">
-      Conjuntos nomeados de permissões. Mudar um perfil vale para todas as concessões dele.
+      Conjuntos nomeados de permissões. Cada mudança é uma versão nova, com documento instituidor e aprovação.
     </p>
   </div>
   <div class="page-header__actions">
@@ -10,7 +10,7 @@
       type="button"
       class="btn btn--primary"
       [id]="idDoCadastro"
-      [disabled]="edicao.gravando()"
+      [disabled]="escrita.gravando()"
       (click)="criar()"
     >
       Novo perfil
@@ -22,34 +22,20 @@
 <cfg-recusa-da-leitura naoEncontrado="Lista de perfis não encontrada" [recusa]="store.recusa()">
   <a routerLink="/">Ir para o início</a>.
 </cfg-recusa-da-leitura>
-@if (edicao.erroDaAcao()) {
-<ui-alert variant="danger" heading="Não foi possível concluir">{{ edicao.erroDaAcao() }}</ui-alert>
+@if (escrita.erroDaAcao()) {
+<ui-alert variant="danger" heading="Não foi possível concluir">{{ escrita.erroDaAcao() }}</ui-alert>
 }
 
-<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<span class="sr-only" role="status">{{ ativacao.anuncio() }}</span>
 <cfg-perfis-lista
   [perfis]="store.itens()"
   [carregando]="store.carregando()"
   [erro]="store.mensagemDeErro()"
-  [gravando]="edicao.gravando()"
+  [gravando]="escrita.gravando()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
-  (editar)="editar($event)"
   (alternarAtivacao)="alternarAtivacao($event)"
   (anterior)="store.paginaAnterior()"
   (proximo)="store.proximaPagina()"
 />
-<cfg-perfil-formulario
-  [(aberto)]="edicao.formAberto"
-  [form]="edicao.form"
-  [emEdicao]="edicao.emEdicao() !== null"
-  [salvando]="edicao.salvando()"
-  [criacaoEmAberto]="edicao.criacaoEmAberto()"
-  [erro]="edicao.erroDoForm()"
-  [catalogo]="store.catalogo()"
-  [leituraDoCatalogo]="leituraDoCatalogo"
-  [recusaDoCatalogo]="store.recusaDoCatalogo()"
-  [marcadas]="permissoesMarcadas()"
-  (salvar)="edicao.aoEnviar()"
-  (alternar)="edicao.alternar($event)"
-/>
+<cfg-perfil-formulario />

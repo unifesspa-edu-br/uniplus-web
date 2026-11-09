@@ -56,6 +56,31 @@ export const ACESSOS_ROUTES: Routes = [
         data: { breadcrumb: 'Perfis de acesso' },
         loadComponent: () => import('./perfis.page').then((m) => m.PerfisPage),
       },
+      {
+        path: 'versoes-de-perfil/gestao-de-acessos',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/versoes-de-perfil/gestao-de-acessos']),
+        ],
+        data: { breadcrumb: 'Versões de perfil na gestão de acessos', etapa: 'gestao_de_acessos' },
+        loadComponent: () =>
+          import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
+      },
+      {
+        path: 'versoes-de-perfil/protecao-de-dados',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/versoes-de-perfil/protecao-de-dados']),
+        ],
+        data: { breadcrumb: 'Versões de perfil na proteção de dados', etapa: 'protecao_de_dados' },
+        loadComponent: () =>
+          import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
+      },
+      {
+        path: 'perfis/:id',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/perfis'])],
+        data: { breadcrumb: 'Perfil de acesso' },
+        loadComponent: () =>
+          import('./versoes/perfil-detalhe.page').then((m) => m.PerfilDetalhePage),
+      },
     ],
   },
 ];

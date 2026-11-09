@@ -48,6 +48,17 @@ describe('PedidoResumoComponent', () => {
     fixture.componentInstance.recusar.subscribe(() => decisoes.push('recusar'));
   });
 
+  it('mostra a versão do perfil que o pedido concede, ou que o perfil não tem versão', () => {
+    entradas({ decisaoIndisponivel: false });
+    fixture.componentRef.setInput('pedido', pedido({ versao: 3 }));
+    fixture.detectChanges();
+    expect(raiz().textContent).toContain('Versão do perfil3');
+
+    fixture.componentRef.setInput('pedido', pedido({ versao: null }));
+    fixture.detectChanges();
+    expect(raiz().textContent).toContain('Versão do perfilSem versão');
+  });
+
   it('com a decisão disponível, aprovar e recusar são pedidos', () => {
     entradas({ decisaoIndisponivel: false });
 

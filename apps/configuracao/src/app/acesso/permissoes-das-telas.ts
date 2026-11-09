@@ -52,6 +52,8 @@ export const PERMISSOES_DAS_TELAS = {
   ],
   'acessos/concessoes': [autorizacao.concessoesAdministrar],
   'acessos/perfis': [autorizacao.perfisManter],
+  'acessos/versoes-de-perfil/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
+  'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;

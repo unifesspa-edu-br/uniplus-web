@@ -45,6 +45,8 @@ export function pedido(parcial: Partial<PedidoDeConcessaoDto> = {}): PedidoDeCon
     concessaoId: null,
     anexos: [],
     decisoes: [],
+    versao: null,
+    trocasDeVersao: [],
     ...parcial,
   };
 }
