@@ -3,7 +3,11 @@
     <h2 id="cfg-perfil-pendente" class="panel-head__title">Versão pendente de aprovação</h2>
     <ui-tag variant="info">Aguarda {{ etapa(versao().etapaAtual).toLowerCase() }}</ui-tag>
   </div>
-  <cfg-resumo-da-versao [versao]="versao()" (abrirDocumento)="abrirDocumento.emit()">
+  <cfg-resumo-da-versao
+    [versao]="versao()"
+    [nomeVigente]="nomeVigente()"
+    [descricaoVigente]="descricaoVigente()"
+    (abrirDocumento)="abrirDocumento.emit()">
     @if (faltaDocumento()) {
       <div class="panel-body">
         <ui-alert variant="warning" heading="Falta o documento instituidor">

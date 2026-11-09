@@ -9,6 +9,20 @@
   <dd>{{ etapas(versao().exigeProtecaoDeDados) }}</dd>
   <dt>Etapa atual</dt>
   <dd>{{ etapa(versao().etapaAtual) }}</dd>
+  <dt>Nome proposto</dt>
+  <dd>
+    {{ versao().nome }}
+    @if (mudou(versao().nome, nomeVigente())) {
+      <span class="cfg-muted">(em vigor: {{ nomeVigente() }})</span>
+    }
+  </dd>
+  <dt>Descrição proposta</dt>
+  <dd>
+    {{ versao().descricao }}
+    @if (mudou(versao().descricao, descricaoVigente())) {
+      <span class="cfg-muted">(em vigor: {{ descricaoVigente() }})</span>
+    }
+  </dd>
   <dt>Protocolo</dt>
   <dd>{{ versao().protocolo }}</dd>
   <dt>Documento instituidor</dt>

@@ -22,6 +22,8 @@ const DOCUMENTO_ENVIAVEL: readonly string[] = ['aguardando_envio', 'recusado'];
 })
 export class VersaoPendenteComponent {
   readonly versao = input.required<VersaoPendenteDto>();
+  readonly nomeVigente = input.required<string>();
+  readonly descricaoVigente = input.required<string>();
   readonly acoes = input.required<AcoesDoPerfil>();
   readonly indisponivel = input.required<boolean>();
   readonly enviandoDocumento = input.required<boolean>();

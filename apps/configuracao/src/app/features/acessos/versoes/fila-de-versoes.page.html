@@ -21,7 +21,10 @@
         · versão {{ item.versao.numero }}
       </h2>
     </div>
-    <cfg-resumo-da-versao [versao]="item.versao" (abrirDocumento)="abrirDocumento(item)">
+    <cfg-resumo-da-versao
+      [versao]="item.versao"
+      [nomeVigente]="item.perfilNome"
+      (abrirDocumento)="abrirDocumento(item)">
       @if (decisao.erros().get(item.versao.versaoId); as erro) {
         <div class="panel-body">
           <ui-alert variant="danger" heading="Não foi possível concluir">{{ erro }}</ui-alert>
