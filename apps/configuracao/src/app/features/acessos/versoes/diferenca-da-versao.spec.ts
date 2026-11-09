@@ -26,10 +26,10 @@ describe('destinoDaProposta', () => {
   it.each([
     ['acréscimo vai para versão', { acrescimo: ['a'], remocao: [] }, false, 'versao'],
     ['acréscimo com remoção vai para versão', { acrescimo: ['a'], remocao: ['b'] }, false, 'versao'],
-    ['texto novo vai para versão', { acrescimo: [], remocao: [] }, true, 'versao'],
+    ['texto ou documento novo vai para versão', { acrescimo: [], remocao: [] }, true, 'versao'],
     ['só remoção vale na hora', { acrescimo: [], remocao: ['b'] }, false, 'remocao'],
     ['sem mudança não envia', { acrescimo: [], remocao: [] }, false, 'nada'],
-  ] as const)('%s', (_, diferenca, textoMudou, esperado) => {
-    expect(destinoDaProposta(diferenca, textoMudou)).toBe(esperado);
+  ] as const)('%s', (_, diferenca, conteudoMudou, esperado) => {
+    expect(destinoDaProposta(diferenca, conteudoMudou)).toBe(esperado);
   });
 });

@@ -24,7 +24,7 @@ import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 
 const SEM_PERMISSAO = 'Marque ao menos uma permissão.';
 const SEM_DOCUMENTO = 'Anexe o PDF do documento instituidor.';
-const SEM_MUDANCA = 'Nada mudou. Altere o nome, a descrição ou as permissões para enviar.';
+const SEM_MUDANCA = 'Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.';
 const DOCUMENTO_NAO_ENVIADO =
   'A versão foi registrada, mas o documento não foi enviado. Abra o perfil e envie o documento.';
 
@@ -68,13 +68,19 @@ export class EdicaoDosPerfis {
     () => this.base()?.composicaoEmVigor?.permissoes.map((p) => p.codigo) ?? [],
   );
   readonly diferenca = computed(() => diferencaDaVersao(this.emVigor(), this.marcadas()));
-  private readonly textoMudou = computed(() => {
+  private readonly conteudoMudou = computed(() => {
     const base = this.base();
-    const { nome, descricao } = this.valores();
-    return base === null || nome?.trim() !== base.nome || descricao?.trim() !== base.descricao;
+    const { nome, descricao, protocolo } = this.valores();
+    const documentoNovo = this.documento() !== null || !!protocolo?.trim();
+    return (
+      base === null ||
+      documentoNovo ||
+      nome?.trim() !== base.nome ||
+      descricao?.trim() !== base.descricao
+    );
   });
   readonly destino = computed(() =>
-    this.base() === null ? 'versao' : destinoDaProposta(this.diferenca(), this.textoMudou()),
+    this.base() === null ? 'versao' : destinoDaProposta(this.diferenca(), this.conteudoMudou()),
   );
   readonly exigeDocumento = computed(() => this.destino() === 'versao');
   readonly exigeRemocao = computed(

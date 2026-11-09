@@ -190,7 +190,35 @@ describe('EdicaoDosPerfis', () => {
 
       await edicao.salvar();
 
-      expect(edicao.erroDoForm()).toBe('Nada mudou. Altere o nome, a descrição ou as permissões para enviar.');
+      expect(edicao.erroDoForm()).toBe('Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.');
+      expect(versoes.propor).not.toHaveBeenCalled();
+    });
+
+    it('propõe versão quando só o protocolo ou o documento mudam, sem mexer nas permissões', async () => {
+      preencher({ protocolo: 'P-9/2026' });
+      expect(edicao.destino()).toBe('versao');
+      expect(edicao.diferenca()).toEqual({ acrescimo: [], remocao: [] });
+
+      edicao.documento.set(PDF);
+      versoes.propor.mockReturnValue(of(ok(ENVIO)));
+      await edicao.salvar();
+
+      expect(versoes.propor).toHaveBeenCalledWith(
+        'p1',
+        expect.objectContaining({ protocolo: 'P-9/2026', permissoes: [ESCREVER, LEITE].sort() }),
+        expect.anything(),
+      );
+    });
+
+    it('com o documento escolhido e sem protocolo, aponta o campo em vez de dizer que nada mudou', async () => {
+      edicao.documento.set(PDF);
+      TestBed.tick();
+
+      await edicao.salvar();
+
+      expect(edicao.destino()).toBe('versao');
+      expect(edicao.erroDoForm()).toBeNull();
+      expect(edicao.form.controls.protocolo.invalid).toBe(true);
       expect(versoes.propor).not.toHaveBeenCalled();
     });
 
