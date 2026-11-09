@@ -194,7 +194,7 @@ describe('PerfilDetalhePage', () => {
 
       await cancelamento.confirmar('p1', 'v2');
 
-      expect(cancelamento.erro()).toContain('A versão não está mais pendente.');
+      expect(cancelamento.erro()).toContain('A versão já foi decidida, cancelada ou substituída');
       expect(cancelamento.aberto()).toBe(true);
     });
   });

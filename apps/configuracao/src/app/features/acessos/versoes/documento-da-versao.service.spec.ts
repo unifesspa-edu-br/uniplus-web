@@ -85,7 +85,7 @@ describe('DocumentoDaVersaoService', () => {
     const desfecho = await servico.enviar(ENVIO, PDF, aoAndar);
 
     expect(desfecho.ok).toBe(false);
-    expect((desfecho as { mensagem: string }).mensagem).toContain('O documento instituidor é inválido.');
+    expect((desfecho as { mensagem: string }).mensagem).toContain('O tamanho declarado do documento ou o identificador de envio (ETag) não é válido.');
   });
 
   it('reemite o envio do documento que aguarda o arquivo', async () => {
@@ -139,7 +139,7 @@ describe('DocumentoDaVersaoService', () => {
     const desfecho = await servico.abrir('p1', 'v1', () => true);
 
     expect(desfecho).toEqual({
-      recusa: expect.stringContaining('O documento instituidor ainda não foi verificado.'),
+      recusa: expect.stringContaining('O documento da versão ainda não passou pela verificação.'),
     });
     expect(aba.close).toHaveBeenCalled();
   });
