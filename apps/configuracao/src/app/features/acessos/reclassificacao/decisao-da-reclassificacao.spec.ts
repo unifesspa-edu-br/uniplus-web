@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { ok, recusa } from '../testes';
+import { ok, recusa, recusaPeloInterceptor } from '../testes';
 import {
   GESTAO_DE_ACESSOS,
   ID,
@@ -251,7 +251,7 @@ describe('decisão da reclassificação', () => {
 
   it('o catálogo desatualizado na decisão diz que o sistema está sendo atualizado', async () => {
     api.decidir.mockReturnValue(
-      of(recusa('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date')),
+      of(recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date')),
     );
     const pagina = await abrirReclassificacao();
     await marcarBetina(pagina);
