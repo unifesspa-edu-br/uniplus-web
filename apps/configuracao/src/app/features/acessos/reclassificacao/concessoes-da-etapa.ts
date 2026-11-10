@@ -6,12 +6,16 @@ import type {
 
 export const PESSOA_SEM_NOME = 'Pessoa sem nome informado';
 
-/** O que a decisão deixou para trás, pelo nome de cada concessão. */
+/**
+ * O que a decisão deixou para trás. Cada concessão vem como a leitura a trouxe, para distinguir
+ * homônimos e escopos; as que a leitura não tem entram só na contagem de `ausentes`.
+ */
 export interface DesfechoDaDecisao {
   readonly decididas: number;
   readonly liberadas: number;
-  readonly paraOutraPessoa: readonly string[];
-  readonly puladasPorEscopo: readonly string[];
+  readonly paraOutraPessoa: readonly ConcessaoSuspensaDto[];
+  readonly puladasPorEscopo: readonly ConcessaoSuspensaDto[];
+  readonly ausentes: number;
 }
 
 /** As concessões que ainda aguardam a etapa. */
@@ -37,14 +41,15 @@ export function desfechoDaDecisao(
   decisao: DecisaoDaReclassificacaoDto,
   concessoes: readonly ConcessaoSuspensaDto[],
 ): DesfechoDaDecisao {
-  const nomes = new Map(
-    concessoes.map((c) => [c.concessaoId, c.beneficiarioNome ?? PESSOA_SEM_NOME]),
-  );
-  const nomeDe = (id: string): string => nomes.get(id) ?? PESSOA_SEM_NOME;
+  const porId = new Map(concessoes.map((c) => [c.concessaoId, c]));
+  const ids = [...decisao.paraOutraPessoa, ...decisao.puladasPorEscopo];
+  const conhecidas = (lista: readonly string[]): ConcessaoSuspensaDto[] =>
+    lista.flatMap((id) => porId.get(id) ?? []);
   return {
     decididas: decisao.decididas.length,
     liberadas: decisao.liberadas.length,
-    paraOutraPessoa: decisao.paraOutraPessoa.map(nomeDe),
-    puladasPorEscopo: decisao.puladasPorEscopo.map(nomeDe),
+    paraOutraPessoa: conhecidas(decisao.paraOutraPessoa),
+    puladasPorEscopo: conhecidas(decisao.puladasPorEscopo),
+    ausentes: ids.filter((id) => !porId.has(id)).length,
   };
 }
