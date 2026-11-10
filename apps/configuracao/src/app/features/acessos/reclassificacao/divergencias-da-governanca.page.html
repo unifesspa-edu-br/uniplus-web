@@ -1,0 +1,62 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Divergências da governança</h1>
+    <p class="page-header__desc">
+      Diferenças entre o catálogo de permissões e a composição, a classificação ou o escopo das
+      permissões dos perfis de governança.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar as divergências" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Divergências não encontradas" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando as divergências…</p>
+}
+
+@if (store.itens().length > 0) {
+  <section class="panel" aria-labelledby="cfg-divergencias-lista">
+    <div class="panel-head">
+      <h2 id="cfg-divergencias-lista" class="panel-head__title">Divergências encontradas</h2>
+    </div>
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Divergências da governança
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Perfil</th>
+            <th scope="col">Permissão</th>
+            <th scope="col">Divergência</th>
+            <th scope="col">De</th>
+            <th scope="col">Para</th>
+            <th scope="col">Encontrada em</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of store.itens(); track item.id) {
+            <tr>
+              <td data-label="Perfil">
+                @if (podeAbrirOPerfil) {
+                  <a [routerLink]="['/acessos/perfis', item.perfilId]">{{ item.perfilNome }}</a>
+                } @else {
+                  {{ item.perfilNome }}
+                }
+              </td>
+              <td data-label="Permissão">{{ item.codigo }}</td>
+              <td data-label="Divergência">{{ tipo(item.tipo) }}</td>
+              <td data-label="De">{{ valor(item.tipo, item.de) }}</td>
+              <td data-label="Para">{{ valor(item.tipo, item.para) }}</td>
+              <td data-label="Encontrada em">{{ item.instante | dateBr: 'datetime' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </section>
+} @else if (!store.carregando() && !store.mensagemDeErro()) {
+  <p class="cfg-muted">Nenhuma divergência da governança foi encontrada.</p>
+}
