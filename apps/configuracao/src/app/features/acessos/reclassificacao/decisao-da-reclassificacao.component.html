@@ -70,8 +70,11 @@
         </label>
       </fieldset>
       <p class="cfg-muted">
-        A sua própria concessão e as que o escopo da permissão não comporta ficam de fora quando você
-        decide todas.
+        A sua própria concessão fica de fora quando você decide todas.
+        @if (decisao.etapa() === 'gestao_de_acessos') {
+          Ao liberar, ficam de fora também as que o escopo da permissão não comporta; manter
+          suspensas essas concessões é permitido.
+        }
       </p>
       <div class="cfg-acoes">
         <button type="button" class="btn btn--primary" [disabled]="gravando()" (click)="liberar()">
