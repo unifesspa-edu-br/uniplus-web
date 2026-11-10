@@ -15,7 +15,6 @@ import {
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   SpinnerComponent,
-  TagComponent,
 } from '@uniplus/shared-ui/components';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
@@ -34,6 +33,8 @@ import { ReenvioDoDocumento } from './reenvio-do-documento';
 import { RemocaoDePermissoes } from './remocao-de-permissoes';
 import { RemocaoDialogComponent } from './remocao-dialog.component';
 import { situacaoEncerrada } from './rotulos-da-versao';
+import { SituacaoDoPerfilComponent } from './situacao-do-perfil.component';
+import { SuspensaoDoPerfilComponent } from './suspensao-do-perfil.component';
 import { VersaoEmVigorComponent } from './versao-em-vigor.component';
 import { VersaoPendenteComponent } from './versao-pendente.component';
 import { devolverFocoAoTitulo } from './foco-ao-titulo';
@@ -55,7 +56,8 @@ const ID_DO_TITULO = 'cfg-perfis-titulo';
     PerfilFormularioComponent,
     RecusaDaLeituraComponent,
     RemocaoDialogComponent,
-    TagComponent,
+    SituacaoDoPerfilComponent,
+    SuspensaoDoPerfilComponent,
     VersaoEmVigorComponent,
     VersaoPendenteComponent,
   ],

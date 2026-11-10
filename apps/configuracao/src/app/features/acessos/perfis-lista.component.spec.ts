@@ -18,6 +18,17 @@ const COMUM: PerfilListadoDto = {
 };
 const COM_PENDENTE: PerfilListadoDto = { ...COMUM, id: 'p4', nome: 'Auditoria', temVersaoPendente: true };
 const DESATIVADO: PerfilListadoDto = { ...COMUM, id: 'p3', nome: 'Consulta', ativo: false };
+const SUSPENSO: PerfilListadoDto = {
+  ...COMUM,
+  id: 'p5',
+  nome: 'Atendimento',
+  suspensao: {
+    desde: '2026-11-09T15:00:00Z',
+    papelDeQuemSuspendeu: 'gestao_de_acessos',
+    etapasExigidasAgora: ['gestao_de_acessos'],
+    etapasDecididas: [],
+  },
+};
 const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
   id: 'p2',
@@ -125,5 +136,27 @@ describe('PerfisListaComponent', () => {
 
     entradas({ perfis: [], temProximo: false, erro: 'Falhou.' });
     expect(raiz().textContent).not.toContain('Nenhum perfil');
+  });
+
+  it('mostra o perfil suspenso e o desativado com situações distintas e desde quando', () => {
+    entradas({
+      perfis: [
+        SUSPENSO,
+        { ...DESATIVADO, desativadoDesde: '2026-11-08T15:00:00Z' },
+      ],
+    });
+
+    const linhas = [...raiz().querySelectorAll('tr[data-perfil-id]')];
+    expect(linhas[0]?.querySelector('[data-label="Situação"]')?.textContent).toContain('Suspenso');
+    expect(linhas[0]?.querySelector('[data-label="Situação"]')?.textContent).toContain(
+      'desde 09/11/2026',
+    );
+    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).toContain('Desativado');
+    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).toContain(
+      'desde 08/11/2026',
+    );
+    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).not.toContain(
+      'Suspenso',
+    );
   });
 });

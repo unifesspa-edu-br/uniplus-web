@@ -10,6 +10,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { sensibilidade } from './rotulos-de-acesso';
 import { acoesDoPerfil, resumoDoPerfil, situacoesDoPerfil } from './versoes/estado-do-perfil';
+import { SituacaoDoPerfilComponent } from './versoes/situacao-do-perfil.component';
 
 @Component({
   selector: 'cfg-perfis-lista',
@@ -19,6 +20,7 @@ import { acoesDoPerfil, resumoDoPerfil, situacoesDoPerfil } from './versoes/esta
     IconButtonComponent,
     PagerComponent,
     RouterLink,
+    SituacaoDoPerfilComponent,
     SpinnerComponent,
     TagComponent,
   ],
