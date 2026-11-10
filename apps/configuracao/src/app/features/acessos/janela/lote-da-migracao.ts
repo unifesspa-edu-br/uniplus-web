@@ -57,7 +57,7 @@ export class LoteDaMigracao {
     return this.escrita.executar(
       'janela',
       async () => {
-        const recusa = await this.envio.enviar({ tipo: 'lote', perfilId, corpo }, (contexto) =>
+        const recusa = await this.envio.enviar(`lote:${perfilId}`, corpo, (contexto) =>
           this.api.enviarLote(perfilId, corpo, contexto),
         );
         if (recusa === null) this.concluir();

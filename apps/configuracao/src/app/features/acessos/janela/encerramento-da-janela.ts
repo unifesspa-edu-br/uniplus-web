@@ -45,7 +45,7 @@ export class EncerramentoDaJanela {
 
   private async encerrar(perfilId: string, motivo: string): Promise<void> {
     const corpo = { motivo, confirmacaoDeExclusao: true };
-    const recusa = await this.envio.enviar({ tipo: 'encerramento', perfilId, corpo }, (contexto) =>
+    const recusa = await this.envio.enviar(`encerramento:${perfilId}`, corpo, (contexto) =>
       this.api.encerrar(perfilId, corpo, contexto),
     );
     if (recusa === null) {

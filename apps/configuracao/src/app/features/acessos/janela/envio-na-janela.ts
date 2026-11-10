@@ -30,18 +30,31 @@ export class EnvioNaJanela {
   private readonly escrita = inject(EscritaDoPerfil);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly chave = new ChaveDeSubstituicao();
+  private readonly chaves = new Map<string, ChaveDeSubstituicao>();
   /** O que mudou na janela quando a API recusou a operação; fica à vista depois da releitura. */
   readonly aviso = signal<string | null>(null);
 
-  /** Devolve a recusa da API, ou `null` quando a operação foi gravada. */
+  /**
+   * Devolve a recusa da API, ou `null` quando a operação foi gravada. Cada comando guarda a própria
+   * chave até o resultado se resolver: repetir o mesmo comando reusa a chave, e outro comando entre
+   * as duas tentativas não a descarta.
+   */
   async enviar(
-    identidade: unknown,
+    comando: string,
+    corpo: unknown,
     chamada: (contexto: HttpContext) => Observable<ApiResult<JanelaDeMigracaoDto>>,
   ): Promise<ProblemDetails | null> {
     this.aviso.set(null);
-    const { resultado } = await comChave(this.chave, identidade, chamada);
+    const { resultado } = await comChave(this.chaveDe(comando), corpo, chamada);
     return resultado.ok ? null : resultado.problem;
+  }
+
+  private chaveDe(comando: string): ChaveDeSubstituicao {
+    const existente = this.chaves.get(comando);
+    if (existente) return existente;
+    const nova = new ChaveDeSubstituicao();
+    this.chaves.set(comando, nova);
+    return nova;
   }
 
   concluir(titulo: string): void {

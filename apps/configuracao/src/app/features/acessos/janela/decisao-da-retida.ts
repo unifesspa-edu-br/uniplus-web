@@ -45,7 +45,7 @@ export class DecisaoDaRetida {
     return this.escrita.executar(
       'janela',
       async () => {
-        const recusa = await this.envio.enviar({ tipo: 'retida', perfilId, concessaoId, corpo }, (c) =>
+        const recusa = await this.envio.enviar(`retida:${perfilId}:${concessaoId}`, corpo, (c) =>
           this.api.decidirRetida(perfilId, concessaoId, corpo, c),
         );
         if (recusa === null) this.concluir(decisao);

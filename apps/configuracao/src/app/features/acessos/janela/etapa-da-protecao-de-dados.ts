@@ -51,7 +51,7 @@ export class EtapaDaProtecaoDeDados {
     return this.escrita.executar(
       'janela',
       async () => {
-        const recusa = await this.envio.enviar({ tipo: 'protecao', perfilId, corpo }, (contexto) =>
+        const recusa = await this.envio.enviar(`protecao:${perfilId}`, corpo, (contexto) =>
           this.api.decidirProtecaoDeDados(perfilId, corpo, contexto),
         );
         if (recusa === null) this.concluir();
