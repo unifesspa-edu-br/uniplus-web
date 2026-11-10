@@ -36,8 +36,12 @@ export class LoteDaMigracaoComponent {
   protected readonly gravando = inject(EscritaDoPerfil).gravando;
   protected readonly idDoErro = ID_DO_ERRO;
   protected readonly faltam = computed(() => semDecisao(this.itens().doLote, this.lote.decisoes()));
+  /** O lote tem o que enviar: decisões de outras pessoas ou, só, concessões suas a reter. */
+  protected readonly enviavel = computed(
+    () => this.itens().doLote.length > 0 || this.itens().proprias.length > 0,
+  );
   protected readonly decidiveis = computed(
-    () => this.podeDecidir() && !this.janela().loteEnviado && this.itens().doLote.length > 0,
+    () => this.podeDecidir() && !this.janela().loteEnviado && this.enviavel(),
   );
 
   constructor() {

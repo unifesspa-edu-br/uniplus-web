@@ -10,8 +10,12 @@
     </p>
   } @else if (itens().doLote.length === 0) {
     <p class="panel-body">
-      Nenhuma concessão aguarda decisão sua. Enviar o lote retém as suas para outra pessoa da
-      gestão de acessos.
+      @if (itens().proprias.length > 0) {
+        Nenhuma concessão aguarda decisão sua. Enviar o lote retém as suas para outra pessoa da
+        gestão de acessos.
+      } @else {
+        Nenhuma concessão aguarda o lote.
+      }
     </p>
   } @else {
     <p class="panel-body">
@@ -22,7 +26,9 @@
 
   @if (lote.erro() && !lote.confirmando()) {
     <div class="panel-body" [id]="idDoErro" tabindex="-1">
-      <ui-alert variant="danger" heading="Não foi possível enviar o lote">{{ lote.erro() }}</ui-alert>
+      <ui-alert variant="danger" heading="Não foi possível enviar o lote">{{
+        lote.erro()
+      }}</ui-alert>
     </div>
   }
 
@@ -70,8 +76,8 @@
     <div class="panel-body">
       <h3 class="form-section__title">Retidas: outra pessoa decide</h3>
       <p class="field__hint">
-        Concessões em que você é a pessoa beneficiada ficam retidas e são decididas por outra
-        pessoa da gestão de acessos.
+        Concessões em que você é a pessoa beneficiada ficam retidas e são decididas por outra pessoa
+        da gestão de acessos.
       </p>
     </div>
     <cfg-tabela-da-janela
@@ -114,6 +120,10 @@
   [enviando]="gravando()"
   (confirmado)="confirmarExclusao()"
 >
-  {{ lote.recusas() === 1 ? '1 concessão recusada perde' : lote.recusas() + ' concessões recusadas perdem' }}
+  {{
+    lote.recusas() === 1
+      ? '1 concessão recusada perde'
+      : lote.recusas() + ' concessões recusadas perdem'
+  }}
   o acesso ao perfil assim que o lote é enviado.
 </cfg-exclusao-dialog>
