@@ -7,6 +7,8 @@ const EM_VIGOR: ResumoDoPerfil = {
   temVigente: true,
   temPendente: false,
   emJanelaDeMigracao: false,
+  suspensoDesde: null,
+  desativadoDesde: null,
 };
 const textos = (resumo: ResumoDoPerfil): string[] => situacoesDoPerfil(resumo).map((s) => s.texto);
 
@@ -35,6 +37,31 @@ describe('situacoesDoPerfil', () => {
 
   it('diz que o perfil está desativado antes das demais situações', () => {
     expect(textos({ ...EM_VIGOR, ativo: false })).toEqual(['Desativado', 'Em vigor']);
+  });
+
+  it('distingue o perfil suspenso do desativado e mostra desde quando', () => {
+    const suspenso = situacoesDoPerfil({ ...EM_VIGOR, suspensoDesde: '2026-11-09T12:00:00Z' });
+    const desativado = situacoesDoPerfil({
+      ...EM_VIGOR,
+      ativo: false,
+      desativadoDesde: '2026-11-08T12:00:00Z',
+    });
+
+    expect(suspenso.map((s) => [s.texto, s.variante, s.desde])).toEqual([
+      ['Suspenso', 'danger', '2026-11-09T12:00:00Z'],
+      ['Em vigor', 'success', undefined],
+    ]);
+    expect(desativado[0]).toEqual({
+      texto: 'Desativado',
+      variante: 'neutral',
+      desde: '2026-11-08T12:00:00Z',
+    });
+  });
+
+  it('soma suspenso e desativado quando as duas contenções valem', () => {
+    expect(
+      textos({ ...EM_VIGOR, ativo: false, suspensoDesde: '2026-11-09T12:00:00Z' }),
+    ).toEqual(['Suspenso', 'Desativado', 'Em vigor']);
   });
 
   it('mostra o perfil de governança só como ativo ou desativado', () => {

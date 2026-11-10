@@ -9,11 +9,17 @@ export interface ResumoDoPerfil {
   readonly temPendente: boolean;
   /** A lista não traz a janela; só o detalhe sabe. */
   readonly emJanelaDeMigracao: boolean;
+  /** Desde quando o acesso das concessões do perfil está bloqueado; `null` sem suspensão. */
+  readonly suspensoDesde: string | null;
+  /** Desde quando o perfil não aceita pedido nem versão nova; `null` enquanto ativo. */
+  readonly desativadoDesde: string | null;
 }
 
 export interface SituacaoDoPerfil {
   readonly texto: string;
   readonly variante: UiTagVariant;
+  /** O instante em que o perfil entrou na situação, quando a API o informa. */
+  readonly desde?: string;
 }
 
 export interface AcoesDoPerfil {
@@ -33,6 +39,8 @@ export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPe
         temVigente: perfil.temVersaoVigente,
         temPendente: perfil.temVersaoPendente,
         emJanelaDeMigracao: false,
+        suspensoDesde: perfil.suspensao?.desde ?? null,
+        desativadoDesde: perfil.desativadoDesde,
       }
     : {
         ativo: perfil.ativo,
@@ -40,17 +48,17 @@ export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPe
         temVigente: perfil.composicaoEmVigor !== null,
         temPendente: perfil.versaoPendente !== null,
         emJanelaDeMigracao: perfil.janela != null,
+        suspensoDesde: perfil.suspensao?.desde ?? null,
+        desativadoDesde: perfil.desativadoDesde,
       };
 }
 
-/**
- * As situações que o perfil mostra juntas. A suspensão entra aqui como mais uma, ao lado das de
- * hoje, sem mexer nas demais.
- */
+/** As situações que o perfil mostra juntas: a suspensão e a desativação são independentes. */
 export function situacoesDoPerfil(perfil: ResumoDoPerfil): readonly SituacaoDoPerfil[] {
-  if (perfil.governanca) return [perfil.ativo ? ATIVO : DESATIVADO];
+  if (perfil.governanca) return [perfil.ativo ? ATIVO : desativado(perfil)];
   return [
-    ...(perfil.ativo ? [] : [DESATIVADO]),
+    ...(perfil.suspensoDesde === null ? [] : [{ ...SUSPENSO, desde: perfil.suspensoDesde }]),
+    ...(perfil.ativo ? [] : [desativado(perfil)]),
     perfil.temVigente ? EM_VIGOR : SEM_VERSAO_EM_VIGOR,
     ...(perfil.temPendente ? [VERSAO_PENDENTE] : []),
     ...(perfil.emJanelaDeMigracao ? [EM_JANELA_DE_MIGRACAO] : []),
@@ -59,6 +67,7 @@ export function situacoesDoPerfil(perfil: ResumoDoPerfil): readonly SituacaoDoPe
 
 const ATIVO: SituacaoDoPerfil = { texto: 'Ativo', variante: 'success' };
 const DESATIVADO: SituacaoDoPerfil = { texto: 'Desativado', variante: 'neutral' };
+const SUSPENSO: SituacaoDoPerfil = { texto: 'Suspenso', variante: 'danger' };
 const EM_VIGOR: SituacaoDoPerfil = { texto: 'Em vigor', variante: 'success' };
 const SEM_VERSAO_EM_VIGOR: SituacaoDoPerfil = { texto: 'Sem versão em vigor', variante: 'warning' };
 const VERSAO_PENDENTE: SituacaoDoPerfil = { texto: 'Versão pendente', variante: 'info' };
@@ -66,6 +75,12 @@ const EM_JANELA_DE_MIGRACAO: SituacaoDoPerfil = {
   texto: 'Janela de migração aberta',
   variante: 'warning',
 };
+
+function desativado(perfil: ResumoDoPerfil): SituacaoDoPerfil {
+  return perfil.desativadoDesde === null
+    ? DESATIVADO
+    : { ...DESATIVADO, desde: perfil.desativadoDesde };
+}
 
 /**
  * O perfil de governança não tem versão nem situação para mudar: a composição dele muda por

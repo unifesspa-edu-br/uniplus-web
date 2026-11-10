@@ -44,7 +44,7 @@
               <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
               <td data-label="Situação">
                 @for (situacao of situacoes(perfil); track situacao.texto) {
-                  <ui-tag [variant]="situacao.variante">{{ situacao.texto }}</ui-tag>
+                  <cfg-situacao-do-perfil [situacao]="situacao" />
                 }
               </td>
               <td class="table-responsive__actions" data-label="Ações">

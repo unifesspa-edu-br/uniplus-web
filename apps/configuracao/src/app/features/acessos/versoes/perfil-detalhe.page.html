@@ -8,7 +8,7 @@
       <p class="page-header__desc">{{ p.descricao }}</p>
       <p class="cfg-tags">
         @for (situacao of situacoes(); track situacao.texto) {
-          <ui-tag [variant]="situacao.variante">{{ situacao.texto }}</ui-tag>
+          <cfg-situacao-do-perfil [situacao]="situacao" />
         }
       </p>
     }
@@ -47,6 +47,9 @@
   <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando o perfil…</p>
 }
 @if (perfil(); as p) {
+  @if (p.suspensao; as suspensao) {
+    <cfg-suspensao-do-perfil [suspensao]="suspensao" />
+  }
   @if (p.ultimaVersaoEncerradaSemVigor; as encerrada) {
     <ui-alert variant="warning" heading="A última versão proposta não entrou em vigor">
       A versão {{ encerrada.numero }} foi {{ situacaoEncerrada(encerrada.situacao) }}. O perfil

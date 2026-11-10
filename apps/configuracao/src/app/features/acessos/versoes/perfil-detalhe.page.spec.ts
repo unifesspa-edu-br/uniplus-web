@@ -123,6 +123,35 @@ describe('PerfilDetalhePage', () => {
     expect(host.textContent).not.toContain('Janela de migração');
   });
 
+  it('perfil suspenso mostra o estado, desde quando e as etapas da retomada', async () => {
+    const { host } = await abrir(
+      ok(
+        perfilDoDetalhe({
+          suspensao: {
+            desde: '2026-11-09T15:00:00Z',
+            papelDeQuemSuspendeu: 'gestao_de_acessos',
+            etapasExigidasAgora: ['gestao_de_acessos', 'protecao_de_dados'],
+            etapasDecididas: ['gestao_de_acessos'],
+          },
+        }),
+      ),
+    );
+
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain('Suspenso');
+    expect(host.querySelector('cfg-suspensao-do-perfil')?.textContent).toContain(
+      'Retomada pela proteção de dados: aguarda a decisão',
+    );
+  });
+
+  it('perfil desativado mostra desde quando', async () => {
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ ativo: false, desativadoDesde: '2026-11-08T15:00:00Z' })),
+    );
+
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain('Desativado');
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain('desde 08/11/2026');
+  });
+
   it('perfil desativado só se reativa', async () => {
     const { host, fixture } = await abrir(ok(perfilDoDetalhe({ ativo: false })));
     perfis.ativar.mockReturnValue(of(ok(undefined)));
