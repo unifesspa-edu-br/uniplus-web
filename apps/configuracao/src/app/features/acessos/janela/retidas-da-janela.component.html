@@ -1,0 +1,58 @@
+<section class="panel" aria-labelledby="cfg-retidas-titulo">
+  <div class="panel-head">
+    <h2 id="cfg-retidas-titulo" class="panel-head__title">Concessões retidas</h2>
+  </div>
+  <p class="panel-body">
+    O lote reteve estas concessões porque a pessoa beneficiada é quem o enviou. Outra pessoa da
+    gestão de acessos decide cada uma.
+    @if (!podeDecidir()) {
+      Você consulta a janela, mas a decisão cabe à gestão de acessos.
+    }
+  </p>
+  <cfg-tabela-da-janela
+    [itens]="retidas()"
+    [nomeDoEscopo]="nomeDoEscopo()"
+    legenda="Concessões retidas para decisão"
+  >
+    @if (podeDecidir()) {
+      <ng-template #acao let-item>
+        <div class="cfg-acoes">
+          <button
+            type="button"
+            class="btn btn--primary btn--rect"
+            [disabled]="gravando()"
+            (click)="migrar(item)"
+          >
+            Migrar
+            <span class="sr-only">{{ item.beneficiarioNome ?? 'pessoa sem nome informado' }}</span>
+          </button>
+          <button
+            type="button"
+            class="btn btn--danger btn--rect"
+            [disabled]="gravando()"
+            (click)="decisao.pedirRecusa(item)"
+          >
+            Recusar
+            <span class="sr-only">{{ item.beneficiarioNome ?? 'pessoa sem nome informado' }}</span>
+          </button>
+        </div>
+        @if (erroDe(item); as erro) {
+          <ui-alert variant="danger" heading="Não foi possível decidir">{{ erro }}</ui-alert>
+        }
+      </ng-template>
+    }
+  </cfg-tabela-da-janela>
+</section>
+
+<cfg-exclusao-dialog
+  [(visible)]="decisao.confirmando"
+  heading="Recusar a concessão retida"
+  confirmLabel="Recusar concessão"
+  confirmacao="Entendo que a concessão recusada será revogada."
+  [erro]="erroDoDialogo()"
+  [enviando]="gravando()"
+  (confirmado)="confirmarRecusa()"
+>
+  A concessão de {{ decisao.recusando()?.beneficiarioNome ?? 'pessoa sem nome informado' }} perde o
+  acesso ao perfil assim que a recusa é gravada.
+</cfg-exclusao-dialog>

@@ -22,11 +22,13 @@ import { nomesDeEscopo } from '../nomes-de-escopo';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { devolverFocoAoTitulo } from '../versoes/foco-ao-titulo';
 import { LeituraDosPerfis } from '../versoes/leitura-dos-perfis';
+import { DecisaoDaRetida } from './decisao-da-retida';
 import { EnvioNaJanela } from './envio-na-janela';
 import { JanelaDaMigracaoStore } from './janela-da-migracao.store';
 import { LoteDaMigracao } from './lote-da-migracao';
 import { LoteDaMigracaoComponent } from './lote-da-migracao.component';
 import { PrazoDaJanelaComponent } from './prazo-da-janela.component';
+import { RetidasDaJanelaComponent } from './retidas-da-janela.component';
 import { TabelaDaJanelaComponent } from './tabela-da-janela.component';
 
 const ID_DO_TITULO = 'cfg-janela-titulo';
@@ -44,6 +46,7 @@ const { autorizacao } = PERMISSAO;
     LoteDaMigracaoComponent,
     PrazoDaJanelaComponent,
     RecusaDaLeituraComponent,
+    RetidasDaJanelaComponent,
     SpinnerComponent,
     TabelaDaJanelaComponent,
   ],
@@ -53,6 +56,7 @@ const { autorizacao } = PERMISSAO;
     EscritaDoPerfil,
     EnvioNaJanela,
     LoteDaMigracao,
+    DecisaoDaRetida,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },

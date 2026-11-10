@@ -34,6 +34,14 @@
         [podeDecidir]="podeComoGestao()"
       />
     }
+    @if (itens.retidas.length > 0) {
+      <cfg-retidas-da-janela
+        [janela]="janela"
+        [retidas]="itens.retidas"
+        [nomeDoEscopo]="nomeDoEscopo"
+        [podeDecidir]="podeComoGestao()"
+      />
+    }
     @if (itens.decididas.length > 0) {
       <section class="panel" aria-labelledby="cfg-decididas-titulo">
         <div class="panel-head">
