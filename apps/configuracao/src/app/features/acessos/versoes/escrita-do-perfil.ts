@@ -3,7 +3,14 @@ import { aguardarRecarga } from '../../../shared/foco';
 import { FALHA_INESPERADA } from '../mensagens-de-acesso';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
 
-export type TipoDeEscrita = 'salvando' | 'situacao' | 'remocao' | 'cancelamento' | 'documento' | 'decisao' | 'janela';
+export type TipoDeEscrita =
+  | 'salvando'
+  | 'contencao'
+  | 'remocao'
+  | 'cancelamento'
+  | 'documento'
+  | 'decisao'
+  | 'janela';
 
 /**
  * A escrita em curso na tela de perfis. Só uma por vez, e a próxima só começa quando a leitura
@@ -18,7 +25,7 @@ export class EscritaDoPerfil {
     computed(() => this.leitura.mensagemDeErro() !== null),
   );
   readonly salvando = computed(() => this.corrente() === 'salvando');
-  readonly alterandoSituacao = computed(() => this.corrente() === 'situacao');
+  readonly contendo = computed(() => this.corrente() === 'contencao');
   readonly removendo = computed(() => this.corrente() === 'remocao');
   readonly cancelando = computed(() => this.corrente() === 'cancelamento');
   readonly enviandoDocumento = computed(() => this.corrente() === 'documento');

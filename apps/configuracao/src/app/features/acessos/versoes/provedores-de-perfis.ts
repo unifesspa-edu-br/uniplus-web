@@ -1,6 +1,5 @@
 import type { Provider } from '@angular/core';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
-import { AtivacaoDoPerfil } from './ativacao-do-perfil';
 import { CatalogoDePermissoesStore } from './catalogo-de-permissoes.store';
 import { EnvioDaVersao } from './envio-da-versao';
 import { EscritaDoPerfil } from './escrita-do-perfil';
@@ -11,5 +10,4 @@ export const PROVEDORES_DE_ESCRITA_DE_PERFIS: readonly Provider[] = [
   EscritaDoPerfil,
   EnvioDaVersao,
   EdicaoDosPerfis,
-  AtivacaoDoPerfil,
 ];

@@ -26,7 +26,6 @@
 <ui-alert variant="danger" heading="Não foi possível concluir">{{ escrita.erroDaAcao() }}</ui-alert>
 }
 
-<span class="sr-only" role="status">{{ ativacao.anuncio() }}</span>
 <cfg-perfis-lista
   [perfis]="store.itens()"
   [carregando]="store.carregando()"
@@ -34,7 +33,6 @@
   [gravando]="escrita.gravando()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
-  (alternarAtivacao)="alternarAtivacao($event)"
   (anterior)="store.paginaAnterior()"
   (proximo)="store.proximaPagina()"
 />

@@ -140,7 +140,7 @@ const CATALOGO = [
 
 
 describe('PerfisPage', () => {
-  const api = { criar: vi.fn(), ativar: vi.fn(), desativar: vi.fn() };
+  const api = { criar: vi.fn() };
   const documento = { enviar: vi.fn() };
   const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
   const leituras = { perfis: vi.fn() };
@@ -181,9 +181,6 @@ describe('PerfisPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
   };
-
-  const botaoDaLinha = (host: HTMLElement, rotulo: string) =>
-    presente(host.querySelector<HTMLButtonElement>(`button[aria-label="${rotulo}"]`));
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -352,57 +349,6 @@ describe('PerfisPage', () => {
     expect(api.criar).not.toHaveBeenCalled();
   });
 
-  it('desativa o perfil ativo e reativa o desativado, e anuncia o desfecho', async () => {
-    const { fixture, host } = await abrir(ok([COMUM, { ...GOVERNANCA, governanca: null, ativo: false }]));
-    api.desativar.mockReturnValue(of(ok(undefined)));
-    api.ativar.mockReturnValue(of(ok(undefined)));
-
-    botaoDaLinha(host, 'Desativar o perfil Operador de inscrições').click();
-    await assentar(fixture);
-    botaoDaLinha(host, 'Reativar o perfil Gestor de acessos').click();
-    await assentar(fixture);
-
-    expect(api.desativar.mock.calls[0]?.[0]).toBe('p1');
-    expect(api.ativar.mock.calls[0]?.[0]).toBe('p2');
-    expect(notificacoes.success).toHaveBeenCalledWith('Perfil desativado');
-    expect(notificacoes.success).toHaveBeenCalledWith('Perfil reativado');
-    expect(host.querySelector('.sr-only[role="status"]')?.textContent).toContain(
-      'Perfil Gestor de acessos reativado.',
-    );
-  });
-
-  it('impede escritas concorrentes durante a mudança de situação', async () => {
-    const { fixture, host, edicao, escrita } = await abrir();
-    const resposta = new Subject<ReturnType<typeof ok<void>>>();
-    api.desativar.mockReturnValue(resposta);
-
-    botaoDaLinha(host, 'Desativar o perfil Operador de inscrições').click();
-    fixture.detectChanges();
-
-    expect(escrita.gravando()).toBe(true);
-    expect(host.querySelector<HTMLButtonElement>('#cfg-perfis-novo')?.disabled).toBe(true);
-    edicao.abrirCriacao();
-    await edicao.salvar();
-    expect(edicao.formAberto()).toBe(false);
-    expect(api.criar).not.toHaveBeenCalled();
-
-    resposta.next(ok(undefined));
-    resposta.complete();
-    await assentar(fixture);
-  });
-
-  it('mostra a recusa da mudança de situação junto à lista', async () => {
-    const { fixture, host, escrita } = await abrir();
-    api.desativar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.governanca_imutavel')));
-
-    botaoDaLinha(host, 'Desativar o perfil Operador de inscrições').click();
-    await assentar(fixture);
-
-    expect(escrita.erroDaAcao()).toContain('Perfil de governança não se altera.');
-    expect(host.textContent).toContain('Não foi possível concluir');
-    expect(notificacoes.success).not.toHaveBeenCalled();
-  });
-
   it('com a leitura falha, oferece tentar novamente e relê a lista', async () => {
     const { fixture, host } = await abrir(recusa('uniplus.internal.unexpected', 500, 'Erro interno'));
     const tentar = presente(
@@ -414,26 +360,5 @@ describe('PerfisPage', () => {
     await assentar(fixture);
 
     expect(host.textContent).toContain('Operador de inscrições');
-  });
-
-  it('depois de desativar, devolve o foco ao botão da mesma linha', async () => {
-    const { fixture, host } = await abrir();
-    const resposta = new Subject<ReturnType<typeof ok<void>>>();
-    api.desativar.mockReturnValue(resposta);
-    const rotulo = 'Desativar o perfil Operador de inscrições';
-    const acionador = botaoDaLinha(host, rotulo);
-    acionador.focus();
-    acionador.click();
-    fixture.detectChanges();
-    const provisorio = host.appendChild(document.createElement('button'));
-    provisorio.focus();
-    provisorio.remove();
-
-    resposta.next(ok(undefined));
-    resposta.complete();
-    await assentar(fixture);
-    await assentar(fixture);
-
-    expect(document.activeElement).toBe(botaoDaLinha(host, rotulo));
   });
 });

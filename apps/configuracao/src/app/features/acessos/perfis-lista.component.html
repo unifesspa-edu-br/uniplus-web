@@ -10,7 +10,7 @@
 
   @if (perfis().length > 0) {
     <div
-      class="table-responsive table-responsive--acoes-fixas"
+      class="table-responsive"
       role="region"
       tabindex="0"
       aria-label="Lista de perfis de acesso"
@@ -24,9 +24,6 @@
             <th scope="col">Nome</th>
             <th scope="col">Sensibilidade</th>
             <th scope="col">Situação</th>
-            <th scope="col" class="table-responsive__actions">
-              <span class="sr-only">Ações</span>
-            </th>
           </tr>
         </thead>
         <tbody>
@@ -45,20 +42,6 @@
               <td data-label="Situação">
                 @for (situacao of situacoes(perfil); track situacao.texto) {
                   <cfg-situacao-do-perfil [situacao]="situacao" />
-                }
-              </td>
-              <td class="table-responsive__actions" data-label="Ações">
-                @let permitido = acoes(perfil);
-                @if (permitido.desativar || permitido.reativar) {
-                  <ui-icon-button
-                    [isDisabled]="indisponivel()"
-                    icon="pi-power-off"
-                    [accessibleName]="
-                      (perfil.ativo ? 'Desativar' : 'Reativar') + ' o perfil ' + perfil.nome
-                    "
-                    [tooltip]="perfil.ativo ? 'Desativar perfil' : 'Reativar perfil'"
-                    (triggered)="alternarAtivacao.emit(perfil)"
-                  />
                 }
               </td>
             </tr>

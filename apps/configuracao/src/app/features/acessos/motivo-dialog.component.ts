@@ -56,7 +56,9 @@ export const LIMITE_DO_MOTIVO = 500;
         </button>
         <button
           type="button"
-          class="btn btn--danger"
+          class="btn"
+          [class.btn--danger]="confirmVariant() === 'danger'"
+          [class.btn--primary]="confirmVariant() === 'primary'"
           [attr.aria-disabled]="enviando() ? 'true' : null"
           [attr.aria-busy]="enviando()"
           (click)="confirmar($event)"
@@ -74,6 +76,7 @@ export class MotivoDialogComponent {
   readonly visible = model(false);
   readonly heading = input.required<string>();
   readonly confirmLabel = input.required<string>();
+  readonly confirmVariant = input<'danger' | 'primary'>('danger');
   readonly ajuda = input('O motivo fica registrado na trilha.');
   readonly erro = input<string | null>(null);
   readonly enviando = input(false);
