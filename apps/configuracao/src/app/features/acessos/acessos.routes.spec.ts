@@ -53,6 +53,7 @@ const PROTEGIDAS = [
   ['janelas-de-migracao/protecao-de-dados', 'acessos/janelas-de-migracao/protecao-de-dados'],
   ['reclassificacoes/gestao-de-acessos', 'acessos/reclassificacoes/gestao-de-acessos'],
   ['reclassificacoes/protecao-de-dados', 'acessos/reclassificacoes/protecao-de-dados'],
+  ['governanca/divergencias', 'acessos/governanca/divergencias'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -141,7 +142,7 @@ describe('rotas dos acessos', () => {
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(17);
+    expect(carregaveis).toHaveLength(18);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }

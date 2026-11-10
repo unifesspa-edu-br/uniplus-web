@@ -7,8 +7,19 @@ export const FILA_DA_ETAPA: Readonly<Record<EtapaDaVersao, string>> = {
   protecao_de_dados: '/acessos/reclassificacoes/protecao-de-dados',
 };
 
+const TIPO_DA_DIVERGENCIA: Readonly<Record<string, string>> = {
+  composicao_faltante: 'Permissão que falta na composição',
+  composicao_excedente: 'Permissão a mais na composição',
+  classificacao: 'Classificação diferente do catálogo',
+  escopo: 'Escopo diferente do catálogo',
+};
+
 export function escopoDaPermissao(deUnidade: boolean): string {
   return deUnidade ? 'Unidade' : 'Instituição';
+}
+
+export function tipoDaDivergencia(tipo: string): string {
+  return TIPO_DA_DIVERGENCIA[tipo] ?? tipo;
 }
 
 /** O que mudou na permissão, em uma frase por eixo; o eixo que não mudou não aparece. */
@@ -25,4 +36,12 @@ export function mudancasDaPermissao(mudanca: MudancaDaPermissaoDto): readonly st
     );
   }
   return dessas;
+}
+
+/** O valor de um lado da divergência, na linguagem do tipo dela; sem valor, o traço. */
+export function valorDaDivergencia(tipo: string, valor: string | null): string {
+  if (valor === null) return '—';
+  if (tipo === 'classificacao') return sensibilidade(valor);
+  if (tipo === 'escopo') return escopoDaPermissao(valor.toLowerCase() === 'unidade');
+  return valor;
 }

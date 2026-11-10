@@ -238,6 +238,12 @@ export class LayoutComponent {
           routerLink: '/acessos/reclassificacoes/protecao-de-dados',
           exact: true,
         },
+        {
+          label: 'Divergências da governança',
+          icon: 'pi-exclamation-triangle',
+          routerLink: '/acessos/governanca/divergencias',
+          exact: true,
+        },
       ],
     },
   ];

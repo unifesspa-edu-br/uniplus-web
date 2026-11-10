@@ -94,6 +94,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
       'Histórico de pedidos',
       'Concessões',
       'Perfis de acesso',
+      'Divergências da governança',
     ]);
   });
 
@@ -120,7 +121,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).not.toContain('Janelas na proteção de dados');
   });
 
-  it('oferece a reclassificação da proteção de dados a quem aprova por essa etapa', () => {
+  it('oferece a reclassificação da etapa e as divergências a quem tem a permissão de cada tela', () => {
     concedidas.set(['autorizacao:perfis:aprovar-protecao-de-dados']);
 
     expect(itensDoMenu()).toEqual([
@@ -128,29 +129,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
       'Versões na proteção de dados',
       'Janelas na proteção de dados',
       'Reclassificações na proteção de dados',
-    ]);
-  });
-
-  it('não oferece a reclassificação da proteção de dados a quem só aprova pela gestão de acessos', () => {
-    concedidas.set(['autorizacao:perfis:aprovar-funcional']);
-
-    expect(itensDoMenu()).not.toContain('Reclassificações na proteção de dados');
-  });
-
-  it('não oferece as janelas da proteção de dados a quem só aprova pela gestão de acessos', () => {
-    concedidas.set(['autorizacao:perfis:aprovar-funcional']);
-
-    expect(itensDoMenu()).not.toContain('Janelas na proteção de dados');
-  });
-
-  it('oferece a reclassificação da proteção de dados a quem aprova por essa etapa', () => {
-    concedidas.set(['autorizacao:perfis:aprovar-protecao-de-dados']);
-
-    expect(itensDoMenu()).toEqual([
-      'Meus pedidos',
-      'Versões na proteção de dados',
-      'Janelas na proteção de dados',
-      'Reclassificações na proteção de dados',
+      'Divergências da governança',
     ]);
   });
 
@@ -161,6 +140,14 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itens).toContain('Reclassificações na gestão de acessos');
     expect(itens).not.toContain('Divergências da governança');
     expect(itens).not.toContain('Reclassificações na proteção de dados');
+  });
+
+  it('oferece as divergências, mas não a reclassificação, a quem só mantém perfis', () => {
+    concedidas.set(['autorizacao:perfis:manter']);
+
+    const itens = itensDoMenu();
+    expect(itens).toContain('Divergências da governança');
+    expect(itens).not.toContain('Reclassificações na gestão de acessos');
   });
 
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {

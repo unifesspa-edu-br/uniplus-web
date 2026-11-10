@@ -58,6 +58,10 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/janelas-de-migracao/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/reclassificacoes/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/reclassificacoes/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/governanca/divergencias': [
+    autorizacao.perfisManter,
+    autorizacao.perfisAprovarProtecaoDeDados,
+  ],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 /** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */

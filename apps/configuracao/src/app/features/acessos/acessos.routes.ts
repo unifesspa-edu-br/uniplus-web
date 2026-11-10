@@ -128,6 +128,15 @@ export const ACESSOS_ROUTES: Routes = [
           ),
       },
       {
+        path: 'governanca/divergencias',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/governanca/divergencias'])],
+        data: { breadcrumb: 'Divergências da governança' },
+        loadComponent: () =>
+          import('./reclassificacao/divergencias-da-governanca.page').then(
+            (m) => m.DivergenciasDaGovernancaPage,
+          ),
+      },
+      {
         path: 'perfis/:id/janela',
         canActivate: [permissaoGuard(...PERMISSOES_DA_JANELA_DE_MIGRACAO)],
         data: { breadcrumb: 'Janela de migração' },
