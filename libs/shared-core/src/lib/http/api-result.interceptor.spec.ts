@@ -264,8 +264,7 @@ describe('apiResultInterceptor', () => {
   });
 
   describe('catálogo desatualizado', () => {
-    const MENSAGEM = 'O sistema está sendo atualizado.';
-    const ORIENTACAO = 'Tente novamente em instantes.';
+    const MENSAGEM = 'O sistema está sendo atualizado. Tente novamente em instantes.';
     const desatualizado: ProblemDetails = {
       type: 'x',
       title: 'Catalog out of date',
@@ -274,6 +273,10 @@ describe('apiResultInterceptor', () => {
       code: 'uniplus.autorizacao.catalogo.desatualizado',
       traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
     };
+
+    function textoDaMensagem(m: { title: string; detail?: string }): string {
+      return m.detail ? `${m.title} ${m.detail}` : m.title;
+    }
 
     function falhar(): ApiFailure {
       let received: ApiResult<unknown> | undefined;
@@ -290,7 +293,7 @@ describe('apiResultInterceptor', () => {
       const { problem } = falhar();
 
       expect(problem.title).toBe(MENSAGEM);
-      expect(problem.detail).toBe(ORIENTACAO);
+      expect(problem.detail).toBeUndefined();
       expect(problem.code).toBe(desatualizado.code);
     });
 
@@ -299,17 +302,23 @@ describe('apiResultInterceptor', () => {
 
       notificacoes.errorFromProblem(falhar().problem);
 
-      expect(notificacoes.notifications()[0]).toMatchObject({ title: MENSAGEM, detail: ORIENTACAO });
+      const [toast] = notificacoes.notifications();
+      expect(toast?.title).toBe(MENSAGEM);
+      expect(toast?.detail).toBeUndefined();
     });
 
-    it('chega assim à tela que mostra só o título', () => {
-      expect(falhar().problem.title).toBe(MENSAGEM);
+    it('chega inteira à tela que mostra só o título resolvido', () => {
+      const { title } = TestBed.inject(ProblemI18nService).resolve(falhar().problem);
+
+      expect(title).toBe(MENSAGEM);
     });
 
     it('chega assim à recusa junto à ação, que resolve o problema pelo serviço de mensagens', () => {
       const mensagem = TestBed.inject(ProblemI18nService).resolve(falhar().problem);
 
-      expect(mensagem).toMatchObject({ title: MENSAGEM, detail: ORIENTACAO });
+      expect(mensagem.title).toBe(MENSAGEM);
+      expect(mensagem.detail).toBeUndefined();
+      expect(textoDaMensagem(mensagem)).toBe(MENSAGEM);
     });
 
     it('não altera o texto de outros problemas', () => {
