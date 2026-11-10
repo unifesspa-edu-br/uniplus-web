@@ -55,3 +55,17 @@ export const PERMISSOES_DO_DIOGO = [
 export const PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS = [
   'autorizacao:pedidos:aprovar-protecao-de-dados',
 ] as const;
+
+/** Diogo só aprova pela gestão de acessos: não mantém perfis nem aprova pela proteção de dados. */
+export const PERMISSOES_DO_DIOGO_SO_APROVA = ['autorizacao:perfis:aprovar-funcional'] as const;
+
+/** Betina só aprova pela proteção de dados. */
+export const PERMISSOES_DA_BETINA_SO_APROVA = [
+  'autorizacao:perfis:aprovar-protecao-de-dados',
+] as const;
+
+/** Quem aprova pelas duas etapas escolhe, na decisão, por qual delas decide. */
+export const PERMISSOES_DAS_DUAS_ETAPAS = [
+  ...PERMISSOES_DO_DIOGO_SO_APROVA,
+  ...PERMISSOES_DA_BETINA_SO_APROVA,
+] as const;
