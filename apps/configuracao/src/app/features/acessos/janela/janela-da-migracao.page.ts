@@ -23,6 +23,8 @@ import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { devolverFocoAoTitulo } from '../versoes/foco-ao-titulo';
 import { LeituraDosPerfis } from '../versoes/leitura-dos-perfis';
 import { DecisaoDaRetida } from './decisao-da-retida';
+import { EncerramentoDaJanela } from './encerramento-da-janela';
+import { EncerramentoDaJanelaComponent } from './encerramento-da-janela.component';
 import { EnvioNaJanela } from './envio-na-janela';
 import { EtapaDaProtecaoDeDados } from './etapa-da-protecao-de-dados';
 import { JanelaDaMigracaoStore } from './janela-da-migracao.store';
@@ -43,6 +45,7 @@ const { autorizacao } = PERMISSAO;
   imports: [
     RouterLink,
     AlertComponent,
+    EncerramentoDaJanelaComponent,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
     LoteDaMigracaoComponent,
@@ -61,6 +64,7 @@ const { autorizacao } = PERMISSAO;
     LoteDaMigracao,
     DecisaoDaRetida,
     EtapaDaProtecaoDeDados,
+    EncerramentoDaJanela,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
 import { itemDaJanela, janelaDeMigracao } from './janela.testing';
 import {
+  GESTAO_DE_ACESSOS,
   abrirJanela,
   api,
   botao,
@@ -248,5 +249,12 @@ describe('JanelaDaMigracaoPage', () => {
       expect(presente(botao(host, 'Migrar todas')).disabled).toBe(true);
       expect(host.querySelector<HTMLInputElement>('input[type="radio"]')?.closest('fieldset')?.disabled).toBe(true);
     });
+  });
+
+  it('a permissão de gestão de acessos libera o lote e o encerramento', async () => {
+    const { host } = await abrirJanela(LOTE, [GESTAO_DE_ACESSOS]);
+
+    expect(botao(host, 'Enviar o lote')).toBeDefined();
+    expect(host.querySelector('cfg-encerramento-da-janela')).not.toBeNull();
   });
 });
