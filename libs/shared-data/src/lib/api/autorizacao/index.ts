@@ -67,3 +67,16 @@ export {
   type JanelaDeMigracaoDto,
   type JanelaDoPerfilDto,
 } from './janela-de-migracao.api';
+export {
+  ReclassificacoesApi,
+  type ConcessaoSuspensaDto,
+  type DecidirReclassificacaoRequest,
+  type DecisaoDaReclassificacaoDto,
+  type DivergenciaDaGovernancaDto,
+  type ItemDaFilaDeReclassificacoesDto,
+  type MudancaDaPermissaoDto,
+  type PermissaoDaVersaoEmUsoDto,
+  type ReclassificacaoDto,
+  type ResultadoDaReclassificacao,
+  type VersaoEmUsoDto,
+} from './reclassificacoes.api';
