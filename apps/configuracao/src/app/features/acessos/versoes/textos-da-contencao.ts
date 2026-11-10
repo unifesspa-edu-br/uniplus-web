@@ -1,5 +1,10 @@
 /** As ações de contenção do perfil que pedem um motivo. */
-export type AcaoDaContencao = 'suspender' | 'desativar' | 'reativar';
+export type AcaoDaContencao =
+  | 'suspender'
+  | 'retomar_gestao_de_acessos'
+  | 'retomar_protecao_de_dados'
+  | 'desativar'
+  | 'reativar';
 
 export interface TextosDaContencao {
   readonly titulo: string;
@@ -9,6 +14,9 @@ export interface TextosDaContencao {
   readonly variante: 'danger' | 'primary';
 }
 
+const AJUDA_DA_RETOMADA =
+  'Quem suspendeu o perfil não decide a retomada, e cada etapa exigida é decidida por uma pessoa diferente. As concessões voltam a valer quando todas as etapas estiverem decididas. O motivo fica na trilha.';
+
 export const TEXTOS_DA_CONTENCAO: Readonly<Record<AcaoDaContencao, TextosDaContencao>> = {
   suspender: {
     titulo: 'Suspender o perfil',
@@ -17,6 +25,20 @@ export const TEXTOS_DA_CONTENCAO: Readonly<Record<AcaoDaContencao, TextosDaConte
       'Nenhuma concessão do perfil dá acesso até a retomada, que exige outra pessoa. As concessões não são revogadas. O motivo fica na trilha e não vai nos avisos.',
     sucesso: 'Perfil suspenso',
     variante: 'danger',
+  },
+  retomar_gestao_de_acessos: {
+    titulo: 'Retomar o perfil: gestão de acessos',
+    confirmar: 'Decidir a retomada',
+    ajuda: AJUDA_DA_RETOMADA,
+    sucesso: 'Etapa da retomada decidida',
+    variante: 'primary',
+  },
+  retomar_protecao_de_dados: {
+    titulo: 'Retomar o perfil: proteção de dados',
+    confirmar: 'Decidir a retomada',
+    ajuda: AJUDA_DA_RETOMADA,
+    sucesso: 'Etapa da retomada decidida',
+    variante: 'primary',
   },
   desativar: {
     titulo: 'Desativar o perfil',
