@@ -276,10 +276,27 @@ describe('decisão da reclassificação', () => {
 
     expect(presente(botao(pagina.host, 'Liberar as concessões')).disabled).toBe(true);
     expect(presente(botao(pagina.host, 'Manter suspensas')).disabled).toBe(true);
-    expect(presente(caixaDe(pagina.host, 'Betina Teste')).disabled).toBe(false);
+    expect(presente(caixaDe(pagina.host, 'Betina Teste')).disabled).toBe(true);
     resposta.next(ok(DECISAO));
     resposta.complete();
     await pagina.assentar();
+  });
+
+  it('mantém a seleção travada enquanto a reclassificação é relida e a libera ao fim', async () => {
+    api.decidir.mockReturnValue(of(ok(DECISAO)));
+    const pagina = await abrirReclassificacao();
+    await marcarBetina(pagina);
+    const releitura = new Subject<unknown>();
+    leituras.mockReturnValue(releitura);
+
+    presente(botao(pagina.host, 'Liberar as concessões')).click();
+    await pagina.assentar();
+
+    expect(presente(caixaDe(pagina.host, 'Betina Teste')).disabled).toBe(true);
+    releitura.next(ok(reclassificacao()));
+    releitura.complete();
+    await pagina.assentar();
+    expect(presente(caixaDe(pagina.host, 'Betina Teste')).disabled).toBe(false);
   });
 
   it('com as duas permissões, escolhe a etapa e decide só as concessões que a aguardam', async () => {
