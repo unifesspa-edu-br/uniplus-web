@@ -29,7 +29,7 @@ export const ACESSOS_ROUTES: Routes = [
       {
         path: 'fila-do-gestor',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/fila-do-gestor'])],
-        data: { breadcrumb: 'Fila do gestor', fila: 'gestor' },
+        data: { breadcrumb: 'Fila da gestão de acessos', fila: 'gestor' },
         loadComponent: () => import('./pedidos.page').then((m) => m.PedidosPage),
       },
       {

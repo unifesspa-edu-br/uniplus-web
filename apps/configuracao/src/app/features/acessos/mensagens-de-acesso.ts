@@ -70,16 +70,16 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'pedido.prazo_vencido': {
     titulo:
-      'O prazo definido pelo gestor de acessos venceu antes da aprovação da proteção de dados.',
-    resolver: 'O pedido voltou ao gestor de acessos, sem prazo. Aguarde uma nova decisão.',
+      'O prazo definido pela gestão de acessos venceu antes da aprovação da proteção de dados.',
+    resolver: 'O pedido voltou à gestão de acessos, sem prazo. Aguarde uma nova decisão.',
   },
   'pedido.perfil_alterado': {
     titulo: 'O perfil mudou durante a análise.',
-    resolver: 'O pedido voltou ao gestor de acessos. Aguarde uma nova decisão.',
+    resolver: 'O pedido voltou à gestão de acessos. Aguarde uma nova decisão.',
   },
   'pedido.perfil_inativo': {
     titulo: 'O perfil de acesso está desativado.',
-    resolver: 'Escolha um perfil ativo ou peça ao gestor de acessos que reative o perfil.',
+    resolver: 'Escolha um perfil ativo ou peça à gestão de acessos que reative o perfil.',
   },
   'pedido.solicitante_nao_institucional': {
     titulo: 'O e-mail da sessão não é institucional verificado.',
@@ -108,7 +108,7 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
     resolver: 'Nenhuma ação é necessária. Se a pessoa precisar do acesso, faça um novo pedido.',
   },
   'concessao.minimo_de_gestores': {
-    titulo: 'A instituição precisa de ao menos dois gestores de acessos.',
+    titulo: 'A instituição precisa de ao menos duas pessoas na gestão de acessos.',
     resolver:
       'Conceda o perfil de gestor de acessos a outra pessoa antes de revogar esta concessão.',
   },
