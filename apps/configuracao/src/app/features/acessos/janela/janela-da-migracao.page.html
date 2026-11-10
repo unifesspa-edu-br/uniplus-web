@@ -1,0 +1,50 @@
+<div class="page-header">
+  <div class="page-header__content">
+    @if (podeVerOPerfil()) {
+      <p class="page-header__eyebrow"><a [routerLink]="['/acessos/perfis', id()]">Perfil de acesso</a></p>
+    }
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Janela de migração</h1>
+    <p class="page-header__desc">
+      As concessões da versão anterior do perfil passam à versão nova por decisão da gestão de
+      acessos e, quando a versão acrescenta permissão pessoal ou sensível, da proteção de dados.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a janela" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="O perfil não tem janela de migração" [recusa]="store.recusa()">
+  <a routerLink="/acessos/perfis">Ir para os perfis</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a janela…</p>
+}
+
+@if (envio.aviso(); as aviso) {
+  <ui-alert variant="warning" heading="A janela mudou">{{ aviso }}</ui-alert>
+}
+
+@if (store.janela(); as janela) {
+  @if (store.itens(); as itens) {
+    <cfg-prazo-da-janela [janela]="janela" />
+    @if (janela.situacao === 'aberta' || janela.loteEnviado) {
+      <cfg-lote-da-migracao
+        [janela]="janela"
+        [itens]="itens"
+        [nomeDoEscopo]="nomeDoEscopo"
+        [podeDecidir]="podeComoGestao()"
+      />
+    }
+    @if (itens.decididas.length > 0) {
+      <section class="panel" aria-labelledby="cfg-decididas-titulo">
+        <div class="panel-head">
+          <h2 id="cfg-decididas-titulo" class="panel-head__title">Situação das demais concessões</h2>
+        </div>
+        <cfg-tabela-da-janela
+          [itens]="itens.decididas"
+          [nomeDoEscopo]="nomeDoEscopo"
+          legenda="Concessões com situação final"
+        />
+      </section>
+    }
+  }
+}

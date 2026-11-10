@@ -56,6 +56,13 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
+/** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */
+export const PERMISSOES_DA_JANELA_DE_MIGRACAO = [
+  autorizacao.perfisManter,
+  autorizacao.perfisAprovarFuncional,
+  autorizacao.perfisAprovarProtecaoDeDados,
+] as const satisfies readonly CodigoDePermissao[];
+
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;
 
 /** Entrada sem destino: leva à primeira tela que a pessoa pode abrir. */

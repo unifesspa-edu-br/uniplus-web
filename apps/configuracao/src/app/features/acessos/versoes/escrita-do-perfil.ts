@@ -3,7 +3,7 @@ import { aguardarRecarga } from '../../../shared/foco';
 import { FALHA_INESPERADA } from '../mensagens-de-acesso';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
 
-export type TipoDeEscrita = 'salvando' | 'situacao' | 'remocao' | 'cancelamento' | 'documento' | 'decisao';
+export type TipoDeEscrita = 'salvando' | 'situacao' | 'remocao' | 'cancelamento' | 'documento' | 'decisao' | 'janela';
 
 /**
  * A escrita em curso na tela de perfis. Só uma por vez, e a próxima só começa quando a leitura
