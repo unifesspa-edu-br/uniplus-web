@@ -51,6 +51,6 @@ export type ClientProblemCode = (typeof CLIENT_PROBLEM_CODES)[keyof typeof CLIEN
 export const CODIGO_CATALOGO_DESATUALIZADO = 'uniplus.autorizacao.catalogo.desatualizado';
 
 export const MENSAGEM_CATALOGO_DESATUALIZADO = {
-  title: 'O sistema está sendo atualizado.',
-  detail: 'Tente novamente em instantes.',
+  title: 'O sistema está sendo atualizado. Tente novamente em instantes.',
+  detail: undefined,
 } as const;

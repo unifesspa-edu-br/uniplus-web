@@ -317,9 +317,10 @@ describe('decisão da reclassificação', () => {
     presente(botao(pagina.host, 'Liberar as concessões')).click();
     await pagina.assentar();
 
-    expect(alertaDaAcao(pagina.host)?.textContent).toContain(
-      'O sistema está sendo atualizado. Tente novamente em instantes.',
-    );
+    const texto = alertaDaAcao(pagina.host)?.textContent ?? '';
+    expect(texto).toContain('O sistema está sendo atualizado. Tente novamente em instantes.');
+    expect(texto.split('Tente novamente').length - 1).toBe(1);
+    expect(texto).not.toContain('undefined');
     expect(presente(botao(pagina.host, 'Liberar as concessões')).disabled).toBe(false);
   });
 
