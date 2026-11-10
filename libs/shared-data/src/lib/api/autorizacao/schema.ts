@@ -3979,6 +3979,302 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/autorizacao/reclassificacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly etapa?: string;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["ItemDaFilaDeReclassificacoesDto"][];
+                        readonly "application/json": readonly components["schemas"]["ItemDaFilaDeReclassificacoesDto"][];
+                        readonly "text/json": readonly components["schemas"]["ItemDaFilaDeReclassificacoesDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/reclassificacoes/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["ReclassificacaoDto"];
+                        readonly "application/json": components["schemas"]["ReclassificacaoDto"];
+                        readonly "text/json": components["schemas"]["ReclassificacaoDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/reclassificacoes/{id}/decisoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DecidirReclassificacaoRequest"];
+                    readonly "text/json": components["schemas"]["DecidirReclassificacaoRequest"];
+                    readonly "application/*+json": components["schemas"]["DecidirReclassificacaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["DecisaoDaReclassificacaoDto"];
+                        readonly "application/json": components["schemas"]["DecisaoDaReclassificacaoDto"];
+                        readonly "text/json": components["schemas"]["DecisaoDaReclassificacaoDto"];
+                    };
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/governanca/divergencias": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["DivergenciaDaGovernancaDto"][];
+                        readonly "application/json": readonly components["schemas"]["DivergenciaDaGovernancaDto"][];
+                        readonly "text/json": readonly components["schemas"]["DivergenciaDaGovernancaDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/autorizacao/revisoes": {
         readonly parameters: {
             readonly query?: never;
@@ -4981,6 +5277,19 @@ export interface components {
             readonly motivoRevogacao: null | string;
             readonly ativa: boolean;
         };
+        readonly ConcessaoSuspensaDto: {
+            /** Format: uuid */
+            readonly concessaoId: string;
+            readonly beneficiarioNome: null | string;
+            readonly escopoTipo: string;
+            /** Format: uuid */
+            readonly unidadeId: null | string;
+            /** Format: int32 */
+            readonly versao: null | number;
+            readonly etapasExigidas: readonly string[];
+            readonly etapasDecididas: readonly string[];
+            readonly ehDoLeitor: boolean;
+        };
         readonly ConfirmarAnexoDoPedidoRequest: {
             readonly etag: null | string;
         };
@@ -5015,6 +5324,13 @@ export interface components {
             readonly decisoes: null | readonly components["schemas"]["DecisaoDaMigracaoRequest"][];
             readonly confirmacaoDeExclusao: boolean;
         };
+        readonly DecidirReclassificacaoRequest: {
+            readonly etapa: null | string;
+            readonly resultado: null | string;
+            readonly concessoes: null | readonly string[];
+            readonly todas: boolean;
+            readonly motivo: null | string;
+        };
         readonly DecidirRetidaRequest: {
             readonly decisao: null | string;
             readonly confirmacaoDeExclusao: boolean;
@@ -5023,6 +5339,14 @@ export interface components {
             /** Format: uuid */
             readonly concessaoId: string;
             readonly decisao: null | string;
+        };
+        readonly DecisaoDaReclassificacaoDto: {
+            /** Format: uuid */
+            readonly loteId: string;
+            readonly decididas: readonly string[];
+            readonly liberadas: readonly string[];
+            readonly paraOutraPessoa: readonly string[];
+            readonly puladasPorEscopo: readonly string[];
         };
         readonly DecisaoDaVersaoDto: {
             readonly etapa: string;
@@ -5042,6 +5366,19 @@ export interface components {
             readonly permissoesAvaliadas: readonly string[];
             readonly sensibilidadeAvaliada: string;
             readonly dispensa: null | string;
+        };
+        readonly DivergenciaDaGovernancaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly perfilNome: string;
+            readonly codigo: string;
+            readonly tipo: string;
+            readonly de: null | string;
+            readonly para: null | string;
+            /** Format: date-time */
+            readonly instante: string;
         };
         readonly DocumentoDaVersaoDto: {
             /** Format: uuid */
@@ -5150,6 +5487,19 @@ export interface components {
             /** Format: int32 */
             readonly quantidadeADecidir: number;
         };
+        readonly ItemDaFilaDeReclassificacoesDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly perfilNome: string;
+            readonly codigo: string;
+            readonly mudanca: components["schemas"]["MudancaDaPermissaoDto"];
+            /** Format: date-time */
+            readonly instante: string;
+            /** Format: int32 */
+            readonly concessoesAguardando: number;
+        };
         readonly ItemDaFilaDeVersoesDto: {
             /** Format: uuid */
             readonly perfilId: string;
@@ -5235,6 +5585,12 @@ export interface components {
         };
         readonly MotivoDaContencaoRequest: {
             readonly motivo: null | string;
+        };
+        readonly MudancaDaPermissaoDto: {
+            readonly classificacaoAnterior: string;
+            readonly classificacaoNova: string;
+            readonly deUnidadeAnterior: boolean;
+            readonly deUnidadeNovo: boolean;
         };
         readonly OrigemDto: {
             readonly tipo: string;
@@ -5340,6 +5696,11 @@ export interface components {
             readonly id: string;
             readonly nome: string;
         };
+        readonly PermissaoDaVersaoEmUsoDto: {
+            readonly codigo: string;
+            readonly classificacao: string;
+            readonly deUnidade: boolean;
+        };
         readonly PermissaoDoCatalogoResponse: {
             readonly codigo: string;
             readonly nome: string;
@@ -5374,6 +5735,20 @@ export interface components {
             readonly tamanhoDoDocumento: number;
             readonly motivoDaRemocao: null | string;
             readonly categoriaDaRemocao: null | string;
+        };
+        readonly ReclassificacaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly perfilNome: string;
+            readonly codigo: string;
+            readonly mudanca: components["schemas"]["MudancaDaPermissaoDto"];
+            /** Format: date-time */
+            readonly instante: string;
+            readonly vigente: boolean;
+            readonly versoes: readonly components["schemas"]["VersaoEmUsoDto"][];
+            readonly concessoes: readonly components["schemas"]["ConcessaoSuspensaDto"][];
         };
         readonly RecusarEtapaDaVersaoRequest: {
             readonly etapa: null | string;
@@ -5493,6 +5868,15 @@ export interface components {
             readonly perfis: readonly components["schemas"]["PerfilConcedidoResponse"][];
             /** Format: date-time */
             readonly timestamp: string;
+        };
+        readonly VersaoEmUsoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: int32 */
+            readonly numero: number;
+            readonly situacao: string;
+            readonly permissoes: readonly components["schemas"]["PermissaoDaVersaoEmUsoDto"][];
+            readonly linkDoDocumento: null | string;
         };
         readonly VersaoPendenteDto: {
             /** Format: uuid */
