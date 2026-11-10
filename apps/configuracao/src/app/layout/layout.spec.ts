@@ -103,6 +103,26 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila da gestão de acessos', 'Histórico de pedidos']);
   });
 
+  it('oferece as versões e as janelas da etapa a quem só tem a permissão de aprovar, sem a lista de perfis', () => {
+    concedidas.set(['autorizacao:perfis:aprovar-funcional']);
+
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Versões na gestão de acessos',
+      'Janelas na gestão de acessos',
+    ]);
+  });
+
+  it('oferece as janelas da proteção de dados só a quem aprova por essa etapa', () => {
+    concedidas.set(['autorizacao:perfis:aprovar-protecao-de-dados']);
+
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Versões na proteção de dados',
+      'Janelas na proteção de dados',
+    ]);
+  });
+
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {
     concedidas.set(['configuracao:tipos-processo:consultar']);
     const fixture = TestBed.createComponent(LayoutComponent);

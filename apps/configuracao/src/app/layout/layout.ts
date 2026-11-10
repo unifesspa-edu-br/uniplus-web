@@ -214,6 +214,18 @@ export class LayoutComponent {
           routerLink: '/acessos/versoes-de-perfil/protecao-de-dados',
           exact: true,
         },
+        {
+          label: 'Janelas na gestão de acessos',
+          icon: 'pi-clock',
+          routerLink: '/acessos/janelas-de-migracao/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Janelas na proteção de dados',
+          icon: 'pi-hourglass',
+          routerLink: '/acessos/janelas-de-migracao/protecao-de-dados',
+          exact: true,
+        },
       ],
     },
   ];

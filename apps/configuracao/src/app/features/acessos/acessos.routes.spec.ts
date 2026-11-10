@@ -45,6 +45,8 @@ const PROTEGIDAS = [
   ['perfis/:id', 'acessos/perfis'],
   ['versoes-de-perfil/gestao-de-acessos', 'acessos/versoes-de-perfil/gestao-de-acessos'],
   ['versoes-de-perfil/protecao-de-dados', 'acessos/versoes-de-perfil/protecao-de-dados'],
+  ['janelas-de-migracao/gestao-de-acessos', 'acessos/janelas-de-migracao/gestao-de-acessos'],
+  ['janelas-de-migracao/protecao-de-dados', 'acessos/janelas-de-migracao/protecao-de-dados'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -110,13 +112,15 @@ describe('rotas dos acessos', () => {
   it.each([
     ['versoes-de-perfil/gestao-de-acessos', 'gestao_de_acessos'],
     ['versoes-de-perfil/protecao-de-dados', 'protecao_de_dados'],
+    ['janelas-de-migracao/gestao-de-acessos', 'gestao_de_acessos'],
+    ['janelas-de-migracao/protecao-de-dados', 'protecao_de_dados'],
   ])('%s lista a etapa %s', (caminho, etapa) => {
     expect(rota(caminho).data?.['etapa']).toBe(etapa);
   });
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(12);
+    expect(carregaveis).toHaveLength(14);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }
