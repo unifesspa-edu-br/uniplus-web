@@ -7,6 +7,8 @@ export interface ResumoDoPerfil {
   readonly governanca: boolean;
   readonly temVigente: boolean;
   readonly temPendente: boolean;
+  /** A lista não traz a janela; só o detalhe sabe. */
+  readonly emJanelaDeMigracao: boolean;
 }
 
 export interface SituacaoDoPerfil {
@@ -30,12 +32,14 @@ export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPe
         governanca,
         temVigente: perfil.temVersaoVigente,
         temPendente: perfil.temVersaoPendente,
+        emJanelaDeMigracao: false,
       }
     : {
         ativo: perfil.ativo,
         governanca,
         temVigente: perfil.composicaoEmVigor !== null,
         temPendente: perfil.versaoPendente !== null,
+        emJanelaDeMigracao: perfil.janela != null,
       };
 }
 
@@ -49,6 +53,7 @@ export function situacoesDoPerfil(perfil: ResumoDoPerfil): readonly SituacaoDoPe
     ...(perfil.ativo ? [] : [DESATIVADO]),
     perfil.temVigente ? EM_VIGOR : SEM_VERSAO_EM_VIGOR,
     ...(perfil.temPendente ? [VERSAO_PENDENTE] : []),
+    ...(perfil.emJanelaDeMigracao ? [EM_JANELA_DE_MIGRACAO] : []),
   ];
 }
 
@@ -57,12 +62,19 @@ const DESATIVADO: SituacaoDoPerfil = { texto: 'Desativado', variante: 'neutral' 
 const EM_VIGOR: SituacaoDoPerfil = { texto: 'Em vigor', variante: 'success' };
 const SEM_VERSAO_EM_VIGOR: SituacaoDoPerfil = { texto: 'Sem versão em vigor', variante: 'warning' };
 const VERSAO_PENDENTE: SituacaoDoPerfil = { texto: 'Versão pendente', variante: 'info' };
+const EM_JANELA_DE_MIGRACAO: SituacaoDoPerfil = {
+  texto: 'Janela de migração aberta',
+  variante: 'warning',
+};
 
-/** O perfil de governança não tem versão nem situação para mudar: a composição dele muda por migration. */
+/**
+ * O perfil de governança não tem versão nem situação para mudar: a composição dele muda por
+ * migration. Com a janela de migração aberta o perfil não aceita versão nova, mas a remoção segue.
+ */
 export function acoesDoPerfil(perfil: ResumoDoPerfil): AcoesDoPerfil {
   const comum = !perfil.governanca;
   return {
-    proporVersao: comum && perfil.ativo && !perfil.temPendente,
+    proporVersao: comum && perfil.ativo && !perfil.temPendente && !perfil.emJanelaDeMigracao,
     removerPermissoes: comum && perfil.ativo && perfil.temVigente,
     cancelarVersaoPendente: comum && perfil.temPendente,
     desativar: comum && perfil.ativo,
