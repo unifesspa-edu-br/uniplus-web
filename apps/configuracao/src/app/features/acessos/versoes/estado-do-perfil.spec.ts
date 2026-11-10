@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { acoesDoPerfil, situacoesDoPerfil, type ResumoDoPerfil } from './estado-do-perfil';
 
-const EM_VIGOR: ResumoDoPerfil = { ativo: true, governanca: false, temVigente: true, temPendente: false };
+const EM_VIGOR: ResumoDoPerfil = {
+  ativo: true,
+  governanca: false,
+  temVigente: true,
+  temPendente: false,
+  emJanelaDeMigracao: false,
+};
 const textos = (resumo: ResumoDoPerfil): string[] => situacoesDoPerfil(resumo).map((s) => s.texto);
 
 describe('situacoesDoPerfil', () => {
@@ -17,6 +23,13 @@ describe('situacoesDoPerfil', () => {
     expect(textos({ ...EM_VIGOR, temVigente: false, temPendente: true })).toEqual([
       'Sem versão em vigor',
       'Versão pendente',
+    ]);
+  });
+
+  it('mostra a janela de migração aberta depois da versão em vigor', () => {
+    expect(textos({ ...EM_VIGOR, emJanelaDeMigracao: true })).toEqual([
+      'Em vigor',
+      'Janela de migração aberta',
     ]);
   });
 
@@ -48,6 +61,13 @@ describe('acoesDoPerfil', () => {
 
     expect(acoes.cancelarVersaoPendente).toBe(true);
     expect(acoes.proporVersao).toBe(false);
+  });
+
+  it('com a janela de migração aberta, não propõe versão nova mas segue aceitando a remoção', () => {
+    const acoes = acoesDoPerfil({ ...EM_VIGOR, emJanelaDeMigracao: true });
+
+    expect(acoes.proporVersao).toBe(false);
+    expect(acoes.removerPermissoes).toBe(true);
   });
 
   it('sem versão em vigor, não há o que remover', () => {

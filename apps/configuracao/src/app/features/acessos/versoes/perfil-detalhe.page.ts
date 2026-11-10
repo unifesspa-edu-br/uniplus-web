@@ -26,6 +26,7 @@ import { CancelamentoDaVersao } from './cancelamento-da-versao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import { acoesDoPerfil, resumoDoPerfil, situacoesDoPerfil } from './estado-do-perfil';
 import { EscritaDoPerfil } from './escrita-do-perfil';
+import { JanelaAbertaComponent } from './janela-aberta.component';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
 import { PerfilDetalheStore } from './perfil-detalhe.store';
 import { PROVEDORES_DE_ESCRITA_DE_PERFIS } from './provedores-de-perfis';
@@ -48,6 +49,7 @@ const ID_DO_TITULO = 'cfg-perfis-titulo';
     AlertComponent,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
+    JanelaAbertaComponent,
     SpinnerComponent,
     MotivoDialogComponent,
     PerfilFormularioComponent,

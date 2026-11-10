@@ -53,6 +53,9 @@
       segue com a composição anterior.
     </ui-alert>
   }
+  @if (p.janela; as janela) {
+    <cfg-janela-aberta [perfilId]="p.id" [janela]="janela" />
+  }
   <cfg-versao-em-vigor [perfil]="p" (abrirDocumento)="abrirDocumento($event)" />
   @if (p.versaoPendente; as pendente) {
     <cfg-versao-pendente

@@ -104,6 +104,25 @@ describe('PerfilDetalhePage', () => {
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
   });
 
+  it('com a janela de migração aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
+    const janela = { id: 'j1', prazo: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const { host } = await abrir(ok(perfilDoDetalhe({ janela })));
+
+    expect(host.textContent).toContain('Janela de migração aberta');
+    expect(host.textContent).toContain('12/11/2026');
+    expect(
+      host.querySelector('a[href="/acessos/perfis/p1/janela"]')?.textContent,
+    ).toContain('Abrir a janela de migração');
+    expect(botao(host, 'Propor nova versão')).toBeUndefined();
+    expect(botao(host, 'Remover permissões')).toBeDefined();
+  });
+
+  it('sem janela de migração, não mostra o aviso', async () => {
+    const { host } = await abrir(ok(perfilDoDetalhe({ janela: null })));
+
+    expect(host.textContent).not.toContain('Janela de migração');
+  });
+
   it('perfil desativado só se reativa', async () => {
     const { host, fixture } = await abrir(ok(perfilDoDetalhe({ ativo: false })));
     perfis.ativar.mockReturnValue(of(ok(undefined)));
