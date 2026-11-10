@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
 import { itemDaJanela, janelaDeMigracao } from './janela.testing';
@@ -225,6 +225,21 @@ describe('JanelaDaMigracaoPage', () => {
       expect(host.textContent).toContain('A janela mudou');
       expect(host.textContent).toContain('O lote da gestão de acessos já foi enviado.');
       expect(host.querySelector('#cfg-lote-erro')).toBeNull();
+    });
+
+    it('falha que não veio da API libera o envio e explica junto ao botão', async () => {
+      api.enviarLote.mockReturnValue(throwError(() => new Error('rede')));
+      const { host, assentar } = await abrirJanela(LOTE);
+      presente(botao(host, 'Migrar todas')).click();
+      await assentar();
+
+      presente(botao(host, 'Enviar o lote')).click();
+      await assentar();
+
+      expect(host.querySelector('#cfg-lote-erro')?.textContent).toContain(
+        'Não foi possível concluir a operação.',
+      );
+      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
     });
 
     it('sem a permissão da gestão de acessos, consulta a lista sem decidir', async () => {

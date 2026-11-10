@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiFailure } from '@uniplus/shared-core/http';
 import { ok, recusa } from '../testes';
@@ -139,6 +139,21 @@ describe('encerramento manual da janela', () => {
     const erro = presente(host.querySelector<HTMLElement>('#cfg-encerramento-erro'));
     expect(erro.textContent).toContain('Falta a permissão da etapa para esta decisão.');
     expect(document.activeElement).toBe(erro);
+  });
+
+  it('falha que não veio da API explica no aviso do formulário', async () => {
+    api.encerrar.mockReturnValue(throwError(() => new Error('rede')));
+    const { host, assentar } = await abrirJanela(JANELA);
+    await preencher(host, assentar, 'Versão anterior substituída por engano.');
+    caixa(host).click();
+    await assentar();
+
+    presente(botao(host, 'Encerrar a janela')).click();
+    await assentar();
+
+    expect(host.querySelector('#cfg-encerramento-erro')?.textContent).toContain(
+      'Não foi possível concluir a operação.',
+    );
   });
 
   it('janela que já terminou relê a tela e mantém a explicação à vista', async () => {
