@@ -104,6 +104,25 @@ describe('FilaDeJanelasPage', () => {
     expect(pendente.textContent).toContain('4 concessões');
   });
 
+  it('lista as janelas numa lista com um item por janela, cada um com seu título e link', async () => {
+    const { host } = await abrir('gestao_de_acessos');
+
+    const lista = host.querySelector('ul');
+    expect(lista?.getAttribute('aria-label')).toBe('Janelas de migração na gestão de acessos');
+    const itens = [...(lista?.querySelectorAll(':scope > li') ?? [])];
+    expect(itens).toHaveLength(2);
+    expect(itens.map((li) => li.querySelector('h2 a')?.textContent?.trim())).toEqual([
+      'Acompanhamento',
+      'Auditoria',
+    ]);
+  });
+
+  it('com a fila vazia, não mostra lista', async () => {
+    const { host } = await abrir('gestao_de_acessos', ok([]));
+
+    expect(host.querySelector('ul')).toBeNull();
+  });
+
   it('diz se o lote já foi enviado', async () => {
     const { host } = await abrir('gestao_de_acessos');
 
