@@ -20,6 +20,8 @@ const PERFIL = {
   sensibilidade: 'interno',
   temVersaoVigente: true,
   temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
 };
 
 const DETALHE_DO_PERFIL = {
@@ -444,7 +446,7 @@ test.describe('Acessos — escritas', () => {
       await expect(novo(page)).toBeFocused();
     });
 
-    test('criação concluída, com falha na recarga, leva o foco ao título da lista', async ({
+    test('criação concluída, com falha na recarga, devolve o foco ao botão Novo perfil', async ({
       page,
     }) => {
       const { liberar } = await mockPerfis(page, [{ status: 201 }], 'com-falha');
@@ -453,7 +455,7 @@ test.describe('Acessos — escritas', () => {
       liberar();
 
       await expect(formulario).toBeHidden();
-      await expect(tituloDePerfis(page)).toBeFocused();
+      await expect(novo(page)).toBeFocused();
     });
 
     async function abrirDesativacao(page: Page): Promise<Locator> {
