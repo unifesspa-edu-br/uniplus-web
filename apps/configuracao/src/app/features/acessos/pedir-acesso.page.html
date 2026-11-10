@@ -3,15 +3,12 @@
   description="O pedido passa pela aprovação do gestor de acessos e, quando o perfil inclui dado pessoal ou sensível, também pela da proteção de dados."
 />
 
-@if (edicao.erro()) {
-<ui-alert variant="danger" heading="Não foi possível enviar o pedido">{{ edicao.erro() }}</ui-alert>
-}
-
 <cfg-pedir-acesso-formulario
   [form]="edicao.form"
   [enviando]="edicao.enviando()"
   [aguardandoConfirmacao]="edicao.aguardandoConfirmacao()"
   [faseDoEnvio]="edicao.faseDoEnvio()"
+  [erro]="edicao.erro()"
   (enviar)="edicao.enviar()"
 >
   <cfg-pedir-acesso-beneficiario [form]="edicao.form" [paraQuem]="edicao.paraQuem()" />

@@ -557,6 +557,25 @@ describe('PedidoDetalhePage', () => {
     expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
   });
 
+  it('mostra a recusa do perfil em janela de migração junto à decisão que a causou', async () => {
+    const { host, fixture } = await abrir([GESTOR]);
+    api.aprovar.mockReturnValue(
+      of(
+        recusa(
+          'uniplus.autorizacao.pedido.perfil_em_janela_de_migracao',
+          422,
+          'O perfil está em janela de migração.',
+        ),
+      ),
+    );
+
+    await decidirNoResumo(fixture, host, 'Aprovar');
+    await confirmarNoDialogo(fixture, host);
+
+    expect(textoDoAlerta(host)).toContain('O perfil está em janela de migração.');
+    expect(notificacoes.success).not.toHaveBeenCalled();
+  });
+
   it('a falha de servidor da decisão vira notificação, sem aviso de sucesso', async () => {
     const { host, fixture } = await abrir([GESTOR]);
     api.aprovar.mockReturnValue(of(recusa('uniplus.internal.unexpected', 500, 'Erro interno')));
