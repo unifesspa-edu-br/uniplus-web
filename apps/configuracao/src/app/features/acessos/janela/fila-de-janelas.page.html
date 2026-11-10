@@ -14,7 +14,7 @@
 }
 
 @if (store.itens().length > 0) {
-  <ul [attr.aria-label]="texto().titulo" style="list-style: none; margin: 0; padding: 0">
+  <ul role="list" [attr.aria-label]="texto().titulo" style="list-style: none; margin: 0; padding: 0">
     @for (item of store.itens(); track item.perfilId) {
       <li>
         <section class="panel" [attr.aria-labelledby]="'cfg-janela-' + item.perfilId">
