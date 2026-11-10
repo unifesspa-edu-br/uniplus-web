@@ -67,6 +67,42 @@ describe('MotivoDialogComponent', () => {
     expect(host.textContent).toContain('Motivo recusado.');
   });
 
+  it('liga o campo à ajuda e, quando há erro, ao erro anunciado', () => {
+    const { fixture, host, campo } = montar();
+    const ajuda = host.querySelector('.field__hint');
+    expect(campo.getAttribute('aria-describedby')).toBe(ajuda?.id);
+
+    fixture.componentInstance.tentou.set(true);
+    fixture.detectChanges();
+    const erro = host.querySelector('.field__error');
+    expect(erro?.getAttribute('role')).toBe('alert');
+    expect(campo.getAttribute('aria-describedby')).toBe(`${ajuda?.id} ${erro?.id}`);
+  });
+
+  it('liga o campo ao erro que a API recusou', () => {
+    const { fixture, host, campo } = montar();
+    fixture.componentInstance.motivo.setValue('Motivo');
+    fixture.componentInstance.motivo.setErrors({ backend: { message: 'Motivo recusado.' } });
+    fixture.componentInstance.motivo.markAsTouched();
+    fixture.componentInstance.tentou.set(true);
+    fixture.detectChanges();
+
+    const erro = host.querySelector('.field__error');
+    expect(erro?.textContent).toContain('Motivo recusado.');
+    expect(campo.getAttribute('aria-describedby')).toContain(erro?.id ?? 'sem-erro');
+  });
+
+  it('dois diálogos de motivo na mesma página têm ids distintos', () => {
+    const a = TestBed.createComponent(HospedeComponent);
+    const b = TestBed.createComponent(HospedeComponent);
+    a.detectChanges();
+    b.detectChanges();
+
+    const ids = [a, b].map((f) => (f.nativeElement as HTMLElement).querySelector('.field__hint')?.id);
+    expect(ids[0]).toBeTruthy();
+    expect(ids[0]).not.toBe(ids[1]);
+  });
+
   it('bloqueia o fechamento, o campo e nova confirmação durante o envio', () => {
     const { fixture, host, campo, botao } = montar();
     fixture.componentInstance.motivo.setValue('Motivo');
