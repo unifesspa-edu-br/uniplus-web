@@ -56,6 +56,8 @@ export function perfilDoDetalhe(parcial: Partial<PerfilDto> = {}): PerfilDto {
     },
     versaoPendente: null,
     ultimaVersaoEncerradaSemVigor: null,
+    suspensao: null,
+    desativadoDesde: null,
     ...parcial,
   };
 }

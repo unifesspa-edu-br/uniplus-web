@@ -32,6 +32,8 @@ const COMUM: PerfilListadoDto = {
   sensibilidade: 'interno',
   temVersaoVigente: true,
   temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
 };
 const GOVERNANCA: PerfilListadoDto = {
   ...COMUM,
