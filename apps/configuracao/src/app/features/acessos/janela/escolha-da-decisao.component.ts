@@ -7,7 +7,7 @@ import type { DecisaoDaMigracao } from '@uniplus/shared-data/autorizacao';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <fieldset class="field" role="none" [disabled]="desabilitada()">
+    <fieldset class="field" [disabled]="desabilitada()">
       <legend class="sr-only">Decisão para {{ pessoa() }}</legend>
       <label class="radio">
         <input
