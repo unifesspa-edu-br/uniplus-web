@@ -19,6 +19,7 @@ const RAIZ = 'uniplus.autorizacao.migracao.';
 const RECUSAS_QUE_MOSTRAM_OUTRO_ESTADO: readonly string[] = [
   'prazo_encerrado',
   'janela_encerrada',
+  'janela_nao_encontrada',
   'janela_em_encerramento',
   'lote_ja_enviado',
   'concessao_ja_decidida',
