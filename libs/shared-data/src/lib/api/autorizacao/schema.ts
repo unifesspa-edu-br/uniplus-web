@@ -1534,6 +1534,509 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/autorizacao/perfis/{id}/janela": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "application/json": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "text/json": components["schemas"]["JanelaDeMigracaoDto"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/perfis/{id}/janela/lote": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["EnviarLoteDaMigracaoRequest"];
+                    readonly "text/json": components["schemas"]["EnviarLoteDaMigracaoRequest"];
+                    readonly "application/*+json": components["schemas"]["EnviarLoteDaMigracaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "application/json": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "text/json": components["schemas"]["JanelaDeMigracaoDto"];
+                    };
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/perfis/{id}/janela/retidas/{concessaoId}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly concessaoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DecidirRetidaRequest"];
+                    readonly "text/json": components["schemas"]["DecidirRetidaRequest"];
+                    readonly "application/*+json": components["schemas"]["DecidirRetidaRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "application/json": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "text/json": components["schemas"]["JanelaDeMigracaoDto"];
+                    };
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/perfis/{id}/janela/protecao-de-dados": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DecidirEtapaDaProtecaoRequest"];
+                    readonly "text/json": components["schemas"]["DecidirEtapaDaProtecaoRequest"];
+                    readonly "application/*+json": components["schemas"]["DecidirEtapaDaProtecaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "application/json": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "text/json": components["schemas"]["JanelaDeMigracaoDto"];
+                    };
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/autorizacao/perfis/{id}/janela/encerramento": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["EncerrarJanelaRequest"];
+                    readonly "text/json": components["schemas"]["EncerrarJanelaRequest"];
+                    readonly "application/*+json": components["schemas"]["EncerrarJanelaRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "application/json": components["schemas"]["JanelaDeMigracaoDto"];
+                        readonly "text/json": components["schemas"]["JanelaDeMigracaoDto"];
+                    };
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/autorizacao/pedidos-de-concessao": {
         readonly parameters: {
             readonly query?: never;
@@ -4099,6 +4602,8 @@ export interface components {
             /** Format: date-time */
             readonly revogadaEm: null | string;
             readonly revogadaPor: null | components["schemas"]["IdentidadeDto"];
+            /** Format: uuid */
+            readonly revogadaPelaJanelaId: null | string;
             readonly motivoRevogacao: null | string;
             readonly ativa: boolean;
         };
@@ -4132,6 +4637,19 @@ export interface components {
             /** Format: int64 */
             readonly tamanhoDoDocumento: number;
         };
+        readonly DecidirEtapaDaProtecaoRequest: {
+            readonly decisoes: null | readonly components["schemas"]["DecisaoDaMigracaoRequest"][];
+            readonly confirmacaoDeExclusao: boolean;
+        };
+        readonly DecidirRetidaRequest: {
+            readonly decisao: null | string;
+            readonly confirmacaoDeExclusao: boolean;
+        };
+        readonly DecisaoDaMigracaoRequest: {
+            /** Format: uuid */
+            readonly concessaoId: string;
+            readonly decisao: null | string;
+        };
         readonly DecisaoDaVersaoDto: {
             readonly etapa: string;
             readonly resultado: string;
@@ -4162,6 +4680,10 @@ export interface components {
             /** Format: date-time */
             readonly enviadoEm: null | string;
         };
+        readonly EncerrarJanelaRequest: {
+            readonly motivo: null | string;
+            readonly confirmacaoDeExclusao: boolean;
+        };
         readonly EnviarAnexoDoPedidoRequest: {
             /** Format: int64 */
             readonly tamanhoDoPdf: number;
@@ -4169,6 +4691,10 @@ export interface components {
         readonly EnviarDocumentoDaVersaoRequest: {
             /** Format: int64 */
             readonly tamanhoDoDocumento: number;
+        };
+        readonly EnviarLoteDaMigracaoRequest: {
+            readonly decisoes: null | readonly components["schemas"]["DecisaoDaMigracaoRequest"][];
+            readonly confirmacaoDeExclusao: boolean;
         };
         readonly EnvioDoDocumentoDto: {
             /** Format: uuid */
@@ -4193,8 +4719,10 @@ export interface components {
             readonly tipo: string;
             /** Format: date-time */
             readonly instante: string;
-            readonly autor: components["schemas"]["IdentidadeDto"];
+            readonly autor: null | components["schemas"]["IdentidadeDto"];
             readonly detalhe: null | string;
+            /** @default humano */
+            readonly ator: string;
         };
         readonly IdentidadeDto: {
             readonly emissor: string;
@@ -4242,6 +4770,23 @@ export interface components {
             readonly perfilNome: string;
             readonly versao: components["schemas"]["VersaoPendenteDto"];
         };
+        readonly ItemDaJanelaDto: {
+            /** Format: uuid */
+            readonly concessaoId: string;
+            readonly beneficiarioNome: null | string;
+            readonly escopoTipo: string;
+            /** Format: uuid */
+            readonly unidadeId: null | string;
+            /** Format: date-time */
+            readonly validaAte: null | string;
+            /** Format: int32 */
+            readonly versaoAtual: null | number;
+            readonly acrescimo: readonly string[];
+            readonly exigeProtecaoDeDados: boolean;
+            readonly situacao: string;
+            readonly dispensa: null | string;
+            readonly ehDoLeitor: boolean;
+        };
         readonly ItemDaRevisaoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -4257,6 +4802,33 @@ export interface components {
             readonly decididoPor: null | components["schemas"]["IdentidadeDto"];
             /** Format: date-time */
             readonly decididoEm: null | string;
+        };
+        readonly JanelaDeMigracaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly perfilId: string;
+            /** Format: int32 */
+            readonly versaoNova: number;
+            /** Format: int32 */
+            readonly versaoAlvo: number;
+            /** Format: date-time */
+            readonly abertaEm: string;
+            /** Format: date-time */
+            readonly prazo: string;
+            /** Format: date-time */
+            readonly encerradaEm: null | string;
+            readonly situacao: string;
+            readonly forma: null | string;
+            readonly loteEnviado: boolean;
+            readonly itens: readonly components["schemas"]["ItemDaJanelaDto"][];
+        };
+        readonly JanelaDoPerfilDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: date-time */
+            readonly prazo: string;
+            readonly situacao: string;
         };
         readonly LeituraDoAnexoDto: {
             /** Format: uri */
@@ -4345,6 +4917,7 @@ export interface components {
             readonly composicaoEmVigor: null | components["schemas"]["ComposicaoEmVigorDto"];
             readonly versaoPendente: null | components["schemas"]["VersaoPendenteDto"];
             readonly ultimaVersaoEncerradaSemVigor: null | components["schemas"]["UltimaVersaoEncerradaSemVigorDto"];
+            readonly janela?: null | components["schemas"]["JanelaDoPerfilDto"];
         };
         readonly PerfilListadoDto: {
             /** Format: uuid */

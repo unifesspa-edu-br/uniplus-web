@@ -71,6 +71,7 @@ describe('rótulos de acesso', () => {
     expect(autorDoEvento({ emissor: 'uniplus:sistema', sub: 'verificador' })).toBe(
       'Verificador de documentos',
     );
+    expect(autorDoEvento(null)).toBe('Sistema');
   });
 });
 
@@ -91,5 +92,18 @@ describe('detalhe da trilha', () => {
     );
     expect(detalheDaTrilha('Motivo: faltou.')).toBe('Motivo: faltou.');
     expect(detalheDaTrilha(null)).toBe('—');
+  });
+
+  it('traduz a etapa e a dispensa da decisão da migração e tira o identificador da janela', () => {
+    const janela = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
+
+    expect(
+      detalheDaTrilha(
+        `Etapa: gestao_de_acessos. Janela: ${janela}. Dispensa: beneficiario_ja_tem_protecao_de_dados.`,
+      ),
+    ).toBe(
+      'Etapa: Gestão de acessos. Dispensa: a pessoa beneficiada já exerce a proteção de dados.',
+    );
+    expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
   });
 });
