@@ -1,6 +1,10 @@
 import { Routes } from '@angular/router';
 import { permissaoGuard } from '@uniplus/shared-auth/guards';
-import { PERMISSOES_DA_JANELA_DE_MIGRACAO, PERMISSOES_DAS_TELAS } from '../../acesso/permissoes-das-telas';
+import {
+  PERMISSOES_DA_JANELA_DE_MIGRACAO,
+  PERMISSOES_DA_RECLASSIFICACAO,
+  PERMISSOES_DAS_TELAS,
+} from '../../acesso/permissoes-das-telas';
 import { aguardarPermissoes } from './guardas-de-acesso';
 import { provideMensagensDeAcesso } from './mensagens-de-acesso';
 
@@ -91,6 +95,37 @@ export const ACESSOS_ROUTES: Routes = [
         data: { breadcrumb: 'Janelas de migração na proteção de dados', etapa: 'protecao_de_dados' },
         loadComponent: () =>
           import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
+      },
+      {
+        path: 'reclassificacoes/gestao-de-acessos',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/reclassificacoes/gestao-de-acessos']),
+        ],
+        data: { breadcrumb: 'Reclassificações na gestão de acessos', etapa: 'gestao_de_acessos' },
+        loadComponent: () =>
+          import('./reclassificacao/fila-de-reclassificacoes.page').then(
+            (m) => m.FilaDeReclassificacoesPage,
+          ),
+      },
+      {
+        path: 'reclassificacoes/protecao-de-dados',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/reclassificacoes/protecao-de-dados']),
+        ],
+        data: { breadcrumb: 'Reclassificações na proteção de dados', etapa: 'protecao_de_dados' },
+        loadComponent: () =>
+          import('./reclassificacao/fila-de-reclassificacoes.page').then(
+            (m) => m.FilaDeReclassificacoesPage,
+          ),
+      },
+      {
+        path: 'reclassificacoes/:id',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_RECLASSIFICACAO)],
+        data: { breadcrumb: 'Reclassificação' },
+        loadComponent: () =>
+          import('./reclassificacao/reclassificacao-detalhe.page').then(
+            (m) => m.ReclassificacaoDetalhePage,
+          ),
       },
       {
         path: 'perfis/:id/janela',

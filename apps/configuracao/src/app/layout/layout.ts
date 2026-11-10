@@ -226,6 +226,18 @@ export class LayoutComponent {
           routerLink: '/acessos/janelas-de-migracao/protecao-de-dados',
           exact: true,
         },
+        {
+          label: 'Reclassificações na gestão de acessos',
+          icon: 'pi-sync',
+          routerLink: '/acessos/reclassificacoes/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Reclassificações na proteção de dados',
+          icon: 'pi-sort-amount-up',
+          routerLink: '/acessos/reclassificacoes/protecao-de-dados',
+          exact: true,
+        },
       ],
     },
   ];

@@ -1,0 +1,134 @@
+<section class="panel" aria-labelledby="cfg-decisao-titulo">
+  <div class="panel-head">
+    <h2 id="cfg-decisao-titulo" class="panel-head__title">Decisão</h2>
+  </div>
+
+  @if (substituida()) {
+    <div class="panel-body">
+      <ui-alert variant="warning" heading="Reclassificação substituída">
+        Esta reclassificação foi substituída por outra mais recente. Recarregue a página ou volte à
+        fila para decidir pela mais recente.
+      </ui-alert>
+      <div class="cfg-acoes">
+        <button type="button" class="btn btn--secondary btn--rect" (click)="recarregar()">
+          Recarregar
+        </button>
+        <a class="btn btn--tertiary btn--rect" [routerLink]="voltar()">Voltar à fila</a>
+      </div>
+    </div>
+  } @else if (etapas().length === 0) {
+    <p class="panel-body cfg-muted">
+      Você consulta esta reclassificação. A decisão cabe à gestão de acessos ou à proteção de dados.
+    </p>
+  } @else {
+    @if (decisao.erro() && !decisao.pedindoMotivo()) {
+      <div #erroDaAcao class="panel-body" tabindex="-1">
+        <ui-alert variant="danger" heading="Não foi possível registrar a decisão">{{
+          decisao.erro()
+        }}</ui-alert>
+      </div>
+    }
+    <div class="panel-body">
+      @if (etapas().length > 1) {
+        <fieldset class="field" [disabled]="gravando()">
+          <legend>Etapa que você decide</legend>
+          @for (etapa of etapas(); track etapa) {
+            <label class="radio">
+              <input
+                type="radio"
+                name="cfg-decisao-etapa"
+                [checked]="decisao.etapa() === etapa"
+                (change)="decisao.escolherEtapa(etapa)"
+              />
+              <span class="radio__dot" aria-hidden="true"></span>
+              {{ rotulo(etapa) }}
+            </label>
+          }
+        </fieldset>
+      }
+      <fieldset class="field" [disabled]="gravando()">
+        <legend>Concessões da decisão</legend>
+        <label class="radio">
+          <input
+            type="radio"
+            name="cfg-decisao-alcance"
+            [checked]="decisao.alcance() === 'marcadas'"
+            (change)="decisao.alcance.set('marcadas')"
+          />
+          <span class="radio__dot" aria-hidden="true"></span>
+          As marcadas na tabela ({{ quantidade(decisao.marcadas().size) }})
+        </label>
+        <label class="radio">
+          <input
+            type="radio"
+            name="cfg-decisao-alcance"
+            [checked]="decisao.alcance() === 'todas'"
+            (change)="decisao.alcance.set('todas')"
+          />
+          <span class="radio__dot" aria-hidden="true"></span>
+          Todas as pendentes da etapa ({{ quantidade(pendentes()) }})
+        </label>
+      </fieldset>
+      <p class="cfg-muted">
+        A sua própria concessão e as que o escopo da permissão não comporta ficam de fora quando você
+        decide todas.
+      </p>
+      <div class="cfg-acoes">
+        <button type="button" class="btn btn--primary" [disabled]="gravando()" (click)="liberar()">
+          @if (gravando()) {
+            <ui-spinner spinnerSize="sm" />
+          }
+          Liberar as concessões
+        </button>
+        <button
+          type="button"
+          class="btn btn--secondary btn--rect"
+          [disabled]="gravando()"
+          (click)="decisao.pedirManutencao()"
+        >
+          Manter suspensas
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (decisao.desfecho(); as desfecho) {
+    <div class="panel-body" role="status">
+      <p>
+        Decisão registrada. Concessões decididas: {{ desfecho.decididas }}. Liberadas:
+        {{ desfecho.liberadas }}.
+      </p>
+      @if (desfecho.paraOutraPessoa.length > 0) {
+        <h3>Ficaram para outra pessoa decidir</h3>
+        <ul>
+          @for (nome of desfecho.paraOutraPessoa; track $index) {
+            <li>{{ nome }}</li>
+          }
+        </ul>
+      }
+      @if (desfecho.puladasPorEscopo.length > 0) {
+        <h3>Puladas porque o escopo não comporta a liberação</h3>
+        <p class="cfg-muted">Essas concessões só voltam por pedido novo ou seguem suspensas.</p>
+        <ul>
+          @for (nome of desfecho.puladasPorEscopo; track $index) {
+            <li>{{ nome }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+</section>
+
+<cfg-motivo-dialog
+  [(visible)]="decisao.pedindoMotivo"
+  heading="Manter as concessões suspensas"
+  confirmLabel="Manter suspensas"
+  confirmVariant="primary"
+  ajuda="O motivo fica na trilha e explica por que as concessões seguem suspensas."
+  [erro]="decisao.pedindoMotivo() ? decisao.erro() : null"
+  [enviando]="gravando()"
+  [motivo]="decisao.motivo.controle"
+  [tentou]="decisao.motivo.tentou()"
+  [pedidoDeFoco]="decisao.motivo.pedidoDeFoco()"
+  (confirmado)="manter()"
+/>
