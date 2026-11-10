@@ -23,6 +23,7 @@ export interface SituacaoDoPerfil {
 }
 
 export interface AcoesDoPerfil {
+  readonly suspender: boolean;
   readonly proporVersao: boolean;
   readonly removerPermissoes: boolean;
   readonly cancelarVersaoPendente: boolean;
@@ -100,12 +101,14 @@ export function acoesDoPerfil(
     proporVersao: perfil.ativo && !perfil.temPendente && !perfil.emJanelaDeMigracao,
     removerPermissoes: perfil.ativo && perfil.temVigente,
     cancelarVersaoPendente: perfil.temPendente,
+    suspender: perfil.suspensoDesde === null && (permissoes.gestaoDeAcessos || permissoes.protecaoDeDados),
     desativar: perfil.ativo && permissoes.gestaoDeAcessos,
     reativar: !perfil.ativo && permissoes.gestaoDeAcessos,
   };
 }
 
 const SEM_ACOES: AcoesDoPerfil = {
+  suspender: false,
   proporVersao: false,
   removerPermissoes: false,
   cancelarVersaoPendente: false,

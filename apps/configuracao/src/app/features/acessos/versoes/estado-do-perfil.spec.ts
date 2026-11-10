@@ -76,6 +76,7 @@ describe('situacoesDoPerfil', () => {
 describe('acoesDoPerfil', () => {
   it('oferece propor, remover e desativar ao perfil em vigor', () => {
     expect(acoesDoPerfil(EM_VIGOR, GESTAO)).toEqual({
+      suspender: true,
       proporVersao: true,
       removerPermissoes: true,
       cancelarVersaoPendente: false,
@@ -109,8 +110,23 @@ describe('acoesDoPerfil', () => {
     expect(acoesDoPerfil({ ...EM_VIGOR, ativo: false }, sem).reativar).toBe(false);
   });
 
+  it('suspende quem tem a permissão da gestão de acessos ou a da proteção de dados', () => {
+    const protecao = { gestaoDeAcessos: false, protecaoDeDados: true };
+    const nenhuma = { gestaoDeAcessos: false, protecaoDeDados: false };
+
+    expect(acoesDoPerfil(EM_VIGOR, protecao).suspender).toBe(true);
+    expect(acoesDoPerfil(EM_VIGOR, nenhuma).suspender).toBe(false);
+  });
+
+  it('o perfil já suspenso não se suspende de novo', () => {
+    expect(
+      acoesDoPerfil({ ...EM_VIGOR, suspensoDesde: '2026-11-09T12:00:00Z' }, GESTAO).suspender,
+    ).toBe(false);
+  });
+
   it('desativado, só se reativa', () => {
     expect(acoesDoPerfil({ ...EM_VIGOR, ativo: false }, GESTAO)).toEqual({
+      suspender: true,
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,
@@ -121,6 +137,7 @@ describe('acoesDoPerfil', () => {
 
   it('o perfil de governança não tem nenhuma ação de versão ou de situação', () => {
     expect(acoesDoPerfil({ ...EM_VIGOR, governanca: true }, GESTAO)).toEqual({
+      suspender: false,
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,
