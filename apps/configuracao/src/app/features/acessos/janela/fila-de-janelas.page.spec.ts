@@ -108,6 +108,7 @@ describe('FilaDeJanelasPage', () => {
     const { host } = await abrir('gestao_de_acessos');
 
     const lista = host.querySelector('ul');
+    expect(lista?.getAttribute('role')).toBe('list');
     expect(lista?.getAttribute('aria-label')).toBe('Janelas de migração na gestão de acessos');
     const itens = [...(lista?.querySelectorAll(':scope > li') ?? [])];
     expect(itens).toHaveLength(2);
