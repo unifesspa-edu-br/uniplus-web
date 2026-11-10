@@ -56,7 +56,7 @@
         [nomeDoEscopo]="nomeDoEscopo"
         [etapa]="etapaAberta()"
         [marcadas]="decisao.marcadas()"
-        [bloqueado]="decisao.alcance() === 'todas'"
+        [bloqueado]="selecaoTravada()"
         (alternar)="decisao.alternar($event)"
       />
     } @else {

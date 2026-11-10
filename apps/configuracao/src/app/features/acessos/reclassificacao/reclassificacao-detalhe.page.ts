@@ -96,6 +96,10 @@ export class ReclassificacaoDetalhePage {
       ? this.decisao.etapa()
       : undefined,
   );
+  protected readonly selecaoTravada = computed(
+    () =>
+      this.decisao.alcance() === 'todas' || this.escrita.gravando() || this.store.carregando(),
+  );
   protected readonly leitura = acompanharLeitura({
     assunto: 'reclassificação',
     falha: this.store.falha,
