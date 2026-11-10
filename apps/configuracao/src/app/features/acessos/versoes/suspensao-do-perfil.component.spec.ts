@@ -32,14 +32,21 @@ describe('SuspensaoDoPerfilComponent', () => {
     expect(texto).toContain('Retomada pela proteção de dados: aguarda a decisão');
   });
 
-  it('lista só as etapas exigidas agora', () => {
+  it('mantém a etapa já decidida que deixou de ser exigida, dizendo que não é mais exigida', () => {
     const texto = abrir({
       ...SUSPENSAO,
       etapasExigidasAgora: ['gestao_de_acessos'],
-      etapasDecididas: [],
+      etapasDecididas: ['protecao_de_dados'],
     });
 
     expect(texto).toContain('Retomada pela gestão de acessos: aguarda a decisão');
-    expect(texto).not.toContain('Retomada pela proteção de dados');
+    expect(texto).toContain('Retomada pela proteção de dados: decidida; não é mais exigida');
+  });
+
+  it('não repete a etapa exigida e decidida entre as dispensadas', () => {
+    const texto = abrir(SUSPENSAO);
+
+    expect(texto.match(/Retomada pela gestão de acessos/g)).toHaveLength(1);
+    expect(texto).not.toContain('não é mais exigida');
   });
 });

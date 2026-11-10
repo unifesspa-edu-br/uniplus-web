@@ -19,7 +19,7 @@ import { etapa } from '../rotulos-de-acesso';
         @for (item of etapas(); track item.etapa) {
           <li>
             Retomada pela {{ item.nome }}:
-            <strong>{{ item.decidida ? 'decidida' : 'aguarda a decisão' }}</strong>
+            <strong>{{ item.situacao }}</strong>
           </li>
         }
       </ul>
@@ -31,12 +31,20 @@ export class SuspensaoDoPerfilComponent {
   protected readonly papel = computed(() =>
     etapa(this.suspensao().papelDeQuemSuspendeu).toLowerCase(),
   );
+  /** As exigidas agora e, depois, as já decididas que a suspensão deixou de exigir. */
   protected readonly etapas = computed(() => {
     const { etapasExigidasAgora, etapasDecididas } = this.suspensao();
-    return etapasExigidasAgora.map((codigo) => ({
+    const dispensadas = etapasDecididas.filter((codigo) => !etapasExigidasAgora.includes(codigo));
+    return [
+      ...etapasExigidasAgora.map((codigo) => ({
+        codigo,
+        situacao: etapasDecididas.includes(codigo) ? 'decidida' : 'aguarda a decisão',
+      })),
+      ...dispensadas.map((codigo) => ({ codigo, situacao: 'decidida; não é mais exigida' })),
+    ].map(({ codigo, situacao }) => ({
       etapa: codigo,
       nome: etapa(codigo).toLowerCase(),
-      decidida: etapasDecididas.includes(codigo),
+      situacao,
     }));
   });
 }
