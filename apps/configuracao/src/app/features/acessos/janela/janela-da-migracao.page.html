@@ -13,7 +13,7 @@
 
 <ui-falha-de-leitura titulo="Não foi possível carregar a janela" [leitura]="leitura" />
 <cfg-recusa-da-leitura naoEncontrado="O perfil não tem janela de migração" [recusa]="store.recusa()">
-  <a routerLink="/acessos/perfis">Ir para os perfis</a>.
+  <a [routerLink]="volta().rota">{{ volta().rotulo }}</a>.
 </cfg-recusa-da-leitura>
 @if (store.carregando()) {
   <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a janela…</p>

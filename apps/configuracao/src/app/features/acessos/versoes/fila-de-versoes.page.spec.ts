@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Subject, map, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
@@ -51,6 +52,7 @@ describe('FilaDeVersoesPage', () => {
   async function abrir(
     etapa: EtapaDaVersao,
     fila: unknown = ok([ITEM, OUTRO]),
+    concedidas: readonly string[] = [PERMISSAO.autorizacao.perfisManter],
   ) {
     leitura.mockReturnValue(of(fila));
     TestBed.configureTestingModule({
@@ -69,6 +71,7 @@ describe('FilaDeVersoesPage', () => {
         { provide: VersoesDoPerfilApi, useValue: versoes },
         { provide: DocumentoDaVersaoService, useValue: documento },
         { provide: NotificationService, useValue: notificacoes },
+        { provide: PermissoesService, useValue: { tem: (c: string) => concedidas.includes(c) } },
       ],
     });
     const fixture = TestBed.createComponent(FilaDeVersoesPage);
@@ -141,6 +144,16 @@ describe('FilaDeVersoesPage', () => {
     await assentar(fixture);
 
     expect(versoes.aprovar).toHaveBeenCalledWith('p5', 'v9', 'gestao_de_acessos', expect.anything());
+  });
+
+  it('quem só aprova vê o nome do perfil sem link para a tela que não abre', async () => {
+    const { host } = await abrir('gestao_de_acessos', ok([ITEM]), [
+      PERMISSAO.autorizacao.perfisAprovarFuncional,
+    ]);
+
+    const area = secao(host, 'Operador de inscrições');
+    expect(area.querySelector('h2 a')).toBeNull();
+    expect(area.querySelector('h2')?.textContent).toContain('Operador de inscrições');
   });
 
   it('diz que a fila está vazia', async () => {

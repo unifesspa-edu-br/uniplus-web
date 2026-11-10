@@ -60,7 +60,11 @@ export function montarJanela(
       { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
       { provide: JanelaDeMigracaoApi, useValue: api },
       { provide: NotificationService, useValue: notificacoes },
-      { provide: PermissoesService, useValue: { tem: (c: string) => concedidas.includes(c) } },
+      { provide: PermissoesService, useValue: {
+          tem: (c: string) => concedidas.includes(c),
+          temAlguma: (...c: string[]) => c.some((x) => concedidas.includes(x)),
+        },
+      },
       { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },
     ],
   });

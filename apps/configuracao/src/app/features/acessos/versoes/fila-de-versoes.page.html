@@ -21,7 +21,11 @@
   <section class="panel" [attr.aria-labelledby]="'cfg-versao-' + item.versao.versaoId">
     <div class="panel-head">
       <h2 class="panel-head__title" [id]="'cfg-versao-' + item.versao.versaoId">
-        <a [routerLink]="['/acessos/perfis', item.perfilId]">{{ item.perfilNome }}</a>
+        @if (podeAbrirOPerfil()) {
+          <a [routerLink]="['/acessos/perfis', item.perfilId]">{{ item.perfilNome }}</a>
+        } @else {
+          {{ item.perfilNome }}
+        }
         · versão {{ item.versao.numero }}
       </h2>
     </div>
