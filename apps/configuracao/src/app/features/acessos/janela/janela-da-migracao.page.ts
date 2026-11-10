@@ -22,6 +22,7 @@ import { nomesDeEscopo } from '../nomes-de-escopo';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { devolverFocoAoTitulo } from '../versoes/foco-ao-titulo';
 import { LeituraDosPerfis } from '../versoes/leitura-dos-perfis';
+import { destinoDeVolta } from './destino-de-volta';
 import { DecisaoDaRetida } from './decisao-da-retida';
 import { EncerramentoDaJanela } from './encerramento-da-janela';
 import { EncerramentoDaJanelaComponent } from './encerramento-da-janela.component';
@@ -89,6 +90,7 @@ export class JanelaDaMigracaoPage {
   protected readonly podeComoProtecaoDeDados = computed(() =>
     this.permissoes.tem(autorizacao.perfisAprovarProtecaoDeDados),
   );
+  protected readonly volta = computed(() => destinoDeVolta(this.permissoes));
   protected readonly podeVerOPerfil = computed(() => this.permissoes.tem(autorizacao.perfisManter));
   protected readonly leitura = acompanharLeitura({
     assunto: 'janela de migração',

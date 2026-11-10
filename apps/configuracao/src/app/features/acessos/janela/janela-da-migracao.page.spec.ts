@@ -6,6 +6,7 @@ import { ok, recusa } from '../testes';
 import { itemDaJanela, janelaDeMigracao } from './janela.testing';
 import {
   GESTAO_DE_ACESSOS,
+  PROTECAO_DE_DADOS,
   abrirJanela,
   api,
   botao,
@@ -91,6 +92,30 @@ describe('JanelaDaMigracaoPage', () => {
 
       expect(host.textContent).toContain('O perfil não tem janela de migração');
       expect(botao(host, 'Tentar novamente')).toBeUndefined();
+    });
+
+    describe.each([
+      ['mantém perfis', ['autorizacao:perfis:manter', GESTAO_DE_ACESSOS], 'Ir para os perfis', '/acessos/perfis'],
+      [
+        'só aprova a proteção de dados',
+        [PROTECAO_DE_DADOS],
+        'Ir para as janelas de migração',
+        '/acessos/janelas-de-migracao/protecao-de-dados',
+      ],
+      [
+        'só aprova nas duas etapas',
+        [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
+        'Ir para as janelas de migração',
+        '/acessos/janelas-de-migracao/gestao-de-acessos',
+      ],
+    ])('quem %s', (_quem, concedidas, rotulo, destino) => {
+      it('volta, de um perfil sem janela, à primeira tela que abre', async () => {
+        const { host, falhar } = montarJanela(concedidas);
+        await falhar(404, 'uniplus.autorizacao.migracao.janela_nao_encontrada');
+
+        const link = [...host.querySelectorAll('a')].find((a) => a.textContent?.trim() === rotulo);
+        expect(link?.getAttribute('href')).toBe(destino);
+      });
     });
   });
 

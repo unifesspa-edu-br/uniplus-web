@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { EtapaDaVersao, ItemDaFilaDeVersoesDto } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
@@ -79,7 +80,11 @@ export class FilaDeVersoesPage {
   protected readonly escrita = inject(EscritaDoPerfil);
   protected readonly decisao = inject(DecisaoDaVersao);
   private readonly documentos = inject(DocumentoDaVersaoService);
+  private readonly permissoes = inject(PermissoesService);
   protected readonly idDoTitulo = ID_DO_TITULO;
+  protected readonly podeAbrirOPerfil = computed(() =>
+    this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
+  );
   protected readonly texto = computed(() => APRESENTACAO[this.etapa()]);
   protected readonly leitura = acompanharLeitura({
     assunto: 'fila de versões',
