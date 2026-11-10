@@ -265,6 +265,28 @@ describe('decisão da reclassificação', () => {
     expect(presente(botao(pagina.host, 'Liberar as concessões')).disabled).toBe(false);
   });
 
+  it('pela gestão de acessos, diz que o escopo só deixa de fora a liberação, não a manutenção', async () => {
+    const pagina = await abrirReclassificacao(ok(reclassificacao()), [GESTAO_DE_ACESSOS]);
+
+    const texto = pagina.host.querySelector('cfg-decisao-da-reclassificacao p.cfg-muted')?.textContent;
+
+    expect(texto).toContain('A sua própria concessão fica de fora');
+    expect(texto).toContain('Ao liberar, ficam de fora também as que o escopo da permissão não comporta');
+    expect(texto).toContain('manter suspensas essas concessões é permitido');
+  });
+
+  it('pela proteção de dados, não fala de escopo, que só restringe a gestão de acessos', async () => {
+    const rec = reclassificacao({
+      concessoes: [concessao({ etapasExigidas: ['protecao_de_dados'] })],
+    });
+    const pagina = await abrirReclassificacao(ok(rec), [PROTECAO_DE_DADOS]);
+
+    const texto = pagina.host.querySelector('cfg-decisao-da-reclassificacao p.cfg-muted')?.textContent;
+
+    expect(texto).toContain('A sua própria concessão fica de fora');
+    expect(texto).not.toContain('escopo');
+  });
+
   it('bloqueia as ações enquanto a decisão grava', async () => {
     const resposta = new Subject<ReturnType<typeof ok<typeof DECISAO>>>();
     api.decidir.mockReturnValue(resposta);
