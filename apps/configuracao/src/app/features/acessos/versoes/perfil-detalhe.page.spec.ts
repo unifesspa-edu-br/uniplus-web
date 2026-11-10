@@ -49,7 +49,10 @@ describe('PerfilDetalhePage', () => {
         provideHttpClient(
           withInterceptors([
             (req) =>
-              (req.url.endsWith('/permissoes') ? of(ok([])) : leitura()).pipe(
+              (req.url.endsWith('/permissoes') || req.url.endsWith('/contencao')
+                ? of(ok([]))
+                : leitura()
+              ).pipe(
                 map((body: unknown) => new HttpResponse({ body })),
               ),
           ]),

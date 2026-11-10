@@ -99,6 +99,9 @@
       (confirmado)="cancelarVersao()"
     />
   }
+  @if (podeVerATrilha()) {
+    <cfg-trilha-da-contencao [perfilId]="p.id" [leituraDoPerfil]="p" />
+  }
   <cfg-remocao-dialog [perfil]="p" />
   <cfg-motivo-dialog
     [(visible)]="contencao.aberto"

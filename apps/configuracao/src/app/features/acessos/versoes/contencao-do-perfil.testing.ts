@@ -52,13 +52,14 @@ export async function assentar(fixture: {
 export const botao = (host: HTMLElement, texto: string): HTMLButtonElement | undefined =>
   [...host.querySelectorAll('button')].find((b) => b.textContent?.trim() === texto);
 
-/** Abre o detalhe do perfil `p1` com as permissões informadas, lendo o perfil e a trilha dos dublês. */
+/** Abre o detalhe do perfil `p1` com as permissões e a resposta da trilha informadas. */
 export async function abrirPerfil(
   perfil: PerfilDto = perfilDoDetalhe(),
   concedidas: readonly string[] = [GESTAO],
+  trilha: unknown = ok([]),
 ) {
-  vi.mocked(leituras.perfil).mockReturnValue(of(ok(perfil)));
-  vi.mocked(leituras.trilha).mockReturnValue(of(ok([])));
+  vi.mocked(leituras.perfil).mockImplementation(() => of(ok(structuredClone(perfil))));
+  vi.mocked(leituras.trilha).mockReturnValue(of(trilha));
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
