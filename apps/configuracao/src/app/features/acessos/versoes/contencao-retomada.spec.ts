@@ -105,6 +105,21 @@ describe('retomar o perfil suspenso', () => {
     expect(notificacoes.success).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['etapa_invalida', 'O perfil não exige essa etapa da retomada agora.', 422],
+    ['mesmo_decisor_nas_duas_etapas', 'Você já decidiu a outra etapa da retomada.', 422],
+    ['sem_permissao_na_etapa', 'Falta a permissão da etapa da retomada.', 403],
+  ])('na retomada, %s fala da etapa da retomada e não da versão', async (codigo, texto, status) => {
+    api.retomar.mockReturnValue(of(recusa(`uniplus.autorizacao.perfil.${codigo}`, status)));
+    const { fixture, host } = await abrirPerfil(SUSPENSO, [GESTAO]);
+
+    await decidir(fixture, host, 'Retomar: gestão de acessos');
+
+    const dialogo = host.querySelector('cfg-motivo-dialog')?.textContent ?? '';
+    expect(dialogo).toContain(texto);
+    expect(dialogo).not.toContain('versão');
+  });
+
   it('o perfil sem suspensão não oferece retomada', async () => {
     const { host } = await abrirPerfil(perfilDoDetalhe(), [GESTAO, PROTECAO]);
 
