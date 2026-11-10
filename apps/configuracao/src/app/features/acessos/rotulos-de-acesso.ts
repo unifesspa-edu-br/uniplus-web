@@ -8,7 +8,7 @@ interface Rotulo {
 const SITUACAO_DO_PEDIDO: Readonly<Record<string, Rotulo>> = {
   aguardando_documento: { texto: 'Aguardando o documento de designação', variante: 'warning' },
   aguardando_beneficiario: { texto: 'Aguardando o aceite do beneficiário', variante: 'warning' },
-  aguardando_gestor: { texto: 'Aguardando o gestor de acessos', variante: 'info' },
+  aguardando_gestor: { texto: 'Aguardando a gestão de acessos', variante: 'info' },
   aguardando_protecao_de_dados: { texto: 'Aguardando a proteção de dados', variante: 'info' },
   aprovado: { texto: 'Aprovado', variante: 'success' },
   recusado: { texto: 'Recusado', variante: 'danger' },
@@ -64,8 +64,8 @@ const SENSIBILIDADE: Readonly<Record<string, string>> = {
 const ETAPA: Readonly<Record<string, string>> = {
   gestao_de_acessos: 'Gestão de acessos',
   sistema: 'Sistema',
-  gestor: 'Gestor de acessos',
-  protecao_de_dados: 'Encarregado(a) pelo tratamento de dados',
+  gestor: 'Gestão de acessos',
+  protecao_de_dados: 'Proteção de dados',
 };
 
 const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {

@@ -89,7 +89,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
-      'Fila do gestor',
+      'Fila da gestão de acessos',
       'Fila da proteção de dados',
       'Histórico de pedidos',
       'Concessões',
@@ -100,7 +100,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
   it('não oferece a fila da proteção de dados a quem só aprova como gestor', () => {
     concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
-    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila do gestor', 'Histórico de pedidos']);
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila da gestão de acessos', 'Histórico de pedidos']);
   });
 
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {

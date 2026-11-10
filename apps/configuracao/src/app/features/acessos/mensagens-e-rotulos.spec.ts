@@ -39,7 +39,7 @@ describe('mensagens de acesso', () => {
       textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
 
     expect(resolver('uniplus.autorizacao.pedido.validade_invalida')).toContain('prazo');
-    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou ao gestor');
+    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou à gestão de acessos');
   });
 
   it('orienta nas recusas da janela de migração, com os nomes das funções', () => {
@@ -65,14 +65,14 @@ describe('mensagens de acesso', () => {
 
 describe('rótulos de acesso', () => {
   it('traduz o vocabulário da API e devolve o código desconhecido como veio', () => {
-    expect(situacaoDoPedido('aguardando_gestor').texto).toBe('Aguardando o gestor de acessos');
+    expect(situacaoDoPedido('aguardando_gestor').texto).toBe('Aguardando a gestão de acessos');
     expect(situacaoDoPedido('novo').texto).toBe('novo');
     expect(situacaoDoAnexo('em_verificacao')).toBe('Em verificação');
     expect(situacaoDoAnexo('x')).toBe('x');
     expect(tipoDeEvento('pedido_criado')).toBe('Pedido criado');
     expect(tipoDeEvento('prazo_vencido_entre_etapas')).toBe('Prazo vencido entre as etapas');
     expect(sensibilidade('Sensivel')).toBe('Dado sensível');
-    expect(etapa('protecao_de_dados')).toBe('Encarregado(a) pelo tratamento de dados');
+    expect(etapa('protecao_de_dados')).toBe('Proteção de dados');
     expect(etapa(null)).toBe('—');
     expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
       'designação de proteção de dados',
@@ -101,7 +101,7 @@ describe('detalhe da trilha', () => {
       'Documento. SHA-256 do PDF: 5d6e2503….',
     );
     expect(detalheDaTrilha('Etapa: gestor. Sensibilidade avaliada: pessoal.')).toBe(
-      'Etapa: Gestor de acessos. Sensibilidade avaliada: Dado pessoal.',
+      'Etapa: Gestão de acessos. Sensibilidade avaliada: Dado pessoal.',
     );
     expect(detalheDaTrilha('Motivo: designacao_de_protecao_de_dados.')).toBe(
       'Motivo: designação de proteção de dados.',
