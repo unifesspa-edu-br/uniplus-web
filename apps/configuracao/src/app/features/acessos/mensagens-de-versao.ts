@@ -5,14 +5,6 @@ export interface MensagemDaRecusa {
 
 /** As recusas da proposta, da remoção e da aprovação de versões de perfil, com o que fazer a seguir. */
 export const MENSAGENS_DE_VERSAO: Readonly<Record<string, MensagemDaRecusa>> = {
-  'perfil.acrescimo_com_concessao_ativa': {
-    titulo: 'A versão acrescenta permissão a um perfil que tem concessão não revogada.',
-    resolver: 'Crie um perfil novo com a permissão e peça a concessão dele pelo fluxo de pedido. Se todas as concessões do perfil forem revogadas, a versão pode ser proposta. Mudanças só de nome, descrição ou documento não são afetadas.',
-  },
-  'perfil.ampliacao_exige_protecao_de_dados': {
-    titulo: 'A versão acrescenta permissão pessoal ou sensível a um perfil com concessão ativa.',
-    resolver: 'Para dar a permissão hoje, crie um perfil novo com ela e peça a concessão pelo fluxo de pedido, que passa pela proteção de dados. Se a mudança for só de nome, descrição, documento ou remoção de permissão, proponha a versão sem acrescentar essa permissão.',
-  },
   'perfil.aprovacoes_descartadas': {
     titulo: 'A classificação de uma permissão acrescentada mudou, e as aprovações já dadas foram descartadas. A decisão pedida não foi registrada.',
     resolver: 'Consulte a versão, veja as etapas que ela exige agora e decida de novo, na ordem.',

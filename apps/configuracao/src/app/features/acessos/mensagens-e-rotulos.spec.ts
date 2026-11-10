@@ -42,6 +42,22 @@ describe('mensagens de acesso', () => {
     expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou ao gestor');
   });
 
+  it('orienta nas recusas da janela de migração, com os nomes das funções', () => {
+    TestBed.configureTestingModule({ providers: [provideMensagensDeAcesso()] });
+    const problemas = TestBed.inject(ProblemI18nService);
+    const resolver = (code: string) =>
+      textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
+
+    expect(resolver('uniplus.autorizacao.pedido.perfil_em_janela_de_migracao')).toContain(
+      'não recebe pessoa nova',
+    );
+    expect(resolver('uniplus.autorizacao.perfil.janela_de_migracao_aberta')).toContain(
+      'não aceita outra versão pendente',
+    );
+    expect(resolver('uniplus.autorizacao.migracao.lote_incompleto')).toContain('gestão de acessos');
+    expect(resolver('uniplus.autorizacao.perfil.acrescimo_com_concessao_ativa')).toBe('API');
+  });
+
   it('mantém o título da API quando o código não tem orientação própria', () => {
     expect(textoDaRecusa({ title: 'Falhou' })).toBe('Falhou');
   });
