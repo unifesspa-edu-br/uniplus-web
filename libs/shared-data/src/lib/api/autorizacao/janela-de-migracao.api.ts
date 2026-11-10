@@ -7,6 +7,7 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 export type JanelaDeMigracaoDto = components['schemas']['JanelaDeMigracaoDto'];
 export type ItemDaJanelaDto = components['schemas']['ItemDaJanelaDto'];
+export type ItemDaFilaDeJanelasDto = components['schemas']['ItemDaFilaDeJanelasDto'];
 export type JanelaDoPerfilDto = components['schemas']['JanelaDoPerfilDto'];
 export type EnviarLoteDaMigracaoRequest = components['schemas']['EnviarLoteDaMigracaoRequest'];
 export type DecidirRetidaRequest = components['schemas']['DecidirRetidaRequest'];

@@ -62,6 +62,7 @@ export {
   type DecisaoDaMigracao,
   type EncerrarJanelaRequest,
   type EnviarLoteDaMigracaoRequest,
+  type ItemDaFilaDeJanelasDto,
   type ItemDaJanelaDto,
   type JanelaDeMigracaoDto,
   type JanelaDoPerfilDto,

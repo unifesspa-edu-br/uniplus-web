@@ -75,6 +75,24 @@ export const ACESSOS_ROUTES: Routes = [
           import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
       },
       {
+        path: 'janelas-de-migracao/gestao-de-acessos',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/gestao-de-acessos']),
+        ],
+        data: { breadcrumb: 'Janelas de migração na gestão de acessos', etapa: 'gestao_de_acessos' },
+        loadComponent: () =>
+          import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
+      },
+      {
+        path: 'janelas-de-migracao/protecao-de-dados',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/protecao-de-dados']),
+        ],
+        data: { breadcrumb: 'Janelas de migração na proteção de dados', etapa: 'protecao_de_dados' },
+        loadComponent: () =>
+          import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
+      },
+      {
         path: 'perfis/:id/janela',
         canActivate: [permissaoGuard(...PERMISSOES_DA_JANELA_DE_MIGRACAO)],
         data: { breadcrumb: 'Janela de migração' },
