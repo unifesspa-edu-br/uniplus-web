@@ -494,6 +494,29 @@ describe('PedirAcessoPage', async () => {
     expect(navegar).not.toHaveBeenCalled();
   });
 
+  it('mostra a recusa do perfil em janela de migração junto ao botão de enviar', async () => {
+    api.criar.mockReturnValue(
+      of(
+        recusa(
+          'uniplus.autorizacao.pedido.perfil_em_janela_de_migracao',
+          422,
+          'O perfil está em janela de migração.',
+        ),
+      ),
+    );
+    const { digitar, enviar, host } = await montar();
+
+    digitar('select[formcontrolname="perfilId"]', 'perfil-1');
+    digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
+    digitar('textarea', 'Atendo a comissão do processo seletivo.');
+    await enviar();
+
+    const formulario = host.querySelector('form') as HTMLFormElement;
+    const alerta = formulario.querySelector('ui-alert');
+    expect(alerta?.textContent).toContain('O perfil está em janela de migração.');
+    expect(formulario.querySelector('button[type="submit"]')).not.toBeNull();
+  });
+
   it('depois de falha de rede, repete o mesmo pedido sob a mesma chave e congela o formulário', async () => {
     api.criar
       .mockReturnValueOnce(of(recusa('uniplus.client.network_error', 0)))
