@@ -7,6 +7,7 @@ import { ExclusaoDialogComponent } from './exclusao-dialog.component';
 import { focarQuandoAparecer } from './foco-do-erro';
 import { semDecisao, type ItensDaJanela } from './itens-da-janela';
 import { LoteDaMigracao } from './lote-da-migracao';
+import { orientacaoDaPropria, type OrientacaoDaPropria } from './rotulos-da-janela';
 import { TabelaDaJanelaComponent } from './tabela-da-janela.component';
 
 const ID_DO_ERRO = 'cfg-lote-erro';
@@ -36,6 +37,15 @@ export class LoteDaMigracaoComponent {
   protected readonly gravando = inject(EscritaDoPerfil).gravando;
   protected readonly idDoErro = ID_DO_ERRO;
   protected readonly faltam = computed(() => semDecisao(this.itens().doLote, this.lote.decisoes()));
+  /** As concessões do leitor, agrupadas pela orientação de quem as decide. */
+  protected readonly proprias = computed(() => {
+    const grupos = new Map<OrientacaoDaPropria, ItemDaJanelaDto[]>();
+    for (const item of this.itens().proprias) {
+      const orientacao = orientacaoDaPropria(item.situacao);
+      grupos.set(orientacao, [...(grupos.get(orientacao) ?? []), item]);
+    }
+    return [...grupos].map(([orientacao, itens]) => ({ orientacao, itens }));
+  });
   /** O lote tem o que enviar: decisões de outras pessoas ou, só, concessões suas a reter. */
   protected readonly enviavel = computed(
     () => this.itens().doLote.length > 0 || this.itens().proprias.length > 0,
