@@ -17,12 +17,15 @@ import {
   IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import type { EtapaDaVersao } from '@uniplus/shared-data/autorizacao';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
+import { etapa } from '../rotulos-de-acesso';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { PerfilFormularioComponent } from '../perfil-formulario.component';
 import { CancelamentoDaVersao } from './cancelamento-da-versao';
 import { ContencaoDoPerfil } from './contencao-do-perfil';
+import type { AcaoDaContencao } from './textos-da-contencao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import {
   acoesDoPerfil,
@@ -46,6 +49,10 @@ import { VersaoPendenteComponent } from './versao-pendente.component';
 import { devolverFocoAoTitulo } from './foco-ao-titulo';
 
 const ID_DO_TITULO = 'cfg-perfis-titulo';
+const ACAO_DE_RETOMADA: Readonly<Record<EtapaDaVersao, AcaoDaContencao>> = {
+  gestao_de_acessos: 'retomar_gestao_de_acessos',
+  protecao_de_dados: 'retomar_protecao_de_dados',
+};
 
 /** Um perfil: a versão em vigor, a pendente de aprovação e as ações que o estado dele permite. */
 @Component({
@@ -110,6 +117,8 @@ export class PerfilDetalhePage {
       : acoesDoPerfil(resumoDoPerfil(perfil), this.permissoesDaContencao());
   });
   protected readonly situacaoEncerrada = situacaoEncerrada;
+  protected readonly acaoDeRetomada = ACAO_DE_RETOMADA;
+  protected readonly rotuloDaEtapa = (codigo: EtapaDaVersao): string => etapa(codigo).toLowerCase();
   protected readonly leitura = acompanharLeitura({
     assunto: 'perfil',
     falha: this.store.falha,

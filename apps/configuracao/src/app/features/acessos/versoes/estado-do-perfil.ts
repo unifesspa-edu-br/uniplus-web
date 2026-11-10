@@ -1,4 +1,8 @@
-import type { PerfilDto, PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import type {
+  EtapaDaVersao,
+  PerfilDto,
+  PerfilListadoDto,
+} from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 /** O que decide as situações e as ações de um perfil, igual para o resumo da lista e para o detalhe. */
@@ -13,6 +17,8 @@ export interface ResumoDoPerfil {
   readonly suspensoDesde: string | null;
   /** Desde quando o perfil não aceita pedido nem versão nova; `null` enquanto ativo. */
   readonly desativadoDesde: string | null;
+  /** As etapas da retomada que a suspensão exige agora e ainda não foram decididas. */
+  readonly etapasDaRetomadaPorDecidir: readonly string[];
 }
 
 export interface SituacaoDoPerfil {
@@ -24,6 +30,8 @@ export interface SituacaoDoPerfil {
 
 export interface AcoesDoPerfil {
   readonly suspender: boolean;
+  /** As etapas da retomada que a pessoa pode decidir agora, pelas permissões dela. */
+  readonly retomar: readonly EtapaDaVersao[];
   readonly proporVersao: boolean;
   readonly removerPermissoes: boolean;
   readonly cancelarVersaoPendente: boolean;
@@ -43,6 +51,7 @@ export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPe
     governanca: perfil.governanca !== null,
     suspensoDesde: perfil.suspensao?.desde ?? null,
     desativadoDesde: perfil.desativadoDesde,
+    etapasDaRetomadaPorDecidir: etapasPorDecidir(perfil.suspensao),
   };
   return 'temVersaoVigente' in perfil
     ? {
@@ -57,6 +66,11 @@ export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPe
         temPendente: perfil.versaoPendente !== null,
         emJanelaDeMigracao: perfil.janela != null,
       };
+}
+
+function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] {
+  if (suspensao === null) return [];
+  return suspensao.etapasExigidasAgora.filter((etapa) => !suspensao.etapasDecididas.includes(etapa));
 }
 
 /** As situações que o perfil mostra juntas: a suspensão e a desativação são independentes. */
@@ -101,6 +115,7 @@ export function acoesDoPerfil(
     proporVersao: perfil.ativo && !perfil.temPendente && !perfil.emJanelaDeMigracao,
     removerPermissoes: perfil.ativo && perfil.temVigente,
     cancelarVersaoPendente: perfil.temPendente,
+    retomar: etapasDaRetomada(perfil, permissoes),
     suspender: perfil.suspensoDesde === null && (permissoes.gestaoDeAcessos || permissoes.protecaoDeDados),
     desativar: perfil.ativo && permissoes.gestaoDeAcessos,
     reativar: !perfil.ativo && permissoes.gestaoDeAcessos,
@@ -109,9 +124,21 @@ export function acoesDoPerfil(
 
 const SEM_ACOES: AcoesDoPerfil = {
   suspender: false,
+  retomar: [],
   proporVersao: false,
   removerPermissoes: false,
   cancelarVersaoPendente: false,
   desativar: false,
   reativar: false,
 };
+
+function etapasDaRetomada(
+  perfil: ResumoDoPerfil,
+  permissoes: PermissoesDaContencao,
+): readonly EtapaDaVersao[] {
+  const decidiveis: readonly EtapaDaVersao[] = [
+    ...(permissoes.gestaoDeAcessos ? (['gestao_de_acessos'] as const) : []),
+    ...(permissoes.protecaoDeDados ? (['protecao_de_dados'] as const) : []),
+  ];
+  return decidiveis.filter((etapa) => perfil.etapasDaRetomadaPorDecidir.includes(etapa));
+}
