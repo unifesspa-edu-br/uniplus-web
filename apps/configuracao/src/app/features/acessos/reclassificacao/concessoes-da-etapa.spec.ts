@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  PESSOA_SEM_NOME,
-  decidiveisDaEtapa,
-  desfechoDaDecisao,
-  pendentesDaEtapa,
-} from './concessoes-da-etapa';
+import { decidiveisDaEtapa, desfechoDaDecisao, pendentesDaEtapa } from './concessoes-da-etapa';
 import { concessao } from './reclassificacao.testing';
 
 const BETINA = concessao();
@@ -26,23 +21,25 @@ describe('concessões da etapa', () => {
     expect(decidiveisDaEtapa(TODAS, 'gestao_de_acessos').map((c) => c.concessaoId)).toEqual(['c1']);
   });
 
-  it('o desfecho nomeia as concessões que ficaram para outra pessoa e as puladas por escopo', () => {
+  it('o desfecho traz as concessões como a leitura as tem e conta as que ela não tem', () => {
+    const sem_nome = concessao({ concessaoId: 'c4', beneficiarioNome: null });
     const desfecho = desfechoDaDecisao(
       {
         loteId: 'l1',
         decididas: ['c1'],
         liberadas: ['c1'],
-        paraOutraPessoa: ['c2'],
+        paraOutraPessoa: ['c2', 'c8'],
         puladasPorEscopo: ['c9', 'c4'],
       },
-      [BETINA, DIOGO, concessao({ concessaoId: 'c4', beneficiarioNome: null })],
+      [BETINA, DIOGO, sem_nome],
     );
 
     expect(desfecho).toEqual({
       decididas: 1,
       liberadas: 1,
-      paraOutraPessoa: ['Diogo Teste'],
-      puladasPorEscopo: [PESSOA_SEM_NOME, PESSOA_SEM_NOME],
+      paraOutraPessoa: [DIOGO],
+      puladasPorEscopo: [sem_nome],
+      ausentes: 2,
     });
   });
 });

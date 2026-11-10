@@ -10,13 +10,17 @@ import {
   viewChild,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { EtapaDaVersao, ReclassificacaoDto } from '@uniplus/shared-data/autorizacao';
+import type {
+  ConcessaoSuspensaDto,
+  EtapaDaVersao,
+  ReclassificacaoDto,
+} from '@uniplus/shared-data/autorizacao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { etapa as rotuloDaEtapa } from '../rotulos-de-acesso';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { LeituraDosPerfis } from '../versoes/leitura-dos-perfis';
-import { decidiveisDaEtapa } from './concessoes-da-etapa';
+import { PESSOA_SEM_NOME, decidiveisDaEtapa } from './concessoes-da-etapa';
 import { DecisaoDaReclassificacao } from './decisao-da-reclassificacao';
 import { focarQuandoPedir } from './foco-por-pedido';
 import { FILA_DA_ETAPA } from './rotulos-da-reclassificacao';
@@ -33,6 +37,7 @@ export class DecisaoDaReclassificacaoComponent {
   readonly reclassificacao = input.required<ReclassificacaoDto>();
   /** As etapas que a pessoa decide, pelas permissões dela. */
   readonly etapas = input.required<readonly EtapaDaVersao[]>();
+  readonly nomeDoEscopo = input.required<(concessao: ConcessaoSuspensaDto) => string>();
 
   protected readonly decisao = inject(DecisaoDaReclassificacao);
   protected readonly gravando = inject(EscritaDoPerfil).gravando;
@@ -60,6 +65,17 @@ export class DecisaoDaReclassificacaoComponent {
       }
     });
     focarQuandoPedir(this.decisao.pedidoDeFocoNoErro, this.erroDaAcao);
+  }
+
+  protected descricao(concessao: ConcessaoSuspensaDto): string {
+    const versao = concessao.versao === null ? '' : `, versão ${concessao.versao}`;
+    return `${concessao.beneficiarioNome ?? PESSOA_SEM_NOME} — ${this.nomeDoEscopo()(concessao)}${versao}`;
+  }
+
+  protected ausentes(quantidade: number): string {
+    return quantidade === 1
+      ? 'Uma concessão do resultado não está mais na lista lida.'
+      : `${quantidade} concessões do resultado não estão mais na lista lida.`;
   }
 
   protected recarregar(): void {

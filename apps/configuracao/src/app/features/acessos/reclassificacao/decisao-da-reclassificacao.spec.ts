@@ -116,6 +116,58 @@ describe('decisão da reclassificação', () => {
     expect(pagina.host.textContent).toContain('Paulo Teste');
   });
 
+  it('distingue as puladas homônimas pelo escopo e pela versão, que o contrato traz', async () => {
+    api.decidir.mockReturnValue(of(ok({ ...DECISAO, puladasPorEscopo: ['c5', 'c6'] })));
+    const rec = reclassificacao({
+      concessoes: [
+        concessao(),
+        concessao({
+          concessaoId: 'c5',
+          beneficiarioNome: 'Paulo Teste',
+          unidadeId: null,
+          versao: 1,
+        }),
+        concessao({
+          concessaoId: 'c6',
+          beneficiarioNome: 'Paulo Teste',
+          unidadeId: null,
+          versao: 2,
+        }),
+      ],
+    });
+    const pagina = await abrirReclassificacao(ok(rec));
+    await marcarBetina(pagina);
+
+    presente(botao(pagina.host, 'Liberar as concessões')).click();
+    await pagina.assentar();
+
+    const itens = [...pagina.host.querySelectorAll('cfg-decisao-da-reclassificacao ul li')].map(
+      (li) => li.textContent?.trim(),
+    );
+    expect(itens).toEqual([
+      'Paulo Teste — Instituição, versão 1',
+      'Paulo Teste — Instituição, versão 2',
+    ]);
+  });
+
+  it('diz que a concessão não está mais na lista e oferece recarregar, sem inventar nome', async () => {
+    api.decidir.mockReturnValue(of(ok({ ...DECISAO, puladasPorEscopo: ['c-sumiu'] })));
+    const pagina = await abrirReclassificacao();
+    await marcarBetina(pagina);
+    presente(botao(pagina.host, 'Liberar as concessões')).click();
+    await pagina.assentar();
+    leituras.mockClear();
+
+    expect(pagina.host.textContent).toContain(
+      'Uma concessão do resultado não está mais na lista lida.',
+    );
+    expect(pagina.host.textContent).not.toContain('Pessoa sem nome informado');
+    presente(botao(pagina.host, 'Recarregar a lista')).click();
+    await pagina.assentar();
+
+    expect(leituras).toHaveBeenCalledTimes(1);
+  });
+
   it('manter suspensa pede o motivo, não envia sem ele e marca o campo', async () => {
     const pagina = await abrirReclassificacao();
     await marcarBetina(pagina);
@@ -251,7 +303,13 @@ describe('decisão da reclassificação', () => {
 
   it('o catálogo desatualizado na decisão diz que o sistema está sendo atualizado', async () => {
     api.decidir.mockReturnValue(
-      of(recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date')),
+      of(
+        recusaPeloInterceptor(
+          'uniplus.autorizacao.catalogo.desatualizado',
+          503,
+          'Catalog out of date',
+        ),
+      ),
     );
     const pagina = await abrirReclassificacao();
     await marcarBetina(pagina);
@@ -268,10 +326,14 @@ describe('decisão da reclassificação', () => {
   it('pela gestão de acessos, diz que o escopo só deixa de fora a liberação, não a manutenção', async () => {
     const pagina = await abrirReclassificacao(ok(reclassificacao()), [GESTAO_DE_ACESSOS]);
 
-    const texto = pagina.host.querySelector('cfg-decisao-da-reclassificacao p.cfg-muted')?.textContent;
+    const texto = pagina.host.querySelector(
+      'cfg-decisao-da-reclassificacao p.cfg-muted',
+    )?.textContent;
 
     expect(texto).toContain('A sua própria concessão fica de fora');
-    expect(texto).toContain('Ao liberar, ficam de fora também as que o escopo da permissão não comporta');
+    expect(texto).toContain(
+      'Ao liberar, ficam de fora também as que o escopo da permissão não comporta',
+    );
     expect(texto).toContain('manter suspensas essas concessões é permitido');
   });
 
@@ -281,7 +343,9 @@ describe('decisão da reclassificação', () => {
     });
     const pagina = await abrirReclassificacao(ok(rec), [PROTECAO_DE_DADOS]);
 
-    const texto = pagina.host.querySelector('cfg-decisao-da-reclassificacao p.cfg-muted')?.textContent;
+    const texto = pagina.host.querySelector(
+      'cfg-decisao-da-reclassificacao p.cfg-muted',
+    )?.textContent;
 
     expect(texto).toContain('A sua própria concessão fica de fora');
     expect(texto).not.toContain('escopo');

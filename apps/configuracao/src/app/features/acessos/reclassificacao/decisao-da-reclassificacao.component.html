@@ -103,20 +103,28 @@
       </p>
       @if (desfecho.paraOutraPessoa.length > 0) {
         <h3>Ficaram para outra pessoa decidir</h3>
-        <ul>
-          @for (nome of desfecho.paraOutraPessoa; track $index) {
-            <li>{{ nome }}</li>
+        <ul role="list">
+          @for (item of desfecho.paraOutraPessoa; track item.concessaoId) {
+            <li>{{ descricao(item) }}</li>
           }
         </ul>
       }
       @if (desfecho.puladasPorEscopo.length > 0) {
         <h3>Puladas porque o escopo não comporta a liberação</h3>
         <p class="cfg-muted">Essas concessões só voltam por pedido novo ou seguem suspensas.</p>
-        <ul>
-          @for (nome of desfecho.puladasPorEscopo; track $index) {
-            <li>{{ nome }}</li>
+        <ul role="list">
+          @for (item of desfecho.puladasPorEscopo; track item.concessaoId) {
+            <li>{{ descricao(item) }}</li>
           }
         </ul>
+      }
+      @if (desfecho.ausentes > 0) {
+        <p>
+          {{ ausentes(desfecho.ausentes) }}
+        </p>
+        <button type="button" class="btn btn--secondary btn--rect" (click)="recarregar()">
+          Recarregar a lista
+        </button>
       }
     </div>
   }
