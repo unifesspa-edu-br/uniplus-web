@@ -72,18 +72,15 @@
     </cfg-tabela-da-janela>
   }
 
-  @if (itens().proprias.length > 0) {
+  @for (grupo of proprias(); track grupo.orientacao.titulo) {
     <div class="panel-body">
-      <h3 class="form-section__title">Retidas: outra pessoa decide</h3>
-      <p class="field__hint">
-        Concessões em que você é a pessoa beneficiada ficam retidas e são decididas por outra pessoa
-        da gestão de acessos.
-      </p>
+      <h3 class="form-section__title">{{ grupo.orientacao.titulo }}</h3>
+      <p class="field__hint">{{ grupo.orientacao.dica }}</p>
     </div>
     <cfg-tabela-da-janela
-      [itens]="itens().proprias"
+      [itens]="grupo.itens"
       [nomeDoEscopo]="nomeDoEscopo()"
-      legenda="Concessões suas retidas para outra pessoa decidir"
+      [legenda]="grupo.orientacao.legenda"
     />
   }
 

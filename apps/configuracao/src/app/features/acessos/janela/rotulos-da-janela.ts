@@ -47,3 +47,26 @@ export function formaDoEncerramento(codigo: string | null): string | null {
 export function dispensaDoItem(codigo: string | null): string | null {
   return codigo === null ? null : (MOTIVO_DA_DISPENSA[codigo] ?? codigo);
 }
+
+/** O que diz a quem lê sobre as concessões que são dele: quem as decide depende da situação. */
+export interface OrientacaoDaPropria {
+  readonly titulo: string;
+  readonly dica: string;
+  readonly legenda: string;
+}
+
+const NA_GESTAO: OrientacaoDaPropria = {
+  titulo: 'Retidas: outra pessoa decide',
+  dica: 'Concessões em que você é a pessoa beneficiada ficam retidas e são decididas por outra pessoa da gestão de acessos.',
+  legenda: 'Concessões suas retidas para outra pessoa decidir',
+};
+
+const NA_PROTECAO_DE_DADOS: OrientacaoDaPropria = {
+  titulo: 'Na proteção de dados: outra pessoa decide',
+  dica: 'Concessões em que você é a pessoa beneficiada aguardam a decisão de outra pessoa da proteção de dados.',
+  legenda: 'Concessões suas que aguardam a proteção de dados',
+};
+
+export function orientacaoDaPropria(situacao: string): OrientacaoDaPropria {
+  return situacao === 'aguardando_protecao_de_dados' ? NA_PROTECAO_DE_DADOS : NA_GESTAO;
+}
