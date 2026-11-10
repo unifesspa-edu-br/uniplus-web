@@ -1,16 +1,11 @@
 import { HttpContext } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import {
-  ChaveDeSubstituicao,
-  ProblemI18nService,
-  comChave,
-  type ApiResult,
-  type ProblemDetails,
-} from '@uniplus/shared-core/http';
+import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { JanelaDeMigracaoDto } from '@uniplus/shared-data/autorizacao';
 import type { Observable } from 'rxjs';
 import { mensagemDaRecusa } from '../falha-de-servidor';
+import { ChavesPorComando } from '../versoes/chaves-por-comando';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 
 const RAIZ = 'uniplus.autorizacao.migracao.';
@@ -31,7 +26,7 @@ export class EnvioNaJanela {
   private readonly escrita = inject(EscritaDoPerfil);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly chaves = new Map<string, ChaveDeSubstituicao>();
+  private readonly chaves = new ChavesPorComando();
   /** O que mudou na janela quando a API recusou a operação; fica à vista depois da releitura. */
   readonly aviso = signal<string | null>(null);
 
@@ -46,16 +41,8 @@ export class EnvioNaJanela {
     chamada: (contexto: HttpContext) => Observable<ApiResult<JanelaDeMigracaoDto>>,
   ): Promise<ProblemDetails | null> {
     this.aviso.set(null);
-    const { resultado } = await comChave(this.chaveDe(comando), corpo, chamada);
+    const { resultado } = await this.chaves.enviar(comando, corpo, chamada);
     return resultado.ok ? null : resultado.problem;
-  }
-
-  private chaveDe(comando: string): ChaveDeSubstituicao {
-    const existente = this.chaves.get(comando);
-    if (existente) return existente;
-    const nova = new ChaveDeSubstituicao();
-    this.chaves.set(comando, nova);
-    return nova;
   }
 
   concluir(titulo: string): void {
