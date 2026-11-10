@@ -1,0 +1,73 @@
+<section class="panel" aria-labelledby="cfg-encerramento-titulo">
+  <div class="panel-head">
+    <h2 id="cfg-encerramento-titulo" class="panel-head__title">Encerrar a janela antes do prazo</h2>
+  </div>
+  <form
+    class="panel-body"
+    [id]="idDoFormulario"
+    [formGroup]="encerramento.form"
+    (ngSubmit)="enviar()"
+    novalidate
+  >
+    <ui-alert variant="warning" heading="Quem não migrou perde o acesso" [dynamic]="false">
+      Ao encerrar, as concessões que ainda não foram migradas são revogadas na hora e a versão
+      anterior deixa de valer.
+    </ui-alert>
+    @if (encerramento.erro()) {
+      <div [id]="idDoErro" tabindex="-1">
+        <ui-alert variant="danger" heading="Não foi possível encerrar a janela">{{
+          encerramento.erro()
+        }}</ui-alert>
+      </div>
+    }
+    <fieldset
+      role="none"
+      [disabled]="gravando()"
+      style="border: 0; margin: 0; padding: 0; min-width: 0"
+    >
+      <label class="field" [class.is-error]="motivoInvalido()">
+        <span class="field__label is-required">Motivo</span>
+        <textarea
+          aria-required="true"
+          class="textarea"
+          formControlName="motivo"
+          [attr.maxlength]="limite"
+          [attr.aria-invalid]="motivoInvalido() ? 'true' : null"
+          [attr.aria-describedby]="
+            'cfg-encerramento-ajuda' + (motivoInvalido() ? ' cfg-encerramento-motivo-erro' : '')
+          "
+        ></textarea>
+        <span id="cfg-encerramento-ajuda" class="field__hint">O motivo fica registrado na trilha.</span>
+        @if (motivoInvalido()) {
+          <span id="cfg-encerramento-motivo-erro" class="field__error">{{
+            mensagem(encerramento.form.controls.motivo) ||
+              'Informe o motivo, em até ' + limite + ' caracteres.'
+          }}</span>
+        }
+      </label>
+      <label class="checkbox" [class.is-error]="confirmacaoPendente()">
+        <input
+          type="checkbox"
+          formControlName="confirmou"
+          [attr.aria-invalid]="confirmacaoPendente() ? 'true' : null"
+          [attr.aria-describedby]="confirmacaoPendente() ? 'cfg-encerramento-confirmacao-erro' : null"
+        />
+        <span class="checkbox__box" aria-hidden="true"></span>
+        <span>Entendo que as concessões não migradas serão revogadas.</span>
+      </label>
+      @if (confirmacaoPendente()) {
+        <span id="cfg-encerramento-confirmacao-erro" class="field__error"
+          >Marque a caixa para confirmar.</span
+        >
+      }
+    </fieldset>
+    <div class="cfg-acoes">
+      <button type="submit" class="btn btn--danger" [attr.aria-disabled]="gravando() ? 'true' : null">
+        @if (gravando()) {
+          <ui-spinner spinnerSize="sm" />
+        }
+        Encerrar a janela
+      </button>
+    </div>
+  </form>
+</section>

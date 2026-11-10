@@ -62,5 +62,8 @@
         />
       </section>
     }
+    @if (janela.situacao === 'aberta' && podeComoGestao()) {
+      <cfg-encerramento-da-janela [perfilId]="janela.perfilId" />
+    }
   }
 }
