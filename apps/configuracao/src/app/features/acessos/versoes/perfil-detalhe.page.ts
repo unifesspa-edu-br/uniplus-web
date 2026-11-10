@@ -9,6 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -20,10 +21,15 @@ import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { PerfilFormularioComponent } from '../perfil-formulario.component';
-import { AtivacaoDoPerfil } from './ativacao-do-perfil';
 import { CancelamentoDaVersao } from './cancelamento-da-versao';
+import { ContencaoDoPerfil } from './contencao-do-perfil';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
-import { acoesDoPerfil, resumoDoPerfil, situacoesDoPerfil } from './estado-do-perfil';
+import {
+  acoesDoPerfil,
+  resumoDoPerfil,
+  situacoesDoPerfil,
+  type PermissoesDaContencao,
+} from './estado-do-perfil';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 import { JanelaAbertaComponent } from './janela-aberta.component';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
@@ -66,6 +72,7 @@ const ID_DO_TITULO = 'cfg-perfis-titulo';
     { provide: LeituraDosPerfis, useExisting: PerfilDetalheStore },
     ...PROVEDORES_DE_ESCRITA_DE_PERFIS,
     CancelamentoDaVersao,
+    ContencaoDoPerfil,
     RemocaoDePermissoes,
     ReenvioDoDocumento,
   ],
@@ -80,7 +87,7 @@ export class PerfilDetalhePage {
   protected readonly store = inject(PerfilDetalheStore);
   protected readonly escrita = inject(EscritaDoPerfil);
   protected readonly edicao = inject(EdicaoDosPerfis);
-  protected readonly ativacao = inject(AtivacaoDoPerfil);
+  protected readonly contencao = inject(ContencaoDoPerfil);
   protected readonly cancelamento = inject(CancelamentoDaVersao);
   protected readonly remocao = inject(RemocaoDePermissoes);
   protected readonly reenvio = inject(ReenvioDoDocumento);
@@ -91,9 +98,16 @@ export class PerfilDetalhePage {
     const perfil = this.perfil();
     return perfil === null ? [] : situacoesDoPerfil(resumoDoPerfil(perfil));
   });
+  private readonly permissoes = inject(PermissoesService);
+  private readonly permissoesDaContencao = computed<PermissoesDaContencao>(() => ({
+    gestaoDeAcessos: this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
+    protecaoDeDados: this.permissoes.tem(PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados),
+  }));
   protected readonly acoes = computed(() => {
     const perfil = this.perfil();
-    return perfil === null ? null : acoesDoPerfil(resumoDoPerfil(perfil));
+    return perfil === null
+      ? null
+      : acoesDoPerfil(resumoDoPerfil(perfil), this.permissoesDaContencao());
   });
   protected readonly situacaoEncerrada = situacaoEncerrada;
   protected readonly leitura = acompanharLeitura({
@@ -119,13 +133,11 @@ export class PerfilDetalhePage {
   protected proporVersao(): void {
     const perfil = this.perfil();
     if (perfil === null) return;
-    this.ativacao.limparAnuncio();
     this.edicao.abrirProposta(perfil);
   }
 
-  protected alternarAtivacao(): void {
-    const perfil = this.perfil();
-    if (perfil !== null) void this.ativacao.alternar(perfil);
+  protected confirmarContencao(): void {
+    void this.contencao.confirmar(this.id());
   }
 
   protected async abrirDocumento(versaoId: string): Promise<void> {

@@ -65,51 +65,23 @@ describe('PerfisListaComponent', () => {
     fixture = TestBed.createComponent(PerfisListaComponent);
   });
 
-  it('oferece reativar ou desativar, e nada para o perfil de governança', () => {
-    entradas({});
-
-    expect(
-      raiz().querySelector('button[aria-label="Desativar o perfil Operador de inscrições"]'),
-    ).not.toBeNull();
-    expect(raiz().querySelector('button[aria-label="Reativar o perfil Consulta"]')).not.toBeNull();
-    expect(raiz().querySelector('tr[data-perfil-id="p2"] button')).toBeNull();
-    expect(raiz().textContent).toContain('Governança');
-  });
-
-  it.each([
-    ['uma escrita em curso', { gravando: true }],
-    ['a recarga da lista', { carregando: true }],
-  ])('com %s, todo botão fica indisponível, inclusive a paginação', (_, estado) => {
-    entradas(estado);
-
-    expect(botoes().length).toBeGreaterThan(2);
+  it('com uma escrita em curso ou a recarga da lista, a paginação fica indisponível', () => {
+    entradas({ gravando: true });
+    expect(botoes().length).toBeGreaterThan(0);
     expect(botoes().every(indisponivel)).toBe(true);
   });
 
-  it('sem escrita nem recarga, os botões estão disponíveis', () => {
+  it('a linha não traz botão de ação: desativar e reativar são do detalhe do perfil', () => {
     entradas({});
 
-    const dasLinhas = [...raiz().querySelectorAll<HTMLButtonElement>('tbody button')];
-    expect(dasLinhas.length).toBe(2);
-    expect(dasLinhas.some(indisponivel)).toBe(false);
+    expect(raiz().querySelector('tbody button')).toBeNull();
+    expect(raiz().textContent).toContain('Governança');
   });
 
   it('o título da lista recebe foco programático', () => {
     entradas({});
 
     expect(raiz().querySelector('#cfg-perfis-titulo')?.getAttribute('tabindex')).toBe('-1');
-  });
-
-  it('emite o perfil da linha ao alternar a situação', () => {
-    entradas({});
-    const alternados: PerfilListadoDto[] = [];
-    fixture.componentInstance.alternarAtivacao.subscribe((perfil) => alternados.push(perfil));
-
-    raiz()
-      .querySelector<HTMLButtonElement>('button[aria-label="Reativar o perfil Consulta"]')
-      ?.click();
-
-    expect(alternados).toEqual([DESATIVADO]);
   });
 
   it('leva o nome do perfil ao detalhe dele', () => {

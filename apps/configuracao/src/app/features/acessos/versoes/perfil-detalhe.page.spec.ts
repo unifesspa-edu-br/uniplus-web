@@ -1,8 +1,9 @@
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { Subject, map, of } from 'rxjs';
+import { map, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
@@ -25,7 +26,7 @@ function presente<T>(valor: T | null | undefined): T {
 }
 
 describe('PerfilDetalhePage', () => {
-  const perfis = { ativar: vi.fn(), desativar: vi.fn(), remover: vi.fn(), criar: vi.fn() };
+  const perfis = { remover: vi.fn(), criar: vi.fn() };
   const versoes = { cancelar: vi.fn(), propor: vi.fn() };
   const documento = { reenviar: vi.fn(), abrir: vi.fn(), enviar: vi.fn() };
   const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
@@ -54,6 +55,7 @@ describe('PerfilDetalhePage', () => {
           ]),
         ),
         { provide: PerfisApi, useValue: perfis },
+        { provide: PermissoesService, useValue: { tem: () => true } },
         { provide: VersoesDoPerfilApi, useValue: versoes },
         { provide: DocumentoDaVersaoService, useValue: documento },
         { provide: NotificationService, useValue: notificacoes },
@@ -153,16 +155,12 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('perfil desativado só se reativa', async () => {
-    const { host, fixture } = await abrir(ok(perfilDoDetalhe({ ativo: false })));
-    perfis.ativar.mockReturnValue(of(ok(undefined)));
+    const { host } = await abrir(ok(perfilDoDetalhe({ ativo: false })));
 
     expect(host.textContent).toContain('Desativado');
+    expect(botao(host, 'Reativar')).toBeDefined();
+    expect(botao(host, 'Desativar')).toBeUndefined();
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
-    presente(botao(host, 'Reativar')).click();
-    await assentar(fixture);
-
-    expect(perfis.ativar.mock.calls[0]?.[0]).toBe('p1');
-    expect(notificacoes.success).toHaveBeenCalledWith('Perfil reativado');
   });
 
   it('o perfil de governança não oferece nenhuma ação', async () => {
@@ -523,31 +521,6 @@ describe('PerfilDetalhePage', () => {
       expect(documento.abrir).toHaveBeenCalledWith('p1', 'v1', expect.any(Function));
       expect(host.textContent).toContain('O navegador bloqueou a abertura do documento.');
     });
-  });
-
-  it('desativa o perfil e mostra a recusa junto às ações', async () => {
-    const { fixture, host } = await abrir();
-    perfis.desativar.mockReturnValue(of(recusa('uniplus.autorizacao.perfil.governanca_imutavel')));
-
-    presente(botao(host, 'Desativar')).click();
-    await assentar(fixture);
-
-    expect(host.textContent).toContain('Perfil de governança não se altera.');
-  });
-
-  it('fica indisponível durante a gravação', async () => {
-    const { fixture, host } = await abrir();
-    const resposta = new Subject<ReturnType<typeof ok<void>>>();
-    perfis.desativar.mockReturnValue(resposta);
-
-    presente(botao(host, 'Desativar')).click();
-    fixture.detectChanges();
-
-    expect(presente(botao(host, 'Propor nova versão')).disabled).toBe(true);
-    expect(presente(botao(host, 'Remover permissões')).disabled).toBe(true);
-    resposta.next(ok(undefined));
-    resposta.complete();
-    await assentar(fixture);
   });
 
   it('perfil que não existe mostra a recusa sem oferecer nova tentativa', async () => {

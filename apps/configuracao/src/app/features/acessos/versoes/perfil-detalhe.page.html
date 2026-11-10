@@ -25,9 +25,14 @@
           Remover permissões
         </button>
       }
-      @if (a.desativar || a.reativar) {
-        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="alternarAtivacao()">
-          {{ a.desativar ? 'Desativar' : 'Reativar' }}
+      @if (a.desativar) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('desativar')">
+          Desativar
+        </button>
+      }
+      @if (a.reativar) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('reativar')">
+          Reativar
         </button>
       }
     </div>
@@ -41,7 +46,6 @@
 @if (escrita.erroDaAcao()) {
   <ui-alert variant="danger" heading="Não foi possível concluir">{{ escrita.erroDaAcao() }}</ui-alert>
 }
-<span class="sr-only" role="status">{{ ativacao.anuncio() }}</span>
 
 @if (store.carregando()) {
   <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando o perfil…</p>
@@ -86,5 +90,17 @@
     />
   }
   <cfg-remocao-dialog [perfil]="p" />
+  <cfg-motivo-dialog
+    [(visible)]="contencao.aberto"
+    [heading]="contencao.textos().titulo"
+    [confirmLabel]="contencao.textos().confirmar"
+    [confirmVariant]="contencao.textos().variante"
+    [ajuda]="contencao.textos().ajuda"
+    [erro]="contencao.erro()"
+    [enviando]="escrita.contendo()"
+    [motivo]="contencao.motivo"
+    [tentou]="contencao.tentou()"
+    (confirmado)="confirmarContencao()"
+  />
 }
 <cfg-perfil-formulario />

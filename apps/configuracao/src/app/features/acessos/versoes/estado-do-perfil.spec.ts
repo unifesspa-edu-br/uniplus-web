@@ -10,6 +10,7 @@ const EM_VIGOR: ResumoDoPerfil = {
   suspensoDesde: null,
   desativadoDesde: null,
 };
+const GESTAO = { gestaoDeAcessos: true, protecaoDeDados: false };
 const textos = (resumo: ResumoDoPerfil): string[] => situacoesDoPerfil(resumo).map((s) => s.texto);
 
 describe('situacoesDoPerfil', () => {
@@ -74,7 +75,7 @@ describe('situacoesDoPerfil', () => {
 
 describe('acoesDoPerfil', () => {
   it('oferece propor, remover e desativar ao perfil em vigor', () => {
-    expect(acoesDoPerfil(EM_VIGOR)).toEqual({
+    expect(acoesDoPerfil(EM_VIGOR, GESTAO)).toEqual({
       proporVersao: true,
       removerPermissoes: true,
       cancelarVersaoPendente: false,
@@ -84,25 +85,32 @@ describe('acoesDoPerfil', () => {
   });
 
   it('com versão pendente, oferece cancelá-la e não propõe outra', () => {
-    const acoes = acoesDoPerfil({ ...EM_VIGOR, temPendente: true });
+    const acoes = acoesDoPerfil({ ...EM_VIGOR, temPendente: true }, GESTAO);
 
     expect(acoes.cancelarVersaoPendente).toBe(true);
     expect(acoes.proporVersao).toBe(false);
   });
 
   it('com a janela de migração aberta, não propõe versão nova mas segue aceitando a remoção', () => {
-    const acoes = acoesDoPerfil({ ...EM_VIGOR, emJanelaDeMigracao: true });
+    const acoes = acoesDoPerfil({ ...EM_VIGOR, emJanelaDeMigracao: true }, GESTAO);
 
     expect(acoes.proporVersao).toBe(false);
     expect(acoes.removerPermissoes).toBe(true);
   });
 
   it('sem versão em vigor, não há o que remover', () => {
-    expect(acoesDoPerfil({ ...EM_VIGOR, temVigente: false }).removerPermissoes).toBe(false);
+    expect(acoesDoPerfil({ ...EM_VIGOR, temVigente: false }, GESTAO).removerPermissoes).toBe(false);
+  });
+
+  it('sem a permissão da gestão de acessos, não desativa nem reativa', () => {
+    const sem = { gestaoDeAcessos: false, protecaoDeDados: true };
+
+    expect(acoesDoPerfil(EM_VIGOR, sem).desativar).toBe(false);
+    expect(acoesDoPerfil({ ...EM_VIGOR, ativo: false }, sem).reativar).toBe(false);
   });
 
   it('desativado, só se reativa', () => {
-    expect(acoesDoPerfil({ ...EM_VIGOR, ativo: false })).toEqual({
+    expect(acoesDoPerfil({ ...EM_VIGOR, ativo: false }, GESTAO)).toEqual({
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,
@@ -112,7 +120,7 @@ describe('acoesDoPerfil', () => {
   });
 
   it('o perfil de governança não tem nenhuma ação de versão ou de situação', () => {
-    expect(acoesDoPerfil({ ...EM_VIGOR, governanca: true })).toEqual({
+    expect(acoesDoPerfil({ ...EM_VIGOR, governanca: true }, GESTAO)).toEqual({
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,

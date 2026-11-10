@@ -72,11 +72,8 @@ describe('PerfisApi', () => {
     });
   });
 
-  it('ativa por POST e desativa por DELETE na mesma rota', () => {
-    void firstValueFrom(api.ativar(ID, withIdempotencyKey('k3')));
-    void firstValueFrom(api.desativar(ID, withIdempotencyKey('k4')));
-    const [ativar, desativar] = controller.match(`${RAIZ}/${ID}/ativacao`);
-    expect(ativar?.request.method).toBe('POST');
-    expect(desativar?.request.method).toBe('DELETE');
+  it('não tem mais as rotas de ativação', () => {
+    expect('ativar' in api).toBe(false);
+    expect('desativar' in api).toBe(false);
   });
 });

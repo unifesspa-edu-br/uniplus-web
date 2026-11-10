@@ -30,26 +30,31 @@ export interface AcoesDoPerfil {
   readonly reativar: boolean;
 }
 
+/** O que a pessoa que lê pode fazer na contenção do perfil, pelas permissões dela. */
+export interface PermissoesDaContencao {
+  readonly gestaoDeAcessos: boolean;
+  readonly protecaoDeDados: boolean;
+}
+
 export function resumoDoPerfil(perfil: PerfilDto | PerfilListadoDto): ResumoDoPerfil {
-  const governanca = perfil.governanca !== null;
+  const comum = {
+    ativo: perfil.ativo,
+    governanca: perfil.governanca !== null,
+    suspensoDesde: perfil.suspensao?.desde ?? null,
+    desativadoDesde: perfil.desativadoDesde,
+  };
   return 'temVersaoVigente' in perfil
     ? {
-        ativo: perfil.ativo,
-        governanca,
+        ...comum,
         temVigente: perfil.temVersaoVigente,
         temPendente: perfil.temVersaoPendente,
         emJanelaDeMigracao: false,
-        suspensoDesde: perfil.suspensao?.desde ?? null,
-        desativadoDesde: perfil.desativadoDesde,
       }
     : {
-        ativo: perfil.ativo,
-        governanca,
+        ...comum,
         temVigente: perfil.composicaoEmVigor !== null,
         temPendente: perfil.versaoPendente !== null,
         emJanelaDeMigracao: perfil.janela != null,
-        suspensoDesde: perfil.suspensao?.desde ?? null,
-        desativadoDesde: perfil.desativadoDesde,
       };
 }
 
@@ -86,13 +91,24 @@ function desativado(perfil: ResumoDoPerfil): SituacaoDoPerfil {
  * O perfil de governança não tem versão nem situação para mudar: a composição dele muda por
  * migration. Com a janela de migração aberta o perfil não aceita versão nova, mas a remoção segue.
  */
-export function acoesDoPerfil(perfil: ResumoDoPerfil): AcoesDoPerfil {
-  const comum = !perfil.governanca;
+export function acoesDoPerfil(
+  perfil: ResumoDoPerfil,
+  permissoes: PermissoesDaContencao,
+): AcoesDoPerfil {
+  if (perfil.governanca) return SEM_ACOES;
   return {
-    proporVersao: comum && perfil.ativo && !perfil.temPendente && !perfil.emJanelaDeMigracao,
-    removerPermissoes: comum && perfil.ativo && perfil.temVigente,
-    cancelarVersaoPendente: comum && perfil.temPendente,
-    desativar: comum && perfil.ativo,
-    reativar: comum && !perfil.ativo,
+    proporVersao: perfil.ativo && !perfil.temPendente && !perfil.emJanelaDeMigracao,
+    removerPermissoes: perfil.ativo && perfil.temVigente,
+    cancelarVersaoPendente: perfil.temPendente,
+    desativar: perfil.ativo && permissoes.gestaoDeAcessos,
+    reativar: !perfil.ativo && permissoes.gestaoDeAcessos,
   };
 }
+
+const SEM_ACOES: AcoesDoPerfil = {
+  proporVersao: false,
+  removerPermissoes: false,
+  cancelarVersaoPendente: false,
+  desativar: false,
+  reativar: false,
+};

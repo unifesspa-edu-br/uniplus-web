@@ -20,7 +20,7 @@ export type RemoverPermissoesRequest = components['schemas']['RemoverPermissoesR
 /** Motivos de contenção que a API aceita na remoção de permissões. */
 export type CategoriaDaRemocao = 'incidente' | 'erro_de_composicao' | 'mudanca_de_funcao';
 
-/** Cliente dos perfis de acesso: leitura, criação, remoção de permissões e situação. */
+/** Cliente dos perfis de acesso: leitura, criação, remoção de permissões. */
 @Injectable({ providedIn: 'root' })
 export class PerfisApi {
   private readonly http = inject(HttpClient);
@@ -55,23 +55,6 @@ export class PerfisApi {
     return this.http.post<ApiResult<PerfilDto>>(
       `${this.raiz}/${encodeURIComponent(id)}/remocoes`,
       request,
-      { context },
-    );
-  }
-
-  /** POST `/api/autorizacao/perfis/{id}/ativacao` — reativa o perfil. */
-  ativar(id: string, context: HttpContext): Observable<ApiResult<void>> {
-    return this.http.post<ApiResult<void>>(
-      `${this.raiz}/${encodeURIComponent(id)}/ativacao`,
-      null,
-      { context },
-    );
-  }
-
-  /** DELETE `/api/autorizacao/perfis/{id}/ativacao` — desativa o perfil sem revogar concessões. */
-  desativar(id: string, context: HttpContext): Observable<ApiResult<void>> {
-    return this.http.delete<ApiResult<void>>(
-      `${this.raiz}/${encodeURIComponent(id)}/ativacao`,
       { context },
     );
   }

@@ -1,6 +1,5 @@
 import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -12,7 +11,6 @@ import { PerfilFormularioComponent } from './perfil-formulario.component';
 import { PerfisListaComponent } from './perfis-lista.component';
 import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import { PerfisStore } from './perfis.store';
-import { AtivacaoDoPerfil } from './versoes/ativacao-do-perfil';
 import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 import { LeituraDosPerfis } from './versoes/leitura-dos-perfis';
 import { PROVEDORES_DE_ESCRITA_DE_PERFIS } from './versoes/provedores-de-perfis';
@@ -44,7 +42,6 @@ export class PerfisPage {
   protected readonly store = inject(PerfisStore);
   protected readonly edicao = inject(EdicaoDosPerfis);
   protected readonly escrita = inject(EscritaDoPerfil);
-  protected readonly ativacao = inject(AtivacaoDoPerfil);
   protected readonly idDoCadastro = ID_DO_CADASTRO;
   private readonly foco = devolverFocoDaLista({
     gravando: this.escrita.gravando,
@@ -65,12 +62,6 @@ export class PerfisPage {
 
   protected criar(): void {
     this.foco.registrar(null);
-    this.ativacao.limparAnuncio();
     this.edicao.abrirCriacao();
-  }
-
-  protected alternarAtivacao(perfil: PerfilListadoDto): void {
-    this.foco.registrar({ acao: 'situacao', id: perfil.id });
-    void this.ativacao.alternar(perfil);
   }
 }
