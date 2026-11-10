@@ -42,6 +42,14 @@
         [podeDecidir]="podeComoGestao()"
       />
     }
+    @if (itens.naProtecaoDeDados.length > 0) {
+      <cfg-protecao-de-dados-da-janela
+        [janela]="janela"
+        [itens]="itens.naProtecaoDeDados"
+        [nomeDoEscopo]="nomeDoEscopo"
+        [podeDecidir]="podeComoProtecaoDeDados()"
+      />
+    }
     @if (itens.decididas.length > 0) {
       <section class="panel" aria-labelledby="cfg-decididas-titulo">
         <div class="panel-head">
