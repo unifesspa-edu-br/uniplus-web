@@ -1,6 +1,7 @@
 import { type EnvironmentProviders, inject, provideEnvironmentInitializer } from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
+import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
 import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
 import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
 
@@ -140,6 +141,7 @@ export function provideMensagensDeAcesso(): EnvironmentProviders {
       ...MENSAGENS_DE_VERSAO,
       ...MENSAGENS_DA_JANELA,
       ...MENSAGENS_DA_CONTENCAO,
+      ...MENSAGENS_DA_RECLASSIFICACAO,
     };
     for (const [sufixo, { titulo, resolver }] of Object.entries(todas)) {
       problemas.register(RAIZ + sufixo, { title: titulo, detail: resolver });
