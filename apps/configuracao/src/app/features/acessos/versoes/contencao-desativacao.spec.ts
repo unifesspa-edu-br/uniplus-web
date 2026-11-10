@@ -12,7 +12,7 @@ import {
   notificacoes,
   presente,
 } from './contencao-do-perfil.testing';
-import { perfilDoDetalhe } from './perfis.testing';
+import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
 
 const DESATIVADO = perfilDoDetalhe({ ativo: false, desativadoDesde: '2026-11-08T15:00:00Z' });
 
@@ -132,5 +132,32 @@ describe('desativar e reativar o perfil', () => {
 
     expect(botao(host, 'Desativar')).toBeUndefined();
     expect(botao(host, 'Reativar')).toBeUndefined();
+  });
+
+  it('leva o foco ao campo do diálogo da contenção, não ao do cancelamento deixado inválido', async () => {
+    const { fixture, host } = await abrirPerfil(
+      perfilDoDetalhe({ versaoPendente: versaoPendente() }),
+    );
+
+    presente(botao(host, 'Cancelar versão pendente')).click();
+    await assentar(fixture);
+    presente(botao(host, 'Cancelar versão')).click();
+    await assentar(fixture);
+    expect(motivo(host).getAttribute('aria-invalid')).toBe('true');
+    presente(botao(host, 'Cancelar')).click();
+    await assentar(fixture);
+
+    presente(botao(host, 'Desativar')).click();
+    await assentar(fixture);
+    presente(botao(host, 'Desativar perfil')).click();
+    await assentar(fixture);
+
+    expect(host.querySelectorAll('cfg-motivo-dialog textarea[aria-invalid="true"]')).toHaveLength(
+      2,
+    );
+    expect(document.activeElement?.tagName).toBe('TEXTAREA');
+    expect(document.activeElement?.closest('cfg-motivo-dialog')?.textContent).toContain(
+      'Desativar o perfil',
+    );
   });
 });

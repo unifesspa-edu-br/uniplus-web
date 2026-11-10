@@ -1,4 +1,4 @@
-import { ElementRef, Injector, afterNextRender, inject, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
@@ -6,13 +6,12 @@ import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 
 /**
  * O motivo de um ato que fica na trilha, pedido num diálogo: valida antes de enviar, marca no campo
- * a recusa da API e leva o foco ao campo inválido. Criar em contexto de injeção, no serviço que
- * hospeda o diálogo.
+ * a recusa da API e pede o foco ao campo inválido, que o diálogo atende.
  */
 export class CampoDoMotivo {
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   readonly tentou = signal(false);
+  /** Cresce a cada pedido de foco; o diálogo do motivo o atende no próprio campo. */
+  readonly pedidoDeFoco = signal(0);
   readonly controle = new FormControl('', {
     nonNullable: true,
     validators: [Validators.required, Validators.maxLength(LIMITE_DO_MOTIVO)],
@@ -46,12 +45,6 @@ export class CampoDoMotivo {
   }
 
   private focar(): void {
-    afterNextRender(
-      () =>
-        this.host.nativeElement
-          .querySelector<HTMLElement>('cfg-motivo-dialog [aria-invalid="true"]')
-          ?.focus(),
-      { injector: this.injector },
-    );
+    this.pedidoDeFoco.update((n) => n + 1);
   }
 }

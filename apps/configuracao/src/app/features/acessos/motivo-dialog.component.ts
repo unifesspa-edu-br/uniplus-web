@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  effect,
+  inject,
+  input,
+  model,
+  output,
+  untracked,
+  viewChild,
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
@@ -31,6 +44,7 @@ export const LIMITE_DO_MOTIVO = 500;
         <label class="field" [class.is-error]="comErro()">
           <span class="field__label is-required">Motivo</span>
           <textarea
+            #campo
             aria-required="true"
             class="textarea"
             [formControl]="motivo()"
@@ -85,6 +99,8 @@ export class MotivoDialogComponent {
   readonly confirmado = output<void>();
   readonly motivo = input.required<FormControl<string>>();
   readonly tentou = input(false);
+  /** Cresce a cada vez que o hospedeiro pede o foco no campo deste diálogo. */
+  readonly pedidoDeFoco = input(0);
 
   protected readonly limite = LIMITE_DO_MOTIVO;
   /** Únicos por instância: a página pode ter mais de um diálogo de motivo no DOM. */
@@ -93,6 +109,18 @@ export class MotivoDialogComponent {
   protected readonly idDoErro = `cfg-motivo-erro-${this.sufixo}`;
 
   protected readonly mensagem = mensagemDeErroDoControle;
+
+  private readonly campo = viewChild<ElementRef<HTMLTextAreaElement>>('campo');
+  private readonly injector = inject(Injector);
+
+  constructor() {
+    effect(() => {
+      if (this.pedidoDeFoco() === 0) return;
+      untracked(() =>
+        afterNextRender(() => this.campo()?.nativeElement.focus(), { injector: this.injector }),
+      );
+    });
+  }
 
   protected comErro(): boolean {
     return this.tentou() && this.motivo().invalid;

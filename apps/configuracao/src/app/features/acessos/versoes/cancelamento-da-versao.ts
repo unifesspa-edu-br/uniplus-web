@@ -19,6 +19,7 @@ export class CancelamentoDaVersao {
   readonly erro = signal<string | null>(null);
   readonly tentou = this.campo.tentou;
   readonly motivo = this.campo.controle;
+  readonly pedidoDeFoco = this.campo.pedidoDeFoco;
 
   abrir(): void {
     if (this.escrita.gravando()) return;
