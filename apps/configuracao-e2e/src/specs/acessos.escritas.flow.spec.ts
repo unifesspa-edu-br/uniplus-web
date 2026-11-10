@@ -128,7 +128,7 @@ const EM_PROCESSAMENTO = problema(
 type Recarga = 'com-o-item' | 'sem-o-item' | 'com-falha';
 /** `listaMudou`: a escrita foi recusada porque a lista já estava desatualizada; a recarga traz o estado novo. */
 type Resposta = { status: number; corpo?: unknown; listaMudou?: boolean };
-type Envio = { metodo: string; chave: string | undefined };
+type Envio = { metodo: string; caminho: string; corpo: unknown; chave: string | undefined };
 
 const OK = { status: 204 };
 
@@ -208,6 +208,8 @@ async function mockPerfis(
     const resposta = respostas[envios.length] ?? OK;
     envios.push({
       metodo: requisicao.method(),
+      caminho: new URL(requisicao.url()).pathname,
+      corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
       chave: requisicao.headers()['idempotency-key'],
     });
     await retida;
@@ -267,7 +269,12 @@ async function mockConcessoes(
         return;
       }
       const resposta = respostas[envios.length] ?? OK;
-      envios.push({ metodo: requisicao.method(), chave: undefined });
+      envios.push({
+        metodo: requisicao.method(),
+        caminho: new URL(requisicao.url()).pathname,
+        corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
+        chave: undefined,
+      });
       await retida;
       if (resposta.status < 300 || resposta.listaMudou) gravou = true;
       await responder(route, resposta);
@@ -472,7 +479,12 @@ test.describe('Acessos — escritas', () => {
       await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
       await expect(acaoDoPerfil(page, 'Desativar')).toBeDisabled();
       await confirmar.dispatchEvent('click');
-      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
+      expect(envios).toHaveLength(1);
+      expect(envios[0]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+        corpo: { motivo: 'Perfil sem uso.' },
+      });
       expect(envios[0]?.chave).toBeTruthy();
 
       liberar();
@@ -513,7 +525,50 @@ test.describe('Acessos — escritas', () => {
       await expect(reativacao).toBeHidden();
       await expect(acaoDoPerfil(page, 'Desativar')).toBeVisible();
       expect(envios).toHaveLength(2);
+      expect(envios[0]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+        corpo: { motivo: 'Perfil sem uso.' },
+      });
+      expect(envios[1]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/reativacao`,
+        corpo: { motivo: 'Voltou a ser usado.' },
+      });
       expect(envios[1]?.chave).not.toBe(envios[0]?.chave);
+    });
+
+    test('desativação recusada pelo servidor anuncia o erro, preserva o motivo e libera nova tentativa', async ({
+      page,
+    }) => {
+      const { liberar, envios } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }, OK]);
+      liberar();
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      const confirmar = caixa.getByRole('button', { name: 'Desativar perfil' });
+      await confirmar.click();
+
+      await expect(caixa.getByRole('alert')).toContainText('Erro interno');
+      await expect(caixa.getByLabel('Motivo')).toHaveValue('Perfil sem uso.');
+      await expect(caixa.getByLabel('Motivo')).toBeEnabled();
+      await expect(confirmar).toBeEnabled();
+      await expect(confirmar).not.toHaveAttribute('aria-busy', 'true');
+      await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeEnabled();
+      await expect(caixa).toBeVisible();
+      await expect(caixa.locator(':focus')).toHaveCount(1);
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeEnabled();
+
+      await confirmar.click();
+      await expect(caixa).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
+      expect(envios).toHaveLength(2);
+      for (const envio of envios) {
+        expect(envio).toMatchObject({
+          metodo: 'POST',
+          caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+          corpo: { motivo: 'Perfil sem uso.' },
+        });
+      }
     });
 
     test('desativação sem motivo marca o campo, leva o foco a ele e não chama a API', async ({
