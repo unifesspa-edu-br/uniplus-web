@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
 import { itemDaJanela, janelaDeMigracao, PERFIL } from './janela.testing';
@@ -133,6 +133,20 @@ describe('etapa da proteção de dados da janela', () => {
     const erro = presente(host.querySelector<HTMLElement>('#cfg-protecao-erro'));
     expect(erro.textContent).toContain('A mesma pessoa não decide as duas etapas.');
     expect(document.activeElement).toBe(erro);
+  });
+
+  it('falha que não veio da API explica junto ao envio', async () => {
+    api.decidirProtecaoDeDados.mockReturnValue(throwError(() => new Error('rede')));
+    const { host, assentar } = await abrirJanela(JANELA);
+    escolher(linhaDe(host, 'c1'), 'Migrar');
+    await assentar();
+
+    presente(botao(host, 'Enviar as decisões')).click();
+    await assentar();
+
+    expect(host.querySelector('#cfg-protecao-erro')?.textContent).toContain(
+      'Não foi possível concluir a operação.',
+    );
   });
 
   it('quem só tem a permissão da gestão de acessos consulta a etapa sem decidir', async () => {

@@ -1,6 +1,6 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
 import { itemDaJanela, janelaDeMigracao, PERFIL } from './janela.testing';
@@ -99,6 +99,19 @@ describe('concessões retidas da janela', () => {
 
     expect(linhaDe(host, 'c1').querySelector('ui-alert')?.textContent).toContain(
       'Ninguém decide a própria concessão.',
+    );
+    expect(botao(linhaDe(host, 'c1'), 'Migrar')?.disabled).toBe(false);
+  });
+
+  it('falha que não veio da API explica junto à concessão e libera a decisão', async () => {
+    api.decidirRetida.mockReturnValue(throwError(() => new Error('rede')));
+    const { host, assentar } = await abrirJanela(DEPOIS_DO_LOTE);
+
+    presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
+    await assentar();
+
+    expect(linhaDe(host, 'c1').querySelector('ui-alert')?.textContent).toContain(
+      'Não foi possível concluir a operação.',
     );
     expect(botao(linhaDe(host, 'c1'), 'Migrar')?.disabled).toBe(false);
   });
