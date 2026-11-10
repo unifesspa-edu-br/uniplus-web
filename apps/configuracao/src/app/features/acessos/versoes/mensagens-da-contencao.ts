@@ -1,3 +1,4 @@
+import type { MensagensDoContexto } from '../falha-de-servidor';
 import type { MensagemDaRecusa } from '../mensagens-de-versao';
 
 /** As recusas da suspensão, da retomada, da desativação e da reativação do perfil, com o que fazer a seguir. */
@@ -24,5 +25,26 @@ export const MENSAGENS_DA_CONTENCAO: Readonly<Record<string, MensagemDaRecusa>> 
   'perfil.reativacao_por_quem_desativou': {
     titulo: 'Quem desativou o perfil não o reativa.',
     resolver: 'Peça a outra pessoa da gestão de acessos que reative o perfil, informando o motivo.',
+  },
+};
+
+/**
+ * Códigos que a API reaproveita na retomada da suspensão e que, no registro geral, falam da versão
+ * do perfil. Na retomada, o texto vale para a etapa da retomada.
+ */
+export const MENSAGENS_DA_RETOMADA: MensagensDoContexto = {
+  'uniplus.autorizacao.perfil.etapa_invalida': {
+    title: 'O perfil não exige essa etapa da retomada agora.',
+    detail: 'Recarregue o perfil para ver as etapas que a retomada exige no momento.',
+  },
+  'uniplus.autorizacao.perfil.mesmo_decisor_nas_duas_etapas': {
+    title: 'Você já decidiu a outra etapa da retomada.',
+    detail:
+      'As duas etapas são decididas por pessoas diferentes. Peça a outra pessoa com a permissão da etapa que a decida.',
+  },
+  'uniplus.autorizacao.perfil.sem_permissao_na_etapa': {
+    title: 'Falta a permissão da etapa da retomada.',
+    detail:
+      'Peça à gestão de acessos que confira os perfis da sua conta, ou encaminhe a retomada a quem tenha a permissão da etapa.',
   },
 };

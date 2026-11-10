@@ -1,6 +1,6 @@
 import { HttpContext } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
+import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ContencaoDoPerfilApi,
@@ -12,6 +12,7 @@ import { CampoDoMotivo } from './campo-do-motivo';
 import { ChavesPorComando } from './chaves-por-comando';
 import { EscritaDoPerfil } from './escrita-do-perfil';
 import { etapa } from '../rotulos-de-acesso';
+import { MENSAGENS_DA_RETOMADA } from './mensagens-da-contencao';
 import { TEXTOS_DA_CONTENCAO, type AcaoDaContencao } from './textos-da-contencao';
 
 /**
@@ -60,13 +61,18 @@ export class ContencaoDoPerfil {
     );
     if (!resultado.ok) {
       if (!this.campo.recusar(resultado.problem)) {
-        this.erro.set(mensagemDaRecusa(this.problemas, this.notificacoes, resultado.problem));
+        this.erro.set(this.textoDaRecusa(acao, resultado.problem));
       }
       return;
     }
     this.aberto.set(false);
     this.notificacoes.success(this.textoDoSucesso(acao, resultado.data));
     this.escrita.recarregar();
+  }
+
+  private textoDaRecusa(acao: AcaoDaContencao, problema: ProblemDetails): string {
+    const doContexto = acao.startsWith('retomar_') ? MENSAGENS_DA_RETOMADA : undefined;
+    return mensagemDaRecusa(this.problemas, this.notificacoes, problema, doContexto);
   }
 
   private textoDoSucesso(acao: AcaoDaContencao, dados: unknown): string {

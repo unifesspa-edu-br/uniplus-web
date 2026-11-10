@@ -32,6 +32,25 @@ describe('mensagens de acesso', () => {
     );
   });
 
+  it.each([
+    ['etapa_invalida', 'A decisão foi pedida para uma etapa que a versão não aguarda agora.'],
+    ['mesmo_decisor_nas_duas_etapas', 'Você já decidiu a outra etapa desta versão.'],
+    ['sem_permissao_na_etapa', 'Falta a permissão de aprovação da etapa'],
+  ])('na versão, %s segue falando da versão', (codigo, inicio) => {
+    TestBed.configureTestingModule({ providers: [provideMensagensDeAcesso()] });
+    const problemas = TestBed.inject(ProblemI18nService);
+
+    const mensagem = problemas.resolve({
+      type: 'x',
+      title: 'texto da API',
+      status: 422,
+      code: `uniplus.autorizacao.perfil.${codigo}`,
+      traceId: '',
+    });
+
+    expect(textoDaRecusa(mensagem)).toContain(inicio);
+  });
+
   it('orienta nos dois códigos do fim de vigência', () => {
     TestBed.configureTestingModule({ providers: [provideMensagensDeAcesso()] });
     const problemas = TestBed.inject(ProblemI18nService);
