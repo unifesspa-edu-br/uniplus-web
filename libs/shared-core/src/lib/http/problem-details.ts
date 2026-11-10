@@ -46,3 +46,11 @@ export const CLIENT_PROBLEM_CODES = {
 } as const;
 
 export type ClientProblemCode = (typeof CLIENT_PROBLEM_CODES)[keyof typeof CLIENT_PROBLEM_CODES];
+
+/** Catálogo de permissões em atualização: a chamada vale tentar de novo em instantes. */
+export const CODIGO_CATALOGO_DESATUALIZADO = 'uniplus.autorizacao.catalogo.desatualizado';
+
+export const MENSAGEM_CATALOGO_DESATUALIZADO = {
+  title: 'O sistema está sendo atualizado.',
+  detail: 'Tente novamente em instantes.',
+} as const;

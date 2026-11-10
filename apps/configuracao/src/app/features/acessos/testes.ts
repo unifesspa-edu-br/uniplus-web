@@ -1,5 +1,12 @@
-import { HttpHeaders } from '@angular/common/http';
-import { apiFailure, apiOk, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
+import { HttpErrorResponse, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
+import { throwError } from 'rxjs';
+import {
+  apiFailure,
+  apiOk,
+  apiResultInterceptor,
+  type ApiResult,
+  type ProblemDetails,
+} from '@uniplus/shared-core/http';
 import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 
 export const EU = {
@@ -17,6 +24,27 @@ export function ok<T>(dados: T, link?: string): ApiResult<T> {
 export function recusa(code: string, status = 422, title = 'Recusado'): ApiResult<never> {
   const problem: ProblemDetails = { type: 'x', title, status, code, traceId: '' };
   return apiFailure(problem, status, new HttpHeaders());
+}
+
+/** A recusa como a tela a recebe: o problema do servidor depois de passar pelo interceptor. */
+export function recusaPeloInterceptor(code: string, status: number, title: string): ApiResult<never> {
+  const problema = { type: 'x', title, status, code, traceId: '' };
+  let resultado: ApiResult<never> | undefined;
+  apiResultInterceptor(new HttpRequest('GET', '/x'), () =>
+    throwError(
+      () =>
+        new HttpErrorResponse({
+          status,
+          error: problema,
+          headers: new HttpHeaders({ 'content-type': 'application/problem+json' }),
+        }),
+    ),
+  ).subscribe((evento) => {
+    if (evento instanceof HttpResponse) {
+      resultado = evento.body as ApiResult<never>;
+    }
+  });
+  return resultado as ApiResult<never>;
 }
 
 export function concedidas(...codigos: string[]) {

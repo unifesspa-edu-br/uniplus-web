@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { ok, recusa } from '../testes';
+import { ok, recusa, recusaPeloInterceptor } from '../testes';
 import {
   GESTAO_DE_ACESSOS,
   PROTECAO_DE_DADOS,
@@ -158,7 +158,7 @@ describe('ReclassificacaoDetalhePage', () => {
 
   it('traduz o catálogo desatualizado na leitura', async () => {
     const { host } = await abrirReclassificacao(
-      recusa('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
+      recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
     );
 
     expect(host.textContent).toContain(

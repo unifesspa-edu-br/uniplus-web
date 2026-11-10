@@ -10,7 +10,7 @@ import {
   type ItemDaFilaDeReclassificacoesDto,
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { ok, recusa } from '../testes';
+import { ok, recusa, recusaPeloInterceptor } from '../testes';
 import { FilaDeReclassificacoesPage } from './fila-de-reclassificacoes.page';
 
 const MUDANCA = {
@@ -168,7 +168,7 @@ describe('FilaDeReclassificacoesPage', () => {
   it('o catálogo desatualizado diz que o sistema está sendo atualizado', async () => {
     const { host } = await abrir(
       'gestao_de_acessos',
-      recusa('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
+      recusaPeloInterceptor('uniplus.autorizacao.catalogo.desatualizado', 503, 'Catalog out of date'),
     );
 
     expect(host.textContent).toContain(
