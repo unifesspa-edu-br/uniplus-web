@@ -70,6 +70,7 @@ const ativa: ConcessaoDto = {
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
+  revogadaPelaJanelaId: null,
   motivoRevogacao: null,
   ativa: true,
 };

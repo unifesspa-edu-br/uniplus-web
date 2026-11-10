@@ -37,6 +37,12 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
   cancelado: 'Pedido cancelado',
   concedida: 'Acesso concedido',
   revogada: 'Acesso revogado',
+  revogada_pela_migracao: 'Acesso revogado na migração de versão',
+  migracao_migrar: 'Concessão migrada para a versão nova',
+  migracao_recusar: 'Migração recusada',
+  migracao_reter: 'Concessão retida na migração',
+  migracao_nao_migrada: 'Concessão não migrada no prazo',
+  migracao_fora_da_lista: 'Concessão fora da lista da migração',
   instalacao_iniciada: 'Instalação iniciada',
   documento_verificado: 'Documento verificado',
   documento_recusado: 'Documento recusado na verificação',
@@ -56,6 +62,8 @@ const SENSIBILIDADE: Readonly<Record<string, string>> = {
 };
 
 const ETAPA: Readonly<Record<string, string>> = {
+  gestao_de_acessos: 'Gestão de acessos',
+  sistema: 'Sistema',
   gestor: 'Gestor de acessos',
   protecao_de_dados: 'Encarregado(a) pelo tratamento de dados',
 };
@@ -112,6 +120,8 @@ export function detalheDaTrilha(detalhe: string | null): string {
   return detalhe
     .replace(/Anexo \S+?\./gi, (trecho) => (IDENTIFICADOR.test(trecho) ? 'Documento.' : trecho))
     .replace(SHA256, (hash) => abreviado(hash))
+    .replace(/ ?Janela: [0-9a-f-]{36}\./i, '')
+    .replace(/Dispensa: (\w+)\./, (_, codigo: string) => `Dispensa: ${motivoDaDispensa(codigo)}.`)
     .replace(/Etapa: (\w+)\./, (_, codigo: string) => `Etapa: ${etapa(codigo)}.`)
     .replace(
       /Sensibilidade avaliada: (\w+)\./,
