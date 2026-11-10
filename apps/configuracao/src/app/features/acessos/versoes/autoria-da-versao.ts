@@ -1,9 +1,2 @@
-import type { ItemDaFilaDeVersoesDto } from '@uniplus/shared-data/autorizacao';
-
-/**
- * Diz se quem lê propôs a versão. O contrato da fila ainda não traz essa informação: até lá a
- * tela oferece a decisão e mostra a recusa da API junto à ação. Este é o único ponto a trocar.
- */
-export function propostaPorQuemLe(_item: ItemDaFilaDeVersoesDto): boolean {
-  return false;
-}
+/** O que a pessoa lê quando propôs a versão: a API não deixa quem propôs decidi-la. */
+export const AVISO_DE_AUTORIA = 'Você propôs esta versão. Outra pessoa precisa aprová-la.';

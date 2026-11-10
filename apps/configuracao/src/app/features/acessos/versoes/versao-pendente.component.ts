@@ -6,6 +6,7 @@ import {
   SpinnerComponent,
   TagComponent,
 } from '@uniplus/shared-ui/components';
+import { AVISO_DE_AUTORIA } from './autoria-da-versao';
 import type { AcoesDoPerfil } from './estado-do-perfil';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
 import { etapaDaVersao } from './rotulos-da-versao';
@@ -32,6 +33,7 @@ export class VersaoPendenteComponent {
   readonly abrirDocumento = output<void>();
   readonly documentoEscolhido = output<File | null>();
   protected readonly etapa = etapaDaVersao;
+  protected readonly avisoDeAutoria = AVISO_DE_AUTORIA;
   protected readonly recusado = computed(() => this.versao().situacaoDoDocumento === 'recusado');
   protected readonly faltaDocumento = computed(() =>
     DOCUMENTO_ENVIAVEL.includes(this.versao().situacaoDoDocumento),

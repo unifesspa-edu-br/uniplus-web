@@ -25,7 +25,7 @@ import { EscritaDoPerfil } from './escrita-do-perfil';
 import { devolverFocoAoTitulo } from './foco-ao-titulo';
 import { FilaDeVersoesStore } from './fila-de-versoes.store';
 import { LeituraDosPerfis } from './leitura-dos-perfis';
-import { propostaPorQuemLe } from './autoria-da-versao';
+import { AVISO_DE_AUTORIA } from './autoria-da-versao';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
 
 const ID_DO_TITULO = 'cfg-fila-de-versoes-titulo';
@@ -101,17 +101,13 @@ export class FilaDeVersoesPage {
     devolverFocoAoTitulo(this.escrita.gravando, ID_DO_TITULO);
   }
 
-  protected podeAprovar(item: ItemDaFilaDeVersoesDto): boolean {
-    return !propostaPorQuemLe(item);
-  }
-
   protected documentoVerificado(item: ItemDaFilaDeVersoesDto): boolean {
     return item.versao.situacaoDoDocumento === 'verificado';
   }
 
   /** O que impede a aprovação, dito junto ao botão. */
   protected ajuda(item: ItemDaFilaDeVersoesDto): string | null {
-    if (!this.podeAprovar(item)) return 'Você propôs esta versão. Outra pessoa precisa aprová-la.';
+    if (item.propostaPorQuemLe) return AVISO_DE_AUTORIA;
     return this.documentoVerificado(item)
       ? null
       : 'A aprovação espera a verificação do documento instituidor.';
