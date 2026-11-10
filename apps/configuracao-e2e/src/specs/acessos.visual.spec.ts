@@ -20,6 +20,8 @@ const PERFIL = {
   sensibilidade: 'interno',
   temVersaoVigente: true,
   temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
 };
 const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',
