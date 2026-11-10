@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   Injector,
   afterNextRender,
   effect,
@@ -10,10 +11,11 @@ import {
   output,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 
-const ID_DA_CONFIRMACAO = 'cfg-exclusao-confirmacao';
+let proximoId = 0;
 
 /**
  * Confirmação de que recusar, ou encerrar a janela, revoga o acesso. O botão só segue adiante com
@@ -36,6 +38,7 @@ const ID_DA_CONFIRMACAO = 'cfg-exclusao-confirmacao';
       <label class="checkbox" [class.is-error]="tentou() && !marcada()">
         <input
           type="checkbox"
+          #caixa
           [id]="idDaConfirmacao"
           [checked]="marcada()"
           [disabled]="enviando()"
@@ -85,8 +88,10 @@ export class ExclusaoDialogComponent {
   readonly enviando = input(false);
   readonly confirmado = output<void>();
 
-  protected readonly idDaConfirmacao = ID_DA_CONFIRMACAO;
-  protected readonly idDoErro = `${ID_DA_CONFIRMACAO}-erro`;
+  private readonly caixa = viewChild<ElementRef<HTMLInputElement>>('caixa');
+  /** Único por instância: os diálogos da tela ficam todos no DOM, abertos ou não. */
+  protected readonly idDaConfirmacao = `cfg-exclusao-confirmacao-${proximoId++}`;
+  protected readonly idDoErro = `${this.idDaConfirmacao}-erro`;
   protected readonly marcada = signal(false);
   protected readonly tentou = signal(false);
   private readonly injector = inject(Injector);
@@ -111,7 +116,7 @@ export class ExclusaoDialogComponent {
       return;
     }
     this.tentou.set(true);
-    afterNextRender(() => document.getElementById(ID_DA_CONFIRMACAO)?.focus(), {
+    afterNextRender(() => this.caixa()?.nativeElement.focus(), {
       injector: this.injector,
     });
   }
