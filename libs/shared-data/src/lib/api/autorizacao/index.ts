@@ -15,6 +15,14 @@ export {
   type UltimaVersaoEncerradaSemVigorDto,
 } from './perfis.api';
 export {
+  ContencaoDoPerfilApi,
+  type MotivoDaContencaoRequest,
+  type RegistroDaContencaoDto,
+  type RetomadaDaSuspensaoDto,
+  type RetomadaDaSuspensaoRequest,
+  type SuspensaoDoPerfilDto,
+} from './contencao-do-perfil.api';
+export {
   VersoesDoPerfilApi,
   type DecisaoDaVersaoDto,
   type DocumentoDaVersaoDto,

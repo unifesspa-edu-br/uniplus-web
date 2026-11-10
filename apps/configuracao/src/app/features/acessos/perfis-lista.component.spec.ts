@@ -13,6 +13,8 @@ const COMUM: PerfilListadoDto = {
   sensibilidade: 'interno',
   temVersaoVigente: true,
   temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
 };
 const COM_PENDENTE: PerfilListadoDto = { ...COMUM, id: 'p4', nome: 'Auditoria', temVersaoPendente: true };
 const DESATIVADO: PerfilListadoDto = { ...COMUM, id: 'p3', nome: 'Consulta', ativo: false };
