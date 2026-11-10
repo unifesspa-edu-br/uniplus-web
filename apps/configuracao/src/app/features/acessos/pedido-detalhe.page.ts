@@ -109,6 +109,7 @@ export class PedidoDetalhePage {
   protected readonly confirmando = this.edicao.confirmando;
   protected readonly motivo = this.edicao.motivo;
   protected readonly tentouRecusar = this.edicao.tentouRecusar;
+  protected readonly pedidoDeFoco = this.edicao.pedidoDeFoco;
   protected readonly recusando = this.edicao.recusando;
   protected readonly acaoPendente = this.edicao.acaoPendente;
   protected readonly prazo = this.edicao.prazo;
