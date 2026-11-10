@@ -47,3 +47,14 @@ export {
   type PedidosQuery,
   type PerfilParaPedidoDto,
 } from './pedidos-de-concessao.api';
+export {
+  JanelaDeMigracaoApi,
+  type DecidirEtapaDaProtecaoRequest,
+  type DecidirRetidaRequest,
+  type DecisaoDaMigracao,
+  type EncerrarJanelaRequest,
+  type EnviarLoteDaMigracaoRequest,
+  type ItemDaJanelaDto,
+  type JanelaDeMigracaoDto,
+  type JanelaDoPerfilDto,
+} from './janela-de-migracao.api';
