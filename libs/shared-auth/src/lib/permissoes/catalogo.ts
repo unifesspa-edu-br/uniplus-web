@@ -10,6 +10,7 @@ export const PERMISSAO = {
     perfisAprovarFuncional: 'autorizacao:perfis:aprovar-funcional',
     perfisAprovarProtecaoDeDados: 'autorizacao:perfis:aprovar-protecao-de-dados',
     perfisManter: 'autorizacao:perfis:manter',
+    permissoesConsultarCatalogo: 'autorizacao:permissoes:consultar-catalogo',
   },
   configuracao: {
     baseLegalBonusRegionalManter: 'configuracao:base-legal-bonus-regional:manter',

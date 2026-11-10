@@ -3,12 +3,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   TemplateRef,
+  computed,
   contentChild,
+  inject,
   input,
 } from '@angular/core';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { ItemDaJanelaDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+import { CatalogoDePermissoesStore } from '../versoes/catalogo-de-permissoes.store';
 import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
 
 /** As concessões da janela, com a situação de cada uma; a ação por linha vem do `ng-template` projetado. */
@@ -54,7 +58,7 @@ import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
               </td>
               <td data-label="Acréscimo">
                 @for (codigo of item.acrescimo; track codigo) {
-                  <code class="ui-code">{{ codigo }}</code>
+                  <code class="ui-code" [attr.title]="codigo">{{ nomeDaPermissao()(codigo) }}</code>
                   {{ ' ' }}
                 } @empty {
                   Nenhum
@@ -90,6 +94,18 @@ export class TabelaDaJanelaComponent {
   readonly nomeDoEscopo = input.required<(item: ItemDaJanelaDto) => string>();
   readonly tituloDaAcao = input('Decisão');
   protected readonly acao = contentChild<TemplateRef<{ $implicit: ItemDaJanelaDto }>>('acao');
+  private readonly catalogo = inject(CatalogoDePermissoesStore);
+  /** O nome legível da permissão; sem acesso ao catálogo, o próprio código. */
+  protected readonly nomeDaPermissao = computed(() => {
+    const porCodigo = this.catalogo.porCodigo();
+    return (codigo: string): string => porCodigo.get(codigo)?.nome ?? codigo;
+  });
+
+  constructor() {
+    if (inject(PermissoesService).tem(PERMISSAO.autorizacao.permissoesConsultarCatalogo)) {
+      this.catalogo.carregar();
+    }
+  }
 
   protected situacao(item: ItemDaJanelaDto) {
     return situacaoDoItem(item.situacao);
