@@ -1,4 +1,4 @@
-import { ElementRef, Injectable, Injector, afterNextRender, inject, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import {
   ChaveDeSubstituicao,
@@ -29,8 +29,6 @@ export class DecisaoDaVersao {
   private readonly escrita = inject(EscritaDoPerfil);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   private readonly chave = new ChaveDeSubstituicao();
   /** O que a API recusou de cada versão, pela versão. */
   readonly erros = signal<ReadonlyMap<string, string>>(new Map());
@@ -39,6 +37,8 @@ export class DecisaoDaVersao {
   readonly recusando = signal<ItemDaFilaDeVersoesDto | null>(null);
   readonly erroDaRecusa = signal<string | null>(null);
   readonly tentouRecusar = signal(false);
+  /** Cresce a cada pedido de foco no campo do motivo; o diálogo o atende. */
+  readonly pedidoDeFoco = signal(0);
   readonly aberto = signal(false);
   readonly motivo = new FormControl('', {
     nonNullable: true,
@@ -157,12 +157,6 @@ export class DecisaoDaVersao {
   }
 
   private focarMotivo(): void {
-    afterNextRender(
-      () =>
-        this.host.nativeElement
-          .querySelector<HTMLElement>('cfg-motivo-dialog [aria-invalid="true"]')
-          ?.focus(),
-      { injector: this.injector },
-    );
+    this.pedidoDeFoco.update((n) => n + 1);
   }
 }
