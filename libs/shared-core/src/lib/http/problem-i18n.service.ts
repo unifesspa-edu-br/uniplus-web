@@ -35,6 +35,13 @@ export interface ProblemOverride {
  */
 const TRADUCOES_PADRAO: ReadonlyMap<string, ProblemOverride> = new Map([
   [
+    'uniplus.autorizacao.catalogo.desatualizado',
+    {
+      title: 'O sistema está sendo atualizado.',
+      detail: 'Tente novamente em instantes.',
+    },
+  ],
+  [
     'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
     {
       title: 'O dado aguarda a aprovação da proteção de dados e não aceita vínculo novo',

@@ -54,6 +54,21 @@ describe('ProblemI18nService', () => {
     expect(message.title).toBe('Versão 1 é a única suportada');
   });
 
+  it('traduz o catálogo desatualizado em qualquer tela, sem registro', () => {
+    const message = service.resolve(
+      mockProblemDetails({
+        code: 'uniplus.autorizacao.catalogo.desatualizado',
+        status: 503,
+        title: 'Catalog out of date',
+      }),
+    );
+
+    expect(message).toEqual({
+      title: 'O sistema está sendo atualizado.',
+      detail: 'Tente novamente em instantes.',
+    });
+  });
+
   it('traduz o vínculo com fato que aguarda a proteção de dados em qualquer tela, sem registro', () => {
     const message = service.resolve(
       mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente', status: 422 }),
