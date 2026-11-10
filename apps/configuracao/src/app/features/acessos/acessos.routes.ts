@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { permissaoGuard } from '@uniplus/shared-auth/guards';
-import { PERMISSOES_DAS_TELAS } from '../../acesso/permissoes-das-telas';
+import { PERMISSOES_DA_JANELA_DE_MIGRACAO, PERMISSOES_DAS_TELAS } from '../../acesso/permissoes-das-telas';
 import { aguardarPermissoes } from './guardas-de-acesso';
 import { provideMensagensDeAcesso } from './mensagens-de-acesso';
 
@@ -73,6 +73,13 @@ export const ACESSOS_ROUTES: Routes = [
         data: { breadcrumb: 'Versões de perfil na proteção de dados', etapa: 'protecao_de_dados' },
         loadComponent: () =>
           import('./versoes/fila-de-versoes.page').then((m) => m.FilaDeVersoesPage),
+      },
+      {
+        path: 'perfis/:id/janela',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_JANELA_DE_MIGRACAO)],
+        data: { breadcrumb: 'Janela de migração' },
+        loadComponent: () =>
+          import('./janela/janela-da-migracao.page').then((m) => m.JanelaDaMigracaoPage),
       },
       {
         path: 'perfis/:id',
