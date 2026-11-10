@@ -44,6 +44,7 @@ import { RemocaoDialogComponent } from './remocao-dialog.component';
 import { situacaoEncerrada } from './rotulos-da-versao';
 import { SituacaoDoPerfilComponent } from './situacao-do-perfil.component';
 import { SuspensaoDoPerfilComponent } from './suspensao-do-perfil.component';
+import { TrilhaDaContencaoComponent } from './trilha-da-contencao.component';
 import { VersaoEmVigorComponent } from './versao-em-vigor.component';
 import { VersaoPendenteComponent } from './versao-pendente.component';
 import { devolverFocoAoTitulo } from './foco-ao-titulo';
@@ -71,6 +72,7 @@ const ACAO_DE_RETOMADA: Readonly<Record<EtapaDaVersao, AcaoDaContencao>> = {
     RemocaoDialogComponent,
     SituacaoDoPerfilComponent,
     SuspensaoDoPerfilComponent,
+    TrilhaDaContencaoComponent,
     VersaoEmVigorComponent,
     VersaoPendenteComponent,
   ],
@@ -110,6 +112,10 @@ export class PerfilDetalhePage {
     gestaoDeAcessos: this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
     protecaoDeDados: this.permissoes.tem(PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados),
   }));
+  protected readonly podeVerATrilha = computed(
+    () => this.permissoesDaContencao().gestaoDeAcessos ||
+      this.permissoesDaContencao().protecaoDeDados,
+  );
   protected readonly acoes = computed(() => {
     const perfil = this.perfil();
     return perfil === null
