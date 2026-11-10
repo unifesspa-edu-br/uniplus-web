@@ -34,6 +34,7 @@ export function versaoPendente(parcial: Partial<VersaoPendenteDto> = {}): Versao
     remocao: [],
     decisoes: [],
     criadorTemConcessao: false,
+    propostaPorQuemLe: false,
     ...parcial,
   };
 }

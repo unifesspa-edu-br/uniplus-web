@@ -68,8 +68,9 @@ test.describe('Perfil como versão aprovada', () => {
 
     await autor.getByRole('link', { name: 'Versões na gestão de acessos' }).click();
     const propria = autor.locator('section.panel', { hasText: nome });
-    await propria.getByRole('button', { name: 'Aprovar' }).click();
-    await expect(propria.getByText('Quem criou a versão não pode aprová-la nem recusá-la.')).toBeVisible();
+    await expect(propria.getByText('Você propôs esta versão. Outra pessoa precisa aprová-la.')).toBeVisible();
+    await expect(propria.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
+    await expect(propria.getByRole('button', { name: 'Recusar' })).toHaveCount(0);
 
     const gestao = await entrarComoPersona(browser, APP, GESTOR_DE_ACESSOS, '/acessos/versoes-de-perfil/gestao-de-acessos');
     await aprovarNaFila(gestao, '/acessos/versoes-de-perfil/gestao-de-acessos', nome);

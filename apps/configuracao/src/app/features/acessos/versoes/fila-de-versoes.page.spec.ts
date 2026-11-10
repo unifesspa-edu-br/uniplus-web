@@ -12,13 +12,10 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
 import { ok, recusa } from '../testes';
-import { propostaPorQuemLe } from './autoria-da-versao';
 import { DecisaoDaVersao } from './decisao-da-versao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import { FilaDeVersoesPage } from './fila-de-versoes.page';
 import { versaoPendente } from './perfis.testing';
-
-vi.mock('./autoria-da-versao', () => ({ propostaPorQuemLe: vi.fn(() => false) }));
 
 function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -29,11 +26,13 @@ const ITEM: ItemDaFilaDeVersoesDto = {
   perfilId: 'p1',
   perfilNome: 'Operador de inscrições',
   versao: versaoPendente(),
+  propostaPorQuemLe: false,
 };
 const OUTRO: ItemDaFilaDeVersoesDto = {
   perfilId: 'p3',
   perfilNome: 'Auditoria',
   versao: versaoPendente({ versaoId: 'v7', numero: 4, situacaoDoDocumento: 'em_verificacao' }),
+  propostaPorQuemLe: false,
 };
 
 describe('FilaDeVersoesPage', () => {
@@ -128,6 +127,7 @@ describe('FilaDeVersoesPage', () => {
         acrescimo: [],
         remocao: [],
       }),
+      propostaPorQuemLe: false,
     };
     const { fixture, host } = await abrir('gestao_de_acessos', ok([textual]));
     versoes.aprovar.mockReturnValue(of(ok({})));
@@ -161,15 +161,18 @@ describe('FilaDeVersoesPage', () => {
     expect(leitura).toHaveBeenCalledTimes(2);
   });
 
-  it('não oferece aprovar a versão que a própria pessoa propôs, e explica', async () => {
-    vi.mocked(propostaPorQuemLe).mockImplementation((item) => item.versao.versaoId === 'v2');
-    const { host } = await abrir('gestao_de_acessos');
+  it('não oferece aprovar nem recusar a versão que a própria pessoa propôs, e explica', async () => {
+    const propria = { ...ITEM, propostaPorQuemLe: true };
+    const { host } = await abrir('gestao_de_acessos', ok([propria, OUTRO]));
 
-    const propria = secao(host, 'Operador de inscrições');
-    expect(botao(propria, 'Aprovar')).toBeUndefined();
-    expect(botao(propria, 'Recusar')).toBeDefined();
-    expect(propria.textContent).toContain('Você propôs esta versão. Outra pessoa precisa aprová-la.');
+    const secaoPropria = secao(host, 'Operador de inscrições');
+    expect(botao(secaoPropria, 'Aprovar')).toBeUndefined();
+    expect(botao(secaoPropria, 'Recusar')).toBeUndefined();
+    expect(secaoPropria.textContent).toContain(
+      'Você propôs esta versão. Outra pessoa precisa aprová-la.',
+    );
     expect(botao(secao(host, 'Auditoria'), 'Aprovar')).toBeDefined();
+    expect(botao(secao(host, 'Auditoria'), 'Recusar')).toBeDefined();
   });
 
   it('segura a aprovação enquanto o documento não foi verificado e diz por quê', async () => {

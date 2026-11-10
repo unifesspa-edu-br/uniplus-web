@@ -109,6 +109,20 @@ describe('PerfilDetalhePage', () => {
     expect(botao(host, 'Propor nova versão')).toBeUndefined();
   });
 
+  it('diz que a versão pendente foi proposta por quem lê', async () => {
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ versaoPendente: versaoPendente({ propostaPorQuemLe: true }) })),
+    );
+
+    expect(host.textContent).toContain('Você propôs esta versão.');
+  });
+
+  it('não diz isso da versão pendente que outra pessoa propôs', async () => {
+    const { host } = await abrir(ok(perfilDoDetalhe({ versaoPendente: versaoPendente() })));
+
+    expect(host.textContent).not.toContain('Você propôs esta versão.');
+  });
+
   it('com a janela de migração aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
     const janela = { id: 'j1', prazo: '2026-11-12T12:00:00Z', situacao: 'aberta' };
     const { host } = await abrir(ok(perfilDoDetalhe({ janela })));

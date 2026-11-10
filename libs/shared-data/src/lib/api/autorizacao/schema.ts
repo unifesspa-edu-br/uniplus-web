@@ -2090,6 +2090,72 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/autorizacao/janelas-de-migracao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: {
+                    readonly etapa?: string;
+                };
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": readonly components["schemas"]["ItemDaFilaDeJanelasDto"][];
+                        readonly "application/json": readonly components["schemas"]["ItemDaFilaDeJanelasDto"][];
+                        readonly "text/json": readonly components["schemas"]["ItemDaFilaDeJanelasDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/autorizacao/perfis/{id}/janela/lote": {
         readonly parameters: {
             readonly query?: never;
@@ -5072,11 +5138,24 @@ export interface components {
             /** Format: date-time */
             readonly expiraEm: string;
         };
+        readonly ItemDaFilaDeJanelasDto: {
+            /** Format: uuid */
+            readonly perfilId: string;
+            readonly perfilNome: string;
+            /** Format: int32 */
+            readonly versaoAlvo: number;
+            /** Format: date-time */
+            readonly prazo: string;
+            readonly loteEnviado: boolean;
+            /** Format: int32 */
+            readonly quantidadeADecidir: number;
+        };
         readonly ItemDaFilaDeVersoesDto: {
             /** Format: uuid */
             readonly perfilId: string;
             readonly perfilNome: string;
             readonly versao: components["schemas"]["VersaoPendenteDto"];
+            readonly propostaPorQuemLe: boolean;
         };
         readonly ItemDaJanelaDto: {
             /** Format: uuid */
@@ -5437,6 +5516,7 @@ export interface components {
             readonly remocao: readonly components["schemas"]["PermissaoDoPerfilDto"][];
             readonly decisoes: readonly components["schemas"]["DecisaoDaVersaoDto"][];
             readonly criadorTemConcessao: boolean;
+            readonly propostaPorQuemLe: boolean;
         };
     };
     responses: never;
