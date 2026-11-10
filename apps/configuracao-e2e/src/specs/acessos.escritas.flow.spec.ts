@@ -22,6 +22,25 @@ const PERFIL = {
   temVersaoPendente: false,
 };
 
+const DETALHE_DO_PERFIL = {
+  id: PERFIL.id,
+  nome: PERFIL.nome,
+  descricao: PERFIL.descricao,
+  governanca: null,
+  sensibilidade: 'interno',
+  composicaoEmVigor: {
+    versaoId: '01960000-0000-7000-0000-0000000000b1',
+    numero: 1,
+    permissoes: [],
+    protocolo: 'P-1/2026',
+    documentoVerificadoEm: '2026-10-20T12:00:00Z',
+    desde: '2026-10-21T12:00:00Z',
+  },
+  versaoPendente: null,
+  ultimaVersaoEncerradaSemVigor: null,
+  suspensao: null,
+};
+
 const URL_DE_ENVIO = 'http://localhost:9000/uniplus-teste/documento-do-perfil.pdf';
 const ENVIO_DO_DOCUMENTO = {
   perfilId: '01960000-0000-7000-0000-0000000000a2',
@@ -146,7 +165,7 @@ async function mockPerfis(
   await page.route(/\/api\/autorizacao\/permissoes(\?.*)?$/, (route) =>
     route.fulfill({ status: 200, headers: CORS_HEADERS, json: CATALOGO }),
   );
-  await page.route(/\/api\/autorizacao\/perfis(\/[^/?]+(\/ativacao)?)?(\?.*)?$/, async (route) => {
+  await page.route(/\/api\/autorizacao\/perfis(\/[^/?]+(\/(desativacao|reativacao|contencao))?)?(\?.*)?$/, async (route) => {
     const requisicao = route.request();
     if (requisicao.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -164,6 +183,22 @@ async function mockPerfis(
         await responder(route, { status: 500, corpo: ERRO_INTERNO });
         return;
       }
+      const caminho = new URL(requisicao.url()).pathname;
+      if (caminho.endsWith('/contencao')) {
+        await responder(route, { status: 200, corpo: [] });
+        return;
+      }
+      if (caminho.endsWith(`/perfis/${PERFIL.id}`)) {
+        await responder(route, {
+          status: 200,
+          corpo: {
+            ...DETALHE_DO_PERFIL,
+            ativo: perfil.ativo,
+            desativadoDesde: perfil.ativo ? null : '2026-11-10T12:00:00Z',
+          },
+        });
+        return;
+      }
       await responder(route, {
         status: 200,
         corpo: gravou && recarga === 'sem-o-item' ? [] : [perfil],
@@ -178,7 +213,8 @@ async function mockPerfis(
     await retida;
     if (resposta.status < 300) {
       gravou = true;
-      if (requisicao.url().endsWith('/ativacao')) perfil.ativo = requisicao.method() === 'POST';
+      if (requisicao.url().endsWith('/desativacao')) perfil.ativo = false;
+      if (requisicao.url().endsWith('/reativacao')) perfil.ativo = true;
     }
     await responder(
       route,
@@ -243,8 +279,12 @@ async function mockConcessoes(
 const tituloDePerfis = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Perfis', level: 2, exact: true });
 const linkDoPerfil = (page: Page): Locator => page.getByRole('link', { name: PERFIL.nome });
-const alternar = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
-  page.getByRole('button', { name: `${verbo} o perfil ${PERFIL.nome}`, exact: true });
+const acaoDoPerfil = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
+  page.getByRole('button', { name: verbo, exact: true });
+const tituloDoPerfil = (page: Page): Locator =>
+  page.getByRole('heading', { name: PERFIL.nome, level: 1 });
+const dialogoDeContencao = (page: Page): Locator =>
+  page.getByRole('dialog', { name: 'Desativar o perfil' });
 const novo = (page: Page): Locator => page.getByRole('button', { name: 'Novo perfil' });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de perfil de acesso' });
@@ -273,7 +313,7 @@ test.describe('Acessos — escritas', () => {
   });
 
   test.describe('perfis', () => {
-    test('criação pendente preserva foco e valores, ignora toda ativação e a recusa foca o campo', async ({
+    test('criação pendente preserva foco e valores, ignora o clique repetido e a recusa foca o campo', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [{ status: 422, corpo: RECUSA_DE_NOME }]);
@@ -409,47 +449,85 @@ test.describe('Acessos — escritas', () => {
       await expect(tituloDePerfis(page)).toBeFocused();
     });
 
-    test('desativação pendente deixa a lista indisponível, anuncia o andamento e devolve o foco ao botão da linha', async ({
+    async function abrirDesativacao(page: Page): Promise<Locator> {
+      await page.goto(`/acessos/perfis/${PERFIL.id}`);
+      await acaoDoPerfil(page, 'Desativar').click();
+      const caixa = dialogoDeContencao(page);
+      await expect(caixa).toBeVisible();
+      return caixa;
+    }
+
+    test('desativação pendente deixa o diálogo somente leitura e envia o comando uma só vez, com chave', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [OK]);
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      const confirmar = caixa.getByRole('button', { name: 'Desativar perfil' });
+      await confirmar.click();
 
-      await expect(alternar(page, 'Desativar')).toBeDisabled();
-      await expect(novo(page)).toBeDisabled();
-      await expect(page.getByRole('status').filter({ hasText: 'Desativando' })).toBeAttached();
-      expect(envios.map((envio) => envio.metodo)).toEqual(['DELETE']);
+      await expect(caixa.getByLabel('Motivo')).toBeDisabled();
+      await expect(caixa.getByLabel('Motivo')).toHaveValue('Perfil sem uso.');
+      await expect(confirmar).toHaveAttribute('aria-busy', 'true');
+      await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeDisabled();
+      await confirmar.dispatchEvent('click');
+      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
+      expect(envios[0]?.chave).toBeTruthy();
 
       liberar();
-      await expect(
-        page.getByRole('status').filter({ hasText: 'Perfil Operador de inscrições desativado.' }),
-      ).toBeAttached();
-      await expect(alternar(page, 'Reativar')).toBeFocused();
+      await expect(caixa).toBeHidden();
+      expect(envios).toHaveLength(1);
     });
 
-    test('mudança de situação concluída, com a linha ausente da recarga, leva o foco ao título', async ({
+    test('desativação concluída relê o perfil, oferece reativar e leva o foco ao título', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [OK], 'sem-o-item');
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const { liberar } = await mockPerfis(page, [OK]);
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      await caixa.getByRole('button', { name: 'Desativar perfil' }).click();
       liberar();
 
-      await expect(tituloDePerfis(page)).toBeFocused();
+      await expect(caixa).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
+      await expect(acaoDoPerfil(page, 'Desativar')).toHaveCount(0);
+      await expect(tituloDoPerfil(page)).toBeFocused();
     });
 
-    test('mudança de situação recusada mostra o motivo e devolve o foco ao botão', async ({
+    test('reativação pede o motivo, envia por POST em reativacao e volta a oferecer desativar', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }]);
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const { liberar, envios } = await mockPerfis(page, [OK, OK]);
       liberar();
+      const desativacao = await abrirDesativacao(page);
+      await desativacao.getByLabel('Motivo').fill('Perfil sem uso.');
+      await desativacao.getByRole('button', { name: 'Desativar perfil' }).click();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
 
-      await expect(page.getByText('Não foi possível concluir')).toBeVisible();
-      await expect(alternar(page, 'Desativar')).toBeEnabled();
-      await expect(alternar(page, 'Desativar')).toBeFocused();
+      await acaoDoPerfil(page, 'Reativar').click();
+      const reativacao = page.getByRole('dialog', { name: 'Reativar o perfil' });
+      await reativacao.getByLabel('Motivo').fill('Voltou a ser usado.');
+      await reativacao.getByRole('button', { name: 'Reativar perfil' }).click();
+
+      await expect(reativacao).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeVisible();
+      expect(envios).toHaveLength(2);
+      expect(envios[1]?.chave).not.toBe(envios[0]?.chave);
+    });
+
+    test('desativação sem motivo marca o campo, leva o foco a ele e não chama a API', async ({
+      page,
+    }) => {
+      const { envios } = await mockPerfis(page, []);
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByRole('button', { name: 'Desativar perfil' }).click();
+
+      const motivo = caixa.getByLabel('Motivo');
+      await expect(motivo).toHaveAttribute('aria-invalid', 'true');
+      await expect(motivo).toBeFocused();
+      await expect(caixa.getByRole('alert')).toContainText('Informe o motivo');
+      expect(envios).toEqual([]);
     });
   });
 
