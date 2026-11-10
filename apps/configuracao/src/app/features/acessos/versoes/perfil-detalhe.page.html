@@ -96,6 +96,7 @@
       [enviando]="escrita.cancelando()"
       [motivo]="cancelamento.motivo"
       [tentou]="cancelamento.tentou()"
+      [pedidoDeFoco]="cancelamento.pedidoDeFoco()"
       (confirmado)="cancelarVersao()"
     />
   }
@@ -113,6 +114,7 @@
     [enviando]="escrita.contendo()"
     [motivo]="contencao.motivo"
     [tentou]="contencao.tentou()"
+    [pedidoDeFoco]="contencao.pedidoDeFoco()"
     (confirmado)="confirmarContencao()"
   />
 }

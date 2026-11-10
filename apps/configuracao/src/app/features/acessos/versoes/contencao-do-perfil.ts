@@ -32,6 +32,7 @@ export class ContencaoDoPerfil {
   readonly erro = signal<string | null>(null);
   readonly tentou = this.campo.tentou;
   readonly motivo = this.campo.controle;
+  readonly pedidoDeFoco = this.campo.pedidoDeFoco;
   readonly textos = computed(() => TEXTOS_DA_CONTENCAO[this.acao()]);
 
   abrir(acao: AcaoDaContencao): void {
