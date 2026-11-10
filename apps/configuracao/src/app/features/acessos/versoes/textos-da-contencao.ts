@@ -1,5 +1,5 @@
 /** As ações de contenção do perfil que pedem um motivo. */
-export type AcaoDaContencao = 'desativar' | 'reativar';
+export type AcaoDaContencao = 'suspender' | 'desativar' | 'reativar';
 
 export interface TextosDaContencao {
   readonly titulo: string;
@@ -10,6 +10,14 @@ export interface TextosDaContencao {
 }
 
 export const TEXTOS_DA_CONTENCAO: Readonly<Record<AcaoDaContencao, TextosDaContencao>> = {
+  suspender: {
+    titulo: 'Suspender o perfil',
+    confirmar: 'Suspender perfil',
+    ajuda:
+      'Nenhuma concessão do perfil dá acesso até a retomada, que exige outra pessoa. As concessões não são revogadas. O motivo fica na trilha e não vai nos avisos.',
+    sucesso: 'Perfil suspenso',
+    variante: 'danger',
+  },
   desativar: {
     titulo: 'Desativar o perfil',
     confirmar: 'Desativar perfil',

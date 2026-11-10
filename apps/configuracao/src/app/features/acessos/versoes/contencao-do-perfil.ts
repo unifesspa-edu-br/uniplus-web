@@ -22,7 +22,7 @@ export class ContencaoDoPerfil {
   private readonly notificacoes = inject(NotificationService);
   private readonly campo = new CampoDoMotivo();
   private readonly chaves = new ChavesPorComando();
-  readonly acao = signal<AcaoDaContencao>('desativar');
+  readonly acao = signal<AcaoDaContencao>('suspender');
   readonly aberto = signal(false);
   readonly erro = signal<string | null>(null);
   readonly tentou = this.campo.tentou;
@@ -71,8 +71,11 @@ export class ContencaoDoPerfil {
     corpo: { readonly motivo: string },
     contexto: HttpContext,
   ): Observable<ApiResult<unknown>> {
-    return acao === 'desativar'
-      ? this.api.desativar(perfilId, corpo, contexto)
-      : this.api.reativar(perfilId, corpo, contexto);
+    const chamadas = {
+      suspender: () => this.api.suspender(perfilId, corpo, contexto),
+      desativar: () => this.api.desativar(perfilId, corpo, contexto),
+      reativar: () => this.api.reativar(perfilId, corpo, contexto),
+    };
+    return chamadas[acao]();
   }
 }

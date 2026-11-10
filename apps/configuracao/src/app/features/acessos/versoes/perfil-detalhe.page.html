@@ -25,6 +25,11 @@
           Remover permissões
         </button>
       }
+      @if (a.suspender) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('suspender')">
+          Suspender
+        </button>
+      }
       @if (a.desativar) {
         <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('desativar')">
           Desativar
