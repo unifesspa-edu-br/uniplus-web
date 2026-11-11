@@ -387,9 +387,80 @@ features/
 
 ### Tamanho de arquivo
 
-- Nenhum arquivo de produção (`.ts`, `.html` e `.css` em `apps/` e `libs/`) passa de **400 linhas físicas**, contando comentários e linhas em branco. Ficam de fora specs, mocks de teste, projetos E2E e contratos gerados.
-- `npm run check:tamanho` confere a regra e roda no CI. Arquivo novo acima do limite é recusado.
-- Os arquivos que ainda excedem o limite estão em `tools/tamanho-de-arquivo/excecoes.txt`. A lista só diminui: arquivo listado não pode crescer, toda redução tem de ser registrada nela, e ao chegar a 400 linhas ou menos a entrada sai (`npm run check:tamanho -- --atualizar` reduz números e remove entradas).
+- A regra de tamanho de arquivo (400 linhas físicas, specs, mocks e E2E incluídos) está em [§ Métricas de qualidade](#métricas-de-qualidade).
+- `npm run check:tamanho` roda no CI e, por enquanto, mede só arquivo de produção (`.ts`, `.html` e `.css` em `apps/` e `libs/`): ele **ainda não mede `*.spec.ts`, `*.mock.ts`, `*.testing.ts`, `test-setup.ts`, as pastas chamadas `testing`, os projetos `apps/*-e2e` e `libs/shared-e2e`, mas a regra vale para eles** (outros arquivos de apoio a teste, como um `*.fixture.ts` fora desses padrões e dessas pastas, já são medidos), e a revisão a cobra. Arquivo de produção novo acima do limite é recusado.
+- Os arquivos de produção que ainda excedem o limite estão em `tools/tamanho-de-arquivo/excecoes.txt`. A lista só diminui: arquivo listado não pode crescer, toda redução tem de ser registrada nela, e ao chegar a 400 linhas ou menos a entrada sai (`npm run check:tamanho -- --atualizar` reduz números e remove entradas). A lista é dívida a pagar, não autorização: o CI aceita arquivo dela que não cresce (e, se diminuir, pede a lista atualizada), mas a regra pede que arquivo alterado pelo PR termine com até 400 linhas.
+
+### Métricas de qualidade
+
+As métricas abaixo valem para todo código que o PR cria ou altera, de produção e de teste (specs, mocks, utilitários de teste e E2E). A revisão as cobra; o ESLint e o `check:tamanho` são sinais auxiliares, não a medida.
+
+| # | Regra | Limite |
+|---|---|---|
+| 1 | Linhas físicas por função | 15 |
+| 2 | Linhas físicas por arquivo | 400 |
+| 3 | Parâmetros por função, método ou construtor | 4 |
+| 4 | Complexidade cognitiva / ciclomática por função | 15 / 10 |
+| 5 | Supressão de aviso | proibida |
+| 6 | Código escrito só para caber na métrica | reprovado |
+
+**1. Função: até 15 linhas físicas.** Conta-se da linha da assinatura até a linha da chave final, inclusive, com linhas em branco, comentários e linhas só com chave. Só ficam fora os decorators e o JSDoc que estão acima da assinatura; comentário de qualquer tipo dentro do corpo conta. Arrow function de corpo em expressão, sem chaves, conta da assinatura até a última linha da expressão. Vale para funções, métodos, construtores, getters e setters, toda arrow function e cada caso de teste: cada `it(...)` e `test(...)` conta da linha do `it` até a linha do `});`. O `describe(...)` é agrupador: a função passada a ele não conta como uma função só, porque o que conta são os casos e hooks dentro dele; funções auxiliares declaradas dentro do `describe` contam normalmente, assim como os `beforeEach`/`afterEach`.
+
+O aviso `max-lines-per-function` do ESLint **não é a medida**: ele aceita 30 linhas, não conta linhas em branco e comentários e não roda nos arquivos que o bloco de métricas do `eslint.config.mjs` ignora (`*.spec.ts`, `*.testing.ts`, `*.mock.ts`, `test-setup.ts`, pastas `src/fixtures/` e `src/support/` e os clientes gerados). Uma função de 24 linhas físicas passa nele sem aviso e está fora da regra.
+
+**2. Arquivo: até 400 linhas físicas.** Todas as linhas contam (comentários, imports e linhas em branco), e a última linha conta mesmo sem quebra no fim. Vale para todo arquivo de código do repositório, qualquer que seja a extensão (`.ts`, `.mts`, `.js`, `.mjs`, `.html`, `.css`, `.scss`, `.sh` e outras), em `apps/`, `libs/`, `tools/` ou qualquer outro diretório, specs, mocks e E2E incluídos. Ficam fora só os arquivos gerados: os clientes OpenAPI em `libs/shared-data/src/lib/api/*/schema.ts`. O `check:tamanho` ainda mede só `.ts`, `.html` e `.css` de produção em `apps/` e `libs/` (ver [§ Tamanho de arquivo](#tamanho-de-arquivo)).
+
+**3. Parâmetros: até 4** por função, método ou construtor. A injeção de dependência usa `inject()`, não parâmetro de construtor. O aviso `max-params` do ESLint mede este limite, fora dos specs, como sinal auxiliar.
+
+**4. Complexidade: cognitiva até 15 e ciclomática até 10** por função (`sonarjs/cognitive-complexity` e `complexity` do ESLint).
+
+**5. Supressão de aviso: proibida.** Não se usa `eslint-disable` (de arquivo, de bloco ou de linha), `@ts-ignore`, `@ts-nocheck` nem `@ts-expect-error` para calar aviso: o aviso se corrige no código. Quando o lint revela design ruim, o design é refeito. Desligar uma regra que não se aplica ao workspace inteiro ou a uma categoria de arquivos no `eslint.config.mjs`, com comentário justificando, é decisão de projeto e continua permitido; bloco de configuração que isenta um arquivo específico é supressão disfarçada e também é proibido.
+
+**6. Código feito só para caber na métrica é reprovado**, mesmo dentro dos limites: função-ponte que só repassa a chamada, estado fatiado sem sentido (signals ou serviços criados só para dividir uma função), parâmetros agrupados num objeto artificial que não existe no domínio. A divisão segue responsabilidade, conforme SOLID, Clean Code e as recomendações do Angular (componente de apresentação, serviço, `computed`).
+
+#### Exemplo
+
+Divisão correta: o componente orquestra o envio, e a conversão do formulário para o contrato da API fica numa função pura com nome de domínio. Cada função tem até 15 linhas físicas.
+
+```typescript
+protected enviar(): void {
+  if (this.formulario.invalid) {
+    this.formulario.markAllAsTouched();
+    return;
+  }
+  const inscricao = paraInscricao(this.formulario.getRawValue());
+  this.inscricoes.enviar(inscricao).subscribe({
+    next: () => this.aviso.sucesso('Inscrição enviada.'),
+    error: (erro: unknown) => this.aviso.erroDaApi(erro),
+  });
+}
+
+// inscricao.mapeamento.ts
+export function paraInscricao(valor: ValorDoFormularioDeInscricao): NovaInscricaoDto {
+  return {
+    processoId: valor.processoId,
+    ofertaId: valor.oferta.id,
+    modalidade: valor.modalidade,
+    nomeSocial: valor.nomeSocial?.trim() || null,
+  };
+}
+```
+
+Divisão reprovada: a função longa foi cortada em pedaços que só repassam, sem responsabilidade própria.
+
+```typescript
+protected enviar(): void {
+  this.enviarInterno({ formulario: this.formulario, servico: this.inscricoes }); // objeto artificial
+}
+
+private enviarInterno(contexto: ContextoDoEnvio): void {
+  this.executarParte1(contexto); // função-ponte
+}
+```
+
+#### Dívida existente e CI
+
+O CI **não barra** a dívida antiga: as regras do ESLint continuam como aviso, o `check:tamanho` ainda não mede specs, mocks e E2E e a lista `tools/tamanho-de-arquivo/excecoes.txt` continua. As regras valem para o que o PR cria ou altera: função nova ou alterada cumpre os limites, e arquivo que o PR cria ou altera termina com até 400 linhas (se já passava, o PR o divide por assunto). A dívida é paga por projeto (cada app e cada lib), cada um com sua issue; quando um projeto zera a dívida, o CI passa a barrar aquele projeto.
 
 ---
 
@@ -516,6 +587,7 @@ Complementa os Quality gates acima (verificações de CI automáticas) com higie
 - [ ] Branch **rebaseada** sobre a `main` mais recente
 - [ ] Commits "WIP" / "ajustes do PR" foram **squashados** via `git rebase -i`
 - [ ] PR vinculado à issue com `Closes #N` na descrição
+- [ ] Métricas de qualidade cumpridas no código criado ou alterado, specs incluídos, sem supressão de aviso ([§ Métricas de qualidade](#métricas-de-qualidade)) — o CI ainda não as barra
 
 ---
 
@@ -526,7 +598,7 @@ Todo PR passa por revisão humana. O revisor verifica:
 1. **Acessibilidade** — WCAG 2.1 AA, navegação por teclado, contraste
 2. **Responsividade** — funciona em mobile, tablet e desktop
 3. **Segurança** — PII masking, XSS, tokens
-4. **Qualidade** — componentes pequenos, OnPush, sem lógica no template
+4. **Qualidade** — componentes pequenos, OnPush, sem lógica no template e as [métricas de qualidade](#métricas-de-qualidade) contadas em linhas físicas
 5. **UX** — feedback ao usuário (loading, erros, sucesso), pt-BR correto
 
 O PR precisa de **1 aprovação** para ser mergeado.
