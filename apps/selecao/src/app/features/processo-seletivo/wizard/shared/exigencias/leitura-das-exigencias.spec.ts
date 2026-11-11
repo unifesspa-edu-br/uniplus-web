@@ -346,7 +346,7 @@ describe('exigenciasDe — do processo de volta ao rascunho', () => {
       observacao: 'cotas',
     });
     expect(bases[1].status).toBe('PENDENTE');
-    expect(bases[1].observacao).toBe('');
+    expect(bases[1].observacao).toBeNull();
   });
 
   it('guarda a fase pelo código, não pelo identificador', () => {

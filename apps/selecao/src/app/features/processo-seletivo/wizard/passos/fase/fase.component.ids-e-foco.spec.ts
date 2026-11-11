@@ -8,7 +8,7 @@ import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.com
 import { FasePassoComponent } from './fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 import { fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS, TIPOS_DOCUMENTO } from './fase.testing';
-import { usarFase, type ContextoDaFase } from './fase-passo.testing';
+import { usarFase, type ContextoDaFase, umaNorma } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let detectar: ContextoDaFase['detectar'];
@@ -53,7 +53,7 @@ describe('FasePassoComponent', () => {
         runInInjectionContext(
           fixture.debugElement.injector,
           () => new EditorDaExigenciaComponent(),
-        ).escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 1/2000');
+        ).definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 1/2000' })]);
         fixture.detectChanges();
       }
       return [avaliacao, recursos].map((fixture) => fixture.nativeElement as HTMLElement);

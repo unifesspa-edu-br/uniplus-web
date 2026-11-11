@@ -1,14 +1,15 @@
 import {
   ABRANGENCIAS_ESCOLHIVEIS,
   ABRANGENCIA_PADRAO,
+  baseLegalNova,
   CONSEQUENCIAS_ESCOLHIVEIS as CONSEQUENCIAS_DO_DOCUMENTO,
   CONSEQUENCIA_REENVIO,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   STATUS_BASE_LEGAL_RESOLVIDO,
+  temNormaResolvida,
 } from '@uniplus/shared-utils';
 
 import type {
-  BaseLegalConfig,
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
   NoDeExigencia,
@@ -66,16 +67,6 @@ export function exigenciaNova(
   };
 }
 
-/** Uma norma em branco, no alcance e no status que são o caso comum. */
-export function baseLegalNova(): BaseLegalConfig {
-  return {
-    referencia: '',
-    abrangencia: ABRANGENCIA_PADRAO,
-    status: STATUS_BASE_LEGAL_RESOLVIDO,
-    observacao: '',
-  };
-}
-
 /**
  * Acrescenta a exigência como declaração de RAIZ, sem tocar no resto da árvore.
  *
@@ -113,28 +104,19 @@ export function exigenciasVazias(): ExigenciasDoRascunho {
 }
 
 /**
- * O vocabulário da base legal e as consequências do documento são do editor compartilhado em
- * `@uniplus/shared-ui`, reexportados daqui para que o módulo tenha um só lugar de onde importar.
- * O alcance e o status que a tela oferece a uma exigência recém-declarada são o caso comum: o
- * edital, resolvida.
+ * O vocabulário e as regras puras da base legal são os mesmos do modelo de formulário, definidos
+ * em `@uniplus/shared-utils` e reexportados daqui para que o módulo tenha um só lugar de onde
+ * importar. A norma recém-declarada nasce no caso comum: o edital, resolvida.
  */
 export {
   ABRANGENCIAS_ESCOLHIVEIS,
   ABRANGENCIA_PADRAO,
+  baseLegalNova,
   CONSEQUENCIA_REENVIO,
   STATUS_BASE_LEGAL_ESCOLHIVEIS,
   STATUS_BASE_LEGAL_RESOLVIDO,
+  temNormaResolvida,
 };
-
-/**
- * Se alguma das normas sustenta a exigência perante a publicação: declarada e identificada
- * como resolvida. Uma norma só com a referência, mas pendente, não basta.
- */
-export function temNormaResolvida(bases: readonly BaseLegalConfig[]): boolean {
-  return bases.some(
-    (base) => base.referencia.trim() !== '' && base.status === STATUS_BASE_LEGAL_RESOLVIDO,
-  );
-}
 
 /**
  * Se a exigência decide sozinha o resultado de quem não a cumpre: é obrigatória ou declara
