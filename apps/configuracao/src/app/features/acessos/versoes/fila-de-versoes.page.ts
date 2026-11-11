@@ -9,7 +9,7 @@ import {
   untracked,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { EtapaDaVersao, ItemDaFilaDeVersoesDto } from '@uniplus/shared-data/autorizacao';
 import {
   acompanharLeitura,
@@ -18,6 +18,7 @@ import {
   IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { PERMISSOES_DAS_TELAS } from '../../../acesso/permissoes-das-telas';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { DecisaoDaVersao } from './decisao-da-versao';
@@ -83,7 +84,7 @@ export class FilaDeVersoesPage {
   private readonly permissoes = inject(PermissoesService);
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly podeAbrirOPerfil = computed(() =>
-    this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
+    this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS['acessos/perfis']),
   );
   protected readonly texto = computed(() => APRESENTACAO[this.etapa()]);
   protected readonly leitura = acompanharLeitura({

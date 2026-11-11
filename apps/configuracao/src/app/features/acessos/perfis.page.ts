@@ -1,5 +1,6 @@
 import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -43,6 +44,10 @@ export class PerfisPage {
   protected readonly edicao = inject(EdicaoDosPerfis);
   protected readonly escrita = inject(EscritaDoPerfil);
   protected readonly idDoCadastro = ID_DO_CADASTRO;
+  private readonly permissoes = inject(PermissoesService);
+  protected readonly podeCriar = computed(() =>
+    this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
+  );
   private readonly foco = devolverFocoDaLista({
     gravando: this.escrita.gravando,
     carregando: this.store.carregando,

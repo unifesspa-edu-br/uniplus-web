@@ -20,7 +20,7 @@ const RESULTADO: Readonly<Record<string, RotuloDaDecisao>> = {
 const SITUACAO_ENCERRADA: Readonly<Record<string, string>> = {
   recusada: 'recusada',
   cancelada: 'cancelada',
-  expirada: 'expirou sem decisão',
+  expirada: 'encerrada por expiração',
 };
 
 export function etapaDaVersao(codigo: string): string {

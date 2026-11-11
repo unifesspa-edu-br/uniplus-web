@@ -5,6 +5,7 @@ import {
   TemplateRef,
   computed,
   contentChild,
+  effect,
   inject,
   input,
 } from '@angular/core';
@@ -95,16 +96,20 @@ export class TabelaDaJanelaComponent {
   readonly tituloDaAcao = input('Decisão');
   protected readonly acao = contentChild<TemplateRef<{ $implicit: ItemDaJanelaDto }>>('acao');
   private readonly catalogo = inject(CatalogoDePermissoesStore);
+  private readonly permissoes = inject(PermissoesService);
+  private readonly podeConsultarOCatalogo = computed(() =>
+    this.permissoes.tem(PERMISSAO.autorizacao.permissoesConsultarCatalogo),
+  );
   /** O nome legível da permissão; sem acesso ao catálogo, o próprio código. */
   protected readonly nomeDaPermissao = computed(() => {
-    const porCodigo = this.catalogo.porCodigo();
-    return (codigo: string): string => porCodigo.get(codigo)?.nome ?? codigo;
+    const porCodigo = this.podeConsultarOCatalogo() ? this.catalogo.porCodigo() : null;
+    return (codigo: string): string => porCodigo?.get(codigo)?.nome ?? codigo;
   });
 
   constructor() {
-    if (inject(PermissoesService).tem(PERMISSAO.autorizacao.permissoesConsultarCatalogo)) {
-      this.catalogo.carregar();
-    }
+    effect(() => {
+      if (this.podeConsultarOCatalogo()) this.catalogo.garantir();
+    });
   }
 
   protected situacao(item: ItemDaJanelaDto) {

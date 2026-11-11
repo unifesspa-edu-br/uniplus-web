@@ -16,20 +16,13 @@ describe('destinoDeVolta', () => {
     ).toEqual({ rota: '/acessos/perfis', rotulo: 'Ir para os perfis' });
   });
 
-  it('sem manter, volta à fila de janelas da etapa que a pessoa tem', () => {
-    expect(destinoDeVolta(com(autorizacao.perfisAprovarProtecaoDeDados)).rota).toBe(
-      '/acessos/janelas-de-migracao/protecao-de-dados',
-    );
-  });
-
-  it('com as duas etapas e sem manter, volta à fila da gestão de acessos', () => {
-    expect(
-      destinoDeVolta(
-        com(autorizacao.perfisAprovarFuncional, autorizacao.perfisAprovarProtecaoDeDados),
-      ),
-    ).toEqual({
-      rota: '/acessos/janelas-de-migracao/gestao-de-acessos',
-      rotulo: 'Ir para as janelas de migração',
+  it.each([
+    ['aprova a proteção de dados', autorizacao.perfisAprovarProtecaoDeDados],
+    ['aprova pela gestão de acessos', autorizacao.perfisAprovarFuncional],
+  ])('quem só %s também volta à lista de perfis', (_quem, permissao) => {
+    expect(destinoDeVolta(com(permissao))).toEqual({
+      rota: '/acessos/perfis',
+      rotulo: 'Ir para os perfis',
     });
   });
 

@@ -35,7 +35,8 @@ export class CatalogoDePermissoesStore {
         this.modulos().flatMap((modulo) =>
           modulo.resources.flatMap((resource) =>
             resource.permissoes.map(
-              ({ codigo, nome, sensibilidade }) => [codigo, { codigo, nome, sensibilidade }] as const,
+              ({ codigo, nome, sensibilidade }) =>
+                [codigo, { codigo, nome, sensibilidade }] as const,
             ),
           ),
         ),
@@ -44,6 +45,11 @@ export class CatalogoDePermissoesStore {
 
   constructor() {
     notificarFalhasDeLeitura(this.problemas, inject(NotificationService), [this.consulta.problem]);
+  }
+
+  /** Pede a primeira leitura do catálogo; não relê quando ele já foi pedido. */
+  garantir(): void {
+    this.ativo.set(true);
   }
 
   carregar(): void {

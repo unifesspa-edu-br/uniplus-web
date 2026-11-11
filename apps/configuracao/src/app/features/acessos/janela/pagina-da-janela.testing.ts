@@ -47,59 +47,84 @@ export interface PaginaDaJanela {
   readonly assentar: () => Promise<void>;
 }
 
+/** As permissões da pessoa: fixas ou lidas de um signal, para mudar com a página aberta. */
+export type Concedidas = readonly string[] | (() => readonly string[]);
+
+function permissoesDoTeste(concedidas: Concedidas) {
+  const lidas = (): readonly string[] =>
+    typeof concedidas === 'function' ? concedidas() : concedidas;
+  return {
+    tem: (c: string) => lidas().includes(c),
+    temAlguma: (...c: string[]) => c.some((x) => lidas().includes(x)),
+  };
+}
+
+function provedoresDaJanela(concedidas: Concedidas) {
+  return [
+    provideHttpClient(withInterceptors([apiResultInterceptor])),
+    provideHttpClientTesting(),
+    provideRouter([]),
+    provideMensagensDeAcesso(),
+    { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+    { provide: JanelaDeMigracaoApi, useValue: api },
+    { provide: NotificationService, useValue: notificacoes },
+    { provide: PermissoesService, useValue: permissoesDoTeste(concedidas) },
+    { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },
+  ];
+}
+
+async function assentarATela(): Promise<void> {
+  await new Promise((resolver) => setTimeout(resolver));
+  TestBed.inject(ApplicationRef).tick();
+  await new Promise((resolver) => setTimeout(resolver));
+  TestBed.inject(ApplicationRef).tick();
+}
+
+function respostasDaLeitura(http: HttpTestingController) {
+  const responder = async (proxima: JanelaDeMigracaoDto): Promise<void> => {
+    await assentarATela();
+    http.expectOne(URL_DA_JANELA).flush(proxima);
+    await assentarATela();
+  };
+  const falhar = async (status: number, code = 'uniplus.x'): Promise<void> => {
+    await assentarATela();
+    http.expectOne(URL_DA_JANELA).flush(PROBLEMA(status, code), CABECALHO_DO_PROBLEMA(status));
+    await assentarATela();
+  };
+  return { responder, falhar };
+}
+
+const PROBLEMA = (status: number, code: string) => ({
+  title: 'Falhou',
+  status,
+  code,
+  type: 'about:blank',
+  traceId: '',
+});
+const CABECALHO_DO_PROBLEMA = (status: number) => ({
+  status,
+  statusText: 'Erro',
+  headers: { 'Content-Type': 'application/problem+json' },
+});
+
 /** Monta a página da janela com as permissões informadas, sem responder a leitura. */
 export function montarJanela(
-  concedidas: readonly string[] = [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
+  concedidas: Concedidas = [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
 ): PaginaDaJanela {
-  TestBed.configureTestingModule({
-    providers: [
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-      provideRouter([]),
-      provideMensagensDeAcesso(),
-      { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
-      { provide: JanelaDeMigracaoApi, useValue: api },
-      { provide: NotificationService, useValue: notificacoes },
-      { provide: PermissoesService, useValue: {
-          tem: (c: string) => concedidas.includes(c),
-          temAlguma: (...c: string[]) => c.some((x) => concedidas.includes(x)),
-        },
-      },
-      { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },
-    ],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDaJanela(concedidas) });
   const http = TestBed.inject(HttpTestingController);
   const fixture = TestBed.createComponent(JanelaDaMigracaoPage);
   fixture.componentRef.setInput('id', PERFIL);
   const host = fixture.nativeElement as HTMLElement;
   document.body.appendChild(host);
-  const assentar = async (): Promise<void> => {
-    await new Promise((resolver) => setTimeout(resolver));
-    TestBed.inject(ApplicationRef).tick();
-    await new Promise((resolver) => setTimeout(resolver));
-    TestBed.inject(ApplicationRef).tick();
-  };
-  const responder = async (proxima: JanelaDeMigracaoDto): Promise<void> => {
-    await assentar();
-    http.expectOne(URL_DA_JANELA).flush(proxima);
-    await assentar();
-  };
-  const falhar = async (status: number, code = 'uniplus.x'): Promise<void> => {
-    await assentar();
-    http.expectOne(URL_DA_JANELA).flush(
-      { title: 'Falhou', status, code, type: 'about:blank', traceId: '' },
-      { status, statusText: 'Erro', headers: { 'Content-Type': 'application/problem+json' } },
-    );
-    await assentar();
-  };
   fixture.detectChanges();
-  return { fixture, host, http, responder, falhar, assentar };
+  return { fixture, host, http, ...respostasDaLeitura(http), assentar: assentarATela };
 }
 
 /** Abre a página da janela com a leitura respondida e as permissões informadas. */
 export async function abrirJanela(
   janela: JanelaDeMigracaoDto,
-  concedidas: readonly string[] = [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
+  concedidas: Concedidas = [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
 ): Promise<PaginaDaJanela> {
   const pagina = montarJanela(concedidas);
   await pagina.responder(janela);

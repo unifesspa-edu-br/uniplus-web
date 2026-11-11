@@ -17,6 +17,7 @@ import {
   IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { PERMISSOES_DO_PERFIL } from '../../../acesso/permissoes-das-telas';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { nomesDeEscopo } from '../nomes-de-escopo';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
@@ -91,7 +92,9 @@ export class JanelaDaMigracaoPage {
     this.permissoes.tem(autorizacao.perfisAprovarProtecaoDeDados),
   );
   protected readonly volta = computed(() => destinoDeVolta(this.permissoes));
-  protected readonly podeVerOPerfil = computed(() => this.permissoes.tem(autorizacao.perfisManter));
+  protected readonly podeVerOPerfil = computed(() =>
+    this.permissoes.temAlguma(...PERMISSOES_DO_PERFIL),
+  );
   protected readonly leitura = acompanharLeitura({
     assunto: 'janela de migração',
     falha: this.store.falha,

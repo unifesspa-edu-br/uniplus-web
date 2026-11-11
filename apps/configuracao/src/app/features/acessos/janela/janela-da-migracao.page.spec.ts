@@ -25,6 +25,45 @@ const REBECA = itemDaJanela({
   ehDoLeitor: true,
 });
 const LOTE = janelaDeMigracao({ itens: [BETINA, LEANDRO, REBECA] });
+const ENCERRADA = janelaDeMigracao({
+  situacao: 'encerrada',
+  encerradaEm: '2026-11-11T09:00:00Z',
+  forma: 'prazo',
+  loteEnviado: true,
+  itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
+});
+const LOTE_ENVIADO = janelaDeMigracao({ ...LOTE, loteEnviado: true });
+const TODAS_MIGRADAS = {
+  decisoes: [
+    { concessaoId: 'c1', decisao: 'migrar' },
+    { concessaoId: 'c2', decisao: 'migrar' },
+  ],
+  confirmacaoDeExclusao: false,
+};
+const UMA_RECUSADA = {
+  decisoes: [
+    { concessaoId: 'c1', decisao: 'migrar' },
+    { concessaoId: 'c2', decisao: 'recusar' },
+  ],
+  confirmacaoDeExclusao: true,
+};
+
+type Janela = Awaited<ReturnType<typeof abrirJanela>>;
+
+async function migrarTodasEEnviar({ host, assentar }: Janela): Promise<void> {
+  presente(botao(host, 'Migrar todas')).click();
+  await assentar();
+  presente(botao(host, 'Enviar o lote')).click();
+}
+
+async function pedirConfirmacaoDaExclusao({ host, assentar }: Janela): Promise<HTMLElement> {
+  presente(botao(host, 'Migrar todas')).click();
+  escolher(linhaDe(host, 'c2'), 'Recusar');
+  await assentar();
+  presente(botao(host, 'Enviar o lote')).click();
+  await assentar();
+  return presente(host.querySelector<HTMLElement>('cfg-exclusao-dialog'));
+}
 
 describe('JanelaDaMigracaoPage', () => {
   beforeEach(() => {
@@ -53,21 +92,18 @@ describe('JanelaDaMigracaoPage', () => {
       expect(prazo.textContent).toContain('versão 2');
     });
 
-    it('janela encerrada mostra quando e como terminou, e nenhuma ação', async () => {
-      const encerrada = janelaDeMigracao({
-        situacao: 'encerrada',
-        encerradaEm: '2026-11-11T09:00:00Z',
-        forma: 'prazo',
-        loteEnviado: true,
-        itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
-      });
-
-      const { host } = await abrirJanela(encerrada);
+    it('janela encerrada mostra quando e como terminou', async () => {
+      const { host } = await abrirJanela(ENCERRADA);
 
       const prazo = presente(host.querySelector('cfg-prazo-da-janela')).textContent;
       expect(prazo).toContain('Encerrada em');
       expect(prazo).toContain('O prazo de 72 horas terminou.');
       expect(prazo).not.toContain('Tempo restante');
+    });
+
+    it('janela encerrada mostra a concessão não migrada e nenhuma ação', async () => {
+      const { host } = await abrirJanela(ENCERRADA);
+
       expect(host.textContent).toContain('Não migrada no prazo');
       expect(host.querySelector('cfg-encerramento-da-janela')).toBeNull();
       expect(host.querySelector('input[type="radio"]')).toBeNull();
@@ -95,18 +131,23 @@ describe('JanelaDaMigracaoPage', () => {
     });
 
     describe.each([
-      ['mantém perfis', ['autorizacao:perfis:manter', GESTAO_DE_ACESSOS], 'Ir para os perfis', '/acessos/perfis'],
+      [
+        'mantém perfis',
+        ['autorizacao:perfis:manter', GESTAO_DE_ACESSOS],
+        'Ir para os perfis',
+        '/acessos/perfis',
+      ],
       [
         'só aprova a proteção de dados',
         [PROTECAO_DE_DADOS],
-        'Ir para as janelas de migração',
-        '/acessos/janelas-de-migracao/protecao-de-dados',
+        'Ir para os perfis',
+        '/acessos/perfis',
       ],
       [
         'só aprova nas duas etapas',
         [GESTAO_DE_ACESSOS, PROTECAO_DE_DADOS],
-        'Ir para as janelas de migração',
-        '/acessos/janelas-de-migracao/gestao-de-acessos',
+        'Ir para os perfis',
+        '/acessos/perfis',
       ],
     ])('quem %s', (_quem, concedidas, rotulo, destino) => {
       it('volta, de um perfil sem janela, à primeira tela que abre', async () => {
@@ -132,22 +173,27 @@ describe('JanelaDaMigracaoPage', () => {
       expect(host.textContent).toContain('Retidas: outra pessoa decide');
     });
 
-    it('só habilita o envio com a lista completa e diz quantas faltam', async () => {
-      const { host, fixture, assentar } = await abrirJanela(LOTE);
-      const enviar = () => presente(botao(host, 'Enviar o lote'));
-
-      expect(enviar().disabled).toBe(true);
+    it('segura o envio com a lista incompleta e diz quantas faltam', async () => {
+      const { host, assentar } = await abrirJanela(LOTE);
+      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
       expect(host.textContent).toContain('Faltam 2 concessões para enviar o lote.');
 
       escolher(linhaDe(host, 'c1'), 'Migrar');
       await assentar();
-      expect(host.textContent).toContain('Falta 1 concessão para enviar o lote.');
-      expect(enviar().disabled).toBe(true);
 
+      expect(host.textContent).toContain('Falta 1 concessão para enviar o lote.');
+      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
+    });
+
+    it('habilita o envio quando a lista está completa', async () => {
+      const { host, fixture, assentar } = await abrirJanela(LOTE);
+
+      escolher(linhaDe(host, 'c1'), 'Migrar');
       escolher(linhaDe(host, 'c2'), 'Migrar');
       await assentar();
       fixture.detectChanges();
-      expect(enviar().disabled).toBe(false);
+
+      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
     });
 
     it('migrar todas e recusar todas preenchem a lista inteira', async () => {
@@ -163,83 +209,97 @@ describe('JanelaDaMigracaoPage', () => {
       expect(marcados.map((m) => m.closest('label')?.textContent?.trim())).toEqual(['Recusar']);
     });
 
-    it('sem recusa, envia o lote direto, sem pedir confirmação', async () => {
-      api.enviarLote.mockReturnValue(of(ok(LOTE)));
-      const { host, assentar, responder } = await abrirJanela(LOTE);
+    describe('sem recusa', () => {
+      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(LOTE))));
 
-      presente(botao(host, 'Migrar todas')).click();
-      await assentar();
-      presente(botao(host, 'Enviar o lote')).click();
-      await responder(janelaDeMigracao({ ...LOTE, loteEnviado: true }));
+      it('envia o lote direto, sem pedir confirmação', async () => {
+        const janela = await abrirJanela(LOTE);
 
-      expect(api.enviarLote).toHaveBeenCalledWith(
-        LOTE.perfilId,
-        {
-          decisoes: [
-            { concessaoId: 'c1', decisao: 'migrar' },
-            { concessaoId: 'c2', decisao: 'migrar' },
-          ],
-          confirmacaoDeExclusao: false,
-        },
-        expect.anything(),
-      );
-      expect(notificacoes.success).toHaveBeenCalledWith('Lote enviado');
-      expect(host.textContent).toContain('O lote da gestão de acessos já foi enviado');
-    });
+        await migrarTodasEEnviar(janela);
+        await janela.responder(LOTE_ENVIADO);
 
-    it('com recusa, avisa que o acesso será revogado e só envia depois da confirmação', async () => {
-      api.enviarLote.mockReturnValue(of(ok(LOTE)));
-      const { host, assentar, responder } = await abrirJanela(LOTE);
-      presente(botao(host, 'Migrar todas')).click();
-      escolher(linhaDe(host, 'c2'), 'Recusar');
-      await assentar();
+        const chamada = [LOTE.perfilId, TODAS_MIGRADAS, expect.anything()];
+        expect(api.enviarLote).toHaveBeenCalledWith(...chamada);
+      });
 
-      presente(botao(host, 'Enviar o lote')).click();
-      await assentar();
-      const dialogo = presente(host.querySelector('cfg-exclusao-dialog'));
-      expect(dialogo.textContent).toContain('1 concessão recusada perde o acesso');
-      expect(api.enviarLote).not.toHaveBeenCalled();
+      it('avisa que o lote foi enviado', async () => {
+        const janela = await abrirJanela(LOTE);
 
-      presente(botao(dialogo, 'Recusar e enviar o lote')).click();
-      await assentar();
-      const caixa = presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]'));
-      expect(api.enviarLote).not.toHaveBeenCalled();
-      expect(caixa.getAttribute('aria-invalid')).toBe('true');
-      expect(document.activeElement).toBe(caixa);
+        await migrarTodasEEnviar(janela);
+        await janela.responder(LOTE_ENVIADO);
 
-      caixa.click();
-      await assentar();
-      presente(botao(dialogo, 'Recusar e enviar o lote')).click();
-      await responder(janelaDeMigracao({ ...LOTE, loteEnviado: true }));
-
-      expect(api.enviarLote.mock.calls[0]?.[1]).toEqual({
-        decisoes: [
-          { concessaoId: 'c1', decisao: 'migrar' },
-          { concessaoId: 'c2', decisao: 'recusar' },
-        ],
-        confirmacaoDeExclusao: true,
+        expect(notificacoes.success).toHaveBeenCalledWith('Lote enviado');
+        expect(janela.host.textContent).toContain('O lote da gestão de acessos já foi enviado');
       });
     });
 
-    it('mostra a recusa da API junto ao envio e leva o foco a ela', async () => {
-      api.enviarLote.mockReturnValue(
-        of(recusa('uniplus.autorizacao.migracao.lote_incompleto', 422)),
-      );
-      const { host, assentar } = await abrirJanela(LOTE);
-      presente(botao(host, 'Migrar todas')).click();
-      await assentar();
+    describe('com recusa', () => {
+      beforeEach(() => api.enviarLote.mockReturnValue(of(ok(LOTE))));
 
-      presente(botao(host, 'Enviar o lote')).click();
-      await assentar();
+      it('avisa que o acesso será revogado e só envia depois da confirmação', async () => {
+        const dialogo = await pedirConfirmacaoDaExclusao(await abrirJanela(LOTE));
 
-      const erro = presente(host.querySelector<HTMLElement>('#cfg-lote-erro'));
-      expect(erro.textContent).toContain('O lote não decide todas as concessões da versão anterior.');
-      expect(document.activeElement).toBe(erro);
-      expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(false);
+        expect(dialogo.textContent).toContain('1 concessão recusada perde o acesso');
+        expect(api.enviarLote).not.toHaveBeenCalled();
+      });
+
+      it('exige marcar a confirmação e leva o foco a ela', async () => {
+        const janela = await abrirJanela(LOTE);
+        const dialogo = await pedirConfirmacaoDaExclusao(janela);
+
+        presente(botao(dialogo, 'Recusar e enviar o lote')).click();
+        await janela.assentar();
+
+        const caixa = presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]'));
+        expect(api.enviarLote).not.toHaveBeenCalled();
+        expect(caixa.getAttribute('aria-invalid')).toBe('true');
+        expect(document.activeElement).toBe(caixa);
+      });
+
+      it('envia o lote com a confirmação da exclusão', async () => {
+        const janela = await abrirJanela(LOTE);
+        const dialogo = await pedirConfirmacaoDaExclusao(janela);
+
+        presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]')).click();
+        await janela.assentar();
+        presente(botao(dialogo, 'Recusar e enviar o lote')).click();
+        await janela.responder(LOTE_ENVIADO);
+
+        expect(api.enviarLote.mock.calls[0]?.[1]).toEqual(UMA_RECUSADA);
+      });
+    });
+
+    describe('com o lote incompleto na API', () => {
+      beforeEach(() => {
+        const erro = recusa('uniplus.autorizacao.migracao.lote_incompleto', 422);
+        api.enviarLote.mockReturnValue(of(erro));
+      });
+
+      it('mostra a recusa junto ao envio e leva o foco a ela', async () => {
+        const janela = await abrirJanela(LOTE);
+
+        await migrarTodasEEnviar(janela);
+        await janela.assentar();
+
+        const erro = presente(janela.host.querySelector<HTMLElement>('#cfg-lote-erro'));
+        expect(erro.textContent).toContain('O lote não decide todas as concessões');
+        expect(document.activeElement).toBe(erro);
+      });
+
+      it('mantém o envio habilitado para a pessoa tentar de novo', async () => {
+        const janela = await abrirJanela(LOTE);
+
+        await migrarTodasEEnviar(janela);
+        await janela.assentar();
+
+        expect(presente(botao(janela.host, 'Enviar o lote')).disabled).toBe(false);
+      });
     });
 
     it('lote já enviado por outra pessoa relê a janela e mantém a explicação à vista', async () => {
-      api.enviarLote.mockReturnValue(of(recusa('uniplus.autorizacao.migracao.lote_ja_enviado', 409)));
+      api.enviarLote.mockReturnValue(
+        of(recusa('uniplus.autorizacao.migracao.lote_ja_enviado', 409)),
+      );
       const { host, assentar, responder } = await abrirJanela(LOTE);
       presente(botao(host, 'Migrar todas')).click();
       await assentar();
@@ -287,7 +347,9 @@ describe('JanelaDaMigracaoPage', () => {
 
       expect(presente(botao(host, 'Enviar o lote')).disabled).toBe(true);
       expect(presente(botao(host, 'Migrar todas')).disabled).toBe(true);
-      expect(host.querySelector<HTMLInputElement>('input[type="radio"]')?.closest('fieldset')?.disabled).toBe(true);
+      expect(
+        host.querySelector<HTMLInputElement>('input[type="radio"]')?.closest('fieldset')?.disabled,
+      ).toBe(true);
     });
   });
 
