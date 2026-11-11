@@ -14,11 +14,16 @@ async function medirAlinhamentoDaObservacao(card: Locator): Promise<AlinhamentoM
     const topoDoInput = (campo: Element) =>
       campo.querySelector('input, select, textarea')?.getBoundingClientRect().top ?? null;
     const campo = elemento
-      .querySelector('[id*="-doc-obs-legal-"]')
+      .querySelector('[id*="-doc-normas-"][id$="-obs"]')
       ?.closest('.form-field') as Element;
     const linha = campo.getBoundingClientRect().top;
     const referencia = topoDoInput(campo) ?? 0;
-    const vizinhos = Array.from(elemento.querySelectorAll('.doc-item__eixos > .form-field'))
+    // As normas vêm do editor compartilhado, cujos campos entram na mesma grade dos eixos.
+    const vizinhos = Array.from(
+      elemento.querySelectorAll(
+        '.doc-item__eixos > .form-field, .doc-item__eixos > ui-normas-do-documento > .form-field',
+      ),
+    )
       .filter((outro) => outro !== campo)
       .filter((outro) => Math.abs(outro.getBoundingClientRect().top - linha) <= 1)
       .map(topoDoInput)
