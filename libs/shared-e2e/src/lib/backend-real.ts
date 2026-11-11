@@ -1,4 +1,4 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import type { Browser, Page } from '@playwright/test';
 
 import { SENHA_DAS_PERSONAS } from './credenciais';
 import { keycloakLogin } from './keycloak-login';
@@ -105,44 +105,6 @@ export async function chamarApi<T = unknown>(
     // O corpo não é JSON (arquivo ou erro de proxy): segue como texto.
   }
   return { status: resposta.status, corpo: corpo as T, cabecalhos: resposta.headers };
-}
-
-interface PerfilExistente {
-  readonly id: string;
-  readonly nome: string;
-  readonly ativo: boolean;
-  readonly permissoes: readonly { readonly codigo: string }[];
-}
-
-/**
- * Garante um perfil com exatamente estas permissões: cria quando não existe e atualiza quando
- * a lista difere, para a spec poder rodar de novo sobre a mesma base.
- */
-export async function garantirPerfil(
-  nome: string,
-  descricao: string,
-  permissoes: readonly string[],
-): Promise<string> {
-  const existente = await acharNaListagem<PerfilExistente>(
-    SEGUNDO_GESTOR_DE_ACESSOS,
-    '/api/autorizacao/perfis?limit=100',
-    (perfil) => perfil.nome === nome,
-  );
-  if (existente === undefined) {
-    const criado = await chamarApi<string>(SEGUNDO_GESTOR_DE_ACESSOS, 'POST', '/api/autorizacao/perfis', {
-      corpo: { nome, descricao, permissoes },
-    });
-    expect(criado.status, `criar o perfil "${nome}"`).toBe(201);
-    return criado.corpo;
-  }
-  const atuais = existente.permissoes.map((p) => p.codigo).sort();
-  if (JSON.stringify(atuais) !== JSON.stringify([...permissoes].sort())) {
-    const atualizado = await chamarApi(SEGUNDO_GESTOR_DE_ACESSOS, 'PUT', `/api/autorizacao/perfis/${existente.id}`, {
-      corpo: { id: existente.id, nome, descricao, permissoes },
-    });
-    expect(atualizado.status, `atualizar o perfil "${nome}"`).toBeLessThan(300);
-  }
-  return existente.id;
 }
 
 /**

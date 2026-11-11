@@ -53,7 +53,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
         justificativa: 'Analiso os documentos do processo seletivo.',
       },
     ]);
-    await expect(page.getByText('Aguardando o gestor de acessos').first()).toBeVisible();
+    await expect(page.getByText('Aguardando a gestão de acessos').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Aprovar' })).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Cancelar o pedido' }).click();
@@ -70,7 +70,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);
     await page.goto('/acessos/fila-do-gestor');
     await expect(
-      page.getByRole('heading', { name: 'Fila do gestor de acessos', level: 1 }),
+      page.getByRole('heading', { name: 'Fila da gestão de acessos', level: 1 }),
     ).toBeVisible();
     await page.getByRole('link', { name: /Visualizar o pedido de Analista de documentos/ }).click();
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
@@ -179,7 +179,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     const menu = page.getByRole('navigation', { name: 'Navegação principal' });
     await expect(menu.getByRole('link', { name: 'Meus pedidos' })).toBeVisible();
     for (const nome of [
-      'Fila do gestor',
+      'Fila da gestão de acessos',
       'Fila da proteção de dados',
       'Histórico de pedidos',
       'Concessões',

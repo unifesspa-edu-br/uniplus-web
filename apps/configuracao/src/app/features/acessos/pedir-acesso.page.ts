@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { AlertComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
+import { PageHeaderComponent } from '@uniplus/shared-ui/components';
 import { PedidoDocumentoFormularioComponent } from './pedido-documento-formulario.component';
 import { PedirAcessoBeneficiarioComponent } from './pedir-acesso-beneficiario.component';
 import { PedirAcessoFormularioComponent } from './pedir-acesso-formulario.component';
@@ -16,7 +16,6 @@ import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
   selector: 'cfg-pedir-acesso-page',
   standalone: true,
   imports: [
-    AlertComponent,
     PageHeaderComponent,
     PedidoDocumentoFormularioComponent,
     PedirAcessoBeneficiarioComponent,

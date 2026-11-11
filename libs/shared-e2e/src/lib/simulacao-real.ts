@@ -3,8 +3,8 @@ import { expect } from '@playwright/test';
 import {
   SEGUNDO_GESTOR_DE_ACESSOS,
   chamarApi,
-  garantirPerfil,
 } from './backend-real';
+import { garantirPerfil } from './versoes-de-perfil-reais';
 import { garantirConcessao } from './concessoes-reais';
 
 const SIGLA_DO_CERTAME = 'CEPS';

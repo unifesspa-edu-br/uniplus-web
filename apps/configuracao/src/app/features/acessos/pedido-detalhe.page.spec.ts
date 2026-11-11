@@ -171,7 +171,7 @@ describe('PedidoDetalhePage', () => {
     expect(host.textContent).toContain('Operador de inscrições');
     expect(host.textContent).toContain('CEPS');
     expect(host.textContent).toContain('Betina Teste');
-    expect(host.textContent).toContain('Gestor de acessos');
+    expect(host.textContent).toContain('Gestão de acessos');
   });
 
   it('descarta o resultado de uma carga antiga quando o id já mudou', async () => {
@@ -330,7 +330,7 @@ describe('PedidoDetalhePage', () => {
     expect(api.obter).toHaveBeenCalledTimes(2);
     expect(edicaoDe(fixture).erro()).toBe('Recusado');
     expect(textoDoAlerta(host)).toContain('Recusado');
-    expect(host.textContent).toContain('Encarregado(a) pelo tratamento de dados');
+    expect(host.textContent).toContain('Proteção de dados');
   });
 
   it('mantém a confirmação aberta e impede outra decisão durante o envio', async () => {
@@ -536,7 +536,7 @@ describe('PedidoDetalhePage', () => {
       api.aprovar.mockReturnValue(of(ok(pedido())));
 
       expect(campo(host)).toBeNull();
-      expect(host.textContent).toContain('Fim de vigência definido pelo gestor');
+      expect(host.textContent).toContain('Fim de vigência definido pela gestão de acessos');
       await decidirNoResumo(fixture, host, 'Aprovar');
       await confirmarNoDialogo(fixture, host);
       expect(api.aprovar).toHaveBeenCalledWith('pedido-1', expect.anything(), null);
@@ -555,6 +555,25 @@ describe('PedidoDetalhePage', () => {
     expect(api.obter).toHaveBeenCalledTimes(2);
     expect(notificacoes.success).not.toHaveBeenCalled();
     expect(notificacoes.errorFromProblem).not.toHaveBeenCalled();
+  });
+
+  it('mostra a recusa do perfil em janela de migração junto à decisão que a causou', async () => {
+    const { host, fixture } = await abrir([GESTOR]);
+    api.aprovar.mockReturnValue(
+      of(
+        recusa(
+          'uniplus.autorizacao.pedido.perfil_em_janela_de_migracao',
+          422,
+          'O perfil está em janela de migração.',
+        ),
+      ),
+    );
+
+    await decidirNoResumo(fixture, host, 'Aprovar');
+    await confirmarNoDialogo(fixture, host);
+
+    expect(textoDoAlerta(host)).toContain('O perfil está em janela de migração.');
+    expect(notificacoes.success).not.toHaveBeenCalled();
   });
 
   it('a falha de servidor da decisão vira notificação, sem aviso de sucesso', async () => {

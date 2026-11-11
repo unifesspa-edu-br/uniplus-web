@@ -8,6 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
+  'access-control-expose-headers': 'etag',
 };
 
 const PERFIL = {
@@ -17,13 +18,45 @@ const PERFIL = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  permissoes: [
-    {
-      codigo: 'selecao:processos:configurar',
-      nome: 'Configurar processos',
-      sensibilidade: 'interno',
-    },
-  ],
+  temVersaoVigente: true,
+  temVersaoPendente: false,
+  suspensao: null,
+  desativadoDesde: null,
+};
+
+const DETALHE_DO_PERFIL = {
+  id: PERFIL.id,
+  nome: PERFIL.nome,
+  descricao: PERFIL.descricao,
+  governanca: null,
+  sensibilidade: 'interno',
+  composicaoEmVigor: {
+    versaoId: '01960000-0000-7000-0000-0000000000b1',
+    numero: 1,
+    permissoes: [],
+    protocolo: 'P-1/2026',
+    documentoVerificadoEm: '2026-10-20T12:00:00Z',
+    desde: '2026-10-21T12:00:00Z',
+  },
+  versaoPendente: null,
+  ultimaVersaoEncerradaSemVigor: null,
+  suspensao: null,
+};
+
+const URL_DE_ENVIO = 'http://localhost:9000/uniplus-teste/documento-do-perfil.pdf';
+const ENVIO_DO_DOCUMENTO = {
+  perfilId: '01960000-0000-7000-0000-0000000000a2',
+  versaoId: '01960000-0000-7000-0000-0000000000b2',
+  documentoId: '01960000-0000-7000-0000-0000000000c2',
+  situacao: 'aguardando_envio',
+  urlDeEnvio: URL_DE_ENVIO,
+  tipoDeMidia: 'application/pdf',
+  expiraEm: '2099-01-01T00:00:00Z',
+};
+const PDF_DO_TESTE = {
+  name: 'portaria.pdf',
+  mimeType: 'application/pdf',
+  buffer: Buffer.from('%PDF-1.4\n%%EOF\n'),
 };
 
 const CATALOGO = [
@@ -49,6 +82,7 @@ const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',
   beneficiario: { emissor: 'unifesspa', sub: 'sub-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
+  versao: 1,
   escopo: { tipo: 'unidade', unidadeId: '01960000-0000-7000-0000-00000000aa01' },
   origem: { tipo: 'pedido', id: '01960000-0000-7000-0000-00000000cc01' },
   concedidaEm: '2026-10-28T12:00:00Z',
@@ -96,7 +130,7 @@ const EM_PROCESSAMENTO = problema(
 type Recarga = 'com-o-item' | 'sem-o-item' | 'com-falha';
 /** `listaMudou`: a escrita foi recusada porque a lista já estava desatualizada; a recarga traz o estado novo. */
 type Resposta = { status: number; corpo?: unknown; listaMudou?: boolean };
-type Envio = { metodo: string; chave: string | undefined };
+type Envio = { metodo: string; caminho: string; corpo: unknown; chave: string | undefined };
 
 const OK = { status: 204 };
 
@@ -133,7 +167,7 @@ async function mockPerfis(
   await page.route(/\/api\/autorizacao\/permissoes(\?.*)?$/, (route) =>
     route.fulfill({ status: 200, headers: CORS_HEADERS, json: CATALOGO }),
   );
-  await page.route(/\/api\/autorizacao\/perfis(\/[^/?]+(\/ativacao)?)?(\?.*)?$/, async (route) => {
+  await page.route(/\/api\/autorizacao\/perfis(\/[^/?]+(\/(desativacao|reativacao|contencao))?)?(\?.*)?$/, async (route) => {
     const requisicao = route.request();
     if (requisicao.method() === 'OPTIONS') {
       await route.fulfill({ status: 204, headers: CORS_HEADERS });
@@ -151,6 +185,22 @@ async function mockPerfis(
         await responder(route, { status: 500, corpo: ERRO_INTERNO });
         return;
       }
+      const caminho = new URL(requisicao.url()).pathname;
+      if (caminho.endsWith('/contencao')) {
+        await responder(route, { status: 200, corpo: [] });
+        return;
+      }
+      if (caminho.endsWith(`/perfis/${PERFIL.id}`)) {
+        await responder(route, {
+          status: 200,
+          corpo: {
+            ...DETALHE_DO_PERFIL,
+            ativo: perfil.ativo,
+            desativadoDesde: perfil.ativo ? null : '2026-11-10T12:00:00Z',
+          },
+        });
+        return;
+      }
       await responder(route, {
         status: 200,
         corpo: gravou && recarga === 'sem-o-item' ? [] : [perfil],
@@ -160,15 +210,31 @@ async function mockPerfis(
     const resposta = respostas[envios.length] ?? OK;
     envios.push({
       metodo: requisicao.method(),
+      caminho: new URL(requisicao.url()).pathname,
+      corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
       chave: requisicao.headers()['idempotency-key'],
     });
     await retida;
     if (resposta.status < 300) {
       gravou = true;
-      if (requisicao.url().endsWith('/ativacao')) perfil.ativo = requisicao.method() === 'POST';
+      if (requisicao.url().endsWith('/desativacao')) perfil.ativo = false;
+      if (requisicao.url().endsWith('/reativacao')) perfil.ativo = true;
     }
-    await responder(route, resposta.status === 201 ? { status: 201, corpo: 'novo-id' } : resposta);
+    await responder(
+      route,
+      resposta.status === 201 ? { status: 201, corpo: ENVIO_DO_DOCUMENTO } : resposta,
+    );
   });
+  await page.route(URL_DE_ENVIO, (route) =>
+    route.fulfill({ status: 200, headers: { ...CORS_HEADERS, etag: '"etag-do-teste"' } }),
+  );
+  await page.route(/\/api\/autorizacao\/perfis\/[^/]+\/versoes\/[^/]+\/documento\/confirmacao$/, (route) =>
+    route.fulfill({
+      status: route.request().method() === 'OPTIONS' ? 204 : 200,
+      headers: CORS_HEADERS,
+      ...(route.request().method() === 'OPTIONS' ? {} : { json: {} }),
+    }),
+  );
   return { liberar, envios };
 }
 
@@ -205,7 +271,12 @@ async function mockConcessoes(
         return;
       }
       const resposta = respostas[envios.length] ?? OK;
-      envios.push({ metodo: requisicao.method(), chave: undefined });
+      envios.push({
+        metodo: requisicao.method(),
+        caminho: new URL(requisicao.url()).pathname,
+        corpo: requisicao.postData() === null ? null : requisicao.postDataJSON(),
+        chave: undefined,
+      });
       await retida;
       if (resposta.status < 300 || resposta.listaMudou) gravou = true;
       await responder(route, resposta);
@@ -216,29 +287,31 @@ async function mockConcessoes(
 
 const tituloDePerfis = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Perfis', level: 2, exact: true });
-const editar = (page: Page): Locator =>
-  page.getByRole('button', { name: `Editar o perfil ${PERFIL.nome}` });
-const alternar = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
-  page.getByRole('button', { name: `${verbo} o perfil ${PERFIL.nome}`, exact: true });
+const linkDoPerfil = (page: Page): Locator => page.getByRole('link', { name: PERFIL.nome });
+const acaoDoPerfil = (page: Page, verbo: 'Reativar' | 'Desativar'): Locator =>
+  page.getByRole('button', { name: verbo, exact: true });
+const tituloDoPerfil = (page: Page): Locator =>
+  page.getByRole('heading', { name: PERFIL.nome, level: 1 });
+const dialogoDeContencao = (page: Page): Locator =>
+  page.getByRole('dialog', { name: 'Desativar o perfil' });
 const novo = (page: Page): Locator => page.getByRole('button', { name: 'Novo perfil' });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de perfil de acesso' });
 
-async function abrirEdicao(page: Page): Promise<Locator> {
-  await page.goto('/acessos/perfis');
-  await editar(page).click();
-  const formulario = drawer(page);
-  await expect(formulario).toBeVisible();
-  return formulario;
-}
-
-async function abrirCriacao(page: Page): Promise<Locator> {
+async function abrirCriacao(page: Page, completo = true): Promise<Locator> {
   await page.goto('/acessos/perfis');
   await novo(page).click();
   const formulario = drawer(page);
   await expect(formulario).toBeVisible();
   await formulario.locator('input[formcontrolname="nome"]').fill('Consulta');
   await formulario.locator('textarea[formcontrolname="descricao"]').fill('Só consulta.');
+  if (completo) {
+    await formulario.locator('input[formcontrolname="protocolo"]').fill('P-1/2026');
+    await formulario
+      .locator('label.checkbox', { hasText: 'selecao:processos:configurar' })
+      .click();
+    await formulario.locator('input[type="file"]').setInputFiles(PDF_DO_TESTE);
+  }
   return formulario;
 }
 
@@ -249,25 +322,22 @@ test.describe('Acessos — escritas', () => {
   });
 
   test.describe('perfis', () => {
-    test('edição pendente preserva foco e valores, ignora toda ativação e a recusa foca o campo', async ({
+    test('criação pendente preserva foco e valores, ignora o clique repetido e a recusa foca o campo', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [{ status: 422, corpo: RECUSA_DE_NOME }]);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page);
       const nome = formulario.locator('input[formcontrolname="nome"]');
-      await nome.fill('Operador revisado');
+      await nome.fill('Consulta revisada');
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       const salvar = formulario.getByRole('button', { name: 'Salvando…' });
 
       await expect(nome).toBeDisabled();
-      await expect(nome).toHaveValue('Operador revisado');
+      await expect(nome).toHaveValue('Consulta revisada');
       await expect(salvar).toBeFocused();
       await expect(salvar).toHaveAttribute('aria-disabled', 'true');
       await expect(salvar).toHaveAttribute('aria-busy', 'true');
       await expect(salvar).toHaveCSS('cursor', 'not-allowed');
-      await expect(
-        formulario.getByRole('status').filter({ hasText: 'Salvando perfil' }),
-      ).toContainText('Salvando perfil');
       await expect(formulario.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
       await page.keyboard.press('Escape');
       await expect(formulario).toBeVisible();
@@ -275,21 +345,21 @@ test.describe('Acessos — escritas', () => {
       await salvar.dispatchEvent('click');
       await page.keyboard.press('Enter');
       await page.keyboard.press('Space');
-      expect(envios.map((envio) => envio.metodo)).toEqual(['PUT']);
+      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
 
       liberar();
       await expect(nome).toBeEnabled();
       await expect(nome).toBeFocused();
       await expect(nome).toHaveAttribute('aria-invalid', 'true');
       await expect(formulario.getByText('Nome fora do padrão.')).toBeVisible();
-      expect(envios.map((envio) => envio.metodo)).toEqual(['PUT']);
+      expect(envios.map((envio) => envio.metodo)).toEqual(['POST']);
     });
 
     test('Enter no campo leva o foco ao botão de salvar e, na falha 500, o envio segue disponível', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }]);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page);
       const nome = formulario.locator('input[formcontrolname="nome"]');
       await nome.focus();
       await page.keyboard.press('Enter');
@@ -305,7 +375,7 @@ test.describe('Acessos — escritas', () => {
 
     test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
       const { envios } = await mockPerfis(page, []);
-      const formulario = await abrirEdicao(page);
+      const formulario = await abrirCriacao(page, false);
       const nome = formulario.locator('input[formcontrolname="nome"]');
       await nome.fill('');
       await formulario.getByRole('button', { name: 'Salvar perfil' }).focus();
@@ -314,6 +384,7 @@ test.describe('Acessos — escritas', () => {
       await expect(nome).toBeFocused();
       await expect(nome).toHaveAttribute('aria-invalid', 'true');
       await expect(nome).toHaveAttribute('aria-required', 'true');
+      await expect(formulario.getByText('Anexe o PDF do documento instituidor.')).toBeVisible();
       expect(envios).toEqual([]);
     });
 
@@ -357,25 +428,28 @@ test.describe('Acessos — escritas', () => {
 
       await expect(tentar).toBeFocused();
       await expect(tentar).toHaveAttribute('aria-disabled', 'true');
-      await expect(editar(page)).toBeVisible();
+      await expect(linkDoPerfil(page)).toBeVisible();
       await expect(tituloDePerfis(page)).toBeFocused();
     });
 
-    test('edição concluída devolve o foco ao acionador, mesmo com a recarga atrasada', async ({
+    test('criação concluída envia o PDF, confirma o envio e devolve o foco ao botão Novo perfil', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [OK]);
-      const formulario = await abrirEdicao(page);
+      const { liberar } = await mockPerfis(page, [{ status: 201 }]);
+      const confirmacao = page.waitForRequest(/\/documento\/confirmacao$/);
+      const formulario = await abrirCriacao(page);
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       liberar();
 
+      expect((await confirmacao).postDataJSON()).toEqual({ etag: '"etag-do-teste"' });
       await expect(formulario).toBeHidden();
-      await expect(editar(page)).toBeDisabled();
-      await expect(editar(page)).toBeFocused();
+      await expect(novo(page)).toBeFocused();
     });
 
-    test('criação concluída devolve o foco ao botão Novo perfil', async ({ page }) => {
-      const { liberar } = await mockPerfis(page, [{ status: 201 }]);
+    test('criação concluída, com falha na recarga, devolve o foco ao botão Novo perfil', async ({
+      page,
+    }) => {
+      const { liberar } = await mockPerfis(page, [{ status: 201 }], 'com-falha');
       const formulario = await abrirCriacao(page);
       await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
       liberar();
@@ -384,60 +458,133 @@ test.describe('Acessos — escritas', () => {
       await expect(novo(page)).toBeFocused();
     });
 
-    test('edição concluída, com falha na recarga, leva o foco ao título da lista', async ({
-      page,
-    }) => {
-      const { liberar } = await mockPerfis(page, [OK], 'com-falha');
-      const formulario = await abrirEdicao(page);
-      await formulario.getByRole('button', { name: 'Salvar perfil' }).click();
-      liberar();
+    async function abrirDesativacao(page: Page): Promise<Locator> {
+      await page.goto(`/acessos/perfis/${PERFIL.id}`);
+      await acaoDoPerfil(page, 'Desativar').click();
+      const caixa = dialogoDeContencao(page);
+      await expect(caixa).toBeVisible();
+      return caixa;
+    }
 
-      await expect(formulario).toBeHidden();
-      await expect(tituloDePerfis(page)).toBeFocused();
-    });
-
-    test('desativação pendente deixa a lista indisponível, anuncia o andamento e devolve o foco ao botão da linha', async ({
+    test('desativação pendente deixa o diálogo somente leitura e envia o comando uma só vez, com chave', async ({
       page,
     }) => {
       const { liberar, envios } = await mockPerfis(page, [OK]);
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      const confirmar = caixa.getByRole('button', { name: 'Desativar perfil' });
+      await confirmar.click();
 
-      await expect(alternar(page, 'Desativar')).toBeDisabled();
-      await expect(editar(page)).toBeDisabled();
-      await expect(novo(page)).toBeDisabled();
-      await expect(page.getByRole('status').filter({ hasText: 'Desativando' })).toBeAttached();
-      expect(envios.map((envio) => envio.metodo)).toEqual(['DELETE']);
+      await expect(caixa.getByLabel('Motivo')).toBeDisabled();
+      await expect(caixa.getByLabel('Motivo')).toHaveValue('Perfil sem uso.');
+      await expect(confirmar).toHaveAttribute('aria-busy', 'true');
+      await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeDisabled();
+      await confirmar.dispatchEvent('click');
+      expect(envios).toHaveLength(1);
+      expect(envios[0]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+        corpo: { motivo: 'Perfil sem uso.' },
+      });
+      expect(envios[0]?.chave).toBeTruthy();
 
       liberar();
-      await expect(
-        page.getByRole('status').filter({ hasText: 'Perfil Operador de inscrições desativado.' }),
-      ).toBeAttached();
-      await expect(alternar(page, 'Reativar')).toBeFocused();
+      await expect(caixa).toBeHidden();
+      expect(envios).toHaveLength(1);
     });
 
-    test('mudança de situação concluída, com a linha ausente da recarga, leva o foco ao título', async ({
+    test('desativação concluída relê o perfil, oferece reativar e leva o foco ao título', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [OK], 'sem-o-item');
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const { liberar } = await mockPerfis(page, [OK]);
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      await caixa.getByRole('button', { name: 'Desativar perfil' }).click();
       liberar();
 
-      await expect(tituloDePerfis(page)).toBeFocused();
+      await expect(caixa).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
+      await expect(acaoDoPerfil(page, 'Desativar')).toHaveCount(0);
+      await expect(tituloDoPerfil(page)).toBeFocused();
     });
 
-    test('mudança de situação recusada mostra o motivo e devolve o foco ao botão', async ({
+    test('reativação pede o motivo, envia por POST em reativacao e volta a oferecer desativar', async ({
       page,
     }) => {
-      const { liberar } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }]);
-      await page.goto('/acessos/perfis');
-      await alternar(page, 'Desativar').click();
+      const { liberar, envios } = await mockPerfis(page, [OK, OK]);
       liberar();
+      const desativacao = await abrirDesativacao(page);
+      await desativacao.getByLabel('Motivo').fill('Perfil sem uso.');
+      await desativacao.getByRole('button', { name: 'Desativar perfil' }).click();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
 
-      await expect(page.getByText('Não foi possível concluir')).toBeVisible();
-      await expect(alternar(page, 'Desativar')).toBeEnabled();
-      await expect(alternar(page, 'Desativar')).toBeFocused();
+      await acaoDoPerfil(page, 'Reativar').click();
+      const reativacao = page.getByRole('dialog', { name: 'Reativar o perfil' });
+      await reativacao.getByLabel('Motivo').fill('Voltou a ser usado.');
+      await reativacao.getByRole('button', { name: 'Reativar perfil' }).click();
+
+      await expect(reativacao).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeVisible();
+      expect(envios).toHaveLength(2);
+      expect(envios[0]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+        corpo: { motivo: 'Perfil sem uso.' },
+      });
+      expect(envios[1]).toMatchObject({
+        metodo: 'POST',
+        caminho: `/api/autorizacao/perfis/${PERFIL.id}/reativacao`,
+        corpo: { motivo: 'Voltou a ser usado.' },
+      });
+      expect(envios[1]?.chave).not.toBe(envios[0]?.chave);
+    });
+
+    test('desativação recusada pelo servidor anuncia o erro, preserva o motivo e libera nova tentativa', async ({
+      page,
+    }) => {
+      const { liberar, envios } = await mockPerfis(page, [{ status: 500, corpo: ERRO_INTERNO }, OK]);
+      liberar();
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByLabel('Motivo').fill('Perfil sem uso.');
+      const confirmar = caixa.getByRole('button', { name: 'Desativar perfil' });
+      await confirmar.click();
+
+      await expect(caixa.getByRole('alert')).toContainText('Erro interno');
+      await expect(caixa.getByLabel('Motivo')).toHaveValue('Perfil sem uso.');
+      await expect(caixa.getByLabel('Motivo')).toBeEnabled();
+      await expect(confirmar).toBeEnabled();
+      await expect(confirmar).not.toHaveAttribute('aria-busy', 'true');
+      await expect(caixa.getByRole('button', { name: 'Cancelar' })).toBeEnabled();
+      await expect(caixa).toBeVisible();
+      await expect(caixa.locator(':focus')).toHaveCount(1);
+      await expect(acaoDoPerfil(page, 'Desativar')).toBeEnabled();
+
+      await confirmar.click();
+      await expect(caixa).toBeHidden();
+      await expect(acaoDoPerfil(page, 'Reativar')).toBeVisible();
+      expect(envios).toHaveLength(2);
+      for (const envio of envios) {
+        expect(envio).toMatchObject({
+          metodo: 'POST',
+          caminho: `/api/autorizacao/perfis/${PERFIL.id}/desativacao`,
+          corpo: { motivo: 'Perfil sem uso.' },
+        });
+      }
+    });
+
+    test('desativação sem motivo marca o campo, leva o foco a ele e não chama a API', async ({
+      page,
+    }) => {
+      const { envios } = await mockPerfis(page, []);
+      const caixa = await abrirDesativacao(page);
+      await caixa.getByRole('button', { name: 'Desativar perfil' }).click();
+
+      const motivo = caixa.getByLabel('Motivo');
+      await expect(motivo).toHaveAttribute('aria-invalid', 'true');
+      await expect(motivo).toBeFocused();
+      await expect(caixa.getByRole('alert')).toContainText('Informe o motivo');
+      expect(envios).toEqual([]);
     });
   });
 

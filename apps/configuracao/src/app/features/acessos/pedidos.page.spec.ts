@@ -145,7 +145,7 @@ describe('PedidosPage', () => {
     expect(host.querySelector('h1')?.textContent).toContain('Meus pedidos de acesso');
     expect(host.textContent).toContain('Betina Teste');
     expect(host.textContent).toContain('CEPS');
-    expect(host.textContent).toContain('Aguardando o gestor de acessos');
+    expect(host.textContent).toContain('Aguardando a gestão de acessos');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).not.toBeNull();
   });
 

@@ -1,0 +1,46 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">{{ texto().titulo }}</h1>
+    <p class="page-header__desc">{{ texto().descricao }}</p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a fila" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Fila não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a fila…</p>
+}
+
+@if (store.itens().length > 0) {
+  <ul role="list" [attr.aria-label]="texto().titulo" style="list-style: none; margin: 0; padding: 0">
+    @for (item of store.itens(); track item.perfilId) {
+      <li>
+        <section class="panel" [attr.aria-labelledby]="'cfg-janela-' + item.perfilId">
+          <div class="panel-head">
+            <h2 class="panel-head__title" [id]="'cfg-janela-' + item.perfilId">
+              <a [routerLink]="['/acessos/perfis', item.perfilId, 'janela']">{{ item.perfilNome }}</a>
+              · versão {{ item.versaoAlvo }}
+            </h2>
+            <ui-tag [variant]="item.loteEnviado ? 'info' : 'warning'">
+              {{ item.loteEnviado ? 'Lote enviado' : 'Lote ainda não enviado' }}
+            </ui-tag>
+          </div>
+          <dl class="cfg-detail-list panel-body">
+            <div>
+              <dt>Prazo até</dt>
+              <dd>{{ item.prazo | dateBr: 'datetime' }}</dd>
+            </div>
+            <div>
+              <dt>A decidir por você</dt>
+              <dd>{{ concessoes(item.quantidadeADecidir) }}</dd>
+            </div>
+          </dl>
+        </section>
+      </li>
+    }
+  </ul>
+} @else if (!store.carregando() && !store.mensagemDeErro()) {
+  <p class="cfg-muted">Nenhuma janela de migração aguarda a sua decisão.</p>
+}

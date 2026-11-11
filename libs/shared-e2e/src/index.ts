@@ -21,10 +21,21 @@ export {
   SEGUNDO_GESTOR_DE_ACESSOS,
   chamarApi,
   entrarComoPersona,
-  garantirPerfil,
   identidadeDoToken,
   tokenDaPersona,
 } from './lib/backend-real';
+export {
+  AUTOR_DAS_VERSOES,
+  aguardarDocumentoVerificado,
+  aprovarVersaoPendente,
+  codigosEmVigor,
+  decidirVersao,
+  diferencaDeComposicao,
+  enviarDocumentoDaVersao,
+  garantirPerfil,
+  lerPerfil,
+  proporVersao,
+} from './lib/versoes-de-perfil-reais';
 export { garantirConcessao } from './lib/concessoes-reais';
 export { PDF_MINIMO, enviarPelaUrlAssinada } from './lib/envio-de-arquivo';
 export { SENHA_DAS_PERSONAS } from './lib/credenciais';

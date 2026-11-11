@@ -1,18 +1,26 @@
 <ui-drawer
   class="form-drawer"
-  [(visible)]="aberto"
+  [(visible)]="edicao.formAberto"
   [closable]="!salvando()"
-  [heading]="emEdicao() ? 'Editar perfil' : 'Novo perfil'"
+  [heading]="edicao.base() !== null ? 'Propor nova versão' : 'Novo perfil'"
   ariaLabel="Formulário de perfil de acesso"
   position="right"
 >
-  @if (erro()) {
-    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  @if (edicao.erroDoForm()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{
+      edicao.erroDoForm()
+    }}</ui-alert>
+  }
+  @if (edicao.base() !== null) {
+    <p class="field__hint">
+      Quem acrescenta permissão ou muda o texto cria uma versão pendente de aprovação. As permissões
+      removidas valem na hora.
+    </p>
   }
   <form
     id="cfg-perfil-form"
     class="form-drawer__form"
-    [formGroup]="form()"
+    [formGroup]="edicao.form"
     (ngSubmit)="aoEnviar()"
     novalidate
   >
@@ -24,7 +32,7 @@
           class="input"
           type="text"
           formControlName="nome"
-          [readOnly]="criacaoEmAberto()"
+          [readOnly]="edicao.envioEmAberto()"
           [attr.aria-invalid]="invalido('nome') ? 'true' : null"
           [attr.aria-describedby]="invalido('nome') ? 'cfg-perfil-erro-nome' : null"
         />
@@ -38,7 +46,7 @@
           aria-required="true"
           class="textarea"
           formControlName="descricao"
-          [readOnly]="criacaoEmAberto()"
+          [readOnly]="edicao.envioEmAberto()"
           [attr.aria-invalid]="invalido('descricao') ? 'true' : null"
           [attr.aria-describedby]="invalido('descricao') ? 'cfg-perfil-erro-descricao' : null"
         ></textarea>
@@ -49,60 +57,110 @@
         }
       </label>
 
-      <fieldset class="field" [id]="idDasPermissoes" tabindex="-1">
-        <legend class="form-section__title">Permissões</legend>
-        <ui-falha-de-leitura
-          titulo="Catálogo indisponível"
-          variante="warning"
-          [leitura]="leituraDoCatalogo()"
-        />
-        <cfg-recusa-da-leitura
-          naoEncontrado="Catálogo de permissões não encontrado"
-          [recusa]="recusaDoCatalogo()"
-        >
-          Feche o formulário para voltar à lista de perfis.
-        </cfg-recusa-da-leitura>
-        @for (modulo of catalogo(); track modulo.modulo) {
-          @for (resource of modulo.resources; track resource.resource) {
-            <fieldset class="field">
-              <legend class="field__label cfg-form__grupo-titulo">
-                {{ modulo.modulo }} · {{ resource.resource }}
-              </legend>
-              @for (permissao of resource.permissoes; track permissao.codigo) {
-                <label class="checkbox">
-                  <input
-                    type="checkbox"
-                    [checked]="marcadas().includes(permissao.codigo)"
-                    [disabled]="criacaoEmAberto()"
-                    (change)="alternar.emit(permissao.codigo)"
-                  />
-                  <span class="checkbox__box" aria-hidden="true"></span>
-                  <span>
-                    {{ permissao.nome }}
-                    <span class="field__hint">
-                      · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
-                      <code class="ui-code">{{ permissao.codigo }}</code>
-                    </span>
-                  </span>
-                </label>
-              }
-            </fieldset>
+      <cfg-permissoes-do-perfil
+        [marcadas]="edicao.marcadas()"
+        [diferenca]="edicao.diferenca()"
+        [bloqueado]="edicao.envioEmAberto()"
+        [erro]="edicao.erroDasPermissoes()"
+        (alternar)="edicao.alternar($event)"
+      />
+
+      @if (edicao.base() !== null) {
+        <section aria-labelledby="cfg-perfil-mudancas">
+          <h3 id="cfg-perfil-mudancas" class="form-section__title">Mudanças nas permissões</h3>
+          <cfg-diferenca-da-versao [acrescimo]="acrescimo()" [remocao]="remocao()" />
+        </section>
+      }
+
+      @if (edicao.exigeRemocao()) {
+        <section aria-labelledby="cfg-perfil-remocao">
+          <h3 id="cfg-perfil-remocao" class="form-section__title">Remoção de permissões</h3>
+          <p class="field__hint">
+            A remoção vale na hora para todas as concessões do perfil e cancela a versão pendente,
+            se houver. O motivo fica registrado.
+          </p>
+          <label class="field" [class.is-error]="invalido('motivoDaRemocao')">
+            <span class="field__label is-required">Motivo da remoção</span>
+            <textarea
+              aria-required="true"
+              class="textarea"
+              formControlName="motivoDaRemocao"
+              [readOnly]="edicao.envioEmAberto()"
+              [attr.aria-invalid]="invalido('motivoDaRemocao') ? 'true' : null"
+              [attr.aria-describedby]="
+                invalido('motivoDaRemocao') ? 'cfg-perfil-erro-motivo' : null
+              "
+            ></textarea>
+            @if (invalido('motivoDaRemocao')) {
+              <span class="field__error" id="cfg-perfil-erro-motivo">{{
+                mensagemDoCampo('motivoDaRemocao')
+              }}</span>
+            }
+          </label>
+          <ui-select
+            fieldLabel="Categoria da remoção"
+            formControlName="categoriaDaRemocao"
+            placeholderText="Escolha a categoria"
+            [isRequired]="true"
+            [choices]="categorias"
+            [invalid]="invalido('categoriaDaRemocao')"
+            [errorMessage]="mensagemDoCampo('categoriaDaRemocao') ?? ''"
+          />
+        </section>
+      }
+
+      @if (edicao.base() !== null || edicao.exigeDocumento()) {
+        <section aria-labelledby="cfg-perfil-documento">
+          <h3 id="cfg-perfil-documento" class="form-section__title">Documento instituidor</h3>
+          @if (!edicao.exigeDocumento()) {
+            <p class="field__hint">
+              Preencha o protocolo e anexe o PDF para substituir o documento instituidor.
+            </p>
           }
-        }
-        <span class="field__hint"
-          >Permissão de dado pessoal ou sensível exige a aprovação da proteção de dados nos pedidos
-          deste perfil.</span
-        >
-      </fieldset>
+          <label class="field" [class.is-error]="invalido('protocolo')">
+            <span class="field__label" [class.is-required]="edicao.exigeDocumento()"
+              >Protocolo do documento</span
+            >
+            <input
+              [attr.aria-required]="edicao.exigeDocumento() ? 'true' : null"
+              class="input"
+              type="text"
+              formControlName="protocolo"
+              [readOnly]="edicao.envioEmAberto()"
+              [attr.aria-invalid]="invalido('protocolo') ? 'true' : null"
+              [attr.aria-describedby]="invalido('protocolo') ? 'cfg-perfil-erro-protocolo' : null"
+            />
+            @if (invalido('protocolo')) {
+              <span class="field__error" id="cfg-perfil-erro-protocolo">{{
+                mensagemDoCampo('protocolo')
+              }}</span>
+            }
+          </label>
+          <ui-file-upload
+            fieldLabel="Documento instituidor"
+            [isRequired]="edicao.exigeDocumento()"
+            acceptedFileTypes=".pdf"
+            acceptLabel="PDF de até 10 MB"
+            [allowedMimeTypes]="['application/pdf']"
+            [maxSizeMb]="10"
+            [disabled]="salvando() || edicao.envioEmAberto()"
+            [mensagemExterna]="edicao.erroDoDocumento()"
+            [(selectedFile)]="edicao.documento"
+          />
+        </section>
+      }
     </fieldset>
   </form>
-  <span class="sr-only" role="status">{{ salvando() ? 'Salvando perfil…' : '' }}</span>
+  <span class="sr-only" role="status">{{ textoDaFase() }}</span>
+  @if (salvando()) {
+    <p class="cfg-muted"><ui-spinner spinnerSize="sm" /> {{ textoDaFase() }}</p>
+  }
   <div class="form-drawer__footer">
     <button
       type="button"
       class="btn btn--tertiary btn--rect"
       [disabled]="salvando()"
-      (click)="aberto.set(false)"
+      (click)="edicao.formAberto.set(false)"
     >
       Cancelar
     </button>
@@ -117,7 +175,7 @@
       @if (salvando()) {
         <ui-spinner spinnerSize="sm" />
       }
-      {{ salvando() ? 'Salvando…' : 'Salvar perfil' }}
+      {{ salvando() ? 'Salvando…' : edicao.base() !== null ? 'Enviar proposta' : 'Salvar perfil' }}
     </button>
   </div>
 </ui-drawer>

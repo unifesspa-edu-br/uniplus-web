@@ -77,6 +77,15 @@ function listarApiFiles(root: string): string[] {
 
 const apiFiles = listarApiFiles(API_GLOB_ROOT);
 
+/**
+ * GETs que o contrato da API ainda serve só como JSON simples, sem vendor MIME: pedir um Accept
+ * versionado que o servidor não produz resultaria em 406. A quantidade é fixa por arquivo; um GET
+ * novo sem vendor MIME volta a falhar o teste.
+ */
+const GETS_SEM_VENDOR_MIME_NO_CONTRATO: Readonly<Record<string, number>> = {
+  'versoes-do-perfil.api.ts': 2,
+};
+
 describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
   it('encontra ao menos 1 arquivo *.api.ts (sanity check)', () => {
     expect(apiFiles.length).toBeGreaterThan(0);
@@ -159,11 +168,14 @@ describe('Fitness — services HTTP em libs/shared-data/src/lib/api/', () => {
         return;
       }
 
+      const dispensados = GETS_SEM_VENDOR_MIME_NO_CONTRATO[path.basename(filePath)] ?? 0;
+      const esperados = getCalls - dispensados;
+
       expect(
         vendorMimeCalls,
-        `\nEsperado ≥${getCalls} call sites de withVendorMime() (1 por this.http.get<>); ` +
+        `\nEsperado ≥${esperados} call sites de withVendorMime() (1 por this.http.get<>); ` +
           `encontrado ${vendorMimeCalls}. ADR-0016 exige Accept versionado em todo GET de recurso versionado.`,
-      ).toBeGreaterThanOrEqual(getCalls);
+      ).toBeGreaterThanOrEqual(esperados);
     });
   });
 });

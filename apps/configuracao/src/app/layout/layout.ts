@@ -178,7 +178,7 @@ export class LayoutComponent {
       items: [
         { label: 'Meus pedidos', icon: 'pi-inbox', routerLink: '/acessos/pedidos' },
         {
-          label: 'Fila do gestor',
+          label: 'Fila da gestão de acessos',
           icon: 'pi-check-square',
           routerLink: '/acessos/fila-do-gestor',
           exact: true,
@@ -200,6 +200,48 @@ export class LayoutComponent {
           label: 'Perfis de acesso',
           icon: 'pi-id-card',
           routerLink: '/acessos/perfis',
+          exact: true,
+        },
+        {
+          label: 'Versões na gestão de acessos',
+          icon: 'pi-check-circle',
+          routerLink: '/acessos/versoes-de-perfil/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Versões na proteção de dados',
+          icon: 'pi-lock',
+          routerLink: '/acessos/versoes-de-perfil/protecao-de-dados',
+          exact: true,
+        },
+        {
+          label: 'Janelas na gestão de acessos',
+          icon: 'pi-clock',
+          routerLink: '/acessos/janelas-de-migracao/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Janelas na proteção de dados',
+          icon: 'pi-hourglass',
+          routerLink: '/acessos/janelas-de-migracao/protecao-de-dados',
+          exact: true,
+        },
+        {
+          label: 'Reclassificações na gestão de acessos',
+          icon: 'pi-sync',
+          routerLink: '/acessos/reclassificacoes/gestao-de-acessos',
+          exact: true,
+        },
+        {
+          label: 'Reclassificações na proteção de dados',
+          icon: 'pi-sort-amount-up',
+          routerLink: '/acessos/reclassificacoes/protecao-de-dados',
+          exact: true,
+        },
+        {
+          label: 'Divergências da governança',
+          icon: 'pi-exclamation-triangle',
+          routerLink: '/acessos/governanca/divergencias',
           exact: true,
         },
       ],

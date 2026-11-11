@@ -1,0 +1,52 @@
+<section class="panel" aria-labelledby="cfg-perfil-pendente">
+  <div class="panel-head">
+    <h2 id="cfg-perfil-pendente" class="panel-head__title">Versão pendente de aprovação</h2>
+    <ui-tag variant="info">Aguarda {{ etapa(versao().etapaAtual).toLowerCase() }}</ui-tag>
+  </div>
+  <cfg-resumo-da-versao
+    [versao]="versao()"
+    [nomeVigente]="nomeVigente()"
+    [descricaoVigente]="descricaoVigente()"
+    (abrirDocumento)="abrirDocumento.emit()">
+    @if (versao().propostaPorQuemLe) {
+      <p class="cfg-muted panel-body">{{ avisoDeAutoria }}</p>
+    }
+    @if (faltaDocumento()) {
+      <div class="panel-body">
+        <ui-alert variant="warning" heading="Falta o documento instituidor">
+          @if (recusado()) {
+            A verificação recusou o documento enviado. Envie outro PDF para a versão seguir para
+            aprovação.
+          } @else {
+            Envie o PDF do documento instituidor para a versão seguir para aprovação.
+          }
+        </ui-alert>
+        <ui-file-upload
+          fieldLabel="Documento instituidor"
+          acceptedFileTypes=".pdf"
+          acceptLabel="PDF de até 10 MB"
+          [allowedMimeTypes]="['application/pdf']"
+          [maxSizeMb]="10"
+          [disabled]="indisponivel()"
+          [mensagemExterna]="erroDoDocumento()"
+          (selectedFileChange)="documentoEscolhido.emit($event)"
+        />
+        @if (enviandoDocumento()) {
+          <p role="status"><ui-spinner spinnerSize="sm" /> Enviando o documento…</p>
+        }
+      </div>
+    }
+    @if (acoes().cancelarVersaoPendente) {
+      <div class="cfg-acoes panel-body">
+        <button
+          type="button"
+          class="btn btn--danger btn--rect"
+          [disabled]="indisponivel()"
+          (click)="cancelar.emit()"
+        >
+          Cancelar versão pendente
+        </button>
+      </div>
+    }
+  </cfg-resumo-da-versao>
+</section>

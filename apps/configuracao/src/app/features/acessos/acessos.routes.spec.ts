@@ -2,7 +2,11 @@ import { TestBed } from '@angular/core/testing';
 import { CanActivateFn, Route, UrlTree, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { PERMISSOES_DAS_TELAS } from '../../acesso/permissoes-das-telas';
+import {
+  PERMISSOES_DA_JANELA_DE_MIGRACAO,
+  PERMISSOES_DA_RECLASSIFICACAO,
+  PERMISSOES_DAS_TELAS,
+} from '../../acesso/permissoes-das-telas';
 import { ACESSOS_ROUTES } from './acessos.routes';
 
 const raiz = ACESSOS_ROUTES[0] as Route;
@@ -42,6 +46,14 @@ const PROTEGIDAS = [
   ['historico', 'acessos/historico'],
   ['concessoes', 'acessos/concessoes'],
   ['perfis', 'acessos/perfis'],
+  ['perfis/:id', 'acessos/perfis'],
+  ['versoes-de-perfil/gestao-de-acessos', 'acessos/versoes-de-perfil/gestao-de-acessos'],
+  ['versoes-de-perfil/protecao-de-dados', 'acessos/versoes-de-perfil/protecao-de-dados'],
+  ['janelas-de-migracao/gestao-de-acessos', 'acessos/janelas-de-migracao/gestao-de-acessos'],
+  ['janelas-de-migracao/protecao-de-dados', 'acessos/janelas-de-migracao/protecao-de-dados'],
+  ['reclassificacoes/gestao-de-acessos', 'acessos/reclassificacoes/gestao-de-acessos'],
+  ['reclassificacoes/protecao-de-dados', 'acessos/reclassificacoes/protecao-de-dados'],
+  ['governanca/divergencias', 'acessos/governanca/divergencias'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -75,6 +87,32 @@ describe('rotas dos acessos', () => {
     });
   });
 
+  describe('perfis/:id/janela', () => {
+    it.each(PERMISSOES_DA_JANELA_DE_MIGRACAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('perfis/:id/janela', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado com a permissão de outra tela', async () => {
+      const decisao = await decidirAcesso('perfis/:id/janela', [
+        ...PERMISSOES_DAS_TELAS['acessos/concessoes'],
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
+  describe('reclassificacoes/:id', () => {
+    it.each(PERMISSOES_DA_RECLASSIFICACAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('reclassificacoes/:id', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado com a permissão de outra tela', async () => {
+      const decisao = await decidirAcesso('reclassificacoes/:id', [
+        ...PERMISSOES_DAS_TELAS['acessos/concessoes'],
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
   it.each(['pedidos', 'pedidos/novo', 'pedidos/:id'])(
     '%s fica aberta a quem tem sessão, sem permissão de administração',
     (caminho) => {
@@ -91,9 +129,20 @@ describe('rotas dos acessos', () => {
     expect(rota(caminho).data?.['fila']).toBe(fila);
   });
 
+  it.each([
+    ['versoes-de-perfil/gestao-de-acessos', 'gestao_de_acessos'],
+    ['versoes-de-perfil/protecao-de-dados', 'protecao_de_dados'],
+    ['janelas-de-migracao/gestao-de-acessos', 'gestao_de_acessos'],
+    ['janelas-de-migracao/protecao-de-dados', 'protecao_de_dados'],
+    ['reclassificacoes/gestao-de-acessos', 'gestao_de_acessos'],
+    ['reclassificacoes/protecao-de-dados', 'protecao_de_dados'],
+  ])('%s lista a etapa %s', (caminho, etapa) => {
+    expect(rota(caminho).data?.['etapa']).toBe(etapa);
+  });
+
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(8);
+    expect(carregaveis).toHaveLength(18);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }

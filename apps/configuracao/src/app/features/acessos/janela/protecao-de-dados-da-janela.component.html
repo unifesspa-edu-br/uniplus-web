@@ -1,0 +1,96 @@
+<section class="panel" aria-labelledby="cfg-protecao-titulo">
+  <div class="panel-head">
+    <h2 id="cfg-protecao-titulo" class="panel-head__title">Etapa da proteção de dados</h2>
+  </div>
+  <p class="panel-body">
+    Estas concessões ganham permissão pessoal ou sensível na versão nova e só migram com a decisão
+    da proteção de dados. Quem a gestão de acessos recusou não chega aqui.
+    @if (!podeDecidir()) {
+      Você consulta a janela, mas a decisão cabe à proteção de dados.
+    }
+  </p>
+
+  @if (etapa.erro() && !etapa.confirmando()) {
+    <div class="panel-body" [id]="idDoErro" tabindex="-1">
+      <ui-alert variant="danger" heading="Não foi possível enviar as decisões">{{
+        etapa.erro()
+      }}</ui-alert>
+    </div>
+  }
+
+  @if (podeDecidir()) {
+    <div class="cfg-acoes panel-body">
+      <button
+        type="button"
+        class="btn btn--secondary btn--rect"
+        [disabled]="gravando()"
+        (click)="etapa.decidirTodas(itens(), 'migrar')"
+      >
+        Migrar todas
+      </button>
+      <button
+        type="button"
+        class="btn btn--secondary btn--rect"
+        [disabled]="gravando()"
+        (click)="etapa.decidirTodas(itens(), 'recusar')"
+      >
+        Recusar todas
+      </button>
+    </div>
+  }
+  <cfg-tabela-da-janela
+    [itens]="itens()"
+    [nomeDoEscopo]="nomeDoEscopo()"
+    legenda="Concessões que aguardam a proteção de dados"
+  >
+    @if (podeDecidir()) {
+      <ng-template #acao let-item>
+        <cfg-escolha-da-decisao
+          [pessoa]="item.beneficiarioNome ?? 'pessoa sem nome informado'"
+          [grupo]="'cfg-protecao-' + item.concessaoId"
+          [valor]="etapa.decisoes().get(item.concessaoId) ?? null"
+          [desabilitada]="gravando()"
+          (escolhida)="etapa.decidir(item.concessaoId, $event)"
+        />
+      </ng-template>
+    }
+  </cfg-tabela-da-janela>
+
+  @if (podeDecidir()) {
+    <div class="cfg-acoes panel-body">
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="gravando() || escolhidas() === 0"
+        [attr.aria-describedby]="escolhidas() === 0 ? 'cfg-protecao-ajuda' : null"
+        (click)="enviar()"
+      >
+        @if (gravando()) {
+          <ui-spinner spinnerSize="sm" />
+        }
+        Enviar as decisões
+      </button>
+      <p id="cfg-protecao-ajuda" class="cfg-muted">
+        @if (escolhidas() === 0) {
+          Escolha migrar ou recusar em ao menos uma concessão. As demais seguem aguardando.
+        } @else {
+          {{ escolhidas() === 1 ? '1 concessão escolhida' : escolhidas() + ' concessões escolhidas' }};
+          as demais seguem aguardando.
+        }
+      </p>
+    </div>
+  }
+</section>
+
+<cfg-exclusao-dialog
+  [(visible)]="etapa.confirmando"
+  heading="Enviar as decisões com recusas"
+  confirmLabel="Recusar e enviar"
+  confirmacao="Entendo que as concessões recusadas serão revogadas."
+  [erro]="etapa.erro()"
+  [enviando]="gravando()"
+  (confirmado)="confirmarExclusao()"
+>
+  {{ etapa.recusas() === 1 ? '1 concessão recusada perde' : etapa.recusas() + ' concessões recusadas perdem' }}
+  o acesso ao perfil assim que as decisões são enviadas.
+</cfg-exclusao-dialog>

@@ -1,247 +1,289 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import {
-  ChaveDeSubstituicao,
-  ProblemI18nService,
-  comChave,
-  proximaChave,
-  type ProblemDetails,
-} from '@uniplus/shared-core/http';
-import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { PerfisApi, type PerfilDto } from '@uniplus/shared-data/autorizacao';
-import { aguardarRecarga } from '../../shared/foco';
+import type { CategoriaDaRemocao, PerfilDto } from '@uniplus/shared-data/autorizacao';
+import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
 import { mensagemDaRecusa } from './falha-de-servidor';
-import { FALHA_INESPERADA } from './mensagens-de-acesso';
-import { PerfisStore } from './perfis.store';
 import {
   CODIGO_NOME_DUPLICADO,
   controleDoCampoDoServidor,
   criarFormularioDePerfil,
+  exigirCamposDaProposta,
   valoresDoPerfil,
 } from './perfil-form';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
+import { CatalogoDePermissoesStore } from './versoes/catalogo-de-permissoes.store';
+import {
+  destinoDaProposta,
+  diferencaDaVersao,
+  type DestinoDaProposta,
+} from './versoes/diferenca-da-versao';
+import type { FaseDoEnvio } from './versoes/documento-da-versao.service';
+import { EnvioDaVersao, type DesfechoDoEnvio, type PlanoDeEnvio } from './versoes/envio-da-versao';
+import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 
-interface CorpoDoPerfil {
-  readonly nome: string;
-  readonly descricao: string;
-  readonly permissoes: string[];
-}
+const SEM_PERMISSAO = 'Marque ao menos uma permissão.';
+const SEM_DOCUMENTO = 'Anexe o PDF do documento instituidor.';
+const SEM_MUDANCA = 'Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.';
+const DOCUMENTO_NAO_ENVIADO =
+  'A versão foi registrada, mas o documento não foi enviado. Abra o perfil e envie o documento.';
 
-/** Escritas e estado do formulário de perfis de acesso. */
+const SUCESSO: Readonly<Record<PlanoDeEnvio['tipo'], string>> = {
+  criacao: 'Perfil criado',
+  proposta: 'Versão proposta',
+  remocao: 'Permissões removidas',
+};
+
+/**
+ * Estado e envio do formulário de perfil: o perfil novo e a proposta de versão de um perfil que
+ * existe. As permissões acrescentadas e removidas aparecem em relação ao que está em vigor.
+ */
 @Injectable()
 export class EdicaoDosPerfis {
-  readonly store = inject(PerfisStore);
-  private readonly api = inject(PerfisApi);
+  private readonly escrita = inject(EscritaDoPerfil);
+  private readonly envio = inject(EnvioDaVersao);
+  private readonly catalogo = inject(CatalogoDePermissoesStore);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly chave = new ChaveDeSubstituicao();
-  private chaveDaCriacao = idempotencyKey.create();
-  /**
-   * Corpo de uma criação sem resposta definitiva (rede ou 5xx): o servidor pode tê-la executado, então
-   * a retentativa repete o mesmo corpo sob a mesma chave e recebe o replay em vez de um segundo perfil.
-   */
-  private corpoPendente: CorpoDoPerfil | null = null;
-  readonly criacaoEmAberto = signal(false);
-
-  readonly formAberto = signal(false);
-  private readonly escrita = signal<'salvando' | 'ativando' | null>(null);
-  private readonly recarga = aguardarRecarga(
-    this.store.carregando,
-    computed(() => this.store.mensagemDeErro() !== null),
-  );
-  readonly salvando = computed(() => this.escrita() === 'salvando');
-  /** Inclui a espera pela recarga: a lista só volta a aceitar ação quando reflete o que foi gravado. */
-  readonly gravando = computed(() => this.escrita() !== null || this.recarga.aguardando());
-  readonly erroDoForm = signal<string | null>(null);
-  readonly erroDaAcao = signal<string | null>(null);
-  readonly emEdicao = signal<PerfilDto | null>(null);
-  private readonly andamentoDaAtivacao = signal('');
-  private readonly resultadoDaAtivacao = signal('');
-  /** Na página: o andamento e o desfecho da mudança de situação, que não tem sobreposição para dizê-los. */
-  readonly anuncioDaPagina = computed(
-    () => this.andamentoDaAtivacao() || this.resultadoDaAtivacao(),
-  );
-  private readonly marcadas = signal<ReadonlySet<string>>(new Set());
+  /** Plano sem resposta definitiva (rede ou 5xx): a retentativa o repete igual, sob a mesma chave. */
+  private planoPendente: PlanoDeEnvio | null = null;
 
   readonly form = criarFormularioDePerfil();
+  readonly formAberto = signal(false);
+  /** O perfil de que se propõe versão; `null` no perfil novo. */
+  readonly base = signal<PerfilDto | null>(null);
+  readonly marcadas = signal<ReadonlySet<string>>(new Set());
+  readonly documento = signal<File | null>(null);
+  readonly erroDoDocumento = signal<string | null>(null);
+  readonly erroDasPermissoes = signal<string | null>(null);
+  readonly erroDoForm = signal<string | null>(null);
+  readonly fase = signal<FaseDoEnvio | null>(null);
+  /** O envio ficou sem desfecho conhecido: os campos não mudam até repetir o mesmo envio. */
+  readonly envioEmAberto = signal(false);
 
-  marcada(codigo: string): boolean {
-    return this.marcadas().has(codigo);
+  private readonly valores = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
+  readonly emVigor = computed(
+    () => this.base()?.composicaoEmVigor?.permissoes.map((p) => p.codigo) ?? [],
+  );
+  readonly diferenca = computed(() => diferencaDaVersao(this.emVigor(), this.marcadas()));
+  private readonly conteudoMudou = computed(() => {
+    const base = this.base();
+    const { nome, descricao, protocolo } = this.valores();
+    const documentoNovo = this.documento() !== null || !!protocolo?.trim();
+    return (
+      base === null ||
+      documentoNovo ||
+      nome?.trim() !== base.nome ||
+      descricao?.trim() !== base.descricao
+    );
+  });
+  readonly destino = computed(() =>
+    this.base() === null ? 'versao' : destinoDaProposta(this.diferenca(), this.conteudoMudou()),
+  );
+  readonly exigeDocumento = computed(() => this.destino() === 'versao');
+  readonly exigeRemocao = computed(
+    () => this.base() !== null && this.diferenca().remocao.length > 0,
+  );
+
+  constructor() {
+    effect(() =>
+      exigirCamposDaProposta(this.form, {
+        documento: this.exigeDocumento(),
+        remocao: this.exigeRemocao(),
+      }),
+    );
+  }
+
+  abrirCriacao(): void {
+    this.abrir(null);
+  }
+
+  abrirProposta(perfil: PerfilDto): void {
+    this.abrir(perfil);
   }
 
   alternar(codigo: string): void {
     const proximas = new Set(this.marcadas());
     if (!proximas.delete(codigo)) proximas.add(codigo);
     this.marcadas.set(proximas);
-  }
-
-  abrirCriacao(): void {
-    this.abrirForm(null);
-  }
-
-  abrirEdicao(perfil: PerfilDto): void {
-    this.abrirForm(perfil);
+    this.erroDasPermissoes.set(null);
   }
 
   aoEnviar(): void {
-    if (!this.salvando()) void this.salvar();
+    if (!this.escrita.salvando()) void this.salvar();
   }
 
   async salvar(): Promise<void> {
-    if (this.gravando()) return;
+    if (this.escrita.gravando()) return;
     this.erroDoForm.set(null);
     descartarRecusasDoServidor(this.form);
-    if (this.form.invalid && !this.criacaoEmAberto()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    this.escrita.set('salvando');
-
-    const { nome, descricao } = this.form.getRawValue();
-    const base: CorpoDoPerfil = this.corpoPendente ?? {
-      nome: nome.trim(),
-      descricao: descricao.trim(),
-      permissoes: [...this.marcadas()],
-    };
-    const perfil = this.emEdicao();
-    try {
-      if (perfil === null) {
-        await this.criar(base);
-        return;
-      }
-      await this.atualizar(perfil, base);
-    } catch {
-      this.erroDoForm.set(FALHA_INESPERADA);
-    } finally {
-      this.escrita.set(null);
-    }
+    const plano = this.planoPendente ?? this.planoValido();
+    if (plano === null) return;
+    await this.escrita.executar('salvando', () => this.enviar(plano), (m) => this.erroDoForm.set(m));
   }
 
-  async alternarAtivacao(perfil: PerfilDto): Promise<void> {
-    if (this.gravando()) return;
-    this.escrita.set('ativando');
-    this.erroDaAcao.set(null);
-    this.resultadoDaAtivacao.set('');
-    this.andamentoDaAtivacao.set(
-      `${perfil.ativo ? 'Desativando' : 'Reativando'} o perfil ${perfil.nome}.`,
-    );
-    try {
-      const { resultado } = await comChave(
-        this.chave,
-        { id: perfil.id, ativo: !perfil.ativo },
-        (contexto) =>
-          perfil.ativo
-            ? this.api.desativar(perfil.id, contexto)
-            : this.api.ativar(perfil.id, contexto),
-      );
-      if (resultado.ok) this.concluirAtivacao(perfil);
-      else this.erroDaAcao.set(this.texto(resultado.problem));
-    } catch {
-      this.erroDaAcao.set(FALHA_INESPERADA);
-    } finally {
-      this.andamentoDaAtivacao.set('');
-      this.escrita.set(null);
-    }
-  }
-
-  private concluirAtivacao(perfil: PerfilDto): void {
-    this.notificacoes.success(perfil.ativo ? 'Perfil desativado' : 'Perfil reativado');
-    this.resultadoDaAtivacao.set(
-      `Perfil ${perfil.nome} ${perfil.ativo ? 'desativado' : 'reativado'}.`,
-    );
-    this.recarregar();
-  }
-
-  private async atualizar(perfil: PerfilDto, base: CorpoDoPerfil): Promise<void> {
-    const { resultado } = await comChave<unknown>(
-      this.chave,
-      { id: perfil.id, ...base },
-      (contexto) => this.api.atualizar(perfil.id, { id: perfil.id, ...base }, contexto),
-    );
-    if (!resultado.ok) {
-      this.aplicarRecusa(resultado.problem);
-      return;
-    }
-    this.formAberto.set(false);
-    this.notificacoes.success('Perfil atualizado');
-    this.recarregar();
-  }
-
-  private async criar(corpo: CorpoDoPerfil): Promise<void> {
-    const resultado = await firstValueFrom(
-      this.api.criar(corpo, withIdempotencyKey(this.chaveDaCriacao)),
-    );
-    if (!resultado.ok) {
-      const anterior = this.chaveDaCriacao;
-      this.chaveDaCriacao = proximaChave(anterior, resultado);
-      const inconclusiva = this.chaveDaCriacao === anterior;
-      this.corpoPendente = inconclusiva ? corpo : null;
-      this.criacaoEmAberto.set(inconclusiva);
-      const motivo = this.texto(resultado.problem);
-      if (!inconclusiva && this.aplicarErrosDeCampo(resultado.problem)) return;
-      this.erroDoForm.set(
-        inconclusiva
-          ? `${motivo} Não foi possível saber se o perfil foi criado. Confira a lista de perfis; se ele não aparecer, salve de novo: o envio é o mesmo e não se repete.`
-          : motivo,
-      );
-      return;
-    }
-    this.reiniciarCriacao();
-    this.formAberto.set(false);
-    this.notificacoes.success('Perfil criado');
-    this.recarregar();
-  }
-
-  private recarregar(): void {
-    this.recarga.iniciar();
-    this.store.recarregar();
-  }
-
-  private reiniciarCriacao(): void {
-    this.chaveDaCriacao = idempotencyKey.create();
-    this.corpoPendente = null;
-    this.criacaoEmAberto.set(false);
-  }
-
-  private abrirForm(perfil: PerfilDto | null): void {
-    if (this.gravando()) return;
-    this.reiniciarCriacao();
-    this.resultadoDaAtivacao.set('');
-    this.emEdicao.set(perfil);
-    this.erroDoForm.set(null);
-    this.form.reset(valoresDoPerfil(perfil));
-    this.marcadas.set(new Set(perfil?.permissoes.map((permissao) => permissao.codigo) ?? []));
-    this.store.carregarCatalogo();
+  private abrir(base: PerfilDto | null): void {
+    if (this.escrita.gravando()) return;
+    this.escrita.erroDaAcao.set(null);
+    this.planoPendente = null;
+    this.envioEmAberto.set(false);
+    this.base.set(base);
+    this.form.reset(valoresDoPerfil(base));
+    this.marcadas.set(new Set(base?.composicaoEmVigor?.permissoes.map((p) => p.codigo) ?? []));
+    this.documento.set(null);
+    this.limparErros();
+    this.catalogo.carregar();
     this.formAberto.set(true);
+  }
+
+  private limparErros(): void {
+    this.erroDoForm.set(null);
+    this.erroDoDocumento.set(null);
+    this.erroDasPermissoes.set(null);
+  }
+
+  private planoValido(): PlanoDeEnvio | null {
+    const destino = this.destino();
+    const arquivo = this.documento();
+    const falhas = this.conferirCampos(destino, arquivo);
+    if (this.form.invalid) this.form.markAllAsTouched();
+    return falhas || this.form.invalid ? null : this.planoDe(destino, arquivo);
+  }
+
+  /** Aponta o que falta fora dos campos de texto; devolve se algo impede o envio. */
+  private conferirCampos(destino: DestinoDaProposta, arquivo: File | null): boolean {
+    const semMudanca = destino === 'nada';
+    const semPermissao = destino === 'versao' && this.marcadas().size === 0;
+    const semDocumento = this.exigeDocumento() && arquivo === null;
+    this.erroDoForm.set(semMudanca ? SEM_MUDANCA : null);
+    this.erroDasPermissoes.set(semPermissao ? SEM_PERMISSAO : null);
+    this.erroDoDocumento.set(semDocumento ? SEM_DOCUMENTO : null);
+    return semMudanca || semPermissao || semDocumento;
+  }
+
+  private planoDe(destino: DestinoDaProposta, arquivo: File | null): PlanoDeEnvio | null {
+    const base = this.base();
+    if (destino === 'remocao' && base !== null) {
+      return {
+        tipo: 'remocao',
+        perfilId: base.id,
+        corpo: { permissoes: [...this.diferenca().remocao], ...this.motivoDaRemocao() },
+      };
+    }
+    if (arquivo === null) return null;
+    const dados = this.dadosDaVersao(arquivo);
+    return base === null
+      ? { tipo: 'criacao', corpo: dados, arquivo }
+      : {
+          tipo: 'proposta',
+          perfilId: base.id,
+          corpo: { ...dados, ...this.remocaoDaProposta() },
+          arquivo,
+        };
+  }
+
+  private dadosDaVersao(arquivo: File) {
+    const campos = this.form.getRawValue();
+    return {
+      nome: campos.nome.trim(),
+      descricao: campos.descricao.trim(),
+      permissoes: [...this.marcadas()].sort(),
+      protocolo: campos.protocolo.trim(),
+      tamanhoDoDocumento: arquivo.size,
+    };
+  }
+
+  private motivoDaRemocao(): { motivo: string; categoria: CategoriaDaRemocao } {
+    const { motivoDaRemocao, categoriaDaRemocao } = this.form.getRawValue();
+    return { motivo: motivoDaRemocao.trim(), categoria: categoriaDaRemocao as CategoriaDaRemocao };
+  }
+
+  /** A proposta que retira permissão leva o motivo e a categoria; as demais, nenhum dos dois. */
+  private remocaoDaProposta() {
+    if (!this.exigeRemocao()) return { motivoDaRemocao: null, categoriaDaRemocao: null };
+    const { motivo, categoria } = this.motivoDaRemocao();
+    return { motivoDaRemocao: motivo, categoriaDaRemocao: categoria };
+  }
+
+  private async enviar(plano: PlanoDeEnvio): Promise<void> {
+    try {
+      const desfecho = await this.envio.executar(plano, (fase) => this.fase.set(fase));
+      this.aplicar(desfecho, plano);
+    } finally {
+      this.fase.set(null);
+    }
+  }
+
+  private aplicar(desfecho: DesfechoDoEnvio, plano: PlanoDeEnvio): void {
+    if (desfecho.tipo === 'recusado') {
+      this.recusar(desfecho.problema, desfecho.inconclusivo, plano);
+      return;
+    }
+    this.planoPendente = null;
+    this.envioEmAberto.set(false);
+    this.formAberto.set(false);
+    if (desfecho.tipo === 'sem_documento') {
+      this.escrita.erroDaAcao.set(`${DOCUMENTO_NAO_ENVIADO} ${desfecho.mensagem}`);
+    } else {
+      this.notificacoes.success(SUCESSO[plano.tipo]);
+    }
+    this.escrita.recarregar();
+  }
+
+  private recusar(problema: ProblemDetails, inconclusivo: boolean, plano: PlanoDeEnvio): void {
+    this.planoPendente = inconclusivo ? plano : null;
+    this.envioEmAberto.set(inconclusivo);
+    const motivo = this.texto(problema);
+    if (!inconclusivo && this.aplicarErrosDeCampo(problema)) return;
+    this.erroDoForm.set(
+      inconclusivo ? `${motivo} ${INCONCLUSIVO[plano.tipo]}` : motivo,
+    );
   }
 
   private texto(problema: ProblemDetails): string {
     return mensagemDaRecusa(this.problemas, this.notificacoes, problema);
   }
 
-  private aplicarRecusa(problema: ProblemDetails): void {
-    if (!this.aplicarErrosDeCampo(problema)) this.erroDoForm.set(this.texto(problema));
-  }
-
-  /** Marca o campo recusado: o que o servidor aponta em `errors` e o nome já existente (409). */
+  /**
+   * Marca o campo recusado: o que o servidor aponta em `errors` e o nome já existente (409). O erro
+   * de campo que o formulário não tem vai ao resumo, sem perder os que foram aos campos.
+   */
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
-    let aplicado = false;
-    if (problema.code === CODIGO_NOME_DUPLICADO) {
-      this.marcar('nome', problema.code, this.texto(problema));
-      aplicado = true;
-    }
+    let aplicado = problema.code === CODIGO_NOME_DUPLICADO;
+    if (aplicado) this.marcar('nome', problema.code, this.texto(problema));
+    const semCampo: string[] = [];
     for (const erro of problema.errors ?? []) {
-      const nome = controleDoCampoDoServidor(erro.field);
-      if (nome === null) continue;
-      this.marcar(nome, erro.code, erro.message);
-      aplicado = true;
+      const marcado = this.aplicarErro(erro.field, erro.code, erro.message);
+      if (!marcado) semCampo.push(erro.message);
+      aplicado = marcado || aplicado;
     }
-    return aplicado;
+    if (semCampo.length > 0) this.erroDoForm.set(semCampo.join(' '));
+    return aplicado || semCampo.length > 0;
   }
 
-  private marcar(nome: 'nome' | 'descricao', code: string, message: string): void {
-    const controle = this.form.controls[nome];
-    marcarRecusaDoServidor(controle, code, message);
+  private aplicarErro(campo: string, code: string, message: string): boolean {
+    if (campo.toLowerCase() === 'permissoes') {
+      this.erroDasPermissoes.set(message);
+      return true;
+    }
+    const nome = controleDoCampoDoServidor(campo);
+    if (nome === null) return false;
+    this.marcar(nome, code, message);
+    return true;
+  }
+
+  private marcar(nome: keyof ReturnType<typeof criarFormularioDePerfil>['controls'], code: string, message: string): void {
+    marcarRecusaDoServidor(this.form.controls[nome], code, message);
   }
 }
+
+const INCONCLUSIVO: Readonly<Record<PlanoDeEnvio['tipo'], string>> = {
+  criacao:
+    'Não foi possível saber se o perfil foi criado. Confira a lista de perfis; se ele não aparecer, salve de novo: o envio é o mesmo e não se repete.',
+  proposta:
+    'Não foi possível saber se a versão foi registrada. Confira o perfil; se ela não aparecer, envie de novo: o envio é o mesmo e não se repete.',
+  remocao:
+    'Não foi possível saber se as permissões foram removidas. Confira o perfil; se elas continuarem, envie de novo: o envio é o mesmo e não se repete.',
+};

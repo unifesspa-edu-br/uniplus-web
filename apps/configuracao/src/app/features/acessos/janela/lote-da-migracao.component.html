@@ -1,0 +1,126 @@
+<section class="panel" aria-labelledby="cfg-lote-titulo">
+  <div class="panel-head">
+    <h2 id="cfg-lote-titulo" class="panel-head__title">Lote da gestão de acessos</h2>
+  </div>
+  @if (janela().loteEnviado) {
+    <p class="panel-body">O lote da gestão de acessos já foi enviado e não se altera.</p>
+  } @else if (!podeDecidir()) {
+    <p class="panel-body">
+      O lote cabe à gestão de acessos. Você consulta a janela, mas não decide as concessões.
+    </p>
+  } @else if (itens().doLote.length === 0) {
+    <p class="panel-body">
+      @if (itens().proprias.length > 0) {
+        Nenhuma concessão aguarda decisão sua. Enviar o lote retém as suas para outra pessoa da
+        gestão de acessos.
+      } @else {
+        Nenhuma concessão aguarda o lote.
+      }
+    </p>
+  } @else {
+    <p class="panel-body">
+      Decida todas as concessões da versão anterior: quem migra passa à versão nova e quem é
+      recusado perde o acesso. O lote vale por inteiro e se envia uma só vez.
+    </p>
+  }
+
+  @if (lote.erro() && !lote.confirmando()) {
+    <div class="panel-body" [id]="idDoErro" tabindex="-1">
+      <ui-alert variant="danger" heading="Não foi possível enviar o lote">{{
+        lote.erro()
+      }}</ui-alert>
+    </div>
+  }
+
+  @if (itens().doLote.length > 0) {
+    @if (decidiveis()) {
+      <div class="cfg-acoes panel-body">
+        <button
+          type="button"
+          class="btn btn--secondary btn--rect"
+          [disabled]="gravando()"
+          (click)="lote.decidirTodas(itens().doLote, 'migrar')"
+        >
+          Migrar todas
+        </button>
+        <button
+          type="button"
+          class="btn btn--secondary btn--rect"
+          [disabled]="gravando()"
+          (click)="lote.decidirTodas(itens().doLote, 'recusar')"
+        >
+          Recusar todas
+        </button>
+      </div>
+    }
+    <cfg-tabela-da-janela
+      [itens]="itens().doLote"
+      [nomeDoEscopo]="nomeDoEscopo()"
+      legenda="Concessões da versão anterior que aguardam o lote"
+    >
+      @if (decidiveis()) {
+        <ng-template #acao let-item>
+          <cfg-escolha-da-decisao
+            [pessoa]="item.beneficiarioNome ?? 'pessoa sem nome informado'"
+            [grupo]="'cfg-lote-' + item.concessaoId"
+            [valor]="lote.decisoes().get(item.concessaoId) ?? null"
+            [desabilitada]="gravando()"
+            (escolhida)="lote.decidir(item.concessaoId, $event)"
+          />
+        </ng-template>
+      }
+    </cfg-tabela-da-janela>
+  }
+
+  @for (grupo of proprias(); track grupo.orientacao.titulo) {
+    <div class="panel-body">
+      <h3 class="form-section__title">{{ grupo.orientacao.titulo }}</h3>
+      <p class="field__hint">{{ grupo.orientacao.dica }}</p>
+    </div>
+    <cfg-tabela-da-janela
+      [itens]="grupo.itens"
+      [nomeDoEscopo]="nomeDoEscopo()"
+      [legenda]="grupo.orientacao.legenda"
+    />
+  }
+
+  @if (decidiveis()) {
+    <div class="cfg-acoes panel-body">
+      <button
+        type="button"
+        class="btn btn--primary"
+        [disabled]="gravando() || faltam() > 0"
+        [attr.aria-describedby]="faltam() > 0 ? 'cfg-lote-faltam' : null"
+        (click)="enviar()"
+      >
+        @if (gravando()) {
+          <ui-spinner spinnerSize="sm" />
+        }
+        Enviar o lote
+      </button>
+      @if (faltam() > 0) {
+        <p id="cfg-lote-faltam" class="cfg-muted">
+          {{ faltam() === 1 ? 'Falta 1 concessão' : 'Faltam ' + faltam() + ' concessões' }} para
+          enviar o lote.
+        </p>
+      }
+    </div>
+  }
+</section>
+
+<cfg-exclusao-dialog
+  [(visible)]="lote.confirmando"
+  heading="Enviar o lote com recusas"
+  confirmLabel="Recusar e enviar o lote"
+  confirmacao="Entendo que as concessões recusadas serão revogadas."
+  [erro]="lote.erro()"
+  [enviando]="gravando()"
+  (confirmado)="confirmarExclusao()"
+>
+  {{
+    lote.recusas() === 1
+      ? '1 concessão recusada perde'
+      : lote.recusas() + ' concessões recusadas perdem'
+  }}
+  o acesso ao perfil assim que o lote é enviado.
+</cfg-exclusao-dialog>
