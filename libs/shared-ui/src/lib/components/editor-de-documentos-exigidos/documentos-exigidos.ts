@@ -1,9 +1,5 @@
 import type { PredicadoNoWire } from '../editor-de-formulario/modelo/tipos';
-import {
-  ABRANGENCIA_PADRAO,
-  CONSEQUENCIAS_ESCOLHIVEIS,
-  STATUS_BASE_LEGAL_RESOLVIDO,
-} from '@uniplus/shared-utils';
+import { type BaseLegal, baseLegalNova, CONSEQUENCIAS_ESCOLHIVEIS } from '@uniplus/shared-utils';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
@@ -13,12 +9,8 @@ export interface OpcaoDoDocumento {
   readonly permiteComplementacao?: boolean;
 }
 
-export interface BaseLegalDoDocumento {
-  readonly referencia: string;
-  readonly abrangencia: string;
-  readonly status: string;
-  readonly observacao: null | string;
-}
+/** A norma do documento exigido: a mesma do processo, definida em `@uniplus/shared-utils`. */
+export type BaseLegalDoDocumento = BaseLegal;
 
 /** Um documento do conjunto padrão do modelo, na forma do contrato. */
 export interface DocumentoExigidoDoFormulario {
@@ -28,16 +20,6 @@ export interface DocumentoExigidoDoFormulario {
   readonly quando: PredicadoNoWire;
   readonly consequenciaIndeferimento: string;
   readonly basesLegais: null | readonly BaseLegalDoDocumento[];
-}
-
-/** Uma norma em branco, no alcance e no status que são o caso comum. */
-export function baseLegalNova(): BaseLegalDoDocumento {
-  return {
-    referencia: '',
-    abrangencia: ABRANGENCIA_PADRAO,
-    status: STATUS_BASE_LEGAL_RESOLVIDO,
-    observacao: null,
-  };
 }
 
 /** Um documento novo: exigido de todo candidato, com uma norma em branco para preencher. */
