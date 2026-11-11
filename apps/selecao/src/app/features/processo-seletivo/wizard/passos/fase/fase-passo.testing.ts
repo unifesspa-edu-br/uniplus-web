@@ -1,6 +1,9 @@
 import { runInInjectionContext } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { baseLegalNova } from '@uniplus/shared-utils';
 import { afterEach, beforeEach } from 'vitest';
+
+import type { BaseLegalConfig } from '../../processo-seletivo.models';
 
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.component';
@@ -13,6 +16,11 @@ import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
 
 export const ID_RG = '01960000-0000-7000-0000-0000000000f2';
+
+/** Uma norma como a recém-declarada, com o que o cenário precisa diferente. */
+export function umaNorma(parcial: Partial<BaseLegalConfig> = {}): BaseLegalConfig {
+  return { ...baseLegalNova(), ...parcial };
+}
 
 /**
  * O passo da fase montado, e o que os cenários consultam e conduzem nele. Os campos são funções de

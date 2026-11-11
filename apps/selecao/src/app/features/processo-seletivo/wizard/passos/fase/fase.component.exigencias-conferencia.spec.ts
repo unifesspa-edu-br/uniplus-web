@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { CatalogoDeDocumentos } from '../cronograma/catalogos/catalogo-de-documentos.service';
 import { fase, ID_CPF, TIPOS_DOCUMENTO } from './fase.testing';
 import { ModeloDaExigenciaComponent } from './modelo-da-exigencia/modelo-da-exigencia.component';
-import { usarFase, type ContextoDaFase, ID_RG } from './fase-passo.testing';
+import { usarFase, type ContextoDaFase, ID_RG, umaNorma } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
   let detectar: ContextoDaFase['detectar'];
@@ -59,30 +59,33 @@ describe('FasePassoComponent', () => {
       });
 
       it('avisa enquanto nenhuma norma está declarada, e uma vez só', () => {
-        editor().acrescentarBaseLegal(ID_CPF);
+        editor().definirBasesLegais(ID_CPF, [umaNorma(), umaNorma()]);
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some com a norma declarada e resolvida', () => {
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' })]);
         detectar();
 
         expect(avisos()).toBe(0);
       });
 
       it('continua com a norma declarada mas pendente', () => {
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        editor().escreverBaseLegal(ID_CPF, 0, 'status', 'PENDENTE');
+        editor().definirBasesLegais(ID_CPF, [
+          umaNorma({ referencia: 'Lei 12.711/2012, art. 3º', status: 'PENDENTE' }),
+        ]);
         detectar();
 
         expect(avisos()).toBe(1);
       });
 
       it('some quando outra norma da exigência já está resolvida', () => {
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        editor().acrescentarBaseLegal(ID_CPF);
+        editor().definirBasesLegais(ID_CPF, [
+          umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' }),
+          umaNorma(),
+        ]);
         detectar();
 
         expect(avisos()).toBe(0);
@@ -107,7 +110,7 @@ describe('FasePassoComponent', () => {
       it('mostra no resumo o que decide a exigência, com os campos fechados', () => {
         exigencias().alternarExigencia(ID_CPF, true);
         editor().escolherConsequencia(ID_CPF, 'ELIMINA');
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' })]);
         detectar();
 
         const [linha] = linhas();
@@ -123,7 +126,7 @@ describe('FasePassoComponent', () => {
       /** A norma de todos aparece uma vez, acima da tabela; repetida, dobraria cada linha. */
       it('mostra uma vez a norma resolvida que sustenta todos os documentos', () => {
         exigencias().alternarExigencia(ID_CPF, true);
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
+        editor().definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' })]);
         detectar();
 
         expect(
@@ -141,8 +144,8 @@ describe('FasePassoComponent', () => {
         ]);
         exigencias().alternarExigencia(ID_CPF, true);
         exigencias().alternarExigencia(ID_RG, true);
-        editor().escreverBaseLegal(ID_CPF, 0, 'referencia', 'Lei 12.711/2012, art. 3º');
-        editor().escreverBaseLegal(ID_RG, 0, 'referencia', 'Lei 7.116/1983');
+        editor().definirBasesLegais(ID_CPF, [umaNorma({ referencia: 'Lei 12.711/2012, art. 3º' })]);
+        editor().definirBasesLegais(ID_RG, [umaNorma({ referencia: 'Lei 7.116/1983' })]);
         detectar();
 
         expect(nativo.querySelector('.doc-conferencia__norma-comum')).toBeNull();
