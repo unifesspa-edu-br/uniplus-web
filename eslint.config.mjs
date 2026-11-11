@@ -108,8 +108,9 @@ export default [
     },
   },
   {
-    // Métricas de qualidade do LT: valem para código de produção e rodam como aviso até o fim
-    // da refatoração. O gate de tamanho (`npm run check:tamanho`) segue sendo o que reprova.
+    // Sinal auxiliar das métricas de qualidade (CONTRIBUTING.md, seção "Métricas de qualidade"):
+    // avisa nos .ts fora dos padrões listados em `ignores` e conta função de forma mais frouxa
+    // que a regra, que vale para todos os arquivos e conta linhas físicas. Quem cobra a regra é a revisão.
     files: ['**/*.ts'],
     ignores: [
       '**/*.spec.ts',
