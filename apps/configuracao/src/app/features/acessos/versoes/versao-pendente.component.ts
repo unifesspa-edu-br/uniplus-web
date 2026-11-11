@@ -7,6 +7,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { AVISO_DE_AUTORIA } from './autoria-da-versao';
+import { ID_DO_TITULO_DA_VERSAO_PENDENTE } from './destaque-da-versao';
 import type { AcoesDoPerfil } from './estado-do-perfil';
 import { ResumoDaVersaoComponent } from './resumo-da-versao.component';
 import { etapaDaVersao } from './rotulos-da-versao';
@@ -26,12 +27,15 @@ export class VersaoPendenteComponent {
   readonly nomeVigente = input.required<string>();
   readonly descricaoVigente = input.required<string>();
   readonly acoes = input.required<AcoesDoPerfil>();
+  /** A versão é a do link aberto, por exemplo o de um aviso por e-mail. */
+  readonly doLink = input(false);
   readonly indisponivel = input.required<boolean>();
   readonly enviandoDocumento = input.required<boolean>();
   readonly erroDoDocumento = input.required<string | null>();
   readonly cancelar = output<void>();
   readonly abrirDocumento = output<void>();
   readonly documentoEscolhido = output<File | null>();
+  protected readonly idDoTitulo = ID_DO_TITULO_DA_VERSAO_PENDENTE;
   protected readonly etapa = etapaDaVersao;
   protected readonly avisoDeAutoria = AVISO_DE_AUTORIA;
   protected readonly recusado = computed(() => this.versao().situacaoDoDocumento === 'recusado');

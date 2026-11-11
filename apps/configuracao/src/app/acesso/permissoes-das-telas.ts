@@ -5,6 +5,13 @@ import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 
 const { autorizacao, configuracao, organizacao, publicacoes } = PERMISSAO;
 
+/** O perfil de acesso abre para quem o mantém ou aprova uma das etapas da versão dele. */
+export const PERMISSOES_DO_PERFIL = [
+  autorizacao.perfisManter,
+  autorizacao.perfisAprovarFuncional,
+  autorizacao.perfisAprovarProtecaoDeDados,
+] as const satisfies readonly CodigoDePermissao[];
+
 /**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
  * que o item visível seja sempre um clique que a guarda aceita. A ordem é a da primeira tela
@@ -51,7 +58,7 @@ export const PERMISSOES_DAS_TELAS = {
     autorizacao.pedidosAprovarProtecaoDeDados,
   ],
   'acessos/concessoes': [autorizacao.concessoesAdministrar],
-  'acessos/perfis': [autorizacao.perfisManter],
+  'acessos/perfis': PERMISSOES_DO_PERFIL,
   'acessos/versoes-de-perfil/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/janelas-de-migracao/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
@@ -65,11 +72,7 @@ export const PERMISSOES_DAS_TELAS = {
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 /** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */
-export const PERMISSOES_DA_JANELA_DE_MIGRACAO = [
-  autorizacao.perfisManter,
-  autorizacao.perfisAprovarFuncional,
-  autorizacao.perfisAprovarProtecaoDeDados,
-] as const satisfies readonly CodigoDePermissao[];
+export const PERMISSOES_DA_JANELA_DE_MIGRACAO = PERMISSOES_DO_PERFIL;
 
 /** O detalhe da reclassificação abre para quem aprova uma das etapas dela. */
 export const PERMISSOES_DA_RECLASSIFICACAO = [

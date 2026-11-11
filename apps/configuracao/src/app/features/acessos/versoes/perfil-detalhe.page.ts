@@ -23,13 +23,19 @@ import { etapa } from '../rotulos-de-acesso';
 import { EdicaoDosPerfis } from '../edicao-dos-perfis';
 import { MotivoDialogComponent } from '../motivo-dialog.component';
 import { PerfilFormularioComponent } from '../perfil-formulario.component';
+import {
+  avisoDaVersaoDoLink,
+  encerradaForaDoAvisoDoLink,
+  TITULO_DO_AVISO_DA_VERSAO,
+} from './aviso-da-versao-do-link';
 import { CancelamentoDaVersao } from './cancelamento-da-versao';
 import { ContencaoDoPerfil } from './contencao-do-perfil';
 import type { AcaoDaContencao } from './textos-da-contencao';
+import { destacarAVersaoPendente } from './destaque-da-versao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import {
   acoesDoPerfil,
-  resumoDoPerfil,
+  resumoDoDetalhe,
   situacoesDoPerfil,
   type PermissoesDaContencao,
 } from './estado-do-perfil';
@@ -93,6 +99,9 @@ export class PerfilDetalhePage {
   /** Vem do parâmetro `:id` da rota. */
   readonly id = input.required<string>();
 
+  /** Vem do parâmetro `:versaoId` da rota do link da versão; ausente na rota do perfil. */
+  readonly versaoId = input<string>();
+
   protected readonly store = inject(PerfilDetalheStore);
   protected readonly escrita = inject(EscritaDoPerfil);
   protected readonly edicao = inject(EdicaoDosPerfis);
@@ -105,7 +114,16 @@ export class PerfilDetalhePage {
   protected readonly perfil = this.store.perfil;
   protected readonly situacoes = computed(() => {
     const perfil = this.perfil();
-    return perfil === null ? [] : situacoesDoPerfil(resumoDoPerfil(perfil));
+    return perfil === null ? [] : situacoesDoPerfil(resumoDoDetalhe(perfil));
+  });
+  protected readonly tituloDoAvisoDaVersao = TITULO_DO_AVISO_DA_VERSAO;
+  protected readonly avisoDaVersao = computed(() => {
+    const perfil = this.perfil();
+    return perfil === null ? null : avisoDaVersaoDoLink(perfil, this.versaoId());
+  });
+  protected readonly avisoDaUltimaEncerrada = computed(() => {
+    const perfil = this.perfil();
+    return perfil === null ? null : encerradaForaDoAvisoDoLink(perfil, this.versaoId());
   });
   private readonly permissoes = inject(PermissoesService);
   private readonly permissoesDaContencao = computed<PermissoesDaContencao>(() => ({
@@ -113,14 +131,14 @@ export class PerfilDetalhePage {
     protecaoDeDados: this.permissoes.tem(PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados),
   }));
   protected readonly podeVerATrilha = computed(
-    () => this.permissoesDaContencao().gestaoDeAcessos ||
-      this.permissoesDaContencao().protecaoDeDados,
+    () =>
+      this.permissoesDaContencao().gestaoDeAcessos || this.permissoesDaContencao().protecaoDeDados,
   );
   protected readonly acoes = computed(() => {
     const perfil = this.perfil();
     return perfil === null
       ? null
-      : acoesDoPerfil(resumoDoPerfil(perfil), this.permissoesDaContencao());
+      : acoesDoPerfil(resumoDoDetalhe(perfil), this.permissoesDaContencao());
   });
   protected readonly situacaoEncerrada = situacaoEncerrada;
   protected readonly acaoDeRetomada = ACAO_DE_RETOMADA;
@@ -143,7 +161,16 @@ export class PerfilDetalhePage {
       untracked(() => this.store.id.set(id));
     });
     devolverFocoAoTitulo(this.escrita.gravando, ID_DO_TITULO);
+    destacarAVersaoPendente(this.versaoPendenteDoLink);
   }
+
+  private readonly versaoPendenteDoLink = computed(() => {
+    const versaoId = this.versaoId();
+    return versaoId !== undefined && this.perfil()?.versaoPendente?.versaoId === versaoId
+      ? versaoId
+      : null;
+  });
+  protected readonly pendenteEhADoLink = computed(() => this.versaoPendenteDoLink() !== null);
 
   protected proporVersao(): void {
     const perfil = this.perfil();

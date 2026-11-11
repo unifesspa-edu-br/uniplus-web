@@ -17,23 +17,19 @@ const rota = (caminho: string): Route => {
   return encontrada;
 };
 
+function provedoresDeSessao(concedidas: readonly string[]) {
+  const temAlguma = (...codigos: string[]) => codigos.some((c) => concedidas.includes(c));
+  return [
+    provideRouter([]),
+    { provide: AuthService, useValue: { authenticated: () => true, login: vi.fn() } },
+    { provide: PermissoesService, useValue: { garantir: () => Promise.resolve(), temAlguma } },
+  ];
+}
+
 /** Executa a guarda da rota para quem tem sessão e as permissões informadas. */
 async function decidirAcesso(caminho: string, concedidas: readonly string[]) {
   TestBed.resetTestingModule();
-  TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      { provide: AuthService, useValue: { authenticated: () => true, login: vi.fn() } },
-      {
-        provide: PermissoesService,
-        useValue: {
-          garantir: () => Promise.resolve(),
-          temAlguma: (...codigos: string[]) =>
-            codigos.some((codigo) => concedidas.includes(codigo)),
-        },
-      },
-    ],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDeSessao(concedidas) });
   const [guarda] = rota(caminho).canActivate as CanActivateFn[];
   return TestBed.runInInjectionContext(() =>
     guarda({} as never, { url: `/acessos/${caminho}` } as never),
@@ -47,6 +43,7 @@ const PROTEGIDAS = [
   ['concessoes', 'acessos/concessoes'],
   ['perfis', 'acessos/perfis'],
   ['perfis/:id', 'acessos/perfis'],
+  ['perfis/:id/versoes/:versaoId', 'acessos/perfis'],
   ['versoes-de-perfil/gestao-de-acessos', 'acessos/versoes-de-perfil/gestao-de-acessos'],
   ['versoes-de-perfil/protecao-de-dados', 'acessos/versoes-de-perfil/protecao-de-dados'],
   ['janelas-de-migracao/gestao-de-acessos', 'acessos/janelas-de-migracao/gestao-de-acessos'],
@@ -142,7 +139,7 @@ describe('rotas dos acessos', () => {
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(18);
+    expect(carregaveis).toHaveLength(19);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }

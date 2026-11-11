@@ -28,6 +28,22 @@ const userContextStub = {
   firstDisplayName: signal('Leandro'),
 };
 
+const PERMISSOES_DA_ADMINISTRACAO = [
+  'autorizacao:pedidos:aprovar-funcional',
+  'autorizacao:pedidos:aprovar-protecao-de-dados',
+  'autorizacao:concessoes:administrar',
+  'autorizacao:perfis:manter',
+];
+const MENU_DA_ADMINISTRACAO = [
+  'Meus pedidos',
+  'Fila da gestão de acessos',
+  'Fila da proteção de dados',
+  'Histórico de pedidos',
+  'Concessões',
+  'Perfis de acesso',
+  'Divergências da governança',
+];
+
 describe('LayoutComponent — menu pelas permissões efetivas', () => {
   beforeEach(async () => {
     concedidas.set([]);
@@ -80,35 +96,27 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
   });
 
   it('mostra a administração de acesso conforme a permissão de cada tela', () => {
-    concedidas.set([
-      'autorizacao:pedidos:aprovar-funcional',
-      'autorizacao:pedidos:aprovar-protecao-de-dados',
-      'autorizacao:concessoes:administrar',
-      'autorizacao:perfis:manter',
-    ]);
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
 
-    expect(itensDoMenu()).toEqual([
-      'Meus pedidos',
-      'Fila da gestão de acessos',
-      'Fila da proteção de dados',
-      'Histórico de pedidos',
-      'Concessões',
-      'Perfis de acesso',
-      'Divergências da governança',
-    ]);
+    expect(itensDoMenu()).toEqual(MENU_DA_ADMINISTRACAO);
   });
 
   it('não oferece a fila da proteção de dados a quem só aprova como gestor', () => {
     concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
-    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila da gestão de acessos', 'Histórico de pedidos']);
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Fila da gestão de acessos',
+      'Histórico de pedidos',
+    ]);
   });
 
-  it('oferece as versões e as janelas da etapa a quem só tem a permissão de aprovar, sem a lista de perfis', () => {
+  it('oferece as versões e as janelas da etapa a quem só tem a permissão de aprovar, com a lista de perfis', () => {
     concedidas.set(['autorizacao:perfis:aprovar-funcional']);
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
+      'Perfis de acesso',
       'Versões na gestão de acessos',
       'Janelas na gestão de acessos',
       'Reclassificações na gestão de acessos',
@@ -126,6 +134,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
+      'Perfis de acesso',
       'Versões na proteção de dados',
       'Janelas na proteção de dados',
       'Reclassificações na proteção de dados',

@@ -1,7 +1,10 @@
-<section class="panel" aria-labelledby="cfg-perfil-pendente">
+<section class="panel" [attr.aria-labelledby]="idDoTitulo">
   <div class="panel-head">
-    <h2 id="cfg-perfil-pendente" class="panel-head__title">Versão pendente de aprovação</h2>
+    <h2 [id]="idDoTitulo" class="panel-head__title" tabindex="-1">Versão pendente de aprovação</h2>
     <ui-tag variant="info">Aguarda {{ etapa(versao().etapaAtual).toLowerCase() }}</ui-tag>
+    @if (doLink()) {
+      <ui-tag variant="primary">Versão do link aberto</ui-tag>
+    }
   </div>
   <cfg-resumo-da-versao
     [versao]="versao()"
@@ -15,24 +18,28 @@
       <div class="panel-body">
         <ui-alert variant="warning" heading="Falta o documento instituidor">
           @if (recusado()) {
-            A verificação recusou o documento enviado. Envie outro PDF para a versão seguir para
-            aprovação.
+            A verificação recusou o documento enviado.
+          }
+          @if (acoes().enviarDocumento) {
+            Envie {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão seguir para aprovação.
           } @else {
-            Envie o PDF do documento instituidor para a versão seguir para aprovação.
+            Quem mantém perfis precisa enviar {{ recusado() ? 'outro PDF' : 'o PDF do documento instituidor' }} para a versão seguir para aprovação.
           }
         </ui-alert>
-        <ui-file-upload
-          fieldLabel="Documento instituidor"
-          acceptedFileTypes=".pdf"
-          acceptLabel="PDF de até 10 MB"
-          [allowedMimeTypes]="['application/pdf']"
-          [maxSizeMb]="10"
-          [disabled]="indisponivel()"
-          [mensagemExterna]="erroDoDocumento()"
-          (selectedFileChange)="documentoEscolhido.emit($event)"
-        />
-        @if (enviandoDocumento()) {
-          <p role="status"><ui-spinner spinnerSize="sm" /> Enviando o documento…</p>
+        @if (acoes().enviarDocumento) {
+          <ui-file-upload
+            fieldLabel="Documento instituidor"
+            acceptedFileTypes=".pdf"
+            acceptLabel="PDF de até 10 MB"
+            [allowedMimeTypes]="['application/pdf']"
+            [maxSizeMb]="10"
+            [disabled]="indisponivel()"
+            [mensagemExterna]="erroDoDocumento()"
+            (selectedFileChange)="documentoEscolhido.emit($event)"
+          />
+          @if (enviandoDocumento()) {
+            <p role="status"><ui-spinner spinnerSize="sm" /> Enviando o documento…</p>
+          }
         }
       </div>
     }

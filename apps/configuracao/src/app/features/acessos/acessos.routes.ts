@@ -150,6 +150,13 @@ export const ACESSOS_ROUTES: Routes = [
         loadComponent: () =>
           import('./versoes/perfil-detalhe.page').then((m) => m.PerfilDetalhePage),
       },
+      {
+        path: 'perfis/:id/versoes/:versaoId',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/perfis'])],
+        data: { breadcrumb: 'Versão do perfil de acesso' },
+        loadComponent: () =>
+          import('./versoes/perfil-detalhe.page').then((m) => m.PerfilDetalhePage),
+      },
     ],
   },
 ];
