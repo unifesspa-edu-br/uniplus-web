@@ -89,6 +89,10 @@ export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
 export { DocumentoExigidoComponent } from '../../src/lib/components/editor-de-documentos-exigidos/documento-exigido';
 export { EditorDeDocumentosExigidosComponent } from '../../src/lib/components/editor-de-documentos-exigidos/editor-de-documentos-exigidos';
+export {
+  NormasDoDocumentoComponent,
+  type TextosDasNormas,
+} from '../../src/lib/components/editor-de-documentos-exigidos/normas-do-documento';
 export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';
