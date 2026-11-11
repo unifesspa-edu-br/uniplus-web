@@ -1,10 +1,9 @@
 import { type EnvironmentProviders, inject, provideEnvironmentInitializer } from '@angular/core';
 import { ProblemI18nService } from '@uniplus/shared-core/http';
-
-interface Mensagem {
-  readonly titulo: string;
-  readonly resolver: string;
-}
+import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
+import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
+import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
+import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
 
 const RAIZ = 'uniplus.autorizacao.';
 
@@ -12,7 +11,7 @@ const RAIZ = 'uniplus.autorizacao.';
  * As recusas do fluxo de acesso com o que a pessoa faz a seguir, como nas páginas de erro do
  * portal. O título é o da recusa; o detalhe, a orientação.
  */
-const MENSAGENS: Readonly<Record<string, Mensagem>> = {
+const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   'pedido.anexo_invalido': {
     titulo: 'O documento anexo é inválido.',
     resolver: 'Envie um PDF de até 10 MB e confirme o envio de novo.',
@@ -73,16 +72,16 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
   },
   'pedido.prazo_vencido': {
     titulo:
-      'O prazo definido pelo gestor de acessos venceu antes da aprovação da proteção de dados.',
-    resolver: 'O pedido voltou ao gestor de acessos, sem prazo. Aguarde uma nova decisão.',
+      'O prazo definido pela gestão de acessos venceu antes da aprovação da proteção de dados.',
+    resolver: 'O pedido voltou à gestão de acessos, sem prazo. Aguarde uma nova decisão.',
   },
   'pedido.perfil_alterado': {
     titulo: 'O perfil mudou durante a análise.',
-    resolver: 'O pedido voltou ao gestor de acessos. Aguarde uma nova decisão.',
+    resolver: 'O pedido voltou à gestão de acessos. Aguarde uma nova decisão.',
   },
   'pedido.perfil_inativo': {
     titulo: 'O perfil de acesso está desativado.',
-    resolver: 'Escolha um perfil ativo ou peça ao gestor de acessos que reative o perfil.',
+    resolver: 'Escolha um perfil ativo ou peça à gestão de acessos que reative o perfil.',
   },
   'pedido.solicitante_nao_institucional': {
     titulo: 'O e-mail da sessão não é institucional verificado.',
@@ -111,7 +110,7 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
     resolver: 'Nenhuma ação é necessária. Se a pessoa precisar do acesso, faça um novo pedido.',
   },
   'concessao.minimo_de_gestores': {
-    titulo: 'A instituição precisa de ao menos dois gestores de acessos.',
+    titulo: 'A instituição precisa de ao menos duas pessoas na gestão de acessos.',
     resolver:
       'Conceda o perfil de gestor de acessos a outra pessoa antes de revogar esta concessão.',
   },
@@ -137,7 +136,14 @@ const MENSAGENS: Readonly<Record<string, Mensagem>> = {
 export function provideMensagensDeAcesso(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const problemas = inject(ProblemI18nService);
-    for (const [sufixo, { titulo, resolver }] of Object.entries(MENSAGENS)) {
+    const todas = {
+      ...MENSAGENS,
+      ...MENSAGENS_DE_VERSAO,
+      ...MENSAGENS_DA_JANELA,
+      ...MENSAGENS_DA_CONTENCAO,
+      ...MENSAGENS_DA_RECLASSIFICACAO,
+    };
+    for (const [sufixo, { titulo, resolver }] of Object.entries(todas)) {
       problemas.register(RAIZ + sufixo, { title: titulo, detail: resolver });
     }
   });

@@ -2,14 +2,38 @@ export { AUTORIZACAO_BASE_PATH } from './tokens';
 export type { PaginaQuery } from './paginacao';
 export {
   PerfisApi,
-  type AtualizarPerfilCommand,
-  type CriarPerfilCommand,
-  type PerfilDto,
+  type CategoriaDaRemocao,
+  type ComposicaoEmVigorDto,
+  type DadosDaVersaoRequest,
   type ModuloDoCatalogoDto,
+  type PerfilDto,
+  type PerfilListadoDto,
   type PermissaoDoCatalogoDto,
   type PermissaoDoPerfilDto,
+  type RemoverPermissoesRequest,
   type ResourceDoCatalogoDto,
+  type UltimaVersaoEncerradaSemVigorDto,
 } from './perfis.api';
+export {
+  ContencaoDoPerfilApi,
+  type MotivoDaContencaoRequest,
+  type RegistroDaContencaoDto,
+  type RetomadaDaSuspensaoDto,
+  type RetomadaDaSuspensaoRequest,
+  type SuspensaoDoPerfilDto,
+} from './contencao-do-perfil.api';
+export {
+  VersoesDoPerfilApi,
+  type DecisaoDaVersaoDto,
+  type DocumentoDaVersaoDto,
+  type EnvioDoDocumentoDto,
+  type EtapaDaVersao,
+  type ItemDaFilaDeVersoesDto,
+  type LeituraDoDocumentoDaVersaoDto,
+  type ProporVersaoRequest,
+  type ResultadoDaProposta,
+  type VersaoPendenteDto,
+} from './versoes-do-perfil.api';
 export {
   ConcessoesApi,
   type ConcessaoDto,
@@ -31,3 +55,28 @@ export {
   type PedidosQuery,
   type PerfilParaPedidoDto,
 } from './pedidos-de-concessao.api';
+export {
+  JanelaDeMigracaoApi,
+  type DecidirEtapaDaProtecaoRequest,
+  type DecidirRetidaRequest,
+  type DecisaoDaMigracao,
+  type EncerrarJanelaRequest,
+  type EnviarLoteDaMigracaoRequest,
+  type ItemDaFilaDeJanelasDto,
+  type ItemDaJanelaDto,
+  type JanelaDeMigracaoDto,
+  type JanelaDoPerfilDto,
+} from './janela-de-migracao.api';
+export {
+  ReclassificacoesApi,
+  type ConcessaoSuspensaDto,
+  type DecidirReclassificacaoRequest,
+  type DecisaoDaReclassificacaoDto,
+  type DivergenciaDaGovernancaDto,
+  type ItemDaFilaDeReclassificacoesDto,
+  type MudancaDaPermissaoDto,
+  type PermissaoDaVersaoEmUsoDto,
+  type ReclassificacaoDto,
+  type ResultadoDaReclassificacao,
+  type VersaoEmUsoDto,
+} from './reclassificacoes.api';

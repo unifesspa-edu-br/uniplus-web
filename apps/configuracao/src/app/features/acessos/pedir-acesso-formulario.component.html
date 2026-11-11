@@ -11,6 +11,10 @@
     {{ faseDoEnvio() ?? (enviando() ? 'Enviando pedido…' : '') }}
   </p>
 
+  @if (erro(); as texto) {
+    <ui-alert variant="danger" heading="Não foi possível enviar o pedido">{{ texto }}</ui-alert>
+  }
+
   <div class="form-drawer__footer">
     <a
       class="btn btn--tertiary btn--rect"

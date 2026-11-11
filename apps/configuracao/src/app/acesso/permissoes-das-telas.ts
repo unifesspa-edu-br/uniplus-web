@@ -52,7 +52,30 @@ export const PERMISSOES_DAS_TELAS = {
   ],
   'acessos/concessoes': [autorizacao.concessoesAdministrar],
   'acessos/perfis': [autorizacao.perfisManter],
+  'acessos/versoes-de-perfil/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
+  'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/janelas-de-migracao/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
+  'acessos/janelas-de-migracao/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/reclassificacoes/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
+  'acessos/reclassificacoes/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/governanca/divergencias': [
+    autorizacao.perfisManter,
+    autorizacao.perfisAprovarProtecaoDeDados,
+  ],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
+
+/** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */
+export const PERMISSOES_DA_JANELA_DE_MIGRACAO = [
+  autorizacao.perfisManter,
+  autorizacao.perfisAprovarFuncional,
+  autorizacao.perfisAprovarProtecaoDeDados,
+] as const satisfies readonly CodigoDePermissao[];
+
+/** O detalhe da reclassificação abre para quem aprova uma das etapas dela. */
+export const PERMISSOES_DA_RECLASSIFICACAO = [
+  autorizacao.perfisAprovarFuncional,
+  autorizacao.perfisAprovarProtecaoDeDados,
+] as const satisfies readonly CodigoDePermissao[];
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;
 

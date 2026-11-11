@@ -18,7 +18,9 @@ import {
   idempotencyKey,
   withIdempotencyKey,
 } from './idempotency';
+import { NotificationService } from '../services/notification.service';
 import { CLIENT_PROBLEM_CODES, ProblemDetails } from './problem-details';
+import { ProblemI18nService } from './problem-i18n.service';
 import { withVendorMime } from './vendor-mime';
 
 interface Edital {
@@ -258,6 +260,77 @@ describe('apiResultInterceptor', () => {
 
       const fail = received as ApiFailure;
       expect(fail.problem.code).toBe('uniplus.selecao.edital.nao_encontrado');
+    });
+  });
+
+  describe('catálogo desatualizado', () => {
+    const MENSAGEM = 'O sistema está sendo atualizado. Tente novamente em instantes.';
+    const desatualizado: ProblemDetails = {
+      type: 'x',
+      title: 'Catalog out of date',
+      detail: 'The catalog is being rebuilt',
+      status: 503,
+      code: 'uniplus.autorizacao.catalogo.desatualizado',
+      traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+    };
+
+    function textoDaMensagem(m: { title: string; detail?: string }): string {
+      return m.detail ? `${m.title} ${m.detail}` : m.title;
+    }
+
+    function falhar(): ApiFailure {
+      let received: ApiResult<unknown> | undefined;
+      http.get<ApiResult<unknown>>('/api/autorizacao/x').subscribe((res) => (received = res));
+      controller.expectOne('/api/autorizacao/x').flush(desatualizado, {
+        status: 503,
+        statusText: 'Service Unavailable',
+        headers: PROBLEM_HEADERS,
+      });
+      return received as ApiFailure;
+    }
+
+    it('entrega o título e o detalhe em pt-BR a quem lê o problema direto', () => {
+      const { problem } = falhar();
+
+      expect(problem.title).toBe(MENSAGEM);
+      expect(problem.detail).toBeUndefined();
+      expect(problem.code).toBe(desatualizado.code);
+    });
+
+    it('chega assim à notificação direta', () => {
+      const notificacoes = TestBed.inject(NotificationService);
+
+      notificacoes.errorFromProblem(falhar().problem);
+
+      const [toast] = notificacoes.notifications();
+      expect(toast?.title).toBe(MENSAGEM);
+      expect(toast?.detail).toBeUndefined();
+    });
+
+    it('chega inteira à tela que mostra só o título resolvido', () => {
+      const { title } = TestBed.inject(ProblemI18nService).resolve(falhar().problem);
+
+      expect(title).toBe(MENSAGEM);
+    });
+
+    it('chega assim à recusa junto à ação, que resolve o problema pelo serviço de mensagens', () => {
+      const mensagem = TestBed.inject(ProblemI18nService).resolve(falhar().problem);
+
+      expect(mensagem.title).toBe(MENSAGEM);
+      expect(mensagem.detail).toBeUndefined();
+      expect(textoDaMensagem(mensagem)).toBe(MENSAGEM);
+    });
+
+    it('não altera o texto de outros problemas', () => {
+      let received: ApiResult<unknown> | undefined;
+      http.get<ApiResult<unknown>>('/api/x').subscribe((res) => (received = res));
+      controller.expectOne('/api/x').flush(baseProblem, {
+        status: 404,
+        statusText: 'Not Found',
+        headers: PROBLEM_HEADERS,
+      });
+
+      expect((received as ApiFailure).problem.title).toBe('Edital não encontrado');
     });
   });
 

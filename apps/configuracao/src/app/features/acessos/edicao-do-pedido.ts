@@ -1,12 +1,4 @@
-import {
-  ElementRef,
-  Injectable,
-  Injector,
-  afterNextRender,
-  inject,
-  signal,
-  type Signal,
-} from '@angular/core';
+import { Injectable, inject, signal, type Signal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -31,8 +23,6 @@ import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared
 /** Decisões e envio de documentos de um pedido. */
 @Injectable()
 export class EdicaoDoPedido {
-  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
-  private readonly injector = inject(Injector);
   private readonly store = inject(PedidoDetalheStore);
   private readonly api = inject(PedidosDeConcessaoApi);
   private readonly anexos = inject(AnexoDoPedidoService);
@@ -55,6 +45,8 @@ export class EdicaoDoPedido {
     validators: [Validators.required, Validators.maxLength(LIMITE_DO_MOTIVO)],
   });
   readonly tentouRecusar = signal(false);
+  /** Cresce a cada pedido de foco no campo do motivo; o diálogo o atende. */
+  readonly pedidoDeFoco = signal(0);
   readonly prazo = new FormControl('', { nonNullable: true, validators: [prazoNoPassado] });
 
   async executar(informaPrazo: boolean): Promise<void> {
@@ -209,13 +201,7 @@ export class EdicaoDoPedido {
   }
 
   focarErroDoMotivo(): void {
-    afterNextRender(
-      () =>
-        this.host.nativeElement
-          .querySelector<HTMLElement>('cfg-motivo-dialog [aria-invalid="true"]')
-          ?.focus(),
-      { injector: this.injector },
-    );
+    this.pedidoDeFoco.update((n) => n + 1);
   }
 
   private texto(problema: ProblemDetails): string {

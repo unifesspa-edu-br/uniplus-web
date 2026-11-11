@@ -63,12 +63,14 @@ const ativa: ConcessaoDto = {
   id: 'c1',
   beneficiario: { emissor: 'unifesspa', sub: '0123456789abcdef' },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
+  versao: 2,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
   origem: { tipo: 'pedido', id: 'pedido-1' },
   concedidaEm: '2026-10-28T12:00:00Z',
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
+  revogadaPelaJanelaId: null,
   motivoRevogacao: null,
   ativa: true,
 };
@@ -114,6 +116,17 @@ describe('ConcessoesPage', () => {
     expect(
       fixture.nativeElement.querySelector('button[aria-label^="Revogar a concessão"]'),
     ).not.toBeNull();
+  });
+
+  it('mostra a versão do perfil de cada concessão, ou que o perfil não tem versão', async () => {
+    const fixture = TestBed.createComponent(ConcessoesPage);
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === URL).flush([ativa, { ...ativa, id: 'c2', versao: null }]);
+    await atualizar();
+    const versoes = [
+      ...fixture.nativeElement.querySelectorAll('td[data-label="Versão do perfil"]'),
+    ].map((celula) => (celula as HTMLElement).textContent?.trim());
+    expect(versoes).toEqual(['2', 'Sem versão']);
   });
 
   it('carrega a trilha da concessão selecionada', async () => {

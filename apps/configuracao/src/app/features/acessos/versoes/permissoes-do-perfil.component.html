@@ -1,0 +1,59 @@
+<fieldset
+  class="field"
+  [class.is-error]="erro()"
+  [id]="idDasPermissoes"
+  tabindex="-1"
+  [attr.aria-invalid]="erro() ? 'true' : null"
+  [attr.aria-describedby]="descritoPor()"
+>
+  <legend class="form-section__title">Permissões</legend>
+  <ui-falha-de-leitura titulo="Catálogo indisponível" variante="warning" [leitura]="leitura" />
+  <cfg-recusa-da-leitura
+    naoEncontrado="Catálogo de permissões não encontrado"
+    [recusa]="catalogo.recusa()"
+  >
+    Feche o formulário para voltar à lista de perfis.
+  </cfg-recusa-da-leitura>
+  @for (modulo of catalogo.modulos(); track modulo.modulo) {
+    @for (resource of modulo.resources; track resource.resource) {
+      <fieldset class="field">
+        <legend class="field__label cfg-form__grupo-titulo">
+          {{ modulo.modulo }} · {{ resource.resource }}
+        </legend>
+        @for (permissao of resource.permissoes; track permissao.codigo) {
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              [checked]="marcadas().has(permissao.codigo)"
+              [disabled]="bloqueado()"
+              (change)="alternar.emit(permissao.codigo)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            <span>
+              {{ permissao.nome }}
+              @switch (mudanca(permissao.codigo)) {
+                @case ('acrescentada') {
+                  <ui-tag variant="success">Acrescentada</ui-tag>
+                }
+                @case ('removida') {
+                  <ui-tag variant="danger">Removida</ui-tag>
+                }
+              }
+              <span class="field__hint">
+                · {{ sensibilidadeDe(permissao.sensibilidade) }} ·
+                <code class="ui-code">{{ permissao.codigo }}</code>
+              </span>
+            </span>
+          </label>
+        }
+      </fieldset>
+    }
+  }
+  @if (erro()) {
+    <span class="field__error" [id]="idDoErro">{{ erro() }}</span>
+  }
+  <span class="field__hint"
+    >Permissão de dado pessoal ou sensível exige a aprovação da proteção de dados na versão que a
+    acrescenta e nos pedidos deste perfil.</span
+  >
+</fieldset>

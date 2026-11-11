@@ -1,0 +1,121 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <p class="page-header__eyebrow"><a routerLink="/acessos/perfis">Perfis de acesso</a></p>
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">
+      {{ perfil()?.nome ?? 'Perfil de acesso' }}
+    </h1>
+    @if (perfil(); as p) {
+      <p class="page-header__desc">{{ p.descricao }}</p>
+      <p class="cfg-tags">
+        @for (situacao of situacoes(); track situacao.texto) {
+          <cfg-situacao-do-perfil [situacao]="situacao" />
+        }
+      </p>
+    }
+  </div>
+  @if (acoes(); as a) {
+    <div class="page-header__actions">
+      @if (a.proporVersao) {
+        <button type="button" class="btn btn--primary" [disabled]="escrita.gravando()" (click)="proporVersao()">
+          Propor nova versão
+        </button>
+      }
+      @if (a.removerPermissoes) {
+        <button type="button" class="btn btn--secondary" [disabled]="escrita.gravando()" (click)="remocao.abrir()">
+          Remover permissões
+        </button>
+      }
+      @if (a.suspender) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('suspender')">
+          Suspender
+        </button>
+      }
+      @for (etapa of a.retomar; track etapa) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir(acaoDeRetomada[etapa])">
+          Retomar: {{ rotuloDaEtapa(etapa) }}
+        </button>
+      }
+      @if (a.desativar) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('desativar')">
+          Desativar
+        </button>
+      }
+      @if (a.reativar) {
+        <button type="button" class="btn btn--tertiary" [disabled]="escrita.gravando()" (click)="contencao.abrir('reativar')">
+          Reativar
+        </button>
+      }
+    </div>
+  }
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar o perfil" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Perfil não encontrado" [recusa]="store.recusa()">
+  <a routerLink="/acessos/perfis">Voltar aos perfis</a>.
+</cfg-recusa-da-leitura>
+@if (escrita.erroDaAcao()) {
+  <ui-alert variant="danger" heading="Não foi possível concluir">{{ escrita.erroDaAcao() }}</ui-alert>
+}
+
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando o perfil…</p>
+}
+@if (perfil(); as p) {
+  @if (p.suspensao; as suspensao) {
+    <cfg-suspensao-do-perfil [suspensao]="suspensao" />
+  }
+  @if (p.ultimaVersaoEncerradaSemVigor; as encerrada) {
+    <ui-alert variant="warning" heading="A última versão proposta não entrou em vigor">
+      A versão {{ encerrada.numero }} foi {{ situacaoEncerrada(encerrada.situacao) }}. O perfil
+      segue com a composição anterior.
+    </ui-alert>
+  }
+  @if (p.janela; as janela) {
+    <cfg-janela-aberta [perfilId]="p.id" [janela]="janela" />
+  }
+  <cfg-versao-em-vigor [perfil]="p" (abrirDocumento)="abrirDocumento($event)" />
+  @if (p.versaoPendente; as pendente) {
+    <cfg-versao-pendente
+      [versao]="pendente"
+      [nomeVigente]="p.nome"
+      [descricaoVigente]="p.descricao"
+      [acoes]="acoes()!"
+      [indisponivel]="escrita.gravando()"
+      [enviandoDocumento]="escrita.enviandoDocumento()"
+      [erroDoDocumento]="reenvio.erro()"
+      (abrirDocumento)="abrirDocumento(pendente.versaoId)"
+      (documentoEscolhido)="enviarDocumento($event)"
+      (cancelar)="cancelamento.abrir()"
+    />
+    <cfg-motivo-dialog
+      [(visible)]="cancelamento.aberto"
+      heading="Cancelar a versão pendente"
+      confirmLabel="Cancelar versão"
+      ajuda="O motivo fica na trilha. A composição em vigor não muda."
+      [erro]="cancelamento.erro()"
+      [enviando]="escrita.cancelando()"
+      [motivo]="cancelamento.motivo"
+      [tentou]="cancelamento.tentou()"
+      [pedidoDeFoco]="cancelamento.pedidoDeFoco()"
+      (confirmado)="cancelarVersao()"
+    />
+  }
+  @if (podeVerATrilha()) {
+    <cfg-trilha-da-contencao [perfilId]="p.id" [leituraDoPerfil]="p" />
+  }
+  <cfg-remocao-dialog [perfil]="p" />
+  <cfg-motivo-dialog
+    [(visible)]="contencao.aberto"
+    [heading]="contencao.textos().titulo"
+    [confirmLabel]="contencao.textos().confirmar"
+    [confirmVariant]="contencao.textos().variante"
+    [ajuda]="contencao.textos().ajuda"
+    [erro]="contencao.erro()"
+    [enviando]="escrita.contendo()"
+    [motivo]="contencao.motivo"
+    [tentou]="contencao.tentou()"
+    [pedidoDeFoco]="contencao.pedidoDeFoco()"
+    (confirmado)="confirmarContencao()"
+  />
+}
+<cfg-perfil-formulario />

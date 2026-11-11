@@ -11,6 +11,9 @@ import { PedidoDetalheStore } from './pedido-detalhe.store';
 import { PedidosStore } from './pedidos.store';
 import { PedirAcessoStore } from './pedir-acesso.store';
 import { PerfisStore } from './perfis.store';
+import { CatalogoDePermissoesStore } from './versoes/catalogo-de-permissoes.store';
+import { FilaDeVersoesStore } from './versoes/fila-de-versoes.store';
+import { PerfilDetalheStore } from './versoes/perfil-detalhe.store';
 
 const BASE = 'http://api.test/api/autorizacao';
 
@@ -27,10 +30,21 @@ const LEITURAS: readonly Leitura[] = [
   { nome: 'lista de perfis', store: PerfisStore, url: `${BASE}/perfis` },
   {
     nome: 'catálogo de permissões',
-    store: PerfisStore,
+    store: CatalogoDePermissoesStore,
     url: `${BASE}/permissoes`,
-    vizinhas: [{ url: `${BASE}/perfis`, corpo: [] }],
-    iniciar: (store: PerfisStore) => store.carregarCatalogo(),
+    iniciar: (store: CatalogoDePermissoesStore) => store.carregar(),
+  },
+  {
+    nome: 'perfil',
+    store: PerfilDetalheStore,
+    url: `${BASE}/perfis/p1`,
+    iniciar: (store: PerfilDetalheStore) => store.id.set('p1'),
+  },
+  {
+    nome: 'fila de versões de perfil',
+    store: FilaDeVersoesStore,
+    url: `${BASE}/versoes-de-perfil`,
+    iniciar: (store: FilaDeVersoesStore) => store.etapa.set('gestao_de_acessos'),
   },
   { nome: 'lista de concessões', store: ConcessoesStore, url: `${BASE}/concessoes` },
   {

@@ -20,14 +20,14 @@ const APRESENTACAO: Readonly<Record<FilaDePedidos, Apresentacao>> = {
     vazio: 'Você ainda não tem pedidos de acesso.',
   },
   gestor: {
-    titulo: 'Fila do gestor de acessos',
+    titulo: 'Fila da gestão de acessos',
     descricao: 'Pedidos que aguardam a sua aprovação da adequação funcional.',
     vazio: 'Nenhum pedido aguarda a sua aprovação.',
   },
   protecao_de_dados: {
     titulo: 'Fila da proteção de dados',
     descricao:
-      'Pedidos de perfil com dado pessoal ou sensível, já aprovados pelo gestor de acessos, que aguardam a adequação à proteção de dados.',
+      'Pedidos de perfil com dado pessoal ou sensível, já aprovados pela gestão de acessos, que aguardam a adequação à proteção de dados.',
     vazio: 'Nenhum pedido aguarda a sua aprovação.',
   },
   todos: {

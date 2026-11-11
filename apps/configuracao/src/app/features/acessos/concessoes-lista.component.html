@@ -26,6 +26,7 @@
           <tr>
             <th scope="col">Pessoa</th>
             <th scope="col">Perfil</th>
+            <th scope="col">Versão do perfil</th>
             <th scope="col">Escopo</th>
             <th scope="col">Concedida em</th>
             <th scope="col">Válida até</th>
@@ -40,6 +41,7 @@
                 {{ pessoa(concessao) }}
               </td>
               <td data-label="Perfil">{{ concessao.perfil.nome }}</td>
+              <td data-label="Versão do perfil">{{ concessao.versao ?? 'Sem versão' }}</td>
               <td data-label="Escopo">{{ nomeDoEscopo()(concessao.escopo) }}</td>
               <td data-label="Concedida em">
                 {{ concessao.concedidaEm | dateBr: 'datetime' }}

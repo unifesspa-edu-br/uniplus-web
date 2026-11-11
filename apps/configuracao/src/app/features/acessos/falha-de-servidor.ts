@@ -9,6 +9,9 @@ function falhaDeServidor(problema: ProblemDetails): boolean {
   return problema.status >= PRIMEIRO_STATUS_DE_SERVIDOR;
 }
 
+/** Textos que valem só no contexto de uma operação, por código completo, antes dos gerais. */
+export type MensagensDoContexto = Readonly<Record<string, { title: string; detail?: string }>>;
+
 /**
  * O texto da recusa para a tela. A falha de servidor (5xx), que a pessoa não resolve, também vira
  * notificação com o código de rastreio; a recusa 4xx fica só no lugar onde a tela a mostra.
@@ -17,8 +20,9 @@ export function mensagemDaRecusa(
   problemas: ProblemI18nService,
   notificacoes: NotificationService,
   problema: ProblemDetails,
+  doContexto: MensagensDoContexto = {},
 ): string {
-  const mensagem = problemas.resolve(problema);
+  const mensagem = doContexto[problema.code] ?? problemas.resolve(problema);
   if (falhaDeServidor(problema)) {
     notificacoes.errorFromProblem(problema, { title: mensagem.title });
   }

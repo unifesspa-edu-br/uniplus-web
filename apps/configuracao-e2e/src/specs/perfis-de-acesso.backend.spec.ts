@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { acharNaListagem, entrarComoPersona, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
+import { PDF_MINIMO, acharNaListagem, entrarComoPersona, lerPerfil, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
 
 /**
  * Administração de perfis contra a API real: o catálogo agrupado por módulo e resource,
@@ -10,8 +10,8 @@ const APP = process.env['BASE_URL'] ?? 'http://localhost:4203';
 const ROTA = '/acessos/perfis';
 
 interface PerfilGravado {
+  readonly id: string;
   readonly nome: string;
-  readonly permissoes: readonly { readonly codigo: string }[];
 }
 
 test.describe('Administração de perfis de acesso', () => {
@@ -54,7 +54,7 @@ test.describe('Administração de perfis de acesso', () => {
     await expect(pagina.getByText('selecao:inscricoes:revelar-cpf')).toHaveCount(0);
   });
 
-  test('monta um perfil com as permissões de arquivo e de dado e a API grava o que foi marcado', async ({ browser }) => {
+  test('monta um perfil com as permissões de arquivo e de dado e a API grava a versão pendente com o que foi marcado', async ({ browser }) => {
     const nome = `E2E projeção — perfil da tela ${Date.now()}`;
     const pagina = await entrarComoPersona(browser, APP, 'diogo.souza', ROTA);
     await pagina.getByRole('button', { name: 'Novo perfil' }).click();
@@ -72,12 +72,16 @@ test.describe('Administração de perfis de acesso', () => {
     ]) {
       await pagina.locator('label.checkbox', { has: pagina.getByText(codigo, { exact: true }) }).click();
     }
+    await pagina.getByLabel('Protocolo do documento').fill(`E2E-${Date.now()}`);
+    await pagina.locator('input[type="file"]').setInputFiles({ name: 'portaria.pdf', mimeType: 'application/pdf', buffer: PDF_MINIMO });
     await pagina.getByRole('button', { name: 'Salvar perfil' }).click();
 
     // A lista é paginada e o perfil novo pode cair noutra página; a confirmação da tela e a API bastam.
     await expect(pagina.getByText('Perfil criado', { exact: true })).toBeVisible();
     const gravado = await acharNaListagem<PerfilGravado>('diogo.souza', '/api/autorizacao/perfis?limit=100', (p) => p.nome === nome);
-    expect(gravado?.permissoes.map((p) => p.codigo).sort()).toEqual([
+    // A versão nasce pendente: as permissões marcadas estão na proposta, ainda não em vigor.
+    const pendente = (await lerPerfil(gravado?.id ?? '')).versaoPendente;
+    expect(pendente?.permissoes.map((p) => p.codigo).sort()).toEqual([
       'selecao:dados-identificadores:consultar',
       'selecao:dados-identificadores:revelar',
       'selecao:dados-pessoais:consultar',

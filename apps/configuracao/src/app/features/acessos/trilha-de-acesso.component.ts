@@ -7,10 +7,12 @@ const EMISSOR_DO_SISTEMA = 'uniplus:sistema';
 const TAMANHO_DO_IDENTIFICADOR = 8;
 
 /**
- * Quem agiu: o sistema verificador, o nome que a API gravou no instante da ação ou, no registro
- * que não o tem, o início do `sub` sem expor o identificador inteiro.
+ * Quem agiu: o sistema (evento sem autor, como a revogação pela janela de migração), o sistema
+ * verificador, o nome que a API gravou no instante da ação ou, no registro que não o tem, o início
+ * do `sub` sem expor o identificador inteiro.
  */
 export function autorDoEvento(autor: EventoDaTrilhaDto['autor']): string {
+  if (autor === null) return 'Sistema';
   if (autor.emissor === EMISSOR_DO_SISTEMA) return 'Verificador de documentos';
   const nome = autor.nome?.trim();
   return nome ? nome : `Pessoa ${autor.sub.slice(0, TAMANHO_DO_IDENTIFICADOR)}`;

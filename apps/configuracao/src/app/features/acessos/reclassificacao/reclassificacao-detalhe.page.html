@@ -1,0 +1,72 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <p class="page-header__eyebrow"><a [routerLink]="voltar()">Reclassificações</a></p>
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">
+      {{ store.reclassificacao()?.perfilNome ?? 'Reclassificação' }}
+    </h1>
+    @if (store.reclassificacao(); as r) {
+      <p class="page-header__desc">Permissão {{ r.codigo }}</p>
+    }
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a reclassificação" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Reclassificação não encontrada" [recusa]="store.recusa()">
+  <a [routerLink]="voltar()">Voltar às reclassificações</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+  <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a reclassificação…</p>
+}
+@if (avisoDoDocumento(); as aviso) {
+  <ui-alert variant="warning" heading="Não foi possível abrir o documento">{{ aviso }}</ui-alert>
+}
+
+@if (store.reclassificacao(); as r) {
+  <section class="panel" aria-labelledby="cfg-mudanca-titulo">
+    <div class="panel-head">
+      <h2 id="cfg-mudanca-titulo" class="panel-head__title">O que mudou</h2>
+    </div>
+    <dl class="cfg-detail-list panel-body">
+      @for (mudanca of mudancas(r.mudanca); track mudanca) {
+        <div>
+          <dt>Alteração</dt>
+          <dd>{{ mudanca }}</dd>
+        </div>
+      }
+      <div>
+        <dt>Reclassificada em</dt>
+        <dd>{{ r.instante | dateBr: 'datetime' }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <cfg-versoes-em-uso
+    [versoes]="r.versoes"
+    [pedidoDeFoco]="decisao.pedidoDeLeitura()"
+    (abrirDocumento)="abrirDocumento(r.perfilId, $event)"
+  />
+
+  <section class="panel" aria-labelledby="cfg-suspensas-titulo">
+    <div class="panel-head">
+      <h2 id="cfg-suspensas-titulo" class="panel-head__title">Concessões suspensas</h2>
+    </div>
+    @if (r.concessoes.length > 0) {
+      <cfg-concessoes-suspensas
+        [concessoes]="r.concessoes"
+        [nomeDoEscopo]="nomeDoEscopo"
+        [etapa]="etapaAberta()"
+        [marcadas]="decisao.marcadas()"
+        [bloqueado]="selecaoTravada()"
+        (alternar)="decisao.alternar($event)"
+      />
+    } @else {
+      <p class="panel-body cfg-muted">Nenhuma concessão segue suspensa por esta reclassificação.</p>
+    }
+  </section>
+
+  <cfg-decisao-da-reclassificacao
+    [reclassificacao]="r"
+    [etapas]="etapasDaPessoa()"
+    [nomeDoEscopo]="nomeDoEscopo"
+  />
+}

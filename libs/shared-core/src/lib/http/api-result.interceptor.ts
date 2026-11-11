@@ -11,6 +11,8 @@ import { ApiResult, apiFailure, apiOk } from './api-result';
 import { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
 import {
   CLIENT_PROBLEM_CODES,
+  CODIGO_CATALOGO_DESATUALIZADO,
+  MENSAGEM_CATALOGO_DESATUALIZADO,
   ProblemDetails,
   ProblemValidationError,
 } from './problem-details';
@@ -189,12 +191,16 @@ function normalizeProblem(body: ProblemDetails, fallbackStatus: number): Problem
       ([chave]) => !CAMPOS_NORMALIZADOS.has(chave),
     ),
   );
+  const apresentacao =
+    body.code === CODIGO_CATALOGO_DESATUALIZADO
+      ? MENSAGEM_CATALOGO_DESATUALIZADO
+      : { title: body.title, detail: body.detail };
   return {
     ...extensoesNaoMapeadas,
     type: body.type ?? 'about:blank',
-    title: body.title,
+    title: apresentacao.title,
     status: typeof body.status === 'number' ? body.status : fallbackStatus,
-    detail: body.detail,
+    detail: apresentacao.detail,
     instance: body.instance,
     code: body.code,
     traceId: typeof candidate.traceId === 'string' ? candidate.traceId : '',

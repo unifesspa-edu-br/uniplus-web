@@ -44,12 +44,13 @@ describe('TrilhaDeAcessoComponent', () => {
       instante: '2026-10-29T15:00:00Z',
       autor: { emissor: 'uniplus:sistema', sub: 'verificador' },
       detalhe: `Anexo ${anexo}. SHA-256 do PDF: ${sha}.`,
+      ator: 'humano',
     },
   ];
 
-  function montar() {
+  function montar(lista: readonly EventoDaTrilhaDto[] = eventos) {
     const fixture = TestBed.createComponent(TrilhaDeAcessoComponent);
-    fixture.componentRef.setInput('eventos', eventos);
+    fixture.componentRef.setInput('eventos', lista);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
     const linha = host.querySelector('tbody tr') as HTMLElement;
@@ -97,5 +98,20 @@ describe('TrilhaDeAcessoComponent', () => {
       ?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     fixture.detectChanges();
     expect(host.querySelector('.cfg-trilha__completo')).not.toBeNull();
+  });
+
+  it('mostra o sistema como autor da revogação pela janela de migração, sem identidade humana', () => {
+    const { linha } = montar([
+      {
+        tipo: 'revogada_pela_migracao',
+        instante: '2026-11-09T15:00:00Z',
+        autor: null,
+        detalhe: 'recusado na migração',
+        ator: 'sistema',
+      },
+    ]);
+
+    expect(linha.textContent).toContain('Acesso revogado na migração de versão');
+    expect(linha.querySelector('[data-label="Quem"]')?.textContent).toBe('Sistema');
   });
 });
