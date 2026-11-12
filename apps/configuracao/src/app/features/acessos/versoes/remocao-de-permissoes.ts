@@ -70,7 +70,7 @@ export class RemocaoDePermissoes {
     descartarRecusasDoServidor(this.form);
     if (this.selecionadas().size === 0) this.erroDasPermissoes.set(SEM_PERMISSAO);
     if (this.form.invalid) this.form.markAllAsTouched();
-    const valido = this.form.valid && this.selecionadas().size > 0;
+    const valido = !this.form.invalid && this.selecionadas().size > 0;
     if (!valido) this.conferencias.update((n) => n + 1);
     return valido;
   }

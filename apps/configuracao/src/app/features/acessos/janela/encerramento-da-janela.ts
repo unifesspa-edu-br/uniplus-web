@@ -42,7 +42,7 @@ export class EncerramentoDaJanela {
   private motivoValido(): string | null {
     const motivo = this.form.controls.motivo.value.trim();
     if (!motivo) this.form.controls.motivo.setErrors({ required: true });
-    if (this.form.valid) return motivo;
+    if (!this.form.invalid) return motivo;
     this.form.markAllAsTouched();
     this.tentativas.update((n) => n + 1);
     return null;
