@@ -23,17 +23,19 @@ import { RevisoesPage } from './revisoes.page';
 const REGISTRO_NAO_GRAVOU = 'uniplus.autorizacao.registro_de_acesso.falha_ao_gravar';
 const TITULO_DA_FALHA = 'Não foi possível registrar o acesso aos dados.';
 
-function falhaDoRegistro() {
+function falhaDaApi(status: number, code: string, title: string) {
   return throwError(
     () =>
       new HttpErrorResponse({
-        status: 503,
-        statusText: 'Service Unavailable',
+        status,
+        statusText: 'Erro',
         headers: undefined,
-        error: { type: 'x', title: TITULO_DA_FALHA, status: 503, code: REGISTRO_NAO_GRAVOU },
+        error: { type: 'x', title, status, code },
       }),
   );
 }
+
+const falhaDoRegistro = () => falhaDaApi(503, REGISTRO_NAO_GRAVOU, TITULO_DA_FALHA);
 
 const RESUMO: RevisaoResumoDto = {
   id: 'r1',
@@ -120,5 +122,41 @@ describe('revisão de acessos com o registro de acesso fora do ar (503)', () => 
     expect(host.textContent).not.toContain('Fernanda Drumond');
     expect(host.querySelector('cfg-itens-do-beneficiario')).toBeNull();
     expect(botoes(host)).toEqual(['Tentar novamente']);
+  });
+});
+
+describe('lista de revisões com a situação recusada pela API (400)', () => {
+  const FILTRO_INVALIDO = 'uniplus.autorizacao.revisao.filtro_de_situacao_invalido';
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('mostra a falha de leitura sem revisão nenhuma, e a troca da situação lê de novo', async () => {
+    leituras.mockImplementation((url) =>
+      url.includes('situacao=')
+        ? falhaDaApi(400, FILTRO_INVALIDO, 'Situação de revisão inválida.')
+        : of(ok([RESUMO])),
+    );
+    const host = await abrirLista();
+    const filtro = host.querySelector('select') as HTMLSelectElement;
+
+    filtro.value = 'concluida';
+    filtro.dispatchEvent(new Event('change'));
+    await assentar();
+    expect(host.textContent).toContain('Não foi possível carregar');
+    expect(host.querySelectorAll('tr[data-revisao-id]')).toHaveLength(0);
+    expect(botoes(host)).toContain('Tentar novamente');
+
+    filtro.value = 'todas';
+    filtro.dispatchEvent(new Event('change'));
+    await assentar();
+    expect(host.querySelectorAll('tr[data-revisao-id]')).toHaveLength(1);
+    expect(botoes(host)).not.toContain('Tentar novamente');
   });
 });
