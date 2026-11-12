@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Subject, of, throwError, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import type { ConcessaoDto, EventoDaTrilhaDto } from '@uniplus/shared-data/autorizacao';
@@ -157,6 +157,68 @@ describe('ConcessaoDetalhePage', () => {
     expect(host.textContent).toContain('Não foi possível carregar a concessão');
     expect(host.textContent).not.toContain(MOTIVO);
     expect(host.textContent).not.toContain('Fernanda Drumond');
+  });
+
+  describe('respostas fora de ordem', () => {
+    function leiturasPendentes() {
+      const concessao = new Subject<unknown>();
+      const trilha = new Subject<unknown>();
+      leituras.mockImplementation((url): Observable<unknown> => {
+        if (url.includes('unidades')) return of(ok([]));
+        return url.endsWith('/trilha') ? trilha : concessao;
+      });
+      return { concessao, trilha };
+    }
+
+    const responderCom = async (leitura: Subject<unknown>, resposta: unknown) => {
+      leitura.next(resposta);
+      leitura.complete();
+      await assentar();
+    };
+
+    it('a concessão que chega antes da trilha só aparece quando a trilha responde', async () => {
+      const { concessao, trilha } = leiturasPendentes();
+      const host = await abrir();
+
+      await responderCom(concessao, ok(REVOGADA));
+      expect(host.textContent).not.toContain(MOTIVO);
+
+      await responderCom(trilha, ok(TRILHA));
+      expect(host.textContent).toContain(MOTIVO);
+    });
+
+    it('a trilha que chega antes da concessão só mostra o dado quando a concessão responde', async () => {
+      const { concessao, trilha } = leiturasPendentes();
+      const host = await abrir();
+
+      await responderCom(trilha, ok(TRILHA));
+      expect(host.textContent).not.toContain('Fernanda Drumond');
+
+      await responderCom(concessao, ok(REVOGADA));
+      expect(host.textContent).toContain(MOTIVO);
+    });
+
+    it('a concessão já recebida some quando a trilha responde 503', async () => {
+      const { concessao, trilha } = leiturasPendentes();
+      const host = await abrir();
+
+      await responderCom(concessao, ok(REVOGADA));
+      trilha.error(
+        new HttpErrorResponse({
+          status: 503,
+          error: {
+            type: 'x',
+            title: 'x',
+            status: 503,
+            code: 'uniplus.autorizacao.registro_de_acesso.falha_ao_gravar',
+          },
+        }),
+      );
+      await assentar();
+
+      expect(host.textContent).toContain('Não foi possível carregar a concessão');
+      expect(host.textContent).not.toContain('Fernanda Drumond');
+    });
   });
 
   it('concessão inexistente é recusa definitiva, sem nova tentativa', async () => {
