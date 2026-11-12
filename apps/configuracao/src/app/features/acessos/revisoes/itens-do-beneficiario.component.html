@@ -46,6 +46,15 @@
               @if (decidido(item)) {
                 {{ item.decididoPor?.nome ?? 'Pessoa não identificada' }},
                 {{ item.decididoEm | dateBr: 'datetime' }}
+                @if (leConcessao()) {
+                  <a
+                    [routerLink]="['/acessos/concessoes', item.concessaoId]"
+                    [attr.aria-label]="
+                      'Ver a concessão de ' + grupo().nome + ' ao perfil ' + item.perfil.nome
+                    "
+                    >Ver a concessão</a
+                  >
+                }
               } @else {
                 Ainda não decidido
               }
