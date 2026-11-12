@@ -6,7 +6,9 @@ export {
   AUTH_CONFIG,
   AUTORIZACAO_BASE_PATH,
   PROFILE_BASE_PATH,
+  PROVEDOR_DE_LOGIN,
 } from './tokens/auth.tokens';
+export type { ProvedorDeLogin } from './tokens/auth.tokens';
 export { LoginErrorCode, classifyLoginError } from './models/login-error.model';
 export type { AuthConfig } from './models/auth-config.model';
 export type { LoginErrorDetails } from './models/login-error.model';
