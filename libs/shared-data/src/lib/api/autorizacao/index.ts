@@ -80,3 +80,13 @@ export {
   type ResultadoDaReclassificacao,
   type VersaoEmUsoDto,
 } from './reclassificacoes.api';
+export {
+  RevisoesApi,
+  type ItemDaRevisaoDto,
+  type QuemDecideOItem,
+  type RevisaoDeAcessosDto,
+  type RevisaoResumoDto,
+  type RevogarItemDaRevisaoRequest,
+  type SituacaoDaRevisao,
+  type SituacaoDoItemDaRevisao,
+} from './revisoes.api';
