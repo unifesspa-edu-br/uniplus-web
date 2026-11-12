@@ -13,6 +13,16 @@ export const PERMISSOES_DO_PERFIL = [
 ] as const satisfies readonly CodigoDePermissao[];
 
 /**
+ * A revisão de acessos abre para quem a conduz, para quem revê os itens de quem é Representante do
+ * controlador e para quem só a consulta; as ações dependem da permissão de decidir cada item.
+ */
+export const PERMISSOES_DA_REVISAO = [
+  autorizacao.revisoesConduzir,
+  autorizacao.revisoesReverProtecaoDeDados,
+  autorizacao.revisoesConsultar,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
  * que o item visível seja sempre um clique que a guarda aceita. A ordem é a da primeira tela
  * oferecida a quem entra sem destino.
@@ -65,6 +75,7 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/janelas-de-migracao/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/reclassificacoes/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/reclassificacoes/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/revisoes': PERMISSOES_DA_REVISAO,
   'acessos/governanca/divergencias': [
     autorizacao.perfisManter,
     autorizacao.perfisAprovarProtecaoDeDados,

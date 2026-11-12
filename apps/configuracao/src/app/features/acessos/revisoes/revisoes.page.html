@@ -1,0 +1,106 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Revisões de acesso</h1>
+    <p class="page-header__desc">
+      Revisões periódicas das concessões de perfil com dado pessoal ou sensível. Cada item confirma
+      ou revoga uma concessão: o Representante do controlador decide os itens comuns, e a gestão de
+      acessos, os de quem é Representante do controlador.
+    </p>
+  </div>
+  @if (podeAbrir()) {
+  <div class="page-header__actions">
+    <button
+      type="button"
+      class="btn btn--primary"
+      [attr.aria-disabled]="abertura.abrindo() ? 'true' : null"
+      [attr.aria-busy]="abertura.abrindo()"
+      (click)="abertura.abrir()"
+    >
+      @if (abertura.abrindo()) {
+      <ui-spinner spinnerSize="sm" />
+      } Abrir revisão
+    </button>
+  </div>
+  }
+</div>
+
+@if (abertura.erro(); as erro) {
+<ui-alert variant="danger" heading="Não foi possível abrir a revisão">{{ erro }}</ui-alert>
+}
+<ui-falha-de-leitura titulo="Não foi possível carregar as revisões" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Lista de revisões não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+
+<section class="panel" aria-labelledby="cfg-revisoes-lista" [attr.aria-busy]="store.carregando()">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-revisoes-lista">Revisões</h2>
+      @if (store.carregando()) {
+      <span><ui-spinner spinnerSize="sm" /> Carregando</span>
+      }
+    </div>
+    <label class="field">
+      <span class="field__label">Situação</span>
+      <select class="select" [ngModel]="store.filtro()" (ngModelChange)="store.filtro.set($event)">
+        @for (opcao of opcoes; track opcao.valor) {
+        <option [value]="opcao.valor">{{ opcao.texto }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (store.itens().length > 0) {
+  <div class="table-responsive">
+    <table>
+      <caption class="sr-only">
+        Revisões de acesso
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Aberta em</th>
+          <th scope="col">Aberta por</th>
+          <th scope="col">Situação</th>
+          <th scope="col">Itens</th>
+          <th scope="col">Pendentes</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (revisao of store.itens(); track revisao.id) {
+        <tr [attr.data-revisao-id]="revisao.id">
+          <td data-label="Aberta em">
+            <a [routerLink]="['/acessos/revisoes', revisao.id]">
+              {{ revisao.abertaEm | dateBr: 'datetime' }}
+            </a>
+          </td>
+          <td data-label="Aberta por">{{ revisao.abertaPor.nome ?? 'Pessoa não identificada' }}</td>
+          <td data-label="Situação">
+            <ui-tag [variant]="situacao(revisao.situacao).variante"
+              >{{ situacao(revisao.situacao).texto }}</ui-tag
+            >
+          </td>
+          <td data-label="Itens">{{ itens(revisao.totalDeItens) }}</td>
+          <td data-label="Pendentes">{{ itens(revisao.pendentes) }}</td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @else if (!store.carregando() && !store.mensagemDeErro()) {
+  <ui-empty-state
+    heading="Nada por aqui"
+    description="Nenhuma revisão nesta situação."
+    [level]="3"
+  />
+  } @if (store.anterior() !== null || store.proximo() !== null) {
+  <ui-pager
+    statusText="Navegação por páginas"
+    navigationLabel="Paginação de revisões"
+    [hasPrevious]="store.anterior() !== null"
+    [hasNext]="store.proximo() !== null"
+    [isDisabled]="store.carregando()"
+    (previous)="store.paginaAnterior()"
+    (next)="store.proximaPagina()"
+  />
+  }
+</section>

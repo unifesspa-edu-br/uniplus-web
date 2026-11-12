@@ -5,6 +5,7 @@ import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
   PERMISSOES_DA_RECLASSIFICACAO,
+  PERMISSOES_DA_REVISAO,
   PERMISSOES_DAS_TELAS,
 } from '../../acesso/permissoes-das-telas';
 import { ACESSOS_ROUTES } from './acessos.routes';
@@ -51,6 +52,7 @@ const PROTEGIDAS = [
   ['reclassificacoes/gestao-de-acessos', 'acessos/reclassificacoes/gestao-de-acessos'],
   ['reclassificacoes/protecao-de-dados', 'acessos/reclassificacoes/protecao-de-dados'],
   ['governanca/divergencias', 'acessos/governanca/divergencias'],
+  ['revisoes', 'acessos/revisoes'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -110,6 +112,20 @@ describe('rotas dos acessos', () => {
     });
   });
 
+  describe('revisoes/:id', () => {
+    it.each(PERMISSOES_DA_REVISAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('revisoes/:id', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado sem permissão de conduzir, rever nem consultar revisões', async () => {
+      const decisao = await decidirAcesso('revisoes/:id', [
+        ...PERMISSOES_DAS_TELAS['acessos/concessoes'],
+        ...PERMISSOES_DAS_TELAS['acessos/fila-da-protecao-de-dados'],
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
   it.each(['pedidos', 'pedidos/novo', 'pedidos/:id'])(
     '%s fica aberta a quem tem sessão, sem permissão de administração',
     (caminho) => {
@@ -139,7 +155,7 @@ describe('rotas dos acessos', () => {
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(19);
+    expect(carregaveis).toHaveLength(21);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }
