@@ -46,6 +46,13 @@ async function abrirLista(concedidas: readonly string[], lista = ok([ABERTA, ENC
   return { fixture, host };
 }
 
+function escolher(host: HTMLElement, situacao: string): void {
+  const filtro = host.querySelector<HTMLSelectElement>('select');
+  if (filtro === null) throw new Error('filtro ausente');
+  filtro.value = situacao;
+  filtro.dispatchEvent(new Event('change'));
+}
+
 const linhas = (host: HTMLElement) =>
   [...host.querySelectorAll<HTMLElement>('tr[data-revisao-id]')].map((l) => l.dataset['revisaoId']);
 
@@ -70,21 +77,40 @@ describe('RevisoesPage', () => {
     );
   });
 
-  it('filtra por situação', async () => {
-    const { fixture, host } = await abrirLista([CONSULTAR]);
-    const filtro = host.querySelector<HTMLSelectElement>('select');
-    if (filtro === null) throw new Error('filtro ausente');
+  it('sem filtro, lê todas as revisões sem o parâmetro de situação', async () => {
+    await abrirLista([CONSULTAR]);
 
-    filtro.value = 'concluida';
-    filtro.dispatchEvent(new Event('change'));
+    expect(leituras).toHaveBeenCalledTimes(1);
+    expect(leituras.mock.calls[0]?.[0]).not.toContain('situacao=');
+  });
+
+  it('filtra por situação no servidor e mostra o que a API devolve', async () => {
+    const { fixture, host } = await abrirLista([CONSULTAR]);
+    leituras.mockReturnValue(of(ok([ENCERRADA])));
+
+    escolher(host, 'concluida');
     fixture.detectChanges();
     await assentar();
-    expect(linhas(host)).toEqual(['r0']);
 
-    filtro.value = 'em_andamento';
-    filtro.dispatchEvent(new Event('change'));
+    expect(leituras.mock.lastCall?.[0]).toContain('situacao=concluida');
+    expect(linhas(host)).toEqual(['r0']);
+  });
+
+  it('a troca de situação volta à primeira página, sem o cursor da anterior', async () => {
+    const { fixture, host } = await abrirLista(
+      [CONSULTAR],
+      ok([ABERTA], '<http://api.test/x?cursor=proximo>; rel="next"'),
+    );
+    host.querySelector<HTMLButtonElement>('[data-pager="next"]')?.click();
     await assentar();
-    expect(linhas(host)).toEqual(['r1']);
+    expect(leituras.mock.lastCall?.[0]).toContain('cursor=');
+
+    escolher(host, 'em_andamento');
+    fixture.detectChanges();
+    await assentar();
+
+    expect(leituras.mock.lastCall?.[0]).toContain('situacao=em_andamento');
+    expect(leituras.mock.lastCall?.[0]).not.toContain('cursor=');
   });
 
   it('diz que não há revisão na situação escolhida', async () => {

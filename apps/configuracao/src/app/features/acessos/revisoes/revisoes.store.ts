@@ -1,5 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import {
   CursorPagina,
   ProblemI18nService,
@@ -15,16 +15,22 @@ import {
 } from '../../../shared/navegacao-por-cursor';
 import { desfechoDaLeitura } from '../desfecho-da-leitura';
 import { notificarFalhasDeLeitura } from '../falha-de-servidor';
-import { revisoesNaSituacao } from './regras-da-revisao';
 import type { FiltroDaRevisao } from './rotulos-da-revisao';
 
-/** As revisões de acesso, abertas e encerradas, por página de cursor. */
+/**
+ * As revisões de acesso por página de cursor. A situação escolhida filtra no servidor, antes da
+ * paginação, e a troca dela volta à primeira página.
+ */
 @Injectable()
 export class RevisoesStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly pagina = signal<CursorPagina | undefined>(undefined);
+  readonly filtro = signal<FiltroDaRevisao>('todas');
+  private readonly pagina = linkedSignal<FiltroDaRevisao, CursorPagina | undefined>({
+    source: () => this.filtro(),
+    computation: () => undefined,
+  });
   private readonly lista = useApiResource<readonly RevisaoResumoDto[]>(() => ({
     url: `${this.basePath}/api/autorizacao/revisoes`,
     params: this.montarParams(),
@@ -38,8 +44,7 @@ export class RevisoesStore {
   });
   private readonly desfecho = desfechoDaLeitura([this.lista], this.problemas);
 
-  readonly filtro = signal<FiltroDaRevisao>('todas');
-  readonly itens = computed(() => revisoesNaSituacao(this.navegacao.itens(), this.filtro()));
+  readonly itens = this.navegacao.itens;
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
   readonly carregando = computed(
@@ -71,11 +76,11 @@ export class RevisoesStore {
   }
 
   private montarParams(): HttpParams {
+    const filtro = this.filtro();
+    const params = filtro === 'todas' ? new HttpParams() : new HttpParams().set('situacao', filtro);
     const pagina = this.pagina();
     return pagina
-      ? new HttpParams()
-          .set('cursor', cursorToString(pagina.cursor))
-          .set('direction', pagina.direction)
-      : new HttpParams();
+      ? params.set('cursor', cursorToString(pagina.cursor)).set('direction', pagina.direction)
+      : params;
   }
 }
