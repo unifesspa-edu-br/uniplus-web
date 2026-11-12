@@ -44,9 +44,11 @@ export class RevisoesStore {
   });
   private readonly desfecho = desfechoDaLeitura([this.lista], this.problemas);
 
-  readonly itens = this.navegacao.itens;
-  readonly anterior = this.navegacao.anterior;
-  readonly proximo = this.navegacao.proximo;
+  /** Com falha de leitura não há dado à vista: nem a página anterior, nem os cursores dela. */
+  private readonly comFalha = computed(() => this.desfecho.mensagem() !== null);
+  readonly itens = computed(() => (this.comFalha() ? [] : this.navegacao.itens()));
+  readonly anterior = computed(() => (this.comFalha() ? null : this.navegacao.anterior()));
+  readonly proximo = computed(() => (this.comFalha() ? null : this.navegacao.proximo()));
   readonly carregando = computed(
     () => this.lista.isLoading() || this.recuperandoDeCursorObsoleto(),
   );
