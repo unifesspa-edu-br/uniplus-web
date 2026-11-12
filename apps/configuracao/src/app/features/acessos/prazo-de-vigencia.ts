@@ -39,9 +39,13 @@ export function fimDoDia(dia: string): string {
     minuto: 59,
     segundo: 59,
   });
-  const deslocamento = deslocamentoDoFusoEmMinutos(fim);
-  const sinal = deslocamento >= 0 ? '+' : '-';
-  const horas = String(Math.floor(Math.abs(deslocamento) / 60)).padStart(2, '0');
-  const minutos = String(Math.abs(deslocamento) % 60).padStart(2, '0');
-  return `${dia}T23:59:59${sinal}${horas}:${minutos}`;
+  return `${dia}T23:59:59${deslocamentoEmIso(deslocamentoDoFusoEmMinutos(fim))}`;
+}
+
+/** O deslocamento do fuso no formato ISO 8601 (`-03:00`), a partir dos minutos em relação ao UTC. */
+function deslocamentoEmIso(minutosDoFuso: number): string {
+  const sinal = minutosDoFuso >= 0 ? '+' : '-';
+  const horas = String(Math.floor(Math.abs(minutosDoFuso) / 60)).padStart(2, '0');
+  const minutos = String(Math.abs(minutosDoFuso) % 60).padStart(2, '0');
+  return `${sinal}${horas}:${minutos}`;
 }
