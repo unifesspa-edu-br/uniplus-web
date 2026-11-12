@@ -35,6 +35,7 @@ import { PedidoResumoComponent } from './pedido-resumo.component';
 import { PedidoDocumentosComponent } from './pedido-documentos.component';
 import { PedidoHistoricoComponent } from './pedido-historico.component';
 import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
+import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
 
 const ENCERRADOS: readonly string[] = ['aprovado', 'recusado', 'cancelado'];
 
@@ -173,17 +174,32 @@ export class PedidoDetalhePage {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.destruido.set(true));
     this.acompanharId();
+    this.acompanharACarga();
+    this.reavaliarAoFimDaCarga();
+  }
+
+  /** A falha da carga fecha os diálogos; o pedido lido sugere o prazo enquanto ninguém o editou. */
+  private acompanharACarga(): void {
     effect(() => {
       const pedido = this.store.pedido();
       const erro = this.store.erro();
       untracked(() => {
         if (erro) this.aoFalharACarga();
-        if (pedido && this.prazo.pristine) {
-          const sugerido = diaDoInstante(pedido.validaAteSugerida);
-          this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
-        }
+        if (pedido && this.prazo.pristine) this.sugerirPrazo(pedido);
       });
     });
+  }
+
+  private sugerirPrazo(pedido: PedidoDeConcessaoDto): void {
+    const sugerido = diaDoInstante(pedido.validaAteSugerida);
+    this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
+  }
+
+  /**
+   * Terminada cada carga, o que o pedido permite pode ter mudado: os diálogos se reavaliam e o foco
+   * volta ao título se o botão que o tinha saiu da tela.
+   */
+  private reavaliarAoFimDaCarga(): void {
     effect(() => {
       const carregando = this.store.carregando();
       const erro = this.store.erro();
@@ -191,12 +207,11 @@ export class PedidoDetalhePage {
       this.podeDecidir();
       this.podeAceitar();
       this.podeCancelar();
-      if (!carregando && !erro && pedido) {
-        untracked(() => {
-          this.reavaliarDialogos();
-          this.devolverFocoAoTitulo();
-        });
-      }
+      if (carregando || erro || !pedido) return;
+      untracked(() => {
+        this.reavaliarDialogos();
+        this.devolverFocoAoTitulo();
+      });
     });
   }
 
@@ -228,7 +243,10 @@ export class PedidoDetalhePage {
     this.edicao.decisaoConcluida.set(false);
     this.confirmando.set(false);
     this.recusando.set(false);
-    if (!haviaDialogo) return;
+    if (haviaDialogo) this.focarOAvisoDaFalha();
+  }
+
+  private focarOAvisoDaFalha(): void {
     afterNextRender(
       () => {
         const host = this.host.nativeElement;

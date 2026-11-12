@@ -20,7 +20,11 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
-import { AnexoDoPedidoService, type FaseDoEnvio } from './anexo-do-pedido.service';
+import {
+  AnexoDoPedidoService,
+  type DesfechoDoAnexo,
+  type FaseDoEnvio,
+} from './anexo-do-pedido.service';
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { nomesDeEscopo } from './nomes-de-escopo';
@@ -125,27 +129,31 @@ export class EdicaoDoPedidoDeAcesso {
   async enviar(): Promise<void> {
     if (this.enviando()) return;
     this.erro.set(null);
-    if (!this.validarParaEnviar()) return;
-    this.enviando.set(true);
+    if (this.validarParaEnviar()) await this.enviarPedido(this.corpoDoPedido());
+  }
 
-    const corpo = this.corpoDoPedido();
+  /** Cria o pedido sob a chave da criação; a recusa decide se a chave se renova. */
+  private async enviarPedido(corpo: CorpoDoPedido): Promise<void> {
+    this.enviando.set(true);
     try {
       const resultado = await firstValueFrom(
         this.api.criar(corpo, withIdempotencyKey(this.chaveDaCriacao)),
       );
-      if (!resultado.ok) {
-        this.tratarRecusa(resultado, corpo);
-        return;
-      }
-      this.chaveDaCriacao = idempotencyKey.create();
-      this.corpoPendente = null;
-      await this.concluir(resultado.data.id);
+      if (resultado.ok) await this.aoCriar(resultado.data.id);
+      else this.tratarRecusa(resultado, corpo);
     } catch {
       this.erro.set(FALHA_INESPERADA);
     } finally {
       this.enviando.set(false);
       this.faseDoEnvio.set(null);
     }
+  }
+
+  /** Pedido aceito: a próxima criação usa chave nova, e este segue ao anexo e à página dele. */
+  private aoCriar(pedidoId: string): Promise<void> {
+    this.chaveDaCriacao = idempotencyKey.create();
+    this.corpoPendente = null;
+    return this.concluir(pedidoId);
   }
 
   private validarParaEnviar(): boolean {
@@ -259,13 +267,18 @@ export class EdicaoDoPedidoDeAcesso {
     const desfecho = await this.anexos.anexar(pedidoId, arquivo, (fase) =>
       this.faseDoEnvio.set(FASE[fase]),
     );
-    if (desfecho.ok)
+    this.avisarDoAnexo(desfecho);
+  }
+
+  private avisarDoAnexo(desfecho: DesfechoDoAnexo): void {
+    if (desfecho.ok) {
       this.notificacoes.success('Pedido enviado', 'O documento segue para verificação.');
-    else
-      this.notificacoes.warning(
-        'Pedido enviado, mas o documento não foi anexado',
-        `${desfecho.mensagem} Anexe-o pela página do pedido.`,
-      );
+      return;
+    }
+    this.notificacoes.warning(
+      'Pedido enviado, mas o documento não foi anexado',
+      `${desfecho.mensagem} Anexe-o pela página do pedido.`,
+    );
   }
 
   private aoMudarParaQuem(valor: ParaQuem): void {

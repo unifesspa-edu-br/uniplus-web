@@ -29,6 +29,11 @@ const CODIGOS_DE_LISTA_DESATUALIZADA: ReadonlySet<string> = new Set([
   'uniplus.autorizacao.concessao.nao_encontrada',
 ]);
 
+interface CorpoDaRevogacao {
+  readonly motivo: string;
+  readonly confirmacaoEmail: string;
+}
+
 /** Revogação de concessões e suas recusas. */
 @Injectable()
 export class RevogacaoDeConcessoes {
@@ -84,10 +89,7 @@ export class RevogacaoDeConcessoes {
     this.enviando.set(true);
     this.erroDaRevogacao.set(null);
     try {
-      const corpo = { motivo, confirmacaoEmail };
-      const { resultado } = await comChave(this.chave, { id: concessao.id, ...corpo }, (contexto) =>
-        this.api.revogar(concessao.id, corpo, contexto),
-      );
+      const { resultado } = await this.enviarRevogacao(concessao.id, { motivo, confirmacaoEmail });
       if (resultado.ok) this.concluirRevogacao();
       else this.mostrarRecusa(resultado.problem);
     } catch {
@@ -95,6 +97,13 @@ export class RevogacaoDeConcessoes {
     } finally {
       this.enviando.set(false);
     }
+  }
+
+  /** A revogação sob a chave de idempotência do corpo: o reenvio do mesmo corpo repete a chave. */
+  private enviarRevogacao(id: string, corpo: CorpoDaRevogacao) {
+    return comChave(this.chave, { id, ...corpo }, (contexto) =>
+      this.api.revogar(id, corpo, contexto),
+    );
   }
 
   private concluirRevogacao(): void {
@@ -118,9 +127,7 @@ export class RevogacaoDeConcessoes {
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = false;
     for (const erro of problema.errors ?? []) {
-      const campo = erro.field.toLowerCase();
-      const controle =
-        campo === 'motivo' ? this.motivo : campo === 'confirmacaoemail' ? this.email : null;
+      const controle = this.controleDoCampo(erro.field);
       if (!controle) continue;
       marcarRecusaDoServidor(controle, erro.code, erro.message);
       aplicado = true;
@@ -130,6 +137,13 @@ export class RevogacaoDeConcessoes {
       this.focarErro();
     }
     return aplicado;
+  }
+
+  /** O campo do diálogo a que a API se refere no erro; os demais não têm onde aparecer. */
+  private controleDoCampo(campo: string): FormControl<string> | null {
+    const nome = campo.toLowerCase();
+    if (nome === 'motivo') return this.motivo;
+    return nome === 'confirmacaoemail' ? this.email : null;
   }
 
   private focarErro(): void {

@@ -26,23 +26,27 @@ export function recusa(code: string, status = 422, title = 'Recusado'): ApiResul
   return apiFailure(problem, status, new HttpHeaders());
 }
 
+/** A resposta de erro do servidor com o problema no corpo, como o `HttpClient` a entrega. */
+function respostaComProblema(problema: ProblemDetails): HttpErrorResponse {
+  return new HttpErrorResponse({
+    status: problema.status,
+    error: problema,
+    headers: new HttpHeaders({ 'content-type': 'application/problem+json' }),
+  });
+}
+
 /** A recusa como a tela a recebe: o problema do servidor depois de passar pelo interceptor. */
-export function recusaPeloInterceptor(code: string, status: number, title: string): ApiResult<never> {
-  const problema = { type: 'x', title, status, code, traceId: '' };
+export function recusaPeloInterceptor(
+  code: string,
+  status: number,
+  title: string,
+): ApiResult<never> {
+  const problema: ProblemDetails = { type: 'x', title, status, code, traceId: '' };
   let resultado: ApiResult<never> | undefined;
   apiResultInterceptor(new HttpRequest('GET', '/x'), () =>
-    throwError(
-      () =>
-        new HttpErrorResponse({
-          status,
-          error: problema,
-          headers: new HttpHeaders({ 'content-type': 'application/problem+json' }),
-        }),
-    ),
+    throwError(() => respostaComProblema(problema)),
   ).subscribe((evento) => {
-    if (evento instanceof HttpResponse) {
-      resultado = evento.body as ApiResult<never>;
-    }
+    if (evento instanceof HttpResponse) resultado = evento.body as ApiResult<never>;
   });
   return resultado as ApiResult<never>;
 }
@@ -51,29 +55,34 @@ export function concedidas(...codigos: string[]) {
   return { tem: (codigo: string) => codigos.includes(codigo) };
 }
 
+const PEDIDO_AGUARDANDO_O_GESTOR = {
+  id: 'pedido-1',
+  situacao: 'aguardando_gestor',
+  etapaAtual: 'gestor',
+  solicitante: { emissor: 'unifesspa', sub: 'sub-outra-pessoa' },
+  beneficiario: {
+    email: 'betina.teste@unifesspa.edu.br',
+    identidade: { emissor: 'unifesspa', sub: 'sub-betina-000' },
+    nome: 'Betina Teste',
+  },
+  perfil: { id: 'perfil-1', nome: 'Operador de inscrições' },
+  escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
+  justificativa: 'Atende a comissão do processo seletivo.',
+  admitePrazo: true,
+  validaAteSugerida: null,
+  validaAte: null,
+  criadoEm: '2026-10-28T12:00:00Z',
+  encerradoEm: null,
+  concessaoId: null,
+  versao: null,
+} as const satisfies Partial<PedidoDeConcessaoDto>;
+
+/** Um pedido na fila do gestor; as listas são novas a cada chamada, para um teste não afetar outro. */
 export function pedido(parcial: Partial<PedidoDeConcessaoDto> = {}): PedidoDeConcessaoDto {
   return {
-    id: 'pedido-1',
-    situacao: 'aguardando_gestor',
-    etapaAtual: 'gestor',
-    solicitante: { emissor: 'unifesspa', sub: 'sub-outra-pessoa' },
-    beneficiario: {
-      email: 'betina.teste@unifesspa.edu.br',
-      identidade: { emissor: 'unifesspa', sub: 'sub-betina-000' },
-      nome: 'Betina Teste',
-    },
-    perfil: { id: 'perfil-1', nome: 'Operador de inscrições' },
-    escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
-    justificativa: 'Atende a comissão do processo seletivo.',
-    admitePrazo: true,
-    validaAteSugerida: null,
-    validaAte: null,
-    criadoEm: '2026-10-28T12:00:00Z',
-    encerradoEm: null,
-    concessaoId: null,
+    ...PEDIDO_AGUARDANDO_O_GESTOR,
     anexos: [],
     decisoes: [],
-    versao: null,
     trocasDeVersao: [],
     ...parcial,
   };

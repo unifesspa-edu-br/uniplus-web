@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, type Signal } from '@angular/core';
+import { Injectable, inject, signal, type Signal, type WritableSignal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -11,7 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi, type PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
-import { AnexoDoPedidoService } from './anexo-do-pedido.service';
+import { AnexoDoPedidoService, type DesfechoDoAnexo } from './anexo-do-pedido.service';
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
@@ -19,6 +19,8 @@ import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { fimDoDia, prazoNoPassado } from './prazo-de-vigencia';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
+
+type EnvioDaDecisao = ReturnType<typeof comChave<PedidoDeConcessaoDto>>;
 
 /** Decisões e envio de documentos de um pedido. */
 @Injectable()
@@ -55,18 +57,8 @@ export class EdicaoDoPedido {
       await this.cancelar();
       return;
     }
-    const id = this.store.id() ?? '';
-    const validaAte =
-      acao === 'aprovar' && informaPrazo && this.prazo.value !== ''
-        ? fimDoDia(this.prazo.value)
-        : null;
-    const feito = await this.decidir(() =>
-      comChave(this.chave, { acao, id, validaAte }, (contexto) =>
-        acao === 'aceitar'
-          ? this.api.aceitar(id, contexto)
-          : this.api.aprovar(id, contexto, validaAte),
-      ),
-    );
+    const validaAte = acao === 'aprovar' ? this.prazoDaAprovacao(informaPrazo) : null;
+    const feito = await this.decidir(() => this.enviarDecisao(acao, validaAte));
     if (feito) this.confirmando.set(false);
   }
 
@@ -96,21 +88,9 @@ export class EdicaoDoPedido {
   async recusar(podeDecidir: Signal<boolean>): Promise<void> {
     if (this.indisponivel()) return;
     this.erroDaRecusa.set(null);
-    this.tentouRecusar.set(true);
-    descartarRecusasDoServidor(this.motivo);
-    const motivo = this.motivo.value.trim();
-    if (!motivo || this.motivo.invalid) {
-      if (!motivo) this.motivo.setErrors({ required: true });
-      this.focarErroDoMotivo();
-      return;
-    }
-    const id = this.store.id() ?? '';
-    this.erroDaRecusa.set(null);
-    const feito = await this.decidir(
-      () =>
-        comChave(this.chave, { motivo, id }, (contexto) => this.api.recusar(id, motivo, contexto)),
-      this.erroDaRecusa,
-    );
+    const motivo = this.motivoDaRecusa();
+    if (motivo === null) return;
+    const feito = await this.decidir(() => this.enviarRecusa(motivo), this.erroDaRecusa);
     if (feito) this.recusando.set(false);
     else if (!podeDecidir()) {
       this.erro.set(this.erroDaRecusa());
@@ -123,13 +103,7 @@ export class EdicaoDoPedido {
     this.anexando.set(true);
     this.erroDoAnexo.set(null);
     try {
-      const desfecho = await this.anexos.anexar(this.store.id() ?? '', arquivo, () => undefined);
-      if (desfecho.ok) {
-        this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
-        this.store.recarregar();
-      } else {
-        this.erroDoAnexo.set(desfecho.mensagem);
-      }
+      this.aoAnexar(await this.anexos.anexar(this.store.id() ?? '', arquivo, () => undefined));
     } catch {
       this.erroDoAnexo.set(FALHA_INESPERADA);
     } finally {
@@ -137,54 +111,114 @@ export class EdicaoDoPedido {
     }
   }
 
+  focarErroDoMotivo(): void {
+    this.pedidoDeFoco.update((n) => n + 1);
+  }
+
+  /** O fim do dia do prazo escolhido, quando a etapa admite prazo e ele foi preenchido. */
+  private prazoDaAprovacao(informaPrazo: boolean): string | null {
+    return informaPrazo && this.prazo.value !== '' ? fimDoDia(this.prazo.value) : null;
+  }
+
+  private enviarDecisao(acao: Acao, validaAte: string | null): EnvioDaDecisao {
+    const id = this.store.id() ?? '';
+    return comChave(this.chave, { acao, id, validaAte }, (contexto) =>
+      acao === 'aceitar'
+        ? this.api.aceitar(id, contexto)
+        : this.api.aprovar(id, contexto, validaAte),
+    );
+  }
+
+  /** O motivo digitado, já validado; sem motivo válido, marca o campo e devolve `null`. */
+  private motivoDaRecusa(): string | null {
+    this.tentouRecusar.set(true);
+    descartarRecusasDoServidor(this.motivo);
+    const motivo = this.motivo.value.trim();
+    if (motivo && this.motivo.valid) return motivo;
+    if (!motivo) this.motivo.setErrors({ required: true });
+    this.focarErroDoMotivo();
+    return null;
+  }
+
+  private enviarRecusa(motivo: string): EnvioDaDecisao {
+    const id = this.store.id() ?? '';
+    return comChave(this.chave, { motivo, id }, (contexto) =>
+      this.api.recusar(id, motivo, contexto),
+    );
+  }
+
+  private aoAnexar(desfecho: DesfechoDoAnexo): void {
+    if (!desfecho.ok) {
+      this.erroDoAnexo.set(desfecho.mensagem);
+      return;
+    }
+    this.notificacoes.success('Documento enviado', 'Ele segue para verificação.');
+    this.store.recarregar();
+  }
+
   private async cancelar(): Promise<void> {
     if (this.indisponivel()) return;
+    await this.enquantoEnvia(async () => {
+      try {
+        const resultado = await firstValueFrom(this.api.cancelar(this.store.id() ?? ''));
+        if (isApiOk(resultado)) await this.aoCancelar();
+        else this.erro.set(this.texto(resultado.problem));
+      } catch {
+        this.erro.set(FALHA_INESPERADA);
+      }
+    });
+  }
+
+  private async aoCancelar(): Promise<void> {
+    this.notificacoes.success('Pedido cancelado');
+    this.confirmando.set(false);
+    await this.router.navigate(['/acessos/pedidos']);
+  }
+
+  /** Executa uma decisão sobre o pedido e recarrega o que a API devolveu. */
+  private async decidir(enviar: () => EnvioDaDecisao, destinoDoErro = this.erro): Promise<boolean> {
+    if (this.indisponivel()) return false;
+    this.erro.set(null);
+    return this.enquantoEnvia(async () => {
+      try {
+        const { resultado } = await enviar();
+        if (resultado.ok) this.aoDecidir(resultado.data);
+        else this.aoRecusarADecisao(resultado.problem, destinoDoErro);
+        return resultado.ok;
+      } catch {
+        destinoDoErro.set(FALHA_INESPERADA);
+        return false;
+      }
+    });
+  }
+
+  /** Marca o envio em andamento enquanto a escrita dura, para a tela bloquear outra decisão. */
+  private async enquantoEnvia<T>(escrita: () => Promise<T>): Promise<T> {
     this.enviando.set(true);
     try {
-      const resultado = await firstValueFrom(this.api.cancelar(this.store.id() ?? ''));
-      if (!isApiOk(resultado)) {
-        this.erro.set(this.texto(resultado.problem));
-        return;
-      }
-      this.notificacoes.success('Pedido cancelado');
-      this.confirmando.set(false);
-      await this.router.navigate(['/acessos/pedidos']);
-    } catch {
-      this.erro.set(FALHA_INESPERADA);
+      return await escrita();
     } finally {
       this.enviando.set(false);
     }
   }
 
-  /** Executa uma decisão sobre o pedido e recarrega o que a API devolveu. */
-  private async decidir(
-    enviar: () => ReturnType<typeof comChave<PedidoDeConcessaoDto>>,
-    destinoDoErro = this.erro,
-  ): Promise<boolean> {
-    if (this.indisponivel()) return false;
-    this.enviando.set(true);
-    this.erro.set(null);
-    try {
-      const { resultado } = await enviar();
-      if (!resultado.ok) {
-        if (destinoDoErro !== this.erroDaRecusa || !this.aplicarErroDoMotivo(resultado.problem)) {
-          destinoDoErro.set(this.texto(resultado.problem));
-        }
-        this.store.recarregar();
-        return false;
-      }
-      this.store.aplicarPedido(resultado.data);
-      this.notificacoes.success('Pedido atualizado');
-      this.prazo.reset('');
-      this.decisaoConcluida.set(true);
-      this.store.recarregar();
-      return true;
-    } catch {
-      destinoDoErro.set(FALHA_INESPERADA);
-      return false;
-    } finally {
-      this.enviando.set(false);
+  private aoDecidir(pedido: PedidoDeConcessaoDto): void {
+    this.store.aplicarPedido(pedido);
+    this.notificacoes.success('Pedido atualizado');
+    this.prazo.reset('');
+    this.decisaoConcluida.set(true);
+    this.store.recarregar();
+  }
+
+  /** O erro do motivo vai ao campo do diálogo de recusa; o resto, ao destino da decisão. */
+  private aoRecusarADecisao(
+    problema: ProblemDetails,
+    destino: WritableSignal<string | null>,
+  ): void {
+    if (destino !== this.erroDaRecusa || !this.aplicarErroDoMotivo(problema)) {
+      destino.set(this.texto(problema));
     }
+    this.store.recarregar();
   }
 
   private indisponivel(): boolean {
@@ -198,10 +232,6 @@ export class EdicaoDoPedido {
     this.tentouRecusar.set(true);
     this.focarErroDoMotivo();
     return true;
-  }
-
-  focarErroDoMotivo(): void {
-    this.pedidoDeFoco.update((n) => n + 1);
   }
 
   private texto(problema: ProblemDetails): string {

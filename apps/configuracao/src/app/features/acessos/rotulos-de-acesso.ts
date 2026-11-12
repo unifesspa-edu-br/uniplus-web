@@ -121,11 +121,20 @@ export function abreviado(valor: string): string {
  * (justificativa, motivo digitado).
  */
 export function detalheDaTrilha(detalhe: string | null): string {
-  if (detalhe === null) return '—';
+  return detalhe === null ? '—' : comRotulos(semIdentificadores(detalhe));
+}
+
+/** Tira o identificador do anexo e o da janela e abrevia o SHA-256, que não dizem nada a quem lê. */
+function semIdentificadores(detalhe: string): string {
   return detalhe
     .replace(/Anexo \S+?\./gi, (trecho) => (IDENTIFICADOR.test(trecho) ? 'Documento.' : trecho))
     .replace(SHA256, (hash) => abreviado(hash))
-    .replace(/ ?Janela: [0-9a-f-]{36}\./i, '')
+    .replace(/ ?Janela: [0-9a-f-]{36}\./i, '');
+}
+
+/** Troca os códigos de dispensa, etapa, sensibilidade e motivo pelos rótulos da tela. */
+function comRotulos(detalhe: string): string {
+  return detalhe
     .replace(/Dispensa: (\w+)\./, (_, codigo: string) => `Dispensa: ${motivoDaDispensa(codigo)}.`)
     .replace(/Etapa: (\w+)\./, (_, codigo: string) => `Etapa: ${etapa(codigo)}.`)
     .replace(
