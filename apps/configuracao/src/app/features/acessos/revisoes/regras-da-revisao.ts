@@ -1,10 +1,5 @@
 import { PERMISSAO, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
-import type {
-  ItemDaRevisaoDto,
-  RevisaoDeAcessosDto,
-  RevisaoResumoDto,
-} from '@uniplus/shared-data/autorizacao';
-import type { FiltroDaRevisao } from './rotulos-da-revisao';
+import type { ItemDaRevisaoDto, RevisaoDeAcessosDto } from '@uniplus/shared-data/autorizacao';
 
 const { autorizacao } = PERMISSAO;
 
@@ -18,9 +13,8 @@ const PERMISSAO_QUE_DECIDE: Readonly<Record<string, CodigoDePermissao | undefine
   'gestor-de-acessos': autorizacao.revisoesReverProtecaoDeDados,
 };
 
-/** Quem lê a revisão: a identidade no provedor e as permissões efetivas. */
+/** As permissões efetivas de quem lê a revisão. */
 export interface QuemLe {
-  readonly sub: string | null;
   readonly tem: (codigo: CodigoDePermissao) => boolean;
 }
 
@@ -35,8 +29,8 @@ const SEM_NOME = 'Pessoa não identificada';
 
 /**
  * Confirmar e revogar valem só no item pendente de revisão aberta, quando quem lê tem a permissão
- * de quem decide o item e não é o beneficiário dele: ninguém decide a própria concessão. A API
- * confere de novo e recusa o que mudou entre a leitura e a decisão.
+ * de quem decide o item e o item não é dele (`ehDoLeitor`, que a API calcula): ninguém decide a
+ * própria concessão. A API confere de novo e recusa o que mudou entre a leitura e a decisão.
  */
 export function decideOItem(
   revisao: RevisaoDeAcessosDto,
@@ -44,7 +38,7 @@ export function decideOItem(
   quemLe: QuemLe,
 ): boolean {
   if (revisao.situacao !== 'em_andamento' || item.situacao !== 'pendente') return false;
-  if (quemLe.sub === null || item.beneficiario.sub === quemLe.sub) return false;
+  if (item.ehDoLeitor) return false;
   const exigida = PERMISSAO_QUE_DECIDE[item.decide];
   return exigida !== undefined && quemLe.tem(exigida);
 }
@@ -74,11 +68,4 @@ export function porBeneficiario(
       itens: doGrupo,
     }))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-}
-
-export function revisoesNaSituacao(
-  revisoes: readonly RevisaoResumoDto[],
-  filtro: FiltroDaRevisao,
-): readonly RevisaoResumoDto[] {
-  return filtro === 'todas' ? revisoes : revisoes.filter((r) => r.situacao === filtro);
 }

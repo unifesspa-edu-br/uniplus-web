@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RevisaoResumoDto } from '@uniplus/shared-data/autorizacao';
-import { decideOItem, porBeneficiario, revisoesNaSituacao, type QuemLe } from './regras-da-revisao';
+import { decideOItem, porBeneficiario, type QuemLe } from './regras-da-revisao';
 import {
   CONDUZIR,
   CONSULTAR,
@@ -13,7 +12,7 @@ import {
 } from './revisao.testing';
 
 function quemLe(...concedidas: string[]): QuemLe {
-  return { sub: SUB_DE_QUEM_LE, tem: (codigo) => concedidas.includes(codigo) };
+  return { tem: (codigo) => concedidas.includes(codigo) };
 }
 
 const DO_REPRESENTANTE = item({ decide: 'gestor-de-acessos' });
@@ -38,12 +37,19 @@ describe('quem decide o item da revisão', () => {
   });
 
   it('ninguém decide o próprio item, mesmo com as duas permissões', () => {
-    const proprio = item({ beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves') });
+    const proprio = item({
+      beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'),
+      ehDoLeitor: true,
+    });
     expect(decideOItem(revisao(), proprio, quemLe(CONDUZIR, REVER))).toBe(false);
+    expect(decideOItem(revisao(), { ...DO_REPRESENTANTE, ehDoLeitor: true }, quemLe(REVER))).toBe(
+      false,
+    );
   });
 
-  it('sem identidade de quem lê, nenhum item se decide', () => {
-    expect(decideOItem(revisao(), item(), { sub: null, tem: () => true })).toBe(false);
+  it('o item próprio vem de ehDoLeitor, e não da comparação do beneficiário com quem lê', () => {
+    const deMesmoSub = item({ beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves') });
+    expect(decideOItem(revisao(), deMesmoSub, quemLe(CONDUZIR))).toBe(true);
   });
 
   it('item decidido ou de concessão encerrada não se decide de novo', () => {
@@ -91,20 +97,5 @@ describe('itens por beneficiário', () => {
 
   it('revisão sem itens não tem grupos', () => {
     expect(porBeneficiario([])).toEqual([]);
-  });
-});
-
-describe('filtro da lista de revisões', () => {
-  const lista = [
-    { id: 'r1', situacao: 'em_andamento' },
-    { id: 'r2', situacao: 'concluida' },
-  ] as unknown as readonly RevisaoResumoDto[];
-
-  it.each([
-    ['todas', ['r1', 'r2']],
-    ['em_andamento', ['r1']],
-    ['concluida', ['r2']],
-  ] as const)('%s', (filtro, ids) => {
-    expect(revisoesNaSituacao(lista, filtro).map((r) => r.id)).toEqual(ids);
   });
 });

@@ -1,10 +1,15 @@
-import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
-import { ApplicationRef, signal } from '@angular/core';
+import {
+  HttpHeaders,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
+import { ApplicationRef } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { map, of, type Observable } from 'rxjs';
 import { vi } from 'vitest';
-import { PERMISSAO, PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
@@ -14,7 +19,7 @@ import {
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
-import { EU, ok } from '../testes';
+import { ok } from '../testes';
 import { RevisaoDetalhePage } from './revisao-detalhe.page';
 
 const { autorizacao } = PERMISSAO;
@@ -27,7 +32,10 @@ const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
 
 export const api = { confirmar: vi.fn(), revogar: vi.fn(), abrir: vi.fn() };
 export const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
-/** A leitura da revisão, chamada a cada GET; cada teste define as respostas em sequência. */
+/**
+ * A leitura, chamada a cada GET com o endereço e os parâmetros; cada teste define as respostas em
+ * sequência.
+ */
 export const leituras = vi.fn<(url: string) => Observable<unknown>>();
 
 const ITEM_PENDENTE = {
@@ -72,7 +80,8 @@ const REVISAO_ABERTA = {
 
 /**
  * Os itens da revisão aberta: um comum da Fernanda, outro dela já confirmado, o do Diogo (que é
- * Representante e cabe à gestão de acessos) e o da própria pessoa que lê.
+ * Representante e cabe à gestão de acessos) e o da própria pessoa que lê, que a API marca com
+ * `ehDoLeitor`.
  */
 export function itensDaRevisao(): ItemDaRevisaoDto[] {
   return [
@@ -83,7 +92,7 @@ export function itensDaRevisao(): ItemDaRevisaoDto[] {
       beneficiario: pessoa('sub-diogo', 'Diogo Souza'),
       decide: 'gestor-de-acessos',
     }),
-    item({ id: 'i4', beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves') }),
+    item({ id: 'i4', beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'), ehDoLeitor: true }),
   ];
 }
 
@@ -107,8 +116,14 @@ const UNIDADES = {
   listar: () => of(ok([{ id: 'unidade-1', nome: 'Centro de Seleção', sigla: 'CEPS' }])),
 };
 
+/** O cabeçalho do envelope (o `Link` da página seguinte) chega na resposta, como da API. */
+function resposta(body: unknown): HttpResponse<unknown> {
+  const headers = (body as { headers?: HttpHeaders } | null)?.headers;
+  return new HttpResponse({ body, headers });
+}
+
 const leituraPeloInterceptor = withInterceptors([
-  (req) => leituras(req.url).pipe(map((body) => new HttpResponse({ body }))),
+  (req) => leituras(req.urlWithParams).pipe(map(resposta)),
 ]);
 
 export function provedores(concedidas: readonly string[]) {
@@ -120,7 +135,6 @@ export function provedores(concedidas: readonly string[]) {
     { provide: RevisoesApi, useValue: api },
     { provide: NotificationService, useValue: notificacoes },
     { provide: PermissoesService, useValue: permissoesDe(concedidas) },
-    { provide: UserContextService, useValue: { user: signal({ ...EU, id: SUB_DE_QUEM_LE }) } },
     { provide: UnidadesApi, useValue: UNIDADES },
   ];
 }

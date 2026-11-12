@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { ok, recusaPeloInterceptor } from '../testes';
 import {
   CONDUZIR,
@@ -20,6 +21,21 @@ import {
 } from './revisao.testing';
 
 const DECISOR_MUDOU = 'uniplus.autorizacao.revisao.decisor_nao_decide_o_item';
+
+/** Abre o diálogo do item, escreve o motivo e envia a revogação. */
+async function revogarComMotivo(host: HTMLElement, id: string): Promise<void> {
+  botao(linha(host, id), 'Revogar').click();
+  await assentar();
+  const campo = document.body.querySelector<HTMLTextAreaElement>('cfg-motivo-dialog textarea');
+  if (campo === null) throw new Error('campo do motivo ausente');
+  campo.value = 'Mudou de setor.';
+  campo.dispatchEvent(new Event('input'));
+  botao(document.body, 'Revogar acesso').click();
+  await assentar();
+}
+
+const dialogoAberto = () =>
+  document.body.querySelector<HTMLDialogElement>('cfg-motivo-dialog dialog')?.open === true;
 
 describe('RevisaoDetalhePage', () => {
   beforeEach(() => {
@@ -88,9 +104,10 @@ describe('RevisaoDetalhePage', () => {
     it('quem só consulta vê revisão, itens e resultados sem nenhum botão de ação', async () => {
       const { host } = await abrirRevisao([ok(revisao())], [CONSULTAR]);
 
-      expect(host.querySelectorAll('tr[data-item-id]')).toHaveLength(4);
+      const linhas = [...host.querySelectorAll<HTMLElement>('tr[data-item-id]')];
+      expect(linhas).toHaveLength(4);
       expect(host.textContent).toContain('Acesso mantido');
-      expect(botoes(host).filter((b) => ['Confirmar', 'Revogar'].includes(b))).toEqual([]);
+      expect(linhas.flatMap((l) => botoes(l))).toEqual([]);
     });
 
     it('revisão encerrada é somente leitura e diz isso', async () => {
@@ -107,6 +124,38 @@ describe('RevisaoDetalhePage', () => {
       expect(botao(linha(host, 'i1'), 'Confirmar').getAttribute('aria-label')).toBe(
         'Confirmar o acesso de Fernanda Drumond ao perfil Operador de inscrições',
       );
+    });
+  });
+
+  describe('motivo da revogação, que fica na concessão', () => {
+    const CONSULTAR_CONCESSOES = PERMISSAO.autorizacao.concessoesConsultar;
+    const ADMINISTRAR_CONCESSOES = PERMISSAO.autorizacao.concessoesAdministrar;
+    const link = (raiz: HTMLElement) =>
+      raiz.querySelector<HTMLAnchorElement>('a[href*="concessoes"]');
+
+    it.each([
+      ['quem consulta concessões', [CONSULTAR, CONSULTAR_CONCESSOES]],
+      ['quem administra concessões', [CONDUZIR, ADMINISTRAR_CONCESSOES]],
+    ] as const)('o item decidido leva %s à concessão', async (_, concedidas) => {
+      const revogado = itemDecidido({ situacao: 'revogada', concessaoId: 'c9' });
+      const { host } = await abrirRevisao([ok(revisao({ itens: [revogado] }))], concedidas);
+
+      expect(link(linha(host, 'i1'))?.getAttribute('href')).toBe('/acessos/concessoes/c9');
+      expect(link(linha(host, 'i1'))?.getAttribute('aria-label')).toBe(
+        'Ver a concessão de Fernanda Drumond ao perfil Operador de inscrições',
+      );
+    });
+
+    it('o item pendente não leva à concessão', async () => {
+      const { host } = await abrirRevisao([ok(revisao())], [CONDUZIR, ADMINISTRAR_CONCESSOES]);
+
+      expect(link(linha(host, 'i1'))).toBeNull();
+    });
+
+    it('sem permissão de ler concessões, o item decidido não mostra o link', async () => {
+      const { host } = await abrirRevisao([ok(revisao())], [CONSULTAR]);
+
+      expect(link(linha(host, 'i2'))).toBeNull();
     });
   });
 
@@ -187,14 +236,7 @@ describe('RevisaoDetalhePage', () => {
       api.revogar.mockReturnValue(of(ok(undefined)));
       const { host } = await abrirRevisao();
 
-      botao(linha(host, 'i1'), 'Revogar').click();
-      await assentar();
-      const campo = document.body.querySelector<HTMLTextAreaElement>('cfg-motivo-dialog textarea');
-      if (campo === null) throw new Error('campo do motivo ausente');
-      campo.value = 'Mudou de setor.';
-      campo.dispatchEvent(new Event('input'));
-      botao(document.body, 'Revogar acesso').click();
-      await assentar();
+      await revogarComMotivo(host, 'i1');
 
       expect(api.revogar).toHaveBeenCalledWith(
         ID,
@@ -203,6 +245,49 @@ describe('RevisaoDetalhePage', () => {
         expect.anything(),
       );
       expect(notificacoes.success).toHaveBeenCalledWith('Acesso revogado');
+      expect(dialogoAberto()).toBe(false);
+    });
+
+    it('com o decisor mudado (422), fecha o diálogo, avisa e relê o item', async () => {
+      api.revogar.mockReturnValue(
+        of(recusaPeloInterceptor(DECISOR_MUDOU, 422, 'O item cabe à outra governança')),
+      );
+      const relida = revisao({ itens: [item({ decide: 'gestor-de-acessos' })] });
+      const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
+
+      await revogarComMotivo(host, 'i1');
+
+      expect(dialogoAberto()).toBe(false);
+      expect(host.textContent).toContain('Quem decide o item mudou');
+      expect(linha(host, 'i1').textContent).toContain('Gestão de acessos');
+      expect(botoes(linha(host, 'i1'))).toEqual([]);
+    });
+
+    it('com decisão concorrente (409), fecha o diálogo e mostra a decisão já gravada', async () => {
+      api.revogar.mockReturnValue(
+        of(recusaPeloInterceptor('uniplus.autorizacao.revisao.item_ja_decidido', 409, 'x')),
+      );
+      const relida = revisao({ itens: [itemDecidido({ id: 'i1' })] });
+      const { host } = await abrirRevisao([ok(revisao()), ok(relida)]);
+
+      await revogarComMotivo(host, 'i1');
+
+      expect(dialogoAberto()).toBe(false);
+      expect(host.textContent).toContain('Decisão concorrente');
+      expect(linha(host, 'i1').textContent).toContain('Acesso mantido');
+    });
+
+    it('a recusa que não muda a revisão fica no diálogo, que segue aberto, sem reler', async () => {
+      api.revogar.mockReturnValue(
+        of(recusaPeloInterceptor('uniplus.autorizacao.revisao.decisor_e_beneficiario', 422, 'x')),
+      );
+      const { host } = await abrirRevisao();
+
+      await revogarComMotivo(host, 'i1');
+
+      expect(dialogoAberto()).toBe(true);
+      expect(document.body.textContent).toContain('Ninguém decide o item da própria concessão.');
+      expect(botoes(linha(host, 'i1'))).toEqual(['Confirmar', 'Revogar']);
     });
   });
 });
