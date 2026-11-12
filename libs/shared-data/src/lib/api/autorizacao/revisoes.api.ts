@@ -8,19 +8,9 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 export type RevisaoResumoDto = components['schemas']['RevisaoResumoDto'];
 
-/**
- * O item da revisão no contrato da uniplus-api#2364: `ehDoLeitor` diz que a concessão é de quem lê,
- * que não pode decidi-la. Acréscimo provisório ao tipo gerado; o codegen, depois do merge daquela
- * issue, o traz no `schema.ts`, e o acréscimo sai.
- */
-export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'] & {
-  readonly ehDoLeitor: boolean;
-};
-
-/** A revisão com os itens no contrato da uniplus-api#2364 (ver {@link ItemDaRevisaoDto}). */
-export type RevisaoDeAcessosDto = Omit<components['schemas']['RevisaoDeAcessosDto'], 'itens'> & {
-  readonly itens: readonly ItemDaRevisaoDto[];
-};
+/** O item da revisão; `ehDoLeitor` diz que a concessão é de quem lê, que não pode decidi-la. */
+export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'];
+export type RevisaoDeAcessosDto = components['schemas']['RevisaoDeAcessosDto'];
 export type RevogarItemDaRevisaoRequest = components['schemas']['RevogarItemDaRevisaoRequest'];
 
 /** Situação da revisão na API: com item pendente ela segue em andamento; sem nenhum, está concluída. */
@@ -28,7 +18,7 @@ export type SituacaoDaRevisao = 'em_andamento' | 'concluida';
 
 /**
  * A página da lista de revisões; a `situacao`, quando informada, filtra no servidor antes da
- * paginação (contrato da uniplus-api#2364).
+ * paginação.
  */
 export interface ListaDeRevisoesQuery extends PaginaQuery {
   readonly situacao?: SituacaoDaRevisao;
