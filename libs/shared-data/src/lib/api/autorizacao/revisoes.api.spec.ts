@@ -48,6 +48,21 @@ describe('RevisoesApi', () => {
     req.flush([]);
   });
 
+  it('sem situação, não filtra', () => {
+    void firstValueFrom(api.listar());
+    const req = controller.expectOne((r) => r.url === RAIZ);
+    expect(req.request.params.has('situacao')).toBe(false);
+    req.flush([]);
+  });
+
+  it('filtra pela situação no servidor, junto do cursor', () => {
+    void firstValueFrom(api.listar({ situacao: 'concluida', cursor: 'c1' }));
+    const req = controller.expectOne((r) => r.url === RAIZ);
+    expect(req.request.params.get('situacao')).toBe('concluida');
+    expect(req.request.params.get('cursor')).toBe('c1');
+    req.flush([]);
+  });
+
   it('lê o detalhe pelo id', () => {
     void firstValueFrom(api.obter(ID));
     const req = controller.expectOne(`${RAIZ}/${ID}`);
@@ -74,7 +89,9 @@ describe('RevisoesApi', () => {
   });
 
   it('revoga o item com o motivo e chave de idempotência', () => {
-    void firstValueFrom(api.revogar(ID, ITEM, { motivo: 'Mudou de setor.' }, withIdempotencyKey('k')));
+    void firstValueFrom(
+      api.revogar(ID, ITEM, { motivo: 'Mudou de setor.' }, withIdempotencyKey('k')),
+    );
     const req = controller.expectOne(`${RAIZ}/${ID}/itens/${ITEM}/revogacao`);
     expect(req.request.body).toEqual({ motivo: 'Mudou de setor.' });
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');

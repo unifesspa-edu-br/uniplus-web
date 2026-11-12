@@ -40,6 +40,7 @@ const ITEM_PENDENTE = {
   situacao: 'pendente',
   decididoPor: null,
   decididoEm: null,
+  ehDoLeitor: false,
 } as const satisfies Partial<ItemDaRevisaoDto>;
 
 export function pessoa(sub: string, nome: string) {
