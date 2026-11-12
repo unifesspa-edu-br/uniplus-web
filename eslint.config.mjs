@@ -108,27 +108,33 @@ export default [
     },
   },
   {
-    // Sinal auxiliar das métricas de qualidade (CONTRIBUTING.md, seção "Métricas de qualidade"):
-    // avisa nos .ts fora dos padrões listados em `ignores` e conta função de forma mais frouxa
-    // que a regra, que vale para todos os arquivos e conta linhas físicas. Quem cobra a regra é a revisão.
+    // Métricas de qualidade (CONTRIBUTING.md, seção "Métricas de qualidade"): o aviso é a medida.
+    // Valem em produção, specs e E2E, como aviso até o projeto zerar a dívida; os clientes OpenAPI
+    // gerados ficam fora.
     files: ['**/*.ts'],
-    ignores: [
-      '**/*.spec.ts',
-      '**/*.testing.ts',
-      '**/*.mock.ts',
-      '**/test-setup.ts',
-      '**/src/fixtures/**',
-      '**/src/support/**',
-      'libs/shared-data/src/lib/api/*/schema.ts',
-      'src/lib/api/*/schema.ts',
-    ],
+    ignores: ['libs/shared-data/src/lib/api/*/schema.ts', 'src/lib/api/*/schema.ts'],
     plugins: { sonarjs },
     rules: {
       'max-lines': ['warn', { max: 400, skipBlankLines: false, skipComments: false }],
-      'max-lines-per-function': ['warn', { max: 30, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': ['warn', { max: 15, skipBlankLines: false, skipComments: false }],
       complexity: ['warn', 10],
       'max-params': ['warn', 4],
       'sonarjs/cognitive-complexity': ['warn', 15],
+    },
+  },
+  {
+    // Nos testes, a função passada ao describe agrupa os casos e seria medida inteira: o limite por
+    // função fica desligado na camada de testes. Os demais limites valem.
+    files: ['**/*.spec.ts', '**/*.setup.ts'],
+    rules: {
+      'max-lines-per-function': 'off',
+    },
+  },
+  {
+    // Templates: o parser de template do angular-eslint vem da configuração de cada projeto.
+    files: ['**/*.html'],
+    rules: {
+      'max-lines': ['warn', { max: 400, skipBlankLines: false, skipComments: false }],
     },
   },
   {

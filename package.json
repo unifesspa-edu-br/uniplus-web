@@ -12,7 +12,6 @@
     "build:all": "nx run-many --target=build --all",
     "test:all": "nx run-many --target=vite:test --all",
     "lint:all": "nx run-many --target=lint --all",
-    "check:tamanho": "node tools/tamanho-de-arquivo/verificar.mjs",
     "e2e:selecao": "nx e2e selecao-e2e",
     "e2e:ingresso": "nx e2e ingresso-e2e",
     "e2e:portal": "nx e2e portal-e2e",
