@@ -8,7 +8,10 @@ export interface RotuloDaJanela {
 const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaJanela>> = {
   aguardando_lote: { texto: 'Aguarda o lote', variante: 'info' },
   retida: { texto: 'Retida', variante: 'warning' },
-  aguardando_protecao_de_dados: { texto: 'Aguarda a proteção de dados', variante: 'info' },
+  aguardando_protecao_de_dados: {
+    texto: 'Aguarda o Representante do controlador',
+    variante: 'info',
+  },
   migrada: { texto: 'Migrada', variante: 'success' },
   recusada: { texto: 'Recusada', variante: 'danger' },
   nao_migrada: { texto: 'Não migrada no prazo', variante: 'danger' },
@@ -53,9 +56,9 @@ const NA_GESTAO: OrientacaoDaPropria = {
 };
 
 const NA_PROTECAO_DE_DADOS: OrientacaoDaPropria = {
-  titulo: 'Na proteção de dados: outra pessoa decide',
-  dica: 'Concessões em que você é a pessoa beneficiada aguardam a decisão de outra pessoa da proteção de dados.',
-  legenda: 'Concessões suas que aguardam a proteção de dados',
+  titulo: 'Na etapa de proteção de dados: outro Representante do controlador decide',
+  dica: 'Concessões em que você é a pessoa beneficiada aguardam a decisão de outro Representante do controlador.',
+  legenda: 'Concessões suas que aguardam outro Representante do controlador',
 };
 
 export function orientacaoDaPropria(situacao: string): OrientacaoDaPropria {

@@ -38,7 +38,7 @@ export const MENSAGENS_DA_RECLASSIFICACAO: Readonly<Record<string, MensagemDaRec
   'reclassificacao.etapa_nao_exigida': {
     titulo: 'Esta etapa não é exigida para uma das concessões.',
     resolver:
-      'A proteção de dados decide a subida de classe e a gestão de acessos decide a mudança de escopo. Recarregue e marque só as concessões que aguardam a sua etapa.',
+      'O Representante do controlador decide a subida de classe e a gestão de acessos decide a mudança de escopo. Recarregue e marque só as concessões que aguardam a sua etapa.',
   },
   'reclassificacao.mesmo_decisor_nas_duas_etapas': {
     titulo: 'Você já decidiu a outra etapa desta reclassificação.',
@@ -60,7 +60,7 @@ export const MENSAGENS_DA_RECLASSIFICACAO: Readonly<Record<string, MensagemDaRec
   'reclassificacao.sem_permissao_na_etapa': {
     titulo: 'Falta a permissão da etapa para esta decisão.',
     resolver:
-      'A proteção de dados decide a subida de classe e a gestão de acessos decide a mudança de escopo. Peça a uma pessoa com a permissão da etapa que decida.',
+      'O Representante do controlador decide a subida de classe e a gestão de acessos decide a mudança de escopo. Peça a uma pessoa com a permissão da etapa que decida.',
   },
   'reclassificacao.superada': {
     titulo: 'Esta reclassificação foi substituída por outra mais recente.',

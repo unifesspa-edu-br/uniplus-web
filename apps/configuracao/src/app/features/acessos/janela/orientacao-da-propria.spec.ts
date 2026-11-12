@@ -25,7 +25,7 @@ describe('orientação das concessões do próprio leitor', () => {
     const { host } = await abrirJanela(janela);
 
     expect(host.textContent).toContain('decididas por outra pessoa da gestão de acessos');
-    expect(host.textContent).not.toContain('outra pessoa da proteção de dados');
+    expect(host.textContent).not.toContain('outro Representante do controlador');
   });
 
   it('a que aguarda a proteção de dados aguarda outra pessoa dessa etapa', async () => {
@@ -35,7 +35,7 @@ describe('orientação das concessões do próprio leitor', () => {
     });
     const { host } = await abrirJanela(janela);
 
-    expect(host.textContent).toContain('aguardam a decisão de outra pessoa da proteção de dados');
+    expect(host.textContent).toContain('aguardam a decisão de outro Representante do controlador');
     expect(host.textContent).not.toContain('Retidas: outra pessoa decide');
   });
 });

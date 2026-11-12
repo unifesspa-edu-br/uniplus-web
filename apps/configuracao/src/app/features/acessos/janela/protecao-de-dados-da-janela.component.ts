@@ -11,7 +11,7 @@ import { TabelaDaJanelaComponent } from './tabela-da-janela.component';
 
 const ID_DO_ERRO = 'cfg-protecao-erro';
 
-/** A etapa da proteção de dados: decide uma concessão, várias ou todas, migrando umas e recusando outras. */
+/** A etapa de proteção de dados, do Representante do controlador: decide uma concessão, várias ou todas, migrando umas e recusando outras. */
 @Component({
   selector: 'cfg-protecao-de-dados-da-janela',
   standalone: true,
@@ -29,7 +29,7 @@ export class ProtecaoDeDadosDaJanelaComponent {
   readonly janela = input.required<JanelaDeMigracaoDto>();
   readonly itens = input.required<readonly ItemDaJanelaDto[]>();
   readonly nomeDoEscopo = input.required<(item: ItemDaJanelaDto) => string>();
-  /** A pessoa tem a permissão da proteção de dados. */
+  /** A pessoa tem a permissão de decidir como Representante do controlador. */
   readonly podeDecidir = input.required<boolean>();
 
   protected readonly etapa = inject(EtapaDaProtecaoDeDados);

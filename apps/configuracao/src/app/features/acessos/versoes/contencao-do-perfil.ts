@@ -12,7 +12,7 @@ import { mensagemDaRecusa } from '../falha-de-servidor';
 import { CampoDoMotivo } from './campo-do-motivo';
 import { ChavesPorComando } from './chaves-por-comando';
 import { EscritaDoPerfil } from './escrita-do-perfil';
-import { etapa } from '../rotulos-de-acesso';
+import { decisaoDaEtapa } from './rotulos-da-versao';
 import { MENSAGENS_DA_RETOMADA } from './mensagens-da-contencao';
 import { TEXTOS_DA_CONTENCAO, type AcaoDaContencao } from './textos-da-contencao';
 
@@ -102,8 +102,8 @@ export class ContencaoDoPerfil {
   private textoDoSucesso(acao: AcaoDaContencao, dados: unknown): string {
     if (!ehRetomada(dados)) return TEXTOS_DA_CONTENCAO[acao].sucesso;
     if (dados.concluida) return 'Perfil retomado: as concessões voltam a valer';
-    const faltam = dados.etapasPendentes.map((codigo) => etapa(codigo).toLowerCase());
-    return `Etapa decidida. Falta a decisão da ${faltam.join(' e da ')}`;
+    const faltam = dados.etapasPendentes.map(decisaoDaEtapa);
+    return `Etapa decidida. Falta a ${faltam.join(' e a ')}`;
   }
 }
 

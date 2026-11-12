@@ -36,6 +36,19 @@ describe('PerfisPage: formulário do perfil novo', () => {
     expect(rotulo?.textContent).toContain(sensibilidade);
   });
 
+  it('diz que a permissão de dado pessoal ou sensível passa pelo Representante do controlador', async () => {
+    const aberta = await abrir();
+
+    await abrirOFormulario(aberta);
+
+    const ajudas = [...aberta.host.querySelectorAll('.field__hint')].map((a) =>
+      a.textContent?.replace(/\s+/g, ' '),
+    );
+    expect(ajudas).toContainEqual(
+      expect.stringContaining('exige a aprovação do Representante do controlador na versão'),
+    );
+  });
+
   it('marca o nome como obrigatório no formulário do perfil novo', async () => {
     const aberta = await abrir();
     const { host } = aberta;

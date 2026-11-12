@@ -65,7 +65,7 @@ import { situacaoDoItem } from './rotulos-da-janela';
                   Nenhum
                 }
                 @if (item.exigeProtecaoDeDados) {
-                  <span class="cfg-muted">Passa pela proteção de dados.</span>
+                  <span class="cfg-muted">Passa pelo Representante do controlador.</span>
                 }
               </td>
               <td data-label="Situação">

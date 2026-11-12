@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
 import { AlertComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import type { SuspensaoDoPerfilDto } from '@uniplus/shared-data/autorizacao';
-import { etapa } from '../rotulos-de-acesso';
+import { decisaoDaEtapa, porQuemDecide } from './rotulos-da-versao';
 
 /** A suspensão em curso: desde quando, quem a determinou e o que falta decidir para retomar. */
 @Component({
@@ -12,13 +12,13 @@ import { etapa } from '../rotulos-de-acesso';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-alert variant="danger" heading="Perfil suspenso" [dynamic]="false">
-      Desde {{ suspensao().desde | dateBr: 'datetime' }}, por {{ papel() }}, nenhuma concessão do
+      Desde {{ suspensao().desde | dateBr: 'datetime' }}, por {{ decisao() }}, nenhuma concessão do
       perfil dá acesso. As concessões não foram revogadas e voltam a valer quando a suspensão for
       retomada.
       <ul class="cfg-lista">
         @for (item of etapas(); track item.etapa) {
           <li>
-            Retomada pela {{ item.nome }}:
+            Retomada {{ item.porQuem }}:
             <strong>{{ item.situacao }}</strong>
           </li>
         }
@@ -28,8 +28,8 @@ import { etapa } from '../rotulos-de-acesso';
 })
 export class SuspensaoDoPerfilComponent {
   readonly suspensao = input.required<SuspensaoDoPerfilDto>();
-  protected readonly papel = computed(() =>
-    etapa(this.suspensao().papelDeQuemSuspendeu).toLowerCase(),
+  protected readonly decisao = computed(() =>
+    decisaoDaEtapa(this.suspensao().papelDeQuemSuspendeu),
   );
   /** As exigidas agora e, depois, as já decididas que a suspensão deixou de exigir. */
   protected readonly etapas = computed(() => {
@@ -43,7 +43,7 @@ export class SuspensaoDoPerfilComponent {
       ...dispensadas.map((codigo) => ({ codigo, situacao: 'decidida; não é mais exigida' })),
     ].map(({ codigo, situacao }) => ({
       etapa: codigo,
-      nome: etapa(codigo).toLowerCase(),
+      porQuem: porQuemDecide(codigo),
       situacao,
     }));
   });

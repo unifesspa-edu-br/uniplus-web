@@ -45,7 +45,7 @@ const APRESENTACAO: Readonly<Record<EtapaDaVersao, Apresentacao>> = {
   protecao_de_dados: {
     titulo: 'Versões de perfil na proteção de dados',
     descricao:
-      'Versões que acrescentam permissões sensíveis, já aprovadas pela gestão de acessos, e aguardam a adequação à proteção de dados.',
+      'Versões que acrescentam permissões pessoais ou sensíveis, já aprovadas pela gestão de acessos, que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados.',
   },
 };
 
