@@ -19,24 +19,6 @@
   gap: var(--space-2);
   flex-shrink: 0;
 }
-.topbar__mark {
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-primary-solid);
-  color: var(--color-neutral-0);
-  font-weight: var(--weight-bold);
-  font-size: var(--text-sm);
-  letter-spacing: 0;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-[data-theme='contrast'] .topbar__mark {
-  background: var(--color-primary);
-  color: var(--text-on-primary);
-}
 .topbar__titles {
   min-width: 0;
 }
@@ -80,12 +62,14 @@
   .topbar__actions {
     gap: var(--space-1);
   }
-  .topbar .user-chip {
+  .topbar .user-chip,
+  .institutional-bar .user-chip {
     width: var(--touch-min);
     padding: 0;
     justify-content: center;
   }
-  .topbar .user-chip > svg {
+  .topbar .user-chip > svg,
+  .institutional-bar .user-chip > svg {
     display: none;
   }
 }

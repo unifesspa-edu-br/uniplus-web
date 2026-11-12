@@ -76,6 +76,7 @@
 
 .sidebar__brand {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   padding: 0 var(--space-5) var(--space-3);
@@ -89,24 +90,12 @@
     padding-left: var(--space-3);
   }
 }
-.sidebar__mark {
-  display: inline-flex;
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-md);
-  color: var(--surface-inverse);
-  background: var(--text-on-inverse);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-bold);
-}
 .sidebar__brand-copy {
   min-width: 0;
 }
 @media (min-width: 1024px) {
-  .admin-shell[data-sidebar-desktop='closed'] .sidebar__brand-copy {
+  .admin-shell[data-sidebar-desktop='closed'] .sidebar__brand-copy,
+  .admin-shell[data-sidebar-desktop='closed'] .sidebar__marca {
     display: none;
   }
 }
@@ -309,13 +298,6 @@
     display: inline-flex;
   }
 }
-.shell-topbar-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-left: auto;
-}
-
 .page {
   /* `position: relative` faz o `.page` ser o bloco contêiner dos descendentes
      `position: absolute` (ex.: o `span.sr-only` dentro de `<th>`). Sem isso eles

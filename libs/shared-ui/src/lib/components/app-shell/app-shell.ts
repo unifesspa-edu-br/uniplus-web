@@ -13,6 +13,7 @@ import { A11yMenuComponent } from '../a11y-menu/a11y-menu';
 import { BackToTopComponent } from '../back-to-top/back-to-top';
 import { DrawerComponent } from '../drawer/drawer';
 import { InstitutionalBarComponent } from '../institutional-bar/institutional-bar';
+import { MarcaInstitucionalComponent } from '../marca-institucional/marca-institucional';
 import { SkipLinkComponent } from '../skip-link/skip-link';
 import { VlibrasLoaderComponent } from '../vlibras-loader/vlibras-loader';
 
@@ -46,6 +47,7 @@ let shellIdSeed = 0;
     BackToTopComponent,
     DrawerComponent,
     InstitutionalBarComponent,
+    MarcaInstitucionalComponent,
     SkipLinkComponent,
     VlibrasLoaderComponent,
   ],
@@ -53,12 +55,10 @@ let shellIdSeed = 0;
   template: `
     <div class="ui-app-shell">
       <ui-skip-link [targetId]="mainId" />
-      <ui-institutional-bar
-        [organization]="organization()"
-        [siteMapHref]="siteMapHref()"
-        [accessibilityHref]="accessibilityHref()"
-        [privacyHref]="privacyHref()"
-      />
+      <ui-institutional-bar>
+        <ui-a11y-menu />
+        <ng-content select="[uiShellActions]" />
+      </ui-institutional-bar>
 
       <div
         class="admin-shell"
@@ -66,7 +66,7 @@ let shellIdSeed = 0;
       >
         <aside class="sidebar u-no-print" [id]="sidebarId" aria-label="Painel administrativo">
           <div class="sidebar__brand">
-            <div class="sidebar__mark" aria-hidden="true">U+</div>
+            <ui-marca-institucional class="sidebar__marca" [rotulada]="false" fundo="escuro" />
             <div class="sidebar__brand-copy">
               <div class="sidebar__brand-title">{{ appName() }}</div>
               @if (subtitle()) {
@@ -149,11 +149,6 @@ let shellIdSeed = 0;
                 }
               </ol>
             </nav>
-
-            <div class="shell-topbar-actions">
-              <ui-a11y-menu />
-              <ng-content select="[uiShellActions]" />
-            </div>
           </header>
 
           <main #conteudoPrincipal class="page" [id]="mainId" tabindex="-1">
@@ -211,10 +206,6 @@ let shellIdSeed = 0;
 export class AppShellComponent {
   readonly appName = input.required<string>();
   readonly subtitle = input<string>('');
-  readonly organization = input<string>('UNIFESSPA · Sistema Uni+');
-  readonly siteMapHref = input<string | null>(null);
-  readonly accessibilityHref = input<string | null>(null);
-  readonly privacyHref = input<string | null>(null);
   readonly navGroups = input<readonly UiShellNavGroup[]>([]);
   readonly breadcrumb = input<readonly UiShellBreadcrumbItem[]>([]);
   readonly footerLabel = input<string>('');
