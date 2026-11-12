@@ -58,7 +58,9 @@ describe('mensagens de acesso', () => {
       textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
 
     expect(resolver('uniplus.autorizacao.pedido.validade_invalida')).toContain('prazo');
-    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou à gestão de acessos');
+    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain(
+      'voltou à gestão de acessos',
+    );
   });
 
   it('orienta nas recusas da janela de migração, com os nomes das funções', () => {
@@ -94,7 +96,7 @@ describe('rótulos de acesso', () => {
     expect(etapa('protecao_de_dados')).toBe('Proteção de dados');
     expect(etapa(null)).toBe('—');
     expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
-      'designação de proteção de dados',
+      'designação do Representante do controlador',
     );
     expect(motivoDaDispensa('outro')).toBe('outro');
   });
@@ -123,7 +125,7 @@ describe('detalhe da trilha', () => {
       'Etapa: Gestão de acessos. Sensibilidade avaliada: Dado pessoal.',
     );
     expect(detalheDaTrilha('Motivo: designacao_de_protecao_de_dados.')).toBe(
-      'Motivo: designação de proteção de dados.',
+      'Motivo: designação do Representante do controlador.',
     );
     expect(detalheDaTrilha('Motivo: faltou.')).toBe('Motivo: faltou.');
     expect(detalheDaTrilha(null)).toBe('—');
@@ -137,7 +139,7 @@ describe('detalhe da trilha', () => {
         `Etapa: gestao_de_acessos. Janela: ${janela}. Dispensa: beneficiario_ja_tem_protecao_de_dados.`,
       ),
     ).toBe(
-      'Etapa: Gestão de acessos. Dispensa: a pessoa beneficiada já exerce a proteção de dados.',
+      'Etapa: Gestão de acessos. Dispensa: a pessoa beneficiada já é Representante do controlador.',
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
   });

@@ -110,7 +110,7 @@ describe('PedidoDetalhePage — fim de vigência', () => {
       expect(api.aprovar).toHaveBeenCalledWith('pedido-1', expect.anything(), null);
     });
 
-    it('na etapa da proteção de dados não há campo, mas o prazo do gestor aparece', async () => {
+    it('na etapa do Representante do controlador não há campo, mas o prazo do gestor aparece', async () => {
       const { fixture, host } = await abrir(
         [PROTECAO_DE_DADOS],
         pedido({

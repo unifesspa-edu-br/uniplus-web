@@ -9,7 +9,10 @@ const SITUACAO_DO_PEDIDO: Readonly<Record<string, Rotulo>> = {
   aguardando_documento: { texto: 'Aguardando o documento de designação', variante: 'warning' },
   aguardando_beneficiario: { texto: 'Aguardando o aceite do beneficiário', variante: 'warning' },
   aguardando_gestor: { texto: 'Aguardando a gestão de acessos', variante: 'info' },
-  aguardando_protecao_de_dados: { texto: 'Aguardando a proteção de dados', variante: 'info' },
+  aguardando_protecao_de_dados: {
+    texto: 'Aguardando o Representante do controlador',
+    variante: 'info',
+  },
   aprovado: { texto: 'Aprovado', variante: 'success' },
   recusado: { texto: 'Recusado', variante: 'danger' },
   cancelado: { texto: 'Cancelado', variante: 'neutral' },
@@ -74,8 +77,8 @@ const ETAPA: Readonly<Record<string, string>> = {
 };
 
 const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {
-  designacao_de_protecao_de_dados: 'designação de proteção de dados',
-  beneficiario_ja_tem_protecao_de_dados: 'a pessoa beneficiada já exerce a proteção de dados',
+  designacao_de_protecao_de_dados: 'designação do Representante do controlador',
+  beneficiario_ja_tem_protecao_de_dados: 'a pessoa beneficiada já é Representante do controlador',
 };
 
 export function motivoDaDispensa(codigo: string): string {

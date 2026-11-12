@@ -131,7 +131,7 @@ export class PedidoDetalhePage {
   private readonly semDecisao = computed(() => (this.pedido()?.decisoes.length ?? 0) === 0);
 
   /**
-   * A API recusa só quem aprovou como gestor e agora decidiria como proteção de dados: a aprovação do gestor
+   * A API recusa só quem aprovou como gestor e agora decidiria como Representante do controlador: a aprovação do gestor
    * que o perfil alterado devolveu ao gestor não impede ninguém de decidir de novo na etapa dele.
    */
   private readonly jaAprovouComoGestor = computed(() => {
@@ -144,7 +144,7 @@ export class PedidoDetalhePage {
     );
   });
 
-  /** O prazo se define na aprovação do gestor; a proteção de dados só vê o que ele definiu. */
+  /** O prazo se define na aprovação do gestor; o Representante do controlador só vê o que ele definiu. */
   protected readonly informaPrazo = computed(
     () =>
       this.podeDecidir() &&

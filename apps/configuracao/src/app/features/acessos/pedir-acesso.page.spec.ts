@@ -144,7 +144,7 @@ describe('PedirAcessoPage — formulário e leitura dos perfis', () => {
       'Selecione um perfil',
       'Operador de inscrições',
       'Gestor de acessos',
-      'Encarregado(a) pelo tratamento de dados',
+      'Representante do controlador',
     ]);
     expect(host.querySelector('input[formcontrolname="perfilId"]')).toBeNull();
   });

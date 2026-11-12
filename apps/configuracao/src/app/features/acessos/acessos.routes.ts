@@ -39,7 +39,7 @@ export const ACESSOS_ROUTES: Routes = [
       {
         path: 'fila-da-protecao-de-dados',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/fila-da-protecao-de-dados'])],
-        data: { breadcrumb: 'Fila da proteção de dados', fila: 'protecao_de_dados' },
+        data: { breadcrumb: 'Fila do Representante do controlador', fila: 'protecao_de_dados' },
         loadComponent: () => import('./pedidos.page').then((m) => m.PedidosPage),
       },
       {
@@ -83,7 +83,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/gestao-de-acessos']),
         ],
-        data: { breadcrumb: 'Janelas de migração na gestão de acessos', etapa: 'gestao_de_acessos' },
+        data: {
+          breadcrumb: 'Janelas de migração na gestão de acessos',
+          etapa: 'gestao_de_acessos',
+        },
         loadComponent: () =>
           import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
       },
@@ -92,7 +95,10 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [
           permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/janelas-de-migracao/protecao-de-dados']),
         ],
-        data: { breadcrumb: 'Janelas de migração na proteção de dados', etapa: 'protecao_de_dados' },
+        data: {
+          breadcrumb: 'Janelas de migração na proteção de dados',
+          etapa: 'protecao_de_dados',
+        },
         loadComponent: () =>
           import('./janela/fila-de-janelas.page').then((m) => m.FilaDeJanelasPage),
       },

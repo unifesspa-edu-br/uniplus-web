@@ -28,16 +28,16 @@ interface PedidoCriado {
  * Concede o perfil à persona pelo fluxo real de pedido: um terceiro solicita, a persona aceita,
  * o gestor de acessos aprova a adequação funcional e, quando o perfil traz dado pessoal ou
  * sensível, a proteção de dados aprova a segunda etapa. Idempotente: concessão ativa igual
- * não é pedida de novo, e pedido em andamento é retomado. Antes, garante que a encarregada
- * esteja designada, porque é ela quem aprova a segunda etapa.
+ * não é pedida de novo, e pedido em andamento é retomado. Antes, garante que o Encarregado
+ * esteja designado, porque é ele quem aprova a segunda etapa.
  */
 export async function garantirConcessao(
   beneficiario: string,
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<void> {
-  if (perfilId !== PERFIL_DA_ENCARREGADA) {
-    await garantirEncarregada();
+  if (perfilId !== PERFIL_DO_ENCARREGADO) {
+    await garantirEncarregado();
   }
   const pedido = await pedidoDaConcessao(beneficiario, perfilId, unidadeDaConcessao);
   if (await concessaoAtiva(pedido)) {
@@ -62,24 +62,24 @@ async function pedidoDaConcessao(
   return { beneficiario, email, sub, perfilId, unidadeId };
 }
 
-/** Perfil "Encarregado(a) pelo tratamento de dados", de governança da proteção de dados. */
-const PERFIL_DA_ENCARREGADA = '019a0000-0000-7000-8000-000000000002';
-let encarregadaGuardada: Promise<void> | undefined;
+/** Perfil "Encarregado pelo tratamento de dados", de governança da proteção de dados. */
+const PERFIL_DO_ENCARREGADO = '019a0000-0000-7000-8000-000000000002';
+let encarregadoGuardado: Promise<void> | undefined;
 
 /**
- * Designa a encarregada (institucional) pelo mesmo fluxo de pedido: a API dispensa a etapa de
+ * Designa o Encarregado (institucional) pelo mesmo fluxo de pedido: a API dispensa a etapa de
  * proteção de dados nesse perfil, então só o gestor aprova. Os decisores das duas etapas nunca
- * coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e a proteção é a encarregada ou `caroline.jesus`.
+ * coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e a proteção é o Encarregado ou `caroline.jesus`.
  */
-function garantirEncarregada(): Promise<void> {
-  encarregadaGuardada ??= garantirConcessao(PROTECAO_DE_DADOS, PERFIL_DA_ENCARREGADA, '').catch(
+function garantirEncarregado(): Promise<void> {
+  encarregadoGuardado ??= garantirConcessao(PROTECAO_DE_DADOS, PERFIL_DO_ENCARREGADO, '').catch(
     (erro: unknown) => {
       // Falha não fica guardada: a spec seguinte tenta a designação de novo.
-      encarregadaGuardada = undefined;
+      encarregadoGuardado = undefined;
       throw erro;
     },
   );
-  return encarregadaGuardada;
+  return encarregadoGuardado;
 }
 
 async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
@@ -142,7 +142,7 @@ const postar = (quem: string, caminho: string, corpo?: unknown): Promise<Respost
 
 /**
  * Cada situação em andamento tem a etapa que a resolve; qualquer outra encerra o pedido. O
- * documento de designação (perfil da encarregada) é anexado por quem solicitou, em PDF, pela URL
+ * documento de designação (perfil do Encarregado) é anexado por quem solicitou, em PDF, pela URL
  * assinada; o pedido só segue depois que a API verifica o arquivo.
  */
 const ETAPAS_POR_SITUACAO: Readonly<Record<string, EtapaDoPedido>> = {

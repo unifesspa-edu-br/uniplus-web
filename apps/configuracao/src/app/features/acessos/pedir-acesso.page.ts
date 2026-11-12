@@ -10,7 +10,7 @@ import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
 
 /**
  * Pedido de acesso, para si ou para outra pessoa. O pedido não dá acesso: segue para o gestor de
- * acessos e, se o perfil tem dado pessoal ou sensível, para a proteção de dados.
+ * acessos e, se o perfil tem dado pessoal ou sensível, para o Representante do controlador.
  */
 @Component({
   selector: 'cfg-pedir-acesso-page',

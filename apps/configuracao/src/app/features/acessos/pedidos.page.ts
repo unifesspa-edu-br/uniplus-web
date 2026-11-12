@@ -25,9 +25,9 @@ const APRESENTACAO: Readonly<Record<FilaDePedidos, Apresentacao>> = {
     vazio: 'Nenhum pedido aguarda a sua aprovação.',
   },
   protecao_de_dados: {
-    titulo: 'Fila da proteção de dados',
+    titulo: 'Fila do Representante do controlador',
     descricao:
-      'Pedidos de perfil com dado pessoal ou sensível, já aprovados pela gestão de acessos, que aguardam a adequação à proteção de dados.',
+      'Pedidos de perfil com dado pessoal ou sensível, já aprovados pela gestão de acessos, que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados.',
     vazio: 'Nenhum pedido aguarda a sua aprovação.',
   },
   todos: {
