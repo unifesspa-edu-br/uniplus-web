@@ -220,7 +220,7 @@ const PERMISSOES_DE_CADASTRO_DO_ROTEIRO = [
   'configuracao:fatos-candidato:consultar',
   'configuracao:modelos-formulario:consultar',
   'configuracao:tipos-processo:consultar',
-  'selecao:motivos-decisao-isencao:manter',
+  'selecao:motivos-de-decisao:manter',
   'selecao:obrigatoriedades-legais:manter',
   'selecao:leiautes-inep:consultar',
   'selecao:regras-catalogo:consultar',
