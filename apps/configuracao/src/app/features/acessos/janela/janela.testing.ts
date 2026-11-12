@@ -15,8 +15,6 @@ const ITEM_AGUARDANDO_O_LOTE = {
   versaoAtual: 1,
   exigeProtecaoDeDados: false,
   situacao: 'aguardando_lote',
-  // TODO(codegen api#2363): a dispensa sai das linhas da janela; some daqui com o tipo gerado.
-  dispensa: null,
   ehDoLeitor: false,
 } as const satisfies Partial<ItemDaJanelaDto>;
 
