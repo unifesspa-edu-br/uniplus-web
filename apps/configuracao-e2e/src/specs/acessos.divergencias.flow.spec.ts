@@ -8,6 +8,7 @@ import {
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const PERFIL_ID = '01960000-0000-7000-0000-0000000000a1';
+const OUTRO_PERFIL_ID = '01960000-0000-7000-0000-0000000000a2';
 const ROTA = /\/api\/autorizacao\/governanca\/divergencias(\?.*)?$/;
 
 const DIVERGENCIAS = [
@@ -23,8 +24,8 @@ const DIVERGENCIAS = [
   },
   {
     id: 'd2',
-    perfilId: PERFIL_ID,
-    perfilNome: 'Gestão de acessos',
+    perfilId: OUTRO_PERFIL_ID,
+    perfilNome: 'Operador de inscrições',
     codigo: 'autorizacao:concessoes:administrar',
     tipo: 'composicao_faltante',
     de: null,
@@ -50,10 +51,9 @@ test.describe('Acessos — divergências da governança', () => {
     await expect(linhas.filter({ hasText: 'Permissão que falta na composição' })).toContainText(
       '—',
     );
-    await expect(page.getByRole('link', { name: 'Gestão de acessos' }).first()).toHaveAttribute(
-      'href',
-      `/acessos/perfis/${PERFIL_ID}`,
-    );
+    await expect(
+      page.getByRole('table').getByRole('link', { name: 'Gestão de acessos' }),
+    ).toHaveAttribute('href', `/acessos/perfis/${PERFIL_ID}`);
     expect(leituras).toHaveLength(1);
     expect(leituras[0]).toMatchObject({
       metodo: 'GET',
@@ -61,16 +61,17 @@ test.describe('Acessos — divergências da governança', () => {
     });
   });
 
-  test('a proteção de dados lê as divergências e abre o perfil pelo link', async ({ page }) => {
+  test('a proteção de dados lê as divergências e vê o link de cada perfil', async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
     await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_SO_APROVA);
     await mockRota(page, ROTA, () => ({ status: 200, corpo: DIVERGENCIAS }));
     await page.goto('/acessos/governanca/divergencias');
 
-    await expect(page.getByRole('table')).toBeVisible();
-    const links = page.getByRole('link', { name: 'Gestão de acessos' });
-    await expect(links).toHaveCount(DIVERGENCIAS.length);
-    await expect(links.first()).toHaveAttribute('href', `/acessos/perfis/${PERFIL_ID}`);
+    const linhas = page.getByRole('table').getByRole('row');
+    for (const { perfilId, perfilNome, codigo } of DIVERGENCIAS) {
+      const link = linhas.filter({ hasText: codigo }).getByRole('link', { name: perfilNome });
+      await expect(link).toHaveAttribute('href', `/acessos/perfis/${perfilId}`);
+    }
   });
 
   test('sem divergências, diz que nenhuma foi encontrada', async ({ page }) => {
