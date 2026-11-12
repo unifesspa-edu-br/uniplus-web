@@ -23,7 +23,7 @@ const QUEM_DECIDE: Readonly<Record<string, string>> = {
   'gestor-de-acessos': 'Gestão de acessos',
 };
 
-/** O que o filtro da lista oferece; a API não filtra, e a lista aplica o filtro à página lida. */
+/** O que o filtro da lista oferece; a API filtra pela situação, e "todas" não manda o parâmetro. */
 export const OPCOES_DO_FILTRO = [
   { valor: 'todas', texto: 'Todas' },
   { valor: 'em_andamento', texto: 'Abertas' },
