@@ -6,7 +6,9 @@ import {
   REVISAO_ID,
   RESUMO_ABERTO,
   RESUMO_ENCERRADO,
+  concessaoRevogada,
   itemDaRevisao,
+  mockConcessao,
   mockRevisoes,
   revisaoAberta,
   FERNANDA,
@@ -47,17 +49,23 @@ test.describe('Acessos — revisão periódica', () => {
   test('a lista mostra abertas e encerradas, filtra por situação e abre o resultado da encerrada', async ({
     page,
   }) => {
-    await abrir(page, PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES, '/acessos/revisoes', {
-      lista: [RESUMO_ABERTO, RESUMO_ENCERRADO],
-      detalhe: [
-        () => ({ ...RESUMO_ENCERRADO, itens: [itemDaRevisao('i9', FERNANDA, ITEM_DECIDIDO)] }),
-      ],
-    });
+    const chamadas = await abrir(
+      page,
+      PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES,
+      '/acessos/revisoes',
+      {
+        lista: [RESUMO_ABERTO, RESUMO_ENCERRADO],
+        detalhe: [
+          () => ({ ...RESUMO_ENCERRADO, itens: [itemDaRevisao('i9', FERNANDA, ITEM_DECIDIDO)] }),
+        ],
+      },
+    );
 
     await expect(page.getByRole('heading', { name: 'Revisões de acesso', level: 1 })).toBeVisible();
     await expect(page.locator('tr[data-revisao-id]')).toHaveCount(2);
     await page.getByLabel('Situação').selectOption('concluida');
     await expect(page.locator('tr[data-revisao-id]')).toHaveCount(1);
+    expect(chamadas.at(-1)?.consulta.get('situacao')).toBe('concluida');
     await expect(page.getByRole('button', { name: 'Abrir revisão' })).toHaveCount(0);
 
     await page.locator(`tr[data-revisao-id="${RESUMO_ENCERRADO.id}"] a`).click();
@@ -94,6 +102,31 @@ test.describe('Acessos — revisão periódica', () => {
 
     await expect(page.locator('tr[data-item-id]')).toHaveCount(4);
     await expect(page.getByRole('button', { name: /^(Confirmar|Revogar)/ })).toHaveCount(0);
+  });
+
+  test('no item revogado, o Encarregado de dados chega à concessão e lê o motivo', async ({
+    page,
+  }) => {
+    const motivo = 'Deixou de avaliar recursos neste processo.';
+    const revogado = itemDaRevisao('i9', FERNANDA, {
+      ...ITEM_DECIDIDO,
+      situacao: 'revogada',
+      concessaoId: 'concessao-i9',
+    });
+    await mockConcessao(page, concessaoRevogada('concessao-i9', motivo));
+    await abrir(page, PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES, DETALHE, {
+      detalhe: [() => ({ ...RESUMO_ABERTO, itens: [revogado] })],
+    });
+
+    await linha(page, 'i9')
+      .getByRole('link', { name: /^Ver a concessão de Fernanda/ })
+      .click();
+
+    await expect(
+      page.getByRole('heading', { name: 'Concessão de acesso', level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByText(motivo)).toBeVisible();
+    await expect(page.getByRole('main').getByRole('button')).toHaveCount(0);
   });
 
   test('o decisor muda entre a leitura e a decisão: mostra o título e recarrega o item', async ({
@@ -207,6 +240,25 @@ test.describe('Acessos — revisão periódica: acessibilidade', () => {
       await expect(acoes(page, 'i1').first()).toBeVisible();
     });
   }
+
+  test('a concessão com o motivo, sem violação WCAG 2.1 AA e sem rolagem horizontal em 320 px', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await mockConcessao(page, concessaoRevogada('concessao-i9', 'Mudou de setor.'));
+    await abrir(
+      page,
+      PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES,
+      '/acessos/concessoes/concessao-i9',
+      {
+        detalhe: [revisaoAberta],
+      },
+    );
+    await expect(page.getByText('Mudou de setor.')).toBeVisible();
+
+    await semViolacoes(page);
+    await assertReflowContract(page);
+  });
 
   test('o diálogo de revogação prende o foco e é operável pelo teclado', async ({ page }) => {
     await abrir(page, PERMISSOES_DA_BETINA_CONDUZ_REVISOES, DETALHE, { detalhe: [revisaoAberta] });
