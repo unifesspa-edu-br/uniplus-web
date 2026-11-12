@@ -48,7 +48,7 @@ describe('etapa da proteção de dados da janela', () => {
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
     expect(etapa.querySelector('tr[data-concessao-id="c1"]')).not.toBeNull();
     expect(etapa.querySelector('tr[data-concessao-id="c4"]')).toBeNull();
-    expect(etapa.textContent).toContain('Passa pela proteção de dados.');
+    expect(etapa.textContent).toContain('Passa pelo Representante do controlador.');
   });
 
   it('não envia sem nenhuma escolha e diz por quê', async () => {
@@ -74,7 +74,7 @@ describe('etapa da proteção de dados da janela', () => {
       { decisoes: [{ concessaoId: 'c2', decisao: 'migrar' }], confirmacaoDeExclusao: false },
       expect.anything(),
     );
-    expect(notificacoes.success).toHaveBeenCalledWith('Decisões da proteção de dados enviadas');
+    expect(notificacoes.success).toHaveBeenCalledWith('Decisões do Representante do controlador enviadas');
   });
 
   it('migra algumas e recusa outras no mesmo envio, com a confirmação da revogação', async () => {
@@ -151,7 +151,7 @@ describe('etapa da proteção de dados da janela', () => {
     const { host } = await abrirJanela(JANELA, [GESTAO_DE_ACESSOS]);
 
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
-    expect(etapa.textContent).toContain('a decisão cabe à proteção de dados');
+    expect(etapa.textContent).toContain('a decisão cabe ao Representante do controlador');
     expect(etapa.querySelector('input[type="radio"]')).toBeNull();
     expect(botao(etapa, 'Enviar as decisões')).toBeUndefined();
   });

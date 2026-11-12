@@ -27,9 +27,9 @@ describe('SuspensaoDoPerfilComponent', () => {
     const texto = abrir(SUSPENSAO);
 
     expect(texto).toContain('Desde 09/11/2026');
-    expect(texto).toContain('por proteção de dados');
+    expect(texto).toContain('por decisão do Representante do controlador');
     expect(texto).toContain('Retomada pela gestão de acessos: decidida');
-    expect(texto).toContain('Retomada pela proteção de dados: aguarda a decisão');
+    expect(texto).toContain('Retomada pelo Representante do controlador: aguarda a decisão');
   });
 
   it('mantém a etapa já decidida que deixou de ser exigida, dizendo que não é mais exigida', () => {
@@ -40,7 +40,7 @@ describe('SuspensaoDoPerfilComponent', () => {
     });
 
     expect(texto).toContain('Retomada pela gestão de acessos: aguarda a decisão');
-    expect(texto).toContain('Retomada pela proteção de dados: decidida; não é mais exigida');
+    expect(texto).toContain('Retomada pelo Representante do controlador: decidida; não é mais exigida');
   });
 
   it('não repete a etapa exigida e decidida entre as dispensadas', () => {

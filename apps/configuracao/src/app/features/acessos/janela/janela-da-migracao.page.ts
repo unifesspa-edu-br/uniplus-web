@@ -41,7 +41,7 @@ import { TabelaDaJanelaComponent } from './tabela-da-janela.component';
 const ID_DO_TITULO = 'cfg-janela-titulo';
 const { autorizacao } = PERMISSAO;
 
-/** A janela de migração de um perfil: o lote, as retidas, a proteção de dados, o encerramento e o prazo. */
+/** A janela de migração de um perfil: o lote, as retidas, a etapa de proteção de dados, o encerramento e o prazo. */
 @Component({
   selector: 'cfg-janela-da-migracao-page',
   standalone: true,

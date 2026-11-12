@@ -160,6 +160,14 @@ describe('JanelaDaMigracaoPage', () => {
     });
   });
 
+    it('diz que a versão com permissão pessoal ou sensível passa pelo Representante do controlador', async () => {
+      const { host } = await abrirJanela(LOTE);
+
+      expect(host.querySelector('.page-header__desc')?.textContent?.replace(/\s+/g, ' ')).toContain(
+        'pessoal ou sensível, do Representante do controlador.',
+      );
+    });
+
   describe('lote da gestão de acessos', () => {
     it('lista cada concessão da versão anterior com migrar e recusar, e deixa a própria retida sem ação', async () => {
       const { host } = await abrirJanela(LOTE);

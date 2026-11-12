@@ -85,7 +85,7 @@ describe('PerfilDetalhePage', () => {
 
     expect(host.querySelector('.cfg-tags')?.textContent).toContain('Suspenso');
     expect(host.querySelector('cfg-suspensao-do-perfil')?.textContent).toContain(
-      'Retomada pela proteção de dados: aguarda a decisão',
+      'Retomada pelo Representante do controlador: aguarda a decisão',
     );
   });
 

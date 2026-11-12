@@ -4,7 +4,7 @@ import { formaDoEncerramento, situacaoDaJanela, situacaoDoItem } from './rotulos
 describe('rótulos da janela', () => {
   it('traduz a situação da concessão e devolve o código desconhecido como veio', () => {
     expect(situacaoDoItem('aguardando_protecao_de_dados').texto).toBe(
-      'Aguarda a proteção de dados',
+      'Aguarda o Representante do controlador',
     );
     expect(situacaoDoItem('recusada').variante).toBe('danger');
     expect(situacaoDoItem('nova').texto).toBe('nova');

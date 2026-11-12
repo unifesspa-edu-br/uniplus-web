@@ -50,7 +50,7 @@ describe('trilha da contenção', () => {
       detalheDoRegistro(
         registro({ etapa: 'protecao_de_dados', motivo: 'Incidente de segurança.' }),
       ),
-    ).toBe('Determinada pela proteção de dados. Motivo: Incidente de segurança.');
+    ).toBe('Determinada pelo Representante do controlador. Motivo: Incidente de segurança.');
   });
 
   it('descreve a decisão da etapa com o que valia no momento dela', () => {
