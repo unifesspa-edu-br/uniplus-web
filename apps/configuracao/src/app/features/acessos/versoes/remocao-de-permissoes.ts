@@ -52,15 +52,7 @@ export class RemocaoDePermissoes {
   }
 
   confirmar(perfilId: string): Promise<void> {
-    this.tentou.set(true);
-    this.erro.set(null);
-    descartarRecusasDoServidor(this.form);
-    if (this.selecionadas().size === 0) this.erroDasPermissoes.set(SEM_PERMISSAO);
-    if (this.form.invalid) this.form.markAllAsTouched();
-    if (this.form.invalid || this.selecionadas().size === 0) {
-      this.conferencias.update((n) => n + 1);
-      return Promise.resolve();
-    }
+    if (!this.conferir()) return Promise.resolve();
     return this.escrita.executar(
       'remocao',
       () => this.remover(perfilId),
@@ -69,6 +61,18 @@ export class RemocaoDePermissoes {
         this.conferencias.update((n) => n + 1);
       },
     );
+  }
+
+  /** Confere o formulário e as permissões marcadas antes do envio; a falha pede o foco. */
+  private conferir(): boolean {
+    this.tentou.set(true);
+    this.erro.set(null);
+    descartarRecusasDoServidor(this.form);
+    if (this.selecionadas().size === 0) this.erroDasPermissoes.set(SEM_PERMISSAO);
+    if (this.form.invalid) this.form.markAllAsTouched();
+    const valido = this.form.valid && this.selecionadas().size > 0;
+    if (!valido) this.conferencias.update((n) => n + 1);
+    return valido;
   }
 
   private async remover(perfilId: string): Promise<void> {

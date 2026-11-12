@@ -16,37 +16,51 @@ export const APROVACAO = {
   sensibilidade: 'pessoal',
 } as const;
 
+const VERSAO_PENDENTE = {
+  versaoId: 'v2',
+  numero: 2,
+  nome: 'Operador de inscrições',
+  descricao: 'Opera as inscrições.',
+  protocolo: 'P-2/2026',
+  documentoId: 'd2',
+  situacaoDoDocumento: 'verificado',
+  criadaEm: '2026-11-02T12:00:00Z',
+  expiraEm: '2026-11-16T12:00:00Z',
+  etapaAtual: 'gestao_de_acessos',
+  exigeProtecaoDeDados: true,
+  criadorTemConcessao: false,
+  propostaPorQuemLe: false,
+} as const satisfies Partial<VersaoPendenteDto>;
+
+/** Uma versão pendente na gestão de acessos; as listas são novas a cada chamada. */
 export function versaoPendente(parcial: Partial<VersaoPendenteDto> = {}): VersaoPendenteDto {
   return {
-    versaoId: 'v2',
-    numero: 2,
-    nome: 'Operador de inscrições',
-    descricao: 'Opera as inscrições.',
+    ...VERSAO_PENDENTE,
     permissoes: [LEITURA, ESCRITA, APROVACAO],
-    protocolo: 'P-2/2026',
-    documentoId: 'd2',
-    situacaoDoDocumento: 'verificado',
-    criadaEm: '2026-11-02T12:00:00Z',
-    expiraEm: '2026-11-16T12:00:00Z',
-    etapaAtual: 'gestao_de_acessos',
-    exigeProtecaoDeDados: true,
     acrescimo: [APROVACAO],
     remocao: [],
     decisoes: [],
-    criadorTemConcessao: false,
-    propostaPorQuemLe: false,
     ...parcial,
   };
 }
 
+const PERFIL_DO_DETALHE = {
+  id: 'p1',
+  nome: 'Operador de inscrições',
+  descricao: 'Opera as inscrições.',
+  ativo: true,
+  governanca: null,
+  sensibilidade: 'interno',
+  versaoPendente: null,
+  ultimaVersaoEncerradaSemVigor: null,
+  suspensao: null,
+  desativadoDesde: null,
+} as const satisfies Partial<PerfilDto>;
+
+/** Um perfil ativo com a versão 1 em vigor; a composição é nova a cada chamada. */
 export function perfilDoDetalhe(parcial: Partial<PerfilDto> = {}): PerfilDto {
   return {
-    id: 'p1',
-    nome: 'Operador de inscrições',
-    descricao: 'Opera as inscrições.',
-    ativo: true,
-    governanca: null,
-    sensibilidade: 'interno',
+    ...PERFIL_DO_DETALHE,
     composicaoEmVigor: {
       versaoId: 'v1',
       numero: 1,
@@ -55,10 +69,6 @@ export function perfilDoDetalhe(parcial: Partial<PerfilDto> = {}): PerfilDto {
       documentoVerificadoEm: '2026-10-20T12:00:00Z',
       desde: '2026-10-21T12:00:00Z',
     },
-    versaoPendente: null,
-    ultimaVersaoEncerradaSemVigor: null,
-    suspensao: null,
-    desativadoDesde: null,
     ...parcial,
   };
 }
