@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { RevisaoResumoDto } from '@uniplus/shared-data/autorizacao';
 import { ok } from '../testes';
@@ -76,5 +76,22 @@ describe('lista de revisões: nenhum dado antigo à vista', () => {
     expect(linhas(host)).toHaveLength(0);
     expect(botoes(host)).not.toContain('Próximo');
     expect(botoes(host)).not.toContain('Anterior');
+  });
+
+  it('ao trocar a situação, esvazia a tabela enquanto a nova leitura não responde', async () => {
+    let vez = 0;
+    leituras.mockImplementation(() => (vez++ === 0 ? of(ok([RESUMO])) : NEVER));
+    const host = await abrirLista();
+    expect(linhas(host)).toHaveLength(1);
+
+    const filtro = host.querySelector<HTMLSelectElement>('select');
+    if (filtro === null) throw new Error('filtro ausente');
+    filtro.value = 'concluida';
+    filtro.dispatchEvent(new Event('change'));
+    await assentar();
+
+    expect(leituras).toHaveBeenCalledTimes(2);
+    expect(linhas(host)).toHaveLength(0);
+    expect(host.textContent).toContain('Carregando');
   });
 });

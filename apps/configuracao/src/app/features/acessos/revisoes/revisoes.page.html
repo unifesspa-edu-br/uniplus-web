@@ -42,7 +42,7 @@
     </div>
     <label class="field">
       <span class="field__label">Situação</span>
-      <select class="select" [ngModel]="store.filtro()" (ngModelChange)="store.filtro.set($event)">
+      <select class="select" [ngModel]="store.filtro()" (ngModelChange)="store.filtrarPor($event)">
         @for (opcao of opcoes; track opcao.valor) {
         <option [value]="opcao.valor">{{ opcao.texto }}</option>
         }
