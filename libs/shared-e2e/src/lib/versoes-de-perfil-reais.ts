@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 
 import {
   GESTOR_DE_ACESSOS,
-  PROTECAO_DE_DADOS,
+  REPRESENTANTE_DO_CONTROLADOR,
   SEGUNDO_GESTOR_DE_ACESSOS,
   acharNaListagem,
   chamarApi,
@@ -34,7 +34,9 @@ export interface VersaoPendenteLida {
 export interface PerfilLido {
   readonly id: string;
   readonly nome: string;
-  readonly composicaoEmVigor: { readonly permissoes: readonly { readonly codigo: string }[] } | null;
+  readonly composicaoEmVigor: {
+    readonly permissoes: readonly { readonly codigo: string }[];
+  } | null;
   readonly versaoPendente: VersaoPendenteLida | null;
 }
 
@@ -59,7 +61,10 @@ export interface RemocaoDaProposta {
 }
 
 const MOTIVO_DA_SIMULACAO = 'Recomposição do perfil pela simulação ponta a ponta.';
-const REMOCAO_DA_SIMULACAO: RemocaoDaProposta = { motivo: MOTIVO_DA_SIMULACAO, categoria: 'erro_de_composicao' };
+const REMOCAO_DA_SIMULACAO: RemocaoDaProposta = {
+  motivo: MOTIVO_DA_SIMULACAO,
+  categoria: 'erro_de_composicao',
+};
 
 /** Os códigos das permissões em vigor do perfil, ou nenhum quando ainda não há versão em vigor. */
 export async function codigosEmVigor(perfilId: string): Promise<string[]> {
@@ -73,28 +78,45 @@ export async function proporVersao(
   perfilId: string | null,
   remocao: RemocaoDaProposta | null = null,
 ): Promise<EnvioDaVersao> {
-  const corpo = {
-    ...dados,
-    permissoes: ordenadas(dados.permissoes),
-    tamanhoDoDocumento: PDF_MINIMO.length,
-    ...(perfilId === null
-      ? {}
-      : { motivoDaRemocao: remocao?.motivo ?? null, categoriaDaRemocao: remocao?.categoria ?? null }),
-  };
-  const resposta =
-    perfilId === null
-      ? await chamarApi<EnvioDaVersao>(AUTOR_DAS_VERSOES, 'POST', RAIZ, { corpo })
-      : await chamarApi<EnvioDaVersao>(AUTOR_DAS_VERSOES, 'POST', `${RAIZ}/${perfilId}/versoes`, { corpo });
-  expect(resposta.status, `propor a versão de "${dados.nome}": ${JSON.stringify(resposta.corpo)}`).toBe(201);
+  const caminho = perfilId === null ? RAIZ : `${RAIZ}/${perfilId}/versoes`;
+  const corpo = corpoDaProposta(dados, perfilId, remocao);
+  const resposta = await chamarApi<EnvioDaVersao>(AUTOR_DAS_VERSOES, 'POST', caminho, { corpo });
+  expect(
+    resposta.status,
+    `propor a versão de "${dados.nome}": ${JSON.stringify(resposta.corpo)}`,
+  ).toBe(201);
   return resposta.corpo;
+}
+
+/** A proposta com as permissões em ordem; a versão nova leva o motivo e a categoria da remoção. */
+function corpoDaProposta(
+  dados: DadosDaVersao,
+  perfilId: string | null,
+  remocao: RemocaoDaProposta | null,
+) {
+  const permissoes = ordenadas(dados.permissoes);
+  const daRemocao = perfilId === null ? {} : dadosDaRemocao(remocao);
+  return { ...dados, permissoes, tamanhoDoDocumento: PDF_MINIMO.length, ...daRemocao };
+}
+
+function dadosDaRemocao(remocao: RemocaoDaProposta | null) {
+  return {
+    motivoDaRemocao: remocao?.motivo ?? null,
+    categoriaDaRemocao: remocao?.categoria ?? null,
+  };
 }
 
 /** Leva o PDF ao armazenamento e confirma o envio; a API verifica o arquivo em seguida. */
 export async function enviarDocumentoDaVersao(envio: EnvioDaVersao): Promise<void> {
   const etag = await enviarPelaUrlAssinada(envio.urlDeEnvio, envio.tipoDeMidia, PDF_MINIMO);
   const base = `${RAIZ}/${envio.perfilId}/versoes/${envio.versaoId}`;
-  const confirmado = await chamarApi(AUTOR_DAS_VERSOES, 'POST', `${base}/documento/confirmacao`, { corpo: { etag } });
-  expect(confirmado.status, `confirmar o documento da versão ${envio.versaoId}: ${JSON.stringify(confirmado.corpo)}`).toBe(200);
+  const confirmado = await chamarApi(AUTOR_DAS_VERSOES, 'POST', `${base}/documento/confirmacao`, {
+    corpo: { etag },
+  });
+  expect(
+    confirmado.status,
+    `confirmar o documento da versão ${envio.versaoId}: ${JSON.stringify(confirmado.corpo)}`,
+  ).toBe(200);
 }
 
 /** Espera a verificação do documento, que é assíncrona, e devolve a versão pendente já aprovável. */
@@ -115,25 +137,54 @@ export function decidirVersao(
   versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
   etapa: 'gestao_de_acessos' | 'protecao_de_dados',
 ): Promise<RespostaDaApi> {
-  return chamarApi(quem, 'POST', `${RAIZ}/${versao.perfilId}/versoes/${versao.versaoId}/aprovacao`, { corpo: { etapa } });
+  return chamarApi(
+    quem,
+    'POST',
+    `${RAIZ}/${versao.perfilId}/versoes/${versao.versaoId}/aprovacao`,
+    { corpo: { etapa } },
+  );
 }
 
 /** Aprova a versão pendente nas etapas que ela exige, cada uma por uma pessoa que não a propôs. */
-export async function aprovarVersaoPendente(perfilId: string, versao: VersaoPendenteLida): Promise<void> {
+export async function aprovarVersaoPendente(
+  perfilId: string,
+  versao: VersaoPendenteLida,
+): Promise<void> {
   const identificada = { perfilId, versaoId: versao.versaoId };
-  const funcional = await decidirVersao(GESTOR_DE_ACESSOS, identificada, 'gestao_de_acessos');
-  expect(funcional.status, `aprovar a versão ${versao.versaoId} na gestão de acessos: ${JSON.stringify(funcional.corpo)}`).toBe(200);
+  await aprovarNaEtapa(GESTOR_DE_ACESSOS, identificada, 'gestao_de_acessos');
   if (!versao.exigeProtecaoDeDados) return;
-  const protecao = await decidirVersao(PROTECAO_DE_DADOS, identificada, 'protecao_de_dados');
-  expect(protecao.status, `aprovar a versão ${versao.versaoId} na proteção de dados: ${JSON.stringify(protecao.corpo)}`).toBe(200);
+  await aprovarNaEtapa(REPRESENTANTE_DO_CONTROLADOR, identificada, 'protecao_de_dados');
+}
+
+const NOME_DA_ETAPA = {
+  gestao_de_acessos: 'gestão de acessos',
+  protecao_de_dados: 'proteção de dados',
+};
+
+async function aprovarNaEtapa(
+  quem: string,
+  versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
+  etapa: keyof typeof NOME_DA_ETAPA,
+): Promise<void> {
+  const resposta = await decidirVersao(quem, versao, etapa);
+  const contexto = `aprovar a versão ${versao.versaoId} na ${NOME_DA_ETAPA[etapa]}`;
+  expect(resposta.status, `${contexto}: ${JSON.stringify(resposta.corpo)}`).toBe(200);
 }
 
 /** Cancela a versão pendente que uma execução interrompida deixou, para a próxima proposta caber. */
 export async function cancelarVersaoPendente(perfilId: string, versaoId: string): Promise<void> {
-  const cancelada = await chamarApi(AUTOR_DAS_VERSOES, 'POST', `${RAIZ}/${perfilId}/versoes/${versaoId}/cancelamento`, {
-    corpo: { motivo: 'Execução anterior da simulação interrompida.' },
-  });
-  expect(cancelada.status, `cancelar a versão ${versaoId}: ${JSON.stringify(cancelada.corpo)}`).toBe(200);
+  const cancelada = await chamarApi(
+    AUTOR_DAS_VERSOES,
+    'POST',
+    `${RAIZ}/${perfilId}/versoes/${versaoId}/cancelamento`,
+    {
+      corpo: { motivo: 'Execução anterior da simulação interrompida.' },
+    },
+  );
+  expect(
+    cancelada.status,
+    `cancelar a versão ${versaoId}: ${JSON.stringify(cancelada.corpo)}`,
+  ).toBe(200);
 }
 
 interface PerfilListado {
@@ -166,7 +217,10 @@ export async function removerPermissoes(
   const removida = await chamarApi(AUTOR_DAS_VERSOES, 'POST', `${RAIZ}/${perfilId}/remocoes`, {
     corpo: { permissoes: ordenadas(permissoes), ...remocao },
   });
-  expect(removida.status, `remover permissões do perfil ${perfilId}: ${JSON.stringify(removida.corpo)}`).toBe(200);
+  expect(
+    removida.status,
+    `remover permissões do perfil ${perfilId}: ${JSON.stringify(removida.corpo)}`,
+  ).toBe(200);
 }
 
 async function proporEAprovar(
@@ -197,12 +251,18 @@ export async function garantirPerfil(
     (perfil) => perfil.nome === nome,
   );
   const dados = { nome, descricao, permissoes, protocolo: `E2E-${Date.now()}` };
-  if (existente === undefined) return proporEAprovar(dados, null, null);
-  const perfil = await lerPerfil(existente.id);
-  const emVigor = await codigosEmVigor(perfil.id);
-  const diferenca = diferencaDeComposicao(emVigor, permissoes);
+  return existente === undefined
+    ? proporEAprovar(dados, null, null)
+    : recompor(existente.id, dados);
+}
+
+/** Leva o perfil que existe à composição pedida: nada, só retirada, ou versão nova aprovada. */
+async function recompor(perfilId: string, dados: DadosDaVersao): Promise<string> {
+  const perfil = await lerPerfil(perfilId);
+  const diferenca = diferencaDeComposicao(await codigosEmVigor(perfil.id), dados.permissoes);
   if (diferenca.acrescimo.length === 0 && diferenca.remocao.length === 0) return perfil.id;
-  if (perfil.versaoPendente) await cancelarVersaoPendente(perfil.id, perfil.versaoPendente.versaoId);
+  if (perfil.versaoPendente)
+    await cancelarVersaoPendente(perfil.id, perfil.versaoPendente.versaoId);
   if (diferenca.acrescimo.length === 0) {
     await removerPermissoes(perfil.id, diferenca.remocao);
     return perfil.id;

@@ -1,4 +1,9 @@
-export { resetPasswords, keycloakLogin, keycloakLogout, expectUserInHeader } from './lib/keycloak-login';
+export {
+  resetPasswords,
+  keycloakLogin,
+  keycloakLogout,
+  expectUserInHeader,
+} from './lib/keycloak-login';
 export { createGlobalSetup, setupKeycloakAuth } from './lib/keycloak-auth-fixture';
 export type { KeycloakAuthSetupOptions } from './lib/keycloak-auth-fixture';
 export {
@@ -17,7 +22,7 @@ export {
   acharNaListagem,
   API_URL,
   GESTOR_DE_ACESSOS,
-  PROTECAO_DE_DADOS,
+  REPRESENTANTE_DO_CONTROLADOR,
   SEGUNDO_GESTOR_DE_ACESSOS,
   chamarApi,
   entrarComoPersona,
