@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 
 import {
   GESTOR_DE_ACESSOS,
-  PROTECAO_DE_DADOS,
+  REPRESENTANTE_DO_CONTROLADOR,
   SEGUNDO_GESTOR_DE_ACESSOS,
   SOLICITANTE_DE_PEDIDOS,
   acharNaListagem,
@@ -64,7 +64,7 @@ async function pedidoDaConcessao(
 
 /** Perfil de governança "Representante do controlador", que decide a segunda etapa. */
 const PERFIL_DO_REPRESENTANTE = '019a0000-0000-7000-8000-000000000002';
-/** Quem decide a segunda etapa dos pedidos em que o titular, `PROTECAO_DE_DADOS`, é beneficiário. */
+/** Quem decide a segunda etapa dos pedidos em que o titular, `REPRESENTANTE_DO_CONTROLADOR`, é beneficiário. */
 const SUBSTITUTO_DO_REPRESENTANTE = 'caroline.jesus';
 let representantesGuardados: Promise<void> | undefined;
 
@@ -85,7 +85,7 @@ function garantirRepresentantes(): Promise<void> {
 }
 
 async function designarRepresentantes(): Promise<void> {
-  await garantirConcessao(PROTECAO_DE_DADOS, PERFIL_DO_REPRESENTANTE, '');
+  await garantirConcessao(REPRESENTANTE_DO_CONTROLADOR, PERFIL_DO_REPRESENTANTE, '');
   await garantirConcessao(SUBSTITUTO_DO_REPRESENTANTE, PERFIL_DO_REPRESENTANTE, '');
 }
 
@@ -142,7 +142,9 @@ interface AnexoParaEnvio {
 const POR_QUEM_APROVA_COMO_GESTOR = (p: PedidoDeConcessao): string =>
   p.beneficiario === GESTOR_DE_ACESSOS ? SEGUNDO_GESTOR_DE_ACESSOS : GESTOR_DE_ACESSOS;
 const POR_QUEM_APROVA_COMO_PROTECAO = (p: PedidoDeConcessao): string =>
-  p.beneficiario === PROTECAO_DE_DADOS ? SUBSTITUTO_DO_REPRESENTANTE : PROTECAO_DE_DADOS;
+  p.beneficiario === REPRESENTANTE_DO_CONTROLADOR
+    ? SUBSTITUTO_DO_REPRESENTANTE
+    : REPRESENTANTE_DO_CONTROLADOR;
 
 const postar = (quem: string, caminho: string, corpo?: unknown): Promise<RespostaDaApi> =>
   chamarApi(quem, 'POST', caminho, { corpo });
