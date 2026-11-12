@@ -31,7 +31,9 @@ export {
   AUTH_CONFIG,
   AUTORIZACAO_BASE_PATH,
   PROFILE_BASE_PATH,
+  PROVEDOR_DE_LOGIN,
 } from './tokens/auth.tokens';
+export type { ProvedorDeLogin } from './tokens/auth.tokens';
 
 // Components
 export { AuthErrorBannerComponent } from './components/auth-error-banner.component';
