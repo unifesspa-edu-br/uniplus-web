@@ -61,18 +61,16 @@ test.describe('Acessos — divergências da governança', () => {
     });
   });
 
-  test('a proteção de dados lê as divergências, mas sem o link do perfil que ela não abre', async ({
-    page,
-  }) => {
+  test('a proteção de dados lê as divergências e abre o perfil pelo link', async ({ page }) => {
     await mockConfiguracaoRuntimeConfig(page);
     await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_SO_APROVA);
     await mockRota(page, ROTA, () => ({ status: 200, corpo: DIVERGENCIAS }));
     await page.goto('/acessos/governanca/divergencias');
 
-    await expect(
-      page.getByRole('row').filter({ hasText: 'Escopo' }).or(page.getByRole('table')),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Gestão de acessos' })).toHaveCount(0);
+    await expect(page.getByRole('table')).toBeVisible();
+    const links = page.getByRole('link', { name: 'Gestão de acessos' });
+    await expect(links).toHaveCount(DIVERGENCIAS.length);
+    await expect(links.first()).toHaveAttribute('href', `/acessos/perfis/${PERFIL_ID}`);
   });
 
   test('sem divergências, diz que nenhuma foi encontrada', async ({ page }) => {
