@@ -78,7 +78,6 @@ const ETAPA: Readonly<Record<string, string>> = {
 
 const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {
   designacao_de_protecao_de_dados: 'designação do Representante do controlador',
-  beneficiario_ja_tem_protecao_de_dados: 'a pessoa beneficiada já é Representante do controlador',
 };
 
 export function motivoDaDispensa(codigo: string): string {

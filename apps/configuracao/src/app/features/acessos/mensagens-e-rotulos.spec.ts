@@ -131,15 +131,11 @@ describe('detalhe da trilha', () => {
     expect(detalheDaTrilha(null)).toBe('—');
   });
 
-  it('traduz a etapa e a dispensa da decisão da migração e tira o identificador da janela', () => {
+  it('traduz a etapa da decisão da migração e tira o identificador da janela', () => {
     const janela = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
 
-    expect(
-      detalheDaTrilha(
-        `Etapa: gestao_de_acessos. Janela: ${janela}. Dispensa: beneficiario_ja_tem_protecao_de_dados.`,
-      ),
-    ).toBe(
-      'Etapa: Gestão de acessos. Dispensa: a pessoa beneficiada já é Representante do controlador.',
+    expect(detalheDaTrilha(`Etapa: gestao_de_acessos. Janela: ${janela}.`)).toBe(
+      'Etapa: Gestão de acessos.',
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
   });

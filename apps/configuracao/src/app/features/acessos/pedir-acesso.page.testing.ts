@@ -32,7 +32,7 @@ export const PERFIL_DE_GOVERNANCA = {
   ...PERFIL_INSTITUCIONAL,
   id: 'perfil-3',
   nome: 'Representante do controlador',
-  governanca: 'protecao-de-dados',
+  governanca: 'representante-do-controlador',
 };
 
 export function dublesDoPedirAcesso() {

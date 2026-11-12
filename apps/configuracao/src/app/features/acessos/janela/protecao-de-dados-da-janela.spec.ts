@@ -24,13 +24,12 @@ const naEtapa = (concessaoId: string, beneficiarioNome: string) =>
   });
 const BETINA = naEtapa('c1', 'Betina Teste');
 const LEANDRO = naEtapa('c2', 'Leandro Teste');
-const DISPENSADA = itemDaJanela({
+const MIGRADA = itemDaJanela({
   concessaoId: 'c4',
   beneficiarioNome: 'Aline Teste',
   situacao: 'migrada',
-  dispensa: 'beneficiario_ja_tem_protecao_de_dados',
 });
-const JANELA = janelaDeMigracao({ loteEnviado: true, itens: [BETINA, LEANDRO, DISPENSADA] });
+const JANELA = janelaDeMigracao({ loteEnviado: true, itens: [BETINA, LEANDRO, MIGRADA] });
 
 describe('etapa da proteção de dados da janela', () => {
   beforeEach(() => {
@@ -43,16 +42,13 @@ describe('etapa da proteção de dados da janela', () => {
     document.body.innerHTML = '';
   });
 
-  it('lista as concessões que aguardam a etapa e explica a dispensa das demais', async () => {
+  it('lista só as concessões que aguardam a etapa', async () => {
     const { host } = await abrirJanela(JANELA);
 
     const etapa = presente(host.querySelector('cfg-protecao-de-dados-da-janela'));
     expect(etapa.querySelector('tr[data-concessao-id="c1"]')).not.toBeNull();
     expect(etapa.querySelector('tr[data-concessao-id="c4"]')).toBeNull();
     expect(etapa.textContent).toContain('Passa pela proteção de dados.');
-    expect(linhaDe(host, 'c4').textContent).toContain(
-      'Dispensada: a pessoa beneficiada já exerce a proteção de dados.',
-    );
   });
 
   it('não envia sem nenhuma escolha e diz por quê', async () => {
@@ -90,7 +86,9 @@ describe('etapa da proteção de dados da janela', () => {
     await assentar();
     presente(botao(host, 'Enviar as decisões')).click();
     await assentar();
-    const dialogo = presente(host.querySelector('cfg-protecao-de-dados-da-janela cfg-exclusao-dialog'));
+    const dialogo = presente(
+      host.querySelector('cfg-protecao-de-dados-da-janela cfg-exclusao-dialog'),
+    );
     expect(dialogo.textContent).toContain('1 concessão recusada perde o acesso');
     expect(api.decidirProtecaoDeDados).not.toHaveBeenCalled();
 

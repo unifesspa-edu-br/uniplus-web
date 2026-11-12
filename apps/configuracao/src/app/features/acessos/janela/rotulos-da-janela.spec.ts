@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  dispensaDoItem,
-  formaDoEncerramento,
-  situacaoDaJanela,
-  situacaoDoItem,
-} from './rotulos-da-janela';
+import { formaDoEncerramento, situacaoDaJanela, situacaoDoItem } from './rotulos-da-janela';
 
 describe('rótulos da janela', () => {
   it('traduz a situação da concessão e devolve o código desconhecido como veio', () => {
@@ -26,13 +21,5 @@ describe('rótulos da janela', () => {
     );
     expect(formaDoEncerramento('outra')).toBe('outra');
     expect(formaDoEncerramento(null)).toBeNull();
-  });
-
-  it('explica a dispensa da proteção de dados', () => {
-    expect(dispensaDoItem('beneficiario_ja_tem_protecao_de_dados')).toBe(
-      'Dispensada: a pessoa beneficiada já exerce a proteção de dados.',
-    );
-    expect(dispensaDoItem(null)).toBeNull();
-    expect(dispensaDoItem('outra')).toBe('outra');
   });
 });
