@@ -8,7 +8,7 @@ import {
   pedidoSeed,
 } from '../support/api-de-acesso';
 import {
-  PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS,
+  PERMISSOES_DA_BETINA_REPRESENTANTE,
   PERMISSOES_DO_DIOGO,
   PERMISSOES_DO_LEANDRO,
 } from '../support/permissoes';
@@ -78,7 +78,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
     await expect(page.getByText('Aguardando o Representante do controlador').first()).toBeVisible();
 
-    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS);
+    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_REPRESENTANTE);
     await page.goto('/acessos/fila-da-protecao-de-dados');
     await page.getByRole('link', { name: /Visualizar o pedido de Analista de documentos/ }).click();
     await page.getByRole('button', { name: 'Aprovar' }).click();
