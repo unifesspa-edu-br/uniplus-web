@@ -70,6 +70,7 @@ uniplus-ds CSS-only
 - **Nunca** importar temas PrimeNG (Aura, Lara, etc.).
 - **Preferir** HTML nativo e Angular CDK; PrimeNG só com ganho claro em comportamento complexo e encapsulado.
 - **Validar** 320 px, teclado, foco visivel, tema contraste, zoom 200% e ausência de overflow horizontal.
+- **Lint de CSS** pelo `@eslint/css` com a sintaxe do Tailwind 4, no `nx lint`: fonte em `rem`/`em`, só recurso com suporte amplo e `!important` só nas camadas liberadas (`CONTRIBUTING.md` § Lint de CSS).
 - **Manter** imports TypeScript por `@uniplus/shared-*`. Imports CSS globais permanecem relativos até `shared-ui` ter exports CSS como pacote resolvivel pelo builder.
 
 ### Arquivos de referência

@@ -381,9 +381,30 @@ features/
 
 - **PrimeNG** para componentes complexos (tabelas, calendários, modais, menus)
 - **Tailwind CSS** para layout e utilitários (spacing, flex, grid, responsividade)
-- Nunca usar `!important` — ajustar especificidade ou usar variáveis CSS do PrimeNG
+- `!important` só nas camadas que precisam vencer qualquer componente (veja [Lint de CSS](#lint-de-css)); fora delas, ajustar a especificidade ou usar variáveis CSS
 - Mobile-first: começar pelo layout mobile, expandir com `md:` e `lg:`
 - Cores institucionais devem usar variáveis CSS definidas em `shared-ui`
+
+#### Lint de CSS
+
+Os `.css` passam pelo [`@eslint/css`](https://github.com/eslint/css), com a sintaxe do Tailwind 4 (`tailwind-csstree`), no mesmo `nx lint` de cada projeto. O que o lint aponta é erro e barra o CI. Valem as regras recomendadas do plugin, com estes ajustes no `eslint.config.mjs`:
+
+| Regra | O que cobra | Ajuste |
+|---|---|---|
+| `css/no-invalid-properties` | propriedade ou valor inexistente (`colr: red`) | variável CSS definida em outro arquivo, como os tokens do Uni+ DS, não é erro |
+| `css/relative-font-units` | `font-size` em `rem` ou `em`, para o texto acompanhar o zoom e a preferência de fonte (WCAG 2.1 AA) | no papel (`*-impressao.css`) a unidade é `pt` |
+| `css/use-baseline` | só recurso de CSS com suporte amplo nos navegadores | acabamento que o navegador sem suporte ignora sem prejuízo do uso fica liberado: barra de rolagem, `accent-color`, `user-select`, `resize`, `overscroll-behavior`, `::marker` e os recursos de impressão (`@page`, `print-color-adjust`, `break-after: avoid`) |
+| `css/no-important` | `!important` | liberado só nas camadas que precisam vencer qualquer componente: utilitários de leitor de tela e de impressão (`base.css`), movimento reduzido (`preferencias-do-usuario.css`) e o documento no papel (`*-impressao.css`) |
+
+```css
+/* Recusado: a fonte não acompanha a preferência de tamanho do usuário. */
+.spinner--sm { font-size: 14px; }
+
+/* Aceito. */
+.spinner--sm { font-size: 0.875rem; }
+```
+
+Liberar recurso novo ou camada nova é mudança na configuração, com o motivo no PR; comentário de supressão no CSS é proibido, como no TypeScript. O lint não mede tamanho de arquivo CSS: ele fica com a revisão ([§ Métricas de qualidade](#métricas-de-qualidade)). O VLibras (`libs/shared-ui/src/assets/`) é de terceiro e fica fora.
 
 ### Código que se explica
 

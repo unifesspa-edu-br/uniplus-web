@@ -1,0 +1,175 @@
+/* ============================================================================
+ * DOCUMENTO NO PAPEL — A4 em fundo branco, com o cabeçalho institucional e sem nada que seja de
+ * tela, seja qual for o tema. Medidas em pt e mm, as unidades do papel.
+ * ========================================================================== */
+/*
+ * Página nomeada: só a página com um documento sai em A4 com estas margens; a impressão dos demais
+ * apps não muda. A página vale para a raiz, e não para o documento: num descendente, os ancestrais
+ * ficariam na página padrão e o navegador abriria uma folha antes do documento.
+ */
+:root:has(.documento) {
+  page: documento;
+}
+@page documento {
+  size: A4;
+  margin: 15mm 12mm;
+}
+@media print {
+  :root:has(.documento) {
+    color-scheme: light;
+    --surface-page: #ffffff;
+    --surface-card: #ffffff;
+    --surface-subtle: #ffffff;
+    --border-subtle: #9ca3af;
+    --border-default: #6b7280;
+    --text-primary: #111111;
+    --text-secondary: #333333;
+    --text-muted: #333333;
+    --text-heading: #000000;
+    /* As cores de feedback, de primário e de link voltam às do tema claro: as do tema de
+       contraste são feitas para fundo escuro e somem no papel branco. */
+    --color-primary-50: #f0f5ff;
+    --color-primary-100: #d6e4ff;
+    --color-primary-600: #1351b4;
+    --color-primary-700: #0c4194;
+    --color-primary: #1351b4;
+    --color-success-50: #e7f4e9;
+    --color-success-700: #0a5a16;
+    --color-warning-50: #fef0c8;
+    --color-warning-700: #5a3e08;
+    --color-danger-50: #fcf0ee;
+    --color-danger-700: #7f1d1d;
+    --color-info-50: #eff6ff;
+    --color-info-700: #0c326f;
+    --text-link: #1351b4;
+    background: #ffffff;
+    color: #111111;
+  }
+  /*
+   * A tela trava a altura no viewport e rola por dentro (html, body, host do app, casca e `.page`): no
+   * papel isso cortaria o que passa da primeira folha. O documento solta a cadeia inteira para o
+   * conteúdo se repartir nas folhas que precisar. `body > *` é o host de qualquer app.
+   */
+  :root:has(.documento),
+  :root:has(.documento) body,
+  :root:has(.documento) body > *,
+  :root:has(.documento) ui-app-shell,
+  :root:has(.documento) .ui-app-shell,
+  :root:has(.documento) .page {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .documento {
+    gap: 4mm;
+    font-size: 10pt;
+  }
+  .documento__papel {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6mm;
+    padding-block-end: 3mm;
+    border-block-end: 1px solid #6b7280;
+  }
+  .documento__papel-identificacao {
+    text-align: end;
+  }
+  .documento__papel-identificacao p {
+    margin: 0;
+  }
+  .documento__papel-titulo {
+    font-size: 14pt;
+    font-weight: var(--weight-bold);
+  }
+  .documento__papel-sistema {
+    font-size: 8pt;
+  }
+  /*
+   * No papel o corpo é fluxo de blocos, e não grade: a grade não se parte bem entre páginas.
+   * Só a seção sem seção dentro fica inteira numa página; a que agrupa outras se parte entre elas.
+   */
+  .documento__corpo,
+  .secao-de-documento__corpo {
+    display: block;
+  }
+  /*
+   * Marca d'água: o elemento fixo se repete em todas as folhas sem ocupar espaço. Fica por cima do
+   * conteúdo e se mistura por multiplicação, para nenhum fundo branco a encobrir quando a impressão
+   * inclui planos de fundo e para o texto escuro do documento continuar escuro onde ela passa.
+   * A cor clara só chega ao papel com `print-color-adjust: exact`: na impressão econômica o Chrome
+   * escurece o texto claro e a marca passaria a cobrir o que está escrito.
+   */
+  .documento__aviso-marca {
+    position: fixed;
+    inset-block-start: 50%;
+    inset-inline-start: 50%;
+    z-index: 1;
+    mix-blend-mode: multiply;
+    inline-size: 80%;
+    margin: 0;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color: #d1d5db;
+    font-size: 28pt;
+    font-weight: var(--weight-bold);
+    line-height: 1.1;
+    text-align: center;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+  .documento__corpo > * + *,
+  .documento__corpo > .documento__fragmento > *,
+  .secao-de-documento__corpo > * + * {
+    margin-block-start: 3mm;
+  }
+  .documento__corpo > .documento__fragmento:first-child > :first-child {
+    margin-block-start: 0;
+  }
+  .secao-de-documento {
+    padding: 3mm;
+    border-color: #9ca3af;
+    border-radius: 0;
+    background: transparent;
+  }
+  .secao-de-documento:not(:has(.secao-de-documento)) {
+    break-inside: avoid;
+  }
+  .secao-de-documento--interna {
+    padding: 2mm 0 0;
+  }
+  .secao-de-documento__titulo {
+    break-after: avoid;
+  }
+  /* Tipografia de papel, em pontos: a da tela gastaria o dobro de folhas. */
+  h2.secao-de-documento__titulo {
+    font-size: 13pt;
+  }
+  h3.secao-de-documento__titulo {
+    font-size: 11pt;
+  }
+  h4.secao-de-documento__titulo,
+  h5.secao-de-documento__titulo {
+    font-size: 10pt;
+  }
+  .documento .lista-de-dados {
+    gap: 2mm;
+  }
+  .documento .dado {
+    gap: 0.5mm;
+  }
+  .documento .dado__rotulo {
+    font-size: 8pt;
+  }
+  .documento .dado__valor {
+    font-size: 10pt;
+    line-height: 1.3;
+  }
+  .documento .lista-de-dados--destaque .dado__valor {
+    font-size: 13pt;
+  }
+  .documento .u-body-sm {
+    font-size: 9pt;
+  }
+}
