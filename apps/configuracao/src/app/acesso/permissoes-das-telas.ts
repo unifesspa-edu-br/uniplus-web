@@ -23,6 +23,15 @@ export const PERMISSOES_DA_REVISAO = [
 ] as const satisfies readonly CodigoDePermissao[];
 
 /**
+ * O detalhe da concessão, com a revogação e o motivo dela, abre para quem administra as concessões
+ * e para quem só as consulta; a revisão de acessos leva até ele.
+ */
+export const PERMISSOES_DA_CONCESSAO = [
+  autorizacao.concessoesAdministrar,
+  autorizacao.concessoesConsultar,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
  * que o item visível seja sempre um clique que a guarda aceita. A ordem é a da primeira tela
  * oferecida a quem entra sem destino.

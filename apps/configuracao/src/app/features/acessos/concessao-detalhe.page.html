@@ -1,0 +1,83 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <p class="page-header__eyebrow"><a routerLink="/acessos/revisoes">Revisões de acesso</a></p>
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Concessão de acesso</h1>
+    <p class="page-header__desc">
+      Quem recebeu o acesso, a que perfil e escopo, até quando vale e, na revogada, quem a revogou e
+      por quê.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a concessão" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Concessão não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/acessos/revisoes">Voltar às revisões</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+<p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a concessão…</p>
+} @if (store.dados(); as c) {
+<section class="panel" aria-labelledby="cfg-resumo-da-concessao">
+  <div class="panel-head">
+    <h2 id="cfg-resumo-da-concessao" class="panel-head__title">Resumo</h2>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Pessoa</dt>
+      <dd>{{ pessoa(c.beneficiario) }}</dd>
+    </div>
+    <div>
+      <dt>Perfil</dt>
+      <dd>{{ c.perfil.nome }}</dd>
+    </div>
+    <div>
+      <dt>Escopo</dt>
+      <dd>{{ escopo.nome(c.escopo) }}</dd>
+    </div>
+    <div>
+      <dt>Situação</dt>
+      <dd>
+        <ui-tag [variant]="situacao(c).variante">{{ situacao(c).texto }}</ui-tag>
+      </dd>
+    </div>
+    <div>
+      <dt>Concedida em</dt>
+      <dd>{{ c.concedidaEm | dateBr: 'datetime' }}</dd>
+    </div>
+    <div>
+      <dt>Válida até</dt>
+      <dd>{{ c.validaAte ? (c.validaAte | dateBr: 'datetime') : 'Sem prazo' }}</dd>
+    </div>
+  </dl>
+</section>
+
+@if (c.revogadaEm !== null) {
+<section class="panel" aria-labelledby="cfg-revogacao-da-concessao">
+  <div class="panel-head">
+    <h2 id="cfg-revogacao-da-concessao" class="panel-head__title">Revogação</h2>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Revogada em</dt>
+      <dd>{{ c.revogadaEm | dateBr: 'datetime' }}</dd>
+    </div>
+    <div>
+      <dt>Revogada por</dt>
+      <dd>{{ c.revogadaPelaJanelaId ? 'Janela de migração' : pessoa(c.revogadaPor) }}</dd>
+    </div>
+    <div>
+      <dt>Motivo</dt>
+      <dd>{{ c.motivoRevogacao ?? 'Sem motivo registrado' }}</dd>
+    </div>
+  </dl>
+</section>
+}
+
+<section class="panel" aria-labelledby="cfg-trilha-da-concessao">
+  <div class="panel-head">
+    <h2 id="cfg-trilha-da-concessao" class="panel-head__title">Trilha</h2>
+  </div>
+  <div class="panel-body">
+    <cfg-trilha-de-acesso [eventos]="store.trilha()" legenda="Trilha da concessão" />
+  </div>
+</section>
+}

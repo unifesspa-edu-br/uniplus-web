@@ -9,6 +9,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+import { situacaoDaConcessao } from './situacao-da-concessao';
 import { autorDoEvento } from './trilha-de-acesso.component';
 
 @Component({
@@ -53,13 +54,5 @@ export class ConcessoesListaComponent {
   protected pessoa(concessao: ConcessaoDto): string {
     return autorDoEvento(concessao.beneficiario);
   }
-  protected situacaoDe(concessao: ConcessaoDto): {
-    readonly texto: string;
-    readonly variante: 'success' | 'neutral' | 'warning';
-  } {
-    if (concessao.revogadaEm !== null) return { texto: 'Revogada', variante: 'neutral' };
-    return concessao.ativa
-      ? { texto: 'Ativa', variante: 'success' }
-      : { texto: 'Vencida', variante: 'warning' };
-  }
+  protected readonly situacaoDe = situacaoDaConcessao;
 }
