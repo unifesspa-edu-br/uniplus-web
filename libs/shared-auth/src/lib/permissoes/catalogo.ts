@@ -5,6 +5,8 @@
 export const PERMISSAO = {
   autorizacao: {
     concessoesAdministrar: 'autorizacao:concessoes:administrar',
+    // Consulta do Encarregado de dados, do contrato da uniplus-api#2364: lê concessões, sem revogar.
+    concessoesConsultar: 'autorizacao:concessoes:consultar',
     pedidosAprovarFuncional: 'autorizacao:pedidos:aprovar-funcional',
     pedidosAprovarProtecaoDeDados: 'autorizacao:pedidos:aprovar-protecao-de-dados',
     perfisAprovarFuncional: 'autorizacao:perfis:aprovar-funcional',

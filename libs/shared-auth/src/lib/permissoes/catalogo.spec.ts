@@ -65,4 +65,11 @@ describe('PERMISSAO.autorizacao', () => {
       'autorizacao:revisoes:consultar',
     ]);
   });
+
+  it('declara quem administra e quem só consulta as concessões', () => {
+    expect([
+      PERMISSAO.autorizacao.concessoesAdministrar,
+      PERMISSAO.autorizacao.concessoesConsultar,
+    ]).toEqual(['autorizacao:concessoes:administrar', 'autorizacao:concessoes:consultar']);
+  });
 });
