@@ -23,9 +23,14 @@ export class ConcessaoDetalheStore {
     [this.concessao, this.consultaDaTrilha],
     this.problemas,
   );
-  /** A concessão só aparece com as duas leituras íntegras: falha em qualquer uma não mostra dado. */
+  /**
+   * A concessão só aparece quando as duas leituras responderam com sucesso: nem antes de a trilha
+   * chegar, nem com falha em qualquer uma delas.
+   */
   readonly dados = computed(() =>
-    this.desfecho.mensagem() === null ? this.concessao.data() : null,
+    this.concessao.value()?.ok === true && this.consultaDaTrilha.value()?.ok === true
+      ? this.concessao.data()
+      : null,
   );
   readonly trilha = computed(() => this.consultaDaTrilha.data() ?? []);
   readonly carregando = computed(
