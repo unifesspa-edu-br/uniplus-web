@@ -93,7 +93,7 @@ export class DecisaoDaVersao {
     descartarRecusasDoServidor(this.motivo);
     const motivo = this.motivo.value.trim();
     if (!motivo) this.motivo.setErrors({ required: true });
-    return this.motivo.valid ? motivo : null;
+    return this.motivo.invalid ? null : motivo;
   }
 
   private async enviarRecusa(
