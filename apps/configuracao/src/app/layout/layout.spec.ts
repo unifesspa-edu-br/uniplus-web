@@ -37,7 +37,7 @@ const PERMISSOES_DA_ADMINISTRACAO = [
 const MENU_DA_ADMINISTRACAO = [
   'Meus pedidos',
   'Fila da gestão de acessos',
-  'Fila da proteção de dados',
+  'Fila do Representante do controlador',
   'Histórico de pedidos',
   'Concessões',
   'Perfis de acesso',
@@ -101,7 +101,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).toEqual(MENU_DA_ADMINISTRACAO);
   });
 
-  it('não oferece a fila da proteção de dados a quem só aprova como gestor', () => {
+  it('não oferece a fila do Representante do controlador a quem só aprova como gestor', () => {
     concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
     expect(itensDoMenu()).toEqual([

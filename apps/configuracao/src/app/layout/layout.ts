@@ -184,7 +184,7 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Fila da proteção de dados',
+          label: 'Fila do Representante do controlador',
           icon: 'pi-shield',
           routerLink: '/acessos/fila-da-protecao-de-dados',
           exact: true,

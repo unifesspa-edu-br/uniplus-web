@@ -75,7 +75,7 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
     const { digitar, enviar, host, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
-    digitar('textarea', 'Designada para a proteção de dados da instituição.');
+    digitar('textarea', 'Designado Representante do controlador da instituição.');
     await enviar();
     await fixture.whenStable();
 
@@ -105,7 +105,7 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
     const { digitar, enviar, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
-    digitar('textarea', 'Designada para a proteção de dados da instituição.');
+    digitar('textarea', 'Designado Representante do controlador da instituição.');
     fixture.debugElement.injector
       .get(EdicaoDoPedidoDeAcesso)
       .arquivo.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
@@ -141,7 +141,7 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
     campo<HTMLInputElement>('input[value="outra"]').click();
     digitar('select[formcontrolname="perfilId"]', 'perfil-2');
     digitar('input[formcontrolname="beneficiarioEmail"]', 'betina.teste@unifesspa.edu.br');
-    digitar('textarea', 'Designada como gestora de acessos.');
+    digitar('textarea', 'Designado gestor de acessos da instituição.');
     await enviar();
 
     expect(host.querySelector('select[formcontrolname="unidadeId"]')).toBeNull();

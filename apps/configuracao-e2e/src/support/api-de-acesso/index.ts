@@ -37,7 +37,7 @@ function atenderUnidades(route: Route): Promise<void> {
 }
 
 /**
- * Simula a API de autorização com estado: o pedido percorre gestor e proteção de dados, a última
+ * Simula a API de autorização com estado: o pedido percorre o gestor e o Representante do controlador, a última
  * aprovação gera a concessão e a revogação a tira das ativas. Quem decide é a tela de quem
  * navega; a API simulada só aplica a transição.
  */

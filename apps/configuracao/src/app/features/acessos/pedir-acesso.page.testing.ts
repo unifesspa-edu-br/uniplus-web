@@ -31,7 +31,7 @@ export const PERFIL_INSTITUCIONAL = {
 export const PERFIL_DE_GOVERNANCA = {
   ...PERFIL_INSTITUCIONAL,
   id: 'perfil-3',
-  nome: 'Encarregado(a) pelo tratamento de dados',
+  nome: 'Representante do controlador',
   governanca: 'protecao-de-dados',
 };
 

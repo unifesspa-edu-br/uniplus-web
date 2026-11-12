@@ -149,7 +149,7 @@ describe('PedidosPage', () => {
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).not.toBeNull();
   });
 
-  it('apresenta a fila da proteção de dados sem cadastro nem filtro', async () => {
+  it('apresenta a fila do Representante do controlador sem cadastro nem filtro', async () => {
     const fixture = TestBed.createComponent(PedidosPage);
     fixture.componentRef.setInput('fila', 'protecao_de_dados');
     fixture.detectChanges();
@@ -158,7 +158,7 @@ describe('PedidosPage', () => {
     req.flush([]);
     await atualizar();
     const host = fixture.nativeElement as HTMLElement;
-    expect(host.querySelector('h1')?.textContent).toContain('Fila da proteção de dados');
+    expect(host.querySelector('h1')?.textContent).toContain('Fila do Representante do controlador');
     expect(host.querySelector('a[href="/acessos/pedidos/novo"]')).toBeNull();
     expect(host.querySelector('select')).toBeNull();
     expect(host.textContent).toContain('Nenhum pedido aguarda a sua aprovação.');

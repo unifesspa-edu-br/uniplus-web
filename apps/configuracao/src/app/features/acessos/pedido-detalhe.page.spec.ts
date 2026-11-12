@@ -81,13 +81,13 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     expect(decisoesOferecidas(host)).toEqual([true, true]);
   });
 
-  it('a proteção de dados não decide pedido que ainda aguarda o gestor', async () => {
+  it('o Representante do controlador não decide pedido que ainda aguarda o gestor', async () => {
     const { host } = await abrir([PROTECAO_DE_DADOS]);
 
     expect(decisoesOferecidas(host)).toEqual([false, false]);
   });
 
-  it('a proteção de dados decide o pedido da etapa dela', async () => {
+  it('o Representante do controlador decide o pedido da etapa dele', async () => {
     const { host } = await abrir(
       [PROTECAO_DE_DADOS],
       pedido({ situacao: 'aguardando_protecao_de_dados', etapaAtual: 'protecao_de_dados' }),
@@ -137,7 +137,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     expect(decisoesOferecidas(outro.host)).toEqual([true, true]);
   });
 
-  it('depois do perfil alterado, o gestor original reavalia e a proteção de dados que tentou conclui', async () => {
+  it('depois do perfil alterado, o gestor original reavalia e o Representante do controlador que tentou conclui', async () => {
     const decisao = (etapa: string, resultado: string, sub: string) => ({
       etapa,
       decisor: { emissor: 'unifesspa', sub },

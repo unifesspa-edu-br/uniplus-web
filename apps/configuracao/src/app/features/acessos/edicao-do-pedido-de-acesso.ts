@@ -107,7 +107,7 @@ export class EdicaoDoPedidoDeAcesso {
   readonly perfilSelecionado = computed(
     () => this.perfis().find((perfil) => perfil.id === this.perfilId()) ?? null,
   );
-  /** O perfil de governança (gestor de acessos, proteção de dados) só se pede com o documento de designação. */
+  /** O perfil de governança (gestor de acessos, Representante do controlador) só se pede com o documento de designação. */
   readonly exigeDocumento = computed(() => (this.perfilSelecionado()?.governanca ?? null) !== null);
   readonly erroDoDocumento = computed(() =>
     this.tentouEnviar() && this.exigeDocumento() && this.arquivo() === null

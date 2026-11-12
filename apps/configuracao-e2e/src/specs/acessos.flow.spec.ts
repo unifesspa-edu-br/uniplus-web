@@ -62,7 +62,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page.getByRole('table').getByText('Cancelado')).toBeVisible();
   });
 
-  test('o pedido de perfil com dado sensível passa pelo gestor e pela proteção de dados, gera a concessão e ela é revogada', async ({
+  test('o pedido de perfil com dado sensível passa pelo gestor e pelo Representante do controlador, gera a concessão e ela é revogada', async ({
     page,
   }) => {
     const estado = await mockApiDeAcesso(page, [pedidoSeed()]);
@@ -76,7 +76,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
     await page.getByRole('button', { name: 'Aprovar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
-    await expect(page.getByText('Aguardando a proteção de dados').first()).toBeVisible();
+    await expect(page.getByText('Aguardando o Representante do controlador').first()).toBeVisible();
 
     await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS);
     await page.goto('/acessos/fila-da-protecao-de-dados');
@@ -180,7 +180,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(menu.getByRole('link', { name: 'Meus pedidos' })).toBeVisible();
     for (const nome of [
       'Fila da gestão de acessos',
-      'Fila da proteção de dados',
+      'Fila do Representante do controlador',
       'Histórico de pedidos',
       'Concessões',
       'Perfis de acesso',
