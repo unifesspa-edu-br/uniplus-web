@@ -5521,7 +5521,6 @@ export interface components {
             readonly acrescimo: readonly string[];
             readonly exigeProtecaoDeDados: boolean;
             readonly situacao: string;
-            readonly dispensa: null | string;
             readonly ehDoLeitor: boolean;
         };
         readonly ItemDaRevisaoDto: {
