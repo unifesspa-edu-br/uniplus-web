@@ -179,4 +179,4 @@ Passo a passo, credenciais e sintomas: [`docs/guia-testar-frontend-com-backend-l
 - Soft delete: nunca deletar registros fisicamente
 - Acessibilidade: ARIA em componentes interativos, WCAG 2.1 AA
 - Seguranca: tokens JWT via OIDC, nunca em localStorage
-- Métricas de qualidade (função até 15 linhas físicas, arquivo até 400 linhas com specs, até 4 parâmetros, complexidade, supressão proibida, nada de código só para caber na métrica): `CONTRIBUTING.md` § Métricas de qualidade. Os avisos do ESLint não são a medida.
+- Métricas de qualidade (função até 15 linhas pelo `max-lines-per-function`, desligada só nos `*.spec.ts` e `*.setup.ts`; arquivo `.ts` e `.html` até 400 linhas pelo `max-lines`, specs incluídos; até 4 parâmetros; complexidade; supressão proibida; nada de código só para caber na métrica): `CONTRIBUTING.md` § Métricas de qualidade. O número que vale é o do aviso do ESLint. Código que se explica, comentários e JSDoc: `CONTRIBUTING.md` § Código que se explica.
