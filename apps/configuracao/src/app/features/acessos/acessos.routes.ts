@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import {
+  PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
   PERMISSOES_DA_RECLASSIFICACAO,
   PERMISSOES_DA_REVISAO,
@@ -54,6 +55,12 @@ export const ACESSOS_ROUTES: Routes = [
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/concessoes'])],
         data: { breadcrumb: 'Concessões' },
         loadComponent: () => import('./concessoes.page').then((m) => m.ConcessoesPage),
+      },
+      {
+        path: 'concessoes/:id',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_CONCESSAO)],
+        data: { breadcrumb: 'Concessão de acesso' },
+        loadComponent: () => import('./concessao-detalhe.page').then((m) => m.ConcessaoDetalhePage),
       },
       {
         path: 'perfis',

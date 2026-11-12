@@ -1,8 +1,9 @@
 import { TestBed } from '@angular/core/testing';
 import { CanActivateFn, Route, UrlTree, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { AuthService, PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
+  PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
   PERMISSOES_DA_RECLASSIFICACAO,
   PERMISSOES_DA_REVISAO,
@@ -112,6 +113,19 @@ describe('rotas dos acessos', () => {
     });
   });
 
+  describe('concessoes/:id', () => {
+    it.each(PERMISSOES_DA_CONCESSAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('concessoes/:id', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado só com a permissão de consultar revisões', async () => {
+      const decisao = await decidirAcesso('concessoes/:id', [
+        PERMISSAO.autorizacao.revisoesConsultar,
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
   describe('revisoes/:id', () => {
     it.each(PERMISSOES_DA_REVISAO)('abre com a permissão %s', async (permissao) => {
       expect(await decidirAcesso('revisoes/:id', [permissao])).toBe(true);
@@ -155,7 +169,7 @@ describe('rotas dos acessos', () => {
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(21);
+    expect(carregaveis).toHaveLength(22);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }
