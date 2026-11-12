@@ -27,17 +27,17 @@ interface PedidoCriado {
 /**
  * Concede o perfil à persona pelo fluxo real de pedido: um terceiro solicita, a persona aceita,
  * o gestor de acessos aprova a adequação funcional e, quando o perfil traz dado pessoal ou
- * sensível, a proteção de dados aprova a segunda etapa. Idempotente: concessão ativa igual
- * não é pedida de novo, e pedido em andamento é retomado. Antes, garante que o Encarregado
- * esteja designado, porque é ele quem aprova a segunda etapa.
+ * sensível, um Representante do controlador aprova a segunda etapa. Idempotente: concessão ativa
+ * igual não é pedida de novo, e pedido em andamento é retomado. Antes, garante o titular e o
+ * substituto do Representante, porque são eles que aprovam a segunda etapa.
  */
 export async function garantirConcessao(
   beneficiario: string,
   perfilId: string,
   unidadeDaConcessao: string,
 ): Promise<void> {
-  if (perfilId !== PERFIL_DO_ENCARREGADO) {
-    await garantirEncarregado();
+  if (perfilId !== PERFIL_DO_REPRESENTANTE) {
+    await garantirRepresentantes();
   }
   const pedido = await pedidoDaConcessao(beneficiario, perfilId, unidadeDaConcessao);
   if (await concessaoAtiva(pedido)) {
@@ -62,24 +62,31 @@ async function pedidoDaConcessao(
   return { beneficiario, email, sub, perfilId, unidadeId };
 }
 
-/** Perfil "Encarregado pelo tratamento de dados", de governança da proteção de dados. */
-const PERFIL_DO_ENCARREGADO = '019a0000-0000-7000-8000-000000000002';
-let encarregadoGuardado: Promise<void> | undefined;
+/** Perfil de governança "Representante do controlador", que decide a segunda etapa. */
+const PERFIL_DO_REPRESENTANTE = '019a0000-0000-7000-8000-000000000002';
+/** Quem decide a segunda etapa dos pedidos em que o titular, `PROTECAO_DE_DADOS`, é beneficiário. */
+const SUBSTITUTO_DO_REPRESENTANTE = 'caroline.jesus';
+let representantesGuardados: Promise<void> | undefined;
 
 /**
- * Designa o Encarregado (institucional) pelo mesmo fluxo de pedido: a API dispensa a etapa de
- * proteção de dados nesse perfil, então só o gestor aprova. Os decisores das duas etapas nunca
- * coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e a proteção é o Encarregado ou `caroline.jesus`.
+ * Designa os dois Representantes (institucionais) pelo mesmo fluxo de pedido. O titular entra
+ * pela dispensa de designação, que só vale enquanto não há Representante vigente, então só o
+ * gestor aprova; o substituto passa pela segunda etapa, decidida pelo titular. Os decisores das
+ * duas etapas nunca coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e o Representante é
+ * o titular ou o substituto.
  */
-function garantirEncarregado(): Promise<void> {
-  encarregadoGuardado ??= garantirConcessao(PROTECAO_DE_DADOS, PERFIL_DO_ENCARREGADO, '').catch(
-    (erro: unknown) => {
-      // Falha não fica guardada: a spec seguinte tenta a designação de novo.
-      encarregadoGuardado = undefined;
-      throw erro;
-    },
-  );
-  return encarregadoGuardado;
+function garantirRepresentantes(): Promise<void> {
+  representantesGuardados ??= designarRepresentantes().catch((erro: unknown) => {
+    // Falha não fica guardada: a spec seguinte tenta a designação de novo.
+    representantesGuardados = undefined;
+    throw erro;
+  });
+  return representantesGuardados;
+}
+
+async function designarRepresentantes(): Promise<void> {
+  await garantirConcessao(PROTECAO_DE_DADOS, PERFIL_DO_REPRESENTANTE, '');
+  await garantirConcessao(SUBSTITUTO_DO_REPRESENTANTE, PERFIL_DO_REPRESENTANTE, '');
 }
 
 async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
@@ -135,14 +142,14 @@ interface AnexoParaEnvio {
 const POR_QUEM_APROVA_COMO_GESTOR = (p: PedidoDeConcessao): string =>
   p.beneficiario === GESTOR_DE_ACESSOS ? SEGUNDO_GESTOR_DE_ACESSOS : GESTOR_DE_ACESSOS;
 const POR_QUEM_APROVA_COMO_PROTECAO = (p: PedidoDeConcessao): string =>
-  p.beneficiario === PROTECAO_DE_DADOS ? 'caroline.jesus' : PROTECAO_DE_DADOS;
+  p.beneficiario === PROTECAO_DE_DADOS ? SUBSTITUTO_DO_REPRESENTANTE : PROTECAO_DE_DADOS;
 
 const postar = (quem: string, caminho: string, corpo?: unknown): Promise<RespostaDaApi> =>
   chamarApi(quem, 'POST', caminho, { corpo });
 
 /**
  * Cada situação em andamento tem a etapa que a resolve; qualquer outra encerra o pedido. O
- * documento de designação (perfil do Encarregado) é anexado por quem solicitou, em PDF, pela URL
+ * documento de designação (perfil de governança) é anexado por quem solicitou, em PDF, pela URL
  * assinada; o pedido só segue depois que a API verifica o arquivo.
  */
 const ETAPAS_POR_SITUACAO: Readonly<Record<string, EtapaDoPedido>> = {
