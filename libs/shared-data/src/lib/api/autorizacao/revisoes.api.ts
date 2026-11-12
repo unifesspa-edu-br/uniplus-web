@@ -7,15 +7,39 @@ import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 export type RevisaoResumoDto = components['schemas']['RevisaoResumoDto'];
-export type RevisaoDeAcessosDto = components['schemas']['RevisaoDeAcessosDto'];
-export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'];
+
+/**
+ * O item da revisão no contrato da uniplus-api#2364: `ehDoLeitor` diz que a concessão é de quem lê,
+ * que não pode decidi-la. Acréscimo provisório ao tipo gerado; o codegen, depois do merge daquela
+ * issue, o traz no `schema.ts`, e o acréscimo sai.
+ */
+export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'] & {
+  readonly ehDoLeitor: boolean;
+};
+
+/** A revisão com os itens no contrato da uniplus-api#2364 (ver {@link ItemDaRevisaoDto}). */
+export type RevisaoDeAcessosDto = Omit<components['schemas']['RevisaoDeAcessosDto'], 'itens'> & {
+  readonly itens: readonly ItemDaRevisaoDto[];
+};
 export type RevogarItemDaRevisaoRequest = components['schemas']['RevogarItemDaRevisaoRequest'];
 
 /** Situação da revisão na API: com item pendente ela segue em andamento; sem nenhum, está concluída. */
 export type SituacaoDaRevisao = 'em_andamento' | 'concluida';
 
+/**
+ * A página da lista de revisões; a `situacao`, quando informada, filtra no servidor antes da
+ * paginação (contrato da uniplus-api#2364).
+ */
+export interface ListaDeRevisoesQuery extends PaginaQuery {
+  readonly situacao?: SituacaoDaRevisao;
+}
+
 /** Situação do item: a decisão gravada, a espera dela ou a concessão que deixou de valer fora da revisão. */
-export type SituacaoDoItemDaRevisao = 'pendente' | 'confirmada' | 'revogada' | 'concessao_encerrada';
+export type SituacaoDoItemDaRevisao =
+  | 'pendente'
+  | 'confirmada'
+  | 'revogada'
+  | 'concessao_encerrada';
 
 /**
  * Quem decide o item (ADR-0162): o Representante do controlador decide os itens comuns, e a gestão de
@@ -30,10 +54,10 @@ export class RevisoesApi {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly raiz = `${this.basePath}/api/autorizacao/revisoes`;
 
-  /** GET `/api/autorizacao/revisoes` — as revisões, abertas e encerradas, paginadas por cursor. */
-  listar(query: PaginaQuery = {}): Observable<ApiResult<readonly RevisaoResumoDto[]>> {
+  /** GET `/api/autorizacao/revisoes` — as revisões, todas ou só as da situação, paginadas por cursor. */
+  listar(query: ListaDeRevisoesQuery = {}): Observable<ApiResult<readonly RevisaoResumoDto[]>> {
     return this.http.get<ApiResult<readonly RevisaoResumoDto[]>>(this.raiz, {
-      params: paramsDaPagina(query, {}),
+      params: paramsDaPagina(query, { situacao: query.situacao }),
       context: withVendorMime('revisao-de-acessos', 1),
     });
   }

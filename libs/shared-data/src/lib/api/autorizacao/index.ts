@@ -83,6 +83,7 @@ export {
 export {
   RevisoesApi,
   type ItemDaRevisaoDto,
+  type ListaDeRevisoesQuery,
   type QuemDecideOItem,
   type RevisaoDeAcessosDto,
   type RevisaoResumoDto,
