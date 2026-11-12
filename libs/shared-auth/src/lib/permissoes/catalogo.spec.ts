@@ -53,4 +53,16 @@ describe('PERMISSAO.autorizacao', () => {
       'autorizacao:perfis:aprovar-protecao-de-dados',
     ]);
   });
+
+  it('declara quem conduz, quem revê e quem só consulta a revisão periódica de acessos', () => {
+    expect([
+      PERMISSAO.autorizacao.revisoesConduzir,
+      PERMISSAO.autorizacao.revisoesReverProtecaoDeDados,
+      PERMISSAO.autorizacao.revisoesConsultar,
+    ]).toEqual([
+      'autorizacao:revisoes:conduzir',
+      'autorizacao:revisoes:rever-protecao-de-dados',
+      'autorizacao:revisoes:consultar',
+    ]);
+  });
 });

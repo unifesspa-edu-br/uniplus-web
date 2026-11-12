@@ -11,6 +11,10 @@ export const PERMISSAO = {
     perfisAprovarProtecaoDeDados: 'autorizacao:perfis:aprovar-protecao-de-dados',
     perfisManter: 'autorizacao:perfis:manter',
     permissoesConsultarCatalogo: 'autorizacao:permissoes:consultar-catalogo',
+    revisoesConduzir: 'autorizacao:revisoes:conduzir',
+    // Consulta do Encarregado de dados, do contrato da uniplus-api#2364: lê revisões, sem decidir.
+    revisoesConsultar: 'autorizacao:revisoes:consultar',
+    revisoesReverProtecaoDeDados: 'autorizacao:revisoes:rever-protecao-de-dados',
   },
   configuracao: {
     baseLegalBonusRegionalManter: 'configuracao:base-legal-bonus-regional:manter',
