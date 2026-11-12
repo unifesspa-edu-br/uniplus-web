@@ -85,8 +85,37 @@ function garantirRepresentantes(): Promise<void> {
 }
 
 async function designarRepresentantes(): Promise<void> {
+  await conferirBaseDosRepresentantes();
   await garantirConcessao(REPRESENTANTE_DO_CONTROLADOR, PERFIL_DO_REPRESENTANTE, '');
   await garantirConcessao(SUBSTITUTO_DO_REPRESENTANTE, PERFIL_DO_REPRESENTANTE, '');
+}
+
+/**
+ * A preparação só sabe decidir a segunda etapa como o titular ou o substituto. Se a base tem
+ * outro Representante vigente e nenhum dos dois, a dispensa de designação não se aplica e ninguém
+ * que a simulação conhece decide o pedido do titular: falha antes, dizendo qual base se espera.
+ */
+async function conferirBaseDosRepresentantes(): Promise<void> {
+  const vigentes = await subsDosRepresentantesVigentes();
+  const conhecidos = await Promise.all(
+    [REPRESENTANTE_DO_CONTROLADOR, SUBSTITUTO_DO_REPRESENTANTE].map(
+      async (persona) => identidadeDoToken(await tokenDaPersona(persona)).sub,
+    ),
+  );
+  if (vigentes.length === 0 || vigentes.some((sub) => conhecidos.includes(sub))) return;
+  throw new Error(
+    `A base tem Representante do controlador vigente que não é ${REPRESENTANTE_DO_CONTROLADOR} nem ${SUBSTITUTO_DO_REPRESENTANTE}. ` +
+      'A preparação espera uma base sem Representante vigente ou com um desses dois designado; recrie a base ou designe um deles.',
+  );
+}
+
+async function subsDosRepresentantesVigentes(): Promise<string[]> {
+  const ativas = await chamarApi<ConcessaoExistente[]>(
+    SEGUNDO_GESTOR_DE_ACESSOS,
+    'GET',
+    `/api/autorizacao/concessoes?perfil=${PERFIL_DO_REPRESENTANTE}&situacao=ativa&limit=100`,
+  );
+  return ativas.corpo.filter((concessao) => concessao.ativa).map((c) => c.beneficiario.sub);
 }
 
 async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
