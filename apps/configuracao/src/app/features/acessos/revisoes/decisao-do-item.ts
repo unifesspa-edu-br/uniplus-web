@@ -6,9 +6,15 @@ import { mensagemDaRecusa } from '../falha-de-servidor';
 import { CampoDoMotivo } from '../versoes/campo-do-motivo';
 import { ChavesPorComando } from '../versoes/chaves-por-comando';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
+import { ReleituraDepoisDaFalha, type FalhaDaDecisao } from './releitura-depois-da-falha';
 
 const DECISOR_MUDOU = 'uniplus.autorizacao.revisao.decisor_nao_decide_o_item';
 const CONFLITO = 409;
+const PRIMEIRO_STATUS_DE_SERVIDOR = 500;
+const SEM_RESPOSTA = 'uniplus.client.network_error';
+const TITULO_DA_FALHA = 'Não foi possível concluir a decisão';
+const DEPOIS_DA_RELEITURA =
+  'A revisão foi relida. Confira o item antes de decidir de novo: a decisão pode ter sido gravada.';
 
 /** O que a recusa da decisão mostra acima dos itens, depois de reler a revisão. */
 export interface AvisoDaDecisao {
@@ -19,7 +25,8 @@ export interface AvisoDaDecisao {
 /**
  * A decisão de um item da revisão: confirmar mantém a concessão; revogar pede o motivo. Quando
  * outra pessoa decidiu antes (409, ADR-0119) ou quem decide mudou entre a leitura e a decisão
- * (422 `decisor_nao_decide_o_item`, ADR-0162), a revisão é relida e o aviso explica o porquê.
+ * (422 `decisor_nao_decide_o_item`, ADR-0162), a revisão é relida e o aviso explica o porquê. A
+ * falha de desfecho incerto tira a revisão da tela até ela ser relida com sucesso.
  */
 @Injectable()
 export class DecisaoDoItem {
@@ -36,14 +43,18 @@ export class DecisaoDoItem {
   readonly aberto = signal(false);
   readonly erroDaRevogacao = signal<string | null>(null);
   readonly aviso = signal<AvisoDaDecisao | null>(null);
+  private readonly releitura = new ReleituraDepoisDaFalha((falha) =>
+    this.aviso.set({ titulo: falha.titulo, texto: DEPOIS_DA_RELEITURA }),
+  );
+  /** A falha que esconde a revisão até a próxima leitura bem-sucedida. */
+  readonly falha = this.releitura.falha;
 
   confirmar(revisaoId: string, item: ItemDaRevisaoDto): Promise<void> {
     return this.escrita.executar(
       'decisao',
       () =>
         this.enviar(`confirmar:${item.id}`, null, (c) => this.api.confirmar(revisaoId, item.id, c)),
-      (mensagem) =>
-        this.aviso.set({ titulo: 'Não foi possível confirmar o item', texto: mensagem }),
+      (mensagem) => this.falhar({ titulo: TITULO_DA_FALHA, texto: mensagem }),
     );
   }
 
@@ -65,7 +76,7 @@ export class DecisaoDoItem {
         this.enviar(`revogar:${item.id}`, { motivo }, (c) =>
           this.api.revogar(revisaoId, item.id, { motivo }, c),
         ),
-      (mensagem) => this.erroDaRevogacao.set(mensagem),
+      (mensagem) => this.falhar({ titulo: TITULO_DA_FALHA, texto: mensagem }),
     );
   }
 
@@ -83,8 +94,24 @@ export class DecisaoDoItem {
   private desfecho(comando: string, resultado: ApiResult<unknown>): void {
     if (resultado.ok)
       this.concluir(comando.startsWith('revogar') ? 'Acesso revogado' : 'Acesso mantido');
+    else if (this.incerta(resultado.problem)) this.falharPelo(resultado.problem);
     else if (this.mudouDesdeALeitura(resultado.problem)) this.reler(resultado.problem);
     else if (!this.campo.recusar(resultado.problem)) this.recusar(resultado.problem);
+  }
+
+  /** Falha de servidor ou sem resposta: a decisão pode ter sido gravada ou não. */
+  private incerta(problema: ProblemDetails): boolean {
+    return problema.status >= PRIMEIRO_STATUS_DE_SERVIDOR || problema.code === SEM_RESPOSTA;
+  }
+
+  private falharPelo(problema: ProblemDetails): void {
+    this.falhar({ titulo: TITULO_DA_FALHA, texto: this.texto(problema) });
+  }
+
+  private falhar(falha: FalhaDaDecisao): void {
+    this.aviso.set(null);
+    this.aberto.set(false);
+    this.releitura.iniciar(falha);
   }
 
   private mudouDesdeALeitura(problema: ProblemDetails): boolean {

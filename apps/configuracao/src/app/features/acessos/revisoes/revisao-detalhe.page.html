@@ -18,7 +18,11 @@
 <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a revisão…</p>
 } @if (decisao.aviso(); as aviso) {
 <ui-alert variant="warning" [heading]="aviso.titulo">{{ aviso.texto }}</ui-alert>
-} @if (store.revisao(); as r) {
+} @if (decisao.falha(); as falha) {
+<ui-alert variant="danger" [heading]="falha.titulo"
+  >{{ falha.texto }} A revisão sai da tela até ser relida com sucesso.</ui-alert
+>
+} @else if (store.revisao(); as r) {
 <section class="panel" aria-labelledby="cfg-resumo-da-revisao">
   <div class="panel-head">
     <h2 id="cfg-resumo-da-revisao" class="panel-head__title">Resumo</h2>
