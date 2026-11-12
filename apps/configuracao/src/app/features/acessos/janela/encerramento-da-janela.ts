@@ -29,18 +29,23 @@ export class EncerramentoDaJanela {
     this.tentou.set(true);
     this.erro.set(null);
     descartarRecusasDoServidor(this.form);
-    const motivo = this.form.controls.motivo.value.trim();
-    if (!motivo) this.form.controls.motivo.setErrors({ required: true });
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.tentativas.update((n) => n + 1);
-      return Promise.resolve();
-    }
+    const motivo = this.motivoValido();
+    if (motivo === null) return Promise.resolve();
     return this.escrita.executar(
       'janela',
       () => this.encerrar(perfilId, motivo),
       (mensagem) => this.falhar(mensagem),
     );
+  }
+
+  /** O motivo sem espaços nas pontas, ou `null` quando o formulário não pode seguir. */
+  private motivoValido(): string | null {
+    const motivo = this.form.controls.motivo.value.trim();
+    if (!motivo) this.form.controls.motivo.setErrors({ required: true });
+    if (this.form.valid) return motivo;
+    this.form.markAllAsTouched();
+    this.tentativas.update((n) => n + 1);
+    return null;
   }
 
   private async encerrar(perfilId: string, motivo: string): Promise<void> {

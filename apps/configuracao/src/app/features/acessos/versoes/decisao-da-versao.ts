@@ -46,20 +46,22 @@ export class DecisaoDaVersao {
   });
 
   aprovar(item: ItemDaFilaDeVersoesDto, etapa: EtapaDaVersao): Promise<void> {
-    const { versaoId } = item.versao;
     return this.escrita.executar(
       'decisao',
-      async () => {
-        this.limparErro(versaoId);
-        this.aviso.set(null);
-        const { resultado } = await comChave(this.chave, { versaoId, etapa, tipo: 'aprovar' }, (c) =>
-          this.api.aprovar(item.perfilId, versaoId, etapa, c),
-        );
-        if (resultado.ok) this.concluir('Versão aprovada', item);
-        else this.recusadaNaAprovacao(item, resultado.problem);
-      },
-      (mensagem) => this.registrarErro(versaoId, mensagem),
+      () => this.enviarAprovacao(item, etapa),
+      (mensagem) => this.registrarErro(item.versao.versaoId, mensagem),
     );
+  }
+
+  private async enviarAprovacao(item: ItemDaFilaDeVersoesDto, etapa: EtapaDaVersao): Promise<void> {
+    const { versaoId } = item.versao;
+    this.limparErro(versaoId);
+    this.aviso.set(null);
+    const { resultado } = await comChave(this.chave, { versaoId, etapa, tipo: 'aprovar' }, (c) =>
+      this.api.aprovar(item.perfilId, versaoId, etapa, c),
+    );
+    if (resultado.ok) this.concluir('Versão aprovada', item);
+    else this.recusadaNaAprovacao(item, resultado.problem);
   }
 
   abrirRecusa(item: ItemDaFilaDeVersoesDto): void {
@@ -73,11 +75,8 @@ export class DecisaoDaVersao {
 
   recusar(etapa: EtapaDaVersao): Promise<void> {
     const item = this.recusando();
-    this.tentouRecusar.set(true);
-    descartarRecusasDoServidor(this.motivo);
-    const motivo = this.motivo.value.trim();
-    if (!motivo) this.motivo.setErrors({ required: true });
-    if (item === null || this.motivo.invalid) {
+    const motivo = this.motivoDaRecusa();
+    if (item === null || motivo === null) {
       this.focarMotivo();
       return Promise.resolve();
     }
@@ -86,6 +85,15 @@ export class DecisaoDaVersao {
       () => this.enviarRecusa(item, etapa, motivo),
       (mensagem) => this.erroDaRecusa.set(mensagem),
     );
+  }
+
+  /** O motivo sem espaços nas pontas, ou `null` quando o campo recusa o envio. */
+  private motivoDaRecusa(): string | null {
+    this.tentouRecusar.set(true);
+    descartarRecusasDoServidor(this.motivo);
+    const motivo = this.motivo.value.trim();
+    if (!motivo) this.motivo.setErrors({ required: true });
+    return this.motivo.valid ? motivo : null;
   }
 
   private async enviarRecusa(
@@ -99,15 +107,16 @@ export class DecisaoDaVersao {
     const { resultado } = await comChave(this.chave, { versaoId, etapa, motivo }, (c) =>
       this.api.recusar(item.perfilId, versaoId, { etapa, motivo }, c),
     );
-    if (resultado.ok) {
-      this.aberto.set(false);
-      this.concluir('Versão recusada', item);
-    } else if (this.gravouEstado(resultado.problem)) {
-      this.aberto.set(false);
-      this.avisarEReler(item, resultado.problem);
-    } else {
-      this.recusaDoMotivo(resultado.problem);
-    }
+    if (resultado.ok) this.fecharRecusa(item, null);
+    else if (this.gravouEstado(resultado.problem)) this.fecharRecusa(item, resultado.problem);
+    else this.recusaDoMotivo(resultado.problem);
+  }
+
+  /** Fecha o diálogo: sem problema a recusa foi gravada; com ele, a API gravou outro estado. */
+  private fecharRecusa(item: ItemDaFilaDeVersoesDto, problema: ProblemDetails | null): void {
+    this.aberto.set(false);
+    if (problema === null) this.concluir('Versão recusada', item);
+    else this.avisarEReler(item, problema);
   }
 
   private recusadaNaAprovacao(item: ItemDaFilaDeVersoesDto, problema: ProblemDetails): void {

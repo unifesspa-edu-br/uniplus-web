@@ -4,6 +4,7 @@ import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplu
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ContencaoDoPerfilApi,
+  type EtapaDaVersao,
   type RetomadaDaSuspensaoDto,
 } from '@uniplus/shared-data/autorizacao';
 import type { Observable } from 'rxjs';
@@ -14,6 +15,27 @@ import { EscritaDoPerfil } from './escrita-do-perfil';
 import { etapa } from '../rotulos-de-acesso';
 import { MENSAGENS_DA_RETOMADA } from './mensagens-da-contencao';
 import { TEXTOS_DA_CONTENCAO, type AcaoDaContencao } from './textos-da-contencao';
+
+type Chamada = (
+  api: ContencaoDoPerfilApi,
+  perfilId: string,
+  corpo: { readonly motivo: string },
+  contexto: HttpContext,
+) => Observable<ApiResult<unknown>>;
+
+const retomar =
+  (etapa: EtapaDaVersao): Chamada =>
+  (api, perfilId, corpo, contexto) =>
+    api.retomar(perfilId, { etapa, ...corpo }, contexto);
+
+/** O endpoint de cada ação: a retomada leva a etapa que a pessoa decide. */
+const CHAMADAS: Record<AcaoDaContencao, Chamada> = {
+  suspender: (api, perfilId, corpo, contexto) => api.suspender(perfilId, corpo, contexto),
+  retomar_gestao_de_acessos: retomar('gestao_de_acessos'),
+  retomar_protecao_de_dados: retomar('protecao_de_dados'),
+  desativar: (api, perfilId, corpo, contexto) => api.desativar(perfilId, corpo, contexto),
+  reativar: (api, perfilId, corpo, contexto) => api.reativar(perfilId, corpo, contexto),
+};
 
 /**
  * As ações de contenção do perfil, cada uma com o motivo pedido num diálogo único: o diálogo mostra
@@ -58,16 +80,17 @@ export class ContencaoDoPerfil {
     this.erro.set(null);
     const corpo = { motivo };
     const { resultado } = await this.chaves.enviar(`${acao}:${perfilId}`, corpo, (contexto) =>
-      this.chamar(acao, perfilId, corpo, contexto),
+      CHAMADAS[acao](this.api, perfilId, corpo, contexto),
     );
-    if (!resultado.ok) {
-      if (!this.campo.recusar(resultado.problem)) {
-        this.erro.set(this.textoDaRecusa(acao, resultado.problem));
-      }
-      return;
+    if (resultado.ok) this.concluir(acao, resultado.data);
+    else if (!this.campo.recusar(resultado.problem)) {
+      this.erro.set(this.textoDaRecusa(acao, resultado.problem));
     }
+  }
+
+  private concluir(acao: AcaoDaContencao, dados: unknown): void {
     this.aberto.set(false);
-    this.notificacoes.success(this.textoDoSucesso(acao, resultado.data));
+    this.notificacoes.success(this.textoDoSucesso(acao, dados));
     this.escrita.recarregar();
   }
 
@@ -81,24 +104,6 @@ export class ContencaoDoPerfil {
     if (dados.concluida) return 'Perfil retomado: as concessões voltam a valer';
     const faltam = dados.etapasPendentes.map((codigo) => etapa(codigo).toLowerCase());
     return `Etapa decidida. Falta a decisão da ${faltam.join(' e da ')}`;
-  }
-
-  private chamar(
-    acao: AcaoDaContencao,
-    perfilId: string,
-    corpo: { readonly motivo: string },
-    contexto: HttpContext,
-  ): Observable<ApiResult<unknown>> {
-    const chamadas: Record<AcaoDaContencao, () => Observable<ApiResult<unknown>>> = {
-      suspender: () => this.api.suspender(perfilId, corpo, contexto),
-      retomar_gestao_de_acessos: () =>
-        this.api.retomar(perfilId, { etapa: 'gestao_de_acessos', ...corpo }, contexto),
-      retomar_protecao_de_dados: () =>
-        this.api.retomar(perfilId, { etapa: 'protecao_de_dados', ...corpo }, contexto),
-      desativar: () => this.api.desativar(perfilId, corpo, contexto),
-      reativar: () => this.api.reativar(perfilId, corpo, contexto),
-    };
-    return chamadas[acao]();
   }
 }
 

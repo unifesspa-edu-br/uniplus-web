@@ -36,6 +36,10 @@ const FALHA_NO_ARMAZENAMENTO = 'Falha ao enviar o arquivo. Verifique a conexão 
 const ENDERECO_VENCIDO = 'O endereço de envio venceu. Tente novamente para obter um novo.';
 const SEM_DOCUMENTO_A_ENVIAR = 'A versão não aguarda um documento.';
 
+function falhaNoArmazenamento(expirada: boolean): DesfechoDoDocumento {
+  return { ok: false, mensagem: expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO };
+}
+
 /**
  * O documento instituidor da versão: a API registra o documento e devolve a URL assinada, o
  * navegador envia o PDF direto ao armazenamento e a API recebe o ETag para mandá-lo à verificação.
@@ -48,22 +52,28 @@ export class DocumentoDaVersaoService {
   private readonly notificacoes = inject(NotificationService);
 
   /** Envia o PDF para a URL que a criação da versão devolveu e confirma o envio. */
-  async enviar(envio: EnvioDoDocumentoDto, arquivo: File, aoAndar: AoAndar): Promise<DesfechoDoDocumento> {
-    const { perfilId, versaoId, urlDeEnvio, tipoDeMidia, expiraEm } = envio;
-    const armazenado = await enviarAoStorage(
+  async enviar(
+    envio: EnvioDoDocumentoDto,
+    arquivo: File,
+    aoAndar: AoAndar,
+  ): Promise<DesfechoDoDocumento> {
+    const armazenado = await this.armazenar(envio, arquivo, aoAndar);
+    if (!armazenado.ok) return falhaNoArmazenamento(armazenado.expirada);
+    aoAndar('confirmando', 100);
+    const confirmacao = await firstValueFrom(
+      this.api.confirmarDocumento(envio.perfilId, envio.versaoId, armazenado.etag),
+    );
+    return isApiOk(confirmacao) ? { ok: true } : this.recusa(confirmacao.problem);
+  }
+
+  private armazenar(envio: EnvioDoDocumentoDto, arquivo: File, aoAndar: AoAndar) {
+    const { urlDeEnvio, tipoDeMidia, expiraEm } = envio;
+    return enviarAoStorage(
       this.armazenamento,
       { urlUpload: urlDeEnvio, contentTypeExigido: tipoDeMidia, expiraEm },
       arquivo,
       (percentual) => aoAndar('enviando', percentual),
     );
-    if (!armazenado.ok) {
-      return { ok: false, mensagem: armazenado.expirada ? ENDERECO_VENCIDO : FALHA_NO_ARMAZENAMENTO };
-    }
-    aoAndar('confirmando', 100);
-    const confirmacao = await firstValueFrom(
-      this.api.confirmarDocumento(perfilId, versaoId, armazenado.etag),
-    );
-    return isApiOk(confirmacao) ? { ok: true } : this.recusa(confirmacao.problem);
   }
 
   /**
@@ -83,7 +93,11 @@ export class DocumentoDaVersaoService {
   }
 
   /** Abre o documento verificado numa aba nova, pedindo a URL assinada no clique. */
-  async abrir(perfilId: string, versaoId: string, aindaVale: () => boolean): Promise<DesfechoDaAbertura> {
+  async abrir(
+    perfilId: string,
+    versaoId: string,
+    aindaVale: () => boolean,
+  ): Promise<DesfechoDaAbertura> {
     const desfecho = await abrirAcessoEmNovaAba(
       () => firstValueFrom(this.api.lerDocumento(perfilId, versaoId)),
       aindaVale,

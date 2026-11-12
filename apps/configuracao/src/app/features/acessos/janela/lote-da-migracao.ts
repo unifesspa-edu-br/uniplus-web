@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   JanelaDeMigracaoApi,
   type DecisaoDaMigracao,
+  type EnviarLoteDaMigracaoRequest,
   type ItemDaJanelaDto,
 } from '@uniplus/shared-data/autorizacao';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
@@ -56,15 +57,17 @@ export class LoteDaMigracao {
     const corpo = { decisoes: decisoesDaEtapa(itens, this.decisoes()), confirmacaoDeExclusao };
     return this.escrita.executar(
       'janela',
-      async () => {
-        const recusa = await this.envio.enviar(`lote:${perfilId}`, corpo, (contexto) =>
-          this.api.enviarLote(perfilId, corpo, contexto),
-        );
-        if (recusa === null) this.concluir();
-        else this.recusar(this.envio.tratar(recusa));
-      },
+      () => this.gravar(perfilId, corpo),
       (mensagem) => this.erro.set(mensagem),
     );
+  }
+
+  private async gravar(perfilId: string, corpo: EnviarLoteDaMigracaoRequest): Promise<void> {
+    const recusa = await this.envio.enviar(`lote:${perfilId}`, corpo, (contexto) =>
+      this.api.enviarLote(perfilId, corpo, contexto),
+    );
+    if (recusa === null) this.concluir();
+    else this.recusar(this.envio.tratar(recusa));
   }
 
   private concluir(): void {

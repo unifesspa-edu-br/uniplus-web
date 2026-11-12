@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   JanelaDeMigracaoApi,
+  type DecidirEtapaDaProtecaoRequest,
   type DecisaoDaMigracao,
   type ItemDaJanelaDto,
 } from '@uniplus/shared-data/autorizacao';
@@ -50,15 +51,17 @@ export class EtapaDaProtecaoDeDados {
     const corpo = { decisoes: decisoesDaEtapa(itens, this.decisoes()), confirmacaoDeExclusao };
     return this.escrita.executar(
       'janela',
-      async () => {
-        const recusa = await this.envio.enviar(`protecao:${perfilId}`, corpo, (contexto) =>
-          this.api.decidirProtecaoDeDados(perfilId, corpo, contexto),
-        );
-        if (recusa === null) this.concluir();
-        else this.recusar(this.envio.tratar(recusa));
-      },
+      () => this.gravar(perfilId, corpo),
       (mensagem) => this.erro.set(mensagem),
     );
+  }
+
+  private async gravar(perfilId: string, corpo: DecidirEtapaDaProtecaoRequest): Promise<void> {
+    const recusa = await this.envio.enviar(`protecao:${perfilId}`, corpo, (contexto) =>
+      this.api.decidirProtecaoDeDados(perfilId, corpo, contexto),
+    );
+    if (recusa === null) this.concluir();
+    else this.recusar(this.envio.tratar(recusa));
   }
 
   private concluir(): void {
