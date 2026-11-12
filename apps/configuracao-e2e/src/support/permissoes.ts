@@ -69,3 +69,14 @@ export const PERMISSOES_DAS_DUAS_ETAPAS = [
   ...PERMISSOES_DO_DIOGO_SO_APROVA,
   ...PERMISSOES_DA_BETINA_SO_APROVA,
 ] as const;
+
+/** Betina, Representante do controlador, conduz a revisão periódica e decide os itens comuns. */
+export const PERMISSOES_DA_BETINA_CONDUZ_REVISOES = ['autorizacao:revisoes:conduzir'] as const;
+
+/** Diogo, gestor de acessos, revê os itens de quem é Representante do controlador. */
+export const PERMISSOES_DO_DIOGO_REVE_REVISOES = [
+  'autorizacao:revisoes:rever-protecao-de-dados',
+] as const;
+
+/** Isabella, Encarregado de dados, só consulta as revisões (contrato da uniplus-api#2364). */
+export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = ['autorizacao:revisoes:consultar'] as const;
