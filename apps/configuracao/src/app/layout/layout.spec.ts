@@ -159,6 +159,22 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itens).not.toContain('Reclassificações na gestão de acessos');
   });
 
+  it.each([
+    'autorizacao:revisoes:conduzir',
+    'autorizacao:revisoes:rever-protecao-de-dados',
+    'autorizacao:revisoes:consultar',
+  ])('oferece as revisões de acesso a quem tem %s', (permissao) => {
+    concedidas.set([permissao]);
+
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Revisões de acesso']);
+  });
+
+  it('não oferece as revisões de acesso a quem não as conduz, revê nem consulta', () => {
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
+
+    expect(itensDoMenu()).not.toContain('Revisões de acesso');
+  });
+
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {
     concedidas.set(['configuracao:tipos-processo:consultar']);
     const fixture = TestBed.createComponent(LayoutComponent);

@@ -3,6 +3,7 @@ import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import {
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
   PERMISSOES_DA_RECLASSIFICACAO,
+  PERMISSOES_DA_REVISAO,
   PERMISSOES_DAS_TELAS,
 } from '../../acesso/permissoes-das-telas';
 import { aguardarPermissoes } from './guardas-de-acesso';
@@ -141,6 +142,19 @@ export const ACESSOS_ROUTES: Routes = [
           import('./reclassificacao/divergencias-da-governanca.page').then(
             (m) => m.DivergenciasDaGovernancaPage,
           ),
+      },
+      {
+        path: 'revisoes',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_REVISAO)],
+        data: { breadcrumb: 'Revisões de acesso' },
+        loadComponent: () => import('./revisoes/revisoes.page').then((m) => m.RevisoesPage),
+      },
+      {
+        path: 'revisoes/:id',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_REVISAO)],
+        data: { breadcrumb: 'Revisão de acessos' },
+        loadComponent: () =>
+          import('./revisoes/revisao-detalhe.page').then((m) => m.RevisaoDetalhePage),
       },
       {
         path: 'perfis/:id/janela',

@@ -1,0 +1,80 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <p class="page-header__eyebrow"><a routerLink="/acessos/revisoes">Revisões de acesso</a></p>
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Revisão de acessos</h1>
+    <p class="page-header__desc">
+      Cada item confirma ou revoga uma concessão vigente. Quem decide o item pendente é avaliado
+      agora: o Representante do controlador decide os itens comuns, e a gestão de acessos, os de
+      quem é Representante do controlador. Ninguém decide o item da própria concessão.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a revisão" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Revisão não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/acessos/revisoes">Voltar às revisões</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+<p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a revisão…</p>
+} @if (decisao.aviso(); as aviso) {
+<ui-alert variant="warning" [heading]="aviso.titulo">{{ aviso.texto }}</ui-alert>
+} @if (store.revisao(); as r) {
+<section class="panel" aria-labelledby="cfg-resumo-da-revisao">
+  <div class="panel-head">
+    <h2 id="cfg-resumo-da-revisao" class="panel-head__title">Resumo</h2>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Situação</dt>
+      <dd>
+        <ui-tag [variant]="situacao(r.situacao).variante">{{ situacao(r.situacao).texto }}</ui-tag>
+      </dd>
+    </div>
+    <div>
+      <dt>Aberta em</dt>
+      <dd>{{ r.abertaEm | dateBr: 'datetime' }}</dd>
+    </div>
+    <div>
+      <dt>Aberta por</dt>
+      <dd>{{ r.abertaPor.nome ?? 'Pessoa não identificada' }}</dd>
+    </div>
+    <div>
+      <dt>Itens</dt>
+      <dd>{{ itens(r.totalDeItens) }}, {{ pendentes(r.pendentes) }}</dd>
+    </div>
+  </dl>
+  @if (encerrada()) {
+  <div class="panel-body">
+    <ui-alert variant="info" heading="Revisão encerrada" [dynamic]="false">
+      Todos os itens foram decididos ou deixaram de valer. O resultado fica só para consulta.
+    </ui-alert>
+  </div>
+  }
+</section>
+
+@for (grupo of grupos(); track grupo.chave) {
+<cfg-itens-do-beneficiario
+  [grupo]="grupo"
+  [decide]="decide()"
+  [nomeDoEscopo]="nomeDoEscopo"
+  [indisponivel]="escrita.gravando()"
+  (confirmar)="decisao.confirmar(r.id, $event)"
+  (revogar)="decisao.abrirRevogacao($event)"
+/>
+} @empty {
+<p class="cfg-muted">A revisão não tem itens.</p>
+}
+
+<cfg-motivo-dialog
+  [(visible)]="decisao.aberto"
+  heading="Revogar o acesso"
+  confirmLabel="Revogar acesso"
+  ajuda="A concessão deixa de valer na hora. O motivo fica registrado na trilha."
+  [motivo]="decisao.motivo"
+  [tentou]="decisao.tentou()"
+  [pedidoDeFoco]="decisao.pedidoDeFoco()"
+  [erro]="decisao.erroDaRevogacao()"
+  [enviando]="escrita.gravando()"
+  (confirmado)="decisao.revogar(r.id)"
+/>
+}

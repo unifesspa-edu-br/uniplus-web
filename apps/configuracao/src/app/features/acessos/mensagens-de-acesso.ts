@@ -3,6 +3,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
 import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
 import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
+import { MENSAGENS_DA_REVISAO } from './revisoes/mensagens-da-revisao';
 import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
 
 const RAIZ = 'uniplus.autorizacao.';
@@ -132,18 +133,20 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   },
 };
 
+const TODAS: Readonly<Record<string, MensagemDaRecusa>> = {
+  ...MENSAGENS,
+  ...MENSAGENS_DE_VERSAO,
+  ...MENSAGENS_DA_JANELA,
+  ...MENSAGENS_DA_CONTENCAO,
+  ...MENSAGENS_DA_RECLASSIFICACAO,
+  ...MENSAGENS_DA_REVISAO,
+};
+
 /** Registra as mensagens do fluxo de acesso no lugar do texto curto da API. */
 export function provideMensagensDeAcesso(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const problemas = inject(ProblemI18nService);
-    const todas = {
-      ...MENSAGENS,
-      ...MENSAGENS_DE_VERSAO,
-      ...MENSAGENS_DA_JANELA,
-      ...MENSAGENS_DA_CONTENCAO,
-      ...MENSAGENS_DA_RECLASSIFICACAO,
-    };
-    for (const [sufixo, { titulo, resolver }] of Object.entries(todas)) {
+    for (const [sufixo, { titulo, resolver }] of Object.entries(TODAS)) {
       problemas.register(RAIZ + sufixo, { title: titulo, detail: resolver });
     }
   });

@@ -1,0 +1,84 @@
+<section class="panel" [attr.aria-labelledby]="'cfg-beneficiario-' + grupo().chave">
+  <div class="panel-head">
+    <h2 class="panel-head__title" [id]="'cfg-beneficiario-' + grupo().chave">
+      {{ grupo().nome }}
+    </h2>
+  </div>
+  <div class="table-responsive">
+    <table>
+      <caption class="sr-only">
+        Itens da revisão de
+        {{
+          grupo().nome
+        }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Perfil</th>
+          <th scope="col">Escopo</th>
+          <th scope="col">Válida até</th>
+          <th scope="col">Situação</th>
+          <th scope="col">Quem decide</th>
+          <th scope="col">Decisão</th>
+          <th scope="col"><span class="sr-only">Ações</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of grupo().itens; track item.id) {
+          <tr [attr.data-item-id]="item.id">
+            <td data-label="Perfil">{{ item.perfil.nome }}</td>
+            <td data-label="Escopo">{{ nomeDoEscopo()(item) }}</td>
+            <td data-label="Válida até">
+              {{ item.validaAte ? (item.validaAte | dateBr: 'datetime') : 'Sem prazo' }}
+            </td>
+            <td data-label="Situação">
+              <ui-tag [variant]="situacao(item.situacao).variante">{{
+                situacao(item.situacao).texto
+              }}</ui-tag>
+            </td>
+            <td data-label="Quem decide">
+              {{ quemDecide(item.decide) }}
+              @if (decidido(item)) {
+                <span class="cfg-muted">Governança gravada na decisão.</span>
+              }
+            </td>
+            <td data-label="Decisão">
+              @if (decidido(item)) {
+                {{ item.decididoPor?.nome ?? 'Pessoa não identificada' }},
+                {{ item.decididoEm | dateBr: 'datetime' }}
+              } @else {
+                Ainda não decidido
+              }
+            </td>
+            <td class="table-responsive__actions" data-label="Ações">
+              @if (decide()(item)) {
+                <button
+                  type="button"
+                  class="btn btn--secondary btn--sm"
+                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
+                  [attr.aria-label]="
+                    'Confirmar o acesso de ' + grupo().nome + ' ao perfil ' + item.perfil.nome
+                  "
+                  (click)="indisponivel() || confirmar.emit(item)"
+                >
+                  Confirmar
+                </button>
+                <button
+                  type="button"
+                  class="btn btn--danger btn--sm"
+                  [attr.aria-disabled]="indisponivel() ? 'true' : null"
+                  [attr.aria-label]="
+                    'Revogar o acesso de ' + grupo().nome + ' ao perfil ' + item.perfil.nome
+                  "
+                  (click)="indisponivel() || revogar.emit(item)"
+                >
+                  Revogar
+                </button>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

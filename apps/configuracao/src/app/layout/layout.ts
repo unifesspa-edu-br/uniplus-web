@@ -239,6 +239,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Revisões de acesso',
+          icon: 'pi-calendar',
+          routerLink: '/acessos/revisoes',
+          exact: true,
+        },
+        {
           label: 'Divergências da governança',
           icon: 'pi-exclamation-triangle',
           routerLink: '/acessos/governanca/divergencias',
