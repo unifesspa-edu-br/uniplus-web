@@ -14,7 +14,7 @@ import type { ItemDaJanelaDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { CatalogoDePermissoesStore } from '../versoes/catalogo-de-permissoes.store';
-import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
+import { situacaoDoItem } from './rotulos-da-janela';
 
 /** As concessões da janela, com a situação de cada uma; a ação por linha vem do `ng-template` projetado. */
 @Component({
@@ -67,9 +67,6 @@ import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
                 @if (item.exigeProtecaoDeDados) {
                   <span class="cfg-muted">Passa pela proteção de dados.</span>
                 }
-                @if (dispensa(item); as texto) {
-                  <span class="cfg-muted">{{ texto }}</span>
-                }
               </td>
               <td data-label="Situação">
                 <ui-tag [variant]="situacao(item).variante">{{ situacao(item).texto }}</ui-tag>
@@ -114,9 +111,5 @@ export class TabelaDaJanelaComponent {
 
   protected situacao(item: ItemDaJanelaDto) {
     return situacaoDoItem(item.situacao);
-  }
-
-  protected dispensa(item: ItemDaJanelaDto): string | null {
-    return dispensaDoItem(item.dispensa);
   }
 }

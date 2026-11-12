@@ -27,11 +27,6 @@ const FORMA_DO_ENCERRAMENTO: Readonly<Record<string, string>> = {
   manual: 'A gestão de acessos encerrou a janela antes do prazo.',
 };
 
-const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {
-  beneficiario_ja_tem_protecao_de_dados:
-    'Dispensada: a pessoa beneficiada já exerce a proteção de dados.',
-};
-
 export function situacaoDoItem(codigo: string): RotuloDaJanela {
   return SITUACAO_DO_ITEM[codigo] ?? { texto: codigo, variante: 'neutral' };
 }
@@ -42,10 +37,6 @@ export function situacaoDaJanela(codigo: string): RotuloDaJanela {
 
 export function formaDoEncerramento(codigo: string | null): string | null {
   return codigo === null ? null : (FORMA_DO_ENCERRAMENTO[codigo] ?? codigo);
-}
-
-export function dispensaDoItem(codigo: string | null): string | null {
-  return codigo === null ? null : (MOTIVO_DA_DISPENSA[codigo] ?? codigo);
 }
 
 /** O que diz a quem lê sobre as concessões que são dele: quem as decide depende da situação. */
