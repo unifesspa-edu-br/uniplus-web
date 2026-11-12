@@ -64,6 +64,13 @@ export class RevisoesStore {
     notificarFalhasDeLeitura(this.problemas, this.notificacoes, [this.lista.problem]);
   }
 
+  /** A troca de situação volta à primeira página e não mostra a lista anterior enquanto lê a nova. */
+  filtrarPor(filtro: FiltroDaRevisao): void {
+    if (filtro === this.filtro()) return;
+    this.navegacao.esvaziar();
+    this.filtro.set(filtro);
+  }
+
   proximaPagina(): void {
     this.navegacao.irParaProxima();
   }
