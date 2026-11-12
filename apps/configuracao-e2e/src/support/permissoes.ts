@@ -78,5 +78,11 @@ export const PERMISSOES_DO_DIOGO_REVE_REVISOES = [
   'autorizacao:revisoes:rever-protecao-de-dados',
 ] as const;
 
-/** Isabella, Encarregado de dados, só consulta as revisões (contrato da uniplus-api#2364). */
-export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = ['autorizacao:revisoes:consultar'] as const;
+/**
+ * Isabella, Encarregado de dados, só consulta as revisões e as concessões (contrato da
+ * uniplus-api#2364).
+ */
+export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = [
+  'autorizacao:revisoes:consultar',
+  'autorizacao:concessoes:consultar',
+] as const;

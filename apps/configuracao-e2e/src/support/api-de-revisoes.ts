@@ -28,6 +28,7 @@ const PENDENTE = {
   situacao: 'pendente',
   decididoPor: null,
   decididoEm: null,
+  ehDoLeitor: false,
 };
 
 export function itemDaRevisao(id: string, beneficiario: Identidade, parcial: object = {}) {
@@ -41,7 +42,10 @@ export const ITEM_DECIDIDO = {
   decididoEm: '2026-11-10T13:00:00Z',
 };
 
-/** Os itens da revisão aberta: dois da Fernanda (um já decidido), o do Diogo e o de quem lê. */
+/**
+ * Os itens da revisão aberta: dois da Fernanda (um já decidido), o do Diogo e o de quem lê, que a
+ * API marca com `ehDoLeitor`.
+ */
 export function itensDaRevisao(subDeQuemLe: string) {
   return [
     itemDaRevisao('i1', FERNANDA),
@@ -50,7 +54,11 @@ export function itensDaRevisao(subDeQuemLe: string) {
       perfil: { id: 'p2', nome: 'Avaliador de recursos' },
     }),
     itemDaRevisao('i3', DIOGO, { decide: 'gestor-de-acessos' }),
-    itemDaRevisao('i4', { emissor: EMISSOR, sub: subDeQuemLe, nome: 'Pessoa que lê a revisão' }),
+    itemDaRevisao(
+      'i4',
+      { emissor: EMISSOR, sub: subDeQuemLe, nome: 'Pessoa que lê a revisão' },
+      { ehDoLeitor: true },
+    ),
   ];
 }
 
@@ -87,27 +95,32 @@ export interface CenarioDaRevisao {
 export interface ChamadaDaRevisao {
   readonly metodo: string;
   readonly caminho: string;
+  readonly consulta: URLSearchParams;
   readonly corpo: unknown;
 }
 
 function registrar(route: Route, chamadas: ChamadaDaRevisao[]): void {
   const requisicao = route.request();
   const corpo = requisicao.postData() === null ? null : requisicao.postDataJSON();
-  chamadas.push({
-    metodo: requisicao.method(),
-    caminho: new URL(requisicao.url()).pathname,
-    corpo,
-  });
+  const { pathname, searchParams } = new URL(requisicao.url());
+  chamadas.push({ metodo: requisicao.method(), caminho: pathname, consulta: searchParams, corpo });
+}
+
+/** A API filtra a lista pela situação antes de paginar. */
+function naSituacao(lista: readonly object[], situacao: string | null): readonly object[] {
+  if (situacao === null) return lista;
+  return lista.filter((r) => (r as { situacao?: string }).situacao === situacao);
 }
 
 function respostaDe(route: Route, cenario: CenarioDaRevisao, leituras: { vez: number }): Resposta {
-  const { pathname } = new URL(route.request().url());
+  const { pathname, searchParams } = new URL(route.request().url());
   if (route.request().method() === 'POST') {
     return pathname.endsWith('/revisoes')
       ? (cenario.abertura ?? { status: 201, corpo: revisaoAberta(subDe(route)) })
       : (cenario.decisao ?? { status: 204 });
   }
-  if (pathname.endsWith('/revisoes')) return { status: 200, corpo: cenario.lista ?? [] };
+  if (pathname.endsWith('/revisoes'))
+    return { status: 200, corpo: naSituacao(cenario.lista ?? [], searchParams.get('situacao')) };
   const leitura = cenario.detalhe[Math.min(leituras.vez++, cenario.detalhe.length - 1)];
   return leitura ? { status: 200, corpo: leitura(subDe(route)) } : { status: 404 };
 }
@@ -127,4 +140,37 @@ export async function mockRevisoes(
     return responder(route, respostaDe(route, cenario, leituras));
   });
   return chamadas;
+}
+
+const CONCESSAO_DA_FERNANDA = {
+  beneficiario: FERNANDA,
+  perfil: { id: 'p2', nome: 'Avaliador de recursos' },
+  versao: 1,
+  escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
+  origem: { tipo: 'pedido', id: 'pedido-1' },
+  concedidaEm: '2026-03-02T12:00:00Z',
+  validaAte: null,
+  ativa: false,
+};
+
+/** A concessão revogada na revisão, com o motivo, que a tela da concessão mostra. */
+export function concessaoRevogada(id: string, motivo: string) {
+  return {
+    ...CONCESSAO_DA_FERNANDA,
+    id,
+    revogadaEm: '2026-11-10T13:00:00Z',
+    revogadaPor: BETINA,
+    revogadaPelaJanelaId: null,
+    motivoRevogacao: motivo,
+  };
+}
+
+/** Atende a leitura de uma concessão e da trilha dela. */
+export async function mockConcessao(page: Page, concessao: { readonly id: string }): Promise<void> {
+  await page.route(/\/api\/autorizacao\/concessoes\/[^/?]+(\/trilha)?(\?.*)?$/u, (route) => {
+    if (route.request().method() === 'OPTIONS')
+      return route.fulfill({ status: 204, headers: CORS_HEADERS });
+    const trilha = new URL(route.request().url()).pathname.endsWith('/trilha');
+    return responder(route, { status: 200, corpo: trilha ? [] : concessao });
+  });
 }
