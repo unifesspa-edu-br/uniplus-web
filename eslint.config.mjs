@@ -1,5 +1,7 @@
 import nx from '@nx/eslint-plugin';
 import sonarjs from 'eslint-plugin-sonarjs';
+import css from '@eslint/css';
+import { tailwind4 } from 'tailwind-csstree';
 
 export default [
   ...nx.configs['flat/base'],
@@ -136,6 +138,53 @@ export default [
     rules: {
       'max-lines': ['warn', { max: 400, skipBlankLines: false, skipComments: false }],
     },
+  },
+  {
+    // CSS com a sintaxe do Tailwind 4 (CONTRIBUTING.md, seção "Lint de CSS"). Os tokens do Uni+ DS
+    // são definidos em outro arquivo, por isso variável desconhecida não é erro.
+    files: ['**/*.css'],
+    plugins: { css },
+    language: 'css/css',
+    languageOptions: { customSyntax: tailwind4 },
+    rules: {
+      ...css.configs.recommended.rules,
+      'css/no-invalid-properties': ['error', { allowUnknownVariables: true }],
+      'css/relative-font-units': ['error', { allowUnits: ['rem', 'em'] }],
+      'css/use-baseline': [
+        'error',
+        {
+          // Acabamento que o navegador sem suporte ignora sem prejuízo do uso.
+          allowProperties: [
+            'accent-color',
+            'overscroll-behavior',
+            'print-color-adjust',
+            'resize',
+            'scrollbar-color',
+            'scrollbar-gutter',
+            'scrollbar-width',
+            'user-select',
+          ],
+          allowPropertyValues: { 'break-after': ['avoid'] },
+          allowAtRules: ['page'],
+          allowSelectors: ['marker'],
+        },
+      ],
+    },
+  },
+  {
+    // Camadas que precisam vencer a especificidade de qualquer componente: utilitários de leitor de
+    // tela e de impressão, preferência de movimento reduzido e o documento no papel.
+    files: [
+      'libs/shared-ui/src/styles/base.css',
+      'libs/shared-ui/src/styles/tokens/preferencias-do-usuario.css',
+      '**/*-impressao.css',
+    ],
+    rules: { 'css/no-important': 'off' },
+  },
+  {
+    // No papel, pt é a unidade de tamanho de fonte.
+    files: ['**/*-impressao.css'],
+    rules: { 'css/relative-font-units': 'off' },
   },
   {
     files: ['**/*.ts', '**/*.tsx'],
