@@ -48,10 +48,6 @@
   background: var(--color-danger-50);
 }
 
-.input[type='date']::-webkit-calendar-picker-indicator {
-  /* display: none; */
-}
-
 /* Upload section */
 .upload-section {
   margin-top: var(--space-5);
