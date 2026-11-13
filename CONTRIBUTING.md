@@ -480,6 +480,44 @@ export function paginar<T>(itens: readonly T[], tamanho: number): T[][] {
 
 Documentação que só repete o nome e o tipo não acrescenta nada: `/** Retorna o nome. */` em `obterNome(): string` não diz mais que a assinatura, e fica de fora. Membro privado de componente e spec se explicam pelo nome; documentação neles é exceção, para o porquê não óbvio. O JSDoc acima da função não conta no `max-lines-per-function`.
 
+### Tipos de domínio no lugar de primitivos
+
+Conceito de domínio com significado próprio não trafega como `string` ou `number` soltos. Uma situação, uma edição do ENEM ou uma etapa têm nome e valores admitidos; o primitivo esconde isso e deixa o compilador aceitar um valor no lugar do outro. Use tipos próprios: `interface`/`type` coesos, uniões de literais e uniões discriminadas no lugar de `string`/`number` quando isso der significado.
+
+**Agrupe só o que é coeso.** Um tipo ou um objeto de parâmetro reúne dados que andam juntos e que, juntos, significam algo no domínio. É proibido criar um agrupamento artificial só para baixar a contagem de `max-params`: isso é código escrito para caber na métrica, que a [§ Métricas de qualidade](#métricas-de-qualidade) já recusa.
+
+```typescript
+// Evite: primitivos soltos; nada impede trocar o id pelo nome ou passar uma situação inexistente
+function abrirNotasDoEnem(situacao: string, etapaId: string, etapaNome: string, edicoes: string[]) { … }
+
+// Prefira: o tipo diz o que o processo admite (features/processo-seletivo/notas-do-enem/escopo-do-enem.ts)
+export interface EtapaDoEnem {
+  readonly id: string;
+  readonly nome: string;
+}
+
+export type EscopoDoEnem =
+  | { readonly situacao: 'rascunho' }
+  | { readonly situacao: 'semEtapa' }
+  | { readonly situacao: 'semEdicoes' }
+  | { readonly situacao: 'pronto'; readonly etapa: EtapaDoEnem; readonly edicoes: readonly string[] };
+
+function abrirNotasDoEnem(escopo: EscopoDoEnem) { … }
+```
+
+```typescript
+// Contra-exemplo: agrupamento artificial, só para a função caber em 4 parâmetros.
+// Serviço HTTP, sinal de carregamento e escopo não formam um conceito de domínio.
+interface OpcoesDoEnvio {
+  http: HttpClient;
+  carregando: WritableSignal<boolean>;
+  escopo: EscopoDoEnem;
+  tentativa: number;
+}
+```
+
+**Builders e fábricas de dados só nos specs.** No código de produção, o objeto é montado pelo literal tipado ou pela função que o produz, e o compilador confere os campos obrigatórios. Nos specs, use fábricas de dados com padrões válidos e sobrescrita só do que importa ao cenário (por exemplo, `umEscopoPronto({ edicoes: ['2025'] })`), no lugar de repetir o literal inteiro em cada teste.
+
 ### Métricas de qualidade
 
 As métricas abaixo valem para todo código que o PR cria ou altera, de produção e de teste (specs, mocks, utilitários de teste e E2E). As regras numéricas (1 a 4) são medidas pelo ESLint, e **o número que vale é o do aviso do lint**: não há contagem paralela. O texto abaixo explica como cada regra conta, para você prever o aviso antes de rodar o lint. A revisão cobra os limites no código novo ou alterado e julga o que o lint não mede: o tamanho de CSS, o tamanho de cada caso de teste e as regras 5 e 6.
@@ -744,6 +782,7 @@ Complementa os Quality gates acima (verificações de CI automáticas) com higie
 - [ ] Branch **rebaseada** sobre a `main` mais recente
 - [ ] Commits "WIP" / "ajustes do PR" foram **squashados** via `git rebase -i`
 - [ ] PR vinculado à issue com `Closes #N` na descrição
+- [ ] Conceitos de domínio modelados com tipos próprios, sem primitivos soltos nem agrupamento artificial para caber na métrica, e builders/fábricas de dados só nos specs ([§ Tipos de domínio no lugar de primitivos](#tipos-de-domínio-no-lugar-de-primitivos))
 - [ ] Nenhum aviso novo de `max-lines-per-function`, `max-lines`, `max-params`, `complexity` ou `sonarjs/cognitive-complexity` no código criado ou alterado, specs incluídos, e nenhuma supressão de aviso ([§ Métricas de qualidade](#métricas-de-qualidade)) — o CI ainda não os barra
 
 ---
