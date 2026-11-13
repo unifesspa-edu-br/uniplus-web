@@ -14,7 +14,11 @@
   @if (manifestacao.erro(); as erro) {
     <ui-alert variant="danger" heading="A manifestação não foi registrada">{{ erro }}</ui-alert>
   }
-  <form [formGroup]="form" (ngSubmit)="manifestacao.enviar(detalhe())">
+  <form
+    [formGroup]="form"
+    [attr.aria-busy]="manifestacao.enviando()"
+    (ngSubmit)="manifestacao.enviar(detalhe())"
+  >
     <fieldset
       class="field"
       [class.is-error]="erroDoParecer()"

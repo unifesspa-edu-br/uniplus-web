@@ -1,4 +1,4 @@
-import { Injectable, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators, type AbstractControl } from '@angular/forms';
 import { firstValueFrom, map, type Observable } from 'rxjs';
@@ -55,7 +55,15 @@ export class ManifestacaoDoItem {
     }),
     texto: new FormControl('', { nonNullable: true }),
   });
-  readonly enviando = signal(false);
+  /** Os itens com manifestação a caminho do servidor. */
+  private readonly pendentes = signal<ReadonlySet<string>>(new Set());
+  /** O item aberto, para recomeçar o formulário quando a pessoa passa a outro. */
+  private readonly itemDoFormulario = signal<string | null>(null);
+  /** O envio pendente de outro item não trava nem marca como ocupado o item aberto. */
+  readonly enviando = computed(() => {
+    const item = this.itemDoFormulario();
+    return item !== null && this.pendentes().has(item);
+  });
   readonly tentou = signal(false);
   readonly erro = signal<string | null>(null);
   readonly aviso = signal<string | null>(null);
@@ -66,9 +74,6 @@ export class ManifestacaoDoItem {
     { initialValue: false },
   );
 
-  /** O item aberto, para recomeçar o formulário quando a pessoa passa a outro. */
-  private itemDoFormulario: string | null = null;
-
   constructor() {
     effect(() => {
       const id = this.store.detalhe()?.id ?? null;
@@ -76,11 +81,12 @@ export class ManifestacaoDoItem {
     });
   }
 
-  /** Outro item: parecer, texto, erros e avisos do anterior não passam para ele. */
+  /** Outro item: parecer, texto, erros, avisos e a trava do envio do anterior não passam para ele. */
   private trocarDeItem(id: string | null): void {
-    if (id === null || id === this.itemDoFormulario) return;
-    this.itemDoFormulario = id;
+    if (id === null || id === this.itemDoFormulario()) return;
+    this.itemDoFormulario.set(id);
     this.form.reset();
+    this.travarSeEnviando();
     this.tentou.set(false);
     this.erro.set(null);
     this.aviso.set(null);
@@ -89,17 +95,33 @@ export class ManifestacaoDoItem {
   /** A resposta que chega depois de a pessoa passar a outro item não mexe no formulário dele. */
   async enviar(detalhe: DetalheDaProtecaoDoCatalogoDto): Promise<void> {
     if (this.enviando() || !this.conferir()) return;
-    this.enviando.set(true);
-    const aindaNoItem = () => this.itemDoFormulario === detalhe.id;
-    try {
-      const resultado = await firstValueFrom(this.gravar(this.corpo(detalhe)));
-      this.chave.aposResposta(resultado);
-      if (aindaNoItem()) this.desfecho(resultado);
-    } catch {
-      if (aindaNoItem()) this.erro.set(FALHA_INESPERADA);
-    } finally {
-      this.enviando.set(false);
-    }
+    const corpo = this.corpo(detalhe);
+    this.marcarPendente(detalhe.id, true);
+    const resultado = await firstValueFrom(this.gravar(corpo)).catch(() => null);
+    this.marcarPendente(detalhe.id, false);
+    if (resultado) this.chave.aposResposta(resultado);
+    if (this.itemDoFormulario() !== detalhe.id) return;
+    if (resultado) this.desfecho(resultado);
+    else this.erro.set(FALHA_INESPERADA);
+  }
+
+  /**
+   * Durante o envio o parecer e o texto do item ficam travados: o que se envia é o que está na
+   * tela. Destrava antes do desfecho, que pode marcar nos campos a recusa do servidor.
+   */
+  private marcarPendente(item: string, pendente: boolean): void {
+    this.pendentes.update((atuais) => {
+      const novos = new Set(atuais);
+      if (pendente) novos.add(item);
+      else novos.delete(item);
+      return novos;
+    });
+    this.travarSeEnviando();
+  }
+
+  private travarSeEnviando(): void {
+    if (this.enviando()) this.form.disable();
+    else this.form.enable();
   }
 
   private gravar(corpo: RegistrarManifestacaoDaProtecaoRequest): Observable<ApiResult<void>> {
