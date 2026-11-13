@@ -63,6 +63,10 @@ function formatador(
   return novo;
 }
 
+function formatadorDoFormato(formato: FormatoDataBr, fuso: string): Intl.DateTimeFormat {
+  return formatador('pt-BR', OPCOES_POR_FORMATO[formato], fuso, `${formato}|${fuso}`);
+}
+
 /**
  * Data ou instante como as telas do Uni+ o mostram, em pt-BR e no fuso dado — por padrão, o
  * institucional. A hora de parede sem zona (`AAAA-MM-DDTHH:mm`) é lida nesse mesmo fuso, para que
@@ -78,18 +82,13 @@ export function formatarDataBr(
   if (!entrada) return '';
   const lida = entrada instanceof Date ? { instante: entrada, fuso } : lerEntrada(entrada, fuso);
   if (!lida || Number.isNaN(lida.instante.getTime())) return '';
-  const intl = formatador(
-    'pt-BR',
-    OPCOES_POR_FORMATO[formato],
-    lida.fuso,
-    `${formato}|${lida.fuso}`,
-  );
+  const intl = formatadorDoFormato(formato, lida.fuso);
   return formato === 'shortMonth' ? diaMesAbreviadoAno(intl, lida.instante) : intl.format(lida.instante);
 }
 
 /** O Intl abrevia o mês com ponto ("jun."); a tela mostra "05 jun 2026". */
 function diaMesAbreviadoAno(intl: Intl.DateTimeFormat, instante: Date): string {
-  const partes = new Map(intl.formatToParts(instante).map((p) => [p.type, p.value]));
+  const partes = partesDoIntl(intl, instante);
   return `${partes.get('day') ?? ''} ${(partes.get('month') ?? '').replace('.', '')} ${partes.get('year') ?? ''}`;
 }
 
@@ -173,21 +172,34 @@ export function instanteDaHoraDeParede(
   horaDeParede: HoraDeParede,
   fuso: string = FUSO_INSTITUCIONAL,
 ): Date {
-  const { ano, mes, dia, hora, minuto, segundo } = horaDeParede;
-  const comoSeFosseUtc = new Date(0);
-  comoSeFosseUtc.setUTCFullYear(ano, mes - 1, dia);
-  comoSeFosseUtc.setUTCHours(hora, minuto, segundo, 0);
-  const utc = comoSeFosseUtc.getTime();
-  // Os deslocamentos de antes e de depois de uma eventual virada: um dia de folga basta, porque
-  // nenhum fuso muda de regra duas vezes em dois dias.
-  const antes = deslocamentoEmMilissegundos(new Date(utc - MS_POR_DIA), fuso);
-  const depois = deslocamentoEmMilissegundos(new Date(utc + MS_POR_DIA), fuso);
-  const candidatos = [utc - antes, utc - depois]
+  const utc = milissegundosEmUtc(horaDeParede);
+  const { antes, depois } = deslocamentosAoRedorDe(utc, fuso);
+  const candidato = [utc - antes, utc - depois]
     .sort((a, b) => a - b)
-    .filter((instante) => mesmaHoraDeParede(new Date(instante), horaDeParede, fuso));
+    .find((instante) => mesmaHoraDeParede(new Date(instante), horaDeParede, fuso));
   // Sem candidato, a hora cai na lacuna: lida com o deslocamento de antes da virada, ela avança
   // tanto quanto o relógio saltou.
-  return new Date(candidatos[0] ?? utc - antes);
+  return new Date(candidato ?? utc - antes);
+}
+
+/** Os milissegundos que a hora de parede teria se o relógio estivesse em UTC. */
+function milissegundosEmUtc(parede: HoraDeParede): number {
+  const { ano, mes, dia, hora, minuto, segundo } = parede;
+  const data = new Date(0);
+  data.setUTCFullYear(ano, mes - 1, dia);
+  data.setUTCHours(hora, minuto, segundo, 0);
+  return data.getTime();
+}
+
+/**
+ * Os deslocamentos de antes e de depois de uma eventual virada: um dia de folga basta, porque
+ * nenhum fuso muda de regra duas vezes em dois dias.
+ */
+function deslocamentosAoRedorDe(utc: number, fuso: string): { antes: number; depois: number } {
+  return {
+    antes: deslocamentoEmMilissegundos(new Date(utc - MS_POR_DIA), fuso),
+    depois: deslocamentoEmMilissegundos(new Date(utc + MS_POR_DIA), fuso),
+  };
 }
 
 /** Deslocamento do fuso em relação a UTC, em minutos, no instante dado (Belém hoje: −180). */
@@ -203,13 +215,21 @@ export function deslocamentoDoFusoEmMinutos(
  * inteiros (a hora média local de Belém, antes de 1914, era −3:13:56).
  */
 function deslocamentoEmMilissegundos(instante: Date, fuso: string): number {
-  const partes = partesNoFuso(instante, fuso);
-  const comoSeFosseUtc = new Date(0);
-  comoSeFosseUtc.setUTCFullYear(Number(partes.ano), Number(partes.mes) - 1, Number(partes.dia));
-  comoSeFosseUtc.setUTCHours(Number(partes.hora), Number(partes.minuto), Number(partes.segundo), 0);
+  const parede = horaDeParedeDasPartes(partesNoFuso(instante, fuso));
   // O instante pode trazer milissegundos; a hora de parede, não.
   const semMilissegundos = Math.floor(instante.getTime() / 1_000) * 1_000;
-  return comoSeFosseUtc.getTime() - semMilissegundos;
+  return milissegundosEmUtc(parede) - semMilissegundos;
+}
+
+function horaDeParedeDasPartes(partes: PartesDoInstante): HoraDeParede {
+  return {
+    ano: Number(partes.ano),
+    mes: Number(partes.mes),
+    dia: Number(partes.dia),
+    hora: Number(partes.hora),
+    minuto: Number(partes.minuto),
+    segundo: Number(partes.segundo),
+  };
 }
 
 /** As partes da hora de parede de um instante no fuso dado, com dois dígitos (ano com quatro). */
@@ -222,22 +242,26 @@ export interface PartesDoInstante {
   readonly segundo: string;
 }
 
+const OPCOES_DAS_PARTES: Intl.DateTimeFormatOptions = {
+  hour12: false,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+};
+
+function formatadorDasPartes(fuso: string): Intl.DateTimeFormat {
+  return formatador('en-CA', OPCOES_DAS_PARTES, fuso, `partes|${fuso}`);
+}
+
+function partesDoIntl(intl: Intl.DateTimeFormat, instante: Date): Map<string, string> {
+  return new Map(intl.formatToParts(instante).map((p) => [p.type, p.value]));
+}
+
 export function partesNoFuso(instante: Date, fuso: string = FUSO_INSTITUCIONAL): PartesDoInstante {
-  const intl = formatador(
-    'en-CA',
-    {
-      hour12: false,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    },
-    fuso,
-    `partes|${fuso}`,
-  );
-  const encontradas = new Map(intl.formatToParts(instante).map((p) => [p.type, p.value]));
+  const encontradas = partesDoIntl(formatadorDasPartes(fuso), instante);
   const hora = encontradas.get('hour') ?? '00';
   return {
     ano: (encontradas.get('year') ?? '0').padStart(4, '0'),
@@ -269,18 +293,25 @@ interface EntradaLida {
 }
 
 function lerEntrada(texto: string, fuso: string): EntradaLida | null {
-  if (DATA_HORA_COM_ZONA.test(texto)) {
-    const instante = new Date(texto);
-    return Number.isNaN(instante.getTime()) ? null : { instante, fuso };
-  }
+  if (DATA_HORA_COM_ZONA.test(texto)) return lerInstanteComZona(texto, fuso);
   const local = DATA_HORA_LOCAL.exec(texto);
-  if (local) {
-    const [ano, mes, dia, hora, minuto] = local.slice(1, 6).map(Number);
-    const segundo = Number(local[6] ?? 0);
-    return dataGregorianaValida(ano, mes, dia) && horaValida(hora, minuto, segundo)
-      ? { instante: instanteDaHoraDeParede({ ano, mes, dia, hora, minuto, segundo }, fuso), fuso }
-      : null;
-  }
+  return local ? lerHoraDeParede(local, fuso) : lerDataSemHora(texto);
+}
+
+function lerInstanteComZona(texto: string, fuso: string): EntradaLida | null {
+  const instante = new Date(texto);
+  return Number.isNaN(instante.getTime()) ? null : { instante, fuso };
+}
+
+function lerHoraDeParede(local: RegExpExecArray, fuso: string): EntradaLida | null {
+  const [ano, mes, dia, hora, minuto] = local.slice(1, 6).map(Number);
+  const segundo = Number(local[6] ?? 0);
+  return dataGregorianaValida(ano, mes, dia) && horaValida(hora, minuto, segundo)
+    ? { instante: instanteDaHoraDeParede({ ano, mes, dia, hora, minuto, segundo }, fuso), fuso }
+    : null;
+}
+
+function lerDataSemHora(texto: string): EntradaLida | null {
   const br = DATA_BR_COM_HIFEN.exec(texto);
   const data = br ? dataPura(Number(br[3]), Number(br[2]), Number(br[1])) : lerDataIso(texto);
   return data ? { instante: data, fuso: 'UTC' } : null;
