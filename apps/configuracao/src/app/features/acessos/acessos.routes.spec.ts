@@ -205,11 +205,30 @@ describe('rotas dos acessos', () => {
     expect(rota(caminho).data?.['etapa']).toBe(etapa);
   });
 
-  it('carrega cada tela sob demanda', async () => {
-    const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
+  const GRUPOS_DE_TELAS: readonly (readonly [string, RegExp])[] = [
+    ['pedidos', /^(pedidos|fila-|historico)/u],
+    ['concessões', /^concessoes/u],
+    ['janela e revisões', /^(janelas-de-migracao|perfis\/:id\/janela$|revisoes)/u],
+    ['perfis e versões', /^(perfis|versoes-de-perfil|reclassificacoes|governanca)/u],
+    ['termo', /^termo-de-responsabilidade$/u],
+  ];
+  const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
+  const grupoDe = (item: Route) =>
+    GRUPOS_DE_TELAS.find(([, padrao]) => padrao.test(item.path ?? ''))?.[0];
+
+  it('carrega sob demanda as 23 telas, cada uma num grupo', () => {
     expect(carregaveis).toHaveLength(23);
-    for (const item of carregaveis) {
-      expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
-    }
+    expect(carregaveis.filter((item) => grupoDe(item) === undefined)).toEqual([]);
   });
+
+  it.each(GRUPOS_DE_TELAS.map(([nome]) => nome))(
+    'carrega sob demanda as telas de %s',
+    async (nome) => {
+      const doGrupo = carregaveis.filter((item) => grupoDe(item) === nome);
+      expect(doGrupo.length).toBeGreaterThan(0);
+      for (const item of doGrupo) {
+        expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
+      }
+    },
+  );
 });
