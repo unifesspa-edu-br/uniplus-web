@@ -153,6 +153,53 @@ describe('etapa lida na consulta', () => {
     );
   });
 
+  it('lê a suspensividade em dias corridos nas duas instâncias', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          suspensividadePrimeiraInstanciaValor: '48',
+          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
+          admiteInstanciaSuperior: true,
+          suspensividadeSegundaInstanciaValor: '3',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).toContain('suspensividade da 1ª instância de 48 horas');
+    expect(texto).toContain('suspensividade da 2ª instância de 3 dias corridos');
+  });
+
+  it('concorda em número o dia corrido no singular', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          suspensividadePrimeiraInstanciaValor: '1',
+          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).toContain('suspensividade da 1ª instância de 1 dia corrido');
+  });
+
+  it('não lê a suspensividade da segunda instância quando a janela não a admite', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          admiteInstanciaSuperior: false,
+          suspensividadeSegundaInstanciaValor: '3',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).not.toContain('2ª instância');
+  });
+
   it('concorda em número a unidade em horas', () => {
     const [texto] = lida({
       recursos: [{ ...recurso, prazoValor: '2', prazoUnidade: UnidadePrazo.horas }],
