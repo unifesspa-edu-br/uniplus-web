@@ -3,6 +3,7 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
 import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
 import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
+import { MENSAGENS_DA_PROVIDENCIA } from './providencias/mensagens-da-providencia';
 import { MENSAGENS_DA_REVISAO } from './revisoes/mensagens-da-revisao';
 import { MENSAGENS_DO_TERMO } from './termo/mensagens-do-termo';
 import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
@@ -143,6 +144,7 @@ const TODAS: Readonly<Record<string, MensagemDaRecusa>> = {
   ...MENSAGENS_DA_RECLASSIFICACAO,
   ...MENSAGENS_DA_REVISAO,
   ...MENSAGENS_DO_TERMO,
+  ...MENSAGENS_DA_PROVIDENCIA,
 };
 
 /** Registra as mensagens do fluxo de acesso no lugar do texto curto da API. */
