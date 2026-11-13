@@ -85,6 +85,7 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/reclassificacoes/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/reclassificacoes/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/revisoes': PERMISSOES_DA_REVISAO,
+  'acessos/termo-de-responsabilidade': [autorizacao.termosPublicar],
   'acessos/governanca/divergencias': [
     autorizacao.perfisManter,
     autorizacao.perfisAprovarProtecaoDeDados,

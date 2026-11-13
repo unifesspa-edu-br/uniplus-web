@@ -72,4 +72,8 @@ describe('PERMISSAO.autorizacao', () => {
       PERMISSAO.autorizacao.concessoesConsultar,
     ]).toEqual(['autorizacao:concessoes:administrar', 'autorizacao:concessoes:consultar']);
   });
+
+  it('declara a publicação do termo de responsabilidade', () => {
+    expect(PERMISSAO.autorizacao.termosPublicar).toBe('autorizacao:termos:publicar');
+  });
 });

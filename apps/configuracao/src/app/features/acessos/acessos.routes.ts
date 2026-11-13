@@ -151,6 +151,15 @@ export const ACESSOS_ROUTES: Routes = [
           ),
       },
       {
+        path: 'termo-de-responsabilidade',
+        canActivate: [
+          permissaoGuard(...PERMISSOES_DAS_TELAS['acessos/termo-de-responsabilidade']),
+        ],
+        data: { breadcrumb: 'Termo de responsabilidade' },
+        loadComponent: () =>
+          import('./termo/publicacao-do-termo.page').then((m) => m.PublicacaoDoTermoPage),
+      },
+      {
         path: 'revisoes',
         canActivate: [permissaoGuard(...PERMISSOES_DA_REVISAO)],
         data: { breadcrumb: 'Revisões de acesso' },

@@ -15,6 +15,7 @@ export const PERMISSAO = {
     revisoesConduzir: 'autorizacao:revisoes:conduzir',
     revisoesConsultar: 'autorizacao:revisoes:consultar',
     revisoesReverProtecaoDeDados: 'autorizacao:revisoes:rever-protecao-de-dados',
+    termosPublicar: 'autorizacao:termos:publicar',
   },
   configuracao: {
     baseLegalBonusRegionalManter: 'configuracao:base-legal-bonus-regional:manter',
