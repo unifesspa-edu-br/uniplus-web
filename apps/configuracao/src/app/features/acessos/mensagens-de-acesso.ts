@@ -4,6 +4,7 @@ import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
 import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
 import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
 import { MENSAGENS_DA_REVISAO } from './revisoes/mensagens-da-revisao';
+import { MENSAGENS_DO_TERMO } from './termo/mensagens-do-termo';
 import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
 
 const RAIZ = 'uniplus.autorizacao.';
@@ -18,8 +19,9 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
     resolver: 'Envie um PDF de até 10 MB e confirme o envio de novo.',
   },
   'pedido.anexo_nao_verificado': {
-    titulo: 'O documento ainda não foi verificado.',
-    resolver: 'Aguarde a verificação. Se o documento foi recusado, envie outro arquivo.',
+    titulo: 'O anexo ainda não foi verificado.',
+    resolver:
+      'O documento declarado ainda não foi verificado; o aceite e a decisão esperam a verificação. Se o documento foi recusado, envie outro arquivo.',
   },
   'pedido.beneficiario_invalido': {
     titulo: 'O e-mail do beneficiário não é institucional.',
@@ -140,6 +142,7 @@ const TODAS: Readonly<Record<string, MensagemDaRecusa>> = {
   ...MENSAGENS_DA_CONTENCAO,
   ...MENSAGENS_DA_RECLASSIFICACAO,
   ...MENSAGENS_DA_REVISAO,
+  ...MENSAGENS_DO_TERMO,
 };
 
 /** Registra as mensagens do fluxo de acesso no lugar do texto curto da API. */

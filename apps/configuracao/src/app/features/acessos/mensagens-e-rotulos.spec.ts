@@ -28,7 +28,7 @@ describe('mensagens de acesso', () => {
     });
 
     expect(textoDaRecusa(mensagem)).toBe(
-      'O documento ainda não foi verificado. Aguarde a verificação. Se o documento foi recusado, envie outro arquivo.',
+      'O anexo ainda não foi verificado. O documento declarado ainda não foi verificado; o aceite e a decisão esperam a verificação. Se o documento foi recusado, envie outro arquivo.',
     );
   });
 
