@@ -65,6 +65,9 @@
                 <ui-tag [variant]="rotulo(pedido.situacao).variante">{{
                   rotulo(pedido.situacao).texto
                 }}</ui-tag>
+                @if (pedido.aguardaAceiteDoTermo) {
+                  <ui-tag variant="warning">Aguarda o aceite do termo</ui-tag>
+                }
               </td>
               <td data-label="Pedido em">{{ pedido.criadoEm | dateBr: 'datetime' }}</td>
               <td
