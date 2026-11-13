@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { assertReflowContract, runAxeWcagAA } from '@uniplus/shared-e2e';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { mockManifestacoesDosCadastros } from '../support/listas-de-tipos-e-fatos';
 import { laudoSeed, mockApi, novoCapturado, rgSeed } from '../support/tipos-documento-api';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -11,6 +12,7 @@ test.describe('Tipo de documento — lista e formulário', () => {
   test.beforeEach(async ({ page }, testInfo) => {
     const theme = metadataTheme(testInfo);
     await mockConfiguracaoRuntimeConfig(page);
+    await mockManifestacoesDosCadastros(page);
     await page.addInitScript((dsTheme: VisualTheme) => {
       window.localStorage.setItem(
         'uniplus.a11y',

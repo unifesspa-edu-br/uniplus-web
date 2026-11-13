@@ -56,9 +56,37 @@ async function mockHistoricosDosCadastros(page: Page): Promise<void> {
   await page.route(new RegExp(`${ADMIN}\\/fatos-candidato\\/[^/?]+\\/protecao\\/atos$`), (r) =>
     json(r, ATOS_DO_FATO),
   );
+  await mockManifestacoesDosCadastros(page);
+}
+
+/**
+ * As manifestações técnicas que o drawer dos tipos de documento e dos fatos do candidato lê, nas
+ * rotas do cadastro. Os testes que montam a própria API chamam isto para o drawer não ficar sem
+ * resposta; sem lista dada, o histórico vem vazio.
+ */
+export async function mockManifestacoesDosCadastros(
+  page: Page,
+  manifestacoes: readonly object[] = [],
+): Promise<void> {
   await page.route(
     new RegExp(`${ADMIN}\\/(tipos-documento|fatos-candidato)\\/[^/?]+\\/protecao\\/manifestacoes$`),
-    (r) => json(r, []),
+    (r) => json(r, manifestacoes),
+  );
+}
+
+/**
+ * O histórico das manifestações técnicas que o drawer da fila da proteção de dados lê. Os testes
+ * que montam a própria API da fila chamam isto para o drawer não ficar sem resposta.
+ */
+export async function mockManifestacoesDaFila(
+  page: Page,
+  manifestacoes: readonly object[] = [],
+): Promise<void> {
+  await page.route(
+    new RegExp(
+      `${ADMIN}\\/protecao-do-catalogo\\/(tipos-documento|fatos)\\/[^/?]+\\/manifestacoes$`,
+    ),
+    (r) => json(r, manifestacoes),
   );
 }
 
@@ -123,9 +151,7 @@ function filaDe(url: URL, situacaoDaFila: 'PENDENTE' | 'SOLICITADA') {
 async function mockProtecao(page: Page, situacaoDaFila: 'PENDENTE' | 'SOLICITADA'): Promise<void> {
   const raiz = `${ADMIN}\\/protecao-do-catalogo`;
   await page.route(new RegExp(`${raiz}\\/decisoes(\\?.*)?$`), responderDecisoes);
-  await page.route(new RegExp(`${raiz}\\/(tipos-documento|fatos)\\/[^/?]+\\/manifestacoes$`), (r) =>
-    json(r, []),
-  );
+  await mockManifestacoesDaFila(page);
   await page.route(new RegExp(`${raiz}\\/(tipos-documento|fatos)\\/[^/?]+$`), (r) =>
     json(r, detalheDe(r.request().url())),
   );

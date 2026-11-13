@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { mockManifestacoesDaFila } from '../support/listas-de-tipos-e-fatos';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
 
@@ -23,6 +24,10 @@ const ITEM = {
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    ciclo: 1,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
+    manifestacoesNoCiclo: 0,
   },
 };
 const DETALHE = {
@@ -31,6 +36,7 @@ const DETALHE = {
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg', tamanhoMaximoMb: 10 },
   atos: [],
+  manifestacoesVigentes: [],
 };
 const TOLERANCIA = 1;
 
@@ -75,6 +81,7 @@ test.describe('Proteção de dados do catálogo — geometria da página e do de
     await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (route) =>
       responder(route, []),
     );
+    await mockManifestacoesDaFila(page);
     await page.route(
       /\/api\/configuracao\/admin\/protecao-do-catalogo\/tipos-documento\/[^/?]+$/,
       (route) => responder(route, DETALHE),
