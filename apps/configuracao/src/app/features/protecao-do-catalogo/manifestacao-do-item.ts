@@ -86,13 +86,17 @@ export class ManifestacaoDoItem {
     this.aviso.set(null);
   }
 
+  /** A resposta que chega depois de a pessoa passar a outro item não mexe no formulário dele. */
   async enviar(detalhe: DetalheDaProtecaoDoCatalogoDto): Promise<void> {
     if (this.enviando() || !this.conferir()) return;
     this.enviando.set(true);
+    const aindaNoItem = () => this.itemDoFormulario === detalhe.id;
     try {
-      this.desfecho(await firstValueFrom(this.gravar(this.corpo(detalhe))));
+      const resultado = await firstValueFrom(this.gravar(this.corpo(detalhe)));
+      this.chave.aposResposta(resultado);
+      if (aindaNoItem()) this.desfecho(resultado);
     } catch {
-      this.erro.set(FALHA_INESPERADA);
+      if (aindaNoItem()) this.erro.set(FALHA_INESPERADA);
     } finally {
       this.enviando.set(false);
     }
@@ -133,7 +137,6 @@ export class ManifestacaoDoItem {
   }
 
   private desfecho(resultado: ApiResult<void>): void {
-    this.chave.aposResposta(resultado);
     if (resultado.ok) this.concluir();
     else if (RECUSAS_QUE_RELEEM_O_ITEM.has(resultado.problem.code))
       this.relerOItem(resultado.problem);
