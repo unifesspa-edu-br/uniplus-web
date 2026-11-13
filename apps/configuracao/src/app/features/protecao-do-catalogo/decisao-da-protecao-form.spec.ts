@@ -29,7 +29,7 @@ describe('formulário da decisão da proteção', () => {
     expect(valores).not.toContain(detalheDoLaudo.classificacaoProtecao);
   });
 
-  it('a aprovação leva a proteção que a tela mostrou', () => {
+  it('a aprovação leva a proteção que a tela mostrou, com o ciclo e as manifestações lidos', () => {
     expect(comandoPara(detalheDoLaudo)).toEqual({
       cadastro: 'TIPO_DOCUMENTO',
       itemId: detalheDoLaudo.id,
@@ -37,6 +37,8 @@ describe('formulário da decisão da proteção', () => {
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: detalheDoLaudo.finalidadeTratamento,
+      ciclo: 2,
+      manifestacoesNoCiclo: 0,
     });
   });
 
