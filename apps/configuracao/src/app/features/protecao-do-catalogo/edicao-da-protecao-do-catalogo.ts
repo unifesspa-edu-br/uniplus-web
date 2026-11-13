@@ -43,6 +43,15 @@ const MANIFESTACAO_NAO_LIDA = `${RAIZ}manifestacao_nao_lida`;
 /** A manifestação desfavorável vigente exige a justificativa: o erro fica no campo. */
 const JUSTIFICATIVA_EXIGIDA = `${RAIZ}justificativa_exigida_pela_manifestacao`;
 
+/**
+ * A proteção mudou ou o item saiu da fila. A API pode mandar no mesmo lote a proteção mudada e a
+ * manifestação não lida: reler a fila já cobre as duas, e a tela avisa uma vez só.
+ */
+function releAFila(problem: ProblemDetails): boolean {
+  const codigos = [problem.code, ...(problem.errors ?? []).map((erro) => erro.code)];
+  return codigos.some((codigo) => RECUSAS_QUE_RELEEM_A_FILA.has(codigo));
+}
+
 const SUCESSO: Readonly<Record<DecisaoDaProtecao, string>> = {
   APROVAR: 'Item aprovado',
   RECOMENDAR_AJUSTE: 'Ajuste recomendado',
@@ -216,10 +225,10 @@ export class EdicaoDaProtecaoDoCatalogo {
     if (this.marcarCampos(problem)) return;
     if (problem.code === JUSTIFICATIVA_EXIGIDA) {
       this.pedirJustificativa(mensagem);
+    } else if (releAFila(problem)) {
+      this.relerAposRecusa(mensagem);
     } else if (problem.code === MANIFESTACAO_NAO_LIDA) {
       this.relerOItem(mensagem);
-    } else if (RECUSAS_QUE_RELEEM_A_FILA.has(problem.code)) {
-      this.relerAposRecusa(mensagem);
     } else {
       this.mostrarRecusa(mensagem, problem);
     }
