@@ -51,25 +51,20 @@ Os api clients chamam os paths com prefixo de módulo do contrato (ADR-0064) —
 os de geo sem prefixo (`/api/cidades`, `/api/cep`). O gateway roteia ambos; **não
 há reescrita de path** (o shim legado `/api/editais` foi removido).
 
-### Validação do acompanhamento (app Seleção)
+### Navegação do acompanhamento (app Seleção)
 
-O `runtime-config.json` do Seleção aceita o booleano opcional
-`acompanhamentoValidacaoHabilitada`. Ausente equivale a `false` e preserva menus
-e guards atuais; ele não vem ligado em nenhum exemplo ou configuração padrão.
+O menu do Seleção tem **Acompanhamento → Painel de processos**, disponível a qualquer
+usuário autenticado, e **Cadastro → Processos seletivos**, que aparece só a quem tem a
+permissão efetiva correspondente (a API informa em
+`GET /api/autorizacao/permissoes/efetivas`). Não há opção de `runtime-config.json` para
+isso, e o papel `plataforma-admin` não substitui a permissão.
 
-```json
-{ "acompanhamentoValidacaoHabilitada": true }
-```
-
-Ligado, o menu mostra **Acompanhamento → Painel de processos** e **Cadastro →
-Processos seletivos** (este só para `plataforma-admin`). O painel abre para
-qualquer usuário autenticado, e `/inscricoes`, `/homologacao`, `/notas` e
-`/classificacao` redirecionam para `/dashboard` quem já tem o papel que essas
-entradas exigem; sem o papel, o acesso continua negado. A opção não concede autorização
-na API: um 403 continua levando a `/acesso-negado`.
-
-Ative somente em ambiente controlado com dados fictícios, nunca em ambiente com
-dados reais.
+Entrar no painel não concede acesso a dados: cadastro, inscrições, documentos e notas
+continuam pedindo a permissão de cada um, e a API decide cada requisição (um 403 leva a
+`/acesso-negado`). `/inscricoes`, `/homologacao`, `/notas` e `/classificacao` (inclusive com
+barra final, query string ou fragmento) redirecionam para `/dashboard` quem está
+autenticado; subrotas mantêm destino e proteção. Sem sessão, o acesso direto segue o
+login.
 
 ## 3. Faça login
 
@@ -85,15 +80,15 @@ trocar no primeiro login; basta repetir a mesma senha):
 
 ## Sintomas comuns
 
-| Sintoma                                               | Causa                                                              | Correção                                                               |
-| ----------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| Listas carregam, mas salvar dá erro e volta pro login | APIs não foram iniciadas com o override atual do realm `unifesspa` | Refaça o passo 1 com os dois arquivos compose e a lista de serviços    |
+| Sintoma                                               | Causa                                                                                                                                          | Correção                                                                                              |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Listas carregam, mas salvar dá erro e volta pro login | APIs não foram iniciadas com o override atual do realm `unifesspa`                                                                             | Refaça o passo 1 com os dois arquivos compose e a lista de serviços                                   |
 | Catálogos carregam, mas toda escrita responde `401`   | API subida com `docker-compose.smoke.yml`, que valida o realm `unifesspa-dev-local` — leitura de reference data é pública e mascara o problema | `docker inspect docker-uniplus-api-1 ... \| grep -i authority` e recrie a API sem o override de smoke |
-| Escrita responde `403` e cai em `/acesso-negado`      | O papel exigido pela rota não está no scope mapping do client no Keycloak, então não chega ao token | Confira `clients/<id>/scope-mappings/realm` na API admin do Keycloak  |
-| `404` em `/api/cidades` ou `/api/cep`                 | `geo-api` ou Traefik fora do ar                                    | Confirme ambos os serviços healthy no Compose do passo 1               |
-| `404` em `/api/{modulo}/...`                          | Monólito, portal-api ou gateway fora do ar                         | Confirme `uniplus-api`, `portal-api` e `traefik` no Compose do passo 1 |
-| `ERR_CONNECTION_REFUSED` em :420x                     | Dev server caiu                                                    | `npx nx serve <app>`                                                   |
-| Redireciona ao Keycloak no meio de uma ação longa     | `accessTokenLifespan` curto (300s)                                 | Ampliar para 1800s (opcional — ver CONTRIBUTING do `uniplus-api`)      |
+| Escrita responde `403` e cai em `/acesso-negado`      | O papel exigido pela rota não está no scope mapping do client no Keycloak, então não chega ao token                                            | Confira `clients/<id>/scope-mappings/realm` na API admin do Keycloak                                  |
+| `404` em `/api/cidades` ou `/api/cep`                 | `geo-api` ou Traefik fora do ar                                                                                                                | Confirme ambos os serviços healthy no Compose do passo 1                                              |
+| `404` em `/api/{modulo}/...`                          | Monólito, portal-api ou gateway fora do ar                                                                                                     | Confirme `uniplus-api`, `portal-api` e `traefik` no Compose do passo 1                                |
+| `ERR_CONNECTION_REFUSED` em :420x                     | Dev server caiu                                                                                                                                | `npx nx serve <app>`                                                                                  |
+| Redireciona ao Keycloak no meio de uma ação longa     | `accessTokenLifespan` curto (300s)                                                                                                             | Ampliar para 1800s (opcional — ver CONTRIBUTING do `uniplus-api`)                                     |
 
 ## E2E automatizado
 

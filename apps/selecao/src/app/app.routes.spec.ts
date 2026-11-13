@@ -2,7 +2,6 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { AppConfigService } from '@uniplus/shared-data/config';
 import { appRoutes } from './app.routes';
 
 const autenticado = signal(true);
@@ -13,18 +12,13 @@ const permissoesStub = {
   temNoModulo: (modulo: string) => permissoes().some((codigo) => codigo.startsWith(`${modulo}:`)),
   temAlguma: (...codigos: string[]) => codigos.some((codigo) => permissoes().includes(codigo)),
 };
-const configuracao = signal<{ acompanhamentoValidacaoHabilitada?: boolean } | null>(null);
 const login = vi.fn();
 
 const authStub = { authenticated: autenticado, login };
 
 const ROTAS_E_PERMISSOES = [
-  ['/dashboard', 'selecao:processos:acompanhar'],
   ['/processo-seletivo', 'selecao:processos:configurar'],
   ['/processo-seletivo/abc/inscricoes', 'selecao:inscricoes:consultar'],
-  ['/notas', 'selecao:notas-enem:importar'],
-  ['/homologacao', 'selecao:processos:acompanhar'],
-  ['/classificacao', 'selecao:processos:acompanhar'],
 ] as const;
 
 /**
@@ -37,14 +31,12 @@ describe('appRoutes — permissões efetivas', () => {
   beforeEach(() => {
     autenticado.set(true);
     permissoes.set([]);
-    configuracao.set(null);
     login.mockReset();
     TestBed.configureTestingModule({
       providers: [
         provideRouter(appRoutes),
         { provide: AuthService, useValue: authStub },
         { provide: PermissoesService, useValue: permissoesStub },
-        { provide: AppConfigService, useValue: { config: configuracao } },
       ],
     });
     router = TestBed.inject(Router);
@@ -55,7 +47,27 @@ describe('appRoutes — permissões efetivas', () => {
     return router.url;
   }
 
-  describe('com a opção desligada', () => {
+  describe('painel', () => {
+    it('abre a quem só tem a sessão, com a lista de permissões vazia', async () => {
+      expect(await ir('/dashboard')).toBe('/dashboard');
+    });
+
+    it('leva a raiz ao painel, sem exigir permissão', async () => {
+      expect(await ir('/')).toBe('/dashboard');
+    });
+
+    it('manda quem não tem sessão ao login, sem ciclo', async () => {
+      autenticado.set(false);
+
+      await router.navigateByUrl('/dashboard');
+
+      expect(login).toHaveBeenCalledTimes(1);
+      expect(login).toHaveBeenCalledWith('/dashboard');
+      expect(router.url).toBe('/');
+    });
+  });
+
+  describe('rotas protegidas', () => {
     it.each(ROTAS_E_PERMISSOES)('abre %s com %s', async (url, permissao) => {
       permissoes.set([permissao]);
 
@@ -68,28 +80,17 @@ describe('appRoutes — permissões efetivas', () => {
       expect(await ir(url)).toBe('/acesso-negado');
     });
 
-    it('leva a raiz ao painel de quem acompanha processos', async () => {
-      permissoes.set(['selecao:processos:acompanhar']);
+    it('não abre a rota protegida só pelo papel plataforma-admin', async () => {
+      Object.assign(authStub, { roles: signal(['plataforma-admin']), hasRole: () => true });
+      permissoes.set([]);
 
-      expect(await ir('/')).toBe('/dashboard');
+      expect(await ir('/processo-seletivo')).toBe('/acesso-negado');
     });
 
-    it('leva a raiz de quem só configura processos ao cadastro', async () => {
+    it('abre o cadastro pela permissão efetiva, sem papel', async () => {
       permissoes.set(['selecao:processos:configurar']);
 
-      expect(await ir('/')).toBe('/processo-seletivo');
-    });
-
-    it('leva a entrada isolada /inscricoes, sem processo, à entrada da Seleção', async () => {
-      permissoes.set(['selecao:processos:acompanhar', 'selecao:inscricoes:consultar']);
-
-      expect(await ir('/inscricoes')).toBe('/dashboard');
-    });
-
-    it('leva a raiz de quem só consulta inscrições à lista de processos, que ele abre', async () => {
-      permissoes.set(['selecao:inscricoes:consultar']);
-
-      expect(await ir('/')).toBe('/processo-seletivo');
+      expect(await ir('/processo-seletivo')).toBe('/processo-seletivo');
     });
 
     it('abre as inscrições do processo a quem só as consulta, sem abrir o que configura', async () => {
@@ -133,56 +134,38 @@ describe('appRoutes — permissões efetivas', () => {
       expect(await ir('/processo-seletivo/abc/inscricoes')).toBe('/acesso-negado');
     });
 
-    it('leva a raiz de quem não tem nenhuma das duas ao acesso negado', async () => {
-      expect(await ir('/')).toBe('/acesso-negado');
-    });
-  });
-
-  describe('com a opção ligada', () => {
-    beforeEach(() => configuracao.set({ acompanhamentoValidacaoHabilitada: true }));
-
-    it.each(['/homologacao', '/notas', '/classificacao'])(
-      'redireciona %s ao painel de quem o acompanha, sem loop',
-      async (url) => {
-        permissoes.set([
-          'selecao:processos:acompanhar',
-          'selecao:inscricoes:consultar',
-          'selecao:notas-enem:importar',
-        ]);
-
-        expect(await ir(url)).toBe('/dashboard');
-      },
-    );
-
-    it('abre o painel e a raiz a quem só tem a sessão', async () => {
-      expect(await ir('/dashboard')).toBe('/dashboard');
-      expect(await ir('/')).toBe('/dashboard');
-    });
-
-    it('respeita a permissão da rota antes de redirecionar', async () => {
-      permissoes.set(['selecao:processos:acompanhar']);
-
-      expect(await ir('/notas')).toBe('/acesso-negado');
-    });
-
     it.each([
       '/processo-seletivo',
       '/processo-seletivo/novo',
       '/processo-seletivo/abc/publicacoes',
       '/processo-seletivo/abc/notas-do-enem',
       '/processo-seletivo/abc/simulacao/inscricao',
-    ])('não redireciona %s', async (url) => {
+    ])('preserva a rota contextual %s', async (url) => {
       permissoes.set(['selecao:processos:configurar']);
 
       expect(await ir(url)).toBe(url);
     });
+  });
 
-    it('manda o não autenticado ao login, inclusive em acesso direto', async () => {
+  describe('entradas antigas', () => {
+    const ENTRADAS = ['/inscricoes', '/homologacao', '/notas', '/classificacao'];
+
+    it.each(ENTRADAS)('redireciona %s ao painel sem exigir a permissão antiga', async (url) => {
+      expect(await ir(url)).toBe('/dashboard');
+    });
+
+    it.each(ENTRADAS.flatMap((url) => [`${url}/`, `${url}?x=1`, `${url}#topo`]))(
+      'redireciona %s',
+      async (url) => {
+        expect(await ir(url)).toBe('/dashboard');
+      },
+    );
+
+    it('manda quem não tem sessão ao login, inclusive em acesso direto', async () => {
       autenticado.set(false);
 
       await router.navigateByUrl('/notas');
 
-      expect(login).toHaveBeenCalledTimes(1);
       expect(login).toHaveBeenCalledWith('/notas');
       expect(router.url).toBe('/');
     });
