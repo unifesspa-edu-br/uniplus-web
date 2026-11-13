@@ -88,3 +88,17 @@ describe('PERMISSAO.autorizacao', () => {
     expect(PERMISSAO.autorizacao.providenciasSolicitar).toBe('autorizacao:providencias:solicitar');
   });
 });
+
+describe('PERMISSAO.configuracao — proteção do catálogo', () => {
+  it('declara quem aprova, quem consulta e quem se manifesta', () => {
+    expect([
+      PERMISSAO.configuracao.protecaoDoCatalogoAprovar,
+      PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
+      PERMISSAO.configuracao.protecaoDoCatalogoManifestar,
+    ]).toEqual([
+      'configuracao:protecao-do-catalogo:aprovar',
+      'configuracao:protecao-do-catalogo:consultar',
+      'configuracao:protecao-do-catalogo:manifestar',
+    ]);
+  });
+});
