@@ -12,7 +12,7 @@ import {
   nomeDoCadastro,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import { ManifestacoesDaProtecaoComponent } from './manifestacoes-da-protecao.component';
+import { ManifestacoesDaProtecaoComponent } from '../../shared/protecao-do-catalogo/manifestacoes-da-protecao.component';
 
 interface TextosDaDecisao {
   readonly titulo: string;

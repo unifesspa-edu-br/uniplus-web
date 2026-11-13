@@ -1,6 +1,6 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, Validators, type AbstractControl } from '@angular/forms';
 import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -13,7 +13,10 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { ateCaracteres, marcarRecusaDoServidor } from '../../shared/formulario';
 import { ChaveDaIntencao, enviarComRetentativa } from './envio-da-protecao';
-import { TEXTO_MAXIMO_DA_MANIFESTACAO, exigeTexto } from './manifestacoes';
+import {
+  TEXTO_MAXIMO_DA_MANIFESTACAO,
+  exigeTexto,
+} from '../../shared/protecao-do-catalogo/manifestacoes';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
@@ -24,6 +27,11 @@ const RECUSAS_QUE_RELEEM_O_ITEM: ReadonlySet<string> = new Set([
   `${RAIZ}decisao_ja_tomada`,
 ]);
 const FALHA_INESPERADA = 'Não foi possível registrar a manifestação. Tente de novo.';
+
+/** O texto só de espaços conta como vazio: o parecer desfavorável não passa sem texto de verdade. */
+function textoPreenchido(controle: AbstractControl<string>) {
+  return controle.value.trim() === '' ? { required: true } : null;
+}
 
 /** Os campos do formulário da manifestação. */
 type CampoDaManifestacao = 'parecer' | 'texto';
@@ -58,6 +66,26 @@ export class ManifestacaoDoItem {
     { initialValue: false },
   );
 
+  /** O item aberto, para recomeçar o formulário quando a pessoa passa a outro. */
+  private itemDoFormulario: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const id = this.store.detalhe()?.id ?? null;
+      untracked(() => this.trocarDeItem(id));
+    });
+  }
+
+  /** Outro item: parecer, texto, erros e avisos do anterior não passam para ele. */
+  private trocarDeItem(id: string | null): void {
+    if (id === null || id === this.itemDoFormulario) return;
+    this.itemDoFormulario = id;
+    this.form.reset();
+    this.tentou.set(false);
+    this.erro.set(null);
+    this.aviso.set(null);
+  }
+
   async enviar(detalhe: DetalheDaProtecaoDoCatalogoDto): Promise<void> {
     if (this.enviando() || !this.conferir()) return;
     this.enviando.set(true);
@@ -85,12 +113,12 @@ export class ManifestacaoDoItem {
     const texto = this.form.controls.texto;
     const obrigatorio = exigeTexto(this.form.controls.parecer.value);
     texto.setValidators([
-      ...(obrigatorio ? [Validators.required] : []),
+      ...(obrigatorio ? [textoPreenchido] : []),
       ateCaracteres(TEXTO_MAXIMO_DA_MANIFESTACAO),
     ]);
     texto.updateValueAndValidity();
     this.form.markAllAsTouched();
-    return !this.form.invalid && (!obrigatorio || texto.value.trim() !== '');
+    return !this.form.invalid;
   }
 
   private corpo(detalhe: DetalheDaProtecaoDoCatalogoDto): RegistrarManifestacaoDaProtecaoRequest {

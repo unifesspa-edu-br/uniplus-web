@@ -33,10 +33,10 @@ import { DecisaoDaProtecaoDialogoComponent } from './decisao-da-protecao-dialogo
 import { EdicaoDaProtecaoDoCatalogo } from './edicao-da-protecao-do-catalogo';
 import { ProtecaoDoCatalogoListaComponent } from './protecao-do-catalogo-lista.component';
 import { ItemDaProtecaoDetalheComponent } from './item-da-protecao-detalhe.component';
-import { HistoricoDasManifestacoesComponent } from './historico-das-manifestacoes.component';
+import { HistoricoDasManifestacoesComponent } from '../../shared/protecao-do-catalogo/historico-das-manifestacoes.component';
 import { ManifestacaoDoItem } from './manifestacao-do-item';
 import { ManifestacaoDoItemComponent } from './manifestacao-do-item.component';
-import { ManifestacoesDaProtecaoComponent } from './manifestacoes-da-protecao.component';
+import { ManifestacoesDaProtecaoComponent } from '../../shared/protecao-do-catalogo/manifestacoes-da-protecao.component';
 
 type Aba = 'aguardando' | 'decisoes';
 

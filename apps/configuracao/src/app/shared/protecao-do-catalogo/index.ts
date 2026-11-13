@@ -6,3 +6,6 @@ export * from './aprovacao-do-catalogo';
 export * from './atos-da-protecao';
 export * from './historico-da-protecao';
 export * from './justificativa-da-situacao';
+export * from './manifestacoes';
+export * from './manifestacoes-da-protecao.component';
+export * from './historico-das-manifestacoes.component';
