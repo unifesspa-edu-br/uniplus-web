@@ -33,6 +33,10 @@ const APROVADA = {
   classificacaoRecomendada: null,
   justificativa: null,
   aceitaEm: null,
+  ciclo: 0,
+  manifestadaEm: null,
+  manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
 };
 
 export const comAprovacao = (
