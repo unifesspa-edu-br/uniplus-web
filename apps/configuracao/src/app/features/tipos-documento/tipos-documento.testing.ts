@@ -143,6 +143,9 @@ export const pendencia = (
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    ciclo: 1,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
     ...aprovacao,
   },
 });

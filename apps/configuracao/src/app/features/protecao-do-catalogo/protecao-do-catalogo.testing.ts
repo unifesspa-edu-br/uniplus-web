@@ -37,6 +37,9 @@ export const laudo: ItemDaProtecaoDoCatalogoDto = {
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    ciclo: 1,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
   },
 };
 
@@ -45,6 +48,7 @@ export const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
   descricao: 'Laudo que complementa o pedido de atendimento especializado.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg', tamanhoMaximoMb: 10 },
+  manifestacoesVigentes: [],
   atos: [],
 };
 

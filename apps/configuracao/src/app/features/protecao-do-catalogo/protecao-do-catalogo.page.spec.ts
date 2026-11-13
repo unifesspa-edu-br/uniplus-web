@@ -29,6 +29,9 @@ const SOLICITADA = {
   classificacaoRecomendada: null,
   justificativa: null,
   aceitaEm: null,
+  ciclo: 1,
+  manifestadaEm: null,
+  manifestacaoDesfavoravel: false,
 };
 
 const laudo: ItemDaProtecaoDoCatalogoDto = {
@@ -57,6 +60,7 @@ const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
   descricao: 'Laudo que complementa o pedido de atendimento especializado.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg', tamanhoMaximoMb: 10 },
+  manifestacoesVigentes: [],
   atos: [],
 };
 
@@ -67,6 +71,7 @@ const detalheDoFato = (
   ...rural,
   descricao: 'Se o candidato mora em área rural.',
   tipoDocumento: null,
+  manifestacoesVigentes: [],
   atos: [],
   fato: {
     dominio: 'CATEGORICO',
@@ -770,6 +775,8 @@ describe('ProtecaoDoCatalogoPage', () => {
       ato: 'REPROVACAO',
       instante: '2026-10-31T13:00:00Z',
       atorNome: 'Betina Albuquerque',
+      ciclo: 1,
+      dianteDeManifestacaoDesfavoravel: false,
       classificacaoProtecao: 'PESSOAL',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: 'Conferir a renda familiar.',
@@ -785,6 +792,8 @@ describe('ProtecaoDoCatalogoPage', () => {
       ato: 'AJUSTE_RECOMENDADO',
       instante: '2026-10-30T15:00:00Z',
       atorNome: 'Caroline Ribeiro',
+      ciclo: 1,
+      dianteDeManifestacaoDesfavoravel: false,
       classificacaoProtecao: 'INTERNO',
       classificacaoRecomendada: 'PESSOAL',
       justificativa: 'O laudo identifica o candidato.',
@@ -1099,11 +1108,14 @@ describe('ProtecaoDoCatalogoPage', () => {
       );
       detalhe.flush({
         ...detalheDoLaudo,
+        manifestacoesVigentes: [],
         atos: [
           {
             ...decisaoDoTipo,
             ato: 'SOLICITACAO',
             atorNome: 'Isabella Moura',
+            ciclo: 1,
+            dianteDeManifestacaoDesfavoravel: false,
             classificacaoRecomendada: null,
             justificativa: null,
           },
@@ -1112,6 +1124,8 @@ describe('ProtecaoDoCatalogoPage', () => {
             ...decisaoDoTipo,
             ato: 'ACEITE',
             atorNome: 'Isabella Moura',
+            ciclo: 1,
+            dianteDeManifestacaoDesfavoravel: false,
             classificacaoRecomendada: null,
             justificativa: null,
           },

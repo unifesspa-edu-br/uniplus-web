@@ -26,6 +26,8 @@ const decisao: DecisaoDaProtecaoDto = {
   ato: 'REPROVACAO',
   instante: '2026-10-31T13:00:00Z',
   atorNome: 'Caroline Ribeiro',
+  ciclo: 1,
+  dianteDeManifestacaoDesfavoravel: false,
   classificacaoProtecao: 'INTERNO',
   hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
   finalidadeTratamento: 'Conferir o laudo.',
