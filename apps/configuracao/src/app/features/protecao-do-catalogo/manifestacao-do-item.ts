@@ -47,7 +47,8 @@ export class ManifestacaoDoItem {
   private readonly store = inject(ProtecaoDoCatalogoStore);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
-  private readonly chave = new ChaveDaIntencao();
+  /** Uma chave por item: a resposta de um item não troca a chave de repetição do outro. */
+  private readonly chaves = new Map<string, ChaveDaIntencao>();
   readonly form = new FormGroup({
     parecer: new FormControl<ParecerDaManifestacao | ''>('', {
       nonNullable: true,
@@ -99,7 +100,7 @@ export class ManifestacaoDoItem {
     this.marcarPendente(detalhe.id, true);
     const resultado = await firstValueFrom(this.gravar(corpo)).catch(() => null);
     this.marcarPendente(detalhe.id, false);
-    if (resultado) this.chave.aposResposta(resultado);
+    if (resultado) this.chaveDo(detalhe.id).aposResposta(resultado);
     if (this.itemDoFormulario() !== detalhe.id) return;
     if (resultado) this.desfecho(resultado);
     else this.erro.set(FALHA_INESPERADA);
@@ -124,10 +125,16 @@ export class ManifestacaoDoItem {
     else this.form.enable();
   }
 
+  private chaveDo(item: string): ChaveDaIntencao {
+    const chave = this.chaves.get(item) ?? new ChaveDaIntencao();
+    this.chaves.set(item, chave);
+    return chave;
+  }
+
   private gravar(corpo: RegistrarManifestacaoDaProtecaoRequest): Observable<ApiResult<void>> {
     return enviarComRetentativa(
       (contexto) => this.api.manifestar(corpo, contexto),
-      this.chave.para(corpo),
+      this.chaveDo(corpo.itemId).para(corpo),
     );
   }
 

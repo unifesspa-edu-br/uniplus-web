@@ -200,6 +200,58 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
     pagina.controller.expectOne(`${URL_DA_FILA}/fatos/${rural.id}`).flush(detalheDoFato());
   });
 
+  const envios = () =>
+    pagina.controller.match((r) => r.method === 'POST' && r.url === URL_DA_MANIFESTACAO);
+  const chaveDe = (envio: { request: { headers: { get(nome: string): string | null } } }) =>
+    envio.request.headers.get('Idempotency-Key');
+
+  async function enviarB() {
+    formulario().dispatchEvent(new Event('submit'));
+    await pagina.assentar();
+    const [envioDeB] = envios();
+    expect(envioDeB?.request.body).toMatchObject({ itemId: rural.id });
+    return envioDeB;
+  }
+
+  async function falharARede(envio: ReturnType<typeof envios>[number] | undefined) {
+    envio?.error(new ProgressEvent('error'));
+    await chegarResposta();
+  }
+
+  async function repetirBComAMesmaChave(chaveOriginal: string | null) {
+    expect(chaveOriginal).toBeTruthy();
+    const repeticao = await enviarB();
+    expect(repeticao && chaveDe(repeticao)).toBe(chaveOriginal);
+    repeticao?.flush(null, SEM_CONTEUDO);
+    await chegarResposta();
+    pagina.controller.expectOne(`${URL_DA_FILA}/fatos/${rural.id}`).flush(detalheDoFato());
+  }
+
+  it('B falha de rede, A responde com sucesso e B repete com a mesma chave', async () => {
+    const envioDeA = await enviarAEAbrirB();
+    const envioDeB = await enviarB();
+    const chaveDeB = envioDeB && chaveDe(envioDeB);
+    await falharARede(envioDeB);
+
+    envioDeA.flush(null, SEM_CONTEUDO);
+    await chegarResposta();
+
+    await repetirBComAMesmaChave(chaveDeB);
+  });
+
+  it('o sucesso de A com B pendente não troca a chave de B', async () => {
+    const envioDeA = await enviarAEAbrirB();
+    const envioDeB = await enviarB();
+    const chaveDeB = envioDeB && chaveDe(envioDeB);
+    expect(chaveDe(envioDeA)).not.toBe(chaveDeB);
+
+    envioDeA.flush(null, SEM_CONTEUDO);
+    await chegarResposta();
+    await falharARede(envioDeB);
+
+    await repetirBComAMesmaChave(chaveDeB);
+  });
+
   it('com o envio pendente o parecer e o texto ficam travados e voltam com os valores na recusa', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
     clicar(parecer('INADEQUADA'), 'o parecer inadequada');
