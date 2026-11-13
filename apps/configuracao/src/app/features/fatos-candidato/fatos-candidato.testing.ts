@@ -4,7 +4,7 @@ import {
   TestRequest,
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef, signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -168,12 +168,13 @@ export interface OpcoesDaPagina {
   readonly pendencias?: readonly unknown[];
 }
 
-/** A página montada com a lista já carregada, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(
-  itens: readonly FatoCandidatoDto[] = [trabalha, corRaca],
-  opcoes: OpcoesDaPagina = {},
-) {
-  const concedidas = signal<readonly string[]>(opcoes.concedidas ?? [PERMISSAO_DE_MANTER]);
+/** O dublê das permissões, que a diretiva consulta por uma ou por qualquer de várias. */
+function permissoesConcedidas(concedidas: () => readonly string[]) {
+  const tem = (codigo: string) => concedidas().includes(codigo);
+  return { tem, temAlguma: (...codigos: string[]) => codigos.some(tem) };
+}
+
+function configurarModulo(concedidas: () => readonly string[]): void {
   TestBed.configureTestingModule({
     imports: [FatosCandidatoPage],
     providers: [
@@ -181,152 +182,164 @@ export async function montarPagina(
       provideHttpClientTesting(),
       provideRouter([]),
       { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      { provide: PermissoesService, useValue: { tem: (c: string) => concedidas().includes(c) } },
+      { provide: PermissoesService, useValue: permissoesConcedidas(concedidas) },
     ],
   });
-  const fixture: ComponentFixture<FatosCandidatoPage> = TestBed.createComponent(FatosCandidatoPage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDosFatos);
-  const editor = injetor.get(EdicaoDoFato);
-  const store = injetor.get(FatosCandidatoStore);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
-  const informacoes = vi.spyOn(notificacoes, 'info');
+}
 
-  const propagar = async (): Promise<void> => {
+/** A página montada, e as ferramentas para conduzi-la como a pessoa faz. */
+export class PaginaDosFatos {
+  readonly fixture: ComponentFixture<FatosCandidatoPage> =
+    TestBed.createComponent(FatosCandidatoPage);
+  readonly http = TestBed.inject(HttpTestingController);
+  private readonly app = TestBed.inject(ApplicationRef);
+  private readonly injetor = this.fixture.debugElement.injector;
+  readonly edicao = this.injetor.get(EdicaoDosFatos);
+  readonly editor = this.injetor.get(EdicaoDoFato);
+  readonly store = this.injetor.get(FatosCandidatoStore);
+  private readonly notificacoes = TestBed.inject(NotificationService);
+  readonly sucessos = vi.spyOn(this.notificacoes, 'success');
+  readonly erros = vi.spyOn(this.notificacoes, 'errorFromProblem');
+  readonly informacoes = vi.spyOn(this.notificacoes, 'info');
+
+  constructor(readonly permissoes: WritableSignal<readonly string[]>) {}
+
+  readonly propagar = async (): Promise<void> => {
     await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
+    this.app.tick();
+    this.fixture.detectChanges();
   };
-  const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = raiz().querySelector<T>(seletor);
+  readonly raiz = (): HTMLElement => this.fixture.nativeElement as HTMLElement;
+  readonly elemento = <T extends HTMLElement>(seletor: string): T => {
+    const encontrado = this.raiz().querySelector<T>(seletor);
     expect(encontrado, seletor).not.toBeNull();
     return encontrado as T;
   };
-  const existe = (seletor: string): boolean => raiz().querySelector(seletor) !== null;
-  const texto = (seletor?: string): string =>
-    ((seletor ? elemento(seletor) : raiz()).textContent ?? '').replace(/\s+/gu, ' ');
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const botaoPeloTexto = (
+  readonly existe = (seletor: string): boolean => this.raiz().querySelector(seletor) !== null;
+  readonly texto = (seletor?: string): string =>
+    ((seletor ? this.elemento(seletor) : this.raiz()).textContent ?? '').replace(/\s+/gu, ' ');
+  readonly pelaEtiqueta = (nome: string): HTMLButtonElement =>
+    this.elemento(`button[aria-label="${nome}"]`);
+  readonly botaoPeloTexto = (
     rotulo: string,
-    dentro: ParentNode = raiz(),
+    dentro: ParentNode = this.raiz(),
   ): HTMLButtonElement | undefined =>
     [...dentro.querySelectorAll<HTMLButtonElement>('button')].find(
       (b) => b.textContent?.replace(/\s+/gu, ' ').trim() === rotulo,
     );
-  const acionar = async (botao: HTMLElement): Promise<void> => {
+  readonly acionar = async (botao: HTMLElement): Promise<void> => {
     botao.focus();
     botao.click();
-    await propagar();
+    await this.propagar();
   };
   /** A releitura da lista que a escrita pede; a ausência dela é falha do teste, não indiferença. */
-  const pedidoDaLista = (): TestRequest =>
-    http.expectOne((r) => r.url === LISTA && r.method === 'GET');
-  const atenderPendencias = (itensPendentes: readonly unknown[] = []): void => {
-    for (const req of http.match((r) => r.url === PROTECAO)) {
+  readonly pedidoDaLista = (): TestRequest =>
+    this.http.expectOne((r) => r.url === LISTA && r.method === 'GET');
+  readonly atenderPendencias = (itensPendentes: readonly unknown[] = []): void => {
+    for (const req of this.http.match((r) => r.url === PROTECAO)) {
       if (!req.cancelled) req.flush(itensPendentes);
     }
   };
-  const recarregarCom = async (
+  readonly recarregarCom = async (
     lista: readonly FatoCandidatoDto[],
     pendentes: readonly unknown[] = [],
   ): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush(lista);
-    atenderPendencias(pendentes);
-    await propagar();
+    await this.propagar();
+    this.pedidoDaLista().flush(lista);
+    this.atenderPendencias(pendentes);
+    await this.propagar();
   };
-  const digitar = (seletor: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(seletor);
+  readonly digitar = (seletor: string, valor: string): void => {
+    const campo = this.elemento<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      seletor,
+    );
     campo.value = valor;
     campo.dispatchEvent(new Event(campo instanceof HTMLSelectElement ? 'change' : 'input'));
   };
-  const submeter = (seletor: string): void => {
-    elemento<HTMLFormElement>(seletor).dispatchEvent(new Event('submit', { cancelable: true }));
+  readonly submeter = (seletor: string): void => {
+    this.elemento<HTMLFormElement>(seletor).dispatchEvent(
+      new Event('submit', { cancelable: true }),
+    );
   };
-  const atenderApoios = (catalogo: readonly unknown[] = []): void => {
-    for (const req of http.match((r) => r.url === CATALOGO && r.method === 'GET')) {
+  readonly atenderApoios = (catalogo: readonly unknown[] = []): void => {
+    for (const req of this.http.match((r) => r.url === CATALOGO && r.method === 'GET')) {
       if (!req.cancelled) req.flush(catalogo);
     }
-    for (const req of http.match((r) => r.url === FASES && r.method === 'GET')) {
+    for (const req of this.http.match((r) => r.url === FASES && r.method === 'GET')) {
       if (!req.cancelled) req.flush(FASES_DA_API);
     }
   };
+  readonly titulo = (): HTMLElement => this.elemento(`#${TITULO_DA_LISTA}`);
+  readonly novo = (): HTMLButtonElement => this.elemento('#cfg-fatos-novo');
+  readonly editar = (f: FatoCandidatoDto = trabalha) =>
+    this.pelaEtiqueta(`Editar o fato ${f.codigo}`);
+  readonly desativar = (f: FatoCandidatoDto = trabalha) =>
+    this.pelaEtiqueta(`Desativar o fato ${f.codigo}`);
+  readonly reativar = (f: FatoCandidatoDto = trabalha) =>
+    this.pelaEtiqueta(`Reativar o fato ${f.codigo}`);
+  readonly nomeDaLinha = (f: FatoCandidatoDto = trabalha) =>
+    this.pelaEtiqueta(`Ver o detalhe de ${f.nome}`);
+  readonly drawerDoFato = (): HTMLDialogElement =>
+    this.elemento('dialog[aria-label="Fato do candidato"]');
+  readonly detalhe = (): HTMLDialogElement =>
+    this.elemento('dialog[aria-label="Detalhe do fato do candidato"]');
+  readonly statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
 
-  fixture.detectChanges();
-  http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush(itens);
-  atenderPendencias(opcoes.pendencias ?? []);
-  await propagar();
+  /** Carrega a lista e a situação da proteção, como a página faz ao abrir. */
+  async carregar(
+    itens: readonly FatoCandidatoDto[],
+    pendencias: readonly unknown[],
+  ): Promise<void> {
+    this.fixture.detectChanges();
+    this.pedidoDaLista().flush(itens);
+    this.atenderPendencias(pendencias);
+    await this.propagar();
+  }
 
-  return {
-    fixture,
-    http,
-    edicao,
-    editor,
-    store,
-    sucessos,
-    erros,
-    informacoes,
-    permissoes: concedidas,
-    propagar,
-    raiz,
-    elemento,
-    existe,
-    texto,
-    pelaEtiqueta,
-    botaoPeloTexto,
-    acionar,
-    pedidoDaLista,
-    atenderPendencias,
-    atenderApoios,
-    recarregarCom,
-    digitar,
-    submeter,
-    titulo: (): HTMLElement => elemento(`#${TITULO_DA_LISTA}`),
-    novo: (): HTMLButtonElement => elemento('#cfg-fatos-novo'),
-    editar: (f: FatoCandidatoDto = trabalha) => pelaEtiqueta(`Editar o fato ${f.codigo}`),
-    desativar: (f: FatoCandidatoDto = trabalha) => pelaEtiqueta(`Desativar o fato ${f.codigo}`),
-    reativar: (f: FatoCandidatoDto = trabalha) => pelaEtiqueta(`Reativar o fato ${f.codigo}`),
-    nomeDaLinha: (f: FatoCandidatoDto = trabalha) => pelaEtiqueta(`Ver o detalhe de ${f.nome}`),
-    drawerDoFato: (): HTMLDialogElement => elemento('dialog[aria-label="Fato do candidato"]'),
-    detalhe: (): HTMLDialogElement => elemento('dialog[aria-label="Detalhe do fato do candidato"]'),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Editar" da linha e entrega o fato, o catálogo e as fases que a edição lê. */
-    async abrirEdicao(
-      fato: FatoCandidatoDto = trabalha,
-      carregado: FatoCandidatoDto = fato,
-      catalogo: readonly unknown[] = [],
-    ): Promise<void> {
-      await acionar(pelaEtiqueta(`Editar o fato ${fato.codigo}`));
-      http.expectOne(urlDoFato(fato)).flush(carregado);
-      await propagar();
-      atenderApoios(catalogo);
-      await propagar();
-    },
-    /** Clica de verdade em "Novo fato"; as fases chegam logo em seguida. */
-    async abrirCriacao(): Promise<void> {
-      await acionar(elemento('#cfg-fatos-novo'));
-      atenderApoios();
-      await propagar();
-    },
-    /** Entrega a recarga do fato aberto, que segue a toda escrita da edição; a cópia faz o sinal mudar, como o JSON novo da API. */
-    async recarregarOFato(fato: FatoCandidatoDto, comLista = true): Promise<void> {
-      await propagar();
-      http.expectOne(urlDoFato(fato)).flush(structuredClone(fato));
-      atenderPendencias();
-      if (comLista) pedidoDaLista().flush([fato]);
-      else http.expectNone((r) => r.url === LISTA && r.method === 'GET');
-      await propagar();
-      atenderPendencias();
-      await propagar();
-    },
-  };
+  /** Clica de verdade em "Editar" da linha e entrega o fato, o catálogo e as fases que a edição lê. */
+  async abrirEdicao(
+    fato: FatoCandidatoDto = trabalha,
+    carregado: FatoCandidatoDto = fato,
+    catalogo: readonly unknown[] = [],
+  ): Promise<void> {
+    await this.acionar(this.editar(fato));
+    this.http.expectOne(urlDoFato(fato)).flush(carregado);
+    await this.propagar();
+    this.atenderApoios(catalogo);
+    await this.propagar();
+  }
+
+  /** Clica de verdade em "Novo fato"; as fases chegam logo em seguida. */
+  async abrirCriacao(): Promise<void> {
+    await this.acionar(this.novo());
+    this.atenderApoios();
+    await this.propagar();
+  }
+
+  /** Entrega a recarga do fato aberto, que segue a toda escrita da edição; a cópia faz o sinal mudar, como o JSON novo da API. */
+  async recarregarOFato(fato: FatoCandidatoDto, comLista = true): Promise<void> {
+    await this.propagar();
+    this.http.expectOne(urlDoFato(fato)).flush(structuredClone(fato));
+    this.atenderPendencias();
+    if (comLista) this.pedidoDaLista().flush([fato]);
+    else this.http.expectNone((r) => r.url === LISTA && r.method === 'GET');
+    await this.propagar();
+    this.atenderPendencias();
+    await this.propagar();
+  }
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+/** A página montada com a lista já carregada. */
+export async function montarPagina(
+  itens: readonly FatoCandidatoDto[] = [trabalha, corRaca],
+  opcoes: OpcoesDaPagina = {},
+): Promise<PaginaDosFatos> {
+  const concedidas = signal<readonly string[]>(opcoes.concedidas ?? [PERMISSAO_DE_MANTER]);
+  configurarModulo(concedidas);
+  const pagina = new PaginaDosFatos(concedidas);
+  await pagina.carregar(itens, opcoes.pendencias ?? []);
+  return pagina;
+}
+
+export type Pagina = PaginaDosFatos;
