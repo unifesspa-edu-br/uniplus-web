@@ -204,8 +204,13 @@ export {
   type DetalheDoValorDoFatoDto,
   type ItemDaProtecaoDoCatalogoDto,
   type ItemParaSolicitarRequest,
+  type ManifestacaoDaProtecaoDto,
+  type ManifestarProtecaoRequest,
+  type ParecerDaManifestacao,
   type SituacaoDaAprovacao,
+  type SituacaoDaManifestacao,
   type SolicitacaoDaProtecaoDto,
+  SEGMENTO_DO_CADASTRO,
 } from './protecao-do-catalogo.api';
 
 export { FatosCandidatoApi } from './fatos-candidato.api';

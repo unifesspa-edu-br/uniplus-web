@@ -31,10 +31,14 @@ const detalhe: DetalheDaProtecaoDoCatalogoDto = {
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    ciclo: 1,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
   },
   descricao: 'Laudo complementar.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf', tamanhoMaximoMb: 10 },
+  manifestacoesVigentes: [],
   atos: [],
 };
 

@@ -5,7 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { ProtecaoDoCatalogoApi, type DecidirProtecaoDoCatalogoRequest } from './protecao-do-catalogo.api';
+import {
+  ProtecaoDoCatalogoApi,
+  type DecidirProtecaoDoCatalogoRequest,
+} from './protecao-do-catalogo.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -34,7 +37,9 @@ describe('ProtecaoDoCatalogoApi', () => {
     const promise = firstValueFrom(api.listar('SOLICITADA'));
     const req = controller.expectOne((r) => r.url === URL);
     expect(req.request.params.get('situacao')).toBe('SOLICITADA');
-    expect(req.request.headers.get('Accept')).toBe(buildVendorMimeAccept('protecao-do-catalogo', 1));
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('protecao-do-catalogo', 1),
+    );
     req.flush([]);
     await promise;
   });
@@ -69,4 +74,37 @@ describe('ProtecaoDoCatalogoApi', () => {
     req.flush(null, { status: 204, statusText: 'No Content' });
     await promise;
   });
+
+  it('manifestar() leva o ciclo lido, o parecer e o texto, com Idempotency-Key', async () => {
+    const corpo = {
+      cadastro: 'FATO',
+      itemId: ID,
+      ciclo: 2,
+      parecer: 'INADEQUADA',
+      texto: 'O laudo revela condição de saúde.',
+    } as const;
+    const promise = firstValueFrom(api.manifestar(corpo, withIdempotencyKey('k')));
+    const req = controller.expectOne(`${URL}/manifestacoes`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual(corpo);
+    expect(req.request.headers.get('Idempotency-Key')).toBe('k');
+    req.flush(null, { status: 204, statusText: 'No Content' });
+    await promise;
+  });
+
+  it.each([
+    ['TIPO_DOCUMENTO', 'tipos-documento'],
+    ['FATO', 'fatos'],
+  ] as const)(
+    'manifestacoes() lê o histórico de %s pelo segmento do cadastro',
+    async (cadastro, segmento) => {
+      const promise = firstValueFrom(api.manifestacoes(cadastro, ID));
+      const req = controller.expectOne(`${URL}/${segmento}/${ID}/manifestacoes`);
+      expect(req.request.headers.get('Accept')).toBe(
+        buildVendorMimeAccept('protecao-do-catalogo-manifestacao', 1),
+      );
+      req.flush([]);
+      await promise;
+    },
+  );
 });

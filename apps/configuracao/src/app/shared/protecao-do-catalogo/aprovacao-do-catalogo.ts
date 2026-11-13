@@ -33,6 +33,9 @@ const APROVADA: AprovacaoDaProtecaoDto = {
   classificacaoRecomendada: null,
   justificativa: null,
   aceitaEm: null,
+  ciclo: 0,
+  manifestadaEm: null,
+  manifestacaoDesfavoravel: false,
 };
 
 /**
