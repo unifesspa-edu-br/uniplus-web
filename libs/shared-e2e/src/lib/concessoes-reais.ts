@@ -160,6 +160,7 @@ interface EtapaDoPedido {
 interface PedidoLido {
   readonly situacao: string;
   readonly solicitante: { readonly sub: string };
+  readonly termo: { readonly versaoId: string } | null;
 }
 
 interface AnexoParaEnvio {
@@ -187,7 +188,7 @@ const ETAPAS_POR_SITUACAO: Readonly<Record<string, EtapaDoPedido>> = {
   aguardando_documento: { nome: 'anexo do documento de designação', executar: anexarDocumento },
   aguardando_beneficiario: {
     nome: 'aceite da pessoa beneficiária',
-    executar: (p, base) => postar(p.beneficiario, `${base}/aceite`),
+    executar: aceitarComOTermo,
   },
   aguardando_gestor: {
     nome: 'aprovação funcional',
@@ -312,19 +313,77 @@ function solicitantePara(beneficiario: string): string {
   );
 }
 
+const ROTA_DO_TERMO = '/api/autorizacao/termos-de-responsabilidade';
+
+/**
+ * O perfil protegido exige um termo de responsabilidade publicado: sem versão vigente, o gestor de
+ * acessos publica uma, com o texto da simulação.
+ */
+async function garantirTermoVigente(): Promise<string> {
+  const vigente = await chamarApi<{ id: string }>(
+    GESTOR_DE_ACESSOS,
+    'GET',
+    `${ROTA_DO_TERMO}/vigente`,
+  );
+  if (vigente.status === 200) return vigente.corpo.id;
+  const publicada = await postar(GESTOR_DE_ACESSOS, `${ROTA_DO_TERMO}/versoes`, {
+    texto: TEXTO_DO_TERMO,
+    ato: 'Portaria da simulação ponta a ponta',
+    versaoVigenteEsperadaId: null,
+  });
+  expect(publicada.status, `publicar o termo: ${JSON.stringify(publicada.corpo)}`).toBe(201);
+  return (publicada.corpo as { id: string }).id;
+}
+
+const TEXTO_DO_TERMO =
+  'Termo de responsabilidade da simulação ponta a ponta. Quem recebe acesso a dado pessoal ou ' +
+  'sensível usa o dado só para a finalidade do processo seletivo, não o copia nem o compartilha ' +
+  'fora do sistema, e comunica à gestão de acessos qualquer uso indevido de que tenha conhecimento.';
+
+/** A pessoa beneficiária aceita apresentando a versão do termo fixada no pedido, quando há uma. */
+async function aceitarComOTermo(pedido: PedidoDeConcessao, base: string): Promise<RespostaDaApi> {
+  const { termo } = await lerPedido(pedido, base);
+  const corpo = termo === null ? undefined : { termoVersaoApresentadaId: termo.versaoId };
+  return postar(pedido.beneficiario, `${base}/aceite`, corpo);
+}
+
+/** O corpo do pedido: o perfil de governança declara o documento, e a versão do termo vai quando o perfil a exige. */
+function corpoDoPedido(
+  { email, perfilId, unidadeId }: PedidoDeConcessao,
+  termoVersaoApresentadaId: string | null,
+) {
+  return {
+    beneficiarioEmail: email,
+    perfilId,
+    unidadeId,
+    justificativa: JUSTIFICATIVA,
+    anexaraDocumento: perfilId === PERFIL_DO_REPRESENTANTE,
+    termoVersaoApresentadaId,
+  };
+}
+
 /** Um terceiro solicita a concessão; devolve o pedido criado. */
 async function solicitarConcessao(pedido: PedidoDeConcessao): Promise<PedidoCriado> {
-  const { beneficiario, email, perfilId, unidadeId } = pedido;
-  const corpo = { beneficiarioEmail: email, perfilId, unidadeId, justificativa: JUSTIFICATIVA };
-  const criado = await chamarApi<PedidoCriado>(
-    solicitantePara(beneficiario),
-    'POST',
-    ROTA_DOS_PEDIDOS,
-    { corpo },
-  );
+  const termo = await garantirTermoVigente();
+  const comTermo = await criarPedido(pedido, termo);
+  const criado = semTermoExigido(comTermo) ? await criarPedido(pedido, null) : comTermo;
   expect(
     criado.status,
-    `solicitação do pedido de ${beneficiario}: ${JSON.stringify(criado.corpo)}`,
+    `solicitação do pedido de ${pedido.beneficiario}: ${JSON.stringify(criado.corpo)}`,
   ).toBe(201);
   return criado.corpo;
+}
+
+/** O perfil que não é protegido recusa a versão do termo: o pedido se refaz sem ela. */
+function semTermoExigido(resposta: RespostaDaApi<PedidoCriado>): boolean {
+  return (
+    resposta.status === 422 &&
+    JSON.stringify(resposta.corpo).includes('pedido.apresentacao_do_termo_invalida')
+  );
+}
+
+function criarPedido(pedido: PedidoDeConcessao, termo: string | null) {
+  return chamarApi<PedidoCriado>(solicitantePara(pedido.beneficiario), 'POST', ROTA_DOS_PEDIDOS, {
+    corpo: corpoDoPedido(pedido, termo),
+  });
 }
