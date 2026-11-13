@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, beforeAll } from 'vitest';
 import { PARECERES } from '../../shared/protecao-do-catalogo/manifestacoes';
 import {
   APROVAR,
@@ -20,6 +20,7 @@ import {
   problema,
   rural,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 const URL_DA_MANIFESTACAO = `${URL_DA_FILA}/manifestacoes`;
@@ -35,6 +36,7 @@ const RECUSA_DO_TEXTO = [
 ] as const;
 
 describe('ProtecaoDoCatalogoPage — o formulário da manifestação de um item a outro', () => {
+  beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
 
   beforeEach(async () => {

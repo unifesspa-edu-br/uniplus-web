@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
   comAprovacao,
@@ -7,6 +7,7 @@ import {
   problema,
   sucesso,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
@@ -30,6 +31,7 @@ const agregadoDeRenda: FatoCandidatoDto = {
 };
 
 describe('FatosCandidatoPage — definição do fato', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();

@@ -314,3 +314,14 @@ export async function abrirAbaDeDecisoes(
   await pagina.assentar();
   return pagina.tela;
 }
+
+/**
+ * Compila a página uma vez, antes dos testes do arquivo. Assim, o primeiro teste
+ * não paga sozinho a compilação de toda a árvore de componentes.
+ */
+export async function compilarPaginaUmaVez(): Promise<void> {
+  TestBed.configureTestingModule({ imports: [ProtecaoDoCatalogoPage], providers: provedores([]) });
+  await TestBed.compileComponents();
+  TestBed.createComponent(ProtecaoDoCatalogoPage).destroy();
+  TestBed.resetTestingModule();
+}

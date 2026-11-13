@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   CATALOGO,
@@ -12,6 +12,7 @@ import {
   problema,
   quilombola,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 const categorico = {
@@ -38,6 +39,7 @@ const atosDe = (fato: { id: string }) =>
   `http://localhost:5000/api/configuracao/admin/fatos-candidato/${fato.id}/protecao/atos`;
 
 describe('FatosCandidatoPage — detalhe do fato', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();

@@ -6,7 +6,7 @@ import type {
   DetalheDaProtecaoDoCatalogoDto,
   ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import { EdicaoDaProtecaoDoCatalogo } from './edicao-da-protecao-do-catalogo';
 import { ProtecaoDoCatalogoPage } from './protecao-do-catalogo.page';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
@@ -27,9 +27,11 @@ import {
   problema as recusa,
   rural,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
+  beforeAll(compilarPaginaUmaVez);
   const concedidas = signal<readonly string[]>([APROVAR]);
   let pagina: PaginaMontada;
   let fixture: ComponentFixture<ProtecaoDoCatalogoPage>;

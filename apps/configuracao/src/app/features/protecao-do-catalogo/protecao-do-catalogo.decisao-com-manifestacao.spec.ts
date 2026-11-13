@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   APROVAR,
   SEM_CONTEUDO,
@@ -17,6 +17,7 @@ import {
   montarPagina,
   problema,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
@@ -35,6 +36,7 @@ const comManifestacao = (desfavoravel: boolean) => ({
 });
 
 describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica', () => {
+  beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
 
   beforeEach(async () => {

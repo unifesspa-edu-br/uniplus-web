@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import type { DecisaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import { ProtecaoDoCatalogoPage } from './protecao-do-catalogo.page';
 import {
   APROVAR,
@@ -20,9 +20,11 @@ import {
   navegarNaPagina,
   problema as recusa,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 describe('ProtecaoDoCatalogoPage — páginas e detalhe das decisões', () => {
+  beforeAll(compilarPaginaUmaVez);
   const concedidas = signal<readonly string[]>([APROVAR]);
   let pagina: PaginaMontada;
   let fixture: ComponentFixture<ProtecaoDoCatalogoPage>;

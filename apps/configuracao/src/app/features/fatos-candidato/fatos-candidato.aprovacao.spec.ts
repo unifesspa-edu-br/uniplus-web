@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   LISTA,
   PERMISSAO_DE_CONSULTAR,
   PROTECAO,
+  compilarPaginaUmaVez,
   Pagina,
   comAprovacao,
   corRaca,
@@ -22,6 +23,7 @@ const atosDe = (id: string) => `${LISTA}/${id}/protecao/atos`;
 
 describe('FatosCandidatoPage — aprovação da proteção de dados', () => {
   let p: Pagina;
+  beforeAll(compilarPaginaUmaVez);
   afterEach(() => {
     p.atenderApoios();
     p.atenderPendencias();

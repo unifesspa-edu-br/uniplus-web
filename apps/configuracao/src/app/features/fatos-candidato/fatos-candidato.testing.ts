@@ -347,3 +347,14 @@ export async function montarPagina(
 }
 
 export type Pagina = PaginaDosFatos;
+
+/**
+ * Compila a página uma vez, antes dos testes do arquivo. Assim, o primeiro teste
+ * não paga sozinho a compilação de toda a árvore de componentes.
+ */
+export async function compilarPaginaUmaVez(): Promise<void> {
+  configurarModulo(() => [PERMISSAO_DE_MANTER]);
+  await TestBed.compileComponents();
+  TestBed.createComponent(FatosCandidatoPage).destroy();
+  TestBed.resetTestingModule();
+}

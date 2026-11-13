@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   LISTA,
@@ -12,6 +12,7 @@ import {
   sucesso,
   trabalha,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 const inativo = { ...trabalha, ativo: false };
@@ -21,6 +22,7 @@ const CANCELAR = 'dialog[open] [data-testid="confirm-dialog-cancel"]';
 const atosDe = (id: string) => `${LISTA}/${id}/protecao/atos`;
 
 describe('FatosCandidatoPage — desativar e reativar', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();
