@@ -1,0 +1,68 @@
+<section class="cfg-detalhe-secao" aria-labelledby="cfg-manifestar-titulo">
+  <h3 class="cfg-detalhe-secao__titulo" id="cfg-manifestar-titulo">
+    Registrar manifestação técnica
+  </h3>
+  <p class="u-caption">
+    A manifestação vale no ciclo {{ detalhe().aprovacao.ciclo }} e não decide o item. Uma nova
+    manifestação sua substitui a vigente.
+  </p>
+  <div aria-live="polite" aria-atomic="true">
+    @if (manifestacao.aviso(); as aviso) {
+      <ui-alert variant="warning" heading="O item mudou" [dynamic]="false">{{ aviso }}</ui-alert>
+    }
+  </div>
+  @if (manifestacao.erro(); as erro) {
+    <ui-alert variant="danger" heading="A manifestação não foi registrada">{{ erro }}</ui-alert>
+  }
+  <form [formGroup]="form" (ngSubmit)="manifestacao.enviar(detalhe())">
+    <fieldset
+      class="field"
+      [class.is-error]="erroDoParecer()"
+      [attr.aria-describedby]="erroDoParecer() ? 'cfg-parecer-erro' : null"
+    >
+      <legend class="field__label is-required">Parecer</legend>
+      @for (opcao of pareceres; track opcao.valor) {
+        <label class="radio">
+          <input type="radio" formControlName="parecer" [value]="opcao.valor" />
+          <span class="radio__dot" aria-hidden="true"></span>
+          <span>{{ opcao.rotulo }}</span>
+        </label>
+      }
+      @if (erroDoParecer(); as erro) {
+        <span class="field__error" id="cfg-parecer-erro">{{ erro }}</span>
+      }
+    </fieldset>
+    <label class="field" [class.is-error]="erroDoTexto()">
+      <span class="field__label" [class.is-required]="manifestacao.textoObrigatorio()">Texto</span>
+      <textarea
+        class="textarea"
+        rows="4"
+        formControlName="texto"
+        [attr.maxlength]="limite"
+        [attr.aria-required]="manifestacao.textoObrigatorio() ? 'true' : null"
+        [attr.aria-invalid]="erroDoTexto() ? 'true' : null"
+        [attr.aria-describedby]="
+          erroDoTexto() ? 'cfg-manifestacao-dica cfg-manifestacao-erro' : 'cfg-manifestacao-dica'
+        "
+      ></textarea>
+      <span class="field__hint" id="cfg-manifestacao-dica"
+        >Obrigatório quando o parecer recomenda ajuste ou julga inadequada. {{ tamanho() }} de 2.000
+        caracteres.</span
+      >
+      @if (erroDoTexto(); as erro) {
+        <span class="field__error" id="cfg-manifestacao-erro">{{ erro }}</span>
+      }
+    </label>
+    <button
+      type="submit"
+      class="btn btn--secondary"
+      [attr.aria-disabled]="manifestacao.enviando() ? 'true' : null"
+      [attr.aria-busy]="manifestacao.enviando()"
+    >
+      @if (manifestacao.enviando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      Registrar manifestação
+    </button>
+  </form>
+</section>

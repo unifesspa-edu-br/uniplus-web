@@ -210,12 +210,16 @@ type Permissoes = readonly string[] | Signal<readonly string[]>;
 
 function provedores(permissoes: Permissoes) {
   const lista = typeof permissoes === 'function' ? permissoes : () => permissoes;
+  const tem = (codigo: string) => lista().includes(codigo);
   return [
     provideHttpClient(withInterceptors([apiResultInterceptor])),
     provideHttpClientTesting(),
     provideRouter([]),
     { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-    { provide: PermissoesService, useValue: { tem: (codigo: string) => lista().includes(codigo) } },
+    {
+      provide: PermissoesService,
+      useValue: { tem, temAlguma: (...codigos: string[]) => codigos.some(tem) },
+    },
   ];
 }
 
@@ -276,8 +280,13 @@ export function montarPagina(permissoes: Permissoes): PaginaMontada {
   };
 }
 
+/** Termina o cenário atendendo as leituras de apoio: categorias e o histórico das manifestações. */
 function encerrar(controller: HttpTestingController): void {
   controller.match((r) => r.url === URL_DAS_CATEGORIAS).forEach((req) => req.flush([]));
+  controller
+    .match((r) => r.url.endsWith('/manifestacoes'))
+    .filter((req) => !req.cancelled)
+    .forEach((req) => req.flush([]));
   controller.verify();
 }
 

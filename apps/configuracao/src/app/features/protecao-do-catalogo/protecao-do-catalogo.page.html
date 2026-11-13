@@ -73,6 +73,26 @@
     <ui-alert variant="danger" heading="Item não encontrado">{{ erroDoDetalhe() }}</ui-alert>
     } @if (detalhe(); as d) {
     <cfg-item-da-protecao-detalhe [detalhe]="d" [categorias]="categorias.porCodigo()" />
+    <section class="cfg-detalhe-secao" aria-labelledby="cfg-manifestacoes-vigentes">
+      <h3 class="cfg-detalhe-secao__titulo" id="cfg-manifestacoes-vigentes">Manifestações vigentes</h3>
+      <cfg-manifestacoes-da-protecao
+        [manifestacoes]="d.manifestacoesVigentes"
+        ariaLabel="Manifestações vigentes no ciclo"
+        textoVazio="Nenhuma manifestação vigente neste ciclo. A decisão não depende dela."
+      />
+    </section>
+    <ng-container *authTemPermissao="permissaoDeManifestar">
+      @if (d.aprovacao.situacao === 'SOLICITADA') {
+      <cfg-manifestacao-do-item [detalhe]="d" />
+      }
+    </ng-container>
+    <ng-container *authTemPermissao="permissoesDoHistorico">
+      <cfg-historico-das-manifestacoes
+        [cadastro]="cadastroDe(d)"
+        [id]="d.id"
+        [versao]="manifestacao.registradas()"
+      />
+    </ng-container>
     }
   </div>
   <div class="form-drawer__footer">
@@ -133,6 +153,8 @@
   [opcoes]="edicao.opcoesDaRecomendacao()"
   [erroDaJustificativa]="edicao.erroDaJustificativa()"
   [tamanhoDaJustificativa]="edicao.tamanhoDaJustificativa()"
+  [manifestacoes]="edicao.manifestacoesVigentes()"
+  [exigeJustificativa]="edicao.exigeJustificativa()"
   (fechar)="edicao.fecharDecisao()"
   (confirmar)="edicao.confirmarDecisao()"
 />

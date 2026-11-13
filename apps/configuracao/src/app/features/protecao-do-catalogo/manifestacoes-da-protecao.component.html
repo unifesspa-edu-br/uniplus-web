@@ -1,0 +1,28 @@
+@if (manifestacoes().length === 0) {
+  <p class="u-caption">{{ textoVazio() }}</p>
+} @else {
+  <ol class="cfg-atos" [attr.aria-label]="ariaLabel()">
+    @for (m of manifestacoes(); track m.id) {
+      <li class="cfg-atos__item">
+        <div class="cfg-atos__cabecalho">
+          <ui-tag [variant]="parecer(m.parecer).variante">{{ parecer(m.parecer).texto }}</ui-tag>
+          @if (comSituacao()) {
+            <ui-tag [variant]="situacao(m.situacao).variante">{{
+              situacao(m.situacao).texto
+            }}</ui-tag>
+          }
+          <time [attr.datetime]="m.instante">{{ data(m.instante) }}</time>
+        </div>
+        <p class="cfg-atos__quem">
+          {{ m.autorNome || 'Pessoa não identificada' }} · ciclo {{ m.ciclo }}
+        </p>
+        @if (m.texto; as texto) {
+          <p class="table-responsive__meta cfg-justificativa">{{ texto }}</p>
+        }
+        @if (comSituacao() && substituida(m.substituiId); as anterior) {
+          <p class="table-responsive__meta">Substitui a manifestação de {{ anterior }}.</p>
+        }
+      </li>
+    }
+  </ol>
+}

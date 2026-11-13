@@ -1,11 +1,7 @@
 <ui-dialog
   [visible]="aberto()"
   (visibleChange)="!$event && fechar.emit()"
-  [heading]="
-    decisao() === 'REPROVAR'
-      ? 'Reprovar a proteção de dados do item'
-      : 'Recomendar ajuste da proteção de dados'
-  "
+  [heading]="textos().titulo"
   [dismissible]="!decidindo()"
   [describedBy]="detalhe() ? 'cfg-decisao-item-descricao' : null"
 >
@@ -17,6 +13,17 @@
       {{ cadastro(d.tipo) }}: <strong>{{ d.nome }}</strong
       >. A classificação proposta é {{ rotulo(classificacoes, d.classificacaoProtecao) }}.
     </p>
+    @if (manifestacoes().length > 0) {
+      <section class="cfg-detalhe-secao" aria-labelledby="cfg-decisao-manifestacoes">
+        <h3 class="cfg-detalhe-secao__titulo" id="cfg-decisao-manifestacoes">
+          Manifestações vigentes
+        </h3>
+        <cfg-manifestacoes-da-protecao
+          [manifestacoes]="manifestacoes()"
+          ariaLabel="Manifestações vigentes no ciclo"
+        />
+      </section>
+    }
     <fieldset class="form-drawer__campos" role="none" [disabled]="decidindo()">
       @if (decisao() === 'RECOMENDAR_AJUSTE') {
         <label class="field" [class.is-error]="tentouDecidir() && recomendada().invalid">
@@ -49,23 +56,19 @@
             </span>
           }
           @if (tentouDecidir() && recomendada().invalid) {
-            <span class="field__error" id="cfg-ajuste-erro"
-              >Indique a classificação recomendada.</span
-            >
+            <span class="field__error" id="cfg-ajuste-erro">{{ erroDaRecomendada() }}</span>
           }
         </label>
       }
       <label class="field" [class.is-error]="erroDaJustificativa()">
-        <span class="field__label" [class.is-required]="decisao() === 'REPROVAR'"
-          >Justificativa</span
-        >
+        <span class="field__label" [class.is-required]="exigeJustificativa()">Justificativa</span>
         <textarea
           id="cfg-campo-justificativa"
           class="textarea"
           rows="4"
           [maxlength]="justificativaMaxima"
           [formControl]="justificativa()"
-          [attr.aria-required]="decisao() === 'REPROVAR' ? 'true' : null"
+          [attr.aria-required]="exigeJustificativa() ? 'true' : null"
           [attr.aria-invalid]="erroDaJustificativa() ? 'true' : null"
           [attr.aria-describedby]="
             erroDaJustificativa()
@@ -74,13 +77,13 @@
           "
         ></textarea>
         <span class="field__hint" id="cfg-justificativa-ajuda">
-          {{
-            decisao() === 'REPROVAR'
-              ? 'Obrigatória. Explique o motivo da reprovação; o
-      administrador a lê ao editar o item.'
-              : 'Opcional. Explique ao administrador por que a
-      classificação deve mudar.'
-          }}
+          @if (decisao() === 'REPROVAR') {
+            Obrigatória. Explique o motivo da reprovação; o administrador a lê ao editar o item.
+          } @else if (exigeJustificativa()) {
+            Obrigatória: há manifestação desfavorável vigente. Explique por que decide assim.
+          } @else {
+            Opcional. Explique ao administrador o que motivou a decisão.
+          }
         </span>
         <span class="field__hint" id="cfg-justificativa-contador"
           >{{ tamanhoDaJustificativa() }} de 2.000</span
@@ -113,13 +116,7 @@
       @if (decidindo()) {
         <ui-spinner spinnerSize="sm" />
       }
-      {{
-        decidindo()
-          ? 'Registrando...'
-          : decisao() === 'REPROVAR'
-            ? 'Reprovar item'
-            : 'Recomendar ajuste'
-      }}
+      {{ decidindo() ? 'Registrando...' : textos().confirmar }}
     </button>
   </ng-container>
 </ui-dialog>

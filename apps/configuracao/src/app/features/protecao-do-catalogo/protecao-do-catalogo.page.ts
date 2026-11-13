@@ -11,7 +11,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
+import {
+  type CadastroDoCatalogo,
+  type DetalheDaProtecaoDoCatalogoDto,
+  type ItemDaProtecaoDoCatalogoDto,
+} from '@uniplus/shared-data/configuracao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -29,8 +33,22 @@ import { DecisaoDaProtecaoDialogoComponent } from './decisao-da-protecao-dialogo
 import { EdicaoDaProtecaoDoCatalogo } from './edicao-da-protecao-do-catalogo';
 import { ProtecaoDoCatalogoListaComponent } from './protecao-do-catalogo-lista.component';
 import { ItemDaProtecaoDetalheComponent } from './item-da-protecao-detalhe.component';
+import { HistoricoDasManifestacoesComponent } from './historico-das-manifestacoes.component';
+import { ManifestacaoDoItem } from './manifestacao-do-item';
+import { ManifestacaoDoItemComponent } from './manifestacao-do-item.component';
+import { ManifestacoesDaProtecaoComponent } from './manifestacoes-da-protecao.component';
 
 type Aba = 'aguardando' | 'decisoes';
+
+/** Os filtros da aba das decisões, que a troca de aba tira da URL. */
+const FILTROS_DAS_DECISOES_LIMPOS = {
+  ato: null,
+  cadastro: null,
+  de: null,
+  ate: null,
+  busca: null,
+  minhas: null,
+} as const;
 
 const ABAS: readonly UiSegmentedOption<Aba>[] = [
   { value: 'aguardando', label: 'Aguardando decisão' },
@@ -53,6 +71,9 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
     DecisoesDaProtecaoComponent,
     DecisaoDaProtecaoDialogoComponent,
     ItemDaProtecaoDetalheComponent,
+    HistoricoDasManifestacoesComponent,
+    ManifestacaoDoItemComponent,
+    ManifestacoesDaProtecaoComponent,
     ProtecaoDoCatalogoListaComponent,
     DrawerComponent,
     SegmentedComponent,
@@ -63,10 +84,11 @@ const ABAS: readonly UiSegmentedOption<Aba>[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './protecao-do-catalogo.page.html',
   host: { class: 'cfg-page' },
-  providers: [ProtecaoDoCatalogoStore, EdicaoDaProtecaoDoCatalogo],
+  providers: [ProtecaoDoCatalogoStore, EdicaoDaProtecaoDoCatalogo, ManifestacaoDoItem],
 })
 export class ProtecaoDoCatalogoPage {
   protected readonly edicao = inject(EdicaoDaProtecaoDoCatalogo);
+  protected readonly manifestacao = inject(ManifestacaoDoItem);
   protected readonly store = inject(ProtecaoDoCatalogoStore);
   protected readonly categorias = inject(CatalogoCategoriasDocumento);
   private readonly router = inject(Router);
@@ -85,6 +107,15 @@ export class ProtecaoDoCatalogoPage {
   );
 
   protected readonly permissaoDeAprovar = PERMISSAO.configuracao.protecaoDoCatalogoAprovar;
+  /** O Encarregado de dados se manifesta, mas não decide: a manifestação tem permissão própria. */
+  protected readonly permissaoDeManifestar = PERMISSAO.configuracao.protecaoDoCatalogoManifestar;
+  /** O histórico das manifestações é de quem aprova ou consulta, porque a leitura é registrada. */
+  protected readonly permissoesDoHistorico = [
+    PERMISSAO.configuracao.protecaoDoCatalogoAprovar,
+    PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
+  ];
+  protected readonly cadastroDe = (detalhe: DetalheDaProtecaoDoCatalogoDto): CadastroDoCatalogo =>
+    detalhe.tipo as CadastroDoCatalogo;
 
   protected readonly itens = this.store.itens;
   protected readonly carregando = this.store.carregando;
@@ -124,15 +155,7 @@ export class ProtecaoDoCatalogoPage {
     if (aba === null || aba === this.aba()) return;
     void this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: {
-        aba: aba === 'decisoes' ? 'decisoes' : null,
-        ato: null,
-        cadastro: null,
-        de: null,
-        ate: null,
-        busca: null,
-        minhas: null,
-      },
+      queryParams: { ...FILTROS_DAS_DECISOES_LIMPOS, aba: aba === 'decisoes' ? 'decisoes' : null },
       queryParamsHandling: 'merge',
     });
   }

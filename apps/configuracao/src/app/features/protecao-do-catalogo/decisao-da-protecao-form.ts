@@ -48,18 +48,15 @@ export function comandoPara(
   };
 }
 
+/** O comando da decisão com a justificativa digitada; a recomendação só vale no ajuste. */
 export function comandoDeJustificativa(
   item: DetalheDaProtecaoDoCatalogoDto,
   decisao: DecisaoDaProtecao,
   justificativa: string,
   recomendada: string,
 ): DecidirProtecaoDoCatalogoRequest {
-  return decisao === 'REPROVAR'
-    ? { ...comandoPara(item), decisao, justificativa }
-    : {
-        ...comandoPara(item),
-        decisao,
-        classificacaoRecomendada: recomendada,
-        justificativa: justificativa.length > 0 ? justificativa : null,
-      };
+  const comando = { ...comandoPara(item), decisao, justificativa: justificativa || null };
+  return decisao === 'RECOMENDAR_AJUSTE'
+    ? { ...comando, classificacaoRecomendada: recomendada }
+    : comando;
 }
