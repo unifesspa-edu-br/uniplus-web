@@ -56,7 +56,7 @@ describe('recusas do servidor à etapa', () => {
       recusaDaEtapaDeNotaDoEnem(
         'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
       ),
-    ).toContain('ciência do candidato');
+    ).toContain('recurso da fase que a divulga');
     expect(
       recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
     ).toBeNull();

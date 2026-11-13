@@ -27,6 +27,7 @@
         formControlName="nome"
       />
     </div>
+    @let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
     <div class="form-field">
       <label class="label" [attr.for]="'cr-etapa-tipo-' + posicao">Tipo</label>
       <!--
@@ -37,6 +38,7 @@
       <select
         class="input"
         [attr.id]="'cr-etapa-tipo-' + posicao"
+        [attr.aria-describedby]="notaDoEnem ? 'cr-etapa-enem-' + posicao : null"
         [value]="etapa.controls.tipoEtapaOrigemId.value"
         (change)="edicao.escolherTipoEtapa(etapa, $any($event.target).value)"
       >
@@ -50,14 +52,15 @@
         }
       </select>
     </div>
-    @let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
-    @if (notaDoEnem) {
-      <p class="form-grid__full field__hint" [attr.id]="'cr-etapa-enem-' + posicao">
-        A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato, e não
-        lançada. Por isso ela não tem banca, publicação nem janela própria: acontece na janela da
-        fase e sempre compõe a nota final.
-      </p>
-    }
+    <div class="form-grid__full" role="status">
+      @if (notaDoEnem) {
+        <p class="field__hint" [attr.id]="'cr-etapa-enem-' + posicao">
+          A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato, e não
+          lançada. Por isso ela não tem banca, publicação, janela própria nem recurso: acontece na
+          janela da fase, sempre compõe a nota final e se contesta no recurso da fase que a divulga.
+        </p>
+      }
+    </div>
     <div class="form-field">
       <label class="label" [attr.for]="'cr-etapa-carater-' + posicao">Caráter</label>
       <select

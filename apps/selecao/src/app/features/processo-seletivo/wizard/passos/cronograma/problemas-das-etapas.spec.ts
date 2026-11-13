@@ -363,6 +363,7 @@ describe('etapa de nota do ENEM', () => {
     expect(problemasDaEnem({ fim: '2027-01-10T18:00' })).toHaveLength(1);
     expect(problemasDaEnem({ produtos: [{ atoCodigo: 'ATO', papel: null }] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [recurso('atoPublicado')] })).toHaveLength(1);
-    expect(problemasDaEnem({ recursos: [recurso('cienciaIndividual')] })).toEqual([]);
+    expect(problemasDaEnem({ recursos: [recurso('cienciaIndividual')] })).toHaveLength(1);
+    expect(problemasDaEnem({ recursos: [] })).toEqual([]);
   });
 });
