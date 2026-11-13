@@ -76,8 +76,11 @@
       edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $any($event.target).value)
     "
   >
-    <option value="diasUteis" [selected]="recurso.prazoUnidade === 'diasUteis'">dias úteis</option>
-    <option value="horas" [selected]="recurso.prazoUnidade === 'horas'">horas</option>
+    @for (unidade of unidadesDaInterposicao; track unidade.valor) {
+      <option [value]="unidade.valor" [selected]="recurso.prazoUnidade === unidade.valor">
+        {{ unidade.rotulo }}
+      </option>
+    }
   </select>
 </div>
 <div class="form-field">
@@ -123,15 +126,14 @@
     <option value="" [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === ''">
       Sem suspensividade
     </option>
-    <option
-      value="diasUteis"
-      [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'diasUteis'"
-    >
-      dias úteis
-    </option>
-    <option value="horas" [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === 'horas'">
-      horas
-    </option>
+    @for (unidade of unidadesDaSuspensividade; track unidade.valor) {
+      <option
+        [value]="unidade.valor"
+        [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === unidade.valor"
+      >
+        {{ unidade.rotulo }}
+      </option>
+    }
   </select>
 </div>
 <p class="field__hint" [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + indice">
@@ -237,15 +239,14 @@
       <option value="" [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''">
         Sem suspensividade
       </option>
-      <option
-        value="diasUteis"
-        [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'diasUteis'"
-      >
-        dias úteis
-      </option>
-      <option value="horas" [selected]="recurso.suspensividadeSegundaInstanciaUnidade === 'horas'">
-        horas
-      </option>
+      @for (unidade of unidadesDaSuspensividade; track unidade.valor) {
+        <option
+          [value]="unidade.valor"
+          [selected]="recurso.suspensividadeSegundaInstanciaUnidade === unidade.valor"
+        >
+          {{ unidade.rotulo }}
+        </option>
+      }
     </select>
   </div>
 }

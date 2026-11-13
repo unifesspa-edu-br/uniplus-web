@@ -87,7 +87,7 @@
             [attr.aria-describedby]="par.descritoPor"
           >
             <option value="">{{ par.opcaoVazia }}</option>
-            @for (unidade of unidades; track unidade.valor) {
+            @for (unidade of par.unidades; track unidade.valor) {
               <option [value]="unidade.valor">{{ unidade.rotulo }}</option>
             }
           </select>
