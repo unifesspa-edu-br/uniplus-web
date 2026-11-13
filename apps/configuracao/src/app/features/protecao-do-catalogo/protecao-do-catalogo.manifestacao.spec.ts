@@ -223,6 +223,18 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     expect(manifestacoes()).toHaveLength(0);
   });
 
+  it('o item nunca solicitado no ciclo (422) mostra a recusa e não relê o item', async () => {
+    await escolher('ADEQUADA');
+    await enviar();
+    await responder(
+      problema(422, `${RAIZ}item_fora_de_solicitacao`, 'O item não está numa solicitação'),
+    );
+
+    expect(pagina.tela.textContent).toContain('O item não está numa solicitação');
+    expect(pagina.tela.textContent).not.toContain('O item foi relido');
+    pagina.controller.expectNone(URL_DO_DETALHE);
+  });
+
   it('mostra as manifestações vigentes do ciclo no detalhe', async () => {
     pagina.encerrar();
     TestBed.resetTestingModule();
