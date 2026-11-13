@@ -69,13 +69,15 @@ const SUBSTITUTO_DO_REPRESENTANTE = 'caroline.jesus';
 let representantesGuardados: Promise<void> | undefined;
 
 /**
- * Designa os dois Representantes (institucionais) pelo mesmo fluxo de pedido. O titular entra
- * pela dispensa de designação, que só vale enquanto não há Representante vigente, então só o
- * gestor aprova; o substituto passa pela segunda etapa, decidida pelo titular. Os decisores das
- * duas etapas nunca coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e o Representante é
- * o titular ou o substituto.
+ * Garante o titular e o substituto do Representante do controlador, que decidem a etapa da
+ * proteção de dados (ADR-0162). Chamar antes de qualquer decisão nessa etapa. Idempotente: com os
+ * dois designados, nada muda; numa base nova, designa os dois pelo mesmo fluxo de pedido. O
+ * titular entra pela dispensa de designação, que só vale enquanto não há Representante vigente,
+ * então só o gestor aprova; o substituto passa pela segunda etapa, decidida pelo titular. Os
+ * decisores das duas etapas nunca coincidem: o gestor é `GESTOR_DE_ACESSOS` ou o segundo, e o
+ * Representante é o titular ou o substituto.
  */
-function garantirRepresentantes(): Promise<void> {
+export function garantirRepresentantes(): Promise<void> {
   representantesGuardados ??= designarRepresentantes().catch((erro: unknown) => {
     // Falha não fica guardada: a spec seguinte tenta a designação de novo.
     representantesGuardados = undefined;
