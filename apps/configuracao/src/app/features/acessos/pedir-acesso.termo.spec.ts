@@ -1,0 +1,144 @@
+import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
+import { ok, pedido, recusa } from './testes';
+import { dublesDoPedirAcesso, montarPedirAcesso, versaoDoTermo } from './pedir-acesso.page.testing';
+
+const TERMO_DIVERGENTE = 'uniplus.autorizacao.pedido.termo_divergente';
+
+describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
+  const dubles = dublesDoPedirAcesso();
+  const { api, termos } = dubles;
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    termos.vigente.mockReturnValue(of(ok(versaoDoTermo())));
+  });
+
+  async function montarComPerfilSensivel() {
+    const pagina = await montarPedirAcesso(dubles);
+    pagina.digitar('select[formcontrolname="perfilId"]', 'perfil-4');
+    pagina.digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
+    pagina.digitar('textarea', 'Analiso os documentos pessoais do processo.');
+    await pagina.fixture.whenStable();
+    pagina.fixture.detectChanges();
+    return pagina;
+  }
+
+  const aceite = (host: HTMLElement) =>
+    host.querySelector<HTMLInputElement>('cfg-termo-de-responsabilidade input[type="checkbox"]');
+
+  function marcarAceite(host: HTMLElement): void {
+    aceite(host)?.click();
+  }
+
+  it('no pedido próprio sem documento, apresenta a vigente com versão, resumo e texto focável', async () => {
+    const { host } = await montarComPerfilSensivel();
+
+    const termo = host.querySelector('cfg-termo-de-responsabilidade');
+    expect(termo?.textContent).toContain('2, publicada em');
+    expect(termo?.textContent).toContain('a'.repeat(64));
+    const texto = termo?.querySelector('[role="region"]');
+    expect(texto?.getAttribute('tabindex')).toBe('0');
+    expect(texto?.getAttribute('aria-label')).toBe('Texto do termo de responsabilidade, versão 2');
+  });
+
+  it('não envia sem o aceite e liga o erro à caixa', async () => {
+    const { host, enviar } = await montarComPerfilSensivel();
+
+    await enviar();
+
+    expect(api.criar).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('Marque o aceite do termo para continuar.');
+    expect(aceite(host)?.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('com o aceite, o envio apresenta a versão e é o próprio aceite', async () => {
+    api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
+    const { host, enviar, fixture } = await montarComPerfilSensivel();
+
+    marcarAceite(host);
+    fixture.detectChanges();
+    await enviar();
+
+    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({
+      anexaraDocumento: false,
+      termoVersaoApresentadaId: 'termo-v2',
+    });
+  });
+
+  it('no pedido para outra pessoa não apresenta o termo nem a versão', async () => {
+    api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
+    const { host, campo, digitar, enviar, fixture } = await montarComPerfilSensivel();
+
+    campo<HTMLInputElement>('input[value="outra"]').click();
+    fixture.detectChanges();
+    digitar('input[formcontrolname="beneficiarioEmail"]', 'betina.teste@unifesspa.edu.br');
+    await enviar();
+
+    expect(host.querySelector('cfg-termo-de-responsabilidade')).toBeNull();
+    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({ termoVersaoApresentadaId: null });
+  });
+
+  it('sem termo publicado, diz isso no lugar do texto e não envia', async () => {
+    termos.vigente.mockReturnValue(
+      of(
+        recusa(
+          'uniplus.autorizacao.termo.sem_versao_vigente',
+          404,
+          'Não há termo de responsabilidade publicado',
+        ),
+      ),
+    );
+    const { host, enviar } = await montarComPerfilSensivel();
+
+    await enviar();
+
+    expect(host.textContent).toContain('Não há termo de responsabilidade publicado');
+    expect(api.criar).not.toHaveBeenCalled();
+  });
+
+  it('com a vigente trocada (409), apresenta a nova, desmarca o aceite, avisa e reenvia sob chave nova', async () => {
+    termos.vigente
+      .mockReturnValueOnce(of(ok(versaoDoTermo())))
+      .mockReturnValueOnce(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 }))));
+    api.criar
+      .mockReturnValueOnce(of(recusa(TERMO_DIVERGENTE, 409, 'x')))
+      .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
+    const { host, enviar, fixture } = await montarComPerfilSensivel();
+
+    marcarAceite(host);
+    fixture.detectChanges();
+    await enviar();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(aceite(host)?.checked).toBe(false);
+    expect(host.querySelector('[aria-live="polite"]')?.textContent).toContain('versão 3');
+    marcarAceite(host);
+    fixture.detectChanges();
+    await enviar();
+
+    const [primeira, segunda] = api.criar.mock.calls;
+    expect(segunda?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
+    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).not.toBe(
+      primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN),
+    );
+  });
+
+  it('com conflito de concorrência, repete o mesmo pedido sob a mesma chave', async () => {
+    api.criar
+      .mockReturnValueOnce(of(recusa('uniplus.concorrencia.conflito', 409, 'x')))
+      .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
+    const { host, enviar, fixture } = await montarComPerfilSensivel();
+
+    marcarAceite(host);
+    fixture.detectChanges();
+    await enviar();
+    await enviar();
+
+    const [primeira, segunda] = api.criar.mock.calls;
+    expect(segunda?.[0]).toEqual(primeira?.[0]);
+    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).toBe(primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN));
+  });
+});

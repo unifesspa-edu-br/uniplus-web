@@ -91,3 +91,11 @@ export {
   type SituacaoDaRevisao,
   type SituacaoDoItemDaRevisao,
 } from './revisoes.api';
+export {
+  TermosDeResponsabilidadeApi,
+  type AceiteDoTermoDto,
+  type PublicarVersaoDoTermoRequest,
+  type TermoDoPedidoDto,
+  type VersaoDoTermoDto,
+  type VersaoDoTermoResumoDto,
+} from './termos-de-responsabilidade.api';

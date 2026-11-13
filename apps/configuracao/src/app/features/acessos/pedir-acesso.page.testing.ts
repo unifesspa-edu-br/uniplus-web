@@ -4,7 +4,12 @@ import { Router, provideRouter } from '@angular/router';
 import { map, of, type Observable } from 'rxjs';
 import { vi } from 'vitest';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { AUTORIZACAO_BASE_PATH, PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
+import {
+  AUTORIZACAO_BASE_PATH,
+  PedidosDeConcessaoApi,
+  TermosDeResponsabilidadeApi,
+  type VersaoDoTermoDto,
+} from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { PedirAcessoPage } from './pedir-acesso.page';
@@ -23,21 +28,44 @@ export const PERFIL_COMUM = {
 export const PERFIL_INSTITUCIONAL = {
   ...PERFIL_COMUM,
   id: 'perfil-2',
-  nome: 'Gestor de acessos',
+  nome: 'Consulta institucional',
   escopo: 'instituicao',
-  exigeAprovacaoDeProtecaoDeDados: true,
 };
 
 export const PERFIL_DE_GOVERNANCA = {
   ...PERFIL_INSTITUCIONAL,
   id: 'perfil-3',
   nome: 'Representante do controlador',
+  exigeAprovacaoDeProtecaoDeDados: true,
   governanca: 'representante-do-controlador',
 };
+
+/** Perfil com dado pessoal: exige o termo de responsabilidade. */
+export const PERFIL_SENSIVEL = {
+  ...PERFIL_COMUM,
+  id: 'perfil-4',
+  nome: 'Análise de documentos pessoais',
+  exigeAprovacaoDeProtecaoDeDados: true,
+};
+
+/** A versão vigente do termo, como a API a devolve. */
+export function versaoDoTermo(parcial: Partial<VersaoDoTermoDto> = {}): VersaoDoTermoDto {
+  return {
+    id: 'termo-v2',
+    numero: 2,
+    texto: 'Declaro que tratarei os dados pessoais acessados apenas para a finalidade do processo.',
+    resumo: 'a'.repeat(64),
+    ato: 'Portaria 12/2026',
+    publicadaEm: '2026-11-01T12:00:00Z',
+    vigente: true,
+    ...parcial,
+  };
+}
 
 export function dublesDoPedirAcesso() {
   return {
     api: { criar: vi.fn(), perfisParaPedir: vi.fn() },
+    termos: { vigente: vi.fn(() => of(ok(versaoDoTermo()))) },
     anexos: { anexar: vi.fn() },
     notificacoes: { success: vi.fn(), warning: vi.fn(), errorFromProblem: vi.fn() },
   };
@@ -45,10 +73,10 @@ export function dublesDoPedirAcesso() {
 
 type Dubles = ReturnType<typeof dublesDoPedirAcesso>;
 
-/** Os três perfis em toda leitura; a primeira pode ser substituída por uma recusa. */
+/** Os perfis em toda leitura; a primeira pode ser substituída por uma recusa. */
 function oferecerPerfis(api: Dubles['api'], primeira?: ReturnType<typeof recusa>): void {
   api.perfisParaPedir.mockReturnValue(
-    of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL, PERFIL_DE_GOVERNANCA])),
+    of(ok([PERFIL_COMUM, PERFIL_INSTITUCIONAL, PERFIL_DE_GOVERNANCA, PERFIL_SENSIVEL])),
   );
   if (primeira) api.perfisParaPedir.mockReturnValueOnce(of(primeira));
 }
@@ -65,13 +93,14 @@ function leituraDosPerfis(api: Dubles['api']) {
     ).pipe(map((body) => new HttpResponse({ body })));
 }
 
-function configurar({ api, anexos, notificacoes }: Dubles): void {
+function configurar({ api, termos, anexos, notificacoes }: Dubles): void {
   TestBed.configureTestingModule({
     providers: [
       { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
       provideHttpClient(withInterceptors([leituraDosPerfis(api)])),
       provideRouter([]),
       { provide: PedidosDeConcessaoApi, useValue: api },
+      { provide: TermosDeResponsabilidadeApi, useValue: termos },
       { provide: AnexoDoPedidoService, useValue: anexos },
       { provide: NotificationService, useValue: notificacoes },
       { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },

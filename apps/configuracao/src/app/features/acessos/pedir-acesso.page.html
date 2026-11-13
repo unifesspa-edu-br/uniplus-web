@@ -33,4 +33,14 @@
     [erroDoDocumento]="edicao.erroDoDocumento()"
     [(arquivo)]="edicao.arquivo"
   />
+  @if (edicao.aceiteNoEnvio()) {
+    <cfg-termo-de-responsabilidade
+      [versao]="edicao.termo.versao()"
+      [aceite]="edicao.termo.aceite"
+      [tentou]="edicao.tentouEnviar()"
+      [carregando]="edicao.termo.carregando()"
+      [erro]="edicao.termo.erro()"
+      [aviso]="edicao.termo.aviso()"
+    />
+  }
 </cfg-pedir-acesso-formulario>
