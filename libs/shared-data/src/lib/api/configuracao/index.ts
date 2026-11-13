@@ -205,7 +205,7 @@ export {
   type ItemDaProtecaoDoCatalogoDto,
   type ItemParaSolicitarRequest,
   type ManifestacaoDaProtecaoDto,
-  type ManifestarProtecaoRequest,
+  type RegistrarManifestacaoDaProtecaoRequest,
   type ParecerDaManifestacao,
   type SituacaoDaAprovacao,
   type SituacaoDaManifestacao,
