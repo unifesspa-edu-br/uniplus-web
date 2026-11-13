@@ -42,6 +42,22 @@ export {
   type SituacaoDaConcessao,
 } from './concessoes.api';
 export {
+  ProvidenciasApi,
+  type AtenderProvidenciaRequest,
+  type AtoDoDesfechoDto,
+  type CausaDoEncerramento,
+  type ConcessaoDaProvidenciaDto,
+  type DesfechoDaProvidenciaDto,
+  type EncerramentoDaConcessaoDto,
+  type FiltroDaSituacaoDaProvidencia,
+  type ProvidenciaDto,
+  type ProvidenciaResumoDto,
+  type ResponderProvidenciaRequest,
+  type SituacaoDaProvidencia,
+  type SolicitarProvidenciaRequest,
+  type TipoDaProvidencia,
+} from './providencias.api';
+export {
   PedidosDeConcessaoApi,
   type AnexoDoPedidoDto,
   type AnexoParaEnvioDto,
