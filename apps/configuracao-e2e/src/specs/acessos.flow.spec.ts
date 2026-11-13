@@ -51,6 +51,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
         perfilId: PERFIL_SENSIVEL_ID,
         unidadeId: UNIDADE_ID,
         justificativa: 'Analiso os documentos do processo seletivo.',
+        anexaraDocumento: false,
       },
     ]);
     await expect(page.getByText('Aguardando a gestão de acessos').first()).toBeVisible();
