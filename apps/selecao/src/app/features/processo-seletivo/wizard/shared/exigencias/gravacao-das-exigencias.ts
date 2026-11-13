@@ -1,7 +1,7 @@
 import type { ItemDocumentoExigidoInput, NoExigenciaInput } from '@uniplus/shared-data/selecao';
+import { baseLegalParaEnvio, basesLegaisParaEnvio } from '@uniplus/shared-utils';
 
 import type {
-  BaseLegalConfig,
   ExigenciaDeDocumento,
   ExigenciasDoRascunho,
   NoDeExigencia,
@@ -95,27 +95,12 @@ function comoNo(no: NoDeExigencia): NoExigenciaInput {
     documento: null,
     quantidadeMinima: no.quantidadeMinima ?? null,
     consequencia: no.consequencia,
-    basesLegais: no.basesLegais === null ? null : no.basesLegais.map(comoBaseLegal),
+    basesLegais: no.basesLegais === null ? null : no.basesLegais.map(baseLegalParaEnvio),
     filhos: null,
     chaveDistincao: no.chaveDistincao,
     dataReferencia: no.dataReferencia,
     ocorrenciasEsperadas: no.ocorrenciasEsperadas,
     repetePorEntidade: no.repetePorEntidade,
-  };
-}
-
-/** Norma sem referência não viaja: é linha em branco do formulário, não declaração. */
-function comoBaseLegal(base: BaseLegalConfig): {
-  referencia: string;
-  abrangencia: string;
-  status: string;
-  observacao: string | null;
-} {
-  return {
-    referencia: base.referencia.trim(),
-    abrangencia: base.abrangencia,
-    status: base.status,
-    observacao: base.observacao.trim() === '' ? null : base.observacao.trim(),
   };
 }
 
@@ -149,9 +134,7 @@ function folha(
         : comRecorteDeModalidade(documento.condicoes, recorte),
     // A publicação exige base legal resolvida de toda exigência que decide o resultado; a
     // que não decide pode seguir sem norma declarada. Linha em branco não conta como norma.
-    basesLegais: documento.basesLegais
-      .filter((base) => base.referencia.trim() !== '')
-      .map(comoBaseLegal),
+    basesLegais: basesLegaisParaEnvio(documento.basesLegais),
     idadeMaximaEmissao: comoIdadeMaxima(documento.idadeMaximaEmissao, faseIdPorCodigo),
     formatosPermitidos:
       documento.formatosPermitidos as ItemDocumentoExigidoInput['formatosPermitidos'],

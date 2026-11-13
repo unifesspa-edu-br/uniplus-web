@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, input, output } from '@angu
 import {
   ComboboxComponent,
   EditorDeCondicoesComponent,
+  NormasDoDocumentoComponent,
+  type TextosDasNormas,
   ValorLegivelDirective,
 } from '@uniplus/shared-ui/components';
 import { consequenciasDaFase } from '@uniplus/shared-utils';
@@ -10,11 +12,8 @@ import type { BaseLegalConfig, ModeloDaExigencia } from '../../../processo-selet
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { descreverFase } from '../../../shared/descricao-da-fase';
 import {
-  ABRANGENCIAS_ESCOLHIVEIS,
   CONSEQUENCIAS_ESCOLHIVEIS,
   FATO_MODALIDADE,
-  STATUS_BASE_LEGAL_ESCOLHIVEIS,
-  baseLegalNova,
 } from '../../../shared/exigencias/exigencias-documentais';
 import { mostraFormulario } from '../../../shared/exigencias/formulario-da-exigencia';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
@@ -41,6 +40,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
     EixoFormularioComponent,
     EixoRepeticaoComponent,
     ModeloDaExigenciaComponent,
+    NormasDoDocumentoComponent,
   ],
   templateUrl: './editor-da-exigencia.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,9 +80,20 @@ export class EditorDaExigenciaComponent {
 
   readonly consequencias = CONSEQUENCIAS_ESCOLHIVEIS;
 
-  readonly abrangencias = ABRANGENCIAS_ESCOLHIVEIS;
-
-  readonly statusBaseLegal = STATUS_BASE_LEGAL_ESCOLHIVEIS;
+  /** Os textos que o passo Fase sempre usou para as normas; o editor é o do modelo de formulário. */
+  protected readonly textosDasNormas: Partial<TextosDasNormas> = {
+    referencia: 'Norma que exige o documento',
+    placeholderReferencia: 'Lei 12.711/2012, art. 3º',
+    abrangencia: 'Alcance da norma',
+    status: 'Identificação da norma',
+    observacao: 'Observação',
+    observacaoOculta: ' sobre a norma',
+    observacaoSufixo: ' (opcional)',
+    placeholderObservacao: 'O que esta norma exige, em uma linha',
+    acrescentar: 'Acrescentar outra norma',
+    remover: 'Remover esta norma',
+    removerAcessivel: '',
+  };
 
   ehObrigatorio(id: string): boolean {
     return this.exigencias.exigenciaDoDocumento(id).obrigatorio;
@@ -123,35 +134,13 @@ export class EditorDaExigenciaComponent {
     return this.exigencias.exigenciaDoDocumento(id).basesLegais;
   }
 
-  /** Escreve um campo de UMA das normas, endereçada pela posição. */
-  escreverBaseLegal(
-    id: string,
-    posicao: number,
-    campo: keyof BaseLegalConfig,
-    valor: string,
-  ): void {
-    const bases = this.basesLegaisDoDocumento(id).map((base, i) =>
-      i === posicao ? { ...base, [campo]: valor } : base,
-    );
-    this.exigencias.escreverExigencia(id, { basesLegais: bases });
-  }
-
-  /** Acrescenta uma norma à exigência — uma lei federal somada à cláusula do edital. */
-  acrescentarBaseLegal(id: string): void {
-    this.exigencias.escreverExigencia(id, {
-      basesLegais: [...this.basesLegaisDoDocumento(id), baseLegalNova()],
-    });
-  }
-
   /**
-   * Remove uma norma. A última não sai: a exigência que decide o resultado precisa de norma
-   * resolvida para publicar, e deixar a lista vazia tiraria da tela o campo que a publicação
-   * cobra — a linha em branco não viaja no comando de qualquer forma.
+   * Grava as normas da exigência como o editor as devolve: a lista inteira a cada mudança. A
+   * última não sai (o editor recebe o mínimo de uma): a exigência que decide o resultado precisa
+   * de norma resolvida para publicar, e a linha em branco não viaja no comando de qualquer forma.
    */
-  removerBaseLegal(id: string, posicao: number): void {
-    const bases = this.basesLegaisDoDocumento(id);
-    if (bases.length <= 1) return;
-    this.exigencias.escreverExigencia(id, { basesLegais: bases.filter((_, i) => i !== posicao) });
+  definirBasesLegais(id: string, bases: readonly BaseLegalConfig[]): void {
+    this.exigencias.escreverExigencia(id, { basesLegais: bases });
   }
 
   /** O rótulo da consequência, o mesmo no seletor do editor e no resumo. */

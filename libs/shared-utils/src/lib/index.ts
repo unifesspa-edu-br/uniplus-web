@@ -1,3 +1,10 @@
+export {
+  type BaseLegal,
+  baseLegalNova,
+  baseLegalParaEnvio,
+  basesLegaisParaEnvio,
+  temNormaResolvida,
+} from './utils/base-legal';
 export { normalizarParaBusca } from './utils/busca.util';
 export {
   CODIGO_CADASTRO_FORMATO,

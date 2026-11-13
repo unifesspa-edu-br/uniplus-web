@@ -268,6 +268,10 @@ export {
 export * from './editor-de-documentos-exigidos/documentos-exigidos';
 export { DocumentoExigidoComponent } from './editor-de-documentos-exigidos/documento-exigido';
 export { EditorDeDocumentosExigidosComponent } from './editor-de-documentos-exigidos/editor-de-documentos-exigidos';
+export {
+  NormasDoDocumentoComponent,
+  type TextosDasNormas,
+} from './editor-de-documentos-exigidos/normas-do-documento';
 export * from './editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';

@@ -218,6 +218,6 @@ function baseLegalDe(base: BaseLegalDto): BaseLegalConfig {
     referencia: base.referencia,
     abrangencia: base.abrangencia,
     status: base.status,
-    observacao: base.observacao ?? '',
+    observacao: base.observacao ?? null,
   };
 }

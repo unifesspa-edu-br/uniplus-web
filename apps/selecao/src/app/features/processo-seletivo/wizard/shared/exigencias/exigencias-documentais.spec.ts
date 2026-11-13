@@ -1,3 +1,4 @@
+import { documentoExigidoNovo } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -10,6 +11,7 @@ import { exigenciasLocalizadasDaFase, todasAsExigencias } from './consulta-das-e
 import {
   comExigencia,
   comRepeticao,
+  exigenciaNova,
   folhaDe,
   semAEtapa,
   semAExigencia,
@@ -23,6 +25,19 @@ import {
   exigencia,
   rascunho,
 } from './exigencias.testing';
+
+/** A norma recém-declarada tem uma só definição, a do modelo de formulário e a do processo. */
+describe('a base legal nova', () => {
+  it('nasce igual no modelo de formulário e no processo', () => {
+    const doProcesso = exigenciaNova(ID_RG, 'HABILITACAO').basesLegais;
+    const doModelo = documentoExigidoNovo('HABILITACAO', 'RG').basesLegais;
+
+    expect(doProcesso).toEqual(doModelo);
+    expect(doProcesso).toEqual([
+      { referencia: '', abrangencia: 'INTERNA_EDITAL', status: 'RESOLVIDO', observacao: null },
+    ]);
+  });
+});
 
 describe('operações sobre a árvore do rascunho', () => {
   it('semAFase tira a exigência daquela fase e deixa a das outras', () => {

@@ -1,3 +1,5 @@
+import type { BaseLegal } from '@uniplus/shared-utils';
+
 export interface DocumentoDefinicao {
   id: string;
   nome: string;
@@ -19,14 +21,10 @@ export interface DocumentoGrupo {
 /**
  * Uma norma que sustenta a exigência, espelho de `BaseLegalInput`. São N por exigência (ADR-0074),
  * como a lei federal somada à cláusula do edital, e só as `RESOLVIDO` congelam no snapshot da
- * publicação. `observacao` vazia é a ausência e vira `null` no envio.
+ * publicação. É a mesma norma do modelo de formulário, definida em `@uniplus/shared-utils`:
+ * `observacao` nula ou em branco é a ausência e viaja como `null`.
  */
-export interface BaseLegalConfig {
-  readonly referencia: string;
-  readonly abrangencia: string;
-  readonly status: string;
-  readonly observacao: string;
-}
+export type BaseLegalConfig = BaseLegal;
 
 /** Uma cláusula do gatilho, na forma em que o contrato a guarda. */
 export interface CondicaoGatilhoConfig {
