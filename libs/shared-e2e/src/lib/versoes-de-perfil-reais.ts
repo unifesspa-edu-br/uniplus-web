@@ -8,6 +8,7 @@ import {
   chamarApi,
   type RespostaDaApi,
 } from './backend-real';
+import { garantirRepresentantes } from './concessoes-reais';
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
 
 /** Quem propõe as versões da simulação; quem aprova é sempre outra pessoa. */
@@ -132,11 +133,16 @@ export async function aguardarDocumentoVerificado(perfilId: string): Promise<Ver
   }
 }
 
-export function decidirVersao(
+/**
+ * Decide a versão na etapa. A etapa da proteção de dados é decidida pelo Representante do
+ * controlador: antes, garante que ele exista, porque numa base nova ainda não há nenhum.
+ */
+export async function decidirVersao(
   quem: string,
   versao: Pick<EnvioDaVersao, 'perfilId' | 'versaoId'>,
   etapa: 'gestao_de_acessos' | 'protecao_de_dados',
 ): Promise<RespostaDaApi> {
+  if (etapa === 'protecao_de_dados') await garantirRepresentantes();
   return chamarApi(
     quem,
     'POST',
