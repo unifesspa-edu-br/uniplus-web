@@ -109,3 +109,14 @@ export const PERMISSOES_DO_KEVIN_SOLICITA_PROVIDENCIA = [
 export const PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES = [
   'autorizacao:concessoes:administrar',
 ] as const;
+
+/** Isabella, Encarregado de dados, consulta a proteção dos tipos de documento e dos fatos e se manifesta. */
+export const PERMISSOES_DA_ISABELLA_MANIFESTA = [
+  'configuracao:protecao-do-catalogo:consultar',
+  'configuracao:protecao-do-catalogo:manifestar',
+] as const;
+
+/** Betina, Representante do controlador, decide a proteção dos tipos de documento e dos fatos. */
+export const PERMISSOES_DA_BETINA_DECIDE_A_PROTECAO = [
+  'configuracao:protecao-do-catalogo:aprovar',
+] as const;
