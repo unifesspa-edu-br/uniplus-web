@@ -4,8 +4,10 @@ import {
   afterNextRender,
   Injector,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -31,11 +33,17 @@ import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedirAcessoStore } from './pedir-acesso.store';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { TermoNaCriacao } from './termo/termo-na-criacao';
 
 type ParaQuem = 'mim' | 'outra';
 
 const DOCUMENTO_OBRIGATORIO =
   'O documento de designação é obrigatório para este perfil. Anexe o PDF.';
+
+/** A versão vigente mudou entre a leitura e o envio: a tela apresenta a nova (ADR-0162). */
+const TERMO_DIVERGENTE = 'uniplus.autorizacao.pedido.termo_divergente';
+/** Conflito de concorrência: o comando não foi aplicado e pode ser repetido com a mesma chave. */
+const CONFLITO_DE_CONCORRENCIA = 'uniplus.concorrencia.conflito';
 
 interface CorpoDoPedido {
   readonly beneficiarioEmail: string | null;
@@ -43,6 +51,10 @@ interface CorpoDoPedido {
   readonly unidadeId: string | null;
   readonly justificativa: string;
   readonly validaAteSugerida?: string;
+  /** O pedido declara, na criação, se anexará documento. */
+  readonly anexaraDocumento: boolean;
+  /** A versão do termo apresentada; só no pedido próprio sem documento, em que o envio é o aceite. */
+  readonly termoVersaoApresentadaId: string | null;
 }
 
 const FASE: Readonly<Record<FaseDoEnvio, string>> = {
@@ -68,6 +80,7 @@ export class EdicaoDoPedidoDeAcesso {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
   private readonly store = inject(PedirAcessoStore);
+  readonly termo = inject(TermoNaCriacao);
 
   readonly hoje = hojeNoFuso;
   readonly mensagemDoPrazo = PRAZO_NO_PASSADO;
@@ -90,7 +103,7 @@ export class EdicaoDoPedidoDeAcesso {
   });
 
   readonly arquivo = signal<File | null>(null);
-  private readonly tentouEnviar = signal(false);
+  readonly tentouEnviar = signal(false);
   readonly enviando = signal(false);
   readonly aguardandoConfirmacao = signal(false);
   readonly erro = signal<string | null>(null);
@@ -116,9 +129,26 @@ export class EdicaoDoPedidoDeAcesso {
   );
   /** O perfil de escopo institucional vale para a instituição, sem unidade. */
   readonly exigeUnidade = computed(() => this.perfilSelecionado()?.escopo !== 'instituicao');
+  /** Perfil com dado pessoal ou sensível, inclusive os de governança, exige o termo de responsabilidade. */
+  private readonly protegido = computed(() => {
+    const perfil = this.perfilSelecionado();
+    return (
+      perfil !== null && (perfil.exigeAprovacaoDeProtecaoDeDados || perfil.governanca !== null)
+    );
+  });
+  /**
+   * No pedido próprio protegido sem documento, o envio é o aceite. Com documento, ou para outra
+   * pessoa, o beneficiário aceita no pedido, depois da verificação.
+   */
+  readonly aceiteNoEnvio = computed(
+    () => this.protegido() && this.paraQuem() === 'mim' && this.arquivo() === null,
+  );
 
   constructor() {
     this.form.controls.paraQuem.valueChanges.subscribe((valor) => this.aoMudarParaQuem(valor));
+    effect(() => {
+      if (this.aceiteNoEnvio()) untracked(() => this.termo.garantir());
+    });
   }
 
   invalido(nome: keyof typeof this.form.controls): boolean {
@@ -162,7 +192,7 @@ export class EdicaoDoPedidoDeAcesso {
     );
     this.aplicarObrigatoriedades();
     this.tentouEnviar.set(true);
-    if (this.form.invalid || this.erroDoDocumento() !== null) {
+    if (this.form.invalid || this.erroDoDocumento() !== null || this.faltaOAceite()) {
       this.form.markAllAsTouched();
       this.focarPrimeiroInvalido();
       return false;
@@ -170,30 +200,39 @@ export class EdicaoDoPedidoDeAcesso {
     return true;
   }
 
+  private faltaOAceite(): boolean {
+    return this.aceiteNoEnvio() && this.termo.apresentada() === null;
+  }
+
   impedirDuranteEnvio(evento: Event): void {
     if (this.enviando()) evento.preventDefault();
   }
 
+  /** O corpo de uma criação sem resposta definitiva se repete igual; senão, monta-se do formulário. */
   private corpoDoPedido(): CorpoDoPedido {
+    return this.corpoPendente ?? this.corpoDoFormulario();
+  }
+
+  private corpoDoFormulario(): CorpoDoPedido {
     const valor = this.form.getRawValue();
-    return (
-      this.corpoPendente ?? {
-        beneficiarioEmail: valor.paraQuem === 'outra' ? valor.beneficiarioEmail.trim() : null,
-        perfilId: valor.perfilId,
-        unidadeId: this.exigeUnidade() && valor.unidadeId !== '' ? valor.unidadeId : null,
-        justificativa: valor.justificativa.trim(),
-        ...(this.exigeDocumento() || valor.validaAteSugerida === ''
-          ? {}
-          : { validaAteSugerida: fimDoDia(valor.validaAteSugerida) }),
-      }
-    );
+    return {
+      beneficiarioEmail: valor.paraQuem === 'outra' ? valor.beneficiarioEmail.trim() : null,
+      perfilId: valor.perfilId,
+      unidadeId: this.exigeUnidade() && valor.unidadeId !== '' ? valor.unidadeId : null,
+      justificativa: valor.justificativa.trim(),
+      ...(this.exigeDocumento() || valor.validaAteSugerida === ''
+        ? {}
+        : { validaAteSugerida: fimDoDia(valor.validaAteSugerida) }),
+      anexaraDocumento: this.arquivo() !== null,
+      termoVersaoApresentadaId: this.aceiteNoEnvio() ? this.termo.apresentada() : null,
+    };
   }
 
   private tratarRecusa(resultado: ApiFailure, corpo: CorpoDoPedido): void {
-    const anterior = this.chaveDaCriacao;
-    this.chaveDaCriacao = proximaChave(anterior, resultado);
-    const inconclusiva = this.chaveDaCriacao === anterior;
-    this.corpoPendente = inconclusiva ? corpo : null;
+    const mesmaChave = this.renovarChave(resultado);
+    const inconclusiva = mesmaChave && resultado.problem.code !== CONFLITO_DE_CONCORRENCIA;
+    if (resultado.problem.code === TERMO_DIVERGENTE) void this.termo.trocarPelaVigente();
+    this.corpoPendente = mesmaChave ? corpo : null;
     this.aguardandoConfirmacao.set(inconclusiva);
     if (!inconclusiva && this.aplicarErrosDeCampo(resultado.problem)) return;
     const motivo = mensagemDaRecusa(this.problemas, this.notificacoes, resultado.problem);
@@ -202,6 +241,18 @@ export class EdicaoDoPedidoDeAcesso {
         ? `${motivo} Não foi possível saber se o pedido foi registrado. Confira a lista de pedidos; se ele não aparecer, envie de novo: o pedido é o mesmo e não se repete.`
         : motivo,
     );
+  }
+
+  /**
+   * Gira a chave da criação pela regra comum, menos no conflito de concorrência, que se repete sob a
+   * mesma chave. Devolve se a chave ficou a mesma, e com ela o corpo da retentativa.
+   */
+  private renovarChave(resultado: ApiFailure): boolean {
+    const anterior = this.chaveDaCriacao;
+    if (resultado.problem.code !== CONFLITO_DE_CONCORRENCIA) {
+      this.chaveDaCriacao = proximaChave(anterior, resultado);
+    }
+    return this.chaveDaCriacao === anterior;
   }
 
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {

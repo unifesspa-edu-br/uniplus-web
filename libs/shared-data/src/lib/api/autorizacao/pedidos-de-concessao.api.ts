@@ -4,10 +4,16 @@ import { Observable } from 'rxjs';
 import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import { PaginaQuery, paramsDaPagina } from './paginacao';
 import type { components } from './schema';
+import type {
+  AceiteDoTermoPendente,
+  ApresentacaoDoTermoNaCriacao,
+  TermoNoPedido,
+} from './termos-de-responsabilidade.api';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-export type PedidoDeConcessaoDto = components['schemas']['PedidoDeConcessaoDto'];
-export type PedidoResumoDto = components['schemas']['PedidoResumoDto'];
+/** O pedido com o documento declarado e o termo fixado (contrato da uniplus-api#2365). */
+export type PedidoDeConcessaoDto = components['schemas']['PedidoDeConcessaoDto'] & TermoNoPedido;
+export type PedidoResumoDto = components['schemas']['PedidoResumoDto'] & AceiteDoTermoPendente;
 export type AnexoDoPedidoDto = components['schemas']['AnexoDoPedidoDto'];
 export type AnexoParaEnvioDto = components['schemas']['AnexoParaEnvioDto'];
 export type LeituraDoAnexoDto = components['schemas']['LeituraDoAnexoDto'];
@@ -15,7 +21,8 @@ export type DecisaoDoPedidoDto = components['schemas']['DecisaoDoPedidoDto'];
 export type PerfilParaPedidoDto = components['schemas']['PerfilParaPedidoDto'];
 export type AprovarPedidoDeConcessaoRequest =
   components['schemas']['AprovarPedidoDeConcessaoRequest'];
-export type CriarPedidoDeConcessaoRequest = components['schemas']['CriarPedidoDeConcessaoRequest'];
+export type CriarPedidoDeConcessaoRequest = components['schemas']['CriarPedidoDeConcessaoRequest'] &
+  ApresentacaoDoTermoNaCriacao;
 
 /** Fila que a listagem devolve: os pedidos de quem pergunta ou a fila de uma das etapas de aprovação. */
 export type FilaDePedidos = 'meus' | 'gestor' | 'protecao_de_dados' | 'todos';
@@ -64,11 +71,19 @@ export class PedidosDeConcessaoApi {
     return this.http.delete<ApiResult<void>>(`${this.raiz}/${encodeURIComponent(id)}`);
   }
 
-  /** POST `.../{id}/aceite` — o beneficiário nomeado aceita o pedido. */
-  aceitar(id: string, context: HttpContext): Observable<ApiResult<PedidoDeConcessaoDto>> {
+  /**
+   * POST `.../{id}/aceite` — o beneficiário nomeado aceita o pedido. No pedido com termo, informa a
+   * versão fixada que leu; sem termo, o corpo vai vazio.
+   */
+  aceitar(
+    id: string,
+    context: HttpContext,
+    termoVersaoApresentadaId: string | null = null,
+  ): Observable<ApiResult<PedidoDeConcessaoDto>> {
+    const corpo = termoVersaoApresentadaId === null ? null : { termoVersaoApresentadaId };
     return this.http.post<ApiResult<PedidoDeConcessaoDto>>(
       `${this.raiz}/${encodeURIComponent(id)}/aceite`,
-      null,
+      corpo,
       { context },
     );
   }

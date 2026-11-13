@@ -129,6 +129,8 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
       perfilId: 'perfil-1',
       unidadeId: 'unidade-1',
       justificativa: 'Atendo a comissão do processo seletivo.',
+      anexaraDocumento: false,
+      termoVersaoApresentadaId: null,
     });
     expect(anexos.anexar).not.toHaveBeenCalled();
     expect(navegar).toHaveBeenCalledWith(['/acessos/pedidos', 'novo']);

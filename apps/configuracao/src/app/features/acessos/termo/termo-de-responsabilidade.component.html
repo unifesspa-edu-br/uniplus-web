@@ -1,0 +1,55 @@
+<section class="panel" [attr.aria-labelledby]="idDoTitulo">
+  <div class="panel-head">
+    <h2 class="panel-head__title" [id]="idDoTitulo">{{ titulo() }}</h2>
+  </div>
+  <div class="panel-body cfg-termo">
+    <div aria-live="polite" aria-atomic="true">
+      @if (aviso(); as texto) {
+        <ui-alert variant="warning" heading="O termo mudou" [dynamic]="false">{{ texto }}</ui-alert>
+      }
+    </div>
+    @if (carregando()) {
+      <p><ui-spinner spinnerSize="sm" /> Carregando o termo…</p>
+    }
+    @if (erro(); as mensagem) {
+      <ui-alert variant="danger" heading="Não foi possível apresentar o termo">{{ mensagem }}</ui-alert>
+    }
+    @if (versao(); as v) {
+      <dl class="cfg-detail-list">
+        <div>
+          <dt>Versão</dt>
+          <dd>{{ v.numero }}, publicada em {{ v.publicadaEm | dateBr: 'datetime' }}</dd>
+        </div>
+        <div>
+          <dt>Ato de aprovação</dt>
+          <dd>{{ v.ato }}</dd>
+        </div>
+        <div>
+          <dt>Resumo do texto (SHA-256)</dt>
+          <dd><code class="ui-code cfg-termo__resumo">{{ v.resumo }}</code></dd>
+        </div>
+      </dl>
+      <div
+        class="cfg-termo__texto"
+        role="region"
+        tabindex="0"
+        [attr.aria-label]="'Texto do termo de responsabilidade, versão ' + v.numero"
+      >{{ v.texto }}</div>
+      @if (aceite(); as controle) {
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            [formControl]="controle"
+            [attr.aria-invalid]="semAceite() ? 'true' : null"
+            [attr.aria-describedby]="semAceite() ? idDoErro : null"
+          />
+          <span class="checkbox__box" aria-hidden="true"></span>
+          <span>Li e aceito o termo de responsabilidade, versão {{ v.numero }}.</span>
+        </label>
+        @if (semAceite()) {
+          <span class="field__error" [id]="idDoErro">Marque o aceite do termo para continuar.</span>
+        }
+      }
+    }
+  </div>
+</section>

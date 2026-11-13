@@ -75,6 +75,8 @@ const PEDIDO_AGUARDANDO_O_GESTOR = {
   encerradoEm: null,
   concessaoId: null,
   versao: null,
+  anexaraDocumento: false,
+  termo: null,
 } as const satisfies Partial<PedidoDeConcessaoDto>;
 
 /** Um pedido na fila do gestor; as listas são novas a cada chamada, para um teste não afetar outro. */
