@@ -7,70 +7,51 @@ import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type SolicitacaoDaProtecaoDto = components['schemas']['SolicitacaoDaProtecaoDto'];
 
-/*
- * TODO(uniplus-api#2366): as manifestações técnicas e os campos novos de aprovação, atos e decisões
- * seguem o contrato combinado com a API e ainda não vêm do codegen. Depois do merge,
- * `npm run generate:api` os traz no `schema.ts`, e este bloco passa a apontar para ele.
- */
-
 /** O parecer de quem se manifesta sobre a proteção proposta para o item. */
 export type ParecerDaManifestacao = 'ADEQUADA' | 'RECOMENDA_AJUSTE' | 'INADEQUADA';
 
 /** A manifestação vale no ciclo atual, foi substituída por outra da mesma pessoa ou é de ciclo encerrado. */
 export type SituacaoDaManifestacao = 'VIGENTE' | 'SUBSTITUIDA' | 'ENCERRADA';
 
-/** Uma manifestação técnica; o emissor e o identificador do autor não saem. */
-export interface ManifestacaoDaProtecaoDto {
-  readonly id: string;
-  readonly ciclo: number;
+/** Uma manifestação técnica, com o parecer e a situação nos tokens do contrato; o emissor e o identificador do autor não saem. */
+export type ManifestacaoDaProtecaoDto = Omit<
+  components['schemas']['ManifestacaoDaProtecaoDto'],
+  'parecer' | 'situacao'
+> & {
   readonly parecer: ParecerDaManifestacao;
-  readonly texto: string | null;
-  readonly autorNome: string | null;
-  readonly instante: string;
-  readonly substituiId: string | null;
   readonly situacao: SituacaoDaManifestacao;
-}
+};
 
-/** Registra a manifestação no ciclo lido; o texto é obrigatório nos pareceres desfavoráveis. */
-export interface RegistrarManifestacaoDaProtecaoRequest {
+/**
+ * Registra a manifestação no ciclo lido; o texto é obrigatório nos pareceres desfavoráveis. A tela
+ * sempre manda o ciclo e o texto, nulo quando vazio.
+ */
+export type RegistrarManifestacaoDaProtecaoRequest = Omit<
+  components['schemas']['RegistrarManifestacaoDaProtecaoRequest'],
+  'cadastro' | 'ciclo' | 'parecer' | 'texto'
+> & {
   readonly cadastro: CadastroDoCatalogo;
-  readonly itemId: string;
   readonly ciclo: number;
   readonly parecer: ParecerDaManifestacao;
   readonly texto: string | null;
-}
+};
 
 /**
  * A aprovação com o ciclo, a última manifestação, desfavorável ou não, e quantas manifestações o
  * ciclo tem. A contagem volta na decisão para a API saber o que foi lido; a tela não a mostra.
  */
-export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'] & {
-  readonly ciclo: number;
-  readonly manifestacoesNoCiclo: number;
-  readonly manifestadaEm: string | null;
-  readonly manifestacaoDesfavoravel: boolean;
-};
+export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'];
 
-/** O ciclo do ato e se a decisão foi tomada diante de manifestação desfavorável vigente. */
-interface CicloDoAto {
-  readonly ciclo: number;
-  readonly dianteDeManifestacaoDesfavoravel: boolean;
-}
+/** Os atos e as decisões trazem o ciclo e se a decisão foi tomada diante de manifestação desfavorável vigente. */
+export type AtoDaProtecaoDto = components['schemas']['AtoDaProtecaoDto'];
+export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'];
 
-export type AtoDaProtecaoDto = components['schemas']['AtoDaProtecaoDto'] & CicloDoAto;
-export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'] & CicloDoAto;
-
-export type ItemDaProtecaoDoCatalogoDto = Omit<
-  components['schemas']['ItemDaProtecaoDoCatalogoDto'],
-  'aprovacao'
-> & { readonly aprovacao: AprovacaoDaProtecaoDto };
+export type ItemDaProtecaoDoCatalogoDto = components['schemas']['ItemDaProtecaoDoCatalogoDto'];
 
 export type DetalheDaProtecaoDoCatalogoDto = Omit<
   components['schemas']['DetalheDaProtecaoDoCatalogoDto'],
-  'aprovacao' | 'atos'
+  'manifestacoesVigentes'
 > & {
-  readonly aprovacao: AprovacaoDaProtecaoDto;
-  readonly atos: readonly AtoDaProtecaoDto[];
   readonly manifestacoesVigentes: readonly ManifestacaoDaProtecaoDto[];
 };
 export type DetalheDoFatoDto = components['schemas']['DetalheDoFatoDto'];
@@ -99,11 +80,11 @@ export const SEGMENTO_DO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> 
 
 /**
  * A decisão e o cadastro do corpo, com os mesmos tokens do contrato (o gerador os tipa como enum),
- * e o ciclo e a contagem de manifestações lidos na aprovação (TODO(uniplus-api#2366): codegen).
+ * e o ciclo e a contagem de manifestações lidos na aprovação, que a tela sempre manda.
  */
 export type DecidirProtecaoDoCatalogoRequest = Omit<
   components['schemas']['DecidirProtecaoDoCatalogoRequest'],
-  'cadastro' | 'decisao'
+  'cadastro' | 'decisao' | 'ciclo' | 'manifestacoesNoCiclo'
 > & {
   readonly cadastro: CadastroDoCatalogo;
   readonly decisao: DecisaoDaProtecao;
