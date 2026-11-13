@@ -2,7 +2,7 @@ import { expect } from '@playwright/test';
 
 import { SEGUNDO_GESTOR_DE_ACESSOS, chamarApi } from './backend-real';
 import { garantirPerfil } from './versoes-de-perfil-reais';
-import { garantirConcessao } from './concessoes-reais';
+import { garantirConcessao, garantirRepresentantes } from './concessoes-reais';
 
 const SIGLA_DO_CERTAME = 'CEPS';
 let unidadeGuardada: Promise<string> | undefined;
@@ -125,14 +125,15 @@ const CRIADO_POR_SPEC = /_\d{10,}$/;
 
 /**
  * Leva o catálogo inicial ao estado aprovado, como o Representante do controlador faria: a
- * administradora envia a solicitação dos itens pendentes e o Representante substituto, que a
- * simulação designa ao conceder os acessos, aprova cada item solicitado com a classificação
+ * administradora envia a solicitação dos itens pendentes e o Representante substituto, garantido
+ * antes (numa base nova ele ainda não existe), aprova cada item solicitado com a classificação
  * proposta. Sem isso a API recusa vincular qualquer fato ou tipo à configuração.
  *
  * Só o catálogo inicial entra: o item que uma spec cria leva o instante da criação no fim do
  * código (`..._1793590782604`) e fica com a spec, que decide quando e como ele é solicitado.
  */
 export async function aprovarCatalogoInicial(): Promise<number> {
+  await garantirRepresentantes();
   await solicitarAprovacaoDoCatalogoInicial();
   const fila = await chamarApi<ItemDaProtecao[]>(
     APROVA_O_CATALOGO,
