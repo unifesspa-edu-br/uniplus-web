@@ -32,7 +32,7 @@ export interface ManifestacaoDaProtecaoDto {
 }
 
 /** Registra a manifestação no ciclo lido; o texto é obrigatório nos pareceres desfavoráveis. */
-export interface ManifestarProtecaoRequest {
+export interface RegistrarManifestacaoDaProtecaoRequest {
   readonly cadastro: CadastroDoCatalogo;
   readonly itemId: string;
   readonly ciclo: number;
@@ -166,7 +166,7 @@ export class ProtecaoDoCatalogoApi {
    * a nova da mesma pessoa substitui a vigente. Exige `Idempotency-Key` no contexto.
    */
   manifestar(
-    request: ManifestarProtecaoRequest,
+    request: RegistrarManifestacaoDaProtecaoRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(`${this.url()}/manifestacoes`, request, { context });
