@@ -170,6 +170,24 @@ describe('janela de recurso da etapa', () => {
     expect(comRecurso({})).not.toContainEqual(expect.stringContaining('suspensividade'));
   });
 
+  it('aceita 48 horas na primeira instância e 3 dias corridos na segunda', () => {
+    expect(
+      comRecurso({
+        suspensividadePrimeiraInstanciaValor: '48',
+        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
+        admiteInstanciaSuperior: true,
+        suspensividadeSegundaInstanciaValor: '3',
+        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+      }),
+    ).not.toContainEqual(expect.stringContaining('suspensividade'));
+  });
+
+  it('acusa dias corridos sem o valor', () => {
+    expect(
+      comRecurso({ suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias }),
+    ).toContainEqual(expect.stringContaining('suspensividade'));
+  });
+
   /** Janela sem regra resolvida é descartada na gravação — e isso precisa ser dito. */
   it('acusa a janela cuja regra o catálogo ainda não resolveu', () => {
     expect(comRecurso({ regraCodigo: '', regraVersao: '' })).toContainEqual(
