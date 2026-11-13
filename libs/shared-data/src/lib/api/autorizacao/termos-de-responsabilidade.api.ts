@@ -56,10 +56,13 @@ export interface TermoDoPedidoDto {
   readonly aceite: AceiteDoTermoDto | null;
 }
 
-/** O que a criação do pedido declara sobre o documento e o termo apresentado. */
+/**
+ * O que a criação do pedido declara sobre o documento e o termo apresentado. A versão vigente é
+ * obrigatória no pedido de perfil protegido e não vai no dos demais (UNI-REQ-0377).
+ */
 export interface ApresentacaoDoTermoNaCriacao {
   readonly anexaraDocumento: boolean;
-  readonly termoVersaoApresentadaId: string | null;
+  readonly termoVersaoApresentadaId?: string;
 }
 
 /** O que o pedido lido traz sobre o documento declarado e o termo. */

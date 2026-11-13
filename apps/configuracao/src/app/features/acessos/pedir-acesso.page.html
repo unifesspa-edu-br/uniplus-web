@@ -33,14 +33,15 @@
     [erroDoDocumento]="edicao.erroDoDocumento()"
     [(arquivo)]="edicao.arquivo"
   />
-  @if (edicao.aceiteNoEnvio()) {
-    <cfg-termo-de-responsabilidade
-      [versao]="edicao.termo.versao()"
-      [aceite]="edicao.termo.aceite"
-      [tentou]="edicao.tentouEnviar()"
-      [carregando]="edicao.termo.carregando()"
-      [erro]="edicao.termo.erro()"
-      [aviso]="edicao.termo.aviso()"
-    />
+  @if (edicao.protegido()) {
+  <cfg-termo-de-responsabilidade
+    [versao]="edicao.termo.versao()"
+    [aceite]="edicao.aceiteNoEnvio() ? edicao.termo.aceite : null"
+    [observacao]="edicao.observacaoDoTermo()"
+    [tentou]="edicao.tentouEnviar()"
+    [carregando]="edicao.termo.carregando()"
+    [leitura]="edicao.termo.falhaDeLeitura"
+    [aviso]="edicao.termo.aviso()"
+  />
   }
 </cfg-pedir-acesso-formulario>

@@ -61,7 +61,6 @@ describe('PedidosDeConcessaoApi', () => {
           unidadeId: ID,
           justificativa: 'Preciso do acesso.',
           anexaraDocumento: false,
-          termoVersaoApresentadaId: null,
         },
         withIdempotencyKey('chave-1'),
       ),
