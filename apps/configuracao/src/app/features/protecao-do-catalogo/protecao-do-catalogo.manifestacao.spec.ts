@@ -193,6 +193,36 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     pagina.controller.expectOne(URL_DO_DETALHE).flush(detalheDoLaudo);
   });
 
+  it('o conflito retentável repetido com a mesma chave que recebe decisao_ja_tomada não se repete de novo: relê o item e mostra a recusa', async () => {
+    await escolher('ADEQUADA');
+    await enviar();
+    const [primeira] = manifestacoes();
+    const chave = primeira?.request.headers.get('Idempotency-Key');
+    primeira?.flush(
+      JSON.stringify({
+        status: 409,
+        code: `${RAIZ}conflito_de_concorrencia`,
+        title: 'x',
+        retryable: true,
+      }),
+      problema(409, `${RAIZ}conflito_de_concorrencia`, 'x')[1],
+    );
+    await pagina.assentar();
+
+    const [segunda] = manifestacoes();
+    expect(segunda?.request.headers.get('Idempotency-Key')).toBe(chave);
+    segunda?.flush(...problema(409, `${RAIZ}decisao_ja_tomada`, 'O item foi decidido'));
+    await new Promise((resolver) => setTimeout(resolver));
+    await pagina.assentar();
+
+    expect(manifestacoes()).toHaveLength(0);
+    expect(pagina.tela.textContent).toContain('O item foi decidido');
+    expect(pagina.tela.textContent).toContain('O item foi relido');
+    pagina.controller.expectOne(URL_DO_DETALHE).flush(detalheDoLaudo);
+    await pagina.assentar();
+    expect(manifestacoes()).toHaveLength(0);
+  });
+
   it('mostra as manifestações vigentes do ciclo no detalhe', async () => {
     pagina.encerrar();
     TestBed.resetTestingModule();

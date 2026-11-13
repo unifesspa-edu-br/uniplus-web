@@ -179,6 +179,35 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     pagina.controller.expectNone((r) => r.method === 'GET' && r.url === URL_DA_FILA);
   });
 
+  it('o conflito retentável repetido com a mesma chave que recebe manifestacao_nao_lida não se repete de novo: relê o item e mostra a recusa', async () => {
+    await abrirItem(pagina, laudo, comManifestacao(false));
+    await aprovarPeloDialogo();
+    const [primeira] = decisoes();
+    const chave = primeira?.request.headers.get('Idempotency-Key');
+    primeira?.flush(
+      JSON.stringify({
+        status: 409,
+        code: `${RAIZ}conflito_de_concorrencia`,
+        title: 'x',
+        retryable: true,
+      }),
+      problema(409, `${RAIZ}conflito_de_concorrencia`, 'x')[1],
+    );
+    await pagina.assentar();
+
+    const [segunda] = decisoes();
+    expect(segunda?.request.headers.get('Idempotency-Key')).toBe(chave);
+    segunda?.flush(...problema(409, `${RAIZ}manifestacao_nao_lida`, 'Há manifestação nova'));
+    await pagina.assentar();
+
+    expect(decisoes()).toHaveLength(0);
+    expect(dialogo().hasAttribute('open')).toBe(false);
+    expect(drawerDoItem(pagina.tela)?.textContent).toContain('O item foi relido');
+    pagina.controller.expectOne(URL_DO_DETALHE).flush(comManifestacao(true));
+    await pagina.assentar();
+    expect(decisoes()).toHaveLength(0);
+  });
+
   it('o histórico das manifestações mostra a situação de cada uma e a que ela substituiu', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
     pagina.controller.expectOne(URL_DO_HISTORICO).flush([
