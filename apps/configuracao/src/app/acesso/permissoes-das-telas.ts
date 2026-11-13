@@ -75,7 +75,12 @@ export const PERMISSOES_DAS_TELAS = {
   'modelos-formulario': [configuracao.modelosFormularioConsultar],
   'simulador-de-formulario': [configuracao.modelosFormularioConsultar],
   'tipos-documento': [configuracao.tiposDocumentoManter],
-  'protecao-do-catalogo': [configuracao.protecaoDoCatalogoAprovar],
+  // Quem aprova decide; quem consulta e quem se manifesta (Encarregado de dados) só leem e opinam.
+  'protecao-do-catalogo': [
+    configuracao.protecaoDoCatalogoAprovar,
+    configuracao.protecaoDoCatalogoConsultar,
+    configuracao.protecaoDoCatalogoManifestar,
+  ],
   'base-legal-bonus-regional': [configuracao.baseLegalBonusRegionalManter],
   'condicoes-atendimento': [configuracao.condicoesAtendimentoManter],
   'recursos-acessibilidade': [configuracao.recursosAcessibilidadeManter],

@@ -56,4 +56,11 @@ describe('formulário da decisão da proteção', () => {
       justificativa: null,
     });
   });
+
+  it('a aprovação diante de manifestação leva a justificativa, sem classificação recomendada', () => {
+    const comando = comandoDeJustificativa(detalheDoLaudo, 'APROVAR', 'A classificação basta.', '');
+
+    expect(comando).toMatchObject({ decisao: 'APROVAR', justificativa: 'A classificação basta.' });
+    expect('classificacaoRecomendada' in comando).toBe(false);
+  });
 });
