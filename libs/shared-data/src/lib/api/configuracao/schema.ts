@@ -3981,6 +3981,88 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/fatos-candidato/{id}/protecao/manifestacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-manifestacao.v1+json": readonly components["schemas"]["ManifestacaoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Service Unavailable */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/fatos-candidato/{id}/ativacao": {
         readonly parameters: {
             readonly query?: never;
@@ -7733,6 +7815,89 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/protecao-do-catalogo/{cadastro}/{id}/manifestacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly cadastro: string;
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-manifestacao.v1+json": readonly components["schemas"]["ManifestacaoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Service Unavailable */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/admin/protecao-do-catalogo/solicitacoes": {
         readonly parameters: {
             readonly query?: never;
@@ -7791,6 +7956,111 @@ export interface paths {
                 };
                 /** @description Forbidden */
                 readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/configuracao/admin/protecao-do-catalogo/manifestacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["RegistrarManifestacaoDaProtecaoRequest"];
+                    readonly "text/json": components["schemas"]["RegistrarManifestacaoDaProtecaoRequest"];
+                    readonly "application/*+json": components["schemas"]["RegistrarManifestacaoDaProtecaoRequest"];
+                };
+            };
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -10579,6 +10849,88 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/configuracao/admin/tipos-documento/{id}/protecao/manifestacoes": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.protecao-do-catalogo-manifestacao.v1+json": readonly components["schemas"]["ManifestacaoDaProtecaoDto"][];
+                    };
+                };
+                /** @description Unauthorized */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Service Unavailable */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/configuracao/tipos-etapa": {
         readonly parameters: {
             readonly query?: never;
@@ -11758,6 +12110,8 @@ export interface components {
         };
         readonly AprovacaoDaProtecaoDto: {
             readonly situacao: string;
+            /** Format: int32 */
+            readonly ciclo: number;
             /** Format: date-time */
             readonly solicitadaEm: null | string;
             /** Format: date-time */
@@ -11766,6 +12120,11 @@ export interface components {
             readonly justificativa: null | string;
             /** Format: date-time */
             readonly aceitaEm: null | string;
+            /** Format: date-time */
+            readonly manifestadaEm: null | string;
+            readonly manifestacaoDesfavoravel: boolean;
+            /** Format: int32 */
+            readonly manifestacoesNoCiclo: number;
         };
         readonly AreaPesoAreaEnemDto: {
             readonly codigo: string;
@@ -11776,11 +12135,14 @@ export interface components {
             /** Format: date-time */
             readonly instante: string;
             readonly atorNome: null | string;
+            /** Format: int32 */
+            readonly ciclo: number;
             readonly classificacaoProtecao: string;
             readonly hipoteseLegal: string;
             readonly finalidadeTratamento: string;
             readonly classificacaoRecomendada: null | string;
             readonly justificativa: null | string;
+            readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
         readonly AtualizarBaseLegalBonusRegionalCommand: {
             /** Format: uuid */
@@ -12369,6 +12731,10 @@ export interface components {
             readonly classificacaoProtecao: null | string;
             readonly hipoteseLegal: null | string;
             readonly finalidadeTratamento: null | string;
+            /** Format: int32 */
+            readonly ciclo: null | number;
+            /** Format: int32 */
+            readonly manifestacoesNoCiclo: null | number;
             readonly classificacaoRecomendada?: null | string;
             readonly justificativa?: null | string;
         };
@@ -12382,11 +12748,14 @@ export interface components {
             /** Format: date-time */
             readonly instante: string;
             readonly atorNome: null | string;
+            /** Format: int32 */
+            readonly ciclo: number;
             readonly classificacaoProtecao: string;
             readonly hipoteseLegal: string;
             readonly finalidadeTratamento: string;
             readonly classificacaoRecomendada: null | string;
             readonly justificativa: null | string;
+            readonly dianteDeManifestacaoDesfavoravel: boolean;
         };
         readonly DefinicaoDoFatoInput: {
             readonly pontoResolucao: string;
@@ -12423,6 +12792,7 @@ export interface components {
             readonly fato: null | components["schemas"]["DetalheDoFatoDto"];
             readonly tipoDocumento: null | components["schemas"]["DetalheDoTipoDeDocumentoDto"];
             readonly atos: readonly components["schemas"]["AtoDaProtecaoDto"][];
+            readonly manifestacoesVigentes: readonly components["schemas"]["ManifestacaoDaProtecaoDto"][];
         };
         readonly DetalheDoFatoDto: {
             readonly dominio: string;
@@ -12801,6 +13171,20 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly ManifestacaoDaProtecaoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: int32 */
+            readonly ciclo: number;
+            readonly parecer: string;
+            readonly texto: null | string;
+            readonly autorNome: null | string;
+            /** Format: date-time */
+            readonly instante: string;
+            /** Format: uuid */
+            readonly substituiId: null | string;
+            readonly situacao: string;
+        };
         readonly ModalidadeDto: {
             /** Format: uuid */
             readonly id: string;
@@ -13001,6 +13385,17 @@ export interface components {
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
+        };
+        readonly RegistrarManifestacaoDaProtecaoRequest: {
+            /** @enum {null|string} */
+            readonly cadastro: RegistrarManifestacaoDaProtecaoRequestCadastro;
+            /** Format: uuid */
+            readonly itemId: string;
+            /** Format: int32 */
+            readonly ciclo: null | number;
+            /** @enum {null|string} */
+            readonly parecer: RegistrarManifestacaoDaProtecaoRequestParecer;
+            readonly texto?: null | string;
         };
         readonly RegraDerivacaoPortavel: {
             readonly quando: readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
@@ -13460,6 +13855,15 @@ export enum DecidirProtecaoDoCatalogoRequestDecisao {
 export enum ItemParaSolicitarRequestCadastro {
     TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
     FATO = "FATO"
+}
+export enum RegistrarManifestacaoDaProtecaoRequestCadastro {
+    TIPO_DOCUMENTO = "TIPO_DOCUMENTO",
+    FATO = "FATO"
+}
+export enum RegistrarManifestacaoDaProtecaoRequestParecer {
+    ADEQUADA = "ADEQUADA",
+    RECOMENDA_AJUSTE = "RECOMENDA_AJUSTE",
+    INADEQUADA = "INADEQUADA"
 }
 export enum TipoLocalOferta {
     nenhum = "nenhum",
