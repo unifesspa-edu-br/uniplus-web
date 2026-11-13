@@ -1,49 +1,47 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { EmptyStateComponent, PageHeaderComponent } from '@uniplus/shared-ui/components';
+import { PainelDeProcessosComponent } from '../acompanhamento/painel-de-processos/painel-de-processos.component';
+import { ConsultaDoPainel } from '../acompanhamento/painel-de-processos/consulta-do-painel';
 
 /**
- * Painel de entrada do backoffice de Seleção.
+ * Painel de entrada do backoffice de Seleção: lista os processos seletivos que a API permite ler
+ * e abre o acompanhamento de um deles.
  *
- * Os indicadores que ocupavam esta tela — processos ativos, inscrições no mês,
- * homologações pendentes, prazos e atividade recente — eram valores escritos no
- * template, incluindo nomes de pessoas. Nenhum tinha endpoint por trás, e
- * apresentá-los como número de produção é pior do que não os apresentar
- * Ficam de fora até existir a agregação que os informe.
- *
- * A listagem real dos processos seletivos vive em `/processo-seletivo`, sob a
- * permissão de configurar processo — este painel é acessível a todo o backoffice e não
- * pode carregar um recurso que a maioria dos papéis não alcança.
+ * A seleção do que é visível é do servidor, antes da paginação; esta página não filtra nem
+ * reordena a coleção, não consulta o detalhe de cada processo e não depende da permissão de
+ * indicadores. Quantitativos, situações operacionais e prazos não fazem parte do painel básico.
  */
 @Component({
   selector: 'sel-dashboard',
   standalone: true,
-  imports: [RouterLink, PageHeaderComponent, EmptyStateComponent],
+  imports: [PainelDeProcessosComponent],
+  providers: [ConsultaDoPainel],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './dashboard.page.css',
   template: `
-    <ui-page-header heading="Painel de Processos" description="Visão geral do módulo Seleção." />
-
-    <ui-empty-state
-      heading="Indicadores ainda indisponíveis"
-      description="Os números de processos, inscrições, homologações e prazos dependem de endpoints de agregação que ainda não existem. Nada é exibido aqui até que existam."
-    >
-      @if (podeConfigurarProcesso()) {
-        <a class="btn btn--secondary" routerLink="/processo-seletivo"> Ver processos seletivos </a>
-      }
-    </ui-empty-state>
+    <sel-painel-de-processos
+      [processos]="consulta.itens()"
+      [carregando]="consulta.carregando()"
+      [falha]="consulta.falha()"
+      [restricao]="consulta.restricao()"
+      [tamanhoDePagina]="consulta.limite()"
+      [temAnterior]="consulta.temAnterior()"
+      [temProxima]="consulta.temProxima()"
+      (abrir)="abrir($event)"
+      (paginaAnterior)="consulta.paginaAnterior()"
+      (proximaPagina)="consulta.proximaPagina()"
+      (tamanhoDePaginaChange)="consulta.trocarTamanho($event)"
+      (tentarNovamente)="consulta.tentarNovamente()"
+      (atualizarLista)="consulta.atualizarLista()"
+    />
   `,
 })
 export class DashboardPage {
-  private readonly permissoes = inject(PermissoesService);
+  protected readonly consulta = inject(ConsultaDoPainel);
+  private readonly router = inject(Router);
 
-  /**
-   * O atalho só aparece para quem a rota admite — sem isso, um avaliador
-   * clicaria em "Ver processos seletivos" para cair em `/acesso-negado`.
-   */
-  protected readonly podeConfigurarProcesso = computed(() =>
-    this.permissoes.tem(PERMISSAO.selecao.processosConfigurar),
-  );
+  protected abrir(id: string): void {
+    void this.router.navigate(['/acompanhamento/processos', id]);
+  }
 }

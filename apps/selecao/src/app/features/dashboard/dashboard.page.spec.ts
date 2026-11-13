@@ -1,76 +1,85 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { Router, provideRouter } from '@angular/router';
+import { Subject } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { UserContextService } from '@uniplus/shared-auth/bootstrap';
+import type { ApiResult } from '@uniplus/shared-core/http';
+import {
+  ProcessosSeletivosApi,
+  type ProcessoSeletivoResumoDto,
+} from '@uniplus/shared-data/selecao';
+import { HttpHeaders } from '@angular/common/http';
 
 import { DashboardPage } from './dashboard.page';
 
-/** Permissões de quem está autenticado — o atalho da listagem depende delas. */
-const concedidas = signal<readonly string[]>(['selecao:processos:configurar']);
-const permissoesStub = { tem: (codigo: string) => concedidas().includes(codigo) };
-
 describe('DashboardPage', () => {
-  beforeEach(async () => {
-    concedidas.set(['selecao:processos:configurar']);
+  let resposta: Subject<ApiResult<readonly ProcessoSeletivoResumoDto[]>>;
 
+  beforeEach(async () => {
+    resposta = new Subject();
     await TestBed.configureTestingModule({
       imports: [DashboardPage],
-      providers: [provideRouter([]), { provide: PermissoesService, useValue: permissoesStub }],
+      providers: [
+        provideRouter([]),
+        { provide: ProcessosSeletivosApi, useValue: { listar: () => resposta } },
+        {
+          provide: UserContextService,
+          useValue: { isAuthenticated: signal(true), user: signal({ id: 'u1' }) },
+        },
+      ],
     }).compileComponents();
   });
 
-  function montar(): HTMLElement {
+  function montar() {
     const fixture = TestBed.createComponent(DashboardPage);
     fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
+    return fixture;
   }
 
-  /** Processo, KPI, prazo e atividade só aparecem se tiverem endpoint por trás. */
-  it('não apresenta processo, número ou atividade sem origem de dados', () => {
-    const host = montar();
+  function entregar(fixture: ReturnType<typeof montar>, itens: unknown[]): void {
+    resposta.next({
+      ok: true,
+      data: itens as ProcessoSeletivoResumoDto[],
+      status: 200,
+      headers: new HttpHeaders(),
+    });
+    fixture.detectChanges();
+  }
 
-    expect(host.querySelector('table')).toBeNull();
-    expect(host.querySelector('.kpi')).toBeNull();
-    expect(host.querySelector('.timeline')).toBeNull();
-    expect(host.textContent).not.toContain('SISU 2026.1');
-    expect(host.textContent).not.toContain('23.481');
+  it('sinaliza a espera em vez de lista vazia antes da resposta', () => {
+    const host = montar().nativeElement as HTMLElement;
+    expect(host.textContent).toContain('Carregando processos seletivos');
+    expect(host.textContent).not.toContain('Nenhum processo seletivo encontrado');
   });
 
-  it('declara que os indicadores ainda não existem', () => {
-    expect(montar().querySelector('.empty-state__title')?.textContent).toContain(
-      'Indicadores ainda indisponíveis',
+  it('apresenta os processos retornados com a ação Abrir acompanhamento', () => {
+    const fixture = montar();
+    entregar(fixture, [{ id: 'p1', nome: 'Processo Um' }]);
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.textContent).toContain('Processo Um');
+    expect(host.textContent).toContain('Abrir acompanhamento');
+  });
+
+  it('abre /acompanhamento/processos/:id do processo escolhido', () => {
+    const fixture = montar();
+    entregar(fixture, [{ id: 'p1', nome: 'Processo Um' }]);
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('button[aria-label^="Abrir acompanhamento"]')
+      ?.click();
+
+    expect(navegar).toHaveBeenCalledWith(['/acompanhamento/processos', 'p1']);
+  });
+
+  it('sucesso sem itens apresenta a mensagem de vazio', () => {
+    const fixture = montar();
+    entregar(fixture, []);
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Nenhum processo seletivo encontrado',
     );
-  });
-
-  /**
-   * O painel é acessível a todo o backoffice; a listagem exige a permissão de
-   * configurar processo na rota e na API. Oferecer o atalho a quem não a tem
-   * levaria direto ao acesso negado.
-   */
-  it('leva à listagem quem pode configurar processo', () => {
-    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
-      (a) => a.textContent?.includes('Ver processos seletivos'),
-    );
-
-    expect(atalho?.getAttribute('href')).toBe('/processo-seletivo');
-  });
-
-  it('esconde o atalho da listagem de quem não pode configurar processo', () => {
-    concedidas.set([]);
-
-    const atalho = Array.from(montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>).find(
-      (a) => a.textContent?.includes('Ver processos seletivos'),
-    );
-
-    expect(atalho).toBeUndefined();
-  });
-
-  it('não expõe âncoras sem destino', () => {
-    const vazias = Array.from(
-      montar().querySelectorAll('a') as NodeListOf<HTMLAnchorElement>,
-    ).filter((a) => a.getAttribute('href') === '#');
-
-    expect(vazias).toHaveLength(0);
   });
 });
