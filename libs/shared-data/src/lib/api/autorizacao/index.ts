@@ -46,6 +46,7 @@ export {
   type AnexoDoPedidoDto,
   type AnexoParaEnvioDto,
   type AprovarPedidoDeConcessaoRequest,
+  type AceitarPedidoDeConcessaoRequest,
   type CriarPedidoDeConcessaoRequest,
   type DecisaoDoPedidoDto,
   type FilaDePedidos,

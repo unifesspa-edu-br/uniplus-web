@@ -6,75 +6,19 @@ import { PaginaQuery, paramsDaPagina } from './paginacao';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-/*
- * TODO(uniplus-api#2365): os tipos do termo de responsabilidade seguem o contrato combinado com a
- * API e ainda não vêm do codegen. Depois do merge, `npm run generate:api` traz os equivalentes em
- * `schema.ts`, e este bloco passa a apontar para `components['schemas']`.
- */
-
-/**
- * O tipo de mídia das leituras do termo (ADR-0016). O contrato da uniplus-api#2365 não o nomeia; segue
- * a convenção dos recursos de autorização, pelo nome do recurso no singular.
- */
+/** O tipo de mídia das leituras do termo (ADR-0016). */
 const RECURSO = 'versao-do-termo';
 
 /** Uma versão publicada do termo. `resumo` é o SHA-256, em hexadecimal, do texto normalizado. */
-export interface VersaoDoTermoDto {
-  readonly id: string;
-  readonly numero: number;
-  readonly texto: string;
-  readonly resumo: string;
-  readonly ato: string;
-  readonly publicadaEm: string;
-  readonly vigente: boolean;
-}
-
+export type VersaoDoTermoDto = components['schemas']['VersaoDoTermoDto'];
 /** A versão no histórico, sem o texto. */
-export type VersaoDoTermoResumoDto = Omit<VersaoDoTermoDto, 'texto'>;
-
+export type VersaoDoTermoResumoDto = components['schemas']['VersaoDoTermoResumoDto'];
 /** Publica uma versão; `versaoVigenteEsperadaId` é a vigente que a tela leu, ou `null` sem termo. */
-export interface PublicarVersaoDoTermoRequest {
-  readonly texto: string;
-  readonly ato: string;
-  readonly versaoVigenteEsperadaId: string | null;
-}
-
+export type PublicarVersaoDoTermoRequest = components['schemas']['PublicarVersaoDoTermoRequest'];
 /** Quem aceitou, quando e qual versão, com o resumo do texto apresentado. */
-export interface AceiteDoTermoDto {
-  readonly pessoa: components['schemas']['IdentidadeDto'];
-  readonly aceitoEm: string;
-  readonly versaoId: string;
-  readonly numero: number;
-  readonly resumo: string;
-}
-
+export type AceiteDoTermoDto = components['schemas']['AceiteDoTermoDto'];
 /** A versão fixada no pedido protegido e o aceite dela, quando já houve. */
-export interface TermoDoPedidoDto {
-  readonly versaoId: string;
-  readonly numero: number;
-  readonly resumo: string;
-  readonly aceite: AceiteDoTermoDto | null;
-}
-
-/**
- * O que a criação do pedido declara sobre o documento e o termo apresentado. A versão vigente é
- * obrigatória no pedido de perfil protegido e não vai no dos demais (UNI-REQ-0377).
- */
-export interface ApresentacaoDoTermoNaCriacao {
-  readonly anexaraDocumento: boolean;
-  readonly termoVersaoApresentadaId?: string;
-}
-
-/** O que o pedido lido traz sobre o documento declarado e o termo. */
-export interface TermoNoPedido {
-  readonly anexaraDocumento: boolean;
-  readonly termo: TermoDoPedidoDto | null;
-}
-
-/** O resumo do pedido diz se ele aguarda o aceite do termo pelo beneficiário. */
-export interface AceiteDoTermoPendente {
-  readonly aguardaAceiteDoTermo: boolean;
-}
+export type TermoDoPedidoDto = components['schemas']['TermoDoPedidoDto'];
 
 /** Cliente do termo de responsabilidade: a vigente, as versões e a publicação. */
 @Injectable({ providedIn: 'root' })
