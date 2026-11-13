@@ -24,6 +24,15 @@ import {
 
 const URL_DA_MANIFESTACAO = `${URL_DA_FILA}/manifestacoes`;
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
+const RECUSA_DO_TEXTO = [
+  JSON.stringify({
+    status: 422,
+    code: `${RAIZ}texto_invalido`,
+    title: 'x',
+    errors: [{ field: 'texto', code: 'a', message: 'Texto recusado.' }],
+  }),
+  problema(422, `${RAIZ}texto_invalido`, 'x')[1],
+] as const;
 
 describe('ProtecaoDoCatalogoPage — o formulário da manifestação de um item a outro', () => {
   let pagina: PaginaMontada;
@@ -165,20 +174,61 @@ describe('ProtecaoDoCatalogoPage — a resposta atrasada do item A com o item B 
     expect(sucesso).not.toHaveBeenCalled();
   });
 
+  it('o envio pendente de A não deixa B ocupado nem impede o envio de B', async () => {
+    const envioDeA = await enviarAEAbrirB();
+    const botao = formulario().querySelector('button[type="submit"]') as HTMLButtonElement;
+
+    expect(formulario().getAttribute('aria-busy')).not.toBe('true');
+    expect(botao.getAttribute('aria-disabled')).toBeNull();
+    expect(botao.getAttribute('aria-busy')).not.toBe('true');
+    expect(parecer('INADEQUADA')?.disabled).toBe(false);
+    expect(texto().disabled).toBe(false);
+
+    formulario().dispatchEvent(new Event('submit'));
+    await pagina.assentar();
+    const [envioDeB] = pagina.controller.match(
+      (r) => r.method === 'POST' && r.url === URL_DA_MANIFESTACAO,
+    );
+    expect(envioDeB?.request.body).toMatchObject({ itemId: rural.id, texto: RASCUNHO_DE_B });
+    expect(formulario().getAttribute('aria-busy')).toBe('true');
+
+    envioDeA.flush(null, SEM_CONTEUDO);
+    await chegarResposta();
+    expect(texto().disabled, 'a resposta de A não destrava o envio de B').toBe(true);
+    envioDeB?.flush(null, SEM_CONTEUDO);
+    await chegarResposta();
+    pagina.controller.expectOne(`${URL_DA_FILA}/fatos/${rural.id}`).flush(detalheDoFato());
+  });
+
+  it('com o envio pendente o parecer e o texto ficam travados e voltam com os valores na recusa', async () => {
+    await abrirItem(pagina, laudo, detalheDoLaudo);
+    clicar(parecer('INADEQUADA'), 'o parecer inadequada');
+    digitar(texto(), 'Texto enviado.');
+    await pagina.assentar();
+    formulario().dispatchEvent(new Event('submit'));
+    await pagina.assentar();
+
+    expect(parecer('INADEQUADA')?.disabled).toBe(true);
+    expect(texto().disabled).toBe(true);
+    expect(formulario().getAttribute('aria-busy')).toBe('true');
+
+    const [corpo, cabecalhos] = RECUSA_DO_TEXTO;
+    pagina.controller
+      .expectOne((r) => r.method === 'POST' && r.url === URL_DA_MANIFESTACAO)
+      .flush(corpo, cabecalhos);
+    await chegarResposta();
+
+    expect(parecer('INADEQUADA')?.disabled).toBe(false);
+    expect(parecer('INADEQUADA')?.checked).toBe(true);
+    expect(texto().disabled).toBe(false);
+    expect(texto().value).toBe('Texto enviado.');
+    expect(texto().getAttribute('aria-invalid')).toBe('true');
+    expect(formulario().getAttribute('aria-busy')).toBe('false');
+  });
+
   it.each([
     ['o 409 de ciclo mudado', problema(409, `${RAIZ}ciclo_mudou`, 'O ciclo mudou')],
-    [
-      'a recusa do texto',
-      [
-        JSON.stringify({
-          status: 422,
-          code: `${RAIZ}texto_invalido`,
-          title: 'x',
-          errors: [{ field: 'texto', code: 'a', message: 'Texto recusado.' }],
-        }),
-        problema(422, `${RAIZ}texto_invalido`, 'x')[1],
-      ] as const,
-    ],
+    ['a recusa do texto', RECUSA_DO_TEXTO],
   ])('%s de A não marca o formulário nem os avisos de B', async (_, resposta) => {
     const envioDeA = await enviarAEAbrirB();
 
