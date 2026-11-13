@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { mockManifestacoesDaFila } from '../support/listas-de-tipos-e-fatos';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -71,6 +72,7 @@ function retida(): { espera: Promise<void>; liberar: () => void } {
 async function mockProtecao(page: Page): Promise<() => void> {
   const escrita = retida();
   let leituras = 0;
+  await mockManifestacoesDaFila(page);
   await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (r) =>
     responder(r, 200, []),
   );

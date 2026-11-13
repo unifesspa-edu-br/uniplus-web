@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, type Route } from '@playwright/test';
+import { mockManifestacoesDaFila } from './listas-de-tipos-e-fatos';
 
 /** Os dados, a API simulada e os passos das decisões da proteção de dados dos tipos e fatos. */
 
@@ -128,6 +129,7 @@ class ApiDasDecisoes {
   }
 
   async instalar(page: Page): Promise<void> {
+    await mockManifestacoesDaFila(page);
     await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (r) =>
       responder(r, 200, []),
     );
