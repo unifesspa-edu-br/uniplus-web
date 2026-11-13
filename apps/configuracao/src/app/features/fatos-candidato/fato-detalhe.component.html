@@ -119,6 +119,9 @@
       <ng-container *authTemPermissao="permissaoDeConsultar">
         <cfg-historico-da-protecao cadastro="FATO" [itemId]="f.id" />
       </ng-container>
+      <ng-container *authTemPermissao="permissoesDasManifestacoes">
+        <cfg-historico-das-manifestacoes cadastro="FATO" [id]="f.id" origem="cadastro" />
+      </ng-container>
     </div>
     <div class="form-drawer__footer">
       <button type="button" class="btn btn--tertiary btn--rect" (click)="aberto.set(false)">

@@ -11,6 +11,7 @@ import {
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   HistoricoDaProtecaoComponent,
+  HistoricoDasManifestacoesComponent,
   SituacaoDaAprovacaoComponent,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
@@ -34,6 +35,7 @@ import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
     DetalheDaProtecaoComponent,
     DrawerComponent,
     HistoricoDaProtecaoComponent,
+    HistoricoDasManifestacoesComponent,
     SituacaoDaAprovacaoComponent,
     TagComponent,
     FalhaDeLeituraComponent,
@@ -55,6 +57,14 @@ export class FatoDetalheComponent {
   readonly aceitar = output<FatoCandidatoDto>();
 
   protected readonly idDasRegras = ID_DAS_REGRAS_DO_DETALHE;
+  /**
+   * O histórico das manifestações técnicas, só para ler: quem administra o cadastro ou quem
+   * consulta a proteção de dados.
+   */
+  protected readonly permissoesDasManifestacoes = [
+    PERMISSAO.configuracao.fatosCandidatoConsultar,
+    PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
+  ];
   protected readonly permissaoDeManter = PERMISSAO.configuracao.fatosCandidatoManter;
   protected readonly permissaoDeConsultar = PERMISSAO.configuracao.fatosCandidatoConsultar;
   protected readonly origens = ORIGENS;
