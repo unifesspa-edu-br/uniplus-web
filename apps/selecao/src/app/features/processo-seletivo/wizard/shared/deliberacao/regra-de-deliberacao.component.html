@@ -1,0 +1,195 @@
+<div class="form-grid">
+  <div class="form-field form-grid__full">
+    <label class="label" [attr.for]="id('modo')">Deliberação da banca</label>
+    <select
+      class="input"
+      [attr.id]="id('modo')"
+      [disabled]="desabilitada()"
+      [attr.aria-describedby]="erroDoModo() ? id('modo') + '-erro' : null"
+      [attr.aria-invalid]="erroDoModo() ? 'true' : null"
+      (change)="escolherModo($any($event.target).value)"
+    >
+      <option [value]="semRegra" [selected]="regra() === null">Sem regra declarada</option>
+      @for (modo of modos; track modo.valor) {
+        <option [value]="modo.valor" [selected]="regra()?.modo === modo.valor">
+          {{ modo.rotulo }}
+        </option>
+      }
+    </select>
+    @if (erroDoModo(); as mensagem) {
+      <p class="field__erro" [attr.id]="id('modo') + '-erro'" role="alert">{{ mensagem }}</p>
+    }
+  </div>
+
+  @if (regra(); as atual) {
+    <div class="form-field">
+      <label class="label" [attr.for]="id('integrantes')">Integrantes titulares</label>
+      <input
+        class="input"
+        type="text"
+        inputmode="numeric"
+        [attr.id]="id('integrantes')"
+        [value]="atual.integrantes"
+        [disabled]="desabilitada()"
+        [attr.aria-describedby]="descritoPor('integrantes')"
+        [attr.aria-invalid]="erro('integrantes') ? 'true' : null"
+        (input)="alterar('integrantes', $any($event.target).value)"
+      />
+      @if (erro('integrantes'); as mensagem) {
+        <p class="field__erro" [attr.id]="id('integrantes') + '-erro'" role="alert">
+          {{ mensagem }}
+        </p>
+      }
+    </div>
+
+    <div class="form-field">
+      <label class="label" [attr.for]="id('suplentes')">Suplentes</label>
+      <input
+        class="input"
+        type="text"
+        inputmode="numeric"
+        [attr.id]="id('suplentes')"
+        [value]="atual.suplentes"
+        [disabled]="desabilitada()"
+        [attr.aria-describedby]="descritoPor('suplentes')"
+        [attr.aria-invalid]="erro('suplentes') ? 'true' : null"
+        (input)="alterar('suplentes', $any($event.target).value)"
+      />
+      @if (erro('suplentes'); as mensagem) {
+        <p class="field__erro" [attr.id]="id('suplentes') + '-erro'" role="alert">{{ mensagem }}</p>
+      }
+    </div>
+
+    @if (colegiada()) {
+      <div class="form-field form-grid__full">
+        <label class="label" [attr.for]="id('encerramento')">Encerramento da votação</label>
+        <select
+          class="input"
+          [attr.id]="id('encerramento')"
+          [disabled]="desabilitada()"
+          [attr.aria-describedby]="descritoPor('encerramento')"
+          [attr.aria-invalid]="erro('encerramento') ? 'true' : null"
+          (change)="alterar('encerramento', $any($event.target).value)"
+        >
+          <option value="" [selected]="atual.encerramento === ''">Selecione…</option>
+          @for (opcao of encerramentos; track opcao.valor) {
+            <option [value]="opcao.valor" [selected]="atual.encerramento === opcao.valor">
+              {{ opcao.rotulo }}
+            </option>
+          }
+        </select>
+        @if (erro('encerramento'); as mensagem) {
+          <p class="field__erro" [attr.id]="id('encerramento') + '-erro'" role="alert">
+            {{ mensagem }}
+          </p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label class="label" [attr.for]="id('quorum')">Quórum</label>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          [attr.id]="id('quorum')"
+          [value]="atual.quorum"
+          [readOnly]="quorumFixo()"
+          [disabled]="desabilitada()"
+          [attr.aria-describedby]="descritoPor('quorum', quorumFixo())"
+          [attr.aria-invalid]="erro('quorum') ? 'true' : null"
+          (input)="alterar('quorum', $any($event.target).value)"
+        />
+        @if (quorumFixo()) {
+          <p class="field__hint" [attr.id]="id('quorum') + '-dica'">
+            Com todos os titulares votando, o quórum é o número de integrantes.
+          </p>
+        }
+        @if (erro('quorum'); as mensagem) {
+          <p class="field__erro" [attr.id]="id('quorum') + '-erro'" role="alert">{{ mensagem }}</p>
+        }
+      </div>
+
+      <div class="form-field">
+        <label class="label" [attr.for]="id('criterio')">Critério da votação</label>
+        <select
+          class="input"
+          [attr.id]="id('criterio')"
+          [disabled]="desabilitada()"
+          [attr.aria-describedby]="descritoPor('criterio')"
+          [attr.aria-invalid]="erro('criterio') ? 'true' : null"
+          (change)="alterar('criterio', $any($event.target).value)"
+        >
+          <option value="" [selected]="atual.criterio === ''">Selecione…</option>
+          @for (opcao of criterios; track opcao.valor) {
+            <option [value]="opcao.valor" [selected]="atual.criterio === opcao.valor">
+              {{ opcao.rotulo }}
+            </option>
+          }
+        </select>
+        @if (erro('criterio'); as mensagem) {
+          <p class="field__erro" [attr.id]="id('criterio') + '-erro'" role="alert">
+            {{ mensagem }}
+          </p>
+        }
+      </div>
+
+      @if (comDesempate()) {
+        <div class="form-field form-grid__full">
+          <label class="label" [attr.for]="id('desempate')">Em caso de empate</label>
+          <select
+            class="input"
+            [attr.id]="id('desempate')"
+            [disabled]="desabilitada()"
+            [attr.aria-describedby]="descritoPor('desempate')"
+            [attr.aria-invalid]="erro('desempate') ? 'true' : null"
+            (change)="alterar('desempate', $any($event.target).value)"
+          >
+            <option value="" [selected]="atual.desempate === ''">Selecione…</option>
+            @for (opcao of desempates; track opcao.valor) {
+              <option [value]="opcao.valor" [selected]="atual.desempate === opcao.valor">
+                {{ opcao.rotulo }}
+              </option>
+            }
+          </select>
+          @if (erro('desempate'); as mensagem) {
+            <p class="field__erro" [attr.id]="id('desempate') + '-erro'" role="alert">
+              {{ mensagem }}
+            </p>
+          }
+        </div>
+      }
+
+      @if (comSemUnanimidade()) {
+        <div class="form-field form-grid__full">
+          <label class="label" [attr.for]="id('semUnanimidade')"
+            >Sem unanimidade, o resultado é</label
+          >
+          <select
+            class="input"
+            [attr.id]="id('semUnanimidade')"
+            [disabled]="desabilitada()"
+            [attr.aria-describedby]="descritoPor('semUnanimidade')"
+            [attr.aria-invalid]="erro('semUnanimidade') ? 'true' : null"
+            (change)="alterar('semUnanimidade', $any($event.target).value)"
+          >
+            <option value="" [selected]="atual.semUnanimidade === ''">Selecione…</option>
+            @for (opcao of semUnanimidade; track opcao.valor) {
+              <option [value]="opcao.valor" [selected]="atual.semUnanimidade === opcao.valor">
+                {{ opcao.rotulo }}
+              </option>
+            }
+          </select>
+          @if (erro('semUnanimidade'); as mensagem) {
+            <p class="field__erro" [attr.id]="id('semUnanimidade') + '-erro'" role="alert">
+              {{ mensagem }}
+            </p>
+          }
+        </div>
+      }
+    } @else {
+      <p class="field__hint form-grid__full">
+        Ato individual: uma pessoa decide, sem quórum nem votação.
+      </p>
+    }
+  }
+</div>
