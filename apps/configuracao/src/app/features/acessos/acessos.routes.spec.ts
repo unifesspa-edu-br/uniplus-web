@@ -54,6 +54,7 @@ const PROTEGIDAS = [
   ['reclassificacoes/protecao-de-dados', 'acessos/reclassificacoes/protecao-de-dados'],
   ['governanca/divergencias', 'acessos/governanca/divergencias'],
   ['revisoes', 'acessos/revisoes'],
+  ['termo-de-responsabilidade', 'acessos/termo-de-responsabilidade'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -169,7 +170,7 @@ describe('rotas dos acessos', () => {
 
   it('carrega cada tela sob demanda', async () => {
     const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(22);
+    expect(carregaveis).toHaveLength(23);
     for (const item of carregaveis) {
       expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
     }

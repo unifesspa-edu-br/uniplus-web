@@ -239,6 +239,12 @@ export class LayoutComponent {
           exact: true,
         },
         {
+          label: 'Termo de responsabilidade',
+          icon: 'pi-file-edit',
+          routerLink: '/acessos/termo-de-responsabilidade',
+          exact: true,
+        },
+        {
           label: 'Revisões de acesso',
           icon: 'pi-calendar',
           routerLink: '/acessos/revisoes',

@@ -1,0 +1,178 @@
+import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { ApplicationRef } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { map, of, type Observable } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NotificationService } from '@uniplus/shared-core/notifications';
+import {
+  AUTORIZACAO_BASE_PATH,
+  TermosDeResponsabilidadeApi,
+} from '@uniplus/shared-data/autorizacao';
+import { provideMensagensDeAcesso } from '../mensagens-de-acesso';
+import { ok, recusa, recusaPeloInterceptor, versaoDoTermo } from '../testes';
+import { PublicacaoDoTermoPage } from './publicacao-do-termo.page';
+
+const V1 = versaoDoTermo({ id: 'termo-v1', numero: 1, vigente: false, ato: 'Portaria 3/2026' });
+const V2 = versaoDoTermo();
+const TEXTO_NOVO = 'Declaro ciência das obrigações de sigilo e de finalidade. '.repeat(5);
+
+const api = { publicar: vi.fn() };
+const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
+const leituras = vi.fn<(url: string) => Observable<unknown>>();
+
+function responderLeituras(vigente: unknown, historico: unknown = ok([V1, V2])): void {
+  leituras.mockImplementation((url) => of(url.endsWith('/vigente') ? vigente : historico));
+}
+
+async function assentar(): Promise<void> {
+  for (let vez = 0; vez < 2; vez++) {
+    await new Promise((resolver) => setTimeout(resolver));
+    TestBed.inject(ApplicationRef).tick();
+  }
+}
+
+async function abrir(): Promise<HTMLElement> {
+  TestBed.configureTestingModule({
+    providers: [
+      provideRouter([]),
+      provideMensagensDeAcesso(),
+      { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+      provideHttpClient(
+        withInterceptors([
+          (req) => leituras(req.url).pipe(map((body) => new HttpResponse({ body }))),
+        ]),
+      ),
+      { provide: TermosDeResponsabilidadeApi, useValue: api },
+      { provide: NotificationService, useValue: notificacoes },
+    ],
+  });
+  const fixture = TestBed.createComponent(PublicacaoDoTermoPage);
+  const host = fixture.nativeElement as HTMLElement;
+  document.body.appendChild(host);
+  fixture.detectChanges();
+  await assentar();
+  return host;
+}
+
+function preencher(host: HTMLElement, texto: string, ato: string): void {
+  const campoTexto = host.querySelector<HTMLTextAreaElement>('textarea');
+  const campoAto = host.querySelector<HTMLInputElement>('input[formcontrolname="ato"]');
+  if (campoTexto === null || campoAto === null) throw new Error('formulário ausente');
+  campoTexto.value = texto;
+  campoTexto.dispatchEvent(new Event('input'));
+  campoAto.value = ato;
+  campoAto.dispatchEvent(new Event('input'));
+}
+
+async function publicar(host: HTMLElement): Promise<void> {
+  host.querySelector('form')?.dispatchEvent(new Event('submit'));
+  await assentar();
+}
+
+describe('PublicacaoDoTermoPage', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    TestBed.resetTestingModule();
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('mostra a vigente com o texto e o histórico da versão 1 à mais recente, destacando a vigente', async () => {
+    responderLeituras(ok(V2));
+    const host = await abrir();
+
+    expect(host.querySelector('cfg-termo-de-responsabilidade')?.textContent).toContain(
+      'Versão vigente',
+    );
+    const linhas = [...host.querySelectorAll<HTMLElement>('tr[data-versao]')];
+    expect(linhas.map((l) => l.dataset['versao'])).toEqual(['1', '2']);
+    expect(linhas[1]?.textContent).toContain('Vigente');
+    expect(linhas[0]?.textContent).toContain('Substituída');
+  });
+
+  it('sem versão publicada, diz isso e publica a primeira sem vigente esperada', async () => {
+    responderLeituras(
+      recusaPeloInterceptor('uniplus.autorizacao.termo.sem_versao_vigente', 404, 'x'),
+      ok([]),
+    );
+    api.publicar.mockReturnValue(of(ok(versaoDoTermo({ numero: 1 }))));
+    const host = await abrir();
+
+    expect(host.textContent).toContain('Nenhuma versão publicada');
+    expect(host.textContent).not.toContain('Não foi possível carregar o termo');
+    preencher(host, TEXTO_NOVO, 'Portaria 1/2026');
+    await publicar(host);
+
+    expect(api.publicar.mock.calls[0]?.[0]).toEqual({
+      texto: TEXTO_NOVO,
+      ato: 'Portaria 1/2026',
+      versaoVigenteEsperadaId: null,
+    });
+  });
+
+  it('publica sobre a vigente lida, avisa e relê', async () => {
+    responderLeituras(ok(V2));
+    api.publicar.mockReturnValue(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 }))));
+    const host = await abrir();
+    const leiturasAntes = leituras.mock.calls.length;
+
+    preencher(host, TEXTO_NOVO, ' Portaria 20/2026 ');
+    await publicar(host);
+
+    expect(api.publicar.mock.calls[0]?.[0]).toMatchObject({
+      ato: 'Portaria 20/2026',
+      versaoVigenteEsperadaId: 'termo-v2',
+    });
+    expect(notificacoes.success).toHaveBeenCalledWith('Versão 3 do termo publicada');
+    expect(leituras.mock.calls.length).toBeGreaterThan(leiturasAntes);
+  });
+
+  it('não publica texto curto nem sem ato', async () => {
+    responderLeituras(ok(V2));
+    const host = await abrir();
+
+    preencher(host, 'Curto demais.', '');
+    await publicar(host);
+
+    expect(api.publicar).not.toHaveBeenCalled();
+    expect(host.textContent).toContain('Informe ao menos 200 caracteres.');
+    expect(host.textContent).toContain('Campo obrigatório.');
+  });
+
+  it('com outra versão publicada antes (409), relê e avisa', async () => {
+    responderLeituras(ok(V2));
+    api.publicar.mockReturnValue(
+      of(recusa('uniplus.autorizacao.termo.vigente_alterado', 409, 'x')),
+    );
+    const host = await abrir();
+    const leiturasAntes = leituras.mock.calls.length;
+
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    await publicar(host);
+
+    expect(host.querySelector('[aria-live="polite"]')?.textContent).toContain(
+      'Confira a versão vigente antes de publicar outra.',
+    );
+    expect(leituras.mock.calls.length).toBeGreaterThan(leiturasAntes);
+  });
+
+  it('a recusa de um campo (422) fica no campo', async () => {
+    responderLeituras(ok(V2));
+    api.publicar.mockReturnValue(
+      of(recusa('uniplus.autorizacao.termo.texto_igual_ao_vigente', 422, 'x')),
+    );
+    const host = await abrir();
+
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    await publicar(host);
+
+    const texto = host.querySelector('textarea');
+    expect(texto?.getAttribute('aria-invalid')).toBe('true');
+    expect(host.querySelector('#cfg-termo-texto-erro')?.textContent).toContain(
+      'O texto é igual ao da versão vigente.',
+    );
+  });
+});

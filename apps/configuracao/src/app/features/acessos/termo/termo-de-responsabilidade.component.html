@@ -12,7 +12,9 @@
       <p><ui-spinner spinnerSize="sm" /> Carregando o termo…</p>
     }
     @if (erro(); as mensagem) {
-      <ui-alert variant="danger" heading="Não foi possível apresentar o termo">{{ mensagem }}</ui-alert>
+      <ui-alert variant="danger" heading="Não foi possível apresentar o termo">{{
+        mensagem
+      }}</ui-alert>
     }
     @if (versao(); as v) {
       <dl class="cfg-detail-list">
@@ -26,7 +28,9 @@
         </div>
         <div>
           <dt>Resumo do texto (SHA-256)</dt>
-          <dd><code class="ui-code cfg-termo__resumo">{{ v.resumo }}</code></dd>
+          <dd>
+            <code class="ui-code cfg-termo__resumo">{{ v.resumo }}</code>
+          </dd>
         </div>
       </dl>
       <div
@@ -34,7 +38,9 @@
         role="region"
         tabindex="0"
         [attr.aria-label]="'Texto do termo de responsabilidade, versão ' + v.numero"
-      >{{ v.texto }}</div>
+      >
+        {{ v.texto }}
+      </div>
       @if (aceite(); as controle) {
         <label class="checkbox">
           <input

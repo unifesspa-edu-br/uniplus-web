@@ -175,6 +175,14 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).not.toContain('Revisões de acesso');
   });
 
+  it('oferece a publicação do termo só a quem tem a permissão de publicar', () => {
+    concedidas.set(['autorizacao:termos:publicar']);
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Termo de responsabilidade']);
+
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
+    expect(itensDoMenu()).not.toContain('Termo de responsabilidade');
+  });
+
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {
     concedidas.set(['configuracao:tipos-processo:consultar']);
     const fixture = TestBed.createComponent(LayoutComponent);
