@@ -78,7 +78,7 @@ async function abrirRecomendacaoDeAjuste(pagina: Page, nomeDoItem: string): Prom
   return pagina.getByRole('dialog', { name: 'Recomendar ajuste da proteção de dados' });
 }
 
-test.describe('Aprovação da proteção de dados do catálogo', () => {
+test.describe('Aprovação da proteção de dados dos tipos de documento e dos fatos do candidato', () => {
   test.describe.configure({ mode: 'serial' });
 
   const sufixo = Date.now();
@@ -107,7 +107,7 @@ test.describe('Aprovação da proteção de dados do catálogo', () => {
 
   test('o ajuste sem classificação recomendada não é enviado', async ({ browser }) => {
     const pagina = await comoCaroline(browser);
-    await expect(pagina.getByRole('heading', { level: 1, name: 'Proteção de Dados do Catálogo' })).toBeVisible();
+    await expect(pagina.getByRole('heading', { level: 1, name: 'Proteção de dados dos tipos de documento e dos fatos do candidato' })).toBeVisible();
 
     const dialogo = await abrirRecomendacaoDeAjuste(pagina, nome);
     await dialogo.getByRole('button', { name: 'Recomendar ajuste' }).click();
