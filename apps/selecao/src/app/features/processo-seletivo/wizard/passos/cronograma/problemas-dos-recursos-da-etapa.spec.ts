@@ -188,6 +188,48 @@ describe('janela de recurso da etapa', () => {
     ).toContainEqual(expect.stringContaining('suspensividade'));
   });
 
+  it('acusa fração de dia útil na suspensividade da primeira instância e orienta usar horas', () => {
+    const problemas = comRecurso({
+      suspensividadePrimeiraInstanciaValor: '1,5',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
+    });
+
+    expect(problemas).toContainEqual(
+      expect.stringContaining('suspensividade do recurso da etapa "Prova Objetiva" está em fração'),
+    );
+    expect(problemas).toContainEqual(expect.stringContaining('em horas'));
+  });
+
+  it('acusa fração de dia útil na suspensividade da instância superior que a janela admite', () => {
+    const admitida = comRecurso({
+      admiteInstanciaSuperior: true,
+      suspensividadeSegundaInstanciaValor: '0.5',
+      suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
+    });
+    const naoAdmitida = comRecurso({
+      admiteInstanciaSuperior: false,
+      suspensividadeSegundaInstanciaValor: '0.5',
+      suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
+    });
+
+    expect(admitida).toContainEqual(expect.stringContaining('está em fração de dia útil'));
+    expect(naoAdmitida).not.toContainEqual(expect.stringContaining('suspensividade'));
+  });
+
+  it('aceita dia útil inteiro e horas fracionadas na suspensividade', () => {
+    const inteiro = comRecurso({
+      suspensividadePrimeiraInstanciaValor: '2',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
+    });
+    const emHoras = comRecurso({
+      suspensividadePrimeiraInstanciaValor: '1,5',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
+    });
+
+    expect(inteiro).not.toContainEqual(expect.stringContaining('suspensividade'));
+    expect(emHoras).not.toContainEqual(expect.stringContaining('suspensividade'));
+  });
+
   /** Janela sem regra resolvida é descartada na gravação — e isso precisa ser dito. */
   it('acusa a janela cuja regra o catálogo ainda não resolveu', () => {
     expect(comRecurso({ regraCodigo: '', regraVersao: '' })).toContainEqual(
