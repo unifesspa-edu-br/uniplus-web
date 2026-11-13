@@ -134,6 +134,7 @@ const APROVACAO_PENDENTE: ItemDaProtecaoDoCatalogoDto['aprovacao'] = {
   aceitaEm: null,
   manifestadaEm: null,
   manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
 };
 
 /** Um item do que aguarda a proteção de dados, com a situação dada. */

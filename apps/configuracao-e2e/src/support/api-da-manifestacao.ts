@@ -33,6 +33,7 @@ export function detalheDoLaudo(vigentes: readonly object[]) {
     ...SOLICITADA,
     manifestadaEm: desfavoravel ? MANIFESTACAO_DESFAVORAVEL.instante : null,
     manifestacaoDesfavoravel: desfavoravel,
+    manifestacoesNoCiclo: vigentes.length,
   };
   return { ...LAUDO, aprovacao, manifestacoesVigentes: vigentes };
 }

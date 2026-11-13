@@ -11,6 +11,7 @@ import {
   type DetalheDaProtecaoDoCatalogoDto,
   type ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
+import { contarCaracteres } from '@uniplus/shared-utils';
 import { aguardarRecarga } from '../../shared/foco';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
@@ -18,7 +19,6 @@ import {
   JUSTIFICATIVA_MAXIMA,
   justificativaPreenchida,
   recomendacoesPara,
-  comandoPara,
   comandoDeJustificativa,
 } from './decisao-da-protecao-form';
 import { ChaveDaIntencao, enviarComRetentativa } from './envio-da-protecao';
@@ -33,6 +33,12 @@ const RECUSAS_QUE_RELEEM_A_FILA: ReadonlySet<string> = new Set([
   'uniplus.configuracao.tipo_documento.nao_encontrado',
   'uniplus.configuracao.fato_candidato.nao_encontrado',
 ]);
+
+/**
+ * Entrou manifestação técnica depois da leitura: o item é relido para a pessoa ler o que chegou, e a
+ * decisão não se reenvia sozinha (UNI-REQ-0374).
+ */
+const MANIFESTACAO_NAO_LIDA = `${RAIZ}manifestacao_nao_lida`;
 
 /** A manifestação desfavorável vigente exige a justificativa: o erro fica no campo. */
 const JUSTIFICATIVA_EXIGIDA = `${RAIZ}justificativa_exigida_pela_manifestacao`;
@@ -70,7 +76,7 @@ export class EdicaoDaProtecaoDoCatalogo {
   readonly recomendada = new FormControl('', { nonNullable: true });
   readonly justificativa = new FormControl('', { nonNullable: true });
   readonly tamanhoDaJustificativa = toSignal(
-    this.justificativa.valueChanges.pipe(map((texto) => texto.length)),
+    this.justificativa.valueChanges.pipe(map(contarCaracteres)),
     { initialValue: 0 },
   );
 
@@ -103,18 +109,11 @@ export class EdicaoDaProtecaoDoCatalogo {
   }
 
   /**
-   * Sem manifestação vigente, aprova direto. Com ela, o diálogo mostra as manifestações e recebe a
-   * justificativa, obrigatória quando alguma é desfavorável.
+   * A aprovação passa pelo diálogo, que mostra as manifestações vigentes e recebe a justificativa:
+   * opcional, e obrigatória diante de manifestação desfavorável (UNI-REQ-0374).
    */
   aprovar(): void {
-    const item = this.store.detalhe();
-    if (item === null || this.decidindo()) return;
-    if (item.manifestacoesVigentes.length > 0) {
-      this.abrirDecisao('APROVAR');
-      return;
-    }
-    this.decisaoEmCurso.set('APROVAR');
-    this.decidir(item, comandoPara(item));
+    this.abrirDecisao('APROVAR');
   }
 
   abrirDecisao(decisao: DecisaoDaProtecao): void {
@@ -159,7 +158,7 @@ export class EdicaoDaProtecaoDoCatalogo {
   }
 
   private dialogoValido(): boolean {
-    if (this.justificativa.value.trim().length > JUSTIFICATIVA_MAXIMA) return false;
+    if (contarCaracteres(this.justificativa.value.trim()) > JUSTIFICATIVA_MAXIMA) return false;
     if (this.decisaoEmCurso() === 'RECOMENDAR_AJUSTE' && this.recomendada.value === '') {
       this.recomendada.setErrors({ required: true });
       return false;
@@ -217,6 +216,8 @@ export class EdicaoDaProtecaoDoCatalogo {
     if (this.marcarCampos(problem)) return;
     if (problem.code === JUSTIFICATIVA_EXIGIDA) {
       this.pedirJustificativa(mensagem);
+    } else if (problem.code === MANIFESTACAO_NAO_LIDA) {
+      this.relerOItem(mensagem);
     } else if (RECUSAS_QUE_RELEEM_A_FILA.has(problem.code)) {
       this.relerAposRecusa(mensagem);
     } else {
@@ -241,17 +242,18 @@ export class EdicaoDaProtecaoDoCatalogo {
     return daJustificativa !== undefined || daRecomendada !== undefined;
   }
 
-  /**
-   * A aprovação direta, sem manifestação vigente na leitura, pode encontrar uma que chegou depois:
-   * o item é relido e o diálogo se abre para a justificativa.
-   */
+  /** A justificativa exigida pela manifestação fica no campo do diálogo da decisão. */
   private pedirJustificativa(mensagem: string): void {
-    if (!this.decisaoAberta()) {
-      this.store.recarregarDetalhe();
-      this.abrirDecisao(this.decisaoEmCurso());
-      this.tentouDecidir.set(true);
-    }
+    this.tentouDecidir.set(true);
     this.recusaDaJustificativa.set(mensagem);
+  }
+
+  private relerOItem(mensagem: string): void {
+    this.decisaoAberta.set(false);
+    this.erroDaDecisaoNoDrawer.set(
+      `${mensagem}. O item foi relido; leia a manifestação nova e decida de novo.`,
+    );
+    this.store.recarregarDetalhe();
   }
 
   private relerAposRecusa(mensagem: string): void {

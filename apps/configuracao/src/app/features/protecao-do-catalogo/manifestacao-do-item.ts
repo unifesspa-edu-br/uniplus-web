@@ -11,12 +11,18 @@ import {
   type RegistrarManifestacaoDaProtecaoRequest,
   type ParecerDaManifestacao,
 } from '@uniplus/shared-data/configuracao';
-import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { ateCaracteres, marcarRecusaDoServidor } from '../../shared/formulario';
 import { ChaveDaIntencao, enviarComRetentativa } from './envio-da-protecao';
 import { TEXTO_MAXIMO_DA_MANIFESTACAO, exigeTexto } from './manifestacoes';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 
-const CICLO_MUDOU = 'uniplus.configuracao.protecao_do_catalogo.ciclo_mudou';
+const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
+
+/** O item mudou depois da leitura: de ciclo, ou foi decidido. A tela o relê e não reenvia sozinha. */
+const RECUSAS_QUE_RELEEM_O_ITEM: ReadonlySet<string> = new Set([
+  `${RAIZ}ciclo_mudou`,
+  `${RAIZ}decisao_ja_tomada`,
+]);
 const FALHA_INESPERADA = 'Não foi possível registrar a manifestação. Tente de novo.';
 
 /** Os campos do formulário da manifestação. */
@@ -24,8 +30,8 @@ type CampoDaManifestacao = 'parecer' | 'texto';
 
 /**
  * A manifestação técnica do Encarregado de dados sobre a proteção proposta, no ciclo lido no
- * detalhe. A nova manifestação da mesma pessoa substitui a vigente. Se o ciclo mudou entre a
- * leitura e o envio, o item é relido e a pessoa decide se registra de novo.
+ * detalhe. A nova manifestação da mesma pessoa substitui a vigente. Se o ciclo mudou ou o item foi
+ * decidido entre a leitura e o envio, o item é relido e a pessoa decide se registra de novo.
  */
 @Injectable()
 export class ManifestacaoDoItem {
@@ -80,7 +86,7 @@ export class ManifestacaoDoItem {
     const obrigatorio = exigeTexto(this.form.controls.parecer.value);
     texto.setValidators([
       ...(obrigatorio ? [Validators.required] : []),
-      Validators.maxLength(TEXTO_MAXIMO_DA_MANIFESTACAO),
+      ateCaracteres(TEXTO_MAXIMO_DA_MANIFESTACAO),
     ]);
     texto.updateValueAndValidity();
     this.form.markAllAsTouched();
@@ -101,7 +107,8 @@ export class ManifestacaoDoItem {
   private desfecho(resultado: ApiResult<void>): void {
     this.chave.aposResposta(resultado);
     if (resultado.ok) this.concluir();
-    else if (resultado.problem.code === CICLO_MUDOU) this.relerPeloCiclo(resultado.problem);
+    else if (RECUSAS_QUE_RELEEM_O_ITEM.has(resultado.problem.code))
+      this.relerOItem(resultado.problem);
     else if (!this.marcarCampos(resultado.problem)) this.erro.set(this.texto(resultado.problem));
   }
 
@@ -113,8 +120,8 @@ export class ManifestacaoDoItem {
     this.store.recarregarDetalhe();
   }
 
-  /** O item mudou de ciclo: a tela relê e não reenvia sozinha, para a pessoa conferir antes. */
-  private relerPeloCiclo(problema: ProblemDetails): void {
+  /** O item mudou depois da leitura: a tela relê e não reenvia sozinha, para a pessoa conferir antes. */
+  private relerOItem(problema: ProblemDetails): void {
     this.aviso.set(
       `${this.texto(problema)} O item foi relido; confira a proposta e registre a manifestação de novo.`,
     );

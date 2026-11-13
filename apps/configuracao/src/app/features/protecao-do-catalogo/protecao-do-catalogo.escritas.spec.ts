@@ -34,6 +34,7 @@ const detalhe: DetalheDaProtecaoDoCatalogoDto = {
     aceitaEm: null,
     manifestadaEm: null,
     manifestacaoDesfavoravel: false,
+    manifestacoesNoCiclo: 0,
   },
   descricao: 'Laudo complementar.',
   fato: null,

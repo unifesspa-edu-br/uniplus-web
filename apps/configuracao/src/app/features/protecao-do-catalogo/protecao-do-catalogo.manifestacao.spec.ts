@@ -135,14 +135,38 @@ describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de d
     expect(pagina.tela.textContent).toContain('O texto passa de 2.000 caracteres.');
   });
 
-  it('com o ciclo mudado (409), avisa, relê o item e não reenvia sozinho', async () => {
-    await escolher('ADEQUADA');
-    await enviar();
-    await responder(problema(409, `${RAIZ}ciclo_mudou`, 'O ciclo mudou'));
+  it.each(['ciclo_mudou', 'decisao_ja_tomada'])(
+    'com o 409 %s, avisa, relê o item e não reenvia sozinho',
+    async (codigo) => {
+      await escolher('ADEQUADA');
+      await enviar();
+      await responder(problema(409, `${RAIZ}${codigo}`, 'O item mudou'));
 
-    expect(pagina.tela.textContent).toContain('O item foi relido');
+      expect(pagina.tela.textContent).toContain('O item foi relido');
+      pagina.controller.expectOne(URL_DO_DETALHE).flush(detalheDoLaudo);
+      expect(manifestacoes()).toHaveLength(0);
+    },
+  );
+
+  it('conta o texto em caracteres: 2.000 fora do plano básico cabem e são enviados', async () => {
+    await escolher('INADEQUADA', '😀'.repeat(2000));
+
+    expect(formulario().textContent).toContain('2000 de 2.000');
+    await enviar();
+    const [envio] = manifestacoes();
+    expect(envio?.request.body).toMatchObject({ texto: '😀'.repeat(2000) });
+    envio?.flush(null, SEM_CONTEUDO);
+    await new Promise((resolver) => setTimeout(resolver));
+    await pagina.assentar();
     pagina.controller.expectOne(URL_DO_DETALHE).flush(detalheDoLaudo);
+  });
+
+  it('acima de 2.000 caracteres o texto não é enviado', async () => {
+    await escolher('INADEQUADA', '😀'.repeat(2001));
+    await enviar();
+
     expect(manifestacoes()).toHaveLength(0);
+    expect(texto().getAttribute('aria-invalid')).toBe('true');
   });
 
   it('o conflito retentável (409) se repete uma vez, com a mesma chave', async () => {

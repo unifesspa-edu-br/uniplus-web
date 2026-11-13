@@ -40,9 +40,13 @@ export interface RegistrarManifestacaoDaProtecaoRequest {
   readonly texto: string | null;
 }
 
-/** A aprovação com o ciclo e a última manifestação, desfavorável ou não. */
+/**
+ * A aprovação com o ciclo, a última manifestação, desfavorável ou não, e quantas manifestações o
+ * ciclo tem. A contagem volta na decisão para a API saber o que foi lido; a tela não a mostra.
+ */
 export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'] & {
   readonly ciclo: number;
+  readonly manifestacoesNoCiclo: number;
   readonly manifestadaEm: string | null;
   readonly manifestacaoDesfavoravel: boolean;
 };
@@ -93,11 +97,19 @@ export const SEGMENTO_DO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> 
   FATO: 'fatos',
 };
 
-/** A decisão e o cadastro do corpo, com os mesmos tokens do contrato (o gerador os tipa como enum). */
+/**
+ * A decisão e o cadastro do corpo, com os mesmos tokens do contrato (o gerador os tipa como enum),
+ * e o ciclo e a contagem de manifestações lidos na aprovação (TODO(uniplus-api#2366): codegen).
+ */
 export type DecidirProtecaoDoCatalogoRequest = Omit<
   components['schemas']['DecidirProtecaoDoCatalogoRequest'],
   'cadastro' | 'decisao'
-> & { readonly cadastro: CadastroDoCatalogo; readonly decisao: DecisaoDaProtecao };
+> & {
+  readonly cadastro: CadastroDoCatalogo;
+  readonly decisao: DecisaoDaProtecao;
+  readonly ciclo: number;
+  readonly manifestacoesNoCiclo: number;
+};
 
 /** Um item que o administrador escolheu para a solicitação. */
 export type ItemParaSolicitarRequest = Omit<

@@ -35,6 +35,7 @@ export function recomendacoesPara(item: DetalheDaProtecaoDoCatalogoDto | null) {
   );
 }
 
+/** O comando da decisão sobre a proteção lida, com o ciclo e as manifestações que a pessoa viu. */
 export function comandoPara(
   item: DetalheDaProtecaoDoCatalogoDto,
 ): DecidirProtecaoDoCatalogoRequest {
@@ -45,6 +46,8 @@ export function comandoPara(
     classificacaoProtecao: item.classificacaoProtecao,
     hipoteseLegal: item.hipoteseLegal,
     finalidadeTratamento: item.finalidadeTratamento,
+    ciclo: item.aprovacao.ciclo,
+    manifestacoesNoCiclo: item.aprovacao.manifestacoesNoCiclo,
   };
 }
 
