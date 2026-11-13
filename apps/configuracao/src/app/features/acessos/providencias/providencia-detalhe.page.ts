@@ -11,6 +11,7 @@ import { RouterLink } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   acompanharLeitura,
+  AlertComponent,
   FalhaDeLeituraComponent,
   IndicadorDaLeituraDirective,
   SpinnerComponent,
@@ -28,7 +29,7 @@ import {
   situacaoDaProvidencia,
   tipoDaProvidencia,
 } from './rotulos-da-providencia';
-import { TramitacaoDaProvidencia } from './tramitacao-da-providencia';
+import { TramitacaoDaProvidencia, type AtoSobreAProvidencia } from './tramitacao-da-providencia';
 
 const ID_DO_TITULO = 'cfg-providencia-titulo';
 
@@ -42,6 +43,7 @@ const ID_DO_TITULO = 'cfg-providencia-titulo';
   standalone: true,
   imports: [
     RouterLink,
+    AlertComponent,
     DateBrPipe,
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
@@ -95,11 +97,12 @@ export class ProvidenciaDetalhePage {
     });
   }
 
-  protected visivel(ato: 'responder' | 'atender'): boolean {
+  protected visivel(ato: AtoSobreAProvidencia): boolean {
     return this.tramitacao.aberto() === ato;
   }
 
-  protected mudarVisibilidade(aberto: boolean): void {
-    if (!aberto) this.tramitacao.fechar();
+  /** Cada diálogo só fecha o próprio ato: o fechamento de um não derruba o outro. */
+  protected mudarVisibilidade(ato: AtoSobreAProvidencia, aberto: boolean): void {
+    if (!aberto && this.tramitacao.aberto() === ato) this.tramitacao.fechar();
   }
 }
