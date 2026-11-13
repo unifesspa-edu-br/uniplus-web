@@ -46,6 +46,12 @@ import { FormularioDoCronograma } from './formulario-do-cronograma.service';
  * campos e editar produtos, bancas e janelas de recurso. Cada seção da etapa o usa, e cada
  * leitura acompanha a versão do formulário, porque o valor de um controle não é signal.
  */
+/** "1 banca" ou "3 bancas"; nada quando não há. */
+function marcaDeContagem(total: number, singular: string, plural: string): readonly string[] {
+  if (total === 0) return [];
+  return [total === 1 ? `1 ${singular}` : `${total} ${plural}`];
+}
+
 @Injectable()
 export class EdicaoDaEtapa {
   private readonly catalogoDeAtos = inject(CatalogoDeAtos);
@@ -75,19 +81,18 @@ export class EdicaoDaEtapa {
    */
   tiposEscolhiveisPara(grupo: FormGroup<EtapaForm>): readonly { id: string; nome: string }[] {
     const referenciado = grupo.controls.tipoEtapaOrigemId.value;
-    const nomeDoReferenciado =
-      nomeDoTipoDaEtapaNoFormulario(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId()) ??
-      'Tipo removido do cadastro';
+    const nomeDoReferenciado = this.nomeDoTipoReferenciado(grupo);
     const tipos = this.catalogoDeTiposDeEtapa.tiposEtapa().map((tipo) => ({
       id: tipo.id,
       nome: tipo.id === referenciado ? nomeDoReferenciado : tipo.nome,
     }));
+    const listado = referenciado === '' || tipos.some((tipo) => tipo.id === referenciado);
+    return listado ? tipos : [...tipos, { id: referenciado, nome: nomeDoReferenciado }];
+  }
 
-    if (referenciado === '' || tipos.some((tipo) => tipo.id === referenciado)) {
-      return tipos;
-    }
-
-    return [...tipos, { id: referenciado, nome: nomeDoReferenciado }];
+  private nomeDoTipoReferenciado(grupo: FormGroup<EtapaForm>): string {
+    const tipos = this.catalogoDeTiposDeEtapa.tipoEtapaPorId();
+    return nomeDoTipoDaEtapaNoFormulario(grupo, tipos) ?? 'Tipo removido do cadastro';
   }
 
   /** O que o cabeçalho recolhido diz sobre as janelas recursais da etapa. */
@@ -192,25 +197,15 @@ export class EdicaoDaEtapa {
    * e é assim que a lista distingue o que já foi configurado do que ainda não.
    */
   marcasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
-    const marcas: string[] = [];
-
     const tipo = nomeDoTipoDaEtapaNoFormulario(grupo, this.catalogoDeTiposDeEtapa.tipoEtapaPorId());
-    if (tipo !== undefined) marcas.push(tipo);
-
     const publicacoes = this.produtosDaEtapa(grupo).filter((p) => p.atoCodigo !== '').length;
-    if (publicacoes > 0) {
-      marcas.push(publicacoes === 1 ? '1 publicação' : `${publicacoes} publicações`);
-    }
-
-    const bancas = this.bancasDaEtapa(grupo).length;
-    if (bancas > 0) marcas.push(bancas === 1 ? '1 banca' : `${bancas} bancas`);
-
-    const recursos = this.recursosDaEtapa(grupo).length;
-    if (recursos > 0) marcas.push(recursos === 1 ? '1 recurso' : `${recursos} recursos`);
-
-    if (grupo.controls.emiteParecerIndividual.value) marcas.push('parecer individual');
-
-    return marcas;
+    return [
+      ...(tipo === undefined ? [] : [tipo]),
+      ...marcaDeContagem(publicacoes, 'publicação', 'publicações'),
+      ...marcaDeContagem(this.bancasDaEtapa(grupo).length, 'banca', 'bancas'),
+      ...marcaDeContagem(this.recursosDaEtapa(grupo).length, 'recurso', 'recursos'),
+      ...(grupo.controls.emiteParecerIndividual.value ? ['parecer individual'] : []),
+    ];
   }
 
   readonly nomeDaEtapa = nomeDaEtapa;
@@ -260,8 +255,10 @@ export class EdicaoDaEtapa {
     return grupo.controls.recursos.value;
   }
 
+  /** A nota do ENEM se contesta no recurso da fase que a divulga: a etapa dela não admite recurso. */
   acrescentarRecursoNaEtapa(grupo: FormGroup<EtapaForm>): void {
-    acrescentarRecurso(grupo, this.catalogoDeRegras.regrasRecurso(), this.etapaDeNotaDoEnem(grupo));
+    if (this.etapaDeNotaDoEnem(grupo)) return;
+    acrescentarRecurso(grupo, this.catalogoDeRegras.regrasRecurso());
   }
 
   /** Sem regra de prazo no catálogo, não há janela recursal declarável. */

@@ -15,7 +15,7 @@ const RECUSA_DA_ETAPA_DE_NOTA_DO_ENEM: ReadonlyMap<string, string> = new Map([
   ],
   [
     'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
-    'A etapa de nota do ENEM não publica ato nem abre recurso contado de publicação: o resultado sai pela fase, e na etapa cabe só o recurso contado da ciência do candidato.',
+    'A etapa de nota do ENEM não publica ato nem abre recurso contado de publicação: o resultado sai pela fase, e a nota se contesta no recurso da fase que a divulga.',
   ],
 ]);
 
@@ -161,17 +161,20 @@ export function recusaDoCampoDaEtapa(codigo: string): string | null {
   return RECUSA_DO_CAMPO_DA_ETAPA.get(codigo) ?? null;
 }
 
+/** Onde, no que foi enviado, uma recusa do servidor aponta. */
+export interface LocalDoErroDaEtapa {
+  readonly indice: number;
+  readonly campo: string | null;
+  readonly posicao: number | null;
+  readonly subcampo: string | null;
+}
+
 /**
  * A etapa e o campo que uma recusa do servidor aponta (`etapas[i].campo`, ou
  * `etapas[i].lista[j].subcampo` para o item de uma lista); o índice é o da etapa no que foi
  * enviado. `campo` é `null` quando a recusa aponta a etapa inteira.
  */
-export function localDoErroDaEtapa(field: string): {
-  readonly indice: number;
-  readonly campo: string | null;
-  readonly posicao: number | null;
-  readonly subcampo: string | null;
-} | null {
+export function localDoErroDaEtapa(field: string): LocalDoErroDaEtapa | null {
   const [, indice, campo, posicao, subcampo] =
     /^etapas\[(\d+)\](?:\.(\w+)(?:\[(\d+)\]\.(\w+))?)?$/.exec(field) ?? [];
   if (indice === undefined) return null;

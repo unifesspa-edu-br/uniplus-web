@@ -82,6 +82,12 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
       edicao.acrescentarRecursoNaEtapa(etapa);
+      edicao.alterarRecursoDaEtapa(etapa, 0, 'ancora', 'cienciaIndividual');
+      edicao.acrescentarRecursoNaEtapa(etapa);
+      expect(etapa.controls.recursos.value.map((r) => r.ancora)).toEqual([
+        'cienciaIndividual',
+        'atoPublicado',
+      ]);
 
       edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
 
@@ -91,10 +97,10 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       expect(etapa.controls.recursos.value).toEqual([]);
     });
 
-    it('o recurso acrescentado corre da ciência do candidato', () => {
+    it('não aceita recurso próprio: a nota se contesta no recurso da fase que a divulga', () => {
       const etapa = comEtapaDoEnemAberta();
       edicao.acrescentarRecursoNaEtapa(etapa);
-      expect(etapa.controls.recursos.value[0]?.ancora).toBe('cienciaIndividual');
+      expect(etapa.controls.recursos.value).toEqual([]);
     });
 
     it('na etapa gravada vale o que o processo congelou do tipo', () => {
