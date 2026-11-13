@@ -151,4 +151,57 @@ describe('regra de recurso', () => {
   it('aceita a suspensividade deixada em branco como desativação', () => {
     expect(conferir(comPreliminar())).toEqual([]);
   });
+
+  it('recusa fração de dia útil na suspensividade da primeira instância e orienta usar horas', () => {
+    const problemas = conferir(
+      comPreliminar({
+        suspensividadePrimeiraInstanciaValor: '1,5',
+        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
+      }),
+    );
+
+    expect(problemas).toHaveLength(1);
+    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadePrimeiraInstancia');
+    expect(problemas[0].mensagem).toContain('em dias úteis exige valor inteiro');
+    expect(problemas[0].mensagem).toContain('use horas');
+  });
+
+  it('recusa fração de dia útil na suspensividade da segunda instância que a janela admite', () => {
+    const problemas = conferir(
+      comPreliminar({
+        admiteInstanciaSuperior: true,
+        suspensividadeSegundaInstanciaValor: '0.5',
+        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
+      }),
+    );
+
+    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadeSegundaInstancia');
+    expect(problemas[0].mensagem).toContain('segunda instância');
+  });
+
+  it('não confere a fração da segunda instância que a janela não admite', () => {
+    const problemas = conferir(
+      comPreliminar({
+        admiteInstanciaSuperior: false,
+        suspensividadeSegundaInstanciaValor: '0.5',
+        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
+      }),
+    );
+
+    expect(problemas).toEqual([]);
+  });
+
+  it('aceita dia útil inteiro e horas, inclusive fracionadas, na suspensividade', () => {
+    const inteiro = comPreliminar({
+      suspensividadePrimeiraInstanciaValor: '2',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
+    });
+    const emHoras = comPreliminar({
+      suspensividadePrimeiraInstanciaValor: '1,5',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
+    });
+
+    expect(conferir(inteiro)).toEqual([]);
+    expect(conferir(emHoras)).toEqual([]);
+  });
 });
