@@ -25,7 +25,9 @@ test.describe('Proteção de dados do catálogo — decisões e foco', () => {
     await expect(aprovar).toHaveAttribute('aria-disabled', 'true');
     await expect(aprovar).toHaveAttribute('aria-busy', 'true');
     await expect(aprovar).toHaveCSS('cursor', 'not-allowed');
-    await expect(dialogo.locator('[role="status"]')).toContainText('Registrando decisão');
+    await expect(
+      dialogo.getByRole('status').filter({ hasText: 'Registrando decisão' }),
+    ).toBeAttached();
     await expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(dialogo).toBeVisible();

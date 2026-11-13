@@ -207,6 +207,12 @@ export async function abrirItem(page: Page): Promise<{ drawer: Locator; aprovar:
   return { drawer, aprovar };
 }
 
+/**
+ * O botão que confirma a aprovação: durante a gravação ele diz "Registrando..." e o spinner soma
+ * "Carregando" ao nome acessível.
+ */
+export const CONFIRMAR_A_APROVACAO = /^(Aprovar item|Carregando Registrando\.\.\.)$/;
+
 /** A aprovação passa pelo diálogo, que aceita a justificativa opcional (UNI-REQ-0374). */
 export async function abrirAprovacao(
   page: Page,
@@ -214,7 +220,7 @@ export async function abrirAprovacao(
   const { drawer, aprovar: noDrawer } = await abrirItem(page);
   await noDrawer.click();
   const dialogo = page.getByRole('dialog', { name: 'Aprovar a proteção de dados do item' });
-  const aprovar = dialogo.getByRole('button', { name: 'Aprovar item' });
+  const aprovar = dialogo.getByRole('button', { name: CONFIRMAR_A_APROVACAO });
   await expect(aprovar).toBeVisible();
   return { drawer, dialogo, aprovar };
 }
