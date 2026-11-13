@@ -125,7 +125,9 @@ describe('CronogramaPassoComponent: etapas', () => {
 
     edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
     edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
-    expect(edicao.bancasDaEtapa(etapa)).toEqual([ID_BANCA_HETERO]);
+    expect(edicao.bancasDaEtapa(etapa)).toEqual([
+      { tipoBancaId: ID_BANCA_HETERO, regraDeDeliberacao: null },
+    ]);
 
     edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, false);
     expect(edicao.bancasDaEtapa(etapa)).toEqual([]);

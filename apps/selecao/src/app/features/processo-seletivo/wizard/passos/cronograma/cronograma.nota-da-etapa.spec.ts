@@ -78,7 +78,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
-      etapa.controls.bancas.setValue(['banca-1']);
+      etapa.controls.bancas.setValue([{ tipoBancaId: 'banca-1', regraDeDeliberacao: null }]);
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
       edicao.acrescentarRecursoNaEtapa(etapa);

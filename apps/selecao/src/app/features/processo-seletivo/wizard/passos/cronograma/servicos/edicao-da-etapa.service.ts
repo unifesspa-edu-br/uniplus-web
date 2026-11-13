@@ -1,7 +1,12 @@
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
-import type { ProdutoDaFase, RecursoDaEtapa } from '../../../processo-seletivo.models';
+import type {
+  BancaDaEtapa,
+  ProdutoDaFase,
+  RecursoDaEtapa,
+  RegraDeDeliberacaoDaBanca,
+} from '../../../processo-seletivo.models';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
 import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../../shared/instancia-superior';
 import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
@@ -236,17 +241,38 @@ export class EdicaoDaEtapa {
 
   // ── Bancas e janelas recursais da etapa ────────────────────────────────────
 
-  bancasDaEtapa(grupo: FormGroup<EtapaForm>): readonly string[] {
+  bancasDaEtapa(grupo: FormGroup<EtapaForm>): readonly BancaDaEtapa[] {
     this.versaoDoFormulario();
     return grupo.controls.bancas.value;
   }
 
   alternarBancaDaEtapa(grupo: FormGroup<EtapaForm>, tipoBancaId: string, marcada: boolean): void {
     const atuais = grupo.controls.bancas.value;
-    const proximas = marcada
-      ? [...new Set([...atuais, tipoBancaId])]
-      : atuais.filter((id) => id !== tipoBancaId);
-    grupo.controls.bancas.setValue(proximas);
+    const jaDeclarada = atuais.some((banca) => banca.tipoBancaId === tipoBancaId);
+    if (marcada === jaDeclarada) return;
+    this.escreverBancas(
+      grupo,
+      marcada
+        ? [...atuais, { tipoBancaId, regraDeDeliberacao: null }]
+        : atuais.filter((banca) => banca.tipoBancaId !== tipoBancaId),
+    );
+  }
+
+  declararRegraDaBancaDaEtapa(
+    grupo: FormGroup<EtapaForm>,
+    tipoBancaId: string,
+    regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null,
+  ): void {
+    this.escreverBancas(
+      grupo,
+      grupo.controls.bancas.value.map((banca) =>
+        banca.tipoBancaId === tipoBancaId ? { ...banca, regraDeDeliberacao } : banca,
+      ),
+    );
+  }
+
+  private escreverBancas(grupo: FormGroup<EtapaForm>, bancas: readonly BancaDaEtapa[]): void {
+    grupo.controls.bancas.setValue(bancas);
     grupo.controls.bancas.markAsDirty();
   }
 

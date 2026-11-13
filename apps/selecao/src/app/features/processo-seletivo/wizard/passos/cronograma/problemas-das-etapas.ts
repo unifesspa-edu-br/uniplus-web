@@ -4,6 +4,7 @@ import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.mo
 import { descreverFase } from '../../shared/descricao-da-fase';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { escalaVale, fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
+import { problemasDaRegra } from '../../shared/deliberacao/conferencia-da-regra';
 import { problemasDosRecursosDasEtapas } from './problemas-dos-recursos-da-etapa';
 import { repetidos } from '../../shared/repetidos';
 import {
@@ -70,7 +71,7 @@ export function problemasDasEtapas(
     ...doPar,
     ...problemasDeDeclaracaoEDeTipo(etapas, tipoDaEtapa),
     ...problemasDaNotaDasEtapas(etapas, tipoDaEtapa),
-    ...problemasDosRecursosDasEtapas(etapas),
+    ...problemasDosRecursosEDasBancas(etapas),
   ];
 }
 
@@ -103,6 +104,25 @@ function problemasDaNotaDasEtapas(
       .flatMap(problemasDaEscalaDaEtapa),
     ...problemasDaComposicaoDaNota(etapas),
   ];
+}
+
+function problemasDosRecursosEDasBancas(etapas: readonly EtapaPontuada[]): readonly string[] {
+  return [...problemasDosRecursosDasEtapas(etapas), ...problemasDasBancasDasEtapas(etapas)];
+}
+
+function problemasDasBancasDasEtapas(etapas: readonly EtapaPontuada[]): readonly string[] {
+  return etapas
+    .filter((etapa) =>
+      etapa.bancas.some(
+        (banca) =>
+          banca.regraDeDeliberacao !== null &&
+          problemasDaRegra(banca.regraDeDeliberacao).length > 0,
+      ),
+    )
+    .map(
+      (etapa) =>
+        `A regra de deliberação de uma banca da etapa "${etapa.nome.trim()}" está incompleta: corrija os campos marcados.`,
+    );
 }
 
 /**

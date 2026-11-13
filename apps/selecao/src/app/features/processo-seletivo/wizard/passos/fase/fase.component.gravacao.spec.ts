@@ -115,7 +115,11 @@ describe('FasePassoComponent', () => {
       detectar();
 
       expect(store.draft().cronograma.fases[0].bancasRequeridas).toEqual([
-        { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+        {
+          tipoBancaId: ID_BANCA_HETERO,
+          categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+          regraDeDeliberacao: null,
+        },
       ]);
     });
 
@@ -123,8 +127,12 @@ describe('FasePassoComponent', () => {
       comCronograma(
         fase({
           bancasRequeridas: [
-            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
-            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] },
+            {
+              tipoBancaId: ID_BANCA_HETERO,
+              categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+              regraDeDeliberacao: null,
+            },
+            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao: null },
           ],
         }),
       );
@@ -154,7 +162,11 @@ describe('FasePassoComponent', () => {
           fim: '2026-04-05T18:00:00-03:00',
           produtos: [{ atoCodigo: 'COMUNICADO', papel: null }],
           bancasRequeridas: [
-            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+            {
+              tipoBancaId: ID_BANCA_HETERO,
+              categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
+              regraDeDeliberacao: null,
+            },
           ],
         }),
       );
@@ -181,7 +193,11 @@ describe('FasePassoComponent', () => {
         fim: '2026-04-05T18:00:00-03:00',
         produtos: [{ atoCodigo: 'COMUNICADO', papel: null }],
         bancasRequeridas: [
-          { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+          {
+            tipoBancaId: ID_BANCA_HETERO,
+            categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
+            regraDeDeliberacao: null,
+          },
         ],
         emiteParecerIndividual: false,
       });

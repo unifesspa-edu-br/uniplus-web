@@ -1,5 +1,7 @@
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
+import { campoDaRegraNoCaminho, recusaDaRegra } from '../../shared/deliberacao/recusas-da-regra';
+
 import type { CampoDaFase } from './configuracao-da-fase';
 
 /** Recusa do servidor já traduzida: o que vai por campo, e o que sobra ao resumo. */
@@ -213,6 +215,14 @@ const MENSAGEM_POR_CODIGO: ReadonlyMap<string, { campo: CampoDaFase; mensagem: s
     },
   ],
   [
+    'uniplus.selecao.banca.recorte_em_banca_de_recursos',
+    {
+      campo: 'bancasRequeridas' as CampoDaFase,
+      mensagem:
+        'A banca de análise de recursos julga recursos, não categorias de documento: tire o recorte de competência.',
+    },
+  ],
+  [
     'uniplus.selecao.fase_cronograma.tipo_banca_nao_encontrado',
     {
       campo: 'bancasRequeridas' as CampoDaFase,
@@ -287,15 +297,41 @@ function destinoDoErro(
   if (erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA) {
     return { geral: `${onde}: ${ORIENTACAO_DA_UNIDADE_NAO_ENCONTRADA}` };
   }
+  return destinoDaRecusaConhecida(erro, titulo, onde, indice === indiceDaFaseAberta);
+}
 
-  const conhecido = MENSAGEM_POR_CODIGO.get(erro.code);
+/** Sob o campo quando a recusa é da fase aberta e o código o tem; do contrário, ao resumo. */
+function destinoDaRecusaConhecida(
+  erro: ErroDaRecusa,
+  titulo: string,
+  onde: string,
+  naFaseAberta: boolean,
+): DestinoDoErro {
+  const conhecido = recusaConhecida(erro);
   const texto = conhecido?.mensagem ?? titulo;
-  if (indice === null || indice !== indiceDaFaseAberta) return { geral: `${onde}: ${texto}` };
+  if (!naFaseAberta) return { geral: `${onde}: ${texto}` };
   return conhecido ?? { geral: texto };
 }
 
+/** A recusa já traduzida para o erro: a da regra de uma banca, ou a que o código tem na tabela. */
+function recusaConhecida(erro: ErroDaRecusa): { campo: CampoDaFase; mensagem: string } | undefined {
+  return recusaDaBancaNaFase(erro) ?? MENSAGEM_POR_CODIGO.get(erro.code);
+}
+
+/** A recusa à regra de deliberação de uma banca, sob o campo dela quando o caminho o aponta. */
+export function recusaDaBancaNaFase(
+  erro: Pick<ErroDaRecusa, 'code' | 'field'> & { readonly message?: string },
+): { campo: CampoDaFase; mensagem: string } | undefined {
+  const regra = recusaDaRegra(erro.code, erro.message);
+  if (regra === null) return undefined;
+  const [, posicao] = /bancasRequeridas\[(\d+)\]/i.exec(erro.field) ?? [];
+  if (posicao === undefined) return { campo: 'bancasRequeridas', mensagem: regra.mensagem };
+  const campo = campoDaRegraNoCaminho(erro.field) ?? regra.campo;
+  return { campo: `bancasRequeridas.${Number(posicao)}.${campo}`, mensagem: regra.mensagem };
+}
+
 /** A posição da fase no `field` da recusa, ou `null` quando ele não a nomeia. */
-function indiceDaFaseEm(field: string): number | null {
+export function indiceDaFaseEm(field: string): number | null {
   const casamento = /^(?:\$\.|request\.)?fases\[(\d+)\]/i.exec(field);
   if (casamento === null) return null;
   const indice = Number(casamento[1]);

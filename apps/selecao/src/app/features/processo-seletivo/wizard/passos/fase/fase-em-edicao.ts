@@ -112,7 +112,9 @@ export class FaseEmEdicao {
   /** Bancas que o seletor oferece. */
   readonly bancasEscolhiveis = computed(() => {
     this.espelho.versao();
-    const doCadastro = this.catalogoDeBancas.bancas().map((banca) => ({ id: banca.id, nome: banca.nome }));
+    const doCadastro = this.catalogoDeBancas
+      .bancas()
+      .map((banca) => ({ id: banca.id, nome: banca.nome }));
     return bancasEscolhiveis(doCadastro, this.faseDoRascunho());
   });
 
@@ -160,6 +162,17 @@ export class FaseEmEdicao {
       this.store.geracao();
       untracked(() => this.limparRecusa());
     });
+  }
+
+  /**
+   * A recusa de uma banca vem pela posição dela na lista, e mexer na lista (editar uma regra,
+   * acrescentar, remover) a desfaz: a mensagem ficaria sob uma banca que já não é a recusada.
+   */
+  esquecerRecusasDasBancas(): void {
+    const restantes = [...this.recusaPorCampo()].filter(
+      ([campo]) => !/^bancasRequeridas\.\d+\./.test(campo),
+    );
+    if (restantes.length < this.recusaPorCampo().size) this.recusaPorCampo.set(new Map(restantes));
   }
 
   limparRecusa(): void {

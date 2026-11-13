@@ -202,8 +202,16 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
     comFaseQuePublica(
       [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
       [
-        { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
-        { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+        {
+          tipoBancaId: ID_BANCA_HETERO,
+          categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+          regraDeDeliberacao: null,
+        },
+        {
+          tipoBancaId: ID_BANCA_HETERO,
+          categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
+          regraDeDeliberacao: null,
+        },
       ],
     );
 
@@ -214,8 +222,16 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
     const enviadas = controller.expectOne(ROTA_FASES);
 
     expect((enviadas.request.body as { bancasRequeridas: unknown }[])[0].bancasRequeridas).toEqual([
-      { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
-      { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RENDA] },
+      {
+        tipoBancaId: ID_BANCA_HETERO,
+        categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+        regraDeDeliberacao: null,
+      },
+      {
+        tipoBancaId: ID_BANCA_HETERO,
+        categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
+        regraDeDeliberacao: null,
+      },
     ]);
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
