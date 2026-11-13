@@ -118,6 +118,7 @@ interface ItemDaProtecao {
   readonly classificacaoProtecao: string;
   readonly hipoteseLegal: string;
   readonly finalidadeTratamento: string;
+  readonly aprovacao: { readonly ciclo: number; readonly manifestacoesNoCiclo: number };
 }
 
 const CRIADO_POR_SPEC = /_\d{10,}$/;
@@ -164,15 +165,20 @@ async function solicitarAprovacaoDoCatalogoInicial(): Promise<void> {
   expect(solicitacao.status, 'solicitar a aprovação do catálogo').toBe(200);
 }
 
-/** Aprova o item com a classificação, a hipótese legal e a finalidade propostas. */
+/**
+ * Aprova o item com a classificação, a hipótese legal e a finalidade propostas, e com o ciclo e a
+ * contagem de manifestações lidos na fila, que a decisão sempre leva.
+ */
 async function aprovarItem(item: ItemDaProtecao): Promise<void> {
   const { classificacaoProtecao, hipoteseLegal, finalidadeTratamento } = item;
+  const { ciclo, manifestacoesNoCiclo } = item.aprovacao;
   const decisao = await chamarApi(APROVA_O_CATALOGO, 'POST', PROTECAO_DO_CATALOGO, {
     corpo: {
       cadastro: item.tipo,
       itemId: item.id,
       decisao: 'APROVAR',
       ...{ classificacaoProtecao, hipoteseLegal, finalidadeTratamento },
+      ...{ ciclo, manifestacoesNoCiclo },
     },
   });
   expect(decisao.status, `aprovar ${item.id}`).toBe(204);
