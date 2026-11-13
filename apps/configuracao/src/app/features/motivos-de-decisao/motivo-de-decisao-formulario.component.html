@@ -1,0 +1,159 @@
+<ui-drawer
+  class="form-drawer"
+  [visible]="aberto()"
+  (visibleChange)="aoMudarVisibilidade($event)"
+  [closable]="!salvando()"
+  [heading]="titulo()"
+  ariaLabel="Formulário de motivo de decisão"
+  position="right"
+>
+  <span class="sr-only" role="status">{{ anuncio() }}</span>
+  @if (erro()) {
+    <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
+  }
+
+  @if (aguardandoReenvio()) {
+    <ui-alert variant="warning" heading="Envio sem confirmação" [dynamic]="false">
+      Não houve resposta conclusiva ao envio anterior. Os campos ficam bloqueados até que ele seja
+      reenviado: use "{{ rotuloDoBotao() }}" para reenviar os mesmos dados ou "Cancelar" para
+      descartá-los.
+    </ui-alert>
+  }
+
+  <form
+    [formGroup]="form()"
+    id="cfg-motivo-de-decisao-form"
+    (ngSubmit)="aoEnviar()"
+    novalidate
+    class="form-drawer__form"
+  >
+    <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-motivo-identificacao">
+        <h3 id="cfg-motivo-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          <div class="field">
+            <span class="field__label">Tipo de decisão</span>
+            <span class="field__static" data-testid="motivo-tipo">{{ tipo() }}</span>
+          </div>
+          <label class="field" [class.is-error]="erroDoCampo('codigo')">
+            <span class="field__label is-required">Código</span>
+            <input
+              aria-required="true"
+              class="input"
+              type="text"
+              formControlName="codigo"
+              [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('codigo')
+                  ? 'cfg-motivo-codigo-erro cfg-motivo-codigo-ajuda'
+                  : 'cfg-motivo-codigo-ajuda'
+              "
+            />
+            <span class="field__hint" id="cfg-motivo-codigo-ajuda">
+              {{ criando() ? 'Imutável após a criação.' : 'Imutável.' }}
+            </span>
+            @if (erroDoCampo('codigo')) {
+              <span class="field__error" id="cfg-motivo-codigo-erro">{{
+                erroDoCampo('codigo')
+              }}</span>
+            }
+          </label>
+          <label class="field" [class.is-error]="erroDoCampo('sentido')">
+            <span class="field__label is-required">Sentido</span>
+            <select
+              aria-required="true"
+              class="select"
+              formControlName="sentido"
+              [attr.aria-invalid]="erroDoCampo('sentido') ? 'true' : null"
+              [attr.aria-describedby]="erroDoCampo('sentido') ? 'cfg-motivo-sentido-erro' : null"
+            >
+              <option value="">Selecione</option>
+              @for (sentido of sentidos; track sentido.codigo) {
+                <option [value]="sentido.codigo">{{ sentido.rotulo }}</option>
+              }
+            </select>
+            @if (erroDoCampo('sentido')) {
+              <span class="field__error" id="cfg-motivo-sentido-erro">{{
+                erroDoCampo('sentido')
+              }}</span>
+            }
+          </label>
+          @if (pedeSubclassificacao()) {
+            <label class="field" [class.is-error]="erroDoCampo('subclassificacao')">
+              <span class="field__label is-required">Fundamento de isenção</span>
+              <select
+                aria-required="true"
+                class="select"
+                formControlName="subclassificacao"
+                [attr.aria-invalid]="erroDoCampo('subclassificacao') ? 'true' : null"
+                [attr.aria-describedby]="
+                  erroDoCampo('subclassificacao')
+                    ? 'cfg-motivo-subclassificacao-erro'
+                    : criando() && falhaNosFundamentos()
+                      ? 'cfg-motivo-fundamentos-falha'
+                      : null
+                "
+              >
+                <option value="">Selecione</option>
+                @for (fundamento of fundamentos(); track fundamento.codigo) {
+                  <option [value]="fundamento.codigo">{{ fundamento.nome }}</option>
+                }
+              </select>
+              @if (criando() && falhaNosFundamentos()) {
+                <span class="field__error" id="cfg-motivo-fundamentos-falha" role="alert">{{
+                  falhaNosFundamentos()
+                }}</span>
+              }
+              @if (erroDoCampo('subclassificacao')) {
+                <span class="field__error" id="cfg-motivo-subclassificacao-erro">{{
+                  erroDoCampo('subclassificacao')
+                }}</span>
+              }
+            </label>
+          }
+          <label class="field" [class.is-error]="erroDoCampo('descricao')">
+            <span class="field__label is-required">Descrição</span>
+            <textarea
+              aria-required="true"
+              class="textarea"
+              formControlName="descricao"
+              [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('descricao') ? 'cfg-motivo-descricao-erro' : null
+              "
+            ></textarea>
+            @if (erroDoCampo('descricao')) {
+              <span class="field__error" id="cfg-motivo-descricao-erro">{{
+                erroDoCampo('descricao')
+              }}</span>
+            }
+          </label>
+        </div>
+      </section>
+    </fieldset>
+  </form>
+
+  <div class="form-drawer__footer">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="salvando()"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="submit"
+      form="cfg-motivo-de-decisao-form"
+      class="btn btn--primary"
+      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-busy]="salvando() ? 'true' : null"
+      (click)="aoClicarEmSalvar($event)"
+    >
+      @if (salvando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      {{ rotuloDoBotao() }}
+    </button>
+  </div>
+</ui-drawer>

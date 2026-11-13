@@ -114,6 +114,15 @@ export const appRoutes: Routes = [
           import('./features/tipos-banca/tipos-banca.routes').then((m) => m.TIPOS_BANCA_ROUTES),
       },
       {
+        path: 'motivos-de-decisao',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['motivos-de-decisao'])],
+        data: { breadcrumb: 'Motivos de Decisão' },
+        loadChildren: () =>
+          import('./features/motivos-de-decisao/motivos-de-decisao.routes').then(
+            (m) => m.MOTIVOS_DE_DECISAO_ROUTES,
+          ),
+      },
+      {
         path: 'tipos-etapa',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['tipos-etapa'])],
         data: { breadcrumb: 'Tipo de Etapa' },

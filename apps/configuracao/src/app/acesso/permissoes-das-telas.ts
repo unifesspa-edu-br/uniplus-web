@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 
-const { autorizacao, configuracao, organizacao, publicacoes } = PERMISSAO;
+const { autorizacao, configuracao, organizacao, publicacoes, selecao } = PERMISSAO;
 
 /**
  * O perfil de acesso abre para quem o mantém, para quem aprova uma das etapas da versão dele e para
@@ -58,6 +58,7 @@ export const PERMISSOES_DAS_TELAS = {
   'fases-canonicas': [configuracao.fasesCanonicasManter],
   'precedencias-fase': [configuracao.precedenciasFaseManter],
   'tipos-banca': [configuracao.tiposBancaManter],
+  'motivos-de-decisao': [selecao.motivosDeDecisaoManter],
   'tipos-etapa': [configuracao.tiposEtapaManter],
   'tipos-processo': [configuracao.tiposProcessoConsultar],
   'tipos-ato': [publicacoes.tiposAtoManter],
