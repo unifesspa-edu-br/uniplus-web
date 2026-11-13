@@ -199,6 +199,14 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).not.toContain('Termo de responsabilidade');
   });
 
+  it('oferece os motivos de decisão só a quem tem a permissão de manter', () => {
+    concedidas.set(['selecao:motivos-de-decisao:manter']);
+    expect(itensDoMenu()).toContain('Motivos de Decisão');
+
+    concedidas.set(['configuracao:tipos-processo:consultar']);
+    expect(itensDoMenu()).not.toContain('Motivos de Decisão');
+  });
+
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {
     concedidas.set(['configuracao:tipos-processo:consultar']);
     const fixture = TestBed.createComponent(LayoutComponent);
