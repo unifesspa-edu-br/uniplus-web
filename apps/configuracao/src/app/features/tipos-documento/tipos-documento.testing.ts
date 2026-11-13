@@ -1,6 +1,6 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef, signal } from '@angular/core';
+import { ApplicationRef, signal, type Signal, type WritableSignal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -12,7 +12,7 @@ import {
   type ItemDaProtecaoDoCatalogoDto,
   TipoDocumentoDto,
 } from '@uniplus/shared-data/configuracao';
-import { expect, vi } from 'vitest';
+import { expect, vi, type MockInstance } from 'vitest';
 import { EdicaoDosTiposDocumento } from './edicao-dos-tipos-documento';
 import { TiposDocumentoPage } from './tipos-documento.page';
 import { TiposDocumentoStore } from './tipos-documento.store';
@@ -124,6 +124,18 @@ export const recusaDeCampo = (
 export const sucesso = () => [null, { status: 204, statusText: 'No Content' }] as const;
 export const criado = () => ['novo-id', { status: 201, statusText: 'Created' }] as const;
 
+const APROVACAO_PENDENTE: ItemDaProtecaoDoCatalogoDto['aprovacao'] = {
+  situacao: 'PENDENTE',
+  ciclo: 0,
+  solicitadaEm: null,
+  decididaEm: null,
+  classificacaoRecomendada: null,
+  justificativa: null,
+  aceitaEm: null,
+  manifestadaEm: null,
+  manifestacaoDesfavoravel: false,
+};
+
 /** Um item do que aguarda a proteção de dados, com a situação dada. */
 export const pendencia = (
   tipo: TipoDocumentoDto,
@@ -136,18 +148,7 @@ export const pendencia = (
   classificacaoProtecao: tipo.classificacaoProtecao,
   finalidadeTratamento: tipo.finalidadeTratamento,
   hipoteseLegal: tipo.hipoteseLegal,
-  aprovacao: {
-    situacao: 'PENDENTE',
-    solicitadaEm: null,
-    decididaEm: null,
-    classificacaoRecomendada: null,
-    justificativa: null,
-    aceitaEm: null,
-    ciclo: 1,
-    manifestadaEm: null,
-    manifestacaoDesfavoravel: false,
-    ...aprovacao,
-  },
+  aprovacao: { ...APROVACAO_PENDENTE, ...aprovacao },
 });
 
 export interface OpcoesDaPagina {
@@ -158,178 +159,187 @@ export interface OpcoesDaPagina {
   readonly statusDaFalha?: number;
 }
 
-/** A página montada com a lista já carregada, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(
-  itens: readonly TipoDocumentoDto[] = [rg, laudo],
-  opcoes: OpcoesDaPagina = {},
-) {
-  const concedidas = signal<readonly string[]>(opcoes.concedidas ?? [PERMISSAO_DE_MANTER]);
-  const statusDaFalha = opcoes.statusDaFalha ?? 503;
-  TestBed.configureTestingModule({
-    imports: [TiposDocumentoPage],
-    providers: [
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-      provideRouter([]),
-      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      {
-        provide: PermissoesService,
-        useValue: {
-          tem: (c: string) => concedidas().includes(c),
-          temAlguma: (...cs: string[]) => cs.some((c) => concedidas().includes(c)),
-        },
-      },
-    ],
-  });
-  const fixture: ComponentFixture<TiposDocumentoPage> = TestBed.createComponent(TiposDocumentoPage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDosTiposDocumento);
-  const store = injetor.get(TiposDocumentoStore);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
+function provedoresDaPagina(concedidas: Signal<readonly string[]>) {
+  const tem = (c: string) => concedidas().includes(c);
+  return [
+    provideHttpClient(withInterceptors([apiResultInterceptor])),
+    provideHttpClientTesting(),
+    provideRouter([]),
+    { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+    {
+      provide: PermissoesService,
+      useValue: { tem, temAlguma: (...cs: string[]) => cs.some(tem) },
+    },
+  ];
+}
 
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
+/**
+ * A página dos tipos de documento montada com a lista carregada, e as ferramentas para conduzi-la
+ * como a pessoa faz. As ações são propriedades, para seguirem válidas quando desestruturadas.
+ */
+export class PaginaDosTiposDocumento {
+  readonly concedidas: WritableSignal<readonly string[]>;
+  readonly fixture: ComponentFixture<TiposDocumentoPage>;
+  readonly http: HttpTestingController;
+  readonly edicao: EdicaoDosTiposDocumento;
+  readonly store: TiposDocumentoStore;
+  readonly sucessos: MockInstance<NotificationService['success']>;
+  readonly erros: MockInstance<NotificationService['errorFromProblem']>;
+  private readonly statusDaFalha: number;
+
+  constructor(private readonly opcoes: OpcoesDaPagina) {
+    this.concedidas = signal(opcoes.concedidas ?? [PERMISSAO_DE_MANTER]);
+    this.statusDaFalha = opcoes.statusDaFalha ?? 503;
+    TestBed.configureTestingModule({
+      imports: [TiposDocumentoPage],
+      providers: provedoresDaPagina(this.concedidas),
+    });
+    this.fixture = TestBed.createComponent(TiposDocumentoPage);
+    this.http = TestBed.inject(HttpTestingController);
+    this.edicao = this.fixture.debugElement.injector.get(EdicaoDosTiposDocumento);
+    this.store = this.fixture.debugElement.injector.get(TiposDocumentoStore);
+    const notificacoes = TestBed.inject(NotificationService);
+    this.sucessos = vi.spyOn(notificacoes, 'success');
+    this.erros = vi.spyOn(notificacoes, 'errorFromProblem');
+  }
+
+  /** Atende as leituras de apoio e a lista, como a abertura da página faz. */
+  readonly carregar = async (itens: readonly TipoDocumentoDto[]): Promise<void> => {
+    this.fixture.detectChanges();
+    const { categorias, pendencias } = this.opcoes;
+    this.atenderCategorias(categorias === 'pendente' ? 'pendente' : categorias);
+    this.atenderProtecao(pendencias === 'falha' ? 'falha' : [...(pendencias ?? [])]);
+    this.http.expectOne((r) => r.url === LISTA).flush(itens);
+    await this.propagar();
   };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
+
+  readonly propagar = async (): Promise<void> => {
+    await Promise.resolve();
+    TestBed.inject(ApplicationRef).tick();
+    this.fixture.detectChanges();
+  };
+
+  readonly elemento = <T extends HTMLElement>(seletor: string): T => {
+    const encontrado = (this.fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
     expect(encontrado, seletor).not.toBeNull();
     return encontrado as T;
   };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const atenderProtecao = (itensPendentes: ItemDaProtecaoDoCatalogoDto[] | 'falha' = []): void => {
-    for (const req of http.match((r) => r.url === PROTECAO_URL).filter((p) => !p.cancelled)) {
-      if (itensPendentes === 'falha') req.flush(...problema(statusDaFalha));
-      else req.flush(itensPendentes);
+
+  private readonly pelaEtiqueta = (nome: string): HTMLButtonElement =>
+    this.elemento(`button[aria-label="${nome}"]`);
+
+  readonly atenderProtecao = (pendentes: ItemDaProtecaoDoCatalogoDto[] | 'falha' = []): void => {
+    for (const req of this.http.match((r) => r.url === PROTECAO_URL).filter((p) => !p.cancelled)) {
+      if (pendentes === 'falha') req.flush(...problema(this.statusDaFalha));
+      else req.flush(pendentes);
     }
   };
-  const atenderCategorias = (resposta: OpcoesDaPagina['categorias'] = CATEGORIAS): void => {
-    for (const req of http.match(CATEGORIAS_URL)) {
+
+  readonly atenderCategorias = (resposta: OpcoesDaPagina['categorias'] = CATEGORIAS): void => {
+    for (const req of this.http.match(CATEGORIAS_URL)) {
       if (resposta === 'pendente') continue;
-      if (resposta === 'falha') req.flush(...problema(statusDaFalha));
+      if (resposta === 'falha') req.flush(...problema(this.statusDaFalha));
       else req.flush(resposta);
     }
   };
-  /** Atende as leituras que acompanham a lista: o catálogo e a situação da proteção. */
-  const atenderApoios = (): void => {
-    atenderCategorias(opcoes.categorias === 'pendente' ? 'pendente' : opcoes.categorias);
-    const pendencias = opcoes.pendencias;
-    atenderProtecao(pendencias === 'falha' ? 'falha' : [...(pendencias ?? [])]);
+
+  readonly recarregarCom = async (lista: readonly TipoDocumentoDto[]): Promise<void> => {
+    await this.propagar();
+    this.http.expectOne((r) => r.url === LISTA).flush(lista);
+    this.atenderProtecao();
+    await this.propagar();
   };
-  const recarregarCom = async (lista: readonly TipoDocumentoDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    atenderProtecao();
-    await propagar();
-  };
-  const preencher = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
+
+  readonly preencher = (nome: string, valor: string): void => {
+    const campo = this.elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
     campo.value = valor;
     campo.dispatchEvent(new Event(campo.tagName === 'SELECT' ? 'change' : 'input'));
   };
-  const formulario = (): HTMLFormElement => elemento('#cfg-tipo-documento-form');
-  const acionar = async (botao: HTMLButtonElement): Promise<void> => {
+
+  readonly formulario = (): HTMLFormElement => this.elemento('#cfg-tipo-documento-form');
+  readonly novo = (): HTMLButtonElement => this.elemento('#cfg-tipos-documento-novo');
+  readonly editar = (t: TipoDocumentoDto = rg) =>
+    this.pelaEtiqueta(`Editar tipo de documento ${t.codigo}`);
+  readonly remover = (t: TipoDocumentoDto = rg) =>
+    this.pelaEtiqueta(`Remover tipo de documento ${t.codigo}`);
+  readonly nomeDaLinha = (t: TipoDocumentoDto = rg) =>
+    this.pelaEtiqueta(`Ver o detalhe de ${t.nome}`);
+  readonly salvar = (): HTMLButtonElement =>
+    this.elemento('button[form="cfg-tipo-documento-form"]');
+  readonly campo = (nome: string): HTMLInputElement => this.elemento(`[formcontrolname="${nome}"]`);
+  readonly statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
+
+  readonly confirmar = (dialogo = 'Remover tipo de documento'): HTMLButtonElement =>
+    this.confirmacao(dialogo).querySelector(
+      '[data-testid="confirm-dialog-confirm"]',
+    ) as HTMLButtonElement;
+
+  readonly cancelarDaConfirmacao = (dialogo = 'Remover tipo de documento'): HTMLButtonElement =>
+    this.confirmacao(dialogo).querySelector(
+      '[data-testid="confirm-dialog-cancel"]',
+    ) as HTMLButtonElement;
+
+  /** Clica de verdade em "Novo tipo" e preenche o mínimo para enviar. */
+  readonly abrirCadastro = async (): Promise<void> => {
+    await this.acionar(this.novo());
+    this.preencher('nome', 'Declaração de renda');
+    this.preencher('categoria', 'RENDA');
+    this.preencher('classificacaoProtecao', PROTECAO_PREENCHIDA.classificacaoProtecao);
+    await this.propagar();
+    this.preencher('hipoteseLegal', PROTECAO_PREENCHIDA.hipoteseLegal);
+    this.preencher('finalidadeTratamento', PROTECAO_PREENCHIDA.finalidadeTratamento);
+    await this.propagar();
+  };
+
+  /** Abre o formulário em branco, sem preencher nada. */
+  readonly acionarNovo = (): Promise<void> => this.acionar(this.novo());
+
+  /** Envia o formulário aberto sem esperar requisição: a validação local deve barrá-lo. */
+  readonly enviarSemRequisicao = async (): Promise<void> => {
+    const botao = this.salvar();
     botao.focus();
     botao.click();
-    await propagar();
+    this.formulario().dispatchEvent(new Event('submit', { cancelable: true }));
+    await this.propagar();
+    await this.propagar();
+    this.http.expectNone((r) => r.url.startsWith(ESCRITA));
   };
 
-  fixture.detectChanges();
-  atenderApoios();
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  await propagar();
+  readonly abrirEdicao = (tipo: TipoDocumentoDto = rg): Promise<void> =>
+    this.acionar(this.editar(tipo));
 
-  return {
-    fixture,
-    http,
-    edicao,
-    store,
-    sucessos,
-    erros,
-    propagar,
-    elemento,
-    recarregarCom,
-    preencher,
-    atenderProtecao,
-    atenderCategorias,
-    concedidas,
-    formulario,
-    novo: (): HTMLButtonElement => elemento('#cfg-tipos-documento-novo'),
-    editar: (t: TipoDocumentoDto = rg) => pelaEtiqueta(`Editar tipo de documento ${t.codigo}`),
-    remover: (t: TipoDocumentoDto = rg) => pelaEtiqueta(`Remover tipo de documento ${t.codigo}`),
-    nomeDaLinha: (t: TipoDocumentoDto = rg) => pelaEtiqueta(`Ver o detalhe de ${t.nome}`),
-    salvar: (): HTMLButtonElement => elemento('button[form="cfg-tipo-documento-form"]'),
-    confirmar: (dialogo = 'Remover tipo de documento'): HTMLButtonElement =>
-      confirmacao(dialogo).querySelector(
-        '[data-testid="confirm-dialog-confirm"]',
-      ) as HTMLButtonElement,
-    cancelarDaConfirmacao: (dialogo = 'Remover tipo de documento'): HTMLButtonElement =>
-      confirmacao(dialogo).querySelector(
-        '[data-testid="confirm-dialog-cancel"]',
-      ) as HTMLButtonElement,
-    campo: (nome: string): HTMLInputElement => elemento(`[formcontrolname="${nome}"]`),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Novo tipo" e preenche o mínimo para enviar. */
-    async abrirCadastro(): Promise<void> {
-      await acionar(elemento('#cfg-tipos-documento-novo'));
-      preencher('nome', 'Declaração de renda');
-      preencher('categoria', 'RENDA');
-      preencher('classificacaoProtecao', PROTECAO_PREENCHIDA.classificacaoProtecao);
-      await propagar();
-      preencher('hipoteseLegal', PROTECAO_PREENCHIDA.hipoteseLegal);
-      preencher('finalidadeTratamento', PROTECAO_PREENCHIDA.finalidadeTratamento);
-      await propagar();
-    },
-    /** Abre o formulário em branco, sem preencher nada. */
-    async acionarNovo(): Promise<void> {
-      await acionar(elemento('#cfg-tipos-documento-novo'));
-    },
-    /** Envia o formulário aberto sem esperar requisição: a validação local deve barrá-lo. */
-    async enviarSemRequisicao(): Promise<void> {
-      const botao = elemento<HTMLButtonElement>('button[form="cfg-tipo-documento-form"]');
-      botao.focus();
-      botao.click();
-      formulario().dispatchEvent(new Event('submit', { cancelable: true }));
-      await propagar();
-      await propagar();
-      http.expectNone((r) => r.url.startsWith(ESCRITA));
-    },
-    async abrirEdicao(tipo: TipoDocumentoDto = rg): Promise<void> {
-      await acionar(pelaEtiqueta(`Editar tipo de documento ${tipo.codigo}`));
-    },
-    /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
-    async enviar(url = ESCRITA) {
-      await acionar(elemento('button[form="cfg-tipo-documento-form"]'));
-      return http.expectOne((r) => r.url === url && r.method !== 'GET');
-    },
-    async confirmarRemocao(tipo: TipoDocumentoDto = rg) {
-      await acionar(pelaEtiqueta(`Remover tipo de documento ${tipo.codigo}`));
-      confirmacao('Remover tipo de documento')
-        .querySelector<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]')
-        ?.click();
-      await propagar();
-      return http.expectOne(`${ESCRITA}/${tipo.id}`);
-    },
-    /** Termina o teste sem requisição esquecida: a situação da proteção é relida a cada escrita. */
-    encerrar(): void {
-      atenderProtecao();
-      for (const req of http.match((r) => r.url.endsWith('/protecao/atos'))) {
-        if (!req.cancelled) req.flush([]);
-      }
-      http.verify();
-    },
+  /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
+  readonly enviar = async (url = ESCRITA) => {
+    await this.acionar(this.salvar());
+    return this.http.expectOne((r) => r.url === url && r.method !== 'GET');
   };
 
-  function confirmacao(titulo: string): HTMLElement {
+  readonly confirmarRemocao = async (tipo: TipoDocumentoDto = rg) => {
+    await this.acionar(this.remover(tipo));
+    this.confirmar().click();
+    await this.propagar();
+    return this.http.expectOne(`${ESCRITA}/${tipo.id}`);
+  };
+
+  /** Termina o teste sem requisição esquecida: a situação da proteção é relida a cada escrita. */
+  readonly encerrar = (): void => {
+    this.atenderProtecao();
+    for (const req of this.http.match((r) => r.url.endsWith('/protecao/atos'))) {
+      if (!req.cancelled) req.flush([]);
+    }
+    this.http.verify();
+  };
+
+  private readonly acionar = async (botao: HTMLButtonElement): Promise<void> => {
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  };
+
+  private confirmacao(titulo: string): HTMLElement {
     const todas = [
-      ...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+      ...(this.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
         'cfg-confirmacao-de-remocao',
       ),
     ];
@@ -339,4 +349,14 @@ export async function montarPagina(
   }
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+/** A página montada com a lista já carregada. */
+export async function montarPagina(
+  itens: readonly TipoDocumentoDto[] = [rg, laudo],
+  opcoes: OpcoesDaPagina = {},
+): Promise<PaginaDosTiposDocumento> {
+  const pagina = new PaginaDosTiposDocumento(opcoes);
+  await pagina.carregar(itens);
+  return pagina;
+}
+
+export type Pagina = PaginaDosTiposDocumento;

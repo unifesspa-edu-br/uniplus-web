@@ -28,12 +28,12 @@ const PERMISSOES_DE_LEITURA: readonly CodigoDePermissao[] = [
 
 const APROVADA: AprovacaoDaProtecaoDto = {
   situacao: 'APROVADA',
+  ciclo: 0,
   solicitadaEm: null,
   decididaEm: null,
   classificacaoRecomendada: null,
   justificativa: null,
   aceitaEm: null,
-  ciclo: 0,
   manifestadaEm: null,
   manifestacaoDesfavoravel: false,
 };
@@ -90,18 +90,23 @@ export class AprovacaoDoCatalogo {
       )
       .subscribe((resultado) => {
         this._pendente.set(false);
-        if (resultado.ok) {
-          this._ultimoProblema.set(null);
-          this._itens.set(resultado.data);
-          this._carregado.set(true);
-          return;
-        }
-        // A releitura falhou: o que sobrou na memória é velho, e o item que não aparece nele não é aprovado.
-        this._carregado.set(false);
-        this._itens.set([]);
-        this._comErro.set(true);
-        this._ultimoProblema.set(resultado.problem);
+        if (resultado.ok) this.aplicar(resultado.data);
+        else this.falhar(resultado.problem);
       });
+  }
+
+  private aplicar(itens: readonly ItemDaProtecaoDoCatalogoDto[]): void {
+    this._ultimoProblema.set(null);
+    this._itens.set(itens);
+    this._carregado.set(true);
+  }
+
+  /** A releitura falhou: o que sobrou na memória é velho, e o item que não aparece nele não é aprovado. */
+  private falhar(problema: ProblemDetails): void {
+    this._carregado.set(false);
+    this._itens.set([]);
+    this._comErro.set(true);
+    this._ultimoProblema.set(problema);
   }
 
   /** Lê a lista só de quem pode vê-la: quem apenas consulta o cadastro não a pede. Devolve se leu. */
