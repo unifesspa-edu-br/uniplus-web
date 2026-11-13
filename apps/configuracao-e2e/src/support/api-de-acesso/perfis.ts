@@ -15,6 +15,7 @@ const PERFIS_PARA_PEDIDO = PERFIS.map(({ id, nome, descricao }) => ({
   descricao,
   escopo: 'unidade',
   exigeAprovacaoDeProtecaoDeDados: false,
+  governanca: null,
 }));
 
 /** Os perfis da gestão e os que a pessoa pode pedir; sem e-mail institucional, ela não pede. */
