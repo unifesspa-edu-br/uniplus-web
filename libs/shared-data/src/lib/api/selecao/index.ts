@@ -102,6 +102,8 @@ export type {
   EtapaProcessoInput,
   FaseCronogramaDto,
   FaseCronogramaInput,
+  RegraDeDeliberacaoDto,
+  RegraDeDeliberacaoInput,
   BaseLegalDto,
   DocumentoExigidoDto,
   AvisoConformidadeDto,
@@ -177,6 +179,7 @@ export {
 } from './processos-seletivos.contrato';
 export {
   CaraterEtapa,
+  ModoDeDeliberacao,
   OrigemCandidatos,
   SituacaoDoRegistroDoAto,
   SituacaoInscricao,
