@@ -85,3 +85,6 @@ export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = [
   'autorizacao:revisoes:consultar',
   'autorizacao:concessoes:consultar',
 ] as const;
+
+/** Diogo, gestor de acessos, publica as versões do termo de responsabilidade. */
+export const PERMISSOES_DO_DIOGO_PUBLICA_O_TERMO = ['autorizacao:termos:publicar'] as const;
