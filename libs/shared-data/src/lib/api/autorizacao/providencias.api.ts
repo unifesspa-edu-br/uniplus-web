@@ -5,13 +5,7 @@ import { ApiResult } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-/*
- * TODO(uniplus-api#2367): as providências sobre concessões seguem o contrato do PR uniplus-api#2405
- * e ainda não vêm do codegen. Depois do merge, `npm run generate:api` as traz no `schema.ts`, e
- * este bloco passa a apontar para ele.
- */
-
-type IdentidadeDto = components['schemas']['IdentidadeDto'];
+type Esquemas = components['schemas'];
 
 /** O que a providência pede: a retirada do acesso ou a revisão dele. */
 export type TipoDaProvidencia = 'retirada' | 'revisao';
@@ -28,54 +22,44 @@ export type FiltroDaSituacaoDaProvidencia = SituacaoDaProvidencia | 'todas';
 /** O que encerrou a concessão da providência prejudicada: o primeiro fato, revogação ou vencimento. */
 export type CausaDoEncerramento = 'revogada' | 'vencida';
 
-export interface ConcessaoDaProvidenciaDto {
-  readonly id: string;
-  readonly beneficiario: IdentidadeDto;
-  readonly perfil: components['schemas']['PerfilResumoDto'];
-  readonly escopo: components['schemas']['EscopoDto'];
-  readonly validaAte: string | null;
-  readonly ativa: boolean;
-}
+export type ConcessaoDaProvidenciaDto = Esquemas['ConcessaoDaProvidenciaDto'];
 
-export interface EncerramentoDaConcessaoDto {
+export type EncerramentoDaConcessaoDto = Omit<Esquemas['EncerramentoDaConcessaoDto'], 'causa'> & {
   readonly causa: CausaDoEncerramento;
-  readonly em: string;
-}
+};
 
 /** Quem respondeu ou atendeu, e quando; o motivo só vem no detalhe. */
-export interface AtoDoDesfechoDto {
-  readonly em: string;
-  readonly por: IdentidadeDto;
-}
+export type AtoDoDesfechoDto = Esquemas['AtoDoDesfechoDto'];
+export type DesfechoDaProvidenciaDto = Esquemas['DesfechoDaProvidenciaDto'];
 
-export interface DesfechoDaProvidenciaDto extends AtoDoDesfechoDto {
-  readonly motivo: string;
-}
-
-/** A providência na fila: sem o fundamento e sem o motivo do desfecho. */
-export interface ProvidenciaResumoDto {
-  readonly id: string;
+/** Os vocabulários da providência, que o contrato tipa como texto. */
+interface VocabulariosDaProvidencia {
   readonly tipo: TipoDaProvidencia;
   readonly situacao: SituacaoDaProvidencia;
-  readonly abertaEm: string;
-  readonly solicitadaPor: IdentidadeDto;
-  readonly concessao: ConcessaoDaProvidenciaDto;
   readonly encerramentoDaConcessao: EncerramentoDaConcessaoDto | null;
-  readonly desfecho: AtoDoDesfechoDto | null;
-  /** Quem lê é quem solicitou ou o beneficiário da concessão: não responde nem atende. */
-  readonly impedidoDeResponder: boolean;
 }
 
-export interface ProvidenciaDto extends Omit<ProvidenciaResumoDto, 'desfecho'> {
-  readonly fundamento: string;
-  readonly desfecho: DesfechoDaProvidenciaDto | null;
-}
+/**
+ * A providência na fila: sem o fundamento e sem o motivo do desfecho. `impedidoDeResponder` diz
+ * que quem lê é quem solicitou ou o beneficiário da concessão, e não responde nem atende.
+ */
+export type ProvidenciaResumoDto = Omit<
+  Esquemas['ProvidenciaResumoDto'],
+  keyof VocabulariosDaProvidencia
+> &
+  VocabulariosDaProvidencia;
 
-export interface SolicitarProvidenciaRequest {
-  readonly concessaoId: string;
+export type ProvidenciaDto = Omit<Esquemas['ProvidenciaDto'], keyof VocabulariosDaProvidencia> &
+  VocabulariosDaProvidencia;
+
+/** Os pedidos com os vocabulários estreitados e os campos que a tela sempre manda. */
+export type SolicitarProvidenciaRequest = Omit<
+  Esquemas['SolicitarProvidenciaRequest'],
+  'tipo' | 'fundamento'
+> & {
   readonly tipo: TipoDaProvidencia;
   readonly fundamento: string;
-}
+};
 
 export interface ResponderProvidenciaRequest {
   readonly motivo: string;
