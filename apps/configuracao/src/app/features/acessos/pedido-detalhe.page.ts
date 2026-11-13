@@ -36,6 +36,9 @@ import { PedidoDocumentosComponent } from './pedido-documentos.component';
 import { PedidoHistoricoComponent } from './pedido-historico.component';
 import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
 import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
+import { EvidenciaDoTermoComponent } from './termo/evidencia-do-termo.component';
+import { TermoDeResponsabilidadeComponent } from './termo/termo-de-responsabilidade.component';
+import { TermoDoPedido } from './termo/termo-do-pedido';
 
 const ENCERRADOS: readonly string[] = ['aprovado', 'recusado', 'cancelado'];
 
@@ -57,8 +60,10 @@ import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
     RecusaDaLeituraComponent,
+    EvidenciaDoTermoComponent,
+    TermoDeResponsabilidadeComponent,
   ],
-  providers: [PedidoDetalheStore, EdicaoDoPedido],
+  providers: [PedidoDetalheStore, TermoDoPedido, EdicaoDoPedido],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },
   templateUrl: './pedido-detalhe.page.html',
@@ -69,6 +74,7 @@ export class PedidoDetalhePage {
 
   protected readonly store = inject(PedidoDetalheStore);
   private readonly edicao = inject(EdicaoDoPedido);
+  protected readonly termo = inject(TermoDoPedido);
   private readonly anexos = inject(AnexoDoPedidoService);
   private readonly permissoes = inject(PermissoesService);
   private readonly usuario = inject(UserContextService);
@@ -155,10 +161,27 @@ export class PedidoDetalhePage {
   protected readonly podeAceitar = computed(
     () => this.pedido()?.situacao === 'aguardando_beneficiario' && this.ehBeneficiario(),
   );
+  /**
+   * O termo fixado que o beneficiário aceita junto com o pedido. O pedido que ainda espera o
+   * documento não oferece o aceite: a situação dele não é a de aguardar o beneficiário.
+   */
+  protected readonly termoAAceitar = computed(() => {
+    const termo = this.pedido()?.termo ?? null;
+    return this.podeAceitar() && termo !== null && termo.aceite === null ? termo : null;
+  });
   protected readonly podeCancelar = computed(
     () => !this.encerrado() && this.ehSolicitante() && this.semDecisao(),
   );
-  protected readonly podeAnexar = this.podeCancelar;
+  /**
+   * O pedido comum aceita anexo até a primeira decisão. O protegido, que fixa o termo, só aceita o
+   * documento que declarou, enquanto o espera (o primeiro envio falhou); fora disso a API recusa
+   * com `pedido.anexo_nao_declarado`.
+   */
+  protected readonly podeAnexar = computed(() => {
+    const pedido = this.pedido();
+    if (pedido === null || !this.podeCancelar()) return false;
+    return pedido.termo === null || (pedido.anexaraDocumento && this.aguardandoDocumento());
+  });
   protected readonly podeDecidir = computed(() => {
     const etapaAtual = this.pedido()?.etapaAtual;
     if (this.ehSolicitante() || this.ehBeneficiario()) return false;
@@ -176,6 +199,10 @@ export class PedidoDetalhePage {
     this.acompanharId();
     this.acompanharACarga();
     this.reavaliarAoFimDaCarga();
+    effect(() => {
+      const versaoId = this.termoAAceitar()?.versaoId ?? null;
+      untracked(() => this.termo.acompanhar(versaoId));
+    });
   }
 
   /** A falha da carga fecha os diálogos; o pedido lido sugere o prazo enquanto ninguém o editou. */
@@ -288,7 +315,19 @@ export class PedidoDetalhePage {
   }
 
   protected pedirConfirmacao(acao: Acao, campo?: HTMLInputElement): void {
-    if (this.acaoPermitida(acao)) this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
+    if (!this.acaoPermitida(acao) || this.faltaOAceiteDoTermo(acao)) return;
+    this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
+  }
+
+  /** O pedido com termo só se aceita com a caixa do termo marcada; sem ela, o foco vai à caixa. */
+  private faltaOAceiteDoTermo(acao: Acao): boolean {
+    if (acao !== 'aceitar' || this.termoAAceitar() === null || this.termo.conferirAceite()) {
+      return false;
+    }
+    this.host.nativeElement
+      .querySelector<HTMLInputElement>('cfg-termo-de-responsabilidade input[type="checkbox"]')
+      ?.focus();
+    return true;
   }
 
   protected executar(): Promise<void> {

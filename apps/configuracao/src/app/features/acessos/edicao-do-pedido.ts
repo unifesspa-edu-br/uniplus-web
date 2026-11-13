@@ -15,6 +15,7 @@ import { AnexoDoPedidoService, type DesfechoDoAnexo } from './anexo-do-pedido.se
 import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { PedidoDetalheStore } from './pedido-detalhe.store';
+import { TermoDoPedido } from './termo/termo-do-pedido';
 import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { fimDoDia, prazoNoPassado } from './prazo-de-vigencia';
@@ -28,6 +29,7 @@ export class EdicaoDoPedido {
   private readonly store = inject(PedidoDetalheStore);
   private readonly api = inject(PedidosDeConcessaoApi);
   private readonly anexos = inject(AnexoDoPedidoService);
+  private readonly termo = inject(TermoDoPedido);
   private readonly problemas = inject(ProblemI18nService);
   private readonly notificacoes = inject(NotificationService);
   private readonly router = inject(Router);
@@ -122,9 +124,10 @@ export class EdicaoDoPedido {
 
   private enviarDecisao(acao: Acao, validaAte: string | null): EnvioDaDecisao {
     const id = this.store.id() ?? '';
-    return comChave(this.chave, { acao, id, validaAte }, (contexto) =>
+    const termo = acao === 'aceitar' ? this.termo.versaoApresentada() : null;
+    return comChave(this.chave, { acao, id, validaAte, termo }, (contexto) =>
       acao === 'aceitar'
-        ? this.api.aceitar(id, contexto)
+        ? this.api.aceitar(id, contexto, termo)
         : this.api.aprovar(id, contexto, validaAte),
     );
   }

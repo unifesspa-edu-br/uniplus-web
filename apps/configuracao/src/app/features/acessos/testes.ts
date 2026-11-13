@@ -7,7 +7,7 @@ import {
   type ApiResult,
   type ProblemDetails,
 } from '@uniplus/shared-core/http';
-import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
+import type { PedidoDeConcessaoDto, VersaoDoTermoDto } from '@uniplus/shared-data/autorizacao';
 
 export const EU = {
   id: 'sub-eu-00000000',
@@ -91,3 +91,17 @@ export function pedido(parcial: Partial<PedidoDeConcessaoDto> = {}): PedidoDeCon
 }
 
 export const UNIDADES = [{ id: 'unidade-1', nome: 'Centro de Seleção', sigla: 'CEPS' }] as const;
+
+/** A versão vigente do termo, como a API a devolve. */
+export function versaoDoTermo(parcial: Partial<VersaoDoTermoDto> = {}): VersaoDoTermoDto {
+  return {
+    id: 'termo-v2',
+    numero: 2,
+    texto: 'Declaro que tratarei os dados pessoais acessados apenas para a finalidade do processo.',
+    resumo: 'a'.repeat(64),
+    ato: 'Portaria 12/2026',
+    publicadaEm: '2026-11-01T12:00:00Z',
+    vigente: true,
+    ...parcial,
+  };
+}

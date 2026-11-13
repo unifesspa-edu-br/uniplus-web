@@ -8,12 +8,13 @@ import {
   AUTORIZACAO_BASE_PATH,
   PedidosDeConcessaoApi,
   TermosDeResponsabilidadeApi,
-  type VersaoDoTermoDto,
 } from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { PedirAcessoPage } from './pedir-acesso.page';
-import { UNIDADES, ok, type recusa } from './testes';
+import { UNIDADES, ok, versaoDoTermo, type recusa } from './testes';
+
+export { versaoDoTermo } from './testes';
 
 /** Apoio dos specs da página de pedir acesso: perfis oferecidos, dublês e montagem. */
 
@@ -47,20 +48,6 @@ export const PERFIL_SENSIVEL = {
   nome: 'Análise de documentos pessoais',
   exigeAprovacaoDeProtecaoDeDados: true,
 };
-
-/** A versão vigente do termo, como a API a devolve. */
-export function versaoDoTermo(parcial: Partial<VersaoDoTermoDto> = {}): VersaoDoTermoDto {
-  return {
-    id: 'termo-v2',
-    numero: 2,
-    texto: 'Declaro que tratarei os dados pessoais acessados apenas para a finalidade do processo.',
-    resumo: 'a'.repeat(64),
-    ato: 'Portaria 12/2026',
-    publicadaEm: '2026-11-01T12:00:00Z',
-    vigente: true,
-    ...parcial,
-  };
-}
 
 export function dublesDoPedirAcesso() {
   return {

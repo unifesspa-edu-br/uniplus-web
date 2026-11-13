@@ -11,12 +11,16 @@ import { map, of, type Observable } from 'rxjs';
 import { vi } from 'vitest';
 import { PermissoesService, UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { AUTORIZACAO_BASE_PATH, PedidosDeConcessaoApi } from '@uniplus/shared-data/autorizacao';
+import {
+  AUTORIZACAO_BASE_PATH,
+  PedidosDeConcessaoApi,
+  TermosDeResponsabilidadeApi,
+} from '@uniplus/shared-data/autorizacao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { AnexoDoPedidoService } from './anexo-do-pedido.service';
 import { EdicaoDoPedido } from './edicao-do-pedido';
 import { PedidoDetalhePage } from './pedido-detalhe.page';
-import { EU, UNIDADES, concedidas, ok, pedido, recusa } from './testes';
+import { EU, UNIDADES, concedidas, ok, pedido, recusa, versaoDoTermo } from './testes';
 
 /** Apoio dos specs da página do pedido: dublês da API, montagem da página e interações. */
 
@@ -135,6 +139,7 @@ export function dublesDoPedido() {
       cancelar: vi.fn(),
     },
     anexos: { anexar: vi.fn(), abrir: vi.fn() },
+    termos: { versao: vi.fn() },
     notificacoes: { success: vi.fn(), errorFromProblem: vi.fn() },
   };
 }
@@ -160,6 +165,7 @@ function provedoresDaApi(dubles: DublesDoPedido): (Provider | EnvironmentProvide
     provideHttpClient(withInterceptors([leituraPelosDubles(dubles.api)])),
     { provide: PedidosDeConcessaoApi, useValue: dubles.api },
     { provide: AnexoDoPedidoService, useValue: dubles.anexos },
+    { provide: TermosDeResponsabilidadeApi, useValue: dubles.termos },
     { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },
   ];
 }
@@ -198,6 +204,7 @@ export function abrirPedido(dubles: DublesDoPedido) {
     TestBed.resetTestingModule();
     dubles.api.obter.mockReturnValue(of(ok(resposta)));
     dubles.api.trilha.mockReturnValue(of(ok([])));
+    dubles.termos.versao.mockReturnValue(of(ok(versaoDoTermo())));
     TestBed.configureTestingModule({ providers: provedoresDaPagina(dubles, permissoes, usuario) });
     const navegar = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     const fixture = await montarPagina(resposta.id);
