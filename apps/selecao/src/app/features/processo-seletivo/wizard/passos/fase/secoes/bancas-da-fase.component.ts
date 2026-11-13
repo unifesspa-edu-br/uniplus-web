@@ -2,15 +2,29 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import type { BancaRequeridaDaFase } from '../../../processo-seletivo.models';
+import type {
+  BancaRequeridaDaFase,
+  RegraDeDeliberacaoDaBanca,
+} from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
+import {
+  errosDaBancaPorCampo,
+  type CampoDaBanca,
+} from '../../../shared/deliberacao/recusas-da-regra';
+import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
 @Component({
   selector: 'sel-bancas-da-fase',
-  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
+  imports: [
+    ValorLegivelDirective,
+    FormsModule,
+    ValorEmConsultaComponent,
+    RegraDeDeliberacaoComponent,
+  ],
   templateUrl: './bancas-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
@@ -27,7 +41,9 @@ export class BancasDaFaseComponent {
 
   /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */
   protected readonly categorias = computed(() =>
-    this.catalogoDeDocumentos.categorias().map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
+    this.catalogoDeDocumentos
+      .categorias()
+      .map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
   );
 
   /** A leitura da consulta: cada banca em texto, com o recorte que julga. */
@@ -40,10 +56,17 @@ export class BancasDaFaseComponent {
           (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
         );
         const nomeDaBanca = this.faseEmEdicao.nomeDaBanca(banca.tipoBancaId);
-        return nomes.length === 0 ? nomeDaBanca : `${nomeDaBanca} — julga ${nomes.join(', ')}`;
+        const recorte =
+          nomes.length === 0 ? nomeDaBanca : `${nomeDaBanca} — julga ${nomes.join(', ')}`;
+        return `${recorte} — ${descricaoDaRegra(banca.regraDeDeliberacao)}`;
       }),
     };
   }
+
+  /** A recusa de cada campo da regra de cada banca, estável entre ciclos de detecção. */
+  protected readonly errosDasRegras = computed(() =>
+    this.bancas.map((_, posicao) => this.errosDaRegra(posicao)),
+  );
 
   // ─── Bancas requeridas e o recorte de competência ───────────────────────
 
@@ -53,7 +76,10 @@ export class BancasDaFaseComponent {
   }
 
   acrescentarBanca(): void {
-    this.escreverBancas([...this.bancas, { tipoBancaId: '', categoriasDocumentoIds: [] }]);
+    this.escreverBancas([
+      ...this.bancas,
+      { tipoBancaId: '', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+    ]);
   }
 
   removerBanca(posicao: number): void {
@@ -63,6 +89,14 @@ export class BancasDaFaseComponent {
   escolherTipoDeBanca(posicao: number, tipoBancaId: string): void {
     this.escreverBancas(
       this.bancas.map((banca, indice) => (indice === posicao ? { ...banca, tipoBancaId } : banca)),
+    );
+  }
+
+  declararRegra(posicao: number, regra: RegraDeDeliberacaoDaBanca | null): void {
+    this.escreverBancas(
+      this.bancas.map((banca, indice) =>
+        indice === posicao ? { ...banca, regraDeDeliberacao: regra } : banca,
+      ),
     );
   }
 
@@ -90,7 +124,14 @@ export class BancasDaFaseComponent {
     return this.bancas.filter((banca) => banca.tipoBancaId === tipo).length > 1;
   }
 
+  private errosDaRegra(posicao: number): Partial<Record<CampoDaBanca, string>> {
+    return errosDaBancaPorCampo((campo) =>
+      this.erroDoCampo(`bancasRequeridas.${posicao}.${campo}`),
+    );
+  }
+
   private escreverBancas(bancas: readonly BancaRequeridaDaFase[]): void {
+    this.faseEmEdicao.esquecerRecusasDasBancas();
     this.espelho.formulario()?.controls.bancasRequeridas.setValue(bancas);
   }
 }

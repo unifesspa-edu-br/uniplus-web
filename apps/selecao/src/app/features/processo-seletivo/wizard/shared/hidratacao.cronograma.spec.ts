@@ -18,7 +18,11 @@ describe('hidratarDraft — cronograma e etapas', () => {
 
     expect(fase.faseCanonicaId).toBe('fase-canonica-homologacao');
     expect(fase.bancasRequeridas).toEqual([
-      { tipoBancaId: 'tipo-banca-1', categoriasDocumentoIds: ['categoria-renda'] },
+      {
+        tipoBancaId: 'tipo-banca-1',
+        categoriasDocumentoIds: ['categoria-renda'],
+        regraDeDeliberacao: null,
+      },
     ]);
   });
 

@@ -30,7 +30,9 @@ describe('campos de texto das seções da fase', () => {
       fase({
         produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
         regraRecurso: RECURSO,
-        bancasRequeridas: [{ tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] }],
+        bancasRequeridas: [
+          { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao: null },
+        ],
       }),
     );
     passo.raiz.injector.get(ExigenciasDaFaseStore).alternarExigencia(ID_CPF, true);

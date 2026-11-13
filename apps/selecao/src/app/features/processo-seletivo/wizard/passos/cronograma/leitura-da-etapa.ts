@@ -9,6 +9,7 @@ import {
 import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { descricaoDaRegra } from '../../shared/deliberacao/descricao-da-regra';
 import { prazoEmTexto } from '../../shared/unidades-de-prazo-do-recurso';
 import type { CatalogoDeAtos } from './catalogos/catalogo-de-atos.service';
 import type { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
@@ -187,9 +188,10 @@ function avaliacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
 
 function bancasLidas(controles: EtapaForm, catalogos: CatalogosDaLeitura): readonly string[] {
   const nomesDasBancas = catalogos.bancas();
-  return controles.bancas.value.map(
-    (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
-  );
+  return controles.bancas.value.map(({ tipoBancaId, regraDeDeliberacao }) => {
+    const nome = nomesDasBancas.find((banca) => banca.id === tipoBancaId)?.nome ?? tipoBancaId;
+    return `${nome} — ${descricaoDaRegra(regraDeDeliberacao)}`;
+  });
 }
 
 function publicacoesLidas(

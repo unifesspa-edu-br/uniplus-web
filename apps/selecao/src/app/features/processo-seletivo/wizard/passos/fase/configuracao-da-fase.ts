@@ -1,9 +1,12 @@
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
+  type BancaRequeridaDaFase,
   type FaseDoCronograma,
 } from '../../processo-seletivo.models';
 
+import { problemasDaRegra } from '../../shared/deliberacao/conferencia-da-regra';
+import type { CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
 import { repetidos } from '../../shared/repetidos';
 import { problemasDoRecurso, produtosPreliminares } from './problemas-do-recurso-da-fase';
 
@@ -11,6 +14,9 @@ import { problemasDoRecurso, produtosPreliminares } from './problemas-do-recurso
 export function publicaResultadoDefinitivo(produtos: FaseDoCronograma['produtos']): boolean {
   return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
 }
+
+/** Um campo da regra de deliberação da banca que ocupa a posição `n` entre as requeridas. */
+export type CampoDaBancaRequerida = `bancasRequeridas.${number}.${CampoDaBanca}`;
 
 /**
  * Onde a mensagem de recusa aparece. É a chave que liga a conferência — e a
@@ -24,6 +30,7 @@ export type CampoDaFase =
   | 'faseConcluinteCodigo'
   | 'emiteParecerIndividual'
   | 'bancasRequeridas'
+  | CampoDaBancaRequerida
   | 'recurso.regra'
   | 'recurso.prazo'
   | 'recurso.ancora'
@@ -67,6 +74,7 @@ export function problemasDaFase(
     ...problemasDoParecer(fase),
     ...problemasDoRecurso(fase),
     ...problemasDasBancas(fase, nomeDaBanca),
+    ...problemasDasRegrasDasBancas(fase),
   ];
 }
 
@@ -236,6 +244,21 @@ function problemasDasBancas(
     ([tipoBancaId, recortes]) => problemaDoRecorte(nomeDaBanca(tipoBancaId), recortes),
   );
   return [...emBranco, ...recortesPorTipo];
+}
+
+function problemasDasRegrasDasBancas(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
+  return fase.bancasRequeridas.flatMap(problemasDaRegraDaBanca);
+}
+
+function problemasDaRegraDaBanca(
+  banca: BancaRequeridaDaFase,
+  posicao: number,
+): readonly ProblemaDaFase[] {
+  if (banca.regraDeDeliberacao === null) return [];
+  return problemasDaRegra(banca.regraDeDeliberacao).map(({ campo, mensagem }) => ({
+    campo: `bancasRequeridas.${posicao}.${campo}`,
+    mensagem,
+  }));
 }
 
 function recortesDeCompetenciaPorTipo(fase: FaseDoCronograma): ReadonlyMap<string, string[][]> {

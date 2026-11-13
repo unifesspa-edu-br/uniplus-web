@@ -85,7 +85,11 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     // vindas da outra tela.
     expect(publicacoes().produtos).toEqual([{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }]);
     expect(bancas().bancas).toEqual([
-      { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+      {
+        tipoBancaId: ID_BANCA_HETERO,
+        categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+        regraDeDeliberacao: null,
+      },
     ]);
 
     // 4. Grava pela linha do tempo — é ela que leva as etapas junto.

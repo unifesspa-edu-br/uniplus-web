@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { FaseDoCronograma, RegraDeDeliberacaoDaBanca } from '../../processo-seletivo.models';
+import { ATO_INDIVIDUAL, COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import type { CampoDaFase } from './configuracao-da-fase';
 import { campos, conferir, fase } from './configuracao-da-fase.testing';
 
@@ -177,7 +179,11 @@ describe('bancas requeridas e o recorte de competência', () => {
   it('banca única sem recorte é estado válido — ela julga tudo o que a fase exige', () => {
     expect(
       conferir(
-        fase({ bancasRequeridas: [{ tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [] }] }),
+        fase({
+          bancasRequeridas: [
+            { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+          ],
+        }),
       ),
     ).toEqual([]);
   });
@@ -186,8 +192,12 @@ describe('bancas requeridas e o recorte de competência', () => {
     const problemas = conferir(
       fase({
         bancasRequeridas: [
-          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: ['raca'] },
-          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [] },
+          {
+            tipoBancaId: 'banca-hetero',
+            categoriasDocumentoIds: ['raca'],
+            regraDeDeliberacao: null,
+          },
+          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [], regraDeDeliberacao: null },
         ],
       }),
     );
@@ -200,8 +210,16 @@ describe('bancas requeridas e o recorte de competência', () => {
     const problemas = conferir(
       fase({
         bancasRequeridas: [
-          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: ['raca', 'renda'] },
-          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: ['renda', 'raca'] },
+          {
+            tipoBancaId: 'banca-hetero',
+            categoriasDocumentoIds: ['raca', 'renda'],
+            regraDeDeliberacao: null,
+          },
+          {
+            tipoBancaId: 'banca-hetero',
+            categoriasDocumentoIds: ['renda', 'raca'],
+            regraDeDeliberacao: null,
+          },
         ],
       }),
     );
@@ -214,8 +232,16 @@ describe('bancas requeridas e o recorte de competência', () => {
       conferir(
         fase({
           bancasRequeridas: [
-            { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: ['raca'] },
-            { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: ['renda'] },
+            {
+              tipoBancaId: 'banca-hetero',
+              categoriasDocumentoIds: ['raca'],
+              regraDeDeliberacao: null,
+            },
+            {
+              tipoBancaId: 'banca-hetero',
+              categoriasDocumentoIds: ['renda'],
+              regraDeDeliberacao: null,
+            },
           ],
         }),
       ),
@@ -224,9 +250,42 @@ describe('bancas requeridas e o recorte de competência', () => {
 
   it('cobra o tipo da banca em branco', () => {
     const problemas = campos(
-      fase({ bancasRequeridas: [{ tipoBancaId: '', categoriasDocumentoIds: [] }] }),
+      fase({
+        bancasRequeridas: [
+          { tipoBancaId: '', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+        ],
+      }),
     );
 
     expect(problemas).toContain<CampoDaFase>('bancasRequeridas');
+  });
+
+  describe('regra de deliberação da banca', () => {
+    const comRegra = (...bancas: FaseDoCronograma['bancasRequeridas']) =>
+      conferir(fase({ bancasRequeridas: bancas }));
+    const banca = (
+      regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null,
+      tipoBancaId = 'banca-hetero',
+    ) => ({ tipoBancaId, categoriasDocumentoIds: [], regraDeDeliberacao });
+
+    it('não cobra a banca sem regra: ela só é exigida na publicação', () => {
+      expect(comRegra(banca(null))).toEqual([]);
+    });
+
+    it('aceita a regra completa', () => {
+      expect(comRegra(banca(COLEGIADA), banca(ATO_INDIVIDUAL, 'banca-redacao'))).toEqual([]);
+    });
+
+    it('cobra o campo da regra sob a posição da banca que o tem em branco', () => {
+      const problemas = comRegra(
+        banca(COLEGIADA),
+        banca({ ...COLEGIADA, criterio: '', quorum: '9' }, 'banca-redacao'),
+      );
+
+      expect(problemas.map((problema) => problema.campo)).toEqual([
+        'bancasRequeridas.1.criterio',
+        'bancasRequeridas.1.quorum',
+      ]);
+    });
   });
 });

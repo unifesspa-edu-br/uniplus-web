@@ -56,7 +56,11 @@ describe('FasePassoComponent', () => {
         fase({
           produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
           bancasRequeridas: [
-            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [ID_CATEGORIA_RACA] },
+            {
+              tipoBancaId: ID_BANCA_HETERO,
+              categoriasDocumentoIds: [ID_CATEGORIA_RACA],
+              regraDeDeliberacao: null,
+            },
           ],
           regraRecurso: null,
         }),

@@ -7,7 +7,7 @@
       <label class="checkbox">
         <input
           type="checkbox"
-          [checked]="edicao.bancasDaEtapa(etapa).includes(banca.id)"
+          [checked]="edicao.bancasDaEtapa(etapa).some((declarada) => declarada.tipoBancaId === banca.id)"
           [disabled]="!edicaoLiberada()"
           (change)="edicao.alternarBancaDaEtapa(etapa, banca.id, $any($event.target).checked)"
         />
@@ -16,6 +16,19 @@
       </label>
     }
   </div>
+
+  @for (banca of escolhidas(); track banca.tipoBancaId) {
+    <fieldset class="form-field">
+      <legend class="label">Deliberação da banca {{ banca.nome }}</legend>
+      <sel-regra-de-deliberacao
+        [regra]="banca.regra"
+        [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.tipoBancaId"
+        [desabilitada]="!edicaoLiberada()"
+        [erros]="banca.erros"
+        (regraChange)="edicao.declararRegraDaBancaDaEtapa(etapa, banca.tipoBancaId, $event)"
+      />
+    </fieldset>
+  }
 } @else {
   <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
 }

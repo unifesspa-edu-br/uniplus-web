@@ -1,3 +1,9 @@
+import {
+  campoDaRegraNoCaminho,
+  CAMPOS_DA_BANCA,
+  recusaDaRegra,
+  type CampoDaBanca,
+} from '../../shared/deliberacao/recusas-da-regra';
 import { UNIDADE_RESPONSAVEL_NAO_ENCONTRADA } from '../fase/recusas-da-fase';
 
 /**
@@ -37,7 +43,8 @@ export type CampoDaEtapaComRecusa =
 /** Um campo de um item da lista, na chave `itensDeAvaliacao.2.rotulo`. */
 export type CampoDeItemComRecusa =
   | `itensDeAvaliacao.${number}.${'rotulo' | 'id' | 'pontuacaoMaxima'}`
-  | `escalaDeAtendimento.${number}.${'rotulo' | 'fracao'}`;
+  | `escalaDeAtendimento.${number}.${'rotulo' | 'fracao'}`
+  | `bancas.${number}.${CampoDaBanca}`;
 
 export type CampoComRecusa = CampoDaEtapaComRecusa | CampoDeItemComRecusa;
 
@@ -51,8 +58,11 @@ const CAMPOS_DA_ETAPA_COM_RECUSA: ReadonlySet<string> = new Set<CampoDaEtapaComR
   'escalaDeAtendimento',
 ]);
 
-const CAMPO_DE_ITEM_COM_RECUSA =
-  /^(?:itensDeAvaliacao\.\d+\.(?:rotulo|id|pontuacaoMaxima)|escalaDeAtendimento\.\d+\.(?:rotulo|fracao))$/;
+const CAMPO_DE_ITEM_COM_RECUSA = new RegExp(
+  '^(?:itensDeAvaliacao\\.\\d+\\.(?:rotulo|id|pontuacaoMaxima)|' +
+    'escalaDeAtendimento\\.\\d+\\.(?:rotulo|fracao)|' +
+    `bancas\\.\\d+\\.(?:${CAMPOS_DA_BANCA.join('|')}))$`,
+);
 
 /** A chave sob a qual a tela guarda a recusa do que o servidor apontou, ou `null` quando ela não tem campo. */
 export function campoDaRecusa(
@@ -167,6 +177,36 @@ export interface LocalDoErroDaEtapa {
   readonly campo: string | null;
   readonly posicao: number | null;
   readonly subcampo: string | null;
+}
+
+/** A recusa do servidor à regra de uma banca da etapa: onde ela aparece e o que diz. */
+export function recusaDaBancaDaEtapa(erro: {
+  readonly field: string;
+  readonly code: string;
+  readonly message?: string;
+}): { readonly indice: number; readonly campo: CampoComRecusa; readonly texto: string } | null {
+  const [, indice, posicao] = /^etapas\[(\d+)\]\.bancas\[(\d+)\]/i.exec(erro.field) ?? [];
+  const recusa = recusaDaRegra(erro.code, erro.message);
+  if (indice === undefined || posicao === undefined || recusa === null) return null;
+  const campo = campoDaRegraNoCaminho(erro.field) ?? recusa.campo;
+  return {
+    indice: Number(indice),
+    campo: `bancas.${Number(posicao)}.${campo}`,
+    texto: recusa.mensagem,
+  };
+}
+
+/** O texto da recusa do servidor a um campo ou banca da etapa, e a etapa que ela aponta, se nomeada. */
+export function textoDaRecusaDaEtapa(erro: {
+  readonly field: string;
+  readonly code: string;
+  readonly message?: string;
+}): { readonly texto: string; readonly indice: number | null } | null {
+  const daBanca = recusaDaBancaDaEtapa(erro);
+  if (daBanca !== null) return daBanca;
+  const texto = recusaDoCampoDaEtapa(erro.code);
+  if (texto === null) return null;
+  return { texto, indice: localDoErroDaEtapa(erro.field)?.indice ?? null };
 }
 
 /**
