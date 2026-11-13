@@ -26,20 +26,20 @@ const detalhe: DetalheDaProtecaoDoCatalogoDto = {
   hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
   aprovacao: {
     situacao: 'SOLICITADA',
+    ciclo: 1,
     solicitadaEm: '2026-11-01T12:00:00Z',
     decididaEm: null,
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
-    ciclo: 1,
     manifestadaEm: null,
     manifestacaoDesfavoravel: false,
   },
   descricao: 'Laudo complementar.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf', tamanhoMaximoMb: 10 },
-  manifestacoesVigentes: [],
   atos: [],
+  manifestacoesVigentes: [],
 };
 
 describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
