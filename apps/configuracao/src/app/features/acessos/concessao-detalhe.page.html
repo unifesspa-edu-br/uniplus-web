@@ -48,6 +48,16 @@
       <dd>{{ c.validaAte ? (c.validaAte | dateBr: 'datetime') : 'Sem prazo' }}</dd>
     </div>
   </dl>
+  @if (c.ativa && c.revogadaEm === null) {
+  <ng-container *authTemPermissao="permissaoDeSolicitar">
+    <div class="cfg-acoes panel-body">
+      <button type="button" class="btn btn--secondary" (click)="solicitacao.abrir(c.id)">
+        Solicitar providência
+      </button>
+    </div>
+    <cfg-solicitar-providencia-dialog />
+  </ng-container>
+  }
 </section>
 
 @if (c.revogadaEm !== null) {
