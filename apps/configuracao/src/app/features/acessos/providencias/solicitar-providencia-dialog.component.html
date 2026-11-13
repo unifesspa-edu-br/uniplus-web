@@ -1,0 +1,92 @@
+<ui-dialog
+  [visible]="solicitacao.aberto()"
+  (visibleChange)="visibilidade($event)"
+  heading="Solicitar providência sobre a concessão"
+  [dismissible]="!solicitacao.enviando()"
+>
+  <div class="cfg-dialog-form">
+    @if (solicitacao.erro(); as erro) {
+      <ui-alert variant="danger" heading="Não foi possível solicitar">{{ erro }}</ui-alert>
+    }
+    <fieldset
+      [formGroup]="solicitacao.form"
+      [disabled]="solicitacao.enviando()"
+      style="border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 1rem"
+    >
+      <legend class="field__label is-required">O que a providência pede</legend>
+      <div
+        role="radiogroup"
+        aria-label="O que a providência pede"
+        class="cfg-dialog-form"
+        [attr.aria-describedby]="erroDoTipo() ? 'cfg-tipo-erro' : null"
+      >
+        @for (opcao of tipos; track opcao.valor) {
+          <label class="radio">
+            <input
+              type="radio"
+              formControlName="tipo"
+              [value]="opcao.valor"
+              [attr.aria-invalid]="erroDoTipo() ? 'true' : null"
+              [attr.aria-describedby]="erroDoTipo() ? 'cfg-tipo-erro' : null"
+            />
+            <span class="radio__dot" aria-hidden="true"></span>
+            <span>{{ opcao.rotulo }}</span>
+          </label>
+        }
+      </div>
+      @if (erroDoTipo(); as erro) {
+        <span class="field__error" id="cfg-tipo-erro">{{ erro }}</span>
+      }
+      <label class="field" [class.is-error]="erroDoFundamento()">
+        <span class="field__label is-required">Fundamento</span>
+        <textarea
+          class="textarea"
+          rows="5"
+          formControlName="fundamento"
+          aria-required="true"
+          [attr.aria-invalid]="erroDoFundamento() ? 'true' : null"
+          [attr.aria-describedby]="
+            erroDoFundamento()
+              ? 'cfg-fundamento-ajuda cfg-fundamento-contador cfg-fundamento-erro'
+              : 'cfg-fundamento-ajuda cfg-fundamento-contador'
+          "
+        ></textarea>
+        <span id="cfg-fundamento-ajuda" class="field__hint"
+          >Por que o acesso deve ser retirado ou revisto. Fica na providência e na trilha da
+          concessão.</span
+        >
+        <span id="cfg-fundamento-contador" class="field__hint"
+          >{{ tamanho() }} de {{ maximo }} caracteres (mínimo {{ minimo }}).</span
+        >
+        @if (erroDoFundamento(); as erro) {
+          <span class="field__error" id="cfg-fundamento-erro">{{ erro }}</span>
+        }
+      </label>
+    </fieldset>
+  </div>
+  <p role="status" class="sr-only">
+    {{ solicitacao.enviando() ? 'Solicitando providência…' : '' }}
+  </p>
+  <ng-container uiDialogFooter>
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="solicitacao.enviando()"
+      (click)="solicitacao.fechar()"
+    >
+      Cancelar
+    </button>
+    <button
+      type="button"
+      class="btn btn--primary"
+      [attr.aria-disabled]="solicitacao.enviando() ? 'true' : null"
+      [attr.aria-busy]="solicitacao.enviando()"
+      (click)="solicitacao.confirmar()"
+    >
+      @if (solicitacao.enviando()) {
+        <ui-spinner spinnerSize="sm" />
+      }
+      Solicitar providência
+    </button>
+  </ng-container>
+</ui-dialog>
