@@ -13,9 +13,11 @@ export interface ProblemaDaRegra {
   readonly mensagem: string;
 }
 
+const MAIOR_QUANTIDADE_DA_API = 2_147_483_647;
+
 const MENSAGEM: Readonly<Record<string, string>> = {
-  integrantes: 'Informe quantos titulares a banca tem: um número inteiro, de 1 em diante.',
-  suplentes: 'Informe quantos suplentes a banca tem, ou 0 se não houver.',
+  integrantes: 'Informe quantos titulares a banca tem: um número inteiro, de 1 até 2.147.483.647.',
+  suplentes: 'Informe quantos suplentes a banca tem, de 0 até 2.147.483.647.',
   quorum: 'O quórum é um número inteiro de 1 até o número de integrantes.',
   criterio: 'Escolha o critério: maioria simples, maioria absoluta ou unanimidade.',
   encerramento: 'Diga como a votação se encerra.',
@@ -31,11 +33,14 @@ const falhas = (...conferencias: readonly Conferencia[]): readonly ProblemaDaReg
     .filter(([falha]) => falha)
     .map(([, campo]) => ({ campo, mensagem: MENSAGEM[campo] }));
 
+const quantidadeAceitaPelaApi = (quantidade: number | null): quantidade is number =>
+  quantidade !== null && quantidade <= MAIOR_QUANTIDADE_DA_API;
+
 function problemasDaComposicao(regra: RegraDeDeliberacaoDaBanca): readonly ProblemaDaRegra[] {
   const integrantes = inteiroDoCampo(regra.integrantes);
   return falhas(
-    [integrantes === null || integrantes < 1, 'integrantes'],
-    [inteiroDoCampo(regra.suplentes) === null, 'suplentes'],
+    [!quantidadeAceitaPelaApi(integrantes) || integrantes < 1, 'integrantes'],
+    [!quantidadeAceitaPelaApi(inteiroDoCampo(regra.suplentes)), 'suplentes'],
   );
 }
 

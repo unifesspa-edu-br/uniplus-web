@@ -26,7 +26,7 @@ const PREFIXO = 'uniplus.selecao.banca.';
 const RECUSA_POR_CODIGO: ReadonlyMap<string, RecusaDaRegra> = new Map([
   [
     'integrantes_invalidos',
-    { campo: 'integrantes', mensagem: 'O número de integrantes é um inteiro de 1 em diante.' },
+    { campo: 'integrantes', mensagem: 'O número de integrantes é um inteiro de 1 até 2.147.483.647.' },
   ],
   [
     'suplentes_invalidos',

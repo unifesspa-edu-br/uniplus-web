@@ -18,6 +18,15 @@ describe('problemasDaRegra', () => {
     expect(campos(comRegra({ integrantes: '2,5' }))).toContain('integrantes');
   });
 
+  it('aceita até o maior inteiro da API em titulares e suplentes e cobra o seguinte', () => {
+    const maior = '2147483647';
+    const acima = '2147483648';
+
+    expect(campos(comRegra({ integrantes: maior, suplentes: maior, quorum: maior }))).toEqual([]);
+    expect(campos(comRegra({ integrantes: acima }))).toContain('integrantes');
+    expect(campos(comRegra({ suplentes: acima }))).toEqual(['suplentes']);
+  });
+
   it('cobra os suplentes em branco e aceita zero', () => {
     expect(campos(comRegra({ suplentes: '' }))).toEqual(['suplentes']);
     expect(campos(comRegra({ suplentes: '0' }))).toEqual([]);
