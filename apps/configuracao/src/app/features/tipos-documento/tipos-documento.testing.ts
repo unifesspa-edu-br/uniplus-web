@@ -16,6 +16,7 @@ import { expect, vi, type MockInstance } from 'vitest';
 import { EdicaoDosTiposDocumento } from './edicao-dos-tipos-documento';
 import { TiposDocumentoPage } from './tipos-documento.page';
 import { TiposDocumentoStore } from './tipos-documento.store';
+import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/configuracao/tipos-documento`;
@@ -323,12 +324,13 @@ export class PaginaDosTiposDocumento {
     return this.http.expectOne(`${ESCRITA}/${tipo.id}`);
   };
 
-  /** Termina o teste sem requisição esquecida: a situação da proteção é relida a cada escrita. */
+  /**
+   * Termina o teste sem requisição esquecida: a situação da proteção é relida a cada escrita, e o
+   * drawer lê os atos e as manifestações técnicas do item.
+   */
   readonly encerrar = (): void => {
     this.atenderProtecao();
-    for (const req of this.http.match((r) => r.url.endsWith('/protecao/atos'))) {
-      if (!req.cancelled) req.flush([]);
-    }
+    atenderHistoricosDoDrawer(this.http);
     this.http.verify();
   };
 
