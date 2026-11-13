@@ -175,6 +175,22 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     expect(itensDoMenu()).not.toContain('Revisões de acesso');
   });
 
+  it('a quem só consulta pedidos, concessões e versões, oferece as telas de leitura e nenhuma fila de decisão', () => {
+    concedidas.set([
+      'autorizacao:pedidos:consultar',
+      'autorizacao:concessoes:consultar',
+      'autorizacao:perfis:consultar-versoes',
+    ]);
+
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Histórico de pedidos',
+      'Concessões',
+      'Perfis de acesso',
+      'Divergências da governança',
+    ]);
+  });
+
   it('oferece a publicação do termo só a quem tem a permissão de publicar', () => {
     concedidas.set(['autorizacao:termos:publicar']);
     expect(itensDoMenu()).toEqual(['Meus pedidos', 'Termo de responsabilidade']);

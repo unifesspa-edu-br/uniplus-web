@@ -1,5 +1,6 @@
 import { RouterLink } from '@angular/router';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import type { ConcessaoDto } from '@uniplus/shared-data/autorizacao';
 import { devolverFocoDaLista } from '../../shared/foco';
@@ -34,6 +35,10 @@ export class ConcessoesPage {
   protected readonly revogacao = inject(RevogacaoDeConcessoes);
   protected readonly escopo = nomesDeEscopo();
   protected readonly trilhaAberta = signal(false);
+  private readonly permissoes = inject(PermissoesService);
+  protected readonly podeRevogar = computed(() =>
+    this.permissoes.tem(PERMISSAO.autorizacao.concessoesAdministrar),
+  );
   protected readonly escopoDaRevogacao = computed(() => {
     const concessao = this.revogacao.concessaoARevogar();
     return concessao === null ? '' : this.escopo.nome(concessao.escopo);
