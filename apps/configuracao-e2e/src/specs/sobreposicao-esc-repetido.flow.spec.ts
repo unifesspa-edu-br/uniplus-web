@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { mockManifestacoesDaFila } from '../support/listas-de-tipos-e-fatos';
+import { CONFIRMAR_A_APROVACAO } from '../support/escritas-da-protecao';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -173,7 +174,7 @@ test.describe('Sobreposição com escrita pendente — Esc repetido', () => {
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
     await drawer.getByRole('button', { name: /Aprovar/ }).click();
     const dialogo = page.getByRole('dialog', { name: 'Aprovar a proteção de dados do item' });
-    const aprovar = dialogo.getByRole('button', { name: 'Aprovar item' });
+    const aprovar = dialogo.getByRole('button', { name: CONFIRMAR_A_APROVACAO });
     await aprovar.click();
 
     await escRepetidoEAfirmarModal(page, dialogo, aprovar);
