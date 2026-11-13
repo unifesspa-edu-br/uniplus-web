@@ -157,6 +157,23 @@ export class EdicaoDoPedidoDeAcesso {
     effect(() => {
       if (this.protegido()) untracked(() => this.termo.garantir());
     });
+    this.form.valueChanges.subscribe(() => this.descartarRetentativa());
+    this.termo.aceite.valueChanges.subscribe(() => this.descartarRetentativa());
+    effect(() => {
+      this.arquivo();
+      untracked(() => this.descartarRetentativa());
+    });
+  }
+
+  /**
+   * Depois do conflito de concorrência, a retentativa repete o mesmo corpo sob a mesma chave. Se a
+   * pessoa edita o pedido, ele é outro: o corpo pendente sai e a próxima criação usa chave nova. Na
+   * resposta inconclusiva o formulário fica bloqueado, e o corpo se mantém.
+   */
+  private descartarRetentativa(): void {
+    if (this.corpoPendente === null || this.aguardandoConfirmacao()) return;
+    this.corpoPendente = null;
+    this.chaveDaCriacao = idempotencyKey.create();
   }
 
   invalido(nome: keyof typeof this.form.controls): boolean {
