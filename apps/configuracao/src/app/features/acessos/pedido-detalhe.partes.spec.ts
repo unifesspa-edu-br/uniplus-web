@@ -108,6 +108,39 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
     expect(botoes).toContain('Anexar o documento');
   });
 
+  describe('envio de anexo pelo solicitante', () => {
+    const TERMO = { versaoId: 'termo-v2', numero: 2, resumo: 'a'.repeat(64), aceite: null };
+    const temEnvio = (host: HTMLElement) =>
+      host.querySelector('cfg-pedido-documentos input[type="file"]') !== null;
+
+    it('não oferece o envio no pedido protegido que não declarou documento', async () => {
+      const { host } = await abrir([], pedido({ ...solicitadoPorMim(), termo: TERMO }));
+
+      expect(temEnvio(host)).toBe(false);
+    });
+
+    it('oferece o envio no pedido protegido que declarou o documento e ainda o espera', async () => {
+      const { host } = await abrir(
+        [],
+        pedido({
+          ...solicitadoPorMim(),
+          termo: TERMO,
+          anexaraDocumento: true,
+          situacao: 'aguardando_documento',
+          etapaAtual: null,
+        }),
+      );
+
+      expect(temEnvio(host)).toBe(true);
+    });
+
+    it('continua oferecendo o envio no pedido comum, sem declaração', async () => {
+      const { host } = await abrir([], solicitadoPorMim());
+
+      expect(temEnvio(host)).toBe(true);
+    });
+  });
+
   it('anexa o documento do solicitante e recarrega o pedido', async () => {
     const { fixture, host } = await abrir([], solicitadoPorMim());
     anexos.anexar.mockResolvedValue({ ok: true });

@@ -32,6 +32,16 @@
   solicitante anexar o documento de designação. }
 </ui-alert>
 }
+@if (termoAAceitar()) {
+<cfg-termo-de-responsabilidade
+  titulo="Termo de responsabilidade a aceitar"
+  [versao]="termo.versao()"
+  [aceite]="termo.aceite"
+  [tentou]="termo.tentou()"
+  [carregando]="termo.carregando()"
+  [erro]="termo.erro()"
+/>
+}
 <cfg-pedido-resumo
   [pedido]="p"
   [nomeDoEscopo]="escopo.nome"
@@ -55,6 +65,9 @@
   (abrir)="abrirAnexo($event)"
   (arquivoSelecionado)="anexar($event)"
 />
+@if (p.termo; as termoFixado) {
+<cfg-evidencia-do-termo [termo]="termoFixado" />
+}
 <cfg-pedido-historico [pedido]="p" [trilha]="trilha()" />
 }
 
