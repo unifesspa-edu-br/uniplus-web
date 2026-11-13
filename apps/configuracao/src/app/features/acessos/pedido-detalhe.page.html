@@ -31,15 +31,14 @@
   segue para aprovação depois que o documento for verificado. } @else { O pedido espera o
   solicitante anexar o documento de designação. }
 </ui-alert>
-}
-@if (termoAAceitar()) {
+} @if (termoAAceitar()) {
 <cfg-termo-de-responsabilidade
   titulo="Termo de responsabilidade a aceitar"
   [versao]="termo.versao()"
   [aceite]="termo.aceite"
   [tentou]="termo.tentou()"
   [carregando]="termo.carregando()"
-  [erro]="termo.erro()"
+  [leitura]="termo.falhaDeLeitura"
 />
 }
 <cfg-pedido-resumo

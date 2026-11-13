@@ -11,10 +11,8 @@
     @if (carregando()) {
       <p><ui-spinner spinnerSize="sm" /> Carregando o termo…</p>
     }
-    @if (erro(); as mensagem) {
-      <ui-alert variant="danger" heading="Não foi possível apresentar o termo">{{
-        mensagem
-      }}</ui-alert>
+    @if (leitura(); as acompanhada) {
+      <ui-falha-de-leitura titulo="Não foi possível apresentar o termo" [leitura]="acompanhada" />
     }
     @if (versao(); as v) {
       <dl class="cfg-detail-list">
@@ -41,6 +39,9 @@
       >
         {{ v.texto }}
       </div>
+      @if (observacao(); as nota) {
+        <p class="field__hint">{{ nota }}</p>
+      }
       @if (aceite(); as controle) {
         <label class="checkbox">
           <input

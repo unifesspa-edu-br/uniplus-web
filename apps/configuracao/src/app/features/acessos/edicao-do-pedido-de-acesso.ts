@@ -41,6 +41,8 @@ const DOCUMENTO_OBRIGATORIO =
   'O documento de designação é obrigatório para este perfil. Anexe o PDF.';
 
 /** A versão vigente mudou entre a leitura e o envio: a tela apresenta a nova (ADR-0162). */
+const TERMO_SO_INFORMADO =
+  'Esta é a versão vigente, informada no pedido. O beneficiário aceitará o termo no próprio pedido, depois da verificação.';
 const TERMO_DIVERGENTE = 'uniplus.autorizacao.pedido.termo_divergente';
 /** Conflito de concorrência: o comando não foi aplicado e pode ser repetido com a mesma chave. */
 const CONFLITO_DE_CONCORRENCIA = 'uniplus.concorrencia.conflito';
@@ -53,8 +55,11 @@ interface CorpoDoPedido {
   readonly validaAteSugerida?: string;
   /** O pedido declara, na criação, se anexará documento. */
   readonly anexaraDocumento: boolean;
-  /** A versão do termo apresentada; só no pedido próprio sem documento, em que o envio é o aceite. */
-  readonly termoVersaoApresentadaId: string | null;
+  /**
+   * A versão vigente do termo apresentada; obrigatória no pedido de perfil protegido e ausente nos
+   * demais (UNI-REQ-0377). Só no pedido próprio sem documento o envio é o aceite.
+   */
+  readonly termoVersaoApresentadaId?: string;
 }
 
 const FASE: Readonly<Record<FaseDoEnvio, string>> = {
@@ -130,7 +135,7 @@ export class EdicaoDoPedidoDeAcesso {
   /** O perfil de escopo institucional vale para a instituição, sem unidade. */
   readonly exigeUnidade = computed(() => this.perfilSelecionado()?.escopo !== 'instituicao');
   /** Perfil com dado pessoal ou sensível, inclusive os de governança, exige o termo de responsabilidade. */
-  private readonly protegido = computed(() => {
+  readonly protegido = computed(() => {
     const perfil = this.perfilSelecionado();
     return (
       perfil !== null && (perfil.exigeAprovacaoDeProtecaoDeDados || perfil.governanca !== null)
@@ -144,10 +149,13 @@ export class EdicaoDoPedidoDeAcesso {
     () => this.protegido() && this.paraQuem() === 'mim' && this.arquivo() === null,
   );
 
+  /** Fora do aceite no envio, a versão só é informada: o aceite vem no pedido, depois. */
+  readonly observacaoDoTermo = computed(() => (this.aceiteNoEnvio() ? null : TERMO_SO_INFORMADO));
+
   constructor() {
     this.form.controls.paraQuem.valueChanges.subscribe((valor) => this.aoMudarParaQuem(valor));
     effect(() => {
-      if (this.aceiteNoEnvio()) untracked(() => this.termo.garantir());
+      if (this.protegido()) untracked(() => this.termo.garantir());
     });
   }
 
@@ -201,7 +209,7 @@ export class EdicaoDoPedidoDeAcesso {
   }
 
   private faltaOAceite(): boolean {
-    return this.aceiteNoEnvio() && this.termo.apresentada() === null;
+    return this.protegido() && this.termo.apresentada(this.aceiteNoEnvio()) === null;
   }
 
   impedirDuranteEnvio(evento: Event): void {
@@ -224,14 +232,21 @@ export class EdicaoDoPedidoDeAcesso {
         ? {}
         : { validaAteSugerida: fimDoDia(valor.validaAteSugerida) }),
       anexaraDocumento: this.arquivo() !== null,
-      termoVersaoApresentadaId: this.aceiteNoEnvio() ? this.termo.apresentada() : null,
+      ...this.termoApresentado(),
     };
+  }
+
+  /** Só o pedido de perfil protegido apresenta o termo; os demais não enviam o campo. */
+  private termoApresentado(): Pick<CorpoDoPedido, 'termoVersaoApresentadaId'> {
+    const id = this.protegido() ? this.termo.apresentada(this.aceiteNoEnvio()) : null;
+    return id === null ? {} : { termoVersaoApresentadaId: id };
   }
 
   private tratarRecusa(resultado: ApiFailure, corpo: CorpoDoPedido): void {
     const mesmaChave = this.renovarChave(resultado);
     const inconclusiva = mesmaChave && resultado.problem.code !== CONFLITO_DE_CONCORRENCIA;
-    if (resultado.problem.code === TERMO_DIVERGENTE) void this.termo.trocarPelaVigente();
+    if (resultado.problem.code === TERMO_DIVERGENTE)
+      void this.termo.trocarPelaVigente(this.aceiteNoEnvio());
     this.corpoPendente = mesmaChave ? corpo : null;
     this.aguardandoConfirmacao.set(inconclusiva);
     if (!inconclusiva && this.aplicarErrosDeCampo(resultado.problem)) return;

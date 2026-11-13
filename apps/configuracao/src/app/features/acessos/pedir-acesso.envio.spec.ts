@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
 import { ok, pedido, recusa } from './testes';
-import { dublesDoPedirAcesso, montarPedirAcesso } from './pedir-acesso.page.testing';
+import { dublesDoPedirAcesso, montarPedirAcesso, versaoDoTermo } from './pedir-acesso.page.testing';
 
 describe('PedirAcessoPage — prazo, governança e envio', () => {
   const dubles = dublesDoPedirAcesso();
-  const { api, anexos, notificacoes } = dubles;
+  const { api, anexos, notificacoes, termos } = dubles;
   const montar = (primeiraLeituraDosPerfis?: ReturnType<typeof recusa>) =>
     montarPedirAcesso(dubles, primeiraLeituraDosPerfis);
 
@@ -102,6 +102,7 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
   it('envia o perfil de governança quando o PDF está anexado', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: true });
+    termos.vigente.mockReturnValue(of(ok(versaoDoTermo())));
     const { digitar, enviar, fixture } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
@@ -109,9 +110,11 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
     fixture.debugElement.injector
       .get(EdicaoDoPedidoDeAcesso)
       .arquivo.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
+    await fixture.whenStable();
     await enviar();
 
     expect(api.criar).toHaveBeenCalledTimes(1);
+    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v2' });
     expect(anexos.anexar).toHaveBeenCalled();
   });
 
@@ -130,7 +133,6 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
       unidadeId: 'unidade-1',
       justificativa: 'Atendo a comissão do processo seletivo.',
       anexaraDocumento: false,
-      termoVersaoApresentadaId: null,
     });
     expect(anexos.anexar).not.toHaveBeenCalled();
     expect(navegar).toHaveBeenCalledWith(['/acessos/pedidos', 'novo']);

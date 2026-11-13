@@ -70,7 +70,10 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     });
   });
 
-  it('no pedido para outra pessoa não apresenta o termo nem a versão', async () => {
+  const termoInformado = (host: HTMLElement) =>
+    host.querySelector('cfg-termo-de-responsabilidade')?.textContent ?? '';
+
+  it('no pedido para outra pessoa, informa a vigente sem a caixa e envia a versão', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     const { host, campo, digitar, enviar, fixture } = await montarComPerfilSensivel();
 
@@ -79,8 +82,34 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     digitar('input[formcontrolname="beneficiarioEmail"]', 'betina.teste@unifesspa.edu.br');
     await enviar();
 
-    expect(host.querySelector('cfg-termo-de-responsabilidade')).toBeNull();
-    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({ termoVersaoApresentadaId: null });
+    expect(aceite(host)).toBeNull();
+    expect(termoInformado(host)).toContain('aceitará o termo no próprio pedido');
+    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v2' });
+  });
+
+  it('no pedido para outra pessoa com a vigente trocada (409), reapresenta e reenvia sob chave nova', async () => {
+    termos.vigente
+      .mockReturnValueOnce(of(ok(versaoDoTermo())))
+      .mockReturnValueOnce(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 }))));
+    api.criar
+      .mockReturnValueOnce(of(recusa(TERMO_DIVERGENTE, 409, 'x')))
+      .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
+    const { host, campo, digitar, enviar, fixture } = await montarComPerfilSensivel();
+    campo<HTMLInputElement>('input[value="outra"]').click();
+    fixture.detectChanges();
+    digitar('input[formcontrolname="beneficiarioEmail"]', 'betina.teste@unifesspa.edu.br');
+
+    await enviar();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(host.querySelector('[aria-live="polite"]')?.textContent).toContain('envie de novo');
+    await enviar();
+
+    const [primeira, segunda] = api.criar.mock.calls;
+    expect(segunda?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
+    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).not.toBe(
+      primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN),
+    );
   });
 
   it('sem termo publicado, diz isso no lugar do texto e não envia', async () => {
@@ -145,7 +174,7 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).toBe(primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN));
   });
 
-  it('no pedido próprio com documento não apresenta o termo: o beneficiário aceita depois da verificação', async () => {
+  it('no pedido próprio com documento, informa a vigente sem a caixa: o beneficiário aceita depois da verificação', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     const { host, enviar, fixture } = await montarComPerfilSensivel();
 
@@ -155,10 +184,11 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     fixture.detectChanges();
     await enviar();
 
-    expect(host.querySelector('cfg-termo-de-responsabilidade')).toBeNull();
+    expect(aceite(host)).toBeNull();
+    expect(termoInformado(host)).toContain('depois da verificação');
     expect(api.criar.mock.calls[0]?.[0]).toMatchObject({
       anexaraDocumento: true,
-      termoVersaoApresentadaId: null,
+      termoVersaoApresentadaId: 'termo-v2',
     });
   });
 
@@ -172,7 +202,7 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
 
     expect(pagina.host.querySelector('cfg-termo-de-responsabilidade')).toBeNull();
     expect(termos.vigente).not.toHaveBeenCalled();
-    expect(api.criar.mock.calls[0]?.[0]).toMatchObject({ termoVersaoApresentadaId: null });
+    expect(api.criar.mock.calls[0]?.[0]).not.toHaveProperty('termoVersaoApresentadaId');
   });
 
   it('com a criação recusada por falta de termo publicado (422), explica e não segue', async () => {
