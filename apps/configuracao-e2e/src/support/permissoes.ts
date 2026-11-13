@@ -98,3 +98,14 @@ export const PERMISSOES_DA_ISABELLA_SO_CONSULTA = [
 
 /** Diogo, gestor de acessos, publica as versões do termo de responsabilidade. */
 export const PERMISSOES_DO_DIOGO_PUBLICA_O_TERMO = ['autorizacao:termos:publicar'] as const;
+
+/** Kevin, Encarregado de dados, solicita providência sobre concessões e acompanha a dele. */
+export const PERMISSOES_DO_KEVIN_SOLICITA_PROVIDENCIA = [
+  'autorizacao:providencias:solicitar',
+  'autorizacao:concessoes:consultar',
+] as const;
+
+/** Diogo, gestor de acessos, administra as concessões: responde e atende as providências. */
+export const PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES = [
+  'autorizacao:concessoes:administrar',
+] as const;
