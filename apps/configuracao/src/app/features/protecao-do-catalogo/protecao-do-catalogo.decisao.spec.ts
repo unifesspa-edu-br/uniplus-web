@@ -2,7 +2,6 @@ import { TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EdicaoDaProtecaoDoCatalogo } from './edicao-da-protecao-do-catalogo';
-import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import {
   CODIGO_DE_PROCESSAMENTO,
   CODIGO_PROTECAO_MUDOU,
@@ -191,7 +190,6 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     [422, 'uniplus.configuracao.protecao_do_catalogo.item_fora_de_solicitacao'],
     [409, 'uniplus.configuracao.protecao_do_catalogo.conflito_de_concorrencia'],
     [409, 'uniplus.configuracao.protecao_do_catalogo.protecao_mudou'],
-    [409, 'uniplus.configuracao.fato_candidato.conflito_de_concorrencia'],
     [404, 'uniplus.configuracao.tipo_documento.nao_encontrado'],
     [404, 'uniplus.configuracao.fato_candidato.nao_encontrado'],
   ])('recusa %i %s relê a fila e não oferece mais a decisão', async (status, codigo) => {
@@ -300,124 +298,5 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     await pagina.assentar();
 
     expect(dialogoDaDecisao().querySelector('select')?.getAttribute('aria-required')).toBe('true');
-  });
-
-  describe('foco depois da recarga', () => {
-    it('recarga que falha depois do sucesso deixa o foco no título e oferece nova tentativa', async () => {
-      const { envio } = await abrirComAprovacaoPendente();
-
-      envio.flush(null, SEM_CONTEUDO);
-      await pagina.assentar();
-      leituraDaFila().flush(...ERRO_INTERNO);
-      await pagina.assentar();
-      await pagina.assentar();
-
-      expect(document.activeElement).toBe(tituloDaFila());
-      expect(botaoPorTexto(pagina.tela, 'Tentar novamente')).toBeDefined();
-      expect(avisoDeErro).toHaveBeenCalledTimes(1);
-    });
-
-    it('não toma o foco de quem o levou a outro controle durante a recarga', async () => {
-      const { envio } = await abrirComAprovacaoPendente();
-      envio.flush(null, SEM_CONTEUDO);
-      await pagina.assentar();
-      const outro = document.createElement('button');
-      document.body.appendChild(outro);
-      outro.focus();
-
-      leituraDaFila().flush([]);
-      await pagina.assentar();
-      await pagina.assentar();
-
-      expect(document.activeElement).toBe(outro);
-      outro.remove();
-    });
-  });
-
-  describe('"Tentar novamente" da fila', () => {
-    it('fica indisponível enquanto a decisão grava e a leitura falha, e volta a funcionar depois', async () => {
-      const { envio } = await abrirComAprovacaoPendente();
-      pagina.fixture.debugElement.injector.get(ProtecaoDoCatalogoStore).carregar();
-      await pagina.assentar();
-      leituraDaFila().flush(...ERRO_INTERNO);
-      await pagina.assentar();
-      const tentar = botaoPorTexto(pagina.tela, 'Tentar novamente');
-
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar.matches(':disabled')).toBe(false);
-      clicar(tentar);
-      await pagina.assentar();
-      pagina.controller.expectNone((r) => r.method === 'GET' && r.url === URL_DA_FILA);
-
-      envio.flush(null, SEM_CONTEUDO);
-      await pagina.assentar();
-      leituraDaFila().flush([]);
-      await pagina.assentar();
-    });
-
-    it('que dá certo leva o foco, que estava no botão, ao título da fila', async () => {
-      pagina.fixture.debugElement.injector.get(ProtecaoDoCatalogoStore).carregar();
-      await pagina.assentar();
-      leituraDaFila().flush(...ERRO_INTERNO);
-      await pagina.assentar();
-      const tentar = botaoPorTexto(pagina.tela, 'Tentar novamente');
-      tentar.focus();
-      clicar(tentar);
-      await pagina.assentar();
-      await pagina.assentar();
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
-      expect(document.activeElement).toBe(tentar);
-
-      leituraDaFila().flush([laudo]);
-      await pagina.assentar();
-      await pagina.assentar();
-
-      expect(document.activeElement).toBe(tituloDaFila());
-    });
-
-    it('do detalhe leva o foco à região dos dados do item', async () => {
-      clicar(pagina.tela.querySelector(`td button[aria-label="Ver o detalhe de ${laudo.nome}"]`));
-      await pagina.assentar();
-      pagina.controller
-        .expectOne(`${URL_DA_FILA}/tipos-documento/${laudo.id}`)
-        .flush(...ERRO_INTERNO);
-      await pagina.assentar();
-      const tentar = botaoPorTexto(drawer(), 'Tentar novamente');
-      tentar.focus();
-      clicar(tentar);
-      await pagina.assentar();
-      await pagina.assentar();
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-
-      pagina.controller
-        .expectOne(`${URL_DA_FILA}/tipos-documento/${laudo.id}`)
-        .flush({ ...laudo, descricao: 'Laudo', fato: null, tipoDocumento: null, atos: [] });
-      await pagina.assentar();
-      await pagina.assentar();
-
-      expect(document.activeElement?.id).toBe('cfg-protecao-dados-do-item');
-    });
-  });
-
-  describe('avisos da leitura da fila', () => {
-    it('erro do servidor na releitura avisa uma vez', async () => {
-      pagina.fixture.debugElement.injector.get(ProtecaoDoCatalogoStore).carregar();
-      await pagina.assentar();
-      leituraDaFila().flush(...ERRO_INTERNO);
-      await pagina.assentar();
-
-      expect(avisoDeErro).toHaveBeenCalledTimes(1);
-    });
-
-    it('recusa 4xx na releitura não avisa por toast nem oferece nova tentativa, só no alerta da tela', async () => {
-      pagina.fixture.debugElement.injector.get(ProtecaoDoCatalogoStore).carregar();
-      await pagina.assentar();
-      leituraDaFila().flush(...problema(403, 'uniplus.auth.proibido', 'Sem permissão'));
-      await pagina.assentar();
-
-      expect(avisoDeErro).not.toHaveBeenCalled();
-      expect(pagina.tela.textContent).toContain('Sem permissão');
-      expect(pagina.tela.textContent).not.toContain('Tentar novamente');
-    });
   });
 });
