@@ -69,7 +69,7 @@ export const PERMISSAO = {
     inscricoesConsultar: 'selecao:inscricoes:consultar',
     inscricoesEmitirComprovante: 'selecao:inscricoes:emitir-comprovante',
     leiautesInepConsultar: 'selecao:leiautes-inep:consultar',
-    motivosDecisaoIsencaoManter: 'selecao:motivos-decisao-isencao:manter',
+    motivosDecisaoIsencaoManter: 'selecao:motivos-de-decisao:manter',
     notasEnemImportar: 'selecao:notas-enem:importar',
     obrigatoriedadesLegaisManter: 'selecao:obrigatoriedades-legais:manter',
     processosAcompanhar: 'selecao:processos:acompanhar',
