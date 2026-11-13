@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   CATALOGO,
   PERMISSAO_DE_CONSULTAR,
@@ -41,6 +42,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
   afterEach(() => {
     p.atenderApoios();
     p.atenderPendencias();
+    atenderHistoricosDoDrawer(p.http);
     p.http.verify();
   });
 
