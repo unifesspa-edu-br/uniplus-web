@@ -14,6 +14,7 @@ export const PERMISSAO = {
     perfisConsultarVersoes: 'autorizacao:perfis:consultar-versoes',
     perfisManter: 'autorizacao:perfis:manter',
     permissoesConsultarCatalogo: 'autorizacao:permissoes:consultar-catalogo',
+    providenciasSolicitar: 'autorizacao:providencias:solicitar',
     revisoesConduzir: 'autorizacao:revisoes:conduzir',
     revisoesConsultar: 'autorizacao:revisoes:consultar',
     revisoesReverProtecaoDeDados: 'autorizacao:revisoes:rever-protecao-de-dados',

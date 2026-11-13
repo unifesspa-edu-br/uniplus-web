@@ -83,4 +83,8 @@ describe('PERMISSAO.autorizacao', () => {
       PERMISSAO.autorizacao.perfisConsultarVersoes,
     ]).toEqual(['autorizacao:pedidos:consultar', 'autorizacao:perfis:consultar-versoes']);
   });
+
+  it('declara quem solicita providência sobre uma concessão', () => {
+    expect(PERMISSAO.autorizacao.providenciasSolicitar).toBe('autorizacao:providencias:solicitar');
+  });
 });
