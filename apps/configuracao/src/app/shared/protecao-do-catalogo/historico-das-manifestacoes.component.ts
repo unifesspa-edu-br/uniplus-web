@@ -20,21 +20,50 @@ import {
   FalhaDeLeituraComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { RecusaDaLeituraComponent, recusaDe } from '../recusa-da-leitura';
 import { ManifestacoesDaProtecaoComponent } from './manifestacoes-da-protecao.component';
+
+/**
+ * De onde o histórico é lido: da fila da proteção de dados, por quem aprova, consulta ou se
+ * manifesta, ou da tela de cadastro do item, por quem a administra. Só se lê; não há ação.
+ */
+export type OrigemDoHistoricoDasManifestacoes = 'fila' | 'cadastro';
 
 interface ItemDoHistorico {
   readonly cadastro: CadastroDoCatalogo;
   readonly id: string;
+  readonly origem: OrigemDoHistoricoDasManifestacoes;
+}
+
+/** A rota do histórico de cada cadastro na tela de cadastro do item. */
+const ROTA_NO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> = {
+  TIPO_DOCUMENTO: 'tipos-documento',
+  FATO: 'fatos-candidato',
+};
+
+/** O caminho do histórico do item, a partir de `/api/configuracao/admin`. */
+function caminhoDoHistorico(item: ItemDoHistorico): string {
+  const id = encodeURIComponent(item.id);
+  return item.origem === 'cadastro'
+    ? `${ROTA_NO_CADASTRO[item.cadastro]}/${id}/protecao/manifestacoes`
+    : `protecao-do-catalogo/${SEGMENTO_DO_CADASTRO[item.cadastro]}/${id}/manifestacoes`;
 }
 
 /**
- * Todas as manifestações do item, de todos os ciclos, para quem aprova ou consulta. A leitura é
- * registrada pela API: sem o registro ela responde 503, e a tela mostra a falha sem nenhum dado.
+ * Todas as manifestações técnicas do item, de todos os ciclos: parecer, texto, autor, instante e
+ * situação. A leitura é registrada pela API: sem o registro ela responde 503, e a tela mostra a
+ * falha sem nenhum dado e oferece nova tentativa. A recusa por permissão ou item inexistente não
+ * se repete.
  */
 @Component({
   selector: 'cfg-historico-das-manifestacoes',
   standalone: true,
-  imports: [FalhaDeLeituraComponent, ManifestacoesDaProtecaoComponent, SpinnerComponent],
+  imports: [
+    FalhaDeLeituraComponent,
+    ManifestacoesDaProtecaoComponent,
+    RecusaDaLeituraComponent,
+    SpinnerComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="cfg-detalhe-secao" aria-labelledby="cfg-historico-das-manifestacoes">
@@ -48,6 +77,9 @@ interface ItemDoHistorico {
         titulo="Não foi possível carregar as manifestações"
         [leitura]="leitura"
       />
+      <cfg-recusa-da-leitura naoEncontrado="Item não encontrado" [recusa]="recusa()">
+        Feche o painel e confira a lista.
+      </cfg-recusa-da-leitura>
       @if (manifestacoes(); as lista) {
         <cfg-manifestacoes-da-protecao
           [manifestacoes]="lista"
@@ -64,6 +96,7 @@ export class HistoricoDasManifestacoesComponent {
   readonly id = input.required<string>();
   /** Cresce a cada manifestação registrada na tela: o histórico é relido. */
   readonly versao = input(0);
+  readonly origem = input<OrigemDoHistoricoDasManifestacoes>('fila');
 
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
@@ -78,9 +111,14 @@ export class HistoricoDasManifestacoesComponent {
   protected readonly manifestacoes = computed(() =>
     this.consulta.problem() === null && !this.consulta.error() ? this.consulta.data() : undefined,
   );
+  /** Sem permissão ou item inexistente: repetir a leitura não muda a resposta. */
+  protected readonly recusa = computed(() =>
+    recusaDe(this.consulta.problem(), this.textoDaFalha() ?? ''),
+  );
   protected readonly leitura = acompanharLeitura({
     assunto: 'manifestações',
-    falha: computed(() => this.textoDaFalha()),
+    falha: computed(() => (this.recusa() ? null : this.textoDaFalha())),
+    recusada: computed(() => this.recusa() !== null),
     pendente: this.consulta.isLoading,
     recarregar: () => this.consulta.reload(),
     destino: () => document.getElementById('cfg-historico-das-manifestacoes'),
@@ -88,7 +126,7 @@ export class HistoricoDasManifestacoesComponent {
 
   constructor() {
     effect(() => {
-      const item = { cadastro: this.cadastro(), id: this.id() };
+      const item = { cadastro: this.cadastro(), id: this.id(), origem: this.origem() };
       this.versao();
       untracked(() => this.ler(item));
     });
@@ -96,7 +134,8 @@ export class HistoricoDasManifestacoesComponent {
 
   private ler(item: ItemDoHistorico): void {
     const atual = this.item();
-    if (atual?.id === item.id && atual.cadastro === item.cadastro) this.consulta.reload();
+    const mesmo = atual?.id === item.id && atual.cadastro === item.cadastro;
+    if (mesmo && atual.origem === item.origem) this.consulta.reload();
     else this.item.set(item);
   }
 
@@ -107,7 +146,6 @@ export class HistoricoDasManifestacoesComponent {
   }
 
   private url(item: ItemDoHistorico): string {
-    const segmento = SEGMENTO_DO_CADASTRO[item.cadastro];
-    return `${this.basePath}/api/configuracao/admin/protecao-do-catalogo/${segmento}/${item.id}/manifestacoes`;
+    return `${this.basePath}/api/configuracao/admin/${caminhoDoHistorico(item)}`;
   }
 }
