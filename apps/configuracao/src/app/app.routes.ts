@@ -175,7 +175,7 @@ export const appRoutes: Routes = [
       {
         path: 'protecao-do-catalogo',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['protecao-do-catalogo'])],
-        data: { breadcrumb: 'Proteção de Dados do Catálogo' },
+        data: { breadcrumb: 'Proteção de dados dos tipos de documento e dos fatos do candidato' },
         loadChildren: () =>
           import('./features/protecao-do-catalogo/protecao-do-catalogo.routes').then(
             (m) => m.PROTECAO_DO_CATALOGO_ROUTES,

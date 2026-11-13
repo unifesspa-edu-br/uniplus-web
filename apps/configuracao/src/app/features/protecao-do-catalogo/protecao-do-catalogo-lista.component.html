@@ -17,7 +17,7 @@
     >
       <table>
         <caption class="sr-only">
-          Itens do catálogo aguardando a decisão da proteção de dados. Use o nome para abrir o
+          Tipos de documento e fatos do candidato aguardando a decisão da proteção de dados. Use o nome para abrir o
           detalhe.
         </caption>
         <thead>
@@ -46,8 +46,8 @@
               <td data-label="Sensibilidade" class="u-nowrap-desktop">
                 {{ rotulo(classificacoes, item.classificacaoProtecao) }}
               </td>
-              <td data-label="Ciclo">{{ item.aprovacao.ciclo }}</td>
-              <td data-label="Manifestação">
+              <td data-label="Ciclo" class="u-nowrap-desktop">{{ item.aprovacao.ciclo }}</td>
+              <td data-label="Manifestação" class="u-nowrap-desktop">
                 @if (item.aprovacao.manifestadaEm; as em) {
                   {{ data(em) }}
                   @if (item.aprovacao.manifestacaoDesfavoravel) {
@@ -65,7 +65,7 @@
   } @else if (!carregando() && !erroDeCarga()) {
     <ui-empty-state
       heading="Nenhum item aguardando a sua decisão"
-      description="Quando o administrador do catálogo enviar uma solicitação, os itens aparecem aqui."
+      description="Quando o administrador dos tipos de documento e dos fatos do candidato enviar uma solicitação, os itens aparecem aqui."
     />
   }
 </section>
