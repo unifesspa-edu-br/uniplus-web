@@ -14,6 +14,8 @@
 </cfg-recusa-da-leitura>
 @if (store.carregando()) {
 <p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a providência…</p>
+} @if (tramitacao.aviso(); as aviso) {
+<ui-alert variant="warning" heading="A providência mudou">{{ aviso }}</ui-alert>
 } @if (store.dados(); as p) {
 <section class="panel" aria-labelledby="cfg-providencia-resumo">
   <div class="panel-head">
@@ -118,7 +120,7 @@
   confirmVariant="primary"
   ajuda="A resposta mantém a concessão; o motivo fica na trilha e é enviado a quem solicitou."
   [visible]="visivel('responder')"
-  (visibleChange)="mudarVisibilidade($event)"
+  (visibleChange)="mudarVisibilidade('responder', $event)"
   [motivo]="tramitacao.motivo"
   [tentou]="tramitacao.tentou()"
   [erro]="tramitacao.erro()"
@@ -128,7 +130,7 @@
 
 <cfg-revogar-concessao-dialog
   [visible]="visivel('atender')"
-  (visibleChange)="mudarVisibilidade($event)"
+  (visibleChange)="mudarVisibilidade('atender', $event)"
   [email]="tramitacao.email"
   [motivo]="tramitacao.motivo"
   [tentou]="tramitacao.tentou()"
