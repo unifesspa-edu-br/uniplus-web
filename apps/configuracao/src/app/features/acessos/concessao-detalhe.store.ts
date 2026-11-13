@@ -9,15 +9,23 @@ import {
 import { desfechoDaLeitura } from './desfecho-da-leitura';
 import { notificarFalhasDeLeitura } from './falha-de-servidor';
 
+/** O endereço e o tipo de mídia de cada leitura da tela. */
+const LEITURAS = {
+  concessao: { sufixo: '', recurso: 'concessao' },
+  trilha: { sufixo: '/trilha', recurso: 'trilha-da-concessao' },
+} as const;
+
+type LeituraDaConcessao = keyof typeof LEITURAS;
+
 /** Uma concessão com a trilha: lidas juntas, a falha de qualquer uma é a falha da tela. */
 @Injectable()
 export class ConcessaoDetalheStore {
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
   private readonly problemas = inject(ProblemI18nService);
   readonly id = signal<string | undefined>(undefined);
-  private readonly concessao = useApiResource<ConcessaoDto>(() => this.leitura('', 'concessao'));
+  private readonly concessao = useApiResource<ConcessaoDto>(() => this.leitura('concessao'));
   private readonly consultaDaTrilha = useApiResource<readonly EventoDaTrilhaDto[]>(() =>
-    this.leitura('/trilha', 'trilha-da-concessao'),
+    this.leitura('trilha'),
   );
   private readonly desfecho = desfechoDaLeitura(
     [this.concessao, this.consultaDaTrilha],
@@ -52,7 +60,8 @@ export class ConcessaoDetalheStore {
     return this.consultaDaTrilha.reload() || daConcessao;
   }
 
-  private leitura(sufixo: string, recurso: string) {
+  private leitura(qual: LeituraDaConcessao) {
+    const { sufixo, recurso } = LEITURAS[qual];
     const id = this.id();
     if (id === undefined) return undefined;
     return {

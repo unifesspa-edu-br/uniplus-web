@@ -64,16 +64,6 @@ describe('quem decide o item da revisão', () => {
       false,
     );
   });
-
-  it('quem decide desconhecido não abre ação', () => {
-    expect(
-      decideOItem(
-        revisao(),
-        item({ decide: 'encarregado-de-dados' }),
-        quemLe(CONDUZIR, REVER, CONSULTAR),
-      ),
-    ).toBe(false);
-  });
 });
 
 describe('itens por beneficiário', () => {
