@@ -86,5 +86,15 @@ export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = [
   'autorizacao:concessoes:consultar',
 ] as const;
 
+/**
+ * Isabella, Encarregado de dados, só consulta os pedidos, as concessões e as versões dos perfis:
+ * abre as telas de leitura e não decide, revoga, mantém nem pede por ninguém.
+ */
+export const PERMISSOES_DA_ISABELLA_SO_CONSULTA = [
+  'autorizacao:pedidos:consultar',
+  'autorizacao:concessoes:consultar',
+  'autorizacao:perfis:consultar-versoes',
+] as const;
+
 /** Diogo, gestor de acessos, publica as versões do termo de responsabilidade. */
 export const PERMISSOES_DO_DIOGO_PUBLICA_O_TERMO = ['autorizacao:termos:publicar'] as const;
