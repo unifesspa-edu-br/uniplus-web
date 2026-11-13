@@ -59,6 +59,9 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
   instalacao_confirmada: 'Instalação confirmada',
   instalacao_cancelada: 'Instalação cancelada',
   instalacao_expirada: 'Instalação expirada',
+  termo_aceito: 'Termo de responsabilidade aceito',
+  termo_exigido: 'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
+  termo_excecao_da_instalacao: 'Instalação sem o aceite do termo de responsabilidade',
 };
 
 const SENSIBILIDADE: Readonly<Record<string, string>> = {

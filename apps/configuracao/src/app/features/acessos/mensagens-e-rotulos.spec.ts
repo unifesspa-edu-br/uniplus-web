@@ -139,4 +139,14 @@ describe('detalhe da trilha', () => {
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
   });
+
+  it('nomeia em pt-BR os eventos do termo de responsabilidade nas trilhas do pedido e da concessão', () => {
+    expect(tipoDeEvento('termo_aceito')).toBe('Termo de responsabilidade aceito');
+    expect(tipoDeEvento('termo_exigido')).toBe(
+      'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
+    );
+    expect(tipoDeEvento('termo_excecao_da_instalacao')).toBe(
+      'Instalação sem o aceite do termo de responsabilidade',
+    );
+  });
 });
