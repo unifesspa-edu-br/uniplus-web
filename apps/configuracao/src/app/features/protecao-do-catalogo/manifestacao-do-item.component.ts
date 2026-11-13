@@ -4,9 +4,10 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { map } from 'rxjs';
 import type { DetalheDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { contarCaracteres } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { ManifestacaoDoItem } from './manifestacao-do-item';
-import { PARECERES, TEXTO_MAXIMO_DA_MANIFESTACAO } from './manifestacoes';
+import { PARECERES } from './manifestacoes';
 
 /** O formulário da manifestação técnica: parecer e texto, enviados no ciclo lido no detalhe. */
 @Component({
@@ -20,10 +21,9 @@ export class ManifestacaoDoItemComponent {
   readonly detalhe = input.required<DetalheDaProtecaoDoCatalogoDto>();
   protected readonly manifestacao = inject(ManifestacaoDoItem);
   protected readonly pareceres = PARECERES;
-  protected readonly limite = TEXTO_MAXIMO_DA_MANIFESTACAO;
   protected readonly form = this.manifestacao.form;
   protected readonly tamanho = toSignal(
-    this.form.controls.texto.valueChanges.pipe(map((texto) => texto.length)),
+    this.form.controls.texto.valueChanges.pipe(map(contarCaracteres)),
     { initialValue: 0 },
   );
   private readonly estado = toSignal(this.form.statusChanges, { initialValue: this.form.status });

@@ -252,10 +252,10 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       expect(document.activeElement).toBe(campo);
     });
 
-    it('o campo limita a 2.000 caracteres e o contador diz "N de 2.000"', async () => {
+    it('o contador diz "N de 2.000" contando caracteres, e não unidades UTF-16', async () => {
       const tela = await abrirDialogo();
 
-      expect(campoDaJustificativa(tela).getAttribute('maxlength')).toBe('2000');
+      expect(campoDaJustificativa(tela).hasAttribute('maxlength')).toBe(false);
       expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe(
         '0 de 2.000',
       );
@@ -263,6 +263,23 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
       expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe(
         '19 de 2.000',
       );
+      digitar(campoDaJustificativa(tela), '😀'.repeat(3));
+      expect(tela.querySelector('#cfg-justificativa-contador')?.textContent?.trim()).toBe(
+        '3 de 2.000',
+      );
+    });
+
+    it('2.000 caracteres fora do plano básico cabem no limite e são enviados', async () => {
+      const tela = await abrirDialogo();
+      digitar(campoDaJustificativa(tela), '😀'.repeat(2000));
+
+      clicar(confirmar(tela, 'Reprovar item'));
+
+      const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
+      expect(post.request.body.justificativa).toBe('😀'.repeat(2000));
+      post.flush(null, { status: 204, statusText: 'No Content' });
+      await assentar();
+      controller.expectOne((r) => r.method === 'GET' && r.url === URL).flush([]);
     });
 
     it('acima de 2.000 caracteres não envia e informa o limite no campo', async () => {
