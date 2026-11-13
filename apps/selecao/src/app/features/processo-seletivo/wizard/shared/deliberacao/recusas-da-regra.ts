@@ -30,7 +30,7 @@ const RECUSA_POR_CODIGO: ReadonlyMap<string, RecusaDaRegra> = new Map([
   ],
   [
     'suplentes_invalidos',
-    { campo: 'suplentes', mensagem: 'O número de suplentes é um inteiro de 0 em diante.' },
+    { campo: 'suplentes', mensagem: 'O número de suplentes é um inteiro de 0 até 2.147.483.647.' },
   ],
   [
     'modo_de_deliberacao_invalido',

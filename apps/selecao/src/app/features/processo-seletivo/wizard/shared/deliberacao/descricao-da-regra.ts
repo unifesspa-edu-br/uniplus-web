@@ -14,9 +14,14 @@ function rotuloDe<T extends string>(opcoes: readonly OpcaoDaRegra<T>[], valor: T
   return opcoes.find((opcao) => opcao.valor === valor)?.rotulo.toLowerCase() ?? '';
 }
 
+const quantidade = (valor: string, singular: string, plural: string): string =>
+  `${valor} ${valor === '1' ? singular : plural}`;
+
+const suplentes = (valor: string): string =>
+  valor === '0' ? 'sem suplentes' : quantidade(valor, 'suplente', 'suplentes');
+
 function composicao(regra: RegraDeDeliberacaoDaBanca): string {
-  const suplentes = regra.suplentes === '0' ? 'sem suplentes' : `${regra.suplentes} suplentes`;
-  return `${regra.integrantes} titulares, ${suplentes}`;
+  return `${quantidade(regra.integrantes, 'titular', 'titulares')}, ${suplentes(regra.suplentes)}`;
 }
 
 function votacao(regra: RegraDeDeliberacaoDaBanca): readonly string[] {
