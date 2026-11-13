@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { PARECERES } from './manifestacoes';
+import { PARECERES } from '../../shared/protecao-do-catalogo/manifestacoes';
 import {
   CONSULTAR,
   MANIFESTAR,

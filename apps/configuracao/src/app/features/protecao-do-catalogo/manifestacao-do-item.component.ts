@@ -7,7 +7,7 @@ import { AlertComponent, SpinnerComponent } from '@uniplus/shared-ui/components'
 import { contarCaracteres } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
 import { ManifestacaoDoItem } from './manifestacao-do-item';
-import { PARECERES } from './manifestacoes';
+import { PARECERES } from '../../shared/protecao-do-catalogo/manifestacoes';
 
 /** O formulário da manifestação técnica: parecer e texto, enviados no ciclo lido no detalhe. */
 @Component({

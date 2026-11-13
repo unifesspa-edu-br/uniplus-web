@@ -13,7 +13,7 @@ import { rotuloDaSituacaoDaManifestacao, rotuloDoParecer } from './manifestacoes
   standalone: true,
   imports: [TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  styleUrl: '../../shared/protecao-do-catalogo/atos-da-protecao.css',
+  styleUrl: './atos-da-protecao.css',
   templateUrl: './manifestacoes-da-protecao.component.html',
 })
 export class ManifestacoesDaProtecaoComponent {
