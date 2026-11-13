@@ -17,6 +17,8 @@ import {
   abrirItem,
   botaoDoRodape,
   clicar,
+  confirmarNoDialogo,
+  dialogoDaDecisao,
   detalheDoFato,
   detalheDoLaudo,
   drawerDoItem as drawer,
@@ -55,6 +57,16 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     item: ItemDaProtecaoDoCatalogoDto,
     detalhe: DetalheDaProtecaoDoCatalogoDto,
   ): Promise<void> => abrirItem(pagina, item, detalhe);
+
+  /** A aprovação passa pelo diálogo, que aceita a justificativa opcional (UNI-REQ-0374). */
+  async function aprovarPeloDialogo(tela: HTMLElement): Promise<void> {
+    if (!fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).decisaoAberta()) {
+      clicar(botaoDoRodape(tela, 'Aprovar'));
+      await assentar();
+    }
+    clicar(confirmarNoDialogo(tela, 'Aprovar item'));
+    await assentar();
+  }
 
   it('lista Cadastro, Item, Sensibilidade, Ciclo e Manifestação, sem código, hipótese, finalidade nem botões', async () => {
     const tela = await carregar([laudo, rural]);
@@ -158,7 +170,9 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
 
     const painel = drawer(tela);
     expect(painel?.textContent).toContain('Item não encontrado');
-    expect(painel?.textContent).toContain('O tipo de documento ou o fato do candidato não existe mais.');
+    expect(painel?.textContent).toContain(
+      'O tipo de documento ou o fato do candidato não existe mais.',
+    );
     expect(painel?.textContent).not.toContain('Tentar novamente');
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Fechar')).toBeDefined();
@@ -178,7 +192,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
   it('aprovar leva a proteção conferida, com Idempotency-Key; o drawer fecha e a lista é relida', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(tela, 'Aprovar'));
+    await aprovarPeloDialogo(tela);
 
     const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
     expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
@@ -207,13 +221,16 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     await abrir(tela, laudo, detalheDoLaudo);
     const edicao = fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo);
     edicao.aprovar();
+    edicao.confirmarDecisao();
     const post = controller.expectOne((r) => r.method === 'POST' && r.url === URL);
 
-    edicao.aprovar();
+    edicao.confirmarDecisao();
     edicao.abrirDecisao('REPROVAR');
+    edicao.fecharDecisao();
     edicao.fecharDetalhe();
     expect(edicao.detalheAberto()).toBe(true);
-    expect(edicao.decisaoAberta()).toBe(false);
+    expect(edicao.decisaoAberta()).toBe(true);
+    expect(edicao.decisaoEmCurso()).toBe('APROVAR');
     controller.expectNone((r) => r.method === 'POST');
 
     post.flush(null, { status: 204, statusText: 'No Content' });
@@ -242,7 +259,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
   it('quando a proteção mudou, não repete a decisão: relê a lista e avisa para decidir de novo', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(tela, 'Aprovar'));
+    await aprovarPeloDialogo(tela);
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -270,7 +287,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
   it('item que já saiu da solicitação (decidido por outra pessoa) relê a lista em vez de manter os botões', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(tela, 'Aprovar'));
+    await aprovarPeloDialogo(tela);
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -288,10 +305,10 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
   });
 
-  it('a recusa de uma aprovação fica no drawer, sem fechá-lo', async () => {
+  it('a recusa de uma aprovação fica no diálogo, sem fechar o drawer', async () => {
     const tela = await carregar([laudo]);
     await abrir(tela, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(tela, 'Aprovar'));
+    await aprovarPeloDialogo(tela);
 
     controller
       .expectOne((r) => r.method === 'POST' && r.url === URL)
@@ -307,7 +324,9 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     expect(fixture.debugElement.injector.get(EdicaoDaProtecaoDoCatalogo).detalheAberto()).toBe(
       true,
     );
-    expect(drawer(tela)?.textContent).toContain('A hipótese legal não cabe na classificação');
+    expect(dialogoDaDecisao(tela)?.textContent).toContain(
+      'A hipótese legal não cabe na classificação',
+    );
   });
 
   it('a mesma decisão repetida depois de erro do servidor reusa a chave; a recusa 4xx troca a chave', async () => {
@@ -318,22 +337,22 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
         JSON.stringify({ status, title: 'Falha' }),
         { status, statusText: 'Falha', headers: { 'content-type': 'application/problem+json' } },
       ] as const;
-    const postar = () => {
-      clicar(botaoDoRodape(tela, 'Aprovar'));
+    const postar = async () => {
+      await aprovarPeloDialogo(tela);
       return controller.expectOne((r) => r.method === 'POST' && r.url === URL);
     };
 
-    const primeira = postar();
+    const primeira = await postar();
     const chave = primeira.request.headers.get('Idempotency-Key');
     primeira.flush(...falha(503));
     await assentar();
 
-    const segunda = postar();
+    const segunda = await postar();
     expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
     segunda.flush(...falha(422));
     await assentar();
 
-    const terceira = postar();
+    const terceira = await postar();
     expect(terceira.request.headers.get('Idempotency-Key')).not.toBe(chave);
     terceira.flush(null, { status: 204, statusText: 'No Content' });
     await assentar();

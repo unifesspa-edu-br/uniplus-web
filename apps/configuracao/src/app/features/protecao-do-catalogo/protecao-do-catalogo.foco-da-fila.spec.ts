@@ -40,7 +40,12 @@ describe('ProtecaoDoCatalogoPage — foco e leitura da fila depois da decisão',
 
   async function abrirComAprovacaoPendente() {
     await pagina.abrirDetalhe();
-    const aprovar = botaoPorTexto(drawer(), 'Aprovar');
+    clicar(botaoPorTexto(drawer(), 'Aprovar'));
+    await pagina.assentar();
+    const aprovar = botaoPorTexto(
+      pagina.tela.querySelector('ui-dialog') as HTMLElement,
+      'Aprovar item',
+    );
     aprovar.focus();
     clicar(aprovar);
     await pagina.assentar();

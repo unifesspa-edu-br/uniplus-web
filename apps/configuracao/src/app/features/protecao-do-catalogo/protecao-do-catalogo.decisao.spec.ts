@@ -47,7 +47,9 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
 
   async function abrirComAprovacaoPendente() {
     await pagina.abrirDetalhe();
-    const aprovar = botaoPorTexto(drawer(), 'Aprovar');
+    clicar(botaoPorTexto(drawer(), 'Aprovar'));
+    await pagina.assentar();
+    const aprovar = botaoPorTexto(dialogoDaDecisao(), 'Aprovar item');
     aprovar.focus();
     clicar(aprovar);
     await pagina.assentar();
@@ -69,24 +71,19 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     return confirmar;
   }
 
-  it('aprovar pendente ocupa o botão sem tirar-lhe o foco, recusa Fechar e Esc e não reenvia', async () => {
+  it('aprovar pendente ocupa o botão do diálogo sem tirar-lhe o foco, recusa Cancelar e Esc e não reenvia', async () => {
     const { aprovar, envio } = await abrirComAprovacaoPendente();
 
-    expect(aprovar.matches(':disabled')).toBe(false);
     expect(aprovar.getAttribute('aria-disabled')).toBe('true');
     expect(aprovar.getAttribute('aria-busy')).toBe('true');
     expect(document.activeElement).toBe(aprovar);
-    expect(drawer().querySelector('[role="status"]')?.textContent?.trim()).toBe(
-      'Registrando a decisão.',
-    );
-    expect(drawer().querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
-      true,
-    );
-    expect(botaoPorTexto(drawer(), 'Fechar').disabled).toBe(true);
-    drawer().dispatchEvent(new Event('cancel', { cancelable: true }));
+    expect(botaoPorTexto(dialogoDaDecisao(), 'Cancelar').disabled).toBe(true);
+    dialogoDaDecisao()
+      .querySelector('dialog')
+      ?.dispatchEvent(new Event('cancel', { cancelable: true }));
     clicar(aprovar);
     await pagina.assentar();
-    expect(drawer().hasAttribute('open')).toBe(true);
+    expect(dialogoDaDecisao().querySelector('dialog')?.hasAttribute('open')).toBe(true);
     expect(postagens()).toHaveLength(0);
 
     envio.flush(null, SEM_CONTEUDO);
@@ -105,9 +102,9 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
 
     expect(avisoDeErro).toHaveBeenCalledTimes(1);
     expect(avisoDeSucesso).not.toHaveBeenCalled();
-    expect(aprovar.getAttribute('aria-disabled')).toBeNull();
+    expect(aprovar.getAttribute('aria-disabled')).toBe('false');
     expect(document.activeElement).toBe(aprovar);
-    expect(drawer().textContent).toContain('Erro interno');
+    expect(dialogoDaDecisao().textContent).toContain('Erro interno');
 
     clicar(aprovar);
     await pagina.assentar();
@@ -146,7 +143,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     expect(avisoDeErro).not.toHaveBeenCalled();
   });
 
-  it('recusa 4xx da decisão não vira aviso de erro e fica no drawer', async () => {
+  it('recusa 4xx da decisão não vira aviso de erro e fica no diálogo', async () => {
     const { envio } = await abrirComAprovacaoPendente();
 
     envio.flush(
@@ -159,8 +156,8 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     await pagina.assentar();
 
     expect(avisoDeErro).not.toHaveBeenCalled();
-    expect(drawer().textContent).toContain('Sem quem aprove');
-    expect(drawer().hasAttribute('open')).toBe(true);
+    expect(dialogoDaDecisao().textContent).toContain('Sem quem aprove');
+    expect(dialogoDaDecisao().querySelector('dialog')?.hasAttribute('open')).toBe(true);
   });
 
   it('proteção alterada por outra pessoa fecha o drawer, relê a fila e a próxima decisão ganha chave nova', async () => {
@@ -178,6 +175,8 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
 
     await pagina.abrirDetalhe();
     clicar(botaoPorTexto(drawer(), 'Aprovar'));
+    await pagina.assentar();
+    clicar(botaoPorTexto(dialogoDaDecisao(), 'Aprovar item'));
     await pagina.assentar();
     const nova = umaPostagem();
     expect(nova.request.headers.get('Idempotency-Key')).not.toBe(chave);
@@ -234,7 +233,7 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     expect(avisoDeSucesso).toHaveBeenCalledExactlyOnceWith('Ajuste recomendado', laudo.nome);
   });
 
-  it('decisão ainda em processamento mantém o drawer, não relê a fila e repete com a mesma chave', async () => {
+  it('decisão ainda em processamento mantém o diálogo, não relê a fila e repete com a mesma chave', async () => {
     const { aprovar, envio } = await abrirComAprovacaoPendente();
     const chave = envio.request.headers.get('Idempotency-Key');
 
@@ -242,8 +241,8 @@ describe('ProtecaoDoCatalogoPage — decisão, recusas e foco', () => {
     await pagina.assentar();
 
     expect(avisoDeErro).not.toHaveBeenCalled();
-    expect(drawer().hasAttribute('open')).toBe(true);
-    expect(drawer().textContent).toContain('A decisão ainda está em processamento');
+    expect(dialogoDaDecisao().querySelector('dialog')?.hasAttribute('open')).toBe(true);
+    expect(dialogoDaDecisao().textContent).toContain('A decisão ainda está em processamento');
     pagina.controller.expectNone((r) => r.method === 'GET' && r.url === URL_DA_FILA);
 
     clicar(aprovar);

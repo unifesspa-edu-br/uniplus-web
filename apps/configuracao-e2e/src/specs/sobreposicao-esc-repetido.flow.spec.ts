@@ -22,6 +22,10 @@ const ITEM = {
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    ciclo: 1,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
+    manifestacoesNoCiclo: 0,
   },
 };
 
@@ -31,6 +35,7 @@ const DETALHE = {
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf,jpg', tamanhoMaximoMb: 10 },
   atos: [],
+  manifestacoesVigentes: [],
 };
 
 const CAMPUS = {
@@ -156,7 +161,7 @@ test.describe('Sobreposição com escrita pendente — Esc repetido', () => {
     await mockConfiguracaoRuntimeConfig(page);
   });
 
-  test('o drawer continua aberto, modal e com o bloqueio de rolagem; ao concluir, fecha e leva o foco ao título da fila', async ({
+  test('o diálogo da aprovação e o drawer continuam abertos, com o bloqueio de rolagem; ao concluir, fecham e levam o foco ao título da fila', async ({
     page,
   }) => {
     const liberar = await mockProtecao(page);
@@ -164,10 +169,13 @@ test.describe('Sobreposição com escrita pendente — Esc repetido', () => {
     const acionador = page.getByRole('button', { name: `Ver o detalhe de ${ITEM.nome}` });
     await acionador.click();
     const drawer = page.getByRole('dialog', { name: 'Detalhe do item aguardando a decisão' });
-    const aprovar = drawer.getByRole('button', { name: /Aprovar/ });
+    await drawer.getByRole('button', { name: /Aprovar/ }).click();
+    const dialogo = page.getByRole('dialog', { name: 'Aprovar a proteção de dados do item' });
+    const aprovar = dialogo.getByRole('button', { name: 'Aprovar item' });
     await aprovar.click();
 
-    await escRepetidoEAfirmarModal(page, drawer, aprovar);
+    await escRepetidoEAfirmarModal(page, dialogo, aprovar);
+    await expect(drawer).toBeVisible();
     await expect(page.locator('body')).toHaveClass(/uni-drawer-open/);
 
     liberar();
