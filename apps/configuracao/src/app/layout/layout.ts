@@ -184,6 +184,12 @@ export class LayoutComponent {
       items: [
         { label: 'Meus pedidos', icon: 'pi-inbox', routerLink: '/acessos/pedidos' },
         {
+          label: 'Providências',
+          icon: 'pi-flag',
+          routerLink: '/acessos/providencias',
+          exact: true,
+        },
+        {
           label: 'Fila da gestão de acessos',
           icon: 'pi-check-square',
           routerLink: '/acessos/fila-do-gestor',

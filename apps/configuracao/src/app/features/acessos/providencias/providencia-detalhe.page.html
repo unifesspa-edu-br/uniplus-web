@@ -1,0 +1,138 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <p class="page-header__eyebrow"><a routerLink="/acessos/providencias">Providências</a></p>
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Providência sobre concessão</h1>
+    <p class="page-header__desc">
+      O pedido de retirada ou de revisão de um acesso, com o fundamento, a concessão e o desfecho.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar a providência" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Providência não encontrada" [recusa]="store.recusa()">
+  <a routerLink="/acessos/providencias">Voltar às providências</a>.
+</cfg-recusa-da-leitura>
+@if (store.carregando()) {
+<p [uiIndicadorDaLeitura]="leitura"><ui-spinner spinnerSize="sm" /> Carregando a providência…</p>
+} @if (store.dados(); as p) {
+<section class="panel" aria-labelledby="cfg-providencia-resumo">
+  <div class="panel-head">
+    <h2 id="cfg-providencia-resumo" class="panel-head__title">{{ tipo(p.tipo) }}</h2>
+    <ui-tag [variant]="situacao(p.situacao).variante">{{ situacao(p.situacao).texto }}</ui-tag>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Aberta em</dt>
+      <dd>{{ p.abertaEm | dateBr: 'datetime' }}</dd>
+    </div>
+    <div>
+      <dt>Solicitada por</dt>
+      <dd>{{ pessoa(p.solicitadaPor) }}</dd>
+    </div>
+    <div>
+      <dt>Fundamento</dt>
+      <dd>{{ p.fundamento }}</dd>
+    </div>
+  </dl>
+  @if (podeTramitar()) {
+  <div class="panel-body cfg-acoes">
+    <button type="button" class="btn btn--secondary" (click)="tramitacao.abrir('responder')">
+      Responder
+    </button>
+    <button type="button" class="btn btn--danger" (click)="tramitacao.abrir('atender')">
+      Atender e revogar a concessão
+    </button>
+  </div>
+  } @else if (p.situacao === 'aberta' && p.impedidoDeResponder) {
+  <p class="panel-body">
+    Quem solicitou a providência e o beneficiário da concessão não a respondem: outro gestor de
+    acessos ou Representante do controlador responde.
+  </p>
+  }
+</section>
+
+<section class="panel" aria-labelledby="cfg-providencia-concessao">
+  <div class="panel-head">
+    <h2 id="cfg-providencia-concessao" class="panel-head__title">Concessão</h2>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Beneficiário</dt>
+      <dd>{{ pessoa(p.concessao.beneficiario) }}</dd>
+    </div>
+    <div>
+      <dt>Perfil</dt>
+      <dd>{{ p.concessao.perfil.nome }}</dd>
+    </div>
+    <div>
+      <dt>Escopo</dt>
+      <dd>{{ escopo.nome(p.concessao.escopo) }}</dd>
+    </div>
+    <div>
+      <dt>Válida até</dt>
+      <dd>
+        {{ p.concessao.validaAte ? (p.concessao.validaAte | dateBr: 'datetime') : 'Sem prazo' }}
+      </dd>
+    </div>
+    <div>
+      <dt>Situação da concessão</dt>
+      <dd>{{ p.concessao.ativa ? 'Ativa' : 'Encerrada' }}</dd>
+    </div>
+    @if (p.encerramentoDaConcessao; as fim) {
+    <div>
+      <dt>Encerramento</dt>
+      <dd>{{ encerramento(fim.causa) }} em {{ fim.em | dateBr: 'datetime' }}</dd>
+    </div>
+    }
+  </dl>
+  <p class="panel-body">
+    <a [routerLink]="['/acessos/concessoes', p.concessao.id]">Ver a concessão e a trilha</a>
+  </p>
+</section>
+
+@if (p.desfecho; as d) {
+<section class="panel" aria-labelledby="cfg-providencia-desfecho">
+  <div class="panel-head">
+    <h2 id="cfg-providencia-desfecho" class="panel-head__title">Desfecho</h2>
+  </div>
+  <dl class="cfg-detail-list panel-body">
+    <div>
+      <dt>Em</dt>
+      <dd>{{ d.em | dateBr: 'datetime' }}</dd>
+    </div>
+    <div>
+      <dt>Por</dt>
+      <dd>{{ pessoa(d.por) }}</dd>
+    </div>
+    <div>
+      <dt>Motivo</dt>
+      <dd>{{ d.motivo }}</dd>
+    </div>
+  </dl>
+</section>
+} }
+
+<cfg-motivo-dialog
+  heading="Responder a providência"
+  confirmLabel="Registrar resposta"
+  confirmVariant="primary"
+  ajuda="A resposta mantém a concessão; o motivo fica na trilha e é enviado a quem solicitou."
+  [visible]="visivel('responder')"
+  (visibleChange)="mudarVisibilidade($event)"
+  [motivo]="tramitacao.motivo"
+  [tentou]="tramitacao.tentou()"
+  [erro]="tramitacao.erro()"
+  [enviando]="tramitacao.enviando()"
+  (confirmado)="tramitacao.confirmar()"
+/>
+
+<cfg-revogar-concessao-dialog
+  [visible]="visivel('atender')"
+  (visibleChange)="mudarVisibilidade($event)"
+  [email]="tramitacao.email"
+  [motivo]="tramitacao.motivo"
+  [tentou]="tramitacao.tentou()"
+  [erro]="tramitacao.erro()"
+  [enviando]="tramitacao.enviando()"
+  (confirmado)="tramitacao.confirmar()"
+/>

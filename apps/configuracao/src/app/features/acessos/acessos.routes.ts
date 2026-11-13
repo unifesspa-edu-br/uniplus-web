@@ -3,6 +3,7 @@ import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import {
   PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
+  PERMISSOES_DA_PROVIDENCIA,
   PERMISSOES_DA_RECLASSIFICACAO,
   PERMISSOES_DA_REVISAO,
   PERMISSOES_DAS_TELAS,
@@ -31,6 +32,20 @@ export const ACESSOS_ROUTES: Routes = [
         path: 'pedidos/:id',
         data: { breadcrumb: 'Pedido de acesso' },
         loadComponent: () => import('./pedido-detalhe.page').then((m) => m.PedidoDetalhePage),
+      },
+      {
+        path: 'providencias',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_PROVIDENCIA)],
+        data: { breadcrumb: 'Providências sobre concessões' },
+        loadComponent: () =>
+          import('./providencias/providencias.page').then((m) => m.ProvidenciasPage),
+      },
+      {
+        path: 'providencias/:id',
+        canActivate: [permissaoGuard(...PERMISSOES_DA_PROVIDENCIA)],
+        data: { breadcrumb: 'Providência' },
+        loadComponent: () =>
+          import('./providencias/providencia-detalhe.page').then((m) => m.ProvidenciaDetalhePage),
       },
       {
         path: 'fila-do-gestor',
