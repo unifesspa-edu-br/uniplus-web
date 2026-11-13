@@ -1,8 +1,14 @@
-import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+  type HttpContext,
+} from '@angular/common/http';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { map, of, type Observable } from 'rxjs';
 import { vi } from 'vitest';
+import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   AUTORIZACAO_BASE_PATH,
@@ -130,4 +136,31 @@ export async function montarPedirAcesso(
   await fixture.whenStable();
   fixture.detectChanges();
   return { fixture, navegar, ...interacoes(fixture) };
+}
+
+/** Monta a página com o pedido próprio do perfil sensível preenchido, sem o aceite. */
+export async function montarComPerfilSensivel(dubles: Dubles) {
+  const pagina = await montarPedirAcesso(dubles);
+  pagina.digitar('select[formcontrolname="perfilId"]', 'perfil-4');
+  pagina.digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
+  pagina.digitar('textarea', 'Analiso os documentos pessoais do processo.');
+  await pagina.fixture.whenStable();
+  pagina.fixture.detectChanges();
+  return pagina;
+}
+
+/** A caixa de aceite do termo na página, quando ela é apresentada. */
+export const caixaDoAceite = (host: HTMLElement) =>
+  host.querySelector<HTMLInputElement>('cfg-termo-de-responsabilidade input[type="checkbox"]');
+
+/**
+ * As chaves de idempotência das duas primeiras criações. Falha se alguma estiver vazia, para que
+ * a comparação entre elas diga algo.
+ */
+export function chavesDasCriacoes(dubles: Dubles): readonly [string, string] {
+  const [primeira, segunda] = dubles.api.criar.mock.calls.map((chamada) =>
+    (chamada[1] as HttpContext).get(IDEMPOTENCY_KEY_TOKEN),
+  );
+  if (!primeira || !segunda) throw new Error('criação sem chave de idempotência');
+  return [primeira, segunda];
 }
