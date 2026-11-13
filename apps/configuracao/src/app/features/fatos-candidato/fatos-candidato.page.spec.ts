@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   CATALOGO,
@@ -13,9 +13,11 @@ import {
   trabalha,
   PROTECAO,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 describe('FatosCandidatoPage — leitura', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();

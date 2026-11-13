@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeAll } from 'vitest';
 import {
   Pagina,
   comValores,
@@ -10,6 +10,7 @@ import {
   recusaDeCampo,
   sucesso,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
@@ -18,6 +19,7 @@ const DESCRITIVO = '#cfg-fato-descritivo';
 const botaoDoValor = (codigo: string, acao: string): string => `#cfg-fato-valor-${codigo}-${acao}`;
 
 describe('FatosCandidatoPage — edição do fato: nome, descrição e componente', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();

@@ -1,6 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  type MockInstance,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  beforeAll,
+} from 'vitest';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import {
   SEM_CONTEUDO,
@@ -11,12 +20,14 @@ import {
   montarPagina,
   problema,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
 const ERRO_INTERNO = problema(500, 'uniplus.internal.unexpected', 'Erro interno');
 
 describe('ProtecaoDoCatalogoPage — foco e leitura da fila depois da decisão', () => {
+  beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
   let avisoDeErro: MockInstance<NotificationService['errorFromProblem']>;
 

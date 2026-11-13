@@ -1,14 +1,15 @@
 import { FormControl } from '@angular/forms';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 import {
   comandoDeJustificativa,
   comandoPara,
   justificativaPreenchida,
   recomendacoesPara,
 } from './decisao-da-protecao-form';
-import { detalheDoLaudo } from './protecao-do-catalogo.testing';
+import { detalheDoLaudo, compilarPaginaUmaVez } from './protecao-do-catalogo.testing';
 
 describe('formulário da decisão da proteção', () => {
+  beforeAll(compilarPaginaUmaVez);
   it('a justificativa só de espaços não conta como preenchida', () => {
     expect(justificativaPreenchida(new FormControl('   ', { nonNullable: true }))).toEqual({
       required: true,

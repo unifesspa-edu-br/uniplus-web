@@ -1,10 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import { ProtecaoDoCatalogoListaComponent } from './protecao-do-catalogo-lista.component';
-import { clicar, laudo } from './protecao-do-catalogo.testing';
+import { clicar, laudo, compilarPaginaUmaVez } from './protecao-do-catalogo.testing';
 
 describe('ProtecaoDoCatalogoListaComponent', () => {
+  beforeAll(compilarPaginaUmaVez);
   let fixture: ComponentFixture<ProtecaoDoCatalogoListaComponent>;
 
   beforeEach(() => {

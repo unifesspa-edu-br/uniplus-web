@@ -7,7 +7,7 @@ import type {
   DecisaoDaProtecaoDto,
   ItemDaProtecaoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import { ProtecaoDoCatalogoPage } from './protecao-do-catalogo.page';
 import {
   APROVAR,
@@ -21,9 +21,11 @@ import {
   montarPagina,
   navegarNaPagina,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
+  beforeAll(compilarPaginaUmaVez);
   const concedidas = signal<readonly string[]>([APROVAR]);
   let pagina: PaginaMontada;
   let fixture: ComponentFixture<ProtecaoDoCatalogoPage>;

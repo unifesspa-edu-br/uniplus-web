@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, beforeAll } from 'vitest';
 import { PARECERES } from '../../shared/protecao-do-catalogo/manifestacoes';
 import {
   CONSULTAR,
@@ -17,6 +17,7 @@ import {
   montarPagina,
   problema,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 const URL_DA_MANIFESTACAO = `${URL_DA_FILA}/manifestacoes`;
@@ -25,6 +26,7 @@ const URL_DO_HISTORICO = `${URL_DO_DETALHE}/manifestacoes`;
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
 
 describe('ProtecaoDoCatalogoPage — manifestação técnica do Encarregado de dados', () => {
+  beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
 
   beforeEach(async () => {

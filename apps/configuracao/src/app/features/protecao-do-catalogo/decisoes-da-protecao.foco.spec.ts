@@ -2,7 +2,16 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { type DecisaoDaProtecaoDto } from '@uniplus/shared-data/configuracao';
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  type MockInstance,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  beforeAll,
+} from 'vitest';
 import {
   URL_DA_FILA,
   URL_DAS_DECISOES,
@@ -13,6 +22,7 @@ import {
   montarPagina,
   problema,
   type PaginaMontada,
+  compilarPaginaUmaVez,
 } from './protecao-do-catalogo.testing';
 
 const APROVAR = 'configuracao:protecao-do-catalogo:aprovar';
@@ -36,6 +46,7 @@ const decisao: DecisaoDaProtecaoDto = {
 };
 
 describe('Aba Decisões — leitura, nova tentativa e foco', () => {
+  beforeAll(compilarPaginaUmaVez);
   let pagina: PaginaMontada;
   let avisoDeErro: MockInstance<NotificationService['errorFromProblem']>;
 

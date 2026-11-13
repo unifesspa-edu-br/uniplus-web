@@ -1,6 +1,6 @@
 import { By } from '@angular/platform-browser';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   CATALOGO,
   Pagina,
@@ -10,6 +10,7 @@ import {
   quilombola,
   sucesso,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 const perfil = {
@@ -26,6 +27,7 @@ const completa = { clausula: 1, fato: 'QUILOMBOLA', operador: 'IGUAL', valor: 't
 const semValor = { clausula: 1, fato: 'QUILOMBOLA', operador: 'IGUAL', valor: '' };
 
 describe('FatosCandidatoPage — regras padrão do derivado', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();
