@@ -16,6 +16,9 @@
       </label>
     }
   </div>
+} @else {
+  <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
+}
 
   @for (banca of escolhidas(); track banca.tipoBancaId) {
     <fieldset class="form-field">
@@ -29,6 +32,3 @@
       />
     </fieldset>
   }
-} @else {
-  <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
-}

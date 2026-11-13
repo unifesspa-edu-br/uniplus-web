@@ -150,6 +150,31 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     expect(campo('quorum-erro')).toBeNull();
   });
 
+  it('mostra a regra inválida já declarada mesmo com o cadastro de bancas vazio', () => {
+    const etapa = etapaAberta();
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    edicao.declararRegraDaBancaDaEtapa(etapa, ID_BANCA_HETERO, comRegra({ criterio: '' }));
+    raiz.injector.get(CatalogoDeBancas).bancas.set([]);
+    detectar();
+
+    expect(nativo.textContent).toContain('Nenhum tipo de banca no cadastro.');
+    expect(campo('criterio-erro')?.textContent).toContain('Escolha o critério');
+    expect(campo('criterio')?.getAttribute('aria-invalid')).toBe('true');
+  });
+
+  it('explica a falha de carga do cadastro de bancas em vez de esconder a regra declarada', () => {
+    const etapa = etapaAberta();
+    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    edicao.declararRegraDaBancaDaEtapa(etapa, ID_BANCA_HETERO, comRegra({ criterio: '' }));
+    raiz.injector.get(CatalogoDeBancas).erro.set('Não foi possível carregar as bancas.');
+    detectar();
+
+    expect(nativo.querySelector('ui-alert .alert__title')?.textContent).toBe(
+      'Não foi possível carregar os catálogos',
+    );
+    expect(nativo.textContent).toContain('bancas');
+  });
+
   it('mantém a regra da banca quando outra é marcada ou desmarcada', () => {
     const etapa = etapaAberta();
     edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);

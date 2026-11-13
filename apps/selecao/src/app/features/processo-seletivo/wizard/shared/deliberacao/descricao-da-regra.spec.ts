@@ -30,6 +30,12 @@ describe('descricaoDaRegra', () => {
   });
 
   it('descreve o ato individual sem quórum nem votação', () => {
-    expect(descricaoDaRegra(ATO_INDIVIDUAL)).toBe('1 titulares, sem suplentes; ato individual');
+    expect(descricaoDaRegra(ATO_INDIVIDUAL)).toBe('1 titular, sem suplentes; ato individual');
+  });
+
+  it('descreve no singular o titular e o suplente únicos', () => {
+    expect(descricaoDaRegra(comRegra({ integrantes: '1', suplentes: '1', quorum: '1' }))).toContain(
+      '1 titular, 1 suplente;',
+    );
   });
 });
