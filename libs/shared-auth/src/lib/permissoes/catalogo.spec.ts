@@ -76,4 +76,11 @@ describe('PERMISSAO.autorizacao', () => {
   it('declara a publicação do termo de responsabilidade', () => {
     expect(PERMISSAO.autorizacao.termosPublicar).toBe('autorizacao:termos:publicar');
   });
+
+  it('declara a consulta dos pedidos e das versões de perfil, sem decisão', () => {
+    expect([
+      PERMISSAO.autorizacao.pedidosConsultar,
+      PERMISSAO.autorizacao.perfisConsultarVersoes,
+    ]).toEqual(['autorizacao:pedidos:consultar', 'autorizacao:perfis:consultar-versoes']);
+  });
 });
