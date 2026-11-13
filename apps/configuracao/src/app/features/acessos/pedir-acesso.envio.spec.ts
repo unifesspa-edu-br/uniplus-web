@@ -1,7 +1,7 @@
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
-import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
+import { escolherArquivoNoCampo } from './interacao.testing';
 import { ok, pedido, recusa } from './testes';
 import { dublesDoPedirAcesso, montarPedirAcesso, versaoDoTermo } from './pedir-acesso.page.testing';
 
@@ -103,13 +103,11 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: true });
     termos.vigente.mockReturnValue(of(ok(versaoDoTermo())));
-    const { digitar, enviar, fixture } = await montar();
+    const { digitar, enviar, fixture, host } = await montar();
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-3');
     digitar('textarea', 'Designado Representante do controlador da instituição.');
-    fixture.debugElement.injector
-      .get(EdicaoDoPedidoDeAcesso)
-      .arquivo.set(new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
+    escolherArquivoNoCampo(host, new File(['%PDF'], 'portaria.pdf', { type: 'application/pdf' }));
     await fixture.whenStable();
     await enviar();
 
@@ -270,9 +268,9 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
   it('anexa o documento ao pedido criado e segue para ele', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: true });
-    const { fixture, digitar, enviar, navegar } = await montar();
+    const { host, digitar, enviar, navegar } = await montar();
     const pdf = new File(['%PDF'], 'designacao.pdf', { type: 'application/pdf' });
-    fixture.debugElement.injector.get(EdicaoDoPedidoDeAcesso).arquivo.set(pdf);
+    escolherArquivoNoCampo(host, pdf);
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -290,10 +288,8 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
   it('avisa quando o pedido nasce mas o documento falha', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockResolvedValue({ ok: false, mensagem: 'Falha ao enviar o arquivo.' });
-    const { fixture, digitar, enviar, navegar } = await montar();
-    fixture.debugElement.injector
-      .get(EdicaoDoPedidoDeAcesso)
-      .arquivo.set(new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
+    const { host, digitar, enviar, navegar } = await montar();
+    escolherArquivoNoCampo(host, new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
@@ -310,10 +306,8 @@ describe('PedirAcessoPage — prazo, governança e envio', () => {
   it('segue para o pedido criado, sem erro de envio, quando o anexo lança exceção', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     anexos.anexar.mockRejectedValue(new Error('rede'));
-    const { fixture, digitar, enviar, navegar } = await montar();
-    fixture.debugElement.injector
-      .get(EdicaoDoPedidoDeAcesso)
-      .arquivo.set(new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
+    const { host, digitar, enviar, navegar } = await montar();
+    escolherArquivoNoCampo(host, new File(['%PDF'], 'd.pdf', { type: 'application/pdf' }));
 
     digitar('select[formcontrolname="perfilId"]', 'perfil-1');
     digitar('select[formcontrolname="unidadeId"]', 'unidade-1');

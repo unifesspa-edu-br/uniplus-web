@@ -1,9 +1,15 @@
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
 import { ok, pedido, recusa } from './testes';
-import { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
-import { dublesDoPedirAcesso, montarPedirAcesso, versaoDoTermo } from './pedir-acesso.page.testing';
+import { escolherArquivoNoCampo } from './interacao.testing';
+import {
+  caixaDoAceite as aceite,
+  chavesDasCriacoes,
+  dublesDoPedirAcesso,
+  montarComPerfilSensivel as montarComDubles,
+  montarPedirAcesso,
+  versaoDoTermo,
+} from './pedir-acesso.page.testing';
 
 /** O title do contrato; a mensagem registrada no lugar dele é conferida em mensagens-do-termo.spec. */
 const SEM_TERMO = 'Não há termo de responsabilidade publicado';
@@ -18,18 +24,7 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     termos.vigente.mockReturnValue(of(ok(versaoDoTermo())));
   });
 
-  async function montarComPerfilSensivel() {
-    const pagina = await montarPedirAcesso(dubles);
-    pagina.digitar('select[formcontrolname="perfilId"]', 'perfil-4');
-    pagina.digitar('select[formcontrolname="unidadeId"]', 'unidade-1');
-    pagina.digitar('textarea', 'Analiso os documentos pessoais do processo.');
-    await pagina.fixture.whenStable();
-    pagina.fixture.detectChanges();
-    return pagina;
-  }
-
-  const aceite = (host: HTMLElement) =>
-    host.querySelector<HTMLInputElement>('cfg-termo-de-responsabilidade input[type="checkbox"]');
+  const montarComPerfilSensivel = () => montarComDubles(dubles);
 
   function marcarAceite(host: HTMLElement): void {
     aceite(host)?.click();
@@ -105,11 +100,10 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     expect(host.querySelector('[aria-live="polite"]')?.textContent).toContain('envie de novo');
     await enviar();
 
-    const [primeira, segunda] = api.criar.mock.calls;
-    expect(segunda?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
-    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).not.toBe(
-      primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN),
-    );
+    expect(api.criar.mock.calls[1]?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
+    const [primeira, segunda] = chavesDasCriacoes(dubles);
+    expect(primeira.length * segunda.length).toBeGreaterThan(0);
+    expect(segunda).not.toBe(primeira);
   });
 
   it('sem termo publicado, diz isso no lugar do texto e não envia', async () => {
@@ -130,14 +124,16 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     expect(api.criar).not.toHaveBeenCalled();
   });
 
-  it('com a vigente trocada (409), apresenta a nova, desmarca o aceite, avisa e reenvia sob chave nova', async () => {
+  it('com a vigente trocada (409), troca o texto, desmarca o aceite, avisa, bloqueia e reenvia sob chave nova', async () => {
+    const TEXTO_V3 = 'Declaro que guardarei sigilo sobre os dados da versão três do termo.';
     termos.vigente
       .mockReturnValueOnce(of(ok(versaoDoTermo())))
-      .mockReturnValueOnce(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 }))));
+      .mockReturnValueOnce(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3, texto: TEXTO_V3 }))));
     api.criar
       .mockReturnValueOnce(of(recusa(TERMO_DIVERGENTE, 409, 'x')))
       .mockReturnValueOnce(of(ok(pedido({ id: 'novo' }))));
     const { host, enviar, fixture } = await montarComPerfilSensivel();
+    const textoAntigo = versaoDoTermo().texto;
 
     marcarAceite(host);
     fixture.detectChanges();
@@ -145,17 +141,20 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    expect(host.textContent).not.toContain(textoAntigo);
+    expect(host.textContent).toContain(TEXTO_V3);
     expect(aceite(host)?.checked).toBe(false);
     expect(host.querySelector('[aria-live="polite"]')?.textContent).toContain('versão 3');
+    await enviar();
+    expect(api.criar).toHaveBeenCalledTimes(1);
     marcarAceite(host);
     fixture.detectChanges();
     await enviar();
 
-    const [primeira, segunda] = api.criar.mock.calls;
-    expect(segunda?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
-    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).not.toBe(
-      primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN),
-    );
+    expect(api.criar.mock.calls[1]?.[0]).toMatchObject({ termoVersaoApresentadaId: 'termo-v3' });
+    const [primeira, segunda] = chavesDasCriacoes(dubles);
+    expect(primeira.length * segunda.length).toBeGreaterThan(0);
+    expect(segunda).not.toBe(primeira);
   });
 
   it('com conflito de concorrência, repete o mesmo pedido sob a mesma chave', async () => {
@@ -169,18 +168,17 @@ describe('PedirAcessoPage — termo de responsabilidade no envio', () => {
     await enviar();
     await enviar();
 
-    const [primeira, segunda] = api.criar.mock.calls;
-    expect(segunda?.[0]).toEqual(primeira?.[0]);
-    expect(segunda?.[1].get(IDEMPOTENCY_KEY_TOKEN)).toBe(primeira?.[1].get(IDEMPOTENCY_KEY_TOKEN));
+    expect(api.criar.mock.calls[1]?.[0]).toEqual(api.criar.mock.calls[0]?.[0]);
+    const [primeira, segunda] = chavesDasCriacoes(dubles);
+    expect(primeira.length * segunda.length).toBeGreaterThan(0);
+    expect(segunda).toBe(primeira);
   });
 
   it('no pedido próprio com documento, informa a vigente sem a caixa: o beneficiário aceita depois da verificação', async () => {
     api.criar.mockReturnValue(of(ok(pedido({ id: 'novo' }))));
     const { host, enviar, fixture } = await montarComPerfilSensivel();
 
-    fixture.debugElement.injector
-      .get(EdicaoDoPedidoDeAcesso)
-      .arquivo.set(new File(['%PDF'], 'designacao.pdf', { type: 'application/pdf' }));
+    escolherArquivoNoCampo(host, new File(['%PDF'], 'designacao.pdf', { type: 'application/pdf' }));
     fixture.detectChanges();
     await enviar();
 

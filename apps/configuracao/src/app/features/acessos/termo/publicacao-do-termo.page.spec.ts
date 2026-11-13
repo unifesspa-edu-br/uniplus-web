@@ -8,7 +8,7 @@ import {
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { map, of, throwError, type Observable } from 'rxjs';
+import { Subject, map, of, throwError, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -44,11 +44,11 @@ function responderLeituras(vigente: unknown, historico: unknown = ok([V1, V2])):
   leituras.mockImplementation((url) => of(url.includes('/vigente') ? vigente : historico));
 }
 
+/** Espera as leituras e a renderização assentarem. */
 async function assentar(): Promise<void> {
-  for (let vez = 0; vez < 2; vez++) {
-    await new Promise((resolver) => setTimeout(resolver));
-    TestBed.inject(ApplicationRef).tick();
-  }
+  const app = TestBed.inject(ApplicationRef);
+  await app.whenStable();
+  app.tick();
 }
 
 async function abrir(): Promise<HTMLElement> {
@@ -242,5 +242,77 @@ describe('PublicacaoDoTermoPage', () => {
       .map(([url]) => url)
       .filter((u) => u.includes('/versoes'));
     expect(doHistorico.at(-1)).not.toContain('cursor=');
+  });
+
+  const avisoDaPublicacao = (host: HTMLElement) =>
+    host.querySelector('[aria-live="polite"]')?.textContent ?? '';
+  const botaoPublicar = (host: HTMLElement) =>
+    host.querySelector<HTMLButtonElement>('button[type="submit"]');
+
+  it('com a leitura da vigente em andamento ou falha, não publica', async () => {
+    leituras.mockImplementation((url) =>
+      url.includes('/vigente') ? throwError(() => falhaDoServidor()) : of(ok([V1, V2])),
+    );
+    const host = await abrir();
+
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    await publicar(host);
+
+    expect(botaoPublicar(host)?.getAttribute('aria-disabled')).toBe('true');
+    expect(api.publicar).not.toHaveBeenCalled();
+  });
+
+  it('depois de outra versão publicada antes (409), espera a releitura da vigente para publicar', async () => {
+    const releitura = new Subject<unknown>();
+    let vez = 0;
+    leituras.mockImplementation((url) => {
+      if (!url.includes('/vigente')) return of(ok([V1, V2]));
+      return vez++ === 0 ? of(ok(V2)) : releitura;
+    });
+    api.publicar.mockReturnValueOnce(
+      of(recusa('uniplus.autorizacao.termo.vigente_alterado', 409, 'x')),
+    );
+    const host = await abrir();
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    host.querySelector('form')?.dispatchEvent(new Event('submit'));
+    await vi.waitFor(() => expect(api.publicar).toHaveBeenCalledTimes(1));
+    TestBed.inject(ApplicationRef).tick();
+
+    host.querySelector('form')?.dispatchEvent(new Event('submit'));
+    await Promise.resolve();
+    expect(api.publicar).toHaveBeenCalledTimes(1);
+    expect(botaoPublicar(host)?.getAttribute('aria-disabled')).toBe('true');
+    expect(avisoDaPublicacao(host)).not.toContain('Confira a versão vigente');
+    releitura.next(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 })));
+    releitura.complete();
+    await assentar();
+
+    expect(botaoPublicar(host)?.getAttribute('aria-disabled')).toBeNull();
+    expect(avisoDaPublicacao(host)).toContain('Confira a versão vigente');
+  });
+
+  it('depois de outra versão publicada antes (409), com a releitura falha, mostra o erro e só avisa na retentativa', async () => {
+    let vez = 0;
+    leituras.mockImplementation((url) => {
+      if (!url.includes('/vigente')) return of(ok([V1, V2]));
+      vez++;
+      return vez === 2 ? throwError(() => falhaDoServidor()) : of(ok(V2));
+    });
+    api.publicar.mockReturnValueOnce(
+      of(recusa('uniplus.autorizacao.termo.vigente_alterado', 409, 'x')),
+    );
+    const host = await abrir();
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    await publicar(host);
+
+    expect(avisoDaPublicacao(host)).not.toContain('Confira a versão vigente');
+    const repetir = [...host.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Tentar novamente',
+    );
+    expect(repetir).toBeDefined();
+    repetir?.click();
+    await assentar();
+
+    expect(avisoDaPublicacao(host)).toContain('Confira a versão vigente');
   });
 });
