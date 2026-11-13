@@ -1,3 +1,4 @@
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
@@ -20,6 +21,11 @@ describe('ConcessoesPage — lista e trilha', () => {
   const { api, notificacoes } = dubles;
   beforeEach(() => {
     vi.resetAllMocks();
+    dubles.concedidas.splice(
+      0,
+      dubles.concedidas.length,
+      PERMISSAO.autorizacao.concessoesAdministrar,
+    );
     http = configurarConcessoes(dubles);
   });
   afterEach(() => http.verify());
@@ -40,6 +46,21 @@ describe('ConcessoesPage — lista e trilha', () => {
     expect(
       fixture.nativeElement.querySelector('button[aria-label^="Revogar a concessão"]'),
     ).not.toBeNull();
+  });
+
+  it('a quem só consulta, mostra a trilha e esconde a revogação', async () => {
+    dubles.concedidas.splice(
+      0,
+      dubles.concedidas.length,
+      PERMISSAO.autorizacao.concessoesConsultar,
+    );
+    const fixture = TestBed.createComponent(ConcessoesPage);
+    fixture.detectChanges();
+    http.expectOne((r) => r.url === URL).flush([ativa]);
+    await atualizar();
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.querySelector('button[aria-label^="Ver a trilha da concessão"]')).not.toBeNull();
+    expect(host.querySelector('button[aria-label^="Revogar a concessão"]')).toBeNull();
   });
 
   it('mostra a versão do perfil de cada concessão, ou que o perfil não tem versão', async () => {

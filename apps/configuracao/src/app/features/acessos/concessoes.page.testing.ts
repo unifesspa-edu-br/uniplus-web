@@ -1,3 +1,4 @@
+import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
@@ -66,6 +67,8 @@ export function dublesDeConcessoes() {
   return {
     api: { revogar: vi.fn() },
     notificacoes: { success: vi.fn(), errorFromProblem: vi.fn() },
+    /** As permissões da sessão; por padrão, quem administra as concessões. */
+    concedidas: [PERMISSAO.autorizacao.concessoesAdministrar] as string[],
   };
 }
 
@@ -78,6 +81,10 @@ function provedoresDaPagina(dubles: ReturnType<typeof dublesDeConcessoes>) {
     { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
     { provide: ConcessoesApi, useValue: dubles.api },
     { provide: NotificationService, useValue: dubles.notificacoes },
+    {
+      provide: PermissoesService,
+      useValue: { tem: (codigo: string) => dubles.concedidas.includes(codigo) },
+    },
     { provide: UnidadesApi, useValue: { listar: () => of(ok(UNIDADES)) } },
   ];
 }

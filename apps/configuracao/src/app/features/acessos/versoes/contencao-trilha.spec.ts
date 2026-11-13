@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
+import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ok, recusa } from '../testes';
 import {
@@ -14,6 +15,7 @@ import {
   presente,
 } from './contencao-do-perfil.testing';
 
+const CONSULTA = PERMISSAO.autorizacao.perfisConsultarVersoes;
 const DIOGO = { emissor: 'https://id.unifesspa.edu.br', sub: 'sub-diogo', nome: 'Diogo Souza' };
 const BASE = {
   referenciaId: 's1',
@@ -88,6 +90,15 @@ describe('trilha da contenção no detalhe do perfil', () => {
     const { host } = await abrirPerfil(undefined, [PROTECAO], ok(TRILHA));
 
     expect(linhas(host)).toHaveLength(2);
+  });
+
+  it('quem só consulta as versões vê a trilha, sem as ações de contenção', async () => {
+    const { host } = await abrirPerfil(undefined, [CONSULTA], ok(TRILHA));
+
+    expect(linhas(host)).toHaveLength(2);
+    for (const acao of ['Suspender', 'Desativar', 'Reativar', 'Retomar']) {
+      expect(botao(host, acao)).toBeUndefined();
+    }
   });
 
   it('quem não tem permissão de nenhuma etapa não vê a trilha', async () => {

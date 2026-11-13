@@ -36,6 +36,8 @@ export class ConcessoesListaComponent {
   readonly nomeDoEscopo = input.required<(escopo: ConcessaoDto['escopo']) => string>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
+  /** Quem só consulta as concessões não vê a revogação. */
+  readonly podeRevogar = input.required<boolean>();
   readonly filtrar = output<SituacaoDaConcessao>();
   readonly verTrilha = output<ConcessaoDto>();
   readonly revogar = output<ConcessaoDto>();

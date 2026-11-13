@@ -130,9 +130,12 @@ export class PerfilDetalhePage {
     gestaoDeAcessos: this.permissoes.tem(PERMISSAO.autorizacao.perfisManter),
     protecaoDeDados: this.permissoes.tem(PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados),
   }));
+  /** A trilha da contenção é leitura: abre também para quem só consulta as versões. */
   protected readonly podeVerATrilha = computed(
     () =>
-      this.permissoesDaContencao().gestaoDeAcessos || this.permissoesDaContencao().protecaoDeDados,
+      this.permissoesDaContencao().gestaoDeAcessos ||
+      this.permissoesDaContencao().protecaoDeDados ||
+      this.permissoes.tem(PERMISSAO.autorizacao.perfisConsultarVersoes),
   );
   protected readonly acoes = computed(() => {
     const perfil = this.perfil();

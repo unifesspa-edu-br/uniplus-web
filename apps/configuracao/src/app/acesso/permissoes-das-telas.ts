@@ -5,11 +5,15 @@ import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 
 const { autorizacao, configuracao, organizacao, publicacoes } = PERMISSAO;
 
-/** O perfil de acesso abre para quem o mantém ou aprova uma das etapas da versão dele. */
+/**
+ * O perfil de acesso abre para quem o mantém, para quem aprova uma das etapas da versão dele e para
+ * quem só consulta as versões (UNI-REQ-0372); as ações dependem da permissão de cada uma.
+ */
 export const PERMISSOES_DO_PERFIL = [
   autorizacao.perfisManter,
   autorizacao.perfisAprovarFuncional,
   autorizacao.perfisAprovarProtecaoDeDados,
+  autorizacao.perfisConsultarVersoes,
 ] as const satisfies readonly CodigoDePermissao[];
 
 /**
@@ -75,8 +79,9 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/historico': [
     autorizacao.pedidosAprovarFuncional,
     autorizacao.pedidosAprovarProtecaoDeDados,
+    autorizacao.pedidosConsultar,
   ],
-  'acessos/concessoes': [autorizacao.concessoesAdministrar],
+  'acessos/concessoes': PERMISSOES_DA_CONCESSAO,
   'acessos/perfis': PERMISSOES_DO_PERFIL,
   'acessos/versoes-de-perfil/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
@@ -89,16 +94,21 @@ export const PERMISSOES_DAS_TELAS = {
   'acessos/governanca/divergencias': [
     autorizacao.perfisManter,
     autorizacao.perfisAprovarProtecaoDeDados,
+    autorizacao.perfisConsultarVersoes,
   ],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 /** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */
 export const PERMISSOES_DA_JANELA_DE_MIGRACAO = PERMISSOES_DO_PERFIL;
 
-/** O detalhe da reclassificação abre para quem aprova uma das etapas dela. */
+/**
+ * O detalhe da reclassificação abre para quem aprova uma das etapas dela e para quem só consulta as
+ * versões; as filas de decisão seguem só com quem aprova.
+ */
 export const PERMISSOES_DA_RECLASSIFICACAO = [
   autorizacao.perfisAprovarFuncional,
   autorizacao.perfisAprovarProtecaoDeDados,
+  autorizacao.perfisConsultarVersoes,
 ] as const satisfies readonly CodigoDePermissao[];
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;

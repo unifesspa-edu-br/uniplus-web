@@ -141,6 +141,43 @@ describe('rotas dos acessos', () => {
     });
   });
 
+  describe('Encarregado de dados, que só consulta', () => {
+    const { autorizacao } = PERMISSAO;
+    const SO_CONSULTA = [
+      autorizacao.perfisConsultarVersoes,
+      autorizacao.pedidosConsultar,
+      autorizacao.concessoesConsultar,
+    ];
+
+    it.each([
+      'historico',
+      'concessoes',
+      'concessoes/:id',
+      'perfis',
+      'perfis/:id',
+      'perfis/:id/versoes/:versaoId',
+      'perfis/:id/janela',
+      'reclassificacoes/:id',
+      'governanca/divergencias',
+    ])('abre a tela de leitura %s', async (caminho) => {
+      expect(await decidirAcesso(caminho, SO_CONSULTA)).toBe(true);
+    });
+
+    it.each([
+      'fila-do-gestor',
+      'fila-da-protecao-de-dados',
+      'versoes-de-perfil/gestao-de-acessos',
+      'versoes-de-perfil/protecao-de-dados',
+      'janelas-de-migracao/gestao-de-acessos',
+      'janelas-de-migracao/protecao-de-dados',
+      'reclassificacoes/gestao-de-acessos',
+      'reclassificacoes/protecao-de-dados',
+      'termo-de-responsabilidade',
+    ])('leva ao acesso negado na fila de decisão %s', async (caminho) => {
+      expect(await decidirAcesso(caminho, SO_CONSULTA)).toBeInstanceOf(UrlTree);
+    });
+  });
+
   it.each(['pedidos', 'pedidos/novo', 'pedidos/:id'])(
     '%s fica aberta a quem tem sessão, sem permissão de administração',
     (caminho) => {
