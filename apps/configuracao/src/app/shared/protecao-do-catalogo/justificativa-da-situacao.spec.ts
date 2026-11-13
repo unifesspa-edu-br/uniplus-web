@@ -12,6 +12,7 @@ const APROVADA: AprovacaoDaProtecaoDto = {
   aceitaEm: null,
   manifestadaEm: null,
   manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
 };
 
 const aprovacao = (ciclo: number, justificativa: string | null): AtoDaProtecaoDto => ({

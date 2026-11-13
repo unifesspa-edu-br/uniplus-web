@@ -1,6 +1,8 @@
 <div class="page-header">
   <div class="page-header__content">
-    <h1 class="page-header__title">Proteção de dados dos tipos de documento e dos fatos do candidato</h1>
+    <h1 class="page-header__title">
+      Proteção de dados dos tipos de documento e dos fatos do candidato
+    </h1>
     <p class="page-header__desc">
       {{ aba() === 'decisoes' ? 'As decisões já registradas sobre a proteção de dados dos tipos de
       documento e dos fatos do candidato.' : 'Os tipos de documento e os fatos do candidato que
@@ -57,10 +59,6 @@
     aria-label="Dados do item"
     [attr.aria-busy]="carregandoDetalhe()"
   >
-    <span class="sr-only" role="status"
-      >{{ edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR' ? 'Registrando a decisão.' :
-      '' }}</span
-    >
     @if (carregandoDetalhe()) {
     <span class="list-state__loading"><ui-spinner spinnerSize="sm" /> Carregando o item</span>
     } @if (edicao.erroDaDecisaoNoDrawer()) {
@@ -74,7 +72,9 @@
     } @if (detalhe(); as d) {
     <cfg-item-da-protecao-detalhe [detalhe]="d" [categorias]="categorias.porCodigo()" />
     <section class="cfg-detalhe-secao" aria-labelledby="cfg-manifestacoes-vigentes">
-      <h3 class="cfg-detalhe-secao__titulo" id="cfg-manifestacoes-vigentes">Manifestações vigentes</h3>
+      <h3 class="cfg-detalhe-secao__titulo" id="cfg-manifestacoes-vigentes">
+        Manifestações vigentes
+      </h3>
       <cfg-manifestacoes-da-protecao
         [manifestacoes]="d.manifestacoesVigentes"
         ariaLabel="Manifestações vigentes no ciclo"
@@ -126,13 +126,10 @@
       <button
         type="button"
         class="btn btn--primary"
-        [attr.aria-disabled]="edicao.decidindo() ? 'true' : null"
-        [attr.aria-busy]="edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR' ? 'true' : null"
+        [disabled]="edicao.decidindo()"
         (click)="edicao.aprovar()"
       >
-        @if (edicao.decidindo() && edicao.decisaoEmCurso() === 'APROVAR') {
-        <ui-spinner spinnerSize="sm" />
-        } Aprovar
+        Aprovar
       </button>
       }
     </ng-container>

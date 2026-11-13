@@ -65,6 +65,8 @@ describe('ProtecaoDoCatalogoApi', () => {
       finalidadeTratamento: 'Conferir o laudo.',
       classificacaoRecomendada: 'SENSIVEL',
       justificativa: 'O laudo traz dado de saúde.',
+      ciclo: 2,
+      manifestacoesNoCiclo: 1,
     } as const satisfies DecidirProtecaoDoCatalogoRequest;
     const promise = firstValueFrom(api.decidir(command, withIdempotencyKey('k')));
     const req = controller.expectOne(URL);

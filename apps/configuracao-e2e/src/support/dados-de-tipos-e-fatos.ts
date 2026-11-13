@@ -12,6 +12,7 @@ export const APROVADA = {
   aceitaEm: null,
   manifestadaEm: null,
   manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
 };
 export const AJUSTE = {
   ...APROVADA,

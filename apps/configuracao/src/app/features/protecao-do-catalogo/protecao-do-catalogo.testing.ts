@@ -39,6 +39,7 @@ export const SOLICITADA: AprovacaoDaProtecaoDto = {
   aceitaEm: null,
   manifestadaEm: null,
   manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
 };
 
 export const laudo: ItemDaProtecaoDoCatalogoDto = {

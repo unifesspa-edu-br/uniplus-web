@@ -35,6 +35,14 @@ export const MENSAGENS_DA_PROTECAO_DO_CATALOGO: Readonly<Record<string, Mensagem
     titulo: 'O ciclo de aprovação do item mudou depois de lido; releia o item',
     resolver: 'Confira a proposta relida antes de se manifestar de novo.',
   },
+  decisao_ja_tomada: {
+    titulo: 'O item foi decidido depois da leitura; releia o item',
+    resolver: 'Confira a decisão relida; a manifestação não foi registrada.',
+  },
+  manifestacao_nao_lida: {
+    titulo: 'Há manifestação técnica registrada depois da leitura; releia o item',
+    resolver: 'Leia a manifestação nova antes de decidir de novo.',
+  },
   dado_da_decisao_nao_cabe: {
     titulo: 'A decisão traz classificação recomendada que ela não admite',
     resolver: 'Só o ajuste recomendado leva a classificação recomendada.',

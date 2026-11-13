@@ -11,6 +11,7 @@ import {
   detalheDoLaudo,
   dialogoDaDecisao,
   digitar,
+  drawerDoItem,
   laudo,
   manifestacao,
   montarPagina,
@@ -19,7 +20,8 @@ import {
 } from './protecao-do-catalogo.testing';
 
 const RAIZ = 'uniplus.configuracao.protecao_do_catalogo.';
-const URL_DO_HISTORICO = `${URL_DA_FILA}/tipos-documento/${laudo.id}/manifestacoes`;
+const URL_DO_DETALHE = `${URL_DA_FILA}/tipos-documento/${laudo.id}`;
+const URL_DO_HISTORICO = `${URL_DO_DETALHE}/manifestacoes`;
 
 const comManifestacao = (desfavoravel: boolean) => ({
   ...detalheDoLaudo,
@@ -27,6 +29,7 @@ const comManifestacao = (desfavoravel: boolean) => ({
     ...detalheDoLaudo.aprovacao,
     manifestadaEm: '2026-11-02T14:00:00Z',
     manifestacaoDesfavoravel: desfavoravel,
+    manifestacoesNoCiclo: 1,
   },
   manifestacoesVigentes: [manifestacao({ parecer: desfavoravel ? 'INADEQUADA' : 'ADEQUADA' })],
 });
@@ -86,12 +89,14 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     envio?.flush(null, SEM_CONTEUDO);
   });
 
-  it('sem manifestação vigente, aprova direto, sem diálogo', async () => {
+  it('sem manifestação vigente, a aprovação passa pelo diálogo e aceita a justificativa opcional', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(pagina.tela, 'Aprovar'), 'Aprovar');
-    await pagina.assentar();
+    await aprovarPeloDialogo('  Conferida com a área.  ');
 
-    expect(decisoes()[0]?.request.body).toMatchObject({ decisao: 'APROVAR' });
+    expect(decisoes()[0]?.request.body).toMatchObject({
+      decisao: 'APROVAR',
+      justificativa: 'Conferida com a área.',
+    });
   });
 
   it('o lote de erros da decisão vai à justificativa e à classificação recomendada de uma vez', async () => {
@@ -128,8 +133,7 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
 
   it('o conflito retentável na decisão se repete uma vez, com a mesma chave', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    clicar(botaoDoRodape(pagina.tela, 'Aprovar'), 'Aprovar');
-    await pagina.assentar();
+    await aprovarPeloDialogo();
 
     const [primeira] = decisoes();
     const chave = primeira?.request.headers.get('Idempotency-Key');
@@ -151,21 +155,43 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     pagina.controller.expectOne((r) => r.method === 'GET' && r.url === URL_DA_FILA).flush([]);
   });
 
+  it('a decisão leva o ciclo e a contagem de manifestações lidos na aprovação', async () => {
+    await abrirItem(pagina, laudo, comManifestacao(false));
+    await aprovarPeloDialogo();
+
+    const [envio] = decisoes();
+    expect(envio?.request.body).toMatchObject({ ciclo: 2, manifestacoesNoCiclo: 1 });
+    envio?.flush(null, SEM_CONTEUDO);
+  });
+
+  it('com manifestação nova depois da leitura (409), relê o item, avisa no drawer e não reenvia', async () => {
+    await abrirItem(pagina, laudo, comManifestacao(false));
+    await aprovarPeloDialogo();
+
+    decisoes()[0]?.flush(...problema(409, `${RAIZ}manifestacao_nao_lida`, 'Há manifestação nova'));
+    await pagina.assentar();
+
+    expect(dialogo().hasAttribute('open')).toBe(false);
+    expect(drawerDoItem(pagina.tela)?.textContent).toContain('O item foi relido');
+    pagina.controller.expectOne(URL_DO_DETALHE).flush(comManifestacao(true));
+    await pagina.assentar();
+    expect(decisoes()).toHaveLength(0);
+    pagina.controller.expectNone((r) => r.method === 'GET' && r.url === URL_DA_FILA);
+  });
+
   it('o histórico das manifestações mostra a situação de cada uma e a que ela substituiu', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
-    pagina.controller
-      .expectOne(URL_DO_HISTORICO)
-      .flush([
-        manifestacao({ id: 'a', situacao: 'SUBSTITUIDA', instante: '2026-11-02T14:00:00Z' }),
-        manifestacao({
-          id: 'b',
-          parecer: 'ADEQUADA',
-          texto: null,
-          substituiId: 'a',
-          instante: '2026-11-03T10:00:00Z',
-        }),
-        manifestacao({ id: 'c', ciclo: 1, situacao: 'ENCERRADA' }),
-      ]);
+    pagina.controller.expectOne(URL_DO_HISTORICO).flush([
+      manifestacao({ id: 'a', situacao: 'SUBSTITUIDA', instante: '2026-11-02T14:00:00Z' }),
+      manifestacao({
+        id: 'b',
+        parecer: 'ADEQUADA',
+        texto: null,
+        substituiId: 'a',
+        instante: '2026-11-03T10:00:00Z',
+      }),
+      manifestacao({ id: 'c', ciclo: 1, situacao: 'ENCERRADA' }),
+    ]);
     await pagina.assentar();
 
     const historico = pagina.tela.querySelector(
