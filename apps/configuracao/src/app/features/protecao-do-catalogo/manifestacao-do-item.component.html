@@ -38,7 +38,6 @@
         class="textarea"
         rows="4"
         formControlName="texto"
-        [attr.maxlength]="limite"
         [attr.aria-required]="manifestacao.textoObrigatorio() ? 'true' : null"
         [attr.aria-invalid]="erroDoTexto() ? 'true' : null"
         [attr.aria-describedby]="

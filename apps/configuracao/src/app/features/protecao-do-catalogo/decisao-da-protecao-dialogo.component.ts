@@ -12,7 +12,6 @@ import {
   nomeDoCadastro,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
-import { JUSTIFICATIVA_MAXIMA } from './decisao-da-protecao-form';
 import { ManifestacoesDaProtecaoComponent } from './manifestacoes-da-protecao.component';
 
 interface TextosDaDecisao {
@@ -63,7 +62,6 @@ export class DecisaoDaProtecaoDialogoComponent {
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly cadastro = nomeDoCadastro;
   protected readonly rotulo = rotuloDe;
-  protected readonly justificativaMaxima = JUSTIFICATIVA_MAXIMA;
   protected readonly textos = computed(() => TEXTOS[this.decisao()]);
 
   /** A recusa da API para a classificação recomendada, ou a falta dela. */
