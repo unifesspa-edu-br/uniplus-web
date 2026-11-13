@@ -1,3 +1,8 @@
+import type {
+  QuemDecideOItem,
+  SituacaoDaRevisao,
+  SituacaoDoItemDaRevisao,
+} from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 export interface RotuloDaRevisao {
@@ -5,12 +10,12 @@ export interface RotuloDaRevisao {
   readonly variante: UiTagVariant;
 }
 
-const SITUACAO_DA_REVISAO: Readonly<Record<string, RotuloDaRevisao>> = {
+const SITUACAO_DA_REVISAO: Readonly<Record<SituacaoDaRevisao, RotuloDaRevisao>> = {
   em_andamento: { texto: 'Aberta', variante: 'warning' },
   concluida: { texto: 'Encerrada', variante: 'neutral' },
 };
 
-const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaRevisao>> = {
+const SITUACAO_DO_ITEM: Readonly<Record<SituacaoDoItemDaRevisao, RotuloDaRevisao>> = {
   pendente: { texto: 'Aguarda decisão', variante: 'info' },
   confirmada: { texto: 'Acesso mantido', variante: 'success' },
   revogada: { texto: 'Acesso revogado', variante: 'danger' },
@@ -18,7 +23,7 @@ const SITUACAO_DO_ITEM: Readonly<Record<string, RotuloDaRevisao>> = {
 };
 
 /** Os papéis pela função, no masculino genérico (ADR-0162). */
-const QUEM_DECIDE: Readonly<Record<string, string>> = {
+const QUEM_DECIDE: Readonly<Record<QuemDecideOItem, string>> = {
   'representante-do-controlador': 'Representante do controlador',
   'gestor-de-acessos': 'Gestão de acessos',
 };
@@ -32,17 +37,16 @@ export const OPCOES_DO_FILTRO = [
 
 export type FiltroDaRevisao = (typeof OPCOES_DO_FILTRO)[number]['valor'];
 
-/** A situação que a tela não conhece aparece pelo código, neutra. */
-export function situacaoDaRevisao(codigo: string): RotuloDaRevisao {
-  return SITUACAO_DA_REVISAO[codigo] ?? { texto: codigo, variante: 'neutral' };
+export function situacaoDaRevisao(situacao: SituacaoDaRevisao): RotuloDaRevisao {
+  return SITUACAO_DA_REVISAO[situacao];
 }
 
-export function situacaoDoItem(codigo: string): RotuloDaRevisao {
-  return SITUACAO_DO_ITEM[codigo] ?? { texto: codigo, variante: 'neutral' };
+export function situacaoDoItem(situacao: SituacaoDoItemDaRevisao): RotuloDaRevisao {
+  return SITUACAO_DO_ITEM[situacao];
 }
 
-export function quemDecide(codigo: string): string {
-  return QUEM_DECIDE[codigo] ?? codigo;
+export function quemDecide(quem: QuemDecideOItem): string {
+  return QUEM_DECIDE[quem];
 }
 
 export function pendentes(quantidade: number): string {

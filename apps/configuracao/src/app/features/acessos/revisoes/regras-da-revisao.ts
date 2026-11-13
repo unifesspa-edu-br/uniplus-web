@@ -1,5 +1,9 @@
 import { PERMISSAO, type CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
-import type { ItemDaRevisaoDto, RevisaoDeAcessosDto } from '@uniplus/shared-data/autorizacao';
+import type {
+  ItemDaRevisaoDto,
+  QuemDecideOItem,
+  RevisaoDeAcessosDto,
+} from '@uniplus/shared-data/autorizacao';
 
 const { autorizacao } = PERMISSAO;
 
@@ -8,7 +12,7 @@ const { autorizacao } = PERMISSAO;
  * decide os itens comuns, e a gestão de acessos, os de quem é Representante. Quem só consulta
  * (`autorizacao:revisoes:consultar`) não tem nenhuma delas.
  */
-const PERMISSAO_QUE_DECIDE: Readonly<Record<string, CodigoDePermissao | undefined>> = {
+const PERMISSAO_QUE_DECIDE: Readonly<Record<QuemDecideOItem, CodigoDePermissao>> = {
   'representante-do-controlador': autorizacao.revisoesConduzir,
   'gestor-de-acessos': autorizacao.revisoesReverProtecaoDeDados,
 };
@@ -39,8 +43,7 @@ export function decideOItem(
 ): boolean {
   if (revisao.situacao !== 'em_andamento' || item.situacao !== 'pendente') return false;
   if (item.ehDoLeitor) return false;
-  const exigida = PERMISSAO_QUE_DECIDE[item.decide];
-  return exigida !== undefined && quemLe.tem(exigida);
+  return quemLe.tem(PERMISSAO_QUE_DECIDE[item.decide]);
 }
 
 /** A mesma pessoa é o mesmo `sub` no mesmo emissor. */

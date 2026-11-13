@@ -8,6 +8,14 @@ import { ChavesPorComando } from '../versoes/chaves-por-comando';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { ReleituraDepoisDaFalha, type FalhaDaDecisao } from './releitura-depois-da-falha';
 
+/** O que se decide sobre o item: manter a concessão ou revogá-la. */
+type DecisaoSobreOItem = 'confirmar' | 'revogar';
+
+const SUCESSO: Readonly<Record<DecisaoSobreOItem, string>> = {
+  confirmar: 'Acesso mantido',
+  revogar: 'Acesso revogado',
+};
+
 const DECISOR_MUDOU = 'uniplus.autorizacao.revisao.decisor_nao_decide_o_item';
 const CONFLITO = 409;
 const PRIMEIRO_STATUS_DE_SERVIDOR = 500;
@@ -52,8 +60,7 @@ export class DecisaoDoItem {
   confirmar(revisaoId: string, item: ItemDaRevisaoDto): Promise<void> {
     return this.escrita.executar(
       'decisao',
-      () =>
-        this.enviar(`confirmar:${item.id}`, null, (c) => this.api.confirmar(revisaoId, item.id, c)),
+      () => this.enviar('confirmar', item, null, (c) => this.api.confirmar(revisaoId, item.id, c)),
       (mensagem) => this.falhar({ titulo: TITULO_DA_FALHA, texto: mensagem }),
     );
   }
@@ -73,7 +80,7 @@ export class DecisaoDoItem {
     return this.escrita.executar(
       'decisao',
       () =>
-        this.enviar(`revogar:${item.id}`, { motivo }, (c) =>
+        this.enviar('revogar', item, { motivo }, (c) =>
           this.api.revogar(revisaoId, item.id, { motivo }, c),
         ),
       (mensagem) => this.falhar({ titulo: TITULO_DA_FALHA, texto: mensagem }),
@@ -81,19 +88,19 @@ export class DecisaoDoItem {
   }
 
   private async enviar(
-    comando: string,
+    decisao: DecisaoSobreOItem,
+    item: ItemDaRevisaoDto,
     corpo: unknown,
     chamada: Parameters<ChavesPorComando['enviar']>[2],
   ): Promise<void> {
     this.aviso.set(null);
     this.erroDaRevogacao.set(null);
-    const { resultado } = await this.chaves.enviar(comando, corpo, chamada);
-    this.desfecho(comando, resultado);
+    const { resultado } = await this.chaves.enviar(`${decisao}:${item.id}`, corpo, chamada);
+    this.desfecho(decisao, resultado);
   }
 
-  private desfecho(comando: string, resultado: ApiResult<unknown>): void {
-    if (resultado.ok)
-      this.concluir(comando.startsWith('revogar') ? 'Acesso revogado' : 'Acesso mantido');
+  private desfecho(decisao: DecisaoSobreOItem, resultado: ApiResult<unknown>): void {
+    if (resultado.ok) this.concluir(SUCESSO[decisao]);
     else if (this.incerta(resultado.problem)) this.falharPelo(resultado.problem);
     else if (this.mudouDesdeALeitura(resultado.problem)) this.reler(resultado.problem);
     else if (!this.campo.recusar(resultado.problem)) this.recusar(resultado.problem);

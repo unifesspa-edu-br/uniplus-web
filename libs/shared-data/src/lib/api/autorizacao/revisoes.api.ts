@@ -6,13 +6,6 @@ import { PaginaQuery, paramsDaPagina } from './paginacao';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-export type RevisaoResumoDto = components['schemas']['RevisaoResumoDto'];
-
-/** O item da revisão; `ehDoLeitor` diz que a concessão é de quem lê, que não pode decidi-la. */
-export type ItemDaRevisaoDto = components['schemas']['ItemDaRevisaoDto'];
-export type RevisaoDeAcessosDto = components['schemas']['RevisaoDeAcessosDto'];
-export type RevogarItemDaRevisaoRequest = components['schemas']['RevogarItemDaRevisaoRequest'];
-
 /** Situação da revisão na API: com item pendente ela segue em andamento; sem nenhum, está concluída. */
 export type SituacaoDaRevisao = 'em_andamento' | 'concluida';
 
@@ -36,6 +29,31 @@ export type SituacaoDoItemDaRevisao =
  * acessos, os de quem é Representante. No item pendente é quem decidiria agora; no decidido, a governança gravada.
  */
 export type QuemDecideOItem = 'representante-do-controlador' | 'gestor-de-acessos';
+
+/*
+ * O contrato gerado traz situação e quem decide como `string`; os tipos abaixo dão a eles os
+ * valores que o contrato documenta, para a tela tratar cada caso pelo nome.
+ */
+type ComSituacao<T> = Omit<T, 'situacao'> & { readonly situacao: SituacaoDaRevisao };
+
+export type RevisaoResumoDto = ComSituacao<components['schemas']['RevisaoResumoDto']>;
+
+/** O item da revisão; `ehDoLeitor` diz que a concessão é de quem lê, que não pode decidi-la. */
+export type ItemDaRevisaoDto = Omit<
+  components['schemas']['ItemDaRevisaoDto'],
+  'situacao' | 'decide'
+> & {
+  readonly situacao: SituacaoDoItemDaRevisao;
+  readonly decide: QuemDecideOItem;
+};
+
+export type RevisaoDeAcessosDto = Omit<
+  ComSituacao<components['schemas']['RevisaoDeAcessosDto']>,
+  'itens'
+> & {
+  readonly itens: readonly ItemDaRevisaoDto[];
+};
+export type RevogarItemDaRevisaoRequest = components['schemas']['RevogarItemDaRevisaoRequest'];
 
 /** Cliente da revisão periódica dos acessos a dado pessoal ou sensível. */
 @Injectable({ providedIn: 'root' })
