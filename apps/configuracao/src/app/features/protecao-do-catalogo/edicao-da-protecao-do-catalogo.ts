@@ -52,6 +52,11 @@ function releAFila(problem: ProblemDetails): boolean {
   return codigos.some((codigo) => RECUSAS_QUE_RELEEM_A_FILA.has(codigo));
 }
 
+/** O lote traz, entre os conflitos, a manifestação técnica registrada depois da leitura. */
+function temManifestacaoNaoLida(problem: ProblemDetails): boolean {
+  return (problem.errors ?? []).some((erro) => erro.code === MANIFESTACAO_NAO_LIDA);
+}
+
 const SUCESSO: Readonly<Record<DecisaoDaProtecao, string>> = {
   APROVAR: 'Item aprovado',
   RECOMENDAR_AJUSTE: 'Ajuste recomendado',
@@ -84,6 +89,10 @@ export class EdicaoDaProtecaoDoCatalogo {
   private readonly recusaDaJustificativa = signal<string | null>(null);
   readonly recomendada = new FormControl('', { nonNullable: true });
   readonly justificativa = new FormControl('', { nonNullable: true });
+  /** A recusa da API sobre a justificativa vale até a pessoa mexer no texto. */
+  private readonly limparRecusaAoEditar = this.justificativa.valueChanges
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(() => this.recusaDaJustificativa.set(null));
   readonly tamanhoDaJustificativa = toSignal(
     this.justificativa.valueChanges.pipe(map(contarCaracteres)),
     { initialValue: 0 },
@@ -226,7 +235,7 @@ export class EdicaoDaProtecaoDoCatalogo {
     if (problem.code === JUSTIFICATIVA_EXIGIDA) {
       this.pedirJustificativa(mensagem);
     } else if (releAFila(problem)) {
-      this.relerAposRecusa(mensagem);
+      this.relerAposRecusa(mensagem, problem);
     } else if (problem.code === MANIFESTACAO_NAO_LIDA) {
       this.relerOItem(mensagem);
     } else {
@@ -265,10 +274,20 @@ export class EdicaoDaProtecaoDoCatalogo {
     this.store.recarregarDetalhe();
   }
 
-  private relerAposRecusa(mensagem: string): void {
+  /**
+   * Um aviso só para todos os motivos do lote: quando a proteção mudou e também entrou manifestação
+   * técnica depois da leitura, o aviso diz as duas coisas.
+   */
+  private relerAposRecusa(mensagem: string, problem: ProblemDetails): void {
     this.decisaoAberta.set(false);
     this.detalheAberto.set(false);
-    this.erroDaDecisao.set(`${mensagem}. A lista foi atualizada; confira o item e decida de novo.`);
+    const manifestacaoNova =
+      problem.code !== MANIFESTACAO_NAO_LIDA && temManifestacaoNaoLida(problem)
+        ? ' Também entrou manifestação técnica depois da leitura; leia-a antes de decidir.'
+        : '';
+    this.erroDaDecisao.set(
+      `${mensagem}. A lista foi atualizada; confira o item e decida de novo.${manifestacaoNova}`,
+    );
     this.relerAFila();
   }
 
