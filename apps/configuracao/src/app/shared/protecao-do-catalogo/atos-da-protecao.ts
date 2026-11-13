@@ -35,7 +35,8 @@ export const DECISOES_FILTRAVEIS: readonly {
 /**
  * Os atos da proteção de dados de um item, em ordem cronológica: o que aconteceu, quando, quem agiu e
  * a proteção que valia no instante. O ajuste recomendado traz a classificação indicada, e ele e a
- * reprovação trazem a justificativa quando houver.
+ * reprovação trazem a justificativa quando houver; a aprovação também, desde a manifestação técnica.
+ * Cada ato diz o ciclo e se a decisão foi tomada diante de manifestação desfavorável vigente.
  */
 @Component({
   selector: 'cfg-atos-da-protecao',
@@ -54,7 +55,12 @@ export const DECISOES_FILTRAVEIS: readonly {
               <ui-tag [variant]="rotulo(ato.ato).variante">{{ rotulo(ato.ato).texto }}</ui-tag>
               <time [attr.datetime]="ato.instante">{{ data(ato.instante) }}</time>
             </div>
-            <p class="cfg-atos__quem">{{ ato.atorNome || 'Pessoa não identificada' }}</p>
+            <p class="cfg-atos__quem">
+              {{ ato.atorNome || 'Pessoa não identificada' }} · ciclo {{ ato.ciclo }}
+            </p>
+            @if (ato.dianteDeManifestacaoDesfavoravel) {
+              <p class="table-responsive__meta">Decidido diante de manifestação desfavorável.</p>
+            }
             @if (ato.classificacaoRecomendada; as recomendada) {
               <p class="table-responsive__meta">
                 Classificação recomendada: {{ classificacao(recomendada) }}

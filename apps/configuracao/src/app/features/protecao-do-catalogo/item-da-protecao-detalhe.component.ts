@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { formatarDataBr } from '@uniplus/shared-utils';
 import { type DetalheDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   SituacaoDaAprovacaoComponent,
+  justificativaDaSituacao,
   nomeDoCadastro,
   rotuloDe,
 } from '../../shared/protecao-do-catalogo';
@@ -30,4 +32,8 @@ export class ItemDaProtecaoDetalheComponent {
   protected readonly cardinalidades = CARDINALIDADES;
   protected readonly componentes = COMPONENTES_DE_EXIBICAO;
   protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
+  protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
+  protected readonly justificativa = computed(() =>
+    justificativaDaSituacao(this.detalhe().aprovacao, this.detalhe().atos),
+  );
 }

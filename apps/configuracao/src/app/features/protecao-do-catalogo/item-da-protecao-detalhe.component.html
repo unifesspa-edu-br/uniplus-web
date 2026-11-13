@@ -2,8 +2,24 @@
 <cfg-situacao-da-aprovacao
   [situacao]="d.aprovacao.situacao"
   [classificacaoRecomendada]="d.aprovacao.classificacaoRecomendada"
-  [justificativa]="d.aprovacao.justificativa"
+  [justificativa]="justificativa()"
 />
+<dl class="cfg-detalhe">
+  <div>
+    <dt>Ciclo de aprovação</dt>
+    <dd>{{ d.aprovacao.ciclo }}</dd>
+  </div>
+  <div>
+    <dt>Última manifestação técnica</dt>
+    <dd>
+      @if (d.aprovacao.manifestadaEm; as em) {
+        {{ data(em) }}{{ d.aprovacao.manifestacaoDesfavoravel ? ', desfavorável' : '' }}
+      } @else {
+        Nenhuma neste ciclo
+      }
+    </dd>
+  </div>
+</dl>
 <cfg-detalhe-da-protecao titulo="Proposta de proteção" [protecao]="d" />
 <section class="cfg-detalhe-secao">
   <h3 class="cfg-detalhe-secao__titulo">O que é o item</h3>
