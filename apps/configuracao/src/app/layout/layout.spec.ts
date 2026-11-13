@@ -36,6 +36,7 @@ const PERMISSOES_DA_ADMINISTRACAO = [
 ];
 const MENU_DA_ADMINISTRACAO = [
   'Meus pedidos',
+  'Providências',
   'Fila da gestão de acessos',
   'Fila do Representante do controlador',
   'Histórico de pedidos',
@@ -99,6 +100,12 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
 
     expect(itensDoMenu()).toEqual(MENU_DA_ADMINISTRACAO);
+  });
+
+  it('oferece a fila das providências a quem só solicita providência, para acompanhá-la', () => {
+    concedidas.set(['autorizacao:providencias:solicitar']);
+
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Providências']);
   });
 
   it('não oferece a fila do Representante do controlador a quem só aprova como gestor', () => {

@@ -36,6 +36,15 @@ export const PERMISSOES_DA_CONCESSAO = [
 ] as const satisfies readonly CodigoDePermissao[];
 
 /**
+ * A fila e o detalhe das providências sobre concessões abrem para quem administra as concessões,
+ * que responde e atende, e para quem solicita, que acompanha (UNI-REQ-0375 e UNI-REQ-0376).
+ */
+export const PERMISSOES_DA_PROVIDENCIA = [
+  autorizacao.concessoesAdministrar,
+  autorizacao.providenciasSolicitar,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
  * que o item visível seja sempre um clique que a guarda aceita. A ordem é a da primeira tela
  * oferecida a quem entra sem destino.
@@ -75,6 +84,8 @@ export const PERMISSOES_DAS_TELAS = {
   'calendario-dias-uteis': [configuracao.calendariosDiasUteisManter],
   // Pedir acesso e acompanhar os próprios pedidos é de toda pessoa autenticada: lista vazia.
   'acessos/pedidos': [],
+  // A fila das providências é a primeira de quem administra concessões (UNI-REQ-0375).
+  'acessos/providencias': PERMISSOES_DA_PROVIDENCIA,
   'acessos/fila-do-gestor': [autorizacao.pedidosAprovarFuncional],
   'acessos/fila-da-protecao-de-dados': [autorizacao.pedidosAprovarProtecaoDeDados],
   'acessos/historico': [
