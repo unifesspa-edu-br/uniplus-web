@@ -1,8 +1,14 @@
-import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpErrorResponse,
+  HttpHeaders,
+  HttpResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { map, of, type Observable } from 'rxjs';
+import { map, of, throwError, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -18,11 +24,24 @@ const V2 = versaoDoTermo();
 const TEXTO_NOVO = 'Declaro ciência das obrigações de sigilo e de finalidade. '.repeat(5);
 
 const api = { publicar: vi.fn() };
+
+/** O registro de acesso não gravou: a API não entrega o termo, e a leitura pode ser repetida. */
+const falhaDoServidor = () =>
+  new HttpErrorResponse({
+    status: 503,
+    statusText: 'Erro',
+    error: {
+      type: 'x',
+      title: 'Não foi possível registrar o acesso aos dados.',
+      status: 503,
+      code: 'uniplus.autorizacao.registro_de_acesso.falha_ao_gravar',
+    },
+  });
 const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn() };
 const leituras = vi.fn<(url: string) => Observable<unknown>>();
 
 function responderLeituras(vigente: unknown, historico: unknown = ok([V1, V2])): void {
-  leituras.mockImplementation((url) => of(url.endsWith('/vigente') ? vigente : historico));
+  leituras.mockImplementation((url) => of(url.includes('/vigente') ? vigente : historico));
 }
 
 async function assentar(): Promise<void> {
@@ -40,7 +59,10 @@ async function abrir(): Promise<HTMLElement> {
       { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
       provideHttpClient(
         withInterceptors([
-          (req) => leituras(req.url).pipe(map((body) => new HttpResponse({ body }))),
+          (req) =>
+            leituras(req.urlWithParams).pipe(
+              map((body) => (body instanceof HttpResponse ? body : new HttpResponse({ body }))),
+            ),
         ]),
       ),
       { provide: TermosDeResponsabilidadeApi, useValue: api },
@@ -174,5 +196,51 @@ describe('PublicacaoDoTermoPage', () => {
     expect(host.querySelector('#cfg-termo-texto-erro')?.textContent).toContain(
       'O texto é igual ao da versão vigente.',
     );
+  });
+
+  it('com o registro de acesso fora do ar (503), mostra a falha sem termo e lê de novo', async () => {
+    let vez = 0;
+    leituras.mockImplementation((url) => {
+      if (!url.includes('/vigente')) return of(ok([V1, V2]));
+      return vez++ === 0 ? throwError(() => falhaDoServidor()) : of(ok(V2));
+    });
+    const host = await abrir();
+
+    expect(host.textContent).toContain('Não foi possível carregar o termo');
+    expect(host.querySelector('cfg-termo-de-responsabilidade')).toBeNull();
+    const repetir = [...host.querySelectorAll('button')].find(
+      (b) => b.textContent?.trim() === 'Tentar novamente',
+    );
+    repetir?.click();
+    await assentar();
+
+    expect(host.querySelector('cfg-termo-de-responsabilidade')?.textContent).toContain(
+      'Versão vigente',
+    );
+    expect(host.textContent).not.toContain('Tentar novamente');
+  });
+
+  it('o histórico segue pelo cursor, e a publicação o relê desde a primeira página', async () => {
+    const comProxima = new HttpResponse({
+      body: ok([V1]),
+      headers: new HttpHeaders({ Link: '</api/x?cursor=PROX&direction=next>; rel="next"' }),
+    });
+    leituras.mockImplementation((url) =>
+      of(url.includes('/vigente') ? ok(V2) : url.includes('cursor=') ? ok([V2]) : comProxima),
+    );
+    api.publicar.mockReturnValue(of(ok(versaoDoTermo({ id: 'termo-v3', numero: 3 }))));
+    const host = await abrir();
+
+    [...host.querySelectorAll('button')].find((b) => b.textContent?.includes('Próximo'))?.click();
+    await assentar();
+    expect(leituras.mock.lastCall?.[0]).toContain('cursor=PROX');
+    expect(host.querySelectorAll('tr[data-versao]')).toHaveLength(1);
+
+    preencher(host, TEXTO_NOVO, 'Portaria 20/2026');
+    await publicar(host);
+    const doHistorico = leituras.mock.calls
+      .map(([url]) => url)
+      .filter((u) => u.includes('/versoes'));
+    expect(doHistorico.at(-1)).not.toContain('cursor=');
   });
 });
