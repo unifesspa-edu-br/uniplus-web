@@ -9820,10 +9820,13 @@ export interface components {
             /** Format: uuid */
             readonly tipoBancaOrigemId: string;
             readonly codigo: string;
+            readonly nome: string;
+            readonly regraDeDeliberacao: null | components["schemas"]["RegraDeDeliberacaoDto"];
         };
         readonly BancaDaEtapaInput: {
             /** Format: uuid */
             readonly tipoBancaId: string;
+            readonly regraDeDeliberacao?: null | components["schemas"]["RegraDeDeliberacaoInput"];
         };
         readonly BancaRequeridaDto: {
             /** Format: uuid */
@@ -9831,12 +9834,15 @@ export interface components {
             /** Format: uuid */
             readonly tipoBancaOrigemId: string;
             readonly codigo: string;
+            readonly nome: string;
+            readonly regraDeDeliberacao: null | components["schemas"]["RegraDeDeliberacaoDto"];
             readonly recorteDeCompetencia: readonly components["schemas"]["CategoriaJulgadaDto"][];
         };
         readonly BancaRequeridaInput: {
             /** Format: uuid */
             readonly tipoBancaId: string;
             readonly categoriasDocumentoIds: readonly string[];
+            readonly regraDeDeliberacao?: null | components["schemas"]["RegraDeDeliberacaoInput"];
         };
         readonly BaseLegalDto: {
             /** Format: uuid */
@@ -10200,6 +10206,8 @@ export interface components {
             readonly valor: null | string;
             readonly areas?: null | readonly string[];
         };
+        /** @enum {string} */
+        readonly CriterioDeVotacao: "maioriaSimples" | "maioriaAbsoluta" | "unanimidade" | null;
         readonly DadosDoAtoRequest: {
             readonly orgao: string;
             readonly serie: string;
@@ -10306,6 +10314,8 @@ export interface components {
             readonly booleano: boolean;
             readonly regras: readonly components["schemas"]["RegraDerivacaoPortavel"][];
         };
+        /** @enum {string} */
+        readonly DesempateDaVotacao: "votoDaPresidencia" | "novaVotacao" | null;
         readonly DestinoRemanejamentoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -10448,6 +10458,8 @@ export interface components {
             readonly urlDownload: string;
             readonly documentos: readonly components["schemas"]["DocumentoDoAtoCertameDto"][];
         };
+        /** @enum {string} */
+        readonly EncerramentoDaVotacao: "todosOsTitulares" | "presidenciaNoQuorum" | null;
         readonly EnvioDoComprovanteDto: {
             readonly numeroInscricao: string;
             /** Format: date-time */
@@ -11245,6 +11257,8 @@ export interface components {
             /** Format: uri */
             readonly urlDownload: string;
         };
+        /** @enum {string} */
+        readonly ModoDeDeliberacao: ModoDeDeliberacao;
         readonly MotivoDeDecisaoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -11803,6 +11817,32 @@ export interface components {
                 readonly [key: string]: string;
             };
         };
+        readonly RegraDeDeliberacaoDto: {
+            readonly modo: components["schemas"]["ModoDeDeliberacao"];
+            /** Format: int32 */
+            readonly integrantes: number;
+            /** Format: int32 */
+            readonly suplentes: number;
+            /** Format: int32 */
+            readonly quorum: null | number;
+            readonly criterio: null | components["schemas"]["CriterioDeVotacao"];
+            readonly desempate: null | components["schemas"]["DesempateDaVotacao"];
+            readonly encerramento: null | components["schemas"]["EncerramentoDaVotacao"];
+            readonly semUnanimidade: null | components["schemas"]["ResultadoSemUnanimidade"];
+        };
+        readonly RegraDeDeliberacaoInput: {
+            readonly modo: components["schemas"]["ModoDeDeliberacao"];
+            /** Format: int32 */
+            readonly integrantes: number;
+            /** Format: int32 */
+            readonly suplentes: number;
+            /** Format: int32 */
+            readonly quorum?: null | number;
+            readonly criterio?: null | components["schemas"]["CriterioDeVotacao"];
+            readonly desempate?: null | components["schemas"]["DesempateDaVotacao"];
+            readonly encerramento?: null | components["schemas"]["EncerramentoDaVotacao"];
+            readonly semUnanimidade?: null | components["schemas"]["ResultadoSemUnanimidade"];
+        };
         readonly RegraDerivacaoDto: {
             /** Format: int32 */
             readonly ordem: number;
@@ -11887,6 +11927,8 @@ export interface components {
             readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
             readonly dataMaxima?: null | components["schemas"]["LimiteDeDataInput"];
         };
+        /** @enum {string} */
+        readonly ResultadoSemUnanimidade: "favoravel" | "desfavoravel" | "novaVotacao" | null;
         readonly RetificacaoCertameDto: {
             /** Format: uuid */
             readonly atoRetificadoId: string;
@@ -12237,6 +12279,10 @@ export enum ImpedimentoDoProduto {
     preliminarNaoPublicado = "preliminarNaoPublicado",
     preliminarAguardaConfirmacao = "preliminarAguardaConfirmacao",
     tipoDeAtoNaoVigente = "tipoDeAtoNaoVigente"
+}
+export enum ModoDeDeliberacao {
+    colegiadaComVotacao = "colegiadaComVotacao",
+    atoIndividual = "atoIndividual"
 }
 export enum OrigemCandidatos {
     nenhuma = "nenhuma",
