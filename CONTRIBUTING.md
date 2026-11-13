@@ -718,6 +718,8 @@ Em qualquer tela que exiba nome de candidato, verificar se existe nome social ca
 
 ### Convenções de teste
 
+Verificação de regra de arquitetura (ESLint, compilador ou teste de comportamento, nunca leitura do fonte como texto) segue o [`orientacao-para-revisao.md`](orientacao-para-revisao.md).
+
 **Testes unitários (Jest):**
 
 ```typescript
@@ -796,6 +798,7 @@ Todo PR passa por revisão humana. O revisor verifica:
 3. **Segurança** — PII masking, XSS, tokens
 4. **Qualidade** — componentes pequenos, OnPush, sem lógica no template e as [métricas de qualidade](#métricas-de-qualidade): os avisos do ESLint e, à mão, o tamanho de cada caso de teste e dos arquivos CSS
 5. **UX** — feedback ao usuário (loading, erros, sucesso), pt-BR correto
+6. **Arquitetura** — a abordagem das verificações de arquitetura e a lista "Conferido na revisão" do [`orientacao-para-revisao.md`](orientacao-para-revisao.md)
 
 O PR precisa de **1 aprovação** para ser mergeado.
 
