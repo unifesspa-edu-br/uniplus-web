@@ -5,6 +5,7 @@ import { AuthService, PERMISSAO, PermissoesService } from '@uniplus/shared-auth/
 import {
   PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
+  PERMISSOES_DA_PROVIDENCIA,
   PERMISSOES_DA_RECLASSIFICACAO,
   PERMISSOES_DA_REVISAO,
   PERMISSOES_DAS_TELAS,
@@ -55,6 +56,7 @@ const PROTEGIDAS = [
   ['governanca/divergencias', 'acessos/governanca/divergencias'],
   ['revisoes', 'acessos/revisoes'],
   ['termo-de-responsabilidade', 'acessos/termo-de-responsabilidade'],
+  ['providencias', 'acessos/providencias'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -124,6 +126,19 @@ describe('rotas dos acessos', () => {
         PERMISSAO.autorizacao.revisoesConsultar,
       ]);
       expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
+  describe('providencias/:id', () => {
+    it.each(PERMISSOES_DA_PROVIDENCIA)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('providencias/:id', [permissao])).toBe(true);
+    });
+
+    it('recusa quem só consulta as concessões', async () => {
+      const decisao = await decidirAcesso('providencias/:id', [
+        PERMISSAO.autorizacao.concessoesConsultar,
+      ]);
+      expect(decisao).not.toBe(true);
     });
   });
 
@@ -211,13 +226,14 @@ describe('rotas dos acessos', () => {
     ['janela e revisões', /^(janelas-de-migracao|perfis\/:id\/janela$|revisoes)/u],
     ['perfis e versões', /^(perfis|versoes-de-perfil|reclassificacoes|governanca)/u],
     ['termo', /^termo-de-responsabilidade$/u],
+    ['providências', /^providencias/u],
   ];
   const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
   const grupoDe = (item: Route) =>
     GRUPOS_DE_TELAS.find(([, padrao]) => padrao.test(item.path ?? ''))?.[0];
 
-  it('carrega sob demanda as 23 telas, cada uma num grupo', () => {
-    expect(carregaveis).toHaveLength(23);
+  it('carrega sob demanda as 25 telas, cada uma num grupo', () => {
+    expect(carregaveis).toHaveLength(25);
     expect(carregaveis.filter((item) => grupoDe(item) === undefined)).toEqual([]);
   });
 
