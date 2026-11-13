@@ -9,6 +9,7 @@ import {
 import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
+import { prazoEmTexto } from '../../shared/unidades-de-prazo-do-recurso';
 import type { CatalogoDeAtos } from './catalogos/catalogo-de-atos.service';
 import type { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import type { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
@@ -67,39 +68,41 @@ function itensLidos(grupo: FormGroup<EtapaForm>): {
   };
 }
 
-/** A unidade do prazo concorda com o valor: "1 hora", "2 horas", "1 dia útil", "2 dias úteis". */
-function nomeDaUnidade(unidade: string, valor: string): string {
-  const singular = valor.trim() === '1';
-  if (unidade === 'horas') return singular ? 'hora' : 'horas';
-  return singular ? 'dia útil' : 'dias úteis';
+type Instancia = 'Primeira' | 'Segunda';
+
+const ORDINAL_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
+  Primeira: '1ª',
+  Segunda: '2ª',
+};
+
+function suspensividadeLida(recurso: RecursoDaEtapa, instancia: Instancia): readonly string[] {
+  const texto = prazoEmTexto(
+    recurso[`suspensividade${instancia}InstanciaValor`],
+    recurso[`suspensividade${instancia}InstanciaUnidade`],
+  );
+  return texto === ''
+    ? []
+    : [`suspensividade da ${ORDINAL_DA_INSTANCIA[instancia]} instância de ${texto}`];
+}
+
+function instanciasLidas(recurso: RecursoDaEtapa): readonly string[] {
+  const admiteSuperior = recurso.admiteInstanciaSuperior === true;
+  return [
+    ...suspensividadeLida(recurso, 'Primeira'),
+    admiteSuperior ? 'admite instância superior' : 'não admite instância superior',
+    ...(admiteSuperior ? suspensividadeLida(recurso, 'Segunda') : []),
+  ];
 }
 
 function recursoLido(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => string): string {
-  const par = (valor: string, unidade: string): string =>
-    valor === '' ? '' : `${valor} ${nomeDaUnidade(unidade, valor)}`;
-  const prazo = par(recurso.prazoValor, recurso.prazoUnidade);
-  const partes = [
+  const prazo = prazoEmTexto(recurso.prazoValor, recurso.prazoUnidade);
+  return [
     recurso.ancora === 'atoPublicado'
       ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
       : 'prazo corre da ciência do candidato',
     prazo === '' ? 'prazo não informado' : `prazo de ${prazo}`,
-  ];
-  const primeira = par(
-    recurso.suspensividadePrimeiraInstanciaValor,
-    recurso.suspensividadePrimeiraInstanciaUnidade,
-  );
-  const segunda = recurso.admiteInstanciaSuperior
-    ? par(
-        recurso.suspensividadeSegundaInstanciaValor,
-        recurso.suspensividadeSegundaInstanciaUnidade,
-      )
-    : '';
-  if (primeira) partes.push(`suspensividade da 1ª instância de ${primeira}`);
-  partes.push(
-    recurso.admiteInstanciaSuperior ? 'admite instância superior' : 'não admite instância superior',
-  );
-  if (segunda) partes.push(`suspensividade da 2ª instância de ${segunda}`);
-  return partes.join('; ');
+    ...instanciasLidas(recurso),
+  ].join('; ');
 }
 
 type TiposDeEtapa = ReturnType<CatalogosDaLeitura['tipoEtapaPorId']>;
@@ -114,55 +117,88 @@ function regraDeConsolidacaoLida(controles: EtapaForm): string {
   return codigo ? `${codigo} (${controles.regraConsolidacaoVersao.value})` : '';
 }
 
+function caraterLido(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa): string {
+  const atual = grupo.controls.carater.value;
+  const opcoes = caracteresAdmitidos(
+    tipos.get(grupo.controls.tipoEtapaOrigemId.value),
+    etapaDeNotaDoEnem(grupo, tipos),
+    atual,
+  );
+  return opcoes.find((opcao) => opcao.valor === atual)?.rotulo ?? '';
+}
+
 /** Quem é a etapa e como o caráter a pontua: tipo, caráter, peso, nota mínima e janela. */
-function identificacaoLida(
-  grupo: FormGroup<EtapaForm>,
-  catalogos: CatalogosDaLeitura,
-  tipos: TiposDeEtapa,
-) {
+function identificacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
   const controles = grupo.controls;
   const caraterAtual = controles.carater.value;
-  const carater = caracteresAdmitidos(
-    tipos.get(controles.tipoEtapaOrigemId.value),
-    etapaDeNotaDoEnem(grupo, tipos),
-    caraterAtual,
-  ).find((opcao) => opcao.valor === caraterAtual);
 
   return {
     nome: nomeDaEtapa(grupo),
     tipo: nomeDoTipoDaEtapaNoFormulario(grupo, tipos) ?? '',
-    carater: carater?.rotulo ?? '',
+    carater: caraterLido(grupo, tipos),
     peso: pontuaPorCarater(caraterAtual) ? controles.peso.value : null,
     notaMinima: eliminaPorCarater(caraterAtual) ? controles.notaMinima.value : null,
     janela: janelaLida(controles),
   };
 }
 
-/** Como a etapa é avaliada: nota máxima, forma, consolidação, lançamento, itens e escala. */
-function avaliacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
+function notaLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
   const controles = grupo.controls;
   const declaraNota = etapaDeclaraNotaMaxima(grupo, tipos);
-  const avaliacaoHumana = etapaEhDeAvaliacaoHumana(grupo, tipos);
-  const usaEscala = etapaUsaEscalaDeAtendimento(grupo, tipos);
 
   return {
     notaMaxima: declaraNota ? leituraDoCampoDecimal(controles.notaMaxima.value) : null,
     formaDeAvaliacao: declaraNota
       ? rotuloDaFormaDeAvaliacao(controles.formaDeAvaliacao.value)
       : null,
+    itensDeAvaliacao: declaraNota ? itensLidos(grupo) : null,
+  };
+}
+
+function escalaLida(controles: EtapaForm): readonly string[] {
+  return controles.escalaDeAtendimento.value.map(
+    (nivel) => `${nivel.rotulo} — ${decimalLido(nivel.percentual)}%`,
+  );
+}
+
+function lancamentoLido(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
+  const controles = grupo.controls;
+  const avaliacaoHumana = etapaEhDeAvaliacaoHumana(grupo, tipos);
+  const usaEscala = etapaUsaEscalaDeAtendimento(grupo, tipos);
+
+  return {
     regraDeConsolidacao: avaliacaoHumana ? regraDeConsolidacaoLida(controles) : null,
     passoDoLancamento:
       avaliacaoHumana && !usaEscala
         ? leituraDoCampoDecimal(controles.passoDoLancamento.value)
         : null,
-    itensDeAvaliacao: declaraNota ? itensLidos(grupo) : null,
-    escalaDeAtendimento: usaEscala
-      ? controles.escalaDeAtendimento.value.map(
-          (nivel) => `${nivel.rotulo} — ${decimalLido(nivel.percentual)}%`,
-        )
-      : null,
+    escalaDeAtendimento: usaEscala ? escalaLida(controles) : null,
+  };
+}
+
+/** Como a etapa é avaliada: nota máxima, forma, consolidação, lançamento, itens e escala. */
+function avaliacaoLida(grupo: FormGroup<EtapaForm>, tipos: TiposDeEtapa) {
+  return {
+    ...notaLida(grupo, tipos),
+    ...lancamentoLido(grupo, tipos),
     notaDoEnem: etapaDeNotaDoEnem(grupo, tipos),
   };
+}
+
+function bancasLidas(controles: EtapaForm, catalogos: CatalogosDaLeitura): readonly string[] {
+  const nomesDasBancas = catalogos.bancas();
+  return controles.bancas.value.map(
+    (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
+  );
+}
+
+function publicacoesLidas(
+  controles: EtapaForm,
+  nomeDoAto: (codigo: string) => string,
+): readonly string[] {
+  return controles.produtos.value
+    .filter((produto: ProdutoDaFase) => produto.atoCodigo !== '')
+    .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`);
 }
 
 /** O que a etapa entrega e quem a conduz: parecer, bancas, publicações e recursos. */
@@ -170,16 +206,11 @@ function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitu
   const controles = grupo.controls;
   const rotulosDosAtos = catalogos.rotuloDoAto();
   const nomeDoAto = (codigo: string): string => rotulosDosAtos.get(codigo) ?? codigo;
-  const nomesDasBancas = catalogos.bancas();
 
   return {
     parecerIndividual: controles.emiteParecerIndividual.value,
-    bancas: controles.bancas.value.map(
-      (id) => nomesDasBancas.find((banca) => banca.id === id)?.nome ?? id,
-    ),
-    publicacoes: controles.produtos.value
-      .filter((produto: ProdutoDaFase) => produto.atoCodigo !== '')
-      .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`),
+    bancas: bancasLidas(controles, catalogos),
+    publicacoes: publicacoesLidas(controles, nomeDoAto),
     recursos: controles.recursos.value.map((recurso) => recursoLido(recurso, nomeDoAto)),
   };
 }
@@ -190,7 +221,7 @@ function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitu
  */
 export function etapaLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitura) {
   return {
-    ...identificacaoLida(grupo, catalogos, catalogos.tipoEtapaPorId()),
+    ...identificacaoLida(grupo, catalogos.tipoEtapaPorId()),
     ...avaliacaoLida(grupo, catalogos.tipoEtapaPorId()),
     ...divulgacaoLida(grupo, catalogos),
   };
