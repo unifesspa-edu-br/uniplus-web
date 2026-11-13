@@ -43,6 +43,10 @@ export const MENSAGENS_DA_PROTECAO_DO_CATALOGO: Readonly<Record<string, Mensagem
     titulo: 'Há manifestação técnica registrada depois da leitura; releia o item',
     resolver: 'Leia a manifestação nova antes de decidir de novo.',
   },
+  manifestacoes_no_ciclo_invalida: {
+    titulo: 'Contagem de manifestações lida no item ausente ou inválida',
+    resolver: 'Releia o item e decida de novo.',
+  },
   dado_da_decisao_nao_cabe: {
     titulo: 'A decisão traz classificação recomendada que ela não admite',
     resolver: 'Só o ajuste recomendado leva a classificação recomendada.',

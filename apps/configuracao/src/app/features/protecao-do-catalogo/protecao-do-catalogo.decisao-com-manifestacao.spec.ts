@@ -208,6 +208,36 @@ describe('ProtecaoDoCatalogoPage — decisão diante de manifestação técnica'
     expect(decisoes()).toHaveLength(0);
   });
 
+  it('o lote com a proteção mudada e a manifestação não lida relê a fila e avisa uma vez só', async () => {
+    await abrirItem(pagina, laudo, comManifestacao(false));
+    await aprovarPeloDialogo();
+    const lote = {
+      status: 409,
+      code: `${RAIZ}protecao_mudou`,
+      title: 'A proteção do item mudou',
+      errors: [
+        { field: 'protecao', code: `${RAIZ}protecao_mudou`, message: 'A proteção mudou.' },
+        {
+          field: 'manifestacoesNoCiclo',
+          code: `${RAIZ}manifestacao_nao_lida`,
+          message: 'Há manifestação nova.',
+        },
+      ],
+    };
+
+    decisoes()[0]?.flush(JSON.stringify(lote), problema(409, lote.code, 'x')[1]);
+    await pagina.assentar();
+    pagina.controller.expectOne((r) => r.method === 'GET' && r.url === URL_DA_FILA).flush([laudo]);
+    await pagina.assentar();
+
+    const avisos = [...pagina.tela.querySelectorAll('ui-alert')].map((a) => a.textContent ?? '');
+    expect(avisos.filter((texto) => texto.includes('A proteção do item mudou'))).toHaveLength(1);
+    expect(pagina.tela.textContent).not.toContain('O item foi relido');
+    expect(drawerDoItem(pagina.tela)?.hasAttribute('open')).toBe(false);
+    pagina.controller.expectNone(URL_DO_DETALHE);
+    expect(decisoes()).toHaveLength(0);
+  });
+
   it('o histórico das manifestações mostra a situação de cada uma e a que ela substituiu', async () => {
     await abrirItem(pagina, laudo, detalheDoLaudo);
     pagina.controller.expectOne(URL_DO_HISTORICO).flush([
