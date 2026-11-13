@@ -45,11 +45,20 @@ async function mockCadastros(page: Page): Promise<void> {
   await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, (r) => json(r, FATOS));
   await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (r) => json(r, []));
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (r) => json(r, []));
+  await mockHistoricosDosCadastros(page);
+}
+
+/** Os atos da proteção e as manifestações técnicas de cada item, lidos no drawer do cadastro. */
+async function mockHistoricosDosCadastros(page: Page): Promise<void> {
   await page.route(new RegExp(`${ADMIN}\\/tipos-documento\\/[^/?]+\\/protecao\\/atos$`), (r) =>
     json(r, ATOS_DO_TIPO),
   );
   await page.route(new RegExp(`${ADMIN}\\/fatos-candidato\\/[^/?]+\\/protecao\\/atos$`), (r) =>
     json(r, ATOS_DO_FATO),
+  );
+  await page.route(
+    new RegExp(`${ADMIN}\\/(tipos-documento|fatos-candidato)\\/[^/?]+\\/protecao\\/manifestacoes$`),
+    (r) => json(r, []),
   );
 }
 

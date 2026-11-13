@@ -120,3 +120,9 @@ export const PERMISSOES_DA_ISABELLA_MANIFESTA = [
 export const PERMISSOES_DA_BETINA_DECIDE_A_PROTECAO = [
   'configuracao:protecao-do-catalogo:aprovar',
 ] as const;
+
+/** Leandro administra os tipos de documento e consulta os fatos do candidato; não decide a proteção. */
+export const PERMISSOES_DO_LEANDRO_ADMINISTRA_TIPOS_E_FATOS = [
+  'configuracao:tipos-documento:manter',
+  'configuracao:fatos-candidato:consultar',
+] as const;
