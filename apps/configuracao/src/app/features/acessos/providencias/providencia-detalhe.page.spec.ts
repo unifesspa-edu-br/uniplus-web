@@ -138,6 +138,19 @@ describe('ProvidenciaDetalhePage', () => {
     expect(campo('textarea').getAttribute('aria-invalid')).toBe('true');
   });
 
+  it('o atendimento sem motivo leva o foco ao campo do diálogo aberto, não ao da resposta', async () => {
+    await abrir();
+    botao('Atender e revogar a concessão')?.click();
+    await assentar();
+    digitar(daRevogacao<HTMLInputElement>('input[type="email"]'), 'leandro-viana84@agenciadbd.com');
+    await assentar();
+    botao('Revogar concessão')?.click();
+    await assentar();
+
+    tela.http.expectNone(`${DETALHE}/atendimento`);
+    expect(document.activeElement).toBe(daRevogacao('textarea'));
+  });
+
   it('o conflito retentável se repete uma vez, com a mesma chave', async () => {
     await abrir();
     botao('Responder')?.click();
@@ -156,6 +169,26 @@ describe('ProvidenciaDetalhePage', () => {
     await assentar();
     tela.http.expectOne(DETALHE).flush(providencia({ situacao: 'respondida' }));
     await assentar();
+  });
+
+  it.each([
+    ['solicitante_nao_responde', 'Quem solicitou a providência não a responde.'],
+    ['beneficiario_nao_responde', 'O beneficiário da concessão não responde a providência.'],
+  ])('a recusa 422 %s fica no diálogo, sem reler a providência', async (codigo, titulo) => {
+    await abrir();
+    botao('Responder')?.click();
+    await assentar();
+    digitar(campo<HTMLTextAreaElement>('textarea'), 'Segue na banca.');
+    botao('Registrar resposta')?.click();
+    await assentar();
+
+    tela.http
+      .expectOne(`${DETALHE}/resposta`)
+      .flush(...problema(422, `uniplus.autorizacao.providencia.${codigo}`));
+    await assentar();
+
+    expect(document.querySelector('cfg-motivo-dialog')?.textContent).toContain(titulo);
+    tela.http.expectNone(DETALHE);
   });
 
   it('a providência já respondida por outra pessoa mostra a recusa e relê', async () => {
