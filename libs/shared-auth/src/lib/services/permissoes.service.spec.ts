@@ -9,7 +9,7 @@ import { PermissoesService } from './permissoes.service';
 
 const URL = 'http://api.test/api/autorizacao/permissoes/efetivas';
 
-const MOTIVOS = { codigo: 'selecao:motivos-decisao-isencao:manter', nome: 'Manter motivos' };
+const MOTIVOS = { codigo: 'selecao:motivos-de-decisao:manter', nome: 'Manter motivos' };
 const CAMPI = { codigo: 'configuracao:campi:manter', nome: 'Manter campi' };
 
 describe('PermissoesService', () => {
@@ -49,7 +49,7 @@ describe('PermissoesService', () => {
     await pronta;
 
     expect(service.estado()).toBe('carregada');
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(true);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
     expect(service.tem('selecao:processos:configurar')).toBe(false);
     expect(service.temAlguma('selecao:processos:configurar', 'configuracao:campi:manter')).toBe(
       true,
@@ -76,11 +76,11 @@ describe('PermissoesService', () => {
     const pronta = service.garantir();
 
     expect(service.estado()).toBe('carregando');
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
     http.expectOne(URL).flush([CAMPI]);
     await pronta;
 
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
     expect(service.tem('configuracao:campi:manter')).toBe(true);
   });
 
@@ -89,11 +89,11 @@ describe('PermissoesService', () => {
 
     sessao.set('leandro:1');
     const pronta = service.garantir();
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(true);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
     http.expectOne(URL).flush([CAMPI]);
     await pronta;
 
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
     expect(service.tem('configuracao:campi:manter')).toBe(true);
   });
 
@@ -153,7 +153,7 @@ describe('PermissoesService', () => {
     await pronta;
 
     expect(service.estado()).toBe('indisponivel');
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
   });
 
   it('ignora a resposta de uma sessão que já foi substituída', async () => {
@@ -170,7 +170,7 @@ describe('PermissoesService', () => {
     await antiga;
 
     expect(service.tem('configuracao:campi:manter')).toBe(true);
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
   });
 
   it('descarta a resposta antiga entregue depois da troca de sessão e antes de qualquer sincronização', async () => {
@@ -181,13 +181,13 @@ describe('PermissoesService', () => {
     requisicaoAntiga.flush([MOTIVOS]);
     await Promise.resolve();
 
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
 
     http.expectOne(URL).flush([CAMPI]);
     await antiga;
     await service.garantir();
     expect(service.tem('configuracao:campi:manter')).toBe(true);
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(false);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
   });
 
   it('garantir aguarda a carga da sessão vigente quando uma renovação ocorre durante a consulta', async () => {
@@ -201,7 +201,7 @@ describe('PermissoesService', () => {
     await pronta;
 
     expect(service.estado()).toBe('carregada');
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(true);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
     expect(service.tem('configuracao:campi:manter')).toBe(true);
   });
 
@@ -215,6 +215,6 @@ describe('PermissoesService', () => {
     http.expectOne(URL).flush([MOTIVOS]);
     await service.garantir();
 
-    expect(service.tem('selecao:motivos-decisao-isencao:manter')).toBe(true);
+    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
   });
 });
