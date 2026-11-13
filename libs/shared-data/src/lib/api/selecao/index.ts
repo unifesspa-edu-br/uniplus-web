@@ -12,6 +12,13 @@ export {
   type TipoCatalogadoCertameDto,
 } from './certames-publicos.request';
 export { RegrasCatalogoApi } from './regras-catalogo.api';
+export {
+  MotivosDeDecisaoApi,
+  type AtualizarMotivoDeDecisaoCommand,
+  type CriarMotivoDeDecisaoCommand,
+  type MotivoDeDecisaoDto,
+  type MotivosDeDecisaoQuery,
+} from './motivos-de-decisao.api';
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
 export { OFERTA_NAO_IDENTIFICADA, ofertasEmOrdem, type OfertaExibida } from './ofertas-escolhidas';
 export { InscricoesApi } from './inscricoes.api';
