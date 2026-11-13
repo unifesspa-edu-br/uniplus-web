@@ -56,12 +56,12 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
     detalhe: DetalheDaProtecaoDoCatalogoDto,
   ): Promise<void> => abrirItem(pagina, item, detalhe);
 
-  it('lista só Cadastro, Item e Sensibilidade, sem código, hipótese, finalidade nem botões', async () => {
+  it('lista Cadastro, Item, Sensibilidade, Ciclo e Manifestação, sem código, hipótese, finalidade nem botões', async () => {
     const tela = await carregar([laudo, rural]);
 
     expect(
       Array.from(tela.querySelectorAll('thead th')).map((th) => th.textContent?.trim()),
-    ).toEqual(['Cadastro', 'Item', 'Sensibilidade']);
+    ).toEqual(['Cadastro', 'Item', 'Sensibilidade', 'Ciclo', 'Manifestação']);
     const lista = tela.querySelector('.table-responsive')?.textContent?.replace(/\s+/gu, ' ') ?? '';
     expect(lista).toContain('Laudo médico complementar');
     expect(lista).toContain('Interno');
@@ -158,7 +158,7 @@ describe('ProtecaoDoCatalogoPage — fila, detalhe e aprovação', () => {
 
     const painel = drawer(tela);
     expect(painel?.textContent).toContain('Item não encontrado');
-    expect(painel?.textContent).toContain('O item não existe mais no catálogo.');
+    expect(painel?.textContent).toContain('O tipo de documento ou o fato do candidato não existe mais.');
     expect(painel?.textContent).not.toContain('Tentar novamente');
     expect(botaoDoRodape(tela, 'Aprovar')).toBeUndefined();
     expect(botaoDoRodape(tela, 'Fechar')).toBeDefined();

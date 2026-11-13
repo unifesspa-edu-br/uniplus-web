@@ -93,7 +93,7 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Proteção de Dados do Catálogo',
+          label: 'Proteção de dados dos tipos de documento e dos fatos do candidato',
           icon: 'pi-verified',
           routerLink: '/protecao-do-catalogo',
           exact: true,

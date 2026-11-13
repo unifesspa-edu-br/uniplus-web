@@ -1,9 +1,9 @@
 <div class="page-header">
   <div class="page-header__content">
-    <h1 class="page-header__title">Proteção de Dados do Catálogo</h1>
+    <h1 class="page-header__title">Proteção de dados dos tipos de documento e dos fatos do candidato</h1>
     <p class="page-header__desc">
       {{ aba() === 'decisoes' ? 'As decisões já registradas sobre a proteção de dados dos tipos de
-      documento e dos fatos do catálogo.' : 'Os tipos de documento e os fatos do catálogo que
+      documento e dos fatos do candidato.' : 'Os tipos de documento e os fatos do candidato que
       aguardam a sua decisão sobre a proteção de dados.' }}
     </p>
   </div>
@@ -42,7 +42,7 @@
   class="form-drawer"
   [visible]="edicao.detalheAberto()"
   (visibleChange)="!$event && edicao.fecharDetalhe()"
-  [heading]="itemAberto()?.nome ?? 'Item do catálogo'"
+  [heading]="itemAberto()?.nome ?? 'Tipo de documento ou fato do candidato'"
   ariaLabel="Detalhe do item aguardando a decisão"
   [closable]="!edicao.decidindo()"
   focoInicial="titulo"

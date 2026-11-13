@@ -197,7 +197,7 @@ describe('ProtecaoDoCatalogoPage — páginas e detalhe das decisões', () => {
         .querySelector('dialog[aria-label="Detalhe da decisão"]')
         ?.textContent?.replace(/\s+/gu, ' ') ?? '';
     expect(texto).toContain('Decidido porCaroline Ribeiro');
-    expect(texto).toContain('O item não existe mais no catálogo.');
+    expect(texto).toContain('O tipo de documento ou o fato do candidato não existe mais.');
     expect(texto).not.toContain('Tentar novamente');
   });
 });
