@@ -3,33 +3,53 @@ import {
   HttpContextToken,
   HttpInterceptorFn,
   HttpResourceRequest,
-  provideHttpClient,
-  withInterceptors,
 } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController } from '@angular/common/http/testing';
 import { ApplicationRef, Injector, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { apiResultInterceptor } from './api-result.interceptor';
+import {
+  baseProblem,
+  CorpoDaResposta,
+  Edital,
+  InitDaResposta,
+  PROBLEM_HEADERS,
+  problemaDe,
+  provedoresDeHttpComEnvelope,
+} from './api-result.interceptor.testing';
 import { ProblemDetails } from './problem-details';
 import { useApiResource, UseApiResourceRef } from './use-api-resource';
 import { withVendorMime } from './vendor-mime';
 
-interface Edital {
-  readonly id: string;
-  readonly numero: number;
-}
-
-const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
-const baseProblem: ProblemDetails = {
-  type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.edital.nao_encontrado',
-  title: 'Edital não encontrado',
+const URL_EDITAL = '/api/selecao/editais/edt-1';
+const RESPOSTA_OK: InitDaResposta = { status: 200, statusText: 'OK' };
+const RESPOSTA_NAO_ENCONTRADO: InitDaResposta = {
   status: 404,
-  code: 'uniplus.selecao.edital.nao_encontrado',
-  traceId: '4bf92f3577b34da6a3ce929d0e0e4736',
+  statusText: 'Not Found',
+  headers: PROBLEM_HEADERS,
+};
+const RESPOSTA_NAO_PROCESSAVEL: InitDaResposta = {
+  status: 422,
+  statusText: 'Unprocessable Entity',
+  headers: PROBLEM_HEADERS,
+};
+const LINK_PROXIMA_PAGINA = '</api/selecao/editais?cursor=ABC>; rel="next"';
+const CONTEXTO_DO_CHAMADOR = new HttpContextToken<boolean>(() => false);
+
+const problemaDeValidacao: ProblemDetails = {
+  ...problemaDe(422, 'uniplus.validacao', 'Erro de validação'),
+  errors: [{ field: 'titulo', code: 'Titulo.Vazio', message: 'Título obrigatório' }],
+};
+
+/**
+ * Interceptor sintético que lança Error não-HttpErrorResponse ANTES do request
+ * sair (caso real: interceptor de auth/logging/telemetria com bug síncrono). O
+ * throw escapa do envelopamento do apiResultInterceptor, que só captura
+ * HttpErrorResponse, e chega ao httpResource em status 'error', fazendo
+ * `Resource.value()` lançar `ResourceValueError` se chamado sem guard.
+ */
+const interceptorQueLancaErroNaoHttp: HttpInterceptorFn = () => {
+  throw new Error('synthetic non-HTTP failure (e.g. logging interceptor)');
 };
 
 /**
@@ -45,23 +65,25 @@ const baseProblem: ProblemDetails = {
  * Zone.js e o Angular team explicitamente desabilita ambas no Vitest runner.
  */
 function setup() {
-  TestBed.configureTestingModule({
-    providers: [
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-    ],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDeHttpComEnvelope() });
   const appRef = TestBed.inject(ApplicationRef);
   const injector = TestBed.inject(Injector);
   return {
     controller: TestBed.inject(HttpTestingController),
-    create: <T>(
-      requestFn: () => string | HttpResourceRequest | undefined,
-    ): UseApiResourceRef<T> =>
+    create: <T>(requestFn: () => string | HttpResourceRequest | undefined): UseApiResourceRef<T> =>
       TestBed.runInInjectionContext(() => useApiResource<T>(requestFn, { injector })),
     tickEffects: () => TestBed.tick(),
     stable: () => appRef.whenStable(),
   };
+}
+
+function esperarEnvelopeOk(resource: UseApiResourceRef<Edital>, esperado: Edital): void {
+  expect(resource.data()).toEqual(esperado);
+  expect(resource.problem()).toBeNull();
+  expect(resource.isLoading()).toBe(false);
+  expect(resource.status()).toBe('resolved');
+  expect(resource.statusCode()).toBe(200);
+  expect(resource.value()?.ok).toBe(true);
 }
 
 describe('useApiResource', () => {
@@ -73,57 +95,52 @@ describe('useApiResource', () => {
 
   afterEach(() => env.controller.verify());
 
-  it('carga inicial com URL string dispara GET e popula data() em 200', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
+  function iniciar<T>(
+    requestFn: () => string | HttpResourceRequest | undefined,
+  ): UseApiResourceRef<T> {
+    const resource = env.create<T>(requestFn);
     env.tickEffects();
+    return resource;
+  }
 
+  async function responder(
+    url: string,
+    corpo: CorpoDaResposta,
+    init: InitDaResposta = RESPOSTA_OK,
+  ): Promise<void> {
+    env.controller.expectOne(url).flush(corpo, init);
+    await env.stable();
+  }
+
+  it('carga inicial com URL string dispara GET e popula data() em 200', async () => {
+    const resource = iniciar<Edital>(() => URL_EDITAL);
     expect(resource.isLoading()).toBe(true);
     expect(resource.data()).toBeNull();
 
     const seed: Edital = { id: 'edt-1', numero: 42 };
-    env.controller
-      .expectOne('/api/selecao/editais/edt-1')
-      .flush(seed, { status: 200, statusText: 'OK' });
-    await env.stable();
+    await responder(URL_EDITAL, seed);
 
-    expect(resource.data()).toEqual(seed);
-    expect(resource.problem()).toBeNull();
-    expect(resource.isLoading()).toBe(false);
-    expect(resource.status()).toBe('resolved');
-    expect(resource.statusCode()).toBe(200);
-    expect(resource.value()?.ok).toBe(true);
+    esperarEnvelopeOk(resource, seed);
   });
 
   it('mudança reativa do URL cancela request anterior e dispara nova (race-cancellation nativa)', async () => {
     const id = signal('edt-1');
-    const resource = env.create<Edital>(() => `/api/selecao/editais/${id()}`);
-    env.tickEffects();
-
-    const reqAntiga = env.controller.expectOne('/api/selecao/editais/edt-1');
+    const resource = iniciar<Edital>(() => `/api/selecao/editais/${id()}`);
+    const reqAntiga = env.controller.expectOne(URL_EDITAL);
     expect(reqAntiga.cancelled).toBe(false);
 
     id.set('edt-2');
     env.tickEffects();
-
-    // httpResource cancela a request anterior automaticamente quando dependências
-    // reativas mudam — substitui o race guard manual ("if (this.id() !== id) return").
+    // httpResource cancela a request anterior quando dependências reativas mudam.
     expect(reqAntiga.cancelled).toBe(true);
 
-    const reqNova = env.controller.expectOne('/api/selecao/editais/edt-2');
-    reqNova.flush({ id: 'edt-2', numero: 99 }, { status: 200, statusText: 'OK' });
-    await env.stable();
-
+    await responder('/api/selecao/editais/edt-2', { id: 'edt-2', numero: 99 });
     expect(resource.data()).toEqual({ id: 'edt-2', numero: 99 });
   });
 
   it('404 problem+json popula problem() e mantém data()=null', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais/missing');
-    env.tickEffects();
-
-    env.controller
-      .expectOne('/api/selecao/editais/missing')
-      .flush(baseProblem, { status: 404, statusText: 'Not Found', headers: PROBLEM_HEADERS });
-    await env.stable();
+    const resource = iniciar<Edital>(() => '/api/selecao/editais/missing');
+    await responder('/api/selecao/editais/missing', baseProblem, RESPOSTA_NAO_ENCONTRADO);
 
     expect(resource.data()).toBeNull();
     expect(resource.problem()).toMatchObject({
@@ -131,18 +148,16 @@ describe('useApiResource', () => {
       status: 404,
     });
     expect(resource.value()?.ok).toBe(false);
-    // status do Resource é resolved porque o interceptor envelopa o erro em
-    // ApiResult.fail e re-emite via next — error() do Resource fica undefined.
+    // O interceptor envelopa o erro em ApiResult.fail: status resolved e error() indefinido.
     expect(resource.status()).toBe('resolved');
     expect(resource.error()).toBeUndefined();
   });
 
   it('network error (status 0) é envelopado como ApiFailure com code uniplus.client.network_error', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
-    env.tickEffects();
+    const resource = iniciar<Edital>(() => URL_EDITAL);
 
     env.controller
-      .expectOne('/api/selecao/editais/edt-1')
+      .expectOne(URL_EDITAL)
       .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
     await env.stable();
 
@@ -152,33 +167,20 @@ describe('useApiResource', () => {
   });
 
   it('reload() refaz a request preservando dependências reativas atuais', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
-    env.tickEffects();
-
-    env.controller
-      .expectOne('/api/selecao/editais/edt-1')
-      .flush({ id: 'edt-1', numero: 1 }, { status: 200, statusText: 'OK' });
-    await env.stable();
-
+    const resource = iniciar<Edital>(() => URL_EDITAL);
+    await responder(URL_EDITAL, { id: 'edt-1', numero: 1 });
     expect(resource.data()).toEqual({ id: 'edt-1', numero: 1 });
 
     resource.reload();
     env.tickEffects();
-
-    env.controller
-      .expectOne('/api/selecao/editais/edt-1')
-      .flush({ id: 'edt-1', numero: 2 }, { status: 200, statusText: 'OK' });
-    await env.stable();
+    await responder(URL_EDITAL, { id: 'edt-1', numero: 2 });
 
     expect(resource.data()).toEqual({ id: 'edt-1', numero: 2 });
   });
 
   it('request() retorna undefined => nenhum GET disparado, status=idle', async () => {
     const ativo = signal(false);
-    const resource = env.create<Edital>(() =>
-      ativo() ? '/api/selecao/editais/edt-1' : undefined,
-    );
-    env.tickEffects();
+    const resource = iniciar<Edital>(() => (ativo() ? URL_EDITAL : undefined));
 
     expect(resource.status()).toBe('idle');
     expect(resource.data()).toBeNull();
@@ -187,96 +189,63 @@ describe('useApiResource', () => {
 
     ativo.set(true);
     env.tickEffects();
-
-    env.controller
-      .expectOne('/api/selecao/editais/edt-1')
-      .flush({ id: 'edt-1', numero: 7 }, { status: 200, statusText: 'OK' });
-    await env.stable();
+    await responder(URL_EDITAL, { id: 'edt-1', numero: 7 });
 
     expect(resource.data()).toEqual({ id: 'edt-1', numero: 7 });
   });
 
   it('aceita HttpResourceRequest com context (compõe withVendorMime no Accept)', async () => {
-    const resource = env.create<Edital>(() => ({
-      url: '/api/selecao/editais/edt-1',
+    const resource = iniciar<Edital>(() => ({
+      url: URL_EDITAL,
       context: withVendorMime('edital', 1),
     }));
-    env.tickEffects();
 
-    const req = env.controller.expectOne('/api/selecao/editais/edt-1');
+    const req = env.controller.expectOne(URL_EDITAL);
     expect(req.request.headers.get('Accept')).toBe('application/vnd.uniplus.edital.v1+json');
 
-    req.flush({ id: 'edt-1', numero: 42 }, { status: 200, statusText: 'OK' });
+    req.flush({ id: 'edt-1', numero: 42 }, RESPOSTA_OK);
     await env.stable();
 
     expect(resource.data()?.id).toBe('edt-1');
   });
 
   it('aceita HttpResourceRequest com context arbitrário (não amarrado a vendorMime)', async () => {
-    // Token de exemplo para garantir que helper não acopla a um token específico —
-    // qualquer HttpContext do caller é propagado intacto pelo httpResource.
-    const FLAG_TOKEN = new HttpContextToken<boolean>(() => false);
-    const resource = env.create<Edital>(() => ({
-      url: '/api/selecao/editais/edt-1',
-      context: new HttpContext().set(FLAG_TOKEN, true),
+    const resource = iniciar<Edital>(() => ({
+      url: URL_EDITAL,
+      context: new HttpContext().set(CONTEXTO_DO_CHAMADOR, true),
     }));
-    env.tickEffects();
 
-    const req = env.controller.expectOne('/api/selecao/editais/edt-1');
-    expect(req.request.context.get(FLAG_TOKEN)).toBe(true);
-    req.flush({ id: 'edt-1', numero: 1 }, { status: 200, statusText: 'OK' });
+    const req = env.controller.expectOne(URL_EDITAL);
+    expect(req.request.context.get(CONTEXTO_DO_CHAMADOR)).toBe(true);
+    req.flush({ id: 'edt-1', numero: 1 }, RESPOSTA_OK);
     await env.stable();
 
     expect(resource.data()?.numero).toBe(1);
   });
 
   it('headers() expõe response headers (ex.: Link rel="next" para cursor pagination)', async () => {
-    const resource = env.create<readonly Edital[]>(() => '/api/selecao/editais');
-    env.tickEffects();
+    const resource = iniciar<readonly Edital[]>(() => '/api/selecao/editais');
 
-    env.controller.expectOne('/api/selecao/editais').flush(
-      [{ id: 'edt-1', numero: 1 }],
-      {
-        status: 200,
-        statusText: 'OK',
-        headers: { Link: '</api/selecao/editais?cursor=ABC>; rel="next"' },
-      },
-    );
-    await env.stable();
+    await responder('/api/selecao/editais', [{ id: 'edt-1', numero: 1 }], {
+      ...RESPOSTA_OK,
+      headers: { Link: LINK_PROXIMA_PAGINA },
+    });
 
-    expect(resource.headers()?.get('Link')).toBe('</api/selecao/editais?cursor=ABC>; rel="next"');
+    expect(resource.headers()?.get('Link')).toBe(LINK_PROXIMA_PAGINA);
   });
 
   it('hasValue() reflete presença de envelope (loading=false e value definido)', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais/edt-1');
-    env.tickEffects();
-
+    const resource = iniciar<Edital>(() => URL_EDITAL);
     expect(resource.hasValue()).toBe(false);
 
-    env.controller
-      .expectOne('/api/selecao/editais/edt-1')
-      .flush({ id: 'edt-1', numero: 5 }, { status: 200, statusText: 'OK' });
-    await env.stable();
+    await responder(URL_EDITAL, { id: 'edt-1', numero: 5 });
 
     expect(resource.hasValue()).toBe(true);
   });
 
   it('422 com errors[] de validação preserva o array no problem()', async () => {
-    const resource = env.create<Edital>(() => '/api/selecao/editais');
-    env.tickEffects();
-
-    env.controller.expectOne('/api/selecao/editais').flush(
-      {
-        ...baseProblem,
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.validacao',
-        title: 'Erro de validação',
-        status: 422,
-        code: 'uniplus.validacao',
-        errors: [{ field: 'titulo', code: 'Titulo.Vazio', message: 'Título obrigatório' }],
-      },
-      { status: 422, statusText: 'Unprocessable Entity', headers: PROBLEM_HEADERS },
-    );
-    await env.stable();
+    const resource = iniciar<Edital>(() => '/api/selecao/editais');
+    await responder('/api/selecao/editais', problemaDeValidacao, RESPOSTA_NAO_PROCESSAVEL);
 
     const problem = resource.problem();
     expect(problem?.code).toBe('uniplus.validacao');
@@ -290,41 +259,30 @@ describe('useApiResource', () => {
 });
 
 /**
- * Cenário isolado em describe próprio porque exige um interceptor adicional
- * (`throwingInterceptor`) que faz o `Resource.value()` nativo do Angular
- * lançar `ResourceValueError`. O wrapper deve isolar o caller — `data()`/
- * `problem()`/`value()` retornam ausência segura em estado `'error'`, em vez
- * de propagar a exceção e crashar a página durante change detection.
+ * Cenário isolado em describe próprio porque exige um interceptor adicional que
+ * faz o `Resource.value()` nativo do Angular lançar `ResourceValueError`. O
+ * wrapper deve isolar o caller — `data()`/`problem()`/`value()` retornam
+ * ausência segura em estado `'error'`, em vez de propagar a exceção e crashar a
+ * página durante change detection.
  */
 describe('useApiResource — guarda contra Resource.value() throw em status error', () => {
-  it('data()/problem()/value() retornam ausência sem lançar quando status=error', async () => {
-    // Interceptor sintético que lança Error não-HttpErrorResponse ANTES do
-    // request sair (caso real: interceptor de auth/logging/telemetria com bug
-    // síncrono). O throw escapa do `envelopeFailure` do apiResultInterceptor
-    // (que só captura HttpErrorResponse — linha 89: `if (!(error instanceof
-    // HttpErrorResponse)) throw error;`) e chega ao httpResource em status
-    // 'error', causando `Resource.value()` a lançar `ResourceValueError` se
-    // chamado sem guard.
-    const throwingInterceptor: HttpInterceptorFn = () => {
-      throw new Error('synthetic non-HTTP failure (e.g. logging interceptor)');
-    };
-
+  async function resourceComInterceptorQueLanca(): Promise<UseApiResourceRef<Edital>> {
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor, throwingInterceptor])),
-        provideHttpClientTesting(),
-      ],
+      providers: provedoresDeHttpComEnvelope(interceptorQueLancaErroNaoHttp),
     });
     const appRef = TestBed.inject(ApplicationRef);
     const injector = TestBed.inject(Injector);
     const resource = TestBed.runInInjectionContext(() =>
-      useApiResource<Edital>(() => '/api/selecao/editais/edt-1', { injector }),
+      useApiResource<Edital>(() => URL_EDITAL, { injector }),
     );
     appRef.tick();
     await appRef.whenStable();
+    return resource;
+  }
 
-    // Status do Resource é 'error' (interceptor throwing escapou da chain),
-    // mas o helper isola: data()/problem()/value() retornam ausência segura.
+  it('data()/problem()/value() retornam ausência sem lançar quando status=error', async () => {
+    const resource = await resourceComInterceptorQueLanca();
+
     expect(resource.status()).toBe('error');
     expect(resource.error()).toBeInstanceOf(Error);
     expect(() => resource.data()).not.toThrow();

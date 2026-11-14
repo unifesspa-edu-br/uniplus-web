@@ -21,24 +21,16 @@ const cursorExpirado = mockProblemDetails({
 
 function setup() {
   TestBed.configureTestingModule({});
-  const problem = signal<ProblemDetails | null>(null);
-  const pagina = signal<CursorPagina | undefined>(undefined);
-  const reiniciarPagina = vi.fn();
-  const aoRecuperar = vi.fn();
-
-  const recuperando = TestBed.runInInjectionContext(() =>
-    useCursorObsoletoRecovery({ problem, pagina, reiniciarPagina, aoRecuperar }),
-  );
+  const entradas = {
+    problem: signal<ProblemDetails | null>(null),
+    pagina: signal<CursorPagina | undefined>(undefined),
+    reiniciarPagina: vi.fn(),
+    aoRecuperar: vi.fn(),
+  };
+  const recuperando = TestBed.runInInjectionContext(() => useCursorObsoletoRecovery(entradas));
   TestBed.tick();
 
-  return {
-    problem,
-    pagina,
-    reiniciarPagina,
-    aoRecuperar,
-    recuperando,
-    tick: () => TestBed.tick(),
-  };
+  return { ...entradas, recuperando, tick: () => TestBed.tick() };
 }
 
 describe('useCursorObsoletoRecovery', () => {
