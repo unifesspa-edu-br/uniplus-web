@@ -145,7 +145,12 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
       }
     } @else {
       <button type="button" class="btn btn--sm" (click)="login()">
-        <span class="entrar">Entrar@if (loginPeloGovbr) {<span class="entrar__provedor"> com gov.br</span>}</span>
+        <span class="entrar"
+          >Entrar
+          @if (loginPeloGovbr) {
+            <span class="entrar__provedor"> com gov.br</span>
+          }
+        </span>
       </button>
     }
   `,
@@ -216,21 +221,17 @@ export class UserHeaderInfoComponent {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.disclosure.close(true);
-      return;
+    } else if (TECLAS_DE_NAVEGACAO_DO_MENU.includes(event.key)) {
+      event.preventDefault();
+      this.moverFocoDoMenu(event.key);
     }
+  }
 
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-      return;
-    }
-
-    event.preventDefault();
+  private moverFocoDoMenu(tecla: string): void {
     const items = this.menuItems();
     if (!items.length) return;
-
     const currentIndex = items.indexOf(this.document.activeElement as HTMLElement);
-    const nextIndex = proximoItemDoMenu(event.key, currentIndex, items.length - 1);
-
-    items[nextIndex]?.focus();
+    items[proximoItemDoMenu(tecla, currentIndex, items.length - 1)]?.focus();
   }
 
   protected openProfile(): void {
@@ -271,6 +272,8 @@ export class UserHeaderInfoComponent {
 }
 
 /** O item que a tecla de navegação alcança; as setas dão a volta nas pontas. */
+const TECLAS_DE_NAVEGACAO_DO_MENU = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+
 function proximoItemDoMenu(tecla: string, atual: number, ultimo: number): number {
   switch (tecla) {
     case 'Home':
