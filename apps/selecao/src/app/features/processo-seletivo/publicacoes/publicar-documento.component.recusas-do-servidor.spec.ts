@@ -58,7 +58,7 @@ describe('PublicarDocumentoComponent — recusas do servidor ao publicar', () =>
       'uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo',
       'O objeto já tem ato vivo do tipo',
     ],
-    ['uniplus.publicacoes.ato_normativo.raiz_ja_retificada', 'O ato já foi retificado'],
+    ['uniplus.publicacoes.ato_normativo.ato_ja_retificado', 'O ato já foi retificado'],
   ])(
     'mostra o 409 %s com a mensagem da API e mantém o que foi preenchido',
     async (code, titulo) => {
@@ -133,7 +133,7 @@ describe('PublicarDocumentoComponent — recusas do servidor ao publicar', () =>
     const segunda = tela.controller.expectOne(ROTA_ATOS);
 
     expect(segunda.request.headers.get('Idempotency-Key')).toBe(chave);
-    segunda.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    segunda.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 });

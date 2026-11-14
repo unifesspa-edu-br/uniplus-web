@@ -50,7 +50,7 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
 
   it.each([
     ['uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo', 'O objeto já tem ato vivo do tipo'],
-    ['uniplus.publicacoes.ato_normativo.raiz_ja_retificada', 'O ato já foi retificado'],
+    ['uniplus.publicacoes.ato_normativo.ato_ja_retificado', 'O ato já foi retificado'],
   ])('em 409 %s, mostra a mensagem da API no bloco do ato e mantém o rascunho', async (code, titulo) => {
     const { resultado, antes } = await publicarERecusarComConflito(code, titulo);
 

@@ -12,7 +12,7 @@ const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_nao_congela_configuracao',
   'uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo',
-  'uniplus.publicacoes.ato_normativo.raiz_ja_retificada',
+  'uniplus.publicacoes.ato_normativo.ato_ja_retificado',
   'uniplus.selecao.anexo_do_edital.nao_encontrado',
   'uniplus.selecao.anexo_do_edital.nao_confirmado',
   'uniplus.selecao.anexo_do_edital.repetido',

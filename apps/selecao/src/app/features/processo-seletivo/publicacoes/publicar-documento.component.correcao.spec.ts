@@ -45,7 +45,7 @@ describe('PublicarDocumentoComponent — correção de um ato', () => {
       atoCorrigidoId: ATO_AVISO,
       motivoDaCorrecao: 'Corrige a data.',
     });
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 
@@ -78,7 +78,7 @@ describe('PublicarDocumentoComponent — correção de um ato', () => {
       atoCorrigidoId: ATO_AVISO,
       motivoDaCorrecao: 'Corrige a data.',
     });
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 });

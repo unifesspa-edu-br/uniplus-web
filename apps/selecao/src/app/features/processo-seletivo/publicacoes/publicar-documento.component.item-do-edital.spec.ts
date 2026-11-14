@@ -93,7 +93,7 @@ describe('PublicarDocumentoComponent — item do edital', () => {
     });
     expect(requisicao.request.body).not.toHaveProperty('tipoAtoCodigo');
     expect(requisicao.request.body).not.toHaveProperty('atoCorrigidoId');
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
 
     expect(tela.publicados).toBe(1);
@@ -113,7 +113,7 @@ describe('PublicarDocumentoComponent — item do edital', () => {
 
     const requisicao = tela.controller.expectOne(ROTA_PRODUTO);
     expect(requisicao.request.body).toMatchObject({ politicaDeDivulgacaoConfirmada: false });
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 
@@ -139,7 +139,7 @@ describe('PublicarDocumentoComponent — item do edital', () => {
       motivoDaCorrecao: 'Corrige a classificação.',
       politicaDeDivulgacaoConfirmada: true,
     });
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 

@@ -162,7 +162,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     expect(req.request.headers.get('Idempotency-Key')).toBe('ato-avulso-key');
-    req.flush({ atoId: TIPO_ID }, { status: 202, statusText: 'Accepted' });
+    req.flush({ atoId: TIPO_ID }, { status: 201, statusText: 'Created' });
 
     const result = await promise;
     expect(isApiOk(result)).toBe(true);
@@ -204,7 +204,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     expect(req.request.headers.get('Idempotency-Key')).toBe('produto-key');
-    req.flush({ atoId: ID }, { status: 202, statusText: 'Accepted' });
+    req.flush({ atoId: ID }, { status: 201, statusText: 'Created' });
 
     expect(isApiOk(await promise)).toBe(true);
   });
