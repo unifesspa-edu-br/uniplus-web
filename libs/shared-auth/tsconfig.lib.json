@@ -12,6 +12,7 @@
     "**/*.spec.ts",
     "**/*.test.ts",
     "**/*.dod.ts",
+    "**/*.testing.ts",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",
