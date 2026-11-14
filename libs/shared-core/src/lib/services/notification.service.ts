@@ -92,20 +92,8 @@ export class NotificationService {
    *   sobrescrito via `overrides.persistent`.
    */
   errorFromProblem(problem: ProblemDetails, overrides?: NotificationFromProblemOptions): number {
-    const id = ++this.counter;
-    const persistent = overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD;
-    const traceId = problem.traceId.length > 0 ? problem.traceId : undefined;
-    const notification: Notification = {
-      id,
-      type: 'error',
-      title: overrides?.title ?? problem.title,
-      detail: overrides?.detail ?? problem.detail,
-      traceId,
-      code: problem.code,
-      persistent,
-    };
-    this.publish(notification, overrides?.timeoutMs);
-    return id;
+    const notification = notificacaoDoProblema(++this.counter, problem, overrides);
+    return this.publish(notification, overrides?.timeoutMs);
   }
 
   dismiss(id: number): void {
@@ -132,26 +120,35 @@ export class NotificationService {
     detail: string | undefined,
     options: NotificationOptions | undefined,
   ): number {
-    const id = ++this.counter;
-    const persistent = options?.persistent ?? false;
-    const notification: Notification = {
-      id,
-      type,
-      title,
-      detail,
-      persistent,
-    };
-    this.publish(notification, options?.timeoutMs);
-    return id;
+    const { timeoutMs, persistent = false }: NotificationOptions = options ?? {};
+    return this.publish({ id: ++this.counter, type, title, detail, persistent }, timeoutMs);
   }
 
-  private publish(notification: Notification, timeoutMs: number | undefined): void {
+  private publish(notification: Notification, timeoutMs: number | undefined): number {
     this._notifications.update((items) => [...items, notification]);
-    if (notification.persistent) {
-      return;
+    if (!notification.persistent) {
+      const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
+      this.timers.set(
+        notification.id,
+        setTimeout(() => this.dismiss(notification.id), timeout),
+      );
     }
-    const timeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    const timer = setTimeout(() => this.dismiss(notification.id), timeout);
-    this.timers.set(notification.id, timer);
+    return notification.id;
   }
+}
+
+function notificacaoDoProblema(
+  id: number,
+  problem: ProblemDetails,
+  overrides: NotificationFromProblemOptions | undefined,
+): Notification {
+  return {
+    id,
+    type: 'error',
+    title: overrides?.title ?? problem.title,
+    detail: overrides?.detail ?? problem.detail,
+    traceId: problem.traceId.length > 0 ? problem.traceId : undefined,
+    code: problem.code,
+    persistent: overrides?.persistent ?? problem.status >= SERVER_ERROR_THRESHOLD,
+  };
 }
