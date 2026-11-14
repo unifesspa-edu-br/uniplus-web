@@ -78,20 +78,19 @@ jobs:
       - name: Verificar drift do codegen OpenAPI (shared-data)
         run: npx nx run shared-data:codegen-api-check
 
-  main:
+  # Os gates rodam em jobs separados, cada um no seu runner. Fatos observados com os gates num
+  # job só: o run 43551538979 (PR #1478) foi cancelado no teto de tempo e, no run de push
+  # 43551403356, testes de `configuracao` estouraram o timeout por caso enquanto `selecao` rodava
+  # ao lado; antes disso, runs foram encerrados com "The runner has received a shutdown signal".
+  # A hipótese é contenção de CPU e memória entre as tarefas do mesmo runner. Um runner por alvo
+  # e por projeto de teste elimina essa disputa. O job `main` virou o agregador desses jobs e
+  # mantém o nome do check exigido pela proteção da `main`.
+  escopo:
     runs-on: ubuntu-latest
-    # Os gates completos levam de 16 a 23 minutos quando rodam sozinhos; o teto dá folga
-    # para o pior caso sem deixar um run travado ocupar runner por horas. Os outros dois
-    # jobs já declaravam o seu — este, que é o pesado, era o único sem.
-    timeout-minutes: 45
-    # O runner hospedado foi recolhido no meio dos gates ("The runner has received a shutdown
-    # signal") sem nenhum teste falhar, com a saída parada por 26 a 36 segundos antes do
-    # encerramento, na altura dos testes das apps grandes. A hipótese é carga de máquina: o Nx
-    # roda 3 tarefas por vez e cada vitest abre, por padrão, um worker a menos que o número de
-    # núcleos. Duas tarefas por vez, com dois workers de teste cada, reduzem essa carga.
-    env:
-      NX_PARALLEL: 2
-      VITEST_MAX_WORKERS: 2
+    timeout-minutes: 10
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+      testes: ${{ steps.projetos.outputs.testes }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -119,6 +118,7 @@ jobs:
               - 'tools/e2e-docker/**'
               - 'tools/test-nginx-base-href.sh'
               - '.github/workflows/ci.yml'
+              - '.github/actions/**'
 
       - id: gate
         name: Decidir se gates frontend rodam
@@ -132,35 +132,112 @@ jobs:
           fi
 
       - if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
-
-      - if: steps.gate.outputs.run == 'true'
-        run: npm ci
+        uses: ./.github/actions/preparar-ambiente
 
       - name: Validar base href sob subpath
         if: steps.gate.outputs.run == 'true'
         run: bash tools/test-nginx-base-href.sh
 
-      # Drift check do codegen OpenAPI vive em job dedicado `codegen-drift-check`
-      # (ver acima) — required check em branch protection desde 2026-05-09.
+      # Os projetos com teste viram uma matriz: cada um roda no seu runner. Em pull_request são os
+      # impactados pelo diff contra a branch base (o mesmo conjunto do `nx affected`); em push na
+      # main, todos.
+      - id: projetos
+        if: steps.gate.outputs.run == 'true'
+        env:
+          EVENTO: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENTO" == "pull_request" ]]; then
+            bruto=$(npx nx show projects --affected --with-target=test --base="origin/$BASE" --head=HEAD --json)
+          else
+            bruto=$(npx nx show projects --with-target=test --json)
+          fi
+          testes=$(jq -ce 'if type == "array" then . else error("a saída do nx não é um array") end' <<< "$bruto")
+          echo "Projetos com teste: $testes"
+          echo "testes=$testes" >> "$GITHUB_OUTPUT"
 
-      # Em pull_request, usamos `nx affected` para rodar apenas os projects
-      # impactados pelo diff contra a branch base. Em push para main, fazemos
-      # sweep completo via `nx run-many` como rede de segurança.
-      #
-      # `e2e` fora do gate obrigatório (issue #814): os 4 e2e sobem cada um seu
-      # próprio dev-server Angular sequencialmente no mesmo runner, e o último
-      # da fila trava sem erro explícito até o teto de 45min cancelar o job —
-      # reproduzido tanto em push na main quanto em PR, mesmo depois do fix do
-      # webServer (#812). Rodar via `npx nx e2e <app>-e2e` manualmente/local
-      # enquanto a causa (recursos do runner) não é resolvida.
-      - name: Rodar gates (nx affected — pull_request)
-        if: steps.gate.outputs.run == 'true' && github.event_name == 'pull_request'
-        run: npx nx affected -t lint test build typecheck typecheck-spec --base=origin/${{ github.base_ref }} --head=HEAD --nxBail --outputStyle=static
+  # Drift check do codegen OpenAPI vive em job dedicado `codegen-drift-check`
+  # (ver acima) — required check em branch protection desde 2026-05-09.
+  #
+  # Em pull_request, usamos `nx affected` para rodar apenas os projects
+  # impactados pelo diff contra a branch base. Em push para main, fazemos
+  # sweep completo via `nx run-many` como rede de segurança.
+  #
+  # `e2e` fora do gate obrigatório (issue #814): os 4 e2e sobem cada um seu
+  # próprio dev-server Angular sequencialmente no mesmo runner, e o último
+  # da fila trava sem erro explícito até o teto de 45min cancelar o job —
+  # reproduzido tanto em push na main quanto em PR, mesmo depois do fix do
+  # webServer (#812). Rodar via `npx nx e2e <app>-e2e` manualmente/local
+  # enquanto a causa (recursos do runner) não é resolvida.
+  verificar:
+    name: gate (${{ matrix.alvo }})
+    needs: escopo
+    if: needs.escopo.outputs.run == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        alvo: [lint, typecheck, typecheck-spec, build]
+    env:
+      NX_PARALLEL: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
 
-      - name: Rodar gates (nx run-many — push em main)
-        if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
-        run: npx nx run-many -t lint test build typecheck typecheck-spec --nxBail --outputStyle=static
+      - uses: ./.github/actions/preparar-ambiente
+
+      - name: Rodar o alvo (nx affected em pull_request, nx run-many em push na main)
+        env:
+          ALVO: ${{ matrix.alvo }}
+          EVENTO: ${{ github.event_name }}
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [[ "$EVENTO" == "pull_request" ]]; then
+            npx nx affected -t "$ALVO" --base="origin/$BASE" --head=HEAD --nxBail --outputStyle=static
+          else
+            npx nx run-many -t "$ALVO" --nxBail --outputStyle=static
+          fi
+
+  testes:
+    name: test (${{ matrix.projeto }})
+    needs: escopo
+    if: needs.escopo.outputs.run == 'true' && needs.escopo.outputs.testes != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        projeto: ${{ fromJSON(needs.escopo.outputs.testes) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: tree:0
+          fetch-depth: 0
+
+      - uses: ./.github/actions/preparar-ambiente
+
+      - name: Rodar os testes do projeto
+        env:
+          PROJETO: ${{ matrix.projeto }}
+        run: npx nx run "$PROJETO:test" --outputStyle=static
+
+  # Check exigido pela proteção da `main` (nome contratual, ver CONTRIBUTING.md § Required CI checks).
+  # Falha se qualquer gate falhou ou foi cancelado; gates pulados (PR sem mudança de frontend) passam.
+  main:
+    needs: [escopo, verificar, testes]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Consolidar o resultado dos gates
+        env:
+          RESULTADOS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Resultados: $RESULTADOS"
+          if [[ " $RESULTADOS " == *" failure "* ]] || [[ " $RESULTADOS " == *" cancelled "* ]]; then
+            exit 1
+          fi
