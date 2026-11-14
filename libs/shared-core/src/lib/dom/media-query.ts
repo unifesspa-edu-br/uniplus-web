@@ -1,4 +1,11 @@
-import { DOCUMENT, DestroyRef, type Signal, inject, signal } from '@angular/core';
+import {
+  DOCUMENT,
+  DestroyRef,
+  type Signal,
+  type WritableSignal,
+  inject,
+  signal,
+} from '@angular/core';
 
 /**
  * Expõe o resultado de uma media query como signal somente leitura, atualizado a cada `change`.
@@ -17,16 +24,16 @@ export function mediaQuerySignal(query: string): Signal<boolean> {
 
   const mediaQuery = janela.matchMedia(query);
   const resultado = signal(mediaQuery.matches);
-
-  const aoMudar = (event: MediaQueryListEvent): void => {
-    resultado.set(event.matches);
-  };
-
-  mediaQuery.addEventListener('change', aoMudar);
-
-  destroyRef.onDestroy(() => {
-    mediaQuery.removeEventListener('change', aoMudar);
-  });
-
+  destroyRef.onDestroy(acompanharMudancas(mediaQuery, resultado));
   return resultado.asReadonly();
+}
+
+/** Mantém `resultado` em dia com a media query; devolve o desfazimento do listener. */
+function acompanharMudancas(
+  mediaQuery: MediaQueryList,
+  resultado: WritableSignal<boolean>,
+): () => void {
+  const aoMudar = (event: MediaQueryListEvent): void => resultado.set(event.matches);
+  mediaQuery.addEventListener('change', aoMudar);
+  return () => mediaQuery.removeEventListener('change', aoMudar);
 }
