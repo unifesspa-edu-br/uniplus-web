@@ -86,7 +86,7 @@
           } @if (!publicacao.documentos.principal && publicacao.documentos.anexos.length === 0) {
           <p class="publicacao-documentos__processando">
             <i class="pi pi-clock" aria-hidden="true"></i>
-            Documento em processamento
+            O arquivo ainda está sendo disponibilizado.
           </p>
           }
         </div>
@@ -97,12 +97,12 @@
   } @else if (!item.aviso) {
   <ui-empty-state
     heading="Nenhuma publicação ainda"
-    description="As publicações deste edital aparecem aqui assim que forem registradas."
+    description="As publicações deste edital aparecem aqui assim que forem publicadas."
   />
   } } @else {
   <ui-empty-state
     heading="Nenhuma publicação ainda"
-    description="As publicações deste edital aparecem aqui assim que forem registradas."
+    description="As publicações deste edital aparecem aqui assim que forem publicadas."
   />
   } }
 </div>

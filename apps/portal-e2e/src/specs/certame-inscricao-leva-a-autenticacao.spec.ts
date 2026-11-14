@@ -34,7 +34,7 @@ const PAGINA_DO_CERTAME: CertamePublicoResponse = {
   situacao: 'inscricoesAbertas' as CertamePublicoResponse['situacao'],
   numeroEdital: CERTAME.numero,
   documentoEditalUrl: null,
-  dataPublicacao: null,
+  dataDoAto: null,
   linhaDoTempo: [],
   aviso: null,
 };

@@ -45,13 +45,6 @@
     [leitura]="leituraDosTipos"
   />
 
-  @if (existePendenciaAntiga()) {
-    <ui-alert variant="warning" heading="Há documento em processamento há mais tempo que o normal">
-      O registro de um documento não terminou no prazo esperado. Avise a equipe técnica para
-      conferir; enquanto isso, não publique o mesmo documento de novo.
-    </ui-alert>
-  }
-
   @if (erroDeAbertura(); as erro) {
     <ui-alert variant="danger" heading="Não foi possível abrir o documento">{{ erro }}</ui-alert>
   }

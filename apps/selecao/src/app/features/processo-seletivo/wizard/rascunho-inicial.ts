@@ -89,7 +89,7 @@ function publicacaoInicial(): WizardDraft['publicacao'] {
     numero: '',
     periodoInscricaoInicio: '',
     periodoInscricaoFim: '',
-    ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+    ato: { orgao: '', serie: '', ano: '', dataDoAto: '', assinante: '', tipoAtoCodigo: '' },
     anexos: [],
   };
 }

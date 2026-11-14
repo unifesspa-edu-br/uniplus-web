@@ -2,7 +2,8 @@ import { ProblemDetails } from '@uniplus/shared-core/http';
 
 /**
  * Recusas nomeadas de documento e de ato que nenhum dos dois checklists cobre. São os códigos do
- * wire (`uniplus.<modulo>.<razao>`), que é o que `problem.code` carrega.
+ * wire (`uniplus.<modulo>.<razao>`), que é o que `problem.code` carrega. As de linhagem do ato
+ * vêm de Publicações, que repassa a recusa do módulo dono do ato.
  */
 const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.documento_nao_encontrado',
@@ -10,7 +11,8 @@ const CODIGOS_DE_DOCUMENTO_OU_ATO = new Set<string>([
   'uniplus.selecao.processo_seletivo.documento_do_edital_nao_e_pdf',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_sem_versao_vigente',
   'uniplus.selecao.processo_seletivo.tipo_de_ato_nao_congela_configuracao',
-  'uniplus.selecao.processo_seletivo.objeto_ja_tem_ato_vivo_do_tipo',
+  'uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo',
+  'uniplus.publicacoes.ato_normativo.raiz_ja_retificada',
   'uniplus.selecao.anexo_do_edital.nao_encontrado',
   'uniplus.selecao.anexo_do_edital.nao_confirmado',
   'uniplus.selecao.anexo_do_edital.repetido',

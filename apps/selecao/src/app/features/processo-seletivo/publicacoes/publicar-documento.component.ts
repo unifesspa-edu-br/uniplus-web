@@ -25,6 +25,7 @@ import {
   type ProblemDetails,
   ChaveDeSubstituicao,
   comChave,
+  type RespostaDoComando,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { TipoAtoPublicadoDto } from '@uniplus/shared-data/publicacoes';
@@ -33,6 +34,7 @@ import {
   DocumentosEAtosDoProcessoApi,
   type AtoDoProcessoDto,
   type AtoPublicadoDto,
+  type ProdutoPrevistoDto,
 } from '@uniplus/shared-data/selecao';
 import {
   AlertComponent,
@@ -127,7 +129,7 @@ export class PublicarDocumentoComponent {
   readonly atosCorrigiveis = input<readonly AtoDoProcessoDto[]>([]);
   readonly aberto = model(false);
 
-  /** O ato foi aceito pelo servidor; ainda aguarda o registro. */
+  /** O ato foi publicado pelo servidor. */
   readonly publicado = output<void>();
 
   protected readonly tamanhoMaximoDoPrincipalMb = TAMANHO_MAXIMO_DO_PRINCIPAL_MB;
@@ -247,25 +249,14 @@ export class PublicarDocumentoComponent {
     const principal = this.principal.confirmados()[0];
     if (principal === undefined || this.publicando()) return;
 
-    const envio = this.montarEnvio(principal.documentoAPublicarId);
-
-    this.publicando.set(true);
-    this.form.disable({ emitEvent: false });
-    const { resultado, inconclusiva } = await comChave(this.chave, envio.pedido, envio.enviar);
-    this.publicando.set(false);
-    this.form.enable({ emitEvent: false });
-
+    const { resultado, inconclusiva } = await this.enviarPublicacao(
+      this.montarEnvio(principal.documentoAPublicarId),
+    );
     if (isApiOk(resultado)) {
-      this.notificacoes.success(
-        'Documento enviado para publicação',
-        'O registro leva alguns instantes: a situação aparece na lista.',
-      );
-      this.aberto.set(false);
-      this.publicado.emit();
-      return;
+      this.concluirPublicacao();
+    } else {
+      this.mostrarRecusa(resultado.problem, inconclusiva);
     }
-
-    this.mostrarRecusa(resultado.problem, inconclusiva);
   }
 
   protected erroDoCampo(campo: CampoDoFormulario): string | null {
@@ -273,6 +264,26 @@ export class PublicarDocumentoComponent {
     if (!(controle.touched || controle.dirty) || controle.errors === null) return null;
 
     return mensagemDoErroDoCampo(campo, controle.errors);
+  }
+
+  private async enviarPublicacao(
+    envio: EnvioDaPublicacao,
+  ): Promise<RespostaDoComando<AtoPublicadoDto>> {
+    this.publicando.set(true);
+    this.form.disable({ emitEvent: false });
+    const resposta = await comChave(this.chave, envio.pedido, envio.enviar);
+    this.publicando.set(false);
+    this.form.enable({ emitEvent: false });
+    return resposta;
+  }
+
+  private concluirPublicacao(): void {
+    this.notificacoes.success(
+      'Documento publicado',
+      'Ele já aparece na lista de documentos publicados.',
+    );
+    this.aberto.set(false);
+    this.publicado.emit();
   }
 
   private listaDeEnvios(
@@ -304,23 +315,37 @@ export class PublicarDocumentoComponent {
   }
 
   private montarEnvio(documentoPrincipalId: string): EnvioDaPublicacao {
-    const dados = this.dadosDoPedido();
-    const anexos = this.anexos.confirmados();
-    const processoId = this.processoId();
     const item = this.item();
-    if (item !== null) {
-      const politicaConfirmada =
-        this.politica() !== null && this.form.controls.politicaDeDivulgacaoConfirmada.value;
-      const pedido = pedidoDoItem(dados, documentoPrincipalId, anexos, politicaConfirmada);
-      return {
-        pedido,
-        enviar: (contexto) => this.api.publicarProdutoPrevisto(processoId, item.id, pedido, contexto),
-      };
-    }
+    return item === null
+      ? this.envioDoAtoAvulso(documentoPrincipalId)
+      : this.envioDoItem(item, documentoPrincipalId);
+  }
 
+  private envioDoItem(item: ProdutoPrevistoDto, documentoPrincipalId: string): EnvioDaPublicacao {
+    const politicaConfirmada =
+      this.politica() !== null && this.form.controls.politicaDeDivulgacaoConfirmada.value;
+    const pedido = pedidoDoItem(
+      this.dadosDoPedido(),
+      documentoPrincipalId,
+      this.anexos.confirmados(),
+      politicaConfirmada,
+    );
+    const processoId = this.processoId();
+    return {
+      pedido,
+      enviar: (contexto) => this.api.publicarProdutoPrevisto(processoId, item.id, pedido, contexto),
+    };
+  }
+
+  private envioDoAtoAvulso(documentoPrincipalId: string): EnvioDaPublicacao {
     const tipoAtoCodigo = this.form.controls.tipoAtoCodigo.value;
-    const pedido = pedidoDoAto({ ...dados, tipoAtoCodigo }, documentoPrincipalId, anexos);
-    return { pedido, enviar: (contexto) => this.api.publicarAtoAvulso(processoId, pedido, contexto) };
+    const dados = { ...this.dadosDoPedido(), tipoAtoCodigo };
+    const pedido = pedidoDoAto(dados, documentoPrincipalId, this.anexos.confirmados());
+    const processoId = this.processoId();
+    return {
+      pedido,
+      enviar: (contexto) => this.api.publicarAtoAvulso(processoId, pedido, contexto),
+    };
   }
 
   private dadosDoPedido(): DadosDoItem {
@@ -328,7 +353,7 @@ export class PublicarDocumentoComponent {
     const corrigidoEscolhido = this.escolheOAtoCorrigido() ? valores.atoCorrigidoId : null;
     return {
       numero: valores.numero,
-      dataPublicacao: valores.dataPublicacao,
+      dataDoAto: valores.dataDoAto,
       assinante: valores.assinante,
       atoCorrigidoId: this.atoDaCorrecao()?.id ?? corrigidoEscolhido,
       motivoDaCorrecao: valores.motivoDaCorrecao,

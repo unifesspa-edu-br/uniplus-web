@@ -194,17 +194,17 @@ describe('CertamePublicacoesComponent', () => {
     expect(nomes).toEqual(['Documento principal', 'Anexos (2)']);
   });
 
-  it('ato sem documentos mostra "Documento em processamento", sem link nem grupos', () => {
+  it('ato sem documentos no acervo avisa que o arquivo ainda está sendo disponibilizado, sem link nem grupos', () => {
     criar({ publicacoes: medicina });
     abrir();
 
     const cartaoSemDocumento = host().querySelectorAll('.publicacao-timeline__card')[1];
-    expect(cartaoSemDocumento.textContent).toContain('Documento em processamento');
+    expect(cartaoSemDocumento.textContent).toContain('O arquivo ainda está sendo disponibilizado.');
     expect(cartaoSemDocumento.querySelector('a')).toBeNull();
     expect(cartaoSemDocumento.querySelector('.publicacao-documentos__titulo')).toBeNull();
   });
 
-  it('ato só com o principal não mostra o grupo de anexos nem o aviso de processamento', () => {
+  it('ato só com o principal não mostra o grupo de anexos nem o aviso de disponibilização', () => {
     criar({
       publicacoes: {
         publicacoes: [
@@ -216,7 +216,7 @@ describe('CertamePublicacoesComponent', () => {
 
     expect(links()).toHaveLength(1);
     expect(host().textContent).not.toContain('Anexos');
-    expect(host().textContent).not.toContain('em processamento');
+    expect(host().textContent).not.toContain('ainda está sendo disponibilizado');
   });
 
   it('a linha do tempo não oferece inscrição', () => {
@@ -319,7 +319,7 @@ describe('CertamePublicacoesComponent', () => {
     });
   });
 
-  it('edital sem publicações registradas mostra estado vazio', () => {
+  it('edital sem publicações mostra estado vazio', () => {
     criar({});
     abrir();
 

@@ -157,7 +157,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8017,7 +8017,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta. Reler o processo e resubmeter. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta. Reler o processo e resubmeter. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8124,7 +8124,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8623,7 +8623,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -9286,7 +9286,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -9749,10 +9749,6 @@ export interface components {
             /** Format: date-time */
             readonly publicadoEm: string;
             readonly assinante: string;
-            readonly situacao: components["schemas"]["SituacaoDoRegistroDoAto"];
-            /** Format: date-time */
-            readonly registradoEm: null | string;
-            readonly pendenciaAcimaDoLimiar: boolean;
             /** Format: uuid */
             readonly atoCorrigidoId: null | string;
             readonly motivoDaCorrecao: null | string;
@@ -10214,7 +10210,7 @@ export interface components {
             /** Format: int32 */
             readonly ano: number;
             /** Format: date */
-            readonly dataPublicacao: string;
+            readonly dataDoAto: string;
             readonly assinante: string;
             readonly tipoAtoCodigo: string;
         };
@@ -10380,7 +10376,7 @@ export interface components {
             readonly tamanhoBytes: number;
             readonly hashSha256: string;
             /** Format: uri */
-            readonly urlDownload: string;
+            readonly urlDownload: null | string;
         };
         readonly DocumentoDoAtoDto: {
             /** Format: uuid */
@@ -10403,7 +10399,7 @@ export interface components {
             readonly documentoEditalId: string;
             readonly hashSha256: string;
             /** Format: uri */
-            readonly urlDownload: string;
+            readonly urlDownload: null | string;
         };
         readonly DocumentoExigidoDto: {
             /** Format: uuid */
@@ -10455,7 +10451,7 @@ export interface components {
             /** Format: uuid */
             readonly atoId: string;
             /** Format: uri */
-            readonly urlDownload: string;
+            readonly urlDownload: null | string;
             readonly documentos: readonly components["schemas"]["DocumentoDoAtoCertameDto"][];
         };
         /** @enum {string} */
@@ -11255,7 +11251,7 @@ export interface components {
             readonly formato: string;
             readonly hashSha256: string;
             /** Format: uri */
-            readonly urlDownload: string;
+            readonly urlDownload: null | string;
         };
         /** @enum {string} */
         readonly ModoDeDeliberacao: ModoDeDeliberacao;
@@ -11672,7 +11668,7 @@ export interface components {
             readonly tipoAtoCodigo: string;
             readonly numero: null | string;
             /** Format: date */
-            readonly dataPublicacao: string;
+            readonly dataDoAto: string;
             readonly assinante: string;
             /** Format: uuid */
             readonly documentoPrincipalId: string;
@@ -11695,7 +11691,7 @@ export interface components {
         readonly PublicarProdutoDoEditalRequest: {
             readonly numero: null | string;
             /** Format: date */
-            readonly dataPublicacao: string;
+            readonly dataDoAto: string;
             readonly assinante: string;
             /** Format: uuid */
             readonly documentoPrincipalId: string;
@@ -12001,8 +11997,6 @@ export interface components {
         readonly SituacaoDoCertame: SituacaoDoCertame;
         /** @enum {string} */
         readonly SituacaoDoProdutoPrevisto: SituacaoDoProdutoPrevisto;
-        /** @enum {string} */
-        readonly SituacaoDoRegistroDoAto: SituacaoDoRegistroDoAto;
         /** @enum {string} */
         readonly SituacaoInscricao: SituacaoInscricao;
         readonly SnapshotVigenteDto: {
@@ -12327,10 +12321,6 @@ export enum SituacaoDoProdutoPrevisto {
     aberto = "aberto",
     pendente = "pendente",
     publicado = "publicado"
-}
-export enum SituacaoDoRegistroDoAto {
-    pendente = "pendente",
-    registrado = "registrado"
 }
 export enum SituacaoInscricao {
     rascunho = "rascunho",

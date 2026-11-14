@@ -181,7 +181,6 @@ export {
   CaraterEtapa,
   ModoDeDeliberacao,
   OrigemCandidatos,
-  SituacaoDoRegistroDoAto,
   SituacaoInscricao,
   StatusProcesso,
   UnidadePrazo,

@@ -1,4 +1,3 @@
-import { SituacaoDoRegistroDoAto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { atosQueAdmitemCorrecao, idsJaCorrigidos, type AtoDaCadeia } from './cadeia-de-correcao';
@@ -7,7 +6,6 @@ function ato(id: string, sobrescritas: Partial<AtoDaCadeia> = {}): AtoDaCadeia {
   return {
     id,
     atoCorrigidoId: null,
-    situacao: SituacaoDoRegistroDoAto.registrado,
     tipoCodigo: 'AVISO',
     ...sobrescritas,
   };
@@ -35,21 +33,8 @@ describe('atosQueAdmitemCorrecao', () => {
     expect(oferecidos.map((a) => a.id)).toEqual(['errata-2']);
   });
 
-  it('conta a correção ainda em processamento: o ato já tem quem o corrija', () => {
-    const aviso = ato('aviso');
-    const errataPendente = ato('errata', {
-      tipoCodigo: 'ERRATA',
-      atoCorrigidoId: 'aviso',
-      situacao: SituacaoDoRegistroDoAto.pendente,
-    });
-
-    expect(atosQueAdmitemCorrecao([errataPendente, aviso], nenhumCongela)).toEqual([]);
-  });
-
-  it('não oferece o ato que ainda não foi registrado', () => {
-    const pendente = ato('aviso', { situacao: SituacaoDoRegistroDoAto.pendente });
-
-    expect(atosQueAdmitemCorrecao([pendente], nenhumCongela)).toEqual([]);
+  it('oferece o ato publicado que ainda não foi corrigido', () => {
+    expect(atosQueAdmitemCorrecao([ato('aviso')], nenhumCongela).map((a) => a.id)).toEqual(['aviso']);
   });
 
   it('não oferece o ato de um tipo que congela a configuração, que só se corrige por retificação do edital', () => {

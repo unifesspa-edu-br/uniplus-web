@@ -159,7 +159,7 @@ export interface WizardDraft {
       orgao: string;
       serie: string;
       ano: string;
-      dataPublicacao: string;
+      dataDoAto: string;
       assinante: string;
       tipoAtoCodigo: string;
     };

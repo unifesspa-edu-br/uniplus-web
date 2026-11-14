@@ -5,17 +5,16 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { rotuloDoAto } from './apresentacao-do-ato';
 import { ArquivosDoAtoComponent } from './arquivos-do-ato.component';
-import { SituacaoDoAtoComponent } from './situacao-do-ato.component';
 
 /**
  * Os atos publicados pelo processo — o edital, as retificações e os documentos avulsos —, cada um
- * com os documentos e a situação do registro. Só apresenta: abrir um documento e corrigir um ato
- * são pedidos à página.
+ * com a data do ato, o instante da publicação e os documentos. Só apresenta: abrir um documento e
+ * corrigir um ato são pedidos à página.
  */
 @Component({
   selector: 'sel-atos-do-processo',
   standalone: true,
-  imports: [ArquivosDoAtoComponent, DateBrPipe, EmptyStateComponent, SituacaoDoAtoComponent],
+  imports: [ArquivosDoAtoComponent, DateBrPipe, EmptyStateComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './atos-do-processo.component.html',
   styleUrl: './atos-do-processo.component.css',

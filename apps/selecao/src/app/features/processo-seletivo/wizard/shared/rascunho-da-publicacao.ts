@@ -9,7 +9,7 @@ import { anexoConfirmado } from './anexos-do-edital/anexos-do-edital';
  * acreditando ter conferido. Suba este número ao mudar a forma de `publicacao`; rascunhos
  * antigos passam a abrir vazios, que é o comportamento de hoje e não uma regressão.
  */
-export const VERSAO_DO_RASCUNHO = 1;
+export const VERSAO_DO_RASCUNHO = 2;
 
 /** A seção que o passo de Revisão guarda entre uma sessão e outra. */
 export type BlocoDaPublicacao = WizardDraft['publicacao'];
@@ -67,7 +67,7 @@ export function blocoDoDocumento(documento: unknown): BlocoDaPublicacao {
       orgao: texto(ato['orgao']),
       serie: texto(ato['serie']),
       ano: texto(ato['ano']),
-      dataPublicacao: texto(ato['dataPublicacao']),
+      dataDoAto: texto(ato['dataDoAto']),
       assinante: texto(ato['assinante']),
       tipoAtoCodigo: texto(ato['tipoAtoCodigo']),
     },

@@ -34,6 +34,26 @@ describe('ListaDeDocumentosComponent', () => {
     expect(texto).toContain('Só para quem está na situação descrita no edital · PDF, JPG');
   });
 
+  describe('modelo do documento', () => {
+    const modelo = { nomeArquivo: 'declaracao.odt', formato: 'ODT', urlDownload: null };
+
+    it('oferece o link de download quando o arquivo já está no acervo', () => {
+      const endereco = 'https://acervo.exemplo.test/declaracao.odt';
+      const tela = renderizar([documento({ modelo: { ...modelo, urlDownload: endereco } })]);
+
+      const link = tela.querySelector('a') as HTMLAnchorElement;
+      expect(link.getAttribute('href')).toBe(endereco);
+      expect(link.textContent).toContain('Baixar o modelo (ODT)');
+    });
+
+    it('avisa que o arquivo ainda está sendo disponibilizado, sem link quebrado', () => {
+      const tela = renderizar([documento({ modelo })]);
+
+      expect(tela.querySelector('a')).toBeNull();
+      expect(tela.textContent).toContain('ainda está sendo disponibilizado');
+    });
+  });
+
   it('com a lista vazia, diz o que quem hospeda informar', () => {
     const tela = renderizar([]);
 
