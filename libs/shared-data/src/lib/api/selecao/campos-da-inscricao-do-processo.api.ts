@@ -27,11 +27,14 @@ export class CamposDaInscricaoDoProcessoApi {
     return this.http.post<ApiResult<CampoReveladoDto>>(
       `${inscricao}/campos/${encodeURIComponent(fatoCodigo)}/revelacao`,
       null,
-      {
-        context: withVendorMime('campo-revelado-da-inscricao', 1),
-        params:
-          ocorrenciaId === null ? undefined : new HttpParams().set('ocorrencia', ocorrenciaId),
-      },
+      opcoesDaRevelacao(ocorrenciaId),
     );
   }
+}
+
+function opcoesDaRevelacao(ocorrenciaId: string | null) {
+  return {
+    context: withVendorMime('campo-revelado-da-inscricao', 1),
+    params: ocorrenciaId === null ? undefined : new HttpParams().set('ocorrencia', ocorrenciaId),
+  };
 }

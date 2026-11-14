@@ -91,13 +91,7 @@ export class InscricoesApi {
     return this.http.post<ApiResult<ReciboDaInscricaoDto>>(
       `${this.url(processoSeletivoId)}/submissao`,
       request,
-      {
-        headers: { 'If-Match': eTag },
-        context: withVendorMime('recibo-da-inscricao', 1).set(
-          IDEMPOTENCY_KEY_TOKEN,
-          context.get(IDEMPOTENCY_KEY_TOKEN),
-        ),
-      },
+      { headers: { 'If-Match': eTag }, context: contextoDaSubmissao(context) },
     );
   }
 
@@ -216,4 +210,12 @@ export class InscricoesApi {
   private url(processoSeletivoId: string): string {
     return `${this.basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/inscricao`;
   }
+}
+
+/** A submissão leva a Idempotency-Key de quem chama: repetir a chave devolve o recibo já emitido. */
+function contextoDaSubmissao(context: HttpContext): HttpContext {
+  return withVendorMime('recibo-da-inscricao', 1).set(
+    IDEMPOTENCY_KEY_TOKEN,
+    context.get(IDEMPOTENCY_KEY_TOKEN),
+  );
 }

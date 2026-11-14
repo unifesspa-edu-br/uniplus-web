@@ -196,15 +196,11 @@ export class DocumentosEAtosDoProcessoApi {
     documentoAPublicarId: string,
     context: HttpContext,
   ): Observable<ApiResult<DocumentoAPublicarDto>> {
-    return this.http.post<ApiResult<DocumentoAPublicarDto>>(
-      this.rotas.doProcesso(
-        processoSeletivoId,
-        'documentos-a-publicar',
-        documentoAPublicarId,
-        'confirmacao',
-      ),
-      null,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    return this.confirmarEnvio<DocumentoAPublicarDto>(
+      processoSeletivoId,
+      'documentos-a-publicar',
+      documentoAPublicarId,
+      context,
     );
   }
 
@@ -235,15 +231,11 @@ export class DocumentosEAtosDoProcessoApi {
     modeloDeDocumentoId: string,
     context: HttpContext,
   ): Observable<ApiResult<ModeloDeDocumentoDto>> {
-    return this.http.post<ApiResult<ModeloDeDocumentoDto>>(
-      this.rotas.doProcesso(
-        processoSeletivoId,
-        'modelos-de-documento',
-        modeloDeDocumentoId,
-        'confirmacao',
-      ),
-      null,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    return this.confirmarEnvio<ModeloDeDocumentoDto>(
+      processoSeletivoId,
+      'modelos-de-documento',
+      modeloDeDocumentoId,
+      context,
     );
   }
 
@@ -264,6 +256,20 @@ export class DocumentosEAtosDoProcessoApi {
         'acesso',
       ),
       { context: withVendorMime('acesso-modelo-de-documento', 1) },
+    );
+  }
+
+  /** O terceiro passo do envio é o mesmo nos dois arquivos: um POST sem corpo na `confirmacao`. */
+  private confirmarEnvio<T>(
+    processoSeletivoId: string,
+    colecao: string,
+    arquivoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<T>> {
+    return this.http.post<ApiResult<T>>(
+      this.rotas.doProcesso(processoSeletivoId, colecao, arquivoId, 'confirmacao'),
+      null,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 }
