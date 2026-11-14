@@ -144,6 +144,8 @@ A branch protection da `main` exige aprovação dos seguintes status checks (ord
 3. `nx run-many --target=lint --all`
 4. `PR author is org member`
 
+O check `main` é o agregador dos gates: os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
+
 Renomeação dos jobs em `.github/workflows/*.yml` exige atualização correspondente da branch protection via `gh api PUT /repos/.../branches/main/protection` — os nomes nesta lista são contratuais.
 
 ### 6. Roadmap V2
