@@ -1,5 +1,14 @@
 import { PERMISSAO } from './catalogo';
 
+const CONSULTAS_DE_DADO = [
+  ['dadosPublicosConsultar', 'selecao:dados-publicos:consultar'],
+  ['dadosInternosConsultar', 'selecao:dados-internos:consultar'],
+  ['dadosPessoaisConsultar', 'selecao:dados-pessoais:consultar'],
+  ['dadosSensiveisConsultar', 'selecao:dados-sensiveis:consultar'],
+  ['dadosIdentificadoresConsultar', 'selecao:dados-identificadores:consultar'],
+  ['dadosIdentificadoresRevelar', 'selecao:dados-identificadores:revelar'],
+] as const;
+
 describe('PERMISSAO.selecao', () => {
   it('declara uma permissão de consulta de arquivo para cada classificação', () => {
     expect([
@@ -18,21 +27,9 @@ describe('PERMISSAO.selecao', () => {
   });
 
   it('declara a consulta de dado por classe e, no identificador, a consulta mascarada e a revelação, sem a revelação de CPF antiga', () => {
-    expect([
-      PERMISSAO.selecao.dadosPublicosConsultar,
-      PERMISSAO.selecao.dadosInternosConsultar,
-      PERMISSAO.selecao.dadosPessoaisConsultar,
-      PERMISSAO.selecao.dadosSensiveisConsultar,
-      PERMISSAO.selecao.dadosIdentificadoresConsultar,
-      PERMISSAO.selecao.dadosIdentificadoresRevelar,
-    ]).toEqual([
-      'selecao:dados-publicos:consultar',
-      'selecao:dados-internos:consultar',
-      'selecao:dados-pessoais:consultar',
-      'selecao:dados-sensiveis:consultar',
-      'selecao:dados-identificadores:consultar',
-      'selecao:dados-identificadores:revelar',
-    ]);
+    expect(CONSULTAS_DE_DADO.map(([chave]) => PERMISSAO.selecao[chave])).toEqual(
+      CONSULTAS_DE_DADO.map(([, codigo]) => codigo),
+    );
     expect(Object.values(PERMISSAO.selecao)).not.toContain('selecao:inscricoes:revelar-cpf');
   });
 
