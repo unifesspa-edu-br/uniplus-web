@@ -1,5 +1,5 @@
 import { DestroyRef, Signal, signal } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Observer, Subscription } from 'rxjs';
 
 import { ApiResult } from './api-result';
 import { coletarPaginas } from './coletar-paginas';
@@ -43,21 +43,23 @@ class CatalogoCarregado<T> implements LookupCompleto<T> {
     destroyRef.onDestroy(() => this.emAndamento?.unsubscribe());
   }
 
+  private readonly aoColetar: Observer<ApiResult<readonly T[]>> = {
+    next: (resultado) => {
+      if (resultado.ok) this._opcoes.set(resultado.data);
+      else this._comErro.set(true);
+    },
+    error: () => {
+      this._comErro.set(true);
+      this._pendente.set(false);
+    },
+    complete: () => this._pendente.set(false),
+  };
+
   readonly recarregar = (): void => {
     this.emAndamento?.unsubscribe();
     this._comErro.set(false);
     this._pendente.set(true);
-    this.emAndamento = coletarPaginas(this.pagina).subscribe({
-      next: (resultado) => {
-        if (resultado.ok) this._opcoes.set(resultado.data);
-        else this._comErro.set(true);
-      },
-      error: () => {
-        this._comErro.set(true);
-        this._pendente.set(false);
-      },
-      complete: () => this._pendente.set(false),
-    });
+    this.emAndamento = coletarPaginas(this.pagina).subscribe(this.aoColetar);
   };
 }
 
