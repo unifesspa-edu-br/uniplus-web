@@ -18,6 +18,8 @@ type OpcoesDoComprovante = Pick<
   'numeroDeOpcoesDeCurso' | 'opcoesDeCurso'
 >;
 
+type OpcaoDeclarada = OpcoesDoComprovante['opcoesDeCurso'][number];
+
 const SEGUNDA_OPCAO = 2;
 
 /**
@@ -28,23 +30,26 @@ export function opcoesDeCursoExibidas(comprovante: OpcoesDoComprovante): OpcaoDe
   const declaradas = [...comprovante.opcoesDeCurso].sort((a, b) => a.ordem - b.ordem);
   const admitePar = comprovante.numeroDeOpcoesDeCurso >= SEGUNDA_OPCAO;
   const rotuloDa = (ordem: number): string =>
-    admitePar || declaradas.length > 1 ? `${ordem}ª opção` : 'Curso';
-  const exibidas = declaradas.map((o) => ({
-    rotulo: rotuloDa(o.ordem),
-    curso: o.nome,
-    exibicao: o.nome ?? 'Curso não identificado',
-    modalidades: o.modalidades ? nomesPelaOrdem(o.modalidades) : null,
-  }));
-  const segundaDeclarada = declaradas.some((o) => o.ordem === SEGUNDA_OPCAO);
-  return admitePar && !segundaDeclarada
-    ? [
-        ...exibidas,
-        {
-          rotulo: rotuloDa(SEGUNDA_OPCAO),
-          curso: null,
-          exibicao: 'Não declarada',
-          modalidades: null,
-        },
-      ]
-    : exibidas;
+    rotuloDaOpcao(ordem, admitePar || declaradas.length > 1);
+  const exibidas = declaradas.map((o) => opcaoDeclarada(o, rotuloDa(o.ordem)));
+  const faltaSegunda = admitePar && !declaradas.some((o) => o.ordem === SEGUNDA_OPCAO);
+  return faltaSegunda ? [...exibidas, segundaNaoDeclarada(rotuloDa(SEGUNDA_OPCAO))] : exibidas;
+}
+
+/** A opção leva o número da ordem quando há mais de uma a distinguir; senão é só "Curso". */
+function rotuloDaOpcao(ordem: number, numerada: boolean): string {
+  return numerada ? `${ordem}ª opção` : 'Curso';
+}
+
+function opcaoDeclarada(opcao: OpcaoDeclarada, rotulo: string): OpcaoDeCursoExibida {
+  return {
+    rotulo,
+    curso: opcao.nome,
+    exibicao: opcao.nome ?? 'Curso não identificado',
+    modalidades: opcao.modalidades ? nomesPelaOrdem(opcao.modalidades) : null,
+  };
+}
+
+function segundaNaoDeclarada(rotulo: string): OpcaoDeCursoExibida {
+  return { rotulo, curso: null, exibicao: 'Não declarada', modalidades: null };
 }
