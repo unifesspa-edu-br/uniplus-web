@@ -59,16 +59,18 @@ describe('UserHeaderInfoComponent', () => {
   });
 
   describe('perfis de acesso no menu', () => {
+    const perfisNaOrdemRecebida = [
+      { ...perfil('Consulta institucional', null), escopoTipo: 'instituicao' as const },
+      perfil('Gestor de processo seletivo', 'CEPS'),
+    ];
+
     function grupo(host: HTMLElement): HTMLElement | null {
       return host.querySelector<HTMLElement>('[role="menu"] [role="group"]');
     }
 
     it('lista cada perfil em texto não interativo dentro de um grupo rotulado, na ordem recebida', () => {
       const { fixture } = setup();
-      concedidos.set([
-        { ...perfil('Consulta institucional', null), escopoTipo: 'instituicao' },
-        perfil('Gestor de processo seletivo', 'CEPS'),
-      ]);
+      concedidos.set(perfisNaOrdemRecebida);
       fixture.detectChanges();
 
       const g = grupo(fixture.nativeElement);

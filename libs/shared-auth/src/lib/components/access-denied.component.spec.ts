@@ -59,6 +59,14 @@ describe('AccessDeniedComponent', () => {
     };
   }
 
+  function montarComSaidaPendente() {
+    let concluir: () => void = () => {
+      throw new Error('logout não foi chamado');
+    };
+    const logout = vi.fn(() => new Promise<void>((resolve) => (concluir = resolve)));
+    return { ...montar(logout), concluir: () => concluir() };
+  }
+
   it('oferece a saída pelo encerramento da sessão', () => {
     const { botao } = montar();
 
@@ -109,11 +117,7 @@ describe('AccessDeniedComponent', () => {
 
   /** Um clique duplo não pode disparar duas saídas concorrentes. */
   it('ignora acionamento repetido enquanto a saída corre', async () => {
-    let concluir: () => void = () => {
-      throw new Error('logout não foi chamado');
-    };
-    const logout = vi.fn(() => new Promise<void>((resolve) => (concluir = resolve)));
-    const { botao, fixture } = montar(logout);
+    const { botao, fixture, logout, concluir } = montarComSaidaPendente();
 
     botao()?.click();
     fixture.detectChanges();
