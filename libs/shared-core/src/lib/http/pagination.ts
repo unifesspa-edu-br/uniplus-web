@@ -174,36 +174,28 @@ function extractCursorForRel(
  * `decodeURIComponent`.
  */
 function extractCursorParam(uri: string): string | null {
-  const queryStart = uri.indexOf('?');
-  if (queryStart < 0) {
+  const par = queryDe(uri)
+    ?.split('&')
+    .find((p) => p.startsWith(PREFIXO_DO_CURSOR));
+  return par === undefined ? null : decodificarCursor(par.slice(PREFIXO_DO_CURSOR.length));
+}
+
+const PREFIXO_DO_CURSOR = 'cursor=';
+
+/** Query da URI sem o hash fragment (`#...`), que não tem sentido em paginação mas o servidor pode emitir. */
+function queryDe(uri: string): string | null {
+  const inicio = uri.indexOf('?');
+  return inicio < 0 ? null : uri.slice(inicio + 1).replace(/#.*$/su, '');
+}
+
+/** Percent-encoding malformado é tratado como ausente, em vez de explodir o consumer. */
+function decodificarCursor(valor: string): string | null {
+  if (valor.length === 0) {
     return null;
   }
-  const queryString = uri.slice(queryStart + 1);
-  // Hash fragment (`#...`) não tem sentido em paginação, mas remover por
-  // robustez caso o servidor emita.
-  const hashIdx = queryString.indexOf('#');
-  const cleanQuery = hashIdx < 0 ? queryString : queryString.slice(0, hashIdx);
-
-  for (const pair of cleanQuery.split('&')) {
-    const equalsIdx = pair.indexOf('=');
-    if (equalsIdx < 0) {
-      continue;
-    }
-    const key = pair.slice(0, equalsIdx);
-    if (key !== 'cursor') {
-      continue;
-    }
-    const rawValue = pair.slice(equalsIdx + 1);
-    if (rawValue.length === 0) {
-      return null;
-    }
-    try {
-      return decodeURIComponent(rawValue);
-    } catch {
-      // Servidor mandou percent-encoding malformado; trata como ausente
-      // em vez de explodir o consumer.
-      return null;
-    }
+  try {
+    return decodeURIComponent(valor);
+  } catch {
+    return null;
   }
-  return null;
 }
