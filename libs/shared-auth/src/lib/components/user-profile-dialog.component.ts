@@ -223,23 +223,29 @@ export class UserProfileDialogComponent {
 
   constructor() {
     this.destroyRef.onDestroy(() => (this.destruido = true));
-    afterNextRender(() => {
-      const dialog = this.dialogRef().nativeElement;
-      // Listener nativo: o clique no backdrop é conveniência de mouse (Esc e o
-      // botão Fechar cobrem teclado), então não cabe handler no template.
-      dialog.addEventListener('click', (event) => {
-        // O `<dialog>` ocupa a tela toda: clicar nele mesmo, e não no painel, é clicar fora.
-        if (event.target === dialog) this.fechar();
-      });
-      if (typeof dialog.showModal === 'function') {
-        dialog.showModal();
-      } else {
-        dialog.setAttribute('open', '');
-      }
-    });
+    afterNextRender(() => this.abrirDialog());
     // Abrir Meu perfil é o momento de ver uma concessão recém-revogada ou concedida: a mesma
     // consulta traz os dados do modal e atualiza os perfis.
     void this.carregar();
+  }
+
+  private abrirDialog(): void {
+    const dialog = this.dialogRef().nativeElement;
+    this.fecharAoClicarFora(dialog);
+    if (typeof dialog.showModal === 'function') {
+      dialog.showModal();
+    } else {
+      dialog.setAttribute('open', '');
+    }
+  }
+
+  // Listener nativo: o clique no backdrop é conveniência de mouse (Esc e o
+  // botão Fechar cobrem teclado), então não cabe handler no template.
+  private fecharAoClicarFora(dialog: HTMLDialogElement): void {
+    dialog.addEventListener('click', (event) => {
+      // O `<dialog>` ocupa a tela toda: clicar nele mesmo, e não no painel, é clicar fora.
+      if (event.target === dialog) this.fechar();
+    });
   }
 
   protected perfil(): RespostaDoPerfil | null {
