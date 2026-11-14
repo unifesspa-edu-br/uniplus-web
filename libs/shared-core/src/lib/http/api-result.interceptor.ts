@@ -16,10 +16,7 @@ import {
   ProblemDetails,
   ProblemValidationError,
 } from './problem-details';
-import {
-  VENDOR_MIME_TOKEN,
-  buildVendorMimeAccept,
-} from './vendor-mime';
+import { VENDOR_MIME_TOKEN, buildVendorMimeAccept } from './vendor-mime';
 
 const PROBLEM_DETAILS_MEDIA_TYPE = 'application/problem+json';
 
@@ -47,10 +44,7 @@ const PROBLEM_DETAILS_MEDIA_TYPE = 'application/problem+json';
 export const apiResultInterceptor: HttpInterceptorFn = (req, next) => {
   const requestWithHeaders = appendContextHeaders(req);
 
-  return next(requestWithHeaders).pipe(
-    map(envelopeSuccess),
-    catchError(envelopeFailure),
-  );
+  return next(requestWithHeaders).pipe(map(envelopeSuccess), catchError(envelopeFailure));
 };
 
 /**
@@ -59,22 +53,20 @@ export const apiResultInterceptor: HttpInterceptorFn = (req, next) => {
  * leitor de contexto (ADR-0014).
  */
 function appendContextHeaders(req: HttpRequest<unknown>): HttpRequest<unknown> {
-  const headers: Record<string, string> = {};
+  const headers = { ...cabecalhoDeVendorMime(req), ...cabecalhoDeIdempotencia(req) };
+  return Object.keys(headers).length === 0 ? req : req.clone({ setHeaders: headers });
+}
 
+function cabecalhoDeVendorMime(req: HttpRequest<unknown>): Record<string, string> {
   const vendorMime = req.context.get(VENDOR_MIME_TOKEN);
-  if (vendorMime) {
-    headers['Accept'] = buildVendorMimeAccept(vendorMime.resource, vendorMime.version);
-  }
+  return vendorMime
+    ? { Accept: buildVendorMimeAccept(vendorMime.resource, vendorMime.version) }
+    : {};
+}
 
+function cabecalhoDeIdempotencia(req: HttpRequest<unknown>): Record<string, string> {
   const idempotencyKey = req.context.get(IDEMPOTENCY_KEY_TOKEN);
-  if (idempotencyKey) {
-    headers['Idempotency-Key'] = idempotencyKey;
-  }
-
-  if (Object.keys(headers).length === 0) {
-    return req;
-  }
-  return req.clone({ setHeaders: headers });
+  return idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {};
 }
 
 function envelopeSuccess(event: HttpEvent<unknown>): HttpEvent<unknown> {
@@ -89,48 +81,53 @@ function envelopeFailure(error: unknown): Observable<HttpEvent<unknown>> {
   if (!(error instanceof HttpErrorResponse)) {
     throw error;
   }
+  return of(respostaComFalha(error));
+}
 
-  const problem = synthesizeOrParseProblem(error);
+function respostaComFalha(error: HttpErrorResponse): HttpResponse<ApiResult<unknown>> {
   const headers = error.headers ?? new HttpHeaders();
-  const envelope: ApiResult<unknown> = apiFailure(problem, error.status, headers);
-
-  return of(
-    new HttpResponse({
-      body: envelope,
-      status: error.status,
-      statusText: error.statusText,
-      headers,
-      url: error.url ?? undefined,
-    }),
-  );
+  return new HttpResponse({
+    body: apiFailure(synthesizeOrParseProblem(error), error.status, headers),
+    status: error.status,
+    statusText: error.statusText,
+    headers,
+    url: error.url ?? undefined,
+  });
 }
 
 function synthesizeOrParseProblem(error: HttpErrorResponse): ProblemDetails {
   if (error.status === 0) {
-    return {
-      type: 'about:blank',
-      title: 'Não foi possível conectar ao servidor',
-      status: 0,
-      code: CLIENT_PROBLEM_CODES.NETWORK_ERROR,
-      traceId: '',
-    };
+    return problemaDeRede();
   }
-
   const body = parseBodyAsJson(error.error);
+  return declaraProblemMime(error) && isProblemShape(body)
+    ? normalizeProblem(body, error.status)
+    : problemaInesperado(error.status);
+}
+
+function problemaDeRede(): ProblemDetails {
+  return problemaDoCliente(
+    'Não foi possível conectar ao servidor',
+    0,
+    CLIENT_PROBLEM_CODES.NETWORK_ERROR,
+  );
+}
+
+function problemaInesperado(status: number): ProblemDetails {
+  return problemaDoCliente(
+    'Resposta inesperada do servidor',
+    status,
+    CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE,
+  );
+}
+
+function problemaDoCliente(title: string, status: number, code: string): ProblemDetails {
+  return { type: 'about:blank', title, status, code, traceId: '' };
+}
+
+function declaraProblemMime(error: HttpErrorResponse): boolean {
   const contentType = (error.headers?.get('content-type') ?? '').toLowerCase();
-  const isProblemMime = contentType.includes(PROBLEM_DETAILS_MEDIA_TYPE);
-
-  if (isProblemMime && isProblemShape(body)) {
-    return normalizeProblem(body, error.status);
-  }
-
-  return {
-    type: 'about:blank',
-    title: 'Resposta inesperada do servidor',
-    status: error.status,
-    code: CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE,
-    traceId: '',
-  };
+  return contentType.includes(PROBLEM_DETAILS_MEDIA_TYPE);
 }
 
 function parseBodyAsJson(raw: unknown): unknown {
@@ -182,32 +179,40 @@ const CAMPOS_NORMALIZADOS = new Set<string>([
 ]);
 
 function normalizeProblem(body: ProblemDetails, fallbackStatus: number): ProblemDetails {
-  const candidate = body as ProblemDetails & {
-    readonly traceId?: unknown;
-    readonly errors?: ReadonlyArray<unknown>;
-  };
-  const extensoesNaoMapeadas = Object.fromEntries(
+  return { ...extensoesNaoMapeadas(body), ...camposNormalizados(body, fallbackStatus) };
+}
+
+function extensoesNaoMapeadas(body: ProblemDetails): Record<string, unknown> {
+  return Object.fromEntries(
     Object.entries(body as unknown as Record<string, unknown>).filter(
       ([chave]) => !CAMPOS_NORMALIZADOS.has(chave),
     ),
   );
-  const apresentacao =
-    body.code === CODIGO_CATALOGO_DESATUALIZADO
-      ? MENSAGEM_CATALOGO_DESATUALIZADO
-      : { title: body.title, detail: body.detail };
+}
+
+type ProblemaDoWire = ProblemDetails & {
+  readonly traceId?: unknown;
+  readonly errors?: ReadonlyArray<unknown>;
+};
+
+function camposNormalizados(body: ProblemaDoWire, fallbackStatus: number): ProblemDetails {
   return {
-    ...extensoesNaoMapeadas,
     type: body.type ?? 'about:blank',
-    title: apresentacao.title,
+    ...apresentacaoDe(body),
     status: typeof body.status === 'number' ? body.status : fallbackStatus,
-    detail: apresentacao.detail,
     instance: body.instance,
     code: body.code,
-    traceId: typeof candidate.traceId === 'string' ? candidate.traceId : '',
-    errors: normalizeErrors(candidate.errors),
+    traceId: typeof body.traceId === 'string' ? body.traceId : '',
+    errors: normalizeErrors(body.errors),
     legalReference: body.legalReference,
     available_versions: body.available_versions,
   };
+}
+
+function apresentacaoDe(body: ProblemDetails): Pick<ProblemDetails, 'title' | 'detail'> {
+  return body.code === CODIGO_CATALOGO_DESATUALIZADO
+    ? MENSAGEM_CATALOGO_DESATUALIZADO
+    : { title: body.title, detail: body.detail };
 }
 
 /**
@@ -222,24 +227,13 @@ function normalizeErrors(
   if (!Array.isArray(raw) || raw.length === 0) {
     return undefined;
   }
-  return raw.flatMap<ProblemValidationError>((entry) => {
-    if (typeof entry !== 'object' || entry === null) {
-      return [];
-    }
-    const candidate = entry as Record<string, unknown>;
-    if (
-      typeof candidate['field'] !== 'string' ||
-      typeof candidate['code'] !== 'string' ||
-      typeof candidate['message'] !== 'string'
-    ) {
-      return [];
-    }
-    return [
-      {
-        field: candidate['field'],
-        code: candidate['code'],
-        message: candidate['message'],
-      },
-    ];
-  });
+  return raw.filter(ehErroDeCampo).map(({ field, code, message }) => ({ field, code, message }));
+}
+
+function ehErroDeCampo(entry: unknown): entry is ProblemValidationError {
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+  const candidate = entry as Record<string, unknown>;
+  return ['field', 'code', 'message'].every((chave) => typeof candidate[chave] === 'string');
 }
