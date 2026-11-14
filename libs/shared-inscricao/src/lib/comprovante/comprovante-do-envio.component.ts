@@ -134,18 +134,17 @@ export class ComprovanteDoEnvioComponent {
   private ler(fonte: FonteDoComprovante, numeroPedido: string): Observable<Leitura> {
     // O endereço que não traz um inteiro positivo não leva a comprovante algum: nem se pergunta à API.
     const numero = Number(numeroPedido);
-    if (!Number.isInteger(numero) || numero < 1) {
-      return of({ tipo: 'recusa', recusa: this.recusas().naoEncontrado });
-    }
-    return fonte(numero).pipe(
-      map((resultado): Leitura => {
-        if (resultado.ok) return { tipo: 'pronto', comprovante: resultado.data };
-        const recusa = this.recusas().explicar(resultado.problem);
-        return recusa
-          ? { tipo: 'recusa', recusa }
-          : { tipo: 'falha', mensagem: this.problemas.resolve(resultado.problem).title };
-      }),
-    );
+    return Number.isInteger(numero) && numero >= 1
+      ? fonte(numero).pipe(map((resultado) => this.leituraDe(resultado)))
+      : of<Leitura>({ tipo: 'recusa', recusa: this.recusas().naoEncontrado });
+  }
+
+  private leituraDe(resultado: ApiResult<ComprovanteDaInscricaoDto>): Leitura {
+    if (resultado.ok) return { tipo: 'pronto', comprovante: resultado.data };
+    const recusa = this.recusas().explicar(resultado.problem);
+    return recusa
+      ? { tipo: 'recusa', recusa }
+      : { tipo: 'falha', mensagem: this.problemas.resolve(resultado.problem).title };
   }
 
   private mostrar(leitura: Leitura): void {
