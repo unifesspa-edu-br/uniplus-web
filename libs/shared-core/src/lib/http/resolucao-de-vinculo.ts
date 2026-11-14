@@ -45,13 +45,16 @@ export function resolverVinculo<T>(
   if (item !== undefined) {
     return { estado: 'resolvido', rotulo: rotular(item) };
   }
+  return { estado: estadoSemItem(lookup), rotulo: '' };
+}
+
+function estadoSemItem(
+  lookup: Pick<LookupCompleto<unknown>, 'comErro' | 'pendente'>,
+): Exclude<EstadoDoVinculo, 'resolvido'> {
   if (lookup.comErro()) {
-    return { estado: 'falhou', rotulo: '' };
+    return 'falhou';
   }
-  if (lookup.pendente()) {
-    return { estado: 'carregando', rotulo: '' };
-  }
-  return { estado: 'ausente', rotulo: '' };
+  return lookup.pendente() ? 'carregando' : 'ausente';
 }
 
 /**
