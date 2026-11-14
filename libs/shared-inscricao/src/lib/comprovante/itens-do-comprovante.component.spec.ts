@@ -29,13 +29,23 @@ const valorDe = (tela: HTMLElement, rotulo: string): string | undefined =>
     ?.textContent?.trim()
     .replace(/\s+/g, ' ');
 
+const ITENS_DE_TIPOS_DIFERENTES = [
+  item('Aceita ser contatado', 'booleano', true),
+  item('Data de nascimento', 'data', '2001-03-09'),
+  item('Cor ou raça', 'opcao', { codigo: 'PARDA', rotulo: 'Parda' }),
+];
+
+const ITEM_DE_ENDERECO = item('Endereço', 'endereco', {
+  logradouro: 'Folha 31',
+  numero: '10',
+  municipio: 'Marabá',
+  uf: 'PA',
+  cep: '68500-000',
+});
+
 describe('ItensDoComprovanteComponent', () => {
   it('mantém a ordem e o rótulo da API e formata o valor pelo tipo', async () => {
-    const tela = await montar([
-      item('Aceita ser contatado', 'booleano', true),
-      item('Data de nascimento', 'data', '2001-03-09'),
-      item('Cor ou raça', 'opcao', { codigo: 'PARDA', rotulo: 'Parda' }),
-    ]);
+    const tela = await montar(ITENS_DE_TIPOS_DIFERENTES);
 
     expect(Array.from(tela.querySelectorAll('dt')).map((dt) => dt.textContent?.trim())).toEqual([
       'Aceita ser contatado',
@@ -48,16 +58,7 @@ describe('ItensDoComprovanteComponent', () => {
   });
 
   it('o endereço sai em linhas e o item sem valor diz que não foi informado', async () => {
-    const tela = await montar([
-      item('Endereço', 'endereco', {
-        logradouro: 'Folha 31',
-        numero: '10',
-        municipio: 'Marabá',
-        uf: 'PA',
-        cep: '68500-000',
-      }),
-      item('Complemento', 'texto', null),
-    ]);
+    const tela = await montar([ITEM_DE_ENDERECO, item('Complemento', 'texto', null)]);
 
     const linhas = Array.from(tela.querySelectorAll('.resposta__linha')).map((l) =>
       l.textContent?.trim(),
