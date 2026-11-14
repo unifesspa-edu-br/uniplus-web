@@ -34,9 +34,8 @@ import { PublicacoesDoProcesso } from './publicacoes-do-processo.service';
 import { PublicarDocumentoComponent } from './publicar-documento.component';
 
 /**
- * Publicações do processo seletivo: o que o edital prevê publicar e o que ele já publicou, com a
- * situação do registro de cada documento, e a publicação de documento avulso, de item do edital e
- * a correção de um documento já publicado.
+ * Publicações do processo seletivo: o que o edital prevê publicar e o que ele já publicou, e a
+ * publicação de documento avulso, de item do edital e a correção de um documento já publicado.
  *
  * Só orquestra. O que vale para cada publicação (tipo, vigência, cadeia de correção, documentos) é
  * decidido pelo servidor; a página lê o que ele devolve e mostra as recusas dele.
@@ -117,10 +116,6 @@ export class PublicacoesDoProcessoPage {
     return processo.estado === 'lido' && processo.dados.status === StatusProcesso.rascunho;
   });
 
-  protected readonly existePendenciaAntiga = computed(() =>
-    this.publicacoes.listaDeAtos().some((ato) => ato.pendenciaAcimaDoLimiar),
-  );
-
   /** Publicar documento é de quem tem a permissão de publicar; as demais permissões não bastam. */
   protected readonly temPermissaoDePublicar = computed(() =>
     this.permissoes.tem(PERMISSAO.selecao.processosPublicar),
@@ -177,7 +172,8 @@ export class PublicacoesDoProcessoPage {
     this.erroDeAbertura.set(null);
     try {
       const desfecho = await abrirAcessoEmNovaAba(
-        () => firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
+        () =>
+          firstValueFrom(this.api.obterAcessoDocumentoAPublicar(processoId, documentoAPublicarId)),
         () => processoId === this.publicacoes.processoId(),
       );
       if (desfecho.situacao === 'bloqueada') {

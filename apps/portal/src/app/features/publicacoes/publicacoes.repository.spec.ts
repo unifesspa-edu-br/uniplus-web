@@ -37,7 +37,7 @@ function pagina(certame: CertameParaPublicacoes): CertamePublicoResponse {
     numeroEdital: 'XX/2026',
     situacao: SituacaoDaInscricao.inscricoesAbertas,
     documentoEditalUrl: `${ACERVO}/${certame.identificadorLegivel}/retificacao.pdf`,
-    dataPublicacao: '2026-10-20',
+    dataDoAto: '2026-10-20',
     aviso: null,
     linhaDoTempo: [
       {

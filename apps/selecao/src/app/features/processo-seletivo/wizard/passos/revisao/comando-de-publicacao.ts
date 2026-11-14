@@ -73,7 +73,7 @@ function mensagensDosCamposDoAto(ato: WizardDraft['publicacao']['ato']): string[
   const ano = inteiro(ato.ano);
   if (ano === null || ano <= 0) mensagens.push('Informe o ano do ato de publicação.');
 
-  if (!ato.dataPublicacao.trim()) mensagens.push('Informe a data de publicação do ato.');
+  if (!ato.dataDoAto.trim()) mensagens.push('Informe a data do ato.');
   if (!ato.assinante.trim()) mensagens.push('Informe quem assina o ato.');
   if (!ato.tipoAtoCodigo.trim()) mensagens.push('Selecione o tipo do ato.');
   return mensagens;
@@ -106,6 +106,34 @@ function excessosDeComprimento(publicacao: WizardDraft['publicacao']): readonly 
   );
 }
 
+/** Os dados do ato como o contrato os pede: sem espaços nas pontas e o ano como número. */
+function comoDadosDoAto(ato: WizardDraft['publicacao']['ato']): DadosDoAtoRequest {
+  return {
+    orgao: ato.orgao.trim(),
+    serie: ato.serie.trim(),
+    ano: inteiro(ato.ano) ?? 0,
+    dataDoAto: ato.dataDoAto.trim(),
+    assinante: ato.assinante.trim(),
+    tipoAtoCodigo: ato.tipoAtoCodigo.trim(),
+  };
+}
+
+/**
+ * O período de inscrição digitado só vale sem fase que colete inscrição; o valor que não se aplica
+ * vai `null` explícito, nunca omitido (ver `temFaseDeColetaInscricao`).
+ */
+function periodoDeInscricaoDoPedido(
+  draft: WizardDraft,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+) {
+  const { periodoInscricaoInicio, periodoInscricaoFim } = draft.publicacao;
+  const temFase = temFaseDeColetaInscricao(draft, fasePorId);
+  return {
+    periodoInscricaoInicio: temFase ? null : instanteDoCampo(periodoInscricaoInicio),
+    periodoInscricaoFim: temFase ? null : instanteDoCampo(periodoInscricaoFim),
+  };
+}
+
 /**
  * Monta o pedido de publicação. Chamar só depois de `mensagensDePublicacao` devolver vazio: não
  * revalida os campos do ato, que o contrato exige sempre presentes.
@@ -115,25 +143,12 @@ export function comoComandoDePublicacao(
   documentoEditalId: string,
   fasePorId: ReadonlyMap<string, FaseCanonicaDto> = SEM_CATALOGO,
 ): PublicarProcessoSeletivoRequest {
-  const publicacao = draft.publicacao;
-  const temFase = temFaseDeColetaInscricao(draft, fasePorId);
-
-  const ato: DadosDoAtoRequest = {
-    orgao: publicacao.ato.orgao.trim(),
-    serie: publicacao.ato.serie.trim(),
-    ano: inteiro(publicacao.ato.ano) ?? 0,
-    dataPublicacao: publicacao.ato.dataPublicacao.trim(),
-    assinante: publicacao.ato.assinante.trim(),
-    tipoAtoCodigo: publicacao.ato.tipoAtoCodigo.trim(),
-  };
-
+  const { publicacao } = draft;
   return {
     numero: naoVazio(publicacao.numero),
-    // O valor que não se aplica vai `null` explícito, nunca omitido (ver `temFaseDeColetaInscricao`).
-    periodoInscricaoInicio: temFase ? null : instanteDoCampo(publicacao.periodoInscricaoInicio),
-    periodoInscricaoFim: temFase ? null : instanteDoCampo(publicacao.periodoInscricaoFim),
+    ...periodoDeInscricaoDoPedido(draft, fasePorId),
     documentoEditalId,
-    ato,
+    ato: comoDadosDoAto(publicacao.ato),
     anexos: comoPedidoDeAnexos(publicacao.anexos),
   };
 }

@@ -8,7 +8,6 @@ import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   SELECAO_BASE_PATH,
-  SituacaoDoRegistroDoAto,
   StatusProcesso,
   type AtoDoProcessoDto,
 } from '@uniplus/shared-data/selecao';
@@ -50,7 +49,7 @@ export function atoCompleto(): WizardDraft['publicacao']['ato'] {
     orgao: 'Reitoria',
     serie: '1',
     ano: '2027',
-    dataPublicacao: '2027-01-15',
+    dataDoAto: '2027-01-15',
     assinante: 'Reitor',
     tipoAtoCodigo: 'PORTARIA',
   };
@@ -134,9 +133,6 @@ export const ATO_DO_PROCESSO: AtoDoProcessoDto = {
   dataDoAto: '2026-09-25',
   publicadoEm: '2026-09-25T12:00:00Z',
   assinante: 'Reitor da Unifesspa',
-  situacao: SituacaoDoRegistroDoAto.registrado,
-  registradoEm: '2026-09-25T12:00:00Z',
-  pendenciaAcimaDoLimiar: false,
   atoCorrigidoId: null,
   motivoDaCorrecao: null,
   politicaDeDivulgacaoConfirmada: false,
@@ -161,11 +157,11 @@ export const ATO_PUBLICADO: AtoNormativoDto = {
   congelaConfiguracao: true,
   efeitoIrreversivel: true,
   unicoPorObjeto: false,
-  dataPublicacao: '2026-09-25',
+  dataDoAto: '2026-09-25',
   anexos: [],
   documentoHash: 'hash-do-documento',
   assinante: 'Reitor da Unifesspa',
-  registradoEm: '2026-09-25T12:00:00Z',
+  publicadoEm: '2026-09-25T12:00:00Z',
   versaoInvocadaId: null,
   versaoInvocadaHash: null,
   atoRetificadoId: null,

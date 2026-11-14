@@ -101,17 +101,17 @@
           }
         </div>
 
-        <div class="field" [class.is-error]="erroDoCampo('dataPublicacao')">
+        <div class="field" [class.is-error]="erroDoCampo('dataDoAto')">
           <label class="field__label is-required" for="pub-data">Data do documento</label>
           <input
             id="pub-data"
             class="input"
             type="date"
-            formControlName="dataPublicacao"
-            [attr.aria-invalid]="erroDoCampo('dataPublicacao') ? 'true' : null"
-            [attr.aria-describedby]="erroDoCampo('dataPublicacao') ? 'pub-data-erro' : null"
+            formControlName="dataDoAto"
+            [attr.aria-invalid]="erroDoCampo('dataDoAto') ? 'true' : null"
+            [attr.aria-describedby]="erroDoCampo('dataDoAto') ? 'pub-data-erro' : null"
           />
-          @if (erroDoCampo('dataPublicacao'); as erro) {
+          @if (erroDoCampo('dataDoAto'); as erro) {
             <span class="field__error" id="pub-data-erro">{{ erro }}</span>
           }
         </div>

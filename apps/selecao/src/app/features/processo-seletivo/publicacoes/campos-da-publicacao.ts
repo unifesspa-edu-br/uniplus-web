@@ -3,7 +3,7 @@ import type { ValidationErrors } from '@angular/forms';
 export type CampoDoFormulario =
   | 'tipoAtoCodigo'
   | 'numero'
-  | 'dataPublicacao'
+  | 'dataDoAto'
   | 'assinante'
   | 'atoCorrigidoId'
   | 'motivoDaCorrecao'
@@ -12,7 +12,7 @@ export type CampoDoFormulario =
 const CAMPOS: ReadonlySet<string> = new Set<CampoDoFormulario>([
   'tipoAtoCodigo',
   'numero',
-  'dataPublicacao',
+  'dataDoAto',
   'assinante',
   'atoCorrigidoId',
   'motivoDaCorrecao',

@@ -147,7 +147,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     const request = {
       tipoAtoCodigo: 'ERRATA',
       numero: '02/2026',
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: DOCUMENTO_ID,
       anexos: [{ documentoId: TIPO_ID, nome: 'Planilha' }],
@@ -189,7 +189,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   it('publicarProdutoPrevisto() posta no item, com a chave de idempotência, e devolve o ato aceito', async () => {
     const request = {
       numero: '01/2026',
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: DOCUMENTO_ID,
       politicaDeDivulgacaoConfirmada: true,

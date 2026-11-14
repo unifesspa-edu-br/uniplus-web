@@ -132,7 +132,7 @@ export interface components {
             /** Format: uri */
             readonly documentoEditalUrl: null | string;
             /** Format: date */
-            readonly dataPublicacao: null | string;
+            readonly dataDoAto: null | string;
             readonly linhaDoTempo: readonly components["schemas"]["EventoDaLinhaDoTempoResponse"][];
             readonly aviso: null | string;
         };

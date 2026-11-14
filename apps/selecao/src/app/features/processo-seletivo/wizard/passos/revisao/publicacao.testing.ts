@@ -56,7 +56,7 @@ export function draftVazio(): WizardDraft {
       numero: '',
       periodoInscricaoInicio: '',
       periodoInscricaoFim: '',
-      ato: { orgao: '', serie: '', ano: '', dataPublicacao: '', assinante: '', tipoAtoCodigo: '' },
+      ato: { orgao: '', serie: '', ano: '', dataDoAto: '', assinante: '', tipoAtoCodigo: '' },
       anexos: [],
     },
   };
@@ -84,7 +84,7 @@ export function atoCompleto(): WizardDraft['publicacao']['ato'] {
     orgao: 'Reitoria',
     serie: '1',
     ano: '2027',
-    dataPublicacao: '2027-01-15',
+    dataDoAto: '2027-01-15',
     assinante: 'Reitor',
     tipoAtoCodigo: 'PORTARIA',
   };

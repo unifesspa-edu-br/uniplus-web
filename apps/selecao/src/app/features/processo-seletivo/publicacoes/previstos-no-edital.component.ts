@@ -20,7 +20,6 @@ import {
 } from './previstos-do-edital';
 import type { PrevistosLidos } from './publicacoes-do-processo.service';
 import type { ModoDaPublicacao } from './modo-da-publicacao';
-import { SituacaoDoAtoComponent } from './situacao-do-ato.component';
 
 /**
  * Os documentos que o edital declara publicar, por fase e etapa, com a situação de cada um, a
@@ -36,7 +35,6 @@ import { SituacaoDoAtoComponent } from './situacao-do-ato.component';
     ArquivosDoAtoComponent,
     DateBrPipe,
     EmptyStateComponent,
-    SituacaoDoAtoComponent,
     TagComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,7 +55,6 @@ export class PrevistosNoEditalComponent {
   protected readonly rotuloDoAto = rotuloDoAto;
   protected readonly rotuloDoPapel = rotuloDoPapel;
   protected readonly aberto = SituacaoDoProdutoPrevisto.aberto;
-  protected readonly publicado = SituacaoDoProdutoPrevisto.publicado;
 
   protected readonly fases = computed(() => {
     const { consulta, nomeDaFase } = this.previstos();

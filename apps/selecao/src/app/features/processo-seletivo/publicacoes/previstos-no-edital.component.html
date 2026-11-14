@@ -54,11 +54,7 @@
 
             <td data-label="Situação">
               @if (item.ato; as ato) {
-                @if (item.situacao === publicado) {
-                  <ui-tag variant="success">Publicado em {{ ato.publicadoEm | dateBr: 'short' }}</ui-tag>
-                } @else {
-                  <sel-situacao-do-ato [ato]="ato" />
-                }
+                <ui-tag variant="success">Publicado em {{ ato.publicadoEm | dateBr: 'short' }}</ui-tag>
                 <div class="previstos__detalhe">
                   {{ ato.numero === null ? 'Sem número' : 'Número ' + ato.numero }}
                 </div>
@@ -72,7 +68,6 @@
                         Motivo: {{ correcao.motivoDaCorrecao }}
                       }
                     </div>
-                    <sel-situacao-do-ato [ato]="correcao" />
                     <sel-arquivos-do-ato [ato]="correcao" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />
                   </div>
                 }

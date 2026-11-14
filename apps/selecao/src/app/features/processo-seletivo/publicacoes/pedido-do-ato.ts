@@ -11,7 +11,7 @@ export interface DadosDoAto extends DadosDoItem {
 /** O que o formulário declara de um item do edital: o tipo não entra, porque vem do próprio item. */
 export interface DadosDoItem {
   readonly numero: string;
-  readonly dataPublicacao: string;
+  readonly dataDoAto: string;
   readonly assinante: string;
   /** O ato que este corrige; `null` quando não corrige nenhum. */
   readonly atoCorrigidoId: string | null;
@@ -24,10 +24,24 @@ export interface AnexoConfirmado {
   readonly nome: string;
 }
 
-/**
- * O que os dois comandos têm em comum. O que o servidor trata como ausente vai ausente: número em
- * branco, lista de anexos vazia e, sem ato corrigido, também o motivo — que só existe junto dele.
- */
+/** Lista de anexos vazia vai ausente: é assim que o servidor a trata. */
+function anexosDoCorpo(anexos: readonly AnexoConfirmado[]) {
+  if (anexos.length === 0) return {};
+  return {
+    anexos: anexos.map((anexo) => ({
+      documentoId: anexo.documentoAPublicarId,
+      nome: anexo.nome.trim(),
+    })),
+  };
+}
+
+/** O motivo só existe junto do ato corrigido; sem ele, os dois vão ausentes. */
+function correcaoDoCorpo(dados: DadosDoItem) {
+  if (dados.atoCorrigidoId === null) return {};
+  return { atoCorrigidoId: dados.atoCorrigidoId, motivoDaCorrecao: dados.motivoDaCorrecao.trim() };
+}
+
+/** O que os dois comandos têm em comum; número em branco vai ausente. */
 function corpoDoAto(
   dados: DadosDoItem,
   documentoPrincipalId: string,
@@ -36,20 +50,11 @@ function corpoDoAto(
   const numero = dados.numero.trim();
   return {
     numero: numero === '' ? null : numero,
-    dataPublicacao: dados.dataPublicacao,
+    dataDoAto: dados.dataDoAto,
     assinante: dados.assinante.trim(),
     documentoPrincipalId,
-    ...(anexos.length > 0
-      ? {
-          anexos: anexos.map((anexo) => ({
-            documentoId: anexo.documentoAPublicarId,
-            nome: anexo.nome.trim(),
-          })),
-        }
-      : {}),
-    ...(dados.atoCorrigidoId === null
-      ? {}
-      : { atoCorrigidoId: dados.atoCorrigidoId, motivoDaCorrecao: dados.motivoDaCorrecao.trim() }),
+    ...anexosDoCorpo(anexos),
+    ...correcaoDoCorpo(dados),
   };
 }
 

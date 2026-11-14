@@ -78,7 +78,7 @@ const CERTAME_COMPLETO: CertamePublicoResponse = {
   situacao: 'inscricoesAbertas' as CertamePublicoResponse['situacao'],
   numeroEdital: CERTAME.numero,
   documentoEditalUrl: 'https://acervo.unifesspa.edu.br/editais/edital-020-2026.pdf',
-  dataPublicacao: '2026-01-01',
+  dataDoAto: '2026-01-01',
   linhaDoTempo: [EVENTO_COM_DOCUMENTOS],
   aviso: null,
 };
@@ -93,7 +93,7 @@ const EVENTO_EM_PROCESSAMENTO: EventoDaLinhaDoTempoResponse = {
 };
 
 /** Estado degradado da API: `aviso` preenchido, um ato sem documentos e o cartão não atual. */
-const CERTAME_EM_PROCESSAMENTO: CertamePublicoResponse = {
+const CERTAME_COM_ARQUIVO_EM_DISPONIBILIZACAO: CertamePublicoResponse = {
   ...CERTAME_COMPLETO,
   linhaDoTempo: [EVENTO_COM_DOCUMENTOS, EVENTO_EM_PROCESSAMENTO],
   aviso: AVISO_DA_API,
@@ -106,7 +106,7 @@ const CERTAME_SEM_ATOS: CertamePublicoResponse = {
   situacao: 'inscricoesAbertas' as CertamePublicoResponse['situacao'],
   numeroEdital: CERTAME.numero,
   documentoEditalUrl: null,
-  dataPublicacao: null,
+  dataDoAto: null,
   linhaDoTempo: [],
   aviso: null,
 };
@@ -139,16 +139,16 @@ test.describe('Painel de publicações do certame — gate AAA aplicável @aaa',
     await assertAcessibilidade(page, fontMode);
   });
 
-  test('certame com publicações em processamento (estado degradado) passa AAA aplicável', async ({
+  test('certame com arquivo ainda sendo disponibilizado (estado degradado) passa AAA aplicável', async ({
     page,
   }, testInfo) => {
     const { theme, fontMode } = settingsFromProjectName(testInfo.project.name);
-    await mockCertame(page, CERTAME_EM_PROCESSAMENTO);
+    await mockCertame(page, CERTAME_COM_ARQUIVO_EM_DISPONIBILIZACAO);
 
     const painel = await abrirPainelDePublicacoes(page, theme, fontMode);
 
     await expect(painel.getByText(AVISO_DA_API)).toBeVisible();
-    await expect(painel.getByText('Documento em processamento')).toBeVisible();
+    await expect(painel.getByText('O arquivo ainda está sendo disponibilizado.')).toBeVisible();
     await expect(painel.getByRole('heading', { level: 4 })).toHaveCount(2);
 
     await assertAcessibilidade(page, fontMode);
