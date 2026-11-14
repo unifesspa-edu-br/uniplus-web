@@ -1,5 +1,10 @@
 import { HttpParams, HttpResourceRequest } from '@angular/common/http';
-import { CursorPagina, cursorToString, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  CursorPagina,
+  janelaDaPagina,
+  paramsDosFiltros,
+  withVendorMime,
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SituacaoDoCertame } from './schema';
 
@@ -52,26 +57,21 @@ export function certamesPublicosRequest(
   };
 }
 
+/**
+ * `cursor` e `limit` são exclusivos: o cursor opaco já carrega a janela e o recorte da consulta
+ * que o emitiu, e repetir `limit` ao navegar renderia 422 (uniplus.pagination.limit_invalido).
+ */
 function certamesPublicosParams(query: CertamesPublicosQuery): HttpParams {
-  let params = new HttpParams();
+  const { pagina, limit } = query;
+  const janela = { cursor: pagina?.cursor, direction: pagina?.direction, limit };
+  return janelaDaPagina(paramsDosFiltros(filtrosDaVitrine(query)), janela, LIMIT_PADRAO);
+}
 
-  if (query.incluirContadores === true) {
-    params = params.set('incluir_contadores', 'true');
-  }
-  if (query.situacao) {
-    params = params.set('situacao', query.situacao);
-  }
+function filtrosDaVitrine(query: CertamesPublicosQuery): Record<string, string | undefined> {
   const q = query.q?.trim() ?? '';
-  if (q.length > 0) {
-    params = params.set('q', q);
-  }
-
-  // `cursor` e `limit` são exclusivos: o cursor opaco já carrega a janela e o
-  // recorte da consulta que o emitiu, e repetir `limit` ao navegar renderia
-  // 422 (uniplus.pagination.limit_invalido).
-  return query.pagina === undefined
-    ? params.set('limit', String(query.limit ?? LIMIT_PADRAO))
-    : params
-        .set('cursor', cursorToString(query.pagina.cursor))
-        .set('direction', query.pagina.direction);
+  return {
+    incluir_contadores: query.incluirContadores === true ? 'true' : undefined,
+    situacao: query.situacao ? query.situacao : undefined,
+    q: q.length > 0 ? q : undefined,
+  };
 }
