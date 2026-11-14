@@ -1,6 +1,8 @@
 import type { DocumentoDoComprovanteDto } from '@uniplus/shared-data/selecao';
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
 
+type ArquivoDoDocumento = DocumentoDoComprovanteDto['arquivos'][number];
+
 export interface ArquivoExibido {
   readonly formato: string;
   readonly tamanho: string;
@@ -30,17 +32,25 @@ const abreviado = (codigo: string): string =>
 export function documentosExibidos(
   documentos: readonly DocumentoDoComprovanteDto[],
 ): DocumentoExibido[] {
-  return documentos.map((d) => ({
-    nome: d.nome,
-    integrante: d.integrante,
-    obrigatoriedade: d.obrigatorio ? 'Obrigatório' : 'Facultativo',
-    situacao: d.situacao,
-    consequencia: d.consequencia,
-    arquivos: d.arquivos.map((a) => ({
-      formato: a.formato,
-      tamanho: formatarTamanhoDeArquivo(a.tamanhoBytes),
-      codigoAbreviado: abreviado(a.hashSha256),
-      codigo: a.hashSha256,
-    })),
-  }));
+  return documentos.map(documentoExibido);
+}
+
+function documentoExibido(documento: DocumentoDoComprovanteDto): DocumentoExibido {
+  return {
+    nome: documento.nome,
+    integrante: documento.integrante,
+    obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
+    situacao: documento.situacao,
+    consequencia: documento.consequencia,
+    arquivos: documento.arquivos.map(arquivoExibido),
+  };
+}
+
+function arquivoExibido(arquivo: ArquivoDoDocumento): ArquivoExibido {
+  return {
+    formato: arquivo.formato,
+    tamanho: formatarTamanhoDeArquivo(arquivo.tamanhoBytes),
+    codigoAbreviado: abreviado(arquivo.hashSha256),
+    codigo: arquivo.hashSha256,
+  };
 }
