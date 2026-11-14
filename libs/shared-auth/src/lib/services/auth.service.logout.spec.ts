@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type Keycloak from 'keycloak-js';
 import { AuthService } from './auth.service';
 import { AuthConfig } from '../models/auth-config.model';
+import { espiarCriacaoDoKeycloak, instalarBase } from './auth.service.testing';
 
 const config: AuthConfig = {
   issuerUrl: 'http://localhost:8080/realms/unifesspa',
@@ -26,45 +27,39 @@ function stubKeycloak(partial: Partial<Keycloak>): Keycloak {
   } as unknown as Keycloak;
 }
 
+function novoServico(): AuthService {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({});
+  return TestBed.inject(AuthService);
+}
+
+async function iniciarComKeycloak(service: AuthService, partial: Partial<Keycloak>): Promise<void> {
+  espiarCriacaoDoKeycloak(service).mockReturnValue(stubKeycloak(partial));
+  await service.init(config);
+}
+
 describe('AuthService.login — volta à rota pedida, sob o mount point', () => {
+  beforeEach(() => instalarBase('http://localhost:3000/portal/'));
+
   it('resolve a rota de volta contra document.baseURI', async () => {
-    const base = document.createElement('base');
-    base.href = 'http://localhost:3000/portal/';
-    document.head.appendChild(base);
-    try {
-      TestBed.resetTestingModule();
-      TestBed.configureTestingModule({});
-      const service = TestBed.inject(AuthService);
-      const loginSpy = vi.fn(async () => undefined);
-      vi.spyOn(
-        service as unknown as { createKeycloak: () => Keycloak },
-        'createKeycloak',
-      ).mockReturnValue(stubKeycloak({ login: loginSpy }));
+    const service = novoServico();
+    const loginSpy = vi.fn(async () => undefined);
+    await iniciarComKeycloak(service, { login: loginSpy });
 
-      await service.init(config);
-      await service.login('/inscricao/processo-1');
+    await service.login('/inscricao/processo-1');
 
-      expect(loginSpy).toHaveBeenCalledWith({
-        redirectUri: 'http://localhost:3000/portal/inscricao/processo-1',
-      });
-    } finally {
-      base.remove();
-    }
+    expect(loginSpy).toHaveBeenCalledWith({
+      redirectUri: 'http://localhost:3000/portal/inscricao/processo-1',
+    });
   });
 });
 
 describe('AuthService.atualizarPerfil — abre a atualização de perfil do provedor', () => {
   it('pede a ação UPDATE_PROFILE e deixa o provedor voltar à página atual', async () => {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
-    const service = TestBed.inject(AuthService);
+    const service = novoServico();
     const loginSpy = vi.fn(async () => undefined);
-    vi.spyOn(
-      service as unknown as { createKeycloak: () => Keycloak },
-      'createKeycloak',
-    ).mockReturnValue(stubKeycloak({ login: loginSpy }));
+    await iniciarComKeycloak(service, { login: loginSpy });
 
-    await service.init(config);
     await service.atualizarPerfil();
 
     expect(loginSpy).toHaveBeenCalledWith({ action: 'UPDATE_PROFILE' });
@@ -75,39 +70,29 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
   let service: AuthService;
 
   beforeEach(() => {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(AuthService);
+    service = novoServico();
   });
 
-  it('redireciona pra document.baseURI (raiz) em standalone-compact/lab', async () => {
+  async function encerrarSessao() {
     const logoutSpy = vi.fn<Keycloak['logout']>(async () => undefined);
-    vi.spyOn(
-      service as unknown as { createKeycloak: () => Keycloak },
-      'createKeycloak',
-    ).mockReturnValue(stubKeycloak({ logout: logoutSpy }));
-
-    await service.init(config);
+    await iniciarComKeycloak(service, { logout: logoutSpy });
     await service.logout();
+    return logoutSpy;
+  }
+
+  it('redireciona pra document.baseURI (raiz) em standalone-compact/lab', async () => {
+    const logoutSpy = await encerrarSessao();
 
     expect(logoutSpy).toHaveBeenCalledWith(
       expect.objectContaining({ redirectUri: document.baseURI }),
     );
   });
 
-  it('redireciona pro subpath (/portal/) quando servido sob mount point, não pra raiz do host', async () => {
-    const base = document.createElement('base');
-    base.href = 'http://localhost:3000/portal/';
-    document.head.appendChild(base);
-    try {
-      const logoutSpy = vi.fn<Keycloak['logout']>(async () => undefined);
-      vi.spyOn(
-        service as unknown as { createKeycloak: () => Keycloak },
-        'createKeycloak',
-      ).mockReturnValue(stubKeycloak({ logout: logoutSpy }));
+  describe('servido sob subpath', () => {
+    beforeEach(() => instalarBase('http://localhost:3000/portal/'));
 
-      await service.init(config);
-      await service.logout();
+    it('redireciona pro subpath (/portal/) quando servido sob mount point, não pra raiz do host', async () => {
+      const logoutSpy = await encerrarSessao();
 
       expect(logoutSpy).toHaveBeenCalledWith(
         expect.objectContaining({ redirectUri: 'http://localhost:3000/portal/' }),
@@ -118,8 +103,6 @@ describe('AuthService.logout — redireciona ao mount point (Story #447)', () =>
       expect(logoutSpy.mock.calls[0][0]).not.toEqual(
         expect.objectContaining({ redirectUri: window.location.origin }),
       );
-    } finally {
-      base.remove();
-    }
+    });
   });
 });
