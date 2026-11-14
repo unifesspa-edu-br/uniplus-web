@@ -2,6 +2,7 @@ import {
   APP_INITIALIZER,
   EnvironmentProviders,
   InjectionToken,
+  Provider,
   makeEnvironmentProviders,
 } from '@angular/core';
 import { HttpBackend, HttpClient } from '@angular/common/http';
@@ -77,28 +78,32 @@ export function resolveGeoBasePath(store: AppConfigService): string {
  */
 export function provideRuntimeConfig(): EnvironmentProviders {
   return makeEnvironmentProviders([
-    {
-      provide: APP_INITIALIZER,
-      useFactory: carregarRuntimeConfigEIniciarAutenticacao,
-      deps: [HttpBackend, AppConfigService, AuthService],
-      multi: true,
-    },
-    {
-      provide: AUTH_CONFIG,
-      useFactory: (store: AppConfigService): AuthConfig => toAuthConfig(store.get()),
-      deps: [AppConfigService],
-    },
-    ...TOKENS_NA_API_URL.map((token) => ({
-      provide: token,
-      useFactory: (store: AppConfigService) => store.get().apiUrl,
-      deps: [AppConfigService],
-    })),
-    {
-      provide: GEO_BASE_PATH,
-      useFactory: resolveGeoBasePath,
-      deps: [AppConfigService],
-    },
+    INICIALIZADOR_DO_RUNTIME_CONFIG,
+    CONFIGURACAO_DE_AUTENTICACAO,
+    ...TOKENS_NA_API_URL.map(provedorDaApiUrl),
+    { provide: GEO_BASE_PATH, useFactory: resolveGeoBasePath, deps: [AppConfigService] },
   ]);
+}
+
+const INICIALIZADOR_DO_RUNTIME_CONFIG: Provider = {
+  provide: APP_INITIALIZER,
+  useFactory: carregarRuntimeConfigEIniciarAutenticacao,
+  deps: [HttpBackend, AppConfigService, AuthService],
+  multi: true,
+};
+
+const CONFIGURACAO_DE_AUTENTICACAO: Provider = {
+  provide: AUTH_CONFIG,
+  useFactory: (store: AppConfigService): AuthConfig => toAuthConfig(store.get()),
+  deps: [AppConfigService],
+};
+
+function provedorDaApiUrl(token: InjectionToken<string>): Provider {
+  return {
+    provide: token,
+    useFactory: (store: AppConfigService) => store.get().apiUrl,
+    deps: [AppConfigService],
+  };
 }
 
 /** Os módulos que a API serve na mesma origem, a `apiUrl`. */
@@ -119,33 +124,39 @@ function carregarRuntimeConfigEIniciarAutenticacao(
   auth: AuthService,
 ): () => Promise<void> {
   return async () => {
-    // HttpClient construído com HttpBackend direto não passa por
-    // nenhum interceptor — necessário porque o pipeline padrão
-    // depende de tokens que ainda não estão prontos neste momento.
-    const http = new HttpClient(backend);
-    const cfg = await firstValueFrom(http.get<AppConfig>(resolveRuntimeConfigPath()));
+    const cfg = await lerRuntimeConfig(backend);
     assertNaoEhPlaceholder(cfg);
     store.load(cfg);
     await auth.init(toAuthConfig(cfg));
   };
 }
 
+/**
+ * `HttpClient` construído com `HttpBackend` direto não passa por nenhum interceptor — necessário
+ * porque o pipeline padrão depende de tokens que ainda não estão prontos neste momento.
+ */
+function lerRuntimeConfig(backend: HttpBackend): Promise<AppConfig> {
+  return firstValueFrom(new HttpClient(backend).get<AppConfig>(resolveRuntimeConfigPath()));
+}
+
 export function toAuthConfig(cfg: AppConfig): AuthConfig {
   const oidc = resolveOidcConfig(cfg);
-  // geoApiUrl só entra na allowlist quando difere de apiUrl (host
-  // genuinamente separado, ex. HML) — evita duplicar a mesma origin em
-  // dev local, onde cai no fallback do apiUrl (resolveGeoBasePath).
-  // Sem isso, tokenInterceptor não anexa o Bearer em requests pro
-  // geoApiUrl, e /api/cep e /api/cidades exigem autenticação (401).
-  const urls = [cfg.apiUrl, oidc.issuerUrl];
-  if (cfg.geoApiUrl && cfg.geoApiUrl !== cfg.apiUrl) {
-    urls.push(cfg.geoApiUrl);
-  }
   return {
     issuerUrl: oidc.issuerUrl,
     clientId: oidc.clientId,
-    allowedUrls: Object.freeze(urls),
+    allowedUrls: Object.freeze(urlsComBearer(cfg, oidc.issuerUrl)),
   };
+}
+
+/**
+ * `geoApiUrl` só entra na allowlist quando difere de `apiUrl` (host genuinamente separado, ex.
+ * HML) — evita duplicar a mesma origin em dev local, onde cai no fallback do `apiUrl`
+ * (`resolveGeoBasePath`). Sem isso, `tokenInterceptor` não anexa o Bearer em requests para o
+ * `geoApiUrl`, e `/api/cep` e `/api/cidades` exigem autenticação (401).
+ */
+function urlsComBearer(cfg: AppConfig, issuerUrl: string): string[] {
+  const geoSeparado = cfg.geoApiUrl && cfg.geoApiUrl !== cfg.apiUrl;
+  return geoSeparado ? [cfg.apiUrl, issuerUrl, cfg.geoApiUrl] : [cfg.apiUrl, issuerUrl];
 }
 
 /**
