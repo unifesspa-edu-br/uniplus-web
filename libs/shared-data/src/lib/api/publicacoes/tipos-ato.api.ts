@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { PUBLICACOES_BASE_PATH } from './tokens';
 
@@ -62,15 +62,9 @@ export class TiposAtoApi {
       params = params.set('vigentes', String(query.vigentes));
     }
 
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly TipoAtoPublicadoDto[]>>(
       `${this.basePath}/api/publicacoes/tipos-ato`,
-      { params, context: withVendorMime('tipo-ato', 1) },
+      { params: janelaDaPagina(params, query), context: withVendorMime('tipo-ato', 1) },
     );
   }
 

@@ -1,5 +1,5 @@
 import { HttpParams, HttpResourceRequest } from '@angular/common/http';
-import { withVendorMime } from '@uniplus/shared-core/http';
+import { withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 
 /** Janela da listagem: primeira página pelo `limit`, as seguintes pelo cursor do header `Link`. */
 export interface InscricoesDoProcessoQuery {
@@ -21,16 +21,15 @@ export function inscricoesDoProcessoRequest(
   processoSeletivoId: string,
   query: InscricoesDoProcessoQuery = {},
 ): HttpResourceRequest {
-  let params = new HttpParams();
-  if (query.cursor !== undefined) {
-    params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-  } else if (query.limit !== undefined) {
-    params = params.set('limit', String(query.limit));
-  }
-
   return {
     url: `${basePath}/api/selecao/processos-seletivos/${encodeURIComponent(processoSeletivoId)}/inscricoes`,
-    params,
+    params: janelaDaListagem(query),
     context: withVendorMime('inscricao-do-processo', 1),
   };
+}
+
+/** Sem cursor e sem `limit`, nada viaja: vale o tamanho de página do servidor. */
+function janelaDaListagem(query: InscricoesDoProcessoQuery): HttpParams {
+  const janela = janelaDaPagina(new HttpParams(), query);
+  return janela.has('cursor') || query.limit !== undefined ? janela : new HttpParams();
 }

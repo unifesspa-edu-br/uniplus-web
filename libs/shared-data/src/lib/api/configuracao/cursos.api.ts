@@ -1,7 +1,13 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  withVendorMime,
+  comBusca,
+  janelaDaPagina,
+  comOrdenacaoDaPrimeiraPagina,
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -51,20 +57,10 @@ export class CursosApi {
 
   /** GET `/api/configuracao/cursos` — lista paginada por cursor (ADR-0026). */
   listar(query: CursosQuery = {}): Observable<ApiResult<readonly CursoDto[]>> {
-    let params = new HttpParams();
-    const q = query.q?.trim();
-    if (q) {
-      params = params.set('q', q);
-    }
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-      const sort = query.sort?.trim();
-      if (sort) {
-        params = params.set('sort', sort);
-      }
-    }
+    const params = comOrdenacaoDaPrimeiraPagina(
+      janelaDaPagina(comBusca(new HttpParams(), query.q), query),
+      query.sort,
+    );
     return this.http.get<ApiResult<readonly CursoDto[]>>(
       `${this.basePath}/api/configuracao/cursos`,
       {

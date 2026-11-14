@@ -2,7 +2,7 @@ import { Observable } from 'rxjs';
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -28,15 +28,12 @@ export class RecursoAcessibilidadeApi {
   listar(
     query: RecursoAcessibilidadeQuery = {},
   ): Observable<ApiResult<readonly RecursoAcessibilidadeDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
     return this.http.get<ApiResult<readonly RecursoAcessibilidadeDto[]>>(
       `${this.basePath}/api/configuracao/recursos-acessibilidade`,
-      { params, context: withVendorMime('recurso-acessibilidade', 1) },
+      {
+        params: janelaDaPagina(new HttpParams(), query),
+        context: withVendorMime('recurso-acessibilidade', 1),
+      },
     );
   }
 

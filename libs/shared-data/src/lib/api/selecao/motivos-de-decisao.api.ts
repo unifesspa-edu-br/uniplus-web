@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -86,8 +86,5 @@ function paramsDaListagem(query: MotivosDeDecisaoQuery): HttpParams {
   if (query.apenasAtivos !== undefined) {
     params = params.set('apenasAtivos', String(query.apenasAtivos));
   }
-  if (query.cursor !== undefined && query.cursor.length > 0) {
-    return params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-  }
-  return params.set('limit', String(query.limit ?? 100));
+  return janelaDaPagina(params, query);
 }

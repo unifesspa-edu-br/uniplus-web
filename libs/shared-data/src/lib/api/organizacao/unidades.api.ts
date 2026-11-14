@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import { TipoUnidade } from './schema';
 import { ORGANIZACAO_BASE_PATH } from './tokens';
 import type { components } from './schema';
@@ -50,15 +50,10 @@ export class UnidadesApi {
     if (query.q !== undefined) {
       params = params.set('q', query.q);
     }
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
 
     return this.http.get<ApiResult<readonly UnidadeDto[]>>(
       `${this.basePath}/api/organizacao/unidades`,
-      { params, context: withVendorMime('unidade', 1) },
+      { params: janelaDaPagina(params, query), context: withVendorMime('unidade', 1) },
     );
   }
 
