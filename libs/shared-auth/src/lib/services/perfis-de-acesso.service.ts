@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import {
   rotuloDoPerfil,
@@ -9,6 +9,7 @@ import {
 } from '../models/perfil-concedido.model';
 import { PROFILE_BASE_PATH } from '../tokens/auth.tokens';
 import { AuthService } from './auth.service';
+import { pessoaDaSessao } from './pessoa-da-sessao';
 
 export type EstadoDosPerfis = 'pendente' | 'carregando' | 'carregada' | 'indisponivel';
 
@@ -71,7 +72,7 @@ export class PerfisDeAcessoService {
   private sincronizar(sessao: string | null): void {
     if (sessao === this.sessaoSincronizada) return;
 
-    const pessoaAnterior = pessoaDa(this.sessaoSincronizada);
+    const pessoaAnterior = pessoaDaSessao(this.sessaoSincronizada);
     this.sessaoSincronizada = sessao;
     const geracao = ++this.geracao;
 
@@ -79,28 +80,32 @@ export class PerfisDeAcessoService {
       this.limpar('pendente');
       return;
     }
-    if (pessoaDa(sessao) !== pessoaAnterior) this.limpar('carregando');
+    if (pessoaDaSessao(sessao) !== pessoaAnterior) this.limpar('carregando');
     void this.carregar(sessao, geracao);
   }
 
   private async carregar(sessao: string, geracao: number): Promise<RespostaDoPerfil | null> {
-    let resposta: RespostaDoPerfil | null;
-    try {
-      const resultado = await firstValueFrom(
-        this.http.get<ApiResult<RespostaDoPerfil>>(`${this.basePath}/api/profile/me`),
-      );
-      resposta = resultado.ok ? resultado.data : null;
-    } catch {
-      resposta = null;
-    }
-
+    const resposta = await this.consultar();
     // Uma consulta mais nova (ou outra sessão) já assumiu: o estado não é mais deste resultado.
     // A resposta só chega a quem pediu se ainda for da mesma pessoa; nunca os dados de quem saiu.
     const atual = untracked(() => this.auth.sessao());
     if (geracao !== this.geracao || sessao !== atual) {
-      return pessoaDa(sessao) === pessoaDa(atual) ? resposta : null;
+      return pessoaDaSessao(sessao) === pessoaDaSessao(atual) ? resposta : null;
     }
+    return this.aplicar(resposta);
+  }
 
+  private consultar(): Promise<RespostaDoPerfil | null> {
+    return firstValueFrom(
+      this.http.get<ApiResult<RespostaDoPerfil>>(`${this.basePath}/api/profile/me`).pipe(
+        map((resultado) => (resultado.ok ? resultado.data : null)),
+        catchError(() => of(null)),
+      ),
+      { defaultValue: null },
+    );
+  }
+
+  private aplicar(resposta: RespostaDoPerfil | null): RespostaDoPerfil | null {
     if (resposta === null) {
       this.limpar('indisponivel');
       return null;
@@ -117,10 +122,7 @@ export class PerfisDeAcessoService {
   private agendarVencimento(): void {
     this.cancelarTemporizador();
     const agora = Date.now();
-    const proximo = this._concedidos()
-      .map((perfil) => (perfil.validaAte === null ? NaN : Date.parse(perfil.validaAte)))
-      .filter((instante) => instante > agora)
-      .sort((a, b) => a - b)[0];
+    const proximo = proximoVencimento(this._concedidos(), agora);
     if (proximo === undefined) return;
 
     this.temporizador = setTimeout(
@@ -144,12 +146,16 @@ export class PerfisDeAcessoService {
   }
 }
 
+/** O instante em que a próxima concessão com prazo vence, depois de `agora`; nulo-prazo não vence. */
+function proximoVencimento(perfis: readonly PerfilConcedido[], agora: number): number | undefined {
+  return perfis
+    .map((perfil) => (perfil.validaAte === null ? NaN : Date.parse(perfil.validaAte)))
+    .filter((instante) => instante > agora)
+    .sort((a, b) => a - b)[0];
+}
+
 function estaVigente(perfil: PerfilConcedido, agora: number): boolean {
   if (perfil.validaAte === null) return true;
   const limite = Date.parse(perfil.validaAte);
   return Number.isNaN(limite) || limite > agora;
-}
-
-function pessoaDa(sessao: string | null): string | null {
-  return sessao === null ? null : sessao.slice(0, sessao.lastIndexOf(':'));
 }
