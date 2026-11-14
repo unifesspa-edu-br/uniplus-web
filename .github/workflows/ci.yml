@@ -84,6 +84,14 @@ jobs:
     # para o pior caso sem deixar um run travado ocupar runner por horas. Os outros dois
     # jobs já declaravam o seu — este, que é o pesado, era o único sem.
     timeout-minutes: 45
+    # O runner hospedado foi recolhido no meio dos gates ("The runner has received a shutdown
+    # signal") sem nenhum teste falhar, com a saída parada por 26 a 36 segundos antes do
+    # encerramento, na altura dos testes das apps grandes. A hipótese é carga de máquina: o Nx
+    # roda 3 tarefas por vez e cada vitest abre, por padrão, um worker a menos que o número de
+    # núcleos. Duas tarefas por vez, com dois workers de teste cada, reduzem essa carga.
+    env:
+      NX_PARALLEL: 2
+      VITEST_MAX_WORKERS: 2
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,13 +131,6 @@ jobs:
             echo "PR sem mudancas em codigo frontend - pulando gates"
           fi
 
-      # This enables task distribution via Nx Cloud.
-      # Keep --stop-agents-after aligned with every target executed below so the
-      # distributed run cannot finish before all blocking gates are reconciled.
-      # Learn more at https://nx.dev/ci/reference/nx-cloud-cli#npx-nxcloud-startcirun
-      - if: steps.gate.outputs.run == 'true'
-        run: npx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="lint,test,build,typecheck,typecheck-spec"
-
       - if: steps.gate.outputs.run == 'true'
         uses: actions/setup-node@v4
         with:
@@ -142,9 +143,6 @@ jobs:
       - name: Validar base href sob subpath
         if: steps.gate.outputs.run == 'true'
         run: bash tools/test-nginx-base-href.sh
-
-      - if: steps.gate.outputs.run == 'true'
-        run: npx nx record -- echo Hello World
 
       # Drift check do codegen OpenAPI vive em job dedicado `codegen-drift-check`
       # (ver acima) — required check em branch protection desde 2026-05-09.
@@ -166,6 +164,3 @@ jobs:
       - name: Rodar gates (nx run-many — push em main)
         if: steps.gate.outputs.run == 'true' && github.event_name == 'push'
         run: npx nx run-many -t lint test build typecheck typecheck-spec --nxBail --outputStyle=static
-
-      - if: always() && steps.gate.outputs.run == 'true'
-        run: npx nx fix-ci
