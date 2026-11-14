@@ -113,6 +113,8 @@ export interface paths {
                 /** @description Created */
                 readonly 201: {
                     headers: {
+                        /** @description Endereço do ato publicado. */
+                        readonly Location?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -186,6 +188,80 @@ export interface paths {
                 };
             };
         };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{processoSeletivoId}/atos/{atoId}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly processoSeletivoId: string;
+                    readonly atoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.ato-do-processo.v1+json": components["schemas"]["AtoDoProcessoDto"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O processo não existe (uniplus.selecao.processo_seletivo.nao_encontrado) ou o ato não existe nele (uniplus.selecao.ato_do_processo.nao_encontrado); o ato de outro processo responde igual ao inexistente. */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
         readonly delete?: never;
         readonly options?: never;
         readonly head?: never;
@@ -9242,6 +9318,8 @@ export interface paths {
                 /** @description Created */
                 readonly 201: {
                     headers: {
+                        /** @description Endereço do ato publicado. */
+                        readonly Location?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -10375,7 +10453,10 @@ export interface components {
             /** Format: int64 */
             readonly tamanhoBytes: number;
             readonly hashSha256: string;
-            /** Format: uri */
+            /**
+             * Format: uri
+             * @description Endereço permanente e de leitura anônima. Nunca é nulo: o documento do ato só entra na lista de documentos depois da cópia ao acervo, e por isso o endereço dele já existe.
+             */
             readonly urlDownload: string;
         };
         readonly DocumentoDoAtoDto: {
@@ -10452,6 +10533,7 @@ export interface components {
             readonly atoId: string;
             /** Format: uri */
             readonly urlDownload: null | string;
+            /** @description O edital como documento principal e os anexos em seguida. O documento do ato só entra na lista depois da cópia ao acervo; antes disso a lista é vazia e urlDownload do edital é nulo. */
             readonly documentos: readonly components["schemas"]["DocumentoDoAtoCertameDto"][];
         };
         /** @enum {string} */
