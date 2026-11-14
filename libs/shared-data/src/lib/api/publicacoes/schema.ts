@@ -825,8 +825,8 @@ export interface components {
             /** Format: date-time */
             readonly publicadoEm: string;
             /** Format: uuid */
-            readonly versaoInvocadaId: null | string;
-            readonly versaoInvocadaHash: null | string;
+            readonly versaoDeConfiguracaoId: null | string;
+            readonly versaoDeConfiguracaoHash: null | string;
             /** Format: uuid */
             readonly atoRetificadoId: null | string;
             readonly motivoRetificacao: null | string;
@@ -909,8 +909,8 @@ export interface components {
             readonly documentoHash: string;
             readonly assinante: string;
             /** Format: uuid */
-            readonly versaoInvocadaId?: null | string;
-            readonly versaoInvocadaHash?: null | string;
+            readonly versaoDeConfiguracaoId?: null | string;
+            readonly versaoDeConfiguracaoHash?: null | string;
             /** Format: uuid */
             readonly atoRetificadoId?: null | string;
             readonly motivoRetificacao?: null | string;

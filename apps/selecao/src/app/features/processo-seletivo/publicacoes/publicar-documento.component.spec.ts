@@ -70,7 +70,7 @@ describe('PublicarDocumentoComponent — documento avulso', () => {
       anexos: [{ documentoId: DOCUMENTO_ANEXO, nome: 'planilha' }],
     });
     expect(requisicao.request.body).not.toHaveProperty('atoCorrigidoId');
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
 
     expect(tela.publicados).toBe(1);
@@ -132,7 +132,7 @@ describe('PublicarDocumentoComponent — documento avulso', () => {
     const requisicao = tela.controller.expectOne(ROTA_ATOS);
     expect(requisicao.request.body).not.toHaveProperty('atoCorrigidoId');
     expect(requisicao.request.body).not.toHaveProperty('motivoDaCorrecao');
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 
@@ -154,7 +154,7 @@ describe('PublicarDocumentoComponent — documento avulso', () => {
       atoCorrigidoId: ATO_AVISO,
       motivoDaCorrecao: 'Corrige a data de abertura.',
     });
-    requisicao.flush({ atoId: ATO_AVISO }, { status: 202, statusText: 'Accepted' });
+    requisicao.flush({ atoId: ATO_AVISO }, { status: 201, statusText: 'Created' });
     await tick();
   });
 });

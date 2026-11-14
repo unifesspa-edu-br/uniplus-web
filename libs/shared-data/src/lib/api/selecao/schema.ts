@@ -110,9 +110,11 @@ export interface paths {
                 };
             };
             readonly responses: {
-                /** @description Accepted */
-                readonly 202: {
+                /** @description Created */
+                readonly 201: {
                     headers: {
+                        /** @description Endereço do ato publicado. */
+                        readonly Location?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -157,7 +159,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8017,7 +8019,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta. Reler o processo e resubmeter. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra publicação concorrente congelou uma versão da configuração entre a leitura e a gravação desta. Reler o processo e resubmeter. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8124,7 +8126,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8623,7 +8625,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -9239,9 +9241,11 @@ export interface paths {
                 };
             };
             readonly responses: {
-                /** @description Accepted */
-                readonly 202: {
+                /** @description Created */
+                readonly 201: {
                     headers: {
+                        /** @description Endereço do ato publicado. */
+                        readonly Location?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -9286,7 +9290,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), a raiz do ato já foi retificada (uniplus.publicacoes.ato_normativo.raiz_ja_retificada) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Recusa de publicação, sem nada gravado e com o rascunho preservado: o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou o identificador legível está em uso (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso). Outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -12269,9 +12273,7 @@ export enum FinalidadeDoDocumento {
 }
 export enum ImpedimentoDoProduto {
     jaPublicado = "jaPublicado",
-    aguardaConfirmacaoDoRegistro = "aguardaConfirmacaoDoRegistro",
     preliminarNaoPublicado = "preliminarNaoPublicado",
-    preliminarAguardaConfirmacao = "preliminarAguardaConfirmacao",
     tipoDeAtoNaoVigente = "tipoDeAtoNaoVigente"
 }
 export enum ModoDeDeliberacao {
@@ -12319,7 +12321,6 @@ export enum SituacaoDoCertame {
 }
 export enum SituacaoDoProdutoPrevisto {
     aberto = "aberto",
-    pendente = "pendente",
     publicado = "publicado"
 }
 export enum SituacaoInscricao {

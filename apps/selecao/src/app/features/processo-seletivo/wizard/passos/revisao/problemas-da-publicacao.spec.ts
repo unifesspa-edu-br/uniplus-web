@@ -25,7 +25,7 @@ describe('eErroDeDocumentoOuAto', () => {
     expect(
       eErroDeDocumentoOuAto('uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo'),
     ).toBe(true);
-    expect(eErroDeDocumentoOuAto('uniplus.publicacoes.ato_normativo.raiz_ja_retificada')).toBe(true);
+    expect(eErroDeDocumentoOuAto('uniplus.publicacoes.ato_normativo.ato_ja_retificado')).toBe(true);
   });
 
   it('não reconhece os códigos que a API deixou de emitir', () => {
