@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -38,15 +38,12 @@ export class PrecedenciasFaseApi {
 
   /** GET `/api/configuracao/precedencias-fase` — lista paginada por cursor (ADR-0026). */
   listar(query: PrecedenciasFaseQuery = {}): Observable<ApiResult<readonly PrecedenciaFaseDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
     return this.http.get<ApiResult<readonly PrecedenciaFaseDto[]>>(
       `${this.basePath}/api/configuracao/precedencias-fase`,
-      { params, context: withVendorMime('precedencia-fase', 1) },
+      {
+        params: janelaDaPagina(new HttpParams(), query),
+        context: withVendorMime('precedencia-fase', 1),
+      },
     );
   }
 

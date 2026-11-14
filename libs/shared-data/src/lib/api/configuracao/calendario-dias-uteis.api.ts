@@ -2,7 +2,7 @@ import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/commo
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -55,16 +55,10 @@ export class CalendarioDiasUteisApi {
   listar(
     query: PaginacaoQuery = {},
   ): Observable<ApiResult<readonly CalendarioDiasUteisResumoDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
     return this.http.get<ApiResult<readonly CalendarioDiasUteisResumoDto[]>>(
       `${this.basePath}/api/configuracao/calendarios-dias-uteis`,
       {
-        params,
+        params: janelaDaPagina(new HttpParams(), query),
         context: withVendorMime('calendario-dias-uteis', 1),
       },
     );

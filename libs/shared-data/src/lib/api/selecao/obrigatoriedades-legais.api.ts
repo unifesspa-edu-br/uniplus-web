@@ -1,7 +1,7 @@
 import { HttpContext, HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -44,20 +44,12 @@ export class ObrigatoriedadesLegaisApi {
   listar(
     query: ObrigatoriedadesLegaisQuery = {},
   ): Observable<ApiResult<readonly ObrigatoriedadeLegalDto[]>> {
-    let params = new HttpParams();
-    if (query.tipoEdital !== undefined) params = params.set('tipoEdital', query.tipoEdital);
-    if (query.categoria !== undefined) params = params.set('categoria', query.categoria);
-    if (query.vigentes !== undefined) params = params.set('vigentes', String(query.vigentes));
-
-    if (query.cursor !== undefined && query.cursor.length > 0) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly ObrigatoriedadeLegalDto[]>>(
       `${this.basePath}/api/selecao/obrigatoriedades-legais`,
-      { params, context: withVendorMime('obrigatoriedade-legal', 1) },
+      {
+        params: janelaDaPagina(filtrosDaListagem(query), query),
+        context: withVendorMime('obrigatoriedade-legal', 1),
+      },
     );
   }
 
@@ -100,4 +92,12 @@ export class ObrigatoriedadesLegaisApi {
       `${this.basePath}/api/selecao/admin/obrigatoriedades-legais/${encodeURIComponent(id)}`,
     );
   }
+}
+
+function filtrosDaListagem(query: ObrigatoriedadesLegaisQuery): HttpParams {
+  let params = new HttpParams();
+  if (query.tipoEdital !== undefined) params = params.set('tipoEdital', query.tipoEdital);
+  if (query.categoria !== undefined) params = params.set('categoria', query.categoria);
+  if (query.vigentes !== undefined) params = params.set('vigentes', String(query.vigentes));
+  return params;
 }

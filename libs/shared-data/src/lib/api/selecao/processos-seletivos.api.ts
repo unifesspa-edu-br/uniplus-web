@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type {
   CriarProcessoSeletivoCommand,
   DefinirIdentificadorLegivelRequest,
@@ -37,15 +37,8 @@ export class ProcessosSeletivosApi {
   listar(
     query: ProcessosSeletivosQuery = {},
   ): Observable<ApiResult<readonly ProcessoSeletivoResumoDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly ProcessoSeletivoResumoDto[]>>(this.rotas.colecao(), {
-      params,
+      params: janelaDaPagina(new HttpParams(), query),
       context: withVendorMime('processo-seletivo', 1),
     });
   }

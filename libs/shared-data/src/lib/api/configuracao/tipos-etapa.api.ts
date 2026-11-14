@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -39,16 +39,9 @@ export class TiposEtapaApi {
 
   /** GET `/api/configuracao/tipos-etapa` — lista paginada por cursor (ADR-0026). */
   listar(query: TiposEtapaQuery = {}): Observable<ApiResult<readonly TipoEtapaDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly TipoEtapaDto[]>>(
       `${this.basePath}/api/configuracao/tipos-etapa`,
-      { params, context: withVendorMime('tipo-etapa', 1) },
+      { params: janelaDaPagina(new HttpParams(), query), context: withVendorMime('tipo-etapa', 1) },
     );
   }
 
