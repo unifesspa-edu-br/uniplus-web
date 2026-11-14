@@ -1,4 +1,5 @@
-import { HttpEventType, type HttpResponse } from '@angular/common/http';
+import { HttpEventType, type HttpEvent } from '@angular/common/http';
+import type { Observer } from 'rxjs';
 import { isApiOk, type ApiResult } from './api-result';
 import type { ProblemDetails } from './problem-details';
 import { clicarEmLinkTransitorio } from './link-transitorio';
@@ -59,25 +60,41 @@ export function enviarAoStorage(
   upload: SignedUploadClient,
   destino: DestinoPreAssinado,
   arquivo: File,
-  onProgresso: (percentual: number) => void,
+  onProgresso: AoProgredir,
 ): Promise<ResultadoEnvio> {
   return new Promise<ResultadoEnvio>((resolve) => {
-    let etag: string | null = null;
-    upload.enviar(destino.urlUpload, arquivo, destino.contentTypeExigido).subscribe({
-      next: (evento) => {
-        if (evento.type === HttpEventType.UploadProgress) {
-          onProgresso(percentualDe(evento.loaded, evento.total));
-        } else if (evento.type === HttpEventType.Response) {
-          etag = (evento as HttpResponse<unknown>).headers.get('ETag');
-        }
-      },
-      error: (erro: unknown) => resolve(falhaDoEnvio(erro)),
-      complete: () => {
-        onProgresso(100);
-        resolve({ ok: true, etag });
-      },
-    });
+    upload
+      .enviar(destino.urlUpload, arquivo, destino.contentTypeExigido)
+      .subscribe(new AcompanhamentoDoEnvio(onProgresso, resolve));
   });
+}
+
+type AoProgredir = (percentual: number) => void;
+type AoConcluir = (resultado: ResultadoEnvio) => void;
+
+/** Acompanha o PUT: relata o progresso, guarda o `ETag` da resposta e conclui o envio. */
+class AcompanhamentoDoEnvio implements Observer<HttpEvent<unknown>> {
+  private etag: string | null = null;
+
+  constructor(
+    private readonly onProgresso: AoProgredir,
+    private readonly concluir: AoConcluir,
+  ) {}
+
+  readonly next = (evento: HttpEvent<unknown>): void => {
+    if (evento.type === HttpEventType.UploadProgress) {
+      this.onProgresso(percentualDe(evento.loaded, evento.total));
+    } else if (evento.type === HttpEventType.Response) {
+      this.etag = evento.headers.get('ETag');
+    }
+  };
+
+  readonly error = (erro: unknown): void => this.concluir(falhaDoEnvio(erro));
+
+  readonly complete = (): void => {
+    this.onProgresso(100);
+    this.concluir({ ok: true, etag: this.etag });
+  };
 }
 
 /** A URL pré-assinada tem TTL curto; passado o prazo, só uma nova iniciação serve. */
@@ -101,7 +118,14 @@ export type DesfechoDaAbertura =
  * justamente para que o prazo comece agora e para que ela não sobreviva à ação. Sai daqui direto
  * para a aba e nada mais a retém.
  *
- * Tem de ser chamada dentro do clique: a aba nasce antes do primeiro `await`.
+ * Tem de ser chamada dentro do clique: a aba nasce antes do primeiro `await`. Abri-la depois custaria
+ * a ativação do usuário que o navegador exige, e o bloqueador de pop-ups recusaria a abertura
+ * justamente no caminho feliz — sem erro de API para explicar por que nada aconteceu. A recusa vem
+ * antes de pedir o acesso: a URL é emitida por requisição, com o prazo correndo a partir dela, e
+ * pedir uma que não será usada é o que o endpoint sob demanda existe para evitar.
+ *
+ * A chamada a `window.open` fica sem `noopener`, de propósito: com ele devolve `null` por
+ * especificação, e a referência é a que leva a aba ao endereço quando ele chegar.
  *
  * @param aindaVale se a tela ainda trata do mesmo processo quando o acesso chega; abrir depois de
  *   o editor passar a outro mostraria o arquivo de um processo que já saiu da tela.
@@ -110,39 +134,43 @@ export async function abrirAcessoEmNovaAba(
   pedirAcesso: () => Promise<ApiResult<{ readonly url: string }>>,
   aindaVale: () => boolean,
 ): Promise<DesfechoDaAbertura> {
-  // A aba nasce aqui, ainda dentro do clique. Abri-la depois do `await` custaria a ativação do
-  // usuário que o navegador exige, e o bloqueador de pop-ups recusaria a abertura justamente no
-  // caminho feliz — sem erro de API para explicar por que nada aconteceu.
-  //
-  // Sem `noopener` na chamada, e de propósito: com ele `window.open` devolve `null` por
-  // especificação, e é justamente a referência que se precisa para levar a aba ao endereço quando
-  // ele chegar. O desacoplamento vem depois, zerando `opener` antes de navegar.
   const aba = window.open('', '_blank');
-  // Recusa antes de pedir o acesso: a URL é emitida por requisição, com o prazo correndo a partir
-  // dela, e pedir uma que não será usada é exatamente o que o endpoint sob demanda existe para
-  // evitar.
   if (aba === null) return { situacao: 'bloqueada' };
 
   try {
-    const resultado = await pedirAcesso();
-    if (!aindaVale()) {
-      aba.close();
-      return { situacao: 'abandonada' };
-    }
-    if (!isApiOk(resultado)) {
-      aba.close();
-      return { situacao: 'recusada', problem: resultado.problem };
-    }
-
-    // Zerado antes de navegar: a aba passa a carregar um endereço assinado do storage, fora do
-    // controle da aplicação, e não deve alcançar esta janela pelo `window.opener`.
-    aba.opener = null;
-    aba.location.href = resultado.data.url;
-    return { situacao: 'aberta' };
+    return await levarAbaAoAcesso(aba, pedirAcesso, aindaVale);
   } catch (erro) {
     aba.close();
     throw erro;
   }
+}
+
+async function levarAbaAoAcesso(
+  aba: Window,
+  pedirAcesso: () => Promise<ApiResult<{ readonly url: string }>>,
+  aindaVale: () => boolean,
+): Promise<DesfechoDaAbertura> {
+  const resultado = await pedirAcesso();
+  if (!aindaVale()) return fecharAba(aba, { situacao: 'abandonada' });
+  if (!isApiOk(resultado)) {
+    return fecharAba(aba, { situacao: 'recusada', problem: resultado.problem });
+  }
+  navegarSemOpener(aba, resultado.data.url);
+  return { situacao: 'aberta' };
+}
+
+function fecharAba(aba: Window, desfecho: DesfechoDaAbertura): DesfechoDaAbertura {
+  aba.close();
+  return desfecho;
+}
+
+/**
+ * Zera o `opener` antes de navegar: a aba passa a carregar um endereço assinado do storage, fora
+ * do controle da aplicação, e não deve alcançar esta janela pelo `window.opener`.
+ */
+function navegarSemOpener(aba: Window, url: string): void {
+  aba.opener = null;
+  aba.location.href = url;
 }
 
 /** Como terminou o pedido de download de um arquivo confirmado. */
