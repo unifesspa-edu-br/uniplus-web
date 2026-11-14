@@ -24,12 +24,39 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
     timestamp: '2026-10-05T12:00:00Z',
   };
 
+  const perfilComPrazo = {
+    ...perfil('Gestor de processo seletivo', 'CEPS'),
+    validaAte: '2026-12-31T23:59:00-03:00',
+  };
+
+  function achar(host: HTMLElement, seletor: string): HTMLElement {
+    const el = host.querySelector<HTMLElement>(seletor);
+    if (el === null) throw new Error(`elemento não renderizado: ${seletor}`);
+    return el;
+  }
+
+  function clicarEAtualizar(fixture: ComponentFixture<UserHeaderInfoComponent>, alvo: HTMLElement) {
+    alvo.click();
+    fixture.detectChanges();
+  }
+
+  function pedirMeuPerfil(fixture: ComponentFixture<UserHeaderInfoComponent>): void {
+    const host: HTMLElement = fixture.nativeElement;
+    clicarEAtualizar(fixture, achar(host, 'button.user-chip'));
+    clicarEAtualizar(fixture, achar(host, '[data-testid="auth-user-profile-item"]'));
+  }
+
+  function botaoDoCpf(host: HTMLElement): HTMLElement {
+    return achar(host, '[data-testid="auth-profile-cpf-toggle"]');
+  }
+
+  function cpfExibido(host: HTMLElement): string | undefined {
+    return host.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim();
+  }
+
   function abrirPerfil() {
     const ctx = setup();
-    ctx.fixture.nativeElement.querySelector('button.user-chip').click();
-    ctx.fixture.detectChanges();
-    ctx.fixture.nativeElement.querySelector('[data-testid="auth-user-profile-item"]').click();
-    ctx.fixture.detectChanges();
+    pedirMeuPerfil(ctx.fixture);
     /** Entrega a resposta da consulta única que o serviço faz ao abrir o modal. */
     const responder = async (resposta: unknown) => {
       responderRecarga(resposta);
@@ -37,6 +64,12 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
       ctx.fixture.detectChanges();
     };
     return { ...ctx, responder };
+  }
+
+  async function abrirPerfilRespondido(dados: unknown = resposta) {
+    const ctx = abrirPerfil();
+    await ctx.responder(dados);
+    return ctx;
   }
 
   it('só consulta o perfil depois de pedir Meu perfil, e uma única vez', () => {
@@ -54,8 +87,7 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('fecha o menu e abre o modal exibindo os dados retornados pela API', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
 
     const el: HTMLElement = fixture.nativeElement;
     expect(el.querySelector('.menu')?.hasAttribute('hidden')).toBe(true);
@@ -70,8 +102,7 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('oferece "Alterar nome social" quando a conta tem nome social e abre a atualização do perfil', async () => {
-    const { fixture, atualizarPerfil, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture, atualizarPerfil } = await abrirPerfilRespondido();
 
     const acao = fixture.nativeElement.querySelector(
       '[data-testid="auth-profile-nome-social-acao"]',
@@ -106,25 +137,19 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('revela e volta a ocultar o CPF pelo botão de olho', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture, host } = await abrirPerfilRespondido();
+    const toggle = botaoDoCpf(host);
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar CPF');
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
 
-    const el: HTMLElement = fixture.nativeElement;
-    const toggle = el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]');
-    const cpf = () => el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim();
-    expect(toggle?.getAttribute('aria-label')).toBe('Mostrar CPF');
-    expect(toggle?.getAttribute('aria-pressed')).toBe('false');
-
-    toggle?.click();
-    fixture.detectChanges();
-    expect(cpf()).toBe('699.598.363-71');
+    clicarEAtualizar(fixture, toggle);
+    expect(cpfExibido(host)).toBe('699.598.363-71');
     // O nome não muda: o estado é dito só pelo aria-pressed.
-    expect(toggle?.getAttribute('aria-label')).toBe('Mostrar CPF');
-    expect(toggle?.getAttribute('aria-pressed')).toBe('true');
+    expect(toggle.getAttribute('aria-label')).toBe('Mostrar CPF');
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
 
-    toggle?.click();
-    fixture.detectChanges();
-    expect(cpf()).toBe('***.598.363-**');
+    clicarEAtualizar(fixture, toggle);
+    expect(cpfExibido(host)).toBe('***.598.363-**');
   });
 
   it('não oferece o botão de olho quando o CPF não tem 11 dígitos', async () => {
@@ -139,31 +164,20 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('volta a mascarar o CPF ao reabrir o modal', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
-    const el: HTMLElement = fixture.nativeElement;
-    el.querySelector<HTMLButtonElement>('[data-testid="auth-profile-cpf-toggle"]')?.click();
-    fixture.detectChanges();
-    expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
-      '699.598.363-71',
-    );
+    const { fixture, host, responder } = await abrirPerfilRespondido();
+    clicarEAtualizar(fixture, botaoDoCpf(host));
+    expect(cpfExibido(host)).toBe('699.598.363-71');
 
-    el.querySelector('dialog')?.dispatchEvent(new Event('close'));
+    achar(host, 'dialog').dispatchEvent(new Event('close'));
     fixture.detectChanges();
-    el.querySelector<HTMLButtonElement>('button.user-chip')?.click();
-    fixture.detectChanges();
-    el.querySelector<HTMLButtonElement>('[data-testid="auth-user-profile-item"]')?.click();
-    fixture.detectChanges();
+    pedirMeuPerfil(fixture);
     await responder(resposta);
 
-    expect(el.querySelector('[data-testid="auth-profile-cpf"]')?.textContent?.trim()).toBe(
-      '***.598.363-**',
-    );
+    expect(cpfExibido(host)).toBe('***.598.363-**');
   });
 
   it('fecha ao clicar fora do painel, mas não ao clicar dentro dele', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
     const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
     expect(dialog.open).toBe(true);
 
@@ -181,15 +195,8 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   }
 
   it('lista os perfis com o escopo e o prazo "até dd/mm/aaaa" quando há prazo', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
-    concedidos.set([
-      {
-        ...perfil('Gestor de processo seletivo', 'CEPS'),
-        validaAte: '2026-12-31T23:59:00-03:00',
-      },
-      perfil('Consulta institucional', null),
-    ]);
+    const { fixture } = await abrirPerfilRespondido();
+    concedidos.set([perfilComPrazo, perfil('Consulta institucional', null)]);
     fixture.detectChanges();
 
     const itens = perfisDoModal(fixture).querySelectorAll('li');
@@ -200,8 +207,7 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('mostra "Unidade não identificada" para o perfil numa unidade que não existe mais', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
     concedidos.set([perfil('Gestor de processo seletivo', null)]);
     fixture.detectChanges();
 
@@ -209,16 +215,14 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('mostra "Nenhum perfil de acesso" e nada de "Candidato" a quem não tem perfil', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
 
     expect(perfisDoModal(fixture).textContent).toContain('Nenhum perfil de acesso');
     expect(perfisDoModal(fixture).textContent).not.toContain('Candidato');
   });
 
   it('distingue a falha da consulta de perfis de "sem perfil"', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
     estadoDosPerfis.set('indisponivel');
     fixture.detectChanges();
 
@@ -235,8 +239,7 @@ describe('UserHeaderInfoComponent — Meu perfil', () => {
   });
 
   it('desmonta o modal e devolve o foco ao chip quando ele fecha', async () => {
-    const { fixture, responder } = abrirPerfil();
-    await responder(resposta);
+    const { fixture } = await abrirPerfilRespondido();
 
     const dialog: HTMLDialogElement = fixture.nativeElement.querySelector('dialog');
     dialog.dispatchEvent(new Event('close'));
