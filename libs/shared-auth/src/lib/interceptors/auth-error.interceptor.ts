@@ -27,14 +27,15 @@ export const authErrorInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     tap((event) => {
-      if (!(event instanceof HttpResponse)) {
-        return;
-      }
-      if (event.status === STATUS_HTTP.NAO_AUTENTICADO) {
-        void authService.login();
-      } else if (event.status === STATUS_HTTP.SEM_PERMISSAO) {
-        void router.navigate(['/acesso-negado']);
-      }
+      if (event instanceof HttpResponse) reagirAoStatus(event.status, authService, router);
     }),
   );
 };
+
+function reagirAoStatus(status: number, authService: AuthService, router: Router): void {
+  if (status === STATUS_HTTP.NAO_AUTENTICADO) {
+    void authService.login();
+  } else if (status === STATUS_HTTP.SEM_PERMISSAO) {
+    void router.navigate(['/acesso-negado']);
+  }
+}
