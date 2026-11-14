@@ -9,8 +9,9 @@ import { PermissoesService } from './permissoes.service';
 
 const URL = 'http://api.test/api/autorizacao/permissoes/efetivas';
 
-const MOTIVOS = { codigo: 'selecao:motivos-de-decisao:manter', nome: 'Manter motivos' };
-const CAMPI = { codigo: 'configuracao:campi:manter', nome: 'Manter campi' };
+const MOTIVOS = { codigo: 'selecao:motivos-de-decisao:manter', nome: 'Manter motivos' } as const;
+const CAMPI = { codigo: 'configuracao:campi:manter', nome: 'Manter campi' } as const;
+const PERMISSOES_DE_EXEMPLO = [MOTIVOS, CAMPI];
 
 describe('PermissoesService', () => {
   const sessao = signal<string | null>(null);
@@ -39,7 +40,13 @@ describe('PermissoesService', () => {
     await pronta;
   }
 
-  it('consulta a API com o media type versionado e expõe os códigos recebidos', async () => {
+  function permissoesVigentes(): string[] {
+    return PERMISSOES_DE_EXEMPLO.filter(({ codigo }) => service.tem(codigo)).map(
+      ({ codigo }) => codigo,
+    );
+  }
+
+  it('consulta a API com o media type versionado', async () => {
     const pronta = service.garantir();
     const requisicao = http.expectOne(URL);
     expect(requisicao.request.headers.get('Accept')).toBe(
@@ -47,6 +54,10 @@ describe('PermissoesService', () => {
     );
     requisicao.flush([MOTIVOS, CAMPI]);
     await pronta;
+  });
+
+  it('expõe os códigos recebidos', async () => {
+    await carregar([MOTIVOS, CAMPI]);
 
     expect(service.estado()).toBe('carregada');
     expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
@@ -80,8 +91,7 @@ describe('PermissoesService', () => {
     http.expectOne(URL).flush([CAMPI]);
     await pronta;
 
-    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
-    expect(service.tem('configuracao:campi:manter')).toBe(true);
+    expect(permissoesVigentes()).toEqual([CAMPI.codigo]);
   });
 
   it('recarrega na renovação do token sem esvaziar as permissões do mesmo usuário', async () => {
@@ -93,8 +103,7 @@ describe('PermissoesService', () => {
     http.expectOne(URL).flush([CAMPI]);
     await pronta;
 
-    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
-    expect(service.tem('configuracao:campi:manter')).toBe(true);
+    expect(permissoesVigentes()).toEqual([CAMPI.codigo]);
   });
 
   it('esvazia as permissões no logout e não consulta a API sem sessão', async () => {
@@ -169,8 +178,7 @@ describe('PermissoesService', () => {
     requisicaoAntiga.flush([MOTIVOS]);
     await antiga;
 
-    expect(service.tem('configuracao:campi:manter')).toBe(true);
-    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
+    expect(permissoesVigentes()).toEqual([CAMPI.codigo]);
   });
 
   it('descarta a resposta antiga entregue depois da troca de sessão e antes de qualquer sincronização', async () => {
@@ -186,8 +194,7 @@ describe('PermissoesService', () => {
     http.expectOne(URL).flush([CAMPI]);
     await antiga;
     await service.garantir();
-    expect(service.tem('configuracao:campi:manter')).toBe(true);
-    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(false);
+    expect(permissoesVigentes()).toEqual([CAMPI.codigo]);
   });
 
   it('garantir aguarda a carga da sessão vigente quando uma renovação ocorre durante a consulta', async () => {
@@ -201,8 +208,7 @@ describe('PermissoesService', () => {
     await pronta;
 
     expect(service.estado()).toBe('carregada');
-    expect(service.tem('selecao:motivos-de-decisao:manter')).toBe(true);
-    expect(service.tem('configuracao:campi:manter')).toBe(true);
+    expect(permissoesVigentes()).toEqual([MOTIVOS.codigo, CAMPI.codigo]);
   });
 
   it('recarrega sozinho quando a sessão muda, sem depender de quem pergunta', async () => {
