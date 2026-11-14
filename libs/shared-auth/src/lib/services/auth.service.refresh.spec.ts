@@ -7,13 +7,35 @@ interface KeycloakLike {
   token?: string;
 }
 
+const REUSO_EXCEDIDO = {
+  error: 'invalid_grant',
+  error_description: 'Maximum allowed refresh token reuse exceeded',
+};
+const SESSAO_INATIVA = { error: 'invalid_grant', error_description: 'Session not active' };
+
 /**
  * Injeta um duplo de Keycloak no AuthService sem passar por `init()`
  * (que depende do DOM e de rede). Usa a propriedade privada `keycloak`
  * através de um cast controlado.
  */
-function attachFakeKeycloak(service: AuthService, fake: KeycloakLike): void {
-  (service as unknown as { keycloak: KeycloakLike }).keycloak = fake;
+function attachFakeKeycloak(
+  service: AuthService,
+  fake: Pick<KeycloakLike, 'updateToken'> & Partial<KeycloakLike>,
+): void {
+  const keycloak: KeycloakLike = { logout: async () => undefined, ...fake };
+  (service as unknown as { keycloak: KeycloakLike }).keycloak = keycloak;
+}
+
+function renovacaoQueFalha(erro: unknown): () => Promise<boolean> {
+  return async () => {
+    throw erro;
+  };
+}
+
+function renovacaoDemorada(): Promise<boolean> {
+  return new Promise<boolean>((resolve) => {
+    setTimeout(() => resolve(true), 10);
+  });
 }
 
 describe('AuthService — serialização de refreshToken', () => {
@@ -25,16 +47,8 @@ describe('AuthService — serialização de refreshToken', () => {
   });
 
   it('compartilha uma única chamada de updateToken quando refreshToken é disparado em paralelo', async () => {
-    const updateToken = vi.fn(
-      () =>
-        new Promise<boolean>((resolve) => {
-          setTimeout(() => resolve(true), 10);
-        }),
-    );
-    attachFakeKeycloak(service, {
-      updateToken,
-      logout: async () => undefined,
-    });
+    const updateToken = vi.fn(renovacaoDemorada);
+    attachFakeKeycloak(service, { updateToken });
 
     const [a, b, c] = await Promise.all([
       service.refreshToken(30),
@@ -50,10 +64,7 @@ describe('AuthService — serialização de refreshToken', () => {
 
   it('permite novo refresh após a promise em voo resolver', async () => {
     const updateToken = vi.fn(async () => true);
-    attachFakeKeycloak(service, {
-      updateToken,
-      logout: async () => undefined,
-    });
+    attachFakeKeycloak(service, { updateToken });
 
     await service.refreshToken(30);
     await service.refreshToken(30);
@@ -63,15 +74,7 @@ describe('AuthService — serialização de refreshToken', () => {
 
   it('dispara logout() quando Keycloak retorna "reuse exceeded"', async () => {
     const logout = vi.fn(async () => undefined);
-    attachFakeKeycloak(service, {
-      updateToken: async () => {
-        throw {
-          error: 'invalid_grant',
-          error_description: 'Maximum allowed refresh token reuse exceeded',
-        };
-      },
-      logout,
-    });
+    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(REUSO_EXCEDIDO), logout });
 
     const result = await service.refreshToken(30);
 
@@ -84,12 +87,7 @@ describe('AuthService — serialização de refreshToken', () => {
 
   it('dispara logout() quando Keycloak retorna "session not active"', async () => {
     const logout = vi.fn(async () => undefined);
-    attachFakeKeycloak(service, {
-      updateToken: async () => {
-        throw { error: 'invalid_grant', error_description: 'Session not active' };
-      },
-      logout,
-    });
+    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(SESSAO_INATIVA), logout });
 
     await service.refreshToken(30);
     await Promise.resolve();
@@ -99,12 +97,8 @@ describe('AuthService — serialização de refreshToken', () => {
 
   it('NÃO dispara logout() para erros de rede genéricos', async () => {
     const logout = vi.fn(async () => undefined);
-    attachFakeKeycloak(service, {
-      updateToken: async () => {
-        throw new Error('Network request failed');
-      },
-      logout,
-    });
+    const updateToken = renovacaoQueFalha(new Error('Network request failed'));
+    attachFakeKeycloak(service, { updateToken, logout });
 
     const result = await service.refreshToken(30);
 
@@ -115,42 +109,39 @@ describe('AuthService — serialização de refreshToken', () => {
   });
 
   it('libera a promise em voo mesmo quando o refresh lança', async () => {
-    attachFakeKeycloak(service, {
-      updateToken: async () => {
-        throw new Error('Network fail');
-      },
-      logout: async () => undefined,
-    });
+    attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(new Error('Network fail')) });
 
     await service.refreshToken(30);
     expect(service._getRefreshInFlight()).toBeNull();
   });
+
   describe('sessao', () => {
+    function marcarComoAutenticado(): void {
+      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(
+        true,
+      );
+    }
+
     it('é nula sem sessão autenticada', () => {
       expect(service.sessao()).toBeNull();
     });
 
     it('muda a cada renovação efetiva do token e não muda quando o token segue válido', async () => {
-      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(true);
+      marcarComoAutenticado();
       const antes = service.sessao();
-      attachFakeKeycloak(service, { updateToken: async () => false, logout: async () => undefined });
+      attachFakeKeycloak(service, { updateToken: async () => false });
 
       await service.refreshToken(30);
       expect(service.sessao()).toBe(antes);
 
-      attachFakeKeycloak(service, { updateToken: async () => true, logout: async () => undefined });
+      attachFakeKeycloak(service, { updateToken: async () => true });
       await service.refreshToken(30);
       expect(service.sessao()).not.toBe(antes);
     });
 
     it('volta a ser nula quando a renovação falha e derruba a sessão', async () => {
-      (service as unknown as { _authenticated: { set(v: boolean): void } })._authenticated.set(true);
-      attachFakeKeycloak(service, {
-        updateToken: async () => {
-          throw new Error('Network fail');
-        },
-        logout: async () => undefined,
-      });
+      marcarComoAutenticado();
+      attachFakeKeycloak(service, { updateToken: renovacaoQueFalha(new Error('Network fail')) });
 
       await service.refreshToken(30);
 

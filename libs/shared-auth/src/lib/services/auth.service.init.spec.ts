@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import type Keycloak from 'keycloak-js';
 import { AuthService } from './auth.service';
 import { AuthConfig } from '../models/auth-config.model';
+import { espiarCriacaoDoKeycloak, instalarBase } from './auth.service.testing';
 
 const config: AuthConfig = {
   issuerUrl: 'http://localhost:8080/realms/unifesspa',
@@ -39,13 +40,28 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
     expect(service.authenticated()).toBe(false);
   });
 
-  it('captura erro do adapter OIDC e NÃO propaga; expõe initError()', async () => {
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(stubKeycloak({
-        init: () => Promise.reject(new Error('OIDC offline')),
-      }));
+  async function iniciarComKeycloak(partial: Partial<Keycloak>): Promise<boolean> {
+    espiarCriacaoDoKeycloak(service).mockReturnValue(stubKeycloak(partial));
+    return service.init(config);
+  }
 
-    const result = await service.init(config);
+  function stubQueGuardaOnTokenExpired() {
+    let callback: (() => void) | undefined;
+    const kc = stubKeycloak({ init: async () => true });
+    Object.defineProperty(kc, 'onTokenExpired', {
+      configurable: true,
+      get: () => callback,
+      set: (fn: () => void) => {
+        callback = fn;
+      },
+    });
+    return { kc, callbackCapturado: () => callback };
+  }
+
+  it('captura erro do adapter OIDC e NÃO propaga; expõe initError()', async () => {
+    const result = await iniciarComKeycloak({
+      init: () => Promise.reject(new Error('OIDC offline')),
+    });
 
     expect(result).toBe(false);
     expect(service.initError()).toBe('OIDC offline');
@@ -53,24 +69,16 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
   });
 
   it('propaga false (não autenticado) quando init() resolve com false, sem erro', async () => {
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(stubKeycloak({ init: async () => false }));
-
-    const result = await service.init(config);
+    const result = await iniciarComKeycloak({ init: async () => false });
 
     expect(result).toBe(false);
     expect(service.initError()).toBeNull();
   });
 
   it('init bem-sucedido limpa initError anterior', async () => {
-    const spy = vi.spyOn(
-      service as unknown as { createKeycloak: () => Keycloak },
-      'createKeycloak',
-    );
+    const spy = espiarCriacaoDoKeycloak(service);
 
-    spy.mockReturnValueOnce(stubKeycloak({
-      init: () => Promise.reject(new Error('down')),
-    }));
+    spy.mockReturnValueOnce(stubKeycloak({ init: () => Promise.reject(new Error('down')) }));
     await service.init(config);
     expect(service.initError()).toBe('down');
 
@@ -82,21 +90,15 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
   });
 
   it('usa mensagem humanizada padrão quando o erro não tem descrição', async () => {
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(stubKeycloak({
-        init: () => Promise.reject({}),
-      }));
-
-    await service.init(config);
+    await iniciarComKeycloak({ init: () => Promise.reject({}) });
 
     expect(service.initError()).toBe('Não foi possível contatar o provedor de autenticação.');
   });
 
   it('captura erro lançado pelo próprio construtor do Keycloak', async () => {
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockImplementation(() => {
-        throw new Error('cannot reach');
-      });
+    espiarCriacaoDoKeycloak(service).mockImplementation(() => {
+      throw new Error('cannot reach');
+    });
 
     const result = await service.init(config);
 
@@ -106,62 +108,42 @@ describe('AuthService.init — resiliência a provedor OIDC indisponível', () =
 
   it('resolve silentCheckSsoRedirectUri relativo a document.baseURI (Story #446/#453)', async () => {
     const initSpy = vi.fn(async () => false);
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(stubKeycloak({ init: initSpy }));
-
-    await service.init(config);
+    await iniciarComKeycloak({ init: initSpy });
 
     expect(initSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        silentCheckSsoRedirectUri: new URL('assets/silent-check-sso.html', document.baseURI).toString(),
+        silentCheckSsoRedirectUri: new URL(
+          'assets/silent-check-sso.html',
+          document.baseURI,
+        ).toString(),
       }),
     );
   });
 
-  it('resolve silentCheckSsoRedirectUri sob o mount point quando servido sob subpath', async () => {
-    const base = document.createElement('base');
-    base.href = 'http://localhost:3000/portal/';
-    document.head.appendChild(base);
-    try {
-      const initSpy = vi.fn(async () => false);
-      vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-        .mockReturnValue(stubKeycloak({ init: initSpy }));
+  describe('servido sob subpath', () => {
+    beforeEach(() => instalarBase('http://localhost:3000/portal/'));
 
-      await service.init(config);
+    it('resolve silentCheckSsoRedirectUri sob o mount point quando servido sob subpath', async () => {
+      const initSpy = vi.fn(async () => false);
+      await iniciarComKeycloak({ init: initSpy });
 
       expect(initSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           silentCheckSsoRedirectUri: 'http://localhost:3000/portal/assets/silent-check-sso.html',
         }),
       );
-    } finally {
-      base.remove();
-    }
+    });
   });
 
   it('registra callback onTokenExpired que dispara refreshToken()', async () => {
-    let capturedCallback: (() => void) | undefined;
-    const kc = stubKeycloak({ init: async () => true });
-    // Captura de onTokenExpired via setter-ish
-    Object.defineProperty(kc, 'onTokenExpired', {
-      configurable: true,
-      get() {
-        return capturedCallback;
-      },
-      set(fn: () => void) {
-        capturedCallback = fn;
-      },
-    });
-
-    vi.spyOn(service as unknown as { createKeycloak: () => Keycloak }, 'createKeycloak')
-      .mockReturnValue(kc);
-    // loadProfile depende de loadUserProfile — stub já retorna {}
+    const { kc, callbackCapturado } = stubQueGuardaOnTokenExpired();
+    espiarCriacaoDoKeycloak(service).mockReturnValue(kc);
     const refreshSpy = vi.spyOn(service, 'refreshToken').mockResolvedValue(true);
 
     await service.init(config);
 
-    expect(capturedCallback).toBeInstanceOf(Function);
-    capturedCallback?.();
+    expect(callbackCapturado()).toBeInstanceOf(Function);
+    callbackCapturado()?.();
     // `refreshToken` é chamado de forma fire-and-forget via `void`
     expect(refreshSpy).toHaveBeenCalledWith(30);
   });
