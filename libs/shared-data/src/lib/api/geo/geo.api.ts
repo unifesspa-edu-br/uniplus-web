@@ -2,7 +2,7 @@ import { HttpParams } from '@angular/common/http';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, comBusca } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { GEO_BASE_PATH } from './tokens';
 
@@ -63,18 +63,8 @@ export class GeoApi {
    * dos commands.
    */
   listarCidades(filtro: CidadesFiltro = {}): Observable<ApiResult<readonly CidadeResumoDto[]>> {
-    let params = new HttpParams();
-    if (filtro.uf && filtro.uf.trim().length > 0) {
-      params = params.set('uf', filtro.uf.trim().toUpperCase());
-    }
-    if (filtro.q && filtro.q.trim().length > 0) {
-      params = params.set('q', filtro.q.trim());
-    }
-    if (filtro.limit !== undefined) {
-      params = params.set('limit', String(filtro.limit));
-    }
     return this.http.get<ApiResult<readonly CidadeResumoDto[]>>(`${this.basePath}/api/cidades`, {
-      params,
+      params: paramsDasCidades(filtro),
       context: withVendorMime('cidade', 1),
     });
   }
@@ -86,4 +76,11 @@ export class GeoApi {
       { context: withVendorMime('cidade', 1) },
     );
   }
+}
+
+function paramsDasCidades(filtro: CidadesFiltro): HttpParams {
+  const uf = filtro.uf?.trim().toUpperCase();
+  const comUf = uf ? new HttpParams().set('uf', uf) : new HttpParams();
+  const comTexto = comBusca(comUf, filtro.q);
+  return filtro.limit === undefined ? comTexto : comTexto.set('limit', String(filtro.limit));
 }

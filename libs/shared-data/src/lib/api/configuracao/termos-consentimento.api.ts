@@ -1,7 +1,15 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
-import { ApiResult, apiOk, coletarPaginas, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ApiOk,
+  ApiResult,
+  apiOk,
+  coletarPaginas,
+  withVendorMime,
+  comBusca,
+  janelaDaPagina,
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -24,6 +32,8 @@ export const FORMAS_ACEITE: readonly FormaAceiteOption[] = [
   { value: 'REGISTRO_DIGITAL_SEM_LOG_IP', label: 'Registro digital (sem log de IP)' },
   { value: 'REGISTRO_DIGITAL_COM_LOG_IP', label: 'Registro digital (com log de IP)' },
 ] as const;
+
+type TermosComVersoes = ApiResult<readonly TermoConsentimentoDto[]>;
 
 export interface TermosConsentimentoQuery {
   readonly cursor?: string;
@@ -65,19 +75,7 @@ export class TermosConsentimentoApi {
   listar(
     query: TermosConsentimentoQuery = {},
   ): Observable<ApiResult<readonly TermoConsentimentoResumoDto[]>> {
-    let params = new HttpParams();
-
-    const q = query.q?.trim();
-
-    if (q) {
-      params = params.set('q', q);
-    }
-
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
+    const params = janelaDaPagina(comBusca(new HttpParams(), query.q), query);
 
     return this.http.get<ApiResult<readonly TermoConsentimentoResumoDto[]>>(
       `${this.basePath}/api/configuracao/termos-consentimento`,
@@ -105,23 +103,17 @@ export class TermosConsentimentoApi {
    */
   listarComVersoes(): Observable<ApiResult<readonly TermoConsentimentoDto[]>> {
     return coletarPaginas((cursor) => this.listar({ cursor })).pipe(
-      switchMap((lista): Observable<ApiResult<readonly TermoConsentimentoDto[]>> => {
-        if (!lista.ok) return of(lista);
-        if (lista.data.length === 0)
-          return of(apiOk<readonly TermoConsentimentoDto[]>([], lista.status, lista.headers));
-        return forkJoin(lista.data.map((termo) => this.obter(termo.id))).pipe(
-          map((termos) => {
-            const recusa = termos.find((termo) => !termo.ok);
-            return recusa !== undefined && !recusa.ok
-              ? recusa
-              : apiOk(
-                  termos.flatMap((termo) => (termo.ok ? [termo.data] : [])),
-                  lista.status,
-                  lista.headers,
-                );
-          }),
-        );
-      }),
+      switchMap((lista) => (lista.ok ? this.lerCadaTermo(lista) : of(lista))),
+    );
+  }
+
+  private lerCadaTermo(
+    lista: ApiOk<readonly TermoConsentimentoResumoDto[]>,
+  ): Observable<TermosComVersoes> {
+    // `forkJoin` de lista vazia completa sem emitir; sem termos, a resposta é a lista vazia.
+    if (lista.data.length === 0) return of(apiOk([], lista.status, lista.headers));
+    return forkJoin(lista.data.map((termo) => this.obter(termo.id))).pipe(
+      map((termos) => primeiraRecusaOuTodos(termos, lista)),
     );
   }
 
@@ -185,4 +177,15 @@ export class TermosConsentimentoApi {
       `${this.basePath}/api/configuracao/admin/termos-consentimento/${encodeURIComponent(id)}`,
     );
   }
+}
+
+/** A primeira recusa entre as leituras; sem recusa, todos os termos sob o status da listagem. */
+function primeiraRecusaOuTodos(
+  termos: readonly ApiResult<TermoConsentimentoDto>[],
+  lista: ApiOk<readonly TermoConsentimentoResumoDto[]>,
+): TermosComVersoes {
+  const recusa = termos.find((termo) => !termo.ok);
+  if (recusa !== undefined && !recusa.ok) return recusa;
+  const lidos = termos.flatMap((termo) => (termo.ok ? [termo.data] : []));
+  return apiOk(lidos, lista.status, lista.headers);
 }
