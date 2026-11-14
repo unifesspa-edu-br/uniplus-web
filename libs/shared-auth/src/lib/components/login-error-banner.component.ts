@@ -83,24 +83,23 @@ export class LoginErrorBannerComponent {
 
   protected readonly title = computed(() => {
     const d = this.details();
-    if (!d) return '';
-    switch (d.code) {
-      case LoginErrorCode.UserLocked:
-        return 'Conta bloqueada';
-      case LoginErrorCode.InvalidCredentials:
-        return 'Credenciais inválidas';
-      case LoginErrorCode.OidcProviderUnavailable:
-        return 'Serviço indisponível';
-      case LoginErrorCode.AccessDenied:
-        return 'Acesso recusado';
-      default:
-        return 'Falha no login';
-    }
+    return d ? tituloDoErro(d.code) : '';
   });
 
   protected dismiss(): void {
     this.dismissed.set(true);
   }
+}
+
+const TITULOS_DO_ERRO: Partial<Record<LoginErrorCode, string>> = {
+  [LoginErrorCode.UserLocked]: 'Conta bloqueada',
+  [LoginErrorCode.InvalidCredentials]: 'Credenciais inválidas',
+  [LoginErrorCode.OidcProviderUnavailable]: 'Serviço indisponível',
+  [LoginErrorCode.AccessDenied]: 'Acesso recusado',
+};
+
+function tituloDoErro(code: LoginErrorCode): string {
+  return TITULOS_DO_ERRO[code] ?? 'Falha no login';
 }
 
 function extractErrorFromUrl(url: string): [string | null, string | null] | null {
