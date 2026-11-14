@@ -10,19 +10,20 @@ describe('createDisclosureController', () => {
   let outside: HTMLButtonElement;
   let controller: UiDisclosureController;
 
-  beforeEach(() => {
-    vi.useFakeTimers();
-
+  function montarElementos(): void {
     host = document.createElement('div');
     trigger = document.createElement('button');
     panel = document.createElement('div');
     firstControl = document.createElement('button');
     outside = document.createElement('button');
-
     host.append(trigger, panel);
     panel.append(firstControl);
     document.body.append(host, outside);
+  }
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    montarElementos();
     controller = createDisclosureController({
       document,
       host: new ElementRef(host),
