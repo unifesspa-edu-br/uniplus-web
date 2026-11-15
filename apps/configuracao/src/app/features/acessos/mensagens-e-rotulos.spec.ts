@@ -102,10 +102,10 @@ describe('rótulos de acesso', () => {
   });
 
   it('identifica o autor sem expor o identificador inteiro', () => {
-    expect(autorDoEvento({ emissor: 'unifesspa', sub: '0123456789abcdef' })).toBe(
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId: '0123456789abcdef' })).toBe(
       'Pessoa 01234567',
     );
-    expect(autorDoEvento({ emissor: 'uniplus:sistema', sub: 'verificador' })).toBe(
+    expect(autorDoEvento({ emissor: 'uniplus:sistema', contaId: 'verificador' })).toBe(
       'Verificador de documentos',
     );
     expect(autorDoEvento(null)).toBe('Sistema');

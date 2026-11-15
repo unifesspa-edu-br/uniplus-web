@@ -55,7 +55,7 @@ describe('PedidoDetalhePage — aceite, cancelamento e anexo', () => {
   it('não oferece cancelar depois da decisão nem no pedido encerrado', async () => {
     const decisao = {
       etapa: 'gestor',
-      decisor: { emissor: 'unifesspa', sub: 'sub-gestor-0000' },
+      decisor: { emissor: 'unifesspa', contaId: 'conta-gestor-0000' },
       resultado: 'aprovado',
       motivo: null,
       instante: '2026-10-28T13:00:00Z',

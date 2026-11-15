@@ -12024,7 +12024,7 @@ export interface components {
             readonly numeroVersaoBase: number;
             /** Format: date-time */
             readonly abertoEm: string;
-            readonly abertoPorSub: string;
+            readonly abertoPorContaId: string;
             /** Format: int32 */
             readonly revisao: number;
             readonly eTag: string;

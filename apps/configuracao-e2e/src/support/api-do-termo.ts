@@ -1,6 +1,6 @@
 import type { Page, Route } from '@playwright/test';
 import { pedidoSeed, UNIDADE_ID } from './api-de-acesso/modelo';
-import { subDe } from './api-de-acesso/resposta';
+import { contaIdDe } from './api-de-acesso/resposta';
 import {
   CORS_HEADERS,
   mockUnidades,
@@ -11,7 +11,7 @@ import {
 
 export const PERFIL_SENSIVEL_ID = '01960000-0000-7000-0000-00000000bb02';
 export const PEDIDO_ID = '01960000-0000-7000-0000-00000000cc21';
-const FERNANDA = { emissor: 'unifesspa', sub: 'sub-fernanda-0001-ficticia' };
+const FERNANDA = { emissor: 'unifesspa', contaId: 'conta-fernanda-0001-ficticia' };
 
 /** O perfil com dado sensível exige o termo; o comum não. */
 const PERFIS_PARA_PEDIDO = [
@@ -58,7 +58,7 @@ export interface CenarioDoTermo {
   readonly historico?: readonly object[];
   readonly publicacao?: readonly Resposta[];
   readonly criacao?: readonly Resposta[];
-  readonly pedido?: (sub: string) => object;
+  readonly pedido?: (contaId: string) => object;
   readonly aceite?: Resposta;
 }
 
@@ -76,8 +76,8 @@ export interface OpcoesDoPedido {
   readonly termo?: object | null;
 }
 
-function partesDoPedido(opcoes: OpcoesDoPedido, sub: string) {
-  const eu = { emissor: 'unifesspa', sub };
+function partesDoPedido(opcoes: OpcoesDoPedido, contaId: string) {
+  const eu = { emissor: 'unifesspa', contaId };
   return {
     solicitante: opcoes.solicitadoPorMim ? eu : FERNANDA,
     beneficiario: { email: 'quem.le@unifesspa.edu.br', identidade: eu, nome: 'Quem lê' },
@@ -86,12 +86,12 @@ function partesDoPedido(opcoes: OpcoesDoPedido, sub: string) {
 
 /** O pedido de perfil sensível em que quem lê é o beneficiário, com o termo fixado na versão 1. */
 export function pedidoComTermo(opcoes: OpcoesDoPedido) {
-  return (sub: string) => ({
+  return (contaId: string) => ({
     ...pedidoSeed({
       id: PEDIDO_ID,
       situacao: opcoes.situacao ?? 'aguardando_beneficiario',
       etapaAtual: null,
-      ...partesDoPedido(opcoes, sub),
+      ...partesDoPedido(opcoes, contaId),
     }),
     anexaraDocumento: opcoes.anexaraDocumento,
     termo: opcoes.termo === undefined ? termoFixado() : opcoes.termo,
@@ -156,7 +156,7 @@ function pedidoLido(cenario: CenarioDoTermo, route: Route): Resposta {
   const pedido =
     cenario.pedido ??
     pedidoComTermo({ solicitadoPorMim: true, anexaraDocumento: false, termo: null });
-  return { status: 200, corpo: pedido(subDe(route)) };
+  return { status: 200, corpo: pedido(contaIdDe(route)) };
 }
 
 function registrar(route: Route, chamadas: ChamadaDoTermo[]): string {

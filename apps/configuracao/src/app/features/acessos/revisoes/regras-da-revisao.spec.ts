@@ -4,7 +4,7 @@ import {
   CONDUZIR,
   CONSULTAR,
   REVER,
-  SUB_DE_QUEM_LE,
+  CONTA_DE_QUEM_LE,
   item,
   itemDecidido,
   pessoa,
@@ -38,7 +38,7 @@ describe('quem decide o item da revisão', () => {
 
   it('ninguém decide o próprio item, mesmo com as duas permissões', () => {
     const proprio = item({
-      beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'),
+      beneficiario: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'),
       ehDoLeitor: true,
     });
     expect(decideOItem(revisao(), proprio, quemLe(CONDUZIR, REVER))).toBe(false);
@@ -48,8 +48,8 @@ describe('quem decide o item da revisão', () => {
   });
 
   it('o item próprio vem de ehDoLeitor, e não da comparação do beneficiário com quem lê', () => {
-    const deMesmoSub = item({ beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves') });
-    expect(decideOItem(revisao(), deMesmoSub, quemLe(CONDUZIR))).toBe(true);
+    const deMesmaConta = item({ beneficiario: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves') });
+    expect(decideOItem(revisao(), deMesmaConta, quemLe(CONDUZIR))).toBe(true);
   });
 
   it('item decidido ou de concessão encerrada não se decide de novo', () => {
@@ -67,17 +67,17 @@ describe('quem decide o item da revisão', () => {
 });
 
 describe('itens por beneficiário', () => {
-  it('agrupa pelo emissor e sub, em ordem alfabética, mantendo a ordem dos itens', () => {
+  it('agrupa pelo emissor e contaId, em ordem alfabética, mantendo a ordem dos itens', () => {
     const grupos = porBeneficiario(revisao().itens);
 
     expect(grupos.map((g) => g.nome)).toEqual(['Betina Neves', 'Diogo Souza', 'Fernanda Drumond']);
     expect(grupos[2]?.itens.map((i) => i.id)).toEqual(['i1', 'i2']);
   });
 
-  it('o mesmo sub em outro emissor é outra pessoa, e o sem nome aparece como não identificado', () => {
+  it('o mesmo contaId em outro emissor é outra pessoa, e o sem nome aparece como não identificado', () => {
     const outra = item({
       id: 'i9',
-      beneficiario: { emissor: 'outro', sub: 'sub-fernanda', nome: null },
+      beneficiario: { emissor: 'outro', contaId: 'conta-fernanda', nome: null },
     });
     const grupos = porBeneficiario([item(), outra]);
 

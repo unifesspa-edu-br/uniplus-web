@@ -26,7 +26,7 @@ const FUNDAMENTO = 'Deixou a banca e mantém acesso a documentos sensíveis.';
 
 const ATIVA: ConcessaoDto = {
   id: 'c1',
-  beneficiario: pessoa('sub-leandro', 'Leandro Viana'),
+  beneficiario: pessoa('conta-leandro', 'Leandro Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
   versao: 1,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },

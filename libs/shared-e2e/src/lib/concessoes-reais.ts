@@ -14,7 +14,7 @@ import {
 import { PDF_MINIMO, enviarPelaUrlAssinada } from './envio-de-arquivo';
 
 interface ConcessaoExistente {
-  readonly beneficiario: { readonly sub: string };
+  readonly beneficiario: { readonly contaId: string };
   readonly escopo: { readonly unidadeId: string | null };
   readonly ativa: boolean;
 }
@@ -58,8 +58,8 @@ async function pedidoDaConcessao(
     (p) => p.id === perfilId,
   );
   const unidadeId = perfil?.escopo === 'unidade' ? unidadeDaConcessao : null;
-  const { sub, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
-  return { beneficiario, email, sub, perfilId, unidadeId };
+  const { sub: contaId, email } = identidadeDoToken(await tokenDaPersona(beneficiario));
+  return { beneficiario, email, contaId, perfilId, unidadeId };
 }
 
 /** Perfil de governança "Representante do controlador", que decide a segunda etapa. */
@@ -98,26 +98,26 @@ async function designarRepresentantes(): Promise<void> {
  * que a simulação conhece decide o pedido do titular: falha antes, dizendo qual base se espera.
  */
 async function conferirBaseDosRepresentantes(): Promise<void> {
-  const vigentes = await subsDosRepresentantesVigentes();
+  const vigentes = await contasDosRepresentantesVigentes();
   const conhecidos = await Promise.all(
     [REPRESENTANTE_DO_CONTROLADOR, SUBSTITUTO_DO_REPRESENTANTE].map(
       async (persona) => identidadeDoToken(await tokenDaPersona(persona)).sub,
     ),
   );
-  if (vigentes.length === 0 || vigentes.some((sub) => conhecidos.includes(sub))) return;
+  if (vigentes.length === 0 || vigentes.some((contaId) => conhecidos.includes(contaId))) return;
   throw new Error(
     `A base tem Representante do controlador vigente que não é ${REPRESENTANTE_DO_CONTROLADOR} nem ${SUBSTITUTO_DO_REPRESENTANTE}. ` +
       'A preparação espera uma base sem Representante vigente ou com um desses dois designado; recrie a base ou designe um deles.',
   );
 }
 
-async function subsDosRepresentantesVigentes(): Promise<string[]> {
+async function contasDosRepresentantesVigentes(): Promise<string[]> {
   const ativas = await chamarApi<ConcessaoExistente[]>(
     SEGUNDO_GESTOR_DE_ACESSOS,
     'GET',
     `/api/autorizacao/concessoes?perfil=${PERFIL_DO_REPRESENTANTE}&situacao=ativa&limit=100`,
   );
-  return ativas.corpo.filter((concessao) => concessao.ativa).map((c) => c.beneficiario.sub);
+  return ativas.corpo.filter((concessao) => concessao.ativa).map((c) => c.beneficiario.contaId);
 }
 
 async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
@@ -133,7 +133,7 @@ async function concessaoAtiva(pedido: PedidoDeConcessao): Promise<boolean> {
 function concedeOPedido(concessao: ConcessaoExistente, pedido: PedidoDeConcessao): boolean {
   return (
     concessao.ativa &&
-    concessao.beneficiario.sub === pedido.sub &&
+    concessao.beneficiario.contaId === pedido.contaId &&
     (concessao.escopo.unidadeId ?? null) === pedido.unidadeId
   );
 }
@@ -141,7 +141,7 @@ function concedeOPedido(concessao: ConcessaoExistente, pedido: PedidoDeConcessao
 interface PedidoDeConcessao {
   readonly beneficiario: string;
   readonly email: string;
-  readonly sub: string;
+  readonly contaId: string;
   readonly perfilId: string;
   readonly unidadeId: string | null;
 }
@@ -161,7 +161,7 @@ interface EtapaDoPedido {
 
 interface PedidoLido {
   readonly situacao: string;
-  readonly solicitante: { readonly sub: string };
+  readonly solicitante: { readonly contaId: string };
   readonly termo: { readonly versaoId: string } | null;
 }
 
@@ -286,11 +286,11 @@ async function aguardarSairDe(
 async function solicitanteDoPedido(pedido: PedidoDeConcessao, base: string): Promise<string> {
   const { solicitante } = await lerPedido(pedido, base);
   for (const candidato of [SOLICITANTE_DE_PEDIDOS, 'isabella.figueiredo']) {
-    if (identidadeDoToken(await tokenDaPersona(candidato)).sub === solicitante.sub)
+    if (identidadeDoToken(await tokenDaPersona(candidato)).sub === solicitante.contaId)
       return candidato;
   }
   throw new Error(
-    `O solicitante do pedido ${base} (${solicitante.sub}) não é uma persona conhecida.`,
+    `O solicitante do pedido ${base} (${solicitante.contaId}) não é uma persona conhecida.`,
   );
 }
 

@@ -21,14 +21,14 @@ const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
 
 export const notificacoes = { success: vi.fn(), errorFromProblem: vi.fn(), info: vi.fn() };
 
-export function pessoa(sub: string, nome: string) {
-  return { emissor: EMISSOR, sub, nome };
+export function pessoa(contaId: string, nome: string) {
+  return { emissor: EMISSOR, contaId, nome };
 }
 
 /** A concessão ativa do Leandro, sobre a qual a providência é pedida. */
 const CONCESSAO_DO_LEANDRO: ProvidenciaDto['concessao'] = {
   id: 'c1',
-  beneficiario: pessoa('sub-leandro', 'Leandro Viana'),
+  beneficiario: pessoa('conta-leandro', 'Leandro Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
   validaAte: null,
@@ -48,7 +48,7 @@ const ABERTA: Omit<ProvidenciaDto, 'solicitadaPor' | 'concessao'> = {
 
 /** A providência aberta do Kevin, Encarregado de dados, sobre a concessão do Leandro. */
 export function providencia(parcial: Partial<ProvidenciaDto> = {}): ProvidenciaDto {
-  const solicitadaPor = pessoa('sub-kevin', 'Kevin Carvalho');
+  const solicitadaPor = pessoa('conta-kevin', 'Kevin Carvalho');
   return { ...ABERTA, solicitadaPor, concessao: CONCESSAO_DO_LEANDRO, ...parcial };
 }
 

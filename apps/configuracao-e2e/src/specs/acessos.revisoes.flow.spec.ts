@@ -135,8 +135,8 @@ test.describe('Acessos — revisão periódica', () => {
     const chamadas = await abrir(page, PERMISSOES_DA_BETINA_CONDUZ_REVISOES, DETALHE, {
       detalhe: [
         revisaoAberta,
-        (sub) => ({
-          ...revisaoAberta(sub),
+        (contaId) => ({
+          ...revisaoAberta(contaId),
           itens: [itemDaRevisao('i1', FERNANDA, { decide: 'gestor-de-acessos' })],
         }),
       ],
@@ -164,8 +164,8 @@ test.describe('Acessos — revisão periódica', () => {
     await abrir(page, PERMISSOES_DA_BETINA_CONDUZ_REVISOES, DETALHE, {
       detalhe: [
         revisaoAberta,
-        (sub) => ({
-          ...revisaoAberta(sub),
+        (contaId) => ({
+          ...revisaoAberta(contaId),
           itens: [itemDaRevisao('i1', FERNANDA, { ...ITEM_DECIDIDO, situacao: 'revogada' })],
         }),
       ],

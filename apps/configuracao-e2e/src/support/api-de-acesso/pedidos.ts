@@ -1,6 +1,6 @@
 import { PERFIS, PERFIL_SENSIVEL_ID, concessaoDoPedido, pedidoSeed, type Pedido } from './modelo';
 import type { EstadoDaApi } from './modelo';
-import { json, semConteudo, subDe, type Requisicao, type Rota } from './resposta';
+import { json, semConteudo, contaIdDe, type Requisicao, type Rota } from './resposta';
 
 const PEDIDO_NAO_ENCONTRADO = {
   type: 'x',
@@ -24,7 +24,7 @@ const FILAS: Readonly<Record<string, (pedido: Pedido, eu: string) => boolean>> =
   protecao_de_dados: (pedido) => pedido.situacao === 'aguardando_protecao_de_dados',
   todos: () => true,
 };
-const meus = (pedido: Pedido, eu: string) => pedido.solicitante.sub === eu;
+const meus = (pedido: Pedido, eu: string) => pedido.solicitante.contaId === eu;
 
 function resumo(p: Pedido) {
   const { id, situacao, etapaAtual, beneficiario, perfil, escopo, justificativa, criadoEm } = p;
@@ -37,7 +37,7 @@ const pedidoDe = (estado: EstadoDaApi, caminho: string) =>
 function listar({ route, url, estado }: Requisicao): Promise<void> {
   const daFila = FILAS[url.searchParams.get('fila') ?? 'meus'] ?? meus;
   const situacao = url.searchParams.get('situacao');
-  const eu = subDe(route);
+  const eu = contaIdDe(route);
   const filtrados = estado.pedidos
     .filter((p) => daFila(p, eu))
     .filter((p) => !situacao || p.situacao === situacao);
@@ -45,10 +45,10 @@ function listar({ route, url, estado }: Requisicao): Promise<void> {
 }
 
 /** O pedido que a tela cria é sempre da própria pessoa, como beneficiária e solicitante. */
-function pedidoCriado(corpo: CorpoDaCriacao, sub: string): Pedido {
+function pedidoCriado(corpo: CorpoDaCriacao, contaId: string): Pedido {
   const perfil = PERFIS.find((p) => p.id === corpo.perfilId);
   if (!perfil) throw new Error(`Perfil fora do seed: ${corpo.perfilId}`);
-  const identidade = { emissor: 'unifesspa', sub };
+  const identidade = { emissor: 'unifesspa', contaId };
   return pedidoSeed({
     id: '01960000-0000-7000-0000-00000000cc99',
     solicitante: identidade,
@@ -63,7 +63,7 @@ function pedidoCriado(corpo: CorpoDaCriacao, sub: string): Pedido {
 function criar({ route, estado }: Requisicao): Promise<void> {
   const corpo = route.request().postDataJSON() as CorpoDaCriacao;
   estado.criacoes.push(corpo);
-  const novo = pedidoCriado(corpo, subDe(route));
+  const novo = pedidoCriado(corpo, contaIdDe(route));
   estado.pedidos.push(novo);
   return json(route, novo, 201);
 }

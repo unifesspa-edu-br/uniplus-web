@@ -5,22 +5,22 @@ import { origemDaFila } from './origens-do-pedido';
 import { autorDoEvento, TrilhaDeAcessoComponent } from './trilha-de-acesso.component';
 
 describe('autorDoEvento', () => {
-  const sub = '6ab1f3f7-1c11-4f8e-9d52-6a1f0b2c0001';
+  const contaId = '6ab1f3f7-1c11-4f8e-9d52-6a1f0b2c0001';
 
   it('mostra o nome gravado quando a API o traz', () => {
-    expect(autorDoEvento({ emissor: 'unifesspa', sub, nome: 'Diogo Bruno Filipe Souza' })).toBe(
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId, nome: 'Diogo Bruno Filipe Souza' })).toBe(
       'Diogo Bruno Filipe Souza',
     );
   });
 
   it('cai no início do identificador quando o registro não tem nome', () => {
-    expect(autorDoEvento({ emissor: 'unifesspa', sub, nome: null })).toBe('Pessoa 6ab1f3f7');
-    expect(autorDoEvento({ emissor: 'unifesspa', sub })).toBe('Pessoa 6ab1f3f7');
-    expect(autorDoEvento({ emissor: 'unifesspa', sub, nome: '  ' })).toBe('Pessoa 6ab1f3f7');
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId, nome: null })).toBe('Pessoa 6ab1f3f7');
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId })).toBe('Pessoa 6ab1f3f7');
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId, nome: '  ' })).toBe('Pessoa 6ab1f3f7');
   });
 
   it('mantém o rótulo do verificador de documentos', () => {
-    expect(autorDoEvento({ emissor: 'uniplus:sistema', sub: 'verificador' })).toBe(
+    expect(autorDoEvento({ emissor: 'uniplus:sistema', contaId: 'verificador' })).toBe(
       'Verificador de documentos',
     );
   });
@@ -42,7 +42,7 @@ describe('TrilhaDeAcessoComponent', () => {
     {
       tipo: 'anexo_verificado',
       instante: '2026-10-29T15:00:00Z',
-      autor: { emissor: 'uniplus:sistema', sub: 'verificador' },
+      autor: { emissor: 'uniplus:sistema', contaId: 'verificador' },
       detalhe: `Anexo ${anexo}. SHA-256 do PDF: ${sha}.`,
       ator: 'humano',
     },

@@ -9,6 +9,6 @@ export function ehOBeneficiario(
   eu: { readonly id: string; readonly email: string },
 ): boolean {
   return beneficiario.identidade !== null
-    ? beneficiario.identidade.sub === eu.id
+    ? beneficiario.identidade.contaId === eu.id
     : beneficiario.email.toLowerCase() === eu.email.toLowerCase();
 }

@@ -23,7 +23,7 @@ const CONCESSOES = 'http://api.test/api/autorizacao/concessoes';
 function concessao(id: string): ConcessaoDto {
   return {
     id,
-    beneficiario: pessoa(`sub-${id}`, 'Leandro Viana'),
+    beneficiario: pessoa(`conta-${id}`, 'Leandro Viana'),
     perfil: { id: 'p1', nome: 'Banca de documentos' },
     versao: 1,
     escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },

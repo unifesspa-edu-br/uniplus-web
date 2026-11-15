@@ -83,7 +83,7 @@ describe('ProvidenciaDetalhePage', () => {
         situacao: 'respondida',
         desfecho: {
           em: '2026-11-12T14:00:00Z',
-          por: pessoa('sub-diogo', 'Diogo Souza'),
+          por: pessoa('conta-diogo', 'Diogo Souza'),
           motivo: 'Segue na banca até o fim do certame.',
         },
       }),

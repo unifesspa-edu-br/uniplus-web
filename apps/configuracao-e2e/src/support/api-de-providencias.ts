@@ -11,7 +11,7 @@ import {
 /** A API simulada das providências sobre concessões e da concessão de onde a solicitação parte. */
 
 const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
-const pessoa = (sub: string, nome: string) => ({ emissor: EMISSOR, sub, nome });
+const pessoa = (contaId: string, nome: string) => ({ emissor: EMISSOR, contaId, nome });
 
 export const PROVIDENCIA_ID = '01960000-0000-7000-0000-0000000000e1';
 export const CONCESSAO_ID = '01960000-0000-7000-0000-0000000000c1';
@@ -19,7 +19,7 @@ const RAIZ = '\\/api\\/autorizacao';
 
 const CONCESSAO = {
   id: CONCESSAO_ID,
-  beneficiario: pessoa('sub-leandro', 'Leandro Caleb Viana'),
+  beneficiario: pessoa('conta-leandro', 'Leandro Caleb Viana'),
   perfil: { id: 'p1', nome: 'Banca de documentos' },
   escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
   validaAte: null,
@@ -34,7 +34,7 @@ export function providencia(parcial: object = {}) {
     fundamento: 'Deixou a banca e mantém acesso a documentos sensíveis.',
     situacao: 'aberta',
     abertaEm: '2026-11-10T12:00:00Z',
-    solicitadaPor: pessoa('sub-kevin', 'Kevin Anderson Carvalho'),
+    solicitadaPor: pessoa('conta-kevin', 'Kevin Anderson Carvalho'),
     concessao: CONCESSAO,
     encerramentoDaConcessao: null,
     desfecho: null,

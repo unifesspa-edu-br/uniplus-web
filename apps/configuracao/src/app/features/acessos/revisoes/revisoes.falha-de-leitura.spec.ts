@@ -40,7 +40,7 @@ const falhaDoRegistro = () => falhaDaApi(503, REGISTRO_NAO_GRAVOU, TITULO_DA_FAL
 const RESUMO: RevisaoResumoDto = {
   id: 'r1',
   abertaEm: '2026-11-09T12:00:00Z',
-  abertaPor: pessoa('sub-betina', 'Betina Neves'),
+  abertaPor: pessoa('conta-betina', 'Betina Neves'),
   situacao: 'em_andamento',
   totalDeItens: 4,
   pendentes: 3,

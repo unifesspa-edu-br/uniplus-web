@@ -1,5 +1,5 @@
 import type { Page, Route } from '@playwright/test';
-import { subDe } from './api-de-acesso/resposta';
+import { contaIdDe } from './api-de-acesso/resposta';
 import {
   CORS_HEADERS,
   UNIDADE_CEPS,
@@ -13,13 +13,17 @@ const EMISSOR = 'unifesspa';
 
 export const FERNANDA = {
   emissor: EMISSOR,
-  sub: 'sub-fernanda-0001-ficticia',
+  contaId: 'conta-fernanda-0001-ficticia',
   nome: 'Fernanda Drumond',
 };
-export const DIOGO = { emissor: EMISSOR, sub: 'sub-diogo-0003-ficticio', nome: 'Diogo Souza' };
-const BETINA = { emissor: EMISSOR, sub: 'sub-betina-0002-ficticia', nome: 'Betina Neves' };
+export const DIOGO = {
+  emissor: EMISSOR,
+  contaId: 'conta-diogo-0003-ficticio',
+  nome: 'Diogo Souza',
+};
+const BETINA = { emissor: EMISSOR, contaId: 'conta-betina-0002-ficticia', nome: 'Betina Neves' };
 
-type Identidade = { readonly emissor: string; readonly sub: string; readonly nome: string };
+type Identidade = { readonly emissor: string; readonly contaId: string; readonly nome: string };
 
 const PENDENTE = {
   escopo: { tipo: 'unidade', unidadeId: UNIDADE_CEPS },
@@ -46,7 +50,7 @@ export const ITEM_DECIDIDO = {
  * Os itens da revisão aberta: dois da Fernanda (um já decidido), o do Diogo e o de quem lê, que a
  * API marca com `ehDoLeitor`.
  */
-export function itensDaRevisao(subDeQuemLe: string) {
+export function itensDaRevisao(contaDeQuemLe: string) {
   return [
     itemDaRevisao('i1', FERNANDA),
     itemDaRevisao('i2', FERNANDA, {
@@ -56,7 +60,7 @@ export function itensDaRevisao(subDeQuemLe: string) {
     itemDaRevisao('i3', DIOGO, { decide: 'gestor-de-acessos' }),
     itemDaRevisao(
       'i4',
-      { emissor: EMISSOR, sub: subDeQuemLe, nome: 'Pessoa que lê a revisão' },
+      { emissor: EMISSOR, contaId: contaDeQuemLe, nome: 'Pessoa que lê a revisão' },
       { ehDoLeitor: true },
     ),
   ];
@@ -71,8 +75,8 @@ export const RESUMO_ABERTO = {
   pendentes: 3,
 };
 
-export function revisaoAberta(subDeQuemLe: string, parcial: object = {}) {
-  return { ...RESUMO_ABERTO, itens: itensDaRevisao(subDeQuemLe), ...parcial };
+export function revisaoAberta(contaDeQuemLe: string, parcial: object = {}) {
+  return { ...RESUMO_ABERTO, itens: itensDaRevisao(contaDeQuemLe), ...parcial };
 }
 
 export const RESUMO_ENCERRADO = {
@@ -87,7 +91,7 @@ export const RESUMO_ENCERRADO = {
 /** O cenário que a API simulada atende: a lista e as leituras do detalhe em sequência, e as escritas. */
 export interface CenarioDaRevisao {
   readonly lista?: readonly object[];
-  readonly detalhe: readonly ((sub: string) => object)[];
+  readonly detalhe: readonly ((contaId: string) => object)[];
   readonly decisao?: Resposta;
   readonly abertura?: Resposta;
 }
@@ -116,13 +120,13 @@ function respostaDe(route: Route, cenario: CenarioDaRevisao, leituras: { vez: nu
   const { pathname, searchParams } = new URL(route.request().url());
   if (route.request().method() === 'POST') {
     return pathname.endsWith('/revisoes')
-      ? (cenario.abertura ?? { status: 201, corpo: revisaoAberta(subDe(route)) })
+      ? (cenario.abertura ?? { status: 201, corpo: revisaoAberta(contaIdDe(route)) })
       : (cenario.decisao ?? { status: 204 });
   }
   if (pathname.endsWith('/revisoes'))
     return { status: 200, corpo: naSituacao(cenario.lista ?? [], searchParams.get('situacao')) };
   const leitura = cenario.detalhe[Math.min(leituras.vez++, cenario.detalhe.length - 1)];
-  return leitura ? { status: 200, corpo: leitura(subDe(route)) } : { status: 404 };
+  return leitura ? { status: 200, corpo: leitura(contaIdDe(route)) } : { status: 404 };
 }
 
 /** Atende `/api/autorizacao/revisoes` e as unidades do escopo; devolve as chamadas recebidas. */

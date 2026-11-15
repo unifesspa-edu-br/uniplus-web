@@ -48,7 +48,7 @@ describe('AcessoNegadoPage', () => {
             situacao: 'aguardando_beneficiario',
             beneficiario: {
               email: EU.email,
-              identidade: { emissor: 'unifesspa', sub: EU.id },
+              identidade: { emissor: 'unifesspa', contaId: EU.id },
               nome: EU.nomeCivil,
             },
           }),
