@@ -126,6 +126,15 @@
           }
         </fieldset>
       </section>
+
+      <section aria-labelledby="cfg-etapa-conceitos">
+        <h3 id="cfg-etapa-conceitos" class="form-section__title">Conceitos</h3>
+        <cfg-conceitos-admitidos
+          [controle]="form().controls.conceitosAdmitidos"
+          [catalogo]="conceitos()"
+          [erro]="erroDoCampo('conceitosAdmitidos')"
+        />
+      </section>
     </fieldset>
   </form>
 

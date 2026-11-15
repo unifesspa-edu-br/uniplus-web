@@ -12,7 +12,7 @@ export interface EtapaForm {
   admitePontuacao: FormControl<boolean>;
   admiteEliminacao: FormControl<boolean>;
   descricao: FormControl<string>;
-  /** Códigos dos conceitos admitidos: a API exige a lista a cada gravação, e a tela ainda não a edita. */
+  /** Códigos dos conceitos admitidos: a API exige a lista a cada gravação, ainda que vazia. */
   conceitosAdmitidos: FormControl<readonly string[]>;
 }
 

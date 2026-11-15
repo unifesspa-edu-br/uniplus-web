@@ -2,7 +2,9 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
+  API_MAX_PAGE_SIZE,
   ApiResult,
+  lookupCompleto,
   ProblemDetails,
   ProblemI18nService,
   ProblemValidationError,
@@ -14,7 +16,7 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { TipoEtapaDto, TiposEtapaApi } from '@uniplus/shared-data/configuracao';
+import { TipoEtapaDto, TiposConceitoApi, TiposEtapaApi } from '@uniplus/shared-data/configuracao';
 import { aguardarRecarga } from '../../shared/foco';
 import {
   comandoDeAtualizacao,
@@ -24,6 +26,7 @@ import {
   valoresDaEtapa,
   valoresEmBrancoDaEtapa,
 } from './tipo-etapa-form';
+import { recusasComMensagemDosConceitos } from './mensagens-dos-conceitos';
 import { TiposEtapaStore } from './tipos-etapa.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
@@ -46,12 +49,19 @@ type ModoFormulario = 'criar' | 'editar';
 @Injectable()
 export class EdicaoDosTiposEtapa {
   private readonly api = inject(TiposEtapaApi);
+  private readonly tiposConceitoApi = inject(TiposConceitoApi);
   private readonly store = inject(TiposEtapaStore);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly form = criarFormularioDeEtapa();
+  /** Os tipos de conceito ativos: o que o tipo de etapa pode admitir sai daqui. */
+  readonly conceitos = lookupCompleto(
+    (cursor) =>
+      this.tiposConceitoApi.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
+  );
   private readonly escrita = signal<Escrita | null>(null);
   private readonly recarga = aguardarRecarga(
     this.store.carregando,
@@ -128,7 +138,7 @@ export class EdicaoDosTiposEtapa {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
     descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
+    if (this.form.invalid || this.catalogoDeConceitosIncompleto()) {
       this.form.markAllAsTouched();
       return;
     }
@@ -151,6 +161,13 @@ export class EdicaoDosTiposEtapa {
     );
   }
 
+  /** Sem o catálogo inteiro não dá para conferir o que o tipo admite: a gravação espera. */
+  private catalogoDeConceitosIncompleto(): boolean {
+    const incompleto = this.conceitos.pendente() || this.conceitos.comErro();
+    if (incompleto) this.recusaDoSalvamento.set('Aguarde os tipos de conceito carregarem.');
+    return incompleto;
+  }
+
   private abrirFormulario(
     modo: ModoFormulario,
     id: string | null,
@@ -164,6 +181,7 @@ export class EdicaoDosTiposEtapa {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
     this.renovarChave();
+    this.conceitos.recarregar();
     this.aberto.set(true);
   }
 
@@ -245,7 +263,11 @@ export class EdicaoDosTiposEtapa {
   }
 
   private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+    const aplicou = marcarRecusasDosCampos(
+      recusasComMensagemDosConceitos(errors),
+      this.form,
+      controleDoCampoDoServidor,
+    );
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
