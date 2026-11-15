@@ -155,7 +155,7 @@ const IDENTIFICACAO_DO_PROCESSO = {
 
 const DIMENSOES_SEM_CADASTRO = {
   etapas: [],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,
   aplicaBonusRegional: false,

@@ -165,7 +165,7 @@ function identificacaoDoDetalhe() {
 function dimensoesVaziasDoDetalhe() {
   return {
     etapas: [],
-    ofertaAtendimento: null,
+    atendimentoEspecializado: null,
     distribuicaoVagas: [],
     bonusRegional: null,
     cascata: null,

@@ -21,7 +21,7 @@ export interface FormularioParaConferir {
   readonly abas: readonly AbaParaConferir[];
   readonly draft: WizardDraft;
   readonly aplicacoesEmAberto: ReturnType<ProcessoSeletivoStore['aplicacoesDeModeloEmAberto']>;
-  /** Os campos que o formulário pergunta e a oferta de atendimento não dá com o que escolher. */
+  /** Os campos que o formulário pergunta e o atendimento especializado não dá com o que escolher. */
   readonly camposSemValoresOfertados: readonly string[];
 }
 

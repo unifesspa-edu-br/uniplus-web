@@ -89,8 +89,8 @@ export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
 export type DefinirAlgoritmoContagemPrazoRequest =
   components['schemas']['DefinirAlgoritmoContagemPrazoRequest'];
-export type DefinirOfertaAtendimentoRequest =
-  components['schemas']['DefinirOfertaAtendimentoRequest'];
+export type DefinirAtendimentoEspecializadoRequest =
+  components['schemas']['DefinirAtendimentoEspecializadoRequest'];
 export type DefinirCascataRemanejamentoRequest =
   components['schemas']['DefinirCascataRemanejamentoRequest'];
 export type DestinoRemanejamentoInput = components['schemas']['DestinoRemanejamentoInput'];

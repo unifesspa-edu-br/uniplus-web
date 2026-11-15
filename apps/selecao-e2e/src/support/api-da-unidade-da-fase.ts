@@ -101,7 +101,7 @@ function detalheDoProcesso(capturado: Capturado) {
     ...PROCESSO_PUBLICADO_COMPLETO,
     status: capturado.publicado ? 'publicado' : 'rascunho',
     cronogramaFases: [capturado.fase],
-    ofertaAtendimento: null,
+    atendimentoEspecializado: null,
     raizesExigencia: PROCESSO_PUBLICADO_COMPLETO.raizesExigencia.slice(0, 1),
     classificacao: { ...PROCESSO_PUBLICADO_COMPLETO.classificacao, regrasEliminacao: [] },
   };

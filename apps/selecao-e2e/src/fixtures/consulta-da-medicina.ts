@@ -2,7 +2,7 @@ import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA, PROCESSO_DA_MEDICINA } from './vaga
 
 /**
  * O processo da Medicina 2027 publicado, com o que os passos lidos como texto mostram: a taxa
- * com fundamentos de isenção, a oferta de atendimento especializado e o formulário de
+ * com fundamentos de isenção, o atendimento especializado e o formulário de
  * inscrição. Os valores têm a forma do detalhe que a api devolve; o resto do agregado é o da
  * fixture de Vagas.
  *
@@ -17,7 +17,7 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
     valor: 120.5,
     fundamentos: ['CADASTRO_UNICO', 'DOACAO_MEDULA_OSSEA'],
   },
-  ofertaAtendimento: {
+  atendimentoEspecializado: {
     condicoes: [
       {
         condicaoOrigemId: '01a0d640-0000-7000-8000-000000000001',
@@ -57,8 +57,26 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
       modeloOrigemId: null,
       modeloOrigemCodigo: null,
       etapas: [
-        { codigo: 'SECAO_1', ordem: 0, tipo: 'SECAO', bloco: null, titulo: 'Dados do certame', descricao: null, aviso: null, exibicao: null },
-        { codigo: 'REVISAO_E_ACEITE', ordem: 1, tipo: 'BLOCO', bloco: 'REVISAO_E_ACEITE', titulo: 'Revisão e aceite', descricao: null, aviso: null, exibicao: null },
+        {
+          codigo: 'SECAO_1',
+          ordem: 0,
+          tipo: 'SECAO',
+          bloco: null,
+          titulo: 'Dados do certame',
+          descricao: null,
+          aviso: null,
+          exibicao: null,
+        },
+        {
+          codigo: 'REVISAO_E_ACEITE',
+          ordem: 1,
+          tipo: 'BLOCO',
+          bloco: 'REVISAO_E_ACEITE',
+          titulo: 'Revisão e aceite',
+          descricao: null,
+          aviso: null,
+          exibicao: null,
+        },
       ],
       fatosColetados: [
         {
@@ -92,7 +110,10 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
           impedimento: null,
         },
         // As perguntas que as regras das modalidades fazem, depois dos dois campos acima.
-        ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({ ...campo, ordem: campo.ordem + 2 })),
+        ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
+          ...campo,
+          ordem: campo.ordem + 2,
+        })),
       ],
       termos: [],
       grupos: [],

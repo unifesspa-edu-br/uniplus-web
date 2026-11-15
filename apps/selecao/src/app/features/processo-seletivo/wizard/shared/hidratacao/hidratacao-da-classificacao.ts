@@ -98,13 +98,13 @@ export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempat
 }
 
 /**
- * Projeta a oferta de atendimento gravada com o id **de origem**, que é o que a gravação recebe,
+ * Projeta o atendimento especializado gravado com o id **de origem**, que é o que a gravação recebe,
  * junto do nome (e do código, nas condições) devolvido na leitura: a referência continua legível
- * mesmo se o item já saiu do cadastro ativo. `null` é "nenhuma oferta declarada", e as três
+ * mesmo se o item já saiu do cadastro ativo. `null` é "nenhum atendimento declarado", e as três
  * listas voltam vazias.
  */
 export function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendimento'] {
-  const oferta = dto.ofertaAtendimento;
+  const oferta = dto.atendimentoEspecializado;
   if (oferta === null || oferta === undefined) {
     return { condicoes: [], recursos: [], tiposDeficiencia: [] };
   }

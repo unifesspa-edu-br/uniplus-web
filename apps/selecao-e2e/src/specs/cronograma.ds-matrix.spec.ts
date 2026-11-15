@@ -486,7 +486,7 @@ const DETALHE_PUBLICADO = {
   },
   localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   etapas: [],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,
   aplicaBonusRegional: false,

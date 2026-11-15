@@ -132,7 +132,7 @@ export interface WizardDraft {
   documentos: ExigenciasDoRascunho;
   formulario: FormularioDeInscricao;
   /**
-   * A oferta de atendimento especializado (UNI-REQ-0012), gravada por `PUT …/oferta-atendimento`.
+   * O atendimento especializado (UNI-REQ-0012), gravada por `PUT …/atendimento-especializado`.
    * As listas vêm dos cadastros de Configuração, nunca de vocabulário local; a exceção é o código
    * `PCD`, ancorado no ADR-0067.
    */

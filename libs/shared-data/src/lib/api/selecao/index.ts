@@ -96,7 +96,7 @@ export type {
   DefinirClassificacaoRequest,
   DefinirOpcoesDeCursoRequest,
   DefinirOpcoesDeclaradasRequest,
-  DefinirOfertaAtendimentoRequest,
+  DefinirAtendimentoEspecializadoRequest,
   DestinoRemanejamentoInput,
   EtapaProcessoDto,
   EtapaProcessoInput,
