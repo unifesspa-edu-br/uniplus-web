@@ -168,6 +168,11 @@ export {
   type AbrangenciasToken,
 } from './calendario-dias-uteis.api';
 export {
+  TiposConceitoApi,
+  type TipoConceitoDto,
+  type TiposConceitoQuery,
+} from './tipos-conceito.api';
+export {
   TiposEtapaApi,
   type AtualizarTipoEtapaCommand,
   type CriarTipoEtapaCommand,
