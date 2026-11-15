@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ApiResult, apiResultInterceptor, ProblemDetails } from '@uniplus/shared-core/http';
 import { authErrorInterceptor } from './auth-error.interceptor';
 import { AuthService } from '../services/auth.service';
+import { MotivoDoAcessoNegadoService } from '../services/motivo-do-acesso-negado.service';
 
 const PROBLEM_HEADERS = { 'Content-Type': 'application/problem+json' };
 
@@ -27,11 +28,15 @@ const problemaProibido: ProblemDetails = {
 describe('authErrorInterceptor (consumindo ApiResult)', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
-  function setup() {
+  function setup(rotaAtual = '/inicio', navegandoPara: string | null = null) {
     const login = vi.fn();
     const navigate = vi.fn();
     const authServiceMock = { login } as unknown as AuthService;
-    const routerMock = { navigate } as unknown as Router;
+    const routerMock = {
+      navigate,
+      url: rotaAtual,
+      currentNavigation: () => (navegandoPara ? { finalUrl: navegandoPara } : null),
+    } as unknown as Router;
 
     TestBed.configureTestingModule({
       providers: [
@@ -97,6 +102,55 @@ describe('authErrorInterceptor (consumindo ApiResult)', () => {
     expect(result.status).toBe(403);
     expect(ctx.navigate).toHaveBeenCalledWith(['/acesso-negado']);
     expect(ctx.login).not.toHaveBeenCalled();
+  });
+
+  it('403 com detail guarda o detail para a página de acesso negado', async () => {
+    const ctx = setup();
+    const detail = 'É preciso a permissão de manter perfis.';
+
+    await receberProblema(ctx, '/api/admin', { ...problemaProibido, detail });
+
+    expect(TestBed.inject(MotivoDoAcessoNegadoService).motivo()).toBe(detail);
+  });
+
+  it('403 sem detail apaga o detail de uma recusa anterior', async () => {
+    const ctx = setup();
+    const motivo = TestBed.inject(MotivoDoAcessoNegadoService);
+    motivo.registrar('Recusa anterior.');
+
+    await receberProblema(ctx, '/api/admin', problemaProibido);
+
+    expect(motivo.motivo()).toBeNull();
+  });
+
+  it('401 não guarda detail', async () => {
+    const ctx = setup();
+
+    await receberProblema(ctx, '/api/protegido', { ...baseProblem, detail: 'Sessão expirada.' });
+
+    expect(TestBed.inject(MotivoDoAcessoNegadoService).motivo()).toBeNull();
+  });
+
+  it('403 já na página de acesso negado não troca o detail nem navega de novo', async () => {
+    const ctx = setup('/acesso-negado');
+    const motivo = TestBed.inject(MotivoDoAcessoNegadoService);
+    motivo.registrar('Motivo original.');
+
+    await receberProblema(ctx, '/api/pedidos', problemaProibido);
+
+    expect(motivo.motivo()).toBe('Motivo original.');
+    expect(ctx.navigate).not.toHaveBeenCalled();
+  });
+
+  it('403 durante o redirecionamento de outro 403 mantém o primeiro detail', async () => {
+    const ctx = setup('/processos', '/acesso-negado');
+    const motivo = TestBed.inject(MotivoDoAcessoNegadoService);
+    motivo.registrar('Primeiro motivo.');
+
+    await receberProblema(ctx, '/api/catalogo', { ...problemaProibido, detail: 'Segundo.' });
+
+    expect(motivo.motivo()).toBe('Primeiro motivo.');
+    expect(ctx.navigate).not.toHaveBeenCalled();
   });
 
   it.each([500, 404])(

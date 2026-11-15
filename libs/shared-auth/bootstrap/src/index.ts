@@ -1,5 +1,6 @@
 export { AuthService } from '../../src/lib/services/auth.service';
 export { UserContextService } from '../../src/lib/services/user-context.service';
+export { MotivoDoAcessoNegadoService } from '../../src/lib/services/motivo-do-acesso-negado.service';
 export { provideAuth } from '../../src/lib/providers/auth.provider';
 export {
   AUTH_ALLOWED_URLS,
