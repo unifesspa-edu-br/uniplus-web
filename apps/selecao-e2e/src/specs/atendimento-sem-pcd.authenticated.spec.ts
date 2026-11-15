@@ -52,7 +52,7 @@ const TIPO_VISUAL = {
 const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
   ...PROCESSO_PUBLICADO_DA_MEDICINA,
   status: 'rascunho',
-  ofertaAtendimento: { condicoes: [], recursos: [], tiposDeficiencia: [] },
+  atendimentoEspecializado: { condicoes: [], recursos: [], tiposDeficiencia: [] },
   formularios: [
     {
       ...PROCESSO_PUBLICADO_DA_MEDICINA.formularios[0],

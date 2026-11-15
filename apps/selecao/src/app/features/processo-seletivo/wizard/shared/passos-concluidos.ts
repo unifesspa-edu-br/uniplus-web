@@ -32,7 +32,7 @@ function gravadoPorPasso(dto: ProcessoSeletivoDto): Record<PassoQueGrava, boolea
       (dto.criteriosDesempate ?? []).length > 0 ||
       decodificarOrigemCandidatos(dto.origemCandidatos) === OrigemCandidatos.importacaoExterna,
     Eliminação: classificacaoGravada,
-    'Atend. especial': dto.ofertaAtendimento != null,
+    'Atend. especial': dto.atendimentoEspecializado != null,
     Formulários: (dto.formularios ?? []).length > 0,
   };
 }

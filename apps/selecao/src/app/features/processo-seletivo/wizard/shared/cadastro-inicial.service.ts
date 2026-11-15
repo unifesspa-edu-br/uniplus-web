@@ -10,7 +10,7 @@ import {
   DefinirCascataRemanejamentoRequest,
   DefinirClassificacaoRequest,
   DefinirOpcoesDeclaradasRequest,
-  DefinirOfertaAtendimentoRequest,
+  DefinirAtendimentoEspecializadoRequest,
   DefinirTaxaInscricaoRequest,
   EtapaProcessoInput,
   FaseCronogramaInput,
@@ -280,12 +280,12 @@ export class CadastroInicial {
   }
 
   /** Substitui a configuração inteira: lista vazia apaga o que estava declarado. */
-  definirOfertaAtendimento(
+  definirAtendimentoEspecializado(
     processoSeletivoId: string,
-    request: DefinirOfertaAtendimentoRequest,
+    request: DefinirAtendimentoEspecializadoRequest,
   ): Promise<ResultadoGravacao> {
     return this.gravacao.gravar('atendimento', request, (contexto) =>
-      this.api.definirOfertaAtendimento(processoSeletivoId, request, contexto),
+      this.api.definirAtendimentoEspecializado(processoSeletivoId, request, contexto),
     );
   }
 

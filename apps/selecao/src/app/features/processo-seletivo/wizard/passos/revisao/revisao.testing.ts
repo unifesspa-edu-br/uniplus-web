@@ -95,7 +95,7 @@ export const PROCESSO_DTO_MINIMO = {
   },
   localidade: { codigoIbge: '1500107', nome: 'x', uf: 'PA' },
   etapas: [],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,
   cascata: null,

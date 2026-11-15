@@ -10,7 +10,7 @@ import {
   nullIfBlank,
 } from '../../shared/formulario';
 
-/** Código reservado: a regra de oferta de atendimento o referencia, então não é editável nem removível. */
+/** Código reservado: a regra do atendimento especializado o referencia, então não é editável nem removível. */
 export const CODIGO_RESERVADO = 'PCD';
 
 export interface CondicaoAtendimentoForm {

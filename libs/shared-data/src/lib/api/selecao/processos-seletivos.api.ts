@@ -5,7 +5,7 @@ import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/
 import type {
   CriarProcessoSeletivoCommand,
   DefinirIdentificadorLegivelRequest,
-  DefinirOfertaAtendimentoRequest,
+  DefinirAtendimentoEspecializadoRequest,
   DefinirTaxaInscricaoRequest,
   FundamentoIsencaoDto,
   ProcessoSeletivoDto,
@@ -67,25 +67,25 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/oferta-atendimento` — declara o
+   * PUT `/api/selecao/processos-seletivos/{id}/atendimento-especializado` — declara o
    * atendimento especializado do processo por **id** dos cadastros de
    * Configuração: condições de atendimento, recursos de acessibilidade e
    * tipos de deficiência.
    *
-   * O agregado recusa com 422 (`OfertaAtendimento.TipoDeficienciaSemCondicaoPcd`)
+   * O agregado recusa com 422 (`AtendimentoEspecializado.TipoDeficienciaSemCondicaoPcd`)
    * qualquer `tipoDeficienciaIds` não vazio sem a condição de código `PCD`
    * marcada em `condicaoIds` — quem chama não filtra isso no cliente, é o
    * servidor que arbitra a invariante.
    *
    * Responde 204 sem corpo.
    */
-  definirOfertaAtendimento(
+  definirAtendimentoEspecializado(
     processoSeletivoId: string,
-    request: DefinirOfertaAtendimentoRequest,
+    request: DefinirAtendimentoEspecializadoRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'oferta-atendimento'),
+      this.rotas.doProcesso(processoSeletivoId, 'atendimento-especializado'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

@@ -13,7 +13,7 @@ import { AtendimentoPassoComponent } from './atendimento.component';
 
 const BASE = 'http://localhost:5000';
 const PROCESSO_ID = '01960000-0000-7000-0000-0000000009aa';
-const ROTA_ATENDIMENTO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/oferta-atendimento`;
+const ROTA_ATENDIMENTO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/atendimento-especializado`;
 
 const PCD_ID = '01960000-0000-7000-0000-0000000000d1';
 const OUTRA_CONDICAO_ID = '01960000-0000-7000-0000-0000000000d2';
@@ -328,7 +328,7 @@ describe('AtendimentoPassoComponent', () => {
    *
    * Isso não torna o registro gravável do jeito que está: a mesma condição
    * removida também aparece em `condicoesRemovidas()`, e o
-   * `DefinirOfertaAtendimentoCommandHandler` recusaria o id dela com 422 —
+   * `DefinirAtendimentoEspecializadoCommandHandler` recusaria o id dela com 422 —
    * `validar()` precisa dizer isso antes da ida ao servidor, nomeando a
    * condição, sem esconder a seção de tipos de deficiência que o operador
    * ainda precisa revisar.
@@ -532,7 +532,7 @@ describe('AtendimentoPassoComponent', () => {
    * Uma falha ao carregar qualquer catálogo de
    * Configuração substituía a tela inteira pelo erro, mesmo com o rascunho
    * já tendo os nomes de condição, recurso e tipo de deficiência (populados
-   * por `hidratarDraft()` a partir de `dto.ofertaAtendimento`) — o operador
+   * por `hidratarDraft()` a partir de `dto.atendimentoEspecializado`) — o operador
    * não conseguia inspecionar a oferta persistida durante uma
    * indisponibilidade de catálogo, que é exatamente o cenário para o qual
    * os snapshots embutidos existem.
@@ -745,7 +745,7 @@ describe('AtendimentoPassoComponent', () => {
   });
 
   /**
-   * O `DefinirOfertaAtendimentoCommandHandler`
+   * O `DefinirAtendimentoEspecializadoCommandHandler`
    * resolve cada id no cadastro vivo e recusa com 422 quando uma referência
    * já saiu de lá — sem este diagnóstico local, "Gravar e avançar" falharia
    * sempre que o rascunho guardasse uma referência removida, e nada na tela

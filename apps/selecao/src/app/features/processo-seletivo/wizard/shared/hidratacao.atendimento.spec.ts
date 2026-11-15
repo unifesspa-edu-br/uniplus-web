@@ -33,7 +33,7 @@ describe('hidratarDraft — cascata de remanejamento', () => {
   });
 });
 
-const OFERTA_ATENDIMENTO = {
+const ATENDIMENTO_ESPECIALIZADO = {
   id: 'snapshot-atendimento',
   condicoes: [
     {
@@ -60,11 +60,11 @@ const OFERTA_ATENDIMENTO = {
   ],
 };
 
-describe('hidratarDraft — oferta de atendimento especializado', () => {
+describe('hidratarDraft — atendimento especializado', () => {
   it('projeta condições, recursos e tipos de deficiência pelo id de origem', () => {
     const { atendimento } = hidratarDraft(
       DRAFT,
-      dtoComCronograma({ ofertaAtendimento: OFERTA_ATENDIMENTO }),
+      dtoComCronograma({ atendimentoEspecializado: ATENDIMENTO_ESPECIALIZADO }),
     );
 
     expect(atendimento).toEqual({
@@ -74,8 +74,11 @@ describe('hidratarDraft — oferta de atendimento especializado', () => {
     });
   });
 
-  it('trata processo sem oferta de atendimento como as três listas vazias', () => {
-    const { atendimento } = hidratarDraft(DRAFT, dtoComCronograma({ ofertaAtendimento: null }));
+  it('trata processo sem atendimento especializado como as três listas vazias', () => {
+    const { atendimento } = hidratarDraft(
+      DRAFT,
+      dtoComCronograma({ atendimentoEspecializado: null }),
+    );
 
     expect(atendimento).toEqual({ condicoes: [], recursos: [], tiposDeficiencia: [] });
   });

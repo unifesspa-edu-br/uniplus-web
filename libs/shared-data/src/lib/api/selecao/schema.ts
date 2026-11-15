@@ -5486,7 +5486,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/oferta-atendimento": {
+    readonly "/api/selecao/processos-seletivos/{id}/atendimento-especializado": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -5509,9 +5509,9 @@ export interface paths {
             };
             readonly requestBody: {
                 readonly content: {
-                    readonly "application/json": components["schemas"]["DefinirOfertaAtendimentoRequest"];
-                    readonly "text/json": components["schemas"]["DefinirOfertaAtendimentoRequest"];
-                    readonly "application/*+json": components["schemas"]["DefinirOfertaAtendimentoRequest"];
+                    readonly "application/json": components["schemas"]["DefinirAtendimentoEspecializadoRequest"];
+                    readonly "text/json": components["schemas"]["DefinirAtendimentoEspecializadoRequest"];
+                    readonly "application/*+json": components["schemas"]["DefinirAtendimentoEspecializadoRequest"];
                 };
             };
             readonly responses: {
@@ -9816,6 +9816,13 @@ export interface components {
             readonly recursos: readonly string[];
             readonly tiposDeficiencia: readonly components["schemas"]["CondicaoAtendimentoCertameDto"][];
         };
+        readonly AtendimentoEspecializadoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly condicoes: readonly components["schemas"]["CondicaoOfertadaDto"][];
+            readonly recursos: readonly components["schemas"]["RecursoOfertadoDto"][];
+            readonly tiposDeficiencia: readonly components["schemas"]["DeficienciaAtendidaDto"][];
+        };
         readonly AtoDoProcessoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -10083,6 +10090,14 @@ export interface components {
             readonly operador: string;
             readonly valor: string;
         };
+        readonly CondicaoOfertadaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly condicaoOrigemId: string;
+            readonly condicaoCodigo: string;
+            readonly condicaoNome: string;
+        };
         readonly CondicaoPrecondicaoDto: {
             readonly fato: string;
             readonly operador: string;
@@ -10292,9 +10307,21 @@ export interface components {
             readonly assinante: string;
             readonly tipoAtoCodigo: string;
         };
+        readonly DeficienciaAtendidaDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly tipoDeficienciaOrigemId: string;
+            readonly tipoDeficienciaNome: string;
+        };
         readonly DefinirAlgoritmoContagemPrazoRequest: {
             readonly codigo: null | string;
             readonly versao: null | string;
+        };
+        readonly DefinirAtendimentoEspecializadoRequest: {
+            readonly condicaoIds: readonly string[];
+            readonly recursoIds: readonly string[];
+            readonly tipoDeficienciaIds: readonly string[];
         };
         readonly DefinirBonusRegionalRequest: {
             readonly aplica: boolean;
@@ -10350,11 +10377,6 @@ export interface components {
             readonly codigoIbge: null | string;
             readonly nome: null | string;
             readonly uf: null | string;
-        };
-        readonly DefinirOfertaAtendimentoRequest: {
-            readonly condicaoIds: readonly string[];
-            readonly recursoIds: readonly string[];
-            readonly tipoDeficienciaIds: readonly string[];
         };
         readonly DefinirOpcoesDeclaradasRequest: {
             readonly opcoes: readonly components["schemas"]["OpcaoDeclaradaRequest"][];
@@ -11461,21 +11483,6 @@ export interface components {
             readonly id: null | string;
             readonly respostas: null | Record<string, never>;
         };
-        readonly OfertaAtendimentoEspecializadoDto: {
-            /** Format: uuid */
-            readonly id: string;
-            readonly condicoes: readonly components["schemas"]["OfertaCondicaoDto"][];
-            readonly recursos: readonly components["schemas"]["OfertaRecursoDto"][];
-            readonly tiposDeficiencia: readonly components["schemas"]["OfertaTipoDeficienciaDto"][];
-        };
-        readonly OfertaCondicaoDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly condicaoOrigemId: string;
-            readonly condicaoCodigo: string;
-            readonly condicaoNome: string;
-        };
         readonly OfertaDeCursoCertameDto: {
             /** Format: uuid */
             readonly ofertaCursoOrigemId: string;
@@ -11490,21 +11497,6 @@ export interface components {
             readonly nome: null | string;
             /** Format: int32 */
             readonly ordem: number;
-        };
-        readonly OfertaRecursoDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly recursoOrigemId: string;
-            readonly recursoCodigo: string;
-            readonly recursoNome: string;
-        };
-        readonly OfertaTipoDeficienciaDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly tipoDeficienciaOrigemId: string;
-            readonly tipoDeficienciaNome: string;
         };
         readonly OpcaoDeclaradaRequest: {
             readonly codigo: string;
@@ -11674,7 +11666,7 @@ export interface components {
             readonly unidadeAdministradora: components["schemas"]["UnidadeAdministradoraSnapshotDto"];
             readonly localidade: components["schemas"]["LocalidadeRegenteDto"];
             readonly etapas: readonly components["schemas"]["EtapaProcessoDto"][];
-            readonly ofertaAtendimento: null | components["schemas"]["OfertaAtendimentoEspecializadoDto"];
+            readonly atendimentoEspecializado: null | components["schemas"]["AtendimentoEspecializadoDto"];
             readonly distribuicaoVagas: readonly components["schemas"]["ConfiguracaoDistribuicaoVagasDto"][];
             readonly bonusRegional: null | components["schemas"]["ConfiguracaoBonusRegionalDto"];
             readonly aplicaBonusRegional: null | boolean;
@@ -11838,6 +11830,14 @@ export interface components {
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+        };
+        readonly RecursoOfertadoDto: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly recursoOrigemId: string;
+            readonly recursoCodigo: string;
+            readonly recursoNome: string;
         };
         readonly ReferenciaRegraDto: {
             readonly codigo: string;

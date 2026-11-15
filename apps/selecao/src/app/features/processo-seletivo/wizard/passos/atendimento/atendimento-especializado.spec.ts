@@ -1,12 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import { aposMarcarCondicao, aposMarcarTodas, aposRemover, ehPcd } from './oferta-de-atendimento';
+import {
+  aposMarcarCondicao,
+  aposMarcarTodas,
+  aposRemover,
+  ehPcd,
+} from './atendimento-especializado';
 
 const PCD = { id: 'c-pcd', codigo: 'PCD', nome: 'Pessoa com deficiência' };
 const OUTRA_PCD = { id: 'c-pcd-2', codigo: 'pcd', nome: 'Pessoa com deficiência (nova)' };
 const PPI = { id: 'c-ppi', codigo: 'PPI', nome: 'Pessoa preta, parda ou indígena' };
 
-describe('regra do PcD na oferta de atendimento', () => {
+describe('regra do PcD no atendimento especializado', () => {
   it('reconhece o código PcD sem diferenciar a caixa', () => {
     expect(ehPcd('PCD')).toBe(true);
     expect(ehPcd('pcd')).toBe(true);

@@ -101,7 +101,7 @@ function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
   const escala = recebido.classificacao?.['escalaNotaFinal'] ?? null;
   return comFaseDeInscricao({
     ...PROCESSO_PUBLICADO_COMPLETO,
-    ofertaAtendimento: null,
+    atendimentoEspecializado: null,
     cascata: null,
     cronogramaFases: PROCESSO_PUBLICADO_COMPLETO.cronogramaFases.map(comProdutoDefinitivo),
     status: recebido.publicou ? 'publicado' : 'rascunho',

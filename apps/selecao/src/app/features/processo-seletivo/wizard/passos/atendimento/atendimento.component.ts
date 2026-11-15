@@ -34,19 +34,19 @@ import {
   aposRemover,
   comoCondicaoSelecionada,
   ehPcd,
-} from './oferta-de-atendimento';
+} from './atendimento-especializado';
 import { ReferenciasRemovidasComponent } from './referencias-removidas.component';
 import { mensagemDeRemovidos, referenciasRemovidas } from './referencias-removidas';
 
 /**
- * A oferta de atendimento especializado do processo (UNI-REQ-0012), gravada
- * por `PUT …/oferta-atendimento`. As três listas vêm dos cadastros de
+ * O atendimento especializado do processo (UNI-REQ-0012), gravada
+ * por `PUT …/atendimento-especializado`. As três listas vêm dos cadastros de
  * Configuração — condições, recursos de acessibilidade e tipos de deficiência
  * —, referenciados por id; nenhuma delas é vocabulário local.
  *
  * **A regra do PcD é bicondicional (ADR-0067):** `tipoDeficienciaIds` só é
  * aceito quando a condição de código canônico `PCD` está entre `condicaoIds`
- * (`OfertaAtendimentoEspecializado.CodigoCondicaoPcd`), e a condição `PCD`
+ * (`AtendimentoEspecializado.CodigoCondicaoPcd`), e a condição `PCD`
  * exige ao menos um tipo de deficiência. A tela recusa as duas direções antes
  * de gravar — o `CondicaoAtendimentoDto` não tem campo que vincule condição a
  * tipo de deficiência, então a checagem é por código, não por relação
@@ -381,7 +381,7 @@ export class AtendimentoPassoComponent {
     this.erroDeGravacao.set(null);
     return gravarNoPasso(this.store, async () => {
       const geracao = this.store.geracao();
-      const resultado = await this.cadastro.definirOfertaAtendimento(processoId, {
+      const resultado = await this.cadastro.definirAtendimentoEspecializado(processoId, {
         condicaoIds: atendimento.condicoes.map((item) => item.id),
         recursoIds: atendimento.recursos.map((item) => item.id),
         tipoDeficienciaIds: atendimento.tiposDeficiencia.map((item) => item.id),
