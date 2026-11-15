@@ -12,6 +12,8 @@ export interface EtapaForm {
   admitePontuacao: FormControl<boolean>;
   admiteEliminacao: FormControl<boolean>;
   descricao: FormControl<string>;
+  /** Códigos dos conceitos admitidos: a API exige a lista a cada gravação, e a tela ainda não a edita. */
+  conceitosAdmitidos: FormControl<readonly string[]>;
 }
 
 type ValoresDaEtapa = ReturnType<FormGroup<EtapaForm>['getRawValue']>;
@@ -22,6 +24,7 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof EtapaForm>([
   'admitePontuacao',
   'admiteEliminacao',
   'descricao',
+  'conceitosAdmitidos',
 ]);
 
 export function criarFormularioDeEtapa(): FormGroup<EtapaForm> {
@@ -40,6 +43,7 @@ export function criarFormularioDeEtapa(): FormGroup<EtapaForm> {
       nonNullable: true,
       validators: [Validators.maxLength(1000)],
     }),
+    conceitosAdmitidos: new FormControl<readonly string[]>([], { nonNullable: true }),
   });
 }
 
@@ -50,6 +54,7 @@ export function valoresEmBrancoDaEtapa(): ValoresDaEtapa {
     admitePontuacao: true,
     admiteEliminacao: true,
     descricao: '',
+    conceitosAdmitidos: [],
   };
 }
 
@@ -60,6 +65,7 @@ export function valoresDaEtapa(tipo: TipoEtapaDto): ValoresDaEtapa {
     admitePontuacao: tipo.admitePontuacao,
     admiteEliminacao: tipo.admiteEliminacao,
     descricao: tipo.descricao ?? '',
+    conceitosAdmitidos: tipo.conceitosAdmitidos.map((conceito) => conceito.codigo),
   };
 }
 
@@ -74,6 +80,7 @@ export function comandoDeCriacao(form: FormGroup<EtapaForm>): CriarTipoEtapaComm
     nome: valor.nome.trim(),
     admitePontuacao: valor.admitePontuacao,
     admiteEliminacao: valor.admiteEliminacao,
+    conceitosAdmitidos: [...valor.conceitosAdmitidos],
     descricao: nullIfBlank(valor.descricao),
   };
 }
@@ -88,6 +95,7 @@ export function comandoDeAtualizacao(
     nome: valor.nome.trim(),
     admitePontuacao: valor.admitePontuacao,
     admiteEliminacao: valor.admiteEliminacao,
+    conceitosAdmitidos: [...valor.conceitosAdmitidos],
     descricao: nullIfBlank(valor.descricao),
   };
 }

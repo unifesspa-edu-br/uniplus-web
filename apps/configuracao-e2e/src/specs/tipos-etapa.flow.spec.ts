@@ -26,6 +26,7 @@ const analiseDocumental = {
   ativo: true,
   admitePontuacao: false,
   admiteEliminacao: true,
+  conceitosAdmitidos: [],
   criadoEm: '2026-08-11T00:00:00Z',
 };
 
