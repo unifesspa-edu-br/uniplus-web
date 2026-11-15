@@ -18,6 +18,7 @@ const tipo: TipoEtapaDto = {
   admitePontuacao: false,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  conceitosAdmitidos: [{ codigo: 'CONCEITO_A', nome: 'Conceito A', natureza: 'categorico' }],
   criadoEm: '',
 };
 
@@ -45,6 +46,7 @@ describe('formulário de tipo de etapa', () => {
       admitePontuacao: false,
       admiteEliminacao: true,
       descricao: '',
+      conceitosAdmitidos: ['CONCEITO_A'],
     });
     form.patchValue({ codigo: ' NOVA ', nome: ' Nome ', descricao: '  ' });
     expect(comandoDeCriacao(form)).toEqual({
@@ -52,6 +54,7 @@ describe('formulário de tipo de etapa', () => {
       nome: 'Nome',
       admitePontuacao: false,
       admiteEliminacao: true,
+      conceitosAdmitidos: ['CONCEITO_A'],
       descricao: null,
     });
     expect(comandoDeAtualizacao('1', form)).toEqual({
@@ -59,8 +62,20 @@ describe('formulário de tipo de etapa', () => {
       nome: 'Nome',
       admitePontuacao: false,
       admiteEliminacao: true,
+      conceitosAdmitidos: ['CONCEITO_A'],
       descricao: null,
     });
+  });
+
+  it('cria o tipo sem conceitos admitidos e mantém os que o tipo já tinha ao atualizar', () => {
+    const novo = criarFormularioDeEtapa();
+    novo.reset(valoresEmBrancoDaEtapa());
+    novo.patchValue({ codigo: 'NOVA', nome: 'Nova' });
+    expect(comandoDeCriacao(novo).conceitosAdmitidos).toEqual([]);
+
+    const existente = criarFormularioDeEtapa();
+    existente.reset(valoresDaEtapa({ ...tipo, conceitosAdmitidos: [] }));
+    expect(comandoDeAtualizacao('1', existente).conceitosAdmitidos).toEqual([]);
   });
 
   it('liga o campo recusado pelo servidor ao controle, ignorando o desconhecido', () => {

@@ -57,6 +57,7 @@ describe('TiposEtapaPage', () => {
       nome: 'Nova prova',
       admitePontuacao: false,
       admiteEliminacao: true,
+      conceitosAdmitidos: [],
       descricao: null,
     });
     post.flush(...criado());
