@@ -101,7 +101,7 @@ describe('TiposEtapaPage', () => {
     p.elemento<HTMLButtonElement>('.form-drawer__footer button').click();
     await p.propagar();
     p.novo().click();
-    await p.propagar();
+    await p.responderConceitos([]);
     expect(p.campo('codigo').value).toBe('');
     expect(p.campo('codigo').readOnly).toBe(false);
     expect(p.edicao.form.getRawValue()).toMatchObject({

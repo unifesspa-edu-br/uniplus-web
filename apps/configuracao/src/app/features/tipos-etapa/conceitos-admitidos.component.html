@@ -1,0 +1,55 @@
+<fieldset
+  #grupo
+  class="field"
+  tabindex="-1"
+  [class.is-error]="erro()"
+  [attr.aria-busy]="catalogo().pendente() ? 'true' : null"
+  [attr.aria-describedby]="
+    erro() ? 'cfg-etapa-conceitos-ajuda cfg-etapa-conceitos-erro' : 'cfg-etapa-conceitos-ajuda'
+  "
+>
+  <legend class="field__label">Conceitos admitidos</legend>
+  <span class="field__hint" id="cfg-etapa-conceitos-ajuda">
+    Os tipos de conceito que as etapas deste tipo podem usar, como o resultado de uma análise. Pode
+    ficar sem nenhum.
+  </span>
+
+  <ui-falha-de-leitura
+    titulo="Não foi possível carregar os tipos de conceito"
+    [leitura]="leitura"
+  />
+
+  @if (catalogo().pendente()) {
+    <p class="field__hint" role="status">Carregando os tipos de conceito…</p>
+  } @else if (opcoes().length === 0 && !catalogo().comErro()) {
+    <p class="field__hint">Não há tipo de conceito ativo para escolher.</p>
+  }
+
+  <div class="cfg-tipos-etapa__opcoes">
+    @for (opcao of opcoes(); track opcao.codigo) {
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          [checked]="marcado(opcao.codigo)"
+          [disabled]="controle().disabled"
+          [attr.aria-invalid]="erro() ? 'true' : null"
+          (change)="aoAlternar(opcao.codigo, $event)"
+        />
+        <span class="checkbox__box" aria-hidden="true"></span>
+        {{ opcao.nome }}
+        @if (opcao.inativo) {
+          <span class="field__hint"> (inativo: retire para salvar)</span>
+        }
+      </label>
+    }
+  </div>
+
+  @if (haInativo()) {
+    <span class="field__hint">
+      Conceito inativo não pode ser mantido: a gravação é recusada enquanto ele estiver marcado.
+    </span>
+  }
+  @if (erro()) {
+    <span class="field__error" id="cfg-etapa-conceitos-erro" role="alert">{{ erro() }}</span>
+  }
+</fieldset>
