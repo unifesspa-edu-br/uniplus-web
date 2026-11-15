@@ -110,7 +110,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
   it('quem já decidiu como gestor não vê aprovar nem recusar na etapa da proteção de dados', async () => {
     const decisao = {
       etapa: 'gestor',
-      decisor: { emissor: 'unifesspa', sub: EU.id },
+      decisor: { emissor: 'unifesspa', contaId: EU.id },
       resultado: 'aprovado',
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
@@ -131,16 +131,18 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
       [GESTOR, PROTECAO_DE_DADOS],
       pedido({
         ...naEtapaDaProtecaoDeDados,
-        decisoes: [{ ...decisao, decisor: { emissor: 'unifesspa', sub: 'sub-outro-gestor' } }],
+        decisoes: [
+          { ...decisao, decisor: { emissor: 'unifesspa', contaId: 'conta-outro-gestor' } },
+        ],
       }),
     );
     expect(decisoesOferecidas(outro.host)).toEqual([true, true]);
   });
 
   it('depois do perfil alterado, o gestor original reavalia e o Representante do controlador que tentou conclui', async () => {
-    const decisao = (etapa: string, resultado: string, sub: string) => ({
+    const decisao = (etapa: string, resultado: string, contaId: string) => ({
       etapa,
-      decisor: { emissor: 'unifesspa', sub },
+      decisor: { emissor: 'unifesspa', contaId },
       resultado,
       motivo: null,
       instante: '2026-10-28T13:00:00Z',
@@ -151,7 +153,7 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
     const devolvido = pedido({
       decisoes: [
         decisao('gestor', 'aprovado', EU.id),
-        decisao('protecao_de_dados', 'perfil_alterado', 'sub-outra-pessoa-2'),
+        decisao('protecao_de_dados', 'perfil_alterado', 'conta-outra-pessoa-2'),
       ],
     });
 
@@ -163,12 +165,12 @@ describe('PedidoDetalhePage — leitura e quem decide', () => {
       etapaAtual: 'protecao_de_dados',
       decisoes: [
         decisao('gestor', 'aprovado', EU.id),
-        decisao('protecao_de_dados', 'perfil_alterado', 'sub-protecao-de-dados-0'),
-        decisao('gestor', 'aprovado', 'sub-outro-gestor'),
+        decisao('protecao_de_dados', 'perfil_alterado', 'conta-protecao-de-dados-0'),
+        decisao('gestor', 'aprovado', 'conta-outro-gestor'),
       ],
     });
     const protecaoDeDados = await abrir([PROTECAO_DE_DADOS], naEtapaDaProtecaoDeDados, {
-      id: 'sub-protecao-de-dados-0',
+      id: 'conta-protecao-de-dados-0',
     });
     expect(decisoesOferecidas(protecaoDeDados.host)).toEqual([true, true]);
 

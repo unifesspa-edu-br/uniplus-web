@@ -25,7 +25,7 @@ const PERFIL = {
 };
 const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',
-  beneficiario: { emissor: 'unifesspa', sub: 'sub-betina-0002-ficticia' },
+  beneficiario: { emissor: 'unifesspa', contaId: 'conta-betina-0002-ficticia' },
   perfil: { id: PERFIL.id, nome: PERFIL.nome },
   versao: 1,
   escopo: { tipo: 'instituicao', unidadeId: null },

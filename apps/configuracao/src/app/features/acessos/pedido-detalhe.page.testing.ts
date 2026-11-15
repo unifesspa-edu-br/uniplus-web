@@ -212,4 +212,5 @@ export function abrirPedido(dubles: DublesDoPedido) {
   };
 }
 
-export const solicitadoPorMim = () => pedido({ solicitante: { emissor: 'unifesspa', sub: EU.id } });
+export const solicitadoPorMim = () =>
+  pedido({ solicitante: { emissor: 'unifesspa', contaId: EU.id } });

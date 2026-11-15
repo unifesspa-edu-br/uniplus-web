@@ -49,7 +49,7 @@ export const RECUSA_DO_MOTIVO = recusaDoCampo(
 export const URL = 'http://api.test/api/autorizacao/concessoes';
 export const ativa: ConcessaoDto = {
   id: 'c1',
-  beneficiario: { emissor: 'unifesspa', sub: '0123456789abcdef' },
+  beneficiario: { emissor: 'unifesspa', contaId: '0123456789abcdef' },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 2,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },

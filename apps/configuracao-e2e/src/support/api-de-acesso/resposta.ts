@@ -36,11 +36,11 @@ export function semConteudo(route: Route): Promise<void> {
   return route.fulfill({ status: 204, headers: CORS });
 }
 
-/** O `sub` de quem fez a requisição, lido do Bearer, para os pedidos que a tela cria. */
-export function subDe(route: Route): string {
+/** O identificador da conta de quem fez a requisição, a claim `sub` do Bearer, para os pedidos que a tela cria. */
+export function contaIdDe(route: Route): string {
   const token = (route.request().headers()['authorization'] ?? '').replace(/^Bearer /u, '');
   const carga = JSON.parse(
     Buffer.from(token.split('.')[1] ?? 'e30', 'base64url').toString('utf-8'),
   );
-  return String(carga.sub ?? 'sub-desconhecido');
+  return String(carga.sub ?? 'conta-desconhecida');
 }

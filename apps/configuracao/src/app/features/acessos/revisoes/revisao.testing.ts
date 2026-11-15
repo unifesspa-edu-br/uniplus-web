@@ -27,7 +27,7 @@ export const CONDUZIR = autorizacao.revisoesConduzir;
 export const REVER = autorizacao.revisoesReverProtecaoDeDados;
 export const CONSULTAR = autorizacao.revisoesConsultar;
 export const ID = '01960000-0000-7000-0000-0000000000a1';
-export const SUB_DE_QUEM_LE = 'sub-betina';
+export const CONTA_DE_QUEM_LE = 'conta-betina';
 const EMISSOR = 'https://sso.unifesspa.edu.br/realms/unifesspa';
 
 export const api = { confirmar: vi.fn(), revogar: vi.fn(), abrir: vi.fn() };
@@ -51,20 +51,24 @@ const ITEM_PENDENTE = {
   ehDoLeitor: false,
 } as const satisfies Partial<ItemDaRevisaoDto>;
 
-export function pessoa(sub: string, nome: string) {
-  return { emissor: EMISSOR, sub, nome };
+export function pessoa(contaId: string, nome: string) {
+  return { emissor: EMISSOR, contaId, nome };
 }
 
 /** Um item pendente da Fernanda Drumond, que o Representante do controlador decide. */
 export function item(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto {
-  return { ...ITEM_PENDENTE, beneficiario: pessoa('sub-fernanda', 'Fernanda Drumond'), ...parcial };
+  return {
+    ...ITEM_PENDENTE,
+    beneficiario: pessoa('conta-fernanda', 'Fernanda Drumond'),
+    ...parcial,
+  };
 }
 
 /** O item já decidido: confirmado por quem lê, com a governança gravada. */
 export function itemDecidido(parcial: Partial<ItemDaRevisaoDto> = {}): ItemDaRevisaoDto {
   return item({
     situacao: 'confirmada',
-    decididoPor: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'),
+    decididoPor: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'),
     decididoEm: '2026-11-10T13:00:00Z',
     ...parcial,
   });
@@ -89,17 +93,17 @@ export function itensDaRevisao(): ItemDaRevisaoDto[] {
     itemDecidido({ id: 'i2', perfil: { id: 'p2', nome: 'Avaliador de recursos' } }),
     item({
       id: 'i3',
-      beneficiario: pessoa('sub-diogo', 'Diogo Souza'),
+      beneficiario: pessoa('conta-diogo', 'Diogo Souza'),
       decide: 'gestor-de-acessos',
     }),
-    item({ id: 'i4', beneficiario: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'), ehDoLeitor: true }),
+    item({ id: 'i4', beneficiario: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'), ehDoLeitor: true }),
   ];
 }
 
 export function revisao(parcial: Partial<RevisaoDeAcessosDto> = {}): RevisaoDeAcessosDto {
   return {
     ...REVISAO_ABERTA,
-    abertaPor: pessoa(SUB_DE_QUEM_LE, 'Betina Neves'),
+    abertaPor: pessoa(CONTA_DE_QUEM_LE, 'Betina Neves'),
     itens: itensDaRevisao(),
     ...parcial,
   };

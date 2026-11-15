@@ -25,7 +25,7 @@ const FUNDAMENTO = 'Deixou a banca do certame e mantém o acesso aos dados das i
 interface Concessao {
   readonly id: string;
   readonly ativa: boolean;
-  readonly beneficiario: { readonly sub: string };
+  readonly beneficiario: { readonly contaId: string };
 }
 
 interface Providencia {
@@ -34,11 +34,11 @@ interface Providencia {
 }
 
 async function concessaoAtivaDa(persona: string): Promise<Concessao> {
-  const { sub } = identidadeDoToken(await tokenDaPersona(persona));
+  const { sub: contaId } = identidadeDoToken(await tokenDaPersona(persona));
   const concessao = await acharNaListagem<Concessao>(
     GESTOR_DE_ACESSOS,
     '/api/autorizacao/concessoes?situacao=ativa&limit=100',
-    (c) => c.beneficiario.sub === sub,
+    (c) => c.beneficiario.contaId === contaId,
   );
   if (concessao === undefined) throw new Error(`${persona} não tem concessão ativa nesta base.`);
   return concessao;

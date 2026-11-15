@@ -10,7 +10,7 @@ import {
 import type { PedidoDeConcessaoDto, VersaoDoTermoDto } from '@uniplus/shared-data/autorizacao';
 
 export const EU = {
-  id: 'sub-eu-00000000',
+  id: 'conta-eu-00000000',
   username: 'leandro',
   email: 'leandro.teste@unifesspa.edu.br',
   nomeCivil: 'Leandro Teste',
@@ -59,10 +59,10 @@ const PEDIDO_AGUARDANDO_O_GESTOR = {
   id: 'pedido-1',
   situacao: 'aguardando_gestor',
   etapaAtual: 'gestor',
-  solicitante: { emissor: 'unifesspa', sub: 'sub-outra-pessoa' },
+  solicitante: { emissor: 'unifesspa', contaId: 'conta-outra-pessoa' },
   beneficiario: {
     email: 'betina.teste@unifesspa.edu.br',
-    identidade: { emissor: 'unifesspa', sub: 'sub-betina-000' },
+    identidade: { emissor: 'unifesspa', contaId: 'conta-betina-000' },
     nome: 'Betina Teste',
   },
   perfil: { id: 'perfil-1', nome: 'Operador de inscrições' },

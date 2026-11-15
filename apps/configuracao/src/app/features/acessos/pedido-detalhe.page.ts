@@ -127,7 +127,7 @@ export class PedidoDetalhePage {
     () => this.pedido()?.situacao === 'aguardando_documento',
   );
   protected readonly ehSolicitante = computed(
-    () => this.pedido()?.solicitante.sub === this.usuario.user()?.id,
+    () => this.pedido()?.solicitante.contaId === this.usuario.user()?.id,
   );
   private readonly ehBeneficiario = computed(() => {
     const beneficiario = this.pedido()?.beneficiario;
@@ -146,7 +146,7 @@ export class PedidoDetalhePage {
       (decisao) =>
         decisao.etapa === 'gestor' &&
         decisao.resultado === 'aprovado' &&
-        decisao.decisor.sub === eu,
+        decisao.decisor.contaId === eu,
     );
   });
 

@@ -102,7 +102,7 @@ describe('PedidoDetalhePage — aceite do termo fixado', () => {
       termo: {
         ...TERMO_FIXADO,
         aceite: {
-          pessoa: { emissor: 'unifesspa', sub: 'sub-betina-000', nome: 'Betina Teste' },
+          pessoa: { emissor: 'unifesspa', contaId: 'conta-betina-000', nome: 'Betina Teste' },
           aceitoEm: '2026-11-10T13:00:00Z',
           versaoId: 'termo-v2',
           numero: 2,
@@ -154,7 +154,7 @@ describe('PedidoDetalhePage — aceite do termo fixado', () => {
     it('no pedido próprio com documento, depois da verificação, o aceite informa a versão fixada', async () => {
       const proprio = pedido({
         ...aguardandoMeuAceite(),
-        solicitante: { emissor: 'unifesspa', sub: EU.id },
+        solicitante: { emissor: 'unifesspa', contaId: EU.id },
       });
       const { fixture, host } = await abrir([], proprio);
       api.aceitar.mockReturnValue(of(ok(pedido())));

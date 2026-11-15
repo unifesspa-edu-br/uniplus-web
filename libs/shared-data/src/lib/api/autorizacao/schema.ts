@@ -845,7 +845,7 @@ export interface paths {
         readonly get: {
             readonly parameters: {
                 readonly query?: {
-                    readonly pessoa?: string;
+                    readonly contaId?: string;
                     readonly emissor?: string;
                     readonly unidade?: string;
                     readonly perfil?: string;
@@ -6472,12 +6472,12 @@ export interface components {
         };
         readonly IdentidadeDto: {
             readonly emissor: string;
-            readonly sub: string;
+            readonly contaId: string;
             readonly nome?: null | string;
         };
         readonly IdentidadeInformadaDto: {
             readonly emissor: null | string;
-            readonly sub: null | string;
+            readonly contaId: null | string;
             readonly email?: null | string;
             readonly nome?: null | string;
         };

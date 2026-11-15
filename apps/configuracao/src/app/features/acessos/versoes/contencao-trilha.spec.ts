@@ -16,7 +16,11 @@ import {
 } from './contencao-do-perfil.testing';
 
 const CONSULTA = PERMISSAO.autorizacao.perfisConsultarVersoes;
-const DIOGO = { emissor: 'https://id.unifesspa.edu.br', sub: 'sub-diogo', nome: 'Diogo Souza' };
+const DIOGO = {
+  emissor: 'https://id.unifesspa.edu.br',
+  contaId: 'conta-diogo',
+  nome: 'Diogo Souza',
+};
 const BASE = {
   referenciaId: 's1',
   instante: '2026-11-09T15:00:00Z',

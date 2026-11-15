@@ -46,9 +46,9 @@ export function decideOItem(
   return quemLe.tem(PERMISSAO_QUE_DECIDE[item.decide]);
 }
 
-/** A mesma pessoa é o mesmo `sub` no mesmo emissor. */
+/** A mesma pessoa é o mesmo `contaId` no mesmo emissor. */
 function chaveDoBeneficiario(item: ItemDaRevisaoDto): string {
-  return `${item.beneficiario.emissor}|${item.beneficiario.sub}`;
+  return `${item.beneficiario.emissor}|${item.beneficiario.contaId}`;
 }
 
 function agrupar(itens: readonly ItemDaRevisaoDto[]): Map<string, ItemDaRevisaoDto[]> {

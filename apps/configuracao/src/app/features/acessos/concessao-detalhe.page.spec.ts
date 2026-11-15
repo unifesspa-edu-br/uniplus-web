@@ -14,7 +14,7 @@ const MOTIVO = 'Mudou de setor e não opera mais inscrições.';
 
 const ATIVA: ConcessaoDto = {
   id: ID,
-  beneficiario: pessoa('sub-fernanda', 'Fernanda Drumond'),
+  beneficiario: pessoa('conta-fernanda', 'Fernanda Drumond'),
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 2,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },
@@ -31,7 +31,7 @@ const ATIVA: ConcessaoDto = {
 const REVOGADA: ConcessaoDto = {
   ...ATIVA,
   revogadaEm: '2026-11-10T13:00:00Z',
-  revogadaPor: pessoa('sub-betina', 'Betina Neves'),
+  revogadaPor: pessoa('conta-betina', 'Betina Neves'),
   motivoRevogacao: MOTIVO,
   ativa: false,
 };
@@ -40,7 +40,7 @@ const TRILHA: EventoDaTrilhaDto[] = [
   {
     tipo: 'revisao_revogada',
     instante: '2026-11-10T13:00:00Z',
-    autor: pessoa('sub-betina', 'Betina Neves'),
+    autor: pessoa('conta-betina', 'Betina Neves'),
     detalhe: MOTIVO,
     ator: 'humano',
   },

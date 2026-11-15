@@ -1,7 +1,7 @@
 /** O estado da API de autorização simulada: perfis oferecidos, pedidos, concessões e escritas. */
 
 /** Pessoas fictícias do portal que aparecem como partes dos pedidos. */
-export const FERNANDA = { emissor: 'unifesspa', sub: 'sub-fernanda-0001-fictícia' };
+export const FERNANDA = { emissor: 'unifesspa', contaId: 'conta-fernanda-0001-fictícia' };
 export const BETINA_EMAIL = 'betina.teste@unifesspa.edu.br';
 
 export const UNIDADE_ID = '01960000-0000-7000-0000-00000000aa01';
@@ -26,7 +26,7 @@ export const PERFIS = [
   perfil(PERFIL_SENSIVEL_ID, 'Analista de documentos', 'sensivel'),
 ];
 
-type Identidade = { emissor: string; sub: string };
+type Identidade = { emissor: string; contaId: string };
 
 export interface Pedido {
   id: string;
@@ -79,7 +79,7 @@ const PEDIDO_NA_FILA_DO_GESTOR = {
   solicitante: FERNANDA,
   beneficiario: {
     email: BETINA_EMAIL,
-    identidade: { emissor: 'unifesspa', sub: 'sub-betina-0002-fictícia' },
+    identidade: { emissor: 'unifesspa', contaId: 'conta-betina-0002-fictícia' },
     nome: 'Betina Teste',
   },
   perfil: { id: PERFIL_SENSIVEL_ID, nome: 'Analista de documentos' },
