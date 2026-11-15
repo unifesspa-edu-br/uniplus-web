@@ -1,6 +1,7 @@
 import { HttpContext } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  CODIGO_ESPERA_ESGOTADA,
   deveRotacionarIdempotencyKey,
   IDEMPOTENCY_KEY_TOKEN,
   IDEMPOTENCY_PROBLEM_CODES,
@@ -9,8 +10,7 @@ import {
   withIdempotencyKey,
 } from './idempotency';
 
-const UUID_V7_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const UUID_V7_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 describe('idempotencyKey.create', () => {
   it('gera uma string que satisfaz o formato canônico de UUID v7', () => {
@@ -84,6 +84,16 @@ describe('deveRotacionarIdempotencyKey', () => {
     expect(deveRotacionarIdempotencyKey({ status, code: 'uniplus.client.network_error' })).toBe(
       false,
     );
+  });
+});
+
+describe('503 de espera esgotada', () => {
+  it('renova a chave: a API guarda a recusa na chave e a repetição devolveria o mesmo 503', () => {
+    expect(deveRotacionarIdempotencyKey({ status: 503, code: CODIGO_ESPERA_ESGOTADA })).toBe(true);
+  });
+
+  it('outro 503 continua preservando a chave', () => {
+    expect(deveRotacionarIdempotencyKey({ status: 503, code: 'uniplus.indisponivel' })).toBe(false);
   });
 });
 

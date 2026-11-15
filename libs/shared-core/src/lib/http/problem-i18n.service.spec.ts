@@ -40,7 +40,8 @@ describe('ProblemI18nService', () => {
 
   it('aplica override com função recebendo o ProblemDetails original', () => {
     service.register('uniplus.contract.versao_nao_suportada', {
-      title: (problem) => `Versão ${problem.available_versions?.join(',') ?? '?'} é a única suportada`,
+      title: (problem) =>
+        `Versão ${problem.available_versions?.join(',') ?? '?'} é a única suportada`,
     });
 
     const message = service.resolve(
@@ -56,7 +57,10 @@ describe('ProblemI18nService', () => {
 
   it('traduz o vínculo com fato que aguarda a proteção de dados em qualquer tela, sem registro', () => {
     const message = service.resolve(
-      mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente', status: 422 }),
+      mockProblemDetails({
+        code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
+        status: 422,
+      }),
     );
 
     expect(message.title).toContain('aguarda a aprovação da proteção de dados');
@@ -64,10 +68,14 @@ describe('ProblemI18nService', () => {
   });
 
   it('o override registrado prevalece sobre a tradução padrão', () => {
-    service.register('uniplus.vinculo_catalogo.fato_com_protecao_pendente', { title: 'Texto da tela' });
+    service.register('uniplus.vinculo_catalogo.fato_com_protecao_pendente', {
+      title: 'Texto da tela',
+    });
 
     expect(
-      service.resolve(mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente' })).title,
+      service.resolve(
+        mockProblemDetails({ code: 'uniplus.vinculo_catalogo.fato_com_protecao_pendente' }),
+      ).title,
     ).toBe('Texto da tela');
   });
 
@@ -93,5 +101,21 @@ describe('ProblemI18nService', () => {
     );
 
     expect(message.title).toBe('Original do backend');
+  });
+
+  it('traduz o 503 de espera esgotada sem expor a orientação técnica de chave da API', () => {
+    const problem = mockProblemDetails({
+      status: 503,
+      title: 'Processo ocupado por outra operação',
+      detail: 'Releia o estado do processo e envie com uma nova chave de idempotência.',
+      code: 'uniplus.concorrencia.espera_esgotada',
+    });
+
+    expect(service.resolve(problem)).toEqual({
+      title:
+        'O processo está ocupado com outra operação. Atualize a tela e tente de novo em instantes.',
+      detail: 'Esta operação não foi gravada.',
+      action: undefined,
+    });
   });
 });
