@@ -61,6 +61,13 @@ export const IDEMPOTENCY_PROBLEM_CODES = {
 } as const;
 
 /**
+ * Código do 503 de uma operação que esperou demais por outra sobre o mesmo processo. A API
+ * guarda essa recusa na chave: reenviar com a mesma chave devolve o mesmo 503. Não traz
+ * `Retry-After` e não tem repetição automática.
+ */
+export const CODIGO_ESPERA_ESGOTADA = 'uniplus.concorrencia.espera_esgotada';
+
+/**
  * Diz se, depois desta falha, o próximo envio precisa de uma `Idempotency-Key`
  * nova.
  *
@@ -69,7 +76,8 @@ export const IDEMPOTENCY_PROBLEM_CODES = {
  * `body_mismatch` em vez de processar o comando novo. As duas exceções são
  * `processing_conflict` — que pede explicitamente retry do **mesmo** comando com
  * a **mesma** chave — e as falhas em que nada foi gravado (5xx, erro de rede),
- * onde repetir a chave é o que torna o retry seguro.
+ * onde repetir a chave é o que torna o retry seguro. O 503 de espera esgotada fica guardado na
+ * chave, então a nova tentativa da pessoa leva uma chave nova.
  */
 export function deveRotacionarIdempotencyKey(problem: {
   readonly status: number;
@@ -77,6 +85,9 @@ export function deveRotacionarIdempotencyKey(problem: {
 }): boolean {
   if (problem.code === IDEMPOTENCY_PROBLEM_CODES.PROCESSING_CONFLICT) {
     return false;
+  }
+  if (problem.code === CODIGO_ESPERA_ESGOTADA) {
+    return true;
   }
   return problem.status >= 400 && problem.status < 500;
 }
