@@ -42,7 +42,7 @@ describe('FatosCandidatoPage — aprovação da proteção de dados', () => {
 
   describe('aprovação da proteção de dados', () => {
     it('diz a situação como texto e, na negativa, a classificação recomendada, inclusive no fato de sistema', async () => {
-      p = await montarPagina([{ ...ajuste, sistema: true }]);
+      p = await montarPagina([{ ...ajuste, semeadoPeloSistema: true }]);
 
       expect(p.texto('tbody')).toContain('Ajuste recomendado');
       expect(p.texto('tbody')).not.toContain('Classificação recomendada');

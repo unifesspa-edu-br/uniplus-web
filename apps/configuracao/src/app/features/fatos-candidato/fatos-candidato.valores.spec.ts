@@ -186,7 +186,7 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
 
   describe('os valores que não se mantêm', () => {
     it.each([
-      ['de sistema', { sistema: true }],
+      ['de sistema', { semeadoPeloSistema: true }],
       ['do agregado, que os herda', { binding: 'AGREGACAO_GRUPO:GRUPO.CAMPO' }],
     ])('o fato %s mostra os valores sem Editar, Subir nem Descer', async (_nome, variacao) => {
       await abrir({ ...todos, ...variacao });

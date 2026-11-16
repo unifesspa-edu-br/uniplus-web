@@ -87,7 +87,7 @@ export const FATOS = [
     escopo: 'CANDIDATO',
     ...PROTECAO,
     classificacaoProtecao: 'SENSIVEL',
-    sistema: false,
+    semeadoPeloSistema: false,
     ativo: true,
     valores: [
       {
@@ -117,7 +117,7 @@ export const FATOS = [
     binding: 'CAMPO_INSCRICAO:RENDA',
     escopo: 'CANDIDATO',
     ...PROTECAO,
-    sistema: false,
+    semeadoPeloSistema: false,
     ativo: true,
     valores: [],
     regrasPadrao: [],

@@ -13211,7 +13211,7 @@ export interface components {
         readonly DetalheDoFatoDto: {
             readonly dominio: string;
             readonly cardinalidade: string;
-            readonly sistema: boolean;
+            readonly semeadoPeloSistema: boolean;
             readonly componenteExibicao: null | string;
             readonly valores: readonly components["schemas"]["DetalheDoValorDoFatoDto"][];
         };
@@ -13389,7 +13389,7 @@ export interface components {
             readonly classificacaoProtecao: string;
             readonly finalidadeTratamento: string;
             readonly hipoteseLegal: string;
-            readonly sistema: boolean;
+            readonly semeadoPeloSistema: boolean;
             readonly ativo: boolean;
             readonly valores: readonly components["schemas"]["FatoValorDominioDto"][];
             readonly regrasPadrao: readonly components["schemas"]["RegraPadraoDto"][];
@@ -13718,7 +13718,7 @@ export interface components {
         readonly PesoAreaEnemAreaCommand: {
             readonly codigo: null | string;
             /** Format: double */
-            readonly peso: number;
+            readonly peso: null | number;
             /** Format: double */
             readonly corte?: null | number;
         };
@@ -14088,7 +14088,7 @@ export interface components {
         readonly ValorCategoricoCommand: {
             readonly codigo: null | string;
             readonly rotulo: null | string;
-            readonly contaComoAprovacao: boolean;
+            readonly contaComoAprovacao: null | boolean;
         };
         readonly ValorCategoricoDto: {
             readonly codigo: string;

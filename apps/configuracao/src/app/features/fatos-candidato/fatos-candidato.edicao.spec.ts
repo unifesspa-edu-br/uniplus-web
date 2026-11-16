@@ -353,7 +353,7 @@ describe('FatosCandidatoPage — edição do fato: nome, descrição e component
   });
 
   describe('o fato de sistema', () => {
-    const sistema = { ...corRaca, sistema: true, componenteExibicao: 'SITUACAO' };
+    const sistema = { ...corRaca, semeadoPeloSistema: true, componenteExibicao: 'SITUACAO' };
 
     it('tem nome, descrição e componente editáveis, e o aviso cita os quatro itens', async () => {
       p = await montarPagina([sistema]);

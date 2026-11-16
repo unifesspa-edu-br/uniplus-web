@@ -99,7 +99,7 @@
                 >
                   {{ fato.nome }}
                 </button>
-                @if (fato.sistema) {
+                @if (fato.semeadoPeloSistema) {
                   <ui-tag variant="primary">Sistema</ui-tag>
                 }
               </td>
@@ -129,7 +129,7 @@
                     [isDisabled]="indisponivel()"
                     (triggered)="acionarEditar(fato)"
                   />
-                  @if (fato.sistema) {
+                  @if (fato.semeadoPeloSistema) {
                     <!-- O fato de sistema não se desativa: o botão fica, desabilitado, com o porquê. -->
                     <ui-icon-button
                       icon="pi-power-off"
