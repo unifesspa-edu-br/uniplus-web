@@ -176,6 +176,7 @@ describe('FasePassoComponent', () => {
             emiteParecerIndividual: false,
             bancas: [],
             recursos: [],
+            tiposDeDecisao: [],
           },
         ],
       });

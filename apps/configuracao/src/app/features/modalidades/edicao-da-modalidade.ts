@@ -12,7 +12,7 @@ import {
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
-  COMPOSICAO_RETIRA_DE,
+  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
   COMPOSICAO_VAGAS_DEFAULT,
   ComposicaoVagasToken,
   ModalidadeDto,
@@ -77,7 +77,9 @@ export class EdicaoDaModalidade {
   private readonly composicao = signal<ComposicaoVagasToken>(COMPOSICAO_VAGAS_DEFAULT);
   private readonly regra = signal<RegraSelecao>('');
   readonly mostraRemanejamento = computed(() => this.natureza() !== 'AMPLA');
-  readonly mostraOrigem = computed(() => this.composicao() === COMPOSICAO_RETIRA_DE);
+  readonly mostraOrigem = computed(
+    () => this.composicao() === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
+  );
   readonly mostraDestino = computed(() => this.regra() === 'DESTINO_UNICO');
   readonly mostraParFallback = computed(() => this.regra() === 'CRUZADO');
 

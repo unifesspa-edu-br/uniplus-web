@@ -32,6 +32,7 @@ function regra(codigo: string, tipo: string): RegraCatalogoDto {
     baseLegal: `Base de ${codigo}`,
     hash: `hash-${codigo}`,
     modalidadesAdmitidas: null,
+    ramoDaDistribuicao: null,
   };
 }
 
@@ -100,7 +101,9 @@ describe('CatalogosDeClassificacao', () => {
 
     expect(servico.regrasCalculo().map((r) => r.codigo)).toEqual(['FORMULA-MEDIA-PONDERADA']);
     expect(servico.regrasArredondamento().map((r) => r.codigo)).toEqual(['ARRED-TRUNCAR']);
-    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual(['ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA']);
+    expect(servico.regrasOrdemAlocacao().map((r) => r.codigo)).toEqual([
+      'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    ]);
     expect(servico.regrasEliminacao().map((r) => r.codigo)).toEqual(['ELIM-ZERO-EM-AREA']);
     expect(servico.regrasBonus().map((r) => r.codigo)).toEqual(['BONUS-MULTIPLICATIVO']);
     expect(servico.criteriosDesempate().map((r) => r.codigo)).toEqual(['DESEMPATE-MAIOR-IDADE']);

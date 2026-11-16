@@ -1,9 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
-import { OrigemCandidatos, ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { etapaDoServidor } from './wizard/shared/cronograma-do-servidor.testing';
 import {
   PROCESSO_ID,
   UNIDADE_ORIGEM_ID,
@@ -82,20 +83,19 @@ describe('ProcessoSeletivoPage — retomada por endereço', MONTAGEM_LENTA, () =
   it('preserva o detalhe canônico inteiro como snapshot remoto', async () => {
     const dto = detalhe({
       etapas: [
-        {
+        etapaDoServidor({
           id: 'etapa-1',
-          nome: 'Prova Objetiva',
-          carater: 'classificatoria',
-          tipoEtapa: {
-            origemId: 'tipo-etapa-1',
-            codigo: 'PROVA_OBJETIVA',
-            nome: 'Prova Objetiva',
+          identificacao: {
+            tipoEtapa: {
+              origemId: 'tipo-etapa-1',
+              codigo: 'PROVA_OBJETIVA',
+              nome: 'Prova Objetiva',
+              notaDeOrigemNoEnem: false,
+              exigeCorrecaoIndependente: false,
+            },
           },
-          peso: 2,
-          notaMinima: null,
-          ordem: 1,
-        },
-      ] as unknown as ProcessoSeletivoDto['etapas'],
+        }),
+      ],
     });
     const cenario = montar({ obter: vi.fn(() => of(okResult(dto))) });
     await propagar();

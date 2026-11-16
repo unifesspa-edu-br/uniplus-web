@@ -4,8 +4,12 @@ import type { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-sel
 import {
   decodificarComposicaoVagas,
   ehRamoFederal,
+  ehRamoReconhecido,
   quantidadeEhDeclarada,
 } from '../../passos/vagas/composicao-de-vagas';
+
+type DistribuicaoGravada = ProcessoSeletivoDto['distribuicaoVagas'][number];
+type ModalidadeGravada = DistribuicaoGravada['modalidades'][number];
 
 /**
  * Projeta a distribuição de vagas gravada com os identificadores **de origem**, que é o que o
@@ -16,57 +20,81 @@ import {
  * entrada: reenviar as calculadas faria o servidor recusar a configuração que ele mesmo devolveu.
  */
 export function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
-  return (dto.distribuicaoVagas ?? []).map((distribuicao) => ({
-    ofertaCursoId: distribuicao.ofertaCursoOrigemId,
-    voBase: String(distribuicao.voBase),
-    pr: comoDecimalPtBr(distribuicao.pr),
-    regraDistribuicaoCodigo: distribuicao.regraDistribuicao.codigo,
-    regraDistribuicaoVersao: distribuicao.regraDistribuicao.versao,
-    regraAjusteCodigo: distribuicao.regraAjuste?.codigo ?? null,
-    regraAjusteVersao: distribuicao.regraAjuste?.versao ?? null,
-    referenciaReservaDemograficaId: distribuicao.referenciaDemografica?.origemId ?? null,
-    modalidades: distribuicao.modalidades.map((modalidade) => ({
-      id: modalidade.modalidadeOrigemId,
-      codigo: modalidade.codigo,
-      gravada: {
-        descricao: modalidade.descricao,
-        composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas),
-        composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
-        regraRemanejamento: modalidade.regraRemanejamento,
-        remanejamentoDestino: modalidade.remanejamentoDestino,
-        remanejamentoPar: modalidade.remanejamentoPar,
-        remanejamentoFallback: modalidade.remanejamentoFallback,
-      },
-    })),
-    quadro: quadroDeclaradoDe(distribuicao),
-  }));
+  return (dto.distribuicaoVagas ?? []).map(distribuicaoDe);
 }
 
-/** Só o que o edital fixou; o que a regra calcula fica de fora do rascunho. */
-function quadroDeclaradoDe(
-  distribuicao: ProcessoSeletivoDto['distribuicaoVagas'][number],
-): DistribuicaoDeVagas['quadro'] {
-  const federal = ehRamoFederal(distribuicao.regraDistribuicao.codigo);
-  const composicaoPorModalidade = new Map(
+function distribuicaoDe(distribuicao: DistribuicaoGravada): DistribuicaoDeVagas {
+  return {
+    ofertaCursoId: distribuicao.ofertaCursoOrigemId,
+    voBase: String(distribuicao.vagasOfertadasBase),
+    pr: comoDecimalPtBr(distribuicao.percentualDaReservaLegal),
+    ...regrasDaDistribuicaoDe(distribuicao),
+    referenciaReservaDemograficaId: distribuicao.referenciaDemografica?.origemId ?? null,
+    ajusteDoQuadro: distribuicao.ajusteDoQuadro,
+    modalidades: distribuicao.modalidades.map(modalidadeDe),
+    quadro: quadroDeclaradoDe(distribuicao),
+  };
+}
+
+function regrasDaDistribuicaoDe(distribuicao: DistribuicaoGravada) {
+  return {
+    regraDistribuicaoCodigo: distribuicao.regraDistribuicao.codigo,
+    regraDistribuicaoVersao: distribuicao.regraDistribuicao.versao,
+    ramoDaDistribuicao: distribuicao.ramoDaDistribuicao,
+    regraAjusteCodigo: distribuicao.regraAjuste?.codigo ?? null,
+    regraAjusteVersao: distribuicao.regraAjuste?.versao ?? null,
+  };
+}
+
+function modalidadeDe(modalidade: ModalidadeGravada): DistribuicaoDeVagas['modalidades'][number] {
+  return {
+    id: modalidade.modalidadeOrigemId,
+    codigo: modalidade.codigo,
+    gravada: {
+      descricao: modalidade.descricao,
+      composicaoVagas: decodificarComposicaoVagas(modalidade.composicaoVagas),
+      composicaoOrigemCodigo: modalidade.composicaoOrigemCodigo,
+      regraRemanejamento: modalidade.regraRemanejamento,
+      remanejamentoDestino: modalidade.remanejamentoDestino,
+      remanejamentoPar: modalidade.remanejamentoPar,
+      remanejamentoFallback: modalidade.remanejamentoFallback,
+    },
+  };
+}
+
+/**
+ * Só o que o edital fixou; o que a regra calcula fica de fora do rascunho. Sem ramo reconhecido
+ * não se sabe o que a regra calcula, então nada se deriva do quadro devolvido.
+ */
+function quadroDeclaradoDe(distribuicao: DistribuicaoGravada): DistribuicaoDeVagas['quadro'] {
+  if (!ehRamoReconhecido(distribuicao.ramoDaDistribuicao)) return [];
+
+  const federal = ehRamoFederal(distribuicao.ramoDaDistribuicao);
+  const composicaoPorModalidade = composicaoPorModalidadeDe(distribuicao);
+
+  return distribuicao.quadro
+    .filter((vaga) =>
+      temQuantidadeDeclarada(composicaoPorModalidade.get(vaga.modalidadeOrigemId), federal),
+    )
+    .map((vaga) => ({
+      modalidadeId: vaga.modalidadeOrigemId,
+      quantidade: String(vaga.quantidade),
+    }));
+}
+
+function composicaoPorModalidadeDe(distribuicao: DistribuicaoGravada) {
+  return new Map(
     distribuicao.modalidades.map((modalidade) => [
       modalidade.modalidadeOrigemId,
       decodificarComposicaoVagas(modalidade.composicaoVagas),
     ]),
   );
+}
 
-  return distribuicao.quadro
-    .filter((vaga) => {
-      const composicao = composicaoPorModalidade.get(vaga.modalidadeOrigemId);
-      return (
-        composicao !== undefined &&
-        composicao !== null &&
-        quantidadeEhDeclarada(composicao, federal)
-      );
-    })
-    .map((vaga) => ({
-      modalidadeId: vaga.modalidadeOrigemId,
-      quantidade: String(vaga.quantidade),
-    }));
+function temQuantidadeDeclarada(composicao: string | null | undefined, federal: boolean): boolean {
+  return (
+    composicao !== undefined && composicao !== null && quantidadeEhDeclarada(composicao, federal)
+  );
 }
 
 /**
@@ -86,6 +114,6 @@ export function cascataDe(dto: ProcessoSeletivoDto): CascataSelecionada | null {
  * O separador decimal do campo é a vírgula; devolver o ponto de `String(0.5)` faria a tela reabrir
  * com grafia diferente da que ela mesma pediu.
  */
-function comoDecimalPtBr(valor: number): string {
-  return String(valor).replace('.', ',');
+function comoDecimalPtBr(valor: number | null): string {
+  return valor === null ? '' : String(valor).replace('.', ',');
 }

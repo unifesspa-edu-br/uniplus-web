@@ -165,6 +165,7 @@ describe('RevisaoPassoComponent — ato e período', () => {
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
+        tiposDeDecisao: [],
         congelados: null,
       };
       cenario.fasePorId.set(

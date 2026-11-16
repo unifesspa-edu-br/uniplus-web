@@ -104,15 +104,14 @@ export class RegraDaDistribuicaoComponent {
   }
 
   private aplicar(codigo: string, versao: string): void {
-    const rol =
-      regraPorChave(this.catalogos.regrasDistribuicao(), codigo, versao)?.modalidadesAdmitidas ??
-      null;
+    const regra = regraPorChave(this.catalogos.regrasDistribuicao(), codigo, versao);
 
     this.estado.alterarPadrao(
       padraoAposTrocarDeRegra(this.estado.padrao(), {
         codigo,
         versao,
-        rol,
+        ramo: regra?.ramoDaDistribuicao ?? null,
+        rol: regra?.modalidadesAdmitidas ?? null,
         catalogo: this.catalogos.modalidades(),
       }),
     );

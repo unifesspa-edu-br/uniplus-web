@@ -83,6 +83,7 @@ function faseDoRascunho(campos: CamposDaFase): FaseDoCronograma {
     emiteParecerIndividual: false,
     bancasRequeridas: [],
     regraRecurso: null,
+    tiposDeDecisao: [],
     congelados: null,
     ...campos,
   };
@@ -113,7 +114,14 @@ const ETAPA_SEM_DECLARACAO = {
 
 /** Uma etapa classificatória do rascunho, ainda sem identificador, sem produto nem janela. */
 function etapaDoRascunho(campos: CamposDaEtapa): EtapaPontuada {
-  return { ...ETAPA_SEM_DECLARACAO, produtos: [], bancas: [], recursos: [], ...campos };
+  return {
+    ...ETAPA_SEM_DECLARACAO,
+    produtos: [],
+    bancas: [],
+    recursos: [],
+    tiposDeDecisao: [],
+    ...campos,
+  };
 }
 
 /** A fase de resultado final que declara o que publica e as bancas que requer. */

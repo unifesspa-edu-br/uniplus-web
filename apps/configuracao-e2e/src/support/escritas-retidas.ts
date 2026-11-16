@@ -1,4 +1,4 @@
-import type { Request, Route } from '@playwright/test';
+import type { Page, Request, Route } from '@playwright/test';
 
 /** Apoio dos mocks que retêm cada escrita até o teste liberá-la, para conferir a tela pendente. */
 
@@ -42,6 +42,15 @@ export async function responder(route: Route, resposta: Resposta): Promise<void>
 
 export const responderPreflight = (route: Route) =>
   route.fulfill({ status: 204, headers: CORS_HEADERS });
+
+/** Serve `corpo` como a leitura da rota, respondendo também o preflight de CORS. */
+export async function servirLeitura(page: Page, rota: RegExp, corpo: unknown): Promise<void> {
+  await page.route(rota, (route) =>
+    route.request().method() === 'OPTIONS'
+      ? responderPreflight(route)
+      : responder(route, { status: 200, corpo }),
+  );
+}
 
 export const esperarARecarga = () =>
   new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));

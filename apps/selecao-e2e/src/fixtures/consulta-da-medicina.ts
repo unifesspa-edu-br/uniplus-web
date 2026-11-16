@@ -1,4 +1,5 @@
-import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA, PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
+import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from './medicina/formulario-das-modalidades';
+import { PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
 
 /**
  * O processo da Medicina 2027 publicado, com o que os passos lidos como texto mostram: a taxa

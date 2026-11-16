@@ -127,6 +127,35 @@
         </fieldset>
       </section>
 
+      <section aria-labelledby="cfg-etapa-correcao">
+        <h3 id="cfg-etapa-correcao" class="form-section__title">Correção</h3>
+        <div class="field" [class.is-error]="erroDoCampo('exigeCorrecaoIndependente')">
+          <label class="checkbox">
+            <input
+              type="checkbox"
+              formControlName="exigeCorrecaoIndependente"
+              [attr.aria-describedby]="
+                erroDoCampo('exigeCorrecaoIndependente')
+                  ? 'cfg-etapa-correcao-ajuda cfg-etapa-correcao-erro'
+                  : 'cfg-etapa-correcao-ajuda'
+              "
+              [attr.aria-invalid]="erroDoCampo('exigeCorrecaoIndependente') ? 'true' : null"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            Exige correção independente
+          </label>
+          <span class="field__hint" id="cfg-etapa-correcao-ajuda">
+            As etapas deste tipo são corrigidas por mais de um corretor, cada um com a sua correção,
+            e a divergência entre elas se resolve por regra. Exige ao menos um conceito admitido.
+          </span>
+          @if (erroDoCampo('exigeCorrecaoIndependente')) {
+            <span class="field__error" id="cfg-etapa-correcao-erro">{{
+              erroDoCampo('exigeCorrecaoIndependente')
+            }}</span>
+          }
+        </div>
+      </section>
+
       <section aria-labelledby="cfg-etapa-conceitos">
         <h3 id="cfg-etapa-conceitos" class="form-section__title">Conceitos</h3>
         <cfg-conceitos-admitidos

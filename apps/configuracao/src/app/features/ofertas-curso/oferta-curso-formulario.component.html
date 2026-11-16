@@ -18,6 +18,33 @@
       <ui-alert variant="danger" heading="Não foi possível salvar">{{ erro() }}</ui-alert>
     }
     <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
+      <section aria-labelledby="cfg-oferta-identificacao">
+        <h3 id="cfg-oferta-identificacao" class="form-section__title">Identificação</h3>
+        <div class="form-grid form-grid--1col">
+          @let erroDoCodigo = erroDoCampo('codigo');
+          <label class="field" [class.is-error]="erroDoCodigo">
+            <span class="field__label is-required">Código</span>
+            <input
+              aria-required="true"
+              class="input"
+              type="text"
+              style="text-transform: uppercase"
+              placeholder="Ex.: ENGENHARIA_CIVIL_MARABA"
+              formControlName="codigo"
+              [attr.aria-invalid]="erroDoCodigo ? 'true' : null"
+              [attr.aria-describedby]="descritoPor('codigo', 'cfg-oferta-codigo-dica')"
+            />
+            <span class="field__hint" id="cfg-oferta-codigo-dica">
+              Identidade da oferta: caixa alta, começando por letra, com letras, números e
+              sublinhado, de 2 a 50 caracteres. Único entre as ofertas de curso ativas.
+            </span>
+            @if (erroDoCodigo) {
+              <span class="field__error" [id]="idDoErro('codigo')">{{ erroDoCodigo }}</span>
+            }
+          </label>
+        </div>
+      </section>
+
       <section aria-labelledby="cfg-oferta-vinculos">
         <h3 id="cfg-oferta-vinculos" class="form-section__title">Vínculos</h3>
         <div class="form-grid form-grid--1col">

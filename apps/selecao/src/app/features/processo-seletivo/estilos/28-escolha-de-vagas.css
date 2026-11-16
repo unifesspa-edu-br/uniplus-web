@@ -74,24 +74,28 @@ sel-cascata-remanejamento > .step-card {
 }
 
 /* O alerta é `div`, e não herda a margem que o reset dá ao parágrafo vizinho. */
-.vagas-estouro {
+.vagas-conferencia {
   margin: var(--space-4) 0;
 }
 
-.vagas-estouro__detalhe > summary {
+.vagas-conferencia__detalhe + .vagas-conferencia__detalhe {
+  margin-top: var(--space-3);
+}
+
+.vagas-conferencia__detalhe > summary {
   cursor: pointer;
   margin: 0;
 }
 
-.vagas-estouro__detalhe > summary::marker {
+.vagas-conferencia__detalhe > summary::marker {
   color: var(--text-secondary);
 }
 
-.vagas-estouro__detalhe > .alert__msg {
+.vagas-conferencia__detalhe > .alert__msg {
   margin-top: var(--space-2);
 }
 
-.vagas-estouro__lista {
+.vagas-conferencia__lista {
   display: grid;
   gap: var(--space-1);
   margin: var(--space-2) 0 0;
@@ -100,12 +104,12 @@ sel-cascata-remanejamento > .step-card {
   color: var(--text-secondary);
 }
 
-.vagas-estouro__oferta {
+.vagas-conferencia__oferta {
   font-weight: var(--weight-medium);
   color: var(--text-primary);
 }
 
-.vagas-estouro__valores::before {
+.vagas-conferencia__valores::before {
   content: ' — ';
 }
 

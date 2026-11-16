@@ -17,7 +17,7 @@ import {
   TipoLocalOferta,
 } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH, UnidadeDto } from '@uniplus/shared-data/organizacao';
-import { expect, vi } from 'vitest';
+import { MockInstance, expect, vi } from 'vitest';
 import { EdicaoDasOfertasCurso } from './edicao-das-ofertas-curso';
 import { OfertasCursoPage } from './ofertas-curso.page';
 import { OfertasCursoStore } from './ofertas-curso.store';
@@ -83,6 +83,7 @@ export const ige = {
 
 export const oferta: OfertaCursoDto = {
   id: '01960000-0000-7000-0000-0000000000d1',
+  codigo: 'ENG_CIVIL_MARABA',
   cursoId: engCiv.id,
   localOfertaId: maraba.id,
   unidadeOfertante: {
@@ -106,6 +107,15 @@ export const oferta: OfertaCursoDto = {
 
 /** O nome acessível das ações da linha de `oferta`. */
 export const identificador = 'Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino';
+
+export const mesmaOferta = (
+  id: string,
+  mudancas: Partial<OfertaCursoDto> = {},
+): OfertaCursoDto => ({
+  ...oferta,
+  id,
+  ...mudancas,
+});
 
 export const problema = (status: number, corpo: object = {}) =>
   [
@@ -149,11 +159,7 @@ const ID_DOS_VINCULOS: Readonly<Record<string, string>> = {
   unidadeOfertanteOrigemId: 'cfg-oferta-unidade-id',
 };
 
-/** A página montada com a lista e os catálogos já carregados, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(
-  itens: readonly OfertaCursoDto[] = [oferta],
-  catalogos: CatalogosDaPagina = {},
-) {
+function configurarModuloDaPagina(): void {
   TestBed.configureTestingModule({
     imports: [OfertasCursoPage],
     providers: [
@@ -164,133 +170,166 @@ export async function montarPagina(
       { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
     ],
   });
-  const fixture: ComponentFixture<OfertasCursoPage> = TestBed.createComponent(OfertasCursoPage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDasOfertasCurso);
-  const store = injetor.get(OfertasCursoStore);
-  const vinculos = injetor.get(VinculosDaOferta);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
+}
 
-  const propagar = async (): Promise<void> => {
+/** A página com as ferramentas para conduzi-la como a pessoa faz. */
+export class PaginaDeOfertas {
+  readonly fixture: ComponentFixture<OfertasCursoPage>;
+  readonly http: HttpTestingController;
+  readonly edicao: EdicaoDasOfertasCurso;
+  readonly store: OfertasCursoStore;
+  readonly vinculos: VinculosDaOferta;
+  readonly sucessos: MockInstance<NotificationService['success']>;
+  readonly erros: MockInstance<NotificationService['errorFromProblem']>;
+  private readonly app = TestBed.inject(ApplicationRef);
+
+  constructor() {
+    this.fixture = TestBed.createComponent(OfertasCursoPage);
+    this.http = TestBed.inject(HttpTestingController);
+    const injetor = this.fixture.debugElement.injector;
+    this.edicao = injetor.get(EdicaoDasOfertasCurso);
+    this.store = injetor.get(OfertasCursoStore);
+    this.vinculos = injetor.get(VinculosDaOferta);
+    const notificacoes = TestBed.inject(NotificationService);
+    this.sucessos = vi.spyOn(notificacoes, 'success');
+    this.erros = vi.spyOn(notificacoes, 'errorFromProblem');
+  }
+
+  async carregar(itens: readonly OfertaCursoDto[], catalogos: CatalogosDaPagina): Promise<void> {
+    this.fixture.detectChanges();
+    this.http.expectOne((r) => r.url === LISTA).flush(itens);
+    responder(this.doCatalogo(CURSOS), catalogos.cursos ?? [engCiv]);
+    responder(this.doCatalogo(LOCAIS), catalogos.locais ?? [maraba]);
+    await this.propagar();
+  }
+
+  async propagar(): Promise<void> {
     await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
+    this.app.tick();
+    this.fixture.detectChanges();
+  }
+
+  elemento<T extends HTMLElement>(seletor: string): T {
+    const encontrado = (this.fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
     expect(encontrado, seletor).not.toBeNull();
     return encontrado as T;
-  };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const doCatalogo = (url: string): TestRequest => {
-    const pedido = http.expectOne((r) => r.url === url);
+  }
+
+  doCatalogo(url: string): TestRequest {
+    const pedido = this.http.expectOne((r) => r.url === url);
     const limite = Number(pedido.request.params.get('limit'));
     expect(limite).toBeGreaterThanOrEqual(1);
     expect(limite).toBeLessThanOrEqual(LIMITE_MAXIMO_API);
     return pedido;
-  };
-  const recarregarCom = async (lista: readonly OfertaCursoDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    await propagar();
-  };
-  const seletorDoCampo = (nome: string): string =>
-    nome in ID_DOS_VINCULOS ? `#${ID_DOS_VINCULOS[nome]}` : `[formcontrolname="${nome}"]`;
-  const preencher = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement>(seletorDoCampo(nome));
+  }
+
+  async recarregarCom(lista: readonly OfertaCursoDto[]): Promise<void> {
+    await this.propagar();
+    this.http.expectOne((r) => r.url === LISTA).flush(lista);
+    await this.propagar();
+  }
+
+  preencher(nome: string, valor: string): void {
+    const campo = this.elemento<HTMLInputElement>(seletorDoCampo(nome));
     campo.value = valor;
     campo.dispatchEvent(new Event(campo.tagName === 'SELECT' ? 'change' : 'input'));
-  };
-  const turno = (rotulo: string): HTMLInputElement => {
-    const caixa = [...(fixture.nativeElement as HTMLElement).querySelectorAll('label.checkbox')]
+  }
+
+  turno(rotulo: string): HTMLInputElement {
+    const caixa = [
+      ...(this.fixture.nativeElement as HTMLElement).querySelectorAll('label.checkbox'),
+    ]
       .find((item) => item.textContent?.trim() === rotulo)
       ?.querySelector('input');
     expect(caixa, rotulo).toBeTruthy();
     return caixa as HTMLInputElement;
-  };
-  const responderUnidades = async (unidades: readonly UnidadeDto[] = [ige]): Promise<void> => {
-    await propagar();
-    doCatalogo(UNIDADES).flush(unidades);
-    await propagar();
-  };
+  }
 
-  fixture.detectChanges();
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  responder(doCatalogo(CURSOS), catalogos.cursos ?? [engCiv]);
-  responder(doCatalogo(LOCAIS), catalogos.locais ?? [maraba]);
-  await propagar();
+  async responderUnidades(unidades: readonly UnidadeDto[] = [ige]): Promise<void> {
+    await this.propagar();
+    this.doCatalogo(UNIDADES).flush(unidades);
+    await this.propagar();
+  }
 
-  return {
-    fixture,
-    http,
-    edicao,
-    store,
-    vinculos,
-    sucessos,
-    erros,
-    propagar,
-    elemento,
-    doCatalogo,
-    recarregarCom,
-    preencher,
-    turno,
-    responderUnidades,
-    /** Confere que nada ficou pendente. */
-    encerrar(): void {
-      http.verify();
-    },
-    formulario: (): HTMLFormElement => elemento('#cfg-oferta-curso-form'),
-    novo: (): HTMLButtonElement => elemento('#cfg-ofertas-novo'),
-    editar: (alvo: string = identificador) => pelaEtiqueta(`Editar oferta de curso ${alvo}`),
-    remover: (alvo: string = identificador) => pelaEtiqueta(`Remover oferta de curso ${alvo}`),
-    salvar: (): HTMLButtonElement => elemento('button[form="cfg-oferta-curso-form"]'),
-    confirmar: (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]'),
-    cancelarDaConfirmacao: (): HTMLButtonElement =>
-      elemento('[data-testid="confirm-dialog-cancel"]'),
-    campo: (nome: string): HTMLInputElement => elemento(seletorDoCampo(nome)),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Nova oferta de curso", responde as unidades e escolhe o mínimo para enviar. */
-    async abrirCadastro(): Promise<void> {
-      const novo = elemento<HTMLButtonElement>('#cfg-ofertas-novo');
-      novo.focus();
-      novo.click();
-      await responderUnidades();
-      preencher('cursoId', engCiv.id);
-      preencher('localOfertaId', maraba.id);
-      preencher('unidadeOfertanteOrigemId', ige.id);
-      turno('Matutino').click();
-      await propagar();
-    },
-    async abrirEdicao(alvo: string = identificador): Promise<void> {
-      const botao = pelaEtiqueta(`Editar oferta de curso ${alvo}`);
-      botao.focus();
-      botao.click();
-      await propagar();
-    },
-    /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
-    async enviar(url = ESCRITA) {
-      const botao = elemento<HTMLButtonElement>('button[form="cfg-oferta-curso-form"]');
-      botao.focus();
-      botao.click();
-      await propagar();
-      return http.expectOne(url);
-    },
-    async confirmarRemocao(alvo: string = identificador, id: string = oferta.id) {
-      const lixeira = pelaEtiqueta(`Remover oferta de curso ${alvo}`);
-      lixeira.focus();
-      lixeira.click();
-      await propagar();
-      elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-      await propagar();
-      return http.expectOne(`${ESCRITA}/${id}`);
-    },
-  };
+  /** Confere que nada ficou pendente. */
+  encerrar(): void {
+    this.http.verify();
+  }
+
+  formulario = (): HTMLFormElement => this.elemento('#cfg-oferta-curso-form');
+  novo = (): HTMLButtonElement => this.elemento('#cfg-ofertas-novo');
+  salvar = (): HTMLButtonElement => this.elemento('button[form="cfg-oferta-curso-form"]');
+  confirmar = (): HTMLButtonElement => this.elemento('[data-testid="confirm-dialog-confirm"]');
+  cancelarDaConfirmacao = (): HTMLButtonElement =>
+    this.elemento('[data-testid="confirm-dialog-cancel"]');
+  campo = (nome: string): HTMLInputElement => this.elemento(seletorDoCampo(nome));
+  statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
+
+  editar(alvo: string = identificador): HTMLButtonElement {
+    return this.pelaEtiqueta(`Editar oferta de curso ${alvo}`);
+  }
+
+  remover(alvo: string = identificador): HTMLButtonElement {
+    return this.pelaEtiqueta(`Remover oferta de curso ${alvo}`);
+  }
+
+  /** Clica de verdade em "Nova oferta de curso", responde as unidades e preenche o mínimo para enviar. */
+  async abrirCadastro(): Promise<void> {
+    this.novo().focus();
+    this.novo().click();
+    await this.responderUnidades();
+    this.preencher('codigo', oferta.codigo);
+    this.preencher('cursoId', engCiv.id);
+    this.preencher('localOfertaId', maraba.id);
+    this.preencher('unidadeOfertanteOrigemId', ige.id);
+    this.turno('Matutino').click();
+    await this.propagar();
+  }
+
+  async abrirEdicao(alvo: string = identificador): Promise<void> {
+    await this.clicarComFoco(this.editar(alvo));
+  }
+
+  /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
+  async enviar(url = ESCRITA): Promise<TestRequest> {
+    await this.clicarComFoco(this.salvar());
+    return this.http.expectOne(url);
+  }
+
+  async confirmarRemocao(
+    alvo: string = identificador,
+    id: string = oferta.id,
+  ): Promise<TestRequest> {
+    await this.clicarComFoco(this.remover(alvo));
+    this.confirmar().click();
+    await this.propagar();
+    return this.http.expectOne(`${ESCRITA}/${id}`);
+  }
+
+  private pelaEtiqueta(nome: string): HTMLButtonElement {
+    return this.elemento(`button[aria-label="${nome}"]`);
+  }
+
+  private async clicarComFoco(botao: HTMLButtonElement): Promise<void> {
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  }
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+const seletorDoCampo = (nome: string): string =>
+  nome in ID_DOS_VINCULOS ? `#${ID_DOS_VINCULOS[nome]}` : `[formcontrolname="${nome}"]`;
+
+/** A página montada com a lista e os catálogos já carregados. */
+export async function montarPagina(
+  itens: readonly OfertaCursoDto[] = [oferta],
+  catalogos: CatalogosDaPagina = {},
+): Promise<PaginaDeOfertas> {
+  configurarModuloDaPagina();
+  const pagina = new PaginaDeOfertas();
+  await pagina.carregar(itens, catalogos);
+  return pagina;
+}
+
+export type Pagina = PaginaDeOfertas;

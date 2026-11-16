@@ -19,6 +19,7 @@ import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cro
 import { FasePassoComponent } from './fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
+import { etapaDoServidor } from '../../shared/cronograma-do-servidor.testing';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -137,15 +138,20 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
   },
   localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   etapas: [
-    {
+    etapaDoServidor({
       id: ID_ETAPA_GRAVADA,
-      nome: 'Prova objetiva',
-      carater: 'classificatoria',
-      tipoEtapa: { origemId: ID_TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva' },
-      peso: 1,
-      notaMinima: null,
-      ordem: 1,
-    },
+      identificacao: {
+        nome: 'Prova objetiva',
+        tipoEtapa: {
+          origemId: ID_TIPO_ETAPA,
+          codigo: 'PROVA_OBJETIVA',
+          nome: 'Prova objetiva',
+          notaDeOrigemNoEnem: false,
+          exigeCorrecaoIndependente: false,
+        },
+      },
+      nota: { peso: 1 },
+    }),
   ],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],
@@ -167,6 +173,7 @@ const FASE_DO_CERTAME = {
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,
+  tiposDeDecisao: [],
   congelados: null,
 };
 
@@ -199,6 +206,7 @@ const ETAPA_GRAVADA = {
   emiteParecerIndividual: false,
   bancas: [],
   recursos: [],
+  tiposDeDecisao: [],
 };
 
 const PROVEDORES = [

@@ -4,6 +4,7 @@ import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import {
   BASE,
@@ -232,7 +233,11 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         },
       );
 
-      const FASE = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
+      const FASE = faseDoServidor({
+        id: 'F-INSCRICAO',
+        codigo: 'INSCRICAO',
+        faseCanonica: { coletaInscricao: true },
+      });
       const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
         codigo,
         ordem,

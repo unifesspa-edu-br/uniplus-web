@@ -38,6 +38,8 @@ describe('cobertura de readback do rascunho', () => {
       unidadeAdministradora: { origemId: 'un-1' },
       localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
       origemCandidatos: 'INSCRICAO_PROPRIA',
+      cronogramaFases: [],
+      etapas: [],
     }) as unknown as ProcessoSeletivoDto;
 
   const secoesIntocadas = (): readonly string[] => {

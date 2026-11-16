@@ -60,6 +60,7 @@ export const ETAPA_PERSISTIDA: EtapaPontuada = {
   emiteParecerIndividual: false,
   bancas: [],
   recursos: [],
+  tiposDeDecisao: [],
 };
 
 export function oferecidas(id: string): string[] {

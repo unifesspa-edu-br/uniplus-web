@@ -92,6 +92,7 @@ export const FASES_DO_CATALOGO = [
     nome,
     unidadeSugerida,
     agrupaEtapas: false,
+    admiteAgruparEtapas: false,
     coletaInscricao: false,
   })),
 ];

@@ -36,6 +36,7 @@ const RECURSO: RecursoDaEtapa = {
   admiteInstanciaSuperior: true,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 const TIPO_DA_NOTA_DO_ENEM = {

@@ -57,6 +57,7 @@ describe('TiposEtapaPage', () => {
       nome: 'Nova prova',
       admitePontuacao: false,
       admiteEliminacao: true,
+      exigeCorrecaoIndependente: false,
       conceitosAdmitidos: [],
       descricao: null,
     });
@@ -107,7 +108,20 @@ describe('TiposEtapaPage', () => {
     expect(p.edicao.form.getRawValue()).toMatchObject({
       admitePontuacao: true,
       admiteEliminacao: true,
+      exigeCorrecaoIndependente: false,
     });
+  });
+
+  it('cria o tipo que exige correção independente com o checkbox rotulado marcado', async () => {
+    await p.abrirCadastro();
+    const caixa = p.campo('exigeCorrecaoIndependente');
+    expect(caixa.closest('label')?.textContent?.trim()).toBe('Exige correção independente');
+    caixa.click();
+    const post = await p.enviar();
+    expect(post.request.body).toMatchObject({ exigeCorrecaoIndependente: true });
+    post.flush(...criado());
+    await p.recarregarCom([prova]);
+    expect(p.edicao.aberto()).toBe(false);
   });
 
   it('cada ação mostra seu ícone e sua dica', () => {

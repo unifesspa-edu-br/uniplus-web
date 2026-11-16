@@ -4,7 +4,10 @@
 </p>
 
 @if (!store.emConsulta()) {
-  <ui-falha-de-leitura titulo="Catálogos de ofertas, modalidades e regras" [leitura]="catalogos.leitura" />
+  <ui-falha-de-leitura
+    titulo="Catálogos de ofertas, modalidades e regras"
+    [leitura]="catalogos.leitura"
+  />
 }
 
 @if (carregandoParaEditar()) {
@@ -18,8 +21,8 @@
     <h2 class="form-section__title">Padrão desta distribuição</h2>
     @if (catalogoCarregandoEmConsulta()) {
       <p class="field__hint" role="status">
-        Carregando ofertas, modalidades e regras. O que o processo gravou aparece abaixo; os nomes
-        e as descrições entram quando chegarem.
+        Carregando ofertas, modalidades e regras. O que o processo gravou aparece abaixo; os nomes e
+        as descrições entram quando chegarem.
       </p>
     } @else if (catalogoFalhouEmConsulta()) {
       <p class="field__hint">
@@ -30,28 +33,28 @@
     <div class="form-grid">
       <sel-opcoes-de-curso class="form-field form-grid__full"></sel-opcoes-de-curso>
       <sel-regra-da-distribuicao class="form-field form-grid__full"></sel-regra-da-distribuicao>
-      @if (store.emConsulta()) {
-        <ui-valor-em-consulta
-          rotulo="Percentual de reserva"
-          dica="Entre 0,5 e 1,0 — art. 10, II da Lei 12.711."
-          [valor]="estado.padraoLido().percentualDeReserva"
-        />
-      } @else {
-      <div class="form-field">
-        <label class="label" for="f-pr">Percentual de reserva</label>
-        <input
-          class="input"
-          id="f-pr"
-          inputmode="decimal"
-          [ngModel]="estado.padrao().pr"
-          (ngModelChange)="alterarPr($event)"
-          [disabled]="!store.aceitaEdicao()"
-        />
-        <p class="field__hint">Entre 0,5 e 1,0 — art. 10, II da Lei 12.711.</p>
-      </div>
-      }
-
       @if (estado.ehFederal()) {
+        @if (store.emConsulta()) {
+          <ui-valor-em-consulta
+            rotulo="Percentual de reserva"
+            dica="Entre 0,5 e 1,0 — art. 10, II da Lei 12.711."
+            [valor]="estado.padraoLido().percentualDeReserva"
+          />
+        } @else {
+          <div class="form-field">
+            <label class="label" for="f-pr">Percentual de reserva</label>
+            <input
+              class="input"
+              id="f-pr"
+              inputmode="decimal"
+              [ngModel]="estado.padrao().pr"
+              (ngModelChange)="alterarPr($event)"
+              [disabled]="!store.aceitaEdicao()"
+            />
+            <p class="field__hint">Entre 0,5 e 1,0 — art. 10, II da Lei 12.711.</p>
+          </div>
+        }
+
         <sel-regra-de-ajuste class="form-field"></sel-regra-de-ajuste>
         @if (store.emConsulta()) {
           <ui-valor-em-consulta
@@ -61,25 +64,25 @@
             [valor]="estado.padraoLido().referenciaDemografica"
           />
         } @else {
-        <div class="form-field form-grid__full">
-          <label class="label" for="f-ref">Referência de reserva demográfica</label>
-          <select
-            class="input"
-            id="f-ref"
-            [ngModel]="estado.padrao().referenciaReservaDemograficaId ?? ''"
-            (ngModelChange)="escolherReferencia($event)"
-            [disabled]="!store.aceitaEdicao()"
-          >
-            <option value="">Selecione a referência…</option>
-            @for (referencia of catalogos.referencias(); track referencia.id) {
-              <option [value]="referencia.id">
-                Censo {{ referencia.censoReferencia }} — PPI {{ referencia.ppiPercentual }}% ·
-                quilombola {{ referencia.quilombolaPercentual }}% · PcD
-                {{ referencia.pcdPercentual }}%
-              </option>
-            }
-          </select>
-        </div>
+          <div class="form-field form-grid__full">
+            <label class="label" for="f-ref">Referência de reserva demográfica</label>
+            <select
+              class="input"
+              id="f-ref"
+              [ngModel]="estado.padrao().referenciaReservaDemograficaId ?? ''"
+              (ngModelChange)="escolherReferencia($event)"
+              [disabled]="!store.aceitaEdicao()"
+            >
+              <option value="">Selecione a referência…</option>
+              @for (referencia of catalogos.referencias(); track referencia.id) {
+                <option [value]="referencia.id">
+                  Censo {{ referencia.censoReferencia }} — PPI {{ referencia.ppiPercentual }}% ·
+                  quilombola {{ referencia.quilombolaPercentual }}% · PcD
+                  {{ referencia.pcdPercentual }}%
+                </option>
+              }
+            </select>
+          </div>
         }
       }
     </div>
@@ -93,52 +96,52 @@
         [valor]="estado.padraoLido().modalidades"
       />
     } @else {
-    @if (estado.rolDaRegraEscolhida(); as rol) {
-      <p class="field__hint">
-        A regra escolhida determina estas {{ rol.length }} modalidades — não há escolha a fazer
-        aqui. Para compor livremente, escolha DISTRIB-VAGAS-INSTITUCIONAL.
-      </p>
-
-      @if (reaplicarRolTemEfeito()) {
-        <p class="field__erro" role="alert">
-          A seleção ou o quadro desta oferta não correspondem mais ao rol da regra atual.
+      @if (estado.rolDaRegraEscolhida(); as rol) {
+        <p class="field__hint">
+          A regra escolhida determina estas {{ rol.length }} modalidades — não há escolha a fazer
+          aqui. Para compor livremente, escolha DISTRIB-VAGAS-INSTITUCIONAL.
         </p>
-        <button
-          class="btn btn--tertiary btn--sm"
-          type="button"
-          (click)="reaplicarRolDaRegra()"
-          [disabled]="!store.aceitaEdicao()"
-        >
-          Recompor pelo rol da regra atual
-        </button>
-      }
-    } @else {
-      <div class="vagas-modalidades__atalhos">
-        <label class="check-item">
-          <input
-            type="checkbox"
-            [checked]="todasAsModalidadesSelecionadas()"
-            [disabled]="!store.aceitaEdicao()"
-            (change)="marcarTodasAsModalidades($any($event.target).checked)"
-          />
-          <span>Marcar todas as {{ estado.modalidadesOferecidas().length }} modalidades</span>
-        </label>
-      </div>
-    }
 
-    <div class="checkbox-grid">
-      @for (modalidade of estado.modalidadesOferecidas(); track modalidade.id) {
-        <label class="check-item">
-          <input
-            type="checkbox"
-            [checked]="estado.modalidadeSelecionada(modalidade.id)"
-            [disabled]="!store.aceitaEdicao() || estado.rolDaRegraEscolhida() !== null"
-            (change)="alternarModalidade(modalidade)"
-          />
-          <span>{{ modalidade.codigo }} — {{ modalidade.descricao }}</span>
-        </label>
+        @if (reaplicarRolTemEfeito()) {
+          <p class="field__erro" role="alert">
+            A seleção ou o quadro desta oferta não correspondem mais ao rol da regra atual.
+          </p>
+          <button
+            class="btn btn--tertiary btn--sm"
+            type="button"
+            (click)="reaplicarRolDaRegra()"
+            [disabled]="!store.aceitaEdicao()"
+          >
+            Recompor pelo rol da regra atual
+          </button>
+        }
+      } @else {
+        <div class="vagas-modalidades__atalhos">
+          <label class="check-item">
+            <input
+              type="checkbox"
+              [checked]="todasAsModalidadesSelecionadas()"
+              [disabled]="!store.aceitaEdicao()"
+              (change)="marcarTodasAsModalidades($any($event.target).checked)"
+            />
+            <span>Marcar todas as {{ estado.modalidadesOferecidas().length }} modalidades</span>
+          </label>
+        </div>
       }
-    </div>
+
+      <div class="checkbox-grid">
+        @for (modalidade of estado.modalidadesOferecidas(); track modalidade.id) {
+          <label class="check-item">
+            <input
+              type="checkbox"
+              [checked]="estado.modalidadeSelecionada(modalidade.id)"
+              [disabled]="!store.aceitaEdicao() || estado.rolDaRegraEscolhida() !== null"
+              (change)="alternarModalidade(modalidade)"
+            />
+            <span>{{ modalidade.codigo }} — {{ modalidade.descricao }}</span>
+          </label>
+        }
+      </div>
     }
 
     @if (store.concorrenciaDuplaAplicavel()) {
@@ -187,44 +190,46 @@
         @if (store.emConsulta()) {
           Nenhuma oferta no quadro.
         } @else {
-          Nenhuma oferta no quadro. Cada oferta participa de no máximo uma distribuição, por isso
-          as já adicionadas saem da lista.
+          Nenhuma oferta no quadro. Cada oferta participa de no máximo uma distribuição, por isso as
+          já adicionadas saem da lista.
         }
       </p>
     } @else {
       <sel-tabela-do-quadro class="table-responsive"></sel-tabela-do-quadro>
 
       @if (!store.emConsulta()) {
-      <div class="vagas-simulacao">
-        <button
-          class="btn btn--outline btn--sm"
-          type="button"
-          (click)="simulacao.simular()"
-          [disabled]="simulacao.simulando() || estado.distribuicoes().length === 0"
-        >
-          {{ simulacao.simulando() ? 'Simulando…' : 'Simular o quadro' }}
-        </button>
-        <span class="field__hint">
-          O servidor aplica a regra e devolve quantas vagas cada modalidade recebe — inclusive o que
-          sobra na ampla concorrência depois das reservas e das retiradas.
-        </span>
-      </div>
+        <div class="vagas-simulacao">
+          <button
+            class="btn btn--outline btn--sm"
+            type="button"
+            (click)="simulacao.simular()"
+            [disabled]="simulacao.simulando() || estado.distribuicoes().length === 0"
+          >
+            {{ simulacao.simulando() ? 'Simulando…' : 'Simular o quadro' }}
+          </button>
+          <span class="field__hint">
+            O servidor aplica a regra e devolve quantas vagas cada modalidade recebe — inclusive o
+            que sobra na ampla concorrência depois das reservas e das retiradas.
+          </span>
+        </div>
 
-      @if (estado.erroDaSimulacao(); as erro) {
-        <p class="field__erro" role="alert">{{ erro }}</p>
+        @if (estado.erroDaSimulacao(); as erro) {
+          <p class="field__erro" role="alert">{{ erro }}</p>
+        }
+
+        @if (conferencia.pendenciasDoQuadro().length > 0) {
+          <p class="field__erro" role="alert">
+            Falta preencher: {{ conferencia.pendenciasDoQuadro().join('; ') }}. Os campos pendentes
+            estão destacados no quadro.
+          </p>
+        }
       }
 
-      @if (conferencia.pendenciasDoQuadro().length > 0) {
-        <p class="field__erro" role="alert">
-          Falta preencher: {{ conferencia.pendenciasDoQuadro().join('; ') }}. Os campos pendentes estão
-          destacados no quadro.
-        </p>
-      }
-
-      }
-
-      @if (simulacao.ofertasComEstouro().length > 0) {
-        <sel-estouro-da-reserva class="alert alert--info vagas-estouro" role="status"></sel-estouro-da-reserva>
+      @if (simulacao.haConferencia()) {
+        <sel-conferencia-da-simulacao
+          class="alert alert--info vagas-conferencia"
+          role="status"
+        ></sel-conferencia-da-simulacao>
       }
 
       @if (!store.emConsulta()) {
@@ -234,9 +239,11 @@
       }
 
       @if (estado.ofertasForaDoPadrao().length > 0 && !store.emConsulta()) {
-        <sel-ofertas-fora-do-padrao class="alert alert--warning vagas-divergencia" role="status"></sel-ofertas-fora-do-padrao>
+        <sel-ofertas-fora-do-padrao
+          class="alert alert--warning vagas-divergencia"
+          role="status"
+        ></sel-ofertas-fora-do-padrao>
       }
-
     }
 
     <sel-cascata-remanejamento />

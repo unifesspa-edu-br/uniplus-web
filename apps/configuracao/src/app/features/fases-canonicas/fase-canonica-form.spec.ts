@@ -1,13 +1,15 @@
+import { FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   comandoDeAtualizacao,
   controleDoCampoDoServidor,
   criarFormularioDeFase,
   derivarMarcaDeIsencao,
+  sinalizadoresAdmitidos,
   valoresDaFase,
 } from './fase-canonica-form';
 
-const fase = {
+const fase: FaseCanonicaDto = {
   id: 'f1',
   codigo: 'AVALIACAO',
   nome: 'Avaliação',
@@ -15,12 +17,14 @@ const fase = {
   unidadeSugerida: null,
   agrupaEtapas: true,
   permiteComplementacao: true,
+  admiteAgruparEtapas: true,
+  admiteComplementacao: false,
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,
   origemData: 'NO_EDITAL',
   criadoEm: '',
-} as const;
+};
 
 describe('formulário de fase canônica', () => {
   it('preenche os opcionais em branco, valida e prepara a atualização sem o código', () => {
@@ -40,17 +44,57 @@ describe('formulário de fase canônica', () => {
     expect(comando).not.toHaveProperty('codigo');
   });
 
-  it('zera o que o código da fase não admite', () => {
+  it('devolve no comando os sinalizadores como foram lidos, sem consultar o código da fase', () => {
+    const homologacao = { ...fase, codigo: 'HOMOLOGACAO_INSCRICOES', agrupaEtapas: false };
     const form = criarFormularioDeFase();
-    form.reset(valoresDaFase({ ...fase, codigo: 'MATRICULA' }));
-    expect(comandoDeAtualizacao('f1', form)).toMatchObject({
-      agrupaEtapas: false,
-      permiteComplementacao: false,
-    });
-    form.reset(valoresDaFase({ ...fase, codigo: 'RECURSOS' }));
+    form.reset(valoresDaFase({ ...homologacao, permiteComplementacao: true }));
     expect(comandoDeAtualizacao('f1', form)).toMatchObject({
       agrupaEtapas: false,
       permiteComplementacao: true,
+    });
+
+    form.reset(valoresDaFase({ ...homologacao, permiteComplementacao: false }));
+    expect(comandoDeAtualizacao('f1', form)).toMatchObject({ permiteComplementacao: false });
+  });
+
+  it.each([
+    ['AVALIACAO', true, false],
+    ['MATRICULA', true, true],
+    ['RECURSOS', false, true],
+  ])(
+    'a fase %s lida com agrupa=%s e complementação=%s volta igual no comando',
+    (codigo, agrupaEtapas, permiteComplementacao) => {
+      const form = criarFormularioDeFase();
+      form.reset(valoresDaFase({ ...fase, codigo, agrupaEtapas, permiteComplementacao }));
+      expect(comandoDeAtualizacao('f1', form)).toMatchObject({
+        agrupaEtapas,
+        permiteComplementacao,
+      });
+    },
+  );
+
+  it.each([
+    [true, false],
+    [false, true],
+    [false, false],
+  ])(
+    'oferece agrupar etapas=%s e complementação=%s conforme o que a fase admite, qualquer que seja o código',
+    (admiteAgruparEtapas, admiteComplementacao) => {
+      expect(
+        sinalizadoresAdmitidos({
+          ...fase,
+          codigo: 'QUALQUER',
+          admiteAgruparEtapas,
+          admiteComplementacao,
+        }),
+      ).toEqual({ agrupaEtapas: admiteAgruparEtapas, permiteComplementacao: admiteComplementacao });
+    },
+  );
+
+  it('não oferece nenhum sinalizador sem fase em edição', () => {
+    expect(sinalizadoresAdmitidos(null)).toEqual({
+      agrupaEtapas: false,
+      permiteComplementacao: false,
     });
   });
 

@@ -1,26 +1,11 @@
-import { expect, test, type Page, type Route, type TestInfo } from '@playwright/test';
-import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
+import { expect, test, type Page } from '@playwright/test';
+import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
-import {
-  CURSOS_DA_MEDICINA,
-  MODALIDADES_DA_MEDICINA,
-  OFERTAS_DA_MEDICINA,
-  PROCESSO_DA_MEDICINA,
-  REFERENCIAS_DEMOGRAFICAS_DA_MEDICINA,
-  REGRAS_DE_AJUSTE_DA_MEDICINA,
-  REGRAS_DE_CASCATA_DA_MEDICINA,
-  REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
-} from '../fixtures/vagas-da-medicina';
 import { elementosForaDoCartao } from '../support/limites-do-cartao';
 import { blocosColados } from '../support/ritmo-vertical';
 import { medirTransbordoHorizontal } from '../support/rolagem-do-editor';
-import { irAoPasso, larguraDoProjeto } from '../support/navega-passo';
-import { instalarPreferencia, temaDoProject } from '../support/tema';
-import { responder, responderCom } from '../support/responder';
-import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
-
-type Status = 'rascunho' | 'publicado';
-type Catalogos = 'ok' | 'falha';
+import { abrirVagas } from '../support/api-das-vagas';
+import { larguraDoProjeto } from '../support/navega-passo';
 
 /** Abaixo desta largura os cartões aninhados perdem o recuo de cada nível. */
 const LARGURA_CARTAO_ANINHADO_ENXUTO = 480;
@@ -30,12 +15,6 @@ const LARGURA_CARTAO_ANINHADO_ENXUTO = 480;
  * em 375 px sobram pelo menos 260 px para o conteúdo do cartão mais interno.
  */
 const RECUO_MAXIMO_NA_TELA_ESTREITA = 115;
-
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, OPTIONS',
-  'access-control-allow-headers': 'authorization, accept',
-};
 
 /**
  * Matriz do Uni+ DS para o passo Vagas, com o quadro real do processo da Medicina 2027:
@@ -50,7 +29,7 @@ test.describe('Vagas — matriz DS @ds', () => {
   for (const status of ['rascunho', 'publicado'] as const) {
     test.describe(`processo em ${status}`, () => {
       test.beforeEach(async ({ page }, testInfo) => {
-        await abrirVagas(page, testInfo, status);
+        await abrirVagas(page, testInfo, { status });
       });
 
       /**
@@ -89,7 +68,7 @@ test.describe('Vagas — matriz DS @ds', () => {
    */
   test.describe('quadro e cascata', () => {
     test.beforeEach(async ({ page }, testInfo) => {
-      await abrirVagas(page, testInfo, 'publicado');
+      await abrirVagas(page, testInfo);
     });
 
     /**
@@ -172,7 +151,7 @@ test.describe('Vagas — matriz DS @ds', () => {
    */
   test.describe('consulta com o catálogo em falha', () => {
     test.beforeEach(async ({ page }, testInfo) => {
-      await abrirVagas(page, testInfo, 'publicado', 'falha');
+      await abrirVagas(page, testInfo, { catalogos: 'falha' });
     });
 
     test('lê o gravado e diz o que não leu, sem controle de edição', async ({ page }) => {
@@ -216,27 +195,6 @@ test.describe('Vagas — matriz DS @ds', () => {
   });
 });
 
-async function abrirVagas(
-  page: Page,
-  testInfo: TestInfo,
-  status: Status,
-  catalogos: Catalogos = 'ok',
-): Promise<void> {
-  await mockarApi(page, status, catalogos);
-  await instalarPreferencia(page, temaDoProject(testInfo.project.name));
-  await page.goto(`/processo-seletivo/${PROCESSO_DA_MEDICINA.id}`);
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-  await irAoPasso(page, 'Vagas', testInfo);
-  if (catalogos === 'falha') {
-    // Sem as regras do catálogo a matriz da cascata não se monta: o que há para ler é o padrão.
-    await expect(page.getByRole('heading', { name: 'Padrão desta distribuição' })).toBeVisible();
-    return;
-  }
-  await expect(page.getByRole('heading', { name: 'Cascata de remanejamento' })).toBeVisible();
-  await expect(page.locator('.cascata-matriz tbody tr')).toHaveCount(8);
-}
-
 async function abrirGarantias(page: Page): Promise<void> {
   await page.locator('.wiz-content details').evaluateAll((detalhes) => {
     for (const detalhe of detalhes) {
@@ -248,98 +206,4 @@ async function abrirGarantias(page: Page): Promise<void> {
 /** Falhar por id diz qual regra caiu; a coleção crua não. */
 function identificadoresDe(resultado: AxeResults): string[] {
   return resultado.violations.map((violacao) => violacao.id);
-}
-
-/**
- * O processo, os documentos do edital e os catálogos que o passo Vagas lê. Toda outra
- * consulta à API responde vazia: os outros passos também carregam catálogos ao abrir o
- * processo, e sem a API no CI eles falhariam por conexão recusada.
- *
- * A rota genérica é registrada primeiro porque o Playwright consulta as rotas da mais
- * recente para a mais antiga.
- */
-async function mockarApi(page: Page, status: Status, catalogos: Catalogos): Promise<void> {
-  await responder(page, /\/api\//, [], CORS_HEADERS);
-  await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
-  await responder(
-    page,
-    /\/api\/configuracao\/ofertas-curso(\?.*)?$/,
-    OFERTAS_DA_MEDICINA,
-    CORS_HEADERS,
-  );
-  await responder(page, /\/api\/configuracao\/cursos(\?.*)?$/, CURSOS_DA_MEDICINA, CORS_HEADERS);
-  await responder(
-    page,
-    /\/api\/configuracao\/modalidades(\?.*)?$/,
-    MODALIDADES_DA_MEDICINA,
-    CORS_HEADERS,
-  );
-  await responder(
-    page,
-    /\/api\/configuracao\/referencias-reserva-demografica(\?.*)?$/,
-    REFERENCIAS_DEMOGRAFICAS_DA_MEDICINA,
-    CORS_HEADERS,
-  );
-  await mockarRegrasCatalogo(page);
-  if (catalogos === 'falha') await falharCatalogos(page);
-
-  const processo = new RegExp(`/api/selecao/processos-seletivos/${PROCESSO_DA_MEDICINA.id}`);
-  await page.route(processo, async (route: Route) => {
-    const request = route.request();
-    if (request.method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-
-    const caminho = new URL(request.url()).pathname;
-    if (caminho.endsWith(PROCESSO_DA_MEDICINA.id)) {
-      await responderCom(route, { ...PROCESSO_DA_MEDICINA, status }, CORS_HEADERS);
-      return;
-    }
-    if (caminho.endsWith('/documentos-a-publicar')) {
-      await responderCom(route, [], CORS_HEADERS);
-      return;
-    }
-    await route.fulfill({ status: 404, headers: CORS_HEADERS });
-  });
-}
-
-/**
- * `regras-catalogo` é filtrado por `tipo`: devolver a mesma lista para qualquer tipo
- * mascararia um filtro quebrado.
- */
-async function mockarRegrasCatalogo(page: Page): Promise<void> {
-  const porTipo: Record<string, readonly unknown[]> = {
-    regra_distribuicao_vagas: REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
-    regra_ajuste_distribuicao_vagas: REGRAS_DE_AJUSTE_DA_MEDICINA,
-    criterio_remanejamento: REGRAS_DE_CASCATA_DA_MEDICINA,
-  };
-
-  await page.route(/\/api\/selecao\/regras-catalogo(\?.*)?$/, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-
-    const tipo = new URL(route.request().url()).searchParams.get('tipo') ?? '';
-    await responderCom(route, porTipo[tipo] ?? [], CORS_HEADERS);
-  });
-}
-
-/** Registrada depois das rotas dos catálogos, porque o Playwright consulta da mais recente. */
-async function falharCatalogos(page: Page): Promise<void> {
-  const catalogos =
-    /\/api\/(configuracao\/(ofertas-curso|cursos|modalidades|referencias-reserva-demografica)|selecao\/regras-catalogo)(\/.*|\?.*)?$/;
-  await page.route(catalogos, async (route: Route) => {
-    if (route.request().method() === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    await route.fulfill({
-      status: 503,
-      headers: CORS_HEADERS,
-      contentType: 'application/json',
-      body: '{}',
-    });
-  });
 }

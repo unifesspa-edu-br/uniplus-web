@@ -25,7 +25,7 @@ const acSeed = {
   legalFixa: true,
   descricao: 'Ampla concorrência',
   naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESIDUAL_DO_VO',
+  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
   composicaoOrigem: null,
   regraRemanejamento: null,
   remanejamentoDestino: null,
@@ -45,7 +45,7 @@ const vSeed = {
   legalFixa: false,
   descricao: 'PcD ampla concorrência',
   naturezaLegal: 'ACAO_AFIRMATIVA',
-  composicaoVagas: 'RETIRA_DE',
+  composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
   composicaoOrigem: 'AC',
   regraRemanejamento: 'DESTINO_UNICO',
   remanejamentoDestino: 'AC',
@@ -146,12 +146,16 @@ async function mockApi(
   });
   await page.route(/\/api\/configuracao\/modalidades(\?.*)?$/, (route) => jsonRoute(route, lista));
   // O catálogo de fatos com que a regra de aplicabilidade se lê e se escreve.
-  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) => jsonRoute(route, catalogoDeFatos));
+  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (route) =>
+    jsonRoute(route, catalogoDeFatos),
+  );
 }
 
 async function abrirLista(page: Page): Promise<void> {
   await page.goto('/modalidades');
-  await expect(page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1 })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1 }),
+  ).toBeVisible();
 }
 
 test.describe('Modalidade de concorrência — CRUD (#390)', () => {
@@ -181,20 +185,22 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(page.locator('tbody')).toContainText('PcD ampla concorrência');
   });
 
-  test('CA-02: "Nova modalidade" navega para a tela dedicada com foco no título', async ({ page }) => {
+  test('CA-02: "Nova modalidade" navega para a tela dedicada com foco no título', async ({
+    page,
+  }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('link', { name: 'Nova modalidade', exact: true, }).first().click();
+    await page.getByRole('link', { name: 'Nova modalidade', exact: true }).first().click();
     await expect(page).toHaveURL(/\/modalidades\/novo$/);
-    const titulo = page.getByRole('heading', { name: 'Nova modalidade', level: 1, exact: true, });
+    const titulo = page.getByRole('heading', { name: 'Nova modalidade', level: 1, exact: true });
     await expect(titulo).toBeVisible();
     await expect(titulo).toBeFocused();
 
-    await page.getByRole('link', { name: 'Voltar à lista', exact: true, }).click();
+    await page.getByRole('link', { name: 'Voltar à lista', exact: true }).click();
     await expect(page).toHaveURL(/\/modalidades$/);
     await expect(
-      page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1, exact: true, }),
+      page.getByRole('heading', { name: 'Modalidade de concorrência', level: 1, exact: true }),
     ).toBeVisible();
   });
 
@@ -207,7 +213,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     // de lá volta a sublinhar a ação sem que nada acuse: lint, teste unitário
     // e build não avaliam estilo computado.
     await expect(
-      page.getByRole('link', { name: 'Nova modalidade', exact: true, }).first(),
+      page.getByRole('link', { name: 'Nova modalidade', exact: true }).first(),
     ).toHaveCSS('text-decoration-line', 'none');
   });
 
@@ -231,15 +237,22 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
 
     await natureza.selectOption('ACAO_AFIRMATIVA');
     await expect(regra.locator('option[value="SEGUE_CASCATA"]')).toHaveJSProperty('disabled', true);
-    await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty('disabled', false);
+    await expect(regra.locator('option[value="DESTINO_UNICO"]')).toHaveJSProperty(
+      'disabled',
+      false,
+    );
     await expect(regra.locator('option[value="CRUZADO"]')).toHaveJSProperty('disabled', false);
   });
 
-  test('CA-04: RETIRA_DE exige Origem; CRUZADO exige Par e Fallback', async ({ page }) => {
+  test('CA-04: RETIRADA_DE_OUTRA_MODALIDADE exige Origem; CRUZADO exige Par e Fallback', async ({
+    page,
+  }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await page.goto('/modalidades/novo');
 
-    await page.locator('[formControlName="composicaoVagas"]').selectOption('RETIRA_DE');
+    await page
+      .locator('[formControlName="composicaoVagas"]')
+      .selectOption('RETIRADA_DE_OUTRA_MODALIDADE');
     await expect(page.locator('[formControlName="composicaoOrigem"]')).toBeVisible();
 
     await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
@@ -249,25 +262,29 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(page.locator('[formControlName="remanejamentoDestino"]')).toBeHidden();
   });
 
-  test('CA-02 / CA-04: cria modalidade ACAO_AFIRMATIVA RETIRA_DE + DESTINO_UNICO', async ({ page }) => {
+  test('CA-02 / CA-04: cria modalidade ACAO_AFIRMATIVA RETIRADA_DE_OUTRA_MODALIDADE + DESTINO_UNICO', async ({
+    page,
+  }) => {
     const capturado = novoCapturado();
     await mockApi(page, capturado, [acSeed, vSeed]);
     await page.goto('/modalidades/novo');
 
     await page.locator('[formControlName="codigo"]').fill('LI_PPI');
     await page.locator('[formControlName="descricao"]').fill('Cota PPI independente de renda');
-    await page.locator('[formControlName="composicaoVagas"]').selectOption('RETIRA_DE');
+    await page
+      .locator('[formControlName="composicaoVagas"]')
+      .selectOption('RETIRADA_DE_OUTRA_MODALIDADE');
     await page.locator('[formControlName="composicaoOrigem"]').selectOption('AC');
     await page.locator('[formControlName="naturezaLegal"]').selectOption('ACAO_AFIRMATIVA');
     await page.locator('[formControlName="regraRemanejamento"]').selectOption('DESTINO_UNICO');
     await page.locator('[formControlName="remanejamentoDestino"]').selectOption('AC');
-    await page.getByRole('button', { name: 'Criar modalidade', exact: true, }).click();
+    await page.getByRole('button', { name: 'Criar modalidade', exact: true }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'LI_PPI',
       naturezaLegal: 'ACAO_AFIRMATIVA',
-      composicaoVagas: 'RETIRA_DE',
+      composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
       composicaoOrigem: 'AC',
       regraRemanejamento: 'DESTINO_UNICO',
       remanejamentoDestino: 'AC',
@@ -289,7 +306,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true, }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
     await expect(dialog.getByText('Remoção bloqueada')).toBeVisible();
@@ -297,7 +314,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await expect(dialog.locator('.cfg-refs-lista').getByText('V', { exact: true })).toBeVisible();
     // Não deve haver botão de confirmação de remoção.
     await expect(dialog.getByRole('button', { name: 'Remover', exact: true })).toHaveCount(0);
-    await dialog.getByRole('button', { name: 'Entendi', exact: true, }).click();
+    await dialog.getByRole('button', { name: 'Entendi', exact: true }).click();
     expect(capturado.deletedIds).toHaveLength(0);
   });
 
@@ -306,7 +323,7 @@ test.describe('Modalidade de concorrência — CRUD (#390)', () => {
     await mockApi(page, capturado, [acSeed, vSeed]);
     await abrirLista(page);
 
-    await page.getByRole('button', { name: 'Remover modalidade V', exact: true, }).click();
+    await page.getByRole('button', { name: 'Remover modalidade V', exact: true }).click();
 
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
@@ -338,7 +355,7 @@ test.describe('Modalidade — acessibilidade axe-core (#390)', () => {
   test('modal de bloqueio aberto não tem violações serious/critical', async ({ page }) => {
     await mockApi(page, novoCapturado(), [acSeed, vSeed]);
     await abrirLista(page);
-    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true, }).click();
+    await page.getByRole('button', { name: 'Remover modalidade AC', exact: true }).click();
     await expect(page.locator('dialog.uni-dialog')).toBeVisible();
     await assertSemViolacoesGraves(page);
   });

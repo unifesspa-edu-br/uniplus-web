@@ -12,7 +12,11 @@
       <span class="alert__icon" aria-hidden="true">!</span>
       <div class="alert__body">
         <p class="alert__title">
-          {{ recusa().length > 0 ? 'Não foi possível publicar o documento' : 'Falta completar o documento' }}
+          {{
+            recusa().length > 0
+              ? 'Não foi possível publicar o documento'
+              : 'Falta completar o documento'
+          }}
         </p>
         <ul class="pub__mensagens u-list">
           @for (mensagem of recusa().length > 0 ? recusa() : impedimentos(); track $index) {
@@ -91,7 +95,9 @@
             autocomplete="off"
             formControlName="numero"
             [attr.aria-invalid]="erroDoCampo('numero') ? 'true' : null"
-            [attr.aria-describedby]="erroDoCampo('numero') ? 'pub-numero-dica pub-numero-erro' : 'pub-numero-dica'"
+            [attr.aria-describedby]="
+              erroDoCampo('numero') ? 'pub-numero-dica pub-numero-erro' : 'pub-numero-dica'
+            "
           />
           <span class="field__hint" id="pub-numero-dica">
             O número que consta no documento, se ele tiver um. Por exemplo: 03/2026.
@@ -102,7 +108,7 @@
         </div>
 
         <div class="field" [class.is-error]="erroDoCampo('dataDoAto')">
-          <label class="field__label is-required" for="pub-data">Data do documento</label>
+          <label class="field__label is-required" for="pub-data">Data do ato</label>
           <input
             id="pub-data"
             class="input"
@@ -140,14 +146,18 @@
         <div class="form-grid form-grid--1col">
           @if (escolheOAtoCorrigido()) {
             <div class="field" [class.is-error]="erroDoCampo('atoCorrigidoId')">
-              <label class="field__label is-required" for="pub-corrigido">Documento corrigido</label>
+              <label class="field__label is-required" for="pub-corrigido"
+                >Documento corrigido</label
+              >
               <select
                 id="pub-corrigido"
                 class="select"
                 formControlName="atoCorrigidoId"
                 [attr.aria-invalid]="erroDoCampo('atoCorrigidoId') ? 'true' : null"
                 [attr.aria-describedby]="
-                  erroDoCampo('atoCorrigidoId') ? 'pub-corrigido-dica pub-corrigido-erro' : 'pub-corrigido-dica'
+                  erroDoCampo('atoCorrigidoId')
+                    ? 'pub-corrigido-dica pub-corrigido-erro'
+                    : 'pub-corrigido-dica'
                 "
               >
                 <option value="" disabled>Selecione o documento</option>
@@ -212,13 +222,18 @@
 
     @if (politica(); as politicaDoCertame) {
       <section aria-labelledby="pub-politica-titulo">
-        <h3 id="pub-politica-titulo" class="form-section__title">Política de divulgação do certame</h3>
+        <h3 id="pub-politica-titulo" class="form-section__title">
+          Política de divulgação do certame
+        </h3>
         <p class="field__hint" id="pub-politica-dica">
           Este documento é um resultado. O edital vigente permite que ele mostre apenas os dados dos
           candidatos listados abaixo. O sistema não lê o conteúdo do PDF: a conferência é de quem
           publica.
         </p>
-        <ul class="pub__campos u-list" aria-label="Dados dos candidatos que o documento pode mostrar">
+        <ul
+          class="pub__campos u-list"
+          aria-label="Dados dos candidatos que o documento pode mostrar"
+        >
           @for (campo of politicaDoCertame.campos; track campo) {
             <li>{{ campo }}</li>
           }
@@ -251,7 +266,12 @@
   </form>
 
   <div class="form-drawer__footer">
-    <button type="button" class="btn btn--tertiary btn--rect" [disabled]="publicando()" (click)="fechar()">
+    <button
+      type="button"
+      class="btn btn--tertiary btn--rect"
+      [disabled]="publicando()"
+      (click)="fechar()"
+    >
       Cancelar
     </button>
     <button type="submit" form="pub-form" class="btn btn--primary" [disabled]="publicando()">

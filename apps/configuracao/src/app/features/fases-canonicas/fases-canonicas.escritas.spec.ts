@@ -1,176 +1,93 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ApplicationRef } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
-import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { EdicaoDasFasesCanonicas } from './edicao-das-fases-canonicas';
-import { FasesCanonicasPage } from './fases-canonicas.page';
-import { FasesCanonicasStore } from './fases-canonicas.store';
-
-const BASE = 'http://localhost:5000';
-const LISTA = `${BASE}/api/configuracao/fases-canonicas`;
-const ESCRITA = `${BASE}/api/configuracao/admin/fases-canonicas/f1`;
-const fase: FaseCanonicaDto = {
-  id: 'f1',
-  codigo: 'AVALIACAO',
-  nome: 'Avaliação',
-  descricao: null,
-  unidadeSugerida: null,
-  agrupaEtapas: true,
-  permiteComplementacao: false,
-  baseLegal: null,
-  coletaInscricao: false,
-  coletaSolicitacaoIsencao: false,
-  origemData: 'NO_EDITAL',
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+import {
+  ESCRITA,
+  abrirEdicao,
+  botaoPorTexto,
+  botaoSalvar,
+  concluirRecarga,
+  elemento,
+  falhaDoServidor,
+  fase,
+  montarPaginaComFase,
+  problema,
+  propagarRenderizando,
+  recusaDeNome,
+  statusDaPagina,
+} from './fases-canonicas.escritas.testing';
+import { CenaDaPagina, URL_DA_LISTA } from './fases-canonicas.testing';
 
 describe('FasesCanonicasPage — escritas pela interface', () => {
-  let fixture: ComponentFixture<FasesCanonicasPage>;
-  let edicao: EdicaoDasFasesCanonicas;
-  let store: FasesCanonicasStore;
-  let controller: HttpTestingController;
-  let appRef: ApplicationRef;
+  let cena: CenaDaPagina;
 
   beforeEach(async () => {
-    TestBed.configureTestingModule({
-      imports: [FasesCanonicasPage],
-      providers: [
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        provideRouter([]),
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-      ],
-    });
-    fixture = TestBed.createComponent(FasesCanonicasPage);
-    edicao = fixture.debugElement.injector.get(EdicaoDasFasesCanonicas);
-    store = fixture.debugElement.injector.get(FasesCanonicasStore);
-    controller = TestBed.inject(HttpTestingController);
-    appRef = TestBed.inject(ApplicationRef);
-    fixture.detectChanges();
-    controller.expectOne((r) => r.url === LISTA).flush([fase]);
-    controller
-      .match((r) => r.url === `${BASE}/api/organizacao/unidades`)
-      .forEach((r) => r.flush([]));
-    await propagar();
+    cena = await montarPaginaComFase();
   });
-  afterEach(() => controller.verify());
 
-  async function propagar(): Promise<void> {
-    await Promise.resolve();
-    appRef.tick();
-    fixture.detectChanges();
-  }
-  function elemento<T extends HTMLElement>(seletor: string): T {
-    const encontrado = fixture.nativeElement.querySelector(seletor) as T | null;
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as T;
-  }
-  async function abrir(): Promise<void> {
-    elemento<HTMLButtonElement>('button[aria-label="Editar fase canônica AVALIACAO"]').click();
-    await propagar();
-  }
-  async function remover(): Promise<void> {
-    elemento<HTMLButtonElement>('button[aria-label="Remover fase canônica AVALIACAO"]').click();
-    await propagar();
-    elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-    await propagar();
-  }
-  async function concluirRecarga(): Promise<void> {
-    await propagar();
-    controller.expectOne((r) => r.url === LISTA).flush([fase]);
-    await propagar();
-  }
-  const salvar = (): HTMLButtonElement => elemento('button[form="cfg-fase-canonica-form"]');
-  const statusDaPagina = (): string =>
-    elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
-  const botaoPorTexto = (texto: string): HTMLButtonElement | undefined =>
-    [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (botao) => botao.textContent?.trim() === texto,
-    );
-  const problema = (status: number, corpo: object) =>
-    [
-      JSON.stringify({ type: 'about:blank', title: 'Falha', status, ...corpo }),
-      {
-        status,
-        statusText: 'Erro',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    ] as const;
-  const recusaDeNome = () =>
-    problema(422, {
-      code: 'uniplus.validacao',
-      errors: [
-        {
-          field: 'Nome',
-          code: 'uniplus.configuracao.fase_canonica.invalido',
-          message: 'Nome recusado.',
-        },
-      ],
-    });
-  const falhaDoServidor = () => problema(500, { code: 'uniplus.erro' });
+  afterEach(() => cena.controller.verify());
 
   it('identifica os campos obrigatórios para tecnologias assistivas', async () => {
-    await abrir();
+    await abrirEdicao(cena);
     for (const campo of ['codigo', 'nome', 'origemData']) {
-      expect(elemento(`[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe('true');
+      expect(elemento(cena, `[formcontrolname="${campo}"]`).getAttribute('aria-required')).toBe(
+        'true',
+      );
     }
   });
 
   it('envio mantém valores e foco, desabilita fieldset e impede fechar', async () => {
-    await abrir();
-    edicao.form.controls.descricao.disable();
-    salvar().focus();
-    salvar().click();
-    const requisicao = controller.expectOne(ESCRITA);
-    await propagar();
-    expect(elemento<HTMLFieldSetElement>('.form-drawer__campos').disabled).toBe(true);
-    expect(elemento<HTMLInputElement>('input[formcontrolname="nome"]').value).toBe('Avaliação');
-    expect(edicao.form.controls.nome.enabled).toBe(true);
-    expect(salvar().getAttribute('aria-disabled')).toBe('true');
-    expect(salvar().getAttribute('aria-busy')).toBe('true');
-    expect(salvar().textContent).toContain('Salvando...');
-    expect(document.activeElement).toBe(salvar());
-    expect(elemento<HTMLButtonElement>('.form-drawer__footer button').disabled).toBe(true);
-    const dialogo = elemento<HTMLDialogElement>('dialog[aria-label="Formulário de fase canônica"]');
+    await abrirEdicao(cena);
+    cena.edicao.form.controls.descricao.disable();
+    botaoSalvar(cena).focus();
+    botaoSalvar(cena).click();
+    const requisicao = cena.controller.expectOne(ESCRITA);
+    await propagarRenderizando(cena);
+    expect(elemento<HTMLFieldSetElement>(cena, '.form-drawer__campos').disabled).toBe(true);
+    expect(elemento<HTMLInputElement>(cena, 'input[formcontrolname="nome"]').value).toBe(
+      'Avaliação',
+    );
+    expect(cena.edicao.form.controls.nome.enabled).toBe(true);
+    expect(botaoSalvar(cena).getAttribute('aria-disabled')).toBe('true');
+    expect(botaoSalvar(cena).getAttribute('aria-busy')).toBe('true');
+    expect(botaoSalvar(cena).textContent).toContain('Salvando...');
+    expect(document.activeElement).toBe(botaoSalvar(cena));
+    expect(elemento<HTMLButtonElement>(cena, '.form-drawer__footer button').disabled).toBe(true);
+    const dialogo = elemento<HTMLDialogElement>(
+      cena,
+      'dialog[aria-label="Formulário de fase canônica"]',
+    );
     expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
       true,
     );
     dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
-    await propagar();
-    expect(edicao.aberto()).toBe(true);
+    await propagarRenderizando(cena);
+    expect(cena.edicao.aberto()).toBe(true);
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-    expect(edicao.aberto()).toBe(false);
-    expect(elemento('[formcontrolname="descricao"]').matches(':disabled')).toBe(true);
+    await concluirRecarga(cena);
+    expect(cena.edicao.aberto()).toBe(false);
+    expect(elemento(cena, '[formcontrolname="descricao"]').matches(':disabled')).toBe(true);
   });
 
   it('clique e submit durante envio recusam nova ativação', async () => {
-    await abrir();
-    const chamada = vi.spyOn(edicao, 'salvar');
-    salvar().click();
-    const requisicao = controller.expectOne(ESCRITA);
-    await propagar();
-    salvar().click();
-    elemento<HTMLFormElement>('#cfg-fase-canonica-form').dispatchEvent(
+    await abrirEdicao(cena);
+    const chamada = vi.spyOn(cena.edicao, 'salvar');
+    botaoSalvar(cena).click();
+    const requisicao = cena.controller.expectOne(ESCRITA);
+    await propagarRenderizando(cena);
+    botaoSalvar(cena).click();
+    elemento<HTMLFormElement>(cena, '#cfg-fase-canonica-form').dispatchEvent(
       new Event('submit', { cancelable: true }),
     );
     expect(chamada).toHaveBeenCalledTimes(1);
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
+    await concluirRecarga(cena);
   });
 
   it('recusa no campo devolve foco ao campo e preserva controles desabilitados', async () => {
-    await abrir();
-    edicao.form.controls.descricao.disable();
-    salvar().click();
-    await propagar();
-    controller.expectOne(ESCRITA).flush(
+    await abrirEdicao(cena);
+    cena.edicao.form.controls.descricao.disable();
+    botaoSalvar(cena).click();
+    await propagarRenderizando(cena);
+    cena.controller.expectOne(ESCRITA).flush(
       JSON.stringify({
         type: 'about:blank',
         title: 'Dados inválidos',
@@ -191,122 +108,76 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
         headers: { 'content-type': 'application/problem+json' },
       },
     );
-    await propagar();
-    await propagar();
-    expect(elemento('input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe('true');
-    expect(document.activeElement).toBe(elemento('input[formcontrolname="nome"]'));
-    expect(elemento('[formcontrolname="descricao"]').matches(':disabled')).toBe(true);
-  });
-
-  it('remoção anuncia estado e recusa edição e remoção concorrentes', async () => {
-    await remover();
-    const requisicao = controller.expectOne(ESCRITA);
-    expect(requisicao.request.method).toBe('DELETE');
-    expect(edicao.gravando()).toBe(true);
-    expect(edicao.salvando()).toBe(false);
-    expect(elemento<HTMLFieldSetElement>('.form-drawer__campos').disabled).toBe(false);
-    expect(salvar().textContent).toContain('Salvar fase canônica');
-    expect(elemento('td[data-label="Código"]').textContent).toContain('Removendo...');
-    const dialogo = elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
-    expect(dialogo.querySelector<HTMLButtonElement>('button[aria-label="Fechar"]')?.disabled).toBe(
-      true,
+    await propagarRenderizando(cena);
+    await propagarRenderizando(cena);
+    expect(elemento(cena, 'input[formcontrolname="nome"]').getAttribute('aria-invalid')).toBe(
+      'true',
     );
-    dialogo.dispatchEvent(new Event('cancel', { cancelable: true }));
-    await propagar();
-    expect(edicao.confirmando()).toBe(true);
-    expect(elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-      'Removendo a fase AVALIACAO.',
-    );
-    const editar = elemento<HTMLButtonElement>(
-      'button[aria-label="Editar fase canônica AVALIACAO"]',
-    );
-    expect(editar.disabled).toBe(true);
-    editar.click();
-    edicao.abrirEdicao(fase);
-    edicao.salvar();
-    edicao.removerConfirmado();
-    expect(edicao.aberto()).toBe(false);
-    controller.expectNone(ESCRITA);
-    requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-    expect(elemento('span.sr-only[role="status"]').textContent).toContain(
-      'Fase AVALIACAO removida.',
-    );
+    expect(document.activeElement).toBe(elemento(cena, 'input[formcontrolname="nome"]'));
+    expect(elemento(cena, '[formcontrolname="descricao"]').matches(':disabled')).toBe(true);
   });
 
   it('salvamento bloqueia escritas concorrentes e mantém a trava durante recarga', async () => {
-    await abrir();
-    edicao.salvar();
-    edicao.salvar();
-    edicao.pedirRemocao(fase);
-    edicao.removerConfirmado();
-    const requisicao = controller.expectOne(ESCRITA);
+    await abrirEdicao(cena);
+    cena.edicao.salvar();
+    cena.edicao.salvar();
+    cena.edicao.pedirRemocao(fase);
+    cena.edicao.removerConfirmado();
+    const requisicao = cena.controller.expectOne(ESCRITA);
     expect(requisicao.request.method).toBe('PUT');
     requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    const recarga = controller.expectOne((r) => r.url === LISTA);
-    expect(edicao.gravando()).toBe(true);
-    expect(edicao.salvando()).toBe(false);
-    edicao.abrirEdicao(fase);
-    edicao.pedirRemocao(fase);
-    edicao.salvar();
-    edicao.removerConfirmado();
-    controller.expectNone(ESCRITA);
+    await propagarRenderizando(cena);
+    const recarga = cena.controller.expectOne((r) => r.url === URL_DA_LISTA);
+    expect(cena.edicao.gravando()).toBe(true);
+    expect(cena.edicao.salvando()).toBe(false);
+    cena.edicao.abrirEdicao(fase);
+    cena.edicao.pedirRemocao(fase);
+    cena.edicao.salvar();
+    cena.edicao.removerConfirmado();
+    cena.controller.expectNone(ESCRITA);
     recarga.flush([fase]);
-    await propagar();
-    expect(edicao.gravando()).toBe(false);
-  });
-
-  it('mantém o rótulo da escrita na linha enquanto a lista recarrega', async () => {
-    await remover();
-    controller.expectOne(ESCRITA).flush(null, { status: 204, statusText: 'No Content' });
-    await propagar();
-    const recarga = controller.expectOne((r) => r.url === LISTA);
-    expect(elemento('td[data-label="Código"]').textContent).toContain('Removendo...');
-    expect(elemento('td[data-label="Código"]').textContent).not.toContain('Salvando');
-    recarga.flush([fase]);
-    await propagar();
-    expect(elemento('td[data-label="Código"]').textContent).not.toContain('...');
+    await propagarRenderizando(cena);
+    expect(cena.edicao.gravando()).toBe(false);
   });
 
   it('não repete na página a recusa do formulário depois de Cancelar', async () => {
-    await abrir();
-    salvar().click();
-    controller.expectOne(ESCRITA).flush(...recusaDeNome());
-    await propagar();
-    expect(elemento('ui-drawer [role="status"]').textContent).toContain(
+    await abrirEdicao(cena);
+    botaoSalvar(cena).click();
+    cena.controller.expectOne(ESCRITA).flush(...recusaDeNome());
+    await propagarRenderizando(cena);
+    expect(elemento(cena, 'ui-drawer [role="status"]').textContent).toContain(
       'Revise os campos indicados.',
     );
-    elemento<HTMLButtonElement>('.form-drawer__footer button').click();
-    await propagar();
-    expect(edicao.aberto()).toBe(false);
-    expect(statusDaPagina()).toBe('');
-    await abrir();
-    expect(elemento('ui-drawer [role="status"]').textContent?.trim()).toBe('');
+    elemento<HTMLButtonElement>(cena, '.form-drawer__footer button').click();
+    await propagarRenderizando(cena);
+    expect(cena.edicao.aberto()).toBe(false);
+    expect(statusDaPagina(cena)).toBe('');
+    await abrirEdicao(cena);
+    expect(elemento(cena, 'ui-drawer [role="status"]').textContent?.trim()).toBe('');
   });
 
   it('falha geral do salvamento é anunciada só pelo alerta, não pela região de status', async () => {
-    await abrir();
-    salvar().click();
-    controller.expectOne(ESCRITA).flush(...falhaDoServidor());
-    await propagar();
-    expect(elemento('ui-drawer ui-alert').textContent).toContain('Falha');
-    expect(elemento('ui-drawer [role="status"]').textContent?.trim()).toBe('');
+    await abrirEdicao(cena);
+    botaoSalvar(cena).click();
+    cena.controller.expectOne(ESCRITA).flush(...falhaDoServidor());
+    await propagarRenderizando(cena);
+    expect(elemento(cena, 'ui-drawer ui-alert').textContent).toContain('Falha');
+    expect(elemento(cena, 'ui-drawer [role="status"]').textContent?.trim()).toBe('');
   });
 
   describe('chave de idempotência após recusa do servidor', () => {
     async function chavesDoEnvioRecusado(status: number, corpo: object): Promise<[string, string]> {
-      await abrir();
-      salvar().click();
-      const primeira = controller.expectOne(ESCRITA);
+      await abrirEdicao(cena);
+      botaoSalvar(cena).click();
+      const primeira = cena.controller.expectOne(ESCRITA);
       const chaveEnviada = primeira.request.headers.get('Idempotency-Key') as string;
       primeira.flush(...problema(status, corpo));
-      await propagar();
-      salvar().click();
-      const segunda = controller.expectOne(ESCRITA);
+      await propagarRenderizando(cena);
+      botaoSalvar(cena).click();
+      const segunda = cena.controller.expectOne(ESCRITA);
       const chaveReenviada = segunda.request.headers.get('Idempotency-Key') as string;
       segunda.flush(...falhaDoServidor());
-      await propagar();
+      await propagarRenderizando(cena);
       return [chaveEnviada, chaveReenviada];
     }
 
@@ -331,146 +202,57 @@ describe('FasesCanonicasPage — escritas pela interface', () => {
     });
   });
 
-  it('não repete na página a falha da remoção depois de Cancelar', async () => {
-    await remover();
-    controller.expectOne(ESCRITA).flush(...falhaDoServidor());
-    await propagar();
-    const dialogo = elemento('cfg-confirmacao-de-remocao dialog');
-    expect(dialogo.querySelector('[role="status"]')?.textContent).toContain(
-      'Não foi possível remover a fase AVALIACAO.',
-    );
-    expect(edicao.confirmando()).toBe(true);
-    const cancelar = [...dialogo.querySelectorAll('button')].find(
-      (botao) => botao.textContent?.trim() === 'Cancelar',
-    );
-    cancelar?.click();
-    await propagar();
-    expect(edicao.confirmando()).toBe(false);
-    expect(statusDaPagina()).toBe('');
-  });
-
-  it('abrir a edição apaga o desfecho anterior da página', async () => {
-    await remover();
-    controller.expectOne(ESCRITA).flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-    expect(statusDaPagina()).toContain('Fase AVALIACAO removida.');
-    await abrir();
-    elemento<HTMLButtonElement>('.form-drawer__footer button').click();
-    await propagar();
-    expect(statusDaPagina()).toBe('');
-  });
-
-  it('fecha o diálogo de remoção quando o navegador o fecha', async () => {
-    elemento<HTMLButtonElement>('button[aria-label="Remover fase canônica AVALIACAO"]').click();
-    await propagar();
-    const dialogo = elemento<HTMLDialogElement>('cfg-confirmacao-de-remocao dialog');
-    dialogo.dispatchEvent(new Event('close'));
-    await propagar();
-    expect(edicao.confirmando()).toBe(false);
-  });
-
-  it('a remoção pendente não deixa uma escrita concorrente tomar o andamento', async () => {
-    edicao.pedirRemocao(fase);
-    edicao.confirmando.set(false);
-    edicao.abrirEdicao(fase);
-    edicao.salvar();
-    const salvamento = controller.expectOne(ESCRITA);
-    expect(edicao.andamento()).toEqual({ id: 'f1', rotulo: 'Salvando...' });
-    edicao.removerConfirmado();
-    controller.expectNone(ESCRITA);
-    expect(edicao.andamento()).toEqual({ id: 'f1', rotulo: 'Salvando...' });
-    expect(edicao.anuncioDaRemocao()).toBe('');
-    expect(edicao.anuncioDoSalvamento()).toBe('Salvando fase canônica.');
-    salvamento.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-  });
-
-  it('clicar em Remover durante a remoção é recusado e não dispara outra requisição', async () => {
-    await remover();
-    const requisicao = controller.expectOne(ESCRITA);
-    const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
-    elemento('[data-testid="confirm-dialog-confirm"]').dispatchEvent(clique);
-    await propagar();
-    expect(clique.defaultPrevented).toBe(true);
-    controller.expectNone(ESCRITA);
-    requisicao.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-  });
-
-  it('nova tentativa de remoção apaga a falha anterior', async () => {
-    await remover();
-    controller.expectOne(ESCRITA).flush(...falhaDoServidor());
-    await propagar();
-    expect(edicao.erroRemocao()).not.toBeNull();
-    edicao.removerConfirmado();
-    expect(edicao.erroRemocao()).toBeNull();
-    controller.expectOne(ESCRITA).flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-  });
-
-  it('deixa indisponível "Tentar novamente" enquanto a remoção pende e a listagem falha', async () => {
-    await remover();
-    const remocao = controller.expectOne(ESCRITA);
-    store.recarregar();
-    await propagar();
-    controller.expectOne((r) => r.url === LISTA).flush(...falhaDoServidor());
-    await propagar();
-    expect(botaoPorTexto('Tentar novamente')?.getAttribute('aria-disabled')).toBe('true');
-    remocao.flush(null, { status: 204, statusText: 'No Content' });
-    await concluirRecarga();
-  });
-
   describe('foco do envio e da nova tentativa', () => {
-    const campoNome = (): HTMLInputElement => elemento('input[formcontrolname="nome"]');
+    const campoNome = (): HTMLInputElement => elemento(cena, 'input[formcontrolname="nome"]');
     const submeter = (): void => {
-      elemento<HTMLFormElement>('#cfg-fase-canonica-form').dispatchEvent(
+      elemento<HTMLFormElement>(cena, '#cfg-fase-canonica-form').dispatchEvent(
         new Event('submit', { cancelable: true }),
       );
     };
 
     it('Enter num campo leva o foco ao botão de salvar e a falha do servidor o mantém ali', async () => {
-      await abrir();
+      await abrirEdicao(cena);
       campoNome().focus();
       submeter();
-      await propagar();
+      await propagarRenderizando(cena);
       expect(campoNome().matches(':disabled')).toBe(true);
-      expect(document.activeElement).toBe(salvar());
+      expect(document.activeElement).toBe(botaoSalvar(cena));
 
-      controller.expectOne(ESCRITA).flush(...falhaDoServidor());
-      await propagar();
-      await propagar();
+      cena.controller.expectOne(ESCRITA).flush(...falhaDoServidor());
+      await propagarRenderizando(cena);
+      await propagarRenderizando(cena);
 
-      expect(edicao.aberto()).toBe(true);
-      expect(document.activeElement).toBe(salvar());
+      expect(cena.edicao.aberto()).toBe(true);
+      expect(document.activeElement).toBe(botaoSalvar(cena));
     });
 
     it('envio barrado com o foco no botão de salvar leva o foco ao primeiro campo inválido', async () => {
-      await abrir();
-      edicao.form.controls.nome.setValue('');
-      edicao.form.controls.origemData.setValue('');
-      salvar().focus();
+      await abrirEdicao(cena);
+      cena.edicao.form.controls.nome.setValue('');
+      cena.edicao.form.controls.origemData.setValue('');
+      botaoSalvar(cena).focus();
       submeter();
-      await propagar();
-      await propagar();
-      controller.expectNone(ESCRITA);
+      await propagarRenderizando(cena);
+      await propagarRenderizando(cena);
+      cena.controller.expectNone(ESCRITA);
       expect(document.activeElement).toBe(campoNome());
     });
 
     it('"Tentar novamente" que dá certo leva o foco, que estava no botão, ao título da lista', async () => {
-      store.recarregar();
-      await propagar();
-      controller.expectOne((r) => r.url === LISTA).flush(...falhaDoServidor());
-      await propagar();
-      const tentar = botaoPorTexto('Tentar novamente') as HTMLButtonElement;
+      cena.store.recarregar();
+      await propagarRenderizando(cena);
+      cena.controller.expectOne((r) => r.url === URL_DA_LISTA).flush(...falhaDoServidor());
+      await propagarRenderizando(cena);
+      const tentar = botaoPorTexto(cena, 'Tentar novamente') as HTMLButtonElement;
       tentar.focus();
       tentar.click();
-      await propagar();
+      await propagarRenderizando(cena);
 
-      controller.expectOne((r) => r.url === LISTA).flush([fase]);
-      await propagar();
-      await propagar();
+      cena.controller.expectOne((r) => r.url === URL_DA_LISTA).flush([fase]);
+      await propagarRenderizando(cena);
+      await propagarRenderizando(cena);
 
-      expect(document.activeElement).toBe(elemento('#cfg-fases-canonicas-list-title'));
+      expect(document.activeElement).toBe(elemento(cena, '#cfg-fases-canonicas-list-title'));
     });
   });
 });

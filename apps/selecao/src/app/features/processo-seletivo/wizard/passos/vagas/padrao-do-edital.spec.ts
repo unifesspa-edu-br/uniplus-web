@@ -7,6 +7,7 @@ describe('seguemOMesmoPadrao', () => {
   const PADRAO = {
     regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
     regraDistribuicaoVersao: '1.0',
+    ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     regraAjusteCodigo: null,
     regraAjusteVersao: null,
     referenciaReservaDemograficaId: null,

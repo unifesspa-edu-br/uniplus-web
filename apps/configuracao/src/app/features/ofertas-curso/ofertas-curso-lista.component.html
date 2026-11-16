@@ -29,11 +29,12 @@
     <div class="table-responsive">
       <table>
         <caption class="sr-only">
-          Ofertas de curso, com local de oferta, unidade ofertante, regimes de funcionamento e
-          turno, e vagas e-MEC
+          Ofertas de curso, com código, local de oferta, unidade ofertante, regimes de funcionamento
+          e turno, e vagas e-MEC
         </caption>
         <thead>
           <tr>
+            <th scope="col">Código</th>
             <th scope="col">Curso</th>
             <th scope="col">Grau</th>
             <th scope="col">Local de oferta</th>
@@ -51,6 +52,9 @@
           @for (linha of linhas(); track linha.oferta.id) {
             @let oferta = linha.oferta;
             <tr [attr.data-oferta-id]="oferta.id">
+              <td data-label="Código">
+                <code>{{ oferta.codigo }}</code>
+              </td>
               <td data-label="Curso"><ui-lookup-label [resolucao]="linha.curso" /></td>
               <td data-label="Grau">{{ linha.grau }}</td>
               <td data-label="Local de oferta"><ui-lookup-label [resolucao]="linha.local" /></td>

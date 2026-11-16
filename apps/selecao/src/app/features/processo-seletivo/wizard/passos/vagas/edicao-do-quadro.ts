@@ -15,20 +15,27 @@ export function quadroCoerente(
   catalogo: CatalogoDeModalidades,
 ): DistribuicaoDeVagas['quadro'] {
   const selecionadas = new Set(padrao.modalidades.map((modalidade) => modalidade.id));
-  const federal = ehRamoFederal(padrao.regraDistribuicaoCodigo);
+  const federal = ehRamoFederal(padrao.ramoDaDistribuicao);
 
-  return quadro.filter((item) => {
-    if (!selecionadas.has(item.modalidadeId)) return false;
-    if (!federal) return true;
+  return quadro.filter(
+    (item) =>
+      selecionadas.has(item.modalidadeId) &&
+      (!federal || quantidadeDeclaradaNoRamoFederal(catalogo, item.modalidadeId)),
+  );
+}
 
-    const composicao = catalogo.get(item.modalidadeId)?.composicaoVagas;
-    return composicao !== undefined && quantidadeEhDeclarada(composicao, federal);
-  });
+function quantidadeDeclaradaNoRamoFederal(
+  catalogo: CatalogoDeModalidades,
+  modalidadeId: string,
+): boolean {
+  const composicao = catalogo.get(modalidadeId)?.composicaoVagas;
+  return composicao !== undefined && quantidadeEhDeclarada(composicao, true);
 }
 
 /**
  * O padrão é o da coleção: alterá-lo reescreve todas as ofertas, senão o que a tela mostra deixaria
- * de descrever o que será gravado.
+ * de descrever o que será gravado. O ajuste do quadro não é do padrão: cada oferta o traz do
+ * contrato e o devolve, porque a gravação substitui a distribuição inteira.
  */
 export function comPadraoAplicado(
   ofertas: readonly DistribuicaoDeVagas[],
@@ -38,8 +45,25 @@ export function comPadraoAplicado(
   return ofertas.map((oferta) => ({
     ...oferta,
     ...padrao,
+    ajusteDoQuadro: ajusteAposOPadrao(oferta, padrao),
     quadro: quadroCoerente(oferta.quadro, padrao, catalogo),
   }));
+}
+
+/**
+ * O ajuste do quadro pertence à regra de distribuição da oferta: trocar a regra o zera, e na Lei de
+ * Cotas o servidor o recusa, porque ela reconcilia pela regra de ajuste. Qualquer outra edição do
+ * padrão deixa o ajuste de cada oferta como está.
+ */
+function ajusteAposOPadrao(
+  oferta: DistribuicaoDeVagas,
+  padrao: PadraoDoEdital,
+): DistribuicaoDeVagas['ajusteDoQuadro'] {
+  const mesmaRegra =
+    oferta.regraDistribuicaoCodigo === padrao.regraDistribuicaoCodigo &&
+    oferta.regraDistribuicaoVersao === padrao.regraDistribuicaoVersao;
+
+  return mesmaRegra && !ehRamoFederal(padrao.ramoDaDistribuicao) ? oferta.ajusteDoQuadro : null;
 }
 
 export function comVoBase(
@@ -64,14 +88,15 @@ export function comQuantidade(
   });
 }
 
-/** As ofertas marcadas entram no quadro com o padrão em tela, sem total nem quantidades. */
+/** As ofertas marcadas entram no quadro com o padrão em tela, sem total, quantidades nem ajuste. */
 export function comOfertasAdicionadas(
   ofertas: readonly DistribuicaoDeVagas[],
   padrao: PadraoDoEdital,
   idsDasNovas: readonly string[],
 ): DistribuicaoDeVagas[] {
-  return [
-    ...ofertas,
-    ...idsDasNovas.map((ofertaCursoId) => ({ ...padrao, ofertaCursoId, voBase: '', quadro: [] })),
-  ];
+  return [...ofertas, ...idsDasNovas.map((ofertaCursoId) => ofertaNova(ofertaCursoId, padrao))];
+}
+
+function ofertaNova(ofertaCursoId: string, padrao: PadraoDoEdital): DistribuicaoDeVagas {
+  return { ...padrao, ofertaCursoId, voBase: '', ajusteDoQuadro: null, quadro: [] };
 }

@@ -24,6 +24,7 @@ const ID = '01960000-0000-7000-0000-0000000000a1';
 
 const termoResumoSeed: TermoConsentimentoResumoDto = {
   id: ID,
+  codigo: 'TERMO_DE_PRIVACIDADE_LGPD',
   nome: 'Termo de Privacidade LGPD',
   formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
   revisado: true,
@@ -32,6 +33,7 @@ const termoResumoSeed: TermoConsentimentoResumoDto = {
 
 const termoDtoSeed: TermoConsentimentoDto = {
   id: ID,
+  codigo: 'TERMO_DE_PRIVACIDADE_LGPD',
   nome: 'Termo de Privacidade LGPD',
   formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
   textoRascunho: 'Conteúdo detalhado do termo...',

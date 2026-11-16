@@ -134,7 +134,7 @@ describe('problemasDaDistribuicao — dependências entre modalidades', () => {
     const comDestino = modalidade({
       id: 'm-dest',
       codigo: 'LI_EP',
-      composicaoVagas: 'DENTRO_DO_VR',
+      composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
       regraRemanejamento: 'DESTINO_UNICO',
       remanejamentoDestino: 'AC',
     });
@@ -152,7 +152,7 @@ describe('problemasDaDistribuicao — dependências entre modalidades', () => {
     const cruzada = modalidade({
       id: 'm-cruz',
       codigo: 'LI_PPI',
-      composicaoVagas: 'DENTRO_DO_VR',
+      composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
       regraRemanejamento: 'CRUZADO',
       remanejamentoPar: 'LI_EP',
       remanejamentoFallback: 'AC',
@@ -234,7 +234,7 @@ describe('modalidade que saiu do cadastro', () => {
   const SUMIDA = modalidade({
     id: 'm-sumida',
     codigo: 'PCD_ANTIGA',
-    composicaoVagas: 'RETIRA_DE',
+    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
   });
 
   /**

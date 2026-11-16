@@ -62,6 +62,8 @@ export interface FaseForm {
    * daqui a apagaria a cada mudança de data.
    */
   readonly regraRecurso: FormControl<RecursoDaFase | null>;
+  /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
+  readonly tiposDeDecisao: FormControl<readonly string[]>;
   /**
    * O que a fase congelou do catálogo. Também não é editado — viaja para que a
    * tela continue sabendo o que a fase exige quando o catálogo já não a tem.
@@ -100,6 +102,8 @@ export interface EtapaForm {
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancas: FormControl<readonly BancaDaEtapa[]>;
   readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
+  /** Não é editado aqui, e carregado pela mesma razão de `produtos`. */
+  readonly tiposDeDecisao: FormControl<readonly string[]>;
   /** Não é editado: viaja para a tela saber o que o processo congelou do tipo. */
   readonly tipoCongelado: FormControl<TipoCongeladoDaEtapa | null>;
 }
@@ -128,22 +132,89 @@ export function novoFormularioDoCronograma(): FormGroup<CronogramaForm> {
   });
 }
 
+type ControlesEditadosDaFase = Pick<
+  FaseForm,
+  'faseCanonicaId' | 'codigo' | 'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId'
+>;
+type ControlesCarregadosDaFase = Omit<FaseForm, keyof ControlesEditadosDaFase>;
+
 export function grupoDaFase(fase: FaseDoCronograma): FormGroup<FaseForm> {
   return new FormGroup<FaseForm>({
+    ...controlesEditadosDaFase(fase),
+    ...controlesCarregadosDaFase(fase),
+  });
+}
+
+function controlesEditadosDaFase(fase: FaseDoCronograma): ControlesEditadosDaFase {
+  return {
     faseCanonicaId: controle(fase.faseCanonicaId),
     codigo: controle(fase.codigo),
     ordem: controle(fase.ordem),
     inicio: controle(fase.inicio === null ? '' : campoDoInstante(fase.inicio)),
     fim: controle(fase.fim === null ? '' : campoDoInstante(fase.fim)),
     unidadeResponsavelId: controle(fase.unidadeResponsavelId ?? ''),
+  };
+}
+
+/** O que a fase só carrega: o passo não edita, e a gravação substitui o cronograma inteiro. */
+function controlesCarregadosDaFase(fase: FaseDoCronograma): ControlesCarregadosDaFase {
+  return {
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     faseConcluinteCodigo: controle<string | null>(fase.faseConcluinteCodigo),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
+    tiposDeDecisao: controle<readonly string[]>(fase.tiposDeDecisao ?? []),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
-  });
+  };
 }
+
+type IdentificacaoDaFase = Pick<
+  FaseDoCronograma,
+  'faseCanonicaId' | 'codigo' | 'ordem' | 'unidadeResponsavelId'
+>;
+
+/** A fase que o operador acabou de acrescentar: só a identificação, o resto ele ainda declara. */
+export function faseRecemAcrescentada(identificacao: IdentificacaoDaFase): FaseDoCronograma {
+  return { ...identificacao, ...DECLARACOES_AINDA_NAO_FEITAS_DA_FASE };
+}
+
+const DECLARACOES_AINDA_NAO_FEITAS_DA_FASE: Omit<FaseDoCronograma, keyof IdentificacaoDaFase> = {
+  inicio: null,
+  fim: null,
+  produtos: [],
+  faseConcluinteCodigo: null,
+  emiteParecerIndividual: false,
+  bancasRequeridas: [],
+  regraRecurso: null,
+  tiposDeDecisao: [],
+  congelados: null,
+};
+
+type PosicaoDaEtapa = Pick<EtapaPontuada, 'ordem' | 'faseCodigo'>;
+
+/** A etapa que o operador acabou de acrescentar: só a posição, o resto ele ainda declara. */
+export function etapaRecemAcrescentada(posicao: PosicaoDaEtapa): EtapaPontuada {
+  return { ...posicao, ...ETAPA_AINDA_NAO_DECLARADA };
+}
+
+const ETAPA_AINDA_NAO_DECLARADA: Omit<EtapaPontuada, keyof PosicaoDaEtapa> = {
+  id: null,
+  nome: '',
+  carater: '',
+  tipoEtapaOrigemId: '',
+  peso: '',
+  notaMinima: '',
+  notaMaxima: '',
+  passoDoLancamento: '',
+  produtos: [],
+  inicio: '',
+  fim: '',
+  emiteParecerIndividual: false,
+  bancas: [],
+  recursos: [],
+  tiposDeDecisao: [],
+};
 
 export function grupoDaEtapa(etapa: EtapaPontuada): FormGroup<EtapaForm> {
   return new FormGroup<EtapaForm>({
@@ -199,13 +270,19 @@ function controlesDaAvaliacaoDaEtapa(
   };
 }
 
-/** O que a etapa publica, quando acontece, quem a julga e como se recorre dela. */
-function controlesDoQueAEtapaDeclara(
-  etapa: EtapaPontuada,
-): Pick<
+type ControlesDoQueAEtapaDeclara = Pick<
   EtapaForm,
-  'produtos' | 'inicio' | 'fim' | 'emiteParecerIndividual' | 'bancas' | 'recursos'
-> {
+  | 'produtos'
+  | 'inicio'
+  | 'fim'
+  | 'emiteParecerIndividual'
+  | 'bancas'
+  | 'recursos'
+  | 'tiposDeDecisao'
+>;
+
+/** O que a etapa publica, quando acontece, quem a julga e como se recorre dela. */
+function controlesDoQueAEtapaDeclara(etapa: EtapaPontuada): ControlesDoQueAEtapaDeclara {
   return {
     produtos: controle<readonly ProdutoDaFase[]>(etapa.produtos ?? []),
     inicio: controle(etapa.inicio ?? ''),
@@ -213,25 +290,18 @@ function controlesDoQueAEtapaDeclara(
     emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
     bancas: controle<readonly BancaDaEtapa[]>(etapa.bancas ?? []),
     recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
+    tiposDeDecisao: controle<readonly string[]>(etapa.tiposDeDecisao ?? []),
   };
 }
 
 /** A fase como o rascunho a guarda: a hora de parede vira o instante do certame. */
 export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
-  const valor = grupo.getRawValue();
+  const { inicio, fim, unidadeResponsavelId, ...inalterados } = grupo.getRawValue();
   return {
-    faseCanonicaId: valor.faseCanonicaId,
-    codigo: valor.codigo,
-    ordem: valor.ordem,
-    inicio: valor.inicio === '' ? null : instanteDoCampo(valor.inicio),
-    fim: valor.fim === '' ? null : instanteDoCampo(valor.fim),
-    unidadeResponsavelId: valor.unidadeResponsavelId === '' ? null : valor.unidadeResponsavelId,
-    produtos: valor.produtos,
-    faseConcluinteCodigo: valor.faseConcluinteCodigo,
-    emiteParecerIndividual: valor.emiteParecerIndividual,
-    bancasRequeridas: valor.bancasRequeridas,
-    regraRecurso: valor.regraRecurso,
-    congelados: valor.congelados,
+    ...inalterados,
+    inicio: inicio === '' ? null : instanteDoCampo(inicio),
+    fim: fim === '' ? null : instanteDoCampo(fim),
+    unidadeResponsavelId: unidadeResponsavelId === '' ? null : unidadeResponsavelId,
   };
 }
 

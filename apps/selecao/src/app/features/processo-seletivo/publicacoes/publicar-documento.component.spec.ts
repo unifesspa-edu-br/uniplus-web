@@ -34,6 +34,12 @@ describe('PublicarDocumentoComponent — documento avulso', () => {
     }
   });
 
+  it('rotula a data do formulário como "Data do ato"', () => {
+    const rotulo = tela.host.querySelector('label[for="pub-data"]');
+
+    expect(rotulo?.textContent?.trim()).toBe('Data do ato');
+  });
+
   it('pede o ato corrigido só quando o tipo escolhido corrige outro', () => {
     tela.preencher({ tipoAtoCodigo: 'AVISO' });
     expect(tela.host.querySelector('#pub-corrigido')).toBeNull();

@@ -107,7 +107,7 @@ export { CategoriasDocumentoApi, type CategoriaDocumentoDto } from './categorias
 export {
   ModalidadesApi,
   ACOES_QUANDO_INDEFERIDO,
-  COMPOSICAO_RETIRA_DE,
+  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
   COMPOSICAO_VAGAS_DEFAULT,
   COMPOSICOES_VAGAS,
   NATUREZA_LEGAL_DEFAULT,

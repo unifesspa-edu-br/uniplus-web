@@ -21,6 +21,7 @@ const REGRA = {
   admiteInstanciaSuperior: true,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 describe('RegraDeRecursoDaFaseComponent', () => {
@@ -64,6 +65,33 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     expect(campo('prazo-unidade').querySelector('option')?.textContent).toBe('Selecione…');
   });
 
+  it('liga a regra e as duas suspensividades às respectivas mensagens de erro', () => {
+    comCronograma(
+      fase({
+        produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+        regraRecurso: {
+          ...REGRA,
+          regraCodigo: '',
+          suspensividadePrimeiraInstanciaUnidade: '',
+          suspensividadeSegundaInstanciaValor: '1',
+        } as FaseDoCronograma['regraRecurso'],
+      }),
+    );
+
+    for (const [sufixo, erro] of [
+      ['regra', 'regra-erro'],
+      ['susp1-valor', 'susp1-erro'],
+      ['susp1-unidade', 'susp1-erro'],
+      ['susp2-valor', 'susp2-erro'],
+      ['susp2-unidade', 'susp2-erro'],
+    ]) {
+      expect(campo(sufixo).getAttribute('aria-describedby')?.split(' ')).toContain(
+        `fase-AVALIACAO-${erro}`,
+      );
+      expect(campo(erro).getAttribute('role')).toBe('alert');
+    }
+  });
+
   const unidadesDe = (sufixo: string): string[] =>
     Array.from(campo(sufixo).querySelectorAll('option')).map((opcao) => opcao.value);
 
@@ -104,5 +132,51 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
     expect(leitura).toContain('3 dias corridos');
     expect(leitura).toContain('1 dia corrido');
+  });
+
+  describe('procedimentos declarados do recurso', () => {
+    const PROCEDIMENTO = {
+      tipoDeDecisao: 'RESULTADO_PRELIMINAR',
+      alvo: null,
+      regraCodigo: 'PROCEDIMENTO-RECURSO-COLEGIADO',
+      regraVersao: 'v1',
+      sugestao: 'PROCEDIMENTO-RECURSO-MONOCRATICO',
+    };
+
+    function comProcedimento(): void {
+      comCronograma(
+        fase({
+          produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+          regraRecurso: {
+            ...REGRA,
+            procedimentos: [PROCEDIMENTO],
+          } as FaseDoCronograma['regraRecurso'],
+        }),
+      );
+    }
+
+    const lista = () => nativo.querySelector('.form-grid > sel-procedimentos-do-recurso');
+
+    it('lista o procedimento dentro da grade do recurso, ocupando a linha inteira', () => {
+      comProcedimento();
+
+      expect(lista()?.classList.contains('form-grid__full')).toBe(true);
+      expect(lista()?.textContent).toContain('RESULTADO_PRELIMINAR');
+      expect(lista()?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
+    });
+
+    it('também lista o procedimento em consulta', () => {
+      comProcedimento();
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      expect(lista()?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
+    });
+
+    it('fica oculto quando o recurso não declara procedimento', () => {
+      expect((lista() as HTMLElement).hidden).toBe(true);
+    });
   });
 });

@@ -1,44 +1,26 @@
+import { HttpTestingController } from '@angular/common/http/testing';
+import { ComponentFixture } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
-import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import {
-  ProcessoSeletivoDto,
-  SELECAO_BASE_PATH,
-  StatusProcesso,
-} from '@uniplus/shared-data/selecao';
+
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicial } from '../../shared/cadastro-inicial.service';
-import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
-import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
+import {
+  ROTA_OPCOES,
+  ROTA_PROCESSO_RELIDO,
+  SEM_CORPO,
+  proximoTick,
+  recusa422,
+  montarPassoDeOpcoes,
+} from './vagas.opcoes.testing';
 import { VagasPassoComponent } from './vagas.component';
 import {
-  BASE,
-  LISTA_DE_CURSOS,
-  MODALIDADE,
-  MODALIDADES,
   OFERTA,
-  OFERTAS,
   OUTRA_OFERTA,
-  PROCESSO_ID,
   ROTA_DISTRIBUICAO,
-  ROTA_SIMULACAO,
-  ServicosDasVagas,
   comReleitura,
   distribuicao,
-  servicosDe,
 } from './vagas.testing';
 
-let servicos: ServicosDasVagas;
-
 describe('VagasPassoComponent — número de opções de curso', () => {
-  const ROTA_OPCOES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/opcoes-de-curso`;
-  const ROTA_PROCESSO_RELIDO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
   const TEXTO = 'Com 2 opções de curso, cadastre pelo menos dois cursos.';
 
   let componente: VagasPassoComponent;
@@ -46,94 +28,28 @@ describe('VagasPassoComponent — número de opções de curso', () => {
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
   let tela: HTMLElement;
+  let campo: () => HTMLSelectElement;
+  let escolherNumero: (numero: string) => void;
+  let ofertas: (...ids: string[]) => void;
+  let gravado: (numero: number) => void;
+  let encerrar: () => void;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [VagasPassoComponent],
-      providers: [
-        ProcessoSeletivoStore,
-        CadastroInicial,
-        GravacaoDoProcesso,
-        CatalogoDeFatos,
-        GravacaoDosCamposPressupostos,
-        { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        { provide: SELECAO_BASE_PATH, useValue: BASE },
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(VagasPassoComponent);
-    componente = fixture.componentInstance;
-    servicos = servicosDe(fixture);
-    store = TestBed.inject(ProcessoSeletivoStore);
-    controller = TestBed.inject(HttpTestingController);
-    tela = fixture.nativeElement as HTMLElement;
-    // O foco só se aplica a elemento que está no documento.
-    document.body.appendChild(tela);
-
-    fixture.detectChanges();
-    for (const requisicao of controller.match(() => true)) {
-      const url = requisicao.request.url;
-      if (url.includes('ofertas-curso')) requisicao.flush(OFERTAS);
-      else if (url.includes('cursos')) requisicao.flush(LISTA_DE_CURSOS);
-      else if (url.includes('modalidades')) requisicao.flush(MODALIDADES);
-      else requisicao.flush([]);
-    }
-    fixture.detectChanges();
-    store.processoSeletivoId.set(PROCESSO_ID);
+    ({
+      componente,
+      fixture,
+      store,
+      controller,
+      tela,
+      campo,
+      escolherNumero,
+      ofertas,
+      gravado,
+      encerrar,
+    } = await montarPassoDeOpcoes());
   });
 
-  afterEach(() => {
-    controller.verify();
-    tela.remove();
-  });
-
-  const SEM_CORPO = { status: 204, statusText: 'No Content' };
-  const proximoTick = () => new Promise((resolve) => setTimeout(resolve, 0));
-  const campo = () => tela.querySelector('#f-opcoes-curso') as HTMLSelectElement;
-
-  function escolherNumero(numero: string): void {
-    campo().value = numero;
-    campo().dispatchEvent(new Event('change'));
-    fixture.detectChanges();
-  }
-
-  function ofertas(...ids: string[]): void {
-    store.patchObjectSection('vagas', { ofertas: ids.map(distribuicao) });
-    fixture.detectChanges();
-    servicos.simulacao.simular();
-    controller.expectOne(ROTA_SIMULACAO).flush(
-      ids.map((ofertaCursoOrigemId) => ({
-        ofertaCursoOrigemId,
-        quadro: [{ modalidadeOrigemId: MODALIDADE, modalidadeCodigo: 'AC_I', quantidade: 2 }],
-        totalPublicado: 42,
-      })),
-    );
-    fixture.detectChanges();
-  }
-
-  /** O número que o servidor tem gravado, na leitura mais recente. */
-  function gravado(numero: number): void {
-    store.opcoesDeCursoGravadas.set(numero);
-  }
-
-  const recusa422 = (code: string) => ({
-    body: {
-      type: 'about:blank',
-      title: 'Recusado.',
-      status: 422,
-      code,
-      traceId: 'trace-1',
-    },
-    opts: {
-      status: 422,
-      statusText: 'Unprocessable Entity',
-      headers: { 'content-type': 'application/problem+json' },
-    },
-  });
+  afterEach(() => encerrar());
 
   it('mostra o número de opções como primeiro campo do padrão, antes da regra, com a ajuda', () => {
     const regra = tela.querySelector('#f-regra') as HTMLElement;
@@ -289,129 +205,5 @@ describe('VagasPassoComponent — número de opções de curso', () => {
     const itens = componente.confirmacaoDeGravacao()?.itens ?? [];
 
     expect(itens).toContainEqual({ rotulo: 'Número de opções de curso', valor: '2 opções' });
-  });
-
-  it('mostra no campo, com o mesmo texto, a recusa da API ao gravar o número', async () => {
-    gravado(1);
-    ofertas(OFERTA, OUTRA_OFERTA);
-    escolherNumero('2');
-
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
-    await proximoTick();
-    const { body, opts } = recusa422(
-      'uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas',
-    );
-    controller.expectOne(ROTA_OPCOES).flush(body, opts);
-
-    const resultado = await gravacao;
-    fixture.detectChanges();
-
-    expect(resultado).toEqual({
-      valid: false,
-      messages: [`A distribuição de vagas foi gravada. ${TEXTO}`],
-    });
-    expect(tela.querySelector('#f-opcoes-curso-erro')?.textContent).toContain(TEXTO);
-  });
-
-  it('mostra no mesmo campo a recusa da API sem campo, vinda da gravação da distribuição', async () => {
-    gravado(2);
-    ofertas(OFERTA);
-    escolherNumero('1');
-
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_OPCOES).flush(null, SEM_CORPO);
-    await proximoTick();
-    const { body, opts } = recusa422(
-      'uniplus.selecao.processo_seletivo.opcoes_de_curso_acima_das_ofertas',
-    );
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(body, opts);
-
-    const resultado = await gravacao;
-    fixture.detectChanges();
-
-    expect(resultado.messages).toEqual([`O número de opções de curso foi gravado. ${TEXTO}`]);
-    expect(tela.querySelector('#f-opcoes-curso-erro')?.textContent).toContain(TEXTO);
-  });
-
-  it('guarda o número gravado e relê o processo quando a releitura depois da gravação falha', async () => {
-    gravado(1);
-    ofertas(OFERTA, OUTRA_OFERTA);
-    escolherNumero('2');
-
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
-    await proximoTick();
-    controller.expectOne(ROTA_OPCOES).flush(null, SEM_CORPO);
-    await proximoTick();
-    controller.expectOne(ROTA_PROCESSO_RELIDO).flush(null, { status: 500, statusText: 'Erro' });
-    await gravacao;
-
-    expect(store.opcoesDeCursoGravadas()).toBe(2);
-    expect(store.vagasGravadasDefasadas()).toBe(true);
-
-    // Com o número 2 gravado, reduzir para 1 curso e 1 opção só passa baixando o número antes.
-    ofertas(OFERTA);
-    escolherNumero('1');
-    const segunda = componente.persistir();
-    controller.expectOne(ROTA_PROCESSO_RELIDO).flush({ opcoesDeCurso: { numero: 2 } });
-    await proximoTick();
-    controller.expectNone(ROTA_DISTRIBUICAO);
-    controller.expectOne(ROTA_OPCOES).flush(null, SEM_CORPO);
-    await proximoTick();
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(null, SEM_CORPO);
-    await expect(comReleitura(controller, segunda)).resolves.toEqual({ valid: true });
-  });
-
-  it('trata o conflito de idempotência em andamento como resposta inconclusiva', async () => {
-    gravado(1);
-    ofertas(OFERTA);
-    escolherNumero('1');
-
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_DISTRIBUICAO).flush(
-      {
-        type: 'about:blank',
-        title: 'Em andamento.',
-        status: 409,
-        code: 'uniplus.idempotency.processing_conflict',
-        traceId: 'trace-1',
-      },
-      {
-        status: 409,
-        statusText: 'Conflict',
-        headers: { 'content-type': 'application/problem+json' },
-      },
-    );
-    await gravacao;
-
-    expect(store.vagasGravadasDefasadas()).toBe(true);
-  });
-
-  it('descarta o erro do campo ao trocar de processo na mesma rota', async () => {
-    ofertas(OFERTA);
-    escolherNumero('2');
-    await componente.persistir();
-    fixture.detectChanges();
-    expect(tela.querySelector('#f-opcoes-curso-erro')).not.toBeNull();
-
-    store.geracao.update((valor) => valor + 1);
-    TestBed.tick();
-    fixture.detectChanges();
-
-    expect(tela.querySelector('#f-opcoes-curso-erro')).toBeNull();
-  });
-
-  it('em consulta, lê o número gravado como texto', () => {
-    store.patchObjectSection('opcoesDeCurso', { numero: '2' });
-    store.remoteSnapshot.set({
-      status: StatusProcesso.publicado,
-    } as unknown as ProcessoSeletivoDto);
-    fixture.detectChanges();
-
-    expect(campo()).toBeNull();
-    expect((tela.textContent ?? '').replace(/\s+/g, ' ')).toContain(
-      'Número de opções de curso 2 opções',
-    );
   });
 });

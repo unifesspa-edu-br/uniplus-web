@@ -13,7 +13,7 @@ const MODALIDADE = {
   legalFixa: false,
   descricao: 'Ampla concorrência',
   naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESIDUAL_DO_VO',
+  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
   composicaoOrigem: null,
   regraRemanejamento: null,
   remanejamentoDestino: null,

@@ -1,4 +1,18 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import {
+  CURSO,
+  IDENTIFICADOR_DA_OFERTA,
+  LOCAL,
+  OFERTA,
+  UNIDADE,
+  preencherCadastroDaOferta,
+} from '../support/dados-de-oferta-de-curso';
+import {
+  ATRASO_DA_RECARGA_EM_MS,
+  CORS_HEADERS,
+  ERRO_INTERNO,
+  problema,
+} from '../support/escritas-retidas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -8,87 +22,7 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * pelo projeto `fluxo-chromium`.
  */
 
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-
-const CURSO = {
-  id: '01960000-0000-7000-0000-0000000000c1',
-  codigo: 'ENG-CIV',
-  nome: 'Engenharia Civil',
-  grau: 'Bacharelado',
-  nivelEnsino: 'Graduação',
-  grupoAreaEnem: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const LOCAL = {
-  id: '01960000-0000-7000-0000-0000000000e1',
-  tipo: 'campusSede',
-  campusResponsavelId: null,
-  cidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-  endereco: null,
-  codigoEmec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const UNIDADE = {
-  id: '01960000-0000-7000-0000-0000000000f1',
-  nome: 'Instituto de Geociências e Engenharias',
-  alias: null,
-  slug: 'ige',
-  sigla: 'IGE',
-  codigo: 'IGE',
-  unidadeSuperiorId: null,
-  tipo: 'Instituto',
-  unidadeAcademica: true,
-  vigenciaInicio: '2020-01-01',
-  vigenciaFim: null,
-};
-
-const OFERTA = {
-  id: '01960000-0000-7000-0000-0000000000d1',
-  cursoId: CURSO.id,
-  localOfertaId: LOCAL.id,
-  unidadeOfertante: {
-    origemId: UNIDADE.id,
-    sigla: 'IGE',
-    nome: UNIDADE.nome,
-    tipo: 'Instituto',
-  },
-  programaDeOferta: 'REGULAR',
-  formatoPedagogico: 'PRESENCIAL',
-  regimeDeFuncionamento: 'EXTENSIVO',
-  regimeDeTurno: 'REGULAR',
-  turnos: ['MATUTINO'],
-  eMecCodigo: '123456',
-  codigoSga: null,
-  vagasAnuaisAutorizadas: 40,
-  baseLegal: null,
-  atoAutorizacaoMec: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
-
-const IDENTIFICADOR = 'Engenharia Civil · IGE · Campus sede — Marabá · Regular · Matutino';
-
-/** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o drawer fecha. */
-const ATRASO_DA_RECARGA_EM_MS = 1500;
-
-const ERRO_INTERNO = {
-  type: 'about:blank',
-  title: 'Erro interno',
-  status: 500,
-  code: 'uniplus.internal.unexpected',
-};
-
-const SEM_PERMISSAO = {
-  type: 'about:blank',
-  title: 'Sem permissão',
-  status: 403,
-  code: 'uniplus.auth.forbidden',
-};
+const SEM_PERMISSAO = problema(403, 'uniplus.auth.forbidden', 'Sem permissão');
 
 const PREFIXO_DO_CODIGO = 'uniplus.configuracao.oferta_curso.';
 
@@ -161,22 +95,21 @@ async function mockApi(
   return { liberar, envios };
 }
 
-async function preencherCadastro(page: Page): Promise<void> {
-  await page.locator('#cfg-oferta-curso-id').selectOption(CURSO.id);
-  await page.locator('#cfg-oferta-local-id').selectOption(LOCAL.id);
-  await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE.id);
-  await page.locator('label.checkbox', { hasText: 'Matutino' }).click();
-}
-
 const tituloDaLista = (page: Page) =>
   page.getByRole('heading', { name: 'Ofertas de curso', level: 2 });
 const formulario = (page: Page) =>
   page.getByRole('dialog', { name: 'Formulário de oferta de curso' });
 const confirmacao = (page: Page) => page.getByRole('dialog', { name: 'Remover oferta de curso' });
 const editar = (page: Page) =>
-  page.getByRole('button', { name: `Editar oferta de curso ${IDENTIFICADOR}`, exact: true });
+  page.getByRole('button', {
+    name: `Editar oferta de curso ${IDENTIFICADOR_DA_OFERTA}`,
+    exact: true,
+  });
 const remover = (page: Page) =>
-  page.getByRole('button', { name: `Remover oferta de curso ${IDENTIFICADOR}`, exact: true });
+  page.getByRole('button', {
+    name: `Remover oferta de curso ${IDENTIFICADOR_DA_OFERTA}`,
+    exact: true,
+  });
 const novo = (page: Page) => page.locator('#cfg-ofertas-novo');
 
 test.describe('Oferta de curso — escritas', () => {
@@ -191,7 +124,7 @@ test.describe('Oferta de curso — escritas', () => {
     await page.goto('/ofertas-curso');
     await novo(page).click();
     const drawer = formulario(page);
-    await preencherCadastro(page);
+    await preencherCadastroDaOferta(page);
 
     await drawer.getByRole('button', { name: 'Criar oferta' }).focus();
     await drawer.getByRole('button', { name: 'Criar oferta' }).click();
@@ -244,7 +177,7 @@ test.describe('Oferta de curso — escritas', () => {
     await page.goto('/ofertas-curso');
     await novo(page).click();
     const drawer = formulario(page);
-    await preencherCadastro(page);
+    await preencherCadastroDaOferta(page);
     await drawer.getByRole('button', { name: 'Criar oferta' }).click();
     liberar();
 
@@ -264,7 +197,7 @@ test.describe('Oferta de curso — escritas', () => {
     await page.goto('/ofertas-curso');
     await novo(page).click();
     const drawer = formulario(page);
-    await preencherCadastro(page);
+    await preencherCadastroDaOferta(page);
     const eMec = page.locator('input[formcontrolname="eMecCodigo"]');
     await eMec.focus();
     await page.keyboard.press('Enter');
@@ -286,9 +219,9 @@ test.describe('Oferta de curso — escritas', () => {
     await drawer.getByRole('button', { name: 'Criar oferta' }).focus();
     await page.keyboard.press('Enter');
 
-    const curso = page.locator('#cfg-oferta-curso-id');
-    await expect(curso).toBeFocused();
-    await expect(curso).toHaveAttribute('aria-invalid', 'true');
+    const codigo = page.locator('input[formcontrolname="codigo"]');
+    await expect(codigo).toBeFocused();
+    await expect(codigo).toHaveAttribute('aria-invalid', 'true');
     expect(envios).toEqual([]);
   });
 
@@ -301,7 +234,7 @@ test.describe('Oferta de curso — escritas', () => {
     await acionador.focus();
     await acionador.click();
     const drawer = formulario(page);
-    await preencherCadastro(page);
+    await preencherCadastroDaOferta(page);
     await drawer.getByRole('button', { name: 'Criar oferta' }).click();
 
     liberar();

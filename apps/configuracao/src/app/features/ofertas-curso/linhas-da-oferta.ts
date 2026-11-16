@@ -16,10 +16,10 @@ type Resolvedor = Pick<VinculosDaOferta, 'cursoDaOferta' | 'grauDoCurso' | 'loca
 
 /**
  * Identificador da linha para as ações só-ícone, no lugar do UUID que um leitor de tela não
- * relaciona a nenhuma coluna visível. A listagem reúne ofertas de todos os cursos e o backend não
- * declara chave natural, então o nome repete as colunas que distinguem as ofertas na prática:
- * curso, unidade, local, programa e turnos. Curso e local usam o mesmo texto da célula: enquanto o
- * catálogo carrega ou falha, o botão diz isso em vez de soar como dado legítimo.
+ * relaciona a nenhuma coluna visível. O nome repete as colunas que descrevem a oferta — curso,
+ * unidade, local, programa e turnos —, que dizem mais a quem ouve que o código. Curso e local usam
+ * o mesmo texto da célula: enquanto o catálogo carrega ou falha, o botão diz isso em vez de soar
+ * como dado legítimo.
  */
 function identificadorDaOferta(
   oferta: OfertaCursoDto,

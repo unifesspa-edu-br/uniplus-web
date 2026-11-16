@@ -21,6 +21,7 @@ const UNIDADE_ID = '01960000-0000-7000-0000-0000000000f1';
 
 const ofertaSeed: OfertaCursoDto = {
   id: ID,
+  codigo: 'ENG_CIVIL_MARABA',
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
   unidadeOfertante: {
@@ -43,6 +44,7 @@ const ofertaSeed: OfertaCursoDto = {
 };
 
 const criarCommand: CriarOfertaCursoCommand = {
+  codigo: 'ENG_CIVIL_MARABA',
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
   unidadeOfertanteOrigemId: UNIDADE_ID,
@@ -182,6 +184,7 @@ describe('OfertasCursoApi', () => {
         ID,
         {
           id: ID,
+          codigo: 'ENG_CIVIL_MARABA',
           programaDeOferta: 'REGULAR',
           formatoPedagogico: 'PRESENCIAL',
           regimeDeFuncionamento: null,

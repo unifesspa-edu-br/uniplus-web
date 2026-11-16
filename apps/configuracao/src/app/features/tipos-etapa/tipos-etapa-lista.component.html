@@ -36,6 +36,7 @@
             <th scope="col">Código</th>
             <th scope="col">Nome</th>
             <th scope="col">O que admite</th>
+            <th scope="col">Correção independente</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -50,6 +51,9 @@
               </td>
               <td data-label="Nome">{{ tipo.nome }}</td>
               <td data-label="O que admite">{{ resumoDoQueAdmite(tipo) }}</td>
+              <td data-label="Correção independente">
+                {{ tipo.exigeCorrecaoIndependente ? 'Exige' : 'Não exige' }}
+              </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"

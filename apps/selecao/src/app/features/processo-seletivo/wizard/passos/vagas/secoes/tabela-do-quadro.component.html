@@ -35,18 +35,18 @@
           @if (store.emConsulta()) {
             {{ distribuicao.voBase || '—' }}
           } @else {
-          <input
-            class="input input--numero"
-            inputmode="numeric"
-            [attr.aria-label]="
-              'Total de vagas de ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
-            "
-            [attr.aria-invalid]="conferencia.voBaseComProblema(distribuicao) || null"
-            [class.input--pendente]="conferencia.voBaseComProblema(distribuicao)"
-            [ngModel]="distribuicao.voBase"
-            (ngModelChange)="alterarVoBase(distribuicao.ofertaCursoId, $event)"
-            [disabled]="!store.aceitaEdicao()"
-          />
+            <input
+              class="input input--numero"
+              inputmode="numeric"
+              [attr.aria-label]="
+                'Total de vagas de ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
+              "
+              [attr.aria-invalid]="conferencia.voBaseComProblema(distribuicao) || null"
+              [class.input--pendente]="conferencia.voBaseComProblema(distribuicao)"
+              [ngModel]="distribuicao.voBase"
+              (ngModelChange)="alterarVoBase(distribuicao.ofertaCursoId, $event)"
+              [disabled]="!store.aceitaEdicao()"
+            />
           }
         </td>
         @for (modalidade of estado.colunasDoQuadro(); track modalidade.id) {
@@ -54,20 +54,22 @@
             @if (store.emConsulta()) {
               {{ quantidade(distribuicao, modalidade.id) || '—' }}
             } @else {
-            <input
-              class="input input--numero"
-              inputmode="numeric"
-              [attr.aria-label]="
-                modalidade.codigo + ' de ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
-              "
-              [attr.aria-invalid]="quantidadeInvalida(distribuicao, modalidade.id) || null"
-              [class.input--pendente]="quantidadeInvalida(distribuicao, modalidade.id)"
-              [ngModel]="quantidade(distribuicao, modalidade.id)"
-              (ngModelChange)="
-                alterarQuantidade(distribuicao.ofertaCursoId, modalidade.id, $event)
-              "
-              [disabled]="!store.aceitaEdicao()"
-            />
+              <input
+                class="input input--numero"
+                inputmode="numeric"
+                [attr.aria-label]="
+                  modalidade.codigo +
+                  ' de ' +
+                  catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId)
+                "
+                [attr.aria-invalid]="quantidadeInvalida(distribuicao, modalidade.id) || null"
+                [class.input--pendente]="quantidadeInvalida(distribuicao, modalidade.id)"
+                [ngModel]="quantidade(distribuicao, modalidade.id)"
+                (ngModelChange)="
+                  alterarQuantidade(distribuicao.ofertaCursoId, modalidade.id, $event)
+                "
+                [disabled]="!store.aceitaEdicao()"
+              />
             }
           </td>
         }
@@ -78,23 +80,25 @@
             </td>
           }
           <td class="vagas-table__calculado" data-label="Publicado">
-            {{ simulacao.calculado(distribuicao)?.totalPublicado ?? '—' }}
+            {{ simulacao.calculado(distribuicao)?.totalDeVagasDoEdital ?? '—' }}
           </td>
         }
         @if (!store.emConsulta()) {
-        <td class="vagas-table__acoes">
-          <button
-            class="btn btn--tertiary btn--sm"
-            type="button"
-            (click)="pedirRemocao(distribuicao.ofertaCursoId)"
-            [disabled]="!store.aceitaEdicao()"
-            [attr.aria-label]="
-              'Remover ' + catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId) + ' do quadro'
-            "
-          >
-            Remover
-          </button>
-        </td>
+          <td class="vagas-table__acoes">
+            <button
+              class="btn btn--tertiary btn--sm"
+              type="button"
+              (click)="pedirRemocao(distribuicao.ofertaCursoId)"
+              [disabled]="!store.aceitaEdicao()"
+              [attr.aria-label]="
+                'Remover ' +
+                catalogos.rotuloDaOfertaOuSemNome(distribuicao.ofertaCursoId) +
+                ' do quadro'
+              "
+            >
+              Remover
+            </button>
+          </td>
         }
       </tr>
     }
@@ -106,7 +110,9 @@
     <tr>
       <th scope="row" class="vagas-table__oferta">
         {{
-          estado.distribuicoes().length === 1 ? '1 oferta' : estado.distribuicoes().length + ' ofertas'
+          estado.distribuicoes().length === 1
+            ? '1 oferta'
+            : estado.distribuicoes().length + ' ofertas'
         }}
       </th>
       <td data-label="Total">{{ simulacao.totalGeralDeVagas() }}</td>

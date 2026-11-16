@@ -11,6 +11,7 @@ import {
   rolarAteOMeio,
 } from '../support/rolagem-do-editor';
 import { LARGURA_STEPPER_LATERAL, larguraDoProjeto } from '../support/navega-passo';
+import { REGRAS_DE_DISTRIBUICAO_DA_MEDICINA } from '../fixtures/medicina/catalogos-da-medicina';
 import { responder } from '../support/responder';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
@@ -169,8 +170,11 @@ test.describe('Cadastro de processo seletivo — matriz DS @ds', () => {
   test('o campo focado por Tab não fica atrás do rodapé nem da barra de etapas', async ({
     page,
   }) => {
+    await servirRegrasDeDistribuicao(page);
     await abrirPasso(page, 'Vagas');
     await expect(page.locator('.wiz-content h1')).toContainText('Vagas');
+    await page.getByRole('combobox', { name: 'Regra de distribuição' }).selectOption({ index: 1 });
+    await expect(page.getByLabel('Percentual de reserva')).toBeVisible();
     await encurtarJanela(page);
 
     await conferirFocoForaDasFaixasFixas(page);
@@ -294,6 +298,22 @@ function navegacaoDePassos(page: Page, largura: number): () => Promise<void> {
  * Abre o passo pelo botão do stepper, que fica montado mesmo oculto no celular: o clique
  * vai por script, sem ponteiro, e o foco é o que o editor põe no título do passo.
  */
+/**
+ * O campo "Percentual de reserva" só existe quando a regra escolhida é do ramo da Lei de Cotas:
+ * o passo declara esse ramo pelo catálogo, e com o catálogo vazio ele fica só com os seletores.
+ */
+async function servirRegrasDeDistribuicao(page: Page): Promise<void> {
+  await responder(
+    page,
+    /\/api\/selecao\/regras-catalogo\?.*tipo=regra_distribuicao_vagas/,
+    REGRAS_DE_DISTRIBUICAO_DA_MEDICINA,
+    CORS_HEADERS,
+  );
+  // Os catálogos carregam ao abrir o cadastro: só a recarga os lê com a regra servida.
+  await page.reload();
+  await expect(page.getByRole('radio').first()).toBeVisible();
+}
+
 async function abrirPasso(page: Page, rotulo: string): Promise<void> {
   await page.evaluate((procurado) => {
     const botoes = Array.from(

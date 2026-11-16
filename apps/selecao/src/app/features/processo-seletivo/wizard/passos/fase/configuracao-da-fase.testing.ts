@@ -10,38 +10,24 @@ export const CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map([
   ['COMUNICADO', { nome: 'Comunicado', ehResultado: false }],
 ]);
 
-export function fase(parcial: Partial<FaseDoCronograma> = {}): FaseDoCronograma {
-  return {
-    faseCanonicaId: 'id-1',
-    codigo: 'AVALIACAO',
-    ordem: 1,
-    inicio: null,
-    fim: null,
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    congelados: null,
-    ...parcial,
-  };
-}
+export { umaFaseDoCronograma as fase } from '../../shared/fase-do-cronograma.testing';
+
+const RECURSO_PADRAO: RecursoDaFase = {
+  regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+  regraVersao: 'v1',
+  prazoValor: '2',
+  prazoUnidade: UnidadePrazo.diasUteis,
+  atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+  suspensividadePrimeiraInstanciaValor: '',
+  suspensividadePrimeiraInstanciaUnidade: '',
+  admiteInstanciaSuperior: true,
+  suspensividadeSegundaInstanciaValor: '',
+  suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
+};
 
 export function recurso(parcial: Partial<RecursoDaFase> = {}): RecursoDaFase {
-  return {
-    regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-    regraVersao: 'v1',
-    prazoValor: '2',
-    prazoUnidade: UnidadePrazo.diasUteis,
-    atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-    suspensividadePrimeiraInstanciaValor: '',
-    suspensividadePrimeiraInstanciaUnidade: '',
-    admiteInstanciaSuperior: true,
-    suspensividadeSegundaInstanciaValor: '',
-    suspensividadeSegundaInstanciaUnidade: '',
-    ...parcial,
-  };
+  return { ...RECURSO_PADRAO, ...parcial };
 }
 
 export const nomeDaBanca = (id: string): string =>

@@ -19,6 +19,7 @@ const LINK_HEADER =
 const BASES = [
   {
     id: 'ba5e0000-0000-7000-8000-000000000001',
+    codigo: 'PORTARIA_UNIFESSPA_2514_2023',
     tipoInstrumento: 'PORTARIA',
     identificacao: 'Portaria Unifesspa nº 2514/2023',
     descricao: 'Institui inclusão regional.',
@@ -27,6 +28,7 @@ const BASES = [
   },
   {
     id: 'ba5e0000-0000-7000-8000-000000000002',
+    codigo: 'LEI_12711_2012',
     tipoInstrumento: 'LEI',
     identificacao: 'Lei nº 12.711/2012',
     descricao: 'Reserva de vagas.',

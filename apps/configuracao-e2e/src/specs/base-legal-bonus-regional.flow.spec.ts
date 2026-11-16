@@ -25,6 +25,7 @@ const MARABA = { id: 'cidade-1504208', codigoIbge: '1504208', nome: 'Marabá', u
 
 const portariaSeed = {
   id: 'ba5e0000-0000-7000-8000-000000000001',
+  codigo: 'PORTARIA_UNIFESSPA_2514_2023',
   tipoInstrumento: 'PORTARIA',
   identificacao: 'Portaria Unifesspa nº 2514/2023',
   descricao: 'Institui inclusão regional.',

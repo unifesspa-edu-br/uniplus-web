@@ -10,11 +10,12 @@ import {
 import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import type { EtapaForm } from '../cronograma-form';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
+import { ProcedimentosDoRecursoComponent } from '../procedimentos-do-recurso/procedimentos-do-recurso.component';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 
 @Component({
   selector: 'sel-janela-recursal',
-  imports: [ValorLegivelDirective],
+  imports: [ProcedimentosDoRecursoComponent, ValorLegivelDirective],
   templateUrl: './janela-recursal.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

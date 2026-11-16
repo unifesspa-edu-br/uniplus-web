@@ -97,6 +97,7 @@ describe('FasePassoComponent', () => {
             admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
+            procedimentos: [],
           },
         }),
       );
@@ -128,6 +129,7 @@ describe('FasePassoComponent', () => {
           admiteInstanciaSuperior,
           suspensividadeSegundaInstanciaValor: '48',
           suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
+          procedimentos: [],
         },
       });
     }
@@ -220,6 +222,7 @@ describe('FasePassoComponent', () => {
             admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
+            procedimentos: [],
           },
         }),
       );
@@ -253,6 +256,7 @@ describe('FasePassoComponent', () => {
             admiteInstanciaSuperior: true,
             suspensividadeSegundaInstanciaValor: '',
             suspensividadeSegundaInstanciaUnidade: '',
+            procedimentos: [],
           },
         }),
       );

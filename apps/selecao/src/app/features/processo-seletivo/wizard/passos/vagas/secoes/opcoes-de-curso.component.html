@@ -12,19 +12,16 @@
     [class.is-invalid]="estado.erroDasOpcoes() !== null"
     [attr.aria-invalid]="estado.erroDasOpcoes() !== null ? 'true' : null"
     [attr.aria-describedby]="
-      estado.erroDasOpcoes() !== null ? 'f-opcoes-curso-ajuda f-opcoes-curso-erro' : 'f-opcoes-curso-ajuda'
+      estado.erroDasOpcoes() !== null
+        ? 'f-opcoes-curso-ajuda f-opcoes-curso-erro'
+        : 'f-opcoes-curso-ajuda'
     "
     [disabled]="!store.aceitaEdicao()"
     (change)="alterar($any($event.target).value)"
   >
-    <option value="" [selected]="store.draft().opcoesDeCurso.numero === ''">
-      — escolher —
-    </option>
+    <option value="" [selected]="store.draft().opcoesDeCurso.numero === ''">— escolher —</option>
     @for (opcao of opcoesDeCurso; track opcao.valor) {
-      <option
-        [value]="opcao.valor"
-        [selected]="opcao.valor === store.draft().opcoesDeCurso.numero"
-      >
+      <option [value]="opcao.valor" [selected]="opcao.valor === store.draft().opcoesDeCurso.numero">
         {{ opcao.rotulo }}
       </option>
     }

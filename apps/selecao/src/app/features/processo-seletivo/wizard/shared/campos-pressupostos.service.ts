@@ -31,6 +31,10 @@ import {
 import { CadastroInicial } from './cadastro-inicial.service';
 import { regrasDasModalidadesOfertadas } from './regras-das-modalidades';
 
+function idDaFaseDeInscricao(fases: ProcessoSeletivoDto['cronogramaFases']): string | null {
+  return faseDaInscricao(fases.map((fase) => ({ id: fase.id, ...fase.faseCanonica })))?.id ?? null;
+}
+
 export type CamposPressupostos =
   | { readonly tipo: 'garantidos' }
   | { readonly tipo: 'semFaseDeInscricao' }
@@ -149,13 +153,20 @@ export class GravacaoDosCamposPressupostos {
 
     const recusaDoCatalogo = this.recusaDoCatalogo(servidor, conteudoGravado, citados);
     if (recusaDoCatalogo !== null) return { tipo: 'recusados', motivo: recusaDoCatalogo };
+    return this.planoParaGravar(servidor, { gravado, conteudoGravado, pressuposto });
+  }
 
+  private planoParaGravar(
+    servidor: ProcessoSeletivoDto,
+    base: Omit<PlanoDosCampos, 'desejado' | 'faseId'>,
+  ): PlanoDosCampos | CamposPressupostos {
+    const { gravado, conteudoGravado, pressuposto } = base;
     const desejado = pressuposto(conteudoGravado);
     if (desejado === conteudoGravado) return { tipo: 'garantidos' };
 
-    const faseId = gravado?.faseId ?? faseDaInscricao(servidor.cronogramaFases)?.id ?? null;
+    const faseId = gravado?.faseId ?? idDaFaseDeInscricao(servidor.cronogramaFases);
     if (faseId === null) return { tipo: 'semFaseDeInscricao' };
-    return { gravado, conteudoGravado, pressuposto, desejado, faseId };
+    return { ...base, desejado, faseId };
   }
 
   /**

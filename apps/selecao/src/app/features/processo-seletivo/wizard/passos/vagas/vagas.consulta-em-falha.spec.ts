@@ -133,8 +133,16 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
         {
           ...distribuicaoComCascata(),
           modalidades: [
-            { id: LB_PPI, codigo: 'LB_PPI', gravada: gravadaDe('Baixa renda PPI', 'DENTRO_DO_VR') },
-            { id: AC_CASCATA, codigo: 'AC', gravada: gravadaDe('Ampla concorrência', 'RETIRA_DE') },
+            {
+              id: LB_PPI,
+              codigo: 'LB_PPI',
+              gravada: gravadaDe('Baixa renda PPI', 'DENTRO_DA_RESERVA_LEGAL'),
+            },
+            {
+              id: AC_CASCATA,
+              codigo: 'AC',
+              gravada: gravadaDe('Ampla concorrência', 'RETIRADA_DE_OUTRA_MODALIDADE'),
+            },
           ],
           quadro: [{ modalidadeId: AC_CASCATA, quantidade: '80' }],
         },
@@ -167,9 +175,13 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
             {
               id: LB_PPI,
               codigo: 'LB_PPI',
-              gravada: gravadaDe('Descrição publicada', 'RETIRA_DE'),
+              gravada: gravadaDe('Descrição publicada', 'RETIRADA_DE_OUTRA_MODALIDADE'),
             },
-            { id: LB_Q, codigo: 'LB_Q', gravada: gravadaDe('Quilombola publicada', 'RETIRA_DE') },
+            {
+              id: LB_Q,
+              codigo: 'LB_Q',
+              gravada: gravadaDe('Quilombola publicada', 'RETIRADA_DE_OUTRA_MODALIDADE'),
+            },
           ],
           quadro: [
             { modalidadeId: LB_PPI, quantidade: '10' },
@@ -184,7 +196,7 @@ describe('VagasPassoComponent — consulta com o catálogo em falha', () => {
         id: LB_PPI,
         codigo: 'LB_PPI',
         descricao: 'Descrição de hoje',
-        composicaoVagas: 'DENTRO_DO_VR',
+        composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
       } as never,
     ]);
     store.remoteSnapshot.set({

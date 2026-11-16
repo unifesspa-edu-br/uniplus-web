@@ -1,0 +1,190 @@
+import { etapaDoServidor } from './cronograma-do-servidor';
+import {
+  AREAS_ENEM,
+  BASE_LEGAL_BONUS_REGIONAL_ID,
+  PESOS_AREA_ENEM,
+  RESOLUCAO_PESO_AREA,
+} from './catalogos-da-classificacao';
+
+export const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000898';
+
+export const ETAPA_ENTREVISTA_ID = '01960000-0000-7000-0000-0000000008f1';
+
+function tipoDeEtapa(nome: string, ordem: number, notaDeOrigemNoEnem: boolean) {
+  return {
+    origemId: `01960000-0000-7000-0000-0000000008f${ordem + 1}`,
+    codigo: notaDeOrigemNoEnem ? 'NOTA_ENEM' : 'ENTREVISTA',
+    nome,
+    notaDeOrigemNoEnem,
+    exigeCorrecaoIndependente: false,
+  };
+}
+
+/** Uma etapa gravada, com o mínimo que a hidratação do rascunho lê. */
+function etapaGravada(id: string, nome: string, ordem: number, notaDeOrigemNoEnem: boolean) {
+  const tipoEtapa = tipoDeEtapa(nome, ordem, notaDeOrigemNoEnem);
+  return etapaDoServidor({ id, identificacao: { nome, ordem, tipoEtapa }, nota: { peso: 1 } });
+}
+
+/** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
+function referencia(codigo: string) {
+  return { codigo, versao: '1.0', hash: `hash-${codigo}` };
+}
+
+/**
+ * Um processo publicado com as quatro seções declaradas — o que a consulta precisa ler.
+ * `status: 'publicado'` é o que põe o editor em somente leitura.
+ */
+export const DETALHE_PUBLICADO = {
+  id: PROCESSO_PUBLICADO_ID,
+  nome: 'Processo seletivo publicado',
+  tipoProcesso: {
+    origemId: '01960000-0000-7000-0000-000000000905',
+    codigo: 'GRAD',
+    nome: 'Graduação',
+  },
+  status: 'publicado',
+  origemCandidatos: 'inscricaoPropria',
+  unidadeAdministradora: {
+    origemId: '01960000-0000-7000-0000-000000000906',
+    sigla: 'CEPS',
+    slug: 'ceps',
+    nome: 'CEPS',
+    tipo: 'PROREITORIA',
+    cidadeCodigoIbge: '1504208',
+    cidadeNome: 'Marabá',
+    cidadeUf: 'PA',
+  },
+  localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+  etapas: [
+    etapaGravada(ETAPA_ENTREVISTA_ID, 'Entrevista', 1, false),
+    etapaGravada('01960000-0000-7000-0000-0000000008f9', 'Nota do ENEM', 2, true),
+  ],
+  atendimentoEspecializado: null,
+  distribuicaoVagas: [],
+  aplicaBonusRegional: true,
+  opcoesDeCurso: { numero: 1 },
+  bonusRegional: {
+    id: '01960000-0000-7000-0000-0000000008b1',
+    regra: referencia('BONUS-MULTIPLICATIVO'),
+    fator: 1.2,
+    teto: null,
+    baseLegalBonusRegionalId: BASE_LEGAL_BONUS_REGIONAL_ID,
+    fatoElegibilidadeCodigo: 'PEDE_O_ACRESCIMO',
+    tipoInstrumento: 'PORTARIA',
+    identificacao: 'Portaria Unifesspa nº 2514/2023',
+    descricao: 'Institui inclusão regional.',
+    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+  },
+  cascata: null,
+  criteriosDesempate: [
+    {
+      id: '01960000-0000-7000-0000-0000000008d1',
+      ordem: 1,
+      regra: referencia('DESEMPATE-MAIOR-IDADE'),
+      etapaRef: null,
+      idadeMinima: null,
+      fato: null,
+      operador: null,
+      valor: null,
+      areas: null,
+    },
+  ],
+  classificacao: {
+    id: '01960000-0000-7000-0000-0000000008c1',
+    regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
+    regraArredondamento: referencia('ARRED-TRUNCAR'),
+    casasArredondamento: 2,
+    regraOrdemAlocacao: referencia('ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA'),
+    regrasEliminacao: [
+      {
+        id: '01960000-0000-7000-0000-0000000008e1',
+        regra: referencia('ELIM-ZERO-EM-AREA'),
+        etapaRef: null,
+        notaMinima: null,
+        minimo: null,
+        areaCodigo: null,
+      },
+      {
+        id: '01960000-0000-7000-0000-0000000008e2',
+        regra: referencia('ELIM-AUSENCIA-NA-ETAPA'),
+        etapaRef: ETAPA_ENTREVISTA_ID,
+        notaMinima: null,
+        minimo: null,
+        areaCodigo: null,
+      },
+    ],
+    concorrenciaDuplaAplicavel: false,
+    baseadoEmEnem: false,
+    escalaNotaFinal: 100,
+    resolucaoPesoAreaEnem: null,
+    quadroPesoAreaEnem: [],
+  },
+  cronogramaFases: [],
+  documentosExigidos: [],
+  raizesExigencia: [],
+  referenciaTemporalFatos: null,
+  regrasDerivacao: [],
+  formularios: [],
+  opcoesDeclaradas: [],
+  configuracaoDivulgacao: null,
+  configuracaoTaxaInscricao: null,
+  algoritmoContagemPrazo: null,
+  criadoEm: '2026-09-01T00:00:00Z',
+};
+
+/** O que cada passo lê em consulta: o rótulo do campo e o trecho que o valor tem de trazer. */
+export const LEITURAS: Record<string, Record<string, string>> = {
+  'Fórmula e precisão': {
+    'Regra de cálculo': 'FORMULA-MEDIA-PONDERADA — Resolução CEPS 12/2026',
+    'Regra de arredondamento': 'ARRED-TRUNCAR — Edital padrão PSIQ',
+    'Casas decimais': '2',
+    'Ordem de alocação': 'ALOCACAO-PRIMEIRA-OPCAO-PRIORITARIA',
+    'Escala da nota final': '0 a 100',
+  },
+  Bônus: {
+    'Bônus regional': 'Aplicado neste processo',
+    'Regra do bônus': 'BONUS-MULTIPLICATIVO',
+    Fator: '1,2',
+    'Base Legal do bônus': 'Portaria Unifesspa nº 2514/2023',
+    'Quem recebe o acréscimo': 'PEDE_O_ACRESCIMO',
+  },
+  Desempate: { 'Regra do critério': 'DESEMPATE-MAIOR-IDADE — Costume administrativo' },
+  Eliminação: {
+    'Regra de eliminação 1': 'ELIM-ZERO-EM-AREA — Resolução 805/2020, art. 5º',
+    'Regra de eliminação 2': 'ELIM-AUSENCIA-NA-ETAPA — Edital do processo',
+    Etapa: 'Entrevista',
+  },
+};
+
+export const PROCESSO_DESEMPATE_POR_AREA_ID = '01960000-0000-7000-0000-000000000900';
+
+/**
+ * O mesmo processo publicado, classificado pelo ENEM com o quadro de Peso por Área congelado e
+ * um critério de desempate pela ordem das áreas: é o cartão que quebrava no celular.
+ */
+export const DETALHE_DESEMPATE_POR_AREA = {
+  ...DETALHE_PUBLICADO,
+  id: PROCESSO_DESEMPATE_POR_AREA_ID,
+  criteriosDesempate: [
+    {
+      ...DETALHE_PUBLICADO.criteriosDesempate[0],
+      regra: referencia('DESEMPATE-MAIOR-NOTA-AREA-ENEM'),
+      areas: AREAS_ENEM.map((area) => area.codigo),
+    },
+  ],
+  classificacao: {
+    ...DETALHE_PUBLICADO.classificacao,
+    baseadoEmEnem: true,
+    escalaNotaFinal: 100,
+    resolucaoPesoAreaEnem: RESOLUCAO_PESO_AREA,
+    quadroPesoAreaEnem: PESOS_AREA_ENEM.map((linha) => ({
+      grupoAreaEnem: linha.grupoCurso,
+      baseLegal: linha.baseLegal,
+      areas: linha.areas,
+    })),
+  },
+};
+
+export const PROCESSO_AUSENCIA_ID = '01960000-0000-7000-0000-000000000920';
+export const PROCESSO_EDICOES_ENEM_ID = '01960000-0000-7000-0000-000000000910';

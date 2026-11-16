@@ -47,6 +47,7 @@ export const ITUPIRANGA = {
 
 export const portaria: BaseLegalBonusRegionalDto = {
   id: 'ba5e0000-0000-7000-8000-000000000001',
+  codigo: 'PORTARIA_UNIFESSPA_2514_2023',
   tipoInstrumento: 'PORTARIA',
   identificacao: 'Portaria Unifesspa nº 2514/2023',
   descricao: 'Institui inclusão regional.',
@@ -57,6 +58,7 @@ export const portaria: BaseLegalBonusRegionalDto = {
 export const decreto: BaseLegalBonusRegionalDto = {
   ...portaria,
   id: 'ba5e0000-0000-7000-8000-000000000002',
+  codigo: 'LEI_ESTADUAL_9999_2020',
   tipoInstrumento: 'LEI',
   identificacao: 'Lei estadual nº 9.999/2020',
   municipios: [{ codigoIbge: ITUPIRANGA.codigoIbge, nome: ITUPIRANGA.nome, uf: ITUPIRANGA.uf }],

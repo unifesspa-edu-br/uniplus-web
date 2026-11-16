@@ -1,6 +1,7 @@
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 
 import { FaseDoCronograma, WizardDraft } from '../../processo-seletivo.models';
+import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 
 export const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000518';
 
@@ -63,20 +64,11 @@ export function draftVazio(): WizardDraft {
 }
 
 export function fase(parcial: Partial<FaseDoCronograma> & { ordem: number }): FaseDoCronograma {
-  return {
+  return umaFaseDoCronograma({
     faseCanonicaId: `fase-${parcial.ordem}`,
     codigo: `FASE-${parcial.ordem}`,
-    inicio: null,
-    fim: null,
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    congelados: null,
     ...parcial,
-  };
+  });
 }
 
 export function atoCompleto(): WizardDraft['publicacao']['ato'] {

@@ -1,9 +1,13 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type {
+  BancaDaEtapa,
   BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
+  ItemDeAvaliacaoDaEtapa,
+  NivelDeAtendimentoDaEtapa,
+  ProcedimentoDeRecurso,
   ProdutoDaFase,
   RecursoDaEtapa,
   RecursoDaFase,
@@ -28,32 +32,37 @@ export function cronogramaDe(dto: ProcessoSeletivoDto): WizardDraft['cronograma'
   const algoritmo = dto.algoritmoContagemPrazo;
 
   return {
-    fases: (dto.cronogramaFases ?? []).map(faseDe),
-    // Renumeradas na chegada: a etapa gravada sem ordem volta como zero, e com
-    // uma etapa só não há duplicata que a conferência acuse nem botão de mover
-    // que a conserte — a gravação sairia com ordem zero para voltar recusada,
-    // sem nada na tela explicando. A posição na lista é a ordem que o servidor
-    // devolveu, então renumerar preserva a sequência que já existia.
-    etapas: (dto.etapas ?? []).map(etapaDe).map((etapa, posicao) => ({
-      ...etapa,
-      ordem: posicao + 1,
-    })),
+    fases: dto.cronogramaFases.map(faseDe),
+    etapas: etapasRenumeradasDe(dto),
     algoritmoContagemCodigo: algoritmo?.codigo ?? '',
     algoritmoContagemVersao: algoritmo?.versao ?? '',
   };
 }
 
+// Renumeradas na chegada: a etapa gravada sem ordem volta como zero, e com
+// uma etapa só não há duplicata que a conferência acuse nem botão de mover
+// que a conserte — a gravação sairia com ordem zero para voltar recusada,
+// sem nada na tela explicando. A posição na lista é a ordem que o servidor
+// devolveu, então renumerar preserva a sequência que já existia.
+function etapasRenumeradasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
+  return dto.etapas.map(etapaDe).map((etapa, posicao) => ({ ...etapa, ordem: posicao + 1 }));
+}
+
 type FaseDoDto = ProcessoSeletivoDto['cronogramaFases'][number];
 type EtapaDoDto = ProcessoSeletivoDto['etapas'][number];
-type ArgumentosDoRecurso = NonNullable<FaseDoDto['regraRecurso']>['args'];
+type RecursoDaFaseDoDto = NonNullable<FaseDoDto['publicacoes']['regraRecurso']>;
+type ArgumentosDoRecurso = RecursoDaFaseDoDto['args'];
+type ProcedimentoDoDto = RecursoDaFaseDoDto['procedimentos'][number];
+type RecursoDaEtapaDoDto = EtapaDoDto['publicacoes']['recursos'][number];
 
 function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados']> {
+  const { faseCanonica } = fase;
   return {
-    origemData: fase.origemData,
-    agrupaEtapas: fase.agrupaEtapas,
-    coletaInscricao: fase.coletaInscricao,
-    permiteComplementacao: fase.permiteComplementacao,
-    coletaSolicitacaoIsencao: fase.coletaSolicitacaoIsencao,
+    origemData: faseCanonica.origemData,
+    agrupaEtapas: faseCanonica.agrupaEtapas,
+    coletaInscricao: faseCanonica.coletaInscricao,
+    permiteComplementacao: faseCanonica.permiteComplementacao,
+    coletaSolicitacaoIsencao: faseCanonica.coletaSolicitacaoIsencao,
     bancas: fase.bancasRequeridas.map((banca) => ({
       id: banca.tipoBancaOrigemId,
       codigo: banca.codigo,
@@ -76,15 +85,9 @@ function produtosDe(
 function faseDe(fase: FaseDoDto): FaseDoCronograma {
   return {
     ...identificacaoDaFaseDe(fase),
-    ordem: comoInteiro(fase.ordem),
-    inicio: fase.inicio,
-    fim: fase.fim,
-    produtos: produtosDe(fase.produtos),
-    unidadeResponsavelId: fase.unidadeResponsavel?.origemId ?? null,
-    faseConcluinteCodigo: fase.faseConcluinteCodigo,
-    emiteParecerIndividual: fase.emiteParecerIndividual,
+    ...agendaDaFaseDe(fase.cronograma),
+    ...publicacoesDaFaseDe(fase.publicacoes),
     bancasRequeridas: fase.bancasRequeridas.map(bancaRequeridaDe),
-    regraRecurso: recursoDe(fase.regraRecurso, fase.produtos),
   };
 }
 
@@ -92,11 +95,42 @@ function identificacaoDaFaseDe(
   fase: FaseDoDto,
 ): Pick<FaseDoCronograma, 'faseCanonicaId' | 'codigo' | 'congelados'> {
   return {
-    faseCanonicaId: fase.faseCanonicaOrigemId,
+    faseCanonicaId: fase.faseCanonica.origemId,
     codigo: fase.codigo,
     // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
     // fase, e é isto que mantém a tela sabendo o que ela exige.
     congelados: congeladosDe(fase),
+  };
+}
+
+/** Quando a fase acontece e quem responde por ela. */
+function agendaDaFaseDe(
+  cronograma: FaseDoDto['cronograma'],
+): Pick<
+  FaseDoCronograma,
+  'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId' | 'faseConcluinteCodigo'
+> {
+  return {
+    ordem: comoInteiro(cronograma.ordem),
+    inicio: cronograma.inicio,
+    fim: cronograma.fim,
+    unidadeResponsavelId: cronograma.unidadeResponsavel?.origemId ?? null,
+    faseConcluinteCodigo: cronograma.faseConcluinteCodigo,
+  };
+}
+
+/** O que a fase publica, o recurso que admite e os tipos de decisão que declara. */
+function publicacoesDaFaseDe(
+  publicacoes: FaseDoDto['publicacoes'],
+): Pick<
+  FaseDoCronograma,
+  'produtos' | 'emiteParecerIndividual' | 'regraRecurso' | 'tiposDeDecisao'
+> {
+  return {
+    produtos: produtosDe(publicacoes.produtos),
+    emiteParecerIndividual: publicacoes.emiteParecerIndividual,
+    regraRecurso: recursoDe(publicacoes.regraRecurso, publicacoes.produtos),
+    tiposDeDecisao: [...publicacoes.tiposDeDecisao],
   };
 }
 
@@ -120,8 +154,8 @@ function bancaRequeridaDe(banca: FaseDoDto['bancasRequeridas'][number]): BancaRe
  * prazo de recurso passaria a contar de outra publicação em silêncio.
  */
 function recursoDe(
-  regra: FaseDoDto['regraRecurso'],
-  produtos: FaseDoDto['produtos'],
+  regra: FaseDoDto['publicacoes']['regraRecurso'],
+  produtos: FaseDoDto['publicacoes']['produtos'],
 ): RecursoDaFase | null {
   if (regra === null || regra === undefined) return null;
 
@@ -131,13 +165,30 @@ function recursoDe(
     regraVersao: regra.regra.versao,
     atoAncoraCodigo: ancora?.atoCodigo ?? '',
     ...argumentosDoRecursoDe(regra.args),
+    procedimentos: procedimentosDe(regra.procedimentos),
   };
+}
+
+/**
+ * Os procedimentos como o servidor os declarou, com a sugestão ao lado: ela é só leitura e não
+ * volta no comando.
+ */
+function procedimentosDe(
+  procedimentos: readonly ProcedimentoDoDto[],
+): readonly ProcedimentoDeRecurso[] {
+  return procedimentos.map((procedimento) => ({
+    tipoDeDecisao: procedimento.tipoDeDecisao,
+    alvo: procedimento.alvo === null ? null : { ...procedimento.alvo },
+    regraCodigo: procedimento.regra.codigo,
+    regraVersao: procedimento.regra.versao,
+    sugestao: procedimento.sugestao,
+  }));
 }
 
 /** Os argumentos do recurso, que fase e etapa leem do mesmo jeito: o prazo e o efeito suspensivo. */
 function argumentosDoRecursoDe(
   args: ArgumentosDoRecurso,
-): Omit<RecursoDaFase, 'regraCodigo' | 'regraVersao' | 'atoAncoraCodigo'> {
+): Omit<RecursoDaFase, 'regraCodigo' | 'regraVersao' | 'atoAncoraCodigo' | 'procedimentos'> {
   return {
     prazoValor: comoTexto(args.prazoValor),
     prazoUnidade: args.prazoUnidade,
@@ -155,22 +206,31 @@ function argumentosDoRecursoDe(
  * gravá-lo, porque a navegação é livre.
  */
 export function etapasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
-  return (dto.etapas ?? []).map(etapaDe);
+  return dto.etapas.map(etapaDe);
 }
 
 function etapaDe(etapa: EtapaDoDto): EtapaPontuada {
   return {
     id: etapa.id,
-    nome: etapa.nome,
-    carater: etapa.carater,
-    tipoEtapaOrigemId: etapa.tipoEtapa.origemId,
-    tipoCongelado: {
-      origemId: etapa.tipoEtapa.origemId,
-      nome: etapa.tipoEtapa.nome,
-      notaDeOrigemNoEnem: etapa.tipoEtapa.notaDeOrigemNoEnem,
-    },
+    ...identificacaoDaEtapaDe(etapa.identificacao),
     ...avaliacaoDaEtapaDe(etapa),
     ...agendaDaEtapaDe(etapa),
+  };
+}
+
+function identificacaoDaEtapaDe(
+  identificacao: EtapaDoDto['identificacao'],
+): Pick<EtapaPontuada, 'nome' | 'carater' | 'tipoEtapaOrigemId' | 'tipoCongelado'> {
+  const { tipoEtapa } = identificacao;
+  return {
+    nome: identificacao.nome,
+    carater: identificacao.carater,
+    tipoEtapaOrigemId: tipoEtapa.origemId,
+    tipoCongelado: {
+      origemId: tipoEtapa.origemId,
+      nome: tipoEtapa.nome,
+      notaDeOrigemNoEnem: tipoEtapa.notaDeOrigemNoEnem,
+    },
   };
 }
 
@@ -188,25 +248,30 @@ type AvaliacaoDaEtapa = Pick<
 >;
 
 /** Como a etapa pontua: a escala da nota, a forma de avaliar e os itens e níveis de atendimento. */
-function avaliacaoDaEtapaDe(etapa: EtapaDoDto): AvaliacaoDaEtapa {
+function avaliacaoDaEtapaDe({ nota, avaliacao }: EtapaDoDto): AvaliacaoDaEtapa {
   return {
-    peso: comoTexto(etapa.peso),
-    notaMinima: comoTexto(etapa.notaMinima),
-    notaMaxima: comoTexto(etapa.notaMaxima),
-    passoDoLancamento: comoTexto(etapa.passoDoLancamento),
-    formaDeAvaliacao: etapa.formaDeAvaliacao ?? '',
-    regraConsolidacaoCodigo: etapa.regraConsolidacao?.codigo ?? '',
-    regraConsolidacaoVersao: etapa.regraConsolidacao?.versao ?? '',
-    itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
-      id: item.id,
-      rotulo: item.rotulo,
-      pontuacaoMaxima: comoTexto(item.pontuacaoMaxima),
-    })),
-    escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({
-      rotulo: nivel.rotulo,
-      percentual: percentualDaFracao(nivel.fracao),
-    })),
+    peso: comoTexto(nota.peso),
+    notaMinima: comoTexto(nota.notaMinima),
+    notaMaxima: comoTexto(nota.notaMaxima),
+    passoDoLancamento: comoTexto(nota.passoDoLancamento),
+    formaDeAvaliacao: avaliacao.formaDeAvaliacao ?? '',
+    regraConsolidacaoCodigo: avaliacao.regraConsolidacao?.codigo ?? '',
+    regraConsolidacaoVersao: avaliacao.regraConsolidacao?.versao ?? '',
+    itensDeAvaliacao: avaliacao.itensDeAvaliacao.map(itemDeAvaliacaoDe),
+    escalaDeAtendimento: (avaliacao.escalaDeAtendimento ?? []).map(nivelDeAtendimentoDe),
   };
+}
+
+function itemDeAvaliacaoDe(
+  item: EtapaDoDto['avaliacao']['itensDeAvaliacao'][number],
+): ItemDeAvaliacaoDaEtapa {
+  return { id: item.id, rotulo: item.rotulo, pontuacaoMaxima: comoTexto(item.pontuacaoMaxima) };
+}
+
+function nivelDeAtendimentoDe(
+  nivel: NonNullable<EtapaDoDto['avaliacao']['escalaDeAtendimento']>[number],
+): NivelDeAtendimentoDaEtapa {
+  return { rotulo: nivel.rotulo, percentual: percentualDaFracao(nivel.fracao) };
 }
 
 type AgendaDaEtapa = Pick<
@@ -219,35 +284,51 @@ type AgendaDaEtapa = Pick<
   | 'emiteParecerIndividual'
   | 'bancas'
   | 'recursos'
+  | 'tiposDeDecisao'
 >;
 
-/** Onde a etapa acontece: a fase, a janela, o que publica, as bancas e os recursos. */
+/** Onde a etapa acontece: a posição, a fase e a janela, mais as bancas, os recursos e as decisões. */
 function agendaDaEtapaDe(etapa: EtapaDoDto): AgendaDaEtapa {
+  const { identificacao, janela } = etapa;
   return {
-    ordem: comoInteiro(etapa.ordem),
-    faseCodigo: etapa.faseCodigo ?? '',
-    produtos: produtosDe(etapa.produtos ?? []),
-    inicio: instanteDe(etapa.inicio),
-    fim: instanteDe(etapa.fim),
-    emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
-    bancas: (etapa.bancas ?? []).map((banca) => ({
-      tipoBancaId: banca.tipoBancaOrigemId,
-      regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
-    })),
-    recursos: (etapa.recursos ?? []).map(recursoDaEtapaDe),
+    ordem: comoInteiro(identificacao.ordem),
+    faseCodigo: identificacao.faseCodigo ?? '',
+    inicio: instanteDe(janela.inicio),
+    fim: instanteDe(janela.fim),
+    bancas: etapa.bancas.map(bancaDaEtapaDe),
+    ...publicacoesDaEtapaDe(etapa.publicacoes),
   };
 }
 
-function instanteDe(instante: string | null | undefined): string {
-  return instante === null || instante === undefined ? '' : campoDoInstante(instante);
+function publicacoesDaEtapaDe(
+  publicacoes: EtapaDoDto['publicacoes'],
+): Pick<EtapaPontuada, 'produtos' | 'emiteParecerIndividual' | 'recursos' | 'tiposDeDecisao'> {
+  return {
+    produtos: produtosDe(publicacoes.produtos),
+    emiteParecerIndividual: publicacoes.emiteParecerIndividual,
+    recursos: publicacoes.recursos.map(recursoDaEtapaDe),
+    tiposDeDecisao: [...publicacoes.tiposDeDecisao],
+  };
 }
 
-function recursoDaEtapaDe(recurso: NonNullable<EtapaDoDto['recursos']>[number]): RecursoDaEtapa {
+function bancaDaEtapaDe(banca: EtapaDoDto['bancas'][number]): BancaDaEtapa {
   return {
-    ancora: recurso.ancora as unknown as RecursoDaEtapa['ancora'],
+    tipoBancaId: banca.tipoBancaOrigemId,
+    regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
+  };
+}
+
+function instanteDe(instante: string | null): string {
+  return instante === null ? '' : campoDoInstante(instante);
+}
+
+function recursoDaEtapaDe(recurso: RecursoDaEtapaDoDto): RecursoDaEtapa {
+  return {
+    ancora: recurso.ancora as RecursoDaEtapa['ancora'],
     regraCodigo: recurso.regra.codigo,
     regraVersao: recurso.regra.versao,
     atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
     ...argumentosDoRecursoDe(recurso.args),
+    procedimentos: procedimentosDe(recurso.procedimentos),
   };
 }

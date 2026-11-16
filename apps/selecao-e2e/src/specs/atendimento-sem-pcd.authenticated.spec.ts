@@ -3,7 +3,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
-import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from '../fixtures/vagas-da-medicina';
+import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from '../fixtures/medicina/formulario-das-modalidades';
 import { responder, responderCom } from '../support/responder';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';

@@ -35,6 +35,7 @@ const RECURSO: RecursoDaEtapa = {
   admiteInstanciaSuperior: true,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 describe('JanelaRecursalComponent', () => {
@@ -122,5 +123,32 @@ describe('JanelaRecursalComponent', () => {
     expect(grupo.controls.recursos.value[0]?.suspensividadeSegundaInstanciaUnidade).toBe(
       UnidadePrazo.dias,
     );
+  });
+
+  it('lista os procedimentos declarados, nomeando o item contestado pelo rótulo da etapa', () => {
+    grupo.controls.itensDeAvaliacao.setValue([
+      { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: '4' },
+    ]);
+    fixture.componentRef.setInput('recursoDaEtapa', {
+      ...RECURSO,
+      procedimentos: [
+        {
+          tipoDeDecisao: 'NOTA_DA_ETAPA',
+          alvo: { itemDeAvaliacaoId: 'item-1', areaDoEnem: null },
+          regraCodigo: 'PROCEDIMENTO-RECURSO-COLEGIADO',
+          regraVersao: 'v1',
+          sugestao: 'PROCEDIMENTO-RECURSO-MONOCRATICO',
+        },
+      ],
+    });
+    fixture.detectChanges();
+
+    const lista = (fixture.nativeElement as HTMLElement).querySelector(
+      'sel-procedimentos-do-recurso',
+    );
+    expect(lista?.classList.contains('form-grid__full')).toBe(true);
+    expect(lista?.textContent).toContain('NOTA_DA_ETAPA');
+    expect(lista?.textContent).toContain('Clareza');
+    expect(lista?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
   });
 });

@@ -1,80 +1,52 @@
-import { UnidadePrazo, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  type EtapaProcessoDto,
+  type ProcessoSeletivoDto,
+  UnidadePrazo,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { etapasDe } from '../../shared/hidratacao';
 import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
+import {
+  ARGUMENTOS_DO_RECURSO,
+  type EtapaDoServidorParcial,
+  etapaDoServidor,
+  recursoDaEtapaDoServidor,
+} from '../../shared/cronograma-do-servidor.testing';
+import { etapasDe } from '../../shared/hidratacao';
+import { dtoComCronograma } from '../../shared/hidratacao.testing';
 import { comoComandoDeEtapa, comoComandoDeFase, recursoResolvido } from './cronograma-para-comando';
+
+type ArgumentosDoRecurso = EtapaProcessoDto['publicacoes']['recursos'][number]['args'];
 
 /**
  * O certame como o servidor o devolve, reduzido à etapa e à janela recursal — é o único
  * recorte que estes testes leem, e montar o DTO inteiro só esconderia o que está em jogo.
  */
-function detalheComRecursoDaEtapa(
-  args: Partial<{
-    prazoValor: number;
-    prazoUnidade: string;
-    suspensividadePrimeiraInstanciaValor: number | null;
-    suspensividadePrimeiraInstanciaUnidade: string | null;
-    admiteInstanciaSuperior: boolean;
-    suspensividadeSegundaInstanciaValor: number | null;
-    suspensividadeSegundaInstanciaUnidade: string | null;
-  }> = {},
-): ProcessoSeletivoDto {
-  return {
+function detalheComRecursoDaEtapa(args: Partial<ArgumentosDoRecurso> = {}): ProcessoSeletivoDto {
+  const recurso = recursoDaEtapaDoServidor({ args: { ...ARGUMENTOS_DO_RECURSO, ...args } });
+  return dtoComCronograma({
     etapas: [
-      {
+      etapaDoServidor({
         id: '01960000-0000-7000-0000-0000000000e1',
-        nome: 'Prova Objetiva',
-        carater: 'classificatoria',
-        tipoEtapa: { origemId: '01960000-0000-7000-0000-0000000000t1' },
-        peso: 2,
-        notaMinima: null,
-        ordem: 1,
-        faseCodigo: 'AVALIACAO',
-        produtos: [],
-        inicio: null,
-        fim: null,
-        emiteParecerIndividual: false,
-        bancas: [],
-        recursos: [
-          {
-            id: '01960000-0000-7000-0000-0000000000r1',
-            ancora: 'atoPublicado',
-            regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: '1.0.0' },
-            args: {
-              prazoValor: args.prazoValor ?? 2,
-              prazoUnidade: args.prazoUnidade ?? 'diasUteis',
-              suspensividadePrimeiraInstanciaValor:
-                args.suspensividadePrimeiraInstanciaValor ?? null,
-              suspensividadePrimeiraInstanciaUnidade:
-                args.suspensividadePrimeiraInstanciaUnidade ?? null,
-              admiteInstanciaSuperior: args.admiteInstanciaSuperior ?? true,
-              suspensividadeSegundaInstanciaValor: args.suspensividadeSegundaInstanciaValor ?? null,
-              suspensividadeSegundaInstanciaUnidade:
-                args.suspensividadeSegundaInstanciaUnidade ?? null,
-            },
-            produtoAncoraId: '01960000-0000-7000-0000-0000000000p1',
-            atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-          },
-        ],
-      },
+        identificacao: { faseCodigo: 'AVALIACAO' },
+        publicacoes: { recursos: [recurso] },
+      }),
     ],
-  } as unknown as ProcessoSeletivoDto;
+  });
 }
 
 describe('avaliação da etapa no ida-e-volta', () => {
-  function lida(extra: Record<string, unknown>) {
-    const detalhe = detalheComRecursoDaEtapa();
-    Object.assign(detalhe.etapas[0] as unknown as Record<string, unknown>, extra);
-    return etapasDe(detalhe)[0];
+  function lida(parcial: EtapaDoServidorParcial) {
+    return etapasDe(dtoComCronograma({ etapas: [etapaDoServidor(parcial)] }))[0];
   }
 
   it('relê e regrava a etapa humana com a regra e o passo', () => {
     const etapa = lida({
-      notaMaxima: 10,
-      passoDoLancamento: 0.5,
-      formaDeAvaliacao: 'HUMANA',
-      regraConsolidacao: { codigo: 'CONSOLIDACAO-AVALIACAO-UNICA', versao: 'v1', hash: 'h' },
+      nota: { notaMaxima: 10, passoDoLancamento: 0.5 },
+      avaliacao: {
+        formaDeAvaliacao: 'HUMANA',
+        regraConsolidacao: { codigo: 'CONSOLIDACAO-AVALIACAO-UNICA', versao: 'v1', hash: 'h' },
+      },
     });
 
     expect(etapa.passoDoLancamento).toBe('0.5');
@@ -89,7 +61,7 @@ describe('avaliação da etapa no ida-e-volta', () => {
 
   it('a forma objetiva envia regra e passo nulos, ainda que a etapa os carregue', () => {
     const etapa = {
-      ...lida({ notaMaxima: 10, formaDeAvaliacao: 'OBJETIVA' }),
+      ...lida({ nota: { notaMaxima: 10 }, avaliacao: { formaDeAvaliacao: 'OBJETIVA' } }),
       passoDoLancamento: '0.5',
       regraConsolidacaoCodigo: 'CONSOLIDACAO-AVALIACAO-UNICA',
       regraConsolidacaoVersao: 'v1',
@@ -105,15 +77,17 @@ describe('avaliação da etapa no ida-e-volta', () => {
 
   it('relê os itens com o id e a escala em percentual, e regrava a fração', () => {
     const etapa = lida({
-      notaMaxima: 10,
-      formaDeAvaliacao: 'HUMANA',
-      itensDeAvaliacao: [
-        { id: '01960000-0000-7000-0000-0000000000i1', rotulo: 'Clareza', pontuacaoMaxima: 4 },
-      ],
-      escalaDeAtendimento: [
-        { rotulo: 'Atendeu', fracao: 1 },
-        { rotulo: 'Parcial', fracao: 0.5 },
-      ],
+      nota: { notaMaxima: 10 },
+      avaliacao: {
+        formaDeAvaliacao: 'HUMANA',
+        itensDeAvaliacao: [
+          { id: '01960000-0000-7000-0000-0000000000i1', rotulo: 'Clareza', pontuacaoMaxima: 4 },
+        ],
+        escalaDeAtendimento: [
+          { rotulo: 'Atendeu', fracao: 1 },
+          { rotulo: 'Parcial', fracao: 0.5 },
+        ],
+      },
     });
 
     expect(etapa.escalaDeAtendimento?.map((nivel) => nivel.percentual)).toEqual(['100', '50']);
@@ -130,7 +104,7 @@ describe('avaliação da etapa no ida-e-volta', () => {
 
   it('o item novo vai sem id', () => {
     const etapa = {
-      ...lida({ notaMaxima: 10 }),
+      ...lida({ nota: { notaMaxima: 10 } }),
       itensDeAvaliacao: [{ id: null, rotulo: ' Método ', pontuacaoMaxima: '6,5' }],
     };
 
@@ -156,9 +130,9 @@ describe('recurso da etapa no ida-e-volta', () => {
     const etapa = etapasDe(
       detalheComRecursoDaEtapa({
         suspensividadePrimeiraInstanciaValor: 3,
-        suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
         suspensividadeSegundaInstanciaValor: 48,
-        suspensividadeSegundaInstanciaUnidade: 'horas',
+        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
       }),
     )[0];
 
@@ -170,7 +144,7 @@ describe('recurso da etapa no ida-e-volta', () => {
     const comando = comoComandoDeEtapa(etapa);
     expect(comando.recursos?.[0]).toMatchObject({
       suspensividadePrimeiraInstanciaValor: 3,
-      suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
       suspensividadeSegundaInstanciaValor: 48,
       suspensividadeSegundaInstanciaUnidade: 'horas',
     });
@@ -181,7 +155,7 @@ describe('recurso da etapa no ida-e-volta', () => {
     const etapa = etapasDe(
       detalheComRecursoDaEtapa({
         suspensividadePrimeiraInstanciaValor: 3,
-        suspensividadePrimeiraInstanciaUnidade: 'diasUteis',
+        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
       }),
     )[0];
 
@@ -210,7 +184,7 @@ describe('recurso da etapa no ida-e-volta', () => {
       detalheComRecursoDaEtapa({
         admiteInstanciaSuperior: true,
         suspensividadeSegundaInstanciaValor: 48,
-        suspensividadeSegundaInstanciaUnidade: 'horas',
+        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
       }),
     )[0];
     const semInstancia = {
@@ -252,6 +226,7 @@ describe('regra de recurso da fase no comando', () => {
     admiteInstanciaSuperior: true,
     suspensividadeSegundaInstanciaValor: '48',
     suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
+    procedimentos: [],
   };
 
   const fase: FaseDoCronograma = {
@@ -266,6 +241,7 @@ describe('regra de recurso da fase no comando', () => {
     emiteParecerIndividual: false,
     bancasRequeridas: [],
     regraRecurso,
+    tiposDeDecisao: [],
     congelados: null,
   };
 

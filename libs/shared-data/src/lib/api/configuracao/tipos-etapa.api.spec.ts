@@ -24,6 +24,7 @@ const provaObjetiva: TipoEtapaDto = {
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  exigeCorrecaoIndependente: false,
   conceitosAdmitidos: [],
   criadoEm: '2026-08-30T12:00:00Z',
 };
@@ -81,6 +82,7 @@ describe('TiposEtapaApi', () => {
           nome: 'Análise socioeconômica',
           admitePontuacao: false,
           admiteEliminacao: true,
+          exigeCorrecaoIndependente: false,
           conceitosAdmitidos: [],
           descricao: null,
         },
@@ -107,6 +109,7 @@ describe('TiposEtapaApi', () => {
           nome: 'Prova Objetiva',
           admitePontuacao: true,
           admiteEliminacao: false,
+          exigeCorrecaoIndependente: true,
           conceitosAdmitidos: [],
           descricao: null,
         },
@@ -119,7 +122,10 @@ describe('TiposEtapaApi', () => {
     );
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).not.toHaveProperty('codigo');
-    expect(req.request.body).toMatchObject({ admiteEliminacao: false });
+    expect(req.request.body).toMatchObject({
+      admiteEliminacao: false,
+      exigeCorrecaoIndependente: true,
+    });
     req.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(isApiOk((await promise) as ApiResult<void>)).toBe(true);

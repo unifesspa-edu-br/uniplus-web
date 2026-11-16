@@ -1,3 +1,5 @@
+import { COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE } from '@uniplus/shared-data/configuracao';
+
 import { DistribuicaoDeVagas } from '../../processo-seletivo.models';
 
 import { repetidos } from '../../shared/repetidos';
@@ -91,6 +93,11 @@ export function problemasDeModalidades(
   return problemas;
 }
 
+interface ExigenciaDeCompanheira {
+  readonly codigo: string | null;
+  readonly papel: string;
+}
+
 /**
  * Modalidade que retira de outra, ou que remaneja para outra, exige a
  * companheira selecionada na mesma oferta — senão a regra não tem como ser
@@ -101,33 +108,43 @@ function problemasDeDependencia(
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
   federal: boolean,
 ): string[] {
-  const codigosSelecionados = new Set(
-    modalidadeIds.map((id) => catalogo.get(id)?.codigo).filter((codigo) => codigo !== undefined),
-  );
+  const selecionadas = modalidadeIds.map((id) => catalogo.get(id));
+  const codigosSelecionados = new Set(selecionadas.map((modalidade) => modalidade?.codigo));
 
-  const exigencias = modalidadeIds.flatMap((id) => {
-    const modalidade = catalogo.get(id);
-    if (modalidade === undefined) return [];
-
-    return [
-      ...(federal && modalidade.composicaoVagas === 'RETIRA_DE'
-        ? [{ codigo: modalidade.composicaoOrigemCodigo, papel: 'a origem da retirada' }]
-        : []),
-      ...(modalidade.regraRemanejamento === 'DESTINO_UNICO'
-        ? [{ codigo: modalidade.remanejamentoDestino, papel: 'o destino do remanejamento' }]
-        : []),
-      ...(modalidade.regraRemanejamento === 'CRUZADO'
-        ? [
-            { codigo: modalidade.remanejamentoPar, papel: 'o par do remanejamento' },
-            { codigo: modalidade.remanejamentoFallback, papel: 'o destino final do remanejamento' },
-          ]
-        : []),
-    ].map((exigencia) => ({ ...exigencia, de: modalidade.codigo }));
-  });
-
-  return exigencias
+  return selecionadas
+    .flatMap((modalidade) => (modalidade ? exigenciasDaModalidade(modalidade, federal) : []))
     .filter(({ codigo }) => codigo !== null && !codigosSelecionados.has(codigo))
     .map(({ de, papel, codigo }) => `${de} exige ${papel} (${codigo}) selecionado nesta oferta.`);
+}
+
+function exigenciasDaModalidade(modalidade: ModalidadeDoCatalogo, federal: boolean) {
+  return [
+    ...exigenciaDaRetirada(modalidade, federal),
+    ...exigenciasDoRemanejamento(modalidade),
+  ].map((exigencia) => ({ ...exigencia, de: modalidade.codigo }));
+}
+
+function exigenciaDaRetirada(
+  modalidade: ModalidadeDoCatalogo,
+  federal: boolean,
+): ExigenciaDeCompanheira[] {
+  return federal && modalidade.composicaoVagas === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE
+    ? [{ codigo: modalidade.composicaoOrigemCodigo, papel: 'a origem da retirada' }]
+    : [];
+}
+
+function exigenciasDoRemanejamento(modalidade: ModalidadeDoCatalogo): ExigenciaDeCompanheira[] {
+  switch (modalidade.regraRemanejamento) {
+    case 'DESTINO_UNICO':
+      return [{ codigo: modalidade.remanejamentoDestino, papel: 'o destino do remanejamento' }];
+    case 'CRUZADO':
+      return [
+        { codigo: modalidade.remanejamentoPar, papel: 'o par do remanejamento' },
+        { codigo: modalidade.remanejamentoFallback, papel: 'o destino final do remanejamento' },
+      ];
+    default:
+      return [];
+  }
 }
 
 /**
@@ -186,7 +203,7 @@ function problemasDaQuantidadeFixada(
 
 /**
  * Quem declara a quantidade: o edital ou a regra. No ramo federal o motor
- * calcula as que derivam do VR e do residual, e fixá-las é recusado.
+ * calcula as que derivam da reserva legal e do restante das vagas ofertadas, e fixá-las é recusado.
  */
 function problemasDaModalidadeSelecionada(
   modalidadeId: string,

@@ -28,8 +28,8 @@ export class UnidadesResponsaveisDasFases {
   readonly unidadesParaEscolha = computed(() =>
     opcoesComAsGravadas(
       this.catalogoDeUnidades.opcoes(),
-      (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
-        fase.unidadeResponsavel === null ? [] : [fase.unidadeResponsavel],
+      (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap(({ cronograma }) =>
+        cronograma.unidadeResponsavel === null ? [] : [cronograma.unidadeResponsavel],
       ),
     ),
   );
@@ -41,9 +41,10 @@ export class UnidadesResponsaveisDasFases {
   private readonly gravadaPorFase = computed<ReadonlyMap<string, UnidadeGravada>>(
     () =>
       new Map(
-        (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) =>
-          fase.unidadeResponsavel === null ? [] : [[fase.codigo, fase.unidadeResponsavel] as const],
-        ),
+        (this.store.remoteSnapshot()?.cronogramaFases ?? []).flatMap((fase) => {
+          const unidade = fase.cronograma.unidadeResponsavel;
+          return unidade === null ? [] : [[fase.codigo, unidade] as const];
+        }),
       ),
   );
 
@@ -94,7 +95,8 @@ export class UnidadesResponsaveisDasFases {
    * unidade administradora do processo.
    */
   unidadeInicialDaFase(faseCanonicaId: string): string | null {
-    const sugerida = this.catalogoDeFases.fasePorId().get(faseCanonicaId)?.unidadeSugerida?.origemId;
+    const sugerida = this.catalogoDeFases.fasePorId().get(faseCanonicaId)
+      ?.unidadeSugerida?.origemId;
     if (
       sugerida !== undefined &&
       this.catalogoDeUnidades.opcoes().some((opcao) => opcao.id === sugerida)

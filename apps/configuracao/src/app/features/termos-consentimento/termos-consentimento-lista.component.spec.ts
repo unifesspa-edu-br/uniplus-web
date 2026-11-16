@@ -6,6 +6,7 @@ import { TermosConsentimentoListaComponent } from './termos-consentimento-lista.
 
 const LGPD: TermoConsentimentoResumoDto = {
   id: 'id-lgpd',
+  codigo: 'TERMO_LGPD',
   nome: 'Termo LGPD',
   formaAceiteRascunho: 'REGISTRO_DIGITAL_COM_LOG_IP',
   revisado: true,

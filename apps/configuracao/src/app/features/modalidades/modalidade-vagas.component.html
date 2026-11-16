@@ -39,7 +39,9 @@
           <option [value]="op.value">{{ op.label }}</option>
         }
       </select>
-      <span class="field__hint">"Retira de" exige informar a modalidade de origem.</span>
+      <span class="field__hint"
+        >"Retirada de outra modalidade" exige informar a modalidade de origem.</span
+      >
       @if (erroDoCampo('composicaoVagas')) {
         <span id="cfg-mod-composicaoVagas-erro" class="field__error">{{
           erroDoCampo('composicaoVagas')

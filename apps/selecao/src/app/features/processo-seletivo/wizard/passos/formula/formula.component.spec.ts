@@ -32,6 +32,7 @@ function etapaQueCompoeNota(): EtapaPontuada {
     emiteParecerIndividual: false,
     bancas: [],
     recursos: [],
+    tiposDeDecisao: [],
   };
 }
 

@@ -12,6 +12,7 @@ import {
   UNIDADES_DA_SUSPENSIVIDADE,
   type UnidadeDePrazoDoRecurso,
 } from '../../../shared/unidades-de-prazo-do-recurso';
+import { ProcedimentosDoRecursoComponent } from '../../cronograma/procedimentos-do-recurso/procedimentos-do-recurso.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** Os controles de um par prazo e unidade, como o ng-template compartilhado os desenha. */
@@ -43,10 +44,10 @@ const OPCOES_DA_SUSPENSIVIDADE: OpcoesDeUnidade = {
 
 type Instancia = 'PrimeiraInstancia' | 'SegundaInstancia';
 
-const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
-  PrimeiraInstancia: '1ª',
-  SegundaInstancia: '2ª',
-};
+const INSTANCIAS = {
+  PrimeiraInstancia: { rotulo: '1ª', sufixo: 'susp1' },
+  SegundaInstancia: { rotulo: '2ª', sufixo: 'susp2' },
+} as const;
 
 type RecursoDaFase = NonNullable<
   ReturnType<FaseEmEdicao['espelho']['formulario']>
@@ -81,6 +82,7 @@ function regraDeRecursoLida(recurso: RecursoDaFase): string | null {
   imports: [
     FormsModule,
     NgTemplateOutlet,
+    ProcedimentosDoRecursoComponent,
     ReactiveFormsModule,
     ValorEmConsultaComponent,
     ValorLegivelDirective,
@@ -122,7 +124,7 @@ export class RegraDeRecursoDaFaseComponent {
       ...OPCOES_DA_INTERPOSICAO,
       invalidoNoValor: erro,
       invalidoNaUnidade: erro,
-      descritoPor: this.descritoPeloPrazo(erro),
+      descritoPor: this.descricaoDoPar('prazo-ajuda', 'prazo', erro),
     };
   });
 
@@ -170,24 +172,24 @@ export class RegraDeRecursoDaFaseComponent {
     return codigo ? (this.catalogoDeAtos.rotuloDoAto().get(codigo) ?? codigo) : null;
   }
 
-  private descritoPeloPrazo(erro: 'true' | null): string {
-    const ajuda = this.idDaFase('prazo-ajuda');
-    return erro === null ? ajuda : `${this.idDaFase('prazo-erro')} ${ajuda}`;
+  private descricaoDoPar(idDaAjuda: string, par: string, erro: 'true' | null): string {
+    const ajuda = this.idDaFase(idDaAjuda);
+    return erro === null ? ajuda : `${this.idDaFase(`${par}-erro`)} ${ajuda}`;
   }
 
   private suspensividade(instancia: Instancia): ParComUnidade {
-    const rotulo = ROTULO_DA_INSTANCIA[instancia];
-    const campo = `recurso.suspensividade${instancia}` as const;
+    const { rotulo, sufixo } = INSTANCIAS[instancia];
+    const erro = this.erroDoCampo(`recurso.suspensividade${instancia}`) ? 'true' : null;
     return {
-      sufixo: instancia === 'PrimeiraInstancia' ? 'susp1' : 'susp2',
+      sufixo,
       rotuloDoValor: `Suspensividade da ${rotulo} instância — prazo`,
       rotuloDaUnidade: `Suspensividade da ${rotulo} instância — unidade`,
       controleDoValor: `suspensividade${instancia}Valor`,
       controleDaUnidade: `suspensividade${instancia}Unidade`,
       ...OPCOES_DA_SUSPENSIVIDADE,
-      invalidoNoValor: this.erroDoCampo(campo) ? 'true' : null,
-      invalidoNaUnidade: null,
-      descritoPor: this.idDaFase('susp-ajuda'),
+      invalidoNoValor: erro,
+      invalidoNaUnidade: erro,
+      descritoPor: this.descricaoDoPar('susp-ajuda', sufixo, erro),
     };
   }
 }

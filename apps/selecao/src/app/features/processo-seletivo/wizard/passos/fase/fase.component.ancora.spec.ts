@@ -15,6 +15,7 @@ const RECURSO_SEM_ANCORA: RecursoDaFase = {
   admiteInstanciaSuperior: false,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 describe('âncora única do prazo de recurso', () => {

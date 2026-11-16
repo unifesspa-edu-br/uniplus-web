@@ -1,10 +1,32 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { AtualizarFaseCanonicaCommand, FaseCanonicaDto } from '@uniplus/shared-data/configuracao';
-import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import {
+  controlNameFromBackendField,
+  controleDeMarca,
+  controleDeTexto,
+  nullIfBlank,
+} from '../../shared/formulario';
 
-export const CODIGO_FASE_AVALIACAO = 'AVALIACAO';
-export const CODIGOS_FASE_COM_COMPLEMENTACAO: readonly string[] = ['HOMOLOGACAO', 'RECURSOS'];
 export const CODIGO_FASE_SOLICITACAO_ISENCAO = 'SOLICITACAO_ISENCAO';
+
+/** Quais sinalizadores de fase a tela oferece para edição. */
+export interface SinalizadoresAdmitidos {
+  readonly agrupaEtapas: boolean;
+  readonly permiteComplementacao: boolean;
+}
+
+/**
+ * Único ponto que decide a visibilidade dos campos "agrupa etapas" e "permite complementação":
+ * a fase informa o que admite por `admiteAgruparEtapas` e `admiteComplementacao`. Sem fase em
+ * edição, nenhum dos dois é oferecido. O comando de atualização não depende dela: devolve os
+ * sinalizadores como foram lidos.
+ */
+export function sinalizadoresAdmitidos(fase: FaseCanonicaDto | null): SinalizadoresAdmitidos {
+  return {
+    agrupaEtapas: fase?.admiteAgruparEtapas ?? false,
+    permiteComplementacao: fase?.admiteComplementacao ?? false,
+  };
+}
 
 export interface FaseForm {
   codigo: FormControl<string>;
@@ -34,28 +56,16 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof FaseForm>([
 
 export function criarFormularioDeFase(): FormGroup<FaseForm> {
   return new FormGroup<FaseForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(60)],
-    }),
-    unidadeSugeridaId: new FormControl('', { nonNullable: true }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(300)],
-    }),
-    baseLegal: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(500)],
-    }),
-    agrupaEtapas: new FormControl(false, { nonNullable: true }),
-    permiteComplementacao: new FormControl(false, { nonNullable: true }),
-    origemData: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    coletaInscricao: new FormControl(false, { nonNullable: true }),
-    coletaSolicitacaoIsencao: new FormControl(false, { nonNullable: true }),
+    codigo: controleDeTexto(Validators.required, Validators.maxLength(60)),
+    unidadeSugeridaId: controleDeTexto(),
+    nome: controleDeTexto(Validators.required, Validators.maxLength(200)),
+    descricao: controleDeTexto(Validators.maxLength(300)),
+    baseLegal: controleDeTexto(Validators.maxLength(500)),
+    agrupaEtapas: controleDeMarca(false),
+    permiteComplementacao: controleDeMarca(false),
+    origemData: controleDeTexto(Validators.required),
+    coletaInscricao: controleDeMarca(false),
+    coletaSolicitacaoIsencao: controleDeMarca(false),
   });
 }
 
@@ -89,6 +99,17 @@ export function derivarMarcaDeIsencao(form: FormGroup<FaseForm>, codigo: string)
   if (ehIsencao && coletaInscricao.value) coletaInscricao.setValue(false);
 }
 
+type ValoresDaFase = ReturnType<FormGroup<FaseForm>['getRawValue']>;
+
+function textosAparados(valor: ValoresDaFase) {
+  return {
+    nome: valor.nome.trim(),
+    descricao: nullIfBlank(valor.descricao),
+    unidadeSugeridaId: nullIfBlank(valor.unidadeSugeridaId),
+    baseLegal: nullIfBlank(valor.baseLegal),
+  };
+}
+
 export function comandoDeAtualizacao(
   id: string,
   form: FormGroup<FaseForm>,
@@ -96,14 +117,9 @@ export function comandoDeAtualizacao(
   const valor = form.getRawValue();
   return {
     id,
-    nome: valor.nome.trim(),
-    descricao: nullIfBlank(valor.descricao),
-    unidadeSugeridaId: nullIfBlank(valor.unidadeSugeridaId),
-    agrupaEtapas: valor.codigo === CODIGO_FASE_AVALIACAO ? valor.agrupaEtapas : false,
-    permiteComplementacao: CODIGOS_FASE_COM_COMPLEMENTACAO.includes(valor.codigo)
-      ? valor.permiteComplementacao
-      : false,
-    baseLegal: nullIfBlank(valor.baseLegal),
+    ...textosAparados(valor),
+    agrupaEtapas: valor.agrupaEtapas,
+    permiteComplementacao: valor.permiteComplementacao,
     origemData: valor.origemData,
     coletaInscricao: valor.coletaInscricao,
     coletaSolicitacaoIsencao: valor.coletaSolicitacaoIsencao,

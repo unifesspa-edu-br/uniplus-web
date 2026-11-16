@@ -12626,6 +12626,7 @@ export interface components {
         readonly AtualizarOfertaCursoCommand: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: null | string;
             readonly programaDeOferta: null | string;
             readonly regimeDeFuncionamento: null | string;
             readonly regimeDeTurno: null | string;
@@ -12713,6 +12714,7 @@ export interface components {
             readonly nome: null | string;
             readonly admitePontuacao: null | boolean;
             readonly admiteEliminacao: null | boolean;
+            readonly exigeCorrecaoIndependente: null | boolean;
             readonly conceitosAdmitidos: null | readonly string[];
             readonly descricao?: null | string;
         };
@@ -12741,6 +12743,7 @@ export interface components {
         readonly BaseLegalBonusRegionalDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             readonly tipoInstrumento: string;
             readonly identificacao: string;
             readonly descricao: string;
@@ -13030,6 +13033,7 @@ export interface components {
             readonly localOfertaId: string;
             /** Format: uuid */
             readonly unidadeOfertanteOrigemId: string;
+            readonly codigo: null | string;
             readonly programaDeOferta: null | string;
             readonly regimeDeFuncionamento: null | string;
             readonly regimeDeTurno: null | string;
@@ -13113,6 +13117,7 @@ export interface components {
             readonly nome: null | string;
             readonly admitePontuacao: null | boolean;
             readonly admiteEliminacao: null | boolean;
+            readonly exigeCorrecaoIndependente: null | boolean;
             readonly conceitosAdmitidos: null | readonly string[];
             readonly descricao?: null | string;
         };
@@ -13356,6 +13361,8 @@ export interface components {
             readonly descricao: null | string;
             readonly agrupaEtapas: boolean;
             readonly permiteComplementacao: boolean;
+            readonly admiteAgruparEtapas: boolean;
+            readonly admiteComplementacao: boolean;
             readonly baseLegal: null | string;
             readonly coletaInscricao: boolean;
             readonly coletaSolicitacaoIsencao: boolean;
@@ -13664,6 +13671,7 @@ export interface components {
         readonly OfertaCursoDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             /** Format: uuid */
             readonly cursoId: string;
             /** Format: uuid */
@@ -13885,6 +13893,7 @@ export interface components {
         readonly TermoConsentimentoDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             readonly nome: string;
             readonly textoRascunho: null | string;
             readonly baseLegalRascunho: null | string;
@@ -13902,6 +13911,7 @@ export interface components {
         readonly TermoConsentimentoResumoDto: {
             /** Format: uuid */
             readonly id: string;
+            readonly codigo: string;
             readonly nome: string;
             readonly formaAceiteRascunho: string;
             readonly revisado: boolean;
@@ -13914,6 +13924,8 @@ export interface components {
         readonly TermoConsentimentoVersaoDto: {
             /** Format: uuid */
             readonly id: string;
+            /** Format: int32 */
+            readonly numero: number;
             readonly texto: string;
             readonly baseLegal: string;
             readonly formaAceite: string;
@@ -14034,6 +14046,7 @@ export interface components {
             readonly admitePontuacao: boolean;
             readonly admiteEliminacao: boolean;
             readonly notaDeOrigemNoEnem: boolean;
+            readonly exigeCorrecaoIndependente: boolean;
             readonly conceitosAdmitidos: readonly components["schemas"]["ConceitoAdmitidoDto"][];
             /** Format: date-time */
             readonly criadoEm: string;

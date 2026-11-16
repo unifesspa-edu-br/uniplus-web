@@ -46,6 +46,7 @@ export const direito: CursoDto = {
 
 export const oferta: OfertaCursoDto = {
   id: '01960000-0000-7000-0000-0000000000f1',
+  codigo: 'ENG_CIVIL_MARABA',
   cursoId: engCiv.id,
   localOfertaId: '01960000-0000-7000-0000-0000000000d1',
   unidadeOfertante: {

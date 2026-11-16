@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
+import type { FaseCronogramaDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import { CatalogoDeUnidadesDoCadastro } from './catalogos/catalogo-de-unidades-do-cadastro.service';
 import {
   PROCESSO_ID,
@@ -10,6 +12,11 @@ import {
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import { AjudantesDeUnidades, ID_CEPS, ID_CGA } from './cronograma-unidades.testing';
+
+type UnidadeGravada = NonNullable<FaseCronogramaDto['cronograma']['unidadeResponsavel']>;
+
+const faseComUnidade = (codigo: string, unidadeResponsavel: UnidadeGravada) =>
+  faseDoServidor({ codigo, cronograma: { unidadeResponsavel } });
 
 describe('CronogramaPassoComponent: unidade responsável da fase', () => {
   let componente: ContextoDoCronograma['componente'];
@@ -119,15 +126,11 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [
-          {
-            codigo: 'COLETA_INSCRICAO',
-            unidadeResponsavel: {
-              origemId: ID_CGA,
-              sigla: 'CECA',
-              slug: 'ceca',
-              nome: 'Centro de Estudos Acadêmicos',
-            },
-          },
+          faseComUnidade('COLETA_INSCRICAO', {
+            origemId: ID_CGA,
+            sigla: 'CECA',
+            nome: 'Centro de Estudos Acadêmicos',
+          }),
         ],
       } as never);
 
@@ -140,12 +143,14 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       const gravada = {
         origemId: '01960000-0000-7000-0000-0000000000a9',
         sigla: 'CAT',
-        slug: 'cat',
         nome: 'Coordenação extinta',
       };
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
-        cronogramaFases: [{ unidadeResponsavel: gravada }, { unidadeResponsavel: gravada }],
+        cronogramaFases: [
+          faseComUnidade('COLETA_INSCRICAO', gravada),
+          faseComUnidade('RESULTADO_FINAL', gravada),
+        ],
       } as never);
 
       const ids = unidades.unidadesParaEscolha().map((opcao) => opcao.id);
@@ -198,14 +203,13 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       const copia = (sigla: string, nome: string) => ({
         origemId: ID_CGA,
         sigla,
-        slug: sigla.toLowerCase(),
         nome,
       });
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [
-          { codigo: 'COLETA_INSCRICAO', unidadeResponsavel: copia('CECA', 'Estudos Acadêmicos') },
-          { codigo: 'RESULTADO_FINAL', unidadeResponsavel: copia('CGA', 'Gestão Acadêmica') },
+          faseComUnidade('COLETA_INSCRICAO', copia('CECA', 'Estudos Acadêmicos')),
+          faseComUnidade('RESULTADO_FINAL', copia('CGA', 'Gestão Acadêmica')),
         ],
       } as never);
 
@@ -221,14 +225,11 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       store.remoteSnapshot.set({
         ...PROCESSO_COM_ETAPA_GRAVADA,
         cronogramaFases: [
-          {
-            unidadeResponsavel: {
-              origemId: '01960000-0000-7000-0000-0000000000a9',
-              sigla: 'CAT',
-              slug: 'cat',
-              nome: 'Coordenação extinta',
-            },
-          },
+          faseComUnidade('COLETA_INSCRICAO', {
+            origemId: '01960000-0000-7000-0000-0000000000a9',
+            sigla: 'CAT',
+            nome: 'Coordenação extinta',
+          }),
         ],
       } as never);
 

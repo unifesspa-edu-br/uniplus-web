@@ -111,7 +111,10 @@ export class GravacaoDasExigenciasDocumentais {
       modalidadesOfertadas: this.store.modalidadesDoProcesso(),
       etapasVivas: new Set(processo.etapas.map((etapa) => etapa.id)),
       finalidadesPorFase: new Map(
-        processo.cronogramaFases.map((fase) => [fase.codigo, finalidadesQueAtende(fase)]),
+        processo.cronogramaFases.map((fase) => [
+          fase.codigo,
+          finalidadesQueAtende({ codigo: fase.codigo, ...fase.faseCanonica }),
+        ]),
       ),
     });
   }

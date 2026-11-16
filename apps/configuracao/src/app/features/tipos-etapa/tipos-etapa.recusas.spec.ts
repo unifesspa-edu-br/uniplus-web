@@ -40,6 +40,12 @@ describe('TiposEtapaPage — recusas do servidor', () => {
       ['Descricao', 'textarea', 'descricao', 'cfg-etapa-descricao-erro'],
       ['AdmitePontuacao', 'input', 'admitePontuacao', 'cfg-etapa-pontuacao-erro'],
       ['AdmiteEliminacao', 'input', 'admiteEliminacao', 'cfg-etapa-eliminacao-erro'],
+      [
+        'ExigeCorrecaoIndependente',
+        'input',
+        'exigeCorrecaoIndependente',
+        'cfg-etapa-correcao-erro',
+      ],
     ] as const)(
       'mostra a recusa de %s no campo, associada e focada',
       async (campo, tag, nome, id) => {
