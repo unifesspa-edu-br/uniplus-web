@@ -10168,14 +10168,14 @@ export interface components {
         readonly AtualizarObrigatoriedadeLegalCommand: {
             /** Format: uuid */
             readonly id: string;
-            readonly tipoProcessoCodigo: string;
+            readonly tipoProcessoCodigo: null | string;
             readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
-            readonly regraCodigo: string;
-            readonly predicado: components["schemas"]["PredicadoObrigatoriedade"];
-            readonly descricaoHumana: string;
-            readonly baseLegal: string;
+            readonly regraCodigo: null | string;
+            readonly predicado: null | components["schemas"]["PredicadoObrigatoriedade"];
+            readonly descricaoHumana: null | string;
+            readonly baseLegal: null | string;
             /** Format: date */
-            readonly vigenciaInicio: string;
+            readonly vigenciaInicio: null | string;
             /** Format: date */
             readonly vigenciaFim: null | string;
             readonly atoNormativoUrl: null | string;
@@ -10556,14 +10556,14 @@ export interface components {
             readonly sentido: null | string;
         };
         readonly CriarObrigatoriedadeLegalCommand: {
-            readonly tipoProcessoCodigo: string;
+            readonly tipoProcessoCodigo: null | string;
             readonly categoria: components["schemas"]["CategoriaObrigatoriedade"];
-            readonly regraCodigo: string;
-            readonly predicado: components["schemas"]["PredicadoObrigatoriedade"];
-            readonly descricaoHumana: string;
-            readonly baseLegal: string;
+            readonly regraCodigo: null | string;
+            readonly predicado: null | components["schemas"]["PredicadoObrigatoriedade"];
+            readonly descricaoHumana: null | string;
+            readonly baseLegal: null | string;
             /** Format: date */
-            readonly vigenciaInicio: string;
+            readonly vigenciaInicio: null | string;
             /** Format: date */
             readonly vigenciaFim: null | string;
             readonly atoNormativoUrl: null | string;
