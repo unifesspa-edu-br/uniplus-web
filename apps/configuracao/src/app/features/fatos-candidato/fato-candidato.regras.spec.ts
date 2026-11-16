@@ -16,10 +16,10 @@ import {
 
 const fato = (
   binding: string,
-  extra: Partial<{ sistema: boolean; dominio: string; fonteValores: string | null }> = {},
+  extra: Partial<{ semeadoPeloSistema: boolean; dominio: string; fonteValores: string | null }> = {},
 ) => ({
   binding,
-  sistema: false,
+  semeadoPeloSistema: false,
   dominio: 'CATEGORICO',
   fonteValores: 'GLOBAL' as string | null,
   ...extra,
@@ -34,7 +34,7 @@ describe('o que cada fato deixa manter', () => {
       'o agregado herda os valores do membro',
     ).toBe(false);
     expect(
-      podeTerValores(fato('CAMPO_INSCRICAO:COR', { sistema: true })),
+      podeTerValores(fato('CAMPO_INSCRICAO:COR', { semeadoPeloSistema: true })),
       'o de sistema só muda por versão',
     ).toBe(false);
     expect(podeTerValores(fato('CAMPO_INSCRICAO:OPCAO', { fonteValores: 'PROCESSO' }))).toBe(false);
@@ -49,7 +49,7 @@ describe('o que cada fato deixa manter', () => {
       podeTerRegras(fato('AGREGACAO_GRUPO:RENDA')),
       'o agregado também é derivado, mas não tem regra',
     ).toBe(false);
-    expect(podeTerRegras(fato('REGRA_DERIVACAO:MODALIDADE', { sistema: true }))).toBe(false);
+    expect(podeTerRegras(fato('REGRA_DERIVACAO:MODALIDADE', { semeadoPeloSistema: true }))).toBe(false);
   });
 });
 
@@ -108,9 +108,9 @@ describe('agregado de grupo', () => {
 
 describe('ativação do fato', () => {
   it('o fato de sistema não se desativa nem se reativa; o do administrador alterna', () => {
-    expect(acaoDeAtivacao({ sistema: true, ativo: true })).toBeNull();
-    expect(acaoDeAtivacao({ sistema: false, ativo: true })).toBe('DESATIVAR');
-    expect(acaoDeAtivacao({ sistema: false, ativo: false })).toBe('REATIVAR');
+    expect(acaoDeAtivacao({ semeadoPeloSistema: true, ativo: true })).toBeNull();
+    expect(acaoDeAtivacao({ semeadoPeloSistema: false, ativo: true })).toBe('DESATIVAR');
+    expect(acaoDeAtivacao({ semeadoPeloSistema: false, ativo: false })).toBe('REATIVAR');
   });
 });
 
@@ -154,9 +154,9 @@ describe('a definição que o administrador altera', () => {
   });
 
   it('o fato de sistema e o de vínculo desconhecido não se editam', () => {
-    expect(podeEditarDefinicao({ binding: 'CAMPO_INSCRICAO:X', sistema: true })).toBe(false);
-    expect(podeEditarDefinicao({ binding: 'SISTEMA:X', sistema: false })).toBe(false);
-    expect(podeEditarDefinicao({ binding: 'REGRA_DERIVACAO:X', sistema: false })).toBe(true);
+    expect(podeEditarDefinicao({ binding: 'CAMPO_INSCRICAO:X', semeadoPeloSistema: true })).toBe(false);
+    expect(podeEditarDefinicao({ binding: 'SISTEMA:X', semeadoPeloSistema: false })).toBe(false);
+    expect(podeEditarDefinicao({ binding: 'REGRA_DERIVACAO:X', semeadoPeloSistema: false })).toBe(true);
   });
 
   it('agrupa as citações por tipo e deixa de fora a recusa de campo', () => {

@@ -119,7 +119,7 @@ const DETALHE_DO_FATO = {
   fato: {
     dominio: 'NUMERICO',
     cardinalidade: 'ESCALAR',
-    sistema: false,
+    semeadoPeloSistema: false,
     componenteExibicao: 'MOEDA',
     valores: [],
   },

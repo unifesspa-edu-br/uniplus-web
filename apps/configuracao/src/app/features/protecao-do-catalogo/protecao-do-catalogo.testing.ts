@@ -75,7 +75,7 @@ export const detalheDoLaudo: DetalheDaProtecaoDoCatalogoDto = {
 const FATO_CATEGORICO = {
   dominio: 'CATEGORICO',
   cardinalidade: 'ESCALAR',
-  sistema: false,
+  semeadoPeloSistema: false,
   componenteExibicao: null,
   valores: [
     {

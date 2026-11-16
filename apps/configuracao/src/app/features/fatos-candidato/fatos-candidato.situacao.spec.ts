@@ -42,7 +42,7 @@ describe('FatosCandidatoPage — desativar e reativar', () => {
 
   describe('o fato de sistema', () => {
     it('mostra o desativar desabilitado, com o porquê, e não oferece reativar', async () => {
-      p = await montarPagina([{ ...trabalha, sistema: true }]);
+      p = await montarPagina([{ ...trabalha, semeadoPeloSistema: true }]);
 
       const desativar = p.desativar();
       expect(desativar.matches(':disabled')).toBe(true);

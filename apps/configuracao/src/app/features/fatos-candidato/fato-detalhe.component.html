@@ -22,7 +22,7 @@
         <ui-tag [variant]="f.ativo ? 'success' : 'neutral'">{{
           f.ativo ? 'Ativo' : 'Desativado'
         }}</ui-tag>
-        @if (f.sistema) {
+        @if (f.semeadoPeloSistema) {
           <ui-tag variant="primary">Sistema</ui-tag>
         }
       </div>

@@ -18682,7 +18682,7 @@
         "required": [
           "dominio",
           "cardinalidade",
-          "sistema",
+          "semeadoPeloSistema",
           "componenteExibicao",
           "valores"
         ],
@@ -18694,7 +18694,7 @@
           "cardinalidade": {
             "type": "string"
           },
-          "sistema": {
+          "semeadoPeloSistema": {
             "type": "boolean"
           },
           "componenteExibicao": {
@@ -19477,7 +19477,7 @@
           "classificacaoProtecao",
           "finalidadeTratamento",
           "hipoteseLegal",
-          "sistema",
+          "semeadoPeloSistema",
           "ativo",
           "valores",
           "regrasPadrao",
@@ -19543,7 +19543,7 @@
           "hipoteseLegal": {
             "type": "string"
           },
-          "sistema": {
+          "semeadoPeloSistema": {
             "type": "boolean"
           },
           "ativo": {
@@ -21057,7 +21057,10 @@
             ]
           },
           "peso": {
-            "type": "number",
+            "type": [
+              "null",
+              "number"
+            ],
             "format": "double"
           },
           "corte": {
@@ -22583,7 +22586,10 @@
             ]
           },
           "contaComoAprovacao": {
-            "type": "boolean"
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

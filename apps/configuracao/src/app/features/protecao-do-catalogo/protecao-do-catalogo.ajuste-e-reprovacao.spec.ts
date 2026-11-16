@@ -106,7 +106,7 @@ describe('ProtecaoDoCatalogoPage — recomendar ajuste e reprovar', () => {
           fato: {
             dominio: 'TEXTO',
             cardinalidade: 'ESCALAR',
-            sistema: false,
+            semeadoPeloSistema: false,
             componenteExibicao: null,
             valores: [],
           },
