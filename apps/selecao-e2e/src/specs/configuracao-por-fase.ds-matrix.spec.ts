@@ -36,6 +36,8 @@ const FASES_CANONICAS = [
     unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
+    admiteAgruparEtapas: false,
+    admiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: false,
     origemData: 'NO_EDITAL',
@@ -234,11 +236,9 @@ async function acrescentarFase(page: Page): Promise<void> {
 async function declararPublicacao(page: Page, ato: string): Promise<void> {
   await page.getByRole('button', { name: 'Acrescentar publicação' }).click();
   await page.getByLabel('Publicação', { exact: true }).selectOption({ label: ato });
-  await page
-    .getByLabel('Papel', { exact: true })
-    .selectOption({
-      label: ato === 'Resultado preliminar' ? 'Resultado preliminar' : 'Resultado definitivo',
-    });
+  await page.getByLabel('Papel', { exact: true }).selectOption({
+    label: ato === 'Resultado preliminar' ? 'Resultado preliminar' : 'Resultado definitivo',
+  });
 }
 
 /** Liga o recurso e requer uma banca com recorte — o estado mais cheio da tela. */

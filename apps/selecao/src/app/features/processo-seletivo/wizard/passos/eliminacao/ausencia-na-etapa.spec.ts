@@ -96,6 +96,7 @@ describe('ausência na etapa, pelo passo', () => {
               admitePontuacao: true,
               admiteEliminacao: false,
               notaDeOrigemNoEnem: true,
+              exigeCorrecaoIndependente: false,
               conceitosAdmitidos: [],
               criadoEm: '2026-01-01T00:00:00Z',
             },

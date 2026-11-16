@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import { comoComando } from '../passos/vagas/distribuicao-para-comando';
 import { hidratarDraft } from './hidratacao';
 import { DRAFT, DISTRIBUICAO, dtoCom, gravada } from './hidratacao.testing';
 
@@ -34,12 +35,18 @@ describe('hidratarDraft — distribuição de vagas', () => {
         pr: '0,5',
         regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
         regraDistribuicaoVersao: 'v1',
+        ramoDaDistribuicao: 'LEI_DE_COTAS',
         regraAjusteCodigo: 'RECONCILIACAO-VAGAS-ART11-PU',
         regraAjusteVersao: 'v1',
         referenciaReservaDemograficaId: 'ref-1',
+        ajusteDoQuadro: null,
         modalidades: [
-          { id: 'modalidade-1', codigo: 'AC', gravada: gravada('RESIDUAL_DO_VO') },
-          { id: 'modalidade-2', codigo: 'AC_PCD', gravada: gravada('RETIRA_DE') },
+          { id: 'modalidade-1', codigo: 'AC', gravada: gravada('RESTANTE_DAS_VAGAS_OFERTADAS') },
+          {
+            id: 'modalidade-2',
+            codigo: 'AC_PCD',
+            gravada: gravada('RETIRADA_DE_OUTRA_MODALIDADE'),
+          },
         ],
         quadro: [{ modalidadeId: 'modalidade-2', quantidade: '2' }],
       },
@@ -55,7 +62,10 @@ describe('hidratarDraft — distribuição de vagas', () => {
     [1, '1'],
     ['0.75', '0,75'],
   ])('devolve o percentual %j como %j', (pr, esperado) => {
-    const { ofertas } = hidratarDraft(DRAFT, dtoCom([{ ...DISTRIBUICAO, pr }])).vagas;
+    const { ofertas } = hidratarDraft(
+      DRAFT,
+      dtoCom([{ ...DISTRIBUICAO, percentualDaReservaLegal: pr }]),
+    ).vagas;
     expect(ofertas[0].pr).toBe(esperado);
   });
 
@@ -80,14 +90,34 @@ describe('hidratarDraft — distribuição de vagas', () => {
   });
 
   /** Fora do ramo federal o edital fixa todas — nada é descartado. */
-  it('mantém o quadro inteiro quando a regra não é a Lei 12.711', () => {
+  it('mantém o quadro inteiro quando o ramo é o quadro fixado no edital', () => {
     const institucional = {
       ...DISTRIBUICAO,
       regraDistribuicao: { codigo: 'DISTRIB-VAGAS-INSTITUCIONAL', versao: 'v1' },
+      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
+      percentualDaReservaLegal: null,
     };
     const { ofertas } = hidratarDraft(DRAFT, dtoCom([institucional])).vagas;
 
     expect(ofertas[0].quadro).toHaveLength(2);
+    expect(ofertas[0].ramoDaDistribuicao).toBe('QUADRO_FIXADO_NO_EDITAL');
+    expect(ofertas[0].pr).toBe('');
+  });
+
+  /** O ramo é o que a API congelou; o código da regra e a composição não o deduzem. */
+  it('não presume o ramo quando a distribuição gravada o declara nulo', () => {
+    const semRamo = { ...DISTRIBUICAO, ramoDaDistribuicao: null };
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([semRamo])).vagas;
+
+    expect(ofertas[0].ramoDaDistribuicao).toBeNull();
+  });
+
+  /** Tratar o ramo ausente como quadro fixado declararia quantidades que a regra poderia calcular. */
+  it('não deriva quantidade declarada do quadro quando o ramo é nulo', () => {
+    const semRamo = { ...DISTRIBUICAO, ramoDaDistribuicao: null };
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([semRamo])).vagas;
+
+    expect(ofertas[0].quadro).toEqual([]);
   });
 
   it('trata processo sem distribuição gravada', () => {
@@ -101,5 +131,25 @@ describe('hidratarDraft — distribuição de vagas', () => {
     expect(ofertas[0].regraAjusteCodigo).toBeNull();
     expect(ofertas[0].regraAjusteVersao).toBeNull();
     expect(ofertas[0].referenciaReservaDemograficaId).toBeNull();
+  });
+
+  /** A gravação substitui a distribuição inteira: o que o servidor devolveu volta como veio. */
+  it('devolve ao comando o ajuste do quadro fixado e o percentual ausente que o servidor entregou', () => {
+    const ajuste = { $tipo: 'reduzirDe', modalidadeCodigo: 'AC' } as const;
+    const fixado = {
+      ...DISTRIBUICAO,
+      regraDistribuicao: { codigo: 'DISTRIB-VAGAS-INSTITUCIONAL', versao: 'v1' },
+      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
+      percentualDaReservaLegal: null,
+      regraAjuste: null,
+      referenciaDemografica: null,
+      ajusteDoQuadro: ajuste,
+    };
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([fixado])).vagas;
+    const comando = comoComando(ofertas[0]);
+
+    expect(comando.ajusteDoQuadro).toStrictEqual(ajuste);
+    expect(comando.percentualDaReservaLegal).toBeNull();
+    expect(comando.vagasOfertadasBase).toBe(40);
   });
 });

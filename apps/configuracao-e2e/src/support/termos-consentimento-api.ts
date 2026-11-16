@@ -13,6 +13,7 @@ export const ATRASO_DA_RECARGA_EM_MS = 1500;
 
 export const TERMO = {
   id: ID,
+  codigo: 'DECLARACAO_DE_VERACIDADE',
   nome: 'Declaração de veracidade',
   textoRascunho: 'Declaro que as informações são verdadeiras.',
   baseLegalRascunho: 'Lei nº 13.709/2018',
@@ -30,6 +31,7 @@ export const TERMO_PROMOVIDO = {
   versoes: [
     {
       id: '01960000-0000-7000-0000-0000000000a2',
+      numero: 1,
       texto: TERMO.textoRascunho,
       baseLegal: TERMO.baseLegalRascunho,
       formaAceite: 'A_DEFINIR',
@@ -41,6 +43,7 @@ export const TERMO_PROMOVIDO = {
 
 export const RESUMO = {
   id: ID,
+  codigo: TERMO.codigo,
   nome: TERMO.nome,
   formaAceiteRascunho: 'A_DEFINIR',
   revisado: false,

@@ -273,9 +273,7 @@ export class CatalogosDeDistribuicao {
   }
 
   private anunciarErro(): void {
-    this.erro.set(
-      'Não foi possível carregar os catálogos de ofertas, modalidades e regras.',
-    );
+    this.erro.set('Não foi possível carregar os catálogos de ofertas, modalidades e regras.');
     this.carregando.set(false);
   }
 }

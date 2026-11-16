@@ -19,6 +19,7 @@ const RECURSO: RecursoDaFase = {
   admiteInstanciaSuperior: false,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 describe('campos de texto das seções da fase', () => {

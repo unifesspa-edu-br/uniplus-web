@@ -45,6 +45,7 @@ export const SEM_CONTEUDO = { status: 204, statusText: 'No Content' } as const;
 export function termo(sobrescritas: Partial<TermoConsentimentoDto> = {}): TermoConsentimentoDto {
   return {
     id: ID,
+    codigo: 'DECLARACAO_DE_VERACIDADE',
     nome: 'Declaração de veracidade',
     textoRascunho: 'Declaro que as informações são verdadeiras.',
     baseLegalRascunho: 'Lei nº 13.709/2018',
@@ -62,6 +63,7 @@ export function versao(
 ): TermoConsentimentoVersaoDto {
   return {
     id: '01960000-0000-7000-0000-0000000000a2',
+    numero: 1,
     texto: 'Declaro que as informações são verdadeiras.',
     baseLegal: 'Lei nº 13.709/2018',
     formaAceite: 'A_DEFINIR',

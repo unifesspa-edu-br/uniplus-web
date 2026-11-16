@@ -10020,6 +10020,11 @@ export interface components {
             readonly fatoDeMembro: string;
             readonly operacao: string;
         };
+        readonly AjusteDoQuadroFixadoDto: {
+            readonly vagasRetiradas: readonly components["schemas"]["VagasRetiradasDaModalidadeDto"][];
+            /** Format: int32 */
+            readonly totalDeVagasRetiradas: number;
+        };
         readonly AlterarMotivoRetificacaoRequest: {
             readonly motivo: string;
         };
@@ -10028,6 +10033,16 @@ export interface components {
             readonly grupoId: string;
             /** Format: int32 */
             readonly minimo: number;
+        };
+        readonly AlvoDoProcedimentoDeRecursoDto: {
+            /** Format: uuid */
+            readonly itemDeAvaliacaoId: null | string;
+            readonly areaDoEnem: null | string;
+        };
+        readonly AlvoDoProcedimentoDeRecursoInput: {
+            /** Format: uuid */
+            readonly itemDeAvaliacaoId: null | string;
+            readonly areaDoEnem: null | string;
         };
         /** @enum {string} */
         readonly AncoraDoRecurso: AncoraDoRecurso;
@@ -10189,6 +10204,12 @@ export interface components {
             readonly cpfMascarado: null | string;
             readonly areas: readonly string[];
             readonly ofertas: null | readonly components["schemas"]["OfertaEscolhidaDto"][];
+        };
+        readonly AvaliacaoDaEtapaDto: {
+            readonly formaDeAvaliacao: null | string;
+            readonly regraConsolidacao: null | components["schemas"]["ReferenciaRegraDto"];
+            readonly itensDeAvaliacao: readonly components["schemas"]["ItemDeAvaliacaoDto"][];
+            readonly escalaDeAtendimento: null | readonly components["schemas"]["NivelDeAtendimentoDto"][];
         };
         readonly AvaliacaoDaInscricaoDto: {
             readonly modalidades: components["schemas"]["ModalidadesDaInscricaoDto"];
@@ -10423,6 +10444,16 @@ export interface components {
             readonly operador: string;
             readonly valor: components["schemas"]["JsonElement"];
         };
+        readonly ConferenciaDaReservaLegalDto: {
+            /** Format: int32 */
+            readonly reservaLegalNominal: number;
+            /** Format: int32 */
+            readonly reservaLegalEfetiva: number;
+            /** Format: int32 */
+            readonly excedenteSobreAReservaLegal: number;
+            /** Format: int32 */
+            readonly vagasCortadasPorEscassez: number;
+        };
         readonly ConfiguracaoBonusRegionalDto: {
             /** Format: uuid */
             readonly id: string;
@@ -10481,32 +10512,29 @@ export interface components {
             /** Format: uuid */
             readonly ofertaCursoOrigemId: string;
             /** Format: int32 */
-            readonly voBase: number;
+            readonly vagasOfertadasBase: number;
             /** Format: double */
-            readonly pr: number;
+            readonly percentualDaReservaLegal: null | number;
             readonly regraDistribuicao: components["schemas"]["ReferenciaRegraDto"];
+            readonly ramoDaDistribuicao: null | string;
             readonly regraAjuste: null | components["schemas"]["ReferenciaRegraDto"];
+            readonly ajusteDoQuadro: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
             readonly referenciaDemografica: null | components["schemas"]["ReferenciaReservaDemograficaSnapshotDto"];
             readonly grupoAreaEnem: null | components["schemas"]["GrupoAreaEnemSnapshotDto"];
             readonly modalidades: readonly components["schemas"]["ModalidadeSelecionadaDto"][];
             readonly quadro: readonly components["schemas"]["VagaOfertadaDto"][];
             /** Format: int32 */
-            readonly vrNominal: number;
-            /** Format: int32 */
-            readonly vrFinal: number;
-            /** Format: int32 */
-            readonly estouro: number;
-            readonly capadoEmVo: boolean;
-            /** Format: int32 */
-            readonly totalPublicado: number;
+            readonly totalDeVagasDoEdital: number;
+            readonly conferenciaDaReservaLegal: null | components["schemas"]["ConferenciaDaReservaLegalDto"];
+            readonly ajusteDoQuadroFixado: null | components["schemas"]["AjusteDoQuadroFixadoDto"];
         };
         readonly ConfiguracaoDistribuicaoVagasInput: {
             /** Format: uuid */
             readonly ofertaCursoId: string;
             /** Format: int32 */
-            readonly voBase: number;
+            readonly vagasOfertadasBase: number;
             /** Format: double */
-            readonly pr: number;
+            readonly percentualDaReservaLegal: null | number;
             readonly regraDistribuicaoCodigo: string;
             readonly regraDistribuicaoVersao: string;
             readonly regraAjusteCodigo: null | string;
@@ -10515,7 +10543,7 @@ export interface components {
             readonly referenciaReservaDemograficaId: null | string;
             readonly modalidadeIds: readonly string[];
             readonly quadro: readonly components["schemas"]["QuantidadeVagaInput"][];
-            readonly argsAjuste?: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
+            readonly ajusteDoQuadro?: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
         };
         readonly ConfiguracaoDivulgacaoDto: {
             readonly camposPublicos: readonly string[];
@@ -10612,6 +10640,16 @@ export interface components {
         };
         /** @enum {string} */
         readonly CriterioDeVotacao: "maioriaSimples" | "maioriaAbsoluta" | "unanimidade" | null;
+        readonly CronogramaDaFaseDto: {
+            /** Format: int32 */
+            readonly ordem: number;
+            /** Format: date-time */
+            readonly inicio: null | string;
+            /** Format: date-time */
+            readonly fim: null | string;
+            readonly faseConcluinteCodigo: null | string;
+            readonly unidadeResponsavel: null | components["schemas"]["UnidadeResponsavelDto"];
+        };
         readonly DadosDoAtoRequest: {
             readonly orgao: string;
             readonly serie: string;
@@ -10940,32 +10978,12 @@ export interface components {
         readonly EtapaProcessoDto: {
             /** Format: uuid */
             readonly id: string;
-            readonly nome: string;
-            readonly carater: components["schemas"]["CaraterEtapa"];
-            readonly tipoEtapa: components["schemas"]["TipoEtapaSnapshotDto"];
-            /** Format: double */
-            readonly peso: null | number;
-            /** Format: double */
-            readonly notaMinima: null | number;
-            /** Format: double */
-            readonly notaMaxima: null | number;
-            /** Format: double */
-            readonly passoDoLancamento: null | number;
-            /** Format: int32 */
-            readonly ordem: null | number;
-            readonly faseCodigo: null | string;
-            readonly produtos: readonly components["schemas"]["ProdutoDaEtapaDto"][];
-            /** Format: date-time */
-            readonly inicio: null | string;
-            /** Format: date-time */
-            readonly fim: null | string;
-            readonly emiteParecerIndividual: boolean;
+            readonly identificacao: components["schemas"]["IdentificacaoDaEtapaDto"];
+            readonly nota: components["schemas"]["NotaDaEtapaDto"];
+            readonly avaliacao: components["schemas"]["AvaliacaoDaEtapaDto"];
+            readonly janela: components["schemas"]["JanelaDaEtapaDto"];
+            readonly publicacoes: components["schemas"]["PublicacoesDaEtapaDto"];
             readonly bancas: readonly components["schemas"]["BancaDaEtapaDto"][];
-            readonly recursos: readonly components["schemas"]["RecursoDaEtapaDto"][];
-            readonly formaDeAvaliacao: null | string;
-            readonly regraConsolidacao: null | components["schemas"]["ReferenciaRegraDto"];
-            readonly itensDeAvaliacao: readonly components["schemas"]["ItemDeAvaliacaoDto"][];
-            readonly escalaDeAtendimento: null | readonly components["schemas"]["NivelDeAtendimentoDto"][];
         };
         readonly EtapaProcessoInput: {
             readonly nome: string;
@@ -10999,6 +11017,7 @@ export interface components {
             readonly regraConsolidacaoVersao?: null | string;
             readonly itensDeAvaliacao?: null | readonly components["schemas"]["ItemDeAvaliacaoInput"][];
             readonly escalaDeAtendimento?: null | readonly components["schemas"]["NivelDeAtendimentoInput"][];
+            readonly tiposDeDecisao?: null | readonly string[];
         };
         readonly ExigenciaDocumentalCertameDto: {
             readonly rotulo: string;
@@ -11006,6 +11025,15 @@ export interface components {
             readonly obrigatorio: boolean;
             readonly formatos: components["schemas"]["FormatosAceitosCertameDto"];
             readonly modelo: null | components["schemas"]["ModeloDocumentalCertameDto"];
+        };
+        readonly FaseCanonicaCongeladaDto: {
+            /** Format: uuid */
+            readonly origemId: string;
+            readonly origemData: string;
+            readonly agrupaEtapas: boolean;
+            readonly permiteComplementacao: boolean;
+            readonly coletaInscricao: boolean;
+            readonly coletaSolicitacaoIsencao: boolean;
         };
         readonly FaseComProdutosPrevistosDto: {
             /** Format: uuid */
@@ -11031,27 +11059,11 @@ export interface components {
         readonly FaseCronogramaDto: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: int32 */
-            readonly ordem: number;
-            /** Format: uuid */
-            readonly faseCanonicaOrigemId: string;
             readonly codigo: string;
-            readonly origemData: string;
-            readonly agrupaEtapas: boolean;
-            readonly permiteComplementacao: boolean;
-            readonly produzResultado: boolean;
-            readonly coletaInscricao: boolean;
-            readonly coletaSolicitacaoIsencao: boolean;
-            /** Format: date-time */
-            readonly inicio: null | string;
-            /** Format: date-time */
-            readonly fim: null | string;
-            readonly produtos: readonly components["schemas"]["ProdutoDaFaseDto"][];
-            readonly faseConcluinteCodigo: null | string;
-            readonly emiteParecerIndividual: boolean;
+            readonly faseCanonica: components["schemas"]["FaseCanonicaCongeladaDto"];
+            readonly cronograma: components["schemas"]["CronogramaDaFaseDto"];
+            readonly publicacoes: components["schemas"]["PublicacoesDaFaseDto"];
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaDto"][];
-            readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
-            readonly unidadeResponsavel: null | components["schemas"]["UnidadeResponsavelDto"];
         };
         readonly FaseCronogramaInput: {
             /** Format: int32 */
@@ -11069,6 +11081,7 @@ export interface components {
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
             /** Format: uuid */
             readonly unidadeResponsavelId?: null | string;
+            readonly tiposDeDecisao?: null | readonly string[];
         };
         readonly FaseDosDocumentosDto: {
             /** Format: uuid */
@@ -11311,6 +11324,14 @@ export interface components {
             /** Format: uuid */
             readonly referenciaFaseId: null | string;
         };
+        readonly IdentificacaoDaEtapaDto: {
+            readonly nome: string;
+            readonly carater: components["schemas"]["CaraterEtapa"];
+            readonly tipoEtapa: components["schemas"]["TipoEtapaSnapshotDto"];
+            /** Format: int32 */
+            readonly ordem: null | number;
+            readonly faseCodigo: null | string;
+        };
         /** @enum {string} */
         readonly ImpedimentoDoProduto: ImpedimentoDoProduto;
         readonly ImpedimentoDoProdutoDto: {
@@ -11521,6 +11542,12 @@ export interface components {
             readonly impedido: string;
             readonly mensagemDoImpedimento: null | string;
             readonly opcoes: null | components["schemas"]["OpcoesSimuladasDto"];
+        };
+        readonly JanelaDaEtapaDto: {
+            /** Format: date-time */
+            readonly inicio: null | string;
+            /** Format: date-time */
+            readonly fim: null | string;
         };
         readonly JsonElement: unknown;
         readonly JsonNode: unknown;
@@ -11740,6 +11767,16 @@ export interface components {
         };
         readonly NomeClassificadoDto: {
             readonly valor: string;
+        };
+        readonly NotaDaEtapaDto: {
+            /** Format: double */
+            readonly peso: null | number;
+            /** Format: double */
+            readonly notaMinima: null | number;
+            /** Format: double */
+            readonly notaMaxima: null | number;
+            /** Format: double */
+            readonly passoDoLancamento: null | number;
         };
         readonly ObrigatoriedadeDto: {
             readonly tipo: string;
@@ -11965,6 +12002,18 @@ export interface components {
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
         };
+        readonly ProcedimentoDeRecursoDto: {
+            readonly tipoDeDecisao: string;
+            readonly alvo: null | components["schemas"]["AlvoDoProcedimentoDeRecursoDto"];
+            readonly regra: components["schemas"]["ReferenciaRegraDto"];
+            readonly sugestao: null | string;
+        };
+        readonly ProcedimentoDeRecursoInput: {
+            readonly tipoDeDecisao: null | string;
+            readonly alvo: null | components["schemas"]["AlvoDoProcedimentoDeRecursoInput"];
+            readonly regraCodigo: null | string;
+            readonly regraVersao: null | string;
+        };
         readonly ProcessoDaInscricaoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -12053,6 +12102,19 @@ export interface components {
             readonly fases: readonly components["schemas"]["FaseComProdutosPrevistosDto"][];
             readonly etapasSemFase: readonly components["schemas"]["EtapaComProdutosPrevistosDto"][];
         };
+        readonly PublicacoesDaEtapaDto: {
+            readonly produtos: readonly components["schemas"]["ProdutoDaEtapaDto"][];
+            readonly emiteParecerIndividual: boolean;
+            readonly recursos: readonly components["schemas"]["RecursoDaEtapaDto"][];
+            readonly tiposDeDecisao: readonly string[];
+        };
+        readonly PublicacoesDaFaseDto: {
+            readonly produtos: readonly components["schemas"]["ProdutoDaFaseDto"][];
+            readonly produzResultado: boolean;
+            readonly emiteParecerIndividual: boolean;
+            readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
+            readonly tiposDeDecisao: readonly string[];
+        };
         readonly PublicarAtoAvulsoDoProcessoRequest: {
             readonly tipoAtoCodigo: string;
             readonly numero: null | string;
@@ -12096,7 +12158,7 @@ export interface components {
             readonly ofertaCursoOrigemId: string;
             readonly quadro: readonly components["schemas"]["VagaPorModalidadeCertameDto"][];
             /** Format: int32 */
-            readonly totalPublicado: number;
+            readonly totalDeVagasDoEdital: number;
         };
         readonly QuantidadeVagaInput: {
             /** Format: uuid */
@@ -12129,6 +12191,7 @@ export interface components {
             /** Format: uuid */
             readonly produtoAncoraId: string;
             readonly atoAncoraCodigo: null | string;
+            readonly procedimentos: readonly components["schemas"]["ProcedimentoDeRecursoDto"][];
         };
         readonly RecursoDaEtapaInput: {
             readonly ancora: components["schemas"]["AncoraDoRecurso"];
@@ -12145,6 +12208,7 @@ export interface components {
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly procedimentos?: null | readonly components["schemas"]["ProcedimentoDeRecursoInput"][];
         };
         readonly RecursoOfertadoDto: {
             /** Format: uuid */
@@ -12206,6 +12270,7 @@ export interface components {
             readonly baseLegal: string;
             readonly hash: string;
             readonly modalidadesAdmitidas: null | readonly string[];
+            readonly ramoDaDistribuicao: null | string;
             readonly _links?: null | {
                 readonly [key: string]: string;
             };
@@ -12282,6 +12347,7 @@ export interface components {
             readonly produtoAncoraId: string;
             readonly regra: components["schemas"]["ReferenciaRegraDto"];
             readonly args: components["schemas"]["ArgsRegraPrazoRecursoDto"];
+            readonly procedimentos: readonly components["schemas"]["ProcedimentoDeRecursoDto"][];
         };
         readonly RegraRecursoFaseInput: {
             readonly regraCodigo: string;
@@ -12297,6 +12363,7 @@ export interface components {
             /** Format: double */
             readonly suspensividadeSegundaInstanciaValor: null | number;
             readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly procedimentos?: null | readonly components["schemas"]["ProcedimentoDeRecursoInput"][];
         };
         readonly RestricaoValorDto: {
             readonly tipo: string;
@@ -12429,6 +12496,9 @@ export interface components {
             readonly termoId: string;
             /** Format: uuid */
             readonly versaoId: string;
+            readonly termoCodigo: string;
+            /** Format: int32 */
+            readonly versaoNumero: number;
             readonly nome: string;
             readonly texto: string;
             readonly baseLegal: string;
@@ -12487,6 +12557,7 @@ export interface components {
             readonly codigo: string;
             readonly nome: string;
             readonly notaDeOrigemNoEnem: boolean;
+            readonly exigeCorrecaoIndependente: boolean;
         };
         readonly TipoProcessoSnapshotDto: {
             /** Format: uuid */
@@ -12541,6 +12612,11 @@ export interface components {
             readonly quantidade: number;
         };
         readonly VagaPorModalidadeCertameDto: {
+            readonly modalidadeCodigo: string;
+            /** Format: int32 */
+            readonly quantidade: number;
+        };
+        readonly VagasRetiradasDaModalidadeDto: {
             readonly modalidadeCodigo: string;
             /** Format: int32 */
             readonly quantidade: number;

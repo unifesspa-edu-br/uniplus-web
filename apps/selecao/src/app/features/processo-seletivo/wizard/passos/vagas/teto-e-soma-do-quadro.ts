@@ -20,7 +20,7 @@ export function totalFixadoDoVo(
   distribuicao: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
 ): number {
-  const federal = ehRamoFederal(distribuicao.regraDistribuicaoCodigo);
+  const federal = ehRamoFederal(distribuicao.ramoDaDistribuicao);
 
   return distribuicao.quadro.reduce((soma, item) => {
     const composicao = catalogo.get(item.modalidadeId)?.composicaoVagas;

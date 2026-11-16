@@ -4,11 +4,26 @@ import { DistribuicaoDeVagas, ModalidadeDaOferta } from '../../processo-seletivo
 export interface PadraoDoEdital {
   readonly regraDistribuicaoCodigo: string;
   readonly regraDistribuicaoVersao: string;
+  readonly ramoDaDistribuicao: string | null;
   readonly regraAjusteCodigo: string | null;
   readonly regraAjusteVersao: string | null;
   readonly referenciaReservaDemograficaId: string | null;
   readonly modalidades: readonly ModalidadeDaOferta[];
   readonly pr: string;
+}
+
+/** O padrão que a oferta declara; o da coleção é o da primeira. */
+export function padraoDaOferta(oferta: DistribuicaoDeVagas): PadraoDoEdital {
+  return {
+    regraDistribuicaoCodigo: oferta.regraDistribuicaoCodigo,
+    regraDistribuicaoVersao: oferta.regraDistribuicaoVersao,
+    ramoDaDistribuicao: oferta.ramoDaDistribuicao,
+    regraAjusteCodigo: oferta.regraAjusteCodigo,
+    regraAjusteVersao: oferta.regraAjusteVersao,
+    referenciaReservaDemograficaId: oferta.referenciaReservaDemograficaId,
+    modalidades: oferta.modalidades,
+    pr: oferta.pr,
+  };
 }
 
 /**

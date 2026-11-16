@@ -1,0 +1,17 @@
+@if (linhas().length > 0) {
+  <p class="label" [attr.id]="idDoTitulo()">Procedimentos declarados para este recurso</p>
+  <ul class="u-list" [attr.aria-labelledby]="idDoTitulo()">
+    @for (linha of linhas(); track $index) {
+      <li>
+        {{ linha.tipoDeDecisao }}
+        @if (linha.alvo !== null) {
+          ({{ linha.alvo }})
+        }
+        — {{ linha.regra }}
+        @if (linha.sugestao !== null) {
+          <span class="field__hint">Sugestão: {{ linha.sugestao }}</span>
+        }
+      </li>
+    }
+  </ul>
+}

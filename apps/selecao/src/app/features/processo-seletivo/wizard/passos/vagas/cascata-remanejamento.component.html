@@ -10,9 +10,9 @@
         }}
       </p>
       <p class="alert__msg">
-        A cascata de remanejamento só se aplica a ofertas cuja regra de distribuição é a Lei
-        12.711 (em qualquer variação). Corrija a regra de distribuição ou a modalidade no quadro
-        de vagas acima:
+        A cascata de remanejamento só se aplica a ofertas cuja regra de distribuição é a Lei 12.711
+        (em qualquer variação). Corrija a regra de distribuição ou a modalidade no quadro de vagas
+        acima:
       </p>
       <ul class="u-list">
         @for (oferta of ofertasForaDoRegime(); track oferta.ofertaCursoId) {
@@ -28,21 +28,21 @@
     <h2 class="form-section__title">Cascata de remanejamento</h2>
     @if (secaoSemConfirmacao()) {
       <p class="step-subtitle">
-        A regra gravada é mostrada porque, sem o catálogo de modalidades, não foi possível
-        confirmar se a cascata se aplica a este processo. A ordem de destinos e o destino final
-        vêm congelados na regra gravada.
+        A regra gravada é mostrada porque, sem o catálogo de modalidades, não foi possível confirmar
+        se a cascata se aplica a este processo. A ordem de destinos e o destino final vêm congelados
+        na regra gravada.
       </p>
     } @else if (store.emConsulta()) {
       <p class="step-subtitle">
-        Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do
-        processo. A ordem de destinos e o destino final vêm congelados na regra gravada.
+        Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
+        A ordem de destinos e o destino final vêm congelados na regra gravada.
       </p>
     } @else {
-    <p class="step-subtitle">
-      Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
-      Escolha a regra: a ordem de destinos e o destino final vêm congelados na regra, e esta tela não os
-      compõe — apenas apresenta o que a regra declara para confirmação.
-    </p>
+      <p class="step-subtitle">
+        Ao menos uma oferta desta distribuição tem modalidade que segue a cascata única do processo.
+        Escolha a regra: a ordem de destinos e o destino final vêm congelados na regra, e esta tela
+        não os compõe — apenas apresenta o que a regra declara para confirmação.
+      </p>
     }
 
     <div class="form-field form-grid__full">
@@ -53,19 +53,19 @@
           [valor]="regraLida()"
         />
       } @else {
-      <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
-      <select class="input" id="c-regra-cascata" [formControl]="regraControl">
-        <option value="|">Selecione a regra…</option>
-        @for (regra of opcoesDoSeletor(); track regra.codigo + regra.versao) {
-          <option [value]="regra.codigo + '|' + regra.versao">
-            {{ regra.codigo }} · versão {{ regra.versao }}
-          </option>
-        }
-      </select>
-      <p class="field__hint">
-        O sistema não propõe uma cascata institucional por padrão: a ausência de escolha é estado
-        válido enquanto rascunho.
-      </p>
+        <label class="label" for="c-regra-cascata">Regra de remanejamento</label>
+        <select class="input" id="c-regra-cascata" [formControl]="regraControl">
+          <option value="|">Selecione a regra…</option>
+          @for (regra of opcoesDoSeletor(); track regra.codigo + regra.versao) {
+            <option [value]="regra.codigo + '|' + regra.versao">
+              {{ regra.codigo }} · versão {{ regra.versao }}
+            </option>
+          }
+        </select>
+        <p class="field__hint">
+          O sistema não propõe uma cascata institucional por padrão: a ausência de escolha é estado
+          válido enquanto rascunho.
+        </p>
       }
 
       <!-- Dentro do campo, como nas regras do padrão da distribuição: detalha a regra escolhida
@@ -115,8 +115,8 @@
         de lado, parte dele ficava fora da vista.
       -->
       <p class="field__hint" id="c-matriz-leitura">
-        Para cada modalidade de origem, os destinos da vaga não preenchida, na ordem de
-        preferência que a regra congela: a 1ª antes da 2ª, e assim por diante.
+        Para cada modalidade de origem, os destinos da vaga não preenchida, na ordem de preferência
+        que a regra congela: a 1ª antes da 2ª, e assim por diante.
       </p>
       <div class="table-responsive" uiRolagemFocavel="c-matriz-leitura">
         <table
@@ -128,8 +128,10 @@
       </div>
 
       <p class="cascata-matriz__terminal">
-        Esgotadas todas as origens acima, a vaga é revertida à ampla concorrência
-        (<strong>{{ matrizDaRegra.fallbackCodigo }}</strong>).
+        Esgotadas todas as origens acima, a vaga é revertida à ampla concorrência (<strong>{{
+          matrizDaRegra.fallbackCodigo
+        }}</strong
+        >).
       </p>
 
       @if (problemas().length > 0 && !store.emConsulta()) {
@@ -142,7 +144,6 @@
           </ul>
         </div>
       }
-
     }
   </div>
 }

@@ -5,6 +5,7 @@ import {
   ATO_ID,
   DOCUMENTO_CONFIRMADO_DO_EDITAL,
   FASE_DE_COLETA,
+  PREVISTOS_DO_PROCESSO,
   PROCESSO_ID,
   SNAPSHOT_DA_PUBLICACAO,
   TIPO_ATO_DTO,
@@ -59,6 +60,7 @@ type ProcessoMockado = ReturnType<typeof comPadroes>;
 const LEITURAS_DO_PROCESSO: readonly (readonly [string, (p: ProcessoMockado) => unknown])[] = [
   ['/documentos-a-publicar', () => [DOCUMENTO_CONFIRMADO_DO_EDITAL]],
   ['/snapshot-vigente', () => SNAPSHOT_DA_PUBLICACAO],
+  ['/produtos-previstos', () => PREVISTOS_DO_PROCESSO],
   ['/atos', () => [atoDoProcesso()]],
   ['/rascunho-da-publicacao', (p) => p.rascunhoDaPublicacao],
   [

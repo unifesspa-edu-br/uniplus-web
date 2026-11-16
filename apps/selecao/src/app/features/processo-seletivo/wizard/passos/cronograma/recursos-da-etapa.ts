@@ -65,6 +65,7 @@ function recursoNovo(regra: RegraCatalogoDto | undefined, atoAncoraCodigo: strin
     prazoUnidade: 'diasUteis',
     atoAncoraCodigo,
     ...SEM_SUSPENSIVIDADE_NEM_INSTANCIA_SUPERIOR,
+    procedimentos: [],
   };
 }
 

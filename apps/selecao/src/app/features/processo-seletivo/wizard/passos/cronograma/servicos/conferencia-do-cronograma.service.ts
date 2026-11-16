@@ -35,7 +35,9 @@ export class ConferenciaDoCronograma {
    * resultado, e é melhor dizer isso aqui do que no último passo.
    */
   private readonly gruposDeclarados = computed<readonly GrupoDeclarado[]>(() => {
-    const nomePorId = new Map(this.catalogoDeDocumentos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]));
+    const nomePorId = new Map(
+      this.catalogoDeDocumentos.tiposDocumento().map((tipo) => [tipo.id, tipo.nome]),
+    );
 
     return gruposSemNormaResolvida(this.store.draft().documentos).map((grupo) => ({
       decideResultado: true,

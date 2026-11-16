@@ -224,7 +224,7 @@
               <option [ngValue]="true">Sim</option>
               <option [ngValue]="false">Não</option>
             </select>
-            <span class="field__hint">Aplicável apenas à fase AVALIACAO.</span>
+            <span class="field__hint">Aplicável apenas às fases que admitem agrupar etapas.</span>
             @if (erroDoCampo('agrupaEtapas')) {
               <span class="field__error" id="cfg-fase-erro-agrupaEtapas">{{
                 erroDoCampo('agrupaEtapas')
@@ -254,7 +254,9 @@
               <option [ngValue]="true">Sim</option>
               <option [ngValue]="false">Não</option>
             </select>
-            <span class="field__hint">Aplicável apenas às fases HOMOLOGACAO e RECURSOS.</span>
+            <span class="field__hint"
+              >Aplicável apenas às fases que admitem complementação de documentos.</span
+            >
             @if (erroDoCampo('permiteComplementacao')) {
               <span class="field__error" id="cfg-fase-erro-permiteComplementacao">{{
                 erroDoCampo('permiteComplementacao')

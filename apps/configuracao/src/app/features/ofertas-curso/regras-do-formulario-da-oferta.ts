@@ -7,6 +7,7 @@ import {
   turnosExigidosPorRegime,
   type TurnoOfertaOption,
 } from '@uniplus/shared-data/configuracao';
+import { manterEmCaixaAlta } from '../../shared/codigo-de-cadastro';
 import type { OfertaCursoForm } from './oferta-curso-form';
 import {
   descricaoDoRegime,
@@ -121,27 +122,35 @@ function aplicarRegras(form: FormGroup<OfertaCursoForm>, sinais: SinaisDasRegras
   });
 }
 
+function regrasDoFormulario(
+  sinais: SinaisDasRegras,
+  ofertaEmEdicao: Signal<OfertaCursoDto | null>,
+): Signal<RegrasDoFormulario> {
+  return computed(() => ({
+    exigeBaseLegal: sinais.exigeBaseLegal(),
+    turnosExigidos: sinais.turnosExigidos(),
+    turnosMarcados: sinais.turnos(),
+    opcoesDeTurno: opcoesDeTurno(ofertaEmEdicao()),
+    regimeNaoReconhecido: regimeNaoReconhecido(ofertaEmEdicao()),
+    regimeDescricao: descricaoDoRegime(sinais.regime()),
+    turnosHint: dicaDosTurnos(sinais.turnosExigidos()),
+  }));
+}
+
 /**
- * Liga as regras que cruzam campos do formulário de oferta: base legal conforme o programa, turnos
- * conforme o regime de turno e a compatibilidade entre regime de funcionamento e de turno. Chamar
- * em contexto de injeção.
+ * Liga as regras do formulário de oferta: código em caixa alta, base legal conforme o programa,
+ * turnos conforme o regime de turno e a compatibilidade entre regime de funcionamento e de turno.
+ * Chamar em contexto de injeção.
  */
 export function acompanharRegrasDaOferta(
   form: FormGroup<OfertaCursoForm>,
   ofertaEmEdicao: Signal<OfertaCursoDto | null>,
 ): AcompanhamentoDoFormulario {
   const sinais = sinaisDasRegras(form);
+  manterEmCaixaAlta(form.controls.codigo);
   aplicarRegras(form, sinais);
   return {
     escolhidos: vinculosEscolhidos(form),
-    regras: computed(() => ({
-      exigeBaseLegal: sinais.exigeBaseLegal(),
-      turnosExigidos: sinais.turnosExigidos(),
-      turnosMarcados: sinais.turnos(),
-      opcoesDeTurno: opcoesDeTurno(ofertaEmEdicao()),
-      regimeNaoReconhecido: regimeNaoReconhecido(ofertaEmEdicao()),
-      regimeDescricao: descricaoDoRegime(sinais.regime()),
-      turnosHint: dicaDosTurnos(sinais.turnosExigidos()),
-    })),
+    regras: regrasDoFormulario(sinais, ofertaEmEdicao),
   };
 }

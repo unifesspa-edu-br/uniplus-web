@@ -26,6 +26,11 @@ export interface FaseDoCronograma {
   readonly emiteParecerIndividual: boolean;
   readonly bancasRequeridas: readonly BancaRequeridaDaFase[];
   readonly regraRecurso: RecursoDaFase | null;
+  /**
+   * Os tipos de decisão que a fase declara. O cronograma é gravado por substituição: lista ausente
+   * apaga a declaração, e por isso a tela a devolve como a leu.
+   */
+  readonly tiposDeDecisao?: readonly string[];
   /** `null` numa fase acrescentada agora: quem a descreve é o catálogo. */
   readonly congelados: AtributosCongeladosDaFase | null;
 }
@@ -106,6 +111,30 @@ export interface RecursoDaFase {
   readonly admiteInstanciaSuperior: boolean | null;
   readonly suspensividadeSegundaInstanciaValor: string;
   readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
+  /** Procedimentos declarados para o recurso; a tela os mostra e os devolve como os leu. */
+  readonly procedimentos: readonly ProcedimentoDeRecurso[];
+}
+
+/**
+ * O que um procedimento de recurso contesta: um item de avaliação ou uma área do ENEM. Sem alvo,
+ * o procedimento vale para a decisão inteira.
+ */
+export interface AlvoDoProcedimentoDeRecurso {
+  readonly itemDeAvaliacaoId: string | null;
+  readonly areaDoEnem: string | null;
+}
+
+/**
+ * Como o recurso é julgado para um tipo de decisão: a regra do catálogo que o conduz. A `sugestao`
+ * é o código da regra que o servidor recomenda e serve só de dica ao operador: não se edita e não
+ * volta no comando, que recebe apenas o que o operador declarou.
+ */
+export interface ProcedimentoDeRecurso {
+  readonly tipoDeDecisao: string;
+  readonly alvo: AlvoDoProcedimentoDeRecurso | null;
+  readonly regraCodigo: string;
+  readonly regraVersao: string;
+  readonly sugestao: string | null;
 }
 
 /**
@@ -165,6 +194,8 @@ export interface EtapaPontuada {
   readonly emiteParecerIndividual: boolean;
   readonly bancas: readonly BancaDaEtapa[];
   readonly recursos: readonly RecursoDaEtapa[];
+  /** Tipos de decisão que a etapa declara, devolvidos como lidos: o cronograma se grava por substituição. */
+  readonly tiposDeDecisao?: readonly string[];
   /**
    * O que o processo congelou do tipo quando a etapa foi gravada; vale sobre o cadastro enquanto a
    * etapa aponta para o mesmo tipo. Ausente na etapa ainda não gravada.
@@ -204,4 +235,5 @@ export interface RecursoDaEtapa {
   readonly admiteInstanciaSuperior: boolean | null;
   readonly suspensividadeSegundaInstanciaValor: string;
   readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
+  readonly procedimentos: readonly ProcedimentoDeRecurso[];
 }

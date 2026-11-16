@@ -12,7 +12,7 @@ import {
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 import { comEscopo, ProblemaDaDistribuicao } from './problema-da-distribuicao';
 import { problemaDeSomaDoQuadro } from './teto-e-soma-do-quadro';
-import { ehRamoFederal } from './composicao-de-vagas';
+import { ehRamoFederal, ehRamoReconhecido } from './composicao-de-vagas';
 
 const PR_MINIMO = 0.5;
 const PR_MAXIMO = 1;
@@ -22,8 +22,8 @@ const CASAS_DECIMAIS_PR = 4;
  * Antecipa as invariantes que o agregado declara, para o operador não
  * descobri-las depois de preencher a tela inteira.
  *
- * Não replica o cálculo do quadro: `vrNominal`, `vrFinal`, `estouro` e
- * `capadoEmVo` vêm da simulação, e reimplementar a Lei de Cotas aqui seria a
+ * Não replica o cálculo do quadro: a conferência da reserva legal e o ajuste do quadro fixado
+ * vêm da simulação, e reimplementar a Lei de Cotas aqui seria a
  * divergência mais provável desta tela. A API é árbitra.
  */
 export function problemasDaDistribuicao(
@@ -31,19 +31,72 @@ export function problemasDaDistribuicao(
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
   rol: readonly string[] | null = null,
 ): ProblemaDaDistribuicao[] {
-  const federal = ehRamoFederal(distribuicao.regraDistribuicaoCodigo);
-  const excesso = problemaDeSomaDoQuadro(distribuicao, catalogo);
+  return regraSemRamoReconhecido(distribuicao)
+    ? problemasDaRegraSemRamo(distribuicao)
+    : problemasDaRegraComRamo(distribuicao, catalogo, rol);
+}
 
+/** Regra escolhida cujo ramo a API não declara: o que depende do ramo não tem como ser conferido. */
+function regraSemRamoReconhecido(distribuicao: DistribuicaoDeVagas): boolean {
+  return (
+    distribuicao.regraDistribuicaoCodigo !== '' &&
+    !ehRamoReconhecido(distribuicao.ramoDaDistribuicao)
+  );
+}
+
+function problemasDaRegraSemRamo(distribuicao: DistribuicaoDeVagas): ProblemaDaDistribuicao[] {
   return [
     ...comEscopo('preenchimento', problemasDeVoBase(distribuicao.voBase)),
-    ...comEscopo('padrao', problemasDePr(distribuicao.pr)),
-    ...comEscopo('padrao', problemasDeModalidades(distribuicao, catalogo, federal)),
-    ...comEscopo('oferta', problemasDeModalidadeForaDoCatalogo(distribuicao, catalogo)),
-    ...comEscopo('oferta', problemasDeModalidadeForaDoRol(distribuicao, rol)),
+    ...comEscopo('padrao', [
+      'A regra de distribuição não declara o ramo do quadro (Lei 12.711 ou quadro fixado no edital): escolha outra regra.',
+    ]),
+  ];
+}
+
+function problemasDaRegraComRamo(
+  distribuicao: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  rol: readonly string[] | null,
+): ProblemaDaDistribuicao[] {
+  const federal = ehRamoFederal(distribuicao.ramoDaDistribuicao);
+  return [
+    ...comEscopo('preenchimento', problemasDeVoBase(distribuicao.voBase)),
+    ...problemasDoPadrao(distribuicao, catalogo, federal),
+    ...problemasDeModalidadeIndisponivel(distribuicao, catalogo, rol),
     ...problemasDeQuadro(distribuicao, catalogo, federal),
     ...comEscopo('padrao', problemasDeReferencias(distribuicao, federal)),
-    ...comEscopo('oferta', excesso === null ? [] : [excesso]),
+    ...comEscopo('oferta', problemasDeExcessoDoQuadro(distribuicao, catalogo)),
   ];
+}
+
+function problemasDoPadrao(
+  distribuicao: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  federal: boolean,
+): ProblemaDaDistribuicao[] {
+  return [
+    ...comEscopo('padrao', federal ? problemasDePr(distribuicao.pr) : []),
+    ...comEscopo('padrao', problemasDeModalidades(distribuicao, catalogo, federal)),
+  ];
+}
+
+function problemasDeModalidadeIndisponivel(
+  distribuicao: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+  rol: readonly string[] | null,
+): ProblemaDaDistribuicao[] {
+  return [
+    ...comEscopo('oferta', problemasDeModalidadeForaDoCatalogo(distribuicao, catalogo)),
+    ...comEscopo('oferta', problemasDeModalidadeForaDoRol(distribuicao, rol)),
+  ];
+}
+
+function problemasDeExcessoDoQuadro(
+  distribuicao: DistribuicaoDeVagas,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): string[] {
+  const excesso = problemaDeSomaDoQuadro(distribuicao, catalogo);
+  return excesso === null ? [] : [excesso];
 }
 
 function problemasDeVoBase(voBase: string): string[] {

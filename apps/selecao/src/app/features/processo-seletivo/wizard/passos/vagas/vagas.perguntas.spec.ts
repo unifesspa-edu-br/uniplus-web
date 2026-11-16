@@ -128,7 +128,9 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
           { modalidadeOrigemId: MODALIDADE, modalidadeCodigo: 'AC', quantidade: 2 },
           { modalidadeOrigemId: SEGUNDA_MODALIDADE, modalidadeCodigo: 'AC_PCD', quantidade: 1 },
         ],
-        totalPublicado: 43,
+        totalDeVagasDoEdital: 43,
+        conferenciaDaReservaLegal: null,
+        ajusteDoQuadroFixado: null,
       },
     ]);
   });

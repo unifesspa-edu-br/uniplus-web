@@ -38,6 +38,7 @@ const recurso: RecursoDaEtapa = {
   admiteInstanciaSuperior: false,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
 
 describe('papel da publicação', () => {

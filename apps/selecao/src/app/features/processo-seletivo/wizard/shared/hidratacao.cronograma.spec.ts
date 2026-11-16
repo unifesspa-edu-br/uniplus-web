@@ -1,4 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import {
+  ARGUMENTOS_DO_RECURSO,
+  RECURSO_DA_FASE,
+  etapaDoServidor,
+  faseDoServidor,
+} from './cronograma-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
 import { DRAFT, FASE_COM_RECURSO, ETAPA, dtoComCronograma } from './hidratacao.testing';
 
@@ -33,10 +39,11 @@ describe('hidratarDraft — cronograma e etapas', () => {
   it('projeta a unidade responsável pelo id de origem da cópia gravada', () => {
     const comUnidade = dtoComCronograma({
       cronogramaFases: [
-        {
-          ...FASE_COM_RECURSO,
-          unidadeResponsavel: { origemId: 'unidade-cga', sigla: 'CGA', slug: 'cga', nome: 'CGA' },
-        },
+        faseDoServidor({
+          cronograma: {
+            unidadeResponsavel: { origemId: 'unidade-cga', sigla: 'CGA', nome: 'CGA' },
+          },
+        }),
       ],
     });
 
@@ -101,13 +108,14 @@ describe('hidratarDraft — cronograma e etapas', () => {
   it('preserva a declaração de instância superior que o servidor devolveu', () => {
     const semInstancia = dtoComCronograma({
       cronogramaFases: [
-        {
-          ...FASE_COM_RECURSO,
-          regraRecurso: {
-            ...FASE_COM_RECURSO.regraRecurso,
-            args: { ...FASE_COM_RECURSO.regraRecurso.args, admiteInstanciaSuperior: false },
+        faseDoServidor({
+          publicacoes: {
+            regraRecurso: {
+              ...RECURSO_DA_FASE,
+              args: { ...ARGUMENTOS_DO_RECURSO, admiteInstanciaSuperior: false },
+            },
           },
-        },
+        }),
       ],
       etapas: [],
     });
@@ -136,7 +144,7 @@ describe('hidratarDraft — cronograma e etapas', () => {
    */
   it('devolve a âncora vazia quando o produto ancorado não está entre os da fase', () => {
     const semOProduto = dtoComCronograma({
-      cronogramaFases: [{ ...FASE_COM_RECURSO, produtos: [] }],
+      cronogramaFases: [faseDoServidor({ publicacoes: { produtos: [] } })],
       etapas: [],
     });
 
@@ -181,8 +189,8 @@ describe('hidratarDraft — cronograma e etapas', () => {
   it('renumera as etapas na chegada, corrigindo ordem ausente', () => {
     const semOrdem = dtoComCronograma({
       etapas: [
-        { ...ETAPA, id: 'etapa-sem-ordem', ordem: null },
-        { ...ETAPA, id: 'etapa-com-ordem', ordem: 7 },
+        etapaDoServidor({ id: 'etapa-sem-ordem', identificacao: { ordem: null } }),
+        etapaDoServidor({ id: 'etapa-com-ordem', identificacao: { ordem: 7 } }),
       ],
     });
 

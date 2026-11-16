@@ -5,6 +5,7 @@ import type {
   BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
+  ProcedimentoDeRecurso,
   ProdutoDaFase,
   RecursoDaEtapa,
   RecursoDaFase,
@@ -22,6 +23,7 @@ type ProdutoDaFaseInput = NonNullable<FaseCronogramaInput['produtos']>[number];
 type BancaRequeridaInput = NonNullable<FaseCronogramaInput['bancasRequeridas']>[number];
 type ProdutoDaEtapaInput = NonNullable<EtapaProcessoInput['produtos']>[number];
 type BancaDaEtapaInput = NonNullable<EtapaProcessoInput['bancas']>[number];
+type ProcedimentoDeRecursoInput = NonNullable<RegraDeRecursoDaFaseInput['procedimentos']>[number];
 
 /**
  * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
@@ -58,6 +60,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
+    tiposDeDecisao: [...(fase.tiposDeDecisao ?? [])],
   };
 }
 
@@ -80,14 +83,48 @@ function comoComandoDeRecursoDaFase(regra: RecursoDaFase): RegraDeRecursoDaFaseI
     prazoValor: decimalDoCampo(regra.prazoValor) ?? 0,
     prazoUnidade: regra.prazoUnidade as RegraDeRecursoDaFaseInput['prazoUnidade'],
     atoAncoraCodigo: regra.atoAncoraCodigo,
+    ...comoComandoDasCondicoesDoRecurso(regra),
+  };
+}
+
+type CondicoesDoRecursoInput = Pick<
+  RegraDeRecursoDaFaseInput,
+  | 'suspensividadePrimeiraInstanciaValor'
+  | 'suspensividadePrimeiraInstanciaUnidade'
+  | 'procedimentos'
+> &
+  ReturnType<typeof instanciaSuperiorParaComando>;
+
+/**
+ * A fase e a etapa recorrem nas mesmas condições, e o servidor guarda os quatro valores de
+ * suspensividade em colunas próprias: omiti-los apagaria o efeito suspensivo declarado a cada
+ * gravação do cronograma.
+ */
+function comoComandoDasCondicoesDoRecurso(
+  janela: RecursoDaFase | RecursoDaEtapa,
+): CondicoesDoRecursoInput {
+  return {
     suspensividadePrimeiraInstanciaValor: decimalDoCampo(
-      regra.suspensividadePrimeiraInstanciaValor,
+      janela.suspensividadePrimeiraInstanciaValor,
     ),
     suspensividadePrimeiraInstanciaUnidade:
-      regra.suspensividadePrimeiraInstanciaUnidade === ''
+      janela.suspensividadePrimeiraInstanciaUnidade === ''
         ? null
-        : regra.suspensividadePrimeiraInstanciaUnidade,
-    ...instanciaSuperiorParaComando(regra),
+        : janela.suspensividadePrimeiraInstanciaUnidade,
+    ...instanciaSuperiorParaComando(janela),
+    procedimentos: janela.procedimentos.map(comoComandoDoProcedimento),
+  };
+}
+
+/** O procedimento como o comando o recebe: a sugestão é só dica de leitura e não viaja. */
+function comoComandoDoProcedimento(
+  procedimento: ProcedimentoDeRecurso,
+): ProcedimentoDeRecursoInput {
+  return {
+    tipoDeDecisao: procedimento.tipoDeDecisao,
+    alvo: procedimento.alvo === null ? null : { ...procedimento.alvo },
+    regraCodigo: procedimento.regraCodigo,
+    regraVersao: procedimento.regraVersao,
   };
 }
 
@@ -112,10 +149,22 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     ...comoComandoDaPontuacaoDaEtapa(etapa),
     ...comoComandoDaAvaliacaoDaEtapa(etapa),
     ...comoComandoDaAgendaDaEtapa(etapa),
+    ...comoComandoDoQueAEtapaDeclara(etapa),
+  };
+}
+
+function comoComandoDoQueAEtapaDeclara(
+  etapa: EtapaPontuada,
+): Pick<
+  EtapaProcessoInput,
+  'produtos' | 'emiteParecerIndividual' | 'bancas' | 'recursos' | 'tiposDeDecisao'
+> {
+  return {
     produtos: etapa.produtos.map(comoComandoDoProdutoDaEtapa),
     emiteParecerIndividual: etapa.emiteParecerIndividual,
     bancas: etapa.bancas.map(comoComandoDeBancaDaEtapa),
     recursos: comoComandoDosRecursosDaEtapa(etapa),
+    tiposDeDecisao: [...(etapa.tiposDeDecisao ?? [])],
   };
 }
 
@@ -201,17 +250,7 @@ function comoComandoDeRecursoDaEtapa(recurso: RecursoDaEtapa): RecursoDaEtapaInp
     prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
     prazoUnidade: recurso.prazoUnidade as RecursoDaEtapaInput['prazoUnidade'],
     atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
-    // A etapa recorre nas mesmas condições da fase, e o servidor guarda os quatro valores
-    // em colunas próprias — mandar `null` fixo apagava o efeito suspensivo declarado a
-    // cada gravação do cronograma.
-    suspensividadePrimeiraInstanciaValor: decimalDoCampo(
-      recurso.suspensividadePrimeiraInstanciaValor,
-    ),
-    suspensividadePrimeiraInstanciaUnidade:
-      recurso.suspensividadePrimeiraInstanciaUnidade === ''
-        ? null
-        : recurso.suspensividadePrimeiraInstanciaUnidade,
-    ...instanciaSuperiorParaComando(recurso),
+    ...comoComandoDasCondicoesDoRecurso(recurso),
   };
 }
 

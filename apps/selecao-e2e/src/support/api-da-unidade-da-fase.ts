@@ -1,5 +1,6 @@
 import type { Page, Route } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import type { FaseCronogramaDto } from '@uniplus/shared-data/selecao';
 import {
   FASES_DO_CATALOGO,
   FATOS_DO_CANDIDATO,
@@ -9,6 +10,7 @@ import {
   UNIDADE_CGA,
 } from '../fixtures/cenario-da-unidade-da-fase';
 import { TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
+import { comProdutoNaFase, comUnidadeNaFase } from '../fixtures/cronograma-do-servidor';
 import {
   ATO_PUBLICADO,
   ID_DO_PROCESSO_COMPLETO,
@@ -40,18 +42,14 @@ type UnidadeDaFase = typeof UNIDADE_RESPONSAVEL_DA_FASE | null;
 export interface Capturado {
   readonly cronogramas: { unidadeResponsavelId: string | null }[][];
   readonly publicacoes: unknown[];
-  fase: Record<string, unknown>;
+  fase: FaseCronogramaDto;
   publicado: boolean;
   recusaDeUnidade: boolean;
 }
 
-function faseDoProcesso(unidadeDaFase: UnidadeDaFase): Record<string, unknown> {
+function faseDoProcesso(unidadeDaFase: UnidadeDaFase): FaseCronogramaDto {
   const [primeira] = PROCESSO_PUBLICADO_COMPLETO.cronogramaFases;
-  return {
-    ...primeira,
-    produtos: [...primeira.produtos, PRODUTO_DEFINITIVO],
-    unidadeResponsavel: unidadeDaFase,
-  };
+  return comUnidadeNaFase(comProdutoNaFase(primeira, PRODUTO_DEFINITIVO), unidadeDaFase);
 }
 
 export function novoCapturado(unidadeDaFase: UnidadeDaFase): Capturado {
@@ -144,13 +142,13 @@ async function gravarCronograma(
     await recusarUnidade(route);
     return;
   }
-  capturado.fase = { ...capturado.fase, unidadeResponsavel: unidadeEscolhida(cronograma) };
+  capturado.fase = comUnidadeNaFase(capturado.fase, unidadeEscolhida(cronograma));
   await route.fulfill(SEM_CONTEUDO);
 }
 
 async function publicar(route: Route, capturado: Capturado, comando: unknown): Promise<void> {
   capturado.publicacoes.push(comando);
-  if (capturado.fase['unidadeResponsavel'] === null) {
+  if (capturado.fase.cronograma.unidadeResponsavel === null) {
     const titulo = 'A fase precisa de unidade responsável para publicar.';
     const code = 'uniplus.selecao.processo_seletivo.fase_sem_unidade_responsavel';
     await recusar(route, problema(422, code, titulo));

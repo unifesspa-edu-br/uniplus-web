@@ -1,3 +1,7 @@
+import type { ConfiguracaoDistribuicaoVagasDto } from '@uniplus/shared-data/selecao';
+
+export type AjusteDoQuadro = NonNullable<ConfiguracaoDistribuicaoVagasDto['ajusteDoQuadro']>;
+
 /**
  * Distribuição de vagas de uma oferta de curso (UNI-REQ-0134). A oferta é referenciada pelo id do
  * catálogo de Configuração: curso, local, unidade e turnos são projeção dela, e remontá-los aqui
@@ -8,7 +12,12 @@
  */
 export interface DistribuicaoDeVagas {
   readonly ofertaCursoId: string;
+  /** As vagas ofertadas base da oferta, no contrato `vagasOfertadasBase`. */
   readonly voBase: string;
+  /**
+   * O percentual da reserva legal, no contrato `percentualDaReservaLegal`: obrigatório na Lei de
+   * Cotas, vazio quando o quadro é fixado no edital.
+   */
   readonly pr: string;
   /**
    * Regra do `rol_de_regras`, por código **e** versão: versão nova do catálogo não pode mudar a
@@ -16,11 +25,21 @@ export interface DistribuicaoDeVagas {
    */
   readonly regraDistribuicaoCodigo: string;
   readonly regraDistribuicaoVersao: string;
+  /**
+   * O ramo em que a regra monta o quadro (`LEI_DE_COTAS` ou `QUADRO_FIXADO_NO_EDITAL`), como a
+   * regra o declara. `null` quando a distribuição gravada não o traz: a tela não o presume.
+   */
+  readonly ramoDaDistribuicao: string | null;
   /** Obrigatória na Lei 12.711 (art. 11, § único); ausente nas demais. */
   readonly regraAjusteCodigo: string | null;
   readonly regraAjusteVersao: string | null;
   /** Obrigatória na Lei 12.711 e recusada fora dela. */
   readonly referenciaReservaDemograficaId: string | null;
+  /**
+   * Como o quadro fixado no edital retira vagas, quando a regra o admite. A tela o devolve como o
+   * contrato o entregou, porque a gravação substitui a distribuição inteira.
+   */
+  readonly ajusteDoQuadro: AjusteDoQuadro | null;
   readonly modalidades: readonly ModalidadeDaOferta[];
   readonly quadro: readonly QuantidadeDeVagas[];
 }
@@ -63,8 +82,8 @@ export interface ModalidadeGravada {
 
 /**
  * Quantidade que o edital fixa para uma modalidade. Na Lei 12.711, as de composição
- * `DENTRO_DO_VR` e `RESIDUAL_DO_VO` são calculadas pelo motor e informá-las é recusado; fora
- * dela, todas exigem quantidade.
+ * `DENTRO_DA_RESERVA_LEGAL` e `RESTANTE_DAS_VAGAS_OFERTADAS` são calculadas pelo motor e
+ * informá-las é recusado; fora dela, todas exigem quantidade.
  */
 export interface QuantidadeDeVagas {
   readonly modalidadeId: string;

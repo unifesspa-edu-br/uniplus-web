@@ -1,36 +1,38 @@
-import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import { type EtapaProcessoDto, ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { COLEGIADA } from './deliberacao/regra-de-deliberacao.testing';
+import { etapaDoServidor, faseDoServidor } from './cronograma-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
-import { DRAFT, ETAPA, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing';
+import { DRAFT, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing';
 
-const REGRA_DA_API = {
+type RegraDoServidor = NonNullable<EtapaProcessoDto['bancas'][number]['regraDeDeliberacao']>;
+
+const REGRA_DA_API: RegraDoServidor = {
   modo: ModoDeDeliberacao.colegiadaComVotacao,
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
-  criterio: 'maioriaSimples',
-  desempate: 'votoDaPresidencia',
-  encerramento: 'presidenciaNoQuorum',
+  criterio: 'maioriaSimples' as RegraDoServidor['criterio'],
+  desempate: 'votoDaPresidencia' as RegraDoServidor['desempate'],
+  encerramento: 'presidenciaNoQuorum' as RegraDoServidor['encerramento'],
   semUnanimidade: null,
 };
 
 const [BANCA_DA_FASE] = FASE_COM_RECURSO.bancasRequeridas;
 
-function comRegraNaFase(regraDeDeliberacao: unknown) {
-  const fase = {
-    ...FASE_COM_RECURSO,
+function comRegraNaFase(regraDeDeliberacao: RegraDoServidor | null) {
+  const fase = faseDoServidor({
     bancasRequeridas: [{ ...BANCA_DA_FASE, regraDeDeliberacao }],
-  };
+  });
   return hidratarDraft(DRAFT, dtoComCronograma({ cronogramaFases: [fase], etapas: [] })).cronograma
     .fases[0];
 }
 
-function comBancasNaEtapa(bancas: readonly unknown[]) {
+function comBancasNaEtapa(bancas: EtapaProcessoDto['bancas']) {
   const dto = dtoComCronograma({
     cronogramaFases: [FASE_COM_RECURSO],
-    etapas: [{ ...ETAPA, bancas }],
+    etapas: [etapaDoServidor({ bancas })],
   });
   return hidratarDraft(DRAFT, dto).cronograma.etapas[0];
 }
@@ -42,7 +44,6 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
 
   it('lê a banca da fase sem regra como sem regra declarada', () => {
     expect(comRegraNaFase(null).bancasRequeridas[0].regraDeDeliberacao).toBeNull();
-    expect(comRegraNaFase(undefined).bancasRequeridas[0].regraDeDeliberacao).toBeNull();
   });
 
   it('lê a banca da etapa pelo tipo de origem, com a regra que ela declara', () => {

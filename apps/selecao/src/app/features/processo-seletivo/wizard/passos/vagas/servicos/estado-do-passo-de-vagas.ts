@@ -12,11 +12,12 @@ import { comPadraoAplicado } from '../edicao-do-quadro';
 import { leituraDoPadrao } from '../leitura-do-padrao';
 import { modalidadesDoRol, modalidadesGravadasPorId } from '../modalidades-da-distribuicao';
 import { erroDasOpcoes, rotuloDasOpcoes, TEXTO_OPCOES_ACIMA_DAS_OFERTAS } from '../opcoes-de-curso';
-import { PadraoDoEdital, seguemOMesmoPadrao } from '../padrao-do-edital';
+import { PadraoDoEdital, padraoDaOferta, seguemOMesmoPadrao } from '../padrao-do-edital';
 
 const PADRAO_VAZIO: PadraoDoEdital = {
   regraDistribuicaoCodigo: '',
   regraDistribuicaoVersao: '',
+  ramoDaDistribuicao: null,
   regraAjusteCodigo: null,
   regraAjusteVersao: null,
   referenciaReservaDemograficaId: null,
@@ -67,20 +68,10 @@ export class EstadoDoPassoDeVagas {
    */
   readonly padrao = computed<PadraoDoEdital>(() => {
     const primeira = this.distribuicoes()[0];
-    if (primeira === undefined) return this.padraoPendente();
-
-    return {
-      regraDistribuicaoCodigo: primeira.regraDistribuicaoCodigo,
-      regraDistribuicaoVersao: primeira.regraDistribuicaoVersao,
-      regraAjusteCodigo: primeira.regraAjusteCodigo,
-      regraAjusteVersao: primeira.regraAjusteVersao,
-      referenciaReservaDemograficaId: primeira.referenciaReservaDemograficaId,
-      modalidades: primeira.modalidades,
-      pr: primeira.pr,
-    };
+    return primeira === undefined ? this.padraoPendente() : padraoDaOferta(primeira);
   });
 
-  readonly ehFederal = computed(() => ehRamoFederal(this.padrao().regraDistribuicaoCodigo));
+  readonly ehFederal = computed(() => ehRamoFederal(this.padrao().ramoDaDistribuicao));
 
   readonly regraDistribuicaoEscolhida = computed(() =>
     regraPorChave(

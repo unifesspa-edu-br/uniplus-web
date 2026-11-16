@@ -1,14 +1,15 @@
 import { HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { HttpTestingController } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
 import { type ComponentFixture } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { ConfirmDialogComponent } from '@uniplus/shared-ui/components';
 import { of } from 'rxjs';
 
 import { DistribuicaoDeVagas, ModalidadeGravada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
+import {
+  distribuicao as distribuicaoInstitucional,
+  federal as distribuicaoFederal,
+} from './distribuicao-de-vagas.testing';
 import { ConferenciaDoQuadro } from './servicos/conferencia-do-quadro.service';
 import { EstadoDoPassoDeVagas } from './servicos/estado-do-passo-de-vagas';
 import { SimulacaoDoQuadro } from './servicos/simulacao-do-quadro.service';
@@ -80,18 +81,12 @@ export const OFERTAS = [
 ];
 
 export function distribuicao(ofertaCursoId: string): DistribuicaoDeVagas {
-  return {
+  return distribuicaoInstitucional({
     ofertaCursoId,
-    voBase: '40',
-    pr: '0,5',
-    regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
     regraDistribuicaoVersao: 'v1',
-    regraAjusteCodigo: null,
-    regraAjusteVersao: null,
-    referenciaReservaDemograficaId: null,
     modalidades: [{ id: MODALIDADE, codigo: 'AC_I' }],
     quadro: [{ modalidadeId: MODALIDADE, quantidade: '2' }],
-  };
+  });
 }
 
 export const ROTA_PROCESSO_LIDO = new RegExp(`^${BASE}/api/selecao/processos-seletivos/[^/]+$`);
@@ -151,7 +146,7 @@ export const MODALIDADES_CASCATA = [
     codigo: 'LB_PPI',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRA_DE',
+    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
     composicaoOrigem: 'AC',
     regraRemanejamento: 'SEGUE_CASCATA',
     remanejamentoDestino: null,
@@ -163,7 +158,7 @@ export const MODALIDADES_CASCATA = [
     codigo: 'LB_Q',
     descricao: null,
     naturezaLegal: 'COTA_RESERVADA',
-    composicaoVagas: 'RETIRA_DE',
+    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
     composicaoOrigem: 'AC',
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -175,7 +170,7 @@ export const MODALIDADES_CASCATA = [
     codigo: 'AC',
     descricao: null,
     naturezaLegal: 'GERAL',
-    composicaoVagas: 'RETIRA_DE',
+    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
     composicaoOrigem: null,
     regraRemanejamento: null,
     remanejamentoDestino: null,
@@ -209,6 +204,7 @@ export const REGRA_CASCATA = {
   baseLegal: 'Portaria MEC nº 704/2025',
   hash: 'hash-cascata-v1',
   modalidadesAdmitidas: null,
+  ramoDaDistribuicao: null,
 };
 
 /** Regra existente no catálogo, mas com `esquemaArgs` que não bate com o shape que `matrizDaRegra` reconhece. */
@@ -221,6 +217,7 @@ export const REGRA_CASCATA_SEM_MATRIZ = {
   baseLegal: 'Portaria MEC nº 704/2025',
   hash: 'hash-cascata-sem-matriz',
   modalidadesAdmitidas: null,
+  ramoDaDistribuicao: null,
 };
 
 /** A modalidade como o snapshot a guarda; o que não interessa ao teste fica vazio. */
@@ -236,28 +233,29 @@ export function gravadaDe(descricao: string, composicaoVagas: string): Modalidad
   };
 }
 
+const MODALIDADES_DA_CASCATA = [
+  { id: LB_PPI, codigo: 'LB_PPI' },
+  { id: LB_Q, codigo: 'LB_Q' },
+  { id: AC_CASCATA, codigo: 'AC' },
+];
+
+const QUADRO_DA_CASCATA = [
+  { modalidadeId: LB_PPI, quantidade: '10' },
+  { modalidadeId: LB_Q, quantidade: '10' },
+  { modalidadeId: AC_CASCATA, quantidade: '80' },
+];
+
 /** Oferta federal com as três modalidades: cobre fallback e o destino da origem. */
 export function distribuicaoComCascata(): DistribuicaoDeVagas {
-  return {
+  return distribuicaoFederal({
     ofertaCursoId: OFERTA_CASCATA,
     voBase: '100',
-    pr: '0,5',
-    regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
     regraDistribuicaoVersao: 'v1',
     regraAjusteCodigo: 'AJUSTE-PADRAO',
     regraAjusteVersao: 'v1',
-    referenciaReservaDemograficaId: 'ref-1',
-    modalidades: [
-      { id: LB_PPI, codigo: 'LB_PPI' },
-      { id: LB_Q, codigo: 'LB_Q' },
-      { id: AC_CASCATA, codigo: 'AC' },
-    ],
-    quadro: [
-      { modalidadeId: LB_PPI, quantidade: '10' },
-      { modalidadeId: LB_Q, quantidade: '10' },
-      { modalidadeId: AC_CASCATA, quantidade: '80' },
-    ],
-  };
+    modalidades: MODALIDADES_DA_CASCATA,
+    quadro: QUADRO_DA_CASCATA,
+  });
 }
 
 export const REGRA_INSTITUCIONAL = {
@@ -269,6 +267,7 @@ export const REGRA_INSTITUCIONAL = {
   baseLegal: 'Res. Unifesspa 532/2021',
   hash: 'hash-institucional',
   modalidadesAdmitidas: null,
+  ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
 };
 
 /** O rol fechado coincide, de propósito, com o catálogo de duas modalidades já usado nos demais testes. */
@@ -281,6 +280,7 @@ export const REGRA_PSIQ = {
   baseLegal: 'Portaria Normativa MEC 18/2012',
   hash: 'hash-psiq',
   modalidadesAdmitidas: ['AC_I', 'AC_Q'],
+  ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
 };
 
 export interface ServicosDasVagas {
@@ -298,123 +298,4 @@ export function servicosDe(fixture: ComponentFixture<VagasPassoComponent>): Serv
     conferencia: injetor.get(ConferenciaDoQuadro),
     catalogos: injetor.get(CatalogosDeDistribuicao),
   };
-}
-
-const DIALOGO_DA_REMOCAO = 0;
-const DIALOGO_DA_TROCA_DE_REGRA = 1;
-const DIALOGO_DO_REAPLICAR_ROL = 2;
-
-/** O que o operador faz na tela do passo: clica, digita e escolhe, e a tela reage. */
-export class TelaDasVagas {
-  constructor(private readonly fixture: ComponentFixture<VagasPassoComponent>) {}
-
-  /** Deixa a tela refletir o que mudou no rascunho. */
-  atualizar(): void {
-    this.fixture.detectChanges();
-  }
-
-  pedirRemocao(ofertaCursoId: string): void {
-    this.clicar(this.deLista('button[aria-label^="Remover "]', ofertaCursoId));
-  }
-
-  confirmarRemocao(): void {
-    this.dialogo(DIALOGO_DA_REMOCAO).triggerEventHandler('confirmed', undefined);
-    this.fixture.detectChanges();
-  }
-
-  cancelarRemocao(): void {
-    this.dialogo(DIALOGO_DA_REMOCAO).triggerEventHandler('cancelled', undefined);
-    this.fixture.detectChanges();
-  }
-
-  avisoDaRemocao(): string {
-    return this.dialogo(DIALOGO_DA_REMOCAO).nativeElement.textContent ?? '';
-  }
-
-  alterarVoBase(ofertaCursoId: string, valor: string): void {
-    const campo = this.deLista('input[aria-label^="Total de vagas de"]', ofertaCursoId);
-    this.digitar(campo as HTMLInputElement, valor);
-  }
-
-  escolherRegra(valor: string): void {
-    const campo = this.raiz.querySelector<HTMLSelectElement>('select#f-regra');
-    if (campo === null) throw new Error('O seletor de regra não está na tela.');
-    campo.value = valor;
-    campo.dispatchEvent(new Event('change'));
-    this.fixture.detectChanges();
-  }
-
-  confirmarTrocaDeRegra(): void {
-    this.dialogo(DIALOGO_DA_TROCA_DE_REGRA).triggerEventHandler('confirmed', undefined);
-    this.fixture.detectChanges();
-  }
-
-  cancelarTrocaDeRegra(): void {
-    this.dialogo(DIALOGO_DA_TROCA_DE_REGRA).triggerEventHandler('cancelled', undefined);
-    this.fixture.detectChanges();
-  }
-
-  /** A ação de recompor só existe na tela quando a recomposição muda alguma coisa. */
-  oferecePorRecomporORol(): boolean {
-    return this.botaoComTexto('Recompor pelo rol da regra atual') !== undefined;
-  }
-
-  reaplicarRolDaRegra(): void {
-    this.clicar(this.botaoComTexto('Recompor pelo rol da regra atual'));
-  }
-
-  confirmarReaplicarRol(): void {
-    this.dialogo(DIALOGO_DO_REAPLICAR_ROL).triggerEventHandler('confirmed', undefined);
-    this.fixture.detectChanges();
-  }
-
-  cancelarReaplicarRol(): void {
-    this.dialogo(DIALOGO_DO_REAPLICAR_ROL).triggerEventHandler('cancelled', undefined);
-    this.fixture.detectChanges();
-  }
-
-  aplicarPadraoATodas(): void {
-    this.clicar(this.botaoComTexto('Aplicar o padrão a todas as ofertas'));
-  }
-
-  alternarModalidade(codigo: string): void {
-    const marcador = Array.from(this.raiz.querySelectorAll('.checkbox-grid label.check-item'))
-      .find((rotulo) => rotulo.textContent?.trim().startsWith(`${codigo} —`))
-      ?.querySelector('input');
-    this.clicar(marcador ?? undefined);
-  }
-
-  private get raiz(): HTMLElement {
-    return this.fixture.nativeElement as HTMLElement;
-  }
-
-  private dialogo(indice: number): DebugElement {
-    return this.fixture.debugElement.queryAll(By.directive(ConfirmDialogComponent))[indice];
-  }
-
-  private botaoComTexto(texto: string): HTMLElement | undefined {
-    return Array.from(this.raiz.querySelectorAll<HTMLElement>('button')).find(
-      (botao) => botao.textContent?.trim() === texto,
-    );
-  }
-
-  /** O elemento da linha da oferta: a ordem na tela é a do quadro. */
-  private deLista(seletor: string, ofertaCursoId: string): HTMLElement | undefined {
-    const ofertas = this.fixture.debugElement.injector.get(ProcessoSeletivoStore).draft()
-      .vagas.ofertas;
-    const indice = ofertas.findIndex((oferta) => oferta.ofertaCursoId === ofertaCursoId);
-    return this.raiz.querySelectorAll<HTMLElement>(seletor)[indice];
-  }
-
-  private digitar(campo: HTMLInputElement, valor: string): void {
-    campo.value = valor;
-    campo.dispatchEvent(new Event('input'));
-    this.fixture.detectChanges();
-  }
-
-  private clicar(elemento: HTMLElement | undefined): void {
-    if (elemento === undefined) throw new Error('O controle não está na tela.');
-    elemento.click();
-    this.fixture.detectChanges();
-  }
 }

@@ -12,7 +12,9 @@ import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
 import { CatalogoDeTiposDeEtapa } from '../catalogos/catalogo-de-tipos-de-etapa.service';
 import {
   etapaDoFormulario,
+  etapaRecemAcrescentada,
   faseDoFormulario,
+  faseRecemAcrescentada,
   grupoDaEtapa,
   grupoDaFase,
   novoFormularioDoCronograma,
@@ -122,45 +124,19 @@ export class FormularioDoCronograma {
     const escolhida = this.formulario.controls.faseAAcrescentar.value;
     if (escolhida === '') return;
 
-    this.fases.push(
-      grupoDaFase({
-        faseCanonicaId: escolhida,
-        codigo: this.catalogoDeFases.fasePorId().get(escolhida)?.codigo ?? '',
-        ordem: this.fases.length + 1,
-        inicio: null,
-        fim: null,
-        unidadeResponsavelId: this.unidades.unidadeInicialDaFase(escolhida),
-        produtos: [],
-        faseConcluinteCodigo: null,
-        emiteParecerIndividual: false,
-        bancasRequeridas: [],
-        regraRecurso: null,
-        congelados: null,
-      }),
-    );
+    const fase = faseRecemAcrescentada({
+      faseCanonicaId: escolhida,
+      codigo: this.catalogoDeFases.fasePorId().get(escolhida)?.codigo ?? '',
+      ordem: this.fases.length + 1,
+      unidadeResponsavelId: this.unidades.unidadeInicialDaFase(escolhida),
+    });
+    this.fases.push(grupoDaFase(fase));
     this.formulario.controls.faseAAcrescentar.setValue('');
   }
 
   acrescentarEtapa(faseCodigo = ''): void {
     this.etapas.push(
-      grupoDaEtapa({
-        id: null,
-        nome: '',
-        carater: '',
-        tipoEtapaOrigemId: '',
-        peso: '',
-        notaMinima: '',
-        notaMaxima: '',
-        passoDoLancamento: '',
-        ordem: this.etapas.length + 1,
-        faseCodigo,
-        produtos: [],
-        inicio: '',
-        fim: '',
-        emiteParecerIndividual: false,
-        bancas: [],
-        recursos: [],
-      }),
+      grupoDaEtapa(etapaRecemAcrescentada({ ordem: this.etapas.length + 1, faseCodigo })),
     );
   }
 

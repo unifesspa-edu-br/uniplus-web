@@ -16,6 +16,8 @@ const FASE = {
   unidadeSugerida: null,
   agrupaEtapas: true,
   permiteComplementacao: false,
+  admiteAgruparEtapas: true,
+  admiteComplementacao: false,
   baseLegal: null,
   coletaInscricao: false,
   coletaSolicitacaoIsencao: false,

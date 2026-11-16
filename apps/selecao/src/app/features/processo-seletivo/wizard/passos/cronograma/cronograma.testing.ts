@@ -1,3 +1,5 @@
+import { etapaDoServidor } from '../../shared/cronograma-do-servidor.testing';
+
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
 export const ROTA_ETAPAS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/etapas`;
@@ -169,15 +171,20 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
   },
   localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
   etapas: [
-    {
+    etapaDoServidor({
       id: ID_ETAPA_GRAVADA,
-      nome: 'Prova objetiva',
-      carater: 'classificatoria',
-      tipoEtapa: { origemId: TIPO_ETAPA, codigo: 'PROVA_OBJETIVA', nome: 'Prova objetiva' },
-      peso: 1,
-      notaMinima: null,
-      ordem: 1,
-    },
+      identificacao: {
+        nome: 'Prova objetiva',
+        tipoEtapa: {
+          origemId: TIPO_ETAPA,
+          codigo: 'PROVA_OBJETIVA',
+          nome: 'Prova objetiva',
+          notaDeOrigemNoEnem: false,
+          exigeCorrecaoIndependente: false,
+        },
+      },
+      nota: { peso: 1 },
+    }),
   ],
   atendimentoEspecializado: null,
   distribuicaoVagas: [],

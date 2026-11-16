@@ -35,23 +35,24 @@ export const NATUREZAS_LEGAIS: readonly DominioOption<NaturezaLegalToken>[] = [
 export const NATUREZA_LEGAL_DEFAULT: NaturezaLegalToken = 'AMPLA';
 
 export type ComposicaoVagasToken =
-  | 'RESIDUAL_DO_VO'
-  | 'DENTRO_DO_VR'
-  | 'RETIRA_DE'
+  | 'RESTANTE_DAS_VAGAS_OFERTADAS'
+  | 'DENTRO_DA_RESERVA_LEGAL'
+  | 'RETIRADA_DE_OUTRA_MODALIDADE'
   | 'SUPLEMENTAR_AO_TOTAL';
 
 export const COMPOSICOES_VAGAS: readonly DominioOption<ComposicaoVagasToken>[] = [
-  { value: 'RESIDUAL_DO_VO', label: 'Residual do VO' },
-  { value: 'DENTRO_DO_VR', label: 'Dentro do VR' },
-  { value: 'RETIRA_DE', label: 'Retira de' },
+  { value: 'RESTANTE_DAS_VAGAS_OFERTADAS', label: 'Restante das vagas ofertadas' },
+  { value: 'DENTRO_DA_RESERVA_LEGAL', label: 'Dentro da reserva legal' },
+  { value: 'RETIRADA_DE_OUTRA_MODALIDADE', label: 'Retirada de outra modalidade' },
   { value: 'SUPLEMENTAR_AO_TOTAL', label: 'Suplementar ao total' },
 ] as const;
 
 /** Composição default de uma nova modalidade. */
-export const COMPOSICAO_VAGAS_DEFAULT: ComposicaoVagasToken = 'RESIDUAL_DO_VO';
+export const COMPOSICAO_VAGAS_DEFAULT: ComposicaoVagasToken = 'RESTANTE_DAS_VAGAS_OFERTADAS';
 
 /** Única composição que exige `composicaoOrigem` (equivalência exata, invariante do agregado). */
-export const COMPOSICAO_RETIRA_DE: ComposicaoVagasToken = 'RETIRA_DE';
+export const COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE: ComposicaoVagasToken =
+  'RETIRADA_DE_OUTRA_MODALIDADE';
 
 export type RegraRemanejamentoToken = 'SEGUE_CASCATA' | 'DESTINO_UNICO' | 'CRUZADO';
 

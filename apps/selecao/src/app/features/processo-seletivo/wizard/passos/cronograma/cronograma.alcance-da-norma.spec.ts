@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ID_INSCRICAO, ID_AVALIACAO, FASES_CANONICAS } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import { AjudantesDeExigencias } from './cronograma-exigencias.testing';
+import { RAMO_LEI_DE_COTAS } from '../vagas/composicao-de-vagas';
 
 describe('CronogramaPassoComponent: alcance da norma', () => {
   let expansao: ContextoDoCronograma['expansao'];
@@ -95,9 +96,11 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
               pr: '0,5',
               regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
               regraDistribuicaoVersao: 'v1',
+              ramoDaDistribuicao: RAMO_LEI_DE_COTAS,
               regraAjusteCodigo: 'AJUSTE-PADRAO',
               regraAjusteVersao: 'v1',
               referenciaReservaDemograficaId: 'ref-1',
+              ajusteDoQuadro: null,
               modalidades: codigos.map((codigo) => ({ id: `id-${codigo}`, codigo })),
               quadro: [],
             },

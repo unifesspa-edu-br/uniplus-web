@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { CODIGO_DA_OFERTA, preencherCodigoDaOferta } from '../support/dados-de-oferta-de-curso';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -54,6 +55,7 @@ const unidadeSeed = {
 
 const ofertaSeed = {
   id: OFERTA_ID,
+  codigo: CODIGO_DA_OFERTA,
   cursoId: CURSO_ID,
   localOfertaId: LOCAL_ID,
   unidadeOfertante: {
@@ -189,6 +191,8 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     // `exact: true` é o que faz a asserção discriminar: sem ele o match é por
     // substring, e `'IGE'` passaria também com o rótulo antigo
     // `IGE — Instituto de Geociências e Engenharias`.
+    await expect(page.getByRole('columnheader', { name: 'Código' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: CODIGO_DA_OFERTA, exact: true })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: 'Grau' })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Engenharia Civil', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: 'Bacharelado', exact: true })).toBeVisible();
@@ -227,6 +231,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
     await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
@@ -236,6 +241,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
+      codigo: CODIGO_DA_OFERTA,
       cursoId: CURSO_ID,
       localOfertaId: LOCAL_ID,
       unidadeOfertanteOrigemId: UNIDADE_ID,
@@ -251,6 +257,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
     await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
@@ -276,6 +283,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova oferta de curso' }).first().click();
+    await preencherCodigoDaOferta(page, CODIGO_DA_OFERTA);
     await page.locator('#cfg-oferta-curso-id').selectOption(CURSO_ID);
     await page.locator('#cfg-oferta-local-id').selectOption(LOCAL_ID);
     await page.locator('#cfg-oferta-unidade-id').selectOption(UNIDADE_ID);
@@ -357,6 +365,7 @@ test.describe('Oferta de Curso — CRUD (#389)', () => {
     expect(put['localOfertaId']).toBeUndefined();
     expect(put['unidadeOfertanteOrigemId']).toBeUndefined();
     expect(put['regimeDeFuncionamento']).toBe('EXTENSIVO');
+    expect(put['codigo']).toBe(CODIGO_DA_OFERTA);
     expect(put['eMecCodigo']).toBe('999999');
   });
 });

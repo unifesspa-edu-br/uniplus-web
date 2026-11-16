@@ -17,13 +17,12 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { FaseCanonicaDto, FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
 import { rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
 import {
-  CODIGOS_FASE_COM_COMPLEMENTACAO,
-  CODIGO_FASE_AVALIACAO,
   CODIGO_FASE_SOLICITACAO_ISENCAO,
   comandoDeAtualizacao,
   controleDoCampoDoServidor,
   criarFormularioDeFase,
   derivarMarcaDeIsencao,
+  sinalizadoresAdmitidos,
   valoresDaFase,
 } from './fase-canonica-form';
 import { aguardarRecarga } from '../../shared/foco';
@@ -66,7 +65,8 @@ export class EdicaoDasFasesCanonicas {
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
   readonly erroRemocao = signal<string | null>(null);
-  private readonly faseEmEdicaoId = signal<string | null>(null);
+  private readonly faseEmEdicao = signal<FaseCanonicaDto | null>(null);
+  private readonly faseEmEdicaoId = computed(() => this.faseEmEdicao()?.id ?? null);
   private readonly faseParaRemover = signal<FaseCanonicaDto | null>(null);
   private readonly recusaDoSalvamento = signal('');
   private readonly resultadoDoSalvamento = signal('');
@@ -122,10 +122,9 @@ export class EdicaoDasFasesCanonicas {
   private readonly codigoAtual = toSignal(this.form.controls.codigo.valueChanges, {
     initialValue: this.form.controls.codigo.value,
   });
-  readonly showGrupoAgrupa = computed(() => this.codigoAtual() === CODIGO_FASE_AVALIACAO);
-  readonly showGrupoCompl = computed(() =>
-    CODIGOS_FASE_COM_COMPLEMENTACAO.includes(this.codigoAtual()),
-  );
+  private readonly admitidos = computed(() => sinalizadoresAdmitidos(this.faseEmEdicao()));
+  readonly showGrupoAgrupa = computed(() => this.admitidos().agrupaEtapas);
+  readonly showGrupoCompl = computed(() => this.admitidos().permiteComplementacao);
   readonly ehFaseDeIsencao = computed(() => this.codigoAtual() === CODIGO_FASE_SOLICITACAO_ISENCAO);
 
   constructor() {
@@ -137,7 +136,7 @@ export class EdicaoDasFasesCanonicas {
   abrirEdicao(fase: FaseCanonicaDto): void {
     if (this.gravando()) return;
     this.limparResultados();
-    this.faseEmEdicaoId.set(fase.id);
+    this.faseEmEdicao.set(fase);
     this.form.reset(valoresDaFase(fase));
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
@@ -158,9 +157,7 @@ export class EdicaoDasFasesCanonicas {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
+    this.descartarRecusasAnteriores();
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -181,6 +178,12 @@ export class EdicaoDasFasesCanonicas {
     this.gravar('removendo', fase.id, this.api.remover(fase.id), (result) =>
       this.concluirRemocao(fase, result),
     );
+  }
+
+  private descartarRecusasAnteriores(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+    descartarRecusasDoServidor(this.form);
   }
 
   private gravar<T>(

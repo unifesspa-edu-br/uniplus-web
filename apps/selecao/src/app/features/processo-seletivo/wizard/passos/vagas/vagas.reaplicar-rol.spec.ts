@@ -20,9 +20,9 @@ import {
   OFERTA,
   OFERTAS,
   ServicosDasVagas,
-  TelaDasVagas,
   servicosDe,
 } from './vagas.testing';
+import { TelaDasVagas } from './tela-das-vagas.testing';
 
 let servicos: ServicosDasVagas;
 let operador: TelaDasVagas;
@@ -52,7 +52,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
       codigo: 'X_CALC',
       descricao: 'Calculada pela regra',
       naturezaLegal: 'COTA_RESERVADA',
-      composicaoVagas: 'DENTRO_DO_VR',
+      composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
       composicaoOrigemCodigo: null,
       regraRemanejamento: null,
       remanejamentoDestino: null,
@@ -130,9 +130,11 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
           pr: '0,5',
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
           regraDistribuicaoVersao: 'v1',
+          ramoDaDistribuicao: 'LEI_DE_COTAS',
           regraAjusteCodigo: null,
           regraAjusteVersao: null,
           referenciaReservaDemograficaId: null,
+          ajusteDoQuadro: null,
           modalidades: [
             { id: MODALIDADE, codigo: 'AC_I' },
             { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },
@@ -163,9 +165,11 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
           pr: '0,5',
           regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
           regraDistribuicaoVersao: 'v1',
+          ramoDaDistribuicao: 'LEI_DE_COTAS',
           regraAjusteCodigo: null,
           regraAjusteVersao: null,
           referenciaReservaDemograficaId: null,
+          ajusteDoQuadro: null,
           modalidades: [
             { id: MODALIDADE, codigo: 'AC_I' },
             { id: MODALIDADE_CALCULADA, codigo: 'X_CALC' },

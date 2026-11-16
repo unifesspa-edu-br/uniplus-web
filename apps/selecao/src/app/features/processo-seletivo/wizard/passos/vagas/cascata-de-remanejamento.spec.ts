@@ -42,7 +42,7 @@ function modalidade(
   return {
     id,
     codigo,
-    composicaoVagas: 'RETIRA_DE',
+    composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
     composicaoOrigemCodigo: null,
     regraRemanejamento,
     remanejamentoDestino: null,
@@ -61,16 +61,20 @@ const CATALOGO = new Map<string, ModalidadeDoCatalogo>([
   [AC, modalidade(AC, 'AC')],
 ]);
 
-function ofertaFederal(modalidades: readonly { id: string; codigo: string }[]): DistribuicaoDeVagas {
+function ofertaFederal(
+  modalidades: readonly { id: string; codigo: string }[],
+): DistribuicaoDeVagas {
   return {
     ofertaCursoId: 'oferta-1',
     voBase: '100',
     pr: '0,5',
     regraDistribuicaoCodigo: 'DISTRIB-VAGAS-LEI-12711',
+    ramoDaDistribuicao: 'LEI_DE_COTAS',
     regraDistribuicaoVersao: 'v1',
     regraAjusteCodigo: null,
     regraAjusteVersao: null,
     referenciaReservaDemograficaId: 'ref-1',
+    ajusteDoQuadro: null,
     modalidades,
     quadro: [],
   };
@@ -110,12 +114,12 @@ describe('ofertaExigeCascata / ofertaForaDoRegimeFederal', () => {
     expect(ofertaExigeCascata(oferta, CATALOGO)).toBe(false);
   });
 
-  it('reconhece o ramo federal em qualquer variação da Lei 12.711', () => {
+  it('reconhece o ramo federal pelo ramo da distribuição, e não pelo código da regra', () => {
     expect(ofertaForaDoRegimeFederal(ofertaFederal([]))).toBe(false);
     expect(
       ofertaForaDoRegimeFederal({
         ...ofertaFederal([]),
-        regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+        ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
       }),
     ).toBe(true);
   });
@@ -130,7 +134,7 @@ describe('precisaExibirSecaoDaCascata', () => {
   it('não quando a única oferta que exige é institucional', () => {
     const institucional = {
       ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
-      regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     expect(precisaExibirSecaoDaCascata([institucional], CATALOGO)).toBe(false);
   });
@@ -145,7 +149,7 @@ describe('ofertasComCascataForaDoRegimeFederal', () => {
   it('aponta a oferta que precisaria de cascata mas está fora do ramo federal', () => {
     const foraDoRegime = {
       ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
-      regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     expect(ofertasComCascataForaDoRegimeFederal([foraDoRegime], CATALOGO)).toEqual([foraDoRegime]);
   });
@@ -216,12 +220,12 @@ describe('problemasDaCascata', () => {
     // (é ali que o operador corrige) e sobre a união (nenhuma oferta o
     // oferece) — os dois é que fecham a mesma causa raiz.
     expect(
-      problemas.some(
-        (p) => p.ofertaCursoId === 'oferta-1' && p.mensagem.includes('destino final'),
-      ),
+      problemas.some((p) => p.ofertaCursoId === 'oferta-1' && p.mensagem.includes('destino final')),
     ).toBe(true);
     expect(
-      problemas.some((p) => p.ofertaCursoId === null && p.mensagem.includes('AC como destino final')),
+      problemas.some(
+        (p) => p.ofertaCursoId === null && p.mensagem.includes('AC como destino final'),
+      ),
     ).toBe(true);
   });
 
@@ -247,15 +251,13 @@ describe('problemasDaCascata', () => {
 
     const foraDoRegime = {
       ...ofertaFederal([{ id: LB_PPI, codigo: 'LB_PPI' }]),
-      regraDistribuicaoCodigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
+      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
     };
     // Federal e sem SEGUE_CASCATA — ofereceria o fallback à União, se
     // precisasse: aqui cobre AC para a matriz fechar sem pendência.
     const semCascata = ofertaFederal([{ id: AC, codigo: 'AC' }]);
 
-    expect(problemasDaCascata([foraDoRegime, semCascata], CATALOGO, matrizDeUmaOrigem)).toEqual(
-      [],
-    );
+    expect(problemasDaCascata([foraDoRegime, semCascata], CATALOGO, matrizDeUmaOrigem)).toEqual([]);
   });
 
   it('aponta origem que a regra escolhida não declara', () => {
@@ -279,7 +281,10 @@ describe('problemasDaCascata', () => {
 
 describe('comandoDaCascata / comandoDeRemocaoDaCascata', () => {
   it('monta o comando com a matriz inteira, ordem 1-based por origem', () => {
-    const selecao: CascataSelecionada = { regraCodigo: 'REMANEJ-CASCATA-LEI-12711', regraVersao: 'v1' };
+    const selecao: CascataSelecionada = {
+      regraCodigo: 'REMANEJ-CASCATA-LEI-12711',
+      regraVersao: 'v1',
+    };
     const comando = comandoDaCascata(selecao, matrizReal());
 
     expect(comando).toEqual({

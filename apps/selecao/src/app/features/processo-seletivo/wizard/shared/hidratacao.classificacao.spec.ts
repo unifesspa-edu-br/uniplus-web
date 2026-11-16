@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ProcessoSeletivoStore } from '../processo-seletivo.store';
+import { comoComandoDeClassificacao } from '../passos/classificacao/classificacao-para-comando';
 import { hidratarDraft } from './hidratacao';
 import { DRAFT, dtoComCronograma } from './hidratacao.testing';
 
@@ -159,6 +160,16 @@ describe('hidratarDraft — classificação, bônus e desempate (UNI-REQ-0482)',
       hidratarDraft(DRAFT, dtoComCronograma({ classificacao: semEscala })).classificacao
         .escalaNotaFinal,
     ).toBe('');
+  });
+
+  it.each([
+    [1000, 1000],
+    [7.5, 7.5],
+  ])('devolve ao comando a escala %j que o processo gravou', (escala, esperada) => {
+    const gravada = { ...CLASSIFICACAO, escalaNotaFinal: escala };
+    const { classificacao } = hidratarDraft(DRAFT, dtoComCronograma({ classificacao: gravada }));
+
+    expect(comoComandoDeClassificacao(classificacao).escalaNotaFinal).toBe(esperada);
   });
 
   /** Sob classificação importada, o arredondamento é ausente — `null`, não zero. */

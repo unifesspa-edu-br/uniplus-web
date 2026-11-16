@@ -158,6 +158,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
           emiteParecerIndividual: false,
           bancas: [],
           recursos: [],
+          tiposDeDecisao: [],
         },
         {
           id: 'etapa-segunda',
@@ -174,6 +175,7 @@ describe('CronogramaPassoComponent: tipos de etapa', () => {
           emiteParecerIndividual: false,
           bancas: [],
           recursos: [],
+          tiposDeDecisao: [],
         },
       ],
     });

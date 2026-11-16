@@ -13,6 +13,7 @@ import { type ExigenciaDeclarada } from './conferencia-das-exigencias-declaradas
 import { type TipoDeEtapaDoCatalogo } from './regras-da-etapa';
 import { type FaseCanonicaDto, type PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 import { type AtoDoCatalogo } from '../fase/configuracao-da-fase';
+import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 
 /** O catálogo de atos não descreve nenhum destes códigos: o servidor arbitra. */
 export const SEM_CATALOGO: ReadonlyMap<string, AtoDoCatalogo> = new Map();
@@ -83,21 +84,7 @@ export function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto
 }
 
 export function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
-  return {
-    faseCanonicaId: 'id-1',
-    codigo: 'INSCRICAO',
-    ordem: 1,
-    inicio: null,
-    fim: null,
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    congelados: null,
-    ...parcial,
-  };
+  return umaFaseDoCronograma({ codigo: 'INSCRICAO', ...parcial });
 }
 
 export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto {
@@ -113,28 +100,29 @@ export function aresta(parcial: Partial<PrecedenciaFaseDto>): PrecedenciaFaseDto
 
 /**
  * Espalhar um `Partial` faz o TypeScript aceitar o objeto mesmo sem as propriedades
- * obrigatórias, então o fixture as declara todas à mão: antes disto ele devolvia uma etapa
- * sem `recursos`, e qualquer conferência que percorresse a coleção estourava no teste em vez
- * de reprovar de verdade.
+ * obrigatórias, então o fixture as declara todas à mão: uma etapa sem `recursos` faria a
+ * conferência que percorre a coleção estourar no teste em vez de reprovar de verdade.
  */
+const ETAPA_PADRAO: EtapaPontuada = {
+  id: null,
+  nome: 'Prova Objetiva',
+  carater: CaraterEtapa.classificatoria,
+  tipoEtapaOrigemId: 'tipo-1',
+  peso: '2',
+  notaMinima: '',
+  ordem: 1,
+  faseCodigo: '',
+  produtos: [],
+  inicio: '',
+  fim: '',
+  emiteParecerIndividual: false,
+  bancas: [],
+  recursos: [],
+  tiposDeDecisao: [],
+};
+
 export function etapa(parcial: Partial<EtapaPontuada>): EtapaPontuada {
-  return {
-    id: null,
-    nome: 'Prova Objetiva',
-    carater: CaraterEtapa.classificatoria,
-    tipoEtapaOrigemId: 'tipo-1',
-    peso: '2',
-    notaMinima: '',
-    ordem: 1,
-    faseCodigo: '',
-    produtos: [],
-    inicio: '',
-    fim: '',
-    emiteParecerIndividual: false,
-    bancas: [],
-    recursos: [],
-    ...parcial,
-  };
+  return { ...ETAPA_PADRAO, ...parcial };
 }
 
 /**

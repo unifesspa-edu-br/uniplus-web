@@ -10,7 +10,7 @@ const modalidade: ModalidadeDto = {
   legalFixa: false,
   descricao: 'Modalidade V',
   naturezaLegal: 'AMPLA',
-  composicaoVagas: 'RESIDUAL_DO_VO',
+  composicaoVagas: 'RESTANTE_DAS_VAGAS_OFERTADAS',
   composicaoOrigem: null,
   regraRemanejamento: null,
   remanejamentoDestino: null,
@@ -91,7 +91,7 @@ describe('ModalidadesTabelaComponent', () => {
         }),
         com('C', {
           naturezaLegal: 'ACAO_AFIRMATIVA',
-          composicaoVagas: 'RETIRA_DE',
+          composicaoVagas: 'RETIRADA_DE_OUTRA_MODALIDADE',
           composicaoOrigem: 'A',
           regraRemanejamento: 'DESTINO_UNICO',
           remanejamentoDestino: 'A',

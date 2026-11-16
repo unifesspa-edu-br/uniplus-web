@@ -22,10 +22,10 @@ import {
   OFERTAS,
   OUTRA_OFERTA,
   ServicosDasVagas,
-  TelaDasVagas,
   distribuicao,
   servicosDe,
 } from './vagas.testing';
+import { TelaDasVagas } from './tela-das-vagas.testing';
 
 let servicos: ServicosDasVagas;
 let operador: TelaDasVagas;

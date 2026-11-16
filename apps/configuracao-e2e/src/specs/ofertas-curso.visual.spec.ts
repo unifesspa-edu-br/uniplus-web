@@ -50,9 +50,13 @@ const UNIDADE = {
   vigenciaFim: null,
 };
 
-/** A combinação mais larga do vocabulário: programa de convênio, regime integral e os dois turnos que ele exige. */
+/**
+ * A combinação mais larga do vocabulário: o código no limite de 50 caracteres, programa de
+ * convênio, regime integral e os dois turnos que ele exige.
+ */
 const OFERTA = {
   id: '01960000-0000-7000-0000-0000000000d1',
+  codigo: 'ENGENHARIA_CIVIL_MARABA_CONVENIO_INTEGRAL_ALTO_001',
   cursoId: CURSO.id,
   localOfertaId: LOCAL.id,
   unidadeOfertante: {

@@ -1,0 +1,75 @@
+<div class="alert__body">
+  @let conferencia = simulacao.conferencia();
+
+  @if (conferencia.reservaAcimaDoPercentual.length > 0) {
+    <details class="vagas-conferencia__detalhe">
+      <summary class="alert__title">
+        {{ resumoDaReserva(conferencia.reservaAcimaDoPercentual.length) }}
+      </summary>
+
+      <p class="alert__msg">
+        O art. 10, § 2º garante ao menos uma vaga a cada sub-reserva que ficaria zerada, e é isso
+        que eleva a reserva além do percentual informado.
+      </p>
+
+      <ul class="vagas-conferencia__lista u-list">
+        @for (item of conferencia.reservaAcimaDoPercentual; track item.ofertaCursoId) {
+          <li>
+            <span class="vagas-conferencia__oferta">{{
+              catalogos.rotuloDaOfertaOuSemNome(item.ofertaCursoId)
+            }}</span>
+            <span class="vagas-conferencia__valores">
+              reserva legal de {{ item.reservaLegalNominal }} passou a
+              {{ item.reservaLegalEfetiva }}
+            </span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+
+  @if (conferencia.vagasCortadasPorEscassez.length > 0) {
+    <details class="vagas-conferencia__detalhe">
+      <summary class="alert__title">
+        {{ resumoDaEscassez(conferencia.vagasCortadasPorEscassez.length) }}
+      </summary>
+
+      <ul class="vagas-conferencia__lista u-list">
+        @for (item of conferencia.vagasCortadasPorEscassez; track item.ofertaCursoId) {
+          <li>
+            <span class="vagas-conferencia__oferta">{{
+              catalogos.rotuloDaOfertaOuSemNome(item.ofertaCursoId)
+            }}</span>
+            <span class="vagas-conferencia__valores">
+              {{ vagasCortadas(item.quantidade) }}
+            </span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+
+  @if (conferencia.vagasRetiradasPeloAjuste.length > 0) {
+    <details class="vagas-conferencia__detalhe">
+      <summary class="alert__title">
+        {{ resumoDoAjuste(conferencia.vagasRetiradasPeloAjuste.length) }}
+      </summary>
+
+      <ul class="vagas-conferencia__lista u-list">
+        @for (item of conferencia.vagasRetiradasPeloAjuste; track item.ofertaCursoId) {
+          <li>
+            <span class="vagas-conferencia__oferta">{{
+              catalogos.rotuloDaOfertaOuSemNome(item.ofertaCursoId)
+            }}</span>
+            <span class="vagas-conferencia__valores">
+              {{ vagasRetiradas(item.total) }}
+              @if (item.porModalidade.length > 0) {
+                ({{ retiradasPorModalidade(item.porModalidade) }})
+              }
+            </span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</div>

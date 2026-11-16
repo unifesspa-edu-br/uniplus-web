@@ -19,7 +19,7 @@ import { CatalogosDeDistribuicao } from './catalogos-de-distribuicao.service';
 import { confirmacaoDasVagas } from './confirmacao-das-vagas';
 import { modalidadesDoRolAtual, perderiaQuantidadeDoQuadro } from './edicao-do-padrao';
 import { rotuloDasOpcoes } from './opcoes-de-curso';
-import { EstouroDaReservaComponent } from './secoes/estouro-da-reserva.component';
+import { ConferenciaDaSimulacaoComponent } from './secoes/conferencia-da-simulacao.component';
 import { OfertaParaAdicionarComponent } from './secoes/oferta-para-adicionar.component';
 import { OfertasForaDoPadraoComponent } from './secoes/ofertas-fora-do-padrao.component';
 import { OpcoesDeCursoComponent } from './secoes/opcoes-de-curso.component';
@@ -41,7 +41,7 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
  * O contrato guarda regra, percentual e modalidades em cada oferta, mas o
  * edital declara isso uma vez e repete para todos os cursos. A tela segue o
  * edital: o padrão fica no topo e vale para a coleção, e o quadro pede só o
- * que varia — o VO de cada oferta e as quantidades que a regra não calcula.
+ * que varia — as vagas ofertadas base de cada oferta e as quantidades que a regra não calcula.
  *
  * Com vinte cursos, repetir regra, percentual e dez modalidades em cada bloco
  * transformaria o passo numa sucessão de formulários idênticos.
@@ -66,7 +66,7 @@ import { totalDeVagasInformadas } from './totais-do-quadro';
     RegraDeAjusteComponent,
     OfertaParaAdicionarComponent,
     TabelaDoQuadroComponent,
-    EstouroDaReservaComponent,
+    ConferenciaDaSimulacaoComponent,
     OfertasForaDoPadraoComponent,
   ],
   templateUrl: './vagas.component.html',

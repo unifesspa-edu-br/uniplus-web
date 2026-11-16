@@ -1,5 +1,7 @@
 import type { Page, Route } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
+import type { FaseCronogramaDto } from '@uniplus/shared-data/selecao';
+import { comProdutoNaFase } from '../fixtures/cronograma-do-servidor';
 import { FUNDAMENTOS_DE_ISENCAO, TIPOS_DE_PROCESSO } from '../fixtures/consulta-da-medicina';
 import {
   FASES_CANONICAS,
@@ -48,8 +50,6 @@ const PRODUTO_DEFINITIVO = {
   papel: 'DEFINITIVO',
 };
 
-type FaseDoProcesso = (typeof PROCESSO_PUBLICADO_COMPLETO.cronogramaFases)[number];
-
 /** O que o servidor recebeu: a classificação gravada (PUT) e se a publicação foi aceita. */
 export interface PublicacaoRecebida {
   classificacao: Record<string, unknown> | null;
@@ -92,10 +92,8 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await mockarTiposAto(page);
 }
 
-const comProdutoDefinitivo = (fase: FaseDoProcesso) => ({
-  ...fase,
-  produtos: [...fase.produtos, PRODUTO_DEFINITIVO],
-});
+const comProdutoDefinitivo = (fase: FaseCronogramaDto) =>
+  comProdutoNaFase(fase, PRODUTO_DEFINITIVO);
 
 function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
   const escala = recebido.classificacao?.['escalaNotaFinal'] ?? null;

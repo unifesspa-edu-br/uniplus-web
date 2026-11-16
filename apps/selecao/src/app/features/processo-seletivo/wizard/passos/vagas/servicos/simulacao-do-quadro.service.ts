@@ -5,7 +5,7 @@ import { ConfiguracaoDistribuicaoVagasDto, VagasDoProcessoApi } from '@uniplus/s
 
 import { DistribuicaoDeVagas } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { frase } from '../conferencia-das-vagas';
+import { conferenciaDaSimulacao, haConferencia } from '../conferencia-da-simulacao';
 import { comoComando } from '../distribuicao-para-comando';
 import { totalCalculadoDe, totalDeclaradoDe, totalDeVagasInformadas } from '../totais-do-quadro';
 import { EstadoDoPassoDeVagas } from './estado-do-passo-de-vagas';
@@ -30,31 +30,23 @@ export class SimulacaoDoQuadro {
   readonly totalGeralDeVagas = computed(() => totalDeVagasInformadas(this.estado.distribuicoes()));
 
   /**
-   * Vagas que o processo publica somando as ofertas. Vem do cálculo do servidor, que sabe o que
+   * Vagas que o edital publica somando as ofertas. Vem do cálculo do servidor, que sabe o que
    * cada ramo faz com a suplementar: sob a Lei 12.711 ela acresce ao total da oferta.
    */
   readonly totalGeralPublicado = computed(() =>
     this.estado
       .distribuicoes()
-      .reduce((soma, item) => soma + (this.calculado(item)?.totalPublicado ?? 0), 0),
+      .reduce((soma, item) => soma + (this.calculado(item)?.totalDeVagasDoEdital ?? 0), 0),
   );
 
-  /**
-   * Ofertas em que a reserva final ficou acima do percentual declarado: o art. 10 §2º garante ao
-   * menos uma vaga a cada sub-reserva que ficaria zerada, e isso eleva a reserva além de `VO × PR`.
-   */
-  readonly ofertasComEstouro = computed(() =>
-    this.estado
-      .distribuicoes()
-      .map((distribuicao) => ({ distribuicao, calculado: this.calculado(distribuicao) }))
-      .filter(({ calculado }) => (calculado?.estouro ?? 0) > 0),
+  /** O que o servidor informou do quadro além das quantidades, só das ofertas que o trazem. */
+  readonly conferencia = computed(() =>
+    conferenciaDaSimulacao(
+      this.estado.distribuicoes().flatMap((item) => this.calculado(item) ?? []),
+    ),
   );
 
-  readonly resumoDoEstouro = computed(() => {
-    const quantas = this.ofertasComEstouro().length;
-    const verbo = quantas === 1 ? 'ficou' : 'ficaram';
-    return `${frase(quantas)} ${verbo} com a reserva acima do percentual declarado`;
-  });
+  readonly haConferencia = computed(() => haConferencia(this.conferencia()));
 
   simular(): void {
     const processoId = this.store.processoSeletivoId();

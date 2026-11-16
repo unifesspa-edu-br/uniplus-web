@@ -1,3 +1,5 @@
+import { faseDoServidor } from './cronograma-do-servidor';
+
 export const PROCESSO_ID = '01960000-0000-7000-0000-000000000901';
 export const DOCUMENTO_ID = '01960000-0000-7000-0000-000000000902';
 export const ATO_ID = '01960000-0000-7000-0000-000000000908';
@@ -19,21 +21,9 @@ export const TIPO_ATO_DTO = {
 };
 
 /** Fase com `coletaInscricao: true` — o período de inscrição some da tela e vem da janela dela. */
-export const FASE_DE_COLETA = {
-  faseCanonicaOrigemId: '01960000-0000-7000-0000-000000000904',
-  codigo: 'INSCRICAO',
-  origemData: 'DECLARADA',
-  agrupaEtapas: false,
-  coletaInscricao: true,
-  bancasRequeridas: [],
-  ordem: 1,
-  inicio: '2027-01-01T00:00:00Z',
-  fim: '2027-01-31T23:59:59Z',
-  produtos: [],
-  faseConcluinteCodigo: null,
-  emiteParecerIndividual: false,
-  regraRecurso: null,
-};
+export const FASE_DE_COLETA = faseDoServidor({
+  faseCanonica: { origemData: 'DECLARADA' },
+});
 
 export const ATO_DTO = {
   id: ATO_ID,
@@ -71,6 +61,14 @@ export const RASCUNHO_COM_ANEXOS = {
       { documentoId: ANEXO_B, nome: 'Modelo de recurso', nomeArquivo: 'modelo-de-recurso.docx' },
     ],
   },
+};
+
+/** O que o processo publicado declara publicar: sem fase nem etapa com item previsto. */
+export const PREVISTOS_DO_PROCESSO = {
+  numeroDaVersao: 1,
+  politicaDeDivulgacao: { camposPublicos: [], justificativa: null },
+  fases: [],
+  etapasSemFase: [],
 };
 
 export const DOCUMENTO_CONFIRMADO_DO_EDITAL = {

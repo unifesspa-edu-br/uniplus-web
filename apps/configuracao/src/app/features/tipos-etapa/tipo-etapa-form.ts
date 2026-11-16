@@ -4,13 +4,19 @@ import {
   type AtualizarTipoEtapaCommand,
   type CriarTipoEtapaCommand,
 } from '@uniplus/shared-data/configuracao';
-import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
+import {
+  controlNameFromBackendField,
+  controleDeMarca,
+  controleDeTexto,
+  nullIfBlank,
+} from '../../shared/formulario';
 
 export interface EtapaForm {
   codigo: FormControl<string>;
   nome: FormControl<string>;
   admitePontuacao: FormControl<boolean>;
   admiteEliminacao: FormControl<boolean>;
+  exigeCorrecaoIndependente: FormControl<boolean>;
   descricao: FormControl<string>;
   /** Códigos dos conceitos admitidos: a API exige a lista a cada gravação, ainda que vazia. */
   conceitosAdmitidos: FormControl<readonly string[]>;
@@ -23,26 +29,19 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof EtapaForm>([
   'nome',
   'admitePontuacao',
   'admiteEliminacao',
+  'exigeCorrecaoIndependente',
   'descricao',
   'conceitosAdmitidos',
 ]);
 
 export function criarFormularioDeEtapa(): FormGroup<EtapaForm> {
   return new FormGroup<EtapaForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(64)],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
-    }),
-    admitePontuacao: new FormControl(true, { nonNullable: true }),
-    admiteEliminacao: new FormControl(true, { nonNullable: true }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(1000)],
-    }),
+    codigo: controleDeTexto(Validators.required, Validators.maxLength(64)),
+    nome: controleDeTexto(Validators.required, Validators.maxLength(200)),
+    admitePontuacao: controleDeMarca(true),
+    admiteEliminacao: controleDeMarca(true),
+    exigeCorrecaoIndependente: controleDeMarca(false),
+    descricao: controleDeTexto(Validators.maxLength(1000)),
     conceitosAdmitidos: new FormControl<readonly string[]>([], { nonNullable: true }),
   });
 }
@@ -53,6 +52,7 @@ export function valoresEmBrancoDaEtapa(): ValoresDaEtapa {
     nome: '',
     admitePontuacao: true,
     admiteEliminacao: true,
+    exigeCorrecaoIndependente: false,
     descricao: '',
     conceitosAdmitidos: [],
   };
@@ -64,6 +64,7 @@ export function valoresDaEtapa(tipo: TipoEtapaDto): ValoresDaEtapa {
     nome: tipo.nome,
     admitePontuacao: tipo.admitePontuacao,
     admiteEliminacao: tipo.admiteEliminacao,
+    exigeCorrecaoIndependente: tipo.exigeCorrecaoIndependente,
     descricao: tipo.descricao ?? '',
     conceitosAdmitidos: tipo.conceitosAdmitidos.map((conceito) => conceito.codigo),
   };
@@ -80,6 +81,7 @@ export function comandoDeCriacao(form: FormGroup<EtapaForm>): CriarTipoEtapaComm
     nome: valor.nome.trim(),
     admitePontuacao: valor.admitePontuacao,
     admiteEliminacao: valor.admiteEliminacao,
+    exigeCorrecaoIndependente: valor.exigeCorrecaoIndependente,
     conceitosAdmitidos: [...valor.conceitosAdmitidos],
     descricao: nullIfBlank(valor.descricao),
   };
@@ -95,6 +97,7 @@ export function comandoDeAtualizacao(
     nome: valor.nome.trim(),
     admitePontuacao: valor.admitePontuacao,
     admiteEliminacao: valor.admiteEliminacao,
+    exigeCorrecaoIndependente: valor.exigeCorrecaoIndependente,
     conceitosAdmitidos: [...valor.conceitosAdmitidos],
     descricao: nullIfBlank(valor.descricao),
   };

@@ -7,12 +7,13 @@
   <div class="table-responsive">
     <table>
       <caption class="sr-only">
-        Documentos publicados pelo processo, com data, arquivos e instante da publicação
+        Documentos publicados pelo processo, com data do ato, instante da publicação e arquivos
       </caption>
       <thead>
         <tr>
           <th scope="col">Documento</th>
           <th scope="col">Data do ato</th>
+          <th scope="col">Publicado em</th>
           <th scope="col">Arquivos</th>
           <th scope="col"><span class="sr-only">Ações</span></th>
         </tr>
@@ -43,10 +44,9 @@
               }
             </td>
 
-            <td data-label="Data do ato">
-              <div>{{ ato.dataDoAto | dateBr: 'short' }}</div>
-              <div class="atos__detalhe">Publicado em {{ ato.publicadoEm | dateBr: 'datetime' }}</div>
-            </td>
+            <td data-label="Data do ato">{{ ato.dataDoAto | dateBr: 'short' }}</td>
+
+            <td data-label="Publicado em">{{ ato.publicadoEm | dateBr: 'datetime' }}</td>
 
             <td data-label="Arquivos">
               <sel-arquivos-do-ato [ato]="ato" [abrindo]="abrindo()" (abrir)="abrir.emit($event)" />

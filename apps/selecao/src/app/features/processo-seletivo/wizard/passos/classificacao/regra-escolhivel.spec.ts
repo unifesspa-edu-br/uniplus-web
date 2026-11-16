@@ -13,6 +13,7 @@ function regra(patch: Partial<RegraCatalogoDto>): RegraCatalogoDto {
     baseLegal: 'Base legal',
     hash: 'hash-1',
     modalidadesAdmitidas: null,
+    ramoDaDistribuicao: null,
     ...patch,
   };
 }

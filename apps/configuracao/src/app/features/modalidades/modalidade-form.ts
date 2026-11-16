@@ -2,7 +2,7 @@ import { AbstractControl, FormControl, FormGroup, Validators } from '@angular/fo
 import {
   AcaoQuandoIndeferidoToken,
   AtualizarModalidadeCommand,
-  COMPOSICAO_RETIRA_DE,
+  COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE,
   COMPOSICAO_VAGAS_DEFAULT,
   COMPOSICOES_VAGAS,
   ComposicaoVagasToken,
@@ -138,21 +138,37 @@ function camposComuns(
   valores: ValoresDaModalidade,
   regraDeAplicabilidade: CriarModalidadeCommand['regraDeAplicabilidade'],
 ): Omit<CriarModalidadeCommand, 'codigo'> {
-  const retiraDe = valores.composicaoVagas === COMPOSICAO_RETIRA_DE;
-  const regra = valores.naturezaLegal === 'AMPLA' ? null : nullIfBlank(valores.regraRemanejamento);
   return {
     descricao: nullIfBlank(valores.descricao),
     naturezaLegal: valores.naturezaLegal,
     composicaoVagas: valores.composicaoVagas,
-    composicaoOrigem: retiraDe ? nullIfBlank(valores.composicaoOrigem) : null,
+    composicaoOrigem: origemDaComposicao(valores),
+    ...camposDoRemanejamento(valores),
+    regraDeAplicabilidade,
+    acaoQuandoIndeferido: nullIfBlank(valores.acaoQuandoIndeferido),
+    baseLegal: nullIfBlank(valores.baseLegal),
+  };
+}
+
+function origemDaComposicao(valores: ValoresDaModalidade): string | null {
+  const retiraDeOutraModalidade =
+    valores.composicaoVagas === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE;
+  return retiraDeOutraModalidade ? nullIfBlank(valores.composicaoOrigem) : null;
+}
+
+function camposDoRemanejamento(
+  valores: ValoresDaModalidade,
+): Pick<
+  CriarModalidadeCommand,
+  'regraRemanejamento' | 'remanejamentoDestino' | 'remanejamentoPar' | 'remanejamentoFallback'
+> {
+  const regra = valores.naturezaLegal === 'AMPLA' ? null : nullIfBlank(valores.regraRemanejamento);
+  return {
     regraRemanejamento: regra,
     remanejamentoDestino:
       regra === 'DESTINO_UNICO' ? nullIfBlank(valores.remanejamentoDestino) : null,
     remanejamentoPar: regra === 'CRUZADO' ? nullIfBlank(valores.remanejamentoPar) : null,
     remanejamentoFallback: regra === 'CRUZADO' ? nullIfBlank(valores.remanejamentoFallback) : null,
-    regraDeAplicabilidade,
-    acaoQuandoIndeferido: nullIfBlank(valores.acaoQuandoIndeferido),
-    baseLegal: nullIfBlank(valores.baseLegal),
   };
 }
 
@@ -276,7 +292,7 @@ function exigirSe(control: AbstractControl, aplicavel: boolean): void {
 }
 
 function reconciliarOrigem(controls: ModalidadeForm, composicao: ComposicaoVagasToken): void {
-  exigirSe(controls.composicaoOrigem, composicao === COMPOSICAO_RETIRA_DE);
+  exigirSe(controls.composicaoOrigem, composicao === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE);
 }
 
 function reconciliarRegra(controls: ModalidadeForm, natureza: NaturezaLegalToken): void {
@@ -294,7 +310,7 @@ function reconciliarRegra(controls: ModalidadeForm, natureza: NaturezaLegalToken
 
 /**
  * Reconcilia validação e valores condicionais espelhando as invariantes do agregado `Modalidade`:
- * coerência natureza↔regra, composição RETIRA_DE⟺origem e argumentos por regra. Os campos
+ * coerência natureza↔regra, composição RETIRADA_DE_OUTRA_MODALIDADE⟺origem e argumentos por regra. Os campos
  * inaplicáveis são limpos aqui e anulados no comando, para não restar valor oculto obsoleto.
  */
 export function reconciliarCondicionais(
@@ -312,7 +328,7 @@ export function reconciliarCondicionais(
 }
 
 function clausulaDaComposicao(composicao: ComposicaoVagasToken, origem: string): string {
-  if (composicao === COMPOSICAO_RETIRA_DE) {
+  if (composicao === COMPOSICAO_RETIRADA_DE_OUTRA_MODALIDADE) {
     return origem
       ? `As vagas são retiradas da modalidade ${origem}.`
       : 'As vagas são retiradas de outra modalidade (informe a origem).';

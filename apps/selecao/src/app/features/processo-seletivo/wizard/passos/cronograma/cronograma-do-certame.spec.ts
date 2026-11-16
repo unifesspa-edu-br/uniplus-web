@@ -128,6 +128,7 @@ describe('o que impede gravar o cronograma', () => {
         admiteInstanciaSuperior: true,
         suspensividadeSegundaInstanciaValor: '',
         suspensividadeSegundaInstanciaUnidade: '',
+        procedimentos: [],
       },
     });
 

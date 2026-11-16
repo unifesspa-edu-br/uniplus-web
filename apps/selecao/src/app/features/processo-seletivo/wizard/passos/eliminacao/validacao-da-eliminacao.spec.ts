@@ -20,6 +20,7 @@ const ETAPA: EtapaReferenciavel = {
   emiteParecerIndividual: false,
   bancas: [],
   recursos: [],
+  tiposDeDecisao: [],
   doEnem: false,
 };
 

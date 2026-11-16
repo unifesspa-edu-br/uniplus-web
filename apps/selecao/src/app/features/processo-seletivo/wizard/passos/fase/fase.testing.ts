@@ -11,6 +11,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { FasePassoComponent } from './fase.component';
@@ -160,21 +161,12 @@ export function congeladosDaFase(
 
 /** Uma fase do rascunho, com o que este passo não edita já preenchido. */
 export function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
-  return {
+  return umaFaseDoCronograma({
     faseCanonicaId: ID_AVALIACAO,
-    codigo: 'AVALIACAO',
-    ordem: 1,
     inicio: '2026-03-01T08:00:00-03:00',
     fim: '2026-03-10T18:00:00-03:00',
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
-    regraRecurso: null,
-    congelados: null,
     ...parcial,
-  };
+  });
 }
 
 /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */

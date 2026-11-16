@@ -22,6 +22,7 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
     invariantes: {},
     baseLegal: 'Base legal de teste',
     modalidadesAdmitidas: null,
+    ramoDaDistribuicao: null,
     hash: 'h'.repeat(64),
   };
 }

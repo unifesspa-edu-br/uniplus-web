@@ -1,5 +1,8 @@
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
+import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
+import { ERRO_INTERNO, problema } from '../support/escritas-retidas';
+import { mockTiposDeConceito } from '../support/tipos-conceito-api';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -7,7 +10,7 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const TIPO = {
+const TIPO: TipoEtapaDto = {
   id: '01960000-0000-7000-0000-0000000000e1',
   codigo: 'PROVA',
   nome: 'Prova',
@@ -16,6 +19,7 @@ const TIPO = {
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  exigeCorrecaoIndependente: false,
   conceitosAdmitidos: [],
   criadoEm: '2026-08-11T00:00:00Z',
 };
@@ -23,43 +27,28 @@ const TIPO = {
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o diálogo fecha. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;
 
-const PROBLEMA_409_PROCESSANDO = {
-  type: 'about:blank',
-  title: 'Escrita em processamento',
-  status: 409,
-  code: 'uniplus.idempotency.processing_conflict',
-};
-const PROBLEMA_409_CODIGO = {
-  type: 'about:blank',
-  title: 'Código do tipo de etapa já está reservado',
-  status: 409,
-  code: 'uniplus.configuracao.tipo_etapa.codigo_ja_existe',
-};
-const PROBLEMA_422_NOTA_DO_ENEM = {
-  type: 'about:blank',
-  title: 'Tipo de etapa com nota de origem no ENEM não pode ser desativado',
-  status: 422,
-  code: 'uniplus.configuracao.tipo_etapa.nota_de_origem_no_enem_nao_desativa',
-};
-const PROBLEMA_500 = {
-  type: 'about:blank',
-  title: 'Erro interno',
-  status: 500,
-  code: 'uniplus.internal.unexpected',
-};
-const RECUSA_DE_NOME = {
-  type: 'about:blank',
-  title: 'Dados inválidos',
-  status: 422,
-  code: 'uniplus.validacao',
-  errors: [
-    {
-      field: 'Nome',
-      code: 'uniplus.configuracao.tipo_etapa.nome_tamanho',
-      message: 'Nome fora do padrão.',
-    },
-  ],
-};
+const PROBLEMA_409_PROCESSANDO = problema(
+  409,
+  'uniplus.idempotency.processing_conflict',
+  'Escrita em processamento',
+);
+const PROBLEMA_409_CODIGO = problema(
+  409,
+  'uniplus.configuracao.tipo_etapa.codigo_ja_existe',
+  'Código do tipo de etapa já está reservado',
+);
+const PROBLEMA_422_NOTA_DO_ENEM = problema(
+  422,
+  'uniplus.configuracao.tipo_etapa.nota_de_origem_no_enem_nao_desativa',
+  'Tipo de etapa com nota de origem no ENEM não pode ser desativado',
+);
+const RECUSA_DE_NOME = problema(422, 'uniplus.validacao', 'Dados inválidos', [
+  {
+    field: 'Nome',
+    code: 'uniplus.configuracao.tipo_etapa.nome_tamanho',
+    message: 'Nome fora do padrão.',
+  },
+]);
 
 type Recarga = 'com-o-item' | 'sem-o-item' | 'com-falha';
 type Resposta = { status: number; corpo?: unknown };
@@ -78,6 +67,7 @@ async function mockApi(
   const envios: string[] = [];
   let gravou = false;
   let consultas = 0;
+  await mockTiposDeConceito(page);
   await page.route(/\/api\/configuracao\/tipos-etapa(\?.*)?$/, async (route) => {
     consultas += 1;
     if (primeiraConsulta === 'falha' && consultas === 1) {
@@ -85,7 +75,7 @@ async function mockApi(
         status: 500,
         headers: CORS_HEADERS,
         contentType: 'application/problem+json',
-        body: JSON.stringify(PROBLEMA_500),
+        body: JSON.stringify(ERRO_INTERNO),
       });
       return;
     }
@@ -101,7 +91,7 @@ async function mockApi(
         status: 500,
         headers: CORS_HEADERS,
         contentType: 'application/problem+json',
-        body: JSON.stringify(PROBLEMA_500),
+        body: JSON.stringify(ERRO_INTERNO),
       });
       return;
     }
@@ -249,7 +239,7 @@ test.describe('Tipo de etapa — escritas', () => {
   }) => {
     const { liberar, envios } = await mockApi(
       page,
-      [{ status: 500, corpo: PROBLEMA_500 }],
+      [{ status: 500, corpo: ERRO_INTERNO }],
       'com-o-item',
     );
     const formulario = await abrirEdicao(page);
@@ -370,7 +360,7 @@ test.describe('Tipo de etapa — escritas', () => {
 
   for (const recusa of [
     { status: 422, corpo: PROBLEMA_422_NOTA_DO_ENEM },
-    { status: 500, corpo: PROBLEMA_500 },
+    { status: 500, corpo: ERRO_INTERNO },
   ]) {
     test(`remoção recusada (${recusa.status}) mantém o diálogo, a mensagem e o foco no botão, que volta a aceitar o clique`, async ({
       page,

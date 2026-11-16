@@ -357,6 +357,7 @@ describe('etapa de nota do ENEM', () => {
       admiteInstanciaSuperior: true,
       suspensividadeSegundaInstanciaValor: '',
       suspensividadeSegundaInstanciaUnidade: '',
+      procedimentos: [],
     });
     expect(
       problemasDaEnem({ bancas: [{ tipoBancaId: 'banca-1', regraDeDeliberacao: null }] }),

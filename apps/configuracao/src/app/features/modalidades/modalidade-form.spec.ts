@@ -45,7 +45,7 @@ describe('modalidade-form', () => {
     const form = criarFormularioDeModalidade();
     const condicionais = {
       natureza: 'ACAO_AFIRMATIVA',
-      composicao: 'RESIDUAL_DO_VO',
+      composicao: 'RESTANTE_DAS_VAGAS_OFERTADAS',
       regra: 'CRUZADO',
     } as const;
     expect(resumoCondicional(condicionais, form.getRawValue())[1]).toBe(
@@ -59,9 +59,9 @@ describe('modalidade-form', () => {
 
   it('exige a origem só na composição que retira de outra modalidade', () => {
     const form = criarFormularioDeModalidade();
-    reconciliarCondicionais(form, 'AMPLA', 'RETIRA_DE');
+    reconciliarCondicionais(form, 'AMPLA', 'RETIRADA_DE_OUTRA_MODALIDADE');
     expect(form.controls.composicaoOrigem.invalid).toBe(true);
-    reconciliarCondicionais(form, 'AMPLA', 'RESIDUAL_DO_VO');
+    reconciliarCondicionais(form, 'AMPLA', 'RESTANTE_DAS_VAGAS_OFERTADAS');
     expect(form.controls.composicaoOrigem.valid).toBe(true);
   });
 });

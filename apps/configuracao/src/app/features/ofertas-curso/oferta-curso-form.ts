@@ -8,6 +8,7 @@ import {
   REGIME_DE_TURNO_REGULAR,
   ordenarTurnosCanonicamente,
 } from '@uniplus/shared-data/configuracao';
+import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import {
   controlNameFromBackendField,
   mensagemDeErroDoControle,
@@ -16,6 +17,7 @@ import {
 import { cardinalidadeDeTurnos, compatibilidadeComRegimeDeTurno } from './turnos-da-oferta';
 
 export interface OfertaCursoForm {
+  codigo: FormControl<string>;
   cursoId: FormControl<string>;
   localOfertaId: FormControl<string>;
   unidadeOfertanteOrigemId: FormControl<string>;
@@ -34,6 +36,7 @@ export interface OfertaCursoForm {
 export type ValoresDaOferta = ReturnType<FormGroup<OfertaCursoForm>['getRawValue']>;
 
 export const OFERTA_EM_BRANCO: ValoresDaOferta = {
+  codigo: '',
   cursoId: '',
   localOfertaId: '',
   unidadeOfertanteOrigemId: '',
@@ -52,6 +55,7 @@ export const OFERTA_EM_BRANCO: ValoresDaOferta = {
 const PREFIXO_DO_CODIGO = 'uniplus.configuracao.oferta_curso.';
 
 const CAMPOS: ReadonlySet<string> = new Set<keyof OfertaCursoForm>([
+  'codigo',
   'programaDeOferta',
   'formatoPedagogico',
   'regimeDeTurno',
@@ -65,15 +69,19 @@ const CAMPOS: ReadonlySet<string> = new Set<keyof OfertaCursoForm>([
 ]);
 
 /**
- * Recusas de domínio que se referem a um vínculo mas não trazem `errors[]` com o campo (a
- * existência de curso, local e unidade é checada fora da validação dos campos): o sufixo do
- * código de wire e o controle que mostra a mensagem. As demais recusas de campo vêm em `errors[]`.
+ * Recusas de domínio que se referem a um campo mas não trazem `errors[]` com ele (a existência de
+ * curso, local e unidade e a unicidade do código são checadas fora da validação dos campos): o
+ * sufixo do código de wire e o controle que mostra a mensagem. As demais recusas de campo vêm em
+ * `errors[]`.
  */
 const CONTROLE_DO_CODIGO: ReadonlyMap<string, keyof OfertaCursoForm> = new Map([
   ['curso_inexistente_ou_removido', 'cursoId'],
   ['local_oferta_inexistente_ou_removido', 'localOfertaId'],
   ['unidade_ofertante_inexistente', 'unidadeOfertanteOrigemId'],
   ['unidade_ofertante_origem_obrigatoria', 'unidadeOfertanteOrigemId'],
+  ['codigo_obrigatorio', 'codigo'],
+  ['codigo_formato_invalido', 'codigo'],
+  ['codigo_ja_em_uso', 'codigo'],
 ]);
 
 const obrigatorio = (): FormControl<string> =>
@@ -87,9 +95,30 @@ const obrigatorioCom = (valor: string): FormControl<string> =>
 
 export function criarFormularioDeOferta(): FormGroup<OfertaCursoForm> {
   return new FormGroup<OfertaCursoForm>({
+    ...controlesDeIdentificacao(),
+    ...controlesDoRegime(),
+    ...controlesComplementares(),
+  });
+}
+
+function controlesDeIdentificacao() {
+  return {
+    codigo: new FormControl('', {
+      nonNullable: true,
+      validators: [
+        Validators.required,
+        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+        Validators.pattern(CODIGO_CADASTRO_FORMATO),
+      ],
+    }),
     cursoId: obrigatorio(),
     localOfertaId: obrigatorio(),
     unidadeOfertanteOrigemId: obrigatorio(),
+  };
+}
+
+function controlesDoRegime() {
+  return {
     programaDeOferta: obrigatorioCom(PROGRAMA_DE_OFERTA_REGULAR),
     formatoPedagogico: obrigatorioCom('PRESENCIAL'),
     regimeDeTurno: obrigatorioCom(REGIME_DE_TURNO_REGULAR),
@@ -97,6 +126,15 @@ export function criarFormularioDeOferta(): FormGroup<OfertaCursoForm> {
       nonNullable: true,
       validators: [cardinalidadeDeTurnos],
     }),
+    regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
+    }),
+  };
+}
+
+function controlesComplementares() {
+  return {
     eMecCodigo: opcional(20),
     codigoSga: opcional(30),
     vagasAnuaisAutorizadas: new FormControl<number | null>(null, {
@@ -104,23 +142,16 @@ export function criarFormularioDeOferta(): FormGroup<OfertaCursoForm> {
     }),
     baseLegal: opcional(500),
     atoAutorizacaoMec: opcional(300),
-    regimeDeFuncionamento: new FormControl(REGIME_DE_FUNCIONAMENTO_EXTENSIVO, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(30), compatibilidadeComRegimeDeTurno],
-    }),
-  });
+  };
 }
 
 export function valoresDaOferta(oferta: OfertaCursoDto): ValoresDaOferta {
   return {
+    codigo: oferta.codigo,
     cursoId: oferta.cursoId,
     localOfertaId: oferta.localOfertaId,
     unidadeOfertanteOrigemId: oferta.unidadeOfertante.origemId,
-    programaDeOferta: oferta.programaDeOferta,
-    formatoPedagogico: oferta.formatoPedagogico,
-    regimeDeTurno: oferta.regimeDeTurno,
-    regimeDeFuncionamento: oferta.regimeDeFuncionamento,
-    turnos: ordenarTurnosCanonicamente(oferta.turnos),
+    ...valoresDoRegime(oferta),
     eMecCodigo: oferta.eMecCodigo ?? '',
     codigoSga: oferta.codigoSga ?? '',
     vagasAnuaisAutorizadas: oferta.vagasAnuaisAutorizadas,
@@ -129,12 +160,22 @@ export function valoresDaOferta(oferta: OfertaCursoDto): ValoresDaOferta {
   };
 }
 
+function valoresDoRegime(oferta: OfertaCursoDto) {
+  return {
+    programaDeOferta: oferta.programaDeOferta,
+    formatoPedagogico: oferta.formatoPedagogico,
+    regimeDeTurno: oferta.regimeDeTurno,
+    regimeDeFuncionamento: oferta.regimeDeFuncionamento,
+    turnos: ordenarTurnosCanonicamente(oferta.turnos),
+  };
+}
+
 /** O controle do formulário que corresponde ao `field` de um erro de validação da API. */
 export function controleDoCampoDoServidor(field: string): keyof OfertaCursoForm | null {
   return controlNameFromBackendField<keyof OfertaCursoForm>(field, CAMPOS);
 }
 
-/** O controle que mostra a recusa de vínculo de código `code`, se ele se refere a um campo. */
+/** O controle que mostra a recusa de código `code`, se ele se refere a um campo. */
 export function controleDoCodigoDoServidor(code: string | undefined): keyof OfertaCursoForm | null {
   if (code === undefined || !code.startsWith(PREFIXO_DO_CODIGO)) {
     return null;
@@ -144,6 +185,7 @@ export function controleDoCodigoDoServidor(code: string | undefined): keyof Ofer
 
 function camposDaOferta(valores: ValoresDaOferta) {
   return {
+    codigo: valores.codigo.trim(),
     programaDeOferta: valores.programaDeOferta,
     formatoPedagogico: valores.formatoPedagogico,
     regimeDeTurno: valores.regimeDeTurno,
@@ -187,7 +229,21 @@ export function mensagemDeErroDaOferta(controle: AbstractControl): string | null
   return erros['maxlength'] ? mensagem : (mensagemDaRegraDaOferta(erros) ?? mensagem);
 }
 
+const MENSAGEM_DE_FORMATO_DO_CODIGO =
+  'Formato inválido. Use letras maiúsculas, números e sublinhado, iniciando por letra, de 2 a 50 caracteres (ex.: ENGENHARIA_CIVIL_MARABA).';
+
 function mensagemDaRegraDaOferta(erros: Record<string, unknown>): string | null {
+  if (erros['pattern']) return MENSAGEM_DE_FORMATO_DO_CODIGO;
+  if (erros['min']) return 'Valor não pode ser negativo.';
+  const incompativel = erros['regimeFuncionamentoIncompativelRegimeTurno'] as
+    | { regimeDeTurno: string }
+    | undefined;
+  return incompativel
+    ? `A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado ${incompativel.regimeDeTurno}.`
+    : mensagemDosTurnos(erros);
+}
+
+function mensagemDosTurnos(erros: Record<string, unknown>): string | null {
   if (erros['turnosObrigatorios']) {
     return 'Marque ao menos um turno — nenhum formato pedagógico dispensa o turno.';
   }
@@ -200,12 +256,5 @@ function mensagemDaRegraDaOferta(erros: Record<string, unknown>): string | null 
       ? `O regime ${regime} exige exatamente um turno.`
       : `O regime ${regime} exige exatamente ${exigidos} turnos distintos.`;
   }
-  if (erros['turnoRepetido']) return 'Os turnos devem ser distintos entre si.';
-  if (erros['min']) return 'Valor não pode ser negativo.';
-  const incompativel = erros['regimeFuncionamentoIncompativelRegimeTurno'] as
-    | { regimeDeTurno: string }
-    | undefined;
-  return incompativel
-    ? `A oferta INTENSIVO exige regime de turno INTEGRAL; foi declarado ${incompativel.regimeDeTurno}.`
-    : null;
+  return erros['turnoRepetido'] ? 'Os turnos devem ser distintos entre si.' : null;
 }

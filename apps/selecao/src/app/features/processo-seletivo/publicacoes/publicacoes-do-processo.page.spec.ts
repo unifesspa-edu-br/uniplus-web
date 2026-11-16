@@ -53,7 +53,7 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
     expect(temCorrigir(pagina.linhas()[0])).toBe(false);
   });
 
-  it('mostra a data do ato e o instante da publicação, sem situação de registro', async () => {
+  it('mostra a data do ato e o instante da publicação em colunas próprias, sem situação de registro', async () => {
     const publicado = ato('edital', {
       dataDoAto: '2026-11-10',
       publicadoEm: '2026-11-12T15:30:00Z',
@@ -61,11 +61,14 @@ describe('PublicacoesDoProcessoPage — atos publicados', () => {
 
     await pagina.abrir(StatusProcesso.publicado, [publicado]);
 
-    const texto = pagina.linhas()[0].textContent ?? '';
-    expect(texto).toContain('10/11/2026');
-    expect(texto).toContain('Publicado em 12/11/2026');
-    expect(texto).toContain('12:30');
-    expect(pagina.host.querySelector('th[scope="col"]')?.textContent).toBe('Documento');
+    const cabecalhos = Array.from(pagina.host.querySelectorAll('th[scope="col"]')).map((th) =>
+      th.textContent?.trim(),
+    );
+    const celulas = pagina.linhas()[0].querySelectorAll('td');
+    expect(cabecalhos.slice(0, 3)).toEqual(['Documento', 'Data do ato', 'Publicado em']);
+    expect(celulas[1].textContent?.trim()).toBe('10/11/2026');
+    expect(celulas[2].textContent).toContain('12/11/2026');
+    expect(celulas[2].textContent).toContain('12:30');
     expect(pagina.host.textContent).not.toMatch(/Em processamento|Registrado/);
   });
 

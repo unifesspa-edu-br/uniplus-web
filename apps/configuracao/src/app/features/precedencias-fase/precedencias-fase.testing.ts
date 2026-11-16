@@ -1,5 +1,9 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import {
+  HttpTestingController,
+  TestRequest,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -10,7 +14,7 @@ import {
   FaseCanonicaDto,
   PrecedenciaFaseDto,
 } from '@uniplus/shared-data/configuracao';
-import { expect, vi } from 'vitest';
+import { MockInstance, expect, vi } from 'vitest';
 import { EdicaoDasPrecedencias } from './edicao-das-precedencias';
 import { FasesDoGrafoStore } from './fases-do-grafo.store';
 import { PrecedenciasFasePage } from './precedencias-fase.page';
@@ -37,21 +41,22 @@ export const avaliacaoClassificacao: PrecedenciaFaseDto = {
   sucessoraCodigo: 'CLASSIFICACAO',
 };
 
+const FASE_CANONICA_PADRAO: Omit<FaseCanonicaDto, 'id' | 'codigo' | 'nome'> = {
+  descricao: null,
+  unidadeSugerida: null,
+  agrupaEtapas: false,
+  permiteComplementacao: false,
+  admiteAgruparEtapas: false,
+  admiteComplementacao: false,
+  coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
+  origemData: 'NO_EDITAL',
+  baseLegal: null,
+  criadoEm: '2026-06-10T12:00:00Z',
+};
+
 export function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
-  return {
-    id: `fase-${codigo}`,
-    codigo,
-    nome,
-    descricao: null,
-    unidadeSugerida: null,
-    agrupaEtapas: false,
-    permiteComplementacao: false,
-    coletaInscricao: false,
-    coletaSolicitacaoIsencao: false,
-    origemData: 'NO_EDITAL',
-    baseLegal: null,
-    criadoEm: '2026-06-10T12:00:00Z',
-  };
+  return { ...FASE_CANONICA_PADRAO, id: `fase-${codigo}`, codigo, nome };
 }
 
 /** Um 409 de conflito de estado, recusa 4xx que chega à tela (o 403 vai à página de acesso negado). */
@@ -81,12 +86,7 @@ export const recusaDeCampo = (
 export const sucesso = () => [null, { status: 204, statusText: 'No Content' }] as const;
 export const criado = () => ['nova-aresta-id', { status: 201, statusText: 'Created' }] as const;
 
-/** A página montada com a lista e as fases já carregadas, e as ferramentas para conduzi-la como a pessoa faz. */
-export async function montarPagina(
-  itens: readonly PrecedenciaFaseDto[] = [inscricaoHomologacao],
-  fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente' = [],
-  linkDasFases?: string,
-) {
+function configurarModuloDaPagina(): void {
   TestBed.configureTestingModule({
     imports: [PrecedenciasFasePage],
     providers: [
@@ -96,118 +96,153 @@ export async function montarPagina(
       { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
     ],
   });
-  const fixture: ComponentFixture<PrecedenciasFasePage> =
-    TestBed.createComponent(PrecedenciasFasePage);
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDasPrecedencias);
-  const store = injetor.get(PrecedenciasFaseStore);
-  const fasesDoGrafo = injetor.get(FasesDoGrafoStore);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
+}
 
-  const propagar = async (): Promise<void> => {
+/** A página com as ferramentas para conduzi-la como a pessoa faz. */
+export class PaginaDePrecedencias {
+  readonly fixture: ComponentFixture<PrecedenciasFasePage>;
+  readonly http: HttpTestingController;
+  readonly edicao: EdicaoDasPrecedencias;
+  readonly store: PrecedenciasFaseStore;
+  readonly fasesDoGrafo: FasesDoGrafoStore;
+  readonly sucessos: MockInstance<NotificationService['success']>;
+  readonly erros: MockInstance<NotificationService['errorFromProblem']>;
+  private readonly app = TestBed.inject(ApplicationRef);
+  private pedidoDeFases!: TestRequest;
+
+  constructor() {
+    this.fixture = TestBed.createComponent(PrecedenciasFasePage);
+    this.http = TestBed.inject(HttpTestingController);
+    const injetor = this.fixture.debugElement.injector;
+    this.edicao = injetor.get(EdicaoDasPrecedencias);
+    this.store = injetor.get(PrecedenciasFaseStore);
+    this.fasesDoGrafo = injetor.get(FasesDoGrafoStore);
+    const notificacoes = TestBed.inject(NotificationService);
+    this.sucessos = vi.spyOn(notificacoes, 'success');
+    this.erros = vi.spyOn(notificacoes, 'errorFromProblem');
+  }
+
+  async carregar(
+    itens: readonly PrecedenciaFaseDto[],
+    fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente',
+    linkDasFases?: string,
+  ): Promise<void> {
+    this.fixture.detectChanges();
+    this.pedidoDeFases = this.http.expectOne((r) => r.url === FASES);
+    this.responderFasesNaMontagem(fases, linkDasFases);
+    this.http.expectOne((r) => r.url === LISTA).flush(itens);
+    await this.propagar();
+  }
+
+  private responderFasesNaMontagem(
+    fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente',
+    linkDasFases?: string,
+  ): void {
+    // 'pendente': a requisição das fases segue em aberto; o teste a responde com `responderFases`.
+    if (fases === 'pendente') return;
+    if (fases === 'falha') this.pedidoDeFases.flush(...problema(503));
+    else this.pedidoDeFases.flush(fases, linkDasFases ? { headers: { Link: linkDasFases } } : {});
+  }
+
+  async responderFases(corpo: readonly FaseCanonicaDto[]): Promise<void> {
+    this.pedidoDeFases.flush(corpo);
+    await this.propagar();
+  }
+
+  async propagar(): Promise<void> {
     await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
+    this.app.tick();
+    this.fixture.detectChanges();
+  }
+
+  elemento<T extends HTMLElement>(seletor: string): T {
+    const encontrado = (this.fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
     expect(encontrado, seletor).not.toBeNull();
     return encontrado as T;
-  };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const nomeDoPar = (a: PrecedenciaFaseDto): string =>
-    `precedência entre ${a.antecessoraCodigo} e ${a.sucessoraCodigo}`;
-  const recarregarCom = async (lista: readonly PrecedenciaFaseDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    await propagar();
-  };
-  const selecionar = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLSelectElement>(`select[formcontrolname="${nome}"]`);
+  }
+
+  async recarregarCom(lista: readonly PrecedenciaFaseDto[]): Promise<void> {
+    await this.propagar();
+    this.http.expectOne((r) => r.url === LISTA).flush(lista);
+    await this.propagar();
+  }
+
+  selecionar(nome: string, valor: string): void {
+    const campo = this.elemento<HTMLSelectElement>(`select[formcontrolname="${nome}"]`);
     const opcao = [...campo.options].find((o) => o.value === valor || o.text.trim() === valor);
     expect(opcao, `opção ${valor}`).toBeDefined();
     campo.value = (opcao as HTMLOptionElement).value;
     campo.dispatchEvent(new Event('change'));
-  };
-
-  fixture.detectChanges();
-  const pedidoDeFases = http.expectOne((r) => r.url === FASES);
-  if (fases === 'pendente') {
-    // a requisição das fases segue em aberto; o teste a responde com `responderFases`
-  } else if (fases === 'falha') {
-    pedidoDeFases.flush(...problema(503));
-  } else {
-    pedidoDeFases.flush(fases, linkDasFases ? { headers: { Link: linkDasFases } } : {});
   }
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  await propagar();
 
-  return {
-    fixture,
-    http,
-    responderFases: async (corpo: readonly FaseCanonicaDto[]): Promise<void> => {
-      pedidoDeFases.flush(corpo);
-      await propagar();
-    },
-    edicao,
-    store,
-    fasesDoGrafo,
-    sucessos,
-    erros,
-    propagar,
-    elemento,
-    recarregarCom,
-    selecionar,
-    formulario: (): HTMLFormElement => elemento('#cfg-precedencia-fase-form'),
-    novo: (): HTMLButtonElement => elemento('#cfg-precedencias-fase-nova'),
-    editar: (a: PrecedenciaFaseDto = inscricaoHomologacao) =>
-      pelaEtiqueta(`Editar ${nomeDoPar(a)}`),
-    remover: (a: PrecedenciaFaseDto = inscricaoHomologacao) =>
-      pelaEtiqueta(`Remover ${nomeDoPar(a)}`),
-    salvar: (): HTMLButtonElement => elemento('button[form="cfg-precedencia-fase-form"]'),
-    confirmar: (): HTMLButtonElement => elemento('[data-testid="confirm-dialog-confirm"]'),
-    cancelarDaConfirmacao: (): HTMLButtonElement =>
-      elemento('[data-testid="confirm-dialog-cancel"]'),
-    campo: (nome: string): HTMLElement => elemento(`[formcontrolname="${nome}"]`),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Nova aresta" e escolhe um par válido. */
-    async abrirCadastro(antecessora = 'AVALIACAO', sucessora = 'CLASSIFICACAO'): Promise<void> {
-      elemento<HTMLButtonElement>('#cfg-precedencias-fase-nova').focus();
-      elemento<HTMLButtonElement>('#cfg-precedencias-fase-nova').click();
-      await propagar();
-      selecionar('antecessoraCodigo', antecessora);
-      selecionar('sucessoraCodigo', sucessora);
-    },
-    async abrirEdicao(aresta: PrecedenciaFaseDto = inscricaoHomologacao): Promise<void> {
-      const botao = pelaEtiqueta(`Editar ${nomeDoPar(aresta)}`);
-      botao.focus();
-      botao.click();
-      await propagar();
-    },
-    /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
-    async enviar(url = ESCRITA) {
-      const botao = elemento<HTMLButtonElement>('button[form="cfg-precedencia-fase-form"]');
-      botao.focus();
-      botao.click();
-      await propagar();
-      return http.expectOne(url);
-    },
-    async confirmarRemocao(aresta: PrecedenciaFaseDto = inscricaoHomologacao) {
-      const lixeira = pelaEtiqueta(`Remover ${nomeDoPar(aresta)}`);
-      lixeira.focus();
-      lixeira.click();
-      await propagar();
-      elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-      await propagar();
-      return http.expectOne(`${ESCRITA}/${aresta.id}`);
-    },
-  };
+  formulario = (): HTMLFormElement => this.elemento('#cfg-precedencia-fase-form');
+  novo = (): HTMLButtonElement => this.elemento('#cfg-precedencias-fase-nova');
+  salvar = (): HTMLButtonElement => this.elemento('button[form="cfg-precedencia-fase-form"]');
+  confirmar = (): HTMLButtonElement => this.elemento('[data-testid="confirm-dialog-confirm"]');
+  cancelarDaConfirmacao = (): HTMLButtonElement =>
+    this.elemento('[data-testid="confirm-dialog-cancel"]');
+  campo = (nome: string): HTMLElement => this.elemento(`[formcontrolname="${nome}"]`);
+  statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
+
+  editar(aresta: PrecedenciaFaseDto = inscricaoHomologacao): HTMLButtonElement {
+    return this.pelaEtiqueta(`Editar ${nomeDoPar(aresta)}`);
+  }
+
+  remover(aresta: PrecedenciaFaseDto = inscricaoHomologacao): HTMLButtonElement {
+    return this.pelaEtiqueta(`Remover ${nomeDoPar(aresta)}`);
+  }
+
+  /** Clica de verdade em "Nova aresta" e escolhe um par válido. */
+  async abrirCadastro(antecessora = 'AVALIACAO', sucessora = 'CLASSIFICACAO'): Promise<void> {
+    this.novo().focus();
+    this.novo().click();
+    await this.propagar();
+    this.selecionar('antecessoraCodigo', antecessora);
+    this.selecionar('sucessoraCodigo', sucessora);
+  }
+
+  async abrirEdicao(aresta: PrecedenciaFaseDto = inscricaoHomologacao): Promise<void> {
+    await this.clicarComFoco(this.editar(aresta));
+  }
+
+  /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
+  async enviar(url = ESCRITA): Promise<TestRequest> {
+    await this.clicarComFoco(this.salvar());
+    return this.http.expectOne(url);
+  }
+
+  async confirmarRemocao(aresta: PrecedenciaFaseDto = inscricaoHomologacao): Promise<TestRequest> {
+    await this.clicarComFoco(this.remover(aresta));
+    this.confirmar().click();
+    await this.propagar();
+    return this.http.expectOne(`${ESCRITA}/${aresta.id}`);
+  }
+
+  private pelaEtiqueta(nome: string): HTMLButtonElement {
+    return this.elemento(`button[aria-label="${nome}"]`);
+  }
+
+  private async clicarComFoco(botao: HTMLButtonElement): Promise<void> {
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  }
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+const nomeDoPar = (a: PrecedenciaFaseDto): string =>
+  `precedência entre ${a.antecessoraCodigo} e ${a.sucessoraCodigo}`;
+
+/** A página montada com a lista e as fases já carregadas. */
+export async function montarPagina(
+  itens: readonly PrecedenciaFaseDto[] = [inscricaoHomologacao],
+  fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente' = [],
+  linkDasFases?: string,
+): Promise<PaginaDePrecedencias> {
+  configurarModuloDaPagina();
+  const pagina = new PaginaDePrecedencias();
+  await pagina.carregar(itens, fases, linkDasFases);
+  return pagina;
+}
+
+export type Pagina = PaginaDePrecedencias;

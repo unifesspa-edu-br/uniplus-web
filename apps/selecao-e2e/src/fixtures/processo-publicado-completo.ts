@@ -1,4 +1,8 @@
+import type { EtapaProcessoDto } from '@uniplus/shared-data/selecao';
 import { PROCESSO_PUBLICADO_DA_MEDICINA } from './consulta-da-medicina';
+import { etapaDoServidor, faseDoServidor } from './cronograma-do-servidor';
+
+type RecursoDaEtapa = EtapaProcessoDto['publicacoes']['recursos'][number];
 
 /**
  * O processo da Medicina 2027 publicado, com os 12 passos preenchidos: é o que a varredura da
@@ -27,6 +31,16 @@ export const UNIDADE_RESPONSAVEL_DA_FASE = {
   slug: 'ceps',
   nome: 'Centro de Processos Seletivos',
 } as const;
+
+const ARGUMENTOS_DO_RECURSO: RecursoDaEtapa['args'] = {
+  prazoValor: 2,
+  prazoUnidade: 'diasUteis' as RecursoDaEtapa['args']['prazoUnidade'],
+  suspensividadePrimeiraInstanciaValor: null,
+  suspensividadePrimeiraInstanciaUnidade: null,
+  admiteInstanciaSuperior: true,
+  suspensividadeSegundaInstanciaValor: null,
+  suspensividadeSegundaInstanciaUnidade: null,
+};
 
 /** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
 function referencia(codigo: string) {
@@ -119,74 +133,73 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     quadroPesoAreaEnem: [],
   },
   etapas: [
-    {
+    etapaDoServidor({
       id: '01a0d640-0000-7000-8000-0000000000f1',
-      nome: 'Prova objetiva',
-      carater: 'classificatoria',
-      tipoEtapa: {
-        origemId: TIPO_ETAPA_ID,
-        codigo: 'PROVA_OBJETIVA',
-        nome: 'Prova objetiva',
-        notaDeOrigemNoEnem: false,
+      identificacao: {
+        tipoEtapa: {
+          origemId: TIPO_ETAPA_ID,
+          codigo: 'PROVA_OBJETIVA',
+          nome: 'Prova objetiva',
+          notaDeOrigemNoEnem: false,
+          exigeCorrecaoIndependente: false,
+        },
+        faseCodigo: CODIGO_DA_FASE,
       },
-      peso: 2,
-      notaMinima: null,
-      ordem: 1,
-      faseCodigo: CODIGO_DA_FASE,
-      produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
-      inicio: '2027-01-20T08:00:00Z',
-      fim: '2027-01-20T12:00:00Z',
-      emiteParecerIndividual: true,
+      janela: { inicio: '2027-01-20T08:00:00Z', fim: '2027-01-20T12:00:00Z' },
+      publicacoes: {
+        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+        emiteParecerIndividual: true,
+        recursos: [
+          {
+            id: '01a0d640-0000-7000-8000-0000000000f3',
+            ancora: 'atoPublicado' as RecursoDaEtapa['ancora'],
+            regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
+            args: ARGUMENTOS_DO_RECURSO,
+            produtoAncoraId: PRODUTO_ID,
+            atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+            procedimentos: [],
+          },
+        ],
+      },
       bancas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000f2',
           tipoBancaOrigemId: TIPO_BANCA_ID,
           codigo: 'BANCA_GERAL',
+          nome: 'Banca geral',
+          regraDeDeliberacao: null,
         },
       ],
-      recursos: [
-        {
-          id: '01a0d640-0000-7000-8000-0000000000f3',
-          ancora: 'atoPublicado',
-          regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
-          args: {
-            prazoValor: 2,
-            prazoUnidade: 'diasUteis',
-            suspensividadePrimeiraInstanciaValor: null,
-            suspensividadePrimeiraInstanciaUnidade: null,
-            admiteInstanciaSuperior: true,
-            suspensividadeSegundaInstanciaValor: null,
-            suspensividadeSegundaInstanciaUnidade: null,
-          },
-          produtoAncoraId: PRODUTO_ID,
-          atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-        },
-      ],
-    },
+    }),
   ],
   cronogramaFases: [
-    {
+    faseDoServidor({
       id: FASE_ID,
-      ordem: 1,
-      faseCanonicaOrigemId: FASE_CANONICA_ID,
       codigo: CODIGO_DA_FASE,
-      unidadeResponsavel: UNIDADE_RESPONSAVEL_DA_FASE,
-      origemData: 'NO_EDITAL',
-      agrupaEtapas: true,
-      permiteComplementacao: false,
-      produzResultado: true,
-      coletaInscricao: true,
-      coletaSolicitacaoIsencao: false,
-      inicio: '2027-01-01T00:00:00Z',
-      fim: '2027-01-31T23:59:59Z',
-      produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
-      faseConcluinteCodigo: null,
-      emiteParecerIndividual: false,
+      faseCanonica: {
+        origemId: FASE_CANONICA_ID,
+        agrupaEtapas: true,
+        coletaInscricao: true,
+      },
+      cronograma: { unidadeResponsavel: UNIDADE_RESPONSAVEL_DA_FASE },
+      publicacoes: {
+        produtos: [{ id: PRODUTO_ID, atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+        produzResultado: true,
+        regraRecurso: {
+          id: '01a0d640-0000-7000-8000-0000000000c5',
+          produtoAncoraId: PRODUTO_ID,
+          regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
+          args: ARGUMENTOS_DO_RECURSO,
+          procedimentos: [],
+        },
+      },
       bancasRequeridas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000c3',
           tipoBancaOrigemId: TIPO_BANCA_ID,
           codigo: 'BANCA_GERAL',
+          nome: 'Banca geral',
+          regraDeDeliberacao: null,
           recorteDeCompetencia: [
             {
               id: '01a0d640-0000-7000-8000-0000000000c4',
@@ -196,21 +209,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
           ],
         },
       ],
-      regraRecurso: {
-        id: '01a0d640-0000-7000-8000-0000000000c5',
-        produtoAncoraId: PRODUTO_ID,
-        regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
-        args: {
-          prazoValor: 2,
-          prazoUnidade: 'diasUteis',
-          suspensividadePrimeiraInstanciaValor: null,
-          suspensividadePrimeiraInstanciaUnidade: null,
-          admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: null,
-          suspensividadeSegundaInstanciaUnidade: null,
-        },
-      },
-    },
+    }),
   ],
   raizesExigencia: [
     folha('01a0d640-0000-7000-8000-000000000a11', {
@@ -329,6 +328,8 @@ export const FASES_CANONICAS = [
     unidadeSugerida: null,
     agrupaEtapas: true,
     permiteComplementacao: false,
+    admiteAgruparEtapas: true,
+    admiteComplementacao: false,
     baseLegal: null,
     coletaInscricao: true,
     origemData: 'NO_EDITAL',

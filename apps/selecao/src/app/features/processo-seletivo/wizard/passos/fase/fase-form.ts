@@ -6,6 +6,7 @@ import type {
   AtributosCongeladosDaFase,
   BancaRequeridaDaFase,
   FaseDoCronograma,
+  ProcedimentoDeRecurso,
   ProdutoDaFase,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
@@ -30,6 +31,8 @@ export interface RecursoForm {
   readonly admiteInstanciaSuperior: FormControl<boolean | null>;
   readonly suspensividadeSegundaInstanciaValor: FormControl<string>;
   readonly suspensividadeSegundaInstanciaUnidade: FormControl<UnidadeEscolhida>;
+  /** Não é editado aqui: viaja para a gravação do cronograma não o apagar. */
+  readonly procedimentos: FormControl<readonly ProcedimentoDeRecurso[]>;
 }
 
 /**
@@ -59,6 +62,8 @@ export interface FaseConfigForm {
   readonly faseConcluinteCodigo: FormControl<string>;
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
+  /** Não é editado aqui; viaja pela mesma razão da unidade. */
+  readonly tiposDeDecisao: FormControl<readonly string[]>;
   readonly admiteRecurso: FormControl<boolean>;
   readonly recurso: FormGroup<RecursoForm>;
   readonly congelados: FormControl<AtributosCongeladosDaFase | null>;
@@ -76,33 +81,74 @@ const RECURSO_EM_BRANCO: RecursoDaFase = {
   admiteInstanciaSuperior: null,
   suspensividadeSegundaInstanciaValor: '',
   suspensividadeSegundaInstanciaUnidade: '',
+  procedimentos: [],
 };
+
+type IdentificacaoEJanelaDaFase = Pick<
+  FaseConfigForm,
+  'faseCanonicaId' | 'codigo' | 'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId'
+>;
 
 export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<FaseConfigForm> {
   return new FormGroup<FaseConfigForm>({
+    ...controlesDeIdentificacaoEJanela(fase),
+    ...controlesDoQueAFaseDeclara(fase),
+  });
+}
+
+function controlesDeIdentificacaoEJanela(fase: FaseDoCronograma): IdentificacaoEJanelaDaFase {
+  return {
     faseCanonicaId: controle(fase.faseCanonicaId),
     codigo: controle(fase.codigo),
     ordem: controle(fase.ordem),
     inicio: controle<string | null>(fase.inicio),
     fim: controle<string | null>(fase.fim),
     unidadeResponsavelId: controle<string | null>(fase.unidadeResponsavelId),
+  };
+}
+
+function controlesDoQueAFaseDeclara(
+  fase: FaseDoCronograma,
+): Omit<FaseConfigForm, keyof IdentificacaoEJanelaDaFase> {
+  return {
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     faseConcluinteCodigo: controle(fase.faseConcluinteCodigo ?? ''),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
+    tiposDeDecisao: controle<readonly string[]>(fase.tiposDeDecisao ?? []),
     admiteRecurso: controle(fase.regraRecurso !== null),
     recurso: grupoDoRecurso(fase.regraRecurso ?? RECURSO_EM_BRANCO),
     congelados: controle<AtributosCongeladosDaFase | null>(fase.congelados),
-  });
+  };
 }
+
+type PrazoDoRecurso = Pick<
+  RecursoForm,
+  'regraCodigo' | 'regraVersao' | 'prazoValor' | 'prazoUnidade' | 'atoAncoraCodigo'
+>;
 
 function grupoDoRecurso(recurso: RecursoDaFase): FormGroup<RecursoForm> {
   return new FormGroup<RecursoForm>({
+    ...controlesDoPrazoDoRecurso(recurso),
+    ...controlesDaSuspensividadeDoRecurso(recurso),
+    procedimentos: controle<readonly ProcedimentoDeRecurso[]>(recurso.procedimentos),
+  });
+}
+
+function controlesDoPrazoDoRecurso(recurso: RecursoDaFase): PrazoDoRecurso {
+  return {
     regraCodigo: controle(recurso.regraCodigo),
     regraVersao: controle(recurso.regraVersao),
     prazoValor: controle(recurso.prazoValor),
     prazoUnidade: controle<UnidadeEscolhida>(recurso.prazoUnidade),
     atoAncoraCodigo: controle(recurso.atoAncoraCodigo),
+  };
+}
+
+function controlesDaSuspensividadeDoRecurso(
+  recurso: RecursoDaFase,
+): Omit<RecursoForm, keyof PrazoDoRecurso | 'procedimentos'> {
+  return {
     suspensividadePrimeiraInstanciaValor: controle(recurso.suspensividadePrimeiraInstanciaValor),
     suspensividadePrimeiraInstanciaUnidade: controle<UnidadeEscolhida>(
       recurso.suspensividadePrimeiraInstanciaUnidade,
@@ -112,43 +158,17 @@ function grupoDoRecurso(recurso: RecursoDaFase): FormGroup<RecursoForm> {
     suspensividadeSegundaInstanciaUnidade: controle<UnidadeEscolhida>(
       recurso.suspensividadeSegundaInstanciaUnidade,
     ),
-  });
+  };
 }
 
 /** A fase como o rascunho a guarda, com o que esta superfície declarou. */
 export function faseDaConfiguracao(grupo: FormGroup<FaseConfigForm>): FaseDoCronograma {
-  const valor = grupo.getRawValue();
+  const { admiteRecurso, recurso, faseConcluinteCodigo, ...inalterados } = grupo.getRawValue();
 
   return {
-    faseCanonicaId: valor.faseCanonicaId,
-    codigo: valor.codigo,
-    ordem: valor.ordem,
-    inicio: valor.inicio,
-    fim: valor.fim,
-    unidadeResponsavelId: valor.unidadeResponsavelId,
-    produtos: valor.produtos,
-    faseConcluinteCodigo: valor.faseConcluinteCodigo === '' ? null : valor.faseConcluinteCodigo,
-    emiteParecerIndividual: valor.emiteParecerIndividual,
-    bancasRequeridas: valor.bancasRequeridas,
-    regraRecurso: valor.admiteRecurso ? recursoDaConfiguracao(valor.recurso) : null,
-    congelados: valor.congelados,
-  };
-}
-
-function recursoDaConfiguracao(
-  valor: ReturnType<FormGroup<RecursoForm>['getRawValue']>,
-): RecursoDaFase {
-  return {
-    regraCodigo: valor.regraCodigo,
-    regraVersao: valor.regraVersao,
-    prazoValor: valor.prazoValor,
-    prazoUnidade: valor.prazoUnidade,
-    atoAncoraCodigo: valor.atoAncoraCodigo,
-    suspensividadePrimeiraInstanciaValor: valor.suspensividadePrimeiraInstanciaValor,
-    suspensividadePrimeiraInstanciaUnidade: valor.suspensividadePrimeiraInstanciaUnidade,
-    admiteInstanciaSuperior: valor.admiteInstanciaSuperior,
-    suspensividadeSegundaInstanciaValor: valor.suspensividadeSegundaInstanciaValor,
-    suspensividadeSegundaInstanciaUnidade: valor.suspensividadeSegundaInstanciaUnidade,
+    ...inalterados,
+    faseConcluinteCodigo: faseConcluinteCodigo === '' ? null : faseConcluinteCodigo,
+    regraRecurso: admiteRecurso ? recurso : null,
   };
 }
 

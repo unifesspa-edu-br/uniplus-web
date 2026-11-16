@@ -93,6 +93,7 @@ describe('FasePassoComponent', () => {
           admiteInstanciaSuperior: true,
           suspensividadeSegundaInstanciaValor: '',
           suspensividadeSegundaInstanciaUnidade: '',
+          procedimentos: [],
         },
       }),
     );
@@ -232,6 +233,7 @@ describe('FasePassoComponent', () => {
             emiteParecerIndividual: false,
             bancas: [],
             recursos: [],
+            tiposDeDecisao: [],
           },
         ],
       });

@@ -12,6 +12,7 @@ import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
+import { RAMO_LEI_DE_COTAS } from './composicao-de-vagas';
 import { VagasPassoComponent } from './vagas.component';
 import {
   BASE,
@@ -24,10 +25,10 @@ import {
   REGRA_PSIQ,
   SEGUNDA_MODALIDADE,
   ServicosDasVagas,
-  TelaDasVagas,
   distribuicao,
   servicosDe,
 } from './vagas.testing';
+import { TelaDasVagas } from './tela-das-vagas.testing';
 
 let servicos: ServicosDasVagas;
 let operador: TelaDasVagas;
@@ -84,7 +85,8 @@ describe('VagasPassoComponent — regra determina o rol de modalidades', () => {
 
   /** A região viva que anuncia os problemas do padrão não pode tirar da lista o papel de lista. */
   it('anuncia os problemas do padrão numa região viva que envolve a lista', () => {
-    store.patchObjectSection('vagas', { ofertas: [{ ...distribuicao(OFERTA), pr: '2' }] });
+    const federal = { ...distribuicao(OFERTA), pr: '2', ramoDaDistribuicao: RAMO_LEI_DE_COTAS };
+    store.patchObjectSection('vagas', { ofertas: [federal] });
     detectar();
 
     const regiao = elementoRaiz.querySelector<HTMLElement>('[role="alert"]');

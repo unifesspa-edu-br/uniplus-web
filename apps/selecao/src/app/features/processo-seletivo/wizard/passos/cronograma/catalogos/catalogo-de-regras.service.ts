@@ -8,17 +8,19 @@ import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 const TIPO_REGRA_CONTAGEM = 'algoritmo_contagem_prazo';
 const TIPO_REGRA_CONSOLIDACAO = 'regra_consolidacao';
 const TIPO_REGRA_RECURSO = 'regra_prazo_recurso';
+const TIPO_REGRA_PROCEDIMENTO = 'regra_procedimento_recurso';
 
 /**
  * As regras versionadas do `rol_de_regras` que o cronograma referencia: a de recurso de uma fase,
- * o algoritmo de contagem de prazo da convenção e a consolidação das notas de uma etapa de
- * avaliação humana.
+ * o procedimento com que o recurso é julgado, o algoritmo de contagem de prazo da convenção e a
+ * consolidação das notas de uma etapa de avaliação humana.
  */
 @Injectable()
 export class CatalogoDeRegras {
   private readonly regrasApi = inject(RegrasCatalogoApi);
 
   readonly regrasRecurso = signal<readonly RegraCatalogoDto[]>([]);
+  readonly regrasProcedimento = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasContagem = signal<readonly RegraCatalogoDto[]>([]);
   readonly regrasConsolidacao = signal<readonly RegraCatalogoDto[]>([]);
 
@@ -26,15 +28,19 @@ export class CatalogoDeRegras {
     buscar: () =>
       forkJoin({
         recurso: this.regrasDoTipo(TIPO_REGRA_RECURSO),
+        procedimento: this.regrasDoTipo(TIPO_REGRA_PROCEDIMENTO),
         contagem: this.regrasDoTipo(TIPO_REGRA_CONTAGEM),
         consolidacao: this.regrasDoTipo(TIPO_REGRA_CONSOLIDACAO),
       }).pipe(
-        map(({ recurso, contagem, consolidacao }) =>
-          recurso && contagem && consolidacao ? { recurso, contagem, consolidacao } : null,
+        map(({ recurso, procedimento, contagem, consolidacao }) =>
+          recurso && procedimento && contagem && consolidacao
+            ? { recurso, procedimento, contagem, consolidacao }
+            : null,
         ),
       ),
     aplicar: (dados) => {
       this.regrasRecurso.set(dados.recurso);
+      this.regrasProcedimento.set(dados.procedimento);
       this.regrasContagem.set(dados.contagem);
       this.regrasConsolidacao.set(dados.consolidacao);
     },

@@ -1,0 +1,154 @@
+import { faseDoServidor } from './cronograma-do-servidor';
+import {
+  FASES_CANONICAS,
+  NOME_DOCUMENTO,
+  TIPOS_DOCUMENTO,
+  TIPOS_PROCESSO,
+} from './catalogos-do-cronograma';
+
+/**
+ * Documentos publicados: o processo da consulta, com uma fase e dois documentos — um cobrado de
+ * todo candidato e outro só de quem concorre por LB_PPI. `status: 'publicado'` põe o editor em
+ * somente leitura.
+ */
+export const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000a01';
+const FASE_PUBLICADA_ID = '01960000-0000-7000-0000-000000000a02';
+const NORMA_DO_EDITAL = {
+  referencia: 'Edital nº 1/2027, Anexo III',
+  abrangencia: 'INTERNA_EDITAL',
+  status: 'RESOLVIDO',
+  observacao: null,
+};
+
+const FOLHA_SEM_DOCUMENTO = {
+  tipo: 'FOLHA',
+  quantidadeMinima: null,
+  consequencia: null,
+  basesLegais: [],
+  filhos: [],
+  chaveDistincao: null,
+  dataReferencia: null,
+  ocorrenciasEsperadas: null,
+  repetePorEntidade: null,
+};
+
+function documentoDaFolha(id: string, documento: Record<string, unknown>) {
+  return {
+    id: `${id}-doc`,
+    exigidoNaFaseId: FASE_PUBLICADA_ID,
+    tipoDocumentoCategoria: 'IDENTIFICACAO',
+    condicoes: [],
+    basesLegais: [{ id: `${id}-norma`, ...NORMA_DO_EDITAL }],
+    idadeMaximaEmissao: null,
+    formatosPermitidos: ['pdf'],
+    tamanhoMaximoBytes: 10485760,
+    exigidoNaEtapaId: null,
+    ...documento,
+  };
+}
+
+function folha(id: string, documento: Record<string, unknown>) {
+  return { id, ...FOLHA_SEM_DOCUMENTO, documento: documentoDaFolha(id, documento) };
+}
+
+export const DETALHE_PUBLICADO = {
+  id: PROCESSO_PUBLICADO_ID,
+  nome: 'Processo seletivo publicado',
+  tipoProcesso: { origemId: TIPOS_PROCESSO[0].id, codigo: 'SISU', nome: 'SISU' },
+  status: 'publicado',
+  origemCandidatos: 'inscricaoPropria',
+  unidadeAdministradora: {
+    origemId: '01960000-0000-7000-0000-000000000906',
+    sigla: 'CEPS',
+    slug: 'ceps',
+    nome: 'CEPS',
+    tipo: 'PROREITORIA',
+    cidadeCodigoIbge: '1504208',
+    cidadeNome: 'Marabá',
+    cidadeUf: 'PA',
+  },
+  localidade: { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
+  etapas: [],
+  atendimentoEspecializado: null,
+  distribuicaoVagas: [],
+  bonusRegional: null,
+  aplicaBonusRegional: false,
+  cascata: null,
+  criteriosDesempate: [],
+  classificacao: null,
+  cronogramaFases: [
+    faseDoServidor({
+      id: FASE_PUBLICADA_ID,
+      codigo: FASES_CANONICAS[0].codigo,
+      faseCanonica: { origemId: FASES_CANONICAS[0].id },
+    }),
+  ],
+  documentosExigidos: [],
+  raizesExigencia: [
+    folha('01960000-0000-7000-0000-000000000a11', {
+      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
+      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
+      tipoDocumentoNome: NOME_DOCUMENTO,
+      aplicabilidade: 'GERAL',
+      obrigatorio: true,
+      consequenciaIndeferimento: 'ELIMINA',
+    }),
+    folha('01960000-0000-7000-0000-000000000a12', {
+      tipoDocumentoOrigemId: '01960000-0000-7000-0000-0000000000f9',
+      tipoDocumentoCodigo: 'AUTODECLARACAO_PPI',
+      tipoDocumentoNome: 'Autodeclaração étnico-racial',
+      aplicabilidade: 'CONDICIONAL',
+      obrigatorio: false,
+      consequenciaIndeferimento: 'RECLASSIFICA_AC',
+      condicoes: [
+        {
+          id: '01960000-0000-7000-0000-000000000a13',
+          clausula: 1,
+          fato: 'MODALIDADE',
+          operador: 'EM',
+          valor: '["LB_PPI"]',
+        },
+      ],
+    }),
+  ],
+  referenciaTemporalFatos: null,
+  regrasDerivacao: [],
+  formularios: [],
+  opcoesDeclaradas: [],
+  configuracaoDivulgacao: null,
+  configuracaoTaxaInscricao: null,
+  algoritmoContagemPrazo: null,
+  criadoEm: '2026-09-01T00:00:00Z',
+};
+
+/**
+ * O mesmo processo com uma segunda fase que exige o mesmo tipo de documento: a consulta monta um
+ * `sel-step-fase` por fase, e o que cada um nomeia com id não pode repetir-se no vizinho.
+ */
+const FASE_PUBLICADA_2_ID = '01960000-0000-7000-0000-000000000a03';
+export const DETALHE_DUAS_FASES = {
+  ...DETALHE_PUBLICADO,
+  cronogramaFases: [
+    ...DETALHE_PUBLICADO.cronogramaFases,
+    faseDoServidor({
+      id: FASE_PUBLICADA_2_ID,
+      codigo: FASES_CANONICAS[1].codigo,
+      faseCanonica: { origemId: FASES_CANONICAS[1].id, coletaInscricao: false },
+      cronograma: { ordem: 2 },
+    }),
+  ],
+  raizesExigencia: [
+    ...DETALHE_PUBLICADO.raizesExigencia,
+    folha('01960000-0000-7000-0000-000000000a21', {
+      exigidoNaFaseId: FASE_PUBLICADA_2_ID,
+      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
+      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
+      tipoDocumentoNome: NOME_DOCUMENTO,
+      aplicabilidade: 'GERAL',
+      obrigatorio: true,
+      consequenciaIndeferimento: 'ELIMINA',
+    }),
+  ],
+};
+
+export type DetalheMockado = typeof DETALHE_PUBLICADO | typeof DETALHE_DUAS_FASES;

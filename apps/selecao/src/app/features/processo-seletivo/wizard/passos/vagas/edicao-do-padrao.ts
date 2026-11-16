@@ -45,28 +45,43 @@ export function perderiaQuantidadeDoQuadro(
 /**
  * Trocar a regra define o rol: rol aberto preserva a seleção livre; rol fechado é a oferta
  * inteira, porque a regra determina o conjunto e não filtra uma escolha dentro dele. Fora do ramo
- * federal o servidor recusa regra de ajuste e referência demográfica, então saem.
+ * federal o servidor recusa regra de ajuste e referência demográfica, e o percentual da reserva
+ * legal não se aplica, então saem.
  */
 export function padraoAposTrocarDeRegra(
   padrao: PadraoDoEdital,
-  troca: {
-    readonly codigo: string;
-    readonly versao: string;
-    readonly rol: readonly string[] | null;
-    readonly catalogo: readonly ModalidadeSelecionada[];
-  },
+  troca: TrocaDeRegra,
 ): Partial<PadraoDoEdital> {
-  const modalidades =
-    troca.rol === null ? padrao.modalidades : modalidadesDoRolAtual(troca.rol, troca.catalogo);
-  const regra = { regraDistribuicaoCodigo: troca.codigo, regraDistribuicaoVersao: troca.versao };
+  const regra = {
+    regraDistribuicaoCodigo: troca.codigo,
+    regraDistribuicaoVersao: troca.versao,
+    ramoDaDistribuicao: troca.ramo,
+    modalidades: modalidadesAposTroca(padrao, troca),
+  };
 
-  return ehRamoFederal(troca.codigo)
-    ? { ...regra, modalidades }
-    : {
-        ...regra,
-        regraAjusteCodigo: null,
-        regraAjusteVersao: null,
-        referenciaReservaDemograficaId: null,
-        modalidades,
-      };
+  return ehRamoFederal(troca.ramo) ? regra : { ...regra, ...SEM_ITENS_FEDERAIS };
+}
+
+function modalidadesAposTroca(
+  padrao: PadraoDoEdital,
+  troca: TrocaDeRegra,
+): PadraoDoEdital['modalidades'] {
+  if (troca.rol === null) return padrao.modalidades;
+  return modalidadesDoRolAtual(troca.rol, troca.catalogo);
+}
+
+/** O que só existe sob a Lei 12.711 e sai do padrão quando a regra escolhida é de outro ramo. */
+const SEM_ITENS_FEDERAIS = {
+  pr: '',
+  regraAjusteCodigo: null,
+  regraAjusteVersao: null,
+  referenciaReservaDemograficaId: null,
+};
+
+export interface TrocaDeRegra {
+  readonly codigo: string;
+  readonly versao: string;
+  readonly ramo: string | null;
+  readonly rol: readonly string[] | null;
+  readonly catalogo: readonly ModalidadeSelecionada[];
 }

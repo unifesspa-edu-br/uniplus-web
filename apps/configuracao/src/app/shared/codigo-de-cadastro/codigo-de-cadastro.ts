@@ -15,6 +15,39 @@ export interface CodigoDeCadastroLigado {
 }
 
 /**
+ * Mantém o código em caixa alta no modelo, sem reescrever a view (`emitModelToViewChange: false`),
+ * para não reposicionar o cursor; a apresentação em caixa alta fica por conta do `text-transform`
+ * do campo. Chamar em contexto de injeção: a inscrição termina com a tela.
+ */
+export function manterEmCaixaAlta(codigo: FormControl<string>): void {
+  codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((valor) => {
+    const emCaixaAlta = valor.toLocaleUpperCase('pt-BR');
+    if (emCaixaAlta === valor) return;
+    codigo.setValue(emCaixaAlta, { emitEvent: false, emitModelToViewChange: false });
+  });
+}
+
+/**
+ * Sugere o código a partir do nome enquanto o que está no campo é obra da própria sugestão:
+ * o operador que troca o código por outro encerra a sugestão.
+ */
+function criarSugestorDeCodigo(codigo: FormControl<string>): CodigoDeCadastroLigado & {
+  sugerirPara(nome: string): void;
+} {
+  let ultimaSugestao = '';
+  return {
+    sugerirPara(nome: string): void {
+      if (codigo.value !== '' && codigo.value !== ultimaSugestao) return;
+      ultimaSugestao = sugerirCodigoDeCadastro(nome);
+      codigo.setValue(ultimaSugestao, { emitEvent: false });
+    },
+    reiniciar(): void {
+      ultimaSugestao = '';
+    },
+  };
+}
+
+/**
  * Liga o código de cadastro ao nome, como a convenção do código informado pelo operador pede:
  *
  * - **sugestão:** na criação, o código acompanha o nome enquanto o que está nele é obra da
@@ -31,25 +64,10 @@ export function ligarCodigoDeCadastro(
   campos: CamposDoCodigoDeCadastro,
   emCriacao: () => boolean,
 ): CodigoDeCadastroLigado {
-  let ultimaSugestao = '';
-
+  const sugestor = criarSugestorDeCodigo(campos.codigo);
   campos.nome.valueChanges.pipe(takeUntilDestroyed()).subscribe((nome) => {
-    if (!emCriacao()) return;
-    const codigoAtual = campos.codigo.value;
-    if (codigoAtual !== '' && codigoAtual !== ultimaSugestao) return;
-    ultimaSugestao = sugerirCodigoDeCadastro(nome);
-    campos.codigo.setValue(ultimaSugestao, { emitEvent: false });
+    if (emCriacao()) sugestor.sugerirPara(nome);
   });
-
-  campos.codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((codigo) => {
-    const emCaixaAlta = codigo.toLocaleUpperCase('pt-BR');
-    if (emCaixaAlta === codigo) return;
-    campos.codigo.setValue(emCaixaAlta, { emitEvent: false, emitModelToViewChange: false });
-  });
-
-  return {
-    reiniciar: () => {
-      ultimaSugestao = '';
-    },
-  };
+  manterEmCaixaAlta(campos.codigo);
+  return sugestor;
 }

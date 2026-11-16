@@ -72,7 +72,10 @@ function ordemDaMatriz(itemBruto: unknown): OrdemDaMatriz | null {
 }
 
 /** A modalidade segue a cascata única do processo — vocabulário fechado do catálogo. */
-function segueCascata(modalidadeId: string, catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>): boolean {
+function segueCascata(
+  modalidadeId: string,
+  catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
+): boolean {
   return catalogo.get(modalidadeId)?.regraRemanejamento === SEGUE_CASCATA;
 }
 
@@ -86,7 +89,7 @@ export function ofertaExigeCascata(
 
 /** A oferta não usa o ramo federal (Lei 12.711, em qualquer variação) — espelha `OfertaForaDoRegimeFederal` do domínio. */
 export function ofertaForaDoRegimeFederal(oferta: DistribuicaoDeVagas): boolean {
-  return !ehRamoFederal(oferta.regraDistribuicaoCodigo);
+  return !ehRamoFederal(oferta.ramoDaDistribuicao);
 }
 
 /**
