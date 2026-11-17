@@ -5,12 +5,8 @@ import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import {
-  errorResult,
-  mockProblemDetails,
-  okResult,
-  type ApiResult,
-} from '@uniplus/shared-core/http';
+import type { ApiResult } from '@uniplus/shared-core/http';
+import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import {
   ProcessosSeletivosApi,
   type ProcessoSeletivoResumoDto,

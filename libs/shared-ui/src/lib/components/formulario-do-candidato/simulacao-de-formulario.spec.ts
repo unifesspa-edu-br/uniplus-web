@@ -1,6 +1,6 @@
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { okResult } from '@uniplus/shared-core/http';
+import { okResult } from '@uniplus/shared-testing';
 
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
 import { interpretarFormulario } from './interpretador/interpretador';

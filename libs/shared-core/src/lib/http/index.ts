@@ -3,14 +3,6 @@ export type { ApiFailure, ApiOk, ApiResult } from './api-result';
 
 export { apiResultInterceptor } from './api-result.interceptor';
 
-export {
-  errorResult,
-  mockCausaGeral,
-  mockProblemDetails,
-  mockValidationError,
-  okResult,
-} from './api-result.testing';
-
 export { parseLink } from './link-header';
 export type { ParsedLink } from './link-header';
 

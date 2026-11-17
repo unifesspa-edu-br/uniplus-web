@@ -3,29 +3,24 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { BuscaDeMunicipios } from './busca-de-municipios';
-import type { MunicipioOpcao } from './calendario-dias-uteis.util';
+import { ESPERA_DA_BUSCA_DE_MUNICIPIO_MS, type MunicipioOpcao } from './calendario-dias-uteis.util';
 import {
   aplicarAbrangencia,
   criarGrupoDeDiaNaoUtil,
   municipioSelecionadoDe,
   type GrupoDoDia,
 } from './dia-nao-util-form';
-import {
-  BASE,
-  CIDADES,
-  ESPERA_DA_BUSCA_EM_MS,
-  MARABA,
-  PARAUAPEBAS,
-  esperar,
-} from './calendario-dias-uteis.testing';
+import { BASE, CIDADES, MARABA, PARAUAPEBAS } from './calendario-dias-uteis.testing';
 
 describe('BuscaDeMunicipios', () => {
   let busca: BuscaDeMunicipios;
   let http: HttpTestingController;
 
   beforeEach(() => {
+    ligarRelogioControlado();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -38,7 +33,10 @@ describe('BuscaDeMunicipios', () => {
     http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    http.verify();
+  });
 
   const diaMunicipal = (): GrupoDoDia => {
     const grupo = criarGrupoDeDiaNaoUtil();
@@ -52,7 +50,7 @@ describe('BuscaDeMunicipios', () => {
   ];
   const buscarEEsperar = async (grupo: GrupoDoDia, termo: string): Promise<void> => {
     busca.aplicar(grupo, { tipo: 'busca', termo });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
   };
   const escolher = async (grupo: GrupoDoDia, municipio: MunicipioOpcao = MARABA): Promise<void> => {
     await buscarEEsperar(grupo, municipio.nome);
@@ -76,6 +74,20 @@ describe('BuscaDeMunicipios', () => {
     expect(estado(grupo)?.opcoes).toEqual([expect.objectContaining(PARAUAPEBAS)]);
   });
 
+  it('a busca espera a pessoa parar de digitar: um milissegundo antes nada sai, no seguinte sai', async () => {
+    const grupo = diaMunicipal();
+
+    busca.aplicar(grupo, { tipo: 'busca', termo: 'Mar' });
+    busca.aplicar(grupo, { tipo: 'busca', termo: 'Marab' });
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS - 1);
+    http.expectNone((r) => r.url === CIDADES);
+
+    await passarOTempo(1);
+    const requisicao = http.expectOne((r) => r.url === CIDADES);
+    expect(requisicao.request.params.get('q')).toBe('Marab');
+    requisicao.flush(respostaDa(MARABA));
+  });
+
   it('grava o snapshot inteiro da opção escolhida', async () => {
     const grupo = diaMunicipal();
 
@@ -90,7 +102,7 @@ describe('BuscaDeMunicipios', () => {
     const grupo = diaMunicipal();
 
     busca.aplicar(grupo, { tipo: 'busca', termo: 'M' });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
 
     http.expectNone((r) => r.url === CIDADES);
     expect(estado(grupo)).toEqual({ opcoes: [], carregando: false, erro: false });
@@ -115,7 +127,7 @@ describe('BuscaDeMunicipios', () => {
     expect(grupo.controls.municipioNome.value).toBeNull();
     expect(grupo.controls.municipioUf.value).toBeNull();
     expect(municipioSelecionadoDe(grupo)).toBeNull();
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http.expectOne((r) => r.url === CIDADES).flush([]);
   });
 
@@ -126,7 +138,7 @@ describe('BuscaDeMunicipios', () => {
     busca.aplicar(grupo, { tipo: 'busca', termo: 'MARABA' });
 
     expect(municipioSelecionadoDe(grupo)).toEqual(MARABA);
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http.expectOne((r) => r.url === CIDADES).flush(respostaDa(MARABA));
   });
 
@@ -169,7 +181,7 @@ describe('BuscaDeMunicipios', () => {
 
     busca.aplicar(primeira, { tipo: 'busca', termo: MARABA.nome });
     busca.aplicar(segunda, { tipo: 'busca', termo: PARAUAPEBAS.nome });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
 
     const requisicoes = http.match((r) => r.url === CIDADES);
     expect(requisicoes).toHaveLength(2);
@@ -214,7 +226,7 @@ describe('BuscaDeMunicipios', () => {
     await escolher(grupo);
 
     busca.aplicar(grupo, { tipo: 'busca', termo: 'Marab' });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     const emVoo = http.expectOne((r) => r.url === CIDADES);
     expect(estado(grupo)?.carregando).toBe(true);
 
@@ -244,14 +256,14 @@ describe('BuscaDeMunicipios', () => {
     http.expectOne((r) => r.url === CIDADES).flush(respostaDa(MARABA));
 
     busca.aplicar(grupo, { tipo: 'busca', termo: 'Marabá ' });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http.expectOne((r) => r.url === CIDADES).flush('falha', { status: 503, statusText: 'Erro' });
     expect(estado(grupo)?.erro).toBe(true);
     expect(estado(grupo)?.opcoes).toEqual([expect.objectContaining(MARABA)]);
 
     busca.aplicar(grupo, { tipo: 'novaTentativa' });
     expect(estado(grupo)).toMatchObject({ carregando: true, erro: false });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http.expectOne((r) => r.url === CIDADES).flush(respostaDa(MARABA));
     expect(estado(grupo)).toMatchObject({ carregando: false, erro: false });
   });
@@ -260,7 +272,7 @@ describe('BuscaDeMunicipios', () => {
     const grupo = diaMunicipal();
 
     busca.aplicar(grupo, { tipo: 'novaTentativa' });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
 
     http.expectNone((r) => r.url === CIDADES);
   });
@@ -270,7 +282,7 @@ describe('BuscaDeMunicipios', () => {
     await escolher(grupo);
 
     busca.aplicar(grupo, { tipo: 'busca', termo: 'Marabá' });
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http.expectOne((r) => r.url === CIDADES).flush(respostaDa(PARAUAPEBAS));
 
     expect(estado(grupo)?.opcoes.map((opcao) => opcao.codigoIbge)).toEqual([

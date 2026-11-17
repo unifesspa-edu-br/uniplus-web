@@ -62,7 +62,7 @@ export function nomeDoMunicipioNaoCarregado(codigoIbge: string): string {
 /** O termo mais curto que vale buscar: com menos, a busca alcançaria centenas de nomes. */
 const TERMO_MINIMO = 3;
 /** A espera depois da última tecla, para não buscar a cada letra. */
-const ESPERA_DA_DIGITACAO_MS = 300;
+export const ESPERA_DA_DIGITACAO_MS = 300;
 
 /**
  * O nome de cada município já escolhido nesta sessão, pelo código IBGE. A condição grava só o
@@ -204,6 +204,11 @@ export class ValorDeMunicipioComponent {
   private readonly encontrados = signal<readonly MunicipioEncontrado[]>([]);
 
   constructor() {
+    this.buscarAoMudarOTermo();
+    this.refazerABuscaAoTrocarAUf();
+  }
+
+  private buscarAoMudarOTermo(): void {
     // switchMap direto sobre o termo: o termo novo cancela a busca em voo, e a resposta de um termo
     // já trocado nunca chega a substituir a do atual.
     this.termos
@@ -212,7 +217,9 @@ export class ValorDeMunicipioComponent {
         takeUntilDestroyed(inject(DestroyRef)),
       )
       .subscribe((resultado) => this.mostrar(resultado));
+  }
 
+  private refazerABuscaAoTrocarAUf(): void {
     // Trocar a UF refaz a busca do termo na UF nova: os municípios achados na anterior não ficam
     // escolhíveis.
     effect(() => {
@@ -258,27 +265,14 @@ export class ValorDeMunicipioComponent {
     this.encontrados().length === 0 ? this.textoSemResultado() : null,
   );
 
-  protected readonly grupos = computed<readonly UiComboboxGroup[]>(() => {
-    const escolhidos = this.values();
-    const opcao = (codigo: string): UiComboboxOption => ({
-      value: codigo,
-      label: this.rotulosGravados()[codigo] ?? this.nomes.rotulo(codigo),
-    });
-    const achados = this.encontrados()
-      .filter((municipio) => !escolhidos.includes(municipio.codigoIbge))
-      .map((municipio) => opcao(municipio.codigoIbge));
-    return [
-      ...(escolhidos.length > 0
-        ? [
-            {
-              label: escolhidos.length > 1 ? 'Escolhidos' : 'Escolhido',
-              options: escolhidos.map(opcao),
-            },
-          ]
-        : []),
-      ...(achados.length > 0 ? [{ label: 'Encontrados', options: achados }] : []),
-    ];
-  });
+  protected readonly grupos = computed(() =>
+    gruposDaLista(this.values(), this.encontrados(), (codigo) => this.rotuloDaOpcao(codigo)),
+  );
+
+  /** O nome gravado vale no lugar do nome que a busca achou. */
+  private rotuloDaOpcao(codigo: string): string {
+    return this.rotulosGravados()[codigo] ?? this.nomes.rotulo(codigo);
+  }
 
   protected buscar(termo: string): void {
     const limpo = termo.trim();
@@ -290,4 +284,28 @@ export class ValorDeMunicipioComponent {
     this.encontrados.set([]);
     this.termos.next(limpo);
   }
+}
+
+/** Os escolhidos ficam no topo, para serem conferidos e desmarcados; os achados vêm depois, sem repeti-los. */
+function gruposDaLista(
+  escolhidos: readonly string[],
+  encontrados: readonly MunicipioEncontrado[],
+  rotulo: (codigo: string) => string,
+): readonly UiComboboxGroup[] {
+  const opcao = (codigo: string): UiComboboxOption => ({ value: codigo, label: rotulo(codigo) });
+  const achados = encontrados
+    .filter((municipio) => !escolhidos.includes(municipio.codigoIbge))
+    .map((municipio) => opcao(municipio.codigoIbge));
+  return [
+    ...grupoComOpcoes(escolhidos.length > 1 ? 'Escolhidos' : 'Escolhido', escolhidos.map(opcao)),
+    ...grupoComOpcoes('Encontrados', achados),
+  ];
+}
+
+/** O grupo sem opção não aparece. */
+function grupoComOpcoes(
+  rotulo: string,
+  opcoes: readonly UiComboboxOption[],
+): readonly UiComboboxGroup[] {
+  return opcoes.length > 0 ? [{ label: rotulo, options: opcoes }] : [];
 }

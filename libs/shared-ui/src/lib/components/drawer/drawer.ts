@@ -136,10 +136,13 @@ export class DrawerComponent implements OnDestroy {
       drawer.setAttribute('open', '');
     }
     this.lockBodyScroll();
-    queueMicrotask(() => {
-      const alvo = this.focoInicial() === 'titulo' ? this.titleRef() : this.closeButtonRef();
-      alvo?.nativeElement.focus();
-    });
+    queueMicrotask(() => this.aplicarFocoInicial(drawer));
+  }
+
+  private aplicarFocoInicial(drawer: HTMLDialogElement): void {
+    if (!drawer.open) return;
+    const alvo = this.focoInicial() === 'titulo' ? this.titleRef() : this.closeButtonRef();
+    alvo?.nativeElement.focus();
   }
 
   private closeDrawer(drawer: HTMLDialogElement): void {

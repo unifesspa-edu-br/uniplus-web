@@ -8,6 +8,8 @@ decision-makers:
 # ADR-0004: Vitest como framework de testes unitários
 
 > **Emenda (2026-11-17).** O ambiente do teste segue o alvo do código: `node` em `tools/` (generators e demais ferramentas Node) e `jsdom` em app e lib, que rodam no navegador.
+>
+> **Emenda (2026-11-17).** O teste unitário roda sem Zone.js em app e lib, embora os apps rodem com Zone.js (ADR-0005). O `TestBed` do Angular 21 já detecta mudanças sem zona, e o `async`/`await` do código do projeto não é reescrito no Vitest como no build, de modo que a zona no teste não reproduziria a ordem do app. O relógio controlado é o `vi.useFakeTimers`; `fakeAsync` e `waitForAsync` não se usam. O teste que depende da ordem real entre temporizador e atualização da tela carrega a zona no próprio arquivo, com `@analogjs/vitest-angular/setup-zone` e `provideZoneChangeDetection({ eventCoalescing: true })`, e usa temporizador real. O app montado com zona fica coberto pelo E2E.
 
 ## Contexto e enunciado do problema
 

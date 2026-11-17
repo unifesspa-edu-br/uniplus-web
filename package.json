@@ -46,7 +46,6 @@
     "keycloak-angular": "^21.0.0",
     "keycloak-js": "^26.2.3",
     "primeicons": "^7.0.0",
-    "primeng": "^21.1.4",
     "rxjs": "~7.8.0",
     "uuid": "^14.0.0",
     "zone.js": "0.16.0"

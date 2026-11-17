@@ -10,6 +10,7 @@ import {
   SELECAO_BASE_PATH,
   SituacaoDoCertame,
 } from '@uniplus/shared-data/selecao';
+import { ligarRelogioControlado } from '@uniplus/shared-testing';
 import { delay, of } from 'rxjs';
 import { expect, vi } from 'vitest';
 
@@ -149,15 +150,6 @@ export function respostaDeProblema(
   ];
 }
 
-// O `debounceTime` do RxJS agenda por `setInterval` e mede por `Date`; microtarefa e `performance` ficam reais.
-const TEMPORIZADORES_CONTROLADOS = [
-  'setTimeout',
-  'clearTimeout',
-  'setInterval',
-  'clearInterval',
-  'Date',
-] as const;
-
 function substituirMatchMedia(matches: boolean): void {
   window.matchMedia = ((consulta: string) =>
     ({
@@ -200,7 +192,7 @@ function criarPagina(publicacoes: PublicacoesDaVitrine): PaginaMontada {
 
 /** Falha na montagem desfaz o relógio e o `matchMedia`: sem instância, o `encerrar` não roda. */
 function montarPaginaComRelogioControlado(publicacoes: PublicacoesDaVitrine): PaginaMontada {
-  vi.useFakeTimers({ toFake: [...TEMPORIZADORES_CONTROLADOS] });
+  ligarRelogioControlado();
   const matchMediaOriginal = window.matchMedia;
   try {
     return criarPagina(publicacoes);
@@ -255,13 +247,6 @@ export class CenarioDaVitrine {
   async propagar(): Promise<void> {
     await Promise.resolve();
     this.appRef.tick();
-  }
-
-  /** O efeito de `toObservable` só emite no tick, que precisa vir antes de o relógio andar. */
-  async passarOTempo(ms: number): Promise<void> {
-    await this.propagar();
-    await vi.advanceTimersByTimeAsync(ms);
-    await this.propagar();
   }
 
   async responderLista(

@@ -101,6 +101,23 @@ describe('DrawerComponent', () => {
     expect(document.activeElement?.textContent?.trim()).toBe('Registro Geral');
   });
 
+  it('não foca o botão de fechar quando o painel fecha antes da microtarefa de abertura', async () => {
+    const origem = document.createElement('button');
+    document.body.append(origem);
+    try {
+      origem.focus();
+      fixture.componentRef.setInput('visible', true);
+      fixture.detectChanges();
+      fixture.componentRef.setInput('visible', false);
+      fixture.detectChanges();
+      await Promise.resolve();
+
+      expect(document.activeElement).toBe(origem);
+    } finally {
+      origem.remove();
+    }
+  });
+
   it('devolve o foco ao elemento que abriu o drawer ao fechar', () => {
     const origem = document.createElement('button');
     document.body.appendChild(origem);

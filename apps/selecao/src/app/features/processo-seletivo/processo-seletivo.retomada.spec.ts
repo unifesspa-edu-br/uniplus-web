@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
 import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

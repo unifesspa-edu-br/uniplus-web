@@ -111,6 +111,7 @@ libs/
 | `@uniplus/shared-auth` | Integração OIDC: `AuthService`, `UserContextService`, route guards, HTTP interceptors, `provideAuth`, `AUTH_CONFIG` token |
 | `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
 | `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md)) |
+| `@uniplus/shared-testing` | Apoio de teste unitário: relógio controlado e respostas simuladas da API do `shared-core`; depende só do `shared-core`, e o `shared-core` não o importa; só `*.spec.ts`, `*.testing.ts` e arquivos de setup o importam, e produção nunca importa a lib nem o Vitest ([ADR-0032](docs/adrs/0032-apoio-de-teste-unitario-em-lib-restrita-aos-testes.md)) |
 
 ### 3. Onde nasce cada peça
 
@@ -255,6 +256,7 @@ As regras de formato, tipos permitidos e convenções gerais de mensagem estão 
 | `shared-auth` | OIDC, `libs/shared-auth/` (guards, interceptor, tokens) |
 | `shared-utils` | Utilitários puros, pipes, helpers (`libs/shared-utils/`) |
 | `shared-e2e` | Fixtures e utilitários Playwright compartilhados (`libs/shared-e2e/`) |
+| `shared-testing` | Apoio de teste unitário, sem build (`libs/shared-testing/`) |
 | `ds` | Tokens, foundation e mapeamento CSS do Uni+ DS |
 | `poc-primeng` | POC histórica read-only, fora do workspace Nx (`docs/referencias/poc-primeng/`) — ADR-0022 |
 | `poc-primeng-e2e` | Suíte E2E histórica da POC (`docs/referencias/poc-primeng-e2e/`) — ADR-0022 |
@@ -385,7 +387,7 @@ features/
 
 ### CSS / Tailwind
 
-- **PrimeNG** para componentes complexos (tabelas, calendários, modais, menus)
+- **HTML nativo e Angular CDK**, encapsulados em wrappers `ui-*` de `shared-ui`, para componentes complexos (tabelas, calendários, modais, menus); o PrimeNG não é dependência do workspace (ADR-0024)
 - **Tailwind CSS** para layout e utilitários (spacing, flex, grid, responsividade)
 - `!important` só nas camadas que precisam vencer qualquer componente (veja [Lint de CSS](#lint-de-css)); fora delas, ajustar a especificidade ou usar variáveis CSS
 - Mobile-first: começar pelo layout mobile, expandir com `md:` e `lg:`
@@ -712,7 +714,7 @@ Em qualquer tela que exiba nome de candidato, verificar se existe nome social ca
 
 | Tipo | Onde | Framework | Quando |
 |---|---|---|---|
-| Unitário | Components, Services, Pipes | Jest + Angular Testing Library | Toda lógica de componente e service |
+| Unitário | Components, Services, Pipes | Vitest + `TestBed` do Angular (ADR-0004) | Toda lógica de componente e service |
 | E2E | Fluxos completos | Playwright | Todo fluxo crítico do usuário |
 
 ### Recomendado
@@ -726,20 +728,30 @@ Em qualquer tela que exiba nome de candidato, verificar se existe nome social ca
 
 Verificação de regra de arquitetura (ESLint, compilador ou teste de comportamento, nunca leitura do fonte como texto) segue o [`orientacao-para-revisao.md`](orientacao-para-revisao.md).
 
-**Testes unitários (Jest):**
+**Testes unitários (Vitest):**
 
 ```typescript
 // formulario-inscricao.component.spec.ts
+import { TestBed } from '@angular/core/testing';
+import { FormularioInscricaoComponent } from './formulario-inscricao.component';
+
 describe('FormularioInscricaoComponent', () => {
   it('deve bloquear submit quando CPF é inválido', () => {
-    // Arrange
-    const { getByRole, getByLabelText } = render(FormularioInscricaoComponent);
+    const fixture = TestBed.createComponent(FormularioInscricaoComponent);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const campo = host.querySelector<HTMLInputElement>('input[name="cpf"]')!;
+    const enviar = host.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    campo.value = '529.982.247-25';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(enviar.disabled).toBe(false);
 
-    // Act
-    fireEvent.input(getByLabelText('CPF'), { target: { value: '000.000.000-00' } });
+    campo.value = '000.000.000-00';
+    campo.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
 
-    // Assert
-    expect(getByRole('button', { name: /enviar/i })).toBeDisabled();
+    expect(enviar.disabled).toBe(true);
   });
 });
 ```

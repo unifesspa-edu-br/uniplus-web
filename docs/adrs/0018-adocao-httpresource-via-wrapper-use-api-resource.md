@@ -24,7 +24,7 @@ A guidance oficial Angular (`https://angular.dev/guide/http/http-resource` § Be
 - **Limitar blast radius do status experimental** — se a API do `httpResource` mudar entre 19.2 e GA, o impacto deve ficar contido a 1 arquivo.
 - **Respeitar guidance Angular oficial** — GET-only (mutações continuam HttpClient direto via service).
 - **Pattern reusável para futuras detail pages** — Inscrição, Recurso, Classificação devem consumir o mesmo helper sem reinvenção.
-- **Testabilidade** — pattern deve permitir specs Vitest determinísticos sem `fakeAsync`/`flushMicrotasks` (incompatíveis com Vitest no Angular 21).
+- **Testabilidade** — pattern deve permitir specs Vitest determinísticos sem `fakeAsync`, `flushMicrotasks` e `waitForAsync` do Angular, que exigem Zone.js no teste (ADR-0004).
 
 ## Opções consideradas
 
@@ -100,7 +100,7 @@ readonly errorMessage = computed<string | null>(() => {
 
 ### Pattern de teste (lição)
 
-`fakeAsync`/`flushMicrotasks` exigem Zone.js test mode e são **incompatíveis com Vitest** no Angular 21 (per documentação oficial). O pattern que funciona:
+`fakeAsync`, `flushMicrotasks` e `waitForAsync`, do Angular, exigem Zone.js no teste, que roda sem zona (ADR-0004): o projeto não os usa, e o tempo se controla com `vi.useFakeTimers`. O pattern que funciona:
 
 - **Specs do helper isolado:** `await ApplicationRef.whenStable()` após `controller.flush(...)` propaga valores aos signals do resource.
 - **Specs com `ComponentFixture`:** `await Promise.resolve(); appRef.tick();` (helper `propagate()`) — `whenStable()` deadlocka na presença de subscriptions Observable concorrentes (publish flow).

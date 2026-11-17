@@ -3,18 +3,14 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  apiOk,
-  apiResultInterceptor,
-  errorResult,
-  mockProblemDetails,
-} from '@uniplus/shared-core/http';
+import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
 import { PesosEnemApi } from '@uniplus/shared-data/configuracao';
 import {
   RegraCatalogoDto,
   RegrasCatalogoApi,
   RegrasCatalogoQuery,
 } from '@uniplus/shared-data/selecao';
+import { errorResult, mockProblemDetails } from '@uniplus/shared-testing';
 
 import { CatalogosDeClassificacao } from './catalogos-de-classificacao.service';
 

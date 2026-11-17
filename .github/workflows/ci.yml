@@ -109,6 +109,7 @@ jobs:
               - 'playwright.config.ts'
               - 'docker/**'
               - 'tools/e2e-docker/**'
+              - 'tools/eslint/**'
               - 'tools/workspace-generators/**'
               - 'tools/test-nginx-base-href.sh'
               - '.github/workflows/ci.yml'

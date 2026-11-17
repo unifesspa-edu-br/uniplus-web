@@ -6,7 +6,8 @@ import { Router, provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import { apiResultInterceptor, mockProblemDetails } from '@uniplus/shared-core/http';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import { mockProblemDetails } from '@uniplus/shared-testing';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
 import { SELECAO_BASE_PATH, type ProcessoSeletivoResumoDto } from '@uniplus/shared-data/selecao';
 

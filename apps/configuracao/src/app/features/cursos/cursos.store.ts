@@ -28,7 +28,7 @@ import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/nave
  * Debounce da busca textual — uma request por rajada de digitação, não por tecla (mesmo padrão de
  * Unidades). No Angular 21.x o caminho oficial é a interop `toObservable → debounceTime → toSignal`.
  */
-const BUSCA_DEBOUNCE_MS = 300;
+export const ESPERA_DA_BUSCA_MS = 300;
 
 /**
  * Estado da listagem de cursos: busca no servidor, limite, paginação e recarga.
@@ -52,7 +52,7 @@ export class CursosStore {
   private readonly buscaAplicada = toSignal(
     toObservable(this.termoBusca).pipe(
       map((termo) => termo.trim()),
-      debounceTime(BUSCA_DEBOUNCE_MS),
+      debounceTime(ESPERA_DA_BUSCA_MS),
       distinctUntilChanged(),
     ),
     { initialValue: '' },

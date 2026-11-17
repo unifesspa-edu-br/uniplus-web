@@ -1,5 +1,6 @@
 import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CIDADES_URL,
   ESCRITA,
@@ -11,27 +12,26 @@ import {
   portaria,
   problema,
 } from './base-legal-bonus-regional.testing';
-
-/** Mais que a espera da digitação, para o pedido de busca sair. */
-const ESPERA_DA_BUSCA_EM_MS = 350;
+import { ESPERA_DA_BUSCA_MS } from './municipios-da-base-legal';
 
 describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
   let p: Pagina;
 
   beforeEach(async () => {
+    ligarRelogioControlado();
     p = await montarPagina([portaria]);
     p.edicao.abrirCadastro();
     await p.propagar();
   });
-  afterEach(() => p.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   const digitar = async (termo: string): Promise<void> => {
     p.buscaDeMunicipio().value = termo;
     p.buscaDeMunicipio().dispatchEvent(new Event('input'));
     await p.propagar();
-  };
-  const esperarABusca = async (): Promise<void> => {
-    await new Promise((resolve) => setTimeout(resolve, ESPERA_DA_BUSCA_EM_MS));
   };
   const resultados = (): HTMLButtonElement[] => [
     ...p.fixture.nativeElement.querySelectorAll('.cfg-municipio-resultados button'),
@@ -43,12 +43,13 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('só busca a partir de 3 caracteres, depois da espera da digitação', async () => {
     await digitar('Ma');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     p.http.expectNone((r) => r.url === CIDADES_URL);
 
     await digitar('Marabá');
+    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
     p.http.expectNone((r) => r.url === CIDADES_URL);
-    await esperarABusca();
+    await passarOTempo(1);
     const pedido = p.http.expectOne((r) => r.url === CIDADES_URL);
     expect(pedido.request.params.get('q')).toBe('Marabá');
     expect(pedido.request.params.get('limit')).toBe('20');
@@ -60,7 +61,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('anuncia a busca em curso e, sem resultado, diz que não há município', async () => {
     await digitar('Zzzz');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     expect(p.elemento('cfg-campo-de-municipios .list-state__loading').textContent).toContain(
       'Buscando',
     );
@@ -74,7 +75,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('escolher um resultado o move para os selecionados e limpa a busca', async () => {
     await digitar('Marabá');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA, ITUPIRANGA]);
     await p.propagar();
 
@@ -92,7 +93,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
   it('não oferece de novo o município que já foi escolhido', async () => {
     p.municipios.adicionar(MARABA);
     await digitar('Marabá');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA, ITUPIRANGA]);
     await p.propagar();
 
@@ -123,7 +124,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('escolher um resultado devolve o foco à busca', async () => {
     await digitar('Marabá');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     p.http.expectOne((r) => r.url === CIDADES_URL).flush([MARABA]);
     await p.propagar();
 
@@ -164,7 +165,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('limpar o termo cancela a busca em voo, e a resposta atrasada não repovoa a lista', async () => {
     await digitar('Marabá');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     const antiga = p.http.expectOne((r) => r.url === CIDADES_URL);
 
     await digitar('');
@@ -181,7 +182,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
     'a falha %s da busca é apontada no campo, que fica descrito por ela, e avisa %s vez(es) por toast',
     async (status, avisos) => {
       await digitar('Marabá');
-      await esperarABusca();
+      await passarOTempo(ESPERA_DA_BUSCA_MS);
       p.http
         .expectOne((r) => r.url === CIDADES_URL)
         .flush(...problema(status, corpoDaFalha(status)));
@@ -200,7 +201,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
 
   it('"Tentar novamente" repete a busca sem redigitar, fica indisponível enquanto busca e devolve o foco à busca', async () => {
     await digitar('Marabá');
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     p.http.expectOne((r) => r.url === CIDADES_URL).flush(...problema(503, corpoDaFalha(503)));
     await p.propagar();
 
@@ -213,7 +214,7 @@ describe('BaseLegalBonusRegionalPage — escolha dos municípios', () => {
     expect(tentar.getAttribute('aria-disabled')).toBe('true');
     expect(document.activeElement).toBe(tentar);
     tentar.click();
-    await esperarABusca();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     const repetida = p.http.expectOne((r) => r.url === CIDADES_URL);
     expect(repetida.request.params.get('q')).toBe('Marabá');
     repetida.flush([MARABA]);

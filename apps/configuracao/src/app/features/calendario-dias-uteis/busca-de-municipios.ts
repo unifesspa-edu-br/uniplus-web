@@ -4,7 +4,7 @@ import { debounceTime, groupBy, map, mergeMap, Subject, switchMap } from 'rxjs';
 import { ApiResult } from '@uniplus/shared-core/http';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 import {
-  MUNICIPIO_BUSCA_DEBOUNCE_MS,
+  ESPERA_DA_BUSCA_DE_MUNICIPIO_MS,
   MUNICIPIO_BUSCA_VAZIA,
   type MunicipioBuscaRequest,
   type MunicipioBuscaState,
@@ -56,7 +56,7 @@ export class BuscaDeMunicipios {
         groupBy((pedido) => pedido.grupo),
         mergeMap((dia) =>
           dia.pipe(
-            debounceTime(MUNICIPIO_BUSCA_DEBOUNCE_MS),
+            debounceTime(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS),
             switchMap((pedido) =>
               this.geo
                 .listarCidades({ uf: pedido.uf, q: pedido.termo, limit: MUNICIPIOS_LIMIT })

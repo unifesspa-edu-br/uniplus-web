@@ -1,5 +1,6 @@
 import { By } from '@angular/platform-browser';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DiaNaoUtilDialogoComponent } from './dia-nao-util-dialogo.component';
 import {
   DIA_ESTADUAL,
@@ -16,12 +17,16 @@ describe('CalendarioDiasUteisDetalhePage — inclusão de dia não útil', () =>
   let p: PaginaDoDetalhe;
 
   beforeEach(async () => {
+    ligarRelogioControlado();
     p = await montarDetalhe([DIA_ESTADUAL]);
     await p.abrirCadastro();
     p.escrever(p.campo('descricao') as HTMLTextAreaElement, 'Data nova');
     await p.propagar();
   });
-  afterEach(() => p.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   const submeter = (): void => {
     p.formulario().dispatchEvent(new Event('submit', { cancelable: true }));

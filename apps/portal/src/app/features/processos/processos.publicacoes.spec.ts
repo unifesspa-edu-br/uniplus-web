@@ -1,4 +1,5 @@
 import type { CertameNaVitrineDto } from '@uniplus/shared-data/selecao';
+import { passarOTempo } from '@uniplus/shared-testing';
 import type { Observable } from 'rxjs';
 import { Subject, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,7 +33,7 @@ describe('ProcessosComponent — publicações do edital', () => {
 
   async function carregarComPublicacoes(itens: readonly CertameNaVitrineDto[]): Promise<void> {
     await cenario.responderLista(itens, contadoresHeaders);
-    await cenario.passarOTempo(CHEGADA_DAS_PUBLICACOES_MS);
+    await passarOTempo(CHEGADA_DAS_PUBLICACOES_MS);
     cenario.fixture.detectChanges();
   }
 
@@ -100,7 +101,7 @@ describe('ProcessosComponent — publicações do edital', () => {
       await cenario.responderLista([sisu, encerrado], contadoresHeaders);
       expect(cenario.host().querySelector('.certame-edital-link')).toBeNull();
 
-      await cenario.passarOTempo(CHEGADA_DAS_PUBLICACOES_MS);
+      await passarOTempo(CHEGADA_DAS_PUBLICACOES_MS);
       cenario.fixture.detectChanges();
 
       const links = cenario.host().querySelectorAll<HTMLAnchorElement>('.certame-edital-link');

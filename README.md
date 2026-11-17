@@ -115,7 +115,6 @@ Regras principais:
 - Angular 21 / TypeScript 5.9
 - Nx 22 (monorepo)
 - Uni+ DS CSS-only via `libs/shared-ui/src/styles`
-- PrimeNG 21 (uso legado/complexo encapsulado quando necessário)
 - Tailwind CSS 4.2 (estilização utility-first com @theme)
 - OIDC (autenticação)
 - Playwright (testes E2E)

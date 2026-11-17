@@ -7,7 +7,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import { type CidadeResumoDto, GeoApi } from '@uniplus/shared-data/geo';
 
 /** Espera após a última tecla antes de buscar municípios (mesmo valor do calendário de dias úteis). */
-const BUSCA_ESPERA_EM_MS = 300;
+export const ESPERA_DA_BUSCA_MS = 300;
 
 /** Nome completo evita lista poluída com resultados irrelevantes. */
 export const BUSCA_MINIMO_DE_CARACTERES = 3;
@@ -93,7 +93,7 @@ export class MunicipiosDaBaseLegal {
             return of(null);
           }
           this.buscando.set(true);
-          return timer(BUSCA_ESPERA_EM_MS).pipe(
+          return timer(ESPERA_DA_BUSCA_MS).pipe(
             switchMap(() => this.geo.listarCidades({ q: termo, limit: BUSCA_LIMITE })),
           );
         }),

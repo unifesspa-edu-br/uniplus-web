@@ -2,13 +2,9 @@ import { HttpEventType, HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  SignedUploadClient,
-  errorResult,
-  mockProblemDetails,
-  okResult,
-} from '@uniplus/shared-core/http';
+import { SignedUploadClient } from '@uniplus/shared-core/http';
 import { InscricoesApi } from '@uniplus/shared-data/selecao';
+import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import type { AlvoDoEnvio } from '@uniplus/shared-ui/components';
 
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';

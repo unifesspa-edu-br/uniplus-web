@@ -1,5 +1,6 @@
 import type { HttpRequest } from '@angular/common/http';
 import { SituacaoDoCertame } from '@uniplus/shared-data/selecao';
+import { passarOTempo } from '@uniplus/shared-testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -30,10 +31,10 @@ describe('ProcessosComponent — busca e paginação', () => {
     cenario.vitrine().termoBusca.set('t');
     cenario.vitrine().termoBusca.set('te');
     cenario.vitrine().termoBusca.set('tecnico');
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS - 1);
+    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
     cenario.controller.expectNone(comBusca);
 
-    await cenario.passarOTempo(1);
+    await passarOTempo(1);
     const requisicao = cenario.controller.expectOne(comBusca);
     expect(requisicao.request.params.get('q')).toBe('tecnico');
     expect(requisicao.request.params.has('cursor')).toBe(false);
@@ -64,14 +65,14 @@ describe('ProcessosComponent — busca e paginação', () => {
     await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
     cenario.vitrine().termoBusca.set('tecnico');
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     await cenario.responderLista([tecnicoEnfermagem], contadoresHeaders);
 
     expect(cenario.vitrine().temFiltrosAtivos()).toBe(true);
     cenario.botao('Limpar filtros')?.click();
     cenario.fixture.detectChanges();
     // `termoBusca` limpo também passa pelo debounce antes de virar `buscaAplicada`.
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
 
     const requisicao = cenario.controller.expectOne(
       (requisicao) => requisicao.url === CERTAMES_URL,
@@ -91,7 +92,7 @@ describe('ProcessosComponent — busca e paginação', () => {
     cenario.botao('Limpar filtros')?.click();
 
     expect(cenario.vitrine().termoBusca()).toBe('tecn');
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     cenario.controller
       .expectOne(
         (requisicao) => requisicao.url === CERTAMES_URL && requisicao.params.get('q') === 'tecn',
@@ -103,13 +104,13 @@ describe('ProcessosComponent — busca e paginação', () => {
   it('"Limpar filtros" acionado mantém o foco no botão, que passa a indisponível sem sair da ordem de tab', async () => {
     await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
     cenario.vitrine().termoBusca.set('tecnico');
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     await cenario.responderLista([tecnicoEnfermagem], contadoresHeaders);
     const limpar = cenario.botao('Limpar filtros');
     limpar?.focus();
 
     limpar?.click();
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     cenario.fixture.detectChanges();
 
     expect(document.activeElement).toBe(limpar);
@@ -150,7 +151,7 @@ describe('ProcessosComponent — busca e paginação', () => {
     await cenario.responderLista([sisu, tecnicoEnfermagem], contadoresHeaders);
 
     cenario.vitrine().termoBusca.set('curso que não existe');
-    await cenario.passarOTempo(ESPERA_DA_BUSCA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     await cenario.responderLista([], contadoresHeaders);
 
     const vazio = cenario.host().querySelector('.empty-state');

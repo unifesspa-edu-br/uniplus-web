@@ -8,6 +8,7 @@
   "exclude": [
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
+    "src/**/*.testing.ts",
     "vite.config.ts",
     "vite.config.mts",
     "vitest.config.ts",

@@ -25,6 +25,9 @@ import {
 import { Subject, debounceTime, distinctUntilChanged, map } from 'rxjs';
 import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 
+/** A espera depois da última tecla, para não buscar a cada letra. */
+export const ESPERA_DA_BUSCA_MS = 300;
+
 @Injectable()
 export class TermosConsentimentoStore {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
@@ -76,7 +79,7 @@ export class TermosConsentimentoStore {
       .pipe(
         map((valor) => valor.trim()),
         distinctUntilChanged(),
-        debounceTime(300),
+        debounceTime(ESPERA_DA_BUSCA_MS),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((filtro) => {

@@ -1,5 +1,5 @@
 import { ReferenciaReservaDemograficaDto } from '@uniplus/shared-data/configuracao';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
   RESERVA_EM_BRANCO,
   comandoDeAtualizacao,
@@ -62,7 +62,11 @@ describe('formulário de reserva demográfica', () => {
   });
 
   describe('mensagem do campo', () => {
-    const form = criarFormularioDeReserva();
+    let form: ReturnType<typeof criarFormularioDeReserva>;
+    beforeEach(() => {
+      form = criarFormularioDeReserva();
+    });
+
     const tocar = (nome: 'censoReferencia' | 'ppiPercentual', valor: string | number | null) => {
       const controle = form.controls[nome];
       controle.setValue(valor as never);

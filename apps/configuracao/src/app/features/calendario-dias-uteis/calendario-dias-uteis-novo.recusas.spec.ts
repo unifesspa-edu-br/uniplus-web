@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ESCRITA_DO_CALENDARIO,
   PaginaNova,
@@ -24,10 +25,14 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
   let p: PaginaNova;
 
   beforeEach(async () => {
+    ligarRelogioControlado();
     p = await montarNovo();
     p.escrever(p.versao(), '2026.1');
   });
-  afterEach(() => p.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   const chaveDe = (requisicao: { request: { headers: { get(n: string): string | null } } }) =>
     requisicao.request.headers.get('Idempotency-Key');
@@ -68,7 +73,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       const repeticao = await reenviar();
       expect(chaveDe(repeticao)).not.toBe(chave);
       repeticao.flush(...criado());
-      await p.fixture.whenStable();
+      await passarOTempo(0);
     });
 
     it('a recusa da versão do dataset aparece no campo da versão', async () => {
@@ -123,7 +128,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       const repeticao = await reenviar();
       expect(chaveDe(repeticao)).toBe(chave);
       repeticao.flush(...criado());
-      await p.fixture.whenStable();
+      await passarOTempo(0);
     });
 
     it.each([
@@ -142,7 +147,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       const repeticao = await reenviar();
       expect(chaveDe(repeticao)).not.toBe(chave);
       repeticao.flush(...criado());
-      await p.fixture.whenStable();
+      await passarOTempo(0);
     });
 
     it('a falha do servidor mantém a chave, mostra o alerta e avisa por toast', async () => {
@@ -158,7 +163,7 @@ describe('CalendarioDiasUteisNovoPage — recusas do servidor', () => {
       const repeticao = await reenviar();
       expect(chaveDe(repeticao)).toBe(chave);
       repeticao.flush(...criado());
-      await p.fixture.whenStable();
+      await passarOTempo(0);
     });
   });
 

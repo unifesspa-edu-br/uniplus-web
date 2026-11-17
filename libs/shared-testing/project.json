@@ -1,0 +1,13 @@
+{
+  "name": "shared-testing",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-testing/src",
+  "projectType": "library",
+  "tags": ["scope:shared", "type:testing"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "typecheck-spec": {}
+  }
+}

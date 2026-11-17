@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   DIA_ESTADUAL,
   ESCRITA_DO_DIA,
@@ -18,12 +19,16 @@ describe('CalendarioDiasUteisDetalhePage — recusas do servidor', () => {
   let p: PaginaDoDetalhe;
 
   beforeEach(async () => {
+    ligarRelogioControlado();
     p = await montarDetalhe([DIA_ESTADUAL]);
     await p.abrirCadastro();
     p.escrever(p.campo('descricao') as HTMLTextAreaElement, 'Data nova');
     await p.propagar();
   });
-  afterEach(() => p.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   const alerta = (): string =>
     p.fixture.nativeElement.querySelector('cfg-dia-nao-util-dialogo ui-alert')?.textContent ?? '';

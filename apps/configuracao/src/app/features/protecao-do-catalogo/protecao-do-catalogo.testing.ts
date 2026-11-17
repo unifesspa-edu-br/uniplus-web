@@ -13,6 +13,7 @@ import {
   type ItemDaProtecaoDoCatalogoDto,
   type ManifestacaoDaProtecaoDto,
 } from '@uniplus/shared-data/configuracao';
+import { esperarUmTurno } from '@uniplus/shared-testing';
 import { expect } from 'vitest';
 import { ProtecaoDoCatalogoPage } from './protecao-do-catalogo.page';
 
@@ -291,9 +292,9 @@ function encerrar(controller: HttpTestingController): void {
   controller.verify();
 }
 
-/** A navegação do roteador termina em outra tarefa: espera por ela antes de olhar a tela. */
+/** A navegação do roteador termina em outra tarefa: espera por ela, sem depender do relógio controlado, antes de olhar a tela. */
 export async function navegarNaPagina(pagina: Pick<PaginaMontada, 'assentar'>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await esperarUmTurno();
   await pagina.assentar();
   await pagina.assentar();
 }

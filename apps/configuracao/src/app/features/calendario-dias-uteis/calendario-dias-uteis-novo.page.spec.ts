@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ESCRITA_DO_CALENDARIO,
   MARABA,
@@ -12,9 +13,13 @@ describe('CalendarioDiasUteisNovoPage', () => {
   let p: PaginaNova;
 
   beforeEach(async () => {
+    ligarRelogioControlado();
     p = await montarNovo();
   });
-  afterEach(() => p.http.verify());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   it('sem dia não útil, o envio não parte e a tela explica o que falta', async () => {
     p.escrever(p.versao(), '2026.1');
@@ -80,7 +85,7 @@ describe('CalendarioDiasUteisNovoPage', () => {
       uf: null,
     });
     post.flush(...criado());
-    await p.fixture.whenStable();
+    await passarOTempo(0);
     expect(p.router.url).toBe('/calendario-dias-uteis');
     expect(p.sucessos).toHaveBeenCalledWith('Calendário criado');
   });
