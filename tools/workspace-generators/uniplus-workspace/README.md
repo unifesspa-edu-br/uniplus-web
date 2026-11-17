@@ -17,7 +17,7 @@ Cria uma feature lib em `libs/<scope>/<name>/` com:
 #### Uso
 
 ```bash
-npx nx g @uniplus/workspace:feature-lib <scope>/<name> --type=<feature|ui|data-access>
+npx nx g @uniplus/workspace:feature-lib <scope>/<name> --type=<feature|data-access>
 ```
 
 Exemplos:
@@ -30,14 +30,13 @@ npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=dat
 #### Validações
 
 - `<scope>` ∈ `{selecao, ingresso, portal}`. Outros valores são rejeitados pelo generator com mensagem listando os scopes válidos.
-- `<type>` ∈ `{feature, ui, data-access}`. Validado pelo schema `enum` antes do factory rodar.
+- `<type>` ∈ `{feature, data-access}`. Validado pelo schema `enum` antes do factory rodar.
 
 #### Tags emitidas
 
 | `--type` | Tags do `project.json` gerado |
 |---|---|
 | `feature` | `["scope:<scope>", "type:feature"]` |
-| `ui` | `["scope:<scope>", "type:ui"]` |
 | `data-access` | `["scope:<scope>", "type:data-access"]` |
 
 #### Builder em V1
