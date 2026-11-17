@@ -69,15 +69,19 @@ export const CODIGO_ESPERA_ESGOTADA = 'uniplus.concorrencia.espera_esgotada';
 
 /**
  * Diz se, depois desta falha, o próximo envio precisa de uma `Idempotency-Key`
- * nova.
+ * nova. É o único lugar da regra.
  *
- * A API guarda a resposta de qualquer status abaixo de 500 associada ao hash do
- * corpo: reenviar o formulário corrigido com a mesma chave devolveria
- * `body_mismatch` em vez de processar o comando novo. As duas exceções são
- * `processing_conflict` — que pede explicitamente retry do **mesmo** comando com
- * a **mesma** chave — e as falhas em que nada foi gravado (5xx, erro de rede),
- * onde repetir a chave é o que torna o retry seguro. O 503 de espera esgotada fica guardado na
- * chave, então a nova tentativa da pessoa leva uma chave nova.
+ * A chave só troca quando o comando certamente não foi executado ou a recusa
+ * ficou guardada nela. A API guarda a resposta de qualquer status abaixo de 500
+ * associada ao hash do corpo: reenviar o formulário corrigido com a mesma chave
+ * devolveria `body_mismatch` em vez de processar o comando novo. O 503 de espera
+ * esgotada também fica guardado na chave, então a nova tentativa da pessoa leva
+ * uma chave nova.
+ *
+ * Todo desfecho incerto mantém a chave, porque repeti-la é o que impede um
+ * segundo efeito: `processing_conflict` pede retry do **mesmo** comando, e 5xx,
+ * erro de rede (status 0) e resposta fora do contrato com 2xx ou 3xx podem
+ * esconder um comando já executado.
  */
 export function deveRotacionarIdempotencyKey(problem: {
   readonly status: number;

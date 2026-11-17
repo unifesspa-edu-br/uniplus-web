@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0014: Idempotency-Key cliente via `HttpContext` + UUID v7, anexado pelo `apiResultInterceptor`
 
+> **Emenda (2026-11-17).** A chave só troca na recusa definitiva. A API guarda a resposta abaixo de 500 junto do hash do corpo, e repetir a chave com o corpo corrigido devolve `body_mismatch`. Por isso a chave troca em 4xx, exceto `processing_conflict`, e em 503 `espera_esgotada`. Em todo desfecho incerto ela fica mantida: 5xx, status 0, `processing_conflict` e resposta fora do contrato com 2xx ou 3xx. No sucesso ela é renovada. A regra vive num lugar só, na `shared-core`. A resposta ilegível de um comando concluído não gera um segundo efeito, e quem chama trata o desfecho incerto como possivelmente executado. Isto substitui a linha "Reset só em `result.ok`" das decisões binding.
+
 ## Contexto e enunciado do problema
 
 A `uniplus-api` adotou o header `Idempotency-Key` como **opt-in por endpoint** (ADR-0027): controllers marcados com `[RequiresIdempotencyKey]` (ex.: `POST /api/editais`, `POST /api/editais/{id}/publicar`) **rejeitam** requisições sem o header retornando `400 uniplus.idempotency.key_ausente`. Replays válidos com a mesma key + body idêntico recebem a resposta original cacheada com `Idempotency-Replayed: true`. O comportamento segue o draft IETF `idempotency-key-header-07`: key 1-255 ASCII printable, sem `,` nem `;`.
@@ -21,7 +23,7 @@ A questão é **onde** mora a lógica e **como** o caller declara que um endpoin
 - **Pattern simétrico com vendor MIME (ADR-0028 do backend) já entregue na F1** — `withVendorMime(resource, version)` retorna `HttpContext` populado e o `apiResultInterceptor` lê esse token e anexa `Accept`. Repetir o mesmo pattern para `Idempotency-Key` mantém **um único leitor de `HttpContext`** na chain HTTP.
 - **Geração via UUID v7 (RFC 9562)** — timestamp-prefixed e ordering-stable; satisfaz o draft IETF (1-255 ASCII printable); facilita debug em logs cronológicos.
 - **Stack 100% Node — preferir biblioteca battle-tested** sobre implementação manual; `uuid@^11` mantém `v7()` canônico.
-- **Form-scoped key, não submit-scoped** — replay em retry de submit deve preservar a mesma key (única forma de o backend reconhecer como replay e devolver a resposta cacheada). Caller tipicamente gera a key uma vez na inicialização do form e reusa até sucesso ou cancelamento explícito.
+- **Form-scoped key, não submit-scoped** — replay em retry de desfecho incerto deve preservar a mesma key (única forma de o backend reconhecer como replay e devolver a resposta cacheada). Caller tipicamente gera a key uma vez na inicialização do form e reusa até sucesso ou cancelamento explícito.
 - **Sem reflection nem decorators custom** — Angular standalone idiomático: helper funcional + `HttpContext`.
 
 ## Opções consideradas
@@ -89,11 +91,13 @@ export class EditaisCreatePage {
     this.editaisApi
       .criar(this.form.getRawValue(), withIdempotencyKey(this.idempotencyKeyForSubmit()))
       .subscribe(result => {
+        // Key nova no sucesso e na recusa definitiva; desfecho incerto mantém a key.
+        if (result.ok || deveRotacionarIdempotencyKey(result.problem)) {
+          this.idempotencyKeyForSubmit.set(idempotencyKey.create());
+        }
         if (result.ok) {
-          this.idempotencyKeyForSubmit.set(idempotencyKey.create()); // reset após sucesso
           this.router.navigate([...]);
         }
-        // result.ok === false: mantém a key — retry vai bater no replay do backend
       });
   }
 }
@@ -186,15 +190,14 @@ export class EditaisCreatePage {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((result) => {
         this.submitting.set(false);
-        if (result.ok) {
-          // Reset SOMENTE após sucesso — próximo submit ganha key nova.
+        // Key nova no sucesso e na recusa definitiva; desfecho incerto mantém a key e o retry vira replay.
+        if (result.ok || deveRotacionarIdempotencyKey(result.problem)) {
           this.idempotencyKeyAtual.set(idempotencyKey.create());
+        }
+        if (result.ok) {
           this.router.navigate(['/editais']);
           return;
         }
-        // Em 422/409/etc., a key é PRESERVADA. Retries (com correção do payload
-        // ou simples retentativa de transient) reusam a mesma key, e o backend
-        // distingue replay legítimo de double-submit acidental conforme ADR-0027.
         this.aplicarFalha(result.problem);
       });
   }
@@ -204,7 +207,7 @@ export class EditaisCreatePage {
 ### Decisões binding capturadas na aplicação
 
 - **Key viva no `signal`, nunca em `localStorage`/`sessionStorage`** — aderência ao padrão #20.
-- **Reset só em `result.ok`** — falhas de validação ou conflito mantêm a key porque o usuário está corrigindo o mesmo "intent de submit". Mudar a key em cada retry derrotaria o propósito do header (backend não reconheceria como replay).
+- **Troca da key só na recusa definitiva** — o usuário corrige o mesmo "intent de submit" e a key acompanha o desfecho: fica mantida onde o comando pode ter sido executado e é renovada em `result.ok` e na recusa guardada pela API (ver a emenda de 2026-11-17).
 - **Falha de rede / timeout** — caller pode chamar `enviar()` de novo com a mesma key; backend dedupa. Sem retry automático embutido na page (decisão do operador humano).
 - **Cancelamento explícito (usuário clica "Cancelar"** ou navega para fora**)** — nesta page, `routerLink="/editais"` simplesmente abandona o componente; `takeUntilDestroyed` cancela qualquer subscribe pendente. A key gerada é descartada com o componente — sem necessidade de reset manual.
 
