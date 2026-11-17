@@ -29,22 +29,29 @@ interface DadosDoPasso {
   readonly comErro: boolean;
 }
 
+function resumoDoPasso({
+  primeira,
+  segunda,
+  comSegundaOpcao,
+}: DadosDoPasso): PassoPrefixado['resumo'] {
+  return comSegundaOpcao
+    ? [
+        { rotulo: '1ª opção', valor: primeira ?? 'Ainda não escolhida' },
+        { rotulo: '2ª opção', valor: segunda ?? 'Não declarada' },
+      ]
+    : [{ rotulo: 'Curso', valor: primeira ?? 'Ainda não escolhido' }];
+}
+
 function passoDoCurso(dados: DadosDoPasso): PassoPrefixado {
-  const { primeira, segunda, comSegundaOpcao } = dados;
   return {
     chave: PASSO_DO_CURSO,
     titulo: 'Curso',
-    descricao: comSegundaOpcao
+    descricao: dados.comSegundaOpcao
       ? 'Escolha o curso da 1ª opção e, se quiser, o da 2ª opção neste processo seletivo.'
       : 'Escolha o curso em que você quer se inscrever neste processo seletivo.',
-    concluido: primeira !== null,
+    concluido: dados.primeira !== null,
     comErro: dados.comErro,
-    resumo: comSegundaOpcao
-      ? [
-          { rotulo: '1ª opção', valor: primeira ?? 'Ainda não escolhida' },
-          { rotulo: '2ª opção', valor: segunda ?? 'Não declarada' },
-        ]
-      : [{ rotulo: 'Curso', valor: primeira ?? 'Ainda não escolhido' }],
+    resumo: resumoDoPasso(dados),
   };
 }
 
@@ -217,12 +224,18 @@ export class EscolhaDoCurso {
       daPrimeira,
       daSegunda,
     ]);
-    if (lugar.noCampo) {
-      this.erroDaOferta.set(daPrimeira);
-      this.erroDaSegundaOferta.set(lugar.segundaNoCampo ? daSegunda : null);
-      this.pedidoDeFoco.set({ primeira: daPrimeira !== null });
-    }
+    if (lugar.noCampo) this.mostrarNosCampos(lugar, daPrimeira, daSegunda);
     return { textoGeral: lugar.textoGeral, mostradas: lugar.mostradas };
+  }
+
+  private mostrarNosCampos(
+    lugar: LugarDasRecusas,
+    daPrimeira: string | null,
+    daSegunda: string | null,
+  ): void {
+    this.erroDaOferta.set(daPrimeira);
+    this.erroDaSegundaOferta.set(lugar.segundaNoCampo ? daSegunda : null);
+    this.pedidoDeFoco.set({ primeira: daPrimeira !== null });
   }
 
   /**

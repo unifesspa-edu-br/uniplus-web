@@ -25,6 +25,18 @@ export interface PublicacoesDoItem {
   readonly edital: { readonly documentoUrl: string } | null;
 }
 
+function publicacoesDoItem(leitura: LeituraDoCertame): PublicacoesDoItem {
+  const publicacoes = leitura.status === 'ok' ? leitura.publicacoes : undefined;
+  return {
+    publicacoes,
+    carregando: leitura.status === 'carregando',
+    erro: leitura.status === 'erro',
+    edital: publicacoes?.documentoEditalUrl
+      ? { documentoUrl: publicacoes.documentoEditalUrl }
+      : null,
+  };
+}
+
 /**
  * Publicações (linha do tempo do accordion "Ver publicações" e link do edital
  * vigente) dos certames da página, com uma consulta à página pública de cada
@@ -98,20 +110,12 @@ export class PublicacoesDaVitrine {
   readonly porCertame = computed<ReadonlyMap<string, PublicacoesDoItem>>(() => {
     const leituras = this.leituras();
     return new Map(
-      this.vitrine.certames().map((certame) => {
-        const id = certame.processoSeletivoId;
-        const leitura = leituras.get(id) ?? { status: 'carregando' };
-        const publicacoes = leitura.status === 'ok' ? leitura.publicacoes : undefined;
-        const item: PublicacoesDoItem = {
-          publicacoes,
-          carregando: leitura.status === 'carregando',
-          erro: leitura.status === 'erro',
-          edital: publicacoes?.documentoEditalUrl
-            ? { documentoUrl: publicacoes.documentoEditalUrl }
-            : null,
-        };
-        return [id, item];
-      }),
+      this.vitrine
+        .certames()
+        .map(({ processoSeletivoId: id }) => [
+          id,
+          publicacoesDoItem(leituras.get(id) ?? { status: 'carregando' }),
+        ]),
     );
   });
 }

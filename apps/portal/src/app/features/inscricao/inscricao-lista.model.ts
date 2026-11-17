@@ -46,6 +46,10 @@ function mensagemDa(inscricao: MinhaInscricaoDto): string | null {
   }
 }
 
+function cursoDaInscricao(opcao: MinhaInscricaoDto['opcoesDeCurso'][number]): CursoDaInscricao {
+  return { ordem: opcao.ordem, nome: `${opcao.cursoNome} (${opcao.cursoGrau})` };
+}
+
 export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
   return {
     id: inscricao.inscricaoId,
@@ -54,10 +58,7 @@ export function itemDaLista(inscricao: MinhaInscricaoDto): ItemDaLista {
     nome: inscricao.nomeDoProcesso ?? 'Processo seletivo',
     numero: inscricao.numeroInscricao,
     mensagem: mensagemDa(inscricao),
-    cursos: inscricao.opcoesDeCurso.map((o) => ({
-      ordem: o.ordem,
-      nome: `${o.cursoNome} (${o.cursoGrau})`,
-    })),
+    cursos: inscricao.opcoesDeCurso.map(cursoDaInscricao),
     acoes: inscricao.acoes,
     numeroDoComprovante: inscricao.numeroDoUltimoComprovante,
   };

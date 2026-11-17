@@ -43,6 +43,12 @@ type Chamada<T> = (
   eTag: string,
 ) => Observable<ApiResult<T>>;
 
+/** A inscrição lida que a escrita grava, e o processo a que ela pertence. */
+interface InscricaoAGravar {
+  readonly processoId: string;
+  readonly inscricao: InscricaoDto;
+}
+
 /** A recusa sem campo para apontar: o título diz o que aconteceu e o texto, o que fazer. */
 export interface RecusaGeral {
   readonly titulo: string;
@@ -108,12 +114,7 @@ export class GravacaoDaInscricao {
       formulario,
       'salvando',
       (processoId, request, eTag) => this.servico.salvar(processoId, request, eTag),
-      (inscricao) => {
-        this.leitura.adotar(inscricao);
-        this.avaliacao.aplicarDaGravacao(inscricao.avaliacao, revisao);
-        this.anuncio.definir('Rascunho salvo.');
-        this.operacao.set(null);
-      },
+      (inscricao) => this.concluirOSalvar(inscricao, revisao),
     );
   }
 
@@ -125,15 +126,7 @@ export class GravacaoDaInscricao {
       formulario,
       'enviando',
       (processoId, request, eTag) => this.servico.submeter(processoId, request, eTag),
-      (recibo) => {
-        this.recibo.set(recibo);
-        this.anuncio.definir(`Inscrição enviada. Número ${recibo.numeroInscricao}.`);
-        // O formulário só se libera com o ETag novo: antes disso, uma correção sairia com o velho.
-        this.relerAGravada((lida) => {
-          this.operacao.set(null);
-          if (!lida) this.leitura.motivoDoRecarregar.set('envio');
-        });
-      },
+      (recibo) => this.concluirOEnvio(recibo),
     );
   }
 
@@ -172,32 +165,62 @@ export class GravacaoDaInscricao {
     }
   }
 
-  private gravar<T>(
-    formulario: FormularioParaGravar,
-    operacao: Operacao,
-    chamada: Chamada<T>,
-    sucesso: (dado: T) => void,
-  ): void {
+  private concluirOSalvar(inscricao: InscricaoDto, revisao: number): void {
+    this.leitura.adotar(inscricao);
+    this.avaliacao.aplicarDaGravacao(inscricao.avaliacao, revisao);
+    this.anuncio.definir('Rascunho salvo.');
+    this.operacao.set(null);
+  }
+
+  private concluirOEnvio(recibo: ReciboDaInscricaoDto): void {
+    this.recibo.set(recibo);
+    this.anuncio.definir(`Inscrição enviada. Número ${recibo.numeroInscricao}.`);
+    // O formulário só se libera com o ETag novo: antes disso, uma correção sairia com o velho.
+    this.relerAGravada((lida) => {
+      this.operacao.set(null);
+      if (!lida) this.leitura.motivoDoRecarregar.set('envio');
+    });
+  }
+
+  /**
+   * Começa a escrita se a tela pode gravar. Sem inscrição lida, sem processo ou bloqueada, devolve
+   * `null` sem tocar na tela.
+   */
+  private comecarAEscrita(operacao: Operacao): InscricaoAGravar | null {
     const inscricao = this.leitura.inscricao();
     const processoId = this.leitura.processoId();
-    if (!inscricao || processoId === null || this.bloqueada()) return;
+    if (!inscricao || processoId === null || this.bloqueada()) return null;
     this.recomecar(operacao);
+    return { processoId, inscricao };
+  }
+
+  private requestDaGravacao(
+    inscricao: InscricaoDto,
+    formulario: FormularioParaGravar,
+  ): InscricaoRequest {
     const corpo = corpoDaAvaliacao(inscricao, formulario.simulacao(), this.escolha.escolhidas());
-    const request = corpoDaGravacao(
+    return corpoDaGravacao(
       corpo,
       formulario.termosAceitos(),
       this.leitura.formulario()?.termos ?? [],
     );
-    chamada(processoId, request, inscricao.eTag)
+  }
+
+  /** Quem conclui o sucesso libera o formulário: o envio espera a releitura do ETag. */
+  private gravar<T>(
+    formulario: FormularioParaGravar,
+    operacao: Operacao,
+    chamada: Chamada<T>,
+    concluir: (dado: T) => void,
+  ): void {
+    const alvo = this.comecarAEscrita(operacao);
+    if (alvo === null) return;
+    const request = this.requestDaGravacao(alvo.inscricao, formulario);
+    chamada(alvo.processoId, request, alvo.inscricao.eTag)
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        if (resultado.ok) {
-          // Quem trata o sucesso libera o formulário: o envio espera a releitura do ETag.
-          sucesso(resultado.data);
-          return;
-        }
-        this.tratarRecusa(resultado);
-      });
+      .subscribe((resultado) =>
+        resultado.ok ? concluir(resultado.data) : this.tratarRecusa(resultado),
+      );
   }
 
   /** Começa uma escrita: tudo o que a anterior deixou na tela some. */
@@ -256,19 +279,24 @@ export class GravacaoDaInscricao {
    */
   private confirmarGravacao(): void {
     const eTagDaTentativa = this.leitura.inscricao()?.eTag;
-    this.relerAGravada((lida) => {
-      this.operacao.set(null);
-      if (!lida) {
-        this.leitura.motivoDoRecarregar.set('incerta');
-        this.recusaGeral.set(null);
-        return;
-      }
-      const relida = this.leitura.inscricao();
-      if (relida && relida.eTag !== eTagDaTentativa) {
-        this.recusaGeral.set(null);
-        this.anuncio.definir(confirmacaoDaGravacao(relida));
-      }
-    }, eTagDaTentativa);
+    this.relerAGravada(
+      (lida) => this.concluirAGravacaoIncerta(lida, eTagDaTentativa),
+      eTagDaTentativa,
+    );
+  }
+
+  private concluirAGravacaoIncerta(lida: boolean, eTagDaTentativa: string | undefined): void {
+    this.operacao.set(null);
+    if (!lida) {
+      this.leitura.motivoDoRecarregar.set('incerta');
+      this.recusaGeral.set(null);
+      return;
+    }
+    const relida = this.leitura.inscricao();
+    if (relida && relida.eTag !== eTagDaTentativa) {
+      this.recusaGeral.set(null);
+      this.anuncio.definir(confirmacaoDaGravacao(relida));
+    }
   }
 
   /**

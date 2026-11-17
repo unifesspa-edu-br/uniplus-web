@@ -1,7 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, map, switchMap } from 'rxjs';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { type ApiResult, type ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
 import type {
   AvaliacaoDaInscricaoDto,
   AvaliacaoDaInscricaoRequest,
@@ -46,6 +46,7 @@ export interface InicioDaAvaliacao {
 export class AvaliacaoDaInscricaoEstado {
   private readonly servico = inject(InscricaoDoCandidatoService);
   private readonly problemas = inject(ProblemI18nService);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly modalidades = signal<ModalidadesAvaliadas | null>(null);
   private readonly modalidadesSegundaOpcao = signal<ModalidadesAvaliadas | null>(null);
@@ -93,22 +94,9 @@ export class AvaliacaoDaInscricaoEstado {
             .avaliar(this.processoId, consulta.corpo)
             .pipe(map((resultado) => ({ consulta, resultado }))),
         ),
-        takeUntilDestroyed(inject(DestroyRef)),
+        takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(({ consulta, resultado }) => {
-        if (consulta.revisao !== this.revisaoAtual) return;
-        this.calculando.set(false);
-        this.consultasConcluidas.update((n) => n + 1);
-        if (resultado.ok) {
-          this.aplicar(resultado.data);
-          return;
-        }
-        this.erro.set(
-          resultado.problem.code === FORA_DO_PERIODO
-            ? this.problemas.resolve(resultado.problem).title
-            : FALHA_GENERICA,
-        );
-      });
+      .subscribe(({ consulta, resultado }) => this.adotarAResposta(consulta, resultado));
   }
 
   /** Parte da avaliação que veio com a inscrição, sem consultar. */
@@ -151,15 +139,8 @@ export class AvaliacaoDaInscricaoEstado {
     segundaOferta: string | null,
     corpo: () => AvaliacaoDaInscricaoRequest,
   ): void {
-    const primeiraMudou = oferta !== this.oferta;
-    const segundaMudou = segundaOferta !== this.segundaOferta;
-    if (!primeiraMudou && !segundaMudou) return;
-    // As modalidades de uma opção cujo curso mudou não valem para o curso novo, e com duas opções elas
-    // estão sob o título do curso: não ficam à vista enquanto a nova avaliação não chega.
-    if (segundaMudou) this.modalidadesSegundaOpcao.set(null);
-    if (primeiraMudou && (segundaOferta !== null || this.segundaOferta !== null)) {
-      this.modalidades.set(null);
-    }
+    if (oferta === this.oferta && segundaOferta === this.segundaOferta) return;
+    this.descartarModalidadesQueNaoValem(oferta, segundaOferta);
     this.oferta = oferta;
     this.segundaOferta = segundaOferta;
     this.revisaoAtual++;
@@ -201,6 +182,34 @@ export class AvaliacaoDaInscricaoEstado {
     this.consultas.next({ revisao: this.revisaoAtual, corpo });
   }
 
+  /** A resposta de uma consulta vale só se nenhuma resposta de que ela depende mudou desde que saiu. */
+  private adotarAResposta(consulta: Consulta, resultado: ApiResult<AvaliacaoDaInscricaoDto>): void {
+    if (consulta.revisao !== this.revisaoAtual) return;
+    this.calculando.set(false);
+    this.consultasConcluidas.update((n) => n + 1);
+    if (resultado.ok) this.aplicar(resultado.data);
+    else this.erro.set(this.mensagemDaFalha(resultado.problem));
+  }
+
+  private mensagemDaFalha(problem: ProblemDetails): string {
+    return problem.code === FORA_DO_PERIODO
+      ? this.problemas.resolve(problem).title
+      : FALHA_GENERICA;
+  }
+
+  // As modalidades de uma opção cujo curso mudou não valem para o curso novo, e com duas opções elas
+  // estão sob o título do curso: não ficam à vista enquanto a nova avaliação não chega.
+  private descartarModalidadesQueNaoValem(
+    oferta: string | null,
+    segundaOferta: string | null,
+  ): void {
+    if (segundaOferta !== this.segundaOferta) this.modalidadesSegundaOpcao.set(null);
+    const primeiraMudou = oferta !== this.oferta;
+    if (primeiraMudou && (segundaOferta !== null || this.segundaOferta !== null)) {
+      this.modalidades.set(null);
+    }
+  }
+
   private aplicar(avaliacao: AvaliacaoDaInscricaoDto): void {
     this.erro.set(null);
     this.modalidades.set(avaliacao.modalidades);
@@ -219,16 +228,18 @@ export function impressaoDasDependencias(
   dependencias: DependenciasDaAvaliacao | null,
 ): string | null {
   if (dependencias === null) return null;
-  const respostas = simulacao.respostas ?? {};
   const grupos = simulacao.grupos ?? {};
-  const fatos = dependencias.fatos.map((fato) => {
-    const [grupo, subitem] = fato.split('.');
-    if (subitem === undefined) return [fato, respostas[fato] ?? null];
-    return [fato, (grupos[grupo] ?? []).map((o) => [o.id, o.respostas?.[subitem] ?? null])];
-  });
+  const fatos = dependencias.fatos.map((fato) => [fato, respostaDoFato(simulacao, fato)]);
   const ocorrencias = dependencias.grupos.map((grupo) => [
     grupo,
     (grupos[grupo] ?? []).map((o) => o.id),
   ]);
   return JSON.stringify([fatos, ocorrencias]);
+}
+
+/** A resposta de um fato direto, ou as respostas do subitem (`GRUPO.FATO`) em cada ocorrência do grupo. */
+function respostaDoFato(simulacao: SimulacaoDoFormulario, fato: string): unknown {
+  const [grupo, subitem] = fato.split('.');
+  if (subitem === undefined) return (simulacao.respostas ?? {})[fato] ?? null;
+  return ((simulacao.grupos ?? {})[grupo] ?? []).map((o) => [o.id, o.respostas?.[subitem] ?? null]);
 }

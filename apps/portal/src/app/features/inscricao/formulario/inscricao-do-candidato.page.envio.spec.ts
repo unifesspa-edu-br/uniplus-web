@@ -7,7 +7,7 @@ import {
   type InscricaoRequest,
   SituacaoInscricao,
 } from '@uniplus/shared-data/selecao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
+import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
 import {
   ok,
   problema,

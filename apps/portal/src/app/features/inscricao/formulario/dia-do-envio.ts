@@ -27,6 +27,11 @@ export class DiaDoEnvio {
   });
 
   constructor() {
+    this.conferirAoVoltarAAba();
+    this.recomecarACadaCarga();
+  }
+
+  private conferirAoVoltarAAba(): void {
     const conferirODia = (): void => this.acompanhar();
     const janela = this.documento.defaultView;
     this.documento.addEventListener('visibilitychange', conferirODia);
@@ -36,6 +41,9 @@ export class DiaDoEnvio {
       janela?.removeEventListener('focus', conferirODia);
       this.cancelarAViradaDoDia();
     });
+  }
+
+  private recomecarACadaCarga(): void {
     effect(() => {
       this.leitura.carregada();
       untracked(() => {

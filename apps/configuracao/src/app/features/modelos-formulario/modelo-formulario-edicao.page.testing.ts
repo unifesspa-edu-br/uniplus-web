@@ -1,0 +1,329 @@
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { ApplicationRef, type EnvironmentProviders, type Provider } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { apiResultInterceptor } from '@uniplus/shared-core/http';
+import {
+  CONFIGURACAO_BASE_PATH,
+  type FatoCandidatoView,
+  type ModeloFormularioView,
+} from '@uniplus/shared-data/configuracao';
+import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
+import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
+
+export const BASE = 'http://localhost:5000';
+export const ID = '01960000-0000-7000-0000-0000000000a1';
+export const MODELO = `${BASE}/api/configuracao/admin/modelos-formulario/${ID}`;
+export const PROBLEMA = {
+  status: 422,
+  statusText: 'Recusa',
+  headers: { 'content-type': 'application/problem+json' },
+};
+
+const FATO_BASE: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> = {
+  descricao: 'Dado do candidato.',
+  dominio: 'BOOLEANO',
+  origem: 'DECLARADO',
+  cardinalidade: 'ESCALAR',
+  valoresDominio: null,
+  pontoResolucao: 'INSCRICAO',
+  valoresDominioDeclarados: null,
+  fonteValores: null,
+  ativo: true,
+  escopo: 'CANDIDATO',
+  classificacaoProtecao: 'INTERNO',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Aplicar a regra do certame.',
+  protecaoAprovada: true,
+};
+
+export const fato = (codigo: string): FatoCandidatoView => ({
+  ...FATO_BASE,
+  id: codigo,
+  codigo,
+  nome: codigo,
+  binding: `CAMPO_FORMULARIO:${codigo}`,
+});
+
+/**
+ * Um modelo de inscrição como a API o devolve: com a seção dos dados básicos, e com o que esta
+ * tela ainda não edita — termo, grupo, restrição e impedimento.
+ */
+export const modelo: ModeloFormularioView = {
+  id: ID,
+  codigo: 'INSCRICAO_MEDICINA',
+  nome: 'Inscrição Medicina',
+  descricao: null,
+  finalidade: 'INSCRICAO',
+  tipoProcessoCodigo: null,
+  ativo: true,
+  conteudo: {
+    titulo: 'Inscrição',
+    etapas: [
+      {
+        codigo: 'DADOS_BASICOS',
+        ordem: 0,
+        tipo: 'SECAO',
+        bloco: null,
+        titulo: 'Dados do candidato',
+        descricao: null,
+        aviso: null,
+      },
+      {
+        codigo: 'SECAO_1',
+        ordem: 1,
+        tipo: 'SECAO',
+        bloco: null,
+        titulo: 'Escolaridade',
+        descricao: null,
+        aviso: null,
+      },
+      {
+        codigo: 'REVISAO_E_ACEITE',
+        ordem: 2,
+        tipo: 'BLOCO',
+        bloco: 'REVISAO_E_ACEITE',
+        titulo: 'Revisão e aceite',
+        descricao: null,
+        aviso: null,
+      },
+    ],
+    itens: [
+      {
+        fatoCodigo: 'NOME',
+        ordem: 0,
+        rotulo: 'Nome',
+        tipoRenderizacao: 'TEXTO',
+        obrigatoriedade: 'SEMPRE',
+        precondicao: null,
+        etapaCodigo: 'DADOS_BASICOS',
+        pedirConfirmacao: false,
+      },
+      {
+        fatoCodigo: 'ESCOLA_PUBLICA',
+        ordem: 1,
+        rotulo: 'Estudou em escola pública?',
+        tipoRenderizacao: 'BOOLEANO',
+        obrigatoriedade: 'SEMPRE',
+        precondicao: null,
+        etapaCodigo: 'SECAO_1',
+        pedirConfirmacao: false,
+        restricoes: [{ tipo: 'SUBCONJUNTO', entradas: [{ quando: null, valores: ['true'] }] }],
+        impedimento: {
+          quando: [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: false }]],
+          mensagem: 'Só para egressos.',
+        },
+      },
+    ],
+    termos: [
+      {
+        codigo: 'LGPD',
+        ordem: 0,
+        termoId: 'T1',
+        versaoId: 'V1',
+        exibicao: null,
+        obrigatoriedade: 'SEMPRE',
+        predicadoObrigatoriedade: null,
+      },
+    ],
+    pressupostos: [],
+    grupos: [
+      {
+        codigo: 'FAMILIA',
+        ordem: 2,
+        rotulo: 'Composição familiar',
+        etapaCodigo: 'SECAO_1',
+        minimo: 1,
+        maximo: null,
+        exibicao: null,
+        obrigatoriedade: 'SEMPRE',
+        predicadoObrigatoriedade: null,
+        subitens: [],
+        incluiCandidato: true,
+      },
+    ],
+    documentosExigidos: [
+      {
+        faseCodigo: 'INSCRICAO',
+        tipoDocumentoCodigo: 'LAUDO_MEDICO',
+        obrigatorio: true,
+        quando: [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }]],
+        consequenciaIndeferimento: 'ELIMINA',
+        basesLegais: [
+          {
+            referencia: 'Lei 13.146/2015',
+            abrangencia: 'FEDERAL',
+            status: 'RESOLVIDO',
+            observacao: null,
+          },
+        ],
+      },
+      {
+        faseCodigo: 'INSCRICAO',
+        tipoDocumentoCodigo: 'CERTIDAO_NASCIMENTO',
+        obrigatorio: false,
+        quando: null,
+        consequenciaIndeferimento: 'PENDENCIA_REENVIO',
+        basesLegais: [],
+      },
+    ],
+  },
+};
+
+export const FASES = [
+  { id: '1', codigo: 'INSCRICAO', nome: 'Inscrição', permiteComplementacao: true },
+  { id: '2', codigo: 'HOMOLOGACAO', nome: 'Homologação', permiteComplementacao: false },
+];
+
+const FATOS_BASICOS = ['NOME', 'ESCOLA_PUBLICA', 'GESTANTE'];
+const API = `${BASE}/api/configuracao`;
+
+export const FALHA_500 = JSON.stringify({
+  status: 500,
+  title: 'Erro interno',
+  code: 'uniplus.internal.unexpected',
+});
+
+const FALHA_404 = JSON.stringify({
+  status: 404,
+  title: 'Modelo não encontrado',
+  code: 'uniplus.configuracao.modelo_formulario.nao_encontrado',
+});
+
+const TIPOS_DE_DOCUMENTO = [
+  { id: '1', codigo: 'LAUDO_MEDICO', nome: 'Laudo médico' },
+  { id: '2', codigo: 'CERTIDAO_NASCIMENTO', nome: 'Certidão de nascimento' },
+  { id: '3', codigo: 'ATESTADO', nome: 'Atestado' },
+];
+
+export interface TelaDeEdicao {
+  readonly fixture: ComponentFixture<ModeloFormularioEdicaoPage>;
+  readonly controller: HttpTestingController;
+}
+
+/** O que a carga da tela traz: o modelo, os fatos além dos básicos, as fases e quais leituras falham. */
+export interface CenarioDaCarga {
+  readonly modelo?: ModeloFormularioView;
+  readonly fatosExtras?: readonly FatoCandidatoView[];
+  readonly fases?: readonly object[];
+  readonly falhando?: readonly string[];
+}
+
+/** Um erro de campo como a API o devolve na recusa 422 do conteúdo. */
+export interface ErroDeCampo {
+  readonly field: string;
+  readonly code: string;
+  readonly message: string;
+}
+
+interface RecursoDaCarga {
+  readonly recurso: string;
+  readonly url: string;
+  readonly dados: object;
+}
+
+function provedoresDaTela(): (EnvironmentProviders | Provider)[] {
+  return [
+    provideRouter([]),
+    provideHttpClient(withInterceptors([apiResultInterceptor])),
+    provideHttpClientTesting(),
+    { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+    { provide: GEO_BASE_PATH, useValue: BASE },
+    {
+      provide: ActivatedRoute,
+      useValue: { snapshot: { paramMap: convertToParamMap({ id: ID }) } },
+    },
+  ];
+}
+
+export function montarTelaDeEdicao(): TelaDeEdicao {
+  TestBed.configureTestingModule({
+    imports: [ModeloFormularioEdicaoPage],
+    providers: provedoresDaTela(),
+  });
+  const fixture = TestBed.createComponent(ModeloFormularioEdicaoPage);
+  const controller = TestBed.inject(HttpTestingController);
+  fixture.detectChanges();
+  return { fixture, controller };
+}
+
+export async function propagarAlteracoes(
+  fixture: ComponentFixture<ModeloFormularioEdicaoPage>,
+): Promise<HTMLElement> {
+  await Promise.resolve();
+  TestBed.inject(ApplicationRef).tick();
+  fixture.detectChanges();
+  return fixture.nativeElement as HTMLElement;
+}
+
+function recursosDaCarga(cenario: CenarioDaCarga): readonly RecursoDaCarga[] {
+  const fatos = [...FATOS_BASICOS.map(fato), ...(cenario.fatosExtras ?? [])];
+  return [
+    { recurso: 'modelo', url: MODELO, dados: cenario.modelo ?? modelo },
+    { recurso: 'fatos', url: `${API}/fatos-candidato`, dados: fatos },
+    { recurso: 'tipos-processo', url: `${API}/tipos-processo`, dados: [] },
+    { recurso: 'termos', url: `${API}/termos-consentimento`, dados: [] },
+    { recurso: 'fases', url: `${API}/fases-canonicas`, dados: cenario.fases ?? FASES },
+    { recurso: 'tipos-documento', url: `${API}/tipos-documento`, dados: TIPOS_DE_DOCUMENTO },
+  ];
+}
+
+interface FalhaDaLeitura {
+  readonly corpo: string;
+  readonly resposta: { status: number; statusText: string; headers: Record<string, string> };
+}
+
+function falhaDoRecurso(recurso: string, falhando: readonly string[]): FalhaDaLeitura | null {
+  if (recurso === 'modelo' && falhando.includes('modelo-inexistente')) {
+    return {
+      corpo: FALHA_404,
+      resposta: { ...PROBLEMA, status: 404, statusText: 'Não encontrado' },
+    };
+  }
+  if (!falhando.includes(recurso)) return null;
+  return { corpo: FALHA_500, resposta: { ...PROBLEMA, status: 500, statusText: 'Erro' } };
+}
+
+function responderRecurso(
+  controller: HttpTestingController,
+  recurso: RecursoDaCarga,
+  falhando: readonly string[],
+): void {
+  const pedido = controller.expectOne((req) => req.url === recurso.url);
+  const falha = falhaDoRecurso(recurso.recurso, falhando);
+  if (falha === null) pedido.flush(recurso.dados);
+  else pedido.flush(falha.corpo, falha.resposta);
+}
+
+/** Responde as seis leituras que a tela faz ao abrir. */
+export function responderCarga(
+  controller: HttpTestingController,
+  cenario: CenarioDaCarga = {},
+): void {
+  const falhando = cenario.falhando ?? [];
+  for (const recurso of recursosDaCarga(cenario)) responderRecurso(controller, recurso, falhando);
+}
+
+export function salvar(tela: HTMLElement): void {
+  const botao = Array.from(
+    tela.querySelectorAll('button[type="submit"]') as NodeListOf<HTMLButtonElement>,
+  ).find((b) => b.textContent?.includes('Salvar modelo'));
+  (botao as HTMLButtonElement).click();
+}
+
+/** A API recusa a gravação do conteúdo com os erros de campo dados. */
+export function recusarGravacao(
+  controller: HttpTestingController,
+  erros: readonly ErroDeCampo[],
+): void {
+  const corpo = JSON.stringify({
+    status: 422,
+    title: 'Requisição inválida',
+    code: 'uniplus.configuracao.modelo_formulario.conteudo_invalido',
+    errors: erros,
+  });
+  controller.expectOne((req) => req.method === 'PUT').flush(corpo, PROBLEMA);
+}
+
+export const tituloDaTela = (): HTMLElement | null => document.getElementById('cfg-modelo-titulo');

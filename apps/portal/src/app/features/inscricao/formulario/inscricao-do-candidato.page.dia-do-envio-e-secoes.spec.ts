@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
+import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
 import {
   inscricao,
   RESPONDIDA,

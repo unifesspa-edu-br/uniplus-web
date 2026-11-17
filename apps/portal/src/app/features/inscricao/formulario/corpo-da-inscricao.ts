@@ -13,18 +13,18 @@ export interface OfertasEscolhidas {
   readonly ofertaCursoSegundaOpcaoId: string | null;
 }
 
+type GruposDoCorpo = Record<string, { id: string; respostas: Record<string, unknown> }[]>;
+
 /**
- * As respostas e as ocorrências como o servidor as mescla ao gravado. A resposta que o candidato
- * apagou vai como `null`: ausente do corpo, o servidor manteria a gravada. O grupo que o candidato
- * removeu vai como lista vazia, pelo mesmo motivo: ausente do corpo, o servidor manteria as
- * ocorrências gravadas; enviado, ele as substitui. O nome social da conta só vai quando o candidato
- * escolhe usá-lo: com a recusa, a resposta vai nula, e a inscrição não guarda um nome que ele não
- * quis usar.
+ * As respostas como o servidor as mescla ao gravado. A resposta que o candidato apagou vai como
+ * `null`: ausente do corpo, o servidor manteria a gravada. O nome social da conta só vai quando o
+ * candidato escolhe usá-lo: com a recusa, a resposta vai nula, e a inscrição não guarda um nome que
+ * ele não quis usar.
  */
 function respostasDoCorpo(
   inscricao: InscricaoDto,
   simulacao: SimulacaoDoFormulario,
-): Pick<AvaliacaoDaInscricaoRequest, 'respostas' | 'grupos'> {
+): Record<string, unknown> {
   const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
   for (const fato of Object.keys(inscricao.respostas)) {
     if (!(fato in respostas)) respostas[fato] = null;
@@ -32,17 +32,25 @@ function respostasDoCorpo(
   if ('NOME_SOCIAL' in respostas && respostas['DESEJA_NOME_SOCIAL'] !== true) {
     respostas['NOME_SOCIAL'] = null;
   }
-  const grupos: Record<string, { id: string; respostas: Record<string, unknown> }[]> =
-    Object.fromEntries(
-      Object.entries(simulacao.grupos ?? {}).map(([codigo, ocorrencias]) => [
-        codigo,
-        (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
-      ]),
-    );
+  return respostas;
+}
+
+/**
+ * As ocorrências dos grupos como o servidor as mescla ao gravado. O grupo que o candidato removeu vai
+ * como lista vazia: ausente do corpo, o servidor manteria as ocorrências gravadas; enviado, ele as
+ * substitui.
+ */
+function gruposDoCorpo(inscricao: InscricaoDto, simulacao: SimulacaoDoFormulario): GruposDoCorpo {
+  const grupos: GruposDoCorpo = Object.fromEntries(
+    Object.entries(simulacao.grupos ?? {}).map(([codigo, ocorrencias]) => [
+      codigo,
+      (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
+    ]),
+  );
   for (const codigo of Object.keys(inscricao.grupos)) {
     if (simulacao.grupos?.[codigo] == null) grupos[codigo] = [];
   }
-  return { respostas, grupos };
+  return grupos;
 }
 
 /** O corpo da consulta de avaliação: as respostas da tela e as ofertas escolhidas nela, ou `null`. */
@@ -51,7 +59,11 @@ export function corpoDaAvaliacao(
   simulacao: SimulacaoDoFormulario,
   ofertas: OfertasEscolhidas,
 ): AvaliacaoDaInscricaoRequest {
-  return { ...respostasDoCorpo(inscricao, simulacao), ...ofertas };
+  return {
+    respostas: respostasDoCorpo(inscricao, simulacao),
+    grupos: gruposDoCorpo(inscricao, simulacao),
+    ...ofertas,
+  };
 }
 
 /** O corpo do salvar e do envio: o da avaliação e os termos aceitos, com a versão que o formulário publica. */

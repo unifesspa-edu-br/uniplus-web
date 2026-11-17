@@ -1,11 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { type Observable, of, switchMap, tap } from 'rxjs';
-import type { ApiResult } from '@uniplus/shared-core/http';
-import {
-  deveRotacionarIdempotencyKey,
-  idempotencyKey,
-  withIdempotencyKey,
-} from '@uniplus/shared-core/idempotency';
+import { type ApiResult, ChaveDeSubstituicao } from '@uniplus/shared-core/http';
 import {
   type ComprovanteDaInscricaoDto,
   InscricoesApi,
@@ -16,8 +11,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class MinhasInscricoesService {
   private readonly api = inject(InscricoesApi);
-  private cancelamentoEmCurso: { readonly chave: string; readonly assinatura: string } | null =
-    null;
+  private readonly chaveDoCancelamento = new ChaveDeSubstituicao();
 
   /** As inscrições do dono do token, cada uma com o número do último comprovante. */
   listar(): Observable<ApiResult<readonly MinhaInscricaoDto[]>> {
@@ -42,18 +36,13 @@ export class MinhasInscricoesService {
    * pedido (rede que cai), e uma nova vale quando a falha já registrou resposta na API.
    */
   cancelar(processoId: string, motivo: string | null): Observable<ApiResult<void>> {
-    const assinatura = JSON.stringify([processoId, motivo]);
-    if (this.cancelamentoEmCurso?.assinatura !== assinatura) {
-      this.cancelamentoEmCurso = { chave: idempotencyKey.create(), assinatura };
-    }
-    const { chave } = this.cancelamentoEmCurso;
+    const contexto = this.chaveDoCancelamento.contextoPara([processoId, motivo]);
     return this.comETagAtual(processoId, (eTag) =>
-      this.api.cancelar(processoId, { motivo }, eTag, withIdempotencyKey(chave)),
+      this.api.cancelar(processoId, { motivo }, eTag, contexto),
     ).pipe(
       tap((resultado) => {
-        if (resultado.ok || deveRotacionarIdempotencyKey(resultado.problem)) {
-          this.cancelamentoEmCurso = null;
-        }
+        if (resultado.ok) this.chaveDoCancelamento.renovar();
+        else this.chaveDoCancelamento.recusada(resultado);
       }),
     );
   }
