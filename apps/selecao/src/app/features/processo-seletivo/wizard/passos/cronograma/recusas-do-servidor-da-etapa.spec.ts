@@ -5,6 +5,7 @@ import {
   recusaDoCampoDaEtapa,
   campoDaRecusa,
   fasesComUnidadeNaoEncontrada,
+  indiceDaEtapaEm,
   recusaDaBancaDaEtapa,
   textoDaRecusaDaEtapa,
 } from './recusas-do-servidor-da-etapa';
@@ -166,5 +167,32 @@ describe('recusas do servidor à regra de deliberação das bancas da etapa', ()
     expect(
       campoDaRecusa(localDoErroDaEtapa('etapas[0].bancas[0].regraDeDeliberacao.quorum')),
     ).toBeNull();
+  });
+
+  it('entrega o texto da declaração dos tipos de decisão com a etapa que o caminho nomeia', () => {
+    expect(
+      textoDaRecusaDaEtapa({
+        field: 'etapas[2].tiposDeDecisao[1]',
+        code: 'uniplus.selecao.motivo_de_decisao.tipo_invalido',
+      }),
+    ).toEqual({ indice: 2, texto: 'Um tipo de decisão enviado não é reconhecido pelo servidor.' });
+    expect(
+      textoDaRecusaDaEtapa({
+        field: 'etapas[0].tiposDeDecisao[1]',
+        code: 'uniplus.selecao.motivo_de_decisao.tipo_de_decisao_duplicado',
+      })?.texto,
+    ).toBe('O mesmo tipo de decisão foi enviado mais de uma vez.');
+    expect(
+      textoDaRecusaDaEtapa({
+        field: 'etapas[0].recursos[0]',
+        code: 'uniplus.selecao.recurso_da_etapa.procedimento_para_decisao_nao_declarada',
+      })?.texto,
+    ).toContain('marque o tipo de novo');
+  });
+
+  it('lê a etapa pelo prefixo do caminho, qualquer que seja o campo depois dela', () => {
+    expect(indiceDaEtapaEm('etapas[4].tiposDeDecisao[0]')).toBe(4);
+    expect(indiceDaEtapaEm('etapas[1]')).toBe(1);
+    expect(indiceDaEtapaEm('fases[1].tiposDeDecisao[0]')).toBeNull();
   });
 });

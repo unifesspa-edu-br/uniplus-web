@@ -1,4 +1,4 @@
-import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import { rotuloDoTipoDeDecisao, type RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 
 import type {
   ItemDeAvaliacaoDaEtapa,
@@ -25,7 +25,7 @@ export function procedimentosParaLeitura(
   itens: readonly ItemDeAvaliacaoDaEtapa[],
 ): readonly ProcedimentoParaLeitura[] {
   return procedimentos.map((procedimento) => ({
-    tipoDeDecisao: procedimento.tipoDeDecisao,
+    tipoDeDecisao: rotuloDoTipoDeDecisao(procedimento.tipoDeDecisao),
     alvo: alvoEmTexto(procedimento.alvo, itens),
     regra: regraDeclaradaEmTexto(procedimento, catalogo),
     sugestao:

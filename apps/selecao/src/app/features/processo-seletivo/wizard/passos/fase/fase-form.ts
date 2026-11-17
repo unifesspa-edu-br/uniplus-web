@@ -62,7 +62,7 @@ export interface FaseConfigForm {
   readonly faseConcluinteCodigo: FormControl<string>;
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
-  /** Não é editado aqui; viaja pela mesma razão da unidade. */
+  /** Os tipos de decisão que a fase toma, em ordem alfabética do código. */
   readonly tiposDeDecisao: FormControl<readonly string[]>;
   readonly admiteRecurso: FormControl<boolean>;
   readonly recurso: FormGroup<RecursoForm>;

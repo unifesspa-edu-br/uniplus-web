@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { SENTIDOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
 import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { FundamentoOferecido } from './fundamentos-oferecidos';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
 import { ModoDoMotivo, MotivoForm, mensagemDoCampo } from './motivo-de-decisao-form';
-import { SENTIDOS_DE_MOTIVO } from './tipos-de-motivo';
 
 @Component({
   selector: 'cfg-motivo-de-decisao-formulario',
@@ -30,7 +30,7 @@ export class MotivoDeDecisaoFormularioComponent {
   readonly salvar = output<void>();
   readonly cancelar = output<void>();
 
-  protected readonly sentidos = SENTIDOS_DE_MOTIVO;
+  protected readonly sentidos = SENTIDOS_DE_DECISAO;
   protected readonly criando = computed(() => this.modo() === 'criar');
   protected readonly rotuloDoBotao = computed(() => {
     if (this.salvando()) return 'Salvando...';

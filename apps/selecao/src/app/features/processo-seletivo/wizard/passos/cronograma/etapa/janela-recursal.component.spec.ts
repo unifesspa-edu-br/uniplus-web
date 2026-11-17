@@ -147,7 +147,7 @@ describe('JanelaRecursalComponent', () => {
       'sel-procedimentos-do-recurso',
     );
     expect(lista?.classList.contains('form-grid__full')).toBe(true);
-    expect(lista?.textContent).toContain('NOTA_DA_ETAPA');
+    expect(lista?.textContent).toContain('Nota da etapa');
     expect(lista?.textContent).toContain('Clareza');
     expect(lista?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
   });

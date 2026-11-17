@@ -129,3 +129,19 @@ export function comUnidadeNaFase(
 ): FaseCronogramaDto {
   return { ...fase, cronograma: { ...fase.cronograma, unidadeResponsavel: unidade } };
 }
+
+/** A mesma fase com os tipos de decisão que ela declara trocados. */
+export function comTiposDeDecisaoNaFase(
+  fase: FaseCronogramaDto,
+  tiposDeDecisao: readonly string[],
+): FaseCronogramaDto {
+  return { ...fase, publicacoes: { ...fase.publicacoes, tiposDeDecisao: [...tiposDeDecisao] } };
+}
+
+/** A mesma etapa com os tipos de decisão que ela declara trocados. */
+export function comTiposDeDecisaoNaEtapa(
+  etapa: EtapaProcessoDto,
+  tiposDeDecisao: readonly string[],
+): EtapaProcessoDto {
+  return { ...etapa, publicacoes: { ...etapa.publicacoes, tiposDeDecisao: [...tiposDeDecisao] } };
+}

@@ -1,3 +1,4 @@
+import { TIPOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import {
   MOTIVO_EM_BRANCO,
@@ -9,12 +10,7 @@ import {
   valoresDoMotivo,
 } from './motivo-de-decisao-form';
 import { isencao } from './motivos-de-decisao.testing';
-import {
-  rotuloDe,
-  SENTIDOS_DE_MOTIVO,
-  TIPOS_DE_MOTIVO,
-  tipoPedeSubclassificacao,
-} from './tipos-de-motivo';
+import { tipoPedeSubclassificacao } from './tipos-de-motivo';
 
 describe('formulário de motivo de decisão', () => {
   it('na criação, todos os campos valem e só o código e a descrição são validados pelo tamanho', () => {
@@ -86,10 +82,8 @@ describe('formulário de motivo de decisão', () => {
     expect(controleDoCampoDoServidor('Outro')).toBeNull();
   });
 
-  it('só a isenção pede subclassificação, e os seis tipos têm nome em português', () => {
-    expect(TIPOS_DE_MOTIVO.filter((t) => tipoPedeSubclassificacao(t.codigo))).toHaveLength(1);
-    expect(TIPOS_DE_MOTIVO).toHaveLength(6);
-    expect(rotuloDe(SENTIDOS_DE_MOTIVO, 'FAVORAVEL')).toBe('Favorável ao candidato');
-    expect(rotuloDe(SENTIDOS_DE_MOTIVO, 'DESCONHECIDO')).toBe('DESCONHECIDO');
+  it('só a isenção pede subclassificação', () => {
+    expect(TIPOS_DE_DECISAO.filter((t) => tipoPedeSubclassificacao(t.codigo))).toHaveLength(1);
+    expect(tipoPedeSubclassificacao('ISENCAO_DA_TAXA')).toBe(true);
   });
 });

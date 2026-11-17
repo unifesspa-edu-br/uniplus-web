@@ -24,6 +24,7 @@ import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
 import { FaseEmEdicao } from './fase-em-edicao';
 import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
+import { DecisoesDaFaseComponent } from './secoes/decisoes-da-fase.component';
 import { RegraDeRecursoDaFaseComponent } from './secoes/regra-de-recurso-da-fase.component';
 import { BancasDaFaseComponent } from './secoes/bancas-da-fase.component';
 import { recusaDaGravacao } from './recusas-da-gravacao';
@@ -47,6 +48,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
     ValorLegivelDirective,
     FormsModule,
     CicloRecursalDaFaseComponent,
+    DecisoesDaFaseComponent,
     PublicacoesDaFaseComponent,
     ReactiveFormsModule,
     RegraDeRecursoDaFaseComponent,

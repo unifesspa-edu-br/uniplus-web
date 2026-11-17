@@ -15,7 +15,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
-import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import { MotivosDeDecisaoApi, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
   AnuncioDaConclusao,
@@ -69,6 +69,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
         { provide: TiposDocumentoApi, useValue: vazio },
         { provide: TiposAtoApi, useValue: vazio },
         { provide: RegrasCatalogoApi, useValue: vazio },
+        { provide: MotivosDeDecisaoApi, useValue: vazio },
         { provide: UnidadesApi, useValue: vazio },
       ],
     });

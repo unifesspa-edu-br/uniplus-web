@@ -1,0 +1,23 @@
+<fieldset class="field" [attr.aria-describedby]="idDoGrupo() + '-ajuda'">
+  <legend class="field__label">{{ legenda() }}</legend>
+  <p class="field__hint" [attr.id]="idDoGrupo() + '-ajuda'">
+    Marque as decisões tomadas aqui. O procedimento de um recurso só pode ser configurado para uma
+    decisão declarada.
+  </p>
+  <div class="opcoes">
+    @for (tipo of opcoes(); track tipo.codigo) {
+      <label class="checkbox" [attr.for]="idDoGrupo() + '-' + tipo.codigo">
+        <input
+          #caixa
+          type="checkbox"
+          [attr.id]="idDoGrupo() + '-' + tipo.codigo"
+          [checked]="estaDeclarado(tipo.codigo)"
+          [disabled]="desabilitado()"
+          (change)="alternar(tipo.codigo, caixa.checked)"
+        />
+        <span class="checkbox__box" aria-hidden="true"></span>
+        {{ tipo.rotulo }}
+      </label>
+    }
+  </div>
+</fieldset>

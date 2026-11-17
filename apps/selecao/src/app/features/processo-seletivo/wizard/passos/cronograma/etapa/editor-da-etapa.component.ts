@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
+import { TiposDeDecisaoDaFaseOuEtapaComponent } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-fase-ou-etapa.component';
 import type { EtapaForm } from '../cronograma-form';
 import { ItensDeAvaliacaoDaEtapaComponent } from '../itens-de-avaliacao-da-etapa.component';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
@@ -26,6 +27,7 @@ import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
     JanelaDaEtapaComponent,
     BancasDaEtapaComponent,
     PublicacoesDaEtapaComponent,
+    TiposDeDecisaoDaFaseOuEtapaComponent,
     RecursosDaEtapaComponent,
     ItensDeAvaliacaoDaEtapaComponent,
   ],

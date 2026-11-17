@@ -12,7 +12,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
-import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import { MotivosDeDecisaoApi, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
 
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
 import { falhaDoServidor, pagina } from './catalogos.testing';
@@ -21,11 +21,13 @@ import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cr
 interface Falhas {
   readonly fatos?: boolean;
   readonly unidades?: boolean;
+  readonly motivos?: boolean;
 }
 
 interface Buscas {
   readonly fases: () => void;
   readonly unidades: () => void;
+  readonly motivos: () => void;
 }
 
 function montar(falhas: Falhas = {}, buscas?: Buscas) {
@@ -52,6 +54,15 @@ function montar(falhas: Falhas = {}, buscas?: Buscas) {
       {
         provide: FatosCandidatoApi,
         useValue: { listar: () => (falhas.fatos ? falhaDoServidor() : of({ ok: true, data: [] })) },
+      },
+      {
+        provide: MotivosDeDecisaoApi,
+        useValue: {
+          listar: () => {
+            buscas?.motivos();
+            return falhas.motivos ? falhaDoServidor() : pagina([]);
+          },
+        },
       },
       {
         provide: UnidadesApi,
@@ -94,14 +105,23 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     expect(situacao.erro()).toBeNull();
   });
 
+  /** A falta dos motivos não derruba o editor: só a escolha dos motivos fica sem opções. */
+  it('não conta a falha dos motivos de decisão como falha dos catálogos exigidos', () => {
+    const situacao = montar({ motivos: true });
+
+    expect(situacao.erro()).toBeNull();
+    expect(situacao.leituraDosMotivos.visivel()).toBe(true);
+  });
+
   /** Refazer só o que falhou abriria a tela com catálogos de rodadas diferentes. */
-  it('repete a rodada inteira, inclusive os catálogos que já tinham carregado e as unidades', () => {
-    const buscas = { fases: vi.fn(), unidades: vi.fn() };
+  it('repete a rodada inteira, inclusive os catálogos que já tinham carregado, as unidades e os motivos', () => {
+    const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn() };
     const situacao = montar({ fatos: true, unidades: true }, buscas);
 
     situacao.recarregar();
 
     expect(buscas.fases).toHaveBeenCalledTimes(2);
     expect(buscas.unidades).toHaveBeenCalledTimes(2);
+    expect(buscas.motivos).toHaveBeenCalledTimes(2);
   });
 });

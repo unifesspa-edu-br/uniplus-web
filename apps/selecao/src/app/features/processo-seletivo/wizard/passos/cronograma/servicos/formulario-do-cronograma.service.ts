@@ -11,8 +11,10 @@ import { semAEtapa, semAFase } from '../../../shared/exigencias/exigencias-docum
 import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
 import { CatalogoDeTiposDeEtapa } from '../catalogos/catalogo-de-tipos-de-etapa.service';
 import {
+  etapaComoNoFormulario,
   etapaDoFormulario,
   etapaRecemAcrescentada,
+  faseComoNoFormulario,
   faseDoFormulario,
   faseRecemAcrescentada,
   grupoDaEtapa,
@@ -21,6 +23,7 @@ import {
   type FaseForm,
 } from '../cronograma-form';
 import { etapaComOQueDeclara } from '../regras-da-etapa';
+import { espelharFasesNoFormulario } from './espelho-das-fases-no-formulario';
 import { ReleituraDasEtapas } from './releitura-das-etapas.service';
 import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
@@ -281,35 +284,53 @@ export class FormularioDoCronograma {
   private jaEspelha(cronograma: WizardDraft['cronograma']): boolean {
     const controles = this.formulario.controls;
     return (
-      mesmoConteudo(this.fases.controls.map(faseDoFormulario), cronograma.fases) &&
-      mesmoConteudo(this.etapas.controls.map(etapaDoFormulario), cronograma.etapas) &&
+      this.fasesJaEspelhadas(cronograma.fases) &&
+      this.etapasJaEspelhadas(cronograma.etapas) &&
       controles.algoritmoContagemCodigo.value === cronograma.algoritmoContagemCodigo &&
       controles.algoritmoContagemVersao.value === cronograma.algoritmoContagemVersao
     );
   }
 
   /**
-   * A ordem das etapas vem resolvida da hidratação, que renumera o que o servidor devolveu:
-   * corrigir de novo aqui deixaria o formulário e o rascunho descrevendo posições diferentes.
+   * Compara com o rascunho como o formulário o mostraria, não como foi escrito: o rascunho que
+   * chega de fora pode omitir campos opcionais ou trazer a janela em outro formato, e tratar isso
+   * como mudança recriaria os controles na primeira edição, quando o caminho de volta reescreve
+   * o rascunho na forma do formulário.
+   */
+  private fasesJaEspelhadas(fases: WizardDraft['cronograma']['fases']): boolean {
+    return mesmoConteudo(
+      this.fases.controls.map(faseDoFormulario),
+      fases.map(faseComoNoFormulario),
+    );
+  }
+
+  private etapasJaEspelhadas(etapas: WizardDraft['cronograma']['etapas']): boolean {
+    return mesmoConteudo(
+      this.etapas.controls.map(etapaDoFormulario),
+      etapas.map(etapaComoNoFormulario),
+    );
+  }
+
+  /**
+   * Reconstrói só o que difere. A ordem das etapas vem resolvida da hidratação, que renumera o
+   * que o servidor devolveu: corrigir de novo aqui deixaria o formulário e o rascunho
+   * descrevendo posições diferentes.
    */
   private reconstruirDe(cronograma: WizardDraft['cronograma']): void {
-    this.fases.clear({ emitEvent: false });
-    for (const fase of renumerar(cronograma.fases)) {
-      this.fases.push(grupoDaFase(fase), { emitEvent: false });
+    if (!this.fasesJaEspelhadas(cronograma.fases)) {
+      espelharFasesNoFormulario(this.fases, renumerar(cronograma.fases));
     }
-
-    this.etapas.clear({ emitEvent: false });
-    for (const etapa of cronograma.etapas) {
-      this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
-    }
+    if (!this.etapasJaEspelhadas(cronograma.etapas)) this.recriarEtapas(cronograma.etapas);
 
     const controles = this.formulario.controls;
-    controles.algoritmoContagemCodigo.setValue(cronograma.algoritmoContagemCodigo, {
-      emitEvent: false,
-    });
-    controles.algoritmoContagemVersao.setValue(cronograma.algoritmoContagemVersao, {
-      emitEvent: false,
-    });
+    const semEvento = { emitEvent: false };
+    controles.algoritmoContagemCodigo.setValue(cronograma.algoritmoContagemCodigo, semEvento);
+    controles.algoritmoContagemVersao.setValue(cronograma.algoritmoContagemVersao, semEvento);
+  }
+
+  private recriarEtapas(etapas: WizardDraft['cronograma']['etapas']): void {
+    this.etapas.clear({ emitEvent: false });
+    for (const etapa of etapas) this.etapas.push(grupoDaEtapa(etapa), { emitEvent: false });
   }
 
   /**

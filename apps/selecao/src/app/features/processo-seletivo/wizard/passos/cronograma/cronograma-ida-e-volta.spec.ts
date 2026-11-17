@@ -46,7 +46,7 @@ const PROCEDIMENTOS_DO_COMANDO = [
   },
 ];
 
-const TIPOS_DE_DECISAO = ['RESULTADO_PRELIMINAR', 'RESULTADO_FINAL'];
+const TIPOS_DE_DECISAO = ['RESULTADO_FINAL', 'RESULTADO_PRELIMINAR'];
 
 const FASE_PREENCHIDA = faseDoServidor({
   cronograma: { unidadeResponsavel: UNIDADE },

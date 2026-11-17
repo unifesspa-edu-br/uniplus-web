@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
+import { MotivoDeDecisaoDto, rotuloDoSentido } from '@uniplus/shared-data/selecao';
 import {
   EmptyStateComponent,
   FilterBarComponent,
@@ -12,7 +12,6 @@ import {
 } from '@uniplus/shared-ui/components';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
 import { devolverFocoDaLista } from '../../shared/foco';
-import { rotuloDe, SENTIDOS_DE_MOTIVO } from './tipos-de-motivo';
 
 type Acao = 'editar' | 'situacao';
 
@@ -78,7 +77,7 @@ export class MotivosDeDecisaoListaComponent {
   }
 
   protected sentidoDe(motivo: MotivoDeDecisaoDto): string {
-    return rotuloDe(SENTIDOS_DE_MOTIVO, motivo.sentido);
+    return rotuloDoSentido(motivo.sentido);
   }
 
   protected nomeDaAcaoDeSituacao(motivo: MotivoDeDecisaoDto): string {

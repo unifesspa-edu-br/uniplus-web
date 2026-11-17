@@ -277,6 +277,13 @@
       ></sel-publicacoes-da-etapa>
     }
 
+    <sel-tipos-de-decisao-da-fase-ou-etapa
+      class="form-grid__full etapa-publica"
+      formControlName="tiposDeDecisao"
+      legenda="Decisões que esta etapa toma"
+      [idDoGrupo]="'cr-etapa-tipos-' + posicao"
+    />
+
     <sel-recursos-da-etapa
       class="form-grid__full etapa-publica etapa-publica--recolhivel"
       [class.is-aberto]="expansao.blocoAberto(posicao, 'recursos')"

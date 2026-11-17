@@ -14,7 +14,11 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { MotivoDeDecisaoDto, MotivosDeDecisaoApi } from '@uniplus/shared-data/selecao';
+import {
+  MotivoDeDecisaoDto,
+  MotivosDeDecisaoApi,
+  rotuloDoTipoDeDecisao,
+} from '@uniplus/shared-data/selecao';
 import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
 import { aguardarRecarga } from '../../shared/foco';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
@@ -37,7 +41,7 @@ import {
 } from './motivo-de-decisao-form';
 import { FundamentoOferecido, FundamentosOferecidos } from './fundamentos-oferecidos';
 import { MotivosDeDecisaoStore } from './motivos-de-decisao.store';
-import { rotuloDe, TIPOS_DE_MOTIVO, tipoPedeSubclassificacao } from './tipos-de-motivo';
+import { tipoPedeSubclassificacao } from './tipos-de-motivo';
 
 type Escrita = 'salvando' | 'situacao';
 type MudancaDeSituacao = { readonly motivo: MotivoDeDecisaoDto; readonly ativar: boolean };
@@ -105,7 +109,7 @@ export class EdicaoDosMotivosDeDecisao {
   });
   readonly falhaNosFundamentos = this.oferecidos.falha;
   readonly pedeSubclassificacao = computed(() => tipoPedeSubclassificacao(this.store.tipo()));
-  readonly tipoEscolhido = computed(() => rotuloDe(TIPOS_DE_MOTIVO, this.store.tipo()));
+  readonly tipoEscolhido = computed(() => rotuloDoTipoDeDecisao(this.store.tipo()));
   readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Novo motivo de decisão' : 'Editar motivo de decisão',
   );

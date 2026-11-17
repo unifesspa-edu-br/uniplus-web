@@ -140,6 +140,14 @@ describe('etapa lida na consulta', () => {
     ]);
   });
 
+  it('lê os tipos de decisão da etapa pelo nome e mantém o código que o vocabulário não conhece', () => {
+    expect(lida({ tiposDeDecisao: ['CLASSIFICACAO', 'TIPO_DO_FUTURO'] }).tiposDeDecisao).toEqual([
+      'Classificação',
+      'TIPO_DO_FUTURO',
+    ]);
+    expect(lida({ tiposDeDecisao: [] }).tiposDeDecisao).toEqual([]);
+  });
+
   it('lê o recurso que corre da publicação do ato, com a suspensividade das duas instâncias', () => {
     const [texto] = lida({
       recursos: [

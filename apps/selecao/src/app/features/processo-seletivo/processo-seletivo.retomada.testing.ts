@@ -41,6 +41,7 @@ import {
   FundamentoIsencaoDto,
   ItemConformidadeDto,
   OrigemCandidatos,
+  MotivosDeDecisaoApi,
   RegrasCatalogoApi,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
@@ -106,6 +107,7 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
   { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; estas suítes cobrem a retomada do processo, não as escolhas.
