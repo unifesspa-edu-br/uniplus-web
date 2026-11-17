@@ -59,6 +59,18 @@
         "cwd": "{workspaceRoot}"
       }
     },
+    "test": {
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/apps/*/project.json",
+        "{workspaceRoot}/libs/*/project.json",
+        "{workspaceRoot}/tools/**/project.json",
+        { "externalDependencies": ["vitest"] },
+        { "env": "CI" },
+        { "dependentTasksOutputFiles": "**/*.js", "transitive": true }
+      ]
+    },
     "typecheck-spec": {}
   }
 }

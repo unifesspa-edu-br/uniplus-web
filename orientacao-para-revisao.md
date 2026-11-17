@@ -2,13 +2,13 @@
 
 Complementa o [`CONTRIBUTING.md`](CONTRIBUTING.md). Registra como as regras de arquitetura do `uniplus-web` são garantidas e o que fica para quem revisa.
 
-Atualizado em 13/11/2026.
+Atualizado em 17/11/2026.
 
 ## Regra
 
 Regra de arquitetura só vira verificação automática quando pode ser garantida de forma declarativa, legível e estável diante de refatoração. As formas aceitas são:
 
-- **ESLint**: regras configuradas no `eslint.config.mjs` da raiz ou do projeto. Hoje a raiz já aplica `@nx/enforce-module-boundaries` e as métricas de tamanho e complexidade. `no-restricted-imports`, `no-restricted-syntax` com seletores e `@angular-eslint/*` são as formas previstas para os substitutos abaixo;
+- **ESLint**: regras configuradas no `eslint.config.mjs` da raiz ou do projeto. Hoje a raiz já aplica `@nx/enforce-module-boundaries` e as métricas de tamanho e complexidade, com `linterOptions.noInlineConfig` para que nenhum comentário desligue regra. `no-restricted-imports`, `no-restricted-syntax` com seletores e `@angular-eslint/*` são as formas previstas para os substitutos abaixo;
 - **compilador do TypeScript**: tipos que tornam a violação impossível de compilar;
 - **teste de comportamento**: unitário (Vitest) ou E2E (Playwright), que prova o efeito, e não a forma do código.
 
@@ -30,7 +30,7 @@ Siga esta ordem:
 
 ## Transição da dívida existente
 
-Os specs `*.fitness.spec.ts` leem o fonte como texto. Eles continuam valendo até serem substituídos, com estas regras:
+Os specs `*.fitness.spec.ts` da tabela abaixo leem o fonte como texto. Eles continuam valendo até serem substituídos, com estas regras:
 
 - Um spec legado só é removido no mesmo PR em que o substituto fica implementado e verde. Proteção automática não pode ficar descoberta, nem por um commit.
 - PR que altera um spec legado o migra para a forma aceita. A regra é desta orientação, e não das métricas do `CONTRIBUTING.md`.
@@ -43,7 +43,6 @@ Salvo o que a tabela marca como já ativo, os substitutos abaixo não existem ai
 
 | Spec legado | O que protege | Substituto previsto |
 |---|---|---|
-| `libs/shared-data/src/lib/__fitness__/architecture-boundaries.fitness.spec.ts` | Restrições de tag nas arestas estáticas e ausência de ciclo em todas as arestas do grafo de projetos, inclusive as implícitas | Imports entre projetos: `@nx/enforce-module-boundaries`, já ativo, mais `linterOptions.noInlineConfig` para que nenhuma regra seja desligada por comentário (o repositório não tem `eslint-disable` hoje). Arestas implícitas (`implicitDependencies`): o lint não as vê; a garantia fica retida até haver verificação equivalente sobre o grafo do Nx |
 | `libs/shared-data/src/lib/__fitness__/public-entrypoints.fitness.spec.ts` | Apps importam só subpaths permitidos das libs `shared-*`; cada entrypoint listado é um entrypoint real do ng-packagr; `tsconfig.base.json` sem alias wildcard `shared-*` | Imports das apps: `no-restricted-imports` com a lista permitida expressa como padrão de permissão, e não só a proibição dos barrels raiz e de `src/lib/*`. Existência de cada entrypoint e ausência de wildcard: sem substituto equivalente; ficam retidas |
 | `libs/shared-data/src/lib/__fitness__/runtime-config-providers.fitness.spec.ts` | `provideRuntimeConfig` importado de `@uniplus/shared-data/config` e `provideAuth` de `@uniplus/shared-auth/bootstrap`; `provideRuntimeConfig()` antes de `provideAuth()`; nada de `environments/environment` | Ordem: teste de comportamento da inicialização (unitário ou E2E, decisão pendente). Origem dos dois providers e import de `environments/environment`: `no-restricted-imports` nos `app.config.ts` |
 | `libs/shared-data/src/lib/api/__fitness__/api-services.fitness.spec.ts` | Classe `@Injectable`; nenhum método público devolve `Promise`; método público que devolve `Observable` devolve `Observable<ApiResult<T>>`; import de `withVendorMime` vindo de `@uniplus/shared-core/http`; ocorrência de `withVendorMime` nos `this.http.get(...)`, contada por arquivo, com dois GETs de `versoes-do-perfil.api.ts` dispensados. Mutações ficam fora do spec | Decorator e `providedIn: 'root'`: `no-restricted-syntax` com seletores que exijam os dois, porque `@angular-eslint/use-injectable-provided-in` sozinho aceita classe sem decorator e outros valores. Origem do import: `no-restricted-imports`. Proibição de `Promise`: `no-restricted-syntax` sobre o tipo de retorno dos métodos públicos dos `*.api.ts`. Tipo `Observable<ApiResult<T>>` e uso de `withVendorMime` em cada chamada: sem forma declarativa equivalente definida; ficam retidos até haver desenho (por exemplo, cliente HTTP comum que só devolve `ApiResult` e aplica o cabeçalho) com teste unitário de cada serviço |
@@ -53,6 +52,7 @@ Salvo o que a tabela marca como já ativo, os substitutos abaixo não existem ai
 
 - `calendario-dias-uteis.api.spec.ts` lê o contrato OpenAPI (JSON) para derivar o DTO. É dado, não fonte.
 - Os specs do formulário do candidato carregam casos de teste em JSON com `import.meta.glob`.
+- `grafo-de-projetos-sem-ciclo.fitness.spec.ts` lê o grafo de projetos pela API do Nx (`readCachedProjectGraph`). É dado da ferramenta, não fonte, e o spec confere só a ausência de ciclo, inclusive o fechado por `implicitDependencies`, que o lint não vê. As restrições de tag entre projetos ficam só no `@nx/enforce-module-boundaries`.
 
 ## Conferido na revisão (não vira verificação automática)
 
