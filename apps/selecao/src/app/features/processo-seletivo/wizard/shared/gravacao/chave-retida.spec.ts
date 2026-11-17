@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { errorResult, mockProblemDetails } from '@uniplus/shared-core/http';
 import { IDEMPOTENCY_KEY_TOKEN } from '@uniplus/shared-core/idempotency';
+import { errorResult, mockProblemDetails } from '@uniplus/shared-testing';
 import { ChaveRetida } from './chave-retida';
 
 const falha = (status: number, code: string) =>

@@ -63,12 +63,6 @@ export const ofertaSeed: OfertaCursoDto = {
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
-/** Folga acima do debounce da busca (BUSCA_DEBOUNCE_MS = 300 na página). */
-export const DEBOUNCE_FOLGA_MS = 360;
-
-export const sleep = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
 export interface CursosPageMontada {
   readonly fixture: ComponentFixture<CursosPage>;
   readonly store: CursosStore;

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { AnuncioDaConclusao } from '@uniplus/shared-ui/components';
+import { passarOTempo } from '@uniplus/shared-testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -90,7 +91,7 @@ describe('ProcessosComponent — nova tentativa e página que falha', () => {
     );
 
     await cenario.responderLista([sisu], contadoresHeaders);
-    await cenario.passarOTempo(0);
+    await passarOTempo(0);
     cenario.fixture.detectChanges();
 
     expect(document.activeElement).toBe(titulo);
@@ -132,7 +133,7 @@ describe('ProcessosComponent — nova tentativa e página que falha', () => {
     tentar?.click();
     await cenario.propagar();
     await cenario.responderComProblema(410, CURSOR_EXPIRADO);
-    await cenario.passarOTempo(0);
+    await passarOTempo(0);
     cenario.fixture.detectChanges();
 
     const recarga = cenario.controller.expectOne((requisicao) => requisicao.url === CERTAMES_URL);
@@ -143,7 +144,7 @@ describe('ProcessosComponent — nova tentativa e página que falha', () => {
     expect(anunciar).not.toHaveBeenCalled();
 
     recarga.flush([sisu], { headers: contadoresHeaders });
-    await cenario.passarOTempo(0);
+    await passarOTempo(0);
     cenario.fixture.detectChanges();
 
     expect(document.activeElement).toBe(cenario.host().querySelector('h1'));

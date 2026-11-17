@@ -2,12 +2,11 @@ import { By } from '@angular/platform-browser';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { UnidadeFormularioComponent } from './unidade-formulario.component';
 import {
+  CenarioDaPaginaDeUnidades,
   ESCRITA,
   LISTA,
-  Pagina,
   criado,
   instituto,
-  montarPagina,
   problema,
   recusaDeCampo,
   reitoria,
@@ -15,17 +14,14 @@ import {
 } from './unidades.testing';
 
 describe('UnidadesPage — escritas pela interface', () => {
-  let p: Pagina;
+  let p: CenarioDaPaginaDeUnidades;
 
   beforeEach(async () => {
-    p = await montarPagina([reitoria, instituto]);
+    p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto]);
   });
   afterEach(() => p.http.verify());
 
   const drawer = (): HTMLDialogElement => p.elemento('dialog[aria-label="Formulário de unidade"]');
-  const submeter = (): void => {
-    p.formulario().dispatchEvent(new Event('submit', { cancelable: true }));
-  };
   const cancelar = (): HTMLButtonElement =>
     [...p.fixture.nativeElement.querySelectorAll('.form-drawer__footer button')].find(
       (b) => (b as HTMLElement).textContent?.trim() === 'Cancelar',
@@ -54,7 +50,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.aberto()).toBe(true);
 
       post.flush(...criado());
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
       expect(p.edicao.aberto()).toBe(false);
     });
 
@@ -63,13 +59,13 @@ describe('UnidadesPage — escritas pela interface', () => {
       const post = await p.enviar();
       const clique = new MouseEvent('click', { bubbles: true, cancelable: true });
       p.salvar().dispatchEvent(clique);
-      submeter();
+      p.submeterOFormulario();
       await p.propagar();
 
       expect(clique.defaultPrevented).toBe(true);
       p.http.expectNone(ESCRITA);
       post.flush(...criado());
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
     });
 
     it('a submissão repetida nem chega a pedir o salvamento ao formulário', async () => {
@@ -81,12 +77,12 @@ describe('UnidadesPage — escritas pela interface', () => {
       const post = await p.enviar();
       expect(pedidos).toEqual(['salvar']);
 
-      submeter();
+      p.submeterOFormulario();
       await p.propagar();
 
       expect(pedidos).toEqual(['salvar']);
       post.flush(...criado());
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
     });
 
     it('o salvamento não se apresenta como remoção, nem durante a espera pela recarga', async () => {
@@ -101,13 +97,13 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.gravando()).toBe(true);
       expect(p.edicao.removendo()).toBe(false);
       expect(p.elemento('cfg-unidades-lista').textContent).not.toContain('Removendo');
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
     });
 
     it('Enter num campo leva o foco ao botão e, na falha 500, o envio segue disponível', async () => {
       await p.abrirCadastro();
       p.campo('nome').focus();
-      submeter();
+      p.submeterOFormulario();
       await p.propagar();
       const post = p.http.expectOne(ESCRITA);
 
@@ -118,12 +114,12 @@ describe('UnidadesPage — escritas pela interface', () => {
       await p.propagar();
 
       expect(p.campo('nome').matches(':disabled')).toBe(false);
-      expect(p.elemento('ui-drawer ui-alert').textContent).toContain('Falha');
+      expect(p.alertaDoDrawer().textContent).toContain('Falha');
       expect(document.activeElement).toBe(p.salvar());
       expect(p.salvar().getAttribute('aria-disabled')).toBeNull();
-      submeter();
+      p.submeterOFormulario();
       p.http.expectOne(ESCRITA).flush(...criado());
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
     });
 
     it('não abre outro editor nem fecha o drawer enquanto grava', async () => {
@@ -138,7 +134,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.aberto()).toBe(true);
 
       put.flush(...sucesso());
-      await p.recarregarCom([reitoria, instituto]);
+      await p.responderAConsultaDasUnidades([reitoria, instituto]);
       expect(p.edicao.aberto()).toBe(false);
     });
   });
@@ -160,7 +156,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.form.controls.alias.disabled).toBe(true);
       expect(p.edicao.form.controls.nome.enabled).toBe(true);
       expect(p.campo('alias').matches(':disabled')).toBe(true);
-      if (desfecho === 'sucesso') await p.recarregarCom([reitoria]);
+      if (desfecho === 'sucesso') await p.responderAConsultaDasUnidades([reitoria]);
     });
   });
 
@@ -192,7 +188,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.gravando()).toBe(true);
       p.novo().click();
       expect(p.edicao.aberto()).toBe(false);
-      await p.recarregarCom([instituto]);
+      await p.responderAConsultaDasUnidades([instituto]);
       expect(p.edicao.gravando()).toBe(false);
     });
 
@@ -211,7 +207,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       p.http.expectNone(`${ESCRITA}/${reitoria.id}`);
 
       del.flush(...sucesso());
-      await p.recarregarCom([instituto]);
+      await p.responderAConsultaDasUnidades([instituto]);
     });
 
     it('"Tentar novamente" fica indisponível com a leitura falha enquanto remove', async () => {
@@ -228,7 +224,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       p.http.expectNone((r) => r.url === LISTA);
 
       del.flush(...sucesso());
-      await p.recarregarCom([instituto]);
+      await p.responderAConsultaDasUnidades([instituto]);
     });
 
     it('a árvore e a busca ficam indisponíveis enquanto grava', async () => {
@@ -237,7 +233,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.elemento('cfg-unidades-filtros').hasAttribute('inert')).toBe(true);
       expect(p.nomeDoNo(reitoria).matches(':disabled')).toBe(true);
       del.flush(...sucesso());
-      await p.recarregarCom([instituto]);
+      await p.responderAConsultaDasUnidades([instituto]);
       expect(p.elemento('cfg-unidades-filtros').hasAttribute('inert')).toBe(false);
     });
   });
@@ -256,14 +252,14 @@ describe('UnidadesPage — escritas pela interface', () => {
       p.edicao.abrirCadastro();
       p.edicao.salvar();
       p.http.expectNone(ESCRITA);
-      await p.recarregarCom([reitoria, instituto]);
+      await p.responderAConsultaDasUnidades([reitoria, instituto]);
 
       p.edicao.pedirRemocao(instituto);
       p.edicao.removerConfirmado();
       p.edicao.salvar();
       p.http.expectNone(ESCRITA);
       p.http.expectOne(`${ESCRITA}/${instituto.id}`).flush(...sucesso());
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
     });
 
     it('confirmar sem ter pedido a remoção não envia nada', () => {
@@ -281,7 +277,7 @@ describe('UnidadesPage — escritas pela interface', () => {
       expect(p.edicao.salvando()).toBe(false);
       expect(p.edicao.gravando()).toBe(true);
       expect(p.editar(reitoria).matches(':disabled')).toBe(true);
-      await p.recarregarCom([reitoria]);
+      await p.responderAConsultaDasUnidades([reitoria]);
       expect(p.edicao.gravando()).toBe(false);
       expect(p.editar(reitoria).matches(':disabled')).toBe(false);
     });
@@ -304,7 +300,7 @@ describe('UnidadesPage — escritas pela interface', () => {
         expect(tentar.getAttribute('aria-disabled')).toBeNull();
         tentar.click();
         await p.propagar();
-        await p.recarregarCom([reitoria]);
+        await p.responderAConsultaDasUnidades([reitoria]);
         expect(p.store.mensagemDeErro()).toBeNull();
       },
     );

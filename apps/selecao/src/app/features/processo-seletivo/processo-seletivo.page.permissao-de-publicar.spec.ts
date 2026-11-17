@@ -2,23 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
-import { PAGE_PROVIDERS, concedeSoPublicar } from './processo-seletivo.page.testing';
+import { concedeSoPublicar, configurarPagina } from './processo-seletivo.page.testing';
 
 describe('ProcessoSeletivoPage — permissão de publicar', () => {
   const ID = '11111111-1111-4111-8111-111111111111';
 
-  async function montarNoUltimoPasso(permissoes: (codigo: string) => boolean) {
-    TestBed.resetTestingModule();
-    await TestBed.configureTestingModule({
-      imports: [ProcessoSeletivoPage],
-      providers: [
-        ...PAGE_PROVIDERS.filter(
-          (provedor) =>
-            !('provide' in provedor && (provedor.provide as unknown) === PermissoesService),
-        ),
-        { provide: PermissoesService, useValue: { tem: permissoes } },
-      ],
-    }).compileComponents();
+  beforeEach(configurarPagina);
+
+  function montarNoUltimoPasso(permissoes: (codigo: string) => boolean) {
+    TestBed.overrideProvider(PermissoesService, { useValue: { tem: permissoes } });
     vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
     vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
     const fixture = TestBed.createComponent(ProcessoSeletivoPage);
@@ -35,14 +27,14 @@ describe('ProcessoSeletivoPage — permissão de publicar', () => {
     return { fixture, page: fixture.componentInstance, store, host, textoDosBotoes };
   }
 
-  it('com a permissão de publicar, oferece publicar', async () => {
-    const { textoDosBotoes } = await montarNoUltimoPasso(concedeSoPublicar);
+  it('com a permissão de publicar, oferece publicar', () => {
+    const { textoDosBotoes } = montarNoUltimoPasso(concedeSoPublicar);
 
     expect(textoDosBotoes()).toEqual(expect.arrayContaining(['Publicar']));
   });
 
   it('só com configurar, não oferece publicar, e o avanço não publica', async () => {
-    const { fixture, page, store, textoDosBotoes } = await montarNoUltimoPasso(
+    const { fixture, page, store, textoDosBotoes } = montarNoUltimoPasso(
       (codigo) => codigo === 'selecao:processos:configurar',
     );
 

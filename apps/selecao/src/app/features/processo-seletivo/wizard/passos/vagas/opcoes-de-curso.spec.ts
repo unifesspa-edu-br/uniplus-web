@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mockProblemDetails } from '@uniplus/shared-core/http';
+import { mockProblemDetails } from '@uniplus/shared-testing';
 
 import {
   erroDasOpcoes,

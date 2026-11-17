@@ -7,11 +7,13 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
+import { passarOTempo } from '@uniplus/shared-testing';
 import { Subject } from 'rxjs';
 import { expect, vi } from 'vitest';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import { CalendarioDiasUteisDetalhePage } from './calendario-dias-uteis-detalhe.page';
 import { CalendarioDiasUteisNovoPage } from './calendario-dias-uteis-novo.page';
+import { ESPERA_DA_BUSCA_DE_MUNICIPIO_MS } from './calendario-dias-uteis.util';
 import { CalendarioStore } from './calendario.store';
 import { EdicaoDoCalendario } from './edicao-do-calendario';
 import { EdicaoDosDiasNaoUteis } from './edicao-dos-dias-nao-uteis';
@@ -23,8 +25,6 @@ export const ESCRITA_DO_CALENDARIO = `${BASE}/api/configuracao/admin/calendarios
 export const ESCRITA_DO_DIA = `${ESCRITA_DO_CALENDARIO}/${CALENDARIO_ID}/dias-nao-uteis`;
 export const LEITURA = `${BASE}/api/configuracao/calendarios-dias-uteis/${CALENDARIO_ID}`;
 export const CIDADES = `${BASE}/api/cidades`;
-/** Mais que o debounce da busca de municípios. */
-export const ESPERA_DA_BUSCA_EM_MS = 350;
 
 export const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' } as const;
 export const PARAUAPEBAS = { codigoIbge: '1505536', nome: 'Parauapebas', uf: 'PA' } as const;
@@ -84,9 +84,6 @@ export const problema = (status: number, corpo: object = {}) =>
 
 export const criado = () => [CALENDARIO_ID, { status: 201, statusText: 'Created' }] as const;
 
-export const esperar = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
 function configurar(raiz: unknown, rota?: Partial<ActivatedRoute>) {
   TestBed.configureTestingModule({
     imports: [raiz as never],
@@ -131,7 +128,7 @@ function ferramentas<T>(fixture: ComponentFixture<T>) {
     municipio: { codigoIbge: string; nome: string; uf: string },
   ): Promise<void> => {
     escrever(elemento<HTMLInputElement>(ids.busca), municipio.nome);
-    await esperar(ESPERA_DA_BUSCA_EM_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_DE_MUNICIPIO_MS);
     http
       .expectOne((r) => r.url === CIDADES)
       .flush([{ id: `cidade-${municipio.codigoIbge}`, ddd: '94', ...municipio }]);

@@ -143,4 +143,4 @@ function textoAparado(controle: FormControl<string | null>): string {
 export const MUNICIPIOS_LIMIT = 20;
 /** Quantas letras a busca de município exige antes de consultar a Geo. */
 export const TAMANHO_MINIMO_DA_BUSCA_DE_MUNICIPIO = 2;
-export const MUNICIPIO_BUSCA_DEBOUNCE_MS = 300;
+export const ESPERA_DA_BUSCA_DE_MUNICIPIO_MS = 300;

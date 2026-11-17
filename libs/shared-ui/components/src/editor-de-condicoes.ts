@@ -59,6 +59,7 @@ export {
 export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
 export {
   BUSCA_DE_MUNICIPIOS,
+  ESPERA_DA_DIGITACAO_MS,
   LEITURA_DE_MUNICIPIO_POR_CODIGO,
   NomesDeMunicipios,
   type BuscaDeMunicipios,

@@ -3,7 +3,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
-import { apiOk, errorResult, mockProblemDetails, okResult } from '@uniplus/shared-core/http';
+import { apiOk } from '@uniplus/shared-core/http';
 import {
   ModalidadeDto,
   BaseLegalBonusRegionalApi,
@@ -49,6 +49,7 @@ import {
   StatusProcesso,
   VagasDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
+import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 

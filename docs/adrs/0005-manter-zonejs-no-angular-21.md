@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0005: Manter Zone.js no Angular 21
 
+> **Emenda (2026-11-17).** O PrimeNG saiu do `package.json`: nenhum app nem lib o importa, e a compatibilidade com ele deixou de ser motivo da decisão. A decisão de manter Zone.js permanece até a reavaliação que esta ADR já exige a cada major do Angular, e o teste unitário não depende dela (ADR-0004).
+
 ## Contexto e enunciado do problema
 
 O Angular 21 promoveu o modo zoneless a stable, permitindo remover Zone.js da aplicação e delegar toda a detecção de mudanças a signals e `provideZonelessChangeDetection()`. Como o `uniplus-web` é um workspace novo, é razoável questionar se vale adotar zoneless desde o início para reduzir bundle e simplificar o modelo mental de change detection.

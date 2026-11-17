@@ -11,6 +11,10 @@ informed:
 
 # ADR-0024: Uso seletivo de PrimeNG em wrappers `ui-*`
 
+> **Emenda (2026-11-17).** O PrimeNG saiu do `package.json`: nenhum app nem lib o importa e
+> nenhum wrapper `ui-*` o usa. Se um wrapper vier a precisar dele, a dependência volta ao
+> workspace com decisão própria e as regras de encapsulamento abaixo passam a valer.
+
 ## Contexto e enunciado do problema
 
 A ADR-0023 definiu o `uniplus-ds` CSS-only como contrato visual vigente e

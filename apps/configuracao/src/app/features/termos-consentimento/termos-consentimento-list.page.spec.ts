@@ -1,4 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { ESPERA_DA_BUSCA_MS } from './termos-consentimento.store';
 import {
   CenarioDaLista,
   LGPD,
@@ -11,6 +13,7 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   let c: CenarioDaLista;
 
   beforeEach(() => {
+    ligarRelogioControlado();
     c = new CenarioDaLista();
   });
 
@@ -22,18 +25,15 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
     expect(c.store.termos()[0].nome).toBe('Termo LGPD');
   });
 
-  it('aplica debounce de 300ms e normaliza com trim ao alterar a busca', async () => {
-    vi.useFakeTimers();
+  it('só busca quando passa a espera da digitação e normaliza com trim', async () => {
     await c.montar();
 
     c.store.alterarBusca('  lgpd  ');
 
-    vi.advanceTimersByTime(200);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
     c.controller.expectNone((r) => r.url === URL && r.params.has('q'));
 
-    vi.advanceTimersByTime(100);
-    await c.propagar();
+    await passarOTempo(1);
     const req = c.controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd');
     req.flush([LGPD]);
     await c.propagar();
@@ -42,12 +42,10 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   });
 
   it('limpa filtros, cancela o debounce pendente e permite repetir o mesmo termo', async () => {
-    vi.useFakeTimers();
     await c.montar();
 
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(150);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
 
     c.store.limparFiltros();
     await c.propagar();
@@ -56,30 +54,25 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
     req.flush([LGPD, USO_IMAGEM]);
     await c.propagar();
 
-    vi.advanceTimersByTime(150);
-    await c.propagar();
+    await passarOTempo(1);
     c.controller.expectNone((r) => r.url === URL && r.params.get('q') === 'lgpd');
     expect(c.store.busca()).toBe('');
 
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
 
     c.controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd').flush([LGPD]);
   });
 
   it('ignora disparos se o termo normalizado for idêntico', async () => {
-    vi.useFakeTimers();
     await c.montar();
 
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     c.controller.expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd').flush([LGPD]);
 
     c.store.alterarBusca('lgpd ');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
 
     c.controller.expectNone((r) => r.url === URL && r.params.get('q') === 'lgpd');
   });
@@ -87,10 +80,8 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   it('zera cursores e lista imediatamente ao aplicar um novo filtro', async () => {
     await c.montar();
 
-    vi.useFakeTimers();
     c.store.alterarBusca('novo-termo');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
 
     expect(c.store.prevCursor()).toBeNull();
     expect(c.store.nextCursor()).toBeNull();
@@ -127,12 +118,10 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   });
 
   it('preserva o filtro ao navegar para a próxima página', async () => {
-    vi.useFakeTimers();
     await c.montar();
 
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     c.controller
       .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd')
       .flush([LGPD], {
@@ -157,19 +146,16 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   });
 
   it('ignora resposta atrasada de um filtro anterior', async () => {
-    vi.useFakeTimers();
     await c.montar();
 
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     const reqAnterior = c.controller.expectOne(
       (r) => r.url === URL && r.params.get('q') === 'lgpd',
     );
 
     c.store.alterarBusca('imagem');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     const reqAtual = c.controller.expectOne((r) => r.url === URL && r.params.get('q') === 'imagem');
 
     reqAtual.flush([USO_IMAGEM]);
@@ -205,19 +191,16 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
   });
 
   it('voltar à busca já aplicada não repete a consulta, mas na página seguinte volta à primeira', async () => {
-    vi.useFakeTimers();
     await c.montar([LGPD], comProximo('n1'));
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     c.controller
       .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd')
       .flush([LGPD], { headers: comProximo('n2') });
     await c.propagar();
     c.store.alterarBusca('x');
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     c.controller.expectNone((r) => r.url === URL && r.params.has('q'));
 
     c.store.proximaPagina();
@@ -226,8 +209,7 @@ describe('TermosConsentimentoListPage — busca e paginação', () => {
     await c.propagar();
     c.store.alterarBusca('x');
     c.store.alterarBusca('lgpd');
-    vi.advanceTimersByTime(300);
-    await c.propagar();
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     c.controller
       .expectOne((r) => r.url === URL && r.params.get('q') === 'lgpd' && !r.params.has('cursor'))
       .flush([LGPD]);

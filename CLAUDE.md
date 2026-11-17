@@ -10,7 +10,6 @@ bibliotecas compartilhadas.
 - **Angular** 21.x (standalone components, signals, OnPush)
 - **Nx** 22.x (monorepo, affected, caching)
 - **Uni+ DS** CSS-only (tokens semanticos, temas e anatomia HTML)
-- **PrimeNG** 21.x (uso legado/complexo encapsulado quando necessário)
 - **Tailwind CSS** 4.x (estilização utility-first com @theme)
 - **OIDC Keycloak** (autenticação via `keycloak-js` e `keycloak-angular`)
 - **Playwright** (testes E2E)
@@ -37,6 +36,7 @@ libs/
   shared-data/    → Runtime config, DTOs e clientes API gerados por OpenAPI
   shared-inscricao/ → Apresentação do domínio da inscrição comum a mais de um app (ADR-0030)
   shared-e2e/     → Fixtures, setup e utilitários compartilhados de Playwright
+  shared-testing/ → Apoio de teste unitário (relógio controlado, respostas simuladas da API); só testes o importam (ADR-0032)
   shared-utils/   → Utilitários sem dependência de domínio
 
 docs/referencias/
@@ -92,6 +92,7 @@ uniplus-ds CSS-only
 - `@uniplus/shared-inscricao/comprovante` → `libs/shared-inscricao/src/lib/comprovante/index.ts`
 - `@uniplus/shared-utils` → `libs/shared-utils/src/index.ts`
 - `@uniplus/shared-e2e` → `libs/shared-e2e/src/index.ts`
+- `@uniplus/shared-testing` → `libs/shared-testing/src/index.testing.ts`
 
 ## Padroes de componentes
 

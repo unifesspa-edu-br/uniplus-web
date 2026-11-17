@@ -1,15 +1,10 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ApplicationRef } from '@angular/core';
 import { CursoDto } from '@uniplus/shared-data/configuracao';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  CURSOS_URL,
-  cursoSeed,
-  DEBOUNCE_FOLGA_MS,
-  montarCursosPage,
-  sleep,
-} from './cursos.listagem.testing';
-import { CursosStore } from './cursos.store';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CURSOS_URL, cursoSeed, montarCursosPage } from './cursos.listagem.testing';
+import { CursosStore, ESPERA_DA_BUSCA_MS } from './cursos.store';
 
 describe('CursosPage — paginação e busca', () => {
   let store!: CursosStore;
@@ -20,11 +15,13 @@ describe('CursosPage — paginação e busca', () => {
   let encerrar!: () => void;
 
   beforeEach(() => {
+    ligarRelogioControlado();
     ({ store, controller, appRef, propagate, flushLista, encerrar } = montarCursosPage());
   });
 
   afterEach(() => {
     encerrar();
+    vi.useRealTimers();
   });
 
   it('trocar itens por página recarrega a primeira página com o novo limit', async () => {
@@ -188,7 +185,7 @@ describe('CursosPage — paginação e busca', () => {
     await flushLista([cursoSeed]);
 
     store.termoBusca.set('x'.repeat(201));
-    await sleep(DEBOUNCE_FOLGA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     await propagate();
 
     const req = controller.expectOne((r) => r.url === CURSOS_URL && r.params.has('q'));
@@ -219,10 +216,10 @@ describe('CursosPage — paginação e busca', () => {
     store.termoBusca.set('adm');
     store.termoBusca.set('administ');
     appRef.tick();
-    // Antes do debounce, nenhuma request com q (não dispara por tecla).
+    await passarOTempo(ESPERA_DA_BUSCA_MS - 1);
     controller.expectNone((r) => r.url === CURSOS_URL && r.params.has('q'));
 
-    await sleep(DEBOUNCE_FOLGA_MS);
+    await passarOTempo(1);
     await propagate();
 
     const req = controller.expectOne((r) => r.url === CURSOS_URL && r.params.has('q'));
@@ -238,7 +235,7 @@ describe('CursosPage — paginação e busca', () => {
     await flushLista([cursoSeed]);
 
     store.termoBusca.set('eng');
-    await sleep(DEBOUNCE_FOLGA_MS);
+    await passarOTempo(ESPERA_DA_BUSCA_MS);
     await propagate();
 
     const p1 = controller.expectOne((r) => r.url === CURSOS_URL && r.params.get('q') === 'eng');

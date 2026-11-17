@@ -8,7 +8,7 @@ Atualizado em 17/11/2026.
 
 Regra de arquitetura só vira verificação automática quando pode ser garantida de forma declarativa, legível e estável diante de refatoração. As formas aceitas são:
 
-- **ESLint**: regras configuradas no `eslint.config.mjs` da raiz ou do projeto. Hoje a raiz já aplica `@nx/enforce-module-boundaries` e as métricas de tamanho e complexidade, com `linterOptions.noInlineConfig` para que nenhum comentário desligue regra. `no-restricted-imports`, `no-restricted-syntax` com seletores e `@angular-eslint/*` são as formas previstas para os substitutos abaixo;
+- **ESLint**: regras configuradas no `eslint.config.mjs` da raiz ou do projeto. Hoje a raiz já aplica `@nx/enforce-module-boundaries` e as métricas de tamanho e complexidade, com `linterOptions.noInlineConfig` para que nenhum comentário desligue regra. `no-restricted-imports`, `no-restricted-syntax` com seletores e `@angular-eslint/*` são as formas previstas para os substitutos abaixo. Quando um projeto redefine a regra original e a substituiria no bloco dele, a regra do núcleo é registrada com nome próprio (caso de `apoio-de-teste/arquivo-de-teste-fora-da-producao`, ADR-0032), que nenhum projeto redefine;
 - **compilador do TypeScript**: tipos que tornam a violação impossível de compilar;
 - **teste de comportamento**: unitário (Vitest) ou E2E (Playwright), que prova o efeito, e não a forma do código.
 
@@ -46,7 +46,7 @@ Salvo o que a tabela marca como já ativo, os substitutos abaixo não existem ai
 | `libs/shared-data/src/lib/__fitness__/public-entrypoints.fitness.spec.ts` | Apps importam só subpaths permitidos das libs `shared-*`; cada entrypoint listado é um entrypoint real do ng-packagr; `tsconfig.base.json` sem alias wildcard `shared-*` | Imports das apps: `no-restricted-imports` com a lista permitida expressa como padrão de permissão, e não só a proibição dos barrels raiz e de `src/lib/*`. Existência de cada entrypoint e ausência de wildcard: sem substituto equivalente; ficam retidas |
 | `libs/shared-data/src/lib/__fitness__/runtime-config-providers.fitness.spec.ts` | `provideRuntimeConfig` importado de `@uniplus/shared-data/config` e `provideAuth` de `@uniplus/shared-auth/bootstrap`; `provideRuntimeConfig()` antes de `provideAuth()`; nada de `environments/environment` | Ordem: teste de comportamento da inicialização (unitário ou E2E, decisão pendente). Origem dos dois providers e import de `environments/environment`: `no-restricted-imports` nos `app.config.ts` |
 | `libs/shared-data/src/lib/api/__fitness__/api-services.fitness.spec.ts` | Classe `@Injectable`; nenhum método público devolve `Promise`; método público que devolve `Observable` devolve `Observable<ApiResult<T>>`; import de `withVendorMime` vindo de `@uniplus/shared-core/http`; ocorrência de `withVendorMime` nos `this.http.get(...)`, contada por arquivo, com dois GETs de `versoes-do-perfil.api.ts` dispensados. Mutações ficam fora do spec | Decorator e `providedIn: 'root'`: `no-restricted-syntax` com seletores que exijam os dois, porque `@angular-eslint/use-injectable-provided-in` sozinho aceita classe sem decorator e outros valores. Origem do import: `no-restricted-imports`. Proibição de `Promise`: `no-restricted-syntax` sobre o tipo de retorno dos métodos públicos dos `*.api.ts`. Tipo `Observable<ApiResult<T>>` e uso de `withVendorMime` em cada chamada: sem forma declarativa equivalente definida; ficam retidos até haver desenho (por exemplo, cliente HTTP comum que só devolve `ApiResult` e aplica o cabeçalho) com teste unitário de cada serviço |
-| `apps/configuracao/src/app/features/__fitness__/nav-icons-existem-no-primeicons.fitness.spec.ts` | Ícone do menu lateral existe no PrimeIcons | Tipo `IconeDoMenu` derivado de `PrimeIcons` no app-shell: ícone inexistente não compila |
+| `apps/configuracao/src/app/features/__fitness__/nav-icons-existem-no-primeicons.fitness.spec.ts` | Ícone do menu lateral existe no PrimeIcons | Nenhum: o spec legado continua como a guarda contra o `primeicons.css`, que os apps importam |
 
 ## Leituras de arquivo que continuam legítimas
 
@@ -59,13 +59,10 @@ Salvo o que a tabela marca como já ativo, os substitutos abaixo não existem ai
 1. Componente de página não usa `HttpClient`: o acesso HTTP passa pelos serviços de `@uniplus/shared-data`. Já é regra de ESLint em `apps/configuracao` (`no-restricted-imports` em `features`) e em `apps/selecao` (`no-restricted-syntax` contra `inject(HttpClient)` nas páginas). Nas demais apps, confira no diff.
 2. Vocabulário institucional em texto exibido: confira no diff o termo usado em string de tela.
 3. Tamanho de cada caso de teste e dos arquivos CSS, como já diz a seção "Revisão de código" do `CONTRIBUTING.md`.
+4. Teste que usa o relógio controlado o liga antes de criar o componente ou o serviço cujo temporizador exercita: temporizador agendado antes fica no relógio real.
 
 ## Decisões pendentes
 
 - **`@uniplus/shared-data/tokens`.** Definir se é ponto de entrada público. A regra de `no-restricted-imports` depende disso.
 - **Specs de estilo.** `libs/shared-ui/src/styles/base.spec.ts`, `components.spec.ts`, os specs de componentes que usam `lerFolha` e `apps/portal/src/app/layout/portal-shell.spec.ts` leem CSS como texto. Decidir quais são removidos por só detectarem mudança e quais passam a usar um parser de CSS (`postcss.parse`) em vez de regex.
 - **Ordem dos providers.** Teste unitário do `app.config.ts` ou E2E da inicialização.
-
-## Divergência registrada
-
-A seção "Testes" do `CONTRIBUTING.md` cita Jest. O repositório usa Vitest. Corrigir no PR que tocar aquela seção.

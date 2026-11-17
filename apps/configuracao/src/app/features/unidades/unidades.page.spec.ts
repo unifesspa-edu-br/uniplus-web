@@ -1,27 +1,28 @@
 import { VENDOR_MIME_TOKEN } from '@uniplus/shared-core/http';
-import { afterEach, describe, expect, it } from 'vitest';
+import { ligarRelogioControlado, passarOTempo } from '@uniplus/shared-testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ATRASO_DA_BUSCA_EM_MS } from './unidades.store';
 import {
+  CenarioDaPaginaDeUnidades,
   LISTA,
-  Pagina,
-  TITULO_DA_LISTA,
   comLink,
   instituto,
-  montarPagina,
   problema,
   reitoria,
 } from './unidades.testing';
-
-const ESPERA_DO_DEBOUNCE_MS = 360;
-const esperar = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 const LINK_PARA_PROXIMA = '<.../unidades?cursor=next_123&direction=next>; rel="next"';
 const LINK_DAS_DUAS = `<.../unidades?cursor=prev_123&direction=prev>; rel="prev", <.../unidades?cursor=next_456&direction=next>; rel="next"`;
 const ORDINAL_DE_INSTITUTO = '4';
 
 describe('UnidadesPage — leitura', () => {
-  let p: Pagina;
+  let p: CenarioDaPaginaDeUnidades;
 
-  afterEach(() => p.http.verify());
+  beforeEach(() => ligarRelogioControlado());
+  afterEach(() => {
+    vi.useRealTimers();
+    p.http.verify();
+  });
 
   const alternarRaiz = async (): Promise<HTMLButtonElement> => {
     const alternar = p.elemento<HTMLButtonElement>('.unit-node__toggle');
@@ -37,7 +38,7 @@ describe('UnidadesPage — leitura', () => {
   };
   const buscarPor = async (termo: string): Promise<void> => {
     await digitarNaBusca(termo);
-    await esperar(ESPERA_DO_DEBOUNCE_MS);
+    await passarOTempo(ATRASO_DA_BUSCA_EM_MS);
     await p.propagar();
   };
   const pagina = (sentido: 'prev' | 'next'): HTMLButtonElement =>
@@ -47,7 +48,7 @@ describe('UnidadesPage — leitura', () => {
 
   describe('árvore', () => {
     it('consulta a primeira página com limit=100 e a mídia de versão da unidade', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
 
       expect(p.primeiraConsulta.request.params.get('limit')).toBe('100');
       expect(p.primeiraConsulta.request.params.has('cursor')).toBe(false);
@@ -58,7 +59,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('mostra a raiz recolhida e a hierarquia em listas aninhadas, com nome acessível', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
 
       const arvore = p.elemento('ul.unit-tree');
       expect(arvore.getAttribute('aria-label')).toBe('Hierarquia de unidades da Unifesspa');
@@ -72,7 +73,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('expande e recolhe o nó com filhos, e aria-expanded acompanha', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       const alternar = p.elemento<HTMLButtonElement>('.unit-node__toggle');
       expect(alternar.getAttribute('aria-expanded')).toBe('false');
       expect(alternar.getAttribute('aria-label')).toBe('Expandir REIT');
@@ -88,7 +89,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('a unidade folha não tem botão de expandir, só o ícone estático', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       await alternarRaiz();
 
       const folha = p.elemento(`[data-unidade-id="${instituto.id}"]`);
@@ -97,7 +98,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('oferece Editar e Remover em cada nível, sem pintar o Remover de vermelho', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       await alternarRaiz();
 
       for (const unidade of [reitoria, instituto]) {
@@ -112,7 +113,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('um pai fora do resultado faz o filho aparecer como raiz', async () => {
-      p = await montarPagina([instituto]);
+      p = await CenarioDaPaginaDeUnidades.abrir([instituto]);
 
       expect(p.elemento('ul.unit-tree > li.unit-node')).toBeTruthy();
       expect(p.fixture.nativeElement.querySelector('.unit-node__toggle')).toBeNull();
@@ -122,19 +123,20 @@ describe('UnidadesPage — leitura', () => {
 
   describe('busca e filtro por tipo', () => {
     it('limita a busca a 256 caracteres, o que a API aceita em q', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
 
       const campo = p.elemento<HTMLInputElement>('ui-filter-bar input[type="search"]');
       expect(campo.getAttribute('maxlength')).toBe('256');
     });
 
     it('envia q ao servidor depois do debounce e abre o ramo com o resultado', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       expect(aoMenosUmaVez('Instituto de Ciências Exatas')).toBe(false);
 
       await digitarNaBusca('exatas');
+      await passarOTempo(ATRASO_DA_BUSCA_EM_MS - 1);
       p.http.expectNone((r) => r.url === LISTA && r.params.has('q'));
-      await esperar(ESPERA_DO_DEBOUNCE_MS);
+      await passarOTempo(1);
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.params.get('q') === 'exatas')
@@ -151,7 +153,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('filtra por tipo enviando o ordinal numérico e volta à primeira página', async () => {
-      p = await montarPagina([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
+      p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
       pagina('next').click();
       await p.propagar();
       p.http
@@ -169,7 +171,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('o chip de Instituto usa o ordinal do backend', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
 
       const chips = [...p.fixture.nativeElement.querySelectorAll('ui-filter-chips button')];
       const chip = chips.find((c) => (c as HTMLElement).textContent?.trim() === 'Instituto');
@@ -183,7 +185,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('"Limpar filtros" do estado vazio da busca zera a busca e o tipo', async () => {
-      p = await montarPagina([reitoria, instituto]);
+      p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto]);
       p.elemento<HTMLButtonElement>('ui-filter-chips button:not([aria-pressed="true"])').click();
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA && r.params.has('tipo')).flush([reitoria]);
@@ -205,7 +207,7 @@ describe('UnidadesPage — leitura', () => {
         .expectOne((r) => r.url === LISTA && r.params.get('q') === 'zzz' && !r.params.has('tipo'))
         .flush([]);
       await p.propagar();
-      await esperar(ESPERA_DO_DEBOUNCE_MS);
+      await passarOTempo(ATRASO_DA_BUSCA_EM_MS);
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && !r.params.has('q') && !r.params.has('tipo'))
@@ -214,7 +216,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('sem filtro, o estado vazio convida ao cadastro e "Nova unidade" segue disponível', async () => {
-      p = await montarPagina([]);
+      p = await CenarioDaPaginaDeUnidades.abrir([]);
 
       expect(aoMenosUmaVez('Nenhuma unidade cadastrada')).toBe(true);
       expect(p.novo().getAttribute('aria-disabled')).toBeNull();
@@ -223,7 +225,7 @@ describe('UnidadesPage — leitura', () => {
 
   describe('paginação', () => {
     it('avança pelo cursor, volta pelo cursor anterior e não oferece botão sem página', async () => {
-      p = await montarPagina([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
+      p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
       expect(pagina('prev').getAttribute('aria-disabled')).toBe('true');
 
       pagina('next').click();
@@ -248,7 +250,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('falha ao navegar preserva a página e os cursores, e "Tentar novamente" refaz a mesma página', async () => {
-      p = await montarPagina([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
+      p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
       pagina('next').click();
       await p.propagar();
       p.http
@@ -268,7 +270,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('falha na primeira página esvazia a lista e os cursores', async () => {
-      p = await montarPagina([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
+      p = await CenarioDaPaginaDeUnidades.abrir([reitoria, instituto], comLink(LINK_PARA_PROXIMA));
       p.store.recarregar();
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
@@ -282,7 +284,7 @@ describe('UnidadesPage — leitura', () => {
 
   describe('detalhe', () => {
     it('mostra a ficha, com a cidade, e "Não informada" quando ausente', async () => {
-      p = await montarPagina([
+      p = await CenarioDaPaginaDeUnidades.abrir([
         { ...reitoria, cidadeCodigoIbge: null, cidadeNome: null, cidadeUf: null },
         instituto,
       ]);
@@ -306,7 +308,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('resolve o rótulo da superior mesmo depois de filtrada para fora da página', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       p.elemento<HTMLButtonElement>('ui-filter-chips button:not([aria-pressed="true"])').click();
       await p.propagar();
       p.http.expectOne((r) => r.url === LISTA && r.params.has('tipo')).flush([instituto]);
@@ -318,7 +320,7 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('uma superior nunca vista aparece como "Não carregada"', async () => {
-      p = await montarPagina([instituto]);
+      p = await CenarioDaPaginaDeUnidades.abrir([instituto]);
 
       p.nomeDoNo(instituto).click();
       await p.propagar();
@@ -326,13 +328,13 @@ describe('UnidadesPage — leitura', () => {
     });
 
     it('Editar abre o formulário e fecha o detalhe; Remover abre a confirmação', async () => {
-      p = await montarPagina();
+      p = await CenarioDaPaginaDeUnidades.abrir();
       p.nomeDoNo(reitoria).click();
       await p.propagar();
       const botoes = [...p.fixture.nativeElement.querySelectorAll('.cfg-drawer-actions button')];
 
       (botoes[0] as HTMLButtonElement).click();
-      await p.responderOpcoes();
+      await p.responderAConsultaDasUnidades();
       expect(p.edicao.aberto()).toBe(true);
       expect(p.elemento<HTMLDialogElement>('cfg-unidade-detalhe dialog').open).toBe(false);
 
@@ -348,52 +350,6 @@ describe('UnidadesPage — leitura', () => {
       await p.propagar();
       expect(p.edicao.confirmando()).toBe(true);
       expect(p.elemento<HTMLDialogElement>('cfg-unidade-detalhe dialog').open).toBe(false);
-    });
-  });
-
-  describe('falha de leitura', () => {
-    it('5xx avisa por toast e "Tentar novamente" devolve o foco ao título', async () => {
-      p = await montarPagina();
-      p.store.recarregar();
-      await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
-      await p.propagar();
-      expect(p.erros).toHaveBeenCalledTimes(1);
-
-      const tentar = p.elemento<HTMLButtonElement>('ui-alert .list-state__retry button');
-      tentar.focus();
-      tentar.click();
-      await p.propagar();
-      expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      expect(tentar.getAttribute('aria-busy')).toBe('true');
-      await p.recarregarCom([reitoria]);
-      expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
-    });
-
-    it('4xx mostra o alerta sem toast', async () => {
-      p = await montarPagina();
-      p.store.recarregar();
-      await p.propagar();
-      p.http
-        .expectOne((r) => r.url === LISTA)
-        .flush(...problema(403, { code: 'uniplus.auth.forbidden' }));
-      await p.propagar();
-
-      expect(p.elemento('ui-alert .list-state__retry button')).toBeTruthy();
-      expect(p.erros).not.toHaveBeenCalled();
-    });
-
-    it('as ações das linhas ficam indisponíveis enquanto a lista recarrega', async () => {
-      p = await montarPagina();
-      p.store.recarregar();
-      await p.propagar();
-
-      expect(p.editar().matches(':disabled')).toBe(true);
-      expect(p.remover().matches(':disabled')).toBe(true);
-      expect(p.nomeDoNo(reitoria).matches(':disabled')).toBe(true);
-      p.http.expectOne((r) => r.url === LISTA).flush([reitoria]);
-      await p.propagar();
-      expect(p.editar().matches(':disabled')).toBe(false);
     });
   });
 });

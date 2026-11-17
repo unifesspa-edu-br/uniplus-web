@@ -50,8 +50,6 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
 
   const router = (): Router => TestBed.inject(Router);
   const navegar = (): Promise<void> => navegarNaPagina(pagina);
-  const esperar = (ms: number): Promise<void> =>
-    new Promise((resolver) => setTimeout(resolver, ms));
   const abrirAba = (
     consulta: string,
     itens: readonly DecisaoDaProtecaoDto[] = [decisaoDoFato, decisaoDoTipo],
@@ -259,25 +257,5 @@ describe('ProtecaoDoCatalogoPage — abas e decisões registradas', () => {
       'igual ou posterior',
     );
     expect(ate.getAttribute('aria-invalid')).toBe('true');
-  });
-
-  it('a busca espera a pessoa parar de digitar e vai à URL', async () => {
-    const tela = await abrirAba('?aba=decisoes');
-    const campo = tela.querySelector<HTMLInputElement>('input[type="search"]') as HTMLInputElement;
-
-    campo.value = 'ren';
-    campo.dispatchEvent(new Event('input'));
-    campo.value = 'renda';
-    campo.dispatchEvent(new Event('input'));
-    await esperar(50);
-    expect(decisoesPendentes()).toHaveLength(0);
-
-    await esperar(400);
-    await assentar();
-    controller
-      .expectOne((r) => r.url === DECISOES && r.params.get('busca') === 'renda')
-      .flush([decisaoDoFato]);
-    await assentar();
-    expect(router().url).toBe('/?aba=decisoes&busca=renda');
   });
 });

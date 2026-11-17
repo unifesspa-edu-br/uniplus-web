@@ -39,7 +39,8 @@ import {
   type FiltrosDasDecisoes,
 } from './filtros-das-decisoes';
 
-const BUSCA_DEBOUNCE_MS = 300;
+/** A espera depois da última tecla, para não buscar a cada letra. */
+export const ESPERA_DA_BUSCA_MS = 300;
 
 const OPCOES_DE_CADASTRO: readonly UiFilterChipOption[] = CADASTROS.map((valor) => ({
   value: valor,
@@ -142,7 +143,7 @@ export class DecisoesDaProtecaoComponent {
     });
     toObservable(this.termoBusca)
       .pipe(
-        debounceTime(BUSCA_DEBOUNCE_MS),
+        debounceTime(ESPERA_DA_BUSCA_MS),
         map((termo) => termo.trim()),
         distinctUntilChanged(),
         takeUntilDestroyed(this.destroyRef),

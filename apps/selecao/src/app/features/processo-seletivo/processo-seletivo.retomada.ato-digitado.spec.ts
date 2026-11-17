@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import type { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
-import { okResult } from '@uniplus/shared-core/http';
 import { StatusProcesso } from '@uniplus/shared-data/selecao';
+import { okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

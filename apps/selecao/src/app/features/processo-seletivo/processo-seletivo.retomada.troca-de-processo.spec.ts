@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { okResult } from '@uniplus/shared-core/http';
+import { okResult } from '@uniplus/shared-testing';
 import { BehaviorSubject, from, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
