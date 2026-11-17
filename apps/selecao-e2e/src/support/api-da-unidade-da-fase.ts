@@ -21,17 +21,17 @@ import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
 import { responder, responderCom } from './responder';
 
-const CORS = {
+export const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, PUT, POST, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, accept, content-type, idempotency-key, if-match',
 };
 
 const PROBLEM_JSON = 'application/problem+json';
-const SEM_CONTEUDO = { status: 204, headers: CORS };
+export const SEM_CONTEUDO = { status: 204, headers: CORS };
 const ROTA_DO_PROCESSO = new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`);
 const ROTA_DO_ATO_PUBLICADO = new RegExp(`/api/publicacoes/atos/${ATO_PUBLICADO.id}$`);
-const PRODUTO_DEFINITIVO = {
+export const PRODUTO_DEFINITIVO = {
   id: '01a0d640-0000-7000-8000-0000000000d2',
   atoCodigo: 'RESULTADO_FINAL',
   papel: 'DEFINITIVO',
@@ -62,7 +62,7 @@ export function novoCapturado(unidadeDaFase: UnidadeDaFase): Capturado {
   };
 }
 
-function problema(status: number, code: string, title: string, errors?: unknown) {
+export function problema(status: number, code: string, title: string, errors?: unknown) {
   return {
     type: 'about:blank',
     title,
@@ -73,7 +73,7 @@ function problema(status: number, code: string, title: string, errors?: unknown)
   };
 }
 
-async function recusar(route: Route, corpo: unknown): Promise<void> {
+export async function recusar(route: Route, corpo: unknown): Promise<void> {
   await route.fulfill({
     status: 422,
     contentType: PROBLEM_JSON,
@@ -82,7 +82,7 @@ async function recusar(route: Route, corpo: unknown): Promise<void> {
   });
 }
 
-async function mockarCatalogos(page: Page): Promise<void> {
+export async function mockarCatalogos(page: Page): Promise<void> {
   const unidades = [UNIDADE_CEPS, UNIDADE_CGA, UNIDADE_ADMINISTRADORA];
   await responder(page, /\/api\//, [], CORS);
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);

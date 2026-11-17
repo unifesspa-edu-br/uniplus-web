@@ -8,6 +8,7 @@ import { CatalogoDeBancas } from './catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from './catalogo-de-documentos.service';
 import { CatalogoDeFases } from './catalogo-de-fases.service';
 import { CatalogoDeFatos } from './catalogo-de-fatos.service';
+import { CatalogoDeMotivos } from './catalogo-de-motivos.service';
 import { CatalogoDeRegras } from './catalogo-de-regras.service';
 import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
@@ -20,9 +21,10 @@ const MENSAGEM_DE_FALHA =
  * oferecer qualquer escolha: uma tela com um catálogo faltando ofereceria menos do que existe, e
  * o operador não teria como saber. Ou vêm todos, ou a tela mostra a falha e a nova tentativa.
  *
- * As unidades ficam de fora do estado conjunto — a falta delas só tira a escolha da unidade de
- * cada fase —, mas são carregadas junto. Vive na página do wizard, e não num passo, porque a
- * linha do tempo e a superfície por fase leem os mesmos catálogos.
+ * As unidades e os motivos de decisão ficam de fora do estado conjunto — a falta das unidades só
+ * tira a escolha da unidade de cada fase, e a dos motivos só tira a escolha dos motivos —, mas são
+ * carregados junto. Vive na página do wizard, e não num passo, porque a linha do tempo e a
+ * superfície por fase leem os mesmos catálogos.
  */
 @Injectable()
 export class SituacaoDosCatalogosDoCronograma {
@@ -36,6 +38,7 @@ export class SituacaoDosCatalogosDoCronograma {
     inject(CatalogoDeRegras),
   ];
   private readonly unidades = inject(CatalogoDeUnidadesDoCadastro);
+  private readonly motivos = inject(CatalogoDeMotivos);
 
   readonly carregando = computed(() => this.exigidos.some((catalogo) => catalogo.carregando()));
   readonly erro = computed(() =>
@@ -70,8 +73,26 @@ export class SituacaoDosCatalogosDoCronograma {
       ),
   });
 
+  /**
+   * A falha dos motivos de decisão com a nova tentativa, um aviso só para a tela inteira. O foco
+   * vai ao título da primeira seção de motivos da tela ou, sem ela, ao título do passo.
+   */
+  readonly leituraDosMotivos = acompanharLeitura({
+    falha: this.motivos.erro,
+    pendente: this.motivos.carregando,
+    recarregar: () => this.motivos.recarregar(),
+    destino: () =>
+      destinoAcessivel(
+        document.querySelector<HTMLElement>(
+          'sel-motivos-da-fase-ou-etapa .form-section__title[tabindex="-1"]',
+        ),
+        tituloDoPasso(),
+      ),
+  });
+
   carregar(): void {
     this.unidades.carregar();
+    this.motivos.carregar();
     this.exigidos.forEach((catalogo) => catalogo.carregar());
   }
 
@@ -81,6 +102,7 @@ export class SituacaoDosCatalogosDoCronograma {
    */
   recarregar(): void {
     this.unidades.recarregar();
+    this.motivos.recarregar();
     this.exigidos.forEach((catalogo) => catalogo.recarregar());
   }
 }

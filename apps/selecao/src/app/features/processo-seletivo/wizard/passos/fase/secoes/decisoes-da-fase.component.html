@@ -1,0 +1,14 @@
+<h3 class="form-section__title">Decisões da fase</h3>
+@if (store.emConsulta()) {
+  <ui-valor-em-consulta
+    rotulo="Decisões que esta fase toma"
+    seVazio="Nenhuma decisão declarada"
+    [valor]="decisoesLidas()"
+  />
+} @else {
+  <sel-tipos-de-decisao-da-fase-ou-etapa
+    formControlName="tiposDeDecisao"
+    legenda="Decisões que esta fase toma"
+    [idDoGrupo]="idDaFase('tipos-de-decisao')"
+  />
+}

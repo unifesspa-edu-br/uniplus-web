@@ -1,3 +1,4 @@
+import { textoDaRecusaDosTiposDeDecisao } from '../../shared/decisoes-da-fase-ou-etapa/recusas-dos-tipos-de-decisao';
 import {
   campoDaRegraNoCaminho,
   CAMPOS_DA_BANCA,
@@ -204,9 +205,15 @@ export function textoDaRecusaDaEtapa(erro: {
 }): { readonly texto: string; readonly indice: number | null } | null {
   const daBanca = recusaDaBancaDaEtapa(erro);
   if (daBanca !== null) return daBanca;
-  const texto = recusaDoCampoDaEtapa(erro.code);
+  const texto = recusaDoCampoDaEtapa(erro.code) ?? textoDaRecusaDosTiposDeDecisao(erro.code);
   if (texto === null) return null;
-  return { texto, indice: localDoErroDaEtapa(erro.field)?.indice ?? null };
+  return { texto, indice: indiceDaEtapaEm(erro.field) };
+}
+
+/** A posição da etapa no `field` da recusa, qualquer que seja o campo depois dela, ou `null`. */
+export function indiceDaEtapaEm(field: string): number | null {
+  const [, indice] = /^etapas\[(\d+)\]/i.exec(field) ?? [];
+  return indice === undefined ? null : Number(indice);
 }
 
 /**

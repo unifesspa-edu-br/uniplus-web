@@ -69,4 +69,18 @@ describe('procedimentosParaLeitura', () => {
     );
     expect(procedimentosParaLeitura([procedimento()], CATALOGO, [])[0].alvo).toBeNull();
   });
+
+  it('dá ao tipo de decisão o nome do vocabulário e mantém o código que ele não conhece', () => {
+    const [conhecido, desconhecido] = procedimentosParaLeitura(
+      [
+        procedimento({ tipoDeDecisao: 'HETEROIDENTIFICACAO' }),
+        procedimento({ tipoDeDecisao: 'TIPO_DO_FUTURO' }),
+      ],
+      CATALOGO,
+      [],
+    );
+
+    expect(conhecido.tipoDeDecisao).toBe('Heteroidentificação');
+    expect(desconhecido.tipoDeDecisao).toBe('TIPO_DO_FUTURO');
+  });
 });

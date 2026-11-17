@@ -150,6 +150,12 @@
         }
         <ui-valor-em-consulta
           class="form-grid__full"
+          rotulo="Decisões que esta etapa toma"
+          seVazio="Nenhuma decisão declarada"
+          [valor]="etapa.tiposDeDecisao"
+        />
+        <ui-valor-em-consulta
+          class="form-grid__full"
           rotulo="Recursos que esta etapa admite"
           seVazio="Esta etapa não admite recurso"
           [valor]="etapa.recursos"

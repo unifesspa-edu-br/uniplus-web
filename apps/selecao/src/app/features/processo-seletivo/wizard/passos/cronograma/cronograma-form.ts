@@ -102,7 +102,7 @@ export interface EtapaForm {
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancas: FormControl<readonly BancaDaEtapa[]>;
   readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
-  /** Não é editado aqui, e carregado pela mesma razão de `produtos`. */
+  /** Os tipos de decisão que a etapa toma, em ordem alfabética do código. */
   readonly tiposDeDecisao: FormControl<readonly string[]>;
   /** Não é editado: viaja para a tela saber o que o processo congelou do tipo. */
   readonly tipoCongelado: FormControl<TipoCongeladoDaEtapa | null>;
@@ -307,6 +307,22 @@ export function faseDoFormulario(grupo: FormGroup<FaseForm>): FaseDoCronograma {
 
 export function etapaDoFormulario(grupo: FormGroup<EtapaForm>): EtapaPontuada {
   return grupo.getRawValue();
+}
+
+/**
+ * A fase como o formulário a devolve ao rascunho: com a janela no instante do certame. O rascunho
+ * pode trazê-la de outra forma, e é com esta que o conteúdo dos dois lados se compara.
+ */
+export function faseComoNoFormulario(fase: FaseDoCronograma): FaseDoCronograma {
+  return faseDoFormulario(grupoDaFase(fase));
+}
+
+/**
+ * A etapa como o formulário a devolve ao rascunho: com cada campo opcional no seu valor vazio. O
+ * modelo admite etapa sem esses campos, e o formulário nunca os deixa ausentes.
+ */
+export function etapaComoNoFormulario(etapa: EtapaPontuada): EtapaPontuada {
+  return etapaDoFormulario(grupoDaEtapa(etapa));
 }
 
 /**

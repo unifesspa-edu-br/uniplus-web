@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { TIPOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
 import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { EdicaoDosMotivosDeDecisao } from './edicao-dos-motivos-de-decisao';
@@ -6,7 +7,6 @@ import { FundamentosOferecidos } from './fundamentos-oferecidos';
 import { MotivoDeDecisaoFormularioComponent } from './motivo-de-decisao-formulario.component';
 import { MotivosDeDecisaoListaComponent } from './motivos-de-decisao-lista.component';
 import { MotivosDeDecisaoStore } from './motivos-de-decisao.store';
-import { TIPOS_DE_MOTIVO } from './tipos-de-motivo';
 
 @Component({
   selector: 'cfg-motivos-de-decisao-page',
@@ -25,7 +25,7 @@ import { TIPOS_DE_MOTIVO } from './tipos-de-motivo';
 export class MotivosDeDecisaoPage {
   protected readonly store = inject(MotivosDeDecisaoStore);
   protected readonly edicao = inject(EdicaoDosMotivosDeDecisao);
-  protected readonly tipos = TIPOS_DE_MOTIVO;
+  protected readonly tipos = TIPOS_DE_DECISAO;
   protected readonly leitura = acompanharLeitura({
     falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,

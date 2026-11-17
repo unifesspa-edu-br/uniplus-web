@@ -1,4 +1,5 @@
 import type { FormGroup } from '@angular/forms';
+import { rotuloDoTipoDeDecisao } from '@uniplus/shared-data/selecao';
 
 import {
   PAPEL_DEFINITIVO,
@@ -203,7 +204,7 @@ function publicacoesLidas(
     .map((produto) => `${nomeDoAto(produto.atoCodigo)} — ${rotuloDoPapel(produto.papel)}`);
 }
 
-/** O que a etapa entrega e quem a conduz: parecer, bancas, publicações e recursos. */
+/** O que a etapa entrega e quem a conduz: parecer, bancas, publicações, decisões e recursos. */
 function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitura) {
   const controles = grupo.controls;
   const rotulosDosAtos = catalogos.rotuloDoAto();
@@ -213,6 +214,7 @@ function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitu
     parecerIndividual: controles.emiteParecerIndividual.value,
     bancas: bancasLidas(controles, catalogos),
     publicacoes: publicacoesLidas(controles, nomeDoAto),
+    tiposDeDecisao: controles.tiposDeDecisao.value.map(rotuloDoTipoDeDecisao),
     recursos: controles.recursos.value.map((recurso) => recursoLido(recurso, nomeDoAto)),
   };
 }

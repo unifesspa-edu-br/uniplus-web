@@ -18,7 +18,7 @@ import {
   fasesComUnidadeNaoEncontrada,
   textoDaRecusaDaEtapa,
 } from '../recusas-do-servidor-da-etapa';
-import { indiceDaFaseEm, recusaDaBancaNaFase } from '../../fase/recusas-da-fase';
+import { textoDaRecusaDaFase } from '../recusas-do-servidor-da-fase';
 import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
@@ -98,14 +98,6 @@ interface ConteudoDaGravacao {
   readonly fases: readonly FaseDoCronograma[];
   readonly grupos: readonly FormGroup<EtapaForm>[];
   readonly etapas: readonly EtapaPontuada[];
-}
-
-/** O texto da recusa à regra de uma banca da fase, com a fase de origem quando o caminho a nomeia. */
-function mensagemDaBancaDaFase(erro: Parameters<typeof recusaDaBancaNaFase>[0]): string | null {
-  const recusa = recusaDaBancaNaFase(erro);
-  if (recusa === undefined) return null;
-  const indice = indiceDaFaseEm(erro.field);
-  return indice === null ? recusa.mensagem : `Fase ${indice + 1}: ${recusa.mensagem}`;
 }
 
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
@@ -260,7 +252,7 @@ export class GravacaoDoCronograma {
   }
 
   private mensagensDaRecusaDasFases(problema: ProblemaDaGravacao): string[] {
-    return resumoDaRecusa(problema, mensagemDaBancaDaFase, () =>
+    return resumoDaRecusa(problema, textoDaRecusaDaFase, () =>
       this.explicarRecusa(problema.code, problema),
     );
   }

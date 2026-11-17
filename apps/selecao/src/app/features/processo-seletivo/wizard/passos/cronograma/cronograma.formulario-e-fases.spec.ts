@@ -125,6 +125,32 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
     expect(cronograma.etapas.at(0)).toBe(antesEtapa);
   });
 
+  /**
+   * A configuração embutida na fase grava no rascunho o que o formulário do cronograma só
+   * carrega, como os tipos de decisão. Trocar os grupos por causa disso recriaria a fase
+   * aberta e tiraria o foco do controle acionado.
+   */
+  it('mantém os grupos da fase e das etapas quando o rascunho muda só o que a fase carrega', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comUmaEtapa();
+    const gruposDasFases = [...cronograma.fases.controls];
+    const gruposDasEtapas = [...cronograma.etapas.controls];
+    const rascunho = store.draft().cronograma;
+    const fases = rascunho.fases.map((fase, posicao) =>
+      posicao === 1 ? { ...fase, tiposDeDecisao: ['CLASSIFICACAO'] } : fase,
+    );
+
+    store.patchObjectSection('cronograma', { fases });
+    detectar();
+
+    expect(cronograma.fases.at(1)).toBe(gruposDasFases[1]);
+    expect(cronograma.fases.at(1).controls.tiposDeDecisao.value).toStrictEqual(['CLASSIFICACAO']);
+    expect(cronograma.fases.at(0)).toBe(gruposDasFases[0]);
+    expect(cronograma.etapas.length).toBe(gruposDasEtapas.length);
+    expect(cronograma.etapas.at(0)).toBe(gruposDasEtapas[0]);
+    expect(store.draft().cronograma.fases).toStrictEqual(fases);
+  });
+
   it('leva ao rascunho o que foi digitado no controle', () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();

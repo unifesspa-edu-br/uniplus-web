@@ -15,6 +15,7 @@ import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
+import { emOrdemAlfabetica } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-declarados';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 
 type RegraDeRecursoDaFaseInput = NonNullable<FaseCronogramaInput['regraRecurso']>;
@@ -60,7 +61,7 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
-    tiposDeDecisao: [...(fase.tiposDeDecisao ?? [])],
+    tiposDeDecisao: emOrdemAlfabetica(fase.tiposDeDecisao ?? []),
   };
 }
 
@@ -164,7 +165,7 @@ function comoComandoDoQueAEtapaDeclara(
     emiteParecerIndividual: etapa.emiteParecerIndividual,
     bancas: etapa.bancas.map(comoComandoDeBancaDaEtapa),
     recursos: comoComandoDosRecursosDaEtapa(etapa),
-    tiposDeDecisao: [...(etapa.tiposDeDecisao ?? [])],
+    tiposDeDecisao: emOrdemAlfabetica(etapa.tiposDeDecisao ?? []),
   };
 }
 

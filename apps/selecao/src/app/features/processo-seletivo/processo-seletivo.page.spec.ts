@@ -43,6 +43,7 @@ import {
   OrigemCandidatos,
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
+  MotivosDeDecisaoApi,
   RegrasCatalogoApi,
   StatusProcesso,
   VagasDoProcessoApi,
@@ -136,6 +137,7 @@ const PAGE_PROVIDERS = [
   { provide: TiposEtapaApi, useValue: catalogoVazioStub },
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
+  { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
   { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte não exercita as escolhas, só a estrutura da página.

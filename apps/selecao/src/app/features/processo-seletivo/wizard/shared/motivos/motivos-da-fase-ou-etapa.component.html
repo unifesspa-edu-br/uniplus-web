@@ -1,0 +1,78 @@
+@if (nivelDoTitulo() === 3) {
+  <h3 class="form-section__title" tabindex="-1" [attr.id]="idBase() + '-titulo'">
+    Motivos de decisão
+  </h3>
+} @else {
+  <h4 class="form-section__title" tabindex="-1" [attr.id]="idBase() + '-titulo'">
+    Motivos de decisão
+  </h4>
+}
+
+@if (!emConsulta()) {
+  <p class="field__hint">Os motivos que esta {{ parte() }} pode usar ao decidir.</p>
+}
+
+@for (grupo of grupos(); track grupo.tipoCodigo) {
+  @if (!grupo.declarado) {
+    <div class="alert alert--warning" role="status" [attr.id]="idDoAviso(grupo)">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <div class="alert__body">
+        <p class="alert__msg">
+          Esta {{ parte() }} não declara a decisão “{{ grupo.rotulo }}”.
+          @if (temEscolhidoSemDeclaracao(grupo)) {
+            Os motivos marcados continuam escolhidos.
+          }
+          Para declará-la, marque-a em “Decisões que esta {{ parte() }} toma”.
+        </p>
+      </div>
+    </div>
+  }
+
+  @if (emConsulta()) {
+    <ui-valor-em-consulta
+      [rotulo]="grupo.rotulo"
+      seVazio="Nenhum motivo escolhido"
+      [valor]="textosLidosPorTipo().get(grupo.tipoCodigo) ?? []"
+    />
+  } @else {
+    <fieldset class="field">
+      <legend class="field__label">{{ grupo.rotulo }}</legend>
+      @if (grupo.motivos.length === 0 && catalogoCarregado()) {
+        <p class="field__hint">Nenhum motivo deste tipo no cadastro.</p>
+      }
+      <div class="opcoes">
+        @for (motivo of grupo.motivos; track motivo.codigo) {
+          <label class="checkbox">
+            <input
+              #caixa
+              type="checkbox"
+              [attr.id]="idDoMotivo(motivo)"
+              [checked]="motivo.escolhido"
+              [disabled]="modo() === 'bloqueado'"
+              [attr.aria-invalid]="temRecusa(motivo) ? 'true' : null"
+              [attr.aria-describedby]="descritoPor(grupo, motivo)"
+              (change)="alternar(caixa, motivo)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            <span class="motivo">
+              {{ motivo.descricao }}
+              <span class="field__hint">{{ detalheDoMotivo(motivo) }}</span>
+              <span class="sr-only">. Motivo {{ identificacaoDaParte() }}</span>
+            </span>
+          </label>
+          @if (temRecusa(motivo)) {
+            <p class="field__error" role="alert" [attr.id]="idDaRecusa(motivo)">
+              Este motivo já está escolhido nesta {{ parte() }}.
+            </p>
+          }
+        }
+      </div>
+    </fieldset>
+  }
+} @empty {
+  @if (!emConsulta() && catalogoCarregado()) {
+    <p class="field__hint">Nenhum motivo no cadastro.</p>
+  } @else if (emConsulta()) {
+    <p class="field__hint">Nenhum motivo escolhido.</p>
+  }
+}

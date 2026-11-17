@@ -3,6 +3,7 @@ import { CatalogoDeBancas } from './catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from './catalogo-de-documentos.service';
 import { CatalogoDeFases } from './catalogo-de-fases.service';
 import { CatalogoDeFatos } from './catalogo-de-fatos.service';
+import { CatalogoDeMotivos } from './catalogo-de-motivos.service';
 import { CatalogoDeRegras } from './catalogo-de-regras.service';
 import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
@@ -15,6 +16,7 @@ export const CATALOGOS_DO_CRONOGRAMA = [
   CatalogoDeDocumentos,
   CatalogoDeFases,
   CatalogoDeFatos,
+  CatalogoDeMotivos,
   CatalogoDeRegras,
   CatalogoDeTiposDeEtapa,
   CatalogoDeUnidadesDoCadastro,
