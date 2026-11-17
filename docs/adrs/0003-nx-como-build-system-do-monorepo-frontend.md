@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0003: Nx como build system do monorepo frontend
 
+> **Emenda (2026-11-17).** No CI, cada alvo do gate e o teste de cada projeto rodam num job próprio, e o job `main` consolida o resultado: com tudo num runner só, houve timeout e cancelamento de execução, atribuídos à disputa de CPU e memória.
+
 ## Contexto e enunciado do problema
 
 O `uniplus-web` mantém três aplicações Angular (Seleção, Ingresso, Portal — ver ADR-0001) que compartilham lógica de autenticação, componentes de UI e modelos de dados. Sem uma ferramenta de monorepo, o código compartilhado teria de ser publicado como pacotes npm internos ou duplicado entre repositórios, com overhead de versionamento e divergência inevitável de configuração (ESLint, Tailwind, Docker).
@@ -74,7 +76,7 @@ Module boundaries são enforçados via `@nx/enforce-module-boundaries` no ESLint
 
 ## Confirmação
 
-- Pipeline de CI executa `nx affected --target=build`, `vite:test` e `lint`.
+- Pipeline de CI executa `lint`, `typecheck`, `typecheck-spec`, `build` e o teste de cada projeto em jobs próprios, sobre os projetos afetados pelo diff em pull request que toca o frontend e sobre todos em push na `main`; o job `main` consolida o resultado.
 - ESLint roda `@nx/enforce-module-boundaries` em todos os projetos.
 
 ## Mais informações

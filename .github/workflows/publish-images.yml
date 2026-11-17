@@ -14,7 +14,7 @@ name: Publish Images
 #
 # Sem `latest`, sem `main` — ArgoCD pina semver, devs usam `nx serve` ou
 # compose local com build-by-context. Imagem única por app + runtime config
-# via ConfigMap em produção (ADR-0020 + #84) — nunca embutir URL de Keycloak
+# via ConfigMap em produção (ADR-0020) — nunca embutir URL de Keycloak
 # ou da API.
 #
 # Imagens publicadas:
@@ -172,8 +172,7 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.module }},mode=max
 
       - name: Smoke test — non-root + /health.json
-        # Smoke runtime cobre os dois critérios de aceite da Story #217 que
-        # validam o hardening da #4 e a saúde básica da imagem servida:
+        # Smoke runtime valida o hardening e a saúde básica da imagem servida:
         #   - Non-root: docker inspect Config.User != '' && != 'root' && != '0'
         #   - /health.json: curl com retry retorna 200 e body {"status":"ok"}
         # nginx-unprivileged escuta em :8080. Sem JS/Angular runtime em CI

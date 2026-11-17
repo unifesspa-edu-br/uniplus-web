@@ -27,17 +27,6 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
     },
-    "@nx/vitest:test": {
-      "cache": true,
-      "inputs": ["default", "^production"]
-    },
-    "vite:test": {
-      "options": {
-        "env": {
-          "NO_COLOR": ""
-        }
-      }
-    },
     "typecheck-spec": {
       "executor": "nx:run-commands",
       "cache": true,
@@ -71,12 +60,6 @@
         "typecheckTargetName": "typecheck",
         "buildDepsTargetName": "build-deps",
         "watchDepsTargetName": "watch-deps"
-      }
-    },
-    {
-      "plugin": "@nx/vitest",
-      "options": {
-        "testTargetName": "vite:test"
       }
     }
   ],

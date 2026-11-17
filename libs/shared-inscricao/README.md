@@ -9,7 +9,7 @@ Apresentação do domínio da inscrição, compartilhada entre os apps (ADR-0030
 ## Testes
 
 ```bash
-npx nx run shared-inscricao:vite:test -- --run
+npx nx run shared-inscricao:test -- --run
 npx nx run shared-inscricao:lint
 npx nx run shared-inscricao:build
 ```

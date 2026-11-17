@@ -9,8 +9,7 @@
       "type": "string",
       "description": "Nome da lib no formato <scope>/<name>. Exemplo: selecao/feature-editais-detail.",
       "$default": { "$source": "argv", "index": 0 },
-      "x-prompt": "Qual o nome da lib (formato <scope>/<name>)?",
-      "pattern": "^(selecao|ingresso|portal)/[a-z][-a-z0-9]*$"
+      "x-prompt": "Qual o nome da lib (formato <scope>/<name>)?"
     },
     "type": {
       "type": "string",

@@ -11,6 +11,8 @@ informed:
 
 # ADR-0021: Runtime config via `AUTH_CONFIG` InjectionToken + fitness cross-app
 
+> **Emenda (2026-11-17).** O alvo de teste do workspace é `test`, o canônico da ADR-0004; o alvo `vite:test` deixou de existir. Onde este texto cita `vite:test`, leia `test`.
+
 ## Contexto e enunciado do problema
 
 A Story [#84](https://github.com/unifesspa-edu-br/uniplus-web/issues/84) exige que as 3 apps (`selecao`, `ingresso`, `portal`) carreguem URL da API e parâmetros OIDC em runtime, lidos de `/assets/runtime-config.json`, para que a **mesma imagem** Docker (publicada via [ADR-0020](0020-registry-ghcr-e-tagging.md)) seja promovida entre ambientes apenas trocando o `ConfigMap` montado pelo Kubernetes — sem rebuild, sem `fileReplacements` por ambiente, sem URL embutida no bundle.

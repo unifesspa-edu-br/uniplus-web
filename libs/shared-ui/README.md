@@ -23,7 +23,7 @@ Os apps importam esses arquivos em `apps/<app>/src/styles.css` antes do Tailwind
 ## Testes
 
 ```bash
-npx nx run shared-ui:vite:test -- --run
+npx nx run shared-ui:test -- --run
 npx nx run shared-ui:lint
 npx nx run shared-ui:build
 ```

@@ -13,6 +13,7 @@ Cria uma feature lib em `libs/<scope>/<name>/` com:
 - `vite.config.mts` + `tsconfig.spec.json` com Vitest + `@analogjs/vite-plugin-angular` (paridade com `shared-utils`).
 - `src/index.ts` (barrel) + `src/lib/<name>.ts` (placeholder) + `src/test-setup.ts`.
 - Path mapping `@uniplus/<scope>-<name>` registrado em `tsconfig.base.json`.
+- `eslint.config.mjs` com as métricas de qualidade em erro (`max-lines`, `max-lines-per-function`, `complexity`, `max-params`, `sonarjs/cognitive-complexity`): a lib nasce sem dívida e o CI a barra.
 
 #### Uso
 
@@ -29,7 +30,8 @@ npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=dat
 
 #### Validações
 
-- `<scope>` ∈ `{selecao, ingresso, portal}`. Outros valores são rejeitados pelo generator com mensagem listando os scopes válidos.
+- `<scope>` ∈ `{selecao, ingresso, portal, configuracao}`. Outros valores são rejeitados pelo generator com mensagem listando os scopes válidos. O `shared` fica fora do conjunto porque as libs `shared-*` têm criação própria (CONTRIBUTING § Arquitetura de bibliotecas).
+- `<name>` em kebab-case ASCII começando por letra, sem hífen no início, no fim nem repetido (`^[a-z][a-z0-9]*(-[a-z0-9]+)*$`). O generator é a fonte única dessa validação: o nome é testado como foi informado, sem normalização, antes de gravar qualquer arquivo.
 - `<type>` ∈ `{feature, data-access}`. Validado pelo schema `enum` antes do factory rodar.
 
 #### Tags emitidas
