@@ -22,7 +22,7 @@ import { type ContadoresSituacao, contadoresDosHeaders } from './contadores-de-s
 import { SITUACOES_EXIBIDAS, recebeInscricao, rotuloDaSituacao } from './situacao-do-certame';
 
 /** Debounce da busca textual — uma request por rajada de digitação, não por tecla. */
-const BUSCA_DEBOUNCE_MS = 300;
+export const ESPERA_DA_BUSCA_MS = 300;
 
 type ListaDeCertames = ApiResult<readonly CertameNaVitrineDto[]> | undefined;
 
@@ -45,7 +45,7 @@ export class VitrineDeCertames {
   private readonly buscaAplicada = toSignal(
     toObservable(this.termoBusca).pipe(
       map((termo) => termo.trim()),
-      debounceTime(BUSCA_DEBOUNCE_MS),
+      debounceTime(ESPERA_DA_BUSCA_MS),
       distinctUntilChanged(),
     ),
     { initialValue: '' },
