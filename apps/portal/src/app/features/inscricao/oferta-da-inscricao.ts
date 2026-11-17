@@ -29,24 +29,38 @@ export interface EscolhaDeOfertas {
   readonly segunda: string | null;
 }
 
+type GravadaDaInscricao = Pick<InscricaoDto, 'ofertaCursoId' | 'ofertaCursoSegundaOpcaoId'>;
+
 /**
- * A escolha com que a tela abre. Com uma oferta só, ela é a escolha — mesmo que a gravada seja de
- * outra que saiu do processo —, para o cabeçalho e o envio dizerem o mesmo curso. A 2ª opção só vale
- * com a 1ª, com 2 opções admitidas e sendo outra oferta.
+ * Com uma oferta só, ela é a 1ª opção — mesmo que a gravada seja de outra que saiu do processo —, para
+ * o cabeçalho e o envio dizerem o mesmo curso. Com várias, vale a gravada, se ainda é oferta do processo.
  */
+function primeiraOpcaoInicial(
+  inscricao: GravadaDaInscricao,
+  ofertas: readonly OfertaDaInscricao[],
+): string | null {
+  if (ofertas.length === 1) return ofertas[0].id;
+  return ofertas.find((o) => o.id === inscricao.ofertaCursoId)?.id ?? null;
+}
+
+/** A 2ª opção só vale com a 1ª, com 2 opções admitidas e sendo outra oferta. */
+function segundaOpcaoInicial(
+  inscricao: GravadaDaInscricao,
+  ofertas: readonly OfertaDaInscricao[],
+  numeroDeOpcoes: 1 | 2,
+  primeira: string | null,
+): string | null {
+  if (numeroDeOpcoes !== 2 || primeira === null) return null;
+  const gravada = inscricao.ofertaCursoSegundaOpcaoId;
+  return ofertas.find((o) => o.id === gravada && o.id !== primeira)?.id ?? null;
+}
+
+/** A escolha com que a tela abre: a 1ª e a 2ª opção, cada uma pela sua regra. */
 export function escolhaInicialDeOfertas(
-  inscricao: Pick<InscricaoDto, 'ofertaCursoId' | 'ofertaCursoSegundaOpcaoId'>,
+  inscricao: GravadaDaInscricao,
   ofertas: readonly OfertaDaInscricao[],
   numeroDeOpcoes: 1 | 2,
 ): EscolhaDeOfertas {
-  const oferta =
-    ofertas.length === 1
-      ? ofertas[0].id
-      : (ofertas.find((o) => o.id === inscricao.ofertaCursoId)?.id ?? null);
-  const segunda =
-    numeroDeOpcoes === 2 && oferta !== null
-      ? (ofertas.find((o) => o.id === inscricao.ofertaCursoSegundaOpcaoId && o.id !== oferta)?.id ??
-        null)
-      : null;
-  return { oferta, segunda };
+  const oferta = primeiraOpcaoInicial(inscricao, ofertas);
+  return { oferta, segunda: segundaOpcaoInicial(inscricao, ofertas, numeroDeOpcoes, oferta) };
 }

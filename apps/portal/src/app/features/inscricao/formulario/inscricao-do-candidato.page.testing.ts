@@ -28,7 +28,7 @@ import {
 
 import type { OfertaDaInscricao } from '../oferta-da-inscricao';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
+import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
 import { InscricaoDoCandidatoPage } from './inscricao-do-candidato.page';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';

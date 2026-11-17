@@ -37,23 +37,23 @@ function cpfFixo(conta: ContaDoCandidato | null): RespostaFixa | null {
 }
 
 /**
- * O nome civil, o nome social e o CPF vêm da conta e não se alteram aqui: entram na resposta do
- * formulário que os coleta. Quem muda o nome social é o titular, em Meu perfil; sem nome social na
- * conta o campo fica vazio e travado, e a resposta vai como nula para não manter um nome gravado que
- * a conta não tem. Só o CPF aparece mascarado, e o titular o revela a partir do próprio login.
+ * O nome civil, o nome social e o CPF vêm da conta e não se alteram aqui. Quem muda o nome social é
+ * o titular, em Meu perfil; sem nome social na conta o campo fica vazio e travado, e a resposta vai
+ * como nula para não manter um nome gravado que a conta não tem. Só o CPF aparece mascarado, e o
+ * titular o revela a partir do próprio login.
  */
+function respostasDaConta(conta: ContaDoCandidato | null): Record<string, RespostaFixa | null> {
+  return { NOME: nomeCivilFixo(conta), NOME_SOCIAL: nomeSocialFixo(conta), CPF: cpfFixo(conta) };
+}
+
+/** As respostas da conta entram no formulário que coleta o fato. */
 export function respostasFixasDaConta(
   conta: ContaDoCandidato | null,
   formulario: FormularioRenderizavelDto | null,
 ): Readonly<Record<string, RespostaFixa>> {
   if (formulario === null) return {};
-  const candidatas: Record<string, RespostaFixa | null> = {
-    NOME: nomeCivilFixo(conta),
-    NOME_SOCIAL: nomeSocialFixo(conta),
-    CPF: cpfFixo(conta),
-  };
   return Object.fromEntries(
-    Object.entries(candidatas).flatMap<[string, RespostaFixa]>(([fato, resposta]) =>
+    Object.entries(respostasDaConta(conta)).flatMap<[string, RespostaFixa]>(([fato, resposta]) =>
       resposta !== null && coletaO(formulario, fato) ? [[fato, resposta]] : [],
     ),
   );

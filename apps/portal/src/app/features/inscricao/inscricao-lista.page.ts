@@ -79,16 +79,22 @@ const INSCRICAO_STATUS_VARIANT: Record<SituacaoInscricao, UiTagVariant> = {
   [SituacaoInscricao.cancelada]: 'neutral',
 };
 
-type TipoDeAcao = 'continuar' | 'corrigir' | 'comprovante' | 'cancelar' | 'descartar';
+type TipoDeAcaoQueNavega = 'continuar' | 'corrigir' | 'comprovante';
+type TipoDeAcaoDestrutiva = 'cancelar' | 'descartar';
+type TipoDeAcao = TipoDeAcaoQueNavega | TipoDeAcaoDestrutiva;
 
-/** Uma ação que a lista oferece sobre uma inscrição. */
-export interface AcaoDaInscricao {
-  readonly tipo: TipoDeAcao;
+interface ApresentacaoDaAcao {
   readonly label: string;
   readonly variant: UiButtonVariant;
-  /** Desfaz a inscrição: sai do conjunto das ações e vira link em linha própria. */
-  readonly destrutiva: boolean;
 }
+
+/**
+ * Uma ação que a lista oferece sobre uma inscrição. A destrutiva desfaz a inscrição: sai do conjunto
+ * das ações e vira link em linha própria, e pede confirmação em vez de navegar.
+ */
+export type AcaoDaInscricao =
+  | (ApresentacaoDaAcao & { readonly tipo: TipoDeAcaoQueNavega; readonly destrutiva: false })
+  | (ApresentacaoDaAcao & { readonly tipo: TipoDeAcaoDestrutiva; readonly destrutiva: true });
 
 const ACAO: Record<TipoDeAcao, AcaoDaInscricao> = {
   continuar: {
@@ -121,7 +127,20 @@ const ACAO: Record<TipoDeAcao, AcaoDaInscricao> = {
 /** O que o diálogo está confirmando: o item e a ação que o abriu. */
 interface Confirmacao {
   readonly item: ItemDaLista;
-  readonly tipo: 'cancelar' | 'descartar';
+  readonly tipo: TipoDeAcaoDestrutiva;
+}
+
+/**
+ * Aonde a ação leva. O formulário abre a inscrição ativa do processo: o rascunho, ou a enviada na
+ * versão congelada.
+ */
+function caminhoDaAcao(
+  tipo: TipoDeAcaoQueNavega,
+  item: ItemDaLista,
+): readonly (string | number | null)[] {
+  return tipo === 'comprovante'
+    ? ['/inscricao', 'comprovante', item.id, item.numeroDoComprovante]
+    : ['/inscricao', item.processoId];
 }
 
 @Component({
@@ -245,19 +264,10 @@ export class InscricaoListaPage {
   }
 
   protected executar(acao: AcaoDaInscricao, item: ItemDaLista): void {
-    switch (acao.tipo) {
-      case 'continuar':
-      case 'corrigir':
-        // O formulário abre a inscrição ativa do processo: o rascunho, ou a enviada na versão congelada.
-        void this.router.navigate(['/inscricao', item.processoId]);
-        return;
-      case 'comprovante':
-        void this.router.navigate(['/inscricao', 'comprovante', item.id, item.numeroDoComprovante]);
-        return;
-      case 'cancelar':
-      case 'descartar':
-        this.abrirConfirmacao(acao.tipo, item);
-        return;
+    if (acao.destrutiva) {
+      this.abrirConfirmacao(acao.tipo, item);
+    } else {
+      void this.router.navigate(caminhoDaAcao(acao.tipo, item));
     }
   }
 
@@ -267,19 +277,9 @@ export class InscricaoListaPage {
     this.executando.set(true);
     this.erroDaAcao.set(null);
     this.aviso.set(null);
-    const { item, tipo } = atual;
-    const chamada: Observable<ApiResult<void>> =
-      tipo === 'descartar'
-        ? this.minhasInscricoes.descartar(item.processoId)
-        : this.minhasInscricoes.cancelar(item.processoId, this.motivo().trim() || null);
-    chamada.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((resultado) => {
-      this.executando.set(false);
-      if (resultado.ok) {
-        this.concluir(tipo, item);
-      } else {
-        this.erroDaAcao.set(this.mensagemDaFalha(resultado));
-      }
-    });
+    this.comandoDa(atual)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((resultado) => this.aoTerminarAAcao(resultado, atual));
   }
 
   protected aoFecharDialogo(): void {
@@ -295,6 +295,21 @@ export class InscricaoListaPage {
     this.erroDaAcao.set(null);
     this.confirmacao.set({ item, tipo });
     this.dialogoAberto.set(true);
+  }
+
+  private comandoDa({ item, tipo }: Confirmacao): Observable<ApiResult<void>> {
+    return tipo === 'descartar'
+      ? this.minhasInscricoes.descartar(item.processoId)
+      : this.minhasInscricoes.cancelar(item.processoId, this.motivo().trim() || null);
+  }
+
+  private aoTerminarAAcao(resultado: ApiResult<void>, { item, tipo }: Confirmacao): void {
+    this.executando.set(false);
+    if (resultado.ok) {
+      this.concluir(tipo, item);
+    } else {
+      this.erroDaAcao.set(this.mensagemDaFalha(resultado));
+    }
   }
 
   private concluir(tipo: Confirmacao['tipo'], item: ItemDaLista): void {

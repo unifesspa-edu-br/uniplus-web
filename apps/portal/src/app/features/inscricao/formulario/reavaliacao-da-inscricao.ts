@@ -53,26 +53,9 @@ export class ReavaliacaoDaInscricao {
    */
   acompanhar(formulario: Signal<FormularioParaReavaliar | undefined>): void {
     this.formulario = formulario;
-    const aoMudarAVisibilidade = (): void =>
-      this.abaVisivel.set(this.documento.visibilityState !== 'hidden');
-    this.documento.addEventListener('visibilitychange', aoMudarAVisibilidade);
-    this.destroyRef.onDestroy(() => {
-      this.documento.removeEventListener('visibilitychange', aoMudarAVisibilidade);
-      this.verificacao.parar();
-    });
-    // Cada consulta que termina, com resultado ou com erro, agenda a seguinte enquanto houver arquivo em
-    // verificação na fase do formulário. Com a aba oculta ninguém vê o resultado: espera a volta.
-    effect(() => {
-      this.avaliacao.respondidas();
-      const aguardando = (formulario()?.haArquivoEmVerificacao() ?? false) && this.abaVisivel();
-      untracked(() => this.verificacao.aoAvaliar(aguardando));
-    });
-    // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
-    // fora do componente do passo, então a reavaliação vem dele, mesmo que a tela tenha mudado de passo.
-    effect(() => {
-      const mudancas = this.gravacao.envioDeDocumentos()?.mudancas() ?? 0;
-      untracked(() => this.aoMudarOsDocumentos(mudancas));
-    });
+    this.acompanharAVisibilidadeDaAba();
+    this.repetirEnquantoHaVerificacao(formulario);
+    this.reavaliarAoMudarOsDocumentos();
   }
 
   /**
@@ -98,6 +81,37 @@ export class ReavaliacaoDaInscricao {
     this.avaliacao.ofertaMudou(ofertas.ofertaCursoId, ofertas.ofertaCursoSegundaOpcaoId, () =>
       corpoDaAvaliacao(inscricao, formulario.simulacao(), this.escolha.escolhidas()),
     );
+  }
+
+  private acompanharAVisibilidadeDaAba(): void {
+    const aoMudarAVisibilidade = (): void =>
+      this.abaVisivel.set(this.documento.visibilityState !== 'hidden');
+    this.documento.addEventListener('visibilitychange', aoMudarAVisibilidade);
+    this.destroyRef.onDestroy(() =>
+      this.documento.removeEventListener('visibilitychange', aoMudarAVisibilidade),
+    );
+  }
+
+  // Cada consulta que termina, com resultado ou com erro, agenda a seguinte enquanto houver arquivo em
+  // verificação na fase do formulário. Com a aba oculta ninguém vê o resultado: espera a volta.
+  private repetirEnquantoHaVerificacao(
+    formulario: Signal<FormularioParaReavaliar | undefined>,
+  ): void {
+    this.destroyRef.onDestroy(() => this.verificacao.parar());
+    effect(() => {
+      this.avaliacao.respondidas();
+      const aguardando = (formulario()?.haArquivoEmVerificacao() ?? false) && this.abaVisivel();
+      untracked(() => this.verificacao.aoAvaliar(aguardando));
+    });
+  }
+
+  // Enviar ou remover um arquivo muda a situação dos documentos, que só a API calcula. O envio fica
+  // fora do componente do passo, então a reavaliação vem dele, mesmo que a tela tenha mudado de passo.
+  private reavaliarAoMudarOsDocumentos(): void {
+    effect(() => {
+      const mudancas = this.gravacao.envioDeDocumentos()?.mudancas() ?? 0;
+      untracked(() => this.aoMudarOsDocumentos(mudancas));
+    });
   }
 
   private aoMudarOsDocumentos(mudancas: number): void {

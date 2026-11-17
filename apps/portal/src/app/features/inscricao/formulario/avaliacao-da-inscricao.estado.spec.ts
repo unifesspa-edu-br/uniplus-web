@@ -1,57 +1,18 @@
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { Subject, type Observable } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
-import type {
-  AvaliacaoDaInscricaoDto,
-  AvaliacaoDaInscricaoRequest,
-} from '@uniplus/shared-data/selecao';
+import { apiFailure } from '@uniplus/shared-core/http';
 import type { SimulacaoDoFormulario } from '@uniplus/shared-ui/components';
 
 import { AvaliacaoDaInscricaoEstado, ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
+import {
+  DEPENDENCIAS,
+  PROCESSO,
+  ServicoDublê,
+  avaliacao,
+  ok,
+} from './avaliacao-da-inscricao.estado.testing';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
-
-const PROCESSO = '0199e000-0000-7000-8000-0000000000d1';
-const DEPENDENCIAS = { fatos: ['CONCORRER_EP', 'FAMILIA.RENDA'], grupos: ['FAMILIA'] };
-
-const avaliacao = (...nomes: string[]): AvaliacaoDaInscricaoDto => ({
-  modalidades: {
-    derivada: true,
-    situacao: 'CONCORRE',
-    itens: nomes.map((nome, ordem) => ({ codigo: nome, nome, ordem })),
-    pendencias: [],
-  },
-  documentos: {
-    fases: [
-      {
-        faseId: 'fase-1',
-        codigo: 'INSCRICAO',
-        ordem: 1,
-        documentos: [],
-        pendencias: [
-          { fatoCodigo: 'RENDA', rotulo: `Renda de ${nomes.join(', ')}`, secaoCodigo: null },
-        ],
-      },
-    ],
-  },
-});
-const ok = (dado: AvaliacaoDaInscricaoDto): ApiResult<AvaliacaoDaInscricaoDto> =>
-  apiOk(dado, 200, new HttpHeaders());
-
-/** O serviço que guarda cada consulta e só responde quando o teste manda. */
-class ServicoDublê {
-  readonly consultas: { corpo: AvaliacaoDaInscricaoRequest; resposta: Subject<unknown> }[] = [];
-  avaliar = (_: string, corpo: AvaliacaoDaInscricaoRequest): Observable<unknown> => {
-    const resposta = new Subject<unknown>();
-    this.consultas.push({ corpo, resposta });
-    return resposta;
-  };
-  responder(indice: number, resultado: ApiResult<AvaliacaoDaInscricaoDto>): void {
-    this.consultas[indice].resposta.next(resultado);
-    this.consultas[indice].resposta.complete();
-  }
-}
 
 describe('AvaliacaoDaInscricaoEstado', () => {
   let estado: AvaliacaoDaInscricaoEstado;

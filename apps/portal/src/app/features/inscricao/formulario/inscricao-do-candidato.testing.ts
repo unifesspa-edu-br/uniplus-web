@@ -1,7 +1,18 @@
 import type { FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
 
+type EtapaDoFormulario = FormularioRenderizavelDto['etapas'][number];
+type CampoColetado = FormularioRenderizavelDto['fatosColetados'][number];
+
 const DADOS = 'Inscricao:DADOS_PESSOAIS';
 const ENDERECO = 'Inscricao:ENDERECO';
+
+/** O que o campo coletado tem por padrão: sem opções fixas, sem formato, sem ajuda e sem confirmação. */
+const CAMPO_COLETADO = {
+  valoresSelecionaveis: null,
+  formato: null,
+  ajuda: null,
+  pedirConfirmacao: false,
+} satisfies Partial<CampoColetado>;
 
 /** Um formulário de inscrição no contrato atual, para os testes da tela. */
 export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
@@ -14,8 +25,8 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   dataReferenciaFatos: '2026-12-10',
   fusoDoEnvio: 'America/Belem',
   etapas: [
-    secao('DADOS_PESSOAIS', DADOS, 0, 'Dados pessoais'),
-    secao('ENDERECO', ENDERECO, 1, 'Endereço'),
+    secao('DADOS_PESSOAIS', 0, 'Dados pessoais'),
+    secao('ENDERECO', 1, 'Endereço'),
     {
       codigo: 'REVISAO',
       codigoNasRegras: null,
@@ -42,10 +53,40 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
     },
   ],
   fatosColetados: [
-    campo('NOME', 0, 'Nome completo', 'TEXTO', DADOS, 'NOME_PESSOA'),
-    campo('CPF', 1, 'CPF', 'TEXTO', DADOS, 'CPF'),
-    campo('DATA_NASCIMENTO', 2, 'Data de nascimento', 'DATA', DADOS),
-    campo('ENDERECO_RESIDENCIAL', 3, 'Endereço residencial', 'ENDERECO', ENDERECO),
+    {
+      ...CAMPO_COLETADO,
+      fatoCodigo: 'NOME',
+      ordem: 0,
+      rotulo: 'Nome completo',
+      tipoRenderizacao: 'TEXTO',
+      etapaCodigo: DADOS,
+      formato: 'NOME_PESSOA',
+    },
+    {
+      ...CAMPO_COLETADO,
+      fatoCodigo: 'CPF',
+      ordem: 1,
+      rotulo: 'CPF',
+      tipoRenderizacao: 'TEXTO',
+      etapaCodigo: DADOS,
+      formato: 'CPF',
+    },
+    {
+      ...CAMPO_COLETADO,
+      fatoCodigo: 'DATA_NASCIMENTO',
+      ordem: 2,
+      rotulo: 'Data de nascimento',
+      tipoRenderizacao: 'DATA',
+      etapaCodigo: DADOS,
+    },
+    {
+      ...CAMPO_COLETADO,
+      fatoCodigo: 'ENDERECO_RESIDENCIAL',
+      ordem: 3,
+      rotulo: 'Endereço residencial',
+      tipoRenderizacao: 'ENDERECO',
+      etapaCodigo: ENDERECO,
+    },
   ],
   grupos: [],
   pressupostos: [
@@ -81,42 +122,16 @@ export const FORMULARIO_DE_INSCRICAO_MOCK: FormularioRenderizavelDto = {
   },
 };
 
-function secao(
-  codigo: string,
-  codigoNasRegras: string,
-  ordem: number,
-  titulo: string,
-): FormularioRenderizavelDto['etapas'][number] {
+function secao(codigo: string, ordem: number, titulo: string): EtapaDoFormulario {
   return {
     codigo,
-    codigoNasRegras,
+    codigoNasRegras: `Inscricao:${codigo}`,
     ordem,
     tipo: 'SECAO',
     bloco: null,
     titulo,
     descricao: null,
     aviso: null,
-  };
-}
-
-function campo(
-  fatoCodigo: string,
-  ordem: number,
-  rotulo: string,
-  tipoRenderizacao: string,
-  etapaCodigo: string,
-  formato: string | null = null,
-): FormularioRenderizavelDto['fatosColetados'][number] {
-  return {
-    fatoCodigo,
-    ordem,
-    rotulo,
-    tipoRenderizacao,
-    valoresSelecionaveis: null,
-    etapaCodigo,
-    formato,
-    ajuda: null,
-    pedirConfirmacao: false,
   };
 }
 

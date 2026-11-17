@@ -1,11 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { type Observable, tap } from 'rxjs';
-import { type ApiResult } from '@uniplus/shared-core/http';
-import {
-  deveRotacionarIdempotencyKey,
-  idempotencyKey,
-  withIdempotencyKey,
-} from '@uniplus/shared-core/idempotency';
+import { type ApiResult, ChaveDeSubstituicao } from '@uniplus/shared-core/http';
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
@@ -23,12 +18,10 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
   private readonly api = inject(InscricoesApi);
 
   /**
-   * O envio em curso: a chave e a assinatura do corpo que ela acompanha. A chave se repete enquanto o
-   * resultado não chega, para o reenvio não gerar outro comprovante, mas só vale para o mesmo corpo: a
-   * API recusa a mesma chave com outro corpo (`body_mismatch`). Trocada também quando a regra de
-   * idempotência pede.
+   * A chave se repete enquanto o resultado não chega, para o reenvio não gerar outro comprovante, mas só
+   * vale para o mesmo processo e corpo: a API recusa a mesma chave com outro corpo (`body_mismatch`).
    */
-  private envioEmCurso: { readonly chave: string; readonly assinatura: string } | null = null;
+  private readonly chaveDoEnvio = new ChaveDeSubstituicao();
 
   iniciar(processoId: string): Observable<ApiResult<InscricaoDto>> {
     return this.api.iniciar(processoId);
@@ -58,26 +51,12 @@ export class InscricaoDoCandidatoHttp extends InscricaoDoCandidatoService {
     request: InscricaoRequest,
     eTag: string,
   ): Observable<ApiResult<ReciboDaInscricaoDto>> {
-    const assinatura = assinaturaDoEnvio(processoId, request);
-    if (this.envioEmCurso?.assinatura !== assinatura) {
-      this.envioEmCurso = { chave: idempotencyKey.create(), assinatura };
-    }
-    return this.api
-      .submeter(processoId, request, eTag, withIdempotencyKey(this.envioEmCurso.chave))
-      .pipe(
-        tap((resultado) => {
-          if (resultado.ok || deveRotacionarIdempotencyKey(resultado.problem)) {
-            this.envioEmCurso = null;
-          }
-        }),
-      );
+    const contexto = this.chaveDoEnvio.contextoPara([processoId, request]);
+    return this.api.submeter(processoId, request, eTag, contexto).pipe(
+      tap((resultado) => {
+        if (resultado.ok) this.chaveDoEnvio.renovar();
+        else this.chaveDoEnvio.recusada(resultado);
+      }),
+    );
   }
-}
-
-/**
- * O processo e o corpo do envio no mesmo texto que vai na requisição: a API compara o hash dos bytes do
- * corpo, então a mesma chave só pode acompanhar o mesmo texto — inclusive na ordem das chaves.
- */
-function assinaturaDoEnvio(processoId: string, request: InscricaoRequest): string {
-  return JSON.stringify([processoId, request]);
 }

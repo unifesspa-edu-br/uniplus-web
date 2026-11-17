@@ -10,7 +10,7 @@ import {
 import { passarOTempo } from '@uniplus/shared-testing';
 import { esperaDaConsulta } from './acompanhamento-da-verificacao';
 import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
+import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
 import {
   ok,
   problema,

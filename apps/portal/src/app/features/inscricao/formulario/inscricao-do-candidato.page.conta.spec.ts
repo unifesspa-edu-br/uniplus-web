@@ -3,7 +3,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiFailure } from '@uniplus/shared-core/http';
 import { type FormularioRenderizavelDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.mock';
+import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
 import {
   CPF_DA_CONTA,
   NOME_DA_CONTA,

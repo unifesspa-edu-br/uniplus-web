@@ -19,6 +19,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 import {
   type MunicipiosGravados,
+  type MunicipiosSeparados,
   LEITURA_DE_MUNICIPIO_POR_CODIGO,
   NomesDeMunicipios,
   type SimulacaoDoFormulario,
@@ -162,15 +163,7 @@ export class LeituraDaInscricao {
     formulario: FormularioRenderizavelDto,
   ): void {
     const municipios = this.respostasIniciais(inscricao, formulario);
-    const carga: InscricaoCarregada = {
-      inscricao,
-      formulario,
-      ofertas: ofertasDaInscricao(inscricao),
-      numeroDeOpcoes: numeroDeOpcoesDeCurso(inscricao.numeroDeOpcoesDeCurso),
-      inicial: { respostas: municipios.respostas, grupos: municipios.grupos },
-      municipiosGravados: municipios.gravados,
-      termosAceitos: inscricao.aceites.map((a) => a.codigo),
-    };
+    const carga = inscricaoCarregada(inscricao, formulario, municipios);
     this.nomes.carregar(municipios.semNome, this.lerMunicipio);
     this.iniciarAAvaliacao(processoId, carga);
     this.carregada.set(carga);
@@ -192,7 +185,7 @@ export class LeituraDaInscricao {
   private respostasIniciais(
     inscricao: InscricaoDto,
     formulario: FormularioRenderizavelDto,
-  ): ReturnType<typeof separarMunicipiosGravados> {
+  ): MunicipiosSeparados {
     // As respostas chegam em JSON: são os valores que o formulário lê.
     const gravadas = inscricao.respostas as Readonly<Record<string, ValorJson>>;
     return separarMunicipiosGravados(formulario, {
@@ -203,4 +196,20 @@ export class LeituraDaInscricao {
       grupos: inscricao.grupos as NonNullable<SimulacaoDoFormulario['grupos']>,
     });
   }
+}
+
+function inscricaoCarregada(
+  inscricao: InscricaoDto,
+  formulario: FormularioRenderizavelDto,
+  municipios: MunicipiosSeparados,
+): InscricaoCarregada {
+  return {
+    inscricao,
+    formulario,
+    ofertas: ofertasDaInscricao(inscricao),
+    numeroDeOpcoes: numeroDeOpcoesDeCurso(inscricao.numeroDeOpcoesDeCurso),
+    inicial: { respostas: municipios.respostas, grupos: municipios.grupos },
+    municipiosGravados: municipios.gravados,
+    termosAceitos: inscricao.aceites.map((a) => a.codigo),
+  };
 }
