@@ -8,6 +8,10 @@ export default [
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
   {
+    // Comentário `eslint-disable` não silencia regra nenhuma: a supressão é proibida (CONTRIBUTING, § Métricas de qualidade).
+    linterOptions: { noInlineConfig: true },
+  },
+  {
     ignores: [
       '**/dist',
       '**/vite.config.*.timestamp*',

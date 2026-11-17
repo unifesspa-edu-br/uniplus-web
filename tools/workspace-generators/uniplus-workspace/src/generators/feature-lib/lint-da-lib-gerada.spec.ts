@@ -64,11 +64,15 @@ function instalarLibNoWorkspace(raiz: string, scope: string, configuracaoDaLib: 
   return diretorioDaLib;
 }
 
+async function configuracaoEfetivaDe(diretorioDaLib: string, arquivo: string) {
+  return new ESLint({ cwd: diretorioDaLib }).calculateConfigForFile(arquivo);
+}
+
 async function regrasEfetivasDe(
   diretorioDaLib: string,
   arquivo: string,
 ): Promise<Record<string, unknown>> {
-  const configuracao = await new ESLint({ cwd: diretorioDaLib }).calculateConfigForFile(arquivo);
+  const configuracao = await configuracaoEfetivaDe(diretorioDaLib, arquivo);
   return configuracao.rules ?? {};
 }
 
@@ -121,6 +125,12 @@ describe('lint da lib gerada', () => {
       expect(severidadeDe(regras['max-lines-per-function'])).toBe(SEVERIDADE_DESLIGADA);
     },
   );
+
+  it('não deixa comentário eslint-disable silenciar regra na lib gerada', async () => {
+    const configuracao = await configuracaoEfetivaDe(diretorioDaLibSelecao, 'src/lib/foo.ts');
+
+    expect(configuracao.linterOptions).toMatchObject({ noInlineConfig: true });
+  });
 
   it('barra no CI o tamanho dos templates da lib gerada', async () => {
     const regras = await regrasDe('src/lib/foo.component.html');
