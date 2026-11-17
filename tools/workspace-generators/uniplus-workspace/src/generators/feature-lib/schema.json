@@ -15,11 +15,11 @@
     "type": {
       "type": "string",
       "description": "Tipo da lib no eixo type:* do enforce-module-boundaries.",
-      "enum": ["feature", "ui", "data-access"],
+      "enum": ["feature", "data-access"],
       "x-prompt": {
         "message": "Tipo da lib?",
         "type": "list",
-        "items": ["feature", "ui", "data-access"]
+        "items": ["feature", "data-access"]
       }
     }
   },

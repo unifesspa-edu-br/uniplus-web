@@ -1,4 +1,4 @@
-export type FeatureLibType = 'feature' | 'ui' | 'data-access';
+export type FeatureLibType = 'feature' | 'data-access';
 
 export interface FeatureLibSchema {
   /** Nome da lib no formato `<scope>/<name>`. */

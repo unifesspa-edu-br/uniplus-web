@@ -112,16 +112,20 @@ libs/
 | `@uniplus/shared-utils` | Utilitários TypeScript puros, sem runtime Angular (ex: `formatCpfProgressive`) |
 | `@uniplus/shared-inscricao/*` | Apresentação do domínio da inscrição usada por mais de um app (ex.: o comprovante); recebe o DTO pronto e só importa tipos de `@uniplus/shared-data` ([ADR-0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md)) |
 
-### 3. Regra de criação (rule of three + first-real-feature)
+### 3. Onde nasce cada peça
 
-- Componente/serviço/utilitário usado por **um** app e **uma** feature → mora em `libs/<scope>/<nome>/` criada via generator (próxima seção).
-- Usado por **dois ou mais** apps ou com reutilização cross-cutting hoje → mora na lib `shared-*` apropriada.
-- Em dúvida → defaulta feature lib local; promover para `shared-*` quando aparecer terceiro consumer.
+O lugar segue as ADRs [0017](docs/adrs/0017-pattern-feature-page-container-presentational.md), [0023](docs/adrs/0023-uniplus-ds-como-contrato-visual-vigente.md), [0030](docs/adrs/0030-lib-de-apresentacao-do-dominio-da-inscricao.md) e [0031](docs/adrs/0031-recusa-da-api-junto-ao-campo.md); esta seção só as resume.
+
+- **Componente de apresentação reutilizável e sem domínio** (não injeta serviço nem router e não importa tipo de `@uniplus/shared-data`): nasce como `ui-*` em `@uniplus/shared-ui` desde o primeiro consumidor, mesmo que hoje só um app o use (caso do `ui-recusa-do-campo`, ADR-0031). Não passa pela pasta do app. Componente feito para uma única tela, sem intenção de reúso, fica na pasta da feature.
+- **Apresentação que conhece domínio** (recebe DTO ou usa o vocabulário de um agregado): fica na pasta da feature do app enquanto só um app a usa. Quando um segundo app a usar, muda para a lib de apresentação do domínio, como `@uniplus/shared-inscricao/*`. Domínio que ainda não tem essa lib pede ADR antes.
+- **Serviço, utilitário e código de feature**: ficam no app que os usa, na pasta da feature (`apps/<app>/src/app/features/<feature>/`) ou numa lib `libs/<scope>/<nome>/` criada pelo generator (§ 4). Quando um segundo app precisar do mesmo serviço ou utilitário, ele muda para a lib `shared-*` cujo escopo o comporta (§ 2); se nenhuma o comporta, pede ADR antes. Página e roteamento de feature não se promovem.
+
+O limite de promoção é um só: o segundo **app**. Reúso entre features do mesmo app não promove. Criar direto no `shared-ui` (primeiro item) é regra de criação, não de promoção.
 
 ### 4. Comando do generator
 
 ```bash
-npx nx g @uniplus/workspace:feature-lib <scope>/<nome> --type=<feature|ui|data-access>
+npx nx g @uniplus/workspace:feature-lib <scope>/<nome> --type=<feature|data-access>
 ```
 
 Exemplos:
@@ -131,7 +135,7 @@ npx nx g @uniplus/workspace:feature-lib selecao/feature-editais-detail --type=fe
 npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=data-access
 ```
 
-`<scope>` é validado contra o set `{selecao, ingresso, portal}` antes do factory rodar; `<type>` é validado pelo enum `{feature, ui, data-access}` no schema do Nx CLI. Tags emitidas no `project.json` gerado: `["scope:<scope>", "type:<type>"]`. Path mapping `@uniplus/<scope>-<nome>` é registrado automaticamente em `tsconfig.base.json`.
+`<scope>` é validado contra o set `{selecao, ingresso, portal}` antes do factory rodar; `<type>` é validado pelo enum `{feature, data-access}` no schema do Nx CLI. Tags emitidas no `project.json` gerado: `["scope:<scope>", "type:<type>"]`. Path mapping `@uniplus/<scope>-<nome>` é registrado automaticamente em `tsconfig.base.json`.
 
 Documentação de referência: [`tools/workspace-generators/uniplus-workspace/README.md`](tools/workspace-generators/uniplus-workspace/README.md).
 
