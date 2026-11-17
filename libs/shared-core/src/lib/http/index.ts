@@ -53,6 +53,8 @@ export type {
   ProblemValidationError,
 } from './problem-details';
 
+export { paginaDoErro, paginaDoProblema } from './pagina-do-erro';
+
 export { SignedUploadClient } from './signed-upload';
 
 export { STATUS_HTTP, ehRecusaDefinitiva } from './status-http';

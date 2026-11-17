@@ -9,6 +9,7 @@ import {
   mensagemDoCampo,
   valoresDaReserva,
 } from './reserva-demografica-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const referencia: ReferenciaReservaDemograficaDto = {
   id: 'r1',
@@ -86,7 +87,7 @@ describe('formulário de reserva demográfica', () => {
       censo.setErrors({ duplicado: true });
       censo.markAsTouched();
       expect(mensagemDoCampo(censo)).toBe('Já existe uma referência ativa para este Censo.');
-      censo.setErrors({ backend: { code: 'x', message: 'Recusado.' } });
+      marcarRecusaDoServidor(censo, 'x', 'Recusado.');
       expect(mensagemDoCampo(censo)).toBe('Recusado.');
     });
   });

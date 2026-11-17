@@ -6,7 +6,6 @@ import {
   ApiResult,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
   STATUS_HTTP,
   lookupCompleto,
 } from '@uniplus/shared-core/http';
@@ -24,6 +23,8 @@ import {
 import {
   descartarRecusasDoServidor,
   marcarRecusasDosCampos,
+  recusasDoProblema,
+  type RecusaDoServidor,
   MENSAGEM_SEM_MAPEAMENTO,
 } from '../../shared/formulario';
 type Escrita = 'salvando' | 'removendo';
@@ -185,15 +186,15 @@ export class EdicaoDosTiposBanca {
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.renovarChave();
-      this.aplicarErros(problem.errors);
+      this.aplicarErros(recusasDoProblema(problem));
       return;
     }
     if (problem.code === CORPO_DIVERGENTE) this.renovarChave();
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
-  private aplicarErros(errors: ReadonlyArray<ProblemValidationError>): void {
-    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+  private aplicarErros(recusas: readonly RecusaDoServidor[]): void {
+    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
   private renovarChave(): void {

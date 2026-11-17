@@ -10,6 +10,7 @@ import {
   valoresDaOferta,
 } from './oferta-curso-form';
 import { oferta } from './ofertas-curso.testing';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const preenchido = () => {
   const form = criarFormularioDeOferta();
@@ -129,7 +130,7 @@ describe('formulário de oferta de curso', () => {
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Informe no máximo 50 caracteres.');
     form.controls.codigo.setValue('');
     expect(mensagemDeErroDaOferta(form.controls.codigo)).toBe('Campo obrigatório.');
-    form.controls.eMecCodigo.setErrors({ backend: { code: 'x', message: 'Do servidor.' } });
+    marcarRecusaDoServidor(form.controls.eMecCodigo, 'x', 'Do servidor.');
     expect(mensagemDeErroDaOferta(form.controls.eMecCodigo)).toBe('Do servidor.');
     expect(mensagemDeErroDaOferta(preenchido().controls.codigoSga)).toBeNull();
   });

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mensagemDoCampoNumerico } from './pesos-enem-campo-numerico';
 import { criarGrupoDeCriacao } from './pesos-enem-form';
 import { AREAS, grupo } from './pesos-enem.testing';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 function campo(nome: 'peso' | 'corte') {
   return criarGrupoDeCriacao(grupo('TECNOLOGICA'), AREAS).controls.areas.at(0).controls[nome];
@@ -45,10 +46,8 @@ describe('mensagem do campo numérico', () => {
     corte.markAsTouched();
     corte.setErrors({ numeroInvalido: true });
     expect(mensagemDoCampoNumerico(corte, 'corte')).toBe('Número inválido.');
-    corte.setErrors({
-      numeroInvalido: true,
-      backend: { code: 'c', message: 'Recusado pelo servidor.' },
-    });
+    marcarRecusaDoServidor(corte, 'c', 'Recusado pelo servidor.');
+    corte.setErrors({ ...corte.errors, numeroInvalido: true });
     expect(mensagemDoCampoNumerico(corte, 'corte')).toBe('Recusado pelo servidor.');
   });
 

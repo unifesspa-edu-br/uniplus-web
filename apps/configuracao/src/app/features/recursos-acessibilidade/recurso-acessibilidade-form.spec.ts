@@ -10,6 +10,7 @@ import {
   mensagemDoCampo,
   valoresDoRecurso,
 } from './recurso-acessibilidade-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const recurso: RecursoAcessibilidadeDto = {
   id: 'r1',
@@ -68,7 +69,7 @@ describe('formulário de recurso de acessibilidade', () => {
 
     it('prioriza a recusa do servidor e a obrigatoriedade', () => {
       expect(tocar('', 'nome')).toBe('Campo obrigatório.');
-      form.controls.nome.setErrors({ backend: { code: 'x', message: 'Nome recusado.' } });
+      marcarRecusaDoServidor(form.controls.nome, 'x', 'Nome recusado.');
       expect(mensagemDoCampo(form.controls.nome)).toBe('Nome recusado.');
     });
 

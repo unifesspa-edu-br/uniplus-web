@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 import { TermoConsentimentoFormularioComponent } from './termo-consentimento-formulario.component';
 import { criarFormulario } from './termo-consentimento-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 describe('TermoConsentimentoFormularioComponent', () => {
   function montar(criando: boolean): ComponentFixture<TermoConsentimentoFormularioComponent> {
@@ -57,7 +58,7 @@ describe('TermoConsentimentoFormularioComponent', () => {
   it('mostra a recusa do servidor com a mensagem do servidor e a de tamanho', () => {
     const fixture = montar(false);
     const { nome, texto } = fixture.componentInstance.form().controls;
-    nome.setErrors({ backend: { code: 'c', message: 'Nome recusado.' } });
+    marcarRecusaDoServidor(nome, 'c', 'Nome recusado.');
     nome.markAsTouched();
     texto.setValue('x'.repeat(20001));
     texto.markAsTouched();

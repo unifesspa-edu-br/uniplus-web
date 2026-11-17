@@ -57,9 +57,9 @@ describe('TiposEtapaPage — recusas do servidor', () => {
         const controle = p.elemento<HTMLElement>(`${tag}[formcontrolname="${nome}"]`);
         expect(controle.getAttribute('aria-invalid')).toBe('true');
         expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
-        expect(
-          controle.closest('.field')?.querySelector('.field__error')?.textContent?.trim(),
-        ).toBe('Valor recusado.');
+        expect(controle.closest('.field')?.querySelector('.field__error')?.textContent).toContain(
+          'Valor recusado.',
+        );
         if (id !== null) {
           expect(controle.getAttribute('aria-describedby')?.split(' ')).toContain(id);
         }

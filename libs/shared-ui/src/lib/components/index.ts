@@ -52,6 +52,7 @@ export {
   ListFooterComponent,
 } from './list-footer/list-footer';
 export { PagerComponent } from './pager/pager';
+export { RecusaDoCampoComponent, type RecusaDoCampo } from './recusa-do-campo/recusa-do-campo';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
 export { SelectComponent, type UiSelectOption } from './select/select';
 export { CondicaoDeFatoComponent } from './editor-de-condicoes/condicao-de-fato';

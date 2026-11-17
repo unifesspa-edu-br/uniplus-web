@@ -1,6 +1,7 @@
 import { FormControl } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
-import { mensagemDeErroDoCampoComFormato } from './mensagem-de-erro';
+import { mensagemDeErroDoCampoComFormato, mensagemDeErroDoControle } from './mensagem-de-erro';
+import { marcarRecusaDoServidor } from './recusa-do-servidor';
 
 const FORMATO = 'Formato de teste.';
 
@@ -20,12 +21,10 @@ describe('mensagem do campo de cadastro com formato', () => {
 
   it('a recusa do servidor e a obrigatoriedade vencem as regras de tamanho e formato', () => {
     const regras = { minlength: { requiredLength: 2 }, pattern: {} };
-    expect(
-      mensagemDeErroDoCampoComFormato(
-        tocado({ ...regras, backend: { code: 'c', message: 'Recusado.' } }),
-        FORMATO,
-      ),
-    ).toBe('Recusado.');
+    const recusado = tocado(regras);
+    marcarRecusaDoServidor(recusado, 'c', 'Recusado.');
+    recusado.setErrors({ ...recusado.errors, ...regras });
+    expect(mensagemDeErroDoCampoComFormato(recusado, FORMATO)).toBe('Recusado.');
     expect(mensagemDeErroDoCampoComFormato(tocado({ ...regras, required: true }), FORMATO)).toBe(
       'Campo obrigatório.',
     );
@@ -54,5 +53,22 @@ describe('mensagem do campo de cadastro com formato', () => {
     expect(mensagemDeErroDoCampoComFormato(tocado({ outra: true }), FORMATO)).toBe(
       'Valor inválido.',
     );
+  });
+});
+
+describe('mensagem do controle com recusas do servidor', () => {
+  it('junta as mensagens das recusas do campo, na ordem recebida', () => {
+    const controle = new FormControl('x', { nonNullable: true });
+    marcarRecusaDoServidor(controle, 'a', 'Primeira.');
+    marcarRecusaDoServidor(controle, 'b', 'Segunda.');
+
+    expect(mensagemDeErroDoControle(controle)).toBe('Primeira. Segunda.');
+  });
+
+  it('com uma só recusa, mostra a mensagem dela', () => {
+    const controle = new FormControl('x', { nonNullable: true });
+    marcarRecusaDoServidor(controle, 'a', 'Única.');
+
+    expect(mensagemDeErroDoControle(controle)).toBe('Única.');
   });
 });

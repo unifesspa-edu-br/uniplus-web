@@ -14,6 +14,7 @@ import {
   configurarConcessoes,
   atualizar,
 } from './concessoes.page.testing';
+import { recusasDoControle } from '../../shared/formulario';
 
 describe('ConcessoesPage — revogação e suas recusas', () => {
   let http: HttpTestingController;
@@ -91,7 +92,7 @@ describe('ConcessoesPage — revogação e suas recusas', () => {
       const { pagina } = await revogarComRecusa(DIVERGENCIA_DE_EMAIL, 'outra@uniplus-test.local');
 
       expect(pagina.revogando()).toBe(true);
-      expect(pagina.email.errors?.['backend'].message).toBe(
+      expect(recusasDoControle(pagina.email)[0].mensagem).toBe(
         'O e-mail informado não é o do beneficiário da concessão.',
       );
       expect(pagina.erroDaRevogacao()).toBeNull();
@@ -203,7 +204,7 @@ describe('ConcessoesPage — revogação e suas recusas', () => {
     const motivo = host.querySelector<HTMLTextAreaElement>('textarea');
     expect(motivo?.getAttribute('aria-invalid')).toBe('true');
     expect(host.textContent).toContain('Motivo recusado.');
-    expect(edicao.motivo.errors?.['backend'].code).toBe(
+    expect(recusasDoControle(edicao.motivo)[0].codigo).toBe(
       'uniplus.autorizacao.concessao.motivo_invalido',
     );
     expect(document.activeElement).toBe(motivo);

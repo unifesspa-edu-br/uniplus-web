@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { criarGrupoDeCriacao } from './pesos-enem-form';
 import { aplicarRecusaDoGrupo, ehRecusaAcionavelPeloOperador } from './pesos-enem-recusas';
 import { AREAS, grupo } from './pesos-enem.testing';
+import { recusasDoControle } from '../../shared/formulario';
 
 const titulo = (problem: ProblemDetails): string => `titulo ${problem.status}`;
 const problema = (status: number, errors?: ProblemDetails['errors']): ProblemDetails =>
@@ -31,11 +32,10 @@ describe('recusas do servidor', () => {
       titulo,
     );
 
-    expect(areas.at(1).controls.peso.getError('backend')).toEqual({
-      code: 'a',
-      message: 'Item inválido. Código fora do domínio.',
-    });
-    expect(areas.at(2).controls.corte.getError('backend').message).toBe('Corte alto.');
+    expect(recusasDoControle(areas.at(1).controls.peso)).toEqual([
+      { codigo: 'a', mensagem: 'Item inválido. Código fora do domínio.', pagina: null },
+    ]);
+    expect(recusasDoControle(areas.at(2).controls.corte)[0].mensagem).toBe('Corte alto.');
     expect(semCampo).toEqual(['Grupo inválido.', 'Área inexistente.']);
   });
 

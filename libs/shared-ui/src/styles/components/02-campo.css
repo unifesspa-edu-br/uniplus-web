@@ -27,6 +27,11 @@
   font-size: var(--text-xs);
   color: var(--color-danger-700);
 }
+ui-recusa-do-campo .field__error {
+  flex-wrap: wrap;
+  column-gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
 
 .input,
 .select,

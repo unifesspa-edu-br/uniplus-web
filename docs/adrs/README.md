@@ -59,6 +59,7 @@ npx markdownlint-cli2 'docs/adrs/**/*.md'
 | [0028](0028-base-href-parametrizado-em-runtime.md) | `base href` parametrizado em runtime pelo container Nginx | accepted | 2026-07-15 |
 | [0029](0029-reset-do-tailwind-como-base-dos-apps.md) | Reset do Tailwind como base dos apps | accepted | 2026-11-05 |
 | [0030](0030-lib-de-apresentacao-do-dominio-da-inscricao.md) | Lib de apresentação do domínio da inscrição | accepted | 2026-11-08 |
+| [0031](0031-recusa-da-api-junto-ao-campo.md) | Recusa da API junto ao campo, com código e página do erro | accepted | 2026-11-17 |
 
 ## Como adicionar um novo ADR
 

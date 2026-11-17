@@ -12,6 +12,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
+  descartarRecusasDoServidorPorCodigo,
   mensagemDeErroDoControle,
   nullIfBlank,
 } from '../../shared/formulario';
@@ -113,14 +114,10 @@ export function mensagemDaSucessora(form: FormGroup<PrecedenciaForm>): string | 
 /**
  * Tira da sucessora o erro do par devolvido pelo servidor. O Angular não revalida erros manuais de
  * um irmão: preso à sucessora, o erro sobreviveria à correção da antecessora e deixaria o
- * formulário travado numa dupla que já mudou.
+ * formulário travado numa dupla que já mudou. As recusas da própria sucessora continuam.
  */
 export function descartarErroDoPar(form: FormGroup<PrecedenciaForm>): void {
-  const sucessora = form.controls.sucessoraCodigo;
-  const codigo = (sucessora.errors?.['backend'] as { code?: string } | undefined)?.code;
-  if (codigo !== undefined && CODIGOS_ERRO_DO_PAR.has(codigo)) {
-    sucessora.updateValueAndValidity({ emitEvent: false });
-  }
+  descartarRecusasDoServidorPorCodigo(form.controls.sucessoraCodigo, CODIGOS_ERRO_DO_PAR);
 }
 
 /** Projeção explícita: um campo novo no formulário não vaza para o payload. */

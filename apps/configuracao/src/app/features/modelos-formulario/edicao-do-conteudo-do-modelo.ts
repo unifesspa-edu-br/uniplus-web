@@ -12,12 +12,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import {
-  ProblemDetails,
-  ProblemI18nService,
-  ProblemValidationError,
-  STATUS_HTTP,
-} from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -37,7 +32,11 @@ import {
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
-import { descartarRecusasDoServidor, marcarRecusasDosCampos } from '../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusasDosCampos,
+  recusasDoProblema,
+} from '../../shared/formulario';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 interface CabecalhoForm {
@@ -185,7 +184,7 @@ export class EdicaoDoConteudoDoModelo {
       (erro) => campoDoCabecalho(erro.field) === null && !ehRecusaDeDocumento(erro.field),
     );
     const dosDocumentos = erros.filter((erro) => ehRecusaDeDocumento(erro.field));
-    const marcouCampo = this.marcarCamposDoCabecalho(erros);
+    const marcouCampo = this.marcarCamposDoCabecalho(problem);
 
     const recusas = distribuirRecusas(doConteudo, enviado);
     this.recusas.set(recusas);
@@ -211,8 +210,10 @@ export class EdicaoDoConteudoDoModelo {
     );
   }
 
-  private marcarCamposDoCabecalho(erros: readonly ProblemValidationError[]): boolean {
-    return marcarRecusasDosCampos(erros, this.form, campoDoCabecalho);
+  private marcarCamposDoCabecalho(problem: ProblemDetails): boolean {
+    const recusas =
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? recusasDoProblema(problem) : [];
+    return marcarRecusasDosCampos(recusas, this.form, campoDoCabecalho);
   }
 }
 

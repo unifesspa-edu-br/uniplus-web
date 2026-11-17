@@ -14,6 +14,7 @@ import {
   recusarCampos,
   termo,
 } from './termos-consentimento.testing';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 let cena: CenaDoDetalhe;
 afterEach(() => cena.controller.verify());
@@ -171,7 +172,7 @@ describe('rascunho — escritas pela interface', () => {
   it('associa os erros e as dicas aos campos do rascunho', async () => {
     cena = await montarDetalhe(ID);
     for (const controle of Object.values(cena.edicao.rascunhoForm.controls)) {
-      controle.setErrors({ backend: { message: 'Campo recusado.' } });
+      marcarRecusaDoServidor(controle, 'x', 'Campo recusado.');
       controle.markAsTouched();
     }
     await cena.propagar();
@@ -271,7 +272,7 @@ describe('criação — escritas pela interface', () => {
     cena = await montarDetalhe(null);
     expect(nome().getAttribute('aria-required')).toBe('true');
     for (const controle of Object.values(cena.edicao.criarForm.controls)) {
-      controle.setErrors({ backend: { message: 'Campo recusado.' } });
+      marcarRecusaDoServidor(controle, 'x', 'Campo recusado.');
       controle.markAsTouched();
     }
     await cena.propagar();

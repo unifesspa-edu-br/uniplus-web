@@ -10,6 +10,7 @@ import {
   mensagemDoCampo,
   valoresDaCondicao,
 } from './condicao-atendimento-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const condicao: CondicaoAtendimentoDto = {
   id: 'c1',
@@ -68,7 +69,7 @@ describe('formulário de condição de atendimento', () => {
 
     it('prioriza a recusa do servidor e a obrigatoriedade', () => {
       expect(tocar('', 'nome')).toBe('Campo obrigatório.');
-      form.controls.nome.setErrors({ backend: { code: 'x', message: 'Nome recusado.' } });
+      marcarRecusaDoServidor(form.controls.nome, 'x', 'Nome recusado.');
       expect(mensagemDoCampo(form.controls.nome)).toBe('Nome recusado.');
     });
 

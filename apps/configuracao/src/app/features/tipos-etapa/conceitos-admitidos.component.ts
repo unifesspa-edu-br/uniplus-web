@@ -11,7 +11,12 @@ import { FormControl } from '@angular/forms';
 import { startWith, switchMap } from 'rxjs';
 import type { LookupCompleto } from '@uniplus/shared-core/http';
 import type { TipoConceitoDto } from '@uniplus/shared-data/configuracao';
-import { FalhaDeLeituraComponent, acompanharCatalogo } from '@uniplus/shared-ui/components';
+import {
+  FalhaDeLeituraComponent,
+  RecusaDoCampoComponent,
+  acompanharCatalogo,
+  type RecusaDoCampo,
+} from '@uniplus/shared-ui/components';
 import { alternarConceito, opcoesDeConceito } from './conceitos-admitidos';
 
 const FALHA_NA_CARGA = 'Sem os tipos de conceito não é possível escolher o que o tipo admite.';
@@ -24,15 +29,15 @@ const FALHA_NA_CARGA = 'Sem os tipos de conceito não é possível escolher o qu
 @Component({
   selector: 'cfg-conceitos-admitidos',
   standalone: true,
-  imports: [FalhaDeLeituraComponent],
+  imports: [FalhaDeLeituraComponent, RecusaDoCampoComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './conceitos-admitidos.component.html',
 })
 export class ConceitosAdmitidosComponent {
   readonly controle = input.required<FormControl<readonly string[]>>();
   readonly catalogo = input.required<LookupCompleto<TipoConceitoDto>>();
-  /** A recusa do campo, já em mensagem pt-BR; `null` quando não há. */
-  readonly erro = input<string | null>(null);
+  /** As recusas do servidor ao campo, já em mensagem pt-BR; vazia quando não há. */
+  readonly recusas = input<readonly RecusaDoCampo[]>([]);
 
   private readonly grupo = viewChild<ElementRef<HTMLElement>>('grupo');
 
@@ -57,6 +62,7 @@ export class ConceitosAdmitidosComponent {
     if (catalogo.pendente() || catalogo.comErro()) return [];
     return opcoesDeConceito(catalogo.opcoes(), this.admitidos());
   });
+  protected readonly comRecusa = computed(() => this.recusas().length > 0);
   protected readonly haInativo = computed(() => this.opcoes().some((opcao) => opcao.inativo));
 
   protected marcado(codigo: string): boolean {

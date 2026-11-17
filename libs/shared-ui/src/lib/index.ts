@@ -42,6 +42,10 @@ export {
   ListFooterComponent,
 } from './components/list-footer/list-footer';
 export { PagerComponent } from './components/pager/pager';
+export {
+  RecusaDoCampoComponent,
+  type RecusaDoCampo,
+} from './components/recusa-do-campo/recusa-do-campo';
 export { SegmentedComponent, type UiSegmentedOption } from './components/segmented/segmented';
 export {
   ComboboxComponent,

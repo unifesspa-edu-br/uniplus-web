@@ -1,4 +1,4 @@
-import type { ProblemValidationError } from '@uniplus/shared-core/http';
+import type { RecusaDoServidor } from '../../shared/formulario';
 
 const CAMPO = 'conceitosAdmitidos';
 
@@ -22,18 +22,16 @@ const MENSAGENS_POR_CODIGO: ReadonlyMap<string, string> = new Map([
 ]);
 
 /**
- * As recusas do campo dos conceitos admitidos, em mensagem estática pt-BR por código e reunidas
- * numa só (a API devolve uma por espécie de recusa e o campo mostra uma mensagem). As recusas dos
- * demais campos, e as de código desconhecido, seguem como vieram.
+ * As recusas do campo dos conceitos admitidos, em mensagem estática pt-BR por código; cada
+ * recusa segue com o seu código e a sua página. As recusas dos demais campos, e as de código
+ * desconhecido, seguem como vieram.
  */
 export function recusasComMensagemDosConceitos(
-  recusas: ReadonlyArray<ProblemValidationError>,
-): ReadonlyArray<ProblemValidationError> {
-  const dosConceitos = recusas.filter((recusa) => recusa.field === CAMPO);
-  const demais = recusas.filter((recusa) => recusa.field !== CAMPO);
-  if (dosConceitos.length === 0) return recusas;
-  const mensagens = dosConceitos.map(
-    (recusa) => MENSAGENS_POR_CODIGO.get(recusa.code) ?? recusa.message,
+  recusas: readonly RecusaDoServidor[],
+): readonly RecusaDoServidor[] {
+  return recusas.map((recusa) =>
+    recusa.campo === CAMPO
+      ? { ...recusa, mensagem: MENSAGENS_POR_CODIGO.get(recusa.codigo) ?? recusa.mensagem }
+      : recusa,
   );
-  return [...demais, { ...dosConceitos[0], message: [...new Set(mensagens)].join(' ') }];
 }

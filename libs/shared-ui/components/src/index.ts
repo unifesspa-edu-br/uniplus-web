@@ -76,6 +76,10 @@ export {
   ListFooterComponent,
 } from '../../src/lib/components/list-footer/list-footer';
 export { PagerComponent } from '../../src/lib/components/pager/pager';
+export {
+  RecusaDoCampoComponent,
+  type RecusaDoCampo,
+} from '../../src/lib/components/recusa-do-campo/recusa-do-campo';
 export { RecolhivelComponent } from '../../src/lib/components/recolhivel/recolhivel';
 export { RolagemFocavelDirective } from '../../src/lib/directives/rolagem-focavel.directive';
 export { ValorLegivelDirective } from '../../src/lib/components/valor-legivel/valor-legivel.directive';

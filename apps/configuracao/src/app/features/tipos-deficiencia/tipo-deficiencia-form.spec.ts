@@ -9,6 +9,7 @@ import {
   mensagemDoCampo,
   valoresDoTipoDeficiencia,
 } from './tipo-deficiencia-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const tipo: TipoDeficienciaDto = {
   id: 'r1',
@@ -74,7 +75,7 @@ describe('formulário de tipo de deficiência', () => {
 
     it('prioriza a recusa do servidor e a obrigatoriedade', () => {
       expect(tocar('', 'nome')).toBe('Campo obrigatório.');
-      form.controls.nome.setErrors({ backend: { code: 'x', message: 'Nome recusado.' } });
+      marcarRecusaDoServidor(form.controls.nome, 'x', 'Nome recusado.');
       expect(mensagemDoCampo(form.controls.nome, 'nome')).toBe('Nome recusado.');
     });
 
