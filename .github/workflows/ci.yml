@@ -12,10 +12,7 @@ permissions:
   pull-requests: read
 
 # Um run por referência. O push seguinte ao mesmo PR cancela o anterior, que já não
-# descreve o que será integrado: sem isto, uma sequência de correções de revisão deixou
-# SEIS runs da mesma branch vivos ao mesmo tempo, cada um carregando as quatro suítes de
-# e2e com Keycloak, e todos disputando os mesmos runners — o gate passou de 20 minutos
-# para quase três horas sem que o código tivesse mudado de tamanho.
+# descreve o que será integrado e só ocuparia runners à toa.
 #
 # Em `main` é o contrário: cada commit integrado precisa da própria validação, e cancelar
 # a anterior deixaria buraco no histórico de verificação. Daí a condição no valor.
@@ -78,13 +75,9 @@ jobs:
       - name: Verificar drift do codegen OpenAPI (shared-data)
         run: npx nx run shared-data:codegen-api-check
 
-  # Os gates rodam em jobs separados, cada um no seu runner. Fatos observados com os gates num
-  # job só: o run 43551538979 (PR #1478) foi cancelado no teto de tempo e, no run de push
-  # 43551403356, testes de `configuracao` estouraram o timeout por caso enquanto `selecao` rodava
-  # ao lado; antes disso, runs foram encerrados com "The runner has received a shutdown signal".
-  # A hipótese é contenção de CPU e memória entre as tarefas do mesmo runner. Um runner por alvo
-  # e por projeto de teste elimina essa disputa. O job `main` virou o agregador desses jobs e
-  # mantém o nome do check exigido pela proteção da `main`.
+  # Os gates rodam em jobs separados, cada um no seu runner, para que as tarefas não disputem
+  # CPU e memória no mesmo runner e estourem o tempo. O job `main` agrega esses jobs e mantém o
+  # nome do check exigido pela proteção da `main`.
   escopo:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -116,6 +109,7 @@ jobs:
               - 'playwright.config.ts'
               - 'docker/**'
               - 'tools/e2e-docker/**'
+              - 'tools/workspace-generators/**'
               - 'tools/test-nginx-base-href.sh'
               - '.github/workflows/ci.yml'
               - '.github/actions/**'
@@ -164,12 +158,9 @@ jobs:
   # impactados pelo diff contra a branch base. Em push para main, fazemos
   # sweep completo via `nx run-many` como rede de segurança.
   #
-  # `e2e` fora do gate obrigatório (issue #814): os 4 e2e sobem cada um seu
-  # próprio dev-server Angular sequencialmente no mesmo runner, e o último
-  # da fila trava sem erro explícito até o teto de 45min cancelar o job —
-  # reproduzido tanto em push na main quanto em PR, mesmo depois do fix do
-  # webServer (#812). Rodar via `npx nx e2e <app>-e2e` manualmente/local
-  # enquanto a causa (recursos do runner) não é resolvida.
+  # `e2e` fica fora do gate obrigatório: os 4 e2e sobem cada um seu próprio dev-server Angular
+  # em sequência no mesmo runner, e o último da fila pode travar sem erro explícito. Rode
+  # `npx nx e2e <app>-e2e` manualmente ou local.
   verificar:
     name: gate (${{ matrix.alvo }})
     needs: escopo

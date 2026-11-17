@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0012: Placement do `ApiResult<T>` em subpasta de `shared-core`, não em nova lib
 
+> **Emenda (2026-11-17).** O alvo de teste do workspace é `test`, o canônico da ADR-0004; o alvo `vite:test` deixou de existir. Onde este texto cita `vite:test`, leia `test`.
+
 ## Contexto e enunciado do problema
 
 A [ADR-0011](0011-consumer-adapter-api-result.md) decidiu que o adapter `ApiResult<T>` + `apiResultInterceptor` consolidado + `ProblemI18nService` viveriam em uma **nova lib `libs/shared-http`** com path alias `@uniplus/shared-http` e tags `scope:shared, type:http`.

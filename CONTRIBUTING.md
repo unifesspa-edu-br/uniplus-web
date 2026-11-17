@@ -135,7 +135,7 @@ npx nx g @uniplus/workspace:feature-lib selecao/feature-editais-detail --type=fe
 npx nx g @uniplus/workspace:feature-lib portal/data-access-inscricoes --type=data-access
 ```
 
-`<scope>` é validado contra o set `{selecao, ingresso, portal}` antes do factory rodar; `<type>` é validado pelo enum `{feature, data-access}` no schema do Nx CLI. Tags emitidas no `project.json` gerado: `["scope:<scope>", "type:<type>"]`. Path mapping `@uniplus/<scope>-<nome>` é registrado automaticamente em `tsconfig.base.json`.
+`<scope>` é validado contra o set `{selecao, ingresso, portal, configuracao}` e `<nome>`, pelo generator (kebab-case ASCII começando por letra), antes de gravar qualquer arquivo; `<type>` é validado pelo enum `{feature, data-access}` no schema do Nx CLI. Tags emitidas no `project.json` gerado: `["scope:<scope>", "type:<type>"]`. Path mapping `@uniplus/<scope>-<nome>` é registrado automaticamente em `tsconfig.base.json`.
 
 Documentação de referência: [`tools/workspace-generators/uniplus-workspace/README.md`](tools/workspace-generators/uniplus-workspace/README.md).
 
@@ -218,12 +218,12 @@ Todos os comandos acima devem passar antes de abrir o PR.
 
 #### Estratégia de lint em três camadas
 
-O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não-afetados:
+O lint é checado em três pontos distintos, do mais rápido ao mais abrangente, para evitar acúmulo silencioso de débito em projetos não afetados:
 
 | Camada | Quando roda | O que executa | Bloqueante? |
 |---|---|---|---|
 | **Pre-commit local** | Automático em cada `git commit` | `lint-staged` → `eslint --fix` apenas nos arquivos staged | Sim (impede commit) |
-| **Lint afetado local** | Manual antes do push da PR | `npx nx affected --target=lint` | Recomendado (não há gate CI dedicado) |
+| **Lint afetado local** | Manual antes do push da PR | `npx nx affected --target=lint` | Recomendado (o CI roda `gate (lint)` sobre os projetos afetados, quando o PR toca o frontend, e o `lint-full.yml` sobre todos) |
 | **CI completo (`lint-full.yml`)** | Em cada PR e push para `main` | `npx nx run-many --target=lint --all` | Sim (gate de merge) |
 
 O hook de pre-commit é configurado via `husky` (`.husky/pre-commit`) e roda automaticamente após `npm install`. Em casos excepcionais, pode-se contornar com `git commit --no-verify` — mas a CI rejeitará o PR se o lint completo falhar.
@@ -638,7 +638,7 @@ O CI **não barra** a dívida antiga. As regras de métrica são aviso, e o lint
 - função nova ou alterada cumpre os limites;
 - arquivo que o PR cria ou altera termina com até 400 linhas; se já passava, o PR o divide por assunto.
 
-A dívida é paga por projeto (cada app e cada lib), cada um com sua issue. Quando um projeto zera, o `eslint.config.mjs` dele passa as regras a erro, e o CI barra aquele projeto. Três cuidados, porque o último bloco que casa com o arquivo vence: o bloco de erro repete a exclusão dos clientes OpenAPI gerados, o bloco que desliga o limite por função nos testes vem depois dele, e o `.html` fica num bloco próprio, porque o plugin `sonarjs` só existe para `.ts`:
+A dívida é paga por projeto (cada app e cada lib), cada um com sua issue. Quando um projeto zera, o `eslint.config.mjs` dele passa as regras a erro, e o CI barra aquele projeto. Três cuidados, porque o último bloco que casa com o arquivo vence: no projeto que tem clientes OpenAPI gerados (`shared-data`), o bloco de erro repete a exclusão deles, o bloco que desliga o limite por função nos testes vem depois dele, e o `.html` fica num bloco próprio, porque o plugin `sonarjs` só existe para `.ts`:
 
 ```js
   {

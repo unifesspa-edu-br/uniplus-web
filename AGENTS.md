@@ -5,7 +5,7 @@
 - Use `rtk` como prefixo de todo comando de shell.
 - Use Node.js 22 (`nvm use`) e `npm ci`; não altere o lockfile sem necessidade.
 - Execute comandos Nx a partir da raiz do workspace. Para uma mudança focada,
-  prefira `npx nx lint <projeto>`, `npx nx vite:test <projeto>` e
+  prefira `npx nx lint <projeto>`, `npx nx test <projeto>` e
   `npx nx build <projeto>` em vez de gates globais.
 - Para alterações somente em Markdown, valide os arquivos modificados com
   `npx prettier --check <arquivos>` e `git diff --check`.

@@ -158,8 +158,8 @@ organizacional — exercitando o CRUD completo contra o backend real.
 
 ```bash
 cd uniplus-web
-npx nx vite:test configuracao          # um app
-npx nx run-many --target=vite:test --all
+npx nx test configuracao          # um app
+npx nx run-many --target=test --all
 ```
 
 ### Frontend — E2E (Playwright)
@@ -222,8 +222,8 @@ npx nx build configuracao
 npx nx run-many --target=build --all
 
 # Testes unitários (Vitest)
-npx nx vite:test configuracao
-npx nx run-many --target=vite:test --all
+npx nx test configuracao
+npx nx run-many --target=test --all
 
 # Lint
 npx nx lint configuracao
@@ -240,7 +240,7 @@ npx nx graph
 
 # Affected (o que mudou em relação à base) — usado no CI
 npx nx affected --target=build
-npx nx affected --target=vite:test
+npx nx affected --target=test
 
 # Backend (uniplus-api) — a partir da raiz do repositório uniplus-api
 docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml \

@@ -1,74 +1,104 @@
-import {
-  formatFiles,
-  generateFiles,
-  joinPathFragments,
-  names,
-  Tree,
-  updateJson,
-} from '@nx/devkit';
+import { formatFiles, generateFiles, joinPathFragments, Tree, updateJson } from '@nx/devkit';
 import * as path from 'node:path';
 import type { FeatureLibSchema } from './schema';
 
-const SCOPES_VALIDOS = ['selecao', 'ingresso', 'portal'] as const;
+export const SCOPES_VALIDOS = ['selecao', 'ingresso', 'portal', 'configuracao'] as const;
 type Scope = (typeof SCOPES_VALIDOS)[number];
 
-interface NormalizedOptions {
+interface OpcoesValidadas {
   scope: Scope;
   name: string;
   type: FeatureLibSchema['type'];
+}
+
+/** Os campos em inglês são as variáveis que os templates de `files/` consomem. */
+interface ConfiguracaoDaLib extends OpcoesValidadas {
   projectRoot: string;
+  /**
+   * Prefixado pelo scope (`<scope>-<name>`) para garantir unicidade no Nx graph quando dois
+   * scopes diferentes geram libs com o mesmo `<name>` (ex: `selecao/foo` e `portal/foo`). Sem o
+   * prefixo, ambos sairiam como project `foo` e o graph resolution quebraria. Manter alinhado
+   * com `importPath` (`@uniplus/<scope>-<name>`).
+   */
   projectName: string;
   importPath: string;
   prefix: string;
+  tags: string[];
 }
 
-function normalizarOpcoes(options: FeatureLibSchema): NormalizedOptions {
-  const partes = options.name.split('/');
+function separarScopeENome(nomeQualificado: string): [string, string] {
+  const partes = nomeQualificado.split('/');
   if (partes.length !== 2) {
     throw new Error(
-      `Nome inválido "${options.name}". Use o formato <scope>/<name> (ex: selecao/feature-editais-detail).`,
+      `Nome inválido "${nomeQualificado}". Use o formato <scope>/<name> (ex: selecao/feature-editais-detail).`,
     );
   }
-  const [scope, rawName] = partes;
-  if (!SCOPES_VALIDOS.includes(scope as Scope)) {
+  const [scope, nome] = partes;
+  return [scope, nome];
+}
+
+function exigirScopeValido(scope: string): Scope {
+  const scopeValido = SCOPES_VALIDOS.find((valido) => valido === scope);
+  if (!scopeValido) {
+    throw new Error(`Scope inválido "${scope}". Scopes válidos: ${SCOPES_VALIDOS.join(', ')}.`);
+  }
+  return scopeValido;
+}
+
+function exigirNomeDaLibValido(nome: string): string {
+  if (!/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/.test(nome)) {
     throw new Error(
-      `Scope inválido "${scope}". Scopes válidos: ${SCOPES_VALIDOS.join(', ')}.`,
+      `Nome de lib inválido "${nome}". Use kebab-case ASCII começando por letra (ex: feature-editais-detail).`,
     );
   }
-  const nomeNormalizado = names(rawName).fileName;
-  if (!/^[a-z][-a-z0-9]*$/.test(nomeNormalizado)) {
-    throw new Error(
-      `Nome de lib inválido "${rawName}". Use kebab-case ASCII começando por letra (ex: feature-editais-detail).`,
-    );
-  }
+  return nome;
+}
+
+function validarOpcoes(options: FeatureLibSchema): OpcoesValidadas {
+  const [scopeInformado, nomeInformado] = separarScopeENome(options.name);
+  const scope = exigirScopeValido(scopeInformado);
+  const name = exigirNomeDaLibValido(nomeInformado);
+  return { scope, name, type: options.type };
+}
+
+function montarConfiguracaoDaLib(opcoes: OpcoesValidadas): ConfiguracaoDaLib {
+  const { scope, name, type } = opcoes;
   return {
-    scope: scope as Scope,
-    name: nomeNormalizado,
-    type: options.type,
-    projectRoot: joinPathFragments('libs', scope, nomeNormalizado),
-    // Project name é prefixado pelo scope (`<scope>-<name>`) para garantir
-    // unicidade no Nx graph quando dois scopes diferentes geram libs com o
-    // mesmo `<name>` (ex: `selecao/foo` e `portal/foo`). Sem o prefixo, ambos
-    // sairiam como project `foo` e o graph resolution quebraria. Manter
-    // alinhado com `importPath` (`@uniplus/<scope>-<name>`).
-    projectName: `${scope}-${nomeNormalizado}`,
-    importPath: `@uniplus/${scope}-${nomeNormalizado}`,
+    ...opcoes,
+    projectRoot: joinPathFragments('libs', scope, name),
+    projectName: `${scope}-${name}`,
+    importPath: `@uniplus/${scope}-${name}`,
     prefix: scope,
+    tags: [`scope:${scope}`, `type:${type}`],
   };
 }
 
-function registrarPathMapping(tree: Tree, opts: NormalizedOptions): void {
+function exigirDiretorioLivre(tree: Tree, projectRoot: string): void {
+  if (tree.exists(projectRoot)) {
+    throw new Error(
+      `Diretório ${projectRoot} já existe. Escolha outro nome ou apague antes de gerar.`,
+    );
+  }
+}
+
+function gerarArquivosDaLib(tree: Tree, configuracao: ConfiguracaoDaLib): void {
+  generateFiles(tree, path.join(__dirname, 'files'), configuracao.projectRoot, {
+    ...configuracao,
+    tmpl: '',
+    tags: JSON.stringify(configuracao.tags),
+  });
+}
+
+function registrarPathMapping(tree: Tree, { importPath, projectRoot }: ConfiguracaoDaLib): void {
   updateJson(tree, 'tsconfig.base.json', (json) => {
-    json.compilerOptions = json.compilerOptions ?? {};
-    json.compilerOptions.paths = json.compilerOptions.paths ?? {};
-    if (json.compilerOptions.paths[opts.importPath]) {
+    json.compilerOptions ??= {};
+    json.compilerOptions.paths ??= {};
+    if (json.compilerOptions.paths[importPath]) {
       throw new Error(
-        `Path "${opts.importPath}" já registrado em tsconfig.base.json. Provavelmente a lib já existe ou o nome conflita.`,
+        `Path "${importPath}" já registrado em tsconfig.base.json. Provavelmente a lib já existe ou o nome conflita.`,
       );
     }
-    json.compilerOptions.paths[opts.importPath] = [
-      `${opts.projectRoot}/src/index.ts`,
-    ];
+    json.compilerOptions.paths[importPath] = [`${projectRoot}/src/index.ts`];
     return json;
   });
 }
@@ -77,27 +107,9 @@ export default async function featureLibGenerator(
   tree: Tree,
   options: FeatureLibSchema,
 ): Promise<void> {
-  const opts = normalizarOpcoes(options);
-
-  if (tree.exists(opts.projectRoot)) {
-    throw new Error(
-      `Diretório ${opts.projectRoot} já existe. Escolha outro nome ou apague antes de gerar.`,
-    );
-  }
-
-  generateFiles(
-    tree,
-    path.join(__dirname, 'files'),
-    opts.projectRoot,
-    {
-      ...opts,
-      tmpl: '',
-      // EJS helpers para os templates
-      tags: JSON.stringify([`scope:${opts.scope}`, `type:${opts.type}`]),
-    },
-  );
-
-  registrarPathMapping(tree, opts);
-
+  const configuracao = montarConfiguracaoDaLib(validarOpcoes(options));
+  exigirDiretorioLivre(tree, configuracao.projectRoot);
+  gerarArquivosDaLib(tree, configuracao);
+  registrarPathMapping(tree, configuracao);
   await formatFiles(tree);
 }

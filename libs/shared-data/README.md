@@ -95,7 +95,7 @@ Decisão registrada em [ADR-0013](../../docs/adrs/0013-gerador-openapi-node-only
 
 ```bash
 nx run shared-data:lint            # ESLint da lib
-nx run shared-data:vite:test       # Suíte Vitest
+nx run shared-data:test       # Suíte Vitest
 nx run shared-data:build           # Build (ng-packagr-lite)
 nx run shared-data:codegen-api     # Regen schema.ts (gera arquivos)
 nx run shared-data:codegen-api-check  # Regen + diff (falha se drift)

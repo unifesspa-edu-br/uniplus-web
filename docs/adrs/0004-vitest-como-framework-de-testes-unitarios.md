@@ -7,6 +7,8 @@ decision-makers:
 
 # ADR-0004: Vitest como framework de testes unitários
 
+> **Emenda (2026-11-17).** O ambiente do teste segue o alvo do código: `node` em `tools/` (generators e demais ferramentas Node) e `jsdom` em app e lib, que rodam no navegador.
+
 ## Contexto e enunciado do problema
 
 O `uniplus-web` precisa de um framework de testes unitários para componentes Angular, services, pipes e utilidades de bibliotecas compartilhadas. A escolha precisa integrar bem com o build system Nx (ADR-0003), com o pipeline Vite já adotado pelo Angular CLI moderno e com a estratégia de affected tests no CI.
@@ -64,8 +66,8 @@ Configuração centralizada em `vite.config.mts` por projeto. Major versions de 
 
 ## Confirmação
 
-- `npx nx test <projeto>` é o comando canônico de execução local (o target `test` resolve para o executor Vitest configurado no projeto, exposto pelo plugin Nx como `vite:test`).
-- Pipeline de CI (`.github/workflows/ci.yml`) executa o target `test` de cada projeto do workspace em um job próprio (`test (<projeto>)`), em paralelo aos jobs `gate (<alvo>)`; o job agregador `main` consolida o resultado.
+- `npx nx test <projeto>` é o comando canônico de execução local (o target `test` é inferido pelo plugin `@nx/vite/plugin` a partir do `vite.config.mts` do projeto e executa o Vitest).
+- Pipeline de CI (`.github/workflows/ci.yml`) executa o target `test` de cada projeto com teste, selecionado conforme a ADR-0003, em um job próprio (`test (<projeto>)`), em paralelo aos jobs `gate (<alvo>)`; o job agregador `main` consolida o resultado.
 
 ## Mais informações
 

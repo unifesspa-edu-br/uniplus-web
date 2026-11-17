@@ -66,7 +66,7 @@ npx nx serve configuracao
 npx nx run-many --target=build --all
 
 # Testes
-npx nx run-many --target=vite:test --all
+npx nx run-many --target=test --all
 
 # Lint
 npx nx run-many --target=lint --all

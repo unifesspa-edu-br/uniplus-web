@@ -126,8 +126,8 @@ npx nx build selecao
 npx nx run-many --target=build --all
 
 # Testes unitarios
-npx nx vite:test selecao
-npx nx run-many --target=vite:test --all
+npx nx test selecao
+npx nx run-many --target=test --all
 
 # Lint
 npx nx lint selecao
@@ -144,7 +144,7 @@ npm run generate:api
 
 # Affected (CI)
 npx nx affected --target=build
-npx nx affected --target=vite:test
+npx nx affected --target=test
 ```
 
 ### Testar um app contra o backend real (local)
