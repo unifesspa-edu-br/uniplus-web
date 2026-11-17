@@ -1,5 +1,5 @@
 import { signal } from '@angular/core';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import type { FatoCandidatoDto, RegrasPadraoInput } from '@uniplus/shared-data/configuracao';
 import {
   deClausulasDoWire,
@@ -103,7 +103,7 @@ export class RegrasEmEdicao {
   /** Põe cada recusa de regra junto da regra; diz se alguma coube. */
   aplicarRecusa(problem: ProblemDetails): boolean {
     const porRegra: Record<number, string> = {};
-    for (const erro of problem.errors ?? []) {
+    for (const erro of separarCausas(problem.errors).deCampo) {
       const indice = indiceDaRegra(erro.field);
       if (indice !== null) porRegra[indice] = erro.message;
     }

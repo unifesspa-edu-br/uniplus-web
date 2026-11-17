@@ -1,7 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ChaveDeSubstituicao, ProblemI18nService, comChave } from '@uniplus/shared-core/http';
+import {
+  ChaveDeSubstituicao,
+  type ProblemDetails,
+  ProblemI18nService,
+  comChave,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { VersoesDoPerfilApi } from '@uniplus/shared-data/autorizacao';
+import { textoDaCausaGeral } from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { CampoDoMotivo } from './campo-do-motivo';
 import { EscritaDoPerfil } from './escrita-do-perfil';
@@ -44,13 +50,19 @@ export class CancelamentoDaVersao {
       this.api.cancelar(perfilId, versaoId, motivo, contexto),
     );
     if (!resultado.ok) {
-      if (!this.campo.recusar(resultado.problem)) {
-        this.erro.set(mensagemDaRecusa(this.problemas, this.notificacoes, resultado.problem));
-      }
+      this.mostrarRecusa(resultado.problem);
       return;
     }
     this.aberto.set(false);
     this.notificacoes.success('Versão pendente cancelada');
     this.escrita.recarregar();
+  }
+  /** O motivo recusado vai ao campo, e só a causa geral vai à área geral; a recusa de outro assunto vai toda a ela. */
+  private mostrarRecusa(problema: ProblemDetails): void {
+    this.erro.set(
+      this.campo.recusar(problema)
+        ? textoDaCausaGeral(problema)
+        : mensagemDaRecusa(this.problemas, this.notificacoes, problema),
+    );
   }
 }

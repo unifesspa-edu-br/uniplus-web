@@ -1,7 +1,11 @@
 import { signal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import { ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  causaDoCampo,
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+} from '../../../shared/formulario';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 
 /**
@@ -37,7 +41,7 @@ export class CampoDoMotivo {
 
   /** Marca no campo a recusa da API que fala do motivo; devolve `false` quando a recusa é de outro assunto. */
   recusar(problema: ProblemDetails): boolean {
-    const doMotivo = problema.errors?.find((erro) => erro.field.toLowerCase() === 'motivo');
+    const doMotivo = causaDoCampo(problema, 'motivo');
     if (!doMotivo) return false;
     marcarRecusaDoServidor(this.controle, doMotivo.code, doMotivo.message);
     this.focar();

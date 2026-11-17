@@ -170,6 +170,41 @@ describe('encerramento manual da janela', () => {
     expect(host.textContent).toContain('A janela de migração já terminou.');
   });
 
+  it('o motivo recusado com causa geral marca o campo e mostra a causa no aviso, sem reler a janela', async () => {
+    api.encerrar.mockReturnValue(
+      of(
+        apiFailure(
+          {
+            type: 'x',
+            title: 'Janela encerrada',
+            status: 422,
+            code: 'uniplus.autorizacao.migracao.janela_encerrada',
+            traceId: '',
+            errors: [
+              { field: 'Motivo', code: 'motivo_invalido', message: 'Motivo longo demais.' },
+              { code: 'bloqueada', message: 'A janela está bloqueada.' },
+            ],
+          },
+          422,
+          new HttpHeaders(),
+        ),
+      ),
+    );
+    const { host, assentar } = await abrirJanela(JANELA);
+    await preencher(host, assentar, 'Versão anterior substituída por engano.');
+    caixa(host).click();
+    await assentar();
+
+    presente(botao(host, 'Encerrar a janela')).click();
+    await assentar();
+
+    expect(host.textContent).toContain('Motivo longo demais.');
+    expect(host.querySelector('#cfg-encerramento-erro')?.textContent).toContain(
+      'A janela está bloqueada.',
+    );
+    expect(host.textContent).not.toContain('A janela mudou');
+  });
+
   it('quem só tem a permissão da proteção de dados não vê o encerramento', async () => {
     const { host } = await abrirJanela(JANELA, [PROTECAO_DE_DADOS]);
 

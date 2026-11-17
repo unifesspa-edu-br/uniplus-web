@@ -30,12 +30,11 @@ import { recusasComMensagemDosConceitos } from './mensagens-dos-conceitos';
 import { TiposEtapaStore } from './tipos-etapa.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  marcarRecusasDosCampos,
-  MENSAGEM_SEM_MAPEAMENTO,
   recusasDoProblema,
-  type RecusaDoServidor,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoEtapa.CodigoJaExiste` (409 Conflict). */
@@ -265,13 +264,14 @@ export class EdicaoDosTiposEtapa {
     marcarRecusaDoServidor(codigo, problem.code, mensagem, paginaDoProblema(problem));
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(
-      recusasComMensagemDosConceitos(recusas),
-      this.form,
-      controleDoCampoDoServidor,
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    const comMensagemDosConceitos = {
+      ...recusas,
+      deCampo: recusasComMensagemDosConceitos(recusas.deCampo),
+    };
+    this.erro.set(
+      aplicarRecusasDoProblema(comMensagemDosConceitos, this.form, controleDoCampoDoServidor),
     );
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 
   private renovarChave(): void {

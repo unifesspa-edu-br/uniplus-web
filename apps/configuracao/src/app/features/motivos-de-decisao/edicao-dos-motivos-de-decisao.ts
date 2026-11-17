@@ -22,12 +22,11 @@ import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
 import { aguardarRecarga } from '../../shared/foco';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 import {
   MOTIVO_EM_BRANCO,
@@ -322,9 +321,8 @@ export class EdicaoDosMotivosDeDecisao {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
 
   private prepararChaveDaMudanca(id: string, ativar: boolean): void {

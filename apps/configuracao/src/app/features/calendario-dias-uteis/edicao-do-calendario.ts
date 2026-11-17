@@ -5,9 +5,10 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -16,6 +17,7 @@ import {
   controlNameFromBackendField,
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
+  textoDasCausasGerais,
 } from '../../shared/formulario';
 import { BuscaDeMunicipios } from './busca-de-municipios';
 import {
@@ -112,11 +114,13 @@ export class EdicaoDoCalendario {
 
   private aplicarFalha(problem: ProblemDetails): void {
     const falha = aplicarPoliticaDaFalha(problem, this.chave, this.notifications);
-    const apontou = falha.tipo === 'campos' && this.aplicarErrosDeValidacao(problem.errors ?? []);
-    this.erro.set(apontou ? null : this.problemI18n.resolve(problem).title);
+    const causas = separarCausas(problem.errors);
+    const apontou = falha.tipo === 'campos' && this.aplicarErrosDeValidacao(causas.deCampo);
+    const geral = textoDasCausasGerais(causas.gerais);
+    this.erro.set(geral ?? (apontou ? null : this.problemI18n.resolve(problem).title));
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): boolean {
+  private aplicarErrosDeValidacao(errors: readonly CausaDeCampo[]): boolean {
     let aplicouAlgum = false;
     for (const erro of errors) {
       aplicouAlgum = this.aplicarErro(erro) || aplicouAlgum;
@@ -124,7 +128,7 @@ export class EdicaoDoCalendario {
     return aplicouAlgum;
   }
 
-  private aplicarErro(erro: ProblemValidationError): boolean {
+  private aplicarErro(erro: CausaDeCampo): boolean {
     const indice = indiceDoDiaNoServidor(erro.field);
     if (indice === null) {
       return this.aplicarNaVersao(erro);
@@ -133,7 +137,7 @@ export class EdicaoDoCalendario {
     return grupo !== undefined && aplicarErroNoDia(grupo, erro);
   }
 
-  private aplicarNaVersao(erro: ProblemValidationError): boolean {
+  private aplicarNaVersao(erro: CausaDeCampo): boolean {
     if (controlNameFromBackendField(erro.field, CAMPO_DA_VERSAO) === null) {
       return false;
     }

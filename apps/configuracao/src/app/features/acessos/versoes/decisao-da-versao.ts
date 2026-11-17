@@ -2,9 +2,9 @@ import { Injectable, inject, signal } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import {
   ChaveDeSubstituicao,
-  ProblemI18nService,
   comChave,
   type ProblemDetails,
+  ProblemI18nService,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -12,7 +12,12 @@ import {
   type EtapaDaVersao,
   type ItemDaFilaDeVersoesDto,
 } from '@uniplus/shared-data/autorizacao';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import {
+  causaDoCampo,
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  temCausaGeral,
+} from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 import { EscritaDoPerfil } from './escrita-do-perfil';
@@ -140,13 +145,12 @@ export class DecisaoDaVersao {
   }
 
   private recusaDoMotivo(problema: ProblemDetails): void {
-    const doMotivo = problema.errors?.find((erro) => erro.field.toLowerCase() === 'motivo');
+    const doMotivo = causaDoCampo(problema, 'motivo');
     if (doMotivo) {
       marcarRecusaDoServidor(this.motivo, doMotivo.code, doMotivo.message);
       this.focarMotivo();
-    } else {
-      this.erroDaRecusa.set(this.texto(problema));
     }
+    if (!doMotivo || temCausaGeral(problema)) this.erroDaRecusa.set(this.texto(problema));
   }
 
   registrarErro(versaoId: string, mensagem: string): void {

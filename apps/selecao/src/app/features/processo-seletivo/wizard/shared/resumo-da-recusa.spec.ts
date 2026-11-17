@@ -58,4 +58,52 @@ describe('resumoDaRecusa', () => {
   it('sem erro de campo e sem explicação para a raiz, dá o título', () => {
     expect(resumoDaRecusa(problema([]), explicarConhecido, () => TITULO)).toEqual([TITULO]);
   });
+
+  it('a causa geral entra com a própria mensagem e não pede o título da raiz', () => {
+    const geral = { ...problema(undefined), errors: [{ code: 'geral', message: 'Bloqueado.' }] };
+
+    expect(resumoDaRecusa(geral, explicarConhecido, () => TITULO)).toEqual(['Bloqueado.']);
+  });
+
+  it('a causa geral vem depois das explicadas e não esconde o erro de campo sem explicação', () => {
+    const mista = {
+      ...problema([
+        { field: 'a', code: 'conhecido' },
+        { field: 'b', code: 'outro' },
+      ]),
+      errors: [
+        { field: 'a', code: 'conhecido', message: 'x' },
+        { code: 'geral', message: 'Bloqueado.' },
+        { field: 'b', code: 'outro', message: 'x' },
+      ],
+    };
+
+    expect(resumoDaRecusa(mista, explicarConhecido, () => TITULO)).toEqual([
+      'Texto da tela.',
+      'Bloqueado.',
+      TITULO,
+    ]);
+  });
+
+  it('a causa de campo vazio, a raiz do documento, é causa de campo e segue a explicação da tela', () => {
+    const raiz = problema([{ field: '', code: 'conhecido' }]);
+
+    expect(resumoDaRecusa(raiz, explicarConhecido, () => TITULO)).toEqual(['Texto da tela.']);
+  });
+
+  it('a causa geral igual ao texto de um campo continua no resumo, e a repetida entre gerais não', () => {
+    const mista = {
+      ...problema([{ field: 'a', code: 'conhecido' }]),
+      errors: [
+        { field: 'a', code: 'conhecido', message: 'x' },
+        { code: 'geral', message: 'Texto da tela.' },
+        { code: 'geral', message: 'Texto da tela.' },
+      ],
+    };
+
+    expect(resumoDaRecusa(mista, explicarConhecido, () => TITULO)).toEqual([
+      'Texto da tela.',
+      'Texto da tela.',
+    ]);
+  });
 });

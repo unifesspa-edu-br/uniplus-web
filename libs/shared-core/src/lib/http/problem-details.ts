@@ -28,8 +28,13 @@ export interface ProblemDetails {
   readonly retryable?: boolean;
 }
 
+/**
+ * Causa de recusa. `field` ausente indica causa geral, que não aponta um campo; `field` vazio
+ * (`""`) aponta o campo que é a raiz do documento ou do ponteiro JSON. A API omite a chave
+ * quando a causa é geral, e o tipo nunca carrega `null`.
+ */
 export interface ProblemValidationError {
-  readonly field: string;
+  readonly field?: string;
   readonly code: string;
   readonly message: string;
 }

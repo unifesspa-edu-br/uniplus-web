@@ -3,9 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -34,7 +35,7 @@ import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -235,7 +236,7 @@ export class EdicaoDasReservasDemograficas {
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.renovarChave();
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
     const titulo = this.problemI18n.resolve(problem).title;
@@ -249,15 +250,15 @@ export class EdicaoDasReservasDemograficas {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
-    for (const recusa of errors) {
+    for (const recusa of causas.deCampo) {
       const nome = controleDoCampoDoServidor(recusa.field);
       if (nome === null) continue;
       this.marcarCampo(nome, recusa.code, recusa.message);
       aplicouAlgum = true;
     }
-    if (!aplicouAlgum) this.erro.set(MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
   /** Um campo desabilitado não pode ser corrigido nem fica inválido: a recusa vira mensagem geral. */

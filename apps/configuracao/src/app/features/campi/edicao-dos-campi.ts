@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -33,7 +35,7 @@ import {
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -218,7 +220,7 @@ export class EdicaoDosCampi {
     }
     const errosDeCampo = problem.errors ?? [];
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
-      this.aplicarErrosDeValidacao(errosDeCampo);
+      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
       return;
     }
     if (ehErroDeEndereco(problem.code)) {
@@ -242,10 +244,10 @@ export class EdicaoDosCampi {
     marcarRecusaDoServidor(sigla, problem.code, this.problemI18n.resolve(problem).title);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
     let erroEndereco: string | null = null;
-    for (const erro of errors) {
+    for (const erro of causas.deCampo) {
       if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {
         erroEndereco ??= erro.message;
         aplicouAlgum = true;
@@ -254,10 +256,10 @@ export class EdicaoDosCampi {
       aplicouAlgum = this.marcarControle(erro) || aplicouAlgum;
     }
     this.erroDoEndereco.set(erroEndereco);
-    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
-  private marcarControle(erro: ProblemValidationError): boolean {
+  private marcarControle(erro: CausaDeCampo): boolean {
     const nome = controleDoCampoDoServidor(erro.field);
     if (nome === null) {
       return false;

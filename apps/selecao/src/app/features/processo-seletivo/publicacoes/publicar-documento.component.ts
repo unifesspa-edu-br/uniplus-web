@@ -54,11 +54,7 @@ import {
 import { AnexosDoEdital } from '../wizard/shared/anexos-do-edital/envio-do-anexo.service';
 import { AnexosDaPublicacaoComponent } from './anexos-da-publicacao.component';
 import { rotuloDoAto } from './apresentacao-do-ato';
-import {
-  campoDoServidor,
-  mensagemDoErroDoCampo,
-  type CampoDoFormulario,
-} from './campos-da-publicacao';
+import { mensagemDoErroDoCampo, type CampoDoFormulario } from './campos-da-publicacao';
 import { EnviosDeArquivos, type DependenciasDosEnvios } from './envios-de-arquivos';
 import {
   ajustarObrigatoriedade,
@@ -76,6 +72,10 @@ import {
 import { impedimentosDosArquivos } from './impedimentos-da-publicacao';
 import { pedidoDoAto, pedidoDoItem, type DadosDoItem } from './pedido-do-ato';
 import { rotuloDoPapel } from './previstos-do-edital';
+import {
+  MENSAGEM_DA_PUBLICACAO_INCONCLUSIVA,
+  distribuirRecusaDaPublicacao,
+} from './recusa-da-publicacao';
 
 const TAMANHO_MAXIMO_DO_PRINCIPAL_MB = TAMANHO_MAXIMO_DO_ANEXO_MB;
 const TIPO_DE_MIDIA_DO_PRINCIPAL = 'application/pdf';
@@ -361,26 +361,16 @@ export class PublicarDocumentoComponent {
   }
 
   private mostrarRecusa(problema: ProblemDetails, inconclusiva: boolean): void {
-    const mensagens: string[] = [this.problemI18n.resolve(problema).title];
-
-    for (const erro of problema.errors ?? []) {
-      const campo = campoDoServidor(erro.field);
-      if (campo === null) {
-        mensagens.push(erro.message);
-        continue;
-      }
+    const titulo = this.problemI18n.resolve(problema).title;
+    const recusa = distribuirRecusaDaPublicacao(titulo, problema.errors);
+    for (const [campo, mensagem] of recusa.dosCampos) {
       const controle = this.form.controls[campo];
-      controle.setErrors({ ...controle.errors, servidor: { mensagem: erro.message } });
+      controle.setErrors({ ...controle.errors, servidor: { mensagem } });
       controle.markAsTouched();
     }
-
-    if (inconclusiva) {
-      mensagens.push(
-        'Não foi possível saber se o documento foi publicado. Confira a lista de documentos; se ele não aparecer, publique de novo: o pedido é o mesmo e não se repete.',
-      );
-    }
-
-    this.recusa.set(mensagens);
+    this.recusa.set(
+      inconclusiva ? [...recusa.mensagens, MENSAGEM_DA_PUBLICACAO_INCONCLUSIVA] : recusa.mensagens,
+    );
     this.focarResumo();
   }
 

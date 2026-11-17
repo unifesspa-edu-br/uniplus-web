@@ -4,9 +4,11 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
@@ -42,7 +44,7 @@ import type { OpcaoDeReferencia } from './opcao-de-referencia';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.modalidade.codigo_ja_existe';
@@ -216,7 +218,7 @@ export class EdicaoDaModalidade {
     const errosDeCampo = problem.errors ?? [];
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
       this.renovarChave();
-      this.aplicarErrosDeValidacao(errosDeCampo);
+      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
       return;
     }
     // O código comparado é o do wire (`uniplus.<modulo>.<razao>`); o de domínio é chave de busca do servidor.
@@ -236,10 +238,10 @@ export class EdicaoDaModalidade {
     this.erro.set(null);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
     const recusasDaRegra: string[] = [];
-    for (const erro of errors) {
+    for (const erro of causas.deCampo) {
       if (ehDaRegra(erro.field)) {
         recusasDaRegra.push(erro.message);
         aplicouAlgum = true;
@@ -248,10 +250,10 @@ export class EdicaoDaModalidade {
       }
     }
     this.aplicabilidade.recusas.set(recusasDaRegra);
-    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
-  private marcarControle(erro: ProblemValidationError): boolean {
+  private marcarControle(erro: CausaDeCampo): boolean {
     const nome = controleDoCampoDoServidor(erro.field);
     if (nome === null) return false;
     const control = this.form.controls[nome];

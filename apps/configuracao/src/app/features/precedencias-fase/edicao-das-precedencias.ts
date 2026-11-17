@@ -31,12 +31,12 @@ import {
 import { PrecedenciasFaseStore } from './precedencias-fase.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaCausaGeral,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
@@ -266,7 +266,11 @@ export class EdicaoDasPrecedencias {
 
   private aplicarFalha(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
-    if (this.aplicarRecusaDoGrafo(problem)) return;
+    if (this.aplicarRecusaDoGrafo(problem)) {
+      const geral = textoDaCausaGeral(problem);
+      if (geral !== null) this.erro.set(geral);
+      return;
+    }
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
@@ -297,9 +301,8 @@ export class EdicaoDasPrecedencias {
     return campo === undefined ? null : this.form.controls[campo];
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
 
   private renovarChave(): void {

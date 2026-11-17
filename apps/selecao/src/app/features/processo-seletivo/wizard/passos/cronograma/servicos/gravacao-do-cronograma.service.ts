@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
-import { ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
 
 import type {
   EtapaPontuada,
@@ -247,7 +247,10 @@ export class GravacaoDoCronograma {
     conteudo: ConteudoDaGravacao,
     problema: ProblemaDaGravacao,
   ): ValidacaoDoPasso {
-    this.recusarUnidades(conteudo.enviadas, fasesComUnidadeNaoEncontrada(problema.errors ?? []));
+    this.recusarUnidades(
+      conteudo.enviadas,
+      fasesComUnidadeNaoEncontrada(separarCausas(problema.errors).deCampo),
+    );
     return { valid: false, messages: this.mensagensDaRecusaDasFases(problema) };
   }
 
@@ -265,7 +268,7 @@ export class GravacaoDoCronograma {
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (gravacao.ok) return null;
 
-    this.recusas.aplicar(conteudo.grupos, gravacao.problem.errors ?? []);
+    this.recusas.aplicar(conteudo.grupos, separarCausas(gravacao.problem.errors).deCampo);
     return { valid: false, messages: this.mensagensDaRecusaDasEtapas(gravacao.problem, conteudo) };
   }
 

@@ -33,6 +33,7 @@ import {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoProblema,
+  textoDaCausaGeral,
 } from '../../shared/formulario';
 
 type Escrita = 'criando' | 'ativando' | 'aceitando';
@@ -315,22 +316,28 @@ export class EdicaoDosFatos {
 
   private recusarCriacao(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.chaveDaCriacao.set(idempotencyKey.create());
+    const geral = textoDaCausaGeral(problem);
+    if (this.marcouCampoDaCriacao(problem)) {
+      if (geral !== null) this.erro.set(geral);
+      return;
+    }
+    this.erro.set(geral ?? this.problemI18n.resolve(problem).title);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  /** Marca o campo que a recusa aponta, pelo código do fato ou pelas causas; diz se algum foi marcado. */
+  private marcouCampoDaCriacao(problem: ProblemDetails): boolean {
     if (problem.code === CODIGO_JA_EXISTE) {
       marcarRecusaDoServidor(
         this.form.controls.codigo,
         problem.code,
         this.problemI18n.resolve(problem).title,
       );
-      return;
+      return true;
     }
-    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && this.marcarCamposRecusados(problem))
-      return;
-    this.erro.set(this.problemI18n.resolve(problem).title);
-    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
-  }
-
-  private marcarCamposRecusados(problem: ProblemDetails): boolean {
-    return marcarRecusasDosCampos(recusasDoProblema(problem), this.form, controleDoCampoDoServidor);
+    if (problem.status !== STATUS_HTTP.RECUSA_DE_NEGOCIO) return false;
+    const recusas = recusasDoProblema(problem).deCampo;
+    return marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
   }
 
   /** A mensagem da recusa para o diálogo; só a falha do servidor (5xx) avisa também por toast. */

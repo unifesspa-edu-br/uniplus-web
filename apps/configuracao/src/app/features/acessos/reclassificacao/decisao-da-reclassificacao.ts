@@ -7,6 +7,7 @@ import {
   type ReclassificacaoDto,
   type ResultadoDaReclassificacao,
 } from '@uniplus/shared-data/autorizacao';
+import { textoDaCausaGeral } from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { ChavesPorComando } from '../versoes/chaves-por-comando';
 import { CampoDoMotivo } from '../versoes/campo-do-motivo';
@@ -128,7 +129,19 @@ export class DecisaoDaReclassificacao {
   }
 
   private recusar(problema: ProblemDetails): void {
-    if (this.pedindoMotivo() && this.motivo.recusar(problema)) return;
+    if (this.pedindoMotivo() && this.motivo.recusar(problema)) {
+      this.mostrarCausaGeral(problema);
+    } else {
+      this.recusarDaAcao(problema);
+    }
+  }
+
+  private mostrarCausaGeral(problema: ProblemDetails): void {
+    const geral = textoDaCausaGeral(problema);
+    if (geral !== null) this.falhar(geral);
+  }
+
+  private recusarDaAcao(problema: ProblemDetails): void {
     const texto = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
     if (problema.code === DOCUMENTO_NAO_LIDO) {
       this.pedindoMotivo.set(false);

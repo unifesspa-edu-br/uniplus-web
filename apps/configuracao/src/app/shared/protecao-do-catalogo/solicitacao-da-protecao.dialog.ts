@@ -12,7 +12,12 @@ import {
   untracked,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  type CausaDeCampo,
+  type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -27,6 +32,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { CLASSIFICACOES_DE_PROTECAO, nomeDoCadastro, rotuloDe } from './protecao-de-dados';
+import { textoDasCausasGerais } from '../formulario';
 
 const chaveDe = (item: ItemDaProtecaoDoCatalogoDto): string => `${item.tipo}:${item.id}`;
 
@@ -264,13 +270,20 @@ export class SolicitacaoDaProtecaoDialogComponent {
           this.concluirEnvio(resultado.data);
           return;
         }
-        if (deveRotacionarIdempotencyKey(resultado.problem)) this.chave = idempotencyKey.create();
-        const titulo = this.problemI18n.resolve(resultado.problem).title;
-        this.marcarRecusados(resultado.problem, enviados);
-        this.erro.set(titulo);
-        if (resultado.problem.status >= 500)
-          this.notifications.errorFromProblem(resultado.problem, { title: titulo });
+        this.recusarEnvio(resultado.problem, enviados);
       });
+  }
+
+  private recusarEnvio(
+    problem: ProblemDetails,
+    enviados: readonly ItemDaProtecaoDoCatalogoDto[],
+  ): void {
+    if (deveRotacionarIdempotencyKey(problem)) this.chave = idempotencyKey.create();
+    const titulo = this.problemI18n.resolve(problem).title;
+    const { deCampo, gerais } = separarCausas(problem.errors);
+    this.marcarRecusados(deCampo, enviados);
+    this.erro.set(textoDasCausasGerais(gerais) ?? titulo);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem, { title: titulo });
   }
 
   private concluirEnvio(data: SolicitacaoDaProtecaoDto): void {
@@ -288,11 +301,11 @@ export class SolicitacaoDaProtecaoDialogComponent {
    * recusado fica sinalizado na linha e sai da marcação, para a pessoa reenviar os demais.
    */
   private marcarRecusados(
-    problem: ProblemDetails,
+    erros: readonly CausaDeCampo[],
     enviados: readonly ItemDaProtecaoDoCatalogoDto[],
   ): void {
     const recusas = new Map<string, string>();
-    for (const erro of problem.errors ?? []) {
+    for (const erro of erros) {
       const indice = /^itens\[(\d+)\]\.id$/u.exec(erro.field)?.[1];
       const item = indice === undefined ? undefined : enviados[Number(indice)];
       if (item !== undefined) recusas.set(chaveDe(item), erro.message);

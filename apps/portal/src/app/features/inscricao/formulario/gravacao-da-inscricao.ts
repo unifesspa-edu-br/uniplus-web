@@ -1,7 +1,12 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EMPTY, type Observable, defer, filter, map, tap } from 'rxjs';
-import { type ApiFailure, type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  type ApiFailure,
+  type ApiResult,
+  ProblemI18nService,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import {
   type ReciboDaInscricaoDto,
   type InscricaoDto,
@@ -19,7 +24,7 @@ import {
   mesmoConteudoGravado,
 } from './corpo-da-inscricao';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
-import { EscolhaDoCurso } from './escolha-do-curso';
+import { EscolhaDoCurso, type RecusasMostradas } from './escolha-do-curso';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { CONFLITOS, type RecusaDaSegundaOpcao, separarRecusas } from './recusas-da-inscricao';
@@ -45,6 +50,9 @@ export interface RecusaGeral {
 }
 
 const TITULO_DA_RECUSA = 'A inscrição não foi gravada';
+const ANUNCIO_DA_RECUSA_GERAL = `${TITULO_DA_RECUSA}. Leia a mensagem de recusa e tente de novo.`;
+const TITULO_DA_GRAVACAO_INCERTA = 'Não conseguimos confirmar a gravação';
+const ORIENTACAO_DA_GRAVACAO_INCERTA = 'Confira as respostas e tente de novo.';
 
 /**
  * Tudo o que a tela escreve na inscrição: salvar o rascunho, enviar e reler a revisão depois de uma
@@ -263,24 +271,28 @@ export class GravacaoDaInscricao {
     }, eTagDaTentativa);
   }
 
-  /** Mostra a recusa no campo, numa das ofertas ou, sem onde apontar, como recusa geral. */
+  /**
+   * Mostra a recusa no campo, numa das ofertas ou, sem onde apontar, como recusa geral. As causas
+   * gerais da API vão para a recusa geral, junto do que não tem campo na tela.
+   */
   private exibirRecusa(falha: ApiFailure, ambigua: boolean): void {
-    const recusas = separarRecusas(falha.problem.errors ?? []);
+    const { deCampo, gerais } = separarCausas(falha.problem.errors);
+    const recusas = separarRecusas(deCampo);
     const dasOfertas = this.mostrarRecusasDasOfertas(recusas.daOferta, recusas.daSegunda);
     if (recusas.porCampo.length > 0) this.errosDoServidor.set(recusas.porCampo);
-    const total = recusas.porCampo.length + dasOfertas;
-    if (total > 0) {
-      this.anuncio.definir(
-        total === 1
-          ? 'Uma resposta foi recusada. Corrija e tente de novo.'
-          : `${total} respostas foram recusadas. Corrija e tente de novo.`,
-      );
-      return;
-    }
+    const textoGeral = juntarTextos([dasOfertas.textoGeral, ...gerais.map((g) => g.message)]);
+    if (textoGeral !== null) this.recusaGeral.set(recusaGeralComCausa(textoGeral, ambigua));
+    const total = recusas.porCampo.length + dasOfertas.mostradas;
+    if (total > 0 || textoGeral !== null)
+      this.anuncio.definir(anuncioDaRecusa(total, textoGeral !== null, ambigua));
+    else this.recusarSemOndeApontar(falha, ambigua);
+  }
+
+  private recusarSemOndeApontar(falha: ApiFailure, ambigua: boolean): void {
     if (ambigua) {
       this.recusaGeral.set({
-        titulo: 'Não conseguimos confirmar a gravação',
-        texto: 'Confira as respostas e tente de novo.',
+        titulo: TITULO_DA_GRAVACAO_INCERTA,
+        texto: ORIENTACAO_DA_GRAVACAO_INCERTA,
       });
       return;
     }
@@ -291,12 +303,39 @@ export class GravacaoDaInscricao {
   private mostrarRecusasDasOfertas(
     daOferta: string | null,
     daSegunda: RecusaDaSegundaOpcao | null,
-  ): number {
-    if (daOferta === null && daSegunda === null) return 0;
-    const mostradas = this.escolha.mostrarRecusas(daOferta, daSegunda);
-    if (mostradas.textoGeral !== null) {
-      this.recusaGeral.set({ titulo: TITULO_DA_RECUSA, texto: mostradas.textoGeral });
-    }
-    return mostradas.mostradas;
+  ): RecusasMostradas {
+    if (daOferta === null && daSegunda === null) return { textoGeral: null, mostradas: 0 };
+    return this.escolha.mostrarRecusas(daOferta, daSegunda);
   }
+}
+
+function juntarTextos(textos: readonly (string | null)[]): string | null {
+  const presentes = textos.filter((texto) => texto !== null);
+  return presentes.length === 0 ? null : presentes.join(' ');
+}
+
+/** Na falha ambígua a causa não diz se algo foi gravado: a orientação de gravação incerta acompanha-a. */
+function recusaGeralComCausa(causa: string, ambigua: boolean): RecusaGeral {
+  if (!ambigua) return { titulo: TITULO_DA_RECUSA, texto: causa };
+  return {
+    titulo: TITULO_DA_GRAVACAO_INCERTA,
+    texto: juntarTextos([causa, ORIENTACAO_DA_GRAVACAO_INCERTA]) ?? ORIENTACAO_DA_GRAVACAO_INCERTA,
+  };
+}
+
+/**
+ * Com causa geral, o leitor de tela a ouve: na falha ambígua, o anúncio é o da gravação incerta; nas
+ * demais, o das recusas de campo, quando há, seguido da indicação de ler a mensagem geral.
+ */
+function anuncioDaRecusa(total: number, comCausaGeral: boolean, ambigua: boolean): string {
+  if (!comCausaGeral) return anuncioDasRecusasDeCampo(total);
+  if (ambigua) return `${TITULO_DA_GRAVACAO_INCERTA}. Leia a mensagem de recusa e tente de novo.`;
+  if (total === 0) return ANUNCIO_DA_RECUSA_GERAL;
+  return `${anuncioDasRecusasDeCampo(total)} Leia também a mensagem de recusa.`;
+}
+
+function anuncioDasRecusasDeCampo(total: number): string {
+  return total === 1
+    ? 'Uma resposta foi recusada. Corrija e tente de novo.'
+    : `${total} respostas foram recusadas. Corrija e tente de novo.`;
 }

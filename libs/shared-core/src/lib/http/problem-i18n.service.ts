@@ -20,8 +20,8 @@ export interface ProblemAction {
  * `errors[].message` e demais campos que podem conter PII residual. **Quem
  * registrar um override nunca deve interpolar `detail` ou `errors[].message`
  * diretamente em UI que possa ser logada, persistida ou compartilhada por
- * humanos.** Use `errors[].field` + `errors[].code` para mapear campos a
- * mensagens estáticas pt-BR; reserve `detail` para mensagens curtas que o
+ * humanos.** Use `errors[].code` (com `errors[].field`, quando a causa aponta
+ * um campo) para mapear causas a mensagens estáticas pt-BR; reserve `detail` para mensagens curtas que o
  * backend já garantiu serem PII-safe.
  */
 export interface ProblemOverride {

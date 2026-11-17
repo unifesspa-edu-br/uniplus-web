@@ -2,7 +2,12 @@ import { DestroyRef, Injector, afterNextRender, computed, inject, signal } from 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FormGroup } from '@angular/forms';
 import type { Observable } from 'rxjs';
-import { ApiResult, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import { deveRotacionarIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { aguardarRecarga, focarPrimeiroCampoInvalido } from '../../shared/foco';
@@ -11,7 +16,7 @@ import { ehConflitoDeConcorrencia } from './conflitos-do-fato';
 import { FatoEmEdicaoStore } from './fato-em-edicao.store';
 import { FatosCandidatoStore } from './fatos-candidato.store';
 import { idDoValor } from './ids-do-fato';
-import { descartarRecusasDoServidor } from '../../shared/formulario';
+import { descartarRecusasDoServidor, textoDasCausasGerais } from '../../shared/formulario';
 
 const MENSAGEM_DE_CONCORRENCIA =
   'Outra pessoa alterou este fato enquanto você editava. A versão atual foi carregada: refaça a alteração.';
@@ -90,9 +95,17 @@ export abstract class EscritorDeFato {
     if (deveRotacionarIdempotencyKey(problem)) this.chaves.rotacionarTodas();
     const perdeu = ehConflitoDeConcorrencia(problem);
     if (perdeu) this.recarregarAposPerder(escrita);
-    else if (!escrita.aoRecusar?.(problem)) this.erro.set(this.problemI18n.resolve(problem).title);
+    else this.mostrarRecusa(escrita, problem);
     this.anuncio.set(this.erro() ?? 'Revise os campos indicados.');
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  /** O que o servidor recusou vai onde a escrita pede; a causa geral e o que não coube vão à área geral. */
+  private mostrarRecusa(escrita: Escrita, problem: ProblemDetails): void {
+    const mostrou = escrita.aoRecusar?.(problem) ?? false;
+    const geral = textoDasCausasGerais(separarCausas(problem.errors).gerais);
+    if (geral !== null) this.erro.set(geral);
+    else if (!mostrou) this.erro.set(this.problemI18n.resolve(problem).title);
   }
 
   /** A escrita perdeu para outra: relê o fato e fecha a edição em linha, para refazer sobre a versão atual. */

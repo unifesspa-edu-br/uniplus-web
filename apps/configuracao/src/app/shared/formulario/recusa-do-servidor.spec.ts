@@ -34,7 +34,7 @@ describe('recusasDoProblema', () => {
       }),
     );
 
-    expect(recusas).toEqual([
+    expect(recusas.deCampo).toEqual([
       {
         campo: 'Nome',
         codigo: 'uniplus.configuracao.nome_obrigatorio',
@@ -47,13 +47,13 @@ describe('recusasDoProblema', () => {
   it('deixa a página vazia quando o código é uma URN que não aponta página', () => {
     const [recusa] = recusasDoProblema(
       problema({ errors: [{ field: 'Nome', code: 'urn:uniplus:nome', message: 'Informe.' }] }),
-    );
+    ).deCampo;
 
     expect(recusa.pagina).toBeNull();
   });
 
   it('devolve lista vazia para o problema sem recusa de campo, como o 409', () => {
-    expect(recusasDoProblema(problema({ status: 409 }))).toEqual([]);
+    expect(recusasDoProblema(problema({ status: 409 }))).toEqual({ deCampo: [], gerais: [] });
   });
 });
 

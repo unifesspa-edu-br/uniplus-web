@@ -1,5 +1,5 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ProblemValidationError } from '@uniplus/shared-core/http';
+import type { CausaDeCampo } from '@uniplus/shared-core/http';
 import type { DiaNaoUtilCommandItem } from '@uniplus/shared-data/configuracao';
 import {
   controlNameFromBackendField,
@@ -184,7 +184,7 @@ export function indiceDoDiaNoServidor(field: string): number | null {
 }
 
 /** Marca o campo que o servidor recusou. Devolve se o erro tem campo na tela. */
-export function aplicarErroNoDia(grupo: GrupoDoDia, erro: ProblemValidationError): boolean {
+export function aplicarErroNoDia(grupo: GrupoDoDia, erro: CausaDeCampo): boolean {
   const nome = controlNameFromBackendField<string>(erro.field, CAMPOS_DO_SERVIDOR);
   if (nome === null) {
     return false;

@@ -1,4 +1,4 @@
-import type { ProblemValidationError } from '@uniplus/shared-core/http';
+import type { CausaDeCampo } from '@uniplus/shared-core/http';
 import type { ErroDoServidor } from '@uniplus/shared-ui/components';
 
 /**
@@ -83,7 +83,7 @@ export interface RecusaDaSegundaOpcao {
 }
 
 /** Separa as recusas do servidor entre as de campo e as das opções de curso. */
-export function separarRecusas(recusas: readonly ProblemValidationError[]): RecusasSeparadas {
+export function separarRecusas(recusas: readonly CausaDeCampo[]): RecusasSeparadas {
   const daOferta = recusas.find((e) => e.field === CAMPO_DA_OFERTA);
   const daSegunda = recusas.find((e) => e.field === CAMPO_DA_SEGUNDA_OPCAO);
   return {

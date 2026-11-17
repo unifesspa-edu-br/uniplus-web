@@ -22,6 +22,7 @@ import {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoProblema,
+  textoDaCausaGeral,
 } from '../../shared/formulario';
 
 /** O código do modelo já existe — código de modelo nunca se reutiliza. */
@@ -154,28 +155,28 @@ export class EdicaoDosModelosFormulario {
     if (deveRotacionarIdempotencyKey(problem)) {
       this.chaveDaCriacao = idempotencyKey.create();
     }
+    const geral = textoDaCausaGeral(problem);
+    if (this.marcouCampo(problem)) {
+      this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
+      if (geral !== null) this.erroDaCriacao.set(geral);
+      return;
+    }
+    this.erroDaCriacao.set(geral ?? this.problemI18n.resolve(problem).title);
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  /** Marca o campo que a recusa aponta, pelo código do modelo ou pelas causas; diz se algum foi marcado. */
+  private marcouCampo(problem: ProblemDetails): boolean {
     if (problem.code === CODIGO_JA_EXISTE) {
       marcarRecusaDoServidor(
         this.form.controls.codigo,
         problem.code,
         this.problemI18n.resolve(problem).title,
       );
-      this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
-      return;
+      return true;
     }
-    if (this.aplicarErrosDeCampo(problem)) {
-      this.recusaDaCriacao.set(REVISE_OS_CAMPOS);
-      return;
-    }
-    this.erroDaCriacao.set(this.problemI18n.resolve(problem).title);
-    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
-  }
-
-  private aplicarErrosDeCampo(problem: ProblemDetails): boolean {
-    return (
-      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
-      marcarRecusasDosCampos(recusasDoProblema(problem), this.form, campoDaRecusa)
-    );
+    if (problem.status !== STATUS_HTTP.RECUSA_DE_NEGOCIO) return false;
+    return marcarRecusasDosCampos(recusasDoProblema(problem).deCampo, this.form, campoDaRecusa);
   }
 
   /** A linha mantém o andamento até a lista recarregada chegar, ou falhar. */

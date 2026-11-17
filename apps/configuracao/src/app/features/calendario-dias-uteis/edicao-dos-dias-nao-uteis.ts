@@ -3,9 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -17,7 +18,7 @@ import { CalendarioStore } from './calendario.store';
 import { aplicarErroNoDia, comandoDoDiaNaoUtil, criarGrupoDeDiaNaoUtil } from './dia-nao-util-form';
 import { aplicarPoliticaDaFalha, TipoDeFalha } from './falha-do-calendario';
 import { SelecaoDoDia } from './selecao-do-dia';
-import { descartarRecusasDoServidor } from '../../shared/formulario';
+import { descartarRecusasDoServidor, textoDasCausasGerais } from '../../shared/formulario';
 
 const ORIENTACAO_DA_DUPLICIDADE =
   'Escolha outra abrangência ou região, ou cancele para manter o que já está cadastrado.';
@@ -135,22 +136,30 @@ export class EdicaoDosDiasNaoUteis {
 
   private aplicarFalha(problem: ProblemDetails): void {
     const falha = aplicarPoliticaDaFalha(problem, this.chave, this.notifications);
-    const apontou = falha.tipo === 'campos' && this.aplicarErrosDeValidacao(problem.errors ?? []);
-    this.erro.set(apontou ? null : this.mensagemDaRecusa(problem, falha.tipo));
+    const causas = separarCausas(problem.errors);
+    const apontou = falha.tipo === 'campos' && this.aplicarErrosDeValidacao(causas.deCampo);
+    const geral = textoDasCausasGerais(causas.gerais);
+    this.erro.set(this.textoDaRecusa(problem, falha.tipo, geral, apontou));
   }
 
   /**
    * A data vem do dia clicado e não se edita aqui, então a duplicidade não tem campo onde ser
-   * corrigida: o alerta diz o que ainda dá para mudar, para a tentativa seguinte ser diferente.
+   * corrigida: o alerta diz o que ainda dá para mudar, para a tentativa seguinte ser diferente. A
+   * causa geral, quando a API envia, dá o motivo no lugar do texto padrão e a orientação continua.
    */
-  private mensagemDaRecusa(problem: ProblemDetails, tipo: TipoDeFalha): string {
-    const titulo = this.problemI18n.resolve(problem).title;
-    return tipo === 'dataDuplicada'
-      ? `${DATA_DUPLICADA_MESSAGE} ${ORIENTACAO_DA_DUPLICIDADE}`
-      : titulo;
+  private textoDaRecusa(
+    problem: ProblemDetails,
+    tipo: TipoDeFalha,
+    geral: string | null,
+    apontou: boolean,
+  ): string | null {
+    if (tipo === 'dataDuplicada') {
+      return `${geral ?? DATA_DUPLICADA_MESSAGE} ${ORIENTACAO_DA_DUPLICIDADE}`;
+    }
+    return geral ?? (apontou ? null : this.problemI18n.resolve(problem).title);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): boolean {
+  private aplicarErrosDeValidacao(errors: readonly CausaDeCampo[]): boolean {
     let aplicouAlgum = false;
     for (const erro of errors) {
       aplicouAlgum = aplicarErroNoDia(this.form, erro) || aplicouAlgum;

@@ -12,10 +12,11 @@ import {
 import { FormControl, FormGroup, Validators, type AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import {
-  ChaveDeSubstituicao,
-  ProblemI18nService,
   type ApiResult,
+  ChaveDeSubstituicao,
   type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
@@ -24,7 +25,11 @@ import {
   type SolicitarProvidenciaRequest,
   type TipoDaProvidencia,
 } from '@uniplus/shared-data/autorizacao';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  temCausaGeral,
+} from '../../../shared/formulario';
 import { ConcessaoDetalheStore } from '../concessao-detalhe.store';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { FALHA_INESPERADA } from '../mensagens-de-acesso';
@@ -154,14 +159,14 @@ export class SolicitacaoDeProvidencia {
   private recusar(problema: ProblemDetails): void {
     const texto = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
     let marcado = false;
-    for (const erro of problema.errors ?? []) {
+    for (const erro of separarCausas(problema.errors).deCampo) {
       const nome = erro.field.toLowerCase();
       if (nome !== 'tipo' && nome !== 'fundamento') continue;
       marcarRecusaDoServidor(this.form.controls[nome], erro.code, erro.message);
       marcado = true;
     }
     if (marcado) this.focarErro();
-    else this.erro.set(texto);
+    if (!marcado || temCausaGeral(problema)) this.erro.set(texto);
   }
 
   private focarErro(): void {
