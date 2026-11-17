@@ -43,4 +43,25 @@ describe('CatalogosDoFormulario', () => {
     expect(servico.termosErro()).toBeNull();
     expect(servico.termosCarregando()).toBe(true);
   });
+
+  it('guarda as duas identidades das versões e as invalida ao recarregar', () => {
+    servico.carregarTermos();
+    termos.next({
+      ok: true,
+      data: [
+        {
+          id: 't1',
+          codigo: 'TERMO',
+          nome: 'Termo',
+          versoes: [{ id: 'v1', numero: 2, promovidaEm: '2026-01-01T00:00:00Z' }],
+        },
+      ],
+    });
+    expect(servico.referenciasDosTermos()).toEqual([
+      { termoId: 't1', termoCodigo: 'TERMO', versaoId: 'v1', versaoNumero: 2 },
+    ]);
+    expect(servico.termosDisponiveis()[0].versoes[0].versaoId).toBe('v1');
+    servico.carregarTermos();
+    expect(servico.referenciasDosTermos()).toBeNull();
+  });
 });

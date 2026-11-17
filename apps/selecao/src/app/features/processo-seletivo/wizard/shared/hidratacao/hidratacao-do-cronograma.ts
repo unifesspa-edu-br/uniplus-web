@@ -15,6 +15,7 @@ import type {
 import type { WizardDraft } from '../../processo-seletivo.models';
 import { regraDoDto } from '../deliberacao/regra-de-deliberacao-contrato';
 import { campoDoInstante } from '../fuso-institucional';
+import { alvoLidoDoServidor } from '../procedimentos-do-recurso/alvo-do-procedimento';
 import { percentualDaFracao } from '../itens-de-avaliacao';
 import { comoInteiro, comoTexto } from './campos-lidos';
 
@@ -51,7 +52,7 @@ function etapasRenumeradasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
 type FaseDoDto = ProcessoSeletivoDto['cronogramaFases'][number];
 type EtapaDoDto = ProcessoSeletivoDto['etapas'][number];
 type RecursoDaFaseDoDto = NonNullable<FaseDoDto['publicacoes']['regraRecurso']>;
-type ArgumentosDoRecurso = RecursoDaFaseDoDto['args'];
+type ParametrosDoRecurso = RecursoDaFaseDoDto['parametros'];
 type ProcedimentoDoDto = RecursoDaFaseDoDto['procedimentos'][number];
 type RecursoDaEtapaDoDto = EtapaDoDto['publicacoes']['recursos'][number];
 
@@ -164,7 +165,7 @@ function recursoDe(
     regraCodigo: regra.regra.codigo,
     regraVersao: regra.regra.versao,
     atoAncoraCodigo: ancora?.atoCodigo ?? '',
-    ...argumentosDoRecursoDe(regra.args),
+    ...parametrosDoRecursoDe(regra.parametros),
     procedimentos: procedimentosDe(regra.procedimentos),
   };
 }
@@ -178,25 +179,27 @@ function procedimentosDe(
 ): readonly ProcedimentoDeRecurso[] {
   return procedimentos.map((procedimento) => ({
     tipoDeDecisao: procedimento.tipoDeDecisao,
-    alvo: procedimento.alvo === null ? null : { ...procedimento.alvo },
+    alvo: alvoLidoDoServidor(procedimento.alvo),
     regraCodigo: procedimento.regra.codigo,
     regraVersao: procedimento.regra.versao,
     sugestao: procedimento.sugestao,
   }));
 }
 
-/** Os argumentos do recurso, que fase e etapa leem do mesmo jeito: o prazo e o efeito suspensivo. */
-function argumentosDoRecursoDe(
-  args: ArgumentosDoRecurso,
+/** Os parâmetros do recurso, que fase e etapa leem do mesmo jeito: o prazo e o efeito suspensivo. */
+function parametrosDoRecursoDe(
+  parametros: ParametrosDoRecurso,
 ): Omit<RecursoDaFase, 'regraCodigo' | 'regraVersao' | 'atoAncoraCodigo' | 'procedimentos'> {
   return {
-    prazoValor: comoTexto(args.prazoValor),
-    prazoUnidade: args.prazoUnidade,
-    suspensividadePrimeiraInstanciaValor: comoTexto(args.suspensividadePrimeiraInstanciaValor),
-    suspensividadePrimeiraInstanciaUnidade: args.suspensividadePrimeiraInstanciaUnidade ?? '',
-    admiteInstanciaSuperior: args.admiteInstanciaSuperior,
-    suspensividadeSegundaInstanciaValor: comoTexto(args.suspensividadeSegundaInstanciaValor),
-    suspensividadeSegundaInstanciaUnidade: args.suspensividadeSegundaInstanciaUnidade ?? '',
+    prazoValor: comoTexto(parametros.prazoValor),
+    prazoUnidade: parametros.prazoUnidade,
+    suspensividadePrimeiraInstanciaValor: comoTexto(
+      parametros.suspensividadePrimeiraInstanciaValor,
+    ),
+    suspensividadePrimeiraInstanciaUnidade: parametros.suspensividadePrimeiraInstanciaUnidade ?? '',
+    admiteInstanciaSuperior: parametros.admiteInstanciaSuperior,
+    suspensividadeSegundaInstanciaValor: comoTexto(parametros.suspensividadeSegundaInstanciaValor),
+    suspensividadeSegundaInstanciaUnidade: parametros.suspensividadeSegundaInstanciaUnidade ?? '',
   };
 }
 
@@ -328,7 +331,7 @@ function recursoDaEtapaDe(recurso: RecursoDaEtapaDoDto): RecursoDaEtapa {
     regraCodigo: recurso.regra.codigo,
     regraVersao: recurso.regra.versao,
     atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
-    ...argumentosDoRecursoDe(recurso.args),
+    ...parametrosDoRecursoDe(recurso.parametros),
     procedimentos: procedimentosDe(recurso.procedimentos),
   };
 }

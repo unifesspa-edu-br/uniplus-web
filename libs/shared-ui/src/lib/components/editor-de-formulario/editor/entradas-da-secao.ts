@@ -1,3 +1,4 @@
+import { camposNaParte, type CamposEditadosDoFormulario } from '../modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -62,6 +63,7 @@ const SEM_RECUSAS = new Map<string, never[]>();
                 "
                 [impedimentoPermitido]="regras(entrada.item)?.impedimentoPermitido ?? false"
                 [fatosDoImpedimento]="regras(entrada.item)?.fatosDoImpedimento ?? []"
+                (camposEditados)="registrarParte('itens', entrada.item.fatoCodigo, $event)"
                 (itemChange)="conteudoChange.emit(comItem(contexto().conteudo, $event))"
                 (mover)="moverAEntrada(entrada, $event)"
                 (remover)="removerOItem(entrada.item)"
@@ -82,6 +84,7 @@ const SEM_RECUSAS = new Map<string, never[]>();
                 [erros]="contexto().recusas?.porGrupo?.get(entrada.grupo.codigo) ?? []"
                 [errosPorCampo]="contexto().recusas?.porItem ?? semRecusas"
                 [recusasDasRestricoes]="contexto().recusas?.porRestricao ?? semRecusas"
+                (camposEditados)="registrarParte('grupos', entrada.grupo.codigo, $event)"
                 (grupoChange)="conteudoChange.emit(comGrupo(contexto().conteudo, $event))"
                 (anuncio)="anuncio.emit($event)"
                 (mover)="moverAEntrada(entrada, $event)"
@@ -103,7 +106,16 @@ export class EntradasDaSecaoComponent {
   readonly etapa = input.required<EtapaDoFormulario>();
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly anuncio = output<string>();
+
+  protected registrarParte(
+    lista: string,
+    codigo: string,
+    campos: CamposEditadosDoFormulario,
+  ): void {
+    this.camposEditados.emit(camposNaParte([lista, codigo], campos));
+  }
 
   protected readonly idDoItem = idDoItem;
   protected readonly idDoGrupo = idDoGrupo;
@@ -139,13 +151,17 @@ export class EntradasDaSecaoComponent {
       this.anuncio.emit(
         `${descricaoDe(entrada)} movido para a posição ${posicao} de ${entradas.length} em ${this.etapa().titulo}.`,
       );
-      const prefixo =
-        entrada.tipo === 'item'
-          ? idDoItem(this.idBase(), entrada.item.fatoCodigo)
-          : idDoGrupo(this.idBase(), entrada.grupo.codigo);
-      const [mesmo, oposto] = direcao < 0 ? ['subir', 'descer'] : ['descer', 'subir'];
-      focarDepois(this.injector, `${prefixo}-${mesmo}`, `${prefixo}-${oposto}`);
+      this.focarMovimento(entrada, direcao);
     });
+  }
+
+  private focarMovimento(entrada: EntradaDaSecao, direcao: -1 | 1): void {
+    const prefixo =
+      entrada.tipo === 'item'
+        ? idDoItem(this.idBase(), entrada.item.fatoCodigo)
+        : idDoGrupo(this.idBase(), entrada.grupo.codigo);
+    const [mesmo, oposto] = direcao < 0 ? ['subir', 'descer'] : ['descer', 'subir'];
+    focarDepois(this.injector, `${prefixo}-${mesmo}`, `${prefixo}-${oposto}`);
   }
 
   protected removerOItem(item: ItemDoFormulario): void {

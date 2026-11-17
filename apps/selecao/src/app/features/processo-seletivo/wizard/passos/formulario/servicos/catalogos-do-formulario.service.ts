@@ -1,10 +1,11 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import { isApiOk, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import {
   FatoCandidatoView,
   FatosCandidatoApi,
   TermosConsentimentoApi,
+  type TermoConsentimentoDto,
 } from '@uniplus/shared-data/configuracao';
 import {
   acompanharLeitura,
@@ -12,6 +13,10 @@ import {
   type TermoDisponivel,
 } from '@uniplus/shared-ui/components';
 
+import {
+  referenciasDosTermos,
+  type ReferenciasDosTermosDoFormulario,
+} from '../../../documento/formulario/referencias-dos-termos';
 import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 
 const CONSEQUENCIA_DO_CATALOGO =
@@ -32,6 +37,7 @@ export class CatalogosDoFormulario {
   readonly catalogoErro = signal<string | null>(null);
 
   readonly termosDisponiveis = signal<readonly TermoDisponivel[]>([]);
+  readonly referenciasDosTermos = signal<ReferenciasDosTermosDoFormulario | null>(null);
   readonly termosCarregando = signal(true);
   readonly termosErro = signal<string | null>(null);
 
@@ -59,32 +65,38 @@ export class CatalogosDoFormulario {
     this.fatosApi
       .listar()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.catalogoCarregando.set(false);
-        if (!isApiOk(resultado)) {
-          this.catalogoErro.set(
-            `${this.problemI18n.resolve(resultado.problem).title} ${CONSEQUENCIA_DO_CATALOGO}`,
-          );
-          return;
-        }
-        this.catalogo.set(resultado.data);
-      });
+      .subscribe((resultado) => this.receberCatalogo(resultado));
+  }
+
+  private receberCatalogo(resultado: ApiResult<readonly FatoCandidatoView[]>): void {
+    this.catalogoCarregando.set(false);
+    if (!isApiOk(resultado)) {
+      this.catalogoErro.set(
+        `${this.problemI18n.resolve(resultado.problem).title} ${CONSEQUENCIA_DO_CATALOGO}`,
+      );
+      return;
+    }
+    this.catalogo.set(resultado.data);
   }
 
   /** Os termos de consentimento com as versões promovidas. */
   carregarTermos(): void {
     this.termosCarregando.set(true);
     this.termosErro.set(null);
+    this.referenciasDosTermos.set(null);
     this.termosApi
       .listarComVersoes()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((termos) => {
-        this.termosCarregando.set(false);
-        if (!termos.ok) {
-          this.termosErro.set(MENSAGEM_DOS_TERMOS);
-          return;
-        }
-        this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
-      });
+      .subscribe((termos) => this.receberTermos(termos));
+  }
+
+  private receberTermos(termos: ApiResult<readonly TermoConsentimentoDto[]>): void {
+    this.termosCarregando.set(false);
+    if (!termos.ok) {
+      this.termosErro.set(MENSAGEM_DOS_TERMOS);
+      return;
+    }
+    this.referenciasDosTermos.set(referenciasDosTermos(termos.data));
+    this.termosDisponiveis.set(termos.data.map(termoDisponivelDe));
   }
 }

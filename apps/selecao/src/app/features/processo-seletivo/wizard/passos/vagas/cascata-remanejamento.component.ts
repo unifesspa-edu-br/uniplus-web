@@ -17,9 +17,9 @@ import {
   ValorEmConsultaComponent,
 } from '@uniplus/shared-ui/components';
 
+import type { MatrizDaCascata } from '../../documento/edicoes/cascata-de-remanejamento.edicao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
-  MatrizDaRegra,
   matrizDaRegra,
   ofertasComCascataForaDoRegimeFederal,
   precisaExibirSecaoDaCascata,
@@ -172,7 +172,7 @@ export class CascataRemanejamentoComponent {
   });
 
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */
-  readonly matriz = computed<MatrizDaRegra | null>(() => {
+  readonly matriz = computed<MatrizDaCascata | null>(() => {
     const regra = this.versaoDaRegra.regraEscolhida();
     return regra === undefined ? null : matrizDaRegra(regra.esquemaArgs);
   });

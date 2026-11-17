@@ -11,7 +11,7 @@ import {
   FORMATO_DA_ESCALA_DA_NOTA_FINAL,
   escalaDaNotaFinal,
   escalaDaNotaFinalIlegivel,
-} from './escala-da-nota-final';
+} from '../../shared/escala-da-nota-final';
 
 /**
  * Código de `RegraCalculoCodigo.ClassificacaoImportada` — a única regra de

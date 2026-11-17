@@ -2,10 +2,8 @@ import { ApplicationRef } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import type { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
-import {
-  MotivosDaFaseOuEtapaComponent,
-  type ModoDosMotivos,
-} from './motivos-da-fase-ou-etapa.component';
+import type { ModoDaSecao } from '../modo-da-secao';
+import { MotivosDaFaseOuEtapaComponent } from './motivos-da-fase-ou-etapa.component';
 import type { RecusaDaEscolha } from './escolha-dos-motivos';
 import type { FaseOuEtapaDoMotivo, MotivoNoDocumento } from './motivo-no-documento';
 import { FASE_DA_INSCRICAO, umMotivoDoCadastro } from './motivos.testing';
@@ -20,7 +18,7 @@ export interface EntradasDosMotivos {
   readonly catalogoCarregado: boolean;
   readonly tiposDeclarados: readonly string[];
   readonly recusas: readonly RecusaDaEscolha[];
-  readonly modo: ModoDosMotivos;
+  readonly modo: ModoDaSecao;
   readonly idBase: string;
 }
 

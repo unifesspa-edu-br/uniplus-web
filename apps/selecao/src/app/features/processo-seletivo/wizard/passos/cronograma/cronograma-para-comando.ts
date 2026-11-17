@@ -17,6 +17,7 @@ import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { emOrdemAlfabetica } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-declarados';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
+import { alvoParaComando } from '../../shared/procedimentos-do-recurso/alvo-do-procedimento';
 
 type RegraDeRecursoDaFaseInput = NonNullable<FaseCronogramaInput['regraRecurso']>;
 type RecursoDaEtapaInput = NonNullable<EtapaProcessoInput['recursos']>[number];
@@ -123,7 +124,7 @@ function comoComandoDoProcedimento(
 ): ProcedimentoDeRecursoInput {
   return {
     tipoDeDecisao: procedimento.tipoDeDecisao,
-    alvo: procedimento.alvo === null ? null : { ...procedimento.alvo },
+    alvo: alvoParaComando(procedimento.alvo),
     regraCodigo: procedimento.regraCodigo,
     regraVersao: procedimento.regraVersao,
   };

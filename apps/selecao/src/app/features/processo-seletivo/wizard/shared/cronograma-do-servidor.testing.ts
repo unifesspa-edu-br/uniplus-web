@@ -28,7 +28,7 @@ export interface EtapaDoServidorParcial {
 
 type RecursoDaFaseDoServidor = NonNullable<FaseCronogramaDto['publicacoes']['regraRecurso']>;
 
-export const ARGUMENTOS_DO_RECURSO: RecursoDaFaseDoServidor['args'] = {
+export const PARAMETROS_DO_RECURSO: RecursoDaFaseDoServidor['parametros'] = {
   prazoValor: 2,
   prazoUnidade: UnidadePrazo.diasUteis,
   suspensividadePrimeiraInstanciaValor: null,
@@ -42,7 +42,7 @@ export const RECURSO_DA_FASE: RecursoDaFaseDoServidor = {
   id: 'snapshot-recurso',
   produtoAncoraId: 'produto-preliminar',
   regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: 'v1', hash: 'abc123' },
-  args: ARGUMENTOS_DO_RECURSO,
+  parametros: PARAMETROS_DO_RECURSO,
   procedimentos: [],
 };
 
@@ -151,7 +151,7 @@ export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProc
 
 type RecursoDaEtapaDoServidor = EtapaProcessoDto['publicacoes']['recursos'][number];
 
-/** Recurso da etapa ancorado na publicação de um ato, com os argumentos do exemplo da fase. */
+/** Recurso da etapa ancorado na publicação de um ato, com os parâmetros do exemplo da fase. */
 export function recursoDaEtapaDoServidor(
   parcial: Partial<RecursoDaEtapaDoServidor> = {},
 ): RecursoDaEtapaDoServidor {
@@ -159,7 +159,7 @@ export function recursoDaEtapaDoServidor(
     id: 'recurso-da-etapa-1',
     ancora: 'atoPublicado' as RecursoDaEtapaDoServidor['ancora'],
     regra: { codigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO', versao: '1.0.0', hash: 'abc123' },
-    args: ARGUMENTOS_DO_RECURSO,
+    parametros: PARAMETROS_DO_RECURSO,
     produtoAncoraId: 'produto-da-etapa-1',
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
     procedimentos: [],

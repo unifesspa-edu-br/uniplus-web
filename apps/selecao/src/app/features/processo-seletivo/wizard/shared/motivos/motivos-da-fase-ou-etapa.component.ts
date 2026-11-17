@@ -12,6 +12,7 @@ import type { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
 import { focarAposRenderizarSeSemFoco } from '../foco-apos-renderizar';
+import type { ModoDaSecao } from '../modo-da-secao';
 import type { RecusaDaEscolha } from './escolha-dos-motivos';
 import {
   agruparPorTipo,
@@ -27,9 +28,6 @@ import {
   type MotivoNoDocumento,
 } from './motivo-no-documento';
 import { detalheDoMotivo, textoDoMotivoLido } from './texto-do-motivo';
-
-/** Edição liberada, edição travada (as caixas ficam desabilitadas) ou só consulta (texto, sem caixas). */
-export type ModoDosMotivos = 'edicao' | 'bloqueado' | 'consulta';
 
 /**
  * Os motivos de decisão que uma fase ou etapa escolhe, agrupados por tipo de decisão, com os tipos
@@ -72,7 +70,7 @@ export class MotivosDaFaseOuEtapaComponent {
   readonly catalogoCarregado = input.required<boolean>();
   readonly tiposDeclarados = input.required<readonly string[]>();
   readonly recusas = input<readonly RecusaDaEscolha[]>([]);
-  readonly modo = input<ModoDosMotivos>('edicao');
+  readonly modo = input<ModoDaSecao>('edicao');
   readonly idBase = input.required<string>();
   /** O nível do título na hierarquia de quem mostra a seção: 3 numa seção da fase, 4 dentro de uma etapa. */
   readonly nivelDoTitulo = input<3 | 4>(4);

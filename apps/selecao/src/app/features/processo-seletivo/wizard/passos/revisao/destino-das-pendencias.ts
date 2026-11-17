@@ -1,5 +1,5 @@
 import { PASSOS, RotuloDePasso } from '../../processo-seletivo.data';
-import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from '../classificacao/escala-da-nota-final';
+import { CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA } from '../../shared/escala-da-nota-final';
 
 /**
  * Onde o item se resolve: o passo que o botão abre e, quando o botão não basta, o que fazer e

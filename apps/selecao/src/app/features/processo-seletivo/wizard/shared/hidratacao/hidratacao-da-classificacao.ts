@@ -12,7 +12,7 @@ import type {
 } from '../../processo-seletivo.models';
 import { bonusInicial, classificacaoInicial } from '../../rascunho-inicial';
 import { edicoesDoEnemDe } from '../../passos/classificacao/edicoes-do-enem';
-import { escalaDaNotaFinalComoTexto } from '../../passos/classificacao/escala-da-nota-final';
+import { escalaDaNotaFinalComoTexto } from '../escala-da-nota-final';
 import { comoInteiro, comoTexto } from './campos-lidos';
 
 /**

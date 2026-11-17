@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ARGUMENTOS_DO_RECURSO,
+  PARAMETROS_DO_RECURSO,
   RECURSO_DA_FASE,
   etapaDoServidor,
   faseDoServidor,
@@ -112,7 +112,7 @@ describe('hidratarDraft — cronograma e etapas', () => {
           publicacoes: {
             regraRecurso: {
               ...RECURSO_DA_FASE,
-              args: { ...ARGUMENTOS_DO_RECURSO, admiteInstanciaSuperior: false },
+              parametros: { ...PARAMETROS_DO_RECURSO, admiteInstanciaSuperior: false },
             },
           },
         }),

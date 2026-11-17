@@ -1,3 +1,4 @@
+import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -162,6 +163,7 @@ export class TermoDoFormularioComponent {
   readonly disabled = input<boolean>(false);
   readonly erros = input<readonly string[]>([]);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly termoChange = output<TermoDoFormulario>();
   readonly mover = output<-1 | 1>();
   readonly remover = output<void>();
@@ -213,6 +215,7 @@ export class TermoDoFormularioComponent {
   }
 
   protected trocar(mudanca: Partial<TermoDoFormulario>): void {
+    this.camposEditados.emit(camposDaMudanca(mudanca));
     this.termoChange.emit({ ...this.termo(), ...mudanca });
   }
 

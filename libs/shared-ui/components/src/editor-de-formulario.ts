@@ -152,3 +152,9 @@ export {
   type TermoDoFormulario,
 } from '../../src/lib/components/editor-de-formulario/modelo/tipos';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
+
+export type {
+  CaminhoDoCampo,
+  CamposEditadosDoFormulario,
+  EdicaoDoFormulario,
+} from '../../src/lib/components/editor-de-formulario/modelo/campos-editados';

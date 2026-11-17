@@ -107,3 +107,11 @@ describe('remoção de fase ou etapa do documento', () => {
     ]);
   });
 });
+
+it('retira uma única ocorrência e preserva a ordem das demais', () => {
+  const repetido = { ...naInscricao };
+  expect(retirar([naInscricao, naMatricula, repetido], naInscricao)).toEqual([
+    naMatricula,
+    repetido,
+  ]);
+});

@@ -49,7 +49,7 @@ function faseComRecurso(procedimentos: readonly unknown[]) {
         id: '01960000-0000-7000-0000-0000000009c5',
         produtoAncoraId: PRODUTO.id,
         regra: REGRA_DO_RECURSO,
-        args: {
+        parametros: {
           prazoValor: 2,
           prazoUnidade: 'diasUteis',
           suspensividadePrimeiraInstanciaValor: null,

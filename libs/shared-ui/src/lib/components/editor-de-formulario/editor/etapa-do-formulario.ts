@@ -1,3 +1,4 @@
+import { camposNaParte, type CamposEditadosDoFormulario } from '../modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -142,6 +143,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           @if (etapa().bloco === revisaoEAceite) {
             <ui-termos-exigidos
               [contexto]="contexto()"
+              (camposEditados)="camposEditados.emit($event)"
               (conteudoChange)="conteudoChange.emit($event)"
               (anuncio)="anuncio.emit($event)"
             />
@@ -152,11 +154,13 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
             [fatos]="contexto().fatosDaSecao.get(etapa().codigo) ?? []"
             [idBase]="idDaSecao()"
             [disabled]="contexto().disabled"
+            (camposEditados)="registrarEtapa($event)"
             (etapaChange)="conteudoChange.emit(comEtapa(contexto().conteudo, $event))"
           />
           <ui-entradas-da-secao
             [contexto]="contexto()"
             [etapa]="etapa()"
+            (camposEditados)="camposEditados.emit($event)"
             (conteudoChange)="conteudoChange.emit($event)"
             (anuncio)="anuncio.emit($event)"
           />
@@ -181,9 +185,14 @@ export class EtapaDoFormularioComponent {
   readonly aberta = input<boolean>(true);
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly anuncio = output<string>();
   /** Pede para abrir ou fechar o corpo; quem guarda o que está aberto é o editor. */
   readonly alternar = output<void>();
+
+  protected registrarEtapa(campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(camposNaParte(['etapas', this.etapa().codigo], campos));
+  }
 
   protected readonly dadosBasicos = SECAO_DADOS_BASICOS;
   protected readonly revisaoEAceite = BLOCO_REVISAO_E_ACEITE;

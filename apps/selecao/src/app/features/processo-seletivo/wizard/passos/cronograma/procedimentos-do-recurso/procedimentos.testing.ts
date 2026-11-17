@@ -1,3 +1,7 @@
+import {
+  TipoDeDecisaoDoDocumento,
+  type DocumentoDaConfiguracaoProcedimentoDeRecurso,
+} from '@uniplus/shared-data/selecao';
 import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 
 import type { ProcedimentoDeRecurso } from '../../../processo-seletivo.models';
@@ -23,6 +27,16 @@ export function procedimento(parcial: Partial<ProcedimentoDeRecurso> = {}): Proc
     regraCodigo: 'PROCEDIMENTO-RECURSO-COLEGIADO',
     regraVersao: 'v1',
     sugestao: null,
+    ...parcial,
+  };
+}
+
+export function procedimentoDoDocumento(
+  parcial: Partial<DocumentoDaConfiguracaoProcedimentoDeRecurso> = {},
+): DocumentoDaConfiguracaoProcedimentoDeRecurso {
+  return {
+    tipoDeDecisao: TipoDeDecisaoDoDocumento.NOTA_DA_ETAPA,
+    regra: { codigo: 'PROCEDIMENTO-RECURSO-COLEGIADO', versao: 'v1' },
     ...parcial,
   };
 }

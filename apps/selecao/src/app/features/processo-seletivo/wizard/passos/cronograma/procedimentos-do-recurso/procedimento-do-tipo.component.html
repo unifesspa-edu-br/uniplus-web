@@ -1,0 +1,73 @@
+<fieldset
+  class="field"
+  tabindex="-1"
+  [attr.id]="idDoTipo()"
+  [attr.aria-describedby]="descricaoDoTipo()"
+>
+  <legend class="field__label">{{ tipo().rotulo }}</legend>
+
+  @if (!tipo().declarado) {
+    <div class="alert alert--warning" role="status" [attr.id]="idDoTipo() + '-nao-declarado'">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <div class="alert__body">
+        <p class="alert__msg">
+          A decisão “{{ tipo().rotulo }}” não está mais na lista de decisões, mas ainda tem
+          procedimento. Remova o procedimento ou declare a decisão de novo.
+        </p>
+      </div>
+    </div>
+  }
+  @if (semProcedimento()) {
+    <div class="alert alert--warning" role="status" [attr.id]="idDoTipo() + '-falta'">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <div class="alert__body">
+        <p class="alert__msg">Falta o procedimento de recurso para “{{ tipo().rotulo }}”.</p>
+      </div>
+    </div>
+  }
+
+  @if (oferecePorAlvo() && modo() !== 'consulta' && temJanela()) {
+    <fieldset class="field">
+      <legend class="field__label">Onde o procedimento vale</legend>
+      @for (opcao of modos; track opcao.valor) {
+        <label class="radio">
+          <input
+            #radioDoModo
+            type="radio"
+            [attr.name]="idDoTipo() + '-modo'"
+            [attr.aria-describedby]="contextoDaLinha()"
+            [value]="opcao.valor"
+            [checked]="modoDoTipo() === opcao.valor"
+            [disabled]="bloqueado()"
+            (change)="escolherModo(opcao.valor)"
+          />
+          <span class="radio__dot" aria-hidden="true"></span>
+          {{ opcao.rotulo }}
+        </label>
+      }
+    </fieldset>
+  }
+
+  @if (recusasDoTipo().length > 0) {
+    <ui-recusa-do-campo [attr.id]="idDoTipo() + '-recusa'" [recusas]="recusasDoTipo()" />
+  }
+
+  <div class="linhas">
+    @for (linha of linhas(); track linha.chave; let posicao = $index) {
+      <sel-escolha-do-procedimento
+        [idBase]="idDaLinha(posicao)"
+        [linha]="linha"
+        [regrasDoCatalogo]="regrasDoCatalogo()"
+        [nomeDoTipo]="tipo().rotulo"
+        [desabilitado]="modo() !== 'edicao'"
+        [somenteRemocao]="!temJanela()"
+        [idDoAvisoDoTipo]="contextoDaLinha()"
+        [recusas]="recusasDaLinha(linha)"
+        [sugestao]="sugestao()"
+        [emConsulta]="modo() === 'consulta'"
+        (escolher)="aoEscolher(linha, $event)"
+        (remover)="aoRemover(linha)"
+      />
+    }
+  </div>
+</fieldset>

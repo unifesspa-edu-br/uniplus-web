@@ -24,13 +24,25 @@ export type MotivoNoDocumento = IdentidadeDoMotivo & {
   readonly versaoDoEditalDeEntrada?: number;
 };
 
-export function daMesmaFaseOuEtapa(uma: FaseOuEtapaDoMotivo, outra: FaseOuEtapaDoMotivo): boolean {
+/** O lugar do motivo como qualquer representação dele o traz: a chave da fase ou a da etapa. */
+export interface LugarDoMotivo {
+  readonly faseChave?: string;
+  readonly etapaChave?: string;
+}
+
+/** Um motivo reconhecível pelo lugar, pelo tipo de decisão e pelo código. */
+export interface MotivoReconhecivel extends LugarDoMotivo {
+  readonly tipoCodigo: string;
+  readonly codigo: string;
+}
+
+export function daMesmaFaseOuEtapa(uma: LugarDoMotivo, outra: LugarDoMotivo): boolean {
   return uma.faseChave === undefined
     ? uma.etapaChave === outra.etapaChave
     : uma.faseChave === outra.faseChave;
 }
 
-export function ehOMesmoMotivo(um: IdentidadeDoMotivo, outro: IdentidadeDoMotivo): boolean {
+export function ehOMesmoMotivo(um: MotivoReconhecivel, outro: MotivoReconhecivel): boolean {
   return (
     daMesmaFaseOuEtapa(um, outro) &&
     um.tipoCodigo === outro.tipoCodigo &&

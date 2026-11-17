@@ -1,3 +1,4 @@
+import { camposNaParte, type CamposEditadosDoFormulario } from './modelo/campos-editados';
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
@@ -111,6 +112,7 @@ interface CampoCitavel {
                     [removivel]="(restricao.entradas ?? []).length > 1"
                     [recusas]="recusasDoGrupo(entrada)"
                     (entradaChange)="trocarEntrada(indice, grupo, $event)"
+                    (camposEditados)="registrarEntrada(indice, grupo, $event)"
                     (remover)="removerEntrada(indice, grupo)"
                   />
                 }
@@ -241,6 +243,7 @@ export class RestricoesDoCampoComponent {
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly restricoesChange = output<readonly RestricaoDeValor[] | null>();
 
   protected readonly faixa = RESTRICAO_FAIXA_NUMERICA;
@@ -322,6 +325,15 @@ export class RestricoesDoCampoComponent {
 
   protected trocarLimiteDeData(indice: number, mudanca: MudancaDeLimiteDeData): void {
     this.trocar(indice, { [mudanca.limite]: mudanca.valor });
+  }
+
+  protected registrarEntrada(
+    indice: number,
+    grupo: number,
+    campos: CamposEditadosDoFormulario,
+  ): void {
+    const prefixo = ['restricoes', String(indice), 'entradas', String(grupo)];
+    this.camposEditados.emit(camposNaParte(prefixo, campos));
   }
 
   protected trocarEntrada(indice: number, grupo: number, entrada: OpcoesCondicionadas): void {

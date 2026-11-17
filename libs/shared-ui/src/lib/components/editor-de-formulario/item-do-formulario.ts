@@ -1,3 +1,4 @@
+import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -240,7 +241,8 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         [ufs]="ufs()"
         [idBase]="idBase()"
         [disabled]="disabled()"
-        (restricoesChange)="trocar({ restricoes: $event })"
+        (restricoesChange)="trocarRestricoes($event)"
+        (camposEditados)="camposEditados.emit($event)"
       />
 
       @if (impedimentoPermitido() || item().impedimento) {
@@ -251,6 +253,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
           [idBase]="idBase()"
           [disabled]="disabled()"
           (itemChange)="itemChange.emit($event)"
+          (camposEditados)="camposEditados.emit($event)"
         />
       }
     </article>
@@ -293,6 +296,7 @@ export class ItemDoFormularioComponent {
   /** Os fatos que a condição do impedimento cita, o próprio campo primeiro. */
   readonly fatosDoImpedimento = input<readonly FatoEscolhivel[]>([]);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly itemChange = output<ItemDoFormulario>();
   readonly mover = output<-1 | 1>();
   readonly remover = output<void>();
@@ -346,7 +350,12 @@ export class ItemDoFormularioComponent {
     return problemasDasCondicoes(condicoes, this.fatos());
   }
 
+  protected trocarRestricoes(restricoes: ItemDoFormulario['restricoes']): void {
+    this.itemChange.emit({ ...this.item(), restricoes });
+  }
+
   protected trocar(mudanca: Partial<ItemDoFormulario>): void {
+    this.camposEditados.emit(camposDaMudanca(mudanca));
     this.itemChange.emit({ ...this.item(), ...mudanca });
   }
 

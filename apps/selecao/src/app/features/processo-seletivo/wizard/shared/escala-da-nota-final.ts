@@ -1,5 +1,4 @@
-
-import { decimalDoCampo } from '../../shared/numero-do-campo';
+import { decimalDoCampo } from './numero-do-campo';
 
 /** O item da conferência que aponta a classificação por fórmula local sem a escala da nota final. */
 export const CODIGO_ESCALA_DA_NOTA_FINAL_NAO_DECLARADA =

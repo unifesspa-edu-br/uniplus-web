@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
+import type { MatrizDaCascata } from '../../documento/edicoes/cascata-de-remanejamento.edicao';
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import {
   comandoDaCascata,
   comandoDeRemocaoDaCascata,
-  MatrizDaRegra,
   matrizDaRegra,
   ofertaExigeCascata,
   ofertaForaDoRegimeFederal,
@@ -28,7 +28,7 @@ const ESQUEMA_ARGS_REAL = {
 };
 
 /** A fixture já é provada válida em `describe('matrizDaRegra', …)`; aqui só evita `!` nos testes seguintes. */
-function matrizReal(): MatrizDaRegra {
+function matrizReal(): MatrizDaCascata {
   const matriz = matrizDaRegra(ESQUEMA_ARGS_REAL);
   if (matriz === null) throw new Error('ESQUEMA_ARGS_REAL deveria produzir uma matriz válida.');
   return matriz;

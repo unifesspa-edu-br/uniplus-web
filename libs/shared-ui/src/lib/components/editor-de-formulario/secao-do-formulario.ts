@@ -1,3 +1,4 @@
+import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -99,6 +100,7 @@ export class SecaoDoFormularioComponent {
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly etapaChange = output<EtapaDoFormulario>();
 
   protected readonly limites = LIMITES_DO_FORMULARIO;
@@ -127,6 +129,7 @@ export class SecaoDoFormularioComponent {
   }
 
   protected trocar(mudanca: Partial<EtapaDoFormulario>): void {
+    this.camposEditados.emit(camposDaMudanca(mudanca));
     this.etapaChange.emit({ ...this.etapa(), ...mudanca });
   }
 
