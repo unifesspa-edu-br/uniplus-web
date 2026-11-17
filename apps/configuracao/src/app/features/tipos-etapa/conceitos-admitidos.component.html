@@ -2,10 +2,12 @@
   #grupo
   class="field"
   tabindex="-1"
-  [class.is-error]="erro()"
+  [class.is-error]="comRecusa()"
   [attr.aria-busy]="catalogo().pendente() ? 'true' : null"
   [attr.aria-describedby]="
-    erro() ? 'cfg-etapa-conceitos-ajuda cfg-etapa-conceitos-erro' : 'cfg-etapa-conceitos-ajuda'
+    comRecusa()
+      ? 'cfg-etapa-conceitos-ajuda cfg-etapa-conceitos-erro'
+      : 'cfg-etapa-conceitos-ajuda'
   "
 >
   <legend class="field__label">Conceitos admitidos</legend>
@@ -32,7 +34,8 @@
           type="checkbox"
           [checked]="marcado(opcao.codigo)"
           [disabled]="controle().disabled"
-          [attr.aria-invalid]="erro() ? 'true' : null"
+          [attr.aria-invalid]="comRecusa() ? 'true' : null"
+          [attr.aria-describedby]="comRecusa() ? 'cfg-etapa-conceitos-erro' : null"
           (change)="aoAlternar(opcao.codigo, $event)"
         />
         <span class="checkbox__box" aria-hidden="true"></span>
@@ -49,7 +52,7 @@
       Conceito inativo não pode ser mantido: a gravação é recusada enquanto ele estiver marcado.
     </span>
   }
-  @if (erro()) {
-    <span class="field__error" id="cfg-etapa-conceitos-erro" role="alert">{{ erro() }}</span>
+  @if (comRecusa()) {
+    <ui-recusa-do-campo id="cfg-etapa-conceitos-erro" [recusas]="recusas()" />
   }
 </fieldset>

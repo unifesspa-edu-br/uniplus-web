@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { FormControl, Validators } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
 import { MotivoDialogComponent } from './motivo-dialog.component';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 @Component({
   standalone: true,
@@ -31,12 +32,6 @@ class HospedeComponent {
 
 describe('MotivoDialogComponent', () => {
   function montar() {
-    window.HTMLDialogElement.prototype.showModal ??= function () {
-      this.setAttribute('open', '');
-    };
-    window.HTMLDialogElement.prototype.close ??= function () {
-      this.removeAttribute('open');
-    };
     const fixture = TestBed.createComponent(HospedeComponent);
     fixture.detectChanges();
     const host = fixture.nativeElement as HTMLElement;
@@ -59,7 +54,7 @@ describe('MotivoDialogComponent', () => {
 
   it('apresenta a recusa do campo', () => {
     const { fixture, host, campo } = montar();
-    fixture.componentInstance.motivo.setErrors({ backend: { message: 'Motivo recusado.' } });
+    marcarRecusaDoServidor(fixture.componentInstance.motivo, 'x', 'Motivo recusado.');
     fixture.componentInstance.motivo.markAsTouched();
     fixture.componentInstance.tentou.set(true);
     fixture.detectChanges();
@@ -82,7 +77,7 @@ describe('MotivoDialogComponent', () => {
   it('liga o campo ao erro que a API recusou', () => {
     const { fixture, host, campo } = montar();
     fixture.componentInstance.motivo.setValue('Motivo');
-    fixture.componentInstance.motivo.setErrors({ backend: { message: 'Motivo recusado.' } });
+    marcarRecusaDoServidor(fixture.componentInstance.motivo, 'x', 'Motivo recusado.');
     fixture.componentInstance.motivo.markAsTouched();
     fixture.componentInstance.tentou.set(true);
     fixture.detectChanges();
@@ -98,7 +93,9 @@ describe('MotivoDialogComponent', () => {
     a.detectChanges();
     b.detectChanges();
 
-    const ids = [a, b].map((f) => (f.nativeElement as HTMLElement).querySelector('.field__hint')?.id);
+    const ids = [a, b].map(
+      (f) => (f.nativeElement as HTMLElement).querySelector('.field__hint')?.id,
+    );
     expect(ids[0]).toBeTruthy();
     expect(ids[0]).not.toBe(ids[1]);
   });

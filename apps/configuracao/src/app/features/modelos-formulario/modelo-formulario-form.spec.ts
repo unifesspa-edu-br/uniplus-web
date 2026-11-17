@@ -5,6 +5,7 @@ import {
   criarFormularioDeModelo,
   mensagemDoCampo,
 } from './modelo-formulario-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 describe('formulário de criação do modelo', () => {
   it('monta o comando sem espaços nas pontas e com nulo nos opcionais em branco', () => {
@@ -90,11 +91,8 @@ describe('formulário de criação do modelo', () => {
     it('a recusa do servidor vale mais que a regra local', () => {
       const form = criarFormularioDeModelo();
       form.controls.codigo.setValue('1abc');
-      form.controls.codigo.setErrors({
-        backend: { code: 'x', message: 'Código em uso.' },
-        pattern: true,
-      });
-      form.controls.codigo.markAsTouched();
+      marcarRecusaDoServidor(form.controls.codigo, 'x', 'Código em uso.');
+      form.controls.codigo.setErrors({ ...form.controls.codigo.errors, pattern: true });
 
       expect(mensagemDoCampo(form.controls.codigo)).toBe('Código em uso.');
     });

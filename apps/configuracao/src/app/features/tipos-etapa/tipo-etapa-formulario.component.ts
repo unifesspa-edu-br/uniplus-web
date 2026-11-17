@@ -2,9 +2,15 @@ import { ChangeDetectionStrategy, Component, input, model, output } from '@angul
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import type { LookupCompleto } from '@uniplus/shared-core/http';
 import type { TipoConceitoDto } from '@uniplus/shared-data/configuracao';
-import { AlertComponent, DrawerComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import {
+  AlertComponent,
+  DrawerComponent,
+  RecusaDoCampoComponent,
+  SpinnerComponent,
+  type RecusaDoCampo,
+} from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
-import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { mensagemDeErroDoControle, recusasDoControle } from '../../shared/formulario';
 import { ConceitosAdmitidosComponent } from './conceitos-admitidos.component';
 import { EtapaForm } from './tipo-etapa-form';
 
@@ -16,6 +22,7 @@ import { EtapaForm } from './tipo-etapa-form';
     AlertComponent,
     ConceitosAdmitidosComponent,
     DrawerComponent,
+    RecusaDoCampoComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,5 +54,9 @@ export class TipoEtapaFormularioComponent {
 
   protected erroDoCampo(nome: keyof EtapaForm): string | null {
     return mensagemDeErroDoControle(this.form().controls[nome]);
+  }
+
+  protected recusasDoCampo(nome: keyof EtapaForm): readonly RecusaDoCampo[] {
+    return recusasDoControle(this.form().controls[nome]);
   }
 }

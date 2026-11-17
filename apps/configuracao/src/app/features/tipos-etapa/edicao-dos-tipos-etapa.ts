@@ -5,9 +5,9 @@ import {
   API_MAX_PAGE_SIZE,
   ApiResult,
   lookupCompleto,
+  paginaDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -34,6 +34,8 @@ import {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   MENSAGEM_SEM_MAPEAMENTO,
+  recusasDoProblema,
+  type RecusaDoServidor,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoEtapa.CodigoJaExiste` (409 Conflict). */
@@ -243,7 +245,7 @@ export class EdicaoDosTiposEtapa {
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.renovarChave();
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
     }
     if (problem.code === CODIGO_JA_EXISTE) {
@@ -259,12 +261,13 @@ export class EdicaoDosTiposEtapa {
   /** O código reservado é um DomainError único (409, sem `errors[]`): o vínculo com o campo é feito aqui. */
   private marcarCodigoJaExistente(problem: ProblemDetails): void {
     const codigo = this.form.controls.codigo;
-    marcarRecusaDoServidor(codigo, problem.code, this.problemI18n.resolve(problem).title);
+    const mensagem = this.problemI18n.resolve(problem).title;
+    marcarRecusaDoServidor(codigo, problem.code, mensagem, paginaDoProblema(problem));
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
     const aplicou = marcarRecusasDosCampos(
-      recusasComMensagemDosConceitos(errors),
+      recusasComMensagemDosConceitos(recusas),
       this.form,
       controleDoCampoDoServidor,
     );

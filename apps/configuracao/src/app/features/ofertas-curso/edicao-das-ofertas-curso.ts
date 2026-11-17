@@ -26,6 +26,7 @@ import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
+  recusasDoProblema,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -266,7 +267,7 @@ export class EdicaoDasOfertasCurso {
   private aplicarFalha(problem: ProblemDetails): void {
     if (
       problem.errors?.length &&
-      marcarRecusasDosCampos(problem.errors, this.form, controleDoCampoDoServidor)
+      marcarRecusasDosCampos(recusasDoProblema(problem), this.form, controleDoCampoDoServidor)
     ) {
       this.renovarChaveDeIdempotencia();
       return;

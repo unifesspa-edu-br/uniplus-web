@@ -28,13 +28,18 @@ const EXIGENTE = tipoDeEtapa({
   ],
 });
 
-const RECUSA_DA_CORRECAO = problema(422, 'uniplus.validacao', 'Dados inválidos', [
-  {
-    field: 'ExigeCorrecaoIndependente',
-    code: 'uniplus.configuracao.tipo_etapa.correcao_independente_exige_conceito',
-    message: 'Escolha ao menos um conceito admitido.',
-  },
-]);
+const PAGINAS_DE_ERRO = 'https://developers.example.test/erros/';
+const CODIGO_SEM_CONCEITO = 'uniplus.configuracao.tipo_etapa.correcao_independente_sem_conceito';
+const RECUSA_DA_CORRECAO = {
+  ...problema(422, 'uniplus.validacao', 'Dados inválidos', [
+    {
+      field: 'conceitosAdmitidos',
+      code: CODIGO_SEM_CONCEITO,
+      message: 'Escolha ao menos um conceito admitido.',
+    },
+  ]),
+  type: `${PAGINAS_DE_ERRO}uniplus.validacao`,
+};
 
 const caixaDaCorrecao = (page: Page) =>
   page.getByRole('checkbox', { name: 'Exige correção independente' });
@@ -61,6 +66,14 @@ async function abrirCadastroPreenchido(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Novo tipo de etapa' }).first().click();
   await page.locator('[formControlName="codigo"]').fill('CORRECAO_DA_REDACAO');
   await page.locator('[formControlName="nome"]').fill('Correção da redação');
+}
+
+async function recusarACorrecaoSemConceito(page: Page): Promise<void> {
+  await abrirPagina(page, novoCapturado(), RECUSA_DA_CORRECAO);
+  await abrirCadastroPreenchido(page);
+  await page.locator('label.checkbox').filter({ hasText: 'Exige correção independente' }).click();
+  await page.getByRole('button', { name: 'Criar tipo de etapa' }).click();
+  await expect(formulario(page).locator('#cfg-etapa-conceitos-erro')).toBeVisible();
 }
 
 test.describe('Tipo de etapa — correção independente', () => {
@@ -121,19 +134,41 @@ test.describe('Tipo de etapa — correção independente', () => {
     expect(capturado.puts[0]).toMatchObject({ exigeCorrecaoIndependente: false });
   });
 
-  test('a recusa do servidor aparece no campo, associada e com o foco', async ({ page }) => {
-    await abrirPagina(page, novoCapturado(), RECUSA_DA_CORRECAO);
-    await abrirCadastroPreenchido(page);
-    await page.locator('label.checkbox').filter({ hasText: 'Exige correção independente' }).click();
-    await page.getByRole('button', { name: 'Criar tipo de etapa' }).click();
+  test('a recusa do servidor aparece junto aos conceitos, com código e página, e com o foco', async ({
+    page,
+  }) => {
+    await recusarACorrecaoSemConceito(page);
 
-    const caixa = caixaDaCorrecao(page);
-    await expect(caixa).toBeFocused();
-    await expect(caixa).toHaveAttribute('aria-invalid', 'true');
-    await expect(caixa).toHaveAttribute('aria-describedby', /cfg-etapa-correcao-erro/);
-    await expect(formulario(page).locator('#cfg-etapa-correcao-erro')).toHaveText(
-      'Escolha ao menos um conceito admitido.',
-    );
+    const conceito = formulario(page).getByRole('checkbox', { name: PARECER_FINAL.nome });
+    const recusa = formulario(page).locator('#cfg-etapa-conceitos-erro');
+    await expect(conceito).toBeFocused();
+    await expect(conceito).toHaveAttribute('aria-invalid', 'true');
+    await expect(conceito).toHaveAttribute('aria-describedby', 'cfg-etapa-conceitos-erro');
+    await expect(recusa).toContainText('Escolha ao menos um conceito admitido.');
+    await expect(recusa).toContainText(CODIGO_SEM_CONCEITO);
+    const pagina = recusa.getByRole('link', { name: /Entenda a recusa/ });
+    await expect(pagina).toHaveAttribute('href', `${PAGINAS_DE_ERRO}${CODIGO_SEM_CONCEITO}`);
+    await expect(pagina).toHaveAttribute('target', '_blank');
+  });
+
+  test('o formulário com a recusa visível não tem violação WCAG A e AA', async ({ page }) => {
+    await recusarACorrecaoSemConceito(page);
+
+    expect((await runAxeWcagAA(page)).violations.map((violacao) => violacao.id)).toEqual([]);
+  });
+
+  test('a 320 px a recusa visível não gera rolagem horizontal', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 800 });
+    await recusarACorrecaoSemConceito(page);
+
+    const dimensoes = await formulario(page).evaluate((el) => ({
+      largura: el.scrollWidth,
+      visivel: el.clientWidth,
+      documento: document.documentElement.scrollWidth,
+      janela: document.documentElement.clientWidth,
+    }));
+    expect(dimensoes.largura).toBeLessThanOrEqual(dimensoes.visivel);
+    expect(dimensoes.documento).toBeLessThanOrEqual(dimensoes.janela);
   });
 
   test('o formulário com a seção de correção não tem violação WCAG A e AA', async ({ page }) => {

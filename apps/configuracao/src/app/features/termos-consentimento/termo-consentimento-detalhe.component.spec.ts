@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { TermoConsentimentoDetalheComponent } from './termo-consentimento-detalhe.component';
 import { AcaoTermo, criarFormularioRascunho } from './termo-consentimento-form';
 import { REVISADO, termo, versao } from './termos-consentimento.testing';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 interface Estado {
   readonly processando?: boolean;
@@ -144,7 +145,7 @@ describe('TermoConsentimentoDetalheComponent', () => {
       const fixture = montar({ processando: true, acao });
       const campo = fixture.componentInstance.form().controls.texto;
       campo.markAsTouched();
-      campo.setErrors({ backend: { code: 'c', message: 'Recusado.' } });
+      marcarRecusaDoServidor(campo, 'c', 'Recusado.');
       fixture.componentRef.setInput('processando', false);
       fixture.componentRef.setInput('acaoEmAndamento', null);
       fixture.detectChanges();

@@ -11,6 +11,7 @@ import {
   valoresDaPrecedencia,
   valoresEmBrancoDaPrecedencia,
 } from './precedencia-form';
+import { marcarRecusaDoServidor, recusasDoControle } from '../../shared/formulario';
 
 const aresta: PrecedenciaFaseDto = {
   id: 'a1',
@@ -82,7 +83,7 @@ describe('formulário de precedência de fase', () => {
         antecessoraCodigo: 'A',
         sucessoraCodigo: 'B',
       });
-      form.controls.sucessoraCodigo.setErrors({ backend: { code, message: 'Recusa.' } });
+      marcarRecusaDoServidor(form.controls.sucessoraCodigo, code, 'Recusa.');
       return form;
     };
 
@@ -90,6 +91,20 @@ describe('formulário de precedência de fase', () => {
       const form = marcar('uniplus.configuracao.precedencia_fase.aresta_duplicada');
       descartarErroDoPar(form);
       expect(form.controls.sucessoraCodigo.errors).toBeNull();
+    });
+
+    it('some só a recusa do par e mantém a recusa própria da sucessora', () => {
+      const form = marcar('uniplus.configuracao.precedencia_fase.aresta_duplicada');
+      marcarRecusaDoServidor(
+        form.controls.sucessoraCodigo,
+        'uniplus.configuracao.precedencia_fase.sucessora_fora_do_conjunto_canonico',
+        'Fase fora do conjunto.',
+      );
+      form.controls.antecessoraCodigo.setValue('C');
+      descartarErroDoPar(form);
+      expect(recusasDoControle(form.controls.sucessoraCodigo).map((r) => r.codigo)).toEqual([
+        'uniplus.configuracao.precedencia_fase.sucessora_fora_do_conjunto_canonico',
+      ]);
     });
 
     it('não apaga a recusa de uma fase isolada', () => {

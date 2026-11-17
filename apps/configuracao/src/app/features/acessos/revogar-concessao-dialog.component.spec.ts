@@ -8,6 +8,7 @@ import {
   RevogarConcessaoDialogComponent,
   type ConfirmacaoDaRevogacao,
 } from './revogar-concessao-dialog.component';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 const concessao: ConcessaoDto = {
   id: 'c1',
@@ -63,12 +64,6 @@ class HospedeComponent {
 
 describe('RevogarConcessaoDialogComponent', () => {
   function montar() {
-    window.HTMLDialogElement.prototype.showModal ??= function () {
-      this.setAttribute('open', '');
-    };
-    window.HTMLDialogElement.prototype.close ??= function () {
-      this.removeAttribute('open');
-    };
     TestBed.configureTestingModule({ providers: [provideRouter([])] });
     const fixture = TestBed.createComponent(HospedeComponent);
     fixture.detectChanges();
@@ -128,9 +123,7 @@ describe('RevogarConcessaoDialogComponent', () => {
     const { fixture, host } = montar();
     const { email, tentou } = fixture.componentInstance;
 
-    email.setErrors({
-      backend: { code: 'x', message: 'O e-mail informado não é o do beneficiário.' },
-    });
+    marcarRecusaDoServidor(email, 'x', 'O e-mail informado não é o do beneficiário.');
     email.markAsTouched();
     tentou.set(true);
     fixture.detectChanges();

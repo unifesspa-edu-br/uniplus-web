@@ -1,5 +1,6 @@
 import type { AbstractControl } from '@angular/forms';
 import type { EdicaoDoPedidoDeAcesso } from './edicao-do-pedido-de-acesso';
+import { mensagemDasRecusasDoServidor } from '../../shared/formulario';
 
 /** O seletor de perfil: destino do foco quando a lista de perfis volta a carregar. */
 export const ID_DO_PERFIL = 'cfg-pedir-perfil';
@@ -13,5 +14,5 @@ export function campoInvalido(controle: AbstractControl): boolean {
 
 /** A recusa do servidor, quando houver; senão a mensagem do campo. */
 export function mensagemDoCampo(controle: AbstractControl, padrao: string): string {
-  return (controle.getError('backend') as { message: string } | null)?.message ?? padrao;
+  return mensagemDasRecusasDoServidor(controle) ?? padrao;
 }

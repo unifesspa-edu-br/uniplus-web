@@ -22,54 +22,78 @@
       <section aria-labelledby="cfg-etapa-identificacao">
         <h3 id="cfg-etapa-identificacao" class="form-section__title">Identificação</h3>
         <div class="form-grid form-grid--1col">
-          <label class="field" [class.is-error]="erroDoCampo('codigo')">
-            <span class="field__label is-required">Código</span>
+          <div class="field" [class.is-error]="erroDoCampo('codigo')">
+            <label class="field__label is-required" for="cfg-etapa-codigo">Código</label>
             <input
+              id="cfg-etapa-codigo"
               class="input"
               type="text"
               formControlName="codigo"
               aria-required="true"
               [readonly]="modo() === 'editar'"
               [attr.aria-invalid]="erroDoCampo('codigo') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('codigo')
+                  ? 'cfg-etapa-codigo-ajuda cfg-etapa-codigo-erro'
+                  : 'cfg-etapa-codigo-ajuda'
+              "
             />
-            <span class="field__hint">
+            <span class="field__hint" id="cfg-etapa-codigo-ajuda">
               Identifica o tipo para sempre — nem a remoção libera o código para reuso. Por
               convenção, maiúsculas separadas por sublinhado, como ANALISE_DOCUMENTAL.
             </span>
-            @if (erroDoCampo('codigo')) {
-              <span class="field__error">{{ erroDoCampo('codigo') }}</span>
+            @if (recusasDoCampo('codigo').length > 0) {
+              <ui-recusa-do-campo id="cfg-etapa-codigo-erro" [recusas]="recusasDoCampo('codigo')" />
+            } @else if (erroDoCampo('codigo')) {
+              <span class="field__error" id="cfg-etapa-codigo-erro">{{
+                erroDoCampo('codigo')
+              }}</span>
             }
-          </label>
-          <label class="field" [class.is-error]="erroDoCampo('nome')">
-            <span class="field__label is-required">Nome</span>
+          </div>
+          <div class="field" [class.is-error]="erroDoCampo('nome')">
+            <label class="field__label is-required" for="cfg-etapa-nome">Nome</label>
             <input
+              id="cfg-etapa-nome"
               class="input"
               type="text"
               formControlName="nome"
               aria-required="true"
               [attr.aria-invalid]="erroDoCampo('nome') ? 'true' : null"
+              [attr.aria-describedby]="
+                erroDoCampo('nome')
+                  ? 'cfg-etapa-nome-ajuda cfg-etapa-nome-erro'
+                  : 'cfg-etapa-nome-ajuda'
+              "
             />
-            <span class="field__hint"
+            <span class="field__hint" id="cfg-etapa-nome-ajuda"
               >Como o tipo aparece para quem monta o processo seletivo.</span
             >
-            @if (erroDoCampo('nome')) {
-              <span class="field__error">{{ erroDoCampo('nome') }}</span>
+            @if (recusasDoCampo('nome').length > 0) {
+              <ui-recusa-do-campo id="cfg-etapa-nome-erro" [recusas]="recusasDoCampo('nome')" />
+            } @else if (erroDoCampo('nome')) {
+              <span class="field__error" id="cfg-etapa-nome-erro">{{ erroDoCampo('nome') }}</span>
             }
-          </label>
-          <label class="field" [class.is-error]="erroDoCampo('descricao')">
-            <span class="field__label">Descrição</span>
+          </div>
+          <div class="field" [class.is-error]="erroDoCampo('descricao')">
+            <label class="field__label" for="cfg-etapa-descricao">Descrição</label>
             <textarea
+              id="cfg-etapa-descricao"
               class="textarea"
               formControlName="descricao"
               [attr.aria-invalid]="erroDoCampo('descricao') ? 'true' : null"
               [attr.aria-describedby]="erroDoCampo('descricao') ? 'cfg-etapa-descricao-erro' : null"
             ></textarea>
-            @if (erroDoCampo('descricao')) {
+            @if (recusasDoCampo('descricao').length > 0) {
+              <ui-recusa-do-campo
+                id="cfg-etapa-descricao-erro"
+                [recusas]="recusasDoCampo('descricao')"
+              />
+            } @else if (erroDoCampo('descricao')) {
               <span class="field__error" id="cfg-etapa-descricao-erro">{{
                 erroDoCampo('descricao')
               }}</span>
             }
-          </label>
+          </div>
         </div>
       </section>
 
@@ -114,15 +138,11 @@
             Ao menos um. Só quem compõe a nota final pode ter peso; só quem elimina pode ter nota
             mínima.
           </span>
-          @if (erroDoCampo('admitePontuacao')) {
-            <span class="field__error" id="cfg-etapa-pontuacao-erro">{{
-              erroDoCampo('admitePontuacao')
-            }}</span>
+          @if (recusasDoCampo('admitePontuacao').length > 0) {
+            <ui-recusa-do-campo id="cfg-etapa-pontuacao-erro" [recusas]="recusasDoCampo('admitePontuacao')" />
           }
-          @if (erroDoCampo('admiteEliminacao')) {
-            <span class="field__error" id="cfg-etapa-eliminacao-erro">{{
-              erroDoCampo('admiteEliminacao')
-            }}</span>
+          @if (recusasDoCampo('admiteEliminacao').length > 0) {
+            <ui-recusa-do-campo id="cfg-etapa-eliminacao-erro" [recusas]="recusasDoCampo('admiteEliminacao')" />
           }
         </fieldset>
       </section>
@@ -145,13 +165,14 @@
             Exige correção independente
           </label>
           <span class="field__hint" id="cfg-etapa-correcao-ajuda">
-            As etapas deste tipo são corrigidas por mais de um corretor, cada um com a sua correção,
-            e a divergência entre elas se resolve por regra. Exige ao menos um conceito admitido.
+            A etapa deste tipo é avaliada por pessoas, com correção independente, e não admite
+            avaliação única. Exige ao menos um conceito admitido.
           </span>
-          @if (erroDoCampo('exigeCorrecaoIndependente')) {
-            <span class="field__error" id="cfg-etapa-correcao-erro">{{
-              erroDoCampo('exigeCorrecaoIndependente')
-            }}</span>
+          @if (recusasDoCampo('exigeCorrecaoIndependente').length > 0) {
+            <ui-recusa-do-campo
+              id="cfg-etapa-correcao-erro"
+              [recusas]="recusasDoCampo('exigeCorrecaoIndependente')"
+            />
           }
         </div>
       </section>
@@ -161,7 +182,7 @@
         <cfg-conceitos-admitidos
           [controle]="form().controls.conceitosAdmitidos"
           [catalogo]="conceitos()"
-          [erro]="erroDoCampo('conceitosAdmitidos')"
+          [recusas]="recusasDoCampo('conceitosAdmitidos')"
         />
       </section>
     </fieldset>

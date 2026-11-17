@@ -5,6 +5,7 @@ import type { AlteracaoDoLocal } from './busca-de-municipios';
 import { DiaNaoUtilCamposComponent } from './dia-nao-util-campos.component';
 import { MUNICIPIO_BUSCA_VAZIA, type MunicipioBuscaState } from './calendario-dias-uteis.util';
 import { aplicarAbrangencia, criarGrupoDeDiaNaoUtil, type GrupoDoDia } from './dia-nao-util-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 describe('DiaNaoUtilCamposComponent', () => {
   let fixture: ComponentFixture<DiaNaoUtilCamposComponent>;
@@ -87,8 +88,7 @@ describe('DiaNaoUtilCamposComponent', () => {
   });
 
   it('mostra a recusa do servidor posta no campo por quem hospeda', async () => {
-    grupo.controls.descricao.setErrors({ backend: { code: 'c', message: 'Descrição recusada.' } });
-    grupo.controls.descricao.markAsTouched();
+    marcarRecusaDoServidor(grupo.controls.descricao, 'c', 'Descrição recusada.');
     await fixture.whenStable();
     fixture.detectChanges();
 

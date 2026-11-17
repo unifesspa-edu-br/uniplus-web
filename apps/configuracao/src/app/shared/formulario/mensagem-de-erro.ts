@@ -1,8 +1,19 @@
 import { AbstractControl } from '@angular/forms';
+import { recusasDoControle } from './recusa-do-servidor';
+
+/**
+ * As mensagens das recusas do servidor presas ao controle, juntas na ordem em que a API as
+ * devolveu; `null` quando o controle não tem recusa do servidor.
+ */
+export function mensagemDasRecusasDoServidor(control: AbstractControl): string | null {
+  const recusas = recusasDoControle(control);
+  return recusas.length === 0 ? null : recusas.map((recusa) => recusa.mensagem).join(' ');
+}
 
 /**
  * A mensagem do primeiro erro do controle, só depois de tocado ou editado. O erro devolvido pelo
- * servidor (`backend`) vale mais que as regras locais, porque nomeia o motivo exato.
+ * servidor (`backend`) vale mais que as regras locais, porque nomeia o motivo exato; com mais de
+ * uma recusa, as mensagens seguem juntas, na ordem em que a API as devolveu.
  */
 export function mensagemDeErroDoControle(control: AbstractControl): string | null {
   const deveExibir = control.touched || control.dirty;
@@ -10,8 +21,7 @@ export function mensagemDeErroDoControle(control: AbstractControl): string | nul
     return null;
   }
   if (control.errors['backend']) {
-    const backend = control.errors['backend'] as { code: string; message: string };
-    return backend.message;
+    return mensagemDasRecusasDoServidor(control);
   }
   if (control.errors['required']) return 'Campo obrigatório.';
   if (control.errors['maxlength']) {

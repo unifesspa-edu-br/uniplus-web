@@ -21,6 +21,7 @@ import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
+  recusasDoProblema,
 } from '../../shared/formulario';
 
 /** O código do modelo já existe — código de modelo nunca se reutiliza. */
@@ -173,7 +174,7 @@ export class EdicaoDosModelosFormulario {
   private aplicarErrosDeCampo(problem: ProblemDetails): boolean {
     return (
       problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO &&
-      marcarRecusasDosCampos(problem.errors ?? [], this.form, campoDaRecusa)
+      marcarRecusasDosCampos(recusasDoProblema(problem), this.form, campoDaRecusa)
     );
   }
 

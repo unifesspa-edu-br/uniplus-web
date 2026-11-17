@@ -32,6 +32,7 @@ import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
+  recusasDoProblema,
 } from '../../shared/formulario';
 
 type Escrita = 'criando' | 'ativando' | 'aceitando';
@@ -329,7 +330,7 @@ export class EdicaoDosFatos {
   }
 
   private marcarCamposRecusados(problem: ProblemDetails): boolean {
-    return marcarRecusasDosCampos(problem.errors ?? [], this.form, controleDoCampoDoServidor);
+    return marcarRecusasDosCampos(recusasDoProblema(problem), this.form, controleDoCampoDoServidor);
   }
 
   /** A mensagem da recusa para o diálogo; só a falha do servidor (5xx) avisa também por toast. */

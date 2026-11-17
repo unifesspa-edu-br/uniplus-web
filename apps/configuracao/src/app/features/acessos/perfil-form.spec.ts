@@ -6,6 +6,7 @@ import {
   mensagemDoCampoDoPerfil,
   valoresDoPerfil,
 } from './perfil-form';
+import { marcarRecusaDoServidor } from '../../shared/formulario';
 
 describe('formulário de perfil', () => {
   it('começa vazio e exige nome, descrição e protocolo do documento instituidor', () => {
@@ -53,7 +54,7 @@ describe('formulário de perfil', () => {
     descricao.markAsTouched();
     expect(mensagemDoCampoDoPerfil('nome', nome)).toBe('Informe o nome do perfil.');
     expect(mensagemDoCampoDoPerfil('descricao', descricao)).toBe('Descreva o perfil.');
-    nome.setErrors({ backend: { code: 'x', message: 'Nome recusado.' } });
+    marcarRecusaDoServidor(nome, 'x', 'Nome recusado.');
     expect(mensagemDoCampoDoPerfil('nome', nome)).toBe('Nome recusado.');
   });
 });

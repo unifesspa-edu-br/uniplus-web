@@ -10,6 +10,7 @@ import {
   municipioSelecionadoDe,
   type GrupoDoDia,
 } from './dia-nao-util-form';
+import { recusasDoControle } from '../../shared/formulario';
 
 const MARABA = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };
 
@@ -147,7 +148,7 @@ describe('dia não útil — recusas do servidor', () => {
 
     expect(aplicarErroNoDia(grupo, recusa('DiasNaoUteis[2].Descricao'))).toBe(true);
 
-    expect(grupo.controls.descricao.errors?.['backend']).toMatchObject({ message: 'Recusado.' });
+    expect(recusasDoControle(grupo.controls.descricao)).toMatchObject([{ mensagem: 'Recusado.' }]);
     expect(grupo.controls.descricao.touched).toBe(true);
   });
 

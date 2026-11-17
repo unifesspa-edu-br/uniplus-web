@@ -5,7 +5,6 @@ import {
   ApiResult,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -31,6 +30,8 @@ import { TiposAtoStore } from './tipos-ato.store';
 import {
   descartarRecusasDoServidor,
   marcarRecusasDosCampos,
+  recusasDoProblema,
+  type RecusaDoServidor,
   MENSAGEM_SEM_MAPEAMENTO,
 } from '../../shared/formulario';
 
@@ -230,7 +231,7 @@ export class EdicaoDosTiposAto {
   private aplicarFalha(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
     }
     this.erro.set(
@@ -241,8 +242,8 @@ export class EdicaoDosTiposAto {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
-    const aplicou = marcarRecusasDosCampos(errors, this.form, controleDoCampoDoServidor);
+  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
+    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
     this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
   }
 

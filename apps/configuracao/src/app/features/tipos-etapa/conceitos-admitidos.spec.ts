@@ -1,5 +1,6 @@
 import type { TipoConceitoDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
+import type { RecusaDoServidor } from '../../shared/formulario';
 import { alternarConceito, opcoesDeConceito } from './conceitos-admitidos';
 import { recusasComMensagemDosConceitos } from './mensagens-dos-conceitos';
 
@@ -46,21 +47,22 @@ describe('alternarConceito', () => {
 });
 
 describe('recusasComMensagemDosConceitos', () => {
-  const recusa = (code: string, field = 'conceitosAdmitidos') => ({
-    field,
-    code,
-    message: 'da API',
+  const recusa = (codigo: string, campo = 'conceitosAdmitidos'): RecusaDoServidor => ({
+    campo,
+    codigo,
+    mensagem: 'da API',
+    pagina: null,
   });
 
-  it('troca a mensagem pela do código e reúne as recusas do campo numa só', () => {
+  it('troca a mensagem pela do código e mantém uma recusa por código', () => {
     const resultado = recusasComMensagemDosConceitos([
       recusa('uniplus.configuracao.tipo_etapa.conceito_inexistente'),
       recusa('uniplus.configuracao.tipo_etapa.conceito_inativo'),
     ]);
 
-    expect(resultado).toHaveLength(1);
-    expect(resultado[0].message).toContain('não existe mais no catálogo');
-    expect(resultado[0].message).toContain('está desativado');
+    expect(resultado).toHaveLength(2);
+    expect(resultado[0].mensagem).toContain('não existe mais no catálogo');
+    expect(resultado[1].mensagem).toContain('está desativado');
   });
 
   it('deixa como veio a recusa de código desconhecido e a de outro campo', () => {
@@ -68,12 +70,12 @@ describe('recusasComMensagemDosConceitos', () => {
     const resultado = recusasComMensagemDosConceitos([outra, recusa('codigo.novo')]);
 
     expect(resultado).toContainEqual(outra);
-    expect(resultado.find((item) => item.field === 'conceitosAdmitidos')?.message).toBe('da API');
+    expect(resultado.find((item) => item.campo === 'conceitosAdmitidos')?.mensagem).toBe('da API');
   });
 
   it('não mexe em recusas sem o campo dos conceitos', () => {
     const lista = [recusa('x', 'nome')];
 
-    expect(recusasComMensagemDosConceitos(lista)).toBe(lista);
+    expect(recusasComMensagemDosConceitos(lista)).toEqual(lista);
   });
 });

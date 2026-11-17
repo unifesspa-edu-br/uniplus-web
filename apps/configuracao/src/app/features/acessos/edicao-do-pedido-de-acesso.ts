@@ -32,7 +32,7 @@ import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { nomesDeEscopo } from './nomes-de-escopo';
 import { PedirAcessoStore } from './pedir-acesso.store';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
-import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { marcarRecusaDoServidor, mensagemDasRecusasDoServidor } from '../../shared/formulario';
 import { TermoNaCriacao } from './termo/termo-na-criacao';
 
 type ParaQuem = 'mim' | 'outra';
@@ -303,10 +303,7 @@ export class EdicaoDoPedidoDeAcesso {
   }
 
   mensagemDoCampo(nome: keyof typeof this.form.controls, padrao: string): string {
-    return (
-      (this.form.controls[nome].getError('backend') as { message: string } | null)?.message ??
-      padrao
-    );
+    return mensagemDasRecusasDoServidor(this.form.controls[nome]) ?? padrao;
   }
 
   /** Leva o foco ao primeiro campo com erro depois que a tela o marca, para o leitor de tela anunciá-lo. */

@@ -7,6 +7,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { AlertComponent, DialogComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
+import { mensagemDasRecusasDoServidor } from '../../shared/formulario';
 import {
   CLASSIFICACOES_DE_PROTECAO,
   nomeDoCadastro,
@@ -66,8 +67,9 @@ export class DecisaoDaProtecaoDialogoComponent {
 
   /** A recusa da API para a classificação recomendada, ou a falta dela. */
   protected erroDaRecomendada(): string {
-    const recusa = this.recomendada().getError('backend') as { message: string } | null;
-    return recusa?.message ?? 'Indique a classificação recomendada.';
+    return (
+      mensagemDasRecusasDoServidor(this.recomendada()) ?? 'Indique a classificação recomendada.'
+    );
   }
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.decidindo, aberto: this.aberto });
