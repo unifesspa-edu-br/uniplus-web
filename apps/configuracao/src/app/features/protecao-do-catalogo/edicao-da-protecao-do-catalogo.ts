@@ -2,7 +2,12 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormControl } from '@angular/forms';
 import { map, type Observable } from 'rxjs';
-import { ProblemDetails, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
+import {
+  type ApiResult,
+  ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ProtecaoDoCatalogoApi,
@@ -13,7 +18,7 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { contarCaracteres } from '@uniplus/shared-utils';
 import { aguardarRecarga } from '../../shared/foco';
-import { marcarRecusaDoServidor } from '../../shared/formulario';
+import { marcarRecusaDoServidor, textoDasCausasGerais } from '../../shared/formulario';
 import { ProtecaoDoCatalogoStore } from './protecao-do-catalogo.store';
 import {
   JUSTIFICATIVA_MAXIMA,
@@ -229,11 +234,25 @@ export class EdicaoDaProtecaoDoCatalogo {
     this.relerAFila();
   }
 
+  /**
+   * A causa geral, quando a API envia, é o motivo mostrado ao usuário; os códigos que pedem
+   * releitura continuam relendo a fila ou o item, e a recusa de campo continua marcando o campo.
+   */
   private recusar(problem: ProblemDetails): void {
-    const mensagem = this.problemI18n.resolve(problem).title;
-    if (this.marcarCampos(problem)) return;
+    const geral = textoDasCausasGerais(separarCausas(problem.errors).gerais);
+    if (this.marcarCampos(problem)) {
+      if (geral !== null) this.mostrarRecusa(geral, problem);
+      return;
+    }
+    this.recusarSemCampo(problem, geral);
+  }
+
+  private recusarSemCampo(problem: ProblemDetails, geral: string | null): void {
+    const titulo = this.problemI18n.resolve(problem).title;
+    const mensagem = geral ?? titulo;
     if (problem.code === JUSTIFICATIVA_EXIGIDA) {
-      this.pedirJustificativa(mensagem);
+      this.pedirJustificativa(titulo);
+      if (geral !== null) this.mostrarRecusa(geral, problem);
     } else if (releAFila(problem)) {
       this.relerAposRecusa(mensagem, problem);
     } else if (problem.code === MANIFESTACAO_NAO_LIDA) {
@@ -248,7 +267,7 @@ export class EdicaoDaProtecaoDoCatalogo {
    * recomendada: cada erro vai ao seu campo de uma vez. Devolve se algum campo foi marcado.
    */
   private marcarCampos(problem: ProblemDetails): boolean {
-    const erros = problem.errors ?? [];
+    const erros = separarCausas(problem.errors).deCampo;
     const daJustificativa = erros.find((erro) => erro.field.toLowerCase() === 'justificativa');
     const daRecomendada = erros.find(
       (erro) => erro.field.toLowerCase() === 'classificacaorecomendada',

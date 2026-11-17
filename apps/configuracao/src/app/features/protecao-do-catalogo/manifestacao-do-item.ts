@@ -2,7 +2,13 @@ import { Injectable, computed, effect, inject, signal, untracked } from '@angula
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators, type AbstractControl } from '@angular/forms';
 import { firstValueFrom, map, type Observable } from 'rxjs';
-import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  type ApiResult,
+  type CausaDeCampo,
+  type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   ProtecaoDoCatalogoApi,
@@ -11,7 +17,11 @@ import {
   type RegistrarManifestacaoDaProtecaoRequest,
   type ParecerDaManifestacao,
 } from '@uniplus/shared-data/configuracao';
-import { ateCaracteres, marcarRecusaDoServidor } from '../../shared/formulario';
+import {
+  ateCaracteres,
+  marcarRecusaDoServidor,
+  textoDasCausasGerais,
+} from '../../shared/formulario';
 import { ChaveDaIntencao, enviarComRetentativa } from './envio-da-protecao';
 import {
   TEXTO_MAXIMO_DA_MANIFESTACAO,
@@ -169,7 +179,7 @@ export class ManifestacaoDoItem {
     if (resultado.ok) this.concluir();
     else if (RECUSAS_QUE_RELEEM_O_ITEM.has(resultado.problem.code))
       this.relerOItem(resultado.problem);
-    else if (!this.marcarCampos(resultado.problem)) this.erro.set(this.texto(resultado.problem));
+    else this.recusarNoFormulario(resultado.problem);
   }
 
   private concluir(): void {
@@ -188,10 +198,17 @@ export class ManifestacaoDoItem {
     this.store.recarregarDetalhe();
   }
 
-  private marcarCampos(problema: ProblemDetails): boolean {
-    const doFormulario = (problema.errors ?? []).filter(
-      (erro) => erro.field.toLowerCase() in this.form.controls,
-    );
+  /** Os campos recusados levam a recusa; a causa geral, ou a recusa sem campo, vai à área geral. */
+  private recusarNoFormulario(problema: ProblemDetails): void {
+    const { deCampo, gerais } = separarCausas(problema.errors);
+    const marcou = this.marcarCampos(deCampo);
+    const geral = textoDasCausasGerais(gerais);
+    if (geral !== null) this.erro.set(geral);
+    else if (!marcou) this.erro.set(this.texto(problema));
+  }
+
+  private marcarCampos(erros: readonly CausaDeCampo[]): boolean {
+    const doFormulario = erros.filter((erro) => erro.field.toLowerCase() in this.form.controls);
     for (const erro of doFormulario) {
       const campo = erro.field.toLowerCase() as CampoDaManifestacao;
       marcarRecusaDoServidor(this.form.controls[campo], erro.code, erro.message);

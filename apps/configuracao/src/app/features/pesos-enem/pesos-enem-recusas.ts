@@ -1,5 +1,10 @@
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
-import { ProblemDetails, STATUS_HTTP } from '@uniplus/shared-core/http';
+import {
+  type CausasDoProblema,
+  ProblemDetails,
+  separarCausas,
+  STATUS_HTTP,
+} from '@uniplus/shared-core/http';
 import { controlNameFromBackendField, marcarRecusaDoServidor } from '../../shared/formulario';
 import type { AreaForm } from './pesos-enem-form';
 
@@ -62,11 +67,11 @@ interface MensagensDoControle {
 function marcarCamposRecusados(
   areas: FormArray<FormGroup<AreaForm>>,
   destinos: DestinosDePrimeiroNivel,
-  errors: NonNullable<ProblemDetails['errors']>,
+  causas: CausasDoProblema,
 ): string[] {
-  const semCampo: string[] = [];
+  const semCampo: string[] = causas.gerais.map((causa) => causa.message);
   const porControle = new Map<AbstractControl, MensagensDoControle>();
-  for (const erro of errors) {
+  for (const erro of causas.deCampo) {
     const control = controleDoCampoDoServidor(areas, destinos, erro.field);
     const alvo = control === null ? semCampo : (porControle.get(control)?.mensagens ?? []);
     if (!alvo.includes(erro.message)) {
@@ -88,7 +93,7 @@ function marcarCamposRecusados(
  * a exibe), para o banner da operação: um controle inválido e invisível travaria o formulário
  * sem mensagem, e pôr o erro num campo que não é o dele faria o operador mexer no lugar errado.
  *
- * Recusa 4xx sem `errors[]` (ex.: linha removida por outra sessão, conflito de concorrência)
+ * Causa geral de `errors[]` e recusa 4xx sem `errors[]` (ex.: linha removida por outra sessão, conflito de concorrência)
  * não aponta campo nenhum, então vai ao banner. Falha transitória (rede, 5xx) não acrescenta
  * nada: o banner geral já a comunica.
  */
@@ -99,7 +104,7 @@ export function aplicarRecusaDoGrupo(
   tituloDaRecusa: (problem: ProblemDetails) => string,
 ): string[] {
   if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-    return marcarCamposRecusados(areas, destinos, problem.errors);
+    return marcarCamposRecusados(areas, destinos, separarCausas(problem.errors));
   }
   return ehRecusaAcionavelPeloOperador(problem) ? [tituloDaRecusa(problem)] : [];
 }

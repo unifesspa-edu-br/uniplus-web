@@ -1,5 +1,5 @@
 import type { FormGroup } from '@angular/forms';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { type CausaDeCampo, type ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
 import {
   campoDaRecusa,
@@ -19,9 +19,12 @@ export const ROTULOS_DOS_EIXOS: Readonly<Record<string, string>> = {
 };
 
 /** Põe as recusas de campo da API nos controles do formulário; diz se alguma coube. */
-export function aplicarErrosNoFormulario(formulario: FormGroup, problem: ProblemDetails): boolean {
+export function aplicarErrosNoFormulario(
+  formulario: FormGroup,
+  erros: readonly CausaDeCampo[],
+): boolean {
   let aplicou = false;
-  for (const erro of problem.errors ?? []) {
+  for (const erro of erros) {
     const controle = formulario.get(campoDaRecusa(erro.field));
     if (controle === null) continue;
     marcarRecusaDoServidor(controle, erro.code, erro.message);
@@ -49,16 +52,16 @@ export function distribuirRecusaDaDefinicao(
   formulario: FormGroup,
   eixos: EixosEditaveis,
 ): RecusaDaDefinicao {
-  const erros = problem.errors ?? [];
+  const erros = separarCausas(problem.errors).deCampo;
   const doCampo = erros.filter((erro) => !ehCitacao(erro.field));
   const naTela = (campo: string): boolean =>
     formulario.get(campo) !== null &&
     (!(campo in ROTULOS_DOS_EIXOS) || eixos[campo as keyof EixosEditaveis]);
   const ocultos = doCampo.filter((erro) => !naTela(campoDaRecusa(erro.field)));
-  const noCampo = aplicarErrosNoFormulario(formulario, {
-    ...problem,
-    errors: doCampo.filter((erro) => !ocultos.includes(erro)),
-  });
+  const noCampo = aplicarErrosNoFormulario(
+    formulario,
+    doCampo.filter((erro) => !ocultos.includes(erro)),
+  );
   const texto = ocultos
     .map((erro) => `${ROTULOS_DOS_EIXOS[campoDaRecusa(erro.field)] ?? erro.field}: ${erro.message}`)
     .join(' ');

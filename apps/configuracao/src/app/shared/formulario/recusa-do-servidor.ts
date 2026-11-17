@@ -1,5 +1,11 @@
 import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
-import { paginaDoErro, ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  type CausaDeCampo,
+  type CausaGeral,
+  paginaDoErro,
+  type ProblemDetails,
+  separarCausas,
+} from '@uniplus/shared-core/http';
 import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
 /** A recusa que a API fez a um campo, com o nome do campo no servidor para achar o controle. */
@@ -7,17 +13,27 @@ export interface RecusaDoServidor extends RecusaDoCampo {
   readonly campo: string;
 }
 
+/** As recusas do problema: as que apontam um campo e as gerais, que não apontam nenhum. */
+export interface RecusasDoProblema {
+  readonly deCampo: readonly RecusaDoServidor[];
+  readonly gerais: readonly CausaGeral[];
+}
+
 /**
- * As recusas de campo (`errors[]`) do problema, cada uma já com a página que explica o código.
- * O problema sem `errors[]` não tem recusa de campo e devolve lista vazia.
+ * As causas (`errors[]`) do problema separadas entre as que apontam um campo, cada uma já com a
+ * página que explica o código, e as gerais. O problema sem `errors[]` devolve as duas listas vazias.
  */
-export function recusasDoProblema(problema: ProblemDetails): readonly RecusaDoServidor[] {
-  return (problema.errors ?? []).map((erro) => ({
-    campo: erro.field,
-    codigo: erro.code,
-    mensagem: erro.message,
-    pagina: paginaDoErro(problema, erro.code),
-  }));
+export function recusasDoProblema(problema: ProblemDetails): RecusasDoProblema {
+  const { deCampo, gerais } = separarCausas(problema.errors);
+  return {
+    deCampo: deCampo.map((erro) => ({
+      campo: erro.field,
+      codigo: erro.code,
+      mensagem: erro.message,
+      pagina: paginaDoErro(problema, erro.code),
+    })),
+    gerais,
+  };
 }
 
 /** As recusas da API presas ao controle; vazia quando o controle não tem recusa do servidor. */
@@ -80,6 +96,42 @@ export function descartarRecusasDoServidorPorCodigo(
 export const MENSAGEM_SEM_MAPEAMENTO =
   'Não foi possível mapear os erros de validação. Revise os campos.';
 
+/** A recusa de campo do problema que aponta o campo dado, sem diferenciar maiúsculas de minúsculas. */
+export function causaDoCampo(problema: ProblemDetails, campo: string): CausaDeCampo | undefined {
+  return separarCausas(problema.errors).deCampo.find(
+    (causa) => causa.field.toLowerCase() === campo.toLowerCase(),
+  );
+}
+
+/** O problema traz causa geral, que a tela mostra na área geral mesmo quando marcou campos. */
+export function temCausaGeral(problema: ProblemDetails): boolean {
+  return separarCausas(problema.errors).gerais.length > 0;
+}
+
+/** As mensagens das causas gerais em um só texto; `null` quando não há causa geral. */
+export function textoDasCausasGerais(gerais: readonly CausaGeral[]): string | null {
+  return gerais.length === 0 ? null : gerais.map((causa) => causa.message).join(' ');
+}
+
+/** As mensagens das causas gerais do problema em um só texto; `null` quando não há causa geral. */
+export function textoDaCausaGeral(problema: ProblemDetails): string | null {
+  return textoDasCausasGerais(separarCausas(problema.errors).gerais);
+}
+
+/**
+ * O texto da área geral da tela depois de marcar os campos: as mensagens das causas gerais e, quando
+ * há recusa de campo e nenhuma foi aplicada, `MENSAGEM_SEM_MAPEAMENTO`. A causa geral não é recusa
+ * de campo sem mapa, então sozinha não aciona essa mensagem. Sem nada a dizer, devolve `null`.
+ */
+export function textoDaAreaGeral(
+  aplicouAlgum: boolean,
+  causas: { readonly deCampo: readonly unknown[]; readonly gerais: readonly CausaGeral[] },
+): string | null {
+  const semMapa = causas.deCampo.length > 0 && !aplicouAlgum ? MENSAGEM_SEM_MAPEAMENTO : null;
+  const textos = [semMapa, textoDasCausasGerais(causas.gerais)].filter((texto) => texto !== null);
+  return textos.length === 0 ? null : textos.join(' ');
+}
+
 /**
  * Marca no formulário cada recusa de campo que a tela sabe mapear a um controle.
  * Devolve se alguma foi aplicada; sem nenhuma, quem chama mostra `MENSAGEM_SEM_MAPEAMENTO` em
@@ -99,4 +151,17 @@ export function marcarRecusasDosCampos<TNome extends string>(
     aplicouAlgum = true;
   }
   return aplicouAlgum;
+}
+
+/**
+ * Marca os campos que a tela mapeia e devolve o que dizer na área geral: as causas gerais e, se
+ * nenhuma recusa de campo achou controle, `MENSAGEM_SEM_MAPEAMENTO`; `null` quando não há o que dizer.
+ */
+export function aplicarRecusasDoProblema<TNome extends string>(
+  recusas: RecusasDoProblema,
+  formulario: { readonly controls: Record<TNome, AbstractControl> },
+  controleDoCampo: (campoDoServidor: string) => TNome | null,
+): string | null {
+  const aplicou = marcarRecusasDosCampos(recusas.deCampo, formulario, controleDoCampo);
+  return textoDaAreaGeral(aplicou, recusas);
 }

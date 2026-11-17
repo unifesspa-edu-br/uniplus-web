@@ -1,8 +1,9 @@
 import { inject, Injectable, signal } from '@angular/core';
 import {
-  ProblemI18nService,
+  type CausaDeCampo,
   type ProblemDetails,
-  type ProblemValidationError,
+  ProblemI18nService,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 
 import { ValidacaoDoPasso } from '../../processo-seletivo.models';
@@ -141,7 +142,7 @@ export class GravacaoDaClassificacao {
    * antes de chegar a julgar a resolução, e só a gravação que dá certo prova que ela passou.
    */
   private mensagensDaRecusa(problema: ProblemDetails): string[] {
-    const erros = problema.errors ?? [];
+    const erros = separarCausas(problema.errors).deCampo;
     this.recusasPorCampo.set(recusasDoCorte(erros));
     this.guardarRecusasDaResolucao(erros);
     const recusaDaEscala = this.guardarRecusaDaEscala(erros);
@@ -162,7 +163,7 @@ export class GravacaoDaClassificacao {
   }
 
   /** As recusas sob o campo da resolução: a da resolução e a de um critério de desempate gravado. */
-  private guardarRecusasDaResolucao(erros: readonly ProblemValidationError[]): void {
+  private guardarRecusasDaResolucao(erros: readonly CausaDeCampo[]): void {
     const sobOCampo = erros.filter((erro) => ehCampoDaResolucao(erro.field));
     if (sobOCampo.length === 0) return;
 
@@ -178,7 +179,7 @@ export class GravacaoDaClassificacao {
   }
 
   /** A recusa da escala da nota final, guardada para o passo da fórmula; `null` sem recusa dela. */
-  private guardarRecusaDaEscala(erros: readonly ProblemValidationError[]): string | null {
+  private guardarRecusaDaEscala(erros: readonly CausaDeCampo[]): string | null {
     const daEscala = erros.find((erro) => ehCampoDaEscala(erro.field));
     const recusa = daEscala === undefined ? null : mensagemDaRecusaDaEscala(daEscala);
     if (recusa !== null) this.store.classificacao.recusaDaEscalaDaNotaFinal.set(recusa);

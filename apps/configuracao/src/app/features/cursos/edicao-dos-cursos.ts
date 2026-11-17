@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -30,7 +32,7 @@ import { OfertasDoCursoStore } from './ofertas-do-curso.store';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -265,7 +267,7 @@ export class EdicaoDosCursos {
     const errosDeCampo = problem.errors ?? [];
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
       this.renovarChaveDeIdempotencia();
-      this.aplicarErrosDeValidacao(errosDeCampo);
+      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
       return;
     }
     // Curso.CodigoJaExiste é um DomainError único (409, sem `errors[]` — esse array só existe no
@@ -293,15 +295,15 @@ export class EdicaoDosCursos {
     );
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
-    for (const erro of errors) {
+    for (const erro of causas.deCampo) {
       aplicouAlgum = this.marcarControle(erro) || aplicouAlgum;
     }
-    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
-  private marcarControle(erro: ProblemValidationError): boolean {
+  private marcarControle(erro: CausaDeCampo): boolean {
     const nome = controleDoCampoDoServidor(erro.field);
     if (nome === null) {
       return false;

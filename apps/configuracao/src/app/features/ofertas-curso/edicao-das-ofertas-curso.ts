@@ -27,6 +27,7 @@ import {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoProblema,
+  textoDaCausaGeral,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -265,31 +266,38 @@ export class EdicaoDasOfertasCurso {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    if (
-      problem.errors?.length &&
-      marcarRecusasDosCampos(recusasDoProblema(problem), this.form, controleDoCampoDoServidor)
-    ) {
+    const geral = textoDaCausaGeral(problem);
+    if (this.marcouCampo(problem)) {
       this.renovarChaveDeIdempotencia();
+      if (geral !== null) this.erro.set(geral);
       return;
     }
-    const campo = controleDoCodigoDoServidor(problem.code);
-    if (campo !== null) {
-      this.renovarChaveDeIdempotencia();
-      marcarRecusaDoServidor(
-        this.form.controls[campo],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
-      return;
-    }
+    this.recusarSemCampo(problem, geral);
+  }
+
+  private recusarSemCampo(problem: ProblemDetails, geral: string | null): void {
     // O 409 do envio é `processing_conflict`: pede repetir o mesmo comando com a mesma chave.
     if (deveRotacionarIdempotencyKey(problem)) {
       this.renovarChaveDeIdempotencia();
     }
-    this.erro.set(this.problemI18n.resolve(problem).title);
+    this.erro.set(geral ?? this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) {
       this.notifications.errorFromProblem(problem);
     }
+  }
+
+  /** Marca no formulário o campo que a recusa aponta, pelas causas ou pelo código; diz se algum foi marcado. */
+  private marcouCampo(problem: ProblemDetails): boolean {
+    const recusas = recusasDoProblema(problem).deCampo;
+    if (marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor)) return true;
+    const campo = controleDoCodigoDoServidor(problem.code);
+    if (campo === null) return false;
+    marcarRecusaDoServidor(
+      this.form.controls[campo],
+      problem.code,
+      this.problemI18n.resolve(problem).title,
+    );
+    return true;
   }
 
   private renovarChaveDeIdempotencia(): void {

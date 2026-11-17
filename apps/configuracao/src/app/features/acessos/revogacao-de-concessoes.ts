@@ -10,9 +10,10 @@ import {
 import { FormControl, Validators } from '@angular/forms';
 import {
   ChaveDeSubstituicao,
-  ProblemI18nService,
   comChave,
   type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ConcessoesApi, type ConcessaoDto } from '@uniplus/shared-data/autorizacao';
@@ -22,6 +23,7 @@ import { mensagemDaRecusa } from './falha-de-servidor';
 import { FALHA_INESPERADA } from './mensagens-de-acesso';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { ConcessoesStore } from './concessoes.store';
+import { temCausaGeral } from '../../shared/formulario';
 
 /** Recusas que mostram que a lista está desatualizada: a concessão já não está como a tela a exibe. */
 const CODIGOS_DE_LISTA_DESATUALIZADA: ReadonlySet<string> = new Set([
@@ -114,9 +116,9 @@ export class RevogacaoDeConcessoes {
 
   private mostrarRecusa(problema: ProblemDetails): void {
     const texto = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
-    if (this.aplicarErrosDeCampo(problema)) return;
-    this.erroDaRevogacao.set(texto);
-    if (CODIGOS_DE_LISTA_DESATUALIZADA.has(problema.code)) this.recarregarLista();
+    const marcou = this.aplicarErrosDeCampo(problema);
+    if (!marcou || temCausaGeral(problema)) this.erroDaRevogacao.set(texto);
+    if (!marcou && CODIGOS_DE_LISTA_DESATUALIZADA.has(problema.code)) this.recarregarLista();
   }
 
   private recarregarLista(): void {
@@ -126,7 +128,7 @@ export class RevogacaoDeConcessoes {
 
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = false;
-    for (const erro of problema.errors ?? []) {
+    for (const erro of separarCausas(problema.errors).deCampo) {
       const controle = this.controleDoCampo(erro.field);
       if (!controle) continue;
       marcarRecusaDoServidor(controle, erro.code, erro.message);

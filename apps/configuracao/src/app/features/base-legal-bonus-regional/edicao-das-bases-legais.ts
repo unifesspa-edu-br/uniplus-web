@@ -3,9 +3,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausaDeCampo,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -23,8 +25,8 @@ import { aguardarRecarga } from '../../shared/foco';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
   nullIfBlank,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
 import {
@@ -234,25 +236,25 @@ export class EdicaoDasBasesLegais {
   private aplicarFalha(problem: ProblemDetails): void {
     if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
-    for (const recusa of errors) {
+    for (const recusa of causas.deCampo) {
       const campo = campoDoServidor(recusa.field);
       if (campo === null) continue;
       this.marcarCampo(campo, recusa);
       aplicouAlgum = true;
     }
-    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
-  private marcarCampo(campo: CampoDoServidor, recusa: ProblemValidationError): void {
+  private marcarCampo(campo: CampoDoServidor, recusa: CausaDeCampo): void {
     if (campo === 'municipios') {
       this.municipios.recusar(recusa.message);
       return;

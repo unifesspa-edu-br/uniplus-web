@@ -11,14 +11,19 @@ import {
 } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import {
-  ChaveDeSubstituicao,
-  ProblemI18nService,
   type ApiResult,
+  ChaveDeSubstituicao,
   type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { ProvidenciasApi, type ProvidenciaDto } from '@uniplus/shared-data/autorizacao';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  temCausaGeral,
+} from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { FALHA_INESPERADA } from '../mensagens-de-acesso';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
@@ -180,7 +185,10 @@ export class TramitacaoDaProvidencia {
 
   private recusar(problema: ProblemDetails): void {
     const texto = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
-    if (this.marcarCampos(problema)) return;
+    if (this.marcarCampos(problema)) {
+      if (temCausaGeral(problema)) this.erro.set(texto);
+      return;
+    }
     if (!RECUSAS_QUE_RELEEM.has(problema.code)) {
       this.erro.set(texto);
       return;
@@ -192,7 +200,7 @@ export class TramitacaoDaProvidencia {
 
   private marcarCampos(problema: ProblemDetails): boolean {
     let marcado = false;
-    for (const erro of problema.errors ?? []) {
+    for (const erro of separarCausas(problema.errors).deCampo) {
       const controle = this.controleDoCampo(erro.field);
       if (controle === null) continue;
       marcarRecusaDoServidor(controle, erro.code, erro.message);

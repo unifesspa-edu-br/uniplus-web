@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { ProblemI18nService, type ApiResult, type ProblemDetails } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { RevisoesApi, type ItemDaRevisaoDto } from '@uniplus/shared-data/autorizacao';
+import { textoDaCausaGeral } from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { CampoDoMotivo } from '../versoes/campo-do-motivo';
 import { ChavesPorComando } from '../versoes/chaves-por-comando';
@@ -103,7 +104,7 @@ export class DecisaoDoItem {
     if (resultado.ok) this.concluir(SUCESSO[decisao]);
     else if (this.incerta(resultado.problem)) this.falharPelo(resultado.problem);
     else if (this.mudouDesdeALeitura(resultado.problem)) this.reler(resultado.problem);
-    else if (!this.campo.recusar(resultado.problem)) this.recusar(resultado.problem);
+    else this.recusar(resultado.problem);
   }
 
   /** Falha de servidor ou sem resposta: a decisão pode ter sido gravada ou não. */
@@ -139,9 +140,12 @@ export class DecisaoDoItem {
     this.escrita.recarregar();
   }
 
+  /** O motivo recusado vai ao campo, e só a causa geral vai à área geral; a recusa de outro assunto vai toda a ela. */
   private recusar(problema: ProblemDetails): void {
-    if (this.aberto()) this.erroDaRevogacao.set(this.texto(problema));
-    else this.aviso.set({ titulo: 'Não foi possível decidir o item', texto: this.texto(problema) });
+    const texto = this.campo.recusar(problema) ? textoDaCausaGeral(problema) : this.texto(problema);
+    if (texto === null) return;
+    if (this.aberto()) this.erroDaRevogacao.set(texto);
+    else this.aviso.set({ titulo: 'Não foi possível decidir o item', texto });
   }
 
   private texto(problema: ProblemDetails): string {

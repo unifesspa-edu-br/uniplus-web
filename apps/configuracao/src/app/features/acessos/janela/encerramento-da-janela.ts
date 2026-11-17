@@ -1,8 +1,13 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { JanelaDeMigracaoApi } from '@uniplus/shared-data/autorizacao';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import { ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  causaDoCampo,
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  textoDaCausaGeral,
+} from '../../../shared/formulario';
 import { LIMITE_DO_MOTIVO } from '../motivo-dialog.component';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
 import { EnvioNaJanela } from './envio-na-janela';
@@ -63,10 +68,11 @@ export class EncerramentoDaJanela {
   }
 
   private recusar(problema: ProblemDetails): void {
-    const doMotivo = problema.errors?.find((erro) => erro.field.toLowerCase() === 'motivo');
+    const doMotivo = causaDoCampo(problema, 'motivo');
     if (doMotivo) {
       marcarRecusaDoServidor(this.form.controls.motivo, doMotivo.code, doMotivo.message);
       this.tentativas.update((n) => n + 1);
+      this.erro.set(textoDaCausaGeral(problema));
       return;
     }
     this.falhar(this.envio.tratar(problema));

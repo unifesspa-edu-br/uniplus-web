@@ -28,12 +28,11 @@ import {
 import { TiposProcessoStore } from './tipos-processo.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoProcesso.CodigoJaExiste` (409 Conflict). */
@@ -320,9 +319,8 @@ export class EdicaoDosTiposProcesso {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
 
   private renovarChave(): void {

@@ -1,13 +1,17 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
+import { type ProblemDetails, ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   TermosDeResponsabilidadeApi,
   type PublicarVersaoDoTermoRequest,
   type VersaoDoTermoDto,
 } from '@uniplus/shared-data/autorizacao';
-import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
+import {
+  descartarRecusasDoServidor,
+  marcarRecusaDoServidor,
+  temCausaGeral,
+} from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { FALHA_INESPERADA } from '../mensagens-de-acesso';
 import { ChavesPorComando } from '../versoes/chaves-por-comando';
@@ -115,14 +119,14 @@ export class PublicacaoDoTermo {
       this.aviso.set(null);
       this.store.recarregar();
       this.avisoPendente.set(this.texto(problema));
-    } else if (!this.marcarCampos(problema)) {
+    } else if (!this.marcarCampos(problema) || temCausaGeral(problema)) {
       this.erro.set(this.texto(problema));
     }
   }
 
   /** Marca no campo a recusa por campo, ou a do código que só cabe a um campo. */
   private marcarCampos(problema: ProblemDetails): boolean {
-    const campos = (problema.errors ?? []).filter(
+    const campos = separarCausas(problema.errors).deCampo.filter(
       (e) => e.field.toLowerCase() in this.form.controls,
     );
     for (const erro of campos)

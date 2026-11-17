@@ -57,6 +57,24 @@ describe('CalendarioDiasUteisDetalhePage — recusas do servidor', () => {
     expect(p.edicao.aberto()).toBe(true);
   });
 
+  it('a causa geral da data duplicada dá o motivo e a orientação de escolher outra abrangência segue', async () => {
+    const post = await p.enviar();
+
+    post.flush(
+      ...problema(422, {
+        code: DUPLICADA,
+        title: 'Data duplicada',
+        errors: [{ code: DUPLICADA, message: 'Já existe feriado estadual nesta data.' }],
+      }),
+    );
+    await p.propagar();
+
+    expect(alerta()).toContain('Já existe feriado estadual nesta data.');
+    expect(alerta()).toContain('Escolha outra abrangência ou região');
+    expect(alerta()).not.toContain('Esta data está duplicada para a mesma abrangência e região.');
+    expect(p.edicao.aberto()).toBe(true);
+  });
+
   it('a recusa apontada em campo marca o campo, leva o foco a ele e renova a chave, sem toast', async () => {
     const post = await p.enviar();
     const chave = post.request.headers.get('Idempotency-Key');

@@ -5,6 +5,7 @@ export { apiResultInterceptor } from './api-result.interceptor';
 
 export {
   errorResult,
+  mockCausaGeral,
   mockProblemDetails,
   mockValidationError,
   okResult,
@@ -52,6 +53,9 @@ export type {
   ProblemDetails,
   ProblemValidationError,
 } from './problem-details';
+
+export { separarCausas } from './causas-do-problema';
+export type { CausaDeCampo, CausaGeral, CausasDoProblema } from './causas-do-problema';
 
 export { paginaDoErro, paginaDoProblema } from './pagina-do-erro';
 

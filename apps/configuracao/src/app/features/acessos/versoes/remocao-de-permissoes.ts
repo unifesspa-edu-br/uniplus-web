@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
+import { type ProblemDetails, ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { CategoriaDaRemocao } from '@uniplus/shared-data/autorizacao';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../../shared/formulario';
@@ -100,9 +100,9 @@ export class RemocaoDePermissoes {
   }
 
   private recusar(problema: ProblemDetails): void {
-    const campos = problema.errors ?? [];
-    for (const erro of campos) this.aplicar(erro.field, erro.code, erro.message);
-    if (campos.length === 0) {
+    const { deCampo, gerais } = separarCausas(problema.errors);
+    for (const erro of deCampo) this.aplicar(erro.field, erro.code, erro.message);
+    if (deCampo.length === 0 || gerais.length > 0) {
       this.erro.set(mensagemDaRecusa(this.problemas, this.notificacoes, problema));
     }
   }

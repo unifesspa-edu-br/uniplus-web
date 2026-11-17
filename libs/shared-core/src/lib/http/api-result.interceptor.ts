@@ -227,13 +227,23 @@ function normalizeErrors(
   if (!Array.isArray(raw) || raw.length === 0) {
     return undefined;
   }
-  return raw.filter(ehErroDeCampo).map(({ field, code, message }) => ({ field, code, message }));
+  return raw.map(causaDoFio).filter((causa) => causa !== null);
 }
 
-function ehErroDeCampo(entry: unknown): entry is ProblemValidationError {
+/**
+ * Lê uma causa do fio. `field` ausente ou `null` vira causa geral, sem a chave; `field` de outro
+ * tipo ou causa sem `code`/`message` em texto não é causa válida e é descartada.
+ */
+function causaDoFio(entry: unknown): ProblemValidationError | null {
   if (typeof entry !== 'object' || entry === null) {
-    return false;
+    return null;
   }
-  const candidate = entry as Record<string, unknown>;
-  return ['field', 'code', 'message'].every((chave) => typeof candidate[chave] === 'string');
+  const { field, code, message } = entry as Record<string, unknown>;
+  if (typeof code !== 'string' || typeof message !== 'string') {
+    return null;
+  }
+  if (typeof field === 'string') {
+    return { field, code, message };
+  }
+  return field === undefined || field === null ? { code, message } : null;
 }

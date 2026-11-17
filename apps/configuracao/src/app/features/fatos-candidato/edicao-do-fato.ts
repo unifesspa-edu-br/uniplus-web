@@ -1,7 +1,7 @@
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FormControl, FormGroup } from '@angular/forms';
-import { ProblemDetails } from '@uniplus/shared-core/http';
+import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { FatoCandidatoDto, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
 import {
@@ -310,7 +310,7 @@ export class EdicaoDoFato extends EscritorDeFato {
     problem: ProblemDetails,
     idDoFormulario: string,
   ): boolean {
-    const coube = aplicarErrosNoFormulario(formulario, problem);
+    const coube = aplicarErrosNoFormulario(formulario, separarCausas(problem.errors).deCampo);
     if (coube) this.focarPrimeiroInvalidoEm(idDoFormulario);
     return coube;
   }

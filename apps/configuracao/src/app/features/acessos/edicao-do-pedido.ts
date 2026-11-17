@@ -4,10 +4,10 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   ChaveDeSubstituicao,
-  ProblemI18nService,
   comChave,
   isApiOk,
   type ProblemDetails,
+  ProblemI18nService,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { PedidosDeConcessaoApi, type PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
@@ -20,6 +20,7 @@ import { type Acao } from './confirmacoes-do-pedido';
 import { LIMITE_DO_MOTIVO } from './motivo-dialog.component';
 import { fimDoDia, prazoNoPassado } from './prazo-de-vigencia';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
+import { causaDoCampo, temCausaGeral } from '../../shared/formulario';
 
 type EnvioDaDecisao = ReturnType<typeof comChave<PedidoDeConcessaoDto>>;
 
@@ -218,9 +219,8 @@ export class EdicaoDoPedido {
     problema: ProblemDetails,
     destino: WritableSignal<string | null>,
   ): void {
-    if (destino !== this.erroDaRecusa || !this.aplicarErroDoMotivo(problema)) {
-      destino.set(this.texto(problema));
-    }
+    const marcou = destino === this.erroDaRecusa && this.aplicarErroDoMotivo(problema);
+    if (!marcou || temCausaGeral(problema)) destino.set(this.texto(problema));
     this.store.recarregar();
   }
 
@@ -229,7 +229,7 @@ export class EdicaoDoPedido {
   }
 
   private aplicarErroDoMotivo(problema: ProblemDetails): boolean {
-    const erro = problema.errors?.find((item) => item.field.toLowerCase() === 'motivo');
+    const erro = causaDoCampo(problema, 'motivo');
     if (!erro) return false;
     marcarRecusaDoServidor(this.motivo, erro.code, erro.message);
     this.tentouRecusar.set(true);

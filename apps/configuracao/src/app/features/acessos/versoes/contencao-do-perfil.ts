@@ -8,6 +8,7 @@ import {
   type RetomadaDaSuspensaoDto,
 } from '@uniplus/shared-data/autorizacao';
 import type { Observable } from 'rxjs';
+import { textoDaCausaGeral } from '../../../shared/formulario';
 import { mensagemDaRecusa } from '../falha-de-servidor';
 import { CampoDoMotivo } from './campo-do-motivo';
 import { ChavesPorComando } from './chaves-por-comando';
@@ -83,15 +84,22 @@ export class ContencaoDoPerfil {
       CHAMADAS[acao](this.api, perfilId, corpo, contexto),
     );
     if (resultado.ok) this.concluir(acao, resultado.data);
-    else if (!this.campo.recusar(resultado.problem)) {
-      this.erro.set(this.textoDaRecusa(acao, resultado.problem));
-    }
+    else this.mostrarRecusa(acao, resultado.problem);
   }
 
   private concluir(acao: AcaoDaContencao, dados: unknown): void {
     this.aberto.set(false);
     this.notificacoes.success(this.textoDoSucesso(acao, dados));
     this.escrita.recarregar();
+  }
+
+  /** O motivo recusado vai ao campo, e só a causa geral vai à área geral; a recusa de outro assunto vai toda a ela. */
+  private mostrarRecusa(acao: AcaoDaContencao, problema: ProblemDetails): void {
+    this.erro.set(
+      this.campo.recusar(problema)
+        ? textoDaCausaGeral(problema)
+        : this.textoDaRecusa(acao, problema),
+    );
   }
 
   private textoDaRecusa(acao: AcaoDaContencao, problema: ProblemDetails): string {

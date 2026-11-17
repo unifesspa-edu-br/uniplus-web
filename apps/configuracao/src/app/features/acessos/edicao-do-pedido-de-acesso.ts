@@ -18,6 +18,7 @@ import {
   type ProblemDetails,
   ProblemI18nService,
   proximaChave,
+  separarCausas,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -34,6 +35,7 @@ import { PedirAcessoStore } from './pedir-acesso.store';
 import { PRAZO_NO_PASSADO, fimDoDia, hojeNoFuso, prazoNoPassado } from './prazo-de-vigencia';
 import { marcarRecusaDoServidor, mensagemDasRecusasDoServidor } from '../../shared/formulario';
 import { TermoNaCriacao } from './termo/termo-na-criacao';
+import { temCausaGeral } from '../../shared/formulario';
 
 type ParaQuem = 'mim' | 'outra';
 
@@ -266,8 +268,14 @@ export class EdicaoDoPedidoDeAcesso {
       void this.termo.trocarPelaVigente(this.aceiteNoEnvio());
     this.corpoPendente = mesmaChave ? corpo : null;
     this.aguardandoConfirmacao.set(inconclusiva);
-    if (!inconclusiva && this.aplicarErrosDeCampo(resultado.problem)) return;
-    const motivo = mensagemDaRecusa(this.problemas, this.notificacoes, resultado.problem);
+    const marcou = !inconclusiva && this.aplicarErrosDeCampo(resultado.problem);
+    if (!marcou || temCausaGeral(resultado.problem)) {
+      this.mostrarErro(resultado.problem, inconclusiva);
+    }
+  }
+
+  private mostrarErro(problema: ProblemDetails, inconclusiva: boolean): void {
+    const motivo = mensagemDaRecusa(this.problemas, this.notificacoes, problema);
     this.erro.set(
       inconclusiva
         ? `${motivo} Não foi possível saber se o pedido foi registrado. Confira a lista de pedidos; se ele não aparecer, envie de novo: o pedido é o mesmo e não se repete.`
@@ -289,7 +297,7 @@ export class EdicaoDoPedidoDeAcesso {
 
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = false;
-    for (const erro of problema.errors ?? []) {
+    for (const erro of separarCausas(problema.errors).deCampo) {
       const nome = (Object.keys(this.form.controls) as (keyof typeof this.form.controls)[]).find(
         (campo) => campo.toLowerCase() === erro.field.toLowerCase(),
       );

@@ -35,8 +35,9 @@ export interface NotificationOptions {
  * `title`/`detail` vêm do próprio `problem` — o backend já garante PII-safe.
  *
  * **LGPD:** quem registrar override é responsável por garantir que o texto
- * não interpole `errors[].message`/`detail` raw. Use `errors[].field` +
- * `errors[].code` como chaves para mensagens estáticas pt-BR.
+ * não interpole `errors[].message`/`detail` raw. Use `errors[].code` (com
+ * `errors[].field`, quando a causa aponta um campo) como chave para mensagens
+ * estáticas pt-BR.
  */
 export interface NotificationFromProblemOptions extends NotificationOptions {
   readonly title?: string;

@@ -28,11 +28,10 @@ import { aguardarRecarga } from '../../shared/foco';
 import { FasesCanonicasStore } from './fases-canonicas.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
@@ -253,9 +252,8 @@ export class EdicaoDasFasesCanonicas {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
 
   private renovarChave(): void {

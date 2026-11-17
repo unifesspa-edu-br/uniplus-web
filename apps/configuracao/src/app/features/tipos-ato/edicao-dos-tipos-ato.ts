@@ -28,11 +28,10 @@ import {
 } from './tipo-ato-form';
 import { TiposAtoStore } from './tipos-ato.store';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoAtoPublicado.VigenciaSobreposta` (409 em POST e PUT, sem `errors[]`). */
@@ -242,9 +241,8 @@ export class EdicaoDosTiposAto {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErrosDeValidacao(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
 
   private renovarChave(): void {

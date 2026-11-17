@@ -12,7 +12,12 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ProblemDetails, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import {
+  ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+  STATUS_HTTP,
+} from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -179,11 +184,13 @@ export class EdicaoDoConteudoDoModelo {
     if (deveRotacionarIdempotencyKey(problem)) {
       this.chaveDaGravacao = idempotencyKey.create();
     }
-    const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
-    const doConteudo = erros.filter(
+    const { deCampo, gerais } = separarCausas(
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? problem.errors : undefined,
+    );
+    const doConteudo = deCampo.filter(
       (erro) => campoDoCabecalho(erro.field) === null && !ehRecusaDeDocumento(erro.field),
     );
-    const dosDocumentos = erros.filter((erro) => ehRecusaDeDocumento(erro.field));
+    const dosDocumentos = deCampo.filter((erro) => ehRecusaDeDocumento(erro.field));
     const marcouCampo = this.marcarCamposDoCabecalho(problem);
 
     const recusas = distribuirRecusas(doConteudo, enviado);
@@ -191,13 +198,8 @@ export class EdicaoDoConteudoDoModelo {
     this.recusasDosDocumentos.set(
       distribuirRecusasDosDocumentos(dosDocumentos, enviado.documentosExigidos ?? []),
     );
-    this.recusasGerais.set(
-      recusas.gerais.length > 0
-        ? recusas.gerais
-        : erros.length > 0
-          ? ['Há recusas nos campos marcados abaixo.']
-          : [this.problemI18n.resolve(problem).title],
-    );
+    const resumo = [...recusas.gerais, ...gerais.map((causa) => causa.message)];
+    this.recusasGerais.set(this.resumoDaRecusa(problem, deCampo.length, resumo));
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
     if (!marcouCampo) this.focarResumo();
   }
@@ -210,10 +212,20 @@ export class EdicaoDoConteudoDoModelo {
     );
   }
 
+  /** O resumo diz as recusas gerais; sem elas, aponta os campos marcados ou dá o motivo da falha. */
+  private resumoDaRecusa(
+    problem: ProblemDetails,
+    comCampo: number,
+    gerais: readonly string[],
+  ): readonly string[] {
+    if (gerais.length > 0) return gerais;
+    if (comCampo > 0) return ['Há recusas nos campos marcados abaixo.'];
+    return [this.problemI18n.resolve(problem).title];
+  }
+
   private marcarCamposDoCabecalho(problem: ProblemDetails): boolean {
-    const recusas =
-      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? recusasDoProblema(problem) : [];
-    return marcarRecusasDosCampos(recusas, this.form, campoDoCabecalho);
+    if (problem.status !== STATUS_HTTP.RECUSA_DE_NEGOCIO) return false;
+    return marcarRecusasDosCampos(recusasDoProblema(problem).deCampo, this.form, campoDoCabecalho);
   }
 }
 

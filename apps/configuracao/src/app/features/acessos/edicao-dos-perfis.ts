@@ -1,6 +1,6 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ProblemI18nService, type ProblemDetails } from '@uniplus/shared-core/http';
+import { type ProblemDetails, ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import type { CategoriaDaRemocao, PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { descartarRecusasDoServidor, marcarRecusaDoServidor } from '../../shared/formulario';
@@ -24,7 +24,8 @@ import { EscritaDoPerfil } from './versoes/escrita-do-perfil';
 
 const SEM_PERMISSAO = 'Marque ao menos uma permissão.';
 const SEM_DOCUMENTO = 'Anexe o PDF do documento instituidor.';
-const SEM_MUDANCA = 'Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.';
+const SEM_MUDANCA =
+  'Nada mudou. Altere o nome, a descrição, as permissões ou o documento para enviar.';
 const DOCUMENTO_NAO_ENVIADO =
   'A versão foi registrada, mas o documento não foi enviado. Abra o perfil e envie o documento.';
 
@@ -121,7 +122,11 @@ export class EdicaoDosPerfis {
     descartarRecusasDoServidor(this.form);
     const plano = this.planoPendente ?? this.planoValido();
     if (plano === null) return;
-    await this.escrita.executar('salvando', () => this.enviar(plano), (m) => this.erroDoForm.set(m));
+    await this.escrita.executar(
+      'salvando',
+      () => this.enviar(plano),
+      (m) => this.erroDoForm.set(m),
+    );
   }
 
   private abrir(base: PerfilDto | null): void {
@@ -237,9 +242,7 @@ export class EdicaoDosPerfis {
     this.envioEmAberto.set(inconclusivo);
     const motivo = this.texto(problema);
     if (!inconclusivo && this.aplicarErrosDeCampo(problema)) return;
-    this.erroDoForm.set(
-      inconclusivo ? `${motivo} ${INCONCLUSIVO[plano.tipo]}` : motivo,
-    );
+    this.erroDoForm.set(inconclusivo ? `${motivo} ${INCONCLUSIVO[plano.tipo]}` : motivo);
   }
 
   private texto(problema: ProblemDetails): string {
@@ -253,8 +256,9 @@ export class EdicaoDosPerfis {
   private aplicarErrosDeCampo(problema: ProblemDetails): boolean {
     let aplicado = problema.code === CODIGO_NOME_DUPLICADO;
     if (aplicado) this.marcar('nome', problema.code, this.texto(problema));
-    const semCampo: string[] = [];
-    for (const erro of problema.errors ?? []) {
+    const { deCampo, gerais } = separarCausas(problema.errors);
+    const semCampo: string[] = gerais.map((causa) => causa.message);
+    for (const erro of deCampo) {
       const marcado = this.aplicarErro(erro.field, erro.code, erro.message);
       if (!marcado) semCampo.push(erro.message);
       aplicado = marcado || aplicado;
@@ -274,7 +278,11 @@ export class EdicaoDosPerfis {
     return true;
   }
 
-  private marcar(nome: keyof ReturnType<typeof criarFormularioDePerfil>['controls'], code: string, message: string): void {
+  private marcar(
+    nome: keyof ReturnType<typeof criarFormularioDePerfil>['controls'],
+    code: string,
+    message: string,
+  ): void {
     marcarRecusaDoServidor(this.form.controls[nome], code, message);
   }
 }

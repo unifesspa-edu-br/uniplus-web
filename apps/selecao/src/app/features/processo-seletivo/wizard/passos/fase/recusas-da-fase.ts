@@ -1,4 +1,4 @@
-import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { separarCausas, type CausaDeCampo, type ProblemDetails } from '@uniplus/shared-core/http';
 
 import { campoDaRegraNoCaminho, recusaDaRegra } from '../../shared/deliberacao/recusas-da-regra';
 
@@ -263,12 +263,11 @@ export function traduzirRecusa(
   nomeDaFase: (indice: number) => string,
 ): RecusaTraduzida {
   const porCampo = new Map<CampoDaFase, string>();
-  const gerais: string[] = [];
+  const { deCampo, gerais: causasGerais } = separarCausas(problema.errors);
+  const gerais = causasGerais.map((causa) => causa.message);
+  if (deCampo.length === 0 && gerais.length === 0) return { porCampo, gerais: [problema.title] };
 
-  const erros = problema.errors ?? [];
-  if (erros.length === 0) return { porCampo, gerais: [problema.title] };
-
-  for (const erro of erros) {
+  for (const erro of deCampo) {
     const destino = destinoDoErro(erro, problema.title, indiceDaFaseAberta, nomeDaFase);
     if ('geral' in destino) {
       gerais.push(destino.geral);
@@ -282,12 +281,10 @@ export function traduzirRecusa(
   return { porCampo, gerais };
 }
 
-type ErroDaRecusa = NonNullable<ProblemDetails['errors']>[number];
-
 type DestinoDoErro = { readonly geral: string } | { campo: CampoDaFase; mensagem: string };
 
 function destinoDoErro(
-  erro: ErroDaRecusa,
+  erro: CausaDeCampo,
   titulo: string,
   indiceDaFaseAberta: number,
   nomeDaFase: (indice: number) => string,
@@ -302,7 +299,7 @@ function destinoDoErro(
 
 /** Sob o campo quando a recusa é da fase aberta e o código o tem; do contrário, ao resumo. */
 function destinoDaRecusaConhecida(
-  erro: ErroDaRecusa,
+  erro: CausaDeCampo,
   titulo: string,
   onde: string,
   naFaseAberta: boolean,
@@ -314,13 +311,13 @@ function destinoDaRecusaConhecida(
 }
 
 /** A recusa já traduzida para o erro: a da regra de uma banca, ou a que o código tem na tabela. */
-function recusaConhecida(erro: ErroDaRecusa): { campo: CampoDaFase; mensagem: string } | undefined {
+function recusaConhecida(erro: CausaDeCampo): { campo: CampoDaFase; mensagem: string } | undefined {
   return recusaDaBancaNaFase(erro) ?? MENSAGEM_POR_CODIGO.get(erro.code);
 }
 
 /** A recusa à regra de deliberação de uma banca, sob o campo dela quando o caminho o aponta. */
 export function recusaDaBancaNaFase(
-  erro: Pick<ErroDaRecusa, 'code' | 'field'> & { readonly message?: string },
+  erro: Pick<CausaDeCampo, 'code' | 'field'> & { readonly message?: string },
 ): { campo: CampoDaFase; mensagem: string } | undefined {
   const regra = recusaDaRegra(erro.code, erro.message);
   if (regra === null) return undefined;

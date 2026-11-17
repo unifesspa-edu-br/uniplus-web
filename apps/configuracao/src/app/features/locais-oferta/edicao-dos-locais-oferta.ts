@@ -2,9 +2,10 @@ import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ApiResult,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -35,7 +36,7 @@ import { LocaisOfertaStore } from './locais-oferta.store';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -251,7 +252,7 @@ export class EdicaoDosLocaisOferta {
       problem.errors.length > 0
     ) {
       this.renovarIdempotencyKey();
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
     if (ehErroDeEndereco(problem.code)) {
@@ -271,10 +272,10 @@ export class EdicaoDosLocaisOferta {
     this.idempotencyKeyAtual.set(idempotencyKey.create());
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
     let erroEndereco: string | null = null;
-    for (const erro of errors) {
+    for (const erro of causas.deCampo) {
       if (ehErroDeEndereco(erro.field) || ehErroDeEndereco(erro.code)) {
         erroEndereco ??= erro.message;
         aplicouAlgum = true;
@@ -289,10 +290,6 @@ export class EdicaoDosLocaisOferta {
 
     this.enderecoErro.set(erroEndereco);
 
-    if (aplicouAlgum) {
-      this.formError.set(null);
-      return;
-    }
-    this.formError.set(MENSAGEM_SEM_MAPEAMENTO);
+    this.formError.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 }

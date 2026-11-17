@@ -5,9 +5,10 @@ import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -31,7 +32,7 @@ import {
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type Escrita = AcaoTermo | 'criar';
@@ -280,7 +281,7 @@ export class EdicaoDosTermosConsentimento {
     if (problem.code === CODIGO_DE_CONFLITO_DE_CONCORRENCIA) this.leituraDefasada.set(true);
     const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? problem.errors : undefined;
     if (erros?.length && (escrita === 'criar' || escrita === 'rascunho')) {
-      this.aplicarRecusaDosCampos(escrita, erros);
+      this.aplicarRecusaDosCampos(escrita, separarCausas(erros));
       return;
     }
     const erro = escrita === 'criar' ? this.formError : this.acaoErro;
@@ -288,14 +289,11 @@ export class EdicaoDosTermosConsentimento {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarRecusaDosCampos(
-    escrita: 'criar' | 'rascunho',
-    errors: ReadonlyArray<ProblemValidationError>,
-  ): void {
+  private aplicarRecusaDosCampos(escrita: 'criar' | 'rascunho', causas: CausasDoProblema): void {
     const form = escrita === 'criar' ? this.criarForm : this.rascunhoForm;
     const controles: Partial<Record<keyof CriarForm, FormControl<string>>> = form.controls;
     let aplicouAlgum = false;
-    for (const erro of errors) {
+    for (const erro of causas.deCampo) {
       const nome = controleDoCampoDoServidor(erro.field);
       const controle = nome === null ? undefined : controles[nome];
       if (controle === undefined) continue;
@@ -303,7 +301,7 @@ export class EdicaoDosTermosConsentimento {
       aplicouAlgum = true;
     }
     (escrita === 'criar' ? this.formError : this.acaoErro).set(
-      aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO,
+      textoDaAreaGeral(aplicouAlgum, causas),
     );
   }
 

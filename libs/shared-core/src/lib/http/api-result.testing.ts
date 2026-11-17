@@ -1,5 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { ApiFailure, ApiOk, apiFailure, apiOk } from './api-result';
+import { CausaGeral } from './causas-do-problema';
 import { ProblemDetails, ProblemValidationError } from './problem-details';
 
 export function okResult<T>(data: T, status = 200, headers = new HttpHeaders()): ApiOk<T> {
@@ -32,6 +33,14 @@ export function mockValidationError(
     field: 'campoExemplo',
     code: 'Campo.Invalido',
     message: 'Valor inválido',
+    ...overrides,
+  };
+}
+
+export function mockCausaGeral(overrides: Partial<CausaGeral> = {}): CausaGeral {
+  return {
+    code: 'Causa.Geral',
+    message: 'Não foi possível concluir a operação.',
     ...overrides,
   };
 }

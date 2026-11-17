@@ -3,9 +3,10 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -36,7 +37,7 @@ import { UnidadesStore } from './unidades.store';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
@@ -262,7 +263,7 @@ export class EdicaoDasUnidades {
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.renovarChave();
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
       return;
     }
     const campoDuplicado = CAMPO_DO_CONFLITO[problem.code];
@@ -285,9 +286,9 @@ export class EdicaoDasUnidades {
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
-    for (const recusa of errors) {
+    for (const recusa of causas.deCampo) {
       if (ehErroDeEndereco(recusa.field) || ehErroDeEndereco(recusa.code)) {
         this.erroDaCidade.update((atual) => atual ?? recusa.message);
         aplicouAlgum = true;
@@ -298,9 +299,7 @@ export class EdicaoDasUnidades {
       marcarRecusaDoServidor(this.form.controls[nome], recusa.code, recusa.message);
       aplicouAlgum = true;
     }
-    if (!aplicouAlgum) {
-      this.erro.set(MENSAGEM_SEM_MAPEAMENTO);
-    }
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
   private renovarChave(): void {

@@ -213,4 +213,16 @@ describe('tradução das recusas do domínio', () => {
       expect(traduzida.porCampo.get('bancasRequeridas')).toContain('tire o recorte');
     });
   });
+
+  it('leva a causa geral ao resumo com a mensagem dela, sem título genérico nem campo', () => {
+    const geral: ProblemDetails = {
+      ...recusa([]),
+      errors: [{ code: 'uniplus.selecao.bloqueado', message: 'O cronograma está bloqueado.' }],
+    };
+
+    const traduzida = traduzirRecusa(geral, 0, nomeDaFase);
+
+    expect(traduzida.gerais).toEqual(['O cronograma está bloqueado.']);
+    expect(traduzida.porCampo.size).toBe(0);
+  });
 });

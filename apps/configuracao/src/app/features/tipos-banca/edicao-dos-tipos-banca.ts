@@ -21,11 +21,10 @@ import {
   valoresDaBanca,
 } from './tipo-banca-form';
 import {
+  aplicarRecusasDoProblema,
   descartarRecusasDoServidor,
-  marcarRecusasDosCampos,
   recusasDoProblema,
-  type RecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  type RecusasDoProblema,
 } from '../../shared/formulario';
 type Escrita = 'salvando' | 'removendo';
 
@@ -193,9 +192,8 @@ export class EdicaoDosTiposBanca {
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
-  private aplicarErros(recusas: readonly RecusaDoServidor[]): void {
-    const aplicou = marcarRecusasDosCampos(recusas, this.form, controleDoCampoDoServidor);
-    this.erro.set(aplicou ? null : MENSAGEM_SEM_MAPEAMENTO);
+  private aplicarErros(recusas: RecusasDoProblema): void {
+    this.erro.set(aplicarRecusasDoProblema(recusas, this.form, controleDoCampoDoServidor));
   }
   private renovarChave(): void {
     this.chave.set(idempotencyKey.create());

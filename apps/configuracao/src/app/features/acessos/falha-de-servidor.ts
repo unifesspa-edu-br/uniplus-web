@@ -1,7 +1,8 @@
 import { effect, untracked, type Signal } from '@angular/core';
-import type { ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import { ProblemDetails, ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
 import type { NotificationService } from '@uniplus/shared-core/notifications';
 import { textoDaRecusa } from './mensagens-de-acesso';
+import { textoDasCausasGerais } from '../../shared/formulario';
 
 const PRIMEIRO_STATUS_DE_SERVIDOR = 500;
 
@@ -13,8 +14,9 @@ function falhaDeServidor(problema: ProblemDetails): boolean {
 export type MensagensDoContexto = Readonly<Record<string, { title: string; detail?: string }>>;
 
 /**
- * O texto da recusa para a tela. A falha de servidor (5xx), que a pessoa não resolve, também vira
- * notificação com o código de rastreio; a recusa 4xx fica só no lugar onde a tela a mostra.
+ * O texto da recusa para a tela: as mensagens das causas gerais no lugar do título do código, quando
+ * há, com a orientação do código depois. A falha de servidor (5xx), que a pessoa não resolve, também
+ * vira notificação com o código de rastreio; a recusa 4xx fica só no lugar onde a tela a mostra.
  */
 export function mensagemDaRecusa(
   problemas: ProblemI18nService,
@@ -26,7 +28,8 @@ export function mensagemDaRecusa(
   if (falhaDeServidor(problema)) {
     notificacoes.errorFromProblem(problema, { title: mensagem.title });
   }
-  return textoDaRecusa(mensagem);
+  const geral = textoDasCausasGerais(separarCausas(problema.errors).gerais);
+  return geral === null ? textoDaRecusa(mensagem) : textoDaRecusa({ ...mensagem, title: geral });
 }
 
 /**

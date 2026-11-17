@@ -1,9 +1,11 @@
 import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import {
   isApiOk,
-  ProblemI18nService,
-  STATUS_HTTP,
+  type CausasDoProblema,
   type ProblemDetails,
+  ProblemI18nService,
+  separarCausas,
+  STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
   distribuirRecusas,
@@ -175,20 +177,29 @@ export class GravacaoDosFormularios {
     problem: ProblemDetails,
     conteudo: ConteudoDoFormulario,
   ): readonly string[] {
-    const erros = problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? (problem.errors ?? []) : [];
-    if (erros.length === 0) {
+    const { deCampo, gerais } = separarCausas(
+      problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? problem.errors : undefined,
+    );
+    if (deCampo.length === 0 && gerais.length === 0) {
       this.recusas.set(new Map());
+      const nome = nomeDaFinalidade(finalidade);
       return [
-        `O formulário de ${nomeDaFinalidade(finalidade)} não foi gravado. ${this.problemI18n.resolve(problem).title}`,
+        `O formulário de ${nome} não foi gravado. ${this.problemI18n.resolve(problem).title}`,
       ];
     }
-    const recusas = distribuirRecusas(erros, semDadosBasicos(conteudo));
+    return this.mensagensDoPasso(finalidade, { deCampo, gerais }, conteudo);
+  }
+
+  private mensagensDoPasso(
+    finalidade: string,
+    causas: CausasDoProblema,
+    conteudo: ConteudoDoFormulario,
+  ): readonly string[] {
+    const recusas = distribuirRecusas(causas.deCampo, semDadosBasicos(conteudo));
     this.recusas.set(new Map([[finalidade, recusas]]));
-    return recusas.gerais.length > 0
-      ? recusas.gerais
-      : [
-          `O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`,
-        ];
+    const mensagens = [...recusas.gerais, ...causas.gerais.map((causa) => causa.message)];
+    const marcadas = `O formulário de ${nomeDaFinalidade(finalidade)} foi recusado: veja os campos marcados na aba dele.`;
+    return mensagens.length > 0 ? mensagens : [marcadas];
   }
 
   /**
@@ -245,17 +256,27 @@ function planoDeEnvio(
   if ('valid' in paraEnvio) return paraEnvio;
 
   const gravados = (finalidade: string) => formularioDaFinalidade(processo.formularios, finalidade);
-  const ordem = ordemDeGravacao(
-    paraEnvio.map((formulario) => {
-      const gravado = gravados(formulario.finalidade);
-      return {
-        finalidade: formulario.finalidade,
-        servidor: gravado === null ? null : conteudoDoFormulario(gravado),
-        desejado: formulario.conteudo,
-      };
-    }),
-  );
+  const ordem = ordemDosFormularios(paraEnvio, gravados);
   return { paraEnvio, ordem, faseIdPorCodigo, gravados };
+}
+
+function ordemDosFormularios(
+  formularios: PlanoDeEnvio['paraEnvio'],
+  gravados: PlanoDeEnvio['gravados'],
+): readonly string[] {
+  return ordemDeGravacao(formularios.map((formulario) => compararFormulario(formulario, gravados)));
+}
+
+function compararFormulario(
+  formulario: PlanoDeEnvio['paraEnvio'][number],
+  gravados: PlanoDeEnvio['gravados'],
+) {
+  const gravado = gravados(formulario.finalidade);
+  return {
+    finalidade: formulario.finalidade,
+    servidor: gravado === null ? null : conteudoDoFormulario(gravado),
+    desejado: formulario.conteudo,
+  };
 }
 
 /** Cada formulário com o id da fase; a recusa quando a fase de algum ainda não está gravada. */

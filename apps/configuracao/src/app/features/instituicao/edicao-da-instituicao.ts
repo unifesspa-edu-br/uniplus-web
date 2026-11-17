@@ -3,9 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
 import {
   ApiResult,
+  type CausasDoProblema,
   ProblemDetails,
   ProblemI18nService,
-  ProblemValidationError,
+  separarCausas,
   STATUS_HTTP,
 } from '@uniplus/shared-core/http';
 import {
@@ -33,7 +34,7 @@ import { InstituicaoStore } from './instituicao.store';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  MENSAGEM_SEM_MAPEAMENTO,
+  textoDaAreaGeral,
 } from '../../shared/formulario';
 
 /**
@@ -256,7 +257,7 @@ export class EdicaoDaInstituicao {
       this.renovarChave();
     }
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.aplicarErrosDeValidacao(problem.errors);
+      this.aplicarErrosDeValidacao(separarCausas(problem.errors));
     } else if (UNIDADE_RAIZ_INVALIDA_CODES.has(problem.code)) {
       marcarRecusaDoServidor(
         this.form.controls['unidadeRaizId'],
@@ -284,10 +285,10 @@ export class EdicaoDaInstituicao {
     }
   }
 
-  private aplicarErrosDeValidacao(errors: ReadonlyArray<ProblemValidationError>): void {
+  private aplicarErrosDeValidacao(causas: CausasDoProblema): void {
     let aplicouAlgum = false;
     let erroEndereco: string | null = null;
-    for (const recusa of errors) {
+    for (const recusa of causas.deCampo) {
       if (ehErroDeEndereco(recusa.field) || ehErroDeEndereco(recusa.code)) {
         erroEndereco ??= recusa.message;
         aplicouAlgum = true;
@@ -300,7 +301,7 @@ export class EdicaoDaInstituicao {
       }
     }
     this.erroDoEndereco.set(erroEndereco);
-    this.erro.set(aplicouAlgum ? null : MENSAGEM_SEM_MAPEAMENTO);
+    this.erro.set(textoDaAreaGeral(aplicouAlgum, causas));
   }
 
   private renovarChave(): void {
