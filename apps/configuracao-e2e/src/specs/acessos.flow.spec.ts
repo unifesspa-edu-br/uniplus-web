@@ -15,13 +15,23 @@ import {
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
- * Administração de acesso (web#1306): pedido com dupla aprovação, filas, concessões e revogação.
+ * Administração de acesso: pedido com dupla aprovação, filas, concessões e revogação.
  * Convenção do repo: runtime-config e API mockados por `page.route`; autenticação real
  * (Keycloak) via projeto `fluxo-chromium`. A pessoa de cada passo é a que as permissões
  * efetivas mockadas descrevem.
  */
 
 const PEDIDO_ID = '01960000-0000-7000-0000-00000000cc01';
+
+const TELAS_DE_ACESSO = [
+  { nome: 'Pedidos', caminho: '/acessos/pedidos' },
+  { nome: 'Novo pedido', caminho: '/acessos/pedidos/novo' },
+  { nome: 'Detalhe do pedido', caminho: `/acessos/pedidos/${PEDIDO_ID}` },
+  { nome: 'Fila do gestor', caminho: '/acessos/fila-do-gestor' },
+  { nome: 'Histórico', caminho: '/acessos/historico' },
+  { nome: 'Concessões', caminho: '/acessos/concessoes' },
+  { nome: 'Perfis', caminho: '/acessos/perfis' },
+];
 
 test.describe('Configuração — administração de acesso @flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -252,23 +262,21 @@ test.describe('Configuração — administração de acesso @flow', () => {
     expect(semCursor).toHaveLength(2);
   });
 
-  test('as telas de acesso não têm violação de acessibilidade', async ({ page }) => {
-    await mockApiDeAcesso(page, [pedidoSeed()]);
-    await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);
+  test.describe('acessibilidade das telas de acesso', () => {
+    test.beforeEach(async ({ page }) => {
+      await mockApiDeAcesso(page, [pedidoSeed()]);
+      await mockPermissoesEfetivas(page, PERMISSOES_DO_DIOGO);
+    });
 
-    for (const rota of [
-      '/acessos/pedidos',
-      '/acessos/pedidos/novo',
-      `/acessos/pedidos/${PEDIDO_ID}`,
-      '/acessos/fila-do-gestor',
-      '/acessos/historico',
-      '/acessos/concessoes',
-      '/acessos/perfis',
-    ]) {
-      await page.goto(rota);
-      await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-      const { violations } = await runAxeWcagAA(page);
-      expect(violations, `${rota}: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
+    for (const { nome, caminho } of TELAS_DE_ACESSO) {
+      test(`a tela "${nome}" não tem violação de acessibilidade`, async ({ page }) => {
+        await page.goto(caminho);
+        await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
+        const { violations } = await runAxeWcagAA(page);
+
+        expect(violations, `${caminho}: ${JSON.stringify(violations, null, 2)}`).toEqual([]);
+      });
     }
   });
 });
