@@ -116,13 +116,12 @@ export interface RecursoDaFase {
 }
 
 /**
- * O que um procedimento de recurso contesta: um item de avaliação ou uma área do ENEM. Sem alvo,
- * o procedimento vale para a decisão inteira.
+ * O que um procedimento de recurso contesta: um item de avaliação ou uma área do ENEM. O
+ * procedimento sem alvo vale para o tipo de decisão inteiro.
  */
-export interface AlvoDoProcedimentoDeRecurso {
-  readonly itemDeAvaliacaoId: string | null;
-  readonly areaDoEnem: string | null;
-}
+export type AlvoDoProcedimentoDeRecurso =
+  | { readonly itemDeAvaliacaoId: string }
+  | { readonly areaDoEnem: string };
 
 /**
  * Como o recurso é julgado para um tipo de decisão: a regra do catálogo que o conduz. A `sugestao`
@@ -142,6 +141,8 @@ export interface ProcedimentoDeRecurso {
  * recurso apontam para ele, então é reenviado quando o item existe e fica `null` no item novo.
  */
 export interface ItemDeAvaliacaoDaEtapa {
+  /** Chave já atribuída no documento, transportada para a apresentação sem usar o id como substituto. */
+  readonly chave?: string;
   readonly id: string | null;
   readonly rotulo: string;
   /** Texto até a conversão, como os demais campos numéricos do editor. */

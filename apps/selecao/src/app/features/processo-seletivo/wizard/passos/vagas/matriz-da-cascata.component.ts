@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
-import { MatrizDaRegra } from './cascata-de-remanejamento';
+import type { MatrizDaCascata } from '../../documento/edicoes/cascata-de-remanejamento.edicao';
 
 @Component({
   selector: 'table[selMatrizDaCascata]',
@@ -8,7 +8,7 @@ import { MatrizDaRegra } from './cascata-de-remanejamento';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MatrizDaCascataComponent {
-  readonly matriz = input.required<MatrizDaRegra>();
+  readonly matriz = input.required<MatrizDaCascata>();
 
   /**
    * Os rótulos ordinais das colunas — "1ª", "2ª", … —, um por posição de preferência. Saem do

@@ -1,4 +1,9 @@
 import {
+  camposDaInclusaoDoCandidato,
+  camposDaMudanca,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
+import {
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -48,7 +53,8 @@ import {
 @Component({
   selector: 'ui-grupo-do-formulario',
   standalone: true,
-  imports: [ValorLegivelDirective, 
+  imports: [
+    ValorLegivelDirective,
     EditorDeCondicoesComponent,
     OcorrenciasDoGrupoComponent,
     CamposDoGrupoComponent,
@@ -196,6 +202,7 @@ import {
         [remocoesTravadas]="remocoesTravadas()"
         [fatosIndisponiveis]="fatosIndisponiveis()"
         (grupoChange)="emitir($event)"
+        (camposEditados)="camposEditados.emit($event)"
         (anuncio)="anuncio.emit($event)"
       />
 
@@ -230,6 +237,7 @@ export class GrupoDoFormularioComponent {
   /** Os fatos de outra finalidade, que não podem entrar neste formulário. */
   readonly fatosIndisponiveis = input<readonly string[]>([]);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly grupoChange = output<GrupoDoFormulario>();
   readonly mover = output<-1 | 1>();
   readonly remover = output<void>();
@@ -295,6 +303,7 @@ export class GrupoDoFormularioComponent {
   }
 
   protected trocar(mudanca: Partial<GrupoDoFormulario>): void {
+    this.camposEditados.emit(camposDaMudanca(mudanca));
     this.emitir({ ...this.grupo(), ...mudanca });
   }
 
@@ -333,9 +342,15 @@ export class GrupoDoFormularioComponent {
       this.anuncio.emit(resultado.recusa);
       return;
     }
+    const campos = ligado ? camposDaInclusaoDoCandidato(resultado.grupo) : [['incluiCandidato']];
+    this.camposEditados.emit(campos);
     this.emitir(resultado.grupo);
+    this.anunciarCandidato(resultado.grupo);
+  }
+
+  private anunciarCandidato(grupo: GrupoDoFormulario): void {
     this.anuncio.emit(
-      resultado.grupo.incluiCandidato
+      grupo.incluiCandidato
         ? 'O candidato passa a ser um dos membros: o parentesco é o primeiro campo, sempre obrigatório.'
         : 'O candidato deixa de ser um dos membros.',
     );

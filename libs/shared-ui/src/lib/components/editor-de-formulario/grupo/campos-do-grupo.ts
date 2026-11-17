@@ -1,3 +1,4 @@
+import { camposNaParte, type CamposEditadosDoFormulario } from '../modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -73,6 +74,7 @@ import {
             [recusasDasRestricoes]="recusasDasRestricoes().get(campo.fatoCodigo) ?? []"
             [travadoPor]="travaDo(campo)"
             [remocaoTravadaPor]="remocoesTravadas().get(campo.fatoCodigo) ?? null"
+            (camposEditados)="registrarCampo(campo.fatoCodigo, $event)"
             (itemChange)="grupoChange.emit(comCampoDoGrupo(grupo(), $event))"
             (mover)="moverOCampo(campo, $event)"
             (remover)="removerOCampo(campo)"
@@ -133,7 +135,12 @@ export class CamposDoGrupoComponent {
 
   readonly grupoChange = output<GrupoDoFormulario>();
   /** O que anunciar na região de status do editor: o acréscimo, o movimento ou a recusa. */
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly anuncio = output<string>();
+
+  protected registrarCampo(codigo: string, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(camposNaParte(['subitens', codigo], campos));
+  }
 
   protected readonly escolhido = signal('');
   protected readonly nome = computed(() => this.grupo().rotulo.trim() || this.grupo().codigo);
@@ -236,14 +243,18 @@ export class CamposDoGrupoComponent {
       (grupo) => {
         const posicao =
           camposDoGrupo(grupo).findIndex((c) => c.fatoCodigo === campo.fatoCodigo) + 1;
-        const prefixo = this.idDoCampo(campo.fatoCodigo);
-        focarDepois(
-          this.injector,
-          `${prefixo}-${direcao < 0 ? 'subir' : 'descer'}`,
-          `${prefixo}-${direcao < 0 ? 'descer' : 'subir'}`,
-        );
+        this.focarMovimento(campo, direcao);
         return `“${campo.rotulo}” movido para a posição ${posicao} de ${grupo.subitens.length} em ${this.nome()}.`;
       },
+    );
+  }
+
+  private focarMovimento(campo: ItemDoFormulario, direcao: -1 | 1): void {
+    const prefixo = this.idDoCampo(campo.fatoCodigo);
+    focarDepois(
+      this.injector,
+      `${prefixo}-${direcao < 0 ? 'subir' : 'descer'}`,
+      `${prefixo}-${direcao < 0 ? 'descer' : 'subir'}`,
     );
   }
 

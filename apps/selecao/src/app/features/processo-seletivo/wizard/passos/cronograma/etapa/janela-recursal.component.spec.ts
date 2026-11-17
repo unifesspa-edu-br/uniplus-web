@@ -134,7 +134,7 @@ describe('JanelaRecursalComponent', () => {
       procedimentos: [
         {
           tipoDeDecisao: 'NOTA_DA_ETAPA',
-          alvo: { itemDeAvaliacaoId: 'item-1', areaDoEnem: null },
+          alvo: { itemDeAvaliacaoId: 'item-1' },
           regraCodigo: 'PROCEDIMENTO-RECURSO-COLEGIADO',
           regraVersao: 'v1',
           sugestao: 'PROCEDIMENTO-RECURSO-MONOCRATICO',

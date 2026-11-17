@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
 import {
-  ARGUMENTOS_DO_RECURSO,
+  PARAMETROS_DO_RECURSO,
   type EtapaDoServidorParcial,
   etapaDoServidor,
   recursoDaEtapaDoServidor,
@@ -16,14 +16,18 @@ import { etapasDe } from '../../shared/hidratacao';
 import { dtoComCronograma } from '../../shared/hidratacao.testing';
 import { comoComandoDeEtapa, comoComandoDeFase, recursoResolvido } from './cronograma-para-comando';
 
-type ArgumentosDoRecurso = EtapaProcessoDto['publicacoes']['recursos'][number]['args'];
+type ParametrosDoRecurso = EtapaProcessoDto['publicacoes']['recursos'][number]['parametros'];
 
 /**
  * O certame como o servidor o devolve, reduzido à etapa e à janela recursal — é o único
  * recorte que estes testes leem, e montar o DTO inteiro só esconderia o que está em jogo.
  */
-function detalheComRecursoDaEtapa(args: Partial<ArgumentosDoRecurso> = {}): ProcessoSeletivoDto {
-  const recurso = recursoDaEtapaDoServidor({ args: { ...ARGUMENTOS_DO_RECURSO, ...args } });
+function detalheComRecursoDaEtapa(
+  parametros: Partial<ParametrosDoRecurso> = {},
+): ProcessoSeletivoDto {
+  const recurso = recursoDaEtapaDoServidor({
+    parametros: { ...PARAMETROS_DO_RECURSO, ...parametros },
+  });
   return dtoComCronograma({
     etapas: [
       etapaDoServidor({

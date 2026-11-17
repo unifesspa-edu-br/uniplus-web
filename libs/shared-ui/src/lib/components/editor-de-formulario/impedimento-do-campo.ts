@@ -1,3 +1,4 @@
+import type { CamposEditadosDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -26,6 +27,7 @@ import {
 
 /** O tamanho da mensagem ao candidato (`FormaDoItem.MensagemDoImpedimentoMaxLength`). */
 const MENSAGEM_MAX = 500;
+const CAMPOS_DO_IMPEDIMENTO = ['impedimento', 'obrigatoriedade', 'predicadoObrigatoriedade'];
 
 /**
  * O impedimento da inscrição por um campo: quando a resposta dele — sozinha ou junto de respostas
@@ -118,6 +120,7 @@ export class ImpedimentoDoCampoComponent {
   readonly idBase = input.required<string>();
   readonly disabled = input<boolean>(false);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly itemChange = output<ItemDoFormulario>();
 
   protected readonly mensagemMax = MENSAGEM_MAX;
@@ -143,19 +146,20 @@ export class ImpedimentoDoCampoComponent {
   /** Ligar põe a condição sobre o próprio campo e torna o campo obrigatório; desligar tira o impedimento inteiro. */
   protected alternar(): void {
     if (this.ligado()) {
-      this.itemChange.emit({ ...this.item(), impedimento: null });
+      this.publicar({ ...this.item(), impedimento: null }, ['impedimento']);
       return;
     }
     const proprio = this.fatos().find((fato) => fato.codigo === this.item().fatoCodigo);
     if (proprio === undefined) return;
     const condicoes = [condicaoNova(proprio, 1)];
     this.condicoes.set(condicoes);
-    this.itemChange.emit(comImpedimento(this.item(), paraPredicado(condicoes)));
+    this.publicar(comImpedimento(this.item(), paraPredicado(condicoes)), CAMPOS_DO_IMPEDIMENTO);
     focarDepois(this.injector, `${this.idBase()}-impedimento-mensagem`);
   }
 
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
+    this.camposEditados.emit([['impedimento', 'quando']]);
     this.itemChange.emit({
       ...this.item(),
       impedimento: {
@@ -167,9 +171,14 @@ export class ImpedimentoDoCampoComponent {
 
   protected trocarMensagem(evento: Event): void {
     const mensagem = (evento.target as HTMLTextAreaElement).value;
+    this.camposEditados.emit([['impedimento', 'mensagem']]);
     this.itemChange.emit({
       ...this.item(),
       impedimento: { quando: this.item().impedimento?.quando ?? null, mensagem },
     });
+  }
+  private publicar(item: ItemDoFormulario, campos: readonly string[]): void {
+    this.camposEditados.emit(campos.map((campo) => [campo]));
+    this.itemChange.emit(item);
   }
 }

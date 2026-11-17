@@ -5,7 +5,7 @@ import {
   exigeResolucaoPesoAreaEnem,
 } from './classificacao-para-comando';
 import { declaraEdicoesDoEnem, rotuloDaEdicao } from './edicoes-do-enem';
-import { leituraDaEscalaDaNotaFinal } from './escala-da-nota-final';
+import { leituraDaEscalaDaNotaFinal } from '../../shared/escala-da-nota-final';
 
 /** O que a confirmação da classificação mostra além do rascunho da própria classificação. */
 export interface ConteudoDaConfirmacao {

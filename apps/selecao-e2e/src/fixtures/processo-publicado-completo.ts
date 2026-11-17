@@ -32,9 +32,9 @@ export const UNIDADE_RESPONSAVEL_DA_FASE = {
   nome: 'Centro de Processos Seletivos',
 } as const;
 
-const ARGUMENTOS_DO_RECURSO: RecursoDaEtapa['args'] = {
+const PARAMETROS_DO_RECURSO: RecursoDaEtapa['parametros'] = {
   prazoValor: 2,
-  prazoUnidade: 'diasUteis' as RecursoDaEtapa['args']['prazoUnidade'],
+  prazoUnidade: 'diasUteis' as RecursoDaEtapa['parametros']['prazoUnidade'],
   suspensividadePrimeiraInstanciaValor: null,
   suspensividadePrimeiraInstanciaUnidade: null,
   admiteInstanciaSuperior: true,
@@ -45,6 +45,31 @@ const ARGUMENTOS_DO_RECURSO: RecursoDaEtapa['args'] = {
 /** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
 function referencia(codigo: string) {
   return { codigo, versao: '1.0', hash: `hash-${codigo}` };
+}
+
+function normaDoDocumento(id: string) {
+  return {
+    id: `${id}-norma`,
+    referencia: 'Edital nº 1/2027, Anexo III',
+    abrangencia: 'INTERNA_EDITAL',
+    status: 'RESOLVIDO',
+    observacao: null,
+  };
+}
+
+function documentoDaFolha(id: string, documento: Record<string, unknown>) {
+  return {
+    id: `${id}-doc`,
+    exigidoNaFaseId: FASE_ID,
+    tipoDocumentoCategoria: 'IDENTIFICACAO',
+    condicoes: [],
+    basesLegais: [normaDoDocumento(id)],
+    idadeMaximaEmissao: null,
+    formatosPermitidos: ['pdf'],
+    tamanhoMaximoBytes: 10485760,
+    exigidoNaEtapaId: null,
+    ...documento,
+  };
 }
 
 function folha(id: string, documento: Record<string, unknown>) {
@@ -59,26 +84,7 @@ function folha(id: string, documento: Record<string, unknown>) {
     dataReferencia: null,
     ocorrenciasEsperadas: null,
     repetePorEntidade: null,
-    documento: {
-      id: `${id}-doc`,
-      exigidoNaFaseId: FASE_ID,
-      tipoDocumentoCategoria: 'IDENTIFICACAO',
-      condicoes: [],
-      basesLegais: [
-        {
-          id: `${id}-norma`,
-          referencia: 'Edital nº 1/2027, Anexo III',
-          abrangencia: 'INTERNA_EDITAL',
-          status: 'RESOLVIDO',
-          observacao: null,
-        },
-      ],
-      idadeMaximaEmissao: null,
-      formatosPermitidos: ['pdf'],
-      tamanhoMaximoBytes: 10485760,
-      exigidoNaEtapaId: null,
-      ...documento,
-    },
+    documento: documentoDaFolha(id, documento),
   };
 }
 
@@ -154,7 +160,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
             id: '01a0d640-0000-7000-8000-0000000000f3',
             ancora: 'atoPublicado' as RecursoDaEtapa['ancora'],
             regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
-            args: ARGUMENTOS_DO_RECURSO,
+            parametros: PARAMETROS_DO_RECURSO,
             produtoAncoraId: PRODUTO_ID,
             atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
             procedimentos: [],
@@ -189,7 +195,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
           id: '01a0d640-0000-7000-8000-0000000000c5',
           produtoAncoraId: PRODUTO_ID,
           regra: referencia('RECURSO-PRAZO-ANCORADO-EM-ATO'),
-          args: ARGUMENTOS_DO_RECURSO,
+          parametros: PARAMETROS_DO_RECURSO,
           procedimentos: [],
         },
       },

@@ -1,3 +1,4 @@
+import type { CamposEditadosDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -105,6 +106,7 @@ export class GrupoDeOpcoesComponent {
   /** As recusas da API que apontam este grupo. */
   readonly recusas = input<readonly string[]>([]);
 
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly entradaChange = output<OpcoesCondicionadas>();
   readonly remover = output<void>();
 
@@ -132,11 +134,13 @@ export class GrupoDeOpcoesComponent {
 
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
+    this.camposEditados.emit([['quando']]);
     this.entradaChange.emit({ ...this.entrada(), quando: paraPredicado(condicoes) });
   }
 
   protected alternarValor(valor: string): void {
     const atual = this.entrada().valores;
+    this.camposEditados.emit([['valores']]);
     this.entradaChange.emit({
       ...this.entrada(),
       valores: atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor],

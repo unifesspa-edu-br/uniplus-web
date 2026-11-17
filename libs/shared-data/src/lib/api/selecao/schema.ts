@@ -1380,7 +1380,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -1401,8 +1400,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -1452,15 +1449,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -1472,15 +1460,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -1583,7 +1562,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -1604,8 +1582,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -1655,15 +1631,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -1675,15 +1642,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -1721,7 +1679,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -1742,8 +1699,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -1793,15 +1748,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -1813,15 +1759,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -1860,7 +1797,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -1933,15 +1869,6 @@ export interface paths {
                 };
                 /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
                 readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Failed */
-                readonly 412: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -5309,11 +5236,14 @@ export interface paths {
             readonly cookie?: never;
         };
         readonly get?: never;
+        /**
+         * Substitui as etapas e as bancas do processo
+         * @description Substitui as etapas e as bancas de cada etapa inteiras: o que o corpo não traz deixa de existir no processo. A regra de deliberação de uma banca é opcional neste pedido, e a banca que a omite apaga a regra que já estava gravada. A obrigatoriedade da regra de deliberação é conferida na publicação.
+         */
         readonly put: {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -5333,8 +5263,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -5384,15 +5312,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -5404,15 +5323,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -5450,7 +5360,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -5471,8 +5380,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -5522,15 +5429,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -5542,15 +5440,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -5588,7 +5477,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -5608,8 +5496,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -5659,15 +5545,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -5679,15 +5556,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -5725,7 +5593,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -5745,8 +5612,6 @@ export interface paths {
                 /** @description OK */
                 readonly 200: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content: {
@@ -5800,15 +5665,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -5820,15 +5676,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6057,7 +5904,9 @@ export interface paths {
         };
         readonly get: {
             readonly parameters: {
-                readonly query?: never;
+                readonly query?: {
+                    readonly versao?: number;
+                };
                 readonly header?: never;
                 readonly path: {
                     readonly id: string;
@@ -6072,9 +5921,7 @@ export interface paths {
                         readonly [name: string]: unknown;
                     };
                     content: {
-                        readonly "text/plain": readonly components["schemas"]["MotivoDoProcessoDto"][];
-                        readonly "application/json": readonly components["schemas"]["MotivoDoProcessoDto"][];
-                        readonly "text/json": readonly components["schemas"]["MotivoDoProcessoDto"][];
+                        readonly "application/vnd.uniplus.motivo-do-processo.v1+json": readonly components["schemas"]["MotivoDoProcessoDto"][];
                     };
                 };
                 /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
@@ -6095,6 +5942,24 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         readonly put?: never;
@@ -6105,7 +5970,7 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
-    readonly "/api/selecao/processos-seletivos/{id}/motivos-de-decisao/{motivoDeDecisaoId}": {
+    readonly "/api/selecao/processos-seletivos/{id}/fases/{faseCanonicaOrigemId}/motivos-de-decisao/{motivoDeDecisaoId}": {
         readonly parameters: {
             readonly query?: never;
             readonly header?: never;
@@ -6117,29 +5982,21 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
                 readonly path: {
                     readonly id: string;
+                    readonly faseCanonicaOrigemId: string;
                     readonly motivoDeDecisaoId: string;
                 };
                 readonly cookie?: never;
             };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["IncluirMotivoNoProcessoRequest"];
-                    readonly "text/json": components["schemas"]["IncluirMotivoNoProcessoRequest"];
-                    readonly "application/*+json": components["schemas"]["IncluirMotivoNoProcessoRequest"];
-                };
-            };
+            readonly requestBody?: never;
             readonly responses: {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6187,15 +6044,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -6207,15 +6055,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6239,12 +6078,12 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
                 readonly path: {
                     readonly id: string;
+                    readonly faseCanonicaOrigemId: string;
                     readonly motivoDeDecisaoId: string;
                 };
                 readonly cookie?: never;
@@ -6254,8 +6093,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6303,8 +6140,107 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/processos-seletivos/{id}/etapas/{etapaId}/motivos-de-decisao/{motivoDeDecisaoId}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly etapaId: string;
+                    readonly motivoDeDecisaoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6330,8 +6266,95 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Required */
-                readonly 428: {
+                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                    readonly etapaId: string;
+                    readonly motivoDeDecisaoId: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inválido. */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6367,7 +6390,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -6387,8 +6409,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6438,15 +6458,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -6458,15 +6469,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6504,7 +6506,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -6524,8 +6525,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6575,15 +6574,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -6595,15 +6585,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6641,7 +6622,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -6661,8 +6641,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6712,15 +6690,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -6732,15 +6701,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6778,7 +6738,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -6798,8 +6757,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6849,15 +6806,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -6869,15 +6817,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -6915,7 +6854,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -6935,8 +6873,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -6986,15 +6922,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7006,15 +6933,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7052,7 +6970,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7072,8 +6989,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7123,15 +7038,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7143,15 +7049,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7189,7 +7086,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7209,8 +7105,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7260,15 +7154,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7280,15 +7165,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7326,7 +7202,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7346,8 +7221,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7397,15 +7270,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7417,15 +7281,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7463,7 +7318,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7483,8 +7337,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7534,15 +7386,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7554,15 +7397,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7600,7 +7434,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7620,8 +7453,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7671,15 +7502,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7691,15 +7513,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7737,7 +7550,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7757,8 +7569,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7808,15 +7618,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7828,15 +7629,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -7874,7 +7666,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -7894,8 +7685,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -7945,15 +7734,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -7965,15 +7745,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -8011,7 +7782,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -8031,8 +7801,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -8082,15 +7850,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -8102,15 +7861,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -8148,7 +7898,6 @@ export interface paths {
             readonly parameters: {
                 readonly query?: never;
                 readonly header: {
-                    readonly "If-Match"?: string;
                     /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
                     readonly "Idempotency-Key": string;
                 };
@@ -8168,8 +7917,6 @@ export interface paths {
                 /** @description No Content */
                 readonly 204: {
                     headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
                         readonly [name: string]: unknown;
                     };
                     content?: never;
@@ -8219,15 +7966,6 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
                 /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
                 readonly 413: {
                     headers: {
@@ -8239,15 +7977,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -8461,7 +8190,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Há uma retificação em curso neste processo: enquanto a sessão editorial existir, o atalho em um ato só recusa — fechá-la ou descartá-la libera esta rota. Também responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), quando o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
+                /** @description Responde 409 quando outra publicação ou retificação concorrente congelou uma versão da configuração entre a leitura e a gravação desta (reler o processo e resubmeter), quando o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
                 readonly 409: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -8481,559 +8210,6 @@ export interface paths {
                 };
                 /** @description Unprocessable Entity */
                 readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
-                readonly 503: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/selecao/processos-seletivos/{id}/retificacao-em-curso": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.retificacao-em-curso.v1+json": components["schemas"]["RetificacaoEmCursoDto"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Precondição de concorrência (RFC 9110 §13.1.1) — o ETag da sessão editorial em curso. OBRIGATÓRIO nesta rota: ela existe para a sessão, e sem a precondição responde 428. Comparação FORTE: uma weak tag (W/"...") nunca casa, e produz 412. */
-                    readonly "If-Match": string;
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AlterarMotivoRetificacaoRequest"];
-                    readonly "text/json": components["schemas"]["AlterarMotivoRetificacaoRequest"];
-                    readonly "application/*+json": components["schemas"]["AlterarMotivoRetificacaoRequest"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Não há retificação em curso para ter o motivo alterado. Abrir a retificação antes. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
-                readonly 503: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["AbrirRetificacaoRequest"];
-                    readonly "text/json": components["schemas"]["AbrirRetificacaoRequest"];
-                    readonly "application/*+json": components["schemas"]["AbrirRetificacaoRequest"];
-                };
-            };
-            readonly responses: {
-                /** @description Created */
-                readonly 201: {
-                    headers: {
-                        /** @description ETag forte da sessão editorial de retificação, no formato "{idDaSessao}:{revisao}". Devolva-o no If-Match da próxima mutação. Toda mutação aceita INCREMENTA a revisão e emite o tag novo aqui — o cliente encadeia sem um GET no meio. Ausente quando não há sessão em curso (o processo em rascunho não tem precondição a satisfazer). */
-                        readonly ETag?: string;
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "text/plain": components["schemas"]["RetificacaoEmCursoDto"];
-                        readonly "application/json": components["schemas"]["RetificacaoEmCursoDto"];
-                        readonly "text/json": components["schemas"]["RetificacaoEmCursoDto"];
-                    };
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Já existe retificação em curso para este processo — só uma por vez. Fechar ou descartar a atual antes de abrir outra. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
-                readonly 503: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Precondição de concorrência (RFC 9110 §13.1.1) — o ETag da sessão editorial em curso. OBRIGATÓRIO nesta rota: ela existe para a sessão, e sem a precondição responde 428. Comparação FORTE: uma weak tag (W/"...") nunca casa, e produz 412. */
-                    readonly "If-Match": string;
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Não há retificação em curso para descartar, ou a base dela ficou para trás da versão vigente. Reler o estado da retificação antes de repetir. Também responde 409 quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave. */
-                readonly 503: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/selecao/processos-seletivos/{id}/retificacao-em-curso/fechamento": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get?: never;
-        readonly put?: never;
-        readonly post: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Precondição de concorrência (RFC 9110 §13.1.1) — o ETag da sessão editorial em curso. OBRIGATÓRIO nesta rota: ela existe para a sessão, e sem a precondição responde 428. Comparação FORTE: uma weak tag (W/"...") nunca casa, e produz 412. */
-                    readonly "If-Match": string;
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["FecharRetificacaoRequest"];
-                    readonly "text/json": components["schemas"]["FecharRetificacaoRequest"];
-                    readonly "application/*+json": components["schemas"]["FecharRetificacaoRequest"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description A retificação não está aberta, a base dela ficou para trás da versão vigente, ou outra publicação concorrente congelou uma versão entre a leitura e a gravação desta. Reler a retificação em curso antes de repetir. Também responde 409 quando o identificador legível já é de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto já tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige já foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisição com a mesma Idempotency-Key ainda está em processamento. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Failed */
-                readonly 412: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Precondition Required */
-                readonly 428: {
                     headers: {
                         readonly [name: string]: unknown;
                     };
@@ -9219,216 +8395,6 @@ export interface paths {
         readonly put?: never;
         readonly post?: never;
         readonly delete?: never;
-        readonly options?: never;
-        readonly head?: never;
-        readonly patch?: never;
-        readonly trace?: never;
-    };
-    readonly "/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao": {
-        readonly parameters: {
-            readonly query?: never;
-            readonly header?: never;
-            readonly path?: never;
-            readonly cookie?: never;
-        };
-        readonly get: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description OK */
-                readonly 200: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/vnd.uniplus.rascunho-da-publicacao.v1+json": components["schemas"]["RascunhoDaPublicacaoDto"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Acceptable */
-                readonly 406: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly put: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header: {
-                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
-                    readonly "Idempotency-Key": string;
-                };
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody: {
-                readonly content: {
-                    readonly "application/json": components["schemas"]["SalvarRascunhoDaPublicacaoRequest"];
-                    readonly "text/json": components["schemas"]["SalvarRascunhoDaPublicacaoRequest"];
-                    readonly "application/*+json": components["schemas"]["SalvarRascunhoDaPublicacaoRequest"];
-                };
-            };
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Bad Request */
-                readonly 400: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Not Found */
-                readonly 404: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
-                readonly 409: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite é do filtro, não do servidor. */
-                readonly 413: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        readonly post?: never;
-        readonly delete: {
-            readonly parameters: {
-                readonly query?: never;
-                readonly header?: never;
-                readonly path: {
-                    readonly id: string;
-                };
-                readonly cookie?: never;
-            };
-            readonly requestBody?: never;
-            readonly responses: {
-                /** @description No Content */
-                readonly 204: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
-                readonly 401: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
-                readonly 403: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Unprocessable Entity */
-                readonly 422: {
-                    headers: {
-                        readonly [name: string]: unknown;
-                    };
-                    content: {
-                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
         readonly options?: never;
         readonly head?: never;
         readonly patch?: never;
@@ -9714,6 +8680,399 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/rascunhos-de-processos-seletivos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get?: never;
+        readonly put?: never;
+        readonly post: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Chave opaca (1-255 ASCII printable, sem ',' ou ';') para retry seguro do comando. Replay com mesma key + mesmo body retorna response cacheada (ADR-0027). */
+                    readonly "Idempotency-Key": string;
+                };
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DocumentoDaConfiguracao"];
+                };
+            };
+            readonly responses: {
+                /** @description Created */
+                readonly 201: {
+                    headers: {
+                        /** @description A revisão do rascunho que a resposta descreve, para o If-Match da próxima substituição ou exclusão. */
+                        readonly ETag?: string;
+                        /** @description Endereço do rascunho criado. */
+                        readonly Location?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["RascunhoCriadoResponse"];
+                        readonly "application/json": components["schemas"]["RascunhoCriadoResponse"];
+                        readonly "text/json": components["schemas"]["RascunhoCriadoResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description A pessoa não configura processos na unidade do documento, ou o código não resolve para uma unidade (uniplus.selecao.rascunho_de_processo_seletivo.unidade_fora_da_permissao). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição concorrente com a mesma Idempotency-Key ainda em processamento (uniplus.idempotency.processing_conflict). Repetir depois, com a MESMA chave. Concluída a operação anterior, a repetição recebe em replay o resultado dela quando ele é guardável; não sendo (5xx, cancelamento, ou conflito que a própria resposta declara retentável), a reserva é liberada e a repetição executa de novo. */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O corpo passa de 2 MiB (uniplus.idempotency.body_muito_grande), ou o documento passa do limite de profundidade ou de nós do formato (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/rascunhos-de-processos-seletivos/{id}": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description A revisão do rascunho que a resposta descreve, para o If-Match da próxima substituição ou exclusão. */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.rascunho-de-processo-seletivo.v1+json": components["schemas"]["DocumentoDaConfiguracao"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Precondição de concorrência (RFC 9110 §13.1.1) — o ETag da revisão lida. OBRIGATÓRIO nesta rota: sem a precondição ela responde 428. Comparação FORTE: uma weak tag (W/"...") nunca casa, e produz 412. */
+                    readonly "If-Match": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody: {
+                readonly content: {
+                    readonly "application/json": components["schemas"]["DocumentoDaConfiguracao"];
+                };
+            };
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        /** @description A revisão do rascunho que a resposta descreve, para o If-Match da próxima substituição ou exclusão. */
+                        readonly ETag?: string;
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "text/plain": components["schemas"]["RascunhoSubstituidoResponse"];
+                        readonly "application/json": components["schemas"]["RascunhoSubstituidoResponse"];
+                        readonly "text/json": components["schemas"]["RascunhoSubstituidoResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O rascunho já foi publicado e virou o processo seletivo de mesmo identificador (uniplus.selecao.rascunho_de_processo_seletivo.ja_publicado). */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O documento passa de um limite do formato: 2 MiB, profundidade ou quantidade de nós (uniplus.selecao.documento_da_configuracao.acima_do_limite). */
+                readonly 413: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Unprocessable Entity */
+                readonly 422: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado: releia o estado do processo e envie de novo. */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly post?: never;
+        readonly delete: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header: {
+                    /** @description Precondição de concorrência (RFC 9110 §13.1.1) — o ETag da revisão lida. OBRIGATÓRIO nesta rota: sem a precondição ela responde 428. Comparação FORTE: uma weak tag (W/"...") nunca casa, e produz 412. */
+                    readonly "If-Match": string;
+                };
+                readonly path: {
+                    readonly id: string;
+                };
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description No Content */
+                readonly 204: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                readonly 400: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Requisição não autenticada — token ausente ou inválido (a rota exige autenticação). Também emitido quando o principal é exigido e não está presente (uniplus.idempotency.principal_requerido). */
+                readonly 401: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Autenticado, mas sem a autorização exigida pela rota (ex.: a role plataforma-admin). */
+                readonly 403: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                readonly 404: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description O rascunho já foi publicado e virou o processo seletivo de mesmo identificador (uniplus.selecao.rascunho_de_processo_seletivo.ja_publicado). */
+                readonly 409: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Failed */
+                readonly 412: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Precondition Required */
+                readonly 428: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Outra operação retém o processo além do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado: releia o estado do processo e envie de novo. */
+                readonly 503: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/regras-catalogo": {
         readonly parameters: {
             readonly query?: never;
@@ -9981,9 +9340,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        readonly AbrirRetificacaoRequest: {
-            readonly motivo: string;
-        };
         readonly AceiteDeTermoInput: {
             readonly codigo: string;
             /** Format: uuid */
@@ -10024,9 +9380,6 @@ export interface components {
             readonly vagasRetiradas: readonly components["schemas"]["VagasRetiradasDaModalidadeDto"][];
             /** Format: int32 */
             readonly totalDeVagasRetiradas: number;
-        };
-        readonly AlterarMotivoRetificacaoRequest: {
-            readonly motivo: string;
         };
         readonly AlternativasSimuladasDto: {
             /** Format: uuid */
@@ -10075,29 +9428,6 @@ export interface components {
             readonly peso: number;
             /** Format: double */
             readonly corte: null | number;
-        };
-        readonly ArgsRegraAjusteDistribuicao: components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirDe"] | components["schemas"]["ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm"];
-        readonly ArgsRegraAjusteDistribuicaoArgsReduzirDe: {
-            /** @enum {string} */
-            readonly $tipo?: ArgsRegraAjusteDistribuicaoArgsReduzirDe$tipo;
-            readonly modalidadeCodigo: string;
-        };
-        readonly ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm: {
-            /** @enum {string} */
-            readonly $tipo?: ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm$tipo;
-            readonly modalidadeCodigos: readonly string[];
-        };
-        readonly ArgsRegraPrazoRecursoDto: {
-            /** Format: double */
-            readonly prazoValor: number;
-            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
-            /** Format: double */
-            readonly suspensividadePrimeiraInstanciaValor: null | number;
-            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
-            readonly admiteInstanciaSuperior: boolean;
-            /** Format: double */
-            readonly suspensividadeSegundaInstanciaValor: null | number;
-            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
         };
         readonly ArquivoAdministrativoDto: {
             /** Format: uuid */
@@ -10518,7 +9848,7 @@ export interface components {
             readonly regraDistribuicao: components["schemas"]["ReferenciaRegraDto"];
             readonly ramoDaDistribuicao: null | string;
             readonly regraAjuste: null | components["schemas"]["ReferenciaRegraDto"];
-            readonly ajusteDoQuadro: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
+            readonly ajusteDoQuadro: null | components["schemas"]["ParametrosRegraAjusteDistribuicao"];
             readonly referenciaDemografica: null | components["schemas"]["ReferenciaReservaDemograficaSnapshotDto"];
             readonly grupoAreaEnem: null | components["schemas"]["GrupoAreaEnemSnapshotDto"];
             readonly modalidades: readonly components["schemas"]["ModalidadeSelecionadaDto"][];
@@ -10543,7 +9873,7 @@ export interface components {
             readonly referenciaReservaDemograficaId: null | string;
             readonly modalidadeIds: readonly string[];
             readonly quadro: readonly components["schemas"]["QuantidadeVagaInput"][];
-            readonly ajusteDoQuadro?: null | components["schemas"]["ArgsRegraAjusteDistribuicao"];
+            readonly ajusteDoQuadro?: null | components["schemas"]["ParametrosRegraAjusteDistribuicao"];
         };
         readonly ConfiguracaoDivulgacaoDto: {
             readonly camposPublicos: readonly string[];
@@ -10797,6 +10127,2249 @@ export interface components {
             readonly hashSha256: null | string;
             /** Format: date-time */
             readonly confirmadoEm: null | string;
+        };
+        /**
+         * Documento de configuração do processo seletivo
+         * @description Formato portável da configuração de um processo seletivo, na versão 1. Serve ao rascunho salvo pela tela e à importação e exportação de um processo, inclusive o preparado fora do sistema. O esquema descreve só a forma: tipo, formato, enumerações, limites de tamanho e o que é estruturalmente obrigatório. As regras de negócio (o que torna a configuração publicável) são do domínio e não se repetem aqui; por isso um rascunho incompleto é válido. Campo ainda não preenchido é campo ausente, nunca texto no lugar de número ou de data. Catálogos e unidades são citados pelo código estável, nunca pelo identificador interno do banco. As referências entre partes do documento usam a chave local da parte referenciada, definida no próprio documento e única nele.
+         */
+        readonly DocumentoDaConfiguracao: {
+            /**
+             * Formato do documento
+             * @description Identificador fixo do formato. Distingue este documento de qualquer outro JSON.
+             * @constant
+             */
+            readonly formato: "uniplus.selecao.configuracao";
+            /**
+             * Versão do formato
+             * @description Versão principal do formato. Neste esquema é sempre 1. Mudança incompatível cria a versão 2 em outro esquema.
+             * @constant
+             */
+            readonly versaoFormato: 1;
+            /**
+             * Id do processo
+             * Format: uuid
+             * @description Identificador único (uuid) do processo. No rascunho é o id do próprio rascunho, que vira o id do processo na publicação. Não concede pertencimento. Campo só de leitura: ignorado na importação, porque o processo importado ganha id novo.
+             */
+            readonly id?: string;
+            /**
+             * Versão
+             * @description Número da versão do processo que foi exportada, a partir de 1. Não existe no rascunho. Campo só de leitura: ignorado na importação e definido pela publicação.
+             */
+            readonly versao?: number;
+            /**
+             * Publicado em
+             * @description Instante da divulgação da versão exportada, em UTC. A publicidade é a divulgação gravada na transação; numa retificação o campo traz o instante da versão retificada. Não existe no rascunho. Campo só de leitura: ignorado na importação e definido pela divulgação.
+             */
+            readonly publicadoEm?: components["schemas"]["DocumentoDaConfiguracaoComunsInstante"];
+            readonly identificacao?: components["schemas"]["DocumentoDaConfiguracaoIdentificacao"];
+            readonly coleta?: components["schemas"]["DocumentoDaConfiguracaoColeta"];
+            /**
+             * Formulários
+             * @description Os formulários do processo, no máximo um por finalidade. Lista vazia ou ausente é válida no rascunho.
+             */
+            readonly formularios?: readonly components["schemas"]["DocumentoDaConfiguracaoFormulario"][];
+            /**
+             * Opções de curso
+             * @description Quantas opções de curso o candidato escolhe: 1 ou 2. A segunda opção é outra oferta do processo. Ausente: ainda não declarado, e a ausência nunca vale uma opção.
+             */
+            readonly opcoesDeCurso?: {
+                /**
+                 * Número de opções
+                 * @description 1 ou 2.
+                 * @enum {unknown}
+                 */
+                readonly numero?: DocumentoDaConfiguracaoOpcoesDeCursoNumero;
+            };
+            /**
+             * Distribuição de vagas
+             * @description A distribuição de vagas de cada oferta de curso do processo, no máximo uma por oferta.
+             */
+            readonly distribuicaoVagas?: readonly components["schemas"]["DocumentoDaConfiguracaoDistribuicaoDeVagas"][];
+            /**
+             * Cascata de remanejamento
+             * @description A cascata de remanejamento entre modalidades. Ausente quando o processo não tem cascata.
+             */
+            readonly cascataRemanejamento?: components["schemas"]["DocumentoDaConfiguracaoCascataDeRemanejamento"];
+            readonly cronograma?: components["schemas"]["DocumentoDaConfiguracaoCronograma"];
+            /**
+             * Etapas
+             * @description Etapas de avaliação do processo. A chave de cada etapa é única no documento e é a que as outras partes usam para citá-la. Lista vazia ou ausente é válida: há processos sem prova.
+             */
+            readonly etapas?: readonly components["schemas"]["DocumentoDaConfiguracaoEtapas"][];
+            readonly taxaDeInscricao?: components["schemas"]["DocumentoDaConfiguracaoTaxaDeInscricao"];
+            readonly divulgacao?: components["schemas"]["DocumentoDaConfiguracaoDivulgacao"];
+            /**
+             * Tipos de ato congelados
+             * @description Cópia, congelada na publicação, dos tipos de ato do catálogo de Publicações que o processo usa, com o que cada um significa. Existe só no processo publicado. Campo só de leitura: ignorado na importação; a referência é o código do tipo de ato em cada produto de fase e de etapa.
+             */
+            readonly tiposDeAtoCongelados?: readonly {
+                /**
+                 * Código do tipo de ato
+                 * @description Código do tipo de ato no catálogo de Publicações.
+                 */
+                readonly codigo?: string;
+                /**
+                 * Único por objeto
+                 * @description Verdadeiro quando o tipo só pode ser publicado uma vez para o mesmo objeto.
+                 */
+                readonly unicoPorObjeto?: boolean;
+                /**
+                 * É resultado
+                 * @description Verdadeiro quando o tipo publica um resultado.
+                 */
+                readonly ehResultado?: boolean;
+                /**
+                 * Congela a configuração
+                 * @description Verdadeiro quando publicar o ato congela a configuração do processo.
+                 */
+                readonly congelaConfiguracao?: boolean;
+            }[];
+            /**
+             * Documentos exigidos
+             * @description As exigências de documentos do processo e a árvore de satisfação delas. Lista vazia ou ausente é válida: há processos sem comprovação documental.
+             */
+            readonly documentosExigidos?: components["schemas"]["DocumentoDaConfiguracaoExigencias"];
+            /**
+             * Classificação
+             * @description Cálculo da nota final, ordem de alocação, eliminação e desempate. Ausente no rascunho que ainda não decidiu a classificação.
+             */
+            readonly classificacao?: components["schemas"]["DocumentoDaConfiguracaoClassificacao"];
+            /**
+             * Atendimento especializado
+             * @description Condições, recursos e tipos de deficiência que o processo atende. Ausente no rascunho que ainda não decidiu o atendimento.
+             */
+            readonly atendimento?: components["schemas"]["DocumentoDaConfiguracaoAtendimento"];
+            /**
+             * Bônus regional
+             * @description Declaração de que o processo aplica ou não o bônus regional e, se aplica, a regra e a base legal. Ausente no rascunho que ainda não decidiu.
+             */
+            readonly bonusRegional?: components["schemas"]["DocumentoDaConfiguracaoBonusRegional"];
+            /**
+             * Importação do resultado
+             * @description Relatórios e primeira fase depois da importação, nos processos de resultado importado. Ausente nos demais.
+             */
+            readonly importacao?: components["schemas"]["DocumentoDaConfiguracaoImportacao"];
+            /**
+             * Prova presencial
+             * @description Declaração de que o processo tem ou não prova presencial e, se tem, dos municípios de aplicação. Ausente no rascunho que ainda não a declarou.
+             */
+            readonly provaPresencial?: components["schemas"]["DocumentoDaConfiguracaoProvaPresencial"];
+            /**
+             * Motivos de decisão
+             * @description Motivos do catálogo que o processo escolheu para as decisões das fases e das etapas. Cada motivo se identifica pelo lugar, a fase ou a etapa pela chave, e pelo tipo e pelo código.
+             */
+            readonly motivos?: readonly components["schemas"]["DocumentoDaConfiguracaoMotivo"][];
+        };
+        /**
+         * Nó da árvore de satisfação
+         * @description Um nó da árvore que diz quais documentos satisfazem a exigência do candidato: a folha aponta uma exigência; E e OU combinam os filhos.
+         */
+        readonly DocumentoDaConfiguracaoArvoreDeSatisfacao: {
+            /**
+             * Ordem
+             * @description Posição do nó entre os irmãos.
+             */
+            readonly ordem?: number;
+            /**
+             * Tipo do nó
+             * @description FOLHA cita uma exigência; E exige todos os filhos; OU exige algum deles.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoArvoreDeSatisfacaoTipo;
+            /**
+             * Exigência da folha
+             * @description Chave local da exigência que a folha cita. Só existe no nó FOLHA.
+             */
+            readonly exigenciaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Quantidade mínima
+             * @description Quantas ocorrências do documento satisfazem a folha (até 366), ou quantos filhos o nó OU precisa.
+             */
+            readonly quantidadeMinima?: number;
+            /**
+             * Consequência
+             * @description Consequência da insatisfação do nó.
+             * @enum {unknown}
+             */
+            readonly consequencia?: DocumentoDaConfiguracaoArvoreDeSatisfacaoConsequencia;
+            /**
+             * Bases legais
+             * @description Embasamento normativo do nó.
+             */
+            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
+            /**
+             * Chave de distinção
+             * @description O que torna duas ocorrências do mesmo documento distintas.
+             * @enum {unknown}
+             */
+            readonly chaveDistincao?: DocumentoDaConfiguracaoArvoreDeSatisfacaoChaveDistincao;
+            /**
+             * Data de referência
+             * Format: date
+             * @description Data de referência: a competência ou o exercício dela é o último a comprovar, contando-se para trás.
+             */
+            readonly dataReferencia?: string;
+            /**
+             * Ocorrências esperadas
+             * @description Rótulos das ocorrências esperadas, quando a chave de distinção é a ocorrência.
+             */
+            readonly ocorrenciasEsperadas?: readonly string[];
+            /**
+             * Repete por entidade
+             * @description Código do grupo de entidades do formulário (por exemplo, os integrantes da família) para cada uma das quais o nó se repete. Ausente quando o nó não se repete.
+             */
+            readonly repetePorEntidade?: string;
+            /**
+             * Filhos
+             * @description Nós filhos, nos nós E e OU.
+             */
+            readonly filhos?: readonly components["schemas"]["DocumentoDaConfiguracaoArvoreDeSatisfacao"][];
+        };
+        /**
+         * Atendimento especializado
+         * @description O que o processo oferece a candidatos com necessidades de atendimento: as condições atendidas, os recursos de acessibilidade e os tipos de deficiência. Cada item é citado pelo código do catálogo.
+         */
+        readonly DocumentoDaConfiguracaoAtendimento: {
+            /**
+             * Condições
+             * @description Condições de atendimento que o processo oferece.
+             */
+            readonly condicoes?: readonly components["schemas"]["DocumentoDaConfiguracaoAtendimentoCondicao"][];
+            /**
+             * Recursos
+             * @description Recursos de acessibilidade que o processo oferece.
+             */
+            readonly recursos?: readonly components["schemas"]["DocumentoDaConfiguracaoAtendimentoRecurso"][];
+            /**
+             * Tipos de deficiência
+             * @description Tipos de deficiência que o atendimento do processo cobre.
+             */
+            readonly tiposDeficiencia?: readonly components["schemas"]["DocumentoDaConfiguracaoAtendimentoTipoDeficiencia"][];
+        };
+        /**
+         * Condição de atendimento
+         * @description Uma condição de atendimento que o processo oferece.
+         */
+        readonly DocumentoDaConfiguracaoAtendimentoCondicao: {
+            /**
+             * Código
+             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             */
+            readonly condicaoCodigo: string;
+            /**
+             * Nome
+             * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly condicaoNome?: string;
+        };
+        /**
+         * Recurso de acessibilidade
+         * @description Um recurso de acessibilidade que o processo oferece.
+         */
+        readonly DocumentoDaConfiguracaoAtendimentoRecurso: {
+            /**
+             * Código
+             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             */
+            readonly recursoCodigo: string;
+            /**
+             * Nome
+             * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly recursoNome?: string;
+        };
+        /**
+         * Tipo de deficiência
+         * @description Um tipo de deficiência que o atendimento cobre.
+         */
+        readonly DocumentoDaConfiguracaoAtendimentoTipoDeficiencia: {
+            /**
+             * Código
+             * @description Código estável no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+             */
+            readonly tipoDeficienciaCodigo: string;
+            /**
+             * Nome
+             * @description Nome no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly tipoDeficienciaNome?: string;
+        };
+        /**
+         * Banca requerida
+         * @description Uma banca que a fase exige: o tipo dela, o recorte de competência e a regra de deliberação.
+         */
+        readonly DocumentoDaConfiguracaoBancas: {
+            /**
+             * Chave da banca
+             * @description Chave local da banca, única no documento. É obrigatória: é escolhida por quem cria a banca, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Tipo de banca
+             * @description Código do tipo de banca no catálogo, por exemplo BANCA_ANALISE_RECURSOS.
+             */
+            readonly tipoBancaCodigo?: string;
+            /**
+             * Recorte de competência
+             * @description Códigos das categorias de documento que a banca analisa. Lista vazia quando a banca não é recortada por categoria.
+             */
+            readonly categoriasDocumentoCodigos?: readonly string[];
+            readonly regraDeDeliberacao?: components["schemas"]["DocumentoDaConfiguracaoBancasRegraDeDeliberacao"];
+        };
+        /**
+         * Regra de deliberação da banca
+         * @description Como a banca decide: o modo, a composição e, na votação do colegiado, o quórum, o critério, o desempate e o encerramento. Os campos que o modo não admite ficam ausentes.
+         */
+        readonly DocumentoDaConfiguracaoBancasRegraDeDeliberacao: {
+            /**
+             * Modo de deliberação
+             * @description Votação do colegiado (colegiadaComVotacao) ou ato individual (atoIndividual).
+             * @enum {unknown}
+             */
+            readonly modo?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo;
+            /**
+             * Integrantes titulares
+             * @description Número de titulares da banca.
+             */
+            readonly integrantes?: number;
+            /**
+             * Suplentes
+             * @description Número de suplentes da banca.
+             */
+            readonly suplentes?: number;
+            /**
+             * Quórum
+             * @description Número mínimo de votos para decidir. Só na votação do colegiado.
+             */
+            readonly quorum?: number;
+            /**
+             * Critério de votação
+             * @description Maioria simples, maioria absoluta ou unanimidade. Só na votação do colegiado.
+             * @enum {unknown}
+             */
+            readonly criterio?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoCriterio;
+            /**
+             * Desempate
+             * @description Como se desempata nos critérios de maioria: voto da presidência ou nova votação.
+             * @enum {unknown}
+             */
+            readonly desempate?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoDesempate;
+            /**
+             * Encerramento da votação
+             * @description Quando a votação termina: com o voto de todos os titulares ou quando a presidência vê o quórum atingido.
+             * @enum {unknown}
+             */
+            readonly encerramento?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoEncerramento;
+            /**
+             * Resultado sem unanimidade
+             * @description O que vale quando a unanimidade é o critério e ela não ocorre: favorável, desfavorável ou nova votação.
+             * @enum {unknown}
+             */
+            readonly semUnanimidade?: DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade;
+        };
+        /**
+         * Bônus regional
+         * @description O acréscimo na nota do candidato que cumpre a base legal do bônus regional. O processo declara que aplica o bônus e cita a regra do catálogo e a base legal pelo código, ou declara que não o aplica.
+         */
+        readonly DocumentoDaConfiguracaoBonusRegional: {
+            /**
+             * Aplica o bônus
+             * @description Verdadeiro quando o processo aplica o bônus regional. Falso proíbe os demais campos.
+             */
+            readonly aplica: boolean;
+            /**
+             * Regra do bônus
+             * @description Regra do catálogo que calcula o bônus.
+             */
+            readonly regra?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Fator
+             * @description Fator multiplicativo aplicado à nota do candidato elegível. Maior que zero, até 99,9999.
+             */
+            readonly fator?: number;
+            /**
+             * Teto
+             * @description Acréscimo máximo que o bônus pode dar, quando houver. Maior que zero, até 99,9999.
+             */
+            readonly teto?: number;
+            /**
+             * Fato de elegibilidade
+             * @description Código do fato que decide quem recebe o bônus, quando o processo o declara, de 1 a 60 caracteres.
+             */
+            readonly fatoElegibilidadeCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Base legal
+             * @description Código estável da base legal do bônus regional no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 100 caracteres.
+             */
+            readonly baseLegalBonusRegionalCodigo?: string;
+            /**
+             * Tipo do instrumento
+             * @description Tipo do instrumento normativo da base legal. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly tipoInstrumento?: string;
+            /**
+             * Identificação
+             * @description Identificação do instrumento normativo da base legal. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly identificacao?: string;
+            /**
+             * Descrição
+             * @description Descrição da base legal. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly descricao?: string;
+            /**
+             * Municípios
+             * @description Municípios que a base legal contempla. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly municipios?: readonly components["schemas"]["DocumentoDaConfiguracaoBonusRegionalMunicipio"][];
+        };
+        /**
+         * Município
+         * @description Um município contemplado pela base legal.
+         */
+        readonly DocumentoDaConfiguracaoBonusRegionalMunicipio: {
+            /**
+             * Código IBGE
+             * @description Código do município no IBGE, com 7 dígitos.
+             */
+            readonly codigoIbge?: string;
+            /**
+             * Nome
+             * @description Nome do município.
+             */
+            readonly nome?: string;
+            /**
+             * UF
+             * @description Sigla da unidade federativa.
+             */
+            readonly uf?: string;
+        };
+        /**
+         * Cascata de remanejamento
+         * @description A ordem em que as vagas não preenchidas de uma modalidade passam a outras. No máximo uma cascata por processo; sem o objeto, o processo não tem cascata.
+         */
+        readonly DocumentoDaConfiguracaoCascataDeRemanejamento: {
+            /**
+             * Regra de remanejamento
+             * @description Regra do catálogo que define o remanejamento.
+             */
+            readonly regra?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Modalidade de destino final
+             * @description Código da modalidade que recebe as vagas quando nenhum destino da cascata as absorve, em geral a ampla concorrência.
+             */
+            readonly fallbackCodigo?: string;
+            /**
+             * Destinos
+             * @description Os destinos de cada modalidade de origem, até 56 no total e até 8 origens distintas.
+             */
+            readonly destinos?: readonly {
+                /**
+                 * Modalidade de origem
+                 * @description Código da modalidade que cede as vagas.
+                 */
+                readonly modalidadeOrigemCodigo: string;
+                /**
+                 * Ordem
+                 * @description Posição do destino na cascata da origem, a partir de 1. A ordem é semântica: decide quem recebe primeiro.
+                 */
+                readonly ordem: number;
+                /**
+                 * Modalidade de destino
+                 * @description Código da modalidade que recebe as vagas.
+                 */
+                readonly modalidadeDestinoCodigo: string;
+            }[];
+        };
+        /**
+         * Classificação
+         * @description Como os candidatos são classificados: o cálculo da nota final, o arredondamento, a ordem de alocação, a eliminação e o desempate.
+         */
+        readonly DocumentoDaConfiguracaoClassificacao: {
+            /**
+             * Regra de cálculo
+             * @description Regra do catálogo que calcula a nota final. A classificação importada dispensa o arredondamento local e as regras de eliminação por corte de nota.
+             */
+            readonly regraCalculo?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Regra de arredondamento
+             * @description Regra do catálogo que arredonda a nota. Ausente quando a classificação é importada.
+             */
+            readonly regraArredondamento?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Casas de arredondamento
+             * @description Casas decimais da nota arredondada. Ausente quando a classificação é importada.
+             */
+            readonly casasArredondamento?: number;
+            /**
+             * Escala da nota final
+             * @description Escala em que a nota final é publicada: 10, 100, 1000. Só se aplica ao cálculo local.
+             */
+            readonly escalaNotaFinal?: number;
+            /**
+             * Regra de ordem de alocação
+             * @description Regra do catálogo que define a ordem em que as vagas são alocadas.
+             */
+            readonly regraOrdemAlocacao?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Baseado no Enem
+             * @description Se a classificação usa as notas do Enem.
+             */
+            readonly baseadoEmEnem?: boolean;
+            /**
+             * Regras de eliminação
+             * @description Regras que eliminam candidatos da classificação.
+             */
+            readonly regrasEliminacao?: readonly components["schemas"]["DocumentoDaConfiguracaoEliminacao"][];
+            /**
+             * Critérios de desempate
+             * @description Critérios aplicados em ordem quando as notas empatam.
+             */
+            readonly criteriosDeDesempate?: readonly components["schemas"]["DocumentoDaConfiguracaoDesempate"][];
+            /**
+             * Resolução do peso por área do Enem
+             * @description Código da resolução cujo quadro de pesos por área vale para o processo.
+             */
+            readonly resolucaoPesoAreaEnem?: string;
+            /**
+             * Quadro de pesos por área do Enem
+             * @description Os pesos e cortes por área do Enem que a resolução fixa, copiados na exportação. Campo só de leitura: ignorado na importação, porque é congelado do catálogo pela resolução.
+             */
+            readonly quadroPesoAreaEnem?: readonly components["schemas"]["DocumentoDaConfiguracaoPesosPorArea"][];
+        };
+        /**
+         * Coleta de fatos
+         * @description Regras de coleta dos fatos do candidato: a referência temporal e as regras que derivam fatos das respostas.
+         */
+        readonly DocumentoDaConfiguracaoColeta: {
+            /**
+             * Referência temporal dos fatos
+             * @description Instante a partir do qual se avaliam os fatos que dependem de data, como a idade do candidato. A fase citada é a do cronograma deste documento.
+             */
+            readonly referenciaTemporalFatos?: {
+                /**
+                 * Tipo de referência
+                 * @description Âncora da referência: fim da inscrição, início ou fim de uma fase, ou uma data específica.
+                 * @enum {unknown}
+                 */
+                readonly tipo?: DocumentoDaConfiguracaoColetaReferenciaTemporalFatosTipo;
+                /**
+                 * Data específica
+                 * Format: date
+                 * @description Data da referência, no formato AAAA-MM-DD. Usada quando o tipo é DATA_ESPECIFICA.
+                 */
+                readonly data?: string;
+                /**
+                 * Fase de referência
+                 * @description Chave local da fase do cronograma que ancora a referência. Usada quando o tipo é INICIO_FASE ou FIM_FASE.
+                 */
+                readonly faseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            };
+            /**
+             * Regras de derivação
+             * @description Regras que derivam o valor de um fato do catálogo a partir de outros fatos. Cada fato derivado aparece uma vez. A derivação da modalidade não entra aqui: vem da oferta.
+             */
+            readonly regrasDerivacao?: readonly {
+                /**
+                 * Fato derivado
+                 * @description Código do fato derivado no catálogo, de 1 a 60 caracteres.
+                 */
+                readonly fatoCodigo: string;
+                /**
+                 * Regras
+                 * @description Regras da derivação, cada uma com a condição em que contribui. A regra sem condição é a âncora e contribui sempre, junto com as demais que valerem.
+                 */
+                readonly regras?: readonly {
+                    /**
+                     * Ordem
+                     * @description Posição da regra na avaliação, a partir de 0.
+                     */
+                    readonly ordem?: number;
+                    /**
+                     * Valor contribuído
+                     * @description Valor que a regra atribui ao fato quando vale, de até 60 caracteres.
+                     */
+                    readonly contribui?: string | null;
+                    /**
+                     * Quando vale
+                     * @description Condição da regra. Nula ou ausente: regra âncora, que vale sempre.
+                     */
+                    readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+                }[];
+            }[];
+        };
+        /**
+         * Alvo do procedimento de recurso
+         * @description Um item de avaliação da etapa que produz a decisão, pela chave, ou uma área do ENEM, pelo código; um só dos dois. A área exige que o processo importe a nota do ENEM.
+         */
+        readonly DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecurso: {
+            /**
+             * Item de avaliação
+             * @description Chave do item de avaliação da etapa.
+             */
+            readonly itemDeAvaliacaoChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Área do ENEM
+             * @description Código da área do ENEM.
+             * @enum {unknown}
+             */
+            readonly areaDoEnem?: DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem;
+        };
+        /**
+         * Chave local
+         * @description Identificador local de uma parte do documento, que as outras partes usam para se referir a ela; as referências a uma parte (por exemplo a chave da fase ou da etapa) têm este mesmo formato. É único entre as partes do mesmo tipo no documento ou, quando a parte pertence a outra (os itens de uma etapa), dentro da parte que a contém. Letras minúsculas, números e hífens, começando por letra.
+         */
+        readonly DocumentoDaConfiguracaoComunsChave: string;
+        /**
+         * Código estável de catálogo
+         * @description Código estável e legível de um item de catálogo ou de uma unidade. Nunca o identificador interno do banco: um valor com a forma de identificador único (UUID) é recusado.
+         */
+        readonly DocumentoDaConfiguracaoComunsCodigoDeCatalogo: string;
+        /**
+         * Identificador da conta
+         * @description Identificador da conta da pessoa no Uni+, texto opaco e estável que o provedor de identidade atribui (o sub do token). Nunca é CPF, e-mail, telefone nem nome, e quem o escreve não o monta a partir deles. O esquema só descreve a forma: não exige nem proíbe a forma de UUID e recusa o texto vazio, o que tem espaço nas pontas e o que passa de 255 caracteres. Que o valor é uma conta existente é conferência do domínio contra o cadastro de assinantes, que recusa o código desconhecido pela posição.
+         */
+        readonly DocumentoDaConfiguracaoComunsIdentificadorDaConta: string;
+        /**
+         * Instante
+         * Format: date-time
+         * @description Instante em UTC, no formato RFC 3339 com o sufixo Z e, se necessário, até seis casas de fração de segundo. Exemplo: 2027-01-10T03:00:00Z.
+         */
+        readonly DocumentoDaConfiguracaoComunsInstante: string;
+        /**
+         * Procedimento de recurso
+         * @description Como se revisa o recurso de uma matéria: o tipo de decisão recorrida, o alvo opcional dentro dela e a regra do catálogo que diz como revisar. Sem alvo, o procedimento cobre o tipo de decisão inteiro. O tipo de decisão precisa estar entre os que a fase ou a etapa declara.
+         */
+        readonly DocumentoDaConfiguracaoComunsProcedimentoDeRecurso: {
+            /**
+             * Tipo de decisão
+             * @description Tipo da decisão recorrida, entre os que a fase ou a etapa declara.
+             */
+            readonly tipoDeDecisao: components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"];
+            /**
+             * Alvo
+             * @description A parte da matéria que o procedimento cobre: um item de avaliação da etapa, pela chave, ou uma área do ENEM, pelo código. Ausente, o procedimento cobre o tipo de decisão inteiro.
+             */
+            readonly alvo?: components["schemas"]["DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecurso"];
+            /**
+             * Regra do procedimento
+             * @description Regra do catálogo que diz como o recurso é revisado: nova correção, conferência, correção de erro de registro ou recálculo.
+             */
+            readonly regra: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+        };
+        /**
+         * Ato publicado pela fase
+         * @description Um tipo de ato que a fase publica, com o papel dele no ciclo de recurso.
+         */
+        readonly DocumentoDaConfiguracaoComunsProduto: {
+            /**
+             * Tipo de ato
+             * @description Código do tipo de ato no catálogo de publicações.
+             */
+            readonly atoCodigo: string;
+            /**
+             * Papel do ato
+             * @description PRELIMINAR para o resultado que admite recurso, DEFINITIVO para o resultado final. Ausente quando o ato não é um resultado.
+             * @enum {unknown}
+             */
+            readonly papel?: DocumentoDaConfiguracaoComunsProdutoPapel;
+        };
+        /**
+         * Propriedades do recurso
+         * @description Prazo de interposição, âncora e efeito suspensivo do recurso, comuns à fase e à etapa.
+         */
+        readonly DocumentoDaConfiguracaoComunsPropriedadesDoRecurso: {
+            /**
+             * Código da regra
+             * @description Código da regra de prazo de recurso no catálogo de regras.
+             */
+            readonly regraCodigo?: string;
+            /**
+             * Versão da regra
+             * @description Versão da regra de prazo de recurso, na forma v1, v2, v3.
+             */
+            readonly regraVersao?: string;
+            /**
+             * Prazo de interposição
+             * @description Quantidade de unidades do prazo para recorrer, com até quatro casas decimais.
+             */
+            readonly prazoValor?: number;
+            /**
+             * Unidade do prazo
+             * @description Unidade do prazo de interposição: horas ou dias úteis (diasUteis).
+             * @enum {unknown}
+             */
+            readonly prazoUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade;
+            /**
+             * Ato âncora do prazo
+             * @description Código do tipo de ato, entre os atos preliminares da própria fase, a partir de cujo instante o prazo corre.
+             */
+            readonly atoAncoraCodigo?: string;
+            /**
+             * Efeito suspensivo na primeira instância, quantidade
+             * @description Quantidade de unidades do efeito suspensivo na primeira instância, com até quatro casas decimais.
+             */
+            readonly suspensividadePrimeiraInstanciaValor?: number;
+            /**
+             * Efeito suspensivo na primeira instância, unidade
+             * @description Unidade do efeito suspensivo na primeira instância: horas, dias ou dias úteis (diasUteis).
+             * @enum {unknown}
+             */
+            readonly suspensividadePrimeiraInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadePrimeiraInstanciaUnidade;
+            /**
+             * Admite instância superior
+             * @description Se cabe recurso à instância superior.
+             */
+            readonly admiteInstanciaSuperior?: boolean;
+            /**
+             * Efeito suspensivo na instância superior, quantidade
+             * @description Quantidade de unidades do efeito suspensivo na instância superior, com até quatro casas decimais.
+             */
+            readonly suspensividadeSegundaInstanciaValor?: number;
+            /**
+             * Efeito suspensivo na instância superior, unidade
+             * @description Unidade do efeito suspensivo na instância superior: horas, dias ou dias úteis (diasUteis).
+             * @enum {unknown}
+             */
+            readonly suspensividadeSegundaInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadeSegundaInstanciaUnidade;
+            /**
+             * Procedimentos de recurso
+             * @description O procedimento que revisa o recurso de cada matéria que a fase ou a etapa decide. Cada matéria tem um único procedimento, e um tipo de decisão não mistura procedimento para o tipo inteiro com procedimento por alvo.
+             */
+            readonly procedimentosDeRecurso?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProcedimentoDeRecurso"][];
+        };
+        /**
+         * Referência a uma regra do catálogo
+         * @description Cita uma regra do catálogo de regras pelo código e pela versão. O catálogo é só de acréscimo: a versão citada nunca muda de conteúdo.
+         */
+        readonly DocumentoDaConfiguracaoComunsReferenciaDeRegra: {
+            /**
+             * Código da regra
+             * @description Código da regra no catálogo de regras.
+             */
+            readonly codigo?: string;
+            /**
+             * Versão da regra
+             * @description Versão da regra no catálogo de regras, na forma v1, v2, v3.
+             */
+            readonly versao?: string;
+        };
+        /**
+         * Regra sem parâmetros
+         * @description A regra não tem parâmetros.
+         */
+        readonly DocumentoDaConfiguracaoComunsSemParametros: Record<string, never>;
+        /**
+         * Tipo de decisão
+         * @description Tipo de decisão que a fase ou a etapa toma e para a qual escolhe motivos.
+         * @enum {unknown}
+         */
+        readonly DocumentoDaConfiguracaoComunsTipoDeDecisao: DocumentoDaConfiguracaoComunsTipoDeDecisao;
+        /**
+         * Tipos de decisão
+         * @description Tipos de decisão declarados, cada um uma única vez.
+         */
+        readonly DocumentoDaConfiguracaoComunsTiposDeDecisao: readonly components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"][];
+        /**
+         * Cronograma
+         * @description As fases do processo, cada uma com a sua janela de datas, unidade responsável, atos que publica, bancas e regra de recurso.
+         */
+        readonly DocumentoDaConfiguracaoCronograma: {
+            /**
+             * Fases
+             * @description Fases do cronograma. A chave de cada fase é única no documento.
+             */
+            readonly fases?: readonly components["schemas"]["DocumentoDaConfiguracaoCronogramaFase"][];
+        };
+        /**
+         * Fase do cronograma
+         * @description Uma fase do processo. Só a chave local é obrigatória: as datas, a unidade e o resto podem faltar num rascunho.
+         */
+        readonly DocumentoDaConfiguracaoCronogramaFase: {
+            /**
+             * Chave da fase
+             * @description Chave local da fase, única no documento. Outras partes a usam para citar esta fase. É obrigatória: é escolhida por quem cria a fase, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Fase canônica
+             * @description Código da fase no catálogo de fases canônicas, por exemplo INSCRICAO ou RESULTADO_FINAL.
+             */
+            readonly faseCanonicaCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Ordem
+             * @description Posição da fase na linha do tempo do processo, a partir de 1. Não se repete entre as fases.
+             */
+            readonly ordem?: number;
+            /**
+             * Início da fase
+             * @description Instante em que a fase começa, em UTC. Ausente enquanto não definido.
+             */
+            readonly inicio?: components["schemas"]["DocumentoDaConfiguracaoComunsInstante"];
+            /**
+             * Fim da fase
+             * @description Instante em que a fase termina, em UTC. Ausente enquanto não definido.
+             */
+            readonly fim?: components["schemas"]["DocumentoDaConfiguracaoComunsInstante"];
+            /**
+             * Unidade responsável pela fase
+             * @description Código estável da unidade responsável por conduzir a fase.
+             */
+            readonly unidadeResponsavelCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Nome da unidade responsável
+             * @description Nome da unidade responsável pela fase, guardado no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é unidadeResponsavelCodigo.
+             */
+            readonly unidadeResponsavelNome?: string;
+            /**
+             * Sigla da unidade responsável
+             * @description Sigla da unidade responsável pela fase, guardada no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é unidadeResponsavelCodigo.
+             */
+            readonly unidadeResponsavelSigla?: string;
+            /**
+             * Atos que a fase publica
+             * @description Tipos de ato publicados pela fase, como o resultado preliminar. O par tipo de ato e papel não se repete na fase.
+             */
+            readonly produtos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProduto"][];
+            /**
+             * Fase que conclui o ciclo
+             * @description Chave local da fase do cronograma que conclui o ciclo de recurso desta fase.
+             */
+            readonly faseConcluinteChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Emite parecer individual
+             * @description Se a fase emite parecer individual ao candidato, quando ela publica resultado.
+             */
+            readonly emiteParecerIndividual?: boolean;
+            /**
+             * Bancas requeridas
+             * @description Bancas que a fase exige. Cada uma tem uma chave local, porque o mesmo tipo de banca pode aparecer mais de uma vez com recortes diferentes.
+             */
+            readonly bancasRequeridas?: readonly components["schemas"]["DocumentoDaConfiguracaoBancas"][];
+            /**
+             * Regra de recurso
+             * @description Prazo e efeito suspensivo do recurso. A presença desta regra é o que faz a fase admitir recurso.
+             */
+            readonly regraRecurso?: components["schemas"]["DocumentoDaConfiguracaoCronogramaRegraRecurso"];
+            /**
+             * Tipos de decisão da fase
+             * @description Tipos de decisão que a fase toma e para os quais o processo escolhe motivos.
+             */
+            readonly tiposDeDecisao?: components["schemas"]["DocumentoDaConfiguracaoComunsTiposDeDecisao"];
+            /**
+             * Regra de homologação
+             * @description Como a fase homologa as inscrições. Exige o tipo HOMOLOGACAO_DAS_INSCRICOES entre os tipos de decisão da fase.
+             */
+            readonly regraDeHomologacao?: components["schemas"]["DocumentoDaConfiguracaoHomologacao"];
+            /**
+             * Assinantes da fase
+             * @description Pessoas que assinam o documento da fase, em ordem, cada uma citada pelo identificador da conta dela no Uni+. O documento não traz o nome nem qualquer dado pessoal: o nome vem do cadastro de assinantes na emissão. A pessoa aparece uma única vez.
+             */
+            readonly assinantes?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsIdentificadorDaConta"][];
+        };
+        /**
+         * Regra de recurso
+         * @description Regra do catálogo que define o prazo de interposição do recurso, a âncora dele e o efeito suspensivo.
+         */
+        readonly DocumentoDaConfiguracaoCronogramaRegraRecurso: components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
+        /**
+         * Critério de desempate
+         * @description Um critério de desempate: a regra do catálogo e os parâmetros dela. Os critérios são aplicados na ordem, do primeiro ao último.
+         */
+        readonly DocumentoDaConfiguracaoDesempate: {
+            /**
+             * Ordem
+             * @description Posição do critério na sequência de desempate, a partir de 1.
+             */
+            readonly ordem?: number;
+            /**
+             * Regra do critério
+             * @description Regra de desempate no catálogo de regras.
+             */
+            readonly regra: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Parâmetros
+             * @description Parâmetros da regra. A forma de cada código está nas definições de parâmetros deste esquema, aplicadas conforme o código da regra.
+             */
+            readonly parametros?: {
+                readonly [key: string]: unknown;
+            };
+        } & (unknown & unknown & unknown & unknown & unknown);
+        /**
+         * Condição do desempate
+         * @description Fato, operador e valor que o desempate por predicado avalia.
+         */
+        readonly DocumentoDaConfiguracaoDesempateCondicaoDoDesempate: components["schemas"]["DocumentoDaConfiguracaoPredicadoCondicao"];
+        /**
+         * Parâmetros da regra
+         * @description Desempata a favor do candidato com a idade mínima informada ou mais.
+         */
+        readonly DocumentoDaConfiguracaoDesempateParametrosIdoso: {
+            /**
+             * Idade mínima
+             * @description Idade mínima, em anos, para valer a preferência.
+             */
+            readonly idadeMinima: number;
+        };
+        /**
+         * Parâmetros da regra
+         * @description Desempata pela maior nota nas áreas do Enem, na ordem listada.
+         */
+        readonly DocumentoDaConfiguracaoDesempateParametrosMaiorNotaAreaEnem: {
+            /**
+             * Áreas
+             * @description Códigos das áreas do Enem, em ordem de precedência.
+             */
+            readonly areas: readonly string[];
+        };
+        /**
+         * Parâmetros da regra
+         * @description Desempata pela maior nota numa etapa.
+         */
+        readonly DocumentoDaConfiguracaoDesempateParametrosMaiorNotaEtapa: {
+            /**
+             * Etapa citada
+             * @description Chave local da etapa que a regra cita.
+             */
+            readonly etapaChave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+        };
+        /**
+         * Distribuição de vagas por oferta de curso
+         * @description Os insumos que o edital declara para distribuir as vagas de uma oferta de curso. No máximo uma distribuição por oferta no processo. O quadro de vagas é calculado pelo sistema e vai ao documento só como leitura.
+         */
+        readonly DocumentoDaConfiguracaoDistribuicaoDeVagas: {
+            /**
+             * Oferta de curso
+             * @description Código da oferta de curso no cadastro, de letras maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres. É a chave da distribuição.
+             */
+            readonly ofertaCursoCodigo: string;
+            /**
+             * Vagas ofertadas base
+             * @description Número de vagas que a oferta tem antes da distribuição por modalidade. Maior que zero.
+             */
+            readonly vagasOfertadasBase?: number;
+            /**
+             * Percentual da reserva legal
+             * @description Fração das vagas reservada pela Lei de Cotas, de 0,5 a 1, com até quatro casas decimais. Obrigatório nas regras do ramo federal.
+             */
+            readonly percentualDaReservaLegal?: number | null;
+            /**
+             * Regra de distribuição
+             * @description Regra do catálogo que distribui as vagas entre as modalidades.
+             */
+            readonly regraDistribuicao?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Regra de ajuste
+             * @description Regra do catálogo que concilia o quadro de vagas. Nula ou ausente quando a distribuição não a usa.
+             */
+            readonly regraAjuste?: null | components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Ajuste do quadro
+             * @description Como o edital reduz o quadro fixado: de uma modalidade ou proporcionalmente em um conjunto delas. Nulo ou ausente quando não há ajuste.
+             */
+            readonly ajusteDoQuadro?: null | components["schemas"]["DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro"];
+            /**
+             * Referência demográfica
+             * @description Código do censo de referência da reserva demográfica no cadastro, de até 20 caracteres. É o `censoReferencia` do cadastro de referências demográficas. Só nas regras do ramo federal. Nula ou ausente quando a distribuição não cita referência demográfica.
+             */
+            readonly referenciaDemograficaCodigo?: string | null;
+            /**
+             * Modalidades
+             * @description Modalidades que a oferta distribui, cada uma pelo código do cadastro.
+             */
+            readonly modalidades?: readonly components["schemas"]["DocumentoDaConfiguracaoDistribuicaoDeVagasModalidade"][];
+            /**
+             * Nome do curso
+             * @description Nome do curso da oferta, para leitura. Campo só de leitura: ignorado na importação.
+             */
+            readonly cursoNome?: string;
+            /**
+             * Grau do curso
+             * @description Grau do curso da oferta. Campo só de leitura: ignorado na importação.
+             */
+            readonly cursoGrau?: string;
+            /**
+             * Unidade ofertante
+             * @description Nome da unidade que oferta o curso. Campo só de leitura: ignorado na importação.
+             */
+            readonly unidadeOfertanteNome?: string;
+            /**
+             * Turnos
+             * @description Turnos da oferta. Campo só de leitura: ignorado na importação.
+             */
+            readonly turnos?: readonly string[];
+            /**
+             * Quadro de vagas
+             * @description Vagas por modalidade calculadas pelo sistema a partir dos insumos. Campo só de leitura: ignorado na importação, porque o sistema recalcula o quadro.
+             */
+            readonly quadro?: readonly components["schemas"]["DocumentoDaConfiguracaoDistribuicaoDeVagasVagasDaModalidade"][];
+            /**
+             * Total de vagas do edital
+             * @description Soma das vagas do quadro. Campo só de leitura: ignorado na importação.
+             */
+            readonly totalDeVagasDoEdital?: number;
+        };
+        /**
+         * Ajuste do quadro
+         * @description O ajuste que o edital declara sobre o quadro fixado. O discriminador $tipo escolhe qual propriedade vale.
+         */
+        readonly DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro: {
+            /**
+             * Tipo de ajuste
+             * @description reduzirDe reduz de uma modalidade; reduzirProporcionalEm reduz proporcionalmente num conjunto delas.
+             * @enum {unknown}
+             */
+            readonly $tipo: DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro$tipo;
+            /**
+             * Modalidade reduzida
+             * @description Código da modalidade de onde se reduz. Usado em reduzirDe.
+             */
+            readonly modalidadeCodigo?: string;
+            /**
+             * Modalidades reduzidas
+             * @description Códigos das modalidades em que se reduz proporcionalmente. Usado em reduzirProporcionalEm.
+             */
+            readonly modalidadeCodigos?: readonly string[];
+        };
+        /**
+         * Modalidade da oferta
+         * @description Uma modalidade de concorrência da oferta. A natureza, a composição e o remanejamento dela vêm do cadastro de modalidades e não se declaram aqui.
+         */
+        readonly DocumentoDaConfiguracaoDistribuicaoDeVagasModalidade: {
+            /**
+             * Código da modalidade
+             * @description Código da modalidade no cadastro, de letras maiúsculas, dígitos e sublinhado, de 1 a 60 caracteres.
+             */
+            readonly codigo: string;
+            /**
+             * Quantidade declarada
+             * @description Quantidade de vagas que o edital fixa para a modalidade. Nula ou ausente quando o sistema a calcula.
+             */
+            readonly quantidadeDeclarada?: number | null;
+            /**
+             * Descrição da modalidade
+             * @description Descrição da modalidade no cadastro. Campo só de leitura: ignorado na importação.
+             */
+            readonly descricao?: string | null;
+        };
+        /**
+         * Vagas de uma modalidade
+         * @description A quantidade de vagas calculada para uma modalidade.
+         */
+        readonly DocumentoDaConfiguracaoDistribuicaoDeVagasVagasDaModalidade: {
+            /**
+             * Código da modalidade
+             * @description Código da modalidade no cadastro.
+             */
+            readonly modalidadeCodigo?: string;
+            /**
+             * Quantidade
+             * @description Vagas da modalidade no quadro.
+             */
+            readonly quantidade?: number;
+        };
+        /**
+         * Política de divulgação
+         * @description Quais dados do candidato aparecem nas listas públicas de resultado. Bloco ausente significa que a política ainda não foi preenchida.
+         */
+        readonly DocumentoDaConfiguracaoDivulgacao: {
+            /**
+             * Campos públicos
+             * @description Dados do candidato divulgados nas listas públicas: numero_inscricao, nome_abreviado ou nome. Não se repetem.
+             */
+            readonly camposPublicos?: readonly DocumentoDaConfiguracaoDivulgacaoCamposPublicos[];
+            /**
+             * Justificativa
+             * @description Motivo de divulgar o nome completo, texto livre de até 1000 caracteres.
+             */
+            readonly justificativa?: string;
+            /**
+             * Regra do nome abreviado
+             * @description Identificador da regra vigente que abrevia o nome do candidato, presente quando nome_abreviado é divulgado. Definido pelo servidor na publicação. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é camposPublicos.
+             */
+            readonly regraNomeAbreviado?: string;
+        };
+        /**
+         * Regra de eliminação
+         * @description Uma regra de eliminação: a regra do catálogo e os parâmetros dela.
+         */
+        readonly DocumentoDaConfiguracaoEliminacao: {
+            /**
+             * Regra de eliminação
+             * @description Regra de eliminação no catálogo de regras.
+             */
+            readonly regra: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Parâmetros
+             * @description Parâmetros da regra. A forma de cada código está nas definições de parâmetros deste esquema, aplicadas conforme o código da regra.
+             */
+            readonly parametros?: {
+                readonly [key: string]: unknown;
+            };
+        } & (unknown & unknown & unknown & unknown & unknown);
+        /**
+         * Parâmetros da regra
+         * @description Elimina o candidato ausente numa etapa.
+         */
+        readonly DocumentoDaConfiguracaoEliminacaoParametrosAusenciaNaEtapa: {
+            /**
+             * Etapa citada
+             * @description Chave local da etapa que a regra cita.
+             */
+            readonly etapaChave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+        };
+        /**
+         * Parâmetros da regra
+         * @description Elimina o candidato com nota abaixo do corte numa área do Enem.
+         */
+        readonly DocumentoDaConfiguracaoEliminacaoParametrosCorteEmArea: {
+            /**
+             * Área
+             * @description Código da área do Enem: letras maiúsculas, dígitos e sublinhado, até 30 caracteres.
+             */
+            readonly areaCodigo: string;
+            /**
+             * Mínimo
+             * @description Nota abaixo da qual o candidato é eliminado na área.
+             */
+            readonly minimo: number;
+        };
+        /**
+         * Parâmetros da regra
+         * @description Elimina o candidato com nota abaixo do mínimo numa etapa.
+         */
+        readonly DocumentoDaConfiguracaoEliminacaoParametrosNotaMinimaEtapa: {
+            /**
+             * Etapa citada
+             * @description Chave local da etapa que a regra cita.
+             */
+            readonly etapaChave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Nota mínima
+             * @description Nota abaixo da qual o candidato é eliminado.
+             */
+            readonly notaMinima: number;
+        };
+        /**
+         * Etapa de avaliação
+         * @description Uma etapa de avaliação do processo. Só a chave local é obrigatória: o resto pode faltar num rascunho.
+         */
+        readonly DocumentoDaConfiguracaoEtapas: {
+            /**
+             * Chave da etapa
+             * @description Chave local da etapa, única no documento. Desempate, eliminação e exigências a usam para citar esta etapa. É obrigatória: é escolhida por quem cria a etapa, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Nome da etapa
+             * @description Nome da etapa como aparece para as pessoas.
+             */
+            readonly nome?: string;
+            /**
+             * Caráter da etapa
+             * @description Se a etapa classifica (classificatoria), elimina (eliminatoria) ou faz as duas coisas (ambas).
+             * @enum {unknown}
+             */
+            readonly carater?: DocumentoDaConfiguracaoEtapasCarater;
+            /**
+             * Tipo de etapa
+             * @description Código do tipo de etapa no catálogo de tipos de etapa.
+             */
+            readonly tipoEtapaCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Peso
+             * @description Peso da etapa na nota final, com até quatro casas decimais.
+             */
+            readonly peso?: number;
+            /**
+             * Nota mínima
+             * @description Nota mínima para não ser eliminado, com até quatro casas decimais.
+             */
+            readonly notaMinima?: number;
+            /**
+             * Nota máxima
+             * @description Nota máxima da etapa, com até quatro casas decimais.
+             */
+            readonly notaMaxima?: number;
+            /**
+             * Passo do lançamento
+             * @description Menor variação aceita no lançamento da nota, com até quatro casas decimais.
+             */
+            readonly passoDoLancamento?: number;
+            /**
+             * Forma de avaliação
+             * @description OBJETIVA para correção automática ou HUMANA para correção por avaliadores.
+             * @enum {unknown}
+             */
+            readonly formaDeAvaliacao?: DocumentoDaConfiguracaoEtapasFormaDeAvaliacao;
+            /**
+             * Regra de consolidação
+             * @description Regra do catálogo que consolida as correções na avaliação humana.
+             */
+            readonly regraConsolidacao?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+            /**
+             * Itens de avaliação
+             * @description Itens que compõem a nota da etapa. Cada item tem uma chave local, que o preserva quando o rótulo muda.
+             */
+            readonly itensDeAvaliacao?: readonly components["schemas"]["DocumentoDaConfiguracaoEtapasItemDeAvaliacao"][];
+            /**
+             * Escala de atendimento
+             * @description Níveis de atendimento que o avaliador usa para dar a fração da pontuação de cada item.
+             */
+            readonly escalaDeAtendimento?: readonly components["schemas"]["DocumentoDaConfiguracaoEtapasNivelDeAtendimento"][];
+            /**
+             * Ordem
+             * @description Posição de apresentação da etapa, a partir de 1.
+             */
+            readonly ordem?: number;
+            /**
+             * Fase da etapa
+             * @description Chave local da fase do cronograma que contém a etapa.
+             */
+            readonly faseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Início da etapa
+             * @description Instante em que a etapa começa, em UTC. Ausente quando ela segue a janela da fase.
+             */
+            readonly inicio?: components["schemas"]["DocumentoDaConfiguracaoComunsInstante"];
+            /**
+             * Fim da etapa
+             * @description Instante em que a etapa termina, em UTC. Ausente quando ela segue a janela da fase.
+             */
+            readonly fim?: components["schemas"]["DocumentoDaConfiguracaoComunsInstante"];
+            /**
+             * Emite parecer individual
+             * @description Se a etapa emite parecer individual ao candidato, quando ela publica resultado.
+             */
+            readonly emiteParecerIndividual?: boolean;
+            /**
+             * Atos que a etapa publica
+             * @description Tipos de ato publicados pela etapa. O par tipo de ato e papel não se repete na etapa.
+             */
+            readonly produtos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProduto"][];
+            /**
+             * Bancas da etapa
+             * @description Bancas que a etapa exige. Cada uma tem uma chave local.
+             */
+            readonly bancas?: readonly components["schemas"]["DocumentoDaConfiguracaoBancas"][];
+            /**
+             * Recursos da etapa
+             * @description Recursos que a etapa admite.
+             */
+            readonly recursos?: readonly components["schemas"]["DocumentoDaConfiguracaoEtapasRecursoDaEtapa"][];
+            /**
+             * Tipos de decisão da etapa
+             * @description Tipos de decisão que a etapa toma e para os quais o processo escolhe motivos.
+             */
+            readonly tiposDeDecisao?: components["schemas"]["DocumentoDaConfiguracaoComunsTiposDeDecisao"];
+        };
+        /**
+         * Item de avaliação
+         * @description Um item que compõe a nota de uma etapa.
+         */
+        readonly DocumentoDaConfiguracaoEtapasItemDeAvaliacao: {
+            /**
+             * Chave do item
+             * @description Chave local do item, única na etapa. É obrigatória: é escolhida por quem cria o item, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Rótulo
+             * @description Nome do item como aparece para o avaliador.
+             */
+            readonly rotulo?: string;
+            /**
+             * Pontuação máxima
+             * @description Pontuação máxima do item, com até quatro casas decimais.
+             */
+            readonly pontuacaoMaxima?: number;
+        };
+        /**
+         * Nível de atendimento
+         * @description Um nível da escala de atendimento: o rótulo e a fração da pontuação do item que ele vale.
+         */
+        readonly DocumentoDaConfiguracaoEtapasNivelDeAtendimento: {
+            /**
+             * Chave do nível
+             * @description Chave local do nível, única na escala. É a identidade do nível entre versões e nas referências internas: o rótulo é texto editável, e corrigir a grafia não pode virar retirada e inclusão. É obrigatória: é escolhida por quem cria o nível, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Rótulo do nível
+             * @description Nome do nível, único na escala.
+             */
+            readonly rotulo?: string;
+            /**
+             * Fração
+             * @description Fração da pontuação do item que o nível vale, de 0 a 1, com até quatro casas decimais.
+             */
+            readonly fracao?: number;
+        };
+        /**
+         * Recurso da etapa
+         * @description Recurso que a etapa admite: a âncora do prazo e as mesmas propriedades de prazo e efeito suspensivo do recurso da fase. Com a âncora atoPublicado, o ato âncora é um ato preliminar da própria etapa.
+         */
+        readonly DocumentoDaConfiguracaoEtapasRecursoDaEtapa: {
+            /**
+             * Âncora do prazo
+             * @description De onde o prazo corre: do ato publicado (atoPublicado) ou da ciência individual do candidato (cienciaIndividual).
+             * @enum {unknown}
+             */
+            readonly ancora?: DocumentoDaConfiguracaoEtapasRecursoDaEtapaAncora;
+        } & components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
+        /**
+         * Documentos exigidos
+         * @description As exigências de documentos do processo e a árvore que combina os documentos que satisfazem a exigência do candidato.
+         */
+        readonly DocumentoDaConfiguracaoExigencias: {
+            /**
+             * Exigências
+             * @description Documentos que o processo exige.
+             */
+            readonly exigencias?: readonly components["schemas"]["DocumentoDaConfiguracaoExigenciasExigencia"][];
+            /**
+             * Árvore de satisfação
+             * @description Raízes da árvore de satisfação das exigências.
+             */
+            readonly arvoreDeSatisfacao?: readonly components["schemas"]["DocumentoDaConfiguracaoArvoreDeSatisfacao"][];
+        };
+        /**
+         * Exigência de documento
+         * @description Um documento que o processo exige, onde é exigido, se é obrigatório, em que condição e como é entregue. O tipo de documento é citado pelo código do catálogo.
+         */
+        readonly DocumentoDaConfiguracaoExigenciasExigencia: {
+            /**
+             * Chave da exigência
+             * @description Chave local da exigência, única no documento. A árvore de satisfação a cita por ela. É obrigatória: é escolhida por quem cria a exigência, o sistema não a atribui, e ela não muda ao renomear nem ao reordenar.
+             */
+            readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Tipo de documento
+             * @description Código do tipo de documento no catálogo, de 1 a 60 caracteres.
+             */
+            readonly tipoDocumentoCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Nome do tipo de documento
+             * @description Nome do tipo de documento no catálogo, copiado na exportação. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly tipoDocumentoNome?: string;
+            /**
+             * Categoria do tipo de documento
+             * @description Categoria do tipo de documento no catálogo. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly tipoDocumentoCategoria?: string;
+            /**
+             * Classificação de proteção
+             * @description Classificação do tipo de documento quanto à proteção de dados. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             * @enum {unknown}
+             */
+            readonly classificacaoProtecao?: DocumentoDaConfiguracaoExigenciasExigenciaClassificacaoProtecao;
+            /**
+             * Finalidade do tratamento
+             * @description Finalidade do tratamento de dados do tipo de documento. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly finalidadeTratamento?: string;
+            /**
+             * Hipótese legal
+             * @description Hipótese legal do tratamento de dados do tipo de documento. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly hipoteseLegal?: string;
+            /**
+             * Fatos comprovados
+             * @description Códigos dos fatos do candidato que o documento comprova. Campo só de leitura: ignorado na importação, porque vem do catálogo pelo código.
+             */
+            readonly fatosComprovados?: readonly string[];
+            /**
+             * Fase em que é exigido
+             * @description Chave local da fase do cronograma em que o documento é exigido.
+             */
+            readonly faseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Etapa em que é exigido
+             * @description Chave local da etapa em que o documento é exigido, quando a exigência é de uma etapa.
+             */
+            readonly etapaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Finalidade do formulário
+             * @description Finalidade do formulário a que a exigência pertence, quando houver.
+             * @enum {unknown}
+             */
+            readonly finalidade?: DocumentoDaConfiguracaoExigenciasExigenciaFinalidade;
+            /**
+             * Aplicabilidade
+             * @description GERAL vale para todos os candidatos; CONDICIONAL vale só quando a condição de gatilho é verdadeira.
+             * @enum {unknown}
+             */
+            readonly aplicabilidade?: DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade;
+            /**
+             * Obrigatório
+             * @description Se a entrega do documento é obrigatória.
+             */
+            readonly obrigatorio?: boolean;
+            /**
+             * Consequência do indeferimento
+             * @description O que acontece quando o documento é indeferido.
+             * @enum {unknown}
+             */
+            readonly consequenciaIndeferimento?: DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento;
+            /**
+             * Condição de gatilho
+             * @description Predicado que torna a exigência aplicável, quando ela é condicional.
+             */
+            readonly condicaoGatilho?: components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            /**
+             * Bases legais
+             * @description Embasamento normativo da exigência.
+             */
+            readonly basesLegais?: readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoBaseLegal"][];
+            /**
+             * Idade máxima de emissão
+             * @description Quanto tempo o documento pode ter desde a emissão, contado a partir da referência.
+             */
+            readonly idadeMaximaEmissao?: components["schemas"]["DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissao"];
+            /**
+             * Formatos permitidos
+             * @description Os formatos de arquivo aceitos para a entrega do documento: qualquer um ou uma lista com o tamanho máximo de cada formato.
+             */
+            readonly formatosPermitidos?: components["schemas"]["DocumentoDaConfiguracaoExigenciasFormatosPermitidos"];
+            /**
+             * Tamanho máximo
+             * @description Tamanho máximo do arquivo, em bytes, para os formatos sem limite próprio.
+             */
+            readonly tamanhoMaximoBytes?: number;
+            /**
+             * Modelo do documento
+             * @description Modelo de documento que a exigência oferece ao candidato, descrito na exportação. Campo só de leitura: ignorado na importação, porque o modelo é um arquivo enviado em separado.
+             */
+            readonly modelo?: {
+                /**
+                 * Nome do arquivo
+                 * @description Nome do arquivo do modelo.
+                 */
+                readonly nomeArquivo?: string;
+                /**
+                 * Formato
+                 * @description Formato do arquivo do modelo.
+                 */
+                readonly formato?: string;
+                /**
+                 * Resumo do conteúdo
+                 * @description Resumo SHA-256 do conteúdo do modelo, em hexadecimal.
+                 */
+                readonly hashSha256?: string;
+            };
+        };
+        /**
+         * Formatos permitidos
+         * @description Os formatos de arquivo aceitos para a entrega do documento: qualquer um ou uma lista com o tamanho máximo de cada formato.
+         */
+        readonly DocumentoDaConfiguracaoExigenciasFormatosPermitidos: {
+            /**
+             * Qualquer formato
+             * @description Verdadeiro quando o documento aceita qualquer formato.
+             */
+            readonly qualquer?: boolean;
+            /**
+             * Lista de formatos
+             * @description Formatos aceitos, quando não é qualquer um.
+             */
+            readonly lista?: readonly {
+                /**
+                 * Formato
+                 * @description Formato do arquivo.
+                 * @enum {unknown}
+                 */
+                readonly formato?: DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato;
+                /**
+                 * Tamanho máximo
+                 * @description Tamanho máximo do arquivo nesse formato, em bytes.
+                 */
+                readonly tamanhoMaximoBytesMax?: number;
+            }[];
+        };
+        /**
+         * Idade máxima de emissão
+         * @description Quanto tempo o documento pode ter desde a emissão, contado a partir da referência.
+         */
+        readonly DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissao: {
+            /**
+             * Valor
+             * @description Quantidade de unidades, maior que zero.
+             */
+            readonly valor?: number;
+            /**
+             * Unidade
+             * @description Unidade do valor.
+             * @enum {unknown}
+             */
+            readonly unidade?: DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade;
+            /**
+             * Referência
+             * @description Instante de onde a idade é contada.
+             * @enum {unknown}
+             */
+            readonly referenciaTipo?: DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoReferenciaTipo;
+            /**
+             * Data
+             * Format: date
+             * @description Data da referência, quando ela é uma data específica.
+             */
+            readonly data?: string;
+            /**
+             * Fase da referência
+             * @description Chave local da fase de onde a idade é contada, quando a referência é o início ou o fim de uma fase.
+             */
+            readonly referenciaFaseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+        };
+        /**
+         * Formulário do processo
+         * @description O formulário de uma finalidade: as etapas, os itens e grupos coletados e os termos de consentimento exigidos. Cada finalidade tem no máximo um formulário no processo. Um formulário comporta no máximo 200 itens, contando itens, grupos e subitens.
+         */
+        readonly DocumentoDaConfiguracaoFormulario: {
+            /**
+             * Finalidade
+             * @description Para que serve o formulário. É a chave dele no documento.
+             * @enum {unknown}
+             */
+            readonly finalidade: DocumentoDaConfiguracaoFormularioFinalidade;
+            /**
+             * Fase do formulário
+             * @description Chave local da fase do cronograma a que o formulário pertence.
+             */
+            readonly faseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Título
+             * @description Título do formulário, de até 300 caracteres.
+             */
+            readonly titulo?: string;
+            /**
+             * Modelo de origem
+             * @description Código do modelo de formulário aplicado ao processo, de até 60 caracteres. Registra só a proveniência. Campo só de leitura: ignorado na importação.
+             */
+            readonly modeloOrigemCodigo?: string;
+            /**
+             * Etapas
+             * @description Seções e blocos do formulário, na ordem de apresentação.
+             */
+            readonly etapas?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioEtapa"][];
+            /**
+             * Itens
+             * @description Fatos coletados pelo formulário.
+             */
+            readonly itens?: readonly components["schemas"]["DocumentoDaConfiguracaoItemDoFormulario"][];
+            /**
+             * Grupos
+             * @description Grupos repetíveis de campos, como a composição familiar.
+             */
+            readonly grupos?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioGrupo"][];
+            /**
+             * Termos de consentimento
+             * @description Termos que o candidato deve aceitar, cada um citando o termo e o número da versão no catálogo.
+             */
+            readonly termos?: readonly components["schemas"]["DocumentoDaConfiguracaoFormularioTermoExigido"][];
+        };
+        /**
+         * Etapa do formulário
+         * @description Uma seção de campos ou um bloco de sistema.
+         */
+        readonly DocumentoDaConfiguracaoFormularioEtapa: {
+            /**
+             * Código
+             * @description Código da etapa, único no formulário. Os itens e grupos a citam em etapaCodigo.
+             */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Ordem
+             * @description Posição de apresentação, a partir de 0.
+             */
+            readonly ordem?: number;
+            /**
+             * Tipo
+             * @description SECAO reúne campos; BLOCO é um bloco de sistema.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoFormularioEtapaTipo;
+            /**
+             * Bloco de sistema
+             * @description Qual bloco de sistema a etapa é. Só faz sentido quando o tipo é BLOCO; a coerência é regra do domínio.
+             * @enum {unknown}
+             */
+            readonly bloco?: DocumentoDaConfiguracaoFormularioEtapaBloco;
+            /**
+             * Título
+             * @description Título da etapa, de até 300 caracteres.
+             */
+            readonly titulo?: string;
+            /**
+             * Descrição
+             * @description Texto explicativo da etapa, de até 2000 caracteres.
+             */
+            readonly descricao?: string;
+            /**
+             * Aviso
+             * @description Aviso destacado da etapa, de até 2000 caracteres.
+             */
+            readonly aviso?: string;
+            /**
+             * Exibição
+             * @description Condição para exibir a etapa. Nula ou ausente: sempre exibida.
+             */
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+        };
+        /**
+         * Grupo repetível
+         * @description Conjunto de campos que o candidato repete, uma vez por ocorrência.
+         */
+        readonly DocumentoDaConfiguracaoFormularioGrupo: {
+            /**
+             * Código
+             * @description Código do grupo, único no processo e distinto de qualquer código de fato.
+             */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Etapa
+             * @description Código da etapa do tipo SECAO, do mesmo formulário, em que o grupo aparece.
+             */
+            readonly etapaCodigo?: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Ordem
+             * @description Posição de apresentação, a partir de 0, única no formulário entre itens e grupos.
+             */
+            readonly ordem?: number;
+            /**
+             * Rótulo
+             * @description Texto do grupo exibido ao candidato, de até 300 caracteres.
+             */
+            readonly rotulo?: string;
+            /**
+             * Mínimo de ocorrências
+             * @description Menor número de ocorrências aceito.
+             */
+            readonly minimo?: number;
+            /**
+             * Máximo de ocorrências
+             * @description Maior número de ocorrências aceito. Nulo ou ausente: sem teto.
+             */
+            readonly maximo?: number | null;
+            /**
+             * Inclui o candidato
+             * @description Se o próprio candidato conta como uma das ocorrências.
+             */
+            readonly incluiCandidato?: boolean;
+            /**
+             * Exibição
+             * @description Condição para exibir o grupo. Nula ou ausente: sempre exibido.
+             */
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            /**
+             * Obrigatoriedade
+             * @description Se o preenchimento do grupo é obrigatório sempre, nunca ou só sob uma condição.
+             */
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+            /**
+             * Subitens
+             * @description Campos de cada ocorrência, até 30. O subitem não tem etapa nem impedimento: ficam ausentes ou nulos.
+             */
+            readonly subitens: readonly components["schemas"]["DocumentoDaConfiguracaoItemDoFormulario"][];
+        };
+        /**
+         * Termo exigido pelo formulário
+         * @description Um termo de consentimento que o candidato aceita, apontando uma versão publicada do catálogo. Nome, texto, base legal e forma de aceite vêm da versão e não se declaram aqui.
+         */
+        readonly DocumentoDaConfiguracaoFormularioTermoExigido: {
+            /**
+             * Código
+             * @description Código do termo neste formulário, de até 60 caracteres, único no formulário.
+             */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Ordem
+             * @description Posição de apresentação, a partir de 0.
+             */
+            readonly ordem?: number;
+            /**
+             * Termo
+             * @description Código estável do termo no catálogo de termos de consentimento, de até 100 caracteres.
+             */
+            readonly termoCodigo: string;
+            /**
+             * Versão do termo
+             * @description Número da versão publicada do termo, a partir de 1.
+             */
+            readonly versaoNumero: number;
+            /**
+             * Exibição
+             * @description Condição para exibir o termo. Nula ou ausente: sempre exibido.
+             */
+            readonly exibicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            /**
+             * Obrigatoriedade
+             * @description Se o aceite é obrigatório sempre, nunca ou só sob uma condição.
+             */
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+        };
+        /**
+         * Regra de homologação das inscrições
+         * @description Como a fase homologa as inscrições: o resultado que publica a lista e as alternativas de condições. A inscrição é homologada se cumpre todas as condições de ao menos uma alternativa; sem alternativa, toda inscrição enviada é homologada.
+         */
+        readonly DocumentoDaConfiguracaoHomologacao: {
+            /**
+             * Resultado que publica a lista
+             * @description Código do tipo de ato, resultado da própria fase ou da fase concluinte, que publica a lista de homologadas.
+             */
+            readonly resultadoAtoCodigo?: string;
+            /**
+             * Alternativas
+             * @description Alternativas de condições ligadas por OU; dentro de cada uma, as condições se ligam por E.
+             */
+            readonly alternativas?: readonly components["schemas"]["DocumentoDaConfiguracaoHomologacaoAlternativa"][];
+        };
+        /**
+         * Alternativa de condições
+         * @description Conjunto de condições que, cumpridas todas, homologa a inscrição.
+         */
+        readonly DocumentoDaConfiguracaoHomologacaoAlternativa: {
+            /**
+             * Condições
+             * @description Condições da alternativa, ao menos uma.
+             */
+            readonly condicoes?: readonly components["schemas"]["DocumentoDaConfiguracaoHomologacaoCondicao"][];
+        };
+        /**
+         * Condição de homologação
+         * @description Uma condição que a inscrição cumpre para ser homologada.
+         */
+        readonly DocumentoDaConfiguracaoHomologacaoCondicao: {
+            /**
+             * Tipo da condição
+             * @description O que a condição apura. Por ora, o resultado do candidato no retorno do INEP.
+             * @enum {unknown}
+             */
+            readonly tipo?: DocumentoDaConfiguracaoHomologacaoCondicaoTipo;
+            /**
+             * Edição do exame
+             * @description Ano da edição do exame, de 1998 a 2100.
+             */
+            readonly edicaoDoExame?: number;
+            /**
+             * Motivo desfavorável
+             * @description Código do motivo desfavorável registrado quando a condição não é cumprida.
+             */
+            readonly motivoDesfavoravelCodigo?: components["schemas"]["DocumentoDaConfiguracaoMotivoCodigoDoMotivo"];
+            /**
+             * Enquadramento
+             * @description Predicado que restringe a quem a condição vale; ausente ou nulo, vale para todos.
+             */
+            readonly enquadramento?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+        };
+        /**
+         * Identificação do processo
+         * @description Quem é o processo seletivo: nome, tipo, unidade administradora, origem dos candidatos, localidade e identificador legível, mais as convenções de contagem de prazo e a referência temporal dos fatos.
+         */
+        readonly DocumentoDaConfiguracaoIdentificacao: {
+            /**
+             * Nome do processo
+             * @description Nome do processo seletivo como aparece para as pessoas.
+             */
+            readonly nome?: string;
+            /**
+             * Tipo de processo
+             * @description Código do tipo de processo no catálogo de tipos de processo.
+             */
+            readonly tipoProcessoCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Nome do tipo de processo
+             * @description Nome do tipo de processo guardado no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é tipoProcessoCodigo.
+             */
+            readonly tipoProcessoNome?: string;
+            /**
+             * Unidade administradora
+             * @description Código estável da unidade que administra o processo.
+             */
+            readonly unidadeAdministradoraCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Nome da unidade administradora
+             * @description Nome da unidade administradora guardado no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é unidadeAdministradoraCodigo.
+             */
+            readonly unidadeAdministradoraNome?: string;
+            /**
+             * Sigla da unidade administradora
+             * @description Sigla da unidade administradora guardada no processo. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é unidadeAdministradoraCodigo.
+             */
+            readonly unidadeAdministradoraSigla?: string;
+            /**
+             * Origem dos candidatos
+             * @description Como os candidatos chegam ao processo: inscrevendo-se pelo sistema (inscricaoPropria) ou por importação de uma lista externa (importacaoExterna).
+             * @enum {unknown}
+             */
+            readonly origemCandidatos?: DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos;
+            /**
+             * Localidade do processo
+             * @description Código IBGE do município (7 dígitos) que rege a contagem de prazos. O nome e a UF vêm do cadastro de localidades.
+             */
+            readonly localidadeCodigoIbge?: string;
+            /**
+             * Nome da localidade
+             * @description Nome do município, guardado no processo como texto de exibição. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é localidadeCodigoIbge.
+             */
+            readonly localidadeNome?: string;
+            /**
+             * UF da localidade
+             * @description Sigla da unidade federativa do município, guardada como texto de exibição. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é localidadeCodigoIbge.
+             */
+            readonly localidadeUf?: string;
+            /**
+             * Identificador legível
+             * @description Identificador do processo para endereços e referências: de 3 a 64 caracteres, minúsculas, números e hífens, começando por letra.
+             */
+            readonly identificadorLegivel?: string;
+            /**
+             * Convenção de contagem de prazo
+             * @description Regra do catálogo que define como os prazos do processo são contados.
+             */
+            readonly algoritmoContagemPrazo?: components["schemas"]["DocumentoDaConfiguracaoComunsReferenciaDeRegra"];
+        };
+        /**
+         * Importação do resultado
+         * @description O que o processo de resultado importado declara da importação: os relatórios que importa, cada um pelo leiaute e pela versão, e a primeira fase depois da importação, em que o formulário coleta o que o arquivo não traz.
+         */
+        readonly DocumentoDaConfiguracaoImportacao: {
+            /**
+             * Relatórios
+             * @description Relatórios que o processo importa. Nenhum leiaute se repete.
+             */
+            readonly relatorios?: readonly components["schemas"]["DocumentoDaConfiguracaoImportacaoRelatorio"][];
+            /**
+             * Primeira fase depois da importação
+             * @description Chave local da primeira fase do cronograma depois da importação.
+             */
+            readonly primeiraFaseDepoisDaImportacaoChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+        };
+        /**
+         * Relatório importado
+         * @description Um relatório que o processo importa, pelo leiaute que ele segue.
+         */
+        readonly DocumentoDaConfiguracaoImportacaoRelatorio: {
+            /**
+             * Leiaute
+             * @description Código do leiaute do arquivo no catálogo de leiautes.
+             */
+            readonly leiauteCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * Versão do leiaute
+             * @description Versão do leiaute do arquivo.
+             */
+            readonly leiauteVersao: string;
+        };
+        /**
+         * Item do formulário
+         * @description Um fato do catálogo coletado pelo formulário. O item aponta o fato pelo código; tipo de renderização, formato, classificação de proteção e demais propriedades do fato vêm do catálogo e não se declaram aqui.
+         */
+        readonly DocumentoDaConfiguracaoItemDoFormulario: {
+            /**
+             * Fato
+             * @description Código do fato no catálogo, de 1 a 60 caracteres. Cada fato é coletado por um só formulário do processo.
+             */
+            readonly fatoCodigo: string;
+            /**
+             * Etapa
+             * @description Código da etapa do tipo SECAO, do mesmo formulário, em que o item aparece. Nulo ou ausente em subitem de grupo.
+             */
+            readonly etapaCodigo?: null | components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Ordem
+             * @description Posição de apresentação, a partir de 0. Única no formulário entre itens e grupos; o subitem tem ordem própria dentro do grupo.
+             */
+            readonly ordem?: number;
+            /**
+             * Rótulo
+             * @description Texto da pergunta exibido ao candidato, de até 300 caracteres.
+             */
+            readonly rotulo?: string;
+            /**
+             * Ajuda
+             * @description Texto de apoio ao preenchimento, de até 1000 caracteres.
+             */
+            readonly ajuda?: string;
+            /**
+             * Pedir confirmação
+             * @description Se o candidato deve digitar a resposta duas vezes.
+             */
+            readonly pedirConfirmacao?: boolean;
+            /**
+             * Obrigatoriedade
+             * @description Se a resposta é obrigatória sempre, nunca ou só sob uma condição.
+             */
+            readonly obrigatoriedade?: components["schemas"]["DocumentoDaConfiguracaoPredicadoObrigatoriedade"];
+            /**
+             * Precondição
+             * @description Condição para o fato ser coletado. Nula ou ausente: é sempre coletado. A lista vazia nunca é verdadeira.
+             */
+            readonly precondicao?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            /**
+             * Restrições de valor
+             * @description Limites impostos à resposta.
+             */
+            readonly restricoes?: readonly components["schemas"]["DocumentoDaConfiguracaoRestricaoDeValor"][];
+            /**
+             * Impedimento
+             * @description Resposta que impede a inscrição, com a mensagem ao candidato. Só no formulário de inscrição e fora de subitem de grupo.
+             */
+            readonly impedimento?: null | components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioImpedimento"];
+            /**
+             * Opções declaradas
+             * @description Opções de resposta definidas pelo processo, para fato cujos valores vêm do processo. Cada código é único no fato.
+             */
+            readonly opcoes?: readonly components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioOpcao"][];
+        };
+        /**
+         * Código local
+         * @description Código escolhido por quem escreve o formulário, de 1 a 60 caracteres, único no formulário.
+         */
+        readonly DocumentoDaConfiguracaoItemDoFormularioCodigoLocal: string;
+        /**
+         * Impedimento de inscrição
+         * @description Condição sobre a resposta do próprio campo que impede a inscrição.
+         */
+        readonly DocumentoDaConfiguracaoItemDoFormularioImpedimento: {
+            /**
+             * Quando impede
+             * @description Predicado que, verdadeiro, impede a inscrição.
+             */
+            readonly quando: components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+            /**
+             * Mensagem
+             * @description Explicação ao candidato, de 1 a 500 caracteres.
+             */
+            readonly mensagem: string;
+        };
+        /**
+         * Opção declarada
+         * @description Uma opção de resposta do fato.
+         */
+        readonly DocumentoDaConfiguracaoItemDoFormularioOpcao: {
+            /**
+             * Código
+             * @description Código da opção, de 1 a 60 caracteres, único no fato.
+             */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoItemDoFormularioCodigoLocal"];
+            /**
+             * Rótulo
+             * @description Texto da opção exibido ao candidato, de até 300 caracteres.
+             */
+            readonly rotulo?: string;
+        };
+        /**
+         * Motivo de decisão do processo
+         * @description Um motivo do catálogo que o processo escolheu para uma fase ou etapa. A identidade é o lugar, a fase ou a etapa pela chave, mais o par tipo e código do catálogo; o descritivo é cópia do catálogo e, depois de publicado o edital, não acompanha mais as mudanças dele.
+         */
+        readonly DocumentoDaConfiguracaoMotivo: {
+            /**
+             * Fase da decisão
+             * @description Chave da fase do cronograma em que o motivo vale. Exatamente um entre a fase e a etapa.
+             */
+            readonly faseChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Etapa da decisão
+             * @description Chave da etapa em que o motivo vale. Exatamente um entre a fase e a etapa.
+             */
+            readonly etapaChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
+            /**
+             * Tipo de decisão
+             * @description Tipo de decisão a que o motivo pertence.
+             */
+            readonly tipoCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsTipoDeDecisao"];
+            /** Código do motivo */
+            readonly codigo: components["schemas"]["DocumentoDaConfiguracaoMotivoCodigoDoMotivo"];
+            /**
+             * Descrição do motivo
+             * @description Descrição do motivo no catálogo, de até 500 caracteres. Campo só de leitura: a exportação o traz para quem lê o arquivo, e ele é ignorado na importação; a referência é o código.
+             */
+            readonly descricao?: string;
+            /**
+             * Subclassificação
+             * @description Subclassificação do motivo no catálogo, de até 64 caracteres. Campo só de leitura: ignorado na importação.
+             */
+            readonly subclassificacao?: string;
+            /**
+             * Sentido do motivo
+             * @description Se o motivo sustenta a decisão favorável ou a desfavorável. Campo só de leitura: ignorado na importação.
+             * @enum {unknown}
+             */
+            readonly sentido?: DocumentoDaConfiguracaoMotivoSentido;
+            /**
+             * Justificativa da inclusão
+             * @description Por que o motivo entrou no processo depois da publicação, de até 1000 caracteres. Ausente nas inclusões feitas antes dela.
+             */
+            readonly justificativaDaInclusao?: string;
+            /**
+             * Versão do edital de entrada
+             * @description Número da versão do edital em que o motivo entrou: 1 no rascunho, e a versão seguinte à base na sessão de retificação. Campo só de leitura: ignorado na importação.
+             */
+            readonly versaoDoEditalDeEntrada?: number;
+        } & (unknown | unknown);
+        /**
+         * Código do motivo
+         * @description Código do motivo no catálogo: maiúscula inicial, depois maiúsculas, dígitos e sublinhado, de 2 a 50 caracteres.
+         */
+        readonly DocumentoDaConfiguracaoMotivoCodigoDoMotivo: string;
+        /**
+         * Grupo de pesos por área
+         * @description Os pesos e cortes das áreas do Enem de um grupo, congelados do catálogo. Campo só de leitura: ignorado na importação, porque é congelado do catálogo pela resolução.
+         */
+        readonly DocumentoDaConfiguracaoPesosPorArea: {
+            /**
+             * Grupo
+             * @description Código do grupo de áreas do Enem.
+             */
+            readonly grupoAreaEnemCodigo?: string;
+            /**
+             * Rótulo do grupo
+             * @description Rótulo do grupo de áreas do Enem.
+             */
+            readonly grupoAreaEnemRotulo?: string;
+            /**
+             * Base legal
+             * @description Base legal do quadro de pesos do grupo.
+             */
+            readonly baseLegal?: string;
+            /**
+             * Áreas
+             * @description Peso e corte de cada área do grupo.
+             */
+            readonly areas?: readonly components["schemas"]["DocumentoDaConfiguracaoPesosPorAreaAreaDePeso"][];
+        };
+        /**
+         * Área do Enem
+         * @description Peso e corte de uma área do Enem.
+         */
+        readonly DocumentoDaConfiguracaoPesosPorAreaAreaDePeso: {
+            /**
+             * Código
+             * @description Código da área.
+             */
+            readonly codigo?: string;
+            /**
+             * Rótulo
+             * @description Rótulo da área.
+             */
+            readonly rotulo?: string;
+            /**
+             * Peso
+             * @description Peso da área na nota.
+             */
+            readonly peso?: number;
+            /**
+             * Corte
+             * @description Nota de corte da área, quando houver.
+             */
+            readonly corte?: number;
+        };
+        /**
+         * Base legal
+         * @description Embasamento da exigência: a norma, a abrangência dela e se a referência já foi resolvida.
+         */
+        readonly DocumentoDaConfiguracaoPredicadoBaseLegal: {
+            /**
+             * Referência
+             * @description Citação da norma que fundamenta a exigência.
+             */
+            readonly referencia?: string;
+            /**
+             * Abrangência
+             * @description Esfera da norma.
+             * @enum {unknown}
+             */
+            readonly abrangencia?: DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia;
+            /**
+             * Situação
+             * @description Se a referência foi resolvida ou ainda está pendente.
+             * @enum {unknown}
+             */
+            readonly status?: DocumentoDaConfiguracaoPredicadoBaseLegalStatus;
+            /**
+             * Observação
+             * @description Nota livre sobre a base legal.
+             */
+            readonly observacao?: string;
+        };
+        /**
+         * Condição de um predicado
+         * @description Um átomo do predicado: o fato, o operador e o valor de comparação. Os operadores EM e NAO_EM comparam com uma lista; os demais, com um valor escalar. A existência do fato no vocabulário é regra do domínio, não do esquema.
+         */
+        readonly DocumentoDaConfiguracaoPredicadoCondicao: {
+            /**
+             * Fato
+             * @description Código do fato que a condição examina, de 1 a 60 caracteres (o limite do armazenamento), com ao menos um caractere que não seja espaço.
+             */
+            readonly fato: string;
+            /**
+             * Operador
+             * @description Operador de comparação entre o fato e o valor.
+             * @enum {unknown}
+             */
+            readonly operador: DocumentoDaConfiguracaoPredicadoCondicaoOperador;
+            /**
+             * Valor
+             * @description Valor de comparação: uma lista para EM e NAO_EM, um texto, número ou booleano para os demais. Texto em branco, sozinho ou como item da lista, é recusado.
+             */
+            readonly valor: unknown;
+        };
+        /**
+         * Obrigatoriedade
+         * @description Se a exigência vale sempre, nunca, ou só quando o predicado é verdadeiro. O predicado existe somente em QUANDO.
+         */
+        readonly DocumentoDaConfiguracaoPredicadoObrigatoriedade: {
+            /**
+             * Tipo da obrigatoriedade
+             * @description SEMPRE, NUNCA ou QUANDO.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo;
+            /**
+             * Predicado
+             * @description Condição em que a obrigatoriedade QUANDO vale; nas outras o campo é nulo ou ausente.
+             */
+            readonly predicado?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+        };
+        /**
+         * Predicado em forma normal disjuntiva
+         * @description Lista de cláusulas ligadas por OU; cada cláusula é uma lista de condições ligadas por E. A lista vazia é o predicado sem cláusula, que não é verdadeiro para ninguém: usá-lo como condição de uma regra a torna nunca aplicável.
+         */
+        readonly DocumentoDaConfiguracaoPredicadoPredicado: readonly (readonly components["schemas"]["DocumentoDaConfiguracaoPredicadoCondicao"][])[];
+        /**
+         * Prova presencial
+         * @description O que o processo declara da prova presencial: se a tem e, só então, os municípios em que a aplica. A declaração é do próprio processo, nunca deduzida do tipo de processo nem das etapas.
+         */
+        readonly DocumentoDaConfiguracaoProvaPresencial: {
+            /**
+             * Tem prova presencial
+             * @description Verdadeiro quando o processo tem prova presencial.
+             */
+            readonly temProvaPresencial: boolean;
+            /**
+             * Municípios de aplicação
+             * @description Municípios em que a prova é aplicada, cada um pelo código do IBGE. Vazio sem prova presencial.
+             */
+            readonly municipios?: readonly components["schemas"]["DocumentoDaConfiguracaoProvaPresencialMunicipio"][];
+        };
+        /**
+         * Município de aplicação
+         * @description Um município em que a prova é aplicada: o código do IBGE é a autoridade, e a UF é a do prefixo do código.
+         */
+        readonly DocumentoDaConfiguracaoProvaPresencialMunicipio: {
+            /**
+             * Código IBGE
+             * @description Código do município no IBGE, com 7 dígitos e o prefixo de uma unidade federativa.
+             */
+            readonly codigoIbge: string;
+            /**
+             * UF
+             * @description Sigla da unidade federativa do município.
+             */
+            readonly uf: string;
+        };
+        /**
+         * Restrição de valor
+         * @description Limite que o formulário impõe à resposta de um campo. O tipo escolhe quais outras propriedades valem; a coerência com o tipo de renderização do fato é regra do domínio, não do esquema.
+         */
+        readonly DocumentoDaConfiguracaoRestricaoDeValor: {
+            /**
+             * Tipo da restrição
+             * @description Faixa numérica, tamanho do texto, opções permitidas, opções formadas pelas respostas, municípios da UF respondida ou faixa de data.
+             * @enum {unknown}
+             */
+            readonly tipo: DocumentoDaConfiguracaoRestricaoDeValorTipo;
+            /**
+             * Mínimo
+             * @description Limite inferior da faixa numérica (até quatro casas decimais) ou do tamanho do texto (inteiro). Usado nos tipos FAIXA_NUMERICA e TAMANHO_TEXTO.
+             */
+            readonly minimo?: number | null;
+            /**
+             * Máximo
+             * @description Limite superior da faixa numérica (até quatro casas decimais) ou do tamanho do texto (inteiro). Usado nos tipos FAIXA_NUMERICA e TAMANHO_TEXTO.
+             */
+            readonly maximo?: number | null;
+            /**
+             * Entradas de opções permitidas
+             * @description Conjuntos de valores permitidos, cada um com a condição em que vale. Usado no tipo OPCOES_PERMITIDAS.
+             */
+            readonly entradas?: readonly {
+                /**
+                 * Quando vale
+                 * @description Condição em que o conjunto vale. Ausente ou nula: vale sempre.
+                 */
+                readonly quando?: null | components["schemas"]["DocumentoDaConfiguracaoPredicadoPredicado"];
+                /**
+                 * Valores permitidos
+                 * @description Códigos dos valores permitidos.
+                 */
+                readonly valores: readonly string[];
+            }[];
+            /**
+             * Fatos de origem
+             * @description Códigos dos fatos cujas respostas formam as opções (OPCOES_DAS_RESPOSTAS) ou fato com a UF respondida (MUNICIPIOS_DA_UF).
+             */
+            readonly fatos?: readonly string[];
+            /**
+             * Data mínima
+             * @description Limite inferior da faixa de data. Usado no tipo FAIXA_DE_DATA.
+             */
+            readonly dataMinima?: null | components["schemas"]["DocumentoDaConfiguracaoRestricaoDeValorLimiteDeData"];
+            /**
+             * Data máxima
+             * @description Limite superior da faixa de data. Usado no tipo FAIXA_DE_DATA.
+             */
+            readonly dataMaxima?: null | components["schemas"]["DocumentoDaConfiguracaoRestricaoDeValorLimiteDeData"];
+        };
+        /**
+         * Limite de data
+         * @description Data fixa, ou deslocamento em anos e dias a partir do envio da resposta.
+         */
+        readonly DocumentoDaConfiguracaoRestricaoDeValorLimiteDeData: {
+            /**
+             * Âncora
+             * @description DATA_FIXA usa a data; ENVIO usa o deslocamento em anos e dias.
+             * @enum {unknown}
+             */
+            readonly ancora: DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora;
+            /**
+             * Data
+             * Format: date
+             * @description Data do limite, no formato AAAA-MM-DD. Usada na âncora DATA_FIXA.
+             */
+            readonly data?: string;
+            /**
+             * Anos
+             * @description Deslocamento em anos a partir do envio, de 0 a 150. Usado na âncora ENVIO.
+             */
+            readonly anos?: number;
+            /**
+             * Dias
+             * @description Deslocamento em dias a partir do envio, de 0 a 54900. Usado na âncora ENVIO.
+             */
+            readonly dias?: number;
+        };
+        /**
+         * Taxa de inscrição e isenção
+         * @description Se o processo cobra taxa de inscrição, o valor e os fundamentos de isenção que ele reconhece. Bloco ausente significa que a taxa ainda não foi declarada.
+         */
+        readonly DocumentoDaConfiguracaoTaxaDeInscricao: {
+            /**
+             * Cobra taxa
+             * @description Se o processo cobra taxa de inscrição.
+             */
+            readonly cobra?: boolean;
+            /**
+             * Valor da taxa
+             * @description Valor da taxa em reais, com até duas casas decimais.
+             */
+            readonly valor?: number;
+            /**
+             * Fundamentos de isenção
+             * @description Fundamentos de isenção da taxa que o processo reconhece. Não se repetem.
+             */
+            readonly fundamentos?: readonly DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos[];
         };
         readonly DocumentoDaInscricaoDto: {
             /** Format: uuid */
@@ -11124,17 +12697,6 @@ export interface components {
             readonly restricoes?: null | readonly components["schemas"]["RestricaoValorInput"][];
             readonly impedimento?: null | components["schemas"]["ImpedimentoInput"];
         };
-        readonly FecharRetificacaoRequest: {
-            readonly numero: null | string;
-            /** Format: uuid */
-            readonly documentoEditalId: string;
-            readonly ato: components["schemas"]["DadosDoAtoRequest"];
-            readonly anexos?: null | readonly components["schemas"]["AnexoDoEditalRequest"][];
-            /** Format: date-time */
-            readonly periodoInscricaoInicio?: null | string;
-            /** Format: date-time */
-            readonly periodoInscricaoFim?: null | string;
-        };
         /** @enum {string} */
         readonly FinalidadeDoDocumento: FinalidadeDoDocumento;
         readonly FormatosAceitosCertameDto: {
@@ -11346,9 +12908,6 @@ export interface components {
             readonly quando: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
             readonly mensagem: null | string;
         };
-        readonly IncluirMotivoNoProcessoRequest: {
-            readonly justificativa: null | string;
-        };
         readonly IniciarEnvioDeDocumentoDaInscricaoDto: {
             /** Format: uuid */
             readonly arquivoId: string;
@@ -11486,6 +13045,11 @@ export interface components {
             /** Format: double */
             readonly pontuacaoMaxima: number;
         };
+        readonly ItemDeErroDeCampo: {
+            readonly field?: null | string;
+            readonly code: string;
+            readonly message: string;
+        };
         readonly ItemDeRespostaDto: {
             readonly fatoCodigo: string;
             readonly rotulo: string;
@@ -11619,6 +13183,12 @@ export interface components {
             readonly totalDeInscritosAusentes: number;
             readonly ausentes: null | readonly components["schemas"]["AusenteDoLoteDto"][];
         };
+        readonly LugarDoMotivoDto: {
+            /** Format: uuid */
+            readonly faseCanonicaOrigemId: null | string;
+            /** Format: uuid */
+            readonly etapaId: null | string;
+        };
         readonly MinhaInscricaoDto: {
             /** Format: uuid */
             readonly inscricaoId: string;
@@ -11717,12 +13287,13 @@ export interface components {
         readonly MotivoDoProcessoDto: {
             /** Format: uuid */
             readonly motivoDeDecisaoId: string;
+            readonly lugar: components["schemas"]["LugarDoMotivoDto"];
             readonly tipo: string;
             readonly codigo: string;
             readonly descricao: string;
             readonly subclassificacao: null | string;
             readonly sentido: string;
-            readonly congelado: boolean;
+            readonly vigencia: components["schemas"]["VigenciaDoMotivoDto"];
             readonly justificativaDaInclusao: null | string;
         };
         readonly NivelDeAtendimentoDto: {
@@ -11898,6 +13469,29 @@ export interface components {
         };
         /** @enum {string} */
         readonly OrigemCandidatos: OrigemCandidatos;
+        readonly ParametrosRegraAjusteDistribuicao: components["schemas"]["ParametrosRegraAjusteDistribuicaoParametrosReduzirDe"] | components["schemas"]["ParametrosRegraAjusteDistribuicaoParametrosReduzirProporcionalEm"];
+        readonly ParametrosRegraAjusteDistribuicaoParametrosReduzirDe: {
+            /** @enum {string} */
+            readonly $tipo?: ParametrosRegraAjusteDistribuicaoParametrosReduzirDe$tipo;
+            readonly modalidadeCodigo: string;
+        };
+        readonly ParametrosRegraAjusteDistribuicaoParametrosReduzirProporcionalEm: {
+            /** @enum {string} */
+            readonly $tipo?: ParametrosRegraAjusteDistribuicaoParametrosReduzirProporcionalEm$tipo;
+            readonly modalidadeCodigos: readonly string[];
+        };
+        readonly ParametrosRegraPrazoRecursoDto: {
+            /** Format: double */
+            readonly prazoValor: number;
+            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
+            /** Format: double */
+            readonly suspensividadePrimeiraInstanciaValor: null | number;
+            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly admiteInstanciaSuperior: boolean;
+            /** Format: double */
+            readonly suspensividadeSegundaInstanciaValor: null | number;
+            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+        };
         readonly ParteDescartadaDto: {
             readonly parte: string;
             readonly codigo: string;
@@ -12166,12 +13760,17 @@ export interface components {
             /** Format: int32 */
             readonly quantidade: number;
         };
-        readonly RascunhoDaPublicacaoDto: {
+        readonly RascunhoCriadoResponse: {
+            /** Format: uuid */
+            readonly id: string;
             /** Format: int32 */
-            readonly versao: number;
-            readonly conteudo: components["schemas"]["JsonElement"];
-            /** Format: date-time */
-            readonly salvoEm: string;
+            readonly revisao: number;
+            readonly diagnosticos: readonly components["schemas"]["ItemDeErroDeCampo"][];
+        };
+        readonly RascunhoSubstituidoResponse: {
+            /** Format: int32 */
+            readonly revisao: number;
+            readonly diagnosticos: readonly components["schemas"]["ItemDeErroDeCampo"][];
         };
         readonly ReciboDaInscricaoDto: {
             /** Format: uuid */
@@ -12187,7 +13786,7 @@ export interface components {
             readonly id: string;
             readonly ancora: components["schemas"]["AncoraDoRecurso"];
             readonly regra: components["schemas"]["ReferenciaRegraDto"];
-            readonly args: components["schemas"]["ArgsRegraPrazoRecursoDto"];
+            readonly parametros: components["schemas"]["ParametrosRegraPrazoRecursoDto"];
             /** Format: uuid */
             readonly produtoAncoraId: string;
             readonly atoAncoraCodigo: null | string;
@@ -12346,7 +13945,7 @@ export interface components {
             /** Format: uuid */
             readonly produtoAncoraId: string;
             readonly regra: components["schemas"]["ReferenciaRegraDto"];
-            readonly args: components["schemas"]["ArgsRegraPrazoRecursoDto"];
+            readonly parametros: components["schemas"]["ParametrosRegraPrazoRecursoDto"];
             readonly procedimentos: readonly components["schemas"]["ProcedimentoDeRecursoDto"][];
         };
         readonly RegraRecursoFaseInput: {
@@ -12394,23 +13993,6 @@ export interface components {
             readonly atoRetificadoId: string;
             readonly motivo: string;
         };
-        readonly RetificacaoEmCursoDto: {
-            /** Format: uuid */
-            readonly id: string;
-            /** Format: uuid */
-            readonly processoSeletivoId: string;
-            readonly motivo: string;
-            /** Format: uuid */
-            readonly versaoBaseId: string;
-            /** Format: int32 */
-            readonly numeroVersaoBase: number;
-            /** Format: date-time */
-            readonly abertoEm: string;
-            readonly abertoPorContaId: string;
-            /** Format: int32 */
-            readonly revisao: number;
-            readonly eTag: string;
-        };
         readonly RetificarProcessoSeletivoRequest: {
             readonly motivo: string;
             readonly numero: null | string;
@@ -12422,11 +14004,6 @@ export interface components {
             readonly periodoInscricaoInicio?: null | string;
             /** Format: date-time */
             readonly periodoInscricaoFim?: null | string;
-        };
-        readonly SalvarRascunhoDaPublicacaoRequest: {
-            /** Format: int32 */
-            readonly versao: number;
-            readonly conteudo: components["schemas"]["JsonElement"];
         };
         readonly SecaoDaInscricaoDto: {
             readonly codigo: string;
@@ -12628,6 +14205,12 @@ export interface components {
             readonly ordem: number;
             readonly orientacao?: null | string;
         };
+        readonly VigenciaDoMotivoDto: {
+            /** Format: int32 */
+            readonly versaoDoEditalDeEntrada: number;
+            /** Format: int32 */
+            readonly versaoDoEditalDeSaida: null | number;
+        };
     };
     responses: never;
     parameters: never;
@@ -12696,12 +14279,6 @@ export enum AncoraDoRecurso {
     atoPublicado = "atoPublicado",
     cienciaIndividual = "cienciaIndividual"
 }
-export enum ArgsRegraAjusteDistribuicaoArgsReduzirDe$tipo {
-    reduzirDe = "reduzirDe"
-}
-export enum ArgsRegraAjusteDistribuicaoArgsReduzirProporcionalEm$tipo {
-    reduzirProporcionalEm = "reduzirProporcionalEm"
-}
 export enum ArquivoAdministrativoDtoClassificacaoProtecao {
     PUBLICO = "PUBLICO",
     INTERNO = "INTERNO",
@@ -12735,6 +14312,216 @@ export enum DefinirTaxaInscricaoRequestFundamentos {
     DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
     CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
 }
+export enum DocumentoDaConfiguracaoOpcoesDeCursoNumero {
+    Value1 = 1,
+    Value2 = 2
+}
+export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoTipo {
+    FOLHA = "FOLHA",
+    E = "E",
+    OU = "OU"
+}
+export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoConsequencia {
+    ELIMINA = "ELIMINA",
+    RECLASSIFICA_AC = "RECLASSIFICA_AC",
+    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
+    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
+}
+export enum DocumentoDaConfiguracaoArvoreDeSatisfacaoChaveDistincao {
+    COMPETENCIA_MENSAL = "COMPETENCIA_MENSAL",
+    EXERCICIO_ANUAL = "EXERCICIO_ANUAL",
+    OCORRENCIA = "OCORRENCIA"
+}
+export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoModo {
+    colegiadaComVotacao = "colegiadaComVotacao",
+    atoIndividual = "atoIndividual"
+}
+export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoCriterio {
+    maioriaSimples = "maioriaSimples",
+    maioriaAbsoluta = "maioriaAbsoluta",
+    unanimidade = "unanimidade"
+}
+export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoDesempate {
+    votoDaPresidencia = "votoDaPresidencia",
+    novaVotacao = "novaVotacao"
+}
+export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoEncerramento {
+    todosOsTitulares = "todosOsTitulares",
+    presidenciaNoQuorum = "presidenciaNoQuorum"
+}
+export enum DocumentoDaConfiguracaoBancasRegraDeDeliberacaoSemUnanimidade {
+    favoravel = "favoravel",
+    desfavoravel = "desfavoravel",
+    novaVotacao = "novaVotacao"
+}
+export enum DocumentoDaConfiguracaoColetaReferenciaTemporalFatosTipo {
+    FIM_INSCRICAO = "FIM_INSCRICAO",
+    INICIO_FASE = "INICIO_FASE",
+    FIM_FASE = "FIM_FASE",
+    DATA_ESPECIFICA = "DATA_ESPECIFICA"
+}
+export enum DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem {
+    REDACAO = "REDACAO",
+    CIENCIAS_DA_NATUREZA = "CIENCIAS_DA_NATUREZA",
+    CIENCIAS_HUMANAS = "CIENCIAS_HUMANAS",
+    LINGUAGENS = "LINGUAGENS",
+    MATEMATICA = "MATEMATICA"
+}
+export enum DocumentoDaConfiguracaoComunsProdutoPapel {
+    PRELIMINAR = "PRELIMINAR",
+    DEFINITIVO = "DEFINITIVO"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade {
+    horas = "horas",
+    diasUteis = "diasUteis"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadePrimeiraInstanciaUnidade {
+    horas = "horas",
+    dias = "dias",
+    diasUteis = "diasUteis"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadeSegundaInstanciaUnidade {
+    horas = "horas",
+    dias = "dias",
+    diasUteis = "diasUteis"
+}
+export enum DocumentoDaConfiguracaoComunsTipoDeDecisao {
+    ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
+    HOMOLOGACAO_DAS_INSCRICOES = "HOMOLOGACAO_DAS_INSCRICOES",
+    ANALISE_DOCUMENTAL = "ANALISE_DOCUMENTAL",
+    HETEROIDENTIFICACAO = "HETEROIDENTIFICACAO",
+    AVALIACAO_BIOPSICOSSOCIAL = "AVALIACAO_BIOPSICOSSOCIAL",
+    CLASSIFICACAO = "CLASSIFICACAO",
+    GABARITO_DA_PROVA = "GABARITO_DA_PROVA",
+    NOTA_DA_ETAPA = "NOTA_DA_ETAPA"
+}
+export enum DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro$tipo {
+    reduzirDe = "reduzirDe",
+    reduzirProporcionalEm = "reduzirProporcionalEm"
+}
+export enum DocumentoDaConfiguracaoDivulgacaoCamposPublicos {
+    numero_inscricao = "numero_inscricao",
+    nome_abreviado = "nome_abreviado",
+    nome = "nome"
+}
+export enum DocumentoDaConfiguracaoEtapasCarater {
+    classificatoria = "classificatoria",
+    eliminatoria = "eliminatoria",
+    ambas = "ambas"
+}
+export enum DocumentoDaConfiguracaoEtapasFormaDeAvaliacao {
+    OBJETIVA = "OBJETIVA",
+    HUMANA = "HUMANA"
+}
+export enum DocumentoDaConfiguracaoEtapasRecursoDaEtapaAncora {
+    atoPublicado = "atoPublicado",
+    cienciaIndividual = "cienciaIndividual"
+}
+export enum DocumentoDaConfiguracaoExigenciasExigenciaClassificacaoProtecao {
+    PUBLICO = "PUBLICO",
+    INTERNO = "INTERNO",
+    PESSOAL = "PESSOAL",
+    IDENTIFICADOR = "IDENTIFICADOR",
+    SENSIVEL = "SENSIVEL"
+}
+export enum DocumentoDaConfiguracaoExigenciasExigenciaFinalidade {
+    INSCRICAO = "INSCRICAO",
+    ISENCAO_TAXA = "ISENCAO_TAXA",
+    HABILITACAO = "HABILITACAO"
+}
+export enum DocumentoDaConfiguracaoExigenciasExigenciaAplicabilidade {
+    Geral = "Geral",
+    Condicional = "Condicional"
+}
+export enum DocumentoDaConfiguracaoExigenciasExigenciaConsequenciaIndeferimento {
+    ELIMINA = "ELIMINA",
+    RECLASSIFICA_AC = "RECLASSIFICA_AC",
+    REMOVE_VANTAGEM = "REMOVE_VANTAGEM",
+    PENDENCIA_REENVIO = "PENDENCIA_REENVIO"
+}
+export enum DocumentoDaConfiguracaoExigenciasFormatosPermitidosListaFormato {
+    PDF = "PDF",
+    JPEG = "JPEG",
+    PNG = "PNG"
+}
+export enum DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoUnidade {
+    DIAS = "DIAS",
+    MESES = "MESES",
+    ANOS = "ANOS"
+}
+export enum DocumentoDaConfiguracaoExigenciasIdadeMaximaEmissaoReferenciaTipo {
+    FIM_INSCRICAO = "FIM_INSCRICAO",
+    INICIO_FASE = "INICIO_FASE",
+    FIM_FASE = "FIM_FASE",
+    DATA_ESPECIFICA = "DATA_ESPECIFICA",
+    DATA_SUBMISSAO = "DATA_SUBMISSAO"
+}
+export enum DocumentoDaConfiguracaoFormularioFinalidade {
+    INSCRICAO = "INSCRICAO",
+    ISENCAO_TAXA = "ISENCAO_TAXA",
+    HABILITACAO = "HABILITACAO"
+}
+export enum DocumentoDaConfiguracaoFormularioEtapaTipo {
+    SECAO = "SECAO",
+    BLOCO = "BLOCO"
+}
+export enum DocumentoDaConfiguracaoFormularioEtapaBloco {
+    COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
+    MODALIDADES_CALCULADAS = "MODALIDADES_CALCULADAS",
+    REVISAO_E_ACEITE = "REVISAO_E_ACEITE"
+}
+export enum DocumentoDaConfiguracaoHomologacaoCondicaoTipo {
+    RESULTADO_NO_RETORNO_DO_INEP = "RESULTADO_NO_RETORNO_DO_INEP"
+}
+export enum DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos {
+    inscricaoPropria = "inscricaoPropria",
+    importacaoExterna = "importacaoExterna"
+}
+export enum DocumentoDaConfiguracaoMotivoSentido {
+    FAVORAVEL = "FAVORAVEL",
+    DESFAVORAVEL = "DESFAVORAVEL"
+}
+export enum DocumentoDaConfiguracaoPredicadoBaseLegalAbrangencia {
+    FEDERAL = "FEDERAL",
+    ESTADUAL = "ESTADUAL",
+    MUNICIPAL = "MUNICIPAL",
+    INTERNA_NORMA = "INTERNA_NORMA",
+    INTERNA_EDITAL = "INTERNA_EDITAL"
+}
+export enum DocumentoDaConfiguracaoPredicadoBaseLegalStatus {
+    PENDENTE = "PENDENTE",
+    RESOLVIDO = "RESOLVIDO"
+}
+export enum DocumentoDaConfiguracaoPredicadoCondicaoOperador {
+    IGUAL = "IGUAL",
+    DIFERENTE = "DIFERENTE",
+    MAIOR_IGUAL = "MAIOR_IGUAL",
+    MENOR_IGUAL = "MENOR_IGUAL",
+    EM = "EM",
+    NAO_EM = "NAO_EM"
+}
+export enum DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo {
+    SEMPRE = "SEMPRE",
+    NUNCA = "NUNCA",
+    QUANDO = "QUANDO"
+}
+export enum DocumentoDaConfiguracaoRestricaoDeValorTipo {
+    FAIXA_NUMERICA = "FAIXA_NUMERICA",
+    TAMANHO_TEXTO = "TAMANHO_TEXTO",
+    OPCOES_PERMITIDAS = "OPCOES_PERMITIDAS",
+    OPCOES_DAS_RESPOSTAS = "OPCOES_DAS_RESPOSTAS",
+    MUNICIPIOS_DA_UF = "MUNICIPIOS_DA_UF",
+    FAIXA_DE_DATA = "FAIXA_DE_DATA"
+}
+export enum DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora {
+    DATA_FIXA = "DATA_FIXA",
+    ENVIO = "ENVIO"
+}
+export enum DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos {
+    CADASTRO_UNICO = "CADASTRO_UNICO",
+    DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
+    CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
+}
 export enum FinalidadeDoDocumento {
     documentoDoEdital = "documentoDoEdital",
     anexoDoEdital = "anexoDoEdital",
@@ -12753,6 +14540,12 @@ export enum OrigemCandidatos {
     nenhuma = "nenhuma",
     inscricaoPropria = "inscricaoPropria",
     importacaoExterna = "importacaoExterna"
+}
+export enum ParametrosRegraAjusteDistribuicaoParametrosReduzirDe$tipo {
+    reduzirDe = "reduzirDe"
+}
+export enum ParametrosRegraAjusteDistribuicaoParametrosReduzirProporcionalEm$tipo {
+    reduzirProporcionalEm = "reduzirProporcionalEm"
 }
 export enum PredicadoObrigatoriedadeAtendimentoDisponivel$tipo {
     atendimentoDisponivel = "atendimentoDisponivel"

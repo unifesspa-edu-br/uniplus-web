@@ -3,33 +3,16 @@ import {
   DestinoRemanejamentoInput,
 } from '@uniplus/shared-data/selecao';
 
+import type {
+  MatrizDaCascata,
+  OrdemDeOrigem,
+} from '../../documento/edicoes/cascata-de-remanejamento.edicao';
 import { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
 import { ehRamoFederal } from './composicao-de-vagas';
 import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 
 /** Vocabulário fechado que a API devolve para a modalidade: ela segue a cascata única do processo. */
 const SEGUE_CASCATA = 'SEGUE_CASCATA';
-
-/**
- * Uma origem da matriz que a regra congelou: a modalidade de onde a vaga sai e
- * a ordem de preferência dos destinos. `destinos` já vem na ordem em que a
- * regra os declara — é a ordem que o comando envia como `ordem` 1-based.
- */
-export interface OrdemDaMatriz {
-  readonly origem: string;
-  readonly destinos: readonly string[];
-}
-
-/**
- * A cascata como a regra do catálogo a congela — o que `RegraCatalogoDto.esquemaArgs`
- * expõe para `criterio_remanejamento`, na forma que a tela consome.
- *
- * A tela nunca monta isto: ela só lê o que a regra já declarou e apresenta.
- */
-export interface MatrizDaRegra {
-  readonly fallbackCodigo: string;
-  readonly ordens: readonly OrdemDaMatriz[];
-}
 
 /**
  * Lê o `esquemaArgs` da regra de remanejamento — shape `{"fallbackCodigo":
@@ -41,7 +24,7 @@ export interface MatrizDaRegra {
  * poderia declarar um esquema diferente no futuro. `null` aqui vira "regra sem
  * matriz reconhecida" na tela, nunca uma matriz inventada.
  */
-export function matrizDaRegra(esquemaArgs: unknown): MatrizDaRegra | null {
+export function matrizDaRegra(esquemaArgs: unknown): MatrizDaCascata | null {
   if (typeof esquemaArgs !== 'object' || esquemaArgs === null) return null;
 
   const bruto = esquemaArgs as Record<string, unknown>;
@@ -49,7 +32,7 @@ export function matrizDaRegra(esquemaArgs: unknown): MatrizDaRegra | null {
   const ordensBrutas = bruto['ordens'];
   if (typeof fallbackCodigo !== 'string' || !Array.isArray(ordensBrutas)) return null;
 
-  const ordens: OrdemDaMatriz[] = [];
+  const ordens: OrdemDeOrigem[] = [];
   for (const itemBruto of ordensBrutas) {
     const ordem = ordemDaMatriz(itemBruto);
     if (ordem === null) return null;
@@ -59,7 +42,7 @@ export function matrizDaRegra(esquemaArgs: unknown): MatrizDaRegra | null {
   return { fallbackCodigo, ordens };
 }
 
-function ordemDaMatriz(itemBruto: unknown): OrdemDaMatriz | null {
+function ordemDaMatriz(itemBruto: unknown): OrdemDeOrigem | null {
   if (typeof itemBruto !== 'object' || itemBruto === null) return null;
   const item = itemBruto as Record<string, unknown>;
   const origem = item['origem'];
@@ -162,7 +145,7 @@ export interface ProblemaDaCascata {
 export function problemasDaCascata(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
 ): readonly ProblemaDaCascata[] {
   const destinosPorOrigem = new Map(matriz.ordens.map((ordem) => [ordem.origem, ordem.destinos]));
 
@@ -179,7 +162,7 @@ export function problemasDaCascata(
 function problemasDaOferta(
   oferta: DistribuicaoDeVagas,
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
   destinosPorOrigem: ReadonlyMap<string, readonly string[]>,
 ): readonly ProblemaDaCascata[] {
   const problemas: ProblemaDaCascata[] = [];
@@ -227,7 +210,7 @@ function recusaDaOrigem(
 function problemasDeCoberturaDaMatriz(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
 ): readonly ProblemaDaCascata[] {
   const codigosOfertados = new Set(
     ofertas.flatMap((oferta) => oferta.modalidades.map((modalidade) => modalidade.codigo)),
@@ -252,7 +235,7 @@ function semOferta(mensagem: string): ProblemaDaCascata {
 function origensSemMarcaDeCascata(
   ofertas: readonly DistribuicaoDeVagas[],
   catalogo: ReadonlyMap<string, ModalidadeDoCatalogo>,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
 ): readonly ProblemaDaCascata[] {
   const origensSegueCascata = new Set(
     ofertas.flatMap((oferta) =>
@@ -276,7 +259,7 @@ function origensSemMarcaDeCascata(
 // vez por origem que a referencia.
 function destinosNaoOfertados(
   codigosOfertados: ReadonlySet<string>,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
 ): readonly ProblemaDaCascata[] {
   const destinosDaMatriz = new Set(matriz.ordens.flatMap((ordem) => ordem.destinos));
   const faltantes = [...destinosDaMatriz].filter((destino) => !codigosOfertados.has(destino));
@@ -297,7 +280,7 @@ function destinosNaoOfertados(
  */
 export function comandoDaCascata(
   selecao: CascataSelecionada,
-  matriz: MatrizDaRegra,
+  matriz: MatrizDaCascata,
 ): DefinirCascataRemanejamentoRequest {
   const destinos: DestinoRemanejamentoInput[] = matriz.ordens.flatMap((ordem) =>
     ordem.destinos.map((destino, indice) => ({

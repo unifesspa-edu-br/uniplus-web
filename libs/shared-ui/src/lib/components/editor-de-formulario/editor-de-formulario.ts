@@ -1,3 +1,4 @@
+import type { CamposEditadosDoFormulario, EdicaoDoFormulario } from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -45,7 +46,8 @@ import {
 @Component({
   selector: 'ui-editor-de-formulario',
   standalone: true,
-  imports: [ValorLegivelDirective, 
+  imports: [
+    ValorLegivelDirective,
     PressupostosDoFormularioComponent,
     EtapaDoFormularioComponent,
     AcrescentarNoFimComponent,
@@ -87,6 +89,7 @@ import {
         [posicao]="posicao + 1"
         [aberta]="etapaAberta(etapa)"
         (alternar)="alternarEtapa(etapa)"
+        (camposEditados)="camposEditados = $event"
         (conteudoChange)="emitir($event)"
         (anuncio)="anuncio.set($event)"
       />
@@ -139,6 +142,8 @@ export class EditorDeFormularioComponent {
   readonly remocoesTravadas = input<ReadonlyMap<string, string>>(new Map());
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
+  readonly edicao = output<EdicaoDoFormulario>();
+  protected camposEditados: CamposEditadosDoFormulario = [];
 
   protected readonly limites = LIMITES_DO_FORMULARIO;
   protected readonly anuncio = signal('');
@@ -164,11 +169,15 @@ export class EditorDeFormularioComponent {
   );
 
   protected emitir(conteudo: ConteudoDoFormulario): void {
+    const camposEditados = this.camposEditados;
+    this.camposEditados = [];
+    this.edicao.emit({ conteudo, camposEditados });
     this.conteudoChange.emit(conteudo);
   }
 
   protected trocarTitulo(evento: Event): void {
     const titulo = (evento.target as HTMLInputElement).value;
+    this.camposEditados = [['titulo']];
     this.emitir({ ...this.conteudo(), titulo: titulo.trim() === '' ? null : titulo });
   }
 
@@ -201,6 +210,10 @@ export class EditorDeFormularioComponent {
       (candidata) => `${idDaEtapa(this.idBase(), candidata.codigo)}-corpo` === corpo.id,
     );
     if (etapa !== undefined) this.alternarEtapa(etapa);
+    return this.focarAposAbrirEtapa();
+  }
+
+  private focarAposAbrirEtapa(): Promise<boolean> {
     return new Promise((resolve) => {
       afterNextRender(
         () => {

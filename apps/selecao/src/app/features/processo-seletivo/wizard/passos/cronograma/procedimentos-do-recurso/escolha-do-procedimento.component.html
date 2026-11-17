@@ -1,0 +1,54 @@
+<div class="field" [class.is-error]="comRecusa()">
+  @if (emConsulta()) {
+    <p class="field__label">{{ linha().rotulo }}</p>
+    <p>{{ regraParaLeitura() }}</p>
+  } @else {
+    <label class="field__label" [attr.for]="id('regra')">{{ linha().rotulo }}</label>
+    <div class="escolha">
+      <select
+        #seletor
+        class="select"
+        [attr.id]="id('regra')"
+        [formControl]="escolha"
+        [attr.aria-invalid]="comRecusa() ? 'true' : null"
+        [attr.aria-describedby]="descritoPor()"
+        (change)="escolhida(seletor)"
+      >
+        @if (linha().declarado === null) {
+          <option value="" selected>Escolher o procedimento</option>
+        }
+        @for (opcao of opcoes(); track opcao.chave) {
+          <option [value]="opcao.chave" [selected]="opcao.selecionada">{{ opcao.rotulo }}</option>
+        }
+      </select>
+      @if (linha().declarado !== null) {
+        <ui-button
+          variant="tertiary"
+          buttonSize="sm"
+          [isDisabled]="desabilitado()"
+          (click)="remover.emit()"
+        >
+          Remover<span class="sr-only"> o procedimento de {{ contextoDaRemocao() }}</span>
+        </ui-button>
+      }
+    </div>
+  }
+
+  @if (linha().foraDoOferecido) {
+    <p class="field__hint" [attr.id]="id('fora')">
+      {{ avisoDeIndisponibilidade() }}
+    </p>
+  }
+  @if (linha().ocorrencia > 0) {
+    <p class="field__hint" [attr.id]="id('repetido')">
+      Este procedimento está repetido para a mesma decisão e mesmo item contestado. Remova a
+      repetição.
+    </p>
+  }
+  @if (sugestaoEmTexto() !== null) {
+    <p class="field__hint" [attr.id]="id('sugestao')">Sugestão: {{ sugestaoEmTexto() }}</p>
+  }
+  @if (comRecusa()) {
+    <ui-recusa-do-campo [attr.id]="id('recusa')" [recusas]="recusas()" />
+  }
+</div>

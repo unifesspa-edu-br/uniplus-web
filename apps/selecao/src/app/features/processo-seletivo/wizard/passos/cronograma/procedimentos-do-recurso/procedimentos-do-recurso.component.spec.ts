@@ -13,11 +13,15 @@ import { procedimento, regraDoCatalogo } from './procedimentos.testing';
   template: `<sel-procedimentos-do-recurso
     class="form-grid__full"
     [procedimentos]="procedimentos()"
+    [tiposDeclarados]="tiposDeclarados()"
+    [temJanela]="temJanela()"
     idDoTitulo="titulo-de-teste"
   />`,
 })
 class AnfitriaComponent {
   readonly procedimentos = signal<readonly ProcedimentoDeRecurso[]>([]);
+  readonly tiposDeclarados = signal<readonly string[]>([]);
+  readonly temJanela = signal(true);
 }
 
 function montar(procedimentos: readonly ProcedimentoDeRecurso[], carregarCatalogo = true) {
@@ -44,6 +48,32 @@ describe('ProcedimentosDoRecursoComponent', () => {
 
     expect(host.hidden).toBe(true);
     expect(host.querySelector('ul')).toBeNull();
+  });
+
+  it.each([[[]], [[procedimento()]]])(
+    'mostra tipos e avisos em consulta com procedimentos antigos ou ausentes',
+    (procedimentos) => {
+      const { fixture, host } = montar(procedimentos);
+      fixture.componentInstance.tiposDeclarados.set(['HOMOLOGACAO_DAS_INSCRICOES', 'NOTA_DA_ETAPA']);
+      fixture.detectChanges();
+
+      expect(host.hidden).toBe(false);
+      expect(host.querySelectorAll('sel-procedimento-do-tipo')).toHaveLength(2);
+      expect(host.querySelectorAll('.alert--warning')).toHaveLength(2);
+      expect(host.textContent).toContain('Falta o procedimento de recurso');
+      expect(host.querySelectorAll('li')).toHaveLength(procedimentos.length);
+    },
+  );
+
+  it('mostra o tipo sem pedir procedimento quando não há período de recurso', () => {
+    const { fixture, host } = montar([]);
+    fixture.componentInstance.tiposDeclarados.set(['NOTA_DA_ETAPA']);
+    fixture.componentInstance.temJanela.set(false);
+    fixture.detectChanges();
+
+    expect(host.hidden).toBe(false);
+    expect(host.querySelector('sel-procedimento-do-tipo')).not.toBeNull();
+    expect(host.textContent).not.toContain('Falta o procedimento de recurso');
   });
 
   it('lista cada procedimento declarado, ligado ao título da lista', () => {

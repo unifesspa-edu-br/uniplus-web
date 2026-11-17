@@ -24,7 +24,7 @@ import {
   FORMATO_DA_ESCALA_DA_NOTA_FINAL,
   escalaDaNotaFinalIlegivel,
   leituraDaEscalaDaNotaFinal,
-} from '../classificacao/escala-da-nota-final';
+} from '../../shared/escala-da-nota-final';
 import {
   lerChaveDaRegra,
   regrasEscolhiveis,

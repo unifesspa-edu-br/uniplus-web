@@ -1,17 +1,84 @@
-@if (linhas().length > 0) {
-  <p class="label" [attr.id]="idDoTitulo()">Procedimentos declarados para este recurso</p>
-  <ul class="u-list" [attr.aria-labelledby]="idDoTitulo()">
-    @for (linha of linhas(); track $index) {
-      <li>
-        {{ linha.tipoDeDecisao }}
-        @if (linha.alvo !== null) {
-          ({{ linha.alvo }})
-        }
-        — {{ linha.regra }}
-        @if (linha.sugestao !== null) {
-          <span class="field__hint">Sugestão: {{ linha.sugestao }}</span>
-        }
-      </li>
+@if (recusasDaJanela().length > 0) {
+  <ui-recusa-do-campo [attr.id]="idDaRecusaDaJanela()" [recusas]="recusasDaJanela()" />
+}
+@if (leituraEmLista()) {
+  @if (linhas().length > 0) {
+    <p class="label" [attr.id]="idDoTitulo()">Procedimentos declarados para este recurso</p>
+    <ul class="u-list" [attr.aria-labelledby]="idDoTitulo()">
+      @for (linha of linhas(); track $index) {
+        <li>
+          {{ linha.tipoDeDecisao }}
+          @if (linha.alvo !== null) {
+            ({{ linha.alvo }})
+          }
+          — {{ linha.regra }}
+          @if (linha.sugestao !== null) {
+            <span class="field__hint">Sugestão: {{ linha.sugestao }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+} @else {
+  @if (nivelDoTitulo() === 3) {
+    <h3 class="form-section__title" tabindex="-1" [attr.id]="idDoTitulo()">
+      Procedimentos de recurso
+    </h3>
+  } @else {
+    <h4 class="form-section__title" tabindex="-1" [attr.id]="idDoTitulo()">
+      Procedimentos de recurso
+    </h4>
+  }
+  <p class="field__hint">Como o recurso é revisto para cada decisão declarada.</p>
+  @if (catalogoSemRegra()) {
+    <p class="field__hint">Nenhum procedimento de recurso cadastrado.</p>
+  }
+
+  @if (linhasAntigas().length > 0) {
+    <ul class="u-list" [attr.aria-labelledby]="idDoTitulo()">
+      @for (linha of linhasAntigas(); track $index) {
+        <li>
+          {{ linha.tipoDeDecisao }}
+          @if (linha.alvo !== null) {
+            ({{ linha.alvo }})
+          }
+          — {{ linha.regra }}
+          @if (linha.sugestao !== null) {
+            <span class="field__hint">Sugestão: {{ linha.sugestao }}</span>
+          }
+        </li>
+      }
+    </ul>
+  }
+
+  @for (tipo of tipos(); track tipo.tipoDeDecisao) {
+    @if (tiposSemConversao().has(tipo.tipoDeDecisao)) {
+      <p class="field__hint">
+        O item contestado ou o tipo de decisão não pôde ser identificado para edição. A edição dos
+        procedimentos desta decisão está indisponível.
+      </p>
     }
-  </ul>
+    <sel-procedimento-do-tipo
+      [tipo]="tipo"
+      [idBase]="idDoTitulo()"
+      [regrasDoCatalogo]="regrasDoCatalogo()"
+      [alvosOferecidos]="oferecidos()"
+      [modo]="
+        modo() === 'edicao' && tiposSemConversao().has(tipo.tipoDeDecisao) ? 'bloqueado' : modo()
+      "
+      [recusas]="recusas()"
+      [temJanela]="temJanela()"
+      [semProcedimento]="tiposSemProcedimento().includes(tipo.tipoDeDecisao)"
+      [idDaRecusaDaJanela]="idDaRecusaDaJanela()"
+      [sugestao]="sugestao()"
+      (declarar)="declarar.emit($event)"
+      (trocarRegra)="trocarRegra.emit($event)"
+      (remover)="aoRemover($event)"
+      (trocarModo)="trocarModo.emit($event)"
+    />
+  } @empty {
+    <p class="field__hint">
+      Nenhuma decisão declarada ainda. Declare-as para escolher o procedimento de cada uma.
+    </p>
+  }
 }

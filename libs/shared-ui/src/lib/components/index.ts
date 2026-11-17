@@ -297,3 +297,9 @@ export { DocumentoComponent } from './documento/documento';
 export { SecaoDeDocumentoComponent } from './documento/secao-de-documento';
 export { CodigoDeVerificacaoComponent } from './codigo-de-verificacao/codigo-de-verificacao';
 export { nomesPelaOrdem } from './formulario-do-candidato/modalidades-avaliadas';
+
+export type {
+  CaminhoDoCampo,
+  CamposEditadosDoFormulario,
+  EdicaoDoFormulario,
+} from './editor-de-formulario/modelo/campos-editados';

@@ -1,3 +1,4 @@
+import { camposNaParte, type CamposEditadosDoFormulario } from '../modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -49,6 +50,7 @@ import { TermoDoFormularioComponent } from '../termo-do-formulario';
               [podeDescer]="posicao < termos().length - 1"
               [disabled]="contexto().disabled"
               [erros]="contexto().recusas?.porTermo?.get(termo.codigo) ?? []"
+              (camposEditados)="registrarTermo(termo.codigo, $event)"
               (termoChange)="conteudoChange.emit(comTermo(contexto().conteudo, $event))"
               (mover)="mover(termo.codigo, $event)"
               (remover)="remover(termo.codigo)"
@@ -97,7 +99,12 @@ export class TermosExigidosComponent {
   readonly contexto = input.required<ContextoDoEditor>();
 
   readonly conteudoChange = output<ConteudoDoFormulario>();
+  readonly camposEditados = output<CamposEditadosDoFormulario>();
   readonly anuncio = output<string>();
+
+  protected registrarTermo(codigo: string, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(camposNaParte(['termos', codigo], campos));
+  }
 
   protected readonly idDoTermo = idDoTermo;
   protected readonly comTermo = comTermo;
