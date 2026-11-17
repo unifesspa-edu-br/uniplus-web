@@ -1,5 +1,6 @@
 import { HttpContext } from '@angular/common/http';
 import { describe, expect, it, vi } from 'vitest';
+import { CLIENT_PROBLEM_CODES } from './problem-details';
 import {
   CODIGO_ESPERA_ESGOTADA,
   deveRotacionarIdempotencyKey,
@@ -83,6 +84,27 @@ describe('deveRotacionarIdempotencyKey', () => {
   ])('preserva a chave — %s', (_rotulo, status) => {
     expect(deveRotacionarIdempotencyKey({ status, code: 'uniplus.client.network_error' })).toBe(
       false,
+    );
+  });
+});
+
+describe('deveRotacionarIdempotencyKey: desfecho incerto', () => {
+  const RESPOSTA_FORA_DO_CONTRATO = CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE;
+
+  it.each([
+    ['2xx com corpo inválido: o comando foi executado e uma chave nova o executaria de novo', 200],
+    ['3xx que chega como falha: não há recusa guardada na chave', 302],
+  ])('preserva a chave — %s', (_rotulo, status) => {
+    expect(deveRotacionarIdempotencyKey({ status, code: RESPOSTA_FORA_DO_CONTRATO })).toBe(false);
+  });
+
+  it('preserva a chave em status 0 sem o código de erro de rede', () => {
+    expect(deveRotacionarIdempotencyKey({ status: 0, code: 'uniplus.test.fake' })).toBe(false);
+  });
+
+  it('renova a chave em 4xx fora do contrato: a recusa fica guardada na chave', () => {
+    expect(deveRotacionarIdempotencyKey({ status: 400, code: RESPOSTA_FORA_DO_CONTRATO })).toBe(
+      true,
     );
   });
 });

@@ -3,6 +3,7 @@ import type { ApiFailure } from './api-result';
 import type { ProblemDetails } from './problem-details';
 import { errorResult, mockProblemDetails } from './api-result.testing';
 import { CODIGO_ESPERA_ESGOTADA, IDEMPOTENCY_KEY_TOKEN } from './idempotency';
+import { CLIENT_PROBLEM_CODES } from './problem-details';
 
 import { ChaveDeSubstituicao } from './chave-de-substituicao';
 
@@ -59,6 +60,28 @@ describe('ChaveDeSubstituicao', () => {
       expect(chaveDe(chave, CORPO)).toBe(usada);
     });
 
+    /** Resposta ilegível de um comando que o servidor pode ter executado: chave nova o executaria de novo. */
+    it.each([
+      ['2xx com corpo inválido', { code: CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE, status: 200 }],
+      ['3xx que chega como falha', { code: CLIENT_PROBLEM_CODES.UNEXPECTED_RESPONSE, status: 302 }],
+      ['status 0 sem código de erro de rede', { code: 'uniplus.test.fake', status: 0 }],
+    ])('preserva a chave e é inconclusiva em %s', (_caso, problem) => {
+      const chave = new ChaveDeSubstituicao();
+      const usada = chaveDe(chave, CORPO);
+      expect(chave.recusada(falha(problem))).toBe(true);
+      expect(chaveDe(chave, CORPO)).toBe(usada);
+    });
+
+    it.each([
+      ['processing_conflict', { code: 'uniplus.idempotency.processing_conflict', status: 409 }],
+      ['falha de rede', { code: CLIENT_PROBLEM_CODES.NETWORK_ERROR, status: 0 }],
+      ['erro do servidor', { code: 'uniplus.internal', status: 500 }],
+    ])('é inconclusiva em %s', (_caso, problem) => {
+      const chave = new ChaveDeSubstituicao();
+      chaveDe(chave, CORPO);
+      expect(chave.recusada(falha(problem))).toBe(true);
+    });
+
     /** Recusa definitiva: prender a chave repetiria para sempre o recusado. */
     it.each([
       ['validação', { status: 400 }],
@@ -70,6 +93,15 @@ describe('ChaveDeSubstituicao', () => {
       const usada = chaveDe(chave, CORPO);
       chave.recusada(falha(problem));
       expect(chaveDe(chave, CORPO)).not.toBe(usada);
+    });
+
+    it.each([
+      ['validação', { status: 400 }],
+      ['corpo divergente', { code: 'uniplus.idempotency.body_mismatch', status: 409 }],
+    ])('não é inconclusiva em %s: o servidor recusou sem executar', (_caso, problem) => {
+      const chave = new ChaveDeSubstituicao();
+      chaveDe(chave, CORPO);
+      expect(chave.recusada(falha(problem))).toBe(false);
     });
 
     it('não trata o 503 de processo ocupado como inconclusivo: nada foi aplicado', () => {
