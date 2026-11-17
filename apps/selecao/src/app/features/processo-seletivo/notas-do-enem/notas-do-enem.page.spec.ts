@@ -68,7 +68,7 @@ describe('NotasDoEnemPage', () => {
     expect(texto()).toContain('O processo ainda não foi divulgado');
   });
 
-  it('uma retificação aberta que removeu a edição não tira a edição publicada da tela', async () => {
+  it('uma configuração que removeu a edição depois da publicação não tira a edição publicada da tela', async () => {
     // A configuração administrativa já não declara a edição 2025; a publicada ainda a declara.
     await abrir(processo(), snapshotVigente({ edicoes: ['2025'] }));
 

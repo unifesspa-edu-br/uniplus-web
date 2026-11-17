@@ -9,7 +9,6 @@ import { ProcessoSeletivoStore } from '../wizard/processo-seletivo.store';
 import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
 import { FocoDoEditor } from './foco-do-editor.service';
-import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 
 const RESOLUCAO = 'Resolução nº 805/2024/Consepe';
 
@@ -29,7 +28,6 @@ describe('ConducaoDoWizard', () => {
         ConducaoDoWizard,
         { provide: ReleituraDoSnapshot, useValue: { reler: vi.fn(async () => true) } },
         { provide: FocoDoEditor, useValue: {} },
-        { provide: RascunhoDaPublicacao, useValue: {} },
         { provide: PermissoesService, useValue: { tem: () => true } },
       ],
     });

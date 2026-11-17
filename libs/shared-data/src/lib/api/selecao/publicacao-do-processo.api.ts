@@ -6,14 +6,12 @@ import type {
   ConformidadeLegalProcessoSeletivoDto,
   ConformidadeProcessoSeletivoDto,
   PublicarProcessoSeletivoRequest,
-  RascunhoDaPublicacaoDto,
-  SalvarRascunhoDaPublicacaoRequest,
   SnapshotVigenteDto,
 } from './processos-seletivos.contrato';
 import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
 
-/** Cliente da conformidade, da publicação, do snapshot vigente e do rascunho da publicação. */
+/** Cliente da conformidade, da publicação, do ato vigente. */
 @Injectable({ providedIn: 'root' })
 export class PublicacaoDoProcessoApi {
   private readonly http = inject(HttpClient);
@@ -111,59 +109,6 @@ export class PublicacaoDoProcessoApi {
     return this.http.get<ApiResult<SnapshotVigenteDto>>(
       this.rotas.doProcesso(processoSeletivoId, 'snapshot-vigente'),
       { params, context: withVendorMime('snapshot-vigente-processo-seletivo', 1) },
-    );
-  }
-
-  /**
-   * GET `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` — o bloco
-   * do ato que o operador já transcreveu e ainda não publicou.
-   *
-   * 404 quando não há rascunho, inclusive quando o que havia venceu: é a leitura
-   * que cobra o prazo, porque não há tarefa recorrente varrendo a tabela.
-   */
-  obterRascunhoDaPublicacao(
-    processoSeletivoId: string,
-  ): Observable<ApiResult<RascunhoDaPublicacaoDto>> {
-    return this.http.get<ApiResult<RascunhoDaPublicacaoDto>>(
-      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
-      { context: withVendorMime('rascunho-da-publicacao', 1) },
-    );
-  }
-
-  /**
-   * PUT `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` —
-   * substitui por inteiro o rascunho do operador corrente.
-   *
-   * É substituição, não mesclagem: um campo que o operador apagou tem de sumir
-   * do servidor também, e por isso o corpo carrega a seção completa. O conteúdo
-   * não é validado campo a campo — rascunho pela metade é o caso de uso, e a
-   * validação forte continua no ato de publicar.
-   *
-   * Responde 204 sem corpo.
-   */
-  salvarRascunhoDaPublicacao(
-    processoSeletivoId: string,
-    request: SalvarRascunhoDaPublicacaoRequest,
-    context: HttpContext,
-  ): Observable<ApiResult<void>> {
-    return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
-      request,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
-    );
-  }
-
-  /**
-   * DELETE `/api/selecao/processos-seletivos/{id}/rascunho-da-publicacao` —
-   * joga fora o rascunho do operador corrente.
-   *
-   * Idempotente: descartar o que não existe responde 204, porque o pedido era
-   * que não houvesse rascunho.
-   */
-  descartarRascunhoDaPublicacao(processoSeletivoId: string): Observable<ApiResult<void>> {
-    return this.http.delete<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'rascunho-da-publicacao'),
-      { headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 }

@@ -16,7 +16,6 @@ import { classificarDocumentos } from '../wizard/shared/hidratacao';
 import { passosConcluidosDe } from '../wizard/shared/passos-concluidos';
 import { CatalogosDeClassificacao } from '../wizard/passos/classificacao/catalogos-de-classificacao.service';
 import { ConducaoDoWizard } from './conducao-do-wizard.service';
-import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 
 /** Formato do `:id` na rota; recusar aqui poupa uma ida ao servidor com lixo. */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -47,7 +46,6 @@ export class LeituraDoProcesso {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly cadastro = inject(CadastroInicial);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacao);
-  private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly conducao = inject(ConducaoDoWizard);
 
   /** Vez da leitura em curso; as respostas de vezes anteriores são descartadas. */
@@ -104,7 +102,7 @@ export class LeituraDoProcesso {
     this.store.hidratando.set(false);
   }
 
-  /** Põe o detalhe no editor e restaura o que ele não traz: o edital, o rascunho local e os passos concluídos. */
+  /** Põe o detalhe no editor e restaura o que ele não traz: o edital e os passos concluídos. */
   private async restaurarProcesso(
     id: string,
     detalhe: ProcessoSeletivoDto,
@@ -112,8 +110,6 @@ export class LeituraDoProcesso {
   ): Promise<void> {
     this.store.hidratar(detalhe);
     await this.restaurarDocumentoEdital(id, superada);
-    if (superada()) return;
-    await this.rascunho.restaurar(id, superada);
     if (superada()) return;
     await this.derivarPassosConcluidos(detalhe, superada);
   }
@@ -144,10 +140,6 @@ export class LeituraDoProcesso {
     // passo pelo estado novo enquanto exibe os dados do editor anterior. O efeito que o zera ao
     // trocar de passo só roda na detecção de mudanças, depois da leitura que já saiu.
     this.conducao.confirmacaoPendente.set(null);
-
-    // O rastro do rascunho descreve o processo que estava aberto: sem esquecê-lo, a guarda de saída
-    // perguntaria sobre a transcrição do processo anterior.
-    this.rascunho.esquecer();
   }
 
   /**

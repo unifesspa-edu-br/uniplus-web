@@ -24,7 +24,7 @@ import { responder, responderCom } from './responder';
 export const CORS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, PUT, POST, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, accept, content-type, idempotency-key, if-match',
+  'access-control-allow-headers': 'authorization, accept, content-type, idempotency-key',
 };
 
 const PROBLEM_JSON = 'application/problem+json';

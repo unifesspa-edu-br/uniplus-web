@@ -119,6 +119,3 @@ export type DefinirOpcoesDeclaradasRequest =
 export type CriterioDesempateDto = components['schemas']['CriterioDesempateDto'];
 export type CriterioDesempateInput = components['schemas']['CriterioDesempateInput'];
 export type SnapshotVigenteDto = components['schemas']['SnapshotVigenteDto'];
-export type RascunhoDaPublicacaoDto = components['schemas']['RascunhoDaPublicacaoDto'];
-export type SalvarRascunhoDaPublicacaoRequest =
-  components['schemas']['SalvarRascunhoDaPublicacaoRequest'];

@@ -1,4 +1,7 @@
-import { FATO_DA_EDICAO_DO_ENEM, codigosPelaOrdem } from '../wizard/passos/classificacao/edicoes-do-enem';
+import {
+  FATO_DA_EDICAO_DO_ENEM,
+  codigosPelaOrdem,
+} from '../wizard/passos/classificacao/edicoes-do-enem';
 
 /** A etapa cuja nota vem do ENEM: o domínio admite no máximo uma por processo. */
 export interface EtapaDoEnem {
@@ -61,8 +64,8 @@ function edicoesDaVersaoPublicada(configuracao: Objeto): readonly string[] {
 
 /**
  * O escopo da versão publicada, lido da configuração congelada no snapshot vigente: é por ela que
- * a API resolve a etapa e as edições, e não pela configuração administrativa, que muda durante uma
- * retificação aberta.
+ * a API resolve a etapa e as edições, e não pela configuração administrativa, que muda depois da
+ * publicação.
  */
 export function escopoDoEnem(configuracao: unknown): EscopoDoEnem {
   const congelada = comoObjeto(configuracao);

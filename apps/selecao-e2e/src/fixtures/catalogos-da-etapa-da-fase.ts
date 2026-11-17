@@ -8,7 +8,7 @@ import {
 const CORS_DA_ETAPA = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, PUT, POST, OPTIONS',
-  'access-control-allow-headers': 'authorization, accept, content-type, idempotency-key, if-match',
+  'access-control-allow-headers': 'authorization, accept, content-type, idempotency-key',
 };
 
 const TIPOS_PROCESSO = [
