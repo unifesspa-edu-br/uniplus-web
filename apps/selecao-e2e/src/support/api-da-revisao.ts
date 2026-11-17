@@ -30,7 +30,6 @@ const ROTA_DO_PROCESSO = new RegExp(
 
 export interface MockarProcessoOpcoes {
   readonly classificacao?: unknown;
-  readonly rascunhoDaPublicacao?: unknown;
   readonly status?: 'rascunho' | 'publicado';
   readonly cronogramaFases?: readonly unknown[];
   readonly conformidadeItens?: readonly {
@@ -62,7 +61,6 @@ const LEITURAS_DO_PROCESSO: readonly (readonly [string, (p: ProcessoMockado) => 
   ['/snapshot-vigente', () => SNAPSHOT_DA_PUBLICACAO],
   ['/produtos-previstos', () => PREVISTOS_DO_PROCESSO],
   ['/atos', () => [atoDoProcesso()]],
-  ['/rascunho-da-publicacao', (p) => p.rascunhoDaPublicacao],
   [
     '/conformidade-legal',
     (p) => ({

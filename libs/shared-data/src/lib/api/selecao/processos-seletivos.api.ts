@@ -128,10 +128,6 @@ export class ProcessosSeletivosApi {
    * PUT `/api/selecao/processos-seletivos/{id}/taxa-inscricao` — declara se o
    * processo cobra taxa, quanto, e quais fundamentos de isenção reconhece.
    *
-   * O `If-Match` não vai aqui: em rascunho não há sessão editorial nem ETag, e
-   * o servidor ignora a precondição. Retificar processo publicado é outro
-   * fluxo, e exigirá o cabeçalho quando existir.
-   *
    * Responde 204 sem corpo.
    */
   definirTaxaInscricao(

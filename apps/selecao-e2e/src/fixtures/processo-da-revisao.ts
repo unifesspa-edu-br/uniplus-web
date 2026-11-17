@@ -47,22 +47,6 @@ export const ATO_DTO = {
   _links: null,
 };
 
-/** O rascunho da publicação guarda os anexos já confirmados, pelo documento e pelo nome de exibição. */
-export const RASCUNHO_COM_ANEXOS = {
-  versao: 2,
-  salvoEm: '2027-01-10T12:00:00Z',
-  conteudo: {
-    numero: '',
-    periodoInscricaoInicio: '',
-    periodoInscricaoFim: '',
-    ato: {},
-    anexos: [
-      { documentoId: ANEXO_A, nome: 'Cronograma detalhado', nomeArquivo: 'cronograma.pdf' },
-      { documentoId: ANEXO_B, nome: 'Modelo de recurso', nomeArquivo: 'modelo-de-recurso.docx' },
-    ],
-  },
-};
-
 /** O que o processo publicado declara publicar: sem fase nem etapa com item previsto. */
 export const PREVISTOS_DO_PROCESSO = {
   numeroDaVersao: 1,

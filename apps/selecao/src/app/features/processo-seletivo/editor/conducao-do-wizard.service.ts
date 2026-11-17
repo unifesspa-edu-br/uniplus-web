@@ -12,7 +12,6 @@ import { ReleituraDoSnapshot } from '../wizard/shared/releitura-do-snapshot.serv
 import { FocoDoEditor } from './foco-do-editor.service';
 import { falhaAoConcluir, mensagensDe } from './mensagens-do-passo';
 import { publicar } from './publicacao-do-rascunho';
-import { RascunhoDaPublicacao } from './rascunho-da-publicacao.service';
 
 const COPIA_NAO_CONFIRMADA =
   'Os critérios de desempate não foram gravados: a classificação foi gravada, mas o quadro de Peso por Área que ela congelou não pôde ser confirmado por uma releitura do processo, e os critérios por área dependem dele. Tente de novo.';
@@ -32,7 +31,6 @@ export class ConducaoDoWizard {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly releitura = inject(ReleituraDoSnapshot);
   private readonly foco = inject(FocoDoEditor);
-  private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly permissoes = inject(PermissoesService);
 
   /**
@@ -47,7 +45,7 @@ export class ConducaoDoWizard {
    */
   readonly restaurarFocoAoFechar = signal(true);
 
-  /** Publicar, gravar o rascunho da publicação e enviar o edital exigem a permissão de publicar, além da de configurar. */
+  /** Publicar e enviar o edital exigem a permissão de publicar, além da de configurar. */
   readonly podePublicar = computed(() => this.permissoes.tem(PERMISSAO.selecao.processosPublicar));
 
   private passos: Signal<readonly PassoDoWizard[]> = signal([]);
@@ -149,9 +147,6 @@ export class ConducaoDoWizard {
       // dispara depois de publicar: sem este destino, fechar o diálogo da publicação deixa o foco
       // sem lugar nenhum.
       if (sucesso && this.store.isLast()) {
-        // O ato foi registrado e o servidor já apagou o rascunho. O que sobra em tela é a
-        // declaração publicada, e zerá-la faria a guarda de saída barrar quem acabou de publicar.
-        this.rascunho.fixarComoJaGravado();
         this.foco.focarConfirmacaoDePublicacao();
       }
     } finally {

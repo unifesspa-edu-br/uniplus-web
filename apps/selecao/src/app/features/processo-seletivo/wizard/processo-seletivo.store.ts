@@ -182,17 +182,24 @@ export class ProcessoSeletivoStore {
   }
 
   /**
-   * `ProcessoSeletivo.MutacaoPermitida` também aceita processo publicado com
-   * retificação aberta, mas o detalhe não expõe a sessão editorial e a
-   * retificação ainda não tem tela — daí a allowlist de um status só, que
-   * também impede um status novo de abrir a edição por omissão.
+   * Só o rascunho aceita edição: processo publicado muda por retificação, que
+   * ainda não tem tela. Liberar um único status também impede que um status
+   * novo abra a edição por omissão.
    *
    * Sem detalhe nada é bloqueado: processo em criação ainda não tem status.
    */
-  readonly edicaoPermitida = computed(() => {
-    if (this.publicacaoNaoConfirmada()) return false;
+  readonly edicaoPermitida = computed(
+    () => !this.publicacaoNaoConfirmada() && !this.processoForaDeRascunho(),
+  );
+
+  /**
+   * O servidor disse que o processo saiu do rascunho. É o único fato que encerra a edição de
+   * vez: `publicacaoNaoConfirmada` também a bloqueia, mas o resultado é desconhecido e o processo
+   * pode ainda estar em rascunho.
+   */
+  readonly processoForaDeRascunho = computed(() => {
     const detalhe = this.remoteSnapshot();
-    return detalhe === null || detalhe.status === StatusProcesso.rascunho;
+    return detalhe !== null && detalhe.status !== StatusProcesso.rascunho;
   });
 
   /**

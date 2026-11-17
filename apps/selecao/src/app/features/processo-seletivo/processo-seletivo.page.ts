@@ -23,14 +23,12 @@ import {
   StepsResponsivoComponent,
   type StepItem,
 } from '@uniplus/shared-ui/components';
-import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
 import { PASSOS } from './wizard/processo-seletivo.data';
 import { PASSO_DO_WIZARD } from './wizard/passo-do-wizard';
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { FocoDoEditor } from './editor/foco-do-editor.service';
 import { LeituraDoProcesso } from './editor/leitura-do-processo.service';
-import { RascunhoDaPublicacao } from './editor/rascunho-da-publicacao.service';
 import { CadastroInicial } from './wizard/shared/cadastro-inicial.service';
 import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { EnvioDoEdital } from './wizard/shared/envio-do-edital.service';
@@ -53,17 +51,18 @@ import { reavaliarRecusaPeloDesempate } from './wizard/passos/desempate/conferen
 import { EliminacaoPassoComponent } from './wizard/passos/eliminacao/eliminacao.component';
 import { AtendimentoPassoComponent } from './wizard/passos/atendimento/atendimento.component';
 import { RevisaoPassoComponent } from './wizard/passos/revisao/revisao.component';
+import { avisarAoFecharAJanelaEnquanto } from './wizard/shared/aviso-ao-fechar-a-janela';
+import { temAtoDigitado } from './wizard/shared/ato-digitado';
 import {
-  AVISO_DE_RASCUNHO_NAO_GRAVADO,
+  AVISO_DE_ATO_DIGITADO,
   ConfirmacaoDeSaida,
-} from './wizard/shared/rascunho-nao-gravado.guard';
+} from './wizard/shared/saida-com-ato-digitado.guard';
 
 @Component({
   selector: 'sel-processo-seletivo',
   standalone: true,
-  host: { class: 'sel-processo', '(window:beforeunload)': 'aoFecharAJanela($event)' },
+  host: { class: 'sel-processo' },
   imports: [
-    DateBrPipe,
     RouterLink,
     AlertComponent,
     DialogComponent,
@@ -87,7 +86,6 @@ import {
   providers: [
     ProcessoSeletivoStore,
     FocoDoEditor,
-    RascunhoDaPublicacao,
     ConducaoDoWizard,
     LeituraDoProcesso,
     GravacaoDoProcesso,
@@ -109,7 +107,6 @@ export class ProcessoSeletivoPage {
   readonly store = inject(ProcessoSeletivoStore);
   private readonly conducao = inject(ConducaoDoWizard);
   private readonly leitura = inject(LeituraDoProcesso);
-  private readonly rascunho = inject(RascunhoDaPublicacao);
   private readonly foco = inject(FocoDoEditor);
   private readonly cadastroDePesos = inject(LeituraDoCadastroDePesos);
   private readonly catalogosDeClassificacao = inject(CatalogosDeClassificacao);
@@ -122,11 +119,16 @@ export class ProcessoSeletivoPage {
   readonly podePublicar = this.conducao.podePublicar;
   readonly confirmacaoPendente = this.conducao.confirmacaoPendente;
   readonly restaurarFocoAoFechar = this.conducao.restaurarFocoAoFechar;
-  readonly rascunhoPendente = this.rascunho.pendente;
-  readonly rascunhoSalvoEm = this.rascunho.salvoEm;
-  readonly avisoDoRascunho = this.rascunho.aviso;
-  readonly salvandoRascunho = this.rascunho.salvando;
-  readonly falhaDoRascunho = this.rascunho.falha;
+
+  /**
+   * Há ato digitado que sair da página descarta. Só some quando o servidor confirma que o processo
+   * saiu do rascunho: o que sobra em tela é então o ato que já virou publicação. Enquanto o
+   * resultado da publicação é desconhecido, a edição fica bloqueada mas o processo pode ainda estar
+   * em rascunho, e o ato digitado continua a perder.
+   */
+  readonly atoDigitadoPendente = computed(
+    () => !this.store.processoForaDeRascunho() && temAtoDigitado(this.store.draft().publicacao),
+  );
 
   /** Só a falha temporária admite repetir a leitura; as demais descrevem o endereço. */
   protected readonly leituraDoProcesso = acompanharLeitura({
@@ -173,6 +175,7 @@ export class ProcessoSeletivoPage {
 
   constructor() {
     this.conducao.conectar(this.passos);
+    avisarAoFecharAJanelaEnquanto(this.atoDigitadoPendente);
     this.esquecerAConfirmacaoAoTrocarDePasso();
     this.reavaliarARecusaPeloDesempate();
     this.foco.observarReservas(
@@ -257,7 +260,7 @@ export class ProcessoSeletivoPage {
     } else {
       // A guarda da rota não roda aqui: mudar só o `:id` reusa a rota, e o componente nunca é
       // desativado. Sem perguntar neste ponto, a promessa dela valia para sair do editor e não
-      // para trocar de processo — e é `retomar()` quem apaga a transcrição, logo em seguida.
+      // para trocar de processo — e é `retomar()` quem apaga o ato digitado, logo em seguida.
       this.voltarAoProcessoAberto();
     }
   }
@@ -298,40 +301,17 @@ export class ProcessoSeletivoPage {
     }
   }
 
-  /**
-   * A guarda de saída — a rede que torna o botão de gravar suficiente.
-   *
-   * São dois mecanismos, e não três: trocar de passo dentro do wizard não perde nada, porque
-   * `goTo` mexe só no passo corrente e o rascunho continua no store. O que perde é sair do
-   * editor (tratado pelo `CanDeactivate` da rota) e recarregar ou fechar a aba, que é este.
-   *
-   * O navegador ignora qualquer texto que se ponha aqui e mostra o aviso genérico dele — por
-   * isso não há mensagem a escrever, só o `preventDefault` que pede a confirmação.
-   */
-  protected aoFecharAJanela(evento: BeforeUnloadEvent): void {
-    if (!this.rascunhoPendente()) return;
-    evento.preventDefault();
-  }
-
-  protected salvarRascunhoDaPublicacao(): Promise<void> {
-    return this.rascunho.salvar();
-  }
-
-  protected descartarRascunhoDaPublicacao(): Promise<void> {
-    return this.rascunho.descartar();
-  }
-
-  /** Há transcrição por gravar, e quem está trocando de processo concordou em perdê-la? */
+  /** Há ato digitado, e quem está trocando de processo concordou em perdê-lo? */
   private podeTrocarDeProcesso(): boolean {
-    if (!this.rascunhoPendente()) return true;
-    return this.confirmacaoDeSaida.confirmar(AVISO_DE_RASCUNHO_NAO_GRAVADO);
+    if (!this.atoDigitadoPendente()) return true;
+    return this.confirmacaoDeSaida.confirmar(AVISO_DE_ATO_DIGITADO);
   }
 
   /**
    * Devolve o endereço ao processo que continua em tela.
    *
    * A assinatura do parâmetro dispara de novo, e o ramo que reconhece o processo já aberto não
-   * relê nada — é por isso que voltar aqui não custa a transcrição que a recusa acabou de
+   * relê nada — é por isso que voltar aqui não custa o ato digitado que a recusa acabou de
    * proteger.
    */
   private voltarAoProcessoAberto(): void {

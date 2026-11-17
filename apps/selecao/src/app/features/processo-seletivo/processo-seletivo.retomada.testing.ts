@@ -54,7 +54,6 @@ import { vi } from 'vitest';
 
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { PASSOS } from './wizard/processo-seletivo.data';
-import { VERSAO_DO_RASCUNHO } from './wizard/shared/rascunho-da-publicacao';
 
 export const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
 export const OUTRO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b099';
@@ -209,18 +208,12 @@ export function documento(overrides: Partial<DocumentoAPublicarDto> = {}): Docum
   };
 }
 
-/** O rascunho da publicação como o servidor o devolve, no formato da versão informada. */
-export const rascunhoGuardado = (conteudo: unknown, versao = VERSAO_DO_RASCUNHO) =>
-  vi.fn(() => of(okResult({ versao, conteudo, salvoEm: '2026-09-14T14:32:00Z' })));
-
 export interface CenarioOpts {
   readonly id?: string | null;
   readonly obter?: ReturnType<typeof vi.fn>;
   /** O checklist estrutural que o servidor devolve — sem item nenhum por padrão. */
   readonly obterConformidade?: ReturnType<typeof vi.fn>;
   readonly listarDocumentos?: ReturnType<typeof vi.fn>;
-  /** O rascunho da publicação que o servidor devolve — 404 por padrão (não há nenhum). */
-  readonly obterRascunho?: ReturnType<typeof vi.fn>;
   /** Simula catálogo de tipos indisponível. */
   readonly tiposFalham?: boolean;
   /** Simula catálogo de unidades indisponível. */
@@ -236,8 +229,6 @@ function leiturasDoServidor(opts: CenarioOpts) {
       opts.obterConformidade ?? vi.fn(() => of(okResult({ itens: [] as ItemConformidadeDto[] }))),
     definirTaxaInscricao: vi.fn(() => of(okResult(undefined))),
     listarDocumentos: opts.listarDocumentos ?? vi.fn(() => of(okResult([]))),
-    obterRascunho:
-      opts.obterRascunho ?? vi.fn(() => of(errorResult(mockProblemDetails({ status: 404 })))),
   };
 }
 
@@ -276,7 +267,6 @@ function provedorDaPublicacao(leituras: LeiturasDoServidor): Provider {
     provide: PublicacaoDoProcessoApi,
     useValue: {
       obterConformidade: leituras.obterConformidade,
-      obterRascunhoDaPublicacao: leituras.obterRascunho,
       // A Revisão de processo publicado lê o ato vigente; estas suítes não exercitam o ato.
       obterSnapshotVigente: () => NEVER,
     },

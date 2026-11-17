@@ -109,30 +109,6 @@ describe('ProcessoSeletivoPage — processo fora de rascunho', MONTAGEM_LENTA, (
     expect(motivo).not.toContain('encerrado');
   });
 
-  /**
-   * No processo publicado, cancelado ou encerrado os campos são de leitura. Gravar rascunho
-   * dali ou colheria recusa do servidor ou guardaria uma transcrição que esta jornada não
-   * tem mais como usar — e a tela anunciaria sucesso. Sem as ações de rascunho, o rodapé fica
-   * só com a navegação, alinhado como nos demais passos.
-   */
-  it('não oferece gravar rascunho em processo que não aceita edição', async () => {
-    const cenario = montar({
-      obter: vi.fn(() => of(okResult(detalhe({ status: StatusProcesso.publicado })))),
-    });
-    await propagar();
-
-    expect(cenario.store.edicaoPermitida(), 'pré-condição: o processo é de leitura').toBe(false);
-
-    cenario.store.goTo(cenario.store.totalDePassos - 1);
-    cenario.fixture.detectChanges();
-
-    const botao = Array.from(
-      cenario.host.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
-    ).find((b) => b.textContent?.trim() === 'Salvar rascunho');
-    expect(botao).toBeUndefined();
-    expect(cenario.host.querySelector('.rascunho-publicacao')).toBeNull();
-  });
-
   it('mantém a edição liberada enquanto o detalhe não chegou', () => {
     const cenario = montar();
 

@@ -20,8 +20,8 @@ import { hidratarDraft } from './hidratacao';
 describe('cobertura de readback do rascunho', () => {
   /**
    * A única seção sem readback pelo detalhe, e por uma razão de domínio: publicar não é uma
-   * dimensão que o processo devolva editável. Ela sobrevive a um recarregamento por outra via —
-   * a rota própria de rascunho da publicação —, não por `hidratarDraft`.
+   * dimensão que o processo devolva editável. O ato digitado fica só na memória da página e
+   * não volta num recarregamento.
    */
   const SEM_READBACK_PELO_DETALHE = ['publicacao'] as const;
 

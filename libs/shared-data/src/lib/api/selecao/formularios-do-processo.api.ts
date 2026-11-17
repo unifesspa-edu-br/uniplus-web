@@ -55,7 +55,7 @@ export class FormulariosDoProcessoApi {
    *
    * A leitura vem com o processo (`ProcessoSeletivoDto.formularios`). As escritas são três,
    * separadas porque a API confere cada parte contra o que está gravado da outra: o cabeçalho,
-   * os itens e grupos, e os termos. O `If-Match` é aceito e ignorado no rascunho.
+   * os itens e grupos, e os termos.
    *
    * Responde 204 sem corpo.
    */

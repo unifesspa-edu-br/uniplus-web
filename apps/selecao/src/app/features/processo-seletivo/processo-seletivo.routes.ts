@@ -4,7 +4,7 @@ import { permissaoGuard } from '@uniplus/shared-auth/guards';
 import { ROTA_REUSE_KEY } from '../../editor-route-reuse.strategy';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { ProcessosSeletivosListaPage } from './processos-seletivos-lista.page';
-import { rascunhoNaoGravadoGuard } from './wizard/shared/rascunho-nao-gravado.guard';
+import { saidaComAtoDigitadoGuard } from './wizard/shared/saida-com-ato-digitado.guard';
 
 /**
  * A lista de processos é aberta também a quem só consulta inscrições (a guarda da rota-mãe admite as
@@ -39,7 +39,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     path: 'novo',
     canActivate: CONFIGURAR_PROCESSO,
     component: ProcessoSeletivoPage,
-    canDeactivate: [rascunhoNaoGravadoGuard],
+    canDeactivate: [saidaComAtoDigitadoGuard],
     data: {
       breadcrumb: 'Novo Processo Seletivo',
       [ROTA_REUSE_KEY]: EDITOR_PROCESSO_SELETIVO,
@@ -47,7 +47,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   },
   {
     // A simulação abre fora do editor, em nova aba: não reaproveita a tela do editor nem tem
-    // rascunho a guardar.
+    // ato digitado a perder.
     path: ':id/simulacao/:finalidade',
     canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
@@ -56,7 +56,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   },
   {
     // Publicações do processo: o que ele já publicou e a publicação de documento avulso. Fora do
-    // editor, porque não há rascunho a guardar.
+    // editor, porque não há ato digitado a perder.
     path: ':id/publicacoes',
     canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
@@ -65,7 +65,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
   },
   {
     // Notas do ENEM: o envio ao INEP e a importação do retorno. Fora do editor, porque não há
-    // rascunho a guardar.
+    // ato digitado a perder.
     path: ':id/notas-do-enem',
     canActivate: CONFIGURAR_PROCESSO,
     loadComponent: () =>
@@ -76,7 +76,7 @@ export const PROCESSO_SELETIVO_ROUTES: Routes = [
     path: ':id',
     canActivate: CONFIGURAR_PROCESSO,
     component: ProcessoSeletivoPage,
-    canDeactivate: [rascunhoNaoGravadoGuard],
+    canDeactivate: [saidaComAtoDigitadoGuard],
     data: {
       breadcrumb: 'Processo Seletivo',
       [ROTA_REUSE_KEY]: EDITOR_PROCESSO_SELETIVO,

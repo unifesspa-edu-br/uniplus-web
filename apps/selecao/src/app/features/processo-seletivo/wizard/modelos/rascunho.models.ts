@@ -143,9 +143,9 @@ export interface WizardDraft {
   };
   /**
    * O que o passo Revisão coleta para `POST …/publicacao`. Fica **fora de
-   * `hidratarDraft`**: depois do `204` o processo é somente leitura. É a única seção que volta de
-   * outra rota: a página a repõe de `GET …/rascunho-da-publicacao` depois de hidratar. Publicar
-   * lê o que está em tela, nunca o que está guardado.
+   * `hidratarDraft`**: depois do `204` o processo é somente leitura. Vive só na memória da página
+   * (UNI-REQ-0426): nada é guardado no servidor, abrir um processo a começa vazia e sair da tela a
+   * descarta. Publicar lê o que está em tela.
    *
    * `periodoInscricaoInicio`/`…Fim` só valem quando o cronograma NÃO tem fase com
    * `coletaInscricao` (armadilha do período): a tela os abre só nesse ramo, e o mapeador os

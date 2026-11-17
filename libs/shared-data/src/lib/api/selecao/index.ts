@@ -131,8 +131,6 @@ export type {
   RegraEliminacaoInput,
   RegraRecursoFaseInput,
   SnapshotVigenteDto,
-  RascunhoDaPublicacaoDto,
-  SalvarRascunhoDaPublicacaoRequest,
 } from './processos-seletivos.contrato';
 export type { RegraCatalogoDto, RegrasCatalogoQuery } from './regras-catalogo.api';
 export { ProcessosSeletivosApi, type ProcessosSeletivosQuery } from './processos-seletivos.api';
