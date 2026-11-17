@@ -36,6 +36,16 @@ const GOVERNANCA: PerfilListadoDto = {
   governanca: 'gestor',
 };
 
+const SEM_VERSAO_VIGOR: PerfilListadoDto = {
+  ...COMUM,
+  id: 'p6',
+  nome: 'Acessos',
+  governanca: 'gestor',
+  temVersaoVigente: false,
+  temVersaoPendente: false,
+  suspensao: null,
+};
+
 describe('PerfisListaComponent', () => {
   let fixture: ComponentFixture<PerfisListaComponent>;
   const raiz = (): HTMLElement => fixture.nativeElement as HTMLElement;
@@ -51,7 +61,7 @@ describe('PerfisListaComponent', () => {
     erro?: string | null;
     temProximo?: boolean;
   }): void {
-    fixture.componentRef.setInput('perfis', parcial.perfis ?? [COMUM, DESATIVADO, GOVERNANCA]);
+    fixture.componentRef.setInput('perfis', parcial.perfis ?? [COMUM, DESATIVADO, GOVERNANCA, SEM_VERSAO_VIGOR]);
     fixture.componentRef.setInput('carregando', parcial.carregando ?? false);
     fixture.componentRef.setInput('gravando', parcial.gravando ?? false);
     fixture.componentRef.setInput('erro', parcial.erro ?? null);
@@ -91,15 +101,16 @@ describe('PerfisListaComponent', () => {
     expect(ligacao?.getAttribute('href')).toBe('/acessos/perfis/p1');
   });
 
-  it('mostra as situações do perfil: em vigor, versão pendente, desativado e governança', () => {
-    entradas({ perfis: [COMUM, COM_PENDENTE, DESATIVADO, GOVERNANCA] });
+  it('mostra as situações do perfil: em vigor, desativado e governança', () => {
+    entradas({ perfis: [COMUM, COM_PENDENTE, DESATIVADO, GOVERNANCA, SEM_VERSAO_VIGOR] });
 
     const situacao = (id: string): string =>
       raiz().querySelector(`tr[data-perfil-id="${id}"] td[data-label="Situação"]`)?.textContent ?? '';
     expect(situacao('p1')).toContain('Em vigor');
-    expect(situacao('p4')).toContain('Versão pendente');
+    expect(situacao('p4')).toContain('Em vigor');
     expect(situacao('p3')).toContain('Desativado');
-    expect(situacao('p2')).toContain('Ativo');
+    expect(situacao('p2')).toContain('Em vigor');
+    expect(situacao('p6')).toContain('Sem versão em vigor');
   });
 
   it('sem perfis, convida a criar o primeiro; com falha de carga, não afirma que está vazio', () => {

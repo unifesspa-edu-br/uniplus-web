@@ -8,7 +8,11 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { sensibilidade } from './rotulos-de-acesso';
-import { resumoDaLista, situacoesDoPerfil } from './versoes/estado-do-perfil';
+import {
+  resumoDaLista,
+  type SituacaoDoPerfil,
+  situacoesDoPerfil,
+} from './versoes/estado-do-perfil';
 import { SituacaoDoPerfilComponent } from './versoes/situacao-do-perfil.component';
 
 @Component({
@@ -35,7 +39,21 @@ export class PerfisListaComponent {
   readonly anterior = output<void>();
   readonly proximo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
-  protected readonly situacoes = (perfil: PerfilListadoDto) =>
-    situacoesDoPerfil(resumoDaLista(perfil));
+  protected readonly situacoes = (perfil: PerfilListadoDto) => situacoesDoPerfil(resumoDaLista(perfil));
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
+  protected exibeSituacaoPorPerfil(perfil: PerfilListadoDto): SituacaoDoPerfil {
+    const situacoes = this.situacoes(perfil);
+    if (!perfil.ativo) {
+      return situacoes.find((p) => p.texto === 'Desativado') as SituacaoDoPerfil;
+    }
+    if (situacoes.find((p) => p.texto === 'Suspenso')) {
+      return situacoes.find((p) => p.texto === 'Suspenso') as SituacaoDoPerfil;
+    } else {
+      return {
+        texto: perfil.temVersaoVigente ? 'Em vigor' : 'Sem versão em vigor',
+        variante: perfil.temVersaoVigente ? 'success': 'warning',
+        desde: undefined,
+      };
+    }
+  }
 }

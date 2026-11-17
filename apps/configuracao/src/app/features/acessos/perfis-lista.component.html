@@ -40,9 +40,7 @@
               </td>
               <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
               <td data-label="Situação">
-                @for (situacao of situacoes(perfil); track situacao.texto) {
-                  <cfg-situacao-do-perfil [situacao]="situacao" />
-                }
+                <cfg-situacao-do-perfil [situacao]="exibeSituacaoPorPerfil(perfil)" />
               </td>
             </tr>
           }
