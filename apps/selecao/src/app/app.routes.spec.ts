@@ -14,7 +14,7 @@ const permissoesStub = {
 };
 const login = vi.fn();
 
-const authStub = { authenticated: autenticado, login };
+let authStub: { authenticated: typeof autenticado; login: typeof login };
 
 const ROTAS_E_PERMISSOES = [
   ['/processo-seletivo', 'selecao:processos:configurar'],
@@ -32,6 +32,7 @@ describe('appRoutes — permissões efetivas', () => {
     autenticado.set(true);
     permissoes.set([]);
     login.mockReset();
+    authStub = { authenticated: autenticado, login };
     TestBed.configureTestingModule({
       providers: [
         provideRouter(appRoutes),

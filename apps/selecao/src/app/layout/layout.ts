@@ -98,8 +98,8 @@ export class LayoutComponent {
   ];
 
   /**
-   * Segue as permissões efetivas: enquanto carregam ou se a consulta falha, o conjunto está vazio e
-   * só sobra o painel, que depende apenas da sessão. Grupos vazios não aparecem.
+   * Mostra entradas protegidas apenas após carregar as permissões efetivas. Durante a recarga ou
+   * em caso de falha, só o painel permanece visível. Grupos vazios não aparecem.
    */
   protected readonly navGroups = computed<readonly UiShellNavGroup[]>(() =>
     this.navGroupsDeclarados
@@ -108,7 +108,8 @@ export class LayoutComponent {
         items: grupo.items.filter(
           (item) =>
             item.tela === undefined ||
-            this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[item.tela]),
+            (this.permissoes.estado() === 'carregada' &&
+              this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS[item.tela])),
         ),
       }))
       .filter((grupo) => grupo.items.length > 0),
