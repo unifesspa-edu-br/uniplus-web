@@ -58,6 +58,15 @@ describe('resumo da exigência documental', () => {
     expect(descreverPublico(publico)).toBe('Todo candidato');
   });
 
+  it('reavalia a modalidade quando a exigência muda', () => {
+    const exigencia = exigenciaNova('DOC', 'HABILITACAO');
+    const publico = publicoDaExigencia(exigencia, FATOS);
+    expect(publico.alcancaModalidade('AC')).toBe(true);
+
+    Object.assign(exigencia, { aplicabilidade: APLICABILIDADE_CONDICIONAL });
+    expect(publico.alcancaModalidade('AC')).toBe(false);
+  });
+
   it('nomeia as modalidades do recorte pelo código', () => {
     const publico = publicoDaExigencia(condicional([], ['LB_PPI', 'LI_PPI']), FATOS);
 
