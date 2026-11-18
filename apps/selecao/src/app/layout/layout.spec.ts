@@ -13,8 +13,10 @@ import { LayoutComponent } from './layout';
 const estadoDosPerfis = signal<EstadoDosPerfis>('carregada');
 const rotulosDosPerfis = signal<readonly string[]>([]);
 const concedidas = signal<readonly string[]>([]);
+const estadoDasPermissoes = signal<'carregada' | 'carregando'>('carregada');
 const menuPrincipal = 'nav[aria-label="Navegação principal"] a';
 const permissoesStub = {
+  estado: estadoDasPermissoes,
   tem: (codigo: string) => concedidas().includes(codigo),
   temAlguma: (...codigos: string[]) => codigos.some((codigo) => concedidas().includes(codigo)),
 };
@@ -35,6 +37,7 @@ const userContextStub = {
 describe('LayoutComponent — navegação por permissão', () => {
   beforeEach(async () => {
     concedidas.set([]);
+    estadoDasPermissoes.set('carregada');
     estadoDosPerfis.set('carregada');
     rotulosDosPerfis.set([]);
     await TestBed.configureTestingModule({
@@ -77,6 +80,15 @@ describe('LayoutComponent — navegação por permissão', () => {
 
     expect(rotulosDeNavegacao()).toEqual(['Painel de processos', 'Processos seletivos']);
     expect(titulosDeGrupo()).toEqual(['Acompanhamento', 'Cadastro']);
+  });
+
+  it('oculta o cadastro durante a recarga mesmo com concessões anteriores', () => {
+    concedidas.set(['selecao:processos:configurar']);
+    estadoDasPermissoes.set('carregando');
+
+    expect(rotulosDeNavegacao()).toEqual(['Painel de processos']);
+    estadoDasPermissoes.set('carregada');
+    expect(rotulosDeNavegacao()).toEqual(['Painel de processos', 'Processos seletivos']);
   });
 
   it('não dá o cadastro a quem só acompanha processos', () => {
