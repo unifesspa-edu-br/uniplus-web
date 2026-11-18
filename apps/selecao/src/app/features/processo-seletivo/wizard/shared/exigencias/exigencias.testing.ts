@@ -1,3 +1,5 @@
+import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+
 import { arvoreDeExigencias } from './gravacao-das-exigencias';
 import { comExigencia, exigenciaNova } from './exigencias-documentais';
 import type { ExigenciaDeDocumento, ExigenciasDoRascunho } from '../../processo-seletivo.models';
@@ -47,4 +49,44 @@ export function comando(
     etapasVivas: ETAPAS_VIVAS,
     finalidadesPorFase: FINALIDADES_POR_FASE,
   });
+}
+
+export function detalheDaApi(raizes: readonly unknown[]): ProcessoSeletivoDto {
+  return {
+    cronogramaFases: [
+      { id: ID_ISENCAO, codigo: 'ISENCAO' },
+      { id: ID_HABILITACAO, codigo: 'HABILITACAO' },
+    ],
+    raizesExigencia: raizes,
+  } as unknown as ProcessoSeletivoDto;
+}
+
+const RG_EXIGIDO_NA_HABILITACAO = {
+  id: 'doc-1',
+  exigidoNaFaseId: ID_HABILITACAO,
+  tipoDocumentoOrigemId: ID_RG,
+  aplicabilidade: 'GERAL',
+  obrigatorio: true,
+  consequenciaIndeferimento: null,
+  idadeMaximaEmissao: null,
+  formatosPermitidos: 'QUALQUER',
+  tamanhoMaximoBytes: null,
+  exigidoNaEtapaId: null,
+  modelo: null,
+};
+
+export function exigenciaDaApi(alteracoes: Record<string, unknown> = {}) {
+  return {
+    id: 'no-1',
+    tipo: 'FOLHA',
+    quantidadeMinima: null,
+    consequencia: null,
+    basesLegais: [],
+    filhos: [],
+    chaveDistincao: null,
+    dataReferencia: null,
+    ocorrenciasEsperadas: null,
+    repetePorEntidade: null,
+    documento: { ...RG_EXIGIDO_NA_HABILITACAO, condicoes: [], basesLegais: [], ...alteracoes },
+  };
 }

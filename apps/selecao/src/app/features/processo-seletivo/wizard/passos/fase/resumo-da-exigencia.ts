@@ -51,33 +51,47 @@ export function publicoDaExigencia(
   exigencia: ExigenciaDeDocumento,
   fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
 ): PublicoDaExigencia {
-  const alcancaModalidade = (codigo: string) => podeAlcancarModalidade(exigencia, codigo);
   if (exigidoDeTodos(exigencia)) {
     return {
       deTodos: true,
       modalidades: null,
       alternativas: [],
       independeDeOutroFato: true,
-      alcancaModalidade,
+      alcancaModalidade: (codigo) => podeAlcancarModalidade(exigencia, codigo),
     };
   }
+  return publicoCondicional(exigencia, fatoPorCodigo);
+}
 
+function publicoCondicional(
+  exigencia: ExigenciaDeDocumento,
+  fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+): PublicoDaExigencia {
   const modalidades = recorteUniforme(exigencia);
   const porAlternativa = condicoesPorAlternativa(exigencia);
+  return {
+    deTodos: false,
+    alcancaModalidade: (codigo) => podeAlcancarModalidade(exigencia, codigo),
+    modalidades,
+    alternativas: descreverAlternativas(porAlternativa, modalidades, fatoPorCodigo),
+    independeDeOutroFato: porAlternativa.some((itens) => itens.every(ehCondicaoDeModalidade)),
+  };
+}
+
+function ehCondicaoDeModalidade(condicao: CondicaoDeFato): boolean {
+  return condicao.fato === FATO_MODALIDADE;
+}
+
+/** Se uma alternativa só exige a modalidade, as outras não restringem o público dela. */
+function descreverAlternativas(
+  porAlternativa: readonly CondicaoDeFato[][],
+  modalidades: readonly string[] | null,
+  fatoPorCodigo: ReadonlyMap<string, FatoEscolhivel>,
+): readonly (readonly string[])[] {
   const descritas = porAlternativa.map((condicoes) =>
     descreverAlternativa(condicoes, modalidades, fatoPorCodigo),
   );
-
-  // As alternativas se combinam por OU: com recorte uniforme, a que só tem o recorte já cobra o
-  // documento de toda a modalidade recortada, e as outras não restringem nada além dela.
-  // Descrevê-las faria parecer que o documento só é cobrado de quem as satisfaz. Sem recorte
-  // uniforme, nenhuma alternativa fica vazia: cada condição dela aparece descrita.
-  const alternativas = descritas.some((alternativa) => alternativa.length === 0) ? [] : descritas;
-  const independeDeOutroFato = porAlternativa.some((condicoes) =>
-    condicoes.every((condicao) => condicao.fato === FATO_MODALIDADE),
-  );
-
-  return { deTodos: false, modalidades, alternativas, independeDeOutroFato, alcancaModalidade };
+  return descritas.some((alternativa) => alternativa.length === 0) ? [] : descritas;
 }
 
 function condicoesPorAlternativa(exigencia: ExigenciaDeDocumento): CondicaoDeFato[][] {
@@ -98,7 +112,7 @@ function descreverAlternativa(
   return condicoes
     .filter((condicao) => !ehORecorte(condicao, modalidades))
     .map((condicao) =>
-      condicao.fato === FATO_MODALIDADE
+      ehCondicaoDeModalidade(condicao)
         ? descreverCondicaoDeModalidade(condicao)
         : descreverCondicao(condicao, fatoPorCodigo.get(condicao.fato)),
     );
@@ -107,7 +121,7 @@ function descreverAlternativa(
 function ehORecorte(condicao: CondicaoDeFato, modalidades: readonly string[] | null): boolean {
   return (
     modalidades !== null &&
-    condicao.fato === FATO_MODALIDADE &&
+    ehCondicaoDeModalidade(condicao) &&
     condicao.operador === OPERADOR_EM &&
     JSON.stringify(valoresDeListaDe(condicao)) === JSON.stringify(modalidades)
   );

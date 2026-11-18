@@ -11,6 +11,8 @@ import {
 
 import type {
   ExigenciaDeDocumento,
+  RegraDaExigenciaDeDocumento,
+  CriteriosDoComprovante,
   ExigenciasDoRascunho,
   NoDeExigencia,
 } from '../../processo-seletivo.models';
@@ -53,14 +55,24 @@ export function exigenciaNova(
     tipoDocumentoId,
     faseCodigo,
     etapaId: null,
-    // Sem declaração, vale o formulário efetivo: o único que a fase responde, ou a escolha que a
-    // fase dividida entre inscrição e isenção pede ao operador.
     finalidade: null,
+    ...regraInicialDaExigencia(),
+    ...criteriosIniciaisDoComprovante(restricao),
+  };
+}
+
+function regraInicialDaExigencia(): RegraDaExigenciaDeDocumento {
+  return {
     aplicabilidade: APLICABILIDADE_GERAL,
     obrigatorio: true,
     consequenciaIndeferimento: '',
     condicoes: [],
     basesLegais: [baseLegalNova()],
+  };
+}
+
+function criteriosIniciaisDoComprovante(restricao?: RestricaoDeArquivo): CriteriosDoComprovante {
+  return {
     idadeMaximaEmissao: null,
     ...limitesDoArquivo(restricao),
     modelo: null,
@@ -123,7 +135,7 @@ export {
  * consequência para a falta. É a exigência que a publicação só aceita com norma resolvida.
  */
 export function exigenciaDecideResultado(
-  exigencia: Pick<ExigenciaDeDocumento, 'obrigatorio' | 'consequenciaIndeferimento'>,
+  exigencia: Pick<RegraDaExigenciaDeDocumento, 'obrigatorio' | 'consequenciaIndeferimento'>,
 ): boolean {
   return exigencia.obrigatorio || exigencia.consequenciaIndeferimento !== '';
 }
@@ -134,7 +146,7 @@ export function exigenciaDecideResultado(
  */
 export function exigenciaSemNormaResolvida(
   exigencia: Pick<
-    ExigenciaDeDocumento,
+    RegraDaExigenciaDeDocumento,
     'obrigatorio' | 'consequenciaIndeferimento' | 'basesLegais'
   >,
 ): boolean {
@@ -161,29 +173,26 @@ export function transformar(
   nos: readonly NoDeExigencia[],
   transformacao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
 ): readonly NoDeExigencia[] {
-  const vivos: NoDeExigencia[] = [];
+  return nos.flatMap((no) => transformarExigencia(no, transformacao) ?? []);
+}
 
-  for (const no of nos) {
-    if (no.tipo === 'FOLHA') {
-      const documento = no.documento === null ? null : transformacao(no.documento);
-      if (documento !== null) vivos.push({ ...no, documento });
-      continue;
-    }
-
-    const filhos = transformar(no.filhos ?? [], transformacao);
-    if (filhos.length === 0) continue;
-    vivos.push({
-      ...no,
-      filhos,
-      quantidadeMinima: coubeNoGrupo(no.quantidadeMinima, filhos.length),
-    });
+function transformarExigencia(
+  no: NoDeExigencia,
+  transformacao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
+): NoDeExigencia | null {
+  if (no.tipo === 'FOLHA') {
+    if (no.documento === null) return null;
+    const documento = transformacao(no.documento);
+    if (documento === null) return null;
+    return { ...no, documento };
   }
-
-  return vivos;
+  const filhos = transformar(no.filhos ?? [], transformacao);
+  if (filhos.length === 0) return null;
+  return { ...no, filhos, quantidadeMinima: coubeNoGrupo(no.quantidadeMinima, filhos.length) };
 }
 
 /**
- * A quantidade mínima que ainda cabe no grupo depois da poda.
+ * A quantidade mínima que ainda cabe no grupo após remover alternativas.
  *
  * Um grupo que pedia duas alternativas e ficou com uma só continuaria pedindo duas: o agregado
  * recusa, e a recusa chega depois de as etapas, o cronograma e o formulário já terem sido
@@ -206,29 +215,35 @@ export function semAFase(
   exigencias: ExigenciasDoRascunho,
   faseCodigo: string,
 ): ExigenciasDoRascunho {
-  const raizes = transformar(exigencias.raizes, (documento) => {
-    if (documento.faseCodigo === faseCodigo) return null;
-    if (documento.idadeMaximaEmissao?.referenciaFaseCodigo !== faseCodigo) return documento;
-    return {
-      ...documento,
-      idadeMaximaEmissao: { ...documento.idadeMaximaEmissao, referenciaFaseCodigo: null },
-    };
-  });
-
-  // A marca de alcance global cai junto com a última declaração de raiz que lhe servia de
-  // modelo. Sem isso ela fica órfã: a tela segue anunciando o documento como exigido, a
-  // materialização não tem de onde copiá-lo, e a gravação sai sem a exigência — sem nada
-  // dizendo que ela deixou de existir.
-  const comModelo = new Set(
-    raizes
-      .filter((no) => no.tipo === 'FOLHA' && no.documento !== null)
-      .map((no) => (no.documento as ExigenciaDeDocumento).tipoDocumentoId),
+  const raizes = transformar(exigencias.raizes, (documento) =>
+    documentoSemFase(documento, faseCodigo),
   );
-
+  const tiposNaRaiz = tiposDeDocumentoNaRaiz(raizes);
   return {
     raizes,
-    emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => comModelo.has(tipo)),
+    emTodasAsFases: exigencias.emTodasAsFases.filter((tipo) => tiposNaRaiz.has(tipo)),
   };
+}
+
+function documentoSemFase(
+  documento: ExigenciaDeDocumento,
+  faseCodigo: string,
+): ExigenciaDeDocumento | null {
+  if (documento.faseCodigo === faseCodigo) return null;
+  if (documento.idadeMaximaEmissao?.referenciaFaseCodigo !== faseCodigo) return documento;
+  return {
+    ...documento,
+    idadeMaximaEmissao: { ...documento.idadeMaximaEmissao, referenciaFaseCodigo: null },
+  };
+}
+
+/** O alcance de todas as fases depende de uma exigência de raiz que sirva de modelo. */
+function tiposDeDocumentoNaRaiz(raizes: readonly NoDeExigencia[]): ReadonlySet<string> {
+  return new Set(
+    raizes.flatMap((no) =>
+      no.tipo === 'FOLHA' && no.documento !== null ? [no.documento.tipoDocumentoId] : [],
+    ),
+  );
 }
 
 /**
@@ -256,23 +271,32 @@ export function comExigencia(
   exigencias: ExigenciasDoRascunho,
   documento: ExigenciaDeDocumento,
 ): ExigenciasDoRascunho {
-  // Só a PRIMEIRA folha que casa é trocada. O mesmo documento pode aparecer duas vezes na
-  // mesma fase — uma solta e outra como alternativa de um grupo `OU` —, e o contrato não
-  // proíbe isso; escrever nas duas de uma vez sobrescreveria a alternativa do grupo com a
-  // edição feita na outra, sem nada na tela dizendo que havia duas.
-  let trocou = false;
-  const raizes = transformar(exigencias.raizes, (atual) => {
-    if (trocou) return atual;
-    if (atual.tipoDocumentoId !== documento.tipoDocumentoId) return atual;
-    if (atual.faseCodigo !== documento.faseCodigo) return atual;
-    trocou = true;
-    return documento;
-  });
+  const { raizes, alterou } = transformarPrimeiraExigencia(
+    exigencias.raizes,
+    pertenceAFaseETipoDeDocumento(documento.faseCodigo, documento.tipoDocumentoId),
+    () => documento,
+  );
+  return { ...exigencias, raizes: alterou ? raizes : [...raizes, folhaDe(documento)] };
+}
 
-  return {
-    ...exigencias,
-    raizes: trocou ? raizes : [...raizes, folhaDe(documento)],
-  };
+function pertenceAFaseETipoDeDocumento(faseCodigo: string, tipoDocumentoId: string) {
+  return (documento: ExigenciaDeDocumento | null) =>
+    documento?.faseCodigo === faseCodigo && documento.tipoDocumentoId === tipoDocumentoId;
+}
+
+/** Uma exigência independente e uma alternativa de grupo podem pedir o mesmo documento. */
+function transformarPrimeiraExigencia(
+  nos: readonly NoDeExigencia[],
+  corresponde: (documento: ExigenciaDeDocumento) => boolean,
+  alteracao: (documento: ExigenciaDeDocumento) => ExigenciaDeDocumento | null,
+) {
+  let alterou = false;
+  const raizes = transformar(nos, (documento) => {
+    if (alterou || !corresponde(documento)) return documento;
+    alterou = true;
+    return alteracao(documento);
+  });
+  return { raizes, alterou };
 }
 
 /**
@@ -286,21 +310,28 @@ export function comRepeticao(
   faseCodigo: string,
   grupo: string | null,
 ): ExigenciasDoRascunho {
-  let trocou = false;
-  const naArvore = (nos: readonly NoDeExigencia[]): readonly NoDeExigencia[] =>
-    nos.map((no) => {
-      if (trocou) return no;
-      if (no.tipo !== 'FOLHA') return { ...no, filhos: naArvore(no.filhos ?? []) };
-      if (
-        no.documento?.tipoDocumentoId !== tipoDocumentoId ||
-        no.documento.faseCodigo !== faseCodigo
-      )
-        return no;
-      trocou = true;
-      return { ...no, repetePorEntidade: grupo };
-    });
+  const corresponde = pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId);
+  return {
+    ...exigencias,
+    raizes: definirRepeticaoDaPrimeiraExigencia(exigencias.raizes, corresponde, grupo),
+  };
+}
 
-  return { ...exigencias, raizes: naArvore(exigencias.raizes) };
+/** Atualiza a repetição sem remover exigências nem mudar a quantidade mínima dos grupos. */
+function definirRepeticaoDaPrimeiraExigencia(
+  nos: readonly NoDeExigencia[],
+  corresponde: (documento: ExigenciaDeDocumento | null) => boolean,
+  grupo: string | null,
+): readonly NoDeExigencia[] {
+  let alterou = false;
+  const editar = (no: NoDeExigencia): NoDeExigencia => {
+    if (alterou) return no;
+    if (no.tipo !== 'FOLHA') return { ...no, filhos: (no.filhos ?? []).map(editar) };
+    if (!corresponde(no.documento)) return no;
+    alterou = true;
+    return { ...no, repetePorEntidade: grupo };
+  };
+  return nos.map(editar);
 }
 
 /**
@@ -328,17 +359,10 @@ export function semAExigencia(
   tipoDocumentoId: string,
   faseCodigo: string,
 ): ExigenciasDoRascunho {
-  // Remove só a PRIMEIRA que casa, pela mesma razão de `comExigencia`: desmarcar o documento
-  // não pode levar junto a alternativa homônima de um grupo, que é outra declaração.
-  let removeu = false;
-  return {
-    ...exigencias,
-    raizes: transformar(exigencias.raizes, (documento) => {
-      if (removeu) return documento;
-      if (documento.tipoDocumentoId !== tipoDocumentoId) return documento;
-      if (documento.faseCodigo !== faseCodigo) return documento;
-      removeu = true;
-      return null;
-    }),
-  };
+  const { raizes } = transformarPrimeiraExigencia(
+    exigencias.raizes,
+    pertenceAFaseETipoDeDocumento(faseCodigo, tipoDocumentoId),
+    () => null,
+  );
+  return { ...exigencias, raizes };
 }

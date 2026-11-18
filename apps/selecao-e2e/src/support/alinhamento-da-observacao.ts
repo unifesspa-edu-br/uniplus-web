@@ -40,14 +40,19 @@ async function conferirAsLarguras(page: Page, card: Locator): Promise<number | n
     const alinhamento = await medirAlinhamentoDaObservacao(card);
     if (alinhamento.vizinhos === 0) continue;
     larguraComVizinhos ??= largura;
-    for (const diferenca of alinhamento.diferencas) {
-      expect(
-        Math.abs(diferenca),
-        `o input da observação alinha com os vizinhos em ${largura} px`,
-      ).toBeLessThanOrEqual(1);
-    }
+    verificarAlinhamento(alinhamento, largura);
   }
   return larguraComVizinhos;
+}
+
+/** Verifica cada diferença na largura em que foi medida. */
+function verificarAlinhamento(alinhamento: AlinhamentoMedido, largura: number): void {
+  for (const diferenca of alinhamento.diferencas) {
+    expect(
+      Math.abs(diferenca),
+      `o input da observação alinha com os vizinhos em ${largura} px`,
+    ).toBeLessThanOrEqual(1);
+  }
 }
 
 /**
