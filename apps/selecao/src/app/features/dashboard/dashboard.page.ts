@@ -41,7 +41,9 @@ export class DashboardPage {
   protected readonly consulta = inject(ConsultaDoPainel);
   private readonly router = inject(Router);
 
+  /** Gate redundante ao do cartão (ADR-0026): a navegação não parte mesmo se o clique escapar. */
   protected abrir(id: string): void {
+    if (this.consulta.carregando()) return;
     void this.router.navigate(['/acompanhamento/processos', id]);
   }
 }
