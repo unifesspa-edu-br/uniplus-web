@@ -8,6 +8,7 @@ import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import type { ApiResult, ProblemDetails } from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
+  StatusProcesso,
   type ProcessoSeletivoResumoDto,
 } from '@uniplus/shared-data/selecao';
 
@@ -19,7 +20,15 @@ type Chamada = {
   resposta: Subject<Resposta>;
 };
 
-const resumo = (id: string, nome: string) => ({ id, nome }) as unknown as ProcessoSeletivoResumoDto;
+function resumo(id: string, nome: string): ProcessoSeletivoResumoDto {
+  return {
+    id,
+    nome,
+    tipoProcesso: { origemId: 'tipo-ficticio', codigo: 'VESTIBULAR', nome: 'Vestibular' },
+    status: StatusProcesso.rascunho,
+    criadoEm: '2026-08-20T13:23:42.707136+00:00',
+  };
+}
 
 function sucesso(itens: ProcessoSeletivoResumoDto[], link?: string): Resposta {
   return {
@@ -162,6 +171,10 @@ describe('ConsultaDoPainel', () => {
 
     consulta.atualizarLista();
     expect(ultima().query).toMatchObject({ cursor: undefined, limit: 50 });
+    // A restrição (e o aviso/botão que a acompanha) só se limpa na resposta, não ao pedir de novo.
+    expect(consulta.restricao()).toBe('cursor-expirado');
+
+    responder(sucesso([resumo('n', 'Novo')]));
     expect(consulta.restricao()).toBeNull();
   });
 

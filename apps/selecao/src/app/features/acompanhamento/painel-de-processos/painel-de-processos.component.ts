@@ -118,7 +118,8 @@ const MENSAGENS_DA_FALHA: Readonly<Record<FalhaDoPainel, string>> = {
                       type="button"
                       class="btn btn--secondary btn--sm"
                       [attr.aria-label]="'Abrir acompanhamento de ' + processo.nome"
-                      (click)="abrir.emit(processo.id)"
+                      [attr.aria-disabled]="carregando() ? 'true' : null"
+                      (click)="aoAbrir(processo.id)"
                     >
                       Abrir acompanhamento
                     </button>
@@ -194,6 +195,13 @@ export class PainelDeProcessosComponent {
   protected aoAtualizarLista(): void {
     if (!this.carregando()) {
       this.atualizarLista.emit();
+    }
+  }
+
+  /** Durante a recarga substitutiva os cartões da página sendo trocada ficam indisponíveis (ADR-0026). */
+  protected aoAbrir(id: string): void {
+    if (!this.carregando()) {
+      this.abrir.emit(id);
     }
   }
 

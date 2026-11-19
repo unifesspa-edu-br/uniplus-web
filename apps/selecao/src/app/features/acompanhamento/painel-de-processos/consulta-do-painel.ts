@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Subject, switchMap } from 'rxjs';
+import { EMPTY, Observable, Subject, switchMap } from 'rxjs';
 
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import {
@@ -8,6 +8,8 @@ import {
   extractNextCursor,
   extractPrevCursor,
   ehCursorDePaginacaoObsoleto,
+  type ApiFailure,
+  type ApiOk,
   type ApiResult,
   type Cursor,
   type CursorPagina,
@@ -77,21 +79,33 @@ export class ConsultaDoPainel {
   });
 
   constructor() {
+    this.observarPedidos();
+    this.observarSessao();
+  }
+
+  private observarPedidos(): void {
     this.pedidos
       .pipe(
-        switchMap((consulta) =>
-          consulta === null
-            ? EMPTY
-            : this.api.listar({
-                cursor: consulta.pagina?.cursor,
-                direction: consulta.pagina?.direction,
-                limit: consulta.pagina === undefined ? consulta.limite : undefined,
-              }),
-        ),
+        switchMap((consulta) => this.executar(consulta)),
         takeUntilDestroyed(inject(DestroyRef)),
       )
       .subscribe((resultado) => this.aplicar(resultado));
+  }
 
+  private executar(
+    consulta: Consulta | null,
+  ): Observable<ApiResult<readonly ProcessoSeletivoResumoDto[]>> {
+    return consulta === null
+      ? EMPTY
+      : this.api.listar({
+          cursor: consulta.pagina?.cursor,
+          direction: consulta.pagina?.direction,
+          limit: consulta.pagina === undefined ? consulta.limite : undefined,
+        });
+  }
+
+  /** A troca de usuário reinicia a consulta; a renovação do token não. */
+  private observarSessao(): void {
     effect(() => {
       const id = this.idDoUsuario();
       untracked(() => this.recomecarParaUsuario(id));
@@ -141,7 +155,6 @@ export class ConsultaDoPainel {
   private iniciar(consulta: Consulta): void {
     this.ultima = consulta;
     this._carregando.set(true);
-    this._restricao.set(null);
     // Uma falha de navegação some ao repetir; a inicial também, para a espera não coexistir com ela.
     this._falha.set(null);
     this.pedidos.next(consulta);
@@ -162,31 +175,52 @@ export class ConsultaDoPainel {
     this.iniciar({ pagina: undefined, limite: TAMANHO_INICIAL_DO_PAINEL });
   }
 
+  /**
+   * Mantém a restrição (e o aviso que a acompanha) até a resposta chegar, para o foco e o botão
+   * de recuperação não saírem do DOM durante a espera; ela só é limpa aqui, nunca ao iniciar.
+   */
   private aplicar(resultado: ApiResult<readonly ProcessoSeletivoResumoDto[]>): void {
     this._carregando.set(false);
+    this._restricao.set(null);
 
     if (resultado.ok) {
-      this._itens.set(resultado.data.map(({ id, nome }) => ({ id, nome })));
-      const link = resultado.headers?.get('Link') ?? null;
-      this._cursores.set({ prev: extractPrevCursor(link), next: extractNextCursor(link) });
+      this.aplicarSucesso(resultado);
+      return;
+    }
+
+    this.aplicarFalha(resultado);
+  }
+
+  private aplicarSucesso(resultado: ApiOk<readonly ProcessoSeletivoResumoDto[]>): void {
+    this._itens.set(resultado.data.map(({ id, nome }) => ({ id, nome })));
+    const link = resultado.headers?.get('Link') ?? null;
+    this._cursores.set({ prev: extractPrevCursor(link), next: extractNextCursor(link) });
+  }
+
+  private aplicarFalha(resultado: ApiFailure): void {
+    if (resultado.status === STATUS_HTTP.SEM_PERMISSAO) {
+      this.limparDados();
+      this._restricao.set('acesso-negado');
       return;
     }
 
     const primeira = this.ultima.pagina === undefined;
-
-    if (resultado.status === STATUS_HTTP.SEM_PERMISSAO) {
-      this.limparDados();
-      this._restricao.set('acesso-negado');
-    } else if (!primeira && ehCursorDePaginacaoObsoleto(resultado.problem)) {
+    if (!primeira && ehCursorDePaginacaoObsoleto(resultado.problem)) {
       this._cursores.set({ prev: null, next: null });
       this._restricao.set('cursor-expirado');
-    } else if (primeira) {
+      return;
+    }
+    this.aplicarFalhaDeConsulta(primeira);
+  }
+
+  private aplicarFalhaDeConsulta(primeira: boolean): void {
+    if (primeira) {
       this.limparDados();
       this._falha.set('inicial');
-    } else {
-      // Falha de navegação: a última página válida e seus cursores continuam.
-      this._falha.set('navegacao');
+      return;
     }
+    // Falha de navegação: a última página válida e seus cursores continuam.
+    this._falha.set('navegacao');
   }
 
   private limparDados(): void {

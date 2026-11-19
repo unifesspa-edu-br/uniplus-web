@@ -119,6 +119,18 @@ describe('PainelDeProcessosComponent', () => {
       expect(abertos).toEqual(['processo-ficticio-2']);
     });
 
+    it('não abre um cartão da página sendo substituída durante a recarga (ADR-0026)', () => {
+      const abertos: string[] = [];
+      componente.abrir.subscribe((id) => abertos.push(id));
+      const acao = cartoes()[1].querySelector('button') as HTMLButtonElement;
+
+      entrada('carregando', true);
+      acao.click();
+
+      expect(abertos).toEqual([]);
+      expect(acao.getAttribute('aria-disabled')).toBe('true');
+    });
+
     it('não apresenta total global nem mensagem de lista vazia', () => {
       expect(texto()).not.toMatch(/total|\d+ processos/i);
       expect(texto()).not.toContain('Nenhum processo seletivo encontrado');
