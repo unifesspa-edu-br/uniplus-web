@@ -19,6 +19,10 @@ export default defineConfig(() => ({
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     setupFiles: ['src/test-setup.ts'],
+    // O pool `vmThreads` (padrão do plugin Angular) acumula memória a cada arquivo. O limite padrão é
+    // proporcional à memória da máquina e passa do teto de 4 GB do trabalhador: sem este valor, o
+    // trabalhador morre antes de ser reciclado.
+    vmMemoryLimit: '1GB',
     reporters: ['default'],
     coverage: {
       reportsDirectory: '../../coverage/apps/configuracao',
