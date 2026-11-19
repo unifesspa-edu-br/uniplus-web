@@ -104,7 +104,9 @@ describe('ReavaliacaoDaInscricao: respostas e oferta da tela', () => {
   afterEach(() => cenario.encerrar());
 
   it('a resposta que mudou consulta com as respostas da tela, o nulo das apagadas e as ofertas', async () => {
-    cenario.inscricao.update((i) => (i ? { ...i, respostas: { RENDA: 900 } } : i));
+    cenario.inscricao.update((i) =>
+      i ? { ...i, formulario: { ...i.formulario, respostas: { RENDA: 900 } } } : i,
+    );
 
     cenario.reavaliacao.respostasMudaram({ respostas: { CONCORRER_EP: true } });
     await cenario.esperarAConsulta(0);

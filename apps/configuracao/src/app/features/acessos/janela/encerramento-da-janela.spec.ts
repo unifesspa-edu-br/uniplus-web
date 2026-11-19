@@ -16,7 +16,7 @@ import {
 } from './pagina-da-janela.testing';
 
 const JANELA = janelaDeMigracao({
-  loteEnviado: true,
+  decisoesEnviadas: true,
   itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'retida' })],
 });
 
@@ -32,14 +32,18 @@ describe('encerramento manual da janela', () => {
   });
 
   async function preencher(host: HTMLElement, assentar: () => Promise<void>, motivo: string) {
-    const campo = presente(host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'));
+    const campo = presente(
+      host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'),
+    );
     campo.value = motivo;
     campo.dispatchEvent(new Event('input'));
     await assentar();
   }
 
   const caixa = (host: HTMLElement) =>
-    presente(host.querySelector<HTMLInputElement>('cfg-encerramento-da-janela input[type="checkbox"]'));
+    presente(
+      host.querySelector<HTMLInputElement>('cfg-encerramento-da-janela input[type="checkbox"]'),
+    );
 
   it('não encerra sem motivo e sem confirmação, e leva o foco ao primeiro campo a corrigir', async () => {
     const { host, assentar } = await abrirJanela(JANELA);
@@ -48,7 +52,9 @@ describe('encerramento manual da janela', () => {
     await assentar();
 
     expect(api.encerrar).not.toHaveBeenCalled();
-    const motivo = presente(host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'));
+    const motivo = presente(
+      host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'),
+    );
     expect(motivo.getAttribute('aria-invalid')).toBe('true');
     expect(document.activeElement).toBe(motivo);
     expect(host.textContent).toContain('Marque a caixa para confirmar.');
@@ -79,7 +85,7 @@ describe('encerramento manual da janela', () => {
         situacao: 'encerrada',
         forma: 'manual',
         encerradaEm: '2026-11-10T09:00:00Z',
-        loteEnviado: true,
+        decisoesEnviadas: true,
         itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
       }),
     );
@@ -119,7 +125,9 @@ describe('encerramento manual da janela', () => {
     presente(botao(host, 'Encerrar a janela')).click();
     await assentar();
 
-    const motivo = presente(host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'));
+    const motivo = presente(
+      host.querySelector<HTMLTextAreaElement>('cfg-encerramento-da-janela textarea'),
+    );
     expect(host.textContent).toContain('Motivo longo demais.');
     expect(document.activeElement).toBe(motivo);
   });
@@ -164,7 +172,13 @@ describe('encerramento manual da janela', () => {
     await assentar();
 
     presente(botao(host, 'Encerrar a janela')).click();
-    await responder(janelaDeMigracao({ situacao: 'encerrada', forma: 'concluida', encerradaEm: '2026-11-10T09:00:00Z' }));
+    await responder(
+      janelaDeMigracao({
+        situacao: 'encerrada',
+        forma: 'concluida',
+        encerradaEm: '2026-11-10T09:00:00Z',
+      }),
+    );
 
     expect(host.textContent).toContain('A janela mudou');
     expect(host.textContent).toContain('A janela de migração já terminou.');

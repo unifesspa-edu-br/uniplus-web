@@ -8,7 +8,7 @@ function regra(patch: Partial<RegraCatalogoDto>): RegraCatalogoDto {
     codigo: '',
     versao: '',
     tipo: 'regra_calculo',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal',
     hash: 'hash-1',

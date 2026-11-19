@@ -40,7 +40,9 @@ describe('grupo de escolha da decisão', () => {
   });
 
   it('na proteção de dados, o grupo mantém a semântica do fieldset e é nomeado pela pessoa', async () => {
-    const { host } = await abrirJanela(janelaDeMigracao({ loteEnviado: true, itens: [LEANDRO] }));
+    const { host } = await abrirJanela(
+      janelaDeMigracao({ decisoesEnviadas: true, itens: [LEANDRO] }),
+    );
 
     const grupo = grupoDe(linhaDe(host, 'c2'));
     expect(grupo.hasAttribute('role')).toBe(false);

@@ -23,21 +23,27 @@ export const CPF_DA_CONTA = '69959836371';
 
 /** O envio 2 de 2 (o que vale) de Fernanda Drumond, que prefere o nome social. */
 export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
-  inscricaoId: INSCRICAO_ID,
-  numero: 2,
-  total: 2,
-  vale: true,
-  numeroAnterior: 1,
-  numeroSeguinte: null,
-  processoSeletivoId: PROCESSO,
-  nomeDoProcesso: 'Medicina 2027',
-  identificadorDoProcesso: 'Edital 001/2026',
-  unidadeAdministradora: 'Centro de Processos Seletivos',
-  envio: {
-    numeroInscricao: '2027-000042',
-    enviadoEm: '2026-12-11T13:30:00Z',
-    fusoHorario: FUSO,
-    hashIntegridade: 'a'.repeat(64),
+  inscricao: {
+    inscricaoId: INSCRICAO_ID,
+    numero: 2,
+    total: 2,
+    vale: true,
+    numeroAnterior: 1,
+    numeroSeguinte: null,
+    envio: {
+      numeroInscricao: '2027-000042',
+      enviadoEm: '2026-12-11T13:30:00Z',
+      fusoHorario: FUSO,
+      hashIntegridade: 'a'.repeat(64),
+    },
+    cancelamento: null,
+    prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: true },
+  },
+  processo: {
+    processoSeletivoId: PROCESSO,
+    nomeDoProcesso: 'Medicina 2027',
+    identificadorDoProcesso: 'Edital 001/2026',
+    unidadeAdministradora: 'Centro de Processos Seletivos',
   },
   candidato: {
     nomeCivil: 'Fernanda Laura Nicole Drumond',
@@ -45,87 +51,90 @@ export const COMPROVANTE_BASE: ComprovanteDaInscricaoDto = {
     usaNomeSocial: true,
     cpfMascarado: '***.598.363-**',
   },
-  prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: true },
-  numeroDeOpcoesDeCurso: 1,
-  opcoesDeCurso: [
-    {
-      ordem: 1,
-      nome: 'Direito (Bacharelado) — Campus Marabá',
-      modalidades: [
-        { codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 1 },
-        { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 },
-      ],
-    },
-  ],
-  secoes: [
-    {
-      codigo: 'DADOS_BASICOS',
-      titulo: 'Dados do candidato',
-      itens: [
-        {
-          rotulo: 'Município de nascimento',
-          descricao: '',
-          tipo: 'opcao',
-          componente: 'padrao',
-          valor: { codigo: '2927408', rotulo: 'Salvador' },
-        },
-        {
-          rotulo: 'Data de nascimento',
-          descricao: '',
-          tipo: 'data',
-          componente: 'padrao',
-          valor: '2001-03-09',
-        },
-      ],
-      grupos: [
-        {
-          codigo: 'FAMILIA',
-          rotulo: 'Composição familiar',
-          ocorrencias: [
-            {
-              id: 'o1',
-              titulo: 'Você (candidato)',
-              itens: [
-                {
-                  rotulo: 'Renda mensal',
-                  descricao: '',
-                  tipo: 'numero',
-                  componente: 'moeda',
-                  valor: '1234.5',
-                },
-              ],
-            },
-            {
-              id: 'o2',
-              titulo: 'Integrante 1',
-              itens: [
-                {
-                  rotulo: 'Renda mensal',
-                  descricao: '',
-                  tipo: 'numero',
-                  componente: 'moeda',
-                  valor: '800',
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  ],
-  derivados: [
-    {
-      rotulo: 'Faixa etária',
-      descricao: '',
-      tipo: 'texto',
-      componente: 'padrao',
-      valor: '25 a 29 anos',
-    },
-  ],
-  termosAceitos: [
-    { codigo: 'VERACIDADE', nome: 'Declaração de veracidade', versaoId: 'v1', hashVersao: 'h1' },
-  ],
-  documentos: [],
+  escolhasDeCurso: {
+    numeroDeOpcoesDeCurso: 1,
+    opcoesDeCurso: [
+      {
+        ordem: 1,
+        nome: 'Direito (Bacharelado) — Campus Marabá',
+        modalidades: [
+          { codigo: 'LI_EP', nome: 'Escola pública, independente de renda', ordem: 1 },
+          { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 },
+        ],
+      },
+    ],
+  },
+  formulario: {
+    secoes: [
+      {
+        codigo: 'DADOS_BASICOS',
+        titulo: 'Dados do candidato',
+        itens: [
+          {
+            rotulo: 'Município de nascimento',
+            descricao: '',
+            tipo: 'opcao',
+            componente: 'padrao',
+            valor: { codigo: '2927408', rotulo: 'Salvador' },
+          },
+          {
+            rotulo: 'Data de nascimento',
+            descricao: '',
+            tipo: 'data',
+            componente: 'padrao',
+            valor: '2001-03-09',
+          },
+        ],
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            rotulo: 'Composição familiar',
+            ocorrencias: [
+              {
+                id: 'o1',
+                titulo: 'Você (candidato)',
+                itens: [
+                  {
+                    rotulo: 'Renda mensal',
+                    descricao: '',
+                    tipo: 'numero',
+                    componente: 'moeda',
+                    valor: '1234.5',
+                  },
+                ],
+              },
+              {
+                id: 'o2',
+                titulo: 'Integrante 1',
+                itens: [
+                  {
+                    rotulo: 'Renda mensal',
+                    descricao: '',
+                    tipo: 'numero',
+                    componente: 'moeda',
+                    valor: '800',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    derivados: [
+      {
+        rotulo: 'Faixa etária',
+        descricao: '',
+        tipo: 'texto',
+        componente: 'padrao',
+        valor: '25 a 29 anos',
+      },
+    ],
+    termosAceitos: [
+      { codigo: 'VERACIDADE', nome: 'Declaração de veracidade', versaoId: 'v1', hashVersao: 'h1' },
+    ],
+    documentos: [],
+  },
 };
 
 export function falha(
@@ -168,14 +177,23 @@ export const botaoDeTentar = (tela: HTMLElement): HTMLButtonElement | undefined 
     (botao) => botao.textContent?.trim() === 'Tentar novamente',
   );
 
+/** O que cada teste muda em cada parte do comprovante-base. */
+export interface AlteracoesDoComprovante {
+  readonly candidato?: ComprovanteDaInscricaoDto['candidato'];
+  readonly inscricao?: Partial<ComprovanteDaInscricaoDto['inscricao']>;
+  readonly processo?: Partial<ComprovanteDaInscricaoDto['processo']>;
+  readonly escolhasDeCurso?: Partial<ComprovanteDaInscricaoDto['escolhasDeCurso']>;
+  readonly formulario?: Partial<ComprovanteDaInscricaoDto['formulario']>;
+}
+
 /** A página do comprovante aberta com o serviço de leitura e a conta do titular simulados. */
 export class CenarioDoComprovante {
   /** O que cada teste muda no comprovante-base devolvido pelo serviço. */
-  alteracoes: Partial<ComprovanteDaInscricaoDto> = {};
+  alteracoes: AlteracoesDoComprovante = {};
   readonly cpfDoLogin = signal(CPF_DA_CONTA);
   readonly servico = {
     comprovante: (_: string, numero: number): Observable<ApiResult<ComprovanteDaInscricaoDto>> =>
-      of(apiOk({ ...this.comprovante(), numero }, 200, SEM_CABECALHOS)),
+      of(apiOk(this.comprovante(numero), 200, SEM_CABECALHOS)),
   };
   fixture!: ComponentFixture<ComprovanteDaInscricaoPage>;
 
@@ -195,8 +213,17 @@ export class CenarioDoComprovante {
     this.configurar();
   }
 
-  comprovante(): ComprovanteDaInscricaoDto {
-    return { ...COMPROVANTE_BASE, ...this.alteracoes };
+  comprovante(numero = COMPROVANTE_BASE.inscricao.numero): ComprovanteDaInscricaoDto {
+    const base = COMPROVANTE_BASE;
+    const { candidato, ...grupos } = this.alteracoes;
+    return {
+      ...base,
+      candidato: candidato ?? base.candidato,
+      inscricao: { ...base.inscricao, ...grupos.inscricao, numero },
+      processo: { ...base.processo, ...grupos.processo },
+      escolhasDeCurso: { ...base.escolhasDeCurso, ...grupos.escolhasDeCurso },
+      formulario: { ...base.formulario, ...grupos.formulario },
+    };
   }
 
   async abrir(numero = '2'): Promise<HTMLElement> {

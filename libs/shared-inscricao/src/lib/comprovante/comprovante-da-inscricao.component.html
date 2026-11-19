@@ -1,41 +1,41 @@
 @let c = comprovante();
-<ui-secao-de-documento [titulo]="c.nomeDoProcesso" largura="inteira">
+<ui-secao-de-documento [titulo]="c.processo.nomeDoProcesso" largura="inteira">
   <p class="u-body-sm u-no-print">Universidade Federal do Sul e Sudeste do Pará</p>
   <p class="u-body-sm">
-    @if (c.identificadorDoProcesso; as identificador) {
+    @if (c.processo.identificadorDoProcesso; as identificador) {
       Processo {{ identificador }} ·
     }
-    {{ c.unidadeAdministradora }}
+    {{ c.processo.unidadeAdministradora }}
   </p>
   <ui-lista-de-dados variante="destaque">
     <ng-template
       uiDado
       rotulo="Número da inscrição"
-      [valor]="c.envio.numeroInscricao"
+      [valor]="c.inscricao.envio.numeroInscricao"
     ></ng-template>
     <ng-template uiDado rotulo="Situação">
-      @if (c.cancelamento) {
+      @if (c.inscricao.cancelamento) {
         <ui-tag variant="danger" [dot]="true">Inscrição cancelada</ui-tag>
-      } @else if (c.vale) {
+      } @else if (c.inscricao.vale) {
         <ui-tag variant="success" [dot]="true">É o que vale</ui-tag>
       } @else {
         <ui-tag variant="neutral" [dot]="true">Substituído</ui-tag>
       }
     </ng-template>
     <ng-template uiDado rotulo="Enviado em">
-      <time [attr.datetime]="c.envio.enviadoEm">{{ enviadoEm() }}</time>
+      <time [attr.datetime]="c.inscricao.envio.enviadoEm">{{ enviadoEm() }}</time>
     </ng-template>
   </ui-lista-de-dados>
   <nav aria-label="Envios desta inscrição">
     <p class="u-body-sm">
-      Envio {{ c.numero }} de {{ c.total }}
-      @if (c.numeroAnterior; as anterior) {
+      Envio {{ c.inscricao.numero }} de {{ c.inscricao.total }}
+      @if (c.inscricao.numeroAnterior; as anterior) {
         <span class="u-no-print">
           ·
           <a [routerLink]="rotaDoEnvio()(anterior)">‹ Envio anterior</a>
         </span>
       }
-      @if (c.numeroSeguinte; as seguinte) {
+      @if (c.inscricao.numeroSeguinte; as seguinte) {
         <span class="u-no-print">
           ·
           <a [routerLink]="rotaDoEnvio()(seguinte)">Envio seguinte ›</a>
@@ -45,7 +45,7 @@
   </nav>
 </ui-secao-de-documento>
 
-@if (c.cancelamento; as cancelamento) {
+@if (c.inscricao.cancelamento; as cancelamento) {
   <ui-secao-de-documento titulo="Cancelamento">
     <ui-lista-de-dados>
       <ng-template uiDado rotulo="Cancelada em">
@@ -118,9 +118,9 @@
   </ui-lista-de-dados>
 </ui-secao-de-documento>
 
-@if (c.secoes.length > 0 || c.derivados.length > 0) {
+@if (c.formulario.secoes.length > 0 || c.formulario.derivados.length > 0) {
   <ui-secao-de-documento titulo="Respostas da inscrição">
-    @for (secao of c.secoes; track $index) {
+    @for (secao of c.formulario.secoes; track $index) {
       <ui-secao-de-documento [titulo]="secao.titulo ?? 'Outras informações'" [nivel]="3">
         @if (secao.itens.length > 0) {
           <insc-itens-do-comprovante [itens]="secao.itens" />
@@ -136,9 +136,9 @@
         }
       </ui-secao-de-documento>
     }
-    @if (c.derivados.length > 0) {
+    @if (c.formulario.derivados.length > 0) {
       <ui-secao-de-documento titulo="Calculado pelo sistema" [nivel]="3">
-        <insc-itens-do-comprovante [itens]="c.derivados" />
+        <insc-itens-do-comprovante [itens]="c.formulario.derivados" />
       </ui-secao-de-documento>
     }
   </ui-secao-de-documento>
@@ -182,10 +182,10 @@
     }
   </ui-secao-de-documento>
 }
-@if (c.termosAceitos.length > 0) {
+@if (c.formulario.termosAceitos.length > 0) {
   <ui-secao-de-documento titulo="Termos aceitos" largura="inteira">
     <ul class="u-list">
-      @for (termo of c.termosAceitos; track termo.codigo) {
+      @for (termo of c.formulario.termosAceitos; track termo.codigo) {
         <li>{{ termo.nome }}</li>
       }
     </ul>
@@ -194,14 +194,14 @@
 }
 
 <ui-secao-de-documento titulo="Código de verificação" largura="inteira">
-  <ui-codigo-de-verificacao [codigo]="c.envio.hashIntegridade" />
+  <ui-codigo-de-verificacao [codigo]="c.inscricao.envio.hashIntegridade" />
   <p class="u-body-sm">
     Este código identifica exatamente o conteúdo deste comprovante. Qualquer alteração no que foi
     enviado gera um código diferente.
   </p>
 </ui-secao-de-documento>
 
-@if (c.prazoDaCorrecao; as prazo) {
+@if (c.inscricao.prazoDaCorrecao; as prazo) {
   <ui-secao-de-documento titulo="Prazo para correção" largura="inteira">
     @if (prazo.aberto) {
       <p>

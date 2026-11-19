@@ -14,14 +14,18 @@ import {
   presente,
 } from './pagina-da-janela.testing';
 
-const BETINA = itemDaJanela({ concessaoId: 'c1', beneficiarioNome: 'Betina Teste', situacao: 'retida' });
+const BETINA = itemDaJanela({
+  concessaoId: 'c1',
+  beneficiarioNome: 'Betina Teste',
+  situacao: 'retida',
+});
 const REBECA = itemDaJanela({
   concessaoId: 'c3',
   beneficiarioNome: 'Rebeca Teste',
   situacao: 'retida',
   ehDoLeitor: true,
 });
-const DEPOIS_DO_LOTE = janelaDeMigracao({ loteEnviado: true, itens: [BETINA, REBECA] });
+const DEPOIS_DO_LOTE = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, REBECA] });
 
 describe('concessões retidas da janela', () => {
   beforeEach(() => {
@@ -51,7 +55,9 @@ describe('concessões retidas da janela', () => {
     const { host, responder } = await abrirJanela(DEPOIS_DO_LOTE);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
-    await responder(janelaDeMigracao({ loteEnviado: true, itens: [{ ...BETINA, situacao: 'migrada' }] }));
+    await responder(
+      janelaDeMigracao({ decisoesEnviadas: true, itens: [{ ...BETINA, situacao: 'migrada' }] }),
+    );
 
     expect(api.decidirRetida).toHaveBeenCalledWith(
       PERFIL,
@@ -117,14 +123,16 @@ describe('concessões retidas da janela', () => {
   });
 
   it('prazo encerrado relê a janela e mantém a explicação no aviso da página', async () => {
-    api.decidirRetida.mockReturnValue(of(recusa('uniplus.autorizacao.migracao.prazo_encerrado', 422)));
+    api.decidirRetida.mockReturnValue(
+      of(recusa('uniplus.autorizacao.migracao.prazo_encerrado', 422)),
+    );
     const { host, responder } = await abrirJanela(DEPOIS_DO_LOTE);
 
     presente(botao(linhaDe(host, 'c1'), 'Migrar')).click();
     await responder(
       janelaDeMigracao({
         situacao: 'encerrada',
-        loteEnviado: true,
+        decisoesEnviadas: true,
         itens: [{ ...BETINA, situacao: 'nao_migrada' }],
       }),
     );

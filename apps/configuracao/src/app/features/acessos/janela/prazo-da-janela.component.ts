@@ -30,7 +30,7 @@ const UM_MINUTO = 60_000;
       <dl class="cfg-detail-list panel-body">
         <div>
           <dt>Prazo</dt>
-          <dd>{{ janela().prazo | dateBr: 'datetime' }}</dd>
+          <dd>{{ janela().terminaEm | dateBr: 'datetime' }}</dd>
         </div>
         @if (janela().encerradaEm; as encerradaEm) {
           <div>
@@ -62,7 +62,9 @@ export class PrazoDaJanelaComponent {
   protected readonly situacao = computed(() => situacaoDaJanela(this.janela().situacao));
   protected readonly forma = computed(() => formaDoEncerramento(this.janela().forma));
   protected readonly restante = computed(() =>
-    this.janela().situacao === 'aberta' ? tempoRestante(this.janela().prazo, this.agora()) : null,
+    this.janela().situacao === 'aberta'
+      ? tempoRestante(this.janela().terminaEm, this.agora())
+      : null,
   );
 
   constructor() {

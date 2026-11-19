@@ -23,7 +23,7 @@ function regra(codigo: string, tipo: string): RegraCatalogoDto {
     codigo,
     versao: '1.0',
     tipo,
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
     hash: `hash-${codigo}`,

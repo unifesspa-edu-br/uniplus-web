@@ -38,10 +38,10 @@ describe('ComprovanteDaInscricaoDoProcessoApi', () => {
     expect(req.request.headers.get('Accept')).toBe(
       buildVendorMimeAccept('comprovante-inscricao', 1),
     );
-    req.flush({ numero: 2 });
+    req.flush({ inscricao: { numero: 2 } });
 
     const resultado = await promessa;
-    expect(resultado.ok && resultado.data.numero).toBe(2);
+    expect(resultado.ok && resultado.data.inscricao.numero).toBe(2);
   });
 
   it('entrega a recusa 403 como falha, sem lançar', async () => {

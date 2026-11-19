@@ -218,7 +218,7 @@ export interface paths {
                         readonly "application/vnd.uniplus.ato-normativo.v1+json": components["schemas"]["AtoNormativoDto"];
                     };
                 };
-                /** @description Not Found */
+                /** @description O ato não existe (uniplus.publicacoes.ato_normativo.nao_encontrado). */
                 readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -456,7 +456,7 @@ export interface paths {
                         readonly "application/vnd.uniplus.tipo-ato.v1+json": components["schemas"]["TipoAtoPublicadoDto"];
                     };
                 };
-                /** @description Not Found */
+                /** @description O tipo de ato não existe ou foi removido (uniplus.publicacoes.tipo_ato.nao_encontrado). */
                 readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -522,7 +522,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Not Found */
+                /** @description Nenhuma versão do tipo de ato vale na data (uniplus.publicacoes.tipo_ato.nao_encontrado). */
                 readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;

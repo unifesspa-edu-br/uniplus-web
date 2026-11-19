@@ -48,7 +48,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('sem identificador do processo, mostra só a unidade', async () => {
-      cenario.alteracoes = { identificadorDoProcesso: null };
+      cenario.alteracoes = { processo: { identificadorDoProcesso: null } };
       const tela = await cenario.abrir();
 
       const texto = secao(tela, 'Medicina 2027')?.textContent?.replace(/\s+/g, ' ') ?? '';
@@ -77,7 +77,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       );
       cenario.reiniciar();
 
-      cenario.alteracoes = { derivados: [] };
+      cenario.alteracoes = { formulario: { derivados: [] } };
       const semCalculo = await cenario.abrir();
 
       expect(secao(semCalculo, 'Calculado pelo sistema')).toBeNull();
@@ -92,8 +92,8 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('a seção sem título na API aparece como "Outras informações"', async () => {
-      const [secao0] = COMPROVANTE_BASE.secoes;
-      cenario.alteracoes = { secoes: [{ ...secao0, titulo: null }] };
+      const [secao0] = COMPROVANTE_BASE.formulario.secoes;
+      cenario.alteracoes = { formulario: { secoes: [{ ...secao0, titulo: null }] } };
       const tela = await cenario.abrir();
 
       expect(secao(tela, 'Outras informações')).not.toBeNull();
@@ -108,24 +108,26 @@ describe('ComprovanteDaInscricaoPage', () => {
 
     it('lista cada documento com a exigência, a situação, a consequência e o código de cada arquivo', async () => {
       cenario.alteracoes = {
-        documentos: [
-          {
-            nome: 'Laudo médico',
-            integrante: 'Integrante 1',
-            obrigatorio: true,
-            situacao: 'Atendido',
-            consequencia: 'Indeferimento da inscrição',
-            arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
-          },
-          {
-            nome: 'Atestado',
-            integrante: null,
-            obrigatorio: false,
-            situacao: 'Dispensado',
-            consequencia: null,
-            arquivos: [],
-          },
-        ],
+        formulario: {
+          documentos: [
+            {
+              nome: 'Laudo médico',
+              integrante: 'Integrante 1',
+              obrigatorio: true,
+              situacao: 'Atendido',
+              consequencia: 'Indeferimento da inscrição',
+              arquivos: [{ formato: 'PDF', tamanhoBytes: 2048, hashSha256: HASH }],
+            },
+            {
+              nome: 'Atestado',
+              integrante: null,
+              obrigatorio: false,
+              situacao: 'Dispensado',
+              consequencia: null,
+              arquivos: [],
+            },
+          ],
+        },
       };
       const tela = await cenario.abrir();
 

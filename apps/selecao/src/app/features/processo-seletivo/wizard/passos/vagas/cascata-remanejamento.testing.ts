@@ -60,7 +60,7 @@ export const REGRA_CASCATA = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v1',
   tipo: 'criterio_remanejamento',
-  esquemaArgs: {
+  declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },
@@ -75,7 +75,7 @@ export const REGRA_CASCATA_ANTERIOR = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v0',
   tipo: 'criterio_remanejamento',
-  esquemaArgs: {
+  declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },

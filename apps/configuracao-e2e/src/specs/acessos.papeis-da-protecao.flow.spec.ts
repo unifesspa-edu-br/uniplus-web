@@ -33,11 +33,11 @@ const JANELA_COM_ETAPA_PROTEGIDA = {
   versaoNova: 2,
   versaoAlvo: 2,
   abertaEm: '2026-11-09T12:00:00Z',
-  prazo: '2026-12-15T15:00:00Z',
+  terminaEm: '2026-12-15T15:00:00Z',
   encerradaEm: null,
   situacao: 'aberta',
   forma: null,
-  loteEnviado: true,
+  decisoesEnviadas: true,
   itens: [ITEM],
 };
 
@@ -48,14 +48,14 @@ async function abrir(page: Page, permissoes: readonly string[], rota: string): P
   await mockUnidades(page);
   await mockRota(
     page,
-    /\/api\/autorizacao\/(versoes-de-perfil|janelas-de-migracao)(\?.*)?$/,
+    /\/api\/autorizacao\/(versoes-de-perfil|revisoes-de-concessoes)(\?.*)?$/,
     () => ({ status: 200, corpo: [] }),
   );
   await mockRota(page, /\/api\/autorizacao\/permissoes(\?.*)?$/, () => ({
     status: 200,
     corpo: [],
   }));
-  await mockRota(page, /\/api\/autorizacao\/perfis\/[^/]+\/janela$/, () => ({
+  await mockRota(page, /\/api\/autorizacao\/perfis\/[^/]+\/revisao-das-concessoes$/, () => ({
     status: 200,
     corpo: JANELA_COM_ETAPA_PROTEGIDA,
   }));

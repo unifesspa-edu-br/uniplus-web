@@ -106,7 +106,7 @@ export class InscricaoDoCandidatoPage implements OnInit {
   protected readonly ocorrenciasGravadas = computed(
     () =>
       new Set(
-        Object.values(this.leitura.inscricao()?.grupos ?? {}).flatMap((ocorrencias) =>
+        Object.values(this.leitura.inscricao()?.formulario.grupos ?? {}).flatMap((ocorrencias) =>
           ocorrencias.map((ocorrencia) => ocorrencia.id),
         ),
       ),

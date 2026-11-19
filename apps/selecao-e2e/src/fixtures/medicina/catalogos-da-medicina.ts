@@ -225,7 +225,7 @@ export const REGRAS_DE_DISTRIBUICAO_DA_MEDICINA = [
     codigo: 'DISTRIB-VAGAS-LEI-12711-COM-AC-PCD',
     versao: 'v1',
     tipo: 'regra_distribuicao_vagas',
-    esquemaArgs: {
+    declaracaoDaRegra: {
       pr_minimo: 'numeric (piso 0,5 — art. 10 II; teto 1,0)',
       sub_reservas: ['PPI', 'Q', 'PCD', 'EP'],
       entradas_por_edital: ['VO_base', 'PR', 'ReferenciaReservaDemografica'],
@@ -281,7 +281,7 @@ export const REGRAS_DE_AJUSTE_DA_MEDICINA = [
     codigo: 'RECONCILIACAO-VAGAS-ART11-PU',
     versao: 'v1',
     tipo: 'regra_ajuste_distribuicao_vagas',
-    esquemaArgs: {
+    declaracaoDaRegra: {
       motores_nao_art10:
         'REDUZIR_DE | REDUZIR_PROPORCIONAL_EM (apenas distribuições institucionais; clamp >=0; VEDADOS à Lei 12.711)',
       reconciliacao_federal:
@@ -307,7 +307,7 @@ export const REGRAS_DE_CASCATA_DA_MEDICINA = [
     codigo: 'REMANEJ-CASCATA-LEI-12711',
     versao: 'v1',
     tipo: 'criterio_remanejamento',
-    esquemaArgs: {
+    declaracaoDaRegra: {
       ordens: [
         {
           origem: 'LB_PPI',

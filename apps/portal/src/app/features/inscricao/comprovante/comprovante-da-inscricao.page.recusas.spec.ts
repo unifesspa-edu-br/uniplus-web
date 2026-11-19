@@ -29,7 +29,7 @@ describe('ComprovanteDaInscricaoPage', () => {
       tela.querySelector('.documento__aviso')?.textContent?.trim() ?? null;
 
     it('aparece quando o comprovante traz o cancelamento', async () => {
-      cenario.alteracoes = { cancelamento };
+      cenario.alteracoes = { inscricao: { cancelamento } };
 
       const tela = await cenario.abrir();
 
@@ -38,11 +38,11 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('some ao trocar para um envio sem cancelamento', async () => {
-      cenario.alteracoes = { cancelamento };
+      cenario.alteracoes = { inscricao: { cancelamento } };
       const tela = await cenario.abrir('2');
       expect(avisoNaTela(tela)).toBe(AVISO);
 
-      cenario.alteracoes = { cancelamento: null };
+      cenario.alteracoes = { inscricao: { cancelamento: null } };
       await cenario.trocarPara('1');
 
       expect(avisoNaTela(tela)).toBeNull();
@@ -50,7 +50,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('não sobrevive a uma recusa', async () => {
-      cenario.alteracoes = { cancelamento };
+      cenario.alteracoes = { inscricao: { cancelamento } };
       const tela = await cenario.abrir('2');
       expect(avisoNaTela(tela)).toBe(AVISO);
 

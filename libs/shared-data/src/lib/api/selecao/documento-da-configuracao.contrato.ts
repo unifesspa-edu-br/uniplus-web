@@ -9,8 +9,6 @@ import {
   DocumentoDaConfiguracaoComunsAlvoDoProcedimentoDeRecursoAreaDoEnem as AreaDoEnemDoProcedimento,
   DocumentoDaConfiguracaoComunsProdutoPapel as PapelDoProduto,
   DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade as UnidadeDoPrazoDoRecurso,
-  DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadePrimeiraInstanciaUnidade as UnidadeDaSuspensividade,
-  DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadeSegundaInstanciaUnidade as UnidadeDaSuspensividadeNaSegundaInstancia,
   DocumentoDaConfiguracaoComunsTipoDeDecisao as TipoDeDecisaoDoDocumento,
   DocumentoDaConfiguracaoDistribuicaoDeVagasAjusteDoQuadro$tipo as TipoDeAjusteDoQuadro,
   DocumentoDaConfiguracaoEtapasCarater as CaraterDaEtapa,
@@ -59,6 +57,13 @@ export type DocumentoDaConfiguracaoNivelDeAtendimento =
   Esquemas['DocumentoDaConfiguracaoEtapasNivelDeAtendimento'];
 export type DocumentoDaConfiguracaoPropriedadesDoRecurso =
   Esquemas['DocumentoDaConfiguracaoComunsPropriedadesDoRecurso'];
+/** A unidade do efeito suspensivo; nula, junto ao valor, desativa o bloqueio na instância. */
+export type UnidadeDaSuspensividade = NonNullable<
+  DocumentoDaConfiguracaoPropriedadesDoRecurso['suspensividadePrimeiraInstanciaUnidade']
+>;
+export type UnidadeDaSuspensividadeNaSegundaInstancia = NonNullable<
+  DocumentoDaConfiguracaoPropriedadesDoRecurso['suspensividadeSegundaInstanciaUnidade']
+>;
 export type DocumentoDaConfiguracaoRecursoDaEtapa =
   Esquemas['DocumentoDaConfiguracaoEtapasRecursoDaEtapa'];
 export type DocumentoDaConfiguracaoFormulario = Esquemas['DocumentoDaConfiguracaoFormulario'];
@@ -86,7 +91,6 @@ export {
   AbrangenciaDaBaseLegal,
   TipoDaReferenciaTemporal,
   FinalidadeDoFormulario,
-  UnidadeDaSuspensividadeNaSegundaInstancia,
   OperadorDaCondicao,
   AplicabilidadeDaExigencia,
   ChaveDeDistincaoDoNo,
@@ -110,7 +114,6 @@ export {
   PapelDoProduto,
   SentidoDoMotivo,
   TipoDeDecisaoDoDocumento,
-  UnidadeDaSuspensividade,
   UnidadeDoPrazoDoRecurso,
   TipoDeAjusteDoQuadro,
   DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos,

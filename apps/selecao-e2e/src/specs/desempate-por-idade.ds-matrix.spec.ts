@@ -21,7 +21,7 @@ function regra(codigo: string, baseLegal: string) {
     codigo,
     versao: '1.0',
     tipo: 'criterio_desempate',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,
     hash: `hash-${codigo}`,

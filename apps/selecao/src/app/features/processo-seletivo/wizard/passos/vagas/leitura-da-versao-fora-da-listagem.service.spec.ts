@@ -19,7 +19,7 @@ const REGRA_V0 = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v0',
   tipo: 'criterio_remanejamento',
-  esquemaArgs: { fallbackCodigo: 'AC', ordens: [] },
+  declaracaoDaRegra: { fallbackCodigo: 'AC', ordens: [] },
   invariantes: [],
   baseLegal: 'Portaria MEC nº 704/2025 (redação anterior)',
   hash: 'hash-cascata-v0',

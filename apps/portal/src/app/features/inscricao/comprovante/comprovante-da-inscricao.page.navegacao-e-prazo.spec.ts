@@ -32,7 +32,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('no primeiro envio oferece só o seguinte', async () => {
-      cenario.alteracoes = { total: 3, numeroAnterior: null, numeroSeguinte: 2 };
+      cenario.alteracoes = { inscricao: { total: 3, numeroAnterior: null, numeroSeguinte: 2 } };
       const tela = await cenario.abrir('1');
 
       expect(links(tela)).toEqual(['Envio seguinte ›']);
@@ -48,11 +48,13 @@ describe('ComprovanteDaInscricaoPage', () => {
 
     it('o envio substituído avisa e aponta o último, pelo total, sem oferecer a correção', async () => {
       cenario.alteracoes = {
-        vale: false,
-        numeroSeguinte: 2,
-        numeroAnterior: null,
-        total: 3,
-        prazoDaCorrecao: null,
+        inscricao: {
+          vale: false,
+          numeroSeguinte: 2,
+          numeroAnterior: null,
+          total: 3,
+          prazoDaCorrecao: null,
+        },
       };
       const tela = await cenario.abrir('1');
 
@@ -77,7 +79,9 @@ describe('ComprovanteDaInscricaoPage', () => {
 
     it('com o prazo encerrado, diz que não se corrige mais e não oferece a correção', async () => {
       cenario.alteracoes = {
-        prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: false },
+        inscricao: {
+          prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: false },
+        },
       };
       const tela = await cenario.abrir();
 
@@ -88,7 +92,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('sem prazo na resposta, a seção não aparece', async () => {
-      cenario.alteracoes = { prazoDaCorrecao: null };
+      cenario.alteracoes = { inscricao: { prazoDaCorrecao: null } };
       const tela = await cenario.abrir();
 
       expect(secao(tela, 'Prazo para correção')).toBeNull();

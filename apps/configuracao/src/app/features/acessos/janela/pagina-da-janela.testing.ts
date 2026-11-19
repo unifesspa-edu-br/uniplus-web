@@ -21,7 +21,7 @@ import { PERFIL } from './janela.testing';
 
 export const GESTAO_DE_ACESSOS = PERMISSAO.autorizacao.perfisAprovarFuncional;
 export const PROTECAO_DE_DADOS = PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados;
-export const URL_DA_JANELA = `http://api.test/api/autorizacao/perfis/${PERFIL}/janela`;
+export const URL_DA_JANELA = `http://api.test/api/autorizacao/perfis/${PERFIL}/revisao-das-concessoes`;
 
 export const api = {
   enviarLote: vi.fn(),

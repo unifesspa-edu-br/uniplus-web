@@ -12,7 +12,7 @@ function regra(codigo: string, tipo: string, baseLegal: string) {
     codigo,
     versao: '1.0',
     tipo,
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,
     hash: `hash-${codigo}`,

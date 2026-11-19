@@ -1,8 +1,8 @@
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { ErrorHandler, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import { apiOk, apiResultInterceptor } from '@uniplus/shared-core/http';
@@ -52,6 +52,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
   const iniciarAAvaliacao = vi.fn();
   const carregarNomes = vi.fn();
   const lerMunicipio = vi.fn();
+  const tratarErro = vi.fn();
   const conta = signal<Record<string, string | undefined>>({ cpf: '69959836371' });
   let leitura: LeituraDaInscricao;
 
@@ -69,6 +70,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
         { provide: AvaliacaoDaInscricaoEstado, useValue: { iniciar: iniciarAAvaliacao } },
         { provide: NomesDeMunicipios, useValue: { carregar: carregarNomes } },
         { provide: LEITURA_DE_MUNICIPIO_POR_CODIGO, useValue: lerMunicipio },
+        { provide: ErrorHandler, useValue: { handleError: tratarErro } },
       ],
     });
     leitura = TestBed.inject(LeituraDaInscricao);
@@ -78,7 +80,7 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
   async function carregarCom(
     iniciada: InscricaoDto,
-    formulario: FormularioRenderizavelDto = COM_NATURALIDADE,
+    formulario: FormularioRenderizavelDto | null = COM_NATURALIDADE,
   ): Promise<void> {
     iniciar.mockReturnValue(of(apiOk(iniciada, 200, new HttpHeaders())));
     leitura.carregar(PROCESSO);
@@ -189,5 +191,58 @@ describe('LeituraDaInscricao: a carga que a tela adota', () => {
 
     expect(leitura.carregada()?.inicial.respostas).toEqual({ NOME: 'Outra' });
     expect(iniciarAAvaliacao).toHaveBeenCalledTimes(2);
+  });
+
+  describe('quando a resposta da API não tem a forma que a tela espera', () => {
+    const SEM_O_BLOCO_DO_FORMULARIO = {
+      ...inscricao(),
+      formulario: undefined,
+    } as unknown as InscricaoDto;
+
+    it('mostra o erro da leitura em vez de ficar carregando', async () => {
+      await carregarCom(SEM_O_BLOCO_DO_FORMULARIO);
+
+      expect(leitura.estado()).toBe('erro');
+      expect(leitura.erroAoCarregar()).toBe(
+        'Não foi possível abrir a inscrição. Tente novamente ou recarregue a página.',
+      );
+      expect(leitura.carregada()).toBeNull();
+    });
+
+    it('sai do carregamento quando o formulário chega sem corpo', async () => {
+      await carregarCom(inscricao(), null);
+
+      expect(leitura.estado()).toBe('erro');
+      expect(leitura.erroAoCarregar()).toContain('Não foi possível abrir a inscrição');
+    });
+
+    it('informa a falha quando o início termina com erro fora da resposta HTTP', () => {
+      iniciar.mockReturnValue(throwError(() => new Error('Falha de transporte')));
+      leitura.carregar(PROCESSO);
+
+      expect(leitura.estado()).toBe('erro');
+      expect(leitura.erroAoCarregar()).toContain('Não foi possível abrir a inscrição');
+    });
+
+    it('registra a falha de montagem sem incluir os dados da inscrição', async () => {
+      iniciarAAvaliacao.mockImplementation(() => {
+        throw new Error('Valor recebido do formulário');
+      });
+      await carregarCom(inscricao());
+
+      expect(tratarErro).toHaveBeenCalledExactlyOnceWith(
+        new Error('Não foi possível montar a inscrição.'),
+      );
+      expect(leitura.estado()).toBe('erro');
+    });
+
+    it('lê de novo ao recarregar e sai do erro quando a resposta passa a servir', async () => {
+      await carregarCom(SEM_O_BLOCO_DO_FORMULARIO);
+
+      await carregarCom(inscricao({ respostas: { NOME: 'Fernanda' } }));
+
+      expect(leitura.estado()).toBe('pronto');
+      expect(leitura.erroAoCarregar()).toBeNull();
+    });
   });
 });

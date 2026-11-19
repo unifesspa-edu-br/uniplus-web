@@ -25,7 +25,7 @@ const concessao: ConcessaoDto = {
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
-  revogadaPelaJanelaId: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
   ativa: true,
 };

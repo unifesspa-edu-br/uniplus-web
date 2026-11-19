@@ -11,7 +11,7 @@ export function regraDoCatalogo(codigo: string, baseLegal: string): RegraCatalog
     codigo,
     versao: 'v1',
     tipo: 'regra_procedimento_recurso',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal,
     modalidadesAdmitidas: null,

@@ -31,7 +31,7 @@ describe('lote em que todas as concessões são de quem envia', () => {
     expect(host.textContent).toContain('Enviar o lote retém as suas');
     expect(linhaDe(host, 'c3').querySelector('input')).toBeNull();
     presente(botao(host, 'Enviar o lote')).click();
-    await responder(janelaDeMigracao({ itens: [PROPRIA], loteEnviado: true }));
+    await responder(janelaDeMigracao({ itens: [PROPRIA], decisoesEnviadas: true }));
 
     expect(host.querySelector('cfg-exclusao-dialog dialog')?.hasAttribute('open')).toBe(false);
     expect(api.enviarLote).toHaveBeenCalledWith(

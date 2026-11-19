@@ -12,6 +12,7 @@ import {
   atoDoProcesso,
   processoDto,
 } from '../fixtures/processo-da-revisao';
+import { isolarDaApi } from './isolar-da-api';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
 import { responder, responderCom } from './responder';
 import { instalarPreferencia, temaDoProject } from './tema';
@@ -118,6 +119,7 @@ export async function mockarAtoPublicado(page: Page): Promise<void> {
 
 /** As permissões do operador, os tipos de ato e o tema do project, antes de cada cenário. */
 export async function prepararARevisao(page: Page, nomeDoProject: string): Promise<void> {
+  await isolarDaApi(page);
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
   await mockarTiposAto(page);
   await instalarPreferencia(page, temaDoProject(nomeDoProject));

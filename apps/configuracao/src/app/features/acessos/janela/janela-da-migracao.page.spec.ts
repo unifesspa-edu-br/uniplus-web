@@ -29,10 +29,10 @@ const ENCERRADA = janelaDeMigracao({
   situacao: 'encerrada',
   encerradaEm: '2026-11-11T09:00:00Z',
   forma: 'prazo',
-  loteEnviado: true,
+  decisoesEnviadas: true,
   itens: [itemDaJanela({ concessaoId: 'c1', situacao: 'nao_migrada' })],
 });
-const LOTE_ENVIADO = janelaDeMigracao({ ...LOTE, loteEnviado: true });
+const LOTE_ENVIADO = janelaDeMigracao({ ...LOTE, decisoesEnviadas: true });
 const TODAS_MIGRADAS = {
   decisoes: [
     { concessaoId: 'c1', decisao: 'migrar' },
@@ -160,13 +160,13 @@ describe('JanelaDaMigracaoPage', () => {
     });
   });
 
-    it('diz que a versão com permissão pessoal ou sensível passa pelo Representante do controlador', async () => {
-      const { host } = await abrirJanela(LOTE);
+  it('diz que a versão com permissão pessoal ou sensível passa pelo Representante do controlador', async () => {
+    const { host } = await abrirJanela(LOTE);
 
-      expect(host.querySelector('.page-header__desc')?.textContent?.replace(/\s+/g, ' ')).toContain(
-        'pessoal ou sensível, do Representante do controlador.',
-      );
-    });
+    expect(host.querySelector('.page-header__desc')?.textContent?.replace(/\s+/g, ' ')).toContain(
+      'pessoal ou sensível, do Representante do controlador.',
+    );
+  });
 
   describe('lote da gestão de acessos', () => {
     it('lista cada concessão da versão anterior com migrar e recusar, e deixa a própria retida sem ação', async () => {
@@ -313,7 +313,7 @@ describe('JanelaDaMigracaoPage', () => {
       await assentar();
 
       presente(botao(host, 'Enviar o lote')).click();
-      await responder(janelaDeMigracao({ ...LOTE, loteEnviado: true }));
+      await responder(janelaDeMigracao({ ...LOTE, decisoesEnviadas: true }));
 
       expect(host.textContent).toContain('A janela mudou');
       expect(host.textContent).toContain('O lote da gestão de acessos já foi enviado.');

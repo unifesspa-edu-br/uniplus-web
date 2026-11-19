@@ -65,7 +65,7 @@ describe('VagasPassoComponent — reaplicar o rol sob composição calculada', (
     codigo: 'DISTRIB-VAGAS-LEI-12711',
     versao: 'v1',
     tipo: 'regra_distribuicao_vagas',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: [],
     baseLegal: 'Lei 12.711/2012',
     hash: 'hash-federal',

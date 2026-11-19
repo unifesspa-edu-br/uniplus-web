@@ -76,7 +76,7 @@ export class VagasDoProcessoApi {
    * grava a matriz de remanejamento entre modalidades.
    *
    * A tela não compõe `fallbackCodigo` nem `destinos[]`: o handler valida o
-   * corpo célula a célula contra o `esquemaArgs` **congelado** da regra
+   * corpo célula a célula contra o `declaracaoDaRegra` **congelado** da regra
    * escolhida e recusa com 422 (`ConfiguracaoCascataRemanejamento.MatrizDivergenteDaRegra`)
    * qualquer divergência — quem chama envia o que a regra do catálogo já
    * declarou, nunca uma composição livre.

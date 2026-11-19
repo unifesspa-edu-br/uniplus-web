@@ -28,7 +28,7 @@ export function regra(codigo: string): RegraCatalogoDto {
     codigo,
     versao: '1.0',
     tipo: 'regra_calculo',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: `Base de ${codigo}`,
     hash: `hash-${codigo}`,

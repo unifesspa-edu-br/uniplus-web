@@ -49,7 +49,7 @@ import { LeituraDaVersaoForaDaListagem } from './leitura-da-versao-fora-da-lista
  * depois de a oferta ser gravada.
  *
  * **A tela confirma, não compõe.** O operador escolhe regra e versão; o
- * `fallbackCodigo` e os `destinos[]` são derivados do `esquemaArgs`
+ * `fallbackCodigo` e os `destinos[]` são derivados do `declaracaoDaRegra`
  * congelado da regra — nunca compostos aqui. O handler recusa com
  * `MatrizDivergenteDaRegra` qualquer divergência célula a célula
  * (UNI-REQ-0056).
@@ -174,10 +174,10 @@ export class CascataRemanejamentoComponent {
   /** A matriz que a regra escolhida congela — o que a tela apresenta e envia, sem editar. */
   readonly matriz = computed<MatrizDaCascata | null>(() => {
     const regra = this.versaoDaRegra.regraEscolhida();
-    return regra === undefined ? null : matrizDaRegra(regra.esquemaArgs);
+    return regra === undefined ? null : matrizDaRegra(regra.declaracaoDaRegra);
   });
 
-  /** A regra existe (na listagem ou pela busca direta) mas o `esquemaArgs` não tem a forma reconhecida — defeito a reportar, não matriz vazia. */
+  /** A regra existe (na listagem ou pela busca direta) mas o `declaracaoDaRegra` não tem a forma reconhecida — defeito a reportar, não matriz vazia. */
   readonly esquemaNaoReconhecido = computed(
     () => this.versaoDaRegra.regraEscolhida() !== undefined && this.matriz() === null,
   );

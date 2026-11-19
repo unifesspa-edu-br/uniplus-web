@@ -18,7 +18,7 @@ const LB_PPI = 'mod-lb-ppi';
 const LB_Q = 'mod-lb-q';
 const AC = 'mod-ac';
 
-/** Molde reduzido do `esquemaArgs` real de `REMANEJ-CASCATA-LEI-12711` — duas origens, não oito, porque o que o teste prova é o encaixe, não o catálogo inteiro. */
+/** Molde reduzido do `declaracaoDaRegra` real de `REMANEJ-CASCATA-LEI-12711` — duas origens, não oito, porque o que o teste prova é o encaixe, não o catálogo inteiro. */
 const ESQUEMA_ARGS_REAL = {
   fallbackCodigo: 'AC',
   ordens: [
@@ -81,7 +81,7 @@ function ofertaFederal(
 }
 
 describe('matrizDaRegra', () => {
-  it('lê o esquemaArgs real de REMANEJ-CASCATA-LEI-12711', () => {
+  it('lê o declaracaoDaRegra real de REMANEJ-CASCATA-LEI-12711', () => {
     expect(matrizDaRegra(ESQUEMA_ARGS_REAL)).toEqual({
       fallbackCodigo: 'AC',
       ordens: [
@@ -178,7 +178,7 @@ describe('problemasDaCascata', () => {
    * (fallback presente, cada origem que ELA declara resolve) e mesmo assim
    * deixar de cobrir uma origem ou destino que a matriz declara e nenhuma
    * oferta do processo usa: o handler de gravação aceita — só confere a
-   * matriz contra o `esquemaArgs`, não contra o quadro de vagas — e o
+   * matriz contra o `declaracaoDaRegra`, não contra o quadro de vagas — e o
    * processo fica impublicável, porque a prontidão de conformidade
    * (`PendenciaDaCascata`/`ExisteCascataOrigemNaoSegueCascata`) recusa depois.
    * Esta checagem é o que evita o PUT aceitar essa configuração calada.

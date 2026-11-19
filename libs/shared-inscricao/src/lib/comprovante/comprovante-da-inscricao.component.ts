@@ -16,7 +16,10 @@ import { ItensDoComprovanteComponent } from './itens-do-comprovante.component';
 import { opcoesDeCursoExibidas } from './opcoes-de-curso-do-comprovante';
 
 /** Um instante em pt-BR, no fuso que a API projeta, com o nome dele: "10/10/2026, 19:36, horário de Belém (PA)". */
-function noFuso(instante: string, fuso: ComprovanteDaInscricaoDto['envio']['fusoHorario']): string {
+function noFuso(
+  instante: string,
+  fuso: ComprovanteDaInscricaoDto['inscricao']['envio']['fusoHorario'],
+): string {
   return `${formatarDataBr(instante, 'datetime', fuso.id)}, horário de ${fuso.nome}`;
 }
 
@@ -53,24 +56,26 @@ export class ComprovanteDaInscricaoComponent {
   readonly rotaDoEnvio = input.required<(numero: number) => readonly unknown[]>();
 
   protected readonly enviadoEm = computed(() => {
-    const { enviadoEm, fusoHorario } = this.comprovante().envio;
+    const { enviadoEm, fusoHorario } = this.comprovante().inscricao.envio;
     return noFuso(enviadoEm, fusoHorario);
   });
   protected readonly aceitosEm = computed(() => {
-    const { enviadoEm, fusoHorario } = this.comprovante().envio;
+    const { enviadoEm, fusoHorario } = this.comprovante().inscricao.envio;
     return formatarDataBr(enviadoEm, 'short', fusoHorario.id);
   });
   protected readonly canceladaEm = computed(() => {
-    const cancelamento = this.comprovante().cancelamento;
+    const cancelamento = this.comprovante().inscricao.cancelamento;
     return cancelamento
-      ? noFuso(cancelamento.canceladaEm, this.comprovante().envio.fusoHorario)
+      ? noFuso(cancelamento.canceladaEm, this.comprovante().inscricao.envio.fusoHorario)
       : '';
   });
   protected readonly fimDoPrazo = computed(() => {
-    const prazo = this.comprovante().prazoDaCorrecao;
+    const prazo = this.comprovante().inscricao.prazoDaCorrecao;
     return prazo ? noFuso(prazo.fim, prazo.fusoHorario) : '';
   });
-  protected readonly opcoes = computed(() => opcoesDeCursoExibidas(this.comprovante()));
+  protected readonly opcoes = computed(() =>
+    opcoesDeCursoExibidas(this.comprovante().escolhasDeCurso),
+  );
   /** O envio de um processo de 1 opção sem o nome do curso não tem o que mostrar na seção. */
   protected readonly mostrarOpcoes = computed(() => {
     const opcoes = this.opcoes();
@@ -80,5 +85,7 @@ export class ComprovanteDaInscricaoComponent {
   protected readonly modalidadesDefinidas = computed(() =>
     this.opcoes().some((o) => o.modalidades !== null),
   );
-  protected readonly documentos = computed(() => documentosExibidos(this.comprovante().documentos));
+  protected readonly documentos = computed(() =>
+    documentosExibidos(this.comprovante().formulario.documentos),
+  );
 }

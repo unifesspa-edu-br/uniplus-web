@@ -14,7 +14,12 @@ const DOCUMENTO_COM_CHAVES_REPETIDAS: DocumentoDaConfiguracao = {
   formato: 'uniplus.selecao.configuracao',
   versaoFormato: 1,
   etapas: [{ chave: 'x' }, { chave: 'x' }],
-  cronograma: { fases: [{ chave: 'x' }, { chave: 'x' }] },
+  cronograma: {
+    fases: [
+      { chave: 'x', faseCanonicaCodigo: 'INSCRICOES' },
+      { chave: 'x', faseCanonicaCodigo: 'INSCRICOES' },
+    ],
+  },
 };
 const RESERVAS = { original: DOCUMENTO_COM_CHAVES_REPETIDAS, criadas: [] };
 
@@ -80,7 +85,7 @@ describe('regressões de origem e calendário', () => {
       { tipoBancaCodigo: 'B', nome: 'Banca' },
       RESERVAS,
     );
-    expect(banca.cronograma?.fases?.[0]).toEqual({ chave: 'x' });
+    expect(banca.cronograma?.fases?.[0]).toEqual({ chave: 'x', faseCanonicaCodigo: 'INSCRICOES' });
     expect(banca.cronograma?.fases?.[1].bancasRequeridas).toHaveLength(1);
   });
   it('acrescenta banca na etapa escolhida', () => {

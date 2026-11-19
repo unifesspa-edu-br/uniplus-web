@@ -4,9 +4,11 @@ import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { responder } from '../support/responder';
+import { isolarDaApi } from '../support/isolar-da-api';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 test.beforeEach(async ({ page }) => {
+  await isolarDaApi(page);
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
 

@@ -102,7 +102,11 @@ export class EscolhaDoCurso {
   private readonly inicial = computed(() => {
     const carregada = this.leitura.carregada();
     return carregada
-      ? escolhaInicialDeOfertas(carregada.inscricao, carregada.ofertas, carregada.numeroDeOpcoes)
+      ? escolhaInicialDeOfertas(
+          carregada.inscricao.escolhasDeCurso,
+          carregada.ofertas,
+          carregada.numeroDeOpcoes,
+        )
       : { oferta: null, segunda: null };
   });
 

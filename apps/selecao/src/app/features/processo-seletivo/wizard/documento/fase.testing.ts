@@ -66,7 +66,7 @@ const FASE_COMPLETA: DocumentoDaConfiguracao = {
   etapas: [
     {
       ...PROVA,
-      bancas: [{ chave: 'banca-da-prova' }],
+      bancas: [{ chave: 'banca-da-prova', tipoBancaCodigo: 'BANCA_PROVA' }],
       recursos: [
         {
           ancora: AncoraDoRecursoDaEtapa.atoPublicado,

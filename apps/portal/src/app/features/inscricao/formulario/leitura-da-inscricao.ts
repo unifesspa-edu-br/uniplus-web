@@ -1,5 +1,6 @@
 import {
   DestroyRef,
+  ErrorHandler,
   Injectable,
   computed,
   effect,
@@ -55,6 +56,10 @@ export interface InscricaoCarregada {
 /** Por que a página precisa ser recarregada, quando precisa. */
 export type MotivoDoRecarregar = 'envio' | 'incerta';
 
+/** Quando a inscrição e o formulário chegam, mas a tela não consegue montá-los. */
+const FALHA_AO_MONTAR_A_INSCRICAO =
+  'Não foi possível abrir a inscrição. Tente novamente ou recarregue a página.';
+
 type EstadoDaLeitura = 'carregando' | 'erro' | 'pronto';
 
 /** O que o início da inscrição devolveu: a inscrição, e o processo a que o formulário se refere. */
@@ -79,6 +84,7 @@ export class LeituraDaInscricao {
   private readonly nomes = inject(NomesDeMunicipios);
   private readonly lerMunicipio = inject(LEITURA_DE_MUNICIPIO_POR_CODIGO);
   private readonly basePath = inject(SELECAO_BASE_PATH);
+  private readonly erros = inject(ErrorHandler);
   private inicioEmCurso: Subscription | null = null;
 
   constructor() {
@@ -87,14 +93,14 @@ export class LeituraDaInscricao {
       const iniciada = this.iniciada();
       const formulario = this.formularioLido.data();
       if (iniciada && formulario) {
-        untracked(() => this.adotarCarga(iniciada, formulario));
+        untracked(() => this.montarCarga(iniciada, formulario));
       }
     });
   }
 
   readonly processoId = signal<string | null>(null);
   private readonly iniciada = signal<InscricaoIniciada | null>(null);
-  private readonly falhaAoIniciar = signal<string | null>(null);
+  private readonly falhaDaLeitura = signal<string | null>(null);
   /** O formulário só é pedido depois de a inscrição ser iniciada: a versão que vale é a dela. */
   private readonly formularioLido = useApiResource<FormularioRenderizavelDto>(() => {
     const iniciada = this.iniciada();
@@ -103,10 +109,15 @@ export class LeituraDaInscricao {
   /** O que chegou na última leitura; só ela o troca, nunca uma gravação. */
   readonly carregada = signal<InscricaoCarregada | null>(null);
   readonly erroAoCarregar = computed(() => {
-    const falha = this.falhaAoIniciar();
+    const falha = this.falhaDaLeitura();
     if (falha !== null) return falha;
     const problema = this.formularioLido.problem();
-    return problema ? this.problemas.resolve(problema).title : null;
+    if (problema) return this.problemas.resolve(problema).title;
+    const formulario = this.formularioLido;
+    if (formulario.error() || (formulario.value()?.ok && !formulario.data())) {
+      return FALHA_AO_MONTAR_A_INSCRICAO;
+    }
+    return null;
   });
   readonly estado = computed<EstadoDaLeitura>(() => {
     if (this.erroAoCarregar() !== null) return 'erro';
@@ -135,10 +146,13 @@ export class LeituraDaInscricao {
     this.inicioEmCurso?.unsubscribe();
     this.iniciada.set(null);
     this.carregada.set(null);
-    this.falhaAoIniciar.set(null);
-    this.inicioEmCurso = this.servico.iniciar(processoId).subscribe((resultado) => {
-      if (resultado.ok) this.iniciada.set({ processoId, inscricao: resultado.data });
-      else this.falhaAoIniciar.set(this.problemas.resolve(resultado.problem).title);
+    this.falhaDaLeitura.set(null);
+    this.inicioEmCurso = this.servico.iniciar(processoId).subscribe({
+      next: (resultado) => {
+        if (resultado.ok) this.iniciada.set({ processoId, inscricao: resultado.data });
+        else this.falhaDaLeitura.set(this.problemas.resolve(resultado.problem).title);
+      },
+      error: () => this.falhaDaLeitura.set(FALHA_AO_MONTAR_A_INSCRICAO),
     });
   }
 
@@ -158,6 +172,16 @@ export class LeituraDaInscricao {
     this.atual.update((inscricao) => (inscricao ? { ...inscricao, eTag } : inscricao));
   }
 
+  /** Uma resposta que a tela não sabe montar vira o erro da leitura, não um carregamento sem fim. */
+  private montarCarga(iniciada: InscricaoIniciada, formulario: FormularioRenderizavelDto): void {
+    try {
+      this.adotarCarga(iniciada, formulario);
+    } catch {
+      this.falhaDaLeitura.set(FALHA_AO_MONTAR_A_INSCRICAO);
+      this.erros.handleError(new Error('Não foi possível montar a inscrição.'));
+    }
+  }
+
   private adotarCarga(
     { processoId, inscricao }: InscricaoIniciada,
     formulario: FormularioRenderizavelDto,
@@ -170,8 +194,8 @@ export class LeituraDaInscricao {
   }
 
   private iniciarAAvaliacao(processoId: string, carga: InscricaoCarregada): void {
-    const { inscricao, formulario } = carga;
-    const escolha = escolhaInicialDeOfertas(inscricao, carga.ofertas, carga.numeroDeOpcoes);
+    const { inscricao, formulario, ofertas, numeroDeOpcoes } = carga;
+    const escolha = escolhaInicialDeOfertas(inscricao.escolhasDeCurso, ofertas, numeroDeOpcoes);
     this.avaliacao.iniciar({
       processoId,
       avaliacao: inscricao.avaliacao,
@@ -187,13 +211,13 @@ export class LeituraDaInscricao {
     formulario: FormularioRenderizavelDto,
   ): MunicipiosSeparados {
     // As respostas chegam em JSON: são os valores que o formulário lê.
-    const gravadas = inscricao.respostas as Readonly<Record<string, ValorJson>>;
+    const gravadas = inscricao.formulario.respostas as Readonly<Record<string, ValorJson>>;
     return separarMunicipiosGravados(formulario, {
       respostas: {
         ...respostasIniciaisDoNomeSocial(this.usuario.user(), gravadas, formulario),
         ...gravadas,
       },
-      grupos: inscricao.grupos as NonNullable<SimulacaoDoFormulario['grupos']>,
+      grupos: inscricao.formulario.grupos as NonNullable<SimulacaoDoFormulario['grupos']>,
     });
   }
 }
@@ -206,10 +230,10 @@ function inscricaoCarregada(
   return {
     inscricao,
     formulario,
-    ofertas: ofertasDaInscricao(inscricao),
-    numeroDeOpcoes: numeroDeOpcoesDeCurso(inscricao.numeroDeOpcoesDeCurso),
+    ofertas: ofertasDaInscricao(inscricao.escolhasDeCurso),
+    numeroDeOpcoes: numeroDeOpcoesDeCurso(inscricao.escolhasDeCurso.numeroDeOpcoesDeCurso),
     inicial: { respostas: municipios.respostas, grupos: municipios.grupos },
     municipiosGravados: municipios.gravados,
-    termosAceitos: inscricao.aceites.map((a) => a.codigo),
+    termosAceitos: inscricao.formulario.aceites.map((a) => a.codigo),
   };
 }

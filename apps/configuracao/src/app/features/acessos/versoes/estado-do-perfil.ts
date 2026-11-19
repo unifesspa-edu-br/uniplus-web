@@ -70,7 +70,7 @@ export function resumoDoDetalhe(perfil: PerfilDto): ResumoDoDetalheDoPerfil {
     ...resumoComum(perfil),
     temVigente: perfil.composicaoEmVigor !== null,
     temPendente: perfil.versaoPendente !== null,
-    emJanelaDeMigracao: perfil.janela != null,
+    emJanelaDeMigracao: perfil.revisaoDasConcessoes != null,
   };
 }
 

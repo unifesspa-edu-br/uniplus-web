@@ -50,7 +50,11 @@ describe('GravacaoDaInscricao: recusa só com causa geral', () => {
           provide: LeituraDaInscricao,
           useValue: {
             processoId: () => 'processo-1',
-            inscricao: () => ({ eTag: 'v1', respostas: {}, grupos: {} }) as unknown as InscricaoDto,
+            inscricao: () =>
+              ({
+                eTag: 'v1',
+                formulario: { respostas: {}, grupos: {} },
+              }) as unknown as InscricaoDto,
             formulario: () => null,
             precisaRecarregar: () => false,
           },

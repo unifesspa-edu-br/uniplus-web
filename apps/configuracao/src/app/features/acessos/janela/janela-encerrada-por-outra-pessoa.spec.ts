@@ -12,10 +12,10 @@ const BETINA = itemDaJanela({
   beneficiarioNome: 'Betina Teste',
   situacao: 'retida',
 });
-const ABERTA = janelaDeMigracao({ loteEnviado: true, itens: [BETINA] });
+const ABERTA = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA] });
 const ENCERRADA = janelaDeMigracao({
   situacao: 'encerrada',
-  loteEnviado: true,
+  decisoesEnviadas: true,
   itens: [{ ...BETINA, situacao: 'nao_migrada' }],
 });
 

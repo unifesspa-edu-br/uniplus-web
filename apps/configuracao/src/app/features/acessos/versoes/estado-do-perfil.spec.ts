@@ -217,10 +217,14 @@ describe('resumo da lista e do detalhe', () => {
   });
 
   it('o detalhe informa se há janela de migração', () => {
-    const janela = { id: 'j1', prazo: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
 
-    expect(resumoDoDetalhe(perfilDoDetalhe({ janela })).emJanelaDeMigracao).toBe(true);
-    expect(resumoDoDetalhe(perfilDoDetalhe({ janela: null })).emJanelaDeMigracao).toBe(false);
+    expect(
+      resumoDoDetalhe(perfilDoDetalhe({ revisaoDasConcessoes: janela })).emJanelaDeMigracao,
+    ).toBe(true);
+    expect(
+      resumoDoDetalhe(perfilDoDetalhe({ revisaoDasConcessoes: null })).emJanelaDeMigracao,
+    ).toBe(false);
   });
 
   it('a lista com versão em vigor e pendente resume as duas', () => {

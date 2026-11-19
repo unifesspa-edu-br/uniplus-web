@@ -40,7 +40,13 @@ describe('bancas', () => {
     const original = {
       ...umaFaseCompleta(),
       cronograma: {
-        fases: [{ chave: 'inscricao', bancasRequeridas: [{ chave: 'banca-de-analise' }] }],
+        fases: [
+          {
+            chave: 'inscricao',
+            faseCanonicaCodigo: 'INSCRICOES',
+            bancasRequeridas: [{ chave: 'banca-de-analise', tipoBancaCodigo: 'BANCA_ANALISE' }],
+          },
+        ],
       },
       etapas: [],
     };

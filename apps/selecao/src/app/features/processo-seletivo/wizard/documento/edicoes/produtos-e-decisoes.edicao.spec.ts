@@ -7,7 +7,10 @@ import { describe, expect, it } from 'vitest';
 import { umaFaseCompleta } from '../fase.testing';
 import { comParecerIndividual, comProdutos, comTiposDeDecisao } from './produtos-e-decisoes.edicao';
 
-const SEM_NADA: DocumentoDaConfiguracaoCronogramaFase = { chave: 'x' };
+const SEM_NADA: DocumentoDaConfiguracaoCronogramaFase = {
+  chave: 'x',
+  faseCanonicaCodigo: 'INSCRICOES',
+};
 
 function inscricao() {
   const fase = umaFaseCompleta().cronograma?.fases?.[0];

@@ -14,14 +14,14 @@ import {
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const PERFIL_ID = '01960000-0000-7000-0000-0000000000a1';
-const FILA = /\/api\/autorizacao\/janelas-de-migracao(\?.*)?$/;
+const FILA = /\/api\/autorizacao\/revisoes-de-concessoes(\?.*)?$/;
 
 const ITEM = {
   perfilId: PERFIL_ID,
   perfilNome: 'Operador de inscrições',
   versaoAlvo: 3,
-  prazo: '2026-12-15T15:00:00Z',
-  loteEnviado: false,
+  terminaEm: '2026-12-15T15:00:00Z',
+  decisoesEnviadas: false,
   quantidadeADecidir: 2,
 };
 
@@ -64,7 +64,7 @@ test.describe('Acessos — fila de janelas de migração', () => {
     expect(chamadas).toHaveLength(1);
     expect(chamadas[0]).toMatchObject({
       metodo: 'GET',
-      caminho: '/api/autorizacao/janelas-de-migracao',
+      caminho: '/api/autorizacao/revisoes-de-concessoes',
       consulta: '?etapa=gestao_de_acessos',
     });
   });
@@ -74,7 +74,7 @@ test.describe('Acessos — fila de janelas de migração', () => {
       page,
       PERMISSOES_DA_BETINA_SO_APROVA,
       '/acessos/janelas-de-migracao/protecao-de-dados',
-      [{ status: 200, corpo: [{ ...ITEM, loteEnviado: true, quantidadeADecidir: 1 }] }],
+      [{ status: 200, corpo: [{ ...ITEM, decisoesEnviadas: true, quantidadeADecidir: 1 }] }],
     );
 
     await expect(page.getByText('Lote enviado')).toBeVisible();

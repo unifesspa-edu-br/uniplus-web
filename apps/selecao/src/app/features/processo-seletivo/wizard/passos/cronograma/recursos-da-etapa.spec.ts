@@ -18,7 +18,7 @@ function regra(codigo: string, versao: string): RegraCatalogoDto {
     codigo,
     versao,
     tipo: 'PRAZO',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Base legal de teste',
     modalidadesAdmitidas: null,

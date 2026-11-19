@@ -17,7 +17,9 @@ export class JanelaDaMigracaoStore implements LeituraDosPerfis {
     const id = this.perfilId();
     return id === undefined
       ? undefined
-      : { url: `${this.basePath}/api/autorizacao/perfis/${encodeURIComponent(id)}/janela` };
+      : {
+          url: `${this.basePath}/api/autorizacao/perfis/${encodeURIComponent(id)}/revisao-das-concessoes`,
+        };
   });
   private readonly desfecho = desfechoDaLeitura([this.recurso], this.problemas);
   readonly janela = this.recurso.data;

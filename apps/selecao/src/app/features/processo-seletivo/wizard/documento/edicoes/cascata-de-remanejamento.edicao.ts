@@ -18,7 +18,7 @@ export interface OrdemDeOrigem {
 }
 
 /**
- * A cascata como a regra do catálogo a congela (`RegraCatalogoDto.esquemaArgs` de
+ * A cascata como a regra do catálogo a congela (`RegraCatalogoDto.declaracaoDaRegra` de
  * `criterio_remanejamento`): a modalidade de reserva e a ordem de cada origem. A tela só lê o que
  * a regra declarou e apresenta; nunca monta a matriz.
  */

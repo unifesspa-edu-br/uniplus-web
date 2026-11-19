@@ -56,7 +56,7 @@ const CONCESSAO_LIDA = {
   concedidaEm: '2026-03-02T12:00:00Z',
   revogadaEm: null,
   revogadaPor: null,
-  revogadaPelaJanelaId: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
 };
 

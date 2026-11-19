@@ -164,7 +164,7 @@ export function concessaoRevogada(id: string, motivo: string) {
     id,
     revogadaEm: '2026-11-10T13:00:00Z',
     revogadaPor: BETINA,
-    revogadaPelaJanelaId: null,
+    revogadaPelaRevisaoId: null,
     motivoRevogacao: motivo,
   };
 }

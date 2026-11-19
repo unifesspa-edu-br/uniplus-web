@@ -2,7 +2,7 @@
   <div class="panel-head">
     <h2 id="cfg-lote-titulo" class="panel-head__title">Lote da gestão de acessos</h2>
   </div>
-  @if (janela().loteEnviado) {
+  @if (janela().decisoesEnviadas) {
     <p class="panel-body">O lote da gestão de acessos já foi enviado e não se altera.</p>
   } @else if (!podeDecidir()) {
     <p class="panel-body">

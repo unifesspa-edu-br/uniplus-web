@@ -16,13 +16,13 @@
   <!-- A região fica sempre na página: trocar de envio só troca o conteúdo dela, e a troca é anunciada. -->
   <div aria-live="polite">
     @if (comprovante(); as c) {
-      @if (estado() === 'pronto' && !c.vale) {
+      @if (estado() === 'pronto' && !c.inscricao.vale) {
         <ui-alert variant="info" [dynamic]="false">
           Este envio foi substituído por um mais recente.
-          @if (!c.cancelamento) {
+          @if (!c.inscricao.cancelamento) {
             A inscrição que vale é a última enviada.
           }
-          <a [routerLink]="rotaDoEnvio()(c.total)"> Ver o envio mais recente </a>
+          <a [routerLink]="rotaDoEnvio()(c.inscricao.total)"> Ver o envio mais recente </a>
         </ui-alert>
       }
     }

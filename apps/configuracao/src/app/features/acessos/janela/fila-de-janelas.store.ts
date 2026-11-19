@@ -6,6 +6,6 @@ import { FilaPorEtapaStore } from '../fila-por-etapa.store';
 @Injectable()
 export class FilaDeJanelasStore extends FilaPorEtapaStore<ItemDaFilaDeJanelasDto> {
   constructor() {
-    super('janelas-de-migracao');
+    super('revisoes-de-concessoes');
   }
 }

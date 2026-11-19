@@ -149,8 +149,12 @@ describe('procedimentos na fase e na etapa', () => {
       ...documentoSemNada(),
       cronograma: {
         fases: [
-          { chave: 'a', regraRecurso: { regraCodigo: 'RECURSO', procedimentosDeRecurso: [] } },
-          { chave: 'sem-recurso' },
+          {
+            chave: 'a',
+            faseCanonicaCodigo: 'INSCRICOES',
+            regraRecurso: { regraCodigo: 'RECURSO', procedimentosDeRecurso: [] },
+          },
+          { chave: 'sem-recurso', faseCanonicaCodigo: 'INSCRICOES' },
         ],
       },
       etapas: [{ chave: 'prova', recursos: [{ prazoValor: 1 }, { prazoValor: 2 }] }],
@@ -211,8 +215,8 @@ describe('janelas de chave repetida', () => {
       ...documentoSemNada(),
       cronograma: {
         fases: [
-          { chave: 'a', regraRecurso: {} },
-          { chave: 'a', regraRecurso: {} },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
         ],
       },
       etapas: [
@@ -230,8 +234,12 @@ describe('janelas de chave repetida', () => {
     );
     expect(fase.cronograma).toEqual({
       fases: [
-        { chave: 'a', regraRecurso: {} },
-        { chave: 'a', regraRecurso: { procedimentosDeRecurso: procedimentos } },
+        { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
+        {
+          chave: 'a',
+          faseCanonicaCodigo: 'INSCRICOES',
+          regraRecurso: { procedimentosDeRecurso: procedimentos },
+        },
       ],
     });
     expect(etapa.etapas).toEqual([
