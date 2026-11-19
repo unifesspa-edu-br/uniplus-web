@@ -114,6 +114,15 @@ export const appRoutes: Routes = [
           import('./features/tipos-banca/tipos-banca.routes').then((m) => m.TIPOS_BANCA_ROUTES),
       },
       {
+        path: 'motivos-de-decisao',
+        canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['motivos-de-decisao'])],
+        data: { breadcrumb: 'Motivos de Decisão' },
+        loadChildren: () =>
+          import('./features/motivos-de-decisao/motivos-de-decisao.routes').then(
+            (m) => m.MOTIVOS_DE_DECISAO_ROUTES,
+          ),
+      },
+      {
         path: 'tipos-etapa',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['tipos-etapa'])],
         data: { breadcrumb: 'Tipo de Etapa' },
@@ -166,7 +175,7 @@ export const appRoutes: Routes = [
       {
         path: 'protecao-do-catalogo',
         canActivate: [permissaoGuard(...PERMISSOES_DAS_TELAS['protecao-do-catalogo'])],
-        data: { breadcrumb: 'Proteção de Dados do Catálogo' },
+        data: { breadcrumb: 'Proteção de dados dos tipos de documento e dos fatos do candidato' },
         loadChildren: () =>
           import('./features/protecao-do-catalogo/protecao-do-catalogo.routes').then(
             (m) => m.PROTECAO_DO_CATALOGO_ROUTES,

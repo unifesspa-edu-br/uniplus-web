@@ -15,6 +15,11 @@ import { rotasDoProcesso } from './rotas-do-processo';
 import { SELECAO_BASE_PATH } from './tokens';
 
 /** Cliente dos formulários do processo seletivo e da referência temporal dos fatos que eles coletam. */
+const MIME_DA_APLICACAO_DE_MODELO = {
+  resource: 'aplicacao-de-modelo-formulario',
+  version: 1,
+} as const;
+
 @Injectable({ providedIn: 'root' })
 export class FormulariosDoProcessoApi {
   private readonly http = inject(HttpClient);
@@ -136,18 +141,9 @@ export class FormulariosDoProcessoApi {
     context: HttpContext,
   ): Observable<ApiResult<AplicacaoDeModeloDto>> {
     return this.http.post<ApiResult<AplicacaoDeModeloDto>>(
-      this.rotas.doProcessoNaAdministracao(
-        processoSeletivoId,
-        'formularios',
-        'aplicacoes-de-modelo',
-      ),
+      this.urlDoFormulario(processoSeletivoId, 'aplicacoes-de-modelo'),
       request,
-      {
-        context: context.set(VENDOR_MIME_TOKEN, {
-          resource: 'aplicacao-de-modelo-formulario',
-          version: 1,
-        }),
-      },
+      { context: context.set(VENDOR_MIME_TOKEN, MIME_DA_APLICACAO_DE_MODELO) },
     );
   }
 
@@ -168,7 +164,7 @@ export class FormulariosDoProcessoApi {
     );
   }
 
-  private urlDoFormulario(processoSeletivoId: string, finalidade: string): string {
-    return this.rotas.doProcessoNaAdministracao(processoSeletivoId, 'formularios', finalidade);
+  private urlDoFormulario(processoSeletivoId: string, segmento: string): string {
+    return this.rotas.doProcessoNaAdministracao(processoSeletivoId, 'formularios', segmento);
   }
 }

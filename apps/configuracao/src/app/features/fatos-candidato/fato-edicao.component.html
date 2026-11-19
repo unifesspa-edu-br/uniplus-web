@@ -12,7 +12,7 @@
     }
   </div>
   @if (leitura.fato(); as f) {
-    @if (f.sistema) {
+    @if (f.semeadoPeloSistema) {
       <ui-alert variant="info" heading="Fato de sistema">
         Este fato é resolvido pelo próprio sistema. Só o nome, a descrição, o componente de exibição
         e a proteção de dados podem ser alterados; a proteção passa pela aprovação da proteção de

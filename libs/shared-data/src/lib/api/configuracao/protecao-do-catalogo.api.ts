@@ -5,12 +5,55 @@ import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
-export type ItemDaProtecaoDoCatalogoDto = components['schemas']['ItemDaProtecaoDoCatalogoDto'];
-export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'];
 export type SolicitacaoDaProtecaoDto = components['schemas']['SolicitacaoDaProtecaoDto'];
-export type DetalheDaProtecaoDoCatalogoDto = components['schemas']['DetalheDaProtecaoDoCatalogoDto'];
-export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'];
+
+/** O parecer de quem se manifesta sobre a proteção proposta para o item. */
+export type ParecerDaManifestacao = 'ADEQUADA' | 'RECOMENDA_AJUSTE' | 'INADEQUADA';
+
+/** A manifestação vale no ciclo atual, foi substituída por outra da mesma pessoa ou é de ciclo encerrado. */
+export type SituacaoDaManifestacao = 'VIGENTE' | 'SUBSTITUIDA' | 'ENCERRADA';
+
+/** Uma manifestação técnica, com o parecer e a situação nos tokens do contrato; o emissor e o identificador do autor não saem. */
+export type ManifestacaoDaProtecaoDto = Omit<
+  components['schemas']['ManifestacaoDaProtecaoDto'],
+  'parecer' | 'situacao'
+> & {
+  readonly parecer: ParecerDaManifestacao;
+  readonly situacao: SituacaoDaManifestacao;
+};
+
+/**
+ * Registra a manifestação no ciclo lido; o texto é obrigatório nos pareceres desfavoráveis. A tela
+ * sempre manda o ciclo e o texto, nulo quando vazio.
+ */
+export type RegistrarManifestacaoDaProtecaoRequest = Omit<
+  components['schemas']['RegistrarManifestacaoDaProtecaoRequest'],
+  'cadastro' | 'ciclo' | 'parecer' | 'texto'
+> & {
+  readonly cadastro: CadastroDoCatalogo;
+  readonly ciclo: number;
+  readonly parecer: ParecerDaManifestacao;
+  readonly texto: string | null;
+};
+
+/**
+ * A aprovação com o ciclo, a última manifestação, desfavorável ou não, e quantas manifestações o
+ * ciclo tem. A contagem volta na decisão para a API saber o que foi lido; a tela não a mostra.
+ */
+export type AprovacaoDaProtecaoDto = components['schemas']['AprovacaoDaProtecaoDto'];
+
+/** Os atos e as decisões trazem o ciclo e se a decisão foi tomada diante de manifestação desfavorável vigente. */
 export type AtoDaProtecaoDto = components['schemas']['AtoDaProtecaoDto'];
+export type DecisaoDaProtecaoDto = components['schemas']['DecisaoDaProtecaoDto'];
+
+export type ItemDaProtecaoDoCatalogoDto = components['schemas']['ItemDaProtecaoDoCatalogoDto'];
+
+export type DetalheDaProtecaoDoCatalogoDto = Omit<
+  components['schemas']['DetalheDaProtecaoDoCatalogoDto'],
+  'manifestacoesVigentes'
+> & {
+  readonly manifestacoesVigentes: readonly ManifestacaoDaProtecaoDto[];
+};
 export type DetalheDoFatoDto = components['schemas']['DetalheDoFatoDto'];
 export type DetalheDoTipoDeDocumentoDto = components['schemas']['DetalheDoTipoDeDocumentoDto'];
 export type DetalheDoValorDoFatoDto = components['schemas']['DetalheDoValorDoFatoDto'];
@@ -29,22 +72,47 @@ export type DecisaoDaProtecao = 'APROVAR' | 'RECOMENDAR_AJUSTE' | 'REPROVAR';
 /** Qual cadastro do catálogo o item pertence. */
 export type CadastroDoCatalogo = 'TIPO_DOCUMENTO' | 'FATO';
 
-/** A decisão e o cadastro do corpo, com os mesmos tokens do contrato (o gerador os tipa como enum). */
+/** O segmento de cada cadastro nas rotas da proteção do catálogo. */
+export const SEGMENTO_DO_CADASTRO: Readonly<Record<CadastroDoCatalogo, string>> = {
+  TIPO_DOCUMENTO: 'tipos-documento',
+  FATO: 'fatos',
+};
+
+/**
+ * A decisão e o cadastro do corpo, com os mesmos tokens do contrato (o gerador os tipa como enum),
+ * e o ciclo e a contagem de manifestações lidos na aprovação, que a tela sempre manda.
+ */
 export type DecidirProtecaoDoCatalogoRequest = Omit<
   components['schemas']['DecidirProtecaoDoCatalogoRequest'],
-  'cadastro' | 'decisao'
-> & { readonly cadastro: CadastroDoCatalogo; readonly decisao: DecisaoDaProtecao };
+  'cadastro' | 'decisao' | 'ciclo' | 'manifestacoesNoCiclo'
+> & {
+  readonly cadastro: CadastroDoCatalogo;
+  readonly decisao: DecisaoDaProtecao;
+  readonly ciclo: number;
+  readonly manifestacoesNoCiclo: number;
+};
 
 /** Um item que o administrador escolheu para a solicitação. */
-export type ItemParaSolicitarRequest = Omit<components['schemas']['ItemParaSolicitarRequest'], 'cadastro'> & {
+export type ItemParaSolicitarRequest = Omit<
+  components['schemas']['ItemParaSolicitarRequest'],
+  'cadastro'
+> & {
   readonly cadastro: CadastroDoCatalogo;
 };
 
 /** O ato que fica registrado na proteção de um item: o pedido, a decisão da proteção de dados e o aceite do administrador. */
-export type AtoDaProtecao = 'SOLICITACAO' | 'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO' | 'ACEITE';
+export type AtoDaProtecao =
+  | 'SOLICITACAO'
+  | 'APROVACAO'
+  | 'AJUSTE_RECOMENDADO'
+  | 'REPROVACAO'
+  | 'ACEITE';
 
 /** Os atos de decisão, que a lista de decisões traz. */
-export type AtoDeDecisao = Extract<AtoDaProtecao, 'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO'>;
+export type AtoDeDecisao = Extract<
+  AtoDaProtecao,
+  'APROVACAO' | 'AJUSTE_RECOMENDADO' | 'REPROVACAO'
+>;
 
 /**
  * Cliente do circuito de aprovação da proteção de dados do catálogo (UNI-REQ-0205): o que aguarda a
@@ -66,7 +134,8 @@ export class ProtecaoDoCatalogoApi {
   listar(
     situacao?: Exclude<SituacaoDaAprovacao, 'APROVADA'>,
   ): Observable<ApiResult<readonly ItemDaProtecaoDoCatalogoDto[]>> {
-    const params = situacao === undefined ? new HttpParams() : new HttpParams().set('situacao', situacao);
+    const params =
+      situacao === undefined ? new HttpParams() : new HttpParams().set('situacao', situacao);
     return this.http.get<ApiResult<readonly ItemDaProtecaoDoCatalogoDto[]>>(this.url(), {
       params,
       context: withVendorMime('protecao-do-catalogo', 1),
@@ -85,8 +154,33 @@ export class ProtecaoDoCatalogoApi {
     );
   }
 
+  /**
+   * POST `.../protecao-do-catalogo/manifestacoes` — registra a manifestação técnica no ciclo lido;
+   * a nova da mesma pessoa substitui a vigente. Exige `Idempotency-Key` no contexto.
+   */
+  manifestar(
+    request: RegistrarManifestacaoDaProtecaoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
+    return this.http.post<ApiResult<void>>(`${this.url()}/manifestacoes`, request, { context });
+  }
+
+  /** GET `.../protecao-do-catalogo/{tipos-documento|fatos}/{id}/manifestacoes` — o histórico do item. */
+  manifestacoes(
+    cadastro: CadastroDoCatalogo,
+    id: string,
+  ): Observable<ApiResult<readonly ManifestacaoDaProtecaoDto[]>> {
+    return this.http.get<ApiResult<readonly ManifestacaoDaProtecaoDto[]>>(
+      `${this.url()}/${SEGMENTO_DO_CADASTRO[cadastro]}/${encodeURIComponent(id)}/manifestacoes`,
+      { context: withVendorMime('protecao-do-catalogo-manifestacao', 1) },
+    );
+  }
+
   /** POST `/api/configuracao/admin/protecao-do-catalogo` — aprova, recomenda ajuste ou reprova um item da solicitação. */
-  decidir(command: DecidirProtecaoDoCatalogoRequest, context: HttpContext): Observable<ApiResult<void>> {
+  decidir(
+    command: DecidirProtecaoDoCatalogoRequest,
+    context: HttpContext,
+  ): Observable<ApiResult<void>> {
     return this.http.post<ApiResult<void>>(this.url(), command, { context });
   }
 

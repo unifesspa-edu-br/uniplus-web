@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
   comValores,
@@ -8,6 +8,7 @@ import {
   recusaDeCampo,
   sucesso,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 const todos = comValores();
@@ -18,6 +19,7 @@ const campoDoValor = (codigo: string, campo: string): string =>
   `${formDo(codigo)} [formcontrolname="${campo}"]`;
 
 describe('FatosCandidatoPage — correção e ordem dos valores', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();
@@ -184,7 +186,7 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
 
   describe('os valores que não se mantêm', () => {
     it.each([
-      ['de sistema', { sistema: true }],
+      ['de sistema', { semeadoPeloSistema: true }],
       ['do agregado, que os herda', { binding: 'AGREGACAO_GRUPO:GRUPO.CAMPO' }],
     ])('o fato %s mostra os valores sem Editar, Subir nem Descer', async (_nome, variacao) => {
       await abrir({ ...todos, ...variacao });

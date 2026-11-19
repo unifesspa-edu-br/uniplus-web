@@ -3,6 +3,10 @@ import { FormGroup } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import type { RecursoDaEtapa } from '../../../processo-seletivo.models';
+import {
+  UNIDADES_DA_INTERPOSICAO,
+  UNIDADES_DA_SUSPENSIVIDADE,
+} from '../../../shared/unidades-de-prazo-do-recurso';
 import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import type { EtapaForm } from '../cronograma-form';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
@@ -19,6 +23,8 @@ export class JanelaRecursalComponent {
   readonly indiceDaEtapa = input.required<number>();
   readonly recursoDaEtapa = input.required<RecursoDaEtapa>();
   readonly indiceDoRecurso = input.required<number>();
+  protected readonly unidadesDaInterposicao = UNIDADES_DA_INTERPOSICAO;
+  protected readonly unidadesDaSuspensividade = UNIDADES_DA_SUSPENSIVIDADE;
   protected readonly catalogoDeAtos = inject(CatalogoDeAtos);
   protected readonly edicao = inject(EdicaoDaEtapa);
   protected readonly cronograma = inject(FormularioDoCronograma);

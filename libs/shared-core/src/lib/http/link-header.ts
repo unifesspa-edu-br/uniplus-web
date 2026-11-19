@@ -42,40 +42,35 @@ export type ParsedLink = {
  *   values quoted-string preservam o case original do conteúdo.
  */
 export function parseLink(headerValue: string | null | undefined): Map<string, ParsedLink> {
-  const result = new Map<string, ParsedLink>();
-  if (headerValue === null || headerValue === undefined) {
-    return result;
-  }
-  const trimmed = headerValue.trim();
-  if (trimmed.length === 0) {
-    return result;
-  }
-
-  for (const segment of splitTopLevel(trimmed, DELIMITA_LINK_VALUES)) {
-    const linkValue = parseLinkValue(segment);
-    if (linkValue === null) {
-      continue;
-    }
-    const rel = linkValue.params['rel'];
-    if (rel === undefined) {
-      continue;
-    }
-    for (const r of rel.trim().split(/\s+/u)) {
-      if (r.length === 0 || result.has(r)) {
-        continue;
+  const links = new Map<string, ParsedLink>();
+  for (const linkValue of linkValuesDe(headerValue)) {
+    for (const rel of relsDe(linkValue)) {
+      if (!links.has(rel)) {
+        links.set(rel, linkValue);
       }
-      result.set(r, linkValue);
     }
   }
-  return result;
+  return links;
+}
+
+function linkValuesDe(headerValue: string | null | undefined): ParsedLink[] {
+  const texto = headerValue?.trim() ?? '';
+  return splitTopLevel(texto, DELIMITA_LINK_VALUES)
+    .map(parseLinkValue)
+    .filter((linkValue): linkValue is ParsedLink => linkValue !== null);
+}
+
+function relsDe(linkValue: ParsedLink): string[] {
+  const rel = linkValue.params['rel'];
+  return rel === undefined
+    ? []
+    : rel
+        .trim()
+        .split(/\s+/u)
+        .filter((r) => r.length > 0);
 }
 
 type Contexto = 'livre' | 'aspas' | 'angulos';
-
-interface Varredura {
-  contexto: Contexto;
-  escapado: boolean;
-}
 
 /** Quais trechos o tokenizador atravessa sem tratar o separador como separador. */
 interface DelimitacaoDeSegmentos {
@@ -87,18 +82,37 @@ interface DelimitacaoDeSegmentos {
 const DELIMITA_LINK_VALUES: DelimitacaoDeSegmentos = { separador: ',', protegeUri: true };
 const DELIMITA_PARAMETERS: DelimitacaoDeSegmentos = { separador: ';', protegeUri: false };
 
-function avancarVarredura(v: Varredura, ch: string, protegeUri: boolean): void {
-  if (v.escapado) {
-    v.escapado = false;
-  } else if (v.contexto === 'aspas') {
-    if (ch === '\\') v.escapado = true;
-    else if (ch === '"') v.contexto = 'livre';
-  } else if (v.contexto === 'angulos') {
-    if (ch === '>') v.contexto = 'livre';
-  } else if (ch === '"') {
-    v.contexto = 'aspas';
-  } else if (protegeUri && ch === '<') {
-    v.contexto = 'angulos';
+/**
+ * Onde o tokenizador está no texto: fora de qualquer trecho protegido (`livre`), dentro de uma
+ * quoted-string (`aspas`, com escape por `\`) ou dentro de `<URI>` (`angulos`).
+ */
+class Varredura {
+  private contexto: Contexto = 'livre';
+  private escapado = false;
+
+  constructor(private readonly protegeUri: boolean) {}
+
+  get noTopLevel(): boolean {
+    return this.contexto === 'livre' && !this.escapado;
+  }
+
+  avancar(ch: string): void {
+    if (this.escapado) {
+      this.escapado = false;
+    } else if (this.contexto === 'aspas') {
+      this.dentroDeAspas(ch);
+    } else if (this.contexto === 'angulos') {
+      if (ch === '>') this.contexto = 'livre';
+    } else if (ch === '"') {
+      this.contexto = 'aspas';
+    } else if (this.protegeUri && ch === '<') {
+      this.contexto = 'angulos';
+    }
+  }
+
+  private dentroDeAspas(ch: string): void {
+    if (ch === '\\') this.escapado = true;
+    else if (ch === '"') this.contexto = 'livre';
   }
 }
 
@@ -107,20 +121,18 @@ function avancarVarredura(v: Varredura, ch: string, protegeUri: boolean): void {
  * de `<URI>` (quando a delimitação a protege) ou de quoted-strings (suportando escape com `\`).
  */
 function splitTopLevel(input: string, delimitacao: DelimitacaoDeSegmentos): string[] {
-  const segments: string[] = [];
-  const varredura: Varredura = { contexto: 'livre', escapado: false };
-  let start = 0;
-
+  const segmentos: string[] = [];
+  const varredura = new Varredura(delimitacao.protegeUri);
+  let inicio = 0;
   for (let i = 0; i < input.length; i++) {
-    const ch = input[i];
-    if (varredura.contexto === 'livre' && !varredura.escapado && ch === delimitacao.separador) {
-      segments.push(input.slice(start, i));
-      start = i + 1;
+    if (varredura.noTopLevel && input[i] === delimitacao.separador) {
+      segmentos.push(input.slice(inicio, i));
+      inicio = i + 1;
     }
-    avancarVarredura(varredura, ch, delimitacao.protegeUri);
+    varredura.avancar(input[i]);
   }
-  segments.push(input.slice(start));
-  return segments.map((s) => s.trim()).filter((s) => s.length > 0);
+  segmentos.push(input.slice(inicio));
+  return segmentos.map((s) => s.trim()).filter((s) => s.length > 0);
 }
 
 /**
@@ -169,28 +181,23 @@ function parseParameters(tail: string): Record<string, string> {
  * silenciosamente incorreto.
  */
 function unquoteIfQuoted(value: string): string {
-  if (value.length < 2 || value[0] !== '"' || value[value.length - 1] !== '"') {
-    return value;
-  }
-  // Conta `\` consecutivos imediatamente antes do `"` final. Quantidade ímpar
-  // significa que o `"` foi escapado — a string não está realmente fechada.
-  let trailingBackslashes = 0;
+  return ehQuotedStringFechada(value) ? desfazerEscapes(value.slice(1, -1)) : value;
+}
+
+function ehQuotedStringFechada(value: string): boolean {
+  const entreAspas = value.length >= 2 && value[0] === '"' && value[value.length - 1] === '"';
+  // Quantidade ímpar de `\` antes do `"` final significa que o `"` foi escapado.
+  return entreAspas && barrasAntesDoFecho(value) % 2 === 0;
+}
+
+function barrasAntesDoFecho(value: string): number {
+  let barras = 0;
   for (let i = value.length - 2; i >= 1 && value[i] === '\\'; i--) {
-    trailingBackslashes++;
+    barras++;
   }
-  if (trailingBackslashes % 2 === 1) {
-    return value;
-  }
-  const inner = value.slice(1, -1);
-  let out = '';
-  for (let i = 0; i < inner.length; i++) {
-    const ch = inner[i];
-    if (ch === '\\' && i + 1 < inner.length) {
-      out += inner[i + 1];
-      i++;
-      continue;
-    }
-    out += ch;
-  }
-  return out;
+  return barras;
+}
+
+function desfazerEscapes(conteudo: string): string {
+  return conteudo.replace(/\\([\s\S])/gu, '$1');
 }

@@ -1,3 +1,5 @@
+import type { BaseLegal } from '@uniplus/shared-utils';
+
 export interface DocumentoDefinicao {
   id: string;
   nome: string;
@@ -19,14 +21,10 @@ export interface DocumentoGrupo {
 /**
  * Uma norma que sustenta a exigência, espelho de `BaseLegalInput`. São N por exigência (ADR-0074),
  * como a lei federal somada à cláusula do edital, e só as `RESOLVIDO` congelam no snapshot da
- * publicação. `observacao` vazia é a ausência e vira `null` no envio.
+ * publicação. É a mesma norma do modelo de formulário, definida em `@uniplus/shared-utils`:
+ * `observacao` nula ou em branco é a ausência e viaja como `null`.
  */
-export interface BaseLegalConfig {
-  readonly referencia: string;
-  readonly abrangencia: string;
-  readonly status: string;
-  readonly observacao: string;
-}
+export type BaseLegalConfig = BaseLegal;
 
 /** Uma cláusula do gatilho, na forma em que o contrato a guarda. */
 export interface CondicaoGatilhoConfig {
@@ -49,13 +47,32 @@ export interface IdadeMaximaEmissaoConfig {
   readonly referenciaFaseCodigo: string | null;
 }
 
+/** Aplicabilidade, obrigatoriedade, consequências e normas da exigência de documento. */
+export interface RegraDaExigenciaDeDocumento {
+  readonly aplicabilidade: string;
+  readonly obrigatorio: boolean;
+  readonly consequenciaIndeferimento: string;
+  readonly condicoes: readonly CondicaoGatilhoConfig[];
+  readonly basesLegais: readonly BaseLegalConfig[];
+}
+
+/** Restrições e modelo do documento apresentado. */
+export interface CriteriosDoComprovante {
+  readonly idadeMaximaEmissao: IdadeMaximaEmissaoConfig | null;
+  /** O contrato aceita a string QUALQUER ou uma lista de formatos declarados. */
+  readonly formatosPermitidos: unknown;
+  readonly tamanhoMaximoBytes: number | null;
+  /** Modelo que o candidato pode baixar e devolver preenchido. */
+  readonly modelo: ModeloDaExigencia | null;
+}
+
 /**
  * A exigência de um documento numa fase, a unidade que o contrato guarda: um registro por
  * (documento, fase, etapa). Um registro por tipo de documento achataria, na releitura, o mesmo
  * documento exigido em duas fases, e a gravação seguinte reescreveria a segunda com o valor da
  * primeira. A fase entra por CÓDIGO, como na idade máxima.
  */
-export interface ExigenciaDeDocumento {
+export interface ExigenciaDeDocumento extends RegraDaExigenciaDeDocumento, CriteriosDoComprovante {
   readonly tipoDocumentoId: string;
   /**
    * O nome que o processo guardou do tipo de documento. Cobre o tipo removido depois de exigido:
@@ -73,24 +90,6 @@ export interface ExigenciaDeDocumento {
    * fase sai de `finalidadeDaExigencia`, que nunca troca o declarado por outro.
    */
   readonly finalidade: string | null;
-  readonly aplicabilidade: string;
-  readonly obrigatorio: boolean;
-  readonly consequenciaIndeferimento: string;
-  readonly condicoes: readonly CondicaoGatilhoConfig[];
-  readonly basesLegais: readonly BaseLegalConfig[];
-  readonly idadeMaximaEmissao: IdadeMaximaEmissaoConfig | null;
-  /**
-   * Formato e tamanho vêm do cadastro do tipo de documento. Viajam como valor JSON polimórfico: a
-   * string `QUALQUER` ou a lista de formatos.
-   */
-  readonly formatosPermitidos: unknown;
-  readonly tamanhoMaximoBytes: number | null;
-  /**
-   * O modelo que a exigência oferece ao candidato para baixar, preencher e devolver; `null` quando
-   * não oferece. O `PUT` da árvore substitui tudo, então sem reenviar o modelo cada gravação o
-   * desvincularia.
-   */
-  readonly modelo: ModeloDaExigencia | null;
 }
 
 /**

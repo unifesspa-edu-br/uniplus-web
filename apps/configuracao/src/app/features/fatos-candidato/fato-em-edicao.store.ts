@@ -96,7 +96,7 @@ export class FatoEmEdicaoStore {
   /** O fato de sistema não edita eixo nenhum, qualquer seja o vínculo dele: só a proteção de dados. */
   readonly tipo = computed<TipoDoFato>(() => {
     const fato = this.fato();
-    return fato === null || fato.sistema ? 'OUTRO' : tipoDoFato(fato);
+    return fato === null || fato.semeadoPeloSistema ? 'OUTRO' : tipoDoFato(fato);
   });
   readonly temValores = computed(() => this.vale(podeTerValores));
   readonly temRegras = computed(() => this.vale(podeTerRegras));
@@ -104,7 +104,7 @@ export class FatoEmEdicaoStore {
   readonly definicaoEditavel = computed(() => this.vale(podeEditarDefinicao));
   /** A proteção de dados se altera no fato do administrador e também no de sistema, que trava o resto da definição. */
   readonly protecaoEditavel = computed(
-    () => this.definicaoEditavel() || this.fato()?.sistema === true,
+    () => this.definicaoEditavel() || this.fato()?.semeadoPeloSistema === true,
   );
   /** O agregado mostra o fato de membro que resume, sem poder trocá-lo. */
   readonly membroDoAgregado = computed(() => {

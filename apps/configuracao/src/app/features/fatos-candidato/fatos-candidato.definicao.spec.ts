@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
   comAprovacao,
@@ -7,6 +7,7 @@ import {
   problema,
   sucesso,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 
@@ -30,6 +31,7 @@ const agregadoDeRenda: FatoCandidatoDto = {
 };
 
 describe('FatosCandidatoPage — definição do fato', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();
@@ -118,7 +120,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
     });
 
     it('o fato de sistema trava a definição e envia só o ponto de resolução atual e a proteção', async () => {
-      const sistema = { ...corRaca, sistema: true };
+      const sistema = { ...corRaca, semeadoPeloSistema: true };
       await abrir(sistema);
       expect(p.texto()).toContain('Fato de sistema');
       expect(p.existe(campo('classificacaoProtecao'))).toBe(true);
@@ -418,7 +420,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
     it('ao abrir, não apaga a proteção que o servidor tem, ainda que a regra do domínio hoje não a admita', async () => {
       const sistema = {
         ...corRaca,
-        sistema: true,
+        semeadoPeloSistema: true,
         dominio: 'TEXTO',
         classificacaoProtecao: 'INTERNO',
         hipoteseLegal: 'INTERESSE_LEGITIMO',
@@ -432,7 +434,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
     it('esvazia a hipótese que a pessoa tornou incompatível ao trocar a classificação', async () => {
       const sistema = {
         ...corRaca,
-        sistema: true,
+        semeadoPeloSistema: true,
         dominio: 'BOOLEANO',
         classificacaoProtecao: 'PESSOAL',
         hipoteseLegal: 'INTERESSE_LEGITIMO',
@@ -459,7 +461,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
     });
 
     it('não avisa quando o fato já está pendente', async () => {
-      await abrir(comAprovacao({ ...corRaca, sistema: true }, 'PENDENTE'));
+      await abrir(comAprovacao({ ...corRaca, semeadoPeloSistema: true }, 'PENDENTE'));
 
       p.digitar(campo('classificacaoProtecao'), 'PESSOAL');
       await p.propagar();
@@ -469,7 +471,7 @@ describe('FatosCandidatoPage — definição do fato', () => {
 
     it('mostra a situação como texto e a classificação que a proteção de dados recomendou', async () => {
       await abrir(
-        comAprovacao({ ...corRaca, sistema: true }, 'AJUSTE_RECOMENDADO', 'IDENTIFICADOR'),
+        comAprovacao({ ...corRaca, semeadoPeloSistema: true }, 'AJUSTE_RECOMENDADO', 'IDENTIFICADOR'),
       );
 
       expect(p.texto()).toContain('Ajuste recomendado');

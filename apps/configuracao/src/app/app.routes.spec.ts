@@ -112,6 +112,26 @@ describe('appRoutes — acesso pelas permissões efetivas', () => {
     expect(await ir('/acessos/versoes-de-perfil/protecao-de-dados')).toBe('/acesso-negado');
   });
 
+  it('abre o perfil de acesso e o link da versão a quem mantém ou aprova perfis', async () => {
+    for (const permissao of [
+      'autorizacao:perfis:manter',
+      'autorizacao:perfis:aprovar-funcional',
+      'autorizacao:perfis:aprovar-protecao-de-dados',
+    ]) {
+      concedidas.set([permissao]);
+
+      expect(await ir('/acessos/perfis')).toBe('/acessos/perfis');
+      expect(await ir('/acessos/perfis/p1')).toBe('/acessos/perfis/p1');
+      expect(await ir('/acessos/perfis/p1/versoes/v2')).toBe('/acessos/perfis/p1/versoes/v2');
+    }
+  });
+
+  it('leva o link da versão ao acesso negado sem permissão de perfis', async () => {
+    concedidas.set(['autorizacao:concessoes:administrar']);
+
+    expect(await ir('/acessos/perfis/p1/versoes/v2')).toBe('/acesso-negado');
+  });
+
   it('abre a fila de versões de perfil de cada etapa a quem tem a permissão dela', async () => {
     concedidas.set(['autorizacao:perfis:aprovar-funcional']);
 

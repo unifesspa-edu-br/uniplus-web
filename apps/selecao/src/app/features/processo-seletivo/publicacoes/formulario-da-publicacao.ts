@@ -14,38 +14,34 @@ export interface ExigenciasDoFormulario {
   readonly confirmacaoDaPolitica: boolean;
 }
 
+function textoDoFormulario(valorInicial: string, ...validators: ValidatorFn[]): FormControl<string> {
+  return new FormControl(valorInicial, { nonNullable: true, validators });
+}
+
 export function criarFormularioDaPublicacao() {
   return new FormGroup({
-    tipoAtoCodigo: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    numero: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(NUMERO_TAMANHO_MAXIMO)],
-    }),
-    dataPublicacao: new FormControl(hojeNoFusoInstitucional(), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    assinante: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(ASSINANTE_TAMANHO_MAXIMO)],
-    }),
-    atoCorrigidoId: new FormControl('', { nonNullable: true }),
-    motivoDaCorrecao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(MOTIVO_TAMANHO_MAXIMO)],
-    }),
+    tipoAtoCodigo: textoDoFormulario('', Validators.required),
+    numero: textoDoFormulario('', Validators.maxLength(NUMERO_TAMANHO_MAXIMO)),
+    dataDoAto: textoDoFormulario(hojeNoFusoInstitucional(), Validators.required),
+    assinante: textoDoFormulario(
+      '',
+      Validators.required,
+      Validators.maxLength(ASSINANTE_TAMANHO_MAXIMO),
+    ),
+    atoCorrigidoId: textoDoFormulario(''),
+    motivoDaCorrecao: textoDoFormulario('', Validators.maxLength(MOTIVO_TAMANHO_MAXIMO)),
     politicaDeDivulgacaoConfirmada: new FormControl(false, { nonNullable: true }),
   });
 }
 
 export type FormularioDaPublicacao = ReturnType<typeof criarFormularioDaPublicacao>;
 
-/** Cada abertura começa de um formulário em branco, com a data de hoje. */
+/** Cada abertura começa de um formulário em branco, com a data de hoje na data do ato. */
 export function esvaziar(formulario: FormularioDaPublicacao): void {
   formulario.reset({
     tipoAtoCodigo: '',
     numero: '',
-    dataPublicacao: hojeNoFusoInstitucional(),
+    dataDoAto: hojeNoFusoInstitucional(),
     assinante: '',
     atoCorrigidoId: '',
     motivoDaCorrecao: '',

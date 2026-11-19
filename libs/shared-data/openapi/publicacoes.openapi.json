@@ -1065,12 +1065,12 @@
           "congelaConfiguracao",
           "efeitoIrreversivel",
           "unicoPorObjeto",
-          "dataPublicacao",
+          "dataDoAto",
           "documentoHash",
           "assinante",
-          "registradoEm",
-          "versaoInvocadaId",
-          "versaoInvocadaHash",
+          "publicadoEm",
+          "versaoDoObjetoId",
+          "versaoDoObjetoHash",
           "atoRetificadoId",
           "motivoRetificacao",
           "anexos"
@@ -1115,7 +1115,7 @@
           "unicoPorObjeto": {
             "type": "boolean"
           },
-          "dataPublicacao": {
+          "dataDoAto": {
             "type": "string",
             "format": "date"
           },
@@ -1125,18 +1125,18 @@
           "assinante": {
             "type": "string"
           },
-          "registradoEm": {
+          "publicadoEm": {
             "type": "string",
             "format": "date-time"
           },
-          "versaoInvocadaId": {
+          "versaoDoObjetoId": {
             "type": [
               "null",
               "string"
             ],
             "format": "uuid"
           },
-          "versaoInvocadaHash": {
+          "versaoDoObjetoHash": {
             "type": [
               "null",
               "string"
@@ -1437,7 +1437,7 @@
           "ano",
           "numero",
           "tipoCodigo",
-          "dataPublicacao",
+          "dataDoAto",
           "documentoHash",
           "assinante"
         ],
@@ -1462,7 +1462,7 @@
           "tipoCodigo": {
             "type": "string"
           },
-          "dataPublicacao": {
+          "dataDoAto": {
             "type": "string",
             "format": "date"
           },
@@ -1472,14 +1472,14 @@
           "assinante": {
             "type": "string"
           },
-          "versaoInvocadaId": {
+          "versaoDoObjetoId": {
             "type": [
               "null",
               "string"
             ],
             "format": "uuid"
           },
-          "versaoInvocadaHash": {
+          "versaoDoObjetoHash": {
             "type": [
               "null",
               "string"
@@ -1521,7 +1521,7 @@
       "RegistrarAtoNormativoResult": {
         "required": [
           "atoId",
-          "registradoEm",
+          "publicadoEm",
           "avisos"
         ],
         "type": "object",
@@ -1530,7 +1530,7 @@
             "type": "string",
             "format": "uuid"
           },
-          "registradoEm": {
+          "publicadoEm": {
             "type": "string",
             "format": "date-time"
           },

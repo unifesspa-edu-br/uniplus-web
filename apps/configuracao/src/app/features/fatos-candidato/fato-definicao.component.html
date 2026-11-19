@@ -272,7 +272,7 @@
           *ngTemplateOutlet="botaoDeSalvar; context: { $implicit: 'Salvar definição' }"
         />
       </form>
-    } @else if (f.sistema) {
+    } @else if (f.semeadoPeloSistema) {
       <ng-container
         *ngTemplateOutlet="leituraDaDefinicao; context: { $implicit: f, comProtecao: false }"
       />

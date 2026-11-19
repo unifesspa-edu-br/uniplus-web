@@ -93,7 +93,7 @@ export class LayoutComponent {
           exact: true,
         },
         {
-          label: 'Proteção de Dados do Catálogo',
+          label: 'Proteção de dados dos tipos de documento e dos fatos do candidato',
           icon: 'pi-verified',
           routerLink: '/protecao-do-catalogo',
           exact: true,
@@ -133,6 +133,12 @@ export class LayoutComponent {
           exact: true,
         },
         { label: 'Tipo de Banca', icon: 'pi-shield', routerLink: '/tipos-banca', exact: true },
+        {
+          label: 'Motivos de Decisão',
+          icon: 'pi-comments',
+          routerLink: '/motivos-de-decisao',
+          exact: true,
+        },
         { label: 'Tipo de Etapa', icon: 'pi-list-check', routerLink: '/tipos-etapa', exact: true },
         {
           label: 'Tipo de Processo',
@@ -178,13 +184,19 @@ export class LayoutComponent {
       items: [
         { label: 'Meus pedidos', icon: 'pi-inbox', routerLink: '/acessos/pedidos' },
         {
+          label: 'Providências',
+          icon: 'pi-flag',
+          routerLink: '/acessos/providencias',
+          exact: true,
+        },
+        {
           label: 'Fila da gestão de acessos',
           icon: 'pi-check-square',
           routerLink: '/acessos/fila-do-gestor',
           exact: true,
         },
         {
-          label: 'Fila da proteção de dados',
+          label: 'Fila do Representante do controlador',
           icon: 'pi-shield',
           routerLink: '/acessos/fila-da-protecao-de-dados',
           exact: true,
@@ -236,6 +248,18 @@ export class LayoutComponent {
           label: 'Reclassificações na proteção de dados',
           icon: 'pi-sort-amount-up',
           routerLink: '/acessos/reclassificacoes/protecao-de-dados',
+          exact: true,
+        },
+        {
+          label: 'Termo de responsabilidade',
+          icon: 'pi-file-edit',
+          routerLink: '/acessos/termo-de-responsabilidade',
+          exact: true,
+        },
+        {
+          label: 'Revisões de acesso',
+          icon: 'pi-calendar',
+          routerLink: '/acessos/revisoes',
           exact: true,
         },
         {

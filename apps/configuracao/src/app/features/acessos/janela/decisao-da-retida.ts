@@ -40,19 +40,24 @@ export class DecisaoDaRetida {
     item: ItemDaJanelaDto,
     decisao: DecisaoDaMigracao,
   ): Promise<void> {
-    const { concessaoId } = item;
-    const corpo = { decisao, confirmacaoDeExclusao: decisao === 'recusar' };
     return this.escrita.executar(
       'janela',
-      async () => {
-        const recusa = await this.envio.enviar(`retida:${perfilId}:${concessaoId}`, corpo, (c) =>
-          this.api.decidirRetida(perfilId, concessaoId, corpo, c),
-        );
-        if (recusa === null) this.concluir(decisao);
-        else this.registrarErro(concessaoId, this.envio.tratar(recusa));
-      },
-      (mensagem) => this.registrarErro(concessaoId, mensagem),
+      () => this.gravar(perfilId, item.concessaoId, decisao),
+      (mensagem) => this.registrarErro(item.concessaoId, mensagem),
     );
+  }
+
+  private async gravar(
+    perfilId: string,
+    concessaoId: string,
+    decisao: DecisaoDaMigracao,
+  ): Promise<void> {
+    const corpo = { decisao, confirmacaoDeExclusao: decisao === 'recusar' };
+    const recusa = await this.envio.enviar(`retida:${perfilId}:${concessaoId}`, corpo, (c) =>
+      this.api.decidirRetida(perfilId, concessaoId, corpo, c),
+    );
+    if (recusa === null) this.concluir(decisao);
+    else this.registrarErro(concessaoId, this.envio.tratar(recusa));
   }
 
   private concluir(decisao: DecisaoDaMigracao): void {

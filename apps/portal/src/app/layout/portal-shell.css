@@ -14,13 +14,18 @@
   background: var(--surface-page);
 }
 
-.topbar__brand {
+.topbar__link-marca,
+.topbar__titles {
   text-decoration: none;
   color: inherit;
   border-radius: var(--radius-sm);
 }
-.topbar__brand:focus-visible {
-  outline: none;
+.topbar__link-marca {
+  display: inline-flex;
+}
+.topbar__link-marca:focus-visible,
+.topbar__titles:focus-visible {
+  outline: 2px solid transparent; /* vira contorno visível em cores forçadas, que suprimem a sombra */
   box-shadow: var(--focus-ring);
 }
 /* `.topbar__title`/`.topbar__subtitle` do DS não fixam `display: block` —
@@ -28,6 +33,31 @@
 .topbar__title,
 .topbar__subtitle {
   display: block;
+}
+/* A marca da Unifesspa acompanhada da menção ao sistema, separada por um traço vertical, como
+   prevê o manual de identidade visual. */
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.topbar__titles {
+  padding-inline-start: var(--space-3);
+  border-inline-start: 1px solid var(--border-default);
+}
+/* Cabeçalho e abas formam um bloco só; a sombra o separa do conteúdo, e a barra do gov.br,
+   em outro tom, fica acima. */
+.portal-topbar {
+  border-bottom: 0;
+}
+.portal-topbar .topbar__title {
+  font-size: var(--text-xl);
+  line-height: 1.25;
+}
+@media (max-width: 479px) {
+  .portal-topbar .topbar__subtitle {
+    display: none;
+  }
 }
 
 /* ── Navegação por abas ──────────────────────────────────────────── */
@@ -37,7 +67,9 @@
   gap: var(--space-5);
   padding-inline: var(--space-4);
   background: var(--surface-card);
-  border-bottom: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-2);
+  position: relative;
+  z-index: 1;
   overflow-x: auto;
 }
 
@@ -202,8 +234,7 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-/* Mesmo par bg/fg de .topbar__mark: --color-primary-solid + branco fixo já é
-   pensado pra continuar legível nos três temas — ao contrário de um fundo
+/* --color-primary-solid + branco fixo já é pensado pra continuar legível nos três temas — ao contrário de um fundo
    fixo com texto de cor variável por tema, que quebra em algum deles. */
 .portal-footer__brand-mark {
   display: inline-flex;

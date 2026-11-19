@@ -4,7 +4,7 @@ import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/commo
 
 import { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 
 export type TipoDeficienciaDto = components['schemas']['TipoDeficienciaDto'];
 export type CriarTipoDeficienciaCommand = components['schemas']['CriarTipoDeficienciaCommand'];
@@ -25,15 +25,12 @@ export class TipoDeficienciaApi {
 
   /** GET `/api/configuracao/tipos-deficiencia` — lista (vivas) por cursor. */
   listar(query: TipoDeficienciaQuery = {}): Observable<ApiResult<readonly TipoDeficienciaDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
     return this.http.get<ApiResult<readonly TipoDeficienciaDto[]>>(
       `${this.basePath}/api/configuracao/tipos-deficiencia`,
-      { params, context: withVendorMime('tipo-deficiencia', 1) },
+      {
+        params: janelaDaPagina(new HttpParams(), query),
+        context: withVendorMime('tipo-deficiencia', 1),
+      },
     );
   }
 

@@ -11,7 +11,11 @@ import {
 
 const concessao: ConcessaoDto = {
   id: 'c1',
-  beneficiario: { emissor: 'unifesspa', sub: '0123456789abcdef', nome: 'Betina Marina das Neves' },
+  beneficiario: {
+    emissor: 'unifesspa',
+    contaId: '0123456789abcdef',
+    nome: 'Betina Marina das Neves',
+  },
   perfil: { id: 'p1', nome: 'Operador de inscrições' },
   versao: 1,
   escopo: { tipo: 'unidade', unidadeId: 'unidade-1' },

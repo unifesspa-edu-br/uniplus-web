@@ -21,6 +21,11 @@ export interface ProblemDetails {
   readonly errors?: ReadonlyArray<ProblemValidationError>;
   readonly legalReference?: LegalReference;
   readonly available_versions?: ReadonlyArray<number>;
+  /**
+   * `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem
+   * alteração e com a mesma chave de idempotência, pode agora ser aceita.
+   */
+  readonly retryable?: boolean;
 }
 
 export interface ProblemValidationError {

@@ -1,5 +1,14 @@
 import { PERMISSAO } from './catalogo';
 
+const CONSULTAS_DE_DADO = [
+  ['dadosPublicosConsultar', 'selecao:dados-publicos:consultar'],
+  ['dadosInternosConsultar', 'selecao:dados-internos:consultar'],
+  ['dadosPessoaisConsultar', 'selecao:dados-pessoais:consultar'],
+  ['dadosSensiveisConsultar', 'selecao:dados-sensiveis:consultar'],
+  ['dadosIdentificadoresConsultar', 'selecao:dados-identificadores:consultar'],
+  ['dadosIdentificadoresRevelar', 'selecao:dados-identificadores:revelar'],
+] as const;
+
 describe('PERMISSAO.selecao', () => {
   it('declara uma permissão de consulta de arquivo para cada classificação', () => {
     expect([
@@ -18,21 +27,9 @@ describe('PERMISSAO.selecao', () => {
   });
 
   it('declara a consulta de dado por classe e, no identificador, a consulta mascarada e a revelação, sem a revelação de CPF antiga', () => {
-    expect([
-      PERMISSAO.selecao.dadosPublicosConsultar,
-      PERMISSAO.selecao.dadosInternosConsultar,
-      PERMISSAO.selecao.dadosPessoaisConsultar,
-      PERMISSAO.selecao.dadosSensiveisConsultar,
-      PERMISSAO.selecao.dadosIdentificadoresConsultar,
-      PERMISSAO.selecao.dadosIdentificadoresRevelar,
-    ]).toEqual([
-      'selecao:dados-publicos:consultar',
-      'selecao:dados-internos:consultar',
-      'selecao:dados-pessoais:consultar',
-      'selecao:dados-sensiveis:consultar',
-      'selecao:dados-identificadores:consultar',
-      'selecao:dados-identificadores:revelar',
-    ]);
+    expect(CONSULTAS_DE_DADO.map(([chave]) => PERMISSAO.selecao[chave])).toEqual(
+      CONSULTAS_DE_DADO.map(([, codigo]) => codigo),
+    );
     expect(Object.values(PERMISSAO.selecao)).not.toContain('selecao:inscricoes:revelar-cpf');
   });
 
@@ -51,6 +48,54 @@ describe('PERMISSAO.autorizacao', () => {
     ]).toEqual([
       'autorizacao:perfis:aprovar-funcional',
       'autorizacao:perfis:aprovar-protecao-de-dados',
+    ]);
+  });
+
+  it('declara quem conduz, quem revê e quem só consulta a revisão periódica de acessos', () => {
+    expect([
+      PERMISSAO.autorizacao.revisoesConduzir,
+      PERMISSAO.autorizacao.revisoesReverProtecaoDeDados,
+      PERMISSAO.autorizacao.revisoesConsultar,
+    ]).toEqual([
+      'autorizacao:revisoes:conduzir',
+      'autorizacao:revisoes:rever-protecao-de-dados',
+      'autorizacao:revisoes:consultar',
+    ]);
+  });
+
+  it('declara quem administra e quem só consulta as concessões', () => {
+    expect([
+      PERMISSAO.autorizacao.concessoesAdministrar,
+      PERMISSAO.autorizacao.concessoesConsultar,
+    ]).toEqual(['autorizacao:concessoes:administrar', 'autorizacao:concessoes:consultar']);
+  });
+
+  it('declara a publicação do termo de responsabilidade', () => {
+    expect(PERMISSAO.autorizacao.termosPublicar).toBe('autorizacao:termos:publicar');
+  });
+
+  it('declara a consulta dos pedidos e das versões de perfil, sem decisão', () => {
+    expect([
+      PERMISSAO.autorizacao.pedidosConsultar,
+      PERMISSAO.autorizacao.perfisConsultarVersoes,
+    ]).toEqual(['autorizacao:pedidos:consultar', 'autorizacao:perfis:consultar-versoes']);
+  });
+
+  it('declara quem solicita providência sobre uma concessão', () => {
+    expect(PERMISSAO.autorizacao.providenciasSolicitar).toBe('autorizacao:providencias:solicitar');
+  });
+});
+
+describe('PERMISSAO.configuracao — proteção do catálogo', () => {
+  it('declara quem aprova, quem consulta e quem se manifesta', () => {
+    expect([
+      PERMISSAO.configuracao.protecaoDoCatalogoAprovar,
+      PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
+      PERMISSAO.configuracao.protecaoDoCatalogoManifestar,
+    ]).toEqual([
+      'configuracao:protecao-do-catalogo:aprovar',
+      'configuracao:protecao-do-catalogo:consultar',
+      'configuracao:protecao-do-catalogo:manifestar',
     ]);
   });
 });

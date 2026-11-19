@@ -1,0 +1,91 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Motivos de decisão</h1>
+    <p class="page-header__desc">
+      Cadastro dos motivos que justificam cada decisão do processo seletivo, por tipo de decisão.
+    </p>
+  </div>
+</div>
+
+<div>
+  <label class="field">
+    <span class="field__label">Tipo de decisão</span>
+    <select
+      class="select"
+      data-testid="motivos-tipo"
+      [value]="store.tipo()"
+      [disabled]="edicao.gravando()"
+      (change)="escolherTipo($event)"
+    >
+      @for (tipo of tipos; track tipo.codigo) {
+      <option [value]="tipo.codigo" [selected]="tipo.codigo === store.tipo()">
+        {{ tipo.rotulo }}
+      </option>
+      }
+    </select>
+  </label>
+  <div class="field">
+    <label class="checkbox">
+      <input
+        type="checkbox"
+        data-testid="motivos-desativados"
+        [checked]="store.comDesativados()"
+        [disabled]="edicao.gravando()"
+        (change)="alternarDesativados($event)"
+      />
+      <span class="checkbox__box" aria-hidden="true"></span>
+      Mostrar também os motivos desativados
+    </label>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar os motivos de decisão" [leitura]="leitura" />
+
+<span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
+<cfg-motivos-de-decisao-lista
+  [motivos]="store.motivosFiltrados()"
+  [tipoEscolhido]="edicao.tipoEscolhido()"
+  [mostraSubclassificacao]="edicao.pedeSubclassificacao()"
+  [carregando]="store.carregando()"
+  [gravando]="edicao.gravando()"
+  [andamento]="edicao.andamento()"
+  [erro]="store.mensagemDeErro()"
+  [temFiltro]="store.temFiltro()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  [(termoBusca)]="store.termoBusca"
+  (cadastrar)="edicao.abrirCadastro()"
+  (editar)="edicao.abrirEdicao($event)"
+  (alternarSituacao)="edicao.pedirMudancaDeSituacao($event, !$event.ativo)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
+<cfg-motivo-de-decisao-formulario
+  [aberto]="edicao.aberto()"
+  [form]="edicao.form"
+  [titulo]="edicao.titulo()"
+  [tipo]="edicao.tipoEscolhido()"
+  [erro]="edicao.erro()"
+  [anuncio]="edicao.anuncioDoSalvamento()"
+  [modo]="edicao.modo()"
+  [salvando]="edicao.salvando()"
+  [aguardandoReenvio]="edicao.aguardandoReenvio()"
+  [pedeSubclassificacao]="edicao.pedeSubclassificacao()"
+  [fundamentos]="edicao.fundamentos()"
+  [falhaNosFundamentos]="edicao.falhaNosFundamentos()"
+  (salvar)="edicao.salvar()"
+  (cancelar)="edicao.fechar()"
+/>
+<cfg-confirmacao-de-remocao
+  [titulo]="edicao.tituloDaConfirmacao()"
+  [rotulo]="edicao.ativando() ? 'Reativar' : 'Desativar'"
+  [variante]="edicao.ativando() ? 'primary' : 'danger'"
+  [aberto]="edicao.confirmando()"
+  (abertoChange)="edicao.aoMudarConfirmacao($event)"
+  [item]="edicao.itemDaConfirmacao()"
+  [mensagem]="edicao.mensagemDaConfirmacao()"
+  [removendo]="edicao.mudandoSituacao()"
+  [erro]="edicao.erroDaConfirmacao()"
+  [anuncio]="edicao.anuncioDaConfirmacao()"
+  (confirmar)="edicao.confirmarMudanca()"
+/>

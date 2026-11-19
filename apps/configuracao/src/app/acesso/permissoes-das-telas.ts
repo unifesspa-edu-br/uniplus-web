@@ -3,7 +3,46 @@ import { CanActivateFn, Router } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import type { CodigoDePermissao } from '@uniplus/shared-auth/bootstrap';
 
-const { autorizacao, configuracao, organizacao, publicacoes } = PERMISSAO;
+const { autorizacao, configuracao, organizacao, publicacoes, selecao } = PERMISSAO;
+
+/**
+ * O perfil de acesso abre para quem o mantém, para quem aprova uma das etapas da versão dele e para
+ * quem só consulta as versões (UNI-REQ-0372); as ações dependem da permissão de cada uma.
+ */
+export const PERMISSOES_DO_PERFIL = [
+  autorizacao.perfisManter,
+  autorizacao.perfisAprovarFuncional,
+  autorizacao.perfisAprovarProtecaoDeDados,
+  autorizacao.perfisConsultarVersoes,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
+ * A revisão de acessos abre para quem a conduz, para quem revê os itens de quem é Representante do
+ * controlador e para quem só a consulta; as ações dependem da permissão de decidir cada item.
+ */
+export const PERMISSOES_DA_REVISAO = [
+  autorizacao.revisoesConduzir,
+  autorizacao.revisoesReverProtecaoDeDados,
+  autorizacao.revisoesConsultar,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
+ * O detalhe da concessão, com a revogação e o motivo dela, abre para quem administra as concessões
+ * e para quem só as consulta; a revisão de acessos leva até ele.
+ */
+export const PERMISSOES_DA_CONCESSAO = [
+  autorizacao.concessoesAdministrar,
+  autorizacao.concessoesConsultar,
+] as const satisfies readonly CodigoDePermissao[];
+
+/**
+ * A fila e o detalhe das providências sobre concessões abrem para quem administra as concessões,
+ * que responde e atende, e para quem solicita, que acompanha (UNI-REQ-0375 e UNI-REQ-0376).
+ */
+export const PERMISSOES_DA_PROVIDENCIA = [
+  autorizacao.concessoesAdministrar,
+  autorizacao.providenciasSolicitar,
+] as const satisfies readonly CodigoDePermissao[];
 
 /**
  * Permissões que abrem cada tela, por caminho de rota (basta uma). Rotas e menu leem daqui, para
@@ -28,6 +67,7 @@ export const PERMISSOES_DAS_TELAS = {
   'fases-canonicas': [configuracao.fasesCanonicasManter],
   'precedencias-fase': [configuracao.precedenciasFaseManter],
   'tipos-banca': [configuracao.tiposBancaManter],
+  'motivos-de-decisao': [selecao.motivosDeDecisaoManter],
   'tipos-etapa': [configuracao.tiposEtapaManter],
   'tipos-processo': [configuracao.tiposProcessoConsultar],
   'tipos-ato': [publicacoes.tiposAtoManter],
@@ -35,7 +75,12 @@ export const PERMISSOES_DAS_TELAS = {
   'modelos-formulario': [configuracao.modelosFormularioConsultar],
   'simulador-de-formulario': [configuracao.modelosFormularioConsultar],
   'tipos-documento': [configuracao.tiposDocumentoManter],
-  'protecao-do-catalogo': [configuracao.protecaoDoCatalogoAprovar],
+  // Quem aprova decide; quem consulta e quem se manifesta (Encarregado de dados) só leem e opinam.
+  'protecao-do-catalogo': [
+    configuracao.protecaoDoCatalogoAprovar,
+    configuracao.protecaoDoCatalogoConsultar,
+    configuracao.protecaoDoCatalogoManifestar,
+  ],
   'base-legal-bonus-regional': [configuracao.baseLegalBonusRegionalManter],
   'condicoes-atendimento': [configuracao.condicoesAtendimentoManter],
   'recursos-acessibilidade': [configuracao.recursosAcessibilidadeManter],
@@ -44,37 +89,43 @@ export const PERMISSOES_DAS_TELAS = {
   'calendario-dias-uteis': [configuracao.calendariosDiasUteisManter],
   // Pedir acesso e acompanhar os próprios pedidos é de toda pessoa autenticada: lista vazia.
   'acessos/pedidos': [],
+  // A fila das providências é a primeira de quem administra concessões (UNI-REQ-0375).
+  'acessos/providencias': PERMISSOES_DA_PROVIDENCIA,
   'acessos/fila-do-gestor': [autorizacao.pedidosAprovarFuncional],
   'acessos/fila-da-protecao-de-dados': [autorizacao.pedidosAprovarProtecaoDeDados],
   'acessos/historico': [
     autorizacao.pedidosAprovarFuncional,
     autorizacao.pedidosAprovarProtecaoDeDados,
+    autorizacao.pedidosConsultar,
   ],
-  'acessos/concessoes': [autorizacao.concessoesAdministrar],
-  'acessos/perfis': [autorizacao.perfisManter],
+  'acessos/concessoes': PERMISSOES_DA_CONCESSAO,
+  'acessos/perfis': PERMISSOES_DO_PERFIL,
   'acessos/versoes-de-perfil/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/versoes-de-perfil/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/janelas-de-migracao/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/janelas-de-migracao/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
   'acessos/reclassificacoes/gestao-de-acessos': [autorizacao.perfisAprovarFuncional],
   'acessos/reclassificacoes/protecao-de-dados': [autorizacao.perfisAprovarProtecaoDeDados],
+  'acessos/revisoes': PERMISSOES_DA_REVISAO,
+  'acessos/termo-de-responsabilidade': [autorizacao.termosPublicar],
   'acessos/governanca/divergencias': [
     autorizacao.perfisManter,
     autorizacao.perfisAprovarProtecaoDeDados,
+    autorizacao.perfisConsultarVersoes,
   ],
 } as const satisfies Record<string, readonly CodigoDePermissao[]>;
 
 /** A janela de migração abre para quem mantém o perfil ou aprova uma das etapas dela. */
-export const PERMISSOES_DA_JANELA_DE_MIGRACAO = [
-  autorizacao.perfisManter,
-  autorizacao.perfisAprovarFuncional,
-  autorizacao.perfisAprovarProtecaoDeDados,
-] as const satisfies readonly CodigoDePermissao[];
+export const PERMISSOES_DA_JANELA_DE_MIGRACAO = PERMISSOES_DO_PERFIL;
 
-/** O detalhe da reclassificação abre para quem aprova uma das etapas dela. */
+/**
+ * O detalhe da reclassificação abre para quem aprova uma das etapas dela e para quem só consulta as
+ * versões; as filas de decisão seguem só com quem aprova.
+ */
 export const PERMISSOES_DA_RECLASSIFICACAO = [
   autorizacao.perfisAprovarFuncional,
   autorizacao.perfisAprovarProtecaoDeDados,
+  autorizacao.perfisConsultarVersoes,
 ] as const satisfies readonly CodigoDePermissao[];
 
 export type CaminhoDeTela = keyof typeof PERMISSOES_DAS_TELAS;

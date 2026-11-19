@@ -128,4 +128,89 @@ describe('tradução das recusas do domínio', () => {
       'Processo não está em rascunho',
     ]);
   });
+
+  describe('regra de deliberação da banca', () => {
+    const PREFIXO = 'uniplus.selecao.banca.';
+
+    it('leva a recusa ao campo da regra que o caminho aponta, na posição da banca', () => {
+      const traduzida = traduzirRecusa(
+        recusa([
+          {
+            field: 'fases[0].bancasRequeridas[1].regraDeDeliberacao.quorum',
+            code: `${PREFIXO}quorum_fora_do_intervalo`,
+          },
+        ]),
+        0,
+        nomeDaFase,
+      );
+
+      expect(traduzida.porCampo.get('bancasRequeridas.1.quorum')).toContain('entre 1 e o número');
+      expect(traduzida.gerais).toEqual([]);
+    });
+
+    it('leva ao campo da tabela a recusa cujo caminho aponta só a banca', () => {
+      const traduzida = traduzirRecusa(
+        recusa([
+          {
+            field: 'fases[0].bancasRequeridas[0]',
+            code: `${PREFIXO}regra_de_deliberacao_obrigatoria`,
+          },
+        ]),
+        0,
+        nomeDaFase,
+      );
+
+      expect(traduzida.porCampo.get('bancasRequeridas.0.regra')).toContain('Declare a regra');
+    });
+
+    it('mostra o mínimo de integrantes que só vem na mensagem do servidor', () => {
+      const problema = recusa([
+        {
+          field: 'fases[0].bancasRequeridas[0].regraDeDeliberacao.integrantes',
+          code: `${PREFIXO}integrantes_abaixo_do_minimo`,
+        },
+      ]);
+      const erro = problema.errors?.[0];
+      const comMinimo = {
+        ...problema,
+        errors: [{ ...erro, message: 'A banca precisa de 3 integrantes.' }],
+      } as ProblemDetails;
+
+      expect(
+        traduzirRecusa(comMinimo, 0, nomeDaFase).porCampo.get('bancasRequeridas.0.integrantes'),
+      ).toBe('A banca precisa de 3 integrantes.');
+    });
+
+    it('manda ao resumo, nomeando a fase, a recusa da regra de outra fase', () => {
+      const traduzida = traduzirRecusa(
+        recusa([
+          {
+            field: 'fases[1].bancasRequeridas[0].regraDeDeliberacao.criterio',
+            code: `${PREFIXO}criterio_obrigatorio`,
+          },
+        ]),
+        0,
+        nomeDaFase,
+      );
+
+      expect(traduzida.porCampo.size).toBe(0);
+      expect(traduzida.gerais[0]).toContain('Na fase Recursos');
+      expect(traduzida.gerais[0]).toContain('critério');
+    });
+
+    it('leva ao campo das bancas a recusa do recorte em banca de recursos', () => {
+      const traduzida = traduzirRecusa(
+        recusa([
+          {
+            field: 'fases[0].bancasRequeridas[0]',
+            code: `${PREFIXO}recorte_em_banca_de_recursos`,
+          },
+        ]),
+        0,
+        nomeDaFase,
+      );
+
+      expect(traduzida.porCampo.get('bancasRequeridas')).toContain('tire o recorte');
+    });
+  });
 });

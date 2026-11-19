@@ -1,6 +1,0 @@
-# Exceções ao limite de 400 linhas físicas por arquivo de produção
-# (.ts, .html e .css em apps/ e libs/; comentários e linhas em branco contam).
-# Cada linha: <linhas> <caminho relativo>, ordenada por caminho.
-# A lista só diminui: arquivo novo não entra aqui, e arquivo listado não pode crescer.
-# Ao dividir um arquivo até 400 linhas ou menos, remova a entrada (ou rode
-# `npm run check:tamanho -- --atualizar`, que só reduz números e remove entradas).

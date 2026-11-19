@@ -29,7 +29,8 @@ export interface DocumentoExigido {
   readonly modelo: {
     readonly nomeArquivo: string;
     readonly formato: string;
-    readonly urlDownload: string;
+    /** `null` enquanto a cópia ao acervo público não terminou: não há o que baixar ainda. */
+    readonly urlDownload: string | null;
   } | null;
 }
 
@@ -121,14 +122,21 @@ export interface DocumentoExigido {
               passar pela API — nada de fetch nem de CORS.
             -->
             @if (documento.modelo; as modelo) {
-              <a class="lista-de-documentos__modelo" [href]="modelo.urlDownload">
-                <i class="pi pi-download" aria-hidden="true"></i>
-                Baixar o modelo ({{ modelo.formato }})
-                <span class="sr-only">
-                  de {{ documento.rotulo }}:
-                  {{ modelo.nomeArquivo }}
-                </span>
-              </a>
+              @if (modelo.urlDownload; as endereco) {
+                <a class="lista-de-documentos__modelo" [href]="endereco">
+                  <i class="pi pi-download" aria-hidden="true"></i>
+                  Baixar o modelo ({{ modelo.formato }})
+                  <span class="sr-only">
+                    de {{ documento.rotulo }}:
+                    {{ modelo.nomeArquivo }}
+                  </span>
+                </a>
+              } @else {
+                <p class="lista-de-documentos__meta">
+                  <i class="pi pi-clock" aria-hidden="true"></i>
+                  O arquivo do modelo ({{ modelo.formato }}) ainda está sendo disponibilizado.
+                </p>
+              }
             }
             @if (acao(); as acao) {
               <ng-container *ngTemplateOutlet="acao; context: { $implicit: documento }" />

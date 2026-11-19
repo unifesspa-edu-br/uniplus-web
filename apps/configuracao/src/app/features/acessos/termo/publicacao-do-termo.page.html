@@ -1,0 +1,154 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title" [id]="idDoTitulo" tabindex="-1">Termo de responsabilidade</h1>
+    <p class="page-header__desc">
+      Quem recebe acesso a dado pessoal ou sensível aceita a versão vigente do termo antes da
+      decisão da gestão de acessos. Cada versão publicada é imutável; a nova passa a valer para os
+      pedidos criados depois dela.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar o termo" [leitura]="leitura" />
+<cfg-recusa-da-leitura naoEncontrado="Termo não encontrado" [recusa]="store.recusa()">
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+<div aria-live="polite" aria-atomic="true">
+  @if (publicacao.aviso(); as aviso) {
+  <ui-alert variant="warning" heading="Outra versão foi publicada antes" [dynamic]="false">
+    {{ aviso }} A versão vigente e o histórico abaixo já foram atualizados.
+  </ui-alert>
+  }
+</div>
+
+@if (store.vigente(); as vigente) {
+<cfg-termo-de-responsabilidade titulo="Versão vigente" [versao]="vigente" />
+} @else if (store.semVersaoVigente()) {
+<ui-empty-state
+  heading="Nenhuma versão publicada"
+  description="Os pedidos de perfil com dado pessoal ou sensível são recusados até a publicação da primeira versão."
+/>
+} @else if (store.carregando()) {
+<p><ui-spinner spinnerSize="sm" /> Carregando o termo…</p>
+}
+
+<section class="panel" aria-labelledby="cfg-historico-do-termo">
+  <div class="panel-head">
+    <h2 id="cfg-historico-do-termo" class="panel-head__title">Histórico de versões</h2>
+  </div>
+  @if (store.historico().length > 0) {
+  <div class="table-responsive">
+    <table>
+      <caption class="sr-only">
+        Versões do termo de responsabilidade, da primeira à mais recente
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Versão</th>
+          <th scope="col">Publicada em</th>
+          <th scope="col">Ato de aprovação</th>
+          <th scope="col">Resumo (SHA-256)</th>
+          <th scope="col">Situação</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (versao of store.historico(); track versao.id) {
+        <tr [attr.data-versao]="versao.numero">
+          <td data-label="Versão">{{ versao.numero }}</td>
+          <td data-label="Publicada em">{{ versao.publicadaEm | dateBr: 'datetime' }}</td>
+          <td data-label="Ato de aprovação">{{ versao.ato }}</td>
+          <td data-label="Resumo (SHA-256)">
+            <code class="ui-code cfg-resumo-do-termo">{{ versao.resumo }}</code>
+          </td>
+          <td data-label="Situação">
+            @if (versao.vigente) {
+            <ui-tag variant="success">Vigente</ui-tag>
+            } @else {
+            <ui-tag variant="neutral">Substituída</ui-tag>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  } @else if (!store.carregando() && !store.mensagemDeErro()) {
+  <p class="panel-body cfg-muted">Nenhuma versão publicada.</p>
+  } @if (store.anterior() !== null || store.proximo() !== null) {
+  <ui-pager
+    statusText="Navegação por páginas"
+    navigationLabel="Paginação do histórico do termo"
+    [hasPrevious]="store.anterior() !== null"
+    [hasNext]="store.proximo() !== null"
+    [isDisabled]="store.carregando()"
+    (previous)="store.paginaAnterior()"
+    (next)="store.proximaPagina()"
+  />
+  }
+</section>
+
+<section class="panel" aria-labelledby="cfg-nova-versao-do-termo">
+  <div class="panel-head">
+    <h2 id="cfg-nova-versao-do-termo" class="panel-head__title">Publicar uma versão nova</h2>
+  </div>
+  <form
+    class="panel-body form-grid"
+    [formGroup]="publicacao.form"
+    (ngSubmit)="publicacao.publicar()"
+  >
+    @if (publicacao.erro(); as erro) {
+    <ui-alert class="form-grid__full" variant="danger" heading="Não foi possível publicar"
+      >{{ erro }}</ui-alert
+    >
+    }
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('texto')">
+      <span class="field__label is-required">Texto da versão nova</span>
+      <textarea
+        class="textarea"
+        rows="12"
+        formControlName="texto"
+        aria-required="true"
+        [attr.maxlength]="limites.textoMaximo"
+        [attr.aria-invalid]="erroDoCampo('texto') ? 'true' : null"
+        [attr.aria-describedby]="
+          erroDoCampo('texto') ? 'cfg-termo-texto-dica cfg-termo-texto-erro' : 'cfg-termo-texto-dica'
+        "
+      ></textarea>
+      <span class="field__hint" id="cfg-termo-texto-dica"
+        >Entre {{ limites.textoMinimo }} e {{ limites.textoMaximo }} caracteres.</span
+      >
+      @if (erroDoCampo('texto'); as erro) {
+      <span class="field__error" id="cfg-termo-texto-erro" role="alert">{{ erro }}</span>
+      }
+    </label>
+    <label class="field form-grid__full" [class.is-error]="erroDoCampo('ato')">
+      <span class="field__label is-required">Ato que aprova a versão</span>
+      <input
+        class="input"
+        type="text"
+        formControlName="ato"
+        aria-required="true"
+        [attr.maxlength]="limites.atoMaximo"
+        [attr.aria-invalid]="erroDoCampo('ato') ? 'true' : null"
+        [attr.aria-describedby]="erroDoCampo('ato') ? 'cfg-termo-ato-erro' : null"
+      />
+      @if (erroDoCampo('ato'); as erro) {
+      <span class="field__error" id="cfg-termo-ato-erro" role="alert">{{ erro }}</span>
+      }
+    </label>
+    <div class="form-grid__full">
+      <button
+        type="submit"
+        class="btn btn--primary"
+        [attr.aria-disabled]="
+          publicacao.publicando() || !store.vigenteConhecida() ? 'true' : null
+        "
+        [attr.aria-busy]="publicacao.publicando()"
+      >
+        @if (publicacao.publicando()) {
+        <ui-spinner spinnerSize="sm" />
+        } Publicar versão
+      </button>
+    </div>
+  </form>
+</section>

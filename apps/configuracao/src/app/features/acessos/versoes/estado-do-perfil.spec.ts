@@ -1,13 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
   acoesDoPerfil,
-  resumoDoPerfil,
+  resumoDaLista,
+  resumoDoDetalhe,
   situacoesDoPerfil,
+  type ResumoDoDetalheDoPerfil,
   type ResumoDoPerfil,
 } from './estado-do-perfil';
 import { perfilDoDetalhe } from './perfis.testing';
 
-const EM_VIGOR: ResumoDoPerfil = {
+const EM_VIGOR: ResumoDoDetalheDoPerfil = {
   ativo: true,
   governanca: false,
   temVigente: true,
@@ -18,7 +20,8 @@ const EM_VIGOR: ResumoDoPerfil = {
   etapasDaRetomadaPorDecidir: [],
 };
 const GESTAO = { gestaoDeAcessos: true, protecaoDeDados: false };
-const textos = (resumo: ResumoDoPerfil): string[] => situacoesDoPerfil(resumo).map((s) => s.texto);
+const textos = (resumo: ResumoDoPerfil | ResumoDoDetalheDoPerfil): string[] =>
+  situacoesDoPerfil(resumo).map((s) => s.texto);
 
 describe('situacoesDoPerfil', () => {
   it('mostra o perfil em vigor', () => {
@@ -47,23 +50,21 @@ describe('situacoesDoPerfil', () => {
     expect(textos({ ...EM_VIGOR, ativo: false })).toEqual(['Desativado', 'Em vigor']);
   });
 
-  it('distingue o perfil suspenso do desativado e mostra desde quando', () => {
+  it('mostra desde quando o perfil está suspenso', () => {
     const suspenso = situacoesDoPerfil({ ...EM_VIGOR, suspensoDesde: '2026-11-09T12:00:00Z' });
-    const desativado = situacoesDoPerfil({
-      ...EM_VIGOR,
-      ativo: false,
-      desativadoDesde: '2026-11-08T12:00:00Z',
-    });
 
     expect(suspenso.map((s) => [s.texto, s.variante, s.desde])).toEqual([
       ['Suspenso', 'danger', '2026-11-09T12:00:00Z'],
       ['Em vigor', 'success', undefined],
     ]);
-    expect(desativado[0]).toEqual({
-      texto: 'Desativado',
-      variante: 'neutral',
-      desde: '2026-11-08T12:00:00Z',
-    });
+  });
+
+  it('mostra desde quando o perfil está desativado', () => {
+    const desde = '2026-11-08T12:00:00Z';
+
+    const [primeira] = situacoesDoPerfil({ ...EM_VIGOR, ativo: false, desativadoDesde: desde });
+
+    expect(primeira).toEqual({ texto: 'Desativado', variante: 'neutral', desde });
   });
 
   it('soma suspenso e desativado quando as duas contenções valem', () => {
@@ -90,6 +91,7 @@ describe('acoesDoPerfil', () => {
       proporVersao: true,
       removerPermissoes: true,
       cancelarVersaoPendente: false,
+      enviarDocumento: false,
       desativar: true,
       reativar: false,
     });
@@ -172,7 +174,7 @@ describe('acoesDoPerfil', () => {
         },
       });
 
-      expect(resumoDoPerfil(perfil).etapasDaRetomadaPorDecidir).toEqual(['protecao_de_dados']);
+      expect(resumoDoDetalhe(perfil).etapasDaRetomadaPorDecidir).toEqual(['protecao_de_dados']);
     });
   });
 
@@ -183,6 +185,7 @@ describe('acoesDoPerfil', () => {
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,
+      enviarDocumento: false,
       desativar: false,
       reativar: true,
     });
@@ -195,8 +198,42 @@ describe('acoesDoPerfil', () => {
       proporVersao: false,
       removerPermissoes: false,
       cancelarVersaoPendente: false,
+      enviarDocumento: false,
       desativar: false,
       reativar: false,
     });
+  });
+});
+
+describe('resumo da lista e do detalhe', () => {
+  it('a lista não informa a janela de migração, que só o detalhe conhece', () => {
+    const listado = {
+      ...perfilDoDetalhe(),
+      temVersaoVigente: true,
+      temVersaoPendente: false,
+    };
+
+    expect('emJanelaDeMigracao' in resumoDaLista(listado)).toBe(false);
+  });
+
+  it('o detalhe informa se há janela de migração', () => {
+    const janela = { id: 'j1', prazo: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+
+    expect(resumoDoDetalhe(perfilDoDetalhe({ janela })).emJanelaDeMigracao).toBe(true);
+    expect(resumoDoDetalhe(perfilDoDetalhe({ janela: null })).emJanelaDeMigracao).toBe(false);
+  });
+
+  it('a lista com versão em vigor e pendente resume as duas', () => {
+    const listado = { ...perfilDoDetalhe(), temVersaoVigente: true, temVersaoPendente: true };
+
+    const resumo = resumoDaLista(listado);
+
+    expect([resumo.temVigente, resumo.temPendente]).toEqual([true, true]);
+  });
+
+  it('a lista não mostra a situação de janela de migração', () => {
+    const listado = { ...perfilDoDetalhe(), temVersaoVigente: true, temVersaoPendente: false };
+
+    expect(textos(resumoDaLista(listado))).toEqual(['Em vigor']);
   });
 });

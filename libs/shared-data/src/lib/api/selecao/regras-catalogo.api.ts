@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
@@ -37,19 +37,12 @@ export class RegrasCatalogoApi {
   /** GET `/api/selecao/regras-catalogo` — lista paginada por cursor (ADR-0026). */
   listar(query: RegrasCatalogoQuery = {}): Observable<ApiResult<readonly RegraCatalogoDto[]>> {
     let params = new HttpParams();
-    // O filtro entra antes do ramo de paginação: navegar por cursor não pode
-    // devolver o catálogo inteiro.
+    // O filtro viaja em toda página: navegar por cursor não pode devolver o catálogo inteiro.
     if (query.tipo !== undefined) params = params.set('tipo', query.tipo);
-
-    if (query.cursor !== undefined && query.cursor.length > 0) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
 
     return this.http.get<ApiResult<readonly RegraCatalogoDto[]>>(
       `${this.basePath}/api/selecao/regras-catalogo`,
-      { params, context: withVendorMime('regra-catalogo', 1) },
+      { params: janelaDaPagina(params, query), context: withVendorMime('regra-catalogo', 1) },
     );
   }
 

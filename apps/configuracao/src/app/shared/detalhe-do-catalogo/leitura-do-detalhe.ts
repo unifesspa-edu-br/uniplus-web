@@ -45,7 +45,7 @@ export class LeituraDoDetalhe {
   );
   readonly erro = computed(() => {
     const problem = this.recurso.problem();
-    if (this.naoEncontrado()) return 'O item não existe mais no catálogo.';
+    if (this.naoEncontrado()) return 'O tipo de documento ou o fato do candidato não existe mais.';
     if (problem) return this.problemI18n.resolve(problem).title;
     return this.recurso.error() ? 'Não foi possível carregar o detalhe.' : null;
   });

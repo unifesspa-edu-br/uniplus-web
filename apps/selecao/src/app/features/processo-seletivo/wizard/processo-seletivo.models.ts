@@ -1,6 +1,7 @@
 export * from './modelos/atendimento.models';
 export * from './modelos/classificacao.models';
 export * from './modelos/cronograma.models';
+export * from './modelos/deliberacao.models';
 export * from './modelos/exigencias.models';
 export * from './modelos/formulario.models';
 export * from './modelos/identificacao.models';

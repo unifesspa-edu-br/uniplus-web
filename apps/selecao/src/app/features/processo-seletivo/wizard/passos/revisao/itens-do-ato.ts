@@ -9,7 +9,7 @@ export interface AtoParaListar {
   readonly orgao: string;
   readonly serie: string;
   readonly ano: string;
-  readonly dataPublicacao: string;
+  readonly dataDoAto: string;
   readonly assinante: string;
 }
 
@@ -30,7 +30,7 @@ export function itensDoAto(ato: AtoParaListar): readonly ItemDeConfirmacao[] {
     { rotulo: 'Órgão', valor: ato.orgao },
     { rotulo: 'Série', valor: ato.serie },
     { rotulo: 'Ano', valor: ato.ano },
-    { rotulo: 'Data de publicação do ato', valor: ato.dataPublicacao },
+    { rotulo: 'Data do ato', valor: ato.dataDoAto },
     { rotulo: 'Assinante', valor: ato.assinante },
   ];
 }

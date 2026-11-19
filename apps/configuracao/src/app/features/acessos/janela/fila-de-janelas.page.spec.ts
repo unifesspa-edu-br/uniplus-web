@@ -91,6 +91,15 @@ describe('FilaDeJanelasPage', () => {
     expect(host.querySelector('h1')?.textContent).toContain(titulo);
   });
 
+  it('a fila da etapa de proteção de dados nomeia o Representante do controlador como quem decide', async () => {
+    const { host } = await abrir('protecao_de_dados');
+
+    expect(host.textContent).toContain(
+      'aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados',
+    );
+    expect(host.textContent).not.toContain('Encarregado');
+  });
+
   it('mostra de cada janela o perfil, a versão-alvo, o prazo em Brasília e as concessões a decidir', async () => {
     const { host } = await abrir('gestao_de_acessos');
 

@@ -1,12 +1,6 @@
 import { HttpHeaders } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
-import {
-  ApiResult,
-  apiFailure,
-  apiOk,
-  isApiFailure,
-  isApiOk,
-} from './api-result';
+import { ApiResult, apiFailure, apiOk, isApiFailure, isApiOk } from './api-result';
 import { mockProblemDetails } from './api-result.testing';
 
 describe('ApiResult — construtores e narrowing', () => {
@@ -32,19 +26,19 @@ describe('ApiResult — construtores e narrowing', () => {
     expect(result.status).toBe(404);
   });
 
-  it('discriminator result.ok permite narrowing tipado sem cast', () => {
+  it('discriminator result.ok estreita para ApiOk sem cast', () => {
     const happy: ApiResult<{ id: string }> = apiOk({ id: 'x' }, 200, new HttpHeaders());
-    const sad: ApiResult<{ id: string }> = apiFailure(
-      mockProblemDetails({ status: 400 }),
-      400,
-      new HttpHeaders(),
-    );
 
     if (happy.ok) {
       expect(happy.data.id).toBe('x');
     } else {
       throw new Error('happy deveria narrow para ApiOk');
     }
+  });
+
+  it('discriminator result.ok estreita para ApiFailure sem cast', () => {
+    const problem = mockProblemDetails({ status: 400 });
+    const sad: ApiResult<{ id: string }> = apiFailure(problem, 400, new HttpHeaders());
 
     if (!sad.ok) {
       expect(sad.problem.status).toBe(400);

@@ -17,6 +17,7 @@ import {
   IndicadorDaLeituraDirective,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
+import { PERMISSOES_DO_PERFIL } from '../../../acesso/permissoes-das-telas';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { nomesDeEscopo } from '../nomes-de-escopo';
 import { EscritaDoPerfil } from '../versoes/escrita-do-perfil';
@@ -40,7 +41,7 @@ import { TabelaDaJanelaComponent } from './tabela-da-janela.component';
 const ID_DO_TITULO = 'cfg-janela-titulo';
 const { autorizacao } = PERMISSAO;
 
-/** A janela de migração de um perfil: o lote, as retidas, a proteção de dados, o encerramento e o prazo. */
+/** A janela de migração de um perfil: o lote, as retidas, a etapa de proteção de dados, o encerramento e o prazo. */
 @Component({
   selector: 'cfg-janela-da-migracao-page',
   standalone: true,
@@ -91,7 +92,9 @@ export class JanelaDaMigracaoPage {
     this.permissoes.tem(autorizacao.perfisAprovarProtecaoDeDados),
   );
   protected readonly volta = computed(() => destinoDeVolta(this.permissoes));
-  protected readonly podeVerOPerfil = computed(() => this.permissoes.tem(autorizacao.perfisManter));
+  protected readonly podeVerOPerfil = computed(() =>
+    this.permissoes.temAlguma(...PERMISSOES_DO_PERFIL),
+  );
   protected readonly leitura = acompanharLeitura({
     assunto: 'janela de migração',
     falha: this.store.falha,

@@ -1,6 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap';
+import {
+  AuthService,
+  MotivoDoAcessoNegadoService,
+  UserContextService,
+} from '@uniplus/shared-auth/bootstrap';
 
 /**
  * Página de "Acesso negado" (HTTP 403). Exibida quando um usuário
@@ -17,6 +28,9 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
  * aqui, e mandá-lo para lá o traria de volta. Por isso o destino é declarado
  * por quem monta a rota, em `data.rotaDeVolta`, e não presumido.
  *
+ * Quando a API recusou com um `detail`, ele aparece abaixo do texto padrão, em parágrafo
+ * próprio, lido na ordem da página; sem `detail`, a recarga ou o acesso direto mostram só o texto padrão.
+ *
  * O conteúdo projetado aparece antes das ações: quem monta a rota acrescenta
  * o que for próprio do seu domínio sem que esta lib passe a conhecê-lo.
  */
@@ -31,6 +45,9 @@ import { AuthService, UserContextService } from '@uniplus/shared-auth/bootstrap'
         <div class="empty-state__icon" aria-hidden="true">!</div>
         <h1 class="empty-state__title">Acesso negado</h1>
         <p class="empty-state__desc">Sua conta não possui permissão para acessar esta área.</p>
+        @if (motivo(); as texto) {
+          <p class="empty-state__desc ui-access-denied__motivo">{{ texto }}</p>
+        }
         @if (user(); as profile) {
           <p class="u-caption">
             Conectado como <strong>{{ profile.username }}</strong
@@ -62,7 +79,16 @@ export class AccessDeniedComponent {
   private readonly authService = inject(AuthService);
   private readonly userContext = inject(UserContextService);
 
+  private readonly motivoDoAcessoNegado = inject(MotivoDoAcessoNegadoService);
+
   protected readonly user = this.userContext.user;
+
+  /** O `detail` da API no 403; vale só para esta recusa e some ao sair da página. */
+  protected readonly motivo = this.motivoDoAcessoNegado.motivo;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => this.motivoDoAcessoNegado.limpar());
+  }
 
   /**
    * Rota alcançável sem a role que faltou, declarada por quem monta a rota de

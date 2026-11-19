@@ -1,11 +1,12 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, effect, inject, signal, untracked } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
 import { withVendorMime } from '@uniplus/shared-core/http';
 import type { ApiResult } from '@uniplus/shared-core/http';
 import type { CodigoDePermissao, ModuloDePermissao } from '../permissoes/catalogo';
 import { AUTORIZACAO_BASE_PATH } from '../tokens/auth.tokens';
 import { AuthService } from './auth.service';
+import { pessoaDaSessao } from './pessoa-da-sessao';
 
 /** Permissão que a API informa para a pessoa logada (`PermissaoEfetivaResponse`). */
 export interface PermissaoEfetiva {
@@ -79,48 +80,61 @@ export class PermissoesService {
   private sincronizar(sessao: string | null): Promise<void> {
     if (sessao === this.sessaoSincronizada) return this.cargaEmCurso;
 
-    const usuarioAnterior = usuarioDa(this.sessaoSincronizada);
+    const pessoaAnterior = pessoaDaSessao(this.sessaoSincronizada);
     this.sessaoSincronizada = sessao;
     const geracao = ++this.geracao;
-
-    if (sessao === null) {
-      this.limpar('pendente');
-      this.cargaEmCurso = Promise.resolve();
-      return this.cargaEmCurso;
-    }
-
-    const mesmaPessoa = usuarioDa(sessao) === usuarioAnterior;
-    if (mesmaPessoa) this._estado.set('carregando');
-    else this.limpar('carregando');
-
-    this.cargaEmCurso = this.carregar(sessao, geracao);
+    this.cargaEmCurso =
+      sessao === null ? this.semSessao() : this.carregarDaSessao(sessao, geracao, pessoaAnterior);
     return this.cargaEmCurso;
   }
 
-  private async carregar(sessao: string, geracao: number): Promise<void> {
-    let codigos: ReadonlySet<string> | null;
-    try {
-      const resultado = await firstValueFrom(
-        this.http.get<ApiResult<readonly PermissaoEfetiva[]>>(
-          `${this.basePath}/api/autorizacao/permissoes/efetivas`,
-          { context: withVendorMime('permissao-efetiva', 1) },
-        ),
-      );
-      codigos = resultado.ok ? new Set(resultado.data.map((permissao) => permissao.codigo)) : null;
-    } catch {
-      codigos = null;
-    }
+  private semSessao(): Promise<void> {
+    this.limpar('pendente');
+    return Promise.resolve();
+  }
 
+  private carregarDaSessao(
+    sessao: string,
+    geracao: number,
+    pessoaAnterior: string | null,
+  ): Promise<void> {
+    if (pessoaDaSessao(sessao) === pessoaAnterior) this._estado.set('carregando');
+    else this.limpar('carregando');
+    return this.carregar(sessao, geracao);
+  }
+
+  private async carregar(sessao: string, geracao: number): Promise<void> {
+    const codigos = await this.consultar();
     if (geracao !== this.geracao || sessao !== this.sessaoAtual()) {
       void this.sincronizar(this.sessaoAtual());
       return;
     }
-    if (codigos !== null) {
-      this._codigos.set(codigos);
-      this._estado.set('carregada');
-    } else {
+    this.aplicar(codigos);
+  }
+
+  private consultar(): Promise<ReadonlySet<string> | null> {
+    const url = `${this.basePath}/api/autorizacao/permissoes/efetivas`;
+    const consulta = this.http.get<ApiResult<readonly PermissaoEfetiva[]>>(url, {
+      context: withVendorMime('permissao-efetiva', 1),
+    });
+    return firstValueFrom(
+      consulta.pipe(
+        map((resultado) =>
+          resultado.ok ? new Set(resultado.data.map((permissao) => permissao.codigo)) : null,
+        ),
+        catchError(() => of(null)),
+      ),
+      { defaultValue: null },
+    );
+  }
+
+  private aplicar(codigos: ReadonlySet<string> | null): void {
+    if (codigos === null) {
       this.limpar('indisponivel');
+      return;
     }
+    this._codigos.set(codigos);
+    this._estado.set('carregada');
   }
 
   private sessaoAtual(): string | null {
@@ -131,8 +145,4 @@ export class PermissoesService {
     this._codigos.set(SEM_PERMISSOES);
     this._estado.set(estado);
   }
-}
-
-function usuarioDa(sessao: string | null): string | null {
-  return sessao === null ? null : sessao.slice(0, sessao.lastIndexOf(':'));
 }

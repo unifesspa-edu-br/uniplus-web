@@ -40,7 +40,7 @@
           @for (item of store.itens(); track item.id) {
             <tr>
               <td data-label="Perfil">
-                @if (podeAbrirOPerfil) {
+                @if (podeAbrirOPerfil()) {
                   <a [routerLink]="['/acessos/perfis', item.perfilId]">{{ item.perfilNome }}</a>
                 } @else {
                   {{ item.perfilNome }}

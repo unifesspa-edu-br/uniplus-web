@@ -70,6 +70,7 @@ uniplus-ds CSS-only
 - **Nunca** importar temas PrimeNG (Aura, Lara, etc.).
 - **Preferir** HTML nativo e Angular CDK; PrimeNG só com ganho claro em comportamento complexo e encapsulado.
 - **Validar** 320 px, teclado, foco visivel, tema contraste, zoom 200% e ausência de overflow horizontal.
+- **Lint de CSS** pelo `@eslint/css` com a sintaxe do Tailwind 4, no `nx lint`: fonte em `rem`/`em`, só recurso com suporte amplo e `!important` só nas camadas liberadas (`CONTRIBUTING.md` § Lint de CSS).
 - **Manter** imports TypeScript por `@uniplus/shared-*`. Imports CSS globais permanecem relativos até `shared-ui` ter exports CSS como pacote resolvivel pelo builder.
 
 ### Arquivos de referência
@@ -149,23 +150,30 @@ npx nx affected --target=vite:test
 ### Testar um app contra o backend real (local)
 
 Para exercitar um app contra as APIs do `uniplus-api` (login Keycloak + dados
-reais), suba a infraestrutura, as APIs e o Traefik pelo override atual, sem
-iniciar os serviços `*-web`; assim, as portas 4200–4203 ficam livres para o Nx.
-Os apps usam o gateway `http://localhost:5000` e o realm `unifesspa`.
+reais), suba a infraestrutura, as APIs, os serviços de apoio e o Traefik pelo
+override atual, sem iniciar os serviços `*-web`; assim, as portas 4200–4203 ficam
+livres para o Nx. Os apps usam o gateway `http://localhost:5000` e o realm
+`unifesspa`; a senha das personas é a que o `ambiente-init` define (`Uni+Teste26`).
 
 ```bash
-# No repositório irmão uniplus-api
+# No repositório irmão uniplus-api (layout plano: uniplus-api/ ao lado de uniplus-web/)
 docker compose -f docker/docker-compose.yml \
   -f docker/docker-compose.override.yml \
-  up -d --build postgres redis kafka minio apicurio keycloak \
-    uniplus-api geo-api portal-api traefik
+  up -d --build postgres redis kafka kafka-init minio minio-init \
+    rabbitmq mailpit openldap keycloak clamd-verificador verificador \
+    apicurio uniplus-api geo-api portal-api ambiente-init traefik
 ```
+
+Ordem da base nova: `ambiente-init` (gestores) → serviços no ar → roteiro
+`scripts/roteiro-processo-teste-inscricao.sh`. A unidade CEPS é um passo manual
+até a uniplus-api#2407. Portas alternativas ficam só no `docker/.env` local e no
+`runtime-config.json` ajustado durante a rodada, sem commit.
 
 Passo a passo, credenciais e sintomas: [`docs/guia-testar-frontend-com-backend-local.md`](docs/guia-testar-frontend-com-backend-local.md).
 
 ## Localização do repositório
 
-**REGRA ABSOLUTA:** este repositório deve estar clonado em `repositories/uniplus-web/` dentro do diretório de trabalho do projeto. NUNCA clonar ou criar cópias fora de `repositories/`.
+O workspace usa o layout plano: `uniplus-web/` fica ao lado de `uniplus-api/` e dos demais repositórios, sem a pasta `repositories/`. Não clonar nem criar cópias fora do diretório de trabalho do projeto.
 
 ## Git conventions
 
@@ -179,3 +187,4 @@ Passo a passo, credenciais e sintomas: [`docs/guia-testar-frontend-com-backend-l
 - Soft delete: nunca deletar registros fisicamente
 - Acessibilidade: ARIA em componentes interativos, WCAG 2.1 AA
 - Seguranca: tokens JWT via OIDC, nunca em localStorage
+- Métricas de qualidade (função até 15 linhas pelo `max-lines-per-function`, desligada só nos `*.spec.ts` e `*.setup.ts`; arquivo `.ts` e `.html` até 400 linhas pelo `max-lines`, specs incluídos; até 4 parâmetros; complexidade; supressão proibida; nada de código só para caber na métrica): `CONTRIBUTING.md` § Métricas de qualidade. O número que vale é o do aviso do ESLint. Código que se explica, comentários e JSDoc: `CONTRIBUTING.md` § Código que se explica.

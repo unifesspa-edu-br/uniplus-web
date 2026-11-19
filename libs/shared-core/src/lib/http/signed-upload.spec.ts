@@ -9,6 +9,8 @@ import { SignedUploadClient } from './signed-upload';
 const URL_ASSINADA =
   'http://localhost:9000/uniplus-selecao/editais/documento.pdf?X-Amz-Signature=abc';
 
+const ARQUIVO_PDF = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
+
 describe('SignedUploadClient', () => {
   let client: SignedUploadClient;
   let controller: HttpTestingController;
@@ -28,11 +30,12 @@ describe('SignedUploadClient', () => {
 
   afterEach(() => controller.verify());
 
+  function enviarPdf() {
+    return client.enviar(URL_ASSINADA, ARQUIVO_PDF, 'application/pdf');
+  }
+
   it('faz PUT com o content type assinado e reporta progresso', async () => {
-    const arquivo = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
-    const eventos = lastValueFrom(
-      client.enviar(URL_ASSINADA, arquivo, 'application/pdf').pipe(toArray()),
-    );
+    const eventos = lastValueFrom(enviarPdf().pipe(toArray()));
 
     const req = controller.expectOne(URL_ASSINADA);
     expect(req.request.method).toBe('PUT');
@@ -47,8 +50,7 @@ describe('SignedUploadClient', () => {
   });
 
   it('não anexa Authorization nem Accept versionado ao destino do storage', async () => {
-    const arquivo = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
-    const promise = lastValueFrom(client.enviar(URL_ASSINADA, arquivo, 'application/pdf'));
+    const promise = lastValueFrom(enviarPdf());
 
     const req = controller.expectOne(URL_ASSINADA);
     expect(req.request.headers.has('Authorization')).toBe(false);
@@ -65,8 +67,7 @@ describe('SignedUploadClient', () => {
    * chamador precisa vê-lo como erro para pedir uma URL nova.
    */
   it('propaga o 403 do storage como erro HTTP, sem envelope', async () => {
-    const arquivo = new Blob(['%PDF-1.7'], { type: 'application/pdf' });
-    const promise = lastValueFrom(client.enviar(URL_ASSINADA, arquivo, 'application/pdf'));
+    const promise = lastValueFrom(enviarPdf());
 
     controller.expectOne(URL_ASSINADA).flush('<Error><Code>AccessDenied</Code></Error>', {
       status: 403,

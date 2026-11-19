@@ -14,11 +14,11 @@ import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-
 import { type EtapaForm, type FaseForm, faseDoFormulario } from '../cronograma-form';
 import { comoComandoDeEtapa, comoComandoDeFase } from '../cronograma-para-comando';
 import {
-  localDoErroDaEtapa,
   recusaDaEtapaDeNotaDoEnem,
-  recusaDoCampoDaEtapa,
   fasesComUnidadeNaoEncontrada,
+  textoDaRecusaDaEtapa,
 } from '../recusas-do-servidor-da-etapa';
+import { indiceDaFaseEm, recusaDaBancaNaFase } from '../../fase/recusas-da-fase';
 import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
@@ -88,6 +88,8 @@ export async function gravarCronogramaFases(
   return cadastro.definirCronogramaFases(processoSeletivoId, fases.map(comoComandoDeFase));
 }
 
+type ProblemaDaGravacao = Extract<ResultadoGravacao, { ok: false }>['problem'];
+
 /** O que uma gravação do cronograma escreve, congelado no instante em que o operador manda gravar. */
 interface ConteudoDaGravacao {
   readonly processoId: string;
@@ -96,6 +98,14 @@ interface ConteudoDaGravacao {
   readonly fases: readonly FaseDoCronograma[];
   readonly grupos: readonly FormGroup<EtapaForm>[];
   readonly etapas: readonly EtapaPontuada[];
+}
+
+/** O texto da recusa à regra de uma banca da fase, com a fase de origem quando o caminho a nomeia. */
+function mensagemDaBancaDaFase(erro: Parameters<typeof recusaDaBancaNaFase>[0]): string | null {
+  const recusa = recusaDaBancaNaFase(erro);
+  if (recusa === undefined) return null;
+  const indice = indiceDaFaseEm(erro.field);
+  return indice === null ? recusa.mensagem : `Fase ${indice + 1}: ${recusa.mensagem}`;
 }
 
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
@@ -234,20 +244,25 @@ export class GravacaoDoCronograma {
       conteudo.fases,
     );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
-    if (!cronograma.ok) {
-      this.recusarUnidades(
-        conteudo.enviadas,
-        fasesComUnidadeNaoEncontrada(cronograma.problem.errors ?? []),
-      );
-      return {
-        valid: false,
-        messages: [this.explicarRecusa(cronograma.problem.code, cronograma.problem)],
-      };
-    }
+    if (!cronograma.ok) return this.recusarFases(conteudo, cronograma.problem);
 
     this.unidades.limparRecusadas();
     this.recusas.limpar();
     return null;
+  }
+
+  private recusarFases(
+    conteudo: ConteudoDaGravacao,
+    problema: ProblemaDaGravacao,
+  ): ValidacaoDoPasso {
+    this.recusarUnidades(conteudo.enviadas, fasesComUnidadeNaoEncontrada(problema.errors ?? []));
+    return { valid: false, messages: this.mensagensDaRecusaDasFases(problema) };
+  }
+
+  private mensagensDaRecusaDasFases(problema: ProblemaDaGravacao): string[] {
+    return resumoDaRecusa(problema, mensagemDaBancaDaFase, () =>
+      this.explicarRecusa(problema.code, problema),
+    );
   }
 
   private async gravarEtapas(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
@@ -263,7 +278,7 @@ export class GravacaoDoCronograma {
   }
 
   private mensagensDaRecusaDasEtapas(
-    problema: Extract<ResultadoGravacao, { ok: false }>['problem'],
+    problema: ProblemaDaGravacao,
     conteudo: ConteudoDaGravacao,
   ): string[] {
     const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
@@ -276,15 +291,14 @@ export class GravacaoDoCronograma {
   }
 
   private mensagemDoErroDaEtapa(
-    erro: { readonly code: string; readonly field: string },
+    erro: { readonly code: string; readonly field: string; readonly message?: string },
     etapas: ConteudoDaGravacao['etapas'],
   ): string | null {
-    const texto = recusaDoCampoDaEtapa(erro.code);
-    if (texto === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
-    const indice = localDoErroDaEtapa(erro.field)?.indice;
-    if (indice === undefined) return texto;
-    const nome = etapas[indice]?.nome.trim() ?? '';
-    return `${nome === '' ? `Etapa ${indice + 1}` : nome}: ${texto}`;
+    const recusa = textoDaRecusaDaEtapa(erro);
+    if (recusa === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
+    if (recusa.indice === null) return recusa.texto;
+    const nome = etapas[recusa.indice]?.nome.trim() ?? '';
+    return `${nome === '' ? `Etapa ${recusa.indice + 1}` : nome}: ${recusa.texto}`;
   }
 
   private async recolherIdentificadores(

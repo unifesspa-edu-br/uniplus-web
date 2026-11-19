@@ -25,6 +25,14 @@ export {
   extractPrevCursor,
 } from './pagination';
 export { coletarPaginas } from './coletar-paginas';
+export {
+  LIMITE_PADRAO_DA_LISTAGEM,
+  comBusca,
+  comOrdenacaoDaPrimeiraPagina,
+  janelaDaPagina,
+  paramsDosFiltros,
+} from './parametros-de-listagem';
+export type { JanelaDaPagina } from './parametros-de-listagem';
 export { lookupCompleto } from './lookup-completo';
 export type { LookupCompleto } from './lookup-completo';
 export { useCursorObsoletoRecovery } from './use-cursor-obsoleto-recovery';

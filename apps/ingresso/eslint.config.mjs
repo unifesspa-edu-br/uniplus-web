@@ -29,4 +29,24 @@ export default [
     },
   },
   blocoDaLeituraNosModelos('warn'),
+  {
+    // Projeto sem dívida de métricas: o CI barra.
+    files: ['**/*.ts'],
+    ignores: ['**/src/lib/api/*/schema.ts'],
+    rules: {
+      'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }],
+      'max-lines-per-function': ['error', { max: 15, skipBlankLines: false, skipComments: false }],
+      complexity: ['error', 10],
+      'max-params': ['error', 4],
+      'sonarjs/cognitive-complexity': ['error', 15],
+    },
+  },
+  {
+    files: ['**/*.spec.ts', '**/*.setup.ts'],
+    rules: { 'max-lines-per-function': 'off' },
+  },
+  {
+    files: ['**/*.html'],
+    rules: { 'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }] },
+  },
 ];

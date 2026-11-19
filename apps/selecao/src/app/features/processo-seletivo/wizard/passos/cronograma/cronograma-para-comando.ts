@@ -1,11 +1,15 @@
 import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
 
 import type {
+  BancaDaEtapa,
+  BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
+  ProdutoDaFase,
   RecursoDaEtapa,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
+import { regraComoInput } from '../../shared/deliberacao/regra-de-deliberacao-contrato';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
 import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
@@ -14,6 +18,10 @@ import { decimalDoCampo } from '../../shared/numero-do-campo';
 
 type RegraDeRecursoDaFaseInput = NonNullable<FaseCronogramaInput['regraRecurso']>;
 type RecursoDaEtapaInput = NonNullable<EtapaProcessoInput['recursos']>[number];
+type ProdutoDaFaseInput = NonNullable<FaseCronogramaInput['produtos']>[number];
+type BancaRequeridaInput = NonNullable<FaseCronogramaInput['bancasRequeridas']>[number];
+type ProdutoDaEtapaInput = NonNullable<EtapaProcessoInput['produtos']>[number];
+type BancaDaEtapaInput = NonNullable<EtapaProcessoInput['bancas']>[number];
 
 /**
  * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
@@ -45,17 +53,23 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     inicio: fase.inicio,
     fim: fase.fim,
     unidadeResponsavelId: fase.unidadeResponsavelId,
-    produtos: fase.produtos.map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel,
-    })),
+    produtos: fase.produtos.map(comoComandoDoProdutoDaFase),
     faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
-    bancasRequeridas: fase.bancasRequeridas.map((banca) => ({
-      tipoBancaId: banca.tipoBancaId,
-      categoriasDocumentoIds: [...banca.categoriasDocumentoIds],
-    })),
+    bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
+  };
+}
+
+function comoComandoDoProdutoDaFase(produto: ProdutoDaFase): ProdutoDaFaseInput {
+  return { atoCodigo: produto.atoCodigo, papel: produto.papel };
+}
+
+function comoComandoDeBancaRequerida(banca: BancaRequeridaDaFase): BancaRequeridaInput {
+  return {
+    tipoBancaId: banca.tipoBancaId,
+    categoriasDocumentoIds: [...banca.categoriasDocumentoIds],
+    regraDeDeliberacao: regraComoInput(banca.regraDeDeliberacao),
   };
 }
 
@@ -95,30 +109,56 @@ export function comoComandoDeEtapa(etapa: EtapaPontuada): EtapaProcessoInput {
     nome: etapa.nome.trim(),
     carater: etapa.carater as EtapaProcessoInput['carater'],
     tipoEtapaOrigemId: etapa.tipoEtapaOrigemId,
+    ...comoComandoDaPontuacaoDaEtapa(etapa),
+    ...comoComandoDaAvaliacaoDaEtapa(etapa),
+    ...comoComandoDaAgendaDaEtapa(etapa),
+    produtos: etapa.produtos.map(comoComandoDoProdutoDaEtapa),
+    emiteParecerIndividual: etapa.emiteParecerIndividual,
+    bancas: etapa.bancas.map(comoComandoDeBancaDaEtapa),
+    recursos: comoComandoDosRecursosDaEtapa(etapa),
+  };
+}
+
+function comoComandoDaPontuacaoDaEtapa(
+  etapa: EtapaPontuada,
+): Pick<EtapaProcessoInput, 'peso' | 'notaMinima' | 'notaMaxima'> {
+  return {
     peso: decimalDoCampo(etapa.peso),
     notaMinima: decimalDoCampo(etapa.notaMinima),
     notaMaxima: decimalDoCampo(etapa.notaMaxima ?? ''),
-    ...comoComandoDaAvaliacaoDaEtapa(etapa),
+  };
+}
+
+function comoComandoDaAgendaDaEtapa(
+  etapa: EtapaPontuada,
+): Pick<EtapaProcessoInput, 'ordem' | 'faseCodigo' | 'inicio' | 'fim'> {
+  return {
     ordem: etapa.ordem,
     faseCodigo: etapa.faseCodigo === '' ? null : etapa.faseCodigo,
-    produtos: etapa.produtos.map((produto) => ({
-      atoCodigo: produto.atoCodigo,
-      papel: produto.papel as EtapaProcessoInput['produtos'] extends readonly (infer P)[]
-        ? P extends { papel: infer T }
-          ? T
-          : never
-        : never,
-    })),
     inicio: etapa.inicio === '' ? null : instanteDoCampo(etapa.inicio),
     fim: etapa.fim === '' ? null : instanteDoCampo(etapa.fim),
-    emiteParecerIndividual: etapa.emiteParecerIndividual,
-    bancas: etapa.bancas.map((tipoBancaId) => ({ tipoBancaId })),
-    // Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
-    // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
-    // que ela ficou de fora é `problemasDasEtapas`, na prontidão do passo — sumir com o
-    // trabalho do operador em silêncio era o defeito anterior.
-    recursos: etapa.recursos.filter(recursoResolvido).map(comoComandoDeRecursoDaEtapa),
   };
+}
+
+function comoComandoDoProdutoDaEtapa(
+  produto: EtapaPontuada['produtos'][number],
+): ProdutoDaEtapaInput {
+  return { atoCodigo: produto.atoCodigo, papel: produto.papel as ProdutoDaEtapaInput['papel'] };
+}
+
+function comoComandoDeBancaDaEtapa(banca: BancaDaEtapa): BancaDaEtapaInput {
+  return {
+    tipoBancaId: banca.tipoBancaId,
+    regraDeDeliberacao: regraComoInput(banca.regraDeDeliberacao),
+  };
+}
+
+// Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
+// devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
+// que ela ficou de fora é `problemasDasEtapas`, na prontidão do passo — sumir com o
+// trabalho do operador em silêncio era o defeito anterior.
+function comoComandoDosRecursosDaEtapa(etapa: EtapaPontuada): RecursoDaEtapaInput[] {
+  return etapa.recursos.filter(recursoResolvido).map(comoComandoDeRecursoDaEtapa);
 }
 
 type AvaliacaoDaEtapaInput = Pick<

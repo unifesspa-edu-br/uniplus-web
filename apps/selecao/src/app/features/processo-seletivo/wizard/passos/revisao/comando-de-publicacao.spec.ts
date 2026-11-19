@@ -65,7 +65,7 @@ describe('comoComandoDePublicacao — ARMADILHA do período (#486)', () => {
       orgao: 'Reitoria',
       serie: '1',
       ano: 2027,
-      dataPublicacao: '2027-01-15',
+      dataDoAto: '2027-01-15',
       assinante: 'Reitor',
       tipoAtoCodigo: 'PORTARIA',
     });

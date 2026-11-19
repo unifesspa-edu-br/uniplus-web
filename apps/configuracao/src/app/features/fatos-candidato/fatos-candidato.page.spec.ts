@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
+import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
   CATALOGO,
   LISTA,
@@ -12,13 +13,16 @@ import {
   trabalha,
   PROTECAO,
   urlDoFato,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 describe('FatosCandidatoPage — leitura', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();
     p.atenderPendencias();
+    atenderHistoricosDoDrawer(p.http);
     p.http.verify();
   });
 
@@ -242,7 +246,7 @@ describe('FatosCandidatoPage — leitura', () => {
         b.textContent?.trim(),
       );
       expect(rodape).toEqual(['Fechar']);
-      p.http.match((r) => r.url.includes('/protecao/atos')).forEach((r) => r.flush([]));
+      atenderHistoricosDoDrawer(p.http);
     });
   });
 

@@ -1,6 +1,7 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type {
+  BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
   ProdutoDaFase,
@@ -8,6 +9,7 @@ import type {
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import type { WizardDraft } from '../../processo-seletivo.models';
+import { regraDoDto } from '../deliberacao/regra-de-deliberacao-contrato';
 import { campoDoInstante } from '../fuso-institucional';
 import { percentualDaFracao } from '../itens-de-avaliacao';
 import { comoInteiro, comoTexto } from './campos-lidos';
@@ -73,11 +75,7 @@ function produtosDe(
 
 function faseDe(fase: FaseDoDto): FaseDoCronograma {
   return {
-    faseCanonicaId: fase.faseCanonicaOrigemId,
-    codigo: fase.codigo,
-    // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
-    // fase, e é isto que mantém a tela sabendo o que ela exige.
-    congelados: congeladosDe(fase),
+    ...identificacaoDaFaseDe(fase),
     ordem: comoInteiro(fase.ordem),
     inicio: fase.inicio,
     fim: fase.fim,
@@ -85,13 +83,30 @@ function faseDe(fase: FaseDoDto): FaseDoCronograma {
     unidadeResponsavelId: fase.unidadeResponsavel?.origemId ?? null,
     faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
-    bancasRequeridas: fase.bancasRequeridas.map((banca) => ({
-      tipoBancaId: banca.tipoBancaOrigemId,
-      categoriasDocumentoIds: banca.recorteDeCompetencia.map(
-        (categoria) => categoria.categoriaDocumentoOrigemId,
-      ),
-    })),
+    bancasRequeridas: fase.bancasRequeridas.map(bancaRequeridaDe),
     regraRecurso: recursoDe(fase.regraRecurso, fase.produtos),
+  };
+}
+
+function identificacaoDaFaseDe(
+  fase: FaseDoDto,
+): Pick<FaseDoCronograma, 'faseCanonicaId' | 'codigo' | 'congelados'> {
+  return {
+    faseCanonicaId: fase.faseCanonicaOrigemId,
+    codigo: fase.codigo,
+    // O detalhe traz o que a fase congelou; o catálogo pode não ter mais esta
+    // fase, e é isto que mantém a tela sabendo o que ela exige.
+    congelados: congeladosDe(fase),
+  };
+}
+
+function bancaRequeridaDe(banca: FaseDoDto['bancasRequeridas'][number]): BancaRequeridaDaFase {
+  return {
+    tipoBancaId: banca.tipoBancaOrigemId,
+    categoriasDocumentoIds: banca.recorteDeCompetencia.map(
+      (categoria) => categoria.categoriaDocumentoOrigemId,
+    ),
+    regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
   };
 }
 
@@ -215,7 +230,10 @@ function agendaDaEtapaDe(etapa: EtapaDoDto): AgendaDaEtapa {
     inicio: instanteDe(etapa.inicio),
     fim: instanteDe(etapa.fim),
     emiteParecerIndividual: etapa.emiteParecerIndividual ?? false,
-    bancas: (etapa.bancas ?? []).map((banca) => banca.tipoBancaOrigemId),
+    bancas: (etapa.bancas ?? []).map((banca) => ({
+      tipoBancaId: banca.tipoBancaOrigemId,
+      regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
+    })),
     recursos: (etapa.recursos ?? []).map(recursoDaEtapaDe),
   };
 }

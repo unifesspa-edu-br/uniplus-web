@@ -1,0 +1,5 @@
+/* O resumo SHA-256 tem 64 caracteres sem espaço: quebra em qualquer ponto para caber em 320 px. */
+.cfg-resumo-do-termo {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}

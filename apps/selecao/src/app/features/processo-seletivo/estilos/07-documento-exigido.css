@@ -36,17 +36,6 @@
 }
 
 /*
- * As ações da norma ocupam uma linha inteira do grid: como item solto, o botão virava uma
- * célula e esticava até a altura dos campos vizinhos.
- */
-.sel-processo .doc-item__acoes {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-/*
  * O aviso de norma é da exigência, não de uma norma: vem depois de todas elas, na largura
  * inteira, e se afasta das ações que o seguem.
  */

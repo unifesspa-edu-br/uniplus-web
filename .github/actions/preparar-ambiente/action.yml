@@ -1,0 +1,13 @@
+name: Preparar ambiente
+description: Instala o Node da versão do .nvmrc, com o cache do npm, e as dependências do workspace.
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+
+    - run: npm ci
+      shell: bash

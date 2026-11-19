@@ -1,11 +1,11 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type {
   CriarProcessoSeletivoCommand,
   DefinirIdentificadorLegivelRequest,
-  DefinirOfertaAtendimentoRequest,
+  DefinirAtendimentoEspecializadoRequest,
   DefinirTaxaInscricaoRequest,
   FundamentoIsencaoDto,
   ProcessoSeletivoDto,
@@ -37,15 +37,8 @@ export class ProcessosSeletivosApi {
   listar(
     query: ProcessosSeletivosQuery = {},
   ): Observable<ApiResult<readonly ProcessoSeletivoResumoDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly ProcessoSeletivoResumoDto[]>>(this.rotas.colecao(), {
-      params,
+      params: janelaDaPagina(new HttpParams(), query),
       context: withVendorMime('processo-seletivo', 1),
     });
   }
@@ -74,25 +67,25 @@ export class ProcessosSeletivosApi {
   }
 
   /**
-   * PUT `/api/selecao/processos-seletivos/{id}/oferta-atendimento` — declara o
+   * PUT `/api/selecao/processos-seletivos/{id}/atendimento-especializado` — declara o
    * atendimento especializado do processo por **id** dos cadastros de
    * Configuração: condições de atendimento, recursos de acessibilidade e
    * tipos de deficiência.
    *
-   * O agregado recusa com 422 (`OfertaAtendimento.TipoDeficienciaSemCondicaoPcd`)
+   * O agregado recusa com 422 (`AtendimentoEspecializado.TipoDeficienciaSemCondicaoPcd`)
    * qualquer `tipoDeficienciaIds` não vazio sem a condição de código `PCD`
    * marcada em `condicaoIds` — quem chama não filtra isso no cliente, é o
    * servidor que arbitra a invariante.
    *
    * Responde 204 sem corpo.
    */
-  definirOfertaAtendimento(
+  definirAtendimentoEspecializado(
     processoSeletivoId: string,
-    request: DefinirOfertaAtendimentoRequest,
+    request: DefinirAtendimentoEspecializadoRequest,
     context: HttpContext,
   ): Observable<ApiResult<void>> {
     return this.http.put<ApiResult<void>>(
-      this.rotas.doProcesso(processoSeletivoId, 'oferta-atendimento'),
+      this.rotas.doProcesso(processoSeletivoId, 'atendimento-especializado'),
       request,
       { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );

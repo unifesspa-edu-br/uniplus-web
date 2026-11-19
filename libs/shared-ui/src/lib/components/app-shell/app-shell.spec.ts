@@ -99,6 +99,13 @@ describe('AppShellComponent', () => {
     expect(host.querySelector('main.page')?.closest('.u-no-print')).toBeNull();
   });
 
+  it('mostra a marca institucional da Unifesspa na lateral, no lugar do monograma', async () => {
+    const { host } = await montarShell();
+    const marca = host.querySelector('.sidebar__brand ui-marca-institucional');
+    expect(marca).not.toBeNull();
+    expect(host.querySelector('.sidebar__brand')?.textContent).not.toContain('U+');
+  });
+
   it('arma o skip link com o id do main', async () => {
     const { host } = await montarShell();
     expect(host.querySelector('main.page')?.id).toBeTruthy();

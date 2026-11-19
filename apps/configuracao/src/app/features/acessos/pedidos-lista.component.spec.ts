@@ -11,8 +11,8 @@ describe('PedidosListaComponent', () => {
   const linha = (): HTMLElement =>
     (fixture.nativeElement as HTMLElement).querySelector('tbody tr') as HTMLElement;
 
-  function entradas(carregando: boolean): void {
-    fixture.componentRef.setInput('pedidos', [pedido()]);
+  function entradas(carregando: boolean, aguardaAceiteDoTermo = false): void {
+    fixture.componentRef.setInput('pedidos', [{ ...pedido(), aguardaAceiteDoTermo }]);
     fixture.componentRef.setInput('nomesDosEscopos', new Map([['unidade-1', 'CEPS']]));
     fixture.componentRef.setInput('carregando', carregando);
     fixture.componentRef.setInput('erro', null);
@@ -60,5 +60,13 @@ describe('PedidosListaComponent', () => {
 
     expect(abertos).toEqual([]);
     expect(linha().getAttribute('tabindex')).toBeNull();
+  });
+
+  it('sinaliza o pedido que aguarda o aceite do termo de responsabilidade', () => {
+    entradas(false, true);
+    expect(linha().textContent).toContain('Aguarda o aceite do termo');
+
+    entradas(false, false);
+    expect(linha().textContent).not.toContain('Aguarda o aceite do termo');
   });
 });

@@ -147,7 +147,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     const request = {
       tipoAtoCodigo: 'ERRATA',
       numero: '02/2026',
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: DOCUMENTO_ID,
       anexos: [{ documentoId: TIPO_ID, nome: 'Planilha' }],
@@ -162,7 +162,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     expect(req.request.headers.get('Idempotency-Key')).toBe('ato-avulso-key');
-    req.flush({ atoId: TIPO_ID }, { status: 202, statusText: 'Accepted' });
+    req.flush({ atoId: TIPO_ID }, { status: 201, statusText: 'Created' });
 
     const result = await promise;
     expect(isApiOk(result)).toBe(true);
@@ -189,7 +189,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
   it('publicarProdutoPrevisto() posta no item, com a chave de idempotência, e devolve o ato aceito', async () => {
     const request = {
       numero: '01/2026',
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: DOCUMENTO_ID,
       politicaDeDivulgacaoConfirmada: true,
@@ -204,7 +204,7 @@ describe('DocumentosEAtosDoProcessoApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual(request);
     expect(req.request.headers.get('Idempotency-Key')).toBe('produto-key');
-    req.flush({ atoId: ID }, { status: 202, statusText: 'Accepted' });
+    req.flush({ atoId: ID }, { status: 201, statusText: 'Created' });
 
     expect(isApiOk(await promise)).toBe(true);
   });

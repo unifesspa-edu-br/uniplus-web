@@ -94,36 +94,31 @@ export interface UseApiResourceRef<T> {
   destroy(): void;
 }
 
+/**
+ * `Resource.value()` **lança `ResourceValueError`** quando `status() === 'error'` (caso real:
+ * interceptor não-HTTP que escapa do envelope `ApiResult` — vide ADR-0018 §"esta ADR não
+ * decide"). Sem o guard contra `error()`, `value()`/`data()`/`problem()` propagam a exceção
+ * durante change detection e a página crasha em vez de renderizar a mensagem de erro. O helper
+ * padroniza: em estado de erro, todos os derivados retornam ausência (`undefined`/`null`) e o
+ * caller diferencia via `error()` (que nunca lança).
+ */
 function sinaisDoEnvelope<T>(
   resource: HttpResourceRef<ApiResult<T> | undefined>,
 ): Pick<UseApiResourceRef<T>, 'value' | 'data' | 'problem'> {
-  // `Resource.value()` **lança `ResourceValueError`** quando `status() ===
-  // 'error'` (caso real: interceptor não-HTTP que escapa do envelope `ApiResult`
-  // — vide ADR-0018 §"esta ADR não decide"). Sem o guard contra `error()`,
-  // `value()`/`data()`/`problem()` propagam a exceção durante change detection
-  // e a página crasha em vez de renderizar a mensagem de erro. O helper
-  // padroniza: em estado de erro, todos os derivados retornam ausência
-  // (`undefined`/`null`) e o caller diferencia via `error()` (que nunca lança).
-  const value: Signal<ApiResult<T> | undefined> = computed(() =>
-    resource.error() ? undefined : resource.value(),
-  );
+  const envelope = computed(() => (resource.error() ? undefined : resource.value()));
+  return {
+    value: envelope,
+    data: computed(() => dadoDe(envelope())),
+    problem: computed(() => problemaDe(envelope())),
+  };
+}
 
-  const data: Signal<T | null> = computed(() => {
-    if (resource.error()) {
-      return null;
-    }
-    const envelope = resource.value();
-    return envelope?.ok ? envelope.data : null;
-  });
+function dadoDe<T>(envelope: ApiResult<T> | undefined): T | null {
+  return envelope?.ok ? envelope.data : null;
+}
 
-  const problem: Signal<ProblemDetails | null> = computed(() => {
-    if (resource.error()) {
-      return null;
-    }
-    const envelope = resource.value();
-    return envelope && !envelope.ok ? envelope.problem : null;
-  });
-  return { value, data, problem };
+function problemaDe<T>(envelope: ApiResult<T> | undefined): ProblemDetails | null {
+  return envelope && !envelope.ok ? envelope.problem : null;
 }
 
 /**
@@ -158,25 +153,22 @@ function sinaisDoEnvelope<T>(
  */
 export function useApiResource<T>(
   request: () => string | HttpResourceRequest | undefined,
-  options?: Omit<
-    HttpResourceOptions<ApiResult<T>, unknown>,
-    'defaultValue' | 'parse'
-  >,
+  options?: Omit<HttpResourceOptions<ApiResult<T>, unknown>, 'defaultValue' | 'parse'>,
 ): UseApiResourceRef<T> {
-  const resource = httpResource<ApiResult<T>>(() => {
-    const next = request();
-    if (next === undefined) {
-      return undefined;
-    }
-    return typeof next === 'string' ? { url: next } : next;
-  }, options);
+  const resource = httpResource<ApiResult<T>>(() => comoRequisicao(request()), options);
+  return { ...sinaisDoEnvelope(resource), ...repasseDoResource(resource) };
+}
 
-  const { value, data, problem } = sinaisDoEnvelope(resource);
+function comoRequisicao(
+  pedido: string | HttpResourceRequest | undefined,
+): HttpResourceRequest | undefined {
+  return typeof pedido === 'string' ? { url: pedido } : pedido;
+}
 
+function repasseDoResource<T>(
+  resource: HttpResourceRef<ApiResult<T> | undefined>,
+): Omit<UseApiResourceRef<T>, 'value' | 'data' | 'problem'> {
   return {
-    value,
-    data,
-    problem,
     isLoading: resource.isLoading,
     status: resource.status,
     statusCode: resource.statusCode,

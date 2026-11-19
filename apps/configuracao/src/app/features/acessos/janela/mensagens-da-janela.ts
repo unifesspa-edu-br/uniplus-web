@@ -40,7 +40,7 @@ export const MENSAGENS_DA_JANELA: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'migracao.lote_ja_enviado': {
     titulo: 'O lote da gestão de acessos já foi enviado.',
-    resolver: 'Recarregue a janela para ver as decisões do lote. O que ficou retido se decide pela concessão retida, e o que aguarda a proteção de dados, pela etapa dela.',
+    resolver: 'Recarregue a janela para ver as decisões do lote. O que ficou retido se decide pela concessão retida, e o que aguarda o Representante do controlador, pela etapa de proteção de dados.',
   },
   'migracao.lote_nao_enviado': {
     titulo: 'O lote da gestão de acessos ainda não foi enviado.',
@@ -60,7 +60,7 @@ export const MENSAGENS_DA_JANELA: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'migracao.sem_permissao_na_etapa': {
     titulo: 'Falta a permissão da etapa para esta decisão.',
-    resolver: 'A gestão de acessos decide o lote, as retidas e o encerramento; a proteção de dados decide a etapa dela. Peça a uma pessoa com a permissão da etapa que faça a decisão.',
+    resolver: 'A gestão de acessos decide o lote, as retidas e o encerramento; o Representante do controlador decide a etapa de proteção de dados. Peça a uma pessoa com a permissão da etapa que faça a decisão.',
   },
   'pedido.perfil_em_janela_de_migracao': {
     titulo: 'O perfil está em janela de migração e não recebe pessoa nova até o fim dela.',

@@ -179,7 +179,7 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
       ordem: 1,
     },
   ],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [],
   bonusRegional: null,
   cascata: null,

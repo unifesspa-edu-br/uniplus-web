@@ -4,6 +4,7 @@ import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
 import type {
   AtributosCongeladosDaFase,
+  BancaDaEtapa,
   BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
@@ -97,7 +98,7 @@ export interface EtapaForm {
   readonly inicio: FormControl<string>;
   readonly fim: FormControl<string>;
   readonly emiteParecerIndividual: FormControl<boolean>;
-  readonly bancas: FormControl<readonly string[]>;
+  readonly bancas: FormControl<readonly BancaDaEtapa[]>;
   readonly recursos: FormControl<readonly RecursoDaEtapa[]>;
   /** Não é editado: viaja para a tela saber o que o processo congelou do tipo. */
   readonly tipoCongelado: FormControl<TipoCongeladoDaEtapa | null>;
@@ -210,7 +211,7 @@ function controlesDoQueAEtapaDeclara(
     inicio: controle(etapa.inicio ?? ''),
     fim: controle(etapa.fim ?? ''),
     emiteParecerIndividual: controle(etapa.emiteParecerIndividual ?? false),
-    bancas: controle<readonly string[]>(etapa.bancas ?? []),
+    bancas: controle<readonly BancaDaEtapa[]>(etapa.bancas ?? []),
     recursos: controle<readonly RecursoDaEtapa[]>(etapa.recursos ?? []),
   };
 }

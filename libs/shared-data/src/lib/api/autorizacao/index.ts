@@ -42,10 +42,27 @@ export {
   type SituacaoDaConcessao,
 } from './concessoes.api';
 export {
+  ProvidenciasApi,
+  type AtenderProvidenciaRequest,
+  type AtoDoDesfechoDto,
+  type CausaDoEncerramento,
+  type ConcessaoDaProvidenciaDto,
+  type DesfechoDaProvidenciaDto,
+  type EncerramentoDaConcessaoDto,
+  type FiltroDaSituacaoDaProvidencia,
+  type ProvidenciaDto,
+  type ProvidenciaResumoDto,
+  type ResponderProvidenciaRequest,
+  type SituacaoDaProvidencia,
+  type SolicitarProvidenciaRequest,
+  type TipoDaProvidencia,
+} from './providencias.api';
+export {
   PedidosDeConcessaoApi,
   type AnexoDoPedidoDto,
   type AnexoParaEnvioDto,
   type AprovarPedidoDeConcessaoRequest,
+  type AceitarPedidoDeConcessaoRequest,
   type CriarPedidoDeConcessaoRequest,
   type DecisaoDoPedidoDto,
   type FilaDePedidos,
@@ -80,3 +97,22 @@ export {
   type ResultadoDaReclassificacao,
   type VersaoEmUsoDto,
 } from './reclassificacoes.api';
+export {
+  RevisoesApi,
+  type ItemDaRevisaoDto,
+  type ListaDeRevisoesQuery,
+  type QuemDecideOItem,
+  type RevisaoDeAcessosDto,
+  type RevisaoResumoDto,
+  type RevogarItemDaRevisaoRequest,
+  type SituacaoDaRevisao,
+  type SituacaoDoItemDaRevisao,
+} from './revisoes.api';
+export {
+  TermosDeResponsabilidadeApi,
+  type AceiteDoTermoDto,
+  type PublicarVersaoDoTermoRequest,
+  type TermoDoPedidoDto,
+  type VersaoDoTermoDto,
+  type VersaoDoTermoResumoDto,
+} from './termos-de-responsabilidade.api';

@@ -16,7 +16,7 @@ export const ORIGEM_POR_FILA: Readonly<Record<FilaDePedidos, OrigemDoPedido>> = 
   gestor: { rota: '/acessos/fila-do-gestor', voltar: 'Voltar à fila da gestão de acessos' },
   protecao_de_dados: {
     rota: '/acessos/fila-da-protecao-de-dados',
-    voltar: 'Voltar à fila da proteção de dados',
+    voltar: 'Voltar à fila do Representante do controlador',
   },
   todos: { rota: '/acessos/historico', voltar: 'Voltar ao histórico de pedidos' },
 };

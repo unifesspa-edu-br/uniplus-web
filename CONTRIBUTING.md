@@ -144,6 +144,8 @@ A branch protection da `main` exige aprovação dos seguintes status checks (ord
 3. `nx run-many --target=lint --all`
 4. `PR author is org member`
 
+O check `main` é o agregador dos gates: os jobs `gate (lint)`, `gate (typecheck)`, `gate (typecheck-spec)`, `gate (build)` e `test (<projeto>)` rodam em paralelo, cada um no seu runner, e `main` falha se qualquer um falhar ou for cancelado. Não são checks exigidos por si, para a lista de testes poder mudar com os projetos do workspace.
+
 Renomeação dos jobs em `.github/workflows/*.yml` exige atualização correspondente da branch protection via `gh api PUT /repos/.../branches/main/protection` — os nomes nesta lista são contratuais.
 
 ### 6. Roadmap V2
@@ -381,15 +383,281 @@ features/
 
 - **PrimeNG** para componentes complexos (tabelas, calendários, modais, menus)
 - **Tailwind CSS** para layout e utilitários (spacing, flex, grid, responsividade)
-- Nunca usar `!important` — ajustar especificidade ou usar variáveis CSS do PrimeNG
+- `!important` só nas camadas que precisam vencer qualquer componente (veja [Lint de CSS](#lint-de-css)); fora delas, ajustar a especificidade ou usar variáveis CSS
 - Mobile-first: começar pelo layout mobile, expandir com `md:` e `lg:`
 - Cores institucionais devem usar variáveis CSS definidas em `shared-ui`
 
-### Tamanho de arquivo
+#### Lint de CSS
 
-- Nenhum arquivo de produção (`.ts`, `.html` e `.css` em `apps/` e `libs/`) passa de **400 linhas físicas**, contando comentários e linhas em branco. Ficam de fora specs, mocks de teste, projetos E2E e contratos gerados.
-- `npm run check:tamanho` confere a regra e roda no CI. Arquivo novo acima do limite é recusado.
-- Os arquivos que ainda excedem o limite estão em `tools/tamanho-de-arquivo/excecoes.txt`. A lista só diminui: arquivo listado não pode crescer, toda redução tem de ser registrada nela, e ao chegar a 400 linhas ou menos a entrada sai (`npm run check:tamanho -- --atualizar` reduz números e remove entradas).
+Os `.css` passam pelo [`@eslint/css`](https://github.com/eslint/css), com a sintaxe do Tailwind 4 (`tailwind-csstree`), no mesmo `nx lint` de cada projeto. O que o lint aponta é erro e barra o CI. Valem as regras recomendadas do plugin, com estes ajustes no `eslint.config.mjs`:
+
+| Regra | O que cobra | Ajuste |
+|---|---|---|
+| `css/no-invalid-properties` | propriedade ou valor inexistente (`colr: red`) | variável CSS definida em outro arquivo, como os tokens do Uni+ DS, não é erro |
+| `css/relative-font-units` | `font-size` em `rem` ou `em`, para o texto acompanhar o zoom e a preferência de fonte (WCAG 2.1 AA) | no papel (`*-impressao.css`) a unidade é `pt` |
+| `css/use-baseline` | só recurso de CSS com suporte amplo nos navegadores | acabamento que o navegador sem suporte ignora sem prejuízo do uso fica liberado: barra de rolagem, `accent-color`, `user-select`, `resize`, `overscroll-behavior`, `::marker` e os recursos de impressão (`@page`, `print-color-adjust`, `break-after: avoid`) |
+| `css/no-important` | `!important` | liberado só nas camadas que precisam vencer qualquer componente: utilitários de leitor de tela e de impressão (`base.css`), movimento reduzido (`preferencias-do-usuario.css`) e o documento no papel (`*-impressao.css`) |
+
+```css
+/* Recusado: a fonte não acompanha a preferência de tamanho do usuário. */
+.spinner--sm { font-size: 14px; }
+
+/* Aceito. */
+.spinner--sm { font-size: 0.875rem; }
+```
+
+Liberar recurso novo ou camada nova é mudança na configuração, com o motivo no PR; comentário de supressão no CSS é proibido, como no TypeScript. O lint não mede tamanho de arquivo CSS: ele fica com a revisão ([§ Métricas de qualidade](#métricas-de-qualidade)). O VLibras (`libs/shared-ui/src/assets/`) é de terceiro e fica fora.
+
+### Código que se explica
+
+O código é a primeira documentação. Quem lê um componente ou uma função precisa entender o que ele faz pelo nome e pelo corpo, sem depender de comentário. Antes de escrever um comentário, tente dizer a mesma coisa no próprio código.
+
+**Nomes expressivos e semânticos.** O nome diz o que a coisa é ou faz no domínio, não como é feita.
+
+| Evite | Prefira | Por quê |
+|---|---|---|
+| `processar()`, `handleClick()` | `homologarInscricoes()`, `abrirRecurso()` | o verbo e o objeto dizem a intenção |
+| `data`, `lista`, `res`, `item`, `aux` | `inscricoesHomologadas` | a variável diz o que guarda |
+| `flag`, `status: boolean` | `estaVigente`, `podeRecorrer` | booleano se lê como pergunta |
+| `tipo: number` com números mágicos | união de literais ou `enum` (`'pendente' \| 'aprovado'`) | o valor tem nome e o compilador confere |
+| `qtdInscCand` | `quantidadeDeInscricoesDoCandidato` | abreviação só se for do domínio (CPF, ENEM) |
+
+**TypeScript e Angular idiomáticos.** Use a linguagem e o framework em vez de código feito à mão:
+
+- `signal`, `computed` e `input()`/`output()` para estado e comunicação, no lugar de variável solta e `EventEmitter` manual;
+- `inject()` no lugar de parâmetro de construtor;
+- controle de fluxo do template (`@if`, `@for` com `track`, `@switch`) no lugar de `*ngIf`/`*ngFor`;
+- tipos estritos: sem `any`, sem `!` para calar o compilador, união discriminada no lugar de vários booleanos combinados;
+- encadeamento opcional (`?.`) e coalescência (`??`) no lugar de `if` defensivo aninhado;
+- `readonly` no que não muda;
+- função pura para transformação de dado, fora do componente, onde é testável sem `TestBed`.
+
+**Extraia em vez de comentar.** Um bloco que precisa de comentário para dizer o que faz vira uma função ou um `computed` com esse nome:
+
+```typescript
+// Evite: o comentário repete a condição
+// Mostra o botão se o prazo não acabou e o candidato ainda não recorreu
+@if (agora() < prazo().fim && !recurso()) { … }
+
+// Prefira: o nome diz o quê
+protected readonly podeRecorrer = computed(() => this.prazo().abertoEm(this.agora()) && !this.recurso());
+@if (podeRecorrer()) { … }
+```
+
+#### Comentários
+
+Comentário explica o **porquê** que o código não consegue mostrar:
+
+- a regra de negócio por trás de uma decisão, com o `UNI-REQ` correspondente;
+- o motivo de uma escolha que parece estranha;
+- uma limitação externa, como comportamento de navegador, biblioteca ou leitor de tela;
+- um cuidado de acessibilidade, segurança ou LGPD.
+
+```typescript
+// O foco volta ao botão que abriu o diálogo: sem isso, quem navega por teclado
+// perde a posição na página ao fechar (WCAG 2.4.3).
+this.gatilho()?.focus();
+```
+
+Não se comenta o que o código já diz. O comentário também não conta histórico ("antes era assim", "corrigido no PR tal") — o git conta —, e código comentado não fica no repositório. Comentário desatualizado é defeito: ao mudar o código, revise o comentário ao lado. Comentário dentro da função conta no `max-lines-per-function` ([§ Métricas de qualidade](#métricas-de-qualidade)), mais um motivo para extrair em vez de explicar.
+
+#### Documentação JSDoc/TSDoc
+
+Documentar com JSDoc (`/** … */`) o que é exportado é boa prática, principalmente a API pública das libs `shared-*` e dos serviços e utilitários que outros projetos usam. A documentação diz o que o nome e o tipo não dizem:
+
+- **propósito:** para que serve;
+- **contrato:** o que exige, o que garante e o que acontece na falha (`@throws`, `Observable` que erra);
+- **formato:** formato de data, fuso, unidade, máscara;
+- **exemplo de uso**, quando ajuda (`@example`).
+
+```typescript
+/**
+ * Agrupa os itens em páginas de tamanho fixo, mantendo a ordem de entrada.
+ *
+ * @param tamanho quantidade de itens por página; precisa ser maior que zero.
+ * @throws RangeError quando `tamanho` não é maior que zero.
+ */
+export function paginar<T>(itens: readonly T[], tamanho: number): T[][] {
+```
+
+Documentação que só repete o nome e o tipo não acrescenta nada: `/** Retorna o nome. */` em `obterNome(): string` não diz mais que a assinatura, e fica de fora. Membro privado de componente e spec se explicam pelo nome; documentação neles é exceção, para o porquê não óbvio. O JSDoc acima da função não conta no `max-lines-per-function`.
+
+### Tipos de domínio no lugar de primitivos
+
+Conceito de domínio com significado próprio não trafega como `string` ou `number` soltos. Uma situação, uma edição do ENEM ou uma etapa têm nome e valores admitidos; o primitivo esconde isso e deixa o compilador aceitar um valor no lugar do outro. Use tipos próprios: `interface`/`type` coesos, uniões de literais e uniões discriminadas no lugar de `string`/`number` quando isso der significado.
+
+**Agrupe só o que é coeso.** Um tipo ou um objeto de parâmetro reúne dados que andam juntos e que, juntos, significam algo no domínio. É proibido criar um agrupamento artificial só para baixar a contagem de `max-params`: isso é código escrito para caber na métrica, que a [§ Métricas de qualidade](#métricas-de-qualidade) já recusa.
+
+```typescript
+// Evite: primitivos soltos; nada impede trocar o id pelo nome ou passar uma situação inexistente
+function abrirNotasDoEnem(situacao: string, etapaId: string, etapaNome: string, edicoes: string[]) { … }
+
+// Prefira: o tipo diz o que o processo admite (features/processo-seletivo/notas-do-enem/escopo-do-enem.ts)
+export interface EtapaDoEnem {
+  readonly id: string;
+  readonly nome: string;
+}
+
+export type EscopoDoEnem =
+  | { readonly situacao: 'rascunho' }
+  | { readonly situacao: 'semEtapa' }
+  | { readonly situacao: 'semEdicoes' }
+  | { readonly situacao: 'pronto'; readonly etapa: EtapaDoEnem; readonly edicoes: readonly string[] };
+
+function abrirNotasDoEnem(escopo: EscopoDoEnem) { … }
+```
+
+```typescript
+// Contra-exemplo: agrupamento artificial, só para a função caber em 4 parâmetros.
+// Serviço HTTP, sinal de carregamento e escopo não formam um conceito de domínio.
+interface OpcoesDoEnvio {
+  http: HttpClient;
+  carregando: WritableSignal<boolean>;
+  escopo: EscopoDoEnem;
+  tentativa: number;
+}
+```
+
+**Builders e fábricas de dados só nos specs.** No código de produção, o objeto é montado pelo literal tipado ou pela função que o produz, e o compilador confere os campos obrigatórios. Nos specs, use fábricas de dados com padrões válidos e sobrescrita só do que importa ao cenário (por exemplo, `umEscopoPronto({ edicoes: ['2025'] })`), no lugar de repetir o literal inteiro em cada teste.
+
+### Métricas de qualidade
+
+As métricas abaixo valem para todo código que o PR cria ou altera, de produção e de teste (specs, mocks, utilitários de teste e E2E). As regras numéricas (1 a 4) são medidas pelo ESLint, e **o número que vale é o do aviso do lint**: não há contagem paralela. O texto abaixo explica como cada regra conta, para você prever o aviso antes de rodar o lint. A revisão cobra os limites no código novo ou alterado e julga o que o lint não mede: o tamanho de CSS, o tamanho de cada caso de teste e as regras 5 e 6.
+
+| # | Regra | Limite | Regra do ESLint | Produção | Specs e E2E |
+|---|---|---|---|---|---|
+| 1 | Linhas físicas por função | 15 | `max-lines-per-function` | sim | não nos `*.spec.ts` e `*.setup.ts`; sim nos demais arquivos de teste e de E2E |
+| 2 | Linhas físicas por arquivo `.ts` e `.html` | 400 | `max-lines` | sim | sim |
+| 3 | Parâmetros por função, método ou construtor | 4 | `max-params` | sim | sim |
+| 4 | Complexidade ciclomática por função | 10 | `complexity` | sim | sim |
+| 4 | Complexidade cognitiva por função | 15 | `sonarjs/cognitive-complexity` | sim | sim |
+| 5 | Supressão de aviso | proibida | revisão | sim | sim |
+| 6 | Código escrito só para caber na métrica | reprovado | revisão | sim | sim |
+
+Os limites ficam no bloco de métricas do `eslint.config.mjs` da raiz.
+
+**1. Função: até 15 linhas físicas (`max-lines-per-function`).** A regra conta da linha onde a função começa até a linha da chave final, inclusive; numa arrow function de corpo em expressão, sem chaves, até a última linha da expressão.
+
+- **Contam:** linhas em branco e comentários dentro do corpo. Num método com decorator, a contagem começa na linha do decorator.
+- **Não conta:** o JSDoc acima da função.
+- **O que é medido:** função, método, construtor, getter e setter, arrow function e função anônima, cada uma separadamente. Uma arrow passada como argumento é medida sozinha e também conta dentro da função que a contém.
+- **Onde não vale:** a regra fica desligada nos arquivos de teste (`*.spec.ts` e `*.setup.ts` do Playwright). Lá, a função passada ao `describe(...)` agrupa todos os casos e seria medida inteira, e cumprir o limite exigiria um `describe` por caso, que é código feito só para caber na métrica. O tamanho de cada `it(...)` e de cada `test(...)` é cobrado na revisão. Funções auxiliares de teste em arquivo próprio (`*.testing.ts`, `*.mock.ts`, fixtures) são medidas.
+
+Exemplo: o lint conta **10** linhas neste método, do decorator à chave final, com a linha em branco e o comentário. O JSDoc não entra.
+
+```typescript
+/**
+ * Fecha o diálogo pelo teclado.
+ */
+@HostListener('keydown.escape')
+protected fechar(): void {
+  if (!this.aberto()) {
+    return;
+  }
+
+  // O foco volta ao botão que abriu o diálogo (WCAG 2.4.3).
+  this.aberto.set(false);
+  this.gatilho()?.focus();
+}
+```
+
+**2. Arquivo: até 400 linhas físicas (`max-lines`).** Todas as linhas contam, inclusive comentários, imports e linhas em branco.
+
+- **Onde vale:** `.ts` de `apps/` e `libs/`, specs, mocks e E2E incluídos, e templates `.html`, medidos pelo parser de template do angular-eslint.
+- **Ficam fora:** os clientes OpenAPI gerados (`libs/shared-data/src/lib/api/*/schema.ts`).
+- **CSS:** nenhum lint mede tamanho de arquivo CSS (o `max-lines` não roda com o `@eslint/css`). Ali a revisão cobra o mesmo limite.
+
+**3. Parâmetros: até 4** por função, método ou construtor (`max-params`). A injeção de dependência usa `inject()`, não parâmetro de construtor.
+
+**4. Complexidade: ciclomática até 10 (`complexity`) e cognitiva até 15 (`sonarjs/cognitive-complexity`)** por função.
+
+**5. Supressão de aviso: proibida.**
+
+- **Proibido:** calar aviso com `eslint-disable` (de arquivo, de bloco ou de linha), `@ts-ignore`, `@ts-nocheck` ou `@ts-expect-error`. O aviso se corrige no código.
+- **Design ruim se refaz:** quando o lint revela design ruim, o design é refeito.
+- **Permitido:** desligar no `eslint.config.mjs`, com comentário justificando, uma regra que não se aplica ao workspace inteiro ou a uma camada inteira. Camada é código com o mesmo papel, como specs, selecionado por glob, como o limite por função nos testes. Isso é decisão de projeto.
+- **Supressão disfarçada:** bloco de configuração que isenta um arquivo específico também é proibido.
+
+**6. Código feito só para caber na métrica é reprovado**, mesmo dentro dos limites. Exemplos:
+
+- função-ponte que só repassa a chamada;
+- estado fatiado sem sentido: signals ou serviços criados só para dividir uma função;
+- parâmetros agrupados num objeto artificial que não existe no domínio;
+- `describe` criado só para encurtar outro.
+
+Juntar instruções na mesma linha para enganar a contagem também é reprovado, e o Prettier desfaz. A divisão segue responsabilidade, conforme SOLID, Clean Code e as recomendações do Angular (componente de apresentação, serviço, `computed`).
+
+#### Exemplo
+
+Divisão correta: o componente orquestra o envio, e a conversão do formulário para o contrato da API fica numa função pura com nome de domínio. O lint conta 11 linhas em `enviar` e 8 em `paraInscricao`.
+
+```typescript
+protected enviar(): void {
+  if (this.formulario.invalid) {
+    this.formulario.markAllAsTouched();
+    return;
+  }
+  const inscricao = paraInscricao(this.formulario.getRawValue());
+  this.inscricoes.enviar(inscricao).subscribe({
+    next: () => this.aviso.sucesso('Inscrição enviada.'),
+    error: (erro: unknown) => this.aviso.erroDaApi(erro),
+  });
+}
+
+// inscricao.mapeamento.ts
+export function paraInscricao(valor: ValorDoFormularioDeInscricao): NovaInscricaoDto {
+  return {
+    processoId: valor.processoId,
+    ofertaId: valor.oferta.id,
+    modalidade: valor.modalidade,
+    nomeSocial: valor.nomeSocial?.trim() || null,
+  };
+}
+```
+
+Divisão reprovada: a função longa foi cortada em pedaços que só repassam, sem responsabilidade própria.
+
+```typescript
+protected enviar(): void {
+  this.enviarInterno({ formulario: this.formulario, servico: this.inscricoes }); // objeto artificial
+}
+
+private enviarInterno(contexto: ContextoDoEnvio): void {
+  this.executarParte1(contexto); // função-ponte
+}
+```
+
+#### Dívida existente e CI
+
+O CI **não barra** a dívida antiga. As regras de métrica são aviso, e o lint completo só reprova por erro. Elas valem para o que o PR cria ou altera:
+
+- função nova ou alterada cumpre os limites;
+- arquivo que o PR cria ou altera termina com até 400 linhas; se já passava, o PR o divide por assunto.
+
+A dívida é paga por projeto (cada app e cada lib), cada um com sua issue. Quando um projeto zera, o `eslint.config.mjs` dele passa as regras a erro, e o CI barra aquele projeto. Três cuidados, porque o último bloco que casa com o arquivo vence: o bloco de erro repete a exclusão dos clientes OpenAPI gerados, o bloco que desliga o limite por função nos testes vem depois dele, e o `.html` fica num bloco próprio, porque o plugin `sonarjs` só existe para `.ts`:
+
+```js
+  {
+    // Projeto sem dívida de métricas: o CI barra.
+    files: ['**/*.ts'],
+    ignores: ['**/src/lib/api/*/schema.ts'],
+    rules: {
+      'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }],
+      'max-lines-per-function': ['error', { max: 15, skipBlankLines: false, skipComments: false }],
+      complexity: ['error', 10],
+      'max-params': ['error', 4],
+      'sonarjs/cognitive-complexity': ['error', 15],
+    },
+  },
+  {
+    files: ['**/*.spec.ts', '**/*.setup.ts'],
+    rules: { 'max-lines-per-function': 'off' },
+  },
+  {
+    files: ['**/*.html'],
+    rules: { 'max-lines': ['error', { max: 400, skipBlankLines: false, skipComments: false }] },
+  },
+```
 
 ---
 
@@ -451,6 +719,8 @@ Em qualquer tela que exiba nome de candidato, verificar se existe nome social ca
 | Visual regression | Componentes UI | Playwright screenshots | Mudanças em shared-ui |
 
 ### Convenções de teste
+
+Verificação de regra de arquitetura (ESLint, compilador ou teste de comportamento, nunca leitura do fonte como texto) segue o [`orientacao-para-revisao.md`](orientacao-para-revisao.md).
 
 **Testes unitários (Jest):**
 
@@ -516,6 +786,8 @@ Complementa os Quality gates acima (verificações de CI automáticas) com higie
 - [ ] Branch **rebaseada** sobre a `main` mais recente
 - [ ] Commits "WIP" / "ajustes do PR" foram **squashados** via `git rebase -i`
 - [ ] PR vinculado à issue com `Closes #N` na descrição
+- [ ] Conceitos de domínio modelados com tipos próprios, sem primitivos soltos nem agrupamento artificial para caber na métrica, e builders/fábricas de dados só nos specs ([§ Tipos de domínio no lugar de primitivos](#tipos-de-domínio-no-lugar-de-primitivos))
+- [ ] Nenhum aviso novo de `max-lines-per-function`, `max-lines`, `max-params`, `complexity` ou `sonarjs/cognitive-complexity` no código criado ou alterado, specs incluídos, e nenhuma supressão de aviso ([§ Métricas de qualidade](#métricas-de-qualidade)) — o CI ainda não os barra
 
 ---
 
@@ -526,8 +798,9 @@ Todo PR passa por revisão humana. O revisor verifica:
 1. **Acessibilidade** — WCAG 2.1 AA, navegação por teclado, contraste
 2. **Responsividade** — funciona em mobile, tablet e desktop
 3. **Segurança** — PII masking, XSS, tokens
-4. **Qualidade** — componentes pequenos, OnPush, sem lógica no template
+4. **Qualidade** — componentes pequenos, OnPush, sem lógica no template e as [métricas de qualidade](#métricas-de-qualidade): os avisos do ESLint e, à mão, o tamanho de cada caso de teste e dos arquivos CSS
 5. **UX** — feedback ao usuário (loading, erros, sucesso), pt-BR correto
+6. **Arquitetura** — a abordagem das verificações de arquitetura e a lista "Conferido na revisão" do [`orientacao-para-revisao.md`](orientacao-para-revisao.md)
 
 O PR precisa de **1 aprovação** para ser mergeado.
 

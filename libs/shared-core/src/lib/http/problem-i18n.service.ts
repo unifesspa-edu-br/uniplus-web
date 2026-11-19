@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { CODIGO_ESPERA_ESGOTADA } from './idempotency';
 import { ProblemDetails } from './problem-details';
 
 export interface ProblemMessage {
@@ -34,6 +35,15 @@ export interface ProblemOverride {
  * código prevalece.
  */
 const TRADUCOES_PADRAO: ReadonlyMap<string, ProblemOverride> = new Map([
+  [
+    CODIGO_ESPERA_ESGOTADA,
+    {
+      // O título vai sozinho em várias telas: leva a orientação junto.
+      title:
+        'O processo está ocupado com outra operação. Atualize a tela e tente de novo em instantes.',
+      detail: 'Esta operação não foi gravada.',
+    },
+  ],
   [
     'uniplus.vinculo_catalogo.fato_com_protecao_pendente',
     {

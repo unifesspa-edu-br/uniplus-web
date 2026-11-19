@@ -52,6 +52,28 @@ export async function assentar(fixture: {
 export const botao = (host: HTMLElement, texto: string): HTMLButtonElement | undefined =>
   [...host.querySelectorAll('button')].find((b) => b.textContent?.trim() === texto);
 
+/** A leitura que cada endereço da tela recebe: o catálogo vazio, a trilha ou o perfil. */
+function respostaDaLeitura(url: string): Observable<unknown> {
+  if (url.endsWith('/permissoes')) return of(ok([]));
+  return url.endsWith('/contencao') ? leituras.trilha() : leituras.perfil();
+}
+
+function provedoresDoPerfil(concedidas: readonly string[]) {
+  return [
+    provideRouter([]),
+    provideMensagensDeAcesso(),
+    { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+    provideHttpClient(
+      withInterceptors([
+        (req) => respostaDaLeitura(req.url).pipe(map((body) => new HttpResponse({ body }))),
+      ]),
+    ),
+    { provide: ContencaoDoPerfilApi, useValue: api },
+    { provide: PermissoesService, useValue: { tem: (c: string) => concedidas.includes(c) } },
+    { provide: NotificationService, useValue: notificacoes },
+  ];
+}
+
 /** Abre o detalhe do perfil `p1` com as permissões e a resposta da trilha informadas. */
 export async function abrirPerfil(
   perfil: PerfilDto = perfilDoDetalhe(),
@@ -60,27 +82,7 @@ export async function abrirPerfil(
 ) {
   vi.mocked(leituras.perfil).mockImplementation(() => of(ok(structuredClone(perfil))));
   vi.mocked(leituras.trilha).mockReturnValue(of(trilha));
-  TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      provideMensagensDeAcesso(),
-      { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
-      provideHttpClient(
-        withInterceptors([
-          (req) =>
-            (req.url.endsWith('/permissoes')
-              ? of(ok([]))
-              : req.url.endsWith('/contencao')
-                ? leituras.trilha()
-                : leituras.perfil()
-            ).pipe(map((body: unknown) => new HttpResponse({ body }))),
-        ]),
-      ),
-      { provide: ContencaoDoPerfilApi, useValue: api },
-      { provide: PermissoesService, useValue: { tem: (c: string) => concedidas.includes(c) } },
-      { provide: NotificationService, useValue: notificacoes },
-    ],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDoPerfil(concedidas) });
   const fixture = TestBed.createComponent(PerfilDetalhePage);
   fixture.componentRef.setInput('id', 'p1');
   await assentar(fixture);

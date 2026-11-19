@@ -12,6 +12,7 @@ import {
   A11yMenuComponent,
   BackToTopComponent,
   InstitutionalBarComponent,
+  MarcaInstitucionalComponent,
   SkipLinkComponent,
   VlibrasLoaderComponent,
 } from '@uniplus/shared-ui/components';
@@ -58,6 +59,7 @@ interface PortalFooterGroup {
     A11yMenuComponent,
     BackToTopComponent,
     InstitutionalBarComponent,
+    MarcaInstitucionalComponent,
     SkipLinkComponent,
     VlibrasLoaderComponent,
   ],
@@ -65,31 +67,26 @@ interface PortalFooterGroup {
   styleUrl: './portal-shell.css',
   template: `
     <ui-skip-link targetId="portal-main" />
-    <!--
-      Decisão (issue #780): os links opcionais de "Mapa do site", "Acessibilidade"
-      e "Privacidade" da faixa institucional ficam ocultos por ora — nenhuma
-      dessas páginas existe no app ainda (o rodapé já lista os mesmos três itens
-      como texto inerte, pelo mesmo motivo). O componente já esconde a seção de
-      links quando as hrefs não são passadas; assim que as páginas existirem,
-      basta preencher siteMapHref/accessibilityHref/privacyHref aqui.
-    -->
-    <ui-institutional-bar organization="UNIFESSPA · Sistema Uni+" />
+    <ui-institutional-bar>
+      <ui-a11y-menu />
+      <auth-user-header-info />
+    </ui-institutional-bar>
 
     <header class="topbar portal-topbar u-no-print" role="banner">
-      <!-- Sem aria-label: o nome acessível vem do texto visível (título + subtítulo),
-           satisfazendo WCAG 2.5.3 (Label in Name) por construção — um aria-label
-           customizado que não repetisse literalmente o subtítulo seria rejeitado
-           pelo axe (label-content-name-mismatch). -->
-      <a class="topbar__brand" routerLink="/processos">
-        <span class="topbar__mark" aria-hidden="true">U+</span>
-        <span class="topbar__titles">
-          <span class="topbar__title">Portal do Candidato</span>
-          <span class="topbar__subtitle">Sistema Uni+ · Unifesspa</span>
-        </span>
-      </a>
-      <div class="topbar__actions">
-        <ui-a11y-menu />
-        <auth-user-header-info />
+      <div class="topbar__brand">
+        <a
+          class="topbar__link-marca"
+          href="https://www.unifesspa.edu.br"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Unifesspa (abre em nova aba)"
+        >
+          <ui-marca-institucional class="topbar__marca" [rotulada]="false" fundo="tema" />
+        </a>
+        <a class="topbar__titles" routerLink="/processos">
+          <span class="topbar__title">Uni+</span>
+          <span class="topbar__subtitle">Portal do Candidato</span>
+        </a>
       </div>
     </header>
 

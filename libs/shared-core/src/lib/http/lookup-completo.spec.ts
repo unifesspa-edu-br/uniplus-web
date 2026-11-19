@@ -9,11 +9,23 @@ import { errorResult, mockProblemDetails } from './api-result.testing';
 import { Cursor, createCursor } from './pagination';
 import { lookupCompleto } from './lookup-completo';
 
-function pagina(dados: readonly string[], proximo?: string): ApiResult<readonly string[]> {
+type Catalogo = ApiResult<readonly string[]>;
+
+function pagina(dados: readonly string[], proximo?: string): Catalogo {
   const headers = new HttpHeaders(
     proximo === undefined ? {} : { Link: `</api/x?cursor=${proximo}>; rel="next"` },
   );
   return apiOk<readonly string[]>(dados, 200, headers);
+}
+
+function respondendoEm(...respostas: readonly Observable<Catalogo>[]) {
+  const consulta = vi.fn<(cursor?: Cursor) => Observable<Catalogo>>();
+  respostas.forEach((resposta) => consulta.mockReturnValueOnce(resposta));
+  return consulta;
+}
+
+function erroQueEscapaDoEnvelope(): Observable<Catalogo> {
+  return throwError(() => new Error('rede caiu'));
 }
 
 const recusa = errorResult(
@@ -71,11 +83,7 @@ describe('lookupCompleto', () => {
    * escape da cadeia deixaria a tela sem o alerta e subiria sem tratamento.
    */
   it('sinaliza erro que escapa do envelope', () => {
-    const consulta = vi.fn(
-      () => throwError(() => new Error('rede caiu')) as Observable<ApiResult<readonly string[]>>,
-    );
-
-    const lookup = lookupCompleto(consulta, destroyRef);
+    const lookup = lookupCompleto(erroQueEscapaDoEnvelope, destroyRef);
     lookup.recarregar();
 
     expect(lookup.comErro()).toBe(true);
@@ -102,14 +110,9 @@ describe('lookupCompleto', () => {
    * catálogo antigo ao `select`.
    */
   it('cancela a busca em andamento quando recarrega', () => {
-    const primeira = new Subject<ApiResult<readonly string[]>>();
-    const segunda = new Subject<ApiResult<readonly string[]>>();
-    const consulta = vi
-      .fn<(cursor?: Cursor) => Observable<ApiResult<readonly string[]>>>()
-      .mockReturnValueOnce(primeira)
-      .mockReturnValueOnce(segunda);
-
-    const lookup = lookupCompleto(consulta, destroyRef);
+    const primeira = new Subject<Catalogo>();
+    const segunda = new Subject<Catalogo>();
+    const lookup = lookupCompleto(respondendoEm(primeira, segunda), destroyRef);
     lookup.recarregar();
     lookup.recarregar();
 
@@ -122,12 +125,8 @@ describe('lookupCompleto', () => {
   });
 
   it('para de acumular quando o componente é destruído', () => {
-    const primeira = new Subject<ApiResult<readonly string[]>>();
-    const consulta = vi
-      .fn<(cursor?: Cursor) => Observable<ApiResult<readonly string[]>>>()
-      .mockReturnValue(primeira);
-
-    const lookup = lookupCompleto(consulta, destroyRef);
+    const primeira = new Subject<Catalogo>();
+    const lookup = lookupCompleto(respondendoEm(primeira), destroyRef);
     lookup.recarregar();
 
     TestBed.resetTestingModule();
@@ -142,12 +141,9 @@ describe('lookupCompleto', () => {
    * tela não tem como distinguir "carregando" de "não encontrado".
    */
   it('nasce pendente e só se resolve quando a busca termina', () => {
-    const emVoo = new Subject<ApiResult<readonly string[]>>();
-    const consulta = vi.fn(() => emVoo);
-
-    const lookup = lookupCompleto(consulta, destroyRef);
-    // Antes da primeira busca já conta como pendente: um lookup lazy exibiria
-    // "não encontrado" na janela entre o render e o disparo da consulta.
+    const emVoo = new Subject<Catalogo>();
+    const lookup = lookupCompleto(() => emVoo, destroyRef);
+    // Já nasce pendente: um lookup lazy exibiria "não encontrado" antes do disparo.
     expect(lookup.pendente()).toBe(true);
 
     lookup.recarregar();
@@ -167,10 +163,7 @@ describe('lookupCompleto', () => {
   });
 
   it('deixa de estar pendente quando o erro escapa do envelope', () => {
-    const lookup = lookupCompleto(
-      () => throwError(() => new Error('rede caiu')) as Observable<ApiResult<readonly string[]>>,
-      destroyRef,
-    );
+    const lookup = lookupCompleto(erroQueEscapaDoEnvelope, destroyRef);
     lookup.recarregar();
 
     expect(lookup.comErro()).toBe(true);
@@ -178,13 +171,8 @@ describe('lookupCompleto', () => {
   });
 
   it('volta a ficar pendente a cada nova tentativa', () => {
-    const segunda = new Subject<ApiResult<readonly string[]>>();
-    const consulta = vi
-      .fn<(cursor?: Cursor) => Observable<ApiResult<readonly string[]>>>()
-      .mockReturnValueOnce(of(pagina(['a'])))
-      .mockReturnValueOnce(segunda);
-
-    const lookup = lookupCompleto(consulta, destroyRef);
+    const segunda = new Subject<Catalogo>();
+    const lookup = lookupCompleto(respondendoEm(of(pagina(['a'])), segunda), destroyRef);
     lookup.recarregar();
     expect(lookup.pendente()).toBe(false);
 

@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -39,16 +39,12 @@ export class TiposProcessoApi {
 
   /** GET `/api/configuracao/tipos-processo` — itens ativos, paginação por cursor opaco (ADR-0026). */
   listar(query: TiposProcessoQuery = {}): Observable<ApiResult<readonly TipoProcessoDto[]>> {
-    let params = new HttpParams();
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-    }
-
     return this.http.get<ApiResult<readonly TipoProcessoDto[]>>(
       `${this.basePath}/api/configuracao/tipos-processo`,
-      { params, context: withVendorMime('tipo-processo', 1) },
+      {
+        params: janelaDaPagina(new HttpParams(), query),
+        context: withVendorMime('tipo-processo', 1),
+      },
     );
   }
 

@@ -60,6 +60,8 @@ export type ConfiguracaoDistribuicaoVagasDto =
 export type EtapaProcessoInput = components['schemas']['EtapaProcessoInput'];
 export type EtapaProcessoDto = components['schemas']['EtapaProcessoDto'];
 export type FaseCronogramaInput = components['schemas']['FaseCronogramaInput'];
+export type RegraDeDeliberacaoDto = components['schemas']['RegraDeDeliberacaoDto'];
+export type RegraDeDeliberacaoInput = components['schemas']['RegraDeDeliberacaoInput'];
 export type NoExigenciaInput = components['schemas']['NoExigenciaInput'];
 export type ItemDocumentoExigidoInput = components['schemas']['ItemDocumentoExigidoInput'];
 export type DocumentoExigidoDto = components['schemas']['DocumentoExigidoDto'];
@@ -87,8 +89,8 @@ export type FaseCronogramaDto = components['schemas']['FaseCronogramaDto'];
 export type RegraRecursoFaseInput = components['schemas']['RegraRecursoFaseInput'];
 export type DefinirAlgoritmoContagemPrazoRequest =
   components['schemas']['DefinirAlgoritmoContagemPrazoRequest'];
-export type DefinirOfertaAtendimentoRequest =
-  components['schemas']['DefinirOfertaAtendimentoRequest'];
+export type DefinirAtendimentoEspecializadoRequest =
+  components['schemas']['DefinirAtendimentoEspecializadoRequest'];
 export type DefinirCascataRemanejamentoRequest =
   components['schemas']['DefinirCascataRemanejamentoRequest'];
 export type DestinoRemanejamentoInput = components['schemas']['DestinoRemanejamentoInput'];

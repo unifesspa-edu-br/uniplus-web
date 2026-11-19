@@ -111,8 +111,16 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "description": "Accepted",
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "Endere\u00E7o do ato publicado.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -152,7 +160,7 @@
             }
           },
           "409": {
-            "description": "Outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "O objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -173,6 +181,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -240,6 +258,90 @@
           },
           "404": {
             "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{processoSeletivoId}/atos/{atoId}": {
+      "get": {
+        "tags": [
+          "AtosDoProcesso"
+        ],
+        "parameters": [
+          {
+            "name": "processoSeletivoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "atoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.ato-do-processo.v1\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/AtoDoProcessoDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "O processo n\u00E3o existe (uniplus.selecao.processo_seletivo.nao_encontrado) ou o ato n\u00E3o existe nele (uniplus.selecao.ato_do_processo.nao_encontrado); o ato de outro processo responde igual ao inexistente.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -1853,6 +1955,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1921,6 +2033,16 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado: releia o estado do processo e envie de novo.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2094,6 +2216,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -2275,6 +2407,16 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2433,6 +2575,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -4476,14 +4628,21 @@
         ]
       }
     },
-    "/api/selecao/motivos-decisao-isencao": {
+    "/api/selecao/motivos-de-decisao": {
       "get": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
-            "name": "fundamento",
+            "name": "tipo",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subclassificacao",
             "in": "query",
             "schema": {
               "type": "string"
@@ -4547,11 +4706,11 @@
               }
             },
             "content": {
-              "application/vnd.uniplus.motivo-decisao-isencao.v1\u002Bjson": {
+              "application/vnd.uniplus.motivo-de-decisao.v1\u002Bjson": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/MotivoDecisaoIsencaoDto"
+                    "$ref": "#/components/schemas/MotivoDeDecisaoDto"
                   }
                 }
               }
@@ -4601,10 +4760,10 @@
         "x-uniplus-paginated": true
       }
     },
-    "/api/selecao/motivos-decisao-isencao/{id}": {
+    "/api/selecao/motivos-de-decisao/{id}": {
       "get": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
@@ -4621,9 +4780,9 @@
           "200": {
             "description": "OK",
             "content": {
-              "application/vnd.uniplus.motivo-decisao-isencao.v1\u002Bjson": {
+              "application/vnd.uniplus.motivo-de-decisao.v1\u002Bjson": {
                 "schema": {
-                  "$ref": "#/components/schemas/MotivoDecisaoIsencaoDto"
+                  "$ref": "#/components/schemas/MotivoDeDecisaoDto"
                 }
               }
             }
@@ -4651,10 +4810,10 @@
         }
       }
     },
-    "/api/selecao/admin/motivos-decisao-isencao": {
+    "/api/selecao/admin/motivos-de-decisao": {
       "post": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
@@ -4674,17 +4833,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CriarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/CriarMotivoDeDecisaoCommand"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/CriarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/CriarMotivoDeDecisaoCommand"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/CriarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/CriarMotivoDeDecisaoCommand"
               }
             }
           },
@@ -4783,10 +4942,10 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/admin/motivos-decisao-isencao/{id}": {
+    "/api/selecao/admin/motivos-de-decisao/{id}": {
       "put": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
@@ -4815,17 +4974,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/AtualizarMotivoDeDecisaoCommand"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/AtualizarMotivoDeDecisaoCommand"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/AtualizarMotivoDecisaoIsencaoCommand"
+                "$ref": "#/components/schemas/AtualizarMotivoDeDecisaoCommand"
               }
             }
           },
@@ -4914,10 +5073,10 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/admin/motivos-decisao-isencao/{id}/ativacao": {
+    "/api/selecao/admin/motivos-de-decisao/{id}/ativacao": {
       "post": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
@@ -5019,7 +5178,7 @@
       },
       "delete": {
         "tags": [
-          "MotivosDecisaoIsencao"
+          "MotivosDeDecisao"
         ],
         "parameters": [
           {
@@ -5283,6 +5442,16 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado: releia o estado do processo e envie de novo.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -5555,6 +5724,16 @@
           },
           "422": {
             "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado: releia o estado do processo e envie de novo.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -6752,6 +6931,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -6926,6 +7115,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -6955,7 +7154,7 @@
         "x-uniplus-idempotent": true
       }
     },
-    "/api/selecao/processos-seletivos/{id}/oferta-atendimento": {
+    "/api/selecao/processos-seletivos/{id}/atendimento-especializado": {
       "put": {
         "tags": [
           "ProcessoSeletivo"
@@ -6994,17 +7193,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirOfertaAtendimentoRequest"
+                "$ref": "#/components/schemas/DefinirAtendimentoEspecializadoRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirOfertaAtendimentoRequest"
+                "$ref": "#/components/schemas/DefinirAtendimentoEspecializadoRequest"
               }
             },
             "application/*\u002Bjson": {
               "schema": {
-                "$ref": "#/components/schemas/DefinirOfertaAtendimentoRequest"
+                "$ref": "#/components/schemas/DefinirAtendimentoEspecializadoRequest"
               }
             }
           },
@@ -7084,6 +7283,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7285,6 +7494,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7564,6 +7783,414 @@
         ]
       }
     },
+    "/api/selecao/processos-seletivos/{id}/motivos-de-decisao": {
+      "get": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoDoProcessoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoDoProcessoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MotivoDoProcessoDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/selecao/processos-seletivos/{id}/motivos-de-decisao/{motivoDeDecisaoId}": {
+      "put": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "motivoDeDecisaoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncluirMotivoNoProcessoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncluirMotivoNoProcessoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/IncluirMotivoNoProcessoRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {
+              "ETag": {
+                "description": "ETag forte da sess\u00E3o editorial de retifica\u00E7\u00E3o, no formato \u0022{idDaSessao}:{revisao}\u0022. Devolva-o no If-Match da pr\u00F3xima muta\u00E7\u00E3o. Toda muta\u00E7\u00E3o aceita INCREMENTA a revis\u00E3o e emite o tag novo aqui \u2014 o cliente encadeia sem um GET no meio. Ausente quando n\u00E3o h\u00E1 sess\u00E3o em curso (o processo em rascunho n\u00E3o tem precondi\u00E7\u00E3o a satisfazer).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "Precondition Required",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      },
+      "delete": {
+        "tags": [
+          "ProcessoSeletivo"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "motivoDeDecisaoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Chave opaca (1-255 ASCII printable, sem \u0027,\u0027 ou \u0027;\u0027) para retry seguro do comando. Replay com mesma key \u002B mesmo body retorna response cacheada (ADR-0027).",
+            "required": true,
+            "schema": {
+              "maxLength": 255,
+              "minLength": 1,
+              "pattern": "^[\\x21-\\x2B\\x2D-\\x3A\\x3C-\\x7E]\u002B$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content",
+            "headers": {
+              "ETag": {
+                "description": "ETag forte da sess\u00E3o editorial de retifica\u00E7\u00E3o, no formato \u0022{idDaSessao}:{revisao}\u0022. Devolva-o no If-Match da pr\u00F3xima muta\u00E7\u00E3o. Toda muta\u00E7\u00E3o aceita INCREMENTA a revis\u00E3o e emite o tag novo aqui \u2014 o cliente encadeia sem um GET no meio. Ausente quando n\u00E3o h\u00E1 sess\u00E3o em curso (o processo em rascunho n\u00E3o tem precondi\u00E7\u00E3o a satisfazer).",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Precondition Failed",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "428": {
+            "description": "Precondition Required",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Idempotency-Key ausente ou malformada (uniplus.idempotency.key_ausente, uniplus.idempotency.key_malformada), ou corpo JSON inv\u00E1lido."
+          },
+          "413": {
+            "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Autenticado, mas sem a autoriza\u00E7\u00E3o exigida pela rota (ex.: a role plataforma-admin).",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-uniplus-idempotent": true
+      }
+    },
     "/api/selecao/processos-seletivos/{id}/criterios-desempate": {
       "put": {
         "tags": [
@@ -7702,6 +8329,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -7876,6 +8513,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -8034,6 +8681,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -8208,6 +8865,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -8366,6 +9033,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -8540,6 +9217,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -8698,6 +9385,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -8881,6 +9578,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -9056,6 +9763,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -9214,6 +9931,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -9388,6 +10115,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -9554,6 +10291,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -9712,6 +10459,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -9895,6 +10652,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -9997,7 +10764,7 @@
             }
           },
           "409": {
-            "description": "Outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta. Reler o processo e resubmeter. Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "Outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e resubmeter), o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo) ou o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado). Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10018,6 +10785,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10128,7 +10905,7 @@
             }
           },
           "409": {
-            "description": "H\u00E1 uma retifica\u00E7\u00E3o em curso neste processo: enquanto a sess\u00E3o editorial existir, o atalho em um ato s\u00F3 recusa \u2014 fech\u00E1-la ou descart\u00E1-la libera esta rota. Tamb\u00E9m responde 409 quando outra publica\u00E7\u00E3o ou retifica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e resubmeter), e quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "H\u00E1 uma retifica\u00E7\u00E3o em curso neste processo: enquanto a sess\u00E3o editorial existir, o atalho em um ato s\u00F3 recusa \u2014 fech\u00E1-la ou descart\u00E1-la libera esta rota. Tamb\u00E9m responde 409 quando outra publica\u00E7\u00E3o ou retifica\u00E7\u00E3o concorrente congelou uma vers\u00E3o da configura\u00E7\u00E3o entre a leitura e a grava\u00E7\u00E3o desta (reler o processo e resubmeter), quando o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10149,6 +10926,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10305,6 +11092,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10560,6 +11357,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -10698,6 +11505,16 @@
               }
             }
           },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "Requisi\u00E7\u00E3o n\u00E3o autenticada \u2014 token ausente ou inv\u00E1lido (a rota exige autentica\u00E7\u00E3o). Tamb\u00E9m emitido quando o principal \u00E9 exigido e n\u00E3o est\u00E1 presente (uniplus.idempotency.principal_requerido).",
             "content": {
@@ -10809,7 +11626,7 @@
             }
           },
           "409": {
-            "description": "A retifica\u00E7\u00E3o n\u00E3o est\u00E1 aberta, a base dela ficou para tr\u00E1s da vers\u00E3o vigente, ou outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o entre a leitura e a grava\u00E7\u00E3o desta. Reler a retifica\u00E7\u00E3o em curso antes de repetir. Tamb\u00E9m responde 409 quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "A retifica\u00E7\u00E3o n\u00E3o est\u00E1 aberta, a base dela ficou para tr\u00E1s da vers\u00E3o vigente, ou outra publica\u00E7\u00E3o concorrente congelou uma vers\u00E3o entre a leitura e a grava\u00E7\u00E3o desta. Reler a retifica\u00E7\u00E3o em curso antes de repetir. Tamb\u00E9m responde 409 quando o identificador leg\u00EDvel j\u00E1 \u00E9 de outro certame (uniplus.selecao.processo_seletivo.identificador_legivel_em_uso), o objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) e quando outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -10850,6 +11667,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -11546,8 +12373,16 @@
           "required": true
         },
         "responses": {
-          "202": {
-            "description": "Accepted",
+          "201": {
+            "description": "Created",
+            "headers": {
+              "Location": {
+                "description": "Endere\u00E7o do ato publicado.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
             "content": {
               "text/plain": {
                 "schema": {
@@ -11587,7 +12422,7 @@
             }
           },
           "409": {
-            "description": "Outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
+            "description": "O objeto j\u00E1 tem ato vivo do tipo (uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo), o ato que se corrige j\u00E1 foi retificado (uniplus.publicacoes.ato_normativo.ato_ja_retificado) ou outra requisi\u00E7\u00E3o com a mesma Idempotency-Key ainda est\u00E1 em processamento.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -11608,6 +12443,16 @@
           },
           "413": {
             "description": "Corpo acima do limite dos endpoints idempotentes (uniplus.idempotency.body_muito_grande). O limite \u00E9 do filtro, n\u00E3o do servidor.",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Outra opera\u00E7\u00E3o ret\u00E9m o processo al\u00E9m do limite de espera (uniplus.concorrencia.espera_esgotada). Nada foi gravado, mas a recusa fica guardada pela Idempotency-Key: releia o estado do processo e envie com uma nova chave.",
             "content": {
               "application/problem\u002Bjson": {
                 "schema": {
@@ -12525,6 +13370,39 @@
           }
         }
       },
+      "AtendimentoEspecializadoDto": {
+        "required": [
+          "id",
+          "condicoes",
+          "recursos",
+          "tiposDeficiencia"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "condicoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CondicaoOfertadaDto"
+            }
+          },
+          "recursos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecursoOfertadoDto"
+            }
+          },
+          "tiposDeficiencia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeficienciaAtendidaDto"
+            }
+          }
+        }
+      },
       "AtoDoProcessoDto": {
         "required": [
           "id",
@@ -12534,9 +13412,6 @@
           "dataDoAto",
           "publicadoEm",
           "assinante",
-          "situacao",
-          "registradoEm",
-          "pendenciaAcimaDoLimiar",
           "atoCorrigidoId",
           "motivoDaCorrecao",
           "politicaDeDivulgacaoConfirmada",
@@ -12571,19 +13446,6 @@
           },
           "assinante": {
             "type": "string"
-          },
-          "situacao": {
-            "$ref": "#/components/schemas/SituacaoDoRegistroDoAto"
-          },
-          "registradoEm": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "pendenciaAcimaDoLimiar": {
-            "type": "boolean"
           },
           "atoCorrigidoId": {
             "type": [
@@ -12624,7 +13486,7 @@
           }
         }
       },
-      "AtualizarMotivoDecisaoIsencaoCommand": {
+      "AtualizarMotivoDeDecisaoCommand": {
         "required": [
           "id",
           "descricao"
@@ -12664,25 +13526,47 @@
             "format": "uuid"
           },
           "tipoProcessoCodigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoria": {
             "$ref": "#/components/schemas/CategoriaObrigatoriedade"
           },
           "regraCodigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "predicado": {
-            "$ref": "#/components/schemas/PredicadoObrigatoriedade"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PredicadoObrigatoriedade"
+              }
+            ]
           },
           "descricaoHumana": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegal": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vigenciaInicio": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date"
           },
           "vigenciaFim": {
@@ -12845,7 +13729,9 @@
         "required": [
           "id",
           "tipoBancaOrigemId",
-          "codigo"
+          "codigo",
+          "nome",
+          "regraDeDeliberacao"
         ],
         "type": "object",
         "properties": {
@@ -12859,6 +13745,19 @@
           },
           "codigo": {
             "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "regraDeDeliberacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegraDeDeliberacaoDto"
+              }
+            ]
           }
         }
       },
@@ -12871,6 +13770,16 @@
           "tipoBancaId": {
             "type": "string",
             "format": "uuid"
+          },
+          "regraDeDeliberacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegraDeDeliberacaoInput"
+              }
+            ]
           }
         }
       },
@@ -12879,6 +13788,8 @@
           "id",
           "tipoBancaOrigemId",
           "codigo",
+          "nome",
+          "regraDeDeliberacao",
           "recorteDeCompetencia"
         ],
         "type": "object",
@@ -12893,6 +13804,19 @@
           },
           "codigo": {
             "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "regraDeDeliberacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegraDeDeliberacaoDto"
+              }
+            ]
           },
           "recorteDeCompetencia": {
             "type": "array",
@@ -12919,6 +13843,16 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          "regraDeDeliberacao": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegraDeDeliberacaoInput"
+              }
+            ]
           }
         }
       },
@@ -13621,6 +14555,31 @@
           }
         }
       },
+      "CondicaoOfertadaDto": {
+        "required": [
+          "id",
+          "condicaoOrigemId",
+          "condicaoCodigo",
+          "condicaoNome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "condicaoOrigemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "condicaoCodigo": {
+            "type": "string"
+          },
+          "condicaoNome": {
+            "type": "string"
+          }
+        }
+      },
       "CondicaoPrecondicaoDto": {
         "required": [
           "fato",
@@ -14189,15 +15148,22 @@
           }
         }
       },
-      "CriarMotivoDecisaoIsencaoCommand": {
+      "CriarMotivoDeDecisaoCommand": {
         "required": [
+          "tipo",
           "codigo",
           "descricao",
-          "fundamento",
-          "resultadoPermitido"
+          "subclassificacao",
+          "sentido"
         ],
         "type": "object",
         "properties": {
+          "tipo": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "codigo": {
             "type": [
               "null",
@@ -14210,13 +15176,13 @@
               "string"
             ]
           },
-          "fundamento": {
+          "subclassificacao": {
             "type": [
               "null",
               "string"
             ]
           },
-          "resultadoPermitido": {
+          "sentido": {
             "type": [
               "null",
               "string"
@@ -14240,25 +15206,47 @@
         "type": "object",
         "properties": {
           "tipoProcessoCodigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "categoria": {
             "$ref": "#/components/schemas/CategoriaObrigatoriedade"
           },
           "regraCodigo": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "predicado": {
-            "$ref": "#/components/schemas/PredicadoObrigatoriedade"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PredicadoObrigatoriedade"
+              }
+            ]
           },
           "descricaoHumana": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "baseLegal": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "vigenciaInicio": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date"
           },
           "vigenciaFim": {
@@ -14469,12 +15457,21 @@
           }
         }
       },
+      "CriterioDeVotacao": {
+        "enum": [
+          "maioriaSimples",
+          "maioriaAbsoluta",
+          "unanimidade",
+          null
+        ],
+        "type": "string"
+      },
       "DadosDoAtoRequest": {
         "required": [
           "orgao",
           "serie",
           "ano",
-          "dataPublicacao",
+          "dataDoAto",
           "assinante",
           "tipoAtoCodigo"
         ],
@@ -14490,7 +15487,7 @@
             "type": "integer",
             "format": "int32"
           },
-          "dataPublicacao": {
+          "dataDoAto": {
             "type": "string",
             "format": "date"
           },
@@ -14498,6 +15495,27 @@
             "type": "string"
           },
           "tipoAtoCodigo": {
+            "type": "string"
+          }
+        }
+      },
+      "DeficienciaAtendidaDto": {
+        "required": [
+          "id",
+          "tipoDeficienciaOrigemId",
+          "tipoDeficienciaNome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoDeficienciaOrigemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipoDeficienciaNome": {
             "type": "string"
           }
         }
@@ -14520,6 +15538,37 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "DefinirAtendimentoEspecializadoRequest": {
+        "required": [
+          "condicaoIds",
+          "recursoIds",
+          "tipoDeficienciaIds"
+        ],
+        "type": "object",
+        "properties": {
+          "condicaoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "recursoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "tipoDeficienciaIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -14809,37 +15858,6 @@
           }
         }
       },
-      "DefinirOfertaAtendimentoRequest": {
-        "required": [
-          "condicaoIds",
-          "recursoIds",
-          "tipoDeficienciaIds"
-        ],
-        "type": "object",
-        "properties": {
-          "condicaoIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "recursoIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "tipoDeficienciaIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        }
-      },
       "DefinirOpcoesDeclaradasRequest": {
         "required": [
           "opcoes"
@@ -14989,6 +16007,14 @@
             }
           }
         }
+      },
+      "DesempateDaVotacao": {
+        "enum": [
+          "votoDaPresidencia",
+          "novaVotacao",
+          null
+        ],
+        "type": "string"
       },
       "DestinoRemanejamentoDto": {
         "required": [
@@ -15246,6 +16272,7 @@
           },
           "urlDownload": {
             "type": "string",
+            "description": "Endere\u00E7o permanente e de leitura an\u00F4nima. Nunca \u00E9 nulo: o documento do ato s\u00F3 entra na lista de documentos depois da c\u00F3pia ao acervo, e por isso o endere\u00E7o dele j\u00E1 existe.",
             "format": "uri"
           }
         }
@@ -15340,7 +16367,10 @@
             "type": "string"
           },
           "urlDownload": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uri"
           }
         }
@@ -15565,16 +16595,28 @@
             "format": "uuid"
           },
           "urlDownload": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uri"
           },
           "documentos": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DocumentoDoAtoCertameDto"
-            }
+            },
+            "description": "O edital como documento principal e os anexos em seguida. O documento do ato s\u00F3 entra na lista depois da c\u00F3pia ao acervo; antes disso a lista \u00E9 vazia e urlDownload do edital \u00E9 nulo."
           }
         }
+      },
+      "EncerramentoDaVotacao": {
+        "enum": [
+          "todosOsTitulares",
+          "presidenciaNoQuorum",
+          null
+        ],
+        "type": "string"
       },
       "EnvioDoComprovanteDto": {
         "required": [
@@ -17617,9 +18659,7 @@
       "ImpedimentoDoProduto": {
         "enum": [
           "jaPublicado",
-          "aguardaConfirmacaoDoRegistro",
           "preliminarNaoPublicado",
-          "preliminarAguardaConfirmacao",
           "tipoDeAtoNaoVigente"
         ],
         "type": "string"
@@ -17680,6 +18720,20 @@
             }
           },
           "mensagem": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "IncluirMotivoNoProcessoRequest": {
+        "required": [
+          "justificativa"
+        ],
+        "type": "object",
+        "properties": {
+          "justificativa": {
             "type": [
               "null",
               "string"
@@ -19126,18 +20180,29 @@
             "type": "string"
           },
           "urlDownload": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "uri"
           }
         }
       },
-      "MotivoDecisaoIsencaoDto": {
+      "ModoDeDeliberacao": {
+        "enum": [
+          "colegiadaComVotacao",
+          "atoIndividual"
+        ],
+        "type": "string"
+      },
+      "MotivoDeDecisaoDto": {
         "required": [
           "id",
+          "tipo",
           "codigo",
           "descricao",
-          "fundamento",
-          "resultadoPermitido",
+          "subclassificacao",
+          "sentido",
           "ativo"
         ],
         "type": "object",
@@ -19146,16 +20211,22 @@
             "type": "string",
             "format": "uuid"
           },
+          "tipo": {
+            "type": "string"
+          },
           "codigo": {
             "type": "string"
           },
           "descricao": {
             "type": "string"
           },
-          "fundamento": {
-            "type": "string"
+          "subclassificacao": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
-          "resultadoPermitido": {
+          "sentido": {
             "type": "string"
           },
           "ativo": {
@@ -19169,6 +20240,52 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "MotivoDoProcessoDto": {
+        "required": [
+          "motivoDeDecisaoId",
+          "tipo",
+          "codigo",
+          "descricao",
+          "subclassificacao",
+          "sentido",
+          "congelado",
+          "justificativaDaInclusao"
+        ],
+        "type": "object",
+        "properties": {
+          "motivoDeDecisaoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "subclassificacao": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sentido": {
+            "type": "string"
+          },
+          "congelado": {
+            "type": "boolean"
+          },
+          "justificativaDaInclusao": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -19657,64 +20774,6 @@
           }
         }
       },
-      "OfertaAtendimentoEspecializadoDto": {
-        "required": [
-          "id",
-          "condicoes",
-          "recursos",
-          "tiposDeficiencia"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "condicoes": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OfertaCondicaoDto"
-            }
-          },
-          "recursos": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OfertaRecursoDto"
-            }
-          },
-          "tiposDeficiencia": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OfertaTipoDeficienciaDto"
-            }
-          }
-        }
-      },
-      "OfertaCondicaoDto": {
-        "required": [
-          "id",
-          "condicaoOrigemId",
-          "condicaoCodigo",
-          "condicaoNome"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "condicaoOrigemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "condicaoCodigo": {
-            "type": "string"
-          },
-          "condicaoNome": {
-            "type": "string"
-          }
-        }
-      },
       "OfertaDeCursoCertameDto": {
         "required": [
           "ofertaCursoOrigemId",
@@ -19767,52 +20826,6 @@
           "ordem": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "OfertaRecursoDto": {
-        "required": [
-          "id",
-          "recursoOrigemId",
-          "recursoCodigo",
-          "recursoNome"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "recursoOrigemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "recursoCodigo": {
-            "type": "string"
-          },
-          "recursoNome": {
-            "type": "string"
-          }
-        }
-      },
-      "OfertaTipoDeficienciaDto": {
-        "required": [
-          "id",
-          "tipoDeficienciaOrigemId",
-          "tipoDeficienciaNome"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tipoDeficienciaOrigemId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tipoDeficienciaNome": {
-            "type": "string"
           }
         }
       },
@@ -20505,7 +21518,7 @@
           "unidadeAdministradora",
           "localidade",
           "etapas",
-          "ofertaAtendimento",
+          "atendimentoEspecializado",
           "distribuicaoVagas",
           "bonusRegional",
           "aplicaBonusRegional",
@@ -20561,13 +21574,13 @@
               "$ref": "#/components/schemas/EtapaProcessoDto"
             }
           },
-          "ofertaAtendimento": {
+          "atendimentoEspecializado": {
             "oneOf": [
               {
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/OfertaAtendimentoEspecializadoDto"
+                "$ref": "#/components/schemas/AtendimentoEspecializadoDto"
               }
             ]
           },
@@ -20932,7 +21945,7 @@
         "required": [
           "tipoAtoCodigo",
           "numero",
-          "dataPublicacao",
+          "dataDoAto",
           "assinante",
           "documentoPrincipalId"
         ],
@@ -20947,7 +21960,7 @@
               "string"
             ]
           },
-          "dataPublicacao": {
+          "dataDoAto": {
             "type": "string",
             "format": "date"
           },
@@ -21031,7 +22044,7 @@
       "PublicarProdutoDoEditalRequest": {
         "required": [
           "numero",
-          "dataPublicacao",
+          "dataDoAto",
           "assinante",
           "documentoPrincipalId"
         ],
@@ -21043,7 +22056,7 @@
               "string"
             ]
           },
-          "dataPublicacao": {
+          "dataDoAto": {
             "type": "string",
             "format": "date"
           },
@@ -21283,6 +22296,31 @@
           }
         }
       },
+      "RecursoOfertadoDto": {
+        "required": [
+          "id",
+          "recursoOrigemId",
+          "recursoCodigo",
+          "recursoNome"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recursoOrigemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "recursoCodigo": {
+            "type": "string"
+          },
+          "recursoNome": {
+            "type": "string"
+          }
+        }
+      },
       "ReferenciaRegraDto": {
         "required": [
           "codigo",
@@ -21493,6 +22531,147 @@
             "additionalProperties": {
               "type": "string"
             }
+          }
+        }
+      },
+      "RegraDeDeliberacaoDto": {
+        "required": [
+          "modo",
+          "integrantes",
+          "suplentes",
+          "quorum",
+          "criterio",
+          "desempate",
+          "encerramento",
+          "semUnanimidade"
+        ],
+        "type": "object",
+        "properties": {
+          "modo": {
+            "$ref": "#/components/schemas/ModoDeDeliberacao"
+          },
+          "integrantes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suplentes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quorum": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "criterio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CriterioDeVotacao"
+              }
+            ]
+          },
+          "desempate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DesempateDaVotacao"
+              }
+            ]
+          },
+          "encerramento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EncerramentoDaVotacao"
+              }
+            ]
+          },
+          "semUnanimidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ResultadoSemUnanimidade"
+              }
+            ]
+          }
+        }
+      },
+      "RegraDeDeliberacaoInput": {
+        "required": [
+          "modo",
+          "integrantes",
+          "suplentes"
+        ],
+        "type": "object",
+        "properties": {
+          "modo": {
+            "$ref": "#/components/schemas/ModoDeDeliberacao"
+          },
+          "integrantes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "suplentes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "quorum": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "criterio": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CriterioDeVotacao"
+              }
+            ]
+          },
+          "desempate": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/DesempateDaVotacao"
+              }
+            ]
+          },
+          "encerramento": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/EncerramentoDaVotacao"
+              }
+            ]
+          },
+          "semUnanimidade": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ResultadoSemUnanimidade"
+              }
+            ]
           }
         }
       },
@@ -21904,6 +23083,15 @@
           }
         }
       },
+      "ResultadoSemUnanimidade": {
+        "enum": [
+          "favoravel",
+          "desfavoravel",
+          "novaVotacao",
+          null
+        ],
+        "type": "string"
+      },
       "RetificacaoCertameDto": {
         "required": [
           "atoRetificadoId",
@@ -21928,7 +23116,7 @@
           "versaoBaseId",
           "numeroVersaoBase",
           "abertoEm",
-          "abertoPorSub",
+          "abertoPorContaId",
           "revisao",
           "eTag"
         ],
@@ -21957,7 +23145,7 @@
             "type": "string",
             "format": "date-time"
           },
-          "abertoPorSub": {
+          "abertoPorContaId": {
             "type": "string"
           },
           "revisao": {
@@ -22186,15 +23374,7 @@
       "SituacaoDoProdutoPrevisto": {
         "enum": [
           "aberto",
-          "pendente",
           "publicado"
-        ],
-        "type": "string"
-      },
-      "SituacaoDoRegistroDoAto": {
-        "enum": [
-          "pendente",
-          "registrado"
         ],
         "type": "string"
       },
@@ -22875,7 +24055,7 @@
       "name": "ModelosDeDocumento"
     },
     {
-      "name": "MotivosDecisaoIsencao"
+      "name": "MotivosDeDecisao"
     },
     {
       "name": "NotasDoEnem"

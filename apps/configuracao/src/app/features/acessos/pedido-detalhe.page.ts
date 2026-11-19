@@ -35,6 +35,10 @@ import { PedidoResumoComponent } from './pedido-resumo.component';
 import { PedidoDocumentosComponent } from './pedido-documentos.component';
 import { PedidoHistoricoComponent } from './pedido-historico.component';
 import { RecusaDaLeituraComponent } from '../../shared/recusa-da-leitura';
+import type { PedidoDeConcessaoDto } from '@uniplus/shared-data/autorizacao';
+import { EvidenciaDoTermoComponent } from './termo/evidencia-do-termo.component';
+import { TermoDeResponsabilidadeComponent } from './termo/termo-de-responsabilidade.component';
+import { TermoDoPedido } from './termo/termo-do-pedido';
 
 const ENCERRADOS: readonly string[] = ['aprovado', 'recusado', 'cancelado'];
 
@@ -56,8 +60,10 @@ import { CONFIRMACOES, type Acao } from './confirmacoes-do-pedido';
     FalhaDeLeituraComponent,
     IndicadorDaLeituraDirective,
     RecusaDaLeituraComponent,
+    EvidenciaDoTermoComponent,
+    TermoDeResponsabilidadeComponent,
   ],
-  providers: [PedidoDetalheStore, EdicaoDoPedido],
+  providers: [PedidoDetalheStore, TermoDoPedido, EdicaoDoPedido],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'cfg-page' },
   templateUrl: './pedido-detalhe.page.html',
@@ -68,6 +74,7 @@ export class PedidoDetalhePage {
 
   protected readonly store = inject(PedidoDetalheStore);
   private readonly edicao = inject(EdicaoDoPedido);
+  protected readonly termo = inject(TermoDoPedido);
   private readonly anexos = inject(AnexoDoPedidoService);
   private readonly permissoes = inject(PermissoesService);
   private readonly usuario = inject(UserContextService);
@@ -120,7 +127,7 @@ export class PedidoDetalhePage {
     () => this.pedido()?.situacao === 'aguardando_documento',
   );
   protected readonly ehSolicitante = computed(
-    () => this.pedido()?.solicitante.sub === this.usuario.user()?.id,
+    () => this.pedido()?.solicitante.contaId === this.usuario.user()?.id,
   );
   private readonly ehBeneficiario = computed(() => {
     const beneficiario = this.pedido()?.beneficiario;
@@ -130,7 +137,7 @@ export class PedidoDetalhePage {
   private readonly semDecisao = computed(() => (this.pedido()?.decisoes.length ?? 0) === 0);
 
   /**
-   * A API recusa só quem aprovou como gestor e agora decidiria como proteção de dados: a aprovação do gestor
+   * A API recusa só quem aprovou como gestor e agora decidiria como Representante do controlador: a aprovação do gestor
    * que o perfil alterado devolveu ao gestor não impede ninguém de decidir de novo na etapa dele.
    */
   private readonly jaAprovouComoGestor = computed(() => {
@@ -139,11 +146,11 @@ export class PedidoDetalhePage {
       (decisao) =>
         decisao.etapa === 'gestor' &&
         decisao.resultado === 'aprovado' &&
-        decisao.decisor.sub === eu,
+        decisao.decisor.contaId === eu,
     );
   });
 
-  /** O prazo se define na aprovação do gestor; a proteção de dados só vê o que ele definiu. */
+  /** O prazo se define na aprovação do gestor; o Representante do controlador só vê o que ele definiu. */
   protected readonly informaPrazo = computed(
     () =>
       this.podeDecidir() &&
@@ -154,10 +161,27 @@ export class PedidoDetalhePage {
   protected readonly podeAceitar = computed(
     () => this.pedido()?.situacao === 'aguardando_beneficiario' && this.ehBeneficiario(),
   );
+  /**
+   * O termo fixado que o beneficiário aceita junto com o pedido. O pedido que ainda espera o
+   * documento não oferece o aceite: a situação dele não é a de aguardar o beneficiário.
+   */
+  protected readonly termoAAceitar = computed(() => {
+    const termo = this.pedido()?.termo ?? null;
+    return this.podeAceitar() && termo !== null && termo.aceite === null ? termo : null;
+  });
   protected readonly podeCancelar = computed(
     () => !this.encerrado() && this.ehSolicitante() && this.semDecisao(),
   );
-  protected readonly podeAnexar = this.podeCancelar;
+  /**
+   * O pedido comum aceita anexo até a primeira decisão. O protegido, que fixa o termo, só aceita o
+   * documento que declarou, enquanto o espera (o primeiro envio falhou); fora disso a API recusa
+   * com `pedido.anexo_nao_declarado`.
+   */
+  protected readonly podeAnexar = computed(() => {
+    const pedido = this.pedido();
+    if (pedido === null || !this.podeCancelar()) return false;
+    return pedido.termo === null || (pedido.anexaraDocumento && this.aguardandoDocumento());
+  });
   protected readonly podeDecidir = computed(() => {
     const etapaAtual = this.pedido()?.etapaAtual;
     if (this.ehSolicitante() || this.ehBeneficiario()) return false;
@@ -173,17 +197,36 @@ export class PedidoDetalhePage {
   constructor() {
     inject(DestroyRef).onDestroy(() => this.destruido.set(true));
     this.acompanharId();
+    this.acompanharACarga();
+    this.reavaliarAoFimDaCarga();
+    effect(() => {
+      const versaoId = this.termoAAceitar()?.versaoId ?? null;
+      untracked(() => this.termo.acompanhar(versaoId));
+    });
+  }
+
+  /** A falha da carga fecha os diálogos; o pedido lido sugere o prazo enquanto ninguém o editou. */
+  private acompanharACarga(): void {
     effect(() => {
       const pedido = this.store.pedido();
       const erro = this.store.erro();
       untracked(() => {
         if (erro) this.aoFalharACarga();
-        if (pedido && this.prazo.pristine) {
-          const sugerido = diaDoInstante(pedido.validaAteSugerida);
-          this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
-        }
+        if (pedido && this.prazo.pristine) this.sugerirPrazo(pedido);
       });
     });
+  }
+
+  private sugerirPrazo(pedido: PedidoDeConcessaoDto): void {
+    const sugerido = diaDoInstante(pedido.validaAteSugerida);
+    this.prazo.setValue(diaNoPassado(sugerido) ? '' : sugerido);
+  }
+
+  /**
+   * Terminada cada carga, o que o pedido permite pode ter mudado: os diálogos se reavaliam e o foco
+   * volta ao título se o botão que o tinha saiu da tela.
+   */
+  private reavaliarAoFimDaCarga(): void {
     effect(() => {
       const carregando = this.store.carregando();
       const erro = this.store.erro();
@@ -191,12 +234,11 @@ export class PedidoDetalhePage {
       this.podeDecidir();
       this.podeAceitar();
       this.podeCancelar();
-      if (!carregando && !erro && pedido) {
-        untracked(() => {
-          this.reavaliarDialogos();
-          this.devolverFocoAoTitulo();
-        });
-      }
+      if (carregando || erro || !pedido) return;
+      untracked(() => {
+        this.reavaliarDialogos();
+        this.devolverFocoAoTitulo();
+      });
     });
   }
 
@@ -228,7 +270,10 @@ export class PedidoDetalhePage {
     this.edicao.decisaoConcluida.set(false);
     this.confirmando.set(false);
     this.recusando.set(false);
-    if (!haviaDialogo) return;
+    if (haviaDialogo) this.focarOAvisoDaFalha();
+  }
+
+  private focarOAvisoDaFalha(): void {
     afterNextRender(
       () => {
         const host = this.host.nativeElement;
@@ -270,7 +315,19 @@ export class PedidoDetalhePage {
   }
 
   protected pedirConfirmacao(acao: Acao, campo?: HTMLInputElement): void {
-    if (this.acaoPermitida(acao)) this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
+    if (!this.acaoPermitida(acao) || this.faltaOAceiteDoTermo(acao)) return;
+    this.edicao.pedirConfirmacao(acao, this.informaPrazo(), campo);
+  }
+
+  /** O pedido com termo só se aceita com a caixa do termo marcada; sem ela, o foco vai à caixa. */
+  private faltaOAceiteDoTermo(acao: Acao): boolean {
+    if (acao !== 'aceitar' || this.termoAAceitar() === null || this.termo.conferirAceite()) {
+      return false;
+    }
+    this.host.nativeElement
+      .querySelector<HTMLInputElement>('cfg-termo-de-responsabilidade input[type="checkbox"]')
+      ?.focus();
+    return true;
   }
 
   protected executar(): Promise<void> {

@@ -3,6 +3,9 @@ import { ProblemI18nService } from '@uniplus/shared-core/http';
 import { MENSAGENS_DA_JANELA } from './janela/mensagens-da-janela';
 import { MENSAGENS_DA_RECLASSIFICACAO } from './reclassificacao/mensagens-da-reclassificacao';
 import { MENSAGENS_DE_VERSAO, type MensagemDaRecusa } from './mensagens-de-versao';
+import { MENSAGENS_DA_PROVIDENCIA } from './providencias/mensagens-da-providencia';
+import { MENSAGENS_DA_REVISAO } from './revisoes/mensagens-da-revisao';
+import { MENSAGENS_DO_TERMO } from './termo/mensagens-do-termo';
 import { MENSAGENS_DA_CONTENCAO } from './versoes/mensagens-da-contencao';
 
 const RAIZ = 'uniplus.autorizacao.';
@@ -17,8 +20,9 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
     resolver: 'Envie um PDF de até 10 MB e confirme o envio de novo.',
   },
   'pedido.anexo_nao_verificado': {
-    titulo: 'O documento ainda não foi verificado.',
-    resolver: 'Aguarde a verificação. Se o documento foi recusado, envie outro arquivo.',
+    titulo: 'O anexo ainda não foi verificado.',
+    resolver:
+      'O documento declarado ainda não foi verificado; o aceite e a decisão esperam a verificação. Se o documento foi recusado, envie outro arquivo.',
   },
   'pedido.beneficiario_invalido': {
     titulo: 'O e-mail do beneficiário não é institucional.',
@@ -52,7 +56,7 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'pedido.mesmo_decisor_nas_duas_etapas': {
     titulo: 'A mesma pessoa não decide as duas etapas.',
-    resolver: 'A segunda etapa precisa ser decidida por outra pessoa da proteção de dados.',
+    resolver: 'A segunda etapa precisa ser decidida por outro Representante do controlador.',
   },
   'pedido.motivo_invalido': {
     titulo: 'O motivo da recusa é inválido.',
@@ -72,7 +76,7 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'pedido.prazo_vencido': {
     titulo:
-      'O prazo definido pela gestão de acessos venceu antes da aprovação da proteção de dados.',
+      'O prazo definido pela gestão de acessos venceu antes da aprovação do Representante do controlador.',
     resolver: 'O pedido voltou à gestão de acessos, sem prazo. Aguarde uma nova decisão.',
   },
   'pedido.perfil_alterado': {
@@ -91,7 +95,7 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   'pedido.validade_invalida': {
     titulo: 'O prazo informado não é válido.',
     resolver:
-      'Informe uma data de hoje em diante. Os perfis de gestor de acessos e de proteção de dados não têm prazo, e a proteção de dados não define prazo.',
+      'Informe uma data de hoje em diante. Os perfis de gestor de acessos e de Representante do controlador não têm prazo, e o Representante do controlador não define prazo.',
   },
   'pedido.situacao_invalida': {
     titulo: 'A ação não vale para a situação atual do pedido.',
@@ -128,22 +132,26 @@ const MENSAGENS: Readonly<Record<string, MensagemDaRecusa>> = {
   },
   'perfil.governanca_imutavel': {
     titulo: 'Perfil de governança não se altera.',
-    resolver: 'Os perfis de gestor de acessos e de proteção de dados são fixos.',
+    resolver: 'Os perfis de gestor de acessos e de Representante do controlador são fixos.',
   },
+};
+
+const TODAS: Readonly<Record<string, MensagemDaRecusa>> = {
+  ...MENSAGENS,
+  ...MENSAGENS_DE_VERSAO,
+  ...MENSAGENS_DA_JANELA,
+  ...MENSAGENS_DA_CONTENCAO,
+  ...MENSAGENS_DA_RECLASSIFICACAO,
+  ...MENSAGENS_DA_REVISAO,
+  ...MENSAGENS_DO_TERMO,
+  ...MENSAGENS_DA_PROVIDENCIA,
 };
 
 /** Registra as mensagens do fluxo de acesso no lugar do texto curto da API. */
 export function provideMensagensDeAcesso(): EnvironmentProviders {
   return provideEnvironmentInitializer(() => {
     const problemas = inject(ProblemI18nService);
-    const todas = {
-      ...MENSAGENS,
-      ...MENSAGENS_DE_VERSAO,
-      ...MENSAGENS_DA_JANELA,
-      ...MENSAGENS_DA_CONTENCAO,
-      ...MENSAGENS_DA_RECLASSIFICACAO,
-    };
-    for (const [sufixo, { titulo, resolver }] of Object.entries(todas)) {
+    for (const [sufixo, { titulo, resolver }] of Object.entries(TODAS)) {
       problemas.register(RAIZ + sufixo, { title: titulo, detail: resolver });
     }
   });

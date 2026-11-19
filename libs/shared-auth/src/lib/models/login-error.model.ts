@@ -1,3 +1,5 @@
+import { primeiraDescricao } from './descricao-do-erro';
+
 /**
  * Códigos de erro do fluxo de login, mapeados a partir das respostas
  * OIDC do provedor de identidade. Usado para exibir mensagens contextuais
@@ -94,30 +96,28 @@ export function classifyLoginError(input: unknown): LoginErrorDetails {
     return { code: classificacao.code, message: classificacao.message, rawDescription: raw };
   }
 
+  return erroNaoClassificado(raw);
+}
+
+function erroNaoClassificado(raw: string): LoginErrorDetails {
   return {
     code: LoginErrorCode.Unknown,
-    message:
-      'Não foi possível concluir o login. Tente novamente; se persistir, contate o suporte.',
+    message: 'Não foi possível concluir o login. Tente novamente; se persistir, contate o suporte.',
     rawDescription: raw || undefined,
   };
 }
+
+const CAMPOS_DA_DESCRICAO = [
+  'error_description',
+  'errorDescription',
+  'description',
+  'message',
+  'error',
+];
 
 function extractDescription(input: unknown): string {
   if (!input) return '';
   if (typeof input === 'string') return input;
   if (input instanceof Error) return input.message ?? '';
-  if (typeof input !== 'object') return '';
-
-  const candidates: unknown[] = [
-    (input as { error_description?: unknown }).error_description,
-    (input as { errorDescription?: unknown }).errorDescription,
-    (input as { description?: unknown }).description,
-    (input as { message?: unknown }).message,
-    (input as { error?: unknown }).error,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.length > 0) return candidate;
-  }
-  return '';
+  return typeof input === 'object' ? primeiraDescricao(input, CAMPOS_DA_DESCRICAO) : '';
 }

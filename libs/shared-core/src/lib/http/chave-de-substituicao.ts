@@ -1,9 +1,19 @@
 import { HttpContext } from '@angular/common/http';
 import { ApiFailure } from './api-result';
-import { idempotencyKey, withIdempotencyKey } from './idempotency';
+import { CODIGO_ESPERA_ESGOTADA, idempotencyKey, withIdempotencyKey } from './idempotency';
 
 const PROCESSING_CONFLICT = 'uniplus.idempotency.processing_conflict';
 const NETWORK_ERROR = 'uniplus.client.network_error';
+
+/**
+ * Só estes casos deixam em aberto se o comando foi executado: conflito de processamento, falha sem
+ * resposta e 5xx. O 503 de espera esgotada é a exceção entre os 5xx: nada foi executado e a
+ * recusa fica guardada na chave, então repeti-la devolveria o mesmo 503.
+ */
+function deixaOComandoEmAberto({ code, status }: ApiFailure['problem']): boolean {
+  if (code === CODIGO_ESPERA_ESGOTADA) return false;
+  return code === PROCESSING_CONFLICT || code === NETWORK_ERROR || status >= 500;
+}
 
 /**
  * Regra de rotação da `Idempotency-Key`, por código antes de status: o filtro
@@ -11,20 +21,12 @@ const NETWORK_ERROR = 'uniplus.client.network_error';
  * um corpo corrigido com a mesma chave devolveria `body_mismatch` em vez de
  * processar o comando novo. As exceções vão na direção oposta —
  * `processing_conflict` e falha sem resposta pedem retry com a mesma chave,
- * porque a execução anterior ainda pode concluir.
+ * porque a execução anterior ainda pode concluir. Todo o resto é recusa
+ * definitiva, inclusive `body_mismatch` e o 413 de corpo acima do limite do filtro: manter a
+ * chave prenderia a tela repetindo para sempre um comando que o servidor nunca vai aceitar.
  */
 export function proximaChave(chaveAtual: string, falha: ApiFailure): string {
-  const { code, status } = falha.problem;
-
-  // Só estes três casos deixam em aberto se o comando foi executado.
-  if (code === PROCESSING_CONFLICT || code === NETWORK_ERROR || status >= 500) {
-    return chaveAtual;
-  }
-  // Todo o resto é recusa definitiva — inclusive `body_mismatch` e o 413 de
-  // corpo acima do limite do filtro de idempotência. Manter a chave nesses
-  // casos prenderia a tela repetindo para sempre um comando que o servidor
-  // nunca vai aceitar.
-  return idempotencyKey.create();
+  return deixaOComandoEmAberto(falha.problem) ? chaveAtual : idempotencyKey.create();
 }
 
 /**

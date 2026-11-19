@@ -44,9 +44,8 @@
     <ul class="cfg-lista">
       @for (decisao of versao().decisoes; track decisao.etapa) {
         <li>
-          <ui-tag [variant]="decisao.resultado === 'aprovada' ? 'success' : 'danger'">{{
-            resultado(decisao.resultado)
-          }}</ui-tag>
+          @let rotulo = resultado(decisao.resultado);
+          <ui-tag [variant]="rotulo.variante">{{ rotulo.texto }}</ui-tag>
           <span>
             {{ etapa(decisao.etapa) }} · {{ decisao.nome ?? 'Pessoa não identificada' }} ·
             {{ decisao.instante | dateBr: 'datetime' }}

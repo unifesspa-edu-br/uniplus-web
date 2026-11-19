@@ -14,14 +14,15 @@ export function devolverFocoAoTitulo(gravando: Signal<boolean>, idDoTitulo: stri
     const agora = gravando();
     const terminou = estavaGravando && !agora;
     estavaGravando = agora;
-    if (!terminou) return;
-    untracked(() =>
-      afterNextRender(
-        () => {
-          if (focoEstaLivre()) document.getElementById(idDoTitulo)?.focus();
-        },
-        { injector },
-      ),
-    );
+    if (terminou) untracked(() => focarDepoisDaRenderizacao(injector, idDoTitulo));
   });
+}
+
+function focarDepoisDaRenderizacao(injector: Injector, idDoTitulo: string): void {
+  afterNextRender(
+    () => {
+      if (focoEstaLivre()) document.getElementById(idDoTitulo)?.focus();
+    },
+    { injector },
+  );
 }

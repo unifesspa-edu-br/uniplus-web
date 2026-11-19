@@ -12,7 +12,7 @@ import {
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import {
   CriarProcessoSeletivoCommand,
-  DefinirOfertaAtendimentoRequest,
+  DefinirAtendimentoEspecializadoRequest,
   ProcessoSeletivoDto,
   ProcessoSeletivoResumoDto,
   TipoProcessoSnapshotDto,
@@ -126,18 +126,18 @@ describe('ProcessosSeletivosApi', () => {
 
     expect(isApiOk(await promise)).toBe(true);
   });
-  it('definirOfertaAtendimento() envia os ids dos cadastros de Configuração', async () => {
-    const request: DefinirOfertaAtendimentoRequest = {
+  it('definirAtendimentoEspecializado() envia os ids dos cadastros de Configuração', async () => {
+    const request: DefinirAtendimentoEspecializadoRequest = {
       condicaoIds: ['01960000-0000-7000-0000-000000000601'],
       recursoIds: ['01960000-0000-7000-0000-000000000602'],
       tipoDeficienciaIds: ['01960000-0000-7000-0000-000000000603'],
     };
 
     const promise = firstValueFrom(
-      api.definirOfertaAtendimento(ID, request, withIdempotencyKey('chave-atendimento')),
+      api.definirAtendimentoEspecializado(ID, request, withIdempotencyKey('chave-atendimento')),
     );
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/oferta-atendimento`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/atendimento-especializado`,
     );
 
     expect(req.request.method).toBe('PUT');
@@ -147,26 +147,26 @@ describe('ProcessosSeletivosApi', () => {
 
     expect(isApiOk(await promise)).toBe(true);
   });
-  it('definirOfertaAtendimento() propaga a recusa por tipo de deficiência sem condição PcD', async () => {
-    const request: DefinirOfertaAtendimentoRequest = {
+  it('definirAtendimentoEspecializado() propaga a recusa por tipo de deficiência sem condição PcD', async () => {
+    const request: DefinirAtendimentoEspecializadoRequest = {
       condicaoIds: [],
       recursoIds: [],
       tipoDeficienciaIds: ['01960000-0000-7000-0000-000000000603'],
     };
 
     const promise = firstValueFrom(
-      api.definirOfertaAtendimento(ID, request, withIdempotencyKey('chave-sem-pcd')),
+      api.definirAtendimentoEspecializado(ID, request, withIdempotencyKey('chave-sem-pcd')),
     );
     const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/oferta-atendimento`,
+      `${BASE}/api/selecao/processos-seletivos/${ID}/atendimento-especializado`,
     );
 
     req.flush(
       {
-        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
+        type: 'https://unifesspa-edu-br.github.io/uniplus-developers/erros/uniplus.selecao.atendimento_especializado.tipo_deficiencia_sem_condicao_pcd',
         title: 'Tipo de deficiência exige a condição PcD marcada',
         status: 422,
-        code: 'uniplus.selecao.oferta_atendimento.tipo_deficiencia_sem_condicao_pcd',
+        code: 'uniplus.selecao.atendimento_especializado.tipo_deficiencia_sem_condicao_pcd',
         traceId: '00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01',
       },
       { status: 422, statusText: 'Unprocessable Entity' },

@@ -1,0 +1,22 @@
+/* O texto do termo rola dentro da própria área, que recebe o foco pelo teclado, sem estourar a largura em 320 px. */
+.cfg-termo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cfg-termo__texto {
+  max-block-size: 20rem;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-card);
+}
+
+.cfg-termo__resumo {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}

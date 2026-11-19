@@ -72,7 +72,7 @@ describe('retomar o perfil suspenso', () => {
       expect.anything(),
     );
     expect(notificacoes.success).toHaveBeenCalledWith(
-      'Etapa decidida. Falta a decisão da proteção de dados',
+      'Etapa decidida. Falta a decisão do Representante do controlador',
     );
   });
 

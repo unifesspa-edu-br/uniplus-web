@@ -51,8 +51,8 @@ export const PERMISSOES_DO_DIOGO = [
   'autorizacao:perfis:manter',
 ] as const;
 
-/** Betina é da proteção de dados: aprova a etapa de proteção de dados. */
-export const PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS = [
+/** Betina é Representante do controlador: aprova a etapa de proteção de dados. */
+export const PERMISSOES_DA_BETINA_REPRESENTANTE = [
   'autorizacao:pedidos:aprovar-protecao-de-dados',
 ] as const;
 
@@ -68,4 +68,61 @@ export const PERMISSOES_DA_BETINA_SO_APROVA = [
 export const PERMISSOES_DAS_DUAS_ETAPAS = [
   ...PERMISSOES_DO_DIOGO_SO_APROVA,
   ...PERMISSOES_DA_BETINA_SO_APROVA,
+] as const;
+
+/** Betina, Representante do controlador, conduz a revisão periódica e decide os itens comuns. */
+export const PERMISSOES_DA_BETINA_CONDUZ_REVISOES = ['autorizacao:revisoes:conduzir'] as const;
+
+/** Diogo, gestor de acessos, revê os itens de quem é Representante do controlador. */
+export const PERMISSOES_DO_DIOGO_REVE_REVISOES = [
+  'autorizacao:revisoes:rever-protecao-de-dados',
+] as const;
+
+/**
+ * Isabella, Encarregado de dados, só consulta as revisões e as concessões.
+ */
+export const PERMISSOES_DA_ISABELLA_CONSULTA_REVISOES = [
+  'autorizacao:revisoes:consultar',
+  'autorizacao:concessoes:consultar',
+] as const;
+
+/**
+ * Isabella, Encarregado de dados, só consulta os pedidos, as concessões e as versões dos perfis:
+ * abre as telas de leitura e não decide, revoga, mantém nem pede por ninguém.
+ */
+export const PERMISSOES_DA_ISABELLA_SO_CONSULTA = [
+  'autorizacao:pedidos:consultar',
+  'autorizacao:concessoes:consultar',
+  'autorizacao:perfis:consultar-versoes',
+] as const;
+
+/** Diogo, gestor de acessos, publica as versões do termo de responsabilidade. */
+export const PERMISSOES_DO_DIOGO_PUBLICA_O_TERMO = ['autorizacao:termos:publicar'] as const;
+
+/** Kevin, Encarregado de dados, solicita providência sobre concessões e acompanha a dele. */
+export const PERMISSOES_DO_KEVIN_SOLICITA_PROVIDENCIA = [
+  'autorizacao:providencias:solicitar',
+  'autorizacao:concessoes:consultar',
+] as const;
+
+/** Diogo, gestor de acessos, administra as concessões: responde e atende as providências. */
+export const PERMISSOES_DO_DIOGO_ADMINISTRA_CONCESSOES = [
+  'autorizacao:concessoes:administrar',
+] as const;
+
+/** Isabella, Encarregado de dados, consulta a proteção dos tipos de documento e dos fatos e se manifesta. */
+export const PERMISSOES_DA_ISABELLA_MANIFESTA = [
+  'configuracao:protecao-do-catalogo:consultar',
+  'configuracao:protecao-do-catalogo:manifestar',
+] as const;
+
+/** Betina, Representante do controlador, decide a proteção dos tipos de documento e dos fatos. */
+export const PERMISSOES_DA_BETINA_DECIDE_A_PROTECAO = [
+  'configuracao:protecao-do-catalogo:aprovar',
+] as const;
+
+/** Leandro administra os tipos de documento e consulta os fatos do candidato; não decide a proteção. */
+export const PERMISSOES_DO_LEANDRO_ADMINISTRA_TIPOS_E_FATOS = [
+  'configuracao:tipos-documento:manter',
+  'configuracao:fatos-candidato:consultar',
 ] as const;

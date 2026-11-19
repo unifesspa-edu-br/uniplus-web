@@ -20,6 +20,8 @@ const ato = (extra: Partial<AtoDaProtecaoDto>): AtoDaProtecaoDto => ({
   finalidadeTratamento: 'Conferir o laudo do candidato.',
   classificacaoRecomendada: null,
   justificativa: null,
+  ciclo: 1,
+  dianteDeManifestacaoDesfavoravel: false,
   ...extra,
 });
 

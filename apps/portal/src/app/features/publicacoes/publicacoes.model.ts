@@ -5,7 +5,7 @@
  */
 export interface PublicacaoDoCertame {
   readonly id: string;
-  /** Data de publicação do ato (AAAA-MM-DD), uma data de calendário sem fuso. */
+  /** Data que o documento do ato declara (AAAA-MM-DD), uma data de calendário sem fuso. */
   readonly data: string;
   readonly titulo: string;
   /** Nome do tipo do ato — vira a etiqueta do cartão. */
@@ -14,7 +14,7 @@ export interface PublicacaoDoCertame {
   readonly descricao?: string;
   /**
    * Documentos do ato no acervo. Sem principal nem anexos, o acervo ainda não os tem: a cópia
-   * acontece logo depois do registro do ato.
+   * termina depois da publicação do ato.
    */
   readonly documentos: DocumentosDaPublicacao;
 }

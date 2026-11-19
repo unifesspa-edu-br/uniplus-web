@@ -53,8 +53,7 @@
 }
 
 /* A ação quebra o próprio rótulo em vez de passar da borda do card numa tela estreita. */
-.sel-processo .campo-com-acao > .btn,
-.sel-processo .doc-item__acoes > .btn {
+.sel-processo .campo-com-acao > .btn {
   flex: 0 1 auto;
   max-width: 100%;
   white-space: normal;

@@ -1,5 +1,12 @@
 import { test, expect, type Browser, type Locator, type Page } from '@playwright/test';
-import { acharNaListagem, entrarComoPersona, prepararAcessosDaSimulacao, aprovarCatalogoInicial } from '@uniplus/shared-e2e';
+import {
+  OPERADOR_DO_ROTEIRO,
+  acharNaListagem,
+  aprovarCatalogoInicial,
+  entrarComoPersona,
+  garantirOperadorDoRoteiro,
+  prepararAcessosDaSimulacao,
+} from '@uniplus/shared-e2e';
 
 /**
  * Solicitação, ajuste recomendado, aceite e bloqueio da aprovação da proteção de dados do
@@ -78,7 +85,7 @@ async function abrirRecomendacaoDeAjuste(pagina: Page, nomeDoItem: string): Prom
   return pagina.getByRole('dialog', { name: 'Recomendar ajuste da proteção de dados' });
 }
 
-test.describe('Aprovação da proteção de dados do catálogo', () => {
+test.describe('Aprovação da proteção de dados dos tipos de documento e dos fatos do candidato', () => {
   test.describe.configure({ mode: 'serial' });
 
   const sufixo = Date.now();
@@ -107,7 +114,7 @@ test.describe('Aprovação da proteção de dados do catálogo', () => {
 
   test('o ajuste sem classificação recomendada não é enviado', async ({ browser }) => {
     const pagina = await comoCaroline(browser);
-    await expect(pagina.getByRole('heading', { level: 1, name: 'Proteção de Dados do Catálogo' })).toBeVisible();
+    await expect(pagina.getByRole('heading', { level: 1, name: 'Proteção de dados dos tipos de documento e dos fatos do candidato' })).toBeVisible();
 
     const dialogo = await abrirRecomendacaoDeAjuste(pagina, nome);
     await dialogo.getByRole('button', { name: 'Recomendar ajuste' }).click();
@@ -148,8 +155,9 @@ test.describe('Aprovação da proteção de dados do catálogo', () => {
     await expect(pagina.getByText('O item volta a pendente')).toBeVisible();
   });
 
-  test('quem mantém o cadastro, mas não aprova, não entra na fila da proteção de dados', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, 'isabella.figueiredo', '/protecao-do-catalogo');
+  test('quem mantém o cadastro, sem aprovar, consultar nem se manifestar, não entra na fila da proteção de dados', async ({ browser }) => {
+    await garantirOperadorDoRoteiro();
+    const pagina = await entrarComoPersona(browser, APP, OPERADOR_DO_ROTEIRO, '/protecao-do-catalogo');
 
     await expect(pagina).toHaveURL(/acesso-negado/);
   });

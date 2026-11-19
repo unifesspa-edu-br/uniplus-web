@@ -301,7 +301,7 @@ async function mockVitrine(
       numeroEdital: null,
       situacao: 'inscricoesAbertas' as CertamePublicoResponse['situacao'],
       documentoEditalUrl: `https://acervo.unifesspa.edu.br/editais/${identificador}.pdf`,
-      dataPublicacao: '2026-01-01',
+      dataDoAto: '2026-01-01',
       linhaDoTempo: [],
       aviso: null,
     };

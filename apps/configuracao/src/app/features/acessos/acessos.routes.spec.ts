@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import { CanActivateFn, Route, UrlTree, provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthService, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { AuthService, PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
+  PERMISSOES_DA_CONCESSAO,
   PERMISSOES_DA_JANELA_DE_MIGRACAO,
+  PERMISSOES_DA_PROVIDENCIA,
   PERMISSOES_DA_RECLASSIFICACAO,
+  PERMISSOES_DA_REVISAO,
   PERMISSOES_DAS_TELAS,
 } from '../../acesso/permissoes-das-telas';
 import { ACESSOS_ROUTES } from './acessos.routes';
@@ -17,23 +20,19 @@ const rota = (caminho: string): Route => {
   return encontrada;
 };
 
+function provedoresDeSessao(concedidas: readonly string[]) {
+  const temAlguma = (...codigos: string[]) => codigos.some((c) => concedidas.includes(c));
+  return [
+    provideRouter([]),
+    { provide: AuthService, useValue: { authenticated: () => true, login: vi.fn() } },
+    { provide: PermissoesService, useValue: { garantir: () => Promise.resolve(), temAlguma } },
+  ];
+}
+
 /** Executa a guarda da rota para quem tem sessão e as permissões informadas. */
 async function decidirAcesso(caminho: string, concedidas: readonly string[]) {
   TestBed.resetTestingModule();
-  TestBed.configureTestingModule({
-    providers: [
-      provideRouter([]),
-      { provide: AuthService, useValue: { authenticated: () => true, login: vi.fn() } },
-      {
-        provide: PermissoesService,
-        useValue: {
-          garantir: () => Promise.resolve(),
-          temAlguma: (...codigos: string[]) =>
-            codigos.some((codigo) => concedidas.includes(codigo)),
-        },
-      },
-    ],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDeSessao(concedidas) });
   const [guarda] = rota(caminho).canActivate as CanActivateFn[];
   return TestBed.runInInjectionContext(() =>
     guarda({} as never, { url: `/acessos/${caminho}` } as never),
@@ -47,6 +46,7 @@ const PROTEGIDAS = [
   ['concessoes', 'acessos/concessoes'],
   ['perfis', 'acessos/perfis'],
   ['perfis/:id', 'acessos/perfis'],
+  ['perfis/:id/versoes/:versaoId', 'acessos/perfis'],
   ['versoes-de-perfil/gestao-de-acessos', 'acessos/versoes-de-perfil/gestao-de-acessos'],
   ['versoes-de-perfil/protecao-de-dados', 'acessos/versoes-de-perfil/protecao-de-dados'],
   ['janelas-de-migracao/gestao-de-acessos', 'acessos/janelas-de-migracao/gestao-de-acessos'],
@@ -54,6 +54,9 @@ const PROTEGIDAS = [
   ['reclassificacoes/gestao-de-acessos', 'acessos/reclassificacoes/gestao-de-acessos'],
   ['reclassificacoes/protecao-de-dados', 'acessos/reclassificacoes/protecao-de-dados'],
   ['governanca/divergencias', 'acessos/governanca/divergencias'],
+  ['revisoes', 'acessos/revisoes'],
+  ['termo-de-responsabilidade', 'acessos/termo-de-responsabilidade'],
+  ['providencias', 'acessos/providencias'],
 ] as const;
 
 const permissoesDa = (tela: (typeof PROTEGIDAS)[number][1]): readonly string[] =>
@@ -113,6 +116,83 @@ describe('rotas dos acessos', () => {
     });
   });
 
+  describe('concessoes/:id', () => {
+    it.each(PERMISSOES_DA_CONCESSAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('concessoes/:id', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado só com a permissão de consultar revisões', async () => {
+      const decisao = await decidirAcesso('concessoes/:id', [
+        PERMISSAO.autorizacao.revisoesConsultar,
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
+  describe('providencias/:id', () => {
+    it.each(PERMISSOES_DA_PROVIDENCIA)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('providencias/:id', [permissao])).toBe(true);
+    });
+
+    it('recusa quem só consulta as concessões', async () => {
+      const decisao = await decidirAcesso('providencias/:id', [
+        PERMISSAO.autorizacao.concessoesConsultar,
+      ]);
+      expect(decisao).not.toBe(true);
+    });
+  });
+
+  describe('revisoes/:id', () => {
+    it.each(PERMISSOES_DA_REVISAO)('abre com a permissão %s', async (permissao) => {
+      expect(await decidirAcesso('revisoes/:id', [permissao])).toBe(true);
+    });
+
+    it('leva ao acesso negado sem permissão de conduzir, rever nem consultar revisões', async () => {
+      const decisao = await decidirAcesso('revisoes/:id', [
+        ...PERMISSOES_DAS_TELAS['acessos/concessoes'],
+        ...PERMISSOES_DAS_TELAS['acessos/fila-da-protecao-de-dados'],
+      ]);
+      expect(decisao).toBeInstanceOf(UrlTree);
+    });
+  });
+
+  describe('Encarregado de dados, que só consulta', () => {
+    const { autorizacao } = PERMISSAO;
+    const SO_CONSULTA = [
+      autorizacao.perfisConsultarVersoes,
+      autorizacao.pedidosConsultar,
+      autorizacao.concessoesConsultar,
+    ];
+
+    it.each([
+      'historico',
+      'concessoes',
+      'concessoes/:id',
+      'perfis',
+      'perfis/:id',
+      'perfis/:id/versoes/:versaoId',
+      'perfis/:id/janela',
+      'reclassificacoes/:id',
+      'governanca/divergencias',
+    ])('abre a tela de leitura %s', async (caminho) => {
+      expect(await decidirAcesso(caminho, SO_CONSULTA)).toBe(true);
+    });
+
+    it.each([
+      'fila-do-gestor',
+      'fila-da-protecao-de-dados',
+      'versoes-de-perfil/gestao-de-acessos',
+      'versoes-de-perfil/protecao-de-dados',
+      'janelas-de-migracao/gestao-de-acessos',
+      'janelas-de-migracao/protecao-de-dados',
+      'reclassificacoes/gestao-de-acessos',
+      'reclassificacoes/protecao-de-dados',
+      'termo-de-responsabilidade',
+    ])('leva ao acesso negado na fila de decisão %s', async (caminho) => {
+      expect(await decidirAcesso(caminho, SO_CONSULTA)).toBeInstanceOf(UrlTree);
+    });
+  });
+
   it.each(['pedidos', 'pedidos/novo', 'pedidos/:id'])(
     '%s fica aberta a quem tem sessão, sem permissão de administração',
     (caminho) => {
@@ -140,11 +220,31 @@ describe('rotas dos acessos', () => {
     expect(rota(caminho).data?.['etapa']).toBe(etapa);
   });
 
-  it('carrega cada tela sob demanda', async () => {
-    const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
-    expect(carregaveis).toHaveLength(18);
-    for (const item of carregaveis) {
-      expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
-    }
+  const GRUPOS_DE_TELAS: readonly (readonly [string, RegExp])[] = [
+    ['pedidos', /^(pedidos|fila-|historico)/u],
+    ['concessões', /^concessoes/u],
+    ['janela e revisões', /^(janelas-de-migracao|perfis\/:id\/janela$|revisoes)/u],
+    ['perfis e versões', /^(perfis|versoes-de-perfil|reclassificacoes|governanca)/u],
+    ['termo', /^termo-de-responsabilidade$/u],
+    ['providências', /^providencias/u],
+  ];
+  const carregaveis = filhas.filter((item) => item.loadComponent !== undefined);
+  const grupoDe = (item: Route) =>
+    GRUPOS_DE_TELAS.find(([, padrao]) => padrao.test(item.path ?? ''))?.[0];
+
+  it('carrega sob demanda as 25 telas, cada uma num grupo', () => {
+    expect(carregaveis).toHaveLength(25);
+    expect(carregaveis.filter((item) => grupoDe(item) === undefined)).toEqual([]);
   });
+
+  it.each(GRUPOS_DE_TELAS.map(([nome]) => nome))(
+    'carrega sob demanda as telas de %s',
+    async (nome) => {
+      const doGrupo = carregaveis.filter((item) => grupoDe(item) === nome);
+      expect(doGrupo.length).toBeGreaterThan(0);
+      for (const item of doGrupo) {
+        expect(await (item.loadComponent as () => Promise<unknown>)()).toBeTypeOf('function');
+      }
+    },
+  );
 });

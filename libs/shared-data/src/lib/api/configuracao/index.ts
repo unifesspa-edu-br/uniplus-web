@@ -168,6 +168,11 @@ export {
   type AbrangenciasToken,
 } from './calendario-dias-uteis.api';
 export {
+  TiposConceitoApi,
+  type TipoConceitoDto,
+  type TiposConceitoQuery,
+} from './tipos-conceito.api';
+export {
   TiposEtapaApi,
   type AtualizarTipoEtapaCommand,
   type CriarTipoEtapaCommand,
@@ -204,8 +209,13 @@ export {
   type DetalheDoValorDoFatoDto,
   type ItemDaProtecaoDoCatalogoDto,
   type ItemParaSolicitarRequest,
+  type ManifestacaoDaProtecaoDto,
+  type RegistrarManifestacaoDaProtecaoRequest,
+  type ParecerDaManifestacao,
   type SituacaoDaAprovacao,
+  type SituacaoDaManifestacao,
   type SolicitacaoDaProtecaoDto,
+  SEGMENTO_DO_CADASTRO,
 } from './protecao-do-catalogo.api';
 
 export { FatosCandidatoApi } from './fatos-candidato.api';

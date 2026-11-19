@@ -1,12 +1,15 @@
 export { AuthService } from './services/auth.service';
 export { UserContextService } from './services/user-context.service';
+export { MotivoDoAcessoNegadoService } from './services/motivo-do-acesso-negado.service';
 export { provideAuth } from './providers/auth.provider';
 export {
   AUTH_ALLOWED_URLS,
   AUTH_CONFIG,
   AUTORIZACAO_BASE_PATH,
   PROFILE_BASE_PATH,
+  PROVEDOR_DE_LOGIN,
 } from './tokens/auth.tokens';
+export type { ProvedorDeLogin } from './tokens/auth.tokens';
 export { LoginErrorCode, classifyLoginError } from './models/login-error.model';
 export type { AuthConfig } from './models/auth-config.model';
 export type { LoginErrorDetails } from './models/login-error.model';

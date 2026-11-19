@@ -14,15 +14,15 @@
   flex-shrink: 0;
 }
 .spinner--sm {
-  font-size: 14px;
+  font-size: 0.875rem;
   border-width: 2px;
 }
 .spinner--md {
-  font-size: 20px;
+  font-size: 1.25rem;
   border-width: 2.5px;
 }
 .spinner--lg {
-  font-size: 32px;
+  font-size: 2rem;
   border-width: 3px;
 }
 @keyframes spinner-rotate {

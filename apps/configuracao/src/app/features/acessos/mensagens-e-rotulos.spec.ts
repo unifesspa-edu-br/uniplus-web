@@ -28,7 +28,7 @@ describe('mensagens de acesso', () => {
     });
 
     expect(textoDaRecusa(mensagem)).toBe(
-      'O documento ainda não foi verificado. Aguarde a verificação. Se o documento foi recusado, envie outro arquivo.',
+      'O anexo ainda não foi verificado. O documento declarado ainda não foi verificado; o aceite e a decisão esperam a verificação. Se o documento foi recusado, envie outro arquivo.',
     );
   });
 
@@ -58,7 +58,9 @@ describe('mensagens de acesso', () => {
       textoDaRecusa(problemas.resolve({ type: 'x', title: 'API', status: 422, code, traceId: '' }));
 
     expect(resolver('uniplus.autorizacao.pedido.validade_invalida')).toContain('prazo');
-    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain('voltou à gestão de acessos');
+    expect(resolver('uniplus.autorizacao.pedido.prazo_vencido')).toContain(
+      'voltou à gestão de acessos',
+    );
   });
 
   it('orienta nas recusas da janela de migração, com os nomes das funções', () => {
@@ -94,16 +96,16 @@ describe('rótulos de acesso', () => {
     expect(etapa('protecao_de_dados')).toBe('Proteção de dados');
     expect(etapa(null)).toBe('—');
     expect(motivoDaDispensa('designacao_de_protecao_de_dados')).toBe(
-      'designação de proteção de dados',
+      'designação do Representante do controlador',
     );
     expect(motivoDaDispensa('outro')).toBe('outro');
   });
 
   it('identifica o autor sem expor o identificador inteiro', () => {
-    expect(autorDoEvento({ emissor: 'unifesspa', sub: '0123456789abcdef' })).toBe(
+    expect(autorDoEvento({ emissor: 'unifesspa', contaId: '0123456789abcdef' })).toBe(
       'Pessoa 01234567',
     );
-    expect(autorDoEvento({ emissor: 'uniplus:sistema', sub: 'verificador' })).toBe(
+    expect(autorDoEvento({ emissor: 'uniplus:sistema', contaId: 'verificador' })).toBe(
       'Verificador de documentos',
     );
     expect(autorDoEvento(null)).toBe('Sistema');
@@ -123,22 +125,28 @@ describe('detalhe da trilha', () => {
       'Etapa: Gestão de acessos. Sensibilidade avaliada: Dado pessoal.',
     );
     expect(detalheDaTrilha('Motivo: designacao_de_protecao_de_dados.')).toBe(
-      'Motivo: designação de proteção de dados.',
+      'Motivo: designação do Representante do controlador.',
     );
     expect(detalheDaTrilha('Motivo: faltou.')).toBe('Motivo: faltou.');
     expect(detalheDaTrilha(null)).toBe('—');
   });
 
-  it('traduz a etapa e a dispensa da decisão da migração e tira o identificador da janela', () => {
+  it('traduz a etapa da decisão da migração e tira o identificador da janela', () => {
     const janela = '01a188d4-4a99-7db5-b0cd-0f3e30cce2be';
 
-    expect(
-      detalheDaTrilha(
-        `Etapa: gestao_de_acessos. Janela: ${janela}. Dispensa: beneficiario_ja_tem_protecao_de_dados.`,
-      ),
-    ).toBe(
-      'Etapa: Gestão de acessos. Dispensa: a pessoa beneficiada já exerce a proteção de dados.',
+    expect(detalheDaTrilha(`Etapa: gestao_de_acessos. Janela: ${janela}.`)).toBe(
+      'Etapa: Gestão de acessos.',
     );
     expect(tipoDeEvento('migracao_recusar')).toBe('Migração recusada');
+  });
+
+  it('nomeia em pt-BR os eventos do termo de responsabilidade nas trilhas do pedido e da concessão', () => {
+    expect(tipoDeEvento('termo_aceito')).toBe('Termo de responsabilidade aceito');
+    expect(tipoDeEvento('termo_exigido')).toBe(
+      'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
+    );
+    expect(tipoDeEvento('termo_excecao_da_instalacao')).toBe(
+      'Instalação sem o aceite do termo de responsabilidade',
+    );
   });
 });

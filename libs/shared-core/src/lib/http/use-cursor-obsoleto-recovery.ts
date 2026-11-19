@@ -58,23 +58,28 @@ export interface UseCursorObsoletoRecoveryOptions {
 export function useCursorObsoletoRecovery(
   options: UseCursorObsoletoRecoveryOptions,
 ): Signal<boolean> {
-  const { problem, pagina, reiniciarPagina, aoRecuperar } = options;
-
-  const recuperando = computed(() => {
-    const atual = problem();
-    return atual != null && ehCursorDePaginacaoObsoleto(atual) && pagina() !== undefined;
-  });
-
+  const recuperando = cursorObsoletoEmPaginaNavegada(options);
   effect(() => {
-    if (!recuperando()) {
-      return;
+    if (recuperando()) {
+      recomecarPaginacao(options);
     }
-    const atual = untracked(problem);
-    untracked(() => {
-      reiniciarPagina();
-      aoRecuperar(atual);
-    });
   });
-
   return recuperando;
+}
+
+function cursorObsoletoEmPaginaNavegada(
+  options: UseCursorObsoletoRecoveryOptions,
+): Signal<boolean> {
+  return computed(() => {
+    const atual = options.problem();
+    return atual != null && ehCursorDePaginacaoObsoleto(atual) && options.pagina() !== undefined;
+  });
+}
+
+function recomecarPaginacao(options: UseCursorObsoletoRecoveryOptions): void {
+  const atual = untracked(options.problem);
+  untracked(() => {
+    options.reiniciarPagina();
+    options.aoRecuperar(atual);
+  });
 }

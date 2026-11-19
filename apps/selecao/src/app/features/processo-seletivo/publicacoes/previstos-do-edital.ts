@@ -87,9 +87,8 @@ export function rotuloDoPapel(papel: string | null): string | null {
 }
 
 /**
- * O ato que a correção do item aponta: a publicação mais recente da cadeia, desde que já esteja
- * registrada. `null` enquanto o item não foi publicado ou enquanto a última correção ainda
- * aguarda o registro — corrigir de novo antes disso apontaria um ato que já tem quem o corrija.
+ * O ato que a correção do item aponta: a publicação mais recente da cadeia, a única que ainda não
+ * tem quem a corrija. `null` enquanto o item não foi publicado.
  *
  * Que o preliminar não se corrige depois do definitivo do ciclo dele a tela não decide: o servidor
  * recusa, e a recusa aparece no formulário.

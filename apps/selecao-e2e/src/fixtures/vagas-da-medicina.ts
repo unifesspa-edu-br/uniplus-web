@@ -399,7 +399,7 @@ export const PROCESSO_DA_MEDICINA = {
     uf: 'PA',
   },
   etapas: [],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [
     {
       id: '01a0d636-7bc6-791e-b5a2-357e5b60ff08',

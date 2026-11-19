@@ -30,6 +30,15 @@ describe('certamesPublicosRequest', () => {
     expect(params(request).has('limit')).toBe(false);
   });
 
+  it('cursor vazio abre a primeira página, com o limite', () => {
+    const request = certamesPublicosRequest(BASE, {
+      pagina: { cursor: createCursor(''), direction: 'next' },
+    });
+
+    expect(params(request).get('limit')).toBe('10');
+    expect(params(request).has('cursor')).toBe(false);
+  });
+
   it('declara situação, busca e contadores quando pedidos', () => {
     const request = certamesPublicosRequest(BASE, {
       situacao: SituacaoDoCertame.ultimosDias,

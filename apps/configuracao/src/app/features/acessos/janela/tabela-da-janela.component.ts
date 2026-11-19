@@ -5,6 +5,7 @@ import {
   TemplateRef,
   computed,
   contentChild,
+  effect,
   inject,
   input,
 } from '@angular/core';
@@ -13,7 +14,7 @@ import type { ItemDaJanelaDto } from '@uniplus/shared-data/autorizacao';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 import { CatalogoDePermissoesStore } from '../versoes/catalogo-de-permissoes.store';
-import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
+import { situacaoDoItem } from './rotulos-da-janela';
 
 /** As concessões da janela, com a situação de cada uma; a ação por linha vem do `ng-template` projetado. */
 @Component({
@@ -64,10 +65,7 @@ import { dispensaDoItem, situacaoDoItem } from './rotulos-da-janela';
                   Nenhum
                 }
                 @if (item.exigeProtecaoDeDados) {
-                  <span class="cfg-muted">Passa pela proteção de dados.</span>
-                }
-                @if (dispensa(item); as texto) {
-                  <span class="cfg-muted">{{ texto }}</span>
+                  <span class="cfg-muted">Passa pelo Representante do controlador.</span>
                 }
               </td>
               <td data-label="Situação">
@@ -95,23 +93,23 @@ export class TabelaDaJanelaComponent {
   readonly tituloDaAcao = input('Decisão');
   protected readonly acao = contentChild<TemplateRef<{ $implicit: ItemDaJanelaDto }>>('acao');
   private readonly catalogo = inject(CatalogoDePermissoesStore);
+  private readonly permissoes = inject(PermissoesService);
+  private readonly podeConsultarOCatalogo = computed(() =>
+    this.permissoes.tem(PERMISSAO.autorizacao.permissoesConsultarCatalogo),
+  );
   /** O nome legível da permissão; sem acesso ao catálogo, o próprio código. */
   protected readonly nomeDaPermissao = computed(() => {
-    const porCodigo = this.catalogo.porCodigo();
-    return (codigo: string): string => porCodigo.get(codigo)?.nome ?? codigo;
+    const porCodigo = this.podeConsultarOCatalogo() ? this.catalogo.porCodigo() : null;
+    return (codigo: string): string => porCodigo?.get(codigo)?.nome ?? codigo;
   });
 
   constructor() {
-    if (inject(PermissoesService).tem(PERMISSAO.autorizacao.permissoesConsultarCatalogo)) {
-      this.catalogo.carregar();
-    }
+    effect(() => {
+      if (this.podeConsultarOCatalogo()) this.catalogo.garantir();
+    });
   }
 
   protected situacao(item: ItemDaJanelaDto) {
     return situacaoDoItem(item.situacao);
-  }
-
-  protected dispensa(item: ItemDaJanelaDto): string | null {
-    return dispensaDoItem(item.dispensa);
   }
 }

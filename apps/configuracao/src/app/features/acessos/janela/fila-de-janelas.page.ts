@@ -37,7 +37,7 @@ const APRESENTACAO: Readonly<Record<EtapaDaVersao, Apresentacao>> = {
   protecao_de_dados: {
     titulo: 'Janelas de migração na proteção de dados',
     descricao:
-      'Janelas abertas com concessões que aguardam a adequação à proteção de dados, dentro do prazo.',
+      'Janelas abertas com concessões que aguardam a decisão do Representante do controlador sobre a adequação à proteção de dados, dentro do prazo.',
   },
 };
 

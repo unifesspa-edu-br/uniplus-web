@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../../processo-seletivo.models';
+import { COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { FORMA_HUMANA, FORMA_OBJETIVA } from '../../shared/forma-de-avaliacao';
 import { etapa } from './cronograma-do-certame.testing';
 import { grupoDaEtapa } from './cronograma-form';
@@ -116,7 +117,10 @@ describe('etapa lida na consulta', () => {
   it('nomeia banca e ato pelo catálogo e mostra o id ou o código que ele não conhece', () => {
     const lidaComRefs = lida({
       emiteParecerIndividual: true,
-      bancas: [BANCA, 'banca-sem-cadastro'],
+      bancas: [
+        { tipoBancaId: BANCA, regraDeDeliberacao: null },
+        { tipoBancaId: 'banca-sem-cadastro', regraDeDeliberacao: null },
+      ],
       produtos: [
         { atoCodigo: ATO, papel: 'resultado_preliminar' },
         { atoCodigo: 'ATO_FORA_DO_CATALOGO', papel: null },
@@ -125,7 +129,10 @@ describe('etapa lida na consulta', () => {
     });
 
     expect(lidaComRefs.parecerIndividual).toBe(true);
-    expect(lidaComRefs.bancas).toEqual(['Banca de redação', 'banca-sem-cadastro']);
+    expect(lidaComRefs.bancas).toEqual([
+      'Banca de redação — Sem regra de deliberação declarada',
+      'banca-sem-cadastro — Sem regra de deliberação declarada',
+    ]);
     expect(lidaComRefs.publicacoes).toEqual([
       'Edital de abertura — resultado_preliminar',
       'ATO_FORA_DO_CATALOGO — não é resultado',
@@ -153,6 +160,53 @@ describe('etapa lida na consulta', () => {
     );
   });
 
+  it('lê a suspensividade em dias corridos nas duas instâncias', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          suspensividadePrimeiraInstanciaValor: '48',
+          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
+          admiteInstanciaSuperior: true,
+          suspensividadeSegundaInstanciaValor: '3',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).toContain('suspensividade da 1ª instância de 48 horas');
+    expect(texto).toContain('suspensividade da 2ª instância de 3 dias corridos');
+  });
+
+  it('concorda em número o dia corrido no singular', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          suspensividadePrimeiraInstanciaValor: '1',
+          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).toContain('suspensividade da 1ª instância de 1 dia corrido');
+  });
+
+  it('não lê a suspensividade da segunda instância quando a janela não a admite', () => {
+    const [texto] = lida({
+      recursos: [
+        {
+          ...recurso,
+          admiteInstanciaSuperior: false,
+          suspensividadeSegundaInstanciaValor: '3',
+          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+        },
+      ],
+    }).recursos;
+
+    expect(texto).not.toContain('2ª instância');
+  });
+
   it('concorda em número a unidade em horas', () => {
     const [texto] = lida({
       recursos: [{ ...recurso, prazoValor: '2', prazoUnidade: UnidadePrazo.horas }],
@@ -169,5 +223,14 @@ describe('etapa lida na consulta', () => {
     expect(texto).toBe(
       'prazo corre da ciência do candidato; prazo não informado; não admite instância superior',
     );
+  });
+
+  it('lê a regra de deliberação da banca ao lado do nome dela', () => {
+    const { bancas } = lida({ bancas: [{ tipoBancaId: BANCA, regraDeDeliberacao: COLEGIADA }] });
+
+    expect(bancas).toEqual([
+      'Banca de redação — 5 titulares, 2 suplentes; quórum 3; maioria simples; ' +
+        'encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+    ]);
   });
 });

@@ -21,6 +21,21 @@ describe('eErroDeDocumentoOuAto', () => {
     ).toBe(true);
   });
 
+  it('reconhece as recusas de linhagem do ato, que Publicações repassa em 409', () => {
+    expect(
+      eErroDeDocumentoOuAto('uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo'),
+    ).toBe(true);
+    expect(eErroDeDocumentoOuAto('uniplus.publicacoes.ato_normativo.ato_ja_retificado')).toBe(true);
+  });
+
+  it('não reconhece os códigos que a API deixou de emitir', () => {
+    expect(
+      eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.objeto_ja_tem_ato_vivo_do_tipo'),
+    ).toBe(false);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.ato_do_processo.produto_aguarda_registro')).toBe(false);
+    expect(eErroDeDocumentoOuAto('uniplus.selecao.ato_do_processo.preliminar_aguarda_registro')).toBe(false);
+  });
+
   it('não reconhece código de conformidade estrutural nem legal', () => {
     expect(
       eErroDeDocumentoOuAto('uniplus.selecao.processo_seletivo.conformidade_insuficiente'),

@@ -9,7 +9,10 @@ const SITUACAO_DO_PEDIDO: Readonly<Record<string, Rotulo>> = {
   aguardando_documento: { texto: 'Aguardando o documento de designação', variante: 'warning' },
   aguardando_beneficiario: { texto: 'Aguardando o aceite do beneficiário', variante: 'warning' },
   aguardando_gestor: { texto: 'Aguardando a gestão de acessos', variante: 'info' },
-  aguardando_protecao_de_dados: { texto: 'Aguardando a proteção de dados', variante: 'info' },
+  aguardando_protecao_de_dados: {
+    texto: 'Aguardando o Representante do controlador',
+    variante: 'info',
+  },
   aprovado: { texto: 'Aprovado', variante: 'success' },
   recusado: { texto: 'Recusado', variante: 'danger' },
   cancelado: { texto: 'Cancelado', variante: 'neutral' },
@@ -38,6 +41,10 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
   concedida: 'Acesso concedido',
   revogada: 'Acesso revogado',
   revogada_pela_migracao: 'Acesso revogado na migração de versão',
+  providencia_solicitada: 'Providência solicitada',
+  providencia_respondida: 'Providência respondida',
+  providencia_atendida: 'Providência atendida',
+  vencida: 'Concessão vencida',
   migracao_migrar: 'Concessão migrada para a versão nova',
   migracao_recusar: 'Migração recusada',
   migracao_reter: 'Concessão retida na migração',
@@ -56,6 +63,9 @@ const TIPO_DE_EVENTO: Readonly<Record<string, string>> = {
   instalacao_confirmada: 'Instalação confirmada',
   instalacao_cancelada: 'Instalação cancelada',
   instalacao_expirada: 'Instalação expirada',
+  termo_aceito: 'Termo de responsabilidade aceito',
+  termo_exigido: 'Pedido devolvido: o perfil passou a exigir o termo de responsabilidade',
+  termo_excecao_da_instalacao: 'Instalação sem o aceite do termo de responsabilidade',
 };
 
 const SENSIBILIDADE: Readonly<Record<string, string>> = {
@@ -74,8 +84,7 @@ const ETAPA: Readonly<Record<string, string>> = {
 };
 
 const MOTIVO_DA_DISPENSA: Readonly<Record<string, string>> = {
-  designacao_de_protecao_de_dados: 'designação de proteção de dados',
-  beneficiario_ja_tem_protecao_de_dados: 'a pessoa beneficiada já exerce a proteção de dados',
+  designacao_de_protecao_de_dados: 'designação do Representante do controlador',
 };
 
 export function motivoDaDispensa(codigo: string): string {
@@ -121,11 +130,20 @@ export function abreviado(valor: string): string {
  * (justificativa, motivo digitado).
  */
 export function detalheDaTrilha(detalhe: string | null): string {
-  if (detalhe === null) return '—';
+  return detalhe === null ? '—' : comRotulos(semIdentificadores(detalhe));
+}
+
+/** Tira o identificador do anexo e o da janela e abrevia o SHA-256, que não dizem nada a quem lê. */
+function semIdentificadores(detalhe: string): string {
   return detalhe
     .replace(/Anexo \S+?\./gi, (trecho) => (IDENTIFICADOR.test(trecho) ? 'Documento.' : trecho))
     .replace(SHA256, (hash) => abreviado(hash))
-    .replace(/ ?Janela: [0-9a-f-]{36}\./i, '')
+    .replace(/ ?Janela: [0-9a-f-]{36}\./i, '');
+}
+
+/** Troca os códigos de dispensa, etapa, sensibilidade e motivo pelos rótulos da tela. */
+function comRotulos(detalhe: string): string {
+  return detalhe
     .replace(/Dispensa: (\w+)\./, (_, codigo: string) => `Dispensa: ${motivoDaDispensa(codigo)}.`)
     .replace(/Etapa: (\w+)\./, (_, codigo: string) => `Etapa: ${etapa(codigo)}.`)
     .replace(

@@ -1,4 +1,5 @@
 import { HttpResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { map, of } from 'rxjs';
@@ -42,6 +43,7 @@ const ESCOPO: DivergenciaDaGovernancaDto = {
 
 describe('DivergenciasDaGovernancaPage', () => {
   const leitura = vi.fn();
+  const concedidasAgora = signal<readonly string[]>([]);
   const assentar = async (fixture: { detectChanges(): void; whenStable(): Promise<unknown> }) => {
     await new Promise((resolver) => setTimeout(resolver));
     fixture.detectChanges();
@@ -49,24 +51,28 @@ describe('DivergenciasDaGovernancaPage', () => {
     fixture.detectChanges();
   };
 
+  function provedores() {
+    const temAlguma = (...c: string[]) => c.some((x) => concedidasAgora().includes(x));
+    return [
+      { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
+      provideHttpClient(
+        withInterceptors([
+          (req) => leitura(req.url).pipe(map((body: unknown) => new HttpResponse({ body }))),
+        ]),
+      ),
+      { provide: NotificationService, useValue: { success: vi.fn(), errorFromProblem: vi.fn() } },
+      { provide: PermissoesService, useValue: { temAlguma } },
+    ];
+  }
+
   async function abrir(
     corpo: unknown,
     concedidas: readonly string[] = [PERMISSAO.autorizacao.perfisManter],
   ) {
     leitura.mockReturnValue(of(corpo));
+    concedidasAgora.set(concedidas);
     TestBed.configureTestingModule({
-      providers: [
-        provideRouter([]),
-        provideMensagensDeAcesso(),
-        { provide: AUTORIZACAO_BASE_PATH, useValue: 'http://api.test' },
-        provideHttpClient(
-          withInterceptors([
-            (req) => leitura(req.url).pipe(map((body: unknown) => new HttpResponse({ body }))),
-          ]),
-        ),
-        { provide: NotificationService, useValue: { success: vi.fn(), errorFromProblem: vi.fn() } },
-        { provide: PermissoesService, useValue: { tem: (c: string) => concedidas.includes(c) } },
-      ],
+      providers: [provideRouter([]), provideMensagensDeAcesso(), ...provedores()],
     });
     const fixture = TestBed.createComponent(DivergenciasDaGovernancaPage);
     await assentar(fixture);
@@ -99,7 +105,7 @@ describe('DivergenciasDaGovernancaPage', () => {
     expect(linhas[0]).toContain('09/11/2026, 12:00');
   });
 
-  it('linka o perfil só para quem mantém perfis', async () => {
+  it('linka o perfil para quem mantém ou aprova perfis, e só para essas pessoas', async () => {
     const mantem = await abrir(ok([FALTANTE]));
     expect(mantem.host.querySelector('tbody a')?.getAttribute('href')).toBe('/acessos/perfis/p1');
     TestBed.resetTestingModule();
@@ -107,8 +113,25 @@ describe('DivergenciasDaGovernancaPage', () => {
     const aprova = await abrir(ok([FALTANTE]), [
       PERMISSAO.autorizacao.perfisAprovarProtecaoDeDados,
     ]);
-    expect(aprova.host.querySelector('tbody a')).toBeNull();
-    expect(aprova.host.textContent).toContain('Gestão de acessos');
+    expect(aprova.host.querySelector('tbody a')?.getAttribute('href')).toBe('/acessos/perfis/p1');
+    TestBed.resetTestingModule();
+
+    const semPermissao = await abrir(ok([FALTANTE]), []);
+    expect(semPermissao.host.querySelector('tbody a')).toBeNull();
+    expect(semPermissao.host.textContent).toContain('Gestão de acessos');
+  });
+
+  it('mostra e esconde o link do perfil quando a permissão muda com a página aberta', async () => {
+    const { fixture, host } = await abrir(ok([FALTANTE]), []);
+    expect(host.querySelector('tbody a')).toBeNull();
+
+    concedidasAgora.set([PERMISSAO.autorizacao.perfisManter]);
+    await assentar(fixture);
+    expect(host.querySelector('tbody a')?.getAttribute('href')).toBe('/acessos/perfis/p1');
+
+    concedidasAgora.set([]);
+    await assentar(fixture);
+    expect(host.querySelector('tbody a')).toBeNull();
   });
 
   it('diz que não há divergência', async () => {

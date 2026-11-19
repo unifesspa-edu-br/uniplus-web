@@ -10,7 +10,7 @@ import type { CaraterEscolhido, EtapaForm } from './cronograma-form';
 import { eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
 /**
- * Banca, publicação, janela própria e recurso contado de publicação somem da tela da
+ * Banca, publicação, janela própria e recurso somem da tela da
  * etapa de nota do ENEM. Ficar com o que já estava declarado seria mandar ao servidor, a
  * cada gravação, o que ninguém vê e ele recusa.
  */
@@ -20,9 +20,7 @@ function descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
   grupo.controls.produtos.setValue([]);
   grupo.controls.inicio.setValue('');
   grupo.controls.fim.setValue('');
-  grupo.controls.recursos.setValue(
-    grupo.controls.recursos.value.filter((recurso) => recurso.ancora === 'cienciaIndividual'),
-  );
+  grupo.controls.recursos.setValue([]);
 }
 
 function descartarEscalaEAvaliacao(grupo: FormGroup<EtapaForm>): void {

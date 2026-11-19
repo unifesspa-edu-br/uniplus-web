@@ -1,5 +1,5 @@
 import type { TestRequest } from '@angular/common/http/testing';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   LISTA,
   Pagina,
@@ -9,6 +9,7 @@ import {
   quilombola,
   recusaDeCampo,
   trabalha,
+  compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
 
 const campo = (nome: string): string => `[formcontrolname="${nome}"]`;
@@ -26,6 +27,7 @@ const PREENCHIMENTO_DO_DERIVADO: Record<string, string> = {
 };
 
 describe('FatosCandidatoPage — criação do fato', () => {
+  beforeAll(compilarPaginaUmaVez);
   let p: Pagina;
   afterEach(() => {
     p.atenderApoios();

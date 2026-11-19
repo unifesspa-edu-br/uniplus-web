@@ -30,37 +30,42 @@ export function preliminaresDaEtapa(grupo: FormGroup<EtapaForm>): readonly Produ
  * A janela nasce ancorada no primeiro produto preliminar da etapa, quando existe: é o
  * caso comum, e deixar o campo vazio obrigaria o operador a escolher de novo o que a
  * própria etapa já declarou publicar.
- *
- * A etapa de nota do ENEM não publica ato: o único relógio é a ciência do candidato.
  */
 export function acrescentarRecurso(
   grupo: FormGroup<EtapaForm>,
   regras: readonly RegraCatalogoDto[],
-  etapaDeNotaDoEnem: boolean,
 ): void {
   const preliminar = grupo.controls.produtos.value.find((p) => p.papel === PAPEL_PRELIMINAR);
-  const ancora: RecursoDaEtapa['ancora'] = etapaDeNotaDoEnem ? 'cienciaIndividual' : 'atoPublicado';
-  const regra = regraDoCatalogo(regras, ancora);
+  const regra = regraDoCatalogo(regras, 'atoPublicado');
   escreverRecursos(grupo, [
     ...grupo.controls.recursos.value,
-    {
-      ancora,
-      regraCodigo: regra?.codigo ?? '',
-      regraVersao: regra?.versao ?? '',
-      prazoValor: '',
-      prazoUnidade: 'diasUteis',
-      atoAncoraCodigo: preliminar?.atoCodigo ?? '',
-      // Nasce sem suspensividade — declarar o par é escolha do operador, e os dois em
-      // branco são a desativação prevista daquela instância.
-      suspensividadePrimeiraInstanciaValor: '',
-      suspensividadePrimeiraInstanciaUnidade: '',
-      // Sem valor padrão: a janela só é gravada depois de o operador responder se cabe
-      // instância superior.
-      admiteInstanciaSuperior: null,
-      suspensividadeSegundaInstanciaValor: '',
-      suspensividadeSegundaInstanciaUnidade: '',
-    },
+    recursoNovo(regra, preliminar?.atoCodigo ?? ''),
   ]);
+}
+
+/**
+ * Nasce sem suspensividade — declarar o par é escolha do operador, e os dois em branco são a
+ * desativação prevista daquela instância. A instância superior fica sem resposta: a janela só é
+ * gravada depois de o operador dizer se ela cabe.
+ */
+const SEM_SUSPENSIVIDADE_NEM_INSTANCIA_SUPERIOR = {
+  suspensividadePrimeiraInstanciaValor: '',
+  suspensividadePrimeiraInstanciaUnidade: '',
+  admiteInstanciaSuperior: null,
+  suspensividadeSegundaInstanciaValor: '',
+  suspensividadeSegundaInstanciaUnidade: '',
+} as const;
+
+function recursoNovo(regra: RegraCatalogoDto | undefined, atoAncoraCodigo: string): RecursoDaEtapa {
+  return {
+    ancora: 'atoPublicado',
+    regraCodigo: regra?.codigo ?? '',
+    regraVersao: regra?.versao ?? '',
+    prazoValor: '',
+    prazoUnidade: 'diasUteis',
+    atoAncoraCodigo,
+    ...SEM_SUSPENSIVIDADE_NEM_INSTANCIA_SUPERIOR,
+  };
 }
 
 export function removerRecurso(grupo: FormGroup<EtapaForm>, posicao: number): void {

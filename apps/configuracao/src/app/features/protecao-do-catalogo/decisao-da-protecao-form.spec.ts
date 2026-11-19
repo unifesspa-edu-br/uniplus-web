@@ -1,14 +1,15 @@
 import { FormControl } from '@angular/forms';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeAll } from 'vitest';
 import {
   comandoDeJustificativa,
   comandoPara,
   justificativaPreenchida,
   recomendacoesPara,
 } from './decisao-da-protecao-form';
-import { detalheDoLaudo } from './protecao-do-catalogo.testing';
+import { detalheDoLaudo, compilarPaginaUmaVez } from './protecao-do-catalogo.testing';
 
 describe('formulário da decisão da proteção', () => {
+  beforeAll(compilarPaginaUmaVez);
   it('a justificativa só de espaços não conta como preenchida', () => {
     expect(justificativaPreenchida(new FormControl('   ', { nonNullable: true }))).toEqual({
       required: true,
@@ -29,7 +30,7 @@ describe('formulário da decisão da proteção', () => {
     expect(valores).not.toContain(detalheDoLaudo.classificacaoProtecao);
   });
 
-  it('a aprovação leva a proteção que a tela mostrou', () => {
+  it('a aprovação leva a proteção que a tela mostrou, com o ciclo e as manifestações lidos', () => {
     expect(comandoPara(detalheDoLaudo)).toEqual({
       cadastro: 'TIPO_DOCUMENTO',
       itemId: detalheDoLaudo.id,
@@ -37,6 +38,8 @@ describe('formulário da decisão da proteção', () => {
       classificacaoProtecao: 'INTERNO',
       hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
       finalidadeTratamento: detalheDoLaudo.finalidadeTratamento,
+      ciclo: 2,
+      manifestacoesNoCiclo: 0,
     });
   });
 
@@ -55,5 +58,12 @@ describe('formulário da decisão da proteção', () => {
       classificacaoRecomendada: 'SENSIVEL',
       justificativa: null,
     });
+  });
+
+  it('a aprovação diante de manifestação leva a justificativa, sem classificação recomendada', () => {
+    const comando = comandoDeJustificativa(detalheDoLaudo, 'APROVAR', 'A classificação basta.', '');
+
+    expect(comando).toMatchObject({ decisao: 'APROVAR', justificativa: 'A classificação basta.' });
+    expect('classificacaoRecomendada' in comando).toBe(false);
   });
 });

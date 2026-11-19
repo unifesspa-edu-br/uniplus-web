@@ -74,9 +74,10 @@ export class DocumentosEAtosDoProcessoApi {
    * (aviso, comunicado, errata), com o documento principal e os anexos já enviados, e a correção de
    * um ato publicado quando o corpo cita `atoCorrigidoId` e o motivo.
    *
-   * Responde 202: o ato fica pendente até o registro central confirmar. As recusas de negócio
-   * (processo sem página pública, tipo que não serve a documento avulso, ato já corrigido,
-   * documento já usado) chegam como `ApiResult.fail` com o `ProblemDetails` do 422.
+   * Responde 201: o ato é publicado e divulgado na mesma operação. As recusas de negócio
+   * (processo sem página pública, tipo que não serve a documento avulso, documento já usado)
+   * chegam como `ApiResult.fail` com o `ProblemDetails` do 422, e o ato já corrigido ou a vaga do
+   * tipo ocupada, com o do 409; em ambos nada fica gravado.
    */
   publicarAtoAvulso(
     processoSeletivoId: string,
@@ -111,9 +112,10 @@ export class DocumentosEAtosDoProcessoApi {
    * `atoCorrigidoId` e o motivo. O tipo do ato vem do item; no resultado, o corpo leva a
    * confirmação da política de divulgação.
    *
-   * Responde 202: o ato fica pendente até o registro central confirmar. As recusas de negócio
+   * Responde 201: o ato é publicado e divulgado na mesma operação. As recusas de negócio
    * (item já publicado, definitivo antes do preliminar, política não confirmada) chegam como
-   * `ApiResult.fail` com o `ProblemDetails` do 422.
+   * `ApiResult.fail` com o `ProblemDetails` do 422, e a vaga do tipo ocupada ou o ato já
+   * corrigido, com o do 409; em ambos nada fica gravado.
    */
   publicarProdutoPrevisto(
     processoSeletivoId: string,
@@ -196,15 +198,11 @@ export class DocumentosEAtosDoProcessoApi {
     documentoAPublicarId: string,
     context: HttpContext,
   ): Observable<ApiResult<DocumentoAPublicarDto>> {
-    return this.http.post<ApiResult<DocumentoAPublicarDto>>(
-      this.rotas.doProcesso(
-        processoSeletivoId,
-        'documentos-a-publicar',
-        documentoAPublicarId,
-        'confirmacao',
-      ),
-      null,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    return this.confirmarEnvio<DocumentoAPublicarDto>(
+      processoSeletivoId,
+      'documentos-a-publicar',
+      documentoAPublicarId,
+      context,
     );
   }
 
@@ -235,15 +233,11 @@ export class DocumentosEAtosDoProcessoApi {
     modeloDeDocumentoId: string,
     context: HttpContext,
   ): Observable<ApiResult<ModeloDeDocumentoDto>> {
-    return this.http.post<ApiResult<ModeloDeDocumentoDto>>(
-      this.rotas.doProcesso(
-        processoSeletivoId,
-        'modelos-de-documento',
-        modeloDeDocumentoId,
-        'confirmacao',
-      ),
-      null,
-      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
+    return this.confirmarEnvio<ModeloDeDocumentoDto>(
+      processoSeletivoId,
+      'modelos-de-documento',
+      modeloDeDocumentoId,
+      context,
     );
   }
 
@@ -264,6 +258,20 @@ export class DocumentosEAtosDoProcessoApi {
         'acesso',
       ),
       { context: withVendorMime('acesso-modelo-de-documento', 1) },
+    );
+  }
+
+  /** O terceiro passo do envio é o mesmo nos dois arquivos: um POST sem corpo na `confirmacao`. */
+  private confirmarEnvio<T>(
+    processoSeletivoId: string,
+    colecao: string,
+    arquivoId: string,
+    context: HttpContext,
+  ): Observable<ApiResult<T>> {
+    return this.http.post<ApiResult<T>>(
+      this.rotas.doProcesso(processoSeletivoId, colecao, arquivoId, 'confirmacao'),
+      null,
+      { context, headers: new HttpHeaders({ Accept: 'application/json' }) },
     );
   }
 }

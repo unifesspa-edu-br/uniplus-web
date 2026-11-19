@@ -1,8 +1,9 @@
 import type { ItemDocumentoExigidoInput, NoExigenciaInput } from '@uniplus/shared-data/selecao';
+import { baseLegalParaEnvio, basesLegaisParaEnvio } from '@uniplus/shared-utils';
 
 import type {
-  BaseLegalConfig,
   ExigenciaDeDocumento,
+  CriteriosDoComprovante,
   ExigenciasDoRascunho,
   NoDeExigencia,
 } from '../../processo-seletivo.models';
@@ -13,7 +14,7 @@ import { APLICABILIDADE_GERAL } from './exigencias-documentais';
 import { finalidadeEnviada } from './formulario-da-exigencia';
 import { comRecorteDeModalidade, recorteDeModalidades } from './recorte-por-modalidade';
 
-/** O processo vivo contra o qual a árvore do rascunho é resolvida e podada. */
+/** Os dados do processo usados para preparar as exigências para envio. */
 export interface ProcessoVivoDasExigencias {
   readonly faseIdPorCodigo: ReadonlyMap<string, string>;
   readonly modalidadesOfertadas: readonly string[];
@@ -23,9 +24,9 @@ export interface ProcessoVivoDasExigencias {
 
 /**
  * Serializa a árvore do rascunho no que o `PUT` recebe, resolvendo o que é declarado por
- * código contra o processo vivo e podando o que o cronograma invalidou.
+ * código e descartando exigências de fases removidas e grupos que ficaram vazios.
  *
- * A poda não é zelo: o `PUT` recusa a árvore inteira se um nó apontar fase que saiu do
+ * O `PUT` recusa a árvore inteira se um nó apontar fase que saiu do
  * cronograma (`FaseNaoPertenceAoProcesso`), etapa que não é da fase (`EtapaNaoPertenceAFase`),
  * cláusula de modalidade esvaziada (`ClausulaVazia`) ou grupo sem filhos (`GrupoVazio`) — e a
  * recusa chegaria sobre configuração que a tela não mostra mais.
@@ -36,12 +37,12 @@ export function arvoreDeExigencias(
 ): readonly NoExigenciaInput[] {
   const completas = comAlcanceDeTodasAsFases(exigencias, [...processo.faseIdPorCodigo.keys()]);
   return completas.raizes.flatMap((raiz) =>
-    podar([raiz], processo, finalidadeDaRaiz(raiz, processo)),
+    prepararExigenciasParaEnvio([raiz], processo, finalidadeDaRaiz(raiz, processo)),
   );
 }
 
 /**
- * O formulário da árvore de raiz, declarado na primeira folha que sobrevive à poda e herdado por
+ * O formulário da árvore de raiz, declarado na primeira exigência de uma fase ativa e herdado por
  * todas as outras: o servidor recusa grupo com documentos de formulários diferentes.
  */
 function finalidadeDaRaiz(raiz: NoDeExigencia, processo: ProcessoVivoDasExigencias): string | null {
@@ -56,46 +57,43 @@ function finalidadeDaRaiz(raiz: NoDeExigencia, processo: ProcessoVivoDasExigenci
       );
 }
 
-function podar(
+function prepararExigenciasParaEnvio(
   nos: readonly NoDeExigencia[],
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
-): readonly NoExigenciaInput[] {
-  const vivos: NoExigenciaInput[] = [];
+): NoExigenciaInput[] {
+  return nos.flatMap((no) => {
+    if (no.tipo === 'FOLHA') return documentoDaExigenciaParaEnvio(no, processo, finalidade);
+    const filhos = prepararExigenciasParaEnvio(no.filhos ?? [], processo, finalidade);
+    if (filhos.length === 0) return [];
+    return [{ ...dadosDaExigenciaParaEnvio(no), filhos }];
+  });
+}
 
-  for (const no of nos) {
-    if (no.tipo === 'FOLHA') {
-      const documento = no.documento;
-      // A fase saiu do cronograma depois de o documento ser marcado nela.
-      if (documento === null || !processo.faseIdPorCodigo.has(documento.faseCodigo)) continue;
-
-      vivos.push({
-        ...comoNo(no),
-        documento: folha(documento, processo, finalidade),
-        filhos: null,
-      });
-      continue;
-    }
-
-    const filhos = podar(no.filhos ?? [], processo, finalidade);
-    // Grupo que perdeu todos os filhos deixa de existir — mandá-lo vazio derrubaria a
-    // gravação inteira, e um grupo sem alternativa nenhuma não exige coisa alguma.
-    if (filhos.length === 0) continue;
-
-    vivos.push({ ...comoNo(no), documento: null, filhos });
-  }
-
-  return vivos;
+/** Exclui exigências de fases removidas do cronograma. */
+function documentoDaExigenciaParaEnvio(
+  no: NoDeExigencia,
+  processo: ProcessoVivoDasExigencias,
+  finalidade: string | null,
+): NoExigenciaInput[] {
+  const documento = no.documento;
+  if (documento === null || !processo.faseIdPorCodigo.has(documento.faseCodigo)) return [];
+  return [
+    {
+      ...dadosDaExigenciaParaEnvio(no),
+      documento: prepararDocumentoParaEnvio(documento, processo, finalidade),
+    },
+  ];
 }
 
 /** Os campos do nó que o rascunho carrega sem tocar, inclusive os que a tela não edita. */
-function comoNo(no: NoDeExigencia): NoExigenciaInput {
+function dadosDaExigenciaParaEnvio(no: NoDeExigencia): NoExigenciaInput {
   return {
     tipo: no.tipo,
     documento: null,
     quantidadeMinima: no.quantidadeMinima ?? null,
     consequencia: no.consequencia,
-    basesLegais: no.basesLegais === null ? null : no.basesLegais.map(comoBaseLegal),
+    basesLegais: no.basesLegais === null ? null : no.basesLegais.map(baseLegalParaEnvio),
     filhos: null,
     chaveDistincao: no.chaveDistincao,
     dataReferencia: no.dataReferencia,
@@ -104,55 +102,56 @@ function comoNo(no: NoDeExigencia): NoExigenciaInput {
   };
 }
 
-/** Norma sem referência não viaja: é linha em branco do formulário, não declaração. */
-function comoBaseLegal(base: BaseLegalConfig): {
-  referencia: string;
-  abrangencia: string;
-  status: string;
-  observacao: string | null;
-} {
-  return {
-    referencia: base.referencia.trim(),
-    abrangencia: base.abrangencia,
-    status: base.status,
-    observacao: base.observacao.trim() === '' ? null : base.observacao.trim(),
-  };
-}
-
-function folha(
+function prepararDocumentoParaEnvio(
   documento: ExigenciaDeDocumento,
   processo: ProcessoVivoDasExigencias,
   finalidade: string | null,
 ): ItemDocumentoExigidoInput {
-  const { faseIdPorCodigo } = processo;
-  const recorte = recorteDeModalidades(documento, processo.modalidadesOfertadas);
-
   return {
-    exigidoNaFaseId: faseIdPorCodigo.get(documento.faseCodigo) ?? '',
-    exigidoNaEtapaId: etapaViva(documento, processo.etapasVivas),
+    exigidoNaFaseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? '',
+    exigidoNaEtapaId: etapaDeColetaValida(documento, processo.etapasVivas),
     finalidade,
     tipoDocumentoId: documento.tipoDocumentoId,
-    // A aplicabilidade é DECLARADA, nunca inferida das condições (ADR-0071): "exigida de quem
-    // satisfaz" com gatilho vazio é estado legítimo — exigida de ninguém —, e derivá-la da
-    // presença de condição tornaria esse estado inalcançável pela tela.
-    //
-    // Quando é de todos, TODA condição sai: o agregado recusa a exigência geral que carrega
-    // gatilho, e antes disto uma condição sobre outro fato viajava junto com a aplicabilidade
-    // rebaixada — inclusive quando o operador marcava todas as modalidades.
+    ...regraDaExigenciaParaEnvio(documento, processo.modalidadesOfertadas),
+    ...criteriosDoComprovanteParaEnvio(documento, processo.faseIdPorCodigo),
+  };
+}
+
+type RegraDaExigenciaParaEnvio = Pick<
+  ItemDocumentoExigidoInput,
+  'aplicabilidade' | 'obrigatorio' | 'consequenciaIndeferimento' | 'condicoes' | 'basesLegais'
+>;
+
+/** A aplicabilidade é declarada. Uma exigência geral segue sem condições (ADR-0071). */
+function regraDaExigenciaParaEnvio(
+  documento: ExigenciaDeDocumento,
+  modalidadesOfertadas: readonly string[],
+): RegraDaExigenciaParaEnvio {
+  return {
     aplicabilidade: documento.aplicabilidade,
     obrigatorio: documento.obrigatorio,
     consequenciaIndeferimento:
       documento.consequenciaIndeferimento === '' ? null : documento.consequenciaIndeferimento,
-    condicoes:
-      documento.aplicabilidade === APLICABILIDADE_GERAL
-        ? []
-        : comRecorteDeModalidade(documento.condicoes, recorte),
-    // A publicação exige base legal resolvida de toda exigência que decide o resultado; a
-    // que não decide pode seguir sem norma declarada. Linha em branco não conta como norma.
-    basesLegais: documento.basesLegais
-      .filter((base) => base.referencia.trim() !== '')
-      .map(comoBaseLegal),
-    idadeMaximaEmissao: comoIdadeMaxima(documento.idadeMaximaEmissao, faseIdPorCodigo),
+    condicoes: condicoesParaEnvio(documento, modalidadesOfertadas),
+    basesLegais: basesLegaisParaEnvio(documento.basesLegais),
+  };
+}
+
+function condicoesParaEnvio(
+  documento: ExigenciaDeDocumento,
+  modalidadesOfertadas: readonly string[],
+) {
+  if (documento.aplicabilidade === APLICABILIDADE_GERAL) return [];
+  const recorte = recorteDeModalidades(documento, modalidadesOfertadas);
+  return comRecorteDeModalidade(documento.condicoes, recorte);
+}
+
+function criteriosDoComprovanteParaEnvio(
+  documento: CriteriosDoComprovante,
+  faseIdPorCodigo: ReadonlyMap<string, string>,
+) {
+  return {
+    idadeMaximaEmissao: idadeMaximaParaEnvio(documento.idadeMaximaEmissao, faseIdPorCodigo),
     formatosPermitidos:
       documento.formatosPermitidos as ItemDocumentoExigidoInput['formatosPermitidos'],
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
@@ -164,7 +163,7 @@ function folha(
  * A etapa que coletava saiu do cronograma: o documento volta a ser da fase inteira em vez de
  * referenciar um identificador que o processo não tem mais.
  */
-function etapaViva(
+function etapaDeColetaValida(
   documento: ExigenciaDeDocumento,
   etapasVivas: ReadonlySet<string>,
 ): string | null {
@@ -179,21 +178,14 @@ function etapaViva(
  * linha que não existe mais. O servidor recusaria com `IdadeMaximaEmissao.FaseNaoPertenceAoProcesso`,
  * e a recusa falaria de um campo que esta tela não renderiza — o operador não teria o que fazer.
  */
-function comoIdadeMaxima(
+function idadeMaximaParaEnvio(
   idade: ExigenciaDeDocumento['idadeMaximaEmissao'],
   faseIdPorCodigo: ReadonlyMap<string, string>,
 ): ItemDocumentoExigidoInput['idadeMaximaEmissao'] {
   if (idade === null) return null;
-
-  const faseId =
-    idade.referenciaFaseCodigo === null ? null : faseIdPorCodigo.get(idade.referenciaFaseCodigo);
-  if (idade.referenciaFaseCodigo !== null && faseId === undefined) return null;
-
-  return {
-    valor: idade.valor,
-    unidade: idade.unidade,
-    referenciaTipo: idade.referenciaTipo,
-    data: idade.data,
-    referenciaFaseId: faseId ?? null,
-  };
+  const { referenciaFaseCodigo, valor, unidade, referenciaTipo, data } = idade;
+  const referenciaFaseId =
+    referenciaFaseCodigo === null ? null : faseIdPorCodigo.get(referenciaFaseCodigo);
+  if (referenciaFaseId === undefined) return null;
+  return { valor, unidade, referenciaTipo, data, referenciaFaseId };
 }

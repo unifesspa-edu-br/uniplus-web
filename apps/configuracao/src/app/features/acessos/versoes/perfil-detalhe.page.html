@@ -64,7 +64,10 @@
   @if (p.suspensao; as suspensao) {
     <cfg-suspensao-do-perfil [suspensao]="suspensao" />
   }
-  @if (p.ultimaVersaoEncerradaSemVigor; as encerrada) {
+  @if (avisoDaVersao(); as aviso) {
+    <ui-alert variant="warning" [heading]="tituloDoAvisoDaVersao">{{ aviso }}</ui-alert>
+  }
+  @if (avisoDaUltimaEncerrada(); as encerrada) {
     <ui-alert variant="warning" heading="A última versão proposta não entrou em vigor">
       A versão {{ encerrada.numero }} foi {{ situacaoEncerrada(encerrada.situacao) }}. O perfil
       segue com a composição anterior.
@@ -80,6 +83,7 @@
       [nomeVigente]="p.nome"
       [descricaoVigente]="p.descricao"
       [acoes]="acoes()!"
+      [doLink]="pendenteEhADoLink()"
       [indisponivel]="escrita.gravando()"
       [enviandoDocumento]="escrita.enviandoDocumento()"
       [erroDoDocumento]="reenvio.erro()"

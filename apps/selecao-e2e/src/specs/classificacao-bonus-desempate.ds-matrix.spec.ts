@@ -444,7 +444,7 @@ const DETALHE_PUBLICADO = {
     etapaGravada(ETAPA_ENTREVISTA_ID, 'Entrevista', 1, false),
     etapaGravada('01960000-0000-7000-0000-0000000008f9', 'Nota do ENEM', 2, true),
   ],
-  ofertaAtendimento: null,
+  atendimentoEspecializado: null,
   distribuicaoVagas: [],
   aplicaBonusRegional: true,
   opcoesDeCurso: { numero: 1 },

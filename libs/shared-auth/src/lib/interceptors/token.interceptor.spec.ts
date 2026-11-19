@@ -60,6 +60,11 @@ describe('tokenInterceptor — allowlist', () => {
     };
   }
 
+  function setupComRefresh(token: string, expired: boolean) {
+    const refresh = vi.fn(async () => true);
+    return { ...setup([apiUrl], { token }, { expired, refresh }), refresh };
+  }
+
   it('anexa Bearer quando a URL está na allowlist (API)', async () => {
     const { http, httpMock } = setup([apiUrl, issuerUrl]);
 
@@ -120,18 +125,13 @@ describe('tokenInterceptor — allowlist', () => {
   });
 
   it('dispara refreshToken() e anexa o Bearer quando o token está expirado', async () => {
-    const refreshMock = vi.fn(async () => true);
-    const { http, httpMock } = setup(
-      [apiUrl],
-      { token: 'stale-token' },
-      { expired: true, refresh: refreshMock },
-    );
+    const { http, httpMock, refresh } = setupComRefresh('stale-token', true);
 
     const promise = firstValueFrom(http.get(`${apiUrl}/refresh-before-attach`));
     await flushMicrotasks();
     const req = httpMock.expectOne(`${apiUrl}/refresh-before-attach`);
 
-    expect(refreshMock).toHaveBeenCalledTimes(1);
+    expect(refresh).toHaveBeenCalledTimes(1);
     // getToken() é relido após o refresh; como o mock refresh não rotaciona
     // o valor local (função custom), o header carrega o token original —
     // o essencial é validar que refresh foi disparado antes do envio.
@@ -141,18 +141,13 @@ describe('tokenInterceptor — allowlist', () => {
   });
 
   it('NÃO chama refreshToken() quando o token ainda é válido', async () => {
-    const refreshMock = vi.fn(async () => true);
-    const { http, httpMock } = setup(
-      [apiUrl],
-      { token: 'fresh-token' },
-      { expired: false, refresh: refreshMock },
-    );
+    const { http, httpMock, refresh } = setupComRefresh('fresh-token', false);
 
     const promise = firstValueFrom(http.get(`${apiUrl}/no-refresh`));
     await flushMicrotasks();
     const req = httpMock.expectOne(`${apiUrl}/no-refresh`);
 
-    expect(refreshMock).not.toHaveBeenCalled();
+    expect(refresh).not.toHaveBeenCalled();
     expect(req.request.headers.get('Authorization')).toBe('Bearer fresh-token');
     req.flush({});
     await promise;
@@ -172,20 +167,23 @@ describe('tokenInterceptor — allowlist', () => {
 });
 
 describe('tokenInterceptor — chamada direta', () => {
-  it('encaminha a requisição inalterada se a URL não está na allowlist', () => {
+  const authServiceComTokenValido = {
+    getToken: () => 'tok',
+    isTokenExpired: () => false,
+    refreshToken: async () => true,
+  } as unknown as AuthService;
+
+  function permitirApenas(urlPermitida: string): void {
     TestBed.configureTestingModule({
       providers: [
-        { provide: AUTH_ALLOWED_URLS, useValue: ['http://allowed.example.com'] },
-        {
-          provide: AuthService,
-          useValue: {
-            getToken: () => 'tok',
-            isTokenExpired: () => false,
-            refreshToken: async () => true,
-          } as unknown as AuthService,
-        },
+        { provide: AUTH_ALLOWED_URLS, useValue: [urlPermitida] },
+        { provide: AuthService, useValue: authServiceComTokenValido },
       ],
     });
+  }
+
+  it('encaminha a requisição inalterada se a URL não está na allowlist', () => {
+    permitirApenas('http://allowed.example.com');
 
     const req = new HttpRequest('GET', 'https://other.example.com/x');
     const next: HttpHandlerFn = (r) => {

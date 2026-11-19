@@ -13,7 +13,7 @@ export interface ItensDaJanela {
   readonly doLote: readonly ItemDaJanelaDto[];
   /** O lote as reteve para outra pessoa da gestão de acessos decidir. */
   readonly retidas: readonly ItemDaJanelaDto[];
-  /** Migram só depois da decisão da proteção de dados. */
+  /** Migram só depois da decisão do Representante do controlador. */
   readonly naProtecaoDeDados: readonly ItemDaJanelaDto[];
   /** São da pessoa que lê e ainda aguardam decisão: outra pessoa decide, e a tela não oferece ação. */
   readonly proprias: readonly ItemDaJanelaDto[];

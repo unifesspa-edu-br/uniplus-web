@@ -20,3 +20,37 @@
     --marca-altura: 15mm;
   }
 }
+
+.topbar__marca,
+.sidebar__marca {
+  --marca-altura: 3rem;
+  --marca-protecao: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* Fundo que muda com o tema: a colorida no claro; a branca oficial no escuro e no contraste. */
+.marca-institucional__imagem--conforme-tema {
+  display: none;
+}
+[data-theme="dark"] .marca-institucional__imagem--conforme-tema,
+[data-theme="contrast"] .marca-institucional__imagem--conforme-tema {
+  display: block;
+}
+[data-theme="dark"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema),
+[data-theme="contrast"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="auto"] .marca-institucional__imagem--conforme-tema {
+    display: block;
+  }
+  [data-theme="auto"] .marca-institucional__imagem--colorida:has(~ .marca-institucional__imagem--conforme-tema) {
+    display: none;
+  }
+}
+@media (max-width: 479px) {
+  .topbar__marca {
+    --marca-altura: 2rem;
+    --marca-protecao: var(--space-1);
+  }
+}

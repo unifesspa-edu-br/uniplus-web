@@ -1,6 +1,5 @@
 import {
   SituacaoDoProdutoPrevisto,
-  SituacaoDoRegistroDoAto,
   type AtoDoProcessoDto,
   type ProdutoPrevistoDto,
   type ProdutosPrevistosDoProcessoDto,
@@ -22,9 +21,6 @@ function ato(id: string, sobrescritas: Partial<AtoDoProcessoDto> = {}): AtoDoPro
     dataDoAto: '2026-10-10',
     publicadoEm: '2026-10-10T15:00:00Z',
     assinante: 'Pró-reitoria de Ensino',
-    situacao: SituacaoDoRegistroDoAto.registrado,
-    registradoEm: '2026-10-10T15:01:00Z',
-    pendenciaAcimaDoLimiar: false,
     atoCorrigidoId: null,
     motivoDaCorrecao: null,
     politicaDeDivulgacaoConfirmada: true,
@@ -110,21 +106,8 @@ describe('atoQueACorrecaoCorrige', () => {
     expect(corrigido?.id).toBe('errata-2');
   });
 
-  it('não oferece nova correção enquanto a última ainda aguarda o registro', () => {
-    const original = ato('original');
-    const pendente = ato('errata', {
-      atoCorrigidoId: 'original',
-      situacao: SituacaoDoRegistroDoAto.pendente,
-      registradoEm: null,
-    });
-
-    expect(atoQueACorrecaoCorrige(item('p', { ato: original, correcoes: [pendente] }))).toBeNull();
-  });
-
-  it('não oferece correção ao item que ainda não foi publicado ou aguarda o registro', () => {
+  it('não oferece correção ao item que ainda não foi publicado', () => {
     expect(atoQueACorrecaoCorrige(item('aberto'))).toBeNull();
-    const pendente = ato('original', { situacao: SituacaoDoRegistroDoAto.pendente, registradoEm: null });
-    expect(atoQueACorrecaoCorrige(item('pendente', { ato: pendente }))).toBeNull();
   });
 });
 

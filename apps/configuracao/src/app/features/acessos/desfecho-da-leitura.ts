@@ -20,23 +20,38 @@ export interface DesfechoDaLeitura {
   readonly mensagem: Signal<string | null>;
 }
 
+type TextoDoProblema = (problema: ProblemDetails) => string;
+
 export function desfechoDaLeitura(
   consultas: readonly Consulta[],
   problemas: ProblemI18nService,
 ): DesfechoDaLeitura {
-  const textoDe = (problema: ProblemDetails): string => textoDaRecusa(problemas.resolve(problema));
+  const textoDe: TextoDoProblema = (problema) => textoDaRecusa(problemas.resolve(problema));
   const problemasDas = (): ProblemDetails[] =>
     consultas.flatMap((consulta) => consulta.problem() ?? []);
 
-  const recusa = computed(() => {
-    const problema = problemasDas().find(ehRecusaDefinitiva);
-    return problema ? recusaDe(problema, textoDe(problema)) : null;
-  });
-  const falha = computed(() => {
-    if (recusa() !== null) return null;
-    const problema = problemasDas()[0];
-    if (problema) return textoDe(problema);
-    return consultas.some((consulta) => consulta.error()) ? FALHA_INESPERADA_DE_LEITURA : null;
-  });
+  const recusa = computed(() => recusaDefinitiva(problemasDas(), textoDe));
+  const falha = computed(() =>
+    recusa() === null ? falhaRecuperavel(consultas, problemasDas(), textoDe) : null,
+  );
   return { falha, recusa, mensagem: computed(() => recusa()?.texto ?? falha()) };
+}
+
+function recusaDefinitiva(
+  problemas: readonly ProblemDetails[],
+  textoDe: TextoDoProblema,
+): RecusaDaLeitura | null {
+  const problema = problemas.find(ehRecusaDefinitiva);
+  return problema ? recusaDe(problema, textoDe(problema)) : null;
+}
+
+/** O problema da primeira consulta que falhou ou, sem problema, a falha inesperada de qualquer uma. */
+function falhaRecuperavel(
+  consultas: readonly Consulta[],
+  problemas: readonly ProblemDetails[],
+  textoDe: TextoDoProblema,
+): string | null {
+  const problema = problemas[0];
+  if (problema) return textoDe(problema);
+  return consultas.some((consulta) => consulta.error()) ? FALHA_INESPERADA_DE_LEITURA : null;
 }

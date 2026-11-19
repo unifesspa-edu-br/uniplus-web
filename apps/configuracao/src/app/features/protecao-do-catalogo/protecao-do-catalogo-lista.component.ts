@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { type ItemDaProtecaoDoCatalogoDto } from '@uniplus/shared-data/configuracao';
-import { EmptyStateComponent, SpinnerComponent } from '@uniplus/shared-ui/components';
+import { EmptyStateComponent, SpinnerComponent, TagComponent } from '@uniplus/shared-ui/components';
+import { formatarDataBr } from '@uniplus/shared-utils';
 import { devolverFocoDaLista } from '../../shared/foco';
 import {
   CLASSIFICACOES_DE_PROTECAO,
@@ -11,7 +12,7 @@ import {
 @Component({
   selector: 'cfg-protecao-do-catalogo-lista',
   standalone: true,
-  imports: [EmptyStateComponent, SpinnerComponent],
+  imports: [EmptyStateComponent, SpinnerComponent, TagComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './protecao-do-catalogo-lista.component.html',
 })
@@ -24,6 +25,7 @@ export class ProtecaoDoCatalogoListaComponent {
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly cadastro = nomeDoCadastro;
   protected readonly rotulo = rotuloDe;
+  protected readonly data = (instante: string): string => formatarDataBr(instante, 'datetime');
 
   /** O item decidido sai da fila: ao fim da gravação e da recarga o foco livre vai ao título. */
   private readonly foco = devolverFocoDaLista({

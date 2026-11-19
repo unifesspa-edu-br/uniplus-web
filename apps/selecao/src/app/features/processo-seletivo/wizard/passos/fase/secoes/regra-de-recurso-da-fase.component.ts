@@ -6,17 +6,13 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeRegras } from '../../cronograma/catalogos/catalogo-de-regras.service';
+import {
+  prazoEmTexto,
+  UNIDADES_DA_INTERPOSICAO,
+  UNIDADES_DA_SUSPENSIVIDADE,
+  type UnidadeDePrazoDoRecurso,
+} from '../../../shared/unidades-de-prazo-do-recurso';
 import { FaseEmEdicao } from '../fase-em-edicao';
-
-/**
- * Unidades de prazo que o domínio aceita, com o rótulo que o operador lê. Dia
- * corrido fica de fora de propósito: o domínio o recusa na interposição, e
- * oferecê-lo seria convidar a uma gravação que volta recusada.
- */
-const UNIDADES = [
-  { valor: 'diasUteis', rotulo: 'dias úteis' },
-  { valor: 'horas', rotulo: 'horas' },
-] as const;
 
 /** Os controles de um par prazo e unidade, como o ng-template compartilhado os desenha. */
 interface ParComUnidade {
@@ -26,10 +22,24 @@ interface ParComUnidade {
   readonly controleDoValor: string;
   readonly controleDaUnidade: string;
   readonly opcaoVazia: string;
+  readonly unidades: readonly UnidadeDePrazoDoRecurso[];
   readonly invalidoNoValor: 'true' | null;
   readonly invalidoNaUnidade: 'true' | null;
   readonly descritoPor: string;
 }
+
+/** O que o seletor de unidade oferece: a opção em branco e as unidades que o contrato admite. */
+type OpcoesDeUnidade = Pick<ParComUnidade, 'opcaoVazia' | 'unidades'>;
+
+const OPCOES_DA_INTERPOSICAO: OpcoesDeUnidade = {
+  opcaoVazia: 'Selecione…',
+  unidades: UNIDADES_DA_INTERPOSICAO,
+};
+
+const OPCOES_DA_SUSPENSIVIDADE: OpcoesDeUnidade = {
+  opcaoVazia: 'Sem suspensividade',
+  unidades: UNIDADES_DA_SUSPENSIVIDADE,
+};
 
 type Instancia = 'PrimeiraInstancia' | 'SegundaInstancia';
 
@@ -38,31 +48,31 @@ const ROTULO_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
   SegundaInstancia: '2ª',
 };
 
-function valorComUnidade(valor: string, unidade: string): string {
-  if (valor === '') return '';
-  return `${valor} ${UNIDADES.find((u) => u.valor === unidade)?.rotulo ?? unidade}`;
-}
-
 type RecursoDaFase = NonNullable<
   ReturnType<FaseEmEdicao['espelho']['formulario']>
 >['controls']['recurso']['controls'];
 
+function suspensividadeLida(recurso: RecursoDaFase, instancia: Instancia): string {
+  return prazoEmTexto(
+    recurso[`suspensividade${instancia}Valor`].value,
+    recurso[`suspensividade${instancia}Unidade`].value,
+  );
+}
+
 /** As suspensividades das instâncias em texto; a da segunda só existe se o recurso admite instância superior. */
 function suspensividadesLidas(recurso: RecursoDaFase) {
   const admiteSuperior = recurso.admiteInstanciaSuperior.value;
-  const segunda = valorComUnidade(
-    recurso.suspensividadeSegundaInstanciaValor.value,
-    recurso.suspensividadeSegundaInstanciaUnidade.value,
-  );
+  const segunda = suspensividadeLida(recurso, 'SegundaInstancia');
   return {
-    suspensividadePrimeiraInstancia:
-      valorComUnidade(
-        recurso.suspensividadePrimeiraInstanciaValor.value,
-        recurso.suspensividadePrimeiraInstanciaUnidade.value,
-      ) || null,
+    suspensividadePrimeiraInstancia: suspensividadeLida(recurso, 'PrimeiraInstancia') || null,
     admiteInstanciaSuperior: admiteSuperior,
     suspensividadeSegundaInstancia: admiteSuperior === true ? segunda || null : null,
   };
+}
+
+function regraDeRecursoLida(recurso: RecursoDaFase): string | null {
+  const { regraCodigo, regraVersao } = recurso;
+  return regraCodigo.value ? `${regraCodigo.value} · versão ${regraVersao.value}` : null;
 }
 
 /** A regra de recurso da fase: a regra de contagem, o prazo, a âncora e as suspensividades. */
@@ -93,7 +103,6 @@ export class RegraDeRecursoDaFaseComponent {
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
   protected readonly ancorasPossiveis = this.faseEmEdicao.ancorasPossiveis;
-  protected readonly unidades = UNIDADES;
 
   /** Regras de prazo de recurso publicadas no catálogo versionado. */
   protected readonly regrasDeRecurso = computed(() =>
@@ -110,13 +119,10 @@ export class RegraDeRecursoDaFaseComponent {
       rotuloDaUnidade: 'Unidade do prazo',
       controleDoValor: 'prazoValor',
       controleDaUnidade: 'prazoUnidade',
-      opcaoVazia: 'Selecione…',
+      ...OPCOES_DA_INTERPOSICAO,
       invalidoNoValor: erro,
       invalidoNaUnidade: erro,
-      descritoPor:
-        erro === null
-          ? this.idDaFase('prazo-ajuda')
-          : this.idDaFase('prazo-erro') + ' ' + this.idDaFase('prazo-ajuda'),
+      descritoPor: this.descritoPeloPrazo(erro),
     };
   });
 
@@ -149,19 +155,24 @@ export class RegraDeRecursoDaFaseComponent {
     if (form === null) return null;
     this.espelho.versao();
 
-    const rotulosDosAtos = this.catalogoDeAtos.rotuloDoAto();
     const recurso = form.controls.recurso.controls;
-    const ancora = recurso.atoAncoraCodigo.value;
 
     return {
       admiteRecurso: form.controls.admiteRecurso.value,
-      regraDeRecurso: recurso.regraCodigo.value
-        ? `${recurso.regraCodigo.value} · versão ${recurso.regraVersao.value}`
-        : null,
-      prazo: valorComUnidade(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
-      publicacaoDoPrazo: ancora ? (rotulosDosAtos.get(ancora) ?? ancora) : null,
+      regraDeRecurso: regraDeRecursoLida(recurso),
+      prazo: prazoEmTexto(recurso.prazoValor.value, recurso.prazoUnidade.value) || null,
+      publicacaoDoPrazo: this.publicacaoDoPrazoLida(recurso.atoAncoraCodigo.value),
       ...suspensividadesLidas(recurso),
     };
+  }
+
+  private publicacaoDoPrazoLida(codigo: string): string | null {
+    return codigo ? (this.catalogoDeAtos.rotuloDoAto().get(codigo) ?? codigo) : null;
+  }
+
+  private descritoPeloPrazo(erro: 'true' | null): string {
+    const ajuda = this.idDaFase('prazo-ajuda');
+    return erro === null ? ajuda : `${this.idDaFase('prazo-erro')} ${ajuda}`;
   }
 
   private suspensividade(instancia: Instancia): ParComUnidade {
@@ -173,7 +184,7 @@ export class RegraDeRecursoDaFaseComponent {
       rotuloDaUnidade: `Suspensividade da ${rotulo} instância — unidade`,
       controleDoValor: `suspensividade${instancia}Valor`,
       controleDaUnidade: `suspensividade${instancia}Unidade`,
-      opcaoVazia: 'Sem suspensividade',
+      ...OPCOES_DA_SUSPENSIVIDADE,
       invalidoNoValor: this.erroDoCampo(campo) ? 'true' : null,
       invalidoNaUnidade: null,
       descritoPor: this.idDaFase('susp-ajuda'),

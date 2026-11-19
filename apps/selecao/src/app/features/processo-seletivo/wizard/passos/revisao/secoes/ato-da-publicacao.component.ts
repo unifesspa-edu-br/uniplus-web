@@ -15,6 +15,7 @@ import {
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
+import type { WizardDraft } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeFases } from '../../cronograma/catalogos/catalogo-de-fases.service';
 import { itensDoAto, rotuloDoTipoDeAto } from '../itens-do-ato';
@@ -60,7 +61,7 @@ export class AtoDaPublicacaoComponent {
     orgao: new FormControl<string>('', { nonNullable: true }),
     serie: new FormControl<string>('', { nonNullable: true }),
     ano: new FormControl<string>('', { nonNullable: true }),
-    dataPublicacao: new FormControl<string>('', { nonNullable: true }),
+    dataDoAto: new FormControl<string>('', { nonNullable: true }),
     assinante: new FormControl<string>('', { nonNullable: true }),
     periodoInscricaoInicio: new FormControl<string>('', { nonNullable: true }),
     periodoInscricaoFim: new FormControl<string>('', { nonNullable: true }),
@@ -98,7 +99,7 @@ export class AtoDaPublicacaoComponent {
       ...ato,
       numero: numero.trim() || 'Não informado',
       tipo: rotuloDoTipoDeAto(this.prontidao.tiposAto(), ato.tipoAtoCodigo),
-      dataPublicacao: ato.dataPublicacao ? this.dataBr.transform(ato.dataPublicacao) : '',
+      dataDoAto: ato.dataDoAto ? this.dataBr.transform(ato.dataDoAto) : '',
     });
   });
 
@@ -114,7 +115,7 @@ export class AtoDaPublicacaoComponent {
       numero: ato.numero?.trim() || 'não informado',
       tipo: tipo?.nome ?? ato.tipoCodigo,
       ano: String(ato.ano),
-      dataPublicacao: this.dataBr.transform(ato.dataPublicacao),
+      dataDoAto: this.dataBr.transform(ato.dataDoAto),
     });
   });
 
@@ -172,19 +173,24 @@ export class AtoDaPublicacaoComponent {
 
   private gravarFormularioNoRascunho(): void {
     this.form.valueChanges.pipe(takeUntilDestroyed()).subscribe((valores) => {
-      this.store.patchObjectSection('publicacao', {
-        numero: valores.numero ?? '',
-        periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
-        periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
-        ato: {
-          orgao: valores.orgao ?? '',
-          serie: valores.serie ?? '',
-          ano: valores.ano ?? '',
-          dataPublicacao: valores.dataPublicacao ?? '',
-          assinante: valores.assinante ?? '',
-          tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
-        },
-      });
+      this.store.patchObjectSection('publicacao', this.secaoDoFormulario(valores));
     });
+  }
+
+  /** A seção `publicacao` do rascunho que os valores do formulário descrevem; o ausente vira vazio. */
+  private secaoDoFormulario(valores: typeof this.form.value): Omit<WizardDraft['publicacao'], 'anexos'> {
+    return {
+      numero: valores.numero ?? '',
+      periodoInscricaoInicio: valores.periodoInscricaoInicio ?? '',
+      periodoInscricaoFim: valores.periodoInscricaoFim ?? '',
+      ato: {
+        orgao: valores.orgao ?? '',
+        serie: valores.serie ?? '',
+        ano: valores.ano ?? '',
+        dataDoAto: valores.dataDoAto ?? '',
+        assinante: valores.assinante ?? '',
+        tipoAtoCodigo: valores.tipoAtoCodigo ?? '',
+      },
+    };
   }
 }

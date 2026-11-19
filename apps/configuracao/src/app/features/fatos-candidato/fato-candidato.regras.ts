@@ -125,7 +125,7 @@ export function fatoDeMembroDoBinding(fato: Pick<FatoCandidatoDto, 'binding'>): 
   return fato.binding.startsWith(prefixo) ? fato.binding.slice(prefixo.length) : null;
 }
 
-type FatoAvaliado = Pick<FatoCandidatoDto, 'binding' | 'sistema' | 'dominio' | 'fonteValores'>;
+type FatoAvaliado = Pick<FatoCandidatoDto, 'binding' | 'semeadoPeloSistema' | 'dominio' | 'fonteValores'>;
 
 /**
  * Se o fato tem valores próprios para manter: o categórico do administrador com os valores no
@@ -135,7 +135,7 @@ type FatoAvaliado = Pick<FatoCandidatoDto, 'binding' | 'sistema' | 'dominio' | '
 export function podeTerValores(fato: FatoAvaliado): boolean {
   const tipo = tipoDoFato(fato);
   return (
-    !fato.sistema &&
+    !fato.semeadoPeloSistema &&
     fato.dominio === 'CATEGORICO' &&
     fato.fonteValores === 'GLOBAL' &&
     (tipo === 'DECLARADO' || tipo === 'DERIVADO_POR_REGRA')
@@ -144,7 +144,7 @@ export function podeTerValores(fato: FatoAvaliado): boolean {
 
 /** Se o fato tem regras padrão: só o derivado por regra do administrador. */
 export function podeTerRegras(fato: FatoAvaliado): boolean {
-  return !fato.sistema && tipoDoFato(fato) === 'DERIVADO_POR_REGRA';
+  return !fato.semeadoPeloSistema && tipoDoFato(fato) === 'DERIVADO_POR_REGRA';
 }
 
 /**
@@ -189,9 +189,9 @@ export function resumoDoAgregado(dominioDoMembro: string): string {
 export type AcaoDeAtivacao = 'DESATIVAR' | 'REATIVAR';
 
 export function acaoDeAtivacao(
-  fato: Pick<FatoCandidatoDto, 'sistema' | 'ativo'>,
+  fato: Pick<FatoCandidatoDto, 'semeadoPeloSistema' | 'ativo'>,
 ): AcaoDeAtivacao | null {
-  if (fato.sistema) return null;
+  if (fato.semeadoPeloSistema) return null;
   return fato.ativo ? 'DESATIVAR' : 'REATIVAR';
 }
 
@@ -254,8 +254,8 @@ export function eixosDoTipo(tipo: TipoDoFato): EixosEditaveis {
 }
 
 /** Se a definição do fato se altera na tela: o do administrador de um dos três tipos conhecidos. */
-export function podeEditarDefinicao(fato: Pick<FatoCandidatoDto, 'binding' | 'sistema'>): boolean {
-  return !fato.sistema && tipoDoFato(fato) !== 'OUTRO';
+export function podeEditarDefinicao(fato: Pick<FatoCandidatoDto, 'binding' | 'semeadoPeloSistema'>): boolean {
+  return !fato.semeadoPeloSistema && tipoDoFato(fato) !== 'OUTRO';
 }
 
 /** O que o formulário da definição guarda, no vocabulário do contrato. */

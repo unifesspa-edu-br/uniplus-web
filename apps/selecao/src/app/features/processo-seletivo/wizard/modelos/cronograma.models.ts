@@ -1,5 +1,7 @@
 import type { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
 
+import type { BancaDaEtapa, RegraDeDeliberacaoDaBanca } from './deliberacao.models';
+
 /**
  * Uma fase do cronograma. É referenciada pelo id da fase canônica: código, dono, origem da data e
  * os sinalizadores que decidem o que ela exige são projeção do catálogo, congelados pelo servidor
@@ -48,6 +50,7 @@ export interface ProdutoDaFase {
 export interface BancaRequeridaDaFase {
   readonly tipoBancaId: string;
   readonly categoriasDocumentoIds: readonly string[];
+  readonly regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null;
 }
 
 /** Papel do produto de cujo instante de publicação o prazo de recurso conta. */
@@ -160,7 +163,7 @@ export interface EtapaPontuada {
   readonly inicio: string;
   readonly fim: string;
   readonly emiteParecerIndividual: boolean;
-  readonly bancas: readonly string[];
+  readonly bancas: readonly BancaDaEtapa[];
   readonly recursos: readonly RecursoDaEtapa[];
   /**
    * O que o processo congelou do tipo quando a etapa foi gravada; vale sobre o cadastro enquanto a

@@ -24,6 +24,7 @@ const provaObjetiva: TipoEtapaDto = {
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  conceitosAdmitidos: [],
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
@@ -80,6 +81,7 @@ describe('TiposEtapaApi', () => {
           nome: 'Análise socioeconômica',
           admitePontuacao: false,
           admiteEliminacao: true,
+          conceitosAdmitidos: [],
           descricao: null,
         },
         withIdempotencyKey('k'),
@@ -105,6 +107,7 @@ describe('TiposEtapaApi', () => {
           nome: 'Prova Objetiva',
           admitePontuacao: true,
           admiteEliminacao: false,
+          conceitosAdmitidos: [],
           descricao: null,
         },
         withIdempotencyKey('k'),

@@ -28,6 +28,23 @@ const userContextStub = {
   firstDisplayName: signal('Leandro'),
 };
 
+const PERMISSOES_DA_ADMINISTRACAO = [
+  'autorizacao:pedidos:aprovar-funcional',
+  'autorizacao:pedidos:aprovar-protecao-de-dados',
+  'autorizacao:concessoes:administrar',
+  'autorizacao:perfis:manter',
+];
+const MENU_DA_ADMINISTRACAO = [
+  'Meus pedidos',
+  'Providências',
+  'Fila da gestão de acessos',
+  'Fila do Representante do controlador',
+  'Histórico de pedidos',
+  'Concessões',
+  'Perfis de acesso',
+  'Divergências da governança',
+];
+
 describe('LayoutComponent — menu pelas permissões efetivas', () => {
   beforeEach(async () => {
     concedidas.set([]);
@@ -80,35 +97,33 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
   });
 
   it('mostra a administração de acesso conforme a permissão de cada tela', () => {
-    concedidas.set([
-      'autorizacao:pedidos:aprovar-funcional',
-      'autorizacao:pedidos:aprovar-protecao-de-dados',
-      'autorizacao:concessoes:administrar',
-      'autorizacao:perfis:manter',
-    ]);
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
+
+    expect(itensDoMenu()).toEqual(MENU_DA_ADMINISTRACAO);
+  });
+
+  it('oferece a fila das providências a quem só solicita providência, para acompanhá-la', () => {
+    concedidas.set(['autorizacao:providencias:solicitar']);
+
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Providências']);
+  });
+
+  it('não oferece a fila do Representante do controlador a quem só aprova como gestor', () => {
+    concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
       'Fila da gestão de acessos',
-      'Fila da proteção de dados',
       'Histórico de pedidos',
-      'Concessões',
-      'Perfis de acesso',
-      'Divergências da governança',
     ]);
   });
 
-  it('não oferece a fila da proteção de dados a quem só aprova como gestor', () => {
-    concedidas.set(['autorizacao:pedidos:aprovar-funcional']);
-
-    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Fila da gestão de acessos', 'Histórico de pedidos']);
-  });
-
-  it('oferece as versões e as janelas da etapa a quem só tem a permissão de aprovar, sem a lista de perfis', () => {
+  it('oferece as versões e as janelas da etapa a quem só tem a permissão de aprovar, com a lista de perfis', () => {
     concedidas.set(['autorizacao:perfis:aprovar-funcional']);
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
+      'Perfis de acesso',
       'Versões na gestão de acessos',
       'Janelas na gestão de acessos',
       'Reclassificações na gestão de acessos',
@@ -126,6 +141,7 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
 
     expect(itensDoMenu()).toEqual([
       'Meus pedidos',
+      'Perfis de acesso',
       'Versões na proteção de dados',
       'Janelas na proteção de dados',
       'Reclassificações na proteção de dados',
@@ -148,6 +164,54 @@ describe('LayoutComponent — menu pelas permissões efetivas', () => {
     const itens = itensDoMenu();
     expect(itens).toContain('Divergências da governança');
     expect(itens).not.toContain('Reclassificações na gestão de acessos');
+  });
+
+  it.each([
+    'autorizacao:revisoes:conduzir',
+    'autorizacao:revisoes:rever-protecao-de-dados',
+    'autorizacao:revisoes:consultar',
+  ])('oferece as revisões de acesso a quem tem %s', (permissao) => {
+    concedidas.set([permissao]);
+
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Revisões de acesso']);
+  });
+
+  it('não oferece as revisões de acesso a quem não as conduz, revê nem consulta', () => {
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
+
+    expect(itensDoMenu()).not.toContain('Revisões de acesso');
+  });
+
+  it('a quem só consulta pedidos, concessões e versões, oferece as telas de leitura e nenhuma fila de decisão', () => {
+    concedidas.set([
+      'autorizacao:pedidos:consultar',
+      'autorizacao:concessoes:consultar',
+      'autorizacao:perfis:consultar-versoes',
+    ]);
+
+    expect(itensDoMenu()).toEqual([
+      'Meus pedidos',
+      'Histórico de pedidos',
+      'Concessões',
+      'Perfis de acesso',
+      'Divergências da governança',
+    ]);
+  });
+
+  it('oferece a publicação do termo só a quem tem a permissão de publicar', () => {
+    concedidas.set(['autorizacao:termos:publicar']);
+    expect(itensDoMenu()).toEqual(['Meus pedidos', 'Termo de responsabilidade']);
+
+    concedidas.set(PERMISSOES_DA_ADMINISTRACAO);
+    expect(itensDoMenu()).not.toContain('Termo de responsabilidade');
+  });
+
+  it('oferece os motivos de decisão só a quem tem a permissão de manter', () => {
+    concedidas.set(['selecao:motivos-de-decisao:manter']);
+    expect(itensDoMenu()).toContain('Motivos de Decisão');
+
+    concedidas.set(['configuracao:tipos-processo:consultar']);
+    expect(itensDoMenu()).not.toContain('Motivos de Decisão');
   });
 
   it('aponta o Início do breadcrumb para a entrada, que escolhe uma tela permitida', () => {

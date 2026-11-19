@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ApiFailure } from './api-result';
 import type { ProblemDetails } from './problem-details';
 import { errorResult, mockProblemDetails } from './api-result.testing';
-import { IDEMPOTENCY_KEY_TOKEN } from './idempotency';
+import { CODIGO_ESPERA_ESGOTADA, IDEMPOTENCY_KEY_TOKEN } from './idempotency';
 
 import { ChaveDeSubstituicao } from './chave-de-substituicao';
 
@@ -64,11 +64,18 @@ describe('ChaveDeSubstituicao', () => {
       ['validação', { status: 400 }],
       ['corpo divergente', { code: 'uniplus.idempotency.body_mismatch', status: 409 }],
       ['corpo grande demais', { status: 413 }],
+      ['processo ocupado (503 guardado na chave)', { code: CODIGO_ESPERA_ESGOTADA, status: 503 }],
     ])('gira a chave em %s', (_caso, problem) => {
       const chave = new ChaveDeSubstituicao();
       const usada = chaveDe(chave, CORPO);
       chave.recusada(falha(problem));
       expect(chaveDe(chave, CORPO)).not.toBe(usada);
+    });
+
+    it('não trata o 503 de processo ocupado como inconclusivo: nada foi aplicado', () => {
+      const chave = new ChaveDeSubstituicao();
+      chaveDe(chave, CORPO);
+      expect(chave.recusada(falha({ code: CODIGO_ESPERA_ESGOTADA, status: 503 }))).toBe(false);
     });
 
     /**

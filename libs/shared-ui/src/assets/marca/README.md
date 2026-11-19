@@ -8,5 +8,13 @@ O arquivo é o PNG oficial (`Marca-Horizontal-Smbolo-Tipografia-001.png`) recort
 excedente e reduzido para 180 px de altura, cerca de três vezes o tamanho impresso (15 mm), para a
 impressão a laser.
 
+`unifesspa-horizontal-branca.png` é a versão monocromática branca oficial, com fundo transparente,
+usada no cabeçalho e na lateral nos temas escuro e de contraste. Veio do site institucional, recortada
+na margem transparente e reduzida para 180 px de altura.
+
 **Não editar, não redesenhar e não vetorizar** (manual, p. 17). Trocar pelo vetor oficial quando a
 Assessoria de Comunicação o fornecer.
+
+`govbr-colorido.png` é o logotipo oficial do gov.br, do tema do portal gov.br
+(`https://www.gov.br/++theme++padrao_govbr/img/govbr-colorido-b.png`), usado na barra do Governo
+Federal no topo dos apps.

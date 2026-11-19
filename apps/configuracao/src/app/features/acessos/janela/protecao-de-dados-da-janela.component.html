@@ -4,9 +4,9 @@
   </div>
   <p class="panel-body">
     Estas concessões ganham permissão pessoal ou sensível na versão nova e só migram com a decisão
-    da proteção de dados. Quem a gestão de acessos recusou não chega aqui.
+    do Representante do controlador. Quem a gestão de acessos recusou não chega aqui.
     @if (!podeDecidir()) {
-      Você consulta a janela, mas a decisão cabe à proteção de dados.
+      Você consulta a janela, mas a decisão cabe ao Representante do controlador.
     }
   </p>
 
@@ -41,7 +41,7 @@
   <cfg-tabela-da-janela
     [itens]="itens()"
     [nomeDoEscopo]="nomeDoEscopo()"
-    legenda="Concessões que aguardam a proteção de dados"
+    legenda="Concessões que aguardam o Representante do controlador"
   >
     @if (podeDecidir()) {
       <ng-template #acao let-item>

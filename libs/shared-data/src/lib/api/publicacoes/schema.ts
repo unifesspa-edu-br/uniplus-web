@@ -819,14 +819,14 @@ export interface components {
             readonly efeitoIrreversivel: boolean;
             readonly unicoPorObjeto: boolean;
             /** Format: date */
-            readonly dataPublicacao: string;
+            readonly dataDoAto: string;
             readonly documentoHash: string;
             readonly assinante: string;
             /** Format: date-time */
-            readonly registradoEm: string;
+            readonly publicadoEm: string;
             /** Format: uuid */
-            readonly versaoInvocadaId: null | string;
-            readonly versaoInvocadaHash: null | string;
+            readonly versaoDoObjetoId: null | string;
+            readonly versaoDoObjetoHash: null | string;
             /** Format: uuid */
             readonly atoRetificadoId: null | string;
             readonly motivoRetificacao: null | string;
@@ -905,12 +905,12 @@ export interface components {
             readonly numero: null | string;
             readonly tipoCodigo: string;
             /** Format: date */
-            readonly dataPublicacao: string;
+            readonly dataDoAto: string;
             readonly documentoHash: string;
             readonly assinante: string;
             /** Format: uuid */
-            readonly versaoInvocadaId?: null | string;
-            readonly versaoInvocadaHash?: null | string;
+            readonly versaoDoObjetoId?: null | string;
+            readonly versaoDoObjetoHash?: null | string;
             /** Format: uuid */
             readonly atoRetificadoId?: null | string;
             readonly motivoRetificacao?: null | string;
@@ -921,7 +921,7 @@ export interface components {
             /** Format: uuid */
             readonly atoId: string;
             /** Format: date-time */
-            readonly registradoEm: string;
+            readonly publicadoEm: string;
             readonly avisos: readonly components["schemas"]["AvisoNumeracao"][];
         };
         readonly TipoAtoPublicadoDto: {

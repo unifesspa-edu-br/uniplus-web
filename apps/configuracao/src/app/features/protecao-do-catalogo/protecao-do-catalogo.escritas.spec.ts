@@ -26,16 +26,21 @@ const detalhe: DetalheDaProtecaoDoCatalogoDto = {
   hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
   aprovacao: {
     situacao: 'SOLICITADA',
+    ciclo: 1,
     solicitadaEm: '2026-11-01T12:00:00Z',
     decididaEm: null,
     classificacaoRecomendada: null,
     justificativa: null,
     aceitaEm: null,
+    manifestadaEm: null,
+    manifestacaoDesfavoravel: false,
+    manifestacoesNoCiclo: 0,
   },
   descricao: 'Laudo complementar.',
   fato: null,
   tipoDocumento: { categoria: 'SAUDE', formatosAceitos: 'pdf', tamanhoMaximoMb: 10 },
   atos: [],
+  manifestacoesVigentes: [],
 };
 
 describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
@@ -53,7 +58,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
         provideHttpClientTesting(),
         provideRouter([]),
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-        { provide: PermissoesService, useValue: { tem: () => true } },
+        { provide: PermissoesService, useValue: { tem: () => true, temAlguma: () => true } },
       ],
     });
     fixture = TestBed.createComponent(ProtecaoDoCatalogoPage);
@@ -69,6 +74,10 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
   afterEach(() => {
     controller
       .match((r) => r.url === `${BASE}/api/configuracao/categorias-documento`)
+      .forEach((r) => r.flush([]));
+    controller
+      .match((r) => r.url.endsWith('/manifestacoes'))
+      .filter((r) => !r.cancelled)
       .forEach((r) => r.flush([]));
     controller.verify();
   });
@@ -104,7 +113,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
 
   it('durante a decisão conserva os valores, anuncia o envio e bloqueia fechamento e nova ativação', async () => {
     await abrirDialogo();
-    const campo = elemento<HTMLTextAreaElement>('dialog textarea');
+    const campo = elemento<HTMLTextAreaElement>('cfg-decisao-da-protecao-dialogo textarea');
     campo.value = 'Falta a base legal.';
     campo.dispatchEvent(new Event('input'));
     const confirmar = botao('ui-dialog dialog button', 'Reprovar item');
@@ -171,7 +180,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     await propagar();
     await propagar();
 
-    const campo = elemento<HTMLTextAreaElement>('dialog textarea');
+    const campo = elemento<HTMLTextAreaElement>('cfg-decisao-da-protecao-dialogo textarea');
     expect(campo.getAttribute('aria-invalid')).toBe('true');
     expect(campo.getAttribute('aria-describedby')).toContain('cfg-justificativa-erro');
     expect(elemento('#cfg-justificativa-erro').textContent).toContain('Informe a justificativa');
@@ -189,7 +198,7 @@ describe('ProtecaoDoCatalogoPage — escritas pela interface', () => {
     await propagar();
     await propagar();
 
-    expect(document.activeElement).toBe(elemento('dialog textarea'));
+    expect(document.activeElement).toBe(elemento('cfg-decisao-da-protecao-dialogo textarea'));
     expect(elemento('#cfg-justificativa-erro').textContent).toContain('até 2.000');
     controller.expectNone((r) => r.url === URL && r.method === 'POST');
   });

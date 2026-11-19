@@ -1,6 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import {
   JanelaDeMigracaoApi,
+  type DecidirEtapaDaProtecaoRequest,
   type DecisaoDaMigracao,
   type ItemDaJanelaDto,
 } from '@uniplus/shared-data/autorizacao';
@@ -9,7 +10,7 @@ import { EnvioNaJanela } from './envio-na-janela';
 import { decisoesDaEtapa, quantidadeDeRecusas, type DecisoesDaMigracao } from './itens-da-janela';
 
 /**
- * A etapa da proteção de dados: as concessões que aguardam são decididas uma a uma ou em lote, e o
+ * A etapa de proteção de dados, decidida pelo Representante do controlador: as concessões que aguardam são decididas uma a uma ou em lote, e o
  * envio pode migrar algumas e recusar outras. O envio vale por inteiro ou não é gravado.
  */
 @Injectable()
@@ -50,21 +51,23 @@ export class EtapaDaProtecaoDeDados {
     const corpo = { decisoes: decisoesDaEtapa(itens, this.decisoes()), confirmacaoDeExclusao };
     return this.escrita.executar(
       'janela',
-      async () => {
-        const recusa = await this.envio.enviar(`protecao:${perfilId}`, corpo, (contexto) =>
-          this.api.decidirProtecaoDeDados(perfilId, corpo, contexto),
-        );
-        if (recusa === null) this.concluir();
-        else this.recusar(this.envio.tratar(recusa));
-      },
+      () => this.gravar(perfilId, corpo),
       (mensagem) => this.erro.set(mensagem),
     );
+  }
+
+  private async gravar(perfilId: string, corpo: DecidirEtapaDaProtecaoRequest): Promise<void> {
+    const recusa = await this.envio.enviar(`protecao:${perfilId}`, corpo, (contexto) =>
+      this.api.decidirProtecaoDeDados(perfilId, corpo, contexto),
+    );
+    if (recusa === null) this.concluir();
+    else this.recusar(this.envio.tratar(recusa));
   }
 
   private concluir(): void {
     this.confirmando.set(false);
     this.decisoes.set(new Map());
-    this.envio.concluir('Decisões da proteção de dados enviadas');
+    this.envio.concluir('Decisões do Representante do controlador enviadas');
   }
 
   private recusar(texto: string | null): void {

@@ -21,6 +21,7 @@
   [nomeDoEscopo]="escopo.nome"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
+  [podeRevogar]="podeRevogar()"
   (filtrar)="store.filtrarPor($event)"
   (verTrilha)="abrirTrilha($event)"
   (revogar)="revogar($event)"

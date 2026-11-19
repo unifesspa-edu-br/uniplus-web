@@ -49,7 +49,7 @@ describe('o que impede gravar o formulário', () => {
   });
 });
 
-describe('campos cujo domínio sai da oferta de atendimento', () => {
+describe('campos cujo domínio sai do atendimento especializado', () => {
   const semOferta = { condicoes: [], recursos: [], tiposDeficiencia: [] };
   const comCampos = (...campos: readonly [string, string][]) =>
     formularioCom(

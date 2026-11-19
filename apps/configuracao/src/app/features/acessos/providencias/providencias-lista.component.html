@@ -1,0 +1,83 @@
+<section class="panel" aria-labelledby="cfg-providencias-titulo" [attr.aria-busy]="carregando()">
+  <div class="panel-head">
+    <div class="panel-head__title">
+      <h2 id="cfg-providencias-titulo" tabindex="-1">Providências</h2>
+      @if (carregando()) {
+        <span><ui-spinner spinnerSize="sm" /> Carregando</span>
+      }
+    </div>
+    <label class="field">
+      <span class="field__label">Situação</span>
+      <select class="select" [ngModel]="situacao()" (ngModelChange)="filtrar.emit($event)">
+        @for (opcao of filtros; track opcao.valor) {
+          <option [value]="opcao.valor">{{ opcao.rotulo }}</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (providencias().length > 0) {
+    <div class="table-responsive">
+      <table>
+        <caption class="sr-only">
+          Providências sobre concessões de acesso, da mais antiga para a mais recente
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Aberta em</th>
+            <th scope="col">Tipo</th>
+            <th scope="col">Beneficiário</th>
+            <th scope="col">Perfil</th>
+            <th scope="col">Solicitada por</th>
+            <th scope="col">Situação</th>
+            <th scope="col"><span class="sr-only">Ações</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (providencia of providencias(); track providencia.id) {
+            <tr [attr.data-providencia-id]="providencia.id">
+              <td data-label="Aberta em">{{ providencia.abertaEm | dateBr: 'datetime' }}</td>
+              <td data-label="Tipo">{{ tipoDe(providencia.tipo) }}</td>
+              <td data-label="Beneficiário">{{ pessoa(providencia.concessao.beneficiario) }}</td>
+              <td data-label="Perfil">{{ providencia.concessao.perfil.nome }}</td>
+              <td data-label="Solicitada por">{{ pessoa(providencia.solicitadaPor) }}</td>
+              <td data-label="Situação">
+                <ui-tag [variant]="situacaoDe(providencia.situacao).variante">{{
+                  situacaoDe(providencia.situacao).texto
+                }}</ui-tag>
+              </td>
+              <td class="table-responsive__actions" data-label="Ações">
+                <ui-icon-button
+                  icon="pi-eye"
+                  [link]="['/acessos/providencias', providencia.id]"
+                  [accessibleName]="
+                    'Abrir a providência sobre a concessão de ' +
+                    pessoa(providencia.concessao.beneficiario)
+                  "
+                  tooltip="Abrir providência"
+                />
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!carregando() && !erro()) {
+    <ui-empty-state
+      heading="Nenhuma providência"
+      description="Nenhuma providência corresponde a este filtro."
+    />
+  }
+
+  @if (temAnterior() || temProximo()) {
+    <ui-pager
+      statusText="Navegação por páginas"
+      navigationLabel="Paginação das providências"
+      [hasPrevious]="temAnterior()"
+      [hasNext]="temProximo()"
+      [isDisabled]="carregando()"
+      (previous)="anterior.emit()"
+      (next)="proximo.emit()"
+    />
+  }
+</section>

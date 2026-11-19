@@ -31,7 +31,7 @@ const FATO = {
   classificacaoProtecao: 'PESSOAL',
   finalidadeTratamento: 'Classificar a reserva de vagas.',
   hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-  sistema: false,
+  semeadoPeloSistema: false,
   ativo: true,
   valores: [],
   regrasPadrao: [],

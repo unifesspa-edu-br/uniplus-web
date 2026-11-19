@@ -72,10 +72,3 @@
   opacity: 1;
   transform: translateY(-50%) translateX(0);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  [data-tooltip]::after {
-    transition: opacity var(--duration-fast) linear;
-    transform: none !important;
-  }
-}

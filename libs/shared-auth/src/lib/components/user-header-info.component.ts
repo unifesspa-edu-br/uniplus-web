@@ -12,6 +12,7 @@ import { createDisclosureController } from '@uniplus/shared-core/dom';
 import {
   AuthService,
   PerfisDeAcessoService,
+  PROVEDOR_DE_LOGIN,
   UserContextService,
 } from '@uniplus/shared-auth/bootstrap';
 import { UserProfileDialogComponent } from './user-profile-dialog.component';
@@ -19,7 +20,8 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
 /**
  * Bloco de identificação do usuário para uso em headers.
  * Autenticado: nome social (ou civil), username, perfis de acesso concedidos e
- * menu de conta. Sem sessão ativa: botão "Entrar" que inicia o login OIDC — seguro
+ * menu de conta. Sem sessão ativa: botão "Entrar" (ou "Entrar com gov.br", quando o app provê
+ * `PROVEDOR_DE_LOGIN`) que inicia o login OIDC — seguro
  * para uso em layouts que misturam rotas públicas e autenticadas.
  */
 @Component({
@@ -142,10 +144,27 @@ import { UserProfileDialogComponent } from './user-profile-dialog.component';
         <auth-user-profile-dialog (closed)="onProfileClosed()" />
       }
     } @else {
-      <button type="button" class="btn btn--sm" (click)="login()">Entrar</button>
+      <button type="button" class="btn btn--sm" (click)="login()">
+        <span class="entrar"
+          >Entrar
+          @if (loginPeloGovbr) {
+            <span class="entrar__provedor"> com gov.br</span>
+          }
+        </span>
+      </button>
     }
   `,
   styles: `
+    .entrar,
+    .entrar__provedor {
+      line-height: 1.25;
+    }
+    /* No celular o botão mostra só "Entrar"; o logotipo do gov.br ao lado já diz o provedor. */
+    @media (max-width: 479px) {
+      .entrar__provedor {
+        display: none;
+      }
+    }
     /* Continua o bloco da conta: sem o respiro duplo entre a linha do @usuário e os perfis. */
     .menu__perfis {
       padding-top: 0;
@@ -160,6 +179,7 @@ export class UserHeaderInfoComponent {
 
   protected readonly userContext = inject(UserContextService);
   protected readonly perfis = inject(PerfisDeAcessoService);
+  protected readonly loginPeloGovbr = inject(PROVEDOR_DE_LOGIN, { optional: true })?.id === 'govbr';
   private readonly authService = inject(AuthService);
   private readonly document = inject(DOCUMENT);
   private readonly host = inject(ElementRef<HTMLElement>);
@@ -201,21 +221,17 @@ export class UserHeaderInfoComponent {
     if (event.key === 'Escape') {
       event.preventDefault();
       this.disclosure.close(true);
-      return;
+    } else if (TECLAS_DE_NAVEGACAO_DO_MENU.includes(event.key)) {
+      event.preventDefault();
+      this.moverFocoDoMenu(event.key);
     }
+  }
 
-    if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
-      return;
-    }
-
-    event.preventDefault();
+  private moverFocoDoMenu(tecla: string): void {
     const items = this.menuItems();
     if (!items.length) return;
-
     const currentIndex = items.indexOf(this.document.activeElement as HTMLElement);
-    const nextIndex = proximoItemDoMenu(event.key, currentIndex, items.length - 1);
-
-    items[nextIndex]?.focus();
+    items[proximoItemDoMenu(tecla, currentIndex, items.length - 1)]?.focus();
   }
 
   protected openProfile(): void {
@@ -256,6 +272,8 @@ export class UserHeaderInfoComponent {
 }
 
 /** O item que a tecla de navegação alcança; as setas dão a volta nas pontas. */
+const TECLAS_DE_NAVEGACAO_DO_MENU = ['ArrowDown', 'ArrowUp', 'Home', 'End'];
+
 function proximoItemDoMenu(tecla: string, atual: number, ultimo: number): number {
   switch (tecla) {
     case 'Home':

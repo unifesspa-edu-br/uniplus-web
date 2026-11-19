@@ -1,7 +1,13 @@
 import { HttpClient, HttpContext, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiResult, withVendorMime } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  withVendorMime,
+  comBusca,
+  janelaDaPagina,
+  comOrdenacaoDaPrimeiraPagina,
+} from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
@@ -197,23 +203,11 @@ export class OfertasCursoApi {
 
   /** GET `/api/configuracao/ofertas-curso` — lista paginada por cursor (ADR-0026). */
   listar(query: OfertasCursoQuery = {}): Observable<ApiResult<readonly OfertaCursoDto[]>> {
-    let params = new HttpParams();
-    const q = query.q?.trim();
-    if (q) {
-      params = params.set('q', q);
-    }
-    if (query.cursor !== undefined) {
-      params = params.set('cursor', query.cursor).set('direction', query.direction ?? 'next');
-    } else {
-      params = params.set('limit', String(query.limit ?? 100));
-      const sort = query.sort?.trim();
-      if (sort) {
-        params = params.set('sort', sort);
-      }
-    }
-    if (query.cursoId !== undefined) {
-      params = params.set('cursoId', query.cursoId);
-    }
+    const pagina = comOrdenacaoDaPrimeiraPagina(
+      janelaDaPagina(comBusca(new HttpParams(), query.q), query),
+      query.sort,
+    );
+    const params = query.cursoId === undefined ? pagina : pagina.set('cursoId', query.cursoId);
     return this.http.get<ApiResult<readonly OfertaCursoDto[]>>(
       `${this.basePath}/api/configuracao/ofertas-curso`,
       { params, context: withVendorMime('oferta-curso', 1) },

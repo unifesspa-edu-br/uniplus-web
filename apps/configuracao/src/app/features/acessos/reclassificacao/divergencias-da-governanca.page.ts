@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
+import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import {
   acompanharLeitura,
   FalhaDeLeituraComponent,
@@ -8,6 +8,7 @@ import {
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
+import { PERMISSOES_DAS_TELAS } from '../../../acesso/permissoes-das-telas';
 import { RecusaDaLeituraComponent } from '../../../shared/recusa-da-leitura';
 import { DivergenciasDaGovernancaStore } from './divergencias-da-governanca.store';
 import { tipoDaDivergencia, valorDaDivergencia } from './rotulos-da-reclassificacao';
@@ -36,8 +37,9 @@ export class DivergenciasDaGovernancaPage {
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly tipo = tipoDaDivergencia;
   protected readonly valor = valorDaDivergencia;
-  protected readonly podeAbrirOPerfil = inject(PermissoesService).tem(
-    PERMISSAO.autorizacao.perfisManter,
+  private readonly permissoes = inject(PermissoesService);
+  protected readonly podeAbrirOPerfil = computed(() =>
+    this.permissoes.temAlguma(...PERMISSOES_DAS_TELAS['acessos/perfis']),
   );
   protected readonly leitura = acompanharLeitura({
     assunto: 'divergências da governança',

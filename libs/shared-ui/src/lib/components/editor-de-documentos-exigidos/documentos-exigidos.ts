@@ -1,9 +1,5 @@
 import type { PredicadoNoWire } from '../editor-de-formulario/modelo/tipos';
-import {
-  ABRANGENCIA_PADRAO,
-  CONSEQUENCIAS_ESCOLHIVEIS,
-  STATUS_BASE_LEGAL_RESOLVIDO,
-} from '@uniplus/shared-utils';
+import { type BaseLegal, baseLegalNova, CONSEQUENCIAS_ESCOLHIVEIS } from '@uniplus/shared-utils';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
 export interface OpcaoDoDocumento {
@@ -13,12 +9,8 @@ export interface OpcaoDoDocumento {
   readonly permiteComplementacao?: boolean;
 }
 
-export interface BaseLegalDoDocumento {
-  readonly referencia: string;
-  readonly abrangencia: string;
-  readonly status: string;
-  readonly observacao: null | string;
-}
+/** A norma do documento exigido: a mesma do processo, definida em `@uniplus/shared-utils`. */
+export type BaseLegalDoDocumento = BaseLegal;
 
 /** Um documento do conjunto padrão do modelo, na forma do contrato. */
 export interface DocumentoExigidoDoFormulario {
@@ -28,16 +20,6 @@ export interface DocumentoExigidoDoFormulario {
   readonly quando: PredicadoNoWire;
   readonly consequenciaIndeferimento: string;
   readonly basesLegais: null | readonly BaseLegalDoDocumento[];
-}
-
-/** Uma norma em branco, no alcance e no status que são o caso comum. */
-export function baseLegalNova(): BaseLegalDoDocumento {
-  return {
-    referencia: '',
-    abrangencia: ABRANGENCIA_PADRAO,
-    status: STATUS_BASE_LEGAL_RESOLVIDO,
-    observacao: null,
-  };
 }
 
 /** Um documento novo: exigido de todo candidato, com uma norma em branco para preencher. */
@@ -61,6 +43,11 @@ export interface RecusasDoDocumento {
   readonly demais: readonly string[];
 }
 
+interface RecusasDistribuidas {
+  readonly porDocumento: ReadonlyMap<DocumentoExigidoDoFormulario, RecusasDoDocumento>;
+  readonly gerais: readonly string[];
+}
+
 /** A API prefixa o caminho com `conteudo.`; a posição é a da lista enviada. */
 const DOCUMENTO_APONTADO = /(?:^|\.)documentosExigidos\[(\d+)\](.*)$/iu;
 const LISTA_DE_DOCUMENTOS = /(?:^|\.)documentosExigidos$/iu;
@@ -79,27 +66,31 @@ export function ehRecusaDeDocumento(campo: string): boolean {
 export function distribuirRecusasDosDocumentos(
   recusas: readonly { readonly field: string; readonly message: string }[],
   enviados: readonly DocumentoExigidoDoFormulario[],
-): {
-  readonly porDocumento: ReadonlyMap<DocumentoExigidoDoFormulario, RecusasDoDocumento>;
-  readonly gerais: readonly string[];
-} {
-  const porDocumento = new Map<DocumentoExigidoDoFormulario, RecusasDoDocumento>();
+): RecusasDistribuidas {
+  const porDocumento = new Map<DocumentoExigidoDoFormulario, RecusasEmColeta>();
   const gerais: string[] = [];
-  for (const recusa of recusas) {
-    const apontada = DOCUMENTO_APONTADO.exec(recusa.field);
+  for (const { field, message } of recusas) {
+    const apontada = DOCUMENTO_APONTADO.exec(field);
     const documento = apontada === null ? undefined : enviados[Number(apontada[1])];
-    if (apontada === null || documento === undefined) {
-      gerais.push(recusa.message);
-      continue;
-    }
-    const atual = porDocumento.get(documento) ?? { quando: [], demais: [] };
-    const daCondicao = /^\.quando\b/iu.test(apontada[2] ?? '');
-    porDocumento.set(
-      documento,
-      daCondicao
-        ? { ...atual, quando: [...atual.quando, recusa.message] }
-        : { ...atual, demais: [...atual.demais, recusa.message] },
-    );
+    if (apontada === null || documento === undefined) gerais.push(message);
+    else guardarRecusa(porDocumento, documento, apontada[2] ?? '', message);
   }
   return { porDocumento, gerais };
+}
+
+interface RecusasEmColeta {
+  readonly quando: string[];
+  readonly demais: string[];
+}
+
+function guardarRecusa(
+  porDocumento: Map<DocumentoExigidoDoFormulario, RecusasEmColeta>,
+  documento: DocumentoExigidoDoFormulario,
+  caminho: string,
+  mensagem: string,
+): void {
+  const recusas = porDocumento.get(documento) ?? { quando: [], demais: [] };
+  const categoria = /^\.quando\b/iu.test(caminho) ? 'quando' : 'demais';
+  recusas[categoria].push(mensagem);
+  porDocumento.set(documento, recusas);
 }

@@ -13,6 +13,7 @@ const tipo: TipoEtapaDto = {
   admitePontuacao: true,
   admiteEliminacao: false,
   notaDeOrigemNoEnem: false,
+  conceitosAdmitidos: [],
   criadoEm: '',
 };
 

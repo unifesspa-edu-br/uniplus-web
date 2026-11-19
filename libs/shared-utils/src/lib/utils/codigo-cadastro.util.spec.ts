@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { CODIGO_CADASTRO_FORMATO, sugerirCodigoDeCadastro } from './codigo-cadastro.util';
 
+const NOMES_DE_CADASTRO = [
+  'Laudo médico',
+  '21 de abril',
+  'A',
+  '---',
+  'Ção',
+  '_sublinhado inicial',
+  'a'.repeat(80),
+  'Histórico do ensino médio',
+];
+
 describe('sugerirCodigoDeCadastro', () => {
   it('deriva o código do nome em UPPER_SNAKE, sem acento', () => {
     expect(sugerirCodigoDeCadastro('Laudo médico')).toBe('LAUDO_MEDICO');
@@ -39,18 +50,7 @@ describe('sugerirCodigoDeCadastro', () => {
 
   it('nunca devolve valor que o próprio formato recusaria', () => {
     // A garantia que sustenta o uso: a sugestão ou é vazia, ou é aceitável.
-    const nomes = [
-      'Laudo médico',
-      '21 de abril',
-      'A',
-      '---',
-      'Ção',
-      '_sublinhado inicial',
-      'a'.repeat(80),
-      'Histórico do ensino médio',
-    ];
-
-    for (const nome of nomes) {
+    for (const nome of NOMES_DE_CADASTRO) {
       const sugestao = sugerirCodigoDeCadastro(nome);
       expect(sugestao === '' || CODIGO_CADASTRO_FORMATO.test(sugestao)).toBe(true);
     }

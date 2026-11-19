@@ -17,6 +17,7 @@ const TIPO = {
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  conceitosAdmitidos: [],
   criadoEm: '2026-08-11T00:00:00Z',
 };
 const TOLERANCIA = 1;

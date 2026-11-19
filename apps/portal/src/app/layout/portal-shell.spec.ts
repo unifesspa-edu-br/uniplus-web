@@ -22,6 +22,21 @@ const userContextStub = {
   isAuthenticated,
 };
 
+async function montar(): Promise<ComponentFixture<PortalShellComponent>> {
+  await TestBed.configureTestingModule({
+    imports: [PortalShellComponent],
+    providers: [
+      provideRouter([]),
+      { provide: AuthService, useValue: authServiceStub },
+      { provide: UserContextService, useValue: userContextStub },
+      { provide: PerfisDeAcessoService, useValue: perfisStub },
+    ],
+  }).compileComponents();
+  const fixture = TestBed.createComponent(PortalShellComponent);
+  fixture.detectChanges();
+  return fixture;
+}
+
 /**
  * "Minhas inscrições" leva a uma rota autenticada (`authGuard` em
  * app.routes.ts) — o item de menu tem de espelhar isso, ou candidato
@@ -213,6 +228,13 @@ describe('PortalShellComponent — contrato de impressão', () => {
     }
     expect(host.querySelector('main')?.closest('.u-no-print')).toBeNull();
   });
+
+  it('mostra a marca institucional da Unifesspa no cabeçalho, no lugar do monograma', async () => {
+    const fixture = await montar();
+    const cabecalho = (fixture.nativeElement as HTMLElement).querySelector('header.portal-topbar');
+    expect(cabecalho?.querySelector('ui-marca-institucional.topbar__marca')).not.toBeNull();
+    expect(cabecalho?.textContent).not.toContain('U+');
+  });
 });
 
 /**
@@ -237,20 +259,6 @@ describe('PortalShellComponent — contêiner de rolagem do "Voltar ao topo"', (
     })) as unknown as typeof window.matchMedia;
   }
 
-  async function montar(): Promise<ComponentFixture<PortalShellComponent>> {
-    await TestBed.configureTestingModule({
-      imports: [PortalShellComponent],
-      providers: [
-        provideRouter([]),
-        { provide: AuthService, useValue: authServiceStub },
-        { provide: UserContextService, useValue: userContextStub },
-        { provide: PerfisDeAcessoService, useValue: perfisStub },
-      ],
-    }).compileComponents();
-    const fixture = TestBed.createComponent(PortalShellComponent);
-    fixture.detectChanges();
-    return fixture;
-  }
 
   function containerObservado(fixture: ComponentFixture<PortalShellComponent>): HTMLElement {
     const voltarAoTopo = fixture.debugElement.query(By.directive(BackToTopComponent));

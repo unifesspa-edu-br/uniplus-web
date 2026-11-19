@@ -93,14 +93,9 @@ export class NotasDoEnemApi {
     edicao: string,
     retorno: RetornoDoInep,
   ): Observable<ApiResult<LoteDeNotasDoEnemDto>> {
-    const { arquivo, leiaute } = retorno;
-    const formulario = new FormData();
-    formulario.append('arquivo', arquivo, arquivo.name);
-    formulario.append('leiauteCodigo', leiaute.leiauteCodigo);
-    formulario.append('leiauteVersao', leiaute.leiauteVersao);
     return this.http.post<ApiResult<LoteDeNotasDoEnemDto>>(
       `${this.rota(processoSeletivoId, etapaId, edicao)}/lotes-de-notas`,
-      formulario,
+      formularioDoRetorno(retorno),
       { context: withVendorMime('lote-de-notas-do-enem', 1) },
     );
   }
@@ -136,4 +131,12 @@ export class NotasDoEnemApi {
       `/etapas/${encodeURIComponent(etapaId)}/edicoes-do-enem/${encodeURIComponent(edicao)}`
     );
   }
+}
+
+function formularioDoRetorno({ arquivo, leiaute }: RetornoDoInep): FormData {
+  const formulario = new FormData();
+  formulario.append('arquivo', arquivo, arquivo.name);
+  formulario.append('leiauteCodigo', leiaute.leiauteCodigo);
+  formulario.append('leiauteVersao', leiaute.leiauteVersao);
+  return formulario;
 }

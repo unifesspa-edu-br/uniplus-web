@@ -69,7 +69,7 @@
                   tooltip="Ver trilha"
                   (triggered)="verTrilha.emit(concessao)"
                 />
-                @if (concessao.ativa) {
+                @if (concessao.ativa && podeRevogar()) {
                   <ui-icon-button
                     [isDisabled]="indisponivel()"
                     icon="pi-ban"

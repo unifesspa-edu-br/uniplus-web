@@ -38,14 +38,12 @@ export function notificarFalhasDeLeitura(
   notificacoes: NotificationService,
   leituras: readonly Signal<ProblemDetails | null>[],
 ): void {
+  const notificar = (falha: ProblemDetails) =>
+    notificacoes.errorFromProblem(falha, { title: problemas.resolve(falha).title });
   for (const problema of leituras) {
     effect(() => {
       const falha = problema();
-      if (falha !== null && falhaDeServidor(falha)) {
-        untracked(() =>
-          notificacoes.errorFromProblem(falha, { title: problemas.resolve(falha).title }),
-        );
-      }
+      if (falha !== null && falhaDeServidor(falha)) untracked(() => notificar(falha));
     });
   }
 }

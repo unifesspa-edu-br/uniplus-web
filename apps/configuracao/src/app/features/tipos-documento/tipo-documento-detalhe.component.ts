@@ -8,6 +8,7 @@ import { DrawerComponent, LookupLabelComponent } from '@uniplus/shared-ui/compon
 import { DetalheDaProtecaoComponent } from '../../shared/detalhe-do-catalogo';
 import {
   HistoricoDaProtecaoComponent,
+  HistoricoDasManifestacoesComponent,
   SituacaoDaAprovacaoComponent,
 } from '../../shared/protecao-do-catalogo';
 
@@ -19,6 +20,7 @@ import {
     DetalheDaProtecaoComponent,
     DrawerComponent,
     HistoricoDaProtecaoComponent,
+    HistoricoDasManifestacoesComponent,
     LookupLabelComponent,
     SituacaoDaAprovacaoComponent,
   ],
@@ -36,6 +38,14 @@ export class TipoDocumentoDetalheComponent {
   readonly editar = output<TipoDocumentoDto>();
   readonly aceitar = output<TipoDocumentoDto>();
 
+  /**
+   * O histórico das manifestações técnicas, só para ler: quem administra o cadastro ou quem
+   * consulta a proteção de dados.
+   */
+  protected readonly permissoesDasManifestacoes = [
+    PERMISSAO.configuracao.tiposDocumentoManter,
+    PERMISSAO.configuracao.protecaoDoCatalogoConsultar,
+  ];
   protected readonly permissaoDeManter = PERMISSAO.configuracao.tiposDocumentoManter;
   protected readonly formatarData = formatarDataBr;
 

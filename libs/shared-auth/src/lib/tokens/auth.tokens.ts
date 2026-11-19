@@ -46,3 +46,14 @@ export const PROFILE_BASE_PATH = new InjectionToken<string>('PROFILE_BASE_PATH')
  * token.
  */
 export const AUTORIZACAO_BASE_PATH = new InjectionToken<string>('AUTORIZACAO_BASE_PATH');
+
+/**
+ * Provedor pelo qual o app declara que a pessoa entra. Opcional e sem valor padrão: sem ele, o
+ * cabeçalho mostra o "Entrar" genérico. O portal do candidato, cujo cliente só aceita o gov.br,
+ * o provê no `app.config`.
+ */
+export interface ProvedorDeLogin {
+  readonly id: 'govbr';
+}
+
+export const PROVEDOR_DE_LOGIN = new InjectionToken<ProvedorDeLogin>('PROVEDOR_DE_LOGIN');

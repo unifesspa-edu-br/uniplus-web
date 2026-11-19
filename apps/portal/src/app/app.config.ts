@@ -7,7 +7,7 @@ import { loadingInterceptor } from '@uniplus/shared-core/interceptors';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { provideRuntimeConfig } from '@uniplus/shared-data/config';
 import { authErrorInterceptor, tokenInterceptor } from '@uniplus/shared-auth/interceptors';
-import { provideAuth } from '@uniplus/shared-auth/bootstrap';
+import { PROVEDOR_DE_LOGIN, provideAuth } from '@uniplus/shared-auth/bootstrap';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -31,6 +31,7 @@ export const appConfig: ApplicationConfig = {
     // e ingresso, então ambos os BASE_PATHs vêm da mesma apiUrl.
     provideRuntimeConfig(),
     provideAuth(),
+    { provide: PROVEDOR_DE_LOGIN, useValue: { id: 'govbr' } },
     provideMensagensDoCandidato(),
   ],
 };

@@ -8,7 +8,7 @@ import {
   pedidoSeed,
 } from '../support/api-de-acesso';
 import {
-  PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS,
+  PERMISSOES_DA_BETINA_REPRESENTANTE,
   PERMISSOES_DO_DIOGO,
   PERMISSOES_DO_LEANDRO,
 } from '../support/permissoes';
@@ -51,6 +51,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
         perfilId: PERFIL_SENSIVEL_ID,
         unidadeId: UNIDADE_ID,
         justificativa: 'Analiso os documentos do processo seletivo.',
+        anexaraDocumento: false,
       },
     ]);
     await expect(page.getByText('Aguardando a gestão de acessos').first()).toBeVisible();
@@ -62,7 +63,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page.getByRole('table').getByText('Cancelado')).toBeVisible();
   });
 
-  test('o pedido de perfil com dado sensível passa pelo gestor e pela proteção de dados, gera a concessão e ela é revogada', async ({
+  test('o pedido de perfil com dado sensível passa pelo gestor e pelo Representante do controlador, gera a concessão e ela é revogada', async ({
     page,
   }) => {
     const estado = await mockApiDeAcesso(page, [pedidoSeed()]);
@@ -76,9 +77,9 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(page).toHaveURL(new RegExp(`/acessos/pedidos/${PEDIDO_ID}(\\?.*)?$`));
     await page.getByRole('button', { name: 'Aprovar' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Aprovar' }).click();
-    await expect(page.getByText('Aguardando a proteção de dados').first()).toBeVisible();
+    await expect(page.getByText('Aguardando o Representante do controlador').first()).toBeVisible();
 
-    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_PROTECAO_DE_DADOS);
+    await mockPermissoesEfetivas(page, PERMISSOES_DA_BETINA_REPRESENTANTE);
     await page.goto('/acessos/fila-da-protecao-de-dados');
     await page.getByRole('link', { name: /Visualizar o pedido de Analista de documentos/ }).click();
     await page.getByRole('button', { name: 'Aprovar' }).click();
@@ -180,7 +181,7 @@ test.describe('Configuração — administração de acesso @flow', () => {
     await expect(menu.getByRole('link', { name: 'Meus pedidos' })).toBeVisible();
     for (const nome of [
       'Fila da gestão de acessos',
-      'Fila da proteção de dados',
+      'Fila do Representante do controlador',
       'Histórico de pedidos',
       'Concessões',
       'Perfis de acesso',

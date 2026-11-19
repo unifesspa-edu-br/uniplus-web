@@ -2,8 +2,16 @@ import type { RegistroDaContencaoDto } from '@uniplus/shared-data/autorizacao';
 import { describe, expect, it } from 'vitest';
 import { detalheDoRegistro, registrosComoEventos } from './trilha-da-contencao';
 
-const DIOGO = { emissor: 'https://id.unifesspa.edu.br', sub: 'sub-diogo', nome: 'Diogo Souza' };
-const BETINA = { emissor: 'https://id.unifesspa.edu.br', sub: 'sub-betina', nome: 'Betina Teste' };
+const DIOGO = {
+  emissor: 'https://id.unifesspa.edu.br',
+  contaId: 'conta-diogo',
+  nome: 'Diogo Souza',
+};
+const BETINA = {
+  emissor: 'https://id.unifesspa.edu.br',
+  contaId: 'conta-betina',
+  nome: 'Betina Teste',
+};
 
 function registro(parcial: Partial<RegistroDaContencaoDto>): RegistroDaContencaoDto {
   return {
@@ -50,7 +58,7 @@ describe('trilha da contenção', () => {
       detalheDoRegistro(
         registro({ etapa: 'protecao_de_dados', motivo: 'Incidente de segurança.' }),
       ),
-    ).toBe('Determinada pela proteção de dados. Motivo: Incidente de segurança.');
+    ).toBe('Determinada pelo Representante do controlador. Motivo: Incidente de segurança.');
   });
 
   it('descreve a decisão da etapa com o que valia no momento dela', () => {

@@ -5,7 +5,11 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  TipoConceitoDto,
+  TipoEtapaDto,
+} from '@uniplus/shared-data/configuracao';
 import { expect, vi } from 'vitest';
 import { EdicaoDosTiposEtapa } from './edicao-dos-tipos-etapa';
 import { TiposEtapaPage } from './tipos-etapa.page';
@@ -14,6 +18,7 @@ import { TiposEtapaStore } from './tipos-etapa.store';
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/configuracao/tipos-etapa`;
 export const ESCRITA = `${BASE}/api/configuracao/admin/tipos-etapa`;
+export const CONCEITOS = `${BASE}/api/configuracao/tipos-conceito`;
 export const TITULO_DA_LISTA = '#cfg-tipos-etapa-list-title';
 
 export const prova: TipoEtapaDto = {
@@ -25,6 +30,7 @@ export const prova: TipoEtapaDto = {
   admitePontuacao: true,
   admiteEliminacao: true,
   notaDeOrigemNoEnem: false,
+  conceitosAdmitidos: [],
   criadoEm: '2026-08-11T00:00:00Z',
 };
 
@@ -89,6 +95,12 @@ export async function montarPagina(itens: readonly TipoEtapaDto[] = [prova]) {
     http.expectOne((r) => r.url === LISTA).flush(lista);
     await propagar();
   };
+  /** O drawer pede o catálogo de conceitos ao abrir; a gravação só segue com ele completo. */
+  const responderConceitos = async (catalogo: readonly TipoConceitoDto[]): Promise<void> => {
+    await propagar();
+    http.expectOne((r) => r.url === CONCEITOS).flush(catalogo);
+    await propagar();
+  };
   const preencher = (nome: string, valor: string): void => {
     const campo = elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
     campo.value = valor;
@@ -110,6 +122,7 @@ export async function montarPagina(itens: readonly TipoEtapaDto[] = [prova]) {
     propagar,
     elemento,
     recarregarCom,
+    responderConceitos,
     preencher,
     formulario,
     novo: (): HTMLButtonElement => elemento('#cfg-tipos-etapa-novo'),
@@ -123,18 +136,21 @@ export async function montarPagina(itens: readonly TipoEtapaDto[] = [prova]) {
     statusDaPagina: (): string =>
       elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
     /** Clica de verdade em "Novo tipo de etapa" e preenche o mínimo para enviar. */
-    async abrirCadastro(): Promise<void> {
+    async abrirCadastro(catalogo: readonly TipoConceitoDto[] = []): Promise<void> {
       elemento<HTMLButtonElement>('#cfg-tipos-etapa-novo').focus();
       elemento<HTMLButtonElement>('#cfg-tipos-etapa-novo').click();
-      await propagar();
+      await responderConceitos(catalogo);
       preencher('codigo', 'NOVA_PROVA');
       preencher('nome', 'Nova prova');
     },
-    async abrirEdicao(tipo: TipoEtapaDto = prova): Promise<void> {
+    async abrirEdicao(
+      tipo: TipoEtapaDto = prova,
+      catalogo: readonly TipoConceitoDto[] = [],
+    ): Promise<void> {
       const botao = pelaEtiqueta(`Editar tipo de etapa ${tipo.codigo}`);
       botao.focus();
       botao.click();
-      await propagar();
+      await responderConceitos(catalogo);
     },
     /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
     async enviar(url = ESCRITA) {

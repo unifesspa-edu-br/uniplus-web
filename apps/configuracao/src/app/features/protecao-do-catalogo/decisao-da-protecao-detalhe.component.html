@@ -43,6 +43,16 @@
             <dt>Decidido em</dt>
             <dd>{{ dataEHora(decisao.instante) }}</dd>
           </div>
+          <div>
+            <dt>Ciclo</dt>
+            <dd>{{ decisao.ciclo }}</dd>
+          </div>
+          @if (decisao.dianteDeManifestacaoDesfavoravel) {
+            <div>
+              <dt>Manifestação</dt>
+              <dd>Decidido diante de manifestação desfavorável vigente</dd>
+            </div>
+          }
           @if (decisao.classificacaoRecomendada; as recomendada) {
             <div>
               <dt>Classificação recomendada</dt>

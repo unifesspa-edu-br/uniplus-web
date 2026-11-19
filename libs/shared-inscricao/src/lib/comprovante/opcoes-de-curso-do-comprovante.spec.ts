@@ -4,6 +4,18 @@ import { opcoesDeCursoExibidas } from './opcoes-de-curso-do-comprovante';
 
 const AC = { codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 };
 
+const DUAS_OPCOES_FORA_DE_ORDEM = {
+  numeroDeOpcoesDeCurso: 2,
+  opcoesDeCurso: [
+    { ordem: 2, nome: 'Medicina', modalidades: null },
+    {
+      ordem: 1,
+      nome: 'Direito',
+      modalidades: [{ codigo: 'LI_EP', nome: 'Escola pública', ordem: 1 }, AC],
+    },
+  ],
+};
+
 describe('opcoesDeCursoExibidas', () => {
   it('com uma só opção admitida, o rótulo é "Curso"', () => {
     const [opcao] = opcoesDeCursoExibidas({
@@ -43,17 +55,7 @@ describe('opcoesDeCursoExibidas', () => {
   });
 
   it('as opções saem pela ordem delas e as modalidades, pela ordem da oferta', () => {
-    const opcoes = opcoesDeCursoExibidas({
-      numeroDeOpcoesDeCurso: 2,
-      opcoesDeCurso: [
-        { ordem: 2, nome: 'Medicina', modalidades: null },
-        {
-          ordem: 1,
-          nome: 'Direito',
-          modalidades: [{ codigo: 'LI_EP', nome: 'Escola pública', ordem: 1 }, AC],
-        },
-      ],
-    });
+    const opcoes = opcoesDeCursoExibidas(DUAS_OPCOES_FORA_DE_ORDEM);
 
     expect(opcoes.map((o) => o.rotulo)).toEqual(['1ª opção', '2ª opção']);
     expect(opcoes[0].modalidades).toEqual(['Ampla concorrência', 'Escola pública']);

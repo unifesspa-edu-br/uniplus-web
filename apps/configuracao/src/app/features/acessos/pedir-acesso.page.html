@@ -1,6 +1,6 @@
 <ui-page-header
   heading="Pedir acesso"
-  description="O pedido passa pela aprovação da gestão de acessos e, quando o perfil inclui dado pessoal ou sensível, também pela da proteção de dados."
+  description="O pedido passa pela aprovação da gestão de acessos e, quando o perfil inclui dado pessoal ou sensível, também pela do Representante do controlador."
 />
 
 <cfg-pedir-acesso-formulario
@@ -33,4 +33,15 @@
     [erroDoDocumento]="edicao.erroDoDocumento()"
     [(arquivo)]="edicao.arquivo"
   />
+  @if (edicao.protegido()) {
+  <cfg-termo-de-responsabilidade
+    [versao]="edicao.termo.versao()"
+    [aceite]="edicao.aceiteNoEnvio() ? edicao.termo.aceite : null"
+    [observacao]="edicao.observacaoDoTermo()"
+    [tentou]="edicao.tentouEnviar()"
+    [carregando]="edicao.termo.carregando()"
+    [leitura]="edicao.termo.falhaDeLeitura"
+    [aviso]="edicao.termo.aviso()"
+  />
+  }
 </cfg-pedir-acesso-formulario>

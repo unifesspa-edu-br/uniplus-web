@@ -4,6 +4,7 @@ import { ActivatedRoute, provideRouter } from '@angular/router';
 
 import { UserProfile } from '../models/user.model';
 import { AuthService } from '../services/auth.service';
+import { MotivoDoAcessoNegadoService } from '../services/motivo-do-acesso-negado.service';
 import { UserContextService } from '../services/user-context.service';
 import { AccessDeniedComponent } from './access-denied.component';
 
@@ -59,6 +60,14 @@ describe('AccessDeniedComponent', () => {
     };
   }
 
+  function montarComSaidaPendente() {
+    let concluir: () => void = () => {
+      throw new Error('logout não foi chamado');
+    };
+    const logout = vi.fn(() => new Promise<void>((resolve) => (concluir = resolve)));
+    return { ...montar(logout), concluir: () => concluir() };
+  }
+
   it('oferece a saída pelo encerramento da sessão', () => {
     const { botao } = montar();
 
@@ -109,11 +118,7 @@ describe('AccessDeniedComponent', () => {
 
   /** Um clique duplo não pode disparar duas saídas concorrentes. */
   it('ignora acionamento repetido enquanto a saída corre', async () => {
-    let concluir: () => void = () => {
-      throw new Error('logout não foi chamado');
-    };
-    const logout = vi.fn(() => new Promise<void>((resolve) => (concluir = resolve)));
-    const { botao, fixture } = montar(logout);
+    const { botao, fixture, logout, concluir } = montarComSaidaPendente();
 
     botao()?.click();
     fixture.detectChanges();
@@ -150,5 +155,42 @@ describe('AccessDeniedComponent', () => {
     fixture.detectChanges();
 
     expect(volta()).toBeNull();
+  });
+
+  describe('detail do 403', () => {
+    const detail = 'É preciso a permissão de manter perfis para pedir acesso.';
+
+    function motivoDaApi(): HTMLElement | null {
+      return document.querySelector('.ui-access-denied__motivo');
+    }
+
+    it('mostra o detail em parágrafo próprio, junto do texto padrão', () => {
+      const { fixture, host } = montar();
+
+      TestBed.inject(MotivoDoAcessoNegadoService).registrar(detail);
+      fixture.detectChanges();
+
+      expect(host.querySelector('.ui-access-denied__motivo')?.textContent?.trim()).toBe(detail);
+      expect(host.textContent).toContain('Sua conta não possui permissão');
+      expect(host.querySelector('button')?.textContent?.trim()).toBe('Sair');
+    });
+
+    it('sem detail mostra só o texto padrão, sem parágrafo vazio', () => {
+      const { host } = montar();
+
+      expect(host.querySelector('.ui-access-denied__motivo')).toBeNull();
+      expect(host.textContent).toContain('Sua conta não possui permissão');
+    });
+
+    it('esquece o detail ao sair da página', () => {
+      const { fixture } = montar();
+      const motivo = TestBed.inject(MotivoDoAcessoNegadoService);
+      motivo.registrar(detail);
+
+      fixture.destroy();
+
+      expect(motivo.motivo()).toBeNull();
+      expect(motivoDaApi()).toBeNull();
+    });
   });
 });

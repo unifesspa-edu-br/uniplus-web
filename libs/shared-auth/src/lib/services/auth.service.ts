@@ -1,8 +1,9 @@
 import { Injectable, signal, computed } from '@angular/core';
-import Keycloak from 'keycloak-js';
+import Keycloak, { type KeycloakInitOptions } from 'keycloak-js';
 import { AuthConfig } from '../models/auth-config.model';
 import { UserProfile } from '../models/user.model';
 import { UniPlusTokenClaims } from '../models/token-claims.model';
+import { primeiraDescricao } from '../models/descricao-do-erro';
 
 /**
  * Padrão usado por Keycloak quando um refresh token é replayado:
@@ -53,39 +54,39 @@ export class AuthService {
   async init(config: AuthConfig): Promise<boolean> {
     this._initError.set(null);
     try {
-      this.keycloak = this.createKeycloak(config);
-
-      const authenticated = await this.keycloak.init({
-        onLoad: 'check-sso',
-        silentCheckSsoRedirectUri: new URL(
-          'assets/silent-check-sso.html',
-          document.baseURI,
-        ).toString(),
-        checkLoginIframe: false,
-      });
-
-      // Renovação periódica: o keycloak-js dispara `onTokenExpired`
-      // quando o access token expira. Como `refreshToken()` é serializado,
-      // é seguro chamá-lo aqui sem risco de corrida com
-      // refreshes disparados pelo interceptor.
-      this.keycloak.onTokenExpired = () => {
-        void this.refreshToken(30);
-      };
-
+      const keycloak = this.criarCliente(config);
+      const authenticated = await keycloak.init(opcoesDoInit());
+      this.renovarAoExpirar(keycloak);
       this._authenticated.set(authenticated);
-
-      if (authenticated) {
-        await this.loadProfile();
-      }
-
+      if (authenticated) await this.loadProfile();
       return authenticated;
     } catch (error) {
-      this.keycloak = null;
-      this._authenticated.set(false);
-      this._userProfile.set(null);
-      this._initError.set(describeInitError(error));
+      this.registrarFalhaDoInit(error);
       return false;
     }
+  }
+
+  private criarCliente(config: AuthConfig): Keycloak {
+    const keycloak = this.createKeycloak(config);
+    this.keycloak = keycloak;
+    return keycloak;
+  }
+
+  // Renovação periódica: o keycloak-js dispara `onTokenExpired`
+  // quando o access token expira. Como `refreshToken()` é serializado,
+  // é seguro chamá-lo aqui sem risco de corrida com
+  // refreshes disparados pelo interceptor.
+  private renovarAoExpirar(keycloak: Keycloak): void {
+    keycloak.onTokenExpired = () => {
+      void this.refreshToken(30);
+    };
+  }
+
+  private registrarFalhaDoInit(error: unknown): void {
+    this.keycloak = null;
+    this._authenticated.set(false);
+    this._userProfile.set(null);
+    this._initError.set(describeInitError(error));
   }
 
   /**
@@ -228,30 +229,36 @@ interface KeycloakConfig {
   clientId: string;
 }
 
+function opcoesDoInit(): KeycloakInitOptions {
+  return {
+    onLoad: 'check-sso',
+    silentCheckSsoRedirectUri: new URL('assets/silent-check-sso.html', document.baseURI).toString(),
+    checkLoginIframe: false,
+  };
+}
+
 function toKeycloakConfig(config: AuthConfig): KeycloakConfig {
   const issuer = new URL(config.issuerUrl);
-  const marker = '/realms/';
-  const markerIndex = issuer.pathname.lastIndexOf(marker);
-  if (markerIndex < 0) {
-    throw new Error(
-      'issuerUrl OIDC incompatível com o adapter Keycloak atual: esperado path "/realms/{realm}".',
-    );
-  }
-
-  const realmPath = issuer.pathname.slice(markerIndex + marker.length).replace(/\/$/, '');
-  const realm = decodeURIComponent(realmPath);
-  if (!realm || realm.includes('/')) {
-    throw new Error(
-      'issuerUrl OIDC incompatível com o adapter Keycloak atual: realm ausente ou inválido.',
-    );
-  }
-
-  const basePath = issuer.pathname.slice(0, markerIndex);
+  const { realm, basePath } = realmEPrefixoDoCaminho(issuer.pathname);
   return {
     url: basePath ? `${issuer.origin}${basePath}` : issuer.origin,
     realm,
     clientId: config.clientId,
   };
+}
+
+const MARCADOR_DO_REALM = '/realms/';
+const ISSUER_INCOMPATIVEL = 'issuerUrl OIDC incompatível com o adapter Keycloak atual: ';
+
+/** O realm e o prefixo do caminho do emissor, que o Keycloak serve em `{prefixo}/realms/{realm}`. */
+function realmEPrefixoDoCaminho(caminho: string): { realm: string; basePath: string } {
+  const markerIndex = caminho.lastIndexOf(MARCADOR_DO_REALM);
+  if (markerIndex < 0) throw new Error(`${ISSUER_INCOMPATIVEL}esperado path "/realms/{realm}".`);
+  const restante = caminho.slice(markerIndex + MARCADOR_DO_REALM.length).replace(/\/$/, '');
+  const realm = decodeURIComponent(restante);
+  if (!realm || realm.includes('/'))
+    throw new Error(`${ISSUER_INCOMPATIVEL}realm ausente ou inválido.`);
+  return { realm, basePath: caminho.slice(0, markerIndex) };
 }
 
 function describeInitError(error: unknown): string {
@@ -267,22 +274,10 @@ function isRefreshReuseError(error: unknown): boolean {
   return REFRESH_REUSE_MARKERS.some((marker) => description.includes(marker));
 }
 
+const CAMPOS_DA_DESCRICAO = ['error_description', 'errorDescription', 'description', 'message'];
+
 function extractErrorDescription(error: unknown): string {
   if (!error) return '';
   if (typeof error === 'string') return error;
-  if (typeof error !== 'object') return '';
-
-  const candidates: unknown[] = [
-    (error as { error_description?: unknown }).error_description,
-    (error as { errorDescription?: unknown }).errorDescription,
-    (error as { description?: unknown }).description,
-    (error as { message?: unknown }).message,
-  ];
-
-  for (const candidate of candidates) {
-    if (typeof candidate === 'string' && candidate.length > 0) {
-      return candidate;
-    }
-  }
-  return '';
+  return typeof error === 'object' ? primeiraDescricao(error, CAMPOS_DA_DESCRICAO) : '';
 }

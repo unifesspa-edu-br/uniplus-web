@@ -245,16 +245,19 @@ describe('ComprovanteDoEnvioComponent', () => {
   });
 
   describe('nova tentativa depois da falha', () => {
+    const apertarTentarDeNovo = async (): Promise<void> => {
+      botaoDeTentar()?.click();
+      await atualizar();
+      await atualizar();
+    };
+
     it('a leitura que dá certo tira o alerta e deixa o foco no título, sem somar o aviso de conclusão', async () => {
       const fonte = vi.fn(de(ok())).mockReturnValueOnce(of(falha(503)));
       await abrir(fonte);
       const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
-      const tentar = botaoDeTentar() as HTMLButtonElement;
-      tentar.focus();
+      (botaoDeTentar() as HTMLButtonElement).focus();
 
-      tentar.click();
-      await atualizar();
-      await atualizar();
+      await apertarTentarDeNovo();
 
       expect(tela().querySelector('.alert__title')).toBeNull();
       expect(texto()).toContain('Imprimir comprovante');
@@ -270,9 +273,7 @@ describe('ComprovanteDoEnvioComponent', () => {
       await abrir(fonte);
       const anunciar = vi.spyOn(TestBed.inject(AnuncioDaConclusao), 'anunciar');
 
-      botaoDeTentar()?.click();
-      await atualizar();
-      await atualizar();
+      await apertarTentarDeNovo();
 
       expect(texto()).toContain('Sem acesso');
       expect(botaoDeTentar()).toBeUndefined();

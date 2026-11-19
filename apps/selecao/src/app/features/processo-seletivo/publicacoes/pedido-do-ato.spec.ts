@@ -9,7 +9,7 @@ const CORRIGIDO = '01960000-0000-7000-0000-0000000000a3';
 const dados: DadosDoAto = {
   tipoAtoCodigo: 'AVISO',
   numero: '  03/2026 ',
-  dataPublicacao: '2026-10-19',
+  dataDoAto: '2026-10-19',
   assinante: ' Pró-reitoria de Ensino ',
   atoCorrigidoId: null,
   motivoDaCorrecao: '',
@@ -22,7 +22,7 @@ describe('pedidoDoAto', () => {
     expect(pedido).toEqual({
       tipoAtoCodigo: 'AVISO',
       numero: null,
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: PRINCIPAL,
     });
@@ -59,7 +59,7 @@ describe('pedidoDoAto', () => {
 describe('pedidoDoItem', () => {
   const dadosDoItem: DadosDoItem = {
     numero: dados.numero,
-    dataPublicacao: dados.dataPublicacao,
+    dataDoAto: dados.dataDoAto,
     assinante: dados.assinante,
     atoCorrigidoId: null,
     motivoDaCorrecao: '',
@@ -70,7 +70,7 @@ describe('pedidoDoItem', () => {
 
     expect(pedido).toEqual({
       numero: '03/2026',
-      dataPublicacao: '2026-10-19',
+      dataDoAto: '2026-10-19',
       assinante: 'Pró-reitoria de Ensino',
       documentoPrincipalId: PRINCIPAL,
       politicaDeDivulgacaoConfirmada: true,

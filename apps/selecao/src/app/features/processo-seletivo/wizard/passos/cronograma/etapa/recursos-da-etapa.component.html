@@ -1,5 +1,6 @@
 @let etapa = grupo();
 @let posicao = indiceDaEtapa();
+@let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
 
 <button
   class="etapa-publica__cabecalho"
@@ -26,15 +27,29 @@
         [indiceDoRecurso]="$index"
       ></sel-janela-recursal>
     } @empty {
-      <p class="field__hint">Esta etapa não admite recurso.</p>
+      <p class="field__hint">
+        @if (notaDoEnem) {
+          Esta etapa não admite recurso: a nota do ENEM se contesta no recurso da fase que a
+          divulga.
+        } @else {
+          Esta etapa não admite recurso.
+        }
+      </p>
     }
-    <button
-      class="btn btn--secondary"
-      type="button"
-      (click)="edicao.acrescentarRecursoNaEtapa(etapa)"
-      [disabled]="!edicaoLiberada() || !edicao.temRegraDeRecurso()"
-    >
-      Acrescentar recurso
-    </button>
+    @if (!notaDoEnem) {
+      <button
+        class="btn btn--secondary"
+        type="button"
+        (click)="edicao.acrescentarRecursoNaEtapa(etapa)"
+        [disabled]="!edicaoLiberada() || !edicao.temRegraDeRecurso()"
+      >
+        Acrescentar recurso
+      </button>
+    } @else if (edicao.recursosDaEtapa(etapa).length > 0) {
+      <p class="field__erro" role="alert">
+        A etapa de nota do ENEM não admite recurso próprio: remova a janela declarada. A nota se
+        contesta no recurso da fase que a divulga.
+      </p>
+    }
   </div>
 }

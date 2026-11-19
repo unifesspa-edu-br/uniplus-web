@@ -1,0 +1,29 @@
+<div class="page-header">
+  <div class="page-header__content">
+    <h1 class="page-header__title">Providências sobre concessões</h1>
+    <p class="page-header__desc">
+      Pedidos de retirada ou de revisão de acesso, com fundamento. As abertas ficam no topo, a mais
+      antiga primeiro, até serem respondidas ou atendidas.
+    </p>
+  </div>
+</div>
+
+<ui-falha-de-leitura titulo="Não foi possível carregar as providências" [leitura]="leitura" />
+<cfg-recusa-da-leitura
+  naoEncontrado="Fila de providências não encontrada"
+  [recusa]="store.recusa()"
+>
+  <a routerLink="/">Ir para o início</a>.
+</cfg-recusa-da-leitura>
+
+<cfg-providencias-lista
+  [providencias]="store.itens()"
+  [carregando]="store.carregando()"
+  [erro]="store.mensagemDeErro()"
+  [situacao]="store.situacao()"
+  [temAnterior]="store.anterior() !== null"
+  [temProximo]="store.proximo() !== null"
+  (filtrar)="store.filtrarPor($event)"
+  (anterior)="store.paginaAnterior()"
+  (proximo)="store.proximaPagina()"
+/>
