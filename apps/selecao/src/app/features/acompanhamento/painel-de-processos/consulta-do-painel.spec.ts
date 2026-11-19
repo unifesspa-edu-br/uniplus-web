@@ -5,13 +5,18 @@ import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
-import type { ApiResult, ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  errorResult,
+  mockProblemDetails,
+  okResult,
+  type ApiResult,
+} from '@uniplus/shared-core/http';
 import {
   ProcessosSeletivosApi,
-  StatusProcesso,
   type ProcessoSeletivoResumoDto,
 } from '@uniplus/shared-data/selecao';
 
+import { VESTIBULAR_2026, VESTIBULAR_2027 } from './processos-do-painel.testing';
 import { ConsultaDoPainel } from './consulta-do-painel';
 
 type Resposta = ApiResult<readonly ProcessoSeletivoResumoDto[]>;
@@ -20,32 +25,12 @@ type Chamada = {
   resposta: Subject<Resposta>;
 };
 
-function resumo(id: string, nome: string): ProcessoSeletivoResumoDto {
-  return {
-    id,
-    nome,
-    tipoProcesso: { origemId: 'tipo-ficticio', codigo: 'VESTIBULAR', nome: 'Vestibular' },
-    status: StatusProcesso.rascunho,
-    criadoEm: '2026-08-20T13:23:42.707136+00:00',
-  };
-}
-
-function sucesso(itens: ProcessoSeletivoResumoDto[], link?: string): Resposta {
-  return {
-    ok: true,
-    data: itens,
-    status: 200,
-    headers: new HttpHeaders(link === undefined ? {} : { Link: link }),
-  };
+function sucesso(itens: readonly ProcessoSeletivoResumoDto[], link?: string): Resposta {
+  return okResult(itens, 200, new HttpHeaders(link ? { Link: link } : {}));
 }
 
 function falha(status: number, code = 'uniplus.client.http'): Resposta {
-  return {
-    ok: false,
-    status,
-    problem: { type: 'about:blank', title: 't', status, code } as ProblemDetails,
-    headers: new HttpHeaders(),
-  };
+  return errorResult(mockProblemDetails({ status, code }));
 }
 
 const LINKS =
@@ -90,16 +75,16 @@ describe('ConsultaDoPainel', () => {
 
   it('consulta a primeira página sem cursor e com limit=50', () => {
     expect(chamadas).toHaveLength(1);
-    expect(ultima().query).toEqual({ cursor: undefined, direction: undefined, limit: 50 });
+    expect(ultima().query).toEqual({ limit: 50 });
     expect(consulta.carregando()).toBe(true);
   });
 
   it('mantém a ordem recebida e expõe só id e nome', () => {
-    responder(sucesso([resumo('b', 'B'), resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2027, VESTIBULAR_2026], LINKS));
 
     expect(consulta.itens()).toEqual([
-      { id: 'b', nome: 'B' },
-      { id: 'a', nome: 'A' },
+      { id: VESTIBULAR_2027.id, nome: VESTIBULAR_2027.nome },
+      { id: VESTIBULAR_2026.id, nome: VESTIBULAR_2026.nome },
     ]);
     expect(consulta.carregando()).toBe(false);
     expect(consulta.temAnterior()).toBe(true);
@@ -107,16 +92,16 @@ describe('ConsultaDoPainel', () => {
   });
 
   it('avança e retrocede com o cursor e a direção dos links', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.proximaPagina();
-    expect(ultima().query).toMatchObject({ cursor: 'PROX', direction: 'next', limit: undefined });
-    responder(sucesso([resumo('c', 'C')], LINKS));
+    expect(ultima().query).toMatchObject({ cursor: 'PROX', direction: 'next' });
+    responder(sucesso([VESTIBULAR_2027], LINKS));
     consulta.paginaAnterior();
     expect(ultima().query).toMatchObject({ cursor: 'ANT', direction: 'prev' });
   });
 
   it('não repete a consulta enquanto uma está em curso', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.proximaPagina();
     consulta.proximaPagina();
     consulta.atualizarLista();
@@ -124,9 +109,9 @@ describe('ConsultaDoPainel', () => {
   });
 
   it('reinicia sem cursor ao trocar o tamanho', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.trocarTamanho(25);
-    expect(ultima().query).toEqual({ cursor: undefined, direction: undefined, limit: 25 });
+    expect(ultima().query).toEqual({ limit: 25 });
     expect(consulta.limite()).toBe(25);
   });
 
@@ -143,17 +128,17 @@ describe('ConsultaDoPainel', () => {
     expect(consulta.itens()).toEqual([]);
 
     consulta.tentarNovamente();
-    expect(ultima().query).toMatchObject({ cursor: undefined, limit: 50 });
+    expect(ultima().query).toMatchObject({ limit: 50 });
     expect(consulta.falha()).toBeNull();
   });
 
   it('falha de navegação preserva a página e a nova tentativa repete a consulta que falhou', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.proximaPagina();
     responder(falha(500));
 
     expect(consulta.falha()).toBe('navegacao');
-    expect(consulta.itens()).toEqual([{ id: 'a', nome: 'A' }]);
+    expect(consulta.itens()).toEqual([{ id: VESTIBULAR_2026.id, nome: VESTIBULAR_2026.nome }]);
     expect(consulta.temProxima()).toBe(true);
 
     consulta.tentarNovamente();
@@ -161,7 +146,7 @@ describe('ConsultaDoPainel', () => {
   });
 
   it('cursor expirado (410) pede atualização e reinicia sem o cursor vencido', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.proximaPagina();
     responder(falha(410, 'uniplus.cursor.expirado'));
 
@@ -170,16 +155,14 @@ describe('ConsultaDoPainel', () => {
     expect(consulta.temAnterior()).toBe(false);
 
     consulta.atualizarLista();
-    expect(ultima().query).toMatchObject({ cursor: undefined, limit: 50 });
-    // A restrição (e o aviso/botão que a acompanha) só se limpa na resposta, não ao pedir de novo.
+    expect(ultima().query).toEqual({ limit: 50 });
     expect(consulta.restricao()).toBe('cursor-expirado');
-
-    responder(sucesso([resumo('n', 'Novo')]));
+    responder(sucesso([]));
     expect(consulta.restricao()).toBeNull();
   });
 
   it('403 limpa os dados anteriores e sinaliza acesso negado, não lista vazia', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
+    responder(sucesso([VESTIBULAR_2026], LINKS));
     consulta.proximaPagina();
     responder(falha(403));
 
@@ -188,24 +171,30 @@ describe('ConsultaDoPainel', () => {
     expect(consulta.temProxima()).toBe(false);
   });
 
-  it('troca de sessão limpa itens e cursores e ignora a resposta tardia', () => {
-    responder(sucesso([resumo('a', 'A')], LINKS));
-    consulta.proximaPagina();
-    const antiga = ultima();
+  describe('troca de sessão durante a navegação', () => {
+    let paginaDoUsuarioAnterior: Subject<Resposta>;
 
-    usuarioId.set('u2');
-    TestBed.tick();
+    beforeEach(() => {
+      responder(sucesso([VESTIBULAR_2026], LINKS));
+      consulta.proximaPagina();
+      paginaDoUsuarioAnterior = ultima().resposta;
+      usuarioId.set('u2');
+      TestBed.tick();
+    });
 
-    expect(consulta.itens()).toEqual([]);
-    expect(consulta.temProxima()).toBe(false);
-    expect(chamadas).toHaveLength(3);
-    expect(ultima().query).toMatchObject({ cursor: undefined, limit: 50 });
+    it('descarta a página anterior e consulta a primeira página do novo usuário', () => {
+      expect(consulta.itens()).toEqual([]);
+      expect(consulta.temProxima()).toBe(false);
+      expect(chamadas).toHaveLength(3);
+      expect(ultima().query).toEqual({ limit: 50 });
+    });
 
-    antiga.resposta.next(sucesso([resumo('x', 'Do anterior')], LINKS));
-    expect(consulta.itens()).toEqual([]);
-
-    responder(sucesso([resumo('n', 'Novo')]));
-    expect(consulta.itens()).toEqual([{ id: 'n', nome: 'Novo' }]);
+    it('exibe apenas a resposta da nova sessão, mesmo se a anterior chegar depois', () => {
+      responder(sucesso([VESTIBULAR_2027]));
+      paginaDoUsuarioAnterior.next(sucesso([VESTIBULAR_2026], LINKS));
+      expect(consulta.itens()).toEqual([{ id: VESTIBULAR_2027.id, nome: VESTIBULAR_2027.nome }]);
+      expect(consulta.temProxima()).toBe(false);
+    });
   });
 
   it('sem sessão cancela a consulta e não pede outra', () => {
