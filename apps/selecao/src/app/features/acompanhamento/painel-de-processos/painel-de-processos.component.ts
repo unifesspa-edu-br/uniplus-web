@@ -35,7 +35,7 @@ export interface ProcessoDoPainel {
 export type FalhaDoPainel = 'inicial' | 'navegacao';
 
 /** Condições em que a lista não pode ser mostrada, nem a paginação. */
-export type RestricaoDoPainel = 'cursor-expirado' | 'acesso-negado';
+export type RestricaoDoPainel = 'cursor-invalido' | 'cursor-expirado' | 'acesso-negado';
 
 const MENSAGENS_DA_FALHA: Readonly<Record<FalhaDoPainel, string>> = {
   inicial: 'A lista de processos seletivos não foi carregada.',
@@ -77,17 +77,17 @@ const MENSAGENS_DA_FALHA: Readonly<Record<FalhaDoPainel, string>> = {
           }
         </p>
 
-        @if (restricao() === 'cursor-expirado') {
+        @if (recuperacaoDoCursor.visivel()) {
           <ui-empty-state
             heading="A lista precisa ser atualizada"
-            description="O tempo desta consulta expirou. Atualize a lista para voltar ao início."
+            [description]="recuperacaoDoCursor.mensagem()"
           >
             <button
               type="button"
               class="btn btn--primary"
               data-acao="atualizar-lista"
               [attr.aria-disabled]="carregando() ? 'true' : null"
-              (click)="aoAtualizarLista()"
+              (click)="recuperacaoDoCursor.tentar()"
             >
               Atualizar lista
             </button>
@@ -169,6 +169,26 @@ export class PainelDeProcessosComponent {
 
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
+  private readonly tituloDoPainel = () => this.host.nativeElement.querySelector('h1');
+  private readonly leituraRecusada = computed(() => this.restricao() !== null);
+
+  protected readonly recuperacaoDoCursor = acompanharLeitura({
+    falha: computed(() => {
+      switch (this.restricao()) {
+        case 'cursor-expirado':
+          return 'O tempo desta consulta expirou. Atualize a lista para voltar ao início.';
+        case 'cursor-invalido':
+          return 'Esta página não pode ser consultada. Atualize a lista para voltar ao início.';
+        default:
+          return null;
+      }
+    }),
+    pendente: this.carregando,
+    recarregar: () => this.atualizarLista.emit(),
+    destino: this.tituloDoPainel,
+    recusada: computed(() => this.leituraRecusada() || this.falha() !== null),
+  });
+
   /**
    * Uma leitura por tipo de falha: cada aviso fica na tela até o desfecho da nova tentativa, ainda
    * que quem consulta apague a falha ao recomeçar, e o foco volta ao título quando ela dá certo.
@@ -188,14 +208,9 @@ export class PainelDeProcessosComponent {
       falha: computed(() => (this.falha() === tipo ? MENSAGENS_DA_FALHA[tipo] : null)),
       pendente: this.carregando,
       recarregar: () => this.tentarNovamente.emit(),
-      destino: () => this.host.nativeElement.querySelector('h1'),
+      destino: this.tituloDoPainel,
+      recusada: this.leituraRecusada,
     });
-  }
-
-  protected aoAtualizarLista(): void {
-    if (!this.carregando()) {
-      this.atualizarLista.emit();
-    }
   }
 
   /** Durante a recarga substitutiva os cartões da página sendo trocada ficam indisponíveis (ADR-0026). */

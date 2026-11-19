@@ -1,6 +1,6 @@
-import { DestroyRef, Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Observable, Subject, switchMap } from 'rxjs';
+import { EMPTY, Subject, switchMap } from 'rxjs';
 
 import { UserContextService } from '@uniplus/shared-auth/bootstrap';
 import {
@@ -8,6 +8,7 @@ import {
   extractNextCursor,
   extractPrevCursor,
   ehCursorDePaginacaoObsoleto,
+  ehCursorDePaginacaoExpirado,
   type ApiFailure,
   type ApiOk,
   type ApiResult,
@@ -26,10 +27,22 @@ import {
   type RestricaoDoPainel,
 } from './painel-de-processos.component';
 
-/** Consulta pedida à API: `undefined` em `pagina` é a primeira página, sem cursor. */
-interface Consulta {
-  readonly pagina: CursorPagina | undefined;
-  readonly limite: number;
+/** A primeira página define a janela; nas demais, o cursor já carrega o limite. */
+type PedidoDePagina = { readonly limit: number } | CursorPagina;
+
+interface PaginaDoPainel {
+  readonly itens: readonly ProcessoDoPainel[];
+  readonly anterior: Cursor | null;
+  readonly proxima: Cursor | null;
+}
+
+function paginaRecebida(resposta: ApiOk<readonly ProcessoSeletivoResumoDto[]>): PaginaDoPainel {
+  const link = resposta.headers.get('Link');
+  return {
+    itens: resposta.data.map(({ id, nome }) => ({ id, nome })),
+    anterior: extractPrevCursor(link),
+    proxima: extractNextCursor(link),
+  };
 }
 
 /**
@@ -50,28 +63,24 @@ export class ConsultaDoPainel {
   private readonly usuario = inject(UserContextService);
 
   /** `null` cancela a consulta em curso sem pedir outra. */
-  private readonly pedidos = new Subject<Consulta | null>();
+  private readonly pedidos = new Subject<PedidoDePagina | null>();
 
-  private readonly _itens = signal<readonly ProcessoDoPainel[]>([]);
-  private readonly _cursores = signal<{
-    readonly prev: Cursor | null;
-    readonly next: Cursor | null;
-  }>({ prev: null, next: null });
+  private readonly paginaExibida = signal<PaginaDoPainel | null>(null);
   private readonly _carregando = signal(false);
   private readonly _falha = signal<FalhaDoPainel | null>(null);
   private readonly _restricao = signal<RestricaoDoPainel | null>(null);
   private readonly _limite = signal(TAMANHO_INICIAL_DO_PAINEL);
 
   /** Última consulta pedida: é a que "tentar novamente" repete quando ela falha. */
-  private ultima: Consulta = { pagina: undefined, limite: TAMANHO_INICIAL_DO_PAINEL };
+  private ultimoPedido: PedidoDePagina = { limit: TAMANHO_INICIAL_DO_PAINEL };
 
-  readonly itens = this._itens.asReadonly();
+  readonly itens = computed(() => this.paginaExibida()?.itens ?? []);
   readonly carregando = this._carregando.asReadonly();
   readonly falha = this._falha.asReadonly();
   readonly restricao = this._restricao.asReadonly();
   readonly limite = this._limite.asReadonly();
-  readonly temAnterior = computed(() => this._cursores().prev !== null);
-  readonly temProxima = computed(() => this._cursores().next !== null);
+  readonly temAnterior = computed(() => this.paginaExibida()?.anterior != null);
+  readonly temProxima = computed(() => this.paginaExibida()?.proxima != null);
 
   /** Identidade do usuário; a renovação do token não a altera. */
   private readonly idDoUsuario = computed(() => {
@@ -79,33 +88,13 @@ export class ConsultaDoPainel {
   });
 
   constructor() {
-    this.observarPedidos();
-    this.observarSessao();
-  }
-
-  private observarPedidos(): void {
     this.pedidos
       .pipe(
-        switchMap((consulta) => this.executar(consulta)),
-        takeUntilDestroyed(inject(DestroyRef)),
+        switchMap((pedido) => (pedido === null ? EMPTY : this.api.listar(pedido))),
+        takeUntilDestroyed(),
       )
       .subscribe((resultado) => this.aplicar(resultado));
-  }
 
-  private executar(
-    consulta: Consulta | null,
-  ): Observable<ApiResult<readonly ProcessoSeletivoResumoDto[]>> {
-    return consulta === null
-      ? EMPTY
-      : this.api.listar({
-          cursor: consulta.pagina?.cursor,
-          direction: consulta.pagina?.direction,
-          limit: consulta.pagina === undefined ? consulta.limite : undefined,
-        });
-  }
-
-  /** A troca de usuário reinicia a consulta; a renovação do token não. */
-  private observarSessao(): void {
     effect(() => {
       const id = this.idDoUsuario();
       untracked(() => this.recomecarParaUsuario(id));
@@ -113,56 +102,48 @@ export class ConsultaDoPainel {
   }
 
   proximaPagina(): void {
-    const cursor = untracked(this._cursores).next;
-    if (cursor !== null) {
-      this.consultar({ pagina: { cursor, direction: 'next' }, limite: untracked(this._limite) });
-    }
+    const cursor = this.paginaExibida()?.proxima;
+    if (cursor) this.consultar({ cursor, direction: 'next' });
   }
 
   paginaAnterior(): void {
-    const cursor = untracked(this._cursores).prev;
-    if (cursor !== null) {
-      this.consultar({ pagina: { cursor, direction: 'prev' }, limite: untracked(this._limite) });
-    }
+    const cursor = this.paginaExibida()?.anterior;
+    if (cursor) this.consultar({ cursor, direction: 'prev' });
   }
 
   /** O cursor carrega a janela antiga: trocar o tamanho recomeça sem cursor. */
   trocarTamanho(limite: number): void {
-    if (untracked(this._carregando) || limite === untracked(this._limite)) return;
+    if (this._carregando() || limite === this._limite()) return;
     this._limite.set(limite);
-    this.consultar({ pagina: undefined, limite });
+    this.consultar({ limit: limite });
   }
 
-  /** Repete a consulta que falhou; sem falha de navegação, recomeça do início. */
+  /** A nova tentativa repete tanto a janela inicial quanto a navegação que falhou. */
   tentarNovamente(): void {
-    this.consultar(
-      untracked(this._falha) === 'navegacao'
-        ? this.ultima
-        : { pagina: undefined, limite: untracked(this._limite) },
-    );
+    this.consultar(this.ultimoPedido);
   }
 
   /** Reinicia sem reutilizar o cursor vencido. */
   atualizarLista(): void {
-    this.consultar({ pagina: undefined, limite: untracked(this._limite) });
+    this.consultar({ limit: this._limite() });
   }
 
-  private consultar(consulta: Consulta): void {
-    if (untracked(this._carregando) || this.idDoUsuario() === null) return;
-    this.iniciar(consulta);
+  private consultar(pedido: PedidoDePagina): void {
+    if (this._carregando() || this.idDoUsuario() === null) return;
+    this.iniciar(pedido);
   }
 
-  private iniciar(consulta: Consulta): void {
-    this.ultima = consulta;
+  private iniciar(pedido: PedidoDePagina): void {
+    this.ultimoPedido = pedido;
     this._carregando.set(true);
     // Uma falha de navegação some ao repetir; a inicial também, para a espera não coexistir com ela.
     this._falha.set(null);
-    this.pedidos.next(consulta);
+    this.pedidos.next(pedido);
   }
 
   private recomecarParaUsuario(id: string | null): void {
     // Descarta o que era do usuário anterior; `switchMap` ignora a resposta que ainda voltar.
-    this.limparDados();
+    this.paginaExibida.set(null);
     this._falha.set(null);
     this._restricao.set(null);
     this._limite.set(TAMANHO_INICIAL_DO_PAINEL);
@@ -172,59 +153,32 @@ export class ConsultaDoPainel {
       this.pedidos.next(null);
       return;
     }
-    this.iniciar({ pagina: undefined, limite: TAMANHO_INICIAL_DO_PAINEL });
+    this.iniciar({ limit: TAMANHO_INICIAL_DO_PAINEL });
   }
 
-  /**
-   * Mantém a restrição (e o aviso que a acompanha) até a resposta chegar, para o foco e o botão
-   * de recuperação não saírem do DOM durante a espera; ela só é limpa aqui, nunca ao iniciar.
-   */
   private aplicar(resultado: ApiResult<readonly ProcessoSeletivoResumoDto[]>): void {
     this._carregando.set(false);
     this._restricao.set(null);
-
     if (resultado.ok) {
-      this.aplicarSucesso(resultado);
-      return;
+      this.paginaExibida.set(paginaRecebida(resultado));
+    } else {
+      this.tratarFalha(resultado);
     }
-
-    this.aplicarFalha(resultado);
   }
 
-  private aplicarSucesso(resultado: ApiOk<readonly ProcessoSeletivoResumoDto[]>): void {
-    this._itens.set(resultado.data.map(({ id, nome }) => ({ id, nome })));
-    const link = resultado.headers?.get('Link') ?? null;
-    this._cursores.set({ prev: extractPrevCursor(link), next: extractNextCursor(link) });
-  }
-
-  private aplicarFalha(resultado: ApiFailure): void {
+  private tratarFalha(resultado: ApiFailure): void {
+    const navegando = 'cursor' in this.ultimoPedido;
     if (resultado.status === STATUS_HTTP.SEM_PERMISSAO) {
-      this.limparDados();
+      this.paginaExibida.set(null);
       this._restricao.set('acesso-negado');
-      return;
+    } else if (navegando && ehCursorDePaginacaoObsoleto(resultado.problem)) {
+      this.paginaExibida.set(null);
+      this._restricao.set(
+        ehCursorDePaginacaoExpirado(resultado.problem) ? 'cursor-expirado' : 'cursor-invalido',
+      );
+    } else {
+      if (!navegando) this.paginaExibida.set(null);
+      this._falha.set(navegando ? 'navegacao' : 'inicial');
     }
-
-    const primeira = this.ultima.pagina === undefined;
-    if (!primeira && ehCursorDePaginacaoObsoleto(resultado.problem)) {
-      this._cursores.set({ prev: null, next: null });
-      this._restricao.set('cursor-expirado');
-      return;
-    }
-    this.aplicarFalhaDeConsulta(primeira);
-  }
-
-  private aplicarFalhaDeConsulta(primeira: boolean): void {
-    if (primeira) {
-      this.limparDados();
-      this._falha.set('inicial');
-      return;
-    }
-    // Falha de navegação: a última página válida e seus cursores continuam.
-    this._falha.set('navegacao');
-  }
-
-  private limparDados(): void {
-    this._itens.set([]);
-    this._cursores.set({ prev: null, next: null });
   }
 }
