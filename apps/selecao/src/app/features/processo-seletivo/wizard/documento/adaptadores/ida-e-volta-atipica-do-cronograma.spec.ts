@@ -46,7 +46,14 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     'Fase com instante que o calendário não reconhece',
     comSecao({
       cronograma: {
-        fases: [{ chave: 'a', inicio: '2027-13-45T99:99:99Z', fim: '2027-02-30T00:00:00Z' }],
+        fases: [
+          {
+            chave: 'a',
+            faseCanonicaCodigo: 'INSCRICOES',
+            inicio: '2027-13-45T99:99:99Z',
+            fim: '2027-02-30T00:00:00Z',
+          },
+        ],
       },
     }),
   ],
@@ -55,19 +62,29 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     comSecao({
       cronograma: {
         fases: [
-          { chave: 'x', inicio: '2027-01-10T03:00:00Z', unidadeResponsavelCodigo: 'A' },
-          { chave: 'x', inicio: '2027-05-10T03:00:00Z', unidadeResponsavelCodigo: 'B' },
+          {
+            chave: 'x',
+            faseCanonicaCodigo: 'INSCRICOES',
+            inicio: '2027-01-10T03:00:00Z',
+            unidadeResponsavelCodigo: 'A',
+          },
+          {
+            chave: 'x',
+            faseCanonicaCodigo: 'INSCRICOES',
+            inicio: '2027-05-10T03:00:00Z',
+            unidadeResponsavelCodigo: 'B',
+          },
         ],
       },
     }),
   ],
   [
-    'Fase com `ordem` fora de sequência e campos que nenhuma tela edita',
+    'Fase com campos que nenhuma tela edita',
     comSecao({
       cronograma: {
         fases: [
-          { chave: 'a', ordem: 9, assinantes: [], regraDeHomologacao: {} },
-          { chave: 'b', ordem: 2, produtos: [] },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', assinantes: [], regraDeHomologacao: {} },
+          { chave: 'b', faseCanonicaCodigo: 'INSCRICOES', produtos: [] },
         ],
       },
     }),
@@ -122,7 +139,7 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     'Convenção de contagem vazia e chave antes de outra seção',
     comSecao({
       identificacao: { algoritmoContagemPrazo: {}, nome: 'Depois da convenção' },
-      cronograma: { fases: [{ chave: 'a' }] },
+      cronograma: { fases: [{ chave: 'a', faseCanonicaCodigo: 'INSCRICOES' }] },
     }),
   ],
 ];

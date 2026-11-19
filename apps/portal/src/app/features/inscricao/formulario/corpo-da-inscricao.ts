@@ -26,7 +26,7 @@ function respostasDoCorpo(
   simulacao: SimulacaoDoFormulario,
 ): Record<string, unknown> {
   const respostas: Record<string, unknown> = { ...(simulacao.respostas ?? {}) };
-  for (const fato of Object.keys(inscricao.respostas)) {
+  for (const fato of Object.keys(inscricao.formulario.respostas)) {
     if (!(fato in respostas)) respostas[fato] = null;
   }
   if ('NOME_SOCIAL' in respostas && respostas['DESEJA_NOME_SOCIAL'] !== true) {
@@ -47,7 +47,7 @@ function gruposDoCorpo(inscricao: InscricaoDto, simulacao: SimulacaoDoFormulario
       (ocorrencias ?? []).map((o) => ({ id: o.id, respostas: o.respostas ?? {} })),
     ]),
   );
-  for (const codigo of Object.keys(inscricao.grupos)) {
+  for (const codigo of Object.keys(inscricao.formulario.grupos)) {
     if (simulacao.grupos?.[codigo] == null) grupos[codigo] = [];
   }
   return grupos;
@@ -88,12 +88,12 @@ export function mesmoConteudoGravado(a: InscricaoDto, b: InscricaoDto): boolean 
   const gravado = (i: InscricaoDto): string =>
     JSON.stringify([
       i.situacao,
-      i.versaoFormularioId,
-      i.ofertaCursoId,
-      i.ofertaCursoSegundaOpcaoId,
-      i.respostas,
-      i.grupos,
-      i.aceites,
+      i.formulario.versaoFormularioId,
+      i.escolhasDeCurso.ofertaCursoId,
+      i.escolhasDeCurso.ofertaCursoSegundaOpcaoId,
+      i.formulario.respostas,
+      i.formulario.grupos,
+      i.formulario.aceites,
     ]);
   return gravado(a) === gravado(b);
 }

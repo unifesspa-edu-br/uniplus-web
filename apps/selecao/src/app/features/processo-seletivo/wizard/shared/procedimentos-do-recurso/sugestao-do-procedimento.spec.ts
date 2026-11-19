@@ -14,7 +14,7 @@ function regra(codigo: string, parcial: Partial<RegraCatalogoDto> = {}): RegraCa
     codigo,
     versao: 'v1',
     tipo: 'regra_procedimento_recurso',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: {},
     baseLegal: 'Referência institucional',
     hash: '',

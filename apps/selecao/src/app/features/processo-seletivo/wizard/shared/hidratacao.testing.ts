@@ -27,6 +27,7 @@ export const DISTRIBUICAO = {
       modalidadeOrigemId: 'modalidade-1',
       codigo: 'AC',
       composicaoVagas: 'RestanteDasVagasOfertadas',
+      quantidadeDeclarada: null,
       descricao: null,
       composicaoOrigemCodigo: null,
       regraRemanejamento: null,
@@ -39,6 +40,7 @@ export const DISTRIBUICAO = {
       modalidadeOrigemId: 'modalidade-2',
       codigo: 'AC_PCD',
       composicaoVagas: 'RetiradaDeOutraModalidade',
+      quantidadeDeclarada: 2,
       descricao: null,
       composicaoOrigemCodigo: null,
       regraRemanejamento: null,
@@ -86,3 +88,22 @@ export const ETAPA = etapaDoServidor();
 export function dtoComCronograma(extra: Record<string, unknown>): ProcessoSeletivoDto {
   return { ...dtoCom([]), ...extra } as unknown as ProcessoSeletivoDto;
 }
+
+/** Quadro fixado no edital em que a oferta declarou 25 e 15 e o ajuste do quadro reduziu AC para 20. */
+export const FIXADO_COM_AJUSTE = {
+  ...DISTRIBUICAO,
+  regraDistribuicao: { codigo: 'DISTRIB-VAGAS-INSTITUCIONAL', versao: 'v1' },
+  ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
+  percentualDaReservaLegal: null,
+  regraAjuste: null,
+  referenciaDemografica: null,
+  ajusteDoQuadro: { $tipo: 'reduzirDe', modalidadeCodigo: 'AC' },
+  modalidades: [
+    { ...DISTRIBUICAO.modalidades[0], quantidadeDeclarada: 25 },
+    { ...DISTRIBUICAO.modalidades[1], quantidadeDeclarada: 15 },
+  ],
+  quadro: [
+    { modalidadeOrigemId: 'modalidade-1', modalidadeCodigo: 'AC', quantidade: 20 },
+    { modalidadeOrigemId: 'modalidade-2', modalidadeCodigo: 'AC_PCD', quantidade: 15 },
+  ],
+};

@@ -8849,6 +8849,10 @@ export interface paths {
                 };
             };
         };
+        /**
+         * Substitui o documento inteiro do rascunho
+         * @description Substitui o documento inteiro do rascunho. O corpo é o documento completo: todo bloco que o corpo não traz é apagado, e nada é mesclado com o que estava salvo. Uma lista enviada como [] continua presente e declara nenhum item; só o bloco omitido é apagado. Para mudar uma parte, leia o rascunho pelo GET, altere a parte e envie o documento inteiro. Devolva a chave de cada parte que o esquema identifica por chave, como a leitura a trouxe, porque as referências entre as partes (decisões, fatos, produtos) usam a chave; essa parte, sem a chave, recusa o salvamento (422). A distribuição de vagas é identificada por ofertaCursoCodigo e não tem chave. O id da raiz e os campos somente de leitura enviados são ignorados: vale o rascunho da rota. Exige o If-Match da revisão lida. Se outra alteração do mesmo rascunho estiver em andamento e a espera passar do limite, a resposta é 503, nada é gravado e o envio pode ser repetido.
+         */
         readonly put: {
             readonly parameters: {
                 readonly query?: never;
@@ -9381,6 +9385,12 @@ export interface components {
             /** Format: int32 */
             readonly totalDeVagasRetiradas: number;
         };
+        readonly AlternativaDeCondicoesDto: {
+            readonly condicoes: readonly components["schemas"]["CondicaoDeHomologacaoDto"][];
+        };
+        readonly AlternativaDeCondicoesInput: {
+            readonly condicoes?: null | readonly components["schemas"]["CondicaoDeHomologacaoInput"][];
+        };
         readonly AlternativasSimuladasDto: {
             /** Format: uuid */
             readonly grupoId: string;
@@ -9698,37 +9708,29 @@ export interface components {
             readonly editaisPublicados?: null | readonly components["schemas"]["EditalPublicadoCertameDto"][];
         };
         readonly ComprovanteDaInscricaoDto: {
-            /** Format: uuid */
-            readonly inscricaoId: string;
-            /** Format: int32 */
-            readonly numero: number;
-            /** Format: int32 */
-            readonly total: number;
-            readonly vale: boolean;
-            /** Format: int32 */
-            readonly numeroAnterior?: null | number;
-            /** Format: int32 */
-            readonly numeroSeguinte?: null | number;
-            /** Format: uuid */
-            readonly processoSeletivoId: string;
-            readonly nomeDoProcesso: string;
-            readonly identificadorDoProcesso?: null | string;
-            readonly unidadeAdministradora: string;
-            readonly envio: components["schemas"]["EnvioDoComprovanteDto"];
-            readonly cancelamento?: null | components["schemas"]["CancelamentoNoComprovanteDto"];
             readonly candidato: components["schemas"]["CandidatoDoComprovanteDto"];
-            readonly prazoDaCorrecao?: null | components["schemas"]["PrazoDaCorrecaoDto"];
-            /** Format: int32 */
-            readonly numeroDeOpcoesDeCurso: number;
-            readonly opcoesDeCurso: readonly components["schemas"]["OpcaoDeCursoDoComprovanteDto"][];
-            readonly secoes: readonly components["schemas"]["SecaoDoComprovanteDto"][];
-            readonly derivados: readonly components["schemas"]["ItemDoComprovanteDto"][];
-            readonly termosAceitos: readonly components["schemas"]["TermoAceitoDoComprovanteDto"][];
-            readonly documentos: readonly components["schemas"]["DocumentoDoComprovanteDto"][];
+            readonly inscricao: components["schemas"]["InscricaoNoComprovanteDto"];
+            readonly processo: components["schemas"]["ProcessoNoComprovanteDto"];
+            readonly escolhasDeCurso: components["schemas"]["EscolhasDeCursoNoComprovanteDto"];
+            readonly formulario: components["schemas"]["FormularioNoComprovanteDto"];
         };
         readonly CondicaoAtendimentoCertameDto: {
             readonly codigo: string;
             readonly nome: string;
+        };
+        readonly CondicaoDeHomologacaoDto: {
+            readonly tipo: string;
+            /** Format: int32 */
+            readonly edicaoDoExame: number;
+            readonly motivoDesfavoravelCodigo: null | string;
+            readonly enquadramento: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoDto"][])[];
+        };
+        readonly CondicaoDeHomologacaoInput: {
+            readonly tipo?: null | string;
+            /** Format: int32 */
+            readonly edicaoDoExame?: null | number;
+            readonly motivoDesfavoravelCodigo?: null | string;
+            readonly enquadramento?: null | readonly (readonly components["schemas"]["CondicaoPrecondicaoInput"][])[];
         };
         readonly CondicaoDerivacaoDto: {
             readonly fato: string;
@@ -10406,9 +10408,9 @@ export interface components {
             readonly chave: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
             /**
              * Tipo de banca
-             * @description Código do tipo de banca no catálogo, por exemplo BANCA_ANALISE_RECURSOS.
+             * @description Código do tipo de banca no catálogo, por exemplo BANCA_ANALISE_RECURSOS. É obrigatório: a banca sem tipo não diz que corpo julga.
              */
-            readonly tipoBancaCodigo?: string;
+            readonly tipoBancaCodigo: string;
             /**
              * Recorte de competência
              * @description Códigos das categorias de documento que a banca analisa. Lista vazia quando a banca não é recortada por categoria.
@@ -10807,15 +10809,15 @@ export interface components {
             readonly atoAncoraCodigo?: string;
             /**
              * Efeito suspensivo na primeira instância, quantidade
-             * @description Quantidade de unidades do efeito suspensivo na primeira instância, com até quatro casas decimais.
+             * @description Quantidade de unidades do efeito suspensivo na primeira instância, com até quatro casas decimais. Nulo, junto à unidade, desativa o bloqueio nesta instância.
              */
-            readonly suspensividadePrimeiraInstanciaValor?: number;
+            readonly suspensividadePrimeiraInstanciaValor?: number | null;
             /**
              * Efeito suspensivo na primeira instância, unidade
-             * @description Unidade do efeito suspensivo na primeira instância: horas, dias ou dias úteis (diasUteis).
+             * @description Unidade do efeito suspensivo na primeira instância: horas, dias ou dias úteis (diasUteis). Nula, junto ao valor, desativa o bloqueio nesta instância.
              * @enum {unknown}
              */
-            readonly suspensividadePrimeiraInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadePrimeiraInstanciaUnidade;
+            readonly suspensividadePrimeiraInstanciaUnidade?: "horas" | "dias" | "diasUteis" | null;
             /**
              * Admite instância superior
              * @description Se cabe recurso à instância superior.
@@ -10823,15 +10825,15 @@ export interface components {
             readonly admiteInstanciaSuperior?: boolean;
             /**
              * Efeito suspensivo na instância superior, quantidade
-             * @description Quantidade de unidades do efeito suspensivo na instância superior, com até quatro casas decimais.
+             * @description Quantidade de unidades do efeito suspensivo na instância superior, com até quatro casas decimais. Nulo, junto à unidade, desativa o bloqueio nesta instância.
              */
-            readonly suspensividadeSegundaInstanciaValor?: number;
+            readonly suspensividadeSegundaInstanciaValor?: number | null;
             /**
              * Efeito suspensivo na instância superior, unidade
-             * @description Unidade do efeito suspensivo na instância superior: horas, dias ou dias úteis (diasUteis).
+             * @description Unidade do efeito suspensivo na instância superior: horas, dias ou dias úteis (diasUteis). Nula, junto ao valor, desativa o bloqueio nesta instância.
              * @enum {unknown}
              */
-            readonly suspensividadeSegundaInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadeSegundaInstanciaUnidade;
+            readonly suspensividadeSegundaInstanciaUnidade?: "horas" | "dias" | "diasUteis" | null;
             /**
              * Procedimentos de recurso
              * @description O procedimento que revisa o recurso de cada matéria que a fase ou a etapa decide. Cada matéria tem um único procedimento, e um tipo de decisão não mistura procedimento para o tipo inteiro com procedimento por alvo.
@@ -10877,13 +10879,13 @@ export interface components {
         readonly DocumentoDaConfiguracaoCronograma: {
             /**
              * Fases
-             * @description Fases do cronograma. A chave de cada fase é única no documento.
+             * @description Fases do cronograma, na ordem da linha do tempo do processo: a posição na lista é a ordem de cada fase. A chave de cada fase é única no documento.
              */
             readonly fases?: readonly components["schemas"]["DocumentoDaConfiguracaoCronogramaFase"][];
         };
         /**
          * Fase do cronograma
-         * @description Uma fase do processo. Só a chave local é obrigatória: as datas, a unidade e o resto podem faltar num rascunho.
+         * @description Uma fase do processo. A chave local e a fase canônica são obrigatórias: as datas, a unidade e o resto podem faltar num rascunho.
          */
         readonly DocumentoDaConfiguracaoCronogramaFase: {
             /**
@@ -10895,12 +10897,7 @@ export interface components {
              * Fase canônica
              * @description Código da fase no catálogo de fases canônicas, por exemplo INSCRICAO ou RESULTADO_FINAL.
              */
-            readonly faseCanonicaCodigo?: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
-            /**
-             * Ordem
-             * @description Posição da fase na linha do tempo do processo, a partir de 1. Não se repete entre as fases.
-             */
-            readonly ordem?: number;
+            readonly faseCanonicaCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
             /**
              * Início da fase
              * @description Instante em que a fase começa, em UTC. Ausente enquanto não definido.
@@ -11815,7 +11812,7 @@ export interface components {
         readonly DocumentoDaConfiguracaoHomologacao: {
             /**
              * Resultado que publica a lista
-             * @description Código do tipo de ato, resultado da própria fase ou da fase concluinte, que publica a lista de homologadas.
+             * @description Código do tipo de ato que publica a lista de homologadas: produto da própria fase; o definitivo sai nela ou na fase concluinte.
              */
             readonly resultadoAtoCodigo?: string;
             /**
@@ -11842,10 +11839,9 @@ export interface components {
         readonly DocumentoDaConfiguracaoHomologacaoCondicao: {
             /**
              * Tipo da condição
-             * @description O que a condição apura. Por ora, o resultado do candidato no retorno do INEP.
-             * @enum {unknown}
+             * @description O que a condição apura, em código maiúsculo com sublinhado. Por ora, o sistema só apura RESULTADO_NO_RETORNO_DO_INEP, o resultado do candidato no retorno do INEP.
              */
-            readonly tipo?: DocumentoDaConfiguracaoHomologacaoCondicaoTipo;
+            readonly tipo?: string;
             /**
              * Edição do exame
              * @description Ano da edição do exame, de 1998 a 2100.
@@ -12493,6 +12489,20 @@ export interface components {
             readonly fusoHorario: components["schemas"]["FusoHorarioDto"];
             readonly hashIntegridade: string;
         };
+        readonly EscolhasDeCursoDaInscricaoDto: {
+            /** Format: uuid */
+            readonly ofertaCursoId: null | string;
+            /** Format: uuid */
+            readonly ofertaCursoSegundaOpcaoId: null | string;
+            /** Format: int32 */
+            readonly numeroDeOpcoesDeCurso: number;
+            readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
+        };
+        readonly EscolhasDeCursoNoComprovanteDto: {
+            /** Format: int32 */
+            readonly numeroDeOpcoesDeCurso: number;
+            readonly opcoesDeCurso: readonly components["schemas"]["OpcaoDeCursoDoComprovanteDto"][];
+        };
         readonly EtapaCertameDto: {
             readonly nome: string;
             readonly carater: string;
@@ -12655,6 +12665,7 @@ export interface components {
             /** Format: uuid */
             readonly unidadeResponsavelId?: null | string;
             readonly tiposDeDecisao?: null | readonly string[];
+            readonly regraDeHomologacao?: null | components["schemas"]["RegraDeHomologacaoInput"];
         };
         readonly FaseDosDocumentosDto: {
             /** Format: uuid */
@@ -12703,6 +12714,18 @@ export interface components {
             readonly qualquer: boolean;
             readonly lista: null | readonly string[];
         };
+        readonly FormularioDaInscricaoDto: {
+            /** Format: uuid */
+            readonly versaoFormularioId: string;
+            /** @description As respostas por código do fato. O município vem como texto, o código IBGE, no rascunho, e como objeto { "codigo", "rotulo" } na inscrição enviada, com o nome que o Geo conferiu no envio. */
+            readonly respostas: Record<string, never>;
+            /** @description O que o sistema calculou das respostas. O município de residência vem na mesma forma do município das respostas: { "codigo", "rotulo" } na inscrição enviada. */
+            readonly derivados: Record<string, never>;
+            readonly grupos: {
+                readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
+            };
+            readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
+        };
         readonly FormularioDto: {
             readonly finalidade: string;
             /** Format: uuid */
@@ -12715,6 +12738,12 @@ export interface components {
             readonly fatosColetados: readonly components["schemas"]["FatoColetadoDto"][];
             readonly termos: readonly components["schemas"]["TermoExigidoDto"][];
             readonly grupos: readonly components["schemas"]["GrupoColetadoDto"][];
+        };
+        readonly FormularioNoComprovanteDto: {
+            readonly secoes: readonly components["schemas"]["SecaoDoComprovanteDto"][];
+            readonly derivados: readonly components["schemas"]["ItemDoComprovanteDto"][];
+            readonly termosAceitos: readonly components["schemas"]["TermoAceitoDoComprovanteDto"][];
+            readonly documentos: readonly components["schemas"]["DocumentoDoComprovanteDto"][];
         };
         readonly FormularioPortavel: {
             readonly etapas: readonly components["schemas"]["EtapaPortavel"][];
@@ -12994,25 +13023,26 @@ export interface components {
             readonly processoSeletivoId: string;
             readonly situacao: components["schemas"]["SituacaoInscricao"];
             readonly numeroInscricao: null | string;
-            /** Format: uuid */
-            readonly versaoFormularioId: string;
-            /** Format: uuid */
-            readonly ofertaCursoId: null | string;
-            /** Format: uuid */
-            readonly ofertaCursoSegundaOpcaoId: null | string;
-            /** Format: int32 */
-            readonly numeroDeOpcoesDeCurso: number;
-            readonly ofertas: readonly components["schemas"]["OfertaDeCursoCertameDto"][];
-            /** @description As respostas por código do fato. O município vem como texto, o código IBGE, no rascunho, e como objeto { "codigo", "rotulo" } na inscrição enviada, com o nome que o Geo conferiu no envio. */
-            readonly respostas: Record<string, never>;
-            /** @description O que o sistema calculou das respostas. O município de residência vem na mesma forma do município das respostas: { "codigo", "rotulo" } na inscrição enviada. */
-            readonly derivados: Record<string, never>;
-            readonly grupos: {
-                readonly [key: string]: readonly components["schemas"]["OcorrenciaDeGrupoInscricaoInput"][];
-            };
-            readonly aceites: readonly components["schemas"]["AceiteDeTermoInput"][];
+            readonly formulario: components["schemas"]["FormularioDaInscricaoDto"];
+            readonly escolhasDeCurso: components["schemas"]["EscolhasDeCursoDaInscricaoDto"];
             readonly eTag: string;
             readonly avaliacao: components["schemas"]["AvaliacaoDaInscricaoDto"];
+        };
+        readonly InscricaoNoComprovanteDto: {
+            /** Format: uuid */
+            readonly inscricaoId: string;
+            /** Format: int32 */
+            readonly numero: number;
+            /** Format: int32 */
+            readonly total: number;
+            readonly vale: boolean;
+            /** Format: int32 */
+            readonly numeroAnterior?: null | number;
+            /** Format: int32 */
+            readonly numeroSeguinte?: null | number;
+            readonly envio: components["schemas"]["EnvioDoComprovanteDto"];
+            readonly cancelamento?: null | components["schemas"]["CancelamentoNoComprovanteDto"];
+            readonly prazoDaCorrecao?: null | components["schemas"]["PrazoDaCorrecaoDto"];
         };
         readonly InscricaoRequest: {
             /** Format: uuid */
@@ -13613,6 +13643,13 @@ export interface components {
             readonly id: string;
             readonly nome: string;
         };
+        readonly ProcessoNoComprovanteDto: {
+            /** Format: uuid */
+            readonly processoSeletivoId: string;
+            readonly nomeDoProcesso: string;
+            readonly identificadorDoProcesso?: null | string;
+            readonly unidadeAdministradora: string;
+        };
         readonly ProcessoSeletivoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -13708,6 +13745,7 @@ export interface components {
             readonly emiteParecerIndividual: boolean;
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseDto"];
             readonly tiposDeDecisao: readonly string[];
+            readonly regraDeHomologacao: null | components["schemas"]["RegraDeHomologacaoDto"];
         };
         readonly PublicarAtoAvulsoDoProcessoRequest: {
             readonly tipoAtoCodigo: string;
@@ -13864,7 +13902,7 @@ export interface components {
             readonly codigo: string;
             readonly versao: string;
             readonly tipo: string;
-            readonly esquemaArgs: components["schemas"]["JsonElement"];
+            readonly declaracaoDaRegra: components["schemas"]["JsonElement"];
             readonly invariantes: components["schemas"]["JsonElement"];
             readonly baseLegal: string;
             readonly hash: string;
@@ -13899,6 +13937,14 @@ export interface components {
             readonly desempate?: null | components["schemas"]["DesempateDaVotacao"];
             readonly encerramento?: null | components["schemas"]["EncerramentoDaVotacao"];
             readonly semUnanimidade?: null | components["schemas"]["ResultadoSemUnanimidade"];
+        };
+        readonly RegraDeHomologacaoDto: {
+            readonly resultadoAtoCodigo: null | string;
+            readonly alternativas: readonly components["schemas"]["AlternativaDeCondicoesDto"][];
+        };
+        readonly RegraDeHomologacaoInput: {
+            readonly resultadoAtoCodigo?: null | string;
+            readonly alternativas?: null | readonly components["schemas"]["AlternativaDeCondicoesInput"][];
         };
         readonly RegraDerivacaoDto: {
             /** Format: int32 */
@@ -14375,16 +14421,6 @@ export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade {
     horas = "horas",
     diasUteis = "diasUteis"
 }
-export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadePrimeiraInstanciaUnidade {
-    horas = "horas",
-    dias = "dias",
-    diasUteis = "diasUteis"
-}
-export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoSuspensividadeSegundaInstanciaUnidade {
-    horas = "horas",
-    dias = "dias",
-    diasUteis = "diasUteis"
-}
 export enum DocumentoDaConfiguracaoComunsTipoDeDecisao {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
     HOMOLOGACAO_DAS_INSCRICOES = "HOMOLOGACAO_DAS_INSCRICOES",
@@ -14469,9 +14505,6 @@ export enum DocumentoDaConfiguracaoFormularioEtapaBloco {
     COMPROVACAO_DOCUMENTAL = "COMPROVACAO_DOCUMENTAL",
     MODALIDADES_CALCULADAS = "MODALIDADES_CALCULADAS",
     REVISAO_E_ACEITE = "REVISAO_E_ACEITE"
-}
-export enum DocumentoDaConfiguracaoHomologacaoCondicaoTipo {
-    RESULTADO_NO_RETORNO_DO_INEP = "RESULTADO_NO_RETORNO_DO_INEP"
 }
 export enum DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos {
     inscricaoPropria = "inscricaoPropria",

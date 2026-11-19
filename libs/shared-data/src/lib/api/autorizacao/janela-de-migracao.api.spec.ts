@@ -11,7 +11,7 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 const BASE = 'http://localhost:5000';
 const PERFIL = '01960000-0000-7000-0000-0000000000d1';
 const CONCESSAO = '01960000-0000-7000-0000-0000000000c1';
-const JANELA = `${BASE}/api/autorizacao/perfis/${PERFIL}/janela`;
+const JANELA = `${BASE}/api/autorizacao/perfis/${PERFIL}/revisao-das-concessoes`;
 
 describe('JanelaDeMigracaoApi', () => {
   let api: JanelaDeMigracaoApi;
@@ -31,13 +31,13 @@ describe('JanelaDeMigracaoApi', () => {
 
   afterEach(() => controller.verify());
 
-  it('envia o lote por POST em janela/lote, com chave de idempotência', () => {
+  it('envia o lote por POST em revisao-das-concessoes/decisoes, com chave de idempotência', () => {
     const corpo = {
       decisoes: [{ concessaoId: CONCESSAO, decisao: 'migrar' }],
       confirmacaoDeExclusao: false,
     };
     void firstValueFrom(api.enviarLote(PERFIL, corpo, withIdempotencyKey('k1')));
-    const req = controller.expectOne(`${JANELA}/lote`);
+    const req = controller.expectOne(`${JANELA}/decisoes`);
 
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k1');

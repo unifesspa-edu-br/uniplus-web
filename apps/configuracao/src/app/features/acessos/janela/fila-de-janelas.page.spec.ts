@@ -17,16 +17,16 @@ const ENVIADO: ItemDaFilaDeJanelasDto = {
   perfilId: 'p1',
   perfilNome: 'Acompanhamento',
   versaoAlvo: 3,
-  prazo: '2026-11-12T15:00:00Z',
-  loteEnviado: true,
+  terminaEm: '2026-11-12T15:00:00Z',
+  decisoesEnviadas: true,
   quantidadeADecidir: 1,
 };
 const PENDENTE: ItemDaFilaDeJanelasDto = {
   perfilId: 'p2',
   perfilNome: 'Auditoria',
   versaoAlvo: 5,
-  prazo: '2026-11-13T02:30:00Z',
-  loteEnviado: false,
+  terminaEm: '2026-11-13T02:30:00Z',
+  decisoesEnviadas: false,
   quantidadeADecidir: 4,
 };
 
@@ -85,7 +85,7 @@ describe('FilaDeJanelasPage', () => {
     const { host } = await abrir(etapa);
 
     expect(leitura).toHaveBeenCalledWith(
-      'http://api.test/api/autorizacao/janelas-de-migracao',
+      'http://api.test/api/autorizacao/revisoes-de-concessoes',
       etapa,
     );
     expect(host.querySelector('h1')?.textContent).toContain(titulo);
@@ -167,7 +167,9 @@ describe('FilaDeJanelasPage', () => {
       recusa('uniplus.internal.unexpected', 500, 'Erro interno'),
     );
     const tentar = (): HTMLButtonElement | undefined =>
-      [...host.querySelectorAll('button')].find((b) => b.textContent?.trim() === 'Tentar novamente');
+      [...host.querySelectorAll('button')].find(
+        (b) => b.textContent?.trim() === 'Tentar novamente',
+      );
 
     expect(host.textContent).not.toContain('Nenhuma janela de migração aguarda');
     leitura.mockReturnValue(of(ok([ENVIADO])));
@@ -181,7 +183,9 @@ describe('FilaDeJanelasPage', () => {
     const { host } = await abrir('gestao_de_acessos', recusa('uniplus.forbidden', 403));
 
     expect(
-      [...host.querySelectorAll('button')].some((b) => b.textContent?.trim() === 'Tentar novamente'),
+      [...host.querySelectorAll('button')].some(
+        (b) => b.textContent?.trim() === 'Tentar novamente',
+      ),
     ).toBe(false);
     expect(host.querySelectorAll('section.panel')).toHaveLength(0);
   });

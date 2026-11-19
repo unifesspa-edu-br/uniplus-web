@@ -141,26 +141,58 @@ const INSCRICAO_EM_RASCUNHO: InscricaoDto = {
   processoSeletivoId: PROCESSO,
   situacao: SituacaoInscricao.rascunho,
   numeroInscricao: null,
-  versaoFormularioId: 'versao-1',
-  ofertaCursoId: null,
-  ofertaCursoSegundaOpcaoId: null,
-  numeroDeOpcoesDeCurso: 1,
-  ofertas: [],
-  respostas: {},
-  derivados: {},
-  grupos: {},
-  aceites: [],
+  formulario: {
+    versaoFormularioId: 'versao-1',
+    respostas: {},
+    derivados: {},
+    grupos: {},
+    aceites: [],
+  },
+  escolhasDeCurso: {
+    ofertaCursoId: null,
+    ofertaCursoSegundaOpcaoId: null,
+    numeroDeOpcoesDeCurso: 1,
+    ofertas: [],
+  },
   eTag: '"inscricao-1:1"',
   avaliacao: SEM_DERIVACAO,
 };
 
-export const inscricao = (outros: Partial<InscricaoDto> = {}): InscricaoDto => ({
+type DaRaizDaInscricao = Omit<InscricaoDto, 'formulario' | 'escolhasDeCurso'>;
+
+/** O que o teste ajusta da inscrição: a raiz, o formulário e as escolhas de curso, num só nível. */
+export type AjustesDaInscricao = Partial<
+  DaRaizDaInscricao & InscricaoDto['formulario'] & InscricaoDto['escolhasDeCurso']
+>;
+
+const CAMPOS_DO_FORMULARIO = Object.keys(INSCRICAO_EM_RASCUNHO.formulario);
+const CAMPOS_DAS_ESCOLHAS = Object.keys(INSCRICAO_EM_RASCUNHO.escolhasDeCurso);
+
+/** Só as entradas ajustadas que pertencem ao grupo; `undefined` não apaga o valor de partida. */
+function entradasDo(ajustes: AjustesDaInscricao, pertence: (campo: string) => boolean): object {
+  return Object.fromEntries(
+    Object.entries(ajustes).filter(([campo, valor]) => valor !== undefined && pertence(campo)),
+  );
+}
+
+export const inscricao = (ajustes: AjustesDaInscricao = {}): InscricaoDto => ({
   ...INSCRICAO_EM_RASCUNHO,
-  ...outros,
+  ...entradasDo(
+    ajustes,
+    (c) => !CAMPOS_DO_FORMULARIO.includes(c) && !CAMPOS_DAS_ESCOLHAS.includes(c),
+  ),
+  formulario: {
+    ...INSCRICAO_EM_RASCUNHO.formulario,
+    ...entradasDo(ajustes, (c) => CAMPOS_DO_FORMULARIO.includes(c)),
+  },
+  escolhasDeCurso: {
+    ...INSCRICAO_EM_RASCUNHO.escolhasDeCurso,
+    ...entradasDo(ajustes, (c) => CAMPOS_DAS_ESCOLHAS.includes(c)),
+  },
 });
 
 /** Tudo o que o formulário de teste pede, com os dados da persona: o envio sai sem pendência. */
-export const RESPONDIDA: Partial<InscricaoDto> = {
+export const RESPONDIDA: AjustesDaInscricao = {
   respostas: {
     NOME: 'Fernanda Laura Nicole Drumond',
     DATA_NASCIMENTO: '1970-02-02',
@@ -190,17 +222,25 @@ export class ServicoDublê extends InscricaoDoCandidatoService {
 
   /** A inscrição como a API a devolve: com as ofertas e o número de opções da versão fixada. */
   private lida(): InscricaoDto {
+    const { escolhasDeCurso } = this.inscricao;
     return {
       ...this.inscricao,
-      numeroDeOpcoesDeCurso: this.opcoes,
-      ofertas: this.ofertas.map((o) => ({
-        ofertaCursoOrigemId: o.id,
-        cursoNome: o.nome,
-        cursoGrau: 'Bacharelado',
-        unidadeOfertanteNome: 'Campus Marabá',
-        turnos: [],
-      })),
+      escolhasDeCurso: {
+        ...escolhasDeCurso,
+        numeroDeOpcoesDeCurso: this.opcoes,
+        ofertas: this.ofertasDaVersao(),
+      },
     };
+  }
+
+  private ofertasDaVersao(): InscricaoDto['escolhasDeCurso']['ofertas'] {
+    return this.ofertas.map((o) => ({
+      ofertaCursoOrigemId: o.id,
+      cursoNome: o.nome,
+      cursoGrau: 'Bacharelado',
+      unidadeOfertanteNome: 'Campus Marabá',
+      turnos: [],
+    }));
   }
   iniciar = () => ok(this.lida());
   obter = () => ok(this.lida());

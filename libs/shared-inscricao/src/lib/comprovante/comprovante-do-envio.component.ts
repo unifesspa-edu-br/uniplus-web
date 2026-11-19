@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { map, type Observable, of, switchMap, tap } from 'rxjs';
+import { catchError, defer, map, type Observable, of, switchMap, tap } from 'rxjs';
 import { type ApiResult, ProblemI18nService } from '@uniplus/shared-core/http';
 import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
 import {
@@ -40,6 +40,11 @@ type Leitura =
   | { readonly tipo: 'pronto'; readonly comprovante: ComprovanteDaInscricaoDto }
   | { readonly tipo: 'recusa'; readonly recusa: RecusaDoComprovante }
   | { readonly tipo: 'falha'; readonly mensagem: string };
+
+const FALHA_DE_LEITURA: Leitura = {
+  tipo: 'falha',
+  mensagem: 'Não foi possível carregar o comprovante. Tente novamente.',
+};
 
 type Estado = 'carregando' | 'erro' | 'recusado' | 'pronto';
 
@@ -100,7 +105,7 @@ export class ComprovanteDoEnvioComponent {
 
   /** O aviso do documento só vale com o comprovante à mostra: numa recusa, o anterior já não é o da tela. */
   protected readonly aviso = computed(() =>
-    this.estado() === 'pronto' ? (this.comprovante()?.cancelamento?.aviso ?? null) : null,
+    this.estado() === 'pronto' ? (this.comprovante()?.inscricao.cancelamento?.aviso ?? null) : null,
   );
 
   /** O titular confere o próprio CPF; para qualquer outra pessoa, fica o mascarado que a API entregou. */
@@ -135,12 +140,17 @@ export class ComprovanteDoEnvioComponent {
     // O endereço que não traz um inteiro positivo não leva a comprovante algum: nem se pergunta à API.
     const numero = Number(numeroPedido);
     return Number.isInteger(numero) && numero >= 1
-      ? fonte(numero).pipe(map((resultado) => this.leituraDe(resultado)))
+      ? defer(() => fonte(numero)).pipe(
+          map((resultado) => this.leituraDe(resultado)),
+          catchError(() => of(FALHA_DE_LEITURA)),
+        )
       : of<Leitura>({ tipo: 'recusa', recusa: this.recusas().naoEncontrado });
   }
 
   private leituraDe(resultado: ApiResult<ComprovanteDaInscricaoDto>): Leitura {
-    if (resultado.ok) return { tipo: 'pronto', comprovante: resultado.data };
+    if (resultado.ok) {
+      return resultado.data ? { tipo: 'pronto', comprovante: resultado.data } : FALHA_DE_LEITURA;
+    }
     const recusa = this.recusas().explicar(resultado.problem);
     return recusa
       ? { tipo: 'recusa', recusa }

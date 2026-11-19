@@ -1,11 +1,11 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { PROCESSO_ID } from '../fixtures/processo-da-revisao';
+import { mockarCatalogos } from '../fixtures/catalogos-do-cronograma';
 import { faseDoServidor } from '../fixtures/cronograma-do-servidor';
-import { CORS_HEADERS, mockarProcesso, prepararARevisao } from '../support/api-da-revisao';
+import { mockarProcesso, prepararARevisao } from '../support/api-da-revisao';
 import { identificadoresDe, medirTransbordo } from '../support/medicoes-do-passo';
 import { irAoPasso } from '../support/navega-passo';
-import { responder } from '../support/responder';
 
 /**
  * Regra de recurso da fase no Cronograma, em consulta: o que a fase declara (prazo, publicação de
@@ -72,8 +72,8 @@ async function abrirCronograma(
   testInfo: TestInfo,
   procedimentos: readonly unknown[],
 ): Promise<void> {
-  await responder(page, /\/api\//, [], CORS_HEADERS);
   await prepararARevisao(page, testInfo.project.name);
+  await mockarCatalogos(page);
   await mockarProcesso(page, {
     status: 'publicado',
     cronogramaFases: [faseComRecurso(procedimentos)],

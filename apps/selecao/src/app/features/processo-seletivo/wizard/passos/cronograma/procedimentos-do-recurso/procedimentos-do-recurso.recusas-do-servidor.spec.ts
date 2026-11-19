@@ -32,7 +32,13 @@ describe('ProcedimentosDoRecursoComponent: a recusa que vem do servidor', () => 
       recusas: recusasDosProcedimentosDaFase(PROBLEMA, 0, {
         ...documentoSemNada(),
         cronograma: {
-          fases: [{ chave: 'homologacao', regraRecurso: { procedimentosDeRecurso: enviados } }],
+          fases: [
+            {
+              chave: 'homologacao',
+              faseCanonicaCodigo: 'INSCRICOES',
+              regraRecurso: { procedimentosDeRecurso: enviados },
+            },
+          ],
         },
       }),
     });

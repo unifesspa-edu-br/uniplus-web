@@ -22,21 +22,27 @@ const urlDoComprovante = (numero: number): string =>
 /** O envio 2 de 2 de Fernanda Drumond, persona fictícia do portal de documentação. */
 function comprovanteBase(): ComprovanteDaInscricaoDto {
   return {
-    inscricaoId: INSCRICAO_ID,
-    numero: 2,
-    total: 3,
-    vale: true,
-    numeroAnterior: 1,
-    numeroSeguinte: 3,
-    processoSeletivoId: PROCESSO_ID,
-    nomeDoProcesso: 'Medicina 2027',
-    identificadorDoProcesso: 'Edital 001/2026',
-    unidadeAdministradora: 'Centro de Processos Seletivos',
-    envio: {
-      numeroInscricao: '2027-000042',
-      enviadoEm: '2026-12-11T13:30:00Z',
-      fusoHorario: FUSO,
-      hashIntegridade: 'a'.repeat(64),
+    inscricao: {
+      inscricaoId: INSCRICAO_ID,
+      numero: 2,
+      total: 3,
+      vale: true,
+      numeroAnterior: 1,
+      numeroSeguinte: 3,
+      envio: {
+        numeroInscricao: '2027-000042',
+        enviadoEm: '2026-12-11T13:30:00Z',
+        fusoHorario: FUSO,
+        hashIntegridade: 'a'.repeat(64),
+      },
+      cancelamento: null,
+      prazoDaCorrecao: null,
+    },
+    processo: {
+      processoSeletivoId: PROCESSO_ID,
+      nomeDoProcesso: 'Medicina 2027',
+      identificadorDoProcesso: 'Edital 001/2026',
+      unidadeAdministradora: 'Centro de Processos Seletivos',
     },
     candidato: {
       nomeCivil: 'Fernanda Laura Nicole Drumond',
@@ -44,14 +50,19 @@ function comprovanteBase(): ComprovanteDaInscricaoDto {
       usaNomeSocial: false,
       cpfMascarado: '***.598.363-**',
     },
-    prazoDaCorrecao: null,
-    numeroDeOpcoesDeCurso: 1,
-    opcoesDeCurso: [{ ordem: 1, nome: 'Direito — Campus Marabá', modalidades: null }],
-    secoes: [],
-    derivados: [],
-    termosAceitos: [],
-    documentos: [],
+    escolhasDeCurso: {
+      numeroDeOpcoesDeCurso: 1,
+      opcoesDeCurso: [{ ordem: 1, nome: 'Direito — Campus Marabá', modalidades: null }],
+    },
+    formulario: { secoes: [], derivados: [], termosAceitos: [], documentos: [] },
   };
+}
+
+function comprovanteCom(
+  alteracoes: Partial<ComprovanteDaInscricaoDto['inscricao']>,
+): ComprovanteDaInscricaoDto {
+  const base = comprovanteBase();
+  return { ...base, inscricao: { ...base.inscricao, ...alteracoes } };
 }
 
 describe('ComprovanteDaInscricaoPage (Seleção)', () => {
@@ -126,7 +137,7 @@ describe('ComprovanteDaInscricaoPage (Seleção)', () => {
       motivo: 'Pedido do candidato',
       aviso: AVISO,
     };
-    await abrirComResposta({ ...comprovanteBase(), cancelamento });
+    await abrirComResposta(comprovanteCom({ cancelamento }));
 
     expect(tela().querySelector('.documento__aviso')?.textContent?.trim()).toBe(AVISO);
     expect(texto()).toContain('Motivo Pedido do candidato');
@@ -134,7 +145,7 @@ describe('ComprovanteDaInscricaoPage (Seleção)', () => {
 
   it('a cancelada sem motivo mostra o aviso e nada de motivo', async () => {
     const cancelamento = { canceladaEm: '2026-11-08T01:32:05Z', motivo: null, aviso: AVISO };
-    await abrirComResposta({ ...comprovanteBase(), cancelamento });
+    await abrirComResposta(comprovanteCom({ cancelamento }));
 
     expect(tela().querySelector('.documento__aviso')?.textContent?.trim()).toBe(AVISO);
     expect(texto()).not.toContain('Motivo');
@@ -156,7 +167,7 @@ describe('ComprovanteDaInscricaoPage (Seleção)', () => {
 
     parametros.next(parametrosDe('3'));
     await propagar();
-    controller.expectOne(urlDoComprovante(3)).flush({ ...comprovanteBase(), numero: 3 });
+    controller.expectOne(urlDoComprovante(3)).flush(comprovanteCom({ numero: 3 }));
     await propagar();
 
     expect(texto()).toContain('Envio 3 de 3');

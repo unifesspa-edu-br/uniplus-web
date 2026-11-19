@@ -29,11 +29,11 @@ const JANELA_ABERTA = {
   versaoNova: 2,
   versaoAlvo: 2,
   abertaEm: ABERTA_EM,
-  prazo: PRAZO,
+  terminaEm: PRAZO,
   encerradaEm: null,
   situacao: 'aberta',
   forma: null,
-  loteEnviado: false,
+  decisoesEnviadas: false,
 } as const satisfies Partial<JanelaDeMigracaoDto>;
 
 /** Uma janela aberta, sem lote enviado; a lista de itens é nova a cada chamada. */

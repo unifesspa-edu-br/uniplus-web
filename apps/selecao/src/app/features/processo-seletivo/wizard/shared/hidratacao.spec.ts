@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { comoComando } from '../passos/vagas/distribuicao-para-comando';
 import { hidratarDraft } from './hidratacao';
-import { DRAFT, DISTRIBUICAO, dtoCom, gravada } from './hidratacao.testing';
+import { DRAFT, DISTRIBUICAO, FIXADO_COM_AJUSTE, dtoCom, gravada } from './hidratacao.testing';
 
 describe('hidratarDraft — identificador legível', () => {
   it('projeta o identificador gravado sobre o rascunho', () => {
@@ -90,18 +90,46 @@ describe('hidratarDraft — distribuição de vagas', () => {
   });
 
   /** Fora do ramo federal o edital fixa todas — nada é descartado. */
-  it('mantém o quadro inteiro quando o ramo é o quadro fixado no edital', () => {
-    const institucional = {
-      ...DISTRIBUICAO,
-      regraDistribuicao: { codigo: 'DISTRIB-VAGAS-INSTITUCIONAL', versao: 'v1' },
-      ramoDaDistribuicao: 'QUADRO_FIXADO_NO_EDITAL',
-      percentualDaReservaLegal: null,
-    };
-    const { ofertas } = hidratarDraft(DRAFT, dtoCom([institucional])).vagas;
+  it('mantém a declaração inteira quando o ramo é o quadro fixado no edital', () => {
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([FIXADO_COM_AJUSTE])).vagas;
 
     expect(ofertas[0].quadro).toHaveLength(2);
     expect(ofertas[0].ramoDaDistribuicao).toBe('QUADRO_FIXADO_NO_EDITAL');
     expect(ofertas[0].pr).toBe('');
+  });
+
+  /** O quadro devolvido já traz o ajuste aplicado; a declaração do edital é a entrada. */
+  it('hidrata a quantidade declarada, não a que o ajuste do quadro deixou', () => {
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([FIXADO_COM_AJUSTE])).vagas;
+
+    expect(ofertas[0].quadro).toEqual([
+      { modalidadeId: 'modalidade-1', quantidade: '25' },
+      { modalidadeId: 'modalidade-2', quantidade: '15' },
+    ]);
+  });
+
+  /** Salvar sem mexer não pode trocar a declaração de 25 pela de 20, já reduzida. */
+  it('reenvia a quantidade declarada ao salvar sem alterar o quadro reduzido pelo ajuste', () => {
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([FIXADO_COM_AJUSTE])).vagas;
+
+    expect(comoComando(ofertas[0]).quadro).toEqual([
+      { modalidadeId: 'modalidade-1', quantidade: 25 },
+      { modalidadeId: 'modalidade-2', quantidade: 15 },
+    ]);
+  });
+
+  it('reenvia o quadro declarado quando o quadro fixado não tem ajuste', () => {
+    const semAjuste = {
+      ...FIXADO_COM_AJUSTE,
+      ajusteDoQuadro: null,
+      quadro: [
+        { modalidadeOrigemId: 'modalidade-1', modalidadeCodigo: 'AC', quantidade: 25 },
+        { modalidadeOrigemId: 'modalidade-2', modalidadeCodigo: 'AC_PCD', quantidade: 15 },
+      ],
+    };
+    const { ofertas } = hidratarDraft(DRAFT, dtoCom([semAjuste])).vagas;
+
+    expect(comoComando(ofertas[0]).quadro.map((item) => item.quantidade)).toEqual([25, 15]);
   });
 
   /** O ramo é o que a API congelou; o código da regra e a composição não o deduzem. */
@@ -110,14 +138,6 @@ describe('hidratarDraft — distribuição de vagas', () => {
     const { ofertas } = hidratarDraft(DRAFT, dtoCom([semRamo])).vagas;
 
     expect(ofertas[0].ramoDaDistribuicao).toBeNull();
-  });
-
-  /** Tratar o ramo ausente como quadro fixado declararia quantidades que a regra poderia calcular. */
-  it('não deriva quantidade declarada do quadro quando o ramo é nulo', () => {
-    const semRamo = { ...DISTRIBUICAO, ramoDaDistribuicao: null };
-    const { ofertas } = hidratarDraft(DRAFT, dtoCom([semRamo])).vagas;
-
-    expect(ofertas[0].quadro).toEqual([]);
   });
 
   it('trata processo sem distribuição gravada', () => {

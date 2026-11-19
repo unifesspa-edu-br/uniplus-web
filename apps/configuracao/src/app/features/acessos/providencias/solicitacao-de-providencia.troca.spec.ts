@@ -32,7 +32,7 @@ function concessao(id: string): ConcessaoDto {
     validaAte: null,
     revogadaEm: null,
     revogadaPor: null,
-    revogadaPelaJanelaId: null,
+    revogadaPelaRevisaoId: null,
     motivoRevogacao: null,
     ativa: true,
   };

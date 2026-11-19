@@ -2,7 +2,7 @@ import { HttpHeaders } from '@angular/common/http';
 import { Component, signal } from '@angular/core';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { type Observable, of } from 'rxjs';
+import { type Observable, of, throwError } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { type ApiResult, apiFailure, apiOk } from '@uniplus/shared-core/http';
 import type { ComprovanteDaInscricaoDto } from '@uniplus/shared-data/selecao';
@@ -29,21 +29,27 @@ const RECUSAS: RecusasDoComprovante = {
 /** O envio 2 de 2 (o que vale) de Fernanda Drumond, persona fictícia do portal de documentação. */
 function comprovanteBase(): ComprovanteDaInscricaoDto {
   return {
-    inscricaoId: '0199e000-0000-7000-8000-0000000000e1',
-    numero: 2,
-    total: 2,
-    vale: true,
-    numeroAnterior: 1,
-    numeroSeguinte: null,
-    processoSeletivoId: '0199e000-0000-7000-8000-0000000000d1',
-    nomeDoProcesso: 'Medicina 2027',
-    identificadorDoProcesso: null,
-    unidadeAdministradora: 'Centro de Processos Seletivos',
-    envio: {
-      numeroInscricao: '2027-000042',
-      enviadoEm: '2026-12-11T13:30:00Z',
-      fusoHorario: FUSO,
-      hashIntegridade: 'a'.repeat(64),
+    inscricao: {
+      inscricaoId: '0199e000-0000-7000-8000-0000000000e1',
+      numero: 2,
+      total: 2,
+      vale: true,
+      numeroAnterior: 1,
+      numeroSeguinte: null,
+      envio: {
+        numeroInscricao: '2027-000042',
+        enviadoEm: '2026-12-11T13:30:00Z',
+        fusoHorario: FUSO,
+        hashIntegridade: 'a'.repeat(64),
+      },
+      cancelamento: null,
+      prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: true },
+    },
+    processo: {
+      processoSeletivoId: '0199e000-0000-7000-8000-0000000000d1',
+      nomeDoProcesso: 'Medicina 2027',
+      identificadorDoProcesso: null,
+      unidadeAdministradora: 'Centro de Processos Seletivos',
     },
     candidato: {
       nomeCivil: 'Fernanda Laura Nicole Drumond',
@@ -51,18 +57,20 @@ function comprovanteBase(): ComprovanteDaInscricaoDto {
       usaNomeSocial: false,
       cpfMascarado: '***.598.363-**',
     },
-    prazoDaCorrecao: { fim: '2026-12-20T02:59:00Z', fusoHorario: FUSO, aberto: true },
-    numeroDeOpcoesDeCurso: 1,
-    opcoesDeCurso: [{ ordem: 1, nome: 'Direito — Campus Marabá', modalidades: null }],
-    secoes: [],
-    derivados: [],
-    termosAceitos: [],
-    documentos: [],
+    escolhasDeCurso: {
+      numeroDeOpcoesDeCurso: 1,
+      opcoesDeCurso: [{ ordem: 1, nome: 'Direito — Campus Marabá', modalidades: null }],
+    },
+    formulario: { secoes: [], derivados: [], termosAceitos: [], documentos: [] },
   };
 }
 
-const ok = (c: Partial<ComprovanteDaInscricaoDto> = {}): ApiResult<ComprovanteDaInscricaoDto> =>
-  apiOk({ ...comprovanteBase(), ...c }, 200, SEM_CABECALHOS);
+const ok = (
+  alteracoes: Partial<ComprovanteDaInscricaoDto['inscricao']> = {},
+): ApiResult<ComprovanteDaInscricaoDto> => {
+  const base = comprovanteBase();
+  return apiOk({ ...base, inscricao: { ...base.inscricao, ...alteracoes } }, 200, SEM_CABECALHOS);
+};
 const falha = (status: number): ApiResult<ComprovanteDaInscricaoDto> =>
   apiFailure(
     { type: 'about:blank', title: 'Falha', status, code: 'x', traceId: '' },
@@ -85,7 +93,7 @@ const falha = (status: number): ApiResult<ComprovanteDaInscricaoDto> =>
     >
       <a inscAcaoDoDocumento href="#volta">Voltar de teste</a>
       <ng-template inscAcaoDaCorrecao let-c
-        ><a href="#corrigir">Corrigir {{ c.numero }}</a></ng-template
+        ><a href="#corrigir">Corrigir {{ c.inscricao.numero }}</a></ng-template
       >
     </insc-comprovante-do-envio>
   `,
@@ -207,8 +215,23 @@ describe('ComprovanteDoEnvioComponent', () => {
   });
 
   it('no envio substituído de inscrição cancelada, não diz que a última vale', async () => {
-    const cancelamento = { canceladaEm: '2026-11-08T01:32:05Z', motivo: null, aviso: 'Documento sem validade.' };
-    await abrir(de(ok({ vale: false, numeroSeguinte: 2, numeroAnterior: null, total: 3, cancelamento, prazoDaCorrecao: null })));
+    const cancelamento = {
+      canceladaEm: '2026-11-08T01:32:05Z',
+      motivo: null,
+      aviso: 'Documento sem validade.',
+    };
+    await abrir(
+      de(
+        ok({
+          vale: false,
+          numeroSeguinte: 2,
+          numeroAnterior: null,
+          total: 3,
+          cancelamento,
+          prazoDaCorrecao: null,
+        }),
+      ),
+    );
 
     expect(texto()).toContain('Este envio foi substituído por um mais recente');
     expect(texto()).not.toContain('A inscrição que vale é a última enviada');
@@ -250,6 +273,17 @@ describe('ComprovanteDoEnvioComponent', () => {
       await atualizar();
       await atualizar();
     };
+
+    it('oferece nova tentativa quando a leitura termina fora do contrato HTTP', async () => {
+      const fonte = vi.fn(de(ok())).mockReturnValueOnce(throwError(() => new Error('Transporte')));
+      await abrir(fonte);
+
+      expect(texto()).toContain('Não foi possível carregar o comprovante');
+      await apertarTentarDeNovo();
+
+      expect(texto()).toContain('Imprimir comprovante');
+      expect(fonte).toHaveBeenCalledTimes(2);
+    });
 
     it('a leitura que dá certo tira o alerta e deixa o foco no título, sem somar o aviso de conclusão', async () => {
       const fonte = vi.fn(de(ok())).mockReturnValueOnce(of(falha(503)));

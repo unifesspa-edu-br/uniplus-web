@@ -29,7 +29,7 @@ const MIGRADA = itemDaJanela({
   beneficiarioNome: 'Aline Teste',
   situacao: 'migrada',
 });
-const JANELA = janelaDeMigracao({ loteEnviado: true, itens: [BETINA, LEANDRO, MIGRADA] });
+const JANELA = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO, MIGRADA] });
 
 describe('etapa da proteção de dados da janela', () => {
   beforeEach(() => {
@@ -74,7 +74,9 @@ describe('etapa da proteção de dados da janela', () => {
       { decisoes: [{ concessaoId: 'c2', decisao: 'migrar' }], confirmacaoDeExclusao: false },
       expect.anything(),
     );
-    expect(notificacoes.success).toHaveBeenCalledWith('Decisões do Representante do controlador enviadas');
+    expect(notificacoes.success).toHaveBeenCalledWith(
+      'Decisões do Representante do controlador enviadas',
+    );
   });
 
   it('migra algumas e recusa outras no mesmo envio, com a confirmação da revogação', async () => {

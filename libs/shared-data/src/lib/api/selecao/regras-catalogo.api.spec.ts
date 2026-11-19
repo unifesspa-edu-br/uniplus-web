@@ -16,7 +16,7 @@ const regra: RegraCatalogoDto = {
   codigo: 'LEI_12711_2012',
   versao: '2024.1',
   tipo: 'DISTRIBUICAO',
-  esquemaArgs: {},
+  declaracaoDaRegra: {},
   invariantes: {},
   baseLegal: 'Lei nº 12.711/2012',
   modalidadesAdmitidas: null,

@@ -49,7 +49,7 @@ export interface paths {
                         readonly "application/vnd.uniplus.instituicao.v1+json": components["schemas"]["InstituicaoDto"];
                     };
                 };
-                /** @description Not Found */
+                /** @description Nenhuma Instituição foi cadastrada (uniplus.organizacao.instituicao.nao_encontrada). */
                 readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -368,7 +368,7 @@ export interface paths {
                         readonly "application/vnd.uniplus.unidade.v1+json": readonly components["schemas"]["UnidadeDto"][];
                     };
                 };
-                /** @description Bad Request */
+                /** @description Valor de tipo que não é um tipo de unidade filtrável (uniplus.organizacao.unidade.filtro_de_tipo_invalido). */
                 readonly 400: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -395,7 +395,7 @@ export interface paths {
                         readonly "application/problem+json": components["schemas"]["ProblemDetails"];
                     };
                 };
-                /** @description Unprocessable Entity */
+                /** @description O texto pesquisado excede 200 caracteres (uniplus.consulta.busca_muito_longa). */
                 readonly 422: {
                     headers: {
                         readonly [name: string]: unknown;
@@ -441,7 +441,7 @@ export interface paths {
                         readonly "application/vnd.uniplus.unidade.v1+json": components["schemas"]["UnidadeDto"];
                     };
                 };
-                /** @description Not Found */
+                /** @description A Unidade não existe ou foi removida (uniplus.organizacao.unidade.nao_encontrada). */
                 readonly 404: {
                     headers: {
                         readonly [name: string]: unknown;

@@ -48,6 +48,7 @@ const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
   emiteParecerIndividual: false,
   regraRecurso: null,
   tiposDeDecisao: [],
+  regraDeHomologacao: null,
 };
 
 /** Fase de coleta de inscrição, sem produto, banca nem recurso. */

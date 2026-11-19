@@ -76,7 +76,7 @@ export const REGRAS_CONTAGEM = [
     codigo: 'CONTAGEM-PRAZO-EXCLUI-DIA-INICIAL',
     versao: 'v1',
     tipo: 'algoritmo_contagem_prazo',
-    esquemaArgs: {},
+    declaracaoDaRegra: {},
     invariantes: ['o dia da âncora não conta'],
     baseLegal: 'Lei 9.784/1999, art. 66',
     hash: 'xyz',

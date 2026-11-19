@@ -46,7 +46,7 @@ export interface DistribuicaoDeVagas {
 
 /**
  * A regra de remanejamento escolhida no catálogo, por código e versão. `fallbackCodigo` e
- * `destinos[]` são derivados do `esquemaArgs` congelado da regra ao montar o comando
+ * `destinos[]` são derivados do `declaracaoDaRegra` congelado da regra ao montar o comando
  * (UNI-REQ-0056); guardar mais que o par seria uma segunda fonte que poderia divergir dela.
  */
 export interface CascataSelecionada {

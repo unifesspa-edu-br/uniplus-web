@@ -17,7 +17,7 @@ const LEANDRO = itemDaJanela({
   beneficiarioNome: 'Leandro Teste',
   situacao: 'retida',
 });
-const DEPOIS_DO_LOTE = janelaDeMigracao({ loteEnviado: true, itens: [BETINA, LEANDRO] });
+const DEPOIS_DO_LOTE = janelaDeMigracao({ decisoesEnviadas: true, itens: [BETINA, LEANDRO] });
 const SEM_RESPOSTA = () => of(recusa('uniplus.client.network_error', 0));
 const RECUSADA = () => of(recusa('uniplus.autorizacao.migracao.concessao_propria', 422));
 

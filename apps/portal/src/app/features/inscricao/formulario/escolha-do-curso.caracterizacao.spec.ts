@@ -15,7 +15,12 @@ const RECUSA_DA_2A = {
 };
 
 type CargaMinima = Pick<InscricaoCarregada, 'ofertas' | 'numeroDeOpcoes'> & {
-  readonly inscricao: { ofertaCursoId: string | null; ofertaCursoSegundaOpcaoId: string | null };
+  readonly inscricao: {
+    readonly escolhasDeCurso: {
+      readonly ofertaCursoId: string | null;
+      readonly ofertaCursoSegundaOpcaoId: string | null;
+    };
+  };
 };
 
 function carga(
@@ -24,7 +29,11 @@ function carga(
   gravadas: [string | null, string | null] = [null, null],
 ): CargaMinima {
   const [ofertaCursoId, ofertaCursoSegundaOpcaoId] = gravadas;
-  return { ofertas, numeroDeOpcoes, inscricao: { ofertaCursoId, ofertaCursoSegundaOpcaoId } };
+  return {
+    ofertas,
+    numeroDeOpcoes,
+    inscricao: { escolhasDeCurso: { ofertaCursoId, ofertaCursoSegundaOpcaoId } },
+  };
 }
 
 describe('EscolhaDoCurso', () => {

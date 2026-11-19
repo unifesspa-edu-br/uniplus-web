@@ -65,7 +65,7 @@ describe('CascataRemanejamentoComponent — busca da versão da regra', () => {
     expect(select?.value).toBe('REMANEJ-CASCATA-LEI-12711|v0');
   });
 
-  it('marca a regra como não encontrada quando a busca direta da versão também falha, sem confundir com esquemaArgs malformado', () => {
+  it('marca a regra como não encontrada quando a busca direta da versão também falha, sem confundir com declaracaoDaRegra malformado', () => {
     store.patchObjectSection('vagas', {
       ofertas: [distribuicaoFederal([{ id: LB_PPI, codigo: 'LB_PPI' }])],
       cascata: { regraCodigo: 'REMANEJ-CASCATA-REMOVIDA', regraVersao: 'v9' },

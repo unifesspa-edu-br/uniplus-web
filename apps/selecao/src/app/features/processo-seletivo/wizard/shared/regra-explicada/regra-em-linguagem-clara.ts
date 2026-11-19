@@ -1,7 +1,7 @@
 import { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
 
 /**
- * Um parâmetro declarado no `esquemaArgs` da regra.
+ * Um parâmetro declarado no `declaracaoDaRegra` da regra.
  *
  * O esquema é aberto por contrato — cada regra descreve o que precisa —, então
  * a tela não traduz as chaves: exibe o token como o catálogo o nomeia e o
@@ -30,7 +30,7 @@ export function explicarRegra(regra: RegraCatalogoDto | undefined): RegraExplica
     versao: regra.versao,
     baseLegal: regra.baseLegal,
     invariantes: comoTextos(regra.invariantes),
-    parametros: comoParametros(regra.esquemaArgs),
+    parametros: comoParametros(regra.declaracaoDaRegra),
   };
 }
 
@@ -51,17 +51,19 @@ function comoTextos(valor: unknown): readonly string[] {
  */
 const CHAVE_DO_ROL = 'modalidades_admitidas';
 
-function comoParametros(esquemaArgs: unknown): readonly ParametroDaRegra[] {
-  if (typeof esquemaArgs !== 'object' || esquemaArgs === null || Array.isArray(esquemaArgs)) {
-    return [];
-  }
+function comoParametros(declaracaoDaRegra: unknown): readonly ParametroDaRegra[] {
+  if (!eObjeto(declaracaoDaRegra)) return [];
 
-  return Object.entries(esquemaArgs)
+  return Object.entries(declaracaoDaRegra)
     .filter(([chave]) => chave !== CHAVE_DO_ROL)
     .map(([chave, valor]) => ({
       chave,
       valores: comoValores(valor),
     }));
+}
+
+function eObjeto(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
 
 function comoValores(valor: unknown): readonly string[] {

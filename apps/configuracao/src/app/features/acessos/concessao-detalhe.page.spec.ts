@@ -23,7 +23,7 @@ const ATIVA: ConcessaoDto = {
   validaAte: null,
   revogadaEm: null,
   revogadaPor: null,
-  revogadaPelaJanelaId: null,
+  revogadaPelaRevisaoId: null,
   motivoRevogacao: null,
   ativa: true,
 };
@@ -106,7 +106,7 @@ describe('ConcessaoDetalhePage', () => {
   });
 
   it('na revogada pela janela de migração, quem revogou é a janela', async () => {
-    responder(ok({ ...REVOGADA, revogadaPor: null, revogadaPelaJanelaId: 'j1' }));
+    responder(ok({ ...REVOGADA, revogadaPor: null, revogadaPelaRevisaoId: 'j1' }));
     const host = await abrir();
 
     expect(host.textContent).toContain('Janela de migração');

@@ -13,10 +13,7 @@ export interface OpcaoDeCursoExibida {
   readonly modalidades: readonly string[] | null;
 }
 
-type OpcoesDoComprovante = Pick<
-  ComprovanteDaInscricaoDto,
-  'numeroDeOpcoesDeCurso' | 'opcoesDeCurso'
->;
+type OpcoesDoComprovante = ComprovanteDaInscricaoDto['escolhasDeCurso'];
 
 type OpcaoDeclarada = OpcoesDoComprovante['opcoesDeCurso'][number];
 

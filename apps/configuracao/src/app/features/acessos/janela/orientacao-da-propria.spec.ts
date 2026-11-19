@@ -19,7 +19,7 @@ describe('orientação das concessões do próprio leitor', () => {
 
   it('a retida aguarda outra pessoa da gestão de acessos', async () => {
     const janela = janelaDeMigracao({
-      loteEnviado: true,
+      decisoesEnviadas: true,
       itens: [itemDaJanela({ ...PROPRIA, situacao: 'retida' })],
     });
     const { host } = await abrirJanela(janela);
@@ -30,7 +30,7 @@ describe('orientação das concessões do próprio leitor', () => {
 
   it('a que aguarda a proteção de dados aguarda outra pessoa dessa etapa', async () => {
     const janela = janelaDeMigracao({
-      loteEnviado: true,
+      decisoesEnviadas: true,
       itens: [itemDaJanela({ ...PROPRIA, situacao: 'aguardando_protecao_de_dados' })],
     });
     const { host } = await abrirJanela(janela);

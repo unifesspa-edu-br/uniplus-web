@@ -12,8 +12,9 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <ui-alert variant="warning" heading="Janela de migração aberta" [dynamic]="false">
-      O prazo termina em {{ janela().prazo | dateBr: 'datetime' }}. Enquanto ela dura, o perfil não
-      recebe pessoa nova nem versão nova pendente; a remoção de permissão continua valendo na hora.
+      O prazo termina em {{ janela().terminaEm | dateBr: 'datetime' }}. Enquanto ela dura, o perfil
+      não recebe pessoa nova nem versão nova pendente; a remoção de permissão continua valendo na
+      hora.
       <a [routerLink]="['/acessos/perfis', perfilId(), 'janela']">Abrir a janela de migração</a>.
     </ui-alert>
   `,

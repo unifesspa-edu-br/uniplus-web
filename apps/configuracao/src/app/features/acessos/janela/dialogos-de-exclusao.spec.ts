@@ -23,7 +23,7 @@ const NA_PROTECAO = itemDaJanela({
   situacao: 'aguardando_protecao_de_dados',
   exigeProtecaoDeDados: true,
 });
-const JANELA = janelaDeMigracao({ loteEnviado: true, itens: [RETIDA, NA_PROTECAO] });
+const JANELA = janelaDeMigracao({ decisoesEnviadas: true, itens: [RETIDA, NA_PROTECAO] });
 const caixaDe = (dialogo: Element) =>
   presente(dialogo.querySelector<HTMLInputElement>('input[type="checkbox"]'));
 

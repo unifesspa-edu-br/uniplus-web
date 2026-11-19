@@ -72,6 +72,7 @@ const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
   emiteParecerIndividual: true,
   regraRecurso: RECURSO_DA_FASE,
   tiposDeDecisao: [],
+  regraDeHomologacao: null,
 };
 
 const BANCA_REQUERIDA: FaseCronogramaDto['bancasRequeridas'][number] = {

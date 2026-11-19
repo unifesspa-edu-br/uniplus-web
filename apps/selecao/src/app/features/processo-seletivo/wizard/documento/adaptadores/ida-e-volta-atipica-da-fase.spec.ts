@@ -19,10 +19,13 @@ function idaEVolta(documento: DocumentoDaConfiguracao): DocumentoDaConfiguracao 
   return [...fases, ...etapas].reduce((atual, edicao) => edicao(atual), documento);
 }
 
-function comFase(
-  fase: NonNullable<NonNullable<DocumentoDaConfiguracao['cronograma']>['fases']>[number],
-): DocumentoDaConfiguracao {
-  return { ...documentoSemNada(), cronograma: { fases: [fase] } };
+type FaseDoDocumento = NonNullable<
+  NonNullable<DocumentoDaConfiguracao['cronograma']>['fases']
+>[number];
+
+function comFase(fase: Omit<FaseDoDocumento, 'faseCanonicaCodigo'>): DocumentoDaConfiguracao {
+  const comCodigo: FaseDoDocumento = { ...fase, faseCanonicaCodigo: 'INSCRICOES' };
+  return { ...documentoSemNada(), cronograma: { fases: [comCodigo] } };
 }
 
 function comEtapa(
@@ -74,7 +77,12 @@ const ATIPICOS: readonly [string, DocumentoDaConfiguracao][] = [
     comFase({
       chave: 'a',
       bancasRequeridas: [
-        { chave: 'b', regraDeDeliberacao: {}, categoriasDocumentoCodigos: ['A', 'A'] },
+        {
+          chave: 'b',
+          tipoBancaCodigo: 'BANCA_A',
+          regraDeDeliberacao: {},
+          categoriasDocumentoCodigos: ['A', 'A'],
+        },
         { chave: 'b', tipoBancaCodigo: ' BANCA ', regraDeDeliberacao: { quorum: 1e-7 } },
       ],
     }),

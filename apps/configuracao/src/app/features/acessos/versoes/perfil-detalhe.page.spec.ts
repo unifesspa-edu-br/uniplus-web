@@ -62,8 +62,8 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('com a janela de migração aberta, mostra o prazo e o caminho para a janela e não propõe versão nova', async () => {
-    const janela = { id: 'j1', prazo: '2026-11-12T12:00:00Z', situacao: 'aberta' };
-    const { host } = await abrir(ok(perfilDoDetalhe({ janela })));
+    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: janela })));
 
     expect(host.textContent).toContain('Janela de migração aberta');
     expect(host.textContent).toContain('12/11/2026');
@@ -75,7 +75,7 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('sem janela de migração, não mostra o aviso', async () => {
-    const { host } = await abrir(ok(perfilDoDetalhe({ janela: null })));
+    const { host } = await abrir(ok(perfilDoDetalhe({ revisaoDasConcessoes: null })));
 
     expect(host.textContent).not.toContain('Janela de migração');
   });

@@ -79,7 +79,10 @@ describe('acrescentar fase', () => {
 
 describe('chave da fase sem referências', () => {
   it('continua tomada depois de remover a fase lida', () => {
-    const original = { ...documentoSemNada(), cronograma: { fases: [{ chave: 'teste' }] } };
+    const original = {
+      ...documentoSemNada(),
+      cronograma: { fases: [{ chave: 'teste', faseCanonicaCodigo: 'INSCRICOES' }] },
+    };
     const removido = definirFases(original, []);
     const resultado = acrescentarFase(removido, 'TESTE', 'Teste', { original, criadas: [] });
     expect(resultado.cronograma?.fases?.[0].chave).toBe('teste-2');

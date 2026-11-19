@@ -51,7 +51,7 @@ export class LoteDaMigracaoComponent {
     () => this.itens().doLote.length > 0 || this.itens().proprias.length > 0,
   );
   protected readonly decidiveis = computed(
-    () => this.podeDecidir() && !this.janela().loteEnviado && this.enviavel(),
+    () => this.podeDecidir() && !this.janela().decisoesEnviadas && this.enviavel(),
   );
 
   constructor() {

@@ -173,7 +173,12 @@ describe('ocorrências repetidas', () => {
   it('lê e edita apenas a segunda fase e etapa', () => {
     const documento = {
       ...documentoSemNada(),
-      cronograma: { fases: [{ chave: 'a' }, { chave: 'a', emiteParecerIndividual: true }] },
+      cronograma: {
+        fases: [
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES' },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', emiteParecerIndividual: true },
+        ],
+      },
       etapas: [{ chave: 'b' }, { chave: 'b', emiteParecerIndividual: true }],
     };
     const fase = valoresDaFase(documento, 'a', 1);

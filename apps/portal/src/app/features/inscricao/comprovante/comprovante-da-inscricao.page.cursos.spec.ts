@@ -25,8 +25,8 @@ describe('ComprovanteDaInscricaoPage', () => {
       );
 
     it('o processo de uma opção cujo curso a versão não nomeia não mostra a seção "Inscrição"', async () => {
-      const [primeira] = COMPROVANTE_BASE.opcoesDeCurso;
-      cenario.alteracoes = { opcoesDeCurso: [{ ...primeira, nome: null }] };
+      const [primeira] = COMPROVANTE_BASE.escolhasDeCurso.opcoesDeCurso;
+      cenario.alteracoes = { escolhasDeCurso: { opcoesDeCurso: [{ ...primeira, nome: null }] } };
       const tela = await cenario.abrir();
 
       expect(secao(tela, 'Inscrição')).toBeNull();
@@ -44,17 +44,19 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('com 2 opções, mostra a 1ª e a 2ª e as modalidades de cada uma', async () => {
-      const [primeira] = COMPROVANTE_BASE.opcoesDeCurso;
+      const [primeira] = COMPROVANTE_BASE.escolhasDeCurso.opcoesDeCurso;
       cenario.alteracoes = {
-        numeroDeOpcoesDeCurso: 2,
-        opcoesDeCurso: [
-          primeira,
-          {
-            ordem: 2,
-            nome: 'Medicina (Bacharelado) — Campus Marabá',
-            modalidades: [{ codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 }],
-          },
-        ],
+        escolhasDeCurso: {
+          numeroDeOpcoesDeCurso: 2,
+          opcoesDeCurso: [
+            primeira,
+            {
+              ordem: 2,
+              nome: 'Medicina (Bacharelado) — Campus Marabá',
+              modalidades: [{ codigo: 'AC', nome: 'Ampla concorrência', ordem: 0 }],
+            },
+          ],
+        },
       };
       const tela = await cenario.abrir();
 
@@ -71,7 +73,7 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('o processo de 2 opções com a 2ª vazia mostra "Não declarada" e as modalidades só da 1ª', async () => {
-      cenario.alteracoes = { numeroDeOpcoesDeCurso: 2 };
+      cenario.alteracoes = { escolhasDeCurso: { numeroDeOpcoesDeCurso: 2 } };
       const tela = await cenario.abrir();
 
       expect(dado(tela, '2ª opção')).toBe('Não declarada');
@@ -79,8 +81,10 @@ describe('ComprovanteDaInscricaoPage', () => {
     });
 
     it('o processo que não define as modalidades pela inscrição diz isso, sem lista', async () => {
-      const [primeira] = COMPROVANTE_BASE.opcoesDeCurso;
-      cenario.alteracoes = { opcoesDeCurso: [{ ...primeira, modalidades: null }] };
+      const [primeira] = COMPROVANTE_BASE.escolhasDeCurso.opcoesDeCurso;
+      cenario.alteracoes = {
+        escolhasDeCurso: { opcoesDeCurso: [{ ...primeira, modalidades: null }] },
+      };
       const tela = await cenario.abrir();
 
       const modalidades = secao(tela, 'Modalidades de concorrência');

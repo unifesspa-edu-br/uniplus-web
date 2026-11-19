@@ -178,34 +178,16 @@ describe('adaptador do passo Cronograma', () => {
     expect(editado.identificacao).toEqual({ nome: 'Processo' });
   });
 
-  it('a `ordem` que o documento ainda traga numa fase não é lida nem regravada ao reordenar', () => {
+  it('a posição da fase na lista é a ordem dela: reordenar reescreve a lista, sem campo de ordem', () => {
     const documento = exemploDoContrato('inscricao-pelo-sistema');
     const { fases, ...demais } = ler(documento);
 
     const editado = edicaoDoPasso({ ...demais, fases: [...fases].reverse() })(documento);
 
-    const ordens = editado.cronograma?.fases?.map((fase) => [fase.chave, fase.ordem]);
-    expect(ordens).toEqual([
-      ['resultado-final', 4],
-      ['resultado-preliminar', 3],
-      ['avaliacao', 2],
-      ['inscricao', 1],
-    ]);
-  });
-
-  it('fase sem `ordem` no documento também volta idêntica', () => {
-    const comOrdem = umCronogramaCompleto();
-    const semOrdem: DocumentoDaConfiguracao = {
-      ...comOrdem,
-      cronograma: {
-        fases: (comOrdem.cronograma?.fases ?? []).map(({ chave, faseCanonicaCodigo }) => ({
-          chave,
-          faseCanonicaCodigo,
-        })),
-      },
-    };
-
-    expect(idaEVolta(semOrdem)).toBe(semOrdem);
+    expect(editado.cronograma?.fases?.map((fase) => fase.chave)).toEqual(
+      [...(documento.cronograma?.fases ?? [])].reverse().map((fase) => fase.chave),
+    );
+    expect(editado.cronograma?.fases?.every((fase) => !('ordem' in fase))).toBe(true);
   });
 });
 
@@ -215,13 +197,15 @@ describe('fases com chave repetida', () => {
       ...documentoSemNada(),
       cronograma: {
         fases: [
-          { chave: 'a', ordem: 7 },
-          { chave: 'a', ordem: 9 },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', inicio: '2027-01-01T03:00:00Z' },
+          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', inicio: '2027-02-01T03:00:00Z' },
         ],
       },
     };
     const valores = ler(documento);
     const editado = edicaoDoPasso({ ...valores, fases: valores.fases.slice(1) })(documento);
-    expect(editado.cronograma?.fases).toEqual([{ chave: 'a', ordem: 9 }]);
+    expect(editado.cronograma?.fases).toEqual([
+      { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', inicio: '2027-02-01T03:00:00Z' },
+    ]);
   });
 });

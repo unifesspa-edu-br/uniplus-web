@@ -196,7 +196,7 @@ export const REGRA_CASCATA = {
   codigo: 'REMANEJ-CASCATA-LEI-12711',
   versao: 'v1',
   tipo: 'criterio_remanejamento',
-  esquemaArgs: {
+  declaracaoDaRegra: {
     fallbackCodigo: 'AC',
     ordens: [{ origem: 'LB_PPI', destinos: ['LB_Q', 'AC'] }],
   },
@@ -207,12 +207,12 @@ export const REGRA_CASCATA = {
   ramoDaDistribuicao: null,
 };
 
-/** Regra existente no catálogo, mas com `esquemaArgs` que não bate com o shape que `matrizDaRegra` reconhece. */
+/** Regra existente no catálogo, mas com `declaracaoDaRegra` que não bate com o shape que `matrizDaRegra` reconhece. */
 export const REGRA_CASCATA_SEM_MATRIZ = {
   codigo: 'REMANEJ-CASCATA-SEM-MATRIZ',
   versao: 'v1',
   tipo: 'criterio_remanejamento',
-  esquemaArgs: {},
+  declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Portaria MEC nº 704/2025',
   hash: 'hash-cascata-sem-matriz',
@@ -262,7 +262,7 @@ export const REGRA_INSTITUCIONAL = {
   codigo: 'DISTRIB-VAGAS-INSTITUCIONAL',
   versao: 'v1',
   tipo: 'regra_distribuicao_vagas',
-  esquemaArgs: {},
+  declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Res. Unifesspa 532/2021',
   hash: 'hash-institucional',
@@ -275,7 +275,7 @@ export const REGRA_PSIQ = {
   codigo: 'DISTRIB-VAGAS-PSIQ',
   versao: 'v1',
   tipo: 'regra_distribuicao_vagas',
-  esquemaArgs: {},
+  declaracaoDaRegra: {},
   invariantes: [],
   baseLegal: 'Portaria Normativa MEC 18/2012',
   hash: 'hash-psiq',

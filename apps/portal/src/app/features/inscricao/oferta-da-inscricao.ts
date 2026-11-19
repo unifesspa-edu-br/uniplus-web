@@ -11,9 +11,9 @@ export interface OfertaDaInscricao {
  * Em ordem alfabética, porque a API as devolve na ordem do identificador.
  */
 export function ofertasDaInscricao(
-  inscricao: Pick<InscricaoDto, 'ofertas'>,
+  escolhas: Pick<InscricaoDto['escolhasDeCurso'], 'ofertas'>,
 ): readonly OfertaDaInscricao[] {
-  return inscricao.ofertas
+  return escolhas.ofertas
     .map((o) => ({ id: o.ofertaCursoOrigemId, nome: nomeDaOferta(o) }))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
@@ -29,7 +29,10 @@ export interface EscolhaDeOfertas {
   readonly segunda: string | null;
 }
 
-type GravadaDaInscricao = Pick<InscricaoDto, 'ofertaCursoId' | 'ofertaCursoSegundaOpcaoId'>;
+type GravadaDaInscricao = Pick<
+  InscricaoDto['escolhasDeCurso'],
+  'ofertaCursoId' | 'ofertaCursoSegundaOpcaoId'
+>;
 
 /**
  * Com uma oferta só, ela é a 1ª opção — mesmo que a gravada seja de outra que saiu do processo —, para

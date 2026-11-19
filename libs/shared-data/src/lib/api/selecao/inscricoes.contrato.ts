@@ -18,10 +18,17 @@ type GruposDaInscricao = Readonly<Record<string, readonly OcorrenciaDeGrupoInscr
 
 export type AceiteDeTermoInput = Schemas['AceiteDeTermoInput'];
 
-export type InscricaoDto = Omit<Schemas['InscricaoDto'], 'respostas' | 'derivados' | 'grupos'> & {
+type FormularioDaInscricaoDto = Omit<
+  Schemas['FormularioDaInscricaoDto'],
+  'respostas' | 'derivados' | 'grupos'
+> & {
   readonly respostas: RespostasDaInscricao;
   readonly derivados: RespostasDaInscricao;
   readonly grupos: GruposDaInscricao;
+};
+
+export type InscricaoDto = Omit<Schemas['InscricaoDto'], 'formulario'> & {
+  readonly formulario: FormularioDaInscricaoDto;
 };
 
 export type InscricaoRequest = Omit<Schemas['InscricaoRequest'], 'respostas' | 'grupos'> & {

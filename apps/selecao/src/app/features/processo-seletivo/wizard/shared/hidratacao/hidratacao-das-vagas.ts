@@ -1,12 +1,7 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type { CascataSelecionada, DistribuicaoDeVagas } from '../../processo-seletivo.models';
-import {
-  decodificarComposicaoVagas,
-  ehRamoFederal,
-  ehRamoReconhecido,
-  quantidadeEhDeclarada,
-} from '../../passos/vagas/composicao-de-vagas';
+import { decodificarComposicaoVagas } from '../../passos/vagas/composicao-de-vagas';
 
 type DistribuicaoGravada = ProcessoSeletivoDto['distribuicaoVagas'][number];
 type ModalidadeGravada = DistribuicaoGravada['modalidades'][number];
@@ -16,8 +11,8 @@ type ModalidadeGravada = DistribuicaoGravada['modalidades'][number];
  * comando recebe: o `id` do detalhe identifica o snapshot, não a entidade do catálogo. Os números
  * voltam como texto porque é o que o campo edita.
  *
- * O quadro devolvido é resultado do cálculo, e só as quantidades que o edital fixou voltam como
- * entrada: reenviar as calculadas faria o servidor recusar a configuração que ele mesmo devolveu.
+ * Só as quantidades que o edital declarou voltam como entrada: reenviar as calculadas faria o
+ * servidor recusar a configuração que ele mesmo devolveu.
  */
 export function distribuicoesDe(dto: ProcessoSeletivoDto): DistribuicaoDeVagas[] {
   return (dto.distribuicaoVagas ?? []).map(distribuicaoDe);
@@ -63,43 +58,27 @@ function modalidadeDe(modalidade: ModalidadeGravada): DistribuicaoDeVagas['modal
 }
 
 /**
- * Só o que o edital fixou; o que a regra calcula fica de fora do rascunho. Sem ramo reconhecido
- * não se sabe o que a regra calcula, então nada se deriva do quadro devolvido.
+ * O quadro do rascunho é a declaração do edital, lida de `quantidadeDeclarada` em cada modalidade.
+ * O `quadro` devolvido é o resultado do cálculo, já com o ajuste aplicado: reenviá-lo como entrada
+ * trocaria, sem aviso, o que o edital declarou pelo que o ajuste sobrou. Modalidade com a
+ * quantidade calculada pela regra não tem declaração e fica fora.
  */
 function quadroDeclaradoDe(distribuicao: DistribuicaoGravada): DistribuicaoDeVagas['quadro'] {
-  if (!ehRamoReconhecido(distribuicao.ramoDaDistribuicao)) return [];
-
-  const federal = ehRamoFederal(distribuicao.ramoDaDistribuicao);
-  const composicaoPorModalidade = composicaoPorModalidadeDe(distribuicao);
-
-  return distribuicao.quadro
-    .filter((vaga) =>
-      temQuantidadeDeclarada(composicaoPorModalidade.get(vaga.modalidadeOrigemId), federal),
-    )
-    .map((vaga) => ({
-      modalidadeId: vaga.modalidadeOrigemId,
-      quantidade: String(vaga.quantidade),
-    }));
-}
-
-function composicaoPorModalidadeDe(distribuicao: DistribuicaoGravada) {
-  return new Map(
-    distribuicao.modalidades.map((modalidade) => [
-      modalidade.modalidadeOrigemId,
-      decodificarComposicaoVagas(modalidade.composicaoVagas),
-    ]),
-  );
-}
-
-function temQuantidadeDeclarada(composicao: string | null | undefined, federal: boolean): boolean {
-  return (
-    composicao !== undefined && composicao !== null && quantidadeEhDeclarada(composicao, federal)
+  return distribuicao.modalidades.flatMap((modalidade) =>
+    modalidade.quantidadeDeclarada === null
+      ? []
+      : [
+          {
+            modalidadeId: modalidade.modalidadeOrigemId,
+            quantidade: String(modalidade.quantidadeDeclarada),
+          },
+        ],
   );
 }
 
 /**
  * Projeta a cascata gravada só pelo par código/versão da regra. `fallbackCodigo` e `destinos[]` são
- * derivados do `esquemaArgs` da regra ao montar o comando (UNI-REQ-0056); trazê-los da leitura
+ * derivados do `declaracaoDaRegra` da regra ao montar o comando (UNI-REQ-0056); trazê-los da leitura
  * criaria uma segunda fonte que divergiria da regra se o catálogo ganhasse versão nova entre a
  * gravação e a leitura.
  */

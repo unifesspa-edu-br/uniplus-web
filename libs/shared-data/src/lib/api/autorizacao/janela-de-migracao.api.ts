@@ -5,14 +5,14 @@ import { ApiResult } from '@uniplus/shared-core/http';
 import type { components } from './schema';
 import { AUTORIZACAO_BASE_PATH } from './tokens';
 
-export type JanelaDeMigracaoDto = components['schemas']['JanelaDeMigracaoDto'];
-export type ItemDaJanelaDto = components['schemas']['ItemDaJanelaDto'];
-export type ItemDaFilaDeJanelasDto = components['schemas']['ItemDaFilaDeJanelasDto'];
-export type JanelaDoPerfilDto = components['schemas']['JanelaDoPerfilDto'];
-export type EnviarLoteDaMigracaoRequest = components['schemas']['EnviarLoteDaMigracaoRequest'];
+export type JanelaDeMigracaoDto = components['schemas']['RevisaoDasConcessoesDto'];
+export type ItemDaJanelaDto = components['schemas']['ConcessaoDaRevisaoDto'];
+export type ItemDaFilaDeJanelasDto = components['schemas']['ItemDaListaDeRevisoesDto'];
+export type JanelaDoPerfilDto = components['schemas']['RevisaoDoPerfilDto'];
+export type EnviarLoteDaMigracaoRequest = components['schemas']['EnviarDecisoesDaRevisaoRequest'];
 export type DecidirRetidaRequest = components['schemas']['DecidirRetidaRequest'];
 export type DecidirEtapaDaProtecaoRequest = components['schemas']['DecidirEtapaDaProtecaoRequest'];
-export type EncerrarJanelaRequest = components['schemas']['EncerrarJanelaRequest'];
+export type EncerrarJanelaRequest = components['schemas']['EncerrarRevisaoRequest'];
 
 /** O que a gestão de acessos e a proteção de dados decidem sobre cada concessão da versão anterior. */
 export type DecisaoDaMigracao = 'migrar' | 'recusar';
@@ -23,16 +23,16 @@ export class JanelaDeMigracaoApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(AUTORIZACAO_BASE_PATH);
 
-  /** POST `.../perfis/{id}/janela/lote` — a decisão da gestão de acessos sobre a lista inteira. */
+  /** POST `.../perfis/{id}/revisao-das-concessoes/decisoes` — a decisão da gestão de acessos sobre a lista inteira. */
   enviarLote(
     perfilId: string,
     request: EnviarLoteDaMigracaoRequest,
     context: HttpContext,
   ): Observable<ApiResult<JanelaDeMigracaoDto>> {
-    return this.post(`${this.janela(perfilId)}/lote`, request, context);
+    return this.post(`${this.janela(perfilId)}/decisoes`, request, context);
   }
 
-  /** POST `.../janela/retidas/{concessaoId}` — a concessão que o lote reteve, decidida por outra pessoa. */
+  /** POST `.../revisao-das-concessoes/retidas/{concessaoId}` — a concessão que o lote reteve, decidida por outra pessoa. */
   decidirRetida(
     perfilId: string,
     concessaoId: string,
@@ -46,7 +46,7 @@ export class JanelaDeMigracaoApi {
     );
   }
 
-  /** POST `.../janela/protecao-de-dados` — a etapa da proteção de dados, de uma concessão a várias. */
+  /** POST `.../revisao-das-concessoes/protecao-de-dados` — a etapa da proteção de dados, de uma concessão a várias. */
   decidirProtecaoDeDados(
     perfilId: string,
     request: DecidirEtapaDaProtecaoRequest,
@@ -55,7 +55,7 @@ export class JanelaDeMigracaoApi {
     return this.post(`${this.janela(perfilId)}/protecao-de-dados`, request, context);
   }
 
-  /** POST `.../janela/encerramento` — encerra a versão anterior antes do prazo, com motivo. */
+  /** POST `.../revisao-das-concessoes/encerramento` — encerra a versão anterior antes do prazo, com motivo. */
   encerrar(
     perfilId: string,
     request: EncerrarJanelaRequest,
@@ -73,6 +73,6 @@ export class JanelaDeMigracaoApi {
   }
 
   private janela(perfilId: string): string {
-    return `${this.basePath}/api/autorizacao/perfis/${encodeURIComponent(perfilId)}/janela`;
+    return `${this.basePath}/api/autorizacao/perfis/${encodeURIComponent(perfilId)}/revisao-das-concessoes`;
   }
 }

@@ -12,9 +12,11 @@ import {
 } from '../support/consulta-da-classificacao';
 import { identificadoresDe } from '../support/medicoes-do-passo';
 import { irAoPasso } from '../support/navega-passo';
+import { isolarDaApi } from '../support/isolar-da-api';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 test.beforeEach(async ({ page }) => {
+  await isolarDaApi(page);
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
 

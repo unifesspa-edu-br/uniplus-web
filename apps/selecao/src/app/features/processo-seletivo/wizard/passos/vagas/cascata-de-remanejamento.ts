@@ -15,19 +15,19 @@ import { ModalidadeDoCatalogo } from './modalidades-da-distribuicao';
 const SEGUE_CASCATA = 'SEGUE_CASCATA';
 
 /**
- * Lê o `esquemaArgs` da regra de remanejamento — shape `{"fallbackCodigo":
+ * Lê o `declaracaoDaRegra` da regra de remanejamento — shape `{"fallbackCodigo":
  * "AC", "ordens": [{"origem": "...", "destinos": ["...", ...]}]}` — devolvendo
  * `null` quando não bate com o esperado.
  *
- * `esquemaArgs` chega como `unknown` (é `JsonElement` no contrato): a tela não
+ * `declaracaoDaRegra` chega como `unknown` (é `JsonElement` no contrato): a tela não
  * confia na forma sem checar, porque um catálogo com outra regra do mesmo tipo
  * poderia declarar um esquema diferente no futuro. `null` aqui vira "regra sem
  * matriz reconhecida" na tela, nunca uma matriz inventada.
  */
-export function matrizDaRegra(esquemaArgs: unknown): MatrizDaCascata | null {
-  if (typeof esquemaArgs !== 'object' || esquemaArgs === null) return null;
+export function matrizDaRegra(declaracaoDaRegra: unknown): MatrizDaCascata | null {
+  if (typeof declaracaoDaRegra !== 'object' || declaracaoDaRegra === null) return null;
 
-  const bruto = esquemaArgs as Record<string, unknown>;
+  const bruto = declaracaoDaRegra as Record<string, unknown>;
   const fallbackCodigo = bruto['fallbackCodigo'];
   const ordensBrutas = bruto['ordens'];
   if (typeof fallbackCodigo !== 'string' || !Array.isArray(ordensBrutas)) return null;
@@ -136,7 +136,7 @@ export interface ProblemaDaCascata {
  * de remanejamento não admite recorte), então uma origem ou destino que a regra declara mas
  * nenhuma oferta do processo cobre passa despercebido pela checagem por
  * oferta — e o handler de gravação também não o rejeita, porque
- * `BateComEsquemaArgs` só confere a matriz contra o `esquemaArgs`, nunca
+ * `BateComDeclaracaoDaRegra` só confere a matriz contra o `declaracaoDaRegra`, nunca
  * contra o quadro de vagas. Sem esta segunda checagem, o PUT aceita uma
  * cascata que a prontidão de conformidade (`PendenciaDaCascata`) recusa na
  * publicação — silenciosamente, porque `GET /conformidade` não tem tela
@@ -275,7 +275,7 @@ function destinosNaoOfertados(
  * O comando de gravação: a matriz inteira que a regra declarou, célula a
  * célula (UNI-REQ-0056) — nunca um recorte. O handler recusa com
  * `MatrizDivergenteDaRegra` qualquer payload que não seja idêntico ao
- * `esquemaArgs` congelado, então enviar menos do que a regra declara já é
+ * `declaracaoDaRegra` congelado, então enviar menos do que a regra declara já é
  * recusa certa.
  */
 export function comandoDaCascata(
