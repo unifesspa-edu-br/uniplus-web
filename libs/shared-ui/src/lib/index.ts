@@ -113,10 +113,6 @@ export {
 export { SkeletonComponent } from './components/skeleton/skeleton';
 export { SkipLinkComponent } from './components/skip-link/skip-link';
 export { SpinnerComponent } from './components/spinner/spinner';
-export {
-  StatusBadgeComponent,
-  type UiStatusBadgeStatus,
-} from './components/status-badge/status-badge';
 export { TagComponent, type UiTagVariant } from './components/tag/tag';
 export { TextInputComponent } from './components/text-input/text-input';
 export { TextareaComponent } from './components/textarea/textarea';

@@ -277,7 +277,6 @@ export * from './editor-de-formulario/termos-disponiveis';
 export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';
-export { StatusBadgeComponent, type UiStatusBadgeStatus } from './status-badge/status-badge';
 export { TagComponent, type UiTagVariant } from './tag/tag';
 export { TextareaComponent } from './textarea/textarea';
 export { TextInputComponent } from './text-input/text-input';
