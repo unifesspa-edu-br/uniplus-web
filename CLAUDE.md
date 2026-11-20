@@ -30,7 +30,7 @@ apps/
   configuracao-e2e/ → Testes E2E da configuracao
 
 libs/
-  shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, status-badge, etc.)
+  shared-ui/      → Componentes reutilizáveis (cpf-input, data-table, file-upload, tag, etc.)
   shared-auth/    → Autenticação OIDC (serviço, guards, interceptor e providers)
   shared-core/    → HTTP, interceptors, DOM e notificações transversais
   shared-data/    → Runtime config, DTOs e clientes API gerados por OpenAPI
