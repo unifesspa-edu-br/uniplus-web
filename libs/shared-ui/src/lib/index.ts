@@ -52,7 +52,9 @@ export {
   type UiComboboxGroup,
   type UiComboboxOption,
 } from './components/combobox/combobox';
+export type { CodigoComRotulo } from './components/codigo-com-rotulo';
 export { SelectComponent, type UiSelectOption } from './components/select/select';
+export { opcoesDosCodigos } from './components/select/opcoes-dos-codigos';
 export { CondicaoDeFatoComponent } from './components/editor-de-condicoes/condicao-de-fato';
 export { EditorDeCondicoesComponent } from './components/editor-de-condicoes/editor-de-condicoes';
 export {
@@ -116,7 +118,6 @@ export { SpinnerComponent } from './components/spinner/spinner';
 export { TagComponent, type UiTagVariant } from './components/tag/tag';
 export {
   TagDoCodigoComponent,
-  type CodigoComRotulo,
   type VariantesDosCodigos,
 } from './components/tag-do-codigo/tag-do-codigo';
 export { TextInputComponent } from './components/text-input/text-input';

@@ -1,11 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import type { CodigoComRotulo } from '../codigo-com-rotulo';
 import { TagComponent, type UiTagVariant } from '../tag/tag';
-
-/** Um valor de enum como a API o devolve: o código decide a cor e o rótulo é o que a tela mostra. */
-export interface CodigoComRotulo<C extends string> {
-  readonly codigo: C;
-  readonly rotulo: string;
-}
 
 /**
  * A variante de cor de cada código do tipo. O mapa completo se declara numa constante com este

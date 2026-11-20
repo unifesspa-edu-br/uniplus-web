@@ -54,7 +54,9 @@ export {
 export { PagerComponent } from './pager/pager';
 export { RecusaDoCampoComponent, type RecusaDoCampo } from './recusa-do-campo/recusa-do-campo';
 export { SegmentedComponent, type UiSegmentedOption } from './segmented/segmented';
+export type { CodigoComRotulo } from './codigo-com-rotulo';
 export { SelectComponent, type UiSelectOption } from './select/select';
+export { opcoesDosCodigos } from './select/opcoes-dos-codigos';
 export { CondicaoDeFatoComponent } from './editor-de-condicoes/condicao-de-fato';
 export { EditorDeCondicoesComponent } from './editor-de-condicoes/editor-de-condicoes';
 export {
@@ -278,11 +280,7 @@ export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';
 export { TagComponent, type UiTagVariant } from './tag/tag';
-export {
-  TagDoCodigoComponent,
-  type CodigoComRotulo,
-  type VariantesDosCodigos,
-} from './tag-do-codigo/tag-do-codigo';
+export { TagDoCodigoComponent, type VariantesDosCodigos } from './tag-do-codigo/tag-do-codigo';
 export { TextareaComponent } from './textarea/textarea';
 export { TextInputComponent } from './text-input/text-input';
 export { VlibrasLoaderComponent } from './vlibras-loader/vlibras-loader';
