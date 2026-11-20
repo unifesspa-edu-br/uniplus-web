@@ -87,7 +87,9 @@ export {
   SegmentedComponent,
   type UiSegmentedOption,
 } from '../../src/lib/components/segmented/segmented';
+export type { CodigoComRotulo } from '../../src/lib/components/codigo-com-rotulo';
 export { SelectComponent, type UiSelectOption } from '../../src/lib/components/select/select';
+export { opcoesDosCodigos } from '../../src/lib/components/select/opcoes-dos-codigos';
 export { EnderecoGeoComponent } from '../../src/lib/components/endereco-geo/endereco-geo';
 export * from '../../src/lib/components/endereco-geo/endereco-geo.model';
 export * from '../../src/lib/components/editor-de-documentos-exigidos/documentos-exigidos';
@@ -103,7 +105,6 @@ export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';
 export { TagComponent, type UiTagVariant } from '../../src/lib/components/tag/tag';
 export {
   TagDoCodigoComponent,
-  type CodigoComRotulo,
   type VariantesDosCodigos,
 } from '../../src/lib/components/tag-do-codigo/tag-do-codigo';
 export { TextInputComponent } from '../../src/lib/components/text-input/text-input';

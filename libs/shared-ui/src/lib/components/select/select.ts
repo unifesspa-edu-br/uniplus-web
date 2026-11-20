@@ -1,9 +1,18 @@
-import { ChangeDetectionStrategy, Component, forwardRef, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  input,
+  signal,
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface UiSelectOption<T extends string = string> {
   value: T;
   label: string;
+  /** Texto de apoio que aparece abaixo do campo enquanto a opção está escolhida. */
+  description?: string;
   disabled?: boolean;
 }
 
@@ -30,8 +39,12 @@ let selectIdSeed = 0;
         (change)="onChangeFromDom($event)"
         (blur)="onTouched()"
       >
+        @if (valueOutsideOptions()) {
+          <!-- Sem opção marcada, o navegador marcaria a primeira e a tela mostraria o que o controle não tem. -->
+          <option value="" disabled hidden [selected]="true"></option>
+        }
         @if (placeholderText()) {
-          <option value="">{{ placeholderText() }}</option>
+          <option value="" [selected]="value() === ''">{{ placeholderText() }}</option>
         }
         @for (option of choices(); track option.value) {
           <!-- As opções podem chegar depois do valor: marcar a escolhida mantém a seleção. -->
@@ -46,6 +59,9 @@ let selectIdSeed = 0;
       </select>
       @if (hint()) {
         <p class="field__hint" [id]="hintId">{{ hint() }}</p>
+      }
+      @if (selectedDescription(); as description) {
+        <p class="field__hint" [id]="descriptionId">{{ description }}</p>
       }
       @if (errorMessage()) {
         <p class="field__error" [id]="errorId" aria-live="polite">{{ errorMessage() }}</p>
@@ -73,7 +89,25 @@ export class SelectComponent<T extends string = string> implements ControlValueA
   protected readonly disabled = signal(false);
   protected readonly inputId = `ui-select-${++selectIdSeed}`;
   protected readonly hintId = `${this.inputId}-hint`;
+  protected readonly descriptionId = `${this.inputId}-description`;
   protected readonly errorId = `${this.inputId}-error`;
+
+  protected readonly valueOutsideOptions = computed(() => {
+    const value = this.value();
+    if (this.placeholderText() && value === '') return false;
+    return !this.choices().some((option) => option.value === value);
+  });
+  protected readonly selectedDescription = computed(
+    () => this.choices().find((option) => option.value === this.value())?.description ?? '',
+  );
+  protected readonly describedBy = computed(() => {
+    const ids = [
+      this.hint() ? this.hintId : null,
+      this.selectedDescription() ? this.descriptionId : null,
+      this.errorMessage() ? this.errorId : null,
+    ].filter((id) => id !== null);
+    return ids.length > 0 ? ids.join(' ') : null;
+  });
 
   protected onChange: (value: string) => void = () => undefined;
   protected onTouched: () => void = () => undefined;
@@ -98,12 +132,5 @@ export class SelectComponent<T extends string = string> implements ControlValueA
     const next = (event.target as HTMLSelectElement).value;
     this.value.set(next);
     this.onChange(next);
-  }
-
-  protected describedBy(): string | null {
-    const ids: string[] = [];
-    if (this.hint()) ids.push(this.hintId);
-    if (this.errorMessage()) ids.push(this.errorId);
-    return ids.length > 0 ? ids.join(' ') : null;
   }
 }

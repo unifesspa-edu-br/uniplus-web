@@ -1,10 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, expectTypeOf, it } from 'vitest';
-import {
-  TagDoCodigoComponent,
-  type CodigoComRotulo,
-  type VariantesDosCodigos,
-} from './tag-do-codigo';
+import type { CodigoComRotulo } from '../codigo-com-rotulo';
+import { TagDoCodigoComponent, type VariantesDosCodigos } from './tag-do-codigo';
 
 // Enum e não união de literais: o gerador do cliente da API (--enum) emite enum para os códigos, e
 // é desse tipo que o teste de mapa incompleto precisa.
