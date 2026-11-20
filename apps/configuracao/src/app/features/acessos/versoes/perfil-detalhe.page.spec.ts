@@ -1,6 +1,11 @@
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { perfilDoDetalhe, versaoPendente } from './perfis.testing';
+import {
+  ACESSO_EM_VIGOR,
+  ACESSO_SEM_VERSAO_EM_VIGOR,
+  ACESSO_SUSPENSO,
+} from './situacao-do-acesso.testing';
 import type { PerfilDto } from '@uniplus/shared-data/autorizacao';
 import { ok, recusa } from '../testes';
 import {
@@ -27,7 +32,7 @@ describe('PerfilDetalhePage', () => {
     const { host } = await abrir();
 
     expect(host.querySelector('h1')?.textContent).toContain('Operador de inscrições');
-    expect(host.textContent).toContain('Em vigor');
+    expect(host.textContent).toContain(ACESSO_EM_VIGOR.rotulo);
     expect(host.textContent).toContain('P-1/2026');
     expect(host.textContent).toContain('selecao:processos:consultar');
     expect(botao(host, 'Propor nova versão')).toBeDefined();
@@ -81,9 +86,11 @@ describe('PerfilDetalhePage', () => {
   });
 
   it('perfil suspenso mostra o estado, desde quando e as etapas da retomada', async () => {
-    const { host } = await abrir(ok(perfilDoDetalhe({ suspensao: SUSPENSAO_EM_RETOMADA })));
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ situacaoDoAcesso: ACESSO_SUSPENSO, suspensao: SUSPENSAO_EM_RETOMADA })),
+    );
 
-    expect(host.querySelector('.cfg-tags')?.textContent).toContain('Suspenso');
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain(ACESSO_SUSPENSO.rotulo);
     expect(host.querySelector('cfg-suspensao-do-perfil')?.textContent).toContain(
       'Retomada pelo Representante do controlador: aguarda a decisão',
     );
@@ -96,6 +103,45 @@ describe('PerfilDetalhePage', () => {
 
     expect(host.querySelector('.cfg-tags')?.textContent).toContain('Desativado');
     expect(host.querySelector('.cfg-tags')?.textContent).toContain('desde 08/11/2026');
+  });
+
+  it('perfil suspenso e desativado mostra as duas situações e não diz que está em vigor', async () => {
+    const { host } = await abrir(
+      ok(
+        perfilDoDetalhe({
+          situacaoDoAcesso: ACESSO_SUSPENSO,
+          suspensao: SUSPENSAO_EM_RETOMADA,
+          ativo: false,
+          desativadoDesde: '2026-11-08T15:00:00Z',
+        }),
+      ),
+    );
+
+    const etiquetas = (host.querySelector('.cfg-tags')?.textContent ?? '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    expect(etiquetas).toBe(
+      `${ACESSO_SUSPENSO.rotulo} desde 09/11/2026, 12:00 Desativado desde 08/11/2026, 12:00`,
+    );
+  });
+
+  it('perfil só desativado segue em vigor, porque desativar não bloqueia o acesso', async () => {
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ ativo: false, desativadoDesde: '2026-11-08T15:00:00Z' })),
+    );
+
+    const etiquetas = host.querySelector('.cfg-tags')?.textContent ?? '';
+    expect(etiquetas).toContain(ACESSO_EM_VIGOR.rotulo);
+    expect(etiquetas).toContain('Desativado');
+  });
+
+  it('mostra o rótulo que a API devolve para a situação do acesso', async () => {
+    const acesso = { ...ACESSO_SEM_VERSAO_EM_VIGOR, rotulo: 'Sem versão aprovada' };
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ situacaoDoAcesso: acesso, composicaoEmVigor: null })),
+    );
+
+    expect(host.querySelector('.cfg-tags')?.textContent).toContain('Sem versão aprovada');
   });
 
   it('perfil desativado só se reativa', async () => {

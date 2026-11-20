@@ -35,8 +35,8 @@ import { destacarAVersaoPendente } from './destaque-da-versao';
 import { DocumentoDaVersaoService } from './documento-da-versao.service';
 import {
   acoesDoPerfil,
+  etiquetasDoDetalhe,
   resumoDoDetalhe,
-  situacoesDoPerfil,
   type PermissoesDaContencao,
 } from './estado-do-perfil';
 import { EscritaDoPerfil } from './escrita-do-perfil';
@@ -112,9 +112,13 @@ export class PerfilDetalhePage {
   private readonly documentos = inject(DocumentoDaVersaoService);
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly perfil = this.store.perfil;
-  protected readonly situacoes = computed(() => {
+  private readonly resumo = computed(() => {
     const perfil = this.perfil();
-    return perfil === null ? [] : situacoesDoPerfil(resumoDoDetalhe(perfil));
+    return perfil === null ? null : resumoDoDetalhe(perfil);
+  });
+  protected readonly etiquetas = computed(() => {
+    const resumo = this.resumo();
+    return resumo === null ? [] : etiquetasDoDetalhe(resumo);
   });
   protected readonly tituloDoAvisoDaVersao = TITULO_DO_AVISO_DA_VERSAO;
   protected readonly avisoDaVersao = computed(() => {
@@ -138,10 +142,8 @@ export class PerfilDetalhePage {
       this.permissoes.tem(PERMISSAO.autorizacao.perfisConsultarVersoes),
   );
   protected readonly acoes = computed(() => {
-    const perfil = this.perfil();
-    return perfil === null
-      ? null
-      : acoesDoPerfil(resumoDoDetalhe(perfil), this.permissoesDaContencao());
+    const resumo = this.resumo();
+    return resumo === null ? null : acoesDoPerfil(resumo, this.permissoesDaContencao());
   });
   protected readonly situacaoEncerrada = situacaoEncerrada;
   protected readonly acaoDeRetomada = ACAO_DE_RETOMADA;

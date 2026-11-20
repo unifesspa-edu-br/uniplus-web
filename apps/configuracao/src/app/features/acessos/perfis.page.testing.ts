@@ -22,6 +22,7 @@ import { provideMensagensDeAcesso } from './mensagens-de-acesso';
 import { PerfisPage } from './perfis.page';
 import { ok } from './testes';
 import { DocumentoDaVersaoService } from './versoes/documento-da-versao.service';
+import { ACESSO_EM_VIGOR } from './versoes/situacao-do-acesso.testing';
 
 export function presente<T>(valor: T | null | undefined): T {
   if (valor == null) throw new Error('elemento ausente');
@@ -35,7 +36,7 @@ export const COMUM: PerfilListadoDto = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  temVersaoVigente: true,
+  situacaoDoAcesso: ACESSO_EM_VIGOR,
   temVersaoPendente: false,
   suspensao: null,
   desativadoDesde: null,

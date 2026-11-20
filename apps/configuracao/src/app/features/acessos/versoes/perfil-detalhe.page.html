@@ -7,9 +7,10 @@
     @if (perfil(); as p) {
     <p class="page-header__desc">{{ p.descricao }}</p>
     <p class="cfg-tags">
-      @for (situacao of situacoes(); track situacao.texto) {
-      <cfg-situacao-do-perfil [situacao]="situacao" />
-      }
+      <cfg-situacao-do-perfil
+        [etiquetas]="etiquetas()"
+        [versaoPendente]="p.versaoPendente !== null"
+      />
     </p>
     }
   </div>

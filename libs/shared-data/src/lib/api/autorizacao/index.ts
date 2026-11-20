@@ -1,5 +1,6 @@
 export { AUTORIZACAO_BASE_PATH } from './tokens';
 export type { PaginaQuery } from './paginacao';
+export { SituacaoDoAcessoDoPerfilCodigo } from './schema';
 export {
   PerfisApi,
   type CategoriaDaRemocao,
@@ -12,6 +13,7 @@ export {
   type PermissaoDoPerfilDto,
   type RemoverPermissoesRequest,
   type ResourceDoCatalogoDto,
+  type SituacaoDoAcessoDoPerfilDto,
   type UltimaVersaoEncerradaSemVigorDto,
 } from './perfis.api';
 export {

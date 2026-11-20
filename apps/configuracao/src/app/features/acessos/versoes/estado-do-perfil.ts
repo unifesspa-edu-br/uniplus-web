@@ -1,11 +1,18 @@
-import type { EtapaDaVersao, PerfilDto, PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import {
+  SituacaoDoAcessoDoPerfilCodigo,
+  type EtapaDaVersao,
+  type PerfilDto,
+  type PerfilListadoDto,
+  type SituacaoDoAcessoDoPerfilDto,
+} from '@uniplus/shared-data/autorizacao';
 import type { UiTagVariant } from '@uniplus/shared-ui/components';
 
 /** O que decide as situações de um perfil, igual para o resumo da lista e para o detalhe. */
 export interface ResumoDoPerfil {
   readonly ativo: boolean;
   readonly governanca: boolean;
-  readonly temVigente: boolean;
+  /** A situação do acesso do perfil, calculada pela API: o rótulo é dela e o código só escolhe a cor. */
+  readonly situacaoDoAcesso: SituacaoDoAcessoDoPerfilDto;
   readonly temPendente: boolean;
   /** Desde quando o acesso das concessões do perfil está bloqueado; `null` sem suspensão. */
   readonly suspensoDesde: string | null;
@@ -15,15 +22,16 @@ export interface ResumoDoPerfil {
   readonly etapasDaRetomadaPorDecidir: readonly string[];
 }
 
-/** O resumo do detalhe: só ele sabe se há janela de migração, que a lista não informa. */
+/** O resumo do detalhe: só ele sabe se há versão em vigor e janela de migração, que a lista não informa. */
 export interface ResumoDoDetalheDoPerfil extends ResumoDoPerfil {
+  readonly temVigente: boolean;
   readonly emJanelaDeMigracao: boolean;
 }
 
-export interface SituacaoDoPerfil {
+export interface EtiquetaDoPerfil {
   readonly texto: string;
   readonly variante: UiTagVariant;
-  /** O instante em que o perfil entrou na situação, quando a API o informa. */
+  /** O instante em que o perfil entrou na situação, quando a tela o mostra. */
   readonly desde?: string;
 }
 
@@ -45,12 +53,16 @@ export interface PermissoesDaContencao {
   readonly protecaoDeDados: boolean;
 }
 
-type ParteComum = Pick<PerfilDto, 'ativo' | 'governanca' | 'suspensao' | 'desativadoDesde'>;
+type ParteComum = Pick<
+  PerfilDto,
+  'ativo' | 'governanca' | 'situacaoDoAcesso' | 'suspensao' | 'desativadoDesde'
+>;
 
 function resumoComum(perfil: ParteComum) {
   return {
     ativo: perfil.ativo,
     governanca: perfil.governanca !== null,
+    situacaoDoAcesso: perfil.situacaoDoAcesso,
     suspensoDesde: perfil.suspensao?.desde ?? null,
     desativadoDesde: perfil.desativadoDesde,
     etapasDaRetomadaPorDecidir: etapasPorDecidir(perfil.suspensao),
@@ -60,7 +72,6 @@ function resumoComum(perfil: ParteComum) {
 export function resumoDaLista(perfil: PerfilListadoDto): ResumoDoPerfil {
   return {
     ...resumoComum(perfil),
-    temVigente: perfil.temVersaoVigente,
     temPendente: perfil.temVersaoPendente,
   };
 }
@@ -81,33 +92,39 @@ function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] 
   );
 }
 
-/** As situações que o perfil mostra juntas: a suspensão e a desativação são independentes. */
-export function situacoesDoPerfil(perfil: ResumoDoPerfil): readonly SituacaoDoPerfil[] {
-  if (perfil.governanca) return [perfil.ativo ? ATIVO : desativado(perfil)];
-  return [
-    ...(perfil.suspensoDesde === null ? [] : [{ ...SUSPENSO, desde: perfil.suspensoDesde }]),
-    ...(perfil.ativo ? [] : [desativado(perfil)]),
-    perfil.temVigente ? EM_VIGOR : SEM_VERSAO_EM_VIGOR,
-    ...(perfil.temPendente ? [VERSAO_PENDENTE] : []),
-    ...('emJanelaDeMigracao' in perfil && perfil.emJanelaDeMigracao ? [EM_JANELA_DE_MIGRACAO] : []),
-  ];
-}
-
-const ATIVO: SituacaoDoPerfil = { texto: 'Ativo', variante: 'success' };
-const DESATIVADO: SituacaoDoPerfil = { texto: 'Desativado', variante: 'neutral' };
-const SUSPENSO: SituacaoDoPerfil = { texto: 'Suspenso', variante: 'danger' };
-const EM_VIGOR: SituacaoDoPerfil = { texto: 'Em vigor', variante: 'success' };
-const SEM_VERSAO_EM_VIGOR: SituacaoDoPerfil = { texto: 'Sem versão em vigor', variante: 'warning' };
-const VERSAO_PENDENTE: SituacaoDoPerfil = { texto: 'Versão pendente', variante: 'info' };
-const EM_JANELA_DE_MIGRACAO: SituacaoDoPerfil = {
+const COR_DO_ACESSO: Readonly<Record<SituacaoDoAcessoDoPerfilDto['codigo'], UiTagVariant>> = {
+  [SituacaoDoAcessoDoPerfilCodigo.suspenso]: 'danger',
+  [SituacaoDoAcessoDoPerfilCodigo.em_vigor]: 'success',
+  [SituacaoDoAcessoDoPerfilCodigo.sem_versao_em_vigor]: 'warning',
+};
+const JANELA_DE_MIGRACAO: EtiquetaDoPerfil = {
   texto: 'Janela de migração aberta',
   variante: 'warning',
 };
 
-function desativado(perfil: ResumoDoPerfil): SituacaoDoPerfil {
+/** A situação do acesso e a desativação são independentes: a lista e o detalhe mostram as duas. */
+export function etiquetasDoPerfil(perfil: ResumoDoPerfil): readonly EtiquetaDoPerfil[] {
+  return [etiquetaDoAcesso(perfil), ...(perfil.ativo ? [] : [etiquetaDeDesativado(perfil)])];
+}
+
+export function etiquetasDoDetalhe(perfil: ResumoDoDetalheDoPerfil): readonly EtiquetaDoPerfil[] {
+  return [...etiquetasDoPerfil(perfil), ...(perfil.emJanelaDeMigracao ? [JANELA_DE_MIGRACAO] : [])];
+}
+
+function etiquetaDoAcesso(perfil: ResumoDoPerfil): EtiquetaDoPerfil {
+  const { codigo, rotulo } = perfil.situacaoDoAcesso;
+  return {
+    texto: rotulo,
+    variante: COR_DO_ACESSO[codigo],
+    ...(perfil.suspensoDesde === null ? {} : { desde: perfil.suspensoDesde }),
+  };
+}
+
+function etiquetaDeDesativado(perfil: ResumoDoPerfil): EtiquetaDoPerfil {
+  const etiqueta: EtiquetaDoPerfil = { texto: 'Desativado', variante: 'neutral' };
   return perfil.desativadoDesde === null
-    ? DESATIVADO
-    : { ...DESATIVADO, desde: perfil.desativadoDesde };
+    ? etiqueta
+    : { ...etiqueta, desde: perfil.desativadoDesde };
 }
 
 /**

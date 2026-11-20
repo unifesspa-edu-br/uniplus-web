@@ -3,6 +3,11 @@ import { provideRouter } from '@angular/router';
 import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PerfisListaComponent } from './perfis-lista.component';
+import {
+  ACESSO_EM_VIGOR,
+  ACESSO_SEM_VERSAO_EM_VIGOR,
+  ACESSO_SUSPENSO,
+} from './versoes/situacao-do-acesso.testing';
 
 const COMUM: PerfilListadoDto = {
   id: 'p1',
@@ -11,17 +16,23 @@ const COMUM: PerfilListadoDto = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  temVersaoVigente: true,
+  situacaoDoAcesso: ACESSO_EM_VIGOR,
   temVersaoPendente: false,
   suspensao: null,
   desativadoDesde: null,
 };
-const COM_PENDENTE: PerfilListadoDto = { ...COMUM, id: 'p4', nome: 'Auditoria', temVersaoPendente: true };
+const COM_PENDENTE: PerfilListadoDto = {
+  ...COMUM,
+  id: 'p4',
+  nome: 'Auditoria',
+  temVersaoPendente: true,
+};
 const DESATIVADO: PerfilListadoDto = { ...COMUM, id: 'p3', nome: 'Consulta', ativo: false };
 const SUSPENSO: PerfilListadoDto = {
   ...COMUM,
   id: 'p5',
   nome: 'Atendimento',
+  situacaoDoAcesso: ACESSO_SUSPENSO,
   suspensao: {
     desde: '2026-11-09T15:00:00Z',
     papelDeQuemSuspendeu: 'gestao_de_acessos',
@@ -91,17 +102,6 @@ describe('PerfisListaComponent', () => {
     expect(ligacao?.getAttribute('href')).toBe('/acessos/perfis/p1');
   });
 
-  it('mostra as situações do perfil: em vigor, versão pendente, desativado e governança', () => {
-    entradas({ perfis: [COMUM, COM_PENDENTE, DESATIVADO, GOVERNANCA] });
-
-    const situacao = (id: string): string =>
-      raiz().querySelector(`tr[data-perfil-id="${id}"] td[data-label="Situação"]`)?.textContent ?? '';
-    expect(situacao('p1')).toContain('Em vigor');
-    expect(situacao('p4')).toContain('Versão pendente');
-    expect(situacao('p3')).toContain('Desativado');
-    expect(situacao('p2')).toContain('Ativo');
-  });
-
   it('sem perfis, convida a criar o primeiro; com falha de carga, não afirma que está vazio', () => {
     entradas({ perfis: [], temProximo: false });
     expect(raiz().textContent).toContain('Nenhum perfil');
@@ -110,25 +110,110 @@ describe('PerfisListaComponent', () => {
     expect(raiz().textContent).not.toContain('Nenhum perfil');
   });
 
-  it('mostra o perfil suspenso e o desativado com situações distintas e desde quando', () => {
-    entradas({
-      perfis: [
-        SUSPENSO,
-        { ...DESATIVADO, desativadoDesde: '2026-11-08T15:00:00Z' },
-      ],
+  describe('situação do perfil', () => {
+    const celula = (id: string): HTMLElement => {
+      const encontrada = raiz().querySelector<HTMLElement>(
+        `tr[data-perfil-id="${id}"] td[data-label="Situação"]`,
+      );
+      if (encontrada === null) throw new Error(`linha ${id} ausente`);
+      return encontrada;
+    };
+    const situacao = (id: string): string =>
+      (celula(id).textContent ?? '').replace(/\s+/g, ' ').trim();
+    const etiquetas = (id: string): string[] =>
+      [...celula(id).querySelectorAll('ui-tag')].map((tag) => tag.textContent?.trim() ?? '');
+    const SUSPENSO_DESDE = 'desde 09/11/2026, 12:00';
+    const DESATIVADO_DESDE = '2026-11-08T15:00:00Z';
+    const desativado = (perfil: PerfilListadoDto): PerfilListadoDto => ({
+      ...perfil,
+      ativo: false,
+      desativadoDesde: DESATIVADO_DESDE,
     });
 
-    const linhas = [...raiz().querySelectorAll('tr[data-perfil-id]')];
-    expect(linhas[0]?.querySelector('[data-label="Situação"]')?.textContent).toContain('Suspenso');
-    expect(linhas[0]?.querySelector('[data-label="Situação"]')?.textContent).toContain(
-      'desde 09/11/2026',
-    );
-    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).toContain('Desativado');
-    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).toContain(
-      'desde 08/11/2026',
-    );
-    expect(linhas[1]?.querySelector('[data-label="Situação"]')?.textContent).not.toContain(
-      'Suspenso',
-    );
+    it('perfil ativo em vigor mostra só o rótulo da situação, sem data', () => {
+      entradas({ perfis: [COMUM] });
+
+      expect(situacao('p1')).toBe(ACESSO_EM_VIGOR.rotulo);
+    });
+
+    it('perfil ativo sem versão em vigor mostra só o rótulo da situação, sem data', () => {
+      const semVersao = { ...COMUM, situacaoDoAcesso: ACESSO_SEM_VERSAO_EM_VIGOR };
+      entradas({ perfis: [semVersao] });
+
+      expect(situacao('p1')).toBe(ACESSO_SEM_VERSAO_EM_VIGOR.rotulo);
+    });
+
+    it('perfil ativo e suspenso mostra o rótulo com a data da suspensão', () => {
+      entradas({ perfis: [SUSPENSO] });
+
+      expect(situacao('p5')).toBe(`${ACESSO_SUSPENSO.rotulo} ${SUSPENSO_DESDE}`);
+    });
+
+    it('perfil só desativado continua em vigor e mostra a desativação com a data', () => {
+      entradas({ perfis: [desativado(COMUM)] });
+
+      expect(situacao('p1')).toBe(`${ACESSO_EM_VIGOR.rotulo} Desativado desde 08/11/2026, 12:00`);
+    });
+
+    it('perfil sem versão em vigor e desativado mostra as duas situações', () => {
+      const semVersao = { ...COMUM, situacaoDoAcesso: ACESSO_SEM_VERSAO_EM_VIGOR };
+      entradas({ perfis: [desativado(semVersao)] });
+
+      expect(situacao('p1')).toBe(
+        `${ACESSO_SEM_VERSAO_EM_VIGOR.rotulo} Desativado desde 08/11/2026, 12:00`,
+      );
+    });
+
+    it('perfil suspenso e desativado mostra cada data junto da etiqueta dela', () => {
+      entradas({ perfis: [desativado(SUSPENSO)] });
+
+      expect(situacao('p5')).toBe(
+        `${ACESSO_SUSPENSO.rotulo} ${SUSPENSO_DESDE} Desativado desde 08/11/2026, 12:00`,
+      );
+      expect(situacao('p5')).not.toContain(ACESSO_EM_VIGOR.rotulo);
+    });
+
+    it('perfil de governança mostra só a situação do acesso, sem Ativo nem Desativado', () => {
+      entradas({ perfis: [GOVERNANCA] });
+
+      expect(situacao('p2')).toBe(ACESSO_EM_VIGOR.rotulo);
+    });
+
+    it('versão pendente aparece depois das etiquetas, como texto auxiliar', () => {
+      entradas({ perfis: [COM_PENDENTE] });
+
+      expect(etiquetas('p4')).toEqual([ACESSO_EM_VIGOR.rotulo]);
+      expect(situacao('p4')).toBe(`${ACESSO_EM_VIGOR.rotulo} Versão pendente`);
+    });
+
+    it('perfil desativado e com versão pendente mantém cada texto separado', () => {
+      entradas({ perfis: [desativado(COM_PENDENTE)] });
+
+      expect(situacao('p4')).toBe(
+        `${ACESSO_EM_VIGOR.rotulo} Desativado desde 08/11/2026, 12:00 Versão pendente`,
+      );
+    });
+
+    it('o texto da etiqueta é o rótulo que a API devolve, ainda que diferente do usual', () => {
+      const acesso = { ...ACESSO_EM_VIGOR, rotulo: 'Valendo' };
+      entradas({ perfis: [{ ...COMUM, situacaoDoAcesso: acesso }] });
+
+      expect(situacao('p1')).toBe('Valendo');
+    });
+
+    it('a cor da etiqueta vem do código da situação do acesso', () => {
+      const semVersao = { ...COMUM, id: 'p6', situacaoDoAcesso: ACESSO_SEM_VERSAO_EM_VIGOR };
+      entradas({ perfis: [COMUM, SUSPENSO, semVersao] });
+
+      const cor = (id: string): string | undefined =>
+        [...(celula(id).querySelector('.tag')?.classList ?? [])].find((classe) =>
+          classe.startsWith('tag--'),
+        );
+      expect([cor('p1'), cor('p5'), cor('p6')]).toEqual([
+        'tag--success',
+        'tag--danger',
+        'tag--warning',
+      ]);
+    });
   });
 });

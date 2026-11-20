@@ -1,4 +1,5 @@
 import type { PerfilDto, VersaoPendenteDto } from '@uniplus/shared-data/autorizacao';
+import { ACESSO_EM_VIGOR } from './situacao-do-acesso.testing';
 
 export const LEITURA = {
   codigo: 'selecao:processos:consultar',
@@ -51,6 +52,7 @@ const PERFIL_DO_DETALHE = {
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
+  situacaoDoAcesso: ACESSO_EM_VIGOR,
   versaoPendente: null,
   ultimaVersaoEncerradaSemVigor: null,
   suspensao: null,

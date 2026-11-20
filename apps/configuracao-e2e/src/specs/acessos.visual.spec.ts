@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import { mockApiDeAcesso, pedidoSeed } from '../support/api-de-acesso';
+import { PERFIL } from '../support/api-de-perfis-escritas';
 import { PERMISSOES_DO_DIOGO } from '../support/permissoes';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -10,18 +11,6 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-const PERFIL = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  nome: 'Operador de inscrições',
-  descricao: 'Opera as inscrições.',
-  ativo: true,
-  governanca: null,
-  sensibilidade: 'interno',
-  temVersaoVigente: true,
-  temVersaoPendente: false,
-  suspensao: null,
-  desativadoDesde: null,
 };
 const CONCESSAO = {
   id: '01960000-0000-7000-0000-0000000000c1',

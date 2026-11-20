@@ -1,3 +1,6 @@
+import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import type { ComoAApiEnvia } from '../como-a-api-envia';
+
 /** O estado da API de autorização simulada: perfis oferecidos, pedidos, concessões e escritas. */
 
 /** Pessoas fictícias do portal que aparecem como partes dos pedidos. */
@@ -8,7 +11,7 @@ export const UNIDADE_ID = '01960000-0000-7000-0000-00000000aa01';
 export const PERFIL_COMUM_ID = '01960000-0000-7000-0000-00000000bb01';
 export const PERFIL_SENSIVEL_ID = '01960000-0000-7000-0000-00000000bb02';
 
-function perfil(id: string, nome: string, sensibilidade: string) {
+function perfil(id: string, nome: string, sensibilidade: string): ComoAApiEnvia<PerfilListadoDto> {
   return {
     id,
     nome,
@@ -16,8 +19,10 @@ function perfil(id: string, nome: string, sensibilidade: string) {
     ativo: true,
     governanca: null,
     sensibilidade,
-    temVersaoVigente: true,
+    situacaoDoAcesso: { codigo: 'em_vigor', rotulo: 'Em vigor' },
     temVersaoPendente: false,
+    suspensao: null,
+    desativadoDesde: null,
   };
 }
 
