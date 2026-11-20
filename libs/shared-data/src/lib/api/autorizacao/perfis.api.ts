@@ -7,6 +7,7 @@ import { AUTORIZACAO_BASE_PATH } from './tokens';
 
 export type PerfilDto = components['schemas']['PerfilDto'];
 export type PerfilListadoDto = components['schemas']['PerfilListadoDto'];
+export type SituacaoDoAcessoDoPerfilDto = components['schemas']['SituacaoDoAcessoDoPerfil'];
 export type PermissaoDoPerfilDto = components['schemas']['PermissaoDoPerfilDto'];
 export type ComposicaoEmVigorDto = components['schemas']['ComposicaoEmVigorDto'];
 export type UltimaVersaoEncerradaSemVigorDto =

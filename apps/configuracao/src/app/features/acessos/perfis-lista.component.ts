@@ -8,7 +8,7 @@ import {
   TagComponent,
 } from '@uniplus/shared-ui/components';
 import { sensibilidade } from './rotulos-de-acesso';
-import { resumoDaLista, situacoesDoPerfil } from './versoes/estado-do-perfil';
+import { etiquetasDoPerfil, resumoDaLista } from './versoes/estado-do-perfil';
 import { SituacaoDoPerfilComponent } from './versoes/situacao-do-perfil.component';
 
 @Component({
@@ -35,7 +35,11 @@ export class PerfisListaComponent {
   readonly anterior = output<void>();
   readonly proximo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
-  protected readonly situacoes = (perfil: PerfilListadoDto) =>
-    situacoesDoPerfil(resumoDaLista(perfil));
+  protected readonly linhas = computed(() =>
+    this.perfis().map((perfil) => ({
+      perfil,
+      etiquetas: etiquetasDoPerfil(resumoDaLista(perfil)),
+    })),
+  );
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
 }

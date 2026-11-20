@@ -6671,6 +6671,7 @@ export interface components {
             readonly ativo: boolean;
             readonly governanca: null | string;
             readonly sensibilidade: string;
+            readonly situacaoDoAcesso: components["schemas"]["SituacaoDoAcessoDoPerfil"];
             readonly composicaoEmVigor: null | components["schemas"]["ComposicaoEmVigorDto"];
             readonly versaoPendente: null | components["schemas"]["VersaoPendenteDto"];
             readonly ultimaVersaoEncerradaSemVigor: null | components["schemas"]["UltimaVersaoEncerradaSemVigorDto"];
@@ -6687,7 +6688,7 @@ export interface components {
             readonly ativo: boolean;
             readonly governanca: null | string;
             readonly sensibilidade: string;
-            readonly temVersaoVigente: boolean;
+            readonly situacaoDoAcesso: components["schemas"]["SituacaoDoAcessoDoPerfil"];
             readonly temVersaoPendente: boolean;
             readonly suspensao: null | components["schemas"]["SuspensaoDoPerfilDto"];
             /** Format: date-time */
@@ -6897,6 +6898,17 @@ export interface components {
         };
         readonly RevogarItemDaRevisaoRequest: {
             readonly motivo: null | string;
+        };
+        /** @description Situação do acesso do perfil, e não de cada concessão: com o perfil em vigor, uma concessão ainda pode não dar acesso por prazo vencido, revisão das concessões em andamento ou permissão suspensa por reclassificação. A desativação do perfil não altera a situação. */
+        readonly SituacaoDoAcessoDoPerfil: {
+            /**
+             * @description `suspenso`: Suspenso — Há suspensão aberta: nenhuma concessão do perfil dá acesso até a retomada.
+             *     `em_vigor`: Em vigor — Sem suspensão e com permissões valendo. O perfil de governança está sempre em vigor.
+             *     `sem_versao_em_vigor`: Sem versão em vigor — Sem suspensão e sem versão aprovada valendo.
+             * @enum {string}
+             */
+            readonly codigo: SituacaoDoAcessoDoPerfilCodigo;
+            readonly rotulo: string;
         };
         readonly SolicitarProvidenciaRequest: {
             /** Format: uuid */
@@ -7168,4 +7180,9 @@ export enum PathsApiAutorizacaoRevisoesGetParametersQueryDirection {
 export enum PathsApiAutorizacaoTermosDeResponsabilidadeVersoesGetParametersQueryDirection {
     next = "next",
     prev = "prev"
+}
+export enum SituacaoDoAcessoDoPerfilCodigo {
+    suspenso = "suspenso",
+    em_vigor = "em_vigor",
+    sem_versao_em_vigor = "sem_versao_em_vigor"
 }

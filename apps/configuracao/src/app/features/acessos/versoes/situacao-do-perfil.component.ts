@@ -1,21 +1,30 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TagComponent } from '@uniplus/shared-ui/components';
 import { DateBrPipe } from '@uniplus/shared-ui/pipes';
-import type { SituacaoDoPerfil } from './estado-do-perfil';
+import type { EtiquetaDoPerfil } from './estado-do-perfil';
 
-/** Uma situação do perfil, com o instante em que ela começou quando a API o informa. */
+/** As etiquetas da situação do perfil, na lista e no detalhe, e a versão pendente como texto auxiliar. */
 @Component({
   selector: 'cfg-situacao-do-perfil',
   standalone: true,
   imports: [TagComponent, DateBrPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <ui-tag [variant]="situacao().variante">{{ situacao().texto }}</ui-tag>
-    @if (situacao().desde; as desde) {
-      <span class="cfg-muted">desde {{ desde | dateBr: 'datetime' }}</span>
+    @for (etiqueta of etiquetas(); track etiqueta.texto) {
+      <span>
+        <ui-tag [variant]="etiqueta.variante">{{ etiqueta.texto }}</ui-tag>
+        @if (etiqueta.desde; as desde) {
+          &ngsp;<span class="cfg-muted">desde {{ desde | dateBr: 'datetime' }}</span>
+        }
+      </span>
+      &ngsp;
+    }
+    @if (versaoPendente()) {
+      <span class="cfg-muted">Versão pendente</span>
     }
   `,
 })
 export class SituacaoDoPerfilComponent {
-  readonly situacao = input.required<SituacaoDoPerfil>();
+  readonly etiquetas = input.required<readonly EtiquetaDoPerfil[]>();
+  readonly versaoPendente = input.required<boolean>();
 }

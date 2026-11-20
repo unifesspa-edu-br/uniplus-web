@@ -1,4 +1,5 @@
 import type { Page, Route } from '@playwright/test';
+import type { PerfilDto, PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
 import {
   CORS_HEADERS,
   ERRO_INTERNO,
@@ -12,28 +13,32 @@ import {
   type Recarga,
   type Resposta,
 } from './escritas-retidas';
+import type { ComoAApiEnvia } from './como-a-api-envia';
 
 /** O perfil, o catálogo e o envio de documento que o mock das escritas de perfis atende. */
 
-export const PERFIL = {
+export const PERFIL: ComoAApiEnvia<PerfilListadoDto> = {
   id: '01960000-0000-7000-0000-0000000000a1',
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
   ativo: true,
   governanca: null,
   sensibilidade: 'interno',
-  temVersaoVigente: true,
+  situacaoDoAcesso: { codigo: 'em_vigor', rotulo: 'Em vigor' },
   temVersaoPendente: false,
   suspensao: null,
   desativadoDesde: null,
 };
 
-const DETALHE_DO_PERFIL = {
+const DESATIVADO_EM = '2026-11-10T12:00:00Z';
+
+const DETALHE_DO_PERFIL: Omit<ComoAApiEnvia<PerfilDto>, 'ativo' | 'desativadoDesde'> = {
   id: PERFIL.id,
   nome: PERFIL.nome,
   descricao: PERFIL.descricao,
   governanca: null,
   sensibilidade: 'interno',
+  situacaoDoAcesso: PERFIL.situacaoDoAcesso,
   composicaoEmVigor: {
     versaoId: '01960000-0000-7000-0000-0000000000b1',
     numero: 1,
@@ -94,7 +99,7 @@ const ROTA_DA_CONFIRMACAO =
 class PerfisComEscritasRetidas {
   readonly envios: Envio[] = [];
   private readonly barreira = reter();
-  private readonly perfil = { ...PERFIL };
+  private perfil = PERFIL;
   private gravou = false;
   private consultas = 0;
 
@@ -132,8 +137,8 @@ class PerfisComEscritasRetidas {
   private corpoDaConsulta(caminho: string): unknown {
     if (caminho.endsWith('/contencao')) return [];
     if (caminho.endsWith(`/perfis/${PERFIL.id}`)) {
-      const desativadoDesde = this.perfil.ativo ? null : '2026-11-10T12:00:00Z';
-      return { ...DETALHE_DO_PERFIL, ativo: this.perfil.ativo, desativadoDesde };
+      const { ativo, desativadoDesde } = this.perfil;
+      return { ...DETALHE_DO_PERFIL, ativo, desativadoDesde };
     }
     return this.gravou && this.recarga === 'sem-o-item' ? [] : [this.perfil];
   }
@@ -152,8 +157,12 @@ class PerfisComEscritasRetidas {
 
   private gravar(url: string): void {
     this.gravou = true;
-    if (url.endsWith('/desativacao')) this.perfil.ativo = false;
-    if (url.endsWith('/reativacao')) this.perfil.ativo = true;
+    if (url.endsWith('/desativacao')) {
+      this.perfil = { ...this.perfil, ativo: false, desativadoDesde: DESATIVADO_EM };
+    }
+    if (url.endsWith('/reativacao')) {
+      this.perfil = { ...this.perfil, ativo: true, desativadoDesde: null };
+    }
   }
 }
 

@@ -9,12 +9,7 @@
   </div>
 
   @if (perfis().length > 0) {
-    <div
-      class="table-responsive"
-      role="region"
-      tabindex="0"
-      aria-label="Lista de perfis de acesso"
-    >
+    <div class="table-responsive" role="region" tabindex="0" aria-label="Lista de perfis de acesso">
       <table>
         <caption class="sr-only">
           Perfis de acesso
@@ -27,22 +22,23 @@
           </tr>
         </thead>
         <tbody>
-          @for (perfil of perfis(); track perfil.id) {
-            <tr [attr.data-perfil-id]="perfil.id">
+          @for (linha of linhas(); track linha.perfil.id) {
+            <tr [attr.data-perfil-id]="linha.perfil.id">
               <td data-label="Nome">
                 <div>
-                  <a [routerLink]="['/acessos/perfis', perfil.id]">{{ perfil.nome }}</a>
-                  @if (perfil.governanca) {
+                  <a [routerLink]="['/acessos/perfis', linha.perfil.id]">{{ linha.perfil.nome }}</a>
+                  @if (linha.perfil.governanca) {
                     <ui-tag variant="info">Governança</ui-tag>
                   }
-                  <div class="table-responsive__meta">{{ perfil.descricao }}</div>
+                  <div class="table-responsive__meta">{{ linha.perfil.descricao }}</div>
                 </div>
               </td>
-              <td data-label="Sensibilidade">{{ sensibilidadeDe(perfil.sensibilidade) }}</td>
+              <td data-label="Sensibilidade">{{ sensibilidadeDe(linha.perfil.sensibilidade) }}</td>
               <td data-label="Situação">
-                @for (situacao of situacoes(perfil); track situacao.texto) {
-                  <cfg-situacao-do-perfil [situacao]="situacao" />
-                }
+                <cfg-situacao-do-perfil
+                  [etiquetas]="linha.etiquetas"
+                  [versaoPendente]="linha.perfil.temVersaoPendente"
+                />
               </td>
             </tr>
           }
