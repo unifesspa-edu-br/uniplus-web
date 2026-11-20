@@ -6899,17 +6899,19 @@ export interface components {
         readonly RevogarItemDaRevisaoRequest: {
             readonly motivo: null | string;
         };
-        /** @description Situação do acesso do perfil, e não de cada concessão: com o perfil em vigor, uma concessão ainda pode não dar acesso por prazo vencido, revisão das concessões em andamento ou permissão suspensa por reclassificação. A desativação do perfil não altera a situação. */
         readonly SituacaoDoAcessoDoPerfil: {
-            /**
-             * @description `suspenso`: Suspenso — Há suspensão aberta: nenhuma concessão do perfil dá acesso até a retomada.
-             *     `em_vigor`: Em vigor — Sem suspensão e com permissões valendo. O perfil de governança está sempre em vigor.
-             *     `sem_versao_em_vigor`: Sem versão em vigor — Sem suspensão e sem versão aprovada valendo.
-             * @enum {string}
-             */
-            readonly codigo: SituacaoDoAcessoDoPerfilCodigo;
+            readonly codigo: components["schemas"]["SituacaoDoAcessoDoPerfilCodigo"];
             readonly rotulo: string;
         };
+        /**
+         * @description Situação do acesso do perfil, e não de cada concessão: com o perfil em vigor, uma concessão ainda pode não dar acesso por prazo vencido, revisão das concessões em andamento ou permissão suspensa por reclassificação. A desativação do perfil não altera a situação.
+         *
+         *     - `suspenso`: Suspenso — Há suspensão aberta: nenhuma concessão do perfil dá acesso até a retomada.
+         *     - `em_vigor`: Em vigor — Sem suspensão e com permissões valendo. O perfil de governança está sempre em vigor.
+         *     - `sem_versao_em_vigor`: Sem versão em vigor — Sem suspensão e sem versão aprovada valendo.
+         * @enum {string}
+         */
+        readonly SituacaoDoAcessoDoPerfilCodigo: SituacaoDoAcessoDoPerfilCodigo;
         readonly SolicitarProvidenciaRequest: {
             /** Format: uuid */
             readonly concessaoId: string;
