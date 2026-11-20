@@ -73,5 +73,5 @@ async function assertDrawerNavigation(page: Page): Promise<void> {
     }),
   ).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(page.locator('dialog.uni-drawer')).toHaveCount(0);
+  await expect(page.locator('dialog.uni-drawer[open]')).toHaveCount(0);
 }
