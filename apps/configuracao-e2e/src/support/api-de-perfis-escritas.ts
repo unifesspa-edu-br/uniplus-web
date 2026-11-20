@@ -32,7 +32,7 @@ export const PERFIL: JsonDaApi<PerfilListadoDto> = {
 
 const DESATIVADO_EM = '2026-11-10T12:00:00Z';
 
-const DETALHE_DO_PERFIL: Omit<JsonDaApi<PerfilDto>, 'ativo' | 'desativadoDesde'> = {
+export const DETALHE_DO_PERFIL: Omit<JsonDaApi<PerfilDto>, 'ativo' | 'desativadoDesde'> = {
   id: PERFIL.id,
   nome: PERFIL.nome,
   descricao: PERFIL.descricao,
