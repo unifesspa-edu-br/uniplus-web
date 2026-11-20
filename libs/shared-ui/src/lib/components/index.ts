@@ -278,6 +278,11 @@ export { SkeletonComponent } from './skeleton/skeleton';
 export { SkipLinkComponent } from './skip-link/skip-link';
 export { SpinnerComponent } from './spinner/spinner';
 export { TagComponent, type UiTagVariant } from './tag/tag';
+export {
+  TagDoCodigoComponent,
+  type CodigoComRotulo,
+  type VariantesDosCodigos,
+} from './tag-do-codigo/tag-do-codigo';
 export { TextareaComponent } from './textarea/textarea';
 export { TextInputComponent } from './text-input/text-input';
 export { VlibrasLoaderComponent } from './vlibras-loader/vlibras-loader';

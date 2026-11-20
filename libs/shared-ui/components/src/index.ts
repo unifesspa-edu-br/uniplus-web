@@ -101,6 +101,11 @@ export { SkeletonComponent } from '../../src/lib/components/skeleton/skeleton';
 export { SkipLinkComponent } from '../../src/lib/components/skip-link/skip-link';
 export { SpinnerComponent } from '../../src/lib/components/spinner/spinner';
 export { TagComponent, type UiTagVariant } from '../../src/lib/components/tag/tag';
+export {
+  TagDoCodigoComponent,
+  type CodigoComRotulo,
+  type VariantesDosCodigos,
+} from '../../src/lib/components/tag-do-codigo/tag-do-codigo';
 export { TextInputComponent } from '../../src/lib/components/text-input/text-input';
 export { TextareaComponent } from '../../src/lib/components/textarea/textarea';
 export { VlibrasLoaderComponent } from '../../src/lib/components/vlibras-loader/vlibras-loader';
