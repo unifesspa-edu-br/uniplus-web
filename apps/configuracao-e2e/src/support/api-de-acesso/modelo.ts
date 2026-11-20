@@ -1,5 +1,5 @@
 import type { PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
-import type { ComoAApiEnvia } from '../como-a-api-envia';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 
 /** O estado da API de autorização simulada: perfis oferecidos, pedidos, concessões e escritas. */
 
@@ -11,7 +11,7 @@ export const UNIDADE_ID = '01960000-0000-7000-0000-00000000aa01';
 export const PERFIL_COMUM_ID = '01960000-0000-7000-0000-00000000bb01';
 export const PERFIL_SENSIVEL_ID = '01960000-0000-7000-0000-00000000bb02';
 
-function perfil(id: string, nome: string, sensibilidade: string): ComoAApiEnvia<PerfilListadoDto> {
+function perfil(id: string, nome: string, sensibilidade: string): JsonDaApi<PerfilListadoDto> {
   return {
     id,
     nome,
