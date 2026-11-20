@@ -1,5 +1,6 @@
 import type { Page, Route } from '@playwright/test';
 import type { PerfilDto, PerfilListadoDto } from '@uniplus/shared-data/autorizacao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import {
   CORS_HEADERS,
   ERRO_INTERNO,
@@ -13,11 +14,10 @@ import {
   type Recarga,
   type Resposta,
 } from './escritas-retidas';
-import type { ComoAApiEnvia } from './como-a-api-envia';
 
 /** O perfil, o catálogo e o envio de documento que o mock das escritas de perfis atende. */
 
-export const PERFIL: ComoAApiEnvia<PerfilListadoDto> = {
+export const PERFIL: JsonDaApi<PerfilListadoDto> = {
   id: '01960000-0000-7000-0000-0000000000a1',
   nome: 'Operador de inscrições',
   descricao: 'Opera as inscrições.',
@@ -32,7 +32,7 @@ export const PERFIL: ComoAApiEnvia<PerfilListadoDto> = {
 
 const DESATIVADO_EM = '2026-11-10T12:00:00Z';
 
-const DETALHE_DO_PERFIL: Omit<ComoAApiEnvia<PerfilDto>, 'ativo' | 'desativadoDesde'> = {
+const DETALHE_DO_PERFIL: Omit<JsonDaApi<PerfilDto>, 'ativo' | 'desativadoDesde'> = {
   id: PERFIL.id,
   nome: PERFIL.nome,
   descricao: PERFIL.descricao,

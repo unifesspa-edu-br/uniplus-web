@@ -45,6 +45,7 @@ export { garantirConcessao } from './lib/concessoes-reais';
 export { PDF_MINIMO, enviarPelaUrlAssinada } from './lib/envio-de-arquivo';
 export { SENHA_DAS_PERSONAS } from './lib/credenciais';
 export type { RespostaDaApi } from './lib/backend-real';
+export type { JsonDaApi } from './lib/json-da-api';
 export {
   ACESSOS_DA_SIMULACAO,
   aprovarCatalogoInicial,
