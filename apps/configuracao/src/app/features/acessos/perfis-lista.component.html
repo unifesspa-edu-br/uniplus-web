@@ -36,8 +36,10 @@
               <td data-label="Sensibilidade">{{ sensibilidadeDe(linha.perfil.sensibilidade) }}</td>
               <td data-label="Situação">
                 <cfg-situacao-do-perfil
+                  [situacaoDoAcesso]="linha.resumo.situacaoDoAcesso"
+                  [suspensoDesde]="linha.resumo.suspensoDesde"
                   [etiquetas]="linha.etiquetas"
-                  [versaoPendente]="linha.perfil.temVersaoPendente"
+                  [versaoPendente]="linha.resumo.temPendente"
                 />
               </td>
             </tr>

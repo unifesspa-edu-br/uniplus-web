@@ -36,10 +36,10 @@ export class PerfisListaComponent {
   readonly proximo = output<void>();
   protected readonly sensibilidadeDe = sensibilidade;
   protected readonly linhas = computed(() =>
-    this.perfis().map((perfil) => ({
-      perfil,
-      etiquetas: etiquetasDoPerfil(resumoDaLista(perfil)),
-    })),
+    this.perfis().map((perfil) => {
+      const resumo = resumoDaLista(perfil);
+      return { perfil, resumo, etiquetas: etiquetasDoPerfil(resumo) };
+    }),
   );
   protected readonly indisponivel = computed(() => this.carregando() || this.gravando());
 }

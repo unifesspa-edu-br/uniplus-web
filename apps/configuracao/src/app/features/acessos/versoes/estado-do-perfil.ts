@@ -5,7 +5,7 @@ import {
   type PerfilListadoDto,
   type SituacaoDoAcessoDoPerfilDto,
 } from '@uniplus/shared-data/autorizacao';
-import type { UiTagVariant } from '@uniplus/shared-ui/components';
+import type { UiTagVariant, VariantesDosCodigos } from '@uniplus/shared-ui/components';
 
 /** O que decide as situações de um perfil, igual para o resumo da lista e para o detalhe. */
 export interface ResumoDoPerfil {
@@ -92,7 +92,8 @@ function etapasPorDecidir(suspensao: PerfilDto['suspensao']): readonly string[] 
   );
 }
 
-const COR_DO_ACESSO: Readonly<Record<SituacaoDoAcessoDoPerfilDto['codigo'], UiTagVariant>> = {
+/** A cor de cada situação do acesso; o rótulo da etiqueta é o que a API devolve. */
+export const VARIANTES_DO_ACESSO: VariantesDosCodigos<SituacaoDoAcessoDoPerfilCodigo> = {
   [SituacaoDoAcessoDoPerfilCodigo.suspenso]: 'danger',
   [SituacaoDoAcessoDoPerfilCodigo.em_vigor]: 'success',
   [SituacaoDoAcessoDoPerfilCodigo.sem_versao_em_vigor]: 'warning',
@@ -102,22 +103,18 @@ const JANELA_DE_MIGRACAO: EtiquetaDoPerfil = {
   variante: 'warning',
 };
 
-/** A situação do acesso e a desativação são independentes: a lista e o detalhe mostram as duas. */
+/**
+ * As etiquetas que o web monta de estados do perfil que a API entrega como booleano ou data, sem
+ * código nem rótulo, como a desativação. A situação do acesso fica de fora: vem da API com código
+ * e rótulo e é independente da desativação, então a lista e o detalhe mostram a situação do
+ * acesso e, depois, estas.
+ */
 export function etiquetasDoPerfil(perfil: ResumoDoPerfil): readonly EtiquetaDoPerfil[] {
-  return [etiquetaDoAcesso(perfil), ...(perfil.ativo ? [] : [etiquetaDeDesativado(perfil)])];
+  return perfil.ativo ? [] : [etiquetaDeDesativado(perfil)];
 }
 
 export function etiquetasDoDetalhe(perfil: ResumoDoDetalheDoPerfil): readonly EtiquetaDoPerfil[] {
   return [...etiquetasDoPerfil(perfil), ...(perfil.emJanelaDeMigracao ? [JANELA_DE_MIGRACAO] : [])];
-}
-
-function etiquetaDoAcesso(perfil: ResumoDoPerfil): EtiquetaDoPerfil {
-  const { codigo, rotulo } = perfil.situacaoDoAcesso;
-  return {
-    texto: rotulo,
-    variante: COR_DO_ACESSO[codigo],
-    ...(perfil.suspensoDesde === null ? {} : { desde: perfil.suspensoDesde }),
-  };
 }
 
 function etiquetaDeDesativado(perfil: ResumoDoPerfil): EtiquetaDoPerfil {
