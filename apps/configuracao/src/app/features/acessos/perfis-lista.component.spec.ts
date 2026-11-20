@@ -149,6 +149,21 @@ describe('PerfisListaComponent', () => {
       expect(situacao('p5')).toBe(`${ACESSO_SUSPENSO.rotulo} ${SUSPENSO_DESDE}`);
     });
 
+    it('perfil suspenso mostra a etiqueta e a data da suspensão como partes separadas', () => {
+      entradas({ perfis: [SUSPENSO] });
+
+      const embrulho = celula('p5').querySelector('cfg-situacao-do-perfil > span');
+      expect(embrulho?.textContent).toBe(`${ACESSO_SUSPENSO.rotulo} ${SUSPENSO_DESDE}`);
+      expect(embrulho?.querySelector('.tag')?.textContent?.trim()).toBe(ACESSO_SUSPENSO.rotulo);
+      expect(embrulho?.querySelector('.cfg-muted')?.textContent).toBe(SUSPENSO_DESDE);
+    });
+
+    it('a situação é estática: nada se anuncia como aviso', () => {
+      entradas({ perfis: [desativado(SUSPENSO)] });
+
+      expect(celula('p5').querySelector('[role], [aria-live]')).toBeNull();
+    });
+
     it('perfil só desativado continua em vigor e mostra a desativação com a data', () => {
       entradas({ perfis: [desativado(COMUM)] });
 

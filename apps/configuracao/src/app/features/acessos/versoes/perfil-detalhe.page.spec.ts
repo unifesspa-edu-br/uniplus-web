@@ -96,6 +96,55 @@ describe('PerfilDetalhePage', () => {
     );
   });
 
+  it('perfil suspenso mostra a etiqueta e a data da suspensão como partes separadas', async () => {
+    const { host } = await abrir(
+      ok(perfilDoDetalhe({ situacaoDoAcesso: ACESSO_SUSPENSO, suspensao: SUSPENSAO_EM_RETOMADA })),
+    );
+
+    const embrulho = host.querySelector('.cfg-tags cfg-situacao-do-perfil > span');
+    expect(embrulho?.textContent).toBe(`${ACESSO_SUSPENSO.rotulo} desde 09/11/2026, 12:00`);
+    expect(embrulho?.querySelector('.tag')?.textContent?.trim()).toBe(ACESSO_SUSPENSO.rotulo);
+    expect(embrulho?.querySelector('.cfg-muted')?.textContent).toBe('desde 09/11/2026, 12:00');
+  });
+
+  it('perfil sem suspensão mostra o rótulo da situação do acesso sem "desde"', async () => {
+    const { host } = await abrir();
+
+    expect(host.querySelector('.cfg-tags')?.textContent?.trim()).toBe(ACESSO_EM_VIGOR.rotulo);
+    expect(host.querySelector('.cfg-tags .cfg-muted')).toBeNull();
+  });
+
+  it.each([
+    { acesso: ACESSO_SUSPENSO, suspensao: SUSPENSAO_EM_RETOMADA, variante: 'tag--danger' },
+    { acesso: ACESSO_EM_VIGOR, suspensao: null, variante: 'tag--success' },
+    { acesso: ACESSO_SEM_VERSAO_EM_VIGOR, suspensao: null, variante: 'tag--warning' },
+  ])(
+    'a situação do acesso "$acesso.rotulo" tem a cor $variante, pelo código dela',
+    async ({ acesso, suspensao, variante }) => {
+      const { host } = await abrir(ok(perfilDoDetalhe({ situacaoDoAcesso: acesso, suspensao })));
+
+      expect(host.querySelector('.cfg-tags .tag')?.classList.contains(variante)).toBe(true);
+    },
+  );
+
+  it('depois da situação do acesso vêm a desativação e a janela de migração, nessa ordem', async () => {
+    const janela = { id: 'j1', terminaEm: '2026-11-12T12:00:00Z', situacao: 'aberta' };
+    const { host } = await abrir(
+      ok(
+        perfilDoDetalhe({
+          ativo: false,
+          desativadoDesde: '2026-11-08T15:00:00Z',
+          revisaoDasConcessoes: janela,
+        }),
+      ),
+    );
+
+    const etiquetas = [...host.querySelectorAll('.cfg-tags .tag')].map((tag) =>
+      tag.textContent?.trim(),
+    );
+    expect(etiquetas).toEqual([ACESSO_EM_VIGOR.rotulo, 'Desativado', 'Janela de migração aberta']);
+  });
+
   it('perfil desativado mostra desde quando', async () => {
     const { host } = await abrir(
       ok(perfilDoDetalhe({ ativo: false, desativadoDesde: '2026-11-08T15:00:00Z' })),

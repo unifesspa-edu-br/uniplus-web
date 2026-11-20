@@ -112,7 +112,7 @@ export class PerfilDetalhePage {
   private readonly documentos = inject(DocumentoDaVersaoService);
   protected readonly idDoTitulo = ID_DO_TITULO;
   protected readonly perfil = this.store.perfil;
-  private readonly resumo = computed(() => {
+  protected readonly resumo = computed(() => {
     const perfil = this.perfil();
     return perfil === null ? null : resumoDoDetalhe(perfil);
   });

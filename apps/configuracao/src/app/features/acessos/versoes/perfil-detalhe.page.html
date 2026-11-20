@@ -6,10 +6,13 @@
     </h1>
     @if (perfil(); as p) {
     <p class="page-header__desc">{{ p.descricao }}</p>
+    } @if (resumo(); as r) {
     <p class="cfg-tags">
       <cfg-situacao-do-perfil
+        [situacaoDoAcesso]="r.situacaoDoAcesso"
+        [suspensoDesde]="r.suspensoDesde"
         [etiquetas]="etiquetas()"
-        [versaoPendente]="p.versaoPendente !== null"
+        [versaoPendente]="r.temPendente"
       />
     </p>
     }

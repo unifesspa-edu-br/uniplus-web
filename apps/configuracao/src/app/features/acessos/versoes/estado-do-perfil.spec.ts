@@ -28,87 +28,73 @@ const EM_VIGOR: ResumoDoDetalheDoPerfil = {
 };
 const SUSPENSO_DESDE = '2026-11-09T12:00:00Z';
 const DESATIVADO_DESDE = '2026-11-08T12:00:00Z';
+const SUSPENSAO = {
+  desde: SUSPENSO_DESDE,
+  papelDeQuemSuspendeu: 'gestao_de_acessos',
+  etapasExigidasAgora: ['gestao_de_acessos'],
+  etapasDecididas: [],
+};
 const SUSPENSO = { ...EM_VIGOR, situacaoDoAcesso: ACESSO_SUSPENSO, suspensoDesde: SUSPENSO_DESDE };
+const DESATIVADO = { ...EM_VIGOR, ativo: false, desativadoDesde: DESATIVADO_DESDE };
 const GESTAO = { gestaoDeAcessos: true, protecaoDeDados: false };
 const textos = (etiquetas: readonly EtiquetaDoPerfil[]): string[] => etiquetas.map((e) => e.texto);
 
 describe('etiquetasDoPerfil', () => {
-  it('perfil ativo em vigor mostra só a situação do acesso, sem data', () => {
-    expect(etiquetasDoPerfil(EM_VIGOR)).toEqual([
-      { texto: ACESSO_EM_VIGOR.rotulo, variante: 'success' },
-    ]);
-  });
-
-  it('perfil ativo sem versão em vigor mostra só a situação do acesso, sem data', () => {
+  it('a situação do acesso é da API: não vira etiqueta montada no web, qualquer que seja', () => {
     const semVersao = { ...EM_VIGOR, situacaoDoAcesso: ACESSO_SEM_VERSAO_EM_VIGOR };
 
-    expect(etiquetasDoPerfil(semVersao)).toEqual([
-      { texto: ACESSO_SEM_VERSAO_EM_VIGOR.rotulo, variante: 'warning' },
-    ]);
+    expect(etiquetasDoPerfil(EM_VIGOR)).toEqual([]);
+    expect(etiquetasDoPerfil(semVersao)).toEqual([]);
+    expect(etiquetasDoPerfil(SUSPENSO)).toEqual([]);
   });
 
-  it('perfil suspenso mostra o rótulo da API com a data da suspensão', () => {
-    expect(etiquetasDoPerfil(SUSPENSO)).toEqual([
-      { texto: ACESSO_SUSPENSO.rotulo, variante: 'danger', desde: SUSPENSO_DESDE },
-    ]);
-  });
-
-  it('perfil só desativado continua em vigor e mostra a desativação à parte', () => {
-    const desativado = { ...EM_VIGOR, ativo: false, desativadoDesde: DESATIVADO_DESDE };
-
-    expect(etiquetasDoPerfil(desativado)).toEqual([
-      { texto: ACESSO_EM_VIGOR.rotulo, variante: 'success' },
+  it('perfil desativado mostra a desativação com a data', () => {
+    expect(etiquetasDoPerfil(DESATIVADO)).toEqual([
       { texto: 'Desativado', variante: 'neutral', desde: DESATIVADO_DESDE },
     ]);
   });
 
-  it('perfil suspenso e desativado mostra as duas situações e não mostra em vigor', () => {
+  it('perfil suspenso e desativado mostra só a desativação: a suspensão é a situação do acesso', () => {
     const ambos = { ...SUSPENSO, ativo: false, desativadoDesde: DESATIVADO_DESDE };
 
     expect(etiquetasDoPerfil(ambos)).toEqual([
-      { texto: ACESSO_SUSPENSO.rotulo, variante: 'danger', desde: SUSPENSO_DESDE },
       { texto: 'Desativado', variante: 'neutral', desde: DESATIVADO_DESDE },
     ]);
   });
 
   it('perfil desativado sem a data da desativação mostra só o texto', () => {
-    expect(etiquetasDoPerfil({ ...EM_VIGOR, ativo: false }).at(-1)).toEqual({
-      texto: 'Desativado',
-      variante: 'neutral',
-    });
-  });
-
-  it('o texto da situação do acesso é o rótulo que a API devolveu', () => {
-    const acesso = { ...ACESSO_EM_VIGOR, rotulo: 'Valendo' };
-
-    expect(textos(etiquetasDoPerfil({ ...EM_VIGOR, situacaoDoAcesso: acesso }))).toEqual([
-      'Valendo',
+    expect(etiquetasDoPerfil({ ...EM_VIGOR, ativo: false })).toEqual([
+      { texto: 'Desativado', variante: 'neutral' },
     ]);
   });
 
-  it('o perfil de governança mostra a situação do acesso como os demais, sem Ativo', () => {
-    expect(textos(etiquetasDoPerfil({ ...EM_VIGOR, governanca: true }))).toEqual([
-      ACESSO_EM_VIGOR.rotulo,
-    ]);
+  it('o perfil de governança ativo não tem etiqueta montada no web', () => {
+    expect(etiquetasDoPerfil({ ...EM_VIGOR, governanca: true })).toEqual([]);
   });
 
   it('a versão pendente não vira etiqueta', () => {
-    expect(textos(etiquetasDoPerfil({ ...EM_VIGOR, temPendente: true }))).toEqual([
-      ACESSO_EM_VIGOR.rotulo,
-    ]);
+    expect(etiquetasDoPerfil({ ...EM_VIGOR, temPendente: true })).toEqual([]);
   });
 });
 
 describe('etiquetasDoDetalhe', () => {
   it('mostra as mesmas etiquetas da lista quando não há janela de migração', () => {
-    expect(etiquetasDoDetalhe(SUSPENSO)).toEqual(etiquetasDoPerfil(SUSPENSO));
+    expect(etiquetasDoDetalhe(DESATIVADO)).toEqual(etiquetasDoPerfil(DESATIVADO));
   });
 
-  it('mostra a janela de migração aberta depois da situação do acesso', () => {
-    expect(textos(etiquetasDoDetalhe({ ...EM_VIGOR, emJanelaDeMigracao: true }))).toEqual([
-      ACESSO_EM_VIGOR.rotulo,
+  it('mostra a janela de migração aberta depois da desativação', () => {
+    const comJanela = { ...DESATIVADO, emJanelaDeMigracao: true };
+
+    expect(textos(etiquetasDoDetalhe(comJanela))).toEqual([
+      'Desativado',
       'Janela de migração aberta',
     ]);
+  });
+
+  it('a janela de migração aberta é uma etiqueta de aviso', () => {
+    const [janela] = etiquetasDoDetalhe({ ...EM_VIGOR, emJanelaDeMigracao: true });
+
+    expect(janela).toEqual({ texto: 'Janela de migração aberta', variante: 'warning' });
   });
 });
 
@@ -269,6 +255,16 @@ describe('resumo da lista e do detalhe', () => {
     expect([resumo.temPendente, resumo.situacaoDoAcesso]).toEqual([true, ACESSO_SUSPENSO]);
   });
 
+  it('a lista e o detalhe resumem desde quando o acesso está suspenso, e nada sem suspensão', () => {
+    const suspenso = perfilDoDetalhe({ situacaoDoAcesso: ACESSO_SUSPENSO, suspensao: SUSPENSAO });
+
+    expect(resumoDoDetalhe(suspenso).suspensoDesde).toBe(SUSPENSO_DESDE);
+    expect(resumoDaLista({ ...suspenso, temVersaoPendente: false }).suspensoDesde).toBe(
+      SUSPENSO_DESDE,
+    );
+    expect(resumoDoDetalhe(perfilDoDetalhe()).suspensoDesde).toBeNull();
+  });
+
   it('a lista não calcula a vigência: o resumo dela não traz versão em vigor', () => {
     const listado = { ...perfilDoDetalhe(), temVersaoPendente: false };
 
@@ -280,16 +276,10 @@ describe('resumo da lista e do detalhe', () => {
     expect(resumoDoDetalhe(perfilDoDetalhe({ composicaoEmVigor: null })).temVigente).toBe(false);
   });
 
-  it('a lista e o detalhe do mesmo perfil mostram as mesmas etiquetas', () => {
-    const suspensao = {
-      desde: SUSPENSO_DESDE,
-      papelDeQuemSuspendeu: 'gestao_de_acessos',
-      etapasExigidasAgora: ['gestao_de_acessos'],
-      etapasDecididas: [],
-    };
+  it('a lista e o detalhe do mesmo perfil mostram as mesmas etiquetas do web', () => {
     const detalhe = perfilDoDetalhe({
       situacaoDoAcesso: ACESSO_SUSPENSO,
-      suspensao,
+      suspensao: SUSPENSAO,
       ativo: false,
       desativadoDesde: DESATIVADO_DESDE,
     });
