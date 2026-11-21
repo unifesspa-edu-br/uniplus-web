@@ -43,14 +43,14 @@ describe('CronogramaPassoComponent: descrição de cada controle da regra de rec
     );
 
     expect(descricaoDe('fase-AVALIACAO-prazo-valor')).toContain(
-      'fase-AVALIACAO-recusa-recurso-prazo',
+      'fase-AVALIACAO-recusa-recurso-prazoValor',
     );
     expect(descricaoDe('fase-AVALIACAO-prazo-valor')).not.toContain(
       'fase-AVALIACAO-recusa-recurso-regra',
     );
     expect(descricaoDe('fase-AVALIACAO-regra')).toContain('fase-AVALIACAO-recusa-recurso-regra');
     expect(descricaoDe('fase-AVALIACAO-regra')).not.toContain(
-      'fase-AVALIACAO-recusa-recurso-prazo',
+      'fase-AVALIACAO-recusa-recurso-prazoValor',
     );
   });
 
@@ -60,8 +60,8 @@ describe('CronogramaPassoComponent: descrição de cada controle da regra de rec
       recusa('.regraCodigo', 'Regra recusada.'),
     );
 
-    expect(bloco('fase-AVALIACAO-recusa-recurso-prazo')).toContain('Prazo recusado.');
-    expect(bloco('fase-AVALIACAO-recusa-recurso-prazo')).not.toContain('Regra recusada.');
+    expect(bloco('fase-AVALIACAO-recusa-recurso-prazoValor')).toContain('Prazo recusado.');
+    expect(bloco('fase-AVALIACAO-recusa-recurso-prazoValor')).not.toContain('Regra recusada.');
     expect(bloco('fase-AVALIACAO-recusa-recurso-regra')).toContain('Regra recusada.');
     expect(bloco('fase-AVALIACAO-recusa-recurso-regra')).not.toContain('Prazo recusado.');
     expect(bloco('fase-AVALIACAO-recurso-recusa')).toBeNull();
@@ -83,6 +83,37 @@ describe('CronogramaPassoComponent: descrição de cada controle da regra de rec
     );
 
     expect(bloco('fase-AVALIACAO-recurso-recusa')).toContain('Suspensividade recusada.');
-    expect(bloco('fase-AVALIACAO-recusa-recurso-suspensividadeSegundaInstancia')).toBeNull();
+    expect(bloco('fase-AVALIACAO-recusa-recurso-suspensividadeSegundaInstanciaValor')).toBeNull();
+  });
+
+  const invalido = (id: string) => nativo.querySelector(`#${id}`)?.getAttribute('aria-invalid');
+
+  it('marca e descreve só a unidade do prazo quando só a unidade é recusada', async () => {
+    await recusarNaRegra(recusa('.prazoUnidade', 'Unidade recusada.'));
+
+    expect(invalido('fase-AVALIACAO-prazo-unidade')).toBe('true');
+    expect(descricaoDe('fase-AVALIACAO-prazo-unidade')).toContain(
+      'fase-AVALIACAO-recusa-recurso-prazoUnidade',
+    );
+    expect(invalido('fase-AVALIACAO-prazo-valor')).not.toBe('true');
+    expect(descricaoDe('fase-AVALIACAO-prazo-valor').join(' ')).not.toContain('prazoUnidade');
+  });
+
+  it('marca e descreve só o valor do prazo quando só o valor é recusado', async () => {
+    await recusarNaRegra(recusa('.prazoValor', 'Valor recusado.'));
+
+    expect(invalido('fase-AVALIACAO-prazo-valor')).toBe('true');
+    expect(invalido('fase-AVALIACAO-prazo-unidade')).not.toBe('true');
+    expect(descricaoDe('fase-AVALIACAO-prazo-unidade').join(' ')).not.toContain('prazoValor');
+  });
+
+  it('separa valor e unidade também na suspensividade da 1ª instância', async () => {
+    await recusarNaRegra(recusa('.suspensividadePrimeiraInstanciaUnidade', 'Unidade recusada.'));
+
+    expect(invalido('fase-AVALIACAO-susp1-unidade')).toBe('true');
+    expect(invalido('fase-AVALIACAO-susp1-valor')).not.toBe('true');
+    expect(descricaoDe('fase-AVALIACAO-susp1-valor').join(' ')).not.toContain(
+      'suspensividadePrimeiraInstanciaUnidade',
+    );
   });
 });

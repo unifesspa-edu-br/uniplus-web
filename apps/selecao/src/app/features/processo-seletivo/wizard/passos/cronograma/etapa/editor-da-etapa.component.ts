@@ -2,7 +2,10 @@ import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core
 import { ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
+import { haRecusaAtiva } from '../../../shared/recusas/ordem-das-recusas';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { TiposDeDecisaoDaFaseOuEtapaComponent } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-fase-ou-etapa.component';
+import { NO_TOPO_DA_ETAPA } from '../campo-da-etapa';
 import type { EtapaForm } from '../cronograma-form';
 import { ItensDeAvaliacaoDaEtapaComponent } from '../itens-de-avaliacao-da-etapa.component';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
@@ -30,6 +33,7 @@ import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
     TiposDeDecisaoDaFaseOuEtapaComponent,
     RecursosDaEtapaComponent,
     ItensDeAvaliacaoDaEtapaComponent,
+    RecusasDoCampoComponent,
   ],
   templateUrl: './editor-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,4 +48,6 @@ export class EditorDaEtapaComponent {
   protected readonly recusas = inject(RecusasDoServidorNasEtapas);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
+  protected readonly haRecusaAtiva = haRecusaAtiva;
+  protected readonly topoDaEtapa = NO_TOPO_DA_ETAPA;
 }

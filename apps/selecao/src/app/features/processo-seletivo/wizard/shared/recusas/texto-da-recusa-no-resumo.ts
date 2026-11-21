@@ -27,3 +27,35 @@ export function resumoDasRecusasSemLugar(
   }));
   return [...new Set([...semLugar, ...gerais].map(textoDaRecusaNoResumo))];
 }
+
+/**
+ * A gravação foi recusada e toda recusa achou o campo dela. O resumo não pode ficar vazio: lista
+ * vazia é o sinal de gravação superada, que sai calada, e a recusa precisa contar como pendência.
+ */
+export const RECUSA_MOSTRADA_NOS_CAMPOS =
+  'A gravação do cronograma foi recusada. A mensagem de cada recusa está no campo a que ela se refere.';
+
+/** O que a recusa diz da gravação como um todo, a partir do `code` da resposta. */
+export interface ExplicacaoDaRaiz {
+  /** O texto próprio do `code` da resposta, quando a tela o tem. */
+  readonly doCodigo: string | null;
+  /** O título que a API dá à resposta, para a recusa sem causa nenhuma. */
+  readonly titulo: () => string;
+}
+
+/**
+ * O resumo do passo depois de uma gravação recusada. Sem nenhuma causa em `errors[]`, a recusa é
+ * da raiz e o `code` dela é que se explica. Com causas, o resumo traz o texto do `code` (se há) e
+ * só o que não achou campo; quando tudo achou campo, uma frase própria diz onde ver.
+ */
+export function resumoDaGravacaoRecusada(
+  problema: ProblemDetails,
+  semLugar: readonly RecusaDoCampo[],
+  raiz: ExplicacaoDaRaiz,
+): string[] {
+  const { deCampo, gerais } = separarCausas(problema.errors);
+  if (deCampo.length === 0 && gerais.length === 0) return [raiz.doCodigo ?? raiz.titulo()];
+  const resumo = resumoDasRecusasSemLugar(problema, semLugar);
+  const doCodigo = raiz.doCodigo === null ? [] : [raiz.doCodigo];
+  return [...doCodigo, ...(resumo.length > 0 ? resumo : [RECUSA_MOSTRADA_NOS_CAMPOS])];
+}

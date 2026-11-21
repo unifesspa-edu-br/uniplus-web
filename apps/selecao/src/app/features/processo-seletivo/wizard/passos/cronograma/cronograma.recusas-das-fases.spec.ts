@@ -79,6 +79,22 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
     expect(resultado.messages).toEqual([RECUSADA_NOS_CAMPOS]);
   });
 
+  it('resume a recusa de campo que a fase não conhece, e não a põe no topo da fase', async () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+
+    const resultado = await recusarFases([
+      { field: 'fases[0].codigo', code: TIPO_INVALIDO, message: 'Campo sem lugar.' },
+      { field: 'fases[0].bancas[x]', code: QUORUM, message: 'Banca sem lugar.' },
+    ]);
+
+    expect(bloco('fase-AVALIACAO-recusas')).toBeNull();
+    expect(resultado.messages).toEqual([
+      textoNoResumo('Campo sem lugar.', TIPO_INVALIDO),
+      textoNoResumo('Banca sem lugar.', QUORUM),
+    ]);
+  });
+
   it('põe no bloco da regra de recurso a recusa dela, mesmo sem regra declarada', async () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);

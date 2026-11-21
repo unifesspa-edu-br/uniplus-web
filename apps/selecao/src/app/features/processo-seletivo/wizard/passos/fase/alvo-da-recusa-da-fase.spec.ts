@@ -39,10 +39,13 @@ describe('alvosDaRecusaDaFase', () => {
 
   it.each([
     ['recurso.regra', 'fase-AVALIACAO-regra'],
-    ['recurso.prazo', 'fase-AVALIACAO-prazo-valor'],
+    ['recurso.prazoValor', 'fase-AVALIACAO-prazo-valor'],
+    ['recurso.prazoUnidade', 'fase-AVALIACAO-prazo-unidade'],
     ['recurso.ancora', 'fase-AVALIACAO-ancora'],
-    ['recurso.suspensividadePrimeiraInstancia', 'fase-AVALIACAO-susp1-valor'],
-    ['recurso.suspensividadeSegundaInstancia', 'fase-AVALIACAO-susp2-valor'],
+    ['recurso.suspensividadePrimeiraInstanciaValor', 'fase-AVALIACAO-susp1-valor'],
+    ['recurso.suspensividadePrimeiraInstanciaUnidade', 'fase-AVALIACAO-susp1-unidade'],
+    ['recurso.suspensividadeSegundaInstanciaValor', 'fase-AVALIACAO-susp2-valor'],
+    ['recurso.suspensividadeSegundaInstanciaUnidade', 'fase-AVALIACAO-susp2-unidade'],
   ])(
     'leva a recusa de %s ao controle dela, com o bloco das recusas de reserva',
     (campo, controle) => {

@@ -94,7 +94,7 @@
               [formControlName]="par.controleDoValor"
               [attr.formcontrolname]="par.controleDoValor"
               [attr.aria-invalid]="par.invalidoNoValor"
-              [attr.aria-describedby]="par.descritoPor"
+              [attr.aria-describedby]="par.descritoPorDoValor"
             />
           </div>
           <div class="form-field">
@@ -107,7 +107,7 @@
               [formControlName]="par.controleDaUnidade"
               [attr.formcontrolname]="par.controleDaUnidade"
               [attr.aria-invalid]="par.invalidoNaUnidade"
-              [attr.aria-describedby]="par.descritoPor"
+              [attr.aria-describedby]="par.descritoPorDaUnidade"
             >
               <option value="">{{ par.opcaoVazia }}</option>
               @for (unidade of par.unidades; track unidade.valor) {
@@ -150,7 +150,10 @@
           existe em horas.
         </p>
         <ng-container
-          *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.prazo' }"
+          *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.prazoValor' }"
+        />
+        <ng-container
+          *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.prazoUnidade' }"
         />
         @if (problemaLocal('recurso.prazo'); as erro) {
           <p class="field__erro form-grid__full" [attr.id]="idDaFase('prazo-erro')" role="alert">
@@ -198,7 +201,13 @@
         <ng-container
           *ngTemplateOutlet="
             recusasDoControle;
-            context: { $implicit: 'recurso.suspensividadePrimeiraInstancia' }
+            context: { $implicit: 'recurso.suspensividadePrimeiraInstanciaValor' }
+          "
+        />
+        <ng-container
+          *ngTemplateOutlet="
+            recusasDoControle;
+            context: { $implicit: 'recurso.suspensividadePrimeiraInstanciaUnidade' }
           "
         />
         @if (problemaLocal('recurso.suspensividadePrimeiraInstancia'); as erro) {
@@ -273,7 +282,13 @@
           <ng-container
             *ngTemplateOutlet="
               recusasDoControle;
-              context: { $implicit: 'recurso.suspensividadeSegundaInstancia' }
+              context: { $implicit: 'recurso.suspensividadeSegundaInstanciaValor' }
+            "
+          />
+          <ng-container
+            *ngTemplateOutlet="
+              recusasDoControle;
+              context: { $implicit: 'recurso.suspensividadeSegundaInstanciaUnidade' }
             "
           />
           @if (problemaLocal('recurso.suspensividadeSegundaInstancia'); as erro) {

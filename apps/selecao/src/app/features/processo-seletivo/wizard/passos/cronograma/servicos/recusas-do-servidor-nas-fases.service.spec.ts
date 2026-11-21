@@ -78,6 +78,31 @@ describe('RecusasDoServidorNasFases', () => {
     expect(recusasNasFases.recusasDaFase('fase-a').map((r) => r.campo)).toEqual(['produtos']);
   });
 
+  it.each(['fases[0].codigo', 'fases[0].bancas[x]', 'fases[0].regraRecurso.campoQueNaoExiste'])(
+    'devolve ao resumo a recusa de %s, que a fase não conhece, sem guardá-la',
+    (field) => {
+      const { semLugar } = registrar(recusasNasFases, 1, [PRIMEIRA], [recusa(field)]);
+
+      expect(semLugar.map((r) => r.campo)).toEqual([field]);
+      expect(recusasNasFases.recusasDaFase('fase-a')).toEqual([]);
+    },
+  );
+
+  it('devolve ao resumo a recusa da fase que já saiu do rascunho, sem guardá-la', () => {
+    noRascunho(PRIMEIRA);
+
+    const { semLugar } = registrar(
+      recusasNasFases,
+      1,
+      [PRIMEIRA, SEGUNDA],
+      [recusa('fases[1].produtos'), recusa('fases[0].produtos', 1)],
+    );
+
+    expect(semLugar.map((r) => r.campo)).toEqual(['fases[1].produtos']);
+    expect(recusasNasFases.recusasDaFase('fase-b')).toEqual([]);
+    expect(recusasNasFases.recusasDaFase('fase-a')).toHaveLength(1);
+  });
+
   it('pergunta o controle pela fase que o envio tinha naquela posição', () => {
     const perguntas: string[] = [];
 
@@ -191,7 +216,7 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
     store.patchObjectSection('cronograma', { fases: [fase] });
     recusasNasFases.registrarAlteracao();
   };
-  const estado = (campo: 'produtos' | 'recurso.prazo') =>
+  const estado = (campo: 'produtos' | 'recurso.prazoValor') =>
     recusasNasFases.recusasDaFase('fase-a').find((r) => r.campo === campo)?.aConferir;
 
   beforeEach(() => {
@@ -211,19 +236,19 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
   });
 
   it('começa com as recusas ativas', () => {
-    expect([estado('produtos'), estado('recurso.prazo')]).toEqual([false, false]);
+    expect([estado('produtos'), estado('recurso.prazoValor')]).toEqual([false, false]);
   });
 
   it('passa a recusa da fase a conferir quando a fase muda, e deixa a da regra de recurso', () => {
     alterar({ ...COM_REGRA, fim: '2026-04-01T18:00:00-03:00' });
 
-    expect([estado('produtos'), estado('recurso.prazo')]).toEqual([true, false]);
+    expect([estado('produtos'), estado('recurso.prazoValor')]).toEqual([true, false]);
   });
 
   it('passa a recusa da regra de recurso a conferir quando ela muda, e deixa a da fase', () => {
     alterar({ ...COM_REGRA, regraRecurso: { ...REGRA, prazoValor: '5' } });
 
-    expect([estado('produtos'), estado('recurso.prazo')]).toEqual([false, true]);
+    expect([estado('produtos'), estado('recurso.prazoValor')]).toEqual([false, true]);
   });
 
   it('não conta a mudança de posição como alteração da fase', () => {
@@ -235,7 +260,7 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
   it('escolhe a primeira recusa ativa e ignora as que estão a conferir', () => {
     alterar({ ...COM_REGRA, fim: '2026-04-01T18:00:00-03:00' });
 
-    expect(recusasNasFases.primeiraRecusaAtiva()?.recusa.campo).toBe('recurso.prazo');
+    expect(recusasNasFases.primeiraRecusaAtiva()?.recusa.campo).toBe('recurso.prazoValor');
   });
 
   it('não tem primeira recusa ativa quando todas estão a conferir ou não há nenhuma', () => {
@@ -250,7 +275,7 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
 
     alterar(COM_REGRA);
 
-    expect([estado('produtos'), estado('recurso.prazo')]).toEqual([true, false]);
+    expect([estado('produtos'), estado('recurso.prazoValor')]).toEqual([true, false]);
   });
 
   it('mantém a recusa da regra de recurso a conferir mesmo ao desfazer a alteração antes do próximo ciclo', () => {
@@ -258,7 +283,7 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
 
     alterar(COM_REGRA);
 
-    expect([estado('produtos'), estado('recurso.prazo')]).toEqual([false, true]);
+    expect([estado('produtos'), estado('recurso.prazoValor')]).toEqual([false, true]);
   });
 
   it('volta a valer a recusa quando a resposta seguinte a traz de novo', () => {

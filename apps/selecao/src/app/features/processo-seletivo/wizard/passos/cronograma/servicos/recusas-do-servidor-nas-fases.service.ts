@@ -1,10 +1,16 @@
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { mesmoConteudo } from '../../../shared/conteudo-canonico';
-import { emOrdem, type RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
+import { descartarAsRecusasAoSairDoPasso } from '../../../shared/recusas/descarte-das-recusas';
+import {
+  comEstadoDaConferencia,
+  emOrdem,
+  primeiraRecusaAtiva,
+  type RecusaOrdenada,
+} from '../../../shared/recusas/ordem-das-recusas';
 import type { CampoDaRecusaDaFase } from '../../fase/campo-da-fase';
 import { faseComoNoFormulario } from '../cronograma-form';
 import { conteudoDaParte, type ParteDaFase } from '../../fase/parte-da-fase';
@@ -25,12 +31,6 @@ export interface RecusaAtivaNaFase {
 function chaveDaParte(faseCanonicaId: string, parte: ParteDaFase): string {
   return `${faseCanonicaId}|${parte}`;
 }
-
-function comEstado(guardada: RecusaDaFaseGuardada, aConferir: boolean): RecusaOrdenada {
-  const { campo, codigo, mensagem, pagina, ordem, resposta, origem } = guardada;
-  return { campo, codigo, mensagem, pagina, ordem, resposta, origem, aConferir };
-}
-
 
 /**
  * As fases do rascunho como o formulário as envia: o rascunho que chega do servidor pode trazer a
@@ -83,25 +83,17 @@ export class RecusasDoServidorNasFases {
       ...this.jaAlteradas(),
       ...partesQueDiferem(this.guardadas(), atuais),
     ]);
+    const dasFasesAtuais = [...this.guardadas()].filter(([id]) => atuais.has(id));
     return new Map(
-      [...this.guardadas()].flatMap(([id, recusas]) => {
-        if (!atuais.has(id)) return [];
-        return [
-          [id, recusas.map((r) => comEstado(r, alteradas.has(chaveDaParte(id, r.parte))))] as const,
-        ];
-      }),
+      dasFasesAtuais.map(([id, recusas]) => [
+        id,
+        recusas.map((r) => comEstadoDaConferencia(r, alteradas.has(chaveDaParte(id, r.parte)))),
+      ]),
     );
   });
 
   constructor() {
-    effect(() => {
-      this.store.geracao();
-      untracked(() => this.limpar());
-    });
-    // A página mantém o passo montado e só o esconde: sair do passo é que descarta as recusas.
-    effect(() => {
-      if (!this.store.cronogramaVisivel()) untracked(() => this.limpar());
-    });
+    descartarAsRecusasAoSairDoPasso(this.store, () => this.limpar());
   }
 
   /**
@@ -119,7 +111,7 @@ export class RecusasDoServidorNasFases {
   /**
    * Substitui as recusas pelas da resposta que acabou de chegar, numerada por `resposta`.
    * Devolve como elas se distribuíram: as que acharam fase e as que não acharam lugar, estas
-   * para o resumo do passo.
+   * para o resumo do passo. A recusa de uma fase que já saiu do rascunho não acha lugar.
    */
   registrar(
     resposta: number,
@@ -127,7 +119,9 @@ export class RecusasDoServidorNasFases {
     recusas: readonly RecusaDoProblema[],
     controleNaTela: ControleNaTela,
   ): DistribuicaoDasRecusas {
-    const distribuicao = distribuirRecusasDasFases(resposta, enviadas, recusas, controleNaTela);
+    const naFaseDeHoje: ControleNaTela = (id, campo) =>
+      this.fasesPorId().has(id) && controleNaTela(id, campo);
+    const distribuicao = distribuirRecusasDasFases(resposta, enviadas, recusas, naFaseDeHoje);
     this.jaAlteradas.set(new Set());
     this.guardadas.set(distribuicao.porFase);
     this.registrarAlteracao();
@@ -151,12 +145,9 @@ export class RecusasDoServidorNasFases {
 
   /** A primeira recusa ativa do passo: a da resposta mais recente, na ordem em que a API a deu. */
   primeiraRecusaAtiva(): RecusaAtivaNaFase | null {
-    const ativas = [...this.vigentes()].flatMap(([faseCanonicaId, recusas]) =>
-      recusas.filter((r) => !r.aConferir).map((recusa) => ({ faseCanonicaId, recusa })),
+    const candidatas = [...this.vigentes()].flatMap(([faseCanonicaId, recusas]) =>
+      recusas.map((recusa) => ({ faseCanonicaId, recusa })),
     );
-    const primeira = ativas.sort(
-      (a, b) => b.recusa.resposta - a.recusa.resposta || a.recusa.ordem - b.recusa.ordem,
-    )[0];
-    return primeira ?? null;
+    return primeiraRecusaAtiva(candidatas);
   }
 }

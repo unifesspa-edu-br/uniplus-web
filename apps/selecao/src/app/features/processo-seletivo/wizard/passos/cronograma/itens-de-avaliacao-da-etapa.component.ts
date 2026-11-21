@@ -21,8 +21,10 @@ import {
   somaForaDaNotaMaxima,
   textoDaSoma,
 } from '../../shared/itens-de-avaliacao';
-import type { CampoComRecusa } from './recusas-do-servidor-da-etapa';
+import { haRecusaAtiva, type RecusaOrdenada } from '../../shared/recusas/ordem-das-recusas';
+import { RecusasDoCampoComponent } from '../../shared/recusas/recusas-do-campo.component';
 import type { EtapaForm } from './cronograma-form';
+import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 
 /**
  * Os itens de avaliação da etapa (critérios ou blocos em que a nota se divide) e, na avaliação
@@ -34,17 +36,18 @@ import type { EtapaForm } from './cronograma-form';
  */
 @Component({
   selector: 'sel-itens-de-avaliacao-da-etapa',
+  imports: [RecusasDoCampoComponent],
   templateUrl: './itens-de-avaliacao-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ItensDeAvaliacaoDaEtapaComponent {
   private readonly injector = inject(Injector);
+  private readonly recusasDaEtapa = inject(RecusasDoServidorNasEtapas);
+  protected readonly haRecusaAtiva = haRecusaAtiva;
 
   readonly grupo = input.required<FormGroup<EtapaForm>>();
   readonly posicao = input.required<number>();
   readonly habilitado = input(true);
-  /** As recusas do servidor à etapa, por campo; aqui só se lê as dos itens e da escala. */
-  readonly recusas = input<ReadonlyMap<CampoComRecusa, string>>(new Map());
 
   /** O formulário não é sinal: ele avisa por `valueChanges`, e este contador faz os `computed` relerem. */
   private readonly versao = signal(0);
@@ -88,16 +91,20 @@ export class ItensDeAvaliacaoDaEtapaComponent {
 
   readonly sufixo = computed(() => `cr-etapa-${this.posicao()}`);
 
-  recusaDaLista(campo: 'itensDeAvaliacao' | 'escalaDeAtendimento'): string | null {
-    return this.recusas().get(campo) ?? null;
+  /** As recusas do servidor à lista de itens ou à escala, ativas e a conferir. */
+  recusasDaLista(campo: 'itensDeAvaliacao' | 'escalaDeAtendimento'): readonly RecusaOrdenada[] {
+    return this.recusasDaEtapa.recusasDoCampo(this.grupo(), campo);
   }
 
-  recusaDoItem(indice: number, campo: 'rotulo' | 'pontuacaoMaxima'): string | null {
-    return this.recusas().get(`itensDeAvaliacao.${indice}.${campo}`) ?? null;
+  recusasDoItem(indice: number, campo: 'rotulo' | 'pontuacaoMaxima'): readonly RecusaOrdenada[] {
+    return this.recusasDaEtapa.recusasDoCampo(this.grupo(), `itensDeAvaliacao.${indice}.${campo}`);
   }
 
-  recusaDoNivel(indice: number, campo: 'rotulo' | 'fracao'): string | null {
-    return this.recusas().get(`escalaDeAtendimento.${indice}.${campo}`) ?? null;
+  recusasDoNivel(indice: number, campo: 'rotulo' | 'fracao'): readonly RecusaOrdenada[] {
+    return this.recusasDaEtapa.recusasDoCampo(
+      this.grupo(),
+      `escalaDeAtendimento.${indice}.${campo}`,
+    );
   }
 
   /** O nome do item para quem não o vê: o rótulo, ou a posição enquanto ele não tem rótulo. */

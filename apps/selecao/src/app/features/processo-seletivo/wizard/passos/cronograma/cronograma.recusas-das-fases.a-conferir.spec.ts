@@ -52,9 +52,11 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
   it('começa com as duas recusas valendo', async () => {
     await recusarProdutoEPrazo();
 
-    expect(bloco('fase-AVALIACAO-recusa-recurso-prazo')).toContain('O prazo precisa ser maior');
+    expect(bloco('fase-AVALIACAO-recusa-recurso-prazoValor')).toContain(
+      'O prazo precisa ser maior',
+    );
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazo')).toBe(false);
+    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
   });
 
   it('passa só a recusa da regra de recurso a conferir quando o prazo é digitado', async () => {
@@ -62,7 +64,7 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
 
     digitar('fase-AVALIACAO-prazo-valor', '5');
 
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazo')).toBe(true);
+    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(true);
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
   });
 
@@ -77,7 +79,7 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     detectar();
 
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(true);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazo')).toBe(false);
+    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
   });
 
   it('passa só a recusa da fase a conferir quando o Fim muda na linha do tempo', async () => {
@@ -87,7 +89,7 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     detectar();
 
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(true);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazo')).toBe(false);
+    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
   });
 
   it('mantém a recusa da regra de recurso a conferir, sem marca de inválido, quando o prazo volta ao valor enviado', async () => {
@@ -99,7 +101,7 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     digitar('fase-AVALIACAO-prazo-valor', '3', false);
     detectar();
 
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazo')).toBe(true);
+    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(true);
     expect(prazo()?.getAttribute('aria-invalid')).toBeNull();
   });
 

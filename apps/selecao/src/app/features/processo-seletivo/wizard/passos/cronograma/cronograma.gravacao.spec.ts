@@ -100,7 +100,7 @@ describe('CronogramaPassoComponent: gravação', () => {
     expect(resultado.messages?.join(' ')).toContain('quem julga o recurso');
   });
 
-  it('mantém o texto da recusa do ENEM da raiz mesmo com erros de campo', async () => {
+  it('mantém o texto da recusa do ENEM da raiz e remete aos campos que trazem os erros', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
     comFases(ID_AVALIACAO);
     comUmaEtapa();
@@ -130,7 +130,8 @@ describe('CronogramaPassoComponent: gravação', () => {
     const resultado = await gravacao;
     const texto = resultado.messages?.join(' ');
     expect(texto).toContain('quem julga o recurso');
-    expect(texto).toContain('Prova objetiva: A nota máxima precisa ser maior que zero.');
+    expect(texto).toContain('A mensagem de cada recusa está no campo a que ela se refere');
+    expect(texto).not.toContain('A nota máxima precisa ser maior que zero');
   });
 
   /**

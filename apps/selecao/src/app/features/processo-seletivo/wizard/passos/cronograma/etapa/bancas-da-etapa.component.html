@@ -1,8 +1,18 @@
 @let etapa = grupo();
 
-<h4 class="form-section__title">Quem julga esta etapa</h4>
+<h4 class="form-section__title" [attr.id]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()">
+  Quem julga esta etapa
+</h4>
+@let dasBancas = recusas.recusasDoCampo(etapa, 'bancas');
 @if (catalogoDeBancas.bancas().length > 0) {
-  <div class="checkbox-grid">
+  <div
+    class="checkbox-grid"
+    role="group"
+    [attr.aria-labelledby]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()"
+    [attr.aria-describedby]="
+      dasBancas.length > 0 ? 'cr-etapa-bancas-erro-' + indiceDaEtapa() : null
+    "
+  >
     @for (banca of catalogoDeBancas.bancas(); track banca.id) {
       <label class="checkbox">
         <input
@@ -19,16 +29,23 @@
 } @else {
   <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
 }
+@if (dasBancas.length > 0) {
+  <sel-recusas-do-campo
+    [attr.id]="'cr-etapa-bancas-erro-' + indiceDaEtapa()"
+    tabindex="-1"
+    [recusas]="dasBancas"
+  />
+}
 
-  @for (banca of escolhidas(); track banca.tipoBancaId) {
-    <fieldset class="form-field">
-      <legend class="label">Deliberação da banca {{ banca.nome }}</legend>
-      <sel-regra-de-deliberacao
-        [regra]="banca.regra"
-        [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.tipoBancaId"
-        [desabilitada]="!edicaoLiberada()"
-        [erros]="banca.erros"
-        (regraChange)="edicao.declararRegraDaBancaDaEtapa(etapa, banca.tipoBancaId, $event)"
-      />
-    </fieldset>
-  }
+@for (banca of escolhidas(); track banca.tipoBancaId) {
+  <fieldset class="form-field">
+    <legend class="label">Deliberação da banca {{ banca.nome }}</legend>
+    <sel-regra-de-deliberacao
+      [regra]="banca.regra"
+      [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.tipoBancaId"
+      [desabilitada]="!edicaoLiberada()"
+      [erros]="banca.erros"
+      (regraChange)="edicao.declararRegraDaBancaDaEtapa(etapa, banca.tipoBancaId, $event)"
+    />
+  </fieldset>
+}

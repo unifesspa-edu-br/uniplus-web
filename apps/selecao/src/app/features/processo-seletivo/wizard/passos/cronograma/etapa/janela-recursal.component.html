@@ -3,6 +3,21 @@
 @let recurso = recursoDaEtapa();
 @let indice = indiceDoRecurso();
 @let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
+@let sufixo = posicao + '-' + indice;
+
+<ng-template #recusasDoControle let-controle>
+  @let doControle = recusasDe(controle);
+  @if (doControle.length > 0) {
+    <sel-recusas-do-campo
+      class="form-grid__full"
+      [attr.id]="idDaRecusa(controle)"
+      tabindex="-1"
+      [recusas]="doControle"
+    />
+  }
+</ng-template>
+
+<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso' }" />
 
 <div class="form-field">
   <label class="label" [attr.for]="'cr-rec-anc-' + posicao + '-' + indice">
@@ -11,6 +26,8 @@
   <select
     class="select"
     [attr.id]="'cr-rec-anc-' + posicao + '-' + indice"
+    [attr.aria-invalid]="invalido('origemDoPrazo')"
+    [attr.aria-describedby]="descritoPor('origemDoPrazo')"
     [disabled]="!edicaoLiberada()"
     (change)="edicao.alterarRecursoDaEtapa(etapa, indice, 'ancora', $any($event.target).value)"
   >
@@ -24,6 +41,7 @@
     </option>
   </select>
 </div>
+<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'origemDoPrazo' }" />
 @if (recurso.ancora === 'atoPublicado') {
   <div class="form-field">
     <label class="label" [attr.for]="'cr-rec-ato-' + posicao + '-' + indice">
@@ -32,6 +50,8 @@
     <select
       class="select"
       [attr.id]="'cr-rec-ato-' + posicao + '-' + indice"
+      [attr.aria-invalid]="invalido('ancora')"
+      [attr.aria-describedby]="descritoPor('ancora')"
       [disabled]="!edicaoLiberada()"
       (change)="
         edicao.alterarRecursoDaEtapa(etapa, indice, 'atoAncoraCodigo', $any($event.target).value)
@@ -49,11 +69,13 @@
     </select>
     @if (edicao.preliminaresDaEtapa(etapa).length === 0) {
       <p class="field__hint">
-        Esta etapa ainda não publica resultado preliminar — é da publicação dele que a janela corre.
+        Esta etapa ainda não publica resultado preliminar — o prazo de recurso começa com a
+        publicação dele.
       </p>
     }
   </div>
 }
+<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'ancora' }" />
 <div class="form-field">
   <label class="label" [attr.for]="'cr-rec-prazo-' + posicao + '-' + indice">Prazo</label>
   <input
@@ -61,6 +83,8 @@
     type="text"
     inputmode="numeric"
     [attr.id]="'cr-rec-prazo-' + posicao + '-' + indice"
+    [attr.aria-invalid]="invalido('prazoValor')"
+    [attr.aria-describedby]="descritoPor('prazoValor')"
     [value]="recurso.prazoValor"
     [disabled]="!edicaoLiberada()"
     (input)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoValor', $any($event.target).value)"
@@ -71,6 +95,8 @@
   <select
     class="select"
     [attr.id]="'cr-rec-un-' + posicao + '-' + indice"
+    [attr.aria-invalid]="invalido('prazoUnidade')"
+    [attr.aria-describedby]="descritoPor('prazoUnidade')"
     [disabled]="!edicaoLiberada()"
     (change)="
       edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $any($event.target).value)
@@ -83,6 +109,8 @@
     }
   </select>
 </div>
+<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'prazoValor' }" />
+<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'prazoUnidade' }" />
 <div class="form-field">
   <label class="label" [attr.for]="'cr-rec-susp1-val-' + posicao + '-' + indice"
     >Suspensividade da 1ª instância — prazo</label
@@ -92,7 +120,10 @@
     type="text"
     inputmode="decimal"
     [attr.id]="'cr-rec-susp1-val-' + posicao + '-' + indice"
-    [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+    [attr.aria-invalid]="invalido('suspensividadePrimeiraInstanciaValor')"
+    [attr.aria-describedby]="
+      descritoPor('suspensividadePrimeiraInstanciaValor', 'cr-rec-susp-ajuda-' + sufixo)
+    "
     [value]="recurso.suspensividadePrimeiraInstanciaValor"
     [disabled]="!edicaoLiberada()"
     (input)="
@@ -112,7 +143,10 @@
   <select
     class="select"
     [attr.id]="'cr-rec-susp1-un-' + posicao + '-' + indice"
-    [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+    [attr.aria-invalid]="invalido('suspensividadePrimeiraInstanciaUnidade')"
+    [attr.aria-describedby]="
+      descritoPor('suspensividadePrimeiraInstanciaUnidade', 'cr-rec-susp-ajuda-' + sufixo)
+    "
     [disabled]="!edicaoLiberada()"
     (change)="
       edicao.alterarRecursoDaEtapa(
@@ -136,6 +170,18 @@
     }
   </select>
 </div>
+<ng-container
+  *ngTemplateOutlet="
+    recusasDoControle;
+    context: { $implicit: 'suspensividadePrimeiraInstanciaValor' }
+  "
+/>
+<ng-container
+  *ngTemplateOutlet="
+    recusasDoControle;
+    context: { $implicit: 'suspensividadePrimeiraInstanciaUnidade' }
+  "
+/>
 <p class="field__hint" [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + indice">
   O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são declarados
   juntos; deixar os dois em branco desativa a suspensividade daquela instância. Em dias úteis o
@@ -145,28 +191,26 @@
   class="field form-grid__full"
   [class.is-error]="recurso.admiteInstanciaSuperior === null"
   [attr.aria-describedby]="
-    recurso.admiteInstanciaSuperior === null
-      ? 'cr-rec-superior-erro-' +
-        posicao +
-        '-' +
-        indice +
-        ' cr-rec-superior-ajuda-' +
-        posicao +
-        '-' +
-        indice
-      : 'cr-rec-superior-ajuda-' + posicao + '-' + indice
+    descritoPor(
+      'admiteInstanciaSuperior',
+      recurso.admiteInstanciaSuperior === null ? 'cr-rec-superior-erro-' + sufixo : '',
+      'cr-rec-superior-ajuda-' + sufixo
+    )
   "
 >
   <legend class="field__label is-required">Admite recurso em instância superior?</legend>
   <label class="radio">
     <input
       type="radio"
+      [attr.id]="'cr-rec-superior-sim-' + sufixo"
       [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
       [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
       [value]="true"
       [checked]="recurso.admiteInstanciaSuperior === true"
       [disabled]="!edicaoLiberada()"
-      [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+      [attr.aria-invalid]="
+        recurso.admiteInstanciaSuperior === null ? 'true' : invalido('admiteInstanciaSuperior')
+      "
       (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, true)"
     />
     <span class="radio__dot" aria-hidden="true"></span>
@@ -175,12 +219,15 @@
   <label class="radio">
     <input
       type="radio"
+      [attr.id]="'cr-rec-superior-nao-' + sufixo"
       [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
       [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
       [value]="false"
       [checked]="recurso.admiteInstanciaSuperior === false"
       [disabled]="!edicaoLiberada()"
-      [attr.aria-invalid]="recurso.admiteInstanciaSuperior === null ? 'true' : null"
+      [attr.aria-invalid]="
+        recurso.admiteInstanciaSuperior === null ? 'true' : invalido('admiteInstanciaSuperior')
+      "
       (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, false)"
     />
     <span class="radio__dot" aria-hidden="true"></span>
@@ -196,6 +243,9 @@
     }}</span>
   }
 </fieldset>
+<ng-container
+  *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'admiteInstanciaSuperior' }"
+/>
 @if (recurso.admiteInstanciaSuperior === true) {
   <div class="form-field">
     <label class="label" [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + indice"
@@ -206,7 +256,10 @@
       type="text"
       inputmode="decimal"
       [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + indice"
-      [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+      [attr.aria-invalid]="invalido('suspensividadeSegundaInstanciaValor')"
+      [attr.aria-describedby]="
+        descritoPor('suspensividadeSegundaInstanciaValor', 'cr-rec-susp-ajuda-' + sufixo)
+      "
       [value]="recurso.suspensividadeSegundaInstanciaValor"
       [disabled]="!edicaoLiberada()"
       (input)="
@@ -226,7 +279,10 @@
     <select
       class="select"
       [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + indice"
-      [attr.aria-describedby]="'cr-rec-susp-ajuda-' + posicao + '-' + indice"
+      [attr.aria-invalid]="invalido('suspensividadeSegundaInstanciaUnidade')"
+      [attr.aria-describedby]="
+        descritoPor('suspensividadeSegundaInstanciaUnidade', 'cr-rec-susp-ajuda-' + sufixo)
+      "
       [disabled]="!edicaoLiberada()"
       (change)="
         edicao.alterarRecursoDaEtapa(
@@ -250,6 +306,18 @@
       }
     </select>
   </div>
+  <ng-container
+    *ngTemplateOutlet="
+      recusasDoControle;
+      context: { $implicit: 'suspensividadeSegundaInstanciaValor' }
+    "
+  />
+  <ng-container
+    *ngTemplateOutlet="
+      recusasDoControle;
+      context: { $implicit: 'suspensividadeSegundaInstanciaUnidade' }
+    "
+  />
 }
 
 <sel-procedimentos-do-recurso

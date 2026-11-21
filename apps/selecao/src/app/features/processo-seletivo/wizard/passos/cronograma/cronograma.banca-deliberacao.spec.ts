@@ -4,17 +4,12 @@ import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { COLEGIADA, comRegra } from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { RECUSA_MOSTRADA_NOS_CAMPOS } from '../../shared/recusas/texto-da-recusa-no-resumo';
 import { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import type { EtapaForm } from './cronograma-form';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
-import {
-  ID_AVALIACAO,
-  ID_BANCA_HETERO,
-  PROBLEM_JSON,
-  PROCESSO_ID,
-  ROTA_ETAPAS,
-  ROTA_FASES,
-} from './cronograma.testing';
+import { ID_AVALIACAO, ID_BANCA_HETERO } from './cronograma.testing';
+import { AjudantesDeRecusasDasEtapas } from './cronograma-recusas-das-etapas.testing';
 
 const BANCAS = [
   { id: ID_BANCA_HETERO, nome: 'Heteroidentificação' },
@@ -24,36 +19,33 @@ const BANCAS = [
 const CAMINHO_DA_REGRA = 'etapas[0].bancas[0].regraDeDeliberacao';
 
 describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', () => {
-  let componente: ContextoDoCronograma['componente'];
   let raiz: ContextoDoCronograma['raiz'];
   let expansao: ContextoDoCronograma['expansao'];
   let edicao: ContextoDoCronograma['edicao'];
   let recusas: ContextoDoCronograma['recusas'];
   let cronograma: ContextoDoCronograma['cronograma'];
   let store: ContextoDoCronograma['store'];
-  let controller: ContextoDoCronograma['controller'];
   let detectar: ContextoDoCronograma['detectar'];
   let nativo: ContextoDoCronograma['nativo'];
-  let proximoPasso: ContextoDoCronograma['proximoPasso'];
   let comFases: ContextoDoCronograma['comFases'];
   let comEtapasEmFases: ContextoDoCronograma['comEtapasEmFases'];
+  let recusarEtapas: AjudantesDeRecusasDasEtapas['recusarEtapas'];
+  let bloco: AjudantesDeRecusasDasEtapas['bloco'];
 
   usarCronograma((tela) => {
     ({
-      componente,
       raiz,
       expansao,
       edicao,
       recusas,
       cronograma,
       store,
-      controller,
       detectar,
       nativo,
-      proximoPasso,
       comFases,
       comEtapasEmFases,
     } = tela);
+    ({ recusarEtapas, bloco } = new AjudantesDeRecusasDasEtapas(tela));
   });
 
   function etapaAberta(): FormGroup<EtapaForm> {
@@ -85,26 +77,8 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
   const regraDa = (etapa: FormGroup<EtapaForm>, posicao = 0) =>
     edicao.bancasDaEtapa(etapa)[posicao]?.regraDeDeliberacao;
 
-  async function recusarRegra(field: string, code: string, message = 'detalhe do servidor') {
-    store.processoSeletivoId.set(PROCESSO_ID);
-    const gravacao = componente.persistir();
-    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-    controller.expectOne(ROTA_ETAPAS).flush(
-      {
-        type: 'about:blank',
-        title: 'Validação',
-        status: 422,
-        code: 'uniplus.validacao',
-        traceId: '00000000000000000000000000000009',
-        errors: [{ field, code, message }],
-      },
-      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-    );
-    const resultado = await gravacao;
-    detectar();
-    return resultado;
-  }
+  const recusarRegra = (field: string, code: string, message = 'detalhe do servidor') =>
+    recusarEtapas([{ field, code, message }]);
 
   it('mostra o editor da regra só para a banca que a etapa declara', () => {
     const etapa = etapaAberta();
@@ -219,19 +193,22 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
       return etapa;
     }
 
-    it('aparece sob o campo da regra que o caminho nomeia', async () => {
+    const blocoDasBancas = () => bloco('cr-etapa-bancas-erro-0');
+
+    it('aparece sob as bancas da etapa, com mensagem e código, quando o caminho nomeia a regra', async () => {
       comRegraGravada();
 
       await recusarRegra(
         `${CAMINHO_DA_REGRA}.quorum`,
         'uniplus.selecao.banca.quorum_fora_do_intervalo',
+        'O quórum precisa ficar entre 1 e o número de integrantes.',
       );
 
-      expect(campo('quorum-erro')?.textContent).toContain('entre 1 e o número de integrantes');
-      expect(campo('quorum')?.getAttribute('aria-invalid')).toBe('true');
+      expect(blocoDasBancas()).toContain('entre 1 e o número de integrantes');
+      expect(blocoDasBancas()).toContain('uniplus.selecao.banca.quorum_fora_do_intervalo');
     });
 
-    it('aparece sob o modo quando a banca ficou sem regra na publicação', async () => {
+    it('aparece sob as bancas quando a banca ficou sem regra na publicação', async () => {
       const etapa = comRegraGravada();
       edicao.declararRegraDaBancaDaEtapa(etapa, ID_BANCA_HETERO, null);
       detectar();
@@ -239,9 +216,10 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
       await recusarRegra(
         'etapas[0].bancas[0]',
         'uniplus.selecao.banca.regra_de_deliberacao_obrigatoria',
+        'Declare a regra de deliberação da banca.',
       );
 
-      expect(campo('modo-erro')?.textContent).toContain('Declare a regra de deliberação');
+      expect(blocoDasBancas()).toContain('Declare a regra de deliberação');
     });
 
     it('mostra o mínimo de integrantes que o servidor informa', async () => {
@@ -253,58 +231,61 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
         'A banca precisa de ao menos 7 integrantes.',
       );
 
-      expect(campo('integrantes-erro')?.textContent).toContain('ao menos 7 integrantes');
+      expect(blocoDasBancas()).toContain('ao menos 7 integrantes');
     });
 
-    it('vai também ao resumo da gravação, nomeando a etapa', async () => {
+    it('não repete no resumo da gravação a mensagem que já está sob as bancas', async () => {
       comRegraGravada();
 
       const resultado = await recusarRegra(
         `${CAMINHO_DA_REGRA}.criterio`,
         'uniplus.selecao.banca.criterio_obrigatorio',
+        'Escolha o critério da votação.',
       );
 
-      expect(resultado.messages?.join(' ')).toContain('Etapa 1: Escolha o critério da votação.');
+      expect(resultado.messages).toEqual([RECUSA_MOSTRADA_NOS_CAMPOS]);
     });
 
-    it('persiste a uma edição que não é das bancas e some quando elas mudam', async () => {
+    it('marca o grupo das bancas como descrito pela recusa que vale', async () => {
+      comRegraGravada();
+
+      await recusarRegra(
+        `${CAMINHO_DA_REGRA}.quorum`,
+        'uniplus.selecao.banca.quorum_fora_do_intervalo',
+      );
+
+      const grupo = nativo.querySelector(
+        '[role="group"][aria-labelledby="cr-etapa-bancas-titulo-0"]',
+      );
+      expect(grupo?.getAttribute('aria-describedby')).toBe('cr-etapa-bancas-erro-0');
+    });
+
+    it('fica a conferir de novo quando qualquer campo da etapa muda, e não volta ao desfazer', async () => {
       const etapa = comRegraGravada();
       await recusarRegra(
         `${CAMINHO_DA_REGRA}.quorum`,
         'uniplus.selecao.banca.quorum_fora_do_intervalo',
       );
+      expect(recusas.recusasDoCampo(etapa, 'bancas')[0].aConferir).toBe(false);
 
       etapa.controls.notaMaxima.setValue('10');
-      expect(recusas.recusaDoCampo(etapa, 'bancas.0.quorum')).not.toBeNull();
+      etapa.controls.notaMaxima.setValue('');
 
-      edicao.alternarBancaDaEtapa(etapa, 'outra-banca', true);
-      expect(recusas.recusaDoCampo(etapa, 'bancas.0.quorum')).toBeNull();
+      expect(recusas.recusasDoCampo(etapa, 'bancas')[0].aConferir).toBe(true);
     });
 
-    it('não leva consigo a recusa da nota quando as bancas mudam', async () => {
-      const etapa = comRegraGravada();
-      await recusarRegra(
-        'etapas[0].notaMaxima',
-        'uniplus.selecao.etapa_processo.nota_maxima_invalida',
-      );
-
-      edicao.alternarBancaDaEtapa(etapa, 'outra-banca', true);
-
-      expect(recusas.recusaDoCampo(etapa, 'notaMaxima')).not.toBeNull();
-    });
-
-    it('dura até a banca da etapa mudar', async () => {
+    it('dura até a etapa mudar e passa a conferir de novo quando as bancas mudam', async () => {
       const etapa = comRegraGravada();
       await recusarRegra(
         `${CAMINHO_DA_REGRA}.quorum`,
         'uniplus.selecao.banca.quorum_fora_do_intervalo',
       );
-      expect(recusas.recusaDoCampo(etapa, 'bancas.0.quorum')).not.toBeNull();
 
-      digitar('quorum', '4');
+      edicao.alternarBancaDaEtapa(etapa, 'outra-banca', true);
+      detectar();
 
-      expect(recusas.recusaDoCampo(etapa, 'bancas.0.quorum')).toBeNull();
-      expect(campo('quorum-erro')).toBeNull();
+      expect(recusas.recusasDoCampo(etapa, 'bancas')[0].aConferir).toBe(true);
+      expect(blocoDasBancas()).toContain('conferida de novo');
     });
   });
 });

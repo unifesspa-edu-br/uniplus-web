@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
+import { ehDaSegundaInstancia } from '../../../shared/recusas/controle-do-recurso';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeRegras } from '../../cronograma/catalogos/catalogo-de-regras.service';
@@ -15,6 +16,7 @@ import {
 import { ProcedimentosDoRecursoComponent } from '../../cronograma/procedimentos-do-recurso/procedimentos-do-recurso.component';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import type { CampoDaRecusaDaFase } from '../campo-da-fase';
+import type { CampoDaFase } from '../configuracao-da-fase';
 import { FaseEmEdicao } from '../fase-em-edicao';
 import {
   BLOCO_DAS_RECUSAS_DO_RECURSO,
@@ -33,7 +35,8 @@ interface ParComUnidade {
   readonly unidades: readonly UnidadeDePrazoDoRecurso[];
   readonly invalidoNoValor: 'true' | null;
   readonly invalidoNaUnidade: 'true' | null;
-  readonly descritoPor: string;
+  readonly descritoPorDoValor: string;
+  readonly descritoPorDaUnidade: string;
 }
 
 /** O que o seletor de unidade oferece: a opção em branco e as unidades que o contrato admite. */
@@ -50,6 +53,16 @@ const OPCOES_DA_SUSPENSIVIDADE: OpcoesDeUnidade = {
 };
 
 type Instancia = 'PrimeiraInstancia' | 'SegundaInstancia';
+
+/** Os campos do problema local que valem para um par de valor e unidade. */
+type CampoDoParDaFase = Extract<
+  CampoDaFase,
+  | 'recurso.prazo'
+  | 'recurso.suspensividadePrimeiraInstancia'
+  | 'recurso.suspensividadeSegundaInstancia'
+>;
+
+const PREFIXO_DO_RECURSO = 'recurso.';
 
 const INSTANCIAS = {
   PrimeiraInstancia: { rotulo: '1ª', sufixo: 'susp1' },
@@ -189,10 +202,18 @@ export class RegraDeRecursoDaFaseComponent {
     return codigo ? (this.catalogoDeAtos.rotuloDoAto().get(codigo) ?? codigo) : null;
   }
 
-  /** O que descreve o campo além da ajuda: o problema local, quando há, e as recusas do servidor a ele. */
-  private idsDoErro(campo: CampoDaRecusaDaFase, idDoProblema: string): string[] {
+  /**
+   * O que descreve o controle além da ajuda: o problema local do campo, quando há, e as recusas do
+   * servidor ao controle, que quando ele não é o campo do problema local é outro nome.
+   */
+  private idsDoErro(
+    campo: CampoDaRecusaDaFase,
+    idDoProblema: string,
+    doControle: CampoDaRecusaDaFase = campo,
+  ): string[] {
     const problema = this.problemaLocal(campo) === null ? [] : [this.idDaFase(idDoProblema)];
-    const recusas = this.recusasDoCampo(campo).length === 0 ? [] : [this.idDaRecusa(campo)];
+    const recusas =
+      this.recusasDoCampo(doControle).length === 0 ? [] : [this.idDaRecusa(doControle)];
     return [...problema, ...recusas];
   }
 
@@ -206,7 +227,7 @@ export class RegraDeRecursoDaFaseComponent {
     if (!CAMPOS_DO_RECURSO_COM_CONTROLE.has(campo) || recurso === undefined) return false;
     if (!recurso.admiteRecurso.value) return false;
     return (
-      campo !== 'recurso.suspensividadeSegundaInstancia' ||
+      !ehDaSegundaInstancia(campo.slice(PREFIXO_DO_RECURSO.length)) ||
       recurso.recurso.controls.admiteInstanciaSuperior.value === true
     );
   }
@@ -220,8 +241,10 @@ export class RegraDeRecursoDaFaseComponent {
     campo: CampoDaRecusaDaFase,
     idDoProblema: string,
     idDaAjuda: string,
+    doControle: CampoDaRecusaDaFase = campo,
   ): string {
-    return [...this.idsDoErro(campo, idDoProblema), this.idDaFase(idDaAjuda)].join(' ');
+    const ids = this.idsDoErro(campo, idDoProblema, doControle);
+    return [...ids, this.idDaFase(idDaAjuda)].join(' ');
   }
 
   private suspensividade(instancia: Instancia): ParComUnidade {
@@ -238,10 +261,23 @@ export class RegraDeRecursoDaFaseComponent {
     };
   }
 
-  /** O que marca o par como inválido e o que o descreve, conforme o problema local e as recusas do campo. */
-  private estadoDoPar(campo: CampoDaRecusaDaFase, par: string, idDaAjuda: string) {
-    const erro = this.erroDoCampo(campo) ? ('true' as const) : null;
-    const descritoPor = this.descritoPor(campo, `${par}-erro`, idDaAjuda);
-    return { invalidoNoValor: erro, invalidoNaUnidade: erro, descritoPor };
+  /**
+   * O que marca cada controle do par como inválido e o que o descreve: o problema local, que vale
+   * para o par, e só as recusas do servidor ao campo dele, para que a do valor não marque a
+   * unidade nem o contrário.
+   */
+  private estadoDoPar(campo: CampoDoParDaFase, par: string, idDaAjuda: string) {
+    const doValor = `${campo}Valor` as const;
+    const daUnidade = `${campo}Unidade` as const;
+    return {
+      invalidoNoValor: this.invalidoPor(campo, doValor),
+      invalidoNaUnidade: this.invalidoPor(campo, daUnidade),
+      descritoPorDoValor: this.descritoPor(campo, `${par}-erro`, idDaAjuda, doValor),
+      descritoPorDaUnidade: this.descritoPor(campo, `${par}-erro`, idDaAjuda, daUnidade),
+    };
+  }
+
+  private invalidoPor(local: CampoDaFase, controle: CampoDaRecusaDaFase): 'true' | null {
+    return this.erroDoCampo(local) || this.erroDoCampo(controle) ? 'true' : null;
   }
 }
