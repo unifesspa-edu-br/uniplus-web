@@ -29,6 +29,17 @@ const faseComRegra = (
 
 const etapaComBancas = (bancas: EtapaPontuada['bancas']): EtapaPontuada => ({ ...etapa, bancas });
 
+const atoIndividualSemVotacao = {
+  modo: ModoDeDeliberacao.atoIndividual,
+  integrantes: 1,
+  suplentes: 0,
+  quorum: null,
+  criterio: null,
+  desempate: null,
+  encerramento: null,
+  semUnanimidade: null,
+};
+
 describe('regra de deliberação da banca no comando da fase', () => {
   it('envia a banca sem regra com a regra nula', () => {
     const [banca] = comoComandoDeFase(faseComRegra(null)).bancasRequeridas ?? [];
@@ -51,14 +62,10 @@ describe('regra de deliberação da banca no comando da fase', () => {
     });
   });
 
-  it('envia o ato individual sem nenhum campo de votação', () => {
+  it('envia o ato individual sem votação com os campos nulos', () => {
     const [banca] = comoComandoDeFase(faseComRegra(ATO_INDIVIDUAL)).bancasRequeridas ?? [];
 
-    expect(banca.regraDeDeliberacao).toEqual({
-      modo: ModoDeDeliberacao.atoIndividual,
-      integrantes: 1,
-      suplentes: 0,
-    });
+    expect(banca.regraDeDeliberacao).toEqual(atoIndividualSemVotacao);
   });
 
   it('mantém o recorte de competência ao lado da regra', () => {
@@ -106,7 +113,7 @@ describe('regra de deliberação da banca no comando da etapa', () => {
       {
         id: null,
         tipoBancaId: 'tipo-banca-3',
-        regraDeDeliberacao: { modo: ModoDeDeliberacao.atoIndividual, integrantes: 1, suplentes: 0 },
+        regraDeDeliberacao: atoIndividualSemVotacao,
       },
     ]);
   });

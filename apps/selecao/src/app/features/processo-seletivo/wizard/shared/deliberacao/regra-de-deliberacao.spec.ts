@@ -9,7 +9,7 @@ import {
   quorumSegueOsIntegrantes,
   regraNova,
 } from './regra-de-deliberacao';
-import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
+import { COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 
 describe('regraNova', () => {
   it('começa a colegiada sem nada escolhido e sem suplentes', () => {
@@ -36,14 +36,14 @@ describe('regraNova', () => {
 });
 
 describe('normalizarRegra', () => {
-  it('deixa vazio o que o ato individual não tem', () => {
+  it('mantém a votação no ato individual', () => {
     const regra = normalizarRegra(comRegra({ modo: ModoDeDeliberacao.atoIndividual }));
 
     expect(regra).toMatchObject({
-      quorum: '',
-      criterio: '',
-      desempate: '',
-      encerramento: '',
+      quorum: '3',
+      criterio: 'maioriaSimples',
+      desempate: 'votoDaPresidencia',
+      encerramento: 'presidenciaNoQuorum',
       semUnanimidade: '',
     });
   });
@@ -89,10 +89,11 @@ describe('alterarRegra', () => {
     expect(regra.desempate).toBe('');
   });
 
-  it('troca o modo para o ato individual e limpa a votação', () => {
+  it('preserva a votação ao trocar de modo e voltar', () => {
     const regra = alterarRegra(COLEGIADA, 'modo', ModoDeDeliberacao.atoIndividual);
 
-    expect(regra).toMatchObject({ criterio: '', quorum: '', encerramento: '' });
+    expect(regra).toEqual({ ...COLEGIADA, modo: ModoDeDeliberacao.atoIndividual });
+    expect(alterarRegra(regra, 'modo', ModoDeDeliberacao.colegiadaComVotacao)).toEqual(COLEGIADA);
   });
 
   it('acompanha o número de integrantes no quórum que não se digita', () => {
@@ -103,16 +104,21 @@ describe('alterarRegra', () => {
 });
 
 describe('o que a regra pede', () => {
-  it('pede desempate só na maioria, colegiada e com mais de um integrante', () => {
+  it('pede desempate só na maioria com mais de um integrante', () => {
     expect(pedeDesempate(COLEGIADA)).toBe(true);
     expect(pedeDesempate(comRegra({ criterio: 'unanimidade' }))).toBe(false);
     expect(pedeDesempate(comRegra({ integrantes: '1' }))).toBe(false);
-    expect(pedeDesempate(ATO_INDIVIDUAL)).toBe(false);
+    expect(pedeDesempate(comRegra({ modo: ModoDeDeliberacao.atoIndividual }))).toBe(true);
   });
 
   it('pede o resultado sem unanimidade só na unanimidade com mais de um integrante', () => {
     expect(pedeResultadoSemUnanimidade(comRegra({ criterio: 'unanimidade' }))).toBe(true);
     expect(pedeResultadoSemUnanimidade(COLEGIADA)).toBe(false);
+    expect(
+      pedeResultadoSemUnanimidade(
+        comRegra({ modo: ModoDeDeliberacao.atoIndividual, criterio: 'unanimidade' }),
+      ),
+    ).toBe(true);
     expect(
       pedeResultadoSemUnanimidade(comRegra({ criterio: 'unanimidade', integrantes: '1' })),
     ).toBe(false);
@@ -121,6 +127,10 @@ describe('o que a regra pede', () => {
   it('fixa o quórum só quando todos os titulares votam', () => {
     expect(quorumSegueOsIntegrantes(comRegra({ encerramento: 'todosOsTitulares' }))).toBe(true);
     expect(quorumSegueOsIntegrantes(COLEGIADA)).toBe(false);
-    expect(quorumSegueOsIntegrantes(ATO_INDIVIDUAL)).toBe(false);
+    expect(
+      quorumSegueOsIntegrantes(
+        comRegra({ modo: ModoDeDeliberacao.atoIndividual, encerramento: 'todosOsTitulares' }),
+      ),
+    ).toBe(true);
   });
 });

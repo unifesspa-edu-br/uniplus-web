@@ -1,3 +1,4 @@
+import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { descricaoDaRegra, SEM_REGRA_DE_DELIBERACAO } from './descricao-da-regra';
@@ -31,6 +32,14 @@ describe('descricaoDaRegra', () => {
 
   it('descreve o ato individual sem quórum nem votação', () => {
     expect(descricaoDaRegra(ATO_INDIVIDUAL)).toBe('1 titular, sem suplentes; ato individual');
+  });
+
+  it('descreve a votação do recurso no ato individual', () => {
+    const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
+
+    expect(descricaoDaRegra(regra)).toBe(
+      '5 titulares, 2 suplentes; ato individual; recurso: quórum 3; maioria simples; encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+    );
   });
 
   it('descreve no singular o titular e o suplente únicos', () => {

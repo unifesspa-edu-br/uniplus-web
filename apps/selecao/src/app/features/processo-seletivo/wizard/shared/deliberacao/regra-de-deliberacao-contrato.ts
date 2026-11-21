@@ -3,7 +3,6 @@ import type { RegraDeDeliberacaoDto, RegraDeDeliberacaoInput } from '@uniplus/sh
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
 import { comoTexto } from '../hidratacao/campos-lidos';
 import { inteiroDoCampo } from '../numero-do-campo';
-import { ehColegiada } from './regra-de-deliberacao';
 
 /** A regra que a API devolveu, no formato do rascunho; banca sem regra volta `null`. */
 export function regraDoDto(
@@ -22,9 +21,8 @@ export function regraDoDto(
   };
 }
 
-/** O que a votação carrega: só os campos preenchidos, e nenhum no ato individual. */
+/** Os campos da votação declarada, inclusive os que aguardam preenchimento. */
 function votacaoDaRegra(regra: RegraDeDeliberacaoDaBanca): Partial<RegraDeDeliberacaoInput> {
-  if (!ehColegiada(regra)) return {};
   return {
     quorum: inteiroDoCampo(regra.quorum),
     criterio: regra.criterio || null,

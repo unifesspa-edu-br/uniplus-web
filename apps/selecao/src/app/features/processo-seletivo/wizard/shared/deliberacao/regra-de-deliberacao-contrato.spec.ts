@@ -51,11 +51,25 @@ describe('regraComoInput', () => {
     expect(regraComoInput(COLEGIADA)).toEqual(DTO_COLEGIADA);
   });
 
-  it('leva o ato individual só com o modo e a composição', () => {
+  it('leva o ato individual sem votação com os campos nulos', () => {
     expect(regraComoInput(ATO_INDIVIDUAL)).toEqual({
       modo: ModoDeDeliberacao.atoIndividual,
       integrantes: 1,
       suplentes: 0,
+      quorum: null,
+      criterio: null,
+      desempate: null,
+      encerramento: null,
+      semUnanimidade: null,
+    });
+  });
+
+  it('envia a votação do recurso no ato individual', () => {
+    const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
+
+    expect(regraComoInput(regra)).toEqual({
+      ...DTO_COLEGIADA,
+      modo: ModoDeDeliberacao.atoIndividual,
     });
   });
 

@@ -6,11 +6,7 @@ import {
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import {
-  ATO_INDIVIDUAL,
-  COLEGIADA,
-  comRegra,
-} from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { COLEGIADA, comRegra } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 import { fase, ID_BANCA_HETERO } from './fase.testing';
 
@@ -135,7 +131,7 @@ describe('FasePassoComponent', () => {
       expect(campo('integrantes')).toBeNull();
     });
 
-    it('declara o ato individual sem votação e sem nada a cobrar', () => {
+    it('preserva a votação ao declarar o ato individual', () => {
       comCronograma(
         fase({
           bancasRequeridas: [
@@ -154,8 +150,14 @@ describe('FasePassoComponent', () => {
       digitar('integrantes', '1');
       digitar('suplentes', '0');
 
-      expect(regraDoRascunho()).toEqual(ATO_INDIVIDUAL);
-      expect(campo('criterio')).toBeNull();
+      expect(regraDoRascunho()).toEqual({
+        ...COLEGIADA,
+        modo: ModoDeDeliberacao.atoIndividual,
+        integrantes: '1',
+        suplentes: '0',
+        desempate: '',
+      });
+      expect(campo('criterio')).not.toBeNull();
     });
 
     it('não aceita edição enquanto uma gravação corre', () => {

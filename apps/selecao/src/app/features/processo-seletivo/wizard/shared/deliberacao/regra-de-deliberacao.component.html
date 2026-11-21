@@ -2,6 +2,7 @@
   <div class="form-field form-grid__full">
     <label class="label" [attr.for]="id('modo')">Deliberação da banca</label>
     <select
+      #seletorDeModo
       class="input"
       [attr.id]="id('modo')"
       [disabled]="desabilitada()"
@@ -93,9 +94,25 @@
         (regraChange)="regraChange.emit($event)"
       />
     } @else {
-      <p class="field__hint form-grid__full">
-        Ato individual: uma pessoa decide, sem quórum nem votação.
-      </p>
+      <fieldset class="form-grid__full">
+        <legend class="label">Votação usada quando esta banca julga recurso</legend>
+        <sel-votacao-da-banca
+          [regra]="atual"
+          [idBase]="idBase()"
+          [desabilitada]="desabilitada()"
+          [erros]="erros()"
+          (regraChange)="regraChange.emit($event)"
+        />
+        <button
+          type="button"
+          class="btn btn--secondary"
+          [disabled]="desabilitada()"
+          (click)="retirarVotacao(seletorDeModo)"
+        >
+          Retirar a votação do recurso
+        </button>
+      </fieldset>
     }
   }
+  <p role="status" class="form-grid__full">{{ anuncio() }}</p>
 </div>

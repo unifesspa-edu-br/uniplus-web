@@ -12,6 +12,12 @@ describe('problemasDaRegra', () => {
     expect(problemasDaRegra(ATO_INDIVIDUAL)).toEqual([]);
   });
 
+  it('não confere localmente o ato individual com composição e votação incompletas', () => {
+    expect(
+      problemasDaRegra(comRegra({ integrantes: '', suplentes: '', quorum: '2' }, ATO_INDIVIDUAL)),
+    ).toEqual([]);
+  });
+
   it('cobra os integrantes quando faltam, são zero ou não são inteiros', () => {
     expect(campos(comRegra({ integrantes: '' }))).toContain('integrantes');
     expect(campos(comRegra({ integrantes: '0' }))).toContain('integrantes');
