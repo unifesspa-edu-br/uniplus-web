@@ -76,113 +76,39 @@
   </div>
 }
 <ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'ancora' }" />
-<div class="form-field">
-  <label class="label" [attr.for]="'cr-rec-prazo-' + posicao + '-' + indice">Prazo</label>
-  <input
-    class="input"
-    type="text"
-    inputmode="numeric"
-    [attr.id]="'cr-rec-prazo-' + posicao + '-' + indice"
-    [attr.aria-invalid]="invalido('prazoValor')"
-    [attr.aria-describedby]="descritoPor('prazoValor')"
-    [value]="recurso.prazoValor"
-    [disabled]="!edicaoLiberada()"
-    (input)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoValor', $any($event.target).value)"
-  />
-</div>
-<div class="form-field">
-  <label class="label" [attr.for]="'cr-rec-un-' + posicao + '-' + indice">Unidade</label>
-  <select
-    class="select"
-    [attr.id]="'cr-rec-un-' + posicao + '-' + indice"
-    [attr.aria-invalid]="invalido('prazoUnidade')"
-    [attr.aria-describedby]="descritoPor('prazoUnidade')"
-    [disabled]="!edicaoLiberada()"
-    (change)="
-      edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $any($event.target).value)
-    "
-  >
-    @for (unidade of unidadesDaInterposicao; track unidade.valor) {
-      <option [value]="unidade.valor" [selected]="recurso.prazoUnidade === unidade.valor">
-        {{ unidade.rotulo }}
-      </option>
-    }
-  </select>
-</div>
-<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'prazoValor' }" />
-<ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'prazoUnidade' }" />
-<div class="form-field">
-  <label class="label" [attr.for]="'cr-rec-susp1-val-' + posicao + '-' + indice"
-    >Suspensividade da 1ª instância — prazo</label
-  >
-  <input
-    class="input"
-    type="text"
-    inputmode="decimal"
-    [attr.id]="'cr-rec-susp1-val-' + posicao + '-' + indice"
-    [attr.aria-invalid]="invalido('suspensividadePrimeiraInstanciaValor')"
-    [attr.aria-describedby]="
-      descritoPor('suspensividadePrimeiraInstanciaValor', 'cr-rec-susp-ajuda-' + sufixo)
-    "
-    [value]="recurso.suspensividadePrimeiraInstanciaValor"
-    [disabled]="!edicaoLiberada()"
-    (input)="
-      edicao.alterarRecursoDaEtapa(
-        etapa,
-        indice,
-        'suspensividadePrimeiraInstanciaValor',
-        $any($event.target).value
-      )
-    "
-  />
-</div>
-<div class="form-field">
-  <label class="label" [attr.for]="'cr-rec-susp1-un-' + posicao + '-' + indice"
-    >Suspensividade da 1ª instância — unidade</label
-  >
-  <select
-    class="select"
-    [attr.id]="'cr-rec-susp1-un-' + posicao + '-' + indice"
-    [attr.aria-invalid]="invalido('suspensividadePrimeiraInstanciaUnidade')"
-    [attr.aria-describedby]="
-      descritoPor('suspensividadePrimeiraInstanciaUnidade', 'cr-rec-susp-ajuda-' + sufixo)
-    "
-    [disabled]="!edicaoLiberada()"
-    (change)="
-      edicao.alterarRecursoDaEtapa(
-        etapa,
-        indice,
-        'suspensividadePrimeiraInstanciaUnidade',
-        $any($event.target).value
-      )
-    "
-  >
-    <option value="" [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === ''">
-      Sem suspensividade
-    </option>
-    @for (unidade of unidadesDaSuspensividade; track unidade.valor) {
-      <option
-        [value]="unidade.valor"
-        [selected]="recurso.suspensividadePrimeiraInstanciaUnidade === unidade.valor"
-      >
-        {{ unidade.rotulo }}
-      </option>
-    }
-  </select>
-</div>
-<ng-container
-  *ngTemplateOutlet="
-    recusasDoControle;
-    context: { $implicit: 'suspensividadePrimeiraInstanciaValor' }
+<sel-prazo-do-recurso
+  class="form-grid__full"
+  legenda="Prazo de interposição"
+  textoDeObrigatoriedade="(obrigatório)"
+  [valor]="recurso.prazoValor"
+  [unidade]="recurso.prazoUnidade"
+  [unidades]="unidadesDaInterposicao"
+  [desabilitado]="!edicaoLiberada()"
+  [ids]="idsDaInterposicao()"
+  [recusasDoValor]="recusasDe('prazoValor')"
+  [recusasDaUnidade]="recusasDe('prazoUnidade')"
+  (valorAlterado)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoValor', $event)"
+  (unidadeAlterada)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $event)"
+/>
+<sel-prazo-do-recurso
+  class="form-grid__full"
+  legenda="Suspensividade da 1ª instância"
+  opcaoEmBranco="Sem suspensividade"
+  [valor]="recurso.suspensividadePrimeiraInstanciaValor"
+  [unidade]="recurso.suspensividadePrimeiraInstanciaUnidade"
+  [unidades]="unidadesDaSuspensividade"
+  [desabilitado]="!edicaoLiberada()"
+  [ids]="idsDaSuspensividadeDaPrimeiraInstancia()"
+  [recusasDoValor]="recusasDe('suspensividadePrimeiraInstanciaValor')"
+  [recusasDaUnidade]="recusasDe('suspensividadePrimeiraInstanciaUnidade')"
+  (valorAlterado)="
+    edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadePrimeiraInstanciaValor', $event)
+  "
+  (unidadeAlterada)="
+    edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadePrimeiraInstanciaUnidade', $event)
   "
 />
-<ng-container
-  *ngTemplateOutlet="
-    recusasDoControle;
-    context: { $implicit: 'suspensividadePrimeiraInstanciaUnidade' }
-  "
-/>
-<p class="field__hint" [attr.id]="'cr-rec-susp-ajuda-' + posicao + '-' + indice">
+<p class="field__hint form-grid__full" [attr.id]="'cr-rec-susp-ajuda-' + sufixo">
   O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são declarados
   juntos; deixar os dois em branco desativa a suspensividade daquela instância. Em dias úteis o
   valor é inteiro: para menos de um dia, declare em horas.
@@ -247,75 +173,22 @@
   *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'admiteInstanciaSuperior' }"
 />
 @if (recurso.admiteInstanciaSuperior === true) {
-  <div class="form-field">
-    <label class="label" [attr.for]="'cr-rec-susp2-val-' + posicao + '-' + indice"
-      >Suspensividade da 2ª instância — prazo</label
-    >
-    <input
-      class="input"
-      type="text"
-      inputmode="decimal"
-      [attr.id]="'cr-rec-susp2-val-' + posicao + '-' + indice"
-      [attr.aria-invalid]="invalido('suspensividadeSegundaInstanciaValor')"
-      [attr.aria-describedby]="
-        descritoPor('suspensividadeSegundaInstanciaValor', 'cr-rec-susp-ajuda-' + sufixo)
-      "
-      [value]="recurso.suspensividadeSegundaInstanciaValor"
-      [disabled]="!edicaoLiberada()"
-      (input)="
-        edicao.alterarRecursoDaEtapa(
-          etapa,
-          indice,
-          'suspensividadeSegundaInstanciaValor',
-          $any($event.target).value
-        )
-      "
-    />
-  </div>
-  <div class="form-field">
-    <label class="label" [attr.for]="'cr-rec-susp2-un-' + posicao + '-' + indice"
-      >Suspensividade da 2ª instância — unidade</label
-    >
-    <select
-      class="select"
-      [attr.id]="'cr-rec-susp2-un-' + posicao + '-' + indice"
-      [attr.aria-invalid]="invalido('suspensividadeSegundaInstanciaUnidade')"
-      [attr.aria-describedby]="
-        descritoPor('suspensividadeSegundaInstanciaUnidade', 'cr-rec-susp-ajuda-' + sufixo)
-      "
-      [disabled]="!edicaoLiberada()"
-      (change)="
-        edicao.alterarRecursoDaEtapa(
-          etapa,
-          indice,
-          'suspensividadeSegundaInstanciaUnidade',
-          $any($event.target).value
-        )
-      "
-    >
-      <option value="" [selected]="recurso.suspensividadeSegundaInstanciaUnidade === ''">
-        Sem suspensividade
-      </option>
-      @for (unidade of unidadesDaSuspensividade; track unidade.valor) {
-        <option
-          [value]="unidade.valor"
-          [selected]="recurso.suspensividadeSegundaInstanciaUnidade === unidade.valor"
-        >
-          {{ unidade.rotulo }}
-        </option>
-      }
-    </select>
-  </div>
-  <ng-container
-    *ngTemplateOutlet="
-      recusasDoControle;
-      context: { $implicit: 'suspensividadeSegundaInstanciaValor' }
+  <sel-prazo-do-recurso
+    class="form-grid__full"
+    legenda="Suspensividade da 2ª instância"
+    opcaoEmBranco="Sem suspensividade"
+    [valor]="recurso.suspensividadeSegundaInstanciaValor"
+    [unidade]="recurso.suspensividadeSegundaInstanciaUnidade"
+    [unidades]="unidadesDaSuspensividade"
+    [desabilitado]="!edicaoLiberada()"
+    [ids]="idsDaSuspensividadeDaSegundaInstancia()"
+    [recusasDoValor]="recusasDe('suspensividadeSegundaInstanciaValor')"
+    [recusasDaUnidade]="recusasDe('suspensividadeSegundaInstanciaUnidade')"
+    (valorAlterado)="
+      edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadeSegundaInstanciaValor', $event)
     "
-  />
-  <ng-container
-    *ngTemplateOutlet="
-      recusasDoControle;
-      context: { $implicit: 'suspensividadeSegundaInstanciaUnidade' }
+    (unidadeAlterada)="
+      edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadeSegundaInstanciaUnidade', $event)
     "
   />
 }

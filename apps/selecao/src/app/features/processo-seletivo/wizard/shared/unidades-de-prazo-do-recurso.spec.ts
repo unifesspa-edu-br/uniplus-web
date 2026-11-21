@@ -7,16 +7,16 @@ import {
   UNIDADES_DA_SUSPENSIVIDADE,
 } from './unidades-de-prazo-do-recurso';
 
-const valores = (unidades: readonly { valor: UnidadePrazo }[]) => unidades.map((u) => u.valor);
+const codigos = (unidades: readonly { codigo: UnidadePrazo }[]) => unidades.map((u) => u.codigo);
 
 describe('unidades do prazo de recurso', () => {
   it('a interposição oferece dias úteis e horas, sem dia corrido', () => {
-    expect(valores(UNIDADES_DA_INTERPOSICAO)).toEqual([UnidadePrazo.diasUteis, UnidadePrazo.horas]);
+    expect(codigos(UNIDADES_DA_INTERPOSICAO)).toEqual([UnidadePrazo.diasUteis, UnidadePrazo.horas]);
     expect(UNIDADES_DA_INTERPOSICAO.map((u) => u.rotulo)).toEqual(['dias úteis', 'horas']);
   });
 
   it('a suspensividade oferece dias úteis, dias corridos e horas', () => {
-    expect(valores(UNIDADES_DA_SUSPENSIVIDADE)).toEqual([
+    expect(codigos(UNIDADES_DA_SUSPENSIVIDADE)).toEqual([
       UnidadePrazo.diasUteis,
       UnidadePrazo.dias,
       UnidadePrazo.horas,
@@ -29,8 +29,8 @@ describe('unidades do prazo de recurso', () => {
   });
 
   it('nenhuma lista oferece o valor-zero do enum', () => {
-    expect(valores(UNIDADES_DA_INTERPOSICAO)).not.toContain(UnidadePrazo.nenhuma);
-    expect(valores(UNIDADES_DA_SUSPENSIVIDADE)).not.toContain(UnidadePrazo.nenhuma);
+    expect(codigos(UNIDADES_DA_INTERPOSICAO)).not.toContain(UnidadePrazo.nenhuma);
+    expect(codigos(UNIDADES_DA_SUSPENSIVIDADE)).not.toContain(UnidadePrazo.nenhuma);
   });
 });
 

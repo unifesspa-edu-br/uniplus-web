@@ -1,0 +1,56 @@
+<fieldset class="field">
+  <legend class="field__label">{{ legendaCompleta() }}</legend>
+  <div class="form-grid">
+    <div class="form-field">
+      <label class="label" [attr.for]="ids().valor">Valor</label>
+      <input
+        class="input"
+        type="text"
+        inputmode="decimal"
+        [attr.id]="ids().valor"
+        [value]="valor()"
+        [disabled]="desabilitado()"
+        [attr.aria-required]="obrigatorio() ? 'true' : null"
+        [attr.aria-invalid]="valorInvalido()"
+        [attr.aria-describedby]="descritoPeloValor()"
+        (input)="digitado($event)"
+      />
+    </div>
+    <div class="form-field">
+      <label class="label" [attr.for]="ids().unidade">Unidade</label>
+      <select
+        class="select"
+        [attr.id]="ids().unidade"
+        [disabled]="desabilitado()"
+        [attr.aria-required]="obrigatorio() ? 'true' : null"
+        [attr.aria-invalid]="unidadeInvalida()"
+        [attr.aria-describedby]="descritaPelaUnidade()"
+        (change)="escolhida($event)"
+      >
+        <option value="" [selected]="unidade() === ''">{{ opcaoEmBranco() }}</option>
+        @for (opcao of opcoes(); track opcao.codigo) {
+          <option [value]="opcao.codigo" [selected]="opcao.codigo === unidade()">
+            {{ opcao.texto }}
+          </option>
+        }
+      </select>
+    </div>
+  </div>
+  @if (problema(); as texto) {
+    <p class="field__erro" [attr.id]="ids().problema" role="alert">{{ texto }}</p>
+  }
+  @if (recusasDoValor().length > 0) {
+    <sel-recusas-do-campo
+      [attr.id]="ids().recusasDoValor"
+      tabindex="-1"
+      [recusas]="recusasDoValor()"
+    />
+  }
+  @if (recusasDaUnidade().length > 0) {
+    <sel-recusas-do-campo
+      [attr.id]="ids().recusasDaUnidade"
+      tabindex="-1"
+      [recusas]="recusasDaUnidade()"
+    />
+  }
+</fieldset>
