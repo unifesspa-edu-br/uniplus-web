@@ -49,7 +49,11 @@ export function problemasDoCronograma({
   catalogos,
 }: CronogramaConferido): readonly string[] {
   if (fases.length === 0) return ['O cronograma precisa de ao menos uma fase.'];
+  return conferirCronograma({ fases, etapas, exigencias, catalogos });
+}
 
+function conferirCronograma(cronograma: CronogramaConferido): readonly string[] {
+  const { fases, etapas, exigencias, catalogos } = cronograma;
   return [
     ...problemasDePosicaoDasFases(fases),
     ...fases.flatMap((fase) => problemasDaFaseDoCronograma(fase, catalogos)),
@@ -71,28 +75,26 @@ function problemasDePosicaoDasFases(fases: readonly FaseDoCronograma[]): readonl
   return problemas;
 }
 
+/** A resolução da tela usa os atributos congelados antes do catálogo. */
 function problemasDaFaseDoCronograma(
   fase: FaseDoCronograma,
   catalogos: CatalogosDaConferencia,
 ): readonly string[] {
-  // A mesma resolução que a tela usa: o que a fase congelou vale sobre o
-  // catálogo, e a fase cuja entrada saiu continua sendo conferida pelo que
-  // ela guarda. Consultar o catálogo direto aqui deixaria de conferir
-  // justamente a fase que ninguém mais confere.
   const { nome, exigencias } = descreverFase(fase, catalogos.fasePorId);
   if (exigencias === null) return [];
+  const declarados = problemasDeclaradosDaFase(fase, catalogos, nome);
+  return [...problemasDaJanelaDaFase(fase, nome, exigencias.janelaObrigatoria), ...declarados];
+}
 
-  // O que a fase declara não é editado aqui, mas atravessa este passo até a
-  // gravação — e a gravação substitui a coleção inteira. Sem conferir, uma
-  // publicação sem ato, uma banca sem tipo ou um recurso pela metade sairiam
-  // no comando por causa de uma mudança de data, e a recusa voltaria falando
-  // de um campo que este passo não mostra. Quem confere é a mesma função que
-  // a superfície da fase usa: duplicar a regra aqui produziria regras divergentes.
-  const declarados = problemasDaFase(fase, catalogos.atoPorCodigo, catalogos.nomeDaBanca).map(
+/** Confere as declarações que o passo carrega e a gravação substitui por inteiro. */
+function problemasDeclaradosDaFase(
+  fase: FaseDoCronograma,
+  catalogos: CatalogosDaConferencia,
+  nome: string,
+): readonly string[] {
+  return problemasDaFase(fase, catalogos.atoPorCodigo, catalogos.nomeDaBanca).map(
     (declarado) => `Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`,
   );
-
-  return [...problemasDaJanelaDaFase(fase, nome, exigencias.janelaObrigatoria), ...declarados];
 }
 
 function problemasDaJanelaDaFase(
@@ -168,38 +170,59 @@ function problemasDaJanelaDaEtapa(
 ): readonly string[] {
   const janela = emInstantes(etapa.inicio, etapa.fim);
   if (janela.inicio === null && janela.fim === null) return [];
-
   const nome = etapa.nome.trim() === '' ? 'sem nome' : `"${etapa.nome.trim()}"`;
-
   if (janela.inicio !== null && janela.fim !== null && janela.fim < janela.inicio) {
-    // Sem coerência interna, comparar com a fase só somaria ruído ao mesmo defeito.
     return [`Na etapa ${nome}, o fim não pode vir antes do início.`];
   }
-
   if (fase === undefined) return [];
-
-  return problemasDeJanelaForaDaFase(
-    nome,
-    janela,
-    emInstantes(fase.inicio, fase.fim),
-    descreverFase(fase, fasePorId).nome,
-  );
+  return problemasDeJanelaForaDaFase(nome, janela, fase, fasePorId);
 }
 
 function problemasDeJanelaForaDaFase(
   nomeDaEtapa: string,
   etapa: JanelaEmInstantes,
+  faseDoCronograma: FaseDoCronograma,
+  fasePorId: ReadonlyMap<string, FaseCanonicaDto>,
+): readonly string[] {
+  const fase = emInstantes(faseDoCronograma.inicio, faseDoCronograma.fim);
+  const nomeDaFase = descreverFase(faseDoCronograma, fasePorId).nome;
+  return problemasDosLimitesDaJanela(nomeDaEtapa, etapa, fase, nomeDaFase);
+}
+
+const JANELA_DEVE_CABER = 'A janela da etapa precisa caber na da fase.';
+
+function problemasDosLimitesDaJanela(
+  nomeDaEtapa: string,
+  etapa: JanelaEmInstantes,
   fase: JanelaEmInstantes,
   nomeDaFase: string,
 ): readonly string[] {
-  const problemas: string[] = [];
-  const caber = 'A janela da etapa precisa caber na da fase.';
+  return [
+    ...problemasDoInicioDaEtapa(nomeDaEtapa, etapa, fase, nomeDaFase),
+    ...problemasDoFimDaEtapa(nomeDaEtapa, etapa, fase, nomeDaFase),
+  ];
+}
 
+function problemasDoInicioDaEtapa(
+  nomeDaEtapa: string,
+  etapa: JanelaEmInstantes,
+  fase: JanelaEmInstantes,
+  nomeDaFase: string,
+): readonly string[] {
   if (etapa.inicio !== null && fase.inicio !== null && etapa.inicio < fase.inicio) {
-    problemas.push(`A etapa ${nomeDaEtapa} começa antes da fase ${nomeDaFase}. ${caber}`);
+    return [`A etapa ${nomeDaEtapa} começa antes da fase ${nomeDaFase}. ${JANELA_DEVE_CABER}`];
   }
+  return [];
+}
+
+function problemasDoFimDaEtapa(
+  nomeDaEtapa: string,
+  etapa: JanelaEmInstantes,
+  fase: JanelaEmInstantes,
+  nomeDaFase: string,
+): readonly string[] {
   if (etapa.fim !== null && fase.fim !== null && etapa.fim > fase.fim) {
-    problemas.push(`A etapa ${nomeDaEtapa} termina depois da fase ${nomeDaFase}. ${caber}`);
+    return [`A etapa ${nomeDaEtapa} termina depois da fase ${nomeDaFase}. ${JANELA_DEVE_CABER}`];
   }
-  return problemas;
+  return [];
 }

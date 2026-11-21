@@ -233,11 +233,17 @@ function comoComandoDaAvaliacaoDaEtapa(etapa: EtapaPontuada): AvaliacaoDaEtapaIn
     regraConsolidacaoCodigo: humana ? textoOuNulo(etapa.regraConsolidacaoCodigo) : null,
     regraConsolidacaoVersao: humana ? textoOuNulo(etapa.regraConsolidacaoVersao) : null,
     passoDoLancamento: humana ? decimalDoCampo(etapa.passoDoLancamento ?? '') : null,
-    // O id do item que a API devolveu volta com ele: é o que mantém o item o mesmo na retificação.
+    ...comoComandoDosItensDaAvaliacao(etapa),
+  };
+}
+
+function comoComandoDosItensDaAvaliacao(
+  etapa: EtapaPontuada,
+): Pick<AvaliacaoDaEtapaInput, 'itensDeAvaliacao' | 'escalaDeAtendimento'> {
+  return {
     itensDeAvaliacao: (etapa.itensDeAvaliacao ?? []).map((item) => ({
       id: item.id,
       rotulo: item.rotulo.trim(),
-      // A validação do passo recusa antes o que não é número.
       pontuacaoMaxima: decimalDoCampo(item.pontuacaoMaxima) ?? 0,
     })),
     escalaDeAtendimento: (etapa.escalaDeAtendimento ?? []).map((nivel) => ({

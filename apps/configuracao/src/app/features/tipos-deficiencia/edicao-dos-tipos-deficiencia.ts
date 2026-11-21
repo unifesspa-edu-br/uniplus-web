@@ -33,8 +33,8 @@ import { TiposDeficienciaStore } from './tipos-deficiencia.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
   aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  marcarRecusaDoServidor,
+  validarParaEnvio,
+  marcarConflitoNoCampo,
 } from '../../shared/formulario';
 
 type ModoFormulario = 'criar' | 'editar';
@@ -148,23 +148,19 @@ export class EdicaoDosTiposDeficiencia {
 
   salvar(): void {
     this.erro.set(null);
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    if (!validarParaEnvio(this.form)) return;
     const id = this.tipoEmEdicaoId();
+    this.gravar('salvando', id, this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result),
+    );
+  }
+
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const valores = this.form.getRawValue();
     const chave = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(valores), chave)
-        : this.api.atualizar(
-            id,
-            comandoDeAtualizacao(id, valores, this.permanenteEmEdicao()),
-            chave,
-          );
-    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(valores), chave)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, valores, this.permanenteEmEdicao()), chave);
   }
 
   removerConfirmado(): void {
@@ -242,23 +238,14 @@ export class EdicaoDosTiposDeficiencia {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.renovarChave();
       this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
     }
-    const campo = CAMPO_POR_CONFLITO.get(problem.code);
-    if (campo !== undefined) {
-      this.renovarChave();
-      marcarRecusaDoServidor(
-        this.form.controls[campo],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
-      return;
-    }
-    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
-    this.erro.set(this.problemI18n.resolve(problem).title);
+    const mensagem = this.problemI18n.resolve(problem).title;
+    if (marcarConflitoNoCampo(problem, mensagem, this.form, CAMPO_POR_CONFLITO)) return;
+    this.erro.set(mensagem);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 

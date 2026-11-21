@@ -99,14 +99,15 @@ export class EdicaoDosModelosFormulario {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.escrita.set(null);
-        if (resultado.ok) {
-          this.notifications.success('Modelo criado', codigo);
-          this.drawerAberto.set(false);
-          void this.router.navigate(['/modelos-formulario', resultado.data]);
-          return;
-        }
-        this.aplicarFalha(resultado.problem);
+        if (resultado.ok) this.abrirModeloCriado(resultado.data, codigo);
+        else this.aplicarFalha(resultado.problem);
       });
+  }
+
+  private abrirModeloCriado(id: string, codigo: string): void {
+    this.notifications.success('Modelo criado', codigo);
+    this.drawerAberto.set(false);
+    void this.router.navigate(['/modelos-formulario', id]);
   }
 
   desativar(modelo: ModeloFormularioView): void {
@@ -138,16 +139,24 @@ export class EdicaoDosModelosFormulario {
   ): void {
     this.escrita.set(null);
     if (resultado.ok) {
-      this.anuncioDaSituacao.set(`${mensagem}: ${modelo.codigo}.`);
-      this.notifications.success(mensagem, modelo.codigo);
-      this.aguardandoRecarga.set(true);
-      this.store.recarregar();
+      this.concluirTrocaDeSituacao(mensagem, modelo);
       return;
     }
+    this.recusarTrocaDeSituacao(resultado.problem, modelo);
+  }
+
+  private concluirTrocaDeSituacao(mensagem: string, modelo: ModeloFormularioView): void {
+    this.anuncioDaSituacao.set(`${mensagem}: ${modelo.codigo}.`);
+    this.notifications.success(mensagem, modelo.codigo);
+    this.aguardandoRecarga.set(true);
+    this.store.recarregar();
+  }
+
+  private recusarTrocaDeSituacao(problem: ProblemDetails, modelo: ModeloFormularioView): void {
     this.emAndamento.set(null);
     this.anuncioDaSituacao.set(`Não foi possível alterar a situação do modelo ${modelo.codigo}.`);
-    this.notifications.errorFromProblem(resultado.problem, {
-      title: this.problemI18n.resolve(resultado.problem).title,
+    this.notifications.errorFromProblem(problem, {
+      title: this.problemI18n.resolve(problem).title,
     });
   }
 

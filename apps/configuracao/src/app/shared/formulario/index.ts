@@ -12,6 +12,7 @@ export {
   causaDoCampo,
   descartarRecusasDoServidor,
   descartarRecusasDoServidorPorCodigo,
+  marcarConflitoNoCampo,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoControle,
@@ -19,5 +20,6 @@ export {
   textoDaAreaGeral,
   textoDaCausaGeral,
   textoDasCausasGerais,
+  validarParaEnvio,
   type RecusaDoServidor,
 } from './recusa-do-servidor';

@@ -34,7 +34,7 @@ import { PrecedenciasFaseStore } from './precedencias-fase.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
   aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
+  validarParaEnvio,
   marcarRecusaDoServidor,
   textoDaCausaGeral,
 } from '../../shared/formulario';
@@ -71,11 +71,13 @@ export class EdicaoDasPrecedencias {
   readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
 
   readonly aberto = signal(false);
-  readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
   readonly erroRemocao = signal<string | null>(null);
   private readonly arestaEmEdicaoId = signal<string | null>(null);
+  readonly modo = computed<ModoFormulario>(() =>
+    this.arestaEmEdicaoId() === null ? 'criar' : 'editar',
+  );
   private readonly arestaParaRemover = signal<PrecedenciaFaseDto | null>(null);
   private readonly recusaDoSalvamento = signal('');
   private readonly resultadoDoSalvamento = signal('');
@@ -130,11 +132,11 @@ export class EdicaoDasPrecedencias {
   }
 
   abrirCadastro(): void {
-    this.abrirFormulario('criar', null, valoresEmBrancoDaPrecedencia());
+    this.abrirFormulario(null, valoresEmBrancoDaPrecedencia());
   }
 
   abrirEdicao(aresta: PrecedenciaFaseDto): void {
-    this.abrirFormulario('editar', aresta.id, valoresDaPrecedencia(aresta));
+    this.abrirFormulario(aresta.id, valoresDaPrecedencia(aresta));
   }
 
   fechar(): void {
@@ -156,21 +158,20 @@ export class EdicaoDasPrecedencias {
 
   salvar(): void {
     if (this.gravando()) return;
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.limparRecusasDoEnvio();
+    if (!validarParaEnvio(this.form)) return;
     const id = this.arestaEmEdicaoId();
     const modo = this.modo();
+    this.gravar('salvando', id, this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
+  }
+
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form), contexto)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
-    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result, modo));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
   }
 
   removerConfirmado(): void {
@@ -182,19 +183,21 @@ export class EdicaoDasPrecedencias {
     );
   }
 
+  private limparRecusasDoEnvio(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
   private abrirFormulario(
-    modo: ModoFormulario,
     id: string | null,
     valores: ReturnType<typeof valoresEmBrancoDaPrecedencia>,
   ): void {
     if (this.gravando()) return;
     this.linhaPerdida.set(false);
     this.limparResultados();
-    this.modo.set(modo);
     this.arestaEmEdicaoId.set(id);
     this.form.reset(valores);
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     this.renovarChave();
     this.aberto.set(true);
   }

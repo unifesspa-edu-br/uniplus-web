@@ -50,6 +50,27 @@ export function descartarRecusasDoServidor(controle: AbstractControl): void {
   }
 }
 
+/** Descarta as recusas anteriores e mostra os erros locais antes do envio. */
+export function validarParaEnvio(formulario: AbstractControl): boolean {
+  descartarRecusasDoServidor(formulario);
+  if (!formulario.invalid) return true;
+  formulario.markAllAsTouched();
+  return false;
+}
+
+/** Marca no campo correspondente um conflito de unicidade. */
+export function marcarConflitoNoCampo<TNome extends string>(
+  problema: Pick<ProblemDetails, 'code'>,
+  mensagem: string,
+  formulario: { readonly controls: Record<TNome, AbstractControl> },
+  campoPorConflito: ReadonlyMap<string, TNome>,
+): boolean {
+  const campo = campoPorConflito.get(problema.code);
+  if (campo === undefined) return false;
+  marcarRecusaDoServidor(formulario.controls[campo], problema.code, mensagem);
+  return true;
+}
+
 /**
  * Tira do controle só as recusas do servidor de um dos códigos dados e mantém as demais, que
  * seguem valendo para o campo. Sem `emitEvent`, como o descarte do envio.

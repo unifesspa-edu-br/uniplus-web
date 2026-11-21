@@ -76,11 +76,13 @@ export class EdicaoDosTiposEtapa {
   readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
 
   readonly aberto = signal(false);
-  readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
   readonly erroRemocao = signal<string | null>(null);
   private readonly tipoEmEdicaoId = signal<string | null>(null);
+  readonly modo = computed<ModoFormulario>(() =>
+    this.tipoEmEdicaoId() === null ? 'criar' : 'editar',
+  );
   private readonly tipoParaRemover = signal<TipoEtapaDto | null>(null);
   private readonly recusaDoSalvamento = signal('');
   private readonly resultadoDoSalvamento = signal('');
@@ -116,11 +118,11 @@ export class EdicaoDosTiposEtapa {
   });
 
   abrirCadastro(): void {
-    this.abrirFormulario('criar', null, valoresEmBrancoDaEtapa());
+    this.abrirFormulario(null, valoresEmBrancoDaEtapa());
   }
 
   abrirEdicao(tipo: TipoEtapaDto): void {
-    this.abrirFormulario('editar', tipo.id, valoresDaEtapa(tipo));
+    this.abrirFormulario(tipo.id, valoresDaEtapa(tipo));
   }
 
   fechar(): void {
@@ -136,8 +138,7 @@ export class EdicaoDosTiposEtapa {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     descartarRecusasDoServidor(this.form);
     if (this.form.invalid || this.catalogoDeConceitosIncompleto()) {
       this.form.markAllAsTouched();
@@ -145,12 +146,16 @@ export class EdicaoDosTiposEtapa {
     }
     const id = this.tipoEmEdicaoId();
     const modo = this.modo();
+    this.gravar('salvando', id, this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
+  }
+
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form), contexto)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
-    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result, modo));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
   }
 
   removerConfirmado(): void {
@@ -169,18 +174,20 @@ export class EdicaoDosTiposEtapa {
     return incompleto;
   }
 
+  private limparRecusasDoEnvio(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
   private abrirFormulario(
-    modo: ModoFormulario,
     id: string | null,
     valores: ReturnType<typeof valoresEmBrancoDaEtapa>,
   ): void {
     if (this.gravando()) return;
     this.limparResultados();
-    this.modo.set(modo);
     this.tipoEmEdicaoId.set(id);
     this.form.reset(valores);
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     this.renovarChave();
     this.conceitos.recarregar();
     this.aberto.set(true);

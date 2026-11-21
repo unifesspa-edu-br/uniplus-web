@@ -38,7 +38,7 @@ import {
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
-import { descartarRecusasDoServidor, marcarRecusasDosCampos } from '../../shared/formulario';
+import { validarParaEnvio, marcarRecusasDosCampos } from '../../shared/formulario';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 interface CabecalhoForm {
@@ -114,51 +114,58 @@ export class EdicaoDoConteudoDoModelo {
   salvar(): boolean {
     const conteudo = this.conteudo();
     if (this.somenteLeitura() || conteudo === null) return false;
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
+    if (!validarParaEnvio(this.form)) {
       this.focarInvalido();
       return false;
     }
     const enviado = conteudoParaEnvio(semDadosBasicos(conteudo));
     if (enviado === null) {
-      this.notifications.warning(
-        'Há campos que não são números',
-        'Corrija os campos marcados no formulário antes de salvar.',
-      );
+      this.avisarCamposNaoNumericos();
       return true;
     }
     this.enviar(enviado);
     return false;
   }
 
+  private avisarCamposNaoNumericos(): void {
+    this.notifications.warning(
+      'Há campos que não são números',
+      'Corrija os campos marcados no formulário antes de salvar.',
+    );
+  }
+
   private enviar(enviado: NonNullable<ReturnType<typeof conteudoParaEnvio>>): void {
-    const v = this.form.getRawValue();
+    const comando = this.comandoDeAtualizacao(enviado);
     this.salvando.set(true);
     this.api
-      .atualizar(
-        this.id,
-        {
-          nome: v.nome.trim(),
-          descricao: v.descricao.trim() || null,
-          tipoProcessoCodigo: v.tipoProcessoCodigo || null,
-          conteudo: enviado,
-        },
-        withIdempotencyKey(this.chaveDaGravacao),
-      )
+      .atualizar(this.id, comando, withIdempotencyKey(this.chaveDaGravacao))
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((resultado) => {
         this.salvando.set(false);
         if (resultado.ok) {
-          this.chaveDaGravacao = idempotencyKey.create();
-          this.notifications.success('Modelo salvo', this.modelo()?.codigo ?? '');
-          // Relê o que a API gravou: ela repõe os dados básicos e pode deslocar a ordem.
-          this.aguardandoRecarga.set(true);
-          this.store.recarregar();
+          this.concluirGravacao();
           return;
         }
         this.aplicarFalha(resultado.problem, enviado);
       });
+  }
+
+  private comandoDeAtualizacao(enviado: NonNullable<ReturnType<typeof conteudoParaEnvio>>) {
+    const v = this.form.getRawValue();
+    return {
+      nome: v.nome.trim(),
+      descricao: v.descricao.trim() || null,
+      tipoProcessoCodigo: v.tipoProcessoCodigo || null,
+      conteudo: enviado,
+    };
+  }
+
+  private concluirGravacao(): void {
+    this.chaveDaGravacao = idempotencyKey.create();
+    this.notifications.success('Modelo salvo', this.modelo()?.codigo ?? '');
+    // Relê o que a API gravou: ela repõe os dados básicos e pode deslocar a ordem.
+    this.aguardandoRecarga.set(true);
+    this.store.recarregar();
   }
 
   private preencher(modelo: ModeloFormularioView): void {
@@ -184,21 +191,28 @@ export class EdicaoDoConteudoDoModelo {
     const { deCampo, gerais } = separarCausas(
       problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO ? problem.errors : undefined,
     );
+    const marcouCampo = this.marcarCamposDoCabecalho(problem);
+    const recusas = this.distribuirNoConteudo(deCampo, enviado);
+    const resumo = [...recusas.gerais, ...gerais.map((causa) => causa.message)];
+    this.recusasGerais.set(this.resumoDaRecusa(problem, deCampo.length, resumo));
+    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+    if (!marcouCampo) this.focarResumo();
+  }
+
+  private distribuirNoConteudo(
+    deCampo: ReturnType<typeof separarCausas>['deCampo'],
+    enviado: ConteudoDoFormulario,
+  ): RecusasDoConteudo {
     const doConteudo = deCampo.filter(
       (erro) => campoDoCabecalho(erro.field) === null && !ehRecusaDeDocumento(erro.field),
     );
     const dosDocumentos = deCampo.filter((erro) => ehRecusaDeDocumento(erro.field));
-    const marcouCampo = this.marcarCamposDoCabecalho(problem);
-
     const recusas = distribuirRecusas(doConteudo, enviado);
     this.recusas.set(recusas);
     this.recusasDosDocumentos.set(
       distribuirRecusasDosDocumentos(dosDocumentos, enviado.documentosExigidos ?? []),
     );
-    const resumo = [...recusas.gerais, ...gerais.map((causa) => causa.message)];
-    this.recusasGerais.set(this.resumoDaRecusa(problem, deCampo.length, resumo));
-    if (problem.status >= 500) this.notifications.errorFromProblem(problem);
-    if (!marcouCampo) this.focarResumo();
+    return recusas;
   }
 
   /** Com um campo do cabeçalho recusado, o foco é dele: quem o leva é o acompanhamento do envio. */
