@@ -8,6 +8,13 @@
   <p class="field__hint" role="status">
     Esta fase não está no catálogo carregado e o processo não guardou os atributos dela.
   </p>
+  @if (fimNaConsulta()) {
+    <ui-valor-em-consulta
+      rotulo="Fim"
+      dica="Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados."
+      [valor]="edicao.dataHoraLida(item.grupo.controls.fim.value)"
+    />
+  }
 } @else {
   @if (item.exigencias.admiteRecurso || item.publicaResultadoDefinitivo || item.coletaInscricao) {
     <p class="field__hint">
@@ -29,19 +36,28 @@
       seVazio="Sem unidade responsável"
       [valor]="item.unidade"
     />
-    @if (item.exigencias.janelaObrigatoria) {
+    @let comInicio = item.exigencias.janelaObrigatoria;
+    @let comFim = fimNaConsulta();
+    @if (comInicio) {
       <ui-valor-em-consulta
         rotulo="Início"
         [valor]="edicao.dataHoraLida(item.grupo.controls.inicio.value)"
       />
+    }
+    @if (comFim) {
       <ui-valor-em-consulta
         rotulo="Fim"
         dica="Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados."
         [valor]="edicao.dataHoraLida(item.grupo.controls.fim.value)"
       />
-    } @else {
+    }
+    @if (!comInicio) {
       <p class="field__hint form-grid__full">
-        A data desta fase não consta do edital: a unidade responsável a define na execução.
+        @if (comFim) {
+          O início desta fase não consta do edital: a unidade responsável o define na execução.
+        } @else {
+          A data desta fase não consta do edital: a unidade responsável a define na execução.
+        }
       </p>
     }
 

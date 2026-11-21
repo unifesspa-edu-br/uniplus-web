@@ -5,8 +5,8 @@ import {
   type FaseDoCronograma,
   type ProdutoDaFase,
 } from '../processo-seletivo.models';
-import { publicaResultadoDefinitivo } from '../passos/fase/configuracao-da-fase';
 import { finalidadesQueAtende } from '../passos/formulario/formularios-por-finalidade';
+import { publicaResultadoDefinitivo } from './publicacoes-da-fase';
 
 /** Origem de data que obriga a fase a declarar janela. */
 export const ORIGEM_DATA_NO_EDITAL = 'NO_EDITAL';
@@ -28,6 +28,12 @@ export interface ExigenciasDaFase {
   readonly publicaProduto: boolean;
   /** A fase publica ao menos um produto preliminar, que é a âncora do prazo. */
   readonly admiteRecurso: boolean;
+  /**
+   * A fase não publica resultado definitivo, e por isso a publicação do processo exige o Fim dela.
+   * É indicação da tela, derivada do que a fase declara publicar: não bloqueia gravar o rascunho
+   * sem o Fim, e a recusa vem da API na publicação.
+   */
+  readonly fimObrigatorio: boolean;
   readonly agrupaEtapas: boolean;
 }
 
@@ -50,6 +56,7 @@ export function exigenciasDe(
       canonica.coletaSolicitacaoIsencao,
     publicaProduto: produtos.length > 0,
     admiteRecurso: produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR),
+    fimObrigatorio: !publicaResultadoDefinitivo(produtos),
     agrupaEtapas: canonica.agrupaEtapas,
   };
 }
@@ -90,14 +97,20 @@ function atributosDaFase(
   canonica: FaseCanonicaDto | undefined,
 ): AtributosDescritos {
   const { congelados } = fase;
-  if (congelados !== null) {
-    return {
-      coletaInscricao: congelados.coletaInscricao,
-      coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
-      permiteComplementacao: congelados.permiteComplementacao,
-      exigencias: exigenciasDe(congelados, fase.produtos),
-    };
-  }
+  return congelados === null
+    ? atributosDoCatalogo(fase, canonica)
+    : {
+        coletaInscricao: congelados.coletaInscricao,
+        coletaSolicitacaoIsencao: congelados.coletaSolicitacaoIsencao,
+        permiteComplementacao: congelados.permiteComplementacao,
+        exigencias: exigenciasDe(congelados, fase.produtos),
+      };
+}
+
+function atributosDoCatalogo(
+  fase: FaseDoCronograma,
+  canonica: FaseCanonicaDto | undefined,
+): AtributosDescritos {
   return {
     coletaInscricao: canonica?.coletaInscricao ?? false,
     coletaSolicitacaoIsencao: canonica?.coletaSolicitacaoIsencao ?? false,

@@ -37,6 +37,7 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
   let gravouExigencias: ContextoDoCronograma['gravouExigencias'];
   let gravouEtapas: ContextoDoCronograma['gravouEtapas'];
   let comFases: ContextoDoCronograma['comFases'];
+  let comFaseAjustada: ContextoDoCronograma['comFaseAjustada'];
   let comUnidadesNoCadastro: AjudantesDeUnidades['comUnidadesNoCadastro'];
   let unidadeDoSelect: AjudantesDeUnidades['unidadeDoSelect'];
   let fasesDoCorpo: AjudantesDeUnidades['fasesDoCorpo'];
@@ -57,6 +58,7 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       gravouExigencias,
       gravouEtapas,
       comFases,
+      comFaseAjustada,
     } = tela);
     ({ comUnidadesNoCadastro, unidadeDoSelect, fasesDoCorpo, acrescentar, recusarUnidadeNaFase } =
       new AjudantesDeUnidades(tela));
@@ -304,8 +306,12 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       expect(document.activeElement).toBe(unidadeDoSelect(1));
     });
 
-    it('a fase de data definida na execução não pede início nem fim', () => {
-      comFases(ID_RESULTADO);
+    it('a fase de data definida na execução, com definitivo e sem Fim, não pede início nem fim', () => {
+      comFaseAjustada(ID_RESULTADO, {
+        inicio: null,
+        fim: null,
+        produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+      });
       expansao.alternarFase(0);
       detectar();
 

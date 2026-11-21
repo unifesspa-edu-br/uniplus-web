@@ -46,70 +46,78 @@
   </div>
 }
 
-@if (item.exigencias !== null) {
-  @if (campoNaTela('inicio', item.exigencias)) {
-    @let doInicio = recusasDoCampo(item, 'inicio');
-    <div class="form-field">
-      <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
-      <input
-        class="input"
-        type="datetime-local"
-        [attr.id]="'cr-inicio-' + item.indice"
-        formControlName="inicio"
-        [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
-        [attr.aria-describedby]="
-          'cr-fuso-' + item.indice + (doInicio.length > 0 ? ' cr-inicio-erro-' + item.indice : '')
-        "
-        [attr.aria-invalid]="haRecusaAtiva(doInicio) ? 'true' : null"
+@let comInicio = campoNaTela('inicio', item.exigencias);
+@let comFim = fimNaTela();
+@if (comInicio) {
+  @let doInicio = recusasDoCampo(item, 'inicio');
+  <div class="form-field">
+    <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
+    <input
+      class="input"
+      type="datetime-local"
+      [attr.id]="'cr-inicio-' + item.indice"
+      formControlName="inicio"
+      [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
+      [attr.aria-describedby]="
+        'cr-fuso-' + item.indice + (doInicio.length > 0 ? ' cr-inicio-erro-' + item.indice : '')
+      "
+      [attr.aria-invalid]="haRecusaAtiva(doInicio) ? 'true' : null"
+    />
+    @if (doInicio.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="'cr-inicio-erro-' + item.indice"
+        tabindex="-1"
+        [recusas]="doInicio"
       />
-      @if (doInicio.length > 0) {
-        <sel-recusas-do-campo
-          [attr.id]="'cr-inicio-erro-' + item.indice"
-          tabindex="-1"
-          [recusas]="doInicio"
-        />
-      }
-    </div>
-    @let doFim = recusasDoCampo(item, 'fim');
-    <div class="form-field">
-      <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
-      <input
-        class="input"
-        type="datetime-local"
-        [attr.id]="'cr-fim-' + item.indice"
-        formControlName="fim"
-        [attr.min]="pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)"
-        [attr.aria-describedby]="
-          'cr-fuso-' + item.indice + (doFim.length > 0 ? ' cr-fim-erro-' + item.indice : '')
-        "
-        [attr.aria-invalid]="haRecusaAtiva(doFim) ? 'true' : null"
+    }
+  </div>
+}
+@if (comFim) {
+  @let doFim = recusasDoCampo(item, 'fim');
+  <div class="form-field">
+    <label class="label" [attr.for]="'cr-fim-' + item.indice">{{ rotuloDoFim() }}</label>
+    <input
+      class="input"
+      type="datetime-local"
+      [attr.id]="'cr-fim-' + item.indice"
+      formControlName="fim"
+      [attr.min]="pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)"
+      [attr.aria-required]="item.exigencias?.fimObrigatorio ? 'true' : null"
+      [attr.aria-describedby]="idsQueDescrevemOFim()"
+      [attr.aria-invalid]="haRecusaAtiva(doFim) ? 'true' : null"
+    />
+    @if (doFim.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="'cr-fim-erro-' + item.indice"
+        tabindex="-1"
+        [recusas]="doFim"
       />
-      @if (doFim.length > 0) {
-        <sel-recusas-do-campo
-          [attr.id]="'cr-fim-erro-' + item.indice"
-          tabindex="-1"
-          [recusas]="doFim"
-        />
-      }
-    </div>
-    <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
-      Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados.
-    </p>
-  } @else {
-    <p class="field__hint form-grid__full">
+    }
+  </div>
+}
+@if (comInicio || comFim) {
+  <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
+    Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados.
+  </p>
+}
+@if (item.exigencias !== null && !comInicio) {
+  <p class="field__hint form-grid__full" [attr.id]="'cr-sem-inicio-' + item.indice">
+    @if (comFim) {
+      O início desta fase não consta do edital: a unidade responsável o define na execução.
+    } @else {
       A data desta fase não consta do edital: a unidade responsável a define na execução.
-    </p>
-  }
+    }
+  </p>
+}
 
-  @if (item.exigencias.publicaProduto) {
-    @let produtos = leitura.produtosDaFase(item.grupo);
-    <div class="form-field form-grid__full">
-      <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">O que esta fase publica</h3>
-      <ul class="field__hint u-list" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
-        @for (produto of produtos; track produto.atoCodigo) {
-          <li>{{ produto.nome }} — {{ produto.papel }}.</li>
-        }
-      </ul>
-    </div>
-  }
+@if (item.exigencias?.publicaProduto) {
+  @let produtos = leitura.produtosDaFase(item.grupo);
+  <div class="form-field form-grid__full">
+    <h3 class="label" [attr.id]="'cr-produtos-' + item.indice">O que esta fase publica</h3>
+    <ul class="field__hint u-list" [attr.aria-labelledby]="'cr-produtos-' + item.indice">
+      @for (produto of produtos; track produto.atoCodigo) {
+        <li>{{ produto.nome }} — {{ produto.papel }}.</li>
+      }
+    </ul>
+  </div>
 }

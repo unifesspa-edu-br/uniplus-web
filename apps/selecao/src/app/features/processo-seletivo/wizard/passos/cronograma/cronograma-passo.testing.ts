@@ -226,6 +226,18 @@ export class ContextoDoCronograma {
     this.detectar();
   };
 
+  /** Uma fase da linha do tempo com o que o cenário declara dela, além da janela de sempre. */
+  readonly comFaseAjustada = (faseCanonicaId: string, ajuste: Partial<FaseDoCronograma>): void => {
+    const fase = faseDoRascunho({
+      faseCanonicaId,
+      codigo: FASES_CANONICAS.find((f) => f.id === faseCanonicaId)?.codigo ?? '',
+      ordem: 1,
+      ...ajuste,
+    });
+    this.store.patchObjectSection('cronograma', { fases: [fase] });
+    this.detectar();
+  };
+
   /** Uma fase única que declara o que publica, sem que este passo o edite. */
   readonly comFaseQuePublica = (
     produtos: readonly ProdutoDaFase[],

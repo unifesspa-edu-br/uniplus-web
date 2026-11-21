@@ -13,6 +13,8 @@ import {
   ROTA_PROCESSO,
   ROTA_DOCUMENTOS,
   ID_INSCRICAO,
+  ID_RESULTADO,
+  FASE_SUMIDA,
   PROCESSO_COM_ETAPA_GRAVADA,
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
@@ -27,6 +29,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
   let nativo: ContextoDoCronograma['nativo'];
   let proximoPasso: ContextoDoCronograma['proximoPasso'];
   let comFases: ContextoDoCronograma['comFases'];
+  let comFaseAjustada: ContextoDoCronograma['comFaseAjustada'];
 
   usarCronograma((tela) => {
     ({
@@ -39,6 +42,7 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       nativo,
       proximoPasso,
       comFases,
+      comFaseAjustada,
     } = tela);
   });
 
@@ -217,6 +221,47 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
       });
 
       expect(edicao.etapaLida(etapa).tipo).toBe('Prova de redação (removido do cadastro)');
+    });
+
+    it('lê o Fim que a fase guarda quando o período não é obrigatório, e diz que o início é da execução', () => {
+      comFaseAjustada(ID_RESULTADO, {
+        produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
+        inicio: null,
+        fim: '2026-03-10T18:00:00-03:00',
+      });
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+      expect(leitura).toContain('Fim');
+      expect(leitura).toContain('10/03/2026 18:00');
+      expect(leitura).toContain('O início desta fase não consta do edital');
+      expect(leitura).not.toContain('Início');
+    });
+
+    it('lê o Fim guardado da fase que o catálogo e o processo não descrevem', () => {
+      comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+      expect(leitura).toContain('não está no catálogo carregado');
+      expect(leitura).toContain('10/03/2026 18:00');
+    });
+
+    it('diz que o Fim da fase que o catálogo e o processo não descrevem está no horário de Belém', () => {
+      comFaseAjustada(FASE_SUMIDA, { fim: '2026-03-10T18:00:00-03:00' });
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+      expect(leitura).toContain('Data e hora no horário de Belém');
     });
 
     it('lê a janela da fase em dia e hora, não em texto de campo', () => {
