@@ -1,0 +1,140 @@
+import { TestBed } from '@angular/core/testing';
+import type { FormularioDto } from '@uniplus/shared-data/selecao';
+import { describe, expect, it } from 'vitest';
+
+import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
+import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-documentais';
+import { PASSO_CRONOGRAMA } from '../../shared/documentos-exigidos';
+import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
+import { conteudoDoFormulario } from './formulario-do-processo';
+import {
+  campo,
+  CONGELADOS_DA_INSCRICAO,
+  etapa,
+  FASE_INSCRICAO,
+  GRAVADO,
+  PCD_NO_CATALOGO,
+  PROCESSO,
+  PROCESSO_ID,
+  usarPasso,
+  type ContextoDoPasso,
+} from './formulario-passo.testing';
+
+describe('FormularioPassoComponent: documentos da fase', () => {
+  let fixture: ContextoDoPasso['fixture'];
+  let store: ContextoDoPasso['store'];
+  let host: ContextoDoPasso['host'];
+
+  usarPasso((contexto) => {
+    ({ fixture, store, host } = contexto);
+  });
+
+  describe('etapa dos documentos do formulário', () => {
+    const TIPO_LAUDO = '01960000-0000-7000-0000-0000000000d1';
+    const COM_ETAPA_DE_DOCUMENTOS = {
+      ...GRAVADO,
+      etapas: [
+        etapa('DADOS_BASICOS', 0),
+        etapa('DOCUMENTOS', 1, 'COMPROVACAO_DOCUMENTAL'),
+        etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+      ],
+      fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')],
+      grupos: [],
+    } as unknown as FormularioDto;
+
+    /** O processo publicado: os passos mostram o que está gravado como texto. */
+    function emConsulta(): void {
+      TestBed.inject(CatalogoDeFatos).fatos.set([PCD_NO_CATALOGO] as never);
+      store.patchObjectSection('formulario', {
+        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+      });
+      store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'publicado' } as never);
+      fixture.detectChanges();
+    }
+
+    it('lista os documentos da fase do formulário, com a condição de cada um, em vez de "Nenhum campo"', () => {
+      const laudo = {
+        ...exigenciaNova(TIPO_LAUDO, 'INSCRICAO'),
+        tipoDocumentoNome: 'Laudo médico',
+        aplicabilidade: 'CONDICIONAL',
+        condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
+        formatosPermitidos: ['PDF'],
+        tamanhoMaximoBytes: 5 * 1024 * 1024,
+      } as ExigenciaDeDocumento;
+      const certidaoDeOutraFase = {
+        ...exigenciaNova(TIPO_LAUDO, 'MATRICULA'),
+        tipoDocumentoNome: 'Outra fase',
+      };
+      store.patchSection(
+        'documentos',
+        comExigencia(comExigencia({ raizes: [], emTodasAsFases: [] }, laudo), certidaoDeOutraFase),
+      );
+
+      emConsulta();
+
+      const texto = host.textContent ?? '';
+      expect(texto).toContain('Laudo médico');
+      expect(texto).toContain('Obrigatório');
+      expect(texto).toContain('Pessoa com deficiência');
+      expect(texto).toContain('PDF, até 5,0 MB');
+      expect(texto).not.toContain('Outra fase');
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain(
+        'Laudo médico',
+      );
+    });
+
+    it('não diz que a fase não exige nada quando o documento ainda não tem formulário escolhido', () => {
+      const dividida = {
+        ...FASE_INSCRICAO,
+        congelados: { ...CONGELADOS_DA_INSCRICAO, coletaSolicitacaoIsencao: true },
+      };
+      store.patchSection('cronograma', { ...store.draft().cronograma, fases: [dividida] });
+      store.patchSection(
+        'documentos',
+        comExigencia({ raizes: [], emTodasAsFases: [] }, exigenciaNova(TIPO_LAUDO, 'INSCRICAO')),
+      );
+
+      emConsulta();
+
+      const texto = host.textContent ?? '';
+      expect(texto).toContain('1 documento desta fase depende da escolha do formulário');
+      expect(texto).not.toContain('Nenhum documento exigido nesta fase');
+    });
+
+    it('lista o documento exigido em todas as fases, também na fase acrescentada depois', () => {
+      const antes = {
+        ...FASE_INSCRICAO,
+        codigo: 'ANTES',
+        congelados: { ...CONGELADOS_DA_INSCRICAO, coletaInscricao: false },
+      };
+      store.patchSection('cronograma', {
+        ...store.draft().cronograma,
+        fases: [antes, FASE_INSCRICAO],
+      });
+      store.patchSection('documentos', {
+        ...comExigencia(
+          { raizes: [], emTodasAsFases: [] },
+          { ...exigenciaNova(TIPO_LAUDO, 'ANTES'), tipoDocumentoNome: 'Laudo médico' },
+        ),
+        emTodasAsFases: [TIPO_LAUDO],
+      });
+
+      emConsulta();
+
+      expect(host.querySelector('sel-documentos-do-formulario')?.textContent).toContain(
+        'Laudo médico',
+      );
+    });
+
+    it('sem documento na fase, diz que nenhum é exigido e leva ao Cronograma', () => {
+      store.patchObjectSection('formulario', {
+        conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
+      });
+      fixture.detectChanges();
+
+      expect(host.textContent).toContain('Nenhum documento exigido nesta fase');
+      host.querySelector<HTMLButtonElement>('sel-documentos-do-formulario button')?.click();
+      expect(store.passoAtual()).toBe(PASSO_CRONOGRAMA);
+    });
+  });
+});
