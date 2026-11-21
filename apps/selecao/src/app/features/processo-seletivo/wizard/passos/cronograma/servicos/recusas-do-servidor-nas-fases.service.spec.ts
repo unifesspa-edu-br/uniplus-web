@@ -12,6 +12,7 @@ import { umaFaseDoCronograma } from '../../../shared/fase-do-cronograma.testing'
 import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { faseComoNoFormulario } from '../cronograma-form';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
+import { SEM_RECUSAS_DA_PUBLICACAO } from './recusas-da-publicacao-no-cronograma.testing';
 
 const PRIMEIRA = umaFaseDoCronograma({ faseCanonicaId: 'fase-a', codigo: 'A', ordem: 1 });
 const SEGUNDA = umaFaseDoCronograma({ faseCanonicaId: 'fase-b', codigo: 'B', ordem: 2 });
@@ -28,7 +29,14 @@ function registrar(
 }
 
 function recusa(campo: string, ordem = 0, codigo = 'uniplus.selecao.codigo_a'): RecusaDoProblema {
-  return { campo, codigo, mensagem: `Mensagem de ${campo}.`, pagina: null, ordem };
+  return {
+    campo,
+    codigo,
+    mensagem: `Mensagem de ${campo}.`,
+    pagina: null,
+    ordem,
+    identificadores: [],
+  };
 }
 
 describe('RecusasDoServidorNasFases', () => {
@@ -40,7 +48,7 @@ describe('RecusasDoServidorNasFases', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [ProcessoSeletivoStore, RecusasDoServidorNasFases],
+      providers: [ProcessoSeletivoStore, RecusasDoServidorNasFases, SEM_RECUSAS_DA_PUBLICACAO],
     });
     recusasNasFases = TestBed.inject(RecusasDoServidorNasFases);
     store = TestBed.inject(ProcessoSeletivoStore);
@@ -221,7 +229,7 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [ProcessoSeletivoStore, RecusasDoServidorNasFases],
+      providers: [ProcessoSeletivoStore, RecusasDoServidorNasFases, SEM_RECUSAS_DA_PUBLICACAO],
     });
     recusasNasFases = TestBed.inject(RecusasDoServidorNasFases);
     store = TestBed.inject(ProcessoSeletivoStore);

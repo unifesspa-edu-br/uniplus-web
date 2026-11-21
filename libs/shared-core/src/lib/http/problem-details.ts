@@ -37,6 +37,20 @@ export interface ProblemValidationError {
   readonly field?: string;
   readonly code: string;
   readonly message: string;
+  /**
+   * O identificador estável de cada item de lista que o campo atravessa, na ordem do caminho.
+   * Ausente quando a causa não aponta item com identificador.
+   */
+  readonly identificadores?: ReadonlyArray<IdentificadorDoItem>;
+}
+
+/**
+ * O identificador de um item de lista que a causa atravessa: o nome da lista, como aparece no
+ * caminho do campo, e o identificador do item (um código de catálogo ou um identificador opaco).
+ */
+export interface IdentificadorDoItem {
+  readonly lista: string;
+  readonly identificador: string;
 }
 
 export interface LegalReference {

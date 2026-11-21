@@ -29,6 +29,7 @@ import { RecusasDoServidorNasEtapas } from '../servicos/recusas-do-servidor-nas-
 import { RecusasDoServidorNasFases } from '../servicos/recusas-do-servidor-nas-fases.service';
 import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
 import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
+import { SEM_RECUSAS_DA_PUBLICACAO } from '../servicos/recusas-da-publicacao-no-cronograma.testing';
 
 const RECURSO: RecursoDaEtapa = {
   ancora: 'cienciaIndividual',
@@ -74,6 +75,7 @@ describe('RecursosDaEtapaComponent', () => {
         ReleituraDasEtapas,
         FormularioDoCronograma,
         RecusasDoServidorNasEtapas,
+        SEM_RECUSAS_DA_PUBLICACAO,
         RecusasDoServidorNasFases,
         ExpansaoDoCronograma,
         EdicaoDaEtapa,

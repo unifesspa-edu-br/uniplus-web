@@ -14,15 +14,25 @@
 }
 
 <ul class="u-list">
-  @for (recusa of recusasDoServidor.recusas(); track recusa.ordem) {
+  @for (item of itens(); track item.recusa.ordem) {
     <li>
-      <ui-recusa-do-campo [recusas]="[recusa]" />
+      <ui-recusa-do-campo [recusas]="[item.recusa]" />
       <p class="field__hint">
         Apontada na última resposta que recusou a publicação.
-        @if (recusa.campo !== semCampo) {
+        @if (item.recusa.campo !== semCampo && !item.comCampo) {
           Sem campo nesta tela.
         }
       </p>
+      @if (item.comCampo) {
+        <button
+          class="btn btn--tertiary"
+          type="button"
+          [attr.aria-label]="'Ir ao campo da causa ' + item.recusa.codigo"
+          (click)="irAoCampo(item.recusa)"
+        >
+          Ir ao campo
+        </button>
+      }
     </li>
   }
 </ul>

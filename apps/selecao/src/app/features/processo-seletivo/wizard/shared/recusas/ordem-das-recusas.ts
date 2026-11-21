@@ -13,6 +13,8 @@ export interface RecusaOrdenada extends RecusaDoCampo {
   readonly origem: OrigemDaRecusa;
   /** A parte do cadastro mudou depois da recusa: ela segue à vista e será conferida de novo. */
   readonly aConferir: boolean;
+  /** Um esclarecimento que a tela mostra junto da recusa, além da nota da conferência. */
+  readonly nota?: string;
 }
 
 /**

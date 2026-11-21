@@ -68,6 +68,20 @@ describe('recusasDaResposta', () => {
     expect([recusa.origem, recusa.aConferir]).toEqual(['publicacao', false]);
   });
 
+  it('leva os identificadores dos itens de lista que a API deu, e vazios quando não deu', () => {
+    const doItem = { lista: 'fases', identificador: 'CLASSIFICACAO' };
+
+    const recusas = recusasDaResposta(
+      problema(
+        { ...comCampo('fases[0].fim'), identificadores: [doItem] },
+        comCampo('fases[1].fim'),
+      ),
+      1,
+    );
+
+    expect(recusas.map((recusa) => recusa.identificadores)).toEqual([[doItem], []]);
+  });
+
   it('devolve nada quando a resposta não traz causas', () => {
     expect(recusasDaResposta(problema(), 1)).toEqual([]);
   });
@@ -128,6 +142,27 @@ describe('RecusasDaPublicacao', () => {
     recusas.registrar({ ...problema(comCampo('/b')), code: CODIGO_B }, 'Segunda.');
 
     expect(recusas.resposta()).toEqual({ codigo: CODIGO_B, titulo: 'Segunda.' });
+  });
+
+  it('guarda o cronograma que a publicação conferiu, enquanto a resposta vale', () => {
+    expect(recusas.cronogramaDaResposta()).toBeNull();
+    store.patchObjectSection('cronograma', { fases: [umaFaseDoCronograma()] });
+
+    recusas.registrar(problema(comCampo('/a')), TITULO);
+    store.patchObjectSection('cronograma', { fases: [] });
+
+    expect(recusas.cronogramaDaResposta()?.fases).toHaveLength(1);
+    recusas.limpar();
+    expect(recusas.cronogramaDaResposta()).toBeNull();
+  });
+
+  it('esquece o destino do "Ir ao campo" ao limpar', () => {
+    recusas.registrar(problema(comCampo('/a')), TITULO);
+    recusas.destino.set(recusas.recusas()[0]);
+
+    recusas.limpar();
+
+    expect(recusas.destino()).toBeNull();
   });
 
   it('esvazia ao limpar', () => {

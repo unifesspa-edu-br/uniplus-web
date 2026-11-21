@@ -213,6 +213,12 @@ export interface TipoCongeladoDaEtapa {
  * Os parâmetros são os mesmos da regra de recurso da fase.
  */
 export interface RecursoDaEtapa extends ParametrosDoRecurso {
+  /**
+   * O `Id` que o servidor deu ao recurso na última gravação das etapas; muda a cada gravação.
+   * Ausente enquanto o recurso é novo. Só serve a achar o recurso que uma recusa da publicação
+   * aponta; não viaja no comando.
+   */
+  readonly id?: string;
   readonly leitura: LeituraDoRecurso;
   readonly ancora: 'atoPublicado' | 'cienciaIndividual';
   readonly regraCodigo: string;

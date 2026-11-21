@@ -92,4 +92,44 @@ describe('apiResultInterceptor: causas do problema', () => {
 
     expect(causas).toEqual([{ code: 'Ok', message: 'ok' }]);
   });
+
+  it('leva os identificadores dos itens de lista, na ordem do caminho', () => {
+    const identificadores = [
+      { lista: 'etapas', identificador: 'a1' },
+      { lista: 'recursos', identificador: 'b2' },
+    ];
+
+    const causas = causasRecebidas([
+      { field: 'etapas[0].recursos[1].prazoValor', code: 'A', message: 'a', identificadores },
+    ]);
+
+    expect(causas).toEqual([
+      { field: 'etapas[0].recursos[1].prazoValor', code: 'A', message: 'a', identificadores },
+    ]);
+  });
+
+  it('descarta o identificador que não é um par de textos e tira a chave quando nenhum vale', () => {
+    const causas = causasRecebidas([
+      {
+        field: 'fases[0].fim',
+        code: 'A',
+        message: 'a',
+        identificadores: [{ lista: 'fases', identificador: 'X' }, { lista: 'fases' }, 'x', null],
+      },
+      { field: 'fases[1].fim', code: 'B', message: 'b', identificadores: [{ lista: 7 }, 'x'] },
+      { field: 'fases[2].fim', code: 'C', message: 'c', identificadores: 'não é lista' },
+    ]);
+
+    expect(causas).toEqual([
+      {
+        field: 'fases[0].fim',
+        code: 'A',
+        message: 'a',
+        identificadores: [{ lista: 'fases', identificador: 'X' }],
+      },
+      { field: 'fases[1].fim', code: 'B', message: 'b' },
+      { field: 'fases[2].fim', code: 'C', message: 'c' },
+    ]);
+    expect('identificadores' in (causas?.[1] ?? {})).toBe(false);
+  });
 });

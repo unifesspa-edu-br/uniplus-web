@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { PASSOS } from '../../processo-seletivo.data';
 import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
 import { RevisaoPassoComponent } from './revisao.component';
@@ -30,6 +31,7 @@ interface Erro {
   readonly field?: string;
   readonly code: string;
   readonly message: string;
+  readonly identificadores?: readonly { lista: string; identificador: string }[];
 }
 
 const FIM_DA_FASE: Erro = {
@@ -296,5 +298,52 @@ describe('RevisaoPassoComponent: recusas da publicação', () => {
     TestBed.tick();
 
     expect(recusasDoServidor.recusas()).toEqual([]);
+  });
+
+  describe('"Ir ao campo"', () => {
+    const FIM_IDENTIFICADO: Erro = {
+      ...FIM_DA_FASE,
+      field: 'fases[0].fim',
+      identificadores: [{ lista: 'fases', identificador: 'CLASSIFICACAO' }],
+    };
+    const botao = (): HTMLButtonElement | null =>
+      bloco()?.querySelector<HTMLButtonElement>('button') ?? null;
+
+    it('oferece o botão à recusa que aponta uma fase que está no cronograma', async () => {
+      await prepararRevisao();
+      store.patchObjectSection('cronograma', {
+        fases: [umaFaseDoCronograma({ codigo: 'CLASSIFICACAO' })],
+      });
+
+      await publicarERecusar([FIM_IDENTIFICADO]);
+
+      expect(botao()?.textContent).toContain('Ir ao campo');
+      expect(textoDoBloco()).not.toContain('Sem campo nesta tela.');
+    });
+
+    it('leva ao passo Cronograma e deixa o destino para o passo abrir o campo', async () => {
+      await prepararRevisao();
+      store.patchObjectSection('cronograma', {
+        fases: [umaFaseDoCronograma({ codigo: 'CLASSIFICACAO' })],
+      });
+      await publicarERecusar([FIM_IDENTIFICADO]);
+
+      botao()?.click();
+
+      expect(store.passoAtual()).toBe(PASSOS.findIndex((passo) => passo.rotulo === 'Cronograma'));
+      expect(recusasDoServidor.destino()?.codigo).toBe(SEM_FIM);
+    });
+
+    it('não oferece o botão quando a fase que a recusa aponta não está mais no cronograma', async () => {
+      await prepararRevisao();
+      store.patchObjectSection('cronograma', {
+        fases: [umaFaseDoCronograma({ codigo: 'OUTRA_FASE' })],
+      });
+
+      await publicarERecusar([FIM_IDENTIFICADO]);
+
+      expect(botao()).toBeNull();
+      expect(textoDoBloco()).toContain('Sem campo nesta tela.');
+    });
   });
 });

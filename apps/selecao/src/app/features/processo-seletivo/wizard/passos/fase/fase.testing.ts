@@ -14,6 +14,7 @@ import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/param
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
+import { SEM_RECUSAS_DA_PUBLICACAO } from '../cronograma/servicos/recusas-da-publicacao-no-cronograma.testing';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { FasePassoComponent } from './fase.component';
@@ -193,6 +194,7 @@ export interface FaseMontada {
 const PROVEDORES_DA_FASE = [
   ProcessoSeletivoStore,
   RecusasDoServidorNasFases,
+  SEM_RECUSAS_DA_PUBLICACAO,
   CadastroInicial,
   GravacaoDoProcesso,
   ...CATALOGOS_DO_CRONOGRAMA,

@@ -12,6 +12,7 @@ import { IDEMPOTENCY_KEY_TOKEN } from './idempotency-token';
 import {
   CLIENT_PROBLEM_CODES,
   CODIGO_CATALOGO_DESATUALIZADO,
+  IdentificadorDoItem,
   MENSAGEM_CATALOGO_DESATUALIZADO,
   ProblemDetails,
   ProblemValidationError,
@@ -232,18 +233,33 @@ function normalizeErrors(
 
 /**
  * Lê uma causa do fio. `field` ausente ou `null` vira causa geral, sem a chave; `field` de outro
- * tipo ou causa sem `code`/`message` em texto não é causa válida e é descartada.
+ * tipo ou causa sem `code`/`message` em texto não é causa válida e é descartada. Os
+ * `identificadores` só passam se forem pares de texto, e a chave some quando nenhum é válido.
  */
 function causaDoFio(entry: unknown): ProblemValidationError | null {
   if (typeof entry !== 'object' || entry === null) {
     return null;
   }
-  const { field, code, message } = entry as Record<string, unknown>;
+  const { field, code, message, identificadores } = entry as Record<string, unknown>;
   if (typeof code !== 'string' || typeof message !== 'string') {
     return null;
   }
+  const itens = identificadoresDoFio(identificadores);
+  const causa = itens.length > 0 ? { code, message, identificadores: itens } : { code, message };
   if (typeof field === 'string') {
-    return { field, code, message };
+    return { field, ...causa };
   }
-  return field === undefined || field === null ? { code, message } : null;
+  return field === undefined || field === null ? causa : null;
+}
+
+function identificadoresDoFio(bruto: unknown): readonly IdentificadorDoItem[] {
+  if (!Array.isArray(bruto)) {
+    return [];
+  }
+  return bruto.flatMap((item: unknown) => {
+    const { lista, identificador } = (item ?? {}) as Record<string, unknown>;
+    return typeof lista === 'string' && typeof identificador === 'string'
+      ? [{ lista, identificador }]
+      : [];
+  });
 }

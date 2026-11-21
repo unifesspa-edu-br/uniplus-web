@@ -30,6 +30,7 @@ import {
   type RecusaDaEtapaGuardada,
 } from './distribuicao-das-recusas-das-etapas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
+import { RecusasDaPublicacaoNoCronograma } from './recusas-da-publicacao-no-cronograma.service';
 
 type GuardadasPorEtapa = ReadonlyMap<FormGroup<EtapaForm>, readonly RecusaDaEtapaGuardada[]>;
 
@@ -56,6 +57,7 @@ function foiAlterada(grupo: FormGroup<EtapaForm>, recusa: RecusaDaEtapaGuardada)
 export class RecusasDoServidorNasEtapas {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly cronograma = inject(FormularioDoCronograma);
+  private readonly daPublicacao = inject(RecusasDaPublicacaoNoCronograma);
   private readonly guardadas = signal<GuardadasPorEtapa>(new Map());
 
   /** As listas de cada etapa na última vez que as recusas foram postas nas posições dos itens. */
@@ -156,20 +158,26 @@ export class RecusasDoServidorNasEtapas {
     this.guardadas.set(new Map());
   }
 
+  /** As recusas da etapa, da gravação e da última publicação, ativas e a conferir, sem ordem. */
+  private recusasDaEtapa(grupo: FormGroup<EtapaForm>): readonly RecusaOrdenada[] {
+    return [
+      ...(this.vigentes().get(grupo) ?? []),
+      ...this.daPublicacao.recusasDaEtapa(grupo.controls.id.value),
+    ];
+  }
+
   /** As recusas da etapa a um campo, ativas e a conferir, na ordem em que se leem. */
   recusasDoCampo(
     grupo: FormGroup<EtapaForm>,
     campo: CampoDaRecusaDaEtapa,
   ): readonly RecusaOrdenada[] {
-    const daEtapa = this.vigentes().get(grupo) ?? [];
-    return emOrdem(daEtapa.filter((recusa) => recusa.campo === campo));
+    return emOrdem(this.recusasDaEtapa(grupo).filter((recusa) => recusa.campo === campo));
   }
 
   /** Todas as recusas a um recurso da etapa, ativas e a conferir, na ordem em que se leem. */
   recusasDoRecurso(grupo: FormGroup<EtapaForm>, indice: number): readonly RecusaOrdenada[] {
     const prefixo = `recursos.${indice}.`;
-    const daEtapa = this.vigentes().get(grupo) ?? [];
-    return emOrdem(daEtapa.filter((recusa) => recusa.campo.startsWith(prefixo)));
+    return emOrdem(this.recusasDaEtapa(grupo).filter((recusa) => recusa.campo.startsWith(prefixo)));
   }
 
   /** A primeira recusa ativa do passo: a da resposta mais recente, na ordem em que a API a deu. */
