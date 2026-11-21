@@ -35,6 +35,7 @@ import { EnvioDoEdital } from './wizard/shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from './wizard/shared/gravacao/gravacao-do-processo';
 import { GravacaoDosCamposPressupostos } from './wizard/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './wizard/shared/releitura-do-snapshot.service';
+import { NumeracaoDasRespostasRecusadas } from './wizard/shared/recusas/numeracao-das-respostas-recusadas';
 import { TipoProcessoPassoComponent } from './wizard/passos/tipo-processo/tipo-processo.component';
 import { IdentificacaoPassoComponent } from './wizard/passos/identificacao/identificacao.component';
 import { PagamentoPassoComponent } from './wizard/passos/pagamento/pagamento.component';
@@ -96,6 +97,7 @@ import {
     CatalogosDeClassificacao,
     LeituraDoCadastroDePesos,
     ReleituraDoSnapshot,
+    NumeracaoDasRespostasRecusadas,
   ],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
