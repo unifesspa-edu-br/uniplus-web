@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  CATALOGO,
   ESCRITA,
   FASES,
   LISTA,
@@ -27,10 +28,9 @@ describe('PrecedenciasFasePage', () => {
 
   describe('com as fases cadastradas', () => {
     beforeEach(async () => {
-      p = await montarPagina(
-        [inscricaoHomologacao, avaliacaoClassificacao],
-        [faseCanonica('AVALIACAO', 'Avaliação')],
-      );
+      p = await montarPagina([inscricaoHomologacao, avaliacaoClassificacao], {
+        cadastro: [faseCanonica('AVALIACAO', 'Avaliação')],
+      });
     });
     afterEach(() => p.http.verify());
 
@@ -67,12 +67,18 @@ describe('PrecedenciasFasePage', () => {
       expect(p.fixture.nativeElement.textContent).toContain('Nenhuma aresta encontrada');
     });
 
-    it('as opções cobrem o roster canônico e marcam as fases ainda não cadastradas', async () => {
+    it('as opções vêm do catálogo, na ordem dele, e marcam as fases ainda não cadastradas', async () => {
       p.novo().click();
       await p.propagar();
 
-      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
-      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — (não cadastrada)');
+      expect(opcoesDe('antecessoraCodigo').slice(1)).toEqual([
+        'INSCRICAO — Inscrição (não cadastrada)',
+        'HOMOLOGACAO — Homologação (não cadastrada)',
+        'AVALIACAO — Avaliação',
+        'CLASSIFICACAO — Classificação (não cadastrada)',
+        'RESULTADO_FINAL — Resultado final (não cadastrada)',
+      ]);
+      expect(opcoesDe('sucessoraCodigo').slice(1)).toEqual(opcoesDe('antecessoraCodigo').slice(1));
     });
 
     it('identifica as duas fases como obrigatórias para tecnologias assistivas', async () => {
@@ -206,58 +212,108 @@ describe('PrecedenciasFasePage', () => {
   describe('cadastro de fases', () => {
     afterEach(() => p.http.verify());
 
-    it('percorre todas as páginas de fases canônicas sem truncar', async () => {
-      p = await montarPagina(
-        [inscricaoHomologacao],
-        [faseCanonica('INSCRICAO', 'Inscrição')],
-        `<${FASES}?cursor=pagina-2&direction=next>; rel="next"`,
-      );
+    it('percorre todas as páginas do cadastro sem truncar, e só marca a fase que falta nele', async () => {
+      p = await montarPagina([inscricaoHomologacao], {
+        cadastro: [faseCanonica('INSCRICAO', 'Inscrição')],
+        linkDoCadastro: `<${FASES}?cursor=pagina-2&direction=next>; rel="next"`,
+      });
       p.http
         .expectOne((r) => r.url === FASES && r.params.get('cursor') === 'pagina-2')
         .flush([faseCanonica('HOMOLOGACAO', 'Homologação')]);
       await p.propagar();
+      p.novo().click();
+      await p.propagar();
 
-      expect(p.fasesDoGrafo.nomeDaFase('INSCRICAO')).toBe('Inscrição');
-      expect(p.fasesDoGrafo.nomeDaFase('HOMOLOGACAO')).toBe('Homologação');
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
+      expect(opcoesDe('antecessoraCodigo')).toContain('HOMOLOGACAO — Homologação');
+      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação (não cadastrada)');
     });
 
-    it('a falha ao consultar as fases degrada os rótulos sem se confundir com a da lista', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
+    it('a falha do cadastro tira só a marca: as opções e a lista seguem, sem aviso', async () => {
+      p = await montarPagina([inscricaoHomologacao], { cadastro: 'falha' });
+      p.novo().click();
+      await p.propagar();
+
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
+      expect(opcoesDe('antecessoraCodigo').join()).not.toContain('(não cadastrada)');
+      expect(linhas()[0].textContent).toContain('Inscrição');
+      expect(p.fixture.nativeElement.textContent).not.toContain('Fases indisponíveis');
+    });
+
+    it('enquanto o cadastro carrega, as opções não afirmam que a fase falta', async () => {
+      p = await montarPagina([inscricaoHomologacao], { cadastro: 'pendente' });
+      p.novo().click();
+      await p.propagar();
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
+
+      await p.responderCadastro([faseCanonica('AVALIACAO', 'Avaliação')]);
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição (não cadastrada)');
+      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
+    });
+  });
+
+  describe('catálogo de fases', () => {
+    afterEach(() => p.http.verify());
+
+    const aviso = (): HTMLElement | null =>
+      [
+        ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
+          ':scope > ui-falha-de-leitura',
+        ),
+      ].find((a) => a.textContent?.includes('Fases indisponíveis')) ?? null;
+
+    it('a lista mostra o nome do catálogo e só o código da fase que o catálogo não tem', async () => {
+      p = await montarPagina([inscricaoHomologacao, avaliacaoClassificacao], {
+        catalogo: [{ codigo: 'AVALIACAO', nome: 'Avaliação' }],
+      });
+
+      expect(linhas()[0].textContent).not.toContain('Inscrição');
+      expect(linhas()[1].textContent).toContain('Avaliação');
+    });
+
+    it('a falha do catálogo deixa o formulário sem fases, sem se confundir com a falha da lista', async () => {
+      p = await montarPagina([inscricaoHomologacao], { catalogo: 'falha' });
       p.novo().click();
       await p.propagar();
 
       expect(p.store.mensagemDeErro()).toBeNull();
-      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
-      expect(opcoesDe('antecessoraCodigo')).not.toContain('INSCRICAO — (não cadastrada)');
+      expect(opcoesDe('antecessoraCodigo')).toEqual(['Selecione a fase antecessora']);
+      expect(linhas()[0].textContent).toContain('INSCRICAO');
     });
 
-    it('enquanto as fases carregam, as opções mostram só o código, sem "(não cadastrada)"', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'pendente');
+    it('um catálogo sem fases conta como falha', async () => {
+      p = await montarPagina([inscricaoHomologacao], { catalogo: [] });
+
+      expect(aviso()).not.toBeNull();
+    });
+
+    it('enquanto o catálogo carrega não há opções, e elas chegam na ordem da resposta', async () => {
+      p = await montarPagina([inscricaoHomologacao], { catalogo: 'pendente' });
       p.novo().click();
       await p.propagar();
-      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO');
-      expect(opcoesDe('antecessoraCodigo')).not.toContain('INSCRICAO — (não cadastrada)');
+      expect(opcoesDe('antecessoraCodigo')).toEqual(['Selecione a fase antecessora']);
 
-      await p.responderFases([faseCanonica('AVALIACAO', 'Avaliação')]);
-      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — (não cadastrada)');
-      expect(opcoesDe('antecessoraCodigo')).toContain('AVALIACAO — Avaliação');
+      await p.responderCatalogo([
+        { codigo: 'AVALIACAO', nome: 'Avaliação' },
+        { codigo: 'INSCRICAO', nome: 'Inscrição' },
+      ]);
+      expect(opcoesDe('antecessoraCodigo').slice(1)).toEqual([
+        'AVALIACAO — Avaliação (não cadastrada)',
+        'INSCRICAO — Inscrição (não cadastrada)',
+      ]);
     });
 
-    it('a falha das fases tem um só aviso, na página, e "Tentar novamente" recarrega e devolve o foco ao título', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
-      const aviso = (): HTMLElement | null =>
-        [
-          ...(p.fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>(
-            ':scope > ui-falha-de-leitura',
-          ),
-        ].find((a) => a.textContent?.includes('Nomes das fases indisponíveis')) ?? null;
-      expect(aviso()?.textContent).toContain('a busca por nome não encontra');
+    it('a falha tem um só aviso, na página, e "Tentar novamente" recarrega e devolve o foco ao título', async () => {
+      p = await montarPagina([inscricaoHomologacao], { catalogo: 'falha' });
+      expect(aviso()?.textContent).toContain('a lista e a busca mostram só os códigos');
 
       const tentar = aviso()?.querySelector('button') as HTMLButtonElement;
       tentar.focus();
       tentar.click();
       await p.propagar();
-      p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
+      p.http
+        .expectOne((r) => r.url === CATALOGO)
+        .flush([{ codigo: 'INSCRICAO', nome: 'Inscrição' }]);
       await p.propagar();
       await p.propagar();
 
@@ -266,8 +322,8 @@ describe('PrecedenciasFasePage', () => {
       expect(document.activeElement).toBe(p.elemento('#cfg-precedencias-fase-list-title'));
     });
 
-    it('com o formulário aberto, a nova tentativa das fases está nele e a mesma leitura recarrega uma só vez', async () => {
-      p = await montarPagina([inscricaoHomologacao], 'falha');
+    it('com o formulário aberto, a nova tentativa está nele e a mesma leitura recarrega uma só vez', async () => {
+      p = await montarPagina([inscricaoHomologacao], { catalogo: 'falha' });
       p.novo().click();
       await p.propagar();
 
@@ -278,12 +334,14 @@ describe('PrecedenciasFasePage', () => {
       expect(formulario.textContent).toContain('Tentar novamente');
       tentar?.click();
       await p.propagar();
-      p.http.expectOne((r) => r.url === FASES).flush([faseCanonica('INSCRICAO', 'Inscrição')]);
+      p.http
+        .expectOne((r) => r.url === CATALOGO)
+        .flush([{ codigo: 'INSCRICAO', nome: 'Inscrição' }]);
       await p.propagar();
       await p.propagar();
 
       expect(formulario.querySelector('ui-falha-de-leitura-do-campo button')).toBeNull();
-      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição');
+      expect(opcoesDe('antecessoraCodigo')).toContain('INSCRICAO — Inscrição (não cadastrada)');
     });
   });
 });

@@ -7,6 +7,8 @@ import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type FaseCanonicaDto = components['schemas']['FaseCanonicaDto'];
 export type AtualizarFaseCanonicaCommand = components['schemas']['AtualizarFaseCanonicaCommand'];
+/** Fase do catálogo da API: código estável e nome, ambos postos pela API. */
+export type FaseCanonicaVocabularioDto = components['schemas']['FaseCanonicaVocabularioDto'];
 
 /** Filtro de listagem de Fases canônicas (cursor pagination, ADR-0026). */
 export interface FasesCanonicasQuery {
@@ -14,35 +16,6 @@ export interface FasesCanonicasQuery {
   readonly direction?: 'next' | 'prev';
   readonly limit?: number;
 }
-
-/**
- * Código canônico das fases fixas do ciclo de vida do processo seletivo
- * (UNI-REQ-0139). Roster fechado — provisionado pelo seed da API; a tela de
- * Fase canônica não cria fases e a edição trata `codigo` como
- * imutável (readonly). Consumido pela tela de Precedências de fase. Espelha
- * `FaseCanonicaCatalogo.Codigos` do backend, que não declara o enum no
- * OpenAPI: `codigo` é string no contrato e a pertença é guarda de domínio.
- */
-export const CODIGOS_FASE_CANONICA = [
-  'INSCRICAO',
-  'SOLICITACAO_ISENCAO',
-  'HOMOLOGACAO',
-  'ENSALAMENTO',
-  'AVALIACAO',
-  'CLASSIFICACAO',
-  'RESULTADO_PRELIMINAR',
-  'RECURSOS',
-  'RESULTADO_FINAL',
-  'HABILITACAO',
-  'HETEROIDENTIFICACAO',
-  'AVALIACAO_BIOPSICOSSOCIAL',
-  'MATRICULA',
-  'HOMOLOGACAO_RESULTADO_FINAL',
-  'LISTA_ESPERA',
-  'CHAMADA',
-] as const;
-
-export type CodigoFaseCanonica = (typeof CODIGOS_FASE_CANONICA)[number];
 
 /**
  * Origem da data da fase (UNI-REQ-0064). Domínio fechado de dois tokens, com
@@ -82,6 +55,17 @@ export class FasesCanonicasApi {
         params: janelaDaPagina(new HttpParams(), query),
         context: withVendorMime('fase-canonica', 1),
       },
+    );
+  }
+
+  /**
+   * GET `/api/configuracao/vocabularios/fases-canonicas` — as fases do catálogo, na ordem em que a
+   * tela as apresenta. Conjunto fechado: sem paginação.
+   */
+  listarVocabulario(): Observable<ApiResult<readonly FaseCanonicaVocabularioDto[]>> {
+    return this.http.get<ApiResult<readonly FaseCanonicaVocabularioDto[]>>(
+      `${this.basePath}/api/configuracao/vocabularios/fases-canonicas`,
+      { context: withVendorMime('codigo-fase-canonica', 1) },
     );
   }
 

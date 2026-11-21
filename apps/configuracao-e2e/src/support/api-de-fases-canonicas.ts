@@ -26,6 +26,19 @@ export function faseCanonica(parcial: Partial<FaseCanonicaDto> = {}): FaseCanoni
   return { ...FASE_SEM_SINALIZADORES, ...parcial };
 }
 
+/** O catálogo de fases da API, na ordem dela: as que os specs de precedência escolhem. */
+const CATALOGO_DE_FASES = [
+  { codigo: 'INSCRICAO', nome: 'Inscrição' },
+  { codigo: 'HOMOLOGACAO', nome: 'Homologação' },
+  { codigo: 'AVALIACAO', nome: 'Avaliação' },
+  { codigo: 'CLASSIFICACAO', nome: 'Classificação' },
+  { codigo: 'RESULTADO_FINAL', nome: 'Resultado final' },
+];
+
+/** Serve o catálogo de fases que a página de precedências lê a cada abertura. */
+export const mockCatalogoDeFases = (page: Page): Promise<void> =>
+  servirLeitura(page, /\/api\/configuracao\/vocabularios\/fases-canonicas$/, CATALOGO_DE_FASES);
+
 function aoAtualizar(atualizacoes: unknown[]) {
   return (route: Route): Promise<void> => {
     if (route.request().method() === 'OPTIONS') return responderPreflight(route);

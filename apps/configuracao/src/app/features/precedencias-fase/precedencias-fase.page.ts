@@ -25,7 +25,7 @@ import { PrecedenciasFaseStore } from './precedencias-fase.store';
 
 const ID_DO_TITULO = 'cfg-precedencias-fase-list-title';
 const MENSAGEM_DAS_FASES =
-  'Não foi possível consultar o cadastro de Fase Canônica. A lista, as opções do formulário e a busca mostram só os códigos das fases, e a busca por nome não encontra as arestas existentes.';
+  'Não foi possível consultar as fases do processo seletivo. O formulário fica sem fases para escolher, e a lista e a busca mostram só os códigos das fases.';
 
 @Component({
   selector: 'cfg-precedencias-fase-page',
@@ -63,7 +63,7 @@ export class PrecedenciasFasePage {
     assunto: 'fases',
     falha: computed(() => (this.fases.falhou() ? MENSAGEM_DAS_FASES : null)),
     pendente: this.fases.pendente,
-    recarregar: () => this.fases.recarregar(),
+    recarregar: () => this.fases.tentarDeNovo(),
     destino: () =>
       destinoAcessivel(
         document.querySelector<HTMLElement>('#cfg-precedencia-fase-form select'),

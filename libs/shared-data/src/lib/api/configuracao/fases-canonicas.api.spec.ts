@@ -10,7 +10,11 @@ import {
   isApiOk,
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { FaseCanonicaDto, FasesCanonicasApi } from './fases-canonicas.api';
+import {
+  FaseCanonicaDto,
+  FaseCanonicaVocabularioDto,
+  FasesCanonicasApi,
+} from './fases-canonicas.api';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -69,6 +73,25 @@ describe('FasesCanonicasApi', () => {
     expect(req.request.params.has('limit')).toBe(false);
     req.flush([faseSeed]);
     await promise;
+  });
+
+  it('listarVocabulario() faz GET no catálogo de fases, com Accept versionado e sem janela, e devolve a ordem da API', async () => {
+    const promise = firstValueFrom(api.listarVocabulario());
+    const req = controller.expectOne(
+      (r) => r.url === `${BASE}/api/configuracao/vocabularios/fases-canonicas`,
+    );
+    expect(req.request.method).toBe('GET');
+    expect(req.request.headers.get('Accept')).toBe(
+      buildVendorMimeAccept('codigo-fase-canonica', 1),
+    );
+    expect(req.request.params.keys()).toEqual([]);
+    req.flush([
+      { codigo: 'INSCRICAO', nome: 'Inscrição' },
+      { codigo: 'AVALIACAO', nome: 'Avaliação' },
+    ]);
+    const result = (await promise) as ApiResult<readonly FaseCanonicaVocabularioDto[]>;
+    expect(isApiOk(result)).toBe(true);
+    expect(result.ok && result.data.map((fase) => fase.codigo)).toEqual(['INSCRICAO', 'AVALIACAO']);
   });
 
   it('atualizar() faz PUT /api/configuracao/admin/fases-canonicas/{id} sem o campo codigo', async () => {

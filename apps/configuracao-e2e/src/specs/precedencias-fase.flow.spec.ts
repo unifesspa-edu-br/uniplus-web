@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { mockCatalogoDeFases } from '../support/api-de-fases-canonicas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 import { assertSemViolacoesGraves } from '../support/a11y';
 
@@ -111,7 +112,8 @@ async function mockApi(
   await page.route(/\/api\/configuracao\/precedencias-fase(\?.*)?$/, (route) =>
     jsonRoute(route, lista),
   );
-  // A página também lê o cadastro de Fase canônica para rotular as opções.
+  // A página lê o catálogo de fases para as opções e o cadastro de Fase canônica para marcar as que faltam.
+  await mockCatalogoDeFases(page);
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) =>
     jsonRoute(route, fasesSeed),
   );

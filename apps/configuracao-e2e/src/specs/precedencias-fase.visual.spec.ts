@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
+import { mockCatalogoDeFases } from '../support/api-de-fases-canonicas';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -55,6 +56,7 @@ test.describe('Precedência de fase — geometria da página e do formulário', 
         body: JSON.stringify([ARESTA]),
       }),
     );
+    await mockCatalogoDeFases(page);
     await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route: Route) =>
       route.fulfill({
         status: 200,
