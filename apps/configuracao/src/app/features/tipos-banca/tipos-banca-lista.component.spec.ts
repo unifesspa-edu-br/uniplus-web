@@ -1,17 +1,15 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { TipoBancaDto } from '@uniplus/shared-data/configuracao';
+import { TipoBancaDto, TipoDeBancaCodigo } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposBancaListaComponent } from './tipos-banca-lista.component';
+import { tipoDeBanca } from './tipos-banca.testing';
 
-const banca: TipoBancaDto = {
+const banca = tipoDeBanca(TipoDeBancaCodigo.BANCA_ENTREVISTA, {
   id: '1',
-  codigo: 'BANCA',
   nome: 'Banca',
   faseTipica: null,
-  descricao: null,
-  criadoEm: '',
-};
+});
 
 describe('TiposBancaListaComponent', () => {
   let fixture: ComponentFixture<TiposBancaListaComponent>;
@@ -108,8 +106,8 @@ describe('TiposBancaListaComponent', () => {
       if (!encontrado) throw new Error(`Botão ausente: ${nome}.`);
       return encontrado;
     };
-    const editar = (): HTMLButtonElement => botao('Editar tipo de banca BANCA');
-    const remover = (): HTMLButtonElement => botao('Remover tipo de banca BANCA');
+    const editar = (): HTMLButtonElement => botao('Editar tipo de banca BANCA_ENTREVISTA');
+    const remover = (): HTMLButtonElement => botao('Remover tipo de banca BANCA_ENTREVISTA');
     const acionar = (acionador: HTMLButtonElement): void => {
       acionador.focus();
       acionador.click();

@@ -102,9 +102,9 @@ describe('InscricaoDoCandidatoPage', () => {
 
     await cenario.clicar(botao(tela, 'Enviar inscrição'));
 
-    const termo = FORMULARIO_DE_INSCRICAO_MOCK.termos[0];
+    const termo = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos[0];
     expect(cenario.servico.enviados[0].aceites).toEqual([
-      { codigo: 'VERACIDADE', versaoId: termo.versaoId, hashVersao: termo.hashVersao },
+      { codigo: 'VERACIDADE', versaoId: termo.versaoId, hashVersao: termo.conteudo.hashVersao },
     ]);
   });
 

@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
+import { item } from '../formulario/formulario-de-inscricao.testing';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { fase, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
@@ -58,6 +60,7 @@ describe('FasePassoComponent', () => {
         hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
         finalidadeTratamento: 'Conferir o laudo do candidato.',
         protecaoAprovada: true,
+        operadoresAdmitidos: [{ codigo: OperadorCodigo.IGUAL, rotulo: 'é' }],
       };
 
       beforeEach(() => {
@@ -77,20 +80,7 @@ describe('FasePassoComponent', () => {
                 termos: [],
                 pressupostos: null,
                 grupos: [],
-                itens: [
-                  {
-                    fatoCodigo: 'LAUDO_RECENTE',
-                    ordem: 0,
-                    rotulo: 'Laudo recente',
-                    tipoRenderizacao: 'BOOLEANO',
-                    obrigatoriedade: 'SEMPRE',
-                    precondicao: null,
-                    etapaCodigo: null,
-                    predicadoObrigatoriedade: null,
-                    ajuda: null,
-                    pedirConfirmacao: false,
-                  },
-                ],
+                itens: [item('LAUDO_RECENTE', 0, '', { etapaCodigo: null })],
               },
             },
           ],

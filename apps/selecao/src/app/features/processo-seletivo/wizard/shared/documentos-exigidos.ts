@@ -1,5 +1,5 @@
 import { formatarTamanhoDeArquivo } from '@uniplus/shared-utils';
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { ROTULOS_DOS_PASSOS } from '../processo-seletivo.data';
 import type { ExigenciasDoRascunho } from '../processo-seletivo.models';
 import {
@@ -19,7 +19,10 @@ import {
   exigenciaDecideResultado,
   exigenciaSemNormaResolvida,
 } from './exigencias/exigencias-documentais';
-import { finalidadeDaExigencia } from './exigencias/formulario-da-exigencia';
+import {
+  finalidadeDaExigencia,
+  type FormularioDaExigencia,
+} from './exigencias/formulario-da-exigencia';
 import { dominiosDoGatilho, fatosParaGatilho, type FatoEscolhivel } from './gatilho-de-exigencia';
 
 /** Como a leitura nomeia o que o rascunho guarda por código. */
@@ -42,7 +45,10 @@ export interface DocumentoExigidoLido {
 }
 
 /** Os formatos e o tamanho que a exigência aceita, numa frase. */
-export function descreverArquivo(formatosPermitidos: unknown, tamanhoMaximoBytes: number | null): string {
+export function descreverArquivo(
+  formatosPermitidos: unknown,
+  tamanhoMaximoBytes: number | null,
+): string {
   const formatos =
     Array.isArray(formatosPermitidos) && formatosPermitidos.length > 0
       ? formatosPermitidos.join(', ')
@@ -54,19 +60,29 @@ export function descreverArquivo(formatosPermitidos: unknown, tamanhoMaximoBytes
   return `${formatos}, ${tamanho}`;
 }
 
+type DocumentoDaExigencia = ExigenciaLocalizada['documento'];
+
+function resumoDoDocumento(
+  documento: DocumentoDaExigencia,
+  vocabulario: VocabularioDosDocumentos,
+): Omit<DocumentoExigidoLido, 'chave' | 'composicao' | 'repeticao'> {
+  return {
+    nome: vocabulario.nomeDoTipo(documento.tipoDocumentoId, documento.tipoDocumentoNome),
+    obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
+    aplicaA: descreverPublico(publicoDaExigencia(documento, vocabulario.fatoPorCodigo)),
+    consequencia: rotuloDaConsequencia(documento.consequenciaIndeferimento, documento.obrigatorio),
+    arquivo: descreverArquivo(documento.formatosPermitidos, documento.tamanhoMaximoBytes),
+  };
+}
+
 function lerExigencia(
   { documento, grupo, repeticao }: ExigenciaLocalizada,
   indice: number,
   vocabulario: VocabularioDosDocumentos,
 ): DocumentoExigidoLido {
-  const nome = vocabulario.nomeDoTipo(documento.tipoDocumentoId, documento.tipoDocumentoNome);
   return {
+    ...resumoDoDocumento(documento, vocabulario),
     chave: `${indice}|${documento.tipoDocumentoId}`,
-    nome,
-    obrigatoriedade: documento.obrigatorio ? 'Obrigatório' : 'Facultativo',
-    aplicaA: descreverPublico(publicoDaExigencia(documento, vocabulario.fatoPorCodigo)),
-    consequencia: rotuloDaConsequencia(documento.consequenciaIndeferimento, documento.obrigatorio),
-    arquivo: descreverArquivo(documento.formatosPermitidos, documento.tamanhoMaximoBytes),
     composicao: composicaoResumida(grupo !== null && grupo.alternativas >= 2 ? grupo : null),
     repeticao: repeticaoResumida(repeticao?.grupo ?? null),
   };
@@ -96,21 +112,37 @@ export interface FormularioNaFase {
  */
 export function documentosDoFormulario(
   exigencias: ExigenciasDoRascunho,
-  { faseCodigo, finalidade, finalidadesDaFase, fasesVivas }: FormularioNaFase,
+  formulario: FormularioNaFase,
   vocabulario: VocabularioDosDocumentos,
 ): DocumentosDoFormulario {
-  // O documento declarado para todas as fases só existe na fase acrescentada depois quando é
-  // materializado, como na gravação.
-  const daFase = exigenciasLocalizadasDaFase(comAlcanceDeTodasAsFases(exigencias, fasesVivas), faseCodigo).map((exigencia) => ({
+  const daFase = exigenciasComFormulario(exigencias, formulario);
+  const doFormulario = daFase.filter((e) => ehDoFormulario(e.formulario, formulario.finalidade));
+  return {
+    documentos: doFormulario.map(({ exigencia }, indice) =>
+      lerExigencia(exigencia, indice, vocabulario),
+    ),
+    semFormulario: daFase.filter(({ formulario: efetivo }) => efetivo.situacao !== 'DEFINIDO')
+      .length,
+  };
+}
+
+function ehDoFormulario(efetivo: FormularioDaExigencia, finalidade: string): boolean {
+  return efetivo.situacao === 'DEFINIDO' && efetivo.finalidade === finalidade;
+}
+
+/**
+ * As exigências da fase com o formulário efetivo de cada uma. O documento declarado para todas as
+ * fases só existe na fase acrescentada depois quando é materializado, como na gravação.
+ */
+function exigenciasComFormulario(
+  exigencias: ExigenciasDoRascunho,
+  { faseCodigo, finalidadesDaFase, fasesVivas }: FormularioNaFase,
+): readonly { exigencia: ExigenciaLocalizada; formulario: FormularioDaExigencia }[] {
+  const materializadas = comAlcanceDeTodasAsFases(exigencias, fasesVivas);
+  return exigenciasLocalizadasDaFase(materializadas, faseCodigo).map((exigencia) => ({
     exigencia,
     formulario: finalidadeDaExigencia(exigencia.documento.finalidade, finalidadesDaFase),
   }));
-  return {
-    documentos: daFase
-      .filter(({ formulario }) => formulario.situacao === 'DEFINIDO' && formulario.finalidade === finalidade)
-      .map(({ exigencia }, indice) => lerExigencia(exigencia, indice, vocabulario)),
-    semFormulario: daFase.filter(({ formulario }) => formulario.situacao !== 'DEFINIDO').length,
-  };
 }
 
 /** O resumo dos documentos de uma fase, para a revisão. */
@@ -135,25 +167,38 @@ export function documentosPorFase(
 ): readonly DocumentosDaFase[] {
   const materializadas = comAlcanceDeTodasAsFases(exigencias, faseCodigos);
   const grupos = gruposQueDecidem(materializadas);
-  return faseCodigos.flatMap((faseCodigo) => {
-    const documentos = exigenciasLocalizadasDaFase(materializadas, faseCodigo).map(
-      ({ documento }) => documento,
-    );
-    if (documentos.length === 0) return [];
-    // O grupo `OU` com consequência própria decide o resultado como uma exigência: entra na fase
-    // dos documentos que reúne, nas duas contagens.
-    const gruposDaFase = grupos.filter((grupo) => grupo.fases.includes(faseCodigo));
-    return [
-      {
-        faseCodigo,
-        obrigatorios: documentos.filter((documento) => documento.obrigatorio).length,
-        facultativos: documentos.filter((documento) => !documento.obrigatorio).length,
-        comNormaExigida: documentos.filter(exigenciaDecideResultado).length + gruposDaFase.length,
-        semNorma: documentos.filter(exigenciaSemNormaResolvida).length +
-          gruposDaFase.filter((grupo) => !grupo.normaResolvida).length,
-      },
-    ];
-  });
+  return faseCodigos.flatMap((fase) => resumoDaFase(fase, materializadas, grupos));
+}
+
+/** O resumo da fase, ou nada quando ela não exige documento. */
+function resumoDaFase(
+  faseCodigo: string,
+  materializadas: ExigenciasDoRascunho,
+  grupos: ReturnType<typeof gruposQueDecidem>,
+): readonly DocumentosDaFase[] {
+  const documentos = exigenciasLocalizadasDaFase(materializadas, faseCodigo).map(
+    ({ documento }) => documento,
+  );
+  // O grupo `OU` com consequência própria decide o resultado como uma exigência: entra na fase
+  // dos documentos que reúne, nas duas contagens.
+  const gruposDaFase = grupos.filter((grupo) => grupo.fases.includes(faseCodigo));
+  return documentos.length === 0 ? [] : [contagemDaFase(faseCodigo, documentos, gruposDaFase)];
+}
+
+function contagemDaFase(
+  faseCodigo: string,
+  documentos: readonly DocumentoDaExigencia[],
+  gruposDaFase: ReturnType<typeof gruposQueDecidem>,
+): DocumentosDaFase {
+  return {
+    faseCodigo,
+    obrigatorios: documentos.filter((documento) => documento.obrigatorio).length,
+    facultativos: documentos.filter((documento) => !documento.obrigatorio).length,
+    comNormaExigida: documentos.filter(exigenciaDecideResultado).length + gruposDaFase.length,
+    semNorma:
+      documentos.filter(exigenciaSemNormaResolvida).length +
+      gruposDaFase.filter((grupo) => !grupo.normaResolvida).length,
+  };
 }
 
 /**
@@ -161,7 +206,7 @@ export function documentosPorFase(
  * com os valores que o processo oferta (condições de atendimento e modalidades).
  */
 export function fatosParaLerOGatilho(
-  fatos: readonly FatoCandidatoView[],
+  fatos: readonly FatoCandidatoComOperadores[],
   condicoesDeAtendimento: readonly string[],
   modalidades: readonly string[],
 ): ReadonlyMap<string, FatoEscolhivel> {

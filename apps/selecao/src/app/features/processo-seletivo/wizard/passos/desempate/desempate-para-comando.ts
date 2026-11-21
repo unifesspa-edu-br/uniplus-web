@@ -1,4 +1,5 @@
-import { CriterioDesempateInput } from '@uniplus/shared-data/selecao';
+import { CriterioDesempateInput, OperadorCodigo } from '@uniplus/shared-data/selecao';
+import { codigoDoContrato } from '@uniplus/shared-data/utils';
 
 import { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
 import { inteiroNaForma } from '../../shared/numero-do-campo';
@@ -59,7 +60,7 @@ function naoVazio(texto: string): string | null {
 }
 
 /**
- * Converte um critério configurado no `CriterioDesempateInput` — o campo não
+ * Converte um critério configurado no `CriterioDesempateInput` — o parâmetro não
  * aplicável ao `regraCodigo` viaja `null` explícito, nunca omitido. `ordem` é
  * a posição do item na lista (1-based), não um campo do rascunho: é o reorder
  * que decide, e a lista inteira é reenviada a cada gravação.
@@ -68,21 +69,35 @@ export function comoComandoDeCriterioDesempate(
   criterio: CriterioDesempateConfigurado,
   ordem: number,
 ): CriterioDesempateInput {
-  const usaEtapa = desempateUsaEtapa(criterio.regraCodigo);
-  const usaIdade = desempateUsaIdadeMinima(criterio.regraCodigo);
-  const usaPredicado = desempateUsaPredicadoFato(criterio.regraCodigo);
-  const usaAreas = desempateUsaAreas(criterio.regraCodigo);
-
   return {
     ordem,
-    regraCodigo: criterio.regraCodigo,
-    regraVersao: criterio.regraVersao,
-    etapaRef: usaEtapa ? naoVazio(criterio.etapaRef) : null,
-    idadeMinima: usaIdade ? inteiroNaForma(criterio.idadeMinima) : null,
-    fato: usaPredicado ? naoVazio(criterio.fato) : null,
-    operador: usaPredicado ? naoVazio(criterio.operador) : null,
-    valor: usaPredicado ? naoVazio(criterio.valor) : null,
-    areas: usaAreas ? [...criterio.areas] : null,
+    regra: { codigo: criterio.regraCodigo, versao: criterio.regraVersao },
+    parametros: parametrosDoCriterio(criterio),
+  };
+}
+
+type ParametrosDoCriterio = NonNullable<CriterioDesempateInput['parametros']>;
+
+function parametrosDoCriterio(criterio: CriterioDesempateConfigurado): ParametrosDoCriterio {
+  const regra = criterio.regraCodigo;
+  return {
+    etapaRef: desempateUsaEtapa(regra) ? naoVazio(criterio.etapaRef) : null,
+    idadeMinima: desempateUsaIdadeMinima(regra) ? inteiroNaForma(criterio.idadeMinima) : null,
+    ...predicadoDoCriterio(criterio),
+    areas: desempateUsaAreas(regra) ? [...criterio.areas] : null,
+  };
+}
+
+function predicadoDoCriterio(
+  criterio: CriterioDesempateConfigurado,
+): Pick<ParametrosDoCriterio, 'fato' | 'operador' | 'valor'> {
+  if (!desempateUsaPredicadoFato(criterio.regraCodigo)) {
+    return { fato: null, operador: null, valor: null };
+  }
+  return {
+    fato: naoVazio(criterio.fato),
+    operador: codigoDoContrato(OperadorCodigo, criterio.operador.trim()),
+    valor: naoVazio(criterio.valor),
   };
 }
 

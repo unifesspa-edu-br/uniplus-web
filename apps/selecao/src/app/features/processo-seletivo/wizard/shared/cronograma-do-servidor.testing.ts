@@ -4,8 +4,28 @@ import {
   type EtapaProcessoDto,
   type FaseCronogramaDto,
   GuardaDaVagaCodigo,
+  PapelDaBancaCodigo,
+  TipoDeBancaCodigo,
+  type TipoMotivoDeDecisaoCodigo,
   UnidadePrazoCodigo,
 } from '@uniplus/shared-data/selecao';
+
+/** O tipo de decisão como o servidor o devolve; o rótulo repete o código. */
+export function tipoDeDecisaoDoServidor(codigo: TipoMotivoDeDecisaoCodigo) {
+  return { codigo, rotulo: codigo };
+}
+
+/** O que o servidor devolve do tipo de banca em cada banca da fase ou da etapa. */
+export function tipoDeBancaDoServidor(codigo: TipoDeBancaCodigo) {
+  return {
+    codigo: { codigo, rotulo: codigo },
+    posicaoNoTipo: 1,
+    papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+    exigeDuasOuMaisBancas: false,
+    encerraRecursoNaPrimeiraInstancia: false,
+    tiposDeDecisaoJulgados: [],
+  };
+}
 
 /** A fase como o servidor a devolve; cada seção aninhada aceita só os campos que o teste troca. */
 export interface FaseDoServidorParcial {
@@ -86,10 +106,10 @@ const PUBLICACOES_DA_FASE: FaseCronogramaDto['publicacoes'] = {
 const BANCA_REQUERIDA: FaseCronogramaDto['bancasRequeridas'][number] = {
   id: 'snapshot-banca',
   tipoBancaOrigemId: 'tipo-banca-1',
-  codigo: 'BANCA_ANALISE_RECURSOS',
+  ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_ANALISE_RECURSOS),
   nome: 'Análise de recursos',
   regraDeDeliberacao: null,
-  recorteDeCompetencia: [
+  candidatosAtendidos: [
     { id: 'snapshot-categoria', categoriaDocumentoOrigemId: 'categoria-renda', codigo: 'RENDA' },
   ],
 };

@@ -13,6 +13,7 @@ import {
   ID_RG,
   comando,
   exigencia,
+  noDoRascunho,
   rascunho,
 } from './exigencias.testing';
 
@@ -23,7 +24,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     );
 
     expect(raizes).toHaveLength(2);
-    expect(raizes.map((raiz) => raiz.documento?.exigidoNaFaseId)).toEqual([
+    expect(raizes.map((raiz) => raiz.documento?.momento?.faseId)).toEqual([
       ID_ISENCAO,
       ID_HABILITACAO,
     ]);
@@ -32,12 +33,12 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
   it('resolve a fase pelo código, que é o que sobrevive à reconciliação do servidor', () => {
     const raizes = comando(rascunho(exigencia({ faseCodigo: 'ISENCAO' })));
-    expect(raizes[0].documento?.exigidoNaFaseId).toBe(ID_ISENCAO);
+    expect(raizes[0].documento?.momento?.faseId).toBe(ID_ISENCAO);
   });
 
   it('leva a etapa que coleta o documento naquela fase', () => {
     const raizes = comando(rascunho(exigencia({ etapaId: ID_ETAPA_RENDA })));
-    expect(raizes[0].documento?.exigidoNaEtapaId).toBe(ID_ETAPA_RENDA);
+    expect(raizes[0].documento?.momento?.etapaId).toBe(ID_ETAPA_RENDA);
   });
 
   it('descarta a exigência cuja fase saiu do cronograma', () => {
@@ -47,20 +48,20 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
   it('devolve o documento à fase inteira quando a etapa que o coletava saiu', () => {
     const raizes = comando(rascunho(exigencia({ etapaId: 'etapa-que-nao-existe-mais' })));
-    expect(raizes[0].documento?.exigidoNaEtapaId).toBeNull();
+    expect(raizes[0].documento?.momento?.etapaId).toBeNull();
   });
 
   it('sem recorte de modalidade, o documento é exigido de todo candidato', () => {
     const raizes = comando(rascunho(exigencia()));
-    expect(raizes[0].documento?.aplicabilidade).toBe('GERAL');
-    expect(raizes[0].documento?.condicoes).toEqual([]);
+    expect(raizes[0].documento?.aplicabilidade?.tipo).toBe('GERAL');
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([]);
   });
 
   it('o recorte de modalidade vira a cláusula do gatilho', () => {
     const raizes = comando(rascunho(comModalidades(exigencia(), ['LB_PPI'])), ['AC', 'LB_PPI']);
 
-    expect(raizes[0].documento?.aplicabilidade).toBe('CONDICIONAL');
-    expect(raizes[0].documento?.condicoes).toEqual([
+    expect(raizes[0].documento?.aplicabilidade?.tipo).toBe('CONDICIONAL');
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([
       { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
     ]);
   });
@@ -73,8 +74,8 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
    */
   it('recorte esvaziado pelo quadro de vagas não alarga o alcance sozinho', () => {
     const raizes = comando(rascunho(comModalidades(exigencia(), ['LB_PPI'])), ['AC']);
-    expect(raizes[0].documento?.aplicabilidade).toBe('CONDICIONAL');
-    expect(raizes[0].documento?.condicoes).toEqual([]);
+    expect(raizes[0].documento?.aplicabilidade?.tipo).toBe('CONDICIONAL');
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([]);
   });
 
   /**
@@ -85,7 +86,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
    */
   it('recorte que cobre toda a oferta é preservado quando é a única condição', () => {
     const raizes = comando(rascunho(comModalidades(exigencia(), ['AC'])), ['AC']);
-    expect(raizes[0].documento?.condicoes).toEqual([
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([
       { clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["AC"]' },
     ]);
   });
@@ -99,7 +100,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
     const raizes = comando(rascunho(comModalidades(porSexo, ['AC'])), ['AC']);
 
-    expect(raizes[0].documento?.condicoes).toEqual([
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([
       { clausula: 1, fato: 'SEXO', operador: 'DIFERENTE', valor: '"FEMININO"' },
     ]);
   });
@@ -117,7 +118,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
     const raizes = comando(rascunho(porOutraForma), ['AC', 'LB_PPI']);
 
-    expect(raizes[0].documento?.condicoes).toEqual([
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([
       { clausula: 1, fato: 'MODALIDADE', operador: 'IGUAL', valor: '"AC"' },
     ]);
   });
@@ -135,8 +136,8 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
     const raizes = comando(rascunho(comCondicaoDeOutroFato));
 
-    expect(raizes[0].documento?.aplicabilidade).toBe('GERAL');
-    expect(raizes[0].documento?.condicoes).toEqual([]);
+    expect(raizes[0].documento?.aplicabilidade?.tipo).toBe('GERAL');
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([]);
   });
 
   /** Condição sobre fato que não é modalidade sobrevive ao ida-e-volta. */
@@ -148,35 +149,35 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
     const raizes = comando(rascunho(porSexo));
 
-    expect(raizes[0].documento?.aplicabilidade).toBe('CONDICIONAL');
-    expect(raizes[0].documento?.condicoes).toEqual([
+    expect(raizes[0].documento?.aplicabilidade?.tipo).toBe('CONDICIONAL');
+    expect(raizes[0].documento?.aplicabilidade?.condicoes).toEqual([
       { clausula: 0, fato: 'SEXO', operador: 'DIFERENTE', valor: '"FEMININO"' },
     ]);
   });
 
   it('formato e tamanho vêm do cadastro do tipo de documento', () => {
     const raizes = comando(rascunho(exigencia()));
-    expect(raizes[0].documento?.formatosPermitidos).toEqual(['PDF', 'JPEG', 'PNG']);
-    expect(raizes[0].documento?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
+    expect(raizes[0].documento?.requisitos?.formatosPermitidos).toEqual(['PDF', 'JPEG', 'PNG']);
+    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
   });
 
   it('tipo sem restrição declarada aceita qualquer formato, sem teto', () => {
     const raizes = comando(rascunho(exigenciaNova(ID_CONTRACHEQUE, 'HABILITACAO')));
-    expect(raizes[0].documento?.formatosPermitidos).toBe('QUALQUER');
-    expect(raizes[0].documento?.tamanhoMaximoBytes).toBeNull();
+    expect(raizes[0].documento?.requisitos?.formatosPermitidos).toBe('QUALQUER');
+    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBeNull();
   });
 
   it('a obrigatoriedade e a consequência acompanham a exigência', () => {
     const raizes = comando(
       rascunho(exigencia({ obrigatorio: false, consequenciaIndeferimento: 'ELIMINA' })),
     );
-    expect(raizes[0].documento?.obrigatorio).toBe(false);
-    expect(raizes[0].documento?.consequenciaIndeferimento).toBe('ELIMINA');
+    expect(raizes[0].documento?.indeferimento?.obrigatorio).toBe(false);
+    expect(raizes[0].documento?.indeferimento?.consequencia).toBe('ELIMINA');
   });
 
   it('consequência vazia vira ausência, não texto vazio', () => {
     const raizes = comando(rascunho(exigencia({ consequenciaIndeferimento: '' })));
-    expect(raizes[0].documento?.consequenciaIndeferimento).toBeNull();
+    expect(raizes[0].documento?.indeferimento?.consequencia).toBeNull();
   });
 
   /**
@@ -205,7 +206,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
       ),
     );
 
-    expect(raizes[0].documento?.basesLegais).toEqual([
+    expect(raizes[0].documento?.indeferimento?.basesLegais).toEqual([
       {
         referencia: 'Lei 12.711/2012',
         abrangencia: 'FEDERAL',
@@ -223,7 +224,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
 
   it('norma em branco não viaja — é linha do formulário, não declaração', () => {
     const raizes = comando(rascunho(exigencia()));
-    expect(raizes[0].documento?.basesLegais).toEqual([]);
+    expect(raizes[0].documento?.indeferimento?.basesLegais).toEqual([]);
   });
 
   /** O grupo `OU` e a consequência própria dele sobrevivem a um salvamento que não os toca. */
@@ -231,9 +232,8 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     const grupo: ExigenciasDoRascunho = {
       emTodasAsFases: [],
       raizes: [
-        {
+        noDoRascunho({
           tipo: 'OU',
-          documento: null,
           quantidadeMinima: 1,
           consequencia: 'ELIMINA',
           basesLegais: [
@@ -244,34 +244,17 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
               observacao: '',
             },
           ],
-          filhos: [
-            {
-              tipo: 'FOLHA',
-              documento: exigencia(),
-              quantidadeMinima: null,
-              consequencia: null,
-              basesLegais: null,
-              filhos: null,
-              chaveDistincao: null,
-              dataReferencia: null,
-              ocorrenciasEsperadas: null,
-              repetePorEntidade: null,
-            },
-          ],
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
-        },
+          filhos: [noDoRascunho({ tipo: 'FOLHA', documento: exigencia() })],
+        }),
       ],
     };
 
     const raizes = comando(grupo);
     expect(raizes).toHaveLength(1);
     expect(raizes[0].tipo).toBe('OU');
-    expect(raizes[0].consequencia).toBe('ELIMINA');
-    expect(raizes[0].quantidadeMinima).toBe(1);
-    expect(raizes[0].basesLegais).toHaveLength(1);
+    expect(raizes[0].indeferimento?.consequencia).toBe('ELIMINA');
+    expect(raizes[0].cardinalidade?.quantidadeMinima).toBe(1);
+    expect(raizes[0].indeferimento?.basesLegais).toHaveLength(1);
     expect(raizes[0].filhos).toHaveLength(1);
   });
 
@@ -285,43 +268,12 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     const comGrupo: ExigenciasDoRascunho = {
       emTodasAsFases: [ID_RG],
       raizes: [
-        {
-          tipo: 'FOLHA',
-          documento: exigenciaNova(ID_RG, 'ISENCAO'),
-          quantidadeMinima: null,
-          consequencia: null,
-          basesLegais: null,
-          filhos: null,
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
-        },
-        {
+        noDoRascunho({ tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'ISENCAO') }),
+        noDoRascunho({
           tipo: 'OU',
-          documento: null,
           quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: null,
-          filhos: [
-            {
-              tipo: 'FOLHA',
-              documento: exigenciaNova(ID_RG, 'HABILITACAO'),
-              quantidadeMinima: null,
-              consequencia: null,
-              basesLegais: null,
-              filhos: null,
-              chaveDistincao: null,
-              dataReferencia: null,
-              ocorrenciasEsperadas: null,
-              repetePorEntidade: null,
-            },
-          ],
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
-        },
+          filhos: [noDoRascunho({ tipo: 'FOLHA', documento: exigenciaNova(ID_RG, 'HABILITACAO') })],
+        }),
       ],
     };
 
@@ -341,31 +293,13 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     const grupo: ExigenciasDoRascunho = {
       emTodasAsFases: [],
       raizes: [
-        {
+        noDoRascunho({
           tipo: 'OU',
-          documento: null,
           quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: null,
           filhos: [
-            {
-              tipo: 'FOLHA',
-              documento: exigencia({ faseCodigo: 'FASE_QUE_SAIU' }),
-              quantidadeMinima: null,
-              consequencia: null,
-              basesLegais: null,
-              filhos: null,
-              chaveDistincao: null,
-              dataReferencia: null,
-              ocorrenciasEsperadas: null,
-              repetePorEntidade: null,
-            },
+            noDoRascunho({ tipo: 'FOLHA', documento: exigencia({ faseCodigo: 'FASE_QUE_SAIU' }) }),
           ],
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
-        },
+        }),
       ],
     };
 
@@ -377,25 +311,26 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
     const comCardinalidade: ExigenciasDoRascunho = {
       emTodasAsFases: [],
       raizes: [
-        {
+        noDoRascunho({
           tipo: 'FOLHA',
           documento: exigencia(),
           quantidadeMinima: 3,
-          consequencia: null,
-          basesLegais: null,
-          filhos: null,
           chaveDistincao: 'COMPETENCIA_MENSAL',
           dataReferencia: '2027-03-01',
-          ocorrenciasEsperadas: null,
           repetePorEntidade: 'MEMBRO_FAMILIA',
-        },
+        }),
       ],
     };
 
     const raizes = comando(comCardinalidade);
-    expect(raizes[0].quantidadeMinima).toBe(3);
-    expect(raizes[0].chaveDistincao).toBe('COMPETENCIA_MENSAL');
-    expect(raizes[0].dataReferencia).toBe('2027-03-01');
+    expect(raizes[0].cardinalidade).toEqual({
+      quantidadeMinima: 3,
+      distincao: {
+        chave: 'COMPETENCIA_MENSAL',
+        dataReferencia: '2027-03-01',
+        ocorrenciasEsperadas: null,
+      },
+    });
     expect(raizes[0].repetePorEntidade).toBe('MEMBRO_FAMILIA');
   });
 
@@ -415,7 +350,7 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
       ),
     );
 
-    expect(raizes[0].documento?.idadeMaximaEmissao).toBeNull();
+    expect(raizes[0].documento?.requisitos?.idadeMaximaEmissao).toBeNull();
   });
 
   it('resolve a âncora de idade máxima para o id da fase viva', () => {
@@ -433,6 +368,6 @@ describe('arvoreDeExigencias — do rascunho para o comando', () => {
       ),
     );
 
-    expect(raizes[0].documento?.idadeMaximaEmissao?.referenciaFaseId).toBe(ID_ISENCAO);
+    expect(raizes[0].documento?.requisitos?.idadeMaximaEmissao?.referenciaFaseId).toBe(ID_ISENCAO);
   });
 });

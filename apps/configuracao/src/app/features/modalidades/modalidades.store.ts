@@ -10,7 +10,8 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
-  FatoCandidatoView,
+  fatoComOperadores,
+  FatoDoCatalogoDto,
   ModalidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
@@ -31,10 +32,12 @@ export class ModalidadesStore {
     context: withVendorMime('modalidade', 1),
   }));
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
-  readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() => ({
+  readonly catalogo = useApiResource<readonly FatoDoCatalogoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/fatos-candidato`,
     context: withVendorMime('fato-candidato', 1),
   }));
+  /** Os fatos com os operadores; `null` enquanto o catálogo não foi lido. */
+  readonly fatos = computed(() => this.catalogo.data()?.map(fatoComOperadores) ?? null);
   /** Os fatos recusados em definitivo: repetir a leitura não muda a resposta. */
   readonly recusaDosFatos = computed(() => {
     const problem = this.catalogo.problem();

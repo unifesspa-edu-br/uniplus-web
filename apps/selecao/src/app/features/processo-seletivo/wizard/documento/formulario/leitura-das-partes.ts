@@ -5,7 +5,7 @@ import type {
   ItemDoFormulario,
   GrupoDoFormulario,
 } from '@uniplus/shared-ui/components';
-import { lerObrigatoriedade } from './obrigatoriedade';
+import { lerExibicaoEObrigatoriedade } from './obrigatoriedade';
 import { lerRestricao } from './restricoes';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 
@@ -16,24 +16,40 @@ type Etapa = NonNullable<Formulario['etapas']>[number];
 
 export function lerEtapa(etapa: Etapa): EtapaDoFormulario {
   return {
-    ...etapa,
+    codigo: etapa.codigo,
     ordem: etapa.ordem ?? 0,
+    tipo: etapa.tipo,
     bloco: etapa.bloco ?? null,
-    titulo: etapa.titulo ?? '',
-    descricao: etapa.descricao ?? null,
-    aviso: etapa.aviso ?? null,
+    apresentacao: {
+      titulo: etapa.titulo ?? '',
+      descricao: etapa.descricao ?? null,
+      aviso: etapa.aviso ?? null,
+    },
+    exibicao: etapa.exibicao ?? null,
   };
 }
 
-function apresentacaoDoItem(item: Item) {
+function apresentacaoDoItem(
+  item: Item,
+  tipoRenderizacao: string,
+): ItemDoFormulario['apresentacao'] {
   return {
-    ordem: item.ordem ?? 0,
     rotulo: item.rotulo ?? '',
+    tipoRenderizacao,
+    ajuda: item.ajuda,
     pedirConfirmacao: item.pedirConfirmacao ?? false,
   };
 }
 
-function ocorrenciasDoGrupo(grupo: Grupo) {
+function regrasDoItem(item: Item): ItemDoFormulario['regras'] {
+  return {
+    ...lerExibicaoEObrigatoriedade(item.precondicao, item.obrigatoriedade),
+    restricoes: item.restricoes?.map(lerRestricao),
+    impedimento: item.impedimento,
+  };
+}
+
+function ocorrenciasDoGrupo(grupo: Grupo): GrupoDoFormulario['ocorrencias'] {
   return {
     minimo: grupo.minimo ?? 0,
     maximo: grupo.maximo ?? null,
@@ -42,26 +58,24 @@ function ocorrenciasDoGrupo(grupo: Grupo) {
 }
 
 export function lerItem(item: Item, contexto: Contexto, caminho: Caminho): ItemDoFormulario {
+  const tipoRenderizacao = contexto.tipoDoCampo(item.fatoCodigo, [...caminho, 'fatoCodigo']) ?? '';
   return {
-    ...item,
-    ...apresentacaoDoItem(item),
-    restricoes: item.restricoes?.map(lerRestricao),
-    tipoRenderizacao: contexto.tipoDoCampo(item.fatoCodigo, [...caminho, 'fatoCodigo']) ?? '',
-    ...lerObrigatoriedade(item.obrigatoriedade),
-    precondicao: item.precondicao ?? null,
-    impedimento: item.impedimento,
+    fatoCodigo: item.fatoCodigo,
+    ordem: item.ordem ?? 0,
+    etapaCodigo: item.etapaCodigo,
+    apresentacao: apresentacaoDoItem(item, tipoRenderizacao),
+    regras: regrasDoItem(item),
   };
 }
 
 export function lerGrupo(grupo: Grupo, contexto: Contexto, caminho: Caminho): GrupoDoFormulario {
   return {
-    ...grupo,
+    codigo: grupo.codigo,
     ordem: grupo.ordem ?? 0,
     rotulo: grupo.rotulo ?? '',
     etapaCodigo: grupo.etapaCodigo ?? null,
-    ...ocorrenciasDoGrupo(grupo),
-    exibicao: grupo.exibicao ?? null,
-    ...lerObrigatoriedade(grupo.obrigatoriedade),
+    ocorrencias: ocorrenciasDoGrupo(grupo),
+    regras: lerExibicaoEObrigatoriedade(grupo.exibicao, grupo.obrigatoriedade),
     subitens: grupo.subitens.map((item, indice) =>
       lerItem(item, contexto, [...caminho, 'subitens', String(indice)]),
     ),

@@ -1,12 +1,17 @@
 import {
   BLOCO_REVISAO_E_ACEITE,
   type CampoRenderizavel,
+  type ColetaDoFormulario,
   type FormularioDoCandidato,
   type SecaoRenderizavel,
   type TermoRenderizavel,
   type GrupoRenderizavel,
+  type ValorSelecionavel,
 } from './formulario-do-candidato.model';
 import type {
+  EtapaDasRegras,
+  ExibicaoEObrigatoriedadeDasRegras,
+  GrupoDasRegras,
   ItemDasRegras,
   PredicadoDasRegras,
   RegrasDoFormulario,
@@ -27,37 +32,67 @@ export function apresentacaoDasRegras(
   regras: RegrasDoFormulario,
   simulacao: SimulacaoDoFormulario | null,
 ): FormularioDoCandidato {
-  const respostas = respostasDaSimulacao(simulacao);
-  const comparados = valoresDasCondicoes(regras);
-  const campo = (item: ItemDasRegras, ordem: number): CampoRenderizavel =>
-    campoDoItem(item, ordem, respostas.get(item.fatoCodigo), comparados.get(item.fatoCodigo) ?? []);
-  const etapas = regras.etapas ?? [];
   return {
     finalidade: 'SIMULACAO',
     titulo: null,
     etapas: secoesDasRegras(regras),
-    fatosColetados: etapas.flatMap((etapa) => etapa.itens ?? []).map(campo),
-    grupos: gruposDasRegras(etapas, campo),
     termos: termosDasRegras(regras),
+    coleta: coletaDasRegras(regras, fabricaDeCampos(regras, simulacao)),
     regras,
+    pressupostos: { fatos: [] },
+  };
+}
+
+type FabricaDeCampos = (item: ItemDasRegras, ordem: number) => CampoRenderizavel;
+
+/** O que a simulação e as condições das regras dizem do tipo de um campo. */
+interface Indicios {
+  readonly resposta: ValorJson | undefined;
+  readonly comparados: readonly ValorJson[];
+}
+
+function fabricaDeCampos(
+  regras: RegrasDoFormulario,
+  simulacao: SimulacaoDoFormulario | null,
+): FabricaDeCampos {
+  const respostas = respostasDaSimulacao(simulacao);
+  const comparados = valoresDasCondicoes(regras);
+  return (item, ordem) =>
+    campoDoItem(item, ordem, {
+      resposta: respostas.get(item.fatoCodigo),
+      comparados: comparados.get(item.fatoCodigo) ?? [],
+    });
+}
+
+function coletaDasRegras(regras: RegrasDoFormulario, campo: FabricaDeCampos): ColetaDoFormulario {
+  const etapas = regras.etapas ?? [];
+  return {
+    itens: etapas.flatMap((etapa) => etapa.itens ?? []).map(campo),
+    grupos: gruposDasRegras(etapas, campo),
   };
 }
 
 function gruposDasRegras(
   etapas: NonNullable<RegrasDoFormulario['etapas']>,
-  campo: (item: ItemDasRegras, ordem: number) => CampoRenderizavel,
+  campo: FabricaDeCampos,
 ): GrupoRenderizavel[] {
   return etapas
     .flatMap((etapa) => etapa.grupos ?? [])
-    .map((grupo, ordem) => ({
-      codigo: grupo.codigo,
-      ordem,
-      rotulo: grupo.codigo,
-      minimo: grupo.minimo,
-      maximo: grupo.maximo ?? null,
-      incluiCandidato: grupo.incluiCandidato,
-      subitens: (grupo.subitens ?? []).map(campo),
-    }));
+    .map((grupo, ordem) => grupoRenderizavel(grupo, ordem, campo));
+}
+
+function grupoRenderizavel(
+  grupo: GrupoDasRegras,
+  ordem: number,
+  campo: FabricaDeCampos,
+): GrupoRenderizavel {
+  return {
+    codigo: grupo.codigo,
+    ordem,
+    rotulo: grupo.codigo,
+    ocorrencias: grupo.ocorrencias,
+    subitens: (grupo.subitens ?? []).map(campo),
+  };
 }
 
 function termosDasRegras(regras: RegrasDoFormulario): TermoRenderizavel[] {
@@ -65,9 +100,7 @@ function termosDasRegras(regras: RegrasDoFormulario): TermoRenderizavel[] {
     codigo: termo.codigo,
     codigoNasRegras: termo.codigo,
     ordem,
-    nome: termo.codigo,
-    texto: '',
-    baseLegal: '',
+    conteudo: { nome: termo.codigo, texto: '', baseLegal: '' },
   }));
 }
 
@@ -84,77 +117,76 @@ function respostasDaSimulacao(simulacao: SimulacaoDoFormulario | null): Map<stri
 /** Uma seção por etapa e, havendo termos, o bloco de revisão e aceite, que o caso não declara. */
 function secoesDasRegras(regras: RegrasDoFormulario): SecaoRenderizavel[] {
   const etapas = regras.etapas ?? [];
-  const secoes: SecaoRenderizavel[] = etapas.map((etapa, ordem) => ({
+  const secoes = etapas.map(secaoDaEtapa);
+  if ((regras.termos ?? []).length > 0) secoes.push(secaoDeRevisaoEAceite(etapas.length));
+  return secoes;
+}
+
+function secaoDaEtapa(etapa: EtapaDasRegras, ordem: number): SecaoRenderizavel {
+  return {
     codigo: etapa.codigo,
     codigoNasRegras: etapa.codigo,
     ordem,
     tipo: 'SECAO',
-    titulo: etapa.codigo,
-  }));
-  if ((regras.termos ?? []).length > 0) {
-    secoes.push({
-      codigo: BLOCO_REVISAO_E_ACEITE,
-      codigoNasRegras: null,
-      ordem: etapas.length,
-      tipo: 'BLOCO',
-      bloco: BLOCO_REVISAO_E_ACEITE,
-      titulo: 'Revisão e aceite',
-    });
-  }
-  return secoes;
+    apresentacao: { titulo: etapa.codigo, descricao: null, aviso: null },
+  };
 }
 
-function campoDoItem(
-  item: ItemDasRegras,
-  ordem: number,
-  resposta: ValorJson | undefined,
-  comparados: readonly ValorJson[],
-): CampoRenderizavel {
+function secaoDeRevisaoEAceite(ordem: number): SecaoRenderizavel {
+  return {
+    codigo: BLOCO_REVISAO_E_ACEITE,
+    codigoNasRegras: null,
+    ordem,
+    tipo: 'BLOCO',
+    bloco: BLOCO_REVISAO_E_ACEITE,
+    apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
+  };
+}
+
+function campoDoItem(item: ItemDasRegras, ordem: number, indicios: Indicios): CampoRenderizavel {
   const valores = valoresOferecidos(item);
   return {
     fatoCodigo: item.fatoCodigo,
     ordem,
-    rotulo: item.fatoCodigo,
-    tipoRenderizacao: tipoDoCampo(item, valores.length > 0, resposta, comparados),
-    valoresSelecionaveis:
-      valores.length > 0
-        ? valores.map((codigo, i) => ({ codigo, descricao: null, ordem: i }))
-        : null,
+    apresentacao: {
+      rotulo: item.fatoCodigo,
+      tipoRenderizacao: tipoDoCampo(item, valores.length > 0, indicios),
+      ajuda: null,
+      pedirConfirmacao: false,
+    },
+    valoresSelecionaveis: valores.length > 0 ? valoresSelecionaveis(valores) : null,
     formato: item.formato ?? null,
   };
+}
+
+function valoresSelecionaveis(codigos: readonly string[]): ValorSelecionavel[] {
+  return codigos.map((codigo, i) => ({ codigo, descricao: null, ordem: i }));
 }
 
 function valoresOferecidos(item: ItemDasRegras): string[] {
   return [
     ...new Set([
       ...(item.oferta ?? []),
-      ...(item.restricoes ?? []).flatMap((r) => (r.entradas ?? []).flatMap((e) => e.valores ?? [])),
+      ...(item.regras.restricoes ?? []).flatMap((r) =>
+        (r.entradas ?? []).flatMap((e) => e.valores ?? []),
+      ),
     ]),
   ];
 }
 
 /** A resposta ou algum valor comparado nas condições é do tipo. */
-function indicaTipo(
-  tipo: 'boolean' | 'number',
-  resposta: ValorJson | undefined,
-  comparados: readonly ValorJson[],
-): boolean {
+function indicaTipo(tipo: 'boolean' | 'number', { resposta, comparados }: Indicios): boolean {
   return typeof resposta === tipo || comparados.some((v) => typeof v === tipo);
 }
 
-function tipoDoCampo(
-  item: ItemDasRegras,
-  temValores: boolean,
-  resposta: ValorJson | undefined,
-  comparados: readonly ValorJson[],
-): string {
-  const restricoes = item.restricoes ?? [];
+function tipoDoCampo(item: ItemDasRegras, temValores: boolean, indicios: Indicios): string {
+  const restricoes = item.regras.restricoes ?? [];
   const tem = (tipo: string): boolean => restricoes.some((r) => r.tipo === tipo);
   if (tem('MUNICIPIOS_DA_UF')) return 'MUNICIPIO';
   if (temValores || tem('OPCOES_DAS_RESPOSTAS'))
-    return Array.isArray(resposta) ? 'SELECAO_MULTIPLA' : 'SELECAO_UNICA';
-  if (indicaTipo('boolean', resposta, comparados)) return 'BOOLEANO';
-  if (indicaTipo('number', resposta, comparados) || tem('FAIXA_NUMERICA')) return 'NUMERO';
+    return Array.isArray(indicios.resposta) ? 'SELECAO_MULTIPLA' : 'SELECAO_UNICA';
+  if (indicaTipo('boolean', indicios)) return 'BOOLEANO';
+  if (indicaTipo('number', indicios) || tem('FAIXA_NUMERICA')) return 'NUMERO';
   return 'TEXTO';
 }
 
@@ -181,23 +213,32 @@ function valoresDasCondicoes(regras: RegrasDoFormulario): Comparados {
  */
 function predicadosDasRegras(regras: RegrasDoFormulario): PredicadoDasRegras[] {
   const etapas = regras.etapas ?? [];
-  const grupos = etapas.flatMap((e) => e.grupos ?? []);
-  const itens = [
-    ...etapas.flatMap((e) => e.itens ?? []),
-    ...grupos.flatMap((g) => g.subitens ?? []),
-  ];
+  const donos = [...etapas.flatMap((e) => e.grupos ?? []), ...(regras.termos ?? [])];
   return [
     ...etapas.map((etapa) => etapa.exibicao),
-    ...[...grupos, ...(regras.termos ?? [])].flatMap((dono) => [
-      dono.exibicao,
-      dono.predicadoObrigatoriedade,
-    ]),
-    ...itens.flatMap((item) => [
-      item.exibicao,
-      item.predicadoObrigatoriedade,
-      item.impedimento?.quando,
-      ...(item.restricoes ?? []).flatMap((r) => (r.entradas ?? []).map((e) => e.quando)),
-    ]),
+    ...donos.flatMap((dono) => predicadosDoElemento(dono.regras)),
+    ...itensDasRegras(regras).flatMap(predicadosDoItem),
     ...(regras.derivacoes ?? []).flatMap((d) => (d?.regras ?? []).map((regra) => regra?.quando)),
   ];
+}
+
+function predicadosDoElemento(regras: ExibicaoEObrigatoriedadeDasRegras): PredicadoDasRegras[] {
+  return [regras.exibicao, regras.obrigatoriedade.predicado];
+}
+
+function predicadosDoItem(item: ItemDasRegras): PredicadoDasRegras[] {
+  const { regras } = item;
+  return [
+    ...predicadosDoElemento(regras),
+    regras.impedimento?.quando,
+    ...(regras.restricoes ?? []).flatMap((r) => (r.entradas ?? []).map((e) => e.quando)),
+  ];
+}
+
+/** Os campos das etapas e os subitens dos grupos. */
+function itensDasRegras(regras: RegrasDoFormulario): ItemDasRegras[] {
+  return (regras.etapas ?? []).flatMap((e) => [
+    ...(e.itens ?? []),
+    ...(e.grupos ?? []).flatMap((g) => g.subitens ?? []),
+  ]);
 }

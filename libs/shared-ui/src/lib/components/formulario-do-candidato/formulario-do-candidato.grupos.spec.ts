@@ -3,6 +3,7 @@ import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
   campoRenderizavel,
+  grupoDasRegras,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
 
@@ -16,32 +17,23 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o grupo acrescenta ocorrências até o máximo e volta a permitir ao remover', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [],
-      grupos: [
-        {
-          codigo: 'FAMILIA',
-          ordem: 0,
-          rotulo: 'Integrante',
-          minimo: 1,
-          maximo: 2,
-          incluiCandidato: false,
-          subitens: [campoRenderizavel('RENDA', 'Renda', 'NUMERO')],
-        },
-      ],
+      coleta: {
+        itens: [],
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            ordem: 0,
+            rotulo: 'Integrante',
+            ocorrencias: { minimo: 1, maximo: 2, incluiCandidato: false },
+            subitens: [campoRenderizavel('RENDA', 'Renda', 'NUMERO')],
+          },
+        ],
+      },
       regras: {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
-            grupos: [
-              {
-                codigo: 'FAMILIA',
-                obrigatoriedade: 'SEMPRE',
-                minimo: 1,
-                maximo: 2,
-                incluiCandidato: false,
-                subitens: [itemDasRegras('RENDA')],
-              },
-            ],
+            grupos: [grupoDasRegras('FAMILIA', [itemDasRegras('RENDA')])],
           },
         ],
       },
@@ -60,29 +52,26 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o grupo de mínimo zero aceita a declaração de que não há ocorrência, distinta de não responder', () => {
     cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [],
-      grupos: [
-        {
-          codigo: 'BENS',
-          ordem: 0,
-          rotulo: 'Bem',
-          minimo: 0,
-          incluiCandidato: false,
-          subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
-        },
-      ],
+      coleta: {
+        itens: [],
+        grupos: [
+          {
+            codigo: 'BENS',
+            ordem: 0,
+            rotulo: 'Bem',
+            ocorrencias: { minimo: 0, incluiCandidato: false },
+            subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
+          },
+        ],
+      },
       regras: {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [
-              {
-                codigo: 'BENS',
-                obrigatoriedade: 'SEMPRE',
-                minimo: 0,
-                incluiCandidato: false,
-                subitens: [itemDasRegras('VALOR')],
-              },
+              grupoDasRegras('BENS', [itemDasRegras('VALOR')], {
+                ocorrencias: { minimo: 0, incluiCandidato: false },
+              }),
             ],
           },
         ],
@@ -99,29 +88,26 @@ describe('FormularioDoCandidatoComponent', () => {
   it('remover o último integrante volta o grupo a sem resposta, e não à declaração de que não há', () => {
     cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [],
-      grupos: [
-        {
-          codigo: 'BENS',
-          ordem: 0,
-          rotulo: 'Bem',
-          minimo: 0,
-          incluiCandidato: false,
-          subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
-        },
-      ],
+      coleta: {
+        itens: [],
+        grupos: [
+          {
+            codigo: 'BENS',
+            ordem: 0,
+            rotulo: 'Bem',
+            ocorrencias: { minimo: 0, incluiCandidato: false },
+            subitens: [campoRenderizavel('VALOR', 'Valor', 'NUMERO')],
+          },
+        ],
+      },
       regras: {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [
-              {
-                codigo: 'BENS',
-                obrigatoriedade: 'SEMPRE',
-                minimo: 0,
-                incluiCandidato: false,
-                subitens: [itemDasRegras('VALOR')],
-              },
+              grupoDasRegras('BENS', [itemDasRegras('VALOR')], {
+                ocorrencias: { minimo: 0, incluiCandidato: false },
+              }),
             ],
           },
         ],
@@ -143,29 +129,26 @@ describe('FormularioDoCandidatoComponent', () => {
     });
     cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [],
-      grupos: [
-        {
-          codigo: 'FAMILIA',
-          ordem: 0,
-          rotulo: 'Integrante',
-          minimo: 1,
-          incluiCandidato: true,
-          subitens: [parentesco],
-        },
-      ],
+      coleta: {
+        itens: [],
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            ordem: 0,
+            rotulo: 'Integrante',
+            ocorrencias: { minimo: 1, incluiCandidato: true },
+            subitens: [parentesco],
+          },
+        ],
+      },
       regras: {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             grupos: [
-              {
-                codigo: 'FAMILIA',
-                obrigatoriedade: 'SEMPRE',
-                minimo: 1,
-                incluiCandidato: true,
-                subitens: [itemDasRegras('PARENTESCO')],
-              },
+              grupoDasRegras('FAMILIA', [itemDasRegras('PARENTESCO')], {
+                ocorrencias: { minimo: 1, incluiCandidato: true },
+              }),
             ],
           },
         ],

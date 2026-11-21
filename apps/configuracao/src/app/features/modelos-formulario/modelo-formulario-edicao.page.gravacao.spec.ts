@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import {
-  type FatoCandidatoView,
+  type FatoDoCatalogoDto,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -33,7 +33,7 @@ describe('ModeloFormularioEdicaoPage', () => {
 
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
-    fatosExtras: readonly FatoCandidatoView[] = [],
+    fatosExtras: readonly FatoDoCatalogoDto[] = [],
     fases: readonly object[] = FASES,
     falhando: readonly string[] = [],
   ): Promise<HTMLElement> {
@@ -55,8 +55,10 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(conteudo.itens.map((i: { fatoCodigo: string }) => i.fatoCodigo)).toEqual([
       'ESCOLA_PUBLICA',
     ]);
-    expect(conteudo.itens[0].restricoes).toEqual(modelo.conteudo.itens?.[1].restricoes);
-    expect(conteudo.itens[0].impedimento).toEqual(modelo.conteudo.itens?.[1].impedimento);
+    expect(conteudo.itens[0].regras.restricoes).toEqual(modelo.conteudo.itens[1].regras.restricoes);
+    expect(conteudo.itens[0].regras.impedimento).toEqual(
+      modelo.conteudo.itens[1].regras.impedimento,
+    );
     expect(conteudo.termos).toEqual(modelo.conteudo.termos);
     expect(conteudo.grupos).toEqual(modelo.conteudo.grupos);
     expect(req.request.headers.get('Idempotency-Key')).not.toBeNull();
@@ -127,7 +129,10 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(botao.getAttribute('aria-disabled')).toBe('true');
     expect(document.activeElement).toBe(botao);
 
-    recarga.flush({ ...modelo, nome: 'Inscrição gravada' });
+    recarga.flush({
+      ...modelo,
+      descritivo: { ...modelo.descritivo, nome: 'Inscrição gravada' },
+    });
     await propagar();
     await propagar();
 

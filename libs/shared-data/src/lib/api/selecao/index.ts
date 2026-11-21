@@ -273,5 +273,13 @@ export {
   DocumentoDaConfiguracaoFormularioEtapaBloco as BlocoDoFormulario,
   DocumentoDaConfiguracaoPredicadoObrigatoriedadeTipo as TipoDaObrigatoriedadeDoFormulario,
   DocumentoDaConfiguracaoRestricaoDeValorTipo as TipoDaRestricaoDoFormulario,
-  DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora as AncoraDaRestricaoDoFormulario,
+  DocumentoDaConfiguracaoRestricaoDeValorLimiteDeDataAncora as ReferenciaDoLimiteDeData,
+} from './schema';
+
+export {
+  OperadorCodigo,
+  PapelDaBancaCodigo,
+  TipoDeBancaCodigo,
+  TipoMotivoDeDecisaoCodigo,
+  TipoRenderizacaoCodigo,
 } from './schema';

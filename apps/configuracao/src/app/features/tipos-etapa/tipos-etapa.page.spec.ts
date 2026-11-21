@@ -55,10 +55,12 @@ describe('TiposEtapaPage', () => {
     expect(post.request.body).toEqual({
       codigo: 'NOVA_PROVA',
       nome: 'Nova prova',
-      admitePontuacao: false,
-      admiteEliminacao: true,
-      exigeCorrecaoIndependente: false,
-      conceitosAdmitidos: [],
+      avaliacao: {
+        admitePontuacao: false,
+        admiteEliminacao: true,
+        exigeCorrecaoIndependente: false,
+        conceitosAdmitidos: [],
+      },
       descricao: null,
     });
     post.flush(...criado());
@@ -80,8 +82,7 @@ describe('TiposEtapaPage', () => {
     expect(put.request.body).not.toHaveProperty('codigo');
     expect(put.request.body).toMatchObject({
       id: analiseDocumental.id,
-      admitePontuacao: true,
-      admiteEliminacao: true,
+      avaliacao: { admitePontuacao: true, admiteEliminacao: true },
     });
     put.flush(...sucesso());
     await p.recarregarCom([analiseDocumental, prova]);
@@ -118,7 +119,9 @@ describe('TiposEtapaPage', () => {
     expect(caixa.closest('label')?.textContent?.trim()).toBe('Exige correção independente');
     caixa.click();
     const post = await p.enviar();
-    expect(post.request.body).toMatchObject({ exigeCorrecaoIndependente: true });
+    expect(post.request.body).toMatchObject({
+      avaliacao: { exigeCorrecaoIndependente: true },
+    });
     post.flush(...criado());
     await p.recarregarCom([prova]);
     expect(p.edicao.aberto()).toBe(false);

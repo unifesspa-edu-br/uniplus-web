@@ -1,3 +1,4 @@
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { agruparPorTipo, tiposEscolhidosNaoDeclarados } from './grupos-de-motivos';
@@ -5,11 +6,14 @@ import { FASE_DA_INSCRICAO, umMotivoDoCadastro, umMotivoNoDocumento } from './mo
 
 const homologacao = umMotivoDoCadastro({ codigo: 'SEM_ENEM', descricao: 'Sem ENEM.' });
 const isencao = umMotivoDoCadastro({
-  tipo: 'ISENCAO_DA_TAXA',
+  tipo: TipoMotivoDeDecisaoCodigo.ISENCAO_DA_TAXA,
   codigo: 'RENDA_ALTA',
   descricao: 'Renda acima do limite.',
 });
-const classificacao = umMotivoDoCadastro({ tipo: 'CLASSIFICACAO', codigo: 'EMPATE' });
+const classificacao = umMotivoDoCadastro({
+  tipo: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
+  codigo: 'EMPATE',
+});
 
 const tipos = (grupos: ReturnType<typeof agruparPorTipo>) => grupos.map((g) => g.tipoCodigo);
 

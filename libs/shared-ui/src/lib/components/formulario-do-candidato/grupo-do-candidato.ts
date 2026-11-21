@@ -99,7 +99,7 @@ import {
       }
 
       <div class="formulario-candidato__acoes-do-grupo">
-        @if (grupo().incluiCandidato && !temOcorrenciaDoCandidato()) {
+        @if (grupo().ocorrencias.incluiCandidato && !temOcorrenciaDoCandidato()) {
           <button
             type="button"
             class="btn btn--secondary btn--sm"
@@ -165,12 +165,12 @@ export class GrupoDoCandidatoComponent {
 
   protected readonly grupo = computed(() => this.noPasso().grupo);
   protected readonly obrigatorio = computed(
-    () => this.noPasso().avaliado.obrigatorio === 'VERDADEIRO',
+    () => this.noPasso().avaliado.regras.obrigatorio === 'VERDADEIRO',
   );
   private readonly lista = computed(() => this.ocorrencias() ?? []);
   /** O mínimo e o máximo de ocorrências; o máximo nulo é sem limite. */
-  protected readonly minimo = computed(() => this.grupo().minimo);
-  protected readonly maximo = computed(() => this.grupo().maximo ?? null);
+  protected readonly minimo = computed(() => this.grupo().ocorrencias.minimo);
+  protected readonly maximo = computed(() => this.grupo().ocorrencias.maximo ?? null);
   protected readonly cheio = computed(() => {
     const maximo = this.maximo();
     return maximo !== null && this.lista().length >= maximo;
@@ -181,7 +181,7 @@ export class GrupoDoCandidatoComponent {
    */
   private readonly indiceDoCandidato = computed(() =>
     indiceDaOcorrenciaDoCandidato(
-      this.grupo().incluiCandidato,
+      this.grupo().ocorrencias.incluiCandidato,
       this.lista().map((o) => o.respostas),
     ),
   );
@@ -200,22 +200,26 @@ export class GrupoDoCandidatoComponent {
     ocorrenciasNaTela(this.noPasso(), this.lista(), this.indiceDoCandidato()),
   );
 
-  protected readonly problemas = computed(() => {
-    const { avaliado } = this.noPasso();
-    return [
-      ...(this.mostrarPendencia() && this.obrigatorio() && this.ocorrencias() === undefined
-        ? ['Responda este grupo.']
-        : []),
-      ...(avaliado.contagemValida ? [] : [this.limites()]),
-      ...(avaliado.ocorrenciaDoCandidatoValida ? [] : ['Inclua você na lista uma única vez.']),
-      // As recusas de um campo de ocorrência ficam ao lado dele; as demais são do grupo.
-      ...this.errosDoServidor()
-        .filter((e) => e.campo.split('.').length < 3)
-        .map((e) => e.mensagem),
-    ];
-  });
+  protected readonly problemas = computed(() => [
+    ...(this.mostrarPendencia() && this.obrigatorio() && this.ocorrencias() === undefined
+      ? ['Responda este grupo.']
+      : []),
+    ...this.problemasDaContagem(),
+    // As recusas de um campo de ocorrência ficam ao lado dele; as demais são do grupo.
+    ...this.errosDoServidor()
+      .filter((e) => e.campo.split('.').length < 3)
+      .map((e) => e.mensagem),
+  ]);
 
   protected readonly mensagemDosErros = mensagemDosErros;
+
+  private problemasDaContagem(): string[] {
+    const { ocorrencias } = this.noPasso().avaliado;
+    return [
+      ...(ocorrencias.contagemValida ? [] : [this.limites()]),
+      ...(ocorrencias.ocorrenciaDoCandidatoValida ? [] : ['Inclua você na lista uma única vez.']),
+    ];
+  }
 
   protected rotuloGravado(ocorrencia: OcorrenciaNaTela, fato: string): string | null {
     return rotuloGravadoDa(

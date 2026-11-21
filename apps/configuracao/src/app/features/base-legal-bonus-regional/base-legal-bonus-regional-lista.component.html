@@ -46,9 +46,7 @@
         <tbody>
           @for (base of bases(); track base.id) {
             <tr [attr.data-base-legal-id]="base.id">
-              <td data-label="Tipo">
-                <ui-lookup-label [resolucao]="rotuloDoTipo()(base.tipoInstrumento)" />
-              </td>
+              <td data-label="Tipo">{{ base.tipoInstrumento.rotulo }}</td>
               <td data-label="Identificação">{{ base.identificacao }}</td>
               <td data-label="Municípios" class="u-caption">{{ base.municipios.length }}</td>
               <td class="table-responsive__actions" data-label="Ações">

@@ -1,4 +1,9 @@
 import type { Page, Route } from '@playwright/test';
+import type {
+  BaseLegalBonusRegionalDto,
+  TipoInstrumentoNormativoComDescricao,
+} from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 
 const CORS_HEADERS = {
   'access-control-allow-origin': '*',
@@ -6,20 +11,43 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const TIPOS_INSTRUMENTO = [
-  { codigo: 'PORTARIA', nome: 'Portaria', descricao: 'Ato administrativo de autoridade pública.' },
-  { codigo: 'LEI', nome: 'Lei', descricao: 'Ato normativo de maior hierarquia.' },
-];
+export const TIPO_PORTARIA: JsonDaApi<TipoInstrumentoNormativoComDescricao> = {
+  codigo: 'PORTARIA',
+  rotulo: 'Rótulo do tipo portaria',
+  descricao: 'Descrição do tipo portaria.',
+};
+export const TIPO_LEI: JsonDaApi<TipoInstrumentoNormativoComDescricao> = {
+  codigo: 'LEI',
+  rotulo: 'Rótulo do tipo lei',
+  descricao: 'Descrição do tipo lei.',
+};
+export const TIPOS_INSTRUMENTO = [TIPO_PORTARIA, TIPO_LEI];
 
-const MARABA = { id: 'cidade-1504208', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' };
+export const MARABA = {
+  id: 'cidade-1504208',
+  codigoIbge: '1504208',
+  nome: 'Marabá',
+  uf: 'PA',
+  ddd: '94',
+};
 
-export const BASE_DA_LISTA = {
+export const BASE_DA_LISTA: JsonDaApi<BaseLegalBonusRegionalDto> = {
   id: 'ba5e0000-0000-7000-8000-000000000001',
   codigo: 'PORTARIA_UNIFESSPA_2514_2023',
-  tipoInstrumento: 'PORTARIA',
+  tipoInstrumento: { codigo: TIPO_PORTARIA.codigo, rotulo: TIPO_PORTARIA.rotulo },
   identificacao: 'Portaria Unifesspa nº 2514/2023',
   descricao: 'Institui inclusão regional.',
   municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],
+  criadoEm: '2026-01-01T00:00:00Z',
+};
+
+export const BASE_DA_LEI: JsonDaApi<BaseLegalBonusRegionalDto> = {
+  id: 'ba5e0000-0000-7000-8000-000000000002',
+  codigo: 'LEI_12711_2012',
+  tipoInstrumento: { codigo: TIPO_LEI.codigo, rotulo: TIPO_LEI.rotulo },
+  identificacao: 'Lei nº 12.711/2012',
+  descricao: 'Reserva de vagas.',
+  municipios: [{ codigoIbge: '1505502', nome: 'Parauapebas', uf: 'PA' }],
   criadoEm: '2026-01-01T00:00:00Z',
 };
 

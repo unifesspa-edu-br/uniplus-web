@@ -75,9 +75,7 @@ describe('problemas das etapas', () => {
       catalogos: catalogosDeTeste({
         tipoDaEtapa: () => ({
           nome: 'Análise Documental',
-          admitePontuacao: false,
-          admiteEliminacao: true,
-          notaDeOrigemNoEnem: false,
+          avaliacao: { admitePontuacao: false, admiteEliminacao: true, notaDeOrigemNoEnem: false },
         }),
       }),
     });

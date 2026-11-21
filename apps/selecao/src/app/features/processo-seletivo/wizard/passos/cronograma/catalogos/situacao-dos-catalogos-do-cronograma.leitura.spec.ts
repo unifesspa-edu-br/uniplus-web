@@ -29,7 +29,7 @@ import {
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
-import { pagina } from './catalogos.testing';
+import { opcoesDoRecursoApiDeTeste, pagina } from './catalogos.testing';
 import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cronograma.service';
 
 type Resposta = Subject<ApiResult<readonly never[]>>;
@@ -77,6 +77,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
         { provide: TiposDocumentoApi, useValue: vazio },
         { provide: TiposAtoApi, useValue: vazio },
         { provide: RegrasCatalogoApi, useValue: vazio },
+        { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiDeTeste() },
         { provide: MotivosDeDecisaoApi, useValue: vazio },
         { provide: UnidadesApi, useValue: vazio },
       ],

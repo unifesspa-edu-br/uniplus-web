@@ -1,4 +1,11 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+import {
+  ATRASO_DA_RECARGA_EM_MS,
+  ERRO_INTERNO,
+  CONFLITO,
+  RECUSA_DE_NOME,
+  mockApi,
+} from '../support/api-simulada-das-escritas-dos-fatos';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -7,146 +14,6 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
  * e o cancelamento o devolve a quem abriu. API mockada por `page.route`; autenticação real pelo
  * projeto `fluxo-chromium`.
  */
-
-const CORS_HEADERS = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-
-const FATO = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  codigo: 'TRABALHA',
-  nome: 'Trabalha',
-  descricao: 'Se o candidato trabalha.',
-  componenteExibicao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
-  fonteValores: null,
-  formato: null,
-  pontoResolucao: 'INSCRICAO',
-  binding: 'CAMPO_INSCRICAO:TRABALHA',
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'PESSOAL',
-  finalidadeTratamento: 'Classificar a reserva de vagas.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-  semeadoPeloSistema: false,
-  ativo: true,
-  valores: [],
-  regrasPadrao: [],
-  aprovacao: {
-    situacao: 'APROVADA',
-    solicitadaEm: null,
-    decididaEm: null,
-    classificacaoRecomendada: null,
-    justificativa: null,
-    aceitaEm: null,
-  },
-};
-
-const FASES = [{ id: 'f1', codigo: 'INSCRICAO', nome: 'Inscrição', descricao: null }];
-
-/** Atraso da recarga da lista após a escrita: o foco só pode mudar quando ela termina. */
-const ATRASO_DA_RECARGA_EM_MS = 1500;
-
-const ERRO_INTERNO = {
-  type: 'about:blank',
-  title: 'Erro interno',
-  status: 500,
-  code: 'uniplus.internal.unexpected',
-};
-
-const CONFLITO = {
-  type: 'about:blank',
-  title: 'Conflito de concorrência',
-  status: 409,
-  code: 'uniplus.concorrencia.conflito',
-};
-
-const RECUSA_DE_NOME = {
-  type: 'about:blank',
-  title: 'Requisição inválida',
-  status: 422,
-  code: 'uniplus.validation_failed',
-  traceId: 'e2e',
-  errors: [
-    {
-      field: 'nome',
-      code: 'uniplus.configuracao.fato_candidato.nome_tamanho',
-      message: 'Nome fora do padrão.',
-    },
-  ],
-};
-
-async function responder(route: Route, status: number, corpo?: unknown): Promise<void> {
-  await route.fulfill({
-    status,
-    contentType: status >= 400 ? 'application/problem+json' : 'application/json',
-    headers: CORS_HEADERS,
-    body: status === 204 || corpo === undefined ? undefined : JSON.stringify(corpo),
-  });
-}
-
-type Recarga = 'com-o-fato' | 'sem-o-fato' | 'com-falha';
-
-/** A escrita fica retida até `liberar()`, para observar a tela enquanto ela está em curso. */
-async function mockApi(
-  page: Page,
-  resposta: { status: number; corpo?: unknown },
-  recarga: Recarga = 'com-o-fato',
-) {
-  let liberar: () => void = () => undefined;
-  const retida = new Promise<void>((resolve) => (liberar = resolve));
-  const envios: string[] = [];
-  let consultas = 0;
-  let escrito = false;
-  await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (r) => responder(r, 200, FASES));
-  await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (r) => responder(r, 200, []));
-  await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, (r) =>
-    responder(r, 200, []),
-  );
-  await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, async (route) => {
-    const metodo = route.request().method();
-    if (metodo === 'OPTIONS') {
-      await route.fulfill({ status: 204, headers: CORS_HEADERS });
-      return;
-    }
-    if (metodo !== 'GET') {
-      envios.push(metodo);
-      await retida;
-      escrito = resposta.status < 400 || recarga === 'sem-o-fato';
-      await responder(route, resposta.status, resposta.corpo);
-      return;
-    }
-    consultas += 1;
-    if (consultas > 1) await new Promise((resolve) => setTimeout(resolve, ATRASO_DA_RECARGA_EM_MS));
-    if (consultas > 1 && recarga === 'com-falha') {
-      await responder(route, 500, ERRO_INTERNO);
-      return;
-    }
-    await responder(route, 200, escrito && recarga === 'sem-o-fato' ? [] : [FATO]);
-  });
-  await page.route(
-    /\/api\/configuracao\/admin\/fatos-candidato\/[^/?]+(\/[^?]*)?(\?.*)?$/,
-    async (route) => {
-      const metodo = route.request().method();
-      if (metodo === 'OPTIONS') {
-        await route.fulfill({ status: 204, headers: CORS_HEADERS });
-        return;
-      }
-      if (metodo === 'GET') {
-        await responder(route, 200, FATO);
-        return;
-      }
-      envios.push(metodo);
-      await retida;
-      escrito = resposta.status < 400 || recarga === 'sem-o-fato';
-      await responder(route, resposta.status, resposta.corpo);
-    },
-  );
-  return { liberar, envios };
-}
 
 const tituloDaLista = (page: Page) => page.locator('#cfg-fatos-list-title');
 const formulario = (page: Page) => page.getByRole('dialog', { name: 'Fato do candidato' });

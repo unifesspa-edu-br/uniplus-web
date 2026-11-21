@@ -75,14 +75,15 @@ export class CampoDoCandidatoComponent {
   readonly confirmada = output<string>();
 
   protected readonly campo = computed(() => this.noPasso().campo);
+  protected readonly apresentacao = computed(() => this.campo().apresentacao);
   protected readonly obrigatorio = computed(
-    () => this.noPasso().avaliado.obrigatorio === 'VERDADEIRO',
+    () => this.noPasso().avaliado.regras.obrigatorio === 'VERDADEIRO',
   );
   protected readonly opcoes = computed(() =>
     opcoesDoCampo(this.campo(), this.noPasso().avaliado, codigosDa(this.resposta()) ?? []),
   );
   protected readonly multipla = computed(
-    () => this.campo().tipoRenderizacao === 'SELECAO_MULTIPLA',
+    () => this.apresentacao().tipoRenderizacao === 'SELECAO_MULTIPLA',
   );
   protected readonly vazia = computed(() => estaVazia(this.resposta()));
   /** O telefone vai à API só com os dígitos e aparece com a máscara (formato do catálogo). */
@@ -105,7 +106,7 @@ export class CampoDoCandidatoComponent {
   protected readonly controle = computed<ControleDoCampo>(() =>
     this.fixa()
       ? 'fixa'
-      : controleDoTipo(this.campo().tipoRenderizacao, {
+      : controleDoTipo(this.apresentacao().tipoRenderizacao, {
           semValoresConhecidos: this.semValoresConhecidos(),
           opcoes: this.opcoes().length,
         }),
@@ -140,7 +141,7 @@ export class CampoDoCandidatoComponent {
         return 'A confirmação não confere com a resposta.';
       case 'em-branco':
         return this.mostrarPendencia()
-          ? `Confirme ${this.campo().rotulo} digitando o mesmo valor.`
+          ? `Confirme ${this.apresentacao().rotulo} digitando o mesmo valor.`
           : null;
       default:
         return null;
@@ -213,7 +214,7 @@ export class CampoDoCandidatoComponent {
   protected readonly descritoPor = computed(
     () =>
       [
-        this.campo().ajuda ? `${this.id()}-ajuda` : null,
+        this.apresentacao().ajuda ? `${this.id()}-ajuda` : null,
         this.controle() === 'fixa' ? `${this.id()}-fixa` : null,
         this.controle() === 'municipio' && this.esperaAUf() ? `${this.id()}-uf` : null,
         this.dicaDaData() ? `${this.id()}-faixa` : null,
@@ -227,15 +228,25 @@ export class CampoDoCandidatoComponent {
   private respostaDoEnderecoDada: string | undefined;
 
   constructor() {
-    // A resposta recebida chega ao endereço só quando não é a que ele mesmo deu: reescrevê-lo com
-    // ela desfaria o modo sem CEP e a correção do CEP em curso.
+    this.acompanharAResposta();
+    this.acompanharOEndereco();
+  }
+
+  /**
+   * A resposta recebida chega ao endereço só quando não é a que ele mesmo deu: reescrevê-lo com ela
+   * desfaria o modo sem CEP e a correção do CEP em curso.
+   */
+  private acompanharAResposta(): void {
     effect(() => {
       const resposta = this.resposta();
       if (JSON.stringify(resposta) !== this.respostaDoEnderecoDada) {
         this.endereco.setValue(enderecoDa(resposta), { emitEvent: false });
       }
     });
-    // O endereço com o CEP digitado e ainda não resolvido não é resposta: o obrigatório segue pendente.
+  }
+
+  /** O endereço com o CEP digitado e ainda não resolvido não é resposta: o obrigatório segue pendente. */
+  private acompanharOEndereco(): void {
     this.endereco.valueChanges.pipe(takeUntilDestroyed()).subscribe((endereco) => {
       const resposta =
         endereco === null || this.endereco.invalid ? undefined : respostaDoEndereco(endereco);

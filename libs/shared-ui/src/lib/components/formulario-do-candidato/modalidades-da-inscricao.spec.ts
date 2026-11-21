@@ -5,7 +5,12 @@ import { BUSCA_DE_MUNICIPIOS } from '../editor-de-condicoes/valor-de-municipio';
 import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
-import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
+import {
+  apresentacaoDaEtapa,
+  campoRenderizavel,
+  itemDasRegras,
+} from './formularios-de-exemplo.testing';
 import type { AvaliacaoNaTela, ModalidadesAvaliadas } from './modalidades-avaliadas';
 
 /**
@@ -20,14 +25,14 @@ const FORMULARIO: FormularioDoCandidato = {
       codigoNasRegras: 'Inscricao:CONTATO',
       ordem: 0,
       tipo: 'SECAO',
-      titulo: 'Contato',
+      apresentacao: apresentacaoDaEtapa('Contato'),
     },
     {
       codigo: 'RESERVA',
       codigoNasRegras: 'Inscricao:RESERVA',
       ordem: 1,
       tipo: 'SECAO',
-      titulo: 'Reserva de vagas',
+      apresentacao: apresentacaoDaEtapa('Reserva de vagas'),
     },
     {
       codigo: 'MODALIDADES',
@@ -35,7 +40,7 @@ const FORMULARIO: FormularioDoCandidato = {
       ordem: 2,
       tipo: 'BLOCO',
       bloco: 'MODALIDADES_CALCULADAS',
-      titulo: 'Modalidades de concorrência',
+      apresentacao: apresentacaoDaEtapa('Modalidades de concorrência'),
     },
     {
       codigo: 'REVISAO',
@@ -43,32 +48,35 @@ const FORMULARIO: FormularioDoCandidato = {
       ordem: 3,
       tipo: 'BLOCO',
       bloco: 'REVISAO_E_ACEITE',
-      titulo: 'Revisão e aceite',
+      apresentacao: apresentacaoDaEtapa('Revisão e aceite'),
     },
   ],
   termos: [],
-  grupos: [],
-  fatosColetados: [
-    { fatoCodigo: 'EMAIL', ordem: 0, rotulo: 'E-mail', tipoRenderizacao: 'TEXTO' },
-    {
-      fatoCodigo: 'CONCORRER_EP',
-      ordem: 1,
-      rotulo: 'Deseja concorrer às vagas de escola pública?',
-      tipoRenderizacao: 'TEXTO',
-    },
-  ],
+  pressupostos: { fatos: [] },
+  coleta: {
+    itens: [
+      campoRenderizavel('EMAIL', 'E-mail', 'TEXTO'),
+      campoRenderizavel('CONCORRER_EP', 'Deseja concorrer às vagas de escola pública?', 'TEXTO', {
+        ordem: 1,
+      }),
+    ],
+    grupos: [],
+  },
   regras: {
     etapas: [
       {
         codigo: 'Inscricao:CONTATO',
-        itens: [{ fatoCodigo: 'EMAIL', obrigatoriedade: 'SEMPRE', restricoes: [] }],
+        itens: [itemDasRegras('EMAIL')],
       },
       {
         codigo: 'Inscricao:RESERVA',
-        itens: [{ fatoCodigo: 'CONCORRER_EP', obrigatoriedade: 'SEMPRE', restricoes: [] }],
+        itens: [itemDasRegras('CONCORRER_EP')],
       },
     ],
   },
+};
+
+const NO_PROCESSO: FormularioNoProcesso = {
   dependenciasDaAvaliacao: { fatos: ['CONCORRER_EP'], grupos: [] },
 };
 
@@ -108,6 +116,7 @@ describe('Bloco de modalidades da inscrição', () => {
   const montar = (avaliacao: AvaliacaoNaTela | null): HTMLElement => {
     fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     fixture.componentRef.setInput('formulario', FORMULARIO);
+    fixture.componentRef.setInput('noProcesso', NO_PROCESSO);
     fixture.componentRef.setInput('avaliacao', avaliacao);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;

@@ -1,5 +1,6 @@
 import { lerArquivoDoFormulario } from './arquivo-do-formulario';
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import { apresentacaoDaEtapa, campoRenderizavel } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 
 const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*.json', {
@@ -7,9 +8,29 @@ const casos = import.meta.glob<Record<string, unknown>>('./interpretador/casos/*
   import: 'default',
 });
 
+const BASE = {
+  finalidade: 'INSCRICAO',
+  regras: {},
+  etapas: [],
+  termos: [],
+  coleta: { itens: [], grupos: [] },
+  pressupostos: { fatos: [] },
+};
+const APRESENTACAO = {
+  rotulo: 'Parentesco',
+  tipoRenderizacao: 'SELECAO_UNICA',
+  pedirConfirmacao: false,
+};
+const OCORRENCIAS = { minimo: 0, incluiCandidato: false };
+const SEMPRE = { obrigatoriedade: { tipo: 'SEMPRE' } };
+
 describe('arquivo importado no simulador', () => {
   it('o arquivo fora da forma é recusado com o caminho do problema, antes de qualquer interpretação', () => {
-    expect(lerArquivoDoFormulario('{"regras": {}, "fatosColetados": [], "etapas": "x"}')).toEqual({
+    expect(
+      lerArquivoDoFormulario(
+        '{"regras": {}, "finalidade": "INSCRICAO", "coleta": {"itens": [], "grupos": []}, "etapas": "x"}',
+      ),
+    ).toEqual({
       valido: false,
       caminho: 'etapas',
       mensagem: expect.any(String),
@@ -26,11 +47,11 @@ describe('arquivo importado no simulador', () => {
   });
 
   it('o elemento da apresentação fora da forma é recusado com o caminho dele', () => {
-    const arquivo = { regras: {}, etapas: [], termos: [], grupos: [], fatosColetados: [null] };
+    const arquivo = { ...BASE, coleta: { itens: [null], grupos: [] } };
 
     expect(lerArquivoDoFormulario(JSON.stringify(arquivo))).toMatchObject({
       valido: false,
-      caminho: 'fatosColetados[0]',
+      caminho: 'coleta.itens[0]',
     });
   });
 
@@ -38,21 +59,38 @@ describe('arquivo importado no simulador', () => {
     const subitem = {
       fatoCodigo: 'PARENTESCO',
       ordem: 0,
-      rotulo: 'Parentesco',
-      tipoRenderizacao: 'SELECAO_UNICA',
+      apresentacao: APRESENTACAO,
       valoresSelecionaveis: [null],
     };
-    const arquivo = {
-      regras: {},
-      etapas: [],
-      termos: [],
-      fatosColetados: [],
-      grupos: [{ codigo: 'G', ordem: 0, rotulo: 'G', minimo: 0, subitens: [subitem] }],
-    };
+    const grupo = { codigo: 'G', ordem: 0, rotulo: 'G', ocorrencias: OCORRENCIAS };
+    const arquivo = { ...BASE, coleta: { itens: [], grupos: [{ ...grupo, subitens: [subitem] }] } };
 
     expect(lerArquivoDoFormulario(JSON.stringify(arquivo))).toMatchObject({
       valido: false,
-      caminho: 'grupos[0].subitens[0].valoresSelecionaveis[0]',
+      caminho: 'coleta.grupos[0].subitens[0].valoresSelecionaveis[0]',
+    });
+  });
+
+  it('a finalidade, o indicador de inclusão do candidato e a base legal do termo são conferidos', () => {
+    const grupo = { codigo: 'G', ordem: 0, rotulo: 'G', ocorrencias: { minimo: 0 }, subitens: [] };
+    const termo = {
+      codigo: 'T',
+      codigoNasRegras: 'T',
+      ordem: 0,
+      conteudo: { nome: 'T', texto: 'x' },
+    };
+
+    expect(
+      lerArquivoDoFormulario(JSON.stringify({ ...BASE, finalidade: undefined })),
+    ).toMatchObject({ valido: false, caminho: 'finalidade' });
+    const coleta = { itens: [], grupos: [grupo] };
+    expect(lerArquivoDoFormulario(JSON.stringify({ ...BASE, coleta }))).toMatchObject({
+      valido: false,
+      caminho: 'coleta.grupos[0].ocorrencias.incluiCandidato',
+    });
+    expect(lerArquivoDoFormulario(JSON.stringify({ ...BASE, termos: [termo] }))).toMatchObject({
+      valido: false,
+      caminho: 'termos[0].conteudo.baseLegal',
     });
   });
 
@@ -66,30 +104,31 @@ describe('arquivo importado no simulador', () => {
   });
 
   it('os pressupostos do formulário importado são conferidos, com o caminho', () => {
-    const base = { regras: {}, etapas: [], termos: [], grupos: [], fatosColetados: [] };
-
     expect(
-      lerArquivoDoFormulario(JSON.stringify({ ...base, pressupostos: { TRABALHA: true } })),
+      lerArquivoDoFormulario(JSON.stringify({ ...BASE, pressupostos: { fatos: 'TRABALHA' } })),
     ).toMatchObject({
       valido: false,
-      caminho: 'pressupostos',
+      caminho: 'pressupostos.fatos',
     });
     expect(
       lerArquivoDoFormulario(
         JSON.stringify({
-          ...base,
-          pressupostos: [{ fatoCodigo: 'IDADE', calculadoDe: 'DATA_NASCIMENTO' }],
+          ...BASE,
+          pressupostos: { fatos: [{ fatoCodigo: 'IDADE', calculadoDe: 'DATA_NASCIMENTO' }] },
         }),
       ),
     ).toMatchObject({
       valido: false,
-      caminho: 'pressupostos[0].calculadoDe',
+      caminho: 'pressupostos.fatos[0].calculadoDe',
     });
   });
 
   it('o termo de um caso aparece no bloco de revisão e aceite, que o caso não declara', () => {
     const caso = {
-      regras: { etapas: [], termos: [{ codigo: 'VERACIDADE', obrigatoriedade: 'SEMPRE' }] },
+      regras: {
+        etapas: [],
+        termos: [{ codigo: 'VERACIDADE', regras: { obrigatoriedade: { tipo: 'SEMPRE' } } }],
+      },
     };
     const lido = lerArquivoDoFormulario(JSON.stringify(caso));
 
@@ -105,8 +144,8 @@ describe('arquivo importado no simulador', () => {
     expect(lido.valido).toBe(true);
     if (!lido.valido) return;
     expect(
-      lido.formulario.fatosColetados.find((c) => c.fatoCodigo === 'TIPO_ENDERECO')
-        ?.tipoRenderizacao,
+      lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'TIPO_ENDERECO')?.apresentacao
+        .tipoRenderizacao,
     ).toBe('SELECAO_UNICA');
     expect(lido.simulacao?.respostas).toEqual({ TIPO_ENDERECO: 'URBANO' });
   });
@@ -118,11 +157,17 @@ describe('arquivo importado no simulador', () => {
           {
             codigo: 'DADOS',
             itens: [
-              { fatoCodigo: 'CURSOS', obrigatoriedade: 'NUNCA', oferta: ['MED', 'ENF'] },
+              {
+                fatoCodigo: 'CURSOS',
+                regras: { obrigatoriedade: { tipo: 'NUNCA' } },
+                oferta: ['MED', 'ENF'],
+              },
               {
                 fatoCodigo: 'ESPERA',
-                obrigatoriedade: 'SEMPRE',
-                restricoes: [{ tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['CURSOS'] }],
+                regras: {
+                  obrigatoriedade: { tipo: 'SEMPRE' },
+                  restricoes: [{ tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['CURSOS'] }],
+                },
               },
             ],
           },
@@ -133,7 +178,8 @@ describe('arquivo importado no simulador', () => {
 
     expect(
       lido.valido &&
-        lido.formulario.fatosColetados.find((c) => c.fatoCodigo === 'ESPERA')?.tipoRenderizacao,
+        lido.formulario.coleta.itens.find((c) => c.fatoCodigo === 'ESPERA')?.apresentacao
+          .tipoRenderizacao,
     ).toBe('SELECAO_UNICA');
   });
 
@@ -144,21 +190,24 @@ describe('arquivo importado no simulador', () => {
           {
             codigo: 'DADOS',
             itens: [
-              { fatoCodigo: 'TEM_DEPENDENTES', obrigatoriedade: 'SEMPRE' },
-              { fatoCodigo: 'IDADE', obrigatoriedade: 'SEMPRE' },
+              { fatoCodigo: 'TEM_DEPENDENTES', regras: SEMPRE },
+              { fatoCodigo: 'IDADE', regras: SEMPRE },
               {
                 fatoCodigo: 'RESPONSAVEL',
-                obrigatoriedade: 'SEMPRE',
-                exibicao: [[{ fato: 'IDADE', operador: 'MENOR_IGUAL', valor: 17 }]],
+                regras: {
+                  ...SEMPRE,
+                  exibicao: [[{ fato: 'IDADE', operador: 'MENOR_IGUAL', valor: 17 }]],
+                },
               },
             ],
             grupos: [
               {
                 codigo: 'DEPENDENTES',
-                obrigatoriedade: 'SEMPRE',
-                minimo: 0,
-                incluiCandidato: false,
-                exibicao: [[{ fato: 'TEM_DEPENDENTES', operador: 'IGUAL', valor: true }]],
+                ocorrencias: { minimo: 0, incluiCandidato: false },
+                regras: {
+                  ...SEMPRE,
+                  exibicao: [[{ fato: 'TEM_DEPENDENTES', operador: 'IGUAL', valor: true }]],
+                },
                 subitens: [],
               },
             ],
@@ -169,7 +218,8 @@ describe('arquivo importado no simulador', () => {
     const lido = lerArquivoDoFormulario(JSON.stringify(caso));
     const tipo = (fato: string): string | undefined =>
       lido.valido
-        ? lido.formulario.fatosColetados.find((c) => c.fatoCodigo === fato)?.tipoRenderizacao
+        ? lido.formulario.coleta.itens.find((c) => c.fatoCodigo === fato)?.apresentacao
+            .tipoRenderizacao
         : undefined;
 
     expect([tipo('TEM_DEPENDENTES'), tipo('IDADE')]).toEqual(['BOOLEANO', 'NUMERO']);
@@ -179,13 +229,17 @@ describe('arquivo importado no simulador', () => {
     const formulario: FormularioDoCandidato = {
       finalidade: 'INSCRICAO',
       etapas: [
-        { codigo: 'DADOS', codigoNasRegras: 'DADOS', ordem: 0, tipo: 'SECAO', titulo: 'Dados' },
+        {
+          codigo: 'DADOS',
+          codigoNasRegras: 'DADOS',
+          ordem: 0,
+          tipo: 'SECAO',
+          apresentacao: apresentacaoDaEtapa('Dados'),
+        },
       ],
       termos: [],
-      grupos: [],
-      fatosColetados: [
-        { fatoCodigo: 'IDADE', ordem: 0, rotulo: 'Idade', tipoRenderizacao: 'NUMERO' },
-      ],
+      coleta: { itens: [campoRenderizavel('IDADE', 'Idade', 'NUMERO')], grupos: [] },
+      pressupostos: { fatos: [] },
       regras: {
         etapas: [
           {
@@ -193,8 +247,7 @@ describe('arquivo importado no simulador', () => {
             itens: [
               {
                 fatoCodigo: 'IDADE',
-                obrigatoriedade: 'SEMPRE',
-                restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 16 }],
+                regras: { ...SEMPRE, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 16 }] },
               },
             ],
           },

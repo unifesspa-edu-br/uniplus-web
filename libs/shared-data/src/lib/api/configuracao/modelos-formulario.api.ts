@@ -11,7 +11,7 @@ import {
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
-export type ModeloFormularioView = components['schemas']['ModeloFormularioView'];
+export type ModeloFormularioView = components['schemas']['ModeloFormularioDto'];
 export type FormularioRenderizavel = components['schemas']['FormularioRenderizavel'];
 export type CriarModeloFormularioCommand = components['schemas']['CriarModeloFormularioCommand'];
 export type EdicaoDoModeloInput = components['schemas']['EdicaoDoModeloInput'];

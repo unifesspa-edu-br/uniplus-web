@@ -1,7 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import type { FatoColetadoDto, FormularioDto } from '@uniplus/shared-data/selecao';
+import {
+  type FatoColetadoDto,
+  type FormularioDto,
+  OperadorCodigo,
+  TipoRenderizacaoCodigo,
+} from '@uniplus/shared-data/selecao';
 import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 import { conteudoDoFormulario, itensParaEnvio, planoDeGravacao } from './formulario-do-processo';
+
+type RegrasDoFato = FatoColetadoDto['regras'];
+
+const regras = (extra: Partial<RegrasDoFato> = {}): RegrasDoFato => ({
+  exibicao: null,
+  obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+  restricoes: [],
+  impedimento: null,
+  ...extra,
+});
 
 const fato = (
   fatoCodigo: string,
@@ -11,28 +26,25 @@ const fato = (
 ): FatoColetadoDto => ({
   fatoCodigo,
   ordem,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'BOOLEANO',
-  obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-  precondicao: null,
-  opcoes: null,
   etapaCodigo,
+  apresentacao: {
+    rotulo: fatoCodigo,
+    tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+    ajuda: null,
+    pedirConfirmacao: false,
+  },
+  regras: regras(),
   formato: null,
-  ajuda: null,
-  pedirConfirmacao: false,
-  restricoes: [],
-  impedimento: null,
+  opcoes: null,
   ...extra,
 });
 
-const etapa = (codigo: string, ordem: number) => ({
+const etapa = (codigo: string, ordem: number): FormularioDto['etapas'][number] => ({
   codigo,
   ordem,
   tipo: 'SECAO',
   bloco: null,
-  titulo: codigo,
-  descricao: null,
-  aviso: null,
+  apresentacao: { titulo: codigo, descricao: null, aviso: null },
   exibicao: null,
 });
 
@@ -40,47 +52,47 @@ const inscricao: FormularioDto = {
   finalidade: 'INSCRICAO',
   faseId: 'F1',
   titulo: 'Inscrição',
-  modeloOrigemId: null,
-  modeloOrigemCodigo: null,
+  modeloOrigem: null,
   etapas: [etapa('DADOS_BASICOS', 0), etapa('S1', 1), etapa('S2', 2)],
-  fatosColetados: [
-    fato('NOME', 0, 'DADOS_BASICOS'),
-    fato('A', 1, 'S1', {
-      obrigatoriedade: {
-        tipo: 'QUANDO',
-        predicado: [[{ fato: 'NOME', operador: 'IGUAL', valor: 'X' }]],
+  coleta: {
+    itens: [
+      fato('NOME', 0, 'DADOS_BASICOS'),
+      fato('A', 1, 'S1', {
+        regras: regras({
+          obrigatoriedade: {
+            tipo: 'QUANDO',
+            predicado: [[{ fato: 'NOME', operador: OperadorCodigo.IGUAL, valor: 'X' }]],
+          },
+        }),
+      }),
+      fato('B', 2, 'S2'),
+    ],
+    grupos: [
+      {
+        codigo: 'FAMILIA',
+        ordem: 3,
+        etapaCodigo: 'S2',
+        rotulo: 'Família',
+        ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
+        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        subitens: [fato('PARENTESCO', 0, '')],
       },
-    }),
-    fato('B', 2, 'S2'),
-  ],
+    ],
+  },
   termos: [],
-  grupos: [
-    {
-      codigo: 'FAMILIA',
-      ordem: 3,
-      etapaCodigo: 'S2',
-      rotulo: 'Família',
-      minimo: 1,
-      maximo: null,
-      incluiCandidato: true,
-      exibicao: null,
-      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-      subitens: [fato('PARENTESCO', 0, '')],
-    },
-  ],
 };
 
 describe('formulário do processo no editor', () => {
   it('traz a obrigatoriedade em token e predicado, também nos campos de grupo, e sem pressuposto', () => {
     const conteudo = conteudoDoFormulario(inscricao);
 
-    expect(conteudo.itens?.[1]).toMatchObject({
-      obrigatoriedade: 'QUANDO',
-      predicadoObrigatoriedade: [[{ fato: 'NOME', operador: 'IGUAL', valor: 'X' }]],
+    expect(conteudo.itens?.[1].regras.obrigatoriedade).toEqual({
+      tipo: 'QUANDO',
+      predicado: [[{ fato: 'NOME', operador: OperadorCodigo.IGUAL, valor: 'X' }]],
     });
     expect(conteudo.grupos?.[0].subitens[0]).toMatchObject({
       fatoCodigo: 'PARENTESCO',
-      obrigatoriedade: 'SEMPRE',
+      regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
     });
     expect(conteudo.pressupostos).toEqual([]);
   });
@@ -114,7 +126,12 @@ describe('planoDeGravacao', () => {
       servidor,
       com((c) => ({
         ...c,
-        itens: c.itens?.map((i) => (i.fatoCodigo === 'B' ? { ...i, rotulo: 'Novo' } : i)) ?? [],
+        itens:
+          c.itens?.map((i) =>
+            i.fatoCodigo === 'B'
+              ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Novo' } }
+              : i,
+          ) ?? [],
       })),
     );
     expect(plano).toEqual(['itens']);
@@ -164,6 +181,49 @@ describe('planoDeGravacao', () => {
     ).toBe(true);
   });
 
+  it('o conteúdo lido do servidor e não editado gera plano vazio, com todas as regras e termos', () => {
+    const comTudo: FormularioDto = {
+      ...inscricao,
+      termos: [
+        {
+          codigo: 'TERMO',
+          ordem: 5,
+          termo: {
+            termoId: 't',
+            versaoId: 'v',
+            termoCodigo: 'T',
+            versaoNumero: 1,
+            conteudo: {
+              nome: 'Termo',
+              texto: 'Texto',
+              baseLegal: 'LGPD',
+              formaAceite: 'CHECKBOX',
+              hashVersao: 'h',
+            },
+          },
+          regras: { exibicao: [], obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
+        },
+      ],
+    };
+    const lido = { faseId: 'F1', conteudo: conteudoDoFormulario(comTudo) };
+
+    expect(
+      planoDeGravacao(lido, { faseId: 'F1', conteudo: conteudoDoFormulario(comTudo) }),
+    ).toEqual([]);
+    expect(lido.conteudo.termos?.[0]).toMatchObject({
+      termo: { termoId: 't', versaoId: 'v' },
+      regras: { exibicao: null },
+    });
+  });
+
+  it('o limite de ocorrências do grupo e a inclusão do candidato vêm do bloco de ocorrências', () => {
+    expect(conteudoDoFormulario(inscricao).grupos?.[0].ocorrencias).toEqual({
+      minimo: 1,
+      maximo: null,
+      incluiCandidato: true,
+    });
+  });
+
   it('só o título mudou: só o cabeçalho', () => {
     expect(
       planoDeGravacao(
@@ -191,14 +251,26 @@ describe('planoDeGravacao', () => {
     };
     const comFaixa: FormularioDto = {
       ...inscricao,
-      fatosColetados: [fato('NASCIMENTO', 0, 'S1', { tipoRenderizacao: 'DATA', restricoes: [faixa] })],
-      grupos: [],
+      coleta: {
+        itens: [
+          fato('NASCIMENTO', 0, 'S1', {
+            apresentacao: {
+              rotulo: 'NASCIMENTO',
+              tipoRenderizacao: TipoRenderizacaoCodigo.DATA,
+              ajuda: null,
+              pedirConfirmacao: false,
+            },
+            regras: regras({ restricoes: [faixa] }),
+          }),
+        ],
+        grupos: [],
+      },
     };
 
     const enviado = itensParaEnvio(conteudoDoFormulario(comFaixa));
     if (enviado === null) throw new Error('Esperava o corpo dos itens.');
 
-    expect(enviado.itens[0].restricoes).toEqual([faixa]);
+    expect(enviado.itens[0].regras?.restricoes).toEqual([faixa]);
   });
 
   it('não monta o corpo dos itens quando um limite digitado não é número', () => {
@@ -207,7 +279,7 @@ describe('planoDeGravacao', () => {
       ...conteudo,
       itens: (conteudo.itens ?? []).map((item) => ({
         ...item,
-        restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],
+        regras: { ...item.regras, restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }] },
       })),
     };
 

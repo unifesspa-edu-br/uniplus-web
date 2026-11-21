@@ -25,7 +25,6 @@ import { aguardarRecarga } from '../../shared/foco';
 import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
-  nullIfBlank,
   textoDaAreaGeral,
 } from '../../shared/formulario';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
@@ -87,7 +86,7 @@ export class EdicaoDasBasesLegais {
   readonly mensagemDaConfirmacao = computed(() => {
     const base = this.baseParaRemover();
     return base
-      ? `Tem certeza que deseja remover "${base.identificacao}"? Processos que já a referenciam mantêm o snapshot congelado.`
+      ? `Tem certeza que deseja remover "${base.identificacao}"? Processos que já a referenciam mantêm a cópia congelada.`
       : 'Tem certeza que deseja remover esta base legal?';
   });
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
@@ -128,27 +127,12 @@ export class EdicaoDasBasesLegais {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    this.municipios.descartarRecusa();
-    this.municipios.exigir();
-    if (this.form.invalid || this.municipios.vazia()) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const id = this.baseEmEdicaoId();
+    this.descartarMensagensDoSalvamento();
+    if (!this.formularioValido()) return;
     const modo = this.modo();
-    const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form, this.municipios.itens()), contexto)
-        : this.api.atualizar(
-            id,
-            comandoDeAtualizacao(id, this.form, this.municipios.itens()),
-            contexto,
-          );
-    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+    this.gravar('salvando', this.requisicaoDeSalvamento(), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
   }
 
   removerConfirmado(): void {
@@ -170,13 +154,42 @@ export class EdicaoDasBasesLegais {
     this.resultado.set('');
     this.modo.set(modo);
     this.baseEmEdicaoId.set(id);
-    this.form.reset(valores);
-    this.municipios.carregar(municipios);
-    this.tipos.preparar(nullIfBlank(valores.tipoInstrumento));
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.carregarFormulario(valores, municipios);
+    this.descartarMensagensDoSalvamento();
     this.renovarChave();
     this.aberto.set(true);
+  }
+
+  private carregarFormulario(
+    valores: ValoresDaBaseLegal,
+    municipios: readonly BaseLegalBonusRegionalMunicipioDto[],
+  ): void {
+    this.form.reset(valores);
+    this.municipios.carregar(municipios);
+    this.tipos.preparar();
+  }
+
+  private descartarMensagensDoSalvamento(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
+  private formularioValido(): boolean {
+    descartarRecusasDoServidor(this.form);
+    this.municipios.descartarRecusa();
+    this.municipios.exigir();
+    if (this.form.valid && !this.municipios.vazia()) return true;
+    this.form.markAllAsTouched();
+    return false;
+  }
+
+  private requisicaoDeSalvamento(): Observable<ApiResult<string | void>> {
+    const id = this.baseEmEdicaoId();
+    const contexto = withIdempotencyKey(this.chave());
+    const municipios = this.municipios.itens();
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form, municipios), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form, municipios), contexto);
   }
 
   private gravar<T>(

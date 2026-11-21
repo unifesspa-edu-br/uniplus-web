@@ -1,6 +1,14 @@
 import type { DadoRevelavel } from '@uniplus/shared-utils';
 
-import type { RegrasDoFormulario, ValorJson } from './interpretador/regras-do-formulario';
+import type {
+  ApresentacaoDaEtapa,
+  ApresentacaoDoCampo,
+} from '../editor-de-formulario/modelo/tipos';
+import type {
+  OcorrenciasDoGrupoDasRegras,
+  RegrasDoFormulario,
+  ValorJson,
+} from './interpretador/regras-do-formulario';
 
 /**
  * O formulário que o candidato vê, como a API o publica no formulário renderizável: a apresentação de
@@ -19,21 +27,16 @@ export interface ValorSelecionavel {
 export interface CampoRenderizavel {
   readonly fatoCodigo: string;
   readonly ordem: number;
-  readonly rotulo: string;
-  readonly tipoRenderizacao: string;
-  readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
+  readonly apresentacao: ApresentacaoDoCampo;
   readonly formato?: string | null;
-  readonly ajuda?: string | null;
-  readonly pedirConfirmacao?: boolean;
+  readonly valoresSelecionaveis?: readonly ValorSelecionavel[] | null;
 }
 
 export interface GrupoRenderizavel {
   readonly codigo: string;
   readonly ordem: number;
   readonly rotulo: string;
-  readonly minimo: number;
-  readonly maximo?: number | null;
-  readonly incluiCandidato: boolean;
+  readonly ocorrencias: OcorrenciasDoGrupoDasRegras;
   readonly subitens: readonly CampoRenderizavel[];
 }
 
@@ -45,18 +48,20 @@ export interface SecaoRenderizavel {
   /** `SECAO` ou `BLOCO`. */
   readonly tipo: string;
   readonly bloco?: string | null;
-  readonly titulo: string;
-  readonly descricao?: string | null;
-  readonly aviso?: string | null;
+  readonly apresentacao: ApresentacaoDaEtapa;
+}
+
+export interface ConteudoDoTermo {
+  readonly nome: string;
+  readonly texto: string;
+  readonly baseLegal: string;
 }
 
 export interface TermoRenderizavel {
   readonly codigo: string;
   readonly codigoNasRegras: string;
   readonly ordem: number;
-  readonly nome: string;
-  readonly texto: string;
-  readonly baseLegal: string;
+  readonly conteudo: ConteudoDoTermo;
 }
 
 /**
@@ -72,18 +77,33 @@ export interface PressupostoDoFormulario {
   readonly calculadoDe?: readonly string[] | null;
 }
 
+/** O que o formulário pergunta: os fatos soltos e os grupos de ocorrências. */
+export interface ColetaDoFormulario {
+  readonly itens: readonly CampoRenderizavel[];
+  readonly grupos: readonly GrupoRenderizavel[];
+}
+
+export interface PressupostosDoFormulario {
+  /** Os fatos citados que o formulário não pergunta; a simulação os informa à parte. */
+  readonly fatos: readonly PressupostoDoFormulario[];
+}
+
 export interface FormularioDoCandidato {
   readonly finalidade: string;
-  /** A fase do cronograma que o formulário responde; nula fora de um processo, como no simulador. */
-  readonly faseId?: string | null;
   readonly titulo?: string | null;
   readonly etapas: readonly SecaoRenderizavel[];
   readonly termos: readonly TermoRenderizavel[];
-  readonly fatosColetados: readonly CampoRenderizavel[];
-  readonly grupos: readonly GrupoRenderizavel[];
+  readonly coleta: ColetaDoFormulario;
   readonly regras: RegrasDoFormulario;
-  /** Os fatos citados que o formulário não pergunta; a simulação os informa à parte. */
-  readonly pressupostos?: readonly PressupostoDoFormulario[] | null;
+  readonly pressupostos: PressupostosDoFormulario;
+}
+
+/**
+ * O envelope em que o processo entrega o formulário; aqui, só o que o formulário do candidato lê dele.
+ */
+export interface FormularioNoProcesso {
+  /** A fase do cronograma que o formulário responde; nula fora de um processo, como no simulador. */
+  readonly faseId?: string | null;
   /**
    * As respostas de que a avaliação da API depende, só pelos códigos (ADR-0143): os fatos — o subitem
    * de grupo como `GRUPO.FATO` — e os grupos cujas ocorrências contam.

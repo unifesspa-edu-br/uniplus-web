@@ -175,10 +175,9 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
         ...GRAVADO,
         finalidade: 'HABILITACAO',
         faseId: null,
-        modeloOrigemId: 'hab',
-        modeloOrigemCodigo: 'HAB',
+        modeloOrigem: { id: 'hab', codigo: 'HAB' },
         etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
-        fatosColetados: [],
+        coleta: { itens: [], grupos: [] },
       };
 
       const aplicacao = escolherEAplicar('HABILITACAO', 'hab');

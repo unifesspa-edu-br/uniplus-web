@@ -13,12 +13,10 @@ import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const ANALISE_ID = '01960000-0000-7000-0000-0000000000e1';
 
-const analiseDocumental = tipoDeEtapa({
-  id: ANALISE_ID,
-  codigo: 'ANALISE_DOCUMENTAL',
-  nome: 'Análise Documental',
-  admitePontuacao: false,
-});
+const analiseDocumental = tipoDeEtapa(
+  { id: ANALISE_ID, codigo: 'ANALISE_DOCUMENTAL', nome: 'Análise Documental' },
+  { admitePontuacao: false },
+);
 
 /** A caixa de escolha do formulário, e não o texto explicativo que repete o mesmo rótulo. */
 function caixaDeAdmissao(page: Page, rotulo: string) {
@@ -61,8 +59,7 @@ test.describe('Tipo de etapa — CRUD', () => {
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'ANALISE_SOCIOECONOMICA',
       nome: 'Análise socioeconômica',
-      admitePontuacao: false,
-      admiteEliminacao: true,
+      avaliacao: { admitePontuacao: false, admiteEliminacao: true },
     });
   });
 
@@ -88,7 +85,9 @@ test.describe('Tipo de etapa — CRUD', () => {
 
     await expect.poll(() => capturado.puts.length).toBe(1);
     expect(capturado.puts[0]).not.toHaveProperty('codigo');
-    expect(capturado.puts[0]).toMatchObject({ admitePontuacao: true, admiteEliminacao: true });
+    expect(capturado.puts[0]).toMatchObject({
+      avaliacao: { admitePontuacao: true, admiteEliminacao: true },
+    });
   });
 
   test('remove um tipo após confirmação', async ({ page }) => {

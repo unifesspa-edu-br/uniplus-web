@@ -1,15 +1,8 @@
+import { comparaComLista } from '../../formulario-do-candidato/interpretador/predicado';
 import { FatoEscolhivel } from './fatos-escolhiveis';
 
-/** Os operadores do predicado, nos tokens canônicos do wire. */
-export const OPERADOR_IGUAL = 'IGUAL';
-export const OPERADOR_DIFERENTE = 'DIFERENTE';
-export const OPERADOR_EM = 'EM';
-export const OPERADOR_NAO_EM = 'NAO_EM';
-export const OPERADOR_MAIOR_IGUAL = 'MAIOR_IGUAL';
-export const OPERADOR_MENOR_IGUAL = 'MENOR_IGUAL';
-
 /** Um operador (ou resposta) oferecido para um fato, com a leitura que a tela faz dele. */
-export interface OperadorEscolhivel {
+export interface OpcaoDeValor {
   readonly valor: string;
   readonly rotulo: string;
 }
@@ -29,46 +22,10 @@ export const VALOR_FALSO = 'false';
  * O que o operador escolhe num fato booleano. São duas opções fechadas, e não texto livre: um
  * campo de texto aqui aceitaria "Sim" e gravaria o oposto do que foi digitado.
  */
-export const RESPOSTAS_BOOLEANAS: readonly OperadorEscolhivel[] = [
+export const RESPOSTAS_BOOLEANAS: readonly OpcaoDeValor[] = [
   { valor: VALOR_VERDADEIRO, rotulo: 'Sim' },
   { valor: VALOR_FALSO, rotulo: 'Não' },
 ];
-
-/**
- * Os operadores que o domínio do fato admite.
- *
- * "Não é" acompanha "é" em todo domínio; "é um de" e "não é nenhum de" só nos categóricos, que
- * são os únicos com lista de valores. A diferença entre "não é feminino" e "é masculino" é
- * real e importa: a primeira alcança também quem declarou intersexo.
- */
-export function operadoresDoFato(fato: FatoEscolhivel): readonly OperadorEscolhivel[] {
-  switch (fato.tipoDominio) {
-    case 'BOOLEANO':
-      return [
-        { valor: OPERADOR_IGUAL, rotulo: 'é' },
-        { valor: OPERADOR_DIFERENTE, rotulo: 'não é' },
-      ];
-    case 'NUMERICO':
-      return [
-        { valor: OPERADOR_IGUAL, rotulo: 'é igual a' },
-        { valor: OPERADOR_DIFERENTE, rotulo: 'é diferente de' },
-        { valor: OPERADOR_MAIOR_IGUAL, rotulo: 'é maior ou igual a' },
-        { valor: OPERADOR_MENOR_IGUAL, rotulo: 'é menor ou igual a' },
-      ];
-    default:
-      return [
-        { valor: OPERADOR_IGUAL, rotulo: 'é' },
-        { valor: OPERADOR_DIFERENTE, rotulo: 'não é' },
-        { valor: OPERADOR_EM, rotulo: 'é um de' },
-        { valor: OPERADOR_NAO_EM, rotulo: 'não é nenhum de' },
-      ];
-  }
-}
-
-/** Se o operador compara contra uma LISTA de valores, e não contra um só. */
-export function comparaComLista(operador: string): boolean {
-  return operador === OPERADOR_EM || operador === OPERADOR_NAO_EM;
-}
 
 /** O valor escalar da condição, como texto — vazio quando ela ainda não tem valor. */
 export function valorEscalarDe(condicao: CondicaoDeFato): string {
@@ -97,27 +54,32 @@ export function comValorEscalar<T extends CondicaoDeFato>(
   fato: FatoEscolhivel,
   valor: string,
 ): T {
-  if (valor === '') return { ...condicao, valor: '' };
+  return { ...condicao, valor: valor === '' ? '' : valorNoWire(fato, valor) };
+}
 
-  if (fato.tipoDominio === 'BOOLEANO') {
-    // Só os dois tokens do domínio são aceitos. Qualquer outra coisa volta ao estado sem
-    // valor, que a conferência acusa — tratar o não reconhecido como "não" gravaria
-    // silenciosamente o oposto do que foi escrito, e o servidor aceitaria, porque é booleano
-    // JSON válido.
-    return {
-      ...condicao,
-      valor: valor === VALOR_VERDADEIRO || valor === VALOR_FALSO ? valor : '',
-    };
+/**
+ * No numérico, o que foi escrito é guardado como veio, e a conferência acusa o que o domínio
+ * recusa — ele só aceita inteiro. Truncar aqui gravava um número diferente do que ficava na tela:
+ * quem digitava 1412.50 via 1412.50 e gravava 1412, sem nada dizer.
+ */
+function valorNoWire(fato: FatoEscolhivel, valor: string): string {
+  switch (fato.tipoDominio) {
+    case 'BOOLEANO':
+      return valorBooleano(valor);
+    case 'NUMERICO':
+      return valor.trim();
+    default:
+      return JSON.stringify(valor);
   }
+}
 
-  if (fato.tipoDominio === 'NUMERICO') {
-    // O que foi escrito é guardado como veio, e a conferência acusa o que o domínio recusa —
-    // ele só aceita inteiro. Truncar aqui gravava um número diferente do que ficava na tela:
-    // quem digitava 1412.50 via 1412.50 e gravava 1412, sem nada dizer.
-    return { ...condicao, valor: valor.trim() };
-  }
-
-  return { ...condicao, valor: JSON.stringify(valor) };
+/**
+ * Só os dois tokens do domínio são aceitos. Qualquer outra coisa volta ao estado sem valor, que a
+ * conferência acusa — tratar o não reconhecido como "não" gravaria silenciosamente o oposto do que
+ * foi escrito, e o servidor aceitaria, porque é booleano JSON válido.
+ */
+function valorBooleano(valor: string): string {
+  return valor === VALOR_VERDADEIRO || valor === VALOR_FALSO ? valor : '';
 }
 
 /** A condição de lista com os valores trocados. Lista vazia volta ao estado sem valor. */
@@ -138,17 +100,19 @@ export function comOperador<T extends CondicaoDeFato>(
   fato: FatoEscolhivel,
   operador: string,
 ): T {
-  if (comparaComLista(operador) === comparaComLista(condicao.operador)) {
-    return { ...condicao, operador };
-  }
+  const trocada = { ...condicao, operador };
+  if (comparaComLista(operador) === comparaComLista(condicao.operador)) return trocada;
+  return comparaComLista(operador) ? comoLista(trocada) : comoEscalar(trocada, fato);
+}
 
-  if (comparaComLista(operador)) {
-    const escalar = valorEscalarDe(condicao);
-    return comValoresDeLista({ ...condicao, operador }, escalar === '' ? [] : [escalar]);
-  }
+function comoLista<T extends CondicaoDeFato>(condicao: T): T {
+  const escalar = valorEscalarDe(condicao);
+  return comValoresDeLista(condicao, escalar === '' ? [] : [escalar]);
+}
 
+function comoEscalar<T extends CondicaoDeFato>(condicao: T, fato: FatoEscolhivel): T {
   const [primeiro] = valoresDeListaDe(condicao);
-  return comValorEscalar({ ...condicao, operador }, fato, primeiro ?? '');
+  return comValorEscalar(condicao, fato, primeiro ?? '');
 }
 
 /**

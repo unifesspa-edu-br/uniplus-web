@@ -1,20 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import type { FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
+import {
+  type FormularioRenderizavelDto,
+  TipoRenderizacaoCodigo,
+} from '@uniplus/shared-data/selecao';
 
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import {
+  FORMULARIO_DE_INSCRICAO_MOCK,
+  campoColetado,
+  comFormulario,
+} from './inscricao-do-candidato.testing';
 import { respostasFixasDaConta } from './respostas-da-conta';
 
 /** Fernanda Drumond, persona fictícia do portal de documentação. */
 const CPF_DA_PERSONA = '69959836371';
 const NOME_DA_PERSONA = 'Fernanda Laura Nicole Drumond';
 
-const formularioQueColeta = (...fatos: string[]): FormularioRenderizavelDto => ({
-  ...FORMULARIO_DE_INSCRICAO_MOCK,
-  fatosColetados: fatos.map((fatoCodigo) => ({
-    ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-    fatoCodigo,
-  })),
-});
+const formularioQueColeta = (...fatos: string[]): FormularioRenderizavelDto =>
+  comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
+    coleta: {
+      itens: fatos.map((fato, ordem) =>
+        campoColetado(fato, fato, TipoRenderizacaoCodigo.TEXTO, { ordem }),
+      ),
+      grupos: [],
+    },
+  });
 
 describe('respostasFixasDaConta: o que a conta fixa e o que o formulário coleta', () => {
   const todos = formularioQueColeta('NOME', 'NOME_SOCIAL', 'CPF');

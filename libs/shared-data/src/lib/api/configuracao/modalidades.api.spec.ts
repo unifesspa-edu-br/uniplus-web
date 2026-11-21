@@ -11,6 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { CriarModalidadeCommand, ModalidadeDto, ModalidadesApi } from './modalidades.api';
+import { OperadorCodigo } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -29,7 +30,7 @@ const modalidadeSeed: ModalidadeDto = {
   remanejamentoPar: null,
   remanejamentoFallback: null,
   regraDeAplicabilidade: [
-    [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+    [{ fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
   ],
   acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
   baseLegal: 'Lei 12.711/2012, art. 1º',
@@ -46,7 +47,7 @@ const criarCommand: CriarModalidadeCommand = {
   remanejamentoDestino: 'AC',
   remanejamentoPar: null,
   remanejamentoFallback: null,
-  regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
+  regraDeAplicabilidade: [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
   acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
   baseLegal: 'Lei 14.723/2023',
 };
@@ -117,7 +118,13 @@ describe('ModalidadesApi', () => {
           remanejamentoPar: null,
           remanejamentoFallback: null,
           regraDeAplicabilidade: [
-            [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+            [
+              {
+                fato: 'COR_RACA',
+                operador: OperadorCodigo.EM,
+                valor: ['PRETA', 'PARDA', 'INDIGENA'],
+              },
+            ],
           ],
           acaoQuandoIndeferido: 'RECLASSIFICAR_AC',
           baseLegal: 'Lei 12.711/2012',

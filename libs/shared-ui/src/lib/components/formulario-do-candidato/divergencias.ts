@@ -18,21 +18,24 @@ export interface Divergencia {
   readonly servidor: string;
 }
 
-const CAMPO: readonly (keyof CampoAvaliado)[] = [
-  'estado',
-  'visivel',
-  'obrigatorio',
-  'restricoesVioladas',
-  'impedido',
-  'opcoes',
+/** A propriedade que a divergência nomeia e como lê o valor dela de um item avaliado. */
+type Propriedade<T> = readonly [nome: string, ler: (item: T) => unknown];
+
+const CAMPO: readonly Propriedade<CampoAvaliado>[] = [
+  ['estado', (c) => c.estado],
+  ['visivel', (c) => c.regras.visivel],
+  ['obrigatorio', (c) => c.regras.obrigatorio],
+  ['restricoesVioladas', (c) => c.regras.restricoesVioladas],
+  ['impedido', (c) => c.regras.impedido],
+  ['opcoes', (c) => c.opcoes],
 ];
 
-const GRUPO: readonly (keyof GrupoAvaliado)[] = [
-  'visivel',
-  'obrigatorio',
-  'estado',
-  'contagemValida',
-  'ocorrenciaDoCandidatoValida',
+const GRUPO: readonly Propriedade<GrupoAvaliado>[] = [
+  ['visivel', (g) => g.regras.visivel],
+  ['obrigatorio', (g) => g.regras.obrigatorio],
+  ['estado', (g) => g.estado],
+  ['contagemValida', (g) => g.ocorrencias.contagemValida],
+  ['ocorrenciaDoCandidatoValida', (g) => g.ocorrencias.ocorrenciaDoCandidatoValida],
 ];
 
 /** Dois lados da mesma coleção, casados pela chave; cada item sem par chega com o outro lado ausente. */
@@ -74,8 +77,7 @@ class ConferenciaDasAvaliacoes {
       deles,
       chave: (c) => c.fatoCodigo,
       rotulo: `${prefixo}Campo`,
-      conferir: (onde, meu, dele) =>
-        CAMPO.forEach((p) => this.comparar(onde, p, meu?.[p], dele?.[p])),
+      conferir: (onde, meu, dele) => this.compararPropriedades(onde, CAMPO, meu, dele),
     });
   }
 
@@ -86,8 +88,8 @@ class ConferenciaDasAvaliacoes {
       chave: (g) => g.codigo,
       rotulo: 'Grupo',
       conferir: (onde, meu, dele) => {
-        GRUPO.forEach((p) => this.comparar(onde, p, meu?.[p], dele?.[p]));
-        this.ocorrencias(onde, meu?.ocorrencias ?? [], dele?.ocorrencias ?? []);
+        this.compararPropriedades(onde, GRUPO, meu, dele);
+        this.ocorrencias(onde, meu?.ocorrencias.lista ?? [], dele?.ocorrencias.lista ?? []);
       },
     });
   }
@@ -115,11 +117,23 @@ class ConferenciaDasAvaliacoes {
       deles,
       chave: (o) => o.id,
       rotulo: `${doGrupo}, ocorrência`,
-      conferir: (daOcorrencia, minha, dela) => {
-        this.comparar(daOcorrencia, 'estado', minha?.estado, dela?.estado);
-        this.campos(`${daOcorrencia}, `, minha?.campos ?? [], dela?.campos ?? []);
-      },
+      conferir: (onde, minha, dela) => this.ocorrencia(onde, minha, dela),
     });
+  }
+
+  private ocorrencia(onde: string, minha?: OcorrenciaAvaliada, dela?: OcorrenciaAvaliada): void {
+    this.comparar(onde, 'estado', minha?.estado, dela?.estado);
+    this.campos(`${onde}, `, minha?.campos ?? [], dela?.campos ?? []);
+  }
+
+  private compararPropriedades<T>(
+    onde: string,
+    propriedades: readonly Propriedade<T>[],
+    meu?: T,
+    dele?: T,
+  ): void {
+    for (const [nome, ler] of propriedades)
+      this.comparar(onde, nome, meu && ler(meu), dele && ler(dele));
   }
 
   private comparar(onde: string, propriedade: string, deLa: unknown, daqui: unknown): void {

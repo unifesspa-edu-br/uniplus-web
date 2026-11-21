@@ -3,7 +3,7 @@ import type { DocumentoDaConfiguracaoFormulario } from '@uniplus/shared-data/sel
 import type { GrupoDoFormulario } from '@uniplus/shared-ui/components';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 import { gravarItem } from './itens';
-import { obrigatoriedadeDoDocumento, predicadoDoDocumento } from './obrigatoriedade';
+import { regrasDoDocumento } from './obrigatoriedade';
 
 type Grupo = NonNullable<DocumentoDaConfiguracaoFormulario['grupos']>[number];
 
@@ -25,8 +25,13 @@ function apresentacaoDoGrupo(grupo: GrupoDoFormulario) {
     ordem: grupo.ordem,
     rotulo: grupo.rotulo,
     etapaCodigo: grupo.etapaCodigo ?? undefined,
-    incluiCandidato: grupo.incluiCandidato,
+    incluiCandidato: grupo.ocorrencias.incluiCandidato,
   };
+}
+
+function maximoDoGrupo(grupo: GrupoDoFormulario, contexto: Contexto, caminho: Caminho) {
+  const { maximo } = grupo.ocorrencias;
+  return maximo === null ? null : contexto.numero(maximo, [...caminho, 'maximo'], true);
 }
 
 function camposDoGrupo(
@@ -36,11 +41,9 @@ function camposDoGrupo(
 ): Omit<Grupo, 'subitens'> {
   return {
     ...apresentacaoDoGrupo(grupo),
-    minimo: contexto.numero(grupo.minimo, [...caminho, 'minimo'], true),
-    maximo:
-      grupo.maximo === null ? null : contexto.numero(grupo.maximo, [...caminho, 'maximo'], true),
-    exibicao: predicadoDoDocumento(grupo.exibicao, contexto, [...caminho, 'exibicao']),
-    obrigatoriedade: obrigatoriedadeDoDocumento(grupo, contexto, [...caminho, 'obrigatoriedade']),
+    minimo: contexto.numero(grupo.ocorrencias.minimo, [...caminho, 'minimo'], true),
+    maximo: maximoDoGrupo(grupo, contexto, caminho),
+    ...regrasDoDocumento(grupo.regras, contexto, caminho),
   };
 }
 

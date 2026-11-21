@@ -80,8 +80,13 @@ export const TIPOS_ETAPA = [
     codigo: 'PROVA_OBJETIVA',
     nome: 'Prova objetiva',
     ativo: true,
-    admitePontuacao: true,
-    admiteEliminacao: true,
+    avaliacao: {
+      admitePontuacao: true,
+      admiteEliminacao: true,
+      notaDeOrigemNoEnem: false,
+      exigeCorrecaoIndependente: false,
+      conceitosAdmitidos: [],
+    },
   },
 ];
 

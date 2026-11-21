@@ -5,7 +5,11 @@
   </a>
   <div class="page-header__content">
     <h1 id="cfg-modelo-titulo" class="page-header__title" tabindex="-1">
-      {{ modelo()?.nome ?? 'Modelo de formulário' }}
+      @if (modelo(); as m) {
+        {{ m.descritivo.nome }}
+      } @else {
+        Modelo de formulário
+      }
     </h1>
     @if (modelo(); as m) {
       <p class="page-header__desc">

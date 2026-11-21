@@ -5,6 +5,7 @@ import { CenarioDoFormularioDoCandidato } from './formulario-do-candidato.testin
 import {
   CODIGO_DA_SECAO_DE_DADOS,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
+  apresentacaoDaEtapa,
   campoRenderizavel,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -36,18 +37,21 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a escolha que as regras limitam continua escolha quando nenhuma opção vale ainda', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [
-        campoRenderizavel('CURSOS', 'Cursos', 'SELECAO_MULTIPLA', {
-          valoresSelecionaveis: [{ codigo: 'MED', descricao: 'Medicina', ordem: 0 }],
-        }),
-        campoRenderizavel('ESPERA', 'Lista de espera', 'SELECAO_UNICA', { ordem: 1 }),
-      ],
+      coleta: {
+        itens: [
+          campoRenderizavel('CURSOS', 'Cursos', 'SELECAO_MULTIPLA', {
+            valoresSelecionaveis: [{ codigo: 'MED', descricao: 'Medicina', ordem: 0 }],
+          }),
+          campoRenderizavel('ESPERA', 'Lista de espera', 'SELECAO_UNICA', { ordem: 1 }),
+        ],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
             itens: [
-              itemDasRegras('CURSOS', { obrigatoriedade: 'NUNCA' }),
+              itemDasRegras('CURSOS', { obrigatoriedade: { tipo: 'NUNCA' } }),
               itemDasRegras('ESPERA', {
                 restricoes: [{ tipo: 'OPCOES_DAS_RESPOSTAS', fatos: ['CURSOS'] }],
               }),
@@ -64,12 +68,15 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o município sem regra de UF fica habilitado; com ela, espera a UF respondida antes', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [
-        campoRenderizavel('NATURALIDADE', 'Naturalidade', 'MUNICIPIO'),
-        campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO', {
-          ordem: 1,
-        }),
-      ],
+      coleta: {
+        itens: [
+          campoRenderizavel('NATURALIDADE', 'Naturalidade', 'MUNICIPIO'),
+          campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO', {
+            ordem: 1,
+          }),
+        ],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
@@ -97,9 +104,10 @@ describe('FormularioDoCandidatoComponent', () => {
     cenario.fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     cenario.fixture.componentRef.setInput('formulario', {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [
-        campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO'),
-      ],
+      coleta: {
+        itens: [campoRenderizavel('MUNICIPIO_RESIDENCIA', 'Município de residência', 'MUNICIPIO')],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
@@ -128,11 +136,14 @@ describe('FormularioDoCandidatoComponent', () => {
     cenario.fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
     cenario.fixture.componentRef.setInput('formulario', {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [
-        campoRenderizavel('TURNO', 'Turno', 'SELECAO_UNICA', {
-          valoresSelecionaveis: [{ codigo: 'NOITE', descricao: 'Noite', ordem: 0 }],
-        }),
-      ],
+      coleta: {
+        itens: [
+          campoRenderizavel('TURNO', 'Turno', 'SELECAO_UNICA', {
+            valoresSelecionaveis: [{ codigo: 'NOITE', descricao: 'Noite', ordem: 0 }],
+          }),
+        ],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
@@ -167,11 +178,32 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
       etapas: [
-        { codigo: 'A', codigoNasRegras: 'Inscricao:A', ordem: 0, tipo: 'SECAO', titulo: 'Seção A' },
-        { codigo: 'B', codigoNasRegras: 'Inscricao:B', ordem: 1, tipo: 'SECAO', titulo: 'Seção B' },
-        { codigo: 'C', codigoNasRegras: 'Inscricao:C', ordem: 2, tipo: 'SECAO', titulo: 'Seção C' },
+        {
+          codigo: 'A',
+          codigoNasRegras: 'Inscricao:A',
+          ordem: 0,
+          tipo: 'SECAO',
+          apresentacao: apresentacaoDaEtapa('Seção A'),
+        },
+        {
+          codigo: 'B',
+          codigoNasRegras: 'Inscricao:B',
+          ordem: 1,
+          tipo: 'SECAO',
+          apresentacao: apresentacaoDaEtapa('Seção B'),
+        },
+        {
+          codigo: 'C',
+          codigoNasRegras: 'Inscricao:C',
+          ordem: 2,
+          tipo: 'SECAO',
+          apresentacao: apresentacaoDaEtapa('Seção C'),
+        },
       ],
-      fatosColetados: [campoRenderizavel('QUER_A', 'Mostrar a seção A?', 'BOOLEANO')],
+      coleta: {
+        itens: [campoRenderizavel('QUER_A', 'Mostrar a seção A?', 'BOOLEANO')],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
@@ -193,7 +225,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o número pela metade, como "1,", não é erro e vale o que já foi escrito', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')],
+      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     });
 
@@ -206,7 +238,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('uma partida nova recria os campos: o número digitado pela metade não passa para ela', () => {
     const formulario = {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')],
+      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('NOTA')] }] },
     };
     const tela = cenario.montar(formulario);
@@ -223,12 +255,12 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a etapa das regras sem seção, como a dos campos do rascunho ainda sem seção, vira o passo "Outros dados"', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [campoRenderizavel('NOME_SOCIAL', 'Nome social', 'TEXTO')],
+      coleta: { itens: [campoRenderizavel('NOME_SOCIAL', 'Nome social', 'TEXTO')], grupos: [] },
       regras: {
         etapas: [
           {
             codigo: 'Inscricao',
-            itens: [itemDasRegras('NOME_SOCIAL', { obrigatoriedade: 'NUNCA' })],
+            itens: [itemDasRegras('NOME_SOCIAL', { obrigatoriedade: { tipo: 'NUNCA' } })],
           },
           { codigo: CODIGO_DA_SECAO_DE_DADOS },
         ],
@@ -246,32 +278,35 @@ describe('FormularioDoCandidatoComponent', () => {
         etapas: [
           {
             codigo: CODIGO_DA_SECAO_DE_DADOS,
-            itens: [itemDasRegras('NOME', { obrigatoriedade: 'QUANDO' })],
+            itens: [itemDasRegras('NOME', { obrigatoriedade: { tipo: 'QUANDO' } })],
           },
         ],
       },
     });
 
-    expect(tela.textContent).toContain('etapas[0].itens[0].obrigatoriedade');
+    expect(tela.textContent).toContain('etapas[0].itens[0].regras.obrigatoriedade');
   });
 
   it('a orientação da opção aparece abaixo dela e descreve o controle; a opção sem orientação não tem descrição', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [
-        campoRenderizavel('COR_RACA', 'Cor ou raça', 'SELECAO_UNICA', {
-          valoresSelecionaveis: [
-            { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
-            {
-              codigo: 'PRETA',
-              descricao: 'Preta',
-              ordem: 1,
-              orientacao:
-                'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
-            },
-          ],
-        }),
-      ],
+      coleta: {
+        itens: [
+          campoRenderizavel('COR_RACA', 'Cor ou raça', 'SELECAO_UNICA', {
+            valoresSelecionaveis: [
+              { codigo: 'BRANCA', descricao: 'Branca', ordem: 0 },
+              {
+                codigo: 'PRETA',
+                descricao: 'Preta',
+                ordem: 1,
+                orientacao:
+                  'Quem concorre às vagas para pretos e pardos passa pela heteroidentificação.',
+              },
+            ],
+          }),
+        ],
+        grupos: [],
+      },
       regras: {
         etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('COR_RACA')] }],
       },

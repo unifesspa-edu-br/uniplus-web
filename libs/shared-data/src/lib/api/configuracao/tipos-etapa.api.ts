@@ -6,6 +6,7 @@ import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type TipoEtapaDto = components['schemas']['TipoEtapaDto'];
+export type AvaliacaoDasEtapasInput = components['schemas']['AvaliacaoDasEtapasInput'];
 export type CriarTipoEtapaCommand = components['schemas']['CriarTipoEtapaCommand'];
 export type AtualizarTipoEtapaCommand = components['schemas']['AtualizarTipoEtapaCommand'];
 

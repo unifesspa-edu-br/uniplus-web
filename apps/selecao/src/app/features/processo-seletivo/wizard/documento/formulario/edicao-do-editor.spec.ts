@@ -5,6 +5,11 @@ import { TipoDaObrigatoriedadeDoFormulario as Obrigatoriedade } from '@uniplus/s
 import { conteudoDoDocumento, documentoDoConteudo } from './conversao-do-formulario';
 import { aceita, formulario, CATALOGOS } from './conversao.testing';
 
+const IGUALDADE = [
+  { codigo: 'IGUAL', rotulo: 'é' },
+  { codigo: 'DIFERENTE', rotulo: 'não é' },
+];
+
 const FATOS: readonly FatoDoFormulario[] = [
   {
     codigo: 'RENDA',
@@ -12,6 +17,7 @@ const FATOS: readonly FatoDoFormulario[] = [
     dominio: 'NUMERICO',
     cardinalidade: 'ESCALAR',
     binding: 'CAMPO_FORMULARIO:RENDA',
+    operadoresAdmitidos: IGUALDADE,
     fonteValores: null,
     escopo: 'CANDIDATO',
     ativo: true,
@@ -23,6 +29,7 @@ const FATOS: readonly FatoDoFormulario[] = [
     valoresDominio: ['PROPRIO_CANDIDATO'],
     cardinalidade: 'ESCALAR',
     binding: 'CAMPO_FORMULARIO:PARENTESCO',
+    operadoresAdmitidos: IGUALDADE,
     fonteValores: null,
     escopo: 'MEMBRO_GRUPO',
     ativo: true,

@@ -5,11 +5,14 @@ import { interpretar } from './valor-da-condicao';
  * Uma condição na forma em que a API a recebe e a devolve: o valor é o JSON já interpretado
  * (`true`, `18`, `"PRETA"`, `["AC", "LB_PPI"]`), e não texto.
  */
-export interface CondicaoNoWire {
+export interface CondicaoNoWire<O = string> {
   readonly fato: string;
-  readonly operador: string;
+  readonly operador: O;
   readonly valor: unknown;
 }
+
+/** As cláusulas de um predicado: valem por OU, e as condições de cada uma por E. */
+export type ClausulasNoWire<O = string> = readonly (readonly CondicaoNoWire<O>[])[];
 
 /**
  * O predicado na forma aninhada da API — cláusulas combinadas por OU, cada uma com as condições
@@ -17,7 +20,7 @@ export interface CondicaoNoWire {
  * Nulo ou vazio é predicado sem condição.
  */
 export function deClausulasDoWire(
-  clausulas: readonly (readonly CondicaoNoWire[])[] | null | undefined,
+  clausulas: ClausulasNoWire | null | undefined,
 ): readonly CondicaoEmClausula[] {
   return (clausulas ?? []).flatMap((condicoes, indice) =>
     condicoes.map((condicao) => ({
@@ -46,4 +49,32 @@ export function paraClausulasDoWire(condicoes: readonly CondicaoEmClausula[]): C
         })),
     )
     .filter((clausula) => clausula.length > 0);
+}
+
+/**
+ * O mesmo predicado com o operador de cada condição trocado pelo que o tradutor devolve para o
+ * código dele. O operador de entrada é texto, ou o tipo que a chamada declarar em `E`. A ordem das
+ * cláusulas e das condições, o fato e o valor seguem como estão; o predicado ausente (`null` ou
+ * `undefined`) continua ausente.
+ */
+export function predicadoComOperadores<O, E = string>(
+  clausulas: ClausulasNoWire<E>,
+  operador: (codigo: E) => O,
+): ClausulasNoWire<O>;
+export function predicadoComOperadores<O, E = string>(
+  clausulas: ClausulasNoWire<E> | null,
+  operador: (codigo: E) => O,
+): ClausulasNoWire<O> | null;
+export function predicadoComOperadores<O, E = string>(
+  clausulas: ClausulasNoWire<E> | null | undefined,
+  operador: (codigo: E) => O,
+): ClausulasNoWire<O> | null | undefined;
+export function predicadoComOperadores<O, E = string>(
+  clausulas: ClausulasNoWire<E> | null | undefined,
+  operador: (codigo: E) => O,
+): ClausulasNoWire<O> | null | undefined {
+  if (clausulas === null || clausulas === undefined) return clausulas;
+  return clausulas.map((clausula) =>
+    clausula.map((condicao) => ({ ...condicao, operador: operador(condicao.operador) })),
+  );
 }

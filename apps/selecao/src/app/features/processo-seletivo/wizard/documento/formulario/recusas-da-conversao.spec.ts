@@ -41,7 +41,11 @@ describe('recusas da conversão do formulário', () => {
     const recusada = editar(original, (conteudo) => ({
       ...conteudo,
       titulo: 'Outro título',
-      termos: conteudo.termos?.map((termo) => ({ ...termo, versaoId: 'terceira' })) ?? null,
+      termos:
+        conteudo.termos?.map((termo) => ({
+          ...termo,
+          termo: { ...termo.termo, versaoId: 'terceira' },
+        })) ?? null,
     }));
     expect(recusada.ok).toBe(false);
     const documento: DocumentoDaConfiguracao = {
@@ -66,7 +70,10 @@ describe('recusas da conversão do formulário', () => {
     (minimo) => {
       const recusada = editar(formulario(), (conteudo) => ({
         ...conteudo,
-        grupos: conteudo.grupos?.map((grupo) => ({ ...grupo, minimo })),
+        grupos: conteudo.grupos?.map((grupo) => ({
+          ...grupo,
+          ocorrencias: { ...grupo.ocorrencias, minimo },
+        })),
       }));
       expect(recusada.ok).toBe(false);
       if (recusada.ok) return;
@@ -82,10 +89,17 @@ describe('recusas da conversão do formulário', () => {
       (conteudo) => ({
         ...conteudo,
         pressupostos: ['RENDA'],
-        grupos: conteudo.grupos?.map((grupo) => ({ ...grupo, minimo: 'texto reservado' })),
+        grupos: conteudo.grupos?.map((grupo) => ({
+          ...grupo,
+          ocorrencias: { ...grupo.ocorrencias, minimo: 'texto reservado' },
+        })),
         termos: [
-          { ...(conteudo.termos ?? [])[0], termoId: 'ausente' },
-          { ...(conteudo.termos ?? [])[0], codigo: 'segundo', versaoId: 'terceira' },
+          { ...(conteudo.termos ?? [])[0], termo: { termoId: 'ausente', versaoId: 'primeira' } },
+          {
+            ...(conteudo.termos ?? [])[0],
+            codigo: 'segundo',
+            termo: { termoId: 'termo', versaoId: 'terceira' },
+          },
         ],
       }),
       [],
@@ -117,7 +131,10 @@ describe('recusas da conversão do formulário', () => {
       itens:
         conteudo.itens?.map((item) => ({
           ...item,
-          precondicao: [[{ fato: 'RENDA', operador: 'texto reservado', valor: true }]],
+          regras: {
+            ...item.regras,
+            exibicao: [[{ fato: 'RENDA', operador: 'texto reservado', valor: true }]],
+          },
         })) ?? null,
     }));
     expect(recusada.ok).toBe(false);
@@ -131,7 +148,11 @@ describe('recusas da conversão do formulário', () => {
     const resultado = aceita(
       editar(formulario(), (conteudo) => ({
         ...conteudo,
-        termos: conteudo.termos?.map((termo) => ({ ...termo, versaoId: 'segunda' })) ?? null,
+        termos:
+          conteudo.termos?.map((termo) => ({
+            ...termo,
+            termo: { ...termo.termo, versaoId: 'segunda' },
+          })) ?? null,
       })),
     );
     expect(resultado.formulario.termos?.[0].versaoNumero).toBe(2);

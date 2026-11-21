@@ -10,7 +10,9 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   FaseCanonicaDto,
-  FatoCandidatoView,
+  fatoComOperadores,
+  FatoCandidatoComOperadores,
+  FatoDoCatalogoDto,
 } from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura, type LeituraAcompanhada } from '@uniplus/shared-ui/components';
 
@@ -71,13 +73,9 @@ function falhaDoApoio(
   });
 }
 
-function lerApoio<T>(
-  pedido: Pedido,
-  ativo: () => boolean,
-  aviso: AvisoDaLeitura,
-): LeituraDeApoio<T> {
+function recursoDoPedido<T>(pedido: Pedido, ativo: () => boolean): UseApiResourceRef<readonly T[]> {
   const basePath = inject(CONFIGURACAO_BASE_PATH);
-  const recurso = useApiResource<readonly T[]>(() =>
+  return useApiResource<readonly T[]>(() =>
     ativo()
       ? {
           url: `${basePath}${pedido.caminho}`,
@@ -86,19 +84,35 @@ function lerApoio<T>(
         }
       : undefined,
   );
+}
+
+function avisoDoApoio(
+  recurso: UseApiResourceRef<unknown>,
+  falhou: Signal<boolean>,
+  aviso: AvisoDaLeitura,
+): LeituraAcompanhada {
+  return acompanharLeitura({
+    falha: falhaDoApoio(recurso, falhou, aviso.consequencia),
+    pendente: recurso.isLoading,
+    recarregar: () => recurso.reload(),
+    destino: aviso.destino,
+    assunto: aviso.assunto,
+  });
+}
+
+function lerApoio<T>(
+  pedido: Pedido,
+  ativo: () => boolean,
+  aviso: AvisoDaLeitura,
+): LeituraDeApoio<T> {
+  const recurso = recursoDoPedido<T>(pedido, ativo);
   avisarFalhaDoServidor(recurso);
   const falhou = computed(() => recurso.problem() !== null || recurso.error() !== undefined);
   return {
     itens: computed(() => recurso.data() ?? []),
     pendente: recurso.isLoading,
     falhou,
-    leitura: acompanharLeitura({
-      falha: falhaDoApoio(recurso, falhou, aviso.consequencia),
-      pendente: recurso.isLoading,
-      recarregar: () => recurso.reload(),
-      destino: aviso.destino,
-      assunto: aviso.assunto,
-    }),
+    leitura: avisoDoApoio(recurso, falhou, aviso),
   };
 }
 
@@ -128,10 +142,11 @@ export function lerFasesCanonicas(
 export function lerCatalogoDeFatos(
   ativo: () => boolean,
   aviso: AvisoDaLeitura,
-): LeituraDeApoio<FatoCandidatoView> {
-  return lerApoio(
+): LeituraDeApoio<FatoCandidatoComOperadores> {
+  const leitura = lerApoio<FatoDoCatalogoDto>(
     { caminho: '/api/configuracao/fatos-candidato', recurso: 'fato-candidato' },
     ativo,
     aviso,
   );
+  return { ...leitura, itens: computed(() => leitura.itens().map(fatoComOperadores)) };
 }

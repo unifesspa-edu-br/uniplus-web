@@ -174,6 +174,7 @@ export {
 export {
   TiposEtapaApi,
   type AtualizarTipoEtapaCommand,
+  type AvaliacaoDasEtapasInput,
   type CriarTipoEtapaCommand,
   type TipoEtapaDto,
   type TiposEtapaQuery,
@@ -188,8 +189,10 @@ export {
   type CriarBaseLegalBonusRegionalMunicipioCommand,
 } from './base-legal-bonus-regional.api';
 export {
+  TipoInstrumentoNormativoCodigo,
   TiposInstrumentoNormativoApi,
-  type TipoInstrumentoNormativoVocabularioDto,
+  type TipoInstrumentoNormativo,
+  type TipoInstrumentoNormativoComDescricao,
 } from './tipos-instrumento-normativo.api';
 
 export {
@@ -218,6 +221,7 @@ export {
 } from './protecao-do-catalogo.api';
 
 export { FatosCandidatoApi } from './fatos-candidato.api';
+export { fatoComOperadores, type FatoCandidatoComOperadores } from './fato-do-catalogo';
 export type {
   CriarFatoAgregadoCommand,
   CriarFatoCandidatoCommand,
@@ -226,8 +230,11 @@ export type {
   DescritivoDoFatoInput,
   FatoCandidatoDto,
   FatoCandidatoView,
+  FatoDeManutencaoDto,
+  FatoDoCatalogoDto,
   FatoValorDominioDto,
   FatoValorDominioViewItem,
+  OperadorDoFato,
   RegraPadraoDto,
   RegrasPadraoInput,
   ValorDominioInput,
@@ -251,3 +258,11 @@ export type {
   ModeloFormularioView,
   ModelosFormularioQuery,
 } from './modelos-formulario.api';
+export {
+  NaturezaConceitoCodigo,
+  OperadorCodigo,
+  PapelDaBancaCodigo,
+  TipoDeBancaCodigo,
+  TipoMotivoDeDecisaoCodigo,
+  TipoRenderizacaoCodigo,
+} from './schema';

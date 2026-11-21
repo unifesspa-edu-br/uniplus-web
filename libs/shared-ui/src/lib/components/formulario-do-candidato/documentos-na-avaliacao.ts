@@ -1,6 +1,6 @@
 import { arvoreDeDocumentos, type NoDeDocumentos } from './arvore-de-documentos';
 import { type DocumentosDoFormulario, documentosDoFormulario } from './documentos-avaliados';
-import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import type { AvaliacaoNaTela, PendenciaDaAvaliacao } from './modalidades-avaliadas';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
 
@@ -18,11 +18,12 @@ export function iguaisPorJson(a: unknown, b: unknown): boolean {
 /** Os documentos da fase e da finalidade do formulário, como a avaliação da API os traz; nulos antes dela. */
 export function documentosDaFase(
   avaliacao: AvaliacaoNaTela | null,
-  formulario: FormularioDoCandidato,
+  noProcesso: FormularioNoProcesso | null,
+  finalidade: string,
 ): DocumentosDoFormulario | null {
   const avaliados = avaliacao?.documentos ?? null;
   if (avaliados === null) return null;
-  return documentosDoFormulario(avaliados, formulario.faseId, formulario.finalidade);
+  return documentosDoFormulario(avaliados, noProcesso?.faseId, finalidade);
 }
 
 /** A árvore da escolha dos documentos e o que falta responder; nulas antes da primeira avaliação. */
@@ -33,7 +34,7 @@ export function documentosDaAvaliacao(
 ): DocumentosNaAvaliacao | null {
   if (daFase === null) return null;
   return {
-    arvore: arvoreDeDocumentos(daFase.documentos, formulario.grupos, ocorrencias),
+    arvore: arvoreDeDocumentos(daFase.documentos, formulario.coleta.grupos, ocorrencias),
     pendencias: daFase.pendencias,
   };
 }

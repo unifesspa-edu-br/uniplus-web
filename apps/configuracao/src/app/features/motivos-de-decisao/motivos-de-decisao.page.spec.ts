@@ -1,3 +1,4 @@
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   Pagina,
@@ -48,7 +49,14 @@ describe('MotivosDeDecisaoPage — leitura', () => {
     seletor.dispatchEvent(new Event('change'));
     await p.propagar();
     await p.lerLista(
-      [{ ...desativado, tipo: 'CLASSIFICACAO', subclassificacao: null, ativo: true }],
+      [
+        {
+          ...desativado,
+          tipo: { codigo: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO, rotulo: 'Classificação' },
+          subclassificacao: null,
+          ativo: true,
+        },
+      ],
       (q) => expect(q['tipo']).toBe('CLASSIFICACAO'),
     );
 

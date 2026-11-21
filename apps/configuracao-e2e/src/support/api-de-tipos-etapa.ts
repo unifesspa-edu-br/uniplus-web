@@ -1,5 +1,6 @@
 import type { Page, Request, Route } from '@playwright/test';
 import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { responder, responderPreflight, servirLeitura, type Resposta } from './escritas-retidas';
 import { mockTiposDeConceito } from './tipos-conceito-api';
 
@@ -8,22 +9,31 @@ import { mockTiposDeConceito } from './tipos-conceito-api';
 const ID_DO_TIPO_CRIADO = 'novo-tipo-etapa-id';
 
 /** O tipo sem nada declarado além do que o contrato exige; o teste troca só o que mede. */
-const TIPO_SEM_DECLARACOES: TipoEtapaDto = {
+const TIPO_SEM_DECLARACOES: JsonDaApi<TipoEtapaDto> = {
   id: '01960000-0000-7000-0000-0000000000e1',
   codigo: 'PROVA',
   nome: 'Prova',
   descricao: null,
   ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  exigeCorrecaoIndependente: false,
-  conceitosAdmitidos: [],
+  avaliacao: {
+    admitePontuacao: true,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [],
+  },
   criadoEm: '2026-08-11T00:00:00Z',
 };
 
-export function tipoDeEtapa(parcial: Partial<TipoEtapaDto> = {}): TipoEtapaDto {
-  return { ...TIPO_SEM_DECLARACOES, ...parcial };
+export function tipoDeEtapa(
+  parcial: Partial<Omit<JsonDaApi<TipoEtapaDto>, 'avaliacao'>> = {},
+  avaliacao: Partial<JsonDaApi<TipoEtapaDto>['avaliacao']> = {},
+): JsonDaApi<TipoEtapaDto> {
+  return {
+    ...TIPO_SEM_DECLARACOES,
+    ...parcial,
+    avaliacao: { ...TIPO_SEM_DECLARACOES.avaliacao, ...avaliacao },
+  };
 }
 
 /** O que a tela enviou: o corpo de cada criação e de cada atualização, e o id de cada remoção. */
@@ -62,7 +72,7 @@ function aoEscrever(capturado: Capturado, recusa: Resposta | undefined) {
 export async function mockApiDeTiposEtapa(
   page: Page,
   capturado: Capturado,
-  lista: readonly TipoEtapaDto[],
+  lista: readonly JsonDaApi<TipoEtapaDto>[],
   recusa?: Resposta,
 ): Promise<void> {
   await mockTiposDeConceito(page);

@@ -1,121 +1,171 @@
+import type {
+  ApresentacaoDaEtapa,
+  ApresentacaoDoCampo,
+} from '../editor-de-formulario/modelo/tipos';
+import type {
+  CampoRenderizavel,
+  ColetaDoFormulario,
+  ConteudoDoTermo,
+  FormularioDoCandidato,
+  GrupoRenderizavel,
+  PressupostoDoFormulario,
+  PressupostosDoFormulario,
+  SecaoRenderizavel,
+  TermoRenderizavel,
+  ValorSelecionavel,
+} from './formulario-do-candidato.model';
+import type { OcorrenciasDoGrupoDasRegras } from './interpretador/regras-do-formulario';
+
 /** O primeiro problema de um arquivo importado: onde está e o que há de errado. */
 export interface RecusaDoArquivo {
   readonly caminho: string;
   readonly mensagem: string;
 }
 
-type Validacao = (valor: unknown) => boolean;
-type Forma = Readonly<Record<string, Validacao>>;
 type Objeto = Record<string, unknown>;
+type Conferencia = (valor: unknown, caminho: string) => RecusaDoArquivo | null;
+type Obrigatorias<T> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T];
+/** Uma conferência por propriedade do modelo: as obrigatórias têm de constar, as opcionais podem. */
+type FormaDe<T> = Readonly<Record<Obrigatorias<T>, Conferencia>> &
+  Readonly<Partial<Record<Exclude<keyof T, Obrigatorias<T>>, Conferencia>>>;
 
 export function ehObjeto(valor: unknown): valor is Objeto {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
 
-const texto: Validacao = (v) => typeof v === 'string';
-const lista: Validacao = (v) => Array.isArray(v);
-// O inteiro do contrato vem como número ou, como a API também o lê, como número escrito em texto.
-const numero: Validacao = (v) =>
-  typeof v === 'number' || (typeof v === 'string' && /^-?[0-9]+$/.test(v));
-const opcional =
-  (conferir: Validacao): Validacao =>
-  (v) =>
-    v === null || v === undefined || conferir(v);
+function juntar(caminho: string, propriedade: string): string {
+  return caminho === '' ? propriedade : `${caminho}.${propriedade}`;
+}
 
-const VALOR: Forma = { codigo: texto, ordem: numero, descricao: opcional(texto) };
-const CAMPO: Forma = {
-  fatoCodigo: texto,
+function conferirTipo(ok: boolean): Conferencia {
+  return (_valor, caminho) =>
+    ok ? null : { caminho, mensagem: 'A propriedade falta ou tem outra forma.' };
+}
+
+const texto: Conferencia = (v, caminho) => conferirTipo(typeof v === 'string')(v, caminho);
+const booleano: Conferencia = (v, caminho) => conferirTipo(typeof v === 'boolean')(v, caminho);
+// O inteiro do contrato vem como número ou, como a API também o lê, como número escrito em texto.
+const numero: Conferencia = (v, caminho) =>
+  conferirTipo(typeof v === 'number' || (typeof v === 'string' && /^-?[0-9]+$/.test(v)))(
+    v,
+    caminho,
+  );
+// As regras já foram conferidas por `lerRegras`, antes de a apresentação ser olhada.
+const regrasJaLidas: Conferencia = () => null;
+
+function opcional(conferir: Conferencia): Conferencia {
+  return (valor, caminho) =>
+    valor === null || valor === undefined ? null : conferir(valor, caminho);
+}
+
+function lista(conferir: Conferencia): Conferencia {
+  return (valor, caminho) => {
+    if (!Array.isArray(valor)) return { caminho, mensagem: 'O formulário traz esta lista.' };
+    for (const [i, elemento] of valor.entries()) {
+      const recusa = conferir(elemento, `${caminho}[${i}]`);
+      if (recusa) return recusa;
+    }
+    return null;
+  };
+}
+
+function objeto<T>(forma: FormaDe<T>): Conferencia {
+  const conferencias: Readonly<Record<string, Conferencia | undefined>> = forma;
+  return (valor, caminho) => {
+    if (!ehObjeto(valor)) return { caminho, mensagem: 'O elemento é um objeto.' };
+    for (const [propriedade, conferir] of Object.entries(conferencias)) {
+      const recusa = conferir?.(valor[propriedade], juntar(caminho, propriedade));
+      if (recusa) return recusa;
+    }
+    return null;
+  };
+}
+
+const VALOR = objeto<ValorSelecionavel>({
+  codigo: texto,
   ordem: numero,
+  descricao: opcional(texto),
+  orientacao: opcional(texto),
+});
+const VALORES = opcional(lista(VALOR));
+const APRESENTACAO_DO_CAMPO = objeto<ApresentacaoDoCampo>({
   rotulo: texto,
   tipoRenderizacao: texto,
-  valoresSelecionaveis: opcional(lista),
-};
-const PRESSUPOSTO: Forma = {
+  pedirConfirmacao: booleano,
+  ajuda: opcional(texto),
+});
+const CAMPO = objeto<CampoRenderizavel>({
+  fatoCodigo: texto,
+  ordem: numero,
+  apresentacao: APRESENTACAO_DO_CAMPO,
+  valoresSelecionaveis: VALORES,
+  formato: opcional(texto),
+});
+const OCORRENCIAS = objeto<OcorrenciasDoGrupoDasRegras>({
+  minimo: numero,
+  incluiCandidato: booleano,
+  maximo: opcional(numero),
+});
+const GRUPO = objeto<GrupoRenderizavel>({
+  codigo: texto,
+  ordem: numero,
+  rotulo: texto,
+  ocorrencias: OCORRENCIAS,
+  subitens: lista(CAMPO),
+});
+const APRESENTACAO_DA_ETAPA = objeto<ApresentacaoDaEtapa>({
+  titulo: texto,
+  descricao: opcional(texto),
+  aviso: opcional(texto),
+});
+const SECAO = objeto<SecaoRenderizavel>({
+  codigo: texto,
+  ordem: numero,
+  tipo: texto,
+  apresentacao: APRESENTACAO_DA_ETAPA,
+  codigoNasRegras: opcional(texto),
+  bloco: opcional(texto),
+});
+const CONTEUDO_DO_TERMO = objeto<ConteudoDoTermo>({
+  nome: texto,
+  texto,
+  baseLegal: texto,
+});
+const TERMO = objeto<TermoRenderizavel>({
+  codigo: texto,
+  codigoNasRegras: texto,
+  ordem: numero,
+  conteudo: CONTEUDO_DO_TERMO,
+});
+const PRESSUPOSTO = objeto<PressupostoDoFormulario>({
   fatoCodigo: texto,
   rotulo: opcional(texto),
   tipoRenderizacao: opcional(texto),
   formato: opcional(texto),
-  calculadoDe: opcional((v) => Array.isArray(v) && v.every(texto)),
-  valoresSelecionaveis: opcional(lista),
-};
-const LISTAS_DO_FORMULARIO: Readonly<Record<string, Forma>> = {
-  etapas: {
-    codigo: texto,
-    ordem: numero,
-    tipo: texto,
-    titulo: texto,
-    codigoNasRegras: opcional(texto),
-  },
-  fatosColetados: CAMPO,
-  grupos: { codigo: texto, ordem: numero, rotulo: texto, minimo: numero, subitens: lista },
-  termos: { codigo: texto, codigoNasRegras: texto, ordem: numero, nome: texto, texto: texto },
-};
-
-/** Cada elemento da lista é um objeto com as propriedades da forma. */
-function conferirLista(lista: unknown, caminho: string, forma: Forma): RecusaDoArquivo | null {
-  if (!Array.isArray(lista)) return { caminho, mensagem: 'O formulário traz esta lista.' };
-  for (const [i, elemento] of lista.entries()) {
-    if (!ehObjeto(elemento))
-      return { caminho: `${caminho}[${i}]`, mensagem: 'O elemento é um objeto.' };
-    const errada = Object.entries(forma).find(
-      ([propriedade, valida]) => !valida(elemento[propriedade]),
-    );
-    if (errada) {
-      return {
-        caminho: `${caminho}[${i}].${errada[0]}`,
-        mensagem: 'A propriedade falta ou tem outra forma.',
-      };
-    }
-  }
-  return null;
-}
-
-function conferirValoresDosCampos(campos: Objeto[], caminho: string): RecusaDoArquivo | null {
-  for (const [i, item] of campos.entries()) {
-    const recusa = conferirLista(
-      item['valoresSelecionaveis'] ?? [],
-      `${caminho}[${i}].valoresSelecionaveis`,
-      VALOR,
-    );
-    if (recusa) return recusa;
-  }
-  return null;
-}
-
-function conferirGrupos(grupos: Objeto[]): RecusaDoArquivo | null {
-  for (const [i, grupo] of grupos.entries()) {
-    const caminho = `grupos[${i}].subitens`;
-    const recusa =
-      conferirLista(grupo['subitens'], caminho, CAMPO) ??
-      conferirValoresDosCampos(grupo['subitens'] as Objeto[], caminho);
-    if (recusa) return recusa;
-  }
-  return null;
-}
-
-/** Os pressupostos são opcionais no arquivo; quando vêm, cada um é conferido como os campos. */
-function conferirPressupostos(pressupostos: unknown): RecusaDoArquivo | null {
-  if (pressupostos === undefined || pressupostos === null) return null;
-  return (
-    conferirLista(pressupostos, 'pressupostos', PRESSUPOSTO) ??
-    conferirValoresDosCampos(pressupostos as Objeto[], 'pressupostos')
-  );
-}
+  calculadoDe: opcional(lista(texto)),
+  valoresSelecionaveis: VALORES,
+});
+const COLETA = objeto<ColetaDoFormulario>({
+  itens: lista(CAMPO),
+  grupos: lista(GRUPO),
+});
+const PRESSUPOSTOS = objeto<PressupostosDoFormulario>({ fatos: lista(PRESSUPOSTO) });
+const FORMULARIO = objeto<FormularioDoCandidato>({
+  finalidade: texto,
+  etapas: lista(SECAO),
+  termos: lista(TERMO),
+  coleta: COLETA,
+  regras: regrasJaLidas,
+  pressupostos: PRESSUPOSTOS,
+  titulo: opcional(texto),
+});
 
 /**
  * A apresentação do formulário renderizável, conferida no que o formulário do candidato lê: cada seção,
  * campo, grupo e termo com os códigos e textos dele. O primeiro problema sai com o caminho.
  */
 export function recusaDaApresentacao(conteudo: Objeto): RecusaDoArquivo | null {
-  for (const [nome, forma] of Object.entries(LISTAS_DO_FORMULARIO)) {
-    const recusa = conferirLista(conteudo[nome], nome, forma);
-    if (recusa) return recusa;
-  }
-  return (
-    conferirGrupos(conteudo['grupos'] as Objeto[]) ??
-    conferirValoresDosCampos(conteudo['fatosColetados'] as Objeto[], 'fatosColetados') ??
-    conferirPressupostos(conteudo['pressupostos'])
-  );
+  return FORMULARIO(conteudo, '');
 }
 
 /**

@@ -71,7 +71,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
   });
 
   it('só entra o que as dependências do Fator listam, nada fixo no código', () => {
-    cenario.abrirNaRevisao(formularioComOFator({ fatos: [CAMINHO_DO_FATOR], grupos: [] }), {
+    cenario.abrirNaRevisao(formularioComOFator(), {
+      dependenciasDoFator: { fatos: [CAMINHO_DO_FATOR], grupos: [] },
       respostas: {
         [SOLICITA_O_FATOR]: true,
         [CAMINHO_DO_FATOR]: 'RESIDENCIA',
@@ -89,7 +90,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
     ['sem dependências', null],
     ['com a lista vazia', { fatos: [], grupos: [] }],
   ])('%s, o resumo não aparece', (_, dependencias) => {
-    cenario.abrirNaRevisao(formularioComOFator(dependencias), {
+    cenario.abrirNaRevisao(formularioComOFator(), {
+      dependenciasDoFator: dependencias,
       respostas: { [SOLICITA_O_FATOR]: true },
     });
 
@@ -104,7 +106,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
 
   it('os campos de grupo que o Fator lista aparecem por ocorrência respondida, com o título dela', () => {
     const dependencias = { fatos: ['FAMILIA.BONUS', 'FAMILIA.RENDA'], grupos: ['FAMILIA'] };
-    cenario.abrirNaRevisao(comOGrupo(formularioComOFator(dependencias)), {
+    cenario.abrirNaRevisao(comOGrupo(formularioComOFator()), {
+      dependenciasDoFator: dependencias,
       respostas: {},
       grupos: {
         FAMILIA: [
@@ -131,18 +134,22 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
   });
 
   it('os subitens do grupo seguem a ordem do grupo, não a da regra', () => {
-    const comRendaDepois = comOGrupo(
-      formularioComOFator({ fatos: ['FAMILIA.RENDA', 'FAMILIA.NOME'], grupos: ['FAMILIA'] }),
-    );
+    const comRendaDepois = comOGrupo(formularioComOFator());
     cenario.abrirNaRevisao(
       {
         ...comRendaDepois,
-        grupos: comRendaDepois.grupos.map((grupo) => ({
-          ...grupo,
-          subitens: grupo.subitens.map((s) => (s.fatoCodigo === 'RENDA' ? { ...s, ordem: 5 } : s)),
-        })),
+        coleta: {
+          ...comRendaDepois.coleta,
+          grupos: comRendaDepois.coleta.grupos.map((grupo) => ({
+            ...grupo,
+            subitens: grupo.subitens.map((s) =>
+              s.fatoCodigo === 'RENDA' ? { ...s, ordem: 5 } : s,
+            ),
+          })),
+        },
       },
       {
+        dependenciasDoFator: { fatos: ['FAMILIA.RENDA', 'FAMILIA.NOME'], grupos: ['FAMILIA'] },
         respostas: {},
         grupos: { FAMILIA: [{ id: 'a', respostas: { RENDA: 10, NOME: 'Maria' } }] },
       },

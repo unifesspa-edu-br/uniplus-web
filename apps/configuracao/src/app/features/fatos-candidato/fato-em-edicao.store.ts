@@ -6,7 +6,11 @@ import {
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  FatoCandidatoDto,
+  FatoDeManutencaoDto,
+} from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura, fatosEscolhiveis } from '@uniplus/shared-ui/components';
 import {
   ID_DAS_REGRAS_PADRAO,
@@ -44,7 +48,7 @@ export class FatoEmEdicaoStore {
   /** O fato em edição; `null` com a edição fechada. */
   readonly id = signal<string | null>(null);
 
-  private readonly recurso = useApiResource<FatoCandidatoDto>(() => {
+  private readonly recurso = useApiResource<FatoDeManutencaoDto>(() => {
     const id = this.id();
     return id === null
       ? undefined
@@ -54,7 +58,7 @@ export class FatoEmEdicaoStore {
         };
   });
 
-  readonly fato = this.recurso.data;
+  readonly fato = computed(() => this.recurso.data()?.fato ?? null);
   readonly carregando = this.recurso.isLoading;
   readonly falhouAoCarregar = computed(
     () => this.recurso.problem() !== null || this.recurso.error() !== undefined,
@@ -121,13 +125,15 @@ export class FatoEmEdicaoStore {
   /** A fase atual do fato entra nas opções mesmo se a lista não a traz: a escolha salva não some do select. */
   readonly fasesDaDefinicao = computed<readonly OpcaoDeFase[]>(() => {
     const lista = this.fases.itens();
-    const atual = this.fato()?.pontoResolucao;
+    const atual = this.fato()?.definicao.resolucao.pontoResolucao;
     if (!atual || lista.some((fase) => fase.codigo === atual)) return lista;
     return [{ codigo: atual, nome: this.fases.pendente() ? 'Carregando…' : atual }, ...lista];
   });
 
   readonly valoresAtivos = computed(() =>
-    (this.fato()?.valores ?? []).filter((valor) => valor.ativo).map((valor) => valor.codigo),
+    (this.fato()?.definicao.valores.declarados ?? [])
+      .filter((valor) => valor.ativo)
+      .map((valor) => valor.codigo),
   );
 
   /**

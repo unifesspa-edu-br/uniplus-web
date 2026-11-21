@@ -10,7 +10,6 @@ import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
 import { SELECAO_BASE_PATH, type FormularioDto } from '@uniplus/shared-data/selecao';
 import { afterEach, beforeEach } from 'vitest';
 
-import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -18,182 +17,43 @@ import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cr
 import { FormularioPassoComponent } from './formulario.component';
 import { conteudoDoFormulario } from './formulario-do-processo';
 import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
+import {
+  BASE,
+  FASE_HABILITACAO,
+  FASE_INSCRICAO,
+  GRAVADO,
+  HABILITACAO_GRAVADA,
+  MODELOS,
+  PCD_NO_CATALOGO,
+  PROCESSO,
+  PROCESSO_ID,
+  ROTA_MODELOS,
+} from './formulario-gravado.testing';
 
-export const BASE = 'http://localhost:5000';
-export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
-export const ROTA_PROCESSO = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}`;
-const ROTA_FORMULARIOS = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios`;
-export const ROTA_INSCRICAO = `${ROTA_FORMULARIOS}/INSCRICAO`;
-export const ROTA_HABILITACAO = `${ROTA_FORMULARIOS}/HABILITACAO`;
-export const ROTA_APLICACAO = `${ROTA_FORMULARIOS}/aplicacoes-de-modelo`;
-export const ROTA_MODELOS = `${BASE}/api/configuracao/admin/modelos-formulario`;
-export const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
-
-export const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
-  origemData: 'NO_EDITAL',
-  agrupaEtapas: false,
-  coletaInscricao: true,
-  permiteComplementacao: false,
-  coletaSolicitacaoIsencao: false,
-  bancas: [],
-};
-
-export const FASE_INSCRICAO: FaseDoCronograma = {
-  faseCanonicaId: 'fc-inscricao',
-  codigo: 'INSCRICAO',
-  ordem: 0,
-  inicio: null,
-  fim: null,
-  unidadeResponsavelId: null,
-  produtos: [],
-  noMesmoMomentoDaAnterior: false,
-  emiteParecerIndividual: false,
-  bancasRequeridas: [],
-  regraRecurso: null,
-  congelados: CONGELADOS_DA_INSCRICAO,
-};
-
-export const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
-  fatoCodigo,
-  ordem,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'BOOLEANO',
-  obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-  precondicao: null,
-  opcoes: null,
-  etapaCodigo,
-  formato: null,
-  ajuda: null,
-  pedirConfirmacao: false,
-  restricoes: [],
-  impedimento: null,
-});
-export const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
-  codigo,
-  ordem,
-  tipo: bloco === null ? 'SECAO' : 'BLOCO',
-  bloco,
-  titulo: codigo === 'S1' ? 'Condições especiais' : codigo,
-  descricao: null,
-  aviso: null,
-  exibicao: null,
-});
-
-/** A inscrição como o servidor a devolve: com a seção dos dados básicos que a API acrescenta. */
-export const GRAVADO = {
-  finalidade: 'INSCRICAO',
-  faseId: 'F-INSCRICAO',
-  titulo: 'Inscrição — Medicina 2027',
-  modeloOrigemId: null,
-  modeloOrigemCodigo: null,
-  etapas: [
-    etapa('DADOS_BASICOS', 0),
-    etapa('S1', 1),
-    etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
-  ],
-  fatosColetados: [
-    campo('NOME', 0, 'DADOS_BASICOS'),
-    {
-      ...campo('PCD', 1, 'S1'),
-      obrigatoriedade: {
-        tipo: 'QUANDO',
-        predicado: [[{ fato: 'NOME', operador: 'IGUAL', valor: 'x' }]],
-      },
-    },
-  ],
-  termos: [],
-  grupos: [
-    {
-      codigo: 'FAMILIA',
-      ordem: 3,
-      rotulo: 'FAMILIA',
-      etapaCodigo: 'S1',
-      minimo: 0,
-      maximo: null,
-      exibicao: null,
-      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-      incluiCandidato: false,
-      subitens: [],
-    },
-  ],
-} as unknown as FormularioDto;
-
-/** A fase que colhe a habilitação, depois da inscrição. */
-export const FASE_HABILITACAO: FaseDoCronograma = {
-  ...FASE_INSCRICAO,
-  faseCanonicaId: 'fc-habilitacao',
-  codigo: 'HABILITACAO',
-  ordem: 1,
-  congelados: {
-    origemData: 'NO_EDITAL',
-    agrupaEtapas: false,
-    coletaInscricao: false,
-    permiteComplementacao: false,
-    coletaSolicitacaoIsencao: false,
-    bancas: [],
-  },
-};
-/** O formulário de habilitação como o servidor o devolve. */
-export const HABILITACAO_GRAVADA = {
-  ...GRAVADO,
-  finalidade: 'HABILITACAO',
-  faseId: 'F-HABILITACAO',
-  etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
-  fatosColetados: [],
-} as unknown as FormularioDto;
-
-export const PROCESSO = {
-  formularios: [GRAVADO],
-  cronogramaFases: [{ id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true }],
-};
-
-export const PCD_NO_CATALOGO = {
-  id: 'f-pcd',
-  codigo: 'PCD',
-  nome: 'Pessoa com deficiência',
-  descricao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
-  valoresDominio: null,
-  pontoResolucao: 'INSCRICAO',
-  binding: 'CAMPO_INSCRICAO:PCD',
-  valoresDominioDeclarados: null,
-  fonteValores: null,
-  ativo: true,
-  escopo: 'CANDIDATO',
-};
-
-export const modelo = (id: string, nome: string, finalidade: string) => ({
-  id,
-  codigo: id.toUpperCase(),
-  nome,
-  descricao: null,
-  finalidade,
-  tipoProcessoCodigo: 'MEDICINA',
-  ativo: true,
-  conteudo: {},
-});
-export const MODELOS = [
-  modelo('insc', 'Inscrição de Medicina', 'INSCRICAO'),
-  modelo('hab', 'Habilitação padrão', 'HABILITACAO'),
-];
-export const relato = (finalidade: string) => ({
-  finalidade,
-  fatosTrazidosParaAInscricao: [],
-  fatosMantidosNaInscricao: [],
-  descartados: [],
-  derivacoesCopiadas: [],
-  derivacoesMantidas: [],
-});
-/** A inscrição que a cópia deixa no servidor: sem PCD, que o modelo não traz. */
-export const INSCRICAO_COPIADA = {
-  ...GRAVADO,
-  modeloOrigemId: 'insc',
-  modeloOrigemCodigo: 'INSC',
-  fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')],
-} as unknown as FormularioDto;
-export const PROCESSO_COM_DERIVACOES = { ...PROCESSO, regrasDerivacao: [] };
+export {
+  BASE,
+  PROCESSO_ID,
+  ROTA_PROCESSO,
+  ROTA_INSCRICAO,
+  ROTA_HABILITACAO,
+  ROTA_APLICACAO,
+  ROTA_MODELOS,
+  PROBLEM_JSON,
+  CONGELADOS_DA_INSCRICAO,
+  FASE_INSCRICAO,
+  FASE_HABILITACAO,
+  campo,
+  etapa,
+  GRAVADO,
+  HABILITACAO_GRAVADA,
+  PROCESSO,
+  PCD_NO_CATALOGO,
+  modelo,
+  MODELOS,
+  relato,
+  INSCRICAO_COPIADA,
+  PROCESSO_COM_DERIVACOES,
+} from './formulario-gravado.testing';
 
 /** Deixa a cadeia de `await` da gravação avançar antes da próxima expectativa. */
 export const proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));

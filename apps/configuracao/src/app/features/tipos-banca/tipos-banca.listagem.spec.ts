@@ -6,11 +6,16 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, TipoBancaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  TipoBancaDto,
+  TipoDeBancaCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TIPOS_BANCA_ROUTES } from './tipos-banca.routes';
 import { TiposBancaPage } from './tipos-banca.page';
 import { TiposBancaStore } from './tipos-banca.store';
+import { tipoDeBanca } from './tipos-banca.testing';
 import {
   TEXTO_TENTANDO,
   situacaoDoBotao,
@@ -19,14 +24,8 @@ import {
 const BASE = 'http://localhost:5000';
 const LISTA = `${BASE}/api/configuracao/tipos-banca`;
 const TITULO_DA_LISTA = '#cfg-tipos-banca-list-title';
-const banca = (codigo: string): TipoBancaDto => ({
-  id: codigo,
-  codigo,
-  nome: codigo,
-  faseTipica: null,
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-});
+const banca = (codigo: TipoDeBancaCodigo): TipoBancaDto =>
+  tipoDeBanca(codigo, { id: codigo, nome: codigo, faseTipica: null });
 const indisponivel = [
   JSON.stringify({
     type: 'about:blank',
@@ -73,7 +72,7 @@ describe('TiposBancaPage — listagem', () => {
   const requisicao = () => controller.expectOne((r) => r.url === LISTA);
 
   it('navega pelo cursor, volta pela página anterior e reinicia na primeira ao recarregar', async () => {
-    requisicao().flush([banca('A')], {
+    requisicao().flush([banca(TipoDeBancaCodigo.BANCA_ENTREVISTA)], {
       headers: { Link: '</api/configuracao/tipos-banca?cursor=abc&direction=next>; rel="next"' },
     });
     await propagar();
@@ -82,23 +81,23 @@ describe('TiposBancaPage — listagem', () => {
     const segunda = requisicao();
     expect(segunda.request.params.get('cursor')).toBe('abc');
     expect(segunda.request.params.get('direction')).toBe('next');
-    segunda.flush([banca('B')], {
+    segunda.flush([banca(TipoDeBancaCodigo.BANCA_HETEROIDENTIFICACAO)], {
       headers: { Link: '</api/configuracao/tipos-banca?cursor=zzz&direction=prev>; rel="prev"' },
     });
     await propagar();
-    expect(store.bancas()).toEqual([banca('B')]);
+    expect(store.bancas()).toEqual([banca(TipoDeBancaCodigo.BANCA_HETEROIDENTIFICACAO)]);
     store.paginaAnterior();
     await propagar();
     const voltando = requisicao();
     expect(voltando.request.params.get('direction')).toBe('prev');
-    voltando.flush([banca('A')]);
+    voltando.flush([banca(TipoDeBancaCodigo.BANCA_ENTREVISTA)]);
     await propagar();
     store.recarregar();
     await propagar();
     const recarga = requisicao();
     expect(recarga.request.params.get('limit')).toBe('50');
     expect(recarga.request.params.has('cursor')).toBe(false);
-    recarga.flush([banca('A')]);
+    recarga.flush([banca(TipoDeBancaCodigo.BANCA_ENTREVISTA)]);
   });
 
   it('notifica a falha do servidor na listagem e mostra a mensagem no alerta', async () => {
@@ -125,7 +124,7 @@ describe('TiposBancaPage — listagem', () => {
     expect(tentar.getAttribute('aria-busy')).toBe('true');
     expect(document.activeElement).toBe(tentar);
     tentar.click();
-    requisicao().flush([banca('A')]);
+    requisicao().flush([banca(TipoDeBancaCodigo.BANCA_ENTREVISTA)]);
     await propagar();
     await propagar();
     expect(document.activeElement).toBe(fixture.nativeElement.querySelector(TITULO_DA_LISTA));

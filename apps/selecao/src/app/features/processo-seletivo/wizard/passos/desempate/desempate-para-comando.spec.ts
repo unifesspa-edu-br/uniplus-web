@@ -1,3 +1,4 @@
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { CriterioDesempateConfigurado } from '../../processo-seletivo.models';
@@ -41,14 +42,15 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
-      regraVersao: '1.0',
-      etapaRef: 'etapa-1',
-      idadeMinima: null,
-      fato: null,
-      operador: null,
-      valor: null,
-      areas: null,
+      regra: { codigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', versao: '1.0' },
+      parametros: {
+        etapaRef: 'etapa-1',
+        idadeMinima: null,
+        fato: null,
+        operador: null,
+        valor: null,
+        areas: null,
+      },
     });
   });
 
@@ -60,14 +62,15 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 2,
-      regraCodigo: 'DESEMPATE-MAIOR-IDADE',
-      regraVersao: '1.0',
-      etapaRef: null,
-      idadeMinima: null,
-      fato: null,
-      operador: null,
-      valor: null,
-      areas: null,
+      regra: { codigo: 'DESEMPATE-MAIOR-IDADE', versao: '1.0' },
+      parametros: {
+        etapaRef: null,
+        idadeMinima: null,
+        fato: null,
+        operador: null,
+        valor: null,
+        areas: null,
+      },
     });
   });
 
@@ -79,8 +82,8 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
       1,
     );
 
-    expect(comando.idadeMinima).toBe(60);
-    expect(comando.etapaRef).toBeNull();
+    expect(comando.parametros?.idadeMinima).toBe(60);
+    expect(comando.parametros?.etapaRef).toBeNull();
   });
 
   it('DESEMPATE-PREDICADO-FATO usa fato, operador e valor', () => {
@@ -91,7 +94,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
         regraCodigo: 'DESEMPATE-PREDICADO-FATO',
         regraVersao: '1.0',
         fato: 'RENDA_PER_CAPITA',
-        operador: 'lte',
+        operador: OperadorCodigo.MENOR_IGUAL,
         valor: '1.5',
       }),
       1,
@@ -99,14 +102,15 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-      regraVersao: '1.0',
-      etapaRef: null,
-      idadeMinima: null,
-      fato: 'RENDA_PER_CAPITA',
-      operador: 'lte',
-      valor: '1.5',
-      areas: null,
+      regra: { codigo: 'DESEMPATE-PREDICADO-FATO', versao: '1.0' },
+      parametros: {
+        etapaRef: null,
+        idadeMinima: null,
+        fato: 'RENDA_PER_CAPITA',
+        operador: OperadorCodigo.MENOR_IGUAL,
+        valor: '1.5',
+        areas: null,
+      },
     });
   });
 
@@ -126,14 +130,15 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
 
     expect(comando).toEqual({
       ordem: 1,
-      regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
-      regraVersao: '1',
-      etapaRef: null,
-      idadeMinima: null,
-      fato: null,
-      operador: null,
-      valor: null,
-      areas: ['REDACAO', 'MATEMATICA'],
+      regra: { codigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM', versao: '1' },
+      parametros: {
+        etapaRef: null,
+        idadeMinima: null,
+        fato: null,
+        operador: null,
+        valor: null,
+        areas: ['REDACAO', 'MATEMATICA'],
+      },
     });
   });
 
@@ -143,7 +148,7 @@ describe('shape por código de regra de desempate (ArgsCriterioDesempate)', () =
       1,
     );
 
-    expect(comando.areas).toBeNull();
+    expect(comando.parametros?.areas).toBeNull();
   });
 });
 

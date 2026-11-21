@@ -18,7 +18,7 @@ describe('FormularioDoCandidatoComponent', () => {
   it('a resposta que viola a faixa mostra a mensagem com os limites ao lado do campo', () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')],
+      coleta: { itens: [campoRenderizavel('NOTA', 'Nota', 'NUMERO')], grupos: [] },
       regras: {
         etapas: [
           {
@@ -44,7 +44,10 @@ describe('FormularioDoCandidatoComponent', () => {
     /** O nascimento de até 120 anos antes do envio até o envio, a regra do conjunto básico. */
     const NASCIMENTO: FormularioDoCandidato = {
       ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-      fatosColetados: [campoRenderizavel('DATA_NASCIMENTO', 'Data de nascimento', 'DATA')],
+      coleta: {
+        itens: [campoRenderizavel('DATA_NASCIMENTO', 'Data de nascimento', 'DATA')],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
@@ -146,7 +149,10 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar(
       {
         ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-        fatosColetados: [campoRenderizavel('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
+        coleta: {
+          itens: [campoRenderizavel('CPF', 'CPF', 'TEXTO', { formato: 'CPF' })],
+          grupos: [],
+        },
         regras: { etapas: [{ codigo: CODIGO_DA_SECAO_DE_DADOS, itens: [itemDasRegras('CPF')] }] },
       },
       { respostasFixas: { CPF: { valor: '69959836371', exibicao: '***.598.363-**' } } },
@@ -162,9 +168,10 @@ describe('FormularioDoCandidatoComponent', () => {
     const tela = cenario.montar(
       {
         ...FORMULARIO_DE_ENDERECO_COM_ALDEIA,
-        fatosColetados: [
-          campoRenderizavel('NOME', 'Nome completo', 'TEXTO', { formato: 'NOME_PESSOA' }),
-        ],
+        coleta: {
+          itens: [campoRenderizavel('NOME', 'Nome completo', 'TEXTO', { formato: 'NOME_PESSOA' })],
+          grupos: [],
+        },
         regras: {
           etapas: [
             {

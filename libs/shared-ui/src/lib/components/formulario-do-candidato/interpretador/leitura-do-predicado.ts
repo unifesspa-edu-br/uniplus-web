@@ -3,7 +3,9 @@ import { lista, ehObjeto, Recusa } from './leitura-dos-valores';
 import { type Condicao, comparaComLista, ehOperador, type Predicado } from './predicado';
 import type {
   CondicaoDasRegras,
+  ExibicaoEObrigatoriedadeDasRegras,
   ImpedimentoDasRegras,
+  ObrigatoriedadeDasRegras,
   PredicadoDasRegras,
   ValorJson,
 } from './regras-do-formulario';
@@ -32,19 +34,31 @@ export function lerCondicaoQueValeSempreSeVazia(
 }
 
 export function lerObrigatoriedade(
-  token: string,
-  predicadoDoFio: PredicadoDasRegras,
+  obrigatoriedade: ObrigatoriedadeDasRegras | null | undefined,
   caminho: string,
   dono: string,
 ): Obrigatoriedade {
-  const quando = lerPredicado(predicadoDoFio, `${caminho}.predicadoObrigatoriedade`);
-  if ((token === 'SEMPRE' || token === 'NUNCA') && quando === null)
-    return { tipo: token, predicado: null };
-  if (token === 'QUANDO' && quando !== null) return { tipo: 'QUANDO', predicado: quando };
+  const tipo = obrigatoriedade?.tipo;
+  const quando = lerPredicado(obrigatoriedade?.predicado, `${caminho}.obrigatoriedade.predicado`);
+  if ((tipo === 'SEMPRE' || tipo === 'NUNCA') && quando === null) return { tipo, predicado: null };
+  if (tipo === 'QUANDO' && quando !== null) return { tipo, predicado: quando };
   throw new Recusa(
     `${caminho}.obrigatoriedade`,
     `A obrigatoriedade do ${dono} é SEMPRE ou NUNCA sem predicado, ou QUANDO com ele.`,
   );
+}
+
+/** A exibição e a obrigatoriedade de um elemento, lidas das `regras` dele. */
+export function lerExibicaoEObrigatoriedade(
+  regras: ExibicaoEObrigatoriedadeDasRegras | null | undefined,
+  caminho: string,
+  dono: string,
+): { exibicao: Predicado | null; obrigatoriedade: Obrigatoriedade } {
+  if (!ehObjeto(regras)) throw new Recusa(caminho, `As regras do ${dono} são um objeto.`);
+  return {
+    exibicao: lerPredicado(regras.exibicao, `${caminho}.exibicao`),
+    obrigatoriedade: lerObrigatoriedade(regras.obrigatoriedade, caminho, dono),
+  };
 }
 
 export function lerImpedimento(
@@ -68,16 +82,20 @@ function lerCondicao(condicao: CondicaoDasRegras, caminho: string): Condicao {
   if (typeof condicao.operador !== 'string' || !ehOperador(condicao.operador)) {
     throw new Recusa(`${caminho}.operador`, 'O operador da condição não é reconhecido.');
   }
-  const valor = condicao.valor ?? null;
-  if (!valorCoerenteComOperador(condicao.operador, valor)) {
+  const valor = lerValor(condicao.valor ?? null, condicao.operador, `${caminho}.valor`);
+  return { fato: condicao.fato.trim(), operador: condicao.operador, valor };
+}
+
+function lerValor(valor: unknown, operador: Condicao['operador'], caminho: string): ValorJson {
+  if (!valorCoerenteComOperador(operador, valor)) {
     throw new Recusa(
-      `${caminho}.valor`,
-      comparaComLista(condicao.operador)
+      caminho,
+      comparaComLista(operador)
         ? 'Os operadores EM e NAO_EM exigem uma lista, sem itens de texto em branco.'
         : 'Os operadores IGUAL, DIFERENTE, MAIOR_IGUAL e MENOR_IGUAL exigem um valor simples não branco.',
     );
   }
-  return { fato: condicao.fato.trim(), operador: condicao.operador, valor: valor as ValorJson };
+  return valor as ValorJson;
 }
 
 function valorCoerenteComOperador(operador: Condicao['operador'], valor: unknown): boolean {

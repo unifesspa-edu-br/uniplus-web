@@ -66,20 +66,30 @@ export function corpoDaAvaliacao(
   };
 }
 
+type TermosDoFormulario = FormularioRenderizavelDto['formulario']['termos'];
+
+function aceitesDosTermos(
+  termosAceitos: readonly string[],
+  termosDoFormulario: TermosDoFormulario,
+): InscricaoRequest['aceites'] {
+  const termos = new Map(termosDoFormulario.map((t) => [t.codigo, t]));
+  return termosAceitos.flatMap((codigo) => {
+    const termo = termos.get(codigo);
+    if (!termo) return [];
+    return [{ codigo, versaoId: termo.versaoId, hashVersao: termo.conteudo.hashVersao }];
+  });
+}
+
 /** O corpo do salvar e do envio: o da avaliação e os termos aceitos, com a versão que o formulário publica. */
 export function corpoDaGravacao(
   corpo: AvaliacaoDaInscricaoRequest,
   termosAceitos: readonly string[],
-  termosDoFormulario: FormularioRenderizavelDto['termos'],
+  termosDoFormulario: TermosDoFormulario,
 ): InscricaoRequest {
-  const termos = new Map(termosDoFormulario.map((t) => [t.codigo, t]));
   return {
     ...corpo,
     ofertaCursoId: corpo.ofertaCursoId ?? null,
-    aceites: termosAceitos.flatMap((codigo) => {
-      const termo = termos.get(codigo);
-      return termo ? [{ codigo, versaoId: termo.versaoId, hashVersao: termo.hashVersao }] : [];
-    }),
+    aceites: aceitesDosTermos(termosAceitos, termosDoFormulario),
   };
 }
 

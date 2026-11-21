@@ -1,11 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import {
   OrigemCandidatos,
   StatusProcesso,
   type ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
+import {
+  campoDoServidor,
+  etapaDoServidor,
+  formularioDoServidor,
+} from '../../shared/formulario-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import {
   BASE,
@@ -68,54 +73,14 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
         ],
       },
     ];
-    const FORMULARIO = {
-      finalidade: 'INSCRICAO',
+    const FORMULARIO = formularioDoServidor({
       faseId: FASE.id,
-      titulo: null,
-      modeloOrigemId: null,
-      modeloOrigemCodigo: null,
       etapas: [
-        {
-          codigo: 'DADOS_BASICOS',
-          ordem: 0,
-          tipo: 'SECAO',
-          bloco: null,
-          titulo: 'Dados básicos',
-          descricao: null,
-          aviso: null,
-          exibicao: null,
-        },
-        {
-          codigo: 'REVISAO_E_ACEITE',
-          ordem: 1,
-          tipo: 'BLOCO',
-          bloco: 'REVISAO_E_ACEITE',
-          titulo: 'Revisão e aceite',
-          descricao: null,
-          aviso: null,
-          exibicao: null,
-        },
+        etapaDoServidor('DADOS_BASICOS', 0, null, 'Dados básicos'),
+        etapaDoServidor('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE', 'Revisão e aceite'),
       ],
-      fatosColetados: [
-        {
-          fatoCodigo: 'NOME',
-          ordem: 0,
-          rotulo: 'Nome',
-          tipoRenderizacao: 'TEXTO',
-          obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-          precondicao: null,
-          opcoes: null,
-          etapaCodigo: 'DADOS_BASICOS',
-          formato: null,
-          ajuda: null,
-          pedirConfirmacao: false,
-          restricoes: [],
-          impedimento: null,
-        },
-      ],
-      termos: [],
-      grupos: [],
-    };
+      coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
+    });
 
     beforeEach(() => {
       store.patchObjectSection('identificacao', {
@@ -133,7 +98,8 @@ describe('CronogramaPassoComponent: modalidades ofertadas e consulta', () => {
           fonteValores: null,
           ativo: true,
           valoresDominio: null,
-        } as unknown as FatoCandidatoView,
+          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
+        } as unknown as FatoCandidatoComOperadores,
       ]);
     });
 

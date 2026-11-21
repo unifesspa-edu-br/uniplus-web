@@ -16,9 +16,11 @@ export {
   semCondicaoEm,
 } from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-em-clausulas';
 export {
+  type ClausulasNoWire,
   type CondicaoNoWire,
   deClausulasDoWire,
   paraClausulasDoWire,
+  predicadoComOperadores,
 } from '../../src/lib/components/editor-de-condicoes/condicoes/condicoes-no-wire';
 export {
   alcanceDaCondicao,
@@ -34,29 +36,28 @@ export {
   fatoEscolhivel,
   fatosEscolhiveis,
   nomesDoCatalogo,
+  operadorPadrao,
+  rotuloDoOperador,
   rotuloDoValor,
 } from '../../src/lib/components/editor-de-condicoes/condicoes/fatos-escolhiveis';
 export {
   type CondicaoDeFato,
-  OPERADOR_DIFERENTE,
-  OPERADOR_EM,
-  OPERADOR_IGUAL,
-  OPERADOR_MAIOR_IGUAL,
-  OPERADOR_MENOR_IGUAL,
-  OPERADOR_NAO_EM,
-  type OperadorEscolhivel,
+  type OpcaoDeValor,
   RESPOSTAS_BOOLEANAS,
   VALOR_FALSO,
   VALOR_VERDADEIRO,
   comOperador,
   comValorEscalar,
   comValoresDeLista,
-  comparaComLista,
-  operadoresDoFato,
   valorEscalarDe,
   valoresDeListaDe,
 } from '../../src/lib/components/editor-de-condicoes/condicoes/valor-da-condicao';
+export {
+  comparaComLista,
+  ehNegacao,
+} from '../../src/lib/components/formulario-do-candidato/interpretador/predicado';
 export * from '../../src/lib/components/editor-de-condicoes/leitura-de-condicoes';
+
 export {
   BUSCA_DE_MUNICIPIOS,
   ESPERA_DA_DIGITACAO_MS,

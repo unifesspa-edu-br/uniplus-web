@@ -58,15 +58,17 @@ export class EdicaoDosTiposBanca {
   private readonly recusaDoSalvamento = signal('');
   private readonly resultadoDoSalvamento = signal('');
   private readonly resultadoDaRemocao = signal('');
-  private readonly bancaEmEdicaoId = signal<string | null>(null);
+  private readonly bancaEmEdicao = signal<TipoBancaDto | null>(null);
   private readonly chave = signal(idempotencyKey.create());
   /** Dentro do diálogo de remoção: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDaRemocao = computed(() => {
     const banca = this.bancaParaRemover();
     if (!banca) return '';
-    if (this.removendo()) return `Removendo o tipo de banca ${banca.codigo}.`;
+    if (this.removendo()) return `Removendo o tipo de banca ${banca.codigo.codigo}.`;
     const motivo = this.erroRemocao();
-    return motivo ? `Não foi possível remover o tipo de banca ${banca.codigo}. ${motivo}` : '';
+    return motivo
+      ? `Não foi possível remover o tipo de banca ${banca.codigo.codigo}. ${motivo}`
+      : '';
   });
   /** Dentro do drawer: o andamento e a recusa, que só fazem sentido com ele aberto. */
   readonly anuncioDoSalvamento = computed(() =>
@@ -81,13 +83,13 @@ export class EdicaoDosTiposBanca {
   readonly mensagemDaConfirmacao = computed(() => {
     const banca = this.bancaParaRemover();
     return banca
-      ? `Deseja remover o tipo de banca ${banca.codigo}? A remoção impede novos editais de requerer esta banca, mas não altera bancas já congeladas — a cópia por valor permanece íntegra.`
+      ? `Deseja remover o tipo de banca ${banca.codigo.codigo}? A remoção impede novos editais de requerer esta banca, mas não altera bancas já congeladas — a cópia por valor permanece íntegra.`
       : 'Deseja remover este tipo de banca?';
   });
   abrirEdicao(banca: TipoBancaDto): void {
     if (this.gravando()) return;
     this.limparResultados();
-    this.bancaEmEdicaoId.set(banca.id);
+    this.bancaEmEdicao.set(banca);
     this.form.reset(valoresDaBanca(banca));
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
@@ -109,14 +111,17 @@ export class EdicaoDosTiposBanca {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
     descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-    const id = this.bancaEmEdicaoId() ?? '';
+    if (this.form.invalid) this.form.markAllAsTouched();
+    else this.enviarAtualizacao();
+  }
+
+  private enviarAtualizacao(): void {
+    const banca = this.bancaEmEdicao();
+    if (banca === null) return;
+    const comando = comandoDeAtualizacao(banca, this.form);
     this.gravar(
       'salvando',
-      this.api.atualizar(id, comandoDeAtualizacao(id, this.form), withIdempotencyKey(this.chave())),
+      this.api.atualizar(banca.id, comando, withIdempotencyKey(this.chave())),
       (result) => this.concluirSalvamento(result),
     );
   }
@@ -163,8 +168,8 @@ export class EdicaoDosTiposBanca {
       }
       return;
     }
-    this.resultadoDaRemocao.set(`Tipo de banca ${banca.codigo} removido.`);
-    this.notifications.success('Tipo de banca removido', banca.codigo);
+    this.resultadoDaRemocao.set(`Tipo de banca ${banca.codigo.codigo} removido.`);
+    this.notifications.success('Tipo de banca removido', banca.codigo.codigo);
     this.confirmando.set(false);
     this.bancaParaRemover.set(null);
     this.recarregar();

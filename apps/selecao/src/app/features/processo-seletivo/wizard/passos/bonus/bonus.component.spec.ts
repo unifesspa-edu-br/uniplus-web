@@ -1,22 +1,20 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
-import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HttpTestingController } from '@angular/common/http/testing';
+import { ComponentFixture } from '@angular/core/testing';
+import { OrigemCandidatos } from '@uniplus/shared-data/selecao';
+import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
-import { CadastroInicial } from '../../shared/cadastro-inicial.service';
-import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
-import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { item } from '../formulario/formulario-de-inscricao.testing';
 import { BasesLegaisDeBonus } from './bases-legais-de-bonus.service';
 import { BonusPassoComponent } from './bonus.component';
-
-const BASE = 'http://localhost:5000';
-const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
-const ROTA_BONUS = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/bonus-regional`;
-const BASE_LEGAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
+import {
+  BASE_LEGAL_ID,
+  ROTA_BONUS,
+  ROTA_DAS_BASES,
+  TIPO_DA_BASE,
+  montarPasso,
+} from './bonus.component.testing';
 
 describe('BonusPassoComponent', () => {
   let componente: BonusPassoComponent;
@@ -25,32 +23,8 @@ describe('BonusPassoComponent', () => {
   let controller: HttpTestingController;
   let fixture: ComponentFixture<BonusPassoComponent>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [BonusPassoComponent],
-      providers: [
-        ProcessoSeletivoStore,
-        CadastroInicial,
-        GravacaoDoProcesso,
-        CatalogosDeClassificacao,
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        { provide: SELECAO_BASE_PATH, useValue: BASE },
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(BonusPassoComponent);
-    componente = fixture.componentInstance;
-    basesLegais = fixture.debugElement.injector.get(BasesLegaisDeBonus);
-    store = TestBed.inject(ProcessoSeletivoStore);
-    controller = TestBed.inject(HttpTestingController);
-
-    fixture.detectChanges();
-    for (const requisicao of controller.match(() => true)) requisicao.flush([]);
-    fixture.detectChanges();
-
-    store.processoSeletivoId.set(PROCESSO_ID);
+  beforeEach(() => {
+    ({ componente, basesLegais, store, controller, fixture } = montarPasso());
   });
 
   afterEach(() => controller.verify());
@@ -167,11 +141,10 @@ describe('BonusPassoComponent', () => {
       expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
       expect(requisicao.request.body).toEqual({
         aplica: false,
-        regraCodigo: null,
-        regraVersao: null,
+        regra: null,
         fator: null,
         teto: null,
-        baseLegalBonusRegionalId: null,
+        baseLegal: null,
         fatoElegibilidadeCodigo: null,
       });
 
@@ -190,11 +163,10 @@ describe('BonusPassoComponent', () => {
       const requisicao = controller.expectOne(ROTA_BONUS);
       expect(requisicao.request.body).toEqual({
         aplica: true,
-        regraCodigo: 'BONUS-MULTIPLICATIVO',
-        regraVersao: '1.0',
+        regra: { codigo: 'BONUS-MULTIPLICATIVO', versao: '1.0' },
         fator: 1.2,
         teto: null,
-        baseLegalBonusRegionalId: BASE_LEGAL_ID,
+        baseLegal: { id: BASE_LEGAL_ID },
         fatoElegibilidadeCodigo: null,
       });
 
@@ -269,13 +241,11 @@ describe('BonusPassoComponent', () => {
       // A carga inicial do beforeEach já foi flushada com [] — refaz a busca para
       // interceptar esta com dados reais, sem alterar o setup compartilhado.
       basesLegais.carregar();
-      const requisicaoBaseLegal = controller.expectOne(
-        (r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`,
-      );
+      const requisicaoBaseLegal = controller.expectOne((r) => r.url === ROTA_DAS_BASES);
       requisicaoBaseLegal.flush([
         {
           id: BASE_LEGAL_ID,
-          tipoInstrumento: 'PORTARIA',
+          tipoInstrumento: TIPO_DA_BASE,
           identificacao: 'Portaria Unifesspa nº 2514/2023',
           descricao: 'Institui inclusão regional.',
           municipios: [],
@@ -296,104 +266,6 @@ describe('BonusPassoComponent', () => {
     });
   });
 
-  describe('municipiosDaBaseLegalSelecionada()', () => {
-    it('não lista município nenhum quando não há base legal escolhida', () => {
-      expect(basesLegais.municipiosDaSelecionada()).toEqual([]);
-    });
-
-    it('lista os municípios da base legal escolhida, ordenados por nome', () => {
-      basesLegais.carregar();
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
-        .flush([
-          {
-            id: BASE_LEGAL_ID,
-            tipoInstrumento: 'PORTARIA',
-            identificacao: 'Portaria Unifesspa nº 2514/2023',
-            descricao: 'Institui inclusão regional.',
-            municipios: [
-              { codigoIbge: '1500107', nome: 'Xinguara', uf: 'PA' },
-              { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' },
-              { codigoIbge: '1500859', nome: 'Abel Figueiredo', uf: 'PA' },
-            ],
-            criadoEm: '2026-01-01T00:00:00Z',
-          },
-        ]);
-
-      componente.escolherBaseLegal(BASE_LEGAL_ID);
-
-      expect(basesLegais.municipiosDaSelecionada().map((m) => m.nome)).toEqual([
-        'Abel Figueiredo',
-        'Marabá',
-        'Xinguara',
-      ]);
-    });
-
-    it('não expõe tabindex/role/aria-labelledby quando a tabela não transborda a caixa', () => {
-      basesLegais.carregar();
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
-        .flush([
-          {
-            id: BASE_LEGAL_ID,
-            tipoInstrumento: 'PORTARIA',
-            identificacao: 'Portaria Unifesspa nº 2514/2023',
-            descricao: 'Institui inclusão regional.',
-            municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
-            criadoEm: '2026-01-01T00:00:00Z',
-          },
-        ]);
-
-      componente.escolherAplicacao(true);
-      componente.escolherBaseLegal(BASE_LEGAL_ID);
-      fixture.detectChanges();
-
-      // jsdom não faz layout de verdade — scrollHeight/clientHeight ficam
-      // ambos em 0, o mesmo estado de "cabe sem rolar" que uma base legal com
-      // poucos municípios produz numa tela real.
-      const regiao = fixture.nativeElement.querySelector(
-        '.bonus-municipios__scroll',
-      ) as HTMLDivElement;
-      expect(regiao?.hasAttribute('tabindex')).toBe(false);
-      expect(regiao?.hasAttribute('role')).toBe(false);
-      expect(regiao?.hasAttribute('aria-labelledby')).toBe(false);
-    });
-
-    it('a região com rolagem é alcançável por teclado e tem nome acessível quando a tabela transborda a caixa', () => {
-      basesLegais.carregar();
-      controller
-        .expectOne((r) => r.url === `${BASE}/api/configuracao/base-legal-bonus-regional`)
-        .flush([
-          {
-            id: BASE_LEGAL_ID,
-            tipoInstrumento: 'PORTARIA',
-            identificacao: 'Portaria Unifesspa nº 2514/2023',
-            descricao: 'Institui inclusão regional.',
-            municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
-            criadoEm: '2026-01-01T00:00:00Z',
-          },
-        ]);
-
-      componente.escolherAplicacao(true);
-      componente.escolherBaseLegal(BASE_LEGAL_ID);
-      fixture.detectChanges();
-
-      const regiao = fixture.nativeElement.querySelector(
-        '.bonus-municipios__scroll',
-      ) as HTMLDivElement;
-      vi.spyOn(regiao as HTMLDivElement, 'scrollHeight', 'get').mockReturnValue(500);
-      vi.spyOn(regiao as HTMLDivElement, 'clientHeight', 'get').mockReturnValue(256);
-      window.dispatchEvent(new Event('resize'));
-      fixture.detectChanges();
-
-      expect(regiao?.getAttribute('tabindex')).toBe('0');
-      expect(regiao?.getAttribute('role')).toBe('region');
-
-      const legendaId = regiao?.getAttribute('aria-labelledby');
-      const legenda = fixture.nativeElement.querySelector(`#${legendaId}`) as HTMLElement;
-      expect(legenda?.textContent).toContain('1 município(s) beneficiado(s)');
-    });
-  });
   describe('quem recebe o acréscimo', () => {
     function comInscricaoPropriaEFormulario(): void {
       store.patchObjectSection('identificacao', {
@@ -403,15 +275,9 @@ describe('BonusPassoComponent', () => {
         conteudo: {
           ...store.draft().formulario.conteudo,
           itens: [
-            {
-              fatoCodigo: 'PEDE_O_ACRESCIMO',
-              ordem: 1,
-              rotulo: 'Deseja solicitar o acréscimo?',
-              tipoRenderizacao: 'BOOLEANO',
-              obrigatoriedade: 'SEMPRE',
-              precondicao: null,
-              pedirConfirmacao: false,
-            },
+            item('PEDE_O_ACRESCIMO', 1, 'DADOS_BASICOS', {
+              apresentacao: apresentacaoDoCampo('Deseja solicitar o acréscimo?', 'BOOLEANO'),
+            }),
           ],
         },
       });

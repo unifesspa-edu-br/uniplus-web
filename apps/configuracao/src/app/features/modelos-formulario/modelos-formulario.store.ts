@@ -81,7 +81,7 @@ export class ModelosFormularioStore {
       .filter(
         (modelo) =>
           modelo.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
-          modelo.nome.toLocaleLowerCase('pt-BR').includes(termo),
+          modelo.descritivo.nome.toLocaleLowerCase('pt-BR').includes(termo),
       );
   });
   readonly mensagemDeErro = computed<string | null>(() => {

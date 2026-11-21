@@ -56,7 +56,8 @@ export class FatoDetalheStore {
     const valor =
       regra.contribui === null
         ? null
-        : (fato.valores.find((v) => v.codigo === regra.contribui)?.descricao ?? regra.contribui);
+        : (fato.definicao.valores.declarados.find((v) => v.codigo === regra.contribui)?.descricao ??
+          regra.contribui);
     const quando = resumoDaRegra(deClausulasDoWire(regra.quando), this.fatosNomeados());
     return `${valor === null ? 'É "sim"' : `Contribui "${valor}"`} quando: ${quando}`;
   }

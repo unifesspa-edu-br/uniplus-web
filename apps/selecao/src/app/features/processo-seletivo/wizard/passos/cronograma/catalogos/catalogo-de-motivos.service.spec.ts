@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MotivosDeDecisaoApi } from '@uniplus/shared-data/selecao';
+import { MotivosDeDecisaoApi, TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 
 import { umMotivoDoCadastro } from '../../../shared/motivos/motivos.testing';
 import { CatalogoDeMotivos } from './catalogo-de-motivos.service';
@@ -19,8 +19,8 @@ describe('CatalogoDeMotivos', () => {
   it('carrega os motivos de todos os tipos, na ordem do cadastro', () => {
     const catalogo = catalogoCom(() =>
       pagina([
-        umMotivoDoCadastro({ codigo: 'A', tipo: 'ISENCAO_DA_TAXA' }),
-        umMotivoDoCadastro({ codigo: 'B', tipo: 'CLASSIFICACAO' }),
+        umMotivoDoCadastro({ codigo: 'A', tipo: TipoMotivoDeDecisaoCodigo.ISENCAO_DA_TAXA }),
+        umMotivoDoCadastro({ codigo: 'B', tipo: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO }),
       ]),
     );
 

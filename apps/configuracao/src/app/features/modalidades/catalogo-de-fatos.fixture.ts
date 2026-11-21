@@ -1,27 +1,35 @@
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import {
+  OperadorCodigo,
+  type FatoCandidatoView,
+  type FatoDoCatalogoDto,
+} from '@uniplus/shared-data/configuracao';
+
+const FATO_BOOLEANO: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> = {
+  descricao: 'Dado do candidato.',
+  dominio: 'BOOLEANO',
+  origem: 'DECLARADO',
+  cardinalidade: 'ESCALAR',
+  valoresDominio: null,
+  pontoResolucao: 'INSCRICAO',
+  valoresDominioDeclarados: null,
+  fonteValores: null,
+  ativo: true,
+  escopo: 'CANDIDATO',
+  classificacaoProtecao: 'INTERNO',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Aplicar a regra do certame.',
+  protecaoAprovada: true,
+};
 
 /** Um fato do catálogo como a API o devolve, para os testes da regra de aplicabilidade. */
 export function fatoDoCatalogo(
   over: Partial<FatoCandidatoView> & Pick<FatoCandidatoView, 'codigo'>,
 ): FatoCandidatoView {
   return {
+    ...FATO_BOOLEANO,
     id: over.codigo,
     nome: over.codigo,
-    descricao: 'Dado do candidato.',
-    dominio: 'BOOLEANO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: `CAMPO_FORMULARIO:${over.codigo}`,
-    valoresDominioDeclarados: null,
-    fonteValores: null,
-    ativo: true,
-    escopo: 'CANDIDATO',
-    classificacaoProtecao: 'INTERNO',
-    hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-    finalidadeTratamento: 'Aplicar a regra do certame.',
-    protecaoAprovada: true,
+    binding: `CAMPO_INSCRICAO:${over.codigo}`,
     ...over,
   };
 }
@@ -53,4 +61,21 @@ export const MODALIDADE = fatoDoCatalogo({
   binding: 'REGRA:MODALIDADE',
 });
 
-export const CATALOGO: readonly FatoCandidatoView[] = [ESCOLA_PUBLICA, COR_RACA, MODALIDADE];
+const IGUALDADE = [
+  { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
+  { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
+] as const;
+
+const PERTINENCIA = [
+  { codigo: OperadorCodigo.EM, rotulo: 'é um de' },
+  { codigo: OperadorCodigo.NAO_EM, rotulo: 'não é nenhum de' },
+] as const;
+
+const CATEGORICO = [...IGUALDADE, ...PERTINENCIA] as const;
+
+/** A leitura pública do catálogo: cada fato no envelope, com os operadores que ele admite. */
+export const CATALOGO: readonly FatoDoCatalogoDto[] = [
+  { fato: ESCOLA_PUBLICA, operadoresAdmitidos: IGUALDADE },
+  { fato: COR_RACA, operadoresAdmitidos: CATEGORICO },
+  { fato: MODALIDADE, operadoresAdmitidos: CATEGORICO },
+];

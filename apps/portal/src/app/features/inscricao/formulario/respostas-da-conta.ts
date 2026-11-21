@@ -12,7 +12,7 @@ export interface ContaDoCandidato {
 
 /** Se o formulário coleta o fato. */
 function coletaO(formulario: FormularioRenderizavelDto, fato: string): boolean {
-  return formulario.fatosColetados.some((c) => c.fatoCodigo === fato);
+  return formulario.formulario.coleta.itens.some((c) => c.fatoCodigo === fato);
 }
 
 function nomeSocialDaConta(conta: ContaDoCandidato | null): string {

@@ -1,4 +1,5 @@
 import axe from 'axe-core';
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -17,7 +18,7 @@ import {
 const catalogo = [
   umMotivoDoCadastro({ codigo: 'SEM_ENEM', descricao: 'Sem ENEM.' }),
   umMotivoDoCadastro({
-    tipo: 'CLASSIFICACAO',
+    tipo: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
     codigo: 'EMPATE',
     descricao: 'Empate na nota.',
     subclassificacao: 'Cota racial',

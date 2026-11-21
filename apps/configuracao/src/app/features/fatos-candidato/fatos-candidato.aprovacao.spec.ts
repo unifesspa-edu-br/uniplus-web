@@ -6,15 +6,12 @@ import {
   PROTECAO,
   compilarPaginaUmaVez,
   Pagina,
-  comAprovacao,
-  corRaca,
   montarPagina,
-  pendencia,
   problema,
   sucesso,
-  trabalha,
   urlDoFato,
 } from './fatos-candidato.testing';
+import { comAprovacao, corRaca, pendencia, trabalha } from './fatos-candidato.fixtures';
 
 const ajuste = comAprovacao(trabalha, 'AJUSTE_RECOMENDADO', 'SENSIVEL');
 const CONFIRMAR = 'dialog[open] [data-testid="confirm-dialog-confirm"]';

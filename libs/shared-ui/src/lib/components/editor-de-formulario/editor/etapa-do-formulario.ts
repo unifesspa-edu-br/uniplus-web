@@ -68,7 +68,9 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
             (click)="alternar.emit()"
           >
             <span class="editor-formulario__seta" aria-hidden="true"></span>
-            <span>{{ posicao() }}. {{ etapa().titulo.trim() || 'Seção sem título' }}</span>
+            <span
+              >{{ posicao() }}. {{ etapa().apresentacao.titulo.trim() || 'Seção sem título' }}</span
+            >
           </button>
         </h3>
         <ui-tag [variant]="ehSecao() ? 'neutral' : 'info'">
@@ -134,7 +136,7 @@ const DESCRICAO_DO_BLOCO: Readonly<Record<string, string>> = {
           <ol class="editor-formulario__basicos">
             @for (entrada of entradas(); track $index) {
               @if (entrada.tipo === 'item') {
-                <li>{{ entrada.item.rotulo }}</li>
+                <li>{{ entrada.item.apresentacao.rotulo }}</li>
               }
             }
           </ol>
@@ -225,12 +227,12 @@ export class EtapaDoFormularioComponent {
 
   /** Como a tela chama a etapa: seção ou bloco do sistema — "etapa" é termo do cronograma do processo. */
   protected nomeDaEtapa(): string {
-    const titulo = this.etapa().titulo.trim() || 'sem título';
+    const titulo = this.etapa().apresentacao.titulo.trim() || 'sem título';
     return this.ehSecao() ? `a seção ${titulo}` : `o bloco ${titulo}`;
   }
 
   protected daEtapa(): string {
-    const titulo = this.etapa().titulo.trim() || 'sem título';
+    const titulo = this.etapa().apresentacao.titulo.trim() || 'sem título';
     return this.ehSecao() ? `da seção ${titulo}` : `do bloco ${titulo}`;
   }
 
@@ -244,7 +246,9 @@ export class EtapaDoFormularioComponent {
     aplicarEdicao(moverEtapa(conteudo, etapa.codigo, direcao, nomes), this, (editado) => {
       const etapas = etapasEmOrdem(editado);
       const posicao = etapas.findIndex((e) => e.codigo === etapa.codigo) + 1;
-      this.anuncio.emit(`“${etapa.titulo}” foi para a posição ${posicao} de ${etapas.length}.`);
+      this.anuncio.emit(
+        `“${etapa.apresentacao.titulo}” foi para a posição ${posicao} de ${etapas.length}.`,
+      );
       const prefixo = idDaEtapa(idBase, etapa.codigo);
       const [mesmo, oposto] = direcao < 0 ? ['subir', 'descer'] : ['descer', 'subir'];
       focarDepois(this.injector, `${prefixo}-${mesmo}`, `${prefixo}-${oposto}`);
@@ -254,7 +258,7 @@ export class EtapaDoFormularioComponent {
   protected remover(): void {
     const etapa = this.etapa();
     aplicarEdicao(removerEtapa(this.contexto().conteudo, etapa.codigo), this, () => {
-      this.anuncio.emit(`${etapa.titulo} removida.`);
+      this.anuncio.emit(`${etapa.apresentacao.titulo} removida.`);
       focarDepois(this.injector, `${this.contexto().idBase}-titulo`);
     });
   }

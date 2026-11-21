@@ -27,17 +27,27 @@ export function citaFatoDeElegibilidade(draft: WizardDraft): boolean {
 export function fatosDeElegibilidade(
   formulario: FormularioDeInscricao,
 ): readonly FatoDeElegibilidade[] {
-  const campos: FatoDeElegibilidade[] = (formulario.conteudo.itens ?? [])
-    .filter((item) => item.tipoRenderizacao === 'BOOLEANO')
-    .map((item) => ({ codigo: item.fatoCodigo, rotulo: item.rotulo, origem: 'campo' }));
-  const derivados: FatoDeElegibilidade[] = formulario.derivacao
+  return [...camposBooleanos(formulario), ...derivadosBooleanos(formulario)];
+}
+
+function camposBooleanos(formulario: FormularioDeInscricao): readonly FatoDeElegibilidade[] {
+  return (formulario.conteudo.itens ?? [])
+    .filter((item) => item.apresentacao.tipoRenderizacao === 'BOOLEANO')
+    .map((item) => ({
+      codigo: item.fatoCodigo,
+      rotulo: item.apresentacao.rotulo,
+      origem: 'campo',
+    }));
+}
+
+function derivadosBooleanos(formulario: FormularioDeInscricao): readonly FatoDeElegibilidade[] {
+  return formulario.derivacao
     .filter((derivacao) => derivacaoBooleana(derivacao.regras))
     .map((derivacao) => ({
       codigo: derivacao.codigoFato,
       rotulo: derivacao.codigoFato,
       origem: 'derivado',
     }));
-  return [...campos, ...derivados];
 }
 
 /** A derivação é de sim ou não quando nenhuma regra dela contribui com um valor. */

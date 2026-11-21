@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
+import {
+  type FormularioDto,
+  type ProcessoSeletivoDto,
+  TipoRenderizacaoCodigo,
+} from '@uniplus/shared-data/selecao';
+import {
+  campoDoServidor,
+  etapaDoServidor,
+  formularioDoServidor,
+} from './formulario-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
 import {
   DRAFT,
@@ -101,43 +110,21 @@ describe('hidratarDraft — formulário de inscrição', () => {
     });
   }
 
-  const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
-    fatoCodigo,
-    ordem,
-    rotulo: fatoCodigo,
-    tipoRenderizacao: 'SELECAO_UNICA',
-    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-    precondicao: null,
-    opcoes: null,
-    etapaCodigo,
-    formato: null,
-    ajuda: null,
-    pedirConfirmacao: false,
-    restricoes: [],
-    impedimento: null,
-  });
-  const etapa = (codigo: string, ordem: number) => ({
-    codigo,
-    ordem,
-    tipo: 'SECAO',
-    bloco: null,
-    titulo: codigo,
-    descricao: null,
-    aviso: null,
-    exibicao: null,
-  });
-  const formulario = (finalidade: string, extra: Record<string, unknown> = {}) => ({
-    finalidade,
-    faseId: ID_INSCRICAO,
-    titulo: 'Inscrição 2027',
-    modeloOrigemId: null,
-    modeloOrigemCodigo: null,
-    etapas: [etapa('DADOS_BASICOS', 0), etapa('S1', 1)],
-    fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS'), campo('SEXO', 1, 'S1')],
-    termos: [],
-    grupos: [],
-    ...extra,
-  });
+  const formulario = (finalidade: string, extra: Partial<FormularioDto> = {}) =>
+    formularioDoServidor({
+      finalidade,
+      faseId: ID_INSCRICAO,
+      titulo: 'Inscrição 2027',
+      etapas: [etapaDoServidor('DADOS_BASICOS', 0), etapaDoServidor('S1', 1)],
+      coleta: {
+        itens: [
+          campoDoServidor('NOME', 0, 'DADOS_BASICOS', TipoRenderizacaoCodigo.SELECAO_UNICA),
+          campoDoServidor('SEXO', 1, 'S1', TipoRenderizacaoCodigo.SELECAO_UNICA),
+        ],
+        grupos: [],
+      },
+      ...extra,
+    });
 
   it('lê o formulário de inscrição no conteúdo do editor, com a fase pelo código', () => {
     const draft = hidratarDraft(
@@ -148,7 +135,10 @@ describe('hidratarDraft — formulário de inscrição', () => {
     expect(draft.formulario.faseCodigo).toBe('INSCRICAO');
     expect(draft.formulario.conteudo.titulo).toBe('Inscrição 2027');
     expect(
-      draft.formulario.conteudo.itens?.map((item) => [item.fatoCodigo, item.obrigatoriedade]),
+      draft.formulario.conteudo.itens?.map((item) => [
+        item.fatoCodigo,
+        item.regras?.obrigatoriedade.tipo,
+      ]),
     ).toEqual([
       ['NOME', 'SEMPRE'],
       ['SEXO', 'SEMPRE'],
@@ -162,8 +152,11 @@ describe('hidratarDraft — formulário de inscrição', () => {
         formularios: [
           formulario('INSCRICAO'),
           formulario('ISENCAO_TAXA', {
-            etapas: [etapa('S1', 0)],
-            fatosColetados: [campo('RENDA', 0, 'S1')],
+            etapas: [etapaDoServidor('S1', 0)],
+            coleta: {
+              itens: [campoDoServidor('RENDA', 0, 'S1', TipoRenderizacaoCodigo.SELECAO_UNICA)],
+              grupos: [],
+            },
           }),
         ],
       }),
@@ -184,14 +177,11 @@ describe('hidratarDraft — formulário de inscrição', () => {
       dtoComFormulario({
         formularios: [
           formulario('INSCRICAO', {
-            modeloOrigemId: 'm1',
-            modeloOrigemCodigo: 'MEDICINA-INSCRICAO',
+            modeloOrigem: { id: 'm1', codigo: 'MEDICINA-INSCRICAO' },
           }),
           formulario('ISENCAO_TAXA', {
-            etapas: [etapa('S1', 0)],
-            fatosColetados: [],
-            modeloOrigemId: 'm2',
-            modeloOrigemCodigo: 'ISENCAO-PADRAO',
+            etapas: [etapaDoServidor('S1', 0)],
+            modeloOrigem: { id: 'm2', codigo: 'ISENCAO-PADRAO' },
           }),
         ],
       }),

@@ -25,9 +25,7 @@ export const nomeDaBanca = (id: string): string => id;
  */
 export const tipoQueAdmiteTudo = (): TipoDeEtapaDoCatalogo => ({
   nome: 'Prova objetiva',
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
+  avaliacao: { admitePontuacao: true, admiteEliminacao: true, notaDeOrigemNoEnem: false },
 });
 
 /** Os catálogos da conferência: fases do teste, sem precedência nem ato, e tipo de etapa que admite tudo. */
@@ -51,36 +49,27 @@ export function problemasDe(
   fasePorId: CatalogosDaConferencia['fasePorId'],
   precedencias: CatalogosDaConferencia['precedencias'],
 ): readonly string[] {
-  return problemasDoCronograma({
-    fases,
-    etapas,
-    exigencias: [],
-    catalogos: {
-      fasePorId,
-      precedencias,
-      atoPorCodigo: SEM_CATALOGO,
-      nomeDaBanca,
-      tipoDaEtapa: tipoQueAdmiteTudo,
-    },
-  });
+  const catalogos = catalogosDeTeste({ fasePorId, precedencias });
+  return problemasDoCronograma({ fases, etapas, exigencias: [], catalogos });
 }
 
+const FASE_CANONICA_PADRAO = {
+  id: 'fase-1',
+  codigo: 'INSCRICAO',
+  nome: 'Inscrição',
+  descricao: null,
+  unidadeSugerida: null,
+  agrupaEtapas: false,
+  permiteComplementacao: false,
+  baseLegal: null,
+  coletaInscricao: false,
+  coletaSolicitacaoIsencao: false,
+  origemData: 'NO_EDITAL',
+  criadoEm: '2026-08-30T12:00:00Z',
+};
+
 export function faseCanonica(parcial: Partial<FaseCanonicaDto>): FaseCanonicaDto {
-  return {
-    id: 'fase-1',
-    codigo: 'INSCRICAO',
-    nome: 'Inscrição',
-    descricao: null,
-    unidadeSugerida: null,
-    agrupaEtapas: false,
-    permiteComplementacao: false,
-    baseLegal: null,
-    coletaInscricao: false,
-    coletaSolicitacaoIsencao: false,
-    origemData: 'NO_EDITAL',
-    criadoEm: '2026-08-30T12:00:00Z',
-    ...parcial,
-  } as FaseCanonicaDto;
+  return { ...FASE_CANONICA_PADRAO, ...parcial } as FaseCanonicaDto;
 }
 
 export function fase(parcial: Partial<FaseDoCronograma>): FaseDoCronograma {
@@ -152,9 +141,7 @@ export const AVISO: ProdutoDaFase = { atoCodigo: 'COMUNICADO', papel: null };
 
 export const tipoDoEnem = (): TipoDeEtapaDoCatalogo => ({
   nome: 'Nota do ENEM',
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: true,
+  avaliacao: { admitePontuacao: true, admiteEliminacao: true, notaDeOrigemNoEnem: true },
 });
 
 export const AVALIACAO = faseCanonica({

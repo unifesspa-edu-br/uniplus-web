@@ -6,10 +6,10 @@ import {
   type GrupoRenderizavel,
   type RespostaFixa,
 } from './formulario-do-candidato.model';
-import { type PassoDoFormulario } from './passos-do-formulario';
+import { type GrupoNoPasso, type PassoDoFormulario } from './passos-do-formulario';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type {
-  CampoAvaliado,
+  OcorrenciaAvaliada,
   OcorrenciaSimulada,
   ValorJson,
 } from './interpretador/regras-do-formulario';
@@ -56,17 +56,33 @@ export function resumoDoFator(
   if (!dependencias || (dependencias.fatos.length === 0 && dependencias.grupos.length === 0))
     return null;
   const fatos = new Set(dependencias.fatos);
-  const linhas: LinhaDoFator[] = [];
-  let secao: ResumoDoFator['secao'] | null = null;
-  for (const passo of passos) {
-    const doPasso = [
-      ...linhasDosCampos(passo, fatos, entrada),
-      ...linhasDosGrupos(passo, fatos, entrada),
-    ];
-    linhas.push(...doPasso);
-    if (doPasso.length > 0) secao ??= { chave: passo.chave, titulo: passo.titulo };
-  }
-  return secao ? { linhas, secao } : null;
+  return resumoDe(passos.map((passo) => linhasDoPasso(passo, fatos, entrada)));
+}
+
+/** As linhas do Fator que um passo mostra. */
+interface LinhasDoPasso {
+  readonly passo: PassoDoFormulario;
+  readonly linhas: readonly LinhaDoFator[];
+}
+
+function linhasDoPasso(
+  passo: PassoDoFormulario,
+  fatos: ReadonlySet<string>,
+  entrada: EntradaDoResumoDoFator,
+): LinhasDoPasso {
+  const linhas = [
+    ...linhasDosCampos(passo, fatos, entrada),
+    ...linhasDosGrupos(passo, fatos, entrada),
+  ];
+  return { passo, linhas };
+}
+
+/** Todas as linhas e, como seção do resumo, o primeiro passo que tem alguma. */
+function resumoDe(porPasso: readonly LinhasDoPasso[]): ResumoDoFator | null {
+  const primeiro = porPasso.find((p) => p.linhas.length > 0);
+  if (!primeiro) return null;
+  const { chave, titulo } = primeiro.passo;
+  return { linhas: porPasso.flatMap((p) => p.linhas), secao: { chave, titulo } };
 }
 
 function linhasDosCampos(
@@ -76,18 +92,17 @@ function linhasDosCampos(
 ): LinhaDoFator[] {
   return passo.campos.flatMap(({ campo }) => {
     if (!fatos.has(campo.fatoCodigo)) return [];
-    const fixa = entrada.fixas?.[campo.fatoCodigo];
-    // A resposta fixa aparece como o campo a mostra (o CPF mascarado), nunca pelo valor.
-    const valor = fixa
-      ? fixa.exibicao || null
-      : textoDa(
-          campo,
-          entrada.respostas[campo.fatoCodigo],
-          chaveDaResposta(campo.fatoCodigo),
-          entrada,
-        );
-    return valor === null ? [] : [{ rotulo: campo.rotulo, valor }];
+    const valor = valorDoCampo(campo, entrada);
+    return valor === null ? [] : [{ rotulo: campo.apresentacao.rotulo, valor }];
   });
+}
+
+function valorDoCampo(campo: CampoRenderizavel, entrada: EntradaDoResumoDoFator): string | null {
+  const fixa = entrada.fixas?.[campo.fatoCodigo];
+  // A resposta fixa aparece como o campo a mostra (o CPF mascarado), nunca pelo valor.
+  if (fixa) return fixa.exibicao || null;
+  const chave = chaveDaResposta(campo.fatoCodigo);
+  return textoDa(campo, entrada.respostas[campo.fatoCodigo], chave, entrada);
 }
 
 function linhasDosGrupos(
@@ -95,50 +110,57 @@ function linhasDosGrupos(
   fatos: ReadonlySet<string>,
   entrada: EntradaDoResumoDoFator,
 ): LinhaDoFator[] {
-  return passo.grupos.flatMap(({ grupo, avaliado }) => {
-    const lista = entrada.ocorrencias?.[grupo.codigo] ?? [];
-    const titulos = titulosDasOcorrencias(
-      grupo.incluiCandidato,
-      lista.map((o) => o.respostas),
-    );
-    return avaliado.ocorrencias.flatMap((ocorrencia) => {
-      const indice = lista.findIndex((o) => o.id === ocorrencia.id);
-      return indice < 0
-        ? []
-        : linhasDaOcorrencia(
-            { grupo, ocorrencia, titulo: titulos[indice], resposta: lista[indice] },
-            fatos,
-            entrada,
-          );
-    });
+  return passo.grupos.flatMap((noPasso) => linhasDoGrupo(noPasso, fatos, entrada));
+}
+
+function linhasDoGrupo(
+  { grupo, avaliado }: GrupoNoPasso,
+  fatos: ReadonlySet<string>,
+  entrada: EntradaDoResumoDoFator,
+): LinhaDoFator[] {
+  const lista = entrada.ocorrencias?.[grupo.codigo] ?? [];
+  const respostas = lista.map((o) => o.respostas);
+  const titulos = titulosDasOcorrencias(grupo.ocorrencias.incluiCandidato, respostas);
+  return avaliado.ocorrencias.lista.flatMap((ocorrencia) => {
+    const i = lista.findIndex((o) => o.id === ocorrencia.id);
+    if (i < 0) return [];
+    const doFator = { grupo, ocorrencia, titulo: titulos[i], resposta: lista[i] };
+    return linhasDaOcorrencia(doFator, fatos, entrada);
   });
 }
 
 /** Uma ocorrência do grupo: o título dela e as respostas, para rotular cada linha. */
 interface OcorrenciaDoFator {
   readonly grupo: GrupoRenderizavel;
-  readonly ocorrencia: { readonly id: string; readonly campos: readonly CampoAvaliado[] };
+  readonly ocorrencia: OcorrenciaAvaliada;
   readonly titulo: string;
   readonly resposta: OcorrenciaSimulada;
 }
 
 function linhasDaOcorrencia(
-  { grupo, ocorrencia, titulo, resposta }: OcorrenciaDoFator,
+  doFator: OcorrenciaDoFator,
   fatos: ReadonlySet<string>,
   entrada: EntradaDoResumoDoFator,
 ): LinhaDoFator[] {
+  const { grupo, ocorrencia } = doFator;
   const visiveis = new Set(
-    ocorrencia.campos.filter((c) => c.visivel === 'VERDADEIRO').map((c) => c.fatoCodigo),
+    ocorrencia.campos.filter((c) => c.regras.visivel === 'VERDADEIRO').map((c) => c.fatoCodigo),
   );
   return [...grupo.subitens]
     .sort((a, b) => a.ordem - b.ordem)
     .filter((s) => visiveis.has(s.fatoCodigo) && fatos.has(`${grupo.codigo}.${s.fatoCodigo}`))
-    .flatMap((subitem) => {
-      const chave = chaveDaResposta(subitem.fatoCodigo, { grupo: grupo.codigo, id: ocorrencia.id });
-      const valor = textoDa(subitem, resposta.respostas?.[subitem.fatoCodigo], chave, entrada);
-      const rotulo = `${grupo.rotulo} (${titulo}): ${subitem.rotulo}`;
-      return valor === null ? [] : [{ rotulo, valor }];
-    });
+    .flatMap((subitem) => linhaDoSubitem(subitem, doFator, entrada));
+}
+
+function linhaDoSubitem(
+  subitem: CampoRenderizavel,
+  { grupo, ocorrencia, titulo, resposta }: OcorrenciaDoFator,
+  entrada: EntradaDoResumoDoFator,
+): LinhaDoFator[] {
+  const chave = chaveDaResposta(subitem.fatoCodigo, { grupo: grupo.codigo, id: ocorrencia.id });
+  const valor = textoDa(subitem, resposta.respostas?.[subitem.fatoCodigo], chave, entrada);
+  const rotulo = `${grupo.rotulo} (${titulo}): ${subitem.apresentacao.rotulo}`;
+  return valor === null ? [] : [{ rotulo, valor }];
 }
 
 function textoDa(
@@ -149,7 +171,7 @@ function textoDa(
 ): string | null {
   if (valor === undefined || valor === null || valor === '') return null;
   if (Array.isArray(valor) && valor.length === 0) return null;
-  if (typeof valor === 'string' && campo.tipoRenderizacao === 'MUNICIPIO')
+  if (typeof valor === 'string' && campo.apresentacao.tipoRenderizacao === 'MUNICIPIO')
     return rotuloGravadoDa(gravados, chave, valor) ?? municipios.rotulo(valor);
   return respostaExibida(campo, valor);
 }

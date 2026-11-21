@@ -72,18 +72,33 @@ export function passosDo(
   formulario: FormularioDoCandidato,
   avaliacao: AvaliacaoDoFormulario,
 ): PassoDoFormulario[] {
+  const conteudo = conteudoVisivel(formulario, avaliacao);
+  const secoes = secoesVisiveis(formulario, avaliacao).map((s) => passoDaSecao(s, conteudo));
+  return [...passoDosOutrosDados(formulario, conteudo), ...secoes];
+}
+
+function conteudoVisivel(
+  formulario: FormularioDoCandidato,
+  avaliacao: AvaliacaoDoFormulario,
+): ConteudoVisivel {
   const regraPorFato = regrasPorFato(formulario.regras);
-  const conteudo: ConteudoVisivel = {
+  return {
     campos: camposVisiveis(formulario, avaliacao, regraPorFato),
     grupos: gruposVisiveis(formulario, avaliacao, regraPorFato),
     termos: termosVisiveis(formulario, avaliacao),
   };
+}
+
+function secoesVisiveis(
+  formulario: FormularioDoCandidato,
+  avaliacao: AvaliacaoDoFormulario,
+): SecaoRenderizavel[] {
   const etapaVisivel = new Map(avaliacao.etapas.map((e) => [e.codigo, e.visivel]));
-  const secoes = [...formulario.etapas]
+  return [...formulario.etapas]
     .sort((a, b) => a.ordem - b.ordem)
-    .filter((secao) => !secao.codigoNasRegras || etapaVisivel.get(secao.codigoNasRegras) !== OCULTO)
-    .map((secao) => passoDaSecao(secao, conteudo));
-  return [...passoDosOutrosDados(formulario, conteudo), ...secoes];
+    .filter(
+      (secao) => !secao.codigoNasRegras || etapaVisivel.get(secao.codigoNasRegras) !== OCULTO,
+    );
 }
 
 function camposVisiveis(
@@ -92,11 +107,11 @@ function camposVisiveis(
   regraPorFato: ReadonlyMap<string, ItemDasRegras>,
 ): CampoNoPasso[] {
   const avaliadoPorFato = new Map(avaliacao.campos.map((c) => [c.fatoCodigo, c]));
-  return [...formulario.fatosColetados]
+  return [...formulario.coleta.itens]
     .sort((a, b) => a.ordem - b.ordem)
     .flatMap((campo): CampoNoPasso[] => {
       const avaliado = avaliadoPorFato.get(campo.fatoCodigo);
-      return avaliado && avaliado.visivel === VISIVEL
+      return avaliado && avaliado.regras.visivel === VISIVEL
         ? [{ campo, avaliado, regra: regraPorFato.get(campo.fatoCodigo) ?? null }]
         : [];
     });
@@ -108,11 +123,11 @@ function gruposVisiveis(
   regraPorFato: ReadonlyMap<string, ItemDasRegras>,
 ): GrupoNoPasso[] {
   const avaliadoPorGrupo = new Map(avaliacao.grupos.map((g) => [g.codigo, g]));
-  return [...formulario.grupos]
+  return [...formulario.coleta.grupos]
     .sort((a, b) => a.ordem - b.ordem)
     .flatMap((grupo): GrupoNoPasso[] => {
       const avaliado = avaliadoPorGrupo.get(grupo.codigo);
-      return avaliado && avaliado.visivel === VISIVEL
+      return avaliado && avaliado.regras.visivel === VISIVEL
         ? [{ grupo, avaliado, regras: regraPorFato }]
         : [];
     });
@@ -142,9 +157,9 @@ function passoDaSecao(secao: SecaoRenderizavel, conteudo: ConteudoVisivel): Pass
   const etapas = secao.codigoNasRegras ? [secao.codigoNasRegras] : [];
   return {
     chave: `secao-${secao.codigo}`,
-    titulo: secao.titulo,
-    descricao: secao.descricao ?? null,
-    aviso: secao.aviso ?? null,
+    titulo: secao.apresentacao.titulo,
+    descricao: secao.apresentacao.descricao,
+    aviso: secao.apresentacao.aviso,
     bloco: secao.tipo === 'BLOCO' ? (secao.bloco ?? null) : null,
     etapasNasRegras: etapas,
     campos: naEtapa(conteudo.campos, etapas),
@@ -157,24 +172,30 @@ function passoDosOutrosDados(
   formulario: FormularioDoCandidato,
   conteudo: ConteudoVisivel,
 ): PassoDoFormulario[] {
+  const semSecao = etapasSemSecao(formulario);
+  return semSecao.length === 0 ? [] : [outrosDados(semSecao, conteudo)];
+}
+
+function outrosDados(etapas: readonly string[], conteudo: ConteudoVisivel): PassoDoFormulario {
+  return {
+    chave: 'outros-dados',
+    titulo: 'Outros dados',
+    descricao: 'Campos que ainda não estão em nenhuma seção do formulário.',
+    aviso: null,
+    bloco: null,
+    etapasNasRegras: etapas,
+    campos: naEtapa(conteudo.campos, etapas),
+    grupos: naEtapa(conteudo.grupos, etapas),
+    termos: [],
+  };
+}
+
+/** As etapas das regras que nenhuma seção do formulário cita. */
+function etapasSemSecao(formulario: FormularioDoCandidato): string[] {
   const codigosDasSecoes = new Set(
     formulario.etapas.flatMap((s) => (s.codigoNasRegras ? [s.codigoNasRegras] : [])),
   );
-  const semSecao = (formulario.regras.etapas ?? [])
+  return (formulario.regras.etapas ?? [])
     .map((e) => e.codigo)
     .filter((codigo) => !codigosDasSecoes.has(codigo));
-  if (semSecao.length === 0) return [];
-  return [
-    {
-      chave: 'outros-dados',
-      titulo: 'Outros dados',
-      descricao: 'Campos que ainda não estão em nenhuma seção do formulário.',
-      aviso: null,
-      bloco: null,
-      etapasNasRegras: semSecao,
-      campos: naEtapa(conteudo.campos, semSecao),
-      grupos: naEtapa(conteudo.grupos, semSecao),
-      termos: [],
-    },
-  ];
 }

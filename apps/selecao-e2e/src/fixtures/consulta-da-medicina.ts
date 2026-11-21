@@ -1,3 +1,4 @@
+import { campoColetado } from './campo-coletado';
 import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from './medicina/formulario-das-modalidades';
 import { PROCESSO_DA_MEDICINA } from './vagas-da-medicina';
 
@@ -55,17 +56,14 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
       finalidade: 'INSCRICAO',
       faseId: null,
       titulo: 'Inscrição — Processo Seletivo de Medicina 2027',
-      modeloOrigemId: null,
-      modeloOrigemCodigo: null,
+      modeloOrigem: null,
       etapas: [
         {
           codigo: 'SECAO_1',
           ordem: 0,
           tipo: 'SECAO',
           bloco: null,
-          titulo: 'Dados do certame',
-          descricao: null,
-          aviso: null,
+          apresentacao: { titulo: 'Dados do certame', descricao: null, aviso: null },
           exibicao: null,
         },
         {
@@ -73,51 +71,34 @@ export const PROCESSO_PUBLICADO_DA_MEDICINA = {
           ordem: 1,
           tipo: 'BLOCO',
           bloco: 'REVISAO_E_ACEITE',
-          titulo: 'Revisão e aceite',
-          descricao: null,
-          aviso: null,
+          apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
           exibicao: null,
         },
       ],
-      fatosColetados: [
-        {
-          fatoCodigo: 'COR_RACA',
-          ordem: 0,
-          rotulo: 'Cor ou raça',
-          tipoRenderizacao: 'SELECAO_UNICA',
-          obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-          precondicao: null,
-          opcoes: null,
-          etapaCodigo: 'SECAO_1',
-          formato: null,
-          ajuda: null,
-          pedirConfirmacao: false,
-          restricoes: [],
-          impedimento: null,
-        },
-        {
-          fatoCodigo: 'RENDA_FAMILIAR_PER_CAPITA_ATE_UM_SALARIO_MINIMO',
-          ordem: 1,
-          rotulo: 'Renda familiar per capita igual ou inferior a um salário mínimo',
-          tipoRenderizacao: 'BOOLEANO',
-          obrigatoriedade: { tipo: 'NUNCA', predicado: null },
-          precondicao: null,
-          opcoes: null,
-          etapaCodigo: 'SECAO_1',
-          formato: null,
-          ajuda: null,
-          pedirConfirmacao: false,
-          restricoes: [],
-          impedimento: null,
-        },
-        // As perguntas que as regras das modalidades fazem, depois dos dois campos acima.
-        ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
-          ...campo,
-          ordem: campo.ordem + 2,
-        })),
-      ],
+      coleta: {
+        itens: [
+          campoColetado({
+            fatoCodigo: 'COR_RACA',
+            ordem: 0,
+            rotulo: 'Cor ou raça',
+            tipoRenderizacao: 'SELECAO_UNICA',
+          }),
+          campoColetado({
+            fatoCodigo: 'RENDA_FAMILIAR_PER_CAPITA_ATE_UM_SALARIO_MINIMO',
+            ordem: 1,
+            rotulo: 'Renda familiar per capita igual ou inferior a um salário mínimo',
+            tipoRenderizacao: 'BOOLEANO',
+            obrigatoriedade: { tipo: 'NUNCA', predicado: null },
+          }),
+          // As perguntas que as regras das modalidades fazem, depois dos dois campos acima.
+          ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
+            ...campo,
+            ordem: campo.ordem + 2,
+          })),
+        ],
+        grupos: [],
+      },
       termos: [],
-      grupos: [],
     },
   ],
   referenciaTemporalFatos: { tipo: 'DATA_ESPECIFICA', data: '2027-01-15', faseId: null },

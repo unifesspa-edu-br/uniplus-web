@@ -1,8 +1,9 @@
-import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { FormControl, FormGroup, ValidatorFn, Validators } from '@angular/forms';
 import { CriarModeloFormularioCommand } from '@uniplus/shared-data/configuracao';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { CODIGO_CADASTRO_FORMATO, CODIGO_CADASTRO_TAMANHO_MAXIMO } from '@uniplus/shared-utils';
 import { mensagemDeErroDoControle } from '../../shared/formulario';
+import { conteudoParaOModelo } from './conteudo-do-modelo';
 
 export interface CriacaoForm {
   codigo: FormControl<string>;
@@ -22,23 +23,21 @@ const CAMPOS: readonly CampoDaCriacao[] = [
   'tipoProcessoCodigo',
 ];
 
+function campoDeTexto(...validators: ValidatorFn[]): FormControl<string> {
+  return new FormControl('', { nonNullable: true, validators });
+}
+
 export function criarFormularioDeModelo(): FormGroup<CriacaoForm> {
   return new FormGroup<CriacaoForm>({
-    codigo: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        Validators.required,
-        Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
-        Validators.pattern(CODIGO_CADASTRO_FORMATO),
-      ],
-    }),
-    nome: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(200)],
-    }),
-    descricao: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(1000)] }),
-    finalidade: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    tipoProcessoCodigo: new FormControl('', { nonNullable: true }),
+    codigo: campoDeTexto(
+      Validators.required,
+      Validators.maxLength(CODIGO_CADASTRO_TAMANHO_MAXIMO),
+      Validators.pattern(CODIGO_CADASTRO_FORMATO),
+    ),
+    nome: campoDeTexto(Validators.required, Validators.maxLength(200)),
+    descricao: campoDeTexto(Validators.maxLength(1000)),
+    finalidade: campoDeTexto(Validators.required),
+    tipoProcessoCodigo: campoDeTexto(),
   });
 }
 
@@ -47,11 +46,13 @@ export function comandoDeCriacao(form: FormGroup<CriacaoForm>): CriarModeloFormu
   const valores = form.getRawValue();
   return {
     codigo: valores.codigo.trim(),
-    nome: valores.nome.trim(),
-    descricao: valores.descricao.trim() || null,
     finalidade: valores.finalidade,
-    tipoProcessoCodigo: valores.tipoProcessoCodigo || null,
-    conteudo: conteudoInicial(),
+    descritivo: {
+      nome: valores.nome.trim(),
+      descricao: valores.descricao.trim() || null,
+      tipoProcessoCodigo: valores.tipoProcessoCodigo || null,
+    },
+    conteudo: conteudoParaOModelo(conteudoInicial()),
   };
 }
 

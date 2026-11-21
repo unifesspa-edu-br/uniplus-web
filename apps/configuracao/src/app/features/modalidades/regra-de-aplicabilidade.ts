@@ -1,4 +1,4 @@
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { fatosEscolhiveis, type FatoEscolhivel } from '@uniplus/shared-ui/components';
 
 import { fatosCitaveisPelaRegra } from '../fatos-candidato/fato-candidato.regras';
@@ -14,7 +14,7 @@ const FATO_MODALIDADE = 'MODALIDADE';
  * a API recusa só a citação nova de fato desativado, e a regra que já o citava continua valendo.
  */
 export function fatosDaRegraDeAplicabilidade(
-  catalogo: readonly FatoCandidatoView[],
+  catalogo: readonly FatoCandidatoComOperadores[],
   jaCitados: ReadonlySet<string>,
 ): readonly FatoEscolhivel[] {
   const citaveis = new Set(

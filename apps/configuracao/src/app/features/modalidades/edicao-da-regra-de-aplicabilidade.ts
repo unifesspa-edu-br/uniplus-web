@@ -1,12 +1,19 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { ModalidadeDto } from '@uniplus/shared-data/configuracao';
+import {
+  OperadorCodigo,
+  TipoRenderizacaoCodigo,
+  type ModalidadeDto,
+} from '@uniplus/shared-data/configuracao';
+import { codigosDoContrato } from '@uniplus/shared-data/utils';
 import {
   acompanharCatalogo,
   deClausulasDoWire,
   descreverAlternativas,
   fatosParaLeitura,
   paraClausulasDoWire,
+  predicadoComOperadores,
   problemaDaCondicao,
+  type ClausulasNoWire,
   type CondicaoEmClausula,
 } from '@uniplus/shared-ui/components';
 
@@ -32,7 +39,7 @@ export class EdicaoDaRegraDeAplicabilidade {
   private readonly fatosJaCitados = signal<ReadonlySet<string>>(new Set());
 
   /** O catálogo de fatos chegou; falha e espera têm o aviso da leitura. */
-  readonly catalogoCarregado = computed(() => this.catalogo.data() !== null);
+  readonly catalogoCarregado = computed(() => this.store.fatos() !== null);
   readonly leituraDoCatalogo = acompanharCatalogo({
     assunto: 'catálogo de fatos',
     falha: computed(() =>
@@ -45,9 +52,9 @@ export class EdicaoDaRegraDeAplicabilidade {
     destino: () => document.getElementById('cfg-mod-regra'),
   });
   readonly fatos = computed(() =>
-    fatosDaRegraDeAplicabilidade(this.catalogo.data() ?? [], this.fatosJaCitados()),
+    fatosDaRegraDeAplicabilidade(this.store.fatos() ?? [], this.fatosJaCitados()),
   );
-  private readonly fatosPorCodigo = computed(() => fatosParaLeitura(this.catalogo.data() ?? []));
+  private readonly fatosPorCodigo = computed(() => fatosParaLeitura(this.store.fatos() ?? []));
   readonly leitura = computed(() => descreverAlternativas(this.condicoes(), this.fatosPorCodigo()));
 
   carregar(dto: ModalidadeDto): void {
@@ -63,8 +70,11 @@ export class EdicaoDaRegraDeAplicabilidade {
     this.recusas.set([]);
   }
 
-  paraOWire(): ReturnType<typeof paraClausulasDoWire> {
-    return paraClausulasDoWire(this.condicoes());
+  paraOContrato(): ClausulasNoWire<OperadorCodigo | null> {
+    return predicadoComOperadores(
+      paraClausulasDoWire(this.condicoes()),
+      codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo).operador,
+    );
   }
 
   /**
@@ -74,7 +84,7 @@ export class EdicaoDaRegraDeAplicabilidade {
    * tem contra o que conferir e a palavra fica com a API.
    */
   conferir(): boolean {
-    if (this.fixadaEmLei() || this.catalogo.data() === null) return true;
+    if (this.fixadaEmLei() || this.store.fatos() === null) return true;
     const fatos = new Map(this.fatos().map((fato) => [fato.codigo, fato]));
     const erros: Record<number, string> = {};
     this.condicoes().forEach((condicao, indice) => {

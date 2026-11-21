@@ -6,7 +6,10 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
+  OperadorCodigo,
+  TipoRenderizacaoCodigo,
   type FatoCandidatoView,
+  type FatoDoCatalogoDto,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
@@ -38,13 +41,29 @@ const FATO_BASE: Omit<FatoCandidatoView, 'id' | 'codigo' | 'nome' | 'binding'> =
   protecaoAprovada: true,
 };
 
-export const fato = (codigo: string): FatoCandidatoView => ({
-  ...FATO_BASE,
-  id: codigo,
-  codigo,
-  nome: codigo,
-  binding: `CAMPO_FORMULARIO:${codigo}`,
+/** Um fato como a leitura pública do catálogo o devolve: no envelope, com os operadores declarados. */
+export const fato = (codigo: string): FatoDoCatalogoDto => ({
+  fato: {
+    ...FATO_BASE,
+    id: codigo,
+    codigo,
+    nome: codigo,
+    binding: `CAMPO_FORMULARIO:${codigo}`,
+  },
+  operadoresAdmitidos: [
+    { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
+    { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
+  ],
 });
+
+export const SEMPRE_OBRIGATORIO = { tipo: 'SEMPRE', predicado: null };
+/** As regras de um campo sem exibição condicionada, restrição nem impedimento. */
+export const SEM_REGRAS_DO_CAMPO = {
+  exibicao: null,
+  obrigatoriedade: SEMPRE_OBRIGATORIO,
+  restricoes: [],
+  impedimento: null,
+};
 
 /**
  * Um modelo de inscrição como a API o devolve: com a seção dos dados básicos, e com o que esta
@@ -53,11 +72,9 @@ export const fato = (codigo: string): FatoCandidatoView => ({
 export const modelo: ModeloFormularioView = {
   id: ID,
   codigo: 'INSCRICAO_MEDICINA',
-  nome: 'Inscrição Medicina',
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
   ativo: true,
+  descritivo: { nome: 'Inscrição Medicina', descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: 'Inscrição',
     etapas: [
@@ -66,65 +83,76 @@ export const modelo: ModeloFormularioView = {
         ordem: 0,
         tipo: 'SECAO',
         bloco: null,
-        titulo: 'Dados do candidato',
-        descricao: null,
-        aviso: null,
+        apresentacao: { titulo: 'Dados do candidato', descricao: null, aviso: null },
+        exibicao: null,
       },
       {
         codigo: 'SECAO_1',
         ordem: 1,
         tipo: 'SECAO',
         bloco: null,
-        titulo: 'Escolaridade',
-        descricao: null,
-        aviso: null,
+        apresentacao: { titulo: 'Escolaridade', descricao: null, aviso: null },
+        exibicao: null,
       },
       {
         codigo: 'REVISAO_E_ACEITE',
         ordem: 2,
         tipo: 'BLOCO',
         bloco: 'REVISAO_E_ACEITE',
-        titulo: 'Revisão e aceite',
-        descricao: null,
-        aviso: null,
+        apresentacao: { titulo: 'Revisão e aceite', descricao: null, aviso: null },
+        exibicao: null,
       },
     ],
     itens: [
       {
         fatoCodigo: 'NOME',
         ordem: 0,
-        rotulo: 'Nome',
-        tipoRenderizacao: 'TEXTO',
-        obrigatoriedade: 'SEMPRE',
-        precondicao: null,
+        apresentacao: {
+          rotulo: 'Nome',
+          tipoRenderizacao: TipoRenderizacaoCodigo.TEXTO,
+          ajuda: null,
+          pedirConfirmacao: false,
+        },
+        regras: SEM_REGRAS_DO_CAMPO,
         etapaCodigo: 'DADOS_BASICOS',
-        pedirConfirmacao: false,
       },
       {
         fatoCodigo: 'ESCOLA_PUBLICA',
         ordem: 1,
-        rotulo: 'Estudou em escola pública?',
-        tipoRenderizacao: 'BOOLEANO',
-        obrigatoriedade: 'SEMPRE',
-        precondicao: null,
-        etapaCodigo: 'SECAO_1',
-        pedirConfirmacao: false,
-        restricoes: [{ tipo: 'SUBCONJUNTO', entradas: [{ quando: null, valores: ['true'] }] }],
-        impedimento: {
-          quando: [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: false }]],
-          mensagem: 'Só para egressos.',
+        apresentacao: {
+          rotulo: 'Estudou em escola pública?',
+          tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+          ajuda: null,
+          pedirConfirmacao: false,
         },
+        regras: {
+          exibicao: null,
+          obrigatoriedade: SEMPRE_OBRIGATORIO,
+          restricoes: [
+            {
+              tipo: 'SUBCONJUNTO',
+              minimo: null,
+              maximo: null,
+              entradas: [{ quando: null, valores: ['true'] }],
+              fatos: null,
+              dataMinima: null,
+              dataMaxima: null,
+            },
+          ],
+          impedimento: {
+            quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: false }]],
+            mensagem: 'Só para egressos.',
+          },
+        },
+        etapaCodigo: 'SECAO_1',
       },
     ],
     termos: [
       {
         codigo: 'LGPD',
         ordem: 0,
-        termoId: 'T1',
-        versaoId: 'V1',
-        exibicao: null,
-        obrigatoriedade: 'SEMPRE',
-        predicadoObrigatoriedade: null,
+        termo: { termoId: 'T1', versaoId: 'V1' },
+        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
       },
     ],
     pressupostos: [],
@@ -134,13 +162,9 @@ export const modelo: ModeloFormularioView = {
         ordem: 2,
         rotulo: 'Composição familiar',
         etapaCodigo: 'SECAO_1',
-        minimo: 1,
-        maximo: null,
-        exibicao: null,
-        obrigatoriedade: 'SEMPRE',
-        predicadoObrigatoriedade: null,
+        ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
+        regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
         subitens: [],
-        incluiCandidato: true,
       },
     ],
     documentosExigidos: [
@@ -148,7 +172,7 @@ export const modelo: ModeloFormularioView = {
         faseCodigo: 'INSCRICAO',
         tipoDocumentoCodigo: 'LAUDO_MEDICO',
         obrigatorio: true,
-        quando: [[{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }]],
+        quando: [[{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }]],
         consequenciaIndeferimento: 'ELIMINA',
         basesLegais: [
           {
@@ -158,6 +182,7 @@ export const modelo: ModeloFormularioView = {
             observacao: null,
           },
         ],
+        porOpcao: null,
       },
       {
         faseCodigo: 'INSCRICAO',
@@ -166,6 +191,7 @@ export const modelo: ModeloFormularioView = {
         quando: null,
         consequenciaIndeferimento: 'PENDENCIA_REENVIO',
         basesLegais: [],
+        porOpcao: null,
       },
     ],
   },
@@ -205,7 +231,7 @@ export interface TelaDeEdicao {
 /** O que a carga da tela traz: o modelo, os fatos além dos básicos, as fases e quais leituras falham. */
 export interface CenarioDaCarga {
   readonly modelo?: ModeloFormularioView;
-  readonly fatosExtras?: readonly FatoCandidatoView[];
+  readonly fatosExtras?: readonly FatoDoCatalogoDto[];
   readonly fases?: readonly object[];
   readonly falhando?: readonly string[];
 }

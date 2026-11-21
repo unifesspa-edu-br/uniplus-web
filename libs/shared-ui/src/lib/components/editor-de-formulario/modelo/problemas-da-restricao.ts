@@ -5,7 +5,7 @@ import {
   TETO_DE_DIAS,
 } from '../../formulario-do-candidato/interpretador/restricoes';
 import {
-  ANCORA_DATA_FIXA,
+  LIMITE_EM_DATA_FIXA,
   CASAS_DECIMAIS_DA_FAIXA,
   RESTRICAO_FAIXA_DE_DATA,
   RESTRICAO_FAIXA_NUMERICA,
@@ -115,7 +115,7 @@ export function problemaDoLimiteDeData(
   limite: LimiteDeDataNoWire | null | undefined,
 ): string | null {
   if (limite === null || limite === undefined) return null;
-  return limite.ancora === ANCORA_DATA_FIXA
+  return limite.ancora === LIMITE_EM_DATA_FIXA
     ? problemaDaDataFixa(limite.data ?? '')
     : problemaDoDeslocamento(limite);
 }
@@ -157,7 +157,7 @@ function problemaDaFaixaDeData(restricao: RestricaoDeValor): string | null {
 }
 
 function limiteLido(limite: LimiteDeDataNoWire): Parameters<typeof minimaDepoisDaMaxima>[0] {
-  return limite.ancora === ANCORA_DATA_FIXA
+  return limite.ancora === LIMITE_EM_DATA_FIXA
     ? { ancora: 'DATA_FIXA', data: limite.data ?? '' }
     : { ancora: 'ENVIO', anos: Number(limite.anos ?? 0), dias: Number(limite.dias ?? 0) };
 }

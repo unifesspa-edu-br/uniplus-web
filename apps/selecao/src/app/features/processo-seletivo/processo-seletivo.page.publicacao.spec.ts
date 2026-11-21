@@ -1,5 +1,7 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { item, secao } from './wizard/passos/formulario/formulario-de-inscricao.testing';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { configurarPagina, montarPagina } from './processo-seletivo.page.testing';
 
@@ -76,31 +78,16 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
   });
 
   describe('número inválido no formulário', () => {
-    const conteudoComLimiteInvalido = () => ({
+    const conteudoComLimiteInvalido = (): ConteudoDoFormulario => ({
       titulo: null,
-      etapas: [
-        {
-          codigo: 'S1',
-          ordem: 0,
-          tipo: 'SECAO',
-          bloco: null,
-          titulo: 'Escolaridade',
-          descricao: null,
-          aviso: null,
-        },
-      ],
+      etapas: [secao('S1', 0)],
       itens: [
-        {
-          fatoCodigo: 'NOTA',
-          ordem: 0,
-          rotulo: 'Nota',
-          tipoRenderizacao: 'TEXTO',
-          obrigatoriedade: 'SEMPRE',
-          precondicao: null,
-          etapaCodigo: 'S1',
-          pedirConfirmacao: false,
-          restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }],
-        },
+        item('NOTA', 0, 'S1', {
+          regras: {
+            ...REGRAS_INICIAIS,
+            restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }],
+          },
+        }),
       ],
       termos: [],
       pressupostos: [],
@@ -122,8 +109,8 @@ describe('ProcessoSeletivoPage — publicação: pendências do rascunho', () =>
 
     async function avancarDoFormulario(outraAba: boolean) {
       const { fixture, page, store } = montarPagina();
-      const invalido = conteudoComLimiteInvalido() as never;
-      const valido = { ...conteudoComLimiteInvalido(), itens: [] } as never;
+      const invalido = conteudoComLimiteInvalido();
+      const valido = { ...conteudoComLimiteInvalido(), itens: [] };
       store.patchObjectSection('formulario', {
         conteudo: outraAba ? valido : invalido,
         outrasFinalidades: outraAba

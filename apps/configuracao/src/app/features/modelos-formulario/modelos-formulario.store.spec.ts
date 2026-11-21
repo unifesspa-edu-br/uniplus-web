@@ -15,11 +15,9 @@ const URL_DOS_TIPOS = `${BASE}/api/configuracao/tipos-processo`;
 const modelo = (codigo: string, nome: string): ModeloFormularioView => ({
   id: codigo,
   codigo,
-  nome,
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
   ativo: true,
+  descritivo: { nome, descricao: null, tipoProcessoCodigo: null },
   conteudo: {
     titulo: nome,
     etapas: [],

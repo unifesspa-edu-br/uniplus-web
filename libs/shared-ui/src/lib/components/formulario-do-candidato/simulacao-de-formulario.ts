@@ -21,7 +21,7 @@ import { casoDaSimulacao } from './arquivo-do-formulario';
 import { baixarJson } from './baixar-json';
 import { divergenciasEntre, type Divergencia } from './divergencias';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
-import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type {
   AvaliacaoDoFormulario,
@@ -72,6 +72,13 @@ type Conferencia =
       readonly simulacao: SimulacaoDoFormulario;
     }
   | { readonly estado: 'falha'; readonly mensagem: string };
+
+function falhaDaInterpretacao(erro: { mensagem: string; caminho: string }): Conferencia {
+  return {
+    estado: 'falha',
+    mensagem: `A simulação não interpreta as regras que o servidor aceitou: ${erro.mensagem} (em ${erro.caminho}).`,
+  };
+}
 
 /**
  * A simulação de um formulário, comum ao simulador por arquivo e às simulações de um modelo e de um
@@ -172,7 +179,7 @@ type Conferencia =
 
     <ui-pressupostos-da-simulacao
       [idBase]="idBase() + '-pressupostos'"
-      [pressupostos]="formulario().pressupostos ?? []"
+      [pressupostos]="formulario().pressupostos.fatos"
       [valores]="pressupostos()"
       (valoresChange)="pressupostos.set($event)"
     />
@@ -180,6 +187,7 @@ type Conferencia =
     <ui-formulario-do-candidato
       [idBase]="idBase()"
       [formulario]="formulario()"
+      [noProcesso]="noProcesso()"
       [inicial]="inicial()"
       [pressupostos]="pressupostos()"
       [documentos]="documentos()"
@@ -193,6 +201,8 @@ export class SimulacaoDeFormularioComponent {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly formulario = input.required<FormularioDoCandidato>();
+  /** O que o processo acrescenta ao formulário; nulo fora de um processo, como no simulador. */
+  readonly noProcesso = input<FormularioNoProcesso | null>(null);
   /** As respostas de partida, como as de um caso importado. */
   readonly inicial = input<SimulacaoDoFormulario | null>(null);
   readonly documentos = input<readonly DocumentoExigido[] | null>(null);
@@ -263,7 +273,14 @@ export class SimulacaoDeFormularioComponent {
     this.conferenciaEmVoo?.unsubscribe();
     this.conferenciaEmVoo = this.conferir()(pedidoDeConferencia(regras, simulacao))
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => this.conferencia.set(this.desfechoDa(regras, simulacao, resultado)));
+      .subscribe((resultado) =>
+        this.conferencia.set(this.desfechoDa(regras, simulacao, resultado)),
+      );
+  }
+
+  private falhaDaApi(problema: Parameters<ProblemI18nService['resolve']>[0]): Conferencia {
+    const mensagem = this.problemas.resolve(problema);
+    return { estado: 'falha', mensagem: mensagem.detail ?? mensagem.title };
   }
 
   private desfechoDa(
@@ -271,17 +288,9 @@ export class SimulacaoDeFormularioComponent {
     simulacao: SimulacaoDoFormulario,
     resultado: ApiResult<AvaliacaoDoFormulario>,
   ): Conferencia {
-    if (!resultado.ok) {
-      const mensagem = this.problemas.resolve(resultado.problem);
-      return { estado: 'falha', mensagem: mensagem.detail ?? mensagem.title };
-    }
+    if (!resultado.ok) return this.falhaDaApi(resultado.problem);
     const local = interpretarFormulario(regras, simulacao);
-    if (!local.valida) {
-      return {
-        estado: 'falha',
-        mensagem: `A simulação não interpreta as regras que o servidor aceitou: ${local.erro.mensagem} (em ${local.erro.caminho}).`,
-      };
-    }
+    if (!local.valida) return falhaDaInterpretacao(local.erro);
     return {
       estado: 'feita',
       simulacao,

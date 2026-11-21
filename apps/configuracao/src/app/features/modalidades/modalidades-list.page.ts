@@ -90,24 +90,7 @@ export class ModalidadesListPage {
    * "Referenciada por" e pré-bloqueio de remoção); o backend é a fonte autoritativa
    * do bloqueio (409). Domínio pequeno e fechado: uma página cobre as vivas na prática.
    */
-  protected readonly referenciasReversas = computed(() => {
-    const mapa = new Map<string, ModalidadeDto[]>();
-    for (const m of this.modalidades()) {
-      const alvos = [
-        m.composicaoOrigem,
-        m.remanejamentoDestino,
-        m.remanejamentoPar,
-        m.remanejamentoFallback,
-      ];
-      for (const alvo of alvos) {
-        if (!alvo || alvo === m.codigo) continue;
-        const lista = mapa.get(alvo) ?? [];
-        if (!lista.some((x) => x.id === m.id)) lista.push(m);
-        mapa.set(alvo, lista);
-      }
-    }
-    return mapa;
-  });
+  protected readonly referenciasReversas = computed(() => referenciasReversas(this.modalidades()));
 
   protected readonly chipsNatureza = computed<readonly UiFilterChipOption[]>(() => {
     const todas = this.modalidades();
@@ -133,7 +116,7 @@ export class ModalidadesListPage {
 
   /** A regra de aplicabilidade de cada modalidade numa linha. */
   protected readonly quemConcorre = computed<ReadonlyMap<string, string>>(() => {
-    const catalogo = this.store.catalogo.data();
+    const catalogo = this.store.fatos();
     const fatos = catalogo === null ? null : fatosParaLeitura(catalogo);
     return new Map(
       this.modalidadesFiltradas().map((m) => [
@@ -227,4 +210,26 @@ export class ModalidadesListPage {
     if (alvo === null || this.remocaoBloqueada()) return;
     this.edicao.remover(alvo);
   }
+}
+
+function alvosDaModalidade(m: ModalidadeDto): readonly string[] {
+  const alvos = [
+    m.composicaoOrigem,
+    m.remanejamentoDestino,
+    m.remanejamentoPar,
+    m.remanejamentoFallback,
+  ];
+  return alvos.filter((alvo): alvo is string => !!alvo && alvo !== m.codigo);
+}
+
+function referenciasReversas(modalidades: readonly ModalidadeDto[]): Map<string, ModalidadeDto[]> {
+  const mapa = new Map<string, ModalidadeDto[]>();
+  for (const m of modalidades) {
+    for (const alvo of alvosDaModalidade(m)) {
+      const lista = mapa.get(alvo) ?? [];
+      if (!lista.some((x) => x.id === m.id)) lista.push(m);
+      mapa.set(alvo, lista);
+    }
+  }
+  return mapa;
 }

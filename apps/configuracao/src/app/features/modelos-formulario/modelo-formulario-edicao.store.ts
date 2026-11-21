@@ -10,7 +10,8 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
-  FatoCandidatoView,
+  fatoComOperadores,
+  FatoDoCatalogoDto,
   FaseCanonicaDto,
   ModeloFormularioView,
   TermosConsentimentoApi,
@@ -61,7 +62,7 @@ export class ModeloFormularioEdicaoStore {
     url: `${this.basePath}/api/configuracao/admin/modelos-formulario/${this.id}`,
     context: withVendorMime('modelo-formulario', 1),
   }));
-  readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() => ({
+  readonly catalogo = useApiResource<readonly FatoDoCatalogoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/fatos-candidato`,
     context: withVendorMime('fato-candidato', 1),
   }));
@@ -95,7 +96,7 @@ export class ModeloFormularioEdicaoStore {
   readonly naoEncontrado = computed(
     () => this.detalhe.problem()?.status === STATUS_HTTP.NAO_ENCONTRADO,
   );
-  readonly fatos = computed(() => this.catalogo.data() ?? []);
+  readonly fatos = computed(() => this.catalogo.data()?.map(fatoComOperadores) ?? []);
   readonly catalogoComErro = computed(
     () => this.catalogo.problem() !== null || this.catalogo.error() !== undefined,
   );

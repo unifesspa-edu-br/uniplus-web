@@ -2,16 +2,18 @@ import {
   FATO_PARENTESCO,
   PROPRIO_CANDIDATO,
 } from '../../formulario-do-candidato/interpretador/ocorrencia-do-candidato';
-import { renderizacaoDe } from './catalogo-de-campos';
+import { campoNovo } from './catalogo-de-campos';
+import { recusaDaCitacaoPosterior } from './conferencia-de-ordem';
 import { citaveisAntesDe, fatosCitadosPeloCampo, todosOsCampos } from './citacoes';
 import { codigoDoNome, codigoLivre, nomeDoFato } from './codigos';
-import { LIMITES_DO_FORMULARIO, OBRIGATORIEDADE_SEMPRE } from './constantes';
+import { LIMITES_DO_FORMULARIO, REGRAS_INICIAIS } from './constantes';
 import { ordemNoFimDaSecao, renumerar } from './ordem-das-entradas';
 import {
   ConteudoDoFormulario,
   FatoDoFormulario,
   GrupoDoFormulario,
   ItemDoFormulario,
+  OcorrenciasDoGrupo,
   ResultadoDaEdicao,
   ResultadoDoGrupo,
 } from './tipos';
@@ -28,22 +30,6 @@ export { FATO_PARENTESCO, PROPRIO_CANDIDATO };
 
 /** O teto de campos de cada ocorrência de um grupo (`FormaDoGrupo.MaximoDeSubitens`). */
 export const MAXIMO_DE_CAMPOS_DO_GRUPO = 30;
-
-/** O campo de membro, sem seção própria: aparece onde o grupo aparece. Nasce obrigatório, como o item. */
-export function campoDeMembro(fato: FatoDoFormulario, ordem: number): ItemDoFormulario {
-  return {
-    fatoCodigo: fato.codigo,
-    ordem,
-    rotulo: fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo),
-    tipoRenderizacao: renderizacaoDe(fato) ?? '',
-    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
-    precondicao: null,
-    etapaCodigo: null,
-    predicadoObrigatoriedade: null,
-    ajuda: null,
-    pedirConfirmacao: false,
-  };
-}
 
 /**
  * Um grupo repetível novo no fim da seção, já com o primeiro campo — a API recusa grupo sem campo —,
@@ -99,14 +85,19 @@ function grupoNovo(
     ordem: ordemNoFimDaSecao(conteudo, novo.etapaCodigo),
     rotulo: novo.rotulo.trim().slice(0, LIMITES_DO_FORMULARIO.rotulo),
     etapaCodigo: novo.etapaCodigo,
-    minimo: 0,
-    maximo: null,
-    exibicao: null,
-    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
-    predicadoObrigatoriedade: null,
-    subitens: [campoDeMembro(novo.primeiroCampo, 0)],
-    incluiCandidato: false,
+    ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
+    regras: REGRAS_INICIAIS,
+    subitens: [campoNovo(novo.primeiroCampo, 0, null)],
   };
+}
+
+/** O grupo que só o conteúdo de depois tem. */
+export function grupoAcrescentado(
+  antes: ConteudoDoFormulario,
+  depois: ConteudoDoFormulario,
+): GrupoDoFormulario | undefined {
+  const codigosAnteriores = new Set((antes.grupos ?? []).map((grupo) => grupo.codigo));
+  return (depois.grupos ?? []).find((grupo) => !codigosAnteriores.has(grupo.codigo));
 }
 
 /** Troca o grupo pelo editado, sem mexer na posição dele. */
@@ -156,16 +147,15 @@ export function acrescentarCampoAoGrupo(
   const teto = recusaDoTeto(conteudo, grupo);
   if (teto !== null) return { ok: false, recusa: teto };
   // Renumera o grupo inteiro: a ordem gravada pode começar acima de zero ou ter buraco.
-  return {
-    ok: true,
-    grupo: {
-      ...grupo,
-      subitens: [...camposDoGrupo(grupo), campoDeMembro(fato, 0)].map((campo, ordem) => ({
-        ...campo,
-        ordem,
-      })),
-    },
-  };
+  const campos = [...camposDoGrupo(grupo), campoNovo(fato, 0, null)];
+  return { ok: true, grupo: comCamposRenumerados(grupo, campos) };
+}
+
+function comCamposRenumerados(
+  grupo: GrupoDoFormulario,
+  campos: readonly ItemDoFormulario[],
+): GrupoDoFormulario {
+  return { ...grupo, subitens: campos.map((campo, ordem) => ({ ...campo, ordem })) };
 }
 
 /** Troca o campo do grupo pelo editado. */
@@ -192,15 +182,8 @@ export function removerCampoDoGrupo(
 ): ResultadoDoGrupo {
   const recusa = recusaDaRemocaoDoCampo(grupo, fatoCodigo, nomes);
   if (recusa !== null) return { ok: false, recusa };
-  return {
-    ok: true,
-    grupo: {
-      ...grupo,
-      subitens: camposDoGrupo(grupo)
-        .filter((campo) => campo.fatoCodigo !== fatoCodigo)
-        .map((campo, ordem) => ({ ...campo, ordem })),
-    },
-  };
+  const restantes = camposDoGrupo(grupo).filter((campo) => campo.fatoCodigo !== fatoCodigo);
+  return { ok: true, grupo: comCamposRenumerados(grupo, restantes) };
 }
 
 function recusaDaRemocaoDoCampo(
@@ -208,18 +191,20 @@ function recusaDaRemocaoDoCampo(
   fatoCodigo: string,
   nomes: ReadonlyMap<string, string>,
 ): string | null {
-  if (grupo.subitens.length <= 1) {
+  if (grupo.subitens.length <= 1)
     return 'O grupo precisa de ao menos um campo: remova o grupo inteiro se não precisar dele.';
-  }
-  if (grupo.incluiCandidato && fatoCodigo === FATO_PARENTESCO) {
+  if (grupo.ocorrencias.incluiCandidato && fatoCodigo === FATO_PARENTESCO)
     return 'O grupo inclui o candidato e precisa do parentesco: é por ele que se reconhece a ocorrência do candidato.';
-  }
-  const quem = grupo.subitens.find(
-    (campo) => campo.fatoCodigo !== fatoCodigo && fatosCitadosPeloCampo(campo).includes(fatoCodigo),
-  );
+  const quem = campoQueCita(grupo, fatoCodigo);
   return quem === undefined
     ? null
-    : `Não é possível remover “${nomeDoFato(nomes, fatoCodigo)}”: o campo “${quem.rotulo}” cita esse campo.`;
+    : `Não é possível remover “${nomeDoFato(nomes, fatoCodigo)}”: o campo “${quem.apresentacao.rotulo}” cita esse campo.`;
+}
+
+function campoQueCita(grupo: GrupoDoFormulario, fatoCodigo: string): ItemDoFormulario | undefined {
+  return grupo.subitens.find(
+    (campo) => campo.fatoCodigo !== fatoCodigo && fatosCitadosPeloCampo(campo).includes(fatoCodigo),
+  );
 }
 
 /**
@@ -250,22 +235,23 @@ export function comCamposEmOrdem(
   campos: readonly ItemDoFormulario[],
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDoGrupo {
+  const posterior = citacaoPosteriorNoGrupo(campos);
+  if (posterior === null) return { ok: true, grupo: comCamposRenumerados(grupo, campos) };
+  const descricao = `“${posterior.campo.apresentacao.rotulo}”`;
+  return { ok: false, recusa: recusaDaCitacaoPosterior(descricao, posterior.citado, nomes) };
+}
+
+function citacaoPosteriorNoGrupo(
+  campos: readonly ItemDoFormulario[],
+): { campo: ItemDoFormulario; citado: string } | null {
   const posicao = new Map(campos.map((campo, ordem) => [campo.fatoCodigo, ordem]));
   for (const [ordem, campo] of campos.entries()) {
-    const posterior = fatosCitadosPeloCampo(campo).find(
-      (citado) => (posicao.get(citado) ?? -Infinity) >= ordem && citado !== campo.fatoCodigo,
+    const citado = fatosCitadosPeloCampo(campo).find(
+      (fato) => (posicao.get(fato) ?? -Infinity) >= ordem && fato !== campo.fatoCodigo,
     );
-    if (posterior !== undefined) {
-      return {
-        ok: false,
-        recusa: `“${campo.rotulo}” cita “${nomeDoFato(nomes, posterior)}”, que ficaria depois. Mova primeiro o campo citado.`,
-      };
-    }
+    if (citado !== undefined) return { campo, citado };
   }
-  return {
-    ok: true,
-    grupo: { ...grupo, subitens: campos.map((campo, ordem) => ({ ...campo, ordem })) },
-  };
+  return null;
 }
 
 /**
@@ -314,10 +300,10 @@ export interface ProblemasDasOcorrencias {
 }
 
 export function problemasDasOcorrencias(
-  grupo: Pick<GrupoDoFormulario, 'minimo' | 'maximo'>,
+  ocorrencias: Pick<OcorrenciasDoGrupo, 'minimo' | 'maximo'>,
 ): ProblemasDasOcorrencias {
-  const minimo = Number(grupo.minimo);
-  const maximo = grupo.maximo === null ? null : Number(grupo.maximo);
+  const minimo = Number(ocorrencias.minimo);
+  const maximo = ocorrencias.maximo === null ? null : Number(ocorrencias.maximo);
   const doMinimo = problemaDoMinimo(minimo);
   const doMaximo = problemaDoMaximo(maximo);
   const semRelacao = doMinimo !== null || doMaximo !== null || maximo === null || maximo >= minimo;

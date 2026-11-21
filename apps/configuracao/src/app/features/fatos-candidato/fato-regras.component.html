@@ -9,7 +9,7 @@
       />
       <p class="u-caption">
         O processo copia estas regras ao citar o fato e pode alterá-las na cópia.
-        @if (f.dominio === 'BOOLEANO') {
+        @if (f.definicao.dominio === 'BOOLEANO') {
           O fato vale "sim" quando alguma regra se cumpre.
         } @else {
           Cada regra que se cumpre acrescenta o valor dela ao fato.
@@ -18,7 +18,7 @@
       @for (regra of regras.regras(); track $index; let i = $index) {
         <fieldset class="field form-grid__full">
           <legend class="field__label">Regra {{ i + 1 }}</legend>
-          @if (f.dominio === 'CATEGORICO') {
+          @if (f.definicao.dominio === 'CATEGORICO') {
             <label class="field">
               <span class="field__label is-required">Valor que a regra acrescenta</span>
               <select

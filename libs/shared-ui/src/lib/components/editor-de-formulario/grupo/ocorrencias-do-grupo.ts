@@ -34,8 +34,8 @@ export interface MudancaDeContagem {
             type="text"
             inputmode="numeric"
             [id]="idDe('minimo')"
-            [value]="grupo().minimo"
-            [disabled]="disabled() || grupo().incluiCandidato"
+            [value]="grupo().ocorrencias.minimo"
+            [disabled]="disabled() || grupo().ocorrencias.incluiCandidato"
             [attr.aria-invalid]="problemas().minimo ? 'true' : null"
             [attr.aria-describedby]="descricaoDoMinimo()"
             (change)="trocarContagem('minimo', $event)"
@@ -48,7 +48,7 @@ export interface MudancaDeContagem {
             type="text"
             inputmode="numeric"
             [id]="idDe('maximo')"
-            [value]="grupo().maximo ?? ''"
+            [value]="grupo().ocorrencias.maximo ?? ''"
             [disabled]="disabled()"
             [attr.aria-invalid]="problemas().maximo || problemas().relacao ? 'true' : null"
             [attr.aria-describedby]="descricaoDoMaximo()"
@@ -71,7 +71,7 @@ export interface MudancaDeContagem {
       <label class="checkbox">
         <input
           type="checkbox"
-          [checked]="grupo().incluiCandidato"
+          [checked]="grupo().ocorrencias.incluiCandidato"
           [disabled]="disabled()"
           [attr.aria-describedby]="idDe('candidato-nota')"
           (change)="pedirCandidato($event)"
@@ -95,11 +95,11 @@ export class OcorrenciasDoGrupoComponent {
   /** O estado que a pessoa pediu para a inclusão do candidato. */
   readonly candidatoPedido = output<boolean>();
 
-  protected readonly problemas = computed(() => problemasDasOcorrencias(this.grupo()));
+  protected readonly problemas = computed(() => problemasDasOcorrencias(this.grupo().ocorrencias));
 
   protected readonly descricaoDoMinimo = computed(() =>
     idsDescritivos([
-      this.grupo().incluiCandidato ? this.idDe('candidato-nota') : null,
+      this.grupo().ocorrencias.incluiCandidato ? this.idDe('candidato-nota') : null,
       this.problemas().minimo === null ? null : this.idDe('minimo-erro'),
     ]),
   );
@@ -139,7 +139,7 @@ export class OcorrenciasDoGrupoComponent {
     const caixa = evento.target as HTMLInputElement;
     const pedido = caixa.checked;
     // O navegador marca a caixa antes da decisão: ela volta ao estado real, que só muda se a edição for aceita.
-    caixa.checked = this.grupo().incluiCandidato;
+    caixa.checked = this.grupo().ocorrencias.incluiCandidato;
     this.candidatoPedido.emit(pedido);
   }
 }

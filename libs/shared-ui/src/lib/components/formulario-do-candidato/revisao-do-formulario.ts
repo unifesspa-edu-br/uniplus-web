@@ -5,6 +5,7 @@ import { resumoDoFator } from './fator-de-atenuacao';
 import {
   type ErroDoServidor,
   type FormularioDoCandidato,
+  type FormularioNoProcesso,
   mensagemDosErros,
   type PassoPrefixado,
   type RespostaFixa,
@@ -18,6 +19,7 @@ import type { MunicipiosGravados } from './valor-de-municipio-gravado';
 /** O que a Revisão resume, lido do formulário. */
 export interface FontesDaRevisao {
   readonly formulario: Signal<FormularioDoCandidato>;
+  readonly noProcesso: Signal<FormularioNoProcesso | null>;
   readonly avaliacao: Signal<AvaliacaoNaTela | null>;
   readonly passos: () => readonly PassoDoFormulario[];
   readonly passosPrefixados: Signal<readonly PassoPrefixado[]>;
@@ -48,7 +50,7 @@ export class RevisaoDoFormulario {
       respostas: this.fontes.respostas(),
       municipios: this.fontes.municipios,
       gravados: this.fontes.municipiosGravados(),
-      dependencias: this.fontes.formulario().dependenciasDoFator,
+      dependencias: this.fontes.noProcesso()?.dependenciasDoFator,
       ocorrencias: this.fontes.grupos(),
       fixas: this.fontes.respostasFixas(),
     }),
@@ -57,7 +59,7 @@ export class RevisaoDoFormulario {
   readonly secoesQueDefinem = computed(() =>
     secoesQueDefinemAsModalidades(
       this.fontes.passos(),
-      this.fontes.formulario().dependenciasDaAvaliacao,
+      this.fontes.noProcesso()?.dependenciasDaAvaliacao,
     ),
   );
 

@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
+import type { ApresentacaoDoCampo } from '../editor-de-formulario/modelo/tipos';
+
 import { CampoDoCandidatoComponent } from './campo-do-candidato';
 import type { CampoNoPasso } from './passos-do-formulario';
 import type { PressupostoDoFormulario } from './formulario-do-candidato.model';
-import type { ValorJson } from './interpretador/regras-do-formulario';
+import type { CampoAvaliado, ValorJson } from './interpretador/regras-do-formulario';
 
 /** A forma do valor de um pressuposto sem apresentação, que quem simula escolhe. */
 const FORMAS: readonly { readonly tipo: string; readonly rotulo: string }[] = [
@@ -12,6 +14,49 @@ const FORMAS: readonly { readonly tipo: string; readonly rotulo: string }[] = [
   { tipo: 'BOOLEANO', rotulo: 'Sim ou não' },
   { tipo: 'SELECAO_MULTIPLA', rotulo: 'Lista de códigos' },
 ];
+
+function apresentacaoDoPressuposto(
+  pressuposto: PressupostoDoFormulario,
+  tipo: string,
+): ApresentacaoDoCampo {
+  return {
+    rotulo: pressuposto.rotulo?.trim() || pressuposto.fatoCodigo,
+    tipoRenderizacao: tipo,
+    ajuda: null,
+    pedirConfirmacao: false,
+  };
+}
+
+/** O pressuposto como campo: sempre visível, opcional e sem restrição, na forma dada. */
+function campoDoPressuposto(pressuposto: PressupostoDoFormulario, tipo: string): CampoNoPasso {
+  const { fatoCodigo } = pressuposto;
+  return {
+    campo: {
+      fatoCodigo,
+      ordem: 0,
+      apresentacao: apresentacaoDoPressuposto(pressuposto, tipo),
+      valoresSelecionaveis: pressuposto.valoresSelecionaveis ?? null,
+      formato: pressuposto.formato ?? null,
+    },
+    avaliado: avaliadoDoPressuposto(fatoCodigo),
+    regra: null,
+  };
+}
+
+function avaliadoDoPressuposto(fatoCodigo: string): CampoAvaliado {
+  return {
+    fatoCodigo,
+    etapaCodigo: '',
+    estado: 'RESOLVIDO',
+    regras: {
+      visivel: 'VERDADEIRO',
+      obrigatorio: 'FALSO',
+      restricoesVioladas: [],
+      impedido: 'FALSO',
+    },
+    opcoes: null,
+  };
+}
 
 /**
  * Os pressupostos da simulação: os fatos que o formulário cita sem perguntar. O respondido em outro
@@ -51,7 +96,7 @@ const FORMAS: readonly { readonly tipo: string; readonly rotulo: string }[] = [
                   @for (forma of formas; track forma.tipo) {
                     <option
                       [value]="forma.tipo"
-                      [selected]="forma.tipo === item.campo.campo.tipoRenderizacao"
+                      [selected]="forma.tipo === item.campo.campo.apresentacao.tipoRenderizacao"
                     >
                       {{ forma.rotulo }}
                     </option>
@@ -93,27 +138,7 @@ export class PressupostosDaSimulacaoComponent {
       const semApresentacao = !pressuposto.tipoRenderizacao;
       const tipo =
         pressuposto.tipoRenderizacao ?? this.formaEscolhida()[pressuposto.fatoCodigo] ?? 'TEXTO';
-      const campo: CampoNoPasso = {
-        campo: {
-          fatoCodigo: pressuposto.fatoCodigo,
-          ordem: 0,
-          rotulo: pressuposto.rotulo?.trim() || pressuposto.fatoCodigo,
-          tipoRenderizacao: tipo,
-          valoresSelecionaveis: pressuposto.valoresSelecionaveis ?? null,
-          formato: pressuposto.formato ?? null,
-        },
-        avaliado: {
-          fatoCodigo: pressuposto.fatoCodigo,
-          etapaCodigo: '',
-          estado: 'RESOLVIDO',
-          visivel: 'VERDADEIRO',
-          obrigatorio: 'FALSO',
-          restricoesVioladas: [],
-          impedido: 'FALSO',
-          opcoes: null,
-        },
-        regra: null,
-      };
+      const campo = campoDoPressuposto(pressuposto, tipo);
       return { pressuposto, semApresentacao, campo };
     }),
   );

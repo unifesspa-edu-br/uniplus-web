@@ -25,11 +25,11 @@ describe('alcance de todas as fases', () => {
     const raizes = comando(declarado);
 
     expect(raizes).toHaveLength(2);
-    expect(raizes.map((raiz) => raiz.documento?.exigidoNaFaseId).sort()).toEqual(
+    expect(raizes.map((raiz) => raiz.documento?.momento?.faseId).sort()).toEqual(
       [ID_ISENCAO, ID_HABILITACAO].sort(),
     );
     // A fase nova herda o que foi declarado, não um formulário em branco.
-    expect(raizes.every((raiz) => raiz.documento?.obrigatorio === false)).toBe(true);
+    expect(raizes.every((raiz) => raiz.documento?.indeferimento?.obrigatorio === false)).toBe(true);
   });
 
   /** Sem nada declarado, a intenção não inventa exigência. */

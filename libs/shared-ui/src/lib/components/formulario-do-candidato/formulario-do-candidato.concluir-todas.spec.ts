@@ -50,7 +50,7 @@ describe('FormularioDoCandidatoComponent', () => {
           { codigo: 'Inscricao:CONTATO', itens: [itemDasRegras('EMAIL')] },
           {
             codigo: 'Inscricao:NOME',
-            itens: [itemDasRegras('NOME_SOCIAL', { obrigatoriedade: 'NUNCA' })],
+            itens: [itemDasRegras('NOME_SOCIAL', { obrigatoriedade: { tipo: 'NUNCA' } })],
           },
         ],
       },

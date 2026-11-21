@@ -1,5 +1,11 @@
 import { ConteudoDoFormulario, EntradaDaSecao, EtapaDoFormulario } from './tipos';
 
+/** Uma entrada e a vizinha com quem ela troca de lugar. */
+export interface TrocaComAVizinha<T> {
+  readonly atual: T;
+  readonly vizinha: T;
+}
+
 /** As etapas em ordem. */
 export function etapasEmOrdem(conteudo: ConteudoDoFormulario): readonly EtapaDoFormulario[] {
   return [...(conteudo.etapas ?? [])].sort((a, b) => a.ordem - b.ordem);
@@ -25,6 +31,48 @@ export function entradasDaSecao(
  */
 export function renumerar(conteudo: ConteudoDoFormulario): ConteudoDoFormulario {
   const etapas = etapasEmOrdem(conteudo);
+  return {
+    ...conteudo,
+    etapas: etapas.map((etapa, indice) => ({ ...etapa, ordem: indice })),
+    ...entradasRenumeradas(conteudo, numerarEntradas(conteudo, etapas)),
+  };
+}
+
+/** Itens e grupos com a ordem nova; o que não está em seção alguma vai depois de todos. */
+function entradasRenumeradas(
+  conteudo: ConteudoDoFormulario,
+  { ordemDoItem, ordemDoGrupo, proxima }: EntradasNumeradas,
+): Pick<ConteudoDoFormulario, 'itens' | 'grupos'> {
+  let sobra = proxima;
+  const depois = (): number => sobra++;
+  return {
+    itens: comOrdem(conteudo.itens ?? [], (item) => item.fatoCodigo, ordemDoItem, depois),
+    grupos: comOrdem(conteudo.grupos ?? [], (grupo) => grupo.codigo, ordemDoGrupo, depois),
+  };
+}
+
+function comOrdem<T extends { readonly ordem: number }>(
+  lista: readonly T[],
+  chaveDe: (elemento: T) => string,
+  ordens: ReadonlyMap<string, number>,
+  depois: () => number,
+): T[] {
+  return lista.map((elemento) => ({
+    ...elemento,
+    ordem: ordens.get(chaveDe(elemento)) ?? depois(),
+  }));
+}
+
+interface EntradasNumeradas {
+  readonly ordemDoItem: ReadonlyMap<string, number>;
+  readonly ordemDoGrupo: ReadonlyMap<string, number>;
+  readonly proxima: number;
+}
+
+function numerarEntradas(
+  conteudo: ConteudoDoFormulario,
+  etapas: readonly EtapaDoFormulario[],
+): EntradasNumeradas {
   const ordemDoItem = new Map<string, number>();
   const ordemDoGrupo = new Map<string, number>();
   let proxima = 0;
@@ -34,19 +82,7 @@ export function renumerar(conteudo: ConteudoDoFormulario): ConteudoDoFormulario 
       else ordemDoGrupo.set(entrada.grupo.codigo, proxima++);
     }
   }
-
-  return {
-    ...conteudo,
-    etapas: etapas.map((etapa, indice) => ({ ...etapa, ordem: indice })),
-    itens: (conteudo.itens ?? []).map((item) => ({
-      ...item,
-      ordem: ordemDoItem.get(item.fatoCodigo) ?? proxima++,
-    })),
-    grupos: (conteudo.grupos ?? []).map((grupo) => ({
-      ...grupo,
-      ordem: ordemDoGrupo.get(grupo.codigo) ?? proxima++,
-    })),
-  };
+  return { ordemDoItem, ordemDoGrupo, proxima };
 }
 
 export function ordemDa(entrada: EntradaDaSecao): number {

@@ -40,6 +40,9 @@ import {
   fatosDeElegibilidade,
 } from './fato-de-elegibilidade';
 
+const MENSAGEM_SEM_CADASTRO =
+  'O cadastro do processo precisa estar concluído antes de configurar o bônus.';
+
 /**
  * Bônus regional (`PUT …/bonus-regional`) — o processo declara se aplica o bônus ou não, e a
  * ausência da configuração só significa "sem bônus" quando a declaração é falsa. Não existe
@@ -194,28 +197,25 @@ export class BonusPassoComponent {
   /** Grava a declaração do bônus regional — aplica ou não, o passo sempre grava. */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de configurar o bônus.'],
-      };
-    }
+    if (processoId === null) return { valid: false, messages: [MENSAGEM_SEM_CADASTRO] };
 
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
-    return gravarNoPasso(this.store, async () => {
-      const geracao = this.store.geracao();
-      const resultado = await this.cadastro.definirBonusRegional(
-        processoId,
-        comoComandoDeBonus(this.store.draft().bonus),
-      );
+    return gravarNoPasso(this.store, () => this.gravarDeclaracao(processoId));
+  }
 
-      if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-      return resultado.ok
-        ? { valid: true }
-        : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
-    });
+  private async gravarDeclaracao(processoId: string) {
+    const geracao = this.store.geracao();
+    const resultado = await this.cadastro.definirBonusRegional(
+      processoId,
+      comoComandoDeBonus(this.store.draft().bonus),
+    );
+
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    return resultado.ok
+      ? { valid: true }
+      : { valid: false, messages: [this.problemI18n.resolve(resultado.problem).title] };
   }
 }
 

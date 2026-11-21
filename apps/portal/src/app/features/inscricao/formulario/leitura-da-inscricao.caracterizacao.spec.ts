@@ -10,11 +10,16 @@ import {
   type FormularioRenderizavelDto,
   type InscricaoDto,
   SELECAO_BASE_PATH,
+  TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { LEITURA_DE_MUNICIPIO_POR_CODIGO, NomesDeMunicipios } from '@uniplus/shared-ui/components';
 
 import { AvaliacaoDaInscricaoEstado } from './avaliacao-da-inscricao.estado';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import {
+  FORMULARIO_DE_INSCRICAO_MOCK,
+  campoColetado,
+  comCampoColetado,
+} from './inscricao-do-candidato.testing';
 import { inscricao } from './inscricao-do-candidato.page.testing';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
@@ -30,21 +35,19 @@ const oferta = (id: string, cursoNome: string) => ({
 });
 
 const COM_NATURALIDADE: FormularioRenderizavelDto = {
-  ...FORMULARIO_DE_INSCRICAO_MOCK,
+  ...comCampoColetado(
+    comCampoColetado(
+      FORMULARIO_DE_INSCRICAO_MOCK,
+      campoColetado('NATURALIDADE', 'Naturalidade', TipoRenderizacaoCodigo.MUNICIPIO, { ordem: 4 }),
+    ),
+    campoColetado(
+      'DESEJA_NOME_SOCIAL',
+      'Deseja usar nome social',
+      TipoRenderizacaoCodigo.BOOLEANO,
+      { ordem: 5 },
+    ),
+  ),
   dependenciasDaAvaliacao: { fatos: ['NOME'], grupos: [] },
-  fatosColetados: [
-    ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados,
-    {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-      fatoCodigo: 'NATURALIDADE',
-      tipoRenderizacao: 'MUNICIPIO',
-    },
-    {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-      fatoCodigo: 'DESEJA_NOME_SOCIAL',
-      tipoRenderizacao: 'BOOLEANO',
-    },
-  ],
 };
 
 describe('LeituraDaInscricao: a carga que a tela adota', () => {

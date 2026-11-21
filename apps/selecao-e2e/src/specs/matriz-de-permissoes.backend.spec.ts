@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
+import type { FatoDeManutencaoDto } from '@uniplus/shared-data/configuracao';
 import {
+  type JsonDaApi,
   unidadeDoCertame,
   acharNaListagem,
   chamarApi,
@@ -150,10 +152,12 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     let proximo: string | null = '/api/configuracao/admin/fatos-candidato?limit=100';
     while (proximo !== null) {
       const pagina: {
-        corpo: { codigo: string; classificacaoProtecao: string }[];
+        corpo: JsonDaApi<FatoDeManutencaoDto>[];
         cabecalhos: Headers;
       } = await chamarApi('isabella.figueiredo', 'GET', proximo);
-      pagina.corpo.forEach((f) => classeDoFato.set(f.codigo, f.classificacaoProtecao));
+      pagina.corpo.forEach(({ fato }) =>
+        classeDoFato.set(fato.codigo, fato.definicao.protecao.classificacao),
+      );
       const link = /<([^>]+)>;\s*rel="next"/.exec(pagina.cabecalhos.get('link') ?? '');
       proximo = link === null ? null : (link[1] ?? '').replace(/^https?:\/\/[^/]+/, '');
     }
@@ -217,7 +221,17 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     expect(interno.processo?.id).toBe(cenario.processoId);
   });
 
-  test('a listagem segue as mesmas classes: público, interno e pessoal aparecem cada um com a sua permissão', async () => {
+  const linhaDoErick = (
+    persona: string,
+    procurada: (l: Linha) => boolean,
+  ): Promise<Linha | undefined> =>
+    acharNaListagem<Linha>(
+      persona,
+      `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes?limit=100`,
+      procurada,
+    );
+
+  test('a listagem segue as mesmas classes: público e interno aparecem cada um com a sua permissão', async () => {
     const numeroDoErick = (
       await chamarApi<Resposta>(
         'andre.barbosa',
@@ -225,23 +239,9 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
         `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes/${cenario.erick.inscricaoId}`,
       )
     ).corpo.numeroInscricao;
-    const linhaDe = async (
-      persona: string,
-      procurada: (l: Linha) => boolean,
-    ): Promise<Linha | undefined> =>
-      acharNaListagem<Linha>(
-        persona,
-        `/api/selecao/processos-seletivos/${cenario.processoId}/inscricoes?limit=100`,
-        procurada,
-      );
 
-    const publico = await linhaDe('cecilia.assis', (l) => l.id === cenario.erick.inscricaoId);
-    const interno = await linhaDe('andre.barbosa', (l) => l.numeroInscricao === numeroDoErick);
-    const pessoal = await linhaDe('ayla.luz', (l) => l.id === cenario.erick.inscricaoId);
-    const identificador = await linhaDe(
-      'helena.rezende',
-      (l) => l.id === cenario.erick.inscricaoId,
-    );
+    const publico = await linhaDoErick('cecilia.assis', (l) => l.id === cenario.erick.inscricaoId);
+    const interno = await linhaDoErick('andre.barbosa', (l) => l.numeroInscricao === numeroDoErick);
 
     expect(publico?.situacao).toBeDefined();
     expect(publico?.ofertas?.length).toBeGreaterThan(0);
@@ -250,6 +250,15 @@ test.describe('Matriz de permissões de dado e de arquivo', () => {
     expect(interno?.numeroInscricao).toBe(numeroDoErick);
     expect(interno?.submetidaEm).toBeDefined();
     expect(interno?.nome).toBeUndefined();
+  });
+
+  test('a listagem segue as mesmas classes: pessoal e identificador aparecem cada um com a sua permissão', async () => {
+    const pessoal = await linhaDoErick('ayla.luz', (l) => l.id === cenario.erick.inscricaoId);
+    const identificador = await linhaDoErick(
+      'helena.rezende',
+      (l) => l.id === cenario.erick.inscricaoId,
+    );
+
     expect(pessoal?.nome?.valor).toBe('Erick Isaac Ramos');
     expect(pessoal?.cpf).toBeUndefined();
     expect(identificador?.cpf?.valor).toBe('***.342.259-**');

@@ -31,31 +31,18 @@
   >
     <fieldset class="form-drawer__campos" role="none" [disabled]="salvando()">
       <div class="form-grid">
-        <label class="field" [class.is-error]="erroDoCampo('tipoInstrumento')">
-          <span class="field__label is-required">Tipo de instrumento</span>
-          <select
-            id="cfg-blbr-tipo"
-            class="select"
-            formControlName="tipoInstrumento"
-            aria-required="true"
-            [attr.aria-busy]="tipos().pendente ? 'true' : null"
-            [attr.aria-invalid]="erroDoCampo('tipoInstrumento') ? 'true' : null"
-            [attr.aria-describedby]="descricaoDoTipo()"
-          >
-            <option value="">Selecione…</option>
-            @if (tipos().foraDasOpcoes; as foraDasOpcoes) {
-              <option [value]="foraDasOpcoes.codigo">{{ foraDasOpcoes.rotulo }}</option>
-            }
-            @for (opcao of tipos().opcoes; track opcao.codigo) {
-              <option [value]="opcao.codigo">{{ opcao.nome }}</option>
-            }
-          </select>
-          @if (erroDoCampo('tipoInstrumento')) {
-            <span class="field__error" id="cfg-blbr-tipo-erro" role="alert">{{
-              erroDoCampo('tipoInstrumento')
-            }}</span>
-          }
-        </label>
+        <ui-select
+          idDoCampo="cfg-blbr-tipo"
+          formControlName="tipoInstrumento"
+          fieldLabel="Tipo de instrumento"
+          placeholderText="Selecione…"
+          [isRequired]="true"
+          [choices]="tipos().opcoes"
+          [carregandoOpcoes]="tipos().pendente"
+          [descritoPor]="descricaoDoTipo()"
+          [invalid]="!!erroDoCampo('tipoInstrumento')"
+          [errorMessage]="erroDoCampo('tipoInstrumento') ?? ''"
+        />
 
         <label class="field form-grid__full" [class.is-error]="erroDoCampo('identificacao')">
           <span class="field__label is-required">Identificação</span>
@@ -105,6 +92,12 @@
     </fieldset>
   </form>
 
+  @if (aguardaOsTipos()) {
+    <p class="field__hint" id="cfg-blbr-salvar-aguarda-tipos">
+      Aguarde o carregamento dos tipos de instrumento para salvar.
+    </p>
+  }
+
   <div class="form-drawer__footer">
     <button
       type="button"
@@ -118,7 +111,8 @@
       type="submit"
       form="cfg-base-legal-form"
       class="btn btn--primary"
-      [attr.aria-disabled]="salvando() ? 'true' : null"
+      [attr.aria-disabled]="envioIndisponivel() ? 'true' : null"
+      [attr.aria-describedby]="motivoDoEnvioIndisponivel()"
       [attr.aria-busy]="salvando() ? 'true' : null"
       (click)="aoClicarEmSalvar($event)"
     >

@@ -1,11 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
-import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
 import { BaseLegalBonusRegionalDto } from '@uniplus/shared-data/configuracao';
 import {
   EmptyStateComponent,
   FilterBarComponent,
   IconButtonComponent,
-  LookupLabelComponent,
   PagerComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
@@ -19,7 +17,6 @@ import { devolverFocoDaLista } from '../../shared/foco';
     EmptyStateComponent,
     FilterBarComponent,
     IconButtonComponent,
-    LookupLabelComponent,
     PagerComponent,
     SpinnerComponent,
   ],
@@ -36,8 +33,6 @@ export class BaseLegalBonusRegionalListaComponent {
   readonly temFiltro = input.required<boolean>();
   readonly temAnterior = input.required<boolean>();
   readonly temProximo = input.required<boolean>();
-  /** Como o tipo de instrumento de cada base se apresenta, conforme o estado do vocabulário. */
-  readonly rotuloDoTipo = input.required<(codigo: string) => ResolucaoDeVinculo>();
   readonly termoBusca = model.required<string>();
   readonly cadastrar = output<void>();
   readonly editar = output<BaseLegalBonusRegionalDto>();

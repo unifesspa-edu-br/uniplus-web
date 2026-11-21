@@ -1,6 +1,7 @@
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import {
   TipoEtapaDto,
+  type AvaliacaoDasEtapasInput,
   type AtualizarTipoEtapaCommand,
   type CriarTipoEtapaCommand,
 } from '@uniplus/shared-data/configuracao';
@@ -62,11 +63,11 @@ export function valoresDaEtapa(tipo: TipoEtapaDto): ValoresDaEtapa {
   return {
     codigo: tipo.codigo,
     nome: tipo.nome,
-    admitePontuacao: tipo.admitePontuacao,
-    admiteEliminacao: tipo.admiteEliminacao,
-    exigeCorrecaoIndependente: tipo.exigeCorrecaoIndependente,
+    admitePontuacao: tipo.avaliacao.admitePontuacao,
+    admiteEliminacao: tipo.avaliacao.admiteEliminacao,
+    exigeCorrecaoIndependente: tipo.avaliacao.exigeCorrecaoIndependente,
     descricao: tipo.descricao ?? '',
-    conceitosAdmitidos: tipo.conceitosAdmitidos.map((conceito) => conceito.codigo),
+    conceitosAdmitidos: tipo.avaliacao.conceitosAdmitidos.map((conceito) => conceito.codigo),
   };
 }
 
@@ -74,15 +75,21 @@ export function controleDoCampoDoServidor(field: string): keyof EtapaForm | null
   return controlNameFromBackendField<keyof EtapaForm>(field, CAMPOS);
 }
 
+function avaliacaoDoFormulario(valor: ValoresDaEtapa): AvaliacaoDasEtapasInput {
+  return {
+    admitePontuacao: valor.admitePontuacao,
+    admiteEliminacao: valor.admiteEliminacao,
+    exigeCorrecaoIndependente: valor.exigeCorrecaoIndependente,
+    conceitosAdmitidos: [...valor.conceitosAdmitidos],
+  };
+}
+
 export function comandoDeCriacao(form: FormGroup<EtapaForm>): CriarTipoEtapaCommand {
   const valor = form.getRawValue();
   return {
     codigo: valor.codigo.trim(),
     nome: valor.nome.trim(),
-    admitePontuacao: valor.admitePontuacao,
-    admiteEliminacao: valor.admiteEliminacao,
-    exigeCorrecaoIndependente: valor.exigeCorrecaoIndependente,
-    conceitosAdmitidos: [...valor.conceitosAdmitidos],
+    avaliacao: avaliacaoDoFormulario(valor),
     descricao: nullIfBlank(valor.descricao),
   };
 }
@@ -95,10 +102,7 @@ export function comandoDeAtualizacao(
   return {
     id,
     nome: valor.nome.trim(),
-    admitePontuacao: valor.admitePontuacao,
-    admiteEliminacao: valor.admiteEliminacao,
-    exigeCorrecaoIndependente: valor.exigeCorrecaoIndependente,
-    conceitosAdmitidos: [...valor.conceitosAdmitidos],
+    avaliacao: avaliacaoDoFormulario(valor),
     descricao: nullIfBlank(valor.descricao),
   };
 }

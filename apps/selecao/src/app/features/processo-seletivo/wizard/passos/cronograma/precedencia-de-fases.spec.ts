@@ -17,6 +17,70 @@ describe('precedência entre fases', () => {
     expect(violacoes[0].motivo).toBe('ordem');
   });
 
+  describe('fases no mesmo momento', () => {
+    const inscricao = fase({ codigo: 'INSCRICAO', ordem: 1 });
+    const homologacao = (marcada: boolean) =>
+      fase({
+        codigo: 'HOMOLOGACAO',
+        ordem: 2,
+        faseCanonicaId: 'id-2',
+        noMesmoMomentoDaAnterior: marcada,
+      });
+
+    it('acusa as duas fases ligadas por precedência que acontecem no mesmo momento', () => {
+      const violacoes = violacoesDePrecedencia([inscricao, homologacao(true)], [aresta({})]);
+
+      expect(violacoes).toEqual([
+        { antecessora: 'INSCRICAO', sucessora: 'HOMOLOGACAO', motivo: 'mesmoMomento' },
+      ]);
+    });
+
+    it('aceita a marca entre fases sem precedência entre si', () => {
+      expect(violacoesDePrecedencia([inscricao, homologacao(true)], [])).toEqual([]);
+    });
+
+    it('não acusa a fase que não está marcada', () => {
+      expect(violacoesDePrecedencia([inscricao, homologacao(false)], [aresta({})])).toEqual([]);
+    });
+
+    it('acusa o par que compartilha o momento sem ser vizinho, pela cadeia de marcas', () => {
+      const terceira = fase({
+        codigo: 'RESULTADO',
+        ordem: 3,
+        faseCanonicaId: 'id-3',
+        noMesmoMomentoDaAnterior: true,
+      });
+      const ligacao = aresta({ antecessoraCodigo: 'INSCRICAO', sucessoraCodigo: 'RESULTADO' });
+
+      const violacoes = violacoesDePrecedencia([inscricao, homologacao(true), terceira], [ligacao]);
+
+      expect(violacoes.map((v) => v.motivo)).toEqual(['mesmoMomento']);
+    });
+
+    it('avança o momento quando a fase seguinte não está marcada', () => {
+      const terceira = fase({ codigo: 'RESULTADO', ordem: 3, faseCanonicaId: 'id-3' });
+      const ligacao = aresta({ antecessoraCodigo: 'INSCRICAO', sucessoraCodigo: 'RESULTADO' });
+
+      expect(violacoesDePrecedencia([inscricao, homologacao(true), terceira], [ligacao])).toEqual(
+        [],
+      );
+    });
+
+    it('confere o mesmo momento antes da ordem', () => {
+      const invertida = fase({
+        codigo: 'INSCRICAO',
+        ordem: 2,
+        faseCanonicaId: 'id-2',
+        noMesmoMomentoDaAnterior: true,
+      });
+      const primeira = fase({ codigo: 'HOMOLOGACAO', ordem: 1 });
+
+      const [violacao] = violacoesDePrecedencia([primeira, invertida], [aresta({})]);
+
+      expect(violacao.motivo).toBe('mesmoMomento');
+    });
+  });
+
   /**
    * A ausência de uma das duas fases NÃO é violação — é o que permite um
    * cronograma curto, e o agregado é explícito quanto a isso.

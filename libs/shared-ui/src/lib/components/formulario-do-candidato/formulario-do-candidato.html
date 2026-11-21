@@ -162,9 +162,9 @@
           [attr.data-campo]="termo.termo.codigo"
           [attr.aria-labelledby]="idBase() + '-termo-' + termo.termo.codigo"
         >
-          <h4 [id]="idBase() + '-termo-' + termo.termo.codigo">{{ termo.termo.nome }}</h4>
-          <p class="formulario-candidato__termo-texto">{{ termo.termo.texto }}</p>
-          <p class="field__hint">Base legal: {{ termo.termo.baseLegal }}</p>
+          <h4 [id]="idBase() + '-termo-' + termo.termo.codigo">{{ termo.termo.conteudo.nome }}</h4>
+          <p class="formulario-candidato__termo-texto">{{ termo.termo.conteudo.texto }}</p>
+          <p class="field__hint">Base legal: {{ termo.termo.conteudo.baseLegal }}</p>
           <label class="checkbox">
             <input
               type="checkbox"

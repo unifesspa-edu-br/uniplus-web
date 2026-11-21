@@ -1,4 +1,4 @@
-import type { PredicadoNoWire } from '../editor-de-formulario/modelo/tipos';
+import type { ClausulasNoWire } from '../editor-de-condicoes/condicoes/condicoes-no-wire';
 import { type BaseLegal, baseLegalNova, CONSEQUENCIAS_ESCOLHIVEIS } from '@uniplus/shared-utils';
 
 /** Uma opção de vocabulário: fase canônica ou tipo de documento, pelo código. */
@@ -13,11 +13,11 @@ export interface OpcaoDoDocumento {
 export type BaseLegalDoDocumento = BaseLegal;
 
 /** Um documento do conjunto padrão do modelo, na forma do contrato. */
-export interface DocumentoExigidoDoFormulario {
+export interface DocumentoExigidoDoFormulario<O = string> {
   readonly faseCodigo: string;
   readonly tipoDocumentoCodigo: string;
   readonly obrigatorio: boolean;
-  readonly quando: PredicadoNoWire;
+  readonly quando: ClausulasNoWire<O> | null;
   readonly consequenciaIndeferimento: string;
   readonly basesLegais: null | readonly BaseLegalDoDocumento[];
 }

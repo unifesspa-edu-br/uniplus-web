@@ -1,4 +1,5 @@
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
+import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -28,13 +29,16 @@ describe('quem cita cada fato no processo', () => {
     const citantes = quemCitaNoProcesso(
       {
         documentos: rascunhoCom(
-          exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]),
+          exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]),
         ),
         derivacao: [
           {
             codigoFato: 'MODALIDADE',
             regras: [
-              { contribui: 'LB_PCD', quando: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]] },
+              {
+                contribui: 'LB_PCD',
+                quando: [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
+              },
             ],
           },
         ],
@@ -60,7 +64,7 @@ describe('quem cita cada fato no processo', () => {
         {
           codigo: 'AC_PCD',
           descricao: null,
-          regra: [[{ fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true }]],
+          regra: [[{ fato: 'CONCORRER_PCD', operador: OperadorCodigo.IGUAL, valor: true }]],
         },
       ],
     });
@@ -70,7 +74,7 @@ describe('quem cita cada fato no processo', () => {
 
   it('trava na inscrição o fato que outra finalidade cita, nomeando a finalidade; o que ela cita dos próprios campos fica de fora', () => {
     const habilitacao = conteudoInicial();
-    const citaPcd = [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]];
+    const citaPcd = [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]];
     const citantes = quemCitaNoProcesso({
       documentos: NENHUMA_EXIGENCIA,
       derivacao: [],
@@ -83,9 +87,12 @@ describe('quem cita cada fato no processo', () => {
             ...habilitacao,
             etapas: [secao('H1', 0), ...(habilitacao.etapas ?? [])],
             itens: [
-              item('LAUDO', 0, 'H1', { precondicao: citaPcd }),
+              item('LAUDO', 0, 'H1', { regras: { ...REGRAS_INICIAIS, exibicao: citaPcd } }),
               item('CID', 1, 'H1', {
-                precondicao: [[{ fato: 'LAUDO', operador: 'IGUAL', valor: 'true' }]],
+                regras: {
+                  ...REGRAS_INICIAIS,
+                  exibicao: [[{ fato: 'LAUDO', operador: OperadorCodigo.IGUAL, valor: 'true' }]],
+                },
               }),
             ],
           },
@@ -108,12 +115,14 @@ describe('campos que nada no certame usa', () => {
   });
 
   it('não aponta o campo que uma exigência, a derivação ou outra regra do formulário cita', () => {
-    const quando = [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]];
+    const quando = [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: true }]];
 
     expect(
       camposSemUsoDeclarado(
         formularioCom(inscricaoGravada()),
-        rascunhoCom(exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }])),
+        rascunhoCom(
+          exigenciaCom(ID_TITULO, [{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]),
+        ),
       ),
     ).toEqual([]);
     expect(

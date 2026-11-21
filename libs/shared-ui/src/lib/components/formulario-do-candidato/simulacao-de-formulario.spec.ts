@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 import { okResult } from '@uniplus/shared-testing';
 
 import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import { apresentacaoDaEtapa, campoRenderizavel } from './formularios-de-exemplo.testing';
 import { interpretarFormulario } from './interpretador/interpretador';
 import type { SimulacaoDoFormulario } from './interpretador/regras-do-formulario';
 import {
@@ -16,12 +17,21 @@ const SECAO = 'Inscricao:DADOS';
 /** O nascimento de até 120 anos antes do envio até o envio: a faixa que o editor declara. */
 const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [{ codigo: 'DADOS', codigoNasRegras: SECAO, ordem: 0, tipo: 'SECAO', titulo: 'Dados' }],
-  termos: [],
-  grupos: [],
-  fatosColetados: [
-    { fatoCodigo: 'NASCIMENTO', ordem: 0, rotulo: 'Data de nascimento', tipoRenderizacao: 'DATA' },
+  etapas: [
+    {
+      codigo: 'DADOS',
+      codigoNasRegras: SECAO,
+      ordem: 0,
+      tipo: 'SECAO',
+      apresentacao: apresentacaoDaEtapa('Dados'),
+    },
   ],
+  termos: [],
+  coleta: {
+    itens: [campoRenderizavel('NASCIMENTO', 'Data de nascimento', 'DATA')],
+    grupos: [],
+  },
+  pressupostos: { fatos: [] },
   regras: {
     etapas: [
       {
@@ -29,14 +39,16 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
         itens: [
           {
             fatoCodigo: 'NASCIMENTO',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [
-              {
-                tipo: 'FAIXA_DE_DATA',
-                dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 },
-                dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
-              },
-            ],
+            regras: {
+              obrigatoriedade: { tipo: 'SEMPRE' },
+              restricoes: [
+                {
+                  tipo: 'FAIXA_DE_DATA',
+                  dataMinima: { ancora: 'ENVIO', anos: -120, dias: 0 },
+                  dataMaxima: { ancora: 'ENVIO', anos: 0, dias: 0 },
+                },
+              ],
+            },
           },
         ],
       },
@@ -47,17 +59,20 @@ const COM_FAIXA_DE_DATA: FormularioDoCandidato = {
 /** Um formulário cujo campo depende de um fato que ele não pergunta: o pressuposto TRABALHA. */
 const FORMULARIO: FormularioDoCandidato = {
   finalidade: 'INSCRICAO',
-  etapas: [{ codigo: 'DADOS', codigoNasRegras: SECAO, ordem: 0, tipo: 'SECAO', titulo: 'Dados' }],
-  termos: [],
-  grupos: [],
-  fatosColetados: [
+  etapas: [
     {
-      fatoCodigo: 'TURNO_NOTURNO',
+      codigo: 'DADOS',
+      codigoNasRegras: SECAO,
       ordem: 0,
-      rotulo: 'Prefere o turno noturno?',
-      tipoRenderizacao: 'BOOLEANO',
+      tipo: 'SECAO',
+      apresentacao: apresentacaoDaEtapa('Dados'),
     },
   ],
+  termos: [],
+  coleta: {
+    itens: [campoRenderizavel('TURNO_NOTURNO', 'Prefere o turno noturno?', 'BOOLEANO')],
+    grupos: [],
+  },
   regras: {
     etapas: [
       {
@@ -65,14 +80,16 @@ const FORMULARIO: FormularioDoCandidato = {
         itens: [
           {
             fatoCodigo: 'TURNO_NOTURNO',
-            obrigatoriedade: 'SEMPRE',
-            exibicao: [[{ fato: 'TRABALHA', operador: 'IGUAL', valor: true }]],
+            regras: {
+              obrigatoriedade: { tipo: 'SEMPRE' },
+              exibicao: [[{ fato: 'TRABALHA', operador: 'IGUAL', valor: true }]],
+            },
           },
         ],
       },
     ],
   },
-  pressupostos: [{ fatoCodigo: 'TRABALHA', calculadoDe: ['VINCULO_EMPREGATICIO'] }],
+  pressupostos: { fatos: [{ fatoCodigo: 'TRABALHA', calculadoDe: ['VINCULO_EMPREGATICIO'] }] },
 };
 
 describe('SimulacaoDeFormularioComponent', () => {

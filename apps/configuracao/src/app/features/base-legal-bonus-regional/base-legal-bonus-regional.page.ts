@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
-import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { BaseLegalBonusRegionalFormularioComponent } from './base-legal-bonus-regional-formulario.component';
 import { BaseLegalBonusRegionalListaComponent } from './base-legal-bonus-regional-lista.component';
 import { BaseLegalBonusRegionalStore } from './base-legal-bonus-regional.store';
+import { CatalogoDeTiposDeInstrumento } from './catalogo-de-tipos-de-instrumento';
 import { EdicaoDasBasesLegais } from './edicao-das-bases-legais';
 import { MunicipiosDaBaseLegal } from './municipios-da-base-legal';
 import { TiposDeInstrumento } from './tipos-de-instrumento';
@@ -21,6 +21,7 @@ import { TiposDeInstrumento } from './tipos-de-instrumento';
   ],
   providers: [
     BaseLegalBonusRegionalStore,
+    CatalogoDeTiposDeInstrumento,
     EdicaoDasBasesLegais,
     MunicipiosDaBaseLegal,
     TiposDeInstrumento,
@@ -42,7 +43,4 @@ export class BaseLegalBonusRegionalPage {
     recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-base-legal-list-title'),
   });
-
-  protected readonly rotuloDoTipo = (codigo: string): ResolucaoDeVinculo =>
-    this.tipos.resolver(codigo);
 }

@@ -159,13 +159,16 @@ function lerGrupoDeExigencias(
  * uma lista vazia para um nó sem consequência declarada viola o contrato.
  */
 function camposDoNo(no: NoExigenciaDto): Omit<NoDeExigencia, 'tipo' | 'documento' | 'filhos'> {
+  const { cardinalidade, indeferimento } = no;
   return {
-    quantidadeMinima: no.quantidadeMinima ?? null,
-    consequencia: no.consequencia,
-    basesLegais: no.basesLegais?.length ? no.basesLegais.map(baseLegalDe) : null,
-    chaveDistincao: no.chaveDistincao,
-    dataReferencia: no.dataReferencia,
-    ocorrenciasEsperadas: no.ocorrenciasEsperadas,
+    quantidadeMinima: cardinalidade.quantidadeMinima ?? null,
+    consequencia: indeferimento.consequencia,
+    basesLegais: indeferimento.basesLegais.length
+      ? indeferimento.basesLegais.map(baseLegalDe)
+      : null,
+    chaveDistincao: cardinalidade.distincao?.chave ?? null,
+    dataReferencia: cardinalidade.distincao?.dataReferencia ?? null,
+    ocorrenciasEsperadas: cardinalidade.distincao?.ocorrenciasEsperadas ?? null,
     repetePorEntidade: no.repetePorEntidade,
   };
 }
@@ -175,7 +178,7 @@ function documentoDe(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): ExigenciaDeDocumento | null {
   if (dto === null || dto === undefined) return null;
-  const faseCodigo = codigoPorFaseId.get(dto.exigidoNaFaseId);
+  const faseCodigo = codigoPorFaseId.get(dto.momento.faseId);
   if (faseCodigo === undefined) return null;
   return documentoNaFase(dto, faseCodigo, codigoPorFaseId);
 }
@@ -187,23 +190,24 @@ function documentoNaFase(
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): ExigenciaDeDocumento {
   return {
-    tipoDocumentoId: dto.tipoDocumentoOrigemId,
-    tipoDocumentoNome: dto.tipoDocumentoNome,
+    tipoDocumentoId: dto.tipoDocumento.id,
+    tipoDocumentoNome: dto.tipoDocumento.nome,
     faseCodigo,
-    etapaId: dto.exigidoNaEtapaId ?? null,
-    finalidade: dto.finalidade ?? null,
+    etapaId: dto.momento.etapaId,
+    finalidade: dto.momento.finalidade,
     ...regraDaExigenciaLida(dto),
-    ...criteriosDoComprovanteLidos(dto, codigoPorFaseId),
+    ...criteriosDoComprovanteLidos(dto.requisitos, codigoPorFaseId),
   };
 }
 
 function regraDaExigenciaLida(dto: DocumentoExigidoDto): RegraDaExigenciaDeDocumento {
+  const { aplicabilidade, indeferimento } = dto;
   return {
-    aplicabilidade: dto.aplicabilidade,
-    obrigatorio: dto.obrigatorio,
-    consequenciaIndeferimento: dto.consequenciaIndeferimento ?? '',
-    condicoes: dto.condicoes.map(condicaoDaExigencia),
-    basesLegais: dto.basesLegais.map(baseLegalDe),
+    aplicabilidade: aplicabilidade.tipo,
+    obrigatorio: indeferimento.obrigatorio,
+    consequenciaIndeferimento: indeferimento.consequencia ?? '',
+    condicoes: aplicabilidade.condicoes.map(condicaoDaExigencia),
+    basesLegais: indeferimento.basesLegais.map(baseLegalDe),
   };
 }
 
@@ -212,40 +216,41 @@ function condicaoDaExigencia({
   fato,
   operador,
   valor,
-}: DocumentoExigidoDto['condicoes'][number]) {
-  return { clausula: clausula ?? 1, fato, operador, valor };
+}: DocumentoExigidoDto['aplicabilidade']['condicoes'][number]) {
+  return { clausula, fato, operador, valor };
 }
 
 function criteriosDoComprovanteLidos(
-  dto: DocumentoExigidoDto,
+  requisitos: DocumentoExigidoDto['requisitos'],
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): CriteriosDoComprovante {
   return {
-    idadeMaximaEmissao: idadeMaximaDe(dto.idadeMaximaEmissao, codigoPorFaseId),
-    formatosPermitidos: dto.formatosPermitidos,
-    tamanhoMaximoBytes: dto.tamanhoMaximoBytes ?? null,
-    modelo: modeloDe(dto.modelo),
+    idadeMaximaEmissao: idadeMaximaDe(requisitos.idadeMaximaEmissao, codigoPorFaseId),
+    formatosPermitidos: requisitos.formatosPermitidos,
+    tamanhoMaximoBytes: requisitos.tamanhoMaximoBytes,
+    modelo: modeloDe(requisitos.modelo),
   };
 }
 
 function idadeMaximaDe(
-  idade: DocumentoExigidoDto['idadeMaximaEmissao'],
+  idade: DocumentoExigidoDto['requisitos']['idadeMaximaEmissao'],
   codigoPorFaseId: ReadonlyMap<string, string>,
 ): ExigenciaDeDocumento['idadeMaximaEmissao'] {
-  if (idade === null || idade === undefined) return null;
+  if (idade === null) return null;
   const faseId = idade.referenciaFaseId;
   return {
-    valor: idade.valor ?? null,
+    valor: idade.valor,
     unidade: idade.unidade,
     referenciaTipo: idade.referenciaTipo,
     data: idade.data,
-    referenciaFaseCodigo:
-      faseId === null || faseId === undefined ? null : (codigoPorFaseId.get(faseId) ?? null),
+    referenciaFaseCodigo: faseId === null ? null : (codigoPorFaseId.get(faseId) ?? null),
   };
 }
 
-function modeloDe(modelo: DocumentoExigidoDto['modelo']): ExigenciaDeDocumento['modelo'] {
-  if (modelo === null || modelo === undefined) return null;
+function modeloDe(
+  modelo: DocumentoExigidoDto['requisitos']['modelo'],
+): ExigenciaDeDocumento['modelo'] {
+  if (modelo === null) return null;
   return {
     modeloId: modelo.modeloId,
     nomeArquivo: modelo.nomeArquivo,

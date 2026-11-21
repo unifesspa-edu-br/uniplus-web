@@ -1,6 +1,7 @@
 import { SECAO_DADOS_BASICOS } from './constantes';
 import {
   ConteudoDoFormulario,
+  GrupoDoFormulario,
   ItemDoFormulario,
   LimiteDeDataNoWire,
   NumeroDigitado,
@@ -41,13 +42,28 @@ function limiteParaEnvio(
 function itemParaEnvio(item: ItemDoFormulario): ItemDoFormulario<number> {
   return {
     ...item,
-    restricoes: item.restricoes?.map((restricao) => ({
-      ...restricao,
-      minimo: comoNumero(restricao.minimo),
-      maximo: comoNumero(restricao.maximo),
-      dataMinima: limiteParaEnvio(restricao.dataMinima),
-      dataMaxima: limiteParaEnvio(restricao.dataMaxima),
-    })),
+    regras: {
+      ...item.regras,
+      restricoes: item.regras.restricoes?.map((restricao) => ({
+        ...restricao,
+        minimo: comoNumero(restricao.minimo),
+        maximo: comoNumero(restricao.maximo),
+        dataMinima: limiteParaEnvio(restricao.dataMinima),
+        dataMaxima: limiteParaEnvio(restricao.dataMaxima),
+      })),
+    },
+  };
+}
+
+function grupoParaEnvio(grupo: GrupoDoFormulario): GrupoDoFormulario<number> {
+  return {
+    ...grupo,
+    ocorrencias: {
+      ...grupo.ocorrencias,
+      minimo: comoNumero(grupo.ocorrencias.minimo),
+      maximo: comoNumero(grupo.ocorrencias.maximo),
+    },
+    subitens: grupo.subitens.map(itemParaEnvio),
   };
 }
 
@@ -63,12 +79,7 @@ export function conteudoParaEnvio(
     return {
       ...conteudo,
       itens: conteudo.itens?.map(itemParaEnvio) ?? null,
-      grupos: conteudo.grupos?.map((grupo) => ({
-        ...grupo,
-        minimo: comoNumero(grupo.minimo),
-        maximo: comoNumero(grupo.maximo),
-        subitens: grupo.subitens.map(itemParaEnvio),
-      })),
+      grupos: conteudo.grupos?.map(grupoParaEnvio),
     };
   } catch (erro) {
     if (erro instanceof NaoENumero) return null;

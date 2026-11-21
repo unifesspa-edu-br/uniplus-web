@@ -1,4 +1,4 @@
-import { conteudoInicial } from '@uniplus/shared-ui/components';
+import { conteudoInicial, REGRAS_INICIAIS } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import { SECAO_OUTROS_DADOS } from './fatos-coletados-da-inscricao';
@@ -27,8 +27,8 @@ describe('os campos que o processo pressupõe na inscrição', () => {
     expect(etapas[2].exibicao).toBeNull();
     expect(resultado.itens?.find((i) => i.fatoCodigo === 'RENDA_FAMILIAR')).toMatchObject({
       etapaCodigo: SECAO_OUTROS_DADOS,
-      tipoRenderizacao: 'NUMERO',
-      obrigatoriedade: 'SEMPRE',
+      apresentacao: { tipoRenderizacao: 'NUMERO' },
+      regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
     });
   });
 
@@ -85,13 +85,9 @@ describe('os campos que o processo pressupõe na inscrição', () => {
           ordem: 3,
           rotulo: 'Família',
           etapaCodigo: 'S1',
-          minimo: 1,
-          maximo: null,
-          exibicao: null,
-          obrigatoriedade: 'SEMPRE',
-          predicadoObrigatoriedade: null,
+          ocorrencias: { minimo: 1, maximo: null, incluiCandidato: false },
+          regras: REGRAS_INICIAIS,
           subitens: [item('RENDA_FAMILIAR', 0, 'S1')],
-          incluiCandidato: false,
         },
       ],
     });
@@ -156,7 +152,10 @@ describe('os campos que o processo pressupõe na inscrição', () => {
       itens: [
         ...(base.itens ?? []),
         item('RENDA_FAMILIAR', 3, 'S1', {
-          precondicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
+          regras: {
+            ...REGRAS_INICIAIS,
+            exibicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
+          },
         }),
       ],
     };

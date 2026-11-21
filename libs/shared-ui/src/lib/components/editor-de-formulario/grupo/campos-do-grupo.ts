@@ -222,7 +222,7 @@ export class CamposDoGrupoComponent {
 
   /** O parentesco do grupo que inclui o candidato é sempre exibido e obrigatório: é por ele que a ocorrência do candidato se reconhece. */
   protected travaDo(campo: ItemDoFormulario): string | null {
-    return this.grupo().incluiCandidato && campo.fatoCodigo === FATO_PARENTESCO
+    return this.grupo().ocorrencias.incluiCandidato && campo.fatoCodigo === FATO_PARENTESCO
       ? 'Sempre exibido e obrigatório: o grupo inclui o candidato, e é pelo parentesco que a ocorrência dele se reconhece.'
       : null;
   }
@@ -244,7 +244,7 @@ export class CamposDoGrupoComponent {
         const posicao =
           camposDoGrupo(grupo).findIndex((c) => c.fatoCodigo === campo.fatoCodigo) + 1;
         this.focarMovimento(campo, direcao);
-        return `“${campo.rotulo}” movido para a posição ${posicao} de ${grupo.subitens.length} em ${this.nome()}.`;
+        return `“${campo.apresentacao.rotulo}” movido para a posição ${posicao} de ${grupo.subitens.length} em ${this.nome()}.`;
       },
     );
   }
@@ -266,7 +266,7 @@ export class CamposDoGrupoComponent {
     }
     this.aplicar(removerCampoDoGrupo(this.grupo(), campo.fatoCodigo, this.nomes()), () => {
       focarDepois(this.injector, `${this.idBase()}-acrescentar`);
-      return `Campo “${campo.rotulo}” removido de ${this.nome()}.`;
+      return `Campo “${campo.apresentacao.rotulo}” removido de ${this.nome()}.`;
     });
   }
 

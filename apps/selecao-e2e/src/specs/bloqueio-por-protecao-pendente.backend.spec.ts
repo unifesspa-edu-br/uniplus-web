@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { OPERADOR_DO_ROTEIRO, chamarApi, entrarComoPersona, prepararAcessosDaSimulacao } from '@uniplus/shared-e2e';
+import {
+  OPERADOR_DO_ROTEIRO,
+  chamarApi,
+  entrarComoPersona,
+  prepararAcessosDaSimulacao,
+} from '@uniplus/shared-e2e';
+import type { NoExigenciaInput } from '@uniplus/shared-data/selecao';
 import { rascunhoParaConfiguracao } from '../fixtures/cenario-da-projecao';
 
 /**
@@ -28,16 +34,22 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
     test.setTimeout(900_000);
     await prepararAcessosDaSimulacao();
     ({ processoId, faseHabilitacaoId: faseId } = await rascunhoParaConfiguracao());
-    const criado = await chamarApi<string>('isabella.figueiredo', 'POST', '/api/configuracao/admin/tipos-documento', {
-      corpo: {
-        codigo: `COMPROVANTE_PENDENTE_${sufixo}`,
-        nome,
-        categoria: 'IDENTIFICACAO',
-        classificacaoProtecao: 'INTERNO',
-        hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
-        finalidadeTratamento: 'Conferência do bloqueio de item pendente na configuração do processo.',
+    const criado = await chamarApi<string>(
+      'isabella.figueiredo',
+      'POST',
+      '/api/configuracao/admin/tipos-documento',
+      {
+        corpo: {
+          codigo: `COMPROVANTE_PENDENTE_${sufixo}`,
+          nome,
+          categoria: 'IDENTIFICACAO',
+          classificacaoProtecao: 'INTERNO',
+          hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
+          finalidadeTratamento:
+            'Conferência do bloqueio de item pendente na configuração do processo.',
+        },
       },
-    });
+    );
     expect(criado.status).toBe(201);
     tipoId = criado.corpo;
   });
@@ -52,27 +64,44 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
           {
             tipo: 'FOLHA',
             documento: {
-              exigidoNaFaseId: faseId,
-              finalidade: 'HABILITACAO',
-              tipoDocumentoId: tipoId,
-              aplicabilidade: 'GERAL',
-              obrigatorio: true,
-              consequenciaIndeferimento: 'ELIMINA',
-              condicoes: [],
-              basesLegais: BASES_LEGAIS,
-              formatosPermitidos: 'QUALQUER',
+              tipoDocumento: { id: tipoId },
+              momento: { faseId, etapaId: null, finalidade: 'HABILITACAO' },
+              aplicabilidade: { tipo: 'GERAL', condicoes: [] },
+              indeferimento: {
+                obrigatorio: true,
+                consequencia: 'ELIMINA',
+                basesLegais: BASES_LEGAIS,
+              },
+              requisitos: {
+                formatosPermitidos: 'QUALQUER',
+                tamanhoMaximoBytes: null,
+                idadeMaximaEmissao: null,
+                modelo: null,
+              },
             },
-          },
+            cardinalidade: null,
+            indeferimento: null,
+            filhos: null,
+          } satisfies NoExigenciaInput,
         ],
       },
     );
 
     expect(resposta.status).toBe(422);
-    expect(resposta.corpo.code).toBe('uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente');
+    expect(resposta.corpo.code).toBe(
+      'uniplus.selecao.documento_exigido.tipo_documento_com_protecao_pendente',
+    );
   });
 
-  test('a tela oferece o tipo pendente como indisponível, aguardando a proteção de dados', async ({ browser }) => {
-    const pagina = await entrarComoPersona(browser, APP, OPERADOR_DO_ROTEIRO, `/processo-seletivo/${processoId}`);
+  test('a tela oferece o tipo pendente como indisponível, aguardando a proteção de dados', async ({
+    browser,
+  }) => {
+    const pagina = await entrarComoPersona(
+      browser,
+      APP,
+      OPERADOR_DO_ROTEIRO,
+      `/processo-seletivo/${processoId}`,
+    );
     await pagina.getByRole('button', { name: /^Cronograma/ }).click();
     await expect(pagina.getByRole('heading', { name: /Passo 5/ })).toBeVisible();
     await pagina.getByText('3. Habilitação', { exact: true }).click();
@@ -81,7 +110,9 @@ test.describe('Configuração do processo com item de catálogo pendente', () =>
     await seletor.scrollIntoViewIfNeeded();
     await seletor.fill(nome);
 
-    const opcao = pagina.getByRole('option', { name: new RegExp(`${nome}.*aguarda a aprovação da proteção de dados`) });
+    const opcao = pagina.getByRole('option', {
+      name: new RegExp(`${nome}.*aguarda a aprovação da proteção de dados`),
+    });
     await expect(opcao).toBeVisible();
     await expect(opcao).toHaveAttribute('aria-disabled', 'true');
   });

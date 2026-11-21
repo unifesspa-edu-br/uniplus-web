@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 
 import { exigenciasDaFase, todasAsExigencias } from './consulta-das-exigencias';
 import { exigenciasDe } from './leitura-das-exigencias';
@@ -21,14 +22,12 @@ describe('Leitura e regravação das exigências de documentos', () => {
    */
   it('mantém separadas as duas exigências do mesmo documento em fases diferentes', () => {
     const isencao = exigenciaDaApi({
-      exigidoNaFaseId: ID_ISENCAO,
-      obrigatorio: true,
-      consequenciaIndeferimento: 'ELIMINA',
+      faseId: ID_ISENCAO,
+      indeferimento: { obrigatorio: true, consequencia: 'ELIMINA' },
     });
     const habilitacao = exigenciaDaApi({
-      exigidoNaFaseId: ID_HABILITACAO,
-      obrigatorio: false,
-      consequenciaIndeferimento: null,
+      faseId: ID_HABILITACAO,
+      indeferimento: { obrigatorio: false, consequencia: null },
     });
     const lido = exigenciasDe(detalheDaApi([isencao, habilitacao]));
 
@@ -48,22 +47,24 @@ describe('Leitura e regravação das exigências de documentos', () => {
     const lido = exigenciasDe(
       detalheDaApi([
         exigenciaDaApi({
-          basesLegais: [
-            {
-              id: 'b1',
-              referencia: 'Lei 12.711/2012',
-              abrangencia: 'FEDERAL',
-              status: 'RESOLVIDO',
-              observacao: 'cotas',
-            },
-            {
-              id: 'b2',
-              referencia: 'Edital 01/2027',
-              abrangencia: 'INTERNA_EDITAL',
-              status: 'PENDENTE',
-              observacao: null,
-            },
-          ],
+          indeferimento: {
+            basesLegais: [
+              {
+                id: 'b1',
+                referencia: 'Lei 12.711/2012',
+                abrangencia: 'FEDERAL',
+                status: 'RESOLVIDO',
+                observacao: 'cotas',
+              },
+              {
+                id: 'b2',
+                referencia: 'Edital 01/2027',
+                abrangencia: 'INTERNA_EDITAL',
+                status: 'PENDENTE',
+                observacao: null,
+              },
+            ],
+          },
         }),
       ]),
     );
@@ -86,7 +87,7 @@ describe('Leitura e regravação das exigências de documentos', () => {
   });
 
   it('traz a etapa que coleta, quando declarada', () => {
-    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ exigidoNaEtapaId: ID_ETAPA_RENDA })]));
+    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ etapaId: ID_ETAPA_RENDA })]));
     expect(todasAsExigencias(lido)[0].etapaId).toBe(ID_ETAPA_RENDA);
   });
 
@@ -94,10 +95,18 @@ describe('Leitura e regravação das exigências de documentos', () => {
     const lido = exigenciasDe(
       detalheDaApi([
         exigenciaDaApi({
-          aplicabilidade: 'CONDICIONAL',
-          condicoes: [
-            { id: 'c1', clausula: 1, fato: 'MODALIDADE', operador: 'EM', valor: '["LB_PPI"]' },
-          ],
+          aplicabilidade: {
+            tipo: 'CONDICIONAL',
+            condicoes: [
+              {
+                id: 'c1',
+                clausula: 1,
+                fato: 'MODALIDADE',
+                operador: OperadorCodigo.EM,
+                valor: '["LB_PPI"]',
+              },
+            ],
+          },
         }),
       ]),
     );
@@ -106,63 +115,64 @@ describe('Leitura e regravação das exigências de documentos', () => {
   });
 
   it('descarta a exigência cuja fase não está no cronograma lido', () => {
-    const lido = exigenciasDe(
-      detalheDaApi([exigenciaDaApi({ exigidoNaFaseId: 'fase-desconhecida' })]),
-    );
+    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ faseId: 'fase-desconhecida' })]));
     expect(todasAsExigencias(lido)).toHaveLength(0);
   });
 
   /** O ida-e-volta completo: ler e regravar não pode mudar nada. */
   it('lê o formulário declarado e o regrava', () => {
     const lido = exigenciasDe(
-      detalheDaApi([exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO, finalidade: 'ISENCAO_TAXA' })]),
+      detalheDaApi([exigenciaDaApi({ faseId: ID_ISENCAO, finalidade: 'ISENCAO_TAXA' })]),
     );
 
-    expect(comando(lido)[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+    expect(comando(lido)[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
   });
 
   it('lê e regrava sem perder nada', () => {
     const lido = exigenciasDe(
       detalheDaApi([
         exigenciaDaApi({
-          exigidoNaEtapaId: ID_ETAPA_RENDA,
-          obrigatorio: false,
-          consequenciaIndeferimento: 'PENDENCIA_REENVIO',
-          basesLegais: [
-            {
-              id: 'b1',
-              referencia: 'Lei 12.711/2012',
-              abrangencia: 'FEDERAL',
-              status: 'RESOLVIDO',
-              observacao: 'cotas',
-            },
-            {
-              id: 'b2',
-              referencia: 'Edital 01/2027',
-              abrangencia: 'INTERNA_EDITAL',
-              status: 'RESOLVIDO',
-              observacao: null,
-            },
-          ],
-          formatosPermitidos: ['PDF'],
-          tamanhoMaximoBytes: 3000000,
+          etapaId: ID_ETAPA_RENDA,
+          indeferimento: {
+            obrigatorio: false,
+            consequencia: 'PENDENCIA_REENVIO',
+            basesLegais: [
+              {
+                id: 'b1',
+                referencia: 'Lei 12.711/2012',
+                abrangencia: 'FEDERAL',
+                status: 'RESOLVIDO',
+                observacao: 'cotas',
+              },
+              {
+                id: 'b2',
+                referencia: 'Edital 01/2027',
+                abrangencia: 'INTERNA_EDITAL',
+                status: 'RESOLVIDO',
+                observacao: null,
+              },
+            ],
+          },
+          requisitos: { formatosPermitidos: ['PDF'], tamanhoMaximoBytes: 3000000 },
         }),
       ]),
     );
 
-    const raizes = comando(lido);
+    const documento = comando(lido)[0].documento;
 
-    expect(raizes[0].documento).toMatchObject({
-      exigidoNaFaseId: ID_HABILITACAO,
-      exigidoNaEtapaId: ID_ETAPA_RENDA,
-      tipoDocumentoId: ID_RG,
+    expect(documento?.momento).toMatchObject({ faseId: ID_HABILITACAO, etapaId: ID_ETAPA_RENDA });
+    expect(documento?.tipoDocumento?.id).toBe(ID_RG);
+    expect(documento?.indeferimento).toMatchObject({
       obrigatorio: false,
-      consequenciaIndeferimento: 'PENDENCIA_REENVIO',
+      consequencia: 'PENDENCIA_REENVIO',
+    });
+    expect(documento?.requisitos).toMatchObject({
       formatosPermitidos: ['PDF'],
       tamanhoMaximoBytes: 3000000,
     });
-    expect(raizes[0].documento?.basesLegais).toHaveLength(2);
-    expect(raizes[0].documento?.basesLegais[0].observacao).toBe('cotas');
+    const bases = documento?.indeferimento?.basesLegais ?? [];
+    expect(bases).toHaveLength(2);
+    expect(bases[0].observacao).toBe('cotas');
   });
 
   /** O `PUT` substitui a árvore inteira: o modelo que não volta no comando é desvinculado. */
@@ -173,10 +183,10 @@ describe('Leitura e regravação das exigências de documentos', () => {
       formato: 'DOCX',
       hashSha256: 'ab'.repeat(32),
     };
-    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ modelo })]));
+    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ requisitos: { modelo } })]));
 
     const raizes = comando(lido);
 
-    expect(raizes[0].documento?.modeloId).toBe(modelo.modeloId);
+    expect(raizes[0].documento?.requisitos?.modelo?.modeloId).toBe(modelo.modeloId);
   });
 });

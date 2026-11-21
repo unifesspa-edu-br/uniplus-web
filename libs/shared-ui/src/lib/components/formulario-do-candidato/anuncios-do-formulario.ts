@@ -13,7 +13,9 @@ export interface CamposDoPasso {
 export function camposDoPasso(passo: PassoDoFormulario | null): CamposDoPasso {
   return {
     chave: passo?.chave ?? null,
-    campos: new Map((passo?.campos ?? []).map((c) => [c.campo.fatoCodigo, c.campo.rotulo])),
+    campos: new Map(
+      (passo?.campos ?? []).map((c) => [c.campo.fatoCodigo, c.campo.apresentacao.rotulo]),
+    ),
   };
 }
 
@@ -47,6 +49,27 @@ function naOpcao(opcao: string | null, anuncio: string): string {
   return opcao === null || anuncio === '' ? anuncio : `${opcao}: ${anuncio}`;
 }
 
+function mudancaDaPrimeiraOpcao(atual: DecisaoDaAvaliacao, antes: DecisaoDaAvaliacao): string {
+  if (atual.modalidades === antes.modalidades) return '';
+  return naOpcao(
+    atual.modalidadesDaSegundaOpcao === null ? null : '1ª opção',
+    anunciarMudancaDasModalidades(antes.modalidades, atual.modalidades),
+  );
+}
+
+function mudancaDaSegundaOpcao(atual: DecisaoDaAvaliacao, antes: DecisaoDaAvaliacao): string {
+  if (atual.modalidadesDaSegundaOpcao === antes.modalidadesDaSegundaOpcao) return '';
+  return naOpcao(
+    '2ª opção',
+    anunciarMudancaDasModalidades(antes.modalidadesDaSegundaOpcao, atual.modalidadesDaSegundaOpcao),
+  );
+}
+
+function mudancaDosDocumentos(atual: DecisaoDaAvaliacao, antes: DecisaoDaAvaliacao): string {
+  if (atual.documentos === antes.documentos) return '';
+  return anunciarMudancaDosDocumentos(antes.documentos, atual.documentos, atual.integrantes);
+}
+
 /**
  * Só o que mudou desta vez entra no anúncio: o de antes não volta a ser lido. A primeira avaliação não
  * é mudança.
@@ -56,24 +79,9 @@ export function anunciarMudancaDaAvaliacao(
   antes: DecisaoDaAvaliacao,
 ): string {
   return [
-    atual.modalidades === antes.modalidades
-      ? ''
-      : naOpcao(
-          atual.modalidadesDaSegundaOpcao === null ? null : '1ª opção',
-          anunciarMudancaDasModalidades(antes.modalidades, atual.modalidades),
-        ),
-    atual.modalidadesDaSegundaOpcao === antes.modalidadesDaSegundaOpcao
-      ? ''
-      : naOpcao(
-          '2ª opção',
-          anunciarMudancaDasModalidades(
-            antes.modalidadesDaSegundaOpcao,
-            atual.modalidadesDaSegundaOpcao,
-          ),
-        ),
-    atual.documentos === antes.documentos
-      ? ''
-      : anunciarMudancaDosDocumentos(antes.documentos, atual.documentos, atual.integrantes),
+    mudancaDaPrimeiraOpcao(atual, antes),
+    mudancaDaSegundaOpcao(atual, antes),
+    mudancaDosDocumentos(atual, antes),
   ]
     .filter((parte) => parte)
     .join(' ');

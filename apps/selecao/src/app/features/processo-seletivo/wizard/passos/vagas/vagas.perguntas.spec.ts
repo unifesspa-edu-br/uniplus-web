@@ -3,13 +3,26 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, type FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  type FatoCandidatoComOperadores,
+} from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { OrigemCandidatos, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  OrigemCandidatos,
+  SELECAO_BASE_PATH,
+  TipoRenderizacaoCodigo,
+  type FormularioDto,
+} from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
+import {
+  campoDoServidor,
+  etapaDoServidor,
+  formularioDoServidor,
+} from '../../shared/formulario-do-servidor.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { VagasPassoComponent } from './vagas.component';
@@ -116,7 +129,8 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
         fonteValores: null,
         ativo: true,
         valoresDominio: null,
-      } as unknown as FatoCandidatoView,
+        operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
+      } as unknown as FatoCandidatoComOperadores,
     ]);
     catalogos.carregando.set(false);
 
@@ -142,51 +156,27 @@ describe('VagasPassoComponent — perguntas das modalidades ofertadas', () => {
   const FASE_DE_INSCRICAO = { id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true };
   const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
-  const campo = (fatoCodigo: string, ordem: number, etapaCodigo: string) => ({
-    fatoCodigo,
-    ordem,
-    rotulo: fatoCodigo,
-    tipoRenderizacao: 'BOOLEANO',
-    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-    precondicao: null,
-    opcoes: null,
-    etapaCodigo,
-    formato: null,
-    ajuda: null,
-    pedirConfirmacao: false,
-    restricoes: [],
-    impedimento: null,
-  });
-  const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
-    codigo,
-    ordem,
-    tipo: bloco === null ? 'SECAO' : 'BLOCO',
-    bloco,
-    titulo: codigo,
-    descricao: null,
-    aviso: null,
-    exibicao: null,
-  });
-
   /** O formulário de inscrição gravado, com a seção dos dados básicos que a api acrescenta. */
-  function formularioDeInscricao(coletados: readonly string[]): unknown {
-    return {
-      finalidade: 'INSCRICAO',
+  function formularioDeInscricao(coletados: readonly string[]): FormularioDto {
+    return formularioDoServidor({
       faseId: FASE_DE_INSCRICAO.id,
-      titulo: null,
-      modeloOrigemId: null,
-      modeloOrigemCodigo: null,
-      etapas: [etapa('DADOS_BASICOS', 0), etapa('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE')],
-      fatosColetados: coletados.map((codigo, ordem) => campo(codigo, ordem, 'DADOS_BASICOS')),
-      termos: [],
-      grupos: [],
-    };
+      etapas: [
+        etapaDoServidor('DADOS_BASICOS', 0),
+        etapaDoServidor('REVISAO_E_ACEITE', 1, 'REVISAO_E_ACEITE'),
+      ],
+      coleta: {
+        itens: coletados.map((codigo, ordem) =>
+          campoDoServidor(codigo, ordem, 'DADOS_BASICOS', TipoRenderizacaoCodigo.BOOLEANO),
+        ),
+        grupos: [],
+      },
+    });
   }
 
   /** O processo como o servidor o devolve depois de gravar o quadro, com as regras congeladas. */
   function processoGravado(
     inscricao: {
-      readonly formularios: readonly unknown[];
+      readonly formularios: readonly FormularioDto[];
       readonly cronogramaFases: readonly unknown[];
     } = {
       formularios: [formularioDeInscricao(['NOME', 'CONCORRER_PCD'])],

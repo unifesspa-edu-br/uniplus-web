@@ -1,0 +1,196 @@
+import {
+  OperadorCodigo,
+  type FatoCandidatoDto,
+  type FatoCandidatoView,
+  type FatoDeManutencaoDto,
+  type FatoDoCatalogoDto,
+} from '@uniplus/shared-data/configuracao';
+
+const APROVADA = {
+  situacao: 'APROVADA',
+  solicitadaEm: null,
+  decididaEm: null,
+  classificacaoRecomendada: null,
+  justificativa: null,
+  aceitaEm: null,
+  ciclo: 0,
+  manifestadaEm: null,
+  manifestacaoDesfavoravel: false,
+  manifestacoesNoCiclo: 0,
+};
+
+/** O fato como a leitura administrativa o devolve: no envelope. */
+export const emManutencao = (fato: FatoCandidatoDto): FatoDeManutencaoDto => ({
+  fato,
+  operadoresAdmitidos: [],
+});
+
+/** O fato como a leitura pública do catálogo o devolve: no envelope, com os operadores declarados. */
+export const noCatalogo = (fato: FatoCandidatoView): FatoDoCatalogoDto => ({
+  fato,
+  operadoresAdmitidos: [
+    { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
+    { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
+  ],
+});
+
+type Definicao = FatoCandidatoDto['definicao'];
+
+export const comDefinicao = (
+  fato: FatoCandidatoDto,
+  parte: Partial<Definicao>,
+): FatoCandidatoDto => ({ ...fato, definicao: { ...fato.definicao, ...parte } });
+
+export const comResolucao = (
+  fato: FatoCandidatoDto,
+  parte: Partial<Definicao['resolucao']>,
+): FatoCandidatoDto => ({
+  ...fato,
+  definicao: { ...fato.definicao, resolucao: { ...fato.definicao.resolucao, ...parte } },
+});
+
+export const comProtecao = (
+  fato: FatoCandidatoDto,
+  parte: Partial<Definicao['protecao']>,
+): FatoCandidatoDto => ({
+  ...fato,
+  definicao: { ...fato.definicao, protecao: { ...fato.definicao.protecao, ...parte } },
+});
+
+export const comValoresDeclarados = (
+  fato: FatoCandidatoDto,
+  declarados: Definicao['valores']['declarados'],
+  fonte: Definicao['valores']['fonte'] = fato.definicao.valores.fonte,
+): FatoCandidatoDto => ({
+  ...fato,
+  definicao: { ...fato.definicao, valores: { fonte, declarados } },
+});
+
+export const comAprovacao = (
+  fato: FatoCandidatoDto,
+  situacao: string,
+  classificacaoRecomendada: string | null = null,
+  justificativa: string | null = null,
+): FatoCandidatoDto =>
+  comProtecao(fato, {
+    aprovacao: { ...APROVADA, situacao, classificacaoRecomendada, justificativa },
+  });
+
+/** Fato declarado de sim ou não: o mais simples de editar. */
+export const trabalha: FatoCandidatoDto = {
+  id: '01960000-0000-7000-0000-0000000000a1',
+  codigo: 'TRABALHA',
+  descritivo: {
+    nome: 'Trabalha',
+    descricao: 'Se o candidato trabalha.',
+    componenteExibicao: null,
+  },
+  definicao: {
+    dominio: 'BOOLEANO',
+    cardinalidade: 'ESCALAR',
+    escopo: 'CANDIDATO',
+    formato: null,
+    valores: { fonte: null, declarados: [] },
+    resolucao: {
+      origem: 'DECLARADO',
+      pontoResolucao: 'INSCRICAO',
+      binding: 'CAMPO_INSCRICAO:TRABALHA',
+    },
+    protecao: {
+      classificacao: 'PESSOAL',
+      finalidade: 'Classificar a reserva de vagas.',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+      aprovacao: APROVADA,
+    },
+  },
+  semeadoPeloSistema: false,
+  ativo: true,
+  regrasPadrao: [],
+};
+
+/** Fato declarado categórico, com um valor. */
+export const corRaca: FatoCandidatoDto = {
+  ...trabalha,
+  id: '01960000-0000-7000-0000-0000000000f1',
+  codigo: 'COR_RACA',
+  descritivo: {
+    nome: 'Cor ou raça',
+    descricao: 'Cor ou raça autodeclarada.',
+    componenteExibicao: null,
+  },
+  definicao: {
+    ...trabalha.definicao,
+    dominio: 'CATEGORICO',
+    valores: {
+      fonte: 'GLOBAL',
+      declarados: [
+        { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null },
+      ],
+    },
+    resolucao: { ...trabalha.definicao.resolucao, binding: 'CAMPO_INSCRICAO:COR_RACA' },
+    protecao: {
+      ...trabalha.definicao.protecao,
+      classificacao: 'SENSIVEL',
+      finalidade: 'Reserva de vagas.',
+      hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
+    },
+  },
+};
+
+export const comValores = (fato: FatoCandidatoDto = corRaca): FatoCandidatoDto =>
+  comValoresDeclarados(fato, [
+    { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null },
+    { codigo: 'PARDA', descricao: 'Parda', ordem: 1, ativo: false, orientacao: null },
+    { codigo: 'BRANCA', descricao: 'Branca', ordem: 2, ativo: true, orientacao: null },
+  ]);
+
+export const derivado: FatoCandidatoDto = {
+  ...comResolucao(trabalha, { origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL' }),
+  id: '01960000-0000-7000-0000-0000000000d1',
+  codigo: 'PERFIL',
+  descritivo: { ...trabalha.descritivo, nome: 'Perfil' },
+};
+
+export const agregado: FatoCandidatoDto = {
+  ...comResolucao(derivado, { binding: 'AGREGACAO_GRUPO:RENDA' }),
+  id: '01960000-0000-7000-0000-0000000000e1',
+  codigo: 'PERFIL_FAMILIAR',
+  descritivo: { ...derivado.descritivo, nome: 'Perfil familiar' },
+};
+
+export const quilombola: FatoCandidatoView = {
+  id: 'q',
+  codigo: 'QUILOMBOLA',
+  nome: 'Quilombola',
+  descricao: 'Se o candidato é quilombola.',
+  dominio: 'BOOLEANO',
+  origem: 'DECLARADO',
+  cardinalidade: 'ESCALAR',
+  valoresDominio: null,
+  pontoResolucao: 'INSCRICAO',
+  binding: 'CAMPO_INSCRICAO:QUILOMBOLA',
+  valoresDominioDeclarados: null,
+  fonteValores: null,
+  ativo: true,
+  escopo: 'CANDIDATO',
+  classificacaoProtecao: 'PESSOAL',
+  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+  finalidadeTratamento: 'Classificar a reserva de vagas.',
+  protecaoAprovada: true,
+};
+
+export const FASES_DA_API = [
+  { id: 'f1', codigo: 'INSCRICAO', nome: 'Inscrição', descricao: null },
+  { id: 'f2', codigo: 'HOMOLOGACAO', nome: 'Homologação', descricao: null },
+];
+
+export const pendencia = (fato: FatoCandidatoDto) => ({
+  tipo: 'FATO',
+  id: fato.id,
+  codigo: fato.codigo,
+  nome: fato.descritivo.nome,
+  classificacaoProtecao: fato.definicao.protecao.classificacao,
+  finalidadeTratamento: fato.definicao.protecao.finalidade,
+  hipoteseLegal: fato.definicao.protecao.hipoteseLegal,
+  aprovacao: { ...APROVADA, situacao: 'PENDENTE' },
+});

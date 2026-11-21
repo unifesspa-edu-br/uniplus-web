@@ -12,8 +12,7 @@ const rascunho = (aplica: boolean | null, origem: OrigemCandidatos): WizardDraft
 
 const item = (fatoCodigo: string, tipoRenderizacao: string, rotulo = fatoCodigo) => ({
   fatoCodigo,
-  tipoRenderizacao,
-  rotulo,
+  apresentacao: { tipoRenderizacao, rotulo },
 });
 
 const formulario = (

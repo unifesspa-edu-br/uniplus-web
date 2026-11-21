@@ -16,11 +16,13 @@ const TIPO: TipoEtapaDto = {
   nome: 'Prova',
   descricao: null,
   ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  exigeCorrecaoIndependente: false,
-  conceitosAdmitidos: [],
+  avaliacao: {
+    admitePontuacao: true,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [],
+  },
   criadoEm: '2026-08-11T00:00:00Z',
 };
 

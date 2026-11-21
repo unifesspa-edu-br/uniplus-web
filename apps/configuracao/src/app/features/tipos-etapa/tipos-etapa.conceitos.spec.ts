@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import type { TipoConceitoDto } from '@uniplus/shared-data/configuracao';
+import { NaturezaConceitoCodigo, type TipoConceitoDto } from '@uniplus/shared-data/configuracao';
 import {
   CONCEITOS,
   ESCRITA,
@@ -14,12 +14,14 @@ import {
 const conceito = (codigo: string, nome: string, ativo = true): TipoConceitoDto => ({
   id: `id-${codigo}`,
   codigo,
-  nome,
-  descricao: null,
-  natureza: 'categorico',
   ativo,
-  numerico: null,
-  valores: [],
+  definicao: {
+    nome,
+    descricao: null,
+    natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+    numerico: null,
+    valores: [],
+  },
 });
 
 const PARECER = conceito('PARECER', 'Parecer');
@@ -43,7 +45,7 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
     await p.propagar();
   };
   const corpoDe = (req: { request: { body: unknown } }) =>
-    req.request.body as { conceitosAdmitidos: string[] };
+    (req.request.body as { avaliacao: { conceitosAdmitidos: string[] } }).avaliacao;
 
   it('lista os conceitos ativos por nome e grava os escolhidos na criação', async () => {
     await p.abrirCadastro([PARECER, ANALISE, conceito('ANTIGO', 'Antigo', false)]);
@@ -66,7 +68,16 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
   it('na edição mostra os admitidos marcados e permite trocar', async () => {
     const tipo = {
       ...prova,
-      conceitosAdmitidos: [{ codigo: 'PARECER', nome: 'Parecer', natureza: 'categorico' }],
+      avaliacao: {
+        ...prova.avaliacao,
+        conceitosAdmitidos: [
+          {
+            codigo: 'PARECER',
+            nome: 'Parecer',
+            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+          },
+        ],
+      },
     };
     p.edicao.abrirEdicao(tipo);
     await p.responderConceitos([PARECER, ANALISE]);
@@ -83,7 +94,16 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
   it('conceito admitido que saiu do catálogo ativo fica marcado como inativo e pode ser retirado', async () => {
     const tipo = {
       ...prova,
-      conceitosAdmitidos: [{ codigo: 'ANTIGO', nome: 'Antigo', natureza: 'categorico' }],
+      avaliacao: {
+        ...prova.avaliacao,
+        conceitosAdmitidos: [
+          {
+            codigo: 'ANTIGO',
+            nome: 'Antigo',
+            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+          },
+        ],
+      },
     };
     p.edicao.abrirEdicao(tipo);
     await p.responderConceitos([PARECER]);
@@ -99,7 +119,16 @@ describe('TiposEtapaPage — conceitos admitidos', () => {
   it('não marca admitido como inativo enquanto o catálogo carrega nem depois de falha', async () => {
     const tipo = {
       ...prova,
-      conceitosAdmitidos: [{ codigo: 'PARECER', nome: 'Parecer', natureza: 'categorico' }],
+      avaliacao: {
+        ...prova.avaliacao,
+        conceitosAdmitidos: [
+          {
+            codigo: 'PARECER',
+            nome: 'Parecer',
+            natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+          },
+        ],
+      },
     };
     p.edicao.abrirEdicao(tipo);
     await p.propagar();

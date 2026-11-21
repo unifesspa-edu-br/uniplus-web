@@ -17,9 +17,13 @@ import { focarDepois } from '../foco';
 import { idDaEtapa, idDoGrupo, idDoItem } from '../ids';
 import { type ContextoDoEditor } from '../modelo/contexto-do-editor';
 import { LIMITES_DO_FORMULARIO } from '../modelo/constantes';
-import { acrescentarGrupo } from '../modelo/grupos';
+import { acrescentarGrupo, grupoAcrescentado } from '../modelo/grupos';
 import { acrescentarCampo } from '../modelo/itens';
-import { type ConteudoDoFormulario, type EtapaDoFormulario } from '../modelo/tipos';
+import {
+  type ConteudoDoFormulario,
+  type EtapaDoFormulario,
+  type GrupoDoFormulario,
+} from '../modelo/tipos';
 
 const SEM_FATO_QUE_CASE = 'Nenhum fato do candidato casa com o que você digitou.';
 
@@ -149,7 +153,9 @@ export class AcrescentarNaSecaoComponent {
     const citacoes = { catalogo, fatosConhecidosAntes: conteudoParaCitacoes.pressupostos ?? [] };
     aplicarEdicao(acrescentarCampo(conteudo, fato, this.etapa().codigo, citacoes), this, () => {
       this.fatoEscolhido.set('');
-      this.anuncio.emit(`Campo “${fato.nome}” acrescentado ao fim de ${this.etapa().titulo}.`);
+      this.anuncio.emit(
+        `Campo “${fato.nome}” acrescentado ao fim de ${this.etapa().apresentacao.titulo}.`,
+      );
       focarDepois(this.injector, `${idDoItem(this.contexto().idBase, fato.codigo)}-rotulo`);
     });
   }
@@ -160,18 +166,18 @@ export class AcrescentarNaSecaoComponent {
     const primeiroCampo = fatosDeMembro.find((f) => f.codigo === this.membro());
     if (primeiroCampo === undefined) return;
     const novo = { rotulo, etapaCodigo: this.etapa().codigo, primeiroCampo };
-    aplicarEdicao(acrescentarGrupo(conteudo, novo, catalogo), this, (editado) => {
-      const grupo = (editado.grupos ?? []).find(
-        (g) => !(conteudo.grupos ?? []).some((anterior) => anterior.codigo === g.codigo),
-      );
-      this.rotuloDoGrupo.set('');
-      this.membroEscolhido.set('');
-      this.anuncio.emit(
-        `Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${this.etapa().titulo}.`,
-      );
-      if (grupo !== undefined) {
-        focarDepois(this.injector, `${idDoGrupo(this.contexto().idBase, grupo.codigo)}-rotulo`);
-      }
-    });
+    aplicarEdicao(acrescentarGrupo(conteudo, novo, catalogo), this, (editado) =>
+      this.anunciarOGrupoNovo(rotulo, grupoAcrescentado(conteudo, editado)),
+    );
+  }
+
+  private anunciarOGrupoNovo(rotulo: string, grupo: GrupoDoFormulario | undefined): void {
+    this.rotuloDoGrupo.set('');
+    this.membroEscolhido.set('');
+    this.anuncio.emit(
+      `Grupo repetível “${rotulo.trim()}” acrescentado ao fim de ${this.etapa().apresentacao.titulo}.`,
+    );
+    if (grupo === undefined) return;
+    focarDepois(this.injector, `${idDoGrupo(this.contexto().idBase, grupo.codigo)}-rotulo`);
   }
 }

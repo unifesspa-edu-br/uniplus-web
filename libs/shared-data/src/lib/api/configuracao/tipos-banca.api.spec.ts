@@ -11,6 +11,7 @@ import {
 } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { CriarTipoBancaCommand, TipoBancaDto, TiposBancaApi } from './tipos-banca.api';
+import { PapelDaBancaCodigo, TipoDeBancaCodigo } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -18,18 +19,24 @@ const ID = '01960000-0000-7000-0000-0000000000b2';
 
 const bancaSeed: TipoBancaDto = {
   id: ID,
-  codigo: 'BANCA_ENTREVISTA',
+  codigo: { codigo: TipoDeBancaCodigo.BANCA_ENTREVISTA, rotulo: 'Banca de entrevista' },
   nome: 'Banca de Entrevista',
   faseTipica: 'Avaliação',
   descricao: null,
+  papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+  exigeDuasOuMaisBancas: false,
+  encerraRecursoNaPrimeiraInstancia: false,
+  tiposDeDecisaoJulgados: [],
   criadoEm: '2026-06-10T12:00:00Z',
 };
 
 const criarCommand: CriarTipoBancaCommand = {
-  codigo: 'BANCA_ENTREVISTA',
+  codigo: TipoDeBancaCodigo.BANCA_ENTREVISTA,
   nome: 'Banca de Entrevista',
   faseTipica: 'Avaliação',
   descricao: null,
+  exigeDuasOuMaisBancas: false,
+  encerraRecursoNaPrimeiraInstancia: false,
 };
 
 describe('TiposBancaApi', () => {
@@ -90,6 +97,8 @@ describe('TiposBancaApi', () => {
           nome: 'Banca de Entrevista (revisada)',
           faseTipica: 'Avaliação',
           descricao: null,
+          exigeDuasOuMaisBancas: false,
+          encerraRecursoNaPrimeiraInstancia: false,
         },
         withIdempotencyKey('k'),
       ),

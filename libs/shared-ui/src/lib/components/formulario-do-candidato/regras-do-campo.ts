@@ -11,5 +11,5 @@ export function regrasPorFato(regras: RegrasDoFormulario): ReadonlyMap<string, I
 
 /** O fato da UF de que o campo de município depende, pela restrição dos municípios da UF. */
 export function fatoDaUf(regra: ItemDasRegras | null): string | null {
-  return regra?.restricoes?.find((r) => r.tipo === 'MUNICIPIOS_DA_UF')?.fatos?.[0] ?? null;
+  return regra?.regras.restricoes?.find((r) => r.tipo === 'MUNICIPIOS_DA_UF')?.fatos?.[0] ?? null;
 }

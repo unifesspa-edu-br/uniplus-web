@@ -4,24 +4,22 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, TipoBancaDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  TipoBancaDto,
+  TipoDeBancaCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
 import { TiposBancaStore } from './tipos-banca.store';
 import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
+import { tipoDeBanca } from './tipos-banca.testing';
 import { NotificationService } from '@uniplus/shared-core/notifications';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/tipos-banca`;
 
-const bancaSeed: TipoBancaDto = {
-  id: '01960000-0000-7000-0000-0000000000b2',
-  codigo: 'BANCA_ENTREVISTA',
-  nome: 'Banca de Entrevista',
-  faseTipica: 'Avaliação',
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const bancaSeed = tipoDeBanca(TipoDeBancaCodigo.BANCA_ENTREVISTA);
 
 describe('TiposBancaPage — remoção', () => {
   let fixture: ComponentFixture<TiposBancaPage>;

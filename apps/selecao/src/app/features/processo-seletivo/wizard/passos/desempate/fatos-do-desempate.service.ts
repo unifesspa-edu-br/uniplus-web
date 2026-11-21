@@ -1,14 +1,20 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isApiOk, type ApiResult } from '@uniplus/shared-core/http';
-import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import {
+  fatoComOperadores,
+  type FatoCandidatoComOperadores,
+  type FatoDoCatalogoDto,
+  FatosCandidatoApi,
+} from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { fatosParaGatilho } from '../../shared/gatilho-de-exigencia';
 import { tituloDoPasso } from '../../shared/titulo-do-passo';
 
-const MENSAGEM_DE_FALHA = 'Não foi possível carregar os dados do candidato que um critério pode citar.';
+const MENSAGEM_DE_FALHA =
+  'Não foi possível carregar os dados do candidato que um critério pode citar.';
 const EFEITO_DA_FALHA =
   'Sem esses dados, um critério que cita um fato do candidato aparece como desconhecido e a gravação do passo é recusada.';
 const EFEITO_DA_FALHA_EM_CONSULTA = 'Os critérios que citam um fato aparecem pelo código gravado.';
@@ -27,7 +33,7 @@ export class FatosDoDesempate {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly destroyRef = inject(DestroyRef);
 
-  private readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
+  private readonly catalogo = signal<readonly FatoCandidatoComOperadores[]>([]);
 
   /**
    * Só um catálogo lido permite dizer que um fato saiu dele: enquanto a busca não responde, ou
@@ -77,9 +83,9 @@ export class FatosDoDesempate {
       });
   }
 
-  private concluir(resultado: ApiResult<readonly FatoCandidatoView[]> | null): void {
+  private concluir(resultado: ApiResult<readonly FatoDoCatalogoDto[]> | null): void {
     if (resultado !== null && isApiOk(resultado)) {
-      this.catalogo.set(resultado.data);
+      this.catalogo.set(resultado.data.map(fatoComOperadores));
       this.lido.set(true);
     } else {
       this.falha.set(MENSAGEM_DE_FALHA);

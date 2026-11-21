@@ -10,6 +10,7 @@ import { BUSCA_DE_CEP } from '../endereco-geo/endereco-geo.model';
 import { FormularioDoCandidatoComponent } from './formulario-do-candidato';
 import type {
   CampoRenderizavel,
+  DependenciasDaAvaliacao,
   FormularioDoCandidato,
   GrupoRenderizavel,
   RespostaFixa,
@@ -19,6 +20,12 @@ import type {
   ItemDasRegras,
   ValorJson,
 } from './interpretador/regras-do-formulario';
+import {
+  apresentacaoDaEtapa,
+  campoRenderizavel,
+  grupoDasRegras,
+  itemDasRegras,
+} from './formularios-de-exemplo.testing';
 import type { MunicipiosGravados } from './valor-de-municipio-gravado';
 
 /** A Revisão e aceite resume o pedido do Fator de Atenuação (UNI-REQ-0150) com os rótulos do formulário. */
@@ -55,7 +62,7 @@ const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
     codigoNasRegras: ETAPA_DO_FATOR_NAS_REGRAS,
     ordem: 0,
     tipo: 'SECAO',
-    titulo: 'Fator de Atenuação',
+    apresentacao: apresentacaoDaEtapa('Fator de Atenuação'),
   },
   {
     codigo: 'REVISAO',
@@ -63,148 +70,120 @@ const ETAPAS_DO_FATOR: FormularioDoCandidato['etapas'] = [
     ordem: 1,
     tipo: 'BLOCO',
     bloco: 'REVISAO_E_ACEITE',
-    titulo: 'Revisão e aceite',
+    apresentacao: apresentacaoDaEtapa('Revisão e aceite'),
   },
 ];
 
 const CAMPOS_DO_FATOR: CampoRenderizavel[] = [
-  {
-    fatoCodigo: SOLICITA_O_FATOR,
-    ordem: 0,
-    rotulo: 'Deseja solicitar o Fator?',
-    tipoRenderizacao: 'BOOLEANO',
-  },
-  {
-    fatoCodigo: CAMINHO_DO_FATOR,
-    ordem: 1,
-    rotulo: 'Por qual vínculo com a área você solicita o Fator?',
-    tipoRenderizacao: 'SELECAO_UNICA',
-    valoresSelecionaveis: [
-      { codigo: 'RESIDENCIA', descricao: 'Residência no período do edital', ordem: 0 },
-      { codigo: 'ENSINO_MEDIO', descricao: 'Ensino médio cursado na área', ordem: 1 },
-    ],
-  },
-  {
-    fatoCodigo: MUNICIPIO_DO_FATOR,
+  campoRenderizavel(SOLICITA_O_FATOR, 'Deseja solicitar o Fator?', 'BOOLEANO'),
+  campoRenderizavel(
+    CAMINHO_DO_FATOR,
+    'Por qual vínculo com a área você solicita o Fator?',
+    'SELECAO_UNICA',
+    {
+      ordem: 1,
+      valoresSelecionaveis: [
+        { codigo: 'RESIDENCIA', descricao: 'Residência no período do edital', ordem: 0 },
+        { codigo: 'ENSINO_MEDIO', descricao: 'Ensino médio cursado na área', ordem: 1 },
+      ],
+    },
+  ),
+  campoRenderizavel(MUNICIPIO_DO_FATOR, 'Em qual município você residiu?', 'SELECAO_UNICA', {
     ordem: 2,
-    rotulo: 'Em qual município você residiu?',
-    tipoRenderizacao: 'SELECAO_UNICA',
     valoresSelecionaveis: [{ codigo: '2105302', descricao: 'Imperatriz — MA', ordem: 0 }],
-  },
-  { fatoCodigo: MESES_NA_AREA, ordem: 4, rotulo: 'Meses na área', tipoRenderizacao: 'NUMERO' },
-  {
-    fatoCodigo: ATIVIDADES_NA_AREA,
+  }),
+  campoRenderizavel(MESES_NA_AREA, 'Meses na área', 'NUMERO', { ordem: 4 }),
+  campoRenderizavel(ATIVIDADES_NA_AREA, 'Atividades na área', 'SELECAO_MULTIPLA', {
     ordem: 5,
-    rotulo: 'Atividades na área',
-    tipoRenderizacao: 'SELECAO_MULTIPLA',
     valoresSelecionaveis: [
       { codigo: 'PESCA', descricao: 'Pesca artesanal', ordem: 0 },
       { codigo: 'ROCA', descricao: 'Roça de subsistência', ordem: 1 },
     ],
-  },
-  { fatoCodigo: DATA_INICIO_NA_AREA, ordem: 6, rotulo: 'Início na área', tipoRenderizacao: 'DATA' },
-  {
-    fatoCodigo: TELEFONE_DO_CONTATO,
+  }),
+  campoRenderizavel(DATA_INICIO_NA_AREA, 'Início na área', 'DATA', { ordem: 6 }),
+  campoRenderizavel(TELEFONE_DO_CONTATO, 'Telefone de contato', 'TEXTO', {
     ordem: 7,
-    rotulo: 'Telefone de contato',
-    tipoRenderizacao: 'TEXTO',
     formato: 'TELEFONE',
-  },
+  }),
 ];
 
-const CAMPO_FORA_DO_FATOR: CampoRenderizavel = {
-  fatoCodigo: FATO_FORA_DO_FATOR,
+const CAMPO_FORA_DO_FATOR = campoRenderizavel(FATO_FORA_DO_FATOR, 'Outra pergunta', 'TEXTO', {
   ordem: 3,
-  rotulo: 'Outra pergunta',
-  tipoRenderizacao: 'TEXTO',
-};
+});
 
 const GRUPO_DA_FAMILIA: GrupoRenderizavel = {
   codigo: 'FAMILIA',
   ordem: 0,
   rotulo: 'Integrante da família',
-  minimo: 0,
-  maximo: 3,
-  incluiCandidato: false,
+  ocorrencias: { minimo: 0, maximo: 3, incluiCandidato: false },
   subitens: [
-    { fatoCodigo: 'RENDA', ordem: 0, rotulo: 'Renda', tipoRenderizacao: 'NUMERO' },
-    { fatoCodigo: 'NOME', ordem: 1, rotulo: 'Nome', tipoRenderizacao: 'TEXTO' },
-    { fatoCodigo: 'BONUS', ordem: 2, rotulo: 'Bônus', tipoRenderizacao: 'NUMERO' },
+    campoRenderizavel('RENDA', 'Renda', 'NUMERO'),
+    campoRenderizavel('NOME', 'Nome', 'TEXTO', { ordem: 1 }),
+    campoRenderizavel('BONUS', 'Bônus', 'NUMERO', { ordem: 2 }),
   ],
 };
 
 /** O bônus só aparece quando a renda é 999, valor que nenhuma ocorrência dos testes informa. */
-const REGRA_DO_GRUPO_DA_FAMILIA: GrupoDasRegras = {
-  codigo: 'FAMILIA',
-  obrigatoriedade: 'SEMPRE',
-  minimo: 0,
-  maximo: 3,
-  incluiCandidato: false,
-  subitens: [
-    { fatoCodigo: 'RENDA', obrigatoriedade: 'SEMPRE', restricoes: [] },
-    { fatoCodigo: 'NOME', obrigatoriedade: 'SEMPRE', restricoes: [] },
-    {
-      fatoCodigo: 'BONUS',
-      obrigatoriedade: 'SEMPRE',
-      restricoes: [],
+const REGRA_DO_GRUPO_DA_FAMILIA: GrupoDasRegras = grupoDasRegras(
+  'FAMILIA',
+  [
+    itemDasRegras('RENDA'),
+    itemDasRegras('NOME'),
+    itemDasRegras('BONUS', {
       exibicao: [[{ fato: 'RENDA', operador: 'IGUAL', valor: 999 }]],
-    },
+    }),
   ],
-};
+  { ocorrencias: { minimo: 0, maximo: 3, incluiCandidato: false } },
+);
 
 /** O caminho e o município só aparecem com o Fator pedido. */
-const regraDoItem = (fatoCodigo: string): ItemDasRegras => ({
-  fatoCodigo,
-  obrigatoriedade: 'SEMPRE',
-  restricoes: [],
-  ...(fatoCodigo === CAMINHO_DO_FATOR || fatoCodigo === MUNICIPIO_DO_FATOR
-    ? { exibicao: [[{ fato: SOLICITA_O_FATOR, operador: 'IGUAL', valor: true }]] }
-    : {}),
-});
+const regraDoItem = (fatoCodigo: string): ItemDasRegras =>
+  itemDasRegras(
+    fatoCodigo,
+    fatoCodigo === CAMINHO_DO_FATOR || fatoCodigo === MUNICIPIO_DO_FATOR
+      ? { exibicao: [[{ fato: SOLICITA_O_FATOR, operador: 'IGUAL', valor: true }]] }
+      : {},
+  );
 
 const formularioDaInscricao = (
-  fatosColetados: CampoRenderizavel[],
+  itens: CampoRenderizavel[],
   fatosDaEtapa: string[],
-  dependenciasDoFator: FormularioDoCandidato['dependenciasDoFator'],
 ): FormularioDoCandidato => ({
   finalidade: 'INSCRICAO',
   etapas: ETAPAS_DO_FATOR,
   termos: [],
-  grupos: [],
-  dependenciasDoFator,
-  fatosColetados,
+  coleta: { itens, grupos: [] },
   regras: {
     etapas: [{ codigo: ETAPA_DO_FATOR_NAS_REGRAS, itens: fatosDaEtapa.map(regraDoItem) }],
   },
+  pressupostos: { fatos: [] },
 });
 
-export const formularioComOFator = (
-  dependencias: FormularioDoCandidato['dependenciasDoFator'] = DEPENDENCIAS_PADRAO,
-): FormularioDoCandidato =>
-  formularioDaInscricao([...CAMPOS_DO_FATOR, CAMPO_FORA_DO_FATOR], FATOS_COM_O_FATOR, dependencias);
+export const formularioComOFator = (): FormularioDoCandidato =>
+  formularioDaInscricao([...CAMPOS_DO_FATOR, CAMPO_FORA_DO_FATOR], FATOS_COM_O_FATOR);
 
 export const formularioSemOFator = (): FormularioDoCandidato =>
-  formularioDaInscricao(
-    [{ fatoCodigo: 'EMAIL', ordem: 0, rotulo: 'E-mail', tipoRenderizacao: 'TEXTO' }],
-    ['EMAIL'],
-    DEPENDENCIAS_PADRAO,
-  );
+  formularioDaInscricao([campoRenderizavel('EMAIL', 'E-mail', 'TEXTO')], ['EMAIL']);
+
+const municipioPorBusca = (campo: CampoRenderizavel): CampoRenderizavel =>
+  campo.fatoCodigo === MUNICIPIO_DO_FATOR
+    ? {
+        ...campo,
+        valoresSelecionaveis: undefined,
+        apresentacao: { ...campo.apresentacao, tipoRenderizacao: 'MUNICIPIO' },
+      }
+    : campo;
 
 /** Troca a seleção do município pela busca, que só traz o código quando o nome não foi carregado. */
 export const comMunicipioPorBusca = (base: FormularioDoCandidato): FormularioDoCandidato => ({
   ...base,
-  fatosColetados: base.fatosColetados.map(
-    (campo): CampoRenderizavel =>
-      campo.fatoCodigo === MUNICIPIO_DO_FATOR
-        ? { ...campo, valoresSelecionaveis: undefined, tipoRenderizacao: 'MUNICIPIO' }
-        : campo,
-  ),
+  coleta: { ...base.coleta, itens: base.coleta.itens.map(municipioPorBusca) },
 });
 
 /** Acrescenta ao formulário um grupo de integrantes, na seção do Fator, com um subitem numérico. */
 export const comOGrupo = (base: FormularioDoCandidato): FormularioDoCandidato => ({
   ...base,
-  grupos: [GRUPO_DA_FAMILIA],
+  coleta: { ...base.coleta, grupos: [GRUPO_DA_FAMILIA] },
   regras: {
     etapas: [
       {
@@ -221,7 +200,34 @@ export interface PreenchimentoDaInscricao {
   respostas: Record<string, ValorJson>;
   grupos?: Record<string, { id: string; respostas: Record<string, ValorJson> }[]>;
   fixas?: Record<string, RespostaFixa>;
+  /** O que o processo publica do Fator; sem informar, as dependências padrão do cenário. */
+  dependenciasDoFator?: DependenciasDaAvaliacao | null;
 }
+
+const noProcessoDoFator = ({ dependenciasDoFator }: PreenchimentoDaInscricao) => ({
+  dependenciasDoFator:
+    dependenciasDoFator === undefined ? DEPENDENCIAS_PADRAO : dependenciasDoFator,
+});
+
+const partidaDaInscricao = (preenchimento: PreenchimentoDaInscricao) => ({
+  respostas: preenchimento.respostas,
+  grupos: preenchimento.grupos ?? {},
+  etapasConcluidas: [],
+  pressupostos: {},
+  envio: {},
+});
+
+const entradasDaInscricao = (
+  formulario: FormularioDoCandidato,
+  preenchimento: PreenchimentoDaInscricao,
+  municipiosGravados: MunicipiosGravados,
+): Record<string, unknown> => ({
+  formulario,
+  noProcesso: noProcessoDoFator(preenchimento),
+  respostasFixas: preenchimento.fixas ?? {},
+  municipiosGravados,
+  inicial: partidaDaInscricao(preenchimento),
+});
 
 export class CenarioDaRevisaoDoFator {
   gravados: MunicipiosGravados = {};
@@ -245,16 +251,10 @@ export class CenarioDaRevisaoDoFator {
 
   abrir(formulario: FormularioDoCandidato, preenchimento: PreenchimentoDaInscricao): void {
     this.fixture = TestBed.createComponent(FormularioDoCandidatoComponent);
-    this.fixture.componentRef.setInput('formulario', formulario);
-    this.fixture.componentRef.setInput('respostasFixas', preenchimento.fixas ?? {});
-    this.fixture.componentRef.setInput('municipiosGravados', this.gravados);
-    this.fixture.componentRef.setInput('inicial', {
-      respostas: preenchimento.respostas,
-      grupos: preenchimento.grupos ?? {},
-      etapasConcluidas: [],
-      pressupostos: {},
-      envio: {},
-    });
+    const entradas = entradasDaInscricao(formulario, preenchimento, this.gravados);
+    for (const [nome, valor] of Object.entries(entradas)) {
+      this.fixture.componentRef.setInput(nome, valor);
+    }
     this.fixture.detectChanges();
     this.tela = this.fixture.nativeElement as HTMLElement;
   }

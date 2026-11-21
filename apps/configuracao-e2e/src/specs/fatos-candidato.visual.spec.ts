@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
+import { FATO, emManutencao } from '../support/fato-do-candidato';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -7,36 +8,6 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-const FATO = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  codigo: 'TRABALHA',
-  nome: 'Trabalha',
-  descricao: 'Se o candidato trabalha.',
-  componenteExibicao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
-  fonteValores: null,
-  formato: null,
-  pontoResolucao: 'INSCRICAO',
-  binding: 'CAMPO_INSCRICAO:TRABALHA',
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'PESSOAL',
-  finalidadeTratamento: 'Classificar a reserva de vagas.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-  semeadoPeloSistema: false,
-  ativo: true,
-  valores: [],
-  regrasPadrao: [],
-  aprovacao: {
-    situacao: 'APROVADA',
-    solicitadaEm: null,
-    decididaEm: null,
-    classificacaoRecomendada: null,
-    justificativa: null,
-    aceitaEm: null,
-  },
 };
 const TOLERANCIA = 1;
 
@@ -81,8 +52,14 @@ test.describe('Fatos do candidato — geometria da página e do formulário', ()
     await page.route(/\/api\/configuracao\/admin\/protecao-do-catalogo(\?.*)?$/, json([]));
     await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, json([]));
     await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, json([]));
-    await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, json([FATO]));
-    await page.route(/\/api\/configuracao\/admin\/fatos-candidato\/[^/?]+$/, json(FATO));
+    await page.route(
+      /\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/,
+      json([emManutencao(FATO)]),
+    );
+    await page.route(
+      /\/api\/configuracao\/admin\/fatos-candidato\/[^/?]+$/,
+      json(emManutencao(FATO)),
+    );
   });
 
   test('drawer e diálogos fechados não ocupam espaço entre os blocos', async ({ page }) => {

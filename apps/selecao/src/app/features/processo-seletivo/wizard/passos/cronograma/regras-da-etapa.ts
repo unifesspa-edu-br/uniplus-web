@@ -1,3 +1,4 @@
+import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { escalaVale } from '../../shared/itens-de-avaliacao';
@@ -16,9 +17,10 @@ export function eliminaPorCarater(carater: string): boolean {
 /** O que a conferência precisa saber de um tipo de etapa do cadastro. */
 export interface TipoDeEtapaDoCatalogo {
   readonly nome: string;
-  readonly admitePontuacao: boolean;
-  readonly admiteEliminacao: boolean;
-  readonly notaDeOrigemNoEnem: boolean;
+  readonly avaliacao: Pick<
+    TipoEtapaDto['avaliacao'],
+    'admitePontuacao' | 'admiteEliminacao' | 'notaDeOrigemNoEnem'
+  >;
 }
 
 /**
@@ -34,7 +36,7 @@ export function declaraNotaDoEnem(
   tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
 ): boolean {
   const congelado = tipoCongeladoVigente(etapa);
-  return congelado?.notaDeOrigemNoEnem ?? tipoDoCadastro?.notaDeOrigemNoEnem ?? false;
+  return congelado?.notaDeOrigemNoEnem ?? tipoDoCadastro?.avaliacao.notaDeOrigemNoEnem ?? false;
 }
 
 /**
@@ -80,27 +82,33 @@ export function etapaComOQueDeclara(
   etapa: EtapaPontuada,
   tipoDoCadastro: TipoDeEtapaDoCatalogo | undefined,
 ): EtapaPontuada {
-  if (!declaraNotaMaxima(etapa, tipoDoCadastro)) {
-    return {
-      ...etapa,
-      notaMaxima: '',
-      passoDoLancamento: '',
-      formaDeAvaliacao: '',
-      regraConsolidacaoCodigo: '',
-      regraConsolidacaoVersao: '',
-      itensDeAvaliacao: [],
-      escalaDeAtendimento: [],
-    };
-  }
+  if (!declaraNotaMaxima(etapa, tipoDoCadastro)) return semNotaLancada(etapa);
   const humana = etapa.formaDeAvaliacao === FORMA_HUMANA;
-  const comAvaliacao = humana
-    ? etapa
-    : { ...etapa, passoDoLancamento: '', regraConsolidacaoCodigo: '', regraConsolidacaoVersao: '' };
+  const comAvaliacao = humana ? etapa : semConsolidacao(etapa);
   // A escala existe onde a banca atende cada item; com ela a banca escolhe o nível e não digita a
   // nota, então o passo do lançamento deixa de existir.
   return escalaVale(comAvaliacao)
     ? { ...comAvaliacao, passoDoLancamento: '' }
     : { ...comAvaliacao, escalaDeAtendimento: [] };
+}
+
+function semNotaLancada(etapa: EtapaPontuada): EtapaPontuada {
+  return {
+    ...semConsolidacao(etapa),
+    notaMaxima: '',
+    formaDeAvaliacao: '',
+    itensDeAvaliacao: [],
+    escalaDeAtendimento: [],
+  };
+}
+
+function semConsolidacao(etapa: EtapaPontuada): EtapaPontuada {
+  return {
+    ...etapa,
+    passoDoLancamento: '',
+    regraConsolidacaoCodigo: '',
+    regraConsolidacaoVersao: '',
+  };
 }
 
 /**
@@ -127,6 +135,17 @@ export const CARATERES = [
   { valor: 'ambas', rotulo: 'Classificatória e eliminatória' },
 ] as const;
 
+function caraterAdmitido(
+  carater: string,
+  { avaliacao }: TipoDeEtapaDoCatalogo,
+  notaDoEnem: boolean,
+): boolean {
+  const { admitePontuacao, admiteEliminacao } = avaliacao;
+  if (carater === 'classificatoria') return admitePontuacao;
+  if (carater === 'eliminatoria') return admiteEliminacao && !notaDoEnem;
+  return admitePontuacao && admiteEliminacao;
+}
+
 /**
  * Os caracteres que a etapa pode ter, dado o tipo escolhido.
  *
@@ -146,13 +165,15 @@ export function caracteresAdmitidos(
   const admitidos: readonly { valor: string; rotulo: string }[] =
     tipo === undefined
       ? CARATERES
-      : CARATERES.filter(
-          (opcao) =>
-            (opcao.valor === 'classificatoria' && tipo.admitePontuacao) ||
-            (opcao.valor === 'eliminatoria' && tipo.admiteEliminacao && !notaDoEnem) ||
-            (opcao.valor === 'ambas' && tipo.admitePontuacao && tipo.admiteEliminacao),
-        );
+      : CARATERES.filter((opcao) => caraterAdmitido(opcao.valor, tipo, notaDoEnem));
 
+  return comCaraterJaGravado(admitidos, escolhido);
+}
+
+function comCaraterJaGravado(
+  admitidos: readonly { valor: string; rotulo: string }[],
+  escolhido: string,
+): readonly { valor: string; rotulo: string }[] {
   if (escolhido === '' || admitidos.some((opcao) => opcao.valor === escolhido)) {
     return admitidos;
   }

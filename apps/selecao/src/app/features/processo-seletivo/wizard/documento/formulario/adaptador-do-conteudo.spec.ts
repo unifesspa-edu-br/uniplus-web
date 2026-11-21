@@ -30,7 +30,9 @@ describe('conteúdo do editor no adaptador do documento', () => {
 
   it('o resultado acompanha as confirmações feitas antes da última edição', () => {
     const primeiro = aceita(
-      editar(formulario(), (conteudo) => conteudo, [['grupos', 'familia', 'minimo']]),
+      editar(formulario(), (conteudo) => conteudo, [
+        ['grupos', 'familia', 'ocorrencias', 'minimo'],
+      ]),
     );
     const segundo = documentoDoConteudo(
       primeiro,

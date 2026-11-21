@@ -52,7 +52,7 @@
               <td data-label="Nome">{{ tipo.nome }}</td>
               <td data-label="O que admite">{{ resumoDoQueAdmite(tipo) }}</td>
               <td data-label="Correção independente">
-                {{ tipo.exigeCorrecaoIndependente ? 'Exige' : 'Não exige' }}
+                {{ tipo.avaliacao.exigeCorrecaoIndependente ? 'Exige' : 'Não exige' }}
               </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button

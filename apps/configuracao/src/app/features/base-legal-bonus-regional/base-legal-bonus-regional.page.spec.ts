@@ -3,6 +3,7 @@ import { buildVendorMimeAccept } from '@uniplus/shared-core/http';
 import {
   LISTA,
   Pagina,
+  TIPOS,
   TIPOS_URL,
   TITULO_DA_LISTA,
   corpoDaFalha,
@@ -34,12 +35,16 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
   };
 
   describe('lista', () => {
-    it('mostra o nome do tipo, a identificação e a quantidade de municípios de cada base', async () => {
+    it('mostra o rótulo do tipo que veio na base, a identificação e a quantidade de municípios de cada base', async () => {
       p = await montarPagina([portaria, decreto]);
 
       expect(linhas()).toHaveLength(2);
       const celulas = [...linhas()[0].querySelectorAll('td')].map((c) => c.textContent?.trim());
-      expect(celulas.slice(0, 3)).toEqual(['Portaria', 'Portaria Unifesspa nº 2514/2023', '1']);
+      expect(celulas.slice(0, 3)).toEqual([
+        portaria.tipoInstrumento.rotulo,
+        portaria.identificacao,
+        '1',
+      ]);
     });
 
     it('pede a primeira página com o limite da tela e os tipos de mídia versionados', async () => {
@@ -233,27 +238,21 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
       pedido.flush([]);
     });
 
-    it('enquanto carrega, a lista diz "Carregando…" em vez de um rótulo falso', async () => {
+    it('a lista mostra o rótulo que veio na base sem esperar o vocabulário', async () => {
       p = await montarPagina([portaria], 'pendente');
 
-      expect(linhas()[0].querySelector('td')?.textContent).toContain('Carregando…');
-      p.http
-        .expectOne((r) => r.url === TIPOS_URL)
-        .flush([{ codigo: 'PORTARIA', nome: 'Portaria' }]);
-      await p.propagar();
-      expect(linhas()[0].querySelector('td')?.textContent).toContain('Portaria');
+      expect(linhas()[0].querySelector('td')?.textContent).toContain(
+        portaria.tipoInstrumento.rotulo,
+      );
+      p.http.expectOne((r) => r.url === TIPOS_URL).flush(TIPOS);
     });
 
-    it('um tipo que o vocabulário não conhece aparece como não identificado', async () => {
-      p = await montarPagina([{ ...portaria, tipoInstrumento: 'PARECER_ANTIGO' }]);
-
-      expect(linhas()[0].querySelector('td')?.textContent).toContain('Não identificado');
-    });
-
-    it('a falha avisa na página, marca a coluna e a nova tentativa devolve o foco ao título', async () => {
+    it('a falha avisa na página, a lista segue com o rótulo da base e a nova tentativa devolve o foco ao título', async () => {
       p = await montarPagina([portaria], { falha: 503 });
 
-      expect(linhas()[0].querySelector('td')?.textContent).toContain('Não carregado');
+      expect(linhas()[0].querySelector('td')?.textContent).toContain(
+        portaria.tipoInstrumento.rotulo,
+      );
       expect(p.erros).toHaveBeenCalledTimes(1);
       const alerta = p.elemento('ui-alerta-nova-tentativa');
       expect(alerta.textContent).toContain('Tipos de instrumento não carregados');
@@ -262,13 +261,10 @@ describe('BaseLegalBonusRegionalPage — leitura', () => {
       tentar.click();
       await p.propagar();
       expect(tentar.getAttribute('aria-disabled')).toBe('true');
-      p.http
-        .expectOne((r) => r.url === TIPOS_URL)
-        .flush([{ codigo: 'PORTARIA', nome: 'Portaria' }]);
+      p.http.expectOne((r) => r.url === TIPOS_URL).flush(TIPOS);
       await p.propagar();
 
       expect(p.fixture.nativeElement.querySelector('ui-alerta-nova-tentativa')).toBeNull();
-      expect(linhas()[0].querySelector('td')?.textContent).toContain('Portaria');
       expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
     });
 

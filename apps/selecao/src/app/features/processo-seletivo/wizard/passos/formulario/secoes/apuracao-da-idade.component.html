@@ -28,13 +28,13 @@
 
   @if (store.emConsulta()) {
     <div class="form-grid">
-      <ui-valor-em-consulta rotulo="Apurar a idade em" [valor]="rotuloDaAncora()" />
+      <ui-valor-em-consulta rotulo="Apurar a idade em" [valor]="rotuloDaReferencia()" />
       @if (referencia().tipo === 'DATA_ESPECIFICA') {
         <ui-valor-em-consulta rotulo="Data de apuração" [valor]="referencia().data | dateBr" />
       }
       @if (precisaDeFase()) {
         <ui-valor-em-consulta
-          rotulo="Fase que ancora a apuração"
+          rotulo="Fase de referência da apuração"
           [valor]="referencia().faseCodigo"
         />
       }
@@ -42,14 +42,14 @@
   } @else {
     <div class="form-grid">
       <div class="form-field">
-        <label class="label" for="form-ancora">Apurar a idade em</label>
+        <label class="label" for="form-referencia-da-idade">Apurar a idade em</label>
         <select
           class="select"
-          id="form-ancora"
+          id="form-referencia-da-idade"
           [disabled]="!store.aceitaEdicao()"
           (change)="escreverReferencia({ tipo: $any($event.target).value })"
         >
-          @for (opcao of ancoras; track opcao.valor) {
+          @for (opcao of referencias; track opcao.valor) {
             <option [value]="opcao.valor" [selected]="opcao.valor === referencia().tipo">
               {{ opcao.rotulo }}
             </option>
@@ -73,7 +73,7 @@
 
       @if (precisaDeFase()) {
         <div class="form-field">
-          <label class="label" for="form-fase">Fase que ancora a apuração</label>
+          <label class="label" for="form-fase">Fase de referência da apuração</label>
           <select
             class="select"
             id="form-fase"

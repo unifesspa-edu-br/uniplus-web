@@ -24,17 +24,18 @@ describe('lerMunicipio', () => {
 });
 
 describe('separarMunicipiosGravados', () => {
+  const campo = (fatoCodigo: string, tipoRenderizacao: string) => ({
+    fatoCodigo,
+    apresentacao: { tipoRenderizacao },
+  });
   const formulario = {
-    fatosColetados: [
-      { fatoCodigo: 'NATURALIDADE_MUNICIPIO', tipoRenderizacao: 'MUNICIPIO' },
-      { fatoCodigo: 'ENDERECO_RESIDENCIAL', tipoRenderizacao: 'ENDERECO' },
-    ],
-    grupos: [
-      {
-        codigo: 'FAMILIA',
-        subitens: [{ fatoCodigo: 'MUNICIPIO_DO_INTEGRANTE', tipoRenderizacao: 'MUNICIPIO' }],
-      },
-    ],
+    coleta: {
+      itens: [
+        campo('NATURALIDADE_MUNICIPIO', 'MUNICIPIO'),
+        campo('ENDERECO_RESIDENCIAL', 'ENDERECO'),
+      ],
+      grupos: [{ codigo: 'FAMILIA', subitens: [campo('MUNICIPIO_DO_INTEGRANTE', 'MUNICIPIO')] }],
+    },
   };
   const endereco = { cep: '40020000', cidade: { codigoIbge: '2927408', nome: 'Salvador' } };
 
@@ -46,7 +47,10 @@ describe('separarMunicipiosGravados', () => {
       },
       grupos: {
         FAMILIA: [
-          { id: 'a', respostas: { MUNICIPIO_DO_INTEGRANTE: { codigo: '1501402', rotulo: 'Belém' } } },
+          {
+            id: 'a',
+            respostas: { MUNICIPIO_DO_INTEGRANTE: { codigo: '1501402', rotulo: 'Belém' } },
+          },
         ],
       },
     });
@@ -55,7 +59,9 @@ describe('separarMunicipiosGravados', () => {
       NATURALIDADE_MUNICIPIO: '2927408',
       ENDERECO_RESIDENCIAL: endereco,
     });
-    expect(separado.grupos['FAMILIA']?.[0].respostas).toEqual({ MUNICIPIO_DO_INTEGRANTE: '1501402' });
+    expect(separado.grupos['FAMILIA']?.[0].respostas).toEqual({
+      MUNICIPIO_DO_INTEGRANTE: '1501402',
+    });
     expect(separado.gravados).toEqual({
       NATURALIDADE_MUNICIPIO: { codigo: '2927408', rotulo: 'Salvador' },
       'FAMILIA.a.MUNICIPIO_DO_INTEGRANTE': { codigo: '1501402', rotulo: 'Belém' },

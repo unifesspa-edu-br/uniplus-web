@@ -22,10 +22,8 @@ describe('formulário de criação do modelo', () => {
 
     expect(comando).toMatchObject({
       codigo: 'INSCRICAO',
-      nome: 'Inscrição',
-      descricao: null,
       finalidade: 'INSCRICAO',
-      tipoProcessoCodigo: null,
+      descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
     });
     expect(comando.conteudo).not.toBeNull();
   });
@@ -34,7 +32,7 @@ describe('formulário de criação do modelo', () => {
     const form = criarFormularioDeModelo();
     form.patchValue({ descricao: 'Texto', tipoProcessoCodigo: 'VESTIBULAR' });
 
-    expect(comandoDeCriacao(form)).toMatchObject({
+    expect(comandoDeCriacao(form).descritivo).toMatchObject({
       descricao: 'Texto',
       tipoProcessoCodigo: 'VESTIBULAR',
     });

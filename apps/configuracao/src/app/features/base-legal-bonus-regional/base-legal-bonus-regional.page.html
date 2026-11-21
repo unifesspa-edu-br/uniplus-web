@@ -2,9 +2,8 @@
   <div class="page-header__content">
     <h1 class="page-header__title">Base Legal de Bônus Regional</h1>
     <p class="page-header__desc">
-      Documento formal (Lei, Decreto, Portaria, Resolução, Instrução Normativa ou Parecer) e os
-      municípios que ele beneficia com o bônus regional. O Passo 8 do Processo Seletivo referencia
-      este cadastro e congela um snapshot no momento da configuração.
+      Documento formal e os municípios que ele beneficia com o bônus regional. O Passo 8 do Processo
+      Seletivo referencia este cadastro e congela uma cópia no momento da configuração.
     </p>
   </div>
 </div>
@@ -27,7 +26,6 @@
   [temFiltro]="store.temFiltro()"
   [temAnterior]="store.anterior() !== null"
   [temProximo]="store.proximo() !== null"
-  [rotuloDoTipo]="rotuloDoTipo"
   [(termoBusca)]="store.termoBusca"
   (cadastrar)="edicao.abrirCadastro()"
   (editar)="edicao.abrirEdicao($event)"

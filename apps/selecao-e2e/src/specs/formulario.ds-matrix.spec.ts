@@ -21,8 +21,8 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, accept',
 };
 
-/** As formas de ancorar a apuração da idade, cada uma com os campos que traz à tela. */
-const ANCORAS = [
+/** As referências da apuração da idade, cada uma com os campos que traz à tela. */
+const REFERENCIAS = [
   { valor: 'DATA_ESPECIFICA', rotulo: 'Uma data fixa' },
   { valor: 'FIM_INSCRICAO', rotulo: 'O fim do período de inscrição' },
   { valor: 'INICIO_FASE', rotulo: 'O início de uma fase' },
@@ -33,7 +33,7 @@ const ANCORAS = [
 /**
  * Matriz do Uni+ DS para o editor do passo Formulários, com o processo da Medicina 2027 em
  * rascunho: o editor de formulário compartilhado (título, etapas, campos e termos) e a apuração da
- * idade em cada âncora.
+ * idade em cada referência.
  *
  * A consulta do mesmo passo (processo publicado, lido como texto) é coberta por
  * `consulta-como-texto.ds-matrix.spec.ts`, e os alertas de incoerência com o desempate por
@@ -72,11 +72,11 @@ test.describe('Formulários — editor, matriz DS @ds', () => {
     expect(await blocosColados(page)).toEqual([]);
   });
 
-  for (const ancora of ANCORAS) {
-    test(`apuração da idade em "${ancora.rotulo}": sem violação e sem transbordo`, async ({
+  for (const referencia of REFERENCIAS) {
+    test(`apuração da idade em "${referencia.rotulo}": sem violação e sem transbordo`, async ({
       page,
     }) => {
-      await page.getByLabel('Apurar a idade em', { exact: true }).selectOption(ancora.valor);
+      await page.getByLabel('Apurar a idade em', { exact: true }).selectOption(referencia.valor);
 
       expect(identificadoresDe(await runAxeWcagAA(page))).toEqual([]);
 

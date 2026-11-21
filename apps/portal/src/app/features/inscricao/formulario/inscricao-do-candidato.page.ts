@@ -123,10 +123,10 @@ export class InscricaoDoCandidatoPage implements OnInit {
    */
   protected readonly derivados = computed(
     () => {
-      const formulario = this.leitura.formulario();
-      if (!formulario) return [];
-      const citados = new Map(formulario.pressupostos.map((p) => [p.fatoCodigo, p]));
-      return derivadosDoSistema(this.simulacao().respostas ?? {}, formulario.dataReferenciaFatos)
+      const pressupostos = this.leitura.formulario()?.formulario.pressupostos;
+      if (!pressupostos) return [];
+      const citados = new Map(pressupostos.fatos.map((p) => [p.fatoCodigo, p]));
+      return derivadosDoSistema(this.simulacao().respostas ?? {}, pressupostos.dataReferenciaFatos)
         .filter((d) => citados.has(d.fatoCodigo))
         .map((d) => ({ ...d, rotulo: citados.get(d.fatoCodigo)?.rotulo ?? d.fatoCodigo }));
     },

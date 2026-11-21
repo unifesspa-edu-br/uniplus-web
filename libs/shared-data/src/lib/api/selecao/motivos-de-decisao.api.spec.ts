@@ -15,6 +15,7 @@ import {
   MotivoDeDecisaoDto,
   MotivosDeDecisaoApi,
 } from './motivos-de-decisao.api';
+import { TipoMotivoDeDecisaoCodigo } from './schema';
 import { SELECAO_BASE_PATH } from './tokens';
 
 const BASE = 'http://localhost:5000';
@@ -24,7 +25,10 @@ const ID = '01960000-0000-7000-0000-0000000000a1';
 
 const motivo: MotivoDeDecisaoDto = {
   id: ID,
-  tipo: 'HOMOLOGACAO_DAS_INSCRICOES',
+  tipo: {
+    codigo: TipoMotivoDeDecisaoCodigo.HOMOLOGACAO_DAS_INSCRICOES,
+    rotulo: 'Homologação das inscrições',
+  },
   codigo: 'SEM_RESULTADO_NO_ENEM',
   descricao: 'Sem resultado no ENEM informado.',
   subclassificacao: null,

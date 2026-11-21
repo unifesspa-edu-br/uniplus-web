@@ -1,12 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { ResolucaoDeVinculo } from '@uniplus/shared-core/http';
 import { BaseLegalBonusRegionalDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { BaseLegalBonusRegionalListaComponent } from './base-legal-bonus-regional-lista.component';
 import { decreto, portaria } from './base-legal-bonus-regional.testing';
-
-const resolvido = (rotulo: string): ResolucaoDeVinculo => ({ estado: 'resolvido', rotulo });
 
 describe('BaseLegalBonusRegionalListaComponent', () => {
   let fixture: ComponentFixture<BaseLegalBonusRegionalListaComponent>;
@@ -32,7 +29,6 @@ describe('BaseLegalBonusRegionalListaComponent', () => {
       temFiltro: false,
       temAnterior: false,
       temProximo: false,
-      rotuloDoTipo: (codigo: string) => resolvido(codigo === 'LEI' ? 'Lei' : 'Portaria'),
       termoBusca: '',
     };
     for (const [nome, valor] of Object.entries({ ...padrao, ...entradas })) {
@@ -124,16 +120,13 @@ describe('BaseLegalBonusRegionalListaComponent', () => {
     expect(raiz().querySelector('#cfg-base-legal-list-title')?.getAttribute('tabindex')).toBe('-1');
   });
 
-  it('mostra o rótulo do tipo que a página resolveu, e o estado do vocabulário quando não resolveu', () => {
-    montar([portaria, decreto], {
-      rotuloDoTipo: (codigo: string): ResolucaoDeVinculo =>
-        codigo === 'LEI' ? resolvido('Lei') : { estado: 'falhou', rotulo: '' },
-    });
+  it('mostra, em cada linha, o rótulo do tipo que veio na base', () => {
+    montar([portaria, decreto]);
 
     const tipos = [...raiz().querySelectorAll('tbody tr')].map((linha) =>
       linha.querySelector('td')?.textContent?.trim(),
     );
-    expect(tipos).toEqual(['Não carregado', 'Lei']);
+    expect(tipos).toEqual([portaria.tipoInstrumento.rotulo, decreto.tipoInstrumento.rotulo]);
   });
 
   it('"Limpar busca" zera o termo', () => {

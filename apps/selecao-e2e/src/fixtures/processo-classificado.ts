@@ -1,4 +1,10 @@
+import type {
+  ConfiguracaoBonusRegionalDto,
+  CriterioDesempateDto,
+} from '@uniplus/shared-data/selecao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { etapaDoServidor } from './cronograma-do-servidor';
+import { PARAMETROS_DO_DESEMPATE_SEM_VALOR, referencia } from './regras-congeladas-do-servidor';
 import {
   AREAS_ENEM,
   BASE_LEGAL_BONUS_REGIONAL_ID,
@@ -24,11 +30,6 @@ function tipoDeEtapa(nome: string, ordem: number, notaDeOrigemNoEnem: boolean) {
 function etapaGravada(id: string, nome: string, ordem: number, notaDeOrigemNoEnem: boolean) {
   const tipoEtapa = tipoDeEtapa(nome, ordem, notaDeOrigemNoEnem);
   return etapaDoServidor({ id, identificacao: { nome, ordem, tipoEtapa }, nota: { peso: 1 } });
-}
-
-/** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
-function referencia(codigo: string) {
-  return { codigo, versao: '1.0', hash: `hash-${codigo}` };
 }
 
 /**
@@ -69,27 +70,24 @@ export const DETALHE_PUBLICADO = {
     regra: referencia('BONUS-MULTIPLICATIVO'),
     fator: 1.2,
     teto: null,
-    baseLegalBonusRegionalId: BASE_LEGAL_BONUS_REGIONAL_ID,
     fatoElegibilidadeCodigo: 'PEDE_O_ACRESCIMO',
-    tipoInstrumento: 'PORTARIA',
-    identificacao: 'Portaria Unifesspa nº 2514/2023',
-    descricao: 'Institui inclusão regional.',
-    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
-  },
+    baseLegal: {
+      id: BASE_LEGAL_BONUS_REGIONAL_ID,
+      tipoInstrumento: 'PORTARIA',
+      identificacao: 'Portaria Unifesspa nº 2514/2023',
+      descricao: 'Institui inclusão regional.',
+      municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+    },
+  } satisfies JsonDaApi<ConfiguracaoBonusRegionalDto>,
   cascata: null,
   criteriosDesempate: [
     {
       id: '01960000-0000-7000-0000-0000000008d1',
       ordem: 1,
       regra: referencia('DESEMPATE-MAIOR-IDADE'),
-      etapaRef: null,
-      idadeMinima: null,
-      fato: null,
-      operador: null,
-      valor: null,
-      areas: null,
+      parametros: PARAMETROS_DO_DESEMPATE_SEM_VALOR,
     },
-  ],
+  ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
   classificacao: {
     id: '01960000-0000-7000-0000-0000000008c1',
     regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
@@ -170,7 +168,10 @@ export const DETALHE_DESEMPATE_POR_AREA = {
     {
       ...DETALHE_PUBLICADO.criteriosDesempate[0],
       regra: referencia('DESEMPATE-MAIOR-NOTA-AREA-ENEM'),
-      areas: AREAS_ENEM.map((area) => area.codigo),
+      parametros: {
+        ...PARAMETROS_DO_DESEMPATE_SEM_VALOR,
+        areas: AREAS_ENEM.map((area) => area.codigo),
+      },
     },
   ],
   classificacao: {

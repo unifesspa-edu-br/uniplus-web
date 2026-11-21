@@ -50,32 +50,36 @@
       <code>{{ f.codigo }}</code>
     </dd>
     <dt>Origem</dt>
-    <dd>{{ rotulo(origens, f.origem) }}</dd>
+    <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
     <dt>Tipo de dado</dt>
-    <dd>{{ rotulo(dominios, f.dominio) }} ({{ rotulo(cardinalidades, f.cardinalidade) }})</dd>
-    @if (f.fonteValores) {
+    <dd>
+      {{ rotulo(dominios, f.definicao.dominio) }} ({{
+        rotulo(cardinalidades, f.definicao.cardinalidade)
+      }})
+    </dd>
+    @if (f.definicao.valores.fonte) {
       <dt>Fonte dos valores</dt>
-      <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+      <dd>{{ rotulo(fontes, f.definicao.valores.fonte) }}</dd>
     }
-    @if (f.formato) {
+    @if (f.definicao.formato) {
       <dt>Formato</dt>
-      <dd>{{ rotulo(formatos, f.formato) }}</dd>
+      <dd>{{ rotulo(formatos, f.definicao.formato) }}</dd>
     }
     <dt>Escopo</dt>
-    <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+    <dd>{{ rotulo(escopos, f.definicao.escopo) }}</dd>
     <dt>Componente de exibição</dt>
-    <dd>{{ f.componenteExibicao ? rotulo(componentes, f.componenteExibicao) : rotuloDoPadrao }}</dd>
+    <dd>{{ rotuloDoComponente(f.descritivo.componenteExibicao) }}</dd>
     <dt>Conhecido a partir da fase</dt>
     <dd>
-      <code>{{ f.pontoResolucao }}</code>
+      <code>{{ f.definicao.resolucao.pontoResolucao }}</code>
     </dd>
     @if (comProtecao) {
       <dt>Proteção de dados</dt>
-      <dd>{{ rotulo(classificacoes, f.classificacaoProtecao) }}</dd>
+      <dd>{{ rotulo(classificacoes, f.definicao.protecao.classificacao) }}</dd>
       <dt>Base legal</dt>
-      <dd>{{ rotulo(hipoteses, f.hipoteseLegal) }}</dd>
+      <dd>{{ rotulo(hipoteses, f.definicao.protecao.hipoteseLegal) }}</dd>
       <dt>Finalidade do tratamento</dt>
-      <dd>{{ f.finalidadeTratamento }}</dd>
+      <dd>{{ f.definicao.protecao.finalidade }}</dd>
     }
   </dl>
 </ng-template>
@@ -89,7 +93,7 @@
           <code>{{ f.codigo }}</code>
         </dd>
         <dt>Origem</dt>
-        <dd>{{ rotulo(origens, f.origem) }}</dd>
+        <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
         @if (leitura.membroDoAgregado(); as membro) {
           <dt>Fato de membro resumido</dt>
           <dd>

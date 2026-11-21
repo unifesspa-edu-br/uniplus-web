@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
+import { COM_LISTA } from '../editor-de-condicoes/operadores-de-exemplo.testing';
 import { EditorDeFormularioComponent } from './editor-de-formulario';
 import type { EdicaoDoFormulario } from './modelo/campos-editados';
 import type { ConteudoDoFormulario } from './modelo/tipos';
@@ -15,9 +16,7 @@ const conteudo: ConteudoDoFormulario = {
       ordem: 0,
       tipo: 'SECAO',
       bloco: null,
-      titulo: 'Dados',
-      descricao: null,
-      aviso: null,
+      apresentacao: { titulo: 'Dados', descricao: null, aviso: null },
     },
   ],
   grupos: [
@@ -26,12 +25,8 @@ const conteudo: ConteudoDoFormulario = {
       ordem: 0,
       rotulo: 'Composição familiar',
       etapaCodigo: 'secao',
-      minimo: 0,
-      maximo: null,
-      incluiCandidato: false,
-      exibicao: null,
-      obrigatoriedade: 'SEMPRE',
-      predicadoObrigatoriedade: null,
+      ocorrencias: { minimo: 0, maximo: null, incluiCandidato: false },
+      regras: { exibicao: null, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
       subitens: [],
     },
   ],
@@ -58,9 +53,9 @@ describe('campos confirmados no editor', () => {
     expect(minimo).not.toBeNull();
     minimo?.dispatchEvent(new Event('change'));
     expect(edicoes).toHaveLength(1);
-    expect(edicoes[0].camposEditados).toEqual([['grupos', 'familia', 'minimo']]);
+    expect(edicoes[0].camposEditados).toEqual([['grupos', 'familia', 'ocorrencias', 'minimo']]);
     expect(edicoes[0].conteudo).toBe(completos[0]);
-    expect(completos[0].grupos?.[0].minimo).toBe(0);
+    expect(completos[0].grupos?.[0].ocorrencias.minimo).toBe(0);
   });
 
   it('a identificação da ação anterior não acompanha a edição seguinte', () => {
@@ -78,6 +73,7 @@ describe('campos confirmados no editor', () => {
         nome: 'Parentesco',
         dominio: 'CATEGORICO',
         valoresDominio: ['PROPRIO_CANDIDATO'],
+        operadoresAdmitidos: COM_LISTA,
         binding: 'CAMPO_FORMULARIO:PARENTESCO',
         cardinalidade: 'ESCALAR',
         fonteValores: null,
@@ -93,13 +89,20 @@ describe('campos confirmados no editor', () => {
     expect(caixa).not.toBeNull();
     if (caixa !== null) caixa.checked = true;
     caixa?.dispatchEvent(new Event('change'));
-    expect(edicoes[0].camposEditados).toContainEqual(['grupos', 'familia', 'minimo']);
+    expect(edicoes[0].camposEditados).toContainEqual([
+      'grupos',
+      'familia',
+      'ocorrencias',
+      'minimo',
+    ]);
     expect(edicoes[0].camposEditados).toContainEqual([
       'grupos',
       'familia',
       'subitens',
       'PARENTESCO',
+      'regras',
       'obrigatoriedade',
+      'tipo',
     ]);
     expect(edicoes[0].conteudo.grupos?.[0].subitens[0].fatoCodigo).toBe('PARENTESCO');
   });

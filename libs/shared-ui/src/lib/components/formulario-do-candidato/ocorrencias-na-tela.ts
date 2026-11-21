@@ -6,6 +6,8 @@ import {
 } from './interpretador/ocorrencia-do-candidato';
 import type {
   CampoAvaliado,
+  GrupoAvaliado,
+  ItemDasRegras,
   OcorrenciaSimulada,
   ValorJson,
 } from './interpretador/regras-do-formulario';
@@ -26,10 +28,8 @@ export function ocorrenciasNaTela(
   lista: readonly OcorrenciaSimulada[],
   indiceDoCandidato: number | null,
 ): readonly OcorrenciaNaTela[] {
-  const titulos = titulosDasOcorrencias(
-    noPasso.grupo.incluiCandidato,
-    lista.map((o) => o.respostas),
-  );
+  const respostas = lista.map((o) => o.respostas);
+  const titulos = titulosDasOcorrencias(noPasso.grupo.ocorrencias.incluiCandidato, respostas);
   return lista.map((ocorrencia, i) => ({
     id: ocorrencia.id,
     titulo: titulos[i],
@@ -39,51 +39,70 @@ export function ocorrenciasNaTela(
   }));
 }
 
+interface ContextoDaOcorrencia {
+  readonly doCandidato: boolean;
+  readonly comCandidatoNaLista: boolean;
+}
+
 function camposDaOcorrencia(
   { grupo, avaliado, regras }: GrupoNoPasso,
   indice: number,
   indiceDoCandidato: number | null,
 ): CampoNoPasso[] {
-  const avaliados = new Map(
-    (avaliado.ocorrencias[indice]?.campos ?? []).map((c) => [c.fatoCodigo, c]),
-  );
+  const avaliados = avaliadosDaOcorrencia(avaliado, indice);
+  const contexto = {
+    doCandidato: indice === indiceDoCandidato,
+    comCandidatoNaLista: indiceDoCandidato !== null,
+  };
   return [...grupo.subitens]
     .sort((a, b) => a.ordem - b.ordem)
-    .flatMap((campo) => {
-      const noCampo = campoDaOcorrencia(campo, avaliados.get(campo.fatoCodigo), {
-        doCandidato: indice === indiceDoCandidato,
-        comCandidatoNaLista: indiceDoCandidato !== null,
-      });
-      return noCampo === null ? [] : [{ ...noCampo, regra: regras.get(campo.fatoCodigo) ?? null }];
-    });
+    .flatMap((campo) => campoComRegra(campo, avaliados.get(campo.fatoCodigo), contexto, regras));
+}
+
+function avaliadosDaOcorrencia(
+  avaliado: GrupoAvaliado,
+  indice: number,
+): ReadonlyMap<string, CampoAvaliado> {
+  const campos = avaliado.ocorrencias.lista[indice]?.campos ?? [];
+  return new Map(campos.map((c) => [c.fatoCodigo, c]));
+}
+
+function campoComRegra(
+  campo: CampoRenderizavel,
+  avaliado: CampoAvaliado | undefined,
+  contexto: ContextoDaOcorrencia,
+  regras: ReadonlyMap<string, ItemDasRegras>,
+): CampoNoPasso[] {
+  const noCampo = campoDaOcorrencia(campo, avaliado, contexto);
+  return noCampo === null ? [] : [{ ...noCampo, regra: regras.get(campo.fatoCodigo) ?? null }];
 }
 
 function campoDaOcorrencia(
   campo: CampoRenderizavel,
   avaliado: CampoAvaliado | undefined,
-  contexto: { doCandidato: boolean; comCandidatoNaLista: boolean },
+  contexto: ContextoDaOcorrencia,
 ): Pick<CampoNoPasso, 'campo' | 'avaliado'> | null {
   // O parentesco da ocorrência do candidato é fixo: não se pergunta.
   if (contexto.doCandidato && campo.fatoCodigo === FATO_PARENTESCO) return null;
-  if (!avaliado || avaliado.visivel !== 'VERDADEIRO') return null;
+  if (!avaliado || avaliado.regras.visivel !== 'VERDADEIRO') return null;
   // Com o candidato já na lista, o parentesco dos outros integrantes não oferece o próprio candidato.
   if (!contexto.comCandidatoNaLista || campo.fatoCodigo !== FATO_PARENTESCO)
     return { campo, avaliado };
+  return { campo: semOProprioCandidato(campo), avaliado: semOProprioCandidatoNasOpcoes(avaliado) };
+}
+
+function semOProprioCandidato(campo: CampoRenderizavel): CampoRenderizavel {
   return {
-    campo: {
-      ...campo,
-      valoresSelecionaveis: campo.valoresSelecionaveis?.filter(
-        (v) => v.codigo !== PROPRIO_CANDIDATO,
-      ),
-    },
-    avaliado: avaliado.opcoes
-      ? {
-          ...avaliado,
-          opcoes: {
-            ...avaliado.opcoes,
-            codigos: avaliado.opcoes.codigos?.filter((c) => c !== PROPRIO_CANDIDATO),
-          },
-        }
-      : avaliado,
+    ...campo,
+    valoresSelecionaveis: campo.valoresSelecionaveis?.filter((v) => v.codigo !== PROPRIO_CANDIDATO),
+  };
+}
+
+function semOProprioCandidatoNasOpcoes(avaliado: CampoAvaliado): CampoAvaliado {
+  const { opcoes } = avaliado;
+  if (!opcoes) return avaliado;
+  return {
+    ...avaliado,
+    opcoes: { ...opcoes, codigos: opcoes.codigos?.filter((c) => c !== PROPRIO_CANDIDATO) },
   };
 }

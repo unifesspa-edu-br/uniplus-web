@@ -140,7 +140,7 @@ describe('FasePassoComponent', () => {
         etapasVivas: new Set<string>(),
         finalidadesPorFase: new Map([['AVALIACAO', ['INSCRICAO']]]),
       });
-      expect(raizes[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+      expect(raizes[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
     });
 
     it('na fase que não responde formulário nenhum, o formulário declarado antes se desfaz pela opção "Nenhum"', () => {
@@ -199,8 +199,8 @@ describe('FasePassoComponent', () => {
         finalidadesPorFase: new Map(),
       });
 
-      expect(raizes[0].documento?.formatosPermitidos).toEqual(['PDF', 'JPEG']);
-      expect(raizes[0].documento?.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
+      expect(raizes[0].documento?.requisitos?.formatosPermitidos).toEqual(['PDF', 'JPEG']);
+      expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(10 * 1024 * 1024);
     });
 
     it('não inventa restrição para tipo cujo cadastro não declara nenhuma', () => {

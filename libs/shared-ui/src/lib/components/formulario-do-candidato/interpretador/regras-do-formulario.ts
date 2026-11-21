@@ -18,11 +18,12 @@ export type ValorJson =
 
 /**
  * Uma condição sobre um fato: `{ fato, operador, valor }`. O valor chega como qualquer JSON — o contrato o
- * declara sem forma — e a leitura das regras confere se ele cabe no operador.
+ * declara sem forma — e a leitura das regras confere se ele cabe no operador. O operador ausente ou
+ * desconhecido é recusado na leitura.
  */
 export interface CondicaoDasRegras {
   readonly fato: string;
-  readonly operador: string;
+  readonly operador: string | null;
   readonly valor?: unknown;
 }
 
@@ -63,25 +64,41 @@ export interface ImpedimentoDasRegras {
   readonly mensagem?: string | null;
 }
 
-export interface ItemDasRegras {
-  readonly fatoCodigo: string;
+/** A obrigatoriedade: o tipo e, só em `QUANDO`, o predicado. */
+export interface ObrigatoriedadeDasRegras {
+  readonly tipo: string;
+  readonly predicado?: PredicadoDasRegras;
+}
+
+/** O que decide se um elemento aparece e se é obrigatório. */
+export interface ExibicaoEObrigatoriedadeDasRegras {
   readonly exibicao?: PredicadoDasRegras;
-  readonly obrigatoriedade: string;
-  readonly predicadoObrigatoriedade?: PredicadoDasRegras;
+  readonly obrigatoriedade: ObrigatoriedadeDasRegras;
+}
+
+export interface RegrasDoItemDasRegras extends ExibicaoEObrigatoriedadeDasRegras {
   readonly restricoes?: readonly RestricaoDasRegras[] | null;
   readonly impedimento?: ImpedimentoDasRegras | null;
+}
+
+export interface ItemDasRegras {
+  readonly fatoCodigo: string;
+  readonly regras: RegrasDoItemDasRegras;
   readonly oferta?: readonly string[] | null;
   readonly formato?: string | null;
 }
 
-export interface GrupoDasRegras {
-  readonly codigo: string;
-  readonly exibicao?: PredicadoDasRegras;
-  readonly obrigatoriedade: string;
-  readonly predicadoObrigatoriedade?: PredicadoDasRegras;
+/** A contagem de ocorrências de um grupo repetível. */
+export interface OcorrenciasDoGrupoDasRegras {
   readonly minimo: number;
   readonly maximo?: number | null;
   readonly incluiCandidato: boolean;
+}
+
+export interface GrupoDasRegras {
+  readonly codigo: string;
+  readonly ocorrencias: OcorrenciasDoGrupoDasRegras;
+  readonly regras: ExibicaoEObrigatoriedadeDasRegras;
   readonly subitens?: readonly ItemDasRegras[] | null;
 }
 
@@ -94,9 +111,7 @@ export interface EtapaDasRegras {
 
 export interface TermoDasRegras {
   readonly codigo: string;
-  readonly exibicao?: PredicadoDasRegras;
-  readonly obrigatoriedade: string;
-  readonly predicadoObrigatoriedade?: PredicadoDasRegras;
+  readonly regras: ExibicaoEObrigatoriedadeDasRegras;
 }
 
 export interface RegraDeDerivacaoDasRegras {
@@ -163,14 +178,18 @@ export interface EtapaAvaliada {
   readonly visivel: string;
 }
 
-export interface CampoAvaliado {
-  readonly fatoCodigo: string;
-  readonly etapaCodigo: string;
-  readonly estado: string;
+export interface RegrasDoCampoAvaliadas {
   readonly visivel: string;
   readonly obrigatorio: string;
   readonly restricoesVioladas: readonly string[];
   readonly impedido: string;
+}
+
+export interface CampoAvaliado {
+  readonly fatoCodigo: string;
+  readonly etapaCodigo: string;
+  readonly estado: string;
+  readonly regras: RegrasDoCampoAvaliadas;
   readonly opcoes: OpcoesVigentes | null;
 }
 
@@ -180,15 +199,23 @@ export interface OcorrenciaAvaliada {
   readonly campos: readonly CampoAvaliado[];
 }
 
+export interface ExibicaoEObrigatoriedadeAvaliadas {
+  readonly visivel: string;
+  readonly obrigatorio: string;
+}
+
+export interface OcorrenciasAvaliadas {
+  readonly contagemValida: boolean;
+  readonly ocorrenciaDoCandidatoValida: boolean;
+  readonly lista: readonly OcorrenciaAvaliada[];
+}
+
 export interface GrupoAvaliado {
   readonly codigo: string;
   readonly etapaCodigo: string;
-  readonly visivel: string;
-  readonly obrigatorio: string;
   readonly estado: string;
-  readonly contagemValida: boolean;
-  readonly ocorrenciaDoCandidatoValida: boolean;
-  readonly ocorrencias: readonly OcorrenciaAvaliada[];
+  readonly regras: ExibicaoEObrigatoriedadeAvaliadas;
+  readonly ocorrencias: OcorrenciasAvaliadas;
 }
 
 export interface TermoAvaliado {

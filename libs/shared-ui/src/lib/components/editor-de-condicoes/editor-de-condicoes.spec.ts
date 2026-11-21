@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { EditorDeCondicoesComponent } from './editor-de-condicoes';
+import { COM_LISTA, COM_ORDEM, SO_IGUALDADE } from './operadores-de-exemplo.testing';
 import {
   clausulasDe,
   comClausulaEm,
@@ -25,18 +26,21 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
     dominio: 'CATEGORICO',
     valoresDominio: ['FEMININO', 'MASCULINO', 'INTERSEXO'],
     binding: 'CAMPO_FORMULARIO:SEXO',
+    operadoresAdmitidos: COM_LISTA,
   },
   {
     codigo: 'PCD',
     nome: 'Pessoa com deficiência',
     dominio: 'BOOLEANO',
     binding: 'CAMPO_INSCRICAO:PCD',
+    operadoresAdmitidos: SO_IGUALDADE,
   },
   {
     codigo: 'FAIXA_ETARIA',
     nome: 'Faixa etária',
     dominio: 'NUMERICO',
     binding: 'ATRIBUTO_CANDIDATO:IDADE',
+    operadoresAdmitidos: COM_ORDEM,
   },
   {
     codigo: 'MODALIDADE',
@@ -44,8 +48,15 @@ const CATALOGO: readonly FatoDoCatalogo[] = [
     dominio: 'CATEGORICO',
     valoresDominio: null,
     binding: 'REGRA_DERIVACAO:MODALIDADE',
+    operadoresAdmitidos: COM_LISTA,
   },
-  { codigo: 'NOME', nome: 'Nome', dominio: 'TEXTO', binding: 'CAMPO_FORMULARIO:NOME' },
+  {
+    codigo: 'NOME',
+    nome: 'Nome',
+    dominio: 'TEXTO',
+    binding: 'CAMPO_FORMULARIO:NOME',
+    operadoresAdmitidos: [],
+  },
 ];
 
 const FATOS: readonly FatoEscolhivel[] = fatosEscolhiveis(CATALOGO, new Map(), ['MODALIDADE']);

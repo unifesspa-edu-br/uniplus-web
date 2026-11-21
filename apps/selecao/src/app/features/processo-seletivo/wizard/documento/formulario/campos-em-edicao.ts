@@ -40,10 +40,15 @@ function diferencasDaLista(
   return estruturaMudou ? [caminho, ...campos] : campos;
 }
 
+const BLOCOS_ACHATADOS_NO_DOCUMENTO: ReadonlySet<string> = new Set([
+  'apresentacao',
+  'ocorrencias',
+  'termo',
+]);
+const PARTES_DA_OBRIGATORIEDADE: ReadonlySet<string> = new Set(['tipo', 'predicado']);
+
 function nomeNoDocumento(campo: string): string {
   switch (campo) {
-    case 'predicadoObrigatoriedade':
-      return 'obrigatoriedade';
     case 'termoId':
       return 'termoCodigo';
     case 'versaoId':
@@ -53,15 +58,31 @@ function nomeNoDocumento(campo: string): string {
   }
 }
 
+function ehItem(caminho: readonly string[], posicao: number): boolean {
+  return caminho[posicao - 2] === 'itens' || caminho[posicao - 2] === 'subitens';
+}
+
+/** O mesmo campo no documento, que guarda a apresentação, as ocorrências e as regras sem o bloco que o editor usa. */
+function caminhoNoDocumento(caminho: readonly string[]): readonly string[] {
+  return caminho.reduce<readonly string[]>((atual, parte, posicao) => {
+    if (BLOCOS_ACHATADOS_NO_DOCUMENTO.has(parte) || parte === 'regras') return atual;
+    if (caminho[posicao - 1] === 'regras' && parte === 'exibicao')
+      return [...atual, ehItem(caminho, posicao - 1) ? 'precondicao' : 'exibicao'];
+    const naObrigatoriedade =
+      caminho[posicao - 1] === 'obrigatoriedade' && PARTES_DA_OBRIGATORIEDADE.has(parte);
+    return naObrigatoriedade ? atual : [...atual, nomeNoDocumento(parte)];
+  }, []);
+}
+
 /** Preserva ausência, nulo e campos fora do editor; só os campos editados recebem a conversão. */
 export class CamposEmEdicao {
   constructor(readonly campos: CamposEditadosDoFormulario) {}
 
   editou(caminho: readonly string[]): boolean {
-    const normalizado = caminho.map(nomeNoDocumento);
-    return this.campos.some((campo) =>
-      normalizado.every((parte, indice) => nomeNoDocumento(campo[indice] ?? '') === parte),
-    );
+    return this.campos.some((campo) => {
+      const editado = caminhoNoDocumento(campo);
+      return caminho.every((parte, indice) => editado[indice] === parte);
+    });
   }
 
   preservar<T extends object>(

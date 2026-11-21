@@ -6,14 +6,14 @@ import {
 } from '@uniplus/shared-data/selecao';
 import type {
   CaminhoDoCampo as Caminho,
-  ItemDoFormulario,
+  ExibicaoEObrigatoriedade,
+  Obrigatoriedade as ObrigatoriedadeEditada,
   PredicadoNoWire,
 } from '@uniplus/shared-ui/components';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
 
 type Obrigatoriedade = NonNullable<NonNullable<Formulario['itens']>[number]['obrigatoriedade']>;
 type Condicao = NonNullable<PredicadoNoWire>[number][number];
-type Exigencia = Pick<ItemDoFormulario, 'obrigatoriedade' | 'predicadoObrigatoriedade'>;
 
 function converterCondicao(condicao: Condicao, contexto: Contexto, caminho: Caminho) {
   const operador = contexto.escolha(OperadorDaCondicao, condicao.operador, [
@@ -36,25 +36,43 @@ export function predicadoDoDocumento(
   );
 }
 
-export function lerObrigatoriedade(valor: Obrigatoriedade | undefined) {
+export function lerObrigatoriedade(valor: Obrigatoriedade | undefined): ObrigatoriedadeEditada {
+  return { tipo: valor?.tipo ?? 'SEMPRE', predicado: valor?.predicado ?? null };
+}
+
+export function lerExibicaoEObrigatoriedade(
+  exibicao: PredicadoNoWire | undefined,
+  obrigatoriedade: Obrigatoriedade | undefined,
+): ExibicaoEObrigatoriedade {
+  return { exibicao: exibicao ?? null, obrigatoriedade: lerObrigatoriedade(obrigatoriedade) };
+}
+
+export function regrasDoDocumento(
+  regras: ExibicaoEObrigatoriedade,
+  contexto: Contexto,
+  caminho: Caminho,
+) {
   return {
-    obrigatoriedade: valor?.tipo ?? 'SEMPRE',
-    predicadoObrigatoriedade: valor?.predicado ?? null,
+    exibicao: predicadoDoDocumento(regras.exibicao, contexto, [...caminho, 'exibicao']),
+    obrigatoriedade: obrigatoriedadeDoDocumento(regras.obrigatoriedade, contexto, [
+      ...caminho,
+      'obrigatoriedade',
+    ]),
   };
 }
 
 export function obrigatoriedadeDoDocumento(
-  exigencia: Exigencia,
+  obrigatoriedade: ObrigatoriedadeEditada,
   contexto: Contexto,
   caminho: Caminho,
 ): Obrigatoriedade | undefined {
-  if (exigencia.obrigatoriedade === null) return undefined;
-  const tipo = contexto.escolha(Tipo, exigencia.obrigatoriedade, [...caminho, 'tipo']);
+  if (obrigatoriedade.tipo === null) return undefined;
+  const tipo = contexto.escolha(Tipo, obrigatoriedade.tipo, [...caminho, 'tipo']);
   if (tipo === undefined) return undefined;
   const local = [...caminho, 'predicado'];
   const predicado =
     tipo === Tipo.QUANDO
-      ? predicadoDoDocumento(exigencia.predicadoObrigatoriedade, contexto, local)
+      ? predicadoDoDocumento(obrigatoriedade.predicado, contexto, local)
       : undefined;
   return tipo === Tipo.QUANDO ? { tipo, predicado } : { tipo };
 }

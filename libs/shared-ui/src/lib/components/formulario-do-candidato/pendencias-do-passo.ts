@@ -1,6 +1,11 @@
 import { RESOLVIDO, VERDADEIRO } from './interpretador/logica';
-import type { CampoAvaliado } from './interpretador/regras-do-formulario';
-import type { GrupoNoPasso, PassoDoFormulario, TermoNoPasso } from './passos-do-formulario';
+import type { CampoAvaliado, OcorrenciaAvaliada } from './interpretador/regras-do-formulario';
+import type {
+  CampoNoPasso,
+  GrupoNoPasso,
+  PassoDoFormulario,
+  TermoNoPasso,
+} from './passos-do-formulario';
 
 const VISIVEL = 'VERDADEIRO';
 
@@ -41,29 +46,31 @@ export function pendenciasDo(
   semCobranca: ReadonlySet<string> = new Set(),
 ): PendenciaDoPasso[] {
   return [
-    ...passo.campos.flatMap((c) => [
-      ...(campoPendente(c.avaliado) && !semCobranca.has(c.campo.fatoCodigo)
-        ? [daResposta(c.campo.fatoCodigo)]
-        : []),
-      ...(confirmacoes.has(c.campo.fatoCodigo)
-        ? [{ campo: c.campo.fatoCodigo, naConfirmacao: true }]
-        : []),
-    ]),
-    ...passo.grupos.flatMap((g) => {
-      const pendencia = pendenciaDoGrupo(g, confirmacoes);
-      return pendencia === null ? [] : [pendencia];
-    }),
+    ...passo.campos.flatMap((c) => pendenciasDoCampo(c, confirmacoes, semCobranca)),
+    ...passo.grupos.map((g) => pendenciaDoGrupo(g, confirmacoes)).filter((p) => p !== null),
     ...passo.termos
       .filter((t) => termoSemAceite(t, aceitos))
       .map((t) => daResposta(t.termo.codigo)),
   ];
 }
 
+function pendenciasDoCampo(
+  { campo, avaliado }: CampoNoPasso,
+  confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+  semCobranca: ReadonlySet<string>,
+): PendenciaDoPasso[] {
+  const codigo = campo.fatoCodigo;
+  return [
+    ...(campoPendente(avaliado) && !semCobranca.has(codigo) ? [daResposta(codigo)] : []),
+    ...(confirmacoes.has(codigo) ? [{ campo: codigo, naConfirmacao: true }] : []),
+  ];
+}
+
 function campoPendente(avaliado: CampoAvaliado): boolean {
   return (
-    avaliado.restricoesVioladas.length > 0 ||
-    avaliado.impedido === VERDADEIRO ||
-    (avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO)
+    avaliado.regras.restricoesVioladas.length > 0 ||
+    avaliado.regras.impedido === VERDADEIRO ||
+    (avaliado.regras.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO)
   );
 }
 
@@ -76,17 +83,37 @@ function pendenciaDoGrupo(
   { grupo, avaliado }: GrupoNoPasso,
   confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
 ): PendenciaDoPasso | null {
-  if (!avaliado.contagemValida || !avaliado.ocorrenciaDoCandidatoValida)
+  const { regras, ocorrencias } = avaliado;
+  if (!ocorrencias.contagemValida || !ocorrencias.ocorrenciaDoCandidatoValida)
     return daResposta(grupo.codigo);
-  for (const ocorrencia of avaliado.ocorrencias) {
-    for (const subitem of ocorrencia.campos) {
-      if (subitem.visivel !== VISIVEL) continue;
-      const caminho = `${grupo.codigo}.${ocorrencia.id}.${subitem.fatoCodigo}`;
-      if (campoPendente(subitem)) return daResposta(caminho);
-      if (confirmacoes.has(caminho)) return { campo: caminho, naConfirmacao: true };
-    }
-  }
-  return avaliado.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO
+  const doSubitem = pendenciaDosSubitens(grupo.codigo, ocorrencias.lista, confirmacoes);
+  if (doSubitem !== null) return doSubitem;
+  return regras.obrigatorio === VERDADEIRO && avaliado.estado !== RESOLVIDO
     ? daResposta(grupo.codigo)
     : null;
+}
+
+function pendenciaDosSubitens(
+  grupo: string,
+  ocorrencias: readonly OcorrenciaAvaliada[],
+  confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+): PendenciaDoPasso | null {
+  for (const ocorrencia of ocorrencias) {
+    for (const subitem of ocorrencia.campos) {
+      const caminho = `${grupo}.${ocorrencia.id}.${subitem.fatoCodigo}`;
+      const pendencia = pendenciaDoSubitem(caminho, subitem, confirmacoes);
+      if (pendencia !== null) return pendencia;
+    }
+  }
+  return null;
+}
+
+function pendenciaDoSubitem(
+  caminho: string,
+  subitem: CampoAvaliado,
+  confirmacoes: ReadonlyMap<string, ProblemaDaConfirmacao>,
+): PendenciaDoPasso | null {
+  if (subitem.regras.visivel !== VISIVEL) return null;
+  if (campoPendente(subitem)) return daResposta(caminho);
+  return confirmacoes.has(caminho) ? { campo: caminho, naConfirmacao: true } : null;
 }

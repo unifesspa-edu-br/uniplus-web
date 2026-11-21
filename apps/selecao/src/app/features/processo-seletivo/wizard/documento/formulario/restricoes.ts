@@ -1,5 +1,5 @@
 import {
-  AncoraDaRestricaoDoFormulario as Ancora,
+  ReferenciaDoLimiteDeData as ReferenciaDoLimite,
   TipoDaRestricaoDoFormulario as Tipo,
   type DocumentoDaConfiguracaoFormulario as Formulario,
 } from '@uniplus/shared-data/selecao';
@@ -52,9 +52,12 @@ function gravarLimite(
   caminho: Caminho,
 ): Limite | null | undefined {
   if (limite == null) return limite;
-  const ancora = contexto.escolha(Ancora, limite.ancora, [...caminho, 'ancora']);
-  if (ancora === undefined) return undefined;
-  const convertido: Limite = { ancora, ...deslocamentoDoLimite(limite, contexto, caminho) };
+  const referencia = contexto.escolha(ReferenciaDoLimite, limite.ancora, [...caminho, 'ancora']);
+  if (referencia === undefined) return undefined;
+  const convertido: Limite = {
+    ancora: referencia,
+    ...deslocamentoDoLimite(limite, contexto, caminho),
+  };
   return contexto.edicao.preservar(original ?? undefined, convertido, CAMPOS_DO_LIMITE, caminho);
 }
 

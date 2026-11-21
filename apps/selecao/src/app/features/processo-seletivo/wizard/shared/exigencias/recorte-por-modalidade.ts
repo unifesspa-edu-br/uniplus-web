@@ -1,3 +1,5 @@
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
+
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
 
 import {
@@ -5,8 +7,6 @@ import {
   APLICABILIDADE_GERAL,
   FATO_MODALIDADE,
 } from './exigencias-documentais';
-
-const OPERADOR_EM = 'EM';
 
 /**
  * O recorte de modalidades declarado no gatilho da exigência, ou `null` quando ela vale para
@@ -20,24 +20,20 @@ export function modalidadesDaExigencia(documento: ExigenciaDeDocumento): readonl
 }
 
 /**
- * A exigência com o recorte trocado. `null` devolve o documento a todo candidato: a cláusula
+ * A exigência com as modalidades trocadas. `null` devolve o documento a todo candidato: a cláusula
  * sai do gatilho em vez de ficar como lista vazia, que o agregado recusa.
+ *
+ * Tirar as modalidades NÃO torna a exigência geral: pode haver condição sobre outro
+ * fato. A aplicabilidade só muda quando o operador a declara.
  */
 export function comModalidades(
   documento: ExigenciaDeDocumento,
   codigos: readonly string[] | null,
 ): ExigenciaDeDocumento {
-  if (codigos === null) {
-    // Tirar o recorte de modalidade NÃO torna a exigência geral: pode haver condição sobre
-    // outro fato. A aplicabilidade só muda quando o operador a declara.
-    return { ...documento, condicoes: comRecorteDeModalidade(documento.condicoes, null) };
-  }
-
-  return {
-    ...documento,
-    aplicabilidade: APLICABILIDADE_CONDICIONAL,
-    condicoes: comRecorteDeModalidade(documento.condicoes, codigos),
-  };
+  const condicoes = comRecorteDeModalidade(documento.condicoes, codigos);
+  return codigos === null
+    ? { ...documento, condicoes }
+    : { ...documento, aplicabilidade: APLICABILIDADE_CONDICIONAL, condicoes };
 }
 
 /**
@@ -63,25 +59,35 @@ export function comRecorteDeModalidade(
   condicoes: readonly CondicaoGatilhoConfig[],
   codigos: readonly string[] | null,
 ): readonly CondicaoGatilhoConfig[] {
-  // Só a cláusula que o controle "quem deve entregar" escreve é substituída — ela é a única
-  // que ele sabe reescrever. Uma comparação de modalidade de outra forma, que o domínio aceita
-  // e este wizard não escreve, sobrevive: descartá-la apagaria no servidor, a cada gravação,
-  // uma condição declarada por outro caminho.
-  const outras = condicoes.filter(
-    (condicao) => !(condicao.fato === FATO_MODALIDADE && condicao.operador === OPERADOR_EM),
-  );
+  const outras = condicoes.filter((condicao) => !ehCondicaoDasModalidades(condicao));
   if (codigos === null) return outras;
+  return [...outras, ...modalidadesEmCadaClausula(outras, codigos)];
+}
 
+/**
+ * Se a condição é a cláusula `MODALIDADE EM [...]` que o controle "quem deve entregar" escreve —
+ * a única que ele sabe reescrever. Uma comparação de modalidade de outra forma, que o domínio
+ * aceita e este wizard não escreve, sobrevive: descartá-la apagaria no servidor, a cada gravação,
+ * uma condição declarada por outro caminho.
+ */
+export function ehCondicaoDasModalidades(condicao: {
+  readonly fato: string;
+  readonly operador: string;
+}): boolean {
+  return condicao.fato === FATO_MODALIDADE && condicao.operador === OperadorCodigo.EM;
+}
+
+function modalidadesEmCadaClausula(
+  outras: readonly CondicaoGatilhoConfig[],
+  codigos: readonly string[],
+): readonly CondicaoGatilhoConfig[] {
   const valor = JSON.stringify(codigos);
-  return [
-    ...outras,
-    ...numerosDeClausula(outras).map((clausula: number) => ({
-      clausula,
-      fato: FATO_MODALIDADE,
-      operador: OPERADOR_EM,
-      valor,
-    })),
-  ];
+  return numerosDeClausula(outras).map((clausula) => ({
+    clausula,
+    fato: FATO_MODALIDADE,
+    operador: OperadorCodigo.EM,
+    valor,
+  }));
 }
 
 /**
@@ -149,18 +155,14 @@ export function recorteDeModalidades(
   documento: ExigenciaDeDocumento,
   modalidadesOfertadas: readonly string[],
 ): readonly string[] | null {
-  const declarado = modalidadesDoGatilho(documento.condicoes);
-  if (declarado === null) return null;
-
   const ofertadas = new Set(modalidadesOfertadas);
-  const recorte = declarado.filter((codigo) => ofertadas.has(codigo));
+  const recorte = (modalidadesDoGatilho(documento.condicoes) ?? []).filter((codigo) =>
+    ofertadas.has(codigo),
+  );
   if (recorte.length === 0) return null;
 
-  const temOutraCondicao = documento.condicoes.some(
-    (condicao) => condicao.fato !== FATO_MODALIDADE,
-  );
-  if (recorte.length === ofertadas.size && temOutraCondicao) return null;
-  return recorte;
+  const temOutraCondicao = documento.condicoes.some((c) => c.fato !== FATO_MODALIDADE);
+  return recorte.length === ofertadas.size && temOutraCondicao ? null : recorte;
 }
 
 /**
@@ -178,13 +180,13 @@ export function modalidadesDoGatilho(
     readonly valor: string;
   }[],
 ): readonly string[] | null {
-  const daModalidade = condicoes.find(
-    (condicao) => condicao.fato === FATO_MODALIDADE && condicao.operador === OPERADOR_EM,
-  );
-  if (daModalidade === undefined) return null;
+  const daModalidade = condicoes.find(ehCondicaoDasModalidades);
+  return daModalidade === undefined ? null : listaDeTextos(daModalidade.valor);
+}
 
+function listaDeTextos(texto: string): readonly string[] | null {
   try {
-    const valor: unknown = JSON.parse(daModalidade.valor);
+    const valor: unknown = JSON.parse(texto);
     if (!Array.isArray(valor)) return null;
     return valor.filter((item): item is string => typeof item === 'string');
   } catch {

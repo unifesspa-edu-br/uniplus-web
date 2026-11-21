@@ -25,9 +25,9 @@ function apresentacaoDaEtapa(etapa: EtapaDoFormulario) {
   return {
     codigo: etapa.codigo,
     ordem: etapa.ordem,
-    titulo: etapa.titulo || undefined,
-    descricao: etapa.descricao ?? undefined,
-    aviso: etapa.aviso ?? undefined,
+    titulo: etapa.apresentacao.titulo || undefined,
+    descricao: etapa.apresentacao.descricao ?? undefined,
+    aviso: etapa.apresentacao.aviso ?? undefined,
   };
 }
 

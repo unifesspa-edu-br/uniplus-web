@@ -1,16 +1,18 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { coletarPaginas, isApiOk, ProblemI18nService } from '@uniplus/shared-core/http';
+import { coletarPaginas, isApiOk } from '@uniplus/shared-core/http';
 import {
   BaseLegalBonusRegionalApi,
   BaseLegalBonusRegionalDto,
   TiposInstrumentoNormativoApi,
+  type TipoInstrumentoNormativoComDescricao,
 } from '@uniplus/shared-data/configuracao';
 import { acompanharCatalogo } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 
 const MENSAGEM_DAS_BASES_LEGAIS = 'Não foi possível carregar as bases legais de bônus regional.';
+const MENSAGEM_DOS_TIPOS_DE_NORMA = 'Não foi possível carregar como se lê o tipo de cada norma.';
 
 /** O que o `<select>` de base legal exibe — o mesmo par que `RegraEscolhivel` usa. */
 export interface BaseLegalEscolhivel {
@@ -21,10 +23,11 @@ export interface BaseLegalEscolhivel {
    * parecida é adivinhar, e é a norma que sustenta o bônus. Vêm do cadastro, e também do snapshot
    * congelado no processo, que guarda os dois.
    *
-   * `tipoInstrumento` é o código canônico do vocabulário fechado, não o rótulo: quem traduz é o
-   * próprio vocabulário, servido pela API.
+   * `tipo` é o rótulo do tipo da norma. A base do cadastro o traz da API; a que só o snapshot do
+   * processo conhece guarda o código, e o rótulo vem do vocabulário de tipos — vazio até ele
+   * chegar, para que o código não apareça na tela.
    */
-  readonly tipoInstrumento: string;
+  readonly tipo: string;
   readonly descricao: string;
   readonly municipios: readonly MunicipioBeneficiado[];
 }
@@ -36,20 +39,29 @@ export interface MunicipioBeneficiado {
   readonly uf: string;
 }
 
-/** As bases legais do bônus regional e o vocabulário que dá nome ao tipo de cada norma. */
+function escolhivelDoCadastro(base: BaseLegalBonusRegionalDto): BaseLegalEscolhivel {
+  return {
+    id: base.id,
+    identificacao: base.identificacao,
+    tipo: base.tipoInstrumento.rotulo,
+    descricao: base.descricao,
+    municipios: base.municipios,
+  };
+}
+
+/** As bases legais do bônus regional, com o tipo de cada norma como a API o entregou. */
 @Injectable()
 export class BasesLegaisDeBonus {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly baseLegalApi = inject(BaseLegalBonusRegionalApi);
   private readonly tiposInstrumentoApi = inject(TiposInstrumentoNormativoApi);
-  private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly basesLegais = signal<readonly BaseLegalBonusRegionalDto[]>([]);
   readonly carregando = signal(true);
   readonly erro = signal<string | null>(null);
 
-  /** O foco volta ao seletor de base legal, que as duas leituras alimentam. */
+  /** O foco volta ao seletor de base legal, que a leitura alimenta. */
   private readonly destinoNoSeletor = () => document.getElementById('f-bonus-base-legal');
 
   readonly leituraDasBasesLegais = acompanharCatalogo({
@@ -60,27 +72,17 @@ export class BasesLegaisDeBonus {
     destino: this.destinoNoSeletor,
   });
 
-  /**
-   * Os rótulos dos tipos de instrumento normativo, indexados pelo código. O código é UPPER_SNAKE,
-   * e exibi-lo cru numa tela em português mostra a grafia da máquina a quem monta o edital. A lista
-   * não se escreve aqui: é vocabulário fechado derivado de enum no servidor, e é ele quem publica o rótulo.
-   */
-  private readonly rotuloDoTipoInstrumento = signal<ReadonlyMap<string, string>>(new Map());
-
-  /**
-   * Se o vocabulário não pôde ser carregado. Engolir a falha deixaria o código da máquina
-   * permanente na tela, sem nada dizendo que algo falhou nem como tentar de novo.
-   */
-  readonly tiposInstrumentoErro = signal<string | null>(null);
-
-  /** Se o vocabulário está sendo buscado — trava o botão e evita duas chamadas concorrentes. */
+  private readonly tiposDeInstrumento = signal<readonly TipoInstrumentoNormativoComDescricao[]>([]);
   readonly tiposInstrumentoCarregando = signal(false);
+  readonly tiposInstrumentoErro = signal<string | null>(null);
 
   readonly leituraDosTiposDeInstrumento = acompanharCatalogo({
     assunto: 'tipos de norma',
     falha: computed(() => {
       const erro = this.tiposInstrumentoErro();
-      return erro === null ? null : `${erro} O tipo de cada norma aparece pelo código até o catálogo responder.`;
+      return erro === null
+        ? null
+        : `${erro} O tipo da norma gravada no processo não aparece até o catálogo responder.`;
     }),
     pendente: this.tiposInstrumentoCarregando,
     recarregar: () => this.carregarTiposDeInstrumento(),
@@ -93,13 +95,7 @@ export class BasesLegaisDeBonus {
    * snapshot do próprio processo carrega `identificacao` mesmo quando a base já saiu do catálogo.
    */
   readonly escolhiveis = computed<readonly BaseLegalEscolhivel[]>(() => {
-    const catalogo = this.basesLegais().map((base) => ({
-      id: base.id,
-      identificacao: base.identificacao,
-      tipoInstrumento: base.tipoInstrumento,
-      descricao: base.descricao,
-      municipios: base.municipios,
-    }));
+    const catalogo = this.basesLegais().map(escolhivelDoCadastro);
     const selecionadoId = this.store.draft().bonus.baseLegalBonusRegionalId;
     if (selecionadoId === '' || catalogo.some((base) => base.id === selecionadoId)) {
       return catalogo;
@@ -156,35 +152,20 @@ export class BasesLegaisDeBonus {
     this.tiposInstrumentoApi
       .listar()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (resultado) => {
-          if (isApiOk(resultado)) {
-            this.rotuloDoTipoInstrumento.set(
-              new Map(resultado.data.map((tipo) => [tipo.codigo, tipo.nome])),
-            );
-          } else {
-            this.tiposInstrumentoErro.set(this.problemI18n.resolve(resultado.problem).title);
-          }
-          this.tiposInstrumentoCarregando.set(false);
-        },
-        error: () => {
-          this.tiposInstrumentoErro.set(
-            'Não foi possível carregar como se lê o tipo de cada norma.',
-          );
-          this.tiposInstrumentoCarregando.set(false);
-        },
+      .subscribe((resultado) => {
+        if (isApiOk(resultado)) this.tiposDeInstrumento.set(resultado.data);
+        else this.tiposInstrumentoErro.set(MENSAGEM_DOS_TIPOS_DE_NORMA);
+        this.tiposInstrumentoCarregando.set(false);
       });
   }
 
-  /** O tipo da norma como se lê, ou o código quando o vocabulário ainda não chegou. */
-  rotuloDoTipo(codigo: string): string {
-    if (codigo === '') return '';
-    return this.rotuloDoTipoInstrumento().get(codigo) ?? codigo;
+  /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
+  rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipo' | 'identificacao'>): string {
+    return `${base.tipo} ${base.identificacao}`.trim();
   }
 
-  /** A norma pelo tipo e pela identificação, no seletor e na consulta. */
-  rotuloDaBaseLegal(base: Pick<BaseLegalEscolhivel, 'tipoInstrumento' | 'identificacao'>): string {
-    return `${this.rotuloDoTipo(base.tipoInstrumento)} ${base.identificacao}`.trim();
+  private rotuloDoTipoDoSnapshot(codigo: string): string {
+    return this.tiposDeInstrumento().find((tipo) => tipo.codigo === codigo)?.rotulo ?? '';
   }
 
   /**
@@ -193,14 +174,15 @@ export class BasesLegaisDeBonus {
    */
   private gravadaForaDoCatalogo(selecionadoId: string): BaseLegalEscolhivel | null {
     const snapshot = this.store.remoteSnapshot()?.bonusRegional;
-    if (!snapshot || snapshot.baseLegalBonusRegionalId !== selecionadoId) return null;
+    if (!snapshot || snapshot.baseLegal.id !== selecionadoId) return null;
 
+    const base = snapshot.baseLegal;
     return {
-      id: snapshot.baseLegalBonusRegionalId,
-      identificacao: snapshot.identificacao,
-      tipoInstrumento: snapshot.tipoInstrumento,
-      descricao: snapshot.descricao,
-      municipios: snapshot.municipios,
+      id: base.id,
+      identificacao: base.identificacao,
+      tipo: this.rotuloDoTipoDoSnapshot(base.tipoInstrumento),
+      descricao: base.descricao,
+      municipios: base.municipios,
     };
   }
 }

@@ -1,4 +1,15 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import {
+  BASE_DA_LISTA,
+  MARABA,
+  TIPOS_INSTRUMENTO,
+  TIPO_PORTARIA,
+} from '../support/api-da-base-legal-bonus-regional';
+import {
+  campoDaDescricao,
+  campoDaIdentificacao,
+  tipoDoInstrumento,
+} from '../support/passos-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -14,23 +25,6 @@ const CORS_HEADERS = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
-};
-
-const TIPOS_INSTRUMENTO = [
-  { codigo: 'PORTARIA', nome: 'Portaria', descricao: 'Ato administrativo de autoridade pública.' },
-  { codigo: 'LEI', nome: 'Lei', descricao: 'Ato normativo de maior hierarquia.' },
-];
-
-const MARABA = { id: 'cidade-1504208', codigoIbge: '1504208', nome: 'Marabá', uf: 'PA', ddd: '94' };
-
-const portariaSeed = {
-  id: 'ba5e0000-0000-7000-8000-000000000001',
-  codigo: 'PORTARIA_UNIFESSPA_2514_2023',
-  tipoInstrumento: 'PORTARIA',
-  identificacao: 'Portaria Unifesspa nº 2514/2023',
-  descricao: 'Institui inclusão regional.',
-  municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],
-  criadoEm: '2026-01-01T00:00:00Z',
 };
 
 interface Capturado {
@@ -114,9 +108,12 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova base legal' }).click();
-    await page.locator('[formControlName="tipoInstrumento"]').selectOption('PORTARIA');
-    await page.locator('[formControlName="identificacao"]').fill('Portaria Unifesspa nº 2514/2023');
-    await page.locator('[formControlName="descricao"]').fill('Institui inclusão regional.');
+    const formulario = page.getByRole('dialog', {
+      name: 'Formulário de base legal de bônus regional',
+    });
+    await tipoDoInstrumento(formulario).selectOption({ label: TIPO_PORTARIA.rotulo });
+    await campoDaIdentificacao(formulario).fill(BASE_DA_LISTA.identificacao);
+    await campoDaDescricao(formulario).fill(BASE_DA_LISTA.descricao);
 
     await page.getByPlaceholder('Digite o nome completo do município…').fill('Marabá');
     await page.getByRole('button', { name: /Marabá — PA/ }).click();
@@ -126,8 +123,8 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
-      tipoInstrumento: 'PORTARIA',
-      identificacao: 'Portaria Unifesspa nº 2514/2023',
+      tipoInstrumento: TIPO_PORTARIA.codigo,
+      identificacao: BASE_DA_LISTA.identificacao,
       municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],
     });
   });
@@ -138,9 +135,12 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
     await abrirPagina(page);
 
     await page.getByRole('button', { name: 'Nova base legal' }).click();
-    await page.locator('[formControlName="tipoInstrumento"]').selectOption('PORTARIA');
-    await page.locator('[formControlName="identificacao"]').fill('Portaria de teste');
-    await page.locator('[formControlName="descricao"]').fill('Descrição de teste válida.');
+    const formulario = page.getByRole('dialog', {
+      name: 'Formulário de base legal de bônus regional',
+    });
+    await tipoDoInstrumento(formulario).selectOption({ label: TIPO_PORTARIA.rotulo });
+    await campoDaIdentificacao(formulario).fill('Portaria de teste');
+    await campoDaDescricao(formulario).fill('Descrição de teste válida.');
 
     await page.getByRole('button', { name: 'Criar base legal' }).click();
 
@@ -150,12 +150,12 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
 
   test('CA-05: remover uma Base Legal exige confirmação antes do soft-delete', async ({ page }) => {
     const capturado = novoCapturado();
-    await mockApi(page, capturado, [portariaSeed]);
+    await mockApi(page, capturado, [BASE_DA_LISTA]);
     await abrirPagina(page);
 
     await page
       .getByRole('button', {
-        name: `Remover base legal de bônus regional ${portariaSeed.identificacao}`,
+        name: `Remover base legal de bônus regional ${BASE_DA_LISTA.identificacao}`,
         exact: true,
       })
       .click();
@@ -165,6 +165,6 @@ test.describe('Base Legal de Bônus Regional — CRUD (#754)', () => {
 
     await dialog.getByRole('button', { name: 'Remover' }).click();
 
-    await expect.poll(() => capturado.deletedIds).toEqual([portariaSeed.id]);
+    await expect.poll(() => capturado.deletedIds).toEqual([BASE_DA_LISTA.id]);
   });
 });

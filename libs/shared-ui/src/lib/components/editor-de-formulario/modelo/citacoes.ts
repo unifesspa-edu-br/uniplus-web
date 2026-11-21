@@ -2,12 +2,15 @@ import {
   fatosEscolhiveis,
   type FatoEscolhivel,
 } from '../../editor-de-condicoes/condicoes/fatos-escolhiveis';
-import {
-  OPERADOR_DIFERENTE,
-  OPERADOR_NAO_EM,
-} from '../../editor-de-condicoes/condicoes/valor-da-condicao';
+import { ehNegacao } from '../../formulario-do-candidato/interpretador/predicado';
 import { primeiraOrdemDaEtapa } from './ordem-das-entradas';
-import { ConteudoDoFormulario, FatoDoFormulario, ItemDoFormulario, PredicadoNoWire } from './tipos';
+import {
+  ConteudoDoFormulario,
+  ExibicaoEObrigatoriedade,
+  FatoDoFormulario,
+  ItemDoFormulario,
+  PredicadoNoWire,
+} from './tipos';
 
 /**
  * Os fatos que as condições de um item podem citar: os dos itens anteriores a ele — os dados
@@ -42,12 +45,11 @@ export function fatosQueExigemResposta(conteudo: ConteudoDoFormulario): Readonly
   const fatos = new Set<string>();
   for (const predicado of todosOsPredicados(conteudo)) {
     for (const condicao of (predicado ?? []).flat()) {
-      if (condicao.operador === OPERADOR_DIFERENTE || condicao.operador === OPERADOR_NAO_EM)
-        fatos.add(condicao.fato);
+      if (ehNegacao(condicao.operador)) fatos.add(condicao.fato);
     }
   }
   for (const campo of todosOsCampos(conteudo)) {
-    if (campo.impedimento != null) fatos.add(campo.fatoCodigo);
+    if (campo.regras.impedimento != null) fatos.add(campo.fatoCodigo);
   }
   return fatos;
 }
@@ -118,7 +120,7 @@ export function fatosCitadosPeloConteudo(conteudo: ConteudoDoFormulario): Readon
   return new Set([
     ...todosOsPredicados(conteudo).flatMap(fatosDoPredicado),
     ...todosOsCampos(conteudo).flatMap((campo) =>
-      (campo.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? []),
+      (campo.regras.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? []),
     ),
   ]);
 }
@@ -131,22 +133,26 @@ export function predicadosSobreRespostasAnteriores(
   campo: ItemDoFormulario,
 ): readonly PredicadoNoWire[] {
   return [
-    campo.precondicao,
-    campo.predicadoObrigatoriedade ?? null,
-    ...(campo.restricoes ?? []).flatMap((restricao) =>
+    ...predicadosDasRegras(campo.regras),
+    ...(campo.regras.restricoes ?? []).flatMap((restricao) =>
       (restricao.entradas ?? []).map((entrada) => entrada.quando),
     ),
   ];
 }
 
 function predicadosDoCampo(campo: ItemDoFormulario): readonly PredicadoNoWire[] {
-  return [...predicadosSobreRespostasAnteriores(campo), campo.impedimento?.quando ?? null];
+  return [...predicadosSobreRespostasAnteriores(campo), campo.regras.impedimento?.quando ?? null];
+}
+
+/** A exibição e o predicado da obrigatoriedade: o que o grupo, o termo e o campo têm em comum. */
+export function predicadosDasRegras(regras: ExibicaoEObrigatoriedade): readonly PredicadoNoWire[] {
+  return [regras.exibicao, regras.obrigatoriedade.predicado];
 }
 
 export function fatosCitadosPeloCampo(campo: ItemDoFormulario): readonly string[] {
   return [
     ...predicadosDoCampo(campo).flatMap(fatosDoPredicado),
-    ...(campo.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? []),
+    ...(campo.regras.restricoes ?? []).flatMap((restricao) => restricao.fatos ?? []),
   ];
 }
 
@@ -158,8 +164,8 @@ function todosOsPredicados(conteudo: ConteudoDoFormulario): readonly PredicadoNo
   return [
     ...todosOsCampos(conteudo).flatMap(predicadosDoCampo),
     ...(conteudo.etapas ?? []).map((etapa) => etapa.exibicao ?? null),
-    ...(conteudo.grupos ?? []).flatMap((grupo) => [grupo.exibicao, grupo.predicadoObrigatoriedade]),
-    ...(conteudo.termos ?? []).flatMap((termo) => [termo.exibicao, termo.predicadoObrigatoriedade]),
+    ...(conteudo.grupos ?? []).flatMap((grupo) => predicadosDasRegras(grupo.regras)),
+    ...(conteudo.termos ?? []).flatMap((termo) => predicadosDasRegras(termo.regras)),
     ...(conteudo.documentosExigidos ?? []).map((documento) => documento.quando),
   ];
 }
@@ -176,33 +182,53 @@ interface PossivelCitante {
   readonly citante: Citante;
 }
 
+const dePredicados = (predicados: readonly PredicadoNoWire[]): readonly string[] =>
+  predicados.flatMap(fatosDoPredicado);
+
+const citanteSemCampo = (descricao: string): Citante => ({ fatoCodigo: null, descricao });
+
+function citantesDosCampos(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return todosOsCampos(conteudo).map((campo) => ({
+    citados: fatosCitadosPeloCampo(campo),
+    citante: { fatoCodigo: campo.fatoCodigo, descricao: `o campo “${campo.apresentacao.rotulo}”` },
+  }));
+}
+
+function citantesDasEtapas(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return (conteudo.etapas ?? []).map((etapa) => ({
+    citados: dePredicados([etapa.exibicao ?? null]),
+    citante: citanteSemCampo(`a seção “${etapa.apresentacao.titulo}”`),
+  }));
+}
+
+function citantesDosGrupos(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return (conteudo.grupos ?? []).map((grupo) => ({
+    citados: dePredicados(predicadosDasRegras(grupo.regras)),
+    citante: citanteSemCampo(`o grupo “${grupo.rotulo}”`),
+  }));
+}
+
+function citantesDosTermos(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return (conteudo.termos ?? []).map((termo) => ({
+    citados: dePredicados(predicadosDasRegras(termo.regras)),
+    citante: citanteSemCampo(`o termo ${termo.codigo}`),
+  }));
+}
+
+function citantesDosDocumentos(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
+  return (conteudo.documentosExigidos ?? []).map((documento) => ({
+    citados: dePredicados([documento.quando]),
+    citante: citanteSemCampo(`o documento exigido ${documento.tipoDocumentoCodigo}`),
+  }));
+}
+
 function possiveisCitantes(conteudo: ConteudoDoFormulario): readonly PossivelCitante[] {
-  const dePredicados = (predicados: readonly PredicadoNoWire[]): readonly string[] =>
-    predicados.flatMap(fatosDoPredicado);
   return [
-    ...todosOsCampos(conteudo).map((campo) => ({
-      citados: fatosCitadosPeloCampo(campo),
-      citante: { fatoCodigo: campo.fatoCodigo, descricao: `o campo “${campo.rotulo}”` },
-    })),
-    ...(conteudo.etapas ?? []).map((etapa) => ({
-      citados: dePredicados([etapa.exibicao ?? null]),
-      citante: { fatoCodigo: null, descricao: `a seção “${etapa.titulo}”` },
-    })),
-    ...(conteudo.grupos ?? []).map((grupo) => ({
-      citados: dePredicados([grupo.exibicao, grupo.predicadoObrigatoriedade]),
-      citante: { fatoCodigo: null, descricao: `o grupo “${grupo.rotulo}”` },
-    })),
-    ...(conteudo.termos ?? []).map((termo) => ({
-      citados: dePredicados([termo.exibicao, termo.predicadoObrigatoriedade]),
-      citante: { fatoCodigo: null, descricao: `o termo ${termo.codigo}` },
-    })),
-    ...(conteudo.documentosExigidos ?? []).map((documento) => ({
-      citados: dePredicados([documento.quando]),
-      citante: {
-        fatoCodigo: null,
-        descricao: `o documento exigido ${documento.tipoDocumentoCodigo}`,
-      },
-    })),
+    ...citantesDosCampos(conteudo),
+    ...citantesDasEtapas(conteudo),
+    ...citantesDosGrupos(conteudo),
+    ...citantesDosTermos(conteudo),
+    ...citantesDosDocumentos(conteudo),
   ];
 }
 

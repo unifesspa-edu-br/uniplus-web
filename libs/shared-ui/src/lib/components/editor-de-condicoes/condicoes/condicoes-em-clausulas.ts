@@ -1,5 +1,5 @@
-import { FatoEscolhivel } from './fatos-escolhiveis';
-import { CondicaoDeFato, operadoresDoFato } from './valor-da-condicao';
+import { FatoEscolhivel, operadorPadrao } from './fatos-escolhiveis';
+import { CondicaoDeFato } from './valor-da-condicao';
 
 /** Uma condição que vive numa alternativa (cláusula) do predicado. */
 export interface CondicaoEmClausula extends CondicaoDeFato {
@@ -19,7 +19,7 @@ export interface ClausulaDeCondicoes<T extends CondicaoEmClausula = CondicaoEmCl
 }
 
 /**
- * Uma condição recém-declarada sobre um fato: o primeiro operador que o domínio dele admite,
+ * Uma condição recém-declarada sobre um fato: o primeiro operador que a API oferece para ele,
  * e nenhum valor escolhido ainda.
  *
  * Nasce sem valor de propósito. Semeá-la com o primeiro valor do domínio gravaria uma
@@ -30,9 +30,15 @@ export function condicaoNova(fato: FatoEscolhivel, clausula: number): CondicaoEm
   return {
     clausula,
     fato: fato.codigo,
-    operador: operadoresDoFato(fato)[0].valor,
+    operador: operadorPadrao(fato),
     valor: '',
   };
+}
+
+function numerosEmOrdem(condicoes: readonly CondicaoEmClausula[]): readonly number[] {
+  return [...new Set(condicoes.map((condicao) => condicao.clausula))].sort(
+    (um, outro) => um - outro,
+  );
 }
 
 /**
@@ -40,9 +46,7 @@ export function condicaoNova(fato: FatoEscolhivel, clausula: number): CondicaoEm
  * nenhuma, que é a cláusula em que a primeira condição nascerá.
  */
 export function numerosDeClausula(condicoes: readonly CondicaoEmClausula[]): readonly number[] {
-  const numeros = [...new Set(condicoes.map((condicao) => condicao.clausula))].sort(
-    (um, outro) => um - outro,
-  );
+  const numeros = numerosEmOrdem(condicoes);
   return numeros.length > 0 ? numeros : [1];
 }
 
@@ -58,10 +62,7 @@ export function clausulasDe<T extends CondicaoEmClausula>(
     .map((condicao, indice) => ({ indice, condicao }))
     .filter(({ condicao }) => fatoDoRecorte === '' || condicao.fato !== fatoDoRecorte);
 
-  const numeros = [...new Set(posicionadas.map(({ condicao }) => condicao.clausula))].sort(
-    (um, outro) => um - outro,
-  );
-
+  const numeros = numerosEmOrdem(posicionadas.map(({ condicao }) => condicao));
   return numeros.map((numero) => ({
     numero,
     condicoes: posicionadas.filter(({ condicao }) => condicao.clausula === numero),
@@ -111,16 +112,23 @@ export function comClausulaEm<T extends CondicaoEmClausula>(
   fatoDoRecorte = '',
 ): readonly (T | CondicaoEmClausula)[] {
   const numero = Math.max(...numerosDeClausula(condicoes)) + 1;
-  const doRecorte =
-    fatoDoRecorte === ''
-      ? undefined
-      : condicoes.find((condicao) => condicao.fato === fatoDoRecorte);
-
   return [
     ...condicoes,
     condicaoNova(fato, numero),
-    ...(doRecorte === undefined ? [] : [{ ...doRecorte, clausula: numero }]),
+    ...condicaoFixaNaClausula(condicoes, fatoDoRecorte, numero),
   ];
+}
+
+function condicaoFixaNaClausula(
+  condicoes: readonly CondicaoEmClausula[],
+  fatoDoRecorte: string,
+  numero: number,
+): readonly CondicaoEmClausula[] {
+  const condicaoFixa =
+    fatoDoRecorte === ''
+      ? undefined
+      : condicoes.find((condicao) => condicao.fato === fatoDoRecorte);
+  return condicaoFixa === undefined ? [] : [{ ...condicaoFixa, clausula: numero }];
 }
 
 /** A lista sem aquela alternativa inteira. */
@@ -135,9 +143,7 @@ export function semClausulaEm<T extends CondicaoEmClausula>(
 export function renumerarClausulas<T extends CondicaoEmClausula>(
   condicoes: readonly T[],
 ): readonly T[] {
-  const numeros = [...new Set(condicoes.map((condicao) => condicao.clausula))].sort(
-    (um, outro) => um - outro,
-  );
+  const numeros = numerosEmOrdem(condicoes);
   const novoNumero = new Map(numeros.map((numero, indice) => [numero, indice + 1]));
 
   return condicoes.map((condicao) => ({

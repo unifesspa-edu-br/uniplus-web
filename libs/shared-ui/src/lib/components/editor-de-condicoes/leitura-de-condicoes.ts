@@ -3,9 +3,11 @@
  * nome do fato, a comparação como o editor a oferece e o valor pela descrição do cadastro.
  */
 
+import { comparaComLista } from '../formulario-do-candidato/interpretador/predicado';
 import { clausulasDe, type CondicaoEmClausula } from './condicoes/condicoes-em-clausulas';
 import {
   fatoEscolhivel,
+  rotuloDoOperador,
   rotuloDoValor,
   type FatoDoCatalogo,
   type FatoEscolhivel,
@@ -13,8 +15,6 @@ import {
 import {
   VALOR_FALSO,
   VALOR_VERDADEIRO,
-  comparaComLista,
-  operadoresDoFato,
   type CondicaoDeFato,
   valorEscalarDe,
   valoresDeListaDe,
@@ -27,9 +27,7 @@ export function descreverCondicao(
 ): string {
   if (fato === undefined) return `${condicao.fato} — fora do catálogo`;
 
-  const operador =
-    operadoresDoFato(fato).find((opcao) => opcao.valor === condicao.operador)?.rotulo ??
-    condicao.operador;
+  const operador = rotuloDoOperador(fato, condicao.operador);
   return `${fato.nome} ${operador} ${valorDescrito(condicao, fato)}`;
 }
 

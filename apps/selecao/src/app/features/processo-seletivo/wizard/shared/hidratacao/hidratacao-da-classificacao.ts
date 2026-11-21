@@ -1,4 +1,5 @@
 import type {
+  ConfiguracaoBonusRegionalDto,
   ConfiguracaoClassificacaoDto,
   ProcessoSeletivoDto,
 } from '@uniplus/shared-data/selecao';
@@ -28,17 +29,46 @@ export function classificacaoDe(dto: ProcessoSeletivoDto): WizardDraft['classifi
   }
 
   return {
+    ...calculoDe(classificacao),
+    ...enemDe(classificacao, dto),
+    regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacao.codigo,
+    regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
+    regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
+  };
+}
+
+type CalculoDaClassificacao = Pick<
+  WizardDraft['classificacao'],
+  | 'regraCalculoCodigo'
+  | 'regraCalculoVersao'
+  | 'regraArredondamentoCodigo'
+  | 'regraArredondamentoVersao'
+  | 'casasArredondamento'
+>;
+
+function calculoDe(classificacao: ConfiguracaoClassificacaoDto): CalculoDaClassificacao {
+  return {
     regraCalculoCodigo: classificacao.regraCalculo.codigo,
     regraCalculoVersao: classificacao.regraCalculo.versao,
     regraArredondamentoCodigo: classificacao.regraArredondamento?.codigo ?? '',
     regraArredondamentoVersao: classificacao.regraArredondamento?.versao ?? '',
     casasArredondamento: comoTexto(classificacao.casasArredondamento),
-    regraOrdemAlocacaoCodigo: classificacao.regraOrdemAlocacao.codigo,
-    regraOrdemAlocacaoVersao: classificacao.regraOrdemAlocacao.versao,
+  };
+}
+
+type EnemDaClassificacao = Pick<
+  WizardDraft['classificacao'],
+  'baseadoEmEnem' | 'escalaNotaFinal' | 'resolucaoPesoAreaEnem' | 'edicoesEnem'
+>;
+
+function enemDe(
+  classificacao: ConfiguracaoClassificacaoDto,
+  dto: ProcessoSeletivoDto,
+): EnemDaClassificacao {
+  return {
     baseadoEmEnem: classificacao.baseadoEmEnem,
     escalaNotaFinal: escalaDaNotaFinalComoTexto(classificacao.escalaNotaFinal),
     resolucaoPesoAreaEnem: classificacao.resolucaoPesoAreaEnem ?? '',
-    regrasEliminacao: classificacao.regrasEliminacao.map(regraEliminacaoDe),
     edicoesEnem: edicoesDoEnemDe(dto),
   };
 }
@@ -67,13 +97,16 @@ export function bonusDe(dto: ProcessoSeletivoDto): WizardDraft['bonus'] {
     return { ...bonusInicial(), aplica };
   }
 
+  return { aplica, ...bonusGravadoDe(bonus) };
+}
+
+function bonusGravadoDe(bonus: ConfiguracaoBonusRegionalDto): Omit<WizardDraft['bonus'], 'aplica'> {
   return {
-    aplica,
     regraCodigo: bonus.regra.codigo,
     regraVersao: bonus.regra.versao,
     fator: comoTexto(bonus.fator),
     teto: comoTexto(bonus.teto),
-    baseLegalBonusRegionalId: bonus.baseLegalBonusRegionalId,
+    baseLegalBonusRegionalId: bonus.baseLegal.id,
     fatoElegibilidadeCodigo: bonus.fatoElegibilidadeCodigo ?? '',
   };
 }
@@ -88,12 +121,12 @@ export function desempateDe(dto: ProcessoSeletivoDto): readonly CriterioDesempat
     .map((criterio) => ({
       regraCodigo: criterio.regra.codigo,
       regraVersao: criterio.regra.versao,
-      etapaRef: criterio.etapaRef ?? '',
-      idadeMinima: comoTexto(criterio.idadeMinima),
-      fato: criterio.fato ?? '',
-      operador: criterio.operador ?? '',
-      valor: criterio.valor ?? '',
-      areas: [...(criterio.areas ?? [])],
+      etapaRef: criterio.parametros.etapaRef ?? '',
+      idadeMinima: comoTexto(criterio.parametros.idadeMinima),
+      fato: criterio.parametros.fato ?? '',
+      operador: criterio.parametros.operador ?? '',
+      valor: criterio.parametros.valor ?? '',
+      areas: [...(criterio.parametros.areas ?? [])],
     }));
 }
 
@@ -109,19 +142,31 @@ export function atendimentoDe(dto: ProcessoSeletivoDto): WizardDraft['atendiment
     return { condicoes: [], recursos: [], tiposDeficiencia: [] };
   }
 
-  const condicoes: AtendimentoCondicaoSelecionada[] = oferta.condicoes.map((condicao) => ({
+  return {
+    condicoes: oferta.condicoes.map(condicaoDe),
+    recursos: oferta.recursos.map(recursoDe),
+    tiposDeficiencia: oferta.tiposDeficiencia.map(tipoDeficienciaDe),
+  };
+}
+
+type OfertaDeAtendimento = NonNullable<ProcessoSeletivoDto['atendimentoEspecializado']>;
+
+function condicaoDe(
+  condicao: OfertaDeAtendimento['condicoes'][number],
+): AtendimentoCondicaoSelecionada {
+  return {
     id: condicao.condicaoOrigemId,
     codigo: condicao.condicaoCodigo,
     nome: condicao.condicaoNome,
-  }));
-  const recursos: ReferenciaDeAtendimento[] = oferta.recursos.map((recurso) => ({
-    id: recurso.recursoOrigemId,
-    nome: recurso.recursoNome,
-  }));
-  const tiposDeficiencia: ReferenciaDeAtendimento[] = oferta.tiposDeficiencia.map((tipo) => ({
-    id: tipo.tipoDeficienciaOrigemId,
-    nome: tipo.tipoDeficienciaNome,
-  }));
+  };
+}
 
-  return { condicoes, recursos, tiposDeficiencia };
+function recursoDe(recurso: OfertaDeAtendimento['recursos'][number]): ReferenciaDeAtendimento {
+  return { id: recurso.recursoOrigemId, nome: recurso.recursoNome };
+}
+
+function tipoDeficienciaDe(
+  tipo: OfertaDeAtendimento['tiposDeficiencia'][number],
+): ReferenciaDeAtendimento {
+  return { id: tipo.tipoDeficienciaOrigemId, nome: tipo.tipoDeficienciaNome };
 }

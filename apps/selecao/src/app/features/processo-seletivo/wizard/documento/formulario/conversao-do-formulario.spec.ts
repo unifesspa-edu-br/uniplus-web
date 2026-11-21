@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   TipoDaObrigatoriedadeDoFormulario as Obrigatoriedade,
   TipoDaRestricaoDoFormulario as Restricao,
-  AncoraDaRestricaoDoFormulario as Ancora,
+  ReferenciaDoLimiteDeData as ReferenciaDoLimite,
   OperadorDaCondicao,
 } from '@uniplus/shared-data/selecao';
 import { conteudoDoDocumento, documentoDoConteudo } from './conversao-do-formulario';
@@ -14,10 +14,9 @@ describe('conversão do documento e do conteúdo do editor', () => {
     const lido = aceita(conteudoDoDocumento(original, CATALOGOS));
     expect(lido.conteudo.itens?.[0]).toMatchObject({
       ordem: 0,
-      pedirConfirmacao: false,
-      tipoRenderizacao: 'NUMERO',
+      apresentacao: { pedirConfirmacao: false, tipoRenderizacao: 'NUMERO' },
     });
-    expect(lido.conteudo.grupos?.[0]).toMatchObject({
+    expect(lido.conteudo.grupos?.[0].ocorrencias).toEqual({
       minimo: 0,
       incluiCandidato: false,
       maximo: null,
@@ -34,7 +33,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
   it('grava só o mínimo confirmado em zero, mesmo sem mudar o valor mostrado', () => {
     const original = formulario();
     const volta = aceita(
-      editar(original, (conteudo) => conteudo, [['grupos', 'familia', 'minimo']]),
+      editar(original, (conteudo) => conteudo, [['grupos', 'familia', 'ocorrencias', 'minimo']]),
     );
     expect(volta.formulario.grupos).toEqual([{ ...original.grupos?.[0], minimo: 0 }]);
     expect(volta.formulario.grupos?.[0]).not.toHaveProperty('incluiCandidato');
@@ -66,10 +65,13 @@ describe('conversão do documento e do conteúdo do editor', () => {
         itens:
           conteudo.itens?.map((item) => ({
             ...item,
-            obrigatoriedade: 'QUANDO',
-            predicadoObrigatoriedade: [
-              [{ fato: 'PARENTESCO', operador: 'IGUAL', valor: 'PROPRIO' }],
-            ],
+            regras: {
+              ...item.regras,
+              obrigatoriedade: {
+                tipo: 'QUANDO',
+                predicado: [[{ fato: 'PARENTESCO', operador: 'IGUAL', valor: 'PROPRIO' }]],
+              },
+            },
           })) ?? null,
       })),
     );
@@ -101,8 +103,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
         itens:
           conteudo.itens?.map((item) => ({
             ...item,
-            obrigatoriedade: 'SEMPRE',
-            predicadoObrigatoriedade: null,
+            regras: { ...item.regras, obrigatoriedade: { tipo: 'SEMPRE', predicado: null } },
           })) ?? null,
       })),
     );
@@ -115,14 +116,16 @@ describe('conversão do documento e do conteúdo do editor', () => {
         ...conteudo,
         grupos: conteudo.grupos?.map((grupo) => ({
           ...grupo,
-          minimo: '1',
-          maximo: '3',
+          ocorrencias: { ...grupo.ocorrencias, minimo: '1', maximo: '3' },
           subitens: grupo.subitens.map((item) => ({
             ...item,
-            restricoes: [
-              { tipo: 'FAIXA_NUMERICA', minimo: '1.25', maximo: null },
-              { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: '2', dias: '1' } },
-            ],
+            regras: {
+              ...item.regras,
+              restricoes: [
+                { tipo: 'FAIXA_NUMERICA', minimo: '1.25', maximo: null },
+                { tipo: 'FAIXA_DE_DATA', dataMinima: { ancora: 'ENVIO', anos: '2', dias: '1' } },
+              ],
+            },
           })),
         })),
       })),
@@ -136,7 +139,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
             { tipo: Restricao.FAIXA_NUMERICA, minimo: 1.25, maximo: null },
             {
               tipo: Restricao.FAIXA_DE_DATA,
-              dataMinima: { ancora: Ancora.ENVIO, anos: 2, dias: 1 },
+              dataMinima: { ancora: ReferenciaDoLimite.ENVIO, anos: 2, dias: 1 },
             },
           ],
         },
@@ -152,19 +155,20 @@ describe('conversão do documento e do conteúdo do editor', () => {
           ...conteudo,
           grupos: conteudo.grupos?.map((grupo) => ({
             ...grupo,
-            incluiCandidato: true,
-            minimo: 1,
+            ocorrencias: { ...grupo.ocorrencias, incluiCandidato: true, minimo: 1 },
             subitens: grupo.subitens.map((item) => ({
               ...item,
-              obrigatoriedade: 'SEMPRE',
-              precondicao: null,
-              restricoes: [
-                { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['PROPRIO'] }] },
-              ],
+              regras: {
+                exibicao: null,
+                obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+                restricoes: [
+                  { tipo: 'OPCOES_PERMITIDAS', entradas: [{ quando: null, valores: ['PROPRIO'] }] },
+                ],
+              },
             })),
           })),
         }),
-        [['grupos', 'familia', 'incluiCandidato']],
+        [['grupos', 'familia', 'ocorrencias', 'incluiCandidato']],
       ),
     );
     expect(volta.formulario.grupos?.[0]).toMatchObject({
@@ -172,7 +176,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
       minimo: 1,
       subitens: [{ restricoes: [{ tipo: Restricao.OPCOES_PERMITIDAS }] }],
     });
-    expect(volta.camposEditados).toContainEqual(['grupos', 'familia', 'minimo']);
+    expect(volta.camposEditados).toContainEqual(['grupos', 'familia', 'ocorrencias', 'minimo']);
     expect(volta.formulario).not.toHaveProperty('camposEditados');
   });
 
@@ -180,7 +184,11 @@ describe('conversão do documento e do conteúdo do editor', () => {
     const volta = aceita(
       editar(formulario(), (conteudo) => ({
         ...conteudo,
-        termos: conteudo.termos?.map((termo) => ({ ...termo, versaoId: 'segunda' })) ?? null,
+        termos:
+          conteudo.termos?.map((termo) => ({
+            ...termo,
+            termo: { ...termo.termo, versaoId: 'segunda' },
+          })) ?? null,
       })),
     );
     expect(volta.formulario.termos).toEqual([
@@ -192,7 +200,9 @@ describe('conversão do documento e do conteúdo do editor', () => {
 
   it('conserva as ausências quando a edição seguinte muda outro campo', () => {
     const primeiro = aceita(
-      editar(formulario(), (conteudo) => conteudo, [['grupos', 'familia', 'minimo']]),
+      editar(formulario(), (conteudo) => conteudo, [
+        ['grupos', 'familia', 'ocorrencias', 'minimo'],
+      ]),
     );
     const segundo = aceita(
       documentoDoConteudo(
@@ -213,7 +223,11 @@ describe('conversão do documento e do conteúdo do editor', () => {
     const volta = aceita(
       editar(original, (conteudo) => ({
         ...conteudo,
-        itens: conteudo.itens?.map((item) => ({ ...item, restricoes: null })) ?? null,
+        itens:
+          conteudo.itens?.map((item) => ({
+            ...item,
+            regras: { ...item.regras, restricoes: null },
+          })) ?? null,
       })),
     );
     expect(volta.formulario.itens?.[0].restricoes).toEqual([]);
@@ -236,10 +250,13 @@ describe('conversão do documento e do conteúdo do editor', () => {
         itens:
           conteudo.itens?.map((item) => ({
             ...item,
-            restricoes: item.restricoes?.map((restricao) => ({
-              ...restricao,
-              entradas: restricao.entradas?.map((entrada) => ({ ...entrada, valores: ['B'] })),
-            })),
+            regras: {
+              ...item.regras,
+              restricoes: item.regras.restricoes?.map((restricao) => ({
+                ...restricao,
+                entradas: restricao.entradas?.map((entrada) => ({ ...entrada, valores: ['B'] })),
+              })),
+            },
           })) ?? null,
       })),
     );
@@ -272,9 +289,12 @@ describe('conversão do documento e do conteúdo do editor', () => {
         itens:
           conteudo.itens?.map((item) => ({
             ...item,
-            impedimento: {
-              quando: [[{ fato: 'RENDA', operador: 'IGUAL', valor: 0 }]],
-              mensagem: 'A resposta impede a inscrição.',
+            regras: {
+              ...item.regras,
+              impedimento: {
+                quando: [[{ fato: 'RENDA', operador: 'IGUAL', valor: 0 }]],
+                mensagem: 'A resposta impede a inscrição.',
+              },
             },
           })) ?? null,
       })),
@@ -292,7 +312,9 @@ describe('conversão do documento e do conteúdo do editor', () => {
   ])('recusa o impedimento sem condição ou mensagem', (impedimento) => {
     const recusada = editar(formulario(), (conteudo) => ({
       ...conteudo,
-      itens: conteudo.itens?.map((item) => ({ ...item, impedimento })) ?? null,
+      itens:
+        conteudo.itens?.map((item) => ({ ...item, regras: { ...item.regras, impedimento } })) ??
+        null,
     }));
     expect(recusada.ok).toBe(false);
     if (!recusada.ok) expect(recusada.impedimentos[0].caminho).toBe('/itens/0/impedimento');
@@ -315,9 +337,7 @@ describe('conversão do documento e do conteúdo do editor', () => {
             ordem: 1,
             tipo: 'SECAO',
             bloco: null,
-            titulo: 'Outros dados',
-            descricao: null,
-            aviso: null,
+            apresentacao: { titulo: 'Outros dados', descricao: null, aviso: null },
             exibicao: [],
           },
         ],

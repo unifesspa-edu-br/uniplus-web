@@ -9,81 +9,11 @@ import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SimuladorDeFormularioPage } from './simulador-de-formulario.page';
+import { CASO, RENDERIZAVEL } from './simulador-de-formulario.page.testing';
 
 const BASE = 'http://localhost:5000';
 
 const ID = '01960000-0000-7000-0000-0000000000a1';
-
-/** O renderizável mínimo de um modelo: uma etapa com um campo. */
-const RENDERIZAVEL = {
-  finalidade: 'INSCRICAO',
-  titulo: null,
-  etapas: [
-    {
-      codigo: 'DADOS',
-      codigoNasRegras: 'DADOS',
-      ordem: 0,
-      tipo: 'SECAO',
-      bloco: null,
-      titulo: 'Dados',
-      descricao: null,
-      aviso: null,
-    },
-  ],
-  termos: [],
-  fatosColetados: [
-    { fatoCodigo: 'NOME_SOCIAL', ordem: 0, rotulo: 'Nome social', tipoRenderizacao: 'TEXTO' },
-  ],
-  grupos: [],
-  regras: {
-    etapas: [
-      {
-        codigo: 'DADOS',
-        itens: [{ fatoCodigo: 'NOME_SOCIAL', obrigatoriedade: 'NUNCA', restricoes: [] }],
-        grupos: [],
-      },
-    ],
-    termos: [],
-    derivacoes: [],
-    agregados: [],
-  },
-  pressupostos: [],
-  dataReferenciaFatos: null,
-};
-
-/** Um caso do corpus: regras e respostas, sem apresentação. */
-const CASO = {
-  descricao: 'Endereço urbano esconde a aldeia.',
-  regras: {
-    etapas: [
-      {
-        codigo: 'DADOS',
-        itens: [
-          {
-            fatoCodigo: 'TIPO_ENDERECO',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [],
-            oferta: ['ALDEIA', 'URBANO'],
-          },
-          {
-            fatoCodigo: 'NOME_ALDEIA',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [],
-            exibicao: [[{ fato: 'TIPO_ENDERECO', operador: 'IGUAL', valor: 'ALDEIA' }]],
-          },
-        ],
-        grupos: [],
-      },
-    ],
-    termos: [],
-    derivacoes: [],
-    agregados: [],
-  },
-  respostas: { TIPO_ENDERECO: 'URBANO' },
-  grupos: {},
-  etapasConcluidas: [],
-  pressupostos: {},
-};
 
 const MANTER = 'configuracao:modelos-formulario:manter';
 
@@ -188,20 +118,24 @@ describe('SimuladorDeFormularioPage', () => {
           fatoCodigo: 'TIPO_ENDERECO',
           etapaCodigo: 'DADOS',
           estado: 'RESOLVIDO',
-          visivel: 'VERDADEIRO',
-          obrigatorio: 'VERDADEIRO',
-          restricoesVioladas: [],
-          impedido: 'FALSO',
+          regras: {
+            visivel: 'VERDADEIRO',
+            obrigatorio: 'VERDADEIRO',
+            restricoesVioladas: [],
+            impedido: 'FALSO',
+          },
           opcoes: null,
         },
         {
           fatoCodigo: 'NOME_ALDEIA',
           etapaCodigo: 'DADOS',
           estado: 'INDETERMINADO',
-          visivel: 'VERDADEIRO',
-          obrigatorio: 'VERDADEIRO',
-          restricoesVioladas: [],
-          impedido: 'FALSO',
+          regras: {
+            visivel: 'VERDADEIRO',
+            obrigatorio: 'VERDADEIRO',
+            restricoesVioladas: [],
+            impedido: 'FALSO',
+          },
           opcoes: null,
         },
       ],
@@ -225,7 +159,7 @@ describe('SimuladorDeFormularioPage', () => {
       (r) =>
         r.url === `${BASE}/api/configuracao/admin/modelos-formulario` && !r.params.has('ativo'),
     );
-    req.flush([{ id: ID, codigo: 'INSC', nome: 'Inscrição', ativo }]);
+    req.flush([{ id: ID, codigo: 'INSC', descritivo: { nome: 'Inscrição' }, ativo }]);
   };
   const renderizavel = (): void => {
     const req = http.expectOne(
@@ -288,12 +222,12 @@ describe('SimuladorDeFormularioPage', () => {
     const listagem = `${BASE}/api/configuracao/admin/modelos-formulario`;
     http
       .expectOne((r) => r.url === listagem && !r.params.has('cursor'))
-      .flush([{ id: 'outro', codigo: 'OUTRO', nome: 'Outro', ativo: true }], {
+      .flush([{ id: 'outro', codigo: 'OUTRO', descritivo: { nome: 'Outro' }, ativo: true }], {
         headers: { Link: `<${listagem}?cursor=p2&direction=next>; rel="next"` },
       });
     const segunda = http.expectOne((r) => r.url === listagem && r.params.get('cursor') === 'p2');
     expect(segunda.request.params.get('direction')).toBe('next');
-    segunda.flush([{ id: ID, codigo: 'INSC', nome: 'Inscrição', ativo: true }]);
+    segunda.flush([{ id: ID, codigo: 'INSC', descritivo: { nome: 'Inscrição' }, ativo: true }]);
     renderizavel();
 
     const select = tela().querySelector('select') as HTMLSelectElement;

@@ -1,4 +1,8 @@
-import type { EtapaProcessoInput, FaseCronogramaInput } from '@uniplus/shared-data/selecao';
+import type {
+  EtapaProcessoInput,
+  FaseCronogramaInput,
+  TipoMotivoDeDecisaoCodigo,
+} from '@uniplus/shared-data/selecao';
 
 import type {
   BancaDaEtapa,
@@ -62,8 +66,18 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
-    tiposDeDecisao: emOrdemAlfabetica(fase.tiposDeDecisao ?? []),
+    tiposDeDecisao: tiposDeDecisaoParaComando(fase.tiposDeDecisao),
   };
+}
+
+/**
+ * O código que a tela não conhece segue na lista: o servidor o recusa com a mensagem do campo,
+ * em vez de a tela descartá-lo em silêncio.
+ */
+function tiposDeDecisaoParaComando(
+  declarados: readonly string[] | undefined,
+): readonly TipoMotivoDeDecisaoCodigo[] {
+  return emOrdemAlfabetica(declarados ?? []) as readonly TipoMotivoDeDecisaoCodigo[];
 }
 
 function comoComandoDoProdutoDaFase(produto: ProdutoDaFase): ProdutoDaFaseInput {
@@ -169,7 +183,7 @@ function comoComandoDoQueAEtapaDeclara(
     emiteParecerIndividual: etapa.emiteParecerIndividual,
     bancas: etapa.bancas.map(comoComandoDeBancaDaEtapa),
     recursos: comoComandoDosRecursosDaEtapa(etapa),
-    tiposDeDecisao: emOrdemAlfabetica(etapa.tiposDeDecisao ?? []),
+    tiposDeDecisao: tiposDeDecisaoParaComando(etapa.tiposDeDecisao),
   };
 }
 

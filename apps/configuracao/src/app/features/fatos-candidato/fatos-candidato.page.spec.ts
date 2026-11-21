@@ -5,16 +5,14 @@ import {
   LISTA,
   PERMISSAO_DE_CONSULTAR,
   Pagina,
-  comAprovacao,
-  corRaca,
   montarPagina,
   problema,
   sucesso,
-  trabalha,
   PROTECAO,
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
+import { comAprovacao, corRaca, trabalha, emManutencao } from './fatos-candidato.fixtures';
 
 describe('FatosCandidatoPage — leitura', () => {
   beforeAll(compilarPaginaUmaVez);
@@ -78,13 +76,15 @@ describe('FatosCandidatoPage — leitura', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
-        .flush([trabalha], {
+        .flush([emManutencao(trabalha)], {
           headers: { Link: `<${LISTA}?cursor=pagina-2&direction=next>; rel="next"` },
         });
       await p.propagar();
       p.store.proximaPagina();
       await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA && r.params.has('cursor')).flush([corRaca]);
+      p.http
+        .expectOne((r) => r.url === LISTA && r.params.has('cursor'))
+        .flush([emManutencao(corRaca)]);
       await p.propagar();
 
       p.store.filtroOrigem.set('DECLARADO');
@@ -122,7 +122,7 @@ describe('FatosCandidatoPage — leitura', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
-        .flush([trabalha], {
+        .flush([emManutencao(trabalha)], {
           headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
         });
       await p.propagar();
@@ -139,7 +139,9 @@ describe('FatosCandidatoPage — leitura', () => {
 
       p.store.tentarNovamente();
       await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA && r.params.get('cursor') === 'abc').flush([corRaca]);
+      p.http
+        .expectOne((r) => r.url === LISTA && r.params.get('cursor') === 'abc')
+        .flush([emManutencao(corRaca)]);
       await p.propagar();
       expect(p.store.fatos()).toEqual([corRaca]);
     });
@@ -192,7 +194,7 @@ describe('FatosCandidatoPage — leitura', () => {
       tentar.focus();
       tentar.click();
       await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
+      p.pedidoDaLista().flush([emManutencao(trabalha)]);
       await p.propagar();
       await p.propagar();
 
@@ -296,7 +298,7 @@ describe('FatosCandidatoPage — leitura', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
-        .flush([trabalha], {
+        .flush([emManutencao(trabalha)], {
           headers: { Link: `<${LISTA}?cursor=p2&direction=next>; rel="next"` },
         });
       await p.propagar();
@@ -307,7 +309,9 @@ describe('FatosCandidatoPage — leitura', () => {
       ) as HTMLButtonElement;
       proxima.click();
       await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA && r.params.get('cursor') === 'p2').flush([corRaca]);
+      p.http
+        .expectOne((r) => r.url === LISTA && r.params.get('cursor') === 'p2')
+        .flush([emManutencao(corRaca)]);
       await p.propagar();
       expect(p.store.fatos()).toEqual([corRaca]);
     });
@@ -320,7 +324,7 @@ describe('FatosCandidatoPage — leitura', () => {
       await p.propagar();
       p.http
         .expectOne((r) => r.url === LISTA && r.method === 'GET')
-        .flush([trabalha], {
+        .flush([emManutencao(trabalha)], {
           headers: { Link: `<${LISTA}?cursor=abc&direction=next>; rel="next"` },
         });
       await p.propagar();
@@ -341,7 +345,7 @@ describe('FatosCandidatoPage — leitura', () => {
 
       const reinicio = p.http.expectOne((r) => r.url === LISTA && r.method === 'GET');
       expect(reinicio.request.params.has('cursor')).toBe(false);
-      reinicio.flush([trabalha]);
+      reinicio.flush([emManutencao(trabalha)]);
       await p.propagar();
       expect(p.informacoes).toHaveBeenCalledWith(aviso, 'Recarregamos a listagem do começo.');
       expect(p.texto()).not.toContain('Não foi possível conectar');
@@ -358,7 +362,7 @@ describe('FatosCandidatoPage — leitura', () => {
 
       expect(p.texto()).toContain('Não foi possível conectar ao servidor');
       await p.acionar(p.botaoPeloTexto('Tentar novamente') as HTMLButtonElement);
-      p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
+      p.pedidoDaLista().flush([emManutencao(trabalha)]);
       await p.propagar();
       expect(p.texto()).not.toContain('Não foi possível conectar ao servidor');
     });
@@ -368,7 +372,7 @@ describe('FatosCandidatoPage — leitura', () => {
     p = await montarPagina([trabalha]);
     p.store.recarregar();
     await p.propagar();
-    p.http.expectOne((r) => r.url === LISTA && r.method === 'GET').flush([trabalha]);
+    p.pedidoDaLista().flush([emManutencao(trabalha)]);
     p.http
       .expectOne((r) => r.url === PROTECAO)
       .flush(...problema(500, { code: 'uniplus.internal.unexpected' }));

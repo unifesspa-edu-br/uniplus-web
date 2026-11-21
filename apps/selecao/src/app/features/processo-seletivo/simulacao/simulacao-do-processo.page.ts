@@ -54,7 +54,9 @@ import {
   template: `
     <div class="page-header">
       <div class="page-header__content">
-        <h1 class="page-header__title" tabindex="-1">Simulação do formulário de {{ nomeDaFinalidade() }}</h1>
+        <h1 class="page-header__title" tabindex="-1">
+          Simulação do formulário de {{ nomeDaFinalidade() }}
+        </h1>
         <p class="page-header__desc">
           Responda como o candidato responderia. Simula o processo gravado: o que foi alterado e
           ainda não foi gravado não entra.
@@ -74,6 +76,7 @@ import {
         idBase="simulacao-processo"
         [nomeDoArquivo]="'formulario-' + finalidade.toLocaleLowerCase('pt-BR')"
         [formulario]="renderizavel"
+        [noProcesso]="lido()"
         [documentos]="documentos()"
         [conferir]="conferir"
       />
@@ -104,9 +107,11 @@ export class SimulacaoDoProcessoPage {
     destino: () => this.host.nativeElement.querySelector('h1'),
   });
   /** O formulário com a comprovação documental, que só o processo tem. */
-  private readonly lido = signal<FormularioRenderizavelDto | null>(null);
+  protected readonly lido = signal<FormularioRenderizavelDto | null>(null);
   /** O renderizável do contrato é o formulário que o candidato vê: o compilador acusa se divergirem. */
-  protected readonly formulario = computed<FormularioDoCandidato | null>(() => this.lido());
+  protected readonly formulario = computed<FormularioDoCandidato | null>(
+    () => this.lido()?.formulario ?? null,
+  );
   /** A lista do bloco de comprovação documental; o rascunho não a tem, porque ela sai da publicação. */
   protected readonly documentos = computed<readonly DocumentoExigido[] | null>(
     () => this.lido()?.comprovacaoDocumental ?? null,

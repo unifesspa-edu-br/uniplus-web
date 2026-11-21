@@ -10,11 +10,13 @@ const tipo: TipoEtapaDto = {
   nome: 'Prova',
   descricao: null,
   ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: false,
-  notaDeOrigemNoEnem: false,
-  exigeCorrecaoIndependente: false,
-  conceitosAdmitidos: [],
+  avaliacao: {
+    admitePontuacao: true,
+    admiteEliminacao: false,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [],
+  },
   criadoEm: '',
 };
 
@@ -139,7 +141,7 @@ describe('TiposEtapaListaComponent', () => {
   ])(
     'descreve o que admite (pontuação %s, eliminação %s) como "%s"',
     (admitePontuacao, admiteEliminacao, esperado) => {
-      montar([{ ...tipo, admitePontuacao, admiteEliminacao }]);
+      montar([{ ...tipo, avaliacao: { ...tipo.avaliacao, admitePontuacao, admiteEliminacao } }]);
       expect(raiz().querySelector('td[data-label="O que admite"]')?.textContent?.trim()).toBe(
         esperado,
       );

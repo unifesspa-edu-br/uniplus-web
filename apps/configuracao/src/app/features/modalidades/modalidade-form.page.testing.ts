@@ -3,7 +3,11 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  ModalidadeDto,
+  OperadorCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { EdicaoDaModalidade } from './edicao-da-modalidade';
 import { ModalidadeFormPage } from './modalidade-form.page';
@@ -17,7 +21,7 @@ export const LB_PPI = modalidade({
   composicaoVagas: 'DENTRO_DA_RESERVA_LEGAL',
   regraRemanejamento: 'SEGUE_CASCATA',
   regraDeAplicabilidade: [
-    [{ fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
+    [{ fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'PARDA', 'INDIGENA'] }],
   ],
 });
 /** Modalidade institucional: fora do catálogo legal fixo, a regra se edita. */
@@ -31,8 +35,8 @@ export const BONUS = modalidade({
   regraRemanejamento: 'DESTINO_UNICO',
   remanejamentoDestino: 'AC',
   regraDeAplicabilidade: [
-    [{ fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true }],
-    [{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'INDIGENA' }],
+    [{ fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true }],
+    [{ fato: 'COR_RACA', operador: OperadorCodigo.IGUAL, valor: 'INDIGENA' }],
   ],
 });
 

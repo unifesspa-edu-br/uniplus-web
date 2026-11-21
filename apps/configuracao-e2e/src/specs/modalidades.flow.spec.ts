@@ -54,20 +54,26 @@ const vSeed = {
 
 const catalogoDeFatos = [
   {
-    id: '01960000-0000-7000-0000-0000000000f1',
-    codigo: 'PCD',
-    nome: 'Pessoa com deficiência',
-    descricao: null,
-    dominio: 'BOOLEANO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:PCD',
-    valoresDominioDeclarados: null,
-    fonteValores: null,
-    ativo: true,
-    escopo: 'CANDIDATO',
+    fato: {
+      id: '01960000-0000-7000-0000-0000000000f1',
+      codigo: 'PCD',
+      nome: 'Pessoa com deficiência',
+      descricao: null,
+      dominio: 'BOOLEANO',
+      origem: 'DECLARADO',
+      cardinalidade: 'ESCALAR',
+      valoresDominio: null,
+      pontoResolucao: 'INSCRICAO',
+      binding: 'CAMPO_INSCRICAO:PCD',
+      valoresDominioDeclarados: null,
+      fonteValores: null,
+      ativo: true,
+      escopo: 'CANDIDATO',
+    },
+    operadoresAdmitidos: [
+      { codigo: 'IGUAL', rotulo: 'é' },
+      { codigo: 'DIFERENTE', rotulo: 'não é' },
+    ],
   },
 ];
 

@@ -45,6 +45,7 @@ export {
   STATUS_BASE_LEGAL_RESOLVIDO,
 } from './utils/documento-exigido.vocabulario';
 export { type MunicipioGravado } from './utils/municipio-gravado';
+export { converterLista } from './utils/converter-lista';
 export { contarCaracteres } from './utils/caracteres.util';
 export { formatarNumeroPtBr } from './utils/numero.util';
 export { formatarTamanhoDeArquivo } from './utils/tamanho-de-arquivo.util';

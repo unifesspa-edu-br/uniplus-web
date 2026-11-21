@@ -9,7 +9,10 @@ import {
   sucesso,
 } from './tipos-etapa.testing';
 
-const exigente = { ...analiseDocumental, exigeCorrecaoIndependente: true };
+const exigente = {
+  ...analiseDocumental,
+  avaliacao: { ...analiseDocumental.avaliacao, exigeCorrecaoIndependente: true },
+};
 
 describe('TiposEtapaPage — correção independente', () => {
   let p: Pagina;
@@ -37,7 +40,9 @@ describe('TiposEtapaPage — correção independente', () => {
     expect(p.campo('exigeCorrecaoIndependente').checked).toBe(false);
 
     const post = await p.enviar();
-    expect(post.request.body).toMatchObject({ exigeCorrecaoIndependente: false });
+    expect(post.request.body).toMatchObject({
+      avaliacao: { exigeCorrecaoIndependente: false },
+    });
     post.flush(...criado());
     await p.recarregarCom([prova]);
   });
@@ -50,7 +55,7 @@ describe('TiposEtapaPage — correção independente', () => {
     const put = await p.enviar(`${ESCRITA}/${exigente.id}`);
     expect(put.request.body).toMatchObject({
       id: exigente.id,
-      exigeCorrecaoIndependente: true,
+      avaliacao: { exigeCorrecaoIndependente: true },
     });
     put.flush(...sucesso());
     await p.recarregarCom([exigente, prova]);
@@ -62,7 +67,9 @@ describe('TiposEtapaPage — correção independente', () => {
     p.campo('exigeCorrecaoIndependente').click();
 
     const put = await p.enviar(`${ESCRITA}/${exigente.id}`);
-    expect(put.request.body).toMatchObject({ exigeCorrecaoIndependente: false });
+    expect(put.request.body).toMatchObject({
+      avaliacao: { exigeCorrecaoIndependente: false },
+    });
     put.flush(...sucesso());
     await p.recarregarCom([exigente, prova]);
   });

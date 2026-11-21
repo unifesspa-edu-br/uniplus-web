@@ -1,4 +1,8 @@
-import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
+import {
+  camposDaMudanca,
+  camposNaParte,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,7 +16,11 @@ import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-con
 import { type CondicaoEmClausula } from '../editor-de-condicoes/condicoes/condicoes-em-clausulas';
 import { type FatoEscolhivel } from '../editor-de-condicoes/condicoes/fatos-escolhiveis';
 import { LIMITES_DO_FORMULARIO } from './modelo/constantes';
-import { type EtapaDoFormulario, type PredicadoNoWire } from './modelo/tipos';
+import {
+  type ApresentacaoDaEtapa,
+  type EtapaDoFormulario,
+  type PredicadoNoWire,
+} from './modelo/tipos';
 import {
   paraPredicado,
   problemasDasCondicoes,
@@ -37,7 +45,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="input"
           type="text"
           [id]="idDe('titulo')"
-          [value]="etapa().titulo"
+          [value]="etapa().apresentacao.titulo"
           [maxLength]="limites.tituloDaEtapa"
           [disabled]="disabled()"
           [attr.aria-invalid]="tituloVazio() ? 'true' : null"
@@ -55,7 +63,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="textarea"
           rows="2"
           [id]="idDe('descricao')"
-          [value]="etapa().descricao ?? ''"
+          [value]="etapa().apresentacao.descricao ?? ''"
           [maxLength]="limites.textoDaEtapa"
           [disabled]="disabled()"
           (input)="trocar({ descricao: textoOuNulo($event) })"
@@ -68,7 +76,7 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           class="textarea"
           rows="2"
           [id]="idDe('aviso')"
-          [value]="etapa().aviso ?? ''"
+          [value]="etapa().apresentacao.aviso ?? ''"
           [maxLength]="limites.textoDaEtapa"
           [disabled]="disabled()"
           [attr.aria-describedby]="idDe('aviso-nota')"
@@ -104,7 +112,7 @@ export class SecaoDoFormularioComponent {
   readonly etapaChange = output<EtapaDoFormulario>();
 
   protected readonly limites = LIMITES_DO_FORMULARIO;
-  protected readonly tituloVazio = computed(() => this.etapa().titulo.trim() === '');
+  protected readonly tituloVazio = computed(() => this.etapa().apresentacao.titulo.trim() === '');
 
   protected readonly condicoes = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
     source: () => this.etapa().exibicao ?? null,
@@ -128,13 +136,15 @@ export class SecaoDoFormularioComponent {
     return valor.trim() === '' ? null : valor;
   }
 
-  protected trocar(mudanca: Partial<EtapaDoFormulario>): void {
-    this.camposEditados.emit(camposDaMudanca(mudanca));
-    this.etapaChange.emit({ ...this.etapa(), ...mudanca });
+  protected trocar(mudanca: Partial<ApresentacaoDaEtapa>): void {
+    this.camposEditados.emit(camposNaParte(['apresentacao'], camposDaMudanca(mudanca)));
+    const apresentacao = { ...this.etapa().apresentacao, ...mudanca };
+    this.etapaChange.emit({ ...this.etapa(), apresentacao });
   }
 
   protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
-    this.trocar({ exibicao: paraPredicado(condicoes) });
+    this.camposEditados.emit([['exibicao']]);
+    this.etapaChange.emit({ ...this.etapa(), exibicao: paraPredicado(condicoes) });
   }
 }

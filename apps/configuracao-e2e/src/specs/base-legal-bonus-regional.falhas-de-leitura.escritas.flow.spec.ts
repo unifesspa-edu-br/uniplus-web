@@ -2,9 +2,11 @@ import { expect, test } from '@playwright/test';
 import { mockApi } from '../support/api-da-base-legal-bonus-regional';
 import {
   busca,
+  campoDaIdentificacao,
   drawer,
   editar,
   novo,
+  tipoDoInstrumento,
   titulo,
 } from '../support/passos-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
@@ -66,13 +68,28 @@ test.describe('Base legal de bônus regional — escritas', () => {
     const formulario = drawer(page);
     const aviso = formulario.locator('ui-alerta-nova-tentativa');
     await expect(aviso).toContainText('sem o vocabulário de tipos');
-    await expect(formulario.locator('select[formcontrolname="tipoInstrumento"]')).toHaveAttribute(
+    await expect(tipoDoInstrumento(formulario)).toHaveAttribute(
       'aria-describedby',
       'cfg-blbr-tipos-falha',
     );
     const tentar = aviso.getByRole('button', { name: 'Tentar novamente' });
     await tentar.click();
     await expect(aviso).toBeHidden();
-    await expect(formulario.locator('select[formcontrolname="tipoInstrumento"]')).toBeFocused();
+    await expect(tipoDoInstrumento(formulario)).toBeFocused();
+  });
+
+  test('com o vocabulário indisponível, Enter na identificação não envia e o botão aponta o aviso', async ({
+    page,
+  }) => {
+    const { envios } = await mockApi(page, [], { recarga: 'com-o-item', falhasDoVocabulario: 2 });
+    await page.goto('/base-legal-bonus-regional');
+    await editar(page).click();
+    const formulario = drawer(page);
+    await expect(formulario.locator('ui-alerta-nova-tentativa')).toBeVisible();
+    await campoDaIdentificacao(formulario).press('Enter');
+    const salvar = formulario.getByRole('button', { name: 'Salvar base legal' });
+    await expect(salvar).toHaveAttribute('aria-disabled', 'true');
+    await expect(salvar).toHaveAttribute('aria-describedby', 'cfg-blbr-tipos-falha');
+    expect(envios).toHaveLength(0);
   });
 });

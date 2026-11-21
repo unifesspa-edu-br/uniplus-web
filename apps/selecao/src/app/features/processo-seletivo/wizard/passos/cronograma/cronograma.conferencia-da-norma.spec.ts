@@ -1,10 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import { conteudoInicial } from '@uniplus/shared-ui/components';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
+import {
+  campoDoServidor,
+  etapaDoServidor,
+  formularioDoServidor,
+} from '../../shared/formulario-do-servidor.testing';
 import { CatalogoDeFatos } from './catalogos/catalogo-de-fatos.service';
 import {
   BASE,
@@ -55,7 +60,8 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           ativo: true,
           valoresDominio: null,
           pontoResolucao: 'RESULTADO_FINAL',
-        } as unknown as FatoCandidatoView,
+          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
+        } as unknown as FatoCandidatoComOperadores,
       ]);
       comExigenciaDeclarada(
         [
@@ -151,7 +157,8 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           fonteValores: null,
           ativo: true,
           valoresDominio: null,
-        } as unknown as FatoCandidatoView,
+          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
+        } as unknown as FatoCandidatoComOperadores,
       ]);
       comExigenciaDeclarada(
         [
@@ -213,7 +220,8 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
           fonteValores: null,
           ativo: true,
           valoresDominio: null,
-        } as unknown as FatoCandidatoView,
+          operadoresAdmitidos: [{ codigo: 'IGUAL', rotulo: 'é' }],
+        } as unknown as FatoCandidatoComOperadores,
       ]);
 
       comExigenciaDeclarada(
@@ -238,47 +246,15 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
         codigo: 'INSCRICAO',
         faseCanonica: { coletaInscricao: true },
       });
-      const etapa = (codigo: string, ordem: number, bloco: string | null = null) => ({
-        codigo,
-        ordem,
-        tipo: bloco === null ? 'SECAO' : 'BLOCO',
-        bloco,
-        titulo: codigo,
-        descricao: null,
-        aviso: null,
-        exibicao: null,
-      });
-      const criado = {
-        finalidade: 'INSCRICAO',
+      const criado = formularioDoServidor({
         faseId: FASE.id,
-        titulo: null,
-        modeloOrigemId: null,
-        modeloOrigemCodigo: null,
         etapas: [
-          etapa('DADOS_BASICOS', 0),
-          etapa('OUTROS_DADOS_EXIGIDOS', 1),
-          etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
+          etapaDoServidor('DADOS_BASICOS', 0),
+          etapaDoServidor('OUTROS_DADOS_EXIGIDOS', 1),
+          etapaDoServidor('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
         ],
-        fatosColetados: [
-          {
-            fatoCodigo: 'NOME',
-            ordem: 0,
-            rotulo: 'Nome',
-            tipoRenderizacao: 'TEXTO',
-            obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-            precondicao: null,
-            opcoes: null,
-            etapaCodigo: 'DADOS_BASICOS',
-            formato: null,
-            ajuda: null,
-            pedirConfirmacao: false,
-            restricoes: [],
-            impedimento: null,
-          },
-        ],
-        termos: [],
-        grupos: [],
-      };
+        coleta: { itens: [campoDoServidor('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
+      });
       const ROTA_INSCRICAO = `${BASE}/api/selecao/admin/processos-seletivos/${PROCESSO_ID}/formularios/INSCRICAO`;
 
       const garantir = TestBed.inject(GravacaoDosCamposPressupostos).garantirCampos(
@@ -318,15 +294,13 @@ describe('CronogramaPassoComponent: conferência da norma', () => {
 
       const comCampo = {
         ...criado,
-        fatosColetados: [
-          ...criado.fatosColetados,
-          {
-            ...criado.fatosColetados[0],
-            fatoCodigo: 'RENDA_FAMILIAR',
-            ordem: 1,
-            etapaCodigo: 'OUTROS_DADOS_EXIGIDOS',
-          },
-        ],
+        coleta: {
+          ...criado.coleta,
+          itens: [
+            ...criado.coleta.itens,
+            campoDoServidor('RENDA_FAMILIAR', 1, 'OUTROS_DADOS_EXIGIDOS'),
+          ],
+        },
       };
       controller
         .expectOne(ROTA_PROCESSO)

@@ -1,3 +1,4 @@
+import { apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import { camposSemValoresOfertados, problemasDoFormulario } from './problemas-do-formulario';
@@ -40,7 +41,11 @@ describe('o que impede gravar o formulário', () => {
 
   it('cobra o rótulo que o candidato vai ler, também nos campos de grupo', () => {
     const problemas = problemasDoFormulario(
-      formularioCom(inscricaoGravada({ itens: [item('PCD', 0, 'S1', { rotulo: '  ' })] })),
+      formularioCom(
+        inscricaoGravada({
+          itens: [item('PCD', 0, 'S1', { apresentacao: apresentacaoDoCampo('  ', 'BOOLEANO') })],
+        }),
+      ),
       NENHUMA_EXIGENCIA,
       FASES_VIVAS,
     );
@@ -54,7 +59,9 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
   const comCampos = (...campos: readonly [string, string][]) =>
     formularioCom(
       inscricaoGravada({
-        itens: campos.map(([codigo, tipo], i) => item(codigo, i, 'S1', { tipoRenderizacao: tipo })),
+        itens: campos.map(([codigo, tipo], i) =>
+          item(codigo, i, 'S1', { apresentacao: apresentacaoDoCampo(codigo, tipo) }),
+        ),
       }),
     );
 
@@ -91,7 +98,11 @@ describe('campos cujo domínio sai do atendimento especializado', () => {
 
   it('acusa também o campo perguntado em outro formulário do processo', () => {
     const habilitacao = inscricaoGravada({
-      itens: [item('CONDICAO_ATENDIMENTO', 0, 'S1', { tipoRenderizacao: 'SELECAO_MULTIPLA' })],
+      itens: [
+        item('CONDICAO_ATENDIMENTO', 0, 'S1', {
+          apresentacao: apresentacaoDoCampo('CONDICAO_ATENDIMENTO', 'SELECAO_MULTIPLA'),
+        }),
+      ],
     });
     const formulario = {
       ...comCampos(),

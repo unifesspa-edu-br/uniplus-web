@@ -1,11 +1,7 @@
 import { formatarDataBr } from '@uniplus/shared-utils';
 
 import { lerLimiteDeData } from './interpretador/leitura-da-restricao';
-import type {
-  CampoAvaliado,
-  ItemDasRegras,
-  RestricaoDasRegras,
-} from './interpretador/regras-do-formulario';
+import type { ItemDasRegras, RestricaoDasRegras } from './interpretador/regras-do-formulario';
 import { diaDoLimite, FAIXA_DE_DATA } from './interpretador/restricoes';
 
 const numeroBr = (valor: number): string => valor.toLocaleString('pt-BR');
@@ -24,7 +20,7 @@ export function limitesDaFaixaDeData(
   regra: ItemDasRegras | null,
   diaDoEnvio: string | null,
 ): LimitesDeData | null {
-  const faixa = regra?.restricoes?.find((r) => r.tipo === FAIXA_DE_DATA);
+  const faixa = regra?.regras.restricoes?.find((r) => r.tipo === FAIXA_DE_DATA);
   if (!faixa) return null;
   const resolver = (limite: RestricaoDasRegras['dataMinima']): string | null => {
     const lido = lerLimiteDeData(limite, '');
@@ -45,11 +41,11 @@ export function textoDosLimitesDeData(limites: LimitesDeData | null): string | n
 
 /** A mensagem de cada restrição que a resposta viola, montada com os limites que a regra declara. */
 export function mensagensDasRestricoes(
-  avaliado: CampoAvaliado,
+  violadas: readonly string[],
   regra: ItemDasRegras | null,
   diaDoEnvio: string | null,
 ): string[] {
-  return avaliado.restricoesVioladas.map((tipo) => mensagemDaRestricao(tipo, regra, diaDoEnvio));
+  return violadas.map((tipo) => mensagemDaRestricao(tipo, regra, diaDoEnvio));
 }
 
 interface ContextoDaMensagem {
@@ -78,7 +74,7 @@ function mensagemDaRestricao(
   regra: ItemDasRegras | null,
   diaDoEnvio: string | null,
 ): string {
-  const restricao = regra?.restricoes?.find((r) => r.tipo === tipo);
+  const restricao = regra?.regras.restricoes?.find((r) => r.tipo === tipo);
   const mensagem = Object.hasOwn(MENSAGEM_PELO_TIPO, tipo) ? MENSAGEM_PELO_TIPO[tipo] : null;
   return mensagem
     ? mensagem({ regra, restricao, diaDoEnvio })

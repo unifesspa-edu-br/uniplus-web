@@ -10,7 +10,11 @@ import { provideRouter } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { MotivoDeDecisaoDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import {
+  MotivoDeDecisaoDto,
+  SELECAO_BASE_PATH,
+  TipoMotivoDeDecisaoCodigo,
+} from '@uniplus/shared-data/selecao';
 import { vi } from 'vitest';
 import { EdicaoDosMotivosDeDecisao } from './edicao-dos-motivos-de-decisao';
 import { MotivosDeDecisaoPage } from './motivos-de-decisao.page';
@@ -24,7 +28,7 @@ export const PERMISSAO_DE_MANTER = PERMISSAO.selecao.motivosDeDecisaoManter;
 
 export const isencao: MotivoDeDecisaoDto = {
   id: '01960000-0000-7000-0000-0000000000a1',
-  tipo: 'ISENCAO_DA_TAXA',
+  tipo: { codigo: TipoMotivoDeDecisaoCodigo.ISENCAO_DA_TAXA, rotulo: 'Isenção da taxa' },
   codigo: 'RENDA_ACIMA_DO_LIMITE',
   descricao: 'A renda familiar informada supera o limite do fundamento.',
   subclassificacao: 'BAIXA_RENDA',

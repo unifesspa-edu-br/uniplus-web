@@ -1,4 +1,5 @@
 import type { ConfiguracaoDistribuicaoVagasDto } from '@uniplus/shared-data/selecao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { REGRAS_DE_APLICABILIDADE } from './regras-das-modalidades';
 
 /** A distribuição de vagas da oferta de Medicina, como o detalhe do processo a devolve. */
@@ -276,4 +277,4 @@ export const DISTRIBUICAO_DA_MEDICINA = [
     },
     ajusteDoQuadroFixado: null,
   },
-] as const satisfies readonly ConfiguracaoDistribuicaoVagasDto[];
+] as const satisfies readonly JsonDaApi<ConfiguracaoDistribuicaoVagasDto>[];

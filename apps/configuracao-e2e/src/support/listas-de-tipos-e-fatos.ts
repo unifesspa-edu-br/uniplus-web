@@ -42,7 +42,12 @@ export async function json(route: Route, body: unknown): Promise<void> {
 async function mockCadastros(page: Page): Promise<void> {
   await page.route(/\/api\/configuracao\/tipos-documento(\?.*)?$/, (r) => json(r, TIPOS));
   await page.route(/\/api\/configuracao\/categorias-documento(\?.*)?$/, (r) => json(r, CATEGORIAS));
-  await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, (r) => json(r, FATOS));
+  await page.route(/\/api\/configuracao\/admin\/fatos-candidato(\?.*)?$/, (r) =>
+    json(
+      r,
+      FATOS.map((fato) => ({ fato, operadoresAdmitidos: [] })),
+    ),
+  );
   await page.route(/\/api\/configuracao\/fatos-candidato(\?.*)?$/, (r) => json(r, []));
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (r) => json(r, []));
   await mockHistoricosDosCadastros(page);
