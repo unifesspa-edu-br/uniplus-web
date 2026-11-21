@@ -39,6 +39,15 @@ interface OpcaoNaTela {
 const TEXTO_CARREGANDO = 'Carregando as opções…';
 const TEXTO_FALHOU = 'As opções não carregaram. Use "Tentar de novo" no aviso do topo do passo.';
 
+/** O que o parágrafo de situação diz enquanto não há opção para escolher. */
+export function textoDaSituacaoDasOpcoes(
+  situacao: SituacaoDasOpcoes,
+  textoSemOpcoes = 'Nenhuma opção disponível.',
+): string {
+  if (situacao === 'carregando') return TEXTO_CARREGANDO;
+  return situacao === 'falhou' ? TEXTO_FALHOU : textoSemOpcoes;
+}
+
 function idsJuntos(ids: readonly (string | null)[]): string | null {
   const presentes = ids.filter((id) => id !== null);
   return presentes.length > 0 ? presentes.join(' ') : null;
@@ -90,6 +99,8 @@ export class EscolhaComExplicacaoComponent {
   readonly notaDasRecusasAConferir = input<string | null>(null);
   /** Texto ao fim da legenda, como "(obrigatório)"; com ele o grupo é anunciado como obrigatório. */
   readonly textoDeObrigatoriedade = input<string | null>(null);
+  /** A pessoa não pode escolher agora, como num processo que não aceita edição. */
+  readonly desabilitado = input(false);
   readonly situacao = input<SituacaoDasOpcoes>('pronta');
   /** O que o parágrafo de situação diz quando a lista chega vazia. */
   readonly textoSemOpcoes = input('Nenhuma opção disponível.');
@@ -130,11 +141,9 @@ export class EscolhaComExplicacaoComponent {
     this.recusasAConferir().length > 0 ? this.notaDasRecusasAConferir() : null,
   );
   protected readonly semOpcao = computed(() => this.opcoes().length === 0);
-  protected readonly textoDaSituacao = computed(() => {
-    const situacao = this.situacao();
-    if (situacao === 'carregando') return TEXTO_CARREGANDO;
-    return situacao === 'falhou' ? TEXTO_FALHOU : this.textoSemOpcoes();
-  });
+  protected readonly textoDaSituacao = computed(() =>
+    textoDaSituacaoDasOpcoes(this.situacao(), this.textoSemOpcoes()),
+  );
   protected readonly descritaPeloCampo = computed(() =>
     idsJuntos([this.erroLocal() ? this.idDoErroLocal() : null, ...this.idsQueDescrevem(null)]),
   );

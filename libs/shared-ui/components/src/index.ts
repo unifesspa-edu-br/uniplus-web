@@ -43,6 +43,13 @@ export { DialogComponent } from '../../src/lib/components/dialog/dialog';
 export { DrawerComponent } from '../../src/lib/components/drawer/drawer';
 export { EmptyStateComponent } from '../../src/lib/components/empty-state/empty-state';
 export {
+  EscolhaComExplicacaoComponent,
+  textoDaSituacaoDasOpcoes,
+  type OpcaoDeEscolhaComExplicacao,
+  type SituacaoDasOpcoes,
+} from '../../src/lib/components/escolha-com-explicacao/escolha-com-explicacao';
+export type { RecusaDaEscolha } from '../../src/lib/components/escolha-com-explicacao/recusas-da-escolha';
+export {
   ListaDeDocumentosComponent,
   type DocumentoExigido,
 } from '../../src/lib/components/lista-de-documentos/lista-de-documentos';

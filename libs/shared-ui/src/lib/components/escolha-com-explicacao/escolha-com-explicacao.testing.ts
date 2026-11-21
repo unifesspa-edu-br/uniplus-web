@@ -47,6 +47,7 @@ export interface EntradasDaEscolha {
   recusasAConferir: readonly RecusaDaEscolha[];
   notaDasRecusasAConferir: string | null;
   textoDeObrigatoriedade: string | null;
+  desabilitado: boolean;
   situacao: SituacaoDasOpcoes;
   textoSemOpcoes: string;
 }
