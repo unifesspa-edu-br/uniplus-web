@@ -5,8 +5,8 @@
       class="input"
       [attr.id]="id('modo')"
       [disabled]="desabilitada()"
-      [attr.aria-describedby]="descritoPor('modo')"
-      [attr.aria-invalid]="invalido('modo') ? 'true' : null"
+      [attr.aria-describedby]="estadoDoModo().descritoPor"
+      [attr.aria-invalid]="estadoDoModo().invalido ? 'true' : null"
       (change)="escolherModo($any($event.target).value)"
     >
       <option [value]="semRegra" [selected]="regra() === null">Sem regra declarada</option>
@@ -16,19 +16,20 @@
         </option>
       }
     </select>
-    @if (erro('modo'); as mensagem) {
+    @if (estadoDoModo().erro; as mensagem) {
       <p class="field__erro" [attr.id]="id('modo') + '-erro'" role="alert">{{ mensagem }}</p>
     }
-    @if (recusasDe('modo').length > 0) {
+    @if (estadoDoModo().recusas.length) {
       <sel-recusas-do-campo
         [attr.id]="id('modo') + '-recusas'"
         tabindex="-1"
-        [recusas]="recusasDe('modo')"
+        [recusas]="estadoDoModo().recusas"
       />
     }
   </div>
 
   @if (regra(); as atual) {
+    @let doIntegrantes = estado('integrantes');
     <div class="form-field">
       <label class="label" [attr.for]="id('integrantes')">Integrantes titulares</label>
       <input
@@ -38,24 +39,25 @@
         [attr.id]="id('integrantes')"
         [value]="atual.integrantes"
         [disabled]="desabilitada()"
-        [attr.aria-describedby]="descritoPor('integrantes')"
-        [attr.aria-invalid]="invalido('integrantes') ? 'true' : null"
+        [attr.aria-describedby]="doIntegrantes.descritoPor"
+        [attr.aria-invalid]="doIntegrantes.invalido ? 'true' : null"
         (input)="alterar('integrantes', $any($event.target).value)"
       />
-      @if (erro('integrantes'); as mensagem) {
+      @if (doIntegrantes.erro; as mensagem) {
         <p class="field__erro" [attr.id]="id('integrantes') + '-erro'" role="alert">
           {{ mensagem }}
         </p>
       }
-      @if (recusasDe('integrantes').length > 0) {
+      @if (doIntegrantes.recusas.length) {
         <sel-recusas-do-campo
           [attr.id]="id('integrantes') + '-recusas'"
           tabindex="-1"
-          [recusas]="recusasDe('integrantes')"
+          [recusas]="doIntegrantes.recusas"
         />
       }
     </div>
 
+    @let doSuplentes = estado('suplentes');
     <div class="form-field">
       <label class="label" [attr.for]="id('suplentes')">Suplentes</label>
       <input
@@ -65,183 +67,31 @@
         [attr.id]="id('suplentes')"
         [value]="atual.suplentes"
         [disabled]="desabilitada()"
-        [attr.aria-describedby]="descritoPor('suplentes')"
-        [attr.aria-invalid]="invalido('suplentes') ? 'true' : null"
+        [attr.aria-describedby]="doSuplentes.descritoPor"
+        [attr.aria-invalid]="doSuplentes.invalido ? 'true' : null"
         (input)="alterar('suplentes', $any($event.target).value)"
       />
-      @if (erro('suplentes'); as mensagem) {
+      @if (doSuplentes.erro; as mensagem) {
         <p class="field__erro" [attr.id]="id('suplentes') + '-erro'" role="alert">{{ mensagem }}</p>
       }
-      @if (recusasDe('suplentes').length > 0) {
+      @if (doSuplentes.recusas.length) {
         <sel-recusas-do-campo
           [attr.id]="id('suplentes') + '-recusas'"
           tabindex="-1"
-          [recusas]="recusasDe('suplentes')"
+          [recusas]="doSuplentes.recusas"
         />
       }
     </div>
 
     @if (colegiada()) {
-      <div class="form-field form-grid__full">
-        <label class="label" [attr.for]="id('encerramento')">Encerramento da votação</label>
-        <select
-          class="input"
-          [attr.id]="id('encerramento')"
-          [disabled]="desabilitada()"
-          [attr.aria-describedby]="descritoPor('encerramento')"
-          [attr.aria-invalid]="invalido('encerramento') ? 'true' : null"
-          (change)="alterar('encerramento', $any($event.target).value)"
-        >
-          <option value="" [selected]="atual.encerramento === ''">Selecione…</option>
-          @for (opcao of encerramentos; track opcao.valor) {
-            <option [value]="opcao.valor" [selected]="atual.encerramento === opcao.valor">
-              {{ opcao.rotulo }}
-            </option>
-          }
-        </select>
-        @if (erro('encerramento'); as mensagem) {
-          <p class="field__erro" [attr.id]="id('encerramento') + '-erro'" role="alert">
-            {{ mensagem }}
-          </p>
-        }
-        @if (recusasDe('encerramento').length > 0) {
-          <sel-recusas-do-campo
-            [attr.id]="id('encerramento') + '-recusas'"
-            tabindex="-1"
-            [recusas]="recusasDe('encerramento')"
-          />
-        }
-      </div>
-
-      <div class="form-field">
-        <label class="label" [attr.for]="id('quorum')">Quórum</label>
-        <input
-          class="input"
-          type="text"
-          inputmode="numeric"
-          [attr.id]="id('quorum')"
-          [value]="atual.quorum"
-          [readOnly]="quorumFixo()"
-          [disabled]="desabilitada()"
-          [attr.aria-describedby]="descritoPor('quorum', quorumFixo())"
-          [attr.aria-invalid]="invalido('quorum') ? 'true' : null"
-          (input)="alterar('quorum', $any($event.target).value)"
-        />
-        @if (quorumFixo()) {
-          <p class="field__hint" [attr.id]="id('quorum') + '-dica'">
-            Com todos os titulares votando, o quórum é o número de integrantes.
-          </p>
-        }
-        @if (erro('quorum'); as mensagem) {
-          <p class="field__erro" [attr.id]="id('quorum') + '-erro'" role="alert">{{ mensagem }}</p>
-        }
-        @if (recusasDe('quorum').length > 0) {
-          <sel-recusas-do-campo
-            [attr.id]="id('quorum') + '-recusas'"
-            tabindex="-1"
-            [recusas]="recusasDe('quorum')"
-          />
-        }
-      </div>
-
-      <div class="form-field">
-        <label class="label" [attr.for]="id('criterio')">Critério da votação</label>
-        <select
-          class="input"
-          [attr.id]="id('criterio')"
-          [disabled]="desabilitada()"
-          [attr.aria-describedby]="descritoPor('criterio')"
-          [attr.aria-invalid]="invalido('criterio') ? 'true' : null"
-          (change)="alterar('criterio', $any($event.target).value)"
-        >
-          <option value="" [selected]="atual.criterio === ''">Selecione…</option>
-          @for (opcao of criterios; track opcao.valor) {
-            <option [value]="opcao.valor" [selected]="atual.criterio === opcao.valor">
-              {{ opcao.rotulo }}
-            </option>
-          }
-        </select>
-        @if (erro('criterio'); as mensagem) {
-          <p class="field__erro" [attr.id]="id('criterio') + '-erro'" role="alert">
-            {{ mensagem }}
-          </p>
-        }
-        @if (recusasDe('criterio').length > 0) {
-          <sel-recusas-do-campo
-            [attr.id]="id('criterio') + '-recusas'"
-            tabindex="-1"
-            [recusas]="recusasDe('criterio')"
-          />
-        }
-      </div>
-
-      @if (comDesempate()) {
-        <div class="form-field form-grid__full">
-          <label class="label" [attr.for]="id('desempate')">Em caso de empate</label>
-          <select
-            class="input"
-            [attr.id]="id('desempate')"
-            [disabled]="desabilitada()"
-            [attr.aria-describedby]="descritoPor('desempate')"
-            [attr.aria-invalid]="invalido('desempate') ? 'true' : null"
-            (change)="alterar('desempate', $any($event.target).value)"
-          >
-            <option value="" [selected]="atual.desempate === ''">Selecione…</option>
-            @for (opcao of desempates; track opcao.valor) {
-              <option [value]="opcao.valor" [selected]="atual.desempate === opcao.valor">
-                {{ opcao.rotulo }}
-              </option>
-            }
-          </select>
-          @if (erro('desempate'); as mensagem) {
-            <p class="field__erro" [attr.id]="id('desempate') + '-erro'" role="alert">
-              {{ mensagem }}
-            </p>
-          }
-          @if (recusasDe('desempate').length > 0) {
-            <sel-recusas-do-campo
-              [attr.id]="id('desempate') + '-recusas'"
-              tabindex="-1"
-              [recusas]="recusasDe('desempate')"
-            />
-          }
-        </div>
-      }
-
-      @if (comSemUnanimidade()) {
-        <div class="form-field form-grid__full">
-          <label class="label" [attr.for]="id('semUnanimidade')"
-            >Sem unanimidade, o resultado é</label
-          >
-          <select
-            class="input"
-            [attr.id]="id('semUnanimidade')"
-            [disabled]="desabilitada()"
-            [attr.aria-describedby]="descritoPor('semUnanimidade')"
-            [attr.aria-invalid]="invalido('semUnanimidade') ? 'true' : null"
-            (change)="alterar('semUnanimidade', $any($event.target).value)"
-          >
-            <option value="" [selected]="atual.semUnanimidade === ''">Selecione…</option>
-            @for (opcao of semUnanimidade; track opcao.valor) {
-              <option [value]="opcao.valor" [selected]="atual.semUnanimidade === opcao.valor">
-                {{ opcao.rotulo }}
-              </option>
-            }
-          </select>
-          @if (erro('semUnanimidade'); as mensagem) {
-            <p class="field__erro" [attr.id]="id('semUnanimidade') + '-erro'" role="alert">
-              {{ mensagem }}
-            </p>
-          }
-          @if (recusasDe('semUnanimidade').length > 0) {
-            <sel-recusas-do-campo
-              [attr.id]="id('semUnanimidade') + '-recusas'"
-              tabindex="-1"
-              [recusas]="recusasDe('semUnanimidade')"
-            />
-          }
-        </div>
-      }
+      <sel-votacao-da-banca
+        [regra]="atual"
+        [idBase]="idBase()"
+        [desabilitada]="desabilitada()"
+        [erros]="erros()"
+        [recusas]="recusas()"
+        (regraChange)="regraChange.emit($event)"
+      />
     } @else {
       <p class="field__hint form-grid__full">
         Ato individual: uma pessoa decide, sem quórum nem votação.

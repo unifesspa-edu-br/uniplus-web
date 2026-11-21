@@ -1,4 +1,4 @@
-import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
+import { emOrdem, type RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import type { CampoDaRegra } from './regra-de-deliberacao';
 
 /** Onde a recusa aparece na regra de uma banca: um campo dela, ou a regra inteira. */
@@ -68,4 +68,18 @@ export function alvosDaRecusaDaBanca(idBase: string, campo: CampoDaBanca): reado
   const controle = campo === 'regra' ? 'modo' : campo;
   const ids = [controle, `${controle}-recusas`, 'modo-recusas'];
   return [...new Set(ids)].map((parte) => `${idBase}-${parte}`);
+}
+
+/**
+ * As recusas que o seletor do modo mostra: a dele, a da regra inteira e a de todo controle que a
+ * tela não mostra para a regra atual, para que nenhuma recusa fique sem lugar.
+ */
+export function recusasDoModo(
+  recusas: RecusasDaBancaPorCampo,
+  aVista: ReadonlySet<CampoDaRegra>,
+): readonly RecusaOrdenada[] {
+  const campos = CAMPOS_DA_BANCA.filter(
+    (campo) => campo === 'modo' || campo === 'regra' || !aVista.has(campo),
+  );
+  return emOrdem(campos.flatMap((campo) => recusas[campo] ?? []));
 }
