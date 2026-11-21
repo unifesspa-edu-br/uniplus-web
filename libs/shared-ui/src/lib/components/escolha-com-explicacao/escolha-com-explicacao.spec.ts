@@ -83,6 +83,13 @@ describe('EscolhaComExplicacaoComponent', () => {
       expect(campos().every((c) => c.tabIndex === 0 && !c.disabled)).toBe(true);
     });
 
+    it('desabilita todas as opções quando a escolha não está liberada', () => {
+      aplicar(fixture, { opcoes: OPCOES, valor: 'NENHUM', desabilitado: true });
+
+      expect(campos().every((c) => c.disabled)).toBe(true);
+      expect(campos().map((c) => c.checked)).toEqual([false, true, false]);
+    });
+
     it('marca a opção que o valor indica', () => {
       aplicar(fixture, { opcoes: OPCOES, valor: 'NENHUM' });
 

@@ -20,6 +20,7 @@
         [name]="prefixoDoId()"
         [value]="opcao.codigo"
         [checked]="opcao.codigo === valor()"
+        [disabled]="desabilitado()"
         [attr.aria-describedby]="opcao.descritaPor"
         [attr.aria-invalid]="comErroVisivel() ? 'true' : null"
         (change)="escolher(opcao.codigo)"

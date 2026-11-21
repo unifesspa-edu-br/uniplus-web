@@ -35,6 +35,7 @@ export { EmptyStateComponent } from './empty-state/empty-state';
 export {
   EscolhaComExplicacaoComponent,
   type OpcaoDeEscolhaComExplicacao,
+  textoDaSituacaoDasOpcoes,
   type SituacaoDasOpcoes,
 } from './escolha-com-explicacao/escolha-com-explicacao';
 export type { RecusaDaEscolha } from './escolha-com-explicacao/recusas-da-escolha';
