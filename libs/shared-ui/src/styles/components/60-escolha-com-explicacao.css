@@ -1,0 +1,39 @@
+/* ============================================================================
+ * ESCOLHA COM EXPLICAÇÃO (grupo de opções exclusivas, cada uma com a sua explicação)
+ * ========================================================================== */
+ui-escolha-com-explicacao {
+  display: block;
+}
+.escolha {
+  /* O mínimo do fieldset é o do conteúdo: sem isto, o texto longo alarga a página em 320 px. */
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.escolha__opcao {
+  display: grid;
+  gap: var(--space-1);
+}
+.escolha__opcao .radio {
+  display: flex;
+  align-items: flex-start;
+  padding-block: var(--space-2);
+}
+.escolha__opcao .radio__dot {
+  margin-block-start: 0.125rem;
+}
+.escolha__rotulo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.escolha__explicacao {
+  /* Alinha a explicação ao texto do rótulo: largura da bolinha mais o espaço até o texto. */
+  margin-inline-start: calc(1.25rem + var(--space-2));
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.escolha .radio input[aria-invalid='true'] ~ .radio__dot {
+  border-color: var(--color-danger-500);
+}
