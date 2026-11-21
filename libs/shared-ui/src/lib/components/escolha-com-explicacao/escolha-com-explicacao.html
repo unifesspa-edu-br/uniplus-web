@@ -1,0 +1,55 @@
+<fieldset
+  class="field escolha"
+  role="radiogroup"
+  [attr.id]="idDoGrupo()"
+  [attr.aria-required]="obrigatorio() ? 'true' : null"
+  [attr.aria-busy]="situacao() === 'carregando' ? 'true' : null"
+  [attr.aria-invalid]="comErroVisivel() ? 'true' : null"
+  [attr.aria-describedby]="descritaPeloCampo()"
+>
+  <legend class="field__label">{{ legendaCompleta() }}</legend>
+  @if (instrucao()) {
+  <p class="field__hint" [attr.id]="idDaInstrucao()">{{ instrucao() }}</p>
+  } @for (opcao of opcoesNaTela(); track opcao.codigo) {
+  <div class="escolha__opcao">
+    <label class="radio">
+      <input
+        #campoDaOpcao
+        type="radio"
+        [attr.id]="opcao.idDoCampo"
+        [name]="prefixoDoId()"
+        [value]="opcao.codigo"
+        [checked]="opcao.codigo === valor()"
+        [attr.aria-describedby]="opcao.descritaPor"
+        [attr.aria-invalid]="comErroVisivel() ? 'true' : null"
+        (change)="escolher(opcao.codigo)"
+      />
+      <span class="radio__dot" aria-hidden="true"></span>
+      <span class="escolha__rotulo">{{ opcao.rotulo }}</span>
+    </label>
+    @if (opcao.descricao) {
+    <p class="field__hint escolha__explicacao" [attr.id]="opcao.idDaExplicacao">
+      {{ opcao.descricao }}
+    </p>
+    }
+  </div>
+  } @if (semOpcao()) {
+  <p
+    #paragrafoDaSituacao
+    class="field__hint escolha__situacao"
+    tabindex="-1"
+    [attr.id]="idDaSituacao()"
+    [attr.aria-describedby]="descritaPeloCampo()"
+  >
+    {{ textoDaSituacao() }}
+  </p>
+  } @if (erroLocal(); as erro) {
+  <p class="field__error" [attr.id]="idDoErroLocal()">{{ erro }}</p>
+  } @for (recusa of recusasDesenhadas(); track recusa.id) {
+  <ui-recusa-do-campo [attr.id]="recusa.id" [recusas]="recusa.lista" />
+  } @for (recusa of recusasAConferirDesenhadas(); track recusa.id) {
+  <ui-recusa-do-campo [attr.id]="recusa.id" [recusas]="recusa.lista" />
+  } @if (notaVisivel(); as nota) {
+  <p class="field__hint" [attr.id]="idDaNota()">{{ nota }}</p>
+  }
+</fieldset>

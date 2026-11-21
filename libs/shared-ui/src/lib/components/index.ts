@@ -33,6 +33,12 @@ export { DialogComponent } from './dialog/dialog';
 export { DrawerComponent } from './drawer/drawer';
 export { EmptyStateComponent } from './empty-state/empty-state';
 export {
+  EscolhaComExplicacaoComponent,
+  type OpcaoDeEscolhaComExplicacao,
+  type SituacaoDasOpcoes,
+} from './escolha-com-explicacao/escolha-com-explicacao';
+export type { RecusaDaEscolha } from './escolha-com-explicacao/recusas-da-escolha';
+export {
   FileUploadComponent,
   type ArquivoEmEnvio,
   type FaseDoArquivo,
