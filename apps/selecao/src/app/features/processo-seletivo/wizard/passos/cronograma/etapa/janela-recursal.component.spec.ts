@@ -20,6 +20,7 @@ import { BASE } from '../cronograma.testing';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 import { ReleituraDasEtapas } from '../servicos/releitura-das-etapas.service';
+import { RecusasDoServidorNasEtapas } from '../servicos/recusas-do-servidor-nas-etapas.service';
 import { RecusasDoServidorNasFases } from '../servicos/recusas-do-servidor-nas-fases.service';
 import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
 import { JanelaRecursalComponent } from './janela-recursal.component';
@@ -55,6 +56,7 @@ describe('JanelaRecursalComponent', () => {
         UnidadesResponsaveisDasFases,
         ReleituraDasEtapas,
         FormularioDoCronograma,
+        RecusasDoServidorNasEtapas,
         RecusasDoServidorNasFases,
         EdicaoDaEtapa,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

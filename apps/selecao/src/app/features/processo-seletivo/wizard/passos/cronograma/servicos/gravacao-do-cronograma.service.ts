@@ -1,30 +1,23 @@
 import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
-import type { FormGroup } from '@angular/forms';
 import {
   ProblemI18nService,
   recusasDoProblema,
-  separarCausas,
   type RecusaDoProblema,
 } from '@uniplus/shared-core/http';
 
-import type {
-  EtapaPontuada,
-  FaseDoCronograma,
-  ValidacaoDoPasso,
-} from '../../../processo-seletivo.models';
+import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { CadastroInicial, type ResultadoGravacao } from '../../../shared/cadastro-inicial.service';
+import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
 import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
 import { NumeracaoDasRespostasRecusadas } from '../../../shared/recusas/numeracao-das-respostas-recusadas';
-import { resumoDasRecusasSemLugar } from '../../../shared/recusas/texto-da-recusa-no-resumo';
-import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
+import { resumoDaGravacaoRecusada } from '../../../shared/recusas/texto-da-recusa-no-resumo';
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import { alvosDaRecusaDaFase } from '../../fase/alvo-da-recusa-da-fase';
 import { campoNaTela } from '../../fase/campo-da-fase';
-import { type EtapaForm, faseDoFormulario } from '../cronograma-form';
+import { etapaDoFormulario, faseDoFormulario } from '../cronograma-form';
 import { comoComandoDeEtapa } from '../cronograma-para-comando';
-import { recusaDaEtapaDeNotaDoEnem, textoDaRecusaDaEtapa } from '../recusas-do-servidor-da-etapa';
 import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
+import type { ConteudoDaGravacao, ProblemaDaGravacao } from './conteudo-da-gravacao';
 import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
@@ -34,6 +27,7 @@ import {
   PERMUTACAO_DE_ORDEM,
 } from './gravar-cronograma-fases';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
+import { RecusaDaGravacaoDasEtapas } from './recusa-da-gravacao-das-etapas.service';
 import { ReleituraDasEtapas, AGUARDA_RELEITURA } from './releitura-das-etapas.service';
 import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
@@ -41,24 +35,6 @@ import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.servi
 /** A unidade responsável escolhida para a fase saiu do cadastro de Organização. */
 const UNIDADE_RESPONSAVEL_NAO_ENCONTRADA =
   'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
-
-type ProblemaDaGravacao = Extract<ResultadoGravacao, { ok: false }>['problem'];
-
-/** O que uma gravação do cronograma escreve, congelado no instante em que o operador manda gravar. */
-interface ConteudoDaGravacao {
-  readonly processoId: string;
-  readonly geracao: number;
-  readonly fases: readonly FaseDoCronograma[];
-  readonly grupos: readonly FormGroup<EtapaForm>[];
-  readonly etapas: readonly EtapaPontuada[];
-}
-
-/**
- * A gravação foi recusada e toda recusa achou o campo dela. O resumo não pode ficar vazio: lista
- * vazia é o sinal de gravação superada, que sai calada, e a recusa precisa contar como pendência.
- */
-const RECUSA_MOSTRADA_NOS_CAMPOS =
-  'A gravação do cronograma foi recusada. A mensagem de cada recusa está no campo a que ela se refere.';
 
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
 const GRAVACAO_SUPERADA: ValidacaoDoPasso = { valid: false, messages: [] };
@@ -80,6 +56,7 @@ export class GravacaoDoCronograma {
   private readonly conferencia = inject(ConferenciaDoCronograma);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   private readonly recusas = inject(RecusasDoServidorNasEtapas);
+  private readonly recusaDasEtapas = inject(RecusaDaGravacaoDasEtapas);
   private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
   private readonly numeracao = inject(NumeracaoDasRespostasRecusadas);
   private readonly injetor = inject(Injector);
@@ -158,6 +135,7 @@ export class GravacaoDoCronograma {
       geracao: this.store.geracao(),
       fases: this.cronograma.fases.controls.map(faseDoFormulario),
       grupos: [...this.cronograma.etapas.controls],
+      etapasNoFormulario: this.cronograma.etapas.controls.map(etapaDoFormulario),
       etapas: this.cronograma.etapasParaEnvio(),
     };
   }
@@ -211,11 +189,6 @@ export class GravacaoDoCronograma {
     return { valid: false, messages: this.resumoDaRecusaDasFases(problema, semLugar) };
   }
 
-  /**
-   * O resumo traz só o que não achou campo; se tudo achou, uma frase diz que a gravação foi
-   * recusada e onde ver. Sem nenhuma causa em `errors[]`, a recusa é da raiz e
-   * o `code` dela é que se explica.
-   */
   /** O que a linha do tempo mostra de cada fase agora, para a recusa não apontar controle que não existe. */
   private controleNaTela(): ControleNaTela {
     const exigencias = new Map(
@@ -226,16 +199,18 @@ export class GravacaoDoCronograma {
     return (faseCanonicaId, campo) => campoNaTela(campo, exigencias.get(faseCanonicaId) ?? null);
   }
 
+  /**
+   * O resumo traz só o que não achou campo; se tudo achou, uma frase diz que a gravação foi
+   * recusada e onde ver. A recusa de permutação de ordem leva a orientação do que fazer.
+   */
   private resumoDaRecusaDasFases(
     problema: ProblemaDaGravacao,
     semLugar: readonly RecusaDoProblema[],
   ): string[] {
-    const { deCampo, gerais } = separarCausas(problema.errors);
-    if (deCampo.length === 0 && gerais.length === 0) {
-      return [this.explicarRecusa(problema.code, problema)];
-    }
-    const resumo = resumoDasRecusasSemLugar(problema, semLugar);
-    return resumo.length > 0 ? resumo : [RECUSA_MOSTRADA_NOS_CAMPOS];
+    return resumoDaGravacaoRecusada(problema, semLugar, {
+      doCodigo: problema.code === PERMUTACAO_DE_ORDEM ? ORIENTACAO_DE_PERMUTACAO : null,
+      titulo: () => this.problemI18n.resolve(problema).title,
+    });
   }
 
   /**
@@ -275,32 +250,7 @@ export class GravacaoDoCronograma {
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (gravacao.ok) return null;
 
-    this.recusas.aplicar(conteudo.grupos, separarCausas(gravacao.problem.errors).deCampo);
-    return { valid: false, messages: this.mensagensDaRecusaDasEtapas(gravacao.problem, conteudo) };
-  }
-
-  private mensagensDaRecusaDasEtapas(
-    problema: ProblemaDaGravacao,
-    conteudo: ConteudoDaGravacao,
-  ): string[] {
-    const daRaiz = recusaDaEtapaDeNotaDoEnem(problema.code);
-    const resumo = resumoDaRecusa(
-      problema,
-      (erro) => this.mensagemDoErroDaEtapa(erro, conteudo.etapas),
-      () => this.problemI18n.resolve(problema).title,
-    );
-    return daRaiz === null || resumo.includes(daRaiz) ? resumo : [daRaiz, ...resumo];
-  }
-
-  private mensagemDoErroDaEtapa(
-    erro: { readonly code: string; readonly field: string; readonly message?: string },
-    etapas: ConteudoDaGravacao['etapas'],
-  ): string | null {
-    const recusa = textoDaRecusaDaEtapa(erro);
-    if (recusa === null) return recusaDaEtapaDeNotaDoEnem(erro.code);
-    if (recusa.indice === null) return recusa.texto;
-    const nome = etapas[recusa.indice]?.nome.trim() ?? '';
-    return `${nome === '' ? `Etapa ${recusa.indice + 1}` : nome}: ${recusa.texto}`;
+    return this.recusaDasEtapas.recusar(conteudo, gravacao.problem);
   }
 
   private async recolherIdentificadores(
@@ -349,19 +299,6 @@ export class GravacaoDoCronograma {
       valid: false,
       messages: [`As etapas e o cronograma de fases foram gravados. ${titulo}`],
     };
-  }
-
-  /**
-   * A recusa de permutação de ordem descreve o que aconteceu, não o que fazer.
-   * Quem reordenou duas fases precisa saber que o caminho é fazê-lo em duas
-   * gravações — a informação que evita tentar de novo o mesmo movimento.
-   */
-  private explicarRecusa(
-    codigo: string,
-    problema: Parameters<ProblemI18nService['resolve']>[0],
-  ): string {
-    if (codigo === PERMUTACAO_DE_ORDEM) return ORIENTACAO_DE_PERMUTACAO;
-    return this.problemI18n.resolve(problema).title;
   }
 
   constructor() {

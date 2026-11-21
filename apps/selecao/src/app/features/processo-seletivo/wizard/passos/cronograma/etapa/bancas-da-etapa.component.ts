@@ -8,6 +8,7 @@ import {
   type CampoDaBanca,
 } from '../../../shared/deliberacao/recusas-da-regra';
 import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
 import type { EtapaForm } from '../cronograma-form';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
@@ -26,7 +27,7 @@ interface BancaEscolhida {
 
 @Component({
   selector: 'sel-bancas-da-etapa',
-  imports: [RegraDeDeliberacaoComponent],
+  imports: [RegraDeDeliberacaoComponent, RecusasDoCampoComponent],
   templateUrl: './bancas-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,31 +38,25 @@ export class BancasDaEtapaComponent {
   protected readonly edicao = inject(EdicaoDaEtapa);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly edicaoLiberada = this.cronograma.edicaoLiberada;
-  private readonly recusas = inject(RecusasDoServidorNasEtapas);
+  protected readonly recusas = inject(RecusasDoServidorNasEtapas);
 
   /** As bancas declaradas na etapa, na ordem em que o comando as leva. */
   protected readonly escolhidas = computed<readonly BancaEscolhida[]>(() => {
     const etapa = this.grupo();
     const nomes = new Map(this.catalogoDeBancas.bancas().map((banca) => [banca.id, banca.nome]));
-    return this.edicao.bancasDaEtapa(etapa).map((banca, posicao) => ({
+    return this.edicao.bancasDaEtapa(etapa).map((banca) => ({
       tipoBancaId: banca.tipoBancaId,
       nome: nomes.get(banca.tipoBancaId) ?? banca.tipoBancaId,
       regra: banca.regraDeDeliberacao,
-      erros: this.errosDaBanca(etapa, banca, posicao),
+      erros: this.errosDaBanca(banca),
     }));
   });
 
-  /** A conferência local vem primeiro: descreve o estado atual, e a recusa, o que foi enviado. */
-  private errosDaBanca(
-    etapa: FormGroup<EtapaForm>,
-    banca: BancaDaEtapa,
-    posicao: number,
-  ): ErrosDaBanca {
+  /** O que a conferência local recusa em cada campo da regra; a recusa do servidor fica no bloco das bancas. */
+  private errosDaBanca(banca: BancaDaEtapa): ErrosDaBanca {
     const locais: ReadonlyMap<CampoDaBanca, string> = problemasDaRegraPorCampo(
       banca.regraDeDeliberacao,
     );
-    const erroDe = (campo: CampoDaBanca): string | null =>
-      locais.get(campo) ?? this.recusas.recusaDoCampo(etapa, `bancas.${posicao}.${campo}`);
-    return errosDaBancaPorCampo(erroDe);
+    return errosDaBancaPorCampo((campo) => locais.get(campo));
   }
 }

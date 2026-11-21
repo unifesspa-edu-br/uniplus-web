@@ -3,7 +3,7 @@
   [attr.aria-describedby]="
     sufixo() +
     '-itens-ajuda' +
-    (recusaDaLista('itensDeAvaliacao') ? ' ' + sufixo() + '-itens-erro' : '') +
+    (recusasDaLista('itensDeAvaliacao').length > 0 ? ' ' + sufixo() + '-itens-erro' : '') +
     (somaForaDaNotaMaxima() ? ' ' + sufixo() + '-soma-erro' : '')
   "
 >
@@ -16,7 +16,7 @@
   @for (item of itens(); track $index) {
     <fieldset class="field form-grid" [attr.data-teste]="'item-de-avaliacao'">
       <legend class="field__label">Item {{ $index + 1 }}</legend>
-      @let recusaDoRotulo = recusaDoItem($index, 'rotulo');
+      @let doRotulo = recusasDoItem($index, 'rotulo');
       <div class="form-field">
         <label class="label" [attr.for]="sufixo() + '-item-' + $index + '-rotulo'"
           >Rótulo<span class="sr-only"> do item {{ $index + 1 }}</span></label
@@ -28,19 +28,21 @@
           [attr.id]="sufixo() + '-item-' + $index + '-rotulo'"
           [value]="item.rotulo"
           [disabled]="!habilitado()"
-          [attr.aria-invalid]="recusaDoRotulo ? 'true' : null"
+          [attr.aria-invalid]="haRecusaAtiva(doRotulo) ? 'true' : null"
           [attr.aria-describedby]="
-            recusaDoRotulo ? sufixo() + '-item-' + $index + '-rotulo-erro' : null
+            doRotulo.length > 0 ? sufixo() + '-item-' + $index + '-rotulo-erro' : null
           "
           (input)="editarItem($index, { rotulo: textoDe($event) })"
         />
-        @if (recusaDoRotulo) {
-          <p class="field__error" [id]="sufixo() + '-item-' + $index + '-rotulo-erro'">
-            {{ recusaDoRotulo }}
-          </p>
+        @if (doRotulo.length > 0) {
+          <sel-recusas-do-campo
+            [attr.id]="sufixo() + '-item-' + $index + '-rotulo-erro'"
+            tabindex="-1"
+            [recusas]="doRotulo"
+          />
         }
       </div>
-      @let recusaDaPontuacao = recusaDoItem($index, 'pontuacaoMaxima');
+      @let daPontuacao = recusasDoItem($index, 'pontuacaoMaxima');
       <div class="form-field">
         <label class="label" [attr.for]="sufixo() + '-item-' + $index + '-pontuacao'"
           >Pontuação máxima<span class="sr-only"> do item {{ $index + 1 }}</span></label
@@ -52,16 +54,18 @@
           [attr.id]="sufixo() + '-item-' + $index + '-pontuacao'"
           [value]="item.pontuacaoMaxima"
           [disabled]="!habilitado()"
-          [attr.aria-invalid]="recusaDaPontuacao ? 'true' : null"
+          [attr.aria-invalid]="haRecusaAtiva(daPontuacao) ? 'true' : null"
           [attr.aria-describedby]="
-            recusaDaPontuacao ? sufixo() + '-item-' + $index + '-pontuacao-erro' : null
+            daPontuacao.length > 0 ? sufixo() + '-item-' + $index + '-pontuacao-erro' : null
           "
           (input)="editarItem($index, { pontuacaoMaxima: textoDe($event) })"
         />
-        @if (recusaDaPontuacao) {
-          <p class="field__error" [id]="sufixo() + '-item-' + $index + '-pontuacao-erro'">
-            {{ recusaDaPontuacao }}
-          </p>
+        @if (daPontuacao.length > 0) {
+          <sel-recusas-do-campo
+            [attr.id]="sufixo() + '-item-' + $index + '-pontuacao-erro'"
+            tabindex="-1"
+            [recusas]="daPontuacao"
+          />
         }
       </div>
       <div class="form-field">
@@ -86,8 +90,9 @@
       A soma dos itens precisa ser igual à nota máxima da etapa: a publicação recusa a diferença.
     </p>
   }
-  @if (recusaDaLista('itensDeAvaliacao'); as recusaDosItens) {
-    <p class="field__error" [id]="sufixo() + '-itens-erro'">{{ recusaDosItens }}</p>
+  @let dosItens = recusasDaLista('itensDeAvaliacao');
+  @if (dosItens.length > 0) {
+    <sel-recusas-do-campo [attr.id]="sufixo() + '-itens-erro'" tabindex="-1" [recusas]="dosItens" />
   }
   <button
     class="btn btn--secondary"
@@ -101,11 +106,11 @@
 </fieldset>
 
 @if (admiteEscala()) {
-  @let recusaDaEscala = recusaDaLista('escalaDeAtendimento');
+  @let daEscala = recusasDaLista('escalaDeAtendimento');
   <fieldset
     class="field"
     [attr.aria-describedby]="
-      sufixo() + '-escala-ajuda' + (recusaDaEscala ? ' ' + sufixo() + '-escala-erro' : '')
+      sufixo() + '-escala-ajuda' + (daEscala.length > 0 ? ' ' + sufixo() + '-escala-erro' : '')
     "
   >
     <legend class="field__label">Escala de atendimento</legend>
@@ -118,7 +123,7 @@
     @for (nivel of escala(); track $index) {
       <fieldset class="field form-grid">
         <legend class="field__label">Nível {{ $index + 1 }}</legend>
-        @let recusaDoRotuloDoNivel = recusaDoNivel($index, 'rotulo');
+        @let doRotuloDoNivel = recusasDoNivel($index, 'rotulo');
         <div class="form-field">
           <label class="label" [attr.for]="sufixo() + '-nivel-' + $index + '-rotulo'"
             >Rótulo<span class="sr-only"> do nível {{ $index + 1 }}</span></label
@@ -130,19 +135,21 @@
             [attr.id]="sufixo() + '-nivel-' + $index + '-rotulo'"
             [value]="nivel.rotulo"
             [disabled]="!habilitado()"
-            [attr.aria-invalid]="recusaDoRotuloDoNivel ? 'true' : null"
+            [attr.aria-invalid]="haRecusaAtiva(doRotuloDoNivel) ? 'true' : null"
             [attr.aria-describedby]="
-              recusaDoRotuloDoNivel ? sufixo() + '-nivel-' + $index + '-rotulo-erro' : null
+              doRotuloDoNivel.length > 0 ? sufixo() + '-nivel-' + $index + '-rotulo-erro' : null
             "
             (input)="editarNivel($index, { rotulo: textoDe($event) })"
           />
-          @if (recusaDoRotuloDoNivel) {
-            <p class="field__error" [id]="sufixo() + '-nivel-' + $index + '-rotulo-erro'">
-              {{ recusaDoRotuloDoNivel }}
-            </p>
+          @if (doRotuloDoNivel.length > 0) {
+            <sel-recusas-do-campo
+              [attr.id]="sufixo() + '-nivel-' + $index + '-rotulo-erro'"
+              tabindex="-1"
+              [recusas]="doRotuloDoNivel"
+            />
           }
         </div>
-        @let recusaDoPercentual = recusaDoNivel($index, 'fracao');
+        @let doPercentual = recusasDoNivel($index, 'fracao');
         <div class="form-field">
           <label class="label" [attr.for]="sufixo() + '-nivel-' + $index + '-percentual'"
             >Percentual da pontuação<span class="sr-only"> do nível {{ $index + 1 }}</span></label
@@ -154,16 +161,18 @@
             [attr.id]="sufixo() + '-nivel-' + $index + '-percentual'"
             [value]="nivel.percentual"
             [disabled]="!habilitado()"
-            [attr.aria-invalid]="recusaDoPercentual ? 'true' : null"
+            [attr.aria-invalid]="haRecusaAtiva(doPercentual) ? 'true' : null"
             [attr.aria-describedby]="
-              recusaDoPercentual ? sufixo() + '-nivel-' + $index + '-percentual-erro' : null
+              doPercentual.length > 0 ? sufixo() + '-nivel-' + $index + '-percentual-erro' : null
             "
             (input)="editarNivel($index, { percentual: textoDe($event) })"
           />
-          @if (recusaDoPercentual) {
-            <p class="field__error" [id]="sufixo() + '-nivel-' + $index + '-percentual-erro'">
-              {{ recusaDoPercentual }}
-            </p>
+          @if (doPercentual.length > 0) {
+            <sel-recusas-do-campo
+              [attr.id]="sufixo() + '-nivel-' + $index + '-percentual-erro'"
+              tabindex="-1"
+              [recusas]="doPercentual"
+            />
           }
         </div>
         <div class="form-field">
@@ -182,8 +191,12 @@
       <p class="field__hint">Sem escala, a banca digita a nota de cada item.</p>
     }
 
-    @if (recusaDaEscala) {
-      <p class="field__error" [id]="sufixo() + '-escala-erro'">{{ recusaDaEscala }}</p>
+    @if (daEscala.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="sufixo() + '-escala-erro'"
+        tabindex="-1"
+        [recusas]="daEscala"
+      />
     }
     <button
       class="btn btn--secondary"

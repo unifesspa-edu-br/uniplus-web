@@ -7,9 +7,8 @@ import { emOrdem, type RecusaOrdenada } from '../../shared/recusas/ordem-das-rec
 import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
-import { NO_TOPO_DA_FASE } from '../cronograma/servicos/distribuicao-das-recusas-das-fases';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
-import type { CampoDaRecusaDaFase } from './campo-da-fase';
+import { NO_TOPO_DA_FASE, type CampoDaRecusaDaFase } from './campo-da-fase';
 import { problemasDaFase, type AtoDoCatalogo, type ProblemaDaFase } from './configuracao-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';

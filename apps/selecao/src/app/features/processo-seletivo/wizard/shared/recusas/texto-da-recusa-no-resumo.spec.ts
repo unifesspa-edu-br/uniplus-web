@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import type { ProblemDetails } from '@uniplus/shared-core/http';
 
-import { resumoDasRecusasSemLugar, textoDaRecusaNoResumo } from './texto-da-recusa-no-resumo';
+import {
+  RECUSA_MOSTRADA_NOS_CAMPOS,
+  resumoDaGravacaoRecusada,
+  resumoDasRecusasSemLugar,
+  textoDaRecusaNoResumo,
+} from './texto-da-recusa-no-resumo';
 
 const PAGINAS = 'https://exemplo.unifesspa.edu.br/erros/';
 
@@ -59,5 +64,39 @@ describe('textoDaRecusaNoResumo', () => {
         `Geral. (código uniplus.x; entenda a recusa em ${PAGINAS}uniplus.x)`,
       ]);
     });
+  });
+});
+
+describe('resumoDaGravacaoRecusada', () => {
+  const titulo = () => 'Título da API.';
+  const campo = { field: 'etapas[0].nome', code: 'uniplus.x', message: 'Do campo.' };
+
+  it('explica pelo título a recusa da raiz sem causa nenhuma', () => {
+    expect(resumoDaGravacaoRecusada(problema([]), [], { doCodigo: null, titulo })).toEqual([
+      'Título da API.',
+    ]);
+  });
+
+  it('explica pelo texto do código a recusa da raiz sem causa nenhuma', () => {
+    const raiz = { doCodigo: 'Faça assim.', titulo };
+
+    expect(resumoDaGravacaoRecusada(problema([]), [], raiz)).toEqual(['Faça assim.']);
+  });
+
+  it('diz onde ver quando toda causa achou o campo dela, nunca devolve lista vazia', () => {
+    const resumo = resumoDaGravacaoRecusada(problema([campo]), [], { doCodigo: null, titulo });
+
+    expect(resumo).toEqual([RECUSA_MOSTRADA_NOS_CAMPOS]);
+  });
+
+  it('põe o texto do código antes do que não achou campo', () => {
+    const semLugar = { codigo: 'uniplus.y', mensagem: 'Sem lugar.', pagina: null };
+
+    const resumo = resumoDaGravacaoRecusada(problema([campo]), [semLugar], {
+      doCodigo: 'Do código.',
+      titulo,
+    });
+
+    expect(resumo).toEqual(['Do código.', 'Sem lugar. (código uniplus.y)']);
   });
 });

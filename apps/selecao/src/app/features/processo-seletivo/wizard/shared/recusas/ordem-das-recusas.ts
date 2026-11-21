@@ -42,3 +42,26 @@ function semRepeticao<T extends RecusaOrdenada>(recusas: readonly T[]): T[] {
 export function haRecusaAtiva(recusas: readonly RecusaOrdenada[]): boolean {
   return recusas.some((recusa) => !recusa.aConferir);
 }
+
+/** A recusa guardada, sem o que só a guarda usa, com o estado da conferência que a tela mostra. */
+export function comEstadoDaConferencia(
+  guardada: Omit<RecusaOrdenada, 'aConferir'>,
+  aConferir: boolean,
+): RecusaOrdenada {
+  const { campo, codigo, mensagem, pagina, ordem, resposta, origem } = guardada;
+  return { campo, codigo, mensagem, pagina, ordem, resposta, origem, aConferir };
+}
+
+/**
+ * A primeira recusa que a pessoa ainda precisa tratar: a da resposta mais recente e, nela, a que
+ * a API deu primeiro. As que estão a conferir de novo não entram.
+ */
+export function primeiraRecusaAtiva<T extends { readonly recusa: RecusaOrdenada }>(
+  candidatas: readonly T[],
+): T | null {
+  const ativas = candidatas.filter(({ recusa }) => !recusa.aConferir);
+  const ordenadas = ativas.sort(
+    (a, b) => b.recusa.resposta - a.recusa.resposta || a.recusa.ordem - b.recusa.ordem,
+  );
+  return ordenadas[0] ?? null;
+}

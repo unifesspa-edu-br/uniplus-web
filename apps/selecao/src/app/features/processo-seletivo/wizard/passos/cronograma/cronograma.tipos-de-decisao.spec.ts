@@ -10,6 +10,7 @@ import {
   ROTA_FASES,
   ROTA_PROCESSO,
 } from './cronograma.testing';
+import { RECUSA_MOSTRADA_NOS_CAMPOS } from '../../shared/recusas/texto-da-recusa-no-resumo';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 
 const CODIGO_TIPO_INVALIDO = 'uniplus.selecao.motivo_de_decisao.tipo_invalido';
@@ -168,31 +169,34 @@ describe('CronogramaPassoComponent: tipos de decisão da etapa', () => {
     expect(dasEtapas).toEqual(ordenados);
   });
 
-  it('diz no resumo, com o nome da etapa, que o tipo enviado não é reconhecido', async () => {
+  const topoDaEtapa = (): string =>
+    nativo.querySelector('#cr-etapa-recusas-0')?.textContent?.replace(/\s+/g, ' ') ?? '';
+
+  it('mostra no topo da etapa que o tipo enviado não é reconhecido, com o código', async () => {
     comEtapaAberta();
 
     const resultado = await recusarEm(ROTA_ETAPAS, [
       { field: 'etapas[0].tiposDeDecisao[0]', code: CODIGO_TIPO_INVALIDO },
     ]);
+    detectar();
 
-    expect(resultado.messages).toEqual([
-      'Etapa 1: Um tipo de decisão enviado não é reconhecido pelo servidor.',
-    ]);
+    expect(topoDaEtapa()).toContain('detalhe do servidor');
+    expect(topoDaEtapa()).toContain(CODIGO_TIPO_INVALIDO);
+    expect(resultado.messages).toEqual([RECUSA_MOSTRADA_NOS_CAMPOS]);
   });
 
-  it('diz no resumo que o mesmo tipo foi enviado mais de uma vez', async () => {
+  it('mostra no topo da etapa que o mesmo tipo foi enviado mais de uma vez', async () => {
     comEtapaAberta();
 
-    const resultado = await recusarEm(ROTA_ETAPAS, [
+    await recusarEm(ROTA_ETAPAS, [
       { field: 'etapas[0].tiposDeDecisao[1]', code: CODIGO_TIPO_DUPLICADO },
     ]);
+    detectar();
 
-    expect(resultado.messages).toEqual([
-      'Etapa 1: O mesmo tipo de decisão foi enviado mais de uma vez.',
-    ]);
+    expect(topoDaEtapa()).toContain(CODIGO_TIPO_DUPLICADO);
   });
 
-  it('orienta a marcar o tipo de novo quando o recurso da etapa ainda tem procedimento para ele', async () => {
+  it('leva ao resumo a recusa do recurso que a etapa não tem na tela, com mensagem e código', async () => {
     comEtapaAberta();
 
     const resultado = await recusarEm(ROTA_ETAPAS, [
@@ -200,7 +204,7 @@ describe('CronogramaPassoComponent: tipos de decisão da etapa', () => {
     ]);
 
     expect(resultado.messages).toEqual([
-      'Etapa 1: O recurso tem procedimento para uma decisão que deixou de ser declarada aqui; marque o tipo de novo.',
+      `detalhe do servidor (código ${CODIGO_PROCEDIMENTO_DA_ETAPA})`,
     ]);
   });
 });

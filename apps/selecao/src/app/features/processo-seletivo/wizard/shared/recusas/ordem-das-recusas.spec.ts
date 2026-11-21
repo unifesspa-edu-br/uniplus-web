@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { emOrdem, haRecusaAtiva, type RecusaOrdenada } from './ordem-das-recusas';
+import {
+  comEstadoDaConferencia,
+  emOrdem,
+  haRecusaAtiva,
+  primeiraRecusaAtiva,
+  type RecusaOrdenada,
+} from './ordem-das-recusas';
 
 function recusa(parcial: Partial<RecusaOrdenada>): RecusaOrdenada {
   return {
@@ -110,5 +116,43 @@ describe('haRecusaAtiva', () => {
   it('não vale para a lista só de recusas a conferir, nem para a vazia', () => {
     expect(haRecusaAtiva([recusa({ aConferir: true })])).toBe(false);
     expect(haRecusaAtiva([])).toBe(false);
+  });
+});
+
+describe('primeiraRecusaAtiva', () => {
+  const candidata = (parcial: Partial<RecusaOrdenada>) => ({ recusa: recusa(parcial) });
+
+  it('escolhe a da resposta mais recente e, nela, a que a API deu primeiro', () => {
+    const lista = [
+      candidata({ codigo: 'a', resposta: 1, ordem: 0 }),
+      candidata({ codigo: 'b', resposta: 2, ordem: 3 }),
+      candidata({ codigo: 'c', resposta: 2, ordem: 1 }),
+    ];
+
+    expect(primeiraRecusaAtiva(lista)?.recusa.codigo).toBe('c');
+  });
+
+  it('ignora as que estão a conferir de novo', () => {
+    const lista = [
+      candidata({ codigo: 'a', resposta: 9, aConferir: true }),
+      candidata({ codigo: 'b', resposta: 1 }),
+    ];
+
+    expect(primeiraRecusaAtiva(lista)?.recusa.codigo).toBe('b');
+  });
+
+  it('devolve nulo sem recusa ativa', () => {
+    expect(primeiraRecusaAtiva([candidata({ aConferir: true })])).toBeNull();
+    expect(primeiraRecusaAtiva([])).toBeNull();
+  });
+});
+
+describe('comEstadoDaConferencia', () => {
+  it('leva só os campos da recusa e o estado dado', () => {
+    const guardada = { ...recusa({ campo: 'fim' }), parte: 'fase' };
+
+    const resultado = comEstadoDaConferencia(guardada, true);
+
+    expect(resultado).toEqual(recusa({ campo: 'fim', aConferir: true }));
   });
 });

@@ -5,17 +5,16 @@ import {
   PROCESSO_ID,
   ROTA_ETAPAS,
   ROTA_FASES,
-  PROBLEM_JSON,
   ID_AVALIACAO,
   TIPO_ETAPA_NOTA_ENEM,
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
+import { AjudantesDeRecusasDasEtapas } from './cronograma-recusas-das-etapas.testing';
 
 describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
   let componente: ContextoDoCronograma['componente'];
   let expansao: ContextoDoCronograma['expansao'];
   let edicao: ContextoDoCronograma['edicao'];
-  let recusas: ContextoDoCronograma['recusas'];
   let cronograma: ContextoDoCronograma['cronograma'];
   let store: ContextoDoCronograma['store'];
   let controller: ContextoDoCronograma['controller'];
@@ -24,13 +23,14 @@ describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
   let proximoPasso: ContextoDoCronograma['proximoPasso'];
   let comFases: ContextoDoCronograma['comFases'];
   let comEtapasEmFases: ContextoDoCronograma['comEtapasEmFases'];
+  let recusarEtapas: AjudantesDeRecusasDasEtapas['recusarEtapas'];
+  let bloco: AjudantesDeRecusasDasEtapas['bloco'];
 
   usarCronograma((tela) => {
     ({
       componente,
       expansao,
       edicao,
-      recusas,
       cronograma,
       store,
       controller,
@@ -40,6 +40,7 @@ describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
       comFases,
       comEtapasEmFases,
     } = tela);
+    ({ recusarEtapas, bloco } = new AjudantesDeRecusasDasEtapas(tela));
   });
 
   describe('itens de avaliação e escala de atendimento da etapa', () => {
@@ -120,32 +121,18 @@ describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
       expect(nativo.querySelector('#cr-etapa-0-soma')?.textContent).toContain('4 de 12');
     });
 
-    it('ignora a recusa do servidor que não aponta campo da etapa', async () => {
-      store.processoSeletivoId.set(PROCESSO_ID);
-      const etapa = etapaComNota();
-      const gravacao = componente.persistir();
-      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-      await proximoPasso();
-      controller.expectOne(ROTA_ETAPAS).flush(
-        {
-          type: 'about:blank',
-          title: 'Validação',
-          status: 422,
-          code: 'uniplus.validacao',
-          traceId: '00000000000000000000000000000011',
-          errors: [
-            {
-              field: 'etapas[0]',
-              code: 'uniplus.selecao.etapa_processo.escala_sem_itens',
-              message: 'x',
-            },
-          ],
-        },
-        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-      );
-      await gravacao;
+    it('mostra no topo da etapa a recusa que aponta a etapa inteira', async () => {
+      etapaComNota();
 
-      expect(recusas.recusasDaEtapa(etapa).size).toBe(0);
+      await recusarEtapas([
+        {
+          field: 'etapas[0]',
+          code: 'uniplus.selecao.etapa_processo.escala_sem_itens',
+          message: 'A escala precisa de itens.',
+        },
+      ]);
+
+      expect(bloco('cr-etapa-recusas-0')).toContain('A escala precisa de itens.');
     });
 
     it('mantém o id do item que veio da API ao editar e o envia, e o item novo vai sem id', async () => {
@@ -242,38 +229,22 @@ describe('CronogramaPassoComponent: itens de avaliação e escala', () => {
       digitar('#cr-etapa-0-item-0-rotulo', 'Clareza');
       digitar('#cr-etapa-0-item-0-pontuacao', '10,3');
 
-      const gravacao = componente.persistir();
-      controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
-      await proximoPasso();
-      controller.expectOne(ROTA_ETAPAS).flush(
+      await recusarEtapas([
         {
-          type: 'about:blank',
-          title: 'Validação',
-          status: 422,
-          code: 'uniplus.validacao',
-          traceId: '00000000000000000000000000000010',
-          errors: [
-            {
-              field: 'etapas[0].itensDeAvaliacao[0].pontuacaoMaxima',
-              code: 'uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo',
-              message: 'x',
-            },
-          ],
+          field: 'etapas[0].itensDeAvaliacao[0].pontuacaoMaxima',
+          code: 'uniplus.selecao.item_de_avaliacao.pontuacao_fora_do_passo',
+          message: 'A pontuação precisa ser múltipla do passo.',
         },
-        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-      );
-      await gravacao;
-      detectar();
+      ]);
 
       const campo = nativo.querySelector('#cr-etapa-0-item-0-pontuacao');
-      expect(nativo.querySelector('#cr-etapa-0-item-0-pontuacao-erro')?.textContent).toContain(
-        'múltipla do passo',
-      );
+      expect(bloco('cr-etapa-0-item-0-pontuacao-erro')).toContain('múltipla do passo');
       expect(campo?.getAttribute('aria-invalid')).toBe('true');
       expect(campo?.getAttribute('aria-describedby')).toBe('cr-etapa-0-item-0-pontuacao-erro');
 
       digitar('#cr-etapa-0-item-0-pontuacao', '10,5');
-      expect(nativo.querySelector('#cr-etapa-0-item-0-pontuacao-erro')).toBeNull();
+      expect(bloco('cr-etapa-0-item-0-pontuacao-erro')).toContain('conferida de novo');
+      expect(campo?.getAttribute('aria-invalid')).not.toBe('true');
     });
   });
 });

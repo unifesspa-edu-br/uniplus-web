@@ -1,5 +1,5 @@
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
-import { NO_TOPO_DA_FASE } from '../cronograma/servicos/distribuicao-das-recusas-das-fases';
+import { NO_TOPO_DA_FASE } from './campo-da-fase';
 import { BLOCO_DAS_RECUSAS_DO_RECURSO, CONTROLE_DO_RECURSO, idDaFase } from './ids-da-fase';
 
 /** A opção marcada de "admite instância superior", ou a primeira quando nenhuma está marcada. */

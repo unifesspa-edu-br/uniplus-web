@@ -80,6 +80,16 @@ export class ExpansaoDoCronograma {
     this.etapasAbertas.set(abertas);
   }
 
+  /** Abre as etapas informadas, sem fechar as que já estão abertas. */
+  abrirEtapas(posicoes: readonly number[]): void {
+    this.etapasAbertas.update((abertas) => new Set([...abertas, ...posicoes]));
+  }
+
+  /** Abre o bloco da etapa, sem fechar os que já estão abertos. */
+  abrirBloco(posicao: number, bloco: 'recursos' | 'publica'): void {
+    this.blocosAbertos.update((abertos) => new Set([...abertos, `${posicao}:${bloco}`]));
+  }
+
   blocoAberto(posicao: number, bloco: 'recursos' | 'publica'): boolean {
     return this.blocosAbertos().has(`${posicao}:${bloco}`);
   }
@@ -96,24 +106,29 @@ export class ExpansaoDoCronograma {
   }
 
   constructor() {
-    // Quem chega de uma recusa que cita a fase cai nela: aberta e com o foco no campo da unidade.
-    // O foco espera o passo estar visível e a troca de passo devolver o foco ao título.
-    effect(() => {
-      const codigo = this.store.faseEmFoco();
-      if (codigo === null || !this.store.cronogramaVisivel()) return;
-      const alvo = this.cronograma
-        .linhaDoTempo()
-        .find((item) => item.grupo.controls.codigo.value === codigo);
-      untracked(() => this.store.faseEmFoco.set(null));
-      if (alvo === undefined) return;
-      untracked(() => {
-        this.abrirFases([alvo.indice]);
-        afterNextRender(
-          () => setTimeout(() => document.getElementById(`cr-unidade-${alvo.indice}`)?.focus(), 0),
-          { injector: this.injector },
-        );
-      });
-    });
+    effect(() => this.abrirAFaseEmFoco());
+  }
+
+  /**
+   * Quem chega de uma recusa que cita a fase cai nela: aberta e com o foco no campo da unidade.
+   * O foco espera o passo estar visível e a troca de passo devolver o foco ao título.
+   */
+  private abrirAFaseEmFoco(): void {
+    const codigo = this.store.faseEmFoco();
+    if (codigo === null || !this.store.cronogramaVisivel()) return;
+    const alvo = this.cronograma
+      .linhaDoTempo()
+      .find((item) => item.grupo.controls.codigo.value === codigo);
+    untracked(() => this.store.faseEmFoco.set(null));
+    if (alvo !== undefined) untracked(() => this.abrirComFocoNaUnidade(alvo.indice));
+  }
+
+  private abrirComFocoNaUnidade(indice: number): void {
+    this.abrirFases([indice]);
+    afterNextRender(
+      () => setTimeout(() => document.getElementById(`cr-unidade-${indice}`)?.focus(), 0),
+      { injector: this.injector },
+    );
   }
 
   pedirRemocaoDaFase(indice: number): void {

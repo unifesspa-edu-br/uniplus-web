@@ -13,10 +13,13 @@ export const BLOCO_DAS_RECUSAS_DO_RECURSO = 'recurso-recusa';
 /** O controle da regra de recurso que cada campo recusado nomeia, quando ele é um só. */
 export const CONTROLE_DO_RECURSO: ReadonlyMap<string, string> = new Map([
   ['recurso.regra', 'regra'],
-  ['recurso.prazo', 'prazo-valor'],
+  ['recurso.prazoValor', 'prazo-valor'],
+  ['recurso.prazoUnidade', 'prazo-unidade'],
   ['recurso.ancora', 'ancora'],
-  ['recurso.suspensividadePrimeiraInstancia', 'susp1-valor'],
-  ['recurso.suspensividadeSegundaInstancia', 'susp2-valor'],
+  ['recurso.suspensividadePrimeiraInstanciaValor', 'susp1-valor'],
+  ['recurso.suspensividadePrimeiraInstanciaUnidade', 'susp1-unidade'],
+  ['recurso.suspensividadeSegundaInstanciaValor', 'susp2-valor'],
+  ['recurso.suspensividadeSegundaInstanciaUnidade', 'susp2-unidade'],
 ]);
 
 /** Os campos da regra de recurso que têm controle próprio na tela, e portanto bloco próprio de recusas. */

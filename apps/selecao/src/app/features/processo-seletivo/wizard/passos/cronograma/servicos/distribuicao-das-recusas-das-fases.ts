@@ -6,9 +6,6 @@ import { conteudoDaParte, parteDaFase, type ParteDaFase } from '../../fase/parte
 import { localDaRecusa, type LocalDaRecusa } from '../../../shared/recusas/local-da-recusa';
 import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 
-/** O campo das recusas que a fase recebe mas a tela não mostra num controle: ficam no topo da fase. */
-export const NO_TOPO_DA_FASE = '';
-
 /**
  * A recusa da gravação, guardada com a parte do cadastro a que pertence e com o que a fase tinha
  * naquela parte quando foi enviada: é a comparação com o que a fase tem depois que diz se a parte
@@ -37,7 +34,8 @@ interface LugarNaFase {
 
 /**
  * A fase enviada que o `field` aponta, ou `null` quando ele não nomeia fase, nomeia uma posição
- * que não foi enviada ou nomeia um campo cujo controle a tela não mostra.
+ * que não foi enviada, nomeia um campo que a fase não conhece ou nomeia um campo cujo controle a
+ * tela não mostra.
  */
 function lugarNaFase(
   recusa: RecusaDoProblema,
@@ -46,8 +44,8 @@ function lugarNaFase(
 ): LugarNaFase | null {
   const local = localDaRecusa(recusa.campo);
   const fase = local?.dono === 'fase' ? enviadas[local.indice] : undefined;
-  if (local === null || fase === undefined) return null;
-  const campo = campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE;
+  const campo = local === null ? null : campoDaRecusaDaFase(local);
+  if (local === null || fase === undefined || campo === null) return null;
   return controleNaTela(fase.faseCanonicaId, campo) ? { local, fase, campo } : null;
 }
 

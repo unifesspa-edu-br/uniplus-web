@@ -1,150 +1,175 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FormGroup } from '@angular/forms';
-import { merge, Subscription, take, type Observable } from 'rxjs';
+import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 
-import type { EtapaForm } from '../cronograma-form';
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { mesmoConteudo } from '../../../shared/conteudo-canonico';
+import { descartarAsRecusasAoSairDoPasso } from '../../../shared/recusas/descarte-das-recusas';
 import {
-  campoDaRecusa,
-  localDoErroDaEtapa,
-  recusaDaBancaDaEtapa,
-  recusaDoCampoDaEtapa,
-  type CampoComRecusa,
-} from '../recusas-do-servidor-da-etapa';
+  comEstadoDaConferencia,
+  emOrdem,
+  primeiraRecusaAtiva,
+  type RecusaOrdenada,
+} from '../../../shared/recusas/ordem-das-recusas';
+import type { CampoDaRecusaDaEtapa } from '../campo-da-etapa';
+import { etapaDoFormulario, type EtapaForm } from '../cronograma-form';
+import { conteudoDaParteDaEtapa } from '../parte-da-etapa';
+import {
+  listasDaEtapa,
+  type ListasDaEtapa,
+  novasPosicoes,
+  recusaNasNovasPosicoes,
+  todasNoLugar,
+} from '../posicao-viva-na-etapa';
+import {
+  type ControleNaTelaDaEtapa,
+  distribuirRecusasDasEtapas,
+  type DistribuicaoDasRecusasDasEtapas,
+  type EtapasEnviadas,
+  type RecusaDaEtapaGuardada,
+} from './distribuicao-das-recusas-das-etapas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 
-type ErroDaEtapa = { readonly field: string; readonly code: string; readonly message?: string };
+type GuardadasPorEtapa = ReadonlyMap<FormGroup<EtapaForm>, readonly RecusaDaEtapaGuardada[]>;
 
-/** Onde o erro do servidor aparece na etapa e o que diz, ou `null` quando não tem campo. */
-function alvoDaRecusa(
-  erro: ErroDaEtapa,
-): { readonly indice: number; readonly campo: CampoComRecusa; readonly texto: string } | null {
-  const daBanca = recusaDaBancaDaEtapa(erro);
-  if (daBanca !== null) return daBanca;
-  const local = localDoErroDaEtapa(erro.field);
-  const texto = recusaDoCampoDaEtapa(erro.code);
-  const campo = campoDaRecusa(local);
-  return local === null || campo === null || texto === null
-    ? null
-    : { indice: local.indice, campo, texto };
+/** A recusa que a pessoa ainda precisa tratar, e a etapa a que ela pertence. */
+export interface RecusaAtivaNaEtapa {
+  readonly grupo: FormGroup<EtapaForm>;
+  readonly recusa: RecusaOrdenada;
 }
 
-const ehDaBanca = (campo: CampoComRecusa): boolean => campo.startsWith('bancas.');
-
-/** Os campos da avaliação se explicam entre si: a mudança de qualquer um desfaz a recusa de todos. */
-function mudancasDaAvaliacao({ controls }: FormGroup<EtapaForm>): Observable<unknown> {
-  return merge(
-    controls.notaMinima.valueChanges,
-    controls.notaMaxima.valueChanges,
-    controls.passoDoLancamento.valueChanges,
-    controls.formaDeAvaliacao.valueChanges,
-    controls.regraConsolidacaoCodigo.valueChanges,
-    controls.itensDeAvaliacao.valueChanges,
-    controls.escalaDeAtendimento.valueChanges,
-  );
+/** A parte da etapa que a recusa aponta já não tem o conteúdo que foi enviado. */
+function foiAlterada(grupo: FormGroup<EtapaForm>, recusa: RecusaDaEtapaGuardada): boolean {
+  const atual = conteudoDaParteDaEtapa(etapaDoFormulario(grupo), recusa.parte);
+  return !mesmoConteudo(atual, recusa.conteudoEnviado);
 }
 
-const SEM_RECUSAS: ReadonlyMap<CampoComRecusa, string> = new Map();
-
-/** O que o servidor recusou em cada campo da etapa, e que dura até o campo mudar. */
+/**
+ * O que o servidor recusou na gravação de cada etapa. A recusa fica na etapa que a recebeu, pelo
+ * formulário dela, e não na posição: mover ou remover etapas durante a gravação não a leva para
+ * outra. Dura até a resposta seguinte da gravação das etapas, até mudar o processo ou sair do
+ * passo Cronograma. Alterar a parte do cadastro que ela aponta (a etapa, ou um recurso dela) não
+ * a apaga: passa a "a conferir de novo" na hora e assim fica, mesmo que o valor volte ao enviado.
+ */
 @Injectable()
 export class RecusasDoServidorNasEtapas {
+  private readonly store = inject(ProcessoSeletivoStore);
   private readonly cronograma = inject(FormularioDoCronograma);
-  private readonly destroyRef = inject(DestroyRef);
+  private readonly guardadas = signal<GuardadasPorEtapa>(new Map());
 
-  /** Todas as recusas do servidor à etapa, por campo; o editor dos itens lê as que são dele. */
-  recusasDaEtapa(grupo: FormGroup<EtapaForm>): ReadonlyMap<CampoComRecusa, string> {
-    this.cronograma.versao();
-    return this.recusasPorEtapa.get(grupo)?.recusas ?? SEM_RECUSAS;
-  }
+  /** As listas de cada etapa na última vez que as recusas foram postas nas posições dos itens. */
+  private readonly listasVistas = new WeakMap<FormGroup<EtapaForm>, ListasDaEtapa>();
 
-  /** A recusa do servidor a um campo da escala da etapa, ou `null`. */
-  recusaDoCampo(grupo: FormGroup<EtapaForm>, campo: CampoComRecusa): string | null {
-    this.cronograma.versao();
-    return this.recusasPorEtapa.get(grupo)?.recusas.get(campo) ?? null;
-  }
+  private readonly vigentes = computed<
+    ReadonlyMap<FormGroup<EtapaForm>, readonly RecusaOrdenada[]>
+  >(
+    () =>
+      new Map(
+        [...this.guardadas()].map(([grupo, recusas]) => [
+          grupo,
+          recusas.map((recusa) => comEstadoDaConferencia(recusa, recusa.alterada)),
+        ]),
+      ),
+  );
 
-  /**
-   * Os campos da escala e da avaliação se explicam entre si (a nota máxima fora do passo se
-   * resolve em qualquer um dos dois; a regra recusada depende da forma): mexer em um apaga a
-   * recusa de todos da etapa. As recusas das bancas têm ciclo próprio: duram até `bancas` mudar, e
-   * uma edição da nota não as apaga.
-   */
-  esquecer(grupo: FormGroup<EtapaForm>): void {
-    if (this.descartar(grupo)) this.cronograma.versao.update((versao) => versao + 1);
-  }
-
-  private descartar(grupo: FormGroup<EtapaForm>): boolean {
-    const atual = this.recusasPorEtapa.get(grupo);
-    atual?.assinatura.unsubscribe();
-    return this.recusasPorEtapa.delete(grupo);
+  constructor() {
+    // O formulário avisa de forma síncrona depois de cada escrita: a alteração conta no ato, e
+    // desfazê-la não reativa a recusa.
+    this.cronograma.formulario.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.registrarAlteracao());
+    descartarAsRecusasAoSairDoPasso(this.store, () => this.limpar());
   }
 
   /**
-   * A recusa fica na etapa que a recebeu, e não na posição: remover ou mover etapas durante a
-   * gravação não a leva para outra. Etapa que já saiu do formulário a perde. Ela dura até o
-   * valor de um dos campos dela mudar, por digitação ou não.
+   * Substitui as recusas pelas da resposta que acabou de chegar, numerada por `resposta`.
+   * Devolve como elas se distribuíram: as que acharam etapa e as que não acharam lugar, estas
+   * para o resumo do passo.
    */
-  aplicar(enviadas: readonly FormGroup<EtapaForm>[], erros: readonly ErroDaEtapa[]): void {
-    for (const [grupo, recusas] of this.recusasDosErros(enviadas, erros)) {
-      this.descartar(grupo);
-      const assinatura = this.esquecerNaPrimeiraMudancaDe(grupo);
-      this.recusasPorEtapa.set(grupo, { recusas, assinatura });
+  registrar(
+    resposta: number,
+    enviadas: EtapasEnviadas,
+    recusas: readonly RecusaDoProblema[],
+    controleNaTela: ControleNaTelaDaEtapa,
+  ): DistribuicaoDasRecusasDasEtapas {
+    const distribuicao = distribuirRecusasDasEtapas(resposta, enviadas, recusas, controleNaTela);
+    this.guardadas.set(distribuicao.porEtapa);
+    for (const grupo of distribuicao.porEtapa.keys()) this.vistaDeHoje(grupo);
+    this.registrarAlteracao();
+    return distribuicao;
+  }
+
+  /**
+   * Põe cada recusa na posição de hoje do item que ela aponta e esquece a do item que saiu; passa
+   * a "a conferir de novo" a recusa da parte que já difere do que foi enviado, e esquece a da
+   * etapa que saiu do formulário.
+   */
+  private registrarAlteracao(): void {
+    const noFormulario = new Set(this.cronograma.etapas.controls);
+    const antes = this.guardadas();
+    const proximas = new Map<FormGroup<EtapaForm>, readonly RecusaDaEtapaGuardada[]>();
+    for (const [grupo, recusas] of antes) {
+      if (noFormulario.has(grupo))
+        proximas.set(grupo, this.comAlteracoes(grupo, this.nasPosicoesDeHoje(grupo, recusas)));
     }
-    this.cronograma.versao.update((versao) => versao + 1);
+    const mudou =
+      proximas.size !== antes.size ||
+      [...proximas].some(([grupo, lista]) => lista !== antes.get(grupo));
+    if (mudou) this.guardadas.set(proximas);
   }
 
-  private recusasDosErros(
-    enviadas: readonly FormGroup<EtapaForm>[],
-    erros: readonly ErroDaEtapa[],
-  ): ReadonlyMap<FormGroup<EtapaForm>, ReadonlyMap<CampoComRecusa, string>> {
-    const porEtapa = new Map<FormGroup<EtapaForm>, Map<CampoComRecusa, string>>();
-    for (const erro of erros) {
-      const alvo = alvoDaRecusa(erro);
-      const grupo = alvo === null ? undefined : enviadas[alvo.indice];
-      if (alvo === null || grupo === undefined) continue;
-      if (!this.cronograma.etapas.controls.includes(grupo)) continue;
-      porEtapa.set(grupo, (porEtapa.get(grupo) ?? new Map()).set(alvo.campo, alvo.texto));
-    }
-    return porEtapa;
+  /** As listas de hoje da etapa, que passam a ser as vistas; devolve as vistas antes. */
+  private vistaDeHoje(grupo: FormGroup<EtapaForm>): ListasDaEtapa {
+    const hoje = listasDaEtapa(etapaDoFormulario(grupo));
+    const antes = this.listasVistas.get(grupo) ?? hoje;
+    this.listasVistas.set(grupo, hoje);
+    return antes;
   }
 
-  private esquecerNaPrimeiraMudancaDe(grupo: FormGroup<EtapaForm>): Subscription {
-    const assinatura = new Subscription();
-    assinatura.add(this.esquecerQuandoMudar(grupo, mudancasDaAvaliacao(grupo), false));
-    assinatura.add(this.esquecerQuandoMudar(grupo, grupo.controls.bancas.valueChanges, true));
-    return assinatura;
-  }
-
-  private esquecerQuandoMudar(
+  /**
+   * As recusas nas posições que os itens têm hoje. O item é reconhecido por ele mesmo, e não pela
+   * posição: remover o recurso 0 leva a recusa do recurso 1 para a posição 0, e a do que saiu
+   * deixa de valer. A mesma lista, quando nada mudou de posição.
+   */
+  private nasPosicoesDeHoje(
     grupo: FormGroup<EtapaForm>,
-    mudancas: Observable<unknown>,
-    daBanca: boolean,
-  ): Subscription {
-    return mudancas
-      .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.esquecerAsRecusasDe(grupo, daBanca));
+    recusas: readonly RecusaDaEtapaGuardada[],
+  ): readonly RecusaDaEtapaGuardada[] {
+    const antes = this.vistaDeHoje(grupo);
+    const novas = novasPosicoes(antes, listasDaEtapa(etapaDoFormulario(grupo)));
+    if (todasNoLugar(novas)) return recusas;
+    return recusas.flatMap((recusa) => recusaNasNovasPosicoes(recusa, novas) ?? []);
   }
 
-  /** Apaga as recusas das bancas, ou as demais, da etapa; sem nenhuma sobrando, solta a etapa. */
-  private esquecerAsRecusasDe(grupo: FormGroup<EtapaForm>, daBanca: boolean): void {
-    const atual = this.recusasPorEtapa.get(grupo);
-    if (atual === undefined) return;
-    const restantes = new Map([...atual.recusas].filter(([campo]) => ehDaBanca(campo) !== daBanca));
-    if (restantes.size === 0) this.descartar(grupo);
-    else this.recusasPorEtapa.set(grupo, { ...atual, recusas: restantes });
-    this.cronograma.versao.update((versao) => versao + 1);
+  /** As mesmas recusas, na mesma lista, quando nenhuma passou a estar alterada. */
+  private comAlteracoes(
+    grupo: FormGroup<EtapaForm>,
+    recusas: readonly RecusaDaEtapaGuardada[],
+  ): readonly RecusaDaEtapaGuardada[] {
+    const alteradas = recusas.map((recusa) => recusa.alterada || foiAlterada(grupo, recusa));
+    if (alteradas.every((alterada, i) => alterada === recusas[i].alterada)) return recusas;
+    return recusas.map((recusa, i) => ({ ...recusa, alterada: alteradas[i] }));
   }
-
-  private readonly recusasPorEtapa = new WeakMap<
-    FormGroup<EtapaForm>,
-    { readonly recusas: ReadonlyMap<CampoComRecusa, string>; readonly assinatura: Subscription }
-  >();
 
   limpar(): void {
-    const algumaApagada = this.cronograma.etapas.controls
-      .map((grupo) => this.descartar(grupo))
-      .some(Boolean);
-    if (algumaApagada) this.cronograma.versao.update((versao) => versao + 1);
+    this.guardadas.set(new Map());
+  }
+
+  /** As recusas da etapa a um campo, ativas e a conferir, na ordem em que se leem. */
+  recusasDoCampo(
+    grupo: FormGroup<EtapaForm>,
+    campo: CampoDaRecusaDaEtapa,
+  ): readonly RecusaOrdenada[] {
+    const daEtapa = this.vigentes().get(grupo) ?? [];
+    return emOrdem(daEtapa.filter((recusa) => recusa.campo === campo));
+  }
+
+  /** A primeira recusa ativa do passo: a da resposta mais recente, na ordem em que a API a deu. */
+  primeiraRecusaAtiva(): RecusaAtivaNaEtapa | null {
+    const candidatas = [...this.vigentes()].flatMap(([grupo, recusas]) =>
+      recusas.map((recusa) => ({ grupo, recusa })),
+    );
+    return primeiraRecusaAtiva(candidatas);
   }
 }
