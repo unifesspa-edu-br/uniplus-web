@@ -7,6 +7,7 @@ import { configurarPagina } from './processo-seletivo.page.testing';
 import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
+import { NumeracaoDasRespostasRecusadas } from './wizard/shared/recusas/numeracao-das-respostas-recusadas';
 
 describe('ProcessoSeletivoPage — estrutura', () => {
   beforeEach(configurarPagina);
@@ -272,5 +273,17 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
 
     fixture.destroy();
     expect(document.body.classList.contains('ui-overlay-open')).toBe(false);
+  });
+
+  it('provê uma numeração das respostas recusadas por página, para todos os passos', () => {
+    const primeira = TestBed.createComponent(ProcessoSeletivoPage);
+    const segunda = TestBed.createComponent(ProcessoSeletivoPage);
+    const daPrimeira = primeira.debugElement.injector.get(NumeracaoDasRespostasRecusadas);
+    const daSegunda = segunda.debugElement.injector.get(NumeracaoDasRespostasRecusadas);
+
+    daPrimeira.proxima();
+
+    expect(daPrimeira.proxima()).toBe(2);
+    expect(daSegunda.proxima()).toBe(1);
   });
 });
