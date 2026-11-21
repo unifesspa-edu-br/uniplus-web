@@ -88,7 +88,6 @@ export class CronogramaPassoComponent {
   readonly etapas = this.cronograma.etapas;
   readonly linhaDoTempo = this.cronograma.linhaDoTempo;
   readonly edicaoLiberada = this.cronograma.edicaoLiberada;
-  readonly avisoDeReordenacao = this.cronograma.avisoDeReordenacao;
   private readonly versaoDoFormulario = this.cronograma.versao;
 
   constructor() {

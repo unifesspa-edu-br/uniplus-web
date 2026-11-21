@@ -65,3 +65,32 @@ describe('ProcessoSeletivoStore — processo fora de rascunho', () => {
     expect(store.processoForaDeRascunho()).toBe(false);
   });
 });
+
+describe('ProcessoSeletivoStore — várias seções numa só escrita', () => {
+  const escreverCronogramaEDocumentos = (store: ProcessoSeletivoStore): void =>
+    store.patchSections({
+      cronograma: { ...store.draft().cronograma, algoritmoContagemCodigo: 'NOVO' },
+      documentos: { ...store.draft().documentos, emTodasAsFases: ['DOCUMENTO_NOVO'] },
+    });
+
+  it('troca as seções informadas e mantém as demais', () => {
+    const store = new ProcessoSeletivoStore();
+    const identificacao = store.draft().identificacao;
+
+    escreverCronogramaEDocumentos(store);
+
+    expect(store.draft().cronograma.algoritmoContagemCodigo).toBe('NOVO');
+    expect(store.draft().documentos.emTodasAsFases).toEqual(['DOCUMENTO_NOVO']);
+    expect(store.draft().identificacao).toBe(identificacao);
+  });
+
+  it('não escreve com o processo fora de rascunho', () => {
+    const store = new ProcessoSeletivoStore();
+    store.remoteSnapshot.set({ id: 'p1', status: StatusProcesso.publicado } as ProcessoSeletivoDto);
+
+    escreverCronogramaEDocumentos(store);
+
+    expect(store.draft().cronograma.algoritmoContagemCodigo).not.toBe('NOVO');
+    expect(store.draft().documentos.emTodasAsFases).toEqual([]);
+  });
+});

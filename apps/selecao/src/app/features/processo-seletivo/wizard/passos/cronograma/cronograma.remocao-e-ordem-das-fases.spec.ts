@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import {
   PROCESSO_ID,
   ROTA_ETAPAS,
@@ -60,6 +60,22 @@ describe('CronogramaPassoComponent: remoção e ordem das fases', () => {
     expect(store.draft().cronograma.etapas).toEqual([]);
   });
 
+  it('remover a fase escreve no rascunho uma só vez, já sem a fase e sem as etapas dela', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+    const escritas: { fases: number; etapas: number }[] = [];
+    const original = store.draft.update.bind(store.draft);
+    vi.spyOn(store.draft, 'update').mockImplementation((alteracao) => {
+      original(alteracao);
+      const { fases, etapas } = store.draft().cronograma;
+      escritas.push({ fases: fases.length, etapas: etapas.length });
+    });
+
+    cronograma.removerFase(1);
+
+    expect(escritas).toEqual([{ fases: 1, etapas: 0 }]);
+  });
+
   /**
    * O defeito que existia: remover a fase que o cadastro marca como agrupadora limpava todas
    * as etapas do processo, inclusive as das outras fases.
@@ -75,6 +91,21 @@ describe('CronogramaPassoComponent: remoção e ordem das fases', () => {
       'INSCRICAO',
       'INSCRICAO',
     ]);
+  });
+
+  /**
+   * A API recusa duas etapas com a mesma ordem. Se a remoção deixasse um buraco na numeração, a
+   * etapa acrescentada depois receberia a ordem de uma que já existe.
+   */
+  it('remover a fase renumera as etapas que ficam, e a próxima etapa não repete ordem', () => {
+    comFases(ID_INSCRICAO, ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO', 'INSCRICAO', 'INSCRICAO']);
+
+    cronograma.removerFase(1);
+    cronograma.acrescentarEtapa('INSCRICAO');
+
+    const ordens = cronograma.etapas.controls.map((etapa) => etapa.controls.ordem.value);
+    expect(ordens).toEqual([1, 2, 3]);
   });
 
   /** Etapa que não declara fase nenhuma não pertence a nenhuma, e não sai com a remoção. */
@@ -129,7 +160,7 @@ describe('CronogramaPassoComponent: remoção e ordem das fases', () => {
   it('reordena no rascunho, renumerando a partir de 1', () => {
     comFases(ID_INSCRICAO, ID_AVALIACAO);
 
-    cronograma.mover(0, 1);
+    cronograma.sequencia.mover(0, 1);
 
     const depois = store.draft().cronograma.fases;
     expect(depois.map((fase) => fase.faseCanonicaId)).toEqual([ID_AVALIACAO, ID_INSCRICAO]);
