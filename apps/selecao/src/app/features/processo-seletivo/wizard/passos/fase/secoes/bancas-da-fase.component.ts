@@ -1,33 +1,31 @@
-import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
-import { novaChave } from '../../../shared/chaves/chave-local';
+import type { BancaDeclarada } from '../../../modelos/banca.models';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
-
+import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 import type {
   BancaRequeridaDaFase,
   RegraDeDeliberacaoDaBanca,
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
-import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
+import { ListaDeBancasComponent } from '../../../shared/bancas/lista-de-bancas.component';
+import { identificacaoDaBanca } from '../../../shared/bancas/lista-de-bancas';
+import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
 import {
   errosDaBancaPorCampo,
   recusasDaBancaPorCampo,
-  type CampoDaBanca,
   type RecusasDaBancaPorCampo,
 } from '../../../shared/deliberacao/recusas-da-regra';
-import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
-import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
+import { RegraDeDeliberacaoComponent } from '../../../shared/deliberacao/regra-de-deliberacao.component';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
+import { CatalogoDeBancas } from '../../cronograma/catalogos/catalogo-de-bancas.service';
+import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
-/** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
 @Component({
   selector: 'sel-bancas-da-fase',
   imports: [
+    ListaDeBancasComponent,
     RecusasDoCampoComponent,
-    ValorLegivelDirective,
-    FormsModule,
     ValorEmConsultaComponent,
     RegraDeDeliberacaoComponent,
   ],
@@ -39,124 +37,75 @@ export class BancasDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
   protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
+  private readonly catalogoDeBancas = inject(CatalogoDeBancas);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
-
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
-  protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
   protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
   protected readonly recusasDaLista = this.faseEmEdicao.recusasDaListaDeBancas;
-  protected readonly temMensagemNaLista = this.faseEmEdicao.temMensagemNaListaDeBancas;
-  protected readonly bancasEscolhiveis = this.faseEmEdicao.bancasEscolhiveis;
-
-  /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */
-  protected readonly categorias = computed(() =>
-    this.catalogoDeDocumentos
-      .categorias()
-      .map((categoria) => ({ id: categoria.id, nome: categoria.nome })),
+  protected readonly categorias = computed(() => this.catalogoDeDocumentos.categorias());
+  protected readonly tipos = computed(() =>
+    this.catalogoDeBancas.bancas().map((tipo) => ({
+      ...tipo,
+      rotulo: tipo.codigo.rotulo,
+    })),
   );
 
-  /** A leitura da consulta: cada banca em texto, com o recorte que julga. */
   protected faseLida() {
     if (this.espelho.formulario() === null) return null;
     return { bancas: this.bancas.map((banca) => this.descreverBanca(banca)) };
   }
 
   private descreverBanca(banca: BancaRequeridaDaFase): string {
-    const categorias = this.categorias();
     const nomes = banca.categoriasDocumentoIds.map(
-      (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
+      (id) => this.categorias().find((categoria) => categoria.id === id)?.nome ?? id,
     );
-    const nome = banca.copiaDoTipo?.rotulo ?? this.faseEmEdicao.nomeDaBanca(banca.tipoBancaId);
-    const recorte = nomes.length === 0 ? nome : `${nome} — julga ${nomes.join(', ')}`;
-    return `${recorte} — ${descricaoDaRegra(banca.regraDeDeliberacao)}`;
+    const nome = identificacaoDaBanca(this.bancas, banca, '');
+    const candidatos = nomes.length === 0 ? nome : `${nome} — julga ${nomes.join(', ')}`;
+    return `${candidatos} — ${descricaoDaRegra(banca.regraDeDeliberacao)}`;
   }
-
-  /** O que a conferência local recusa em cada campo da regra de cada banca, estável entre ciclos de detecção. */
-  protected readonly errosDasRegras = computed(() =>
-    this.bancas.map((_, posicao) => this.errosDaRegra(posicao)),
-  );
-
-  /** O que o servidor recusou em cada campo da regra de cada banca e ainda vale, estável entre ciclos de detecção. */
-  protected readonly recusasDasRegras = computed<readonly RecusasDaBancaPorCampo[]>(() =>
-    this.bancas.map((_, posicao) => this.recusasDaRegra(posicao)),
-  );
-
-  // ─── Bancas requeridas e o recorte de competência ───────────────────────
 
   get bancas(): readonly BancaRequeridaDaFase[] {
     this.espelho.versao();
     return this.espelho.formulario()?.controls.bancasRequeridas.value ?? [];
   }
 
-  acrescentarBanca(): void {
-    this.escreverBancas([...this.bancas, this.novaBanca()]);
-  }
-
-  private novaBanca(): BancaRequeridaDaFase {
-    return {
-      id: null,
-      identificadorLocal: novaChave({
-        tipo: 'banca',
-        nome: '',
-        tomadas: new Set(this.bancas.map((banca) => banca.identificadorLocal)),
-      }),
-      copiaDoTipo: null,
-      tipoBancaId: '',
-      categoriasDocumentoIds: [],
-      regraDeDeliberacao: null,
-    };
-  }
-
-  removerBanca(posicao: number): void {
-    this.escreverBancas(this.bancas.filter((_, indice) => indice !== posicao));
-  }
-
-  escolherTipoDeBanca(posicao: number, tipoBancaId: string): void {
-    this.escreverBancas(
-      this.bancas.map((banca, indice) => (indice === posicao ? { ...banca, tipoBancaId } : banca)),
+  protected escreverBancas(bancas: readonly BancaDeclarada[]): void {
+    const anteriores = new Map(this.bancas.map((banca) => [banca.identificadorLocal, banca]));
+    this.espelho.formulario()?.controls.bancasRequeridas.setValue(
+      bancas.map((banca) => ({
+        ...banca,
+        categoriasDocumentoIds:
+          anteriores.get(banca.identificadorLocal)?.categoriasDocumentoIds ?? [],
+      })),
     );
   }
 
-  declararRegra(posicao: number, regra: RegraDeDeliberacaoDaBanca | null): void {
-    this.escreverBancas(
-      this.bancas.map((banca, indice) =>
-        indice === posicao ? { ...banca, regraDeDeliberacao: regra } : banca,
+  /** O que a conferência local recusa na regra de cada banca, pelo identificador da banca. */
+  protected readonly errosDasRegras = computed(
+    () =>
+      new Map(
+        this.bancas.map((banca, posicao) => [banca.identificadorLocal, this.errosDaRegra(posicao)]),
       ),
-    );
-  }
+  );
 
-  alternarCategoria(posicao: number, categoriaId: string, marcada: boolean): void {
-    this.escreverBancas(
-      this.bancas.map((banca, indice) => {
-        if (indice !== posicao) return banca;
-        const semEla = banca.categoriasDocumentoIds.filter((id) => id !== categoriaId);
-        return { ...banca, categoriasDocumentoIds: marcada ? [...semEla, categoriaId] : semEla };
-      }),
-    );
-  }
+  /** As recusas do servidor à regra de cada banca que ainda valem, pela posição dela na lista. */
+  protected readonly recusasDasRegras = computed(
+    () =>
+      new Map(
+        this.bancas.map((banca, posicao) => [
+          banca.identificadorLocal,
+          this.recusasDaRegra(posicao),
+        ]),
+      ),
+  );
 
-  categoriaMarcada(posicao: number, categoriaId: string): boolean {
-    return this.bancas[posicao]?.categoriasDocumentoIds.includes(categoriaId) === true;
-  }
-
-  /**
-   * A banca desta linha divide o tipo com outra da mesma fase — é o caso em que
-   * o recorte deixa de ser opcional, porque é ele que diz qual julga o quê.
-   */
-  recorteObrigatorio(posicao: number): boolean {
-    const tipo = this.bancas[posicao]?.tipoBancaId;
-    if (tipo === undefined || tipo === '') return false;
-    return this.bancas.filter((banca) => banca.tipoBancaId === tipo).length > 1;
-  }
-
-  private errosDaRegra(posicao: number): Partial<Record<CampoDaBanca, string>> {
+  private errosDaRegra(posicao: number) {
     return errosDaBancaPorCampo((campo) =>
       this.faseEmEdicao.problemaLocal(`bancasRequeridas.${posicao}.${campo}`),
     );
   }
 
-  /** As recusas a conferir de novo ficam no bloco das bancas, não sob o campo. */
   private recusasDaRegra(posicao: number): RecusasDaBancaPorCampo {
     return recusasDaBancaPorCampo((campo) =>
       this.faseEmEdicao
@@ -165,7 +114,30 @@ export class BancasDaFaseComponent {
     );
   }
 
-  private escreverBancas(bancas: readonly BancaRequeridaDaFase[]): void {
+  protected declararRegra(banca: BancaDeclarada, regra: RegraDeDeliberacaoDaBanca | null): void {
+    this.escreverBancas(
+      this.bancas.map((atual) =>
+        atual.identificadorLocal === banca.identificadorLocal
+          ? { ...atual, regraDeDeliberacao: regra }
+          : atual,
+      ),
+    );
+  }
+
+  protected alternarCategoria(banca: BancaDeclarada, categoriaId: string, marcada: boolean): void {
+    const bancas = this.bancas.map((atual) => {
+      if (atual.identificadorLocal !== banca.identificadorLocal) return atual;
+      const semEla = atual.categoriasDocumentoIds.filter((id) => id !== categoriaId);
+      return { ...atual, categoriasDocumentoIds: marcada ? [...semEla, categoriaId] : semEla };
+    });
     this.espelho.formulario()?.controls.bancasRequeridas.setValue(bancas);
+  }
+
+  protected categoriaMarcada(banca: BancaDeclarada, categoriaId: string): boolean {
+    return (
+      this.bancas
+        .find((atual) => atual.identificadorLocal === banca.identificadorLocal)
+        ?.categoriasDocumentoIds.includes(categoriaId) === true
+    );
   }
 }

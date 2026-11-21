@@ -4,7 +4,18 @@ import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.mo
 import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { alvosDaRecusaDaFase } from './alvo-da-recusa-da-fase';
 
-const FASE = umaFaseDoCronograma({ codigo: 'AVALIACAO' });
+const banca = (identificadorLocal: string) => ({
+  id: null,
+  identificadorLocal,
+  copiaDoTipo: null,
+  tipoBancaId: 'tipo',
+  categoriasDocumentoIds: [],
+  regraDeDeliberacao: null,
+});
+const FASE = umaFaseDoCronograma({
+  codigo: 'AVALIACAO',
+  bancasRequeridas: [banca('banca-1'), banca('banca-2'), banca('banca-3')],
+});
 
 function comInstanciaSuperior(valor: boolean | null): FaseDoCronograma {
   const regra = { admiteInstanciaSuperior: valor } as RecursoDaFase;
@@ -54,17 +65,17 @@ describe('alvosDaRecusaDaFase', () => {
 
   it('leva a recusa ao campo da regra de uma banca ao controle, ao bloco das recusas dele, ao do modo e ao das bancas', () => {
     expect(alvosDaRecusaDaFase('bancasRequeridas.2.quorum', FASE, 0)).toEqual([
-      'fase-AVALIACAO-regra-2-quorum',
-      'fase-AVALIACAO-regra-2-quorum-recusas',
-      'fase-AVALIACAO-regra-2-modo-recusas',
+      'fase-AVALIACAO-regra-banca-3-quorum',
+      'fase-AVALIACAO-regra-banca-3-quorum-recusas',
+      'fase-AVALIACAO-regra-banca-3-modo-recusas',
       'fase-AVALIACAO-bancas-erro',
     ]);
   });
 
   it('leva a recusa à regra inteira da banca ao modo dela', () => {
     expect(alvosDaRecusaDaFase('bancasRequeridas.0.regra', FASE, 0)).toEqual([
-      'fase-AVALIACAO-regra-0-modo',
-      'fase-AVALIACAO-regra-0-modo-recusas',
+      'fase-AVALIACAO-regra-banca-1-modo',
+      'fase-AVALIACAO-regra-banca-1-modo-recusas',
       'fase-AVALIACAO-bancas-erro',
     ]);
   });

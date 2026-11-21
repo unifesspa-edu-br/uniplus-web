@@ -44,6 +44,8 @@ export class ListaDeBancasComponent {
   readonly idBase = input.required<string>();
   readonly idRecusas = input<string>();
   readonly edicaoLiberada = input(true);
+  readonly textoDoGrupo = input('Bancas do mesmo tipo julgam em paralelo.');
+  readonly textoDaExigencia = input('Este tipo exige duas ou mais bancas.');
   readonly detalhe = input<TemplateRef<{ $implicit: BancaDeclarada }> | null>(null);
   readonly bancasChange = output<readonly BancaDeclarada[]>();
   protected readonly grupos = computed(() => gruposPorTipo(this.bancas()));

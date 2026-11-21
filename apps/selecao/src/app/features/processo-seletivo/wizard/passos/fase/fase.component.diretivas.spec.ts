@@ -45,7 +45,6 @@ describe('campos de texto das seções da fase', () => {
   it.each([
     ['publicações', 'produto-ato-0'],
     ['regra de recurso', 'regra'],
-    ['bancas', 'banca-0'],
     ['editor da exigência', `doc-normas-${ID_CPF}-base-0-ref`],
   ])('a seção de %s aplica a ValorLegivelDirective ao campo %s', (_secao, sufixo) => {
     const campo = passo.raiz.query(By.css(`#fase-AVALIACAO-${sufixo}`));

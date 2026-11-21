@@ -86,7 +86,7 @@ export const ATOS = [
 export const BANCAS = [
   {
     id: ID_BANCA_HETERO,
-    codigo: 'HETEROIDENTIFICACAO',
+    codigo: { codigo: 'HETEROIDENTIFICACAO', rotulo: 'Heteroidentificação' },
     nome: 'Heteroidentificação',
     faseTipica: null,
     descricao: null,

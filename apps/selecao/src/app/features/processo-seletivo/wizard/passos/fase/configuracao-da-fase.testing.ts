@@ -31,7 +31,7 @@ export const nomeDaBanca = (id: string): string =>
   id === 'banca-hetero' ? 'Heteroidentificação' : id;
 
 export function conferir(alvo: FaseDoCronograma) {
-  return problemasDaFase(alvo, CATALOGO, nomeDaBanca);
+  return problemasDaFase(alvo, CATALOGO);
 }
 
 export function campos(alvo: FaseDoCronograma) {

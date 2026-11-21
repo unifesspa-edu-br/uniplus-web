@@ -10,109 +10,54 @@
     />
   }
 } @else {
-  <p class="field__hint" [attr.id]="idDaFase('bancas-ajuda')">
-    O recorte de competência diz que categorias de documento cada banca julga. Com uma banca de cada
-    tipo ele é dispensável — a banca julga tudo o que a fase exige. Com duas do mesmo tipo, ele
-    passa a ser obrigatório e precisa distingui-las.
-  </p>
-
-  @for (banca of bancas; track $index) {
-    <div class="form-grid">
-      <div class="form-field form-grid__full">
-        <label class="label" [attr.for]="idDaFase('banca-' + $index)">Tipo de banca</label>
-        <select
-          class="input"
-          [attr.id]="idDaFase('banca-' + $index)"
-          [ngModel]="banca.tipoBancaId"
-          [ngModelOptions]="{ standalone: true }"
-          [disabled]="!cronograma.edicaoLiberada()"
-          [attr.aria-describedby]="
-            temMensagemNaLista()
-              ? idDaFase('bancas-erro') + ' ' + idDaFase('bancas-ajuda')
-              : idDaFase('bancas-ajuda')
-          "
-          [attr.aria-invalid]="erroDoCampo('bancasRequeridas') ? 'true' : null"
-          (ngModelChange)="escolherTipoDeBanca($index, $event)"
-        >
-          <option value="">Selecione o tipo…</option>
-          @for (tipo of bancasEscolhiveis(); track tipo.id) {
-            <option [value]="tipo.id">{{ tipo.nome }}</option>
-          }
-        </select>
-      </div>
-
-      <fieldset class="form-field form-grid__full">
-        <legend class="label">
-          Recorte de competência
-          @if (recorteObrigatorio($index)) {
-            (obrigatório)
-          }
-        </legend>
-        @if (categorias().length === 0) {
-          <p class="field__hint">
-            Nenhuma categoria de documento no cadastro. Sem elas, o recorte não pode ser declarado.
-          </p>
-        }
-        <div class="checkbox-grid">
-          @for (categoria of categorias(); track categoria.id) {
-            <label class="checkbox" [attr.for]="idDaFase('recorte-' + $index + '-' + categoria.id)">
-              <input
-                type="checkbox"
-                [attr.id]="idDaFase('recorte-' + $index + '-' + categoria.id)"
-                [checked]="categoriaMarcada($index, categoria.id)"
-                [disabled]="!cronograma.edicaoLiberada()"
-                (change)="alternarCategoria($index, categoria.id, $any($event.target).checked)"
-              />
-              <span class="checkbox__box" aria-hidden="true"></span>
-              {{ categoria.nome }}
-            </label>
-          }
-        </div>
-      </fieldset>
-
-      <sel-regra-de-deliberacao
-        class="form-grid__full"
-        [regra]="banca.regraDeDeliberacao"
-        [idBase]="idDaFase('regra-' + $index)"
-        [desabilitada]="!cronograma.edicaoLiberada()"
-        [erros]="errosDasRegras()[$index]"
-        [recusas]="recusasDasRegras()[$index]"
-        (regraChange)="declararRegra($index, $event)"
-      />
-
-      <div class="form-field">
-        <button
-          class="btn btn--tertiary"
-          type="button"
-          [disabled]="!cronograma.edicaoLiberada()"
-          [attr.aria-label]="'Remover banca ' + ($index + 1) + ' desta fase'"
-          (click)="removerBanca($index)"
-        >
-          Remover banca
-        </button>
-      </div>
-    </div>
-  }
-
-  @if (bancas.length === 0) {
-    <p class="field__hint">Esta fase não requer banca alguma.</p>
-  }
-
-  <button
-    class="btn btn--secondary"
-    type="button"
-    [disabled]="!cronograma.edicaoLiberada()"
-    (click)="acrescentarBanca()"
-  >
-    Acrescentar banca
-  </button>
-
-  @if (temMensagemNaLista()) {
-    <div [attr.id]="idDaFase('bancas-erro')" tabindex="-1">
-      @if (problemaLocal('bancasRequeridas'); as erro) {
-        <p class="field__erro" role="alert">{{ erro }}</p>
+  <ng-template #detalhe let-banca>
+    <fieldset class="form-field">
+      <legend class="label">Candidatos atendidos</legend>
+      @if (categorias().length === 0) {
+        <p class="field__hint">Nenhuma categoria de documento no cadastro.</p>
       }
-      <sel-recusas-do-campo [recusas]="recusasDaLista()" />
-    </div>
+      <div class="checkbox-grid">
+        @for (categoria of categorias(); track categoria.id) {
+          <label
+            class="checkbox"
+            [attr.for]="idDaFase('banca-' + banca.identificadorLocal + '-' + categoria.id)"
+          >
+            <input
+              #caixa
+              type="checkbox"
+              [attr.id]="idDaFase('banca-' + banca.identificadorLocal + '-' + categoria.id)"
+              [checked]="categoriaMarcada(banca, categoria.id)"
+              [disabled]="!cronograma.edicaoLiberada()"
+              (change)="alternarCategoria(banca, categoria.id, caixa.checked)"
+            />
+            <span class="checkbox__box" aria-hidden="true"></span>
+            {{ categoria.nome }}
+          </label>
+        }
+      </div>
+    </fieldset>
+    <sel-regra-de-deliberacao
+      [regra]="banca.regraDeDeliberacao"
+      [idBase]="idDaFase('regra-' + banca.identificadorLocal)"
+      [desabilitada]="!cronograma.edicaoLiberada()"
+      [erros]="errosDasRegras().get(banca.identificadorLocal) ?? {}"
+      [recusas]="recusasDasRegras().get(banca.identificadorLocal) ?? {}"
+      (regraChange)="declararRegra(banca, $event)"
+    />
+  </ng-template>
+  @if (problemaLocal('bancasRequeridas'); as erro) {
+    <p class="field__erro" role="alert">{{ erro }}</p>
   }
+  <sel-lista-de-bancas
+    [idBase]="idDaFase('bancas')"
+    [idRecusas]="idDaFase('bancas-erro')"
+    [bancas]="bancas"
+    [tipos]="tipos()"
+    [recusas]="recusasDaLista()"
+    [edicaoLiberada]="cronograma.edicaoLiberada()"
+    textoDoGrupo="Bancas deste tipo com as mesmas categorias, ou todas sem categorias, julgam em paralelo e dividem os candidatos. Bancas com categorias diferentes dividem as categorias; nesse caso, todas precisam ter categorias definidas."
+    textoDaExigencia="Este tipo exige duas ou mais bancas para cada grupo de candidatos atendidos."
+    [detalhe]="detalhe"
+    (bancasChange)="escreverBancas($event)"
+  />
 }

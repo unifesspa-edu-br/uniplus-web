@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { ATO_INDIVIDUAL } from '../../shared/deliberacao/regra-de-deliberacao.testing';
-import { ID_AVALIACAO } from './cronograma.testing';
+import { ID_AVALIACAO, ID_BANCA_HETERO } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import {
   AjudantesDeRecusasDasFases,
@@ -13,7 +13,7 @@ const RECUSADA_NOS_CAMPOS =
 const QUORUM = 'uniplus.selecao.banca.quorum_fora_do_intervalo';
 const REGRA_OBRIGATORIA = 'uniplus.selecao.banca.regra_de_deliberacao_obrigatoria';
 const CAMINHO = 'fases[0].bancasRequeridas[0].regraDeDeliberacao';
-const REGRA = 'fase-AVALIACAO-regra-0';
+const REGRA = `fase-AVALIACAO-regra-${ID_BANCA_HETERO}`;
 const NOTA = 'conferida de novo na próxima gravação';
 const DO_QUORUM = {
   field: `${CAMINHO}.quorum`,

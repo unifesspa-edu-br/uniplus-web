@@ -95,7 +95,9 @@ describe('FasePassoComponent', () => {
     });
 
     it('mostra a banca que a fase requer', () => {
-      expect(selecionado('fase-AVALIACAO-banca-0')).toBe(ID_BANCA_HETERO);
+      expect(nativo.querySelector('sel-bancas-da-fase h6')?.textContent).toContain(
+        'Heteroidentificação 1',
+      );
     });
 
     it('mostra a regra de recurso escolhida', async () => {
