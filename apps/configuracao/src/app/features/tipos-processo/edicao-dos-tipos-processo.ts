@@ -31,12 +31,13 @@ import { TiposProcessoStore } from './tipos-processo.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
 import {
   aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  marcarRecusaDoServidor,
+  validarParaEnvio,
+  marcarConflitoNoCampo,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoProcesso.CodigoJaExiste` (409 Conflict). */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.tipo_processo.codigo_ja_existe';
+const CAMPO_POR_CONFLITO: ReadonlyMap<string, 'codigo'> = new Map([[CODIGO_JA_EXISTE, 'codigo']]);
 
 type Escrita = 'salvando' | 'removendo' | 'reativando';
 type ModoFormulario = 'criar' | 'editar';
@@ -90,13 +91,15 @@ export class EdicaoDosTiposProcesso {
   readonly andamento = computed(() => (this.gravando() ? this.emAndamento() : null));
 
   readonly aberto = signal(false);
-  readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
   readonly erroRemocao = signal<string | null>(null);
   readonly confirmandoReativacao = signal(false);
   readonly erroReativacao = signal<string | null>(null);
   private readonly tipoEmEdicaoId = signal<string | null>(null);
+  readonly modo = computed<ModoFormulario>(() =>
+    this.tipoEmEdicaoId() === null ? 'criar' : 'editar',
+  );
   private readonly tipoParaRemover = signal<TipoProcessoDto | null>(null);
   private readonly tipoParaReativar = signal<TipoProcessoDto | null>(null);
   private readonly recusaDoSalvamento = signal('');
@@ -144,11 +147,11 @@ export class EdicaoDosTiposProcesso {
   );
 
   abrirCadastro(): void {
-    this.abrirFormulario('criar', null, valoresEmBrancoDoTipoProcesso());
+    this.abrirFormulario(null, valoresEmBrancoDoTipoProcesso());
   }
 
   abrirEdicao(tipo: TipoProcessoDto): void {
-    this.abrirFormulario('editar', tipo.id, valoresDoTipoProcesso(tipo));
+    this.abrirFormulario(tipo.id, valoresDoTipoProcesso(tipo));
   }
 
   fechar(): void {
@@ -173,21 +176,20 @@ export class EdicaoDosTiposProcesso {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.limparRecusasDoEnvio();
+    if (!validarParaEnvio(this.form)) return;
     const id = this.tipoEmEdicaoId();
     const modo = this.modo();
+    this.gravar('salvando', id, this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
+  }
+
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form), contexto)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
-    this.gravar('salvando', id, operacao, (result) => this.concluirSalvamento(result, modo));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
   }
 
   removerConfirmado(): void {
@@ -209,19 +211,18 @@ export class EdicaoDosTiposProcesso {
     );
   }
 
-  private abrirFormulario(
-    modo: ModoFormulario,
-    id: string | null,
-    valores: ValoresDoTipoProcesso,
-  ): void {
+  private limparRecusasDoEnvio(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
+  private abrirFormulario(id: string | null, valores: ValoresDoTipoProcesso): void {
     if (this.gravando()) return;
     this.resultado.set('');
-    this.modo.set(modo);
     this.tipoEmEdicaoId.set(id);
     this.ligacaoDoCodigo.reiniciar();
     this.form.reset(valores);
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     this.renovarChave();
     this.aberto.set(true);
   }
@@ -300,22 +301,14 @@ export class EdicaoDosTiposProcesso {
    * concorrência, não dizem nada do campo: a mensagem vai ao alerta.
    */
   private aplicarFalha(problem: ProblemDetails): void {
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.renovarChave();
       this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
     }
-    if (problem.code === CODIGO_JA_EXISTE) {
-      this.renovarChave();
-      marcarRecusaDoServidor(
-        this.form.controls['codigo'],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
-      return;
-    }
-    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
-    this.erro.set(this.problemI18n.resolve(problem).title);
+    const mensagem = this.problemI18n.resolve(problem).title;
+    if (marcarConflitoNoCampo(problem, mensagem, this.form, CAMPO_POR_CONFLITO)) return;
+    this.erro.set(mensagem);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 

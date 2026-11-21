@@ -28,7 +28,7 @@ import { OfertasCursoStore } from './ofertas-curso.store';
 import { acompanharRegrasDaOferta } from './regras-do-formulario-da-oferta';
 import { VinculosDaOferta } from './vinculos-da-oferta';
 import {
-  descartarRecusasDoServidor,
+  validarParaEnvio,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   textoDaCausaGeral,
@@ -148,22 +148,21 @@ export class EdicaoDasOfertasCurso {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.limparRecusasDoEnvio();
+    if (!validarParaEnvio(this.form)) return;
+    const modo = this.modo();
+    this.gravar('salvando', this.requisicaoDeSalvamento(), (result) =>
+      this.concluirGravacao(result, modo),
+    );
+  }
+
+  private requisicaoDeSalvamento(): Observable<ApiResult<string | void>> {
     const chave = withIdempotencyKey(this.chaveDeIdempotencia());
     const valores = this.form.getRawValue();
     const oferta = this.ofertaEmEdicao();
-    const modo = this.modo();
-    const operacao: Observable<ApiResult<string | void>> =
-      oferta === null
-        ? this.api.criar(comandoDeCriacao(valores), chave)
-        : this.api.atualizar(oferta.id, comandoDeAtualizacao(oferta.id, valores), chave);
-    this.gravar('salvando', operacao, (result) => this.concluirGravacao(result, modo));
+    return oferta === null
+      ? this.api.criar(comandoDeCriacao(valores), chave)
+      : this.api.atualizar(oferta.id, comandoDeAtualizacao(oferta.id, valores), chave);
   }
 
   pedirRemocao(oferta: OfertaCursoDto): void {
@@ -235,10 +234,14 @@ export class EdicaoDasOfertasCurso {
     }
   }
 
-  private abrir(): void {
-    this.limparResultados();
+  private limparRecusasDoEnvio(): void {
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
+  }
+
+  private abrir(): void {
+    this.limparResultados();
+    this.limparRecusasDoEnvio();
     this.renovarChaveDeIdempotencia();
     this.aberto.set(true);
   }

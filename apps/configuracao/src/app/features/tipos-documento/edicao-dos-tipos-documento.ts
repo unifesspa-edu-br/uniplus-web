@@ -38,12 +38,13 @@ import {
 import { TiposDocumentoStore } from './tipos-documento.store';
 import {
   aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  marcarRecusaDoServidor,
+  validarParaEnvio,
+  marcarConflitoNoCampo,
 } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoDocumento.CodigoJaExiste` (409, sem `errors[]`). */
 const CODIGO_JA_EXISTE = 'uniplus.configuracao.tipo_documento.codigo_ja_existe';
+const CAMPO_POR_CONFLITO: ReadonlyMap<string, 'codigo'> = new Map([[CODIGO_JA_EXISTE, 'codigo']]);
 
 type Escrita = 'salvando' | 'removendo' | 'aceitando';
 type ModoFormulario = 'criar' | 'editar';
@@ -74,13 +75,15 @@ export class EdicaoDosTiposDocumento {
   readonly aceitando = computed(() => this.escrita() === 'aceitando');
 
   readonly aberto = signal(false);
-  readonly modo = signal<ModoFormulario>('criar');
   readonly erro = signal<string | null>(null);
   readonly confirmando = signal(false);
   readonly erroRemocao = signal<string | null>(null);
   readonly confirmandoAceite = signal(false);
   readonly erroAceite = signal<string | null>(null);
   private readonly tipoEmEdicaoId = signal<string | null>(null);
+  readonly modo = computed<ModoFormulario>(() =>
+    this.tipoEmEdicaoId() === null ? 'criar' : 'editar',
+  );
   private readonly tipoParaRemover = signal<TipoDocumentoDto | null>(null);
   private readonly tipoParaAceitar = signal<TipoDocumentoDto | null>(null);
   /** A proteção que o tipo em edição tinha ao abrir o formulário: a base de comparação do aviso. */
@@ -151,11 +154,11 @@ export class EdicaoDosTiposDocumento {
   );
 
   abrirCadastro(): void {
-    this.abrirFormulario('criar', null, valoresEmBrancoDoTipoDocumento(), null);
+    this.abrirFormulario(null, valoresEmBrancoDoTipoDocumento(), null);
   }
 
   abrirEdicao(tipo: TipoDocumentoDto): void {
-    this.abrirFormulario('editar', tipo.id, valoresDoTipoDocumento(tipo), {
+    this.abrirFormulario(tipo.id, valoresDoTipoDocumento(tipo), {
       classificacaoProtecao: tipo.classificacaoProtecao,
       hipoteseLegal: tipo.hipoteseLegal,
       finalidadeTratamento: tipo.finalidadeTratamento,
@@ -184,21 +187,20 @@ export class EdicaoDosTiposDocumento {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.limparRecusasDoEnvio();
+    if (!validarParaEnvio(this.form)) return;
     const id = this.tipoEmEdicaoId();
     const modo = this.modo();
+    this.gravar('salvando', this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
+  }
+
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
     const contexto = withIdempotencyKey(this.chave());
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form), contexto)
-        : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
-    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form), contexto)
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form), contexto);
   }
 
   removerConfirmado(): void {
@@ -224,21 +226,23 @@ export class EdicaoDosTiposDocumento {
     );
   }
 
+  private limparRecusasDoEnvio(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
   private abrirFormulario(
-    modo: ModoFormulario,
     id: string | null,
     valores: ValoresDoTipoDocumento,
     protecao: ProtecaoDoItem | null,
   ): void {
     if (this.gravando()) return;
     this.resultado.set('');
-    this.modo.set(modo);
     this.tipoEmEdicaoId.set(id);
     this.protecaoOriginal.set(protecao);
     this.ligacaoDoCodigo.reiniciar();
     this.form.reset(valores);
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     this.renovarChave();
     this.aberto.set(true);
   }
@@ -322,22 +326,14 @@ export class EdicaoDosTiposDocumento {
    * dizem nada de um campo: a mensagem vai ao alerta.
    */
   private aplicarFalha(problem: ProblemDetails): void {
+    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
-      this.renovarChave();
       this.aplicarErrosDeValidacao(recusasDoProblema(problem));
       return;
     }
-    if (problem.code === CODIGO_JA_EXISTE) {
-      this.renovarChave();
-      marcarRecusaDoServidor(
-        this.form.controls['codigo'],
-        problem.code,
-        this.problemI18n.resolve(problem).title,
-      );
-      return;
-    }
-    if (deveRotacionarIdempotencyKey(problem)) this.renovarChave();
-    this.erro.set(this.problemI18n.resolve(problem).title);
+    const mensagem = this.problemI18n.resolve(problem).title;
+    if (marcarConflitoNoCampo(problem, mensagem, this.form, CAMPO_POR_CONFLITO)) return;
+    this.erro.set(mensagem);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
   }
 

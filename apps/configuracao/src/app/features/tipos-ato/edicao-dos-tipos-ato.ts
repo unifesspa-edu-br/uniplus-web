@@ -29,7 +29,7 @@ import {
   valoresEmBrancoDoAto,
 } from './tipo-ato-form';
 import { TiposAtoStore } from './tipos-ato.store';
-import { aplicarRecusasDoProblema, descartarRecusasDoServidor } from '../../shared/formulario';
+import { aplicarRecusasDoProblema, validarParaEnvio } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoAtoPublicado.VigenciaSobreposta` (409 em POST e PUT, sem `errors[]`). */
 const VIGENCIA_SOBREPOSTA = 'uniplus.publicacoes.tipo_ato.vigencia_sobreposta';
@@ -132,21 +132,20 @@ export class EdicaoDosTiposAto {
   }
 
   salvar(): void {
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
-    descartarRecusasDoServidor(this.form);
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+    this.limparRecusasDoEnvio();
+    if (!validarParaEnvio(this.form)) return;
     const id = this.atoEmEdicaoId();
     const modo = this.modo();
-    // Idempotency-Key só no POST: a ADR-0027 dispensa PUT puro, e a rota não declara o header.
-    const operacao: Observable<ApiResult<string | void>> =
-      id === null
-        ? this.api.criar(comandoDeCriacao(this.form), withIdempotencyKey(this.chave()))
-        : this.api.atualizar(id, comandoDeAtualizacao(id, this.form));
-    this.gravar('salvando', operacao, (result) => this.concluirSalvamento(result, modo));
+    this.gravar('salvando', this.requisicaoDeSalvamento(id), (result) =>
+      this.concluirSalvamento(result, modo),
+    );
+  }
+
+  /** A ADR-0027 dispensa a chave no PUT, cuja rota não declara o header. */
+  private requisicaoDeSalvamento(id: string | null): Observable<ApiResult<string | void>> {
+    return id === null
+      ? this.api.criar(comandoDeCriacao(this.form), withIdempotencyKey(this.chave()))
+      : this.api.atualizar(id, comandoDeAtualizacao(id, this.form));
   }
 
   removerConfirmado(): void {
@@ -158,14 +157,18 @@ export class EdicaoDosTiposAto {
     );
   }
 
+  private limparRecusasDoEnvio(): void {
+    this.erro.set(null);
+    this.recusaDoSalvamento.set('');
+  }
+
   private abrirFormulario(modo: ModoFormulario, id: string | null, valores: ValoresDoAto): void {
     if (this.gravando()) return;
     this.resultado.set('');
     this.modo.set(modo);
     this.atoEmEdicaoId.set(id);
     this.form.reset(valores);
-    this.erro.set(null);
-    this.recusaDoSalvamento.set('');
+    this.limparRecusasDoEnvio();
     this.renovarChave();
     this.aberto.set(true);
   }

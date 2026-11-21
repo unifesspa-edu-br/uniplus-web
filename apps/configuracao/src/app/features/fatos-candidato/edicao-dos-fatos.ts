@@ -229,24 +229,13 @@ export class EdicaoDosFatos {
     if (pedido === null || this.gravando()) return;
     const { fato, acao } = pedido;
     this.erroDaAtivacao.set(null);
-    const operacao =
-      acao === 'DESATIVAR'
-        ? this.api.desativar(fato.id)
-        : this.api.ativar(fato.id, withIdempotencyKey(this.chaveDaAtivacao()));
     const rotulo = acao === 'DESATIVAR' ? 'Desativando...' : 'Reativando...';
-    this.gravar('ativando', { id: fato.id, rotulo }, operacao, (resultado) => {
-      if (!resultado.ok) {
-        this.erroDaAtivacao.set(this.recusarConfirmacao(resultado.problem, this.chaveDaAtivacao));
-        if (ehConflitoDeConcorrencia(resultado.problem)) this.recarregar();
-        return;
-      }
-      const sucesso = acao === 'DESATIVAR' ? 'Fato desativado' : 'Fato reativado';
-      this.resultado.set(`${sucesso}: ${fato.codigo}.`);
-      this.notifications.success(sucesso, fato.codigo);
-      this.confirmando.set(false);
-      this.pedido.set(null);
-      this.recarregar();
-    });
+    this.gravar(
+      'ativando',
+      { id: fato.id, rotulo },
+      this.requisicaoDeAtivacao(pedido),
+      (resultado) => this.concluirAtivacao(pedido, resultado),
+    );
   }
 
   /** Aceita a recomendação do fato negado, inclusive o de sistema. */
@@ -259,20 +248,42 @@ export class EdicaoDosFatos {
       'aceitando',
       { id: fato.id, rotulo: 'Aceitando...' },
       this.api.aceitarRecomendacao(fato.id, contexto),
-      (resultado) => {
-        if (!resultado.ok) {
-          this.erroDoAceite.set(this.recusarConfirmacao(resultado.problem, this.chaveDoAceite));
-          // A recusa pode vir de um fato que mudou em outra sessão: a lista e a situação são relidas.
-          this.recarregar();
-          return;
-        }
-        this.resultado.set(`Recomendação aceita: ${fato.codigo}.`);
-        this.notifications.success('Recomendação aceita', fato.codigo);
-        this.confirmandoAceite.set(false);
-        this.fatoParaAceitar.set(null);
-        this.recarregar();
-      },
+      (resultado) => this.concluirAceite(fato, resultado),
     );
+  }
+
+  private requisicaoDeAtivacao({ fato, acao }: PedidoDeAtivacao): Observable<ApiResult<void>> {
+    return acao === 'DESATIVAR'
+      ? this.api.desativar(fato.id)
+      : this.api.ativar(fato.id, withIdempotencyKey(this.chaveDaAtivacao()));
+  }
+
+  private concluirAtivacao({ fato, acao }: PedidoDeAtivacao, resultado: ApiResult<void>): void {
+    if (!resultado.ok) {
+      this.erroDaAtivacao.set(this.recusarConfirmacao(resultado.problem, this.chaveDaAtivacao));
+      if (ehConflitoDeConcorrencia(resultado.problem)) this.recarregar();
+      return;
+    }
+    const sucesso = acao === 'DESATIVAR' ? 'Fato desativado' : 'Fato reativado';
+    this.resultado.set(`${sucesso}: ${fato.codigo}.`);
+    this.notifications.success(sucesso, fato.codigo);
+    this.confirmando.set(false);
+    this.pedido.set(null);
+    this.recarregar();
+  }
+
+  private concluirAceite(fato: FatoCandidatoDto, resultado: ApiResult<void>): void {
+    if (!resultado.ok) {
+      this.erroDoAceite.set(this.recusarConfirmacao(resultado.problem, this.chaveDoAceite));
+      // A recusa pode vir de um fato que mudou em outra sessão: a lista e a situação são relidas.
+      this.recarregar();
+      return;
+    }
+    this.resultado.set(`Recomendação aceita: ${fato.codigo}.`);
+    this.notifications.success('Recomendação aceita', fato.codigo);
+    this.confirmandoAceite.set(false);
+    this.fatoParaAceitar.set(null);
+    this.recarregar();
   }
 
   /** Há uma sobreposição aberta sobre a lista: o drawer ou um diálogo de confirmação. */

@@ -239,9 +239,7 @@ function controlesDaIdentidadeDaEtapa(
   };
 }
 
-function controlesDaAvaliacaoDaEtapa(
-  etapa: EtapaPontuada,
-): Pick<
+type ControlesDaAvaliacao = Pick<
   EtapaForm,
   | 'carater'
   | 'peso'
@@ -253,12 +251,30 @@ function controlesDaAvaliacaoDaEtapa(
   | 'regraConsolidacaoVersao'
   | 'itensDeAvaliacao'
   | 'escalaDeAtendimento'
-> {
+>;
+
+function controlesDaAvaliacaoDaEtapa(etapa: EtapaPontuada): ControlesDaAvaliacao {
+  return {
+    ...controlesDaPontuacaoDaEtapa(etapa),
+    ...controlesDaFormaDeAvaliacao(etapa),
+  };
+}
+
+function controlesDaPontuacaoDaEtapa(
+  etapa: EtapaPontuada,
+): Pick<ControlesDaAvaliacao, 'carater' | 'peso' | 'notaMinima' | 'notaMaxima'> {
   return {
     carater: controle<CaraterEscolhido>(etapa.carater),
     peso: controle(etapa.peso),
     notaMinima: controle(etapa.notaMinima),
     notaMaxima: controle(etapa.notaMaxima ?? ''),
+  };
+}
+
+function controlesDaFormaDeAvaliacao(
+  etapa: EtapaPontuada,
+): Omit<ControlesDaAvaliacao, 'carater' | 'peso' | 'notaMinima' | 'notaMaxima'> {
+  return {
     passoDoLancamento: controle(etapa.passoDoLancamento ?? ''),
     formaDeAvaliacao: controle(etapa.formaDeAvaliacao ?? ''),
     regraConsolidacaoCodigo: controle(etapa.regraConsolidacaoCodigo ?? ''),
