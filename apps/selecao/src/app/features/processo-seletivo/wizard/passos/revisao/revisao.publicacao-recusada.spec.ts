@@ -12,12 +12,40 @@ import {
   ROTA_SNAPSHOT,
   SNAPSHOT_DTO,
   criarProcesso,
+  CONFORMIDADE_LEGAL_VERDE,
+  CONFORMIDADE_VERDE,
+  PROCESSO_ID,
   flushMicrotasks,
+  flushProntidao,
   flushProntidaoVerde,
   prepararCamposLocais,
   textoDaTela,
   CenarioDaRevisao,
 } from './revisao.testing';
+
+const ESTRUTURAL_COM_PENDENCIA = {
+  processoSeletivoId: PROCESSO_ID,
+  avisos: [],
+  itens: [{ codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'falta declarar', ok: false }],
+};
+const ESTRUTURAL_SEM_ESCALA = {
+  processoSeletivoId: PROCESSO_ID,
+  avisos: [],
+  itens: [
+    {
+      codigo: 'classificacao_escala_nota_final_nao_declarada',
+      dimensao: 'classificacao',
+      mensagem: 'A escala da nota final não foi declarada.',
+      ok: false,
+    },
+  ],
+};
+const LEGAL_COM_REGRA_REPROVADA = {
+  ...CONFORMIDADE_LEGAL_VERDE,
+  regras: [
+    { regraCodigo: 'R1', descricaoHumana: 'x', baseLegal: 'Lei x', motivo: 'y', aprovada: false },
+  ],
+};
 
 describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => {
   let cenario: CenarioDaRevisao;
@@ -37,7 +65,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       expect(resultado.valid).toBe(false);
     });
 
-    it('em 422 estrutural, guarda as pendências da extension e não marca como publicado', async () => {
+    it('em 422 estrutural, relê o checklist e mostra o que o servidor devolve, sem usar as pendências da resposta', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);
@@ -50,7 +78,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
           status: 422,
           code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
           traceId: 't1',
-          pendencias: [{ codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'falta declarar' }],
+          pendencias: [{ codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'texto da resposta' }],
         },
         {
           status: 422,
@@ -60,12 +88,12 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       );
 
       const resultado = await gravacao;
+      await flushProntidao(cenario, ESTRUTURAL_COM_PENDENCIA, CONFORMIDADE_LEGAL_VERDE);
       fixture.detectChanges();
       expect(resultado.valid).toBe(false);
       expect(textoDaTela(cenario)).toContain('falta declarar');
+      expect(textoDaTela(cenario)).not.toContain('texto da resposta');
       expect(textoDaTela(cenario)).not.toContain('Nenhuma pendência estrutural.');
-      // A conformidade legal não foi avaliada nesta tentativa: vale a leitura anterior, e não "sem reprovação".
-      expect(textoDaTela(cenario)).toContain('Nenhuma obrigatoriedade legal reprovada.');
       expect(store.remoteSnapshot()).toBeNull();
     });
 
@@ -82,13 +110,6 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
           status: 422,
           code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
           traceId: 't1',
-          pendencias: [
-            {
-              codigo: 'classificacao_escala_nota_final_nao_declarada',
-              dimensao: 'classificacao',
-              mensagem: 'A escala da nota final não foi declarada.',
-            },
-          ],
         },
         {
           status: 422,
@@ -97,6 +118,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
         },
       );
       await gravacao;
+      await flushProntidao(cenario, ESTRUTURAL_SEM_ESCALA, CONFORMIDADE_LEGAL_VERDE);
       TestBed.tick();
 
       expect(store.classificacao.escalaDaNotaFinalPendente()).toBe(true);
@@ -106,7 +128,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       expect(store.classificacao.escalaDaNotaFinalPendente()).toBe(false);
     });
 
-    it('em 422 de conformidade legal, guarda as obrigatoriedades reprovadas', async () => {
+    it('em 422 de conformidade legal, relê a conformidade legal e mostra as reprovadas que o servidor devolve', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);
@@ -119,9 +141,6 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
           status: 422,
           code: 'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente',
           traceId: 't2',
-          obrigatoriedadesReprovadas: [
-            { regraCodigo: 'R1', descricaoHumana: 'x', baseLegal: 'Lei x', motivo: 'y' },
-          ],
         },
         {
           status: 422,
@@ -131,6 +150,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       );
 
       const resultado = await gravacao;
+      await flushProntidao(cenario, CONFORMIDADE_VERDE, LEGAL_COM_REGRA_REPROVADA);
       fixture.detectChanges();
       expect(resultado.valid).toBe(false);
       expect(textoDaTela(cenario)).toContain('Lei x');
@@ -175,6 +195,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
         },
       );
       await gravacao;
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
 
       const fasesCitadas = Array.from(
@@ -202,7 +223,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       expect(fixture.nativeElement.querySelector('#revisao-fase-sem-unidade')).toBeNull();
     });
 
-    it('em erro nomeado de documento/ato, marca o bloco próprio sem tocar nos dois checklists', async () => {
+    it('em erro nomeado de documento/ato, marca o bloco próprio e deixa os dois checklists como o servidor os leu', async () => {
       prepararCamposLocais(cenario);
       await criarProcesso(cenario);
       await flushProntidaoVerde(cenario);
@@ -224,10 +245,11 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
       );
 
       const resultado = await gravacao;
+      await flushProntidaoVerde(cenario);
       fixture.detectChanges();
       expect(resultado.valid).toBe(false);
       expect(textoDaTela(cenario)).toContain('documento confirmado');
-      // Nenhum dos dois checklists é tocado: o estrutural segue verde e o legal mantém a leitura anterior.
+      // A recusa não diz nada dos dois checklists: eles seguem como o servidor os leu.
       expect(textoDaTela(cenario)).toContain('Nenhuma pendência estrutural.');
       expect(textoDaTela(cenario)).toContain('Nenhuma obrigatoriedade legal reprovada.');
     });
@@ -255,6 +277,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
         },
       );
       await primeira;
+      await flushProntidaoVerde(cenario);
 
       const segunda = componente.persistir();
       const requisicao2 = controller.expectOne(ROTA_PUBLICACAO);

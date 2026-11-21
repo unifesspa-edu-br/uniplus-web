@@ -21,12 +21,14 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { AnexoEditalComponent } from '../../shared/anexo-edital/anexo-edital.component';
 import { AnexosDoEditalComponent } from '../../shared/anexos-do-edital/anexos-do-edital.component';
 import { documentosPorFase } from '../../shared/documentos-exigidos';
+import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
 import { RegrasDasModalidadesComponent } from '../../shared/regras-das-modalidades.component';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { AvisosDaRevisaoComponent } from './avisos-da-revisao.component';
 import { confirmacaoDaPublicacao } from './confirmacao-da-publicacao';
 import { ProntidaoDaPublicacao } from './prontidao-da-publicacao.service';
 import { AtoDaPublicacaoComponent } from './secoes/ato-da-publicacao.component';
+import { RecusasDaPublicacaoComponent } from './secoes/recusas-da-publicacao.component';
 import { ConformidadeEstruturalComponent } from './secoes/conformidade-estrutural.component';
 import { ConformidadeLegalComponent } from './secoes/conformidade-legal.component';
 import { ConferenciaDaPublicacao } from './servicos/conferencia-da-publicacao.service';
@@ -60,6 +62,7 @@ function contagemEmTexto(quantidade: number, singular: string, plural: string): 
     ConformidadeEstruturalComponent,
     ConformidadeLegalComponent,
     AtoDaPublicacaoComponent,
+    RecusasDaPublicacaoComponent,
   ],
   templateUrl: './revisao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +78,7 @@ export class RevisaoPassoComponent {
   protected readonly prontidao = inject(ProntidaoDaPublicacao);
   protected readonly conferencia = inject(ConferenciaDaPublicacao);
   protected readonly publicacao = inject(PublicacaoDoProcesso);
+  protected readonly recusasDoServidor = inject(RecusasDaPublicacao);
   private readonly permissoes = inject(PermissoesService);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
 

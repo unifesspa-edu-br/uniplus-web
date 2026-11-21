@@ -1,7 +1,7 @@
 import { HttpHeaders, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { WritableSignal, signal } from '@angular/core';
+import { EnvironmentProviders, Provider, WritableSignal, signal } from '@angular/core';
 import { of } from 'rxjs';
 import { expect } from 'vitest';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
@@ -16,6 +16,8 @@ import { AtoNormativoDto, AtosApi, TiposAtoApi } from '@uniplus/shared-data/publ
 import { FaseUpload, UploadItem, WizardDraft } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
+import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
 import { EnvioDoEdital } from '../../shared/envio-do-edital.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
@@ -184,59 +186,76 @@ export interface CenarioDaRevisao {
   respostaDoAto: ReturnType<AtosApi['obter']>;
 }
 
-export async function montarOCenario(): Promise<CenarioDaRevisao> {
-  const negadas = signal<readonly string[]>([]);
-  const fasePorId = signal<ReadonlyMap<string, FaseCanonicaDto>>(new Map());
-  const atosLidos: string[] = [];
-  const cenario: { respostaDoAto: ReturnType<AtosApi['obter']> } = {
+type ApoioDoCenario = Pick<
+  CenarioDaRevisao,
+  'fasePorId' | 'negadas' | 'atosLidos' | 'respostaDoAto'
+>;
+
+function apoioDoCenario(): ApoioDoCenario {
+  return {
+    fasePorId: signal<ReadonlyMap<string, FaseCanonicaDto>>(new Map()),
+    negadas: signal<readonly string[]>([]),
+    atosLidos: [],
     respostaDoAto: of(apiOk(ATO_PUBLICADO, 200, new HttpHeaders())),
   };
-  const atosApi = {
+}
+
+const PROVEDORES_DA_PAGINA: (Provider | EnvironmentProviders)[] = [
+  ProcessoSeletivoStore,
+  CadastroInicial,
+  GravacaoDoProcesso,
+  EnvioDoEdital,
+  NumeracaoDasRespostasRecusadas,
+  RecusasDaPublicacao,
+  provideHttpClient(withInterceptors([apiResultInterceptor])),
+  provideHttpClientTesting(),
+  { provide: SELECAO_BASE_PATH, useValue: BASE },
+  {
+    provide: TiposAtoApi,
+    useValue: { listar: () => of(apiOk([TIPO_ATO_DTO], 200, new HttpHeaders())) },
+  },
+];
+
+function apiDeAtosDoCenario(apoio: ApoioDoCenario) {
+  return {
     obter: (id: string) => {
-      atosLidos.push(id);
-      return cenario.respostaDoAto;
+      apoio.atosLidos.push(id);
+      return apoio.respostaDoAto;
     },
   };
+}
 
-  await TestBed.configureTestingModule({
-    imports: [RevisaoPassoComponent],
-    providers: [
-      ProcessoSeletivoStore,
-      CadastroInicial,
-      GravacaoDoProcesso,
-      EnvioDoEdital,
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-      { provide: SELECAO_BASE_PATH, useValue: BASE },
-      {
-        provide: PermissoesService,
-        useValue: { tem: (codigo: string) => !negadas().includes(codigo) },
-      },
-      {
-        provide: TiposAtoApi,
-        useValue: { listar: () => of(apiOk([TIPO_ATO_DTO], 200, new HttpHeaders())) },
-      },
-      { provide: AtosApi, useValue: atosApi },
-      // Só o que a Revisão lê do catálogo de fases, sem puxar as sete APIs do serviço real.
-      {
-        provide: CatalogoDeFases,
-        useValue: { fasePorId, nomeDaFase: signal((codigo: string) => `Fase ${codigo}`) },
-      },
-    ],
-  }).compileComponents();
+/** Os dobles que o cenário troca por caso: permissões, leitura de atos e catálogo de fases. */
+function doblesDoCenario(apoio: ApoioDoCenario): Provider[] {
+  // O catálogo só devolve o que a Revisão lê dele, sem puxar as sete APIs do serviço real.
+  const catalogo = { fasePorId: apoio.fasePorId, nomeDaFase: signal((c: string) => `Fase ${c}`) };
+  const permissoes = { tem: (codigo: string) => !apoio.negadas().includes(codigo) };
+  return [
+    { provide: PermissoesService, useValue: permissoes },
+    { provide: AtosApi, useValue: apiDeAtosDoCenario(apoio) },
+    { provide: CatalogoDeFases, useValue: catalogo },
+  ];
+}
 
+function montarOComponente(apoio: ApoioDoCenario): CenarioDaRevisao {
   const fixture = TestBed.createComponent(RevisaoPassoComponent);
-  const montada = Object.assign(cenario, {
+  const montada = Object.assign(apoio, {
     fixture,
     componente: fixture.componentInstance,
     store: TestBed.inject(ProcessoSeletivoStore),
     controller: TestBed.inject(HttpTestingController),
-    fasePorId,
-    negadas,
-    atosLidos,
   });
   fixture.detectChanges();
   return montada;
+}
+
+export async function montarOCenario(): Promise<CenarioDaRevisao> {
+  const apoio = apoioDoCenario();
+  await TestBed.configureTestingModule({
+    imports: [RevisaoPassoComponent],
+    providers: [...PROVEDORES_DA_PAGINA, ...doblesDoCenario(apoio)],
+  }).compileComponents();
+  return montarOComponente(apoio);
 }
 
 /**
@@ -286,10 +305,17 @@ export function clicarEm(cenario: CenarioDaRevisao, texto: string): void {
   botao?.click();
 }
 
-export async function flushProntidaoVerde(cenario: CenarioDaRevisao): Promise<void> {
-  cenario.controller.expectOne(ROTA_CONFORMIDADE).flush(CONFORMIDADE_VERDE);
-  cenario.controller
-    .expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL)
-    .flush(CONFORMIDADE_LEGAL_VERDE);
+/** Responde a leitura do checklist estrutural e da conformidade legal que o passo pediu. */
+export async function flushProntidao(
+  cenario: CenarioDaRevisao,
+  estrutural: object,
+  legal: object,
+): Promise<void> {
+  cenario.controller.expectOne(ROTA_CONFORMIDADE).flush(estrutural);
+  cenario.controller.expectOne((req) => req.url === ROTA_CONFORMIDADE_LEGAL).flush(legal);
   await flushMicrotasks();
+}
+
+export function flushProntidaoVerde(cenario: CenarioDaRevisao): Promise<void> {
+  return flushProntidao(cenario, CONFORMIDADE_VERDE, CONFORMIDADE_LEGAL_VERDE);
 }

@@ -1,4 +1,6 @@
-<h2 id="revisao-documento-titulo" class="step-section__title" tabindex="-1">Documento e ato de publicação</h2>
+<h2 id="revisao-documento-titulo" class="step-section__title" tabindex="-1">
+  Documento e ato de publicação
+</h2>
 
 @if (conferencia.fasesSemUnidadeDaRecusa().length > 0) {
   <div class="alert alert--danger" role="alert">
@@ -25,7 +27,7 @@
   </div>
 }
 
-@if (conferencia.ultimaRecusa()?.documentoOuAto; as erroDoc) {
+@if (conferencia.erroDeDocumentoOuAto(); as erroDoc) {
   <p class="alert alert--danger" role="alert">{{ erroDoc }}</p>
 }
 
@@ -49,7 +51,9 @@
       </dl>
     }
     @case ('lendo') {
-      <p class="step-hint" [uiIndicadorDaLeitura]="publicacao.leituraDoAto">Lendo o ato publicado…</p>
+      <p class="step-hint" [uiIndicadorDaLeitura]="publicacao.leituraDoAto">
+        Lendo o ato publicado…
+      </p>
     }
   }
 } @else if (store.emConsulta()) {

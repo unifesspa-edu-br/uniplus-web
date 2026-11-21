@@ -44,20 +44,27 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
       },
     );
     const resultado = await gravacao;
+    await flushProntidaoVerde(cenario);
     fixture.detectChanges();
     return { resultado, antes };
   }
 
   it.each([
-    ['uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo', 'O objeto já tem ato vivo do tipo'],
+    [
+      'uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo',
+      'O objeto já tem ato vivo do tipo',
+    ],
     ['uniplus.publicacoes.ato_normativo.ato_ja_retificado', 'O ato já foi retificado'],
-  ])('em 409 %s, mostra a mensagem da API no bloco do ato e mantém o rascunho', async (code, titulo) => {
-    const { resultado, antes } = await publicarERecusarComConflito(code, titulo);
+  ])(
+    'em 409 %s, mostra a mensagem da API no bloco do ato e mantém o rascunho',
+    async (code, titulo) => {
+      const { resultado, antes } = await publicarERecusarComConflito(code, titulo);
 
-    expect(resultado).toEqual({ valid: false, messages: [titulo] });
-    expect(textoDaTela(cenario)).toContain(titulo);
-    expect(store.draft().publicacao).toEqual(antes);
-  });
+      expect(resultado).toEqual({ valid: false, messages: [titulo] });
+      expect(textoDaTela(cenario)).toContain(titulo);
+      expect(store.draft().publicacao).toEqual(antes);
+    },
+  );
 
   it('em 409 de identificador legível em uso, devolve a mensagem da API e mantém o rascunho', async () => {
     const titulo = 'O identificador legível já é usado por outro processo seletivo';

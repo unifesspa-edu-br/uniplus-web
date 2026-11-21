@@ -36,6 +36,7 @@ import { GravacaoDoProcesso } from './wizard/shared/gravacao/gravacao-do-process
 import { GravacaoDosCamposPressupostos } from './wizard/shared/campos-pressupostos.service';
 import { ReleituraDoSnapshot } from './wizard/shared/releitura-do-snapshot.service';
 import { NumeracaoDasRespostasRecusadas } from './wizard/shared/recusas/numeracao-das-respostas-recusadas';
+import { RecusasDaPublicacao } from './wizard/shared/recusas/recusas-da-publicacao.service';
 import { TipoProcessoPassoComponent } from './wizard/passos/tipo-processo/tipo-processo.component';
 import { IdentificacaoPassoComponent } from './wizard/passos/identificacao/identificacao.component';
 import { PagamentoPassoComponent } from './wizard/passos/pagamento/pagamento.component';
@@ -98,6 +99,7 @@ import {
     LeituraDoCadastroDePesos,
     ReleituraDoSnapshot,
     NumeracaoDasRespostasRecusadas,
+    RecusasDaPublicacao,
   ],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -33,58 +33,6 @@ const CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL = new Set<string>([
   'uniplus.selecao.processo_seletivo.periodo_inscricao_obrigatorio_sem_fase_de_coleta',
 ]);
 
-/** Uma pendência estrutural, como a extensão `pendencias` do 422 a devolve: um item reprovado, sem o `ok`. */
-export interface PendenciaEstruturalProblem {
-  readonly codigo: string;
-  readonly dimensao: string;
-  readonly mensagem: string;
-}
-
-/** Uma obrigatoriedade legal reprovada, como a extensão `obrigatoriedadesReprovadas` do 422 a devolve. */
-export interface ObrigatoriedadeReprovadaProblem {
-  readonly regraCodigo: string;
-  readonly descricaoHumana: string;
-  readonly baseLegal: string;
-  readonly motivo: string | null;
-  /**
-   * Onde a norma pode ser lida, e desde quando ela vige. Só existem quando a reprovação vem da
-   * consulta de conformidade legal: a extensão do 422 carrega os quatro campos acima e mais nada.
-   */
-  readonly atoNormativoUrl?: string | null;
-  readonly portariaInterna?: string | null;
-  readonly vigenciaInicio?: string | null;
-}
-
-/**
- * `ProblemDetails` com as duas extensões que só a publicação emite. Não entra no tipo
- * compartilhado de `shared-core` porque são de um endpoint só.
- */
-export interface ProblemComExtensoesDePublicacao extends ProblemDetails {
-  readonly pendencias?: readonly PendenciaEstruturalProblem[];
-  readonly obrigatoriedadesReprovadas?: readonly ObrigatoriedadeReprovadaProblem[];
-}
-
-/**
- * O que a última tentativa de publicar devolveu. Enquanto ela existir, vale mais que a leitura
- * anterior do checklist: o servidor acabou de dizer o que está pendente.
- */
-export interface RecusaDePublicacao {
-  readonly pendencias: readonly PendenciaEstruturalProblem[];
-  /**
-   * `null` quando a tentativa não chegou a avaliar a conformidade legal: o servidor só a avalia
-   * depois de os gates estruturais passarem. Tratar `null` como "sem reprovação" anunciaria "legal
-   * ok" sobre um estado que a tentativa nem chegou a checar.
-   */
-  readonly obrigatoriedadesReprovadas: readonly ObrigatoriedadeReprovadaProblem[] | null;
-  /** Preenchido só para os erros nomeados que nenhum dos dois checklists cobre (documento, tipo de ato). */
-  readonly documentoOuAto: string | null;
-  /** A recusa cita fase do cronograma sem unidade responsável; a lista é lida do rascunho atual. */
-  readonly citaFaseSemUnidade: boolean;
-}
-
-const CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE =
-  'uniplus.selecao.processo_seletivo.conformidade_legal_insuficiente';
-
 export function eErroDeDocumentoOuAto(codigo: string): boolean {
   return CODIGOS_DE_DOCUMENTO_OU_ATO.has(codigo);
 }
@@ -101,25 +49,4 @@ export function eErroDeFaseSemUnidade(codigo: string): boolean {
 export function motivoDeConformidadeLegalNaoAvaliavel(problem: ProblemDetails): string | null {
   if (!CODIGOS_DE_CONFORMIDADE_LEGAL_NAO_AVALIAVEL.has(problem.code)) return null;
   return problem.detail?.trim() || problem.title;
-}
-
-export function comExtensoesDePublicacao(problem: ProblemDetails): ProblemComExtensoesDePublicacao {
-  return problem as ProblemComExtensoesDePublicacao;
-}
-
-/** Guarda o que a recusa trouxe; `titulo` é o texto que o operador lê quando o erro é de documento ou ato. */
-export function comoRecusaDePublicacao(
-  problem: ProblemDetails,
-  titulo: string,
-): RecusaDePublicacao {
-  const { pendencias, obrigatoriedadesReprovadas } = comExtensoesDePublicacao(problem);
-  return {
-    pendencias: pendencias ?? [],
-    obrigatoriedadesReprovadas:
-      problem.code === CODIGO_CONFORMIDADE_LEGAL_INSUFICIENTE
-        ? (obrigatoriedadesReprovadas ?? [])
-        : null,
-    documentoOuAto: eErroDeDocumentoOuAto(problem.code) ? titulo : null,
-    citaFaseSemUnidade: eErroDeFaseSemUnidade(problem.code),
-  };
 }

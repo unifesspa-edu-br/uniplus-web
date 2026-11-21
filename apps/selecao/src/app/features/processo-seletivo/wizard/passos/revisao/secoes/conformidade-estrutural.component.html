@@ -14,14 +14,19 @@
 </div>
 
 @if (conferencia.estruturalOk()) {
-  <p class="alert alert--success" role="status">
-    @if (conferencia.avisosDaRevisao().length > 0) {
-      Nenhuma pendência estrutural. Há avisos abaixo, que não impedem a publicação, para você
-      conferir.
-    } @else {
-      Nenhuma pendência estrutural.
-    }
-  </p>
+  <!-- Durante a recarga o checklist em tela é o da leitura anterior: só a leitura nova pode dizer "nenhuma pendência". -->
+  @if (prontidao.carregando()) {
+    <p class="alert alert--info" role="status">Atualizando o checklist…</p>
+  } @else {
+    <p class="alert alert--success" role="status">
+      @if (conferencia.avisosDaRevisao().length > 0) {
+        Nenhuma pendência estrutural. Há avisos abaixo, que não impedem a publicação, para você
+        conferir.
+      } @else {
+        Nenhuma pendência estrutural.
+      }
+    </p>
+  }
 }
 
 <div class="revisao-list">

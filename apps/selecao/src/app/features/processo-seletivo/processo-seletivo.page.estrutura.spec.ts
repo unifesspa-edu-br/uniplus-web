@@ -7,6 +7,7 @@ import { configurarPagina } from './processo-seletivo.page.testing';
 import { tituloDoPasso } from './wizard/shared/titulo-do-passo';
 import { ROTULOS_DOS_PASSOS } from './wizard/processo-seletivo.data';
 import { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
+import { RecusasDaPublicacao } from './wizard/shared/recusas/recusas-da-publicacao.service';
 import { NumeracaoDasRespostasRecusadas } from './wizard/shared/recusas/numeracao-das-respostas-recusadas';
 
 describe('ProcessoSeletivoPage — estrutura', () => {
@@ -285,5 +286,27 @@ describe('ProcessoSeletivoPage — bloqueio de scroll', () => {
 
     expect(daPrimeira.proxima()).toBe(2);
     expect(daSegunda.proxima()).toBe(1);
+  });
+
+  it('provê as recusas da publicação por página, para a Revisão escrever e o Cronograma ler', () => {
+    const primeira = TestBed.createComponent(ProcessoSeletivoPage);
+    const segunda = TestBed.createComponent(ProcessoSeletivoPage);
+    const daPrimeira = primeira.debugElement.injector.get(RecusasDaPublicacao);
+    const daSegunda = segunda.debugElement.injector.get(RecusasDaPublicacao);
+
+    daPrimeira.registrar(
+      {
+        type: 'about:blank',
+        title: 'x',
+        status: 422,
+        code: 'uniplus.x',
+        traceId: 't',
+        errors: [{ code: 'uniplus.y', message: 'Causa.' }],
+      },
+      'x',
+    );
+
+    expect(daPrimeira.recusas()).toHaveLength(1);
+    expect(daSegunda.recusas()).toHaveLength(0);
   });
 });

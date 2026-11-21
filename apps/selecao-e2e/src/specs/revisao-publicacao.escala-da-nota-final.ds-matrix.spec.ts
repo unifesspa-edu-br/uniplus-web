@@ -2,7 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { PROCESSO_ID, FASE_DE_COLETA } from '../fixtures/processo-da-revisao';
 import { ID_DO_PROCESSO_COMPLETO } from '../fixtures/processo-publicado-completo';
-import { mockarPublicacaoComEscalaPendente } from '../support/api-da-publicacao-com-escala-pendente';
+import {
+  CAUSA_DA_ESCALA_PENDENTE,
+  mockarPublicacaoComEscalaPendente,
+} from '../support/api-da-publicacao-com-escala-pendente';
 import { mockarProcesso, prepararARevisao } from '../support/api-da-revisao';
 import { identificadoresDe } from '../support/medicoes-do-passo';
 import { irAoPasso } from '../support/navega-passo';
@@ -84,9 +87,17 @@ test.describe('Revisão e publicação — escala da nota final, matriz DS @ds',
     await page.getByRole('button', { name: 'Publicar' }).click();
     await confirmarAPublicacao(page);
 
+    // O checklist da primeira leitura não trazia pendência: o item vem da releitura depois da recusa.
     await expect(
       page.locator('.revisao-list').getByText('Escala da nota final (fórmula local)'),
     ).toBeVisible();
+    await expect(page.getByText('Nenhuma pendência estrutural.')).toHaveCount(0);
+    await expect(
+      page
+        .getByRole('region', { name: 'Onde corrigir' })
+        .getByText(CAUSA_DA_ESCALA_PENDENTE.message),
+    ).toBeVisible();
+    expect(recebido.tentouPublicar).toBe(true);
     expect(recebido.publicou).toBe(false);
     await page.getByRole('button', { name: /Ir para Fórmula de classificação/ }).click();
     const escala = page.getByLabel('Escala da nota final', { exact: true });
@@ -96,6 +107,11 @@ test.describe('Revisão e publicação — escala da nota final, matriz DS @ds',
     await escala.fill('100');
     await expect(escala).not.toHaveAttribute('aria-invalid', 'true');
     await irAoPasso(page, 'Revisão e publicação', testInfo);
+    // A escala só é gravada no passo Eliminação ou na publicação: até lá o item continua no checklist.
+    await expect(
+      page.locator('.revisao-list').getByText('Escala da nota final (fórmula local)'),
+    ).toBeVisible();
+    await expect(page.getByText('Nenhuma pendência estrutural.')).toHaveCount(0);
     await page.getByRole('button', { name: 'Publicar' }).click();
     await confirmarAPublicacao(page);
 
