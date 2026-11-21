@@ -142,7 +142,7 @@ describe('RevisaoPassoComponent — publicação aceita pelo servidor', () => {
         fim: null,
         unidadeResponsavelId: null,
         produtos: [],
-        faseConcluinteCodigo: null,
+        noMesmoMomentoDaAnterior: false,
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,

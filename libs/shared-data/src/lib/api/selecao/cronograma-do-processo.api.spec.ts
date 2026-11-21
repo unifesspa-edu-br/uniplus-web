@@ -5,7 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { apiResultInterceptor, isApiOk } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { CaraterEtapa, UnidadePrazo } from './index';
+import { CaraterEtapa, EfeitoSuspensivoCodigo, UnidadePrazoCodigo } from './index';
 import { EtapaProcessoInput, FaseCronogramaInput } from './processos-seletivos.contrato';
 import { SELECAO_BASE_PATH } from './tokens';
 import { CronogramaDoProcessoApi } from './cronograma-do-processo.api';
@@ -129,7 +129,6 @@ describe('CronogramaDoProcessoApi', () => {
         inicio: '2026-03-01T08:00:00-03:00',
         fim: '2026-03-20T23:59:59-03:00',
         produtos: [],
-        faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
@@ -140,7 +139,6 @@ describe('CronogramaDoProcessoApi', () => {
         inicio: '2026-03-25T08:00:00-03:00',
         fim: '2026-03-25T23:59:59-03:00',
         produtos: [{ atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' }],
-        faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
         bancasRequeridas: [
           {
@@ -152,13 +150,13 @@ describe('CronogramaDoProcessoApi', () => {
           regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
           regraVersao: 'v1',
           prazoValor: 2,
-          prazoUnidade: UnidadePrazo.diasUteis,
+          prazoUnidade: UnidadePrazoCodigo.diasUteis,
           atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
-          suspensividadePrimeiraInstanciaValor: null,
-          suspensividadePrimeiraInstanciaUnidade: null,
           admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: null,
-          suspensividadeSegundaInstanciaUnidade: null,
+          prazoSegundaInstanciaValor: 3,
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
+          efeitoSuspensivo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+          guardaDaVaga: null,
         },
       },
     ];
@@ -190,7 +188,6 @@ describe('CronogramaDoProcessoApi', () => {
         inicio: null,
         fim: null,
         produtos: [],
-        faseConcluinteCodigo: null,
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,
@@ -207,57 +204,6 @@ describe('CronogramaDoProcessoApi', () => {
     expect(req.request.body[0].inicio).toBeNull();
     expect(req.request.body[0].fim).toBeNull();
     expect(req.request.body[0].regraRecurso).toBeNull();
-    req.flush(null, { status: 204, statusText: 'No Content' });
-    await promise;
-  });
-  /**
-   * A ausência dos dois campos de uma instância é a desativação prevista dela —
-   * o domínio a distingue de par incompleto, que recusa. Os quatro campos
-   * chegam como `null` explícito dentro da regra de recurso, e não omitidos.
-   */
-  it('definirCronogramaFases() envia a suspensividade desativada como par nulo', async () => {
-    const fases: readonly FaseCronogramaInput[] = [
-      {
-        ordem: 1,
-        faseCanonicaId: '01960000-0000-7000-0000-0000000006a4',
-        inicio: '2026-03-25T08:00:00-03:00',
-        fim: '2026-03-25T23:59:59-03:00',
-        produtos: [{ atoCodigo: 'RESULTADO_HOMOLOGACAO', papel: 'PRELIMINAR' }],
-        faseConcluinteCodigo: null,
-        emiteParecerIndividual: false,
-        bancasRequeridas: [],
-        regraRecurso: {
-          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-          regraVersao: 'v1',
-          prazoValor: 2,
-          prazoUnidade: UnidadePrazo.diasUteis,
-          atoAncoraCodigo: 'RESULTADO_HOMOLOGACAO',
-          suspensividadePrimeiraInstanciaValor: null,
-          suspensividadePrimeiraInstanciaUnidade: null,
-          admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: null,
-          suspensividadeSegundaInstanciaUnidade: null,
-        },
-      },
-    ];
-
-    const promise = firstValueFrom(
-      api.definirCronogramaFases(ID, fases, withIdempotencyKey('chave-suspensividade')),
-    );
-    const req = controller.expectOne(
-      `${BASE}/api/selecao/processos-seletivos/${ID}/cronograma-fases`,
-    );
-
-    const recurso = req.request.body[0].regraRecurso;
-    for (const campo of [
-      'suspensividadePrimeiraInstanciaValor',
-      'suspensividadePrimeiraInstanciaUnidade',
-      'suspensividadeSegundaInstanciaValor',
-      'suspensividadeSegundaInstanciaUnidade',
-    ]) {
-      expect(campo in recurso, `${campo} sumiu do corpo`).toBe(true);
-      expect(recurso[campo]).toBeNull();
-    }
     req.flush(null, { status: 204, statusText: 'No Content' });
     await promise;
   });

@@ -10,6 +10,7 @@ import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import type { AtributosCongeladosDaFase, FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -25,7 +26,7 @@ export const ROTA_FASES = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID
 export const PROBLEM_JSON = { 'content-type': 'application/problem+json' };
 
 export const ID_AVALIACAO = '01960000-0000-7000-0000-0000000000c2';
-export const ID_RECURSOS = '01960000-0000-7000-0000-0000000000c3';
+export const ID_HOMOLOGACAO = '01960000-0000-7000-0000-0000000000c3';
 export const ID_BANCA_HETERO = '01960000-0000-7000-0000-0000000000b1';
 export const ID_CATEGORIA_RACA = '01960000-0000-7000-0000-0000000000d1';
 export const ID_CATEGORIA_RENDA = '01960000-0000-7000-0000-0000000000d2';
@@ -42,9 +43,9 @@ export const FASES_CANONICAS = [
     origemData: 'NO_EDITAL',
   },
   {
-    id: ID_RECURSOS,
-    codigo: 'RECURSOS',
-    nome: 'Recursos',
+    id: ID_HOMOLOGACAO,
+    codigo: 'HOMOLOGACAO_INSCRICOES',
+    nome: 'Homologação das inscrições',
     unidadeSugerida: null,
     agrupaEtapas: false,
     permiteComplementacao: false,
@@ -207,7 +208,9 @@ const PROVEDORES_DA_FASE = [
 function atenderOsCatalogos(controller: HttpTestingController): void {
   for (const requisicao of controller.match(() => true)) {
     const { url } = requisicao.request;
-    if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
+    const opcoes = opcoesDoRecursoDaUrl(url);
+    if (opcoes !== null) requisicao.flush(opcoes);
+    else if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
     else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
     else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
     else if (url.includes('tipos-documento')) requisicao.flush(TIPOS_DOCUMENTO);

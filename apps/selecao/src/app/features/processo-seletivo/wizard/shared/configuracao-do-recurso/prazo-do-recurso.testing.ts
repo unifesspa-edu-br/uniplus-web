@@ -11,7 +11,8 @@ export const IDS = {
   unidade: 'prazo-unidade',
   recusasDoValor: 'prazo-recusas-valor',
   recusasDaUnidade: 'prazo-recusas-unidade',
-  problema: 'prazo-problema',
+  situacao: 'prazo-situacao',
+  retirar: 'prazo-retirar',
 } satisfies IdsDoPrazo;
 
 export const IDS_COM_AJUDA = { ...IDS, ajuda: 'prazo-ajuda' } satisfies IdsDoPrazo;

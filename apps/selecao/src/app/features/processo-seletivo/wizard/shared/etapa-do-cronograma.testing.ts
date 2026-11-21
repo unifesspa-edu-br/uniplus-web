@@ -1,19 +1,19 @@
 import { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../processo-seletivo.models';
+import {
+  PARAMETROS_SEM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from './configuracao-do-recurso/parametros-do-recurso.testing';
 
 const RECURSO_DA_ETAPA_PADRAO: RecursoDaEtapa = {
   ancora: 'atoPublicado',
   regraCodigo: 'REGRA_DO_RECURSO',
   regraVersao: '1',
+  ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
   prazoValor: '3',
-  prazoUnidade: 'diasUteis',
   atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: false,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso(),
   procedimentos: [],
 };
 

@@ -1,6 +1,7 @@
 import { CaraterEtapa } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { umaLeituraDoRecurso } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { umaEtapaDoCronograma, umRecursoDaEtapa } from '../../shared/etapa-do-cronograma.testing';
 import { localDaRecusa } from '../../shared/recusas/local-da-recusa';
 import { campoDaRecusaDaEtapa, campoNaTelaDaEtapa, NO_TOPO_DA_ETAPA } from './campo-da-etapa';
@@ -55,13 +56,12 @@ describe('campoDaRecusaDaEtapa', () => {
     ['etapas[1].recursos[0].ancora', 'recursos.0.origemDoPrazo'],
     ['etapas[1].recursos[0].atoAncoraCodigo', 'recursos.0.ancora'],
     ['etapas[1].recursos[0].admiteInstanciaSuperior', 'recursos.0.admiteInstanciaSuperior'],
+    ['etapas[1].recursos[3].efeitoSuspensivo', 'recursos.3.efeitoSuspensivo'],
+    ['etapas[1].recursos[3].guardaDaVaga', 'recursos.3.guardaDaVaga'],
+    ['etapas[1].recursos[3].prazoSegundaInstanciaValor', 'recursos.3.prazoSegundaInstanciaValor'],
     [
-      'etapas[1].recursos[3].suspensividadePrimeiraInstanciaValor',
-      'recursos.3.suspensividadePrimeiraInstanciaValor',
-    ],
-    [
-      'etapas[1].recursos[3].suspensividadeSegundaInstanciaUnidade',
-      'recursos.3.suspensividadeSegundaInstanciaUnidade',
+      'etapas[1].recursos[3].prazoSegundaInstanciaUnidade',
+      'recursos.3.prazoSegundaInstanciaUnidade',
     ],
   ])('leva %s ao controle %s, sem juntar valor e unidade', (field, campo) => {
     expect(campoDe(field)).toBe(campo);
@@ -179,7 +179,7 @@ describe('campoNaTelaDaEtapa', () => {
     expect(campoNaTelaDaEtapa('recursos.1.prazoValor', comRecurso, undefined)).toBe(false);
   });
 
-  it('mostra a suspensividade da 2ª instância só com instância superior', () => {
+  it('mostra o prazo da 2ª instância só com instância superior', () => {
     const sem = umaEtapaDoCronograma({
       recursos: [umRecursoDaEtapa({ admiteInstanciaSuperior: false })],
     });
@@ -188,9 +188,22 @@ describe('campoNaTelaDaEtapa', () => {
     });
 
     for (const controle of ['Valor', 'Unidade']) {
-      const campo = `recursos.0.suspensividadeSegundaInstancia${controle}`;
+      const campo = `recursos.0.prazoSegundaInstancia${controle}`;
       expect(campoNaTelaDaEtapa(campo, sem, undefined)).toBe(false);
       expect(campoNaTelaDaEtapa(campo, com, undefined)).toBe(true);
     }
+  });
+
+  it('mostra o prazo da 2ª instância lido sem instância superior, para a pessoa poder retirá-lo', () => {
+    const lido = umaEtapaDoCronograma({
+      recursos: [
+        umRecursoDaEtapa({
+          admiteInstanciaSuperior: false,
+          leitura: umaLeituraDoRecurso({ prazoDaSegundaInstanciaSemInstanciaSuperior: true }),
+        }),
+      ],
+    });
+
+    expect(campoNaTelaDaEtapa('recursos.0.prazoSegundaInstanciaValor', lido, undefined)).toBe(true);
   });
 });

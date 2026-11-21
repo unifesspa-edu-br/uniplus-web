@@ -190,7 +190,12 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     const resultado = await cronograma.persistir();
 
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.join(' ')).toContain('prazo de interposição');
+    expect(resultado.messages?.join(' ')).toContain(
+      'Escolha a regra que rege a contagem do prazo de recurso.',
+    );
+    expect(resultado.messages?.join(' ')).toContain(
+      'Responda se o recurso admite instância superior.',
+    );
     controller.expectNone(ROTA_FASES);
   });
 });

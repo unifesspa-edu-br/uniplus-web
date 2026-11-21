@@ -38,7 +38,7 @@ const CRONOGRAMA_DA_FASE: FaseCronogramaDto['cronograma'] = {
   ordem: 1,
   inicio: '2027-01-01T00:00:00Z',
   fim: '2027-01-31T23:59:59Z',
-  faseConcluinteCodigo: null,
+  noMesmoMomentoDaAnterior: false,
   unidadeResponsavel: null,
 };
 
@@ -110,6 +110,24 @@ export function etapaDoServidor(parcial: EtapaDoServidorParcial = {}): EtapaProc
     bancas: parcial.bancas ?? [],
   };
 }
+
+type ParametrosDoRecursoDoServidor = NonNullable<
+  FaseCronogramaDto['publicacoes']['regraRecurso']
+>['parametros'];
+
+/** Os parâmetros de um recurso sem instância superior, como o servidor os devolve na leitura. */
+export const PARAMETROS_DO_RECURSO_DO_SERVIDOR: ParametrosDoRecursoDoServidor = {
+  prazoValor: 2,
+  prazoUnidade: { codigo: 'diasUteis', rotulo: 'Dias úteis' },
+  admiteInstanciaSuperior: false,
+  prazoSegundaInstanciaValor: null,
+  prazoSegundaInstanciaUnidade: null,
+  efeitoSuspensivo: { codigo: 'semEfeitoSuspensivo', rotulo: 'Sem efeito suspensivo' },
+  guardaDaVaga: {
+    codigo: 'ateOResultadoDefinitivo',
+    rotulo: 'Guarda a vaga até o resultado definitivo',
+  },
+} as ParametrosDoRecursoDoServidor;
 
 type ProdutoDaFase = FaseCronogramaDto['publicacoes']['produtos'][number];
 type UnidadeDaFase = FaseCronogramaDto['cronograma']['unidadeResponsavel'];

@@ -94,7 +94,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       etapa.controls.produtos.setValue([{ atoCodigo: 'ATO', papel: null }]);
       etapa.controls.inicio.setValue('2027-01-10T08:00');
       edicao.acrescentarRecursoNaEtapa(etapa);
-      edicao.alterarRecursoDaEtapa(etapa, 0, 'ancora', 'cienciaIndividual');
+      edicao.alterarRecursoDaEtapa(etapa, 0, { campo: 'ancora', valor: 'cienciaIndividual' });
       edicao.acrescentarRecursoNaEtapa(etapa);
       expect(etapa.controls.recursos.value.map((r) => r.ancora)).toEqual([
         'cienciaIndividual',

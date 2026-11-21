@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { idsDosParametros } from './ids-dos-parametros';
+import type { IdsDoPrazo } from './prazo-do-recurso.component';
 import {
   campoDaUnidade,
   campoDoValor,
@@ -9,6 +11,7 @@ import {
   montarPrazo,
   umaRecusa,
   descritoPor,
+  UNIDADES,
 } from './prazo-do-recurso.testing';
 
 describe('PrazoDoRecursoComponent: recusas', () => {
@@ -51,41 +54,84 @@ describe('PrazoDoRecursoComponent: recusas', () => {
     expect(campoDoValor(fixture).hasAttribute('aria-invalid')).toBe(false);
   });
 
-  it('o problema do prazo marca e descreve valor e unidade, em parágrafo de alerta', () => {
-    const fixture = montarPrazo({ problema: 'O prazo precisa ser um número.' });
-
-    expect(elemento(fixture, IDS.problema).getAttribute('role')).toBe('alert');
-    expect(elemento(fixture, IDS.problema).textContent).toContain('precisa ser um número');
-    for (const campo of [campoDoValor(fixture), campoDaUnidade(fixture)]) {
-      expect(campo.getAttribute('aria-invalid')).toBe('true');
-      expect(descritoPor(campo)).toEqual([IDS.problema]);
-    }
-  });
-
-  it('descreve cada campo pela ajuda, pelo problema e pela recusa dele, nessa ordem', () => {
+  it('descreve cada campo pela ajuda e pela recusa dele, nessa ordem', () => {
     const fixture = montarPrazo({
       ids: IDS_COM_AJUDA,
-      problema: 'Problema.',
       recusasDoValor: [umaRecusa('prazoValor')],
       recusasDaUnidade: [umaRecusa('prazoUnidade')],
     });
 
-    expect(descritoPor(campoDoValor(fixture))).toEqual([
-      IDS_COM_AJUDA.ajuda,
-      IDS.problema,
-      IDS.recusasDoValor,
-    ]);
+    expect(descritoPor(campoDoValor(fixture))).toEqual([IDS_COM_AJUDA.ajuda, IDS.recusasDoValor]);
     expect(descritoPor(campoDaUnidade(fixture))).toEqual([
       IDS_COM_AJUDA.ajuda,
-      IDS.problema,
       IDS.recusasDaUnidade,
     ]);
   });
 
-  it('sem ajuda, problema nem recusa, os campos não têm descrição', () => {
+  it('sem ajuda nem recusa, os campos não têm descrição', () => {
     const fixture = montarPrazo();
 
     expect(campoDoValor(fixture).hasAttribute('aria-describedby')).toBe(false);
     expect(campoDaUnidade(fixture).hasAttribute('aria-describedby')).toBe(false);
+  });
+});
+
+const PRAZOS = idsDosParametros('rec');
+
+const comAjuda = (ids: IdsDoPrazo, ...outros: string[]) =>
+  [ids.ajuda, ...outros].filter((id) => id !== undefined);
+
+describe.each<[string, IdsDoPrazo, string]>([
+  ['de interposição', PRAZOS.prazoDeInterposicao, 'prazoUnidade'],
+  ['da 2ª instância', PRAZOS.prazoDaSegundaInstancia, 'prazoSegundaInstanciaUnidade'],
+])('PrazoDoRecursoComponent: unidade recusada sem opções, prazo %s', (_nome, ids, campo) => {
+  const montarSemOpcoes = (comRecusa = true) =>
+    montarPrazo({
+      ids,
+      unidades: [],
+      situacao: 'carregando',
+      recusasDaUnidade: comRecusa ? [umaRecusa(campo)] : [],
+    });
+
+  it('liga o parágrafo de situação e o seletor à recusa da unidade', () => {
+    const fixture = montarSemOpcoes();
+
+    expect(descritoPor(elemento(fixture, ids.situacao))).toEqual([ids.recusasDaUnidade]);
+    expect(descritoPor(elemento(fixture, ids.unidade))).toEqual(
+      comAjuda(ids, ids.situacao, ids.recusasDaUnidade),
+    );
+  });
+
+  it('sem recusa, o parágrafo de situação não tem descrição', () => {
+    const fixture = montarSemOpcoes(false);
+
+    expect(elemento(fixture, ids.situacao).hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('quando as opções chegam com o foco no parágrafo de situação, o foco vai ao seletor', async () => {
+    const fixture = montarSemOpcoes();
+    elemento(fixture, ids.situacao).focus();
+
+    fixture.componentRef.setInput('unidades', UNIDADES);
+    fixture.componentRef.setInput('situacao', 'pronta');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(elemento(fixture, ids.situacao)).toBeNull();
+    expect(document.activeElement).toBe(elemento(fixture, ids.unidade));
+    expect(descritoPor(elemento(fixture, ids.unidade))).toEqual(
+      comAjuda(ids, ids.recusasDaUnidade),
+    );
+  });
+
+  it('quando as opções chegam com o foco em outro campo, o foco não se move', async () => {
+    const fixture = montarSemOpcoes();
+    elemento(fixture, ids.valor).focus();
+
+    fixture.componentRef.setInput('unidades', UNIDADES);
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(elemento(fixture, ids.valor));
   });
 });

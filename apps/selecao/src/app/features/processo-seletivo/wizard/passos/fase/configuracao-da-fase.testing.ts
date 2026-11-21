@@ -1,5 +1,7 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
-
+import {
+  PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
 import { problemasDaFase, type AtoDoCatalogo } from './configuracao-da-fase';
 
@@ -15,14 +17,9 @@ export { umaFaseDoCronograma as fase } from '../../shared/fase-do-cronograma.tes
 const RECURSO_PADRAO: RecursoDaFase = {
   regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
   regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
+  ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
   atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso(),
   procedimentos: [],
 };
 
@@ -33,10 +30,10 @@ export function recurso(parcial: Partial<RecursoDaFase> = {}): RecursoDaFase {
 export const nomeDaBanca = (id: string): string =>
   id === 'banca-hetero' ? 'Heteroidentificação' : id;
 
-export function conferir(alvo: FaseDoCronograma, outras: readonly FaseDoCronograma[] = []) {
-  return problemasDaFase(alvo, [alvo, ...outras], CATALOGO, nomeDaBanca);
+export function conferir(alvo: FaseDoCronograma) {
+  return problemasDaFase(alvo, CATALOGO, nomeDaBanca);
 }
 
-export function campos(alvo: FaseDoCronograma, outras: readonly FaseDoCronograma[] = []) {
-  return conferir(alvo, outras).map((problema) => problema.campo);
+export function campos(alvo: FaseDoCronograma) {
+  return conferir(alvo).map((problema) => problema.campo);
 }

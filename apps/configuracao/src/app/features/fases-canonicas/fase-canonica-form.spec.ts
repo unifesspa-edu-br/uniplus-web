@@ -60,7 +60,7 @@ describe('formulário de fase canônica', () => {
   it.each([
     ['AVALIACAO', true, false],
     ['MATRICULA', true, true],
-    ['RECURSOS', false, true],
+    ['HOMOLOGACAO_INSCRICOES', false, true],
   ])(
     'a fase %s lida com agrupa=%s e complementação=%s volta igual no comando',
     (codigo, agrupaEtapas, permiteComplementacao) => {

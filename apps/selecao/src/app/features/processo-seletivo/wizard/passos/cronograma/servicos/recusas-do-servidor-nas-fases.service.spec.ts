@@ -1,10 +1,13 @@
 import { TestBed } from '@angular/core/testing';
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma, RecursoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import {
+  PARAMETROS_SEM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { umaFaseDoCronograma } from '../../../shared/fase-do-cronograma.testing';
 import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { faseComoNoFormulario } from '../cronograma-form';
@@ -199,14 +202,11 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
   const REGRA: RecursoDaFase = {
     regraCodigo: 'R',
     regraVersao: '1',
+    ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
     prazoValor: '3',
-    prazoUnidade: UnidadePrazo.diasUteis,
     atoAncoraCodigo: '',
-    suspensividadePrimeiraInstanciaValor: '',
-    suspensividadePrimeiraInstanciaUnidade: '',
     admiteInstanciaSuperior: null,
-    suspensividadeSegundaInstanciaValor: '',
-    suspensividadeSegundaInstanciaUnidade: '',
+    leitura: umaLeituraDoRecurso(),
     procedimentos: [],
   };
   const COM_REGRA: FaseDoCronograma = { ...PRIMEIRA, regraRecurso: REGRA };

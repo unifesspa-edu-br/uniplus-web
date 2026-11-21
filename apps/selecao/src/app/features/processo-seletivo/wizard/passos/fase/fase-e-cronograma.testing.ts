@@ -171,7 +171,7 @@ export const PROCESSO_COM_ETAPA_GRAVADA = {
 const FASE_DO_CERTAME = {
   unidadeResponsavelId: null,
   produtos: [],
-  faseConcluinteCodigo: null,
+  noMesmoMomentoDaAnterior: false,
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,

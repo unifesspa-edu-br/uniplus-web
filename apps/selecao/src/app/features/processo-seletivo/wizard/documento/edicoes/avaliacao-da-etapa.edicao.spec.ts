@@ -58,6 +58,7 @@ describe('acrescentar item e nível', () => {
           {
             chave: 'f',
             faseCanonicaCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
             regraRecurso: {
               procedimentosDeRecurso: [
                 {

@@ -1,22 +1,10 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { RecursoDaFase } from '../../processo-seletivo.models';
+import { PARAMETROS_SEM_INSTANCIA_SUPERIOR } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
+import { recurso } from './configuracao-da-fase.testing';
 import { fase, montarFase } from './fase.testing';
 
-const RECURSO_SEM_ANCORA: RecursoDaFase = {
-  regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-  regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
-  atoAncoraCodigo: '',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: false,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
-  procedimentos: [],
-};
+const RECURSO_SEM_ANCORA = recurso({ ...PARAMETROS_SEM_INSTANCIA_SUPERIOR, atoAncoraCodigo: '' });
 
 describe('âncora única do prazo de recurso', () => {
   let encerrar: () => void = () => undefined;

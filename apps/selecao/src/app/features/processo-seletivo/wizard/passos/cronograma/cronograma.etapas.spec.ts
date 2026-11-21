@@ -133,13 +133,13 @@ describe('CronogramaPassoComponent: etapas', () => {
     expect(edicao.bancasDaEtapa(etapa)).toEqual([]);
   });
 
-  describe('instância superior da janela de recurso da etapa', () => {
-    function janelaAberta() {
+  describe('instância superior do recurso da etapa', () => {
+    function recursoAberto() {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
       edicao.acrescentarRecursoNaEtapa(etapa);
-      // O catálogo não responde neste cenário: a regra resolvida é o que faz a janela viajar.
+      // O catálogo não responde neste cenário: a regra resolvida é o que faz o recurso viajar.
       etapa.controls.recursos.setValue(
         etapa.controls.recursos.value.map((recurso) => ({
           ...recurso,
@@ -155,14 +155,12 @@ describe('CronogramaPassoComponent: etapas', () => {
     }
 
     const radio = (valor: 'true' | 'false') =>
-      Array.from(
-        nativo.querySelectorAll<HTMLInputElement>(
-          'input[type="radio"][name^="admiteInstanciaSuperior-0-0"]',
-        ),
-      ).find((r) => r.value === valor);
+      nativo.querySelector<HTMLInputElement>(
+        `#cr-rec-0-0-superior-${valor === 'true' ? 'sim' : 'nao'}`,
+      );
 
     it('nasce sem resposta, com o campo marcado como inválido e a recusa no resumo', () => {
-      const etapa = janelaAberta();
+      const etapa = recursoAberto();
 
       expect(etapa.controls.recursos.value[0]?.admiteInstanciaSuperior).toBeNull();
       expect(radio('true')?.checked).toBe(false);
@@ -172,7 +170,7 @@ describe('CronogramaPassoComponent: etapas', () => {
     });
 
     it('guarda no rascunho a resposta escolhida', () => {
-      const etapa = janelaAberta();
+      const etapa = recursoAberto();
 
       radio('false')?.click();
       detectar();
@@ -184,18 +182,18 @@ describe('CronogramaPassoComponent: etapas', () => {
       );
     });
 
-    it('esconde o tempo de bloqueio superior com Não e o mostra com Sim', () => {
-      janelaAberta();
+    it('esconde o prazo da 2ª instância com Não e o mostra com Sim', () => {
+      recursoAberto();
 
       radio('false')?.click();
       detectar();
-      expect(nativo.querySelector('#cr-rec-susp2-val-0-0')).toBeNull();
-      expect(nativo.querySelector('#cr-rec-susp2-un-0-0')).toBeNull();
+      expect(nativo.querySelector('#cr-rec-0-0-prazo-segunda-valor')).toBeNull();
+      expect(nativo.querySelector('#cr-rec-0-0-prazo-segunda-unidade')).toBeNull();
 
       radio('true')?.click();
       detectar();
-      expect(nativo.querySelector('#cr-rec-susp2-val-0-0')).not.toBeNull();
-      expect(nativo.querySelector('#cr-rec-susp2-un-0-0')).not.toBeNull();
+      expect(nativo.querySelector('#cr-rec-0-0-prazo-segunda-valor')).not.toBeNull();
+      expect(nativo.querySelector('#cr-rec-0-0-prazo-segunda-unidade')).not.toBeNull();
     });
   });
 

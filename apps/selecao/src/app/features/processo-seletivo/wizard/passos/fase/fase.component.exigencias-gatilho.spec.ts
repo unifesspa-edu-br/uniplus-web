@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
-import { fase, ID_CPF, ID_RECURSOS } from './fase.testing';
+import { fase, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -20,13 +20,16 @@ describe('FasePassoComponent', () => {
 
   describe('exigências documentais da fase', () => {
     it('exige o documento na fase aberta, e só nela', () => {
-      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+      );
 
       exigencias().alternarExigencia(ID_CPF, true);
       detectar();
 
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
-      abrirFase(ID_RECURSOS);
+      abrirFase(ID_HOMOLOGACAO);
       detectar();
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(false);
     });
@@ -61,13 +64,13 @@ describe('FasePassoComponent', () => {
         TestBed.inject(CatalogoDeFatos).fatos.set([LAUDO]);
         comCronograma(
           fase({}),
-          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+          fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
         store.patchObjectSection('formulario', {
           outrasFinalidades: [
             {
               finalidade: 'HABILITACAO',
-              faseCodigo: 'RECURSOS',
+              faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,
                 etapas: [],
@@ -110,7 +113,7 @@ describe('FasePassoComponent', () => {
       });
 
       it('oferece na fase da habilitação o dado que ela coleta', () => {
-        abrirFase(ID_RECURSOS);
+        abrirFase(ID_HOMOLOGACAO);
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
         gatilho().escolherExigidoDe(ID_CPF, 'quem');
@@ -131,7 +134,7 @@ describe('FasePassoComponent', () => {
 
         const alerta = nativo.querySelector('.doc-item__gatilho [role="alert"]');
         expect(alerta?.textContent).toContain(
-          '“Laudo recente” só é conhecido na fase Recursos, depois da fase em que o documento é exigido. Como resolver: exija o documento na fase Recursos',
+          '“Laudo recente” só é conhecido na fase Homologação das inscrições, depois da fase em que o documento é exigido. Como resolver: exija o documento na fase Homologação das inscrições',
         );
       });
     });

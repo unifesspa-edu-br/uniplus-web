@@ -2,7 +2,10 @@ import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
 import { PROCESSO_ID } from '../fixtures/processo-da-revisao';
 import { mockarCatalogos } from '../fixtures/catalogos-do-cronograma';
-import { faseDoServidor } from '../fixtures/cronograma-do-servidor';
+import {
+  faseDoServidor,
+  PARAMETROS_DO_RECURSO_DO_SERVIDOR,
+} from '../fixtures/cronograma-do-servidor';
 import { mockarProcesso, prepararARevisao } from '../support/api-da-revisao';
 import { identificadoresDe, medirTransbordo } from '../support/medicoes-do-passo';
 import { irAoPasso } from '../support/navega-passo';
@@ -49,15 +52,7 @@ function faseComRecurso(procedimentos: readonly unknown[]) {
         id: '01960000-0000-7000-0000-0000000009c5',
         produtoAncoraId: PRODUTO.id,
         regra: REGRA_DO_RECURSO,
-        parametros: {
-          prazoValor: 2,
-          prazoUnidade: 'diasUteis',
-          suspensividadePrimeiraInstanciaValor: null,
-          suspensividadePrimeiraInstanciaUnidade: null,
-          admiteInstanciaSuperior: false,
-          suspensividadeSegundaInstanciaValor: null,
-          suspensividadeSegundaInstanciaUnidade: null,
-        },
+        parametros: PARAMETROS_DO_RECURSO_DO_SERVIDOR,
         procedimentos,
       },
     },
@@ -111,7 +106,7 @@ test.describe('Cronograma — recurso da fase em consulta, matriz DS @ds', () =>
     await abrirCronograma(page, testInfo, [PROCEDIMENTO_SEM_SUGESTAO]);
 
     await expect(page.getByText('Prazo de interposição')).toBeVisible();
-    await expect(page.getByText('2 dias úteis')).toBeVisible();
+    await expect(page.getByText('2 — Dias úteis')).toBeVisible();
   });
 
   test('não viola WCAG 2.1 AA nem transborda com os procedimentos e a sugestão', async ({

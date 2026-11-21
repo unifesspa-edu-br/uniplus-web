@@ -7,7 +7,7 @@ import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.compo
 import { EditorDaExigenciaComponent } from './documentos/editor-da-exigencia.component';
 import { FasePassoComponent } from './fase.component';
 import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.component';
-import { fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS, TIPOS_DOCUMENTO } from './fase.testing';
+import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO, TIPOS_DOCUMENTO } from './fase.testing';
 import { usarFase, type ContextoDaFase, umaNorma } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -25,7 +25,10 @@ describe('FasePassoComponent', () => {
   describe('ids únicos por instância', () => {
     /** Um passo por fase, como o Cronograma os embute. */
     function duasFases() {
-      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+      );
       const criar = (faseCanonicaId: string) => {
         const fixture = TestBed.createComponent(FasePassoComponent);
         fixture.componentRef.setInput('faseFixada', faseCanonicaId);
@@ -35,7 +38,7 @@ describe('FasePassoComponent', () => {
         return fixture;
       };
       const avaliacao = criar(ID_AVALIACAO);
-      const recursos = criar(ID_RECURSOS);
+      const recursos = criar(ID_HOMOLOGACAO);
       for (const fixture of [avaliacao, recursos]) {
         (
           fixture.debugElement.query(By.directive(PublicacoesDaFaseComponent))

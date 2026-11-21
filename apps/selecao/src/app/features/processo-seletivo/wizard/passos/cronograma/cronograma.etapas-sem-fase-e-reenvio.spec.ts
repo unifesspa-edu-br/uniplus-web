@@ -148,11 +148,12 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
   });
 
   /**
-   * A prova do apagamento silencioso: produtos, fase concluinte e parecer
-   * individual não são editados neste passo, e a gravação substitui o
-   * cronograma inteiro. Fora do formulário, uma simples mudança de data os
-   * apagaria — junto com o que a fase produz e com a âncora do recurso, que
-   * deles derivam.
+   * A prova do apagamento silencioso: produtos e parecer individual não são
+   * editados neste passo, e a gravação substitui o cronograma inteiro. Fora do
+   * formulário, uma simples mudança de data os apagaria — junto com o que a
+   * fase produz e com a âncora do recurso, que deles derivam. O momento da
+   * fase em relação à anterior segue o mesmo caminho: lido, preservado e
+   * reenviado.
    */
   it('reenvia na gravação o que a tela não edita, depois de mexer na janela', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
@@ -160,6 +161,11 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
       { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
       { atoCodigo: 'COMUNICADO', papel: null },
     ]);
+    const [lida] = store.draft().cronograma.fases;
+    store.patchObjectSection('cronograma', {
+      fases: [{ ...lida, noMesmoMomentoDaAnterior: true }],
+    });
+    detectar();
 
     cronograma.fases.at(0).controls.fim.setValue('2026-03-11T18:00');
     detectar();
@@ -171,7 +177,7 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
       (
         enviadas.request.body as {
           produtos: unknown;
-          faseConcluinteCodigo: unknown;
+          noMesmoMomentoDaAnterior: unknown;
           emiteParecerIndividual: unknown;
         }[]
       )[0],
@@ -180,7 +186,7 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
         { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
         { atoCodigo: 'COMUNICADO', papel: null },
       ],
-      faseConcluinteCodigo: 'RECURSOS',
+      noMesmoMomentoDaAnterior: true,
       emiteParecerIndividual: true,
     });
 

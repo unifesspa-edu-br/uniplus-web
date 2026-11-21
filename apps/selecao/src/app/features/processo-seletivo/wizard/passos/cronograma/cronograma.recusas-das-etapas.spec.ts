@@ -1,3 +1,4 @@
+import { UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { umRecursoDaEtapa } from '../../shared/etapa-do-cronograma.testing';
@@ -82,8 +83,8 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
     const foco = await focoDepoisDeRecusar('etapas[0].recursos[0].prazoValor');
 
     expect(expansao.blocoAberto(0, 'recursos')).toBe(true);
-    expect(foco).toBe('cr-rec-prazo-0-0');
-    expect(bloco('cr-rec-recusa-prazoValor-0-0')).toContain(
+    expect(foco).toBe('cr-rec-0-0-prazo-interposicao-valor');
+    expect(bloco('cr-rec-0-0-prazo-interposicao-recusas-valor')).toContain(
       'Recusa de etapas[0].recursos[0].prazoValor.',
     );
   });
@@ -92,53 +93,67 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
   const descricaoDe = (id: string) =>
     nativo.querySelector(`#${id}`)?.getAttribute('aria-describedby') ?? '';
 
+  const ID_VALOR = 'cr-rec-0-0-prazo-interposicao-valor';
+  const ID_UNIDADE = 'cr-rec-0-0-prazo-interposicao-unidade';
+  const RECUSAS_DO_VALOR = 'cr-rec-0-0-prazo-interposicao-recusas-valor';
+  const RECUSAS_DA_UNIDADE = 'cr-rec-0-0-prazo-interposicao-recusas-unidade';
+
   it.each([
-    ['prazoValor', 'cr-rec-prazo-0-0', 'prazoUnidade', 'cr-rec-un-0-0'],
-    ['prazoUnidade', 'cr-rec-un-0-0', 'prazoValor', 'cr-rec-prazo-0-0'],
-    [
-      'suspensividadePrimeiraInstanciaValor',
-      'cr-rec-susp1-val-0-0',
-      'suspensividadePrimeiraInstanciaUnidade',
-      'cr-rec-susp1-un-0-0',
-    ],
-    [
-      'suspensividadePrimeiraInstanciaUnidade',
-      'cr-rec-susp1-un-0-0',
-      'suspensividadePrimeiraInstanciaValor',
-      'cr-rec-susp1-val-0-0',
-    ],
+    {
+      campo: 'prazoValor',
+      recusado: ID_VALOR,
+      recusa: RECUSAS_DO_VALOR,
+      par: ID_UNIDADE,
+      recusaDoPar: RECUSAS_DA_UNIDADE,
+    },
+    {
+      campo: 'prazoUnidade',
+      recusado: ID_UNIDADE,
+      recusa: RECUSAS_DA_UNIDADE,
+      par: ID_VALOR,
+      recusaDoPar: RECUSAS_DO_VALOR,
+    },
   ])(
-    'marca e descreve só o controle recusado (%s), e não o do par (%s)',
-    async (campo, id, outro, idDoOutro) => {
+    'marca e descreve só o controle recusado ($campo), e não o do par',
+    async ({ campo, recusado, recusa, par, recusaDoPar }) => {
       etapaFechadaComRecurso();
 
       await recusarEtapas([recusaDaEtapa(`etapas[0].recursos[0].${campo}`)]);
 
-      expect(invalido(id)).toBe('true');
-      expect(descricaoDe(id)).toContain(`cr-rec-recusa-${campo}-0-0`);
-      expect(invalido(idDoOutro)).not.toBe('true');
-      expect(descricaoDe(idDoOutro)).not.toContain(`cr-rec-recusa-${campo}-0-0`);
-      expect(bloco(`cr-rec-recusa-${outro}-0-0`)).toBeNull();
+      expect(invalido(recusado)).toBe('true');
+      expect(descricaoDe(recusado)).toContain(recusa);
+      expect(invalido(par)).not.toBe('true');
+      expect(descricaoDe(par)).not.toContain(recusa);
+      expect(bloco(recusaDoPar)).toBeNull();
     },
   );
 
-  it('descreve a suspensividade da 2ª instância controle a controle', async () => {
+  it('reúne a recusa dos parâmetros no bloco do recurso, com o botão que leva ao campo', async () => {
+    etapaFechadaComRecurso();
+
+    await recusarEtapas([recusaDaEtapa('etapas[0].recursos[0].prazoValor', 'Prazo recusado.')]);
+
+    expect(bloco('cr-rec-recusas-0-0')).toContain('Prazo recusado.');
+    expect(nativo.querySelectorAll('#cr-rec-recusas-0-0 button')).toHaveLength(1);
+  });
+
+  it('descreve o prazo da 2ª instância controle a controle', async () => {
     etapaFechadaComRecurso();
     cronograma.etapas.at(0).controls.recursos.setValue([
       umRecursoDaEtapa({
         ancora: 'cienciaIndividual',
         atoAncoraCodigo: '',
         admiteInstanciaSuperior: true,
+        prazoSegundaInstanciaValor: '3',
+        prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
       }),
     ]);
     detectar();
 
-    await recusarEtapas([
-      recusaDaEtapa('etapas[0].recursos[0].suspensividadeSegundaInstanciaUnidade'),
-    ]);
+    await recusarEtapas([recusaDaEtapa('etapas[0].recursos[0].prazoSegundaInstanciaUnidade')]);
 
-    expect(invalido('cr-rec-susp2-un-0-0')).toBe('true');
-    expect(invalido('cr-rec-susp2-val-0-0')).not.toBe('true');
+    expect(invalido('cr-rec-0-0-prazo-segunda-unidade')).toBe('true');
+    expect(invalido('cr-rec-0-0-prazo-segunda-valor')).not.toBe('true');
   });
 
   it('leva o foco ao controle recusado do par, e não ao primeiro dele', async () => {
@@ -146,7 +161,7 @@ describe('CronogramaPassoComponent: recusas das etapas no campo', () => {
 
     const foco = await focoDepoisDeRecusar('etapas[0].recursos[0].prazoUnidade');
 
-    expect(foco).toBe('cr-rec-un-0-0');
+    expect(foco).toBe('cr-rec-0-0-prazo-interposicao-unidade');
   });
 
   it('leva o foco à primeira regra de consolidação oferecida quando nenhuma está marcada', async () => {

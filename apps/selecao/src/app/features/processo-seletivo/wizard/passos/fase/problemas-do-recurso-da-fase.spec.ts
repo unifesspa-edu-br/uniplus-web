@@ -1,4 +1,4 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
+import { UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
@@ -19,31 +19,21 @@ describe('regra de recurso', () => {
     expect(conferir(comPreliminar())).toEqual([]);
   });
 
-  it('recusa prazo de interposição em dias corridos', () => {
-    const problemas = conferir(comPreliminar({ prazoUnidade: UnidadePrazo.dias }));
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.prazo');
-    expect(problemas[0].mensagem).toContain('dias corridos não é aceito');
-  });
-
-  it('recusa fração de dia útil no prazo de interposição', () => {
-    const problemas = conferir(comPreliminar({ prazoValor: '1,5' }));
-
-    expect(problemas[0].mensagem).toContain('dias úteis exige valor inteiro');
-  });
-
-  it('recusa prazo não positivo', () => {
-    const problemas = conferir(comPreliminar({ prazoValor: '0' }));
-
-    expect(problemas[0].mensagem).toContain('maior que zero');
-  });
-
-  it('cobra a unidade do prazo', () => {
-    const problemas = conferir(comPreliminar({ prazoUnidade: '' }));
-
-    expect(problemas.map((problema) => problema.mensagem)).toContain(
-      'Declare a unidade do prazo de interposição: dias úteis ou horas.',
-    );
+  /**
+   * O web não confere prazo, efeito suspensivo nem guarda da vaga: o valor lido é preservado e
+   * enviado, e quem recusa é a API.
+   */
+  it.each([
+    ['prazo em dias corridos', { prazoUnidade: UnidadePrazoCodigo.dias }],
+    ['fração de dia útil', { prazoValor: '1,5' }],
+    ['prazo zero', { prazoValor: '0' }],
+    ['prazo em branco', { prazoValor: '' }],
+    ['unidade em branco', { prazoUnidade: '' as const }],
+    ['efeito suspensivo em branco', { efeitoSuspensivo: '' as const }],
+    ['guarda da vaga em branco', { guardaDaVaga: '' as const }],
+    ['prazo da 2ª instância só com valor', { prazoSegundaInstanciaUnidade: '' as const }],
+  ])('não confere localmente: %s', (_nome, parcial) => {
+    expect(conferir(comPreliminar(parcial))).toEqual([]);
   });
 
   it('cobra a regra de contagem escolhida no catálogo', () => {
@@ -52,156 +42,51 @@ describe('regra de recurso', () => {
     expect(problemas[0].campo).toBe<CampoDaFase>('recurso.regra');
   });
 
-  it('recusa suspensividade com metade do par preenchida', () => {
-    const problemas = conferir(comPreliminar({ suspensividadePrimeiraInstanciaValor: '3' }));
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadePrimeiraInstancia');
-    expect(problemas[0].mensagem).toContain('valor e unidade juntos');
-  });
-
-  it('aceita o par de suspensividade inteiro em branco como desativação', () => {
-    expect(conferir(comPreliminar())).toEqual([]);
-  });
-
-  it('cobra a resposta sobre a instância superior, que não tem valor padrão', () => {
+  it('cobra a resposta sobre a instância superior', () => {
     const problemas = conferir(comPreliminar({ admiteInstanciaSuperior: null }));
 
-    expect(problemas).toHaveLength(1);
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.admiteInstanciaSuperior');
+    expect(problemas).toEqual([
+      {
+        campo: 'recurso.admiteInstanciaSuperior',
+        mensagem: 'Responda se o recurso admite instância superior.',
+      },
+    ]);
   });
 
-  it('não confere o tempo de bloqueio da instância superior que a janela não admite', () => {
-    const semInstancia = comPreliminar({
-      admiteInstanciaSuperior: false,
-      suspensividadeSegundaInstanciaValor: '48',
-    });
-
-    expect(conferir(semInstancia)).toEqual([]);
+  it('não cobra a instância superior respondida, seja qual for a resposta', () => {
+    for (const admite of [true, false]) {
+      expect(conferir(comPreliminar({ admiteInstanciaSuperior: admite }))).toEqual([]);
+    }
   });
 
-  it('confere o tempo de bloqueio da instância superior que a janela admite', () => {
-    const problemas = conferir(
-      comPreliminar({ admiteInstanciaSuperior: true, suspensividadeSegundaInstanciaValor: '48' }),
-    );
+  it('cobra a publicação preliminar de que cabe recurso quando a fase não publica nenhuma', () => {
+    const problemas = conferir(fase({ regraRecurso: recurso() }));
 
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadeSegundaInstancia');
+    expect(problemas[0].campo).toBe<CampoDaFase>('produtos');
   });
 
-  /**
-   * A âncora é escolhida entre os preliminares da própria fase. Sem nenhum, o
-   * problema é a publicação que falta — não a escolha.
-   */
-  it('aponta a publicação preliminar que falta quando a fase admite recurso sem ter uma', () => {
-    const problemas = conferir(
-      fase({
-        produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
-        regraRecurso: recurso({ atoAncoraCodigo: '' }),
-      }),
-    );
-
-    expect(problemas.map((problema) => problema.campo)).toContain<CampoDaFase>('produtos');
-  });
-
-  it('cobra a escolha da âncora quando a fase publica dois preliminares', () => {
+  it('cobra a âncora quando a fase publica dois preliminares e nenhum foi escolhido', () => {
     const problemas = conferir(
       fase({
         produtos: [
           { atoCodigo: 'GABARITO_PRELIMINAR', papel: 'PRELIMINAR' },
           { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
-          { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
         ],
         regraRecurso: recurso({ atoAncoraCodigo: '' }),
       }),
     );
 
     expect(problemas[0].campo).toBe<CampoDaFase>('recurso.ancora');
-    expect(problemas[0].mensagem).toContain('Escolha a publicação preliminar');
   });
 
-  it('recusa a âncora que a fase não publica como preliminar', () => {
-    const problemas = conferir(comPreliminar({ atoAncoraCodigo: 'RESULTADO_FINAL' }));
+  it('recusa a âncora que não é um resultado preliminar da própria fase', () => {
+    const problemas = conferir(comPreliminar({ atoAncoraCodigo: 'COMUNICADO' }));
 
     expect(problemas[0].campo).toBe<CampoDaFase>('recurso.ancora');
     expect(problemas[0].mensagem).toContain('publicado por esta própria fase');
   });
 
-  it('aceita a suspensividade em dias corridos nas duas instâncias', () => {
-    const problemas = conferir(
-      comPreliminar({
-        suspensividadePrimeiraInstanciaValor: '3',
-        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias,
-        admiteInstanciaSuperior: true,
-        suspensividadeSegundaInstanciaValor: '2',
-        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
-      }),
-    );
-
-    expect(problemas).toEqual([]);
-  });
-
-  it('recusa a unidade sem o valor na suspensividade em dias corridos', () => {
-    const problemas = conferir(
-      comPreliminar({ suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias }),
-    );
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadePrimeiraInstancia');
-    expect(problemas[0].mensagem).toContain('valor e unidade juntos');
-  });
-
-  it('aceita a suspensividade deixada em branco como desativação', () => {
-    expect(conferir(comPreliminar())).toEqual([]);
-  });
-
-  it('recusa fração de dia útil na suspensividade da primeira instância e orienta usar horas', () => {
-    const problemas = conferir(
-      comPreliminar({
-        suspensividadePrimeiraInstanciaValor: '1,5',
-        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
-      }),
-    );
-
-    expect(problemas).toHaveLength(1);
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadePrimeiraInstancia');
-    expect(problemas[0].mensagem).toContain('em dias úteis exige valor inteiro');
-    expect(problemas[0].mensagem).toContain('use horas');
-  });
-
-  it('recusa fração de dia útil na suspensividade da segunda instância que a janela admite', () => {
-    const problemas = conferir(
-      comPreliminar({
-        admiteInstanciaSuperior: true,
-        suspensividadeSegundaInstanciaValor: '0.5',
-        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
-      }),
-    );
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('recurso.suspensividadeSegundaInstancia');
-    expect(problemas[0].mensagem).toContain('segunda instância');
-  });
-
-  it('não confere a fração da segunda instância que a janela não admite', () => {
-    const problemas = conferir(
-      comPreliminar({
-        admiteInstanciaSuperior: false,
-        suspensividadeSegundaInstanciaValor: '0.5',
-        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
-      }),
-    );
-
-    expect(problemas).toEqual([]);
-  });
-
-  it('aceita dia útil inteiro e horas, inclusive fracionadas, na suspensividade', () => {
-    const inteiro = comPreliminar({
-      suspensividadePrimeiraInstanciaValor: '2',
-      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
-    });
-    const emHoras = comPreliminar({
-      suspensividadePrimeiraInstanciaValor: '1,5',
-      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
-    });
-
-    expect(conferir(inteiro)).toEqual([]);
-    expect(conferir(emHoras)).toEqual([]);
+  it('fase sem regra de recurso não relata problema do recurso', () => {
+    expect(conferir(fase({ regraRecurso: null }))).toEqual([]);
   });
 });

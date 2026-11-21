@@ -52,15 +52,15 @@ describe('CronogramaPassoComponent: recusas das etapas a conferir de novo', () =
     await recusarNotaEPrazo();
 
     expect(aConferir('cr-etapa-nota-maxima-erro-0')).toBe(false);
-    expect(aConferir('cr-rec-recusa-prazoValor-0-0')).toBe(false);
+    expect(aConferir('cr-rec-0-0-prazo-interposicao-recusas-valor')).toBe(false);
   });
 
   it('passa só a recusa do recurso a conferir quando o prazo é digitado', async () => {
     await recusarNotaEPrazo();
 
-    digitar('cr-rec-prazo-0-0', '5');
+    digitar('cr-rec-0-0-prazo-interposicao-valor', '5');
 
-    expect(aConferir('cr-rec-recusa-prazoValor-0-0')).toBe(true);
+    expect(aConferir('cr-rec-0-0-prazo-interposicao-recusas-valor')).toBe(true);
     expect(aConferir('cr-etapa-nota-maxima-erro-0')).toBe(false);
   });
 
@@ -71,7 +71,7 @@ describe('CronogramaPassoComponent: recusas das etapas a conferir de novo', () =
     detectar();
 
     expect(aConferir('cr-etapa-nota-maxima-erro-0')).toBe(true);
-    expect(aConferir('cr-rec-recusa-prazoValor-0-0')).toBe(false);
+    expect(aConferir('cr-rec-0-0-prazo-interposicao-recusas-valor')).toBe(false);
   });
 
   it('tira a marcação de inválido do campo que passou a conferir de novo', async () => {

@@ -6,12 +6,16 @@ import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH, UnidadePrazo } from '@uniplus/shared-data/selecao';
+import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RecursoDaEtapa } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import {
+  PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDoProcesso } from '../../../shared/gravacao/gravacao-do-processo';
 import { CATALOGOS_DO_CRONOGRAMA } from '../catalogos/catalogos-do-cronograma';
 import { etapa } from '../cronograma-do-certame.testing';
@@ -30,14 +34,9 @@ const RECURSO: RecursoDaEtapa = {
   ancora: 'cienciaIndividual',
   regraCodigo: 'PRAZO',
   regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
+  ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
   atoAncoraCodigo: '',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso(),
   procedimentos: [],
 };
 
@@ -118,15 +117,15 @@ describe('RecursosDaEtapaComponent', () => {
   describe('etapa de nota do ENEM com recurso já declarado', () => {
     beforeEach(() => montar(true, [RECURSO]));
 
-    it('pede a remoção da janela, que continua removível', () => {
-      expect(texto()).toContain('não admite recurso próprio: remova a janela');
+    it('pede a remoção do recurso, que continua removível', () => {
+      expect(texto()).toContain('não admite recurso próprio: remova o recurso');
       expect(botao('Acrescentar recurso')).toBeUndefined();
 
       botao('Remover recurso')?.click();
       fixture.detectChanges();
 
       expect(grupo.controls.recursos.value).toEqual([]);
-      expect(texto()).not.toContain('remova a janela');
+      expect(texto()).not.toContain('remova o recurso');
     });
   });
 

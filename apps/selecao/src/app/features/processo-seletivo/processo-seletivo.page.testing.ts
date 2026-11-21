@@ -40,6 +40,7 @@ import {
   ProcessosSeletivosApi,
   PublicacaoDoProcessoApi,
   MotivosDeDecisaoApi,
+  OpcoesDoRecursoApi,
   RegrasCatalogoApi,
   VagasDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
@@ -83,6 +84,12 @@ const catalogoVazioStub = {
   listar: () => of(apiOk<readonly never[]>([], 200, new HttpHeaders())),
 };
 
+export const opcoesDoRecursoApiStub = {
+  listarUnidadesDePrazo: catalogoVazioStub.listar,
+  listarEfeitosSuspensivos: catalogoVazioStub.listar,
+  listarGuardasDaVaga: catalogoVazioStub.listar,
+};
+
 /**
  * A page provê `CadastroInicial`, que injeta o client de Processo
  * Seletivo. Nenhum teste desta suíte chega a gravar — o stub existe para o
@@ -123,6 +130,7 @@ export const PAGE_PROVIDERS = [
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
+  { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },
   { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; esta suíte não exercita as escolhas, só a estrutura da página.

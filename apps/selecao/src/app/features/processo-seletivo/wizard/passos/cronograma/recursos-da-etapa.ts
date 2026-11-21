@@ -1,4 +1,5 @@
 import type { FormGroup } from '@angular/forms';
+import { UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 
 import {
   PAPEL_PRELIMINAR,
@@ -6,6 +7,13 @@ import {
   type RecursoDaEtapa,
 } from '../../processo-seletivo.models';
 import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import {
+  LEITURA_EM_BRANCO,
+  PARAMETROS_EM_BRANCO,
+  parametrosAlterados,
+  prazoDaSegundaInstanciaRetirado,
+  type AlteracaoDosParametros,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import type { EtapaForm } from './cronograma-form';
 
 /**
@@ -21,13 +29,13 @@ export function regraDoCatalogo(
   return regras.find((regra) => regra.codigo.includes(alvo)) ?? regras[0];
 }
 
-/** Os produtos preliminares da etapa — os únicos em que uma janela pode ancorar. */
+/** Os produtos preliminares da etapa — os únicos em que um recurso pode ancorar. */
 export function preliminaresDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
   return grupo.controls.produtos.value.filter((p) => p.papel === PAPEL_PRELIMINAR);
 }
 
 /**
- * A janela nasce ancorada no primeiro produto preliminar da etapa, quando existe: é o
+ * O recurso nasce ancorado no primeiro produto preliminar da etapa, quando existe: é o
  * caso comum, e deixar o campo vazio obrigaria o operador a escolher de novo o que a
  * própria etapa já declarou publicar.
  */
@@ -44,27 +52,19 @@ export function acrescentarRecurso(
 }
 
 /**
- * Nasce sem suspensividade — declarar o par é escolha do operador, e os dois em branco são a
- * desativação prevista daquela instância. A instância superior fica sem resposta: a janela só é
- * gravada depois de o operador dizer se ela cabe.
+ * Nasce com o prazo em dias úteis e o resto por responder: a instância superior, o efeito
+ * suspensivo e a guarda da vaga são escolhas de quem configura, e o recurso só é gravado depois
+ * que a instância superior é respondida.
  */
-const SEM_SUSPENSIVIDADE_NEM_INSTANCIA_SUPERIOR = {
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: null,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
-} as const;
-
 function recursoNovo(regra: RegraCatalogoDto | undefined, atoAncoraCodigo: string): RecursoDaEtapa {
   return {
+    ...PARAMETROS_EM_BRANCO,
+    prazoUnidade: UnidadePrazoCodigo.diasUteis,
+    leitura: LEITURA_EM_BRANCO,
     ancora: 'atoPublicado',
     regraCodigo: regra?.codigo ?? '',
     regraVersao: regra?.versao ?? '',
-    prazoValor: '',
-    prazoUnidade: 'diasUteis',
     atoAncoraCodigo,
-    ...SEM_SUSPENSIVIDADE_NEM_INSTANCIA_SUPERIOR,
     procedimentos: [],
   };
 }
@@ -76,11 +76,14 @@ export function removerRecurso(grupo: FormGroup<EtapaForm>, posicao: number): vo
   );
 }
 
-/** O campo da janela recursal que o operador mexeu, com o valor que digitou. */
-export interface AlteracaoDeRecurso {
-  readonly campo: keyof RecursoDaEtapa;
+/** O que o recurso tem além dos parâmetros: de onde o prazo corre, a regra de contagem e a publicação. */
+export type AlteracaoDoRecursoSemParametros = {
+  readonly campo: 'ancora' | 'regraCodigo' | 'atoAncoraCodigo';
   readonly valor: string;
-}
+};
+
+/** O que a pessoa mexeu no recurso, com o valor novo. */
+export type AlteracaoDeRecurso = AlteracaoDosParametros | AlteracaoDoRecursoSemParametros;
 
 export function alterarRecurso(
   grupo: FormGroup<EtapaForm>,
@@ -96,20 +99,59 @@ export function alterarRecurso(
   );
 }
 
+/** Tira o prazo da 2ª instância do recurso, o botão "Retirar o prazo da 2ª instância". */
+export function retirarPrazoDaSegundaInstancia(grupo: FormGroup<EtapaForm>, posicao: number): void {
+  escreverRecursos(
+    grupo,
+    grupo.controls.recursos.value.map((recurso, i) =>
+      i === posicao
+        ? comParametros(recurso, prazoDaSegundaInstanciaRetirado(recurso, recurso.leitura))
+        : recurso,
+    ),
+  );
+}
+
+function ehAlteracaoDosParametros(
+  alteracao: AlteracaoDeRecurso,
+): alteracao is AlteracaoDosParametros {
+  return !['ancora', 'regraCodigo', 'atoAncoraCodigo'].includes(alteracao.campo);
+}
+
 function recursoAlterado(
   recurso: RecursoDaEtapa,
-  { campo, valor }: AlteracaoDeRecurso,
+  alteracao: AlteracaoDeRecurso,
+  regras: readonly RegraCatalogoDto[],
+): RecursoDaEtapa {
+  return ehAlteracaoDosParametros(alteracao)
+    ? comParametros(recurso, parametrosAlterados(recurso, recurso.leitura, alteracao))
+    : recursoComContagemAlterada(recurso, alteracao, regras);
+}
+
+function recursoComContagemAlterada(
+  recurso: RecursoDaEtapa,
+  { campo, valor }: AlteracaoDoRecursoSemParametros,
   regras: readonly RegraCatalogoDto[],
 ): RecursoDaEtapa {
   if (campo === 'ancora')
     return recursoComAncora(recurso, valor as RecursoDaEtapa['ancora'], regras);
+  if (campo === 'regraCodigo') return recursoComRegra(recurso, valor, regras);
+  return { ...recurso, atoAncoraCodigo: valor };
+}
 
-  if (campo === 'regraCodigo') {
-    const regra = regras.find((r) => r.codigo === valor);
-    return { ...recurso, regraCodigo: valor, regraVersao: regra?.versao ?? '' };
-  }
+function comParametros(
+  recurso: RecursoDaEtapa,
+  { parametros, leitura }: Pick<ReturnType<typeof parametrosAlterados>, 'parametros' | 'leitura'>,
+): RecursoDaEtapa {
+  return { ...recurso, ...parametros, leitura };
+}
 
-  return { ...recurso, [campo]: valor };
+function recursoComRegra(
+  recurso: RecursoDaEtapa,
+  codigo: string,
+  regras: readonly RegraCatalogoDto[],
+): RecursoDaEtapa {
+  const regra = regras.find((r) => r.codigo === codigo);
+  return { ...recurso, regraCodigo: codigo, regraVersao: regra?.versao ?? '' };
 }
 
 /**
@@ -129,20 +171,6 @@ function recursoComAncora(
     regraVersao: regra?.versao ?? recurso.regraVersao,
     atoAncoraCodigo: ancora === 'atoPublicado' ? recurso.atoAncoraCodigo : '',
   };
-}
-
-/** Registra a resposta da pergunta que o contrato não deixa sem decisão. */
-export function declararInstanciaSuperior(
-  grupo: FormGroup<EtapaForm>,
-  posicao: number,
-  admite: boolean,
-): void {
-  escreverRecursos(
-    grupo,
-    grupo.controls.recursos.value.map((recurso, i) =>
-      i === posicao ? { ...recurso, admiteInstanciaSuperior: admite } : recurso,
-    ),
-  );
 }
 
 function escreverRecursos(grupo: FormGroup<EtapaForm>, recursos: readonly RecursoDaEtapa[]): void {

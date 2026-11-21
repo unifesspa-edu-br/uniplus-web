@@ -87,8 +87,8 @@ describe('PrazoDoRecursoComponent: valor e unidade', () => {
       campoDaUnidade(fixture).options[0]?.textContent?.trim();
 
     expect(textoEmBranco(montarPrazo())).toBe('Escolha a unidade');
-    expect(textoEmBranco(montarPrazo({ opcaoEmBranco: 'Sem suspensividade' }))).toBe(
-      'Sem suspensividade',
+    expect(textoEmBranco(montarPrazo({ opcaoEmBranco: 'Sem unidade definida' }))).toBe(
+      'Sem unidade definida',
     );
   });
 
@@ -130,5 +130,65 @@ describe('PrazoDoRecursoComponent: valor e unidade', () => {
     }
 
     expect(avisos.mock.calls).toEqual([['diasUteis'], ['']]);
+  });
+});
+
+describe('PrazoDoRecursoComponent: sem unidade para escolher', () => {
+  it.each([
+    ['carregando', 'Carregando as opções…'],
+    ['falhou', 'As opções não carregaram. Use "Tentar de novo" no aviso do topo do passo.'],
+    ['pronta', 'Nenhuma opção disponível.'],
+  ] as const)('com a leitura %s, desabilita a unidade e diz por quê', (situacao, texto) => {
+    const fixture = montarPrazo({ unidades: [], situacao });
+    const paragrafo = fixture.nativeElement.querySelector(`#${IDS.situacao}`) as HTMLElement;
+
+    expect(campoDaUnidade(fixture).disabled).toBe(true);
+    expect(paragrafo.textContent?.trim()).toBe(texto);
+    expect(paragrafo.getAttribute('tabindex')).toBe('-1');
+    expect(descritoPor(campoDaUnidade(fixture))).toEqual([IDS.situacao]);
+  });
+
+  it('com a unidade gravada, ela segue à vista e o seletor fica disponível', () => {
+    const fixture = montarPrazo({ unidades: [], unidade: 'horas', situacao: 'falhou' });
+
+    expect(campoDaUnidade(fixture).disabled).toBe(false);
+    expect(campoDaUnidade(fixture).value).toBe('horas');
+    expect(fixture.nativeElement.querySelector(`#${IDS.situacao}`)).toBeNull();
+  });
+
+  it('mostra o nome que a leitura deu à unidade que o vocabulário não oferece', () => {
+    const fixture = montarPrazo({ unidade: 'dias', rotuloLido: 'Dias corridos' });
+
+    expect(campoDaUnidade(fixture).selectedOptions[0]?.textContent?.trim()).toBe(
+      'Dias corridos — não é mais oferecida',
+    );
+  });
+});
+
+describe('PrazoDoRecursoComponent: retirar o prazo', () => {
+  const botao = (fixture: FixtureDoPrazo) =>
+    fixture.nativeElement.querySelector(`#${IDS.retirar}`) as HTMLButtonElement | null;
+
+  it('só mostra o botão quando o prazo é retirável', () => {
+    expect(botao(montarPrazo())).toBeNull();
+    expect(botao(montarPrazo({ retiravel: true }))?.textContent?.trim()).toBe('Retirar o prazo');
+  });
+
+  it('avisa o pedido de retirada, e o botão acompanha o texto dado pela tela', () => {
+    const fixture = montarPrazo({
+      retiravel: true,
+      textoDoBotaoDeRetirar: 'Retirar o prazo da 2ª instância',
+    });
+    const avisos = vi.fn();
+    fixture.componentInstance.retirar.subscribe(avisos);
+
+    botao(fixture)?.click();
+
+    expect(botao(fixture)?.textContent?.trim()).toBe('Retirar o prazo da 2ª instância');
+    expect(avisos).toHaveBeenCalledOnce();
+  });
+
+  it('desabilita o botão com o prazo', () => {
+    expect(botao(montarPrazo({ retiravel: true, desabilitado: true }))?.disabled).toBe(true);
   });
 });

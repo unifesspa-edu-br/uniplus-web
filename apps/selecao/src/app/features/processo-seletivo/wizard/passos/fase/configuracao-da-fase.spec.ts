@@ -82,75 +82,17 @@ describe('publicações que a fase declara', () => {
   });
 });
 
-describe('conclusão do ciclo recursal', () => {
+describe('publicação preliminar e definitiva', () => {
   const PRELIMINAR = { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' };
   const DEFINITIVO = { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' };
 
-  it('fase que publica preliminar e definitiva conclui a si mesma, sem declarar nada', () => {
+  it('fase que publica preliminar e definitiva não relata problema', () => {
     expect(conferir(fase({ produtos: [PRELIMINAR, DEFINITIVO] }))).toEqual([]);
   });
 
-  it('cobra a fase concluinte de quem publica preliminar sem a definitiva', () => {
-    const problemas = conferir(fase({ produtos: [PRELIMINAR] }));
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('faseConcluinteCodigo');
-    expect(problemas[0].mensagem).toContain('declare qual fase conclui o ciclo recursal');
-  });
-
-  it('aceita a concluinte que publica definitiva e vem depois', () => {
-    const recursos = fase({
-      faseCanonicaId: 'id-2',
-      codigo: 'RECURSOS',
-      ordem: 2,
-      produtos: [DEFINITIVO],
-    });
-
-    expect(
-      conferir(fase({ produtos: [PRELIMINAR], faseConcluinteCodigo: 'RECURSOS' }), [recursos]),
-    ).toEqual([]);
-  });
-
-  it('recusa a concluinte que não publica resultado definitivo', () => {
-    const recursos = fase({ faseCanonicaId: 'id-2', codigo: 'RECURSOS', ordem: 2, produtos: [] });
-    const problemas = conferir(fase({ produtos: [PRELIMINAR], faseConcluinteCodigo: 'RECURSOS' }), [
-      recursos,
-    ]);
-
-    expect(problemas[0].mensagem).toContain('não publica resultado definitivo');
-  });
-
-  it('recusa a concluinte que vem antes na linha do tempo', () => {
-    const antes = fase({
-      faseCanonicaId: 'id-0',
-      codigo: 'ANTERIOR',
-      ordem: 1,
-      produtos: [DEFINITIVO],
-    });
-    const problemas = conferir(
-      fase({ ordem: 2, produtos: [PRELIMINAR], faseConcluinteCodigo: 'ANTERIOR' }),
-      [antes],
-    );
-
-    expect(problemas[0].mensagem).toContain('vem antes desta na linha do tempo');
-  });
-
-  it('recusa a concluinte que não está no cronograma', () => {
-    const problemas = conferir(fase({ produtos: [PRELIMINAR], faseConcluinteCodigo: 'AUSENTE' }));
-
-    expect(problemas[0].mensagem).toContain('não está no cronograma');
-  });
-
-  it('recusa a fase que declara a si mesma como concluinte', () => {
-    const problemas = conferir(fase({ produtos: [PRELIMINAR], faseConcluinteCodigo: 'AVALIACAO' }));
-
-    expect(problemas[0].mensagem).toContain('não conclui a si mesma por declaração');
-  });
-
-  it('recusa conclusão declarada por fase que não publica preliminar', () => {
-    const problemas = conferir(fase({ produtos: [DEFINITIVO], faseConcluinteCodigo: 'RECURSOS' }));
-
-    expect(problemas[0].campo).toBe<CampoDaFase>('faseConcluinteCodigo');
-    expect(problemas[0].mensagem).toContain('Só fase que publica resultado preliminar');
+  /** Cobrar a publicação do definitivo do mesmo tipo de ato é da API: a tela só orienta. */
+  it('fase que publica preliminar sem o definitivo não é recusada pela tela', () => {
+    expect(conferir(fase({ produtos: [PRELIMINAR] }))).toEqual([]);
   });
 });
 

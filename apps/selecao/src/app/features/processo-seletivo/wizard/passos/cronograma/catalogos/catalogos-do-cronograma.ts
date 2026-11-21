@@ -1,3 +1,4 @@
+import { CatalogoDasOpcoesDoRecurso } from './catalogo-das-opcoes-do-recurso.service';
 import { CatalogoDeAtos } from './catalogo-de-atos.service';
 import { CatalogoDeBancas } from './catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from './catalogo-de-documentos.service';
@@ -11,6 +12,7 @@ import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cr
 
 /** Os provedores dos catálogos que o cronograma e a configuração de cada fase leem, na página do wizard. */
 export const CATALOGOS_DO_CRONOGRAMA = [
+  CatalogoDasOpcoesDoRecurso,
   CatalogoDeAtos,
   CatalogoDeBancas,
   CatalogoDeDocumentos,

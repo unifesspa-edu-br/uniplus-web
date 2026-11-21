@@ -12,6 +12,15 @@ test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
 
+/**
+ * Marca a opção `opcao` do grupo de escolha de legenda `legenda`, pelo nome que a pessoa lê. O
+ * controle nativo é coberto pela anatomia do design system: quem recebe o clique é o rótulo.
+ */
+async function escolher(recursos: Locator, legenda: string, opcao: string): Promise<void> {
+  const grupo = recursos.getByRole('radiogroup', { name: legenda });
+  await grupo.getByText(opcao, { exact: true }).click();
+}
+
 /** O valor e a unidade do prazo que o grupo de legenda `legenda` reúne, na posição dada. */
 function prazo(recursos: Locator, legenda: string, posicao = 0) {
   const grupo = recursos.getByRole('group', { name: legenda }).nth(posicao);
@@ -36,7 +45,7 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await abrirFaseDeHabilitacao(page);
   });
 
-  /** Só ato que o catálogo marca como resultado recebe papel no ciclo recursal. */
+  /** Só ato que o catálogo marca como resultado recebe papel no recurso. */
   test('a etapa declara o que publica, com papel', async ({ page }) => {
     await acrescentarEtapa(page);
 
@@ -51,14 +60,14 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
   });
 
   /**
-   * O caso que uma regra por fase tornava inexprimível: a mesma etapa abre duas janelas,
+   * O caso que uma regra por fase tornava inexprimível: a mesma etapa abre dois recursos,
    * com prazos e relógios distintos — uma contra o que ela publica, outra contra a
    * decisão individual que alcança cada candidato.
    */
-  test('a etapa abre duas janelas recursais com prazos distintos', async ({ page }) => {
+  test('a etapa abre dois recursos com prazos distintos', async ({ page }) => {
     await acrescentarEtapa(page);
 
-    // Duas publicações preliminares: é contra cada uma que uma janela corre.
+    // Duas publicações preliminares: é contra cada uma que um recurso corre.
     await abrirBloco(page, 'O que esta etapa publica');
     const publica = blocoDaEtapa(page, 'O que esta etapa publica');
     await publica.getByRole('button', { name: 'Acrescentar publicação' }).click();
@@ -92,54 +101,76 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
   });
 
   /**
-   * O efeito suspensivo da janela da etapa. O servidor guarda os quatro valores em colunas
-   * próprias e os devolve na leitura, mas a tela não tinha onde declará-los e o comando saía
-   * com os quatro em branco: bastava mexer numa data do cronograma para o que estivesse
-   * gravado desaparecer. A fase sempre teve estes campos — a etapa recorre nas mesmas
-   * condições. Os dois da 2ª instância só existem quando a janela admite instância superior.
+   * Os parâmetros do recurso da etapa: o servidor os guarda em colunas próprias e os devolve na
+   * leitura, mas a tela não tinha onde declará-los e o comando saía em branco: bastava mexer
+   * numa data do cronograma para o que estivesse gravado desaparecer. O prazo da 2ª instância só
+   * existe quando o recurso admite instância superior.
    */
-  test('a janela da etapa declara por quanto tempo suspende o efeito do ato', async ({ page }) => {
+  test('o recurso da etapa declara efeito suspensivo, guarda da vaga e prazo da 2ª instância', async ({
+    page,
+  }) => {
     await acrescentarEtapa(page);
 
     await abrirBloco(page, 'Recursos que esta etapa admite');
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
-    await prazo(recursos, 'Suspensividade da 1ª instância').valor.fill('3');
-    await prazo(recursos, 'Suspensividade da 1ª instância').unidade.selectOption('diasUteis');
-    // A 2ª instância só tem suspensividade quando a janela admite instância superior.
-    const prazoDaSegunda = prazo(recursos, 'Suspensividade da 2ª instância').valor;
-    await expect(prazoDaSegunda).toHaveCount(0);
-    const instanciaSuperior = recursos.getByRole('group', {
-      name: 'Admite recurso em instância superior?',
-    });
-    await instanciaSuperior.getByText('Sim', { exact: true }).click();
-    await expect(instanciaSuperior.getByRole('radio', { name: 'Sim', exact: true })).toBeChecked();
-    await prazoDaSegunda.fill('48');
-    await prazo(recursos, 'Suspensividade da 2ª instância').unidade.selectOption('horas');
-
-    await expect(prazo(recursos, 'Suspensividade da 1ª instância').valor).toHaveValue('3');
-    await expect(prazo(recursos, 'Suspensividade da 1ª instância').unidade).toHaveValue(
-      'diasUteis',
+    await escolher(recursos, 'Efeito suspensivo na 1ª instância', 'Sem efeito suspensivo');
+    await escolher(
+      recursos,
+      'Guarda da vaga em disputa',
+      'Guarda a vaga até o resultado definitivo',
     );
-    await expect(prazo(recursos, 'Suspensividade da 2ª instância').valor).toHaveValue('48');
-    await expect(prazo(recursos, 'Suspensividade da 2ª instância').unidade).toHaveValue('horas');
+    await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').valor).toHaveCount(0);
+
+    await escolher(recursos, 'Admite instância superior?', 'Sim');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').valor.fill('48');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('horas');
+
+    await expect(recursos.getByRole('radio', { name: 'Sem efeito suspensivo' })).toBeChecked();
+    await expect(
+      recursos.getByRole('radio', { name: 'Guarda a vaga até o resultado definitivo' }),
+    ).toBeChecked();
+    await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').valor).toHaveValue('48');
+    await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade).toHaveValue(
+      'horas',
+    );
   });
 
-  /** Instância sem os dois campos é desativação declarada, e a tela nomeia isso. */
-  test('a janela da etapa admite instância sem suspensividade', async ({ page }) => {
+  /** Com instância superior a vaga fica sempre guardada: "não guarda" deixa de ser oferecida. */
+  test('com instância superior, a guarda da vaga não oferece "não guarda"', async ({ page }) => {
     await acrescentarEtapa(page);
-
     await abrirBloco(page, 'Recursos que esta etapa admite');
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
-    await expect(prazo(recursos, 'Suspensividade da 1ª instância').unidade).toHaveValue('');
+    await expect(recursos.getByRole('radio', { name: 'Não guarda a vaga' })).toHaveCount(1);
+
+    await escolher(recursos, 'Admite instância superior?', 'Sim');
+
+    await expect(recursos.getByRole('radio', { name: 'Não guarda a vaga' })).toHaveCount(0);
+  });
+
+  /** O que a mudança desfaz por conta própria é anunciado, e nada volta sozinho ao desfazer. */
+  test('marcar Não retira o prazo da 2ª instância e avisa', async ({ page }) => {
+    await acrescentarEtapa(page);
+    await abrirBloco(page, 'Recursos que esta etapa admite');
+    const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
+    await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
+    await escolher(recursos, 'Admite instância superior?', 'Sim');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').valor.fill('48');
+    await prazo(recursos, 'Prazo para recorrer em 2ª instância').unidade.selectOption('horas');
+
+    await escolher(recursos, 'Admite instância superior?', 'Não');
+
     await expect(
-      prazo(recursos, 'Suspensividade da 1ª instância').unidade.getByRole('option', {
-        name: 'Sem suspensividade',
-      }),
-    ).toHaveCount(1);
+      recursos.getByRole('group', { name: 'Prazo para recorrer em 2ª instância' }),
+    ).toHaveCount(0);
+    await expect(recursos.getByRole('status')).toContainText(
+      'O prazo da 2ª instância foi retirado porque o recurso não admite instância superior.',
+    );
+    await escolher(recursos, 'Admite instância superior?', 'Sim');
+    await expect(prazo(recursos, 'Prazo para recorrer em 2ª instância').valor).toHaveValue('');
   });
 
   /** A ciência não tem publicação a apontar: o campo do ato sai junto com ela. */

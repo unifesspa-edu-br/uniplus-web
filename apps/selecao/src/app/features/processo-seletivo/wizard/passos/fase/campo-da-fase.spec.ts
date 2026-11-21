@@ -39,22 +39,10 @@ describe('campoDaRecusaDaFase', () => {
     ['fases[0].regraRecurso.prazoUnidade', 'recurso.prazoUnidade'],
     ['fases[0].regraRecurso.atoAncoraCodigo', 'recurso.ancora'],
     ['fases[0].regraRecurso.admiteInstanciaSuperior', 'recurso.admiteInstanciaSuperior'],
-    [
-      'fases[0].regraRecurso.suspensividadePrimeiraInstanciaValor',
-      'recurso.suspensividadePrimeiraInstanciaValor',
-    ],
-    [
-      'fases[0].regraRecurso.suspensividadePrimeiraInstanciaUnidade',
-      'recurso.suspensividadePrimeiraInstanciaUnidade',
-    ],
-    [
-      'fases[0].regraRecurso.suspensividadeSegundaInstanciaValor',
-      'recurso.suspensividadeSegundaInstanciaValor',
-    ],
-    [
-      'fases[0].regraRecurso.suspensividadeSegundaInstanciaUnidade',
-      'recurso.suspensividadeSegundaInstanciaUnidade',
-    ],
+    ['fases[0].regraRecurso.efeitoSuspensivo', 'recurso.efeitoSuspensivo'],
+    ['fases[0].regraRecurso.guardaDaVaga', 'recurso.guardaDaVaga'],
+    ['fases[0].regraRecurso.prazoSegundaInstanciaValor', 'recurso.prazoSegundaInstanciaValor'],
+    ['fases[0].regraRecurso.prazoSegundaInstanciaUnidade', 'recurso.prazoSegundaInstanciaUnidade'],
   ])('leva %s ao campo %s da regra de recurso', (field, campo) => {
     expect(campoDe(field)).toBe(campo);
   });
@@ -65,12 +53,15 @@ describe('campoDaRecusaDaFase', () => {
     expect(campoDe('fases[0].regraRecurso')).toBe('recurso');
   });
 
-  it.each(['fases[0]', 'fases[0].ordem', 'fases[0].faseCanonicaId', 'fases[0].tiposDeDecisao[0]'])(
-    'deixa no topo da fase o caminho %s, que a fase conhece sem controle de recusa',
-    (field) => {
-      expect(campoDe(field)).toBe(NO_TOPO_DA_FASE);
-    },
-  );
+  it.each([
+    'fases[0]',
+    'fases[0].ordem',
+    'fases[0].faseCanonicaId',
+    'fases[0].noMesmoMomentoDaAnterior',
+    'fases[0].tiposDeDecisao[0]',
+  ])('deixa no topo da fase o caminho %s, que a fase conhece sem controle de recusa', (field) => {
+    expect(campoDe(field)).toBe(NO_TOPO_DA_FASE);
+  });
 
   it.each([
     'fases[0].bancas[x]',

@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
-import {
-  fase,
-  ID_BANCA_HETERO,
-  ID_CATEGORIA_RACA,
-  ID_RECURSOS,
-  proximoPasso,
-} from './fase.testing';
+import { CaraterEtapa } from '@uniplus/shared-data/selecao';
+import { fase, ID_BANCA_HETERO, ID_CATEGORIA_RACA, proximoPasso } from './fase.testing';
+import { recurso } from './configuracao-da-fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent: edição da fase no rascunho', () => {
@@ -16,50 +11,9 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
   let bancas: ContextoDaFase['bancas'];
-  let publicacoes: ContextoDaFase['publicacoes'];
 
   usarFase((tela) => {
-    ({ componente, store, detectar, nativo, comCronograma, bancas, publicacoes } = tela);
-  });
-
-  /**
-   * A conclusão do ciclo só existe em fase que publica preliminar, e o seletor
-   * que a declara some junto com ele. Deixar o código declarado para trás
-   * trancaria o passo numa recusa cujo campo a tela não mostra mais.
-   */
-  describe('conclusão declarada que perde o preliminar', () => {
-    const comConcluinte = () =>
-      comCronograma(
-        fase({
-          produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
-          faseConcluinteCodigo: 'RECURSOS',
-        }),
-        fase({
-          faseCanonicaId: ID_RECURSOS,
-          codigo: 'RECURSOS',
-          ordem: 2,
-          produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
-        }),
-      );
-
-    it('esquece a fase concluinte quando o papel preliminar é trocado', () => {
-      comConcluinte();
-
-      publicacoes().escolherPapel(0, 'DEFINITIVO');
-      detectar();
-
-      expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
-      expect(componente.problemas()).toEqual([]);
-    });
-
-    it('esquece a fase concluinte quando a publicação preliminar é removida', () => {
-      comConcluinte();
-
-      publicacoes().removerProduto(0);
-      detectar();
-
-      expect(store.draft().cronograma.fases[0].faseConcluinteCodigo).toBeNull();
-    });
+    ({ componente, store, detectar, nativo, comCronograma, bancas } = tela);
   });
 
   /**
@@ -74,19 +28,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
           { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
           { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
         ],
-        regraRecurso: {
-          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-          regraVersao: 'v1',
-          prazoValor: '2',
-          prazoUnidade: UnidadePrazo.diasUteis,
-          atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-          suspensividadePrimeiraInstanciaValor: '',
-          suspensividadePrimeiraInstanciaUnidade: '',
-          admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: '',
-          suspensividadeSegundaInstanciaUnidade: '',
-          procedimentos: [],
-        },
+        regraRecurso: recurso(),
       }),
     );
 

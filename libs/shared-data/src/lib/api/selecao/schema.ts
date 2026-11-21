@@ -9340,6 +9340,138 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/unidades-do-prazo-de-recurso": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.unidade-do-prazo-de-recurso.v1+json": readonly components["schemas"]["UnidadePrazo"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/efeitos-suspensivos": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.efeito-suspensivo.v1+json": readonly components["schemas"]["EfeitoSuspensivoComDescricao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/guardas-da-vaga": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.guarda-da-vaga.v1+json": readonly components["schemas"]["GuardaDaVagaComDescricao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -9975,11 +10107,11 @@ export interface components {
         readonly CronogramaDaFaseDto: {
             /** Format: int32 */
             readonly ordem: number;
+            readonly noMesmoMomentoDaAnterior: boolean;
             /** Format: date-time */
             readonly inicio: null | string;
             /** Format: date-time */
             readonly fim: null | string;
-            readonly faseConcluinteCodigo: null | string;
             readonly unidadeResponsavel: null | components["schemas"]["UnidadeResponsavelDto"];
         };
         readonly DadosDoAtoRequest: {
@@ -10778,7 +10910,7 @@ export interface components {
         };
         /**
          * Propriedades do recurso
-         * @description Prazo de interposição, âncora e efeito suspensivo do recurso, comuns à fase e à etapa.
+         * @description Prazos, efeito suspensivo e guarda da vaga do recurso, comuns à fase e à etapa.
          */
         readonly DocumentoDaConfiguracaoComunsPropriedadesDoRecurso: {
             /**
@@ -10798,7 +10930,7 @@ export interface components {
             readonly prazoValor?: number;
             /**
              * Unidade do prazo
-             * @description Unidade do prazo de interposição: horas ou dias úteis (diasUteis).
+             * @description Unidade do prazo de interposição: horas, dias úteis (diasUteis) ou dias corridos (dias). Só horas e dias úteis são aceitos pelo domínio; dias corridos chegam a ele para receber a recusa própria.
              * @enum {unknown}
              */
             readonly prazoUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade;
@@ -10808,32 +10940,33 @@ export interface components {
              */
             readonly atoAncoraCodigo?: string;
             /**
-             * Efeito suspensivo na primeira instância, quantidade
-             * @description Quantidade de unidades do efeito suspensivo na primeira instância, com até quatro casas decimais. Nulo, junto à unidade, desativa o bloqueio nesta instância.
-             */
-            readonly suspensividadePrimeiraInstanciaValor?: number | null;
-            /**
-             * Efeito suspensivo na primeira instância, unidade
-             * @description Unidade do efeito suspensivo na primeira instância: horas, dias ou dias úteis (diasUteis). Nula, junto ao valor, desativa o bloqueio nesta instância.
-             * @enum {unknown}
-             */
-            readonly suspensividadePrimeiraInstanciaUnidade?: "horas" | "dias" | "diasUteis" | null;
-            /**
              * Admite instância superior
              * @description Se cabe recurso à instância superior.
              */
             readonly admiteInstanciaSuperior?: boolean;
             /**
-             * Efeito suspensivo na instância superior, quantidade
-             * @description Quantidade de unidades do efeito suspensivo na instância superior, com até quatro casas decimais. Nulo, junto à unidade, desativa o bloqueio nesta instância.
+             * Prazo da 2ª instância
+             * @description Quantidade de unidades do prazo para recorrer em 2ª instância, com até quatro casas decimais. Obrigatório quando o recurso admite instância superior e recusado quando não admite.
              */
-            readonly suspensividadeSegundaInstanciaValor?: number | null;
+            readonly prazoSegundaInstanciaValor?: number;
             /**
-             * Efeito suspensivo na instância superior, unidade
-             * @description Unidade do efeito suspensivo na instância superior: horas, dias ou dias úteis (diasUteis). Nula, junto ao valor, desativa o bloqueio nesta instância.
+             * Unidade do prazo da 2ª instância
+             * @description Unidade do prazo da 2ª instância: horas, dias úteis (diasUteis) ou dias corridos (dias). Como no prazo de interposição, só horas e dias úteis são aceitos pelo domínio.
              * @enum {unknown}
              */
-            readonly suspensividadeSegundaInstanciaUnidade?: "horas" | "dias" | "diasUteis" | null;
+            readonly prazoSegundaInstanciaUnidade?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoSegundaInstanciaUnidade;
+            /**
+             * Efeito suspensivo na 1ª instância
+             * @description Efeito suspensivo do recurso na 1ª instância, escolhido pelo edital. A única opção aceita é sem efeito suspensivo (semEfeitoSuspensivo). A 2ª instância sempre tem efeito suspensivo, sem escolha.
+             * @enum {unknown}
+             */
+            readonly efeitoSuspensivo?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoEfeitoSuspensivo;
+            /**
+             * Guarda da vaga
+             * @description Se a vaga em disputa fica guardada enquanto o recurso corre: até o resultado definitivo (ateOResultadoDefinitivo) ou não guarda (naoGuarda). Quando ausente, vale guardar até o resultado definitivo. Com instância superior, a vaga fica guardada até o resultado definitivo.
+             * @enum {unknown}
+             */
+            readonly guardaDaVaga?: DocumentoDaConfiguracaoComunsPropriedadesDoRecursoGuardaDaVaga;
             /**
              * Procedimentos de recurso
              * @description O procedimento que revisa o recurso de cada matéria que a fase ou a etapa decide. Cada matéria tem um único procedimento, e um tipo de decisão não mistura procedimento para o tipo inteiro com procedimento por alvo.
@@ -10879,7 +11012,7 @@ export interface components {
         readonly DocumentoDaConfiguracaoCronograma: {
             /**
              * Fases
-             * @description Fases do cronograma, na ordem da linha do tempo do processo: a posição na lista é a ordem de cada fase. A chave de cada fase é única no documento.
+             * @description Fases do cronograma, na ordem da linha do tempo do processo: a posição na lista é a ordem de cada fase, e cada fase acontece depois da anterior, salvo a que está marcada para acontecer no mesmo momento dela. A chave de cada fase é única no documento.
              */
             readonly fases?: readonly components["schemas"]["DocumentoDaConfiguracaoCronogramaFase"][];
         };
@@ -10898,6 +11031,12 @@ export interface components {
              * @description Código da fase no catálogo de fases canônicas, por exemplo INSCRICAO ou RESULTADO_FINAL.
              */
             readonly faseCanonicaCodigo: components["schemas"]["DocumentoDaConfiguracaoComunsCodigoDeCatalogo"];
+            /**
+             * No mesmo momento da fase anterior
+             * @description A fase acontece no mesmo momento da fase que a antecede na lista. Não vale na primeira fase.
+             * @default false
+             */
+            readonly noMesmoMomentoDaAnterior: boolean;
             /**
              * Início da fase
              * @description Instante em que a fase começa, em UTC. Ausente enquanto não definido.
@@ -10925,14 +11064,9 @@ export interface components {
             readonly unidadeResponsavelSigla?: string;
             /**
              * Atos que a fase publica
-             * @description Tipos de ato publicados pela fase, como o resultado preliminar. O par tipo de ato e papel não se repete na fase.
+             * @description Tipos de ato publicados pela fase, como o resultado preliminar. O par tipo de ato e papel não se repete na fase. A fase que publica o resultado preliminar de um tipo de ato publica nela mesma o definitivo do mesmo tipo.
              */
             readonly produtos?: readonly components["schemas"]["DocumentoDaConfiguracaoComunsProduto"][];
-            /**
-             * Fase que conclui o ciclo
-             * @description Chave local da fase do cronograma que conclui o ciclo de recurso desta fase.
-             */
-            readonly faseConcluinteChave?: components["schemas"]["DocumentoDaConfiguracaoComunsChave"];
             /**
              * Emite parecer individual
              * @description Se a fase emite parecer individual ao candidato, quando ela publica resultado.
@@ -10945,7 +11079,7 @@ export interface components {
             readonly bancasRequeridas?: readonly components["schemas"]["DocumentoDaConfiguracaoBancas"][];
             /**
              * Regra de recurso
-             * @description Prazo e efeito suspensivo do recurso. A presença desta regra é o que faz a fase admitir recurso.
+             * @description Prazos, efeito suspensivo e guarda da vaga do recurso. A presença desta regra é o que faz a fase admitir recurso.
              */
             readonly regraRecurso?: components["schemas"]["DocumentoDaConfiguracaoCronogramaRegraRecurso"];
             /**
@@ -10966,7 +11100,7 @@ export interface components {
         };
         /**
          * Regra de recurso
-         * @description Regra do catálogo que define o prazo de interposição do recurso, a âncora dele e o efeito suspensivo.
+         * @description Regra do catálogo que define o prazo de interposição do recurso, o evento que inicia o prazo, o efeito suspensivo e a guarda da vaga.
          */
         readonly DocumentoDaConfiguracaoCronogramaRegraRecurso: components["schemas"]["DocumentoDaConfiguracaoComunsPropriedadesDoRecurso"];
         /**
@@ -11404,7 +11538,7 @@ export interface components {
         };
         /**
          * Recurso da etapa
-         * @description Recurso que a etapa admite: a âncora do prazo e as mesmas propriedades de prazo e efeito suspensivo do recurso da fase. Com a âncora atoPublicado, o ato âncora é um ato preliminar da própria etapa.
+         * @description Recurso que a etapa admite: o evento que inicia o prazo e as mesmas propriedades de prazos, efeito suspensivo e guarda da vaga do recurso da fase. Quando o evento que inicia o prazo é atoPublicado, o ato de referência é um ato preliminar da própria etapa.
          */
         readonly DocumentoDaConfiguracaoEtapasRecursoDaEtapa: {
             /**
@@ -11812,7 +11946,7 @@ export interface components {
         readonly DocumentoDaConfiguracaoHomologacao: {
             /**
              * Resultado que publica a lista
-             * @description Código do tipo de ato que publica a lista de homologadas: produto da própria fase; o definitivo sai nela ou na fase concluinte.
+             * @description Código do tipo de ato que publica a lista de homologadas: produto da própria fase. Se a fase publica o preliminar, o definitivo do mesmo tipo sai na própria fase.
              */
             readonly resultadoAtoCodigo?: string;
             /**
@@ -12480,6 +12614,20 @@ export interface components {
             /** @description O edital como documento principal e os anexos em seguida. O documento do ato só entra na lista depois da cópia ao acervo; antes disso a lista é vazia e urlDownload do edital é nulo. */
             readonly documentos: readonly components["schemas"]["DocumentoDoAtoCertameDto"][];
         };
+        readonly EfeitoSuspensivo: {
+            readonly codigo: components["schemas"]["EfeitoSuspensivoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `semEfeitoSuspensivo`: Sem efeito suspensivo — O recurso não suspende o processo: as fases seguintes começam nas datas do cronograma, mesmo com recurso em análise.
+         * @enum {string}
+         */
+        readonly EfeitoSuspensivoCodigo: EfeitoSuspensivoCodigo;
+        readonly EfeitoSuspensivoComDescricao: {
+            readonly codigo: components["schemas"]["EfeitoSuspensivoCodigo"];
+            readonly rotulo: string;
+            readonly descricao: string;
+        };
         /** @enum {string} */
         readonly EncerramentoDaVotacao: "todosOsTitulares" | "presidenciaNoQuorum" | null;
         readonly EnvioDoComprovanteDto: {
@@ -12658,7 +12806,6 @@ export interface components {
             /** Format: date-time */
             readonly fim: null | string;
             readonly produtos: readonly components["schemas"]["ProdutoDaFaseInput"][];
-            readonly faseConcluinteCodigo: null | string;
             readonly emiteParecerIndividual: boolean;
             readonly bancasRequeridas: readonly components["schemas"]["BancaRequeridaInput"][];
             readonly regraRecurso: null | components["schemas"]["RegraRecursoFaseInput"];
@@ -12666,6 +12813,7 @@ export interface components {
             readonly unidadeResponsavelId?: null | string;
             readonly tiposDeDecisao?: null | readonly string[];
             readonly regraDeHomologacao?: null | components["schemas"]["RegraDeHomologacaoInput"];
+            readonly noMesmoMomentoDaAnterior?: boolean;
         };
         readonly FaseDosDocumentosDto: {
             /** Format: uuid */
@@ -12895,6 +13043,21 @@ export interface components {
             readonly ocorrenciaDoCandidatoValida: boolean;
             readonly ocorrencias: readonly components["schemas"]["OcorrenciaSimuladaDto"][];
         };
+        readonly GuardaDaVaga: {
+            readonly codigo: components["schemas"]["GuardaDaVagaCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `ateOResultadoDefinitivo`: Guarda a vaga até o resultado definitivo — Se quem recorre seria chamado para a vaga, ela fica guardada até a publicação do resultado definitivo.
+         *     - `naoGuarda`: Não guarda a vaga — A vaga não fica guardada durante o recurso. Se o recurso for deferido com a vaga já ocupada, a unidade resolve a situação.
+         * @enum {string}
+         */
+        readonly GuardaDaVagaCodigo: GuardaDaVagaCodigo;
+        readonly GuardaDaVagaComDescricao: {
+            readonly codigo: components["schemas"]["GuardaDaVagaCodigo"];
+            readonly rotulo: string;
+            readonly descricao: string;
+        };
         readonly IdadeMaximaEmissaoDto: {
             /** Format: int32 */
             readonly valor: number;
@@ -12922,6 +13085,10 @@ export interface components {
             /** Format: int32 */
             readonly ordem: null | number;
             readonly faseCodigo: null | string;
+        };
+        readonly IdentificadorDoItemNoFio: {
+            readonly lista: string;
+            readonly identificador: string;
         };
         /** @enum {string} */
         readonly ImpedimentoDoProduto: ImpedimentoDoProduto;
@@ -13079,6 +13246,7 @@ export interface components {
             readonly field?: null | string;
             readonly code: string;
             readonly message: string;
+            readonly identificadores?: null | readonly components["schemas"]["IdentificadorDoItemNoFio"][];
         };
         readonly ItemDeRespostaDto: {
             readonly fatoCodigo: string;
@@ -13514,13 +13682,12 @@ export interface components {
             /** Format: double */
             readonly prazoValor: number;
             readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
-            /** Format: double */
-            readonly suspensividadePrimeiraInstanciaValor: null | number;
-            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
             readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
-            readonly suspensividadeSegundaInstanciaValor: null | number;
-            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly prazoSegundaInstanciaValor: null | number;
+            readonly prazoSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly efeitoSuspensivo: components["schemas"]["EfeitoSuspensivo"];
+            readonly guardaDaVaga: components["schemas"]["GuardaDaVaga"];
         };
         readonly ParteDescartadaDto: {
             readonly parte: string;
@@ -13625,6 +13792,22 @@ export interface components {
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
+            /** @description Uma entrada por violação, quando a resposta reúne mais de uma ou quando alguma aponta um campo. A primeira é a que descreve a resposta inteira. */
+            readonly errors?: readonly {
+                /** @description O campo que a violação aponta, em notação de pontos e colchetes ou como ponteiro JSON quando o corpo é um documento. Ausente quando a violação não é de campo. */
+                readonly field?: string;
+                /** @description O código publicado do erro. */
+                readonly code: string;
+                /** @description A mensagem do erro, que nunca repete o valor recusado. */
+                readonly message: string;
+                /** @description O identificador estável de cada item de lista que o campo atravessa, na ordem do caminho, para achar o item mesmo depois de outra gravação mudar as posições. Ausente quando a violação não aponta item com identificador; o identificador que já não existe não aponta outro item. */
+                readonly identificadores?: readonly {
+                    /** @description O nome da lista, como aparece no caminho do campo. */
+                    readonly lista: string;
+                    /** @description O identificador estável do item: um código de catálogo ou um identificador opaco, nunca dado pessoal. */
+                    readonly identificador: string;
+                }[];
+            }[];
         };
         readonly ProcedimentoDeRecursoDto: {
             readonly tipoDeDecisao: string;
@@ -13835,16 +14018,15 @@ export interface components {
             readonly regraCodigo: string;
             readonly regraVersao: string;
             /** Format: double */
-            readonly prazoValor: number;
-            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
+            readonly prazoValor: null | number;
+            readonly prazoUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
             readonly atoAncoraCodigo: null | string;
-            /** Format: double */
-            readonly suspensividadePrimeiraInstanciaValor: null | number;
-            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
             readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
-            readonly suspensividadeSegundaInstanciaValor: null | number;
-            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly prazoSegundaInstanciaValor: null | number;
+            readonly prazoSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
+            readonly efeitoSuspensivo: null | components["schemas"]["EfeitoSuspensivoCodigo"];
+            readonly guardaDaVaga: null | components["schemas"]["GuardaDaVagaCodigo"];
             readonly procedimentos?: null | readonly components["schemas"]["ProcedimentoDeRecursoInput"][];
         };
         readonly RecursoOfertadoDto: {
@@ -13998,16 +14180,15 @@ export interface components {
             readonly regraCodigo: string;
             readonly regraVersao: string;
             /** Format: double */
-            readonly prazoValor: number;
-            readonly prazoUnidade: components["schemas"]["UnidadePrazo"];
+            readonly prazoValor: null | number;
+            readonly prazoUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
             readonly atoAncoraCodigo: string;
-            /** Format: double */
-            readonly suspensividadePrimeiraInstanciaValor: null | number;
-            readonly suspensividadePrimeiraInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
             readonly admiteInstanciaSuperior: boolean;
             /** Format: double */
-            readonly suspensividadeSegundaInstanciaValor: null | number;
-            readonly suspensividadeSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazo"];
+            readonly prazoSegundaInstanciaValor: null | number;
+            readonly prazoSegundaInstanciaUnidade: null | components["schemas"]["UnidadePrazoCodigo"];
+            readonly efeitoSuspensivo: null | components["schemas"]["EfeitoSuspensivoCodigo"];
+            readonly guardaDaVaga: null | components["schemas"]["GuardaDaVagaCodigo"];
             readonly procedimentos?: null | readonly components["schemas"]["ProcedimentoDeRecursoInput"][];
         };
         readonly RestricaoValorDto: {
@@ -14206,8 +14387,17 @@ export interface components {
             readonly cidadeNome: null | string;
             readonly cidadeUf: null | string;
         };
-        /** @enum {string} */
-        readonly UnidadePrazo: UnidadePrazo;
+        readonly UnidadePrazo: {
+            readonly codigo: components["schemas"]["UnidadePrazoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `horas`: Horas
+         *     - `dias`: Dias corridos
+         *     - `diasUteis`: Dias úteis
+         * @enum {string}
+         */
+        readonly UnidadePrazoCodigo: UnidadePrazoCodigo;
         readonly UnidadeResponsavelDto: {
             /** Format: uuid */
             readonly origemId: string;
@@ -14419,7 +14609,20 @@ export enum DocumentoDaConfiguracaoComunsProdutoPapel {
 }
 export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoUnidade {
     horas = "horas",
+    dias = "dias",
     diasUteis = "diasUteis"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoPrazoSegundaInstanciaUnidade {
+    horas = "horas",
+    dias = "dias",
+    diasUteis = "diasUteis"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoEfeitoSuspensivo {
+    semEfeitoSuspensivo = "semEfeitoSuspensivo"
+}
+export enum DocumentoDaConfiguracaoComunsPropriedadesDoRecursoGuardaDaVaga {
+    ateOResultadoDefinitivo = "ateOResultadoDefinitivo",
+    naoGuarda = "naoGuarda"
 }
 export enum DocumentoDaConfiguracaoComunsTipoDeDecisao {
     ISENCAO_DA_TAXA = "ISENCAO_DA_TAXA",
@@ -14555,10 +14758,17 @@ export enum DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos {
     DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
     CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
 }
+export enum EfeitoSuspensivoCodigo {
+    semEfeitoSuspensivo = "semEfeitoSuspensivo"
+}
 export enum FinalidadeDoDocumento {
     documentoDoEdital = "documentoDoEdital",
     anexoDoEdital = "anexoDoEdital",
     documentoDeAto = "documentoDeAto"
+}
+export enum GuardaDaVagaCodigo {
+    ateOResultadoDefinitivo = "ateOResultadoDefinitivo",
+    naoGuarda = "naoGuarda"
 }
 export enum ImpedimentoDoProduto {
     jaPublicado = "jaPublicado",
@@ -14630,8 +14840,7 @@ export enum StatusProcesso {
     encerrado = "encerrado",
     cancelado = "cancelado"
 }
-export enum UnidadePrazo {
-    nenhuma = "nenhuma",
+export enum UnidadePrazoCodigo {
     horas = "horas",
     dias = "dias",
     diasUteis = "diasUteis"

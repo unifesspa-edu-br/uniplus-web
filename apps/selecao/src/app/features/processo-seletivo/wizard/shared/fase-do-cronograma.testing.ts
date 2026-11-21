@@ -8,7 +8,7 @@ const FASE_DO_CRONOGRAMA_PADRAO: FaseDoCronograma = {
   fim: null,
   unidadeResponsavelId: null,
   produtos: [],
-  faseConcluinteCodigo: null,
+  noMesmoMomentoDaAnterior: false,
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,

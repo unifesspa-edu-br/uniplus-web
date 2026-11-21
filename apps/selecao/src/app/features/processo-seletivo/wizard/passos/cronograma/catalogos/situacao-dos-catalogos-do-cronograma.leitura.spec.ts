@@ -1,5 +1,5 @@
 import { HttpHeaders } from '@angular/common/http';
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,12 +15,18 @@ import {
 } from '@uniplus/shared-data/configuracao';
 import { UnidadesApi } from '@uniplus/shared-data/organizacao';
 import { TiposAtoApi } from '@uniplus/shared-data/publicacoes';
-import { MotivosDeDecisaoApi, RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
+import {
+  MotivosDeDecisaoApi,
+  OpcoesDoRecursoApi,
+  RegrasCatalogoApi,
+} from '@uniplus/shared-data/selecao';
 import {
   acompanharLeitura,
   AnuncioDaConclusao,
   type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
+
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
 import { pagina } from './catalogos.testing';
@@ -59,6 +65,8 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
     TestBed.configureTestingModule({
       providers: [
         ...CATALOGOS_DO_CRONOGRAMA,
+        { provide: ProcessoSeletivoStore, useValue: { emConsulta: signal(true) } },
+        { provide: OpcoesDoRecursoApi, useValue: {} },
         { provide: AnuncioDaConclusao, useValue: { anunciar } },
         { provide: FasesCanonicasApi, useValue: { listar: () => fases } },
         { provide: FatosCandidatoApi, useValue: { listar: () => fatos } },

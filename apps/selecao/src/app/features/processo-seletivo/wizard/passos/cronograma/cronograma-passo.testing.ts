@@ -22,13 +22,13 @@ import type {
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos/catalogos-do-cronograma';
 import { ConvencaoDeContagemComponent } from './convencao-de-contagem.component';
 import { CronogramaPassoComponent } from './cronograma.component';
 import {
-  FASE_SUMIDA,
   FASES_CANONICAS,
   ID_RESULTADO,
   PROCESSO_COM_ETAPA_GRAVADA,
@@ -81,7 +81,7 @@ function faseDoRascunho(campos: CamposDaFase): FaseDoCronograma {
     fim: FIM_DA_FASE,
     unidadeResponsavelId: null,
     produtos: [],
-    faseConcluinteCodigo: null,
+    noMesmoMomentoDaAnterior: false,
     emiteParecerIndividual: false,
     bancasRequeridas: [],
     regraRecurso: null,
@@ -136,7 +136,6 @@ function faseQuePublica(
     codigo: 'RESULTADO_FINAL',
     ordem: 1,
     produtos,
-    faseConcluinteCodigo: 'RECURSOS',
     emiteParecerIndividual: true,
     bancasRequeridas,
   });
@@ -145,6 +144,8 @@ function faseQuePublica(
 function respostaDaLeitura(requisicao: TestRequest): object {
   const { url } = requisicao.request;
   const tipo = requisicao.request.params.get('tipo');
+  const opcoes = opcoesDoRecursoDaUrl(url);
+  if (opcoes !== null) return [...opcoes];
   if (url.includes('fases-canonicas')) return FASES_CANONICAS;
   if (url.includes('tipos-etapa')) return TIPOS_ETAPA;
   if (tipo === 'algoritmo_contagem_prazo') return REGRAS_CONTAGEM;
@@ -244,25 +245,9 @@ export class ContextoDoCronograma {
     bancasRequeridas: readonly BancaRequeridaDaFase[] = [],
   ): void => {
     const resultado = faseQuePublica(produtos, bancasRequeridas);
-    this.store.patchObjectSection('cronograma', { fases: [resultado, this.faseConcluinte()] });
+    this.store.patchObjectSection('cronograma', { fases: [resultado] });
     this.detectar();
   };
-
-  /**
-   * A fase concluinte precisa estar na linha do tempo, publicar a definitiva e vir depois —
-   * é o que a conferência do passo confere.
-   */
-  private faseConcluinte(): FaseDoCronograma {
-    return faseDoRascunho({
-      faseCanonicaId: FASE_SUMIDA,
-      codigo: 'RECURSOS',
-      ordem: 2,
-      inicio: '2026-03-12T08:00:00-03:00',
-      fim: '2026-03-20T18:00:00-03:00',
-      produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
-      congelados: congeladosDaFase(false),
-    });
-  }
 
   /** Fases cujo processo congelou atributos diferentes dos do catálogo. */
   readonly comFasesCongeladas = (

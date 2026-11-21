@@ -25,6 +25,12 @@ export {
   type MotivoDeDecisaoDto,
   type MotivosDeDecisaoQuery,
 } from './motivos-de-decisao.api';
+export {
+  OpcoesDoRecursoApi,
+  type EfeitoSuspensivoDto,
+  type GuardaDaVagaDto,
+  type UnidadeDoPrazoDeRecursoDto,
+} from './opcoes-do-recurso.api';
 export { rotuloDoTipoDeDecisao, TIPOS_DE_DECISAO, type TipoDeDecisao } from './tipos-de-decisao';
 export { rotuloDoSentido, SENTIDOS_DE_DECISAO, type SentidoDeDecisao } from './sentidos-de-decisao';
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
@@ -215,8 +221,6 @@ export {
   DocumentoDaConfiguracaoIdentificacaoOrigemCandidatos,
   DocumentoDaConfiguracaoOpcoesDeCursoNumero,
   DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos,
-  type UnidadeDaSuspensividade,
-  type UnidadeDaSuspensividadeNaSegundaInstancia,
   type DocumentoDaConfiguracao,
   type RascunhoSubstituidoResponse,
   type DocumentoDaConfiguracaoAtendimento,
@@ -247,11 +251,13 @@ export {
 } from './documento-da-configuracao.contrato';
 export {
   CaraterEtapa,
+  EfeitoSuspensivoCodigo,
+  GuardaDaVagaCodigo,
   ModoDeDeliberacao,
   OrigemCandidatos,
   SituacaoInscricao,
   StatusProcesso,
-  UnidadePrazo,
+  UnidadePrazoCodigo,
 } from './schema';
 export {
   ObrigatoriedadesLegaisApi,

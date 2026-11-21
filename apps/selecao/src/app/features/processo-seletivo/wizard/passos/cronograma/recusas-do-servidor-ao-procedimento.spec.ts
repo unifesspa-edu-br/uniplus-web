@@ -49,10 +49,11 @@ function documento(procedimentos = ENVIADOS): DocumentoDaConfiguracao {
     ...documentoSemNada(),
     cronograma: {
       fases: [
-        { chave: 'outra', faseCanonicaCodigo: 'INSCRICOES' },
+        { chave: 'outra', faseCanonicaCodigo: 'INSCRICOES', noMesmoMomentoDaAnterior: false },
         {
           chave: 'fase',
           faseCanonicaCodigo: 'INSCRICOES',
+          noMesmoMomentoDaAnterior: false,
           regraRecurso: { procedimentosDeRecurso: procedimentos },
         },
       ],

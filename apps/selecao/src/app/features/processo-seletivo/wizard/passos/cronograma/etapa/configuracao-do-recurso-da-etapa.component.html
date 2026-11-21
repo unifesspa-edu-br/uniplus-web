@@ -3,7 +3,6 @@
 @let recurso = recursoDaEtapa();
 @let indice = indiceDoRecurso();
 @let notaDoEnem = edicao.etapaDeNotaDoEnem(etapa);
-@let sufixo = posicao + '-' + indice;
 
 <ng-template #recusasDoControle let-controle>
   @let doControle = recusasDe(controle);
@@ -29,7 +28,7 @@
     [attr.aria-invalid]="invalido('origemDoPrazo')"
     [attr.aria-describedby]="descritoPor('origemDoPrazo')"
     [disabled]="!edicaoLiberada()"
-    (change)="edicao.alterarRecursoDaEtapa(etapa, indice, 'ancora', $any($event.target).value)"
+    (change)="escolherOrigemDoPrazo($any($event.target).value)"
   >
     @if (!notaDoEnem || recurso.ancora === 'atoPublicado') {
       <option value="atoPublicado" [selected]="recurso.ancora === 'atoPublicado'">
@@ -53,9 +52,7 @@
       [attr.aria-invalid]="invalido('ancora')"
       [attr.aria-describedby]="descritoPor('ancora')"
       [disabled]="!edicaoLiberada()"
-      (change)="
-        edicao.alterarRecursoDaEtapa(etapa, indice, 'atoAncoraCodigo', $any($event.target).value)
-      "
+      (change)="escolherPublicacao($any($event.target).value)"
     >
       <option value="">Selecione…</option>
       @for (preliminar of edicao.preliminaresDaEtapa(etapa); track preliminar.atoCodigo) {
@@ -76,120 +73,31 @@
   </div>
 }
 <ng-container *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'ancora' }" />
-<sel-prazo-do-recurso
-  class="form-grid__full"
-  legenda="Prazo de interposição"
-  textoDeObrigatoriedade="(obrigatório)"
-  [valor]="recurso.prazoValor"
-  [unidade]="recurso.prazoUnidade"
-  [unidades]="unidadesDaInterposicao"
-  [desabilitado]="!edicaoLiberada()"
-  [ids]="idsDaInterposicao()"
-  [recusasDoValor]="recusasDe('prazoValor')"
-  [recusasDaUnidade]="recusasDe('prazoUnidade')"
-  (valorAlterado)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoValor', $event)"
-  (unidadeAlterada)="edicao.alterarRecursoDaEtapa(etapa, indice, 'prazoUnidade', $event)"
-/>
-<sel-prazo-do-recurso
-  class="form-grid__full"
-  legenda="Suspensividade da 1ª instância"
-  opcaoEmBranco="Sem suspensividade"
-  [valor]="recurso.suspensividadePrimeiraInstanciaValor"
-  [unidade]="recurso.suspensividadePrimeiraInstanciaUnidade"
-  [unidades]="unidadesDaSuspensividade"
-  [desabilitado]="!edicaoLiberada()"
-  [ids]="idsDaSuspensividadeDaPrimeiraInstancia()"
-  [recusasDoValor]="recusasDe('suspensividadePrimeiraInstanciaValor')"
-  [recusasDaUnidade]="recusasDe('suspensividadePrimeiraInstanciaUnidade')"
-  (valorAlterado)="
-    edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadePrimeiraInstanciaValor', $event)
-  "
-  (unidadeAlterada)="
-    edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadePrimeiraInstanciaUnidade', $event)
-  "
-/>
-<p class="field__hint form-grid__full" [attr.id]="'cr-rec-susp-ajuda-' + sufixo">
-  O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são declarados
-  juntos; deixar os dois em branco desativa a suspensividade daquela instância. Em dias úteis o
-  valor é inteiro: para menos de um dia, declare em horas.
-</p>
-<fieldset
-  class="field form-grid__full"
-  [class.is-error]="recurso.admiteInstanciaSuperior === null"
-  [attr.aria-describedby]="
-    descritoPor(
-      'admiteInstanciaSuperior',
-      recurso.admiteInstanciaSuperior === null ? 'cr-rec-superior-erro-' + sufixo : '',
-      'cr-rec-superior-ajuda-' + sufixo
-    )
-  "
->
-  <legend class="field__label is-required">Admite recurso em instância superior?</legend>
-  <label class="radio">
-    <input
-      type="radio"
-      [attr.id]="'cr-rec-superior-sim-' + sufixo"
-      [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
-      [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
-      [value]="true"
-      [checked]="recurso.admiteInstanciaSuperior === true"
-      [disabled]="!edicaoLiberada()"
-      [attr.aria-invalid]="
-        recurso.admiteInstanciaSuperior === null ? 'true' : invalido('admiteInstanciaSuperior')
-      "
-      (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, true)"
-    />
-    <span class="radio__dot" aria-hidden="true"></span>
-    Sim
-  </label>
-  <label class="radio">
-    <input
-      type="radio"
-      [attr.id]="'cr-rec-superior-nao-' + sufixo"
-      [attr.name]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
-      [attr.formcontrolname]="'admiteInstanciaSuperior-' + posicao + '-' + indice"
-      [value]="false"
-      [checked]="recurso.admiteInstanciaSuperior === false"
-      [disabled]="!edicaoLiberada()"
-      [attr.aria-invalid]="
-        recurso.admiteInstanciaSuperior === null ? 'true' : invalido('admiteInstanciaSuperior')
-      "
-      (change)="edicao.declararInstanciaSuperiorDaEtapa(etapa, indice, false)"
-    />
-    <span class="radio__dot" aria-hidden="true"></span>
-    Não
-  </label>
-  <span class="field__hint" [attr.id]="'cr-rec-superior-ajuda-' + posicao + '-' + indice">
-    Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra instância,
-    julgada fora do sistema.
-  </span>
-  @if (recurso.admiteInstanciaSuperior === null) {
-    <span class="field__erro" [attr.id]="'cr-rec-superior-erro-' + posicao + '-' + indice">{{
-      edicao.mensagemDaInstanciaSuperiorEmAberto
-    }}</span>
-  }
-</fieldset>
-<ng-container
-  *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'admiteInstanciaSuperior' }"
-/>
-@if (recurso.admiteInstanciaSuperior === true) {
-  <sel-prazo-do-recurso
+@if (store.emConsulta()) {
+  <sel-parametros-do-recurso-em-consulta
     class="form-grid__full"
-    legenda="Suspensividade da 2ª instância"
-    opcaoEmBranco="Sem suspensividade"
-    [valor]="recurso.suspensividadeSegundaInstanciaValor"
-    [unidade]="recurso.suspensividadeSegundaInstanciaUnidade"
-    [unidades]="unidadesDaSuspensividade"
+    [parametros]="recurso"
+    [leitura]="recurso.leitura"
+  />
+} @else {
+  @if (recusasDoRecurso().length > 0) {
+    <sel-recusas-da-configuracao-do-recurso
+      class="form-grid__full"
+      [attr.id]="blocoDasRecusas()"
+      tabindex="-1"
+      [recusas]="recusasDoRecurso()"
+      [alvos]="alvosDoCampo"
+    />
+  }
+  <sel-parametros-do-recurso
+    class="form-grid__full"
+    [parametros]="recurso"
+    [leitura]="recurso.leitura"
+    [recusas]="recusasDosParametros()"
+    [prefixoDoId]="prefixoDosParametros()"
     [desabilitado]="!edicaoLiberada()"
-    [ids]="idsDaSuspensividadeDaSegundaInstancia()"
-    [recusasDoValor]="recusasDe('suspensividadeSegundaInstanciaValor')"
-    [recusasDaUnidade]="recusasDe('suspensividadeSegundaInstanciaUnidade')"
-    (valorAlterado)="
-      edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadeSegundaInstanciaValor', $event)
-    "
-    (unidadeAlterada)="
-      edicao.alterarRecursoDaEtapa(etapa, indice, 'suspensividadeSegundaInstanciaUnidade', $event)
-    "
+    (alterado)="alterarParametro($event)"
+    (retirarPrazoDaSegundaInstancia)="retirarOPrazoDaSegundaInstancia()"
   />
 }
 

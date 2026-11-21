@@ -1,24 +1,22 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
-
 import {
   PAPEL_DEFINITIVO,
   PAPEL_PRELIMINAR,
   type RecursoDaFase,
 } from '../../processo-seletivo.models';
+import {
+  PARAMETROS_SEM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { PROBLEM_JSON, PROCESSO_ID, ROTA_FASES } from './cronograma.testing';
 import type { ContextoDoCronograma } from './cronograma-passo.testing';
 
 export const REGRA_DO_RECURSO: RecursoDaFase = {
   regraCodigo: 'REGRA_DO_RECURSO',
   regraVersao: '1',
+  ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
   prazoValor: '3',
-  prazoUnidade: UnidadePrazo.diasUteis,
   atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: false,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso(),
   procedimentos: [],
 };
 

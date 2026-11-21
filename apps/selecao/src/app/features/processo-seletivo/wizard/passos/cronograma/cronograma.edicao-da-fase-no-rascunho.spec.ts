@@ -69,7 +69,7 @@ describe('CronogramaPassoComponent: edição da fase pelo rascunho', () => {
         faseDoServidor({ faseCanonica: { origemId: ID_INSCRICAO } }),
         faseDoServidor({
           id: 'fase-2',
-          codigo: 'RECURSOS',
+          codigo: 'HOMOLOGACAO_INSCRICOES',
           faseCanonica: { origemId: ID_AVALIACAO },
         }),
       ],

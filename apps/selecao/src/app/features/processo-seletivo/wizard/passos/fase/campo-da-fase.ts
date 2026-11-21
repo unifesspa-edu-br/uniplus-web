@@ -46,7 +46,7 @@ const CAMPOS_DA_FASE: ReadonlyMap<string, CampoDaRecusaDaFase> = new Map(
  * fase, e a recusa vai ao resumo do passo.
  */
 const CAMPOS_NO_TOPO_DA_FASE: ReadonlySet<string> = new Set(
-  ['ordem', 'faseCanonicaId', 'faseConcluinteCodigo', 'tiposDeDecisao'].map((campo) =>
+  ['ordem', 'faseCanonicaId', 'noMesmoMomentoDaAnterior', 'tiposDeDecisao'].map((campo) =>
     campo.toLowerCase(),
   ),
 );

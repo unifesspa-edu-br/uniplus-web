@@ -51,6 +51,22 @@ export interface components {
             readonly instance?: null | string;
             /** @description Presente e `true` quando o conflito descreve uma corrida que já passou: a mesma requisição, repetida sem alteração, pode agora ser aceita. A ausência é o default conservador do servidor — diz que o conflito não foi declarado retentável, não que repetir esteja descartado; nesse caso vale a descrição da própria resposta. */
             readonly retryable?: boolean;
+            /** @description Uma entrada por violação, quando a resposta reúne mais de uma ou quando alguma aponta um campo. A primeira é a que descreve a resposta inteira. */
+            readonly errors?: readonly {
+                /** @description O campo que a violação aponta, em notação de pontos e colchetes ou como ponteiro JSON quando o corpo é um documento. Ausente quando a violação não é de campo. */
+                readonly field?: string;
+                /** @description O código publicado do erro. */
+                readonly code: string;
+                /** @description A mensagem do erro, que nunca repete o valor recusado. */
+                readonly message: string;
+                /** @description O identificador estável de cada item de lista que o campo atravessa, na ordem do caminho, para achar o item mesmo depois de outra gravação mudar as posições. Ausente quando a violação não aponta item com identificador; o identificador que já não existe não aponta outro item. */
+                readonly identificadores?: readonly {
+                    /** @description O nome da lista, como aparece no caminho do campo. */
+                    readonly lista: string;
+                    /** @description O identificador estável do item: um código de catálogo ou um identificador opaco, nunca dado pessoal. */
+                    readonly identificador: string;
+                }[];
+            }[];
         };
         readonly UserProfileResponse: {
             readonly userId: null | string;

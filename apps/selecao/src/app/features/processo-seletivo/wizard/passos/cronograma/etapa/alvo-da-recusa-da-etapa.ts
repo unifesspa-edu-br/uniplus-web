@@ -1,5 +1,8 @@
 import type { EtapaPontuada } from '../../../processo-seletivo.models';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
+import { alvosDoControleDosParametros } from '../../../shared/configuracao-do-recurso/ids-dos-parametros';
+import type { CampoDosParametros } from '../../../shared/configuracao-do-recurso/parametros-do-recurso';
+import { ehParametroDoRecurso } from '../../../shared/recusas/controle-do-recurso';
 import { NO_TOPO_DA_ETAPA } from '../campo-da-etapa';
 
 /** Os códigos das regras de consolidação que a tela oferece, na ordem em que as oferece. */
@@ -56,36 +59,50 @@ function alvosDoItem([, lista, posicao, subcampo]: RegExpExecArray, indice: numb
   return [controle, `${controle}-erro`];
 }
 
-/** A opção marcada de "admite instância superior", ou a primeira quando nenhuma está marcada. */
-function opcaoDaInstanciaSuperior(etapa: EtapaPontuada, posicao: number): string {
-  return etapa.recursos[posicao]?.admiteInstanciaSuperior === false ? 'nao' : 'sim';
+/** O prefixo dos `id` dos parâmetros do recurso, único por recurso de cada etapa. */
+export function prefixoDoRecursoDaEtapa(indiceDaEtapa: number, posicao: number): string {
+  return `cr-rec-${indiceDaEtapa}-${posicao}`;
 }
 
-/** Os `id` do controle de cada campo do recurso; `opcao` é a escolha marcada em instância superior. */
-const CONTROLE_DO_RECURSO_NA_TELA: ReadonlyMap<
-  string,
-  (sufixo: string, opcao: string) => readonly string[]
-> = new Map([
-  ['prazoValor', (sufixo) => [`cr-rec-prazo-${sufixo}`]],
-  ['prazoUnidade', (sufixo) => [`cr-rec-un-${sufixo}`]],
-  ['origemDoPrazo', (sufixo) => [`cr-rec-anc-${sufixo}`]],
-  ['ancora', (sufixo) => [`cr-rec-ato-${sufixo}`]],
-  ['suspensividadePrimeiraInstanciaValor', (sufixo) => [`cr-rec-susp1-val-${sufixo}`]],
-  ['suspensividadePrimeiraInstanciaUnidade', (sufixo) => [`cr-rec-susp1-un-${sufixo}`]],
-  ['suspensividadeSegundaInstanciaValor', (sufixo) => [`cr-rec-susp2-val-${sufixo}`]],
-  ['suspensividadeSegundaInstanciaUnidade', (sufixo) => [`cr-rec-susp2-un-${sufixo}`]],
-  ['admiteInstanciaSuperior', (sufixo, opcao) => [`cr-rec-superior-${opcao}-${sufixo}`]],
+/** O `id` do bloco que reúne as recusas aos parâmetros do recurso, de reserva ao foco. */
+export function blocoDasRecusasDoRecursoDaEtapa(indiceDaEtapa: number, posicao: number): string {
+  return `cr-rec-recusas-${indiceDaEtapa}-${posicao}`;
+}
+
+/** Os `id` do controle do recurso que não é parâmetro: de onde o prazo corre e a publicação. */
+const CONTROLE_FORA_DOS_PARAMETROS: ReadonlyMap<string, (sufixo: string) => string> = new Map([
+  ['origemDoPrazo', (sufixo) => `cr-rec-anc-${sufixo}`],
+  ['ancora', (sufixo) => `cr-rec-ato-${sufixo}`],
 ]);
+
+function alvosDoControleForaDosParametros(controle: string, sufixo: string): string[] {
+  const reserva = `cr-rec-recusa-${controle}-${sufixo}`;
+  const id = CONTROLE_FORA_DOS_PARAMETROS.get(controle)?.(sufixo);
+  return id === undefined ? [reserva] : [id, reserva];
+}
+
+function alvosDoParametro(
+  etapa: EtapaPontuada,
+  indice: number,
+  posicao: number,
+  controle: CampoDosParametros,
+): string[] {
+  const admite = etapa.recursos[posicao]?.admiteInstanciaSuperior ?? null;
+  const prefixo = prefixoDoRecursoDaEtapa(indice, posicao);
+  return [
+    ...alvosDoControleDosParametros(prefixo, controle, admite),
+    blocoDasRecusasDoRecursoDaEtapa(indice, posicao),
+  ];
+}
 
 function alvosDoRecurso(
   etapa: EtapaPontuada,
   indice: number,
   [, posicao, controle]: RegExpExecArray,
 ): string[] {
-  const sufixo = `${indice}-${posicao}`;
-  const opcao = opcaoDaInstanciaSuperior(etapa, Number(posicao));
-  const doControle = CONTROLE_DO_RECURSO_NA_TELA.get(controle)?.(sufixo, opcao) ?? [];
-  return [...doControle, `cr-rec-recusa-${controle}-${sufixo}`];
+  return ehParametroDoRecurso(controle)
+    ? alvosDoParametro(etapa, indice, Number(posicao), controle)
+    : alvosDoControleForaDosParametros(controle, `${indice}-${posicao}`);
 }
 
 /**

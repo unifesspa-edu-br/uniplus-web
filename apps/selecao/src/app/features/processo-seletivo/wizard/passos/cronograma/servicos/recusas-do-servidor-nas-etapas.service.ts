@@ -165,6 +165,13 @@ export class RecusasDoServidorNasEtapas {
     return emOrdem(daEtapa.filter((recusa) => recusa.campo === campo));
   }
 
+  /** Todas as recusas a um recurso da etapa, ativas e a conferir, na ordem em que se leem. */
+  recusasDoRecurso(grupo: FormGroup<EtapaForm>, indice: number): readonly RecusaOrdenada[] {
+    const prefixo = `recursos.${indice}.`;
+    const daEtapa = this.vigentes().get(grupo) ?? [];
+    return emOrdem(daEtapa.filter((recusa) => recusa.campo.startsWith(prefixo)));
+  }
+
   /** A primeira recusa ativa do passo: a da resposta mais recente, na ordem em que a API a deu. */
   primeiraRecusaAtiva(): RecusaAtivaNaEtapa | null {
     const candidatas = [...this.vigentes()].flatMap(([grupo, recusas]) =>

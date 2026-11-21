@@ -3,8 +3,9 @@ import { escalaVale } from '../../shared/itens-de-avaliacao';
 import {
   controleDoRecurso,
   type ControleDoRecurso,
-  ehDaSegundaInstancia,
+  ehDoPrazoDaSegundaInstancia,
 } from '../../shared/recusas/controle-do-recurso';
+import { prazoDaSegundaInstanciaVisivel } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import type { LocalDaRecusa } from '../../shared/recusas/local-da-recusa';
 import type { EtapaPontuada } from '../../processo-seletivo.models';
 import {
@@ -193,7 +194,10 @@ function itemNaTela(tela: EtapaNaTela, lista: ListaDaEtapa, posicao: number): bo
 function recursoNaTela(etapa: EtapaPontuada, posicao: number, controle: string): boolean {
   const recurso = etapa.recursos[posicao];
   if (recurso === undefined) return false;
-  return !ehDaSegundaInstancia(controle) || recurso.admiteInstanciaSuperior === true;
+  return (
+    !ehDoPrazoDaSegundaInstancia(controle) ||
+    prazoDaSegundaInstanciaVisivel(recurso, recurso.leitura)
+  );
 }
 
 /**

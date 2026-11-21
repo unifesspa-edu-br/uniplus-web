@@ -29,7 +29,7 @@ describe('o que impede gravar o formulário', () => {
   it('acusa a apuração ancorada em fase que saiu do cronograma', () => {
     const problemas = problemasDoFormulario(
       formularioCom(inscricaoGravada(), {
-        referenciaTemporal: { tipo: 'INICIO_FASE', data: '', faseCodigo: 'RECURSOS' },
+        referenciaTemporal: { tipo: 'INICIO_FASE', data: '', faseCodigo: 'HOMOLOGACAO_INSCRICOES' },
       }),
       NENHUMA_EXIGENCIA,
       FASES_VIVAS,

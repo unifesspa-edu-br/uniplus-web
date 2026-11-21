@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
+import { recurso } from '../fase/configuracao-da-fase.testing';
 import { type EtapaPontuada, type FaseDoCronograma } from '../../processo-seletivo.models';
 import {
   problemasDe,
@@ -117,19 +117,7 @@ describe('o que impede gravar o cronograma', () => {
       faseCanonicaId: RESULTADO.id,
       codigo: 'RESULTADO_PRELIMINAR',
       produtos: [PRELIMINAR],
-      regraRecurso: {
-        regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-        regraVersao: 'v1',
-        prazoValor: '2',
-        prazoUnidade: UnidadePrazo.diasUteis,
-        atoAncoraCodigo: '',
-        suspensividadePrimeiraInstanciaValor: '',
-        suspensividadePrimeiraInstanciaUnidade: '',
-        admiteInstanciaSuperior: true,
-        suspensividadeSegundaInstanciaValor: '',
-        suspensividadeSegundaInstanciaUnidade: '',
-        procedimentos: [],
-      },
+      regraRecurso: recurso({ atoAncoraCodigo: '' }),
     });
 
     const problemas = problemasDe([faseDeAvaliacao, semAncora], [etapaValida], catalogoDeFases, []);

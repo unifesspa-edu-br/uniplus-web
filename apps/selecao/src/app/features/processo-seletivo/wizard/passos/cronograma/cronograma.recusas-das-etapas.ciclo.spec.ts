@@ -87,7 +87,7 @@ describe('CronogramaPassoComponent: ciclo de vida das recusas das etapas', () =>
     detectar();
   }
 
-  const doPrazo = (recurso: number) => `cr-rec-recusa-prazoValor-0-${recurso}`;
+  const doPrazo = (recurso: number) => `cr-rec-0-${recurso}-prazo-interposicao-recusas-valor`;
 
   it('leva a recusa do recurso seguinte ao remover o anterior, sem herdar a do removido', async () => {
     doisRecursos();
@@ -112,9 +112,9 @@ describe('CronogramaPassoComponent: ciclo de vida das recusas das etapas', () =>
     detectar();
 
     expect(bloco(doPrazo(0))).toBeNull();
-    expect(nativo.querySelector('#cr-rec-prazo-0-0')?.getAttribute('aria-invalid')).not.toBe(
-      'true',
-    );
+    expect(
+      nativo.querySelector('#cr-rec-0-0-prazo-interposicao-valor')?.getAttribute('aria-invalid'),
+    ).not.toBe('true');
   });
 
   it('troca as recusas pelas da resposta recusada seguinte', async () => {

@@ -39,13 +39,7 @@ describe('alvosDaRecusaDaFase', () => {
 
   it.each([
     ['recurso.regra', 'fase-AVALIACAO-regra'],
-    ['recurso.prazoValor', 'fase-AVALIACAO-prazo-valor'],
-    ['recurso.prazoUnidade', 'fase-AVALIACAO-prazo-unidade'],
     ['recurso.ancora', 'fase-AVALIACAO-ancora'],
-    ['recurso.suspensividadePrimeiraInstanciaValor', 'fase-AVALIACAO-susp1-valor'],
-    ['recurso.suspensividadePrimeiraInstanciaUnidade', 'fase-AVALIACAO-susp1-unidade'],
-    ['recurso.suspensividadeSegundaInstanciaValor', 'fase-AVALIACAO-susp2-valor'],
-    ['recurso.suspensividadeSegundaInstanciaUnidade', 'fase-AVALIACAO-susp2-unidade'],
   ])(
     'leva a recusa de %s ao controle dela, com o bloco das recusas de reserva',
     (campo, controle) => {
@@ -57,15 +51,41 @@ describe('alvosDaRecusaDaFase', () => {
   );
 
   it.each([
-    [true, 'fase-AVALIACAO-superior-sim'],
-    [false, 'fase-AVALIACAO-superior-nao'],
-    [null, 'fase-AVALIACAO-superior-sim'],
+    ['recurso.prazoValor', ['recurso-fase-id-1-prazo-interposicao-valor']],
+    [
+      'recurso.prazoUnidade',
+      [
+        'recurso-fase-id-1-prazo-interposicao-unidade',
+        'recurso-fase-id-1-prazo-interposicao-situacao',
+      ],
+    ],
+    ['recurso.efeitoSuspensivo', ['recurso-fase-id-1-efeito-grupo']],
+    ['recurso.guardaDaVaga', ['recurso-fase-id-1-guarda-grupo']],
+    ['recurso.prazoSegundaInstanciaValor', ['recurso-fase-id-1-prazo-segunda-valor']],
+    [
+      'recurso.prazoSegundaInstanciaUnidade',
+      ['recurso-fase-id-1-prazo-segunda-unidade', 'recurso-fase-id-1-prazo-segunda-situacao'],
+    ],
+  ])(
+    'leva a recusa de %s ao controle do componente comum, com o bloco das recusas de reserva',
+    (campo, controles) => {
+      expect(alvosDaRecusaDaFase(campo, FASE, 0)).toEqual([
+        ...controles,
+        'fase-AVALIACAO-recurso-recusa',
+      ]);
+    },
+  );
+
+  it.each([
+    [true, 'recurso-fase-id-1-superior-sim'],
+    [false, 'recurso-fase-id-1-superior-nao'],
+    [null, 'recurso-fase-id-1-superior-sim'],
   ])(
     'leva a recusa da instância superior à opção marcada (%s), ou à primeira sem marca',
     (marcada, opcao) => {
       expect(
         alvosDaRecusaDaFase('recurso.admiteInstanciaSuperior', comInstanciaSuperior(marcada), 0),
-      ).toEqual([opcao, 'fase-AVALIACAO-recurso-recusa']);
+      ).toEqual([opcao, 'recurso-fase-id-1-superior-recusas', 'fase-AVALIACAO-recurso-recusa']);
     },
   );
 

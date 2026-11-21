@@ -23,6 +23,10 @@ import {
   faseDeAvaliacao,
   catalogosDeTeste,
 } from './cronograma-do-certame.testing';
+import {
+  PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 
 describe('problemas das etapas', () => {
   it('fase que agrupa etapas sem nenhuma etapa é recusada antes de gravar', () => {
@@ -349,14 +353,9 @@ describe('etapa de nota do ENEM', () => {
       ancora,
       regraCodigo: 'R',
       regraVersao: 'v1',
-      prazoValor: '2',
-      prazoUnidade: 'diasUteis',
+      ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
       atoAncoraCodigo: '',
-      suspensividadePrimeiraInstanciaValor: '',
-      suspensividadePrimeiraInstanciaUnidade: '',
-      admiteInstanciaSuperior: true,
-      suspensividadeSegundaInstanciaValor: '',
-      suspensividadeSegundaInstanciaUnidade: '',
+      leitura: umaLeituraDoRecurso(),
       procedimentos: [],
     });
     expect(

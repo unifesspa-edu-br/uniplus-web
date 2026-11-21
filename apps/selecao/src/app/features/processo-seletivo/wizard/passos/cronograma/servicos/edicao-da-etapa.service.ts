@@ -8,7 +8,6 @@ import type {
   RegraDeDeliberacaoDaBanca,
 } from '../../../processo-seletivo.models';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
-import { MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO } from '../../../shared/instancia-superior';
 import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
 import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
@@ -39,7 +38,8 @@ import {
 import {
   acrescentarRecurso,
   alterarRecurso,
-  declararInstanciaSuperior,
+  retirarPrazoDaSegundaInstancia,
+  type AlteracaoDeRecurso,
   preliminaresDaEtapa,
   removerRecurso,
 } from '../recursos-da-etapa';
@@ -73,8 +73,6 @@ export class EdicaoDaEtapa {
 
   /** Os papéis escolhíveis, no mesmo vocabulário que a configuração da fase usa. */
   readonly papeis = PAPEIS_ESCOLHIVEIS;
-
-  readonly mensagemDaInstanciaSuperiorEmAberto = MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO;
 
   /**
    * Tipos que o seletor de uma etapa oferece: os do cadastro, mais o que ela já referencia quando
@@ -297,13 +295,12 @@ export class EdicaoDaEtapa {
   alterarRecursoDaEtapa(
     grupo: FormGroup<EtapaForm>,
     posicao: number,
-    campo: keyof RecursoDaEtapa,
-    valor: string,
+    alteracao: AlteracaoDeRecurso,
   ): void {
-    alterarRecurso(grupo, posicao, { campo, valor }, this.catalogoDeRegras.regrasRecurso());
+    alterarRecurso(grupo, posicao, alteracao, this.catalogoDeRegras.regrasRecurso());
   }
 
-  readonly declararInstanciaSuperiorDaEtapa = declararInstanciaSuperior;
+  readonly retirarPrazoDaSegundaInstanciaDaEtapa = retirarPrazoDaSegundaInstancia;
 
   preliminaresDaEtapa(grupo: FormGroup<EtapaForm>): readonly ProdutoDaFase[] {
     this.versaoDoFormulario();

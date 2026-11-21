@@ -36,6 +36,7 @@ describe('ProcedimentosDoRecursoComponent: a recusa que vem do servidor', () => 
             {
               chave: 'homologacao',
               faseCanonicaCodigo: 'INSCRICOES',
+              noMesmoMomentoDaAnterior: false,
               regraRecurso: { procedimentosDeRecurso: enviados },
             },
           ],

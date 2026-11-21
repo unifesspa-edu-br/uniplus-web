@@ -1,6 +1,10 @@
 import type { EtapaProcessoDto } from '@uniplus/shared-data/selecao';
 import { PROCESSO_PUBLICADO_DA_MEDICINA } from './consulta-da-medicina';
-import { etapaDoServidor, faseDoServidor } from './cronograma-do-servidor';
+import {
+  etapaDoServidor,
+  faseDoServidor,
+  PARAMETROS_DO_RECURSO_DO_SERVIDOR,
+} from './cronograma-do-servidor';
 
 type RecursoDaEtapa = EtapaProcessoDto['publicacoes']['recursos'][number];
 
@@ -33,14 +37,11 @@ export const UNIDADE_RESPONSAVEL_DA_FASE = {
 } as const;
 
 const PARAMETROS_DO_RECURSO: RecursoDaEtapa['parametros'] = {
-  prazoValor: 2,
-  prazoUnidade: 'diasUteis' as RecursoDaEtapa['parametros']['prazoUnidade'],
-  suspensividadePrimeiraInstanciaValor: null,
-  suspensividadePrimeiraInstanciaUnidade: null,
+  ...PARAMETROS_DO_RECURSO_DO_SERVIDOR,
   admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: null,
-  suspensividadeSegundaInstanciaUnidade: null,
-};
+  prazoSegundaInstanciaValor: 3,
+  prazoSegundaInstanciaUnidade: { codigo: 'diasUteis', rotulo: 'Dias úteis' },
+} as RecursoDaEtapa['parametros'];
 
 /** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
 function referencia(codigo: string) {

@@ -152,9 +152,14 @@ describe('procedimentos na fase e na etapa', () => {
           {
             chave: 'a',
             faseCanonicaCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
             regraRecurso: { regraCodigo: 'RECURSO', procedimentosDeRecurso: [] },
           },
-          { chave: 'sem-recurso', faseCanonicaCodigo: 'INSCRICOES' },
+          {
+            chave: 'sem-recurso',
+            faseCanonicaCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
+          },
         ],
       },
       etapas: [{ chave: 'prova', recursos: [{ prazoValor: 1 }, { prazoValor: 2 }] }],
@@ -215,8 +220,18 @@ describe('janelas de chave repetida', () => {
       ...documentoSemNada(),
       cronograma: {
         fases: [
-          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
-          { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
+          {
+            chave: 'a',
+            faseCanonicaCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
+            regraRecurso: {},
+          },
+          {
+            chave: 'a',
+            faseCanonicaCodigo: 'INSCRICOES',
+            noMesmoMomentoDaAnterior: false,
+            regraRecurso: {},
+          },
         ],
       },
       etapas: [
@@ -234,10 +249,16 @@ describe('janelas de chave repetida', () => {
     );
     expect(fase.cronograma).toEqual({
       fases: [
-        { chave: 'a', faseCanonicaCodigo: 'INSCRICOES', regraRecurso: {} },
         {
           chave: 'a',
           faseCanonicaCodigo: 'INSCRICOES',
+          noMesmoMomentoDaAnterior: false,
+          regraRecurso: {},
+        },
+        {
+          chave: 'a',
+          faseCanonicaCodigo: 'INSCRICOES',
+          noMesmoMomentoDaAnterior: false,
           regraRecurso: { procedimentosDeRecurso: procedimentos },
         },
       ],

@@ -21,7 +21,7 @@
       <select
         class="select"
         [attr.id]="ids().unidade"
-        [disabled]="desabilitado()"
+        [disabled]="unidadeDesabilitada()"
         [attr.aria-required]="obrigatorio() ? 'true' : null"
         [attr.aria-invalid]="unidadeInvalida()"
         [attr.aria-describedby]="descritaPelaUnidade()"
@@ -36,8 +36,15 @@
       </select>
     </div>
   </div>
-  @if (problema(); as texto) {
-    <p class="field__erro" [attr.id]="ids().problema" role="alert">{{ texto }}</p>
+  @if (semUnidadeParaEscolher()) {
+    <p
+      class="field__hint"
+      tabindex="-1"
+      [attr.id]="ids().situacao"
+      [attr.aria-describedby]="descritaPelaSituacao()"
+    >
+      {{ textoDaSituacao() }}
+    </p>
   }
   @if (recusasDoValor().length > 0) {
     <sel-recusas-do-campo
@@ -52,5 +59,16 @@
       tabindex="-1"
       [recusas]="recusasDaUnidade()"
     />
+  }
+  @if (retiravel()) {
+    <button
+      class="btn btn--tertiary"
+      type="button"
+      [attr.id]="ids().retirar"
+      [disabled]="desabilitado()"
+      (click)="retirar.emit()"
+    >
+      {{ textoDoBotaoDeRetirar() }}
+    </button>
   }
 </fieldset>
