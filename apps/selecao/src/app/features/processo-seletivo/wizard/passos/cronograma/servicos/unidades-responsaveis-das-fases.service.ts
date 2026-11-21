@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 import { rotuloDaUnidade } from '@uniplus/shared-data/organizacao';
 
@@ -14,7 +14,7 @@ import { CatalogoDeFases } from '../catalogos/catalogo-de-fases.service';
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
 import type { FaseForm } from '../cronograma-form';
 
-/** As unidades que respondem pelas fases: o que o cadastro oferece, o que o processo gravou e o que o servidor recusou. */
+/** As unidades que respondem pelas fases: o que o cadastro oferece e o que o processo gravou. */
 @Injectable()
 export class UnidadesResponsaveisDasFases {
   private readonly store = inject(ProcessoSeletivoStore);
@@ -34,9 +34,6 @@ export class UnidadesResponsaveisDasFases {
     ),
   );
 
-  /** A unidade que o servidor recusou em cada fase; vale enquanto a fase continua com ela. */
-  private readonly unidadesRecusadas = signal<ReadonlyMap<FormGroup<FaseForm>, string>>(new Map());
-
   /** A cópia da unidade que o processo gravou em cada fase, pelo código da fase. */
   private readonly gravadaPorFase = computed<ReadonlyMap<string, UnidadeGravada>>(
     () =>
@@ -51,25 +48,6 @@ export class UnidadesResponsaveisDasFases {
   private readonly rotuloNoCadastro = computed<ReadonlyMap<string, string>>(
     () => new Map(this.unidadesParaEscolha().map((opcao) => [opcao.id, opcao.rotulo] as const)),
   );
-
-  unidadeRecusada(grupo: FormGroup<FaseForm>): boolean {
-    return this.unidadesRecusadas().get(grupo) === grupo.controls.unidadeResponsavelId.value;
-  }
-
-  /** Guarda a unidade de cada fase enviada que o servidor não encontrou. */
-  recusar(enviadas: readonly FormGroup<FaseForm>[], indices: readonly number[]): void {
-    const recusadas = indices.flatMap((indice) => {
-      const grupo = enviadas[indice];
-      return grupo === undefined
-        ? []
-        : [[grupo, grupo.controls.unidadeResponsavelId.value] as const];
-    });
-    this.unidadesRecusadas.set(new Map(recusadas));
-  }
-
-  limparRecusadas(): void {
-    this.unidadesRecusadas.set(new Map());
-  }
 
   /**
    * O rótulo da unidade da fase, ou `null` quando a fase está sem unidade. A cópia gravada na

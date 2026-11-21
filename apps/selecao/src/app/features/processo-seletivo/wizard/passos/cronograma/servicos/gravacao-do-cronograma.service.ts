@@ -1,6 +1,11 @@
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Injectable, Injector, signal, untracked } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
-import { ProblemI18nService, separarCausas } from '@uniplus/shared-core/http';
+import {
+  ProblemI18nService,
+  recusasDoProblema,
+  separarCausas,
+  type RecusaDoProblema,
+} from '@uniplus/shared-core/http';
 
 import type {
   EtapaPontuada,
@@ -9,84 +14,33 @@ import type {
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial, type ResultadoGravacao } from '../../../shared/cadastro-inicial.service';
+import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
+import { NumeracaoDasRespostasRecusadas } from '../../../shared/recusas/numeracao-das-respostas-recusadas';
+import { resumoDasRecusasSemLugar } from '../../../shared/recusas/texto-da-recusa-no-resumo';
 import { resumoDaRecusa } from '../../../shared/resumo-da-recusa';
 import { CatalogoDeUnidadesDoCadastro } from '../catalogos/catalogo-de-unidades-do-cadastro.service';
-import { type EtapaForm, type FaseForm, faseDoFormulario } from '../cronograma-form';
-import { comoComandoDeEtapa, comoComandoDeFase } from '../cronograma-para-comando';
-import {
-  recusaDaEtapaDeNotaDoEnem,
-  fasesComUnidadeNaoEncontrada,
-  textoDaRecusaDaEtapa,
-} from '../recusas-do-servidor-da-etapa';
-import { textoDaRecusaDaFase } from '../recusas-do-servidor-da-fase';
+import { alvosDaRecusaDaFase } from '../../fase/alvo-da-recusa-da-fase';
+import { campoNaTela } from '../../fase/campo-da-fase';
+import { type EtapaForm, faseDoFormulario } from '../cronograma-form';
+import { comoComandoDeEtapa } from '../cronograma-para-comando';
+import { recusaDaEtapaDeNotaDoEnem, textoDaRecusaDaEtapa } from '../recusas-do-servidor-da-etapa';
 import { ConferenciaDoCronograma } from './conferencia-do-cronograma.service';
+import type { ControleNaTela } from './distribuicao-das-recusas-das-fases';
 import { ExpansaoDoCronograma } from './expansao-do-cronograma.service';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
+import {
+  gravarCronogramaFases,
+  ORIENTACAO_DE_PERMUTACAO,
+  PERMUTACAO_DE_ORDEM,
+} from './gravar-cronograma-fases';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
 import { ReleituraDasEtapas, AGUARDA_RELEITURA } from './releitura-das-etapas.service';
 import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
-import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
+import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
 
-/**
- * Recusa do servidor quando a nova ordem troca a posição entre fases que já
- * existem, formando um ciclo que uma única gravação não consegue aplicar.
- */
-export const PERMUTACAO_DE_ORDEM =
-  'uniplus.selecao.fase_cronograma.permutacao_de_ordem_nao_suportada';
-
-/**
- * A recusa de permutação descreve o que aconteceu, não o que fazer. Quem
- * reordenou duas fases precisa saber que o caminho é fazê-lo em duas gravações
- * — a informação que evita tentar de novo o mesmo movimento.
- */
-export const ORIENTACAO_DE_PERMUTACAO =
-  'Trocar duas fases de lugar exige duas gravações: mova uma delas para o fim da linha do tempo, grave, e então traga a outra para a posição desejada.';
-
-/**
- * Grava o cronograma de fases, contornando o ciclo de ordem quando ele aparece.
- *
- * Reordenar é sempre uma permutação de `1..N`, e toda permutação não-trivial
- * fecha ciclo: cada fase precisa que a outra libere a posição primeiro, e o
- * servidor não persiste isso numa chamada. Mandar o operador "mover uma para o
- * fim" não resolvia — renumerar produz `1..N` de novo, e o ciclo volta.
- *
- * O que resolve é uma posição que ninguém ocupa. O domínio aceita qualquer
- * ordem positiva, não só a sequência fechada, então uma gravação intermediária
- * em `N+1..2N` esvazia as posições `1..N` e a seguinte as ocupa sem cadeia que
- * volte a si mesma. Duas chamadas em vez de uma, e só quando a primeira acusa.
- *
- * Vive fora dos passos porque **todo** caminho que substitui a coleção de fases
- * precisa dele: a reordenação fica no rascunho até alguém gravar, e quem grava
- * pode ser a linha do tempo ou a superfície de configuração da fase. O passo que
- * não carregasse o contorno devolveria a recusa crua, de uma tela onde nem dá
- * para reordenar.
- */
-export async function gravarCronogramaFases(
-  cadastro: CadastroInicial,
-  processoSeletivoId: string,
-  fases: readonly FaseDoCronograma[],
-): Promise<ResultadoGravacao> {
-  const pretendida = await cadastro.definirCronogramaFases(
-    processoSeletivoId,
-    fases.map(comoComandoDeFase),
-  );
-  if (pretendida.ok || pretendida.problem.code !== PERMUTACAO_DE_ORDEM) return pretendida;
-
-  // Deslocar pela quantidade de fases só serve se as ordens forem 1..N; o
-  // domínio aceita qualquer ordem positiva, e uma lacuna faria a faixa "livre"
-  // cair em cima de uma posição ocupada. Somar a maior ordem em uso põe todas
-  // acima de qualquer uma que exista hoje.
-  const deslocamento = Math.max(...fases.map((fase) => fase.ordem));
-  const emOrdemLivre = fases.map((fase) => ({ ...fase, ordem: fase.ordem + deslocamento }));
-
-  const intermediaria = await cadastro.definirCronogramaFases(
-    processoSeletivoId,
-    emOrdemLivre.map(comoComandoDeFase),
-  );
-  if (!intermediaria.ok) return intermediaria;
-
-  return cadastro.definirCronogramaFases(processoSeletivoId, fases.map(comoComandoDeFase));
-}
+/** A unidade responsável escolhida para a fase saiu do cadastro de Organização. */
+const UNIDADE_RESPONSAVEL_NAO_ENCONTRADA =
+  'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
 
 type ProblemaDaGravacao = Extract<ResultadoGravacao, { ok: false }>['problem'];
 
@@ -94,14 +48,25 @@ type ProblemaDaGravacao = Extract<ResultadoGravacao, { ok: false }>['problem'];
 interface ConteudoDaGravacao {
   readonly processoId: string;
   readonly geracao: number;
-  readonly enviadas: readonly FormGroup<FaseForm>[];
   readonly fases: readonly FaseDoCronograma[];
   readonly grupos: readonly FormGroup<EtapaForm>[];
   readonly etapas: readonly EtapaPontuada[];
 }
 
+/**
+ * A gravação foi recusada e toda recusa achou o campo dela. O resumo não pode ficar vazio: lista
+ * vazia é o sinal de gravação superada, que sai calada, e a recusa precisa contar como pendência.
+ */
+const RECUSA_MOSTRADA_NOS_CAMPOS =
+  'A gravação do cronograma foi recusada. A mensagem de cada recusa está no campo a que ela se refere.';
+
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
 const GRAVACAO_SUPERADA: ValidacaoDoPasso = { valid: false, messages: [] };
+
+const SEM_PROCESSO: ValidacaoDoPasso = {
+  valid: false,
+  messages: ['O cadastro do processo precisa estar concluído antes de montar o cronograma.'],
+};
 
 /** A sequência de gravação do passo: fases, etapas, releitura, exigências documentais e convenção de contagem. */
 @Injectable()
@@ -115,7 +80,9 @@ export class GravacaoDoCronograma {
   private readonly conferencia = inject(ConferenciaDoCronograma);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
   private readonly recusas = inject(RecusasDoServidorNasEtapas);
-  private readonly unidades = inject(UnidadesResponsaveisDasFases);
+  private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
+  private readonly numeracao = inject(NumeracaoDasRespostasRecusadas);
+  private readonly injetor = inject(Injector);
   private readonly expansao = inject(ExpansaoDoCronograma);
 
   /**
@@ -142,17 +109,6 @@ export class GravacaoDoCronograma {
       this.algoritmoConfirmadoNestaSessao(),
   );
 
-  private recusarUnidades(
-    enviadas: readonly FormGroup<FaseForm>[],
-    indices: readonly number[],
-  ): void {
-    if (indices.length === 0) return;
-    this.unidades.recusar(enviadas, indices);
-    this.expansao.abrirFases(indices.filter((indice) => indice < enviadas.length));
-    this.cronograma.versao.update((versao) => versao + 1);
-    this.catalogoDeUnidades.recarregar();
-  }
-
   /**
    * Grava o cronograma na ordem fases, etapas, releitura dos identificadores, exigências
    * documentais e, por último, a convenção de contagem de prazo — só quando o rascunho declara
@@ -177,18 +133,10 @@ export class GravacaoDoCronograma {
    */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: ['O cadastro do processo precisa estar concluído antes de montar o cronograma.'],
-      };
-    }
+    if (processoId === null) return SEM_PROCESSO;
 
     const conferencia = this.conferencia.validar();
-    if (!conferencia.valid) {
-      this.expansao.expandirTodasAsFases(this.cronograma.linhaDoTempo().map((item) => item.indice));
-      return conferencia;
-    }
+    if (!conferencia.valid) return this.recusarAConferencia(conferencia);
 
     const conteudo = this.congelarConteudo(processoId);
     this.store.salvando.set(true);
@@ -199,11 +147,15 @@ export class GravacaoDoCronograma {
     }
   }
 
+  private recusarAConferencia(conferencia: ValidacaoDoPasso): ValidacaoDoPasso {
+    this.expansao.expandirTodasAsFases(this.cronograma.linhaDoTempo().map((item) => item.indice));
+    return conferencia;
+  }
+
   private congelarConteudo(processoId: string): ConteudoDaGravacao {
     return {
       processoId,
       geracao: this.store.geracao(),
-      enviadas: [...this.cronograma.fases.controls],
       fases: this.cronograma.fases.controls.map(faseDoFormulario),
       grupos: [...this.cronograma.etapas.controls],
       etapas: this.cronograma.etapasParaEnvio(),
@@ -238,7 +190,7 @@ export class GravacaoDoCronograma {
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
     if (!cronograma.ok) return this.recusarFases(conteudo, cronograma.problem);
 
-    this.unidades.limparRecusadas();
+    this.recusasDasFases.limpar();
     this.recusas.limpar();
     return null;
   }
@@ -247,17 +199,72 @@ export class GravacaoDoCronograma {
     conteudo: ConteudoDaGravacao,
     problema: ProblemaDaGravacao,
   ): ValidacaoDoPasso {
-    this.recusarUnidades(
-      conteudo.enviadas,
-      fasesComUnidadeNaoEncontrada(separarCausas(problema.errors).deCampo),
+    const { deCampo } = recusasDoProblema(problema);
+    const resposta = this.numeracao.proxima();
+    const { porFase, semLugar } = this.recusasDasFases.registrar(
+      resposta,
+      conteudo.fases,
+      deCampo,
+      this.controleNaTela(),
     );
-    return { valid: false, messages: this.mensagensDaRecusaDasFases(problema) };
+    this.mostrarAsRecusasDasFases(conteudo, deCampo, [...porFase.keys()]);
+    return { valid: false, messages: this.resumoDaRecusaDasFases(problema, semLugar) };
   }
 
-  private mensagensDaRecusaDasFases(problema: ProblemaDaGravacao): string[] {
-    return resumoDaRecusa(problema, textoDaRecusaDaFase, () =>
-      this.explicarRecusa(problema.code, problema),
+  /**
+   * O resumo traz só o que não achou campo; se tudo achou, uma frase diz que a gravação foi
+   * recusada e onde ver. Sem nenhuma causa em `errors[]`, a recusa é da raiz e
+   * o `code` dela é que se explica.
+   */
+  /** O que a linha do tempo mostra de cada fase agora, para a recusa não apontar controle que não existe. */
+  private controleNaTela(): ControleNaTela {
+    const exigencias = new Map(
+      this.cronograma
+        .linhaDoTempo()
+        .map((item) => [item.grupo.controls.faseCanonicaId.value, item.exigencias] as const),
     );
+    return (faseCanonicaId, campo) => campoNaTela(campo, exigencias.get(faseCanonicaId) ?? null);
+  }
+
+  private resumoDaRecusaDasFases(
+    problema: ProblemaDaGravacao,
+    semLugar: readonly RecusaDoProblema[],
+  ): string[] {
+    const { deCampo, gerais } = separarCausas(problema.errors);
+    if (deCampo.length === 0 && gerais.length === 0) {
+      return [this.explicarRecusa(problema.code, problema)];
+    }
+    const resumo = resumoDasRecusasSemLugar(problema, semLugar);
+    return resumo.length > 0 ? resumo : [RECUSA_MOSTRADA_NOS_CAMPOS];
+  }
+
+  /**
+   * Abre as fases que receberam recusa, recarrega as unidades quando o servidor não encontrou a
+   * escolhida e leva o foco ao alvo da primeira recusa que a pessoa ainda precisa tratar.
+   */
+  private mostrarAsRecusasDasFases(
+    conteudo: ConteudoDaGravacao,
+    recusas: readonly RecusaDoProblema[],
+    fasesComRecusa: readonly string[],
+  ): void {
+    const indices = conteudo.fases.flatMap((fase, indice) =>
+      fasesComRecusa.includes(fase.faseCanonicaId) ? [indice] : [],
+    );
+    this.expansao.abrirFases(indices);
+    if (recusas.some((recusa) => recusa.codigo === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA)) {
+      this.catalogoDeUnidades.recarregar();
+    }
+    this.focarAPrimeiraRecusa(conteudo);
+  }
+
+  private focarAPrimeiraRecusa(conteudo: ConteudoDaGravacao): void {
+    const primeira = this.recusasDasFases.primeiraRecusaAtiva();
+    const indice = conteudo.fases.findIndex(
+      (fase) => fase.faseCanonicaId === primeira?.faseCanonicaId,
+    );
+    if (primeira === null || indice < 0) return;
+    const alvos = alvosDaRecusaDaFase(primeira.recusa.campo, conteudo.fases[indice], indice);
+    focarAposRenderizar(this.injetor, ...alvos);
   }
 
   private async gravarEtapas(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
@@ -316,26 +323,32 @@ export class GravacaoDoCronograma {
   }
 
   private async gravarConvencao(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
-    const formulario = this.cronograma.formulario.controls;
-    const codigo = formulario.algoritmoContagemCodigo.value;
-    if (codigo === '') return null;
+    const convencao = this.convencaoDeclarada();
+    if (convencao === null) return null;
 
-    const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(conteudo.processoId, {
-      codigo,
-      versao: formulario.algoritmoContagemVersao.value,
-    });
+    const algoritmo = await this.cadastro.definirAlgoritmoContagemPrazo(
+      conteudo.processoId,
+      convencao,
+    );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
-    if (!algoritmo.ok) {
-      return {
-        valid: false,
-        messages: [
-          `As etapas e o cronograma de fases foram gravados. ${this.problemI18n.resolve(algoritmo.problem).title}`,
-        ],
-      };
-    }
+    if (!algoritmo.ok) return this.recusarAConvencao(algoritmo.problem);
 
     this.algoritmoConfirmadoNestaSessao.set(true);
     return null;
+  }
+
+  private convencaoDeclarada(): { codigo: string; versao: string } | null {
+    const formulario = this.cronograma.formulario.controls;
+    const codigo = formulario.algoritmoContagemCodigo.value;
+    return codigo === '' ? null : { codigo, versao: formulario.algoritmoContagemVersao.value };
+  }
+
+  private recusarAConvencao(problema: ProblemaDaGravacao): ValidacaoDoPasso {
+    const titulo = this.problemI18n.resolve(problema).title;
+    return {
+      valid: false,
+      messages: [`As etapas e o cronograma de fases foram gravados. ${titulo}`],
+    };
   }
 
   /**

@@ -83,7 +83,7 @@ async function recusarTipoNaoReconhecido(route: Route, campo: string): Promise<v
   const erro = {
     field: campo,
     code: 'uniplus.selecao.motivo_de_decisao.tipo_invalido',
-    message: 'x',
+    message: 'Um tipo de decisão enviado não é reconhecido pelo servidor.',
   };
   await recusar(route, problema(422, 'uniplus.validacao', 'Validação', [erro]));
 }

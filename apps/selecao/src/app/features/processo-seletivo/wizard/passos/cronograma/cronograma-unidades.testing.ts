@@ -17,7 +17,9 @@ const RECUSA_DE_VALIDACAO = {
   code: 'uniplus.validacao',
   traceId: '00000000000000000000000000000009',
 };
-const CODIGO_DA_UNIDADE_INEXISTENTE =
+export const MENSAGEM_DA_UNIDADE_INEXISTENTE =
+  'A unidade responsável da fase não existe no cadastro.';
+export const CODIGO_DA_UNIDADE_INEXISTENTE =
   'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
 
 /** A recusa do servidor à unidade responsável que a fase da posição `indice` declara. */
@@ -25,7 +27,9 @@ function recusaDeUnidadeInexistente(indice: number): object {
   const field = `fases[${indice}].unidadeResponsavelId`;
   return {
     ...RECUSA_DE_VALIDACAO,
-    errors: [{ field, code: CODIGO_DA_UNIDADE_INEXISTENTE, message: 'x' }],
+    errors: [
+      { field, code: CODIGO_DA_UNIDADE_INEXISTENTE, message: MENSAGEM_DA_UNIDADE_INEXISTENTE },
+    ],
   };
 }
 

@@ -127,7 +127,7 @@ async function recusarUnidade(route: Route): Promise<void> {
   const erro = {
     field: 'fases[0].unidadeResponsavelId',
     code: 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada',
-    message: 'x',
+    message: 'A unidade responsável da fase não está mais no cadastro.',
   };
   await recusar(route, problema(422, 'uniplus.validacao', 'Validação', [erro]));
 }

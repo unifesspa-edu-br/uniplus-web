@@ -24,6 +24,7 @@ import {
 } from '../cronograma-form';
 import { etapaComOQueDeclara } from '../regras-da-etapa';
 import { espelharFasesNoFormulario } from './espelho-das-fases-no-formulario';
+import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
 import { ReleituraDasEtapas } from './releitura-das-etapas.service';
 import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
@@ -46,6 +47,7 @@ export class FormularioDoCronograma {
   private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly unidades = inject(UnidadesResponsaveisDasFases);
   private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
+  private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
 
   readonly formulario = novoFormularioDoCronograma();
 
@@ -355,30 +357,34 @@ export class FormularioDoCronograma {
 
   constructor() {
     this.espelharRascunho(this.store.draft().cronograma);
+    this.acompanharORascunho();
+    this.formulario.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => this.aoEditar());
+    this.acompanharAEdicaoLiberada();
+  }
 
-    // Rascunho → formulário: hidratação da leitura e reconciliação da gravação
-    // chegam por aqui, e é a única entrada que não veio da digitação.
+  /** Rascunho → formulário: a hidratação e a reconciliação da gravação, que não vêm da digitação. */
+  private acompanharORascunho(): void {
     effect(() => {
       const cronograma = this.store.draft().cronograma;
       untracked(() => this.espelharRascunho(cronograma));
     });
+  }
 
-    // Formulário → rascunho, que é o que persiste entre passos e alimenta a
-    // gravação.
-    this.formulario.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
-      this.versao.update((versao) => versao + 1);
-      if (this.espelhando) return;
-      this.store.patchObjectSection('cronograma', {
-        fases: this.fases.controls.map(faseDoFormulario),
-        etapas: this.etapas.controls.map(etapaDoFormulario),
-        algoritmoContagemCodigo: this.formulario.controls.algoritmoContagemCodigo.value,
-        algoritmoContagemVersao: this.formulario.controls.algoritmoContagemVersao.value,
-      });
+  /** Formulário → rascunho, que é o que persiste entre passos e alimenta a gravação. */
+  private aoEditar(): void {
+    this.versao.update((versao) => versao + 1);
+    if (this.espelhando) return;
+    this.store.patchObjectSection('cronograma', {
+      fases: this.fases.controls.map(faseDoFormulario),
+      etapas: this.etapas.controls.map(etapaDoFormulario),
+      algoritmoContagemCodigo: this.formulario.controls.algoritmoContagemCodigo.value,
+      algoritmoContagemVersao: this.formulario.controls.algoritmoContagemVersao.value,
     });
+    this.recusasDasFases.registrarAlteracao();
+  }
 
-    // Fora de rascunho o servidor recusa qualquer gravação; o formulário
-    // acompanha o que o wizard já decide para os outros passos, e mais o que só
-    // este passo sabe — as etapas gravadas à espera dos seus identificadores.
+  /** Fora de rascunho o servidor recusa qualquer gravação: o formulário segue `edicaoLiberada`. */
+  private acompanharAEdicaoLiberada(): void {
     effect(() => {
       const editavel = this.edicaoLiberada();
       untracked(() => {

@@ -14,12 +14,14 @@ import {
 } from '../../../shared/deliberacao/recusas-da-regra';
 import { descricaoDaRegra } from '../../../shared/deliberacao/descricao-da-regra';
 import { CatalogoDeDocumentos } from '../../cronograma/catalogos/catalogo-de-documentos.service';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As bancas que a fase requer, com o recorte de categorias de documento que cada uma julga. */
 @Component({
   selector: 'sel-bancas-da-fase',
   imports: [
+    RecusasDoCampoComponent,
     ValorLegivelDirective,
     FormsModule,
     ValorEmConsultaComponent,
@@ -37,6 +39,9 @@ export class BancasDaFaseComponent {
 
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
+  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+  protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly bancasEscolhiveis = this.faseEmEdicao.bancasEscolhiveis;
 
   /** Categorias de documento do cadastro, na ordem de exibição que ele decide. */

@@ -267,34 +267,6 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
       expect(resultado.messages?.join(' ')).toContain('Etapa 1: Escolha o critério da votação.');
     });
 
-    it('chega ao resumo quando o servidor a recusa na gravação das fases', async () => {
-      comRegraGravada();
-      store.processoSeletivoId.set(PROCESSO_ID);
-
-      const gravacao = componente.persistir();
-      controller.expectOne(ROTA_FASES).flush(
-        {
-          type: 'about:blank',
-          title: 'Validação',
-          status: 422,
-          code: 'uniplus.validacao',
-          traceId: '00000000000000000000000000000009',
-          errors: [
-            {
-              field: 'fases[0].bancasRequeridas[0]',
-              code: 'uniplus.selecao.banca.integrantes_abaixo_do_minimo',
-              message: 'A banca precisa de ao menos 7 integrantes.',
-            },
-          ],
-        },
-        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-      );
-      const resultado = await gravacao;
-
-      expect(resultado.valid).toBe(false);
-      expect(resultado.messages).toEqual(['Fase 1: A banca precisa de ao menos 7 integrantes.']);
-    });
-
     it('persiste a uma edição que não é das bancas e some quando elas mudam', async () => {
       const etapa = comRegraGravada();
       await recusarRegra(

@@ -4,12 +4,18 @@ import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared
 
 import { PAPEL_DEFINITIVO } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao, type FaseNoSeletor } from '../fase-em-edicao';
 
 /** A conclusão do ciclo recursal da matéria e a promessa de parecer individual. */
 @Component({
   selector: 'sel-ciclo-recursal-da-fase',
-  imports: [ValorLegivelDirective, ReactiveFormsModule, ValorEmConsultaComponent],
+  imports: [
+    ValorLegivelDirective,
+    ReactiveFormsModule,
+    ValorEmConsultaComponent,
+    RecusasDoCampoComponent,
+  ],
   templateUrl: './ciclo-recursal-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
@@ -24,6 +30,9 @@ export class CicloRecursalDaFaseComponent {
 
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
+  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+  protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
 
   /** Fases que podem concluir o ciclo desta: publicam definitiva e vêm depois. */
@@ -31,18 +40,22 @@ export class CicloRecursalDaFaseComponent {
     const fase = this.faseEmEdicao.faseDoRascunho();
     if (fase === null) return [];
 
-    const declaradaPorId = new Map(
-      this.faseEmEdicao
-        .fasesDoCronograma()
-        .map((candidata) => [candidata.faseCanonicaId, candidata]),
-    );
-
-    return this.faseEmEdicao.fasesNoSeletor().filter((outra) => {
-      if (outra.faseCanonicaId === fase.faseCanonicaId || outra.ordem <= fase.ordem) return false;
-      const declarada = declaradaPorId.get(outra.faseCanonicaId);
-      return declarada?.produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO) === true;
-    });
+    return this.faseEmEdicao
+      .fasesNoSeletor()
+      .filter(
+        (outra) =>
+          outra.faseCanonicaId !== fase.faseCanonicaId &&
+          outra.ordem > fase.ordem &&
+          this.publicaDefinitiva(outra.faseCanonicaId),
+      );
   });
+
+  private publicaDefinitiva(faseCanonicaId: string): boolean {
+    const declarada = this.faseEmEdicao
+      .fasesDoCronograma()
+      .find((candidata) => candidata.faseCanonicaId === faseCanonicaId);
+    return declarada?.produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO) === true;
+  }
 
   /** A leitura da consulta: o ciclo e o parecer em texto, sem o controle que os edita. */
   protected faseLida() {
@@ -50,19 +63,18 @@ export class CicloRecursalDaFaseComponent {
     if (form === null) return null;
     this.espelho.versao();
 
-    const concluinte = form.controls.faseConcluinteCodigo.value;
-    const faseConcluinte = this.faseEmEdicao
-      .fasesNoSeletor()
-      .find((fase) => fase.codigo === concluinte);
     return {
       publicaPreliminar: this.publicaPreliminar(),
-      faseQueConclui:
-        concluinte === ''
-          ? 'Esta fase conclui a si mesma'
-          : faseConcluinte
-            ? `${faseConcluinte.ordem}. ${faseConcluinte.nome}`
-            : concluinte,
+      faseQueConclui: this.nomeDaFaseQueConclui(form.controls.faseConcluinteCodigo.value),
       parecerIndividual: form.controls.emiteParecerIndividual.value,
     };
+  }
+
+  private nomeDaFaseQueConclui(concluinte: string): string {
+    if (concluinte === '') return 'Esta fase conclui a si mesma';
+    const fase = this.faseEmEdicao
+      .fasesNoSeletor()
+      .find((candidata) => candidata.codigo === concluinte);
+    return fase ? `${fase.ordem}. ${fase.nome}` : concluinte;
   }
 }

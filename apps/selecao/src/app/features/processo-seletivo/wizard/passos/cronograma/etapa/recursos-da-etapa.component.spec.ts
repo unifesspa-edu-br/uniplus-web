@@ -21,6 +21,7 @@ import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from '../servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
 import { ReleituraDasEtapas } from '../servicos/releitura-das-etapas.service';
+import { RecusasDoServidorNasFases } from '../servicos/recusas-do-servidor-nas-fases.service';
 import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
 import { RecursosDaEtapaComponent } from './recursos-da-etapa.component';
 
@@ -72,6 +73,7 @@ describe('RecursosDaEtapaComponent', () => {
         UnidadesResponsaveisDasFases,
         ReleituraDasEtapas,
         FormularioDoCronograma,
+        RecusasDoServidorNasFases,
         ExpansaoDoCronograma,
         EdicaoDaEtapa,
         provideHttpClient(withInterceptors([apiResultInterceptor])),

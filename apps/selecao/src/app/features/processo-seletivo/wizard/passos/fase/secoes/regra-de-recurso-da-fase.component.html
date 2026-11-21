@@ -60,8 +60,27 @@
       um resultado preliminar — é da divulgação dele que o prazo corre.
     </p>
 
+    @if (recusasSemControle().length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="idDaFase(blocoDasRecusas)"
+        tabindex="-1"
+        [recusas]="recusasSemControle()"
+      />
+    }
     @if (form.controls.admiteRecurso.value) {
       <div class="form-grid" formGroupName="recurso">
+        <ng-template #recusasDoControle let-campo>
+          @let doCampo = recusasDoCampo(campo);
+          @if (doCampo.length > 0) {
+            <sel-recusas-do-campo
+              class="form-grid__full"
+              [attr.id]="idDaRecusa(campo)"
+              tabindex="-1"
+              [recusas]="doCampo"
+            />
+          }
+        </ng-template>
+
         <ng-template #parComUnidade let-par>
           <div class="form-field">
             <label class="label" [attr.for]="idDaFase(par.sufixo + '-valor')">{{
@@ -107,7 +126,7 @@
             [ngModelOptions]="{ standalone: true }"
             [disabled]="!store.aceitaEdicao()"
             [attr.aria-invalid]="erroDoCampo('recurso.regra') ? 'true' : null"
-            [attr.aria-describedby]="erroDoCampo('recurso.regra') ? idDaFase('regra-erro') : null"
+            [attr.aria-describedby]="descritoPorErro('recurso.regra', 'regra-erro')"
             (ngModelChange)="escolherRegra($event)"
           >
             <option value="">Selecione a regra…</option>
@@ -117,7 +136,10 @@
               </option>
             }
           </select>
-          @if (erroDoCampo('recurso.regra'); as erro) {
+          <ng-container
+            *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.regra' }"
+          />
+          @if (problemaLocal('recurso.regra'); as erro) {
             <p class="field__erro" [attr.id]="idDaFase('regra-erro')" role="alert">{{ erro }}</p>
           }
         </div>
@@ -127,7 +149,10 @@
           Dia corrido não é aceito na interposição. Em dias úteis o prazo é inteiro; a fração só
           existe em horas.
         </p>
-        @if (erroDoCampo('recurso.prazo'); as erro) {
+        <ng-container
+          *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.prazo' }"
+        />
+        @if (problemaLocal('recurso.prazo'); as erro) {
           <p class="field__erro form-grid__full" [attr.id]="idDaFase('prazo-erro')" role="alert">
             {{ erro }}
           </p>
@@ -142,11 +167,7 @@
             [attr.id]="idDaFase('ancora')"
             formControlName="atoAncoraCodigo"
             [attr.aria-invalid]="erroDoCampo('recurso.ancora') ? 'true' : null"
-            [attr.aria-describedby]="
-              erroDoCampo('recurso.ancora')
-                ? idDaFase('ancora-erro') + ' ' + idDaFase('ancora-ajuda')
-                : idDaFase('ancora-ajuda')
-            "
+            [attr.aria-describedby]="descritoPor('recurso.ancora', 'ancora-erro', 'ancora-ajuda')"
           >
             <option value="">Selecione a publicação…</option>
             @for (ancora of ancorasPossiveis(); track ancora.codigo) {
@@ -158,7 +179,10 @@
             resultado preliminares admite recurso de qualquer um dos dois, e é a escolha feita aqui
             que decide de qual publicação a janela é contada.
           </p>
-          @if (erroDoCampo('recurso.ancora'); as erro) {
+          <ng-container
+            *ngTemplateOutlet="recusasDoControle; context: { $implicit: 'recurso.ancora' }"
+          />
+          @if (problemaLocal('recurso.ancora'); as erro) {
             <p class="field__erro" [attr.id]="idDaFase('ancora-erro')" role="alert">
               {{ erro }}
             </p>
@@ -171,7 +195,13 @@
             context: { $implicit: suspensividadeDaPrimeiraInstancia() }
           "
         />
-        @if (erroDoCampo('recurso.suspensividadePrimeiraInstancia'); as erro) {
+        <ng-container
+          *ngTemplateOutlet="
+            recusasDoControle;
+            context: { $implicit: 'recurso.suspensividadePrimeiraInstancia' }
+          "
+        />
+        @if (problemaLocal('recurso.suspensividadePrimeiraInstancia'); as erro) {
           <p class="field__erro form-grid__full" [attr.id]="idDaFase('susp1-erro')" role="alert">
             {{ erro }}
           </p>
@@ -187,15 +217,14 @@
           class="field form-grid__full"
           [class.is-error]="erroDoCampo('recurso.admiteInstanciaSuperior')"
           [attr.aria-describedby]="
-            erroDoCampo('recurso.admiteInstanciaSuperior')
-              ? idDaFase('superior-erro') + ' ' + idDaFase('superior-ajuda')
-              : idDaFase('superior-ajuda')
+            descritoPor('recurso.admiteInstanciaSuperior', 'superior-erro', 'superior-ajuda')
           "
         >
           <legend class="field__label is-required">Admite recurso em instância superior?</legend>
           <label class="radio">
             <input
               type="radio"
+              [attr.id]="idDaFase('superior-sim')"
               name="admiteInstanciaSuperior"
               formControlName="admiteInstanciaSuperior"
               [attr.formcontrolname]="'admiteInstanciaSuperior'"
@@ -208,6 +237,7 @@
           <label class="radio">
             <input
               type="radio"
+              [attr.id]="idDaFase('superior-nao')"
               name="admiteInstanciaSuperior"
               formControlName="admiteInstanciaSuperior"
               [attr.formcontrolname]="'admiteInstanciaSuperior'"
@@ -221,7 +251,13 @@
             Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra
             instância, julgada fora do sistema.
           </span>
-          @if (erroDoCampo('recurso.admiteInstanciaSuperior'); as erro) {
+          <ng-container
+            *ngTemplateOutlet="
+              recusasDoControle;
+              context: { $implicit: 'recurso.admiteInstanciaSuperior' }
+            "
+          />
+          @if (problemaLocal('recurso.admiteInstanciaSuperior'); as erro) {
             <span class="field__erro" [attr.id]="idDaFase('superior-erro')" role="alert">{{
               erro
             }}</span>
@@ -234,7 +270,13 @@
               context: { $implicit: suspensividadeDaSegundaInstancia() }
             "
           />
-          @if (erroDoCampo('recurso.suspensividadeSegundaInstancia'); as erro) {
+          <ng-container
+            *ngTemplateOutlet="
+              recusasDoControle;
+              context: { $implicit: 'recurso.suspensividadeSegundaInstancia' }
+            "
+          />
+          @if (problemaLocal('recurso.suspensividadeSegundaInstancia'); as erro) {
             <p class="field__erro form-grid__full" [attr.id]="idDaFase('susp2-erro')" role="alert">
               {{ erro }}
             </p>

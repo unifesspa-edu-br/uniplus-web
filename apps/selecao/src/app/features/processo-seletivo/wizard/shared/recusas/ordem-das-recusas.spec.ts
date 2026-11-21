@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { emOrdem, type RecusaOrdenada } from './ordem-das-recusas';
+import { emOrdem, haRecusaAtiva, type RecusaOrdenada } from './ordem-das-recusas';
 
 function recusa(parcial: Partial<RecusaOrdenada>): RecusaOrdenada {
   return {
@@ -99,5 +99,16 @@ describe('emOrdem', () => {
     const lista = [recusa({ origem: 'publicacao', resposta: 3 }), recusa({ resposta: 1 })];
 
     expect(emOrdem(lista)).toEqual([recusa({ origem: 'publicacao', resposta: 3 })]);
+  });
+});
+
+describe('haRecusaAtiva', () => {
+  it('vale para a lista com ao menos uma recusa ativa', () => {
+    expect(haRecusaAtiva([recusa({ aConferir: true }), recusa({ codigo: 'b' })])).toBe(true);
+  });
+
+  it('não vale para a lista só de recusas a conferir, nem para a vazia', () => {
+    expect(haRecusaAtiva([recusa({ aConferir: true })])).toBe(false);
+    expect(haRecusaAtiva([])).toBe(false);
   });
 });

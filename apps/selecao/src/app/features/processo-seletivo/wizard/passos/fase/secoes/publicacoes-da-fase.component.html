@@ -1,17 +1,16 @@
-  <h3 class="form-section__title" [attr.id]="idDaFase('publica-titulo')">O que esta fase publica</h3>
-  @if (store.emConsulta()) {
-    @if (faseLida(); as leitura) {
-      <ui-valor-em-consulta
-        [rotuladoPor]="idDaFase('publica-titulo')"
-        seVazio="Esta fase não declara nenhuma publicação"
-        [valor]="leitura.publicacoes"
-      />
-    }
-  } @else {
+<h3 class="form-section__title" [attr.id]="idDaFase('publica-titulo')">O que esta fase publica</h3>
+@if (store.emConsulta()) {
+  @if (faseLida(); as leitura) {
+    <ui-valor-em-consulta
+      [rotuladoPor]="idDaFase('publica-titulo')"
+      seVazio="Esta fase não declara nenhuma publicação"
+      [valor]="leitura.publicacoes"
+    />
+  }
+} @else {
   <p class="field__hint" [attr.id]="idDaFase('produtos-ajuda')">
-    Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo
-    marca como resultado: é ele que abre o ciclo recursal (preliminar) e o encerra
-    (definitivo).
+    Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo marca como
+    resultado: é ele que abre o ciclo recursal (preliminar) e o encerra (definitivo).
   </p>
 
   @for (produto of produtos; track $index) {
@@ -25,7 +24,7 @@
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao()"
           [attr.aria-describedby]="
-            erroDoCampo('produtos')
+            temMensagem('produtos')
               ? idDaFase('produtos-erro') + ' ' + idDaFase('produtos-ajuda')
               : idDaFase('produtos-ajuda')
           "
@@ -80,7 +79,12 @@
     Acrescentar publicação
   </button>
 
-  @if (erroDoCampo('produtos'); as erro) {
-    <p class="field__erro" [attr.id]="idDaFase('produtos-erro')" role="alert">{{ erro }}</p>
+  @if (temMensagem('produtos')) {
+    <div [attr.id]="idDaFase('produtos-erro')" tabindex="-1">
+      @if (problemaLocal('produtos'); as erro) {
+        <p class="field__erro" role="alert">{{ erro }}</p>
+      }
+      <sel-recusas-do-campo [recusas]="recusasDoCampo('produtos')" />
+    </div>
   }
-  }
+}

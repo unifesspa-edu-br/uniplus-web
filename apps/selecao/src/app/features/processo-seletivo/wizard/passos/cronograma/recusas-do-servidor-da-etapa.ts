@@ -5,7 +5,6 @@ import {
   recusaDaRegra,
   type CampoDaBanca,
 } from '../../shared/deliberacao/recusas-da-regra';
-import { UNIDADE_RESPONSAVEL_NAO_ENCONTRADA } from '../fase/recusas-da-fase';
 
 /**
  * Texto próprio das recusas do servidor à etapa de nota do ENEM, que o título genérico não
@@ -231,20 +230,4 @@ export function localDoErroDaEtapa(field: string): LocalDoErroDaEtapa | null {
     posicao: posicao === undefined ? null : Number(posicao),
     subcampo: subcampo ?? null,
   };
-}
-
-/**
- * As posições, no cronograma enviado, das fases cuja unidade o servidor não encontrou. O campo é
- * lido sem prefixo de caminho (`$.`, `request.`) e sem caixa, como em `ehCampoDaResolucao`.
- */
-export function fasesComUnidadeNaoEncontrada(
-  erros: readonly { readonly field: string; readonly code: string }[],
-): readonly number[] {
-  return erros.flatMap((erro) => {
-    const [, indice] =
-      /^(?:\$\.|request\.)?fases\[(\d+)\]\.unidadeResponsavelId$/i.exec(erro.field) ?? [];
-    return indice !== undefined && erro.code === UNIDADE_RESPONSAVEL_NAO_ENCONTRADA
-      ? [Number(indice)]
-      : [];
-  });
 }

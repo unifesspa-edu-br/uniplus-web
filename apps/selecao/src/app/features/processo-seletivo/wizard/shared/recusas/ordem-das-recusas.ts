@@ -37,3 +37,8 @@ function semRepeticao<T extends RecusaOrdenada>(recusas: readonly T[]): T[] {
   }
   return [...escolhidas.values()];
 }
+
+/** Alguma recusa ainda vale, isto é, a pessoa não alterou a parte do cadastro que ela aponta. */
+export function haRecusaAtiva(recusas: readonly RecusaOrdenada[]): boolean {
+  return recusas.some((recusa) => !recusa.aConferir);
+}

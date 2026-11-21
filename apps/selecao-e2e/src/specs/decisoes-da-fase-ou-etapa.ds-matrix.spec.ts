@@ -83,8 +83,9 @@ test.describe('Decisões da fase e da etapa — matriz DS @ds', () => {
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
 
     await expect(
-      page.getByText('Fase 1: Um tipo de decisão enviado não é reconhecido pelo servidor.'),
+      page.getByText('Um tipo de decisão enviado não é reconhecido pelo servidor.'),
     ).toBeVisible();
+    await expect(page.getByText('uniplus.selecao.motivo_de_decisao.tipo_invalido')).toBeVisible();
   });
 
   test('preserva o tipo que a tela não conhece, nas duas gravações, e o devolve marcado ao reabrir', async ({

@@ -14,6 +14,7 @@ import { SituacaoDosCatalogosDoCronograma } from '../cronograma/catalogos/situac
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { GatilhoDasExigenciasStore } from './documentos/gatilho-das-exigencias.store';
+import { RecusasDoCampoComponent } from '../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from './fase-em-edicao';
 import type { FaseConfigForm } from './fase-form';
 import { CicloRecursalDaFaseComponent } from './secoes/ciclo-recursal-da-fase.component';
@@ -35,6 +36,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
   selector: 'sel-step-fase',
   imports: [
     DocumentosDaFaseComponent,
+    RecusasDoCampoComponent,
     BancasDaFaseComponent,
     CicloRecursalDaFaseComponent,
     DecisoesDaFaseComponent,
@@ -63,9 +65,9 @@ export class FasePassoComponent {
   readonly fasesDoCronograma = this.faseEmEdicao.fasesDoCronograma;
   readonly fasesNoSeletor = this.faseEmEdicao.fasesNoSeletor;
   readonly faseDoRascunho = this.faseEmEdicao.faseDoRascunho;
-  readonly nomeDaFaseAberta = this.faseEmEdicao.nomeDaFaseAberta;
   readonly problemas = this.faseEmEdicao.problemas;
   readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  readonly recusasDaConfiguracao = this.faseEmEdicao.recusasDaConfiguracao;
   readonly nomeDaBanca = this.faseEmEdicao.nomeDaBanca;
   readonly idDaFase = this.faseEmEdicao.idDaFase;
 

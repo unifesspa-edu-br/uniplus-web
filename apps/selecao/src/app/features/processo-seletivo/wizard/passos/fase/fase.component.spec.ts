@@ -29,7 +29,7 @@ describe('FasePassoComponent', () => {
     comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
 
     expect(componente.faseAberta()).toBe(ID_AVALIACAO);
-    expect(componente.nomeDaFaseAberta()).toBe('Avaliação');
+    expect(raiz.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe('Avaliação');
   });
 
   it('espelha no formulário a fase que chega ao rascunho', () => {
