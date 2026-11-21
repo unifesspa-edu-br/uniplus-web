@@ -31,6 +31,20 @@ describe('alvosDaRecusaDaFase', () => {
     ]);
   });
 
+  it.each([
+    ['produtos.2.atoCodigo', 'produto-ato-2'],
+    ['produtos.2', 'produto-ato-2'],
+    ['produtos.1.papel', 'produto-papel-1'],
+  ])('leva a recusa de %s ao controle da linha, com os blocos de reserva', (campo, controle) => {
+    const posicao = campo.split('.')[1];
+
+    expect(alvosDaRecusaDaFase(campo, FASE, 0)).toEqual([
+      `fase-AVALIACAO-${controle}`,
+      `fase-AVALIACAO-produto-${posicao}-erro`,
+      'fase-AVALIACAO-produtos-erro',
+    ]);
+  });
+
   it('leva a recusa do parecer individual à caixa de marcar', () => {
     expect(alvosDaRecusaDaFase('emiteParecerIndividual', FASE, 0)[0]).toBe(
       'fase-AVALIACAO-parecer',

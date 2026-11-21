@@ -6,7 +6,11 @@ import {
   type CampoDaRecusaDaEtapa,
 } from '../../passos/cronograma/campo-da-etapa';
 import { conteudoDaParteDaEtapa } from '../../passos/cronograma/parte-da-etapa';
-import { campoDaRecusaDaFase, NO_TOPO_DA_FASE } from '../../passos/fase/campo-da-fase';
+import {
+  campoComLinhaNaLista,
+  campoDaRecusaDaFase,
+  NO_TOPO_DA_FASE,
+} from '../../passos/fase/campo-da-fase';
 import type { CampoDaRecusaDaFase } from '../../passos/fase/campo-da-fase';
 import { conteudoDaParte, parteDaFase, type ParteDaFase } from '../../passos/fase/parte-da-fase';
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
@@ -64,8 +68,12 @@ function campoDaListaDaEtapa(campo: CampoDaRecusaDaEtapa): CampoDaRecusaDaEtapa 
 }
 
 function lugarNaFase(local: LocalDaRecusa, codigo: string, fases: readonly FaseDoCronograma[]) {
-  if (!fases.some((fase) => fase.codigo === codigo)) return { tipo: 'passo' } as const;
-  const campo = campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE;
+  const fase = fases.find((candidata) => candidata.codigo === codigo);
+  if (fase === undefined) return { tipo: 'passo' } as const;
+  const campo = campoComLinhaNaLista(
+    campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE,
+    fase.produtos.length,
+  );
   return { tipo: 'fase', codigo, campo, parte: parteDaFase(local) } as const;
 }
 

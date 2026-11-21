@@ -84,8 +84,28 @@ describe('CronogramaPassoComponent: recusas da publicação nas fases', () => {
       expect(bloco).toContain(PRELIMINAR_SEM_DEFINITIVO);
     });
 
-    it('leva ao campo da lista a recusa de um item dela, sem apontar o item pela posição', () => {
+    it('leva à linha da lista a recusa de um item dela, pela posição que a API deu', () => {
       abrirResultado({ produtos: [PRELIMINAR, DEFINITIVO], ...SEM_PERIODO });
+
+      ajudantes.recusar({
+        field: 'fases[0].produtos[1].atoCodigo',
+        code: PRELIMINAR_SEM_DEFINITIVO,
+        message: MENSAGEM_DOS_PRODUTOS,
+        identificadores: [daFase('RESULTADO_FINAL')],
+      });
+
+      expect(ajudantes.bloco('fase-RESULTADO_FINAL-produto-1-erro')).toContain(
+        MENSAGEM_DOS_PRODUTOS,
+      );
+      expect(campo('fase-RESULTADO_FINAL-produto-ato-1')?.getAttribute('aria-invalid')).toBe(
+        'true',
+      );
+      expect(campo('fase-RESULTADO_FINAL-produto-ato-0')?.getAttribute('aria-invalid')).toBeNull();
+      expect(ajudantes.bloco('fase-RESULTADO_FINAL-produtos-erro')).toBeNull();
+    });
+
+    it('leva à lista a recusa de uma linha que a fase de hoje não tem', () => {
+      abrirResultado({ produtos: [PRELIMINAR], ...SEM_PERIODO });
 
       ajudantes.recusar({
         field: 'fases[0].produtos[1].atoCodigo',
@@ -97,6 +117,7 @@ describe('CronogramaPassoComponent: recusas da publicação nas fases', () => {
       expect(ajudantes.bloco('fase-RESULTADO_FINAL-produtos-erro')).toContain(
         MENSAGEM_DOS_PRODUTOS,
       );
+      expect(ajudantes.bloco('fase-RESULTADO_FINAL-produto-1-erro')).toBeNull();
     });
   });
 

@@ -3,10 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { localDaRecusa } from '../../shared/recusas/local-da-recusa';
 import type { ExigenciasDaFase } from '../../shared/descricao-da-fase';
 import {
+  campoComLinhaNaLista,
   campoDaRecusaDaFase,
   campoNaTela,
   fimDaFaseNaTela,
   NO_TOPO_DA_FASE,
+  posicaoDaPublicacao,
 } from './campo-da-fase';
 
 const campoDe = (field: string) => {
@@ -16,7 +18,6 @@ const campoDe = (field: string) => {
 
 describe('campoDaRecusaDaFase', () => {
   it.each([
-    ['fases[0].produtos[1].atoCodigo', 'produtos'],
     ['fases[0].produtos', 'produtos'],
     ['fases[0].emiteParecerIndividual', 'emiteParecerIndividual'],
     ['fases[0].inicio', 'inicio'],
@@ -24,6 +25,23 @@ describe('campoDaRecusaDaFase', () => {
     ['fases[1].unidadeResponsavelId', 'unidadeResponsavelId'],
   ])('leva %s ao campo %s', (field, campo) => {
     expect(campoDe(field)).toBe(campo);
+  });
+
+  it.each([
+    ['fases[0].produtos[1].atoCodigo', 'produtos.1.atoCodigo'],
+    ['fases[0].produtos[0].papel', 'produtos.0.papel'],
+    ['fases[0].produtos[2]', 'produtos.2'],
+    ['fases[0].produtos[3].campoQueNaoExiste', 'produtos.3'],
+    ['request.Fases[0].Produtos[1].AtoCodigo', 'produtos.1.atoCodigo'],
+    ['/cronograma/fases/0/produtos/1/papel', 'produtos.1.papel'],
+  ])('leva %s à linha da lista de publicações, no campo %s', (field, campo) => {
+    expect(campoDe(field)).toBe(campo);
+  });
+
+  it('dá campos diferentes a linhas diferentes da lista de publicações', () => {
+    expect(campoDe('fases[0].produtos[0].atoCodigo')).not.toBe(
+      campoDe('fases[0].produtos[1].atoCodigo'),
+    );
   });
 
   it.each([
@@ -79,6 +97,34 @@ describe('campoDaRecusaDaFase', () => {
 
   it('lê o campo sem distinguir a caixa que a API usa', () => {
     expect(campoDe('request.Fases[0].UnidadeResponsavelId')).toBe('unidadeResponsavelId');
+  });
+});
+
+describe('a linha da lista de publicações', () => {
+  it.each([
+    ['produtos.1.atoCodigo', 1],
+    ['produtos.0.papel', 0],
+    ['produtos.12', 12],
+    ['produtos', null],
+    ['fim', null],
+    ['recurso.prazoValor', null],
+  ])('lê a posição de %s: %s', (campo, posicao) => {
+    expect(posicaoDaPublicacao(campo)).toBe(posicao);
+  });
+
+  it('deixa a recusa na linha enquanto a posição existe na lista', () => {
+    expect(campoComLinhaNaLista('produtos.1.papel', 2)).toBe('produtos.1.papel');
+    expect(campoComLinhaNaLista('produtos.1', 2)).toBe('produtos.1');
+  });
+
+  it('leva a recusa de uma posição que a lista não tem à lista inteira', () => {
+    expect(campoComLinhaNaLista('produtos.2.atoCodigo', 2)).toBe('produtos');
+    expect(campoComLinhaNaLista('produtos.0', 0)).toBe('produtos');
+  });
+
+  it('não mexe no campo que não é de uma linha', () => {
+    expect(campoComLinhaNaLista('fim', 0)).toBe('fim');
+    expect(campoComLinhaNaLista('produtos', 0)).toBe('produtos');
   });
 });
 

@@ -39,6 +39,9 @@ export class PublicacoesDaFaseComponent {
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
   protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
   protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+  protected readonly recusasDaLinha = this.faseEmEdicao.recusasDaLinha;
+  protected readonly recusasDaLista = this.faseEmEdicao.recusasDaListaDePublicacoes;
+  protected readonly temMensagemNaLista = this.faseEmEdicao.temMensagemNaListaDePublicacoes;
   protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly papeis = PAPEIS_ESCOLHIVEIS;
   protected readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
@@ -47,14 +50,28 @@ export class PublicacoesDaFaseComponent {
     return this.espelho.formulario()?.controls.emiteParecerIndividual.value ?? false;
   });
 
+  /** A recusa à linha inteira ou ao ato dela marca a publicação como inválida. */
+  protected publicacaoRecusada(posicao: number): boolean {
+    const dela = [`produtos.${posicao}`, `produtos.${posicao}.atoCodigo`];
+    return this.recusasDaLinha(posicao).some((recusa) => dela.includes(recusa.campo));
+  }
+
+  /** A recusa ao papel da linha marca o papel como inválido. */
+  protected papelRecusado(posicao: number): boolean {
+    const doPapel = `produtos.${posicao}.papel`;
+    return this.recusasDaLinha(posicao).some((recusa) => recusa.campo === doPapel);
+  }
+
   /**
-   * O que descreve cada controle da lista: a recusa, quando há, a ajuda e, na fase que publica
-   * preliminar, a orientação de publicar também o definitivo.
+   * O que descreve cada controle de uma linha: a recusa da linha e a da lista, quando há, a ajuda
+   * e, na fase que publica preliminar, a orientação de publicar também o definitivo.
    */
-  protected idsQueDescrevemAPublicacao(): string {
-    const recusa = this.temMensagem('produtos') ? [this.idDaFase('produtos-erro')] : [];
+  protected idsQueDescrevemAPublicacao(posicao: number): string {
+    const daLinha =
+      this.recusasDaLinha(posicao).length > 0 ? [this.idDaFase(`produto-${posicao}-erro`)] : [];
+    const daLista = this.temMensagemNaLista() ? [this.idDaFase('produtos-erro')] : [];
     const orientacao = this.publicaPreliminar() ? [this.idDaFase('produtos-definitivo')] : [];
-    return [...recusa, this.idDaFase('produtos-ajuda'), ...orientacao].join(' ');
+    return [...daLinha, ...daLista, this.idDaFase('produtos-ajuda'), ...orientacao].join(' ');
   }
 
   /** A leitura da consulta: cada publicação em texto, sem o controle que a edita. */
