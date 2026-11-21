@@ -52,6 +52,7 @@ import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.serv
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
 import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
+import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 const SEM_CONTEUDO = { status: 204, statusText: 'No Content' };
 const INICIO_DA_FASE = '2026-03-01T08:00:00-03:00';
@@ -70,6 +71,7 @@ const PROVEDORES = [
   provideHttpClientTesting(),
   { provide: SELECAO_BASE_PATH, useValue: BASE },
   { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+  provideTiposDeDecisaoDaApi(),
   { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
   { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
 ];

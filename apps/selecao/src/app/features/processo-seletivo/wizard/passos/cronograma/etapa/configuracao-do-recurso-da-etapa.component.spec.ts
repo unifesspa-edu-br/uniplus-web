@@ -26,6 +26,10 @@ import {
 import { GravacaoDoProcesso } from '../../../shared/gravacao/gravacao-do-processo';
 import { CatalogoDasOpcoesDoRecurso } from '../catalogos/catalogo-das-opcoes-do-recurso.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../catalogos/catalogos-do-cronograma';
+import {
+  provideTiposDeDecisaoDaApi,
+  umProcessoLidoComOsTiposDeDecisao,
+} from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { etapa } from '../cronograma-do-certame.testing';
 import { etapaDoFormulario, grupoDaEtapa } from '../cronograma-form';
 import { BASE } from '../cronograma.testing';
@@ -72,6 +76,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
         provideHttpClientTesting(),
         { provide: SELECAO_BASE_PATH, useValue: BASE },
         { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+        provideTiposDeDecisaoDaApi(),
         { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
         { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
       ],
@@ -200,6 +205,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   });
 
   it('lista os procedimentos declarados, nomeando o item contestado pelo rótulo da etapa', () => {
+    TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set(umProcessoLidoComOsTiposDeDecisao());
     grupo.controls.itensDeAvaliacao.setValue([
       { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: '4' },
     ]);

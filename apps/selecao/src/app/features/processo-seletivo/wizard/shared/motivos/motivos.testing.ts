@@ -1,5 +1,6 @@
 import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
+import { umTipoDeDecisaoDaApi } from '../decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import type { FaseOuEtapaDoMotivo, MotivoNoDocumento } from './motivo-no-documento';
 
 export const FASE_DA_INSCRICAO = { faseChave: 'inscricao' } as const;
@@ -32,16 +33,18 @@ type CamposDoMotivoDoCadastro = Partial<Omit<MotivoDeDecisaoDto, 'tipo'>> & {
 };
 
 /** Um motivo ativo do cadastro; o cenário sobrescreve só o que importa a ele. */
-export function umMotivoDoCadastro(campos: CamposDoMotivoDoCadastro = {}): MotivoDeDecisaoDto {
-  const { tipo = TipoMotivoDeDecisaoCodigo.HOMOLOGACAO_DAS_INSCRICOES, ...demais } = campos;
+export function umMotivoDoCadastro({
+  tipo = TipoMotivoDeDecisaoCodigo.HOMOLOGACAO_DAS_INSCRICOES,
+  ...campos
+}: CamposDoMotivoDoCadastro = {}): MotivoDeDecisaoDto {
   return {
     id: '01960000-0000-7000-0000-0000000000a1',
-    tipo: { codigo: tipo, rotulo: tipo },
+    tipo: umTipoDeDecisaoDaApi(tipo),
     codigo: 'SEM_RESULTADO_NO_ENEM',
     descricao: 'Sem resultado no ENEM informado.',
     subclassificacao: null,
     sentido: 'DESFAVORAVEL',
     ativo: true,
-    ...demais,
+    ...campos,
   };
 }

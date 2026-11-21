@@ -47,6 +47,7 @@ import {
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { opcoesDoRecursoApiDeTeste } from './wizard/passos/cronograma/catalogos/catalogos.testing';
 import type { CriterioDesempateConfigurado } from './wizard/processo-seletivo.models';
+import { provideApiDosTiposDeDecisao } from './wizard/shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 export const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
   regraCodigo: 'DESEMPATE-MAIOR-NOTA-AREA-ENEM',
@@ -104,6 +105,7 @@ export const concedeSoPublicar = (codigo: string): boolean =>
 
 export const PAGE_PROVIDERS = [
   provideRouter([]),
+  provideApiDosTiposDeDecisao(),
   { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
   { provide: UnidadesApi, useValue: unidadesApiStub },
   { provide: GeoApi, useValue: geoApiStub },

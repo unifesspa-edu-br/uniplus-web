@@ -10,7 +10,7 @@ import {
 import { NotificationService } from '@uniplus/shared-core/notifications';
 import { MotivoDeDecisaoDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
-import { TIPO_INICIAL } from './tipos-de-motivo';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
 
 const PAGE_SIZE = 50;
 
@@ -20,17 +20,22 @@ export class MotivosDeDecisaoStore {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
   private readonly basePath = inject(SELECAO_BASE_PATH);
+  private readonly vocabulario = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
   private readonly pagina = signal<CursorPagina | undefined>(undefined);
 
-  readonly tipo = signal(TIPO_INICIAL);
+  readonly tipo = signal('');
   readonly comDesativados = signal(false);
   readonly termoBusca = signal('');
 
-  private readonly lista = useApiResource<readonly MotivoDeDecisaoDto[]>(() => ({
-    url: `${this.basePath}/api/selecao/motivos-de-decisao`,
-    params: this.montarParams(),
-    context: withVendorMime('motivo-de-decisao', 1),
-  }));
+  private readonly lista = useApiResource<readonly MotivoDeDecisaoDto[]>(() =>
+    this.tipo()
+      ? {
+          url: `${this.basePath}/api/selecao/motivos-de-decisao`,
+          params: this.montarParams(),
+          context: withVendorMime('motivo-de-decisao', 1),
+        }
+      : undefined,
+  );
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
   readonly motivos = this.navegacao.itens;
@@ -65,6 +70,10 @@ export class MotivosDeDecisaoStore {
   });
 
   constructor() {
+    effect(() => {
+      const primeiro = this.vocabulario.itens()[0];
+      if (!this.tipo() && primeiro) this.tipo.set(primeiro.codigo);
+    });
     effect(() => {
       const problem = this.lista.problem();
       if (problem && problem.status >= 500) {

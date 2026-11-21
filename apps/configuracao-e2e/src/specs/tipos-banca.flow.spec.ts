@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { ID_DO_TIPO_DE_BANCA, TIPO_DE_BANCA_ENTREVISTA } from '../support/api-de-tipos-banca';
+import { mockarVocabularioDeTiposDeDecisao } from '../support/api-do-vocabulario-de-tipos-de-decisao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -78,6 +79,14 @@ async function mockApi(
     }
     await route.fulfill({ status: 204, headers: CORS_HEADERS });
   });
+  await mockarVocabularioDeTiposDeDecisao(page);
+  await page.route(/\/api\/configuracao\/vocabularios\/papeis-de-banca$/, (route) =>
+    route.fulfill({
+      status: 200,
+      headers: CORS_HEADERS,
+      json: [{ codigo: 'AVALIA_O_MERITO', rotulo: 'Avalia o mérito' }],
+    }),
+  );
   await page.route(/\/api\/configuracao\/tipos-banca(\?.*)?$/, (route) => jsonRoute(route, lista));
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) =>
     jsonRoute(route, fasesCanonicas),

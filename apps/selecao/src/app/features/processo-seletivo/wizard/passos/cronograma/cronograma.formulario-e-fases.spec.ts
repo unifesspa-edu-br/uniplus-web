@@ -73,7 +73,9 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
 
       expect(situacao()).toBe('Tentando novamente…');
       expect(nativo.querySelector('ui-alert')).not.toBeNull();
-      expect(nativo.textContent).toContain('Carregando fases, bancas, atos e regras…');
+      expect(nativo.textContent).toContain(
+        'Carregando fases, bancas, atos, regras e tipos de decisão…',
+      );
       expect(nativo.querySelectorAll('[role="status"]')).toHaveLength(1);
 
       for (const requisicao of controller.match(() => true)) requisicao.flush([]);
@@ -81,7 +83,9 @@ describe('CronogramaPassoComponent: formulário e fases', () => {
       detectar();
 
       expect(nativo.querySelector('ui-alert')).toBeNull();
-      expect(nativo.textContent).not.toContain('Carregando fases, bancas, atos e regras…');
+      expect(nativo.textContent).not.toContain(
+        'Carregando fases, bancas, atos, regras e tipos de decisão…',
+      );
     });
   });
 

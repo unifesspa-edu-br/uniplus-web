@@ -13,7 +13,12 @@ import {
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { FasesCanonicasApi, TipoBancaDto, TiposBancaApi } from '@uniplus/shared-data/configuracao';
+import {
+  FasesCanonicasApi,
+  PapelDaBanca,
+  TipoBancaDto,
+  TiposBancaApi,
+} from '@uniplus/shared-data/configuracao';
 import { aguardarRecarga } from '../../shared/foco';
 import { TiposBancaStore } from './tipos-banca.store';
 import {
@@ -40,6 +45,9 @@ export class EdicaoDosTiposBanca {
     this.destroyRef,
   );
   readonly sugestoesFaseTipica = computed(() => this.fases.opcoes().map((fase) => fase.nome));
+  /** O papel e os tipos de decisão como o tipo de banca os trouxe: seguem à vista ainda que o vocabulário não os tenha. */
+  readonly papelLido = signal<PapelDaBanca | null>(null);
+  readonly tiposLidos = signal<TipoBancaDto['tiposDeDecisaoJulgados']>([]);
   readonly form = criarFormularioDeBanca();
   private readonly escrita = signal<Escrita | null>(null);
   private readonly recarga = aguardarRecarga(
@@ -91,6 +99,8 @@ export class EdicaoDosTiposBanca {
     this.limparResultados();
     this.bancaEmEdicao.set(banca);
     this.form.reset(valoresDaBanca(banca));
+    this.papelLido.set(banca.papel);
+    this.tiposLidos.set(banca.tiposDeDecisaoJulgados);
     this.erro.set(null);
     this.recusaDoSalvamento.set('');
     this.renovarChave();
@@ -187,7 +197,7 @@ export class EdicaoDosTiposBanca {
   private aplicarFalha(problem: ProblemDetails): void {
     if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && problem.errors?.length) {
       this.renovarChave();
-      this.aplicarErros(recusasDoProblema(problem));
+      this.aplicarErros(recusasComDetalhe(problem));
       return;
     }
     if (problem.code === CORPO_DIVERGENTE) this.renovarChave();
@@ -200,4 +210,15 @@ export class EdicaoDosTiposBanca {
   private renovarChave(): void {
     this.chave.set(idempotencyKey.create());
   }
+}
+
+function recusasComDetalhe(problem: ProblemDetails): RecusasDoProblema {
+  const recusas = recusasDoProblema(problem);
+  return {
+    ...recusas,
+    deCampo: recusas.deCampo.map((recusa) => ({
+      ...recusa,
+      mensagem: recusa.mensagem || problem.detail || '',
+    })),
+  };
 }

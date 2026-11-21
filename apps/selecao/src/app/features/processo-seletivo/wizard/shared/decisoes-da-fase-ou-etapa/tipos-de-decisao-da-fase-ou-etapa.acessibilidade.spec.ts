@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { provideTiposDeDecisaoDaApi } from './tipos-de-decisao-da-api.testing';
 import { TiposDeDecisaoDaFaseOuEtapaComponent } from './tipos-de-decisao-da-fase-ou-etapa.component';
 
 @Component({
@@ -30,6 +31,7 @@ describe('TiposDeDecisaoDaFaseOuEtapaComponent: acessibilidade', () => {
   let fixture: ComponentFixture<AnfitriaoComponent>;
 
   beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideTiposDeDecisaoDaApi()] });
     fixture = TestBed.createComponent(AnfitriaoComponent);
     document.body.appendChild(fixture.nativeElement);
     fixture.detectChanges();

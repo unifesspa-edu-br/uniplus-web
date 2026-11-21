@@ -8,9 +8,12 @@ import {
   input,
   output,
 } from '@angular/core';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
 import type { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
+import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { rotuloDoTipoDeDecisaoLido } from '../hidratacao/rotulo-do-tipo-de-decisao-lido';
 import { focarAposRenderizarSeSemFoco } from '../foco-apos-renderizar';
 import type { ModoDaSecao } from '../modo-da-secao';
 import type { RecusaDaEscolha } from './escolha-dos-motivos';
@@ -79,9 +82,24 @@ export class MotivosDaFaseOuEtapaComponent {
   readonly retirar = output<IdentidadeDoMotivo>();
 
   private readonly injector = inject(Injector);
+  private readonly vocabulario = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
+  private readonly store = inject(ProcessoSeletivoStore);
   protected readonly detalheDoMotivo = detalheDoMotivo;
 
   protected readonly emConsulta = computed(() => this.modo() === 'consulta');
+
+  private readonly tiposLidos = computed(() => {
+    const rotulo = rotuloDoTipoDeDecisaoLido(this.store.remoteSnapshot());
+    const codigos = [...this.tiposDeclarados(), ...this.escolhidos().map((m) => m.tipoCodigo)];
+    const vocabulario = this.vocabulario.itens();
+    return [...new Set(codigos)].sort().map((codigo) => ({
+      codigo,
+      rotulo: rotulo(codigo) || vocabulario.find((tipo) => tipo.codigo === codigo)?.rotulo || '',
+    }));
+  });
+  private readonly tiposDeDecisao = computed(() =>
+    this.emConsulta() ? this.tiposLidos() : this.vocabulario.itens(),
+  );
   protected readonly parte = computed(() =>
     this.faseOuEtapa().faseChave === undefined ? 'etapa' : 'fase',
   );
@@ -95,11 +113,19 @@ export class MotivosDaFaseOuEtapaComponent {
       this.emConsulta() ? [] : this.catalogo(),
       this.escolhidos(),
       this.tiposDeclarados(),
+      this.tiposDeDecisao(),
     ),
   );
 
   private readonly tiposEscolhidosSemDeclaracao = computed(
-    () => new Set(tiposEscolhidosNaoDeclarados(this.escolhidos(), this.tiposDeclarados())),
+    () =>
+      new Set(
+        tiposEscolhidosNaoDeclarados(
+          this.escolhidos(),
+          this.tiposDeclarados(),
+          this.tiposDeDecisao(),
+        ),
+      ),
   );
 
   protected readonly textosLidosPorTipo = computed<ReadonlyMap<string, readonly string[]>>(

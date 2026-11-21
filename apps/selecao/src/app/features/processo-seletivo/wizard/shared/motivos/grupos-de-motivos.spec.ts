@@ -1,7 +1,9 @@
-import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
+import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { VOCABULARIO_DA_API as VOCABULARIO } from '../decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { agruparPorTipo, tiposEscolhidosNaoDeclarados } from './grupos-de-motivos';
+import type { MotivoNoDocumento } from './motivo-no-documento';
 import { FASE_DA_INSCRICAO, umMotivoDoCadastro, umMotivoNoDocumento } from './motivos.testing';
 
 const homologacao = umMotivoDoCadastro({ codigo: 'SEM_ENEM', descricao: 'Sem ENEM.' });
@@ -15,11 +17,19 @@ const classificacao = umMotivoDoCadastro({
   codigo: 'EMPATE',
 });
 
+const agrupar = (
+  catalogo: readonly MotivoDeDecisaoDto[],
+  escolhidos: readonly MotivoNoDocumento[],
+  declarados: readonly string[],
+) => agruparPorTipo(catalogo, escolhidos, declarados, VOCABULARIO);
+const naoDeclarados = (escolhidos: readonly MotivoNoDocumento[], declarados: readonly string[]) =>
+  tiposEscolhidosNaoDeclarados(escolhidos, declarados, VOCABULARIO);
+
 const tipos = (grupos: ReturnType<typeof agruparPorTipo>) => grupos.map((g) => g.tipoCodigo);
 
 describe('agruparPorTipo', () => {
   it('põe os tipos declarados primeiro e os demais na ordem do vocabulário', () => {
-    const grupos = agruparPorTipo([homologacao, isencao, classificacao], [], ['CLASSIFICACAO']);
+    const grupos = agrupar([homologacao, isencao, classificacao], [], ['CLASSIFICACAO']);
 
     expect(grupos.map((g) => [g.tipoCodigo, g.declarado])).toEqual([
       ['CLASSIFICACAO', true],
@@ -29,19 +39,30 @@ describe('agruparPorTipo', () => {
   });
 
   it('mostra o tipo declarado que não tem motivo no cadastro', () => {
-    const grupos = agruparPorTipo([isencao], [], ['GABARITO_DA_PROVA']);
+    const grupos = agrupar([isencao], [], ['GABARITO_DA_PROVA']);
 
     expect(grupos[0]).toMatchObject({ tipoCodigo: 'GABARITO_DA_PROVA', motivos: [] });
   });
 
+  it('dá ao tipo que o vocabulário não conhece o rótulo que o motivo do cadastro traz', () => {
+    const doCadastro = umMotivoDoCadastro({ tipo: TipoMotivoDeDecisaoCodigo.HETEROIDENTIFICACAO });
+
+    const [grupo] = agruparPorTipo([doCadastro], [], ['HETEROIDENTIFICACAO'], []);
+
+    expect(grupo).toMatchObject({
+      tipoCodigo: 'HETEROIDENTIFICACAO',
+      rotulo: 'Heteroidentificação',
+    });
+  });
+
   it('esconde o tipo não declarado que não tem motivo', () => {
-    expect(tipos(agruparPorTipo([isencao], [], []))).toEqual(['ISENCAO_DA_TAXA']);
+    expect(tipos(agrupar([isencao], [], []))).toEqual(['ISENCAO_DA_TAXA']);
   });
 
   it('marca os motivos já escolhidos', () => {
     const escolhido = umMotivoNoDocumento(FASE_DA_INSCRICAO, { codigo: 'SEM_ENEM' });
 
-    const [grupo] = agruparPorTipo([homologacao], [escolhido], []);
+    const [grupo] = agrupar([homologacao], [escolhido], []);
 
     expect(grupo.motivos.map((m) => [m.codigo, m.escolhido])).toEqual([['SEM_ENEM', true]]);
   });
@@ -52,7 +73,7 @@ describe('agruparPorTipo', () => {
       codigo: 'RENDA_ALTA',
     });
 
-    const grupos = agruparPorTipo([isencao], [escolhido], ['CLASSIFICACAO']);
+    const grupos = agrupar([isencao], [escolhido], ['CLASSIFICACAO']);
 
     expect(grupos[1]).toMatchObject({
       tipoCodigo: 'ISENCAO_DA_TAXA',
@@ -64,14 +85,14 @@ describe('agruparPorTipo', () => {
   it('não oferece o motivo desativado que ainda não foi escolhido', () => {
     const desativado = umMotivoDoCadastro({ codigo: 'ANTIGO', ativo: false });
 
-    expect(tipos(agruparPorTipo([desativado], [], []))).toEqual([]);
+    expect(tipos(agrupar([desativado], [], []))).toEqual([]);
   });
 
   it('mantém o motivo desativado que já estava escolhido, marcado como desativado', () => {
     const desativado = umMotivoDoCadastro({ codigo: 'ANTIGO', ativo: false });
     const escolhido = umMotivoNoDocumento(FASE_DA_INSCRICAO, { codigo: 'ANTIGO' });
 
-    const [grupo] = agruparPorTipo([desativado], [escolhido], []);
+    const [grupo] = agrupar([desativado], [escolhido], []);
 
     expect(grupo.motivos).toEqual([
       expect.objectContaining({ codigo: 'ANTIGO', escolhido: true, desativado: true }),
@@ -84,7 +105,7 @@ describe('agruparPorTipo', () => {
       descricao: 'Cópia guardada.',
     });
 
-    const [grupo] = agruparPorTipo([homologacao], [escolhido], []);
+    const [grupo] = agrupar([homologacao], [escolhido], []);
 
     expect(grupo.motivos[0].descricao).toBe('Cópia guardada.');
   });
@@ -92,7 +113,7 @@ describe('agruparPorTipo', () => {
   it('descreve pelo catálogo o motivo escolhido que veio sem cópia', () => {
     const escolhido = umMotivoNoDocumento(FASE_DA_INSCRICAO, { codigo: 'SEM_ENEM' });
 
-    const [grupo] = agruparPorTipo([homologacao], [escolhido], []);
+    const [grupo] = agrupar([homologacao], [escolhido], []);
 
     expect(grupo.motivos[0]).toMatchObject({ descricao: 'Sem ENEM.', sentido: 'DESFAVORAVEL' });
   });
@@ -104,7 +125,7 @@ describe('agruparPorTipo', () => {
     });
     const semCopia = umMotivoNoDocumento(FASE_DA_INSCRICAO, { codigo: 'B' });
 
-    const [grupo] = agruparPorTipo([], [comCopia, semCopia], []);
+    const [grupo] = agrupar([], [comCopia, semCopia], []);
 
     expect(grupo.motivos.map((m) => [m.descricao, m.desativado])).toEqual([
       ['Cópia de A.', false],
@@ -112,11 +133,17 @@ describe('agruparPorTipo', () => {
     ]);
   });
 
+  it('não usa o código como rótulo quando nenhum cadastro nomeia o tipo', () => {
+    const [grupo] = agruparPorTipo([], [], ['ISENCAO_DA_TAXA'], []);
+
+    expect(grupo.rotulo).toBe('');
+  });
+
   it('põe o código de tipo que o vocabulário não conhece depois dos demais', () => {
-    const grupos = agruparPorTipo([isencao], [], ['TIPO_NOVO']);
+    const grupos = agrupar([isencao], [], ['TIPO_NOVO']);
 
     expect(tipos(grupos)).toEqual(['TIPO_NOVO', 'ISENCAO_DA_TAXA']);
-    expect(grupos[0].rotulo).toBe('TIPO_NOVO');
+    expect(grupos[0].rotulo).toBe('');
   });
 });
 
@@ -132,24 +159,24 @@ describe('tiposEscolhidosNaoDeclarados', () => {
   const emHomologacao = umMotivoNoDocumento(FASE_DA_INSCRICAO);
 
   it('lista cada tipo escolhido e não declarado uma vez, na ordem do vocabulário', () => {
-    const tipos = tiposEscolhidosNaoDeclarados([emHomologacao, emIsencao, outroEmIsencao], []);
+    const tipos = naoDeclarados([emHomologacao, emIsencao, outroEmIsencao], []);
 
     expect(tipos).toEqual(['ISENCAO_DA_TAXA', 'HOMOLOGACAO_DAS_INSCRICOES']);
   });
 
   it('deixa de fora o tipo que a fase declara', () => {
-    const tipos = tiposEscolhidosNaoDeclarados([emHomologacao, emIsencao], ['ISENCAO_DA_TAXA']);
+    const tipos = naoDeclarados([emHomologacao, emIsencao], ['ISENCAO_DA_TAXA']);
 
     expect(tipos).toEqual(['HOMOLOGACAO_DAS_INSCRICOES']);
   });
 
   it('não lista nada quando não há motivo escolhido', () => {
-    expect(tiposEscolhidosNaoDeclarados([], ['CLASSIFICACAO'])).toEqual([]);
+    expect(naoDeclarados([], ['CLASSIFICACAO'])).toEqual([]);
   });
 
   it('inclui o código de tipo que o vocabulário não conhece', () => {
     const desconhecido = umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoCodigo: 'TIPO_NOVO' });
 
-    expect(tiposEscolhidosNaoDeclarados([desconhecido], [])).toEqual(['TIPO_NOVO']);
+    expect(naoDeclarados([desconhecido], [])).toEqual(['TIPO_NOVO']);
   });
 });

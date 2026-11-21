@@ -1,3 +1,7 @@
+import {
+  provideProcessoLidoComOsTiposDeDecisao,
+  provideTiposDeDecisaoDaApi,
+} from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RegrasCatalogoApi } from '@uniplus/shared-data/selecao';
@@ -26,7 +30,12 @@ class AnfitriaComponent {
 
 function montar(procedimentos: readonly ProcedimentoDeRecurso[], carregarCatalogo = true) {
   TestBed.configureTestingModule({
-    providers: [CatalogoDeRegras, { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } }],
+    providers: [
+      CatalogoDeRegras,
+      { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } },
+      provideTiposDeDecisaoDaApi(),
+      provideProcessoLidoComOsTiposDeDecisao(),
+    ],
   });
   if (carregarCatalogo) {
     TestBed.inject(CatalogoDeRegras).regrasProcedimento.set([
@@ -54,7 +63,10 @@ describe('ProcedimentosDoRecursoComponent', () => {
     'mostra tipos e avisos em consulta com procedimentos antigos ou ausentes',
     (procedimentos) => {
       const { fixture, host } = montar(procedimentos);
-      fixture.componentInstance.tiposDeclarados.set(['HOMOLOGACAO_DAS_INSCRICOES', 'NOTA_DA_ETAPA']);
+      fixture.componentInstance.tiposDeclarados.set([
+        'HOMOLOGACAO_DAS_INSCRICOES',
+        'NOTA_DA_ETAPA',
+      ]);
       fixture.detectChanges();
 
       expect(host.hidden).toBe(false);

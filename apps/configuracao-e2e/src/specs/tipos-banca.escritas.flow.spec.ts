@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { TIPO_DE_BANCA_ENTREVISTA } from '../support/api-de-tipos-banca';
+import { mockarVocabularioDeTiposDeDecisao } from '../support/api-do-vocabulario-de-tipos-de-decisao';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -50,6 +51,14 @@ async function mockApi(page: Page, respostas: readonly Resposta[], recarga: Reca
   let gravou = false;
   await page.route(/\/api\/configuracao\/fases-canonicas(\?.*)?$/, (route) =>
     route.fulfill({ status: 200, headers: CORS_HEADERS, json: [] }),
+  );
+  await mockarVocabularioDeTiposDeDecisao(page);
+  await page.route(/\/api\/configuracao\/vocabularios\/papeis-de-banca$/, (route) =>
+    route.fulfill({
+      status: 200,
+      headers: CORS_HEADERS,
+      json: [{ codigo: 'AVALIA_O_MERITO', rotulo: 'Avalia o mérito' }],
+    }),
   );
   await page.route(/\/api\/configuracao\/tipos-banca(\?.*)?$/, async (route) => {
     if (!gravou) {

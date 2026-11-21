@@ -6,6 +6,7 @@ import { instalarPreferencia, temaDoProject } from '../support/tema';
 import { OPCOES_DO_RECURSO } from '../fixtures/opcoes-do-recurso';
 import { responder, responderCatalogos } from '../support/responder';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
+import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
 
 test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
@@ -307,4 +308,5 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS_HEADERS);
   await responder(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, REGRAS_RECURSO, CORS_HEADERS);
   await responderCatalogos(page, OPCOES_DO_RECURSO, CORS_HEADERS);
+  await responderCatalogos(page, [TIPOS_DE_DECISAO_DA_API], CORS_HEADERS);
 }

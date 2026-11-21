@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
+import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
 import {
   responderCatalogos,
   responderRegrasDoCatalogo,
@@ -174,6 +175,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/fatos-candidato', []],
   ['publicacoes/tipos-ato', TIPOS_ATO],
   ...OPCOES_DO_RECURSO,
+  TIPOS_DE_DECISAO_DA_API,
 ];
 
 export async function mockarCatalogos(page: Page): Promise<void> {

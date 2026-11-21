@@ -15,11 +15,8 @@ import {
   withIdempotencyKey,
 } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import {
-  MotivoDeDecisaoDto,
-  MotivosDeDecisaoApi,
-  rotuloDoTipoDeDecisao,
-} from '@uniplus/shared-data/selecao';
+import { MotivoDeDecisaoDto, MotivosDeDecisaoApi } from '@uniplus/shared-data/selecao';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
 import { ItemDaConfirmacao } from '../../shared/confirmacao-de-remocao';
 import { aguardarRecarga } from '../../shared/foco';
 import type { AndamentoDaEscrita } from '../../shared/escrita';
@@ -63,6 +60,7 @@ const CODIGO_JA_EXISTE = 'uniplus.selecao.motivo_de_decisao.codigo_ja_existe';
 @Injectable()
 export class EdicaoDosMotivosDeDecisao {
   private readonly api = inject(MotivosDeDecisaoApi);
+  private readonly vocabulario = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
   private readonly store = inject(MotivosDeDecisaoStore);
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly notifications = inject(NotificationService);
@@ -109,7 +107,7 @@ export class EdicaoDosMotivosDeDecisao {
   });
   readonly falhaNosFundamentos = this.oferecidos.falha;
   readonly pedeSubclassificacao = computed(() => tipoPedeSubclassificacao(this.store.tipo()));
-  readonly tipoEscolhido = computed(() => rotuloDoTipoDeDecisao(this.store.tipo()));
+  readonly tipoEscolhido = computed(() => this.vocabulario.rotulo()(this.store.tipo()));
   readonly titulo = computed(() =>
     this.modo() === 'criar' ? 'Novo motivo de decisão' : 'Editar motivo de decisão',
   );

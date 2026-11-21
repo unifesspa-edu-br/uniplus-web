@@ -11,18 +11,26 @@
   <label class="field">
     <span class="field__label">Tipo de decisão</span>
     <select
+      id="cfg-motivos-tipo"
       class="select"
       data-testid="motivos-tipo"
       [value]="store.tipo()"
-      [disabled]="edicao.gravando()"
+      [attr.aria-busy]="vocabulario.carregando() ? 'true' : null"
+      [disabled]="edicao.gravando() || vocabulario.carregando() || vocabulario.erro() !== null"
       (change)="escolherTipo($event)"
     >
-      @for (tipo of tipos; track tipo.codigo) {
+      @for (tipo of vocabulario.itens(); track tipo.codigo) {
       <option [value]="tipo.codigo" [selected]="tipo.codigo === store.tipo()">
         {{ tipo.rotulo }}
       </option>
       }
     </select>
+    @if (vocabulario.carregando()) {
+    <span class="field__hint" [uiIndicadorDaLeitura]="leituraDosTipos"
+      >Carregando os tipos de decisão…</span
+    >
+    }
+    <ui-falha-de-leitura-do-campo [leitura]="leituraDosTipos" />
   </label>
   <div class="field">
     <label class="checkbox">
@@ -48,6 +56,7 @@
   [mostraSubclassificacao]="edicao.pedeSubclassificacao()"
   [carregando]="store.carregando()"
   [gravando]="edicao.gravando()"
+  [cadastroIndisponivel]="vocabulario.carregando() || vocabulario.erro() !== null || vocabulario.itens().length === 0"
   [andamento]="edicao.andamento()"
   [erro]="store.mensagemDeErro()"
   [temFiltro]="store.temFiltro()"

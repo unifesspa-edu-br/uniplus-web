@@ -1,4 +1,4 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, type Provider } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import {
   TipoDeDecisaoDoDocumento,
@@ -17,6 +17,10 @@ import { CatalogoDeRegras } from '../catalogos/catalogo-de-regras.service';
 import { ProcedimentosDoRecursoComponent } from './procedimentos-do-recurso.component';
 import { regraDoCatalogo } from './procedimentos.testing';
 import type { RecusaDoProcedimento } from './recusas-do-procedimento';
+import {
+  provideProcessoLidoComOsTiposDeDecisao,
+  provideTiposDeDecisaoDaApi,
+} from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 export type FixtureDosProcedimentos = ComponentFixture<ProcedimentosDoRecursoComponent>;
 
@@ -84,10 +88,17 @@ export async function atualizar(
   await assentar(fixture);
 }
 
+function provedoresDaEdicao(): Provider[] {
+  return [
+    CatalogoDeRegras,
+    { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } },
+    provideTiposDeDecisaoDaApi(),
+    provideProcessoLidoComOsTiposDeDecisao(),
+  ];
+}
+
 function preparar(): void {
-  TestBed.configureTestingModule({
-    providers: [CatalogoDeRegras, { provide: RegrasCatalogoApi, useValue: { listar: vi.fn() } }],
-  });
+  TestBed.configureTestingModule({ providers: provedoresDaEdicao() });
   const catalogo = TestBed.inject(CatalogoDeRegras);
   catalogo.regrasProcedimento.set([
     regraDoCatalogo('PROCEDIMENTO-RECURSO-COLEGIADO', 'Resolução 12/2020, art. 4º'),

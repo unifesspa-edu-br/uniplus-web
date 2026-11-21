@@ -10,6 +10,7 @@ import {
   FatosCandidatoApi,
   PrecedenciasFaseApi,
   TiposBancaApi,
+  TiposDeDecisaoApi,
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
@@ -26,6 +27,7 @@ import {
   type LeituraAcompanhada,
 } from '@uniplus/shared-ui/components';
 
+import { RESPOSTA_DO_VOCABULARIO } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
@@ -72,6 +74,7 @@ describe('leitura acompanhada dos catálogos do cronograma', () => {
         { provide: FatosCandidatoApi, useValue: { listar: () => fatos } },
         { provide: PrecedenciasFaseApi, useValue: vazio },
         { provide: TiposBancaApi, useValue: vazio },
+        { provide: TiposDeDecisaoApi, useValue: { listar: () => RESPOSTA_DO_VOCABULARIO } },
         { provide: CategoriasDocumentoApi, useValue: vazio },
         { provide: TiposEtapaApi, useValue: vazio },
         { provide: TiposDocumentoApi, useValue: vazio },

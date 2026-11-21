@@ -1,6 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { TIPOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
-import { acompanharLeitura, FalhaDeLeituraComponent } from '@uniplus/shared-ui/components';
+import {
+  fornecerVocabularioDeTiposDeDecisao,
+  VOCABULARIO_DE_TIPOS_DE_DECISAO,
+} from '@uniplus/shared-data/configuracao';
+import {
+  acompanharLeitura,
+  FalhaDeLeituraComponent,
+  FalhaDeLeituraDoCampoComponent,
+  IndicadorDaLeituraDirective,
+} from '@uniplus/shared-ui/components';
 import { ConfirmacaoDeRemocaoComponent } from '../../shared/confirmacao-de-remocao';
 import { EdicaoDosMotivosDeDecisao } from './edicao-dos-motivos-de-decisao';
 import { FundamentosOferecidos } from './fundamentos-oferecidos';
@@ -13,11 +21,18 @@ import { MotivosDeDecisaoStore } from './motivos-de-decisao.store';
   standalone: true,
   imports: [
     FalhaDeLeituraComponent,
+    FalhaDeLeituraDoCampoComponent,
+    IndicadorDaLeituraDirective,
     ConfirmacaoDeRemocaoComponent,
     MotivoDeDecisaoFormularioComponent,
     MotivosDeDecisaoListaComponent,
   ],
-  providers: [MotivosDeDecisaoStore, EdicaoDosMotivosDeDecisao, FundamentosOferecidos],
+  providers: [
+    MotivosDeDecisaoStore,
+    EdicaoDosMotivosDeDecisao,
+    FundamentosOferecidos,
+    fornecerVocabularioDeTiposDeDecisao(),
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './motivos-de-decisao.page.html',
   host: { class: 'cfg-page' },
@@ -25,7 +40,14 @@ import { MotivosDeDecisaoStore } from './motivos-de-decisao.store';
 export class MotivosDeDecisaoPage {
   protected readonly store = inject(MotivosDeDecisaoStore);
   protected readonly edicao = inject(EdicaoDosMotivosDeDecisao);
-  protected readonly tipos = TIPOS_DE_DECISAO;
+  protected readonly vocabulario = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
+  protected readonly leituraDosTipos = acompanharLeitura({
+    falha: this.vocabulario.erro,
+    pendente: this.vocabulario.carregando,
+    recarregar: () => this.vocabulario.recarregar(),
+    destino: () => document.getElementById('cfg-motivos-tipo'),
+    assunto: 'os tipos de decisão',
+  });
   protected readonly leitura = acompanharLeitura({
     falha: this.store.mensagemDeErro,
     pendente: this.store.carregando,
@@ -33,6 +55,10 @@ export class MotivosDeDecisaoPage {
     recarregar: () => this.store.tentarNovamente(),
     destino: () => document.getElementById('cfg-motivos-de-decisao-list-title'),
   });
+
+  constructor() {
+    this.vocabulario.carregar();
+  }
 
   protected escolherTipo(evento: Event): void {
     this.edicao.abandonarPendencias();

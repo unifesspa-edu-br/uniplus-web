@@ -5,6 +5,7 @@ import { ApiResult, withVendorMime, janelaDaPagina } from '@uniplus/shared-core/
 import type { components } from './schema';
 import { CONFIGURACAO_BASE_PATH } from './tokens';
 
+export type PapelDaBanca = components['schemas']['PapelDaBanca'];
 export type TipoBancaDto = components['schemas']['TipoBancaDto'];
 export type CriarTipoBancaCommand = components['schemas']['CriarTipoBancaCommand'];
 export type AtualizarTipoBancaCommand = components['schemas']['AtualizarTipoBancaCommand'];
@@ -30,6 +31,13 @@ export interface TiposBancaQuery {
 export class TiposBancaApi {
   private readonly http = inject(HttpClient);
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
+
+  listarPapeis(): Observable<ApiResult<readonly PapelDaBanca[]>> {
+    return this.http.get<ApiResult<readonly PapelDaBanca[]>>(
+      `${this.basePath}/api/configuracao/vocabularios/papeis-de-banca`,
+      { context: withVendorMime('codigo-papel-de-banca', 1) },
+    );
+  }
 
   /** GET `/api/configuracao/tipos-banca` — lista paginada por cursor (ADR-0026). */
   listar(query: TiposBancaQuery = {}): Observable<ApiResult<readonly TipoBancaDto[]>> {

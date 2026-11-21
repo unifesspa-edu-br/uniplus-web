@@ -1,6 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   CategoriasDocumentoApi,
@@ -8,6 +8,7 @@ import {
   FatosCandidatoApi,
   PrecedenciasFaseApi,
   TiposBancaApi,
+  TiposDeDecisaoApi,
   TiposDocumentoApi,
   TiposEtapaApi,
 } from '@uniplus/shared-data/configuracao';
@@ -20,6 +21,7 @@ import {
 } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { RESPOSTA_DO_VOCABULARIO } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 import { CATALOGOS_DO_CRONOGRAMA } from './catalogos-do-cronograma';
 import { falhaDoServidor, pagina } from './catalogos.testing';
@@ -31,6 +33,7 @@ interface Falhas {
   readonly fatos?: boolean;
   readonly unidades?: boolean;
   readonly motivos?: boolean;
+  readonly tiposDeDecisao?: 'falha' | 'pendente';
 }
 
 interface Buscas {
@@ -38,10 +41,16 @@ interface Buscas {
   readonly unidades: () => void;
   readonly motivos: () => void;
   readonly opcoesDoRecurso?: () => void;
+  readonly tiposDeDecisao?: () => void;
 }
 
 function montar(falhas: Falhas = {}, buscas?: Buscas) {
   const listarVazio = { listar: () => pagina([]) };
+  const tiposDeDecisao = () => {
+    buscas?.tiposDeDecisao?.();
+    if (falhas.tiposDeDecisao === 'pendente') return NEVER;
+    return falhas.tiposDeDecisao === 'falha' ? falhaDoServidor() : RESPOSTA_DO_VOCABULARIO;
+  };
   const opcoes = () => {
     buscas?.opcoesDoRecurso?.();
     return falhas.opcoesDoRecurso ? falhaDoServidor() : pagina([]);
@@ -70,6 +79,7 @@ function montar(falhas: Falhas = {}, buscas?: Buscas) {
           },
         },
       },
+      { provide: TiposDeDecisaoApi, useValue: { listar: tiposDeDecisao } },
       { provide: PrecedenciasFaseApi, useValue: listarVazio },
       { provide: TiposBancaApi, useValue: listarVazio },
       { provide: CategoriasDocumentoApi, useValue: listarVazio },
@@ -124,6 +134,21 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     expect(situacao.erro()).toContain('Não foi possível carregar os catálogos');
   });
 
+  /** Sem o vocabulário a tela mostraria o código no lugar do nome: ela espera, ou mostra a falha. */
+  it('conta a falha dos tipos de decisão como falha dos catálogos exigidos', () => {
+    const situacao = montar({ tiposDeDecisao: 'falha' });
+
+    expect(situacao.carregando()).toBe(false);
+    expect(situacao.erro()).toContain('tipos de decisão');
+  });
+
+  it('segue carregando enquanto os tipos de decisão não respondem', () => {
+    const situacao = montar({ tiposDeDecisao: 'pendente' });
+
+    expect(situacao.carregando()).toBe(true);
+    expect(situacao.erro()).toBeNull();
+  });
+
   /** A falta das unidades não derruba o editor: só a escolha da unidade de cada fase fica sem opções. */
   it('não conta a falha das unidades como falha dos catálogos exigidos', () => {
     const situacao = montar({ unidades: true });
@@ -141,12 +166,13 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
 
   /** Refazer só o que falhou abriria a tela com catálogos de rodadas diferentes. */
   it('repete a rodada inteira, inclusive os catálogos que já tinham carregado, as unidades e os motivos', () => {
-    const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn() };
+    const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn(), tiposDeDecisao: vi.fn() };
     const situacao = montar({ fatos: true, unidades: true }, buscas);
 
     situacao.recarregar();
 
     expect(buscas.fases).toHaveBeenCalledTimes(2);
+    expect(buscas.tiposDeDecisao).toHaveBeenCalledTimes(2);
     expect(buscas.unidades).toHaveBeenCalledTimes(2);
     expect(buscas.motivos).toHaveBeenCalledTimes(2);
   });
@@ -167,6 +193,18 @@ describe('SituacaoDosCatalogosDoCronograma', () => {
     situacao.recarregar();
 
     expect(opcoesDoRecurso).not.toHaveBeenCalled();
+    expect(situacao.erro()).toBeNull();
+  });
+
+  /** A consulta mostra os nomes que a leitura devolveu: nenhum pedido ao vocabulário nem espera por ele. */
+  it('na consulta, não pede os tipos de decisão nem conta a falha deles', () => {
+    const tiposDeDecisao = vi.fn();
+    const buscas = { fases: vi.fn(), unidades: vi.fn(), motivos: vi.fn(), tiposDeDecisao };
+    const situacao = montar({ tiposDeDecisao: 'falha', emConsulta: true }, buscas);
+
+    situacao.recarregar();
+
+    expect(tiposDeDecisao).not.toHaveBeenCalled();
     expect(situacao.erro()).toBeNull();
   });
 

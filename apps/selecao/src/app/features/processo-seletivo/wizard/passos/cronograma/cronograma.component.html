@@ -25,7 +25,7 @@
 
 @if (situacao.carregando()) {
   <p class="field__hint" [uiIndicadorDaLeitura]="situacao.leitura">
-    Carregando fases, bancas, atos e regras…
+    Carregando fases, bancas, atos, regras e tipos de decisão…
   </p>
 } @else if (situacao.erro()) {
   <!-- A falha e a nova tentativa ficam no aviso acima. -->

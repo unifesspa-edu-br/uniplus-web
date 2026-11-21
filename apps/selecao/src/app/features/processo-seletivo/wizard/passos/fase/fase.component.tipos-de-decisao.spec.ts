@@ -2,6 +2,7 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { umProcessoLidoComOsTiposDeDecisao } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { fase } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
@@ -74,6 +75,7 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
   it('lê em consulta os nomes dos tipos declarados, sem caixas de marcar', () => {
     comCronograma(fase({ tiposDeDecisao: ['CLASSIFICACAO', 'TIPO_DO_FUTURO'] }));
     store.remoteSnapshot.set({
+      ...umProcessoLidoComOsTiposDeDecisao(),
       status: StatusProcesso.publicado,
     } as unknown as ProcessoSeletivoDto);
     detectar();
@@ -81,7 +83,7 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
     const leitura = nativo.querySelector('sel-decisoes-da-fase')?.textContent ?? '';
     expect(leitura).toContain('Decisões que esta fase toma');
     expect(leitura).toContain('Classificação');
-    expect(leitura).toContain('TIPO_DO_FUTURO');
+    expect(leitura).not.toContain('TIPO_DO_FUTURO');
     expect(nativo.querySelector('sel-decisoes-da-fase input')).toBeNull();
   });
 

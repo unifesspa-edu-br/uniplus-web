@@ -1,5 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { computed, signal } from '@angular/core';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
+import { describe, expect, it, vi } from 'vitest';
 
+import {
+  umTipoDeDecisaoDaApi,
+  VOCABULARIO_DA_API,
+} from '../decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
+import { faseDoServidor } from '../cronograma-do-servidor.testing';
+import { dtoComCronograma } from '../hidratacao.testing';
+import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   assentar,
   atualizar,
@@ -218,6 +227,89 @@ describe('MotivosDaFaseOuEtapaComponent: consulta', () => {
     expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
       'Os motivos marcados continuam escolhidos.',
     );
+  });
+});
+
+describe('MotivosDaFaseOuEtapaComponent: consulta dos tipos', () => {
+  function umVocabularioObservado() {
+    const leituras = vi.fn();
+    const carregar = vi.fn();
+    const recarregar = vi.fn();
+    const vocabulario = {
+      itens: computed(() => {
+        leituras();
+        return VOCABULARIO_DA_API;
+      }),
+      rotulo: computed(() => {
+        leituras();
+        return (codigo: string) => codigo;
+      }),
+      carregando: signal(false),
+      erro: signal<string | null>(null),
+      carregar,
+      recarregar,
+    };
+    return { vocabulario, leituras, carregar, recarregar };
+  }
+
+  /** O processo lido em que a fase declara só a homologação: o tipo escolhido não aparece nele. */
+  function processoQueNaoTrazOTipoEscolhido() {
+    return {
+      provide: ProcessoSeletivoStore,
+      useFactory: () => {
+        const store = new ProcessoSeletivoStore();
+        const fase = faseDoServidor({
+          publicacoes: { tiposDeDecisao: [umTipoDeDecisaoDaApi('HOMOLOGACAO_DAS_INSCRICOES')] },
+        });
+        store.remoteSnapshot.set(dtoComCronograma({ cronogramaFases: [fase], etapas: [] }));
+        return store;
+      },
+    };
+  }
+
+  const motivoDeIsencao = umMotivoNoDocumento(FASE_DA_INSCRICAO, {
+    tipoCodigo: 'ISENCAO_DA_TAXA',
+    codigo: 'RENDA_ALTA',
+  });
+
+  function montarConsultaComVocabulario(
+    vocabulario: ReturnType<typeof umVocabularioObservado>['vocabulario'],
+  ) {
+    const entradas = {
+      modo: 'consulta' as const,
+      escolhidos: [motivoDeIsencao],
+      tiposDeclarados: ['HOMOLOGACAO_DAS_INSCRICOES'],
+    };
+    const provedores = [
+      { provide: VOCABULARIO_DE_TIPOS_DE_DECISAO, useValue: vocabulario },
+      processoQueNaoTrazOTipoEscolhido(),
+    ];
+    return montarMotivos(entradas, provedores);
+  }
+
+  it('descreve genericamente o tipo que a API não informa', async () => {
+    const fixture = await montarMotivos({
+      modo: 'consulta',
+      escolhidos: [umMotivoNoDocumento(FASE_DA_INSCRICAO, { tipoCodigo: 'TIPO_DESCONHECIDO' })],
+      tiposDeclarados: [],
+    });
+
+    expect(textoDe(fixture)).toContain('não declara uma decisão que a API não descreve');
+    expect(textoDe(fixture)).not.toContain('TIPO_DESCONHECIDO');
+  });
+
+  it('avisa do tipo não declarado com o rótulo do vocabulário disponível', async () => {
+    const lido = umVocabularioObservado();
+
+    const fixture = await montarConsultaComVocabulario(lido.vocabulario);
+
+    expect(fixture.nativeElement.querySelector('[role="status"]')?.textContent).toContain(
+      'Esta fase não declara a decisão “Isenção da taxa”.',
+    );
+    expect(textoDe(fixture)).not.toContain('ISENCAO_DA_TAXA');
+    expect(lido.leituras).toHaveBeenCalled();
+    expect(lido.carregar).not.toHaveBeenCalled();
+    expect(lido.recarregar).not.toHaveBeenCalled();
   });
 });
 

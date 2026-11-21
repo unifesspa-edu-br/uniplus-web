@@ -17,7 +17,7 @@
           id="cfg-motivos-de-decisao-novo"
           type="button"
           class="btn btn--primary"
-          [disabled]="indisponivel()"
+          [disabled]="indisponivel() || cadastroIndisponivel()"
           (click)="acionarCadastro()"
         >
           <i class="pi pi-plus btn__icon" aria-hidden="true"></i>

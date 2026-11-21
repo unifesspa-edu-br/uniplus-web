@@ -11,6 +11,7 @@ import {
 import { areaDoEnem } from '../../../documento/edicoes/procedimentos-de-recurso.edicao';
 import { membroDoEnum } from '../../../documento/membro-do-enum';
 import type { RegraEscolhida } from '../../../documento/regra-escolhida';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
 import {
   TipoDeDecisaoDoDocumento,
   type DocumentoDaConfiguracaoProcedimentoDeRecurso,
@@ -20,7 +21,9 @@ import type {
   ItemDeAvaliacaoDaEtapa,
   ProcedimentoDeRecurso,
 } from '../../../processo-seletivo.models';
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { focarAposRenderizarSeSemFoco } from '../../../shared/foco-apos-renderizar';
+import { rotuloDoTipoDeDecisaoLido } from '../../../shared/hidratacao/rotulo-do-tipo-de-decisao-lido';
 import { tiposSemProcedimento } from '../../../shared/procedimentos-do-recurso/cobertura-dos-procedimentos';
 import type { ModoDaSecao } from '../../../shared/modo-da-secao';
 import type { IdentidadeDoProcedimento } from '../../../documento/edicoes/procedimentos-de-recurso.edicao';
@@ -47,6 +50,8 @@ import type { RecusaDoProcedimento } from './recusas-do-procedimento';
 export class ProcedimentosDoRecursoComponent {
   private readonly catalogoDeRegras = inject(CatalogoDeRegras);
   private readonly injector = inject(Injector);
+  private readonly vocabulario = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
+  private readonly store = inject(ProcessoSeletivoStore);
 
   readonly procedimentos =
     input.required<
@@ -102,8 +107,19 @@ export class ProcedimentosDoRecursoComponent {
       this.regrasDoCatalogo().length === 0,
   );
 
+  /** Na consulta o nome é o que o processo lido traz; na edição, o do vocabulário da API. */
+  private readonly rotuloDoTipo = computed(() =>
+    this.emConsulta()
+      ? rotuloDoTipoDeDecisaoLido(this.store.remoteSnapshot())
+      : this.vocabulario.rotulo(),
+  );
   protected readonly linhas = computed(() =>
-    procedimentosParaLeitura(this.procedimentos(), this.regrasDoCatalogo(), this.itensDaEtapa()),
+    procedimentosParaLeitura(
+      this.procedimentos(),
+      this.regrasDoCatalogo(),
+      this.itensDaEtapa(),
+      this.rotuloDoTipo(),
+    ),
   );
   protected readonly tiposSemConversao = computed(
     () =>
@@ -120,6 +136,7 @@ export class ProcedimentosDoRecursoComponent {
       ),
       this.regrasDoCatalogo(),
       this.itensDaEtapa(),
+      this.rotuloDoTipo(),
     ),
   );
   protected readonly semNadaParaLer = computed(
@@ -143,7 +160,7 @@ export class ProcedimentosDoRecursoComponent {
     ),
   );
   protected readonly tipos = computed(() =>
-    tiposNaTela(this.procedimentosDoDocumento(), this.tiposDoDocumento()),
+    tiposNaTela(this.procedimentosDoDocumento(), this.tiposDoDocumento(), this.rotuloDoTipo()),
   );
   protected readonly oferecidos = computed(() =>
     alvosOferecidos(

@@ -54,6 +54,7 @@ import { errorResult, mockProblemDetails, okResult } from '@uniplus/shared-testi
 import { BehaviorSubject, NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 
+import { provideApiDosTiposDeDecisao } from './wizard/shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
 import { opcoesDoRecursoApiStub } from './processo-seletivo.page.testing';
 import { PASSOS } from './wizard/processo-seletivo.data';
@@ -86,6 +87,7 @@ const catalogoVazioStub = { listar: () => respostaVazia<never>() };
 
 /** Os catálogos que cada passo do assistente carrega ao montar; vazios, o grafo de injeção fecha sem HTTP. */
 const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
+  provideApiDosTiposDeDecisao(),
   { provide: ModalidadesApi, useValue: { listar: () => respostaVazia<ModalidadeDto>() } },
   { provide: CursosApi, useValue: catalogoVazioStub },
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },

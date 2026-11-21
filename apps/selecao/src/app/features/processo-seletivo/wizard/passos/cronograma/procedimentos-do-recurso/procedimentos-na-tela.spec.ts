@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { alvosOferecidos, linhasDoTipo, tiposNaTela } from './procedimentos-na-tela';
+import { rotuloDaApi } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { procedimentoDoDocumento as procedimento } from './procedimentos.testing';
 
 const ITEM_1 = { itemDeAvaliacaoChave: 'item-1' };
@@ -50,11 +51,11 @@ describe('tiposNaTela', () => {
       procedimento({ tipoDeDecisao: Tipo.CLASSIFICACAO, alvo: AREA }),
     ];
 
-    const tipos = tiposNaTela(procedimentos, [
-      Tipo.NOTA_DA_ETAPA,
-      Tipo.GABARITO_DA_PROVA,
-      Tipo.NOTA_DA_ETAPA,
-    ]);
+    const tipos = tiposNaTela(
+      procedimentos,
+      [Tipo.NOTA_DA_ETAPA, Tipo.GABARITO_DA_PROVA, Tipo.NOTA_DA_ETAPA],
+      rotuloDaApi,
+    );
 
     expect(tipos.map(({ tipoDeDecisao, declarado }) => [tipoDeDecisao, declarado])).toEqual([
       [Tipo.NOTA_DA_ETAPA, true],
@@ -63,6 +64,12 @@ describe('tiposNaTela', () => {
     ]);
     expect(tipos[0].rotulo).toBe('Nota da etapa');
     expect(tipos[2].procedimentos).toHaveLength(2);
+  });
+
+  it('mostra o código do tipo enquanto o vocabulário da API não carregou', () => {
+    const [tipo] = tiposNaTela([], [Tipo.NOTA_DA_ETAPA], (codigo) => codigo);
+
+    expect(tipo.rotulo).toBe('NOTA_DA_ETAPA');
   });
 });
 

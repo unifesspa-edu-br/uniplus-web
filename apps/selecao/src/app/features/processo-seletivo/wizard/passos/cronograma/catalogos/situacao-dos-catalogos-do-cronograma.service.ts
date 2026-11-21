@@ -1,4 +1,5 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '@uniplus/shared-data/configuracao';
 import { acompanharLeitura, destinoAcessivel } from '@uniplus/shared-ui/components';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -16,7 +17,7 @@ import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
 
 const MENSAGEM_DE_FALHA =
-  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos, regras e opções do recurso.';
+  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos, regras, opções do recurso e tipos de decisão.';
 
 /**
  * O estado conjunto dos catálogos que o cronograma e a configuração de cada fase exigem para
@@ -41,11 +42,14 @@ export class SituacaoDosCatalogosDoCronograma {
   ];
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly opcoesDoRecurso = inject(CatalogoDasOpcoesDoRecurso);
+  private readonly tiposDeDecisao = inject(VOCABULARIO_DE_TIPOS_DE_DECISAO);
   private readonly unidades = inject(CatalogoDeUnidadesDoCadastro);
   private readonly motivos = inject(CatalogoDeMotivos);
 
   private readonly exigidosNestaTela = computed(() =>
-    this.store.emConsulta() ? this.exigidos : [...this.exigidos, this.opcoesDoRecurso],
+    this.store.emConsulta()
+      ? this.exigidos
+      : [...this.exigidos, this.opcoesDoRecurso, this.tiposDeDecisao],
   );
 
   readonly carregando = computed(() =>
@@ -106,7 +110,7 @@ export class SituacaoDosCatalogosDoCronograma {
     this.unidades.carregar();
     this.motivos.carregar();
     this.exigidos.forEach((catalogo) => catalogo.carregar());
-    if (!this.store.emConsulta()) this.opcoesDoRecurso.carregar();
+    if (!this.store.emConsulta()) this.carregarDaEdicao();
   }
 
   /**
@@ -117,6 +121,16 @@ export class SituacaoDosCatalogosDoCronograma {
     this.unidades.recarregar();
     this.motivos.recarregar();
     this.exigidos.forEach((catalogo) => catalogo.recarregar());
-    if (!this.store.emConsulta()) this.opcoesDoRecurso.recarregar();
+    if (!this.store.emConsulta()) this.recarregarDaEdicao();
+  }
+
+  private carregarDaEdicao(): void {
+    this.opcoesDoRecurso.carregar();
+    this.tiposDeDecisao.carregar();
+  }
+
+  private recarregarDaEdicao(): void {
+    this.opcoesDoRecurso.recarregar();
+    this.tiposDeDecisao.recarregar();
   }
 }

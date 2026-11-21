@@ -19,7 +19,8 @@ import {
 } from '../fixtures/processo-publicado-completo';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
-import { responder, responderCom } from './responder';
+import { responder, responderCatalogos, responderCom } from './responder';
+import { TIPOS_DE_DECISAO_DA_API } from './vocabulario-de-tipos-de-decisao';
 
 export const CORS = {
   'access-control-allow-origin': '*',
@@ -92,6 +93,7 @@ export async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_DE_ATO, CORS);
   await responder(page, /\/api\/organizacao\/unidades(\?.*)?$/, unidades, CORS);
   await responder(page, ROTA_DO_ATO_PUBLICADO, ATO_PUBLICADO, CORS);
+  await responderCatalogos(page, [TIPOS_DE_DECISAO_DA_API], CORS);
 }
 
 function detalheDoProcesso(capturado: Capturado) {

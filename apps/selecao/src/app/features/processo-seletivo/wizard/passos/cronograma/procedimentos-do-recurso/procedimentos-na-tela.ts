@@ -1,4 +1,3 @@
-import { rotuloDoTipoDeDecisao } from '@uniplus/shared-data/selecao';
 import type { ItemDeAvaliacaoDaEtapa } from '../../../processo-seletivo.models';
 
 import type {
@@ -90,13 +89,14 @@ function itemComoAlvo(
 export function tiposNaTela(
   procedimentos: readonly Procedimento[],
   tiposDeclarados: readonly TipoDeDecisaoDoDocumento[],
+  rotuloDoTipo: (codigo: string) => string,
 ): readonly TipoDeDecisaoNaTela[] {
   const declarados = [...new Set(tiposDeclarados)];
   const sobrando = procedimentos.map((procedimento) => procedimento.tipoDeDecisao);
   const demais = [...new Set(sobrando)].filter((tipo) => !declarados.includes(tipo));
   return [
-    ...declarados.map((tipo) => umTipo(tipo, true, procedimentos)),
-    ...demais.map((tipo) => umTipo(tipo, false, procedimentos)),
+    ...declarados.map((tipo) => umTipo(tipo, true, procedimentos, rotuloDoTipo)),
+    ...demais.map((tipo) => umTipo(tipo, false, procedimentos, rotuloDoTipo)),
   ];
 }
 
@@ -130,10 +130,11 @@ function umTipo(
   tipoDeDecisao: TipoDeDecisaoDoDocumento,
   declarado: boolean,
   procedimentos: readonly Procedimento[],
+  rotuloDoTipo: (codigo: string) => string,
 ): TipoDeDecisaoNaTela {
   return {
     tipoDeDecisao,
-    rotulo: rotuloDoTipoDeDecisao(tipoDeDecisao),
+    rotulo: rotuloDoTipo(tipoDeDecisao),
     declarado,
     procedimentos: procedimentos.filter(
       (procedimento) => procedimento.tipoDeDecisao === tipoDeDecisao,
