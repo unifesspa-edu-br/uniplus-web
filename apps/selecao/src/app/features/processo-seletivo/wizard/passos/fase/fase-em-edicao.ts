@@ -147,7 +147,7 @@ export class FaseEmEdicao {
   readonly problemas = computed<readonly ProblemaDaFase[]>(() => {
     const fase = this.faseDoRascunho();
     if (fase === null) return [];
-    return problemasDaFase(fase, this.atoPorCodigo(), (id) => this.nomeDaBanca(id));
+    return problemasDaFase(fase, this.atoPorCodigo());
   });
 
   /** O que a conferência local diz do campo. */

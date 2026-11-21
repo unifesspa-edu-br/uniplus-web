@@ -137,7 +137,7 @@ describe('bancas requeridas e o recorte de competência', () => {
     ).toEqual([]);
   });
 
-  it('exige recorte quando a fase requer duas bancas do mesmo tipo', () => {
+  it('não recusa categorias ausentes em bancas do mesmo tipo', () => {
     const problemas = conferir(
       fase({
         bancasRequeridas: [
@@ -161,11 +161,10 @@ describe('bancas requeridas e o recorte de competência', () => {
       }),
     );
 
-    expect(problemas[0].campo).toBe<CampoDaFase>('bancasRequeridas');
-    expect(problemas[0].mensagem).toContain('mais de uma banca de Heteroidentificação');
+    expect(problemas).toEqual([]);
   });
 
-  it('recusa duas bancas do mesmo tipo com recortes idênticos', () => {
+  it('não recusa bancas do mesmo tipo com categorias idênticas', () => {
     const problemas = conferir(
       fase({
         bancasRequeridas: [
@@ -189,7 +188,7 @@ describe('bancas requeridas e o recorte de competência', () => {
       }),
     );
 
-    expect(problemas[0].mensagem).toContain('mesmo recorte de competência');
+    expect(problemas).toEqual([]);
   });
 
   it('aceita duas bancas do mesmo tipo com recortes que as distinguem', () => {

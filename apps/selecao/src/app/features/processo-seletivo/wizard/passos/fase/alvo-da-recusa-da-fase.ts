@@ -48,11 +48,11 @@ function alvosDaPublicacao(campo: string, fase: FaseDoCronograma): readonly stri
 /** O controle da regra da banca requerida, com o bloco das recusas dele e, de reserva, o das bancas. */
 function alvosDaBancaRequerida(campo: string, fase: FaseDoCronograma): readonly string[] {
   const [, posicao, controle] = campo.split('.');
-  const base = idDaFase(fase.codigo, `regra-${posicao}`);
-  return [
-    ...alvosDaRecusaDaBanca(base, controle as CampoDaBanca),
-    idDaFase(fase.codigo, 'bancas-erro'),
-  ];
+  const reserva = idDaFase(fase.codigo, 'bancas-erro');
+  const banca = fase.bancasRequeridas[Number(posicao)];
+  if (banca === undefined) return [reserva];
+  const base = idDaFase(fase.codigo, `regra-${banca.identificadorLocal}`);
+  return [...alvosDaRecusaDaBanca(base, controle as CampoDaBanca), reserva];
 }
 
 function alvosDaLinhaDoTempo(campo: string, indice: number): readonly string[] {

@@ -1,4 +1,8 @@
-import { ModoDeDeliberacao, StatusProcesso } from '@uniplus/shared-data/selecao';
+import {
+  ModoDeDeliberacao,
+  PapelDaBancaCodigo,
+  StatusProcesso,
+} from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
@@ -10,7 +14,7 @@ import {
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 import { fase, ID_BANCA_HETERO } from './fase.testing';
 
-const ID_DA_REGRA = 'fase-AVALIACAO-regra-0';
+const ID_DA_REGRA = 'fase-AVALIACAO-regra-banca-teste';
 const SEM_RECORTE = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] };
 
 describe('FasePassoComponent', () => {
@@ -220,6 +224,37 @@ describe('FasePassoComponent', () => {
       detectar();
 
       expect(nativo.textContent).toContain('Sem regra de deliberação declarada');
+    });
+
+    it('mostra a cópia e a posição de cada banca em consulta', () => {
+      const copiaDoTipo = {
+        rotulo: 'Tipo preservado',
+        papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia' },
+        exigeDuasOuMaisBancas: false,
+        encerraRecursoNaPrimeiraInstancia: false,
+      };
+      const banca = {
+        id: 'gravada',
+        identificadorLocal: 'banca-gravada',
+        copiaDoTipo,
+        ...SEM_RECORTE,
+        regraDeDeliberacao: null,
+      };
+      comCronograma(
+        fase({
+          bancasRequeridas: [banca, { ...banca, id: 'outra', identificadorLocal: 'banca-outra' }],
+        }),
+      );
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      expect(nativo.textContent).toContain('Tipo preservado 1');
+      expect(nativo.textContent).toContain('Tipo preservado 2');
+      expect(nativo.querySelector('sel-bancas-da-fase')?.textContent).not.toContain(
+        'Heteroidentificação',
+      );
     });
   });
 });

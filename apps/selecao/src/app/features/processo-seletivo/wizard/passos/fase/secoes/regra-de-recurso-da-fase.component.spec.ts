@@ -288,7 +288,8 @@ describe('RegraDeRecursoDaFaseComponent', () => {
       comRegra({ procedimentos: [PROCEDIMENTO] });
 
       expect(lista()?.classList.contains('form-grid__full')).toBe(true);
-      expect(lista()?.textContent).toContain('RESULTADO_PRELIMINAR');
+      expect(lista()?.textContent).toContain('Decisão que a API não descreve');
+      expect(lista()?.textContent).not.toContain('RESULTADO_PRELIMINAR');
       expect(lista()?.textContent).toContain('Sugestão: PROCEDIMENTO-RECURSO-MONOCRATICO');
     });
 

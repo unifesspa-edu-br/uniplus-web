@@ -30,6 +30,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
   let superficie: ContextoDoCertame['superficie'];
   let publicacoes: ContextoDoCertame['publicacoes'];
   let bancas: ContextoDoCertame['bancas'];
+  let nativo: ContextoDoCertame['nativo'];
   let store: ContextoDoCertame['store'];
   let controller: ContextoDoCertame['controller'];
   let detectar: ContextoDoCertame['detectar'];
@@ -43,6 +44,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
       superficie,
       publicacoes,
       bancas,
+      nativo,
       store,
       controller,
       detectar,
@@ -71,9 +73,16 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     publicacoes().acrescentarProduto();
     publicacoes().escolherAto(0, 'RESULTADO_FINAL');
     publicacoes().escolherPapel(0, 'DEFINITIVO');
-    bancas().acrescentarBanca();
-    bancas().escolherTipoDeBanca(0, ID_BANCA_HETERO);
-    bancas().alternarCategoria(0, ID_CATEGORIA_RACA, true);
+    const seletor = nativo.querySelector<HTMLSelectElement>('sel-lista-de-bancas select');
+    if (!seletor) throw new Error('Seletor ausente');
+    seletor.value = ID_BANCA_HETERO;
+    seletor.dispatchEvent(new Event('change'));
+    nativo.querySelector<HTMLButtonElement>('sel-lista-de-bancas button')?.click();
+    detectar();
+    const caixa = nativo.querySelector<HTMLInputElement>('sel-bancas-da-fase input[type=checkbox]');
+    if (!caixa) throw new Error('Categoria ausente');
+    caixa.checked = true;
+    caixa.dispatchEvent(new Event('change'));
     detectar();
 
     // 3. Linha do tempo de novo: acerta o início da segunda fase. A superfície
@@ -90,7 +99,12 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
       {
         id: null,
         identificadorLocal: 'banca-1',
-        copiaDoTipo: null,
+        copiaDoTipo: {
+          rotulo: 'Heteroidentificação',
+          papel: null,
+          exigeDuasOuMaisBancas: false,
+          encerraRecursoNaPrimeiraInstancia: false,
+        },
         tipoBancaId: ID_BANCA_HETERO,
         categoriasDocumentoIds: [ID_CATEGORIA_RACA],
         regraDeDeliberacao: null,
@@ -132,7 +146,17 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
         faseDoServidor({
           faseCanonica: { origemId: ID_RESULTADO },
           bancasRequeridas: [
-            { ...bancaLida, id: 'banca-gravada', tipoBancaOrigemId: ID_BANCA_HETERO },
+            {
+              ...bancaLida,
+              id: 'banca-gravada',
+              tipoBancaOrigemId: ID_BANCA_HETERO,
+              candidatosAtendidos: [
+                {
+                  ...bancaLida.candidatosAtendidos[0],
+                  categoriaDocumentoOrigemId: ID_CATEGORIA_RACA,
+                },
+              ],
+            },
           ],
         }),
       ],
@@ -183,7 +207,16 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     store.processoSeletivoId.set(PROCESSO_ID);
     comCertame();
 
-    bancas().acrescentarBanca();
+    superficie.formulario()?.controls.bancasRequeridas.setValue([
+      {
+        id: null,
+        identificadorLocal: 'banca-1',
+        copiaDoTipo: null,
+        tipoBancaId: '',
+        categoriasDocumentoIds: [],
+        regraDeDeliberacao: null,
+      },
+    ]);
     detectar();
 
     const resultado = await cronograma.persistir();

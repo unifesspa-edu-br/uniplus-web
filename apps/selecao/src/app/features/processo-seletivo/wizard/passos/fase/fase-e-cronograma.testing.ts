@@ -110,7 +110,7 @@ export const ATOS = [
 export const BANCAS = [
   {
     id: ID_BANCA_HETERO,
-    codigo: 'HETEROIDENTIFICACAO',
+    codigo: { codigo: 'HETEROIDENTIFICACAO', rotulo: 'Heteroidentificação' },
     nome: 'Heteroidentificação',
     faseTipica: null,
     descricao: null,
@@ -269,6 +269,7 @@ export class ContextoDoCertame {
     this.fixtureCronograma.debugElement.injector.get(FormularioDoCronograma));
   private readonly fixtureSuperficie = TestBed.createComponent(FasePassoComponent);
   readonly superficie = this.fixtureSuperficie.componentInstance;
+  readonly nativo: HTMLElement = this.fixtureSuperficie.nativeElement;
 
   readonly bancas = () =>
     this.fixtureSuperficie.debugElement.query(By.directive(BancasDaFaseComponent))

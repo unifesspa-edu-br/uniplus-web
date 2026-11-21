@@ -14,7 +14,7 @@
         A ordem das bancas deste tipo define qual banca julga o recurso (UNI-REQ-0474). Mudar a
         ordem não muda a identidade da banca.
       </p>
-      <p>Bancas do mesmo tipo julgam em paralelo.</p>
+      <p>{{ textoDoGrupo() }}</p>
       @if (marcas(grupo[0])?.papel?.codigo === 'JULGA_A_PRIMEIRA_INSTANCIA') {
         <p>Os recursos se dividem de forma equilibrada entre estas bancas (UNI-REQ-0483).</p>
       }
@@ -33,7 +33,7 @@
       >
         <h6 [id]="idDaBanca(banca) + '-titulo'">{{ identificacao(banca) }}</h6>
         @if (marcas(banca)?.exigeDuasOuMaisBancas) {
-          <p>Este tipo exige duas ou mais bancas.</p>
+          <p>{{ textoDaExigencia() }}</p>
         }
         @if (marcas(banca)?.encerraRecursoNaPrimeiraInstancia) {
           <p>O recurso deste tipo se encerra na 1ª instância.</p>

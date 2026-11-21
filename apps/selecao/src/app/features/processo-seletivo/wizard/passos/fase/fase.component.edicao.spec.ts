@@ -10,10 +10,9 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
-  let bancas: ContextoDaFase['bancas'];
 
   usarFase((tela) => {
-    ({ componente, store, detectar, nativo, comCronograma, bancas } = tela);
+    ({ componente, store, detectar, nativo, comCronograma } = tela);
   });
 
   /**
@@ -44,16 +43,30 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
     it('declara a banca com o recorte de competência que ela julga', () => {
       comCronograma(fase({}));
 
-      bancas().acrescentarBanca();
-      bancas().escolherTipoDeBanca(0, ID_BANCA_HETERO);
-      bancas().alternarCategoria(0, ID_CATEGORIA_RACA, true);
+      const seletor = nativo.querySelector<HTMLSelectElement>('sel-lista-de-bancas select');
+      if (!seletor) throw new Error('Seletor ausente');
+      seletor.value = ID_BANCA_HETERO;
+      seletor.dispatchEvent(new Event('change'));
+      nativo.querySelector<HTMLButtonElement>('sel-lista-de-bancas button')?.click();
+      detectar();
+      const caixa = nativo.querySelector<HTMLInputElement>(
+        'sel-bancas-da-fase input[type=checkbox]',
+      );
+      if (!caixa) throw new Error('Categoria ausente');
+      caixa.checked = true;
+      caixa.dispatchEvent(new Event('change'));
       detectar();
 
       expect(store.draft().cronograma.fases[0].bancasRequeridas).toEqual([
         {
           id: null,
           identificadorLocal: 'banca-1',
-          copiaDoTipo: null,
+          copiaDoTipo: {
+            rotulo: 'Heteroidentificação',
+            papel: null,
+            exigeDuasOuMaisBancas: false,
+            encerraRecursoNaPrimeiraInstancia: false,
+          },
           tipoBancaId: ID_BANCA_HETERO,
           categoriasDocumentoIds: [ID_CATEGORIA_RACA],
           regraDeDeliberacao: null,
@@ -61,7 +74,7 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
       ]);
     });
 
-    it('exige recorte na segunda banca do mesmo tipo', () => {
+    it('não exige categorias na segunda banca do mesmo tipo', () => {
       comCronograma(
         fase({
           bancasRequeridas: [
@@ -85,10 +98,9 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
         }),
       );
 
-      expect(bancas().recorteObrigatorio(1)).toBe(true);
-      expect(componente.erroDoCampo('bancasRequeridas')).toContain(
-        'mais de uma banca de Heteroidentificação',
-      );
+      detectar();
+      expect(componente.erroDoCampo('bancasRequeridas')).toBeNull();
+      expect(nativo.textContent).toContain('Bancas deste tipo com as mesmas categorias');
     });
   });
 

@@ -56,13 +56,12 @@ export interface AtoDoCatalogo {
 export function problemasDaFase(
   fase: FaseDoCronograma,
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
-  nomeDaBanca: (tipoBancaId: string) => string,
 ): readonly ProblemaDaFase[] {
   return [
     ...problemasDosProdutos(fase, atoPorCodigo),
     ...problemasDoParecer(fase),
     ...problemasDoRecurso(fase),
-    ...problemasDasBancas(fase, nomeDaBanca),
+    ...problemaDeBancaEmBranco(fase),
     ...problemasDasRegrasDasBancas(fase),
   ];
 }
@@ -140,23 +139,6 @@ function problemasDoParecer(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
       ];
 }
 
-/**
- * As bancas requeridas e o recorte de competência de cada uma.
- *
- * O recorte só é obrigatório quando o mesmo tipo de banca aparece mais de uma
- * vez na fase — é ele que diz qual das duas julga o quê. Com uma banca só, o
- * recorte vazio significa "julga tudo o que a fase exige".
- */
-function problemasDasBancas(
-  fase: FaseDoCronograma,
-  nomeDaBanca: (tipoBancaId: string) => string,
-): readonly ProblemaDaFase[] {
-  const recortesPorTipo = [...recortesDeCompetenciaPorTipo(fase)].flatMap(
-    ([tipoBancaId, recortes]) => problemaDoRecorte(nomeDaBanca(tipoBancaId), recortes),
-  );
-  return [...problemaDeBancaEmBranco(fase), ...recortesPorTipo];
-}
-
 function problemaDeBancaEmBranco(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
   if (!fase.bancasRequeridas.some((banca) => banca.tipoBancaId === '')) return [];
   return [
@@ -180,31 +162,6 @@ function problemasDaRegraDaBanca(
     campo: `bancasRequeridas.${posicao}.${campo}`,
     mensagem,
   }));
-}
-
-function recortesDeCompetenciaPorTipo(fase: FaseDoCronograma): ReadonlyMap<string, string[][]> {
-  const porTipo = new Map<string, string[][]>();
-  for (const banca of fase.bancasRequeridas) {
-    if (banca.tipoBancaId === '') continue;
-    const recortes = porTipo.get(banca.tipoBancaId) ?? [];
-    recortes.push([...banca.categoriasDocumentoIds].sort());
-    porTipo.set(banca.tipoBancaId, recortes);
-  }
-  return porTipo;
-}
-
-function problemaDoRecorte(nome: string, recortes: readonly string[][]): readonly ProblemaDaFase[] {
-  if (recortes.length === 1) return [];
-  const mensagem = mensagemDoRecorte(nome, recortes);
-  return mensagem === null ? [] : [{ campo: 'bancasRequeridas', mensagem }];
-}
-
-function mensagemDoRecorte(nome: string, recortes: readonly string[][]): string | null {
-  if (recortes.some((item) => item.length === 0)) {
-    return `A fase requer mais de uma banca de ${nome}: cada uma precisa declarar as categorias de documento que julga.`;
-  }
-  if (repetidos(recortes.map((item) => item.join('|'))).length === 0) return null;
-  return `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`;
 }
 
 /** Como a tela nomeia o papel de uma publicação nos seletores. */

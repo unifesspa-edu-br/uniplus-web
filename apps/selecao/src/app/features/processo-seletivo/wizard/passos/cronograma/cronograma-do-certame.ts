@@ -92,7 +92,7 @@ function problemasDeclaradosDaFase(
   catalogos: CatalogosDaConferencia,
   nome: string,
 ): readonly string[] {
-  return problemasDaFase(fase, catalogos.atoPorCodigo, catalogos.nomeDaBanca).map(
+  return problemasDaFase(fase, catalogos.atoPorCodigo).map(
     (declarado) => `Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`,
   );
 }

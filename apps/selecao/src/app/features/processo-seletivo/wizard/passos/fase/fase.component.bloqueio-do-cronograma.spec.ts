@@ -47,6 +47,10 @@ describe('Fase embutida: bloqueio da releitura', () => {
     for (const controle of [banca, publicacao, recurso, parecer, documento, busca]) {
       expect(controle.disabled).toBe(false);
     }
+    const tipo = tela.nativo.querySelector<HTMLSelectElement>('sel-lista-de-bancas select');
+    if (tipo === null) throw new Error('Seletor de tipo ausente');
+    tipo.value = tipo.options[1].value;
+    tipo.dispatchEvent(new Event('change'));
     banca.click();
     publicacao.click();
     recurso.click();
