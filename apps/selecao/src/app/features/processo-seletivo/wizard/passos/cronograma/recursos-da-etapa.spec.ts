@@ -1,4 +1,9 @@
-import type { RegraCatalogoDto } from '@uniplus/shared-data/selecao';
+import {
+  EfeitoSuspensivoCodigo,
+  GuardaDaVagaCodigo,
+  UnidadePrazoCodigo,
+  type RegraCatalogoDto,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { PAPEL_DEFINITIVO, PAPEL_PRELIMINAR } from '../../processo-seletivo.models';
@@ -7,7 +12,7 @@ import { grupoDaEtapa } from './cronograma-form';
 import {
   acrescentarRecurso,
   alterarRecurso,
-  declararInstanciaSuperior,
+  retirarPrazoDaSegundaInstancia,
   preliminaresDaEtapa,
   regraDoCatalogo,
   removerRecurso,
@@ -50,7 +55,7 @@ describe('recursos da etapa', () => {
     expect(preliminaresDaEtapa(grupo).map((p) => p.atoCodigo)).toEqual(['PRE']);
   });
 
-  it('acrescenta a janela ancorada no primeiro preliminar, sem suspensividade nem instância superior', () => {
+  it('acrescenta o recurso ancorado no primeiro preliminar, com o prazo em dias úteis e o resto por responder', () => {
     const grupo = grupoCom([{ atoCodigo: 'PRE', papel: PAPEL_PRELIMINAR }]);
 
     acrescentarRecurso(grupo, REGRAS);
@@ -61,15 +66,19 @@ describe('recursos da etapa', () => {
         regraCodigo: 'PRAZO-ANCORADO-EM-ATO',
         regraVersao: 'v1',
         atoAncoraCodigo: 'PRE',
+        prazoValor: '',
+        prazoUnidade: UnidadePrazoCodigo.diasUteis,
         admiteInstanciaSuperior: null,
-        suspensividadePrimeiraInstanciaValor: '',
-        suspensividadeSegundaInstanciaValor: '',
+        efeitoSuspensivo: '',
+        guardaDaVaga: '',
+        prazoSegundaInstanciaValor: '',
+        prazoSegundaInstanciaUnidade: '',
       }),
     ]);
     expect(grupo.controls.recursos.dirty).toBe(true);
   });
 
-  it('acrescenta a janela sem âncora e sem regra quando nada oferece', () => {
+  it('acrescenta o recurso sem âncora e sem regra quando nada oferece', () => {
     const grupo = grupoCom();
 
     acrescentarRecurso(grupo, []);
@@ -79,7 +88,7 @@ describe('recursos da etapa', () => {
     );
   });
 
-  it('remove só a janela da posição pedida', () => {
+  it('remove só o recurso da posição pedida', () => {
     const grupo = grupoCom();
     acrescentarRecurso(grupo, REGRAS);
     acrescentarRecurso(grupo, REGRAS);
@@ -125,16 +134,70 @@ describe('recursos da etapa', () => {
     expect(grupo.controls.recursos.value[0].atoAncoraCodigo).toBe('PRE');
   });
 
-  it('registra a resposta sobre a instância superior só na janela indicada', () => {
+  it('registra a resposta sobre a instância superior só no recurso indicado', () => {
     const grupo = grupoCom();
     acrescentarRecurso(grupo, REGRAS);
     acrescentarRecurso(grupo, REGRAS);
 
-    declararInstanciaSuperior(grupo, 1, true);
+    alterarRecurso(grupo, 1, { campo: 'admiteInstanciaSuperior', valor: true }, REGRAS);
 
     expect(grupo.controls.recursos.value.map((r) => r.admiteInstanciaSuperior)).toEqual([
       null,
       true,
     ]);
+  });
+
+  it('grava efeito, guarda e unidade pelo código e deixa vazio o que a API não conhece', () => {
+    const grupo = grupoCom();
+    acrescentarRecurso(grupo, REGRAS);
+
+    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'naoGuarda' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'prazoUnidade', valor: 'semanas' }, REGRAS);
+
+    expect(grupo.controls.recursos.value[0]).toMatchObject({
+      efeitoSuspensivo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+      guardaDaVaga: GuardaDaVagaCodigo.naoGuarda,
+      prazoUnidade: '',
+    });
+  });
+
+  it('marcar Sim com "não guarda" deixa a guarda vazia, e marcar Não retira o prazo da 2ª instância', () => {
+    const grupo = grupoCom();
+    acrescentarRecurso(grupo, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'guardaDaVaga', valor: 'naoGuarda' }, REGRAS);
+
+    alterarRecurso(grupo, 0, { campo: 'admiteInstanciaSuperior', valor: true }, REGRAS);
+    expect(grupo.controls.recursos.value[0].guardaDaVaga).toBe('');
+
+    alterarRecurso(grupo, 0, { campo: 'prazoSegundaInstanciaValor', valor: '3' }, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'admiteInstanciaSuperior', valor: false }, REGRAS);
+    expect(grupo.controls.recursos.value[0].prazoSegundaInstanciaValor).toBe('');
+  });
+
+  it('retira o prazo da 2ª instância lido sem instância superior só do recurso indicado', () => {
+    const grupo = grupoCom();
+    acrescentarRecurso(grupo, REGRAS);
+    acrescentarRecurso(grupo, REGRAS);
+    for (const posicao of [0, 1]) {
+      alterarRecurso(grupo, posicao, { campo: 'prazoSegundaInstanciaValor', valor: '3' }, REGRAS);
+    }
+
+    retirarPrazoDaSegundaInstancia(grupo, 1);
+
+    expect(grupo.controls.recursos.value.map((r) => r.prazoSegundaInstanciaValor)).toEqual([
+      '3',
+      '',
+    ]);
+  });
+
+  it('só troca o que a pessoa mexeu e mantém o resto do recurso, inclusive o valor lido', () => {
+    const grupo = grupoCom();
+    acrescentarRecurso(grupo, REGRAS);
+    alterarRecurso(grupo, 0, { campo: 'prazoValor', valor: '0' }, REGRAS);
+
+    alterarRecurso(grupo, 0, { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' }, REGRAS);
+
+    expect(grupo.controls.recursos.value[0].prazoValor).toBe('0');
   });
 });

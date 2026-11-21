@@ -1,7 +1,17 @@
 import { FormControl, FormGroup } from '@angular/forms';
 
-import type { UnidadePrazo } from '@uniplus/shared-data/selecao';
+import type {
+  EfeitoSuspensivoCodigo,
+  GuardaDaVagaCodigo,
+  UnidadePrazoCodigo,
+} from '@uniplus/shared-data/selecao';
 
+import {
+  LEITURA_EM_BRANCO,
+  PARAMETROS_EM_BRANCO,
+  type LeituraDoRecurso,
+  type ParametrosDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import type {
   AtributosCongeladosDaFase,
   BancaRequeridaDaFase,
@@ -11,9 +21,6 @@ import type {
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 
-/** Unidade ainda não escolhida é `''` — o valor que o seletor mostra vazio. */
-export type UnidadeEscolhida = UnidadePrazo | '';
-
 /**
  * A regra de recurso como o formulário a guarda. Os números são texto porque é
  * o que o campo edita; a conversão acontece no envio, com gramática explícita.
@@ -22,15 +29,18 @@ export interface RecursoForm {
   readonly regraCodigo: FormControl<string>;
   readonly regraVersao: FormControl<string>;
   readonly prazoValor: FormControl<string>;
-  readonly prazoUnidade: FormControl<UnidadeEscolhida>;
+  /** Unidade ainda não escolhida é `''` — o valor que o seletor mostra vazio. */
+  readonly prazoUnidade: FormControl<UnidadePrazoCodigo | ''>;
   /** Código do tipo de ato da publicação preliminar de que corre o prazo. */
   readonly atoAncoraCodigo: FormControl<string>;
-  readonly suspensividadePrimeiraInstanciaValor: FormControl<string>;
-  readonly suspensividadePrimeiraInstanciaUnidade: FormControl<UnidadeEscolhida>;
   /** `null` é a pergunta ainda sem resposta; a conferência recusa a gravação nesse estado. */
   readonly admiteInstanciaSuperior: FormControl<boolean | null>;
-  readonly suspensividadeSegundaInstanciaValor: FormControl<string>;
-  readonly suspensividadeSegundaInstanciaUnidade: FormControl<UnidadeEscolhida>;
+  readonly efeitoSuspensivo: FormControl<EfeitoSuspensivoCodigo | ''>;
+  readonly guardaDaVaga: FormControl<GuardaDaVagaCodigo | ''>;
+  readonly prazoSegundaInstanciaValor: FormControl<string>;
+  readonly prazoSegundaInstanciaUnidade: FormControl<UnidadePrazoCodigo | ''>;
+  /** Não é editado aqui: o que a leitura trouxe e o envio ignora. */
+  readonly leitura: FormControl<LeituraDoRecurso>;
   /** Não é editado aqui: viaja para a gravação do cronograma não o apagar. */
   readonly procedimentos: FormControl<readonly ProcedimentoDeRecurso[]>;
 }
@@ -55,11 +65,11 @@ export interface FaseConfigForm {
   readonly ordem: FormControl<number>;
   readonly inicio: FormControl<string | null>;
   readonly fim: FormControl<string | null>;
+  /** Não é editado aqui; viaja para a gravação do cronograma não o apagar. */
+  readonly noMesmoMomentoDaAnterior: FormControl<boolean>;
   /** Não é editada aqui; viaja para a gravação do cronograma não a apagar. */
   readonly unidadeResponsavelId: FormControl<string | null>;
   readonly produtos: FormControl<readonly ProdutoDaFase[]>;
-  /** `''` representa "nenhuma fase declarada como concluinte". */
-  readonly faseConcluinteCodigo: FormControl<string>;
   readonly emiteParecerIndividual: FormControl<boolean>;
   readonly bancasRequeridas: FormControl<readonly BancaRequeridaDaFase[]>;
   /** Os tipos de decisão que a fase toma, em ordem alfabética do código. */
@@ -73,20 +83,21 @@ export interface FaseConfigForm {
 const RECURSO_EM_BRANCO: RecursoDaFase = {
   regraCodigo: '',
   regraVersao: '',
-  prazoValor: '',
-  prazoUnidade: '',
   atoAncoraCodigo: '',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: null,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  ...PARAMETROS_EM_BRANCO,
+  leitura: LEITURA_EM_BRANCO,
   procedimentos: [],
 };
 
 type IdentificacaoEJanelaDaFase = Pick<
   FaseConfigForm,
-  'faseCanonicaId' | 'codigo' | 'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId'
+  | 'faseCanonicaId'
+  | 'codigo'
+  | 'ordem'
+  | 'inicio'
+  | 'fim'
+  | 'noMesmoMomentoDaAnterior'
+  | 'unidadeResponsavelId'
 >;
 
 export function grupoDaConfiguracaoDaFase(fase: FaseDoCronograma): FormGroup<FaseConfigForm> {
@@ -103,6 +114,7 @@ function controlesDeIdentificacaoEJanela(fase: FaseDoCronograma): IdentificacaoE
     ordem: controle(fase.ordem),
     inicio: controle<string | null>(fase.inicio),
     fim: controle<string | null>(fase.fim),
+    noMesmoMomentoDaAnterior: controle(fase.noMesmoMomentoDaAnterior),
     unidadeResponsavelId: controle<string | null>(fase.unidadeResponsavelId),
   };
 }
@@ -112,7 +124,6 @@ function controlesDoQueAFaseDeclara(
 ): Omit<FaseConfigForm, keyof IdentificacaoEJanelaDaFase> {
   return {
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
-    faseConcluinteCodigo: controle(fase.faseConcluinteCodigo ?? ''),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     tiposDeDecisao: controle<readonly string[]>(fase.tiposDeDecisao ?? []),
@@ -122,52 +133,37 @@ function controlesDoQueAFaseDeclara(
   };
 }
 
-type PrazoDoRecurso = Pick<
-  RecursoForm,
-  'regraCodigo' | 'regraVersao' | 'prazoValor' | 'prazoUnidade' | 'atoAncoraCodigo'
->;
-
 function grupoDoRecurso(recurso: RecursoDaFase): FormGroup<RecursoForm> {
   return new FormGroup<RecursoForm>({
-    ...controlesDoPrazoDoRecurso(recurso),
-    ...controlesDaSuspensividadeDoRecurso(recurso),
+    regraCodigo: controle(recurso.regraCodigo),
+    regraVersao: controle(recurso.regraVersao),
+    atoAncoraCodigo: controle(recurso.atoAncoraCodigo),
+    ...controlesDosParametros(recurso),
+    leitura: controle(recurso.leitura),
     procedimentos: controle<readonly ProcedimentoDeRecurso[]>(recurso.procedimentos),
   });
 }
 
-function controlesDoPrazoDoRecurso(recurso: RecursoDaFase): PrazoDoRecurso {
+function controlesDosParametros(
+  recurso: ParametrosDoRecurso,
+): Pick<RecursoForm, keyof ParametrosDoRecurso> {
   return {
-    regraCodigo: controle(recurso.regraCodigo),
-    regraVersao: controle(recurso.regraVersao),
     prazoValor: controle(recurso.prazoValor),
-    prazoUnidade: controle<UnidadeEscolhida>(recurso.prazoUnidade),
-    atoAncoraCodigo: controle(recurso.atoAncoraCodigo),
-  };
-}
-
-function controlesDaSuspensividadeDoRecurso(
-  recurso: RecursoDaFase,
-): Omit<RecursoForm, keyof PrazoDoRecurso | 'procedimentos'> {
-  return {
-    suspensividadePrimeiraInstanciaValor: controle(recurso.suspensividadePrimeiraInstanciaValor),
-    suspensividadePrimeiraInstanciaUnidade: controle<UnidadeEscolhida>(
-      recurso.suspensividadePrimeiraInstanciaUnidade,
-    ),
-    admiteInstanciaSuperior: controle<boolean | null>(recurso.admiteInstanciaSuperior),
-    suspensividadeSegundaInstanciaValor: controle(recurso.suspensividadeSegundaInstanciaValor),
-    suspensividadeSegundaInstanciaUnidade: controle<UnidadeEscolhida>(
-      recurso.suspensividadeSegundaInstanciaUnidade,
-    ),
+    prazoUnidade: controle(recurso.prazoUnidade),
+    admiteInstanciaSuperior: controle(recurso.admiteInstanciaSuperior),
+    efeitoSuspensivo: controle(recurso.efeitoSuspensivo),
+    guardaDaVaga: controle(recurso.guardaDaVaga),
+    prazoSegundaInstanciaValor: controle(recurso.prazoSegundaInstanciaValor),
+    prazoSegundaInstanciaUnidade: controle(recurso.prazoSegundaInstanciaUnidade),
   };
 }
 
 /** A fase como o rascunho a guarda, com o que esta superfície declarou. */
 export function faseDaConfiguracao(grupo: FormGroup<FaseConfigForm>): FaseDoCronograma {
-  const { admiteRecurso, recurso, faseConcluinteCodigo, ...inalterados } = grupo.getRawValue();
+  const { admiteRecurso, recurso, ...inalterados } = grupo.getRawValue();
 
   return {
     ...inalterados,
-    faseConcluinteCodigo: faseConcluinteCodigo === '' ? null : faseConcluinteCodigo,
     regraRecurso: admiteRecurso ? recurso : null,
   };
 }

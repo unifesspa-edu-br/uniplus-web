@@ -7,7 +7,7 @@ import {
   folhaDe,
 } from '../../shared/exigencias/exigencias-documentais';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
-import { fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS } from './fase.testing';
+import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -88,13 +88,13 @@ describe('FasePassoComponent', () => {
         incluiCandidato: true,
       };
 
-      /** A habilitação, respondida na fase Recursos, com ou sem a composição familiar. */
+      /** A habilitação, respondida na fase Homologação das inscrições, com ou sem a composição familiar. */
       function comHabilitacao(grupos: readonly (typeof FAMILIA)[]): void {
         store.patchObjectSection('formulario', {
           outrasFinalidades: [
             {
               finalidade: 'HABILITACAO',
-              faseCodigo: 'RECURSOS',
+              faseCodigo: 'HOMOLOGACAO_INSCRICOES',
               conteudo: {
                 titulo: null,
                 etapas: [],
@@ -128,13 +128,13 @@ describe('FasePassoComponent', () => {
         TestBed.inject(CatalogoDeFatos).fatos.set([PARENTESCO]);
         comCronograma(
           fase({}),
-          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+          fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
       });
 
       it('sem grupo repetível nos formulários, não oferece repetir e diz de onde vem a lista', () => {
         comHabilitacao([]);
-        exigirCpfNaFase(ID_RECURSOS);
+        exigirCpfNaFase(ID_HOMOLOGACAO);
 
         expect(campoRepetirPor()).toBeNull();
         expect(nativo.textContent).toContain('Nenhum formulário do processo tem grupo repetível');
@@ -142,7 +142,7 @@ describe('FasePassoComponent', () => {
 
       it('escolher o grupo repete a folha e abre ao gatilho os campos dele', () => {
         comHabilitacao([FAMILIA]);
-        exigirCpfNaFase(ID_RECURSOS);
+        exigirCpfNaFase(ID_HOMOLOGACAO);
 
         expect(
           Array.from(campoRepetirPor()?.options ?? []).map((opcao) => opcao.text.trim()),
@@ -175,7 +175,7 @@ describe('FasePassoComponent', () => {
           '',
         ]);
         expect(nativo.textContent).toContain(
-          'Não oferecidos aqui: “Composição familiar”, respondido na fase Recursos, depois desta.',
+          'Não oferecidos aqui: “Composição familiar”, respondido na fase Homologação das inscrições, depois desta.',
         );
       });
 
@@ -192,14 +192,14 @@ describe('FasePassoComponent', () => {
         expect(campo?.selectedOptions[0]?.text.trim()).toBe('Composição familiar (não vale mais)');
         expect(campo?.getAttribute('aria-invalid')).toBe('true');
         expect(nativo.querySelector(`[id$="doc-repeticao-erro-${ID_CPF}"]`)?.textContent).toContain(
-          'O grupo “Composição familiar” é respondido na fase Recursos, depois da fase em que o documento é exigido.',
+          'O grupo “Composição familiar” é respondido na fase Homologação das inscrições, depois da fase em que o documento é exigido.',
         );
       });
 
       it('dentro de grupo de alternativas que se repete, mostra a repetição herdada só para leitura', () => {
         comHabilitacao([FAMILIA]);
-        abrirFase(ID_RECURSOS);
-        const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
+        abrirFase(ID_HOMOLOGACAO);
+        const folha = folhaDe(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
         store.patchSection('documentos', {
           raizes: [
             {
@@ -229,8 +229,8 @@ describe('FasePassoComponent', () => {
 
       it('a repetição herdada que deixou de valer diz o que fazer sem apontar campo que o documento não tem', () => {
         comHabilitacao([]);
-        abrirFase(ID_RECURSOS);
-        const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
+        abrirFase(ID_HOMOLOGACAO);
+        const folha = folhaDe(exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'));
         store.patchSection('documentos', {
           raizes: [
             {

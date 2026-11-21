@@ -3,7 +3,8 @@ import { mockPermissoesEfetivas, runAxeWcagAA } from '@uniplus/shared-e2e';
 import type { AxeResults } from 'axe-core';
 import { irAoPasso } from '../support/navega-passo';
 import { instalarPreferencia, temaDoProject } from '../support/tema';
-import { responder } from '../support/responder';
+import { OPCOES_DO_RECURSO } from '../fixtures/opcoes-do-recurso';
+import { responder, responderCatalogos } from '../support/responder';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 
 test.beforeEach(async ({ page }) => {
@@ -167,6 +168,7 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
    */
   test('não viola WCAG 2.1 AA com a conferência acusando', async ({ page }) => {
     await declararPublicacao(page, 'Resultado preliminar');
+    await page.getByText('Cabe recurso do que esta fase publica').click();
     await expect(page.getByRole('alert').first()).toBeVisible();
 
     const resultado = await runAxeWcagAA(page);
@@ -204,8 +206,13 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
    */
   test('anuncia a recusa da conferência no campo que a provocou', async ({ page }) => {
     await declararPublicacao(page, 'Resultado preliminar');
+    await page.getByText('Cabe recurso do que esta fase publica').click();
 
-    await expect(page.getByRole('alert').filter({ hasText: 'ciclo recursal' })).toBeVisible();
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Responda se o recurso admite instância superior' }),
+    ).toBeVisible();
   });
 
   test('não transborda horizontalmente', async ({ page }) => {
@@ -256,7 +263,7 @@ async function ligarRecursoComBanca(page: Page): Promise<void> {
   // é o rótulo, como acontece com quem usa a tela.
   await page.getByText('Cabe recurso do que esta fase publica').click();
   await prazoDeInterposicao(page).valor.fill('2');
-  await prazoDeInterposicao(page).unidade.selectOption({ label: 'dias úteis' });
+  await prazoDeInterposicao(page).unidade.selectOption('diasUteis');
 
   await page.getByRole('button', { name: 'Acrescentar banca' }).click();
   await page.getByLabel('Tipo de banca').selectOption({ label: 'Banca de heteroidentificação' });
@@ -299,4 +306,5 @@ async function mockarCatalogos(page: Page): Promise<void> {
   await responder(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, [], CORS_HEADERS);
   await responder(page, /\/api\/publicacoes\/tipos-ato(\?.*)?$/, TIPOS_ATO, CORS_HEADERS);
   await responder(page, /\/api\/selecao\/regras-catalogo(\?.*)?$/, REGRAS_RECURSO, CORS_HEADERS);
+  await responderCatalogos(page, OPCOES_DO_RECURSO, CORS_HEADERS);
 }

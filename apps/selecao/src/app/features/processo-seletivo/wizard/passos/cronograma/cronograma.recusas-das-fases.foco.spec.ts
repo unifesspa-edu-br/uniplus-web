@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { prefixoDoRecursoDaFase } from '../fase/ids-da-fase';
 import { ID_AVALIACAO } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import {
@@ -9,6 +10,7 @@ import {
 } from './cronograma-recusas-das-fases.testing';
 
 const PREFIXO = 'fases[0].regraRecurso';
+const PARAMETROS = prefixoDoRecursoDaFase(ID_AVALIACAO);
 const recusaDoRecurso = (campo: string): ErroDaFase => ({
   field: `${PREFIXO}${campo}`,
   code: 'uniplus.selecao.regra_recurso_fase.recusa_de_teste',
@@ -44,7 +46,7 @@ describe('CronogramaPassoComponent: foco na primeira recusa da regra de recurso'
       recusaDoRecurso('.regraCodigo'),
     );
 
-    expect(foco).toBe('fase-AVALIACAO-prazo-valor');
+    expect(foco).toBe(`${PARAMETROS}-prazo-interposicao-valor`);
   });
 
   it('leva o foco ao seletor da regra quando a API a deu primeiro', async () => {
@@ -64,7 +66,7 @@ describe('CronogramaPassoComponent: foco na primeira recusa da regra de recurso'
 
   it('leva o foco à opção marcada da instância superior', async () => {
     expect(await focoDepoisDeRecusar(recusaDoRecurso('.admiteInstanciaSuperior'))).toBe(
-      'fase-AVALIACAO-superior-nao',
+      `${PARAMETROS}-superior-nao`,
     );
   });
 
@@ -72,9 +74,20 @@ describe('CronogramaPassoComponent: foco na primeira recusa da regra de recurso'
     expect(await focoDepoisDeRecusar(recusaDoRecurso(''))).toBe('fase-AVALIACAO-recurso-recusa');
   });
 
-  it('leva o foco ao bloco das recusas quando o controle não existe na tela', async () => {
-    expect(await focoDepoisDeRecusar(recusaDoRecurso('.suspensividadeSegundaInstanciaValor'))).toBe(
+  it('leva o foco ao bloco das recusas quando o prazo da 2ª instância não existe na tela', async () => {
+    expect(await focoDepoisDeRecusar(recusaDoRecurso('.prazoSegundaInstanciaValor'))).toBe(
       'fase-AVALIACAO-recurso-recusa',
     );
   });
+
+  it.each([
+    ['.prazoUnidade', 'prazo-interposicao-unidade'],
+    ['.efeitoSuspensivo', 'efeito-opcao-semEfeitoSuspensivo'],
+    ['.guardaDaVaga', 'guarda-opcao-ateOResultadoDefinitivo'],
+  ])(
+    'leva o foco ao controle de %s dos parâmetros, na opção marcada quando é uma escolha',
+    async (campo, sufixo) => {
+      expect(await focoDepoisDeRecusar(recusaDoRecurso(campo))).toBe(`${PARAMETROS}-${sufixo}`);
+    },
+  );
 });

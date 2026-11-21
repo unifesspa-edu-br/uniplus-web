@@ -8,7 +8,7 @@ import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { RecusasDoServidorNasFases } from '../../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { montarFase } from '../fase.testing';
-import { faseComRegra } from './regra-de-recurso-da-fase.testing';
+import { faseComRegra, PREFIXO } from './regra-de-recurso-da-fase.testing';
 
 describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
   let controller: HttpTestingController;
@@ -66,6 +66,28 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
     });
   });
 
+  describe('parâmetros do recurso, em consulta', () => {
+    const leitura = () => (nativo.textContent ?? '').replace(/\s+/g, ' ');
+
+    it('lê o prazo, o efeito suspensivo, a guarda da vaga e o prazo da 2ª instância com o nome da API', () => {
+      comCronograma(faseComRegra());
+      emConsulta();
+
+      expect(leitura()).toContain('2 — Dias úteis');
+      expect(leitura()).toContain('Sem efeito suspensivo');
+      expect(leitura()).toContain('Guarda a vaga até o resultado definitivo');
+      expect(leitura()).toContain('3 — Dias úteis');
+    });
+
+    it('não desenha os controles da configuração do recurso', () => {
+      comCronograma(faseComRegra());
+      emConsulta();
+
+      expect(nativo.querySelector('sel-parametros-do-recurso')).toBeNull();
+      expect(nativo.querySelector(`#${PREFIXO}-prazo-interposicao-valor`)).toBeNull();
+    });
+  });
+
   describe('recusas do servidor à regra de recurso', () => {
     const recusar = (campo: string): void => {
       const recusa: RecusaDoProblema = {
@@ -88,21 +110,37 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
       expect(textoDe('fase-AVALIACAO-recurso-recusa')).toContain('Prazo de recurso recusado.');
     });
 
-    it('mostra a recusa ao prazo junto do controle, e não no alto da seção, quando a fase admite recurso', () => {
+    it('mostra a recusa ao prazo junto do campo e também no alto da seção, com o botão para ir ao campo', () => {
       comCronograma(faseComRegra());
 
       recusar('fases[0].regraRecurso.prazoValor');
 
-      expect(textoDe('fase-AVALIACAO-recusa-recurso-prazoValor')).toContain(
+      expect(textoDe(`${PREFIXO}-prazo-interposicao-recusas-valor`)).toContain(
         'Prazo de recurso recusado.',
       );
-      expect(nativo.querySelector('#fase-AVALIACAO-recurso-recusa')).toBeNull();
+      expect(textoDe('fase-AVALIACAO-recurso-recusa')).toContain('Ir ao campo');
+      expect(
+        nativo.querySelector(`#${PREFIXO}-prazo-interposicao-valor`)?.getAttribute('aria-invalid'),
+      ).toBe('true');
     });
 
-    it('mostra no alto da seção a recusa à 2ª instância quando a regra não admite instância superior', () => {
+    it.each([
+      ['efeitoSuspensivo', 'efeito'],
+      ['guardaDaVaga', 'guarda'],
+    ])('mostra a recusa a %s junto do grupo de opções', (campo, grupo) => {
+      comCronograma(faseComRegra());
+
+      recusar(`fases[0].regraRecurso.${campo}`);
+
+      const bloco = nativo.querySelector(`#${PREFIXO}-${grupo}-grupo`);
+      expect(bloco?.textContent).toContain('Prazo de recurso recusado.');
+      expect(bloco?.getAttribute('aria-invalid')).toBe('true');
+    });
+
+    it('mostra no alto da seção a recusa ao prazo da 2ª instância quando a regra não admite instância superior', () => {
       comCronograma(faseComRegra({ admiteInstanciaSuperior: false }));
 
-      recusar('fases[0].regraRecurso.suspensividadeSegundaInstanciaValor');
+      recusar('fases[0].regraRecurso.prazoSegundaInstanciaValor');
 
       expect(textoDe('fase-AVALIACAO-recurso-recusa')).toContain('Prazo de recurso recusado.');
     });

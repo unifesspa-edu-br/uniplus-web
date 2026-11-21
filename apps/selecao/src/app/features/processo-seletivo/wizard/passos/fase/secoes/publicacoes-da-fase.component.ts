@@ -1,21 +1,33 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
-import { PAPEL_PRELIMINAR, type ProdutoDaFase } from '../../../processo-seletivo.models';
+import type { ProdutoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { PAPEIS_ESCOLHIVEIS } from '../configuracao-da-fase';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
-/** As publicações que a fase declara, cada uma um tipo de ato do catálogo, com o papel que ela tem. */
+/**
+ * As publicações que a fase declara, cada uma um tipo de ato do catálogo, com o papel que ela tem,
+ * e a promessa de parecer individual a cada candidato.
+ */
 @Component({
   selector: 'sel-publicacoes-da-fase',
-  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent, RecusasDoCampoComponent],
+  imports: [
+    ValorLegivelDirective,
+    FormsModule,
+    ReactiveFormsModule,
+    ValorEmConsultaComponent,
+    RecusasDoCampoComponent,
+  ],
   templateUrl: './publicacoes-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
+  viewProviders: [
+    { provide: ControlContainer, useFactory: () => inject(ControlContainer, { skipSelf: true }) },
+  ],
 })
 export class PublicacoesDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
@@ -30,6 +42,10 @@ export class PublicacoesDaFaseComponent {
   protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly papeis = PAPEIS_ESCOLHIVEIS;
   protected readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
+  protected readonly emiteParecerIndividual = computed(() => {
+    this.espelho.versao();
+    return this.espelho.formulario()?.controls.emiteParecerIndividual.value ?? false;
+  });
 
   /**
    * O que descreve cada controle da lista: a recusa, quando há, a ajuda e, na fase que publica
@@ -52,6 +68,7 @@ export class PublicacoesDaFaseComponent {
       publicacoes: this.produtos.map(
         (produto) => `${nomeDoAto(produto.atoCodigo)} — ${papel(produto.papel)}`,
       ),
+      parecerIndividual: this.emiteParecerIndividual(),
     };
   }
 
@@ -128,20 +145,7 @@ export class PublicacoesDaFaseComponent {
     return ato === undefined || ato.ehResultado;
   }
 
-  /**
-   * Escreve as publicações e reconcilia o que depende delas. A conclusão do ciclo recursal só
-   * existe em fase que publica preliminar: deixar o código declarado para trás trancaria o passo
-   * numa recusa cujo campo a tela já não mostra, sem caminho visível para desfazê-la.
-   */
   private escreverProdutos(produtos: readonly ProdutoDaFase[]): void {
-    const formulario = this.espelho.formulario();
-    if (formulario === null) return;
-
-    formulario.controls.produtos.setValue(produtos);
-
-    const abreCicloRecursal = produtos.some((produto) => produto.papel === PAPEL_PRELIMINAR);
-    if (!abreCicloRecursal && formulario.controls.faseConcluinteCodigo.value !== '') {
-      formulario.controls.faseConcluinteCodigo.setValue('');
-    }
+    this.espelho.formulario()?.controls.produtos.setValue(produtos);
   }
 }

@@ -1,5 +1,9 @@
-import type { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
+import type { CaraterEtapa } from '@uniplus/shared-data/selecao';
 
+import type {
+  LeituraDoRecurso,
+  ParametrosDoRecurso,
+} from '../shared/configuracao-do-recurso/parametros-do-recurso';
 import type { BancaDaEtapa, RegraDeDeliberacaoDaBanca } from './deliberacao.models';
 
 /**
@@ -18,11 +22,14 @@ export interface FaseDoCronograma {
   /** `null` só é válido em fase cuja data é definida na execução. */
   readonly inicio: string | null;
   readonly fim: string | null;
+  /**
+   * A fase acontece no mesmo momento da anterior. Não é editado aqui: viaja como foi lido, para a
+   * gravação do cronograma, que substitui a coleção inteira, não o apagar.
+   */
+  readonly noMesmoMomentoDaAnterior: boolean;
   readonly produtos: readonly ProdutoDaFase[];
   /** Unidade que responde pela fase; `null` é aceito no rascunho e recusado na publicação. */
   readonly unidadeResponsavelId: string | null;
-  /** Código canônico da fase que conclui o ciclo recursal desta, quando não é ela mesma. */
-  readonly faseConcluinteCodigo: string | null;
   readonly emiteParecerIndividual: boolean;
   readonly bancasRequeridas: readonly BancaRequeridaDaFase[];
   readonly regraRecurso: RecursoDaFase | null;
@@ -86,15 +93,13 @@ export interface AtributosCongeladosDaFase {
 
 /**
  * A regra de recurso de uma fase; a **presença** dela é o que faz a fase admitir recurso. Os
- * números são texto porque é o que o campo edita. O par de suspensividade de uma instância é
- * declarado inteiro ou deixado inteiro em branco: metade preenchida é recusada, e a ausência dos
- * dois desativa aquela instância.
+ * parâmetros (prazos, instância superior, efeito suspensivo e guarda da vaga) são os mesmos do
+ * recurso da etapa, e `leitura` guarda o que a resposta trouxe e o envio ignora.
  */
-export interface RecursoDaFase {
+export interface RecursoDaFase extends ParametrosDoRecurso {
+  readonly leitura: LeituraDoRecurso;
   readonly regraCodigo: string;
   readonly regraVersao: string;
-  readonly prazoValor: string;
-  readonly prazoUnidade: UnidadePrazo | '';
   /**
    * Código do tipo de ato cujo produto ancora o prazo. A leitura devolve `produtoAncoraId`, e a
    * hidratação o cruza com os produtos da própria fase para reconstruir este campo. `''` é
@@ -102,15 +107,6 @@ export interface RecursoDaFase {
    * outra publicação.
    */
   readonly atoAncoraCodigo: string;
-  readonly suspensividadePrimeiraInstanciaValor: string;
-  readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
-  /**
-   * Se a janela admite recurso a uma instância superior, julgada fora do sistema. `null` é a
-   * pergunta não respondida: o contrato não tem padrão, para ninguém publicar sem decidir.
-   */
-  readonly admiteInstanciaSuperior: boolean | null;
-  readonly suspensividadeSegundaInstanciaValor: string;
-  readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
   /** Procedimentos declarados para o recurso; a tela os mostra e os devolve como os leu. */
   readonly procedimentos: readonly ProcedimentoDeRecurso[];
 }
@@ -212,29 +208,15 @@ export interface TipoCongeladoDaEtapa {
 }
 
 /**
- * Uma janela recursal da etapa. `ancora` diz de que instante o prazo corre: da publicação do ato
- * (e `atoAncoraCodigo` nomeia qual) ou da ciência do candidato, que não tem publicação a referenciar.
+ * Um recurso da etapa. `ancora` diz de que instante o prazo corre: da publicação do ato (e
+ * `atoAncoraCodigo` nomeia qual) ou da ciência do candidato, que não tem publicação a referenciar.
+ * Os parâmetros são os mesmos da regra de recurso da fase.
  */
-export interface RecursoDaEtapa {
+export interface RecursoDaEtapa extends ParametrosDoRecurso {
+  readonly leitura: LeituraDoRecurso;
   readonly ancora: 'atoPublicado' | 'cienciaIndividual';
   readonly regraCodigo: string;
   readonly regraVersao: string;
-  readonly prazoValor: string;
-  readonly prazoUnidade: string;
   readonly atoAncoraCodigo: string;
-  /**
-   * Quanto tempo o recurso suspende o efeito do ato, por instância, com a gramática de
-   * `RecursoDaFase`. O servidor persiste os quatro valores em colunas próprias; sem estes campos
-   * a gravação os zerava a cada salvamento do cronograma.
-   */
-  readonly suspensividadePrimeiraInstanciaValor: string;
-  readonly suspensividadePrimeiraInstanciaUnidade: UnidadePrazo | '';
-  /**
-   * Se a janela admite recurso a uma instância superior, julgada fora do sistema. `null` é a
-   * pergunta não respondida: o contrato não tem padrão, para ninguém publicar sem decidir.
-   */
-  readonly admiteInstanciaSuperior: boolean | null;
-  readonly suspensividadeSegundaInstanciaValor: string;
-  readonly suspensividadeSegundaInstanciaUnidade: UnidadePrazo | '';
   readonly procedimentos: readonly ProcedimentoDeRecurso[];
 }

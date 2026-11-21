@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
+import { UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
+import { recurso } from './configuracao-da-fase.testing';
 import { FaseEmEdicao } from './fase-em-edicao';
 import {
   fase,
   ID_AVALIACAO,
   ID_BANCA_HETERO,
   ID_CATEGORIA_RACA,
-  ID_RECURSOS,
+  ID_HOMOLOGACAO,
   proximoPasso,
 } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
@@ -26,7 +27,10 @@ describe('FasePassoComponent', () => {
   });
 
   it('abre a primeira fase do cronograma sem que ninguém escolha', () => {
-    comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+    comCronograma(
+      fase({}),
+      fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+    );
 
     expect(componente.faseAberta()).toBe(ID_AVALIACAO);
     expect(raiz.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe('Avaliação');
@@ -86,19 +90,7 @@ describe('FasePassoComponent', () => {
             { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
             { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
           ],
-          regraRecurso: {
-            regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-            regraVersao: 'v1',
-            prazoValor: '2',
-            prazoUnidade: UnidadePrazo.diasUteis,
-            atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-            suspensividadePrimeiraInstanciaValor: '',
-            suspensividadePrimeiraInstanciaUnidade: '',
-            admiteInstanciaSuperior: true,
-            suspensividadeSegundaInstanciaValor: '',
-            suspensividadeSegundaInstanciaUnidade: '',
-            procedimentos: [],
-          },
+          regraRecurso: recurso(),
         }),
       );
 
@@ -112,34 +104,24 @@ describe('FasePassoComponent', () => {
     });
   });
   describe('instância superior da regra de recurso', () => {
+    const PREFIXO_DOS_PARAMETROS = `recurso-fase-${ID_AVALIACAO}`;
+
     function faseComRecurso(admiteInstanciaSuperior: boolean | null) {
       return fase({
         produtos: [
           { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
           { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
         ],
-        regraRecurso: {
-          regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-          regraVersao: 'v1',
-          prazoValor: '2',
-          prazoUnidade: UnidadePrazo.diasUteis,
-          atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-          suspensividadePrimeiraInstanciaValor: '',
-          suspensividadePrimeiraInstanciaUnidade: '',
+        regraRecurso: recurso({
           admiteInstanciaSuperior,
-          suspensividadeSegundaInstanciaValor: '48',
-          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
-          procedimentos: [],
-        },
+          prazoSegundaInstanciaValor: '48',
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.horas,
+        }),
       });
     }
 
-    function radio(valor: 'true' | 'false'): HTMLInputElement | null {
-      // O valor do DOM não distingue as duas: a diretiva do formulário guarda o booleano nela.
-      const radios = nativo.querySelectorAll<HTMLInputElement>(
-        'input[type="radio"][name="admiteInstanciaSuperior"]',
-      );
-      return radios[valor === 'true' ? 0 : 1] ?? null;
+    function radio(valor: 'sim' | 'nao'): HTMLInputElement | null {
+      return nativo.querySelector<HTMLInputElement>(`#${PREFIXO_DOS_PARAMETROS}-superior-${valor}`);
     }
 
     async function abrir(admite: boolean | null): Promise<void> {
@@ -148,30 +130,32 @@ describe('FasePassoComponent', () => {
       detectar();
     }
 
-    it('esconde o tempo de bloqueio da instância superior quando a janela não a admite', async () => {
+    it('esconde o prazo da 2ª instância quando o recurso não admite instância superior', async () => {
       await abrir(false);
 
-      expect(nativo.querySelector('#fase-AVALIACAO-susp2-valor')).toBeNull();
-      expect(nativo.querySelector('#fase-AVALIACAO-susp2-unidade')).toBeNull();
+      expect(nativo.querySelector(`#${PREFIXO_DOS_PARAMETROS}-prazo-segunda-valor`)).toBeNull();
+      expect(nativo.querySelector(`#${PREFIXO_DOS_PARAMETROS}-prazo-segunda-unidade`)).toBeNull();
     });
 
-    it('mostra o tempo de bloqueio quando a janela admite a instância superior', async () => {
+    it('mostra o prazo da 2ª instância quando o recurso admite instância superior', async () => {
       await abrir(true);
 
-      expect(nativo.querySelector('#fase-AVALIACAO-susp2-valor')).not.toBeNull();
-      expect(nativo.querySelector('#fase-AVALIACAO-susp2-unidade')).not.toBeNull();
+      expect(nativo.querySelector(`#${PREFIXO_DOS_PARAMETROS}-prazo-segunda-valor`)).not.toBeNull();
+      expect(
+        nativo.querySelector(`#${PREFIXO_DOS_PARAMETROS}-prazo-segunda-unidade`),
+      ).not.toBeNull();
     });
 
     it('nasce sem resposta e liga o erro ao campo por aria-describedby', async () => {
       await abrir(null);
 
-      expect(radio('true')?.checked).toBe(false);
-      expect(radio('false')?.checked).toBe(false);
-      expect(radio('true')?.getAttribute('aria-invalid')).toBe('true');
+      expect(radio('sim')?.checked).toBe(false);
+      expect(radio('nao')?.checked).toBe(false);
+      expect(radio('sim')?.getAttribute('aria-invalid')).toBe('true');
       expect(componente.erroDoCampo('recurso.admiteInstanciaSuperior')).not.toBeNull();
 
       const descricao = nativo
-        .querySelector('fieldset.field[aria-describedby*="superior-erro"]')
+        .querySelector('fieldset[aria-describedby*="superior-erro"]')
         ?.getAttribute('aria-describedby')
         ?.split(' ');
       expect(descricao?.every((id) => nativo.querySelector(`#${id}`) !== null)).toBe(true);
@@ -180,7 +164,7 @@ describe('FasePassoComponent', () => {
     it('guarda no rascunho a resposta escolhida', async () => {
       await abrir(null);
 
-      radio('false')?.click();
+      radio('nao')?.click();
       detectar();
 
       expect(store.draft().cronograma.fases[0].regraRecurso?.admiteInstanciaSuperior).toBe(false);
@@ -211,19 +195,7 @@ describe('FasePassoComponent', () => {
             { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
             { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
           ],
-          regraRecurso: {
-            regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-            regraVersao: 'v1',
-            prazoValor: '2',
-            prazoUnidade: UnidadePrazo.diasUteis,
-            atoAncoraCodigo: '',
-            suspensividadePrimeiraInstanciaValor: '',
-            suspensividadePrimeiraInstanciaUnidade: '',
-            admiteInstanciaSuperior: true,
-            suspensividadeSegundaInstanciaValor: '',
-            suspensividadeSegundaInstanciaUnidade: '',
-            procedimentos: [],
-          },
+          regraRecurso: recurso({ atoAncoraCodigo: '' }),
         }),
       );
 
@@ -245,19 +217,7 @@ describe('FasePassoComponent', () => {
             { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
             { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
           ],
-          regraRecurso: {
-            regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-            regraVersao: 'v1',
-            prazoValor: '2',
-            prazoUnidade: UnidadePrazo.diasUteis,
-            atoAncoraCodigo: '',
-            suspensividadePrimeiraInstanciaValor: '',
-            suspensividadePrimeiraInstanciaUnidade: '',
-            admiteInstanciaSuperior: true,
-            suspensividadeSegundaInstanciaValor: '',
-            suspensividadeSegundaInstanciaUnidade: '',
-            procedimentos: [],
-          },
+          regraRecurso: recurso({ atoAncoraCodigo: '' }),
         }),
       );
 

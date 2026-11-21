@@ -11,7 +11,7 @@ import { rotuloDaFormaDeAvaliacao } from '../../shared/forma-de-avaliacao';
 import { decimalLido, textoDaSoma } from '../../shared/itens-de-avaliacao';
 import { leituraDoCampoDecimal } from '../../shared/numero-do-campo';
 import { descricaoDaRegra } from '../../shared/deliberacao/descricao-da-regra';
-import { prazoEmTexto } from '../../shared/unidades-de-prazo-do-recurso';
+import { parametrosEmTexto } from '../../shared/configuracao-do-recurso/leitura-dos-parametros';
 import type { CatalogoDeAtos } from './catalogos/catalogo-de-atos.service';
 import type { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import type { CatalogoDeTiposDeEtapa } from './catalogos/catalogo-de-tipos-de-etapa.service';
@@ -70,41 +70,28 @@ function itensLidos(grupo: FormGroup<EtapaForm>): {
   };
 }
 
-type Instancia = 'Primeira' | 'Segunda';
-
-const ORDINAL_DA_INSTANCIA: Readonly<Record<Instancia, string>> = {
-  Primeira: '1ª',
-  Segunda: '2ª',
-};
-
-function suspensividadeLida(recurso: RecursoDaEtapa, instancia: Instancia): readonly string[] {
-  const texto = prazoEmTexto(
-    recurso[`suspensividade${instancia}InstanciaValor`],
-    recurso[`suspensividade${instancia}InstanciaUnidade`],
-  );
-  return texto === ''
-    ? []
-    : [`suspensividade da ${ORDINAL_DA_INSTANCIA[instancia]} instância de ${texto}`];
+function origemDoPrazoLida(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => string): string {
+  return recurso.ancora === 'atoPublicado'
+    ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
+    : 'prazo corre da ciência do candidato';
 }
 
-function instanciasLidas(recurso: RecursoDaEtapa): readonly string[] {
-  const admiteSuperior = recurso.admiteInstanciaSuperior === true;
+function parametrosLidos(recurso: RecursoDaEtapa): readonly string[] {
+  const lidos = parametrosEmTexto(recurso, recurso.leitura);
+  const admite = lidos.admiteInstanciaSuperior === true;
   return [
-    ...suspensividadeLida(recurso, 'Primeira'),
-    admiteSuperior ? 'admite instância superior' : 'não admite instância superior',
-    ...(admiteSuperior ? suspensividadeLida(recurso, 'Segunda') : []),
+    lidos.prazo === null ? 'prazo não informado' : `prazo de interposição: ${lidos.prazo}`,
+    ...(lidos.efeitoSuspensivo === null ? [] : [`efeito suspensivo: ${lidos.efeitoSuspensivo}`]),
+    ...(lidos.guardaDaVaga === null ? [] : [`guarda da vaga: ${lidos.guardaDaVaga}`]),
+    admite ? 'admite instância superior' : 'não admite instância superior',
+    ...(lidos.prazoDaSegundaInstancia === null
+      ? []
+      : [`prazo da 2ª instância: ${lidos.prazoDaSegundaInstancia}`]),
   ];
 }
 
 function recursoLido(recurso: RecursoDaEtapa, nomeDoAto: (codigo: string) => string): string {
-  const prazo = prazoEmTexto(recurso.prazoValor, recurso.prazoUnidade);
-  return [
-    recurso.ancora === 'atoPublicado'
-      ? `prazo corre da publicação de ${nomeDoAto(recurso.atoAncoraCodigo)}`
-      : 'prazo corre da ciência do candidato',
-    prazo === '' ? 'prazo não informado' : `prazo de ${prazo}`,
-    ...instanciasLidas(recurso),
-  ].join('; ');
+  return [origemDoPrazoLida(recurso, nomeDoAto), ...parametrosLidos(recurso)].join('; ');
 }
 
 type TiposDeEtapa = ReturnType<CatalogosDaLeitura['tipoEtapaPorId']>;

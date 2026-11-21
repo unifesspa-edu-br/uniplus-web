@@ -1,26 +1,16 @@
-import { UnidadePrazo } from '@uniplus/shared-data/selecao';
 import { By } from '@angular/platform-browser';
 import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { RecursoDaFase } from '../../processo-seletivo.models';
+import { recurso } from './configuracao-da-fase.testing';
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
+import { PARAMETROS_SEM_INSTANCIA_SUPERIOR } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { fase, ID_BANCA_HETERO, ID_CPF, montarFase, type FaseMontada } from './fase.testing';
 
-const RECURSO: RecursoDaFase = {
-  regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-  regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
-  atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: false,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
-  procedimentos: [],
-};
+const RECURSO = recurso({
+  ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
+});
 
 describe('campos de texto das seções da fase', () => {
   let passo: FaseMontada;
@@ -47,7 +37,6 @@ describe('campos de texto das seções da fase', () => {
 
   it.each([
     ['publicações', 'produto-ato-0'],
-    ['ciclo recursal', 'concluinte'],
     ['regra de recurso', 'regra'],
     ['bancas', 'banca-0'],
     ['editor da exigência', `doc-normas-${ID_CPF}-base-0-ref`],

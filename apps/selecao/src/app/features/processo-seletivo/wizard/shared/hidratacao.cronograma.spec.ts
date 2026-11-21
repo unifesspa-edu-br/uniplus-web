@@ -1,9 +1,11 @@
+import { UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import {
   PARAMETROS_DO_RECURSO,
   RECURSO_DA_FASE,
   etapaDoServidor,
   faseDoServidor,
+  recursoDaEtapaDoServidor,
 } from './cronograma-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
 import { DRAFT, FASE_COM_RECURSO, ETAPA, dtoComCronograma } from './hidratacao.testing';
@@ -17,6 +19,12 @@ const COM_CRONOGRAMA = dtoComCronograma({
     hash: 'def456',
   },
 });
+
+const UNIDADE = { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' };
+
+function comParametros(parcial: Partial<typeof PARAMETROS_DO_RECURSO>) {
+  return { ...RECURSO_DA_FASE, parametros: { ...PARAMETROS_DO_RECURSO, ...parcial } };
+}
 
 describe('hidratarDraft — cronograma e etapas', () => {
   it('projeta a fase pelo id de origem, não pelo id do snapshot', () => {
@@ -79,12 +87,24 @@ describe('hidratarDraft — cronograma e etapas', () => {
   });
 
   /** Também não editados neste passo, e também reenviados a cada gravação. */
-  it('projeta a fase concluinte e a promessa de parecer individual', () => {
+  it('projeta a promessa de parecer individual e o momento em relação à fase anterior', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 
-    expect(fase.faseConcluinteCodigo).toBe('RECURSOS');
     expect(fase.emiteParecerIndividual).toBe(true);
+    expect(fase.noMesmoMomentoDaAnterior).toBe(false);
   });
+
+  it.each([true, false])(
+    'projeta a marca de acontecer no mesmo momento da anterior como o servidor a devolveu (%s)',
+    (marca) => {
+      const dto = dtoComCronograma({
+        cronogramaFases: [faseDoServidor({ cronograma: { noMesmoMomentoDaAnterior: marca } })],
+        etapas: [],
+      });
+
+      expect(hidratarDraft(DRAFT, dto).cronograma.fases[0]?.noMesmoMomentoDaAnterior).toBe(marca);
+    },
+  );
 
   it('preserva a janela como instante, com o deslocamento intacto', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
@@ -153,12 +173,114 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(fase.regraRecurso?.atoAncoraCodigo).toBe('');
   });
 
-  /** Ausência dos dois campos é desativação da instância, e vira campo vazio. */
-  it('projeta a suspensividade desativada como par vazio', () => {
+  it('projeta os parâmetros do recurso pelo código, com o nome que a API deu a cada um', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
 
-    expect(fase.regraRecurso?.suspensividadePrimeiraInstanciaValor).toBe('');
-    expect(fase.regraRecurso?.suspensividadePrimeiraInstanciaUnidade).toBe('');
+    expect(fase.regraRecurso).toMatchObject({
+      prazoValor: '2',
+      prazoUnidade: 'diasUteis',
+      admiteInstanciaSuperior: true,
+      prazoSegundaInstanciaValor: '3',
+      prazoSegundaInstanciaUnidade: 'diasUteis',
+      efeitoSuspensivo: 'semEfeitoSuspensivo',
+      guardaDaVaga: 'ateOResultadoDefinitivo',
+    });
+    expect(fase.regraRecurso?.leitura).toEqual({
+      rotulos: {
+        prazoUnidade: 'Dias úteis',
+        prazoSegundaInstanciaUnidade: 'Dias úteis',
+        efeitoSuspensivo: 'Sem efeito suspensivo',
+        guardaDaVaga: 'Guarda a vaga até o resultado definitivo',
+      },
+      prazoDaSegundaInstanciaSemInstanciaSuperior: false,
+    });
+  });
+
+  it('projeta o prazo da 2ª instância ausente como campos vazios', () => {
+    const dto = dtoComCronograma({
+      cronogramaFases: [
+        faseDoServidor({
+          publicacoes: {
+            regraRecurso: comParametros({
+              admiteInstanciaSuperior: false,
+              prazoSegundaInstanciaValor: null,
+              prazoSegundaInstanciaUnidade: null,
+            }),
+          },
+        }),
+      ],
+      etapas: [],
+    });
+
+    const regra = hidratarDraft(DRAFT, dto).cronograma.fases[0]?.regraRecurso;
+
+    expect(regra).toMatchObject({
+      prazoSegundaInstanciaValor: '',
+      prazoSegundaInstanciaUnidade: '',
+    });
+    expect(regra?.leitura.prazoDaSegundaInstanciaSemInstanciaSuperior).toBe(false);
+  });
+
+  it.each([
+    ['o valor', { prazoSegundaInstanciaValor: 3, prazoSegundaInstanciaUnidade: null }],
+    ['a unidade', { prazoSegundaInstanciaValor: null, prazoSegundaInstanciaUnidade: UNIDADE }],
+    ['o par', { prazoSegundaInstanciaValor: 3, prazoSegundaInstanciaUnidade: UNIDADE }],
+  ])(
+    'marca a leitura quando o recurso sem instância superior traz %s do prazo da 2ª instância',
+    (_nome, prazo) => {
+      const dto = dtoComCronograma({
+        cronogramaFases: [
+          faseDoServidor({
+            publicacoes: {
+              regraRecurso: comParametros({
+                admiteInstanciaSuperior: false,
+                ...prazo,
+              }),
+            },
+          }),
+        ],
+        etapas: [],
+      });
+
+      const regra = hidratarDraft(DRAFT, dto).cronograma.fases[0]?.regraRecurso;
+
+      expect(regra?.leitura.prazoDaSegundaInstanciaSemInstanciaSuperior).toBe(true);
+    },
+  );
+
+  it('lê o código de efeito e de guarda que o vocabulário atual não conhece, sem trocá-lo', () => {
+    const dto = dtoComCronograma({
+      cronogramaFases: [
+        faseDoServidor({
+          publicacoes: {
+            regraRecurso: comParametros({
+              efeitoSuspensivo: { codigo: 'efeitoDoFuturo' as never, rotulo: 'Efeito do futuro' },
+            }),
+          },
+        }),
+      ],
+      etapas: [],
+    });
+
+    const regra = hidratarDraft(DRAFT, dto).cronograma.fases[0]?.regraRecurso;
+
+    expect(regra?.efeitoSuspensivo).toBe('efeitoDoFuturo');
+    expect(regra?.leitura.rotulos.efeitoSuspensivo).toBe('Efeito do futuro');
+  });
+
+  it('projeta os parâmetros do recurso da etapa do mesmo jeito que os da fase', () => {
+    const dto = dtoComCronograma({
+      cronogramaFases: [],
+      etapas: [etapaDoServidor({ publicacoes: { recursos: [recursoDaEtapaDoServidor()] } })],
+    });
+
+    const [etapa] = hidratarDraft(DRAFT, dto).cronograma.etapas;
+
+    expect(etapa.recursos[0]).toMatchObject({
+      prazoUnidade: 'diasUteis',
+      efeitoSuspensivo: 'semEfeitoSuspensivo',
+    });
+    expect(etapa.recursos[0]?.leitura.rotulos.efeitoSuspensivo).toBe('Sem efeito suspensivo');
   });
 
   /**

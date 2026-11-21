@@ -1,8 +1,10 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { acompanharLeitura, destinoAcessivel } from '@uniplus/shared-ui/components';
 
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { tituloDoPasso } from '../../../shared/titulo-do-passo';
 
+import { CatalogoDasOpcoesDoRecurso } from './catalogo-das-opcoes-do-recurso.service';
 import { CatalogoDeAtos } from './catalogo-de-atos.service';
 import { CatalogoDeBancas } from './catalogo-de-bancas.service';
 import { CatalogoDeDocumentos } from './catalogo-de-documentos.service';
@@ -14,7 +16,7 @@ import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
 
 const MENSAGEM_DE_FALHA =
-  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos e regras.';
+  'Não foi possível carregar os catálogos de fases, bancas, categorias de documento, atos, regras e opções do recurso.';
 
 /**
  * O estado conjunto dos catálogos que o cronograma e a configuração de cada fase exigem para
@@ -37,12 +39,22 @@ export class SituacaoDosCatalogosDoCronograma {
     inject(CatalogoDeFatos),
     inject(CatalogoDeRegras),
   ];
+  private readonly store = inject(ProcessoSeletivoStore);
+  private readonly opcoesDoRecurso = inject(CatalogoDasOpcoesDoRecurso);
   private readonly unidades = inject(CatalogoDeUnidadesDoCadastro);
   private readonly motivos = inject(CatalogoDeMotivos);
 
-  readonly carregando = computed(() => this.exigidos.some((catalogo) => catalogo.carregando()));
+  private readonly exigidosNestaTela = computed(() =>
+    this.store.emConsulta() ? this.exigidos : [...this.exigidos, this.opcoesDoRecurso],
+  );
+
+  readonly carregando = computed(() =>
+    this.exigidosNestaTela().some((catalogo) => catalogo.carregando()),
+  );
   readonly erro = computed(() =>
-    this.exigidos.some((catalogo) => catalogo.erro() !== null) ? MENSAGEM_DE_FALHA : null,
+    this.exigidosNestaTela().some((catalogo) => catalogo.erro() !== null)
+      ? MENSAGEM_DE_FALHA
+      : null,
   );
 
   /**
@@ -94,6 +106,7 @@ export class SituacaoDosCatalogosDoCronograma {
     this.unidades.carregar();
     this.motivos.carregar();
     this.exigidos.forEach((catalogo) => catalogo.carregar());
+    if (!this.store.emConsulta()) this.opcoesDoRecurso.carregar();
   }
 
   /**
@@ -104,5 +117,6 @@ export class SituacaoDosCatalogosDoCronograma {
     this.unidades.recarregar();
     this.motivos.recarregar();
     this.exigidos.forEach((catalogo) => catalogo.recarregar());
+    if (!this.store.emConsulta()) this.opcoesDoRecurso.recarregar();
   }
 }

@@ -14,28 +14,15 @@
         rotulo="Regra de contagem"
         [valor]="leitura.regraDeRecurso"
       />
-      <ui-valor-em-consulta rotulo="Prazo de interposição" [valor]="leitura.prazo" />
       <ui-valor-em-consulta
         rotulo="Publicação de que o prazo corre"
         [valor]="leitura.publicacaoDoPrazo"
       />
-      <ui-valor-em-consulta
-        rotulo="Suspensividade da 1ª instância"
-        seVazio="Sem suspensividade"
-        [valor]="leitura.suspensividadePrimeiraInstancia"
-      />
-      <ui-valor-em-consulta
+      <sel-parametros-do-recurso-em-consulta
         class="form-grid__full"
-        rotulo="Admite recurso em instância superior"
-        [valor]="leitura.admiteInstanciaSuperior"
+        [parametros]="parametros()"
+        [leitura]="leituraDoRecurso()"
       />
-      @if (leitura.admiteInstanciaSuperior) {
-        <ui-valor-em-consulta
-          rotulo="Suspensividade da 2ª instância"
-          seVazio="Sem suspensividade"
-          [valor]="leitura.suspensividadeSegundaInstancia"
-        />
-      }
       <sel-procedimentos-do-recurso
         class="form-grid__full"
         [procedimentos]="form.controls.recurso.controls.procedimentos.value"
@@ -59,11 +46,12 @@
     um resultado preliminar — é da divulgação dele que o prazo corre.
   </p>
 
-  @if (recusasSemControle().length > 0) {
-    <sel-recusas-do-campo
+  @if (recusasDoRecurso().length > 0) {
+    <sel-recusas-da-configuracao-do-recurso
       [attr.id]="idDaFase(blocoDasRecusas)"
       tabindex="-1"
-      [recusas]="recusasSemControle()"
+      [recusas]="recusasDoRecurso()"
+      [alvos]="alvosDoCampo"
     />
   }
   @if (form.controls.admiteRecurso.value) {
@@ -107,26 +95,6 @@
         }
       </div>
 
-      <sel-prazo-do-recurso
-        class="form-grid__full"
-        legenda="Prazo de interposição"
-        textoDeObrigatoriedade="(obrigatório)"
-        [valor]="prazo().valor"
-        [unidade]="prazo().unidade"
-        [unidades]="unidadesDaInterposicao"
-        [desabilitado]="!store.aceitaEdicao()"
-        [ids]="prazo().ids"
-        [problema]="prazo().problema"
-        [recusasDoValor]="prazo().recusasDoValor"
-        [recusasDaUnidade]="prazo().recusasDaUnidade"
-        (valorAlterado)="alterarValor('prazoValor', $event)"
-        (unidadeAlterada)="alterarUnidade('prazoUnidade', $event)"
-      />
-      <p class="field__hint form-grid__full" [attr.id]="idDaFase('prazo-ajuda')">
-        Dia corrido não é aceito na interposição. Em dias úteis o prazo é inteiro; a fração só
-        existe em horas.
-      </p>
-
       <div class="form-field form-grid__full">
         <label class="label" [attr.for]="idDaFase('ancora')">Publicação de que o prazo corre</label>
         <select
@@ -156,94 +124,16 @@
         }
       </div>
 
-      <sel-prazo-do-recurso
+      <sel-parametros-do-recurso
         class="form-grid__full"
-        legenda="Suspensividade da 1ª instância"
-        opcaoEmBranco="Sem suspensividade"
-        [valor]="suspensividadeDaPrimeiraInstancia().valor"
-        [unidade]="suspensividadeDaPrimeiraInstancia().unidade"
-        [unidades]="unidadesDaSuspensividade"
+        [parametros]="parametros()"
+        [leitura]="leituraDoRecurso()"
+        [recusas]="recusasDosParametros()"
+        [prefixoDoId]="prefixoDosParametros()"
         [desabilitado]="!store.aceitaEdicao()"
-        [ids]="suspensividadeDaPrimeiraInstancia().ids"
-        [problema]="suspensividadeDaPrimeiraInstancia().problema"
-        [recusasDoValor]="suspensividadeDaPrimeiraInstancia().recusasDoValor"
-        [recusasDaUnidade]="suspensividadeDaPrimeiraInstancia().recusasDaUnidade"
-        (valorAlterado)="alterarValor('suspensividadePrimeiraInstanciaValor', $event)"
-        (unidadeAlterada)="alterarUnidade('suspensividadePrimeiraInstanciaUnidade', $event)"
+        (alterado)="alterarParametro($event)"
+        (retirarPrazoDaSegundaInstancia)="retirarOPrazoDaSegundaInstancia()"
       />
-      <p class="field__hint form-grid__full" [attr.id]="idDaFase('susp-ajuda')">
-        O prazo em que o recurso suspende o efeito do que foi publicado. Valor e unidade são
-        declarados juntos; deixar os dois em branco desativa a suspensividade daquela instância. Em
-        dias úteis o valor é inteiro: para menos de um dia, declare em horas.
-      </p>
-
-      <fieldset
-        class="field form-grid__full"
-        [class.is-error]="erroDoCampo('recurso.admiteInstanciaSuperior')"
-        [attr.aria-describedby]="
-          descritoPor('recurso.admiteInstanciaSuperior', 'superior-erro', 'superior-ajuda')
-        "
-      >
-        <legend class="field__label is-required">Admite recurso em instância superior?</legend>
-        <label class="radio">
-          <input
-            type="radio"
-            [attr.id]="idDaFase('superior-sim')"
-            name="admiteInstanciaSuperior"
-            formControlName="admiteInstanciaSuperior"
-            [attr.formcontrolname]="'admiteInstanciaSuperior'"
-            [value]="true"
-            [attr.aria-invalid]="erroDoCampo('recurso.admiteInstanciaSuperior') ? 'true' : null"
-          />
-          <span class="radio__dot" aria-hidden="true"></span>
-          Sim
-        </label>
-        <label class="radio">
-          <input
-            type="radio"
-            [attr.id]="idDaFase('superior-nao')"
-            name="admiteInstanciaSuperior"
-            formControlName="admiteInstanciaSuperior"
-            [attr.formcontrolname]="'admiteInstanciaSuperior'"
-            [value]="false"
-            [attr.aria-invalid]="erroDoCampo('recurso.admiteInstanciaSuperior') ? 'true' : null"
-          />
-          <span class="radio__dot" aria-hidden="true"></span>
-          Não
-        </label>
-        <span class="field__hint" [attr.id]="idDaFase('superior-ajuda')">
-          Não quando a decisão da banca recursal é final; Sim quando cabe recurso a outra instância,
-          julgada fora do sistema.
-        </span>
-        <ng-container
-          *ngTemplateOutlet="
-            recusasDoControle;
-            context: { $implicit: 'recurso.admiteInstanciaSuperior' }
-          "
-        />
-        @if (problemaLocal('recurso.admiteInstanciaSuperior'); as erro) {
-          <span class="field__erro" [attr.id]="idDaFase('superior-erro')" role="alert">{{
-            erro
-          }}</span>
-        }
-      </fieldset>
-      @if (form.controls.recurso.controls.admiteInstanciaSuperior.value === true) {
-        <sel-prazo-do-recurso
-          class="form-grid__full"
-          legenda="Suspensividade da 2ª instância"
-          opcaoEmBranco="Sem suspensividade"
-          [valor]="suspensividadeDaSegundaInstancia().valor"
-          [unidade]="suspensividadeDaSegundaInstancia().unidade"
-          [unidades]="unidadesDaSuspensividade"
-          [desabilitado]="!store.aceitaEdicao()"
-          [ids]="suspensividadeDaSegundaInstancia().ids"
-          [problema]="suspensividadeDaSegundaInstancia().problema"
-          [recusasDoValor]="suspensividadeDaSegundaInstancia().recusasDoValor"
-          [recusasDaUnidade]="suspensividadeDaSegundaInstancia().recusasDaUnidade"
-          (valorAlterado)="alterarValor('suspensividadeSegundaInstanciaValor', $event)"
-          (unidadeAlterada)="alterarUnidade('suspensividadeSegundaInstanciaUnidade', $event)"
-        />
-      }
       <sel-procedimentos-do-recurso
         class="form-grid__full"
         [procedimentos]="form.controls.recurso.controls.procedimentos.value"

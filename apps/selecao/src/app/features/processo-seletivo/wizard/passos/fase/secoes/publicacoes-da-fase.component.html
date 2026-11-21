@@ -6,11 +6,12 @@
       seVazio="Esta fase não declara nenhuma publicação"
       [valor]="leitura.publicacoes"
     />
+    <ui-valor-em-consulta rotulo="Emite parecer individual" [valor]="leitura.parecerIndividual" />
   }
 } @else {
   <p class="field__hint" [attr.id]="idDaFase('produtos-ajuda')">
     Cada publicação é um tipo de ato do catálogo. O papel só existe em ato que o catálogo marca como
-    resultado: é ele que abre o ciclo recursal (preliminar) e o encerra (definitivo).
+    resultado: é ele que abre o recurso (preliminar) e o encerra (definitivo).
   </p>
 
   @if (publicaPreliminar()) {
@@ -91,4 +92,34 @@
       <sel-recusas-do-campo [recusas]="recusasDoCampo('produtos')" />
     </div>
   }
+
+  <div class="form-field">
+    <label class="checkbox" [attr.for]="idDaFase('parecer')">
+      <input
+        type="checkbox"
+        [attr.id]="idDaFase('parecer')"
+        formControlName="emiteParecerIndividual"
+        [attr.aria-describedby]="
+          temMensagem('emiteParecerIndividual')
+            ? idDaFase('parecer-erro') + ' ' + idDaFase('parecer-ajuda')
+            : idDaFase('parecer-ajuda')
+        "
+        [attr.aria-invalid]="erroDoCampo('emiteParecerIndividual') ? 'true' : null"
+      />
+      <span class="checkbox__box" aria-hidden="true"></span>
+      Esta fase emite parecer individual
+    </label>
+    <p class="field__hint" [attr.id]="idDaFase('parecer-ajuda')">
+      O edital promete devolutiva a cada candidato. Só fase que publica algum resultado pode
+      prometê-la.
+    </p>
+    @if (temMensagem('emiteParecerIndividual')) {
+      <div [attr.id]="idDaFase('parecer-erro')" tabindex="-1">
+        @if (problemaLocal('emiteParecerIndividual'); as erro) {
+          <p class="field__erro" role="alert">{{ erro }}</p>
+        }
+        <sel-recusas-do-campo [recusas]="recusasDoCampo('emiteParecerIndividual')" />
+      </div>
+    }
+  </div>
 }

@@ -7,9 +7,8 @@ import {
 
 import { problemasDaRegra } from '../../shared/deliberacao/conferencia-da-regra';
 import type { CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
-import { publicaResultadoDefinitivo } from '../../shared/publicacoes-da-fase';
 import { repetidos } from '../../shared/repetidos';
-import { problemasDoRecurso, produtosPreliminares } from './problemas-do-recurso-da-fase';
+import { problemasDoRecurso } from './problemas-do-recurso-da-fase';
 
 /** Um campo da regra de deliberação da banca que ocupa a posição `n` entre as requeridas. */
 export type CampoDaBancaRequerida = `bancasRequeridas.${number}.${CampoDaBanca}`;
@@ -23,16 +22,12 @@ export type CampoDaBancaRequerida = `bancasRequeridas.${number}.${CampoDaBanca}`
  */
 export type CampoDaFase =
   | 'produtos'
-  | 'faseConcluinteCodigo'
   | 'emiteParecerIndividual'
   | 'bancasRequeridas'
   | CampoDaBancaRequerida
   | 'recurso.regra'
-  | 'recurso.prazo'
   | 'recurso.ancora'
-  | 'recurso.suspensividadePrimeiraInstancia'
-  | 'recurso.admiteInstanciaSuperior'
-  | 'recurso.suspensividadeSegundaInstancia';
+  | 'recurso.admiteInstanciaSuperior';
 
 export interface ProblemaDaFase {
   readonly campo: CampoDaFase | null;
@@ -60,13 +55,11 @@ export interface AtoDoCatalogo {
  */
 export function problemasDaFase(
   fase: FaseDoCronograma,
-  fases: readonly FaseDoCronograma[],
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
   nomeDaBanca: (tipoBancaId: string) => string,
 ): readonly ProblemaDaFase[] {
   return [
     ...problemasDosProdutos(fase, atoPorCodigo),
-    ...problemasDaConclusao(fase, fases),
     ...problemasDoParecer(fase),
     ...problemasDoRecurso(fase),
     ...problemasDasBancas(fase, nomeDaBanca),
@@ -130,79 +123,6 @@ function papelEmAtoQueNaoEResultado(ato: AtoDoCatalogo): ProblemaDaFase {
     campo: 'produtos',
     mensagem: `A publicação ${ato.nome} não é resultado no catálogo e não recebe papel preliminar nem definitivo.`,
   };
-}
-
-/**
- * A conclusão do ciclo recursal, como o agregado a confere.
- *
- * Fase que publica preliminar e a definitiva da matéria conclui a si mesma e
- * nada declara; fase que publica preliminar sem definitiva própria precisa
- * apontar quem a conclui, e essa fase tem de estar no cronograma, publicar
- * definitiva e vir depois dela. Declarar concluinte sem publicar preliminar não
- * descreve travessia nenhuma.
- */
-function problemasDaConclusao(
-  fase: FaseDoCronograma,
-  fases: readonly FaseDoCronograma[],
-): readonly ProblemaDaFase[] {
-  const publicaPreliminar = produtosPreliminares(fase.produtos).length > 0;
-  const declarada = fase.faseConcluinteCodigo;
-
-  if (!publicaPreliminar) return problemaDeConclusaoSemPreliminar(declarada);
-  if (declarada === null) return problemaDeConclusaoNaoDeclarada(fase);
-  return problemasDaFaseConcluinteDeclarada(fase, fases, declarada);
-}
-
-function problemaDeConclusaoSemPreliminar(declarada: string | null): readonly ProblemaDaFase[] {
-  if (declarada === null) return [];
-  return recusaDaConclusao(
-    'Só fase que publica resultado preliminar declara quem conclui o ciclo recursal dela.',
-  );
-}
-
-function problemaDeConclusaoNaoDeclarada(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
-  if (publicaResultadoDefinitivo(fase.produtos)) return [];
-  return recusaDaConclusao(
-    'A fase publica resultado preliminar e não publica o definitivo: declare qual fase conclui o ciclo recursal.',
-  );
-}
-
-function problemasDaFaseConcluinteDeclarada(
-  fase: FaseDoCronograma,
-  fases: readonly FaseDoCronograma[],
-  declarada: string,
-): readonly ProblemaDaFase[] {
-  const mensagem = mensagemDaConclusaoInvalida(fase, fases, declarada);
-  return mensagem === null ? [] : recusaDaConclusao(mensagem);
-}
-
-function mensagemDaConclusaoInvalida(
-  fase: FaseDoCronograma,
-  fases: readonly FaseDoCronograma[],
-  declarada: string,
-): string | null {
-  if (declarada === fase.codigo)
-    return 'A fase não conclui a si mesma por declaração: para encerrar o próprio ciclo, ela publica o resultado definitivo.';
-  const concluinte = fases.find((outra) => outra.codigo === declarada);
-  if (concluinte === undefined)
-    return `A fase ${declarada} não está no cronograma e não pode concluir o ciclo recursal desta.`;
-  return mensagemDaConcluinteInvalida(fase, concluinte, declarada);
-}
-
-function mensagemDaConcluinteInvalida(
-  fase: FaseDoCronograma,
-  concluinte: FaseDoCronograma,
-  declarada: string,
-): string | null {
-  if (!publicaResultadoDefinitivo(concluinte.produtos))
-    return `A fase ${declarada} não publica resultado definitivo e não conclui o ciclo recursal desta.`;
-  if (concluinte.ordem <= fase.ordem)
-    return `A fase ${declarada} vem antes desta na linha do tempo e não pode encerrar o ciclo recursal dela.`;
-  return null;
-}
-
-function recusaDaConclusao(mensagem: string): readonly ProblemaDaFase[] {
-  return [{ campo: 'faseConcluinteCodigo', mensagem }];
 }
 
 function problemasDoParecer(fase: FaseDoCronograma): readonly ProblemaDaFase[] {

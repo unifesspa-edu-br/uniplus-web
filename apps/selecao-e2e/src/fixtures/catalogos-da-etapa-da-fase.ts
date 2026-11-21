@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
 import {
   responderCatalogos,
   responderRegrasDoCatalogo,
@@ -172,6 +173,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/tipos-documento', TIPOS_DOCUMENTO],
   ['configuracao/fatos-candidato', []],
   ['publicacoes/tipos-ato', TIPOS_ATO],
+  ...OPCOES_DO_RECURSO,
 ];
 
 export async function mockarCatalogos(page: Page): Promise<void> {

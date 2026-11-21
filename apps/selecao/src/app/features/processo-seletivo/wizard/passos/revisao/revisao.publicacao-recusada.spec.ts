@@ -166,7 +166,7 @@ describe('RevisaoPassoComponent — publicação recusada pelo servidor', () => 
         fim: null,
         unidadeResponsavelId,
         produtos: [],
-        faseConcluinteCodigo: null,
+        noMesmoMomentoDaAnterior: false,
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,

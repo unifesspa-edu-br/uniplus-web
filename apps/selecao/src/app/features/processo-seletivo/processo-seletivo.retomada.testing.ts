@@ -42,6 +42,7 @@ import {
   ItemConformidadeDto,
   OrigemCandidatos,
   MotivosDeDecisaoApi,
+  OpcoesDoRecursoApi,
   RegrasCatalogoApi,
   ProcessoSeletivoDto,
   ProcessosSeletivosApi,
@@ -54,6 +55,7 @@ import { BehaviorSubject, NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { opcoesDoRecursoApiStub } from './processo-seletivo.page.testing';
 import { PASSOS } from './wizard/processo-seletivo.data';
 
 export const PROCESSO_ID = '019f41cf-69fd-759a-ac6d-09acabc1b027';
@@ -108,6 +110,7 @@ const PROVEDORES_DE_CATALOGO_VAZIO: readonly Provider[] = [
   { provide: TiposDocumentoApi, useValue: catalogoVazioStub },
   { provide: TiposAtoApi, useValue: catalogoVazioStub },
   { provide: MotivosDeDecisaoApi, useValue: catalogoVazioStub },
+  { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiStub },
   { provide: AtosApi, useValue: { obter: () => NEVER } },
   // O passo de atendimento carrega os três cadastros de Configuração ao
   // montar; estas suítes cobrem a retomada do processo, não as escolhas.

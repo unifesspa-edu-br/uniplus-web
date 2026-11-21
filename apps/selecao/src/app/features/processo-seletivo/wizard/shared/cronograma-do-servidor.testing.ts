@@ -1,8 +1,10 @@
 import {
   CaraterEtapa,
+  EfeitoSuspensivoCodigo,
   type EtapaProcessoDto,
   type FaseCronogramaDto,
-  UnidadePrazo,
+  GuardaDaVagaCodigo,
+  UnidadePrazoCodigo,
 } from '@uniplus/shared-data/selecao';
 
 /** A fase como o servidor a devolve; cada seção aninhada aceita só os campos que o teste troca. */
@@ -30,12 +32,18 @@ type RecursoDaFaseDoServidor = NonNullable<FaseCronogramaDto['publicacoes']['reg
 
 export const PARAMETROS_DO_RECURSO: RecursoDaFaseDoServidor['parametros'] = {
   prazoValor: 2,
-  prazoUnidade: UnidadePrazo.diasUteis,
-  suspensividadePrimeiraInstanciaValor: null,
-  suspensividadePrimeiraInstanciaUnidade: null,
+  prazoUnidade: { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
   admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: null,
-  suspensividadeSegundaInstanciaUnidade: null,
+  prazoSegundaInstanciaValor: 3,
+  prazoSegundaInstanciaUnidade: { codigo: UnidadePrazoCodigo.diasUteis, rotulo: 'Dias úteis' },
+  efeitoSuspensivo: {
+    codigo: EfeitoSuspensivoCodigo.semEfeitoSuspensivo,
+    rotulo: 'Sem efeito suspensivo',
+  },
+  guardaDaVaga: {
+    codigo: GuardaDaVagaCodigo.ateOResultadoDefinitivo,
+    rotulo: 'Guarda a vaga até o resultado definitivo',
+  },
 };
 
 export const RECURSO_DA_FASE: RecursoDaFaseDoServidor = {
@@ -59,7 +67,7 @@ const CRONOGRAMA_DA_FASE: FaseCronogramaDto['cronograma'] = {
   ordem: 2,
   inicio: '2026-03-25T08:00:00-03:00',
   fim: '2026-03-25T23:59:59-03:00',
-  faseConcluinteCodigo: 'RECURSOS',
+  noMesmoMomentoDaAnterior: false,
   unidadeResponsavel: null,
 };
 

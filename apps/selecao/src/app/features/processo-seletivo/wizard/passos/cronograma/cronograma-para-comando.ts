@@ -10,10 +10,10 @@ import type {
   RecursoDaEtapa,
   RecursoDaFase,
 } from '../../processo-seletivo.models';
+import type { ParametrosDoRecurso } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import { regraComoInput } from '../../shared/deliberacao/regra-de-deliberacao-contrato';
 import { FORMA_HUMANA } from '../../shared/forma-de-avaliacao';
 import { fracaoDoPercentual } from '../../shared/itens-de-avaliacao';
-import { instanciaSuperiorParaComando } from '../../shared/instancia-superior';
 import { instanteDoCampo } from '../../shared/fuso-institucional';
 import { emOrdemAlfabetica } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-declarados';
 import { decimalDoCampo } from '../../shared/numero-do-campo';
@@ -28,7 +28,7 @@ type BancaDaEtapaInput = NonNullable<EtapaProcessoInput['bancas']>[number];
 type ProcedimentoDeRecursoInput = NonNullable<RegraDeRecursoDaFaseInput['procedimentos']>[number];
 
 /**
- * Se a janela recursal da etapa tem regra resolvida contra o catálogo — só essas viajam no
+ * Se o recurso da etapa tem regra resolvida contra o catálogo — só essas viajam no
  * comando.
  *
  * Exportada porque a prontidão do passo precisa do MESMO predicado para avisar o operador:
@@ -44,7 +44,7 @@ export function recursoResolvido(recurso: {
 /**
  * A fase como o comando a recebe.
  *
- * Os produtos, a fase concluinte, o parecer individual, as bancas requeridas e
+ * Os produtos, o parecer individual, as bancas requeridas e
  * a regra de recurso atravessam inalterados: quem os edita é a superfície da
  * fase, e a gravação do cronograma substitui a coleção inteira — deixá-los de
  * fora aqui apagaria, a cada mudança de data, o que a fase declara publicar, as
@@ -56,9 +56,9 @@ export function comoComandoDeFase(fase: FaseDoCronograma): FaseCronogramaInput {
     faseCanonicaId: fase.faseCanonicaId,
     inicio: fase.inicio,
     fim: fase.fim,
+    noMesmoMomentoDaAnterior: fase.noMesmoMomentoDaAnterior,
     unidadeResponsavelId: fase.unidadeResponsavelId,
     produtos: fase.produtos.map(comoComandoDoProdutoDaFase),
-    faseConcluinteCodigo: fase.faseConcluinteCodigo,
     emiteParecerIndividual: fase.emiteParecerIndividual,
     bancasRequeridas: fase.bancasRequeridas.map(comoComandoDeBancaRequerida),
     regraRecurso: fase.regraRecurso === null ? null : comoComandoDeRecursoDaFase(fase.regraRecurso),
@@ -82,40 +82,43 @@ function comoComandoDeRecursoDaFase(regra: RecursoDaFase): RegraDeRecursoDaFaseI
   return {
     regraCodigo: regra.regraCodigo,
     regraVersao: regra.regraVersao,
-    prazoValor: decimalDoCampo(regra.prazoValor) ?? 0,
-    prazoUnidade: regra.prazoUnidade as RegraDeRecursoDaFaseInput['prazoUnidade'],
     atoAncoraCodigo: regra.atoAncoraCodigo,
-    ...comoComandoDasCondicoesDoRecurso(regra),
+    ...parametrosParaComando(regra),
+    procedimentos: regra.procedimentos.map(comoComandoDoProcedimento),
   };
 }
 
-type CondicoesDoRecursoInput = Pick<
+type ParametrosDoRecursoInput = Pick<
   RegraDeRecursoDaFaseInput,
-  | 'suspensividadePrimeiraInstanciaValor'
-  | 'suspensividadePrimeiraInstanciaUnidade'
-  | 'procedimentos'
-> &
-  ReturnType<typeof instanciaSuperiorParaComando>;
+  | 'prazoValor'
+  | 'prazoUnidade'
+  | 'admiteInstanciaSuperior'
+  | 'prazoSegundaInstanciaValor'
+  | 'prazoSegundaInstanciaUnidade'
+  | 'efeitoSuspensivo'
+  | 'guardaDaVaga'
+>;
 
 /**
- * A fase e a etapa recorrem nas mesmas condições, e o servidor guarda os quatro valores de
- * suspensividade em colunas próprias: omiti-los apagaria o efeito suspensivo declarado a cada
- * gravação do cronograma.
+ * Os parâmetros do recurso como o comando os recebe, iguais na fase e na etapa. O que a pessoa não
+ * preencheu viaja como nulo e o valor lido viaja como veio: quem confere prazo, efeito e guarda é
+ * o servidor. A pergunta da instância superior em aberto não chega aqui, a conferência do passo
+ * barra a gravação antes.
  */
-function comoComandoDasCondicoesDoRecurso(
-  janela: RecursoDaFase | RecursoDaEtapa,
-): CondicoesDoRecursoInput {
+export function parametrosParaComando(parametros: ParametrosDoRecurso): ParametrosDoRecursoInput {
   return {
-    suspensividadePrimeiraInstanciaValor: decimalDoCampo(
-      janela.suspensividadePrimeiraInstanciaValor,
-    ),
-    suspensividadePrimeiraInstanciaUnidade:
-      janela.suspensividadePrimeiraInstanciaUnidade === ''
-        ? null
-        : janela.suspensividadePrimeiraInstanciaUnidade,
-    ...instanciaSuperiorParaComando(janela),
-    procedimentos: janela.procedimentos.map(comoComandoDoProcedimento),
+    prazoValor: decimalDoCampo(parametros.prazoValor),
+    prazoUnidade: codigoOuNulo(parametros.prazoUnidade),
+    admiteInstanciaSuperior: parametros.admiteInstanciaSuperior === true,
+    prazoSegundaInstanciaValor: decimalDoCampo(parametros.prazoSegundaInstanciaValor),
+    prazoSegundaInstanciaUnidade: codigoOuNulo(parametros.prazoSegundaInstanciaUnidade),
+    efeitoSuspensivo: codigoOuNulo(parametros.efeitoSuspensivo),
+    guardaDaVaga: codigoOuNulo(parametros.guardaDaVaga),
   };
+}
+
+function codigoOuNulo<T extends string>(codigo: T | ''): T | null {
+  return codigo === '' ? null : codigo;
 }
 
 /** O procedimento como o comando o recebe: a sugestão é só dica de leitura e não viaja. */
@@ -204,7 +207,7 @@ function comoComandoDeBancaDaEtapa(banca: BancaDaEtapa): BancaDaEtapaInput {
   };
 }
 
-// Janela sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
+// Recurso sem regra resolvida não viaja: o catálogo ainda não respondeu, e mandá-la
 // devolveria uma recusa de campo que o operador não sabe ligar ao que fez. Quem avisa
 // que ela ficou de fora é `problemasDasEtapas`, na prontidão do passo — sumir com o
 // trabalho do operador em silêncio era o defeito anterior.
@@ -249,10 +252,9 @@ function comoComandoDeRecursoDaEtapa(recurso: RecursoDaEtapa): RecursoDaEtapaInp
     ancora: recurso.ancora as RecursoDaEtapaInput['ancora'],
     regraCodigo: recurso.regraCodigo,
     regraVersao: recurso.regraVersao,
-    prazoValor: decimalDoCampo(recurso.prazoValor) ?? 0,
-    prazoUnidade: recurso.prazoUnidade as RecursoDaEtapaInput['prazoUnidade'],
     atoAncoraCodigo: recurso.atoAncoraCodigo === '' ? null : recurso.atoAncoraCodigo,
-    ...comoComandoDasCondicoesDoRecurso(recurso),
+    ...parametrosParaComando(recurso),
+    procedimentos: recurso.procedimentos.map(comoComandoDoProcedimento),
   };
 }
 

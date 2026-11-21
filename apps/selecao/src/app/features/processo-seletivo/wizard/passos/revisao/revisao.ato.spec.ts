@@ -161,7 +161,7 @@ describe('RevisaoPassoComponent — ato e período', () => {
         fim: '2027-01-11T02:59:00+00:00',
         unidadeResponsavelId: null,
         produtos: [],
-        faseConcluinteCodigo: null,
+        noMesmoMomentoDaAnterior: false,
         emiteParecerIndividual: false,
         bancasRequeridas: [],
         regraRecurso: null,

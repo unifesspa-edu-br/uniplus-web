@@ -40,6 +40,8 @@ export interface FaseForm {
   readonly fim: FormControl<string>;
   /** Unidade que responde pela fase; vazio enquanto não escolhida. */
   readonly unidadeResponsavelId: FormControl<string>;
+  /** Não é editado neste passo e viaja no formulário: a gravação substitui o cronograma inteiro. */
+  readonly noMesmoMomentoDaAnterior: FormControl<boolean>;
   /**
    * O que a fase publica. Como a regra de recurso, não é editado neste passo e
    * viaja no formulário por isso: a gravação substitui o cronograma inteiro, e
@@ -47,8 +49,6 @@ export interface FaseForm {
    * o que a fase produz e com a âncora do recurso, que deles derivam.
    */
   readonly produtos: FormControl<readonly ProdutoDaFase[]>;
-  /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
-  readonly faseConcluinteCodigo: FormControl<string | null>;
   /** Também não editado aqui, e carregado pela mesma razão de `produtos`. */
   readonly emiteParecerIndividual: FormControl<boolean>;
   /**
@@ -159,8 +159,8 @@ function controlesEditadosDaFase(fase: FaseDoCronograma): ControlesEditadosDaFas
 /** O que a fase só carrega: o passo não edita, e a gravação substitui o cronograma inteiro. */
 function controlesCarregadosDaFase(fase: FaseDoCronograma): ControlesCarregadosDaFase {
   return {
+    noMesmoMomentoDaAnterior: controle(fase.noMesmoMomentoDaAnterior),
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
-    faseConcluinteCodigo: controle<string | null>(fase.faseConcluinteCodigo),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),
     regraRecurso: controle<RecursoDaFase | null>(fase.regraRecurso),
@@ -183,7 +183,7 @@ const DECLARACOES_AINDA_NAO_FEITAS_DA_FASE: Omit<FaseDoCronograma, keyof Identif
   inicio: null,
   fim: null,
   produtos: [],
-  faseConcluinteCodigo: null,
+  noMesmoMomentoDaAnterior: false,
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,

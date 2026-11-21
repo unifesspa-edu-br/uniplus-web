@@ -7,7 +7,7 @@ import {
   exigenciasVazias,
 } from '../../shared/exigencias/exigencias-documentais';
 import { arvoreDeExigencias } from '../../shared/exigencias/gravacao-das-exigencias';
-import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS } from './fase.testing';
+import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -220,7 +220,7 @@ describe('FasePassoComponent', () => {
   describe('alcance de todas as fases na tela', () => {
     it('semeia o modelo na fase ABERTA, não na primeira do cronograma', () => {
       comCronograma(
-        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 1 }),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 1 }),
         fase({ ordem: 2 }),
       );
       // A fase aberta é a AVALIACAO (a fixada do componente), não a primeira da lista.
@@ -247,15 +247,18 @@ describe('FasePassoComponent', () => {
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
-      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
-      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toEqual([]);
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+      );
+      expect(exigenciasDaFase(store.draft().documentos, 'HOMOLOGACAO_INSCRICOES')).toEqual([]);
 
       exigencias().alternarExigencia(ID_CPF, false);
       detectar();
 
-      // Saiu da AVALIACAO, que é a fase aberta; continua em RECURSOS.
+      // Saiu da AVALIACAO, que é a fase aberta; continua em HOMOLOGACAO_INSCRICOES.
       expect(exigenciasDaFase(store.draft().documentos, 'AVALIACAO')).toEqual([]);
-      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')).toHaveLength(1);
+      expect(exigenciasDaFase(store.draft().documentos, 'HOMOLOGACAO_INSCRICOES')).toHaveLength(1);
       expect(store.draft().documentos.emTodasAsFases).not.toContain(ID_CPF);
     });
 
@@ -263,7 +266,12 @@ describe('FasePassoComponent', () => {
       const dividida = congeladosDaFase({ coletaInscricao: true, coletaSolicitacaoIsencao: true });
       comCronograma(
         fase({ congelados: dividida }),
-        fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2, congelados: dividida }),
+        fase({
+          faseCanonicaId: ID_HOMOLOGACAO,
+          codigo: 'HOMOLOGACAO_INSCRICOES',
+          ordem: 2,
+          congelados: dividida,
+        }),
       );
       store.patchSection(
         'documentos',
@@ -273,7 +281,7 @@ describe('FasePassoComponent', () => {
             finalidade: 'INSCRICAO',
           }),
           {
-            ...exigenciaNova(ID_CPF, 'RECURSOS'),
+            ...exigenciaNova(ID_CPF, 'HOMOLOGACAO_INSCRICOES'),
             finalidade: 'ISENCAO_TAXA',
           },
         ),
@@ -282,9 +290,9 @@ describe('FasePassoComponent', () => {
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
-      expect(exigenciasDaFase(store.draft().documentos, 'RECURSOS')[0].finalidade).toBe(
-        'ISENCAO_TAXA',
-      );
+      expect(
+        exigenciasDaFase(store.draft().documentos, 'HOMOLOGACAO_INSCRICOES')[0].finalidade,
+      ).toBe('ISENCAO_TAXA');
     });
 
     it('a fase acrescentada depois do regime não herda o formulário do modelo que ela não responde', () => {
@@ -299,13 +307,13 @@ describe('FasePassoComponent', () => {
       comCronograma(
         fase({ congelados: daInscricao }),
         fase({
-          faseCanonicaId: ID_RECURSOS,
-          codigo: 'RECURSOS',
+          faseCanonicaId: ID_HOMOLOGACAO,
+          codigo: 'HOMOLOGACAO_INSCRICOES',
           ordem: 2,
           congelados: congeladosDaFase(),
         }),
       );
-      abrirFase(ID_RECURSOS);
+      abrirFase(ID_HOMOLOGACAO);
       detectar();
 
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
@@ -314,7 +322,10 @@ describe('FasePassoComponent', () => {
 
     /** A fase alcançada mas ainda não materializada mostra o que será gravado. */
     it('mostra na fase herdada o que o modelo declara, não um formulário em branco', () => {
-      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+      );
       documentos().escolherDocumento(ID_CPF);
       documentos().acrescentarDocumento();
       detectar();

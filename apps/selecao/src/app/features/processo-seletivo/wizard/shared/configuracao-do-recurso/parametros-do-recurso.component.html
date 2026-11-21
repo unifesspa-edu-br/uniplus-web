@@ -1,0 +1,141 @@
+@let parametrosAtuais = parametros();
+@let idsDaTela = ids();
+
+<div class="form-grid">
+  <sel-prazo-do-recurso
+    class="form-grid__full"
+    legenda="Prazo de interposição"
+    textoDeObrigatoriedade="(obrigatório)"
+    [valor]="parametrosAtuais.prazoValor"
+    [unidade]="parametrosAtuais.prazoUnidade"
+    [rotuloLido]="rotulos().prazoUnidade"
+    [unidades]="unidades()"
+    [situacao]="situacaoDasUnidades()"
+    [desabilitado]="desabilitado()"
+    [ids]="idsDaTela.prazoDeInterposicao"
+    [recusasDoValor]="recusasDe('prazoValor')"
+    [recusasDaUnidade]="recusasDe('prazoUnidade')"
+    (valorAlterado)="alterarTexto('prazoValor', $event)"
+    (unidadeAlterada)="alterarTexto('prazoUnidade', $event)"
+  />
+  <p class="field__hint form-grid__full" [attr.id]="idsDaTela.prazoDeInterposicao.ajuda">
+    Dia corrido não é aceito na interposição. Em dias úteis o prazo é inteiro; a fração só existe em
+    horas.
+  </p>
+
+  <fieldset
+    class="field form-grid__full"
+    role="radiogroup"
+    aria-required="true"
+    [class.is-error]="instanciaSuperiorInvalida()"
+    [attr.aria-invalid]="instanciaSuperiorInvalida()"
+    [attr.aria-describedby]="
+      idsDaTela.instanciaSuperior.ajuda +
+      (instanciaSuperiorEmAberto() ? ' ' + idsDaTela.instanciaSuperior.erro : '') +
+      (recusasDe('admiteInstanciaSuperior').length > 0
+        ? ' ' + idsDaTela.instanciaSuperior.recusas
+        : '')
+    "
+  >
+    <legend class="field__label is-required">Admite instância superior? (obrigatório)</legend>
+    <label class="radio">
+      <input
+        type="radio"
+        [attr.id]="idsDaTela.instanciaSuperior.sim"
+        [attr.name]="idsDaTela.instanciaSuperior.sim + '-resposta'"
+        [checked]="parametrosAtuais.admiteInstanciaSuperior === true"
+        [disabled]="desabilitado()"
+        [attr.aria-invalid]="instanciaSuperiorInvalida()"
+        (change)="escolherInstanciaSuperior(true)"
+      />
+      <span class="radio__dot" aria-hidden="true"></span>
+      Sim
+    </label>
+    <label class="radio">
+      <input
+        type="radio"
+        [attr.id]="idsDaTela.instanciaSuperior.nao"
+        [attr.name]="idsDaTela.instanciaSuperior.sim + '-resposta'"
+        [checked]="parametrosAtuais.admiteInstanciaSuperior === false"
+        [disabled]="desabilitado()"
+        [attr.aria-invalid]="instanciaSuperiorInvalida()"
+        (change)="escolherInstanciaSuperior(false)"
+      />
+      <span class="radio__dot" aria-hidden="true"></span>
+      Não
+    </label>
+    <span class="field__hint" [attr.id]="idsDaTela.instanciaSuperior.ajuda">
+      Não, quando a decisão da banca recursal é final. Sim, quando o candidato pode recorrer da
+      decisão da 1ª instância à instância superior, no Uni+, no prazo informado.
+    </span>
+    @if (instanciaSuperiorEmAberto()) {
+      <span class="field__erro" role="alert" [attr.id]="idsDaTela.instanciaSuperior.erro">{{
+        mensagemDaInstanciaSuperior
+      }}</span>
+    }
+    @if (recusasDe('admiteInstanciaSuperior').length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="idsDaTela.instanciaSuperior.recusas"
+        tabindex="-1"
+        [recusas]="recusasDe('admiteInstanciaSuperior')"
+      />
+    }
+  </fieldset>
+
+  <ui-escolha-com-explicacao
+    class="form-grid__full"
+    legenda="Efeito suspensivo na 1ª instância"
+    instrucao="Escolha uma opção. A 2ª instância sempre tem efeito suspensivo, sem escolha."
+    textoDeObrigatoriedade="(obrigatório)"
+    [prefixoDoId]="idsDaTela.efeito"
+    [opcoes]="opcoesDoEfeito()"
+    [valor]="parametrosAtuais.efeitoSuspensivo"
+    [situacao]="situacaoDosEfeitos()"
+    [desabilitado]="desabilitado()"
+    [recusas]="ativasDe('efeitoSuspensivo')"
+    [recusasAConferir]="aConferirDe('efeitoSuspensivo')"
+    [notaDasRecusasAConferir]="notaDeConferirDe('efeitoSuspensivo')"
+    (escolhido)="alterarTexto('efeitoSuspensivo', $event)"
+  />
+
+  <ui-escolha-com-explicacao
+    class="form-grid__full"
+    legenda="Guarda da vaga em disputa"
+    [instrucao]="instrucaoDaGuarda()"
+    [prefixoDoId]="idsDaTela.guarda"
+    [opcoes]="opcoesDaGuarda()"
+    [valor]="parametrosAtuais.guardaDaVaga"
+    [situacao]="situacaoDasGuardas()"
+    [desabilitado]="desabilitado()"
+    [recusas]="ativasDe('guardaDaVaga')"
+    [recusasAConferir]="aConferirDe('guardaDaVaga')"
+    [notaDasRecusasAConferir]="notaDeConferirDe('guardaDaVaga')"
+    (escolhido)="alterarTexto('guardaDaVaga', $event)"
+  />
+
+  @if (prazoDaSegundaVisivel()) {
+    <sel-prazo-do-recurso
+      class="form-grid__full"
+      legenda="Prazo para recorrer em 2ª instância"
+      [textoDeObrigatoriedade]="
+        parametrosAtuais.admiteInstanciaSuperior === true ? '(obrigatório)' : null
+      "
+      [valor]="parametrosAtuais.prazoSegundaInstanciaValor"
+      [unidade]="parametrosAtuais.prazoSegundaInstanciaUnidade"
+      [rotuloLido]="rotulos().prazoSegundaInstanciaUnidade"
+      [unidades]="unidades()"
+      [situacao]="situacaoDasUnidades()"
+      [desabilitado]="desabilitado()"
+      [retiravel]="parametrosAtuais.admiteInstanciaSuperior !== true"
+      textoDoBotaoDeRetirar="Retirar o prazo da 2ª instância"
+      [ids]="idsDaTela.prazoDaSegundaInstancia"
+      [recusasDoValor]="recusasDe('prazoSegundaInstanciaValor')"
+      [recusasDaUnidade]="recusasDe('prazoSegundaInstanciaUnidade')"
+      (valorAlterado)="alterarTexto('prazoSegundaInstanciaValor', $event)"
+      (unidadeAlterada)="alterarTexto('prazoSegundaInstanciaUnidade', $event)"
+      (retirar)="retirarPrazo()"
+    />
+  }
+
+  <div class="form-grid__full" role="status" [attr.id]="idsDaTela.aviso">{{ aviso() }}</div>
+</div>

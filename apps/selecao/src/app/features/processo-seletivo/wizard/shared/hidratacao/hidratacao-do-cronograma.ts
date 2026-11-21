@@ -13,6 +13,10 @@ import type {
   RecursoDaFase,
 } from '../../processo-seletivo.models';
 import type { WizardDraft } from '../../processo-seletivo.models';
+import {
+  type LeituraDoRecurso,
+  type ParametrosDoRecurso,
+} from '../configuracao-do-recurso/parametros-do-recurso';
 import { regraDoDto } from '../deliberacao/regra-de-deliberacao-contrato';
 import { campoDoInstante } from '../fuso-institucional';
 import { alvoLidoDoServidor } from '../procedimentos-do-recurso/alvo-do-procedimento';
@@ -52,7 +56,7 @@ function etapasRenumeradasDe(dto: ProcessoSeletivoDto): EtapaPontuada[] {
 type FaseDoDto = ProcessoSeletivoDto['cronogramaFases'][number];
 type EtapaDoDto = ProcessoSeletivoDto['etapas'][number];
 type RecursoDaFaseDoDto = NonNullable<FaseDoDto['publicacoes']['regraRecurso']>;
-type ParametrosDoRecurso = RecursoDaFaseDoDto['parametros'];
+type ParametrosDoDto = RecursoDaFaseDoDto['parametros'];
 type ProcedimentoDoDto = RecursoDaFaseDoDto['procedimentos'][number];
 type RecursoDaEtapaDoDto = EtapaDoDto['publicacoes']['recursos'][number];
 
@@ -109,14 +113,14 @@ function agendaDaFaseDe(
   cronograma: FaseDoDto['cronograma'],
 ): Pick<
   FaseDoCronograma,
-  'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId' | 'faseConcluinteCodigo'
+  'ordem' | 'inicio' | 'fim' | 'noMesmoMomentoDaAnterior' | 'unidadeResponsavelId'
 > {
   return {
     ordem: comoInteiro(cronograma.ordem),
     inicio: cronograma.inicio,
     fim: cronograma.fim,
+    noMesmoMomentoDaAnterior: cronograma.noMesmoMomentoDaAnterior,
     unidadeResponsavelId: cronograma.unidadeResponsavel?.origemId ?? null,
-    faseConcluinteCodigo: cronograma.faseConcluinteCodigo,
   };
 }
 
@@ -165,7 +169,7 @@ function recursoDe(
     regraCodigo: regra.regra.codigo,
     regraVersao: regra.regra.versao,
     atoAncoraCodigo: ancora?.atoCodigo ?? '',
-    ...parametrosDoRecursoDe(regra.parametros),
+    ...parametrosELeituraDe(regra.parametros),
     procedimentos: procedimentosDe(regra.procedimentos),
   };
 }
@@ -186,21 +190,50 @@ function procedimentosDe(
   }));
 }
 
-/** Os parâmetros do recurso, que fase e etapa leem do mesmo jeito: o prazo e o efeito suspensivo. */
-function parametrosDoRecursoDe(
-  parametros: ParametrosDoRecurso,
-): Omit<RecursoDaFase, 'regraCodigo' | 'regraVersao' | 'atoAncoraCodigo' | 'procedimentos'> {
+/**
+ * Os parâmetros do recurso, que fase e etapa leem do mesmo jeito, e o que a leitura trouxe além
+ * deles: o nome de cada código e se o prazo da 2ª instância veio sem instância superior.
+ */
+export function parametrosDaLeitura(parametros: ParametrosDoDto): {
+  readonly parametros: ParametrosDoRecurso;
+  readonly leitura: LeituraDoRecurso;
+} {
+  return { parametros: parametrosDe(parametros), leitura: leituraDe(parametros) };
+}
+
+function parametrosDe(parametros: ParametrosDoDto): ParametrosDoRecurso {
   return {
     prazoValor: comoTexto(parametros.prazoValor),
-    prazoUnidade: parametros.prazoUnidade,
-    suspensividadePrimeiraInstanciaValor: comoTexto(
-      parametros.suspensividadePrimeiraInstanciaValor,
-    ),
-    suspensividadePrimeiraInstanciaUnidade: parametros.suspensividadePrimeiraInstanciaUnidade ?? '',
+    prazoUnidade: parametros.prazoUnidade.codigo,
     admiteInstanciaSuperior: parametros.admiteInstanciaSuperior,
-    suspensividadeSegundaInstanciaValor: comoTexto(parametros.suspensividadeSegundaInstanciaValor),
-    suspensividadeSegundaInstanciaUnidade: parametros.suspensividadeSegundaInstanciaUnidade ?? '',
+    efeitoSuspensivo: parametros.efeitoSuspensivo.codigo,
+    guardaDaVaga: parametros.guardaDaVaga.codigo,
+    prazoSegundaInstanciaValor: comoTexto(parametros.prazoSegundaInstanciaValor),
+    prazoSegundaInstanciaUnidade: parametros.prazoSegundaInstanciaUnidade?.codigo ?? '',
   };
+}
+
+function leituraDe(parametros: ParametrosDoDto): LeituraDoRecurso {
+  const segunda = parametros.prazoSegundaInstanciaUnidade;
+  const temPrazoDaSegunda = parametros.prazoSegundaInstanciaValor !== null || segunda !== null;
+  return {
+    rotulos: {
+      prazoUnidade: parametros.prazoUnidade.rotulo,
+      prazoSegundaInstanciaUnidade: segunda?.rotulo,
+      efeitoSuspensivo: parametros.efeitoSuspensivo.rotulo,
+      guardaDaVaga: parametros.guardaDaVaga.rotulo,
+    },
+    prazoDaSegundaInstanciaSemInstanciaSuperior:
+      !parametros.admiteInstanciaSuperior && temPrazoDaSegunda,
+  };
+}
+
+/** Os parâmetros e a leitura lidos juntos, no formato do recurso do rascunho. */
+function parametrosELeituraDe(
+  parametros: ParametrosDoDto,
+): ParametrosDoRecurso & { readonly leitura: LeituraDoRecurso } {
+  const lido = parametrosDaLeitura(parametros);
+  return { ...lido.parametros, leitura: lido.leitura };
 }
 
 /**
@@ -290,7 +323,7 @@ type AgendaDaEtapa = Pick<
   | 'tiposDeDecisao'
 >;
 
-/** Onde a etapa acontece: a posição, a fase e a janela, mais as bancas, os recursos e as decisões. */
+/** Onde a etapa acontece: a posição, a fase e o período, mais as bancas, os recursos e as decisões. */
 function agendaDaEtapaDe(etapa: EtapaDoDto): AgendaDaEtapa {
   const { identificacao, janela } = etapa;
   return {
@@ -331,7 +364,7 @@ function recursoDaEtapaDe(recurso: RecursoDaEtapaDoDto): RecursoDaEtapa {
     regraCodigo: recurso.regra.codigo,
     regraVersao: recurso.regra.versao,
     atoAncoraCodigo: recurso.atoAncoraCodigo ?? '',
-    ...parametrosDoRecursoDe(recurso.parametros),
+    ...parametrosELeituraDe(recurso.parametros),
     procedimentos: procedimentosDe(recurso.procedimentos),
   };
 }

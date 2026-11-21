@@ -52,7 +52,7 @@ export function problemasDoCronograma({
 
   return [
     ...problemasDePosicaoDasFases(fases),
-    ...fases.flatMap((fase) => problemasDaFaseDoCronograma(fase, fases, catalogos)),
+    ...fases.flatMap((fase) => problemasDaFaseDoCronograma(fase, catalogos)),
     ...problemasDasEtapas(fases, etapas, catalogos.fasePorId, catalogos.tipoDaEtapa),
     ...problemasDasJanelasDasEtapas(fases, etapas, catalogos.fasePorId),
     ...problemasDasExigencias(exigencias),
@@ -73,7 +73,6 @@ function problemasDePosicaoDasFases(fases: readonly FaseDoCronograma[]): readonl
 
 function problemasDaFaseDoCronograma(
   fase: FaseDoCronograma,
-  fases: readonly FaseDoCronograma[],
   catalogos: CatalogosDaConferencia,
 ): readonly string[] {
   // A mesma resolução que a tela usa: o que a fase congelou vale sobre o
@@ -89,12 +88,9 @@ function problemasDaFaseDoCronograma(
   // no comando por causa de uma mudança de data, e a recusa voltaria falando
   // de um campo que este passo não mostra. Quem confere é a mesma função que
   // a superfície da fase usa: duplicar a regra aqui produziria regras divergentes.
-  const declarados = problemasDaFase(
-    fase,
-    fases,
-    catalogos.atoPorCodigo,
-    catalogos.nomeDaBanca,
-  ).map((declarado) => `Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`);
+  const declarados = problemasDaFase(fase, catalogos.atoPorCodigo, catalogos.nomeDaBanca).map(
+    (declarado) => `Na fase ${nome}: ${declarado.mensagem} Corrija em Configuração por fase.`,
+  );
 
   return [...problemasDaJanelaDaFase(fase, nome, exigencias.janelaObrigatoria), ...declarados];
 }

@@ -6,7 +6,7 @@ import { CatalogoDeDocumentos } from '../cronograma/catalogos/catalogo-de-docume
 import { DocumentosDaFaseComponent } from './documentos/documentos-da-fase.component';
 import { ExigenciasDaFaseStore } from './documentos/exigencias-da-fase.store';
 import { FasePassoComponent } from './fase.component';
-import { fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS, TIPOS_DOCUMENTO } from './fase.testing';
+import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO, TIPOS_DOCUMENTO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
@@ -46,38 +46,40 @@ describe('FasePassoComponent', () => {
       it('volta o filtro a todos e apaga o aviso ao trocar de fase', () => {
         comCronograma(
           fase({}),
-          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+          fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
         exigencias().alternarExigencia(ID_CPF, true);
         documentos().filtroDoPublico.set('condicao:Cor ou raça é INDIGENA');
         documentos().saiuDaLista.set('CPF saiu da lista, porque não é mais do público filtrado.');
         detectar();
 
-        abrirFase(ID_RECURSOS);
+        abrirFase(ID_HOMOLOGACAO);
         exigencias().alternarExigencia(ID_CPF, true);
         detectar();
 
         expect(documentos().filtroDoPublico()).toBe('');
-        expect(nativo.querySelector<HTMLSelectElement>('#fase-RECURSOS-doc-filtro')?.value).toBe(
-          '',
-        );
-        expect(nativo.querySelector('#fase-RECURSOS-doc-filtro-total')?.textContent?.trim()).toBe(
-          '1 de 1 documentos.',
-        );
+        expect(
+          nativo.querySelector<HTMLSelectElement>('#fase-HOMOLOGACAO_INSCRICOES-doc-filtro')?.value,
+        ).toBe('');
+        expect(
+          nativo
+            .querySelector('#fase-HOMOLOGACAO_INSCRICOES-doc-filtro-total')
+            ?.textContent?.trim(),
+        ).toBe('1 de 1 documentos.');
       });
 
       /** A mesma exigência em outra fase é outra exigência: abrir numa não abre na outra. */
       it('abre os campos só na fase em que o documento foi aberto', () => {
         comCronograma(
           fase({}),
-          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+          fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
         detectar();
         expect(documentos().emEdicao(ID_CPF)).toBe(true);
 
-        abrirFase(ID_RECURSOS);
+        abrirFase(ID_HOMOLOGACAO);
         exigencias().alternarExigencia(ID_CPF, true);
         detectar();
         expect(documentos().emEdicao(ID_CPF)).toBe(false);
@@ -95,10 +97,10 @@ describe('FasePassoComponent', () => {
       it('dá à conferência de cada fase embutida ids próprios', () => {
         comCronograma(
           fase({}),
-          fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }),
+          fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
         );
         const segunda = TestBed.createComponent(FasePassoComponent);
-        segunda.componentRef.setInput('faseFixada', ID_RECURSOS);
+        segunda.componentRef.setInput('faseFixada', ID_HOMOLOGACAO);
         segunda.detectChanges();
         for (const requisicao of controller.match(() => true)) requisicao.flush([]);
 

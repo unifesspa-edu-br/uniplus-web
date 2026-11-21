@@ -1,19 +1,27 @@
 import {
   type EtapaProcessoDto,
   type ProcessoSeletivoDto,
-  UnidadePrazo,
+  UnidadePrazoCodigo,
 } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma, RecursoDaFase } from '../../processo-seletivo.models';
 import {
+  PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
+import { prazoDaSegundaInstanciaRetirado } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
+import {
   PARAMETROS_DO_RECURSO,
   type EtapaDoServidorParcial,
   etapaDoServidor,
+  faseDoServidor,
   recursoDaEtapaDoServidor,
 } from '../../shared/cronograma-do-servidor.testing';
-import { etapasDe } from '../../shared/hidratacao';
-import { dtoComCronograma } from '../../shared/hidratacao.testing';
+import { umaFaseDoCronograma } from '../../shared/fase-do-cronograma.testing';
+import { etapasDe, hidratarDraft } from '../../shared/hidratacao';
+import { DRAFT, dtoComCronograma } from '../../shared/hidratacao.testing';
+import { faseDoFormulario, faseRecemAcrescentada, grupoDaFase } from './cronograma-form';
 import { comoComandoDeEtapa, comoComandoDeFase, recursoResolvido } from './cronograma-para-comando';
 
 type ParametrosDoRecurso = EtapaProcessoDto['publicacoes']['recursos'][number]['parametros'];
@@ -124,50 +132,20 @@ describe('avaliação da etapa no ida-e-volta', () => {
 
 describe('recurso da etapa no ida-e-volta', () => {
   /**
-   * O efeito suspensivo é persistido pelo servidor em colunas próprias e devolvido na
-   * leitura. Antes deste fix o rascunho não tinha onde guardá-lo e o mapeador mandava `null`
-   * fixo nos quatro campos: bastava o operador mexer numa data do cronograma para a
-   * suspensividade declarada desaparecer, sem tela que a mostrasse e sem recusa que a
-   * defendesse.
+   * Os parâmetros do recurso são guardados pelo servidor e devolvidos na leitura: bastava a pessoa
+   * mexer numa data do cronograma para o que ela declarou desaparecer, se o envio não os levasse.
    */
-  it('preserva a suspensividade das duas instâncias ao reler e regravar', () => {
-    const etapa = etapasDe(
-      detalheComRecursoDaEtapa({
-        suspensividadePrimeiraInstanciaValor: 3,
-        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
-        suspensividadeSegundaInstanciaValor: 48,
-        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
-      }),
-    )[0];
+  it('preserva os parâmetros do recurso ao reler e regravar', () => {
+    const etapa = etapasDe(detalheComRecursoDaEtapa())[0];
 
-    expect(etapa.recursos[0].suspensividadePrimeiraInstanciaValor).toBe('3');
-    expect(etapa.recursos[0].suspensividadePrimeiraInstanciaUnidade).toBe('diasUteis');
-    expect(etapa.recursos[0].suspensividadeSegundaInstanciaValor).toBe('48');
-    expect(etapa.recursos[0].suspensividadeSegundaInstanciaUnidade).toBe('horas');
-
-    const comando = comoComandoDeEtapa(etapa);
-    expect(comando.recursos?.[0]).toMatchObject({
-      suspensividadePrimeiraInstanciaValor: 3,
-      suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
-      suspensividadeSegundaInstanciaValor: 48,
-      suspensividadeSegundaInstanciaUnidade: 'horas',
-    });
-  });
-
-  /** Instância sem suspensividade continua viajando como ausência declarada, não como zero. */
-  it('mantém em branco a instância que não declara suspensividade', () => {
-    const etapa = etapasDe(
-      detalheComRecursoDaEtapa({
-        suspensividadePrimeiraInstanciaValor: 3,
-        suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.diasUteis,
-      }),
-    )[0];
-
-    const comando = comoComandoDeEtapa(etapa);
-    expect(comando.recursos?.[0]).toMatchObject({
-      suspensividadePrimeiraInstanciaValor: 3,
-      suspensividadeSegundaInstanciaValor: null,
-      suspensividadeSegundaInstanciaUnidade: null,
+    expect(comoComandoDeEtapa(etapa).recursos?.[0]).toMatchObject({
+      prazoValor: 2,
+      prazoUnidade: 'diasUteis',
+      admiteInstanciaSuperior: true,
+      prazoSegundaInstanciaValor: 3,
+      prazoSegundaInstanciaUnidade: 'diasUteis',
+      efeitoSuspensivo: 'semEfeitoSuspensivo',
+      guardaDaVaga: 'ateOResultadoDefinitivo',
     });
   });
 
@@ -183,27 +161,40 @@ describe('recurso da etapa no ida-e-volta', () => {
     expect(naoAdmite.recursos?.[0]?.admiteInstanciaSuperior).toBe(false);
   });
 
-  it('omite o tempo de bloqueio superior da janela que não admite a instância', () => {
-    const etapa = etapasDe(
-      detalheComRecursoDaEtapa({
-        admiteInstanciaSuperior: true,
-        suspensividadeSegundaInstanciaValor: 48,
-        suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
-      }),
-    )[0];
-    const semInstancia = {
-      ...etapa,
-      recursos: etapa.recursos.map((recurso) => ({ ...recurso, admiteInstanciaSuperior: false })),
-    };
+  it('envia o prazo da 2ª instância lido sem instância superior até a pessoa retirá-lo', () => {
+    const etapa = etapasDe(detalheComRecursoDaEtapa({ admiteInstanciaSuperior: false }))[0];
 
-    expect(comoComandoDeEtapa(semInstancia).recursos?.[0]).toMatchObject({
+    expect(comoComandoDeEtapa(etapa).recursos?.[0]).toMatchObject({
       admiteInstanciaSuperior: false,
-      suspensividadeSegundaInstanciaValor: null,
-      suspensividadeSegundaInstanciaUnidade: null,
+      prazoSegundaInstanciaValor: 3,
+      prazoSegundaInstanciaUnidade: 'diasUteis',
     });
   });
 
-  /** O prazo e a âncora continuam onde estavam — o fix não podia mexer no que já funcionava. */
+  it('envia nulo no prazo da 2ª instância depois de retirado', () => {
+    const etapa = etapasDe(detalheComRecursoDaEtapa({ admiteInstanciaSuperior: false }))[0];
+    const [recurso] = etapa.recursos;
+    const { parametros, leitura } = prazoDaSegundaInstanciaRetirado(recurso, recurso.leitura);
+
+    const retirado = { ...etapa, recursos: [{ ...recurso, ...parametros, leitura }] };
+
+    expect(comoComandoDeEtapa(retirado).recursos?.[0]).toMatchObject({
+      prazoSegundaInstanciaValor: null,
+      prazoSegundaInstanciaUnidade: null,
+    });
+  });
+
+  it('lê o código de efeito que o vocabulário atual não conhece e o devolve sem trocá-lo', () => {
+    const etapa = etapasDe(
+      detalheComRecursoDaEtapa({
+        efeitoSuspensivo: { codigo: 'efeitoDoFuturo' as never, rotulo: 'Efeito do futuro' },
+      }),
+    )[0];
+
+    expect(comoComandoDeEtapa(etapa).recursos?.[0]?.efeitoSuspensivo).toBe('efeitoDoFuturo');
+  });
+
+  /** O prazo e a âncora continuam onde estavam. */
   it('não altera prazo nem âncora', () => {
     const etapa = etapasDe(detalheComRecursoDaEtapa({ prazoValor: 5 }))[0];
     const comando = comoComandoDeEtapa(etapa);
@@ -218,36 +209,22 @@ describe('recurso da etapa no ida-e-volta', () => {
   });
 });
 
-describe('regra de recurso da fase no comando', () => {
+describe('fase no comando', () => {
   const regraRecurso: RecursoDaFase = {
     regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
     regraVersao: 'v1',
-    prazoValor: '2',
-    prazoUnidade: UnidadePrazo.diasUteis,
     atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-    suspensividadePrimeiraInstanciaValor: '',
-    suspensividadePrimeiraInstanciaUnidade: '',
-    admiteInstanciaSuperior: true,
-    suspensividadeSegundaInstanciaValor: '48',
-    suspensividadeSegundaInstanciaUnidade: UnidadePrazo.horas,
+    ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
+    prazoSegundaInstanciaValor: '48',
+    prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.horas,
+    leitura: umaLeituraDoRecurso(),
     procedimentos: [],
   };
 
-  const fase: FaseDoCronograma = {
+  const fase: FaseDoCronograma = umaFaseDoCronograma({
     faseCanonicaId: '01960000-0000-7000-0000-0000000000f1',
-    codigo: 'AVALIACAO',
-    ordem: 1,
-    inicio: null,
-    fim: null,
-    unidadeResponsavelId: null,
-    produtos: [],
-    faseConcluinteCodigo: null,
-    emiteParecerIndividual: false,
-    bancasRequeridas: [],
     regraRecurso,
-    tiposDeDecisao: [],
-    congelados: null,
-  };
+  });
 
   it('envia a unidade responsável da fase, e nula quando ela não tem', () => {
     expect(
@@ -256,33 +233,72 @@ describe('regra de recurso da fase no comando', () => {
     expect(comoComandoDeFase(fase).unidadeResponsavelId).toBeNull();
   });
 
-  it('envia a declaração e o tempo de bloqueio quando a janela admite a instância superior', () => {
-    expect(comoComandoDeFase(fase).regraRecurso).toMatchObject({
+  it('envia a regra de recurso com os parâmetros, a regra, a âncora e os procedimentos', () => {
+    expect(comoComandoDeFase(fase).regraRecurso).toEqual({
+      regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
+      regraVersao: 'v1',
+      atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
+      prazoValor: 2,
+      prazoUnidade: 'diasUteis',
       admiteInstanciaSuperior: true,
-      suspensividadeSegundaInstanciaValor: 48,
-      suspensividadeSegundaInstanciaUnidade: 'horas',
+      prazoSegundaInstanciaValor: 48,
+      prazoSegundaInstanciaUnidade: 'horas',
+      efeitoSuspensivo: 'semEfeitoSuspensivo',
+      guardaDaVaga: 'ateOResultadoDefinitivo',
+      procedimentos: [],
     });
   });
 
-  it('omite o tempo de bloqueio superior quando a janela não admite a instância', () => {
-    const semInstancia = { ...regraRecurso, admiteInstanciaSuperior: false };
+  it('a fase sem regra de recurso envia a regra nula', () => {
+    expect(comoComandoDeFase({ ...fase, regraRecurso: null }).regraRecurso).toBeNull();
+  });
+});
 
-    expect(comoComandoDeFase({ ...fase, regraRecurso: semInstancia }).regraRecurso).toMatchObject({
-      admiteInstanciaSuperior: false,
-      suspensividadeSegundaInstanciaValor: null,
-      suspensividadeSegundaInstanciaUnidade: null,
+describe('momento da fase em relação à anterior, no ida-e-volta', () => {
+  const comMomento = (noMesmoMomentoDaAnterior: boolean): ProcessoSeletivoDto =>
+    dtoComCronograma({
+      cronogramaFases: [faseDoServidor({ cronograma: { noMesmoMomentoDaAnterior } })],
+      etapas: [],
     });
+
+  it.each([true, false])(
+    'devolve no comando o valor %s que a leitura trouxe, sem a pessoa tocar nele',
+    (marca) => {
+      const [fase] = hidratarDraft(DRAFT, comMomento(marca)).cronograma.fases;
+
+      expect(comoComandoDeFase(fase).noMesmoMomentoDaAnterior).toBe(marca);
+    },
+  );
+
+  it('mantém o valor ao mudar uma data da fase e passar pelo formulário do cronograma', () => {
+    const [fase] = hidratarDraft(DRAFT, comMomento(true)).cronograma.fases;
+    const grupo = grupoDaFase(fase);
+
+    grupo.controls.inicio.setValue('2026-04-01T08:00');
+
+    expect(comoComandoDeFase(faseDoFormulario(grupo)).noMesmoMomentoDaAnterior).toBe(true);
+  });
+
+  it('a fase acrescentada pela pessoa nasce sem a marca', () => {
+    const nova = faseRecemAcrescentada({
+      faseCanonicaId: 'fase-nova',
+      codigo: 'NOVA',
+      ordem: 3,
+      unidadeResponsavelId: null,
+    });
+
+    expect(comoComandoDeFase(nova).noMesmoMomentoDaAnterior).toBe(false);
   });
 });
 
 describe('recursoResolvido', () => {
-  it('reprova janela cujo catálogo ainda não resolveu a regra', () => {
+  it('reprova recurso cujo catálogo ainda não resolveu a regra', () => {
     expect(recursoResolvido({ regraCodigo: '', regraVersao: '' })).toBe(false);
     expect(recursoResolvido({ regraCodigo: 'RECURSO-X', regraVersao: '' })).toBe(false);
     expect(recursoResolvido({ regraCodigo: '', regraVersao: '1.0.0' })).toBe(false);
   });
 
-  it('aprova janela com código e versão', () => {
+  it('aprova recurso com código e versão', () => {
     expect(recursoResolvido({ regraCodigo: 'RECURSO-X', regraVersao: '1.0.0' })).toBe(true);
   });
 });

@@ -1,18 +1,30 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor, type RecusaDoProblema } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
 import { PUBLICACOES_BASE_PATH } from '@uniplus/shared-data/publicacoes';
-import { SELECAO_BASE_PATH, UnidadePrazo } from '@uniplus/shared-data/selecao';
+import {
+  EfeitoSuspensivoCodigo,
+  SELECAO_BASE_PATH,
+  StatusProcesso,
+  UnidadePrazoCodigo,
+  type ProcessoSeletivoDto,
+} from '@uniplus/shared-data/selecao';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RecursoDaEtapa } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import {
+  opcoesDoRecursoDaUrl,
+  PARAMETROS_COM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDoProcesso } from '../../../shared/gravacao/gravacao-do-processo';
+import { CatalogoDasOpcoesDoRecurso } from '../catalogos/catalogo-das-opcoes-do-recurso.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../catalogos/catalogos-do-cronograma';
 import { etapa } from '../cronograma-do-certame.testing';
 import { etapaDoFormulario, grupoDaEtapa } from '../cronograma-form';
@@ -29,14 +41,9 @@ const RECURSO: RecursoDaEtapa = {
   ancora: 'cienciaIndividual',
   regraCodigo: 'PRAZO',
   regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
+  ...PARAMETROS_COM_INSTANCIA_SUPERIOR,
   atoAncoraCodigo: '',
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso(),
   procedimentos: [],
 };
 
@@ -74,6 +81,12 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
     fixture.componentRef.setInput('recursoDaEtapa', RECURSO);
     fixture.componentRef.setInput('indiceDoRecurso', 0);
     fixture.detectChanges();
+    const catalogo = TestBed.inject(CatalogoDasOpcoesDoRecurso);
+    catalogo.carregar();
+    for (const requisicao of TestBed.inject(HttpTestingController).match(() => true)) {
+      requisicao.flush(opcoesDoRecursoDaUrl(requisicao.request.url) ?? []);
+    }
+    fixture.detectChanges();
   });
 
   const seletor = (id: string) =>
@@ -85,106 +98,103 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
   const unidadesDe = (id: string): string[] =>
     Array.from(seletor(id)?.options ?? []).map((opcao) => opcao.value);
 
-  it('o prazo de interposição oferece dias úteis e horas, sem dias corridos', () => {
-    expect(unidadesDe('cr-rec-un-0-0')).toEqual(['', UnidadePrazo.diasUteis, UnidadePrazo.horas]);
+  const P = 'cr-rec-0-0';
+  const recursoNoRascunho = () => grupo.controls.recursos.value[0];
+
+  it('o prazo de interposição oferece as unidades que a API devolve', () => {
+    expect(unidadesDe(`${P}-prazo-interposicao-unidade`)).toEqual([
+      '',
+      UnidadePrazoCodigo.diasUteis,
+      UnidadePrazoCodigo.horas,
+    ]);
   });
 
-  it.each(['cr-rec-susp1-un-0-0', 'cr-rec-susp2-un-0-0'])(
-    'a suspensividade de %s oferece sem suspensividade, dias úteis, dias corridos e horas',
-    (id) => {
-      expect(unidadesDe(id)).toEqual([
-        '',
-        UnidadePrazo.diasUteis,
-        UnidadePrazo.dias,
-        UnidadePrazo.horas,
-      ]);
-      expect(unidadesDe(id)).not.toContain(UnidadePrazo.nenhuma);
-    },
-  );
-
-  it('nomeia a opção de dias corridos em português', () => {
-    const rotulos = Array.from(seletor('cr-rec-susp1-un-0-0')?.options ?? []).map((o) =>
-      (o.textContent ?? '').trim(),
-    );
-
-    expect(rotulos).toEqual(['Sem suspensividade', 'dias úteis', 'dias corridos', 'horas']);
-  });
-
-  it('guarda no rascunho os dias corridos escolhidos na primeira instância', () => {
-    const campo = seletor('cr-rec-susp1-un-0-0') as HTMLSelectElement;
-
-    campo.value = UnidadePrazo.dias;
-    campo.dispatchEvent(new Event('change'));
-
-    expect(grupo.controls.recursos.value[0]?.suspensividadePrimeiraInstanciaUnidade).toBe(
-      UnidadePrazo.dias,
-    );
-  });
-
-  it('guarda no rascunho os dias corridos escolhidos na segunda instância', () => {
-    const campo = seletor('cr-rec-susp2-un-0-0') as HTMLSelectElement;
-
-    campo.value = UnidadePrazo.dias;
-    campo.dispatchEvent(new Event('change'));
-
-    expect(grupo.controls.recursos.value[0]?.suspensividadeSegundaInstanciaUnidade).toBe(
-      UnidadePrazo.dias,
-    );
-  });
-
-  it('desenha o prazo de interposição e as duas suspensividades como grupos com legenda', () => {
+  it('desenha o prazo de interposição e o da 2ª instância como grupos com legenda', () => {
     const legendas = Array.from(
       (fixture.nativeElement as HTMLElement).querySelectorAll('sel-prazo-do-recurso legend'),
     ).map((legenda) => legenda.textContent?.trim());
 
     expect(legendas).toEqual([
       'Prazo de interposição (obrigatório)',
-      'Suspensividade da 1ª instância',
-      'Suspensividade da 2ª instância',
+      'Prazo para recorrer em 2ª instância (obrigatório)',
     ]);
   });
 
-  it('descreve os dois campos de cada suspensividade pela ajuda, e o prazo de interposição sem ela', () => {
-    const descritoPor = (id: string) => seletor(id)?.getAttribute('aria-describedby');
-
-    expect(descritoPor('cr-rec-prazo-0-0')).toBeNull();
-    for (const id of ['susp1-val', 'susp1-un', 'susp2-val', 'susp2-un']) {
-      expect(descritoPor(`cr-rec-${id}-0-0`)).toBe('cr-rec-susp-ajuda-0-0');
-    }
-  });
-
   it('leva ao rascunho do recurso o valor digitado no prazo de interposição', () => {
-    const campo = entrada('cr-rec-prazo-0-0') as HTMLInputElement;
+    const campo = entrada(`${P}-prazo-interposicao-valor`) as HTMLInputElement;
 
     campo.value = '48';
     campo.dispatchEvent(new Event('input'));
 
-    expect(grupo.controls.recursos.value[0]?.prazoValor).toBe('48');
+    expect(recursoNoRascunho()?.prazoValor).toBe('48');
   });
 
   it('leva ao rascunho do recurso a unidade escolhida no prazo de interposição', () => {
-    const campo = seletor('cr-rec-un-0-0') as HTMLSelectElement;
+    const campo = seletor(`${P}-prazo-interposicao-unidade`) as HTMLSelectElement;
 
-    campo.value = UnidadePrazo.horas;
+    campo.value = UnidadePrazoCodigo.horas;
     campo.dispatchEvent(new Event('change'));
 
-    expect(grupo.controls.recursos.value[0]?.prazoUnidade).toBe(UnidadePrazo.horas);
+    expect(recursoNoRascunho()?.prazoUnidade).toBe(UnidadePrazoCodigo.horas);
   });
 
-  it('mantém à vista e marcados os dias corridos já gravados no prazo de interposição', () => {
+  it('mantém à vista e marcada a unidade gravada que a API não oferece', () => {
     fixture.componentRef.setInput('recursoDaEtapa', {
       ...RECURSO,
-      prazoUnidade: UnidadePrazo.dias,
+      prazoUnidade: UnidadePrazoCodigo.dias,
     });
     fixture.detectChanges();
 
-    expect(seletor('cr-rec-un-0-0')?.value).toBe(UnidadePrazo.dias);
-    expect(unidadesDe('cr-rec-un-0-0')).toEqual([
-      '',
-      UnidadePrazo.diasUteis,
-      UnidadePrazo.horas,
-      UnidadePrazo.dias,
-    ]);
+    expect(seletor(`${P}-prazo-interposicao-unidade`)?.value).toBe(UnidadePrazoCodigo.dias);
+    expect(unidadesDe(`${P}-prazo-interposicao-unidade`)).toContain(UnidadePrazoCodigo.dias);
+  });
+
+  it('leva ao rascunho o efeito suspensivo escolhido', () => {
+    entrada(`${P}-efeito-opcao-${EfeitoSuspensivoCodigo.semEfeitoSuspensivo}`)?.click();
+
+    expect(recursoNoRascunho()?.efeitoSuspensivo).toBe(EfeitoSuspensivoCodigo.semEfeitoSuspensivo);
+  });
+
+  it('marcar Não leva ao rascunho a resposta e retira o prazo da 2ª instância', () => {
+    entrada(`${P}-superior-nao`)?.click();
+
+    expect(recursoNoRascunho()).toMatchObject({
+      admiteInstanciaSuperior: false,
+      prazoSegundaInstanciaValor: '',
+      prazoSegundaInstanciaUnidade: '',
+    });
+  });
+
+  it('retira, pelo botão, o prazo da 2ª instância lido sem instância superior', () => {
+    fixture.componentRef.setInput('recursoDaEtapa', {
+      ...RECURSO,
+      admiteInstanciaSuperior: false,
+      leitura: umaLeituraDoRecurso({ prazoDaSegundaInstanciaSemInstanciaSuperior: true }),
+    });
+    fixture.detectChanges();
+
+    (
+      (fixture.nativeElement as HTMLElement).querySelector(
+        `#${P}-prazo-segunda-retirar`,
+      ) as HTMLElement
+    ).click();
+
+    expect(recursoNoRascunho()?.prazoSegundaInstanciaValor).toBe('');
+  });
+
+  it('em consulta, lê os parâmetros em texto e não desenha os controles', () => {
+    TestBed.inject(ProcessoSeletivoStore).remoteSnapshot.set({
+      status: StatusProcesso.publicado,
+    } as unknown as ProcessoSeletivoDto);
+    fixture.componentRef.setInput('recursoDaEtapa', {
+      ...RECURSO,
+      leitura: umaLeituraDoRecurso({ rotulos: { prazoUnidade: 'Dias úteis' } }),
+    });
+    fixture.detectChanges();
+
+    const nativo = fixture.nativeElement as HTMLElement;
+    expect(nativo.querySelector('sel-parametros-do-recurso')).toBeNull();
+    expect(nativo.textContent).toContain('2 — Dias úteis');
   });
 
   it('lista os procedimentos declarados, nomeando o item contestado pelo rótulo da etapa', () => {
@@ -270,7 +280,18 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
 
       expect(atributo(ANCORA, 'aria-invalid')).toBeNull();
       expect(atributo(ANCORA, 'aria-describedby')).toBeNull();
-      expect(atributo('cr-rec-prazo-0-0', 'aria-invalid')).toBe('true');
+      expect(atributo(`${P}-prazo-interposicao-valor`, 'aria-invalid')).toBe('true');
+    });
+
+    it('mostra a recusa a um parâmetro no alto do recurso, com o botão para ir ao campo', () => {
+      recusar('etapas[0].recursos[0].efeitoSuspensivo');
+
+      const bloco = (fixture.nativeElement as HTMLElement).querySelector(
+        `#${P.replace('cr-rec-', 'cr-rec-recusas-')}`,
+      );
+      expect(bloco?.textContent).toContain('Origem do prazo recusada.');
+      expect(bloco?.textContent).toContain('Ir ao campo');
+      expect(atributo(`${P}-efeito-grupo`, 'aria-invalid')).toBe('true');
     });
   });
 });

@@ -75,20 +75,34 @@ describe('alvosDaRecusaDaEtapa', () => {
   });
 
   it.each([
-    ['prazoValor', 'cr-rec-prazo-2-1'],
-    ['prazoUnidade', 'cr-rec-un-2-1'],
     ['origemDoPrazo', 'cr-rec-anc-2-1'],
     ['ancora', 'cr-rec-ato-2-1'],
-    ['suspensividadePrimeiraInstanciaValor', 'cr-rec-susp1-val-2-1'],
-    ['suspensividadePrimeiraInstanciaUnidade', 'cr-rec-susp1-un-2-1'],
-    ['suspensividadeSegundaInstanciaValor', 'cr-rec-susp2-val-2-1'],
-    ['suspensividadeSegundaInstanciaUnidade', 'cr-rec-susp2-un-2-1'],
   ])('leva o controle %s ao id %s, e de reserva ao bloco das recusas dele', (controle, id) => {
     expect(alvos(`recursos.1.${controle}`, etapa, 2)).toEqual([
       id,
       `cr-rec-recusa-${controle}-2-1`,
     ]);
   });
+
+  it.each([
+    ['prazoValor', ['cr-rec-2-1-prazo-interposicao-valor']],
+    [
+      'prazoUnidade',
+      ['cr-rec-2-1-prazo-interposicao-unidade', 'cr-rec-2-1-prazo-interposicao-situacao'],
+    ],
+    ['efeitoSuspensivo', ['cr-rec-2-1-efeito-grupo']],
+    ['guardaDaVaga', ['cr-rec-2-1-guarda-grupo']],
+    ['prazoSegundaInstanciaValor', ['cr-rec-2-1-prazo-segunda-valor']],
+    [
+      'prazoSegundaInstanciaUnidade',
+      ['cr-rec-2-1-prazo-segunda-unidade', 'cr-rec-2-1-prazo-segunda-situacao'],
+    ],
+  ])(
+    'leva o parâmetro %s ao controle do componente comum, com o bloco de reserva',
+    (controle, ids) => {
+      expect(alvos(`recursos.1.${controle}`, etapa, 2)).toEqual([...ids, 'cr-rec-recusas-2-1']);
+    },
+  );
 
   it('leva à opção marcada da instância superior do recurso', () => {
     const sem = umaEtapaDoCronograma({
@@ -97,8 +111,15 @@ describe('alvosDaRecusaDaEtapa', () => {
     const com = umaEtapaDoCronograma({
       recursos: [umRecursoDaEtapa({ admiteInstanciaSuperior: true })],
     });
-    expect(alvos('recursos.0.admiteInstanciaSuperior', sem, 0)[0]).toBe('cr-rec-superior-nao-0-0');
-    expect(alvos('recursos.0.admiteInstanciaSuperior', com, 0)[0]).toBe('cr-rec-superior-sim-0-0');
+    const reserva = ['cr-rec-0-0-superior-recusas', 'cr-rec-recusas-0-0'];
+    expect(alvos('recursos.0.admiteInstanciaSuperior', sem, 0)).toEqual([
+      'cr-rec-0-0-superior-nao',
+      ...reserva,
+    ]);
+    expect(alvos('recursos.0.admiteInstanciaSuperior', com, 0)).toEqual([
+      'cr-rec-0-0-superior-sim',
+      ...reserva,
+    ]);
   });
 
   it('leva ao bloco do recurso quando a recusa é do recurso inteiro', () => {

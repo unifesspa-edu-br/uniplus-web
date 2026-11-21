@@ -10,7 +10,7 @@ import {
   fase,
   ID_CPF,
   ID_ETAPA_DOCUMENTAL,
-  ID_RECURSOS,
+  ID_HOMOLOGACAO,
   ID_TIPO_ETAPA,
   TIPOS_DOCUMENTO,
 } from './fase.testing';
@@ -138,7 +138,10 @@ describe('FasePassoComponent', () => {
     });
 
     it('recorta por fase partindo das fases que o edital tem hoje', () => {
-      comCronograma(fase({}), fase({ faseCanonicaId: ID_RECURSOS, codigo: 'RECURSOS', ordem: 2 }));
+      comCronograma(
+        fase({}),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
+      );
 
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
@@ -151,7 +154,7 @@ describe('FasePassoComponent', () => {
         todasAsExigencias(store.draft().documentos)
           .filter((exigencia) => exigencia.tipoDocumentoId === ID_CPF)
           .map((exigencia) => exigencia.faseCodigo),
-      ).toEqual(['AVALIACAO', 'RECURSOS']);
+      ).toEqual(['AVALIACAO', 'HOMOLOGACAO_INSCRICOES']);
       expect(store.draft().documentos.emTodasAsFases).not.toContain(ID_CPF);
     });
 

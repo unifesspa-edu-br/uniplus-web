@@ -10,6 +10,11 @@ const NOTA_DA_CONFERENCIA: Readonly<Record<OrigemDaRecusa, string>> = {
     'Você alterou esta parte depois desta recusa; ela será conferida de novo na próxima publicação.',
 };
 
+/** A nota que explica a recusa a conferir de novo, conforme a resposta que a trouxe. */
+export function notaDaConferencia(origem: OrigemDaRecusa): string {
+  return NOTA_DA_CONFERENCIA[origem];
+}
+
 /**
  * As recusas que o servidor fez a um campo, com a mensagem, o código e a página dele. As que
  * ainda valem aparecem como recusa; as que a pessoa já tocou por baixo, a conferir de novo,

@@ -46,7 +46,7 @@ export const FASE_INSCRICAO: FaseDoCronograma = {
   fim: null,
   unidadeResponsavelId: null,
   produtos: [],
-  faseConcluinteCodigo: null,
+  noMesmoMomentoDaAnterior: false,
   emiteParecerIndividual: false,
   bancasRequeridas: [],
   regraRecurso: null,

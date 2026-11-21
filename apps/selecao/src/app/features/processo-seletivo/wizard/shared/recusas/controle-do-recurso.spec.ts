@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { controleDoRecurso, ehDaSegundaInstancia } from './controle-do-recurso';
+import {
+  controleDoRecurso,
+  ehDoPrazoDaSegundaInstancia,
+  ehParametroDoRecurso,
+} from './controle-do-recurso';
 
 describe('controleDoRecurso', () => {
   it.each([
@@ -11,10 +15,10 @@ describe('controleDoRecurso', () => {
     ['ancora', 'origemDoPrazo'],
     ['atoAncoraCodigo', 'ancora'],
     ['admiteInstanciaSuperior', 'admiteInstanciaSuperior'],
-    ['suspensividadePrimeiraInstanciaValor', 'suspensividadePrimeiraInstanciaValor'],
-    ['suspensividadePrimeiraInstanciaUnidade', 'suspensividadePrimeiraInstanciaUnidade'],
-    ['suspensividadeSegundaInstanciaValor', 'suspensividadeSegundaInstanciaValor'],
-    ['suspensividadeSegundaInstanciaUnidade', 'suspensividadeSegundaInstanciaUnidade'],
+    ['efeitoSuspensivo', 'efeitoSuspensivo'],
+    ['guardaDaVaga', 'guardaDaVaga'],
+    ['prazoSegundaInstanciaValor', 'prazoSegundaInstanciaValor'],
+    ['prazoSegundaInstanciaUnidade', 'prazoSegundaInstanciaUnidade'],
   ])('leva o campo %s ao controle %s, sem juntar valor e unidade', (campo, controle) => {
     expect(controleDoRecurso(campo)).toBe(controle);
   });
@@ -23,16 +27,36 @@ describe('controleDoRecurso', () => {
     expect(controleDoRecurso('PrazoUnidade')).toBe('prazoUnidade');
   });
 
-  it.each(['procedimentos', '', 'suspensividadePrimeiraInstancia', 'prazo'])(
+  it.each(['procedimentos', '', 'campoQueNaoExiste', 'prazoSegundaInstancia'])(
     'não acha controle para %j',
     (campo) => {
       expect(controleDoRecurso(campo)).toBeNull();
     },
   );
 
-  it('reconhece só os controles da segunda instância', () => {
-    expect(ehDaSegundaInstancia('suspensividadeSegundaInstanciaValor')).toBe(true);
-    expect(ehDaSegundaInstancia('suspensividadePrimeiraInstanciaValor')).toBe(false);
-    expect(ehDaSegundaInstancia('prazoValor')).toBe(false);
+  it('reconhece só os controles do prazo da segunda instância', () => {
+    expect(ehDoPrazoDaSegundaInstancia('prazoSegundaInstanciaValor')).toBe(true);
+    expect(ehDoPrazoDaSegundaInstancia('prazoSegundaInstanciaUnidade')).toBe(true);
+    expect(ehDoPrazoDaSegundaInstancia('guardaDaVaga')).toBe(false);
+    expect(ehDoPrazoDaSegundaInstancia('prazoValor')).toBe(false);
   });
+
+  it.each([
+    'prazoValor',
+    'prazoUnidade',
+    'admiteInstanciaSuperior',
+    'efeitoSuspensivo',
+    'guardaDaVaga',
+    'prazoSegundaInstanciaValor',
+    'prazoSegundaInstanciaUnidade',
+  ])('reconhece %s como parâmetro do componente comum', (controle) => {
+    expect(ehParametroDoRecurso(controle)).toBe(true);
+  });
+
+  it.each(['regra', 'origemDoPrazo', 'ancora'])(
+    'não trata %s como parâmetro: a fase e a etapa o desenham à parte',
+    (controle) => {
+      expect(ehParametroDoRecurso(controle)).toBe(false);
+    },
+  );
 });

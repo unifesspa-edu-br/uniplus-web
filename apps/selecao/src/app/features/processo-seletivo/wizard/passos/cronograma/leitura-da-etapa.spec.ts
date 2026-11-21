@@ -1,8 +1,13 @@
 import { signal } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import { CaraterEtapa, UnidadePrazo } from '@uniplus/shared-data/selecao';
+import { CaraterEtapa, UnidadePrazoCodigo } from '@uniplus/shared-data/selecao';
 
 import type { EtapaPontuada, RecursoDaEtapa } from '../../processo-seletivo.models';
+import {
+  PARAMETROS_SEM_INSTANCIA_SUPERIOR,
+  umaLeituraDoRecurso,
+} from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
+import { PARAMETROS_EM_BRANCO } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import { COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { FORMA_HUMANA, FORMA_OBJETIVA } from '../../shared/forma-de-avaliacao';
 import { etapa } from './cronograma-do-certame.testing';
@@ -30,14 +35,16 @@ const recurso: RecursoDaEtapa = {
   ancora: 'atoPublicado',
   regraCodigo: 'PRAZO',
   regraVersao: '1',
-  prazoValor: '2',
-  prazoUnidade: UnidadePrazo.diasUteis,
+  ...PARAMETROS_SEM_INSTANCIA_SUPERIOR,
   atoAncoraCodigo: ATO,
-  suspensividadePrimeiraInstanciaValor: '',
-  suspensividadePrimeiraInstanciaUnidade: '',
-  admiteInstanciaSuperior: false,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
+  leitura: umaLeituraDoRecurso({
+    rotulos: {
+      prazoUnidade: 'Dias úteis',
+      prazoSegundaInstanciaUnidade: 'Dias úteis',
+      efeitoSuspensivo: 'Sem efeito suspensivo',
+      guardaDaVaga: 'Guarda a vaga até o resultado definitivo',
+    },
+  }),
   procedimentos: [],
 };
 
@@ -148,85 +155,72 @@ describe('etapa lida na consulta', () => {
     expect(lida({ tiposDeDecisao: [] }).tiposDeDecisao).toEqual([]);
   });
 
-  it('lê o recurso que corre da publicação do ato, com a suspensividade das duas instâncias', () => {
+  it('lê o recurso que corre da publicação do ato, com os parâmetros pelo nome que a API deu', () => {
     const [texto] = lida({
       recursos: [
         {
           ...recurso,
-          suspensividadePrimeiraInstanciaValor: '1',
-          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
           admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: '1',
-          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.diasUteis,
+          prazoSegundaInstanciaValor: '3',
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
         },
       ],
     }).recursos;
 
     expect(texto).toBe(
-      'prazo corre da publicação de Edital de abertura; prazo de 2 dias úteis; ' +
-        'suspensividade da 1ª instância de 1 hora; admite instância superior; ' +
-        'suspensividade da 2ª instância de 1 dia útil',
+      'prazo corre da publicação de Edital de abertura; prazo de interposição: 2 — Dias úteis; ' +
+        'efeito suspensivo: Sem efeito suspensivo; ' +
+        'guarda da vaga: Guarda a vaga até o resultado definitivo; admite instância superior; ' +
+        'prazo da 2ª instância: 3 — Dias úteis',
     );
   });
 
-  it('lê a suspensividade em dias corridos nas duas instâncias', () => {
+  it('mostra o código quando a leitura não trouxe o nome da unidade', () => {
+    const [texto] = lida({
+      recursos: [
+        { ...recurso, leitura: umaLeituraDoRecurso(), prazoUnidade: UnidadePrazoCodigo.horas },
+      ],
+    }).recursos;
+
+    expect(texto).toContain('prazo de interposição: 2 — horas');
+  });
+
+  it('lê o prazo da 2ª instância que veio sem instância superior', () => {
     const [texto] = lida({
       recursos: [
         {
           ...recurso,
-          suspensividadePrimeiraInstanciaValor: '48',
-          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.horas,
-          admiteInstanciaSuperior: true,
-          suspensividadeSegundaInstanciaValor: '3',
-          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
+          prazoSegundaInstanciaValor: '3',
+          prazoSegundaInstanciaUnidade: UnidadePrazoCodigo.diasUteis,
         },
       ],
     }).recursos;
 
-    expect(texto).toContain('suspensividade da 1ª instância de 48 horas');
-    expect(texto).toContain('suspensividade da 2ª instância de 3 dias corridos');
+    expect(texto).toContain('não admite instância superior; prazo da 2ª instância: 3 — Dias úteis');
   });
 
-  it('concorda em número o dia corrido no singular', () => {
+  it('não lê efeito nem guarda que o recurso não declara', () => {
     const [texto] = lida({
       recursos: [
-        {
-          ...recurso,
-          suspensividadePrimeiraInstanciaValor: '1',
-          suspensividadePrimeiraInstanciaUnidade: UnidadePrazo.dias,
-        },
+        { ...recurso, efeitoSuspensivo: '', guardaDaVaga: '', leitura: umaLeituraDoRecurso() },
       ],
     }).recursos;
 
-    expect(texto).toContain('suspensividade da 1ª instância de 1 dia corrido');
-  });
-
-  it('não lê a suspensividade da segunda instância quando a janela não a admite', () => {
-    const [texto] = lida({
-      recursos: [
-        {
-          ...recurso,
-          admiteInstanciaSuperior: false,
-          suspensividadeSegundaInstanciaValor: '3',
-          suspensividadeSegundaInstanciaUnidade: UnidadePrazo.dias,
-        },
-      ],
-    }).recursos;
-
-    expect(texto).not.toContain('2ª instância');
-  });
-
-  it('concorda em número a unidade em horas', () => {
-    const [texto] = lida({
-      recursos: [{ ...recurso, prazoValor: '2', prazoUnidade: UnidadePrazo.horas }],
-    }).recursos;
-
-    expect(texto).toContain('prazo de 2 horas');
+    expect(texto).not.toContain('efeito suspensivo');
+    expect(texto).not.toContain('guarda da vaga');
   });
 
   it('lê o recurso sem prazo que corre da ciência do candidato', () => {
     const [texto] = lida({
-      recursos: [{ ...recurso, ancora: 'cienciaIndividual', prazoValor: '' }],
+      recursos: [
+        {
+          ...recurso,
+          ...PARAMETROS_EM_BRANCO,
+          admiteInstanciaSuperior: false,
+          leitura: umaLeituraDoRecurso(),
+          ancora: 'cienciaIndividual',
+        },
+      ],
     }).recursos;
 
     expect(texto).toBe(

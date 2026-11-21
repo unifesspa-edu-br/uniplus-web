@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { prefixoDoRecursoDaFase } from '../fase/ids-da-fase';
 import { ID_AVALIACAO } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import {
@@ -7,6 +8,9 @@ import {
   type ErroDaFase,
 } from './cronograma-recusas-das-fases.testing';
 
+const PARAMETROS = prefixoDoRecursoDaFase(ID_AVALIACAO);
+const ID_DO_PRAZO = `${PARAMETROS}-prazo-interposicao-valor`;
+const RECUSAS_DO_PRAZO = `${PARAMETROS}-prazo-interposicao-recusas-valor`;
 const NOTA = 'conferida de novo na próxima gravação';
 const DO_PRODUTO: ErroDaFase = {
   field: 'fases[0].produtos[0]',
@@ -52,19 +56,17 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
   it('começa com as duas recusas valendo', async () => {
     await recusarProdutoEPrazo();
 
-    expect(bloco('fase-AVALIACAO-recusa-recurso-prazoValor')).toContain(
-      'O prazo precisa ser maior',
-    );
+    expect(bloco(RECUSAS_DO_PRAZO)).toContain('O prazo precisa ser maior');
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
+    expect(aConferir(RECUSAS_DO_PRAZO)).toBe(false);
   });
 
   it('passa só a recusa da regra de recurso a conferir quando o prazo é digitado', async () => {
     await recusarProdutoEPrazo();
 
-    digitar('fase-AVALIACAO-prazo-valor', '5');
+    digitar(ID_DO_PRAZO, '5');
 
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(true);
+    expect(aConferir(RECUSAS_DO_PRAZO)).toBe(true);
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
   });
 
@@ -79,7 +81,7 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     detectar();
 
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(true);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
+    expect(aConferir(RECUSAS_DO_PRAZO)).toBe(false);
   });
 
   it('passa só a recusa da fase a conferir quando o Fim muda na linha do tempo', async () => {
@@ -89,19 +91,19 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     detectar();
 
     expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(true);
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(false);
+    expect(aConferir(RECUSAS_DO_PRAZO)).toBe(false);
   });
 
   it('mantém a recusa da regra de recurso a conferir, sem marca de inválido, quando o prazo volta ao valor enviado', async () => {
     await recusarProdutoEPrazo();
-    const prazo = () => nativo.querySelector('#fase-AVALIACAO-prazo-valor');
+    const prazo = () => nativo.querySelector(`#${ID_DO_PRAZO}`);
     expect(prazo()?.getAttribute('aria-invalid')).toBe('true');
 
-    digitar('fase-AVALIACAO-prazo-valor', '5', false);
-    digitar('fase-AVALIACAO-prazo-valor', '3', false);
+    digitar(ID_DO_PRAZO, '5', false);
+    digitar(ID_DO_PRAZO, '3', false);
     detectar();
 
-    expect(aConferir('fase-AVALIACAO-recusa-recurso-prazoValor')).toBe(true);
+    expect(aConferir(RECUSAS_DO_PRAZO)).toBe(true);
     expect(prazo()?.getAttribute('aria-invalid')).toBeNull();
   });
 
