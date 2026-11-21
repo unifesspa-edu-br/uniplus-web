@@ -41,6 +41,15 @@ function votacao(regra: RegraDeDeliberacaoDaBanca): readonly string[] {
 /** A regra em uma linha, para a leitura em consulta e o resumo. */
 export function descricaoDaRegra(regra: RegraDeDeliberacaoDaBanca | null): string {
   if (regra === null) return SEM_REGRA_DE_DELIBERACAO;
-  const partes = [composicao(regra), ...(ehColegiada(regra) ? votacao(regra) : ['ato individual'])];
+  const partes = [composicao(regra)];
+  if (ehColegiada(regra)) return [...partes, ...votacao(regra)].join('; ');
+  partes.push('ato individual');
+  if (
+    [regra.quorum, regra.criterio, regra.encerramento, regra.desempate, regra.semUnanimidade].some(
+      Boolean,
+    )
+  ) {
+    partes.push(`recurso: ${votacao(regra).join('; ')}`);
+  }
   return partes.join('; ');
 }

@@ -16,7 +16,7 @@ export interface OpcaoDaRegra<T extends string> {
 
 export const MODOS_DE_DELIBERACAO: readonly OpcaoDaRegra<ModoDeDeliberacao>[] = [
   { valor: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada, com votação' },
-  { valor: ModoDeDeliberacao.atoIndividual, rotulo: 'Ato individual, sem votação' },
+  { valor: ModoDeDeliberacao.atoIndividual, rotulo: 'Ato individual' },
 ];
 
 export const CRITERIOS_DE_VOTACAO: readonly OpcaoDaRegra<CriterioDaVotacao>[] = [
@@ -68,15 +68,15 @@ const ehMaioria = (regra: RegraDeDeliberacaoDaBanca): boolean =>
 
 /** Com todos os titulares votando, o quórum é o número de integrantes: não se digita. */
 export const quorumSegueOsIntegrantes = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  ehColegiada(regra) && regra.encerramento === 'todosOsTitulares';
+  regra.encerramento === 'todosOsTitulares';
 
 /** Só a maioria, com mais de um integrante, pode empatar. */
 export const pedeDesempate = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  ehColegiada(regra) && ehMaioria(regra) && (integrantesLidos(regra) ?? 0) > 1;
+  ehMaioria(regra) && (integrantesLidos(regra) ?? 0) > 1;
 
 /** Só a unanimidade, com mais de um integrante, pode não ser alcançada. */
 export const pedeResultadoSemUnanimidade = (regra: RegraDeDeliberacaoDaBanca): boolean =>
-  ehColegiada(regra) && regra.criterio === 'unanimidade' && (integrantesLidos(regra) ?? 0) > 1;
+  regra.criterio === 'unanimidade' && (integrantesLidos(regra) ?? 0) > 1;
 
 /**
  * Os controles que a tela mostra para a regra: sem regra só o modo; com regra, os integrantes e
@@ -104,25 +104,21 @@ const aindaPodeTerVarios = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   (integrantesLidos(regra) ?? 2) > 1;
 
 /**
- * Deixa vazio o que o modo, o critério e o número de integrantes não pedem, e iguala o quórum aos
+ * Deixa vazio o que o critério e o número de integrantes não pedem, e iguala o quórum aos
  * integrantes quando todos os titulares votam. Roda a cada edição: a regra nunca fica com um campo
  * que a API recusaria por não se aplicar.
  */
 export function normalizarRegra(regra: RegraDeDeliberacaoDaBanca): RegraDeDeliberacaoDaBanca {
-  const colegiada = ehColegiada(regra);
-  const varios = colegiada && aindaPodeTerVarios(regra);
+  const varios = aindaPodeTerVarios(regra);
   return {
     ...regra,
     quorum: quorumNormalizado(regra),
-    criterio: colegiada ? regra.criterio : '',
-    encerramento: colegiada ? regra.encerramento : '',
     desempate: varios && ehMaioria(regra) ? regra.desempate : '',
     semUnanimidade: varios && regra.criterio === 'unanimidade' ? regra.semUnanimidade : '',
   };
 }
 
 function quorumNormalizado(regra: RegraDeDeliberacaoDaBanca): string {
-  if (!ehColegiada(regra)) return '';
   return quorumSegueOsIntegrantes(regra) ? regra.integrantes : regra.quorum;
 }
 

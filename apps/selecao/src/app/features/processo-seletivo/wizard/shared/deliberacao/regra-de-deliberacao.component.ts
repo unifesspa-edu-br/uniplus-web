@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
@@ -47,6 +47,7 @@ export class RegraDeDeliberacaoComponent {
     return regra !== null && ehColegiada(regra);
   });
   protected readonly semRegra = SEM_REGRA;
+  protected readonly anuncio = signal('');
 
   /** O modo mostra o que é dele, o da regra inteira e o dos controles que a tela não mostra. */
   protected readonly estadoDoModo = computed(() =>
@@ -73,6 +74,21 @@ export class RegraDeDeliberacaoComponent {
   protected alterar(campo: CampoDaRegra, valor: string): void {
     const regra = this.regra();
     if (regra !== null) this.regraChange.emit(alterarRegra(regra, campo, valor));
+  }
+
+  protected retirarVotacao(seletor: HTMLSelectElement): void {
+    const regra = this.regra();
+    if (regra === null) return;
+    this.regraChange.emit({
+      ...regra,
+      quorum: '',
+      criterio: '',
+      encerramento: '',
+      desempate: '',
+      semUnanimidade: '',
+    });
+    this.anuncio.set('Votação do recurso retirada.');
+    seletor.focus();
   }
 
   private regraDoModo(modo: ModoDeDeliberacao): RegraDeDeliberacaoDaBanca {

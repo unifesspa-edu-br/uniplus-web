@@ -63,10 +63,8 @@ function problemasDaVotacao(regra: RegraDeDeliberacaoDaBanca): readonly Problema
 
 /** Os campos da regra declarada que a API recusaria; a regra ausente não é problema do rascunho. */
 export function problemasDaRegra(regra: RegraDeDeliberacaoDaBanca): readonly ProblemaDaRegra[] {
-  return [
-    ...problemasDaComposicao(regra),
-    ...(ehColegiada(regra) ? problemasDaVotacao(regra) : []),
-  ];
+  if (!ehColegiada(regra)) return [];
+  return [...problemasDaComposicao(regra), ...problemasDaVotacao(regra)];
 }
 
 /** O que a conferência acusa, por campo; a regra ausente não acusa nada. */

@@ -67,11 +67,7 @@ describe('RegraDeDeliberacaoComponent', () => {
         opcao.textContent?.trim(),
       );
 
-      expect(opcoes).toEqual([
-        'Sem regra declarada',
-        'Colegiada, com votação',
-        'Ato individual, sem votação',
-      ]);
+      expect(opcoes).toEqual(['Sem regra declarada', 'Colegiada, com votação', 'Ato individual']);
     });
 
     it('cria a regra do modo escolhido, com os campos ainda em branco', () => {
@@ -124,13 +120,13 @@ describe('RegraDeDeliberacaoComponent', () => {
       expect(emitidas).toEqual([null]);
     });
 
-    it('passa ao ato individual e perde a votação', () => {
+    it('passa ao ato individual preservando a votação', () => {
       escolher('modo', ModoDeDeliberacao.atoIndividual);
 
       expect(emitidas.at(-1)).toMatchObject({
         modo: ModoDeDeliberacao.atoIndividual,
-        criterio: '',
-        quorum: '',
+        criterio: 'maioriaSimples',
+        quorum: '3',
       });
     });
 
@@ -162,11 +158,39 @@ describe('RegraDeDeliberacaoComponent', () => {
   describe('ato individual', () => {
     beforeEach(() => exibe(ATO_INDIVIDUAL));
 
-    it('mostra só a composição e diz que não há quórum nem votação', () => {
+    it('mostra os campos de votação do recurso com legenda', () => {
       expect(controle('integrantes')).not.toBeNull();
-      expect(controle('quorum')).toBeNull();
-      expect(controle('criterio')).toBeNull();
-      expect(nativo().textContent).toContain('sem quórum nem votação');
+      expect(controle('quorum')).not.toBeNull();
+      expect(controle('criterio')).not.toBeNull();
+      expect(nativo().querySelector('legend')?.textContent).toContain(
+        'Votação usada quando esta banca julga recurso',
+      );
+    });
+
+    it('retira a votação, anuncia e devolve o foco ao seletor de modo', () => {
+      exibe(comRegra({ modo: ModoDeDeliberacao.atoIndividual }));
+      document.body.appendChild(nativo());
+      const botao = Array.from(nativo().querySelectorAll('button')).find((item) =>
+        item.textContent?.includes('Retirar a votação do recurso'),
+      );
+      botao?.click();
+      fixture.detectChanges();
+
+      expect(emitidas.at(-1)).toEqual(
+        comRegra({
+          modo: ModoDeDeliberacao.atoIndividual,
+          quorum: '',
+          criterio: '',
+          encerramento: '',
+          desempate: '',
+          semUnanimidade: '',
+        }),
+      );
+      expect(nativo().querySelector('[role="status"]')?.textContent).toContain(
+        'Votação do recurso retirada.',
+      );
+      expect(document.activeElement).toBe(controle('modo'));
+      nativo().remove();
     });
   });
 
