@@ -6,6 +6,8 @@ import {
   ProblemDetails,
   ProblemI18nService,
   STATUS_HTTP,
+  recusasDoProblema,
+  type RecusasDoProblema,
 } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
@@ -27,12 +29,7 @@ import {
 import { aguardarRecarga } from '../../shared/foco';
 import { FasesCanonicasStore } from './fases-canonicas.store';
 import { type AndamentoDaEscrita, ROTULOS_PADRAO_DA_ESCRITA } from '../../shared/escrita';
-import {
-  aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  recusasDoProblema,
-  type RecusasDoProblema,
-} from '../../shared/formulario';
+import { aplicarRecusasDoProblema, descartarRecusasDoServidor } from '../../shared/formulario';
 
 type Escrita = 'salvando' | 'removendo';
 

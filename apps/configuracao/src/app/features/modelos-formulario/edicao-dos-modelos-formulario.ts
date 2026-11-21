@@ -6,6 +6,7 @@ import {
   ProblemDetails,
   ProblemI18nService,
   STATUS_HTTP,
+  recusasDoProblema,
 } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
@@ -21,7 +22,6 @@ import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
-  recusasDoProblema,
   textoDaCausaGeral,
 } from '../../shared/formulario';
 

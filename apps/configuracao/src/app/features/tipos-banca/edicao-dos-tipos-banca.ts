@@ -8,6 +8,8 @@ import {
   ProblemI18nService,
   STATUS_HTTP,
   lookupCompleto,
+  recusasDoProblema,
+  type RecusasDoProblema,
 } from '@uniplus/shared-core/http';
 import { idempotencyKey, withIdempotencyKey } from '@uniplus/shared-core/idempotency';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -20,12 +22,7 @@ import {
   criarFormularioDeBanca,
   valoresDaBanca,
 } from './tipo-banca-form';
-import {
-  aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  recusasDoProblema,
-  type RecusasDoProblema,
-} from '../../shared/formulario';
+import { aplicarRecusasDoProblema, descartarRecusasDoServidor } from '../../shared/formulario';
 type Escrita = 'salvando' | 'removendo';
 
 const CORPO_DIVERGENTE = 'uniplus.idempotency.body_mismatch';

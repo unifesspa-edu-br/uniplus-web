@@ -15,11 +15,9 @@ export {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoControle,
-  recusasDoProblema,
   temCausaGeral,
   textoDaAreaGeral,
   textoDaCausaGeral,
   textoDasCausasGerais,
   type RecusaDoServidor,
-  type RecusasDoProblema,
 } from './recusa-do-servidor';

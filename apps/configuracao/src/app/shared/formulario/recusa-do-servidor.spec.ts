@@ -7,7 +7,6 @@ import {
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
   recusasDoControle,
-  recusasDoProblema,
   type RecusaDoServidor,
 } from './recusa-do-servidor';
 
@@ -23,39 +22,6 @@ function problema(parcial: Partial<ProblemDetails> = {}): ProblemDetails {
     ...parcial,
   };
 }
-
-describe('recusasDoProblema', () => {
-  it('leva cada recusa de campo com a página que explica o código', () => {
-    const recusas = recusasDoProblema(
-      problema({
-        errors: [
-          { field: 'Nome', code: 'uniplus.configuracao.nome_obrigatorio', message: 'Informe.' },
-        ],
-      }),
-    );
-
-    expect(recusas.deCampo).toEqual([
-      {
-        campo: 'Nome',
-        codigo: 'uniplus.configuracao.nome_obrigatorio',
-        mensagem: 'Informe.',
-        pagina: `${BASE_DAS_PAGINAS}uniplus.configuracao.nome_obrigatorio`,
-      },
-    ]);
-  });
-
-  it('deixa a página vazia quando o código é uma URN que não aponta página', () => {
-    const [recusa] = recusasDoProblema(
-      problema({ errors: [{ field: 'Nome', code: 'urn:uniplus:nome', message: 'Informe.' }] }),
-    ).deCampo;
-
-    expect(recusa.pagina).toBeNull();
-  });
-
-  it('devolve lista vazia para o problema sem recusa de campo, como o 409', () => {
-    expect(recusasDoProblema(problema({ status: 409 }))).toEqual({ deCampo: [], gerais: [] });
-  });
-});
 
 describe('marcarRecusaDoServidor', () => {
   it('invalida o controle com a recusa da API e o toca', () => {
