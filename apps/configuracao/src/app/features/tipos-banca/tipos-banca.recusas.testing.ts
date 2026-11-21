@@ -104,6 +104,16 @@ export class PaginaDeRecusas {
     return this.controller.expectOne(ESCRITA);
   }
 
+  /** Responde as leituras de vocabulário que o drawer pediu e confere que nada ficou aberto. */
+  verificar(): void {
+    for (const vocabulario of ['papeis-de-banca', 'tipos-de-decisao']) {
+      this.controller
+        .match((r) => r.url.endsWith(`/vocabularios/${vocabulario}`))
+        .forEach((r) => r.flush([]));
+    }
+    this.controller.verify();
+  }
+
   async recarregarCom(itens: readonly TipoBancaDto[]): Promise<void> {
     await this.propagar();
     this.controller.expectOne((r) => r.url === LISTA).flush(itens);

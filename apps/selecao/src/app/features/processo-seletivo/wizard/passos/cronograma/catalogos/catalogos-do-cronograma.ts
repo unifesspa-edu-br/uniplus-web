@@ -1,3 +1,5 @@
+import { fornecerVocabularioDeTiposDeDecisao } from '@uniplus/shared-data/configuracao';
+
 import { CatalogoDasOpcoesDoRecurso } from './catalogo-das-opcoes-do-recurso.service';
 import { CatalogoDeAtos } from './catalogo-de-atos.service';
 import { CatalogoDeBancas } from './catalogo-de-bancas.service';
@@ -10,7 +12,10 @@ import { CatalogoDeTiposDeEtapa } from './catalogo-de-tipos-de-etapa.service';
 import { CatalogoDeUnidadesDoCadastro } from './catalogo-de-unidades-do-cadastro.service';
 import { SituacaoDosCatalogosDoCronograma } from './situacao-dos-catalogos-do-cronograma.service';
 
-/** Os provedores dos catálogos que o cronograma e a configuração de cada fase leem, na página do wizard. */
+/**
+ * Os provedores dos catálogos que o cronograma e a configuração de cada fase leem, na página do
+ * wizard. O vocabulário de tipos de decisão vive a visita ao processo e termina com a página.
+ */
 export const CATALOGOS_DO_CRONOGRAMA = [
   CatalogoDasOpcoesDoRecurso,
   CatalogoDeAtos,
@@ -23,4 +28,5 @@ export const CATALOGOS_DO_CRONOGRAMA = [
   CatalogoDeTiposDeEtapa,
   CatalogoDeUnidadesDoCadastro,
   SituacaoDosCatalogosDoCronograma,
+  fornecerVocabularioDeTiposDeDecisao(),
 ];

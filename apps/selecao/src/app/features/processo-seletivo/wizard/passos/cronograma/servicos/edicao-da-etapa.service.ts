@@ -7,7 +7,9 @@ import type {
   RecursoDaEtapa,
   RegraDeDeliberacaoDaBanca,
 } from '../../../processo-seletivo.models';
+import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
+import { rotuloDoTipoDeDecisaoLido } from '../../../shared/hidratacao/rotulo-do-tipo-de-decisao-lido';
 import { PAPEIS_ESCOLHIVEIS } from '../../fase/configuracao-da-fase';
 import { CatalogoDeAtos } from '../catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../catalogos/catalogo-de-bancas.service';
@@ -63,10 +65,12 @@ export class EdicaoDaEtapa {
   private readonly catalogoDeBancas = inject(CatalogoDeBancas);
   private readonly catalogoDeRegras = inject(CatalogoDeRegras);
   private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
+  private readonly store = inject(ProcessoSeletivoStore);
   private readonly catalogosDaLeitura: CatalogosDaLeitura = {
     rotuloDoAto: this.catalogoDeAtos.rotuloDoAto,
     tipoEtapaPorId: this.catalogoDeTiposDeEtapa.tipoEtapaPorId,
     bancas: this.catalogoDeBancas.bancas,
+    rotuloDoTipoDeDecisao: computed(() => rotuloDoTipoDeDecisaoLido(this.store.remoteSnapshot())),
   };
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly versaoDoFormulario = this.cronograma.versao;

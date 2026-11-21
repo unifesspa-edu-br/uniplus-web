@@ -70,6 +70,12 @@ describe('TiposBancaPage', () => {
   afterEach(() => {
     // A tela nunca deve emitir a criação de tipo de banca.
     controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
+    controller
+      .match((r) => r.url.endsWith('/vocabularios/papeis-de-banca'))
+      .forEach((r) => r.flush([]));
+    controller
+      .match((r) => r.url.endsWith('/vocabularios/tipos-de-decisao'))
+      .forEach((r) => r.flush([]));
     controller.verify();
   });
 
@@ -152,6 +158,16 @@ describe('TiposBancaPage', () => {
 
     await abrirEdicao(bancaSeed);
     expect(edicao.aberto()).toBe(true);
+  });
+
+  it('mostra os tipos e rótulos recebidos do vocabulário', async () => {
+    await flushLista([bancaSeed]);
+    await abrirEdicao(bancaSeed);
+    const pedido = controller.expectOne((r) => r.url.endsWith('/vocabularios/tipos-de-decisao'));
+    pedido.flush([{ codigo: 'CLASSIFICACAO', rotulo: 'Classificação' }]);
+    await propagate();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Classificação');
   });
 
   it('CA-06: o drawer de edição usa título e ação compatíveis com a edição', async () => {

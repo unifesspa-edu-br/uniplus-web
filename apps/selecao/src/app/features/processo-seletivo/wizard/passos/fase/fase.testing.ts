@@ -18,6 +18,7 @@ import { SEM_RECUSAS_DA_PUBLICACAO } from '../cronograma/servicos/recusas-da-pub
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
 import { FasePassoComponent } from './fase.component';
+import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 export const BASE = 'http://localhost:5000';
 export const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
@@ -202,6 +203,7 @@ const PROVEDORES_DA_FASE = [
   provideHttpClientTesting(),
   { provide: SELECAO_BASE_PATH, useValue: BASE },
   { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+  provideTiposDeDecisaoDaApi(),
   { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
   { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
 ];

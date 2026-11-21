@@ -1,5 +1,5 @@
+import type { Signal } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
-import { rotuloDoTipoDeDecisao } from '@uniplus/shared-data/selecao';
 
 import {
   PAPEL_DEFINITIVO,
@@ -28,7 +28,10 @@ import { caracteresAdmitidos, eliminaPorCarater, pontuaPorCarater } from './regr
 /** O que a consulta da etapa lê dos catálogos, para nomear ato, tipo e banca. */
 export type CatalogosDaLeitura = Pick<CatalogoDeAtos, 'rotuloDoAto'> &
   Pick<CatalogoDeTiposDeEtapa, 'tipoEtapaPorId'> &
-  Pick<CatalogoDeBancas, 'bancas'>;
+  Pick<CatalogoDeBancas, 'bancas'> & {
+    /** O nome do tipo de decisão como o processo lido o traz. */
+    readonly rotuloDoTipoDeDecisao: Signal<(codigo: string) => string>;
+  };
 
 /**
  * Como a tela nomeia o papel de uma publicação. O token que o contrato venha a
@@ -201,7 +204,7 @@ function divulgacaoLida(grupo: FormGroup<EtapaForm>, catalogos: CatalogosDaLeitu
     parecerIndividual: controles.emiteParecerIndividual.value,
     bancas: bancasLidas(controles, catalogos),
     publicacoes: publicacoesLidas(controles, nomeDoAto),
-    tiposDeDecisao: controles.tiposDeDecisao.value.map(rotuloDoTipoDeDecisao),
+    tiposDeDecisao: controles.tiposDeDecisao.value.map(catalogos.rotuloDoTipoDeDecisao()),
     recursos: controles.recursos.value.map((recurso) => recursoLido(recurso, nomeDoAto)),
   };
 }

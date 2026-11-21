@@ -34,6 +34,8 @@
 <cfg-tipo-banca-formulario
   [(aberto)]="edicao.aberto"
   [form]="edicao.form"
+  [papelLido]="edicao.papelLido()"
+  [tiposLidos]="edicao.tiposLidos()"
   [erro]="edicao.erro()"
   [anuncio]="edicao.anuncioDoSalvamento()"
   [salvando]="edicao.salvando()"

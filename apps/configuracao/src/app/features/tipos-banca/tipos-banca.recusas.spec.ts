@@ -16,7 +16,7 @@ describe('TiposBancaPage — recusas e foco', () => {
   beforeEach(async () => {
     p = await montarPaginaDeRecusas();
   });
-  afterEach(() => p.controller.verify());
+  afterEach(() => p.verificar());
 
   describe('conflito de idempotência ao salvar', () => {
     it('conflito de processamento mantém a chave e mostra a mensagem no alerta, sem marcar campo', async () => {

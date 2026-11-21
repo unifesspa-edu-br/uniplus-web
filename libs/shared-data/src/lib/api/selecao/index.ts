@@ -31,7 +31,6 @@ export {
   type GuardaDaVagaDto,
   type UnidadeDoPrazoDeRecursoDto,
 } from './opcoes-do-recurso.api';
-export { rotuloDoTipoDeDecisao, TIPOS_DE_DECISAO, type TipoDeDecisao } from './tipos-de-decisao';
 export { rotuloDoSentido, SENTIDOS_DE_DECISAO, type SentidoDeDecisao } from './sentidos-de-decisao';
 export { nomeDaOferta, type OfertaDeCursoCertameDto } from './nome-da-oferta';
 export { OFERTA_NAO_IDENTIFICADA, ofertasEmOrdem, type OfertaExibida } from './ofertas-escolhidas';

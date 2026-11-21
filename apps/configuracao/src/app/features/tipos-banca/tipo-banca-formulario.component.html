@@ -85,6 +85,96 @@
           </label>
         </div>
       </section>
+      <section aria-labelledby="cfg-banca-marcas">
+        <h3 id="cfg-banca-marcas" class="form-section__title">Marcas do tipo</h3>
+        <p>
+          Mudar a marca não altera processo já configurado: cada processo guarda a cópia do tipo.
+        </p>
+        <label class="field"
+          ><span
+            ><input
+              type="checkbox"
+              formControlName="exigeDuasOuMaisBancas"
+              [attr.aria-invalid]="erroDoCampo('exigeDuasOuMaisBancas') ? 'true' : null"
+              aria-describedby="cfg-exige-ajuda cfg-exige-erro"
+            />
+            Exige duas ou mais bancas</span
+          ></label
+        >
+        <p id="cfg-exige-ajuda">Este tipo exige a criação de duas ou mais bancas.</p>
+        <span id="cfg-exige-erro" class="field__error">{{
+          erroDoCampo('exigeDuasOuMaisBancas')
+        }}</span>
+        <label class="field"
+          ><span
+            ><input
+              type="checkbox"
+              formControlName="encerraRecursoNaPrimeiraInstancia"
+              [attr.aria-invalid]="erroDoCampo('encerraRecursoNaPrimeiraInstancia') ? 'true' : null"
+              aria-describedby="cfg-encerra-ajuda cfg-encerra-erro"
+            />
+            Encerra o recurso na 1ª instância</span
+          ></label
+        >
+        <p id="cfg-encerra-ajuda">O recurso deste tipo termina na primeira instância.</p>
+        <span id="cfg-encerra-erro" class="field__error">{{
+          erroDoCampo('encerraRecursoNaPrimeiraInstancia')
+        }}</span>
+        <label class="field"
+          ><span class="field__label">Papel</span>
+          <select
+            id="cfg-papel"
+            class="input"
+            formControlName="papel"
+            aria-describedby="cfg-papel-ajuda cfg-papel-erro"
+            [attr.aria-busy]="papeis.carregando() ? 'true' : null"
+            [attr.aria-invalid]="erroDoCampo('papel') ? 'true' : null"
+          >
+            <option [ngValue]="null">Selecione</option>
+            @for (papel of opcoesDePapel(); track papel.codigo) {
+              <option [value]="papel.codigo">{{ papel.rotulo }}</option>
+            }
+          </select>
+          @if (papeis.carregando()) {
+            <span class="field__hint" [uiIndicadorDaLeitura]="leituraDosPapeis"
+              >Carregando os papéis de banca…</span
+            >
+          }
+          <ui-falha-de-leitura-do-campo [leitura]="leituraDosPapeis" />
+        </label>
+        <p id="cfg-papel-ajuda">Escolha a atuação deste tipo de banca.</p>
+        <span id="cfg-papel-erro" class="field__error">{{ erroDoCampo('papel') }}</span>
+        <fieldset
+          id="cfg-tipos-decisao"
+          [attr.aria-invalid]="erroDoCampo('tiposDeDecisaoJulgados') ? 'true' : null"
+          [attr.aria-busy]="tiposDeDecisao.carregando() ? 'true' : null"
+          aria-describedby="cfg-tipos-erro"
+        >
+          <legend>Tipos de decisão julgados</legend>
+          @if (tiposDeDecisao.carregando()) {
+            <span class="field__hint" [uiIndicadorDaLeitura]="leituraDosTipos"
+              >Carregando os tipos de decisão…</span
+            >
+          }
+          <ui-falha-de-leitura-do-campo [leitura]="leituraDosTipos" />
+          @for (tipo of tiposDeDecisao.carregando() ? [] : opcoesDeTipo(); track tipo.codigo) {
+            <label class="field"
+              ><span
+                ><input
+                  type="checkbox"
+                  [checked]="tipoMarcado(tipo.codigo)"
+                  (change)="alternarTipo(tipo.codigo, caixa.checked)"
+                  #caixa
+                />
+                {{ tipo.rotulo }}</span
+              ></label
+            >
+          }
+        </fieldset>
+        <span id="cfg-tipos-erro" class="field__error">{{
+          erroDoCampo('tiposDeDecisaoJulgados')
+        }}</span>
+      </section>
     </fieldset>
   </form>
 

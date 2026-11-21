@@ -11,6 +11,10 @@ import {
 import { CORS_HEADERS, mockarTiposAto } from './api-da-revisao';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { PERMISSOES_DO_LEANDRO } from './permissoes';
+import {
+  ROTA_DO_VOCABULARIO_DE_TIPOS_DE_DECISAO,
+  VOCABULARIO_DE_TIPOS_DE_DECISAO,
+} from './vocabulario-de-tipos-de-decisao';
 
 const CORS_DE_ESCRITA = {
   ...CORS_HEADERS,
@@ -119,6 +123,7 @@ async function mockarCatalogos(page: Page): Promise<void> {
   );
   await servir(page, /\/api\/selecao\/fundamentos-isencao(\?.*)?$/, FUNDAMENTOS_DE_ISENCAO);
   await servir(page, /\/api\/configuracao\/fatos-candidato(\?.*)?$/, FATOS_DO_FORMULARIO);
+  await servir(page, ROTA_DO_VOCABULARIO_DE_TIPOS_DE_DECISAO, VOCABULARIO_DE_TIPOS_DE_DECISAO);
   await mockarTiposAto(page);
 }
 

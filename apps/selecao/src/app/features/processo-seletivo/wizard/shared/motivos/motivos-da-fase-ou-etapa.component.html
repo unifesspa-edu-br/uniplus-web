@@ -18,7 +18,11 @@
       <span class="alert__icon" aria-hidden="true">!</span>
       <div class="alert__body">
         <p class="alert__msg">
-          Esta {{ parte() }} não declara a decisão “{{ grupo.rotulo }}”.
+          @if (grupo.rotulo) {
+            Esta {{ parte() }} não declara a decisão “{{ grupo.rotulo }}”.
+          } @else {
+            Esta {{ parte() }} não declara uma decisão que a API não descreve.
+          }
           @if (temEscolhidoSemDeclaracao(grupo)) {
             Os motivos marcados continuam escolhidos.
           }
@@ -30,13 +34,13 @@
 
   @if (emConsulta()) {
     <ui-valor-em-consulta
-      [rotulo]="grupo.rotulo"
+      [rotulo]="grupo.rotulo || 'Decisão que a API não descreve'"
       seVazio="Nenhum motivo escolhido"
       [valor]="textosLidosPorTipo().get(grupo.tipoCodigo) ?? []"
     />
   } @else {
     <fieldset class="field">
-      <legend class="field__label">{{ grupo.rotulo }}</legend>
+      <legend class="field__label">{{ grupo.rotulo || 'Decisão que a API não descreve' }}</legend>
       @if (grupo.motivos.length === 0 && catalogoCarregado()) {
         <p class="field__hint">Nenhum motivo deste tipo no cadastro.</p>
       }

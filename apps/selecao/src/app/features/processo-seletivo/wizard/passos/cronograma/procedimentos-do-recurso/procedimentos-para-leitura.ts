@@ -1,5 +1,4 @@
 import {
-  rotuloDoTipoDeDecisao,
   TipoDeDecisaoDoDocumento,
   type RegraCatalogoDto,
   type DocumentoDaConfiguracaoProcedimentoDeRecurso,
@@ -27,15 +26,17 @@ export interface ProcedimentoParaLeitura {
 /**
  * Os procedimentos declarados em texto para leitura. O nome da regra declarada e o da sugerida
  * saem do mesmo formato do seletor de regras (`código — base legal`); sem a regra no catálogo
- * carregado, a sugestão aparece pelo código.
+ * carregado, a sugestão aparece pelo código. O nome do tipo de decisão vem do vocabulário da API,
+ * por `rotuloDoTipo`.
  */
 export function procedimentosParaLeitura(
   procedimentos: readonly (ProcedimentoDeRecurso | DocumentoDaConfiguracaoProcedimentoDeRecurso)[],
   catalogo: readonly RegraCatalogoDto[],
   itens: readonly (ItemDeAvaliacaoDaEtapa | DocumentoDaConfiguracaoItemDeAvaliacao)[],
+  rotuloDoTipo: (codigo: string) => string,
 ): readonly ProcedimentoParaLeitura[] {
   return procedimentos.map((procedimento) => ({
-    tipoDeDecisao: rotuloDoTipoDeDecisao(procedimento.tipoDeDecisao),
+    tipoDeDecisao: rotuloDoTipo(procedimento.tipoDeDecisao) || 'Decisão que a API não descreve',
     alvo: alvoEmTexto(procedimento.alvo ?? null, itens),
     regra: regraDeclaradaEmTexto(referenciaDoProcedimento(procedimento), catalogo),
     sugestao: sugestaoParaLeitura(procedimento, catalogo),

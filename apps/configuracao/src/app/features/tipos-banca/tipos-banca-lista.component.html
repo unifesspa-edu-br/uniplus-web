@@ -30,6 +30,7 @@
             <th scope="col">Código</th>
             <th scope="col">Nome</th>
             <th scope="col">Fase típica</th>
+            <th scope="col">Marcas</th>
             <th scope="col"><span class="sr-only">Ações</span></th>
           </tr>
         </thead>
@@ -41,6 +42,17 @@
               </td>
               <td data-label="Nome">{{ banca.nome }}</td>
               <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
+              <td data-label="Marcas">
+                @if (banca.exigeDuasOuMaisBancas) {
+                  <span>Exige duas ou mais bancas. </span>
+                }
+                @if (banca.encerraRecursoNaPrimeiraInstancia) {
+                  <span>Encerra o recurso na 1ª instância.</span>
+                }
+                @if (!banca.exigeDuasOuMaisBancas && !banca.encerraRecursoNaPrimeiraInstancia) {
+                  <span>—</span>
+                }
+              </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"

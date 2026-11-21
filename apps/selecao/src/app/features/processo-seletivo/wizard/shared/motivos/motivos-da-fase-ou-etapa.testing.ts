@@ -1,7 +1,11 @@
-import { ApplicationRef } from '@angular/core';
+import { ApplicationRef, type Provider } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
+import {
+  provideProcessoLidoComOsTiposDeDecisao,
+  provideTiposDeDecisaoDaApi,
+} from '../decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import type { ModoDaSecao } from '../modo-da-secao';
 import { MotivosDaFaseOuEtapaComponent } from './motivos-da-fase-ou-etapa.component';
 import type { RecusaDaEscolha } from './escolha-dos-motivos';
@@ -52,10 +56,16 @@ export async function atualizar(
   await assentar(fixture);
 }
 
-/** O componente montado no documento da página, para o foco e o axe enxergarem a árvore real. */
+/**
+ * O componente montado no documento da página, para o foco e o axe enxergarem a árvore real.
+ * `fornecedores` vêm depois dos padrões e os substituem.
+ */
 export async function montarMotivos(
   entradas: Partial<EntradasDosMotivos> = {},
+  fornecedores: readonly Provider[] = [],
 ): Promise<FixtureDosMotivos> {
+  const padroes = [provideTiposDeDecisaoDaApi(), provideProcessoLidoComOsTiposDeDecisao()];
+  TestBed.configureTestingModule({ providers: [...padroes, ...fornecedores] });
   const fixture = TestBed.createComponent(MotivosDaFaseOuEtapaComponent);
   document.body.appendChild(fixture.nativeElement);
   await atualizar(fixture, { ...ENTRADAS_PADRAO, ...entradas });

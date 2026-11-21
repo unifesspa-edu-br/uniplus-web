@@ -30,14 +30,14 @@ const REGRA_DO_RECURSO = {
 };
 
 const PROCEDIMENTO_COM_SUGESTAO = {
-  tipoDeDecisao: 'DEFERIMENTO',
+  tipoDeDecisao: { codigo: 'CLASSIFICACAO', rotulo: 'Classificação' },
   alvo: null,
   regra: { codigo: 'RECURSO-NOTA-RECALCULADA', versao: '1.0', hash: 'hash-p1' },
   sugestao: 'RECURSO-NOTA-RECALCULADA-PELA-BANCA',
 };
 
 const PROCEDIMENTO_SEM_SUGESTAO = {
-  tipoDeDecisao: 'INDEFERIMENTO',
+  tipoDeDecisao: { codigo: 'NOTA_DA_ETAPA', rotulo: 'Nota da etapa' },
   alvo: null,
   regra: { codigo: 'RECURSO-MANTEM-NOTA', versao: '1.0', hash: 'hash-p2' },
   sugestao: null,
@@ -87,11 +87,11 @@ test.describe('Cronograma — recurso da fase em consulta, matriz DS @ds', () =>
     await expect(titulo(page)).toBeVisible();
     const lista = page.getByRole('list', { name: 'Procedimentos declarados para este recurso' });
     await expect(lista.getByRole('listitem')).toHaveCount(2);
-    await expect(lista.getByRole('listitem').first()).toContainText('DEFERIMENTO');
+    await expect(lista.getByRole('listitem').first()).toContainText('Classificação');
     await expect(lista.getByRole('listitem').first()).toContainText(
       'Sugestão: RECURSO-NOTA-RECALCULADA-PELA-BANCA',
     );
-    await expect(lista.getByRole('listitem').nth(1)).toContainText('INDEFERIMENTO');
+    await expect(lista.getByRole('listitem').nth(1)).toContainText('Nota da etapa');
     await expect(lista.getByRole('listitem').nth(1)).not.toContainText('Sugestão');
   });
 

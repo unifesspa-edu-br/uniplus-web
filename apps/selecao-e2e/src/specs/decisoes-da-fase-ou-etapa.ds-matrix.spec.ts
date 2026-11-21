@@ -1,10 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
-import {
-  novoServidorDosTiposDeDecisao,
-  TIPO_ACEITO_SEM_ROTULO,
-  TIPO_RECUSADO,
-} from '../support/api-dos-tipos-de-decisao';
+import { novoServidorDosTiposDeDecisao } from '../support/api-dos-tipos-de-decisao';
 import { identificadoresDe, medirTransbordo } from '../support/medicoes-do-passo';
 import { irAoPasso } from '../support/navega-passo';
 import {
@@ -17,6 +13,10 @@ import {
   marcar,
 } from '../support/passo-das-decisoes';
 import { problemasDeIds } from '../support/passos-do-cronograma';
+import {
+  TIPO_FORA_DO_VOCABULARIO,
+  TIPO_RECUSADO,
+} from '../support/tipos-do-cenario-fora-do-vocabulario';
 
 /**
  * Declaração dos tipos de decisão da fase e da etapa no Cronograma, de ponta a ponta na tela:
@@ -72,35 +72,37 @@ test.describe('Decisões da fase e da etapa — matriz DS @ds', () => {
     await expect(grupoDaEtapa(page).getByLabel('Nota da etapa')).toBeChecked();
   });
 
-  test('mostra o código que o servidor recusou e explica a recusa no resumo da gravação', async ({
+  test('mostra o tipo que o servidor recusou e explica a recusa no resumo da gravação', async ({
     page,
   }, testInfo) => {
-    const servidor = novoServidorDosTiposDeDecisao('rascunho', [TIPO_RECUSADO]);
+    const servidor = novoServidorDosTiposDeDecisao('rascunho', [TIPO_RECUSADO.codigo]);
     await abrirOCronograma(page, testInfo, servidor);
     await abrirAFase(page);
 
-    await expect(grupoDaFase(page).getByLabel(TIPO_RECUSADO)).toBeChecked();
+    await expect(grupoDaFase(page).getByLabel('Tipo de decisão não identificado')).toBeChecked();
     await page.getByRole('button', { name: /Gravar e avançar/ }).click();
 
     await expect(
       page.getByText('Um tipo de decisão enviado não é reconhecido pelo servidor.'),
     ).toBeVisible();
     await expect(page.getByText('uniplus.selecao.motivo_de_decisao.tipo_invalido')).toBeVisible();
+    await expect(page.getByText(TIPO_RECUSADO.codigo)).toHaveCount(0);
   });
 
   test('preserva o tipo que a tela não conhece, nas duas gravações, e o devolve marcado ao reabrir', async ({
     page,
   }, testInfo) => {
-    const servidor = novoServidorDosTiposDeDecisao(
-      'rascunho',
-      [TIPO_ACEITO_SEM_ROTULO],
-      [TIPO_ACEITO_SEM_ROTULO],
-    );
+    const { codigo } = TIPO_FORA_DO_VOCABULARIO;
+    const rotulo = 'Tipo de decisão não identificado';
+    const servidor = novoServidorDosTiposDeDecisao('rascunho', [codigo], [codigo]);
     await abrirOCronograma(page, testInfo, servidor);
     await abrirAFase(page);
     await abrirAEtapa(page);
-    await expect(grupoDaFase(page).getByLabel(TIPO_ACEITO_SEM_ROTULO)).toBeChecked();
-    await expect(grupoDaEtapa(page).getByLabel(TIPO_ACEITO_SEM_ROTULO)).toBeChecked();
+    await expect(grupoDaFase(page).getByLabel(rotulo)).toBeChecked();
+    await expect(grupoDaEtapa(page).getByLabel(rotulo)).toBeChecked();
+    await expect(grupoDaFase(page).getByRole('checkbox').last()).toHaveAccessibleName(rotulo);
+    await expect(grupoDaEtapa(page).getByRole('checkbox').last()).toHaveAccessibleName(rotulo);
+    await expect(page.getByText(codigo)).toHaveCount(0);
 
     await marcar(grupoDaFase(page), 'Classificação');
     await marcar(grupoDaEtapa(page), 'Nota da etapa');
@@ -109,30 +111,32 @@ test.describe('Decisões da fase e da etapa — matriz DS @ds', () => {
 
     expect(servidor.cronogramasEnviados.at(-1)?.[0].tiposDeDecisao).toEqual([
       'CLASSIFICACAO',
-      TIPO_ACEITO_SEM_ROTULO,
+      codigo,
     ]);
-    expect(servidor.etapasEnviadas.at(-1)?.[0].tiposDeDecisao).toEqual([
-      'NOTA_DA_ETAPA',
-      TIPO_ACEITO_SEM_ROTULO,
-    ]);
+    expect(servidor.etapasEnviadas.at(-1)?.[0].tiposDeDecisao).toEqual(['NOTA_DA_ETAPA', codigo]);
     await page.reload();
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await irAoPasso(page, 'Cronograma', testInfo);
     await abrirAFase(page);
     await abrirAEtapa(page);
-    await expect(grupoDaFase(page).getByLabel(TIPO_ACEITO_SEM_ROTULO)).toBeChecked();
-    await expect(grupoDaEtapa(page).getByLabel(TIPO_ACEITO_SEM_ROTULO)).toBeChecked();
+    await expect(grupoDaFase(page).getByLabel(rotulo)).toBeChecked();
+    await expect(grupoDaEtapa(page).getByLabel(rotulo)).toBeChecked();
   });
 
   test('lê em texto, sem caixas de marcar, o que o processo publicado declara', async ({
     page,
   }, testInfo) => {
-    const servidor = novoServidorDosTiposDeDecisao('publicado', ['CLASSIFICACAO']);
+    const servidor = novoServidorDosTiposDeDecisao('publicado', [
+      'CLASSIFICACAO',
+      TIPO_FORA_DO_VOCABULARIO.codigo,
+    ]);
     await abrirOCronograma(page, testInfo, servidor);
 
     await expect(page.getByText(GRUPO_DA_FASE, { exact: true })).toBeVisible();
+    const decisoesDaFase = page.locator('sel-decisoes-da-fase');
+    await expect(decisoesDaFase.getByText('Classificação', { exact: true })).toBeVisible();
     await expect(
-      page.locator('sel-decisoes-da-fase').getByText('Classificação', { exact: true }),
+      decisoesDaFase.getByText('Tipo de decisão não identificado', { exact: true }),
     ).toBeVisible();
     await expect(page.getByText('Nenhuma decisão declarada')).toBeVisible();
     await expect(grupoDaFase(page)).toHaveCount(0);

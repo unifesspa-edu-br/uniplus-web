@@ -83,6 +83,7 @@ export {
 } from './precedencias-fase.api';
 export {
   TiposBancaApi,
+  type PapelDaBanca,
   type AtualizarTipoBancaCommand,
   type CriarTipoBancaCommand,
   type TipoBancaDto,
@@ -266,3 +267,16 @@ export {
   TipoMotivoDeDecisaoCodigo,
   TipoRenderizacaoCodigo,
 } from './schema';
+export { TiposDeDecisaoApi, type TipoDeDecisao } from './tipos-de-decisao.api';
+export {
+  criarVocabulario,
+  opcoesDoVocabulario,
+  type ItemDeVocabulario,
+  type Vocabulario,
+} from './vocabulario';
+export {
+  fornecerVocabularioDePapeisDeBanca,
+  fornecerVocabularioDeTiposDeDecisao,
+  VOCABULARIO_DE_PAPEIS_DE_BANCA,
+  VOCABULARIO_DE_TIPOS_DE_DECISAO,
+} from './vocabularios';

@@ -7,6 +7,7 @@ import { ProcedimentoDoTipoComponent } from './procedimento-do-tipo.component';
 import { escolher } from './procedimentos-do-recurso.edicao.testing';
 import { tiposNaTela } from './procedimentos-na-tela';
 import { procedimentoDoDocumento, regraDoCatalogo } from './procedimentos.testing';
+import { rotuloDaApi } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
 const CODIGO = 'PROCEDIMENTO-RECURSO-RECORRECAO';
 const CHAVE = `${CODIGO}|v1`;
@@ -17,7 +18,7 @@ async function montar(entradas: Record<string, unknown> = {}) {
   const fixture = TestBed.createComponent(ProcedimentoDoTipoComponent);
   document.body.appendChild(fixture.nativeElement);
   const padrao = {
-    tipo: tiposNaTela([], [Tipo.NOTA_DA_ETAPA])[0],
+    tipo: tiposNaTela([], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     idBase: 'procedimento',
     regrasDoCatalogo: [regraDoCatalogo(CODIGO, 'Referência institucional')],
     alvosOferecidos: [],
@@ -56,7 +57,7 @@ describe('procedimento do tipo no documento', () => {
   it('conserva a inconsistência importada sem janela e permite removê-la', async () => {
     const { raiz } = await montar({
       temJanela: false,
-      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     expect(raiz.querySelector('select')?.disabled).toBe(true);
     expect(raiz.querySelector('button')?.disabled).toBe(false);
@@ -66,7 +67,7 @@ describe('procedimento do tipo no documento', () => {
   it('consulta mostra o procedimento em texto, sem controles de edição', async () => {
     const { raiz } = await montar({
       modo: 'consulta',
-      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     expect(raiz.textContent).toContain(`${CODIGO} — Referência institucional`);
     expect(raiz.querySelector('select, button, input')).toBeNull();
@@ -76,7 +77,7 @@ describe('procedimento do tipo no documento', () => {
     const declarado = procedimentoDoDocumento({ regra: { codigo: 'REGRA-ANTIGA', versao: 'v7' } });
     const { fixture, raiz } = await montar({
       modo: 'consulta',
-      tipo: tiposNaTela([declarado], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([declarado], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     fixture.componentRef.setInput('regrasDoCatalogo', []);
     fixture.detectChanges();
@@ -101,7 +102,7 @@ describe('procedimento do tipo no documento', () => {
 
   it('não troca o declarado quando a sugestão ou o catálogo mudam', async () => {
     const { fixture, raiz } = await montar({
-      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     const trocar = vi.fn();
     fixture.componentInstance.trocarRegra.subscribe(trocar);
@@ -117,7 +118,7 @@ describe('procedimento do tipo no documento', () => {
   it('não emite troca para a opção antiga fora do catálogo', async () => {
     const { fixture, raiz } = await montar({
       regrasDoCatalogo: [],
-      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([DECLARADO], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
     });
     const trocar = vi.fn();
     fixture.componentInstance.trocarRegra.subscribe(trocar);
@@ -128,7 +129,7 @@ describe('procedimento do tipo no documento', () => {
   it('mantém duplicatas importadas e remove a ocorrência escolhida', async () => {
     const duplicada = procedimentoDoDocumento({ alvo: ITEM });
     const { fixture, raiz } = await montar({
-      tipo: tiposNaTela([duplicada, duplicada], [Tipo.NOTA_DA_ETAPA])[0],
+      tipo: tiposNaTela([duplicada, duplicada], [Tipo.NOTA_DA_ETAPA], rotuloDaApi)[0],
       alvosOferecidos: [{ alvo: ITEM, rotulo: 'Argumentação' }],
     });
     const remover = vi.fn();

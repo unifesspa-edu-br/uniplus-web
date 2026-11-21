@@ -19,12 +19,9 @@ import {
 } from './api-da-unidade-da-fase';
 import { leituraDoProcessoCompleto } from './leituras-do-processo-completo';
 import { responderCom } from './responder';
+import { TIPO_RECUSADO } from './tipos-do-cenario-fora-do-vocabulario';
 
 const ROTA_DO_PROCESSO = new RegExp(`/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`);
-/** Código que o servidor simulado recusa, para exercitar a recusa de tipo não reconhecido. */
-export const TIPO_RECUSADO = 'TIPO_QUE_O_SERVIDOR_NAO_CONHECE';
-/** Código que a tela desconhece e o servidor simulado aceita e guarda, como um tipo acrescentado depois. */
-export const TIPO_ACEITO_SEM_ROTULO = 'TIPO_ACRESCENTADO_NO_SERVIDOR';
 
 /** O que o servidor simulado guarda e o que a tela lhe enviou. */
 export interface ServidorDosTiposDeDecisao {
@@ -95,7 +92,7 @@ async function gravarCronograma(
 ): Promise<void> {
   servidor.cronogramasEnviados.push(corpo);
   const [fase] = corpo;
-  if (fase.tiposDeDecisao.includes(TIPO_RECUSADO)) {
+  if (fase.tiposDeDecisao.includes(TIPO_RECUSADO.codigo)) {
     return recusarTipoNaoReconhecido(route, 'fases[0].tiposDeDecisao[0]');
   }
   servidor.fase = comTiposDeDecisaoNaFase(servidor.fase, emOrdemAlfabetica(fase.tiposDeDecisao));

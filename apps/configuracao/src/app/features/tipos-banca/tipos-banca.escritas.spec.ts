@@ -49,6 +49,12 @@ describe('TiposBancaPage — escritas', () => {
   afterEach(() => {
     // A tela nunca deve emitir a criação de tipo de banca.
     controller.expectNone((r) => r.method === 'POST' && r.url === CRIAR_URL);
+    controller
+      .match((r) => r.url.endsWith('/vocabularios/papeis-de-banca'))
+      .forEach((r) => r.flush([]));
+    controller
+      .match((r) => r.url.endsWith('/vocabularios/tipos-de-decisao'))
+      .forEach((r) => r.flush([]));
     controller.verify();
   });
 
@@ -108,6 +114,34 @@ describe('TiposBancaPage — escritas', () => {
     put.flush(null, { status: 204, statusText: 'No Content' });
     await propagate();
     await flushLista([bancaSeed]);
+  });
+
+  it('preserva os dados lidos no PUT completo com chave de idempotência', async () => {
+    const papel = bancaSeed.papel.codigo;
+    const decisao = 'CLASSIFICACAO' as TipoBancaDto['tiposDeDecisaoJulgados'][number]['codigo'];
+    const lida: TipoBancaDto = {
+      ...bancaSeed,
+      exigeDuasOuMaisBancas: true,
+      tiposDeDecisaoJulgados: [{ codigo: decisao, rotulo: 'Classificação' }],
+    };
+    await flushLista([lida]);
+    await abrirEdicao(lida);
+    edicao.salvar();
+    const put = controller.expectOne(`${BASE}/api/configuracao/admin/tipos-banca/${lida.id}`);
+    expect(put.request.headers.get('Idempotency-Key')).toBeTruthy();
+    expect(put.request.body).toEqual({
+      id: lida.id,
+      nome: lida.nome,
+      faseTipica: lida.faseTipica,
+      descricao: null,
+      papel,
+      exigeDuasOuMaisBancas: true,
+      encerraRecursoNaPrimeiraInstancia: false,
+      tiposDeDecisaoJulgados: [decisao],
+    });
+    put.flush(null, { status: 204, statusText: 'No Content' });
+    await propagate();
+    await flushLista([lida]);
   });
 
   it('CA-08/CA-14: salvar a edição emite PUT e nunca POST', async () => {

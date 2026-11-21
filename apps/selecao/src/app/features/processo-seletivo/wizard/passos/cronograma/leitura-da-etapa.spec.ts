@@ -12,6 +12,7 @@ import { COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing
 import { FORMA_HUMANA, FORMA_OBJETIVA } from '../../shared/forma-de-avaliacao';
 import { etapa } from './cronograma-do-certame.testing';
 import { grupoDaEtapa } from './cronograma-form';
+import { rotuloDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 import { etapaLida, rotuloDoPapel, type CatalogosDaLeitura } from './leitura-da-etapa';
 
 const ATO = 'EDITAL_ABERTURA';
@@ -31,6 +32,7 @@ const catalogos = {
     ]),
   ),
   bancas: signal([{ id: BANCA, nome: 'Banca de redação' }]),
+  rotuloDoTipoDeDecisao: signal(rotuloDaApi),
 } as unknown as CatalogosDaLeitura;
 
 function lida(parcial: Partial<EtapaPontuada>) {

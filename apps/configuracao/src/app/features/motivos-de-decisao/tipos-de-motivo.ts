@@ -1,7 +1,3 @@
-import { TIPOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
-
-export const TIPO_INICIAL = TIPOS_DE_DECISAO[0].codigo;
-
 const TIPO_COM_SUBCLASSIFICACAO = 'ISENCAO_DA_TAXA';
 
 /** A subclassificação existe só onde o tipo a pede: na isenção, o fundamento de isenção. */

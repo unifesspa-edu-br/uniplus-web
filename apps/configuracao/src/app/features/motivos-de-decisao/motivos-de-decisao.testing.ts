@@ -10,6 +10,7 @@ import { provideRouter } from '@angular/router';
 import { PERMISSAO, PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
+import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
   MotivoDeDecisaoDto,
   SELECAO_BASE_PATH,
@@ -46,6 +47,17 @@ export const desativado: MotivoDeDecisaoDto = {
   ativo: false,
 };
 
+const TIPOS_DA_API = [
+  { codigo: 'ISENCAO_DA_TAXA', rotulo: 'Isenção da taxa' },
+  { codigo: 'HOMOLOGACAO_DAS_INSCRICOES', rotulo: 'Homologação das inscrições' },
+  { codigo: 'ANALISE_DOCUMENTAL', rotulo: 'Análise documental' },
+  { codigo: 'HETEROIDENTIFICACAO', rotulo: 'Heteroidentificação' },
+  { codigo: 'AVALIACAO_BIOPSICOSSOCIAL', rotulo: 'Avaliação biopsicossocial' },
+  { codigo: 'CLASSIFICACAO', rotulo: 'Classificação' },
+  { codigo: 'GABARITO_DA_PROVA', rotulo: 'Gabarito da prova' },
+  { codigo: 'NOTA_DA_ETAPA', rotulo: 'Nota da etapa' },
+];
+
 export const FUNDAMENTOS_DA_API = [
   { codigo: 'BAIXA_RENDA', nome: 'Baixa renda', descricao: 'Renda familiar baixa.' },
   { codigo: 'DOADOR_DE_MEDULA', nome: 'Doador de medula', descricao: 'Doador cadastrado.' },
@@ -69,6 +81,7 @@ function configurarTestBed(concedidas: Signal<readonly string[]>): void {
       provideHttpClientTesting(),
       provideRouter([]),
       { provide: SELECAO_BASE_PATH, useValue: BASE },
+      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
       { provide: PermissoesService, useValue: { tem: (c: string) => concedidas().includes(c) } },
     ],
   });
@@ -145,6 +158,9 @@ async function carregarPagina(
   itens: readonly MotivoDeDecisaoDto[],
 ): Promise<void> {
   fixture.detectChanges();
+  TestBed.inject(HttpTestingController)
+    .expectOne(`${BASE}/api/configuracao/vocabularios/tipos-de-decisao`)
+    .flush(TIPOS_DA_API);
   await tela.propagar();
   await lerLista(itens);
 }

@@ -3,7 +3,7 @@
  * O servidor recusa um código fora do vocabulário, o mesmo código repetido e, ao tirar um tipo, o
  * recurso que ainda tem procedimento para ele.
  */
-const RECUSA_DOS_TIPOS_DE_DECISAO: ReadonlyMap<string, string> = new Map([
+const RECUSA_POR_TIPO: ReadonlyMap<string, string> = new Map([
   [
     'uniplus.selecao.motivo_de_decisao.tipo_invalido',
     'Um tipo de decisão enviado não é reconhecido pelo servidor.',
@@ -24,5 +24,5 @@ const RECUSA_DOS_TIPOS_DE_DECISAO: ReadonlyMap<string, string> = new Map([
 
 /** O texto da recusa à declaração dos tipos de decisão, ou `null` quando a recusa é outra. */
 export function textoDaRecusaDosTiposDeDecisao(codigo: string): string | null {
-  return RECUSA_DOS_TIPOS_DE_DECISAO.get(codigo) ?? null;
+  return RECUSA_POR_TIPO.get(codigo) ?? null;
 }

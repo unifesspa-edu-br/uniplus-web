@@ -3,6 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { provideTiposDeDecisaoDaApi } from './tipos-de-decisao-da-api.testing';
 import { TiposDeDecisaoDaFaseOuEtapaComponent } from './tipos-de-decisao-da-fase-ou-etapa.component';
 
 @Component({
@@ -29,6 +30,7 @@ describe('TiposDeDecisaoDaFaseOuEtapaComponent', () => {
   let anfitriao: AnfitriaoComponent;
 
   beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [provideTiposDeDecisaoDaApi()] });
     fixture = TestBed.createComponent(AnfitriaoComponent);
     anfitriao = fixture.componentInstance;
     fixture.detectChanges();
@@ -83,11 +85,15 @@ describe('TiposDeDecisaoDaFaseOuEtapaComponent', () => {
     expect(anfitriao.formulario.controls.tiposDeDecisao.touched).toBe(true);
   });
 
-  it('mostra o código declarado que o vocabulário não conhece, para poder retirá-lo', () => {
+  it('permite retirar o tipo que o vocabulário não conhece sem expor o código', () => {
     anfitriao.formulario.controls.tiposDeDecisao.setValue(['TIPO_DO_FUTURO']);
     fixture.detectChanges();
 
     expect(caixa('TIPO_DO_FUTURO').checked).toBe(true);
+    expect(caixa('TIPO_DO_FUTURO').closest('label')?.textContent).toContain(
+      'Tipo de decisão não identificado',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('TIPO_DO_FUTURO');
 
     marcar('TIPO_DO_FUTURO', false);
 

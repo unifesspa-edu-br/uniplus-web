@@ -1,4 +1,4 @@
-import { TIPOS_DE_DECISAO } from '@uniplus/shared-data/selecao';
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   MOTIVO_EM_BRANCO,
@@ -83,7 +83,9 @@ describe('formulário de motivo de decisão', () => {
   });
 
   it('só a isenção pede subclassificação', () => {
-    expect(TIPOS_DE_DECISAO.filter((t) => tipoPedeSubclassificacao(t.codigo))).toHaveLength(1);
+    expect(Object.values(TipoMotivoDeDecisaoCodigo).filter(tipoPedeSubclassificacao)).toHaveLength(
+      1,
+    );
     expect(tipoPedeSubclassificacao('ISENCAO_DA_TAXA')).toBe(true);
   });
 });

@@ -35,6 +35,7 @@ export class MotivosDeDecisaoListaComponent {
   readonly mostraSubclassificacao = input.required<boolean>();
   readonly carregando = input.required<boolean>();
   readonly gravando = input.required<boolean>();
+  readonly cadastroIndisponivel = input(false);
   readonly andamento = input.required<AndamentoDaEscrita | null>();
   readonly erro = input.required<string | null>();
   readonly temFiltro = input.required<boolean>();
@@ -65,7 +66,7 @@ export class MotivosDeDecisaoListaComponent {
   });
 
   protected acionarCadastro(): void {
-    if (this.indisponivel()) return;
+    if (this.indisponivel() || this.cadastroIndisponivel()) return;
     this.foco.registrar(null);
     this.cadastrar.emit();
   }

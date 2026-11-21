@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { CORS_DE_LEITURA } from '../support/processo-mockado';
 import { OPCOES_DO_RECURSO } from './opcoes-do-recurso';
+import { TIPOS_DE_DECISAO_DA_API } from '../support/vocabulario-de-tipos-de-decisao';
 import {
   responderCatalogos,
   responderRegrasDoCatalogo,
@@ -105,6 +106,7 @@ const CATALOGOS: readonly CatalogoMockado[] = [
   ['configuracao/fatos-candidato', []],
   ['publicacoes/tipos-ato', []],
   ...OPCOES_DO_RECURSO,
+  TIPOS_DE_DECISAO_DA_API,
 ];
 
 /**

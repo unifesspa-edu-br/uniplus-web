@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
-import { rotuloDoTipoDeDecisao } from '@uniplus/shared-data/selecao';
 import { ValorEmConsultaComponent } from '@uniplus/shared-ui/components';
 
+import { rotuloDoTipoDeDecisaoLido } from '../../../shared/hidratacao/rotulo-do-tipo-de-decisao-lido';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { TiposDeDecisaoDaFaseOuEtapaComponent } from '../../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-fase-ou-etapa.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
@@ -24,11 +24,14 @@ export class DecisoesDaFaseComponent {
   private readonly espelho = this.faseEmEdicao.espelho;
 
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
+  private readonly rotuloLido = computed(() =>
+    rotuloDoTipoDeDecisaoLido(this.store.remoteSnapshot()),
+  );
 
-  /** A leitura da consulta: o nome de cada tipo declarado, sem o controle que os edita. */
+  /** A leitura da consulta: o nome de cada tipo declarado, como o processo lido o traz. */
   protected decisoesLidas(): readonly string[] {
     this.espelho.versao();
     const declarados = this.espelho.formulario()?.controls.tiposDeDecisao.value ?? [];
-    return declarados.map(rotuloDoTipoDeDecisao);
+    return declarados.map(this.rotuloLido());
   }
 }
