@@ -1,4 +1,3 @@
-import { novaChave } from '../../../shared/chaves/chave-local';
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
@@ -6,7 +5,6 @@ import type {
   BancaDaEtapa,
   ProdutoDaFase,
   RecursoDaEtapa,
-  RegraDeDeliberacaoDaBanca,
 } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { FORMAS_DE_AVALIACAO } from '../../../shared/forma-de-avaliacao';
@@ -249,44 +247,7 @@ export class EdicaoDaEtapa {
     return grupo.controls.bancas.value;
   }
 
-  alternarBancaDaEtapa(grupo: FormGroup<EtapaForm>, tipoBancaId: string, marcada: boolean): void {
-    const atuais = grupo.controls.bancas.value;
-    const jaDeclarada = atuais.some((banca) => banca.tipoBancaId === tipoBancaId);
-    if (marcada === jaDeclarada) return;
-    const bancas = marcada
-      ? [...atuais, this.novaBancaDaEtapa(tipoBancaId, atuais)]
-      : atuais.filter((banca) => banca.tipoBancaId !== tipoBancaId);
-    this.escreverBancas(grupo, bancas);
-  }
-
-  private novaBancaDaEtapa(tipoBancaId: string, atuais: readonly BancaDaEtapa[]): BancaDaEtapa {
-    return {
-      id: null,
-      identificadorLocal: novaChave({
-        tipo: 'banca',
-        nome: '',
-        tomadas: new Set(atuais.map((banca) => banca.identificadorLocal)),
-      }),
-      copiaDoTipo: null,
-      tipoBancaId,
-      regraDeDeliberacao: null,
-    };
-  }
-
-  declararRegraDaBancaDaEtapa(
-    grupo: FormGroup<EtapaForm>,
-    tipoBancaId: string,
-    regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null,
-  ): void {
-    this.escreverBancas(
-      grupo,
-      grupo.controls.bancas.value.map((banca) =>
-        banca.tipoBancaId === tipoBancaId ? { ...banca, regraDeDeliberacao } : banca,
-      ),
-    );
-  }
-
-  private escreverBancas(grupo: FormGroup<EtapaForm>, bancas: readonly BancaDaEtapa[]): void {
+  escreverBancas(grupo: FormGroup<EtapaForm>, bancas: readonly BancaDaEtapa[]): void {
     grupo.controls.bancas.setValue(bancas);
     grupo.controls.bancas.markAsDirty();
   }

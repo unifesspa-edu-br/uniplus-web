@@ -67,7 +67,7 @@ function alvosDaBanca(
   const reserva = `cr-etapa-bancas-erro-${indice}`;
   const banca = etapa.bancas[Number(posicao)];
   if (banca === undefined) return [reserva];
-  const base = `etapa-${indice}-banca-${banca.tipoBancaId}`;
+  const base = `etapa-${indice}-banca-${banca.identificadorLocal}`;
   return [...alvosDaRecusaDaBanca(base, campo as CampoDaBanca), reserva];
 }
 

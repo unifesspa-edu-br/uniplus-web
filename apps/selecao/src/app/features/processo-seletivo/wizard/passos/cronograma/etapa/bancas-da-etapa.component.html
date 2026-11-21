@@ -1,52 +1,36 @@
-@let etapa = grupo();
-
-<h4 class="form-section__title" [attr.id]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()">
+<h4 class="form-section__title" [id]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()">
   Quem julga esta etapa
 </h4>
-@let dasBancas = recusas.recusasDoCampo(etapa, 'bancas');
-@if (catalogoDeBancas.bancas().length > 0) {
-  <div
-    class="checkbox-grid"
-    role="group"
-    [attr.aria-labelledby]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()"
-    [attr.aria-describedby]="
-      dasBancas.length > 0 ? 'cr-etapa-bancas-erro-' + indiceDaEtapa() : null
-    "
-  >
-    @for (banca of catalogoDeBancas.bancas(); track banca.id) {
-      <label class="checkbox">
-        <input
-          type="checkbox"
-          [checked]="edicao.bancasDaEtapa(etapa).some((declarada) => declarada.tipoBancaId === banca.id)"
-          [disabled]="!edicaoLiberada()"
-          (change)="edicao.alternarBancaDaEtapa(etapa, banca.id, $any($event.target).checked)"
-        />
-        <span class="checkbox__box" aria-hidden="true"></span>
-        {{ banca.nome }}
-      </label>
-    }
-  </div>
-} @else {
-  <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
-}
-@if (dasBancas.length > 0) {
-  <sel-recusas-do-campo
-    [attr.id]="'cr-etapa-bancas-erro-' + indiceDaEtapa()"
-    tabindex="-1"
-    [recusas]="dasBancas"
-  />
-}
-
-@for (banca of escolhidas(); track banca.tipoBancaId) {
+<ng-template #detalhe let-banca>
   <fieldset class="form-field">
-    <legend class="label">Deliberação da banca {{ banca.nome }}</legend>
+    <legend class="label">Deliberação da banca</legend>
     <sel-regra-de-deliberacao
-      [regra]="banca.regra"
-      [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.tipoBancaId"
-      [desabilitada]="!edicaoLiberada()"
-      [erros]="banca.erros"
-      [recusas]="banca.recusas"
-      (regraChange)="edicao.declararRegraDaBancaDaEtapa(etapa, banca.tipoBancaId, $event)"
+      [regra]="banca.regraDeDeliberacao"
+      [idBase]="'etapa-' + indiceDaEtapa() + '-banca-' + banca.identificadorLocal"
+      [desabilitada]="!cronograma.edicaoLiberada()"
+      [erros]="errosDasRegras().get(banca.identificadorLocal) ?? {}"
+      [recusas]="recusasDasRegras().get(banca.identificadorLocal) ?? {}"
+      (regraChange)="alterarRegra(banca, $event)"
     />
   </fieldset>
-}
+</ng-template>
+<div
+  role="group"
+  [attr.aria-labelledby]="'cr-etapa-bancas-titulo-' + indiceDaEtapa()"
+  [attr.aria-describedby]="
+    recusas.recusasDoCampo(grupo(), 'bancas').length
+      ? 'cr-etapa-bancas-erro-' + indiceDaEtapa()
+      : null
+  "
+>
+  <sel-lista-de-bancas
+    [idBase]="'cr-etapa-bancas-' + indiceDaEtapa()"
+    [idRecusas]="'cr-etapa-bancas-erro-' + indiceDaEtapa()"
+    [bancas]="edicao.bancasDaEtapa(grupo())"
+    [tipos]="tipos()"
+    [recusas]="recusas.recusasDoCampo(grupo(), 'bancas')"
+    [edicaoLiberada]="cronograma.edicaoLiberada()"
+    [detalhe]="detalhe"
+    (bancasChange)="edicao.escreverBancas(grupo(), $event)"
+  />
+</div>

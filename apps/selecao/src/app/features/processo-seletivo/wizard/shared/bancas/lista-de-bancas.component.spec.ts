@@ -1,0 +1,88 @@
+import { TestBed, type ComponentFixture } from '@angular/core/testing';
+import axe from 'axe-core';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BancaDeclarada } from '../../modelos/banca.models';
+import { ListaDeBancasComponent } from './lista-de-bancas.component';
+
+describe('ListaDeBancasComponent', () => {
+  let fixture: ComponentFixture<ListaDeBancasComponent>;
+  let bancas: readonly BancaDeclarada[];
+  const raiz = () => fixture.nativeElement as HTMLElement;
+  const botao = (nome: string) =>
+    raiz().querySelector<HTMLButtonElement>(`button[aria-label="${nome}"]`);
+  const atualizar = (novas: readonly BancaDeclarada[]) => {
+    bancas = novas;
+    fixture.componentRef.setInput('bancas', novas);
+    fixture.detectChanges();
+  };
+  const acrescentar = () => {
+    const select = raiz().querySelector('select');
+    if (!select) throw new Error('Seletor ausente');
+    select.value = 'entrevista';
+    select.dispatchEvent(new Event('change'));
+    Array.from(raiz().querySelectorAll('button'))
+      .find((b) => b.textContent?.includes('Acrescentar'))
+      ?.click();
+  };
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({ imports: [ListaDeBancasComponent] }).compileComponents();
+    fixture = TestBed.createComponent(ListaDeBancasComponent);
+    fixture.componentRef.setInput('idBase', 'bancas');
+    fixture.componentRef.setInput('tipos', [{ id: 'entrevista', rotulo: 'Banca de entrevista' }]);
+    fixture.componentInstance.bancasChange.subscribe(atualizar);
+    atualizar([]);
+    document.body.appendChild(raiz());
+  });
+
+  it('pede o tipo junto ao seletor e leva o foco a ele', async () => {
+    vi.useFakeTimers();
+    raiz().querySelector('button')?.click();
+    fixture.detectChanges();
+    vi.runAllTimers();
+    expect(raiz().querySelector('select')?.getAttribute('aria-describedby')).toBe(
+      'bancas-tipo-erro',
+    );
+    expect(document.activeElement).toBe(raiz().querySelector('select'));
+    vi.useRealTimers();
+  });
+
+  it('acrescenta, move e retira com anúncio e foco', () => {
+    vi.useFakeTimers();
+    acrescentar();
+    vi.runAllTimers();
+    expect(raiz().querySelector('[role=status]')?.textContent).toContain(
+      'Banca de entrevista 1 acrescentada.',
+    );
+    expect(document.activeElement?.id).toBe('bancas-banca-1');
+    expect(raiz().querySelector('[aria-label^="Mover"]')).toBeNull();
+    acrescentar();
+    botao('Mover a Banca de entrevista 2 para antes da Banca de entrevista 1')?.click();
+    vi.runAllTimers();
+    fixture.detectChanges();
+    expect(bancas[0].identificadorLocal).toBe('banca-2');
+    expect(document.activeElement?.id).toBe('bancas-banca-2');
+    expect(raiz().querySelector('[role=status]')?.textContent).toContain(
+      'A banca movida passou a ser a Banca de entrevista 1.',
+    );
+    botao('Retirar a Banca de entrevista 1')?.click();
+    vi.runAllTimers();
+    fixture.detectChanges();
+    expect(document.activeElement?.id).toBe('bancas-banca-1');
+    expect(raiz().querySelector('[role=status]')?.textContent).toContain(
+      'Banca de entrevista 1 retirada; as seguintes deste tipo mudaram de número.',
+    );
+    botao('Retirar a Banca de entrevista 1')?.click();
+    vi.runAllTimers();
+    expect(document.activeElement).toBe(raiz().querySelector('select'));
+    vi.useRealTimers();
+  });
+
+  it('liga os botões ao aviso de ordem e não apresenta violações axe', async () => {
+    acrescentar();
+    acrescentar();
+    const mover = botao('Mover a Banca de entrevista 2 para antes da Banca de entrevista 1');
+    expect(mover?.getAttribute('aria-describedby')).toBe('bancas-ordem-entrevista');
+    expect((await axe.run(raiz())).violations).toEqual([]);
+  });
+});
