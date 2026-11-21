@@ -249,6 +249,18 @@ describe('CronogramaPassoComponent: recusas da publicação nas fases', () => {
   });
 
   describe('"Ir ao campo"', () => {
+    it('abre a fase e foca a caixa da marca recusada', async () => {
+      tela.comFases(ID_AVALIACAO, ID_RESULTADO);
+      ajudantes.recusar({
+        field: '/cronograma/fases/0/noMesmoMomentoDaAnterior',
+        code: 'uniplus.selecao.processo_seletivo.fases_com_precedencia_no_mesmo_momento',
+        message: 'Fases ligadas por precedência não podem estar no mesmo momento.',
+        identificadores: [daFase('RESULTADO_FINAL')],
+      });
+      await ajudantes.irAoCampo(0);
+      expect(document.activeElement).toBe(campo('cr-mesmo-momento-1'));
+    });
+
     it('abre a fase da recusa e põe o foco no campo Fim', async () => {
       tela.comFaseAjustada(ID_RESULTADO, { produtos: [], ...SEM_PERIODO });
       ajudantes.recusar({ ...FIM_RECUSADO, identificadores: [daFase('RESULTADO_FINAL')] });

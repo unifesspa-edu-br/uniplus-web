@@ -55,6 +55,11 @@
       [leitura]="releituraDasEtapas.leitura"
     />
 
+    <div role="status" class="field__hint">
+      @if (avisoDaMarca(); as aviso) {
+        <p>{{ aviso }}</p>
+      }
+    </div>
     @if (linhaDoTempo().length === 0) {
       <p class="field__hint">
         Nenhuma fase na linha do tempo. Comece pela fase em que as inscrições são coletadas, ou pela

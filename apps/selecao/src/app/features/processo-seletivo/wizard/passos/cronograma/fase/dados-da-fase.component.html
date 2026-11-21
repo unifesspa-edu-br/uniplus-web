@@ -46,6 +46,40 @@
   </div>
 }
 
+@if (marcaNaTela()) {
+  @let daMarca = recusasDoCampo(item, 'noMesmoMomentoDaAnterior');
+  <div class="form-field form-grid__full">
+    <label class="checkbox" [attr.for]="'cr-mesmo-momento-' + item.indice">
+      <input
+        type="checkbox"
+        [attr.id]="'cr-mesmo-momento-' + item.indice"
+        formControlName="noMesmoMomentoDaAnterior"
+        [attr.aria-describedby]="
+          'cr-mesmo-momento-ajuda-' +
+          item.indice +
+          (daMarca.length > 0 ? ' cr-mesmo-momento-erro-' + item.indice : '')
+        "
+        [attr.aria-invalid]="haRecusaAtiva(daMarca) ? 'true' : null"
+      />
+      <span class="checkbox__box" aria-hidden="true"></span>
+      No mesmo momento da anterior
+    </label>
+    <p class="field__hint" [attr.id]="'cr-mesmo-momento-ajuda-' + item.indice">
+      As fases marcadas em sequência ocupam o mesmo momento na ordem do cronograma: a fase seguinte
+      espera a conclusão de cada fase do grupo anterior, salvo quando o cronograma permite sobrepor
+      o período dela ao daquela fase. Uma suspensão ativa de fase anterior continua impedindo o
+      início da seguinte.
+    </p>
+    @if (daMarca.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="'cr-mesmo-momento-erro-' + item.indice"
+        tabindex="-1"
+        [recusas]="daMarca"
+      />
+    }
+  </div>
+}
+
 @let comInicio = campoNaTela('inicio', item.exigencias);
 @let comFim = fimNaTela();
 @if (comInicio) {

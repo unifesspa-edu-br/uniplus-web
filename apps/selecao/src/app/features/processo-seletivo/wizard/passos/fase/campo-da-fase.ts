@@ -34,14 +34,20 @@ export type CampoDaRecusaDaFase =
   | CampoDoRecursoDaFase
   | 'inicio'
   | 'fim'
+  | 'noMesmoMomentoDaAnterior'
   | 'unidadeResponsavelId'
   | 'recurso';
 
 const CAMPOS_DA_FASE: ReadonlyMap<string, CampoDaRecusaDaFase> = new Map(
-  (['inicio', 'fim', 'unidadeResponsavelId', 'emiteParecerIndividual'] as const).map((campo) => [
-    campo.toLowerCase(),
-    campo,
-  ]),
+  (
+    [
+      'inicio',
+      'fim',
+      'noMesmoMomentoDaAnterior',
+      'unidadeResponsavelId',
+      'emiteParecerIndividual',
+    ] as const
+  ).map((campo) => [campo.toLowerCase(), campo]),
 );
 
 /**
@@ -50,9 +56,7 @@ const CAMPOS_DA_FASE: ReadonlyMap<string, CampoDaRecusaDaFase> = new Map(
  * fase, e a recusa vai ao resumo do passo.
  */
 const CAMPOS_NO_TOPO_DA_FASE: ReadonlySet<string> = new Set(
-  ['ordem', 'faseCanonicaId', 'noMesmoMomentoDaAnterior', 'tiposDeDecisao'].map((campo) =>
-    campo.toLowerCase(),
-  ),
+  ['ordem', 'faseCanonicaId', 'tiposDeDecisao'].map((campo) => campo.toLowerCase()),
 );
 
 /** Os campos de cada linha da lista de publicações que têm controle, pelo nome em minúsculas. */
@@ -155,12 +159,20 @@ export function fimDaFaseNaTela(
   );
 }
 
+export function marcaDoMesmoMomentoNaTela(
+  posicao: number,
+  ligada: boolean,
+  comRecusa: boolean,
+): boolean {
+  return posicao > 0 || ligada || comRecusa;
+}
+
 /**
  * O campo da linha do tempo da fase tem controle na tela. A fase que a tela não sabe descrever não
  * mostra a unidade nem o início: só existem quando se sabe o que a fase exige. O início aparece só
  * com o período obrigatório. O Fim tem sempre onde receber a recusa, porque `fimDaFaseNaTela` o
  * mostra quando há recusa a ele, mesmo sem saber o que a fase exige. Os demais campos da fase têm
- * controle sempre que a fase está aberta.
+ * controle sempre que a fase está aberta; a marca também aparece na primeira quando ligada ou recusada.
  */
 export function campoNaTela(campo: string, exigencias: ExigenciasDaFase | null): boolean {
   if (campo === 'unidadeResponsavelId') return exigencias !== null;

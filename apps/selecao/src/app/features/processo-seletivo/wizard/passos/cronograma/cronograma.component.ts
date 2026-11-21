@@ -87,6 +87,13 @@ export class CronogramaPassoComponent {
   readonly fases = this.cronograma.fases;
   readonly etapas = this.cronograma.etapas;
   readonly linhaDoTempo = this.cronograma.linhaDoTempo;
+  readonly avisoDaMarca = computed(() => {
+    const codigo = this.cronograma.sequencia.primeiraFaseDesmarcada();
+    const fase = this.linhaDoTempo().find((item) => item.grupo.controls.codigo.value === codigo);
+    return fase === undefined
+      ? null
+      : `A fase ${fase.nome} passou a ser a primeira do cronograma e deixou de estar marcada como no mesmo momento da anterior.`;
+  });
   readonly edicaoLiberada = this.cronograma.edicaoLiberada;
   private readonly versaoDoFormulario = this.cronograma.versao;
 

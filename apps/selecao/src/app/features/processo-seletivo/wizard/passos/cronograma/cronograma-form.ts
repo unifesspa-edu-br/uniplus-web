@@ -40,7 +40,6 @@ export interface FaseForm {
   readonly fim: FormControl<string>;
   /** Unidade que responde pela fase; vazio enquanto não escolhida. */
   readonly unidadeResponsavelId: FormControl<string>;
-  /** Não é editado neste passo e viaja no formulário: a gravação substitui o cronograma inteiro. */
   readonly noMesmoMomentoDaAnterior: FormControl<boolean>;
   /**
    * O que a fase publica. Como a regra de recurso, não é editado neste passo e
@@ -134,7 +133,13 @@ export function novoFormularioDoCronograma(): FormGroup<CronogramaForm> {
 
 type ControlesEditadosDaFase = Pick<
   FaseForm,
-  'faseCanonicaId' | 'codigo' | 'ordem' | 'inicio' | 'fim' | 'unidadeResponsavelId'
+  | 'faseCanonicaId'
+  | 'codigo'
+  | 'ordem'
+  | 'inicio'
+  | 'fim'
+  | 'unidadeResponsavelId'
+  | 'noMesmoMomentoDaAnterior'
 >;
 type ControlesCarregadosDaFase = Omit<FaseForm, keyof ControlesEditadosDaFase>;
 
@@ -153,13 +158,13 @@ function controlesEditadosDaFase(fase: FaseDoCronograma): ControlesEditadosDaFas
     inicio: controle(fase.inicio === null ? '' : campoDoInstante(fase.inicio)),
     fim: controle(fase.fim === null ? '' : campoDoInstante(fase.fim)),
     unidadeResponsavelId: controle(fase.unidadeResponsavelId ?? ''),
+    noMesmoMomentoDaAnterior: controle(fase.noMesmoMomentoDaAnterior),
   };
 }
 
 /** O que a fase só carrega: o passo não edita, e a gravação substitui o cronograma inteiro. */
 function controlesCarregadosDaFase(fase: FaseDoCronograma): ControlesCarregadosDaFase {
   return {
-    noMesmoMomentoDaAnterior: controle(fase.noMesmoMomentoDaAnterior),
     produtos: controle<readonly ProdutoDaFase[]>(fase.produtos),
     emiteParecerIndividual: controle(fase.emiteParecerIndividual),
     bancasRequeridas: controle<readonly BancaRequeridaDaFase[]>(fase.bancasRequeridas),

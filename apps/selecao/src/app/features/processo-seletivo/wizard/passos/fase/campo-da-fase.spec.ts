@@ -7,6 +7,7 @@ import {
   campoDaRecusaDaFase,
   campoNaTela,
   fimDaFaseNaTela,
+  marcaDoMesmoMomentoNaTela,
   NO_TOPO_DA_FASE,
   posicaoNaLista,
 } from './campo-da-fase';
@@ -22,6 +23,7 @@ describe('campoDaRecusaDaFase', () => {
     ['fases[0].emiteParecerIndividual', 'emiteParecerIndividual'],
     ['fases[0].inicio', 'inicio'],
     ['fases[0].fim', 'fim'],
+    ['fases[0].noMesmoMomentoDaAnterior', 'noMesmoMomentoDaAnterior'],
     ['fases[1].unidadeResponsavelId', 'unidadeResponsavelId'],
   ])('leva %s ao campo %s', (field, campo) => {
     expect(campoDe(field)).toBe(campo);
@@ -90,15 +92,12 @@ describe('campoDaRecusaDaFase', () => {
     expect(campoDe('fases[0].regraRecurso')).toBe('recurso');
   });
 
-  it.each([
-    'fases[0]',
-    'fases[0].ordem',
-    'fases[0].faseCanonicaId',
-    'fases[0].noMesmoMomentoDaAnterior',
-    'fases[0].tiposDeDecisao[0]',
-  ])('deixa no topo da fase o caminho %s, que a fase conhece sem controle de recusa', (field) => {
-    expect(campoDe(field)).toBe(NO_TOPO_DA_FASE);
-  });
+  it.each(['fases[0]', 'fases[0].ordem', 'fases[0].faseCanonicaId', 'fases[0].tiposDeDecisao[0]'])(
+    'deixa no topo da fase o caminho %s, que a fase conhece sem controle de recusa',
+    (field) => {
+      expect(campoDe(field)).toBe(NO_TOPO_DA_FASE);
+    },
+  );
 
   it.each([
     'fases[0].bancas[x]',
@@ -203,5 +202,16 @@ describe('o Fim e o início da fase na tela', () => {
   it('o início só aparece com o período obrigatório', () => {
     expect(campoNaTela('inicio', exigencias({ fimObrigatorio: true }))).toBe(false);
     expect(campoNaTela('inicio', exigencias({ janelaObrigatoria: true }))).toBe(true);
+  });
+});
+
+describe('marca do mesmo momento na tela', () => {
+  it.each([
+    [0, false, false, false],
+    [1, false, false, true],
+    [0, true, false, true],
+    [0, false, true, true],
+  ])('na posição %i, ligada %s e com recusa %s: %s', (posicao, ligada, recusa, esperado) => {
+    expect(marcaDoMesmoMomentoNaTela(posicao, ligada, recusa)).toBe(esperado);
   });
 });
