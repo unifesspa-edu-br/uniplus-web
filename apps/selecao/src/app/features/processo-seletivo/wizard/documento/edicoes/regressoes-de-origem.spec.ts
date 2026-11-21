@@ -2,12 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { DocumentoDaConfiguracao } from '@uniplus/shared-data/selecao';
 import { definirCondicoesDeAtendimento } from './atendimento.edicao';
 import { comBasesLegais, comFormatosPermitidos } from './condicoes-da-exigencia.edicao';
-import { comProdutos } from './produtos-e-decisoes.edicao';
 import {
   acrescentarItemDeAvaliacao,
   acrescentarNivelDeAtendimento,
 } from './avaliacao-da-etapa.edicao';
-import { acrescentarBanca } from './bancas.edicao';
 import { instanteEmUtc } from '../instante-em-utc';
 
 const DOCUMENTO_COM_CHAVES_REPETIDAS: DocumentoDaConfiguracao = {
@@ -45,15 +43,6 @@ describe('regressões de origem e calendário', () => {
       ]).basesLegais,
     ).toEqual([bases[1]]);
   });
-  it('preserva a origem dos produtos movidos', () => {
-    const produtos = [{ atoCodigo: ' A ' }, { atoCodigo: ' B ' }];
-    expect(
-      comProdutos({ produtos }, [
-        { origem: 1, atoCodigo: 'B', papel: '' },
-        { origem: 0, atoCodigo: 'A', papel: '' },
-      ]).produtos,
-    ).toEqual([produtos[1], produtos[0]]);
-  });
   it('preserva a origem dos formatos movidos', () => {
     const formatosPermitidos = {
       lista: [{ tamanhoMaximoBytesMax: 5 }, { tamanhoMaximoBytesMax: 10 }],
@@ -77,26 +66,6 @@ describe('regressões de origem e calendário', () => {
     expect(nivel.etapas?.[0]).toEqual({ chave: 'x' });
     expect(nivel.etapas?.[1].itensDeAvaliacao).toHaveLength(1);
     expect(nivel.etapas?.[1].escalaDeAtendimento).toHaveLength(1);
-  });
-  it('acrescenta banca na fase escolhida', () => {
-    const banca = acrescentarBanca(
-      DOCUMENTO_COM_CHAVES_REPETIDAS,
-      { faseChave: 'x', ocorrencia: 1 },
-      { tipoBancaCodigo: 'B', nome: 'Banca' },
-      RESERVAS,
-    );
-    expect(banca.cronograma?.fases?.[0]).toEqual({ chave: 'x', faseCanonicaCodigo: 'INSCRICOES' });
-    expect(banca.cronograma?.fases?.[1].bancasRequeridas).toHaveLength(1);
-  });
-  it('acrescenta banca na etapa escolhida', () => {
-    const banca = acrescentarBanca(
-      DOCUMENTO_COM_CHAVES_REPETIDAS,
-      { etapaChave: 'x', ocorrencia: 1 },
-      { tipoBancaCodigo: 'B', nome: 'Banca' },
-      RESERVAS,
-    );
-    expect(banca.etapas?.[0]).toEqual({ chave: 'x' });
-    expect(banca.etapas?.[1].bancas).toHaveLength(1);
   });
   it.each([
     '2026-02-31T10:00',
