@@ -221,11 +221,10 @@ describe('RevisaoPassoComponent — conferência', () => {
     controller.expectOne(ROTA_PUBLICACAO).flush(
       {
         type: 'about:blank',
-        title: 'O processo tem pendências estruturais',
+        title: 'Somente um documento confirmado pode ser referenciado na publicação.',
         status: 422,
-        code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
+        code: 'uniplus.selecao.processo_seletivo.documento_nao_confirmado',
         traceId: 't1',
-        pendencias: [{ codigo: 'x', dimensao: 'taxa_inscricao', mensagem: 'falta declarar' }],
       },
       {
         status: 422,
@@ -234,13 +233,14 @@ describe('RevisaoPassoComponent — conferência', () => {
       },
     );
     await gravacao;
+    await flushProntidaoVerde(cenario);
     fixture.detectChanges();
-    expect(textoDaTela(cenario)).toContain('falta declarar');
+    expect(textoDaTela(cenario)).toContain('Somente um documento confirmado');
 
     store.geracao.update((geracao) => geracao + 1);
     await flushMicrotasks();
     fixture.detectChanges();
 
-    expect(textoDaTela(cenario)).not.toContain('falta declarar');
+    expect(textoDaTela(cenario)).not.toContain('Somente um documento confirmado');
   });
 });

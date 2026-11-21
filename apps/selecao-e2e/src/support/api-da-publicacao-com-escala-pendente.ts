@@ -38,10 +38,18 @@ const FATOS_DO_FORMULARIO = ['DATA_NASCIMENTO', 'OPTOU_PELAS_COTAS_DA_LEI', 'MOD
   }),
 );
 
-const PENDENCIA_DA_ESCALA = {
+const ITEM_DA_ESCALA_PENDENTE = {
   codigo: 'classificacao_escala_nota_final_nao_declarada',
   dimensao: 'classificacao',
   mensagem: 'Escala da nota final (fórmula local)',
+  ok: false,
+};
+
+/** A causa que a recusa traz em `errors[]`: o ponteiro do campo, sem ligação com o item do checklist. */
+export const CAUSA_DA_ESCALA_PENDENTE = {
+  field: '/classificacao/escalaNotaFinal',
+  code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
+  message: 'A escala da nota final não foi declarada.',
 };
 
 const PRODUTO_DEFINITIVO = {
@@ -50,9 +58,13 @@ const PRODUTO_DEFINITIVO = {
   papel: 'DEFINITIVO',
 };
 
-/** O que o servidor recebeu: a classificação gravada (PUT) e se a publicação foi aceita. */
+/**
+ * O que o servidor recebeu: a classificação gravada (PUT), se alguma publicação foi tentada e se
+ * ela foi aceita.
+ */
 export interface PublicacaoRecebida {
   classificacao: Record<string, unknown> | null;
+  tentouPublicar: boolean;
   publicou: boolean;
 }
 
@@ -111,10 +123,29 @@ function detalheDoProcesso(recebido: PublicacaoRecebida): unknown {
   });
 }
 
+/**
+ * O checklist estrutural: sem pendência até a primeira tentativa de publicar, e depois dela, com a
+ * escala pendente enquanto a classificação gravada não a declara. É o servidor que mudou de estado
+ * entre a leitura da tela e a publicação, e só uma releitura mostra o item.
+ */
+function checklistEstrutural(recebido: PublicacaoRecebida): unknown {
+  const escalaPendente =
+    recebido.tentouPublicar && recebido.classificacao?.['escalaNotaFinal'] == null;
+  return {
+    processoSeletivoId: ID_DO_PROCESSO_COMPLETO,
+    itens: escalaPendente ? [ITEM_DA_ESCALA_PENDENTE] : [],
+    avisos: [],
+  };
+}
+
+function leitura(recebido: PublicacaoRecebida, caminho: string): unknown {
+  if (caminho.endsWith(ID_DO_PROCESSO_COMPLETO)) return detalheDoProcesso(recebido);
+  if (caminho.endsWith('/conformidade')) return checklistEstrutural(recebido);
+  return leituraDoProcessoCompleto(caminho);
+}
+
 async function ler(route: Route, recebido: PublicacaoRecebida, caminho: string): Promise<void> {
-  const corpo = caminho.endsWith(ID_DO_PROCESSO_COMPLETO)
-    ? detalheDoProcesso(recebido)
-    : leituraDoProcessoCompleto(caminho);
+  const corpo = leitura(recebido, caminho);
   if (corpo === undefined) await responder(route, 404);
   else await responder(route, 200, corpo);
 }
@@ -130,12 +161,13 @@ async function recusarPorEscalaPendente(route: Route): Promise<void> {
       status: 422,
       code: 'uniplus.selecao.processo_seletivo.conformidade_insuficiente',
       traceId: 'trace-e2e',
-      pendencias: [PENDENCIA_DA_ESCALA],
+      errors: [CAUSA_DA_ESCALA_PENDENTE],
     }),
   });
 }
 
 async function publicar(route: Route, recebido: PublicacaoRecebida): Promise<void> {
+  recebido.tentouPublicar = true;
   if (recebido.classificacao?.['escalaNotaFinal'] == null) {
     await recusarPorEscalaPendente(route);
     return;
@@ -174,12 +206,17 @@ async function atenderOProcesso(route: Route, recebido: PublicacaoRecebida): Pro
 }
 
 /**
- * O processo completo em rascunho, sem a escala na classificação: a publicação é recusada com a
- * pendência da escala enquanto a classificação gravada (PUT) não a declara, e aceita depois.
- * Devolve o que o servidor recebeu, para o teste conferir o corpo.
+ * O processo completo em rascunho, sem a escala na classificação: a publicação é recusada, com a
+ * causa em `errors[]`, enquanto a classificação gravada (PUT) não declara a escala, e aceita
+ * depois. O checklist só traz a escala pendente depois da primeira tentativa de publicar. Devolve
+ * o que o servidor recebeu, para o teste conferir o corpo.
  */
 export async function mockarPublicacaoComEscalaPendente(page: Page): Promise<PublicacaoRecebida> {
-  const recebido: PublicacaoRecebida = { classificacao: null, publicou: false };
+  const recebido: PublicacaoRecebida = {
+    classificacao: null,
+    tentouPublicar: false,
+    publicou: false,
+  };
   await mockarCatalogos(page);
   await page.route(ROTA_DO_PROCESSO_COMPLETO, (route) => atenderOProcesso(route, recebido));
   return recebido;

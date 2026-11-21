@@ -1,0 +1,28 @@
+<h2 id="revisao-recusas-titulo" class="step-section__title" tabindex="-1">Onde corrigir</h2>
+<p class="step-hint">
+  Estas causas vêm da última resposta do servidor que recusou a publicação. Cada uma traz a
+  mensagem, o código e, quando existe, a página que a explica. Depois da recusa, o checklist
+  estrutural e a conformidade legal são lidos de novo e resumem, por assunto, o que o servidor
+  exige; os itens deles não correspondem um a um às causas desta lista.
+</p>
+
+@if (recusasDoServidor.rascunhoAlterado()) {
+  <p class="alert alert--info" role="status">
+    O rascunho foi alterado depois dessa resposta do servidor. É preciso publicar de novo para
+    conferir estas causas.
+  </p>
+}
+
+<ul class="u-list">
+  @for (recusa of recusasDoServidor.recusas(); track recusa.ordem) {
+    <li>
+      <ui-recusa-do-campo [recusas]="[recusa]" />
+      <p class="field__hint">
+        Apontada na última resposta que recusou a publicação.
+        @if (recusa.campo !== semCampo) {
+          Sem campo nesta tela.
+        }
+      </p>
+    </li>
+  }
+</ul>

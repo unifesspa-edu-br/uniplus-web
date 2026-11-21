@@ -11,7 +11,12 @@
   <!-- Pendência do rascunho, não falha de carga: "Tentar novamente" não a resolveria. -->
   <p class="alert alert--info" role="status">{{ motivo }}</p>
 } @else if (conferencia.legalOk()) {
-  <p class="alert alert--success" role="status">Nenhuma obrigatoriedade legal reprovada.</p>
+  <!-- Durante a recarga o checklist em tela é o da leitura anterior: só a leitura nova pode dizer "nenhuma reprovada". -->
+  @if (prontidao.carregando()) {
+    <p class="alert alert--info" role="status">Atualizando o checklist…</p>
+  } @else {
+    <p class="alert alert--success" role="status">Nenhuma obrigatoriedade legal reprovada.</p>
+  }
 } @else {
   <ul class="revisao-list">
     @for (regra of conferencia.regrasLegaisReprovadas(); track regra.regraCodigo) {

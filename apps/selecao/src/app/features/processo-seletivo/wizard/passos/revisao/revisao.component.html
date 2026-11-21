@@ -66,6 +66,11 @@
   />
 </ng-container>
 
+<!-- Fora do estado do checklist: a recusa é da resposta da publicação e não pode sumir quando a leitura falha ou recarrega. -->
+@if (recusasDoServidor.recusas().length > 0) {
+  <sel-recusas-da-publicacao />
+}
+
 @if (store.processoSeletivoId() === null) {
   @if (!store.emConsulta()) {
     <p class="alert alert--info" role="status">

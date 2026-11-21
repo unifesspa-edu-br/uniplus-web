@@ -1,5 +1,4 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { ProblemDetails } from '@uniplus/shared-core/http';
+import { computed, DestroyRef, effect, inject, Injectable } from '@angular/core';
 
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
@@ -8,11 +7,8 @@ import { mensagensDePublicacao } from '../comando-de-publicacao';
 import { dataReferenciaLegalDe } from '../periodo-de-inscricao';
 import { agruparPorDimensao, comoAvisosDaRevisao, comoGruposDaRevisao } from '../grupos-da-revisao';
 import { ProntidaoDaPublicacao } from '../prontidao-da-publicacao.service';
-import {
-  comoRecusaDePublicacao,
-  ObrigatoriedadeReprovadaProblem,
-  RecusaDePublicacao,
-} from '../problemas-da-publicacao';
+import { eErroDeDocumentoOuAto, eErroDeFaseSemUnidade } from '../problemas-da-publicacao';
+import { RecusasDaPublicacao } from '../../../shared/recusas/recusas-da-publicacao.service';
 
 function recusado(mensagem: string): ValidacaoDoPasso {
   return { valid: false, messages: [mensagem] };
@@ -20,48 +16,45 @@ function recusado(mensagem: string): ValidacaoDoPasso {
 
 /**
  * A conferência da publicação: o que o servidor diz estar pendente, estrutural e legalmente, e se
- * a tela já tem o que falta para publicar. Reúne a leitura do checklist com a última recusa da
- * publicação, e é aqui que a recusa tem precedência sobre a leitura: o `GET` anterior pode estar
- * desatualizado, e mostrar os grupos antigos ao lado de um banner verde contradiria a própria tela.
+ * a tela já tem o que falta para publicar. Os dois checklists vêm sempre da leitura do servidor, e
+ * é ela que a tela relê depois de uma publicação recusada: a recusa e o checklist são duas visões
+ * da mesma conferência, sem chave comum, e por isso um não é casado com o outro. Da recusa a
+ * conferência usa só o que nenhum dos dois checklists diz, lido do registro da última resposta
+ * recusada.
  */
 @Injectable()
 export class ConferenciaDaPublicacao {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly prontidao = inject(ProntidaoDaPublicacao);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly recusasDaPublicacao = inject(RecusasDaPublicacao);
 
-  /** A última recusa da publicação, ou `null` enquanto não houve tentativa (ou ela publicou). */
-  readonly ultimaRecusa = signal<RecusaDePublicacao | null>(null);
-
-  /** Os itens do checklist estrutural em tela; `null` enquanto nada foi lido. */
-  private readonly itensEstruturais = computed(() => {
-    const recusa = this.ultimaRecusa();
-    if (recusa === null) return this.prontidao.estrutural();
-    return recusa.pendencias.map((pendencia) => ({ ...pendencia, ok: false }));
-  });
-
-  /** As obrigatoriedades reprovadas em tela; `null` enquanto a conformidade legal não foi avaliada. */
-  private readonly obrigatoriedadesReprovadas = computed<
-    readonly ObrigatoriedadeReprovadaProblem[] | null
-  >(() => {
-    const daRecusa = this.ultimaRecusa()?.obrigatoriedadesReprovadas;
-    if (daRecusa !== null && daRecusa !== undefined) return daRecusa;
-
+  /** As reprovações da conformidade legal em tela; `null` enquanto ela não foi avaliada. */
+  private readonly obrigatoriedadesReprovadas = computed(() => {
     const legal = this.prontidao.legal();
-    if (legal === null) return null;
-    return legal.regras.filter((regra) => !regra.aprovada);
+    return legal === null ? null : legal.regras.filter((regra) => !regra.aprovada);
   });
 
   readonly gruposEstruturais = computed(() => {
-    const itens = this.itensEstruturais();
+    const itens = this.prontidao.estrutural();
     return itens === null ? null : comoGruposDaRevisao(agruparPorDimensao(itens));
+  });
+
+  /**
+   * O erro de documento ou de ato da última recusa, quando "Onde corrigir" não o traz: a resposta
+   * que o disse em `errors[]` já o mostra ali, e repeti-lo aqui seria a mesma frase duas vezes.
+   */
+  readonly erroDeDocumentoOuAto = computed(() => {
+    const resposta = this.recusasDaPublicacao.resposta();
+    if (resposta === null || this.recusasDaPublicacao.recusas().length > 0) return null;
+    return eErroDeDocumentoOuAto(resposta.codigo) ? resposta.titulo : null;
   });
 
   /** Avisos que não impedem publicar: nunca entram em `estruturalOk()` nem em `validar()`. */
   readonly avisosDaRevisao = computed(() => comoAvisosDaRevisao(this.prontidao.avisos()));
 
   readonly estruturalOk = computed(
-    () => this.itensEstruturais()?.every((item) => item.ok) ?? false,
+    () => this.prontidao.estrutural()?.every((item) => item.ok) ?? false,
   );
 
   readonly regrasLegaisReprovadas = computed(() => this.obrigatoriedadesReprovadas() ?? []);
@@ -90,7 +83,8 @@ export class ConferenciaDaPublicacao {
 
   /** As fases do rascunho sem unidade responsável, quando é isso que a recusa cita. */
   readonly fasesSemUnidadeDaRecusa = computed(() => {
-    if (!this.ultimaRecusa()?.citaFaseSemUnidade) return [];
+    const resposta = this.recusasDaPublicacao.resposta();
+    if (resposta === null || !eErroDeFaseSemUnidade(resposta.codigo)) return [];
     const nomeDaFase = this.catalogoDeFases.nomeDaFase();
     return this.store
       .draft()
@@ -99,14 +93,9 @@ export class ConferenciaDaPublicacao {
   });
 
   constructor() {
-    effect(() => {
-      this.store.geracao();
-      untracked(() => this.ultimaRecusa.set(null));
-    });
-
     // Os outros passos leem da conferência o que lhes cabe; ao sair da Revisão ela deixa de valer.
     const codigosPendentes = computed(() =>
-      (this.itensEstruturais() ?? []).filter((item) => !item.ok).map((item) => item.codigo),
+      (this.prontidao.estrutural() ?? []).filter((item) => !item.ok).map((item) => item.codigo),
     );
     effect(() => this.store.classificacao.pendenciasDaConferencia.set(codigosPendentes()));
     inject(DestroyRef).onDestroy(() => this.store.classificacao.pendenciasDaConferencia.set([]));
@@ -117,35 +106,17 @@ export class ConferenciaDaPublicacao {
     return dataReferenciaLegalDe(this.store.draft(), this.catalogoDeFases.fasePorId());
   }
 
-  /** Guarda o que o servidor recusou; `titulo` é o texto que o operador lê da recusa. */
-  registrarRecusa(problem: ProblemDetails, titulo: string): void {
-    this.ultimaRecusa.set(comoRecusaDePublicacao(problem, titulo));
-  }
-
-  descartarRecusa(): void {
-    this.ultimaRecusa.set(null);
-  }
-
-  /** Relê o checklist do servidor e descarta a recusa, que a leitura nova substitui. */
+  /** Relê o checklist do servidor; a recusa da publicação não muda, porque só uma resposta da publicação a troca. */
   async atualizar(): Promise<void> {
     const id = this.store.processoSeletivoId();
     if (id === null) return;
-    this.descartarRecusa();
     await this.prontidao.recarregar(id, this.dataReferenciaLegal());
   }
 
   /** O que falta nesta tela: campo em branco, checklist reprovado ou documento ainda não escolhido. */
   validar(): ValidacaoDoPasso {
-    if (this.store.processoSeletivoId() === null) {
-      return recusado('Conclua a identificação do processo antes de revisar a conformidade.');
-    }
-
-    const erroDaProntidao = this.prontidao.erro();
-    if (erroDaProntidao !== null) return recusado(erroDaProntidao);
-
-    if (this.prontidao.carregando() || this.prontidao.estrutural() === null) {
-      return recusado('Aguarde o carregamento do checklist de conformidade.');
-    }
+    const aindaSemChecklist = this.recusaPorChecklistIndisponivel();
+    if (aindaSemChecklist !== null) return aindaSemChecklist;
 
     const messages = [
       ...this.pendenciasDoChecklist(),
@@ -158,29 +129,48 @@ export class ConferenciaDaPublicacao {
     return messages.length ? { valid: false, messages } : { valid: true };
   }
 
+  /** A recusa de quando não há checklist a conferir: sem processo, com falha de leitura ou ainda carregando. */
+  private recusaPorChecklistIndisponivel(): ValidacaoDoPasso | null {
+    if (this.store.processoSeletivoId() === null) {
+      return recusado('Conclua a identificação do processo antes de revisar a conformidade.');
+    }
+
+    const erroDaProntidao = this.prontidao.erro();
+    if (erroDaProntidao !== null) return recusado(erroDaProntidao);
+
+    if (this.prontidao.carregando() || this.prontidao.estrutural() === null) {
+      return recusado('Aguarde o carregamento do checklist de conformidade.');
+    }
+    return null;
+  }
+
   private pendenciasDoChecklist(): string[] {
-    const messages: string[] = [];
-    if (!this.estruturalOk()) {
-      messages.push('Há pendências estruturais no checklist. Corrija-as antes de publicar.');
-    }
+    return [this.pendenciaEstrutural(), this.pendenciaLegal(), this.pendenciaDoDocumento()].filter(
+      (mensagem) => mensagem !== null,
+    );
+  }
 
+  private pendenciaEstrutural(): string | null {
+    return this.estruturalOk()
+      ? null
+      : 'Há pendências estruturais no checklist. Corrija-as antes de publicar.';
+  }
+
+  private pendenciaLegal(): string | null {
     const legalIndisponivel = this.prontidao.legalIndisponivel();
-    if (legalIndisponivel !== null) {
-      // Dizer "há obrigatoriedades reprovadas" mandaria procurar uma reprovação que não existe.
-      messages.push(legalIndisponivel);
-    } else if (this.legalDesatualizada()) {
-      messages.push(
-        'A data de referência do checklist legal mudou desde a última carga. Use "Atualizar checklist" antes de publicar.',
-      );
-    } else if (!this.legalOk()) {
-      messages.push('Há obrigatoriedades legais reprovadas. Corrija-as antes de publicar.');
+    // Dizer "há obrigatoriedades reprovadas" mandaria procurar uma reprovação que não existe.
+    if (legalIndisponivel !== null) return legalIndisponivel;
+    if (this.legalDesatualizada()) {
+      return 'A data de referência do checklist legal mudou desde a última carga. Use "Atualizar checklist" antes de publicar.';
     }
+    return this.legalOk()
+      ? null
+      : 'Há obrigatoriedades legais reprovadas. Corrija-as antes de publicar.';
+  }
 
-    if (this.precisaEscolherDocumento()) {
-      messages.push(
-        'Há mais de um documento confirmado. Escolha o oficial na Identificação antes de publicar.',
-      );
-    }
-    return messages;
+  private pendenciaDoDocumento(): string | null {
+    return this.precisaEscolherDocumento()
+      ? 'Há mais de um documento confirmado. Escolha o oficial na Identificação antes de publicar.'
+      : null;
   }
 }

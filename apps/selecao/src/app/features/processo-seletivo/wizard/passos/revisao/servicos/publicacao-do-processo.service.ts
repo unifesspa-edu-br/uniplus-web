@@ -8,6 +8,7 @@ import { firstValueFrom } from 'rxjs';
 import { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import { RecusasDaPublicacao } from '../../../shared/recusas/recusas-da-publicacao.service';
 import {
   gravarNoPasso,
   RESPOSTA_DESCARTADA,
@@ -41,6 +42,7 @@ function recusado(mensagem: string): ValidacaoDoPasso {
 export class PublicacaoDoProcesso {
   private readonly store = inject(ProcessoSeletivoStore);
   private readonly conferencia = inject(ConferenciaDaPublicacao);
+  private readonly recusasDoServidor = inject(RecusasDaPublicacao);
   private readonly cadastro = inject(CadastroInicial);
   private readonly atos = inject(AtosApi);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -80,6 +82,11 @@ export class PublicacaoDoProcesso {
   });
 
   constructor() {
+    this.esquecerAoMudarOProcesso();
+    this.lerOAtoDoProcessoPublicado();
+  }
+
+  private esquecerAoMudarOProcesso(): void {
     effect(() => {
       this.store.geracao();
       untracked(() => {
@@ -87,8 +94,10 @@ export class PublicacaoDoProcesso {
         this.atoPublicado.set(null);
       });
     });
+  }
 
-    // Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar no passo.
+  /** Processo publicado: o ato que vale é o do servidor, lido uma vez ao entrar no passo. */
+  private lerOAtoDoProcessoPublicado(): void {
     effect(() => {
       const id = this.store.processoSeletivoId();
       if (id === null || !this.store.isLast() || !this.jaPublicado()) return;
@@ -113,17 +122,23 @@ export class PublicacaoDoProcesso {
     const geracao = this.store.geracao();
     this.atoPublicado.set({ estado: 'lendo' });
 
+    const leitura = await this.leituraDoAtoVigente(processoId, geracao);
+    if (leitura !== null) this.atoPublicado.set(leitura);
+  }
+
+  /** A leitura do ato, ou `null` quando o processo mudou no meio e ela não vale mais. */
+  private async leituraDoAtoVigente(
+    processoId: string,
+    geracao: number,
+  ): Promise<AtoPublicado | null> {
     const atoId =
       this.snapshotConfirmado()?.atoId ?? (await this.atoIdDoSnapshotVigente(processoId));
-    if (geracao !== this.store.geracao()) return;
-    if (atoId === null) {
-      this.atoPublicado.set({ estado: 'falha' });
-      return;
-    }
+    if (geracao !== this.store.geracao()) return null;
+    if (atoId === null) return { estado: 'falha' };
 
     const ato = await firstValueFrom(this.atos.obter(atoId));
-    if (geracao !== this.store.geracao()) return;
-    this.atoPublicado.set(ato.ok ? { estado: 'lido', ato: ato.data } : { estado: 'falha' });
+    if (geracao !== this.store.geracao()) return null;
+    return ato.ok ? { estado: 'lido', ato: ato.data } : { estado: 'falha' };
   }
 
   /** Publica e, com `204`, confirma o snapshot antes de devolver sucesso. */
@@ -146,18 +161,27 @@ export class PublicacaoDoProcesso {
     processoId: string,
     documentoEditalId: string,
   ): Promise<ValidacaoDoPasso | RespostaDescartada> {
-    const comando = comoComandoDePublicacao(
+    const geracao = this.store.geracao();
+    const resultado = await this.cadastro.publicar(processoId, this.comando(documentoEditalId));
+    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
+    if (!resultado.ok) return this.recusada(resultado);
+
+    this.recusasDoServidor.limpar();
+    return this.confirmada(processoId, geracao);
+  }
+
+  private comando(documentoEditalId: string) {
+    return comoComandoDePublicacao(
       this.store.draft(),
       documentoEditalId,
       this.catalogoDeFases.fasePorId(),
     );
-    const geracao = this.store.geracao();
-    this.conferencia.descartarRecusa();
+  }
 
-    const resultado = await this.cadastro.publicar(processoId, comando);
-    if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
-    if (!resultado.ok) return this.recusada(resultado);
-
+  private async confirmada(
+    processoId: string,
+    geracao: number,
+  ): Promise<ValidacaoDoPasso | RespostaDescartada> {
     const confirmado = await this.confirmarPublicacao(processoId);
     if (geracao !== this.store.geracao()) return RESPOSTA_DESCARTADA;
     return confirmado ? { valid: true } : recusado(PUBLICACAO_NAO_CONFIRMADA);
@@ -173,8 +197,18 @@ export class PublicacaoDoProcesso {
     if (resultado.inconclusiva) this.store.publicacaoNaoConfirmada.set(true);
 
     const titulo = this.problemI18n.resolve(resultado.problem).title;
-    this.conferencia.registrarRecusa(resultado.problem, titulo);
+    if (!resultado.inconclusiva) this.registrarRecusaConclusiva(resultado.problem, titulo);
     return recusado(titulo);
+  }
+
+  /**
+   * O servidor respondeu que recusa: `errors[]` diz onde corrigir, e o checklist é relido como
+   * resumo do que ele exige, sem ligar um item ao outro. Sem resposta conclusiva nada disso muda:
+   * reler o checklist agora não diz se a publicação chegou a ser executada.
+   */
+  private registrarRecusaConclusiva(problem: ProblemDetails, titulo: string): void {
+    this.recusasDoServidor.registrar(problem, titulo);
+    void this.conferencia.atualizar();
   }
 
   /**
@@ -183,17 +217,10 @@ export class PublicacaoDoProcesso {
    * publicado, mesmo que a leitura do snapshot falhe.
    */
   private async confirmarPublicacao(processoId: string): Promise<boolean> {
-    const [detalhe, snapshot] = await Promise.all([
-      this.cadastro.obterDetalhe(processoId),
-      this.cadastro.obterSnapshotVigente(processoId),
-    ]);
+    const [detalhe, snapshot] = await this.releituraDaPublicacao(processoId);
 
-    // Sem o detalhe, ou com ele ainda em rascunho (réplica que não viu a escrita, ou falha real), não
-    // há como confirmar nem descartar a publicação. A edição segue travada até uma releitura mostrar
-    // um status definitivo.
     if (!detalhe.ok || detalhe.data.status === StatusProcesso.rascunho) {
-      this.store.publicacaoNaoConfirmada.set(true);
-      return false;
+      return this.semConfirmacao();
     }
 
     this.store.hidratar(detalhe.data);
@@ -201,6 +228,23 @@ export class PublicacaoDoProcesso {
 
     this.snapshotConfirmado.set(snapshot.data);
     return detalhe.data.status === StatusProcesso.publicado;
+  }
+
+  private releituraDaPublicacao(processoId: string) {
+    return Promise.all([
+      this.cadastro.obterDetalhe(processoId),
+      this.cadastro.obterSnapshotVigente(processoId),
+    ]);
+  }
+
+  /**
+   * Sem o detalhe, ou com ele ainda em rascunho (réplica que não viu a escrita, ou falha real), não
+   * há como confirmar nem descartar a publicação. A edição segue travada até uma releitura mostrar
+   * um status definitivo.
+   */
+  private semConfirmacao(): false {
+    this.store.publicacaoNaoConfirmada.set(true);
+    return false;
   }
 
   private async atoIdDoSnapshotVigente(processoId: string): Promise<string | null> {
