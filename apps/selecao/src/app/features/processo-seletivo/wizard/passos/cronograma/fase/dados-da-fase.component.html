@@ -1,9 +1,10 @@
 @let item = fase();
 
-@if (item.exigencias !== null) {
+@if (campoNaTela('unidadeResponsavelId', item.exigencias)) {
   <div class="form-field form-grid__full">
     <label class="label" [attr.for]="'cr-unidade-' + item.indice">Unidade responsável</label>
-    @let unidadeInvalida = item.unidade === null || unidades.unidadeRecusada(item.grupo);
+    @let daUnidade = recusasDoCampo(item, 'unidadeResponsavelId');
+    @let unidadeInvalida = item.unidade === null || haRecusaAtiva(daUnidade);
     <select
       class="input"
       [attr.id]="'cr-unidade-' + item.indice"
@@ -11,7 +12,7 @@
       [attr.aria-describedby]="
         'cr-unidade-dica-' +
         item.indice +
-        (unidadeInvalida ? ' cr-unidade-erro-' + item.indice : '') +
+        (unidadeInvalida || daUnidade.length > 0 ? ' cr-unidade-erro-' + item.indice : '') +
         (unidadesSemLista() ? ' cr-unidade-sem-lista-' + item.indice : '')
       "
       [attr.aria-invalid]="unidadeInvalida ? 'true' : null"
@@ -27,10 +28,12 @@
         As unidades não carregaram, e por isso a lista está incompleta.
       </p>
     }
-    @if (unidades.unidadeRecusada(item.grupo)) {
-      <p class="field__erro" role="alert" [attr.id]="'cr-unidade-erro-' + item.indice">
-        A unidade escolhida para esta fase não está mais no cadastro. Escolha outra unidade.
-      </p>
+    @if (daUnidade.length > 0) {
+      <sel-recusas-do-campo
+        [attr.id]="'cr-unidade-erro-' + item.indice"
+        tabindex="-1"
+        [recusas]="daUnidade"
+      />
     } @else if (item.unidade === null) {
       <p class="field__erro" [attr.id]="'cr-unidade-erro-' + item.indice">
         Esta fase está sem unidade responsável. Pode salvar o rascunho assim, mas a publicação exige
@@ -41,7 +44,11 @@
       Unidade que decide e registra o que esta fase produz.
     </p>
   </div>
-  @if (item.exigencias.janelaObrigatoria) {
+}
+
+@if (item.exigencias !== null) {
+  @if (campoNaTela('inicio', item.exigencias)) {
+    @let doInicio = recusasDoCampo(item, 'inicio');
     <div class="form-field">
       <label class="label" [attr.for]="'cr-inicio-' + item.indice">Início</label>
       <input
@@ -50,9 +57,20 @@
         [attr.id]="'cr-inicio-' + item.indice"
         formControlName="inicio"
         [attr.min]="pisoDeData(item.grupo.controls.inicio.value)"
-        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+        [attr.aria-describedby]="
+          'cr-fuso-' + item.indice + (doInicio.length > 0 ? ' cr-inicio-erro-' + item.indice : '')
+        "
+        [attr.aria-invalid]="haRecusaAtiva(doInicio) ? 'true' : null"
       />
+      @if (doInicio.length > 0) {
+        <sel-recusas-do-campo
+          [attr.id]="'cr-inicio-erro-' + item.indice"
+          tabindex="-1"
+          [recusas]="doInicio"
+        />
+      }
     </div>
+    @let doFim = recusasDoCampo(item, 'fim');
     <div class="form-field">
       <label class="label" [attr.for]="'cr-fim-' + item.indice">Fim</label>
       <input
@@ -61,8 +79,18 @@
         [attr.id]="'cr-fim-' + item.indice"
         formControlName="fim"
         [attr.min]="pisoDeData(item.grupo.controls.fim.value, item.grupo.controls.inicio.value)"
-        [attr.aria-describedby]="'cr-fuso-' + item.indice"
+        [attr.aria-describedby]="
+          'cr-fuso-' + item.indice + (doFim.length > 0 ? ' cr-fim-erro-' + item.indice : '')
+        "
+        [attr.aria-invalid]="haRecusaAtiva(doFim) ? 'true' : null"
       />
+      @if (doFim.length > 0) {
+        <sel-recusas-do-campo
+          [attr.id]="'cr-fim-erro-' + item.indice"
+          tabindex="-1"
+          [recusas]="doFim"
+        />
+      }
     </div>
     <p class="field__hint form-grid__full" [attr.id]="'cr-fuso-' + item.indice">
       Data e hora no horário de Belém, que é o fuso em que os prazos deste processo são contados.

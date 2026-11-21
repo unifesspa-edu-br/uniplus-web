@@ -14,8 +14,6 @@ import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.te
 
 const CODIGO_TIPO_INVALIDO = 'uniplus.selecao.motivo_de_decisao.tipo_invalido';
 const CODIGO_TIPO_DUPLICADO = 'uniplus.selecao.motivo_de_decisao.tipo_de_decisao_duplicado';
-const CODIGO_PROCEDIMENTO_DA_FASE =
-  'uniplus.selecao.regra_recurso_fase.procedimento_para_decisao_nao_declarada';
 const CODIGO_PROCEDIMENTO_DA_ETAPA =
   'uniplus.selecao.recurso_da_etapa.procedimento_para_decisao_nao_declarada';
 const SEM_CONTEUDO = { status: 204, statusText: 'No Content' };
@@ -203,30 +201,6 @@ describe('CronogramaPassoComponent: tipos de decisão da etapa', () => {
 
     expect(resultado.messages).toEqual([
       'Etapa 1: O recurso tem procedimento para uma decisão que deixou de ser declarada aqui; marque o tipo de novo.',
-    ]);
-  });
-
-  it('orienta a marcar o tipo de novo quando a regra de recurso da fase ainda tem procedimento para ele', async () => {
-    comEtapaAberta();
-
-    const resultado = await recusarEm(ROTA_FASES, [
-      { field: 'fases[0].regraRecurso', code: CODIGO_PROCEDIMENTO_DA_FASE },
-    ]);
-
-    expect(resultado.messages).toEqual([
-      'Fase 1: O recurso tem procedimento para uma decisão que deixou de ser declarada aqui; marque o tipo de novo.',
-    ]);
-  });
-
-  it('diz no resumo, com o número da fase, que o tipo da fase não é reconhecido', async () => {
-    comEtapaAberta();
-
-    const resultado = await recusarEm(ROTA_FASES, [
-      { field: 'fases[0].tiposDeDecisao[0]', code: CODIGO_TIPO_INVALIDO },
-    ]);
-
-    expect(resultado.messages).toEqual([
-      'Fase 1: Um tipo de decisão enviado não é reconhecido pelo servidor.',
     ]);
   });
 });

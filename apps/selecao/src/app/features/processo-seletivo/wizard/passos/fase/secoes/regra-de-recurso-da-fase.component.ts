@@ -13,7 +13,14 @@ import {
   type UnidadeDePrazoDoRecurso,
 } from '../../../shared/unidades-de-prazo-do-recurso';
 import { ProcedimentosDoRecursoComponent } from '../../cronograma/procedimentos-do-recurso/procedimentos-do-recurso.component';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
+import type { CampoDaRecusaDaFase } from '../campo-da-fase';
 import { FaseEmEdicao } from '../fase-em-edicao';
+import {
+  BLOCO_DAS_RECUSAS_DO_RECURSO,
+  CAMPOS_DO_RECURSO_COM_CONTROLE,
+  sufixoDaRecusaDoRecurso,
+} from '../ids-da-fase';
 
 /** Os controles de um par prazo e unidade, como o ng-template compartilhado os desenha. */
 interface ParComUnidade {
@@ -80,6 +87,7 @@ function regraDeRecursoLida(recurso: RecursoDaFase): string | null {
 @Component({
   selector: 'sel-regra-de-recurso-da-fase',
   imports: [
+    RecusasDoCampoComponent,
     FormsModule,
     NgTemplateOutlet,
     ProcedimentosDoRecursoComponent,
@@ -103,7 +111,19 @@ export class RegraDeRecursoDaFaseComponent {
 
   protected readonly formulario = this.espelho.formulario;
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
+  protected readonly blocoDasRecusas = BLOCO_DAS_RECUSAS_DO_RECURSO;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
+  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+
+  /**
+   * As recusas à regra de recurso que não têm controle onde aparecer: as que não apontam um
+   * controle dela e as de um controle que a tela não mostra agora. As demais ficam junto do
+   * controle, e só ele as tem como descrição.
+   */
+  protected readonly recusasSemControle = computed(() =>
+    this.faseEmEdicao.recusasDoRecurso().filter((recusa) => !this.temControle(recusa.campo)),
+  );
   protected readonly ancorasPossiveis = this.faseEmEdicao.ancorasPossiveis;
 
   /** Regras de prazo de recurso publicadas no catálogo versionado. */
@@ -114,7 +134,6 @@ export class RegraDeRecursoDaFaseComponent {
   );
 
   protected readonly prazo = computed<ParComUnidade>(() => {
-    const erro = this.erroDoCampo('recurso.prazo') ? ('true' as const) : null;
     return {
       sufixo: 'prazo',
       rotuloDoValor: 'Prazo de interposição',
@@ -122,9 +141,7 @@ export class RegraDeRecursoDaFaseComponent {
       controleDoValor: 'prazoValor',
       controleDaUnidade: 'prazoUnidade',
       ...OPCOES_DA_INTERPOSICAO,
-      invalidoNoValor: erro,
-      invalidoNaUnidade: erro,
-      descritoPor: this.descricaoDoPar('prazo-ajuda', 'prazo', erro),
+      ...this.estadoDoPar('recurso.prazo', 'prazo', 'prazo-ajuda'),
     };
   });
 
@@ -172,14 +189,44 @@ export class RegraDeRecursoDaFaseComponent {
     return codigo ? (this.catalogoDeAtos.rotuloDoAto().get(codigo) ?? codigo) : null;
   }
 
-  private descricaoDoPar(idDaAjuda: string, par: string, erro: 'true' | null): string {
-    const ajuda = this.idDaFase(idDaAjuda);
-    return erro === null ? ajuda : `${this.idDaFase(`${par}-erro`)} ${ajuda}`;
+  /** O que descreve o campo além da ajuda: o problema local, quando há, e as recusas do servidor a ele. */
+  private idsDoErro(campo: CampoDaRecusaDaFase, idDoProblema: string): string[] {
+    const problema = this.problemaLocal(campo) === null ? [] : [this.idDaFase(idDoProblema)];
+    const recusas = this.recusasDoCampo(campo).length === 0 ? [] : [this.idDaRecusa(campo)];
+    return [...problema, ...recusas];
+  }
+
+  protected idDaRecusa(campo: CampoDaRecusaDaFase): string {
+    return this.idDaFase(sufixoDaRecusaDoRecurso(campo));
+  }
+
+  private temControle(campo: string): boolean {
+    this.espelho.versao();
+    const recurso = this.espelho.formulario()?.controls;
+    if (!CAMPOS_DO_RECURSO_COM_CONTROLE.has(campo) || recurso === undefined) return false;
+    if (!recurso.admiteRecurso.value) return false;
+    return (
+      campo !== 'recurso.suspensividadeSegundaInstancia' ||
+      recurso.recurso.controls.admiteInstanciaSuperior.value === true
+    );
+  }
+
+  protected descritoPorErro(campo: CampoDaRecusaDaFase, idDoProblema: string): string | null {
+    const ids = this.idsDoErro(campo, idDoProblema);
+    return ids.length === 0 ? null : ids.join(' ');
+  }
+
+  protected descritoPor(
+    campo: CampoDaRecusaDaFase,
+    idDoProblema: string,
+    idDaAjuda: string,
+  ): string {
+    return [...this.idsDoErro(campo, idDoProblema), this.idDaFase(idDaAjuda)].join(' ');
   }
 
   private suspensividade(instancia: Instancia): ParComUnidade {
     const { rotulo, sufixo } = INSTANCIAS[instancia];
-    const erro = this.erroDoCampo(`recurso.suspensividade${instancia}`) ? 'true' : null;
+    const campo = `recurso.suspensividade${instancia}` as const;
     return {
       sufixo,
       rotuloDoValor: `Suspensividade da ${rotulo} instância — prazo`,
@@ -187,9 +234,14 @@ export class RegraDeRecursoDaFaseComponent {
       controleDoValor: `suspensividade${instancia}Valor`,
       controleDaUnidade: `suspensividade${instancia}Unidade`,
       ...OPCOES_DA_SUSPENSIVIDADE,
-      invalidoNoValor: erro,
-      invalidoNaUnidade: erro,
-      descritoPor: this.descricaoDoPar('susp-ajuda', sufixo, erro),
+      ...this.estadoDoPar(campo, sufixo, 'susp-ajuda'),
     };
+  }
+
+  /** O que marca o par como inválido e o que o descreve, conforme o problema local e as recusas do campo. */
+  private estadoDoPar(campo: CampoDaRecusaDaFase, par: string, idDaAjuda: string) {
+    const erro = this.erroDoCampo(campo) ? ('true' as const) : null;
+    const descritoPor = this.descritoPor(campo, `${par}-erro`, idDaAjuda);
+    return { invalidoNoValor: erro, invalidoNaUnidade: erro, descritoPor };
   }
 }

@@ -6,3 +6,26 @@
 export function idDaFase(faseCodigo: string, sufixo: string): string {
   return `fase-${faseCodigo}-${sufixo}`;
 }
+
+/** O bloco que reúne as recusas do servidor à regra de recurso da fase. */
+export const BLOCO_DAS_RECUSAS_DO_RECURSO = 'recurso-recusa';
+
+/** O controle da regra de recurso que cada campo recusado nomeia, quando ele é um só. */
+export const CONTROLE_DO_RECURSO: ReadonlyMap<string, string> = new Map([
+  ['recurso.regra', 'regra'],
+  ['recurso.prazo', 'prazo-valor'],
+  ['recurso.ancora', 'ancora'],
+  ['recurso.suspensividadePrimeiraInstancia', 'susp1-valor'],
+  ['recurso.suspensividadeSegundaInstancia', 'susp2-valor'],
+]);
+
+/** Os campos da regra de recurso que têm controle próprio na tela, e portanto bloco próprio de recusas. */
+export const CAMPOS_DO_RECURSO_COM_CONTROLE: ReadonlySet<string> = new Set([
+  ...CONTROLE_DO_RECURSO.keys(),
+  'recurso.admiteInstanciaSuperior',
+]);
+
+/** O sufixo do bloco que reúne as recusas de um campo da regra de recurso, ligado só ao controle dele. */
+export function sufixoDaRecusaDoRecurso(campo: string): string {
+  return `recusa-${campo.replace('.', '-')}`;
+}

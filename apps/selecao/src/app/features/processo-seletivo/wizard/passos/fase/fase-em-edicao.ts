@@ -3,15 +3,14 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { descreverFase, finalidadesDaFase } from '../../shared/descricao-da-fase';
+import { emOrdem, type RecusaOrdenada } from '../../shared/recusas/ordem-das-recusas';
 import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service';
 import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
-import {
-  problemasDaFase,
-  type AtoDoCatalogo,
-  type CampoDaFase,
-  type ProblemaDaFase,
-} from './configuracao-da-fase';
+import { NO_TOPO_DA_FASE } from '../cronograma/servicos/distribuicao-das-recusas-das-fases';
+import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
+import type { CampoDaRecusaDaFase } from './campo-da-fase';
+import { problemasDaFase, type AtoDoCatalogo, type ProblemaDaFase } from './configuracao-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';
 import { EspelhoDaFase } from './espelho-da-fase';
@@ -39,11 +38,14 @@ export class FaseEmEdicao {
   private readonly catalogoDeAtos = inject(CatalogoDeAtos);
   private readonly catalogoDeBancas = inject(CatalogoDeBancas);
   private readonly catalogoDeFases = inject(CatalogoDeFases);
+  private readonly recusasDoServidor = inject(RecusasDoServidorNasFases);
 
   /** Fase aberta, pelo id da fase canônica — o identificador sempre presente. */
   readonly faseAberta = signal('');
 
-  readonly espelho = new EspelhoDaFase(this.store);
+  readonly espelho = new EspelhoDaFase(this.store, () =>
+    this.recusasDoServidor.registrarAlteracao(),
+  );
 
   /** As fases do certame na ordem em que ocorrem. */
   readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() =>
@@ -131,9 +133,38 @@ export class FaseEmEdicao {
     );
   });
 
-  /** O que a tela mostra sob um campo: o que a conferência local diz dele. */
-  readonly erroDoCampo = (campo: CampoDaFase): string | null =>
+  /** O que a conferência local diz do campo. */
+  readonly problemaLocal = (campo: CampoDaRecusaDaFase): string | null =>
     this.problemas().find((problema) => problema.campo === campo)?.mensagem ?? null;
+
+  /** As recusas do servidor à fase aberta, ativas e a conferir, sem ordem. */
+  private readonly recusasDaFase = computed<readonly RecusaOrdenada[]>(() =>
+    this.recusasDoServidor.recusasDaFase(this.faseAberta()),
+  );
+
+  /** As recusas do servidor a um campo da fase aberta, na ordem em que se leem. */
+  readonly recusasDoCampo = (campo: CampoDaRecusaDaFase): readonly RecusaOrdenada[] =>
+    this.recusasDoServidor.recusasDoCampo(this.faseAberta(), campo);
+
+  /** As recusas que a tela não liga a um controle da fase, para o topo dela. */
+  readonly recusasDaConfiguracao = computed(() =>
+    emOrdem(this.recusasDaFase().filter((recusa) => recusa.campo === NO_TOPO_DA_FASE)),
+  );
+
+  /** As recusas à regra de recurso, de qualquer controle dela, para o alto da seção. */
+  readonly recusasDoRecurso = computed(() =>
+    emOrdem(this.recusasDaFase().filter((recusa) => recusa.campo.startsWith('recurso'))),
+  );
+
+  /** O campo tem o que mostrar: um problema local ou uma recusa do servidor, ativa ou a conferir. */
+  readonly temMensagem = (campo: CampoDaRecusaDaFase): boolean =>
+    this.problemaLocal(campo) !== null || this.recusasDoCampo(campo).length > 0;
+
+  /** O que marca o campo como inválido: o problema local, ou a primeira recusa que ainda vale. */
+  readonly erroDoCampo = (campo: CampoDaRecusaDaFase): string | null =>
+    this.problemaLocal(campo) ??
+    this.recusasDoCampo(campo).find((recusa) => !recusa.aConferir)?.mensagem ??
+    null;
 
   readonly nomeDaBanca = (tipoBancaId: string): string =>
     nomeDaBanca(this.bancasEscolhiveis(), tipoBancaId);

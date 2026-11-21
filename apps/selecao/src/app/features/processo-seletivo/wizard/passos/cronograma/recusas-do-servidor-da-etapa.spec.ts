@@ -4,7 +4,6 @@ import {
   localDoErroDaEtapa,
   recusaDoCampoDaEtapa,
   campoDaRecusa,
-  fasesComUnidadeNaoEncontrada,
   indiceDaEtapaEm,
   recusaDaBancaDaEtapa,
   textoDaRecusaDaEtapa,
@@ -63,35 +62,6 @@ describe('recusas do servidor à etapa', () => {
     expect(
       recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
     ).toBeNull();
-  });
-});
-
-describe('fases cuja unidade o servidor não encontrou', () => {
-  const NAO_ENCONTRADA = 'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
-
-  it('devolve a posição de cada fase citada no campo da unidade', () => {
-    expect(
-      fasesComUnidadeNaoEncontrada([
-        { field: 'fases[2].unidadeResponsavelId', code: NAO_ENCONTRADA },
-        { field: 'fases[0].unidadeResponsavelId', code: NAO_ENCONTRADA },
-      ]),
-    ).toEqual([2, 0]);
-  });
-
-  it.each(['$.fases[2].unidadeResponsavelId', 'request.Fases[2].UnidadeResponsavelId'])(
-    'reconhece o campo com prefixo de caminho e caixa diferentes: %s',
-    (field) => {
-      expect(fasesComUnidadeNaoEncontrada([{ field, code: NAO_ENCONTRADA }])).toEqual([2]);
-    },
-  );
-
-  it('ignora outro código ou outro campo da fase', () => {
-    expect(
-      fasesComUnidadeNaoEncontrada([
-        { field: 'fases[1].unidadeResponsavelId', code: 'uniplus.validacao' },
-        { field: 'fases[1].inicio', code: NAO_ENCONTRADA },
-      ]),
-    ).toEqual([]);
   });
 });
 

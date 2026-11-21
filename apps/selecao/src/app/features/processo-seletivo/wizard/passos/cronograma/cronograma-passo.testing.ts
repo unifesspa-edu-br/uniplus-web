@@ -20,6 +20,7 @@ import type {
   ProdutoDaFase,
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
+import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -56,6 +57,7 @@ const FIM_DA_FASE = '2026-03-10T18:00:00-03:00';
 
 const PROVEDORES = [
   ProcessoSeletivoStore,
+  NumeracaoDasRespostasRecusadas,
   CadastroInicial,
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,

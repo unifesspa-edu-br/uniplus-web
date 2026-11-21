@@ -119,8 +119,9 @@ test.describe('Unidade responsável da fase no cronograma', () => {
 
     const unidade = page.getByLabel('Unidade responsável');
     await expect(unidade).toHaveAttribute('aria-invalid', 'true');
+    await expect(unidade).toHaveAccessibleDescription(/não está mais no cadastro/);
     await expect(
-      page.getByRole('alert').filter({ hasText: 'não está mais no cadastro' }),
+      page.getByText('A unidade responsável da fase não está mais no cadastro.'),
     ).toBeVisible();
     expect(await runAxeWcagAA(page).then((r) => r.violations.map((v) => v.id))).toEqual([]);
   });

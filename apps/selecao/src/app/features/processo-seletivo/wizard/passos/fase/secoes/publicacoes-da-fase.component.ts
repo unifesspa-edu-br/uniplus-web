@@ -6,12 +6,13 @@ import { PAPEL_PRELIMINAR, type ProdutoDaFase } from '../../../processo-seletivo
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { PAPEIS_ESCOLHIVEIS } from '../configuracao-da-fase';
+import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
 /** As publicações que a fase declara, cada uma um tipo de ato do catálogo, com o papel que ela tem. */
 @Component({
   selector: 'sel-publicacoes-da-fase',
-  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent],
+  imports: [ValorLegivelDirective, FormsModule, ValorEmConsultaComponent, RecusasDoCampoComponent],
   templateUrl: './publicacoes-da-fase.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
@@ -24,6 +25,9 @@ export class PublicacoesDaFaseComponent {
 
   protected readonly idDaFase = this.faseEmEdicao.idDaFase;
   protected readonly erroDoCampo = this.faseEmEdicao.erroDoCampo;
+  protected readonly problemaLocal = this.faseEmEdicao.problemaLocal;
+  protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
+  protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly papeis = PAPEIS_ESCOLHIVEIS;
 
   /** A leitura da consulta: cada publicação em texto, sem o controle que a edita. */

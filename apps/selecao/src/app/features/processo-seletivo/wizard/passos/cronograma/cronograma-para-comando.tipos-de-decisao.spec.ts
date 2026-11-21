@@ -29,9 +29,9 @@ describe('tipos de decisão da fase no comando', () => {
   });
 
   it('envia lista vazia quando a fase não declara tipo', () => {
-    expect(comoComandoDeFase(umaFaseDoCronograma({ tiposDeDecisao: undefined })).tiposDeDecisao).toEqual(
-      [],
-    );
+    expect(
+      comoComandoDeFase(umaFaseDoCronograma({ tiposDeDecisao: undefined })).tiposDeDecisao,
+    ).toEqual([]);
   });
 });
 

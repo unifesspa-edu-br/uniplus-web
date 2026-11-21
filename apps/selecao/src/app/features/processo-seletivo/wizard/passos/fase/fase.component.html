@@ -5,6 +5,15 @@
   </p>
 } @else if (formulario(); as form) {
   <form [formGroup]="form">
+    @if (recusasDaConfiguracao().length > 0) {
+      <sel-recusas-do-campo
+        class="step-card"
+        [attr.id]="idDaFase('recusas')"
+        tabindex="-1"
+        [recusas]="recusasDaConfiguracao()"
+      />
+    }
+
     <!-- Publicações -->
     <sel-publicacoes-da-fase class="step-card"></sel-publicacoes-da-fase>
 

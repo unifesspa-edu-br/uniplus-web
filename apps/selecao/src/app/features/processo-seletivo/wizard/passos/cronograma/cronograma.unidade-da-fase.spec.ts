@@ -11,7 +11,13 @@ import {
   PROCESSO_COM_ETAPA_GRAVADA,
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
-import { AjudantesDeUnidades, ID_CEPS, ID_CGA } from './cronograma-unidades.testing';
+import {
+  AjudantesDeUnidades,
+  CODIGO_DA_UNIDADE_INEXISTENTE,
+  ID_CEPS,
+  ID_CGA,
+  MENSAGEM_DA_UNIDADE_INEXISTENTE,
+} from './cronograma-unidades.testing';
 
 type UnidadeGravada = NonNullable<FaseCronogramaDto['cronograma']['unidadeResponsavel']>;
 
@@ -248,29 +254,29 @@ describe('CronogramaPassoComponent: unidade responsável da fase', () => {
       const resultado = await recusarUnidadeNaFase(1);
 
       expect(resultado.valid).toBe(false);
-      expect(unidades.unidadeRecusada(cronograma.fases.at(1))).toBe(true);
-      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(false);
       expect(expansao.faseExpandida(1)).toBe(true);
       const erro = nativo.querySelector('#cr-unidade-erro-1');
-      expect(erro?.textContent).toContain('não está mais no cadastro');
-      expect(erro?.getAttribute('role')).toBe('alert');
+      expect(erro?.textContent).toContain(MENSAGEM_DA_UNIDADE_INEXISTENTE);
+      expect(erro?.textContent).toContain(CODIGO_DA_UNIDADE_INEXISTENTE);
+      expect(nativo.querySelector('#cr-unidade-erro-0')).toBeNull();
       expect(unidadeDoSelect(1).getAttribute('aria-describedby')).toContain('cr-unidade-erro-1');
       expect(unidadeDoSelect(1).getAttribute('aria-invalid')).toBe('true');
     });
 
-    it('a recusa da unidade some quando a fase passa a ter outra unidade', async () => {
+    it('a recusa da unidade fica à vista, a conferir de novo, quando a fase passa a ter outra', async () => {
       store.processoSeletivoId.set(PROCESSO_ID);
       comUnidadesNoCadastro();
       comFases(ID_INSCRICAO);
       cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CGA);
       await recusarUnidadeNaFase(0);
-      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(true);
 
       cronograma.fases.at(0).controls.unidadeResponsavelId.setValue(ID_CEPS);
       detectar();
 
-      expect(unidades.unidadeRecusada(cronograma.fases.at(0))).toBe(false);
-      expect(nativo.querySelector('#cr-unidade-erro-0')).toBeNull();
+      expect(nativo.querySelector('#cr-unidade-erro-0')?.textContent).toContain(
+        'conferida de novo na próxima gravação',
+      );
+      expect(unidadeDoSelect(0).getAttribute('aria-invalid')).toBeNull();
     });
 
     it('a fase citada só abre quando o passo Cronograma é o visível', async () => {

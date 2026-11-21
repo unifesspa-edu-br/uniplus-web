@@ -33,8 +33,12 @@ export class EspelhoDaFase {
 
   private readonly store: ProcessoSeletivoStore;
 
-  constructor(store: ProcessoSeletivoStore) {
+  /** Quem precisa saber, logo depois de cada escrita, que o rascunho mudou. */
+  private readonly aoEscrever: () => void;
+
+  constructor(store: ProcessoSeletivoStore, aoEscrever: () => void) {
     this.store = store;
+    this.aoEscrever = aoEscrever;
   }
 
   espelhar(fase: FaseDoCronograma | null): void {
@@ -46,24 +50,32 @@ export class EspelhoDaFase {
 
     const atual = this.formulario();
     if (atual !== null && mesmoConteudo(faseDaConfiguracao(atual), fase)) return;
+    this.reespelhar(fase);
+  }
 
+  private reespelhar(fase: FaseDoCronograma): void {
     this.espelhando = true;
     try {
-      const grupo = grupoDaConfiguracaoDaFase(fase);
-      if (!this.store.aceitaEdicao()) grupo.disable({ emitEvent: false });
-
-      this.encerrar();
-      this.assinatura = grupo.valueChanges.subscribe(() => {
-        this.versao.update((versao) => versao + 1);
-        if (this.espelhando) return;
-        this.escreverNoRascunho(faseDaConfiguracao(grupo));
-      });
-
-      this.formulario.set(grupo);
+      this.formulario.set(this.novoGrupoDa(fase));
       this.versao.update((versao) => versao + 1);
     } finally {
       this.espelhando = false;
     }
+  }
+
+  private novoGrupoDa(fase: FaseDoCronograma): FormGroup<FaseConfigForm> {
+    const grupo = grupoDaConfiguracaoDaFase(fase);
+    if (!this.store.aceitaEdicao()) grupo.disable({ emitEvent: false });
+
+    this.encerrar();
+    this.assinatura = grupo.valueChanges.subscribe(() => this.aoMudar(grupo));
+    return grupo;
+  }
+
+  private aoMudar(grupo: FormGroup<FaseConfigForm>): void {
+    this.versao.update((versao) => versao + 1);
+    if (this.espelhando) return;
+    this.escreverNoRascunho(faseDaConfiguracao(grupo));
   }
 
   encerrar(): void {
@@ -73,12 +85,12 @@ export class EspelhoDaFase {
 
   /** Substitui no rascunho só a fase aberta; as demais seguem como estão. */
   private escreverNoRascunho(fase: FaseDoCronograma): void {
-    this.store.patchObjectSection('cronograma', {
-      fases: this.store
-        .draft()
-        .cronograma.fases.map((atual) =>
-          atual.faseCanonicaId === fase.faseCanonicaId ? fase : atual,
-        ),
-    });
+    const fases = this.store
+      .draft()
+      .cronograma.fases.map((atual) =>
+        atual.faseCanonicaId === fase.faseCanonicaId ? fase : atual,
+      );
+    this.store.patchObjectSection('cronograma', { fases });
+    this.aoEscrever();
   }
 }

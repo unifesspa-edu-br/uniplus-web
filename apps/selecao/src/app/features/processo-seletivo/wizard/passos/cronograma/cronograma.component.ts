@@ -25,6 +25,7 @@ import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigen
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
+import { RecusasDoServidorNasFases } from './servicos/recusas-do-servidor-nas-fases.service';
 import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
 import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
@@ -54,6 +55,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     ReleituraDasEtapas,
     FormularioDoCronograma,
     RecusasDoServidorNasEtapas,
+    RecusasDoServidorNasFases,
     EdicaoDaEtapa,
     LeituraDaLinhaDoTempo,
     ConferenciaDoCronograma,
