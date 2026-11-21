@@ -283,6 +283,21 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(etapa.recursos[0]?.leitura.rotulos.efeitoSuspensivo).toBe('Sem efeito suspensivo');
   });
 
+  it('guarda o Id que o servidor deu ao recurso da etapa, que a recusa da publicação cita', () => {
+    const dto = dtoComCronograma({
+      cronogramaFases: [],
+      etapas: [
+        etapaDoServidor({
+          publicacoes: { recursos: [recursoDaEtapaDoServidor({ id: 'recurso-lido' })] },
+        }),
+      ],
+    });
+
+    const [etapa] = hidratarDraft(DRAFT, dto).cronograma.etapas;
+
+    expect(etapa.recursos[0]?.id).toBe('recurso-lido');
+  });
+
   /**
    * O `id` da etapa é o único que volta ao rascunho, porque critério de
    * desempate e regra de eliminação o referenciam — perdê-lo ao reordenar

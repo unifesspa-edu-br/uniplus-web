@@ -69,4 +69,15 @@ describe('localDaRecusa', () => {
       expect(localDaRecusa(campo)).toBeNull();
     },
   );
+
+  it('lê o ponteiro do documento como o mesmo caminho em pontos e colchetes', () => {
+    expect(localDaRecusa('/cronograma/fases/2/fim')).toEqual(localDaRecusa('fases[2].fim'));
+    expect(localDaRecusa('/cronograma/etapas/1/recursos/0/prazoValor')).toEqual(
+      localDaRecusa('etapas[1].recursos[0].prazoValor'),
+    );
+  });
+
+  it('não lê como dono o ponteiro de outra parte do documento', () => {
+    expect(localDaRecusa('/identificacao/nome')).toBeNull();
+  });
 });

@@ -14,11 +14,19 @@ import type { ControleNaTelaDaEtapa } from './distribuicao-das-recusas-das-etapa
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
 import { novoFormularioDoCronograma } from '../cronograma-form';
+import { SEM_RECUSAS_DA_PUBLICACAO } from './recusas-da-publicacao-no-cronograma.testing';
 
 const TUDO_NA_TELA: ControleNaTelaDaEtapa = () => true;
 
 function recusa(campo: string, ordem = 0, codigo = 'uniplus.selecao.codigo_a'): RecusaDoProblema {
-  return { campo, codigo, mensagem: `Mensagem de ${campo}.`, pagina: null, ordem };
+  return {
+    campo,
+    codigo,
+    mensagem: `Mensagem de ${campo}.`,
+    pagina: null,
+    ordem,
+    identificadores: [],
+  };
 }
 
 describe('RecusasDoServidorNasEtapas', () => {
@@ -55,6 +63,7 @@ describe('RecusasDoServidorNasEtapas', () => {
       providers: [
         ProcessoSeletivoStore,
         RecusasDoServidorNasEtapas,
+        SEM_RECUSAS_DA_PUBLICACAO,
         {
           provide: FormularioDoCronograma,
           useValue: { formulario, etapas: formulario.controls.etapas },
@@ -280,6 +289,7 @@ describe('RecusasDoServidorNasEtapas: a conferir de novo', () => {
       providers: [
         ProcessoSeletivoStore,
         RecusasDoServidorNasEtapas,
+        SEM_RECUSAS_DA_PUBLICACAO,
         {
           provide: FormularioDoCronograma,
           useValue: { formulario, etapas: formulario.controls.etapas },

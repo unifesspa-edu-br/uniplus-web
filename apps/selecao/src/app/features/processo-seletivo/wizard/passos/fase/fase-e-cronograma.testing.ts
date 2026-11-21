@@ -11,6 +11,8 @@ import { CaraterEtapa, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
+import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
+import { RecusasDaPublicacaoNoCronograma } from '../cronograma/servicos/recusas-da-publicacao-no-cronograma.service';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -214,6 +216,8 @@ const ETAPA_GRAVADA = {
 const PROVEDORES = [
   ProcessoSeletivoStore,
   NumeracaoDasRespostasRecusadas,
+  RecusasDaPublicacao,
+  RecusasDaPublicacaoNoCronograma,
   RecusasDoServidorNasFases,
   CadastroInicial,
   GravacaoDoProcesso,

@@ -4,6 +4,18 @@
   pertence.
 </p>
 
+@if (recusasDoPasso().length > 0) {
+  <section class="step-card" aria-labelledby="cr-recusas-da-publicacao-titulo">
+    <h2 id="cr-recusas-da-publicacao-titulo" class="form-section__title">
+      Recusas da última publicação que não apontam campo nesta tela
+    </h2>
+    <p class="field__hint">
+      A fase ou a etapa a que estas recusas se referem já não está no cronograma.
+    </p>
+    <sel-recusas-do-campo [recusas]="recusasDoPasso()" />
+  </section>
+}
+
 <ui-falha-de-leitura titulo="Não foi possível carregar os catálogos" [leitura]="situacao.leitura" />
 
 <ui-falha-de-leitura
@@ -38,7 +50,10 @@
   <form [formGroup]="formulario">
     <sel-nova-fase class="step-card"></sel-nova-fase>
 
-    <ui-falha-de-leitura titulo="Etapas sem identificadores" [leitura]="releituraDasEtapas.leitura" />
+    <ui-falha-de-leitura
+      titulo="Etapas sem identificadores"
+      [leitura]="releituraDasEtapas.leitura"
+    />
 
     @if (avisoDeReordenacao(); as aviso) {
       <div class="field__erro" role="alert">

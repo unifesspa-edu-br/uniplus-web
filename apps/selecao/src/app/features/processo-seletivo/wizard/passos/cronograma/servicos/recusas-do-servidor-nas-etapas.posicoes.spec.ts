@@ -19,6 +19,7 @@ import {
 import type { ControleNaTelaDaEtapa } from './distribuicao-das-recusas-das-etapas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
 import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
+import { SEM_RECUSAS_DA_PUBLICACAO } from './recusas-da-publicacao-no-cronograma.testing';
 
 const TUDO_NA_TELA: ControleNaTelaDaEtapa = () => true;
 
@@ -28,6 +29,7 @@ const recusa = (campo: string): RecusaDoProblema => ({
   mensagem: `Mensagem de ${campo}.`,
   pagina: null,
   ordem: 0,
+  identificadores: [],
 });
 
 const item = (rotulo: string): ItemDeAvaliacaoDaEtapa => ({
@@ -67,6 +69,7 @@ describe('RecusasDoServidorNasEtapas: a recusa segue o item, não a posição', 
       providers: [
         ProcessoSeletivoStore,
         RecusasDoServidorNasEtapas,
+        SEM_RECUSAS_DA_PUBLICACAO,
         {
           provide: FormularioDoCronograma,
           useValue: { formulario, etapas: formulario.controls.etapas },

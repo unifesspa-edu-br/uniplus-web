@@ -21,6 +21,7 @@ import type {
 } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
+import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
@@ -58,6 +59,7 @@ const FIM_DA_FASE = '2026-03-10T18:00:00-03:00';
 const PROVEDORES = [
   ProcessoSeletivoStore,
   NumeracaoDasRespostasRecusadas,
+  RecusasDaPublicacao,
   CadastroInicial,
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,

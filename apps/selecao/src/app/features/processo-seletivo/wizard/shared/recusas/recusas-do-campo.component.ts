@@ -10,6 +10,8 @@ const NOTA_DA_CONFERENCIA: Readonly<Record<OrigemDaRecusa, string>> = {
     'Você alterou esta parte depois desta recusa; ela será conferida de novo na próxima publicação.',
 };
 
+const NOTA_DA_PUBLICACAO = 'Apontada na última tentativa de publicação.';
+
 /** A nota que explica a recusa a conferir de novo, conforme a resposta que a trouxe. */
 export function notaDaConferencia(origem: OrigemDaRecusa): string {
   return NOTA_DA_CONFERENCIA[origem];
@@ -33,6 +35,9 @@ export function notaDaConferencia(origem: OrigemDaRecusa): string {
         <p class="field__hint">{{ nota }}</p>
       }
     }
+    @for (nota of notasDaOrigem(); track nota) {
+      <p class="field__hint">{{ nota }}</p>
+    }
   `,
   styles: ':host { display: block; }',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,4 +52,10 @@ export class RecusasDoCampoComponent {
   protected readonly notas = computed(() => [
     ...new Set(this.aConferir().map((recusa) => NOTA_DA_CONFERENCIA[recusa.origem])),
   ]);
+  protected readonly notasDaOrigem = computed(() => {
+    const recusas = this.recusas();
+    const daPublicacao = recusas.some((recusa) => recusa.origem === 'publicacao');
+    const esclarecimentos = recusas.flatMap((recusa) => recusa.nota ?? []);
+    return [...new Set([...(daPublicacao ? [NOTA_DA_PUBLICACAO] : []), ...esclarecimentos])];
+  });
 }

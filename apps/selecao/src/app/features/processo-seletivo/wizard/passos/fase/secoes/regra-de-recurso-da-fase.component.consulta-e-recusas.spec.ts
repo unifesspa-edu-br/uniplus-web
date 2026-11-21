@@ -96,6 +96,7 @@ describe('RegraDeRecursoDaFaseComponent: consulta e recusas', () => {
         mensagem: 'Prazo de recurso recusado.',
         pagina: null,
         ordem: 0,
+        identificadores: [],
       };
       const enviadas = store.draft().cronograma.fases;
       TestBed.inject(RecusasDoServidorNasFases).registrar(1, enviadas, [recusa], () => true);

@@ -19,13 +19,31 @@ const DONO = /^(?:\$\.|request\.)?(fases|etapas)\[(\d+)\]/i;
 const RECURSO_DA_ETAPA = /^\.recursos\[(\d+)\]/i;
 const CAMINHO_RECONHECIDO = /^(?:\.\w+(?:\[\d+\])?)*$/;
 
+/** O ponteiro JSON do documento: `/cronograma/fases/0/fim`, com o bloco do documento antes da lista. */
+const PONTEIRO_DO_DOCUMENTO = /^\/(?:[^/]+\/)?((?:fases|etapas)\/\d+(?:\/.*)?)$/i;
+
 const DONOS: Readonly<Record<string, DonoDaRecusa>> = { fases: 'fase', etapas: 'etapa' };
 
+/** O ponteiro do documento escrito em pontos e colchetes (`fases[0].fim`); o resto fica como está. */
+function emPontosEColchetes(field: string): string {
+  const ponteiro = PONTEIRO_DO_DOCUMENTO.exec(field);
+  if (ponteiro === null) return field;
+  return ponteiro[1]
+    .split('/')
+    .map((parte, posicao) => {
+      if (/^\d+$/.test(parte)) return `[${parte}]`;
+      return posicao === 0 ? parte : `.${parte}`;
+    })
+    .join('');
+}
+
 /**
- * O lugar que o `field` da recusa aponta: o dono (fase ou etapa) e o caminho dentro dele. Devolve
- * `null` quando o `field` nem nomeia o dono, e o dono sem caminho quando só ele é reconhecido.
+ * O lugar que o `field` da recusa aponta: o dono (fase ou etapa) e o caminho dentro dele, no
+ * caminho em pontos e colchetes ou no ponteiro do documento. Devolve `null` quando o `field` nem
+ * nomeia o dono, e o dono sem caminho quando só ele é reconhecido.
  */
-export function localDaRecusa(field: string): LocalDaRecusa | null {
+export function localDaRecusa(campo: string): LocalDaRecusa | null {
+  const field = emPontosEColchetes(campo);
   const dono = DONO.exec(field);
   if (dono === null) return null;
   const quem = DONOS[dono[1].toLowerCase()];

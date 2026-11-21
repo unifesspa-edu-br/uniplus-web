@@ -57,4 +57,18 @@ describe('RecusasDoCampoComponent', () => {
   it('não desenha nada sem recusa', () => {
     expect(montar([]).textContent?.trim()).toBe('');
   });
+
+  it('diz que a recusa da publicação veio da última tentativa, e a da gravação não diz', () => {
+    const daPublicacao = montar([recusa({ origem: 'publicacao' })]);
+    const daGravacao = montar([recusa({})]);
+
+    expect(daPublicacao.textContent).toContain('Apontada na última tentativa de publicação.');
+    expect(daGravacao.textContent).not.toContain('Apontada na última tentativa');
+  });
+
+  it('mostra o esclarecimento que a recusa traz', () => {
+    const tela = montar([recusa({ nota: 'Sobre um recurso que foi gravado de novo.' })]);
+
+    expect(tela.textContent).toContain('Sobre um recurso que foi gravado de novo.');
+  });
 });

@@ -1,6 +1,13 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
-import { paginaDoErro, type ProblemDetails } from '@uniplus/shared-core/http';
+import {
+  identificadoresDoErro,
+  paginaDoErro,
+  type IdentificadorDoItem,
+  type ProblemDetails,
+  type ProblemValidationError,
+} from '@uniplus/shared-core/http';
 
+import type { WizardDraft } from '../../modelos/rascunho.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { mesmoConteudo } from '../conteudo-canonico';
 import { NumeracaoDasRespostasRecusadas } from './numeracao-das-respostas-recusadas';
@@ -9,15 +16,31 @@ import type { RecusaOrdenada } from './ordem-das-recusas';
 /** O `campo` da recusa que a API deu sem apontar campo. */
 export const SEM_CAMPO = '';
 
+/** A recusa da publicação, com os identificadores dos itens de lista que o campo atravessa. */
+export interface RecusaDaPublicacao extends RecusaOrdenada {
+  readonly identificadores: readonly IdentificadorDoItem[];
+}
+
+/** O que a causa diz: o campo (ou `SEM_CAMPO`), o código, a mensagem e os identificadores. */
+function dadosDaCausa(erro: ProblemValidationError) {
+  return {
+    campo: erro.field ?? SEM_CAMPO,
+    codigo: erro.code,
+    mensagem: erro.message,
+    identificadores: identificadoresDoErro(erro),
+  };
+}
+
 /**
  * Todas as causas (`errors[]`) da resposta recusada, na ordem em que a API as deu, com o campo
  * que ela nomeou (ponteiro no documento) ou `SEM_CAMPO` quando é uma causa geral.
  */
-export function recusasDaResposta(problema: ProblemDetails, resposta: number): RecusaOrdenada[] {
+export function recusasDaResposta(
+  problema: ProblemDetails,
+  resposta: number,
+): RecusaDaPublicacao[] {
   return (problema.errors ?? []).map((erro, ordem) => ({
-    campo: erro.field ?? SEM_CAMPO,
-    codigo: erro.code,
-    mensagem: erro.message,
+    ...dadosDaCausa(erro),
     pagina: paginaDoErro(problema, erro.code),
     ordem,
     resposta,
@@ -28,11 +51,11 @@ export function recusasDaResposta(problema: ProblemDetails, resposta: number): R
 
 /** O que a última resposta recusada deixou: as causas, o código e o título dela, o processo e o rascunho que conferiu. */
 interface UltimaTentativa {
-  readonly recusas: readonly RecusaOrdenada[];
+  readonly recusas: readonly RecusaDaPublicacao[];
   readonly codigo: string;
   readonly titulo: string;
   readonly geracao: number;
-  readonly rascunho: unknown;
+  readonly rascunho: WizardDraft;
 }
 
 /** O código da resposta recusada e o título que o operador lê dela, já resolvido. */
@@ -65,6 +88,12 @@ export class RecusasDaPublicacao {
 
   /** As recusas da última resposta recusada, na ordem da API, enquanto ainda valem. */
   readonly recusas = computed(() => this.vigente()?.recusas ?? []);
+
+  /** O cronograma que a publicação conferiu, enquanto a resposta vale: o que as recusas apontaram. */
+  readonly cronogramaDaResposta = computed(() => this.vigente()?.rascunho.cronograma ?? null);
+
+  /** A recusa a que a pessoa pediu "Ir ao campo" e que o Cronograma ainda não levou ao campo. */
+  readonly destino = signal<RecusaDaPublicacao | null>(null);
 
   /** O código e o título da última resposta recusada, enquanto ainda valem; `null` sem recusa. */
   readonly resposta = computed<RespostaRecusada | null>(() => {
@@ -105,5 +134,6 @@ export class RecusasDaPublicacao {
 
   limpar(): void {
     this.ultima.set(null);
+    this.destino.set(null);
   }
 }

@@ -10,6 +10,8 @@ import { type ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { FasePassoComponent } from '../fase/fase.component';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
+import { emOrdem } from '../../shared/recusas/ordem-das-recusas';
+import { RecusasDoCampoComponent } from '../../shared/recusas/recusas-do-campo.component';
 import { EtapasOrfasComponent } from './etapas-orfas.component';
 import { DadosDaFaseComponent } from './fase/dados-da-fase.component';
 import { CabecalhoDaFaseComponent } from './fase/cabecalho-da-fase.component';
@@ -23,6 +25,8 @@ import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service'
 import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.service';
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { GravacaoDoCronograma } from './servicos/gravacao-do-cronograma.service';
+import { IdaAoCampoDaPublicacao } from './servicos/ida-ao-campo-da-publicacao.service';
+import { RecusasDaPublicacaoNoCronograma } from './servicos/recusas-da-publicacao-no-cronograma.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { RecusaDaGravacaoDasEtapas } from './servicos/recusa-da-gravacao-das-etapas.service';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
@@ -47,6 +51,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     DadosDaFaseComponent,
     EtapasOrfasComponent,
     EtapasDaFaseComponent,
+    RecusasDoCampoComponent,
   ],
   templateUrl: './cronograma.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +62,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     FormularioDoCronograma,
     RecusasDoServidorNasEtapas,
     RecusaDaGravacaoDasEtapas,
+    RecusasDaPublicacaoNoCronograma,
     RecusasDoServidorNasFases,
     EdicaoDaEtapa,
     LeituraDaLinhaDoTempo,
@@ -64,6 +70,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     GravacaoDasExigenciasDocumentais,
     GravacaoDoCronograma,
     ExpansaoDoCronograma,
+    IdaAoCampoDaPublicacao,
   ],
 })
 export class CronogramaPassoComponent {
@@ -75,6 +82,7 @@ export class CronogramaPassoComponent {
   protected readonly gravacao = inject(GravacaoDoCronograma);
   protected readonly leitura = inject(LeituraDaLinhaDoTempo);
   protected readonly expansao = inject(ExpansaoDoCronograma);
+  private readonly recusasDaPublicacao = inject(RecusasDaPublicacaoNoCronograma);
 
   readonly formulario = this.cronograma.formulario;
   readonly fases = this.cronograma.fases;
@@ -86,7 +94,11 @@ export class CronogramaPassoComponent {
 
   constructor() {
     this.situacao.carregar();
+    inject(IdaAoCampoDaPublicacao);
   }
+
+  /** As recusas da última publicação que apontam fase ou etapa que já não existe. */
+  protected readonly recusasDoPasso = computed(() => emOrdem(this.recusasDaPublicacao.doPasso()));
 
   readonly convencaoDeContagemLida = computed(() => {
     this.versaoDoFormulario();

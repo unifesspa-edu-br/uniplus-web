@@ -20,6 +20,7 @@ import {
   type DistribuicaoDasRecusas,
   type RecusaDaFaseGuardada,
 } from './distribuicao-das-recusas-das-fases';
+import { RecusasDaPublicacaoNoCronograma } from './recusas-da-publicacao-no-cronograma.service';
 
 /** A recusa que a pessoa ainda precisa tratar, e a fase a que ela pertence. */
 export interface RecusaAtivaNaFase {
@@ -65,6 +66,7 @@ function partesQueDiferem(
 @Injectable()
 export class RecusasDoServidorNasFases {
   private readonly store = inject(ProcessoSeletivoStore);
+  private readonly daPublicacao = inject(RecusasDaPublicacaoNoCronograma);
   private readonly guardadas = signal<ReadonlyMap<string, readonly RecusaDaFaseGuardada[]>>(
     new Map(),
   );
@@ -133,9 +135,12 @@ export class RecusasDoServidorNasFases {
     this.guardadas.set(new Map());
   }
 
-  /** Todas as recusas da fase, ativas e a conferir, sem ordem. */
+  /** Todas as recusas da fase, da gravação e da última publicação, ativas e a conferir, sem ordem. */
   recusasDaFase(faseCanonicaId: string): readonly RecusaOrdenada[] {
-    return this.vigentes().get(faseCanonicaId) ?? [];
+    return [
+      ...(this.vigentes().get(faseCanonicaId) ?? []),
+      ...this.daPublicacao.recusasDaFase(faseCanonicaId),
+    ];
   }
 
   /** As recusas da fase a um campo, na ordem em que se leem. */

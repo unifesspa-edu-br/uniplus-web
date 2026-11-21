@@ -36,6 +36,7 @@ import { RecusasDoServidorNasEtapas } from '../servicos/recusas-do-servidor-nas-
 import { RecusasDoServidorNasFases } from '../servicos/recusas-do-servidor-nas-fases.service';
 import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
 import { ConfiguracaoDoRecursoDaEtapaComponent } from './configuracao-do-recurso-da-etapa.component';
+import { SEM_RECUSAS_DA_PUBLICACAO } from '../servicos/recusas-da-publicacao-no-cronograma.testing';
 
 const RECURSO: RecursoDaEtapa = {
   ancora: 'cienciaIndividual',
@@ -64,6 +65,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
         ReleituraDasEtapas,
         FormularioDoCronograma,
         RecusasDoServidorNasEtapas,
+        SEM_RECUSAS_DA_PUBLICACAO,
         RecusasDoServidorNasFases,
         EdicaoDaEtapa,
         provideHttpClient(withInterceptors([apiResultInterceptor])),
@@ -235,6 +237,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
         mensagem: 'Origem do prazo recusada.',
         pagina: null,
         ordem: 0,
+        identificadores: [],
       };
       TestBed.inject(FormularioDoCronograma).etapas.push(grupo);
       TestBed.inject(RecusasDoServidorNasEtapas).registrar(
