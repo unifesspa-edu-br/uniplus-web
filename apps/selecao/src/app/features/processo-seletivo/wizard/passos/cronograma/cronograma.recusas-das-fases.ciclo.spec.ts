@@ -69,7 +69,7 @@ describe('CronogramaPassoComponent: ciclo de vida das recusas das fases', () => 
     comUmaEtapa();
     await recusarFases([doProduto(1)]);
 
-    cronograma.mover(1, -1);
+    cronograma.sequencia.mover(1, -1);
     expansao.abrirFases([0, 1]);
     detectar();
 

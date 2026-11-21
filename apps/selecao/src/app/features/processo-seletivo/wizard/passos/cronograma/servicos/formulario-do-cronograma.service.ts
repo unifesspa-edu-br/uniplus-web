@@ -26,6 +26,7 @@ import { etapaComOQueDeclara } from '../regras-da-etapa';
 import { espelharFasesNoFormulario } from './espelho-das-fases-no-formulario';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
 import { ReleituraDasEtapas } from './releitura-das-etapas.service';
+import { SequenciaDasFases } from './sequencia-das-fases';
 import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
 /**
@@ -64,14 +65,10 @@ export class FormularioDoCronograma {
    * escrita no rascunho, que dispararia outra projeção.
    */
   private espelhando = false;
-
-  /**
-   * Orientação da recusa de permutação, quando a reordenação pedida forma um
-   * ciclo que o servidor não persiste numa chamada só.
-   */
-  readonly avisoDeReordenacao = signal<string | null>(null);
+  private escritaSuspensa = false;
 
   readonly fases = this.formulario.controls.fases;
+  readonly sequencia = new SequenciaDasFases(this.fases);
   readonly etapas = this.formulario.controls.etapas;
 
   /**
@@ -193,10 +190,15 @@ export class FormularioDoCronograma {
 
   /** Reescreve a posição das etapas de 1 a N, sem tocar nos identificadores. */
   private renumerarEtapas(): void {
+    this.numerarEtapas();
+    this.etapas.updateValueAndValidity();
+  }
+
+  /** Numera sem emitir: a remoção da fase emite uma só vez, depois de tirar tudo o que era dela. */
+  private numerarEtapas(): void {
     for (const [posicao, grupo] of this.etapas.controls.entries()) {
       grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false });
     }
-    this.etapas.updateValueAndValidity();
   }
 
   /**
@@ -230,11 +232,33 @@ export class FormularioDoCronograma {
 
     const codigo = removida.controls.codigo.value;
 
-    this.fases.removeAt(indice, { emitEvent: false });
-    this.removerEtapasDaFase(codigo);
-    this.removerDocumentosDaFase(codigo);
-    this.renumerarFases();
-    this.avisoDeReordenacao.set(null);
+    this.semEscreverNoRascunho(() => {
+      this.removerEtapasDaFase(codigo);
+      this.sequencia.retirar(indice);
+    });
+    this.escreverSemAFase(codigo);
+  }
+
+  /** Documentos e cronograma saem do rascunho juntos, na mesma escrita. */
+  private escreverSemAFase(codigo: string): void {
+    this.store.patchSections({
+      documentos: semAFase(this.store.draft().documentos, codigo),
+      cronograma: { ...this.store.draft().cronograma, ...this.cronogramaDoFormulario() },
+    });
+    this.recusasDasFases.registrarAlteracao();
+  }
+
+  /**
+   * O formulário muda por etapas, mas o rascunho precisa de uma só escrita já completa: com a
+   * escrita suspensa, nenhum intervalo do rascunho tem a fase sem as etapas dela.
+   */
+  private semEscreverNoRascunho(alteracao: () => void): void {
+    this.escritaSuspensa = true;
+    try {
+      alteracao();
+    } finally {
+      this.escritaSuspensa = false;
+    }
   }
 
   /** As etapas daquela fase, e só elas — identificadas pelo código que cada uma declara. */
@@ -244,43 +268,7 @@ export class FormularioDoCronograma {
         this.etapas.removeAt(posicao, { emitEvent: false });
       }
     }
-  }
-
-  /**
-   * Tira a fase do alcance de cada documento. O documento que valia só ali deixa de ser
-   * exigido; o que valia em mais fases continua, sem ela.
-   */
-  private removerDocumentosDaFase(codigo: string): void {
-    this.store.patchSection('documentos', semAFase(this.store.draft().documentos, codigo));
-  }
-
-  /**
-   * Troca a fase de lugar.
-   *
-   * A troca é sempre aplicada. Trocar duas fases adjacentes forma o ciclo de
-   * ordem que o servidor não persiste numa chamada só — mas recusar aqui
-   * deixaria a linha do tempo impossível de reordenar, porque toda troca entre
-   * vizinhas tem essa forma. A edição aceita; quem arbitra é a gravação, e é lá
-   * que a orientação aparece, com o cronograma que a provocou à vista.
-   */
-  mover(indice: number, direcao: -1 | 1): void {
-    const destino = indice + direcao;
-    const atual = this.fases.at(indice);
-    const vizinha = this.fases.at(destino);
-    if (atual === undefined || vizinha === undefined) return;
-
-    this.fases.removeAt(indice, { emitEvent: false });
-    this.fases.insert(destino, atual, { emitEvent: false });
-    this.renumerarFases();
-    this.avisoDeReordenacao.set(null);
-  }
-
-  /** Reescreve a posição de 1 a N na ordem em que as fases estão. */
-  private renumerarFases(): void {
-    for (const [posicao, grupo] of this.fases.controls.entries()) {
-      grupo.controls.ordem.setValue(posicao + 1, { emitEvent: false });
-    }
-    this.fases.updateValueAndValidity();
+    this.numerarEtapas();
   }
 
   private jaEspelha(cronograma: WizardDraft['cronograma']): boolean {
@@ -373,14 +361,18 @@ export class FormularioDoCronograma {
   /** Formulário → rascunho, que é o que persiste entre passos e alimenta a gravação. */
   private aoEditar(): void {
     this.versao.update((versao) => versao + 1);
-    if (this.espelhando) return;
-    this.store.patchObjectSection('cronograma', {
+    if (this.espelhando || this.escritaSuspensa) return;
+    this.store.patchObjectSection('cronograma', this.cronogramaDoFormulario());
+    this.recusasDasFases.registrarAlteracao();
+  }
+
+  private cronogramaDoFormulario(): Partial<WizardDraft['cronograma']> {
+    return {
       fases: this.fases.controls.map(faseDoFormulario),
       etapas: this.etapas.controls.map(etapaDoFormulario),
       algoritmoContagemCodigo: this.formulario.controls.algoritmoContagemCodigo.value,
       algoritmoContagemVersao: this.formulario.controls.algoritmoContagemVersao.value,
-    });
-    this.recusasDasFases.registrarAlteracao();
+    };
   }
 
   /** Fora de rascunho o servidor recusa qualquer gravação: o formulário segue `edicaoLiberada`. */

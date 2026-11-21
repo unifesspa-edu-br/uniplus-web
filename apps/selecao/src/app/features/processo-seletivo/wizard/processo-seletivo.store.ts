@@ -302,6 +302,12 @@ export class ProcessoSeletivoStore {
     this.draft.update((draft) => ({ ...draft, [section]: value }));
   }
 
+  /** Várias seções numa só escrita, para o rascunho nunca mostrar uma já mudada e a outra não. */
+  patchSections(patch: Partial<WizardDraft>): void {
+    if (!this.edicaoPermitida()) return;
+    this.draft.update((draft) => ({ ...draft, ...patch }));
+  }
+
   /** Ver `patchSection` quanto ao bloqueio fora de rascunho. */
   patchObjectSection<K extends keyof WizardDraft>(
     section: K,
@@ -340,28 +346,40 @@ export class ProcessoSeletivoStore {
   }
 
   reset(): void {
+    this.reiniciarNavegacao();
+    this.reiniciarGravacaoELeitura();
+    this.reiniciarAuxiliaresDosPassos();
+    this.classificacao.reiniciar();
+    this.geracao.update((valor) => valor + 1);
+  }
+
+  private reiniciarNavegacao(): void {
     this.passoAtual.set(0);
     this.passosVisitados.set(new Set([0]));
     this.passosConcluidos.set(new Set());
     this.draft.set(rascunhoInicial());
     this.erroDoPasso.set(null);
+  }
+
+  private reiniciarGravacaoELeitura(): void {
     this.processoSeletivoId.set(null);
     this.salvando.set(false);
     this.travamentoDeOrquestracao.set(false);
     this.criacaoIndefinida.set(false);
     this.publicacaoNaoConfirmada.set(false);
-    this.remoteSnapshot.set(null);
-    this.regrasDasModalidades.set([]);
-    this.opcoesDeCursoGravadas.set(null);
     this.vagasGravadasDefasadas.set(false);
+    this.remoteSnapshot.set(null);
     this.hidratando.set(false);
     this.falhaDeLeitura.set(null);
+  }
+
+  private reiniciarAuxiliaresDosPassos(): void {
+    this.regrasDasModalidades.set([]);
+    this.opcoesDeCursoGravadas.set(null);
     this.documentosParaEscolha.set([]);
     this.camposPostosPelasExigencias.set(new Set());
     this.aplicacoesDeModeloEmAberto.set(new Map());
     this.avisoDocumentos.set(null);
-    this.classificacao.reiniciar();
-    this.geracao.update((valor) => valor + 1);
   }
 
   hidratar(dto: ProcessoSeletivoDto): void {
