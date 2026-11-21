@@ -50,6 +50,8 @@ export { separarCausas } from './causas-do-problema';
 export type { CausaDeCampo, CausaGeral, CausasDoProblema } from './causas-do-problema';
 
 export { paginaDoErro, paginaDoProblema } from './pagina-do-erro';
+export { recusasDoProblema } from './recusas-do-problema';
+export type { RecusaDoProblema, RecusasDoProblema } from './recusas-do-problema';
 
 export { SignedUploadClient } from './signed-upload';
 

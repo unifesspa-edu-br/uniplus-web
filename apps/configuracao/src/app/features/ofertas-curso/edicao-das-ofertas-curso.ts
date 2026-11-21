@@ -1,7 +1,12 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
-import { ApiResult, ProblemDetails, ProblemI18nService } from '@uniplus/shared-core/http';
+import {
+  ApiResult,
+  ProblemDetails,
+  ProblemI18nService,
+  recusasDoProblema,
+} from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
   idempotencyKey,
@@ -26,7 +31,6 @@ import {
   descartarRecusasDoServidor,
   marcarRecusaDoServidor,
   marcarRecusasDosCampos,
-  recusasDoProblema,
   textoDaCausaGeral,
 } from '../../shared/formulario';
 

@@ -17,6 +17,7 @@ import {
   ProblemI18nService,
   separarCausas,
   STATUS_HTTP,
+  recusasDoProblema,
 } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
@@ -37,11 +38,7 @@ import {
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
 import { focoEstaLivre } from '../../shared/foco';
-import {
-  descartarRecusasDoServidor,
-  marcarRecusasDosCampos,
-  recusasDoProblema,
-} from '../../shared/formulario';
+import { descartarRecusasDoServidor, marcarRecusasDosCampos } from '../../shared/formulario';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 interface CabecalhoForm {

@@ -6,6 +6,8 @@ import {
   ProblemDetails,
   ProblemI18nService,
   STATUS_HTTP,
+  recusasDoProblema,
+  type RecusasDoProblema,
 } from '@uniplus/shared-core/http';
 import {
   deveRotacionarIdempotencyKey,
@@ -27,12 +29,7 @@ import {
   valoresEmBrancoDoAto,
 } from './tipo-ato-form';
 import { TiposAtoStore } from './tipos-ato.store';
-import {
-  aplicarRecusasDoProblema,
-  descartarRecusasDoServidor,
-  recusasDoProblema,
-  type RecusasDoProblema,
-} from '../../shared/formulario';
+import { aplicarRecusasDoProblema, descartarRecusasDoServidor } from '../../shared/formulario';
 
 /** Vendor code do DomainError `TipoAtoPublicado.VigenciaSobreposta` (409 em POST e PUT, sem `errors[]`). */
 const VIGENCIA_SOBREPOSTA = 'uniplus.publicacoes.tipo_ato.vigencia_sobreposta';

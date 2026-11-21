@@ -1,11 +1,10 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
-import type { ProblemDetails } from '@uniplus/shared-core/http';
+import { recusasDoProblema, type ProblemDetails } from '@uniplus/shared-core/http';
 import {
   aplicarRecusasDoProblema,
   MENSAGEM_SEM_MAPEAMENTO,
   recusasDoControle,
-  recusasDoProblema,
   textoDaCausaGeral,
 } from './recusa-do-servidor';
 

@@ -2,7 +2,6 @@ import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 import {
   type CausaDeCampo,
   type CausaGeral,
-  paginaDoErro,
   type ProblemDetails,
   separarCausas,
 } from '@uniplus/shared-core/http';
@@ -11,29 +10,6 @@ import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 /** A recusa que a API fez a um campo, com o nome do campo no servidor para achar o controle. */
 export interface RecusaDoServidor extends RecusaDoCampo {
   readonly campo: string;
-}
-
-/** As recusas do problema: as que apontam um campo e as gerais, que não apontam nenhum. */
-export interface RecusasDoProblema {
-  readonly deCampo: readonly RecusaDoServidor[];
-  readonly gerais: readonly CausaGeral[];
-}
-
-/**
- * As causas (`errors[]`) do problema separadas entre as que apontam um campo, cada uma já com a
- * página que explica o código, e as gerais. O problema sem `errors[]` devolve as duas listas vazias.
- */
-export function recusasDoProblema(problema: ProblemDetails): RecusasDoProblema {
-  const { deCampo, gerais } = separarCausas(problema.errors);
-  return {
-    deCampo: deCampo.map((erro) => ({
-      campo: erro.field,
-      codigo: erro.code,
-      mensagem: erro.message,
-      pagina: paginaDoErro(problema, erro.code),
-    })),
-    gerais,
-  };
 }
 
 /** As recusas da API presas ao controle; vazia quando o controle não tem recusa do servidor. */
@@ -158,7 +134,10 @@ export function marcarRecusasDosCampos<TNome extends string>(
  * nenhuma recusa de campo achou controle, `MENSAGEM_SEM_MAPEAMENTO`; `null` quando não há o que dizer.
  */
 export function aplicarRecusasDoProblema<TNome extends string>(
-  recusas: RecusasDoProblema,
+  recusas: {
+    readonly deCampo: readonly RecusaDoServidor[];
+    readonly gerais: readonly CausaGeral[];
+  },
   formulario: { readonly controls: Record<TNome, AbstractControl> },
   controleDoCampo: (campoDoServidor: string) => TNome | null,
 ): string | null {
