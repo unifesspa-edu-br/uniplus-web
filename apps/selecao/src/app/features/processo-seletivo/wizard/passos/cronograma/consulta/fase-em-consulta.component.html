@@ -4,6 +4,13 @@
   {{ item.grupo.controls.ordem.value }}. {{ item.nome }}
 </h2>
 
+@if (item.indice > 0 || item.grupo.controls.noMesmoMomentoDaAnterior.value) {
+  <ui-valor-em-consulta
+    rotulo="No mesmo momento da anterior"
+    [valor]="item.grupo.controls.noMesmoMomentoDaAnterior.value ? 'Sim' : 'Não'"
+  />
+}
+
 @if (item.exigencias === null) {
   <p class="field__hint" role="status">
     Esta fase não está no catálogo carregado e o processo não guardou os atributos dela.

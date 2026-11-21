@@ -63,4 +63,49 @@ describe('Sequência das fases', () => {
     expect(fases.length).toBe(3);
     expect(alteracoes).not.toHaveBeenCalled();
   });
+
+  it('desmarca a fase que sobe à primeira posição e não devolve a marca ao descer', () => {
+    const fases = fasesDoCronograma();
+    const sequencia = new SequenciaDasFases(fases);
+    const marcada = fases.at(1);
+    marcada.controls.noMesmoMomentoDaAnterior.setValue(true);
+    sequencia.mover(1, -1);
+    expect(marcada.controls.noMesmoMomentoDaAnterior.value).toBe(false);
+    expect(sequencia.primeiraFaseDesmarcada()).toBe('AVALIACAO');
+    sequencia.mover(0, 1);
+    expect(marcada.controls.noMesmoMomentoDaAnterior.value).toBe(false);
+    expect(sequencia.primeiraFaseDesmarcada()).toBeNull();
+  });
+
+  it('desmarca a nova primeira fase ao retirar a anterior', () => {
+    const fases = fasesDoCronograma();
+    const sequencia = new SequenciaDasFases(fases);
+    fases.at(1).controls.noMesmoMomentoDaAnterior.setValue(true);
+    sequencia.retirar(0);
+    expect(fases.at(0).controls.noMesmoMomentoDaAnterior.value).toBe(false);
+    expect(sequencia.primeiraFaseDesmarcada()).toBe('AVALIACAO');
+  });
+
+  it('mantém a marca ao mover entre outras posições e não avisa', () => {
+    const fases = fasesDoCronograma();
+    const sequencia = new SequenciaDasFases(fases);
+    const marcada = fases.at(1);
+    marcada.controls.noMesmoMomentoDaAnterior.setValue(true);
+    sequencia.mover(1, 1);
+    expect(marcada.controls.noMesmoMomentoDaAnterior.value).toBe(true);
+    expect(sequencia.primeiraFaseDesmarcada()).toBeNull();
+  });
+
+  it('não desmarca a primeira fase que já chegou marcada quando outra fase se move ou sai', () => {
+    const fases = fasesDoCronograma();
+    const sequencia = new SequenciaDasFases(fases);
+    const primeira = fases.at(0);
+    primeira.controls.noMesmoMomentoDaAnterior.setValue(true);
+
+    sequencia.mover(1, 1);
+    sequencia.retirar(2);
+
+    expect(primeira.controls.noMesmoMomentoDaAnterior.value).toBe(true);
+    expect(sequencia.primeiraFaseDesmarcada()).toBeNull();
+  });
 });

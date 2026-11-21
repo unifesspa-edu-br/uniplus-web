@@ -23,8 +23,8 @@ export function alvosDaRecusaDaFase(
   indice: number,
 ): readonly string[] {
   const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
-  if (campo === 'unidadeResponsavelId') return [`cr-unidade-${indice}`];
-  if (campo === 'inicio' || campo === 'fim') return [`cr-${campo}-${indice}`];
+  const alvos = alvosDaLinhaDoTempo(campo, indice);
+  if (alvos.length > 0) return alvos;
   if (campo.startsWith('produtos')) return alvosDaPublicacao(campo, fase);
   if (campo === 'bancasRequeridas') return [id('banca-0'), id('bancas-erro')];
   if (campo.startsWith('bancasRequeridas')) return alvosDaBancaRequerida(campo, fase);
@@ -53,6 +53,14 @@ function alvosDaBancaRequerida(campo: string, fase: FaseDoCronograma): readonly 
     ...alvosDaRecusaDaBanca(base, controle as CampoDaBanca),
     idDaFase(fase.codigo, 'bancas-erro'),
   ];
+}
+
+function alvosDaLinhaDoTempo(campo: string, indice: number): readonly string[] {
+  if (campo === 'unidadeResponsavelId') return [`cr-unidade-${indice}`];
+  if (campo === 'inicio' || campo === 'fim') return [`cr-${campo}-${indice}`];
+  if (campo === 'noMesmoMomentoDaAnterior')
+    return [`cr-mesmo-momento-${indice}`, `cr-mesmo-momento-erro-${indice}`];
+  return [];
 }
 
 function alvosDoRecurso(campo: string, fase: FaseDoCronograma): readonly string[] {

@@ -20,6 +20,13 @@ describe('alvosDaRecusaDaFase', () => {
     expect(alvosDaRecusaDaFase(campo, FASE, 2)).toEqual(esperado);
   });
 
+  it('aponta a caixa e a recusa da marca na posição atual', () => {
+    expect(alvosDaRecusaDaFase('noMesmoMomentoDaAnterior', FASE, 2)).toEqual([
+      'cr-mesmo-momento-2',
+      'cr-mesmo-momento-erro-2',
+    ]);
+  });
+
   it('prefere o controle e reserva o bloco das recusas nas publicações e nas bancas', () => {
     expect(alvosDaRecusaDaFase('produtos', FASE, 0)).toEqual([
       'fase-AVALIACAO-produto-ato-0',

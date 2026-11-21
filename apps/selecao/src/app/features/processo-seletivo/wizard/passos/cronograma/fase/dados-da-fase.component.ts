@@ -11,7 +11,12 @@ import { ValorLegivelDirective } from '@uniplus/shared-ui/components';
 
 import { haRecusaAtiva } from '../../../shared/recusas/ordem-das-recusas';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
-import { campoNaTela, fimDaFaseNaTela, type CampoDaRecusaDaFase } from '../../fase/campo-da-fase';
+import {
+  campoNaTela,
+  fimDaFaseNaTela,
+  marcaDoMesmoMomentoNaTela,
+  type CampoDaRecusaDaFase,
+} from '../../fase/campo-da-fase';
 import { SituacaoDosCatalogosDoCronograma } from '../catalogos/situacao-dos-catalogos-do-cronograma.service';
 import { pisoDeData } from '../cronograma-form';
 import { FORMULARIO_DO_PAI } from '../formulario-do-pai';
@@ -60,6 +65,23 @@ export class DadosDaFaseComponent {
   protected readonly fimNaTela = computed(() =>
     fimDaFaseNaTela(this.fase().exigencias, this.fimJaVisto()),
   );
+
+  private readonly estadoDaMarca = computed(() => {
+    const item = this.fase();
+    return {
+      posicao: item.indice,
+      ligada: item.grupo.controls.noMesmoMomentoDaAnterior.value,
+      comRecusa: this.recusasDoCampo(item, 'noMesmoMomentoDaAnterior').length > 0,
+    };
+  });
+
+  protected readonly marcaNaTela = linkedSignal({
+    source: this.estadoDaMarca,
+    computation: (estado, anterior) =>
+      marcaDoMesmoMomentoNaTela(estado.posicao, estado.ligada, estado.comRecusa) ||
+      (anterior?.source.posicao === estado.posicao && anterior.value) ||
+      (estado.posicao === 0 && anterior?.source.ligada === true),
+  });
 
   /** O nome do campo traz a indicação de que a publicação exige o Fim; gravar o rascunho não exige. */
   protected rotuloDoFim(): string {
