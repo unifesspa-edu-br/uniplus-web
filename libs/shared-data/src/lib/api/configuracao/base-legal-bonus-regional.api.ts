@@ -26,7 +26,7 @@ export interface BaseLegalBonusRegionalQuery {
  * Cliente Angular standalone do cadastro de Base Legal de Bônus Regional
  * (módulo Configuração): o documento formal (Lei/Decreto/Portaria/Resolução/
  * Instrução Normativa/Parecer) e os municípios que ele beneficia. O Passo 8
- * (Bônus) do Processo Seletivo congela um snapshot deste cadastro no momento
+ * (Bônus) do Processo Seletivo congela uma cópia deste cadastro no momento
  * da configuração — editar ou desativar aqui não altera processos já
  * configurados.
  *

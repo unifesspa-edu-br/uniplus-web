@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { FormulariosDoProcessoApi, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
-import type { ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { REGRAS_INICIAIS, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { gravarFormulario } from './gravacao-do-formulario';
@@ -32,22 +32,19 @@ describe('gravarFormulario', () => {
           ordem: 1,
           tipo: 'SECAO',
           bloco: null,
-          titulo: 'S1',
-          descricao: null,
-          aviso: null,
+          apresentacao: { titulo: 'S1', descricao: null, aviso: null },
         },
       ],
       itens: [
         {
           fatoCodigo: 'IDADE',
           ordem: 1,
-          rotulo: 'Idade',
-          tipoRenderizacao: 'NUMERO',
-          obrigatoriedade: 'SEMPRE',
-          precondicao: null,
           etapaCodigo: 'S1',
-          pedirConfirmacao: false,
-          restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],
+          apresentacao: { rotulo: 'Idade', tipoRenderizacao: 'NUMERO', pedirConfirmacao: false },
+          regras: {
+            ...REGRAS_INICIAIS,
+            restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 'abc' }],
+          },
         },
       ],
       termos: [],

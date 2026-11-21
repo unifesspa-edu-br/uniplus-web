@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { TIPO_DE_BANCA_ENTREVISTA } from '../support/api-de-tipos-banca';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 const CORS_HEADERS = {
@@ -7,14 +8,7 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const BANCA = {
-  id: '01960000-0000-7000-0000-0000000000b2',
-  codigo: 'BANCA_ENTREVISTA',
-  nome: 'Banca de Entrevista',
-  faseTipica: 'Avaliação',
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const BANCA = TIPO_DE_BANCA_ENTREVISTA;
 
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando o drawer fecha. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;
@@ -101,9 +95,9 @@ async function mockApi(page: Page, respostas: readonly Resposta[], recarga: Reca
 const titulo = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Tipos de banca', level: 2 });
 const editar = (page: Page): Locator =>
-  page.getByRole('button', { name: `Editar tipo de banca ${BANCA.codigo}` });
+  page.getByRole('button', { name: `Editar tipo de banca ${BANCA.codigo.codigo}` });
 const lixeira = (page: Page): Locator =>
-  page.getByRole('button', { name: `Remover tipo de banca ${BANCA.codigo}` });
+  page.getByRole('button', { name: `Remover tipo de banca ${BANCA.codigo.codigo}` });
 const drawer = (page: Page): Locator =>
   page.getByRole('dialog', { name: 'Formulário de tipo de banca' });
 const confirmacao = (page: Page): Locator =>

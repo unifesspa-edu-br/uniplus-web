@@ -212,7 +212,7 @@ export class LeituraDaInscricao {
   ): MunicipiosSeparados {
     // As respostas chegam em JSON: são os valores que o formulário lê.
     const gravadas = inscricao.formulario.respostas as Readonly<Record<string, ValorJson>>;
-    return separarMunicipiosGravados(formulario, {
+    return separarMunicipiosGravados(formulario.formulario, {
       respostas: {
         ...respostasIniciaisDoNomeSocial(this.usuario.user(), gravadas, formulario),
         ...gravadas,

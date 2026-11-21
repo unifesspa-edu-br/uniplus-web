@@ -18,15 +18,19 @@ import { PARECER_FINAL } from '../support/tipos-conceito-api';
  */
 
 const COMUM = tipoDeEtapa({ id: '01960000-0000-7000-0000-0000000000e1' });
-const EXIGENTE = tipoDeEtapa({
-  id: '01960000-0000-7000-0000-0000000000e2',
-  codigo: 'REDACAO',
-  nome: 'Redação',
-  exigeCorrecaoIndependente: true,
-  conceitosAdmitidos: [
-    { codigo: PARECER_FINAL.codigo, nome: PARECER_FINAL.nome, natureza: PARECER_FINAL.natureza },
-  ],
-});
+const EXIGENTE = tipoDeEtapa(
+  { id: '01960000-0000-7000-0000-0000000000e2', codigo: 'REDACAO', nome: 'Redação' },
+  {
+    exigeCorrecaoIndependente: true,
+    conceitosAdmitidos: [
+      {
+        codigo: PARECER_FINAL.codigo,
+        nome: PARECER_FINAL.definicao.nome,
+        natureza: PARECER_FINAL.definicao.natureza,
+      },
+    ],
+  },
+);
 
 const PAGINAS_DE_ERRO = 'https://developers.example.test/erros/';
 const CODIGO_SEM_CONCEITO = 'uniplus.configuracao.tipo_etapa.correcao_independente_sem_conceito';
@@ -100,14 +104,16 @@ test.describe('Tipo de etapa — correção independente', () => {
 
     await expect(caixaDaCorrecao(page)).not.toBeChecked();
     await page.locator('label.checkbox').filter({ hasText: 'Exige correção independente' }).click();
-    await page.locator('label.checkbox').filter({ hasText: PARECER_FINAL.nome }).click();
+    await page.locator('label.checkbox').filter({ hasText: PARECER_FINAL.definicao.nome }).click();
     await page.getByRole('button', { name: 'Criar tipo de etapa' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
     expect(capturado.posts[0]).toMatchObject({
       codigo: 'CORRECAO_DA_REDACAO',
-      exigeCorrecaoIndependente: true,
-      conceitosAdmitidos: [PARECER_FINAL.codigo],
+      avaliacao: {
+        exigeCorrecaoIndependente: true,
+        conceitosAdmitidos: [PARECER_FINAL.codigo],
+      },
     });
   });
 
@@ -118,7 +124,9 @@ test.describe('Tipo de etapa — correção independente', () => {
     await page.getByRole('button', { name: 'Criar tipo de etapa' }).click();
 
     await expect.poll(() => capturado.posts.length).toBe(1);
-    expect(capturado.posts[0]).toMatchObject({ exigeCorrecaoIndependente: false });
+    expect(capturado.posts[0]).toMatchObject({
+      avaliacao: { exigeCorrecaoIndependente: false },
+    });
   });
 
   test('a edição abre com a escolha do cadastro e grava a escolha nova', async ({ page }) => {
@@ -131,7 +139,9 @@ test.describe('Tipo de etapa — correção independente', () => {
     await page.getByRole('button', { name: 'Salvar tipo de etapa' }).click();
 
     await expect.poll(() => capturado.puts.length).toBe(1);
-    expect(capturado.puts[0]).toMatchObject({ exigeCorrecaoIndependente: false });
+    expect(capturado.puts[0]).toMatchObject({
+      avaliacao: { exigeCorrecaoIndependente: false },
+    });
   });
 
   test('a recusa do servidor aparece junto aos conceitos, com código e página, e com o foco', async ({
@@ -139,7 +149,7 @@ test.describe('Tipo de etapa — correção independente', () => {
   }) => {
     await recusarACorrecaoSemConceito(page);
 
-    const conceito = formulario(page).getByRole('checkbox', { name: PARECER_FINAL.nome });
+    const conceito = formulario(page).getByRole('checkbox', { name: PARECER_FINAL.definicao.nome });
     const recusa = formulario(page).locator('#cfg-etapa-conceitos-erro');
     await expect(conceito).toBeFocused();
     await expect(conceito).toHaveAttribute('aria-invalid', 'true');

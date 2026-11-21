@@ -1,3 +1,4 @@
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 import { descreverCondicao } from '@uniplus/shared-ui/components';
 
 import type { BaseLegalConfig, ExigenciaDeDocumento } from '../../processo-seletivo.models';
@@ -11,9 +12,6 @@ import {
 } from '../../shared/exigencias/exigencias-documentais';
 import { exigidoDeTodos, numerosDeClausula } from '../../shared/exigencias/recorte-por-modalidade';
 import {
-  OPERADOR_DIFERENTE,
-  OPERADOR_EM,
-  OPERADOR_NAO_EM,
   comparaComLista,
   podeAlcancarModalidade,
   recorteUniforme,
@@ -122,7 +120,7 @@ function ehORecorte(condicao: CondicaoDeFato, modalidades: readonly string[] | n
   return (
     modalidades !== null &&
     ehCondicaoDeModalidade(condicao) &&
-    condicao.operador === OPERADOR_EM &&
+    condicao.operador === OperadorCodigo.EM &&
     JSON.stringify(valoresDeListaDe(condicao)) === JSON.stringify(modalidades)
   );
 }
@@ -133,7 +131,8 @@ export function descreverCondicaoDeModalidade(condicao: CondicaoDeFato): string 
     ? valoresDeListaDe(condicao)
     : [valorEscalarDe(condicao)].filter((codigo) => codigo !== '');
   const lista = codigos.length > 0 ? codigos.join(', ') : '(valor não escolhido)';
-  const nega = condicao.operador === OPERADOR_DIFERENTE || condicao.operador === OPERADOR_NAO_EM;
+  const nega =
+    condicao.operador === OperadorCodigo.DIFERENTE || condicao.operador === OperadorCodigo.NAO_EM;
 
   if (nega) return `Modalidades exceto ${lista}`;
   return codigos.length > 1 ? `Modalidades ${lista}` : `Modalidade ${lista}`;

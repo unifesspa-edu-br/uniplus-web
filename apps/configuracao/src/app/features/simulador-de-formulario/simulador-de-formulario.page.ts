@@ -11,8 +11,13 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink, type ParamMap } from '@angular/router';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
-import { ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
-import { AvaliacoesDeFormularioApi, ModelosFormularioApi } from '@uniplus/shared-data/configuracao';
+import { ApiResult, ProblemI18nService, STATUS_HTTP } from '@uniplus/shared-core/http';
+import {
+  AvaliacoesDeFormularioApi,
+  ModelosFormularioApi,
+  type FormularioRenderizavel,
+  type ModeloFormularioView,
+} from '@uniplus/shared-data/configuracao';
 import {
   acompanharLeitura,
   AlertComponent,
@@ -258,19 +263,21 @@ export class SimuladorDeFormularioPage {
     this.carregamento = this.modelos
       .obterRenderizavel(this.modeloId())
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.carregando.set(false);
-        if (!resultado.ok) {
-          this.erroAoCarregar.set({
-            mensagem: this.problemI18n.resolve(resultado.problem).title,
-            naoEncontrado: resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO,
-          });
-          return;
-        }
-        this.erroAoCarregar.set(null);
-        this.formulario.set(resultado.data);
-      });
+      .subscribe((resultado) => this.concluirCarga(resultado));
     return true;
+  }
+
+  private concluirCarga(resultado: ApiResult<FormularioRenderizavel>): void {
+    this.carregando.set(false);
+    if (!resultado.ok) {
+      this.erroAoCarregar.set({
+        mensagem: this.problemI18n.resolve(resultado.problem).title,
+        naoEncontrado: resultado.problem.status === STATUS_HTTP.NAO_ENCONTRADO,
+      });
+      return;
+    }
+    this.erroAoCarregar.set(null);
+    this.formulario.set(resultado.data);
   }
 
   /** A URL é a fonte da origem e do modelo: a escolha na tela navega, e a navegação carrega. */
@@ -279,17 +286,19 @@ export class SimuladorDeFormularioPage {
     const origem: Origem =
       modelo !== '' || parametros.get('origem') === 'modelo' ? 'modelo' : 'arquivo';
     this.origem.set(origem);
-    if (origem === 'modelo') {
-      this.listarModelos();
-      // O arquivo aberto antes, ou ainda em leitura, não volta ao retornar à origem arquivo.
-      this.importacao++;
-      this.arquivo.set(null);
-    }
+    if (origem === 'modelo') this.abrirOrigemModelo();
     this.modeloEscolhido.setValue(modelo, { emitEvent: false });
     if (modelo !== this.modeloId()) {
       this.modeloId.set(modelo);
       this.carregarModelo();
     }
+  }
+
+  private abrirOrigemModelo(): void {
+    this.listarModelos();
+    // O arquivo aberto antes, ou ainda em leitura, não volta ao retornar à origem arquivo.
+    this.importacao++;
+    this.arquivo.set(null);
   }
 
   private navegar(parametros: { origem: Origem; modelo: string | null }): void {
@@ -313,22 +322,19 @@ export class SimuladorDeFormularioPage {
     this.modelos
       .listarTodos()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((resultado) => {
-        this.listando.set(false);
-        if (!resultado.ok) {
-          this.listaPedida = false;
-          this.erroAoListar.set(this.problemI18n.resolve(resultado.problem).title);
-          return;
-        }
-        this.erroAoListar.set(null);
-        this.opcoesDeModelo.set(
-          resultado.data.map((m) => ({
-            value: m.id,
-            label: `${m.codigo} — ${m.nome}${m.ativo ? '' : ' (desativado)'}`,
-          })),
-        );
-      });
+      .subscribe((resultado) => this.concluirListagem(resultado));
     return true;
+  }
+
+  private concluirListagem(resultado: ApiResult<readonly ModeloFormularioView[]>): void {
+    this.listando.set(false);
+    if (!resultado.ok) {
+      this.listaPedida = false;
+      this.erroAoListar.set(this.problemI18n.resolve(resultado.problem).title);
+      return;
+    }
+    this.erroAoListar.set(null);
+    this.opcoesDeModelo.set(resultado.data.map(opcaoDoModelo));
   }
 
   /** O arquivo escolhido por último: uma leitura mais lenta de um arquivo anterior não o substitui. */
@@ -341,17 +347,25 @@ export class SimuladorDeFormularioPage {
     // Sem limpar a escolha, o mesmo arquivo, corrigido e escolhido de novo, não dispara outra leitura.
     entrada.value = '';
     const esta = ++this.importacao;
-    let lido: ArquivoDoFormulario;
-    try {
-      lido = lerArquivoDoFormulario(await textoDo(arquivo));
-    } catch {
-      lido = {
-        valido: false,
-        caminho: '(arquivo)',
-        mensagem: 'Não foi possível ler o arquivo escolhido.',
-      };
-    }
+    const lido = await lerArquivoEscolhido(arquivo);
     if (esta === this.importacao) this.arquivo.set(lido);
+  }
+}
+
+function opcaoDoModelo(modelo: ModeloFormularioView): UiSelectOption {
+  const situacao = modelo.ativo ? '' : ' (desativado)';
+  return { value: modelo.id, label: `${modelo.codigo} — ${modelo.descritivo.nome}${situacao}` };
+}
+
+async function lerArquivoEscolhido(arquivo: Blob): Promise<ArquivoDoFormulario> {
+  try {
+    return lerArquivoDoFormulario(await textoDo(arquivo));
+  } catch {
+    return {
+      valido: false,
+      caminho: '(arquivo)',
+      mensagem: 'Não foi possível ler o arquivo escolhido.',
+    };
   }
 }
 

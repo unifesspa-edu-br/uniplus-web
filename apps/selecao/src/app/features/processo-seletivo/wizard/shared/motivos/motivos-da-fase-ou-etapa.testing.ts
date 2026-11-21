@@ -1,6 +1,6 @@
 import { ApplicationRef } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import type { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
+import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
 import type { ModoDaSecao } from '../modo-da-secao';
 import { MotivosDaFaseOuEtapaComponent } from './motivos-da-fase-ou-etapa.component';
@@ -84,12 +84,12 @@ export const CATALOGO_DE_TESTE = {
     subclassificacao: 'Cota racial',
   }),
   renda: umMotivoDoCadastro({
-    tipo: 'ISENCAO_DA_TAXA',
+    tipo: TipoMotivoDeDecisaoCodigo.ISENCAO_DA_TAXA,
     codigo: 'RENDA_ALTA',
     descricao: 'Renda acima do limite.',
   }),
   empate: umMotivoDoCadastro({
-    tipo: 'CLASSIFICACAO',
+    tipo: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
     codigo: 'EMPATE',
     descricao: 'Empate na nota.',
   }),

@@ -1,3 +1,4 @@
+import { OperadorCodigo, type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import { atenderHistoricosDoDrawer } from '../../shared/protecao-do-catalogo/historicos-do-drawer.testing';
 import {
@@ -5,34 +6,48 @@ import {
   PERMISSAO_DE_CONSULTAR,
   PERMISSAO_DE_MANTER,
   Pagina,
-  comAprovacao,
-  corRaca,
-  derivado,
   montarPagina,
   problema,
-  quilombola,
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
+import {
+  comAprovacao,
+  comDefinicao,
+  comProtecao,
+  comResolucao,
+  comValoresDeclarados,
+  corRaca,
+  derivado,
+  quilombola,
+  emManutencao,
+  noCatalogo,
+} from './fatos-candidato.fixtures';
 
-const categorico = {
-  ...corRaca,
+const categorico: FatoCandidatoDto = {
+  ...comValoresDeclarados(
+    comProtecao(corRaca, {
+      classificacao: 'PESSOAL',
+      hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
+    }),
+    [
+      {
+        codigo: 'MULHER_CIS',
+        descricao: 'Mulher cis',
+        ordem: 1,
+        ativo: true,
+        orientacao: 'Marque se a identidade coincide com o sexo de nascimento.',
+      },
+      { codigo: 'ANTIGO', descricao: 'Valor antigo', ordem: 2, ativo: false, orientacao: null },
+    ],
+  ),
   id: '01960000-0000-7000-0000-0000000000b1',
   codigo: 'IDENTIDADE_GENERO',
-  nome: 'Identidade de gênero',
-  descricao: 'Como o candidato se identifica.',
-  classificacaoProtecao: 'PESSOAL',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-  valores: [
-    {
-      codigo: 'MULHER_CIS',
-      descricao: 'Mulher cis',
-      ordem: 1,
-      ativo: true,
-      orientacao: 'Marque se a identidade coincide com o sexo de nascimento.',
-    },
-    { codigo: 'ANTIGO', descricao: 'Valor antigo', ordem: 2, ativo: false, orientacao: null },
-  ],
+  descritivo: {
+    ...corRaca.descritivo,
+    nome: 'Identidade de gênero',
+    descricao: 'Como o candidato se identifica.',
+  },
 };
 
 const atosDe = (fato: { id: string }) =>
@@ -133,13 +148,12 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
   });
 
   describe('regras padrão do derivado', () => {
-    const comRegra = {
-      ...categorico,
-      origem: 'DERIVADO',
+    const comRegra: FatoCandidatoDto = {
+      ...comResolucao(categorico, { origem: 'DERIVADO' }),
       regrasPadrao: [
         {
           contribui: 'MULHER_CIS',
-          quando: [[{ fato: 'RENDA', operador: 'MAIOR_IGUAL', valor: 1000 }]],
+          quando: [[{ fato: 'RENDA', operador: OperadorCodigo.MAIOR_IGUAL, valor: 1000 }]],
         },
       ],
     };
@@ -166,18 +180,17 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
     });
 
     it('com o catálogo, cita os fatos pelo nome; o valor sem descrição aparece pelo código', async () => {
-      const regra = [{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }];
-      const categorica = {
-        ...comRegra,
-        valores: [
+      const regra = [{ fato: 'QUILOMBOLA', operador: OperadorCodigo.IGUAL, valor: true }];
+      const categorica: FatoCandidatoDto = {
+        ...comValoresDeclarados(comRegra, [
           { codigo: 'SEM_TEXTO', descricao: null, ordem: 0, ativo: true, orientacao: null },
-        ],
+        ]),
         regrasPadrao: [{ contribui: 'SEM_TEXTO', quando: [regra] }],
       };
       p = await montarPagina([categorica]);
 
       await p.acionar(p.nomeDaLinha(categorica));
-      p.http.expectOne((r) => r.url === CATALOGO).flush([quilombola]);
+      p.http.expectOne((r) => r.url === CATALOGO).flush([noCatalogo(quilombola)]);
       p.http.match((r) => r.url === atosDe(categorica)).forEach((r) => r.flush([]));
       await p.propagar();
 
@@ -219,7 +232,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
         await abrirComFalha(404);
 
         await p.acionar(tentar());
-        p.http.expectOne((r) => r.url === CATALOGO).flush([quilombola]);
+        p.http.expectOne((r) => r.url === CATALOGO).flush([noCatalogo(quilombola)]);
         await p.propagar();
 
         expect(p.botaoPeloTexto('Tentar novamente', p.detalhe())).toBeUndefined();
@@ -228,12 +241,13 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
     });
 
     it('a regra que não contribui valor vale "sim"', async () => {
-      const booleana = {
-        ...comRegra,
-        dominio: 'BOOLEANO',
-        valores: [],
+      const booleana: FatoCandidatoDto = {
+        ...comValoresDeclarados(comDefinicao(comRegra, { dominio: 'BOOLEANO' }), []),
         regrasPadrao: [
-          { contribui: null, quando: [[{ fato: 'RENDA', operador: 'MAIOR_IGUAL', valor: 1000 }]] },
+          {
+            contribui: null,
+            quando: [[{ fato: 'RENDA', operador: OperadorCodigo.MAIOR_IGUAL, valor: 1000 }]],
+          },
         ],
       };
       p = await montarPagina([booleana]);
@@ -282,7 +296,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
 
     expect(p.detalhe().open).toBe(false);
     expect(p.drawerDoFato().open).toBe(true);
-    p.http.expectOne(urlDoFato(categorico)).flush(categorico);
+    p.http.expectOne(urlDoFato(categorico)).flush(emManutencao(categorico));
     await p.propagar();
     expect(p.edicao.modo()).toBe('editar');
     expect(p.editor.leitura.id()).toBe(categorico.id);
@@ -308,7 +322,7 @@ describe('FatosCandidatoPage — detalhe do fato', () => {
     ).toBe(true);
     p.http
       .expectOne((r) => r.method === 'GET' && r.url.endsWith('/admin/fatos-candidato'))
-      .flush([categorico]);
+      .flush([emManutencao(categorico)]);
     await p.propagar();
   });
 });

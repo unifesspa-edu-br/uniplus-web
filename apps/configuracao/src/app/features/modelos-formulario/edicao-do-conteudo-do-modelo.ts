@@ -37,6 +37,7 @@ import {
   type RecusasDoDocumento,
   type RecusasDoConteudo,
 } from '@uniplus/shared-ui/components';
+import { conteudoDoModelo, conteudoParaOModelo } from './conteudo-do-modelo';
 import { focoEstaLivre } from '../../shared/foco';
 import { validarParaEnvio, marcarRecusasDosCampos } from '../../shared/formulario';
 import { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
@@ -153,10 +154,12 @@ export class EdicaoDoConteudoDoModelo {
   private comandoDeAtualizacao(enviado: NonNullable<ReturnType<typeof conteudoParaEnvio>>) {
     const v = this.form.getRawValue();
     return {
-      nome: v.nome.trim(),
-      descricao: v.descricao.trim() || null,
-      tipoProcessoCodigo: v.tipoProcessoCodigo || null,
-      conteudo: enviado,
+      descritivo: {
+        nome: v.nome.trim(),
+        descricao: v.descricao.trim() || null,
+        tipoProcessoCodigo: v.tipoProcessoCodigo || null,
+      },
+      conteudo: conteudoParaOModelo(enviado),
     };
   }
 
@@ -169,14 +172,14 @@ export class EdicaoDoConteudoDoModelo {
   }
 
   private preencher(modelo: ModeloFormularioView): void {
-    this.conteudo.set(modelo.conteudo);
+    this.conteudo.set(conteudoDoModelo(modelo.conteudo));
     this.recusas.set(null);
     this.recusasGerais.set([]);
     this.recusasDosDocumentos.set({ porDocumento: new Map(), gerais: [] });
     this.form.reset({
-      nome: modelo.nome,
-      descricao: modelo.descricao ?? '',
-      tipoProcessoCodigo: modelo.tipoProcessoCodigo ?? '',
+      nome: modelo.descritivo.nome,
+      descricao: modelo.descritivo.descricao ?? '',
+      tipoProcessoCodigo: modelo.descritivo.tipoProcessoCodigo ?? '',
     });
   }
 
@@ -240,11 +243,9 @@ export class EdicaoDoConteudoDoModelo {
   }
 }
 
-/** O campo do cabeçalho que a recusa aponta: as do conteúdo vêm com o caminho dentro dele. */
+/** O campo do cabeçalho que a recusa aponta, dentro do descritivo: as do conteúdo vêm com o caminho dele. */
 function campoDoCabecalho(campo: string): keyof CabecalhoForm | null {
   const campos: readonly (keyof CabecalhoForm)[] = ['nome', 'descricao', 'tipoProcessoCodigo'];
-  return (
-    campos.find((nome) => nome.toLocaleLowerCase('pt-BR') === campo.toLocaleLowerCase('pt-BR')) ??
-    null
-  );
+  const doDescritivo = campo.replace(/^descritivo\./iu, '').toLocaleLowerCase('pt-BR');
+  return campos.find((nome) => nome.toLocaleLowerCase('pt-BR') === doDescritivo) ?? null;
 }

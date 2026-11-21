@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type FormularioRenderizavelDto } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import { FORMULARIO_DE_INSCRICAO_MOCK, comFormulario } from './inscricao-do-candidato.testing';
 import {
   inscricao,
   RESPONDIDA,
@@ -11,7 +11,20 @@ import {
   CenarioDaInscricao,
 } from './inscricao-do-candidato.page.testing';
 
+type RestricaoDoItem =
+  FormularioRenderizavelDto['formulario']['regras']['etapas'][number]['itens'][number]['regras']['restricoes'][number];
+
 /** De 23h50 à meia-noite no fuso do envio. */
+const ATE_O_ENVIO: RestricaoDoItem = {
+  tipo: 'FAIXA_DE_DATA',
+  minimo: null,
+  maximo: null,
+  entradas: null,
+  fatos: null,
+  dataMinima: null,
+  dataMaxima: { ancora: 'ENVIO', data: null, anos: 0, dias: 0 },
+};
+
 const ATE_A_MEIA_NOITE_MS = 10 * 60 * 1_000;
 
 describe('InscricaoDoCandidatoPage', () => {
@@ -26,33 +39,22 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   /** A data de nascimento até o dia do envio, como o conjunto básico a declara. */
-  const comNascimentoAteOEnvio = (): FormularioRenderizavelDto => ({
-    ...FORMULARIO_DE_INSCRICAO_MOCK,
-    regras: {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
-      etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((etapa) => ({
-        ...etapa,
-        itens: etapa.itens.map((item) =>
-          item.fatoCodigo === 'DATA_NASCIMENTO'
-            ? {
-                ...item,
-                restricoes: [
-                  {
-                    tipo: 'FAIXA_DE_DATA',
-                    minimo: null,
-                    maximo: null,
-                    entradas: null,
-                    fatos: null,
-                    dataMinima: null,
-                    dataMaxima: { ancora: 'ENVIO', data: null, anos: 0, dias: 0 },
-                  },
-                ],
-              }
-            : item,
-        ),
-      })),
-    },
-  });
+  const comNascimentoAteOEnvio = (): FormularioRenderizavelDto => {
+    const { regras } = FORMULARIO_DE_INSCRICAO_MOCK.formulario;
+    return comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
+      regras: {
+        ...regras,
+        etapas: regras.etapas.map((etapa) => ({
+          ...etapa,
+          itens: etapa.itens.map((item) =>
+            item.fatoCodigo === 'DATA_NASCIMENTO'
+              ? { ...item, regras: { ...item.regras, restricoes: [ATE_O_ENVIO] } }
+              : item,
+          ),
+        })),
+      },
+    });
+  };
 
   it('o limite contado do envio anda um dia quando a meia-noite do fuso do envio passa', async () => {
     cenario.agora = new Date('2026-12-12T02:50:00Z'); // 23h50 de 11/12 em Belém

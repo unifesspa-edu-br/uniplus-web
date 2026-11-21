@@ -25,6 +25,22 @@ const EIXOS = [
   { campo: 'escopo', rotulo: 'De quem é o dado', vocabulario: ESCOPOS },
 ] as const;
 
+function valoresDosEixos({
+  definicao,
+}: FatoCandidatoDto): Record<(typeof EIXOS)[number]['campo'], string> {
+  return {
+    dominio: definicao.dominio,
+    cardinalidade: definicao.cardinalidade,
+    fonteValores: definicao.valores.fonte ?? '',
+    formato: definicao.formato ?? '',
+    escopo: definicao.escopo,
+  };
+}
+
+function origemDoEixo(tipo: TipoDoFato): string {
+  return tipo === 'AGREGADO' ? 'vem do fato de membro' : 'vem do tipo de dado';
+}
+
 /** Os eixos que o derivado e o agregado herdam em vez de escolher. */
 export function eixosSomenteLeitura(
   fato: FatoCandidatoDto | null,
@@ -32,12 +48,12 @@ export function eixosSomenteLeitura(
 ): readonly EixoSomenteLeitura[] {
   if (fato === null || tipo === 'DECLARADO') return [];
   const doTipo = eixosDoTipo(tipo);
-  const origem = tipo === 'AGREGADO' ? 'vem do fato de membro' : 'vem do tipo de dado';
-  return EIXOS.filter(({ campo }) => !doTipo[campo] && fato[campo]).map(
+  const valores = valoresDosEixos(fato);
+  return EIXOS.filter(({ campo }) => !doTipo[campo] && valores[campo]).map(
     ({ campo, rotulo, vocabulario }) => ({
       rotulo,
-      valor: rotuloDe(vocabulario, fato[campo] as string),
-      origem,
+      valor: rotuloDe(vocabulario, valores[campo]),
+      origem: origemDoEixo(tipo),
     }),
   );
 }

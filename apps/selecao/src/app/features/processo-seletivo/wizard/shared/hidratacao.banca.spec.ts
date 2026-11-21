@@ -1,8 +1,16 @@
-import { type EtapaProcessoDto, ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
+import {
+  type EtapaProcessoDto,
+  ModoDeDeliberacao,
+  TipoDeBancaCodigo,
+} from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { COLEGIADA } from './deliberacao/regra-de-deliberacao.testing';
-import { etapaDoServidor, faseDoServidor } from './cronograma-do-servidor.testing';
+import {
+  etapaDoServidor,
+  faseDoServidor,
+  tipoDeBancaDoServidor,
+} from './cronograma-do-servidor.testing';
 import { hidratarDraft } from './hidratacao';
 import { DRAFT, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing';
 
@@ -51,14 +59,14 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
       {
         id: 'banca-da-etapa-1',
         tipoBancaOrigemId: 'tipo-banca-1',
-        codigo: 'BANCA_ENTREVISTA',
+        ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_ENTREVISTA),
         nome: 'Entrevista',
         regraDeDeliberacao: REGRA_DA_API,
       },
       {
         id: 'banca-da-etapa-2',
         tipoBancaOrigemId: 'tipo-banca-2',
-        codigo: 'BANCA_REDACAO',
+        ...tipoDeBancaDoServidor(TipoDeBancaCodigo.BANCA_CORRECAO_REDACOES),
         nome: 'Redação',
         regraDeDeliberacao: null,
       },

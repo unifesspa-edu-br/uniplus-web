@@ -1,5 +1,7 @@
 import {
+  apresentacaoDoCampo,
   conteudoInicial,
+  REGRAS_INICIAIS,
   type ConteudoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -21,14 +23,9 @@ const item = (
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'BOOLEANO',
-  obrigatoriedade: 'SEMPRE',
-  precondicao: null,
   etapaCodigo: null,
-  predicadoObrigatoriedade: null,
-  ajuda: null,
-  pedirConfirmacao: false,
+  apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+  regras: REGRAS_INICIAIS,
   ...extra,
 });
 
@@ -36,7 +33,9 @@ const com = (...itens: ItemDoFormulario[]): ConteudoDoFormulario => ({
   ...conteudoInicial(),
   itens,
 });
-const citando = (fato: string) => ({ precondicao: [[{ fato, operador: 'IGUAL', valor: 'true' }]] });
+const citando = (fato: string) => ({
+  regras: { ...REGRAS_INICIAIS, exibicao: [[{ fato, operador: 'IGUAL', valor: 'true' }]] },
+});
 
 const fase = (
   codigo: string,

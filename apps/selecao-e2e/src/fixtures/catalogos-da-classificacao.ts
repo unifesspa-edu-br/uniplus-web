@@ -1,4 +1,6 @@
 import type { Page } from '@playwright/test';
+import type { BaseLegalBonusRegionalDto } from '@uniplus/shared-data/configuracao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { CORS_DE_LEITURA } from '../support/processo-mockado';
 import {
   responderCatalogos,
@@ -47,10 +49,11 @@ const REGRAS_BONUS = [
   ),
 ];
 export const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
-const BASES_LEGAIS_BONUS_REGIONAL = [
+const BASES_LEGAIS_BONUS_REGIONAL: readonly JsonDaApi<BaseLegalBonusRegionalDto>[] = [
   {
     id: BASE_LEGAL_BONUS_REGIONAL_ID,
-    tipoInstrumento: 'PORTARIA',
+    codigo: 'PORTARIA_UNIFESSPA_2514_2023',
+    tipoInstrumento: { codigo: 'PORTARIA', rotulo: 'Rótulo do tipo portaria' },
     identificacao: 'Portaria Unifesspa nº 2514/2023',
     descricao: 'Institui inclusão regional.',
     municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
@@ -104,30 +107,42 @@ const CRITERIOS_DESEMPATE = [
  */
 const FATOS_CANDIDATO = [
   {
-    id: '01960000-0000-7000-0000-0000000000f1',
-    codigo: 'RENDA_PER_CAPITA',
-    nome: 'Renda familiar per capita',
-    descricao: null,
-    dominio: 'NUMERICO',
-    origem: 'DERIVADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
-    valoresDominioDeclarados: null,
+    fato: {
+      id: '01960000-0000-7000-0000-0000000000f1',
+      codigo: 'RENDA_PER_CAPITA',
+      nome: 'Renda familiar per capita',
+      descricao: null,
+      dominio: 'NUMERICO',
+      origem: 'DERIVADO',
+      cardinalidade: 'ESCALAR',
+      valoresDominio: null,
+      pontoResolucao: 'INSCRICAO',
+      binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
+      valoresDominioDeclarados: null,
+    },
+    operadoresAdmitidos: [
+      { codigo: 'MAIOR_IGUAL', rotulo: 'é maior ou igual a' },
+      { codigo: 'MENOR_IGUAL', rotulo: 'é menor ou igual a' },
+    ],
   },
   {
-    id: '01960000-0000-7000-0000-0000000000f2',
-    codigo: 'COR_RACA',
-    nome: 'Cor ou raça',
-    descricao: null,
-    dominio: 'CATEGORICO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:COR_RACA',
-    valoresDominioDeclarados: null,
+    fato: {
+      id: '01960000-0000-7000-0000-0000000000f2',
+      codigo: 'COR_RACA',
+      nome: 'Cor ou raça',
+      descricao: null,
+      dominio: 'CATEGORICO',
+      origem: 'DECLARADO',
+      cardinalidade: 'ESCALAR',
+      valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
+      pontoResolucao: 'INSCRICAO',
+      binding: 'CAMPO_INSCRICAO:COR_RACA',
+      valoresDominioDeclarados: null,
+    },
+    operadoresAdmitidos: [
+      { codigo: 'EM', rotulo: 'é um de' },
+      { codigo: 'NAO_EM', rotulo: 'não é nenhum de' },
+    ],
   },
 ];
 

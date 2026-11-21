@@ -21,7 +21,13 @@ const catalogos = {
   rotuloDoAto: signal(new Map([[ATO, 'Edital de abertura']])),
   tipoEtapaPorId: signal(
     new Map([
-      ['tipo-1', { nome: 'Prova objetiva', admitePontuacao: true, admiteEliminacao: true }],
+      [
+        'tipo-1',
+        {
+          nome: 'Prova objetiva',
+          avaliacao: { admitePontuacao: true, admiteEliminacao: true, notaDeOrigemNoEnem: false },
+        },
+      ],
     ]),
   ),
   bancas: signal([{ id: BANCA, nome: 'Banca de redação' }]),

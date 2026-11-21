@@ -41,7 +41,7 @@ describe('o formulário em que o documento é apresentado', () => {
       ),
     );
 
-    expect(raizes.map((raiz) => raiz.documento?.finalidade)).toEqual([
+    expect(raizes.map((raiz) => raiz.documento?.momento?.finalidade)).toEqual([
       'HABILITACAO',
       'ISENCAO_TAXA',
       null,
@@ -53,7 +53,7 @@ describe('o formulário em que o documento é apresentado', () => {
       rascunho(exigencia({ faseCodigo: 'HABILITACAO', finalidade: 'ISENCAO_TAXA' })),
     );
 
-    expect(raizes[0].documento?.finalidade).toBe('ISENCAO_TAXA');
+    expect(raizes[0].documento?.momento?.finalidade).toBe('ISENCAO_TAXA');
     expect(faltaOFormulario('ISENCAO_TAXA', ['HABILITACAO'])).toBe(
       'O formulário de isenção da taxa de inscrição não é respondido nesta fase; escolha o formulário.',
     );
@@ -75,7 +75,7 @@ describe('o formulário em que o documento é apresentado', () => {
     );
 
     expect(
-      raizes.map((raiz) => [raiz.documento?.exigidoNaFaseId, raiz.documento?.finalidade]),
+      raizes.map((raiz) => [raiz.documento?.momento?.faseId, raiz.documento?.momento?.finalidade]),
     ).toEqual([
       [ID_ISENCAO, 'INSCRICAO'],
       [ID_HABILITACAO, 'HABILITACAO'],
@@ -95,7 +95,7 @@ describe('o formulário em que o documento é apresentado', () => {
 
     const [raiz] = comando({ raizes: [grupo], emTodasAsFases: [] });
 
-    expect(raiz.filhos?.map((filho) => filho.documento?.finalidade)).toEqual([
+    expect(raiz.filhos?.map((filho) => filho.documento?.momento?.finalidade)).toEqual([
       'ISENCAO_TAXA',
       'ISENCAO_TAXA',
     ]);

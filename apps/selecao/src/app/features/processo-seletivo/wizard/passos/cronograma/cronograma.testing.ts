@@ -1,3 +1,4 @@
+import type { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { etapaDoServidor } from '../../shared/cronograma-do-servidor.testing';
 
 export const BASE = 'http://localhost:5000';
@@ -67,31 +68,42 @@ export const FASES_CANONICAS = [
 export const TIPO_ETAPA_SO_ELIMINA = '01960000-0000-7000-0000-0000000000e2';
 export const TIPO_ETAPA_NOTA_ENEM = '01960000-0000-7000-0000-0000000000e3';
 
+function avaliacaoDoTipo(parcial: Partial<TipoEtapaDto['avaliacao']>): TipoEtapaDto['avaliacao'] {
+  return {
+    admitePontuacao: false,
+    admiteEliminacao: false,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [],
+    ...parcial,
+  };
+}
+
 export const TIPOS_ETAPA = [
   {
     id: TIPO_ETAPA,
     codigo: 'PROVA_OBJETIVA',
     nome: 'Prova objetiva',
     ativo: true,
-    admitePontuacao: true,
-    admiteEliminacao: true,
+    avaliacao: avaliacaoDoTipo({ admitePontuacao: true, admiteEliminacao: true }),
   },
   {
     id: TIPO_ETAPA_SO_ELIMINA,
     codigo: 'ANALISE_DOCUMENTAL',
     nome: 'Análise documental',
     ativo: true,
-    admitePontuacao: false,
-    admiteEliminacao: true,
+    avaliacao: avaliacaoDoTipo({ admitePontuacao: false, admiteEliminacao: true }),
   },
   {
     id: TIPO_ETAPA_NOTA_ENEM,
     codigo: 'NOTA_ENEM',
     nome: 'Nota do ENEM',
     ativo: true,
-    admitePontuacao: true,
-    admiteEliminacao: true,
-    notaDeOrigemNoEnem: true,
+    avaliacao: avaliacaoDoTipo({
+      admitePontuacao: true,
+      admiteEliminacao: true,
+      notaDeOrigemNoEnem: true,
+    }),
   },
 ];
 

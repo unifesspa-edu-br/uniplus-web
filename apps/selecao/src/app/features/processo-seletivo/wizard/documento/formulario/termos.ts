@@ -1,11 +1,7 @@
 import type { CaminhoDoCampo as Caminho, TermoDoFormulario } from '@uniplus/shared-ui/components';
 import type { DocumentoDaConfiguracaoFormulario as Formulario } from '@uniplus/shared-data/selecao';
 import type { ContextoDaConversao as Contexto } from './contexto-da-conversao';
-import {
-  lerObrigatoriedade,
-  obrigatoriedadeDoDocumento,
-  predicadoDoDocumento,
-} from './obrigatoriedade';
+import { lerExibicaoEObrigatoriedade, regrasDoDocumento } from './obrigatoriedade';
 import {
   type ReferenciaDaVersaoDoTermo,
   referenciaPorCodigoENumero,
@@ -39,19 +35,21 @@ export function lerTermo(termo: Termo, contexto: Contexto, caminho: Caminho): Te
   return {
     codigo: termo.codigo,
     ordem: termo.ordem ?? 0,
-    termoId: referencia?.termoId ?? '',
-    versaoId: referencia?.versaoId ?? '',
-    exibicao: termo.exibicao ?? null,
-    ...lerObrigatoriedade(termo.obrigatoriedade),
+    termo: { termoId: referencia?.termoId ?? '', versaoId: referencia?.versaoId ?? '' },
+    regras: lerExibicaoEObrigatoriedade(termo.exibicao, termo.obrigatoriedade),
   };
 }
 
 function referenciaNaEdicao(termo: TermoDoFormulario, contexto: Contexto, caminho: Caminho) {
   const referencias = contexto.catalogos.termos;
   if (referencias === null) return contexto.recusar('catalogo', caminho, CATALOGO_INDISPONIVEL);
-  const referencia = referenciaPorIdentificadores(referencias, termo.termoId, termo.versaoId);
+  const referencia = referenciaPorIdentificadores(
+    referencias,
+    termo.termo.termoId,
+    termo.termo.versaoId,
+  );
   if (referencia !== undefined) return referencia;
-  const temTermo = referencias.some((item) => item.termoId === termo.termoId);
+  const temTermo = referencias.some((item) => item.termoId === termo.termo.termoId);
   return contexto.recusar(temTermo ? 'versao' : 'termo', caminho, SEM_CORRESPONDENCIA);
 }
 
@@ -73,8 +71,7 @@ function converterTermo(
   if (referencia === undefined) return undefined;
   return {
     ...identidadeDoTermo(termo, referencia),
-    exibicao: predicadoDoDocumento(termo.exibicao, contexto, [...caminho, 'exibicao']),
-    obrigatoriedade: obrigatoriedadeDoDocumento(termo, contexto, [...caminho, 'obrigatoriedade']),
+    ...regrasDoDocumento(termo.regras, contexto, caminho),
   };
 }
 

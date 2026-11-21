@@ -1,4 +1,8 @@
-import type { EtapaProcessoDto, FaseCronogramaDto } from '@uniplus/shared-data/selecao';
+import type {
+  EtapaProcessoDto,
+  FaseCronogramaDto,
+  TipoMotivoDeDecisaoCodigo,
+} from '@uniplus/shared-data/selecao';
 
 /**
  * A fase e a etapa do cronograma como o servidor as devolve no detalhe do processo, com a mesma
@@ -149,12 +153,22 @@ export function comUnidadeNaFase(
   return { ...fase, cronograma: { ...fase.cronograma, unidadeResponsavel: unidade } };
 }
 
+/** Os tipos como o servidor os devolve: o código e o rótulo, que aqui repete o código. */
+function tiposDoServidor(
+  codigos: readonly string[],
+): FaseCronogramaDto['publicacoes']['tiposDeDecisao'] {
+  return codigos.map((codigo) => ({ codigo: codigo as TipoMotivoDeDecisaoCodigo, rotulo: codigo }));
+}
+
 /** A mesma fase com os tipos de decisão que ela declara trocados. */
 export function comTiposDeDecisaoNaFase(
   fase: FaseCronogramaDto,
   tiposDeDecisao: readonly string[],
 ): FaseCronogramaDto {
-  return { ...fase, publicacoes: { ...fase.publicacoes, tiposDeDecisao: [...tiposDeDecisao] } };
+  return {
+    ...fase,
+    publicacoes: { ...fase.publicacoes, tiposDeDecisao: tiposDoServidor(tiposDeDecisao) },
+  };
 }
 
 /** A mesma etapa com os tipos de decisão que ela declara trocados. */
@@ -162,5 +176,8 @@ export function comTiposDeDecisaoNaEtapa(
   etapa: EtapaProcessoDto,
   tiposDeDecisao: readonly string[],
 ): EtapaProcessoDto {
-  return { ...etapa, publicacoes: { ...etapa.publicacoes, tiposDeDecisao: [...tiposDeDecisao] } };
+  return {
+    ...etapa,
+    publicacoes: { ...etapa.publicacoes, tiposDeDecisao: tiposDoServidor(tiposDeDecisao) },
+  };
 }

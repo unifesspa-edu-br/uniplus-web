@@ -17,6 +17,10 @@
 
 @if (expansao.blocoAberto(posicao, 'publica')) {
   <div [attr.id]="'cr-etapa-publica-' + posicao">
+    <p class="field__hint">
+      A etapa que publica um resultado preliminar publica nela mesma o definitivo do mesmo tipo de
+      ato.
+    </p>
     @for (produto of edicao.produtosDaEtapa(etapa); track $index) {
       <div class="form-grid">
         <div class="form-field">

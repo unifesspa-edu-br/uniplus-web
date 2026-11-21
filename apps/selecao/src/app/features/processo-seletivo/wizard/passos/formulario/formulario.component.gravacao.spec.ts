@@ -68,7 +68,13 @@ describe('FormularioPassoComponent: gravação', () => {
         itens:
           conteudo.itens?.map((i) =>
             i.fatoCodigo === 'PCD'
-              ? { ...i, restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }] }
+              ? {
+                  ...i,
+                  regras: {
+                    ...i.regras,
+                    restricoes: [{ tipo: 'TAMANHO_TEXTO', minimo: 'dez', maximo: null }],
+                  },
+                }
               : i,
           ) ?? [],
       },
@@ -88,8 +94,11 @@ describe('FormularioPassoComponent: gravação', () => {
       conteudo: {
         ...conteudo,
         itens:
-          conteudo.itens?.map((i) => (i.fatoCodigo === 'PCD' ? { ...i, rotulo: 'Outro' } : i)) ??
-          [],
+          conteudo.itens?.map((i) =>
+            i.fatoCodigo === 'PCD'
+              ? { ...i, apresentacao: { ...i.apresentacao, rotulo: 'Outro' } }
+              : i,
+          ) ?? [],
       },
     });
 

@@ -25,7 +25,7 @@ export interface GrupoDeMotivos {
 
 function doCatalogo(motivo: MotivoDeDecisaoDto, escolhido?: MotivoNoDocumento): MotivoOferecido {
   return {
-    tipoCodigo: motivo.tipo,
+    tipoCodigo: motivo.tipo.codigo,
     codigo: motivo.codigo,
     descricao: escolhido?.descricao ?? motivo.descricao,
     sentido: escolhido?.sentido ?? motivo.sentido,
@@ -79,7 +79,7 @@ function motivosDoTipo(
   catalogo: readonly MotivoDeDecisaoDto[],
   escolhidos: readonly MotivoNoDocumento[],
 ): readonly MotivoOferecido[] {
-  const noCatalogo = catalogo.filter((motivo) => motivo.tipo === tipoCodigo);
+  const noCatalogo = catalogo.filter((motivo) => motivo.tipo.codigo === tipoCodigo);
   const escolhidosDoTipo = escolhidos.filter((motivo) => motivo.tipoCodigo === tipoCodigo);
   return [
     ...oferecidosPeloCatalogo(noCatalogo, escolhidosDoTipo),
@@ -96,7 +96,7 @@ function tiposPresentes(
   return [
     ...declarados,
     ...escolhidos.map((motivo) => motivo.tipoCodigo),
-    ...catalogo.map((motivo) => motivo.tipo),
+    ...catalogo.map((motivo) => motivo.tipo.codigo),
   ].sort();
 }
 

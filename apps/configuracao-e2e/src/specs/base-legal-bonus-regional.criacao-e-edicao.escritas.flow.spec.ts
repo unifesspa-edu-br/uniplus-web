@@ -12,6 +12,7 @@ import {
   abrirEdicao,
   busca,
   editar,
+  campoDaIdentificacao,
   novo,
   titulo,
 } from '../support/passos-da-base-legal-bonus-regional';
@@ -31,7 +32,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
       { recarga: 'com-o-item' },
     );
     const formulario = await abrirCadastro(page);
-    const identificacao = formulario.locator('input[formcontrolname="identificacao"]');
+    const identificacao = campoDaIdentificacao(formulario);
     await formulario.getByRole('button', { name: 'Criar base legal' }).click();
     const salvar = formulario.getByRole('button', { name: 'Salvando...' });
     await expect(identificacao).toBeDisabled();
@@ -85,7 +86,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
       recarga: 'com-o-item',
     });
     const formulario = await abrirEdicao(page);
-    const identificacao = formulario.locator('input[formcontrolname="identificacao"]');
+    const identificacao = campoDaIdentificacao(formulario);
     await identificacao.focus();
     await page.keyboard.press('Enter');
     await expect(identificacao).toBeDisabled();
@@ -100,7 +101,7 @@ test.describe('Base legal de bônus regional — escritas', () => {
   test('envio barrado localmente leva o foco ao primeiro campo inválido', async ({ page }) => {
     const { envios } = await mockApi(page, [SALVO], { recarga: 'com-o-item' });
     const formulario = await abrirEdicao(page);
-    const identificacao = formulario.locator('input[formcontrolname="identificacao"]');
+    const identificacao = campoDaIdentificacao(formulario);
     await identificacao.fill('');
     await formulario.getByRole('button', { name: 'Salvar base legal' }).focus();
     await page.keyboard.press('Enter');

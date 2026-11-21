@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import type { ModeloDaExigenciaDto } from '@uniplus/shared-data/selecao';
+
 import type { ExigenciasDoRascunho } from '../../processo-seletivo.models';
 import { exigenciasDaFase, exigenciasDaRaiz } from './consulta-das-exigencias';
 import { comExigenciaNaRaiz, exigenciaNova, folhaDe, semAFase } from './exigencias-documentais';
@@ -10,6 +12,7 @@ import {
   ID_RG,
   detalheDaApi,
   exigenciaDaApi,
+  noDoRascunho,
 } from './exigencias.testing';
 
 describe('Alcance da exigência de documento entre fases', () => {
@@ -21,8 +24,8 @@ describe('Alcance da exigência de documento entre fases', () => {
   it('relê o alcance de todas as fases do documento presente em cada uma', () => {
     const lido = exigenciasDe(
       detalheDaApi([
-        exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO }),
-        exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO }),
+        exigenciaDaApi({ faseId: ID_ISENCAO }),
+        exigenciaDaApi({ faseId: ID_HABILITACAO }),
       ]),
     );
 
@@ -37,8 +40,8 @@ describe('Alcance da exigência de documento entre fases', () => {
   it('não infere alcance global quando as declarações por fase divergem', () => {
     const lido = exigenciasDe(
       detalheDaApi([
-        exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO, obrigatorio: true }),
-        exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO, obrigatorio: false }),
+        exigenciaDaApi({ faseId: ID_ISENCAO, indeferimento: { obrigatorio: true } }),
+        exigenciaDaApi({ faseId: ID_HABILITACAO, indeferimento: { obrigatorio: false } }),
       ]),
     );
 
@@ -50,17 +53,16 @@ describe('Alcance da exigência de documento entre fases', () => {
    * receberia o modelo de uma das fases, ou nenhum, sem que ninguém o tivesse escolhido.
    */
   it('não infere alcance global quando as fases oferecem modelos diferentes', () => {
-    const modelo = {
+    const modelo: ModeloDaExigenciaDto = {
       modeloId: 'modelo-1',
       nomeArquivo: 'autodeclaracao.odt',
       formato: 'ODT',
       hashSha256: 'a'.repeat(64),
-      urlDownload: null,
     };
     const lido = exigenciasDe(
       detalheDaApi([
-        exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO, modelo }),
-        exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO }),
+        exigenciaDaApi({ faseId: ID_ISENCAO, requisitos: { modelo } }),
+        exigenciaDaApi({ faseId: ID_HABILITACAO }),
       ]),
     );
 
@@ -74,8 +76,8 @@ describe('Alcance da exigência de documento entre fases', () => {
   it('não infere alcance global quando só uma fase repete o documento por um grupo', () => {
     const lido = exigenciasDe(
       detalheDaApi([
-        { ...exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO }), repetePorEntidade: 'FAMILIA' },
-        exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO }),
+        { ...exigenciaDaApi({ faseId: ID_ISENCAO }), repetePorEntidade: 'FAMILIA' },
+        exigenciaDaApi({ faseId: ID_HABILITACAO }),
       ]),
     );
 
@@ -90,19 +92,15 @@ describe('Alcance da exigência de documento entre fases', () => {
   it('não infere alcance global de documento que noutra fase é só alternativa de grupo', () => {
     const lido = exigenciasDe(
       detalheDaApi([
-        exigenciaDaApi({ exigidoNaFaseId: ID_ISENCAO }),
+        exigenciaDaApi({ faseId: ID_ISENCAO }),
         {
           id: 'grupo-1',
           tipo: 'OU',
-          quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: [],
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
+          cardinalidade: { quantidadeMinima: 1, distincao: null },
+          indeferimento: { consequencia: null, basesLegais: [] },
           repetePorEntidade: null,
           documento: null,
-          filhos: [exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO })],
+          filhos: [exigenciaDaApi({ faseId: ID_HABILITACAO })],
         },
       ]),
     );
@@ -153,18 +151,11 @@ describe('Alcance da exigência de documento entre fases', () => {
     const comGrupo: ExigenciasDoRascunho = {
       emTodasAsFases: [],
       raizes: [
-        {
+        noDoRascunho({
           tipo: 'OU',
-          documento: null,
           quantidadeMinima: 1,
-          consequencia: null,
-          basesLegais: null,
           filhos: [folhaDe(exigenciaNova(ID_RG, 'HABILITACAO'))],
-          chaveDistincao: null,
-          dataReferencia: null,
-          ocorrenciasEsperadas: null,
-          repetePorEntidade: null,
-        },
+        }),
       ],
     };
 
@@ -180,7 +171,7 @@ describe('Alcance da exigência de documento entre fases', () => {
 
   /** Presente em uma fase só, entre duas, é escolha explícita — e continua sendo. */
   it('não inventa alcance de todas as fases para o documento de uma fase só', () => {
-    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ exigidoNaFaseId: ID_HABILITACAO })]));
+    const lido = exigenciasDe(detalheDaApi([exigenciaDaApi({ faseId: ID_HABILITACAO })]));
 
     expect(lido.emTodasAsFases).toEqual([]);
   });

@@ -6,6 +6,7 @@ import {
   LISTA,
   MARABA,
   Pagina,
+  TIPO_PORTARIA,
   criado,
   decreto,
   montarPagina,
@@ -41,7 +42,7 @@ describe('BaseLegalBonusRegionalPage — escritas pela interface', () => {
       expect(post.request.method).toBe('POST');
       expect(post.request.headers.get('Idempotency-Key')).toBeTruthy();
       expect(post.request.body).toEqual({
-        tipoInstrumento: 'PORTARIA',
+        tipoInstrumento: TIPO_PORTARIA.codigo,
         identificacao: 'Portaria de teste',
         descricao: 'Descrição de teste válida.',
         municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],

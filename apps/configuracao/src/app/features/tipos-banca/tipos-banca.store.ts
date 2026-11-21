@@ -40,7 +40,7 @@ export class TiposBancaStore {
     const termo = this.termoBusca().trim().toLocaleLowerCase('pt-BR');
     return this.bancas().filter(
       (banca) =>
-        banca.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
+        banca.codigo.codigo.toLocaleLowerCase('pt-BR').includes(termo) ||
         banca.nome.toLocaleLowerCase('pt-BR').includes(termo),
     );
   });

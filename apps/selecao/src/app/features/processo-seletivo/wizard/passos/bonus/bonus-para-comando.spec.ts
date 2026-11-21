@@ -32,11 +32,10 @@ describe('comoComandoDeBonus', () => {
 
     expect(comando).toEqual({
       aplica: false,
-      regraCodigo: null,
-      regraVersao: null,
+      regra: null,
       fator: null,
       teto: null,
-      baseLegalBonusRegionalId: null,
+      baseLegal: null,
       fatoElegibilidadeCodigo: null,
     });
   });
@@ -56,11 +55,10 @@ describe('comoComandoDeBonus', () => {
 
     expect(comando).toEqual({
       aplica: true,
-      regraCodigo: 'BONUS-MULTIPLICATIVO',
-      regraVersao: '1.0',
+      regra: { codigo: 'BONUS-MULTIPLICATIVO', versao: '1.0' },
       fator: 1.2,
       teto: 10,
-      baseLegalBonusRegionalId: BASE_LEGAL_ID,
+      baseLegal: { id: BASE_LEGAL_ID },
       fatoElegibilidadeCodigo: 'SOLICITA_ACRESCIMO',
     });
   });
@@ -89,7 +87,7 @@ describe('comoComandoDeBonus', () => {
       }),
     );
 
-    expect(comando.baseLegalBonusRegionalId).toBeNull();
+    expect(comando.baseLegal).toBeNull();
   });
 
   it('fato de elegibilidade ainda não escolhido vai null — a publicação é que o exige', () => {

@@ -1,13 +1,19 @@
-import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
-import type { AplicacaoDeModeloDto, FormularioDto } from '@uniplus/shared-data/selecao';
 import {
+  type AplicacaoDeModeloDto,
+  type FormularioDto,
+  TipoRenderizacaoCodigo,
+} from '@uniplus/shared-data/selecao';
+import {
+  apresentacaoDoCampo,
   conteudoInicial,
+  REGRAS_INICIAIS,
   type ConteudoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
 import { describe, expect, it } from 'vitest';
 
 import type { FormularioDeInscricao } from '../../processo-seletivo.models';
+import { modelo } from './formulario-gravado.testing';
 import {
   comAplicacaoDoServidor,
   faseQueAAplicacaoDeclara,
@@ -15,29 +21,12 @@ import {
   resumoDaAplicacao,
 } from './modelo-de-formulario';
 
-const modelo = (id: string, nome: string, finalidade: string): ModeloFormularioView =>
-  ({
-    id,
-    codigo: id.toUpperCase(),
-    nome,
-    descricao: null,
-    finalidade,
-    tipoProcessoCodigo: null,
-    ativo: true,
-    conteudo: {},
-  }) as unknown as ModeloFormularioView;
-
 const item = (fatoCodigo: string): ItemDoFormulario => ({
   fatoCodigo,
   ordem: 0,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'BOOLEANO',
-  obrigatoriedade: 'SEMPRE',
-  precondicao: null,
   etapaCodigo: null,
-  predicadoObrigatoriedade: null,
-  ajuda: null,
-  pedirConfirmacao: false,
+  apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+  regras: REGRAS_INICIAIS,
 });
 const com = (...fatos: string[]): ConteudoDoFormulario => ({
   ...conteudoInicial(),
@@ -50,30 +39,36 @@ const doServidor = (
   faseId: string | null,
   fatos: readonly string[],
   modeloOrigemCodigo: string | null = null,
-): FormularioDto =>
-  ({
-    finalidade,
-    faseId,
-    titulo: null,
-    modeloOrigemId: modeloOrigemCodigo === null ? null : 'm',
-    modeloOrigemCodigo,
-    etapas: [],
-    fatosColetados: fatos.map((fatoCodigo, ordem) => ({
+): FormularioDto => ({
+  finalidade,
+  faseId,
+  titulo: null,
+  modeloOrigem: modeloOrigemCodigo === null ? null : { id: 'm', codigo: modeloOrigemCodigo },
+  etapas: [],
+  coleta: {
+    itens: fatos.map((fatoCodigo, ordem) => ({
       fatoCodigo,
       ordem,
-      rotulo: fatoCodigo,
-      tipoRenderizacao: 'BOOLEANO',
-      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
-      precondicao: null,
       etapaCodigo: null,
-      ajuda: null,
-      pedirConfirmacao: false,
-      restricoes: [],
-      impedimento: null,
+      apresentacao: {
+        rotulo: fatoCodigo,
+        tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+        ajuda: null,
+        pedirConfirmacao: false,
+      },
+      regras: {
+        exibicao: null,
+        obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+        restricoes: [],
+        impedimento: null,
+      },
+      formato: null,
+      opcoes: null,
     })),
-    termos: [],
     grupos: [],
-  }) as unknown as FormularioDto;
+  },
+  termos: [],
+});
 
 const relato = (extra: Partial<AplicacaoDeModeloDto> = {}): AplicacaoDeModeloDto => ({
   finalidade: 'INSCRICAO',

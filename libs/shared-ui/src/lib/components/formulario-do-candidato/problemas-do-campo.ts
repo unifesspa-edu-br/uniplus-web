@@ -17,20 +17,20 @@ export interface SituacaoDoCampo {
 /** As mensagens ao lado do campo: pendência, número não reconhecido, regras violadas e impedimento. */
 export function problemasDoCampo(situacao: SituacaoDoCampo): string[] {
   const { avaliado, regra } = situacao.noPasso;
-  const violadas = avaliado.restricoesVioladas.filter(
-    (tipo) => tipo !== FAIXA_DE_DATA || situacao.dataConferida,
-  );
   return [
     ...(situacao.faltaResponder ? ['Responda este campo.'] : []),
     ...(situacao.numeroInvalido ? ['Escreva um número, com vírgula para as casas decimais.'] : []),
-    ...mensagensDasRestricoes(
-      { ...avaliado, restricoesVioladas: violadas },
-      regra,
-      situacao.diaDoEnvio,
-    ),
-    ...(avaliado.impedido === 'VERDADEIRO'
-      ? [regra?.impedimento?.mensagem?.trim() || 'Esta resposta impede a inscrição.']
+    ...mensagensDasRestricoes(restricoesAMostrar(situacao), regra, situacao.diaDoEnvio),
+    ...(avaliado.regras.impedido === 'VERDADEIRO'
+      ? [regra?.regras.impedimento?.mensagem?.trim() || 'Esta resposta impede a inscrição.']
       : []),
     ...(situacao.erroDoServidor ? [situacao.erroDoServidor] : []),
   ];
+}
+
+/** As restrições violadas; a faixa de data só aparece depois de conferida. */
+function restricoesAMostrar(situacao: SituacaoDoCampo): string[] {
+  return situacao.noPasso.avaliado.regras.restricoesVioladas.filter(
+    (tipo) => tipo !== FAIXA_DE_DATA || situacao.dataConferida,
+  );
 }

@@ -12,7 +12,8 @@ import {
 } from '@uniplus/shared-core/http';
 import {
   CONFIGURACAO_BASE_PATH,
-  FatoCandidatoView,
+  fatoComOperadores,
+  FatoDoCatalogoDto,
   ModalidadeDto,
 } from '@uniplus/shared-data/configuracao';
 import { NotificationService } from '@uniplus/shared-core/notifications';
@@ -33,10 +34,12 @@ export class ModalidadeFormStore {
           context: withVendorMime('modalidade', 1),
         },
   );
-  readonly catalogo = useApiResource<readonly FatoCandidatoView[]>(() => ({
+  readonly catalogo = useApiResource<readonly FatoDoCatalogoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/fatos-candidato`,
     context: withVendorMime('fato-candidato', 1),
   }));
+  /** Os fatos com os operadores; `null` enquanto o catálogo não foi lido. */
+  readonly fatos = computed(() => this.catalogo.data()?.map(fatoComOperadores) ?? null);
   private readonly lista = useApiResource<readonly ModalidadeDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/modalidades`,
     params: this.montarParams(),
@@ -76,17 +79,19 @@ export class ModalidadeFormStore {
       pagina: this.pagina,
       notificacoes: this.notifications,
     });
-    effect(() => {
-      const resultado = this.lista.value();
-      if (!resultado?.ok) return;
-      const proximo = this.navegacao.proximo();
-      untracked(() => {
-        // A primeira página recomeça o laço (cursor recusado): somá-la às já lidas duplicaria as opções.
-        const anteriores = this.pagina() === undefined ? [] : this.acumuladas;
-        this.acumuladas = [...anteriores, ...resultado.data];
-        if (proximo !== null) this.navegacao.irParaProxima();
-        else this.opcoes.set(this.acumuladas);
-      });
+    effect(() => this.acumularPagina());
+  }
+
+  private acumularPagina(): void {
+    const resultado = this.lista.value();
+    if (!resultado?.ok) return;
+    const proximo = this.navegacao.proximo();
+    untracked(() => {
+      // A primeira página recomeça o laço (cursor recusado): somá-la às já lidas duplicaria as opções.
+      const anteriores = this.pagina() === undefined ? [] : this.acumuladas;
+      this.acumuladas = [...anteriores, ...resultado.data];
+      if (proximo !== null) this.navegacao.irParaProxima();
+      else this.opcoes.set(this.acumuladas);
     });
   }
 

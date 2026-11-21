@@ -3,15 +3,17 @@
  * uma exigência documental, o critério de desempate e a regra de um item de formulário
  * escrevem. As CLÁUSULAS se combinam por OU; as condições de dentro de uma cláusula, por E.
  *
- * O que este módulo decide — quais operadores cada fato admite, que forma o valor tem, o que
- * a condição alcança — é espelho do que o servidor confere (ADR-0111), e por isso cada regra
- * daqui tem contrapartida no validador de predicado do domínio. O que ele NÃO faz é escrever a
- * lista de fatos: ela é catálogo institucional e chega pela API.
+ * O que este módulo decide — que forma o valor tem, o que a condição alcança — é espelho do que
+ * o servidor confere (ADR-0111), e por isso cada regra daqui tem contrapartida no validador de
+ * predicado do domínio. O que ele NÃO faz é escrever a lista de fatos nem os operadores que cada
+ * um admite: ambos são catálogo institucional e chegam pela API.
  *
  * Nada aqui conhece o modelo de um módulo: as funções trabalham sobre a tripla
  * `{fato, operador, valor}` e, quando há alternativas, sobre a lista de condições com o número
  * da cláusula em que cada uma vive.
  */
+
+import { CodigoComRotulo } from '../../codigo-com-rotulo';
 
 /** Os quatro domínios que o vocabulário distingue, no formato que o wire usa. */
 export type TipoDeDominio = 'BOOLEANO' | 'NUMERICO' | 'CATEGORICO_ESTATICO' | 'CATEGORICO_DINAMICO';
@@ -26,6 +28,11 @@ export interface FatoDoCatalogo {
   readonly dominio: string;
   readonly valoresDominio?: readonly string[] | null;
   readonly binding: string;
+  /**
+   * As comparações que a API admite para o fato, na ordem de oferta — a primeira é a padrão.
+   * Vazia quando o fato não pode ser citado em regra.
+   */
+  readonly operadoresAdmitidos: readonly CodigoComRotulo<string>[];
   /** De onde vêm os valores do categórico (`GEO_MUNICIPIO`, `PROCESSO`...); nulo nos demais. */
   readonly fonteValores?: string | null;
   /** Os valores do categórico com a descrição que o cadastro deu a cada um, quando há. */
@@ -48,6 +55,8 @@ export interface FatoEscolhivel {
   readonly codigo: string;
   readonly nome: string;
   readonly tipoDominio: TipoDeDominio;
+  /** As comparações que o fato admite, na ordem de oferta; a primeira é a padrão. */
+  readonly operadoresAdmitidos: readonly CodigoComRotulo<string>[];
   /** Os valores declarados, quando o domínio é categórico estático; vazio nos demais. */
   readonly valores: readonly string[];
   /** A descrição de cada valor que tem uma, pelo código; o valor sem descrição se mostra pelo código. */
@@ -89,6 +98,7 @@ export function fatoEscolhivel(fato: FatoDoCatalogo): FatoEscolhivel | null {
     codigo: fato.codigo,
     nome: fato.nome,
     tipoDominio,
+    operadoresAdmitidos: fato.operadoresAdmitidos,
     valores: tipoDominio === 'CATEGORICO_ESTATICO' ? [...(fato.valoresDominio ?? [])] : [],
     coletavel: BINDINGS_DE_CAMPO.some((prefixo) => fato.binding.startsWith(prefixo)),
     ...(fato.protecaoAprovada === false ? { aguardaProtecao: true } : {}),
@@ -115,6 +125,16 @@ function rotulosDeclarados(fato: FatoDoCatalogo): ReadonlyMap<string, string> {
     if (descricao !== '') rotulos.set(valor.codigo, descricao);
   }
   return rotulos;
+}
+
+/** A comparação que uma condição nova sobre o fato começa usando; vazio quando o fato não admite nenhuma. */
+export function operadorPadrao(fato: FatoEscolhivel): string {
+  return fato.operadoresAdmitidos[0]?.codigo ?? '';
+}
+
+/** Como a tela mostra a comparação: pelo rótulo da API, ou pelo código quando o fato não a traz. */
+export function rotuloDoOperador(fato: FatoEscolhivel, codigo: string): string {
+  return fato.operadoresAdmitidos.find((opcao) => opcao.codigo === codigo)?.rotulo ?? codigo;
 }
 
 /** Como a tela mostra um valor do fato: pela descrição do cadastro, ou pelo código quando não há. */
@@ -149,7 +169,8 @@ function oferecido(
   comMunicipios: boolean,
 ): FatoEscolhivel | null {
   const fato = fatoEscolhivel(view);
-  if (fato === null || fato.tipoDominio !== 'CATEGORICO_DINAMICO') return fato;
+  if (fato === null || fato.operadoresAdmitidos.length === 0) return null;
+  if (fato.tipoDominio !== 'CATEGORICO_DINAMICO') return fato;
   if (comMunicipios && view.fonteValores === FONTE_GEO_MUNICIPIO) {
     return { ...fato, municipio: true };
   }

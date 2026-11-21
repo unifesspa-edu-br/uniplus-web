@@ -11,6 +11,12 @@ export interface OpcaoDeConceito {
 const porNome = (a: OpcaoDeConceito, b: OpcaoDeConceito): number =>
   a.nome.localeCompare(b.nome, 'pt-BR');
 
+const nomeDoConceito = (conceito: TipoConceitoDto): string => conceito.definicao.nome;
+
+function opcaoAtiva(conceito: TipoConceitoDto): OpcaoDeConceito {
+  return { codigo: conceito.codigo, nome: nomeDoConceito(conceito), inativo: false };
+}
+
 /**
  * Os conceitos ativos do catálogo, mais os já admitidos pelo tipo que o catálogo ativo não traz
  * (desativados ou desconhecidos), marcados como inativos para a pessoa poder retirá-los.
@@ -19,11 +25,9 @@ export function opcoesDeConceito(
   catalogo: readonly TipoConceitoDto[],
   admitidos: readonly string[],
 ): readonly OpcaoDeConceito[] {
-  const ativos = catalogo
-    .filter((conceito) => conceito.ativo)
-    .map((conceito) => ({ codigo: conceito.codigo, nome: conceito.nome, inativo: false }));
+  const ativos = catalogo.filter((conceito) => conceito.ativo).map(opcaoAtiva);
   const codigosAtivos = new Set(ativos.map((conceito) => conceito.codigo));
-  const nomes = new Map(catalogo.map((conceito) => [conceito.codigo, conceito.nome] as const));
+  const nomes = new Map(catalogo.map((conceito) => [conceito.codigo, nomeDoConceito(conceito)]));
   const foraDoCatalogo = admitidos
     .filter((codigo) => !codigosAtivos.has(codigo))
     .map((codigo) => ({ codigo, nome: nomes.get(codigo) ?? codigo, inativo: true }));

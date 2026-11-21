@@ -27,7 +27,7 @@ import {
 import type { FormularioDaFinalidade, ValidacaoDoPasso } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { provePassoDoWizard } from '../../passo-do-wizard';
-import { abasDoFormulario } from './abas-do-formulario';
+import { abasDoFormulario, type AbaDoFormulario } from './abas-do-formulario';
 import { mensagensDoFormulario } from './validacao-do-formulario';
 import { AplicacaoNoServidor } from './servicos/aplicacao-no-servidor.service';
 import { AplicacaoDeModelo } from './servicos/aplicacao-de-modelo.service';
@@ -54,6 +54,19 @@ import {
   nomeDaFinalidade,
   sufixoDaFinalidade,
 } from './formularios-por-finalidade';
+
+const SEM_CADASTRO_DO_PROCESSO =
+  'O cadastro do processo precisa estar concluído antes de declarar os formulários.';
+
+const paraGravar = ({ finalidade, nome, fase, conteudo }: AbaDoFormulario) => ({
+  finalidade,
+  nome,
+  fase,
+  conteudo,
+});
+
+const anuncioDoAcrescimo = (finalidade: string): string =>
+  `Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`;
 
 /**
  * Formulários — um por finalidade do processo (inscrição, isenção da taxa, habilitação), cada um
@@ -137,6 +150,15 @@ export class FormularioPassoComponent {
     ...fatosColetadosPelaInscricao(this.conteudo()),
   ]);
 
+  private readonly textosDasAbas = computed(() => ({
+    recusasDaGravacao: this.gravacao.recusas(),
+    recusasDaRemocao: this.remocao.recusas(),
+    recusasDaAplicacao: this.aplicacao.recusas(),
+    resumosDaAplicacao: this.aplicacao.resumos(),
+    modelos: this.aplicacao.modelos(),
+    modeloEscolhido: this.aplicacao.escolhidos(),
+  }));
+
   /** Abas só quando há entre o que navegar: com um formulário só, o painel basta. */
   readonly comAbas = computed(() => this.abas().length > 1);
 
@@ -155,14 +177,7 @@ export class FormularioPassoComponent {
       vocabulario: this.fases.vocabularioDosDocumentos(),
       outrasFinalidades: this.store.draft().formulario.outrasFinalidades,
       fatosDaInscricao: this.fatosDaInscricao(),
-      textos: {
-        recusasDaGravacao: this.gravacao.recusas(),
-        recusasDaRemocao: this.remocao.recusas(),
-        recusasDaAplicacao: this.aplicacao.recusas(),
-        resumosDaAplicacao: this.aplicacao.resumos(),
-        modelos: this.aplicacao.modelos(),
-        modeloEscolhido: this.aplicacao.escolhidos(),
-      },
+      textos: this.textosDasAbas(),
     }),
   );
 
@@ -223,10 +238,11 @@ export class FormularioPassoComponent {
   ): void {
     const atual = this.formularios().find((formulario) => formulario.finalidade === finalidade);
     if (atual === undefined) return;
-    this.store.patchSection(
-      'formulario',
-      comFormulario(this.store.draft().formulario, mudar(atual)),
-    );
+    this.trocarFormulario(mudar(atual));
+  }
+
+  private trocarFormulario(formulario: FormularioDaFinalidade): void {
+    this.store.patchSection('formulario', comFormulario(this.store.draft().formulario, formulario));
   }
 
   /**
@@ -238,19 +254,10 @@ export class FormularioPassoComponent {
     const finalidade = this.finalidadeAAcrescentar();
     if (!this.fases.finalidadesOferecidas().some((opcao) => opcao.valor === finalidade)) return;
 
-    this.store.patchSection(
-      'formulario',
-      comFormulario(this.store.draft().formulario, {
-        finalidade,
-        faseCodigo: '',
-        conteudo: conteudoInicial(),
-      }),
-    );
+    this.trocarFormulario({ finalidade, faseCodigo: '', conteudo: conteudoInicial() });
     this.finalidadeAAcrescentar.set('');
     this.selecionarAba(finalidade);
-    this.anuncio.set(
-      `Formulário de ${nomeDaFinalidade(finalidade)} acrescentado. Ele é criado no processo ao gravar o passo.`,
-    );
+    this.anuncio.set(anuncioDoAcrescimo(finalidade));
     this.focarAba(finalidade);
   }
 
@@ -317,7 +324,9 @@ export class FormularioPassoComponent {
       draft.documentos,
       draft.desempate,
       this.store.regrasDasModalidades(),
-    ).map((campo) => (campo.rotulo.trim() === '' ? campo.fatoCodigo : campo.rotulo));
+    ).map((campo) =>
+      campo.apresentacao.rotulo.trim() === '' ? campo.fatoCodigo : campo.apresentacao.rotulo,
+    );
   });
 
   /**
@@ -350,27 +359,13 @@ export class FormularioPassoComponent {
   /** Grava os formulários de cada finalidade e a política que ancora a apuração da idade. */
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
-    if (processoId === null) {
-      return {
-        valid: false,
-        messages: [
-          'O cadastro do processo precisa estar concluído antes de declarar os formulários.',
-        ],
-      };
-    }
+    if (processoId === null) return { valid: false, messages: [SEM_CADASTRO_DO_PROCESSO] };
 
     const conferencia = this.validar();
     if (!conferencia.valid) return conferencia;
 
-    return this.gravacao.gravar(
-      processoId,
-      this.abas().map(({ finalidade, nome, fase, conteudo }) => ({
-        finalidade,
-        nome,
-        fase,
-        conteudo,
-      })),
-      (finalidade) => this.selecionarAba(finalidade),
+    return this.gravacao.gravar(processoId, this.abas().map(paraGravar), (finalidade) =>
+      this.selecionarAba(finalidade),
     );
   }
 }

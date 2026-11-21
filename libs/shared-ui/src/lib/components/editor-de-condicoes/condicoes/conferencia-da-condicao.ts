@@ -1,12 +1,9 @@
+import { comparaComLista, ehNegacao } from '../../formulario-do-candidato/interpretador/predicado';
 import { FatoEscolhivel, rotuloDoValor } from './fatos-escolhiveis';
 import {
   CondicaoDeFato,
-  OPERADOR_DIFERENTE,
-  OPERADOR_NAO_EM,
   VALOR_FALSO,
   VALOR_VERDADEIRO,
-  comparaComLista,
-  operadoresDoFato,
   valorEscalarDe,
   valoresDeListaDe,
 } from './valor-da-condicao';
@@ -22,18 +19,20 @@ export function alcanceDaCondicao(condicao: CondicaoDeFato, fato: FatoEscolhivel
   if (fato.tipoDominio === 'BOOLEANO') return alcanceBooleano(condicao);
   if (fato.valores.length === 0) return '';
 
-  const escolhidos = comparaComLista(condicao.operador)
-    ? valoresDeListaDe(condicao)
-    : [valorEscalarDe(condicao)].filter((valor) => valor !== '');
+  const escolhidos = valoresEscolhidos(condicao);
   if (escolhidos.length === 0) return '';
 
-  const nega = condicao.operador === OPERADOR_DIFERENTE || condicao.operador === OPERADOR_NAO_EM;
-  const alcancados = nega
-    ? fato.valores.filter((valor) => !escolhidos.includes(valor))
-    : fato.valores.filter((valor) => escolhidos.includes(valor));
+  const nega = ehNegacao(condicao.operador);
+  const alcancados = fato.valores.filter((valor) => escolhidos.includes(valor) !== nega);
 
   if (alcancados.length === 0) return 'Não alcança valor nenhum do domínio declarado.';
   return `Alcança ${alcancados.map((valor) => rotuloDoValor(fato, valor)).join(', ')}.`;
+}
+
+function valoresEscolhidos(condicao: CondicaoDeFato): readonly string[] {
+  return comparaComLista(condicao.operador)
+    ? valoresDeListaDe(condicao)
+    : [valorEscalarDe(condicao)].filter((valor) => valor !== '');
 }
 
 /**
@@ -46,7 +45,7 @@ function alcanceBooleano(condicao: CondicaoDeFato): string {
   const escolhido = valorEscalarDe(condicao);
   if (escolhido !== VALOR_VERDADEIRO && escolhido !== VALOR_FALSO) return '';
 
-  const nega = condicao.operador === OPERADOR_DIFERENTE;
+  const nega = condicao.operador === 'DIFERENTE';
   const afirmativo = (escolhido === VALOR_VERDADEIRO) !== nega;
   return afirmativo ? 'Alcança quem respondeu que sim.' : 'Alcança quem respondeu que não.';
 }
@@ -66,7 +65,7 @@ export function problemaDaCondicao(
   if (condicao.fato.trim() === '') return 'escolha o fato do candidato';
   const fato = fatosPorCodigo.get(condicao.fato);
   if (fato === undefined) return problemaDoFatoAusente(condicao.fato, nomeNoCatalogo);
-  if (!operadoresDoFato(fato).some((opcao) => opcao.valor === condicao.operador)) {
+  if (!fato.operadoresAdmitidos.some((opcao) => opcao.codigo === condicao.operador)) {
     return `"${fato.nome}" não admite a comparação escolhida`;
   }
   return problemaDoValor(condicao, fato);
@@ -79,21 +78,24 @@ function problemaDoFatoAusente(codigo: string, nomeNoCatalogo: ReadonlyMap<strin
     : `"${nome}" não tem valor nenhum ofertado por este processo`;
 }
 
-/** A gramática exata de número inteiro do JSON: zero à esquerda não é número JSON válido. */
+/**
+ * A gramática exata de número inteiro do JSON: zero à esquerda não é número JSON válido. O domínio
+ * numérico recusa decimal; sem esta conferência o valor viajava e voltava recusado pelo servidor,
+ * falando de um tipo que a tela não expõe — um `018` aprovado aqui voltaria como recusa de TIPO,
+ * uma mensagem sobre JSON para quem só pôs um zero a mais.
+ */
 const INTEIRO_DO_JSON = /^-?(0|[1-9]\d*)$/;
 
 function problemaDoValor(condicao: CondicaoDeFato, fato: FatoEscolhivel): string | null {
-  const emLista = comparaComLista(condicao.operador);
-  const escolhidos = emLista ? valoresDeListaDe(condicao) : [valorEscalarDe(condicao)];
-  if (emLista ? escolhidos.length === 0 : escolhidos[0] === '') {
-    return `"${fato.nome}" está sem valor`;
-  }
-  // O domínio numérico recusa decimal. Sem esta conferência o valor viajava e voltava recusado
-  // pelo servidor, falando de um tipo que a tela não expõe; um `018` aprovado aqui voltaria como
-  // recusa de TIPO — uma mensagem sobre JSON para quem só pôs um zero a mais.
+  const escolhidos = valoresEscolhidos(condicao);
+  if (escolhidos.length === 0) return `"${fato.nome}" está sem valor`;
   if (fato.tipoDominio === 'NUMERICO' && !INTEIRO_DO_JSON.test(escolhidos[0])) {
     return `"${fato.nome}" aceita número inteiro`;
   }
+  return problemaDoDominio(fato, escolhidos);
+}
+
+function problemaDoDominio(fato: FatoEscolhivel, escolhidos: readonly string[]): string | null {
   const foraDoDominio =
     fato.valores.length === 0 ? [] : escolhidos.filter((valor) => !fato.valores.includes(valor));
   return foraDoDominio.length > 0
@@ -111,14 +113,8 @@ export function problemasDeCondicoes(
   nomeNoCatalogo: ReadonlyMap<string, string> = new Map(),
   ignorados: readonly string[] = [],
 ): readonly string[] {
-  const problemas: string[] = [];
-
-  for (const condicao of condicoes) {
-    if (ignorados.includes(condicao.fato)) continue;
-
-    const problema = problemaDaCondicao(condicao, fatosPorCodigo, nomeNoCatalogo);
-    if (problema !== null) problemas.push(problema);
-  }
-
-  return problemas;
+  return condicoes
+    .filter((condicao) => !ignorados.includes(condicao.fato))
+    .map((condicao) => problemaDaCondicao(condicao, fatosPorCodigo, nomeNoCatalogo))
+    .filter((problema): problema is string => problema !== null);
 }

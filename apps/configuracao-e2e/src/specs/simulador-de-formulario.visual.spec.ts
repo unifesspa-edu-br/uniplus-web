@@ -1,5 +1,6 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test';
 import { runAxeWcagAA } from '@uniplus/shared-e2e';
+import { formularioDoSimulador } from '../support/formulario-do-simulador';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -12,113 +13,7 @@ type VisualTheme = 'light' | 'dark' | 'contrast';
  *
  * O arquivo é aberto no navegador e a simulação não chama a API: nada aqui depende do backend.
  */
-const FORMULARIO = {
-  finalidade: 'INSCRICAO',
-  titulo: 'Inscrição',
-  etapas: [
-    {
-      codigo: 'ENDERECO',
-      codigoNasRegras: 'ENDERECO',
-      ordem: 0,
-      tipo: 'SECAO',
-      bloco: null,
-      titulo: 'Endereço',
-      descricao: 'Onde você mora.',
-      aviso: null,
-    },
-    {
-      codigo: 'FAMILIA',
-      codigoNasRegras: 'FAMILIA',
-      ordem: 1,
-      tipo: 'SECAO',
-      bloco: null,
-      titulo: 'Composição familiar',
-      descricao: null,
-      aviso: null,
-    },
-  ],
-  termos: [],
-  fatosColetados: [
-    {
-      fatoCodigo: 'TIPO_ENDERECO',
-      ordem: 0,
-      rotulo: 'Tipo de endereço',
-      tipoRenderizacao: 'SELECAO_UNICA',
-      valoresSelecionaveis: [
-        { codigo: 'URBANO', descricao: 'Urbano', ordem: 0 },
-        { codigo: 'ALDEIA', descricao: 'Aldeia indígena', ordem: 1 },
-      ],
-    },
-    {
-      fatoCodigo: 'NOME_ALDEIA',
-      ordem: 1,
-      rotulo: 'Nome da aldeia',
-      tipoRenderizacao: 'TEXTO',
-      ajuda: 'Como a comunidade é conhecida.',
-    },
-  ],
-  grupos: [
-    {
-      codigo: 'COMPOSICAO',
-      ordem: 0,
-      rotulo: 'Integrante',
-      minimo: 1,
-      maximo: 3,
-      incluiCandidato: false,
-      subitens: [
-        { fatoCodigo: 'RENDA', ordem: 0, rotulo: 'Renda mensal', tipoRenderizacao: 'NUMERO' },
-      ],
-    },
-  ],
-  regras: {
-    etapas: [
-      {
-        codigo: 'ENDERECO',
-        exibicao: null,
-        itens: [
-          {
-            fatoCodigo: 'TIPO_ENDERECO',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [],
-            oferta: ['ALDEIA', 'URBANO'],
-          },
-          {
-            fatoCodigo: 'NOME_ALDEIA',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [],
-            exibicao: [[{ fato: 'TIPO_ENDERECO', operador: 'IGUAL', valor: 'ALDEIA' }]],
-          },
-        ],
-        grupos: [],
-      },
-      {
-        codigo: 'FAMILIA',
-        exibicao: null,
-        itens: [],
-        grupos: [
-          {
-            codigo: 'COMPOSICAO',
-            obrigatoriedade: 'SEMPRE',
-            minimo: 1,
-            maximo: 3,
-            incluiCandidato: false,
-            subitens: [
-              {
-                fatoCodigo: 'RENDA',
-                obrigatoriedade: 'SEMPRE',
-                restricoes: [{ tipo: 'FAIXA_NUMERICA', minimo: 0 }],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-    termos: [],
-    derivacoes: [],
-    agregados: [],
-  },
-  pressupostos: [],
-};
+const FORMULARIO = formularioDoSimulador();
 
 test.describe('Simulador de formulário — temas, larguras e acessibilidade (web#1027)', () => {
   test.beforeEach(async ({ page }, testInfo) => {

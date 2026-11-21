@@ -1,4 +1,4 @@
-import { ancoraEmFase } from './apuracao-da-idade';
+import { referenciaEmFase } from './apuracao-da-idade';
 import { todosOsCampos } from '@uniplus/shared-ui/components';
 import type {
   ExigenciasDoRascunho,
@@ -28,33 +28,35 @@ export function problemasDoFormulario(
 
 function problemasDosRotulos(formulario: FormularioDeInscricao): string[] {
   return formulariosDoRascunho(formulario)
-    .filter(({ conteudo }) => todosOsCampos(conteudo).some((campo) => campo.rotulo.trim() === ''))
+    .filter(({ conteudo }) =>
+      todosOsCampos(conteudo).some((campo) => campo.apresentacao.rotulo.trim() === ''),
+    )
     .map(
       ({ finalidade }) =>
         `Todo campo do formulário de ${nomeDaFinalidade(finalidade)} precisa do rótulo que o candidato vai ler.`,
     );
 }
 
+const SEM_INSTANTE_DA_IDADE =
+  'Há documento exigido por faixa etária. Declare contra que instante a idade do candidato é apurada — sem isso a publicação é recusada.';
+const SEM_DATA_DA_IDADE = 'A apuração por data específica precisa da data.';
+const SEM_FASE_DA_IDADE =
+  'A apuração da idade aponta uma fase que não está no cronograma. Escolha outra fase, ou apure por data específica.';
+
 function problemasDaApuracaoDaIdade(
   referencia: FormularioDeInscricao['referenciaTemporal'],
   exigencias: ExigenciasDoRascunho,
   fasesVivas: ReadonlySet<string>,
 ): string[] {
-  const problemas: string[] = [];
-  if (fatosCitadosPelasExigencias(exigencias).has(FATO_DA_IDADE) && referencia.tipo === '') {
-    problemas.push(
-      'Há documento exigido por faixa etária. Declare contra que instante a idade do candidato é apurada — sem isso a publicação é recusada.',
-    );
-  }
-  if (referencia.tipo === 'DATA_ESPECIFICA' && referencia.data === '') {
-    problemas.push('A apuração por data específica precisa da data.');
-  }
-  if (ancoraEmFase(referencia.tipo) && !fasesVivas.has(referencia.faseCodigo)) {
-    problemas.push(
-      'A apuração da idade aponta uma fase que não está no cronograma. Escolha outra fase, ou apure por data específica.',
-    );
-  }
-  return problemas;
+  const semInstante =
+    fatosCitadosPelasExigencias(exigencias).has(FATO_DA_IDADE) && referencia.tipo === '';
+  const semData = referencia.tipo === 'DATA_ESPECIFICA' && referencia.data === '';
+  const semFase = referenciaEmFase(referencia.tipo) && !fasesVivas.has(referencia.faseCodigo);
+  return [
+    ...(semInstante ? [SEM_INSTANTE_DA_IDADE] : []),
+    ...(semData ? [SEM_DATA_DA_IDADE] : []),
+    ...(semFase ? [SEM_FASE_DA_IDADE] : []),
+  ];
 }
 
 /**
@@ -68,6 +70,16 @@ const FATOS_COM_DOMINIO_NA_OFERTA = [
   { codigo: 'RECURSO_ACESSIBILIDADE', rotulo: 'o recurso de acessibilidade', lista: 'recursos' },
 ] as const;
 
+/** Todo formulário do processo conta: o campo na isenção ou na habilitação esbarra na mesma oferta vazia. */
+function fatosDeSelecaoPerguntados(formulario: FormularioDeInscricao): ReadonlySet<string> {
+  return new Set(
+    formulariosDoRascunho(formulario)
+      .flatMap((outro) => todosOsCampos(outro.conteudo))
+      .filter((campo) => campo.apresentacao.tipoRenderizacao.startsWith('SELECAO'))
+      .map((campo) => campo.fatoCodigo),
+  );
+}
+
 /**
  * Campos que o formulário pergunta e para os quais a oferta não declara valor nenhum a escolher.
  *
@@ -79,14 +91,7 @@ export function camposSemValoresOfertados(
   formulario: FormularioDeInscricao,
   atendimento: WizardDraft['atendimento'],
 ): readonly string[] {
-  // Todo formulário do processo conta: o campo na isenção ou na habilitação esbarra na mesma oferta vazia.
-  const perguntados = new Set(
-    formulariosDoRascunho(formulario)
-      .flatMap((outro) => todosOsCampos(outro.conteudo))
-      .filter((campo) => campo.tipoRenderizacao.startsWith('SELECAO'))
-      .map((campo) => campo.fatoCodigo),
-  );
-
+  const perguntados = fatosDeSelecaoPerguntados(formulario);
   return FATOS_COM_DOMINIO_NA_OFERTA.filter(
     (fato) => perguntados.has(fato.codigo) && atendimento[fato.lista].length === 0,
   ).map((fato) => fato.rotulo);

@@ -18,13 +18,12 @@ import { eixosSomenteLeitura } from './eixos-somente-leitura';
 import { FatoProtecaoDaDefinicaoComponent } from './fato-protecao-da-definicao.component';
 import {
   CARDINALIDADES,
-  COMPONENTES_DE_EXIBICAO,
   DOMINIOS,
   ESCOPOS,
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
   ORIGENS,
-  ROTULO_DO_COMPONENTE_PADRAO,
+  rotuloDoComponente,
 } from './fato-candidato.regras';
 import { ID_DO_SALVAR_DA_DEFINICAO } from './ids-do-fato';
 
@@ -70,8 +69,7 @@ export class FatoDefinicaoComponent {
   protected readonly fontes = FONTES_DE_VALORES;
   protected readonly formatos = FORMATOS_DE_TEXTO;
   protected readonly escopos = ESCOPOS;
-  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
-  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
+  protected readonly rotuloDoComponente = rotuloDoComponente;
   protected readonly classificacoes = CLASSIFICACOES_DE_PROTECAO;
   protected readonly hipoteses = HIPOTESES_LEGAIS;
   protected readonly rotulo = rotuloDe;

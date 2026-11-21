@@ -68,7 +68,8 @@ export class TiposEtapaListaComponent {
   }
 
   protected resumoDoQueAdmite(tipo: TipoEtapaDto): string {
-    if (tipo.admitePontuacao && tipo.admiteEliminacao) return 'Compor a nota final e eliminar';
-    return tipo.admitePontuacao ? 'Só compor a nota final' : 'Só eliminar';
+    const { admitePontuacao, admiteEliminacao } = tipo.avaliacao;
+    if (admitePontuacao && admiteEliminacao) return 'Compor a nota final e eliminar';
+    return admitePontuacao ? 'Só compor a nota final' : 'Só eliminar';
   }
 }

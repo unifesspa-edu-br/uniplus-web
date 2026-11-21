@@ -10,10 +10,21 @@ import { provideRouter } from '@angular/router';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, type FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  type FatoCandidatoDto,
+  type FatoCandidatoView,
+} from '@uniplus/shared-data/configuracao';
 import { expect, vi } from 'vitest';
 import { EdicaoDoFato } from './edicao-do-fato';
 import { EdicaoDosFatos } from './edicao-dos-fatos';
+import {
+  FASES_DA_API,
+  corRaca,
+  emManutencao,
+  noCatalogo,
+  trabalha,
+} from './fatos-candidato.fixtures';
 import { FatosCandidatoPage } from './fatos-candidato.page';
 import { FatosCandidatoStore } from './fatos-candidato.store';
 
@@ -25,129 +36,6 @@ export const PROTECAO = `${BASE}/api/configuracao/admin/protecao-do-catalogo`;
 export const TITULO_DA_LISTA = 'cfg-fatos-list-title';
 export const PERMISSAO_DE_MANTER = 'configuracao:fatos-candidato:manter';
 export const PERMISSAO_DE_CONSULTAR = 'configuracao:fatos-candidato:consultar';
-
-const APROVADA = {
-  situacao: 'APROVADA',
-  solicitadaEm: null,
-  decididaEm: null,
-  classificacaoRecomendada: null,
-  justificativa: null,
-  aceitaEm: null,
-  ciclo: 0,
-  manifestadaEm: null,
-  manifestacaoDesfavoravel: false,
-  manifestacoesNoCiclo: 0,
-};
-
-export const comAprovacao = (
-  fato: FatoCandidatoDto,
-  situacao: string,
-  classificacaoRecomendada: string | null = null,
-  justificativa: string | null = null,
-): FatoCandidatoDto => ({
-  ...fato,
-  aprovacao: { ...APROVADA, situacao, classificacaoRecomendada, justificativa },
-});
-
-/** Fato declarado de sim ou não: o mais simples de editar. */
-export const trabalha: FatoCandidatoDto = {
-  id: '01960000-0000-7000-0000-0000000000a1',
-  codigo: 'TRABALHA',
-  nome: 'Trabalha',
-  descricao: 'Se o candidato trabalha.',
-  componenteExibicao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
-  fonteValores: null,
-  formato: null,
-  pontoResolucao: 'INSCRICAO',
-  binding: 'CAMPO_INSCRICAO:TRABALHA',
-  escopo: 'CANDIDATO',
-  classificacaoProtecao: 'PESSOAL',
-  finalidadeTratamento: 'Classificar a reserva de vagas.',
-  hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
-  semeadoPeloSistema: false,
-  ativo: true,
-  valores: [],
-  regrasPadrao: [],
-  aprovacao: APROVADA,
-};
-
-/** Fato declarado categórico, com um valor. */
-export const corRaca: FatoCandidatoDto = {
-  ...trabalha,
-  id: '01960000-0000-7000-0000-0000000000f1',
-  codigo: 'COR_RACA',
-  nome: 'Cor ou raça',
-  descricao: 'Cor ou raça autodeclarada.',
-  dominio: 'CATEGORICO',
-  fonteValores: 'GLOBAL',
-  binding: 'CAMPO_INSCRICAO:COR_RACA',
-  classificacaoProtecao: 'SENSIVEL',
-  finalidadeTratamento: 'Reserva de vagas.',
-  hipoteseLegal: 'CUMPRIMENTO_OBRIGACAO_LEGAL',
-  valores: [{ codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null }],
-};
-
-export const comValores = (fato: FatoCandidatoDto = corRaca): FatoCandidatoDto => ({
-  ...fato,
-  valores: [
-    { codigo: 'PRETA', descricao: 'Preta', ordem: 0, ativo: true, orientacao: null },
-    { codigo: 'PARDA', descricao: 'Parda', ordem: 1, ativo: false, orientacao: null },
-    { codigo: 'BRANCA', descricao: 'Branca', ordem: 2, ativo: true, orientacao: null },
-  ],
-});
-
-export const derivado: FatoCandidatoDto = {
-  ...trabalha,
-  id: '01960000-0000-7000-0000-0000000000d1',
-  codigo: 'PERFIL',
-  nome: 'Perfil',
-  origem: 'DERIVADO',
-  binding: 'REGRA_DERIVACAO:PERFIL',
-};
-
-export const agregado: FatoCandidatoDto = {
-  ...derivado,
-  id: '01960000-0000-7000-0000-0000000000e1',
-  codigo: 'PERFIL_FAMILIAR',
-  nome: 'Perfil familiar',
-  binding: 'AGREGACAO_GRUPO:RENDA',
-};
-
-export const quilombola = {
-  id: 'q',
-  codigo: 'QUILOMBOLA',
-  nome: 'Quilombola',
-  descricao: null,
-  dominio: 'BOOLEANO',
-  origem: 'DECLARADO',
-  cardinalidade: 'ESCALAR',
-  valoresDominio: null,
-  pontoResolucao: 'INSCRICAO',
-  binding: 'CAMPO_INSCRICAO:QUILOMBOLA',
-  valoresDominioDeclarados: null,
-  fonteValores: null,
-  ativo: true,
-  escopo: 'CANDIDATO',
-};
-
-export const FASES_DA_API = [
-  { id: 'f1', codigo: 'INSCRICAO', nome: 'Inscrição', descricao: null },
-  { id: 'f2', codigo: 'HOMOLOGACAO', nome: 'Homologação', descricao: null },
-];
-
-export const pendencia = (fato: FatoCandidatoDto) => ({
-  tipo: 'FATO',
-  id: fato.id,
-  codigo: fato.codigo,
-  nome: fato.nome,
-  classificacaoProtecao: fato.classificacaoProtecao,
-  finalidadeTratamento: fato.finalidadeTratamento,
-  hipoteseLegal: fato.hipoteseLegal,
-  aprovacao: { ...APROVADA, situacao: 'PENDENTE' },
-});
 
 export const problema = (status: number, corpo: object = {}) =>
   [
@@ -249,7 +137,7 @@ export class PaginaDosFatos {
     pendentes: readonly unknown[] = [],
   ): Promise<void> => {
     await this.propagar();
-    this.pedidoDaLista().flush(lista);
+    this.pedidoDaLista().flush(lista.map(emManutencao));
     this.atenderPendencias(pendentes);
     await this.propagar();
   };
@@ -265,9 +153,9 @@ export class PaginaDosFatos {
       new Event('submit', { cancelable: true }),
     );
   };
-  readonly atenderApoios = (catalogo: readonly unknown[] = []): void => {
+  readonly atenderApoios = (catalogo: readonly FatoCandidatoView[] = []): void => {
     for (const req of this.http.match((r) => r.url === CATALOGO && r.method === 'GET')) {
-      if (!req.cancelled) req.flush(catalogo);
+      if (!req.cancelled) req.flush(catalogo.map(noCatalogo));
     }
     for (const req of this.http.match((r) => r.url === FASES && r.method === 'GET')) {
       if (!req.cancelled) req.flush(FASES_DA_API);
@@ -282,7 +170,7 @@ export class PaginaDosFatos {
   readonly reativar = (f: FatoCandidatoDto = trabalha) =>
     this.pelaEtiqueta(`Reativar o fato ${f.codigo}`);
   readonly nomeDaLinha = (f: FatoCandidatoDto = trabalha) =>
-    this.pelaEtiqueta(`Ver o detalhe de ${f.nome}`);
+    this.pelaEtiqueta(`Ver o detalhe de ${f.descritivo.nome}`);
   readonly drawerDoFato = (): HTMLDialogElement =>
     this.elemento('dialog[aria-label="Fato do candidato"]');
   readonly detalhe = (): HTMLDialogElement =>
@@ -296,7 +184,7 @@ export class PaginaDosFatos {
     pendencias: readonly unknown[],
   ): Promise<void> {
     this.fixture.detectChanges();
-    this.pedidoDaLista().flush(itens);
+    this.pedidoDaLista().flush(itens.map(emManutencao));
     this.atenderPendencias(pendencias);
     await this.propagar();
   }
@@ -305,10 +193,10 @@ export class PaginaDosFatos {
   async abrirEdicao(
     fato: FatoCandidatoDto = trabalha,
     carregado: FatoCandidatoDto = fato,
-    catalogo: readonly unknown[] = [],
+    catalogo: readonly FatoCandidatoView[] = [],
   ): Promise<void> {
     await this.acionar(this.editar(fato));
-    this.http.expectOne(urlDoFato(fato)).flush(carregado);
+    this.http.expectOne(urlDoFato(fato)).flush(emManutencao(carregado));
     await this.propagar();
     this.atenderApoios(catalogo);
     await this.propagar();
@@ -324,9 +212,9 @@ export class PaginaDosFatos {
   /** Entrega a recarga do fato aberto, que segue a toda escrita da edição; a cópia faz o sinal mudar, como o JSON novo da API. */
   async recarregarOFato(fato: FatoCandidatoDto, comLista = true): Promise<void> {
     await this.propagar();
-    this.http.expectOne(urlDoFato(fato)).flush(structuredClone(fato));
+    this.http.expectOne(urlDoFato(fato)).flush(emManutencao(structuredClone(fato)));
     this.atenderPendencias();
-    if (comLista) this.pedidoDaLista().flush([fato]);
+    if (comLista) this.pedidoDaLista().flush([emManutencao(fato)]);
     else this.http.expectNone((r) => r.url === LISTA && r.method === 'GET');
     await this.propagar();
     this.atenderPendencias();

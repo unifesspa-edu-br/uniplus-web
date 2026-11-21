@@ -14,8 +14,8 @@ export const RESTRICAO_OPCOES_DAS_RESPOSTAS = 'OPCOES_DAS_RESPOSTAS';
 export const RESTRICAO_MUNICIPIOS_DA_UF = 'MUNICIPIOS_DA_UF';
 export const RESTRICAO_FAIXA_DE_DATA = 'FAIXA_DE_DATA';
 
-export const ANCORA_DATA_FIXA = 'DATA_FIXA';
-export const ANCORA_ENVIO = 'ENVIO';
+export const LIMITE_EM_DATA_FIXA = 'DATA_FIXA';
+export const LIMITE_CONTADO_DO_ENVIO = 'ENVIO';
 
 export const RESTRICOES: readonly OpcaoDoFormulario[] = [
   { valor: RESTRICAO_FAIXA_NUMERICA, rotulo: 'Faixa de valores' },
@@ -48,11 +48,11 @@ export function restricoesParaAcrescentar(
   temValoresConhecidos: boolean,
   temFontesDeOpcoes = false,
 ): readonly OpcaoDoFormulario[] {
-  const presentes = new Set((item.restricoes ?? []).map((restricao) => restricao.tipo));
-  const selecao = TIPOS_DE_SELECAO.has(item.tipoRenderizacao);
+  const presentes = new Set((item.regras.restricoes ?? []).map((restricao) => restricao.tipo));
+  const selecao = TIPOS_DE_SELECAO.has(item.apresentacao.tipoRenderizacao);
   const cabe = (tipo: string): boolean => {
     const campo = CAMPO_DA_RESTRICAO.get(tipo);
-    if (campo !== undefined) return item.tipoRenderizacao === campo;
+    if (campo !== undefined) return item.apresentacao.tipoRenderizacao === campo;
     if (tipo === RESTRICAO_OPCOES_PERMITIDAS) return selecao && temValoresConhecidos;
     return tipo === RESTRICAO_OPCOES_DAS_RESPOSTAS && selecao && temFontesDeOpcoes;
   };
@@ -78,11 +78,11 @@ export function entradaDeOpcoesNova(): OpcoesCondicionadas {
   return { quando: null, valores: [] };
 }
 
-/** O limite novo, na âncora escolhida: a data fixa ainda sem data, ou o dia do envio sem deslocamento. */
-export function limiteDeDataNovo(ancora: string): LimiteDeDataNoWire {
-  return ancora === ANCORA_DATA_FIXA
-    ? { ancora, data: null }
-    : { ancora: ANCORA_ENVIO, anos: 0, dias: 0 };
+/** O limite novo, na referência escolhida: a data fixa ainda sem data, ou o dia do envio sem deslocamento. */
+export function limiteDeDataNovo(referencia: string): LimiteDeDataNoWire {
+  return referencia === LIMITE_EM_DATA_FIXA
+    ? { ancora: referencia, data: null }
+    : { ancora: LIMITE_CONTADO_DO_ENVIO, anos: 0, dias: 0 };
 }
 
 /**
@@ -115,13 +115,18 @@ export function fontesDasOpcoes(
   const alvo = catalogo.find((fato) => fato.codigo === alvoCodigo);
   if (alvo === undefined) return [];
   return catalogo
-    .filter(
-      (fato) =>
-        fato.codigo !== alvoCodigo &&
-        citaveis.has(fato.codigo) &&
-        opcoesDaFonteCabemNoAlvo(alvo, fato),
-    )
+    .filter((fato) => ehFonteDasOpcoes(fato, alvo, citaveis))
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+function ehFonteDasOpcoes(
+  fato: FatoDoFormulario,
+  alvo: FatoDoFormulario,
+  citaveis: ReadonlySet<string>,
+): boolean {
+  return (
+    fato.codigo !== alvo.codigo && citaveis.has(fato.codigo) && opcoesDaFonteCabemNoAlvo(alvo, fato)
+  );
 }
 
 type FatoComValores = Pick<

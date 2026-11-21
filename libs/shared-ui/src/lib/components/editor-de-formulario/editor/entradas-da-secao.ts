@@ -37,7 +37,10 @@ const SEM_RECUSAS = new Map<string, never[]>();
   styleUrl: '../anfitriao.css',
   template: `
     @if (entradas().length > 0) {
-      <ol class="editor-formulario__itens" [attr.aria-label]="'Campos de ' + etapa().titulo">
+      <ol
+        class="editor-formulario__itens"
+        [attr.aria-label]="'Campos de ' + etapa().apresentacao.titulo"
+      >
         @for (entrada of entradas(); track chaveDa(entrada); let posicao = $index) {
           <li>
             @if (entrada.tipo === 'item') {
@@ -149,7 +152,7 @@ export class EntradasDaSecaoComponent {
       const entradas = entradasDaSecao(conteudo, this.etapa().codigo);
       const posicao = entradas.findIndex((e) => ehAEntrada(e, chave)) + 1;
       this.anuncio.emit(
-        `${descricaoDe(entrada)} movido para a posição ${posicao} de ${entradas.length} em ${this.etapa().titulo}.`,
+        `${descricaoDe(entrada)} movido para a posição ${posicao} de ${entradas.length} em ${this.etapa().apresentacao.titulo}.`,
       );
       this.focarMovimento(entrada, direcao);
     });
@@ -172,7 +175,9 @@ export class EntradasDaSecaoComponent {
     }
     const resultado = removerItem(this.contexto().conteudo, item.fatoCodigo, this.contexto().nomes);
     aplicarEdicao(resultado, this, () => {
-      this.anuncio.emit(`Campo “${item.rotulo}” removido de ${this.etapa().titulo}.`);
+      this.anuncio.emit(
+        `Campo “${item.apresentacao.rotulo}” removido de ${this.etapa().apresentacao.titulo}.`,
+      );
       this.devolverOFoco();
     });
   }
@@ -187,7 +192,7 @@ export class EntradasDaSecaoComponent {
       return;
     }
     this.conteudoChange.emit(removerGrupo(conteudo, codigo));
-    this.anuncio.emit(`Grupo “${rotulo}” removido de ${this.etapa().titulo}.`);
+    this.anuncio.emit(`Grupo “${rotulo}” removido de ${this.etapa().apresentacao.titulo}.`);
     this.devolverOFoco();
   }
 
@@ -203,5 +208,7 @@ function chaveDe(entrada: EntradaDaSecao): ChaveDaEntrada {
 }
 
 function descricaoDe(entrada: EntradaDaSecao): string {
-  return entrada.tipo === 'item' ? `“${entrada.item.rotulo}”` : `Grupo “${entrada.grupo.rotulo}”`;
+  return entrada.tipo === 'item'
+    ? `“${entrada.item.apresentacao.rotulo}”`
+    : `Grupo “${entrada.grupo.rotulo}”`;
 }

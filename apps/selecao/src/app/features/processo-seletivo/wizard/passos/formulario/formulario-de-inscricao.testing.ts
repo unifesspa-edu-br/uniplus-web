@@ -1,5 +1,8 @@
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import { OperadorCodigo, type FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
 import {
+  apresentacaoDaEtapa,
+  apresentacaoDoCampo,
+  REGRAS_INICIAIS,
   type ConteudoDoFormulario,
   type EtapaDoFormulario,
   type ItemDoFormulario,
@@ -15,38 +18,69 @@ import { comExigencia, exigenciaNova } from '../../shared/exigencias/exigencias-
 export const ID_TITULO = '01960000-0000-7000-0000-0000000000d1';
 export const ID_RESERVISTA = '01960000-0000-7000-0000-0000000000d2';
 
+const IGUALDADE = [
+  { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
+  { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
+] as const;
+const PERTINENCIA = [
+  { codigo: OperadorCodigo.IGUAL, rotulo: 'é' },
+  { codigo: OperadorCodigo.DIFERENTE, rotulo: 'não é' },
+  { codigo: OperadorCodigo.EM, rotulo: 'é um de' },
+  { codigo: OperadorCodigo.NAO_EM, rotulo: 'não é nenhum de' },
+] as const;
+const COMPARACAO = [
+  { codigo: OperadorCodigo.IGUAL, rotulo: 'é igual a' },
+  { codigo: OperadorCodigo.DIFERENTE, rotulo: 'é diferente de' },
+  { codigo: OperadorCodigo.MAIOR_IGUAL, rotulo: 'é maior ou igual a' },
+  { codigo: OperadorCodigo.MENOR_IGUAL, rotulo: 'é menor ou igual a' },
+] as const;
+
+const FATO_DECLARADO = {
+  operadoresAdmitidos: IGUALDADE,
+  id: 'f',
+  descricao: null,
+  dominio: 'BOOLEANO',
+  origem: 'DECLARADO',
+  cardinalidade: 'ESCALAR',
+  valoresDominio: null,
+  pontoResolucao: 'INSCRICAO',
+  escopo: 'CANDIDATO',
+  fonteValores: null,
+  ativo: true,
+  valoresDominioDeclarados: null,
+};
+
 /** O catálogo como o servidor o publica — o que a tela pode coletar sai daqui. */
-export function fato(patch: Partial<FatoCandidatoView> & { codigo: string }): FatoCandidatoView {
+export function fato(
+  patch: Partial<FatoCandidatoComOperadores> & { codigo: string },
+): FatoCandidatoComOperadores {
   return {
-    id: 'f',
+    ...FATO_DECLARADO,
     nome: patch.codigo,
-    descricao: null,
-    dominio: 'BOOLEANO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
     binding: `CAMPO_INSCRICAO:${patch.codigo}`,
-    escopo: 'CANDIDATO',
-    fonteValores: null,
-    ativo: true,
-    valoresDominioDeclarados: null,
     ...patch,
-  } as unknown as FatoCandidatoView;
+  } as unknown as FatoCandidatoComOperadores;
 }
 
-export const SEXO = fato({ codigo: 'SEXO', nome: 'Sexo', dominio: 'CATEGORICO' });
+export const SEXO = fato({
+  codigo: 'SEXO',
+  nome: 'Sexo',
+  dominio: 'CATEGORICO',
+  operadoresAdmitidos: PERTINENCIA,
+});
 export const PCD = fato({ codigo: 'PCD', nome: 'Pessoa com deficiência' });
 export const RENDA = fato({
   codigo: 'RENDA_FAMILIAR',
   nome: 'Renda familiar',
   dominio: 'NUMERICO',
+  operadoresAdmitidos: COMPARACAO,
 });
 export const MODALIDADE = fato({
   codigo: 'MODALIDADE',
   origem: 'DERIVADO',
   binding: 'REGRA_DERIVACAO:MODALIDADE',
   dominio: 'CATEGORICO',
+  operadoresAdmitidos: PERTINENCIA,
 });
 export const CATALOGO = [SEXO, PCD, RENDA, MODALIDADE];
 
@@ -59,9 +93,7 @@ export const secao = (
   ordem,
   tipo: 'SECAO',
   bloco: null,
-  titulo: codigo,
-  descricao: null,
-  aviso: null,
+  apresentacao: apresentacaoDaEtapa(codigo),
   exibicao: null,
   ...extra,
 });
@@ -78,14 +110,9 @@ export const item = (
 ): ItemDoFormulario => ({
   fatoCodigo,
   ordem,
-  rotulo: fatoCodigo,
-  tipoRenderizacao: 'BOOLEANO',
-  obrigatoriedade: 'SEMPRE',
-  precondicao: null,
   etapaCodigo,
-  predicadoObrigatoriedade: null,
-  ajuda: null,
-  pedirConfirmacao: false,
+  apresentacao: apresentacaoDoCampo(fatoCodigo, 'BOOLEANO'),
+  regras: REGRAS_INICIAIS,
   ...extra,
 });
 
@@ -93,12 +120,7 @@ export const item = (
 export function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): ConteudoDoFormulario {
   return {
     titulo: null,
-    etapas: [
-      secao('DADOS_BASICOS', 0),
-      secao('S1', 1),
-      bloco('COMPROVACAO_DOCUMENTAL', 2),
-      bloco('REVISAO_E_ACEITE', 3),
-    ],
+    etapas: etapasDaInscricao(),
     itens: [
       item('NOME', 0, 'DADOS_BASICOS'),
       item('SEXO', 1, 'DADOS_BASICOS'),
@@ -110,6 +132,13 @@ export function inscricaoGravada(extra: Partial<ConteudoDoFormulario> = {}): Con
     ...extra,
   };
 }
+
+const etapasDaInscricao = (): EtapaDoFormulario[] => [
+  secao('DADOS_BASICOS', 0),
+  secao('S1', 1),
+  bloco('COMPROVACAO_DOCUMENTAL', 2),
+  bloco('REVISAO_E_ACEITE', 3),
+];
 
 export function formularioCom(
   conteudo: ConteudoDoFormulario,

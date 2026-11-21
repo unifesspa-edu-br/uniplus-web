@@ -39,6 +39,7 @@ import {
   BLOCO_REVISAO_E_ACEITE,
   type ErroDoServidor,
   type FormularioDoCandidato,
+  type FormularioNoProcesso,
   mensagemDosErros,
   type PassoPrefixado,
   type RespostaFixa,
@@ -104,6 +105,8 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   private readonly titulo = viewChild<ElementRef<HTMLElement>>('titulo');
 
   readonly formulario = input.required<FormularioDoCandidato>();
+  /** O que o processo acrescenta ao formulário: a fase e as dependências da avaliação; nulo fora de um processo. */
+  readonly noProcesso = input<FormularioNoProcesso | null>(null);
   /** As respostas de partida, como as de um caso importado; recomeça quando muda. */
   readonly inicial = input<SimulacaoDoFormulario | null>(null);
   /** Os fatos que vêm de fora do formulário — respostas de outro formulário, valores calculados. */
@@ -246,6 +249,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
 
   protected readonly revisao = new RevisaoDoFormulario({
     formulario: this.formulario,
+    noProcesso: this.noProcesso,
     avaliacao: this.avaliacao,
     passos: () => this.passos(),
     passosPrefixados: this.passosPrefixados,
@@ -266,6 +270,7 @@ export class FormularioDoCandidatoComponent implements AvisosDaTela {
   private readonly decisoes = new DecisoesDaAvaliacao({
     avaliacao: this.avaliacao,
     formulario: this.formulario,
+    noProcesso: this.noProcesso,
     grupos: () => this.dados.grupos(),
   });
   protected readonly documentosDaAvaliacao = this.decisoes.documentosDaAvaliacao;

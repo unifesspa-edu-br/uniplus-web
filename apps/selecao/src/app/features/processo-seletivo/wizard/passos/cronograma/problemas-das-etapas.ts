@@ -182,8 +182,8 @@ function problemasDoCaraterDaEtapa(
   tipo: TipoDeEtapaDoCatalogo,
 ): readonly string[] {
   const nome = etapa.nome.trim();
-  const pontuaSemPoder = pontuaPorCarater(etapa.carater) && !tipo.admitePontuacao;
-  const eliminaSemPoder = eliminaPorCarater(etapa.carater) && !tipo.admiteEliminacao;
+  const pontuaSemPoder = pontuaPorCarater(etapa.carater) && !tipo.avaliacao.admitePontuacao;
+  const eliminaSemPoder = eliminaPorCarater(etapa.carater) && !tipo.avaliacao.admiteEliminacao;
   return [
     ...(pontuaSemPoder ? [mensagemDoTipoQueNaoPontua(tipo, nome)] : []),
     ...(eliminaSemPoder ? [mensagemDoTipoQueNaoElimina(tipo, nome)] : []),

@@ -22,9 +22,9 @@
     <div class="cfg-fato-aprovacao" [id]="idDoInicio" tabindex="-1">
       <span class="field__label">Aprovação da proteção de dados</span>
       <cfg-situacao-da-aprovacao
-        [situacao]="f.aprovacao.situacao"
-        [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada"
-        [justificativa]="f.aprovacao.justificativa"
+        [situacao]="f.definicao.protecao.aprovacao.situacao"
+        [classificacaoRecomendada]="f.definicao.protecao.aprovacao.classificacaoRecomendada"
+        [justificativa]="f.definicao.protecao.aprovacao.justificativa"
       />
     </div>
     <cfg-fato-descritivo

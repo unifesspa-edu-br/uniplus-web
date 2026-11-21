@@ -16,6 +16,7 @@ import {
   type FatoEscolhivel,
 } from './condicoes/fatos-escolhiveis';
 import { type CondicaoDeFato } from './condicoes/valor-da-condicao';
+import { COM_LISTA } from './operadores-de-exemplo.testing';
 import {
   BUSCA_DE_MUNICIPIOS,
   ESPERA_DA_DIGITACAO_MS,
@@ -31,6 +32,7 @@ const MUNICIPIO_DE_RESIDENCIA: FatoDoCatalogo = {
   valoresDominio: null,
   binding: 'CAMPO_FORMULARIO:MUNICIPIO_RESIDENCIA',
   fonteValores: 'GEO_MUNICIPIO',
+  operadoresAdmitidos: COM_LISTA,
 };
 
 const MARABA: MunicipioEncontrado = { codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' };

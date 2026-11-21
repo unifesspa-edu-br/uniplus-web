@@ -1,4 +1,9 @@
-import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
+import {
+  CAMINHO_DA_EXIBICAO,
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -16,7 +21,12 @@ import {
   OBRIGATORIEDADE_QUANDO,
   OBRIGATORIEDADE_SEMPRE,
 } from './modelo/constantes';
-import { type PredicadoNoWire, type TermoDisponivel, type TermoDoFormulario } from './modelo/tipos';
+import {
+  type ExibicaoEObrigatoriedade,
+  type PredicadoNoWire,
+  type TermoDisponivel,
+  type TermoDoFormulario,
+} from './modelo/tipos';
 import {
   paraPredicado,
   problemasDasCondicoes,
@@ -98,10 +108,13 @@ const ACEITES = [
             class="select"
             [id]="idDe('versao')"
             [disabled]="disabled()"
-            (change)="trocar({ versaoId: valorDe($event) })"
+            (change)="trocarVersao(valorDe($event))"
           >
             @for (versao of versoes(); track versao.versaoId) {
-              <option [value]="versao.versaoId" [selected]="versao.versaoId === termo().versaoId">
+              <option
+                [value]="versao.versaoId"
+                [selected]="versao.versaoId === termo().termo.versaoId"
+              >
                 {{ versao.rotulo }}
               </option>
             }
@@ -117,7 +130,10 @@ const ACEITES = [
             (change)="trocarAceite(valorDe($event))"
           >
             @for (opcao of aceites; track opcao.valor) {
-              <option [value]="opcao.valor" [selected]="opcao.valor === termo().obrigatoriedade">
+              <option
+                [value]="opcao.valor"
+                [selected]="opcao.valor === termo().regras.obrigatoriedade.tipo"
+              >
                 {{ opcao.rotulo }}
               </option>
             }
@@ -125,7 +141,7 @@ const ACEITES = [
         </div>
       </div>
 
-      @if (termo().obrigatoriedade === quando) {
+      @if (termo().regras.obrigatoriedade.tipo === quando) {
         <ui-editor-de-condicoes
           legenda="Aceite obrigatório quando"
           textoSemCondicao="Declare ao menos uma condição: sem ela, escolha obrigatório ou opcional."
@@ -176,10 +192,10 @@ export class TermoDoFormularioComponent {
   /** As versões promovidas; a gravada aparece mesmo se não estiver entre elas, para não trocar sem aviso. */
   protected readonly versoes = computed(() => {
     const versoes = this.disponivel()?.versoes ?? [];
-    return versoes.some((versao) => versao.versaoId === this.termo().versaoId)
+    return versoes.some((versao) => versao.versaoId === this.termo().termo.versaoId)
       ? versoes
       : [
-          { versaoId: this.termo().versaoId, rotulo: 'Versão gravada (fora do catálogo)' },
+          { versaoId: this.termo().termo.versaoId, rotulo: 'Versão gravada (fora do catálogo)' },
           ...versoes,
         ];
   });
@@ -188,7 +204,7 @@ export class TermoDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.termo().exibicao,
+    source: () => this.termo().regras.exibicao,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -196,7 +212,7 @@ export class TermoDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.termo().predicadoObrigatoriedade,
+    source: () => this.termo().regras.obrigatoriedade.predicado,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -214,28 +230,37 @@ export class TermoDoFormularioComponent {
     return problemasDasCondicoes(condicoes, this.fatos());
   }
 
-  protected trocar(mudanca: Partial<TermoDoFormulario>): void {
-    this.camposEditados.emit(camposDaMudanca(mudanca));
-    this.termoChange.emit({ ...this.termo(), ...mudanca });
+  protected trocarVersao(versaoId: string): void {
+    this.camposEditados.emit([['termo', 'versaoId']]);
+    this.termoChange.emit({ ...this.termo(), termo: { ...this.termo().termo, versaoId } });
   }
 
   /** Fora do aceite condicional, o predicado sai: a API recusa predicado sem a condicional. */
-  protected trocarAceite(obrigatoriedade: string): void {
-    const condicional = obrigatoriedade === OBRIGATORIEDADE_QUANDO;
+  protected trocarAceite(tipo: string): void {
+    const condicional = tipo === OBRIGATORIEDADE_QUANDO;
     if (!condicional) this.condicoesDoAceite.set([]);
-    this.trocar({
-      obrigatoriedade,
-      predicadoObrigatoriedade: condicional ? paraPredicado(this.condicoesDoAceite()) : null,
-    });
+    const predicado = condicional ? paraPredicado(this.condicoesDoAceite()) : null;
+    this.trocarRegras({ ...this.termo().regras, obrigatoriedade: { tipo, predicado } }, [
+      CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
   }
 
   protected trocarAceiteQuando(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDoAceite.set(condicoes);
-    this.trocar({ predicadoObrigatoriedade: paraPredicado(condicoes) });
+    const { regras } = this.termo();
+    const obrigatoriedade = { ...regras.obrigatoriedade, predicado: paraPredicado(condicoes) };
+    this.trocarRegras({ ...regras, obrigatoriedade }, [CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE]);
   }
 
   protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDaExibicao.set(condicoes);
-    this.trocar({ exibicao: paraPredicado(condicoes) });
+    const regras = { ...this.termo().regras, exibicao: paraPredicado(condicoes) };
+    this.trocarRegras(regras, [CAMINHO_DA_EXIBICAO]);
+  }
+
+  private trocarRegras(regras: ExibicaoEObrigatoriedade, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(campos);
+    this.termoChange.emit({ ...this.termo(), regras });
   }
 }

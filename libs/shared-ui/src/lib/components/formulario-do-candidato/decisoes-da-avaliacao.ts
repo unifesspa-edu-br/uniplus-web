@@ -7,7 +7,7 @@ import {
   situacoesEArquivosDosDocumentos,
 } from './documentos-avaliados';
 import { documentosDaAvaliacao, documentosDaFase, iguaisPorJson } from './documentos-na-avaliacao';
-import type { FormularioDoCandidato } from './formulario-do-candidato.model';
+import type { FormularioDoCandidato, FormularioNoProcesso } from './formulario-do-candidato.model';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
 import {
   type AvaliacaoNaTela,
@@ -19,6 +19,7 @@ import {
 export interface FontesDasDecisoes {
   readonly avaliacao: Signal<AvaliacaoNaTela | null>;
   readonly formulario: Signal<FormularioDoCandidato>;
+  readonly noProcesso: Signal<FormularioNoProcesso | null>;
   readonly grupos: () => Readonly<Record<string, readonly OcorrenciaSimulada[]>>;
 }
 
@@ -56,7 +57,7 @@ export class DecisoesDaAvaliacao {
     const avaliacao = this.fontes.avaliacao();
     return avaliacao?.documentos == null
       ? null
-      : documentosDaFase(avaliacao, this.fontes.formulario());
+      : documentosDaFase(avaliacao, this.fontes.noProcesso(), this.fontes.formulario().finalidade);
   });
   private readonly documentos = computed(() => this.documentosDaFase()?.documentos ?? []);
   /** Os documentos que a avaliação pede no próprio formulário; nulos antes da primeira avaliação. */

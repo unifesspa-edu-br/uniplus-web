@@ -21,8 +21,13 @@ export type ArquivoDoFormulario =
     }
   | { readonly valido: false; readonly caminho: string; readonly mensagem: string };
 
-/** O arquivo lido: a forma é conferida antes de qualquer interpretação, com o caminho do problema. */
-export function lerArquivoDoFormulario(texto: string): ArquivoDoFormulario {
+type ArquivoRecusado = Extract<ArquivoDoFormulario, { readonly valido: false }>;
+
+function ehRecusa(leitura: ArquivoRecusado | Record<string, unknown>): leitura is ArquivoRecusado {
+  return leitura['valido'] === false;
+}
+
+function conteudoDoArquivo(texto: string): ArquivoRecusado | Record<string, unknown> {
   let conteudo: unknown;
   try {
     conteudo = JSON.parse(texto);
@@ -32,15 +37,22 @@ export function lerArquivoDoFormulario(texto: string): ArquivoDoFormulario {
   if (!ehObjeto(conteudo)) return recusado('(arquivo)', 'O arquivo é um objeto JSON.');
   if (!ehObjeto(conteudo['regras']))
     return recusado('regras', 'O arquivo não traz as regras do formulário.');
+  return conteudo;
+}
+
+/** O arquivo lido: a forma é conferida antes de qualquer interpretação, com o caminho do problema. */
+export function lerArquivoDoFormulario(texto: string): ArquivoDoFormulario {
+  const conteudo = conteudoDoArquivo(texto);
+  if (ehRecusa(conteudo)) return conteudo;
 
   // As regras são conferidas antes de qualquer outra coisa: a apresentação de um caso é montada a
   // partir delas, e a do formulário só vale sobre regras que formam formulário.
   const leitura = lerRegras(conteudo['regras'] as RegrasDoFormulario);
   if (!leitura.valida) return recusado(`regras.${leitura.erro.caminho}`, leitura.erro.mensagem);
-  return 'fatosColetados' in conteudo ? lerFormularioRenderizavel(conteudo) : lerCaso(conteudo);
+  return 'coleta' in conteudo ? lerFormularioRenderizavel(conteudo) : lerCaso(conteudo);
 }
 
-function recusado(caminho: string, mensagem: string): ArquivoDoFormulario {
+function recusado(caminho: string, mensagem: string): ArquivoRecusado {
   return { valido: false, caminho, mensagem };
 }
 
@@ -54,22 +66,26 @@ function lerFormularioRenderizavel(conteudo: Record<string, unknown>): ArquivoDo
   };
 }
 
+type CasoDoCorpus = SimulacaoDoFormulario & { readonly regras: RegrasDoFormulario };
+
+function simulacaoDoCaso(caso: CasoDoCorpus): SimulacaoDoFormulario {
+  return {
+    respostas: caso.respostas ?? null,
+    grupos: caso.grupos ?? null,
+    etapasConcluidas: caso.etapasConcluidas ?? null,
+    pressupostos: caso.pressupostos ?? null,
+  };
+}
+
 /** O caso do corpus não tem apresentação: ela sai das regras. */
 function lerCaso(conteudo: Record<string, unknown>): ArquivoDoFormulario {
   const recusa = recusaDaSimulacao(conteudo);
   if (recusa) return { valido: false, ...recusa };
-  const caso = conteudo as unknown as SimulacaoDoFormulario & {
-    readonly regras: RegrasDoFormulario;
-  };
+  const caso = conteudo as unknown as CasoDoCorpus;
   return {
     valido: true,
     formulario: apresentacaoDasRegras(caso.regras, caso),
-    simulacao: {
-      respostas: caso.respostas ?? null,
-      grupos: caso.grupos ?? null,
-      etapasConcluidas: caso.etapasConcluidas ?? null,
-      pressupostos: caso.pressupostos ?? null,
-    },
+    simulacao: simulacaoDoCaso(caso),
   };
 }
 

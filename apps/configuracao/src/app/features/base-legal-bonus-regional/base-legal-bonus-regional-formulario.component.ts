@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { type CidadeResumoDto } from '@uniplus/shared-data/geo';
 import {
   AlertComponent,
   DrawerComponent,
   FalhaDeLeituraComponent,
+  SelectComponent,
   SpinnerComponent,
 } from '@uniplus/shared-ui/components';
 import { acompanharFocoDoEnvio } from '../../shared/foco';
@@ -17,6 +18,8 @@ import type { TiposDoFormulario } from './tipos-de-instrumento';
 /** Nenhum campo da base legal tem validador de formato: a mensagem de formato nunca é a escolhida. */
 const MENSAGEM_DE_FORMATO = 'Valor inválido.';
 
+const ID_DO_AVISO_DE_ESPERA = 'cfg-blbr-salvar-aguarda-tipos';
+
 /** O drawer do cadastro e da edição de base legal de bônus regional. */
 @Component({
   selector: 'cfg-base-legal-bonus-regional-formulario',
@@ -27,6 +30,7 @@ const MENSAGEM_DE_FORMATO = 'Valor inválido.';
     CampoDeMunicipiosComponent,
     DrawerComponent,
     FalhaDeLeituraComponent,
+    SelectComponent,
     SpinnerComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,7 +45,7 @@ export class BaseLegalBonusRegionalFormularioComponent {
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();
   readonly salvando = input.required<boolean>();
-  /** Tipos de instrumento vindos da API: o select oferece os nomes e grava o código. */
+  /** Tipos de instrumento vindos da API: o select oferece os rótulos e grava o código. */
   readonly tipos = input.required<TiposDoFormulario>();
   readonly municipios = input.required<CampoDeMunicipios>();
 
@@ -53,16 +57,21 @@ export class BaseLegalBonusRegionalFormularioComponent {
 
   private readonly foco = acompanharFocoDoEnvio({ salvando: this.salvando, aberto: this.aberto });
 
-  /** Enquanto envia, o botão está indisponível: o clique (e Enter ou Espaço, que o geram) não envia. */
+  /** O envio espera o envio em curso e o vocabulário de tipos: sem ele, o tipo gravado não aparece. */
+  protected readonly envioIndisponivel = computed(
+    () => this.salvando() || !this.tipos().disponivel,
+  );
+
+  /** Com o botão indisponível, o clique (e Enter ou Espaço, que o geram) não envia. */
   protected aoClicarEmSalvar(evento: Event): void {
-    if (this.salvando()) {
+    if (this.envioIndisponivel()) {
       evento.preventDefault();
     }
   }
 
-  /** O envio do formulário (Enter num campo, por exemplo) também espera o envio em curso. */
+  /** O envio do formulário (Enter num campo, por exemplo) também espera o botão ficar disponível. */
   protected aoEnviar(): void {
-    if (this.salvando()) {
+    if (this.envioIndisponivel()) {
       return;
     }
     this.salvar.emit();
@@ -75,12 +84,23 @@ export class BaseLegalBonusRegionalFormularioComponent {
     return mensagemDeErroDoCampoComFormato(this.form().controls[nome], MENSAGEM_DE_FORMATO);
   }
 
-  /** O select é descrito pela falha do vocabulário e pelo erro do campo, quando há. */
+  /** O que explica o botão indisponível; durante o envio, "Salvando..." e `aria-busy` já explicam. */
+  protected motivoDoEnvioIndisponivel(): string | null {
+    if (this.salvando()) {
+      return null;
+    }
+    if (this.tipos().leitura.visivel()) {
+      return 'cfg-blbr-tipos-falha';
+    }
+    return this.tipos().disponivel ? null : ID_DO_AVISO_DE_ESPERA;
+  }
+
+  protected aguardaOsTipos(): boolean {
+    return this.motivoDoEnvioIndisponivel() === ID_DO_AVISO_DE_ESPERA;
+  }
+
+  /** O select é descrito pela falha do vocabulário, quando ela está à vista; o erro do campo é dele. */
   protected descricaoDoTipo(): string | null {
-    const ids = [
-      this.aberto() && this.tipos().leitura.visivel() ? 'cfg-blbr-tipos-falha' : null,
-      this.erroDoCampo('tipoInstrumento') ? 'cfg-blbr-tipo-erro' : null,
-    ].filter((id): id is string => id !== null);
-    return ids.length > 0 ? ids.join(' ') : null;
+    return this.aberto() && this.tipos().leitura.visivel() ? 'cfg-blbr-tipos-falha' : null;
   }
 }

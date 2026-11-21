@@ -1,4 +1,12 @@
-import { ConteudoDoFormulario, OpcaoDoFormulario } from './tipos';
+import {
+  ApresentacaoDaEtapa,
+  ApresentacaoDoCampo,
+  ConteudoDoFormulario,
+  EtapaDoFormulario,
+  ExibicaoEObrigatoriedade,
+  Obrigatoriedade,
+  OpcaoDoFormulario,
+} from './tipos';
 
 export const TIPO_SECAO = 'SECAO';
 export const TIPO_BLOCO = 'BLOCO';
@@ -12,6 +20,44 @@ export const BLOCO_REVISAO_E_ACEITE = 'REVISAO_E_ACEITE';
 export const BLOCO_COMPROVACAO_DOCUMENTAL = 'COMPROVACAO_DOCUMENTAL';
 export const BLOCO_MODALIDADES_CALCULADAS = 'MODALIDADES_CALCULADAS';
 
+/** A obrigatoriedade com que o campo, o grupo ou o termo nasce: sempre, sem condição. */
+export const OBRIGATORIEDADE_INICIAL: Obrigatoriedade = {
+  tipo: OBRIGATORIEDADE_SEMPRE,
+  predicado: null,
+};
+
+/** As regras com que o campo, o grupo ou o termo nasce: aparece sempre e é obrigatório. */
+export const REGRAS_INICIAIS: ExibicaoEObrigatoriedade = {
+  exibicao: null,
+  obrigatoriedade: OBRIGATORIEDADE_INICIAL,
+};
+
+/** A apresentação da etapa nova: só o título, sem descrição nem aviso. */
+export function apresentacaoDaEtapa(titulo: string): ApresentacaoDaEtapa {
+  return { titulo, descricao: null, aviso: null };
+}
+
+/** A apresentação do campo novo: sem ajuda e sem pedido de confirmação. */
+export function apresentacaoDoCampo(rotulo: string, tipoRenderizacao: string): ApresentacaoDoCampo {
+  return { rotulo, tipoRenderizacao, ajuda: null, pedirConfirmacao: false };
+}
+
+/** A etapa nova, sem itens: seção quando não há bloco, ou o bloco do sistema dado. */
+export function etapaNova(
+  codigo: string,
+  titulo: string,
+  bloco: string | null = null,
+): EtapaDoFormulario {
+  return {
+    codigo,
+    ordem: 0,
+    tipo: bloco === null ? TIPO_SECAO : TIPO_BLOCO,
+    bloco,
+    apresentacao: apresentacaoDaEtapa(titulo),
+    exibicao: null,
+  };
+}
+
 export const FINALIDADE_INSCRICAO = 'INSCRICAO';
 
 /** Os tetos da API (`FormaDoItem`, `FormaDaEtapa`): os dados básicos contam no total de itens. */
@@ -23,6 +69,18 @@ export const LIMITES_DO_FORMULARIO = {
   textoDaEtapa: 2000,
   tituloDoFormulario: 300,
 } as const;
+
+/** Como o candidato responde, pelo tipo de campo. */
+export const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
+  BOOLEANO: 'Sim ou não',
+  NUMERO: 'Número',
+  TEXTO: 'Texto',
+  DATA: 'Data',
+  ENDERECO: 'Endereço',
+  MUNICIPIO: 'Município',
+  SELECAO_UNICA: 'Escolha de um valor',
+  SELECAO_MULTIPLA: 'Escolha de vários valores',
+};
 
 export const FINALIDADES: readonly OpcaoDoFormulario[] = [
   { valor: FINALIDADE_INSCRICAO, rotulo: 'Inscrição' },
@@ -56,18 +114,7 @@ export function blocosAdmitidos(finalidade: string): readonly OpcaoDoFormulario[
 export function conteudoInicial(): ConteudoDoFormulario<number> {
   return {
     titulo: null,
-    etapas: [
-      {
-        codigo: BLOCO_REVISAO_E_ACEITE,
-        ordem: 0,
-        tipo: TIPO_BLOCO,
-        bloco: BLOCO_REVISAO_E_ACEITE,
-        titulo: 'Revisão e aceite',
-        descricao: null,
-        aviso: null,
-        exibicao: null,
-      },
-    ],
+    etapas: [etapaNova(BLOCO_REVISAO_E_ACEITE, 'Revisão e aceite', BLOCO_REVISAO_E_ACEITE)],
     itens: [],
     termos: [],
     pressupostos: [],

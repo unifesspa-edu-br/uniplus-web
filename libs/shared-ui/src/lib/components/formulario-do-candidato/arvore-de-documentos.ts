@@ -1,16 +1,17 @@
 import type { DocumentoExigido } from '../lista-de-documentos/lista-de-documentos';
 import {
-  chaveDaExigencia,
   classeDaSituacao,
-  DEPENDE_DE_FASE_POSTERIOR,
   type DocumentoAvaliado,
-  EXIGIDO,
   GRUPO_E,
   GRUPO_OU,
   type GrupoDoDocumento,
-  PODE_SER_EXIGIDO,
 } from './documentos-avaliados';
-import { formatosDaExigencia } from './envio-de-documentos';
+import {
+  deCadaIntegrante,
+  documentoJuntado,
+  type IntegranteDoItem,
+  paraALista,
+} from './documento-na-lista';
 import type { GrupoRenderizavel } from './formulario-do-candidato.model';
 import { titulosDasOcorrencias } from './interpretador/ocorrencia-do-candidato';
 import type { OcorrenciaSimulada } from './interpretador/regras-do-formulario';
@@ -72,11 +73,10 @@ type NoEmMontagem = { tipo: 'DOCUMENTO'; documento: DocumentoNaTela } | GrupoEmM
 
 type Ocorrencias = Readonly<Record<string, readonly OcorrenciaSimulada[]>>;
 
-/** Um integrante de quem a avaliação pede o documento que se repete, e como pede. */
-interface IntegranteDoItem {
-  readonly titulo: string | null;
-  readonly ocorrenciaId: string | null;
-  readonly situacao: string;
+/** A árvore em montagem e os integrantes já juntados de cada documento que se repete para todos. */
+interface Montagem {
+  readonly raiz: NoEmMontagem[];
+  readonly integrantesDeTodos: Map<string, IntegranteDoItem[]>;
 }
 
 /** O documento que se repete sob um grupo escolhido uma vez, com o integrante desta avaliação. */
@@ -102,21 +102,24 @@ export function arvoreDeDocumentos(
   gruposDoFormulario: readonly GrupoRenderizavel[],
   ocorrencias: Ocorrencias,
 ): readonly NoDeDocumentos[] {
-  const raiz: NoEmMontagem[] = [];
-  const integrantesDeTodos = new Map<string, IntegranteDoItem[]>();
+  const montagem: Montagem = { raiz: [], integrantesDeTodos: new Map() };
   for (const documento of documentos) {
     const grupo = gruposDoFormulario.find((g) => g.codigo === documento.grupoCodigo);
     const integrante = tituloDoIntegrante(documento, grupo, ocorrencias);
-    if (integrante === undefined) continue;
-    const itens = descerAoGrupoDoDocumento(raiz, documento, integrante);
-    if (repeteParaTodos(documento)) {
-      incluirDeTodos(itens, { documento, grupo, integrante }, integrantesDeTodos);
-    } else {
-      const rotulo = integrante === null ? documento.nome : `${documento.nome} — ${integrante}`;
-      itens.push({ tipo: 'DOCUMENTO', documento: paraALista(documento, rotulo) });
-    }
+    if (integrante !== undefined) incluirDocumento(montagem, { documento, grupo, integrante });
   }
-  return raiz;
+  return montagem.raiz;
+}
+
+function incluirDocumento(montagem: Montagem, folha: FolhaQueSeRepete): void {
+  const { documento, integrante } = folha;
+  const itens = descerAoGrupoDoDocumento(montagem.raiz, documento, integrante);
+  if (repeteParaTodos(documento)) {
+    incluirDeTodos(itens, folha, montagem.integrantesDeTodos);
+    return;
+  }
+  const rotulo = integrante === null ? documento.nome : `${documento.nome} — ${integrante}`;
+  itens.push({ tipo: 'DOCUMENTO', documento: paraALista(documento, rotulo) });
 }
 
 /** O nível do primeiro grupo da árvore que se repete por integrante; negativo quando nenhum se repete. */
@@ -138,24 +141,56 @@ function descerAoGrupoDoDocumento(
   documento: DocumentoAvaliado,
   integrante: string | null,
 ): NoEmMontagem[] {
+  return passosDaDescida(documento, integrante).reduce(
+    (itens, { grupo, identidade }) => grupoEm(itens, grupo, identidade).itens,
+    raiz,
+  );
+}
+
+interface PassoDaDescida {
+  readonly grupo: GrupoDoDocumento;
+  readonly identidade: IdentidadeDoGrupo;
+}
+
+/** Cada grupo por onde o documento desce, com a identidade que ele tem na árvore. */
+function passosDaDescida(
+  documento: DocumentoAvaliado,
+  integrante: string | null,
+): readonly PassoDaDescida[] {
   const repeteDesde = nivelDaRepeticao(documento);
-  let itens = raiz;
-  documento.grupos.forEach((g, nivel) => {
-    if (nivel === repeteDesde && nivel > 0) {
-      itens = grupoEm(itens, JUNTOS, {
-        chave: `${g.grupoId}:todos`,
-        integrante: null,
-        deCadaIntegrante: true,
-      }).itens;
-    }
-    const porIntegrante = repeteDesde >= 0 && nivel >= repeteDesde;
-    itens = grupoEm(itens, g, {
-      chave: porIntegrante ? `${g.grupoId}:${documento.ocorrenciaId ?? ''}` : g.grupoId,
-      integrante: nivel === repeteDesde ? integrante : null,
-      deCadaIntegrante: false,
-    }).itens;
+  return documento.grupos.flatMap((g, nivel) => {
+    const passo = passoDoNivel(documento, nivel, integrante);
+    const juntos = { grupo: JUNTOS, identidade: identidadeDeTodos(g) };
+    return nivel === repeteDesde && nivel > 0 ? [juntos, passo] : [passo];
   });
-  return itens;
+}
+
+function passoDoNivel(
+  documento: DocumentoAvaliado,
+  nivel: number,
+  integrante: string | null,
+): PassoDaDescida {
+  const repeteDesde = nivelDaRepeticao(documento);
+  const grupo = documento.grupos[nivel];
+  const porIntegrante = repeteDesde >= 0 && nivel >= repeteDesde;
+  const identidade = {
+    ...identidadeDoNivel(grupo, documento, porIntegrante),
+    integrante: nivel === repeteDesde ? integrante : null,
+  };
+  return { grupo, identidade };
+}
+
+function identidadeDoNivel(
+  grupo: GrupoDoDocumento,
+  documento: DocumentoAvaliado,
+  porIntegrante: boolean,
+): IdentidadeDoGrupo {
+  const chave = porIntegrante ? `${grupo.grupoId}:${documento.ocorrenciaId ?? ''}` : grupo.grupoId;
+  return { chave, integrante: null, deCadaIntegrante: false };
+}
+
+function identidadeDeTodos(grupo: GrupoDoDocumento): IdentidadeDoGrupo {
+  return { chave: `${grupo.grupoId}:todos`, integrante: null, deCadaIntegrante: true };
 }
 
 /** O nó que junta as escolhas de cada integrante: todas são pedidas. */
@@ -166,26 +201,30 @@ const JUNTOS: GrupoDoDocumento = {
   repetePorEntidade: null,
 };
 
+type IdentidadeDoGrupo = Pick<GrupoEmMontagem, 'chave' | 'integrante' | 'deCadaIntegrante'>;
+
 /** O grupo do nível em que o documento entra: o já montado com a mesma identidade, ou um novo. */
 function grupoEm(
   itens: NoEmMontagem[],
   grupo: GrupoDoDocumento,
-  identidade: Pick<GrupoEmMontagem, 'chave' | 'integrante' | 'deCadaIntegrante'>,
+  identidade: IdentidadeDoGrupo,
 ): GrupoEmMontagem {
   const existente = itens.find(
     (n): n is GrupoEmMontagem => n.tipo !== 'DOCUMENTO' && n.chave === identidade.chave,
   );
   if (existente) return existente;
-  const novo: GrupoEmMontagem = {
-    tipo: grupo.tipo === GRUPO_OU ? GRUPO_OU : GRUPO_E,
-    chave: identidade.chave,
-    minimo: grupo.minimo ?? 1,
-    integrante: identidade.integrante,
-    deCadaIntegrante: identidade.deCadaIntegrante,
-    itens: [],
-  };
+  const novo = novoGrupo(grupo, identidade);
   itens.push(novo);
   return novo;
+}
+
+function novoGrupo(grupo: GrupoDoDocumento, identidade: IdentidadeDoGrupo): GrupoEmMontagem {
+  return {
+    tipo: grupo.tipo === GRUPO_OU ? GRUPO_OU : GRUPO_E,
+    minimo: grupo.minimo ?? 1,
+    itens: [],
+    ...identidade,
+  };
 }
 
 /**
@@ -201,152 +240,27 @@ function incluirDeTodos(
   const chave = `${documento.exigenciaId}:todos`;
   const integrantes = [
     ...(integrantesDeTodos.get(chave) ?? []),
-    {
-      titulo: integrante,
-      ocorrenciaId: documento.ocorrenciaId,
-      situacao: classeDaSituacao(documento.situacao),
-    },
+    integranteDoItem(documento, integrante),
   ];
   integrantesDeTodos.set(chave, integrantes);
-  const item: NoEmMontagem = {
-    tipo: 'DOCUMENTO',
-    documento: documentoJuntado(chave, documento, grupo, integrantes),
-  };
-  const indice = itens.findIndex((n) => n.tipo === 'DOCUMENTO' && n.documento.chave === chave);
+  const juntado = documentoJuntado(chave, documento, grupo, integrantes);
+  substituirOuAcrescentar(itens, { tipo: 'DOCUMENTO', documento: juntado });
+}
+
+function integranteDoItem(documento: DocumentoAvaliado, titulo: string | null): IntegranteDoItem {
+  const { ocorrenciaId } = documento;
+  return { titulo, ocorrenciaId, situacao: classeDaSituacao(documento.situacao) };
+}
+
+function substituirOuAcrescentar(
+  itens: NoEmMontagem[],
+  item: NoEmMontagem & { tipo: 'DOCUMENTO' },
+): void {
+  const indice = itens.findIndex(
+    (n) => n.tipo === 'DOCUMENTO' && n.documento.chave === item.documento.chave,
+  );
   if (indice < 0) itens.push(item);
   else itens[indice] = item;
-}
-
-function documentoJuntado(
-  chave: string,
-  documento: DocumentoAvaliado,
-  grupo: GrupoRenderizavel | undefined,
-  integrantes: readonly IntegranteDoItem[],
-): DocumentoNaTela {
-  const situacoes = new Set(integrantes.map((i) => i.situacao));
-  const unica = situacoes.size === 1 ? classeDaSituacao(documento.situacao) : null;
-  const rotulo = `${documento.nome} — ${deQuem(integrantes, unica !== null, grupo)}`;
-  return {
-    ...paraALista(documento, rotulo),
-    ...(unica === null
-      ? {
-          situacao: 'Conforme o integrante, como indicado no nome',
-          exigido: situacoes.has(EXIGIDO),
-        }
-      : situacaoNaLista(unica)),
-    chave,
-    juntado: true,
-    exigidas: exigidasDosIntegrantes(documento, integrantes),
-  };
-}
-
-function exigidasDosIntegrantes(
-  documento: DocumentoAvaliado,
-  integrantes: readonly IntegranteDoItem[],
-): ExigenciaPedida[] {
-  return integrantes
-    .filter((i) => i.situacao === EXIGIDO)
-    .map((i) => ({
-      chave: chaveDaExigencia({ exigenciaId: documento.exigenciaId, ocorrenciaId: i.ocorrenciaId }),
-      exigenciaId: documento.exigenciaId,
-      ocorrenciaId: i.ocorrenciaId,
-      enviavel: i.ocorrenciaId !== null,
-      texto: i.titulo === null ? documento.nome : `${documento.nome} — ${i.titulo}`,
-    }));
-}
-
-/** Como a situação de parte dos integrantes entra no nome do documento, quando ela varia entre eles. */
-const PREFIXO_DA_SITUACAO: Readonly<Record<string, string>> = {
-  [EXIGIDO]: '',
-  [PODE_SER_EXIGIDO]: 'pode ser exigido ',
-  [DEPENDE_DE_FASE_POSTERIOR]: 'pode ser exigido, conforme uma fase posterior, ',
-};
-
-/** "de cada integrante (familiares)", para quando não se sabe quais integrantes há. */
-function deCadaIntegrante(grupo: GrupoRenderizavel | undefined): string {
-  const doGrupo = grupo ? ` (${grupo.rotulo.toLocaleLowerCase('pt-BR')})` : '';
-  return `de cada integrante${doGrupo}`;
-}
-
-/**
- * A quem o documento se aplica, pelos títulos dos integrantes: "de Você (candidato) e do Integrante 1".
- * Quando a situação varia, cada uma diz os seus: "de Você (candidato); pode ser exigido do Integrante 1".
- * Sem saber quais integrantes há, vale para cada um.
- */
-function deQuem(
-  integrantes: readonly IntegranteDoItem[],
-  situacaoUnica: boolean,
-  grupo: GrupoRenderizavel | undefined,
-): string {
-  if (integrantes.some((i) => i.ocorrenciaId === null || i.titulo === null))
-    return deCadaIntegrante(grupo);
-  const porSituacao = new Map<string, string[]>();
-  for (const { titulo, situacao } of integrantes) {
-    porSituacao.set(situacao, [...(porSituacao.get(situacao) ?? []), titulo as string]);
-  }
-  return [EXIGIDO, PODE_SER_EXIGIDO, DEPENDE_DE_FASE_POSTERIOR, ...porSituacao.keys()]
-    .filter((situacao, i, todas) => porSituacao.has(situacao) && todas.indexOf(situacao) === i)
-    .map((situacao) => {
-      const prefixo = situacaoUnica ? '' : (PREFIXO_DA_SITUACAO[situacao] ?? '');
-      return `${prefixo}${comPreposicao(porSituacao.get(situacao) ?? [])}`;
-    })
-    .join('; ');
-}
-
-function comPreposicao(titulos: readonly string[]): string {
-  const comDe = titulos.map((t) => (t.startsWith('Integrante') ? `do ${t}` : `de ${t}`));
-  return comDe.length === 1 ? comDe[0] : `${comDe.slice(0, -1).join(', ')} e ${comDe.at(-1)}`;
-}
-
-/** O que a lista diz da situação do documento, no lugar de a quem a exigência se aplica. */
-const TEXTO_DA_SITUACAO: Readonly<Record<string, string>> = {
-  [EXIGIDO]: 'Exigido pelas suas respostas',
-  [PODE_SER_EXIGIDO]: 'Pode ser exigido, conforme as respostas',
-  [DEPENDE_DE_FASE_POSTERIOR]: 'Pode ser exigido, conforme uma fase posterior do processo',
-};
-
-function situacaoNaLista(situacao: string): Pick<DocumentoNaTela, 'exigido' | 'situacao'> {
-  return {
-    exigido: situacao === EXIGIDO,
-    situacao: TEXTO_DA_SITUACAO[situacao] ?? TEXTO_DA_SITUACAO[PODE_SER_EXIGIDO],
-  };
-}
-
-function paraALista(documento: DocumentoAvaliado, rotulo: string): DocumentoNaTela {
-  const chave = chaveDaExigencia(documento);
-  return {
-    chave,
-    juntado: false,
-    rotulo,
-    exigidas: exigidasDoDocumento(documento, chave, rotulo),
-    ...situacaoNaLista(classeDaSituacao(documento.situacao)),
-    obrigatorio: documento.obrigatorio,
-    formatos: formatosDaExigencia(documento.formatosAceitos),
-    modelo: documento.modelo,
-    formatosAceitos: documento.formatosAceitos,
-    tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
-    quantidadeMinima: documento.quantidadeMinima,
-  };
-}
-
-function exigidasDoDocumento(
-  documento: DocumentoAvaliado,
-  chave: string,
-  rotulo: string,
-): ExigenciaPedida[] {
-  if (classeDaSituacao(documento.situacao) !== EXIGIDO) return [];
-  const enviavel =
-    documento.ocorrenciaId !== null ||
-    (documento.grupoCodigo === null && documento.repetePorEntidade === null);
-  return [
-    {
-      chave,
-      exigenciaId: documento.exigenciaId,
-      ocorrenciaId: documento.ocorrenciaId,
-      enviavel,
-      texto: rotulo,
-    },
-  ];
 }
 
 /**
@@ -362,11 +276,19 @@ function tituloDoIntegrante(
   const codigo = documento.grupoCodigo;
   if (codigo === null) return null;
   if (documento.ocorrenciaId === null) return deCadaIntegrante(grupo);
-  const lista = ocorrencias[codigo] ?? [];
-  const indice = lista.findIndex((o) => o.id === documento.ocorrenciaId);
+  return tituloDaOcorrencia(documento.ocorrenciaId, grupo, ocorrencias[codigo] ?? []);
+}
+
+function tituloDaOcorrencia(
+  ocorrenciaId: string,
+  grupo: GrupoRenderizavel | undefined,
+  lista: readonly OcorrenciaSimulada[],
+): string | undefined {
+  const indice = lista.findIndex((o) => o.id === ocorrenciaId);
   if (indice < 0) return undefined;
-  return titulosDasOcorrencias(
-    grupo?.incluiCandidato ?? false,
+  const titulos = titulosDasOcorrencias(
+    grupo?.ocorrencias.incluiCandidato ?? false,
     lista.map((o) => o.respostas),
-  )[indice];
+  );
+  return titulos[indice];
 }

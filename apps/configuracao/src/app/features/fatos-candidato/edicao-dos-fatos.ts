@@ -123,9 +123,9 @@ export class EdicaoDosFatos {
   });
   readonly mensagemDoAceite = computed(() => {
     const fato = this.fatoParaAceitar();
-    const recomendada = fato?.aprovacao.classificacaoRecomendada;
+    const recomendada = fato?.definicao.protecao.aprovacao.classificacaoRecomendada;
     return fato && recomendada
-      ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${fato.nome}" (${fato.codigo})? ` +
+      ? `Aceitar a classificação "${rotuloDe(CLASSIFICACOES_DE_PROTECAO, recomendada)}" para "${fato.descritivo.nome}" (${fato.codigo})? ` +
           'O fato fica aprovado com ela, sem nova solicitação, e a proteção de dados é avisada.'
       : 'Aceitar a classificação recomendada pela proteção de dados?';
   });

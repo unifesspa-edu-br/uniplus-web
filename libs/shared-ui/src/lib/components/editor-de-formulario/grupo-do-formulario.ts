@@ -1,6 +1,8 @@
 import {
+  CAMINHO_DA_EXIBICAO,
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
   camposDaInclusaoDoCandidato,
-  camposDaMudanca,
   type CamposEditadosDoFormulario,
 } from './modelo/campos-editados';
 import {
@@ -22,8 +24,8 @@ import { EditorDeCondicoesComponent } from '../editor-de-condicoes/editor-de-con
 import { TagComponent } from '../tag/tag';
 import { CamposDoGrupoComponent } from './grupo/campos-do-grupo';
 import { OcorrenciasDoGrupoComponent, type MudancaDeContagem } from './grupo/ocorrencias-do-grupo';
-import { comCandidatoComoMembro } from './modelo/candidato-como-membro';
-import { fatosOferecidos } from './modelo/citacoes';
+import { incluirCandidatoComoMembro } from './modelo/candidato-como-membro';
+import { fatosOferecidos, predicadosDasRegras } from './modelo/citacoes';
 import {
   LIMITES_DO_FORMULARIO,
   OBRIGATORIEDADES,
@@ -43,6 +45,9 @@ import {
   problemasDasCondicoes,
   recopiarSeMudouPorFora,
 } from './predicado-em-edicao';
+
+const ANUNCIO_DO_CANDIDATO_INCLUIDO =
+  'O candidato passa a ser um dos membros: o parentesco é o primeiro campo, sempre obrigatório.';
 
 /**
  * Um grupo repetível do formulário (UNI-REQ-0146): o candidato responde os mesmos campos para cada
@@ -128,7 +133,7 @@ import {
             [disabled]="disabled()"
             [attr.aria-invalid]="rotuloVazio() ? 'true' : null"
             [attr.aria-describedby]="rotuloVazio() ? idDe('rotulo-erro') : null"
-            (input)="trocar({ rotulo: valorDe($event) })"
+            (input)="trocarRotulo(valorDe($event))"
           />
           @if (rotuloVazio()) {
             <span class="field__error" [id]="idDe('rotulo-erro')">O grupo precisa de rótulo.</span>
@@ -251,7 +256,7 @@ export class GrupoDoFormularioComponent {
   protected readonly nome = computed(() => this.grupo().rotulo.trim() || this.grupo().codigo);
   protected readonly rotuloVazio = computed(() => this.grupo().rotulo.trim() === '');
   protected readonly obrigatoriedade = computed(
-    () => this.grupo().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE,
+    () => this.grupo().regras.obrigatoriedade.tipo ?? OBRIGATORIEDADE_SEMPRE,
   );
   private readonly nomes = computed(() => nomesDoCatalogo(this.catalogo()));
 
@@ -262,8 +267,7 @@ export class GrupoDoFormularioComponent {
 
   protected readonly fatosDoGrupo = computed(() =>
     fatosOferecidos(this.catalogo(), fatosCitaveisPeloGrupo(this.conteudo(), this.grupo()), [
-      this.grupo().exibicao,
-      this.grupo().predicadoObrigatoriedade,
+      ...predicadosDasRegras(this.grupo().regras),
     ]),
   );
 
@@ -271,7 +275,7 @@ export class GrupoDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.grupo().exibicao,
+    source: () => this.grupo().regras.exibicao,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -279,7 +283,7 @@ export class GrupoDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.grupo().predicadoObrigatoriedade,
+    source: () => this.grupo().regras.obrigatoriedade.predicado,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -302,38 +306,53 @@ export class GrupoDoFormularioComponent {
     this.grupoChange.emit(grupo);
   }
 
-  protected trocar(mudanca: Partial<GrupoDoFormulario>): void {
-    this.camposEditados.emit(camposDaMudanca(mudanca));
+  protected trocar(mudanca: Partial<GrupoDoFormulario>, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(campos);
     this.emitir({ ...this.grupo(), ...mudanca });
   }
 
-  protected trocarContagem(mudanca: MudancaDeContagem): void {
-    this.trocar({ [mudanca.contagem]: mudanca.valor });
+  protected trocarRotulo(rotulo: string): void {
+    this.trocar({ rotulo }, [['rotulo']]);
   }
 
-  protected trocarObrigatoriedade(obrigatoriedade: string): void {
-    const condicional = obrigatoriedade === OBRIGATORIEDADE_QUANDO;
+  protected trocarContagem(mudanca: MudancaDeContagem): void {
+    const ocorrencias = { ...this.grupo().ocorrencias, [mudanca.contagem]: mudanca.valor };
+    this.trocar({ ocorrencias }, [['ocorrencias', mudanca.contagem]]);
+  }
+
+  /** Fora de "obrigatório quando", o predicado sai: a API recusa predicado sem a condicional. */
+  protected trocarObrigatoriedade(tipo: string): void {
+    const condicional = tipo === OBRIGATORIEDADE_QUANDO;
     if (!condicional) this.condicoesDaObrigatoriedade.set([]);
-    this.trocar({
-      obrigatoriedade,
-      predicadoObrigatoriedade: condicional
-        ? paraPredicado(this.condicoesDaObrigatoriedade())
-        : null,
-    });
+    const predicado = condicional ? paraPredicado(this.condicoesDaObrigatoriedade()) : null;
+    this.trocar({ regras: { ...this.grupo().regras, obrigatoriedade: { tipo, predicado } } }, [
+      CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
   }
 
   protected trocarObrigatorioQuando(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDaObrigatoriedade.set(condicoes);
-    this.trocar({ predicadoObrigatoriedade: paraPredicado(condicoes) });
+    const { regras } = this.grupo();
+    const obrigatoriedade = { ...regras.obrigatoriedade, predicado: paraPredicado(condicoes) };
+    this.trocar({ regras: { ...regras, obrigatoriedade } }, [
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
   }
 
   protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDaExibicao.set(condicoes);
-    this.trocar({ exibicao: paraPredicado(condicoes) });
+    const regras = { ...this.grupo().regras, exibicao: paraPredicado(condicoes) };
+    this.trocar({ regras }, [CAMINHO_DA_EXIBICAO]);
   }
 
   protected alternarCandidato(ligado: boolean): void {
-    const resultado = comCandidatoComoMembro(this.conteudo(), this.grupo(), ligado, {
+    if (ligado) this.incluirCandidato();
+    else this.retirarCandidato();
+  }
+
+  private incluirCandidato(): void {
+    const resultado = incluirCandidatoComoMembro(this.conteudo(), this.grupo(), {
       catalogo: this.catalogo(),
       nomes: this.nomes(),
       indisponiveis: this.fatosIndisponiveis(),
@@ -342,17 +361,14 @@ export class GrupoDoFormularioComponent {
       this.anuncio.emit(resultado.recusa);
       return;
     }
-    const campos = ligado ? camposDaInclusaoDoCandidato(resultado.grupo) : [['incluiCandidato']];
-    this.camposEditados.emit(campos);
+    this.camposEditados.emit(camposDaInclusaoDoCandidato(resultado.grupo));
     this.emitir(resultado.grupo);
-    this.anunciarCandidato(resultado.grupo);
+    this.anuncio.emit(ANUNCIO_DO_CANDIDATO_INCLUIDO);
   }
 
-  private anunciarCandidato(grupo: GrupoDoFormulario): void {
-    this.anuncio.emit(
-      grupo.incluiCandidato
-        ? 'O candidato passa a ser um dos membros: o parentesco é o primeiro campo, sempre obrigatório.'
-        : 'O candidato deixa de ser um dos membros.',
-    );
+  private retirarCandidato(): void {
+    const ocorrencias = { ...this.grupo().ocorrencias, incluiCandidato: false };
+    this.trocar({ ocorrencias }, [['ocorrencias', 'incluiCandidato']]);
+    this.anuncio.emit('O candidato deixa de ser um dos membros.');
   }
 }

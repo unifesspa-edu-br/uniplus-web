@@ -68,6 +68,13 @@
       </p>
     }
 
+    @if (item.indice > 0) {
+      <ui-valor-em-consulta
+        rotulo="No mesmo momento da fase anterior"
+        [valor]="item.grupo.controls.noMesmoMomentoDaAnterior.value"
+      />
+    }
+
     @if (item.exigencias.publicaProduto) {
       <h3 class="label form-grid__full" [attr.id]="'cr-produtos-leitura-' + item.indice">
         O que esta fase publica

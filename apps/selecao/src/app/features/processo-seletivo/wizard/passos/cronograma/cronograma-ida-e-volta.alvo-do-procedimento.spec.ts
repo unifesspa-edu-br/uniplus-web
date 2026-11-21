@@ -1,3 +1,4 @@
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
   etapaDoServidor,
   faseDoServidor,
   recursoDaEtapaDoServidor,
+  tipoDeDecisaoDoServidor,
 } from '../../shared/cronograma-do-servidor.testing';
 import { hidratarDraft } from '../../shared/hidratacao';
 import { DRAFT, dtoComCronograma } from '../../shared/hidratacao.testing';
@@ -39,13 +41,20 @@ const ALVOS: readonly {
 ];
 
 function procedimentoDoServidor(alvo: AlvoDoServidor) {
-  return [{ tipoDeDecisao: 'RESULTADO_FINAL', alvo, regra: REGRA, sugestao: null }];
+  return [
+    {
+      tipoDeDecisao: tipoDeDecisaoDoServidor(TipoMotivoDeDecisaoCodigo.CLASSIFICACAO),
+      alvo,
+      regra: REGRA,
+      sugestao: null,
+    },
+  ];
 }
 
 function procedimentoDoComando(alvo: AlvoDoServidor) {
   return [
     {
-      tipoDeDecisao: 'RESULTADO_FINAL',
+      tipoDeDecisao: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
       alvo,
       regraCodigo: REGRA.codigo,
       regraVersao: REGRA.versao,
@@ -57,14 +66,14 @@ function cronogramaCom(alvo: AlvoDoServidor) {
   const procedimentos = procedimentoDoServidor(alvo);
   const fase = faseDoServidor({
     publicacoes: {
-      tiposDeDecisao: ['RESULTADO_FINAL'],
+      tiposDeDecisao: [tipoDeDecisaoDoServidor(TipoMotivoDeDecisaoCodigo.CLASSIFICACAO)],
       regraRecurso: { ...RECURSO_DA_FASE, procedimentos },
     },
   });
   const etapa = etapaDoServidor({
     avaliacao: { itensDeAvaliacao: [ITEM] },
     publicacoes: {
-      tiposDeDecisao: ['RESULTADO_FINAL'],
+      tiposDeDecisao: [tipoDeDecisaoDoServidor(TipoMotivoDeDecisaoCodigo.CLASSIFICACAO)],
       recursos: [recursoDaEtapaDoServidor({ procedimentos })],
     },
   });

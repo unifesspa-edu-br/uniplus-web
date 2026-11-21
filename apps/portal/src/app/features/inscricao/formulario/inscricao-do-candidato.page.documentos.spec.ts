@@ -3,14 +3,13 @@ import { of } from 'rxjs';
 import {
   type AvaliacaoDaInscricaoDto,
   type AvaliacaoDaInscricaoRequest,
-  type FormularioRenderizavelDto,
   type InscricaoRequest,
   SituacaoDoArquivoDoCandidato,
 } from '@uniplus/shared-data/selecao';
 import { passarOTempo } from '@uniplus/shared-testing';
 import { esperaDaConsulta } from './acompanhamento-da-verificacao';
 import { ESPERA_DA_CONSULTA_MS } from './avaliacao-da-inscricao.estado';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import { FORMULARIO_DE_INSCRICAO_MOCK, comFormulario } from './inscricao-do-candidato.testing';
 import {
   ok,
   problema,
@@ -59,22 +58,19 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   /** O formulário de teste com o bloco de comprovação documental. */
-  const COM_DOCUMENTOS: FormularioRenderizavelDto = {
-    ...FORMULARIO_DE_INSCRICAO_MOCK,
+  const COM_DOCUMENTOS = comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
     etapas: [
-      ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
+      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.etapas,
       {
         codigo: 'DOCUMENTOS',
         codigoNasRegras: null,
         ordem: 3,
         tipo: 'BLOCO',
         bloco: 'COMPROVACAO_DOCUMENTAL',
-        titulo: 'Documentos',
-        descricao: null,
-        aviso: null,
+        apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
       },
     ],
-  };
+  });
   const irAosDocumentos = async (tela: HTMLElement): Promise<HTMLElement> => {
     await cenario.clicar(
       [...tela.querySelectorAll<HTMLButtonElement>('nav button')].find((b) =>

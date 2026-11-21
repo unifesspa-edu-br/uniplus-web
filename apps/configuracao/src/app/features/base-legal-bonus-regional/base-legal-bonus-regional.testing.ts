@@ -8,7 +8,8 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   BaseLegalBonusRegionalDto,
   CONFIGURACAO_BASE_PATH,
-  type TipoInstrumentoNormativoVocabularioDto,
+  TipoInstrumentoNormativoCodigo,
+  type TipoInstrumentoNormativoComDescricao,
 } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
 import { expect, vi } from 'vitest';
@@ -25,10 +26,23 @@ export const CIDADES_URL = `${BASE}/api/cidades`;
 export const TITULO_DA_LISTA = '#cfg-base-legal-list-title';
 export const FORMULARIO = '#cfg-base-legal-form';
 
-export const TIPOS: readonly TipoInstrumentoNormativoVocabularioDto[] = [
-  { codigo: 'PORTARIA', nome: 'Portaria', descricao: 'Ato administrativo.' },
-  { codigo: 'LEI', nome: 'Lei', descricao: 'Ato normativo.' },
-];
+export const TIPO_PORTARIA: TipoInstrumentoNormativoComDescricao = {
+  codigo: TipoInstrumentoNormativoCodigo.PORTARIA,
+  rotulo: 'Rótulo do tipo portaria',
+  descricao: 'Descrição do tipo portaria.',
+};
+export const TIPO_LEI: TipoInstrumentoNormativoComDescricao = {
+  codigo: TipoInstrumentoNormativoCodigo.LEI,
+  rotulo: 'Rótulo do tipo lei',
+  descricao: 'Descrição do tipo lei.',
+};
+export const TIPOS: readonly TipoInstrumentoNormativoComDescricao[] = [TIPO_PORTARIA, TIPO_LEI];
+
+/** O tipo como a base legal o traz: só código e rótulo, sem a descrição do vocabulário. */
+const tipoDaBase = ({ codigo, rotulo }: TipoInstrumentoNormativoComDescricao) => ({
+  codigo,
+  rotulo,
+});
 
 export const MARABA = {
   id: 'cidade-1',
@@ -48,7 +62,7 @@ export const ITUPIRANGA = {
 export const portaria: BaseLegalBonusRegionalDto = {
   id: 'ba5e0000-0000-7000-8000-000000000001',
   codigo: 'PORTARIA_UNIFESSPA_2514_2023',
-  tipoInstrumento: 'PORTARIA',
+  tipoInstrumento: tipoDaBase(TIPO_PORTARIA),
   identificacao: 'Portaria Unifesspa nº 2514/2023',
   descricao: 'Institui inclusão regional.',
   municipios: [{ codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf }],
@@ -59,7 +73,7 @@ export const decreto: BaseLegalBonusRegionalDto = {
   ...portaria,
   id: 'ba5e0000-0000-7000-8000-000000000002',
   codigo: 'LEI_ESTADUAL_9999_2020',
-  tipoInstrumento: 'LEI',
+  tipoInstrumento: tipoDaBase(TIPO_LEI),
   identificacao: 'Lei estadual nº 9.999/2020',
   municipios: [{ codigoIbge: ITUPIRANGA.codigoIbge, nome: ITUPIRANGA.nome, uf: ITUPIRANGA.uf }],
 };
@@ -94,15 +108,119 @@ export const criado = () => ['novo-id', { status: 201, statusText: 'Created' }] 
 
 /** O vocabulário chega, falha com o status dado ou fica pendente até o teste responder. */
 export type RespostaDosTipos =
-  | readonly TipoInstrumentoNormativoVocabularioDto[]
+  | readonly TipoInstrumentoNormativoComDescricao[]
   | { readonly falha: number }
   | 'pendente';
 
-/** A página montada com a lista e o vocabulário já carregados, e as ferramentas para conduzi-la. */
-export async function montarPagina(
-  itens: readonly BaseLegalBonusRegionalDto[] = [portaria, decreto],
-  tipos: RespostaDosTipos = TIPOS,
-) {
+/** A página montada e as ferramentas para conduzi-la nos testes. */
+export class PaginaDaBaseLegal {
+  readonly http = TestBed.inject(HttpTestingController);
+  private readonly app = TestBed.inject(ApplicationRef);
+  readonly edicao: EdicaoDasBasesLegais;
+  readonly store: BaseLegalBonusRegionalStore;
+  readonly municipios: MunicipiosDaBaseLegal;
+  readonly sucessos = vi.spyOn(TestBed.inject(NotificationService), 'success');
+  readonly erros = vi.spyOn(TestBed.inject(NotificationService), 'errorFromProblem');
+
+  constructor(readonly fixture: ComponentFixture<BaseLegalBonusRegionalPage>) {
+    const injetor = fixture.debugElement.injector;
+    this.edicao = injetor.get(EdicaoDasBasesLegais);
+    this.store = injetor.get(BaseLegalBonusRegionalStore);
+    this.municipios = injetor.get(MunicipiosDaBaseLegal);
+  }
+
+  async propagar(): Promise<void> {
+    await Promise.resolve();
+    this.app.tick();
+    this.fixture.detectChanges();
+  }
+
+  elemento<T extends HTMLElement>(seletor: string): T {
+    const encontrado = (this.fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
+    expect(encontrado, seletor).not.toBeNull();
+    return encontrado as T;
+  }
+
+  async recarregarCom(lista: readonly BaseLegalBonusRegionalDto[]): Promise<void> {
+    await this.propagar();
+    this.http.expectOne((r) => r.url === LISTA).flush(lista);
+    await this.propagar();
+  }
+
+  /** O controle nativo do campo: o `select` que o `ui-select` do tipo guarda por dentro, ou o próprio campo. */
+  campo(nome: string): HTMLInputElement | HTMLSelectElement {
+    const campo = this.elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
+    return campo.querySelector('select') ?? campo;
+  }
+
+  preencher(nome: string, valor: string): void {
+    const campo = this.campo(nome);
+    campo.value = valor;
+    campo.dispatchEvent(new Event(campo.tagName === 'SELECT' ? 'change' : 'input'));
+  }
+
+  formulario = (): HTMLFormElement => this.elemento(FORMULARIO);
+  novo = (): HTMLButtonElement => this.elemento('#cfg-base-legal-novo');
+  salvar = (): HTMLButtonElement => this.elemento('button[form="cfg-base-legal-form"]');
+  buscaDeMunicipio = (): HTMLInputElement =>
+    this.elemento('input[aria-labelledby="cfg-blbr-municipios-label"]');
+  statusDaPagina = (): string =>
+    this.elemento(':scope > span.sr-only[role="status"]').textContent ?? '';
+
+  editar(base: BaseLegalBonusRegionalDto = portaria): HTMLButtonElement {
+    return this.pelaEtiqueta(`Editar base legal ${base.identificacao}`);
+  }
+
+  remover(base: BaseLegalBonusRegionalDto = portaria): HTMLButtonElement {
+    return this.pelaEtiqueta(`Remover base legal de bônus regional ${base.identificacao}`);
+  }
+
+  confirmar = (): HTMLButtonElement => this.botaoDoDialogo('confirm');
+  cancelarDaConfirmacao = (): HTMLButtonElement => this.botaoDoDialogo('cancel');
+
+  /** Clica de verdade em "Nova base legal", preenche o mínimo e escolhe Marabá como município. */
+  async abrirCadastro(): Promise<void> {
+    await this.acionar(this.novo());
+    this.preencher('tipoInstrumento', TIPO_PORTARIA.codigo);
+    this.preencher('identificacao', 'Portaria de teste');
+    this.preencher('descricao', 'Descrição de teste válida.');
+    this.municipios.adicionar(MARABA);
+    await this.propagar();
+  }
+
+  async abrirEdicao(base: BaseLegalBonusRegionalDto = portaria): Promise<void> {
+    await this.acionar(this.editar(base));
+  }
+
+  /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
+  async enviar(url = ESCRITA) {
+    await this.acionar(this.salvar());
+    return this.http.expectOne((r) => r.url === url && r.method !== 'GET');
+  }
+
+  async confirmarRemocao(base: BaseLegalBonusRegionalDto = portaria) {
+    await this.acionar(this.remover(base));
+    this.confirmar().click();
+    await this.propagar();
+    return this.http.expectOne(`${ESCRITA}/${base.id}`);
+  }
+
+  private pelaEtiqueta(nome: string): HTMLButtonElement {
+    return this.elemento(`button[aria-label="${nome}"]`);
+  }
+
+  private botaoDoDialogo(acao: 'confirm' | 'cancel'): HTMLButtonElement {
+    return this.elemento(`cfg-confirmacao-de-remocao [data-testid="confirm-dialog-${acao}"]`);
+  }
+
+  private async acionar(botao: HTMLButtonElement): Promise<void> {
+    botao.focus();
+    botao.click();
+    await this.propagar();
+  }
+}
+
+function configurarModuloDaPagina(): void {
   TestBed.configureTestingModule({
     imports: [BaseLegalBonusRegionalPage],
     providers: [
@@ -113,114 +231,28 @@ export async function montarPagina(
       { provide: GEO_BASE_PATH, useValue: BASE },
     ],
   });
-  const fixture: ComponentFixture<BaseLegalBonusRegionalPage> = TestBed.createComponent(
-    BaseLegalBonusRegionalPage,
-  );
-  const http = TestBed.inject(HttpTestingController);
-  const app = TestBed.inject(ApplicationRef);
-  const injetor = fixture.debugElement.injector;
-  const edicao = injetor.get(EdicaoDasBasesLegais);
-  const store = injetor.get(BaseLegalBonusRegionalStore);
-  const municipios = injetor.get(MunicipiosDaBaseLegal);
-  const notificacoes = TestBed.inject(NotificationService);
-  const sucessos = vi.spyOn(notificacoes, 'success');
-  const erros = vi.spyOn(notificacoes, 'errorFromProblem');
-
-  const propagar = async (): Promise<void> => {
-    await Promise.resolve();
-    app.tick();
-    fixture.detectChanges();
-  };
-  const elemento = <T extends HTMLElement>(seletor: string): T => {
-    const encontrado = (fixture.nativeElement as HTMLElement).querySelector<T>(seletor);
-    expect(encontrado, seletor).not.toBeNull();
-    return encontrado as T;
-  };
-  const pelaEtiqueta = (nome: string): HTMLButtonElement =>
-    elemento(`button[aria-label="${nome}"]`);
-  const recarregarCom = async (lista: readonly BaseLegalBonusRegionalDto[]): Promise<void> => {
-    await propagar();
-    http.expectOne((r) => r.url === LISTA).flush(lista);
-    await propagar();
-  };
-  const preencher = (nome: string, valor: string): void => {
-    const campo = elemento<HTMLInputElement>(`[formcontrolname="${nome}"]`);
-    campo.value = valor;
-    campo.dispatchEvent(new Event(campo.tagName === 'SELECT' ? 'change' : 'input'));
-  };
-  const acionar = async (botao: HTMLButtonElement): Promise<void> => {
-    botao.focus();
-    botao.click();
-    await propagar();
-  };
-  const dialogoDaRemocao = (): HTMLElement => elemento('cfg-confirmacao-de-remocao');
-
-  fixture.detectChanges();
-  await propagar();
-  if (tipos !== 'pendente') {
-    const resposta = http.expectOne((r) => r.url === TIPOS_URL);
-    if ('falha' in tipos) resposta.flush(...problema(tipos.falha, corpoDaFalha(tipos.falha)));
-    else resposta.flush(tipos);
-  }
-  http.expectOne((r) => r.url === LISTA).flush(itens);
-  await propagar();
-
-  return {
-    fixture,
-    http,
-    edicao,
-    store,
-    municipios,
-    sucessos,
-    erros,
-    propagar,
-    elemento,
-    recarregarCom,
-    preencher,
-    formulario: (): HTMLFormElement => elemento(FORMULARIO),
-    novo: (): HTMLButtonElement => elemento('#cfg-base-legal-novo'),
-    editar: (b: BaseLegalBonusRegionalDto = portaria) =>
-      pelaEtiqueta(`Editar base legal ${b.identificacao}`),
-    remover: (b: BaseLegalBonusRegionalDto = portaria) =>
-      pelaEtiqueta(`Remover base legal de bônus regional ${b.identificacao}`),
-    salvar: (): HTMLButtonElement => elemento('button[form="cfg-base-legal-form"]'),
-    confirmar: (): HTMLButtonElement =>
-      dialogoDaRemocao().querySelector(
-        '[data-testid="confirm-dialog-confirm"]',
-      ) as HTMLButtonElement,
-    cancelarDaConfirmacao: (): HTMLButtonElement =>
-      dialogoDaRemocao().querySelector(
-        '[data-testid="confirm-dialog-cancel"]',
-      ) as HTMLButtonElement,
-    campo: (nome: string): HTMLInputElement => elemento(`[formcontrolname="${nome}"]`),
-    buscaDeMunicipio: (): HTMLInputElement =>
-      elemento('input[aria-labelledby="cfg-blbr-municipios-label"]'),
-    statusDaPagina: (): string =>
-      elemento(':scope > span.sr-only[role="status"]').textContent ?? '',
-    /** Clica de verdade em "Nova base legal", preenche o mínimo e escolhe Marabá como município. */
-    async abrirCadastro(): Promise<void> {
-      await acionar(elemento('#cfg-base-legal-novo'));
-      preencher('tipoInstrumento', 'PORTARIA');
-      preencher('identificacao', 'Portaria de teste');
-      preencher('descricao', 'Descrição de teste válida.');
-      municipios.adicionar(MARABA);
-      await propagar();
-    },
-    async abrirEdicao(base: BaseLegalBonusRegionalDto = portaria): Promise<void> {
-      await acionar(pelaEtiqueta(`Editar base legal ${base.identificacao}`));
-    },
-    /** Envia o formulário aberto, com o foco no botão de salvar, e devolve a requisição de escrita. */
-    async enviar(url = ESCRITA) {
-      await acionar(elemento('button[form="cfg-base-legal-form"]'));
-      return http.expectOne((r) => r.url === url && r.method !== 'GET');
-    },
-    async confirmarRemocao(base: BaseLegalBonusRegionalDto = portaria) {
-      await acionar(pelaEtiqueta(`Remover base legal de bônus regional ${base.identificacao}`));
-      elemento<HTMLButtonElement>('[data-testid="confirm-dialog-confirm"]').click();
-      await propagar();
-      return http.expectOne(`${ESCRITA}/${base.id}`);
-    },
-  };
 }
 
-export type Pagina = Awaited<ReturnType<typeof montarPagina>>;
+function responderAosTipos(http: HttpTestingController, tipos: RespostaDosTipos): void {
+  if (tipos === 'pendente') return;
+  const resposta = http.expectOne((r) => r.url === TIPOS_URL);
+  if ('falha' in tipos) resposta.flush(...problema(tipos.falha, corpoDaFalha(tipos.falha)));
+  else resposta.flush(tipos);
+}
+
+/** A página montada com a lista e o vocabulário já carregados, e as ferramentas para conduzi-la. */
+export async function montarPagina(
+  itens: readonly BaseLegalBonusRegionalDto[] = [portaria, decreto],
+  tipos: RespostaDosTipos = TIPOS,
+): Promise<PaginaDaBaseLegal> {
+  configurarModuloDaPagina();
+  const pagina = new PaginaDaBaseLegal(TestBed.createComponent(BaseLegalBonusRegionalPage));
+  pagina.fixture.detectChanges();
+  await pagina.propagar();
+  responderAosTipos(pagina.http, tipos);
+  pagina.http.expectOne((r) => r.url === LISTA).flush(itens);
+  await pagina.propagar();
+  return pagina;
+}
+
+export type Pagina = PaginaDaBaseLegal;

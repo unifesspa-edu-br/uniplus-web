@@ -3,6 +3,7 @@ import {
   PROCESSO_PUBLICADO_DA_MEDICINA,
   TIPOS_DE_PROCESSO,
 } from '../fixtures/consulta-da-medicina';
+import { campoColetado } from '../fixtures/campo-coletado';
 import { CAMPOS_DAS_MODALIDADES_DA_MEDICINA } from '../fixtures/medicina/formulario-das-modalidades';
 import { responder, responderCom } from '../support/responder';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
@@ -56,18 +57,21 @@ const PROCESSO_COM_FORMULARIO_QUE_PERGUNTA_O_TIPO = {
   formularios: [
     {
       ...PROCESSO_PUBLICADO_DA_MEDICINA.formularios[0],
-      fatosColetados: [
-        {
-          ...PROCESSO_PUBLICADO_DA_MEDICINA.formularios[0].fatosColetados[0],
-          fatoCodigo: 'TIPO_DEFICIENCIA',
-          rotulo: 'Tipo de deficiência',
-          tipoRenderizacao: 'SELECAO_UNICA',
-        },
-        ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
-          ...campo,
-          ordem: campo.ordem + 1,
-        })),
-      ],
+      coleta: {
+        itens: [
+          campoColetado({
+            fatoCodigo: 'TIPO_DEFICIENCIA',
+            ordem: 0,
+            rotulo: 'Tipo de deficiência',
+            tipoRenderizacao: 'SELECAO_UNICA',
+          }),
+          ...CAMPOS_DAS_MODALIDADES_DA_MEDICINA.map((campo) => ({
+            ...campo,
+            ordem: campo.ordem + 1,
+          })),
+        ],
+        grupos: [],
+      },
     },
   ],
 };

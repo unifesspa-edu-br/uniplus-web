@@ -1,11 +1,20 @@
 import { digitosDoTelefone } from '@uniplus/shared-utils';
 
-import { type CampoRenderizavel, type RespostaFixa } from './formulario-do-candidato.model';
+import {
+  type CampoRenderizavel,
+  type GrupoRenderizavel,
+  type RespostaFixa,
+} from './formulario-do-candidato.model';
 import { controleDoTipo } from './controle-do-campo';
 import { type PassoDoFormulario } from './passos-do-formulario';
 import { type ProblemaDaConfirmacao } from './pendencias-do-passo';
 import { estaVazia, VERDADEIRO } from './interpretador/logica';
-import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-formulario';
+import type {
+  CampoAvaliado,
+  OcorrenciaAvaliada,
+  OcorrenciaSimulada,
+  ValorJson,
+} from './interpretador/regras-do-formulario';
 
 /**
  * A confirmação é a segunda digitação de um campo de texto, para o candidato conferir o que escreveu. Ela
@@ -16,7 +25,9 @@ import type { OcorrenciaSimulada, ValorJson } from './interpretador/regras-do-fo
 /** O campo mostra a confirmação: pede, é de texto digitado e o candidato pode alterá-lo. */
 export function pedeConfirmacao(campo: CampoRenderizavel, fixa: boolean): boolean {
   return (
-    campo.pedirConfirmacao === true && !fixa && controleDoTipo(campo.tipoRenderizacao) === 'texto'
+    campo.apresentacao.pedirConfirmacao &&
+    !fixa &&
+    controleDoTipo(campo.apresentacao.tipoRenderizacao) === 'texto'
   );
 }
 
@@ -107,20 +118,32 @@ function problemasDosGrupos(
   entrada: EntradaDasConfirmacoes,
 ): [string, ProblemaDaConfirmacao][] {
   return passo.grupos.flatMap(({ grupo, avaliado }) =>
-    avaliado.ocorrencias.flatMap((ocorrencia) => {
+    avaliado.ocorrencias.lista.flatMap((ocorrencia) => {
       const atuais = entrada.grupos[grupo.codigo]?.find((o) => o.id === ocorrencia.id)?.respostas;
-      return ocorrencia.campos.flatMap((avaliadoDoSubitem) => {
-        const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
-        if (!subitem || avaliadoDoSubitem.visivel !== VERDADEIRO) return [];
-        const fato = subitem.fatoCodigo;
-        const caminho = `${grupo.codigo}.${ocorrencia.id}.${fato}`;
-        return conferir(
-          { caminho, campo: subitem, fixa: false, resposta: atuais?.[fato] },
-          entrada,
-        );
-      });
+      return ocorrencia.campos.flatMap((avaliadoDoSubitem) =>
+        problemaDoSubitem({ grupo, ocorrencia, avaliadoDoSubitem, atuais }, entrada),
+      );
     }),
   );
+}
+
+/** O subitem de uma ocorrência e o que a confirmação dele confere. */
+interface SubitemConfirmavel {
+  readonly grupo: GrupoRenderizavel;
+  readonly ocorrencia: OcorrenciaAvaliada;
+  readonly avaliadoDoSubitem: CampoAvaliado;
+  readonly atuais: Readonly<Record<string, ValorJson>> | null | undefined;
+}
+
+function problemaDoSubitem(
+  { grupo, ocorrencia, avaliadoDoSubitem, atuais }: SubitemConfirmavel,
+  entrada: EntradaDasConfirmacoes,
+): [string, ProblemaDaConfirmacao][] {
+  const subitem = grupo.subitens.find((s) => s.fatoCodigo === avaliadoDoSubitem.fatoCodigo);
+  if (!subitem || avaliadoDoSubitem.regras.visivel !== VERDADEIRO) return [];
+  const fato = subitem.fatoCodigo;
+  const caminho = `${grupo.codigo}.${ocorrencia.id}.${fato}`;
+  return conferir({ caminho, campo: subitem, fixa: false, resposta: atuais?.[fato] }, entrada);
 }
 
 function mesmoValor(a: ValorJson | undefined, b: ValorJson | undefined): boolean {

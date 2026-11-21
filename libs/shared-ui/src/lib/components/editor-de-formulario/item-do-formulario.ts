@@ -1,4 +1,9 @@
-import { camposDaMudanca, type CamposEditadosDoFormulario } from './modelo/campos-editados';
+import {
+  CAMINHO_DA_EXIBICAO,
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -17,9 +22,10 @@ import {
   OBRIGATORIEDADES,
   OBRIGATORIEDADE_QUANDO,
   OBRIGATORIEDADE_SEMPRE,
+  TIPOS_DE_CAMPO,
 } from './modelo/constantes';
 import { type RecusaDaRestricao } from './modelo/recusas';
-import { type ItemDoFormulario, type PredicadoNoWire } from './modelo/tipos';
+import { type ItemDoFormulario, type PredicadoNoWire, type RegrasDoCampo } from './modelo/tipos';
 import { ImpedimentoDoCampoComponent } from './impedimento-do-campo';
 import {
   paraPredicado,
@@ -28,18 +34,6 @@ import {
 } from './predicado-em-edicao';
 import { RestricoesDoCampoComponent } from './restricoes-do-campo';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
-
-/** Como o candidato responde, pelo tipo de campo. */
-const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
-  BOOLEANO: 'Sim ou não',
-  NUMERO: 'Número',
-  TEXTO: 'Texto',
-  DATA: 'Data',
-  ENDERECO: 'Endereço',
-  MUNICIPIO: 'Município',
-  SELECAO_UNICA: 'Escolha de um valor',
-  SELECAO_MULTIPLA: 'Escolha de vários valores',
-};
 
 /**
  * Um campo do formulário em edição: o rótulo, a ajuda, se é obrigatório e quando é exibido.
@@ -136,12 +130,12 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             class="input"
             type="text"
             [id]="idDe('rotulo')"
-            [value]="item().rotulo"
+            [value]="item().apresentacao.rotulo"
             [maxLength]="limites.rotulo"
             [disabled]="disabled()"
             [attr.aria-invalid]="rotuloVazio() ? 'true' : null"
             [attr.aria-describedby]="rotuloVazio() ? idDe('rotulo-erro') : null"
-            (input)="trocar({ rotulo: valorDe($event) })"
+            (input)="trocarRotulo(valorDe($event))"
           />
           @if (rotuloVazio()) {
             <span class="field__error" [id]="idDe('rotulo-erro')"
@@ -194,11 +188,11 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
             class="textarea"
             rows="2"
             [id]="idDe('ajuda')"
-            [value]="item().ajuda ?? ''"
+            [value]="item().apresentacao.ajuda ?? ''"
             [maxLength]="limites.ajuda"
             [disabled]="disabled()"
             [attr.aria-describedby]="idDe('ajuda-nota')"
-            (input)="trocar({ ajuda: valorDe($event).trim() === '' ? null : valorDe($event) })"
+            (input)="trocarAjuda(valorDe($event))"
           ></textarea>
           <span class="field__hint" [id]="idDe('ajuda-nota')"
             >Texto opcional exibido abaixo do campo.</span
@@ -245,7 +239,7 @@ const TIPOS_DE_CAMPO: Readonly<Record<string, string>> = {
         (camposEditados)="camposEditados.emit($event)"
       />
 
-      @if (impedimentoPermitido() || item().impedimento) {
+      @if (impedimentoPermitido() || item().regras.impedimento) {
         <ui-impedimento-do-campo
           [item]="item()"
           [fatos]="fatosDoImpedimento()"
@@ -308,13 +302,16 @@ export class ItemDoFormularioComponent {
   protected readonly textoSemFatos =
     'Nenhum campo anterior pode ser citado: condições citam só campos que vêm antes deste.';
 
-  protected readonly nome = computed(() => this.item().rotulo.trim() || this.item().fatoCodigo);
-  protected readonly tipoDeCampo = computed(
-    () => TIPOS_DE_CAMPO[this.item().tipoRenderizacao] ?? this.item().tipoRenderizacao,
+  protected readonly nome = computed(
+    () => this.item().apresentacao.rotulo.trim() || this.item().fatoCodigo,
   );
-  protected readonly rotuloVazio = computed(() => this.item().rotulo.trim() === '');
+  protected readonly tipoDeCampo = computed(() => {
+    const { tipoRenderizacao } = this.item().apresentacao;
+    return TIPOS_DE_CAMPO[tipoRenderizacao] ?? tipoRenderizacao;
+  });
+  protected readonly rotuloVazio = computed(() => this.item().apresentacao.rotulo.trim() === '');
   protected readonly obrigatoriedade = computed(
-    () => this.item().obrigatoriedade ?? OBRIGATORIEDADE_SEMPRE,
+    () => this.item().regras.obrigatoriedade.tipo ?? OBRIGATORIEDADE_SEMPRE,
   );
   protected readonly opcionalQueExigeResposta = computed(
     () => this.exigeResposta() && this.obrigatoriedade() !== OBRIGATORIEDADE_SEMPRE,
@@ -324,7 +321,7 @@ export class ItemDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.item().precondicao,
+    source: () => this.item().regras.exibicao,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -332,7 +329,7 @@ export class ItemDoFormularioComponent {
     PredicadoNoWire,
     readonly CondicaoEmClausula[]
   >({
-    source: () => this.item().predicadoObrigatoriedade ?? null,
+    source: () => this.item().regras.obrigatoriedade.predicado,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -350,34 +347,49 @@ export class ItemDoFormularioComponent {
     return problemasDasCondicoes(condicoes, this.fatos());
   }
 
-  protected trocarRestricoes(restricoes: ItemDoFormulario['restricoes']): void {
-    this.itemChange.emit({ ...this.item(), restricoes });
+  protected trocarRestricoes(restricoes: RegrasDoCampo['restricoes']): void {
+    this.itemChange.emit({ ...this.item(), regras: { ...this.item().regras, restricoes } });
   }
 
-  protected trocar(mudanca: Partial<ItemDoFormulario>): void {
-    this.camposEditados.emit(camposDaMudanca(mudanca));
+  protected trocar(mudanca: Partial<ItemDoFormulario>, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(campos);
     this.itemChange.emit({ ...this.item(), ...mudanca });
   }
 
+  protected trocarRotulo(rotulo: string): void {
+    const apresentacao = { ...this.item().apresentacao, rotulo };
+    this.trocar({ apresentacao }, [['apresentacao', 'rotulo']]);
+  }
+
+  protected trocarAjuda(texto: string): void {
+    const apresentacao = { ...this.item().apresentacao, ajuda: texto.trim() === '' ? null : texto };
+    this.trocar({ apresentacao }, [['apresentacao', 'ajuda']]);
+  }
+
   /** Fora de "obrigatório quando", o predicado sai: a API recusa predicado sem a condicional. */
-  protected trocarObrigatoriedade(obrigatoriedade: string): void {
-    const condicional = obrigatoriedade === OBRIGATORIEDADE_QUANDO;
+  protected trocarObrigatoriedade(tipo: string): void {
+    const condicional = tipo === OBRIGATORIEDADE_QUANDO;
     if (!condicional) this.condicoesDaObrigatoriedade.set([]);
-    this.trocar({
-      obrigatoriedade,
-      predicadoObrigatoriedade: condicional
-        ? paraPredicado(this.condicoesDaObrigatoriedade())
-        : null,
-    });
+    const predicado = condicional ? paraPredicado(this.condicoesDaObrigatoriedade()) : null;
+    const regras = { ...this.item().regras, obrigatoriedade: { tipo, predicado } };
+    this.trocar({ regras }, [
+      CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
   }
 
   protected trocarObrigatorioQuando(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDaObrigatoriedade.set(condicoes);
-    this.trocar({ predicadoObrigatoriedade: paraPredicado(condicoes) });
+    const { regras } = this.item();
+    const obrigatoriedade = { ...regras.obrigatoriedade, predicado: paraPredicado(condicoes) };
+    this.trocar({ regras: { ...regras, obrigatoriedade } }, [
+      CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+    ]);
   }
 
   protected trocarExibicao(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoesDaExibicao.set(condicoes);
-    this.trocar({ precondicao: paraPredicado(condicoes) });
+    const regras = { ...this.item().regras, exibicao: paraPredicado(condicoes) };
+    this.trocar({ regras }, [CAMINHO_DA_EXIBICAO]);
   }
 }

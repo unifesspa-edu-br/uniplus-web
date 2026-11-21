@@ -52,16 +52,18 @@ export function rotuloGravadoDa(
 
 interface CampoDoFormulario {
   readonly fatoCodigo: string;
-  readonly tipoRenderizacao?: string | null;
+  readonly apresentacao: { readonly tipoRenderizacao: string };
 }
 
 /** O que o formulário diz de onde há município: os fatos coletados e os subitens de cada grupo. */
 export interface FormularioComMunicipios {
-  readonly fatosColetados: readonly CampoDoFormulario[];
-  readonly grupos: readonly {
-    readonly codigo: string;
-    readonly subitens: readonly CampoDoFormulario[];
-  }[];
+  readonly coleta: {
+    readonly itens: readonly CampoDoFormulario[];
+    readonly grupos: readonly {
+      readonly codigo: string;
+      readonly subitens: readonly CampoDoFormulario[];
+    }[];
+  };
 }
 
 export interface RespostasComMunicipios {
@@ -75,7 +77,23 @@ export interface MunicipiosSeparados extends RespostasComMunicipios {
   readonly semNome: readonly string[];
 }
 
-const deMunicipio = (campo: CampoDoFormulario): boolean => campo.tipoRenderizacao === 'MUNICIPIO';
+const deMunicipio = (campo: CampoDoFormulario): boolean =>
+  campo.apresentacao.tipoRenderizacao === 'MUNICIPIO';
+
+type OcorrenciaDoGrupo = { readonly grupo: string; readonly id: string };
+type OcorrenciasDoGrupo = NonNullable<RespostasComMunicipios['grupos'][string]>;
+
+function reduzirOcorrencias(
+  grupo: string,
+  ocorrencias: OcorrenciasDoGrupo,
+  subitens: readonly CampoDoFormulario[],
+  separacao: SeparacaoDeMunicipios,
+): OcorrenciasDoGrupo {
+  return ocorrencias.map((o) => ({
+    ...o,
+    respostas: separacao.reduzir(subitens, o.respostas ?? {}, { grupo, id: o.id }),
+  }));
+}
 
 /**
  * Reduz todo município das respostas e dos subitens de grupo ao código, que é o que o campo e o envio
@@ -87,24 +105,26 @@ export function separarMunicipiosGravados(
   entrada: RespostasComMunicipios,
 ): MunicipiosSeparados {
   const separacao = new SeparacaoDeMunicipios();
-  const subitensDe = new Map(formulario.grupos.map((g) => [g.codigo, g.subitens]));
   return {
-    respostas: separacao.reduzir(formulario.fatosColetados, entrada.respostas),
-    grupos: Object.fromEntries(
-      Object.entries(entrada.grupos).map(([grupo, ocorrencias]) => [
-        grupo,
-        ocorrencias?.map((o) => ({
-          ...o,
-          respostas: separacao.reduzir(subitensDe.get(grupo) ?? [], o.respostas ?? {}, {
-            grupo,
-            id: o.id,
-          }),
-        })) ?? null,
-      ]),
-    ),
+    respostas: separacao.reduzir(formulario.coleta.itens, entrada.respostas),
+    grupos: reduzirGrupos(formulario, entrada.grupos, separacao),
     gravados: separacao.gravados,
     semNome: separacao.semNome,
   };
+}
+
+function reduzirGrupos(
+  formulario: FormularioComMunicipios,
+  grupos: RespostasComMunicipios['grupos'],
+  separacao: SeparacaoDeMunicipios,
+): RespostasComMunicipios['grupos'] {
+  const subitensDe = new Map(formulario.coleta.grupos.map((g) => [g.codigo, g.subitens]));
+  return Object.fromEntries(
+    Object.entries(grupos).map(([grupo, ocorrencias]) => [
+      grupo,
+      ocorrencias && reduzirOcorrencias(grupo, ocorrencias, subitensDe.get(grupo) ?? [], separacao),
+    ]),
+  );
 }
 
 /** Acumula, campo a campo, o nome gravado de cada município e os códigos que vieram sem nome. */
@@ -115,20 +135,20 @@ class SeparacaoDeMunicipios {
   reduzir(
     campos: readonly CampoDoFormulario[],
     respostas: Readonly<Record<string, ValorJson>>,
-    ocorrencia?: { grupo: string; id: string },
+    ocorrencia?: OcorrenciaDoGrupo,
   ): Readonly<Record<string, ValorJson>> {
     const reduzidas = { ...respostas };
     for (const campo of campos.filter(deMunicipio)) {
       const municipio = lerMunicipio(respostas[campo.fatoCodigo]);
       if (!municipio) continue;
       reduzidas[campo.fatoCodigo] = municipio.codigo;
-      if (municipio.rotulo === null) this.semNome.push(municipio.codigo);
-      else
-        this.gravados[chaveDaResposta(campo.fatoCodigo, ocorrencia)] = {
-          codigo: municipio.codigo,
-          rotulo: municipio.rotulo,
-        };
+      this.guardar(chaveDaResposta(campo.fatoCodigo, ocorrencia), municipio);
     }
     return reduzidas;
+  }
+
+  private guardar(chave: string, municipio: MunicipioLido): void {
+    if (municipio.rotulo === null) this.semNome.push(municipio.codigo);
+    else this.gravados[chave] = { codigo: municipio.codigo, rotulo: municipio.rotulo };
   }
 }

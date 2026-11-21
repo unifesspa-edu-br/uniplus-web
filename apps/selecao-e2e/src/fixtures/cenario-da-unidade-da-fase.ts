@@ -64,17 +64,30 @@ const FATO_DECLARADO_NA_INSCRICAO = {
   escopo: 'CANDIDATO',
 };
 
+const IGUALDADE = [
+  { codigo: 'IGUAL', rotulo: 'é' },
+  { codigo: 'DIFERENTE', rotulo: 'não é' },
+];
+
+/** Texto e data não são citáveis em regra: a API devolve a lista de operadores vazia. */
+function fatoDoCandidato([codigo, nome, dominio]: readonly string[], i: number) {
+  return {
+    fato: {
+      id: `01a0d640-0000-7000-8000-0000000000f${i + 1}`,
+      codigo,
+      nome,
+      dominio,
+      ...FATO_DECLARADO_NA_INSCRICAO,
+    },
+    operadoresAdmitidos: dominio === 'BOOLEANO' ? IGUALDADE : [],
+  };
+}
+
 export const FATOS_DO_CANDIDATO = [
   ['MODALIDADE', 'Modalidade', 'TEXTO'],
   ['DATA_NASCIMENTO', 'Data de nascimento', 'DATA'],
   ['OPTOU_PELAS_COTAS_DA_LEI', 'Optou pelas cotas da Lei', 'BOOLEANO'],
-].map(([codigo, nome, dominio], i) => ({
-  id: `01a0d640-0000-7000-8000-0000000000f${i + 1}`,
-  codigo,
-  nome,
-  dominio,
-  ...FATO_DECLARADO_NA_INSCRICAO,
-}));
+].map(fatoDoCandidato);
 
 export const FASES_DO_CATALOGO = [
   ...FASES_CANONICAS,

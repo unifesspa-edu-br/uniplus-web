@@ -5,12 +5,45 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { GEO_BASE_PATH } from '@uniplus/shared-data/geo';
-import { SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
+import { type FormularioRenderizavelDto, SELECAO_BASE_PATH } from '@uniplus/shared-data/selecao';
 import { afterEach, describe, expect, it } from 'vitest';
 import { SimulacaoDoProcessoPage } from './simulacao-do-processo.page';
 
 const BASE = 'http://localhost:5000';
 const ID = '01960000-0000-7000-0000-000000000515';
+
+const FORMULARIO_DA_HABILITACAO: FormularioRenderizavelDto = {
+  faseId: null,
+  dependenciasDaAvaliacao: null,
+  dependenciasDoFator: null,
+  formulario: {
+    finalidade: 'HABILITACAO',
+    titulo: null,
+    etapas: [
+      {
+        codigo: 'DOCUMENTOS',
+        codigoNasRegras: null,
+        ordem: 0,
+        tipo: 'BLOCO',
+        bloco: 'COMPROVACAO_DOCUMENTAL',
+        apresentacao: { titulo: 'Documentos', descricao: null, aviso: null },
+      },
+    ],
+    termos: [],
+    coleta: { itens: [], grupos: [] },
+    regras: { etapas: [], termos: [], derivacoes: [], agregados: [] },
+    pressupostos: { fatos: [], dataReferenciaFatos: null, fusoDoEnvio: null },
+  },
+  comprovacaoDocumental: [
+    {
+      rotulo: 'Histórico escolar',
+      aplicabilidade: 'GERAL',
+      obrigatorio: true,
+      formatos: { qualquer: false, lista: ['PDF'] },
+      modelo: null,
+    },
+  ],
+};
 
 describe('SimulacaoDoProcessoPage', () => {
   afterEach(() => TestBed.inject(HttpTestingController).verify());
@@ -40,37 +73,7 @@ describe('SimulacaoDoProcessoPage', () => {
       .expectOne(
         `${BASE}/api/selecao/admin/processos-seletivos/${ID}/formularios/HABILITACAO/renderizavel`,
       )
-      .flush({
-        finalidade: 'HABILITACAO',
-        titulo: null,
-        etapas: [
-          {
-            codigo: 'DOCUMENTOS',
-            codigoNasRegras: null,
-            ordem: 0,
-            tipo: 'BLOCO',
-            bloco: 'COMPROVACAO_DOCUMENTAL',
-            titulo: 'Documentos',
-            descricao: null,
-            aviso: null,
-          },
-        ],
-        termos: [],
-        fatosColetados: [],
-        grupos: [],
-        regras: { etapas: [], termos: [], derivacoes: [], agregados: [] },
-        pressupostos: [],
-        dataReferenciaFatos: null,
-        comprovacaoDocumental: [
-          {
-            rotulo: 'Histórico escolar',
-            aplicabilidade: 'GERAL',
-            obrigatorio: true,
-            formatos: { qualquer: false, lista: ['PDF'] },
-            modelo: null,
-          },
-        ],
-      });
+      .flush(FORMULARIO_DA_HABILITACAO);
     fixture.detectChanges();
 
     const tela = fixture.nativeElement as HTMLElement;

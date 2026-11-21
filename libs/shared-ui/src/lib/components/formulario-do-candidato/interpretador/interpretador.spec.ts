@@ -1,5 +1,9 @@
 import { interpretarFormulario } from './interpretador';
-import type { RegrasDoFormulario, SimulacaoDoFormulario, ValorJson } from './regras-do-formulario';
+import type {
+  CampoAvaliado,
+  RegrasDoFormulario,
+  SimulacaoDoFormulario,
+} from './regras-do-formulario';
 
 /**
  * O corpus de casos compartilhado com a API (`contracts/formularios/casos` do uniplus-api, copiado em
@@ -10,7 +14,7 @@ import type { RegrasDoFormulario, SimulacaoDoFormulario, ValorJson } from './reg
 interface Caso extends SimulacaoDoFormulario {
   readonly descricao: string;
   readonly regras: RegrasDoFormulario;
-  readonly esperado: ValorJson;
+  readonly esperado: unknown;
 }
 
 const casos = Object.entries(
@@ -27,10 +31,9 @@ describe('interpretador do formulário — corpus compartilhado com a API', () =
 
     expect(resultado.valida, resultado.valida ? '' : JSON.stringify(resultado.erro)).toBe(true);
     if (!resultado.valida) return;
-    expect(
-      divergencias(caso.esperado, resultado.avaliacao as unknown as ValorJson, 'esperado'),
-      caso.descricao,
-    ).toEqual([]);
+    expect(divergencias(caso.esperado, resultado.avaliacao, 'esperado'), caso.descricao).toEqual(
+      [],
+    );
   });
 });
 
@@ -45,8 +48,10 @@ const FAIXA_DE_NASCIMENTO = (
         itens: [
           {
             fatoCodigo: 'NASCIMENTO',
-            obrigatoriedade: 'SEMPRE',
-            restricoes: [{ tipo: 'FAIXA_DE_DATA', dataMinima, dataMaxima }],
+            regras: {
+              obrigatoriedade: { tipo: 'SEMPRE' },
+              restricoes: [{ tipo: 'FAIXA_DE_DATA', dataMinima, dataMaxima }],
+            },
           },
         ],
       },
@@ -66,7 +71,7 @@ describe('interpretador do formulário — faixa de data', () => {
     expect(resultado).toEqual({
       valida: false,
       erro: {
-        caminho: 'etapas[0].itens[0].restricoes[0]',
+        caminho: 'etapas[0].itens[0].regras.restricoes[0]',
         mensagem: expect.stringContaining('mínima'),
       },
     });
@@ -92,7 +97,7 @@ describe('interpretador do formulário — faixa de data', () => {
       ),
     ).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].itens[0].restricoes[0].dataMinima' },
+      erro: { caminho: 'etapas[0].itens[0].regras.restricoes[0].dataMinima' },
     });
     expect(
       interpretarFormulario(
@@ -101,7 +106,7 @@ describe('interpretador do formulário — faixa de data', () => {
       ),
     ).toMatchObject({
       valida: false,
-      erro: { caminho: 'etapas[0].itens[0].restricoes[0].dataMaxima.data' },
+      erro: { caminho: 'etapas[0].itens[0].regras.restricoes[0].dataMaxima.data' },
     });
   });
 
@@ -121,11 +126,18 @@ describe('interpretador do formulário — faixa de data', () => {
   });
 });
 
+const SEMPRE = { obrigatoriedade: { tipo: 'SEMPRE' } };
+
 describe('interpretador do formulário — recusas', () => {
   it('recusa as regras fora da forma com o caminho do problema', () => {
     const resultado = interpretarFormulario(
       {
-        etapas: [{ codigo: 'DADOS', itens: [{ fatoCodigo: 'IDADE', obrigatoriedade: 'QUANDO' }] }],
+        etapas: [
+          {
+            codigo: 'DADOS',
+            itens: [{ fatoCodigo: 'IDADE', regras: { obrigatoriedade: { tipo: 'QUANDO' } } }],
+          },
+        ],
       },
       {},
     );
@@ -133,9 +145,52 @@ describe('interpretador do formulário — recusas', () => {
     expect(resultado).toEqual({
       valida: false,
       erro: {
-        caminho: 'etapas[0].itens[0].obrigatoriedade',
+        caminho: 'etapas[0].itens[0].regras.obrigatoriedade',
         mensagem: expect.stringContaining('QUANDO com ele'),
       },
+    });
+  });
+
+  it('recusa o campo sem `regras` e o grupo sem `ocorrencias` ou sem `regras`', () => {
+    const grupo = { codigo: 'FAMILIA', subitens: [] };
+    const recusaDe = (etapa: object): unknown =>
+      interpretarFormulario({ etapas: [{ codigo: 'DADOS', ...etapa }] } as RegrasDoFormulario, {});
+
+    expect(recusaDe({ itens: [{ fatoCodigo: 'IDADE' }] })).toMatchObject({
+      valida: false,
+      erro: { caminho: 'etapas[0].itens[0].regras' },
+    });
+    expect(recusaDe({ grupos: [{ ...grupo, regras: SEMPRE }] })).toMatchObject({
+      valida: false,
+      erro: { caminho: 'etapas[0].grupos[0].ocorrencias' },
+    });
+    expect(
+      recusaDe({ grupos: [{ ...grupo, ocorrencias: { minimo: 0, incluiCandidato: false } }] }),
+    ).toMatchObject({ valida: false, erro: { caminho: 'etapas[0].grupos[0].regras' } });
+  });
+
+  it('recusa o máximo de ocorrências menor que o mínimo, com o caminho dentro de `ocorrencias`', () => {
+    const grupo = {
+      codigo: 'FAMILIA',
+      ocorrencias: { minimo: 3, maximo: 2, incluiCandidato: false },
+      regras: SEMPRE,
+      subitens: [],
+    };
+
+    expect(
+      interpretarFormulario({ etapas: [{ codigo: 'DADOS', grupos: [grupo] }] }, {}),
+    ).toMatchObject({
+      valida: false,
+      erro: { caminho: 'etapas[0].grupos[0].ocorrencias.maximo' },
+    });
+  });
+
+  it('recusa o termo sem `regras`', () => {
+    const regras: object = { termos: [{ codigo: 'VERACIDADE' }] };
+
+    expect(interpretarFormulario(regras as RegrasDoFormulario, {})).toMatchObject({
+      valida: false,
+      erro: { caminho: 'termos[0].regras' },
     });
   });
 });
@@ -145,11 +200,7 @@ describe('interpretador do formulário — recusas', () => {
  * objeto de uma lista esperada confere com algum objeto da lista do resultado; e o valor simples —
  * inclusive a lista de valores simples — é igual.
  */
-function divergencias(
-  esperado: ValorJson | undefined,
-  real: ValorJson | undefined,
-  caminho: string,
-): string[] {
+function divergencias(esperado: unknown, real: unknown, caminho: string): string[] {
   if (ehObjeto(esperado)) {
     if (!ehObjeto(real)) return [`${caminho}: esperado um objeto, veio ${JSON.stringify(real)}`];
     return Object.entries(esperado).flatMap(([chave, valor]) =>
@@ -170,7 +221,7 @@ function divergencias(
     : [`${caminho}: esperado ${JSON.stringify(esperado)}, veio ${JSON.stringify(real)}`];
 }
 
-function ehObjeto(valor: ValorJson | undefined): valor is { readonly [chave: string]: ValorJson } {
+function ehObjeto(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
 
@@ -178,21 +229,21 @@ const NOME_CIVIL = {
   etapas: [
     {
       codigo: 'DADOS',
-      itens: [{ fatoCodigo: 'NOME', obrigatoriedade: 'SEMPRE', formato: 'NOME_PESSOA' }],
+      itens: [
+        {
+          fatoCodigo: 'NOME',
+          regras: { obrigatoriedade: { tipo: 'SEMPRE' } },
+          formato: 'NOME_PESSOA',
+        },
+      ],
     },
   ],
 } as Parameters<typeof interpretarFormulario>[0];
 
-function campoNome(
-  nome: string,
-  fixos: ReadonlySet<string>,
-): { estado: string; restricoesVioladas: readonly string[] } {
+function campoNome(nome: string, fixos: ReadonlySet<string>): CampoAvaliado {
   const resultado = interpretarFormulario(NOME_CIVIL, { respostas: { NOME: nome } }, fixos);
   if (!resultado.valida) throw new Error(JSON.stringify(resultado.erro));
-  return resultado.avaliacao.campos?.[0] as {
-    estado: string;
-    restricoesVioladas: readonly string[];
-  };
+  return resultado.avaliacao.campos[0];
 }
 
 describe('interpretador do formulário — resposta fixa', () => {
@@ -201,12 +252,14 @@ describe('interpretador do formulário — resposta fixa', () => {
     (nome) => {
       const campo = campoNome(nome, new Set(['NOME']));
 
-      expect(campo.restricoesVioladas).toEqual([]);
+      expect(campo.regras.restricoesVioladas).toEqual([]);
       expect(campo.estado).toBe('RESOLVIDO');
     },
   );
 
   it('a mesma resposta digitada pelo candidato continua recusada pelo formato', () => {
-    expect(campoNome('Maria S. Silva', new Set()).restricoesVioladas).toEqual(['FORMATO_TEXTO']);
+    expect(campoNome('Maria S. Silva', new Set()).regras.restricoesVioladas).toEqual([
+      'FORMATO_TEXTO',
+    ]);
   });
 });

@@ -22,6 +22,7 @@ import {
   eixosDoTipo,
   eixosEditaveis,
   exigirSe,
+  protecaoDoFato,
   obrigatorioNaoEmBranco,
   type DefinicaoEmEdicao,
   type TipoDoFato,
@@ -48,9 +49,9 @@ export function criarFormularioDoDescritivo() {
 
 export function valoresDoDescritivo(fato: FatoCandidatoDto) {
   return {
-    nome: fato.nome,
-    descricao: fato.descricao ?? '',
-    componenteExibicao: fato.componenteExibicao ?? '',
+    nome: fato.descritivo.nome,
+    descricao: fato.descritivo.descricao,
+    componenteExibicao: fato.descritivo.componenteExibicao ?? '',
   };
 }
 
@@ -64,6 +65,13 @@ export function comandoDoDescritivo(form: DescritivoForm): DescritivoDoFatoInput
   };
 }
 
+function controleDaFinalidade() {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.finalidadeTratamento)],
+  });
+}
+
 export function criarFormularioDaDefinicao() {
   const obrigatorio = { nonNullable: true as const, validators: [Validators.required] };
   return new FormGroup({
@@ -74,25 +82,21 @@ export function criarFormularioDaDefinicao() {
     escopo: new FormControl('CANDIDATO', { nonNullable: true }),
     pontoResolucao: new FormControl('', obrigatorio),
     classificacaoProtecao: new FormControl('', obrigatorio),
-    finalidadeTratamento: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.finalidadeTratamento)],
-    }),
+    finalidadeTratamento: controleDaFinalidade(),
     hipoteseLegal: new FormControl('', obrigatorio),
   });
 }
 
 export function valoresDaDefinicao(fato: FatoCandidatoDto): DefinicaoEmEdicao {
+  const { definicao } = fato;
   return {
-    dominio: fato.dominio,
-    cardinalidade: fato.cardinalidade,
-    fonteValores: fato.fonteValores ?? '',
-    formato: fato.formato ?? '',
-    escopo: fato.escopo,
-    pontoResolucao: fato.pontoResolucao,
-    classificacaoProtecao: fato.classificacaoProtecao,
-    finalidadeTratamento: fato.finalidadeTratamento,
-    hipoteseLegal: fato.hipoteseLegal,
+    ...protecaoDoFato(fato),
+    dominio: definicao.dominio,
+    cardinalidade: definicao.cardinalidade,
+    fonteValores: definicao.valores.fonte ?? '',
+    formato: definicao.formato ?? '',
+    escopo: definicao.escopo,
+    pontoResolucao: definicao.resolucao.pontoResolucao,
   };
 }
 
@@ -105,16 +109,17 @@ export function exigirTextoNaFinalidade(form: DefinicaoForm): void {
   }
 }
 
+function controleDoTextoDoValor() {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.maxLength(LIMITES_DO_FATO.textoDoValor)],
+  });
+}
+
 export function criarFormularioDaCorrecao() {
   return new FormGroup({
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(LIMITES_DO_FATO.textoDoValor)],
-    }),
-    orientacao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(LIMITES_DO_FATO.textoDoValor)],
-    }),
+    descricao: controleDoTextoDoValor(),
+    orientacao: controleDoTextoDoValor(),
   });
 }
 
@@ -124,14 +129,8 @@ export function criarFormularioDoNovoValor() {
       nonNullable: true,
       validators: [Validators.required, Validators.maxLength(LIMITES_DO_FATO.codigoDoValor)],
     }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(LIMITES_DO_FATO.textoDoValor)],
-    }),
-    orientacao: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.maxLength(LIMITES_DO_FATO.textoDoValor)],
-    }),
+    descricao: controleDoTextoDoValor(),
+    orientacao: controleDoTextoDoValor(),
   });
 }
 
@@ -171,32 +170,67 @@ export function ligarDependenciasDaDefinicao(
   fato: Signal<FatoCandidatoDto | null>,
   tipo: Signal<TipoDoFato>,
 ): DependenciasDaDefinicao {
-  const valores = toSignal(form.valueChanges.pipe(map(() => form.getRawValue())), {
-    initialValue: form.getRawValue(),
-  });
+  const valores = valoresDoFormulario(form);
   const eixos = computed(() => eixosEditaveis(tipo(), valores().dominio));
   const classificacoes = computed(() => classificacoesDoDominio(valores().dominio));
   const hipoteses = computed(() => hipotesesDaClassificacao(valores().classificacaoProtecao));
   const dominios = computed(() => (tipo() === 'DECLARADO' ? DOMINIOS : DOMINIOS_DO_DERIVADO));
-  const avisaNovaAprovacao = computed(() => {
-    const atual = fato();
-    return (
-      atual !== null && atual.aprovacao.situacao !== 'PENDENTE' && protecaoMudou(atual, valores())
-    );
-  });
+  const avisaNovaAprovacao = computed(() => exigeNovaAprovacao(fato(), valores()));
+  ajustarOsCamposAoQueMudou(form, fato, tipo, { eixos, classificacoes, hipoteses });
+  return { valores, eixos, dominios, classificacoes, hipoteses, avisaNovaAprovacao };
+}
 
+function valoresDoFormulario(form: DefinicaoForm): Signal<DefinicaoEmEdicao> {
+  return toSignal(form.valueChanges.pipe(map(() => form.getRawValue())), {
+    initialValue: form.getRawValue(),
+  });
+}
+
+function exigeNovaAprovacao(atual: FatoCandidatoDto | null, digitado: DefinicaoEmEdicao): boolean {
+  return (
+    atual !== null &&
+    atual.definicao.protecao.aprovacao.situacao !== 'PENDENTE' &&
+    protecaoMudou(valoresDaDefinicao(atual), digitado)
+  );
+}
+
+function ajustarOsCamposAoQueMudou(
+  form: DefinicaoForm,
+  fato: Signal<FatoCandidatoDto | null>,
+  tipo: Signal<TipoDoFato>,
+  derivados: Pick<DependenciasDaDefinicao, 'eixos' | 'classificacoes' | 'hipoteses'>,
+): void {
   effect(() => {
+    const { classificacoes, hipoteses, eixos } = derivados;
     const [c, h, e, doTipo] = [classificacoes(), hipoteses(), eixos(), eixosDoTipo(tipo())];
     untracked(() => {
       esvaziarProtecaoIncompativel(form, fato(), c, h);
-      // Eixo que o tipo do fato não edita guarda o valor do servidor: nem se exige, nem se esvazia.
-      exigirSe(form.controls.dominio, e.dominio, doTipo.dominio);
-      exigirSe(form.controls.fonteValores, e.fonteValores, doTipo.fonteValores);
-      exigirSe(form.controls.formato, e.formato, doTipo.formato);
+      exigirOsEixosDoTipo(form, e, doTipo);
     });
   });
+}
 
-  return { valores, eixos, dominios, classificacoes, hipoteses, avisaNovaAprovacao };
+/** Eixo que o tipo do fato não edita guarda o valor do servidor: nem se exige, nem se esvazia. */
+function exigirOsEixosDoTipo(
+  form: DefinicaoForm,
+  exigidos: ReturnType<typeof eixosEditaveis>,
+  doTipo: ReturnType<typeof eixosDoTipo>,
+): void {
+  exigirSe(form.controls.dominio, exigidos.dominio, doTipo.dominio);
+  exigirSe(form.controls.fonteValores, exigidos.fonteValores, doTipo.fonteValores);
+  exigirSe(form.controls.formato, exigidos.formato, doTipo.formato);
+}
+
+/** O que a pessoa mexeu em relação ao servidor; sem fato carregado, tudo conta como mexido. */
+function mexidoDesdeOServidor(form: DefinicaoForm, servidor: FatoCandidatoDto | null) {
+  const original = servidor === null ? null : valoresDaDefinicao(servidor);
+  const mexido = (campo: keyof DefinicaoEmEdicao): boolean =>
+    original === null || form.controls[campo].value !== original[campo];
+  return {
+    dominio: mexido('dominio'),
+    classificacao: mexido('classificacaoProtecao'),
+    hipotese: mexido('hipoteseLegal'),
+  };
 }
 
 function esvaziarProtecaoIncompativel(
@@ -205,14 +239,11 @@ function esvaziarProtecaoIncompativel(
   classificacoes: ReturnType<typeof classificacoesDoDominio>,
   hipoteses: ReturnType<typeof hipotesesDaClassificacao>,
 ): void {
-  const { dominio, classificacaoProtecao, hipoteseLegal } = form.controls;
-  const dominioMudou = servidor !== null && dominio.value !== servidor.dominio;
-  const classificacaoMudou =
-    servidor !== null && classificacaoProtecao.value !== servidor.classificacaoProtecao;
-  if (dominioMudou || classificacaoMudou || servidor === null) {
-    esvaziarSeForaDas(classificacaoProtecao, classificacoes);
+  const mexido = mexidoDesdeOServidor(form, servidor);
+  if (mexido.dominio || mexido.classificacao) {
+    esvaziarSeForaDas(form.controls.classificacaoProtecao, classificacoes);
   }
-  if (classificacaoMudou || servidor === null || hipoteseLegal.value !== servidor.hipoteseLegal) {
-    esvaziarSeForaDas(hipoteseLegal, hipoteses);
+  if (mexido.classificacao || mexido.hipotese) {
+    esvaziarSeForaDas(form.controls.hipoteseLegal, hipoteses);
   }
 }

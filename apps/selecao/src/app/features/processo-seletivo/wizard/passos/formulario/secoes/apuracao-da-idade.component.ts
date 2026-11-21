@@ -4,7 +4,7 @@ import { DateBrPipe } from '@uniplus/shared-ui/pipes';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { desempateIdosoSemApuracao, PASSO_DESEMPATE } from '../../desempate/desempate-por-idade';
-import { ancoraEmFase, ANCORAS_DA_IDADE } from '../apuracao-da-idade';
+import { referenciaEmFase, REFERENCIAS_DA_IDADE } from '../apuracao-da-idade';
 import { fatosCitadosPelasExigencias } from '../fatos-coletados-da-inscricao';
 
 /**
@@ -28,17 +28,17 @@ import { fatosCitadosPelasExigencias } from '../fatos-coletados-da-inscricao';
 export class ApuracaoDaIdadeComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
 
-  protected readonly ancoras = ANCORAS_DA_IDADE;
+  protected readonly referencias = REFERENCIAS_DA_IDADE;
 
   protected readonly referencia = computed(() => this.store.draft().formulario.referenciaTemporal);
 
-  /** A âncora da apuração como o seletor a nomeia. */
-  protected readonly rotuloDaAncora = computed(
-    () => this.ancoras.find((opcao) => opcao.valor === this.referencia().tipo)?.rotulo ?? null,
+  /** A referência da apuração como o seletor a nomeia. */
+  protected readonly rotuloDaReferencia = computed(
+    () => this.referencias.find((opcao) => opcao.valor === this.referencia().tipo)?.rotulo ?? null,
   );
 
   /** Se a apuração da idade precisa de fase — só então o seletor de fase aparece. */
-  protected readonly precisaDeFase = computed(() => ancoraEmFase(this.referencia().tipo));
+  protected readonly precisaDeFase = computed(() => referenciaEmFase(this.referencia().tipo));
 
   /** O desempate por idoso declarado sem apuração da idade neste formulário. */
   protected readonly desempateIdosoSemApuracao = computed(() => {
@@ -52,7 +52,7 @@ export class ApuracaoDaIdadeComponent {
     fatosCitadosPelasExigencias(this.store.draft().documentos).has('FAIXA_ETARIA'),
   );
 
-  /** As fases do cronograma, para ancorar a apuração da idade. */
+  /** As fases do cronograma, para referenciar a apuração da idade. */
   protected readonly fasesEscolhiveis = computed(() =>
     this.store.draft().cronograma.fases.map((fase) => fase.codigo),
   );

@@ -1,7 +1,7 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import {
-  type FatoCandidatoView,
+  type FatoDoCatalogoDto,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -29,7 +29,7 @@ describe('ModeloFormularioEdicaoPage', () => {
 
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
-    fatosExtras: readonly FatoCandidatoView[] = [],
+    fatosExtras: readonly FatoDoCatalogoDto[] = [],
     fases: readonly object[] = FASES,
     falhando: readonly string[] = [],
   ): Promise<HTMLElement> {

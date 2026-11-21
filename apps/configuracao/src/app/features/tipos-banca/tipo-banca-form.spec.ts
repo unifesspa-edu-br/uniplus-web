@@ -1,3 +1,4 @@
+import { TipoDeBancaCodigo } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   comandoDeAtualizacao,
@@ -5,24 +6,21 @@ import {
   criarFormularioDeBanca,
   valoresDaBanca,
 } from './tipo-banca-form';
+import { tipoDeBanca } from './tipos-banca.testing';
 
 describe('formulário de tipo de banca', () => {
   it('preenche valores opcionais, valida campos e prepara atualização sem código', () => {
+    const banca = tipoDeBanca(TipoDeBancaCodigo.BANCA_ENTREVISTA, {
+      id: '1',
+      nome: 'Banca',
+      faseTipica: null,
+    });
     const form = criarFormularioDeBanca();
     expect(form.invalid).toBe(true);
-    form.reset(
-      valoresDaBanca({
-        id: '1',
-        codigo: 'BANCA',
-        nome: 'Banca',
-        faseTipica: null,
-        descricao: null,
-        criadoEm: '',
-      }),
-    );
+    form.reset(valoresDaBanca(banca));
     expect(form.valid).toBe(true);
     expect(form.getRawValue()).toEqual({
-      codigo: 'BANCA',
+      codigo: 'BANCA_ENTREVISTA',
       nome: 'Banca',
       faseTipica: '',
       descricao: '',
@@ -30,8 +28,12 @@ describe('formulário de tipo de banca', () => {
     form.controls.nome.setValue(' Nome ');
     form.controls.faseTipica.setValue(' Avaliação ');
     form.controls.descricao.setValue('  ');
-    expect(comandoDeAtualizacao('1', form)).toEqual({
+    expect(comandoDeAtualizacao(banca, form)).toEqual({
       id: '1',
+      papel: 'AVALIA_O_MERITO',
+      exigeDuasOuMaisBancas: false,
+      encerraRecursoNaPrimeiraInstancia: false,
+      tiposDeDecisaoJulgados: [],
       nome: 'Nome',
       faseTipica: 'Avaliação',
       descricao: null,

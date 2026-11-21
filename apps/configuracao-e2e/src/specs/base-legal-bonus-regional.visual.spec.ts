@@ -1,5 +1,10 @@
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test';
 import { assertReflowContract, runAxeWcagAA } from '@uniplus/shared-e2e';
+import {
+  BASE_DA_LEI,
+  BASE_DA_LISTA,
+  TIPOS_INSTRUMENTO,
+} from '../support/api-da-base-legal-bonus-regional';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -16,31 +21,7 @@ const CORS_HEADERS = {
 const LINK_HEADER =
   '</api/configuracao/base-legal-bonus-regional?cursor=PROXIMA&direction=next>; rel="next"';
 
-const BASES = [
-  {
-    id: 'ba5e0000-0000-7000-8000-000000000001',
-    codigo: 'PORTARIA_UNIFESSPA_2514_2023',
-    tipoInstrumento: 'PORTARIA',
-    identificacao: 'Portaria Unifesspa nº 2514/2023',
-    descricao: 'Institui inclusão regional.',
-    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
-    criadoEm: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'ba5e0000-0000-7000-8000-000000000002',
-    codigo: 'LEI_12711_2012',
-    tipoInstrumento: 'LEI',
-    identificacao: 'Lei nº 12.711/2012',
-    descricao: 'Reserva de vagas.',
-    municipios: [{ codigoIbge: '1505502', nome: 'Parauapebas', uf: 'PA' }],
-    criadoEm: '2026-01-01T00:00:00Z',
-  },
-] as const;
-
-const TIPOS_INSTRUMENTO = [
-  { codigo: 'PORTARIA', nome: 'Portaria', descricao: 'Ato administrativo.' },
-  { codigo: 'LEI', nome: 'Lei', descricao: 'Ato normativo.' },
-];
+const BASES = [BASE_DA_LISTA, BASE_DA_LEI];
 
 test.describe('Base legal de bônus regional — lista e formulário', () => {
   test.beforeEach(async ({ page }, testInfo) => {
@@ -83,7 +64,7 @@ test.describe('Base legal de bônus regional — lista e formulário', () => {
 
   test('o formulário não viola WCAG 2.1 A/AA', async ({ page }) => {
     await page.getByRole('button', { name: 'Nova base legal' }).first().click();
-    await expect(page.locator('[formControlName="identificacao"]')).toBeVisible();
+    await expect(page.getByLabel('Identificação', { exact: true })).toBeVisible();
 
     const { violations } = await runAxeWcagAA(page);
 

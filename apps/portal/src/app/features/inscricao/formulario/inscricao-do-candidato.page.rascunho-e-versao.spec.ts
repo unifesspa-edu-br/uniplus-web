@@ -9,8 +9,15 @@ import {
   type InscricaoDto,
   type InscricaoRequest,
   SituacaoInscricao,
+  TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import {
+  DADOS,
+  FORMULARIO_DE_INSCRICAO_MOCK,
+  campoColetado,
+  comFormulario,
+  item,
+} from './inscricao-do-candidato.testing';
 import {
   problema,
   COM_NOME_SOCIAL,
@@ -59,55 +66,44 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   it('o grupo que o candidato removeu vai como lista vazia, para o servidor não manter as ocorrências gravadas', async () => {
-    cenario.servico.formulario = {
-      ...FORMULARIO_DE_INSCRICAO_MOCK,
-      grupos: [
-        {
-          codigo: 'FAMILIA',
-          ordem: 0,
-          etapaCodigo: 'Inscricao:DADOS_PESSOAIS',
-          rotulo: 'Integrante',
-          minimo: 0,
-          maximo: null,
-          incluiCandidato: false,
-          subitens: [
-            {
-              fatoCodigo: 'RENDA',
-              ordem: 0,
-              rotulo: 'Renda',
-              tipoRenderizacao: 'NUMERO',
-              valoresSelecionaveis: null,
-              etapaCodigo: 'Inscricao:DADOS_PESSOAIS',
-              formato: null,
-              ajuda: null,
-              pedirConfirmacao: false,
-            },
-          ],
-        },
-      ],
+    const { coleta, regras } = FORMULARIO_DE_INSCRICAO_MOCK.formulario;
+    const ocorrencias = { minimo: 0, maximo: null, incluiCandidato: false };
+    cenario.servico.formulario = comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
+      coleta: {
+        ...coleta,
+        grupos: [
+          {
+            codigo: 'FAMILIA',
+            ordem: 0,
+            etapaCodigo: DADOS,
+            rotulo: 'Integrante',
+            ocorrencias,
+            subitens: [campoColetado('RENDA', 'Renda', TipoRenderizacaoCodigo.NUMERO)],
+          },
+        ],
+      },
       regras: {
-        ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
-        etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((etapa, i) =>
-          i > 0
+        ...regras,
+        etapas: regras.etapas.map((etapa, posicao) =>
+          posicao > 0
             ? etapa
             : {
                 ...etapa,
                 grupos: [
                   {
                     codigo: 'FAMILIA',
-                    exibicao: null,
-                    obrigatoriedade: 'SEMPRE',
-                    predicadoObrigatoriedade: null,
-                    minimo: 0,
-                    maximo: null,
-                    incluiCandidato: false,
-                    subitens: [{ ...etapa.itens[0], fatoCodigo: 'RENDA', formato: null }],
+                    ocorrencias,
+                    regras: {
+                      exibicao: null,
+                      obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+                    },
+                    subitens: [item('RENDA')],
                   },
                 ],
               },
         ),
       },
-    };
+    });
     cenario.servico.inscricao = inscricao({
       grupos: { FAMILIA: [{ id: 'ocorrencia-1', respostas: { RENDA: 1500 } }] },
     });

@@ -7,6 +7,7 @@ import {
   valoresDaBaseLegal,
   valoresEmBrancoDaBaseLegal,
 } from './base-legal-form';
+import { TipoInstrumentoNormativoCodigo } from '@uniplus/shared-data/configuracao';
 import { MARABA, portaria } from './base-legal-bonus-regional.testing';
 
 const MUNICIPIO = { codigoIbge: MARABA.codigoIbge, nome: MARABA.nome, uf: MARABA.uf };
@@ -17,7 +18,11 @@ describe('formulário de base legal', () => {
     form.reset(valoresEmBrancoDaBaseLegal());
     expect(form.invalid).toBe(true);
 
-    form.patchValue({ tipoInstrumento: 'PORTARIA', identificacao: 'Portaria', descricao: 'Texto' });
+    form.patchValue({
+      tipoInstrumento: TipoInstrumentoNormativoCodigo.PORTARIA,
+      identificacao: 'Portaria',
+      descricao: 'Texto',
+    });
     expect(form.valid).toBe(true);
   });
 
@@ -47,19 +52,30 @@ describe('formulário de base legal', () => {
     const form = criarFormularioDeBaseLegal();
     form.reset(valoresDaBaseLegal(portaria));
     expect(form.getRawValue()).toEqual({
-      tipoInstrumento: 'PORTARIA',
+      tipoInstrumento: portaria.tipoInstrumento.codigo,
       identificacao: portaria.identificacao,
       descricao: portaria.descricao,
     });
   });
 
+  it('envia o tipo nulo quando nenhum tipo foi escolhido', () => {
+    const form = criarFormularioDeBaseLegal();
+    form.reset(valoresEmBrancoDaBaseLegal());
+
+    expect(comandoDeCriacao(form, []).tipoInstrumento).toBeNull();
+  });
+
   it('apara os textos nos comandos e envia só código, nome e UF de cada município', () => {
     const form = criarFormularioDeBaseLegal();
-    form.patchValue({ tipoInstrumento: 'LEI', identificacao: ' Lei 1 ', descricao: ' Texto ' });
+    form.patchValue({
+      tipoInstrumento: TipoInstrumentoNormativoCodigo.LEI,
+      identificacao: ' Lei 1 ',
+      descricao: ' Texto ',
+    });
     const municipios = [{ ...MUNICIPIO, ddd: '94' }];
 
     expect(comandoDeCriacao(form, municipios)).toEqual({
-      tipoInstrumento: 'LEI',
+      tipoInstrumento: TipoInstrumentoNormativoCodigo.LEI,
       identificacao: 'Lei 1',
       descricao: 'Texto',
       municipios: [MUNICIPIO],

@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import type { FormularioDto } from '@uniplus/shared-data/selecao';
+import { fatoComOperadores } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 
 import type { ExigenciaDeDocumento } from '../../processo-seletivo.models';
@@ -38,13 +38,12 @@ describe('FormularioPassoComponent: documentos da fase', () => {
         etapa('DOCUMENTOS', 1, 'COMPROVACAO_DOCUMENTAL'),
         etapa('REVISAO_E_ACEITE', 2, 'REVISAO_E_ACEITE'),
       ],
-      fatosColetados: [campo('NOME', 0, 'DADOS_BASICOS')],
-      grupos: [],
-    } as unknown as FormularioDto;
+      coleta: { itens: [campo('NOME', 0, 'DADOS_BASICOS')], grupos: [] },
+    };
 
     /** O processo publicado: os passos mostram o que está gravado como texto. */
     function emConsulta(): void {
-      TestBed.inject(CatalogoDeFatos).fatos.set([PCD_NO_CATALOGO] as never);
+      TestBed.inject(CatalogoDeFatos).fatos.set([fatoComOperadores(PCD_NO_CATALOGO)]);
       store.patchObjectSection('formulario', {
         conteudo: conteudoDoFormulario(COM_ETAPA_DE_DOCUMENTOS),
       });

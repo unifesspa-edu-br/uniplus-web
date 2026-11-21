@@ -9,6 +9,11 @@ function naoVazio(texto: string): string | null {
   return limpo === '' ? null : limpo;
 }
 
+function baseLegalDe(id: string): DefinirBonusRegionalRequest['baseLegal'] {
+  const limpo = naoVazio(id);
+  return limpo === null ? null : { id: limpo };
+}
+
 /**
  * Converte o rascunho de bônus no `DefinirBonusRegionalRequest`. A declaração é obrigatória: só
  * se grava depois de o operador responder se o processo aplica o bônus. `aplica === false` grava
@@ -19,26 +24,25 @@ export function comoComandoDeBonus(bonus: WizardDraft['bonus']): DefinirBonusReg
   if (bonus.aplica === null) {
     throw new Error('A declaração do bônus regional precisa ser respondida antes de gravar.');
   }
+  return bonus.aplica ? bonusAplicado(bonus) : BONUS_NAO_APLICADO;
+}
 
-  if (!bonus.aplica) {
-    return {
-      aplica: false,
-      regraCodigo: null,
-      regraVersao: null,
-      fator: null,
-      teto: null,
-      baseLegalBonusRegionalId: null,
-      fatoElegibilidadeCodigo: null,
-    };
-  }
+const BONUS_NAO_APLICADO: DefinirBonusRegionalRequest = {
+  aplica: false,
+  regra: null,
+  fator: null,
+  teto: null,
+  baseLegal: null,
+  fatoElegibilidadeCodigo: null,
+};
 
+function bonusAplicado(bonus: WizardDraft['bonus']): DefinirBonusRegionalRequest {
   return {
     aplica: true,
-    regraCodigo: naoVazio(bonus.regraCodigo),
-    regraVersao: naoVazio(bonus.regraVersao),
+    regra: { codigo: naoVazio(bonus.regraCodigo), versao: naoVazio(bonus.regraVersao) },
     fator: decimalNaForma(bonus.fator),
     teto: naoVazio(bonus.teto) === null ? null : decimalNaForma(bonus.teto),
-    baseLegalBonusRegionalId: naoVazio(bonus.baseLegalBonusRegionalId),
+    baseLegal: baseLegalDe(bonus.baseLegalBonusRegionalId),
     fatoElegibilidadeCodigo: naoVazio(bonus.fatoElegibilidadeCodigo),
   };
 }

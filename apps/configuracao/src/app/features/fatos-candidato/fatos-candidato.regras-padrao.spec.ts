@@ -1,27 +1,42 @@
 import { By } from '@angular/platform-browser';
-import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  OperadorCodigo,
+  type FatoCandidatoDto,
+  type FatoCandidatoView,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   CATALOGO,
   Pagina,
-  corRaca,
   montarPagina,
   problema,
-  quilombola,
   sucesso,
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
+import {
+  comDefinicao,
+  comResolucao,
+  comValoresDeclarados,
+  corRaca,
+  emManutencao,
+  quilombola,
+} from './fatos-candidato.fixtures';
 
-const perfil = {
-  ...corRaca,
+const perfil: FatoCandidatoDto = {
+  ...comResolucao(
+    comValoresDeclarados(comDefinicao(corRaca, { cardinalidade: 'MULTIVALORADO' }), [
+      { codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null },
+    ]),
+    { origem: 'DERIVADO', binding: 'REGRA_DERIVACAO:PERFIL' },
+  ),
   codigo: 'PERFIL',
-  origem: 'DERIVADO',
-  cardinalidade: 'MULTIVALORADO',
-  binding: 'REGRA_DERIVACAO:PERFIL',
-  valores: [{ codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null }],
 };
-const booleano = { ...perfil, dominio: 'BOOLEANO', fonteValores: null, valores: [] };
+const booleano: FatoCandidatoDto = comValoresDeclarados(
+  comDefinicao(perfil, { dominio: 'BOOLEANO' }),
+  [],
+  null,
+);
 const REGRAS = `${urlDoFato(perfil)}/regras-padrao`;
 const completa = { clausula: 1, fato: 'QUILOMBOLA', operador: 'IGUAL', valor: 'true' };
 const semValor = { clausula: 1, fato: 'QUILOMBOLA', operador: 'IGUAL', valor: '' };
@@ -37,7 +52,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
 
   const abrir = async (
     fato: FatoCandidatoDto = perfil,
-    catalogo: readonly unknown[] = [quilombola],
+    catalogo: readonly FatoCandidatoView[] = [quilombola],
   ): Promise<void> => {
     p = await montarPagina([fato]);
     await p.abrirEdicao(fato, fato, catalogo);
@@ -71,7 +86,10 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     expect(put.request.headers.has('Idempotency-Key')).toBe(true);
     expect(put.request.body).toEqual({
       regras: [
-        { contribui: 'A', quando: [[{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }]] },
+        {
+          contribui: 'A',
+          quando: [[{ fato: 'QUILOMBOLA', operador: OperadorCodigo.IGUAL, valor: true }]],
+        },
       ],
     });
     put.flush(...sucesso());
@@ -91,7 +109,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
   });
 
   it('acrescentar o valor que falta não apaga a regra que está sendo montada', async () => {
-    const semValores = { ...perfil, valores: [] };
+    const semValores = comValoresDeclarados(perfil, []);
     await abrir(semValores);
     await acao('Acrescentar regra');
     p.digitar('#cfg-fato-novo-valor [formcontrolname="codigo"]', 'B');
@@ -99,19 +117,23 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
     await p.propagar();
 
     p.http.expectOne(`${urlDoFato(perfil)}/valores`).flush(...sucesso());
-    await p.recarregarOFato({
-      ...perfil,
-      valores: [{ codigo: 'B', descricao: null, ordem: 0, ativo: true, orientacao: null }],
-    });
+    await p.recarregarOFato(
+      comValoresDeclarados(perfil, [
+        { codigo: 'B', descricao: null, ordem: 0, ativo: true, orientacao: null },
+      ]),
+    );
 
     expect(p.drawerDoFato().querySelectorAll('ui-editor-de-condicoes')).toHaveLength(1);
   });
 
   it('a regra salva que cita fato desativado não trava o salvamento das demais', async () => {
-    const salva = {
+    const salva: FatoCandidatoDto = {
       ...booleano,
       regrasPadrao: [
-        { contribui: null, quando: [[{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }]] },
+        {
+          contribui: null,
+          quando: [[{ fato: 'QUILOMBOLA', operador: OperadorCodigo.IGUAL, valor: true }]],
+        },
       ],
     };
     await abrir(salva, [{ ...quilombola, ativo: false }]);
@@ -126,7 +148,7 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
   it('sem o catálogo de fatos, as regras avisam e, na nova tentativa que dá certo, o foco vai ao título das regras', async () => {
     p = await montarPagina([perfil]);
     await p.acionar(p.editar(perfil));
-    p.http.expectOne(urlDoFato(perfil)).flush(structuredClone(perfil));
+    p.http.expectOne(urlDoFato(perfil)).flush(emManutencao(structuredClone(perfil)));
     p.http
       .expectOne((r) => r.url === CATALOGO)
       .flush(...problema(503, { code: 'uniplus.internal.unexpected' }));
@@ -156,14 +178,16 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
   });
 
   it('a regra salva que contribui um valor já desativado o mantém na lista, marcado', async () => {
-    const comDesativado = {
-      ...perfil,
-      valores: [
+    const comDesativado: FatoCandidatoDto = {
+      ...comValoresDeclarados(perfil, [
         { codigo: 'A', descricao: null, ordem: 0, ativo: true, orientacao: null },
         { codigo: 'B', descricao: null, ordem: 1, ativo: false, orientacao: null },
-      ],
+      ]),
       regrasPadrao: [
-        { contribui: 'B', quando: [[{ fato: 'QUILOMBOLA', operador: 'IGUAL', valor: true }]] },
+        {
+          contribui: 'B',
+          quando: [[{ fato: 'QUILOMBOLA', operador: OperadorCodigo.IGUAL, valor: true }]],
+        },
       ],
     };
     await abrir(comDesativado);
@@ -206,10 +230,13 @@ describe('FatosCandidatoPage — regras padrão do derivado', () => {
   });
 
   it('a condição que cita fato fora do catálogo escolhível é conferida pela API, não pela tela', async () => {
-    const citaForaDoCatalogo = {
+    const citaForaDoCatalogo: FatoCandidatoDto = {
       ...booleano,
       regrasPadrao: [
-        { contribui: null, quando: [[{ fato: 'DO_PROCESSO', operador: 'IGUAL', valor: true }]] },
+        {
+          contribui: null,
+          quando: [[{ fato: 'DO_PROCESSO', operador: OperadorCodigo.IGUAL, valor: true }]],
+        },
       ],
     };
     await abrir(citaForaDoCatalogo, []);

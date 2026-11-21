@@ -1,7 +1,7 @@
 <ui-drawer
   class="form-drawer"
   [(visible)]="aberto"
-  [heading]="fato()?.nome ?? 'Fato do candidato'"
+  [heading]="titulo()"
   ariaLabel="Detalhe do fato do candidato"
   focoInicial="titulo"
   position="right"
@@ -15,9 +15,9 @@
     >
       <div class="cfg-detalhe-situacoes">
         <cfg-situacao-da-aprovacao
-          [situacao]="f.aprovacao.situacao"
-          [classificacaoRecomendada]="f.aprovacao.classificacaoRecomendada"
-          [justificativa]="f.aprovacao.justificativa"
+          [situacao]="f.definicao.protecao.aprovacao.situacao"
+          [classificacaoRecomendada]="f.definicao.protecao.aprovacao.classificacaoRecomendada"
+          [justificativa]="f.definicao.protecao.aprovacao.justificativa"
         />
         <ui-tag [variant]="f.ativo ? 'success' : 'neutral'">{{
           f.ativo ? 'Ativo' : 'Desativado'
@@ -37,51 +37,47 @@
           </div>
           <div>
             <dt>Descrição</dt>
-            <dd>{{ f.descricao || '—' }}</dd>
+            <dd>{{ f.descritivo.descricao || '—' }}</dd>
           </div>
           <div>
             <dt>Origem</dt>
-            <dd>{{ rotulo(origens, f.origem) }}</dd>
+            <dd>{{ rotulo(origens, f.definicao.resolucao.origem) }}</dd>
           </div>
           <div>
             <dt>Tipo de dado</dt>
-            <dd>{{ rotulo(dominios, f.dominio) }}</dd>
+            <dd>{{ rotulo(dominios, f.definicao.dominio) }}</dd>
           </div>
           <div>
             <dt>Cardinalidade</dt>
-            <dd>{{ rotulo(cardinalidades, f.cardinalidade) }}</dd>
+            <dd>{{ rotulo(cardinalidades, f.definicao.cardinalidade) }}</dd>
           </div>
-          @if (f.fonteValores) {
+          @if (f.definicao.valores.fonte) {
             <div>
               <dt>Fonte dos valores</dt>
-              <dd>{{ rotulo(fontes, f.fonteValores) }}</dd>
+              <dd>{{ rotulo(fontes, f.definicao.valores.fonte) }}</dd>
             </div>
           }
-          @if (f.formato) {
+          @if (f.definicao.formato) {
             <div>
               <dt>Formato do texto</dt>
-              <dd>{{ rotulo(formatos, f.formato) }}</dd>
+              <dd>{{ rotulo(formatos, f.definicao.formato) }}</dd>
             </div>
           }
           <div>
             <dt>Escopo</dt>
-            <dd>{{ rotulo(escopos, f.escopo) }}</dd>
+            <dd>{{ rotulo(escopos, f.definicao.escopo) }}</dd>
           </div>
           <div>
             <dt>Componente de exibição</dt>
-            <dd>
-              {{
-                f.componenteExibicao ? rotulo(componentes, f.componenteExibicao) : rotuloDoPadrao
-              }}
-            </dd>
+            <dd>{{ rotuloDoComponente(f.descritivo.componenteExibicao) }}</dd>
           </div>
         </dl>
       </section>
-      @if (f.valores.length > 0) {
+      @if (f.definicao.valores.declarados.length > 0) {
         <section class="cfg-detalhe-secao">
           <h3 class="cfg-detalhe-secao__titulo">Valores possíveis</h3>
           <ul class="cfg-detalhe-valores">
-            @for (valor of f.valores; track valor.codigo) {
+            @for (valor of f.definicao.valores.declarados; track valor.codigo) {
               <li>
                 <div>
                   <code>{{ valor.codigo }}</code>
@@ -115,7 +111,7 @@
           </ul>
         </section>
       }
-      <cfg-detalhe-da-protecao [protecao]="f" />
+      <cfg-detalhe-da-protecao [protecao]="protecaoDe(f)" />
       <ng-container *authTemPermissao="permissaoDeConsultar">
         <cfg-historico-da-protecao cadastro="FATO" [itemId]="f.id" />
       </ng-container>
@@ -128,7 +124,7 @@
         Fechar
       </button>
       <ng-container *authTemPermissao="permissaoDeManter">
-        @if (f.aprovacao.situacao === 'AJUSTE_RECOMENDADO') {
+        @if (f.definicao.protecao.aprovacao.situacao === 'AJUSTE_RECOMENDADO') {
           <button
             type="button"
             class="btn btn--secondary"

@@ -1,7 +1,7 @@
 @if (fato(); as f) {
-  @if (temValores() || f.valores.length > 0) {
+  @if (temValores() || f.definicao.valores.declarados.length > 0) {
     <ui-recolhivel titulo="Valores">
-      @if (f.valores.length > 0) {
+      @if (f.definicao.valores.declarados.length > 0) {
         <div class="table-responsive">
           <table>
             <caption class="sr-only">
@@ -16,7 +16,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (valor of f.valores; track valor.codigo) {
+              @for (valor of f.definicao.valores.declarados; track valor.codigo) {
                 <tr>
                   <td data-label="Código">
                     <code>{{ valor.codigo }}</code>
@@ -39,7 +39,7 @@
                           <label class="field" [class.is-error]="erroDescricao">
                             <span
                               class="field__label"
-                              [class.is-required]="f.origem === 'DECLARADO'"
+                              [class.is-required]="f.definicao.resolucao.origem === 'DECLARADO'"
                               >Descrição<span class="sr-only">
                                 do valor {{ valor.codigo }}</span
                               ></span
@@ -49,7 +49,9 @@
                               type="text"
                               formControlName="descricao"
                               [id]="idDoValor(valor.codigo, 'descricao')"
-                              [attr.aria-required]="f.origem === 'DECLARADO' ? 'true' : null"
+                              [attr.aria-required]="
+                                f.definicao.resolucao.origem === 'DECLARADO' ? 'true' : null
+                              "
                               [attr.aria-invalid]="erroDescricao ? 'true' : null"
                               [attr.aria-describedby]="
                                 erroDescricao
@@ -222,14 +224,18 @@
               </label>
               @let erroNovaDescricao = erroDoNovoValor('descricao');
               <label class="field" [class.is-error]="erroNovaDescricao">
-                <span class="field__label" [class.is-required]="f.origem === 'DECLARADO'"
+                <span
+                  class="field__label"
+                  [class.is-required]="f.definicao.resolucao.origem === 'DECLARADO'"
                   >Descrição</span
                 >
                 <input
                   class="input"
                   type="text"
                   formControlName="descricao"
-                  [attr.aria-required]="f.origem === 'DECLARADO' ? 'true' : null"
+                  [attr.aria-required]="
+                    f.definicao.resolucao.origem === 'DECLARADO' ? 'true' : null
+                  "
                   [attr.aria-invalid]="erroNovaDescricao ? 'true' : null"
                   [attr.aria-describedby]="
                     erroNovaDescricao ? 'cfg-fato-valor-descricao-erro' : null

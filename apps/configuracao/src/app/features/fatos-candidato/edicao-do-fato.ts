@@ -3,7 +3,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import type { FormControl, FormGroup } from '@angular/forms';
 import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import { withIdempotencyKey } from '@uniplus/shared-core/idempotency';
-import { FatoCandidatoDto, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import {
+  FatoCandidatoDto,
+  FatosCandidatoApi,
+  type CorrecaoDeValorDominioInput,
+  type DefinicaoDoFatoInput,
+} from '@uniplus/shared-data/configuracao';
 import {
   comandoDaCorrecao,
   comandoDoDescritivo,
@@ -17,12 +22,10 @@ import {
   valoresDaDefinicao,
   valoresDoDescritivo,
 } from './fato-candidato-edicao-form';
-import {
-  corpoDaDefinicao,
-  obrigatorioNaoEmBranco,
-  type GrupoDeCitacoes,
-} from './fato-candidato.regras';
-import { EscritorDeFato } from './escritor-do-fato';
+import type { GrupoDeCitacoes } from './citacoes-do-fato';
+import { corpoDaDefinicao, obrigatorioNaoEmBranco } from './fato-candidato.regras';
+import type { AcaoComChave } from './chaves-do-fato';
+import { EscritorDeFato, type Escrita } from './escritor-do-fato';
 import {
   ID_DAS_CITACOES,
   ID_DA_RECUSA_DA_DEFINICAO,
@@ -32,7 +35,7 @@ import {
   idDaAcaoDoValor,
   idDoValor,
 } from './ids-do-fato';
-import { trocarDeLugar } from './ordem-dos-valores';
+import { trocarDeLugar, type TrocaDeLugar } from './ordem-dos-valores';
 import { aplicarErrosNoFormulario, distribuirRecusaDaDefinicao } from './recusas-do-fato';
 import { RegrasEmEdicao } from './regras-em-edicao';
 
@@ -77,6 +80,11 @@ export class EdicaoDoFato extends EscritorDeFato {
 
   constructor() {
     super();
+    this.copiarQuandoOFatoChega();
+    this.desfazerCitacoesAoMexerNaDefinicao();
+  }
+
+  private copiarQuandoOFatoChega(): void {
     effect(() => {
       const fato = this.leitura.fato();
       const falhou = this.leitura.falhouAoCarregar();
@@ -85,7 +93,10 @@ export class EdicaoDoFato extends EscritorDeFato {
         if (fato !== null) this.copiarDoServidor(fato);
       });
     });
-    // Mexer na definição desfaz a lista de citações: ela descreve o corpo que foi recusado.
+  }
+
+  /** Mexer na definição desfaz a lista de citações: ela descreve o corpo que foi recusado. */
+  private desfazerCitacoesAoMexerNaDefinicao(): void {
     this.definicao.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
       this.citacoes.set([]);
       this.recusaDaDefinicao.set(null);
@@ -111,8 +122,11 @@ export class EdicaoDoFato extends EscritorDeFato {
   salvarDescritivo(): void {
     // Só para consultar, nada se grava — nem pelo Enter que envia o formulário.
     if (!this.conferido(this.descritivo, 'cfg-fato-descritivo')) return;
-    const id = this.idDoFato();
-    this.executar({
+    this.executar(this.escritaDoDescritivo(this.idDoFato()));
+  }
+
+  private escritaDoDescritivo(id: string): Escrita {
+    return {
       operacao: this.api.atualizarDescritivo(
         id,
         comandoDoDescritivo(this.descritivo),
@@ -124,7 +138,7 @@ export class EdicaoDoFato extends EscritorDeFato {
         this.aRecopiar.descritivo = true;
       },
       aoRecusar: (problem) => this.recusarEmCampo(this.descritivo, problem, 'cfg-fato-descritivo'),
-    });
+    };
   }
 
   salvarDefinicao(): void {
@@ -132,52 +146,65 @@ export class EdicaoDoFato extends EscritorDeFato {
     const exigirFinalidade = (): void => exigirTextoNaFinalidade(this.definicao);
     if (!this.conferido(this.definicao, ID_DO_FORMULARIO_DA_DEFINICAO, exigirFinalidade)) return;
     this.recusaDaDefinicao.set(null);
-    const id = this.idDoFato();
     const corpo = corpoDaDefinicao(this.leitura.tipo(), this.definicao.getRawValue());
-    this.executar({
+    this.executar(this.escritaDaDefinicao(corpo));
+  }
+
+  private escritaDaDefinicao(corpo: DefinicaoDoFatoInput): Escrita {
+    const id = this.idDoFato();
+    return {
       operacao: this.api.alterarDefinicao(
         id,
         corpo,
         withIdempotencyKey(this.chaves.de('definicao', id, JSON.stringify(corpo))),
       ),
       sucesso: 'Definição salva',
-      aoSalvar: () => {
-        this.chaves.rotacionar('definicao');
-        this.aRecopiar.definicao = true;
-        // O formato de `contribui` depende do tipo de dado (nulo no booleano, um valor no categórico).
-        if ('dominio' in corpo && corpo.dominio !== this.leitura.fato()?.dominio) {
-          this.aRecopiar.regras = true;
-        }
-        this.focoAposRecarga = ID_DO_SALVAR_DA_DEFINICAO;
-      },
+      aoSalvar: () => this.aoSalvarDefinicao(corpo),
       aoRecusar: (problem) => this.recusarDefinicao(problem),
-      aoPerderParaOutra: () => {
-        this.aRecopiar.definicao = true;
-        this.focoAposRecarga = ID_DO_SALVAR_DA_DEFINICAO;
-      },
-    });
+      aoPerderParaOutra: () => this.recopiarDefinicao(),
+    };
+  }
+
+  private aoSalvarDefinicao(corpo: DefinicaoDoFatoInput): void {
+    this.chaves.rotacionar('definicao');
+    // O formato de `contribui` depende do tipo de dado (nulo no booleano, um valor no categórico).
+    if ('dominio' in corpo && corpo.dominio !== this.leitura.fato()?.definicao.dominio) {
+      this.aRecopiar.regras = true;
+    }
+    this.recopiarDefinicao();
+  }
+
+  private recopiarDefinicao(): void {
+    this.aRecopiar.definicao = true;
+    this.focoAposRecarga = ID_DO_SALVAR_DA_DEFINICAO;
   }
 
   acrescentarValor(): void {
     const exigirDescricao = (): void =>
       this.exigirDescricaoDoDeclarado(this.novoValor.controls.descricao);
     if (!this.conferido(this.novoValor, ID_DO_NOVO_VALOR, exigirDescricao)) return;
+    this.executar(this.escritaDoNovoValor());
+  }
+
+  private escritaDoNovoValor(): Escrita {
     const id = this.idDoFato();
     // A ordem sai do total de valores: com o fato recarregado a caminho, o total está velho.
-    const ordem = this.leitura.fato()?.valores.length ?? 0;
-    this.executar({
+    const ordem = this.leitura.fato()?.definicao.valores.declarados.length ?? 0;
+    return {
       operacao: this.api.acrescentarValor(
         id,
         comandoDoNovoValor(this.novoValor, ordem),
         withIdempotencyKey(this.chaves.de('valor', id)),
       ),
       sucesso: 'Valor acrescentado',
-      aoSalvar: () => {
-        this.chaves.rotacionar('valor');
-        this.novoValor.reset();
-      },
+      aoSalvar: () => this.aoAcrescentarValor(),
       aoRecusar: (problem) => this.recusarEmCampo(this.novoValor, problem, ID_DO_NOVO_VALOR),
-    });
+    };
+  }
+
+  private aoAcrescentarValor(): void {
+    this.chaves.rotacionar('valor');
+    this.novoValor.reset();
   }
 
   desativarValor(codigo: string): void {
@@ -202,15 +229,14 @@ export class EdicaoDoFato extends EscritorDeFato {
         withIdempotencyKey(this.chaves.de('reativacao', id, codigo)),
       ),
       sucesso: `Valor ${codigo} reativado`,
-      aoSalvar: () => {
-        this.chaves.rotacionar('reativacao');
-        this.focoAposRecarga = idDaAcaoDoValor(codigo);
-      },
+      aoSalvar: () => this.rotacionarEFocar('reativacao', idDaAcaoDoValor(codigo)),
     });
   }
 
   editarValor(codigo: string): void {
-    const valor = this.leitura.fato()?.valores.find((item) => item.codigo === codigo);
+    const valor = this.leitura
+      .fato()
+      ?.definicao.valores.declarados.find((item) => item.codigo === codigo);
     if (valor === undefined || this.bloqueado() || this.editando() !== null) return;
     this.correcao.reset({ descricao: valor.descricao ?? '', orientacao: valor.orientacao ?? '' });
     this.erro.set(null);
@@ -229,69 +255,77 @@ export class EdicaoDoFato extends EscritorDeFato {
     const exigirDescricao = (): void =>
       this.exigirDescricaoDoDeclarado(this.correcao.controls.descricao);
     if (!this.conferido(this.correcao, idDoValor(codigo, 'form'), exigirDescricao)) return;
+    this.executar(this.escritaDaCorrecao(codigo, comandoDaCorrecao(this.correcao)));
+  }
+
+  private escritaDaCorrecao(codigo: string, corpo: CorrecaoDeValorDominioInput): Escrita {
     const id = this.idDoFato();
-    const corpo = comandoDaCorrecao(this.correcao);
-    this.executar({
-      operacao: this.api.corrigirValor(
-        id,
-        codigo,
-        corpo,
-        withIdempotencyKey(this.chaves.de('correcao', id, JSON.stringify([codigo, corpo]))),
-      ),
+    const chave = withIdempotencyKey(
+      this.chaves.de('correcao', id, JSON.stringify([codigo, corpo])),
+    );
+    return {
+      operacao: this.api.corrigirValor(id, codigo, corpo, chave),
       sucesso: `Valor ${codigo} corrigido`,
-      aoSalvar: () => {
-        this.chaves.rotacionar('correcao');
-        this.editando.set(null);
-        this.focoAposRecarga = idDoValor(codigo, 'editar');
-      },
+      aoSalvar: () => this.aoCorrigirValor(codigo),
       aoRecusar: (problem) =>
         this.recusarEmCampo(this.correcao, problem, idDoValor(codigo, 'form')),
-    });
+    };
+  }
+
+  private aoCorrigirValor(codigo: string): void {
+    this.editando.set(null);
+    this.rotacionarEFocar('correcao', idDoValor(codigo, 'editar'));
   }
 
   moverValor(codigo: string, sentido: -1 | 1): void {
     if (this.editando() !== null) return;
-    const codigos = (this.leitura.fato()?.valores ?? []).map((valor) => valor.codigo);
+    const codigos = (this.leitura.fato()?.definicao.valores.declarados ?? []).map((v) => v.codigo);
     const troca = trocarDeLugar(codigos, codigo, sentido);
-    if (troca === null) return;
+    if (troca !== null) this.executar(this.escritaDaOrdem(codigo, troca));
+  }
+
+  private escritaDaOrdem(codigo: string, troca: TrocaDeLugar): Escrita {
     const id = this.idDoFato();
     const ordem = troca.codigos.join(',');
-    this.executar({
+    return {
       operacao: this.api.reordenarValores(
         id,
         { codigos: [...troca.codigos] },
         withIdempotencyKey(this.chaves.de('ordem', id, ordem)),
       ),
       sucesso: `Valor ${codigo} movido`,
-      aoSalvar: () => {
-        this.chaves.rotacionar('ordem');
-        this.focoAposRecarga = idDoValor(codigo, troca.focoEm);
-      },
-    });
+      aoSalvar: () => this.rotacionarEFocar('ordem', idDoValor(codigo, troca.focoEm)),
+    };
+  }
+
+  private rotacionarEFocar(acao: AcaoComChave, idDoFoco: string): void {
+    this.chaves.rotacionar(acao);
+    this.focoAposRecarga = idDoFoco;
   }
 
   acrescentarRegra(): void {
-    this.regras.acrescentar(this.leitura.fato()?.dominio ?? '');
+    this.regras.acrescentar(this.leitura.fato()?.definicao.dominio ?? '');
   }
 
   salvarRegras(): void {
     if (this.bloqueado()) return;
     const porCodigo = new Map(this.leitura.fatosDaRegra().map((fato) => [fato.codigo, fato]));
     if (!this.regras.conferir(porCodigo, this.leitura.fatosJaCitados())) return;
+    this.executar(this.escritaDasRegras());
+  }
+
+  private escritaDasRegras(): Escrita {
     const id = this.idDoFato();
-    this.executar({
-      operacao: this.api.definirRegrasPadrao(
-        id,
-        this.regras.corpo(),
-        withIdempotencyKey(this.chaves.de('regras', id)),
-      ),
+    const chave = withIdempotencyKey(this.chaves.de('regras', id));
+    return {
+      operacao: this.api.definirRegrasPadrao(id, this.regras.corpo(), chave),
       sucesso: 'Regras padrão salvas',
       aoSalvar: () => {
         this.chaves.rotacionar('regras');
         this.aRecopiar.regras = true;
       },
       aoRecusar: (problem) => this.regras.aplicarRecusa(problem),
-    });
+    };
   }
 
   /** A recusa da definição: no campo, na lista do que deixaria de valer ou no alerta junto do botão. */
@@ -317,7 +351,10 @@ export class EdicaoDoFato extends EscritorDeFato {
 
   /** Descrição só com espaços não é descrição: no fato declarado vale como vazia. */
   private exigirDescricaoDoDeclarado(controle: FormControl<string>): void {
-    if (this.leitura.fato()?.origem === 'DECLARADO' && obrigatorioNaoEmBranco(controle) !== null) {
+    if (
+      this.leitura.fato()?.definicao.resolucao.origem === 'DECLARADO' &&
+      obrigatorioNaoEmBranco(controle) !== null
+    ) {
       controle.setErrors({ required: true });
       controle.markAsTouched();
     }
@@ -332,19 +369,23 @@ export class EdicaoDoFato extends EscritorDeFato {
   private copiarDoServidor(fato: FatoCandidatoDto): void {
     this.aguardandoRecarga.set(false);
     const outroFato = this.fatoCopiado !== fato.id;
-    if (outroFato) {
-      this.editando.set(null);
-      this.correcao.reset();
-    }
+    if (outroFato) this.descartarEdicaoDoFatoAnterior();
     if (outroFato || this.aRecopiar.descritivo) this.descritivo.reset(valoresDoDescritivo(fato));
-    if (outroFato || this.aRecopiar.definicao) {
-      this.definicao.reset(valoresDaDefinicao(fato));
-      this.citacoes.set([]);
-    }
+    if (outroFato || this.aRecopiar.definicao) this.copiarDefinicao(fato);
     if (outroFato || this.aRecopiar.regras) this.regras.copiarDe(fato);
     this.fatoCopiado = fato.id;
     this.aRecopiar = { ...NADA_A_RECOPIAR };
     this.devolverFoco();
+  }
+
+  private descartarEdicaoDoFatoAnterior(): void {
+    this.editando.set(null);
+    this.correcao.reset();
+  }
+
+  private copiarDefinicao(fato: FatoCandidatoDto): void {
+    this.definicao.reset(valoresDaDefinicao(fato));
+    this.citacoes.set([]);
   }
 
   private idDoFato(): string {

@@ -1,4 +1,4 @@
-import { FINALIDADE_INSCRICAO, OBRIGATORIEDADE_SEMPRE } from './constantes';
+import { FINALIDADE_INSCRICAO, OBRIGATORIEDADE_INICIAL } from './constantes';
 import { ItemDoFormulario, PredicadoNoWire } from './tipos';
 
 /** Os tipos de campo que o impedimento admite (`Impedimento.CabeNoCampo`). */
@@ -35,9 +35,11 @@ export function impedimentoCabe(
 export function comImpedimento(item: ItemDoFormulario, quando: PredicadoNoWire): ItemDoFormulario {
   return {
     ...item,
-    impedimento: { quando, mensagem: item.impedimento?.mensagem ?? '' },
-    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
-    predicadoObrigatoriedade: null,
+    regras: {
+      ...item.regras,
+      impedimento: { quando, mensagem: item.regras.impedimento?.mensagem ?? '' },
+      obrigatoriedade: OBRIGATORIEDADE_INICIAL,
+    },
   };
 }
 

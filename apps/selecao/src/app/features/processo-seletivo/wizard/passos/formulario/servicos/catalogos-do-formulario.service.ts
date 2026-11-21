@@ -2,7 +2,9 @@ import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { isApiOk, ProblemI18nService, type ApiResult } from '@uniplus/shared-core/http';
 import {
-  FatoCandidatoView,
+  fatoComOperadores,
+  type FatoCandidatoComOperadores,
+  type FatoDoCatalogoDto,
   FatosCandidatoApi,
   TermosConsentimentoApi,
   type TermoConsentimentoDto,
@@ -32,7 +34,7 @@ export class CatalogosDoFormulario {
   private readonly problemI18n = inject(ProblemI18nService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly catalogo = signal<readonly FatoCandidatoView[]>([]);
+  readonly catalogo = signal<readonly FatoCandidatoComOperadores[]>([]);
   readonly catalogoCarregando = signal(true);
   readonly catalogoErro = signal<string | null>(null);
 
@@ -68,7 +70,7 @@ export class CatalogosDoFormulario {
       .subscribe((resultado) => this.receberCatalogo(resultado));
   }
 
-  private receberCatalogo(resultado: ApiResult<readonly FatoCandidatoView[]>): void {
+  private receberCatalogo(resultado: ApiResult<readonly FatoDoCatalogoDto[]>): void {
     this.catalogoCarregando.set(false);
     if (!isApiOk(resultado)) {
       this.catalogoErro.set(
@@ -76,7 +78,7 @@ export class CatalogosDoFormulario {
       );
       return;
     }
-    this.catalogo.set(resultado.data);
+    this.catalogo.set(resultado.data.map(fatoComOperadores));
   }
 
   /** Os termos de consentimento com as versões promovidas. */

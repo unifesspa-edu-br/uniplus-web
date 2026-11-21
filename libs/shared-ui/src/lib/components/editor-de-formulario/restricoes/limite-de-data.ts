@@ -6,14 +6,18 @@ import {
   problemaDosAnos,
   problemaDosDias,
 } from '../modelo/problemas-da-restricao';
-import { ANCORA_DATA_FIXA, ANCORA_ENVIO, limiteDeDataNovo } from '../modelo/restricoes-de-valor';
-import { type LimiteDeDataNoWire } from '../modelo/tipos';
+import {
+  LIMITE_EM_DATA_FIXA,
+  LIMITE_CONTADO_DO_ENVIO,
+  limiteDeDataNovo,
+} from '../modelo/restricoes-de-valor';
+import { type LimiteDeDataNoWire, type NumeroDigitado } from '../modelo/tipos';
 
 type ParteDoDeslocamento = 'anos' | 'dias';
 
 /** O problema do limite como um todo; o deslocamento do dia do envio mostra o de cada campo, junto dele. */
 export function problemaDoLimite(limite: LimiteDeDataNoWire | null): string | null {
-  return limite?.ancora === ANCORA_ENVIO ? null : problemaDoLimiteDeData(limite);
+  return limite?.ancora === LIMITE_CONTADO_DO_ENVIO ? null : problemaDoLimiteDeData(limite);
 }
 
 /**
@@ -30,13 +34,13 @@ export function problemaDoLimite(limite: LimiteDeDataNoWire | null): string | nu
     <fieldset class="editor-formulario__limite" [attr.aria-describedby]="descricao()">
       <legend class="field__label">{{ rotulo() }}</legend>
       <div class="field">
-        <label class="field__label" [for]="idBase() + '-ancora'">Contado de</label>
+        <label class="field__label" [for]="idBase() + '-contado-de'">Contado de</label>
         <select
           class="select"
-          [id]="idBase() + '-ancora'"
+          [id]="idBase() + '-contado-de'"
           [disabled]="disabled()"
           [attr.aria-describedby]="descricao()"
-          (change)="trocarAncora($event)"
+          (change)="trocarAReferencia($event)"
         >
           <option value="" [selected]="limite() === null">Sem limite</option>
           <option [value]="dataFixa" [selected]="limite()?.ancora === dataFixa">Data fixa</option>
@@ -100,25 +104,17 @@ export class LimiteDeDataComponent {
 
   readonly limiteChange = output<LimiteDeDataNoWire | null>();
 
-  protected readonly dataFixa = ANCORA_DATA_FIXA;
-  protected readonly envio = ANCORA_ENVIO;
+  protected readonly dataFixa = LIMITE_EM_DATA_FIXA;
+  protected readonly envio = LIMITE_CONTADO_DO_ENVIO;
 
   protected readonly problema = computed(() => problemaDoLimite(this.limite()));
   protected readonly deslocamentos = computed(() => {
     const atual = this.limite();
+    const anos = atual?.anos;
+    const dias = atual?.dias;
     return [
-      {
-        parte: 'anos',
-        rotulo: 'Anos a somar ao dia do envio',
-        valor: atual?.anos,
-        problema: problemaDosAnos(atual?.anos),
-      },
-      {
-        parte: 'dias',
-        rotulo: 'Dias a somar ao dia do envio',
-        valor: atual?.dias,
-        problema: problemaDosDias(atual?.dias),
-      },
+      deslocamento('anos', 'Anos a somar ao dia do envio', anos, problemaDosAnos(anos)),
+      deslocamento('dias', 'Dias a somar ao dia do envio', dias, problemaDosDias(dias)),
     ] as const;
   });
 
@@ -134,21 +130,30 @@ export class LimiteDeDataComponent {
     return [proprio, this.descricao()].filter((id) => id !== null).join(' ') || null;
   }
 
-  protected trocarAncora(evento: Event): void {
-    const ancora = (evento.target as HTMLSelectElement).value;
-    this.limiteChange.emit(ancora === '' ? null : limiteDeDataNovo(ancora));
+  protected trocarAReferencia(evento: Event): void {
+    const referencia = (evento.target as HTMLSelectElement).value;
+    this.limiteChange.emit(referencia === '' ? null : limiteDeDataNovo(referencia));
   }
 
   protected trocarData(evento: Event): void {
     const data = (evento.target as HTMLInputElement).value;
-    this.limiteChange.emit({ ancora: ANCORA_DATA_FIXA, data: data === '' ? null : data });
+    this.limiteChange.emit({ ancora: LIMITE_EM_DATA_FIXA, data: data === '' ? null : data });
   }
 
   /** O deslocamento como número quando é número, e o texto como veio quando não é, para o problema dizer o quê. */
   protected trocarDeslocamento(parte: ParteDoDeslocamento, evento: Event): void {
     const texto = (evento.target as HTMLInputElement).value.trim().replace('−', '-');
     const valor = texto === '' ? 0 : Number.isFinite(Number(texto)) ? Number(texto) : texto;
-    const atual = this.limite() ?? limiteDeDataNovo(ANCORA_ENVIO);
-    this.limiteChange.emit({ ...atual, ancora: ANCORA_ENVIO, [parte]: valor });
+    const atual = this.limite() ?? limiteDeDataNovo(LIMITE_CONTADO_DO_ENVIO);
+    this.limiteChange.emit({ ...atual, ancora: LIMITE_CONTADO_DO_ENVIO, [parte]: valor });
   }
+}
+
+function deslocamento(
+  parte: ParteDoDeslocamento,
+  rotulo: string,
+  valor: NumeroDigitado | null | undefined,
+  problema: string | null,
+) {
+  return { parte, rotulo, valor, problema };
 }

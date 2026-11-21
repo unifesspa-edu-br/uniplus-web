@@ -23,12 +23,29 @@ import {
   rotuloDaConsequencia,
 } from './resumo-da-exigencia';
 
+const IGUALDADE = [
+  { codigo: 'IGUAL', rotulo: 'é' },
+  { codigo: 'DIFERENTE', rotulo: 'não é' },
+];
+const PERTINENCIA = [
+  ...IGUALDADE,
+  { codigo: 'EM', rotulo: 'é um de' },
+  { codigo: 'NAO_EM', rotulo: 'não é nenhum de' },
+];
+const COMPARACAO = [
+  { codigo: 'IGUAL', rotulo: 'é igual a' },
+  { codigo: 'DIFERENTE', rotulo: 'é diferente de' },
+  { codigo: 'MAIOR_IGUAL', rotulo: 'é maior ou igual a' },
+  { codigo: 'MENOR_IGUAL', rotulo: 'é menor ou igual a' },
+];
+
 const COR_RACA: FatoEscolhivel = {
   codigo: 'COR_RACA',
   nome: 'Cor/raça',
   tipoDominio: 'CATEGORICO_ESTATICO',
   valores: ['Preta', 'Parda', 'Indígena'],
   coletavel: true,
+  operadoresAdmitidos: PERTINENCIA,
 };
 const ESTRANGEIRO: FatoEscolhivel = {
   codigo: 'ESTRANGEIRO',
@@ -36,6 +53,7 @@ const ESTRANGEIRO: FatoEscolhivel = {
   tipoDominio: 'BOOLEANO',
   valores: [],
   coletavel: true,
+  operadoresAdmitidos: IGUALDADE,
 };
 const FATOS = new Map([COR_RACA, ESTRANGEIRO].map((fato) => [fato.codigo, fato]));
 
@@ -148,6 +166,7 @@ describe('resumo da exigência documental', () => {
       tipoDominio: 'CATEGORICO_ESTATICO',
       valores: ['F', 'M'],
       coletavel: true,
+      operadoresAdmitidos: PERTINENCIA,
     };
     const recortada = condicional([], ['LB_PPI']);
     const feminino = (documento: ExigenciaDeDocumento, indice: number) =>
@@ -198,6 +217,7 @@ describe('resumo da exigência documental', () => {
       tipoDominio: 'NUMERICO',
       valores: [],
       coletavel: true,
+      operadoresAdmitidos: COMPARACAO,
     };
     const fatos = new Map([...FATOS, [idade.codigo, idade]]);
     const soNaPrimeira = condicional([

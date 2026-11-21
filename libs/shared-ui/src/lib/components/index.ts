@@ -80,9 +80,11 @@ export {
   semCondicaoEm,
 } from './editor-de-condicoes/condicoes/condicoes-em-clausulas';
 export {
+  type ClausulasNoWire,
   type CondicaoNoWire,
   deClausulasDoWire,
   paraClausulasDoWire,
+  predicadoComOperadores,
 } from './editor-de-condicoes/condicoes/condicoes-no-wire';
 export {
   alcanceDaCondicao,
@@ -98,29 +100,25 @@ export {
   fatoEscolhivel,
   fatosEscolhiveis,
   nomesDoCatalogo,
+  operadorPadrao,
+  rotuloDoOperador,
   rotuloDoValor,
 } from './editor-de-condicoes/condicoes/fatos-escolhiveis';
 export {
   type CondicaoDeFato,
-  OPERADOR_DIFERENTE,
-  OPERADOR_EM,
-  OPERADOR_IGUAL,
-  OPERADOR_MAIOR_IGUAL,
-  OPERADOR_MENOR_IGUAL,
-  OPERADOR_NAO_EM,
-  type OperadorEscolhivel,
+  type OpcaoDeValor,
   RESPOSTAS_BOOLEANAS,
   VALOR_FALSO,
   VALOR_VERDADEIRO,
   comOperador,
   comValorEscalar,
   comValoresDeLista,
-  comparaComLista,
-  operadoresDoFato,
   valorEscalarDe,
   valoresDeListaDe,
 } from './editor-de-condicoes/condicoes/valor-da-condicao';
+export { comparaComLista, ehNegacao } from './formulario-do-candidato/interpretador/predicado';
 export * from './editor-de-condicoes/leitura-de-condicoes';
+
 export { EditorDeFormularioComponent } from './editor-de-formulario/editor-de-formulario';
 export {
   ehColetavel,
@@ -149,12 +147,16 @@ export {
   FINALIDADE_INSCRICAO,
   LIMITES_DO_FORMULARIO,
   OBRIGATORIEDADES,
+  OBRIGATORIEDADE_INICIAL,
   OBRIGATORIEDADE_NUNCA,
   OBRIGATORIEDADE_QUANDO,
   OBRIGATORIEDADE_SEMPRE,
+  REGRAS_INICIAIS,
   SECAO_DADOS_BASICOS,
   TIPO_BLOCO,
   TIPO_SECAO,
+  apresentacaoDaEtapa,
+  apresentacaoDoCampo,
   blocosAdmitidos,
   conteudoInicial,
 } from './editor-de-formulario/modelo/constantes';
@@ -200,6 +202,11 @@ export {
   renumerar,
 } from './editor-de-formulario/modelo/ordem-das-entradas';
 export {
+  CODIGOS_EM_TEXTO,
+  conteudoComCodigos,
+  type TrocaDeCodigos,
+} from './editor-de-formulario/modelo/codigos-do-conteudo';
+export {
   acrescentarPressuposto,
   removerPressuposto,
 } from './editor-de-formulario/modelo/pressupostos';
@@ -218,8 +225,8 @@ export {
   recusasDoGrupoDeOpcoes,
 } from './editor-de-formulario/modelo/recusas';
 export {
-  ANCORA_DATA_FIXA,
-  ANCORA_ENVIO,
+  LIMITE_EM_DATA_FIXA,
+  LIMITE_CONTADO_DO_ENVIO,
   RESTRICAO_FAIXA_DE_DATA,
   RESTRICAO_FAIXA_NUMERICA,
   RESTRICAO_MUNICIPIOS_DA_UF,
@@ -252,6 +259,8 @@ export {
   termosParaAcrescentar,
 } from './editor-de-formulario/modelo/termos';
 export {
+  type ApresentacaoDaEtapa,
+  type ApresentacaoDoCampo,
   type ChaveDaEntrada,
   type ConteudoDoFormulario,
   ESCOPO_CANDIDATO,
@@ -259,20 +268,25 @@ export {
   type EntradaDaSecao,
   type EscopoDoCampo,
   type EtapaDoFormulario,
+  type ExibicaoEObrigatoriedade,
   type FatoDoFormulario,
   type GrupoDoFormulario,
   type Impedimento,
   type ItemDoFormulario,
   type LimiteDeDataNoWire,
   type NumeroDigitado,
+  type Obrigatoriedade,
+  type OcorrenciasDoGrupo,
   type OpcaoDoFormulario,
   type OpcoesCondicionadas,
   type PredicadoNoWire,
+  type RegrasDoCampo,
   type RestricaoDeValor,
   type ResultadoDaEdicao,
   type ResultadoDoGrupo,
   type TermoDisponivel,
   type TermoDoFormulario,
+  type VersaoDoTermo,
 } from './editor-de-formulario/modelo/tipos';
 export * from './editor-de-documentos-exigidos/documentos-exigidos';
 export { DocumentoExigidoComponent } from './editor-de-documentos-exigidos/documento-exigido';

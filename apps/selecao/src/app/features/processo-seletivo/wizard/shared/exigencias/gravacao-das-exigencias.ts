@@ -1,7 +1,13 @@
-import type { ItemDocumentoExigidoInput, NoExigenciaInput } from '@uniplus/shared-data/selecao';
+import {
+  OperadorCodigo,
+  type ItemDocumentoExigidoInput,
+  type NoExigenciaInput,
+} from '@uniplus/shared-data/selecao';
+import { codigoDoContrato } from '@uniplus/shared-data/utils';
 import { baseLegalParaEnvio, basesLegaisParaEnvio } from '@uniplus/shared-utils';
 
 import type {
+  CondicaoGatilhoConfig,
   ExigenciaDeDocumento,
   CriteriosDoComprovante,
   ExigenciasDoRascunho,
@@ -91,14 +97,31 @@ function dadosDaExigenciaParaEnvio(no: NoDeExigencia): NoExigenciaInput {
   return {
     tipo: no.tipo,
     documento: null,
-    quantidadeMinima: no.quantidadeMinima ?? null,
+    cardinalidade: cardinalidadeParaEnvio(no),
+    indeferimento: indeferimentoDoGrupoParaEnvio(no),
+    filhos: null,
+    repetePorEntidade: no.repetePorEntidade,
+  };
+}
+
+function cardinalidadeParaEnvio(no: NoDeExigencia): NoExigenciaInput['cardinalidade'] {
+  const { quantidadeMinima, chaveDistincao, dataReferencia, ocorrenciasEsperadas } = no;
+  const semDistincao =
+    chaveDistincao === null && dataReferencia === null && ocorrenciasEsperadas === null;
+  if (quantidadeMinima === null && semDistincao) return null;
+  return {
+    quantidadeMinima,
+    distincao: semDistincao
+      ? null
+      : { chave: chaveDistincao, dataReferencia, ocorrenciasEsperadas },
+  };
+}
+
+function indeferimentoDoGrupoParaEnvio(no: NoDeExigencia): NoExigenciaInput['indeferimento'] {
+  if (no.consequencia === null && no.basesLegais === null) return null;
+  return {
     consequencia: no.consequencia,
     basesLegais: no.basesLegais === null ? null : no.basesLegais.map(baseLegalParaEnvio),
-    filhos: null,
-    chaveDistincao: no.chaveDistincao,
-    dataReferencia: no.dataReferencia,
-    ocorrenciasEsperadas: no.ocorrenciasEsperadas,
-    repetePorEntidade: no.repetePorEntidade,
   };
 }
 
@@ -108,54 +131,74 @@ function prepararDocumentoParaEnvio(
   finalidade: string | null,
 ): ItemDocumentoExigidoInput {
   return {
-    exigidoNaFaseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? '',
-    exigidoNaEtapaId: etapaDeColetaValida(documento, processo.etapasVivas),
-    finalidade,
-    tipoDocumentoId: documento.tipoDocumentoId,
-    ...regraDaExigenciaParaEnvio(documento, processo.modalidadesOfertadas),
-    ...criteriosDoComprovanteParaEnvio(documento, processo.faseIdPorCodigo),
+    tipoDocumento: { id: documento.tipoDocumentoId },
+    momento: momentoParaEnvio(documento, processo, finalidade),
+    aplicabilidade: aplicabilidadeParaEnvio(documento, processo.modalidadesOfertadas),
+    indeferimento: indeferimentoDoDocumentoParaEnvio(documento),
+    requisitos: requisitosParaEnvio(documento, processo.faseIdPorCodigo),
   };
 }
 
-type RegraDaExigenciaParaEnvio = Pick<
-  ItemDocumentoExigidoInput,
-  'aplicabilidade' | 'obrigatorio' | 'consequenciaIndeferimento' | 'condicoes' | 'basesLegais'
->;
-
-/** A aplicabilidade é declarada. Uma exigência geral segue sem condições (ADR-0071). */
-function regraDaExigenciaParaEnvio(
+function aplicabilidadeParaEnvio(
   documento: ExigenciaDeDocumento,
   modalidadesOfertadas: readonly string[],
-): RegraDaExigenciaParaEnvio {
+): ItemDocumentoExigidoInput['aplicabilidade'] {
   return {
-    aplicabilidade: documento.aplicabilidade,
-    obrigatorio: documento.obrigatorio,
-    consequenciaIndeferimento:
-      documento.consequenciaIndeferimento === '' ? null : documento.consequenciaIndeferimento,
+    tipo: documento.aplicabilidade,
     condicoes: condicoesParaEnvio(documento, modalidadesOfertadas),
+  };
+}
+
+function momentoParaEnvio(
+  documento: ExigenciaDeDocumento,
+  processo: ProcessoVivoDasExigencias,
+  finalidade: string | null,
+): ItemDocumentoExigidoInput['momento'] {
+  return {
+    faseId: processo.faseIdPorCodigo.get(documento.faseCodigo) ?? '',
+    etapaId: etapaDeColetaValida(documento, processo.etapasVivas),
+    finalidade,
+  };
+}
+
+function indeferimentoDoDocumentoParaEnvio(
+  documento: ExigenciaDeDocumento,
+): ItemDocumentoExigidoInput['indeferimento'] {
+  return {
+    obrigatorio: documento.obrigatorio,
+    consequencia:
+      documento.consequenciaIndeferimento === '' ? null : documento.consequenciaIndeferimento,
     basesLegais: basesLegaisParaEnvio(documento.basesLegais),
   };
 }
 
+/** Uma exigência geral segue sem condições (ADR-0071). */
 function condicoesParaEnvio(
   documento: ExigenciaDeDocumento,
   modalidadesOfertadas: readonly string[],
-) {
+): CondicoesDaAplicabilidade {
   if (documento.aplicabilidade === APLICABILIDADE_GERAL) return [];
   const recorte = recorteDeModalidades(documento, modalidadesOfertadas);
-  return comRecorteDeModalidade(documento.condicoes, recorte);
+  return comRecorteDeModalidade(documento.condicoes, recorte).map(condicaoParaEnvio);
 }
 
-function criteriosDoComprovanteParaEnvio(
+type CondicoesDaAplicabilidade = NonNullable<
+  NonNullable<ItemDocumentoExigidoInput['aplicabilidade']>['condicoes']
+>;
+
+function condicaoParaEnvio(condicao: CondicaoGatilhoConfig): CondicoesDaAplicabilidade[number] {
+  return { ...condicao, operador: codigoDoContrato(OperadorCodigo, condicao.operador) };
+}
+
+function requisitosParaEnvio(
   documento: CriteriosDoComprovante,
   faseIdPorCodigo: ReadonlyMap<string, string>,
-) {
+): ItemDocumentoExigidoInput['requisitos'] {
   return {
     idadeMaximaEmissao: idadeMaximaParaEnvio(documento.idadeMaximaEmissao, faseIdPorCodigo),
-    formatosPermitidos:
-      documento.formatosPermitidos as ItemDocumentoExigidoInput['formatosPermitidos'],
+    formatosPermitidos: documento.formatosPermitidos,
     tamanhoMaximoBytes: documento.tamanhoMaximoBytes,
-    modeloId: documento.modelo?.modeloId ?? null,
+    modelo: documento.modelo === null ? null : { modeloId: documento.modelo.modeloId },
   };
 }
 
@@ -181,7 +224,7 @@ function etapaDeColetaValida(
 function idadeMaximaParaEnvio(
   idade: ExigenciaDeDocumento['idadeMaximaEmissao'],
   faseIdPorCodigo: ReadonlyMap<string, string>,
-): ItemDocumentoExigidoInput['idadeMaximaEmissao'] {
+): NonNullable<ItemDocumentoExigidoInput['requisitos']>['idadeMaximaEmissao'] {
   if (idade === null) return null;
   const { referenciaFaseCodigo, valor, unidade, referenciaTipo, data } = idade;
   const referenciaFaseId =

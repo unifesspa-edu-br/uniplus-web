@@ -23,6 +23,8 @@ export {
 } from './api/organizacao/unidades.api';
 
 // Utils
+export { codigoDoContrato } from './utils/codigo-do-contrato';
+export { codigosDoContrato, type CodigosDoContrato } from './utils/codigos-do-contrato';
 export { isValidCpf } from './utils/cpf.util';
 export { formatIsoDateBr, formatIsoDateLong, parseDate, parseIsoDate } from './utils/date.util';
 

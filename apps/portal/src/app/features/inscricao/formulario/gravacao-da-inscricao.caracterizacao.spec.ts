@@ -106,7 +106,7 @@ describe('GravacaoDaInscricao: o salvar do rascunho', () => {
         aceites: [
           expect.objectContaining({
             codigo: 'VERACIDADE',
-            versaoId: FORMULARIO_DE_INSCRICAO_MOCK.termos[0].versaoId,
+            versaoId: FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos[0].versaoId,
           }),
         ],
       }),

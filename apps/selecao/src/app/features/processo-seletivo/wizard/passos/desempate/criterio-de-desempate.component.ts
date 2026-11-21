@@ -6,8 +6,8 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import {
   alcanceDaCondicao,
   comparaComLista,
-  operadoresDoFato,
   RESPOSTAS_BOOLEANAS,
+  rotuloDoOperador,
   valorEscalarDe,
   valoresDeListaDe,
   type CondicaoDeFato,
@@ -128,10 +128,8 @@ export class CriterioDeDesempateComponent {
 
   private rotuloDaComparacao(criterio: CriterioDesempateConfigurado): string | null {
     const fato = this.fato();
-    const comparacao = (fato === undefined ? [] : operadoresDoFato(fato)).find(
-      (opcao) => opcao.valor === criterio.operador,
-    );
-    return comparacao?.rotulo ?? (criterio.operador || null);
+    if (criterio.operador === '') return null;
+    return fato === undefined ? criterio.operador : rotuloDoOperador(fato, criterio.operador);
   }
 
   private leituraDoValor(criterio: CriterioDesempateConfigurado) {

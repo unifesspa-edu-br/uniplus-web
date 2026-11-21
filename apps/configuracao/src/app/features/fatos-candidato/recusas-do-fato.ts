@@ -1,13 +1,8 @@
 import type { FormGroup } from '@angular/forms';
 import { type CausaDeCampo, type ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
 import { marcarRecusaDoServidor } from '../../shared/formulario';
-import {
-  campoDaRecusa,
-  citacoesDaRecusa,
-  ehCitacao,
-  type EixosEditaveis,
-  type GrupoDeCitacoes,
-} from './fato-candidato.regras';
+import { citacoesDaRecusa, ehCitacao, type GrupoDeCitacoes } from './citacoes-do-fato';
+import { campoDaRecusa, type EixosEditaveis } from './fato-candidato.regras';
 
 /** Os eixos que o tipo do fato pode não editar, com o nome que a tela dá a cada um. */
 export const ROTULOS_DOS_EIXOS: Readonly<Record<string, string>> = {
@@ -54,20 +49,30 @@ export function distribuirRecusaDaDefinicao(
 ): RecusaDaDefinicao {
   const erros = separarCausas(problem.errors).deCampo;
   const doCampo = erros.filter((erro) => !ehCitacao(erro.field));
-  const naTela = (campo: string): boolean =>
-    formulario.get(campo) !== null &&
-    (!(campo in ROTULOS_DOS_EIXOS) || eixos[campo as keyof EixosEditaveis]);
-  const ocultos = doCampo.filter((erro) => !naTela(campoDaRecusa(erro.field)));
-  const noCampo = aplicarErrosNoFormulario(
-    formulario,
-    doCampo.filter((erro) => !ocultos.includes(erro)),
-  );
-  const texto = ocultos
-    .map((erro) => `${ROTULOS_DOS_EIXOS[campoDaRecusa(erro.field)] ?? erro.field}: ${erro.message}`)
-    .join(' ');
+  const ocultos = doCampo.filter((erro) => !temControleNaTela(erro.field, formulario, eixos));
+  const coube = doCampo.filter((erro) => !ocultos.includes(erro));
   return {
     citacoes: citacoesDaRecusa(erros),
-    semControle: ocultos.length > 0 ? texto : null,
-    noCampo,
+    semControle: textoDasRecusasSemControle(ocultos),
+    noCampo: aplicarErrosNoFormulario(formulario, coube),
   };
+}
+
+function temControleNaTela(
+  campoDaApi: string,
+  formulario: FormGroup,
+  eixos: EixosEditaveis,
+): boolean {
+  const campo = campoDaRecusa(campoDaApi);
+  return (
+    formulario.get(campo) !== null &&
+    (!(campo in ROTULOS_DOS_EIXOS) || eixos[campo as keyof EixosEditaveis])
+  );
+}
+
+function textoDasRecusasSemControle(ocultos: readonly CausaDeCampo[]): string | null {
+  if (ocultos.length === 0) return null;
+  return ocultos
+    .map((erro) => `${ROTULOS_DOS_EIXOS[campoDaRecusa(erro.field)] ?? erro.field}: ${erro.message}`)
+    .join(' ');
 }

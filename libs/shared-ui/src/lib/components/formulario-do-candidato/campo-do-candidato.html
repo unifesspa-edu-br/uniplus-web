@@ -1,9 +1,9 @@
 @switch (controle()) { @case ('fixa') {
-<label class="field__label" [for]="id()">{{ campo().rotulo }}</label>
+<label class="field__label" [for]="id()">{{ apresentacao().rotulo }}</label>
 @if (fixa()?.revelavel; as revelavel) {
 <ui-dado-revelavel
   aparencia="campo"
-  [rotulo]="campo().rotulo"
+  [rotulo]="apresentacao().rotulo"
   [dado]="revelavel"
   [id]="id()"
   [descritoPor]="descritoPor()"
@@ -18,7 +18,9 @@
 />
 } } @case ('escolha') {
 <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
-  <legend class="field__label" [class.is-required]="obrigatorio()">{{ campo().rotulo }}</legend>
+  <legend class="field__label" [class.is-required]="obrigatorio()">
+    {{ apresentacao().rotulo }}
+  </legend>
   @for (opcao of opcoes(); track opcao.codigo) {
   <label [class]="multipla() ? 'checkbox' : 'radio'">
     <input
@@ -42,7 +44,9 @@
 </fieldset>
 } @case ('booleano') {
 <fieldset class="formulario-candidato__escolhas" [attr.aria-describedby]="descritoPor()">
-  <legend class="field__label" [class.is-required]="obrigatorio()">{{ campo().rotulo }}</legend>
+  <legend class="field__label" [class.is-required]="obrigatorio()">
+    {{ apresentacao().rotulo }}
+  </legend>
   <label class="radio">
     <input
       type="radio"
@@ -68,7 +72,7 @@
 </fieldset>
 } @case ('lista') {
 <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()"
-  >{{ campo().rotulo }}</label
+  >{{ apresentacao().rotulo }}</label
 >
 <select
   class="select"
@@ -86,11 +90,11 @@
 </select>
 } @case ('municipio') {
 <label class="field__label" [class.is-required]="obrigatorio()" [attr.for]="municipio.campoId()"
-  >{{ campo().rotulo }}</label
+  >{{ apresentacao().rotulo }}</label
 >
 <ui-valor-de-municipio
   #municipio
-  [rotulo]="campo().rotulo"
+  [rotulo]="apresentacao().rotulo"
   [values]="municipios()"
   [uf]="uf()"
   [rotulosGravados]="rotulosGravados()"
@@ -105,13 +109,13 @@
   [exigeCep]="true"
   [formControl]="endereco"
   [idPrefix]="id()"
-  [legend]="campo().rotulo"
+  [legend]="apresentacao().rotulo"
   [obrigatorio]="obrigatorio()"
   [descritoPor]="descritoPor()"
 />
 } @default {
 <label class="field__label" [class.is-required]="obrigatorio()" [for]="id()"
-  >{{ campo().rotulo }}</label
+  >{{ apresentacao().rotulo }}</label
 >
 <input
   class="input"
@@ -128,7 +132,9 @@
   (blur)="sair()"
 />
 } } @if (confirmando()) {
-<label class="field__label" [for]="id() + '-confirmacao'">Confirme {{ campo().rotulo }}</label>
+<label class="field__label" [for]="id() + '-confirmacao'"
+  >Confirme {{ apresentacao().rotulo }}</label
+>
 <input
   class="input"
   autocomplete="off"
@@ -142,7 +148,7 @@
 />
 @if (erroDaConfirmacao(); as erro) {
 <span class="field__error" [id]="id() + '-confirmacao-erro'">{{ erro }}</span>
-} } @if (campo().ajuda; as ajuda) {
+} } @if (apresentacao().ajuda; as ajuda) {
 <span class="field__hint" [id]="id() + '-ajuda'">{{ ajuda }}</span>
 } @if (controle() === 'fixa') {
 <span class="field__hint" [id]="id() + '-fixa'">Este dado não pode ser alterado aqui.</span>

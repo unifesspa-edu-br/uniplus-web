@@ -11,7 +11,9 @@ import type {
 } from '@uniplus/shared-data/configuracao';
 import {
   CLASSIFICACOES_DE_PROTECAO,
+  rotuloDe,
   type OpcaoDeVocabulario,
+  type ProtecaoDoItem,
 } from '../../shared/protecao-do-catalogo/protecao-de-dados';
 
 /**
@@ -84,6 +86,10 @@ export const COMPONENTES_DE_EXIBICAO: readonly OpcaoDeVocabulario[] = [
 
 export const ROTULO_DO_COMPONENTE_PADRAO = 'Padrão (pelo tipo do dado)';
 
+export function rotuloDoComponente(componente: string | null): string {
+  return componente ? rotuloDe(COMPONENTES_DE_EXIBICAO, componente) : ROTULO_DO_COMPONENTE_PADRAO;
+}
+
 /**
  * As classificações que cabem no domínio: texto, data e endereço identificam ou localizam a pessoa
  * e nunca são menos que dado pessoal. Identificador é número de documento, que é sempre texto.
@@ -108,24 +114,38 @@ export function temFormato(dominio: string): boolean {
   return dominio === 'TEXTO';
 }
 
+/** O vínculo do fato: de onde vem o valor dele. */
+type FatoComVinculo = {
+  readonly definicao: {
+    readonly resolucao: Pick<FatoCandidatoDto['definicao']['resolucao'], 'binding'>;
+  };
+};
+
 /** O tipo do fato, pelo vínculo que diz de onde vem o valor dele. */
 export type TipoDoFato = 'DECLARADO' | 'DERIVADO_POR_REGRA' | 'AGREGADO' | 'OUTRO';
 
-export function tipoDoFato(fato: Pick<FatoCandidatoDto, 'binding'>): TipoDoFato {
-  if (fato.binding.startsWith('CAMPO_INSCRICAO:') || fato.binding.startsWith('CAMPO_FORMULARIO:'))
+export function tipoDoFato(fato: FatoComVinculo): TipoDoFato {
+  const { binding } = fato.definicao.resolucao;
+  if (binding.startsWith('CAMPO_INSCRICAO:') || binding.startsWith('CAMPO_FORMULARIO:'))
     return 'DECLARADO';
-  if (fato.binding.startsWith('REGRA_DERIVACAO:')) return 'DERIVADO_POR_REGRA';
-  if (fato.binding.startsWith('AGREGACAO_GRUPO:')) return 'AGREGADO';
+  if (binding.startsWith('REGRA_DERIVACAO:')) return 'DERIVADO_POR_REGRA';
+  if (binding.startsWith('AGREGACAO_GRUPO:')) return 'AGREGADO';
   return 'OUTRO';
 }
 
 /** O fato de membro que o agregado resume, lido do binding `AGREGACAO_GRUPO:<membro>`; nulo nos outros tipos. */
-export function fatoDeMembroDoBinding(fato: Pick<FatoCandidatoDto, 'binding'>): string | null {
+export function fatoDeMembroDoBinding(fato: FatoComVinculo): string | null {
   const prefixo = 'AGREGACAO_GRUPO:';
-  return fato.binding.startsWith(prefixo) ? fato.binding.slice(prefixo.length) : null;
+  const { binding } = fato.definicao.resolucao;
+  return binding.startsWith(prefixo) ? binding.slice(prefixo.length) : null;
 }
 
-type FatoAvaliado = Pick<FatoCandidatoDto, 'binding' | 'semeadoPeloSistema' | 'dominio' | 'fonteValores'>;
+type FatoAvaliado = FatoComVinculo &
+  Pick<FatoCandidatoDto, 'semeadoPeloSistema'> & {
+    readonly definicao: Pick<FatoCandidatoDto['definicao'], 'dominio'> & {
+      readonly valores: Pick<FatoCandidatoDto['definicao']['valores'], 'fonte'>;
+    };
+  };
 
 /**
  * Se o fato tem valores próprios para manter: o categórico do administrador com os valores no
@@ -136,8 +156,8 @@ export function podeTerValores(fato: FatoAvaliado): boolean {
   const tipo = tipoDoFato(fato);
   return (
     !fato.semeadoPeloSistema &&
-    fato.dominio === 'CATEGORICO' &&
-    fato.fonteValores === 'GLOBAL' &&
+    fato.definicao.dominio === 'CATEGORICO' &&
+    fato.definicao.valores.fonte === 'GLOBAL' &&
     (tipo === 'DECLARADO' || tipo === 'DERIVADO_POR_REGRA')
   );
 }
@@ -152,7 +172,7 @@ export function podeTerRegras(fato: FatoAvaliado): boolean {
  * fato de membro só existe dentro do grupo, e a regra que cita o próprio fato não termina.
  */
 export function fatosCitaveisPelaRegra<
-  T extends Pick<FatoCandidatoDto, 'codigo' | 'ativo' | 'escopo'>,
+  T extends Pick<FatoCandidatoView, 'codigo' | 'ativo' | 'escopo'>,
 >(catalogo: readonly T[], codigoDoDerivado: string): readonly T[] {
   return catalogo.filter(
     (fato) => fato.ativo && fato.escopo === 'CANDIDATO' && fato.codigo !== codigoDoDerivado,
@@ -254,8 +274,20 @@ export function eixosDoTipo(tipo: TipoDoFato): EixosEditaveis {
 }
 
 /** Se a definição do fato se altera na tela: o do administrador de um dos três tipos conhecidos. */
-export function podeEditarDefinicao(fato: Pick<FatoCandidatoDto, 'binding' | 'semeadoPeloSistema'>): boolean {
+export function podeEditarDefinicao(
+  fato: FatoComVinculo & Pick<FatoCandidatoDto, 'semeadoPeloSistema'>,
+): boolean {
   return !fato.semeadoPeloSistema && tipoDoFato(fato) !== 'OUTRO';
+}
+
+/** A proteção de dados do fato, com os nomes que o cadastro de proteção usa. */
+export function protecaoDoFato({ definicao }: FatoCandidatoDto): ProtecaoDoItem {
+  const { classificacao, hipoteseLegal, finalidade } = definicao.protecao;
+  return {
+    classificacaoProtecao: classificacao,
+    hipoteseLegal,
+    finalidadeTratamento: finalidade,
+  };
 }
 
 /** O que o formulário da definição guarda, no vocabulário do contrato. */
@@ -274,64 +306,33 @@ export interface DefinicaoEmEdicao {
 /** O corpo da alteração: só os eixos que o tipo aceita, porque a API recusa o eixo a mais. */
 export function corpoDaDefinicao(tipo: TipoDoFato, v: DefinicaoEmEdicao): DefinicaoDoFatoInput {
   const eixos = eixosEditaveis(tipo, v.dominio);
-  const declarado = tipo === 'DECLARADO';
   return {
     pontoResolucao: v.pontoResolucao,
     classificacaoProtecao: v.classificacaoProtecao,
     finalidadeTratamento: v.finalidadeTratamento.trim(),
     hipoteseLegal: v.hipoteseLegal,
-    ...(eixos.dominio ? { dominio: v.dominio } : {}),
-    ...(eixos.escopo ? { escopo: v.escopo } : {}),
-    ...(eixos.cardinalidade ? { cardinalidade: v.cardinalidade } : {}),
-    // No declarado fonte e formato valem só em certos tipos de dado: nos demais seguem nulos.
-    ...(declarado
-      ? {
-          fonteValores: eixos.fonteValores ? v.fonteValores : null,
-          formato: eixos.formato ? v.formato : null,
-        }
-      : {}),
+    ...eixosEnviados(eixos, v),
+    ...(tipo === 'DECLARADO' ? fonteEFormatoEnviados(eixos, v) : {}),
   };
 }
 
-/** O que cita o fato e deixaria de valer, agrupado pelo tipo de citação que a API informa. */
-export interface GrupoDeCitacoes {
-  readonly tipo: string;
-  readonly titulo: string;
-  readonly itens: readonly { readonly codigo: string; readonly mensagem: string }[];
+function eixosEnviados(eixos: EixosEditaveis, v: DefinicaoEmEdicao): Partial<DefinicaoDoFatoInput> {
+  return {
+    ...(eixos.dominio ? { dominio: v.dominio } : {}),
+    ...(eixos.escopo ? { escopo: v.escopo } : {}),
+    ...(eixos.cardinalidade ? { cardinalidade: v.cardinalidade } : {}),
+  };
 }
 
-const TITULOS_DE_CITACAO: readonly (readonly [string, string])[] = [
-  ['regrasPadrao', 'Regras padrão de outros fatos'],
-  ['agregados', 'Resumos de grupo'],
-  ['modelos', 'Modelos de formulário'],
-  ['modalidades', 'Regras de aplicabilidade de modalidades'],
-];
-
-/** Agrupa as recusas de `citacoes.<tipo>.<código>`; as demais recusas não são citações. */
-export function citacoesDaRecusa(
-  erros: readonly { field: string; message: string }[],
-): readonly GrupoDeCitacoes[] {
-  const porTipo = new Map<string, { codigo: string; mensagem: string }[]>();
-  for (const erro of erros) {
-    const encontrado = /^citacoes\.([^.]+)\.(.+)$/u.exec(erro.field);
-    if (encontrado === null) continue;
-    const itens = porTipo.get(encontrado[1]) ?? [];
-    itens.push({ codigo: encontrado[2], mensagem: erro.message });
-    porTipo.set(encontrado[1], itens);
-  }
-  const conhecidos = TITULOS_DE_CITACAO.filter(([tipo]) => porTipo.has(tipo)).map(
-    ([tipo, titulo]) => ({ tipo, titulo, itens: porTipo.get(tipo) ?? [] }),
-  );
-  // Um tipo que a tela ainda não conhece não pode sumir: a alteração foi recusada por causa dele.
-  const desconhecidos = [...porTipo.entries()]
-    .filter(([tipo]) => !TITULOS_DE_CITACAO.some(([conhecido]) => conhecido === tipo))
-    .map(([tipo, itens]) => ({ tipo, titulo: 'Outras citações', itens }));
-  return [...conhecidos, ...desconhecidos];
-}
-
-/** Se a recusa é de uma citação, e não de um campo do formulário. */
-export function ehCitacao(campo: string): boolean {
-  return campo.startsWith('citacoes.');
+/** No declarado fonte e formato valem só em certos tipos de dado: nos demais seguem nulos. */
+function fonteEFormatoEnviados(
+  eixos: EixosEditaveis,
+  v: DefinicaoEmEdicao,
+): Partial<DefinicaoDoFatoInput> {
+  return {
+    fonteValores: eixos.fonteValores ? v.fonteValores : null,
+    formato: eixos.formato ? v.formato : null,
+  };
 }
 
 /**
@@ -340,20 +341,20 @@ export function ehCitacao(campo: string): boolean {
  * validação só roda quando algo mudou, para não apagar a recusa do servidor posta no controle.
  */
 export function exigirSe(controle: FormControl<string>, exigido: boolean, limpar = true): void {
-  const tinha = controle.hasValidator(Validators.required);
-  let mudou = false;
-  if (exigido && !tinha) {
-    controle.addValidators(Validators.required);
-    mudou = true;
-  } else if (!exigido) {
-    if (tinha) {
-      controle.removeValidators(Validators.required);
-      mudou = true;
-    }
-    if (limpar && controle.value !== '') {
-      controle.setValue('', { emitEvent: false });
-      mudou = true;
-    }
-  }
+  const mudou = exigido ? passarAExigir(controle) : deixarDeExigir(controle, limpar);
   if (mudou) controle.updateValueAndValidity({ emitEvent: false });
+}
+
+function passarAExigir(controle: FormControl<string>): boolean {
+  if (controle.hasValidator(Validators.required)) return false;
+  controle.addValidators(Validators.required);
+  return true;
+}
+
+function deixarDeExigir(controle: FormControl<string>, limpar: boolean): boolean {
+  const tinha = controle.hasValidator(Validators.required);
+  if (tinha) controle.removeValidators(Validators.required);
+  const esvaziar = limpar && controle.value !== '';
+  if (esvaziar) controle.setValue('', { emitEvent: false });
+  return tinha || esvaziar;
 }

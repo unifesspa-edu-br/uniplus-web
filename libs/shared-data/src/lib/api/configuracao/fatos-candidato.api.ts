@@ -8,6 +8,9 @@ import { CONFIGURACAO_BASE_PATH } from './tokens';
 
 export type FatoCandidatoView = components['schemas']['FatoCandidatoView'];
 export type FatoValorDominioViewItem = components['schemas']['FatoValorDominioViewItem'];
+export type FatoDoCatalogoDto = components['schemas']['FatoDoCatalogoDto'];
+export type FatoDeManutencaoDto = components['schemas']['FatoDeManutencaoDto'];
+export type OperadorDoFato = components['schemas']['Operador'];
 export type FatoCandidatoDto = components['schemas']['FatoCandidatoDto'];
 export type FatoValorDominioDto = components['schemas']['FatoValorDominioDto'];
 export type RegraPadraoDto = components['schemas']['RegraPadraoDto'];
@@ -30,9 +33,9 @@ export type OrdemDosValoresInput = components['schemas']['OrdemDosValoresInput']
  * Os fatos de sistema — os que o código resolve, como modalidade e faixa etária — só têm nome,
  * descrição, componente de exibição e proteção de dados editáveis; a proteção passa pela aprovação da proteção de dados.
  *
- * A leitura pública (`listar`) devolve o catálogo inteiro na forma que os editores de condição
- * precisam; a administrativa (`obter`, e a listagem paginada da página) devolve o fato completo, com proteção de
- * dados, valores e regras padrão.
+ * A leitura pública (`listar`) devolve o catálogo inteiro, cada fato com os operadores que a
+ * condição admite sobre ele; a administrativa (`obter`, e a listagem paginada da página) devolve
+ * o fato completo, com proteção de dados, valores e regras padrão, no mesmo envelope.
  *
  * API thin (ADR-0013): tipos do `schema.ts` gerado; resposta envelopada em `ApiResult<T>`;
  * versionamento por vendor MIME; escritas com Idempotency-Key no `context` (ADR-0027).
@@ -43,16 +46,16 @@ export class FatosCandidatoApi {
   private readonly basePath = inject(CONFIGURACAO_BASE_PATH);
 
   /** GET `/api/configuracao/fatos-candidato` — o catálogo inteiro. Conjunto fechado, sem paginação. */
-  listar(): Observable<ApiResult<readonly FatoCandidatoView[]>> {
-    return this.http.get<ApiResult<readonly FatoCandidatoView[]>>(
+  listar(): Observable<ApiResult<readonly FatoDoCatalogoDto[]>> {
+    return this.http.get<ApiResult<readonly FatoDoCatalogoDto[]>>(
       `${this.basePath}/api/configuracao/fatos-candidato`,
       { context: withVendorMime('fato-candidato', 1) },
     );
   }
 
   /** GET `/api/configuracao/admin/fatos-candidato/{id}` — o fato completo. */
-  obter(id: string): Observable<ApiResult<FatoCandidatoDto>> {
-    return this.http.get<ApiResult<FatoCandidatoDto>>(this.admin(id), {
+  obter(id: string): Observable<ApiResult<FatoDeManutencaoDto>> {
+    return this.http.get<ApiResult<FatoDeManutencaoDto>>(this.admin(id), {
       context: withVendorMime('fato-candidato', 1),
     });
   }
@@ -119,9 +122,12 @@ export class FatosCandidatoApi {
 
   /** GET `/api/configuracao/admin/fatos-candidato/{id}/protecao/atos` — os atos da proteção de dados do fato, em ordem cronológica. Exige a permissão de consultar fatos. */
   atosDaProtecao(id: string): Observable<ApiResult<readonly AtoDaProtecaoDto[]>> {
-    return this.http.get<ApiResult<readonly AtoDaProtecaoDto[]>>(this.admin(id, 'protecao', 'atos'), {
-      context: withVendorMime('protecao-do-catalogo-ato', 1),
-    });
+    return this.http.get<ApiResult<readonly AtoDaProtecaoDto[]>>(
+      this.admin(id, 'protecao', 'atos'),
+      {
+        context: withVendorMime('protecao-do-catalogo-ato', 1),
+      },
+    );
   }
 
   /** POST `/api/configuracao/admin/fatos-candidato/{id}/ativacao` — reativa o fato. */

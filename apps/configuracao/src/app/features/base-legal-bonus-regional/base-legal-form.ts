@@ -11,11 +11,12 @@ import {
   BaseLegalBonusRegionalMunicipioDto,
   CriarBaseLegalBonusRegionalCommand,
   AtualizarBaseLegalBonusRegionalCommand,
+  type TipoInstrumentoNormativoCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { controlNameFromBackendField, nullIfBlank } from '../../shared/formulario';
 
 export interface BaseLegalForm {
-  tipoInstrumento: FormControl<string>;
+  tipoInstrumento: FormControl<TipoInstrumentoNormativoCodigo | ''>;
   identificacao: FormControl<string>;
   descricao: FormControl<string>;
 }
@@ -54,20 +55,18 @@ function validadorTextoAparado(minimo: number): ValidatorFn {
   };
 }
 
+function controleDeTexto(minimo: number, maximo: number): FormControl<string> {
+  return new FormControl('', {
+    nonNullable: true,
+    validators: [validadorTextoAparado(minimo), Validators.maxLength(maximo)],
+  });
+}
+
 export function criarFormularioDeBaseLegal(): FormGroup<BaseLegalForm> {
   return new FormGroup<BaseLegalForm>({
     tipoInstrumento: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    identificacao: new FormControl('', {
-      nonNullable: true,
-      validators: [
-        validadorTextoAparado(IDENTIFICACAO_MINIMO),
-        Validators.maxLength(IDENTIFICACAO_MAXIMO),
-      ],
-    }),
-    descricao: new FormControl('', {
-      nonNullable: true,
-      validators: [validadorTextoAparado(DESCRICAO_MINIMO), Validators.maxLength(DESCRICAO_MAXIMO)],
-    }),
+    identificacao: controleDeTexto(IDENTIFICACAO_MINIMO, IDENTIFICACAO_MAXIMO),
+    descricao: controleDeTexto(DESCRICAO_MINIMO, DESCRICAO_MAXIMO),
   });
 }
 
@@ -77,7 +76,7 @@ export function valoresEmBrancoDaBaseLegal(): ValoresDaBaseLegal {
 
 export function valoresDaBaseLegal(base: BaseLegalBonusRegionalDto): ValoresDaBaseLegal {
   return {
-    tipoInstrumento: base.tipoInstrumento,
+    tipoInstrumento: base.tipoInstrumento.codigo,
     identificacao: base.identificacao,
     descricao: base.descricao,
   };
@@ -93,7 +92,7 @@ export function comandoDeCriacao(
 ): CriarBaseLegalBonusRegionalCommand {
   const valor = form.getRawValue();
   return {
-    tipoInstrumento: nullIfBlank(valor.tipoInstrumento),
+    tipoInstrumento: valor.tipoInstrumento === '' ? null : valor.tipoInstrumento,
     identificacao: nullIfBlank(valor.identificacao),
     descricao: nullIfBlank(valor.descricao),
     municipios: municipios.map(({ codigoIbge, nome, uf }) => ({ codigoIbge, nome, uf })),

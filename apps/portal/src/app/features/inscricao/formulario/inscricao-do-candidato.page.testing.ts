@@ -18,6 +18,7 @@ import {
   type InscricaoRequest,
   SELECAO_BASE_PATH,
   SituacaoInscricao,
+  TipoRenderizacaoCodigo,
 } from '@uniplus/shared-data/selecao';
 import {
   type ArquivoEnviado,
@@ -28,7 +29,12 @@ import {
 
 import type { OfertaDaInscricao } from '../oferta-da-inscricao';
 import { EnvioDeDocumentosDaInscricao } from './envio-de-documentos-da-inscricao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import {
+  FORMULARIO_DE_INSCRICAO_MOCK,
+  campoColetado,
+  comCampoColetado,
+  comFormulario,
+} from './inscricao-do-candidato.testing';
 import { InscricaoDoCandidatoPage } from './inscricao-do-candidato.page';
 import { LeituraDaInscricao } from './leitura-da-inscricao';
 import { InscricaoDoCandidatoService } from './inscricao-do-candidato.service';
@@ -80,61 +86,36 @@ export const SEM_DERIVACAO: AvaliacaoDaInscricaoDto = {
 
 /** O formulário de teste com o bloco das modalidades, que dependem do nome. */
 export const COM_MODALIDADES: FormularioRenderizavelDto = {
-  ...FORMULARIO_DE_INSCRICAO_MOCK,
+  ...comFormulario(FORMULARIO_DE_INSCRICAO_MOCK, {
+    etapas: [
+      ...FORMULARIO_DE_INSCRICAO_MOCK.formulario.etapas,
+      {
+        codigo: 'MODALIDADES',
+        codigoNasRegras: null,
+        ordem: 3,
+        tipo: 'BLOCO',
+        bloco: 'MODALIDADES_CALCULADAS',
+        apresentacao: { titulo: 'Modalidades de concorrência', descricao: null, aviso: null },
+      },
+    ],
+  }),
   dependenciasDaAvaliacao: { fatos: ['NOME'], grupos: [] },
   dependenciasDoFator: null,
-  etapas: [
-    ...FORMULARIO_DE_INSCRICAO_MOCK.etapas,
-    {
-      codigo: 'MODALIDADES',
-      codigoNasRegras: null,
-      ordem: 3,
-      tipo: 'BLOCO',
-      bloco: 'MODALIDADES_CALCULADAS',
-      titulo: 'Modalidades de concorrência',
-      descricao: null,
-      aviso: null,
-    },
-  ],
 };
 
 /** O formulário de teste que também coleta o nome social. */
-export const COM_NOME_SOCIAL: FormularioRenderizavelDto = {
-  ...FORMULARIO_DE_INSCRICAO_MOCK,
-  fatosColetados: [
-    ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados,
-    {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-      fatoCodigo: 'DESEJA_NOME_SOCIAL',
-      ordem: 8,
-      rotulo: 'Deseja usar nome social',
-      tipoRenderizacao: 'BOOLEANO',
-      formato: null,
-    },
-    {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-      fatoCodigo: 'NOME_SOCIAL',
-      ordem: 9,
-      rotulo: 'Nome social',
-      formato: null,
-    },
-  ],
-  regras: {
-    ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
-    etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((e, i) =>
-      i === 0
-        ? {
-            ...e,
-            itens: [
-              ...e.itens,
-              { ...e.itens[0], fatoCodigo: 'DESEJA_NOME_SOCIAL', formato: null },
-              { ...e.itens[0], fatoCodigo: 'NOME_SOCIAL', formato: null },
-            ],
-          }
-        : e,
+export const COM_NOME_SOCIAL = comCampoColetado(
+  comCampoColetado(
+    FORMULARIO_DE_INSCRICAO_MOCK,
+    campoColetado(
+      'DESEJA_NOME_SOCIAL',
+      'Deseja usar nome social',
+      TipoRenderizacaoCodigo.BOOLEANO,
+      { ordem: 8 },
     ),
-  },
-};
+  ),
+  campoColetado('NOME_SOCIAL', 'Nome social', TipoRenderizacaoCodigo.TEXTO, { ordem: 9 }),
+);
 
 const INSCRICAO_EM_RASCUNHO: InscricaoDto = {
   id: 'inscricao-1',

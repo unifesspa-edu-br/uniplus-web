@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
 
 import { conteudoDoFormulario } from './formulario-do-processo';
 import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
@@ -81,11 +82,11 @@ describe('FormularioPassoComponent: um formulário por finalidade', () => {
                 {
                   codigo: 'T',
                   ordem: 0,
-                  termoId: 't',
-                  versaoId: 'v',
-                  exibicao: [[{ fato: 'PCD', operador: 'IGUAL', valor: 'true' }]],
-                  obrigatoriedade: 'SEMPRE',
-                  predicadoObrigatoriedade: null,
+                  termo: { termoId: 't', versaoId: 'v' },
+                  regras: {
+                    exibicao: [[{ fato: 'PCD', operador: OperadorCodigo.IGUAL, valor: 'true' }]],
+                    obrigatoriedade: { tipo: 'SEMPRE', predicado: null },
+                  },
                 },
               ],
             },

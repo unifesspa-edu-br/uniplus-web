@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
-import { BASE_DA_LISTA } from './api-da-base-legal-bonus-regional';
+import { BASE_DA_LISTA, TIPO_PORTARIA } from './api-da-base-legal-bonus-regional';
 
 export const titulo = (page: Page): Locator =>
   page.getByRole('heading', { name: 'Bases legais', level: 2 });
@@ -21,14 +21,21 @@ export const confirmacao = (page: Page): Locator =>
 export const busca = (formulario: Locator): Locator =>
   formulario.getByPlaceholder('Digite o nome completo do município…');
 
+export const tipoDoInstrumento = (formulario: Locator): Locator =>
+  formulario.getByRole('combobox', { name: 'Tipo de instrumento' });
+export const campoDaIdentificacao = (formulario: Locator): Locator =>
+  formulario.getByRole('textbox', { name: /^Identificação/ });
+export const campoDaDescricao = (formulario: Locator): Locator =>
+  formulario.getByRole('textbox', { name: /^Descrição/ });
+
 export async function abrirCadastro(page: Page): Promise<Locator> {
   await page.goto('/base-legal-bonus-regional');
   await novo(page).click();
   const formulario = drawer(page);
   await expect(formulario).toBeVisible();
-  await formulario.locator('select[formcontrolname="tipoInstrumento"]').selectOption('PORTARIA');
-  await formulario.locator('input[formcontrolname="identificacao"]').fill('Nova portaria');
-  await formulario.locator('textarea[formcontrolname="descricao"]').fill('Descrição da portaria.');
+  await tipoDoInstrumento(formulario).selectOption({ label: TIPO_PORTARIA.rotulo });
+  await campoDaIdentificacao(formulario).fill('Nova portaria');
+  await campoDaDescricao(formulario).fill('Descrição da portaria.');
   await busca(formulario).fill('Marabá');
   await formulario.getByRole('button', { name: /Marabá — PA/ }).click();
   await expect(formulario.getByRole('button', { name: 'Remover Marabá' })).toBeVisible();

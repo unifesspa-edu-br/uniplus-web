@@ -1,9 +1,16 @@
 import { signal } from '@angular/core';
 import { ProblemDetails, separarCausas } from '@uniplus/shared-core/http';
-import type { FatoCandidatoDto, RegrasPadraoInput } from '@uniplus/shared-data/configuracao';
+import {
+  OperadorCodigo,
+  TipoRenderizacaoCodigo,
+  type FatoCandidatoDto,
+  type RegrasPadraoInput,
+} from '@uniplus/shared-data/configuracao';
+import { codigosDoContrato } from '@uniplus/shared-data/utils';
 import {
   deClausulasDoWire,
   paraClausulasDoWire,
+  predicadoComOperadores,
   problemaDaCondicao,
   type CondicaoEmClausula,
   type FatoEscolhivel,
@@ -66,36 +73,21 @@ export class RegrasEmEdicao {
    * o editor não oferece (fonte de valores do processo) é conferido pela API.
    */
   conferir(fatosPorCodigo: FatoPorCodigo, jaCitados: ReadonlySet<string>): boolean {
-    const problemas: Record<number, string> = {};
-    const faltando = new Set<number>();
-    const condicoes: Record<number, Record<number, string>> = {};
-    const conferidosPelaApi = new Set(
-      [...jaCitados].filter((codigo) => !fatosPorCodigo.has(codigo)),
-    );
-    this.regras().forEach((regra, indice) => {
-      if (regra.condicoes.length === 0) {
-        problemas[indice] = 'Declare ao menos uma condição.';
-      } else if (regra.contribui === '') {
-        problemas[indice] = 'Escolha o valor que a regra acrescenta.';
-        faltando.add(indice);
-      } else {
-        const porCondicao = problemasDasCondicoes(regra, fatosPorCodigo, conferidosPelaApi);
-        if (Object.keys(porCondicao).length === 0) return;
-        problemas[indice] = 'Há condição incompleta: corrija a condição marcada.';
-        condicoes[indice] = porCondicao;
-      }
-    });
-    this.errosDasRegras.set(problemas);
-    this.contribuicoesFaltando.set(faltando);
-    this.errosDasCondicoes.set(condicoes);
-    return Object.keys(problemas).length === 0;
+    const problemas = Object.entries(conferirRegras(this.regras(), fatosPorCodigo, jaCitados));
+    this.errosDasRegras.set(Object.fromEntries(problemas.map(([i, p]) => [i, p.mensagem])));
+    this.contribuicoesFaltando.set(contribuicoesSemValor(problemas));
+    this.errosDasCondicoes.set(Object.fromEntries(condicoesComProblema(problemas)));
+    return problemas.length === 0;
   }
 
   corpo(): RegrasPadraoInput {
     return {
       regras: this.regras().map((regra) => ({
         contribui: regra.contribui,
-        quando: paraClausulasDoWire(regra.condicoes),
+        quando: predicadoComOperadores(
+          paraClausulasDoWire(regra.condicoes),
+          codigosDoContrato(OperadorCodigo, TipoRenderizacaoCodigo).operador,
+        ),
       })),
     };
   }
@@ -136,6 +128,70 @@ export class RegrasEmEdicao {
       (faltando) => new Set([...faltando].filter((posicao) => posicao !== indice)),
     );
   }
+}
+
+interface ProblemaDaRegra {
+  readonly mensagem: string;
+  readonly contribuicaoFaltando: boolean;
+  readonly porCondicao: Record<number, string> | null;
+}
+
+const SEM_CONDICAO: ProblemaDaRegra = {
+  mensagem: 'Declare ao menos uma condição.',
+  contribuicaoFaltando: false,
+  porCondicao: null,
+};
+
+const SEM_CONTRIBUICAO: ProblemaDaRegra = {
+  mensagem: 'Escolha o valor que a regra acrescenta.',
+  contribuicaoFaltando: true,
+  porCondicao: null,
+};
+
+const MENSAGEM_INCOMPLETA = 'Há condição incompleta: corrija a condição marcada.';
+
+function problemaDaRegra(
+  regra: RegraEmEdicao,
+  fatosPorCodigo: FatoPorCodigo,
+  conferidosPelaApi: ReadonlySet<string>,
+): ProblemaDaRegra | null {
+  if (regra.condicoes.length === 0) return SEM_CONDICAO;
+  if (regra.contribui === '') return SEM_CONTRIBUICAO;
+  const porCondicao = problemasDasCondicoes(regra, fatosPorCodigo, conferidosPelaApi);
+  if (Object.keys(porCondicao).length === 0) return null;
+  return { mensagem: MENSAGEM_INCOMPLETA, contribuicaoFaltando: false, porCondicao };
+}
+
+type ProblemasPorRegra = Readonly<Record<number, ProblemaDaRegra>>;
+
+function conferirRegras(
+  regras: readonly RegraEmEdicao[],
+  fatosPorCodigo: FatoPorCodigo,
+  jaCitados: ReadonlySet<string>,
+): ProblemasPorRegra {
+  const conferidosPelaApi = new Set([...jaCitados].filter((codigo) => !fatosPorCodigo.has(codigo)));
+  const problemas: Record<number, ProblemaDaRegra> = {};
+  regras.forEach((regra, indice) => {
+    const problema = problemaDaRegra(regra, fatosPorCodigo, conferidosPelaApi);
+    if (problema !== null) problemas[indice] = problema;
+  });
+  return problemas;
+}
+
+type ProblemaIndexado = readonly [string, ProblemaDaRegra];
+
+function contribuicoesSemValor(problemas: readonly ProblemaIndexado[]): ReadonlySet<number> {
+  return new Set(
+    problemas.filter(([, p]) => p.contribuicaoFaltando).map(([indice]) => Number(indice)),
+  );
+}
+
+function condicoesComProblema(
+  problemas: readonly ProblemaIndexado[],
+): [string, Record<number, string>][] {
+  return problemas.flatMap(([indice, p]) =>
+    p.porCondicao === null ? [] : [[indice, p.porCondicao]],
+  );
 }
 
 function problemasDasCondicoes(

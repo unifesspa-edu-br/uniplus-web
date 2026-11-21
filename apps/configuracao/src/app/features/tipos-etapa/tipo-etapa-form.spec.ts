@@ -1,4 +1,4 @@
-import { TipoEtapaDto } from '@uniplus/shared-data/configuracao';
+import { NaturezaConceitoCodigo, TipoEtapaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it } from 'vitest';
 import {
   comandoDeAtualizacao,
@@ -15,11 +15,19 @@ const tipo: TipoEtapaDto = {
   nome: 'Prova',
   descricao: null,
   ativo: true,
-  admitePontuacao: false,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  exigeCorrecaoIndependente: false,
-  conceitosAdmitidos: [{ codigo: 'CONCEITO_A', nome: 'Conceito A', natureza: 'categorico' }],
+  avaliacao: {
+    admitePontuacao: false,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [
+      {
+        codigo: 'CONCEITO_A',
+        nome: 'Conceito A',
+        natureza: { codigo: NaturezaConceitoCodigo.CATEGORICO, rotulo: 'Categórico' },
+      },
+    ],
+  },
   criadoEm: '',
 };
 
@@ -55,19 +63,23 @@ describe('formulário de tipo de etapa', () => {
     expect(comandoDeCriacao(form)).toEqual({
       codigo: 'NOVA',
       nome: 'Nome',
-      admitePontuacao: false,
-      admiteEliminacao: true,
-      exigeCorrecaoIndependente: false,
-      conceitosAdmitidos: ['CONCEITO_A'],
+      avaliacao: {
+        admitePontuacao: false,
+        admiteEliminacao: true,
+        exigeCorrecaoIndependente: false,
+        conceitosAdmitidos: ['CONCEITO_A'],
+      },
       descricao: null,
     });
     expect(comandoDeAtualizacao('1', form)).toEqual({
       id: '1',
       nome: 'Nome',
-      admitePontuacao: false,
-      admiteEliminacao: true,
-      exigeCorrecaoIndependente: false,
-      conceitosAdmitidos: ['CONCEITO_A'],
+      avaliacao: {
+        admitePontuacao: false,
+        admiteEliminacao: true,
+        exigeCorrecaoIndependente: false,
+        conceitosAdmitidos: ['CONCEITO_A'],
+      },
       descricao: null,
     });
   });
@@ -76,23 +88,30 @@ describe('formulário de tipo de etapa', () => {
     const novo = criarFormularioDeEtapa();
     novo.reset(valoresEmBrancoDaEtapa());
     novo.patchValue({ codigo: 'NOVA', nome: 'Nova' });
-    expect(comandoDeCriacao(novo).conceitosAdmitidos).toEqual([]);
+    expect(comandoDeCriacao(novo).avaliacao?.conceitosAdmitidos).toEqual([]);
 
     const existente = criarFormularioDeEtapa();
-    existente.reset(valoresDaEtapa({ ...tipo, conceitosAdmitidos: [] }));
-    expect(comandoDeAtualizacao('1', existente).conceitosAdmitidos).toEqual([]);
+    existente.reset(
+      valoresDaEtapa({ ...tipo, avaliacao: { ...tipo.avaliacao, conceitosAdmitidos: [] } }),
+    );
+    expect(comandoDeAtualizacao('1', existente).avaliacao?.conceitosAdmitidos).toEqual([]);
   });
 
   it('devolve nos dois comandos a exigência de correção independente que o tipo declara', () => {
     const form = criarFormularioDeEtapa();
-    form.reset(valoresDaEtapa({ ...tipo, exigeCorrecaoIndependente: true }));
+    form.reset(
+      valoresDaEtapa({
+        ...tipo,
+        avaliacao: { ...tipo.avaliacao, exigeCorrecaoIndependente: true },
+      }),
+    );
     expect(form.controls.exigeCorrecaoIndependente.value).toBe(true);
-    expect(comandoDeCriacao(form).exigeCorrecaoIndependente).toBe(true);
-    expect(comandoDeAtualizacao('1', form).exigeCorrecaoIndependente).toBe(true);
+    expect(comandoDeCriacao(form).avaliacao?.exigeCorrecaoIndependente).toBe(true);
+    expect(comandoDeAtualizacao('1', form).avaliacao?.exigeCorrecaoIndependente).toBe(true);
 
     form.controls.exigeCorrecaoIndependente.setValue(false);
-    expect(comandoDeCriacao(form).exigeCorrecaoIndependente).toBe(false);
-    expect(comandoDeAtualizacao('1', form).exigeCorrecaoIndependente).toBe(false);
+    expect(comandoDeCriacao(form).avaliacao?.exigeCorrecaoIndependente).toBe(false);
+    expect(comandoDeAtualizacao('1', form).avaliacao?.exigeCorrecaoIndependente).toBe(false);
   });
 
   it('liga o campo recusado pelo servidor ao controle, ignorando o desconhecido', () => {
@@ -100,6 +119,7 @@ describe('formulário de tipo de etapa', () => {
     expect(controleDoCampoDoServidor('ExigeCorrecaoIndependente')).toBe(
       'exigeCorrecaoIndependente',
     );
+    expect(controleDoCampoDoServidor('Avaliacao.AdmiteEliminacao')).toBe('admiteEliminacao');
     expect(controleDoCampoDoServidor('Desconhecido')).toBeNull();
   });
 });

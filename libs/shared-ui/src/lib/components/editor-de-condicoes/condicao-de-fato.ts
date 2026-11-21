@@ -4,19 +4,18 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { ComboboxComponent, type UiComboboxGroup } from '../combobox/combobox';
 import { ValorDeMunicipioComponent } from './valor-de-municipio';
 import { alcanceDaCondicao } from './condicoes/conferencia-da-condicao';
-import { rotuloDoValor, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
+import { operadorPadrao, rotuloDoValor, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
 import {
   RESPOSTAS_BOOLEANAS,
   comOperador,
   comValorEscalar,
   comValoresDeLista,
-  comparaComLista,
-  operadoresDoFato,
   type CondicaoDeFato,
-  type OperadorEscolhivel,
+  type OpcaoDeValor,
   valorEscalarDe,
   valoresDeListaDe,
 } from './condicoes/valor-da-condicao';
+import { comparaComLista } from '../formulario-do-candidato/interpretador/predicado';
 import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive';
 
 /**
@@ -79,8 +78,8 @@ import { ValorLegivelDirective } from '../valor-legivel/valor-legivel.directive'
           [disabled]="disabled()"
           (change)="escolherOperador(valorDe($event))"
         >
-          @for (opcao of operadores(); track opcao.valor) {
-            <option [value]="opcao.valor" [selected]="opcao.valor === condicao().operador">
+          @for (opcao of operadores(); track opcao.codigo) {
+            <option [value]="opcao.codigo" [selected]="opcao.codigo === condicao().operador">
               {{ opcao.rotulo }}
             </option>
           }
@@ -246,10 +245,10 @@ export class CondicaoDeFatoComponent {
 
   protected readonly operadores = computed(() => {
     const fato = this.fatoAtual();
-    return fato === undefined ? [] : operadoresDoFato(fato);
+    return fato?.operadoresAdmitidos ?? [];
   });
 
-  protected readonly valoresEscolhiveis = computed<readonly OperadorEscolhivel[]>(() => {
+  protected readonly valoresEscolhiveis = computed<readonly OpcaoDeValor[]>(() => {
     const fato = this.fatoAtual();
     if (fato === undefined) return [];
     return fato.valores.map((valor) => ({ valor, rotulo: rotuloDoValor(fato, valor) }));
@@ -305,21 +304,14 @@ export class CondicaoDeFatoComponent {
    */
   protected escolherFato(codigo: string): void {
     const atual = this.condicao();
+    const fato = this.fatos().find((candidato) => candidato.codigo === codigo);
 
     if (codigo === '') {
       this.condicaoChange.emit({ ...atual, fato: '', operador: '', valor: '' });
-      return;
+    } else if (fato !== undefined) {
+      const operador = operadorPadrao(fato);
+      this.condicaoChange.emit({ ...atual, fato: codigo, operador, valor: '' });
     }
-
-    const fato = this.fatos().find((candidato) => candidato.codigo === codigo);
-    if (fato === undefined) return;
-
-    this.condicaoChange.emit({
-      ...atual,
-      fato: codigo,
-      operador: operadoresDoFato(fato)[0].valor,
-      valor: '',
-    });
   }
 
   protected escolherOperador(operador: string): void {

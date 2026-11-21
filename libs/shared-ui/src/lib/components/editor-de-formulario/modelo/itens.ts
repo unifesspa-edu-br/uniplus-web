@@ -1,9 +1,15 @@
-import { renderizacaoDe } from './catalogo-de-campos';
+import { campoNovo } from './catalogo-de-campos';
 import { comFatosConhecidosAntes, quemCita } from './citacoes';
 import { nomeDoFato } from './codigos';
 import { conferirOrdem } from './conferencia-de-ordem';
-import { LIMITES_DO_FORMULARIO, OBRIGATORIEDADE_SEMPRE, SECAO_DADOS_BASICOS } from './constantes';
-import { entradasDaSecao, ordemDa, ordemNoFimDaSecao, renumerar } from './ordem-das-entradas';
+import { SECAO_DADOS_BASICOS } from './constantes';
+import {
+  TrocaComAVizinha,
+  entradasDaSecao,
+  ordemDa,
+  ordemNoFimDaSecao,
+  renumerar,
+} from './ordem-das-entradas';
 import { RESTRICAO_MUNICIPIOS_DA_UF } from './restricoes-de-valor';
 import {
   ChaveDaEntrada,
@@ -12,6 +18,7 @@ import {
   FONTE_GEO_MUNICIPIO,
   FONTE_GEO_UF,
   FatoDoFormulario,
+  GrupoDoFormulario,
   ItemDoFormulario,
   MULTIVALORADO,
   ResultadoDaEdicao,
@@ -23,18 +30,7 @@ export function acrescentarItem(
   fato: FatoDoFormulario,
   etapaCodigo: string,
 ): ConteudoDoFormulario {
-  const novo: ItemDoFormulario = {
-    fatoCodigo: fato.codigo,
-    ordem: ordemNoFimDaSecao(conteudo, etapaCodigo),
-    rotulo: fato.nome.slice(0, LIMITES_DO_FORMULARIO.rotulo),
-    tipoRenderizacao: renderizacaoDe(fato) ?? '',
-    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
-    precondicao: null,
-    etapaCodigo,
-    predicadoObrigatoriedade: null,
-    ajuda: null,
-    pedirConfirmacao: false,
-  };
+  const novo = campoNovo(fato, ordemNoFimDaSecao(conteudo, etapaCodigo), etapaCodigo);
   return renumerar({ ...conteudo, itens: [...(conteudo.itens ?? []), novo] });
 }
 
@@ -57,26 +53,35 @@ export function acrescentarCampo(
 ): ResultadoDaEdicao {
   const comCampo = acrescentarItem(conteudo, fato, etapaCodigo);
   if (fato.fonteValores !== FONTE_GEO_MUNICIPIO) return { ok: true, conteudo: comCampo };
+  return municipioRestritoAUfAnterior(comCampo, fato, citacoes);
+}
 
+function municipioRestritoAUfAnterior(
+  comCampo: ConteudoDoFormulario,
+  fato: FatoDoFormulario,
+  citacoes: ContextoDeCitacao,
+): ResultadoDaEdicao {
   const uf = ufsAnteriores(
     comFatosConhecidosAntes(comCampo, citacoes.fatosConhecidosAntes ?? []),
     citacoes.catalogo,
     fato.codigo,
   ).at(-1);
-  if (uf === undefined) {
-    return {
-      ok: false,
-      recusa: `Acrescente antes o campo de UF: “${fato.nome}” escolhe entre os municípios da UF respondida antes.`,
-    };
-  }
-  const item = (comCampo.itens ?? []).find((i) => i.fatoCodigo === fato.codigo) as ItemDoFormulario;
-  return {
-    ok: true,
-    conteudo: comItem(comCampo, {
-      ...item,
-      restricoes: [{ tipo: RESTRICAO_MUNICIPIOS_DA_UF, fatos: [uf.codigo] }],
-    }),
-  };
+  if (uf === undefined) return { ok: false, recusa: recusaDoMunicipioSemUf(fato) };
+  return { ok: true, conteudo: comRestricaoAosMunicipiosDaUf(comCampo, fato.codigo, uf.codigo) };
+}
+
+function recusaDoMunicipioSemUf(fato: FatoDoFormulario): string {
+  return `Acrescente antes o campo de UF: “${fato.nome}” escolhe entre os municípios da UF respondida antes.`;
+}
+
+function comRestricaoAosMunicipiosDaUf(
+  conteudo: ConteudoDoFormulario,
+  fatoCodigo: string,
+  uf: string,
+): ConteudoDoFormulario {
+  const item = (conteudo.itens ?? []).find((i) => i.fatoCodigo === fatoCodigo) as ItemDoFormulario;
+  const restricoes = [{ tipo: RESTRICAO_MUNICIPIOS_DA_UF, fatos: [uf] }];
+  return comItem(conteudo, { ...item, regras: { ...item.regras, restricoes } });
 }
 
 /**
@@ -89,19 +94,26 @@ export function ufsAnteriores(
   catalogo: readonly FatoDoFormulario[],
   fatoCodigo: string,
 ): readonly FatoDoFormulario[] {
+  const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
+  return fatosAntesDoCampo(conteudo, fatoCodigo).flatMap((codigo) => {
+    const fato = porCodigo.get(codigo);
+    return fato !== undefined && ehUfDeRespostaUnica(fato) ? [fato] : [];
+  });
+}
+
+function ehUfDeRespostaUnica(fato: FatoDoFormulario): boolean {
+  return fato.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO;
+}
+
+/** Os pressupostos, conhecidos antes de todo o formulário, e depois os itens anteriores ao campo, em ordem. */
+function fatosAntesDoCampo(conteudo: ConteudoDoFormulario, fatoCodigo: string): readonly string[] {
   const ordem =
     (conteudo.itens ?? []).find((item) => item.fatoCodigo === fatoCodigo)?.ordem ?? Infinity;
-  const porCodigo = new Map(catalogo.map((fato) => [fato.codigo, fato]));
   const anteriores = [...(conteudo.itens ?? [])]
     .filter((item) => item.ordem < ordem)
     .sort((a, b) => a.ordem - b.ordem)
     .map((item) => item.fatoCodigo);
-  return [...(conteudo.pressupostos ?? []), ...anteriores].flatMap((codigo) => {
-    const fato = porCodigo.get(codigo);
-    return fato?.fonteValores === FONTE_GEO_UF && fato.cardinalidade !== MULTIVALORADO
-      ? [fato]
-      : [];
-  });
+  return [...(conteudo.pressupostos ?? []), ...anteriores];
 }
 
 /** Troca o item pelo editado, sem mexer na ordem. */
@@ -131,17 +143,26 @@ function etapaDaEntrada(conteudo: ConteudoDoFormulario, chave: ChaveDaEntrada): 
   return etapa ?? null;
 }
 
+function entradaEVizinha(
+  conteudo: ConteudoDoFormulario,
+  chave: ChaveDaEntrada,
+  direcao: -1 | 1,
+): TrocaComAVizinha<EntradaDaSecao> | null {
+  const etapa = etapaDaEntrada(conteudo, chave);
+  if (etapa === null || etapa === SECAO_DADOS_BASICOS) return null;
+  const entradas = entradasDaSecao(conteudo, etapa);
+  const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
+  const vizinha = indice >= 0 ? entradas[indice + direcao] : undefined;
+  return vizinha === undefined ? null : { atual: entradas[indice], vizinha };
+}
+
 /** Se o item ou o grupo pode trocar de lugar com a entrada vizinha da mesma seção. */
 export function podeMoverEntrada(
   conteudo: ConteudoDoFormulario,
   chave: ChaveDaEntrada,
   direcao: -1 | 1,
 ): boolean {
-  const etapa = etapaDaEntrada(conteudo, chave);
-  if (etapa === null || etapa === SECAO_DADOS_BASICOS) return false;
-  const entradas = entradasDaSecao(conteudo, etapa);
-  const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
-  return indice >= 0 && entradas[indice + direcao] !== undefined;
+  return entradaEVizinha(conteudo, chave, direcao) !== null;
 }
 
 /**
@@ -154,31 +175,40 @@ export function moverEntrada(
   direcao: -1 | 1,
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDaEdicao {
-  if (!podeMoverEntrada(conteudo, chave, direcao))
-    return { ok: false, recusa: 'Não é possível mover nessa direção.' };
-  const entradas = entradasDaSecao(conteudo, etapaDaEntrada(conteudo, chave) as string);
-  const indice = entradas.findIndex((entrada) => ehAEntrada(entrada, chave));
-  const [atual, vizinha] = [entradas[indice], entradas[indice + direcao]];
-  // A entrada e a vizinha trocam de ordem; a renumeração fecha a numeração.
-  const ordemTrocada = (alvo: ChaveDaEntrada): number | undefined =>
-    ehAEntrada(atual, alvo)
-      ? ordemDa(vizinha)
-      : ehAEntrada(vizinha, alvo)
-        ? ordemDa(atual)
-        : undefined;
+  const troca = entradaEVizinha(conteudo, chave, direcao);
+  if (troca === null) return { ok: false, recusa: 'Não é possível mover nessa direção.' };
+  return conferirOrdem(comEntradasTrocadas(conteudo, troca), nomes);
+}
 
-  const trocado = renumerar({
+/** A entrada e a vizinha trocam de ordem; a renumeração fecha a numeração. */
+function comEntradasTrocadas(
+  conteudo: ConteudoDoFormulario,
+  troca: TrocaComAVizinha<EntradaDaSecao>,
+): ConteudoDoFormulario {
+  return renumerar({
     ...conteudo,
-    itens: (conteudo.itens ?? []).map((item) => ({
-      ...item,
-      ordem: ordemTrocada({ tipo: 'item', fatoCodigo: item.fatoCodigo }) ?? item.ordem,
-    })),
-    grupos: (conteudo.grupos ?? []).map((grupo) => ({
-      ...grupo,
-      ordem: ordemTrocada({ tipo: 'grupo', codigo: grupo.codigo }) ?? grupo.ordem,
-    })),
+    itens: (conteudo.itens ?? []).map((item) => comOrdemTrocada(item, troca)),
+    grupos: (conteudo.grupos ?? []).map((grupo) => comOrdemTrocada(grupo, troca)),
   });
-  return conferirOrdem(trocado, nomes);
+}
+
+function comOrdemTrocada<T extends ItemDoFormulario | GrupoDoFormulario>(
+  alvo: T,
+  troca: TrocaComAVizinha<EntradaDaSecao>,
+): T {
+  const chave: ChaveDaEntrada =
+    'fatoCodigo' in alvo
+      ? { tipo: 'item', fatoCodigo: alvo.fatoCodigo }
+      : { tipo: 'grupo', codigo: alvo.codigo };
+  return { ...alvo, ordem: ordemDepoisDaTroca(troca, chave) ?? alvo.ordem };
+}
+
+function ordemDepoisDaTroca(
+  troca: TrocaComAVizinha<EntradaDaSecao>,
+  alvo: ChaveDaEntrada,
+): number | undefined {
+  if (ehAEntrada(troca.atual, alvo)) return ordemDa(troca.vizinha);
+  return ehAEntrada(troca.vizinha, alvo) ? ordemDa(troca.atual) : undefined;
 }
 
 /** Se o item pode trocar de lugar com a entrada vizinha da mesma seção. */
@@ -209,13 +239,8 @@ export function removerItem(
   fatoCodigo: string,
   nomes: ReadonlyMap<string, string>,
 ): ResultadoDaEdicao {
-  const quem = quemCita(conteudo, fatoCodigo).find((citante) => citante.fatoCodigo !== fatoCodigo);
-  if (quem !== undefined) {
-    return {
-      ok: false,
-      recusa: `Não é possível remover “${nomeDoFato(nomes, fatoCodigo)}”: ${quem.descricao} cita esse campo.`,
-    };
-  }
+  const recusa = recusaDaRemocaoDoItem(conteudo, fatoCodigo, nomes);
+  if (recusa !== null) return { ok: false, recusa };
   return {
     ok: true,
     conteudo: renumerar({
@@ -223,4 +248,15 @@ export function removerItem(
       itens: (conteudo.itens ?? []).filter((i) => i.fatoCodigo !== fatoCodigo),
     }),
   };
+}
+
+function recusaDaRemocaoDoItem(
+  conteudo: ConteudoDoFormulario,
+  fatoCodigo: string,
+  nomes: ReadonlyMap<string, string>,
+): string | null {
+  const quem = quemCita(conteudo, fatoCodigo).find((citante) => citante.fatoCodigo !== fatoCodigo);
+  return quem === undefined
+    ? null
+    : `Não é possível remover “${nomeDoFato(nomes, fatoCodigo)}”: ${quem.descricao} cita esse campo.`;
 }

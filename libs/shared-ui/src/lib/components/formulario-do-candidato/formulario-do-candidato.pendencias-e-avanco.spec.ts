@@ -4,6 +4,7 @@ import {
   FORMULARIO_COM_TERMO_DE_VERACIDADE,
   FORMULARIO_DE_DUAS_SECOES,
   FORMULARIO_DE_ENDERECO_COM_ALDEIA,
+  apresentacaoDaEtapa,
   campoRenderizavel,
   itemDasRegras,
 } from './formularios-de-exemplo.testing';
@@ -197,40 +198,43 @@ describe('FormularioDoCandidatoComponent', () => {
             codigoNasRegras: 'Inscricao:A',
             ordem: 0,
             tipo: 'SECAO',
-            titulo: 'Seção A',
+            apresentacao: apresentacaoDaEtapa('Seção A'),
           },
           {
             codigo: 'B',
             codigoNasRegras: 'Inscricao:B',
             ordem: 1,
             tipo: 'SECAO',
-            titulo: 'Seção B',
+            apresentacao: apresentacaoDaEtapa('Seção B'),
           },
           {
             codigo: 'C',
             codigoNasRegras: 'Inscricao:C',
             ordem: 2,
             tipo: 'SECAO',
-            titulo: 'Seção C',
+            apresentacao: apresentacaoDaEtapa('Seção C'),
           },
           {
             codigo: 'D',
             codigoNasRegras: 'Inscricao:D',
             ordem: 3,
             tipo: 'SECAO',
-            titulo: 'Seção D',
+            apresentacao: apresentacaoDaEtapa('Seção D'),
           },
         ],
-        fatosColetados: [
-          campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
-          campoRenderizavel('APELIDO', 'Apelido', 'TEXTO', { ordem: 1 }),
-          campoRenderizavel('EMAIL', 'E-mail', 'TEXTO', { ordem: 2 }),
-        ],
+        coleta: {
+          itens: [
+            campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+            campoRenderizavel('APELIDO', 'Apelido', 'TEXTO', { ordem: 1 }),
+            campoRenderizavel('EMAIL', 'E-mail', 'TEXTO', { ordem: 2 }),
+          ],
+          grupos: [],
+        },
         regras: {
           etapas: [
             {
               codigo: 'Inscricao:A',
-              itens: [itemDasRegras('TEM_BOLSA', { obrigatoriedade: 'NUNCA' })],
+              itens: [itemDasRegras('TEM_BOLSA', { obrigatoriedade: { tipo: 'NUNCA' } })],
             },
             {
               codigo: 'Inscricao:B',
@@ -238,7 +242,7 @@ describe('FormularioDoCandidatoComponent', () => {
             },
             {
               codigo: 'Inscricao:C',
-              itens: [itemDasRegras('APELIDO', { obrigatoriedade: 'NUNCA' })],
+              itens: [itemDasRegras('APELIDO', { obrigatoriedade: { tipo: 'NUNCA' } })],
             },
             { codigo: 'Inscricao:D', itens: [itemDasRegras('EMAIL')] },
           ],
@@ -264,16 +268,19 @@ describe('FormularioDoCandidatoComponent', () => {
   it('o link da pendência que só aparece com o opcional em branco conclui a seção até revelá-la e foca o campo', async () => {
     const tela = cenario.montar({
       ...FORMULARIO_DE_DUAS_SECOES,
-      fatosColetados: [
-        campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
-        campoRenderizavel('JUSTIFICATIVA', 'Justificativa', 'TEXTO', { ordem: 1 }),
-      ],
+      coleta: {
+        itens: [
+          campoRenderizavel('TEM_BOLSA', 'Tem bolsa', 'TEXTO'),
+          campoRenderizavel('JUSTIFICATIVA', 'Justificativa', 'TEXTO', { ordem: 1 }),
+        ],
+        grupos: [],
+      },
       regras: {
         etapas: [
           {
             codigo: 'Inscricao:CONTATO',
             itens: [
-              itemDasRegras('TEM_BOLSA', { obrigatoriedade: 'NUNCA' }),
+              itemDasRegras('TEM_BOLSA', { obrigatoriedade: { tipo: 'NUNCA' } }),
               itemDasRegras('JUSTIFICATIVA', {
                 exibicao: [[{ fato: 'BOLSISTA', operador: 'IGUAL', valor: false }]],
               }),

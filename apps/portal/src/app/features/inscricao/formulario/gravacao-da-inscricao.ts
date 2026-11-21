@@ -202,7 +202,7 @@ export class GravacaoDaInscricao {
     return corpoDaGravacao(
       corpo,
       formulario.termosAceitos(),
-      this.leitura.formulario()?.termos ?? [],
+      this.leitura.formulario()?.formulario.termos ?? [],
     );
   }
 

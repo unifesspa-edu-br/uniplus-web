@@ -1,8 +1,7 @@
+import type { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
 import { afterEach, describe, expect, it, beforeAll } from 'vitest';
 import {
   Pagina,
-  comValores,
-  corRaca,
   montarPagina,
   problema,
   recusaDeCampo,
@@ -10,9 +9,20 @@ import {
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
+import {
+  comResolucao,
+  comValoresDeclarados,
+  comValores,
+  corRaca,
+  emManutencao,
+} from './fatos-candidato.fixtures';
 
 const todos = comValores();
 const URL_FATO = urlDoFato(todos);
+const comOrdemTrocada = (fato: FatoCandidatoDto): FatoCandidatoDto => {
+  const [primeiro, segundo, terceiro] = fato.definicao.valores.declarados;
+  return comValoresDeclarados(fato, [primeiro, terceiro, segundo]);
+};
 const botao = (codigo: string, acao: string): string => `#cfg-fato-valor-${codigo}-${acao}`;
 const formDo = (codigo: string): string => `#cfg-fato-valor-${codigo}-form`;
 const campoDoValor = (codigo: string, campo: string): string =>
@@ -157,10 +167,7 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
 
       await cliqueNo('PARDA', 'descer');
       p.http.expectOne(`${URL_FATO}/ordem-dos-valores`).flush(...sucesso());
-      await p.recarregarOFato({
-        ...todos,
-        valores: [todos.valores[0], todos.valores[2], todos.valores[1]],
-      });
+      await p.recarregarOFato(comOrdemTrocada(todos));
 
       expect(document.activeElement?.id).toBe('cfg-fato-valor-PARDA-subir');
     });
@@ -175,8 +182,8 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
       p.elemento<HTMLButtonElement>(botao('BRANCA', 'subir')).click();
       p.http.expectNone(`${URL_FATO}/ordem-dos-valores`);
 
-      recarga.flush({ ...todos, valores: [todos.valores[0], todos.valores[2], todos.valores[1]] });
-      p.pedidoDaLista().flush([todos]);
+      recarga.flush(emManutencao(comOrdemTrocada(todos)));
+      p.pedidoDaLista().flush([todos].map(emManutencao));
       await p.propagar();
       p.atenderPendencias();
 
@@ -186,10 +193,13 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
 
   describe('os valores que não se mantêm', () => {
     it.each([
-      ['de sistema', { semeadoPeloSistema: true }],
-      ['do agregado, que os herda', { binding: 'AGREGACAO_GRUPO:GRUPO.CAMPO' }],
+      ['de sistema', { ...todos, semeadoPeloSistema: true }],
+      [
+        'do agregado, que os herda',
+        comResolucao(todos, { binding: 'AGREGACAO_GRUPO:GRUPO.CAMPO' }),
+      ],
     ])('o fato %s mostra os valores sem Editar, Subir nem Descer', async (_nome, variacao) => {
-      await abrir({ ...todos, ...variacao });
+      await abrir(variacao);
 
       expect(p.texto()).toContain('BRANCA');
       for (const texto of ['Editar', 'Subir', 'Descer'])
@@ -325,7 +335,7 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
       await p.propagar();
 
       expect(p.editor.bloqueado()).toBe(false);
-      p.pedidoDaLista().flush([corRaca]);
+      p.pedidoDaLista().flush([corRaca].map(emManutencao));
       await p.propagar();
     });
 
@@ -338,7 +348,7 @@ describe('FatosCandidatoPage — correção e ordem dos valores', () => {
 
       p.edicao.abrirEdicao(outro.id);
       await p.propagar();
-      p.http.expectOne(urlDoFato(outro)).flush(structuredClone(outro));
+      p.http.expectOne(urlDoFato(outro)).flush(emManutencao(structuredClone(outro)));
       p.atenderApoios();
       await p.propagar();
 

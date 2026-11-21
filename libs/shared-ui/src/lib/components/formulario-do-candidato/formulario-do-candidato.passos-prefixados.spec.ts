@@ -116,7 +116,7 @@ describe('FormularioDoCandidatoComponent', () => {
       const semSecoes: FormularioDoCandidato = {
         ...FORMULARIO_DE_DUAS_SECOES,
         etapas: [],
-        fatosColetados: [],
+        coleta: { itens: [], grupos: [] },
       };
       const tela = cenario.montar(semSecoes, { passosPrefixados: [CURSO] });
 

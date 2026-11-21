@@ -37,17 +37,20 @@ const REGRAS_DE_DESEMPATE = [
 /** O dado pelo qual o desempate por maior idade ordena, como o catálogo de fatos o publica. */
 const FATOS_DO_CANDIDATO = [
   {
-    id: 'fato-data-nascimento',
-    codigo: 'DATA_NASCIMENTO',
-    nome: 'Data de nascimento',
-    descricao: null,
-    dominio: 'DATA',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:DATA_NASCIMENTO',
-    valoresDominioDeclarados: null,
+    fato: {
+      id: 'fato-data-nascimento',
+      codigo: 'DATA_NASCIMENTO',
+      nome: 'Data de nascimento',
+      descricao: null,
+      dominio: 'DATA',
+      origem: 'DECLARADO',
+      cardinalidade: 'ESCALAR',
+      valoresDominio: null,
+      pontoResolucao: 'INSCRICAO',
+      binding: 'CAMPO_INSCRICAO:DATA_NASCIMENTO',
+      valoresDominioDeclarados: null,
+    },
+    operadoresAdmitidos: [],
   },
 ];
 

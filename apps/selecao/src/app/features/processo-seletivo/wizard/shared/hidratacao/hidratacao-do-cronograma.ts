@@ -70,7 +70,7 @@ function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados
     coletaSolicitacaoIsencao: faseCanonica.coletaSolicitacaoIsencao,
     bancas: fase.bancasRequeridas.map((banca) => ({
       id: banca.tipoBancaOrigemId,
-      codigo: banca.codigo,
+      codigo: banca.codigo.codigo,
     })),
   };
 }
@@ -135,14 +135,14 @@ function publicacoesDaFaseDe(
     produtos: produtosDe(publicacoes.produtos),
     emiteParecerIndividual: publicacoes.emiteParecerIndividual,
     regraRecurso: recursoDe(publicacoes.regraRecurso, publicacoes.produtos),
-    tiposDeDecisao: [...publicacoes.tiposDeDecisao],
+    tiposDeDecisao: publicacoes.tiposDeDecisao.map((tipo) => tipo.codigo),
   };
 }
 
 function bancaRequeridaDe(banca: FaseDoDto['bancasRequeridas'][number]): BancaRequeridaDaFase {
   return {
     tipoBancaId: banca.tipoBancaOrigemId,
-    categoriasDocumentoIds: banca.recorteDeCompetencia.map(
+    categoriasDocumentoIds: banca.candidatosAtendidos.map(
       (categoria) => categoria.categoriaDocumentoOrigemId,
     ),
     regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
@@ -182,7 +182,7 @@ function procedimentosDe(
   procedimentos: readonly ProcedimentoDoDto[],
 ): readonly ProcedimentoDeRecurso[] {
   return procedimentos.map((procedimento) => ({
-    tipoDeDecisao: procedimento.tipoDeDecisao,
+    tipoDeDecisao: procedimento.tipoDeDecisao.codigo,
     alvo: alvoLidoDoServidor(procedimento.alvo),
     regraCodigo: procedimento.regra.codigo,
     regraVersao: procedimento.regra.versao,
@@ -343,7 +343,7 @@ function publicacoesDaEtapaDe(
     produtos: produtosDe(publicacoes.produtos),
     emiteParecerIndividual: publicacoes.emiteParecerIndividual,
     recursos: publicacoes.recursos.map(recursoDaEtapaDe),
-    tiposDeDecisao: [...publicacoes.tiposDeDecisao],
+    tiposDeDecisao: publicacoes.tiposDeDecisao.map((tipo) => tipo.codigo),
   };
 }
 

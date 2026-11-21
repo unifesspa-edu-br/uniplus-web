@@ -27,8 +27,14 @@ export function ehOperador(token: string): token is Operador {
   return (OPERADORES as readonly string[]).includes(token);
 }
 
-export function comparaComLista(operador: Operador): boolean {
+/** Se o operador compara contra uma LISTA de valores, e não contra um só. */
+export function comparaComLista(operador: string): boolean {
   return operador === 'EM' || operador === 'NAO_EM';
+}
+
+/** Se a comparação é a negação de outra: DIFERENTE nega IGUAL, e NAO_EM nega EM. */
+export function ehNegacao(operador: string): boolean {
+  return Object.hasOwn(OPERADOR_NEGADO, operador);
 }
 
 export interface Condicao {
@@ -132,37 +138,36 @@ function avaliarSobreConjunto(
     case 'IGUAL':
       return comoTernario(candidato.some((item) => valoresIguais(item, configurado)));
     case 'EM':
-      return comoTernario(
-        (configurado as readonly ValorJson[]).some((item) =>
-          candidato.some((dele) => valoresIguais(dele, item)),
-        ),
-      );
+      return comoTernario(temItemEmComum(candidato, configurado as readonly ValorJson[]));
     default:
       return INDETERMINADO;
   }
 }
+
+function temItemEmComum(candidato: readonly ValorJson[], lista: readonly ValorJson[]): boolean {
+  return lista.some((item) => candidato.some((dele) => valoresIguais(dele, item)));
+}
+
+const COMPARACOES_NUMERICAS: Partial<Record<Operador, (comparacao: number) => boolean>> = {
+  MAIOR_IGUAL: (comparacao) => comparacao >= 0,
+  MENOR_IGUAL: (comparacao) => comparacao <= 0,
+};
 
 function avaliarSobreValorUnico(
   operador: Operador,
   candidato: ValorJson,
   configurado: ValorJson,
 ): Ternario {
-  switch (operador) {
-    case 'IGUAL':
-      return compararIgualdade(candidato, configurado);
-    case 'EM':
-      return typeof candidato === 'string'
-        ? comoTernario(
-            (configurado as readonly ValorJson[]).some((item) => valoresIguais(candidato, item)),
-          )
-        : INDETERMINADO;
-    case 'MAIOR_IGUAL':
-      return compararNumerico(candidato, configurado, (comparacao) => comparacao >= 0);
-    case 'MENOR_IGUAL':
-      return compararNumerico(candidato, configurado, (comparacao) => comparacao <= 0);
-    default:
-      return INDETERMINADO;
-  }
+  if (operador === 'IGUAL') return compararIgualdade(candidato, configurado);
+  if (operador === 'EM') return pertenceALista(candidato, configurado as readonly ValorJson[]);
+  const satisfaz = COMPARACOES_NUMERICAS[operador];
+  if (satisfaz === undefined) return INDETERMINADO;
+  return compararNumerico(candidato, configurado, satisfaz);
+}
+
+function pertenceALista(candidato: ValorJson, lista: readonly ValorJson[]): Ternario {
+  if (typeof candidato !== 'string') return INDETERMINADO;
+  return comoTernario(lista.some((item) => valoresIguais(candidato, item)));
 }
 
 /** Igualdade de três valores: formas diferentes não se comparam e ficam indeterminadas. */

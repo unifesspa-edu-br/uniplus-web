@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, model, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model, output } from '@angular/core';
 import { PERMISSAO } from '@uniplus/shared-auth/bootstrap';
 import { TemPermissaoDirective } from '@uniplus/shared-auth/components';
 import { FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
@@ -17,13 +17,13 @@ import {
 } from '../../shared/protecao-do-catalogo';
 import {
   CARDINALIDADES,
-  COMPONENTES_DE_EXIBICAO,
   DOMINIOS,
   ESCOPOS,
   FONTES_DE_VALORES,
   FORMATOS_DE_TEXTO,
   ORIGENS,
-  ROTULO_DO_COMPONENTE_PADRAO,
+  rotuloDoComponente,
+  protecaoDoFato,
 } from './fato-candidato.regras';
 import { ID_DAS_REGRAS_DO_DETALHE } from './ids-do-fato';
 
@@ -56,6 +56,7 @@ export class FatoDetalheComponent {
   readonly editar = output<FatoCandidatoDto>();
   readonly aceitar = output<FatoCandidatoDto>();
 
+  protected readonly titulo = computed(() => this.fato()?.descritivo.nome ?? 'Fato do candidato');
   protected readonly idDasRegras = ID_DAS_REGRAS_DO_DETALHE;
   /**
    * O histórico das manifestações técnicas, só para ler: quem administra o cadastro ou quem
@@ -73,7 +74,7 @@ export class FatoDetalheComponent {
   protected readonly fontes = FONTES_DE_VALORES;
   protected readonly formatos = FORMATOS_DE_TEXTO;
   protected readonly escopos = ESCOPOS;
-  protected readonly componentes = COMPONENTES_DE_EXIBICAO;
-  protected readonly rotuloDoPadrao = ROTULO_DO_COMPONENTE_PADRAO;
+  protected readonly rotuloDoComponente = rotuloDoComponente;
   protected readonly rotulo = rotuloDe;
+  protected readonly protecaoDe = protecaoDoFato;
 }

@@ -184,7 +184,7 @@ export class EdicaoDaModalidade {
 
   private operacaoDeGravacao(): Observable<ApiResult<string | void>> {
     const valores = this.form.getRawValue();
-    const regra = this.aplicabilidade.paraOWire();
+    const regra = this.aplicabilidade.paraOContrato();
     const contexto = withIdempotencyKey(this.chaveDeIdempotencia);
     return this.id === null
       ? this.api.criar(comandoDeCriacao(valores, regra), contexto)
@@ -215,21 +215,26 @@ export class EdicaoDaModalidade {
   }
 
   private aplicarFalha(problem: ProblemDetails): void {
-    const errosDeCampo = problem.errors ?? [];
-    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
+    if (this.recusarNoFormulario(problem)) {
       this.renovarChave();
-      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
-      return;
-    }
-    // O código comparado é o do wire (`uniplus.<modulo>.<razao>`); o de domínio é chave de busca do servidor.
-    if (problem.code === CODIGO_JA_EXISTE) {
-      this.renovarChave();
-      this.recusarCodigoRepetido(problem);
       return;
     }
     if (problem.code === CORPO_DIVERGENTE) this.renovarChave();
     this.erro.set(this.problemI18n.resolve(problem).title);
     if (problem.status >= 500) this.notifications.errorFromProblem(problem);
+  }
+
+  /** Marca a recusa junto do campo ou da regra; diz se a recusa coube no formulário. */
+  private recusarNoFormulario(problem: ProblemDetails): boolean {
+    const errosDeCampo = problem.errors ?? [];
+    if (problem.status === STATUS_HTTP.RECUSA_DE_NEGOCIO && errosDeCampo.length > 0) {
+      this.aplicarErrosDeValidacao(separarCausas(errosDeCampo));
+      return true;
+    }
+    // O código comparado é o do wire (`uniplus.<modulo>.<razao>`); o de domínio é chave de busca do servidor.
+    if (problem.code !== CODIGO_JA_EXISTE) return false;
+    this.recusarCodigoRepetido(problem);
+    return true;
   }
 
   private recusarCodigoRepetido(problem: ProblemDetails): void {

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { SpinnerComponent, type ConteudoDoFormulario } from '@uniplus/shared-ui/components';
+import { conteudoDoModelo } from './conteudo-do-modelo';
 import type { ModeloFormularioEdicaoStore } from './modelo-formulario-edicao.store';
 
 /** O atalho para simular o modelo gravado e o rodapé de salvar, que envia o formulário de identificação. */
@@ -20,6 +21,7 @@ export class ModeloFormularioRodapeComponent {
   readonly somenteLeitura = input.required<boolean>();
 
   readonly conteudoAlterado = computed(
-    () => JSON.stringify(this.conteudo()) !== JSON.stringify(this.modelo().conteudo ?? null),
+    () =>
+      JSON.stringify(this.conteudo()) !== JSON.stringify(conteudoDoModelo(this.modelo().conteudo)),
   );
 }

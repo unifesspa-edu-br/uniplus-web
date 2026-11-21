@@ -1,9 +1,6 @@
-import type { FatoCandidatoView } from '@uniplus/shared-data/configuracao';
+import type { FatoCandidatoComOperadores } from '@uniplus/shared-data/configuracao';
+import { OperadorCodigo } from '@uniplus/shared-data/selecao';
 import {
-  OPERADOR_DIFERENTE,
-  OPERADOR_EM,
-  OPERADOR_IGUAL,
-  OPERADOR_NAO_EM,
   clausulasDe,
   comClausulaEm,
   comCondicaoEm,
@@ -22,7 +19,11 @@ import {
 
 import type { CondicaoGatilhoConfig, ExigenciaDeDocumento } from '../processo-seletivo.models';
 import { FATO_MODALIDADE } from './exigencias/exigencias-documentais';
-import { exigidoDeTodos, numerosDeClausula } from './exigencias/recorte-por-modalidade';
+import {
+  ehCondicaoDasModalidades,
+  exigidoDeTodos,
+  numerosDeClausula,
+} from './exigencias/recorte-por-modalidade';
 import {
   orientacaoDaRecusaDeFase,
   orientacaoDoCampoDeMembroForaDaRepeticao,
@@ -43,19 +44,13 @@ import {
  *
  * O título de eleitor não se cobra de estrangeiro, de mulher nem de menor de dezoito; a
  * quitação com o serviço militar só se cobra de homem maior de dezoito, e nem dele quando é
- * indígena. As regras de predicado — operadores por domínio, forma do valor, alcance,
+ * indígena. As regras de predicado — forma do valor, alcance,
  * conferência — são do editor compartilhado em `@uniplus/shared-ui`, reexportado daqui para
  * que o resto do módulo tenha um só lugar de onde importar. O que fica neste arquivo é o que
  * é DESTA exigência: o recorte por modalidade, que tem controle próprio, e o modelo do
  * documento.
  */
 export {
-  OPERADOR_DIFERENTE,
-  OPERADOR_EM,
-  OPERADOR_IGUAL,
-  OPERADOR_MAIOR_IGUAL,
-  OPERADOR_MENOR_IGUAL,
-  OPERADOR_NAO_EM,
   RESPOSTAS_BOOLEANAS,
   VALOR_FALSO,
   VALOR_VERDADEIRO,
@@ -67,13 +62,13 @@ export {
   condicaoNova,
   fatoEscolhivel,
   nomesDoCatalogo,
-  operadoresDoFato,
   problemaDaCondicao,
+  rotuloDoOperador,
   valorEscalarDe,
   valoresDeListaDe,
   type CondicaoDeFato,
   type FatoEscolhivel,
-  type OperadorEscolhivel,
+  type OpcaoDeValor,
   type TipoDeDominio,
 } from '@uniplus/shared-ui/components';
 
@@ -93,7 +88,7 @@ export type ClausulaDeGatilho = ClausulaDeCondicoes<CondicaoGatilhoConfig>;
  * cláusula.
  */
 export function fatosParaGatilho(
-  fatos: readonly FatoCandidatoView[],
+  fatos: readonly FatoCandidatoComOperadores[],
   dominiosDinamicos: ReadonlyMap<string, readonly string[]> = new Map(),
 ): readonly FatoEscolhivel[] {
   return fatosEscolhiveis(fatos, dominiosDinamicos, [FATO_MODALIDADE]);
@@ -112,7 +107,7 @@ const FATO_CONDICAO_ATENDIMENTO = 'CONDICAO_ATENDIMENTO';
  * o servidor ao conferir o gatilho, e não pelo código do fato.
  */
 export function dominiosDoGatilho(
-  fatos: readonly FatoCandidatoView[],
+  fatos: readonly FatoCandidatoComOperadores[],
   condicoesDeAtendimento: readonly string[],
   modalidades: readonly string[],
 ): ReadonlyMap<string, readonly string[]> {
@@ -149,23 +144,35 @@ export interface OfertaDoGatilho {
 export function fatosDoGatilhoNaFase(
   fatos: readonly FatoComFase[],
   lugar: LugarDaExigencia,
-  {
-    producao,
-    dominiosDinamicos,
-    citados = [],
-    camposDaRepeticao = new Set<string>(),
-  }: OfertaDoGatilho,
+  oferta: OfertaDoGatilho,
 ): readonly FatoEscolhivel[] {
-  const citaveis = fatos.filter(
-    (fato) =>
-      (!ehCampoDeMembro(fato) || camposDaRepeticao.has(fato.codigo)) &&
-      oProcessoResolve(fato, producao) &&
-      recusaDeFaseDoGatilho(fato.codigo, lugar, producao) === null,
+  const citaveis = fatos.filter((fato) => ehCitavelNaFase(fato, lugar, oferta));
+  const naoCitaveis = marcadosComoNaoCitaveis(fatos, citaveis, oferta.citados ?? []);
+  return fatosEscolhiveis([...citaveis, ...naoCitaveis], oferta.dominiosDinamicos, [
+    FATO_MODALIDADE,
+  ]);
+}
+
+function ehCitavelNaFase(
+  fato: FatoComFase,
+  lugar: LugarDaExigencia,
+  { producao, camposDaRepeticao = new Set<string>() }: OfertaDoGatilho,
+): boolean {
+  return (
+    (!ehCampoDeMembro(fato) || camposDaRepeticao.has(fato.codigo)) &&
+    oProcessoResolve(fato, producao) &&
+    recusaDeFaseDoGatilho(fato.codigo, lugar, producao) === null
   );
-  const naoCitaveis = fatos
+}
+
+function marcadosComoNaoCitaveis(
+  fatos: readonly FatoComFase[],
+  citaveis: readonly FatoComFase[],
+  citados: readonly string[],
+): readonly FatoComFase[] {
+  return fatos
     .filter((fato) => citados.includes(fato.codigo) && !citaveis.includes(fato))
     .map((fato) => ({ ...fato, nome: `${fato.nome}${MARCA_DO_FATO_NAO_CITAVEL}` }));
-  return fatosEscolhiveis([...citaveis, ...naoCitaveis], dominiosDinamicos, [FATO_MODALIDADE]);
 }
 
 /** A recusa de fase de uma condição do gatilho, com a orientação de como resolvê-la. */
@@ -187,15 +194,30 @@ export function recusasDeFaseDoGatilho(
 ): readonly RecusaDeFaseNaCondicao[] {
   return documento.condicoes.flatMap((condicao, indice) => {
     if (condicao.fato.trim() === '') return [];
-    const doCatalogo = producao.catalogo.get(condicao.fato);
-    if (doCatalogo !== undefined && ehCampoDeMembro(doCatalogo) && !camposDaRepeticao.has(condicao.fato)) {
-      return [{ indice, orientacao: orientacaoDoCampoDeMembroForaDaRepeticao(condicao.fato, producao, nomes) }];
-    }
-    const recusa = recusaDeFaseDoGatilho(condicao.fato, documento, producao);
-    return recusa === null
-      ? []
-      : [{ indice, orientacao: orientacaoDaRecusaDeFase(recusa, documento, producao, nomes) }];
+    const orientacao = ehCampoDeMembroForaDaRepeticao(condicao.fato, producao, camposDaRepeticao)
+      ? orientacaoDoCampoDeMembroForaDaRepeticao(condicao.fato, producao, nomes)
+      : orientacaoDaRecusaDoFato(condicao.fato, documento, producao, nomes);
+    return orientacao === null ? [] : [{ indice, orientacao }];
   });
+}
+
+function ehCampoDeMembroForaDaRepeticao(
+  fato: string,
+  producao: ProducaoDosFatos,
+  camposDaRepeticao: ReadonlySet<string>,
+): boolean {
+  const doCatalogo = producao.catalogo.get(fato);
+  return doCatalogo !== undefined && ehCampoDeMembro(doCatalogo) && !camposDaRepeticao.has(fato);
+}
+
+function orientacaoDaRecusaDoFato(
+  fato: string,
+  documento: ExigenciaDeDocumento,
+  producao: ProducaoDosFatos,
+  nomes: NomesDaOrientacao,
+): string | null {
+  const recusa = recusaDeFaseDoGatilho(fato, documento, producao);
+  return recusa === null ? null : orientacaoDaRecusaDeFase(recusa, documento, producao, nomes);
 }
 
 /**
@@ -226,10 +248,7 @@ export function comCondicaoTrocada(
 }
 
 /** A exigência sem aquela condição; a alternativa que fica vazia some e as demais renumeram. */
-export function semCondicao(
-  documento: ExigenciaDeDocumento,
-  indice: number,
-): ExigenciaDeDocumento {
+export function semCondicao(documento: ExigenciaDeDocumento, indice: number): ExigenciaDeDocumento {
   return { ...documento, condicoes: semCondicaoEm(documento.condicoes, indice) };
 }
 
@@ -248,10 +267,7 @@ export function comClausula(
 }
 
 /** A exigência sem aquela alternativa inteira. */
-export function semClausula(
-  documento: ExigenciaDeDocumento,
-  numero: number,
-): ExigenciaDeDocumento {
+export function semClausula(documento: ExigenciaDeDocumento, numero: number): ExigenciaDeDocumento {
   return { ...documento, condicoes: semClausulaEm(documento.condicoes, numero) };
 }
 
@@ -282,21 +298,22 @@ export function problemasDoGatilho(
 export function recorteUniforme(documento: ExigenciaDeDocumento): readonly string[] | null {
   if (documento.condicoes.length === 0) return null;
 
-  const listasPorAlternativa = numerosDeClausula(documento.condicoes).map((numero) =>
-    documento.condicoes
-      .filter(
-        (condicao) =>
-          condicao.clausula === numero &&
-          condicao.fato === FATO_MODALIDADE &&
-          condicao.operador === OPERADOR_EM,
-      )
-      .map((condicao) => JSON.stringify(valoresDeListaDe(condicao))),
-  );
-
+  const listasPorAlternativa = listasDeModalidadesPorAlternativa(documento.condicoes);
   const [primeira] = listasPorAlternativa[0] ?? [];
   if (primeira === undefined) return null;
-  const uniforme = listasPorAlternativa.every((listas) => listas.includes(primeira));
-  return uniforme ? (JSON.parse(primeira) as string[]) : null;
+  if (!listasPorAlternativa.every((listas) => listas.includes(primeira))) return null;
+  const recorte: readonly string[] = JSON.parse(primeira);
+  return recorte;
+}
+
+function listasDeModalidadesPorAlternativa(
+  condicoes: readonly CondicaoGatilhoConfig[],
+): readonly (readonly string[])[] {
+  return numerosDeClausula(condicoes).map((numero) =>
+    condicoes
+      .filter((condicao) => condicao.clausula === numero && ehCondicaoDasModalidades(condicao))
+      .map((condicao) => JSON.stringify(valoresDeListaDe(condicao))),
+  );
 }
 
 /**
@@ -325,13 +342,13 @@ export function podeAlcancarModalidade(
 
 function condicaoDeModalidadeAceita(condicao: CondicaoDeFato, modalidadeCodigo: string): boolean {
   switch (condicao.operador) {
-    case OPERADOR_IGUAL:
+    case OperadorCodigo.IGUAL:
       return valorEscalarDe(condicao) === modalidadeCodigo;
-    case OPERADOR_DIFERENTE:
+    case OperadorCodigo.DIFERENTE:
       return valorEscalarDe(condicao) !== modalidadeCodigo;
-    case OPERADOR_EM:
+    case OperadorCodigo.EM:
       return valoresDeListaDe(condicao).includes(modalidadeCodigo);
-    case OPERADOR_NAO_EM:
+    case OperadorCodigo.NAO_EM:
       return !valoresDeListaDe(condicao).includes(modalidadeCodigo);
     default:
       return false;

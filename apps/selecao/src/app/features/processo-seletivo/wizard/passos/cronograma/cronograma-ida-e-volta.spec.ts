@@ -1,3 +1,4 @@
+import { TipoMotivoDeDecisaoCodigo } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
   etapaDoServidor,
   faseDoServidor,
   recursoDaEtapaDoServidor,
+  tipoDeDecisaoDoServidor,
 } from '../../shared/cronograma-do-servidor.testing';
 import { hidratarDraft } from '../../shared/hidratacao';
 import { DRAFT, dtoComCronograma } from '../../shared/hidratacao.testing';
@@ -17,13 +19,13 @@ const ITEM = { id: 'item-1', rotulo: 'Clareza', pontuacaoMaxima: 4 };
 
 const PROCEDIMENTOS_DO_SERVIDOR = [
   {
-    tipoDeDecisao: 'RESULTADO_PRELIMINAR',
+    tipoDeDecisao: tipoDeDecisaoDoServidor(TipoMotivoDeDecisaoCodigo.NOTA_DA_ETAPA),
     alvo: { itemDeAvaliacaoId: ITEM.id, areaDoEnem: null },
     regra: { codigo: 'PROCEDIMENTO-RECURSO-COLEGIADO', versao: 'v1', hash: 'h1' },
     sugestao: 'PROCEDIMENTO-RECURSO-MONOCRATICO',
   },
   {
-    tipoDeDecisao: 'RESULTADO_FINAL',
+    tipoDeDecisao: tipoDeDecisaoDoServidor(TipoMotivoDeDecisaoCodigo.CLASSIFICACAO),
     alvo: null,
     regra: { codigo: 'PROCEDIMENTO-RECURSO-MONOCRATICO', versao: 'v2', hash: 'h2' },
     sugestao: null,
@@ -33,25 +35,28 @@ const PROCEDIMENTOS_DO_SERVIDOR = [
 /** O que o comando leva dos procedimentos: a sugestão é só dica de leitura e nunca volta. */
 const PROCEDIMENTOS_DO_COMANDO = [
   {
-    tipoDeDecisao: 'RESULTADO_PRELIMINAR',
+    tipoDeDecisao: TipoMotivoDeDecisaoCodigo.NOTA_DA_ETAPA,
     alvo: { itemDeAvaliacaoId: ITEM.id, areaDoEnem: null },
     regraCodigo: 'PROCEDIMENTO-RECURSO-COLEGIADO',
     regraVersao: 'v1',
   },
   {
-    tipoDeDecisao: 'RESULTADO_FINAL',
+    tipoDeDecisao: TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
     alvo: null,
     regraCodigo: 'PROCEDIMENTO-RECURSO-MONOCRATICO',
     regraVersao: 'v2',
   },
 ];
 
-const TIPOS_DE_DECISAO = ['RESULTADO_FINAL', 'RESULTADO_PRELIMINAR'];
+const TIPOS_DE_DECISAO = [
+  TipoMotivoDeDecisaoCodigo.CLASSIFICACAO,
+  TipoMotivoDeDecisaoCodigo.NOTA_DA_ETAPA,
+];
 
 const FASE_PREENCHIDA = faseDoServidor({
   cronograma: { unidadeResponsavel: UNIDADE },
   publicacoes: {
-    tiposDeDecisao: TIPOS_DE_DECISAO,
+    tiposDeDecisao: TIPOS_DE_DECISAO.map(tipoDeDecisaoDoServidor),
     regraRecurso: { ...RECURSO_DA_FASE, procedimentos: PROCEDIMENTOS_DO_SERVIDOR },
   },
 });
@@ -59,7 +64,7 @@ const FASE_PREENCHIDA = faseDoServidor({
 const ETAPA_PREENCHIDA = etapaDoServidor({
   avaliacao: { itensDeAvaliacao: [ITEM] },
   publicacoes: {
-    tiposDeDecisao: TIPOS_DE_DECISAO,
+    tiposDeDecisao: TIPOS_DE_DECISAO.map(tipoDeDecisaoDoServidor),
     recursos: [recursoDaEtapaDoServidor({ procedimentos: PROCEDIMENTOS_DO_SERVIDOR })],
   },
 });

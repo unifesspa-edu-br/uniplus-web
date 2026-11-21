@@ -1,4 +1,5 @@
 import { faseDoServidor } from './cronograma-do-servidor';
+import { folhaDaExigencia } from './no-da-exigencia-do-servidor';
 import {
   FASES_CANONICAS,
   NOME_DOCUMENTO,
@@ -13,44 +14,6 @@ import {
  */
 export const PROCESSO_PUBLICADO_ID = '01960000-0000-7000-0000-000000000a01';
 const FASE_PUBLICADA_ID = '01960000-0000-7000-0000-000000000a02';
-const NORMA_DO_EDITAL = {
-  referencia: 'Edital nº 1/2027, Anexo III',
-  abrangencia: 'INTERNA_EDITAL',
-  status: 'RESOLVIDO',
-  observacao: null,
-};
-
-const FOLHA_SEM_DOCUMENTO = {
-  tipo: 'FOLHA',
-  quantidadeMinima: null,
-  consequencia: null,
-  basesLegais: [],
-  filhos: [],
-  chaveDistincao: null,
-  dataReferencia: null,
-  ocorrenciasEsperadas: null,
-  repetePorEntidade: null,
-};
-
-function documentoDaFolha(id: string, documento: Record<string, unknown>) {
-  return {
-    id: `${id}-doc`,
-    exigidoNaFaseId: FASE_PUBLICADA_ID,
-    tipoDocumentoCategoria: 'IDENTIFICACAO',
-    condicoes: [],
-    basesLegais: [{ id: `${id}-norma`, ...NORMA_DO_EDITAL }],
-    idadeMaximaEmissao: null,
-    formatosPermitidos: ['pdf'],
-    tamanhoMaximoBytes: 10485760,
-    exigidoNaEtapaId: null,
-    ...documento,
-  };
-}
-
-function folha(id: string, documento: Record<string, unknown>) {
-  return { id, ...FOLHA_SEM_DOCUMENTO, documento: documentoDaFolha(id, documento) };
-}
-
 export const DETALHE_PUBLICADO = {
   id: PROCESSO_PUBLICADO_ID,
   nome: 'Processo seletivo publicado',
@@ -85,21 +48,27 @@ export const DETALHE_PUBLICADO = {
   ],
   documentosExigidos: [],
   raizesExigencia: [
-    folha('01960000-0000-7000-0000-000000000a11', {
-      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
-      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
-      tipoDocumentoNome: NOME_DOCUMENTO,
-      aplicabilidade: 'GERAL',
+    folhaDaExigencia({
+      id: '01960000-0000-7000-0000-000000000a11',
+      faseId: FASE_PUBLICADA_ID,
+      tipoDocumento: {
+        id: TIPOS_DOCUMENTO[0].id,
+        codigo: TIPOS_DOCUMENTO[0].codigo,
+        nome: NOME_DOCUMENTO,
+      },
       obrigatorio: true,
-      consequenciaIndeferimento: 'ELIMINA',
+      consequencia: 'ELIMINA',
     }),
-    folha('01960000-0000-7000-0000-000000000a12', {
-      tipoDocumentoOrigemId: '01960000-0000-7000-0000-0000000000f9',
-      tipoDocumentoCodigo: 'AUTODECLARACAO_PPI',
-      tipoDocumentoNome: 'Autodeclaração étnico-racial',
-      aplicabilidade: 'CONDICIONAL',
+    folhaDaExigencia({
+      id: '01960000-0000-7000-0000-000000000a12',
+      faseId: FASE_PUBLICADA_ID,
+      tipoDocumento: {
+        id: '01960000-0000-7000-0000-0000000000f9',
+        codigo: 'AUTODECLARACAO_PPI',
+        nome: 'Autodeclaração étnico-racial',
+      },
       obrigatorio: false,
-      consequenciaIndeferimento: 'RECLASSIFICA_AC',
+      consequencia: 'RECLASSIFICA_AC',
       condicoes: [
         {
           id: '01960000-0000-7000-0000-000000000a13',
@@ -139,14 +108,16 @@ export const DETALHE_DUAS_FASES = {
   ],
   raizesExigencia: [
     ...DETALHE_PUBLICADO.raizesExigencia,
-    folha('01960000-0000-7000-0000-000000000a21', {
-      exigidoNaFaseId: FASE_PUBLICADA_2_ID,
-      tipoDocumentoOrigemId: TIPOS_DOCUMENTO[0].id,
-      tipoDocumentoCodigo: TIPOS_DOCUMENTO[0].codigo,
-      tipoDocumentoNome: NOME_DOCUMENTO,
-      aplicabilidade: 'GERAL',
+    folhaDaExigencia({
+      id: '01960000-0000-7000-0000-000000000a21',
+      faseId: FASE_PUBLICADA_2_ID,
+      tipoDocumento: {
+        id: TIPOS_DOCUMENTO[0].id,
+        codigo: TIPOS_DOCUMENTO[0].codigo,
+        nome: NOME_DOCUMENTO,
+      },
       obrigatorio: true,
-      consequenciaIndeferimento: 'ELIMINA',
+      consequencia: 'ELIMINA',
     }),
   ],
 };

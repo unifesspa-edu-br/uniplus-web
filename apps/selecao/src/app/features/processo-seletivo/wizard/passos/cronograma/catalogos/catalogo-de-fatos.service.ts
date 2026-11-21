@@ -1,6 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { map } from 'rxjs';
-import { FatoCandidatoView, FatosCandidatoApi } from '@uniplus/shared-data/configuracao';
+import {
+  fatoComOperadores,
+  type FatoCandidatoComOperadores,
+  FatosCandidatoApi,
+} from '@uniplus/shared-data/configuracao';
 
 import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 
@@ -14,11 +18,11 @@ import { dadosOuNulo, LeituraDeCatalogo } from './leitura-de-catalogo';
 export class CatalogoDeFatos {
   private readonly fatosApi = inject(FatosCandidatoApi);
 
-  readonly fatos = signal<readonly FatoCandidatoView[]>([]);
+  readonly fatos = signal<readonly FatoCandidatoComOperadores[]>([]);
 
   private readonly leitura = new LeituraDeCatalogo({
     buscar: () => this.fatosApi.listar().pipe(map(dadosOuNulo)),
-    aplicar: (dados) => this.fatos.set(dados),
+    aplicar: (dados) => this.fatos.set(dados.map(fatoComOperadores)),
     mensagemDeErro: 'Não foi possível carregar os fatos do candidato.',
   });
 

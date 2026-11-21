@@ -16,7 +16,11 @@ import {
   withVendorMime,
 } from '@uniplus/shared-core/http';
 import { NotificationService } from '@uniplus/shared-core/notifications';
-import { CONFIGURACAO_BASE_PATH, FatoCandidatoDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  FatoCandidatoDto,
+  FatoDeManutencaoDto,
+} from '@uniplus/shared-data/configuracao';
 import { navegacaoPorCursor, recuperarDeCursorObsoleto } from '../../shared/navegacao-por-cursor';
 import { AprovacaoDoCatalogo } from '../../shared/protecao-do-catalogo';
 
@@ -45,7 +49,7 @@ export class FatosCandidatoStore {
     computation: () => undefined,
   });
 
-  private readonly lista = useApiResource<readonly FatoCandidatoDto[]>(() => ({
+  private readonly lista = useApiResource<readonly FatoDeManutencaoDto[]>(() => ({
     url: `${this.basePath}/api/configuracao/admin/fatos-candidato`,
     params: this.montarParams(),
     context: withVendorMime('fato-candidato', 1),
@@ -53,7 +57,7 @@ export class FatosCandidatoStore {
 
   private readonly navegacao = navegacaoPorCursor(this.lista, this.pagina);
 
-  readonly fatos = this.navegacao.itens;
+  readonly fatos = computed(() => this.navegacao.itens().map((item) => item.fato));
   readonly anterior = this.navegacao.anterior;
   readonly proximo = this.navegacao.proximo;
 
@@ -62,7 +66,7 @@ export class FatosCandidatoStore {
     return termo.length === 0
       ? this.fatos()
       : this.fatos().filter((fato) =>
-          [fato.codigo, fato.nome].some((texto) => contem(texto, termo)),
+          [fato.codigo, fato.descritivo.nome].some((texto) => contem(texto, termo)),
         );
   });
 

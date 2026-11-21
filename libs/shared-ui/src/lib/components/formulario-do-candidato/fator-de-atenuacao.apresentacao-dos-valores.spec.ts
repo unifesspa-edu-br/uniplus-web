@@ -79,7 +79,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
   });
 
   it('a resposta fixa aparece pela exibição mascarada, nunca pelo valor', () => {
-    cenario.abrirNaRevisao(formularioComOFator({ fatos: [TELEFONE_DO_CONTATO], grupos: [] }), {
+    cenario.abrirNaRevisao(formularioComOFator(), {
+      dependenciasDoFator: { fatos: [TELEFONE_DO_CONTATO], grupos: [] },
       respostas: {},
       fixas: { [TELEFONE_DO_CONTATO]: { valor: '61981951555', exibicao: '(**) *****-1555' } },
     });
@@ -92,7 +93,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
 
   it('a data aparece no formato brasileiro e o telefone com a máscara, como no comprovante', () => {
     const dependencias = { fatos: [DATA_INICIO_NA_AREA, TELEFONE_DO_CONTATO], grupos: [] };
-    cenario.abrirNaRevisao(formularioComOFator(dependencias), {
+    cenario.abrirNaRevisao(formularioComOFator(), {
+      dependenciasDoFator: dependencias,
       respostas: { [DATA_INICIO_NA_AREA]: '2001-03-09', [TELEFONE_DO_CONTATO]: '61981951555' },
     });
 
@@ -104,7 +106,8 @@ describe('Resumo do Fator de Atenuação na Revisão', () => {
 
   it('o número aparece formatado e a seleção múltipla pelas descrições, separadas por vírgula', () => {
     const dependencias = { fatos: [MESES_NA_AREA, ATIVIDADES_NA_AREA], grupos: [] };
-    cenario.abrirNaRevisao(formularioComOFator(dependencias), {
+    cenario.abrirNaRevisao(formularioComOFator(), {
+      dependenciasDoFator: dependencias,
       respostas: { [MESES_NA_AREA]: 1234.5, [ATIVIDADES_NA_AREA]: ['PESCA', 'ROCA'] },
     });
 

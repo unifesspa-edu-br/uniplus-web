@@ -1,6 +1,9 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
-import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
+import {
+  TipoRenderizacaoCodigo,
+  type ModeloFormularioView,
+} from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ModeloFormularioEdicaoPage } from './modelo-formulario-edicao.page';
 import {
@@ -12,26 +15,31 @@ import {
   recusarGravacao,
   responderCarga,
   salvar,
+  SEM_REGRAS_DO_CAMPO,
 } from './modelo-formulario-edicao.page.testing';
 
 type ConteudoDoModelo = ModeloFormularioView['conteudo'];
-type Campo = NonNullable<ConteudoDoModelo['itens']>[number];
+type Campo = ConteudoDoModelo['itens'][number];
 
 const TEXTO_NAO_GRAVAVEL = 'uniplus.configuracao.modelo_formulario.texto_nao_gravavel';
 const OBRIGATORIEDADE_INVALIDA = 'uniplus.configuracao.modelo_formulario.obrigatoriedade_invalida';
 
-const [dadosBasicos, escolaPublica] = modelo.conteudo.itens ?? [];
-const [termoLgpd] = modelo.conteudo.termos ?? [];
-const [grupoFamilia] = modelo.conteudo.grupos ?? [];
+const [dadosBasicos, escolaPublica] = modelo.conteudo.itens;
+const [termoLgpd] = modelo.conteudo.termos;
+const [grupoFamilia] = modelo.conteudo.grupos;
 
 const umCampo = (fatoCodigo: string, ordem: number, etapaCodigo: string | null): Campo => ({
   ...escolaPublica,
   fatoCodigo,
   ordem,
-  rotulo: `Campo ${fatoCodigo}`,
+  apresentacao: {
+    rotulo: `Campo ${fatoCodigo}`,
+    tipoRenderizacao: TipoRenderizacaoCodigo.BOOLEANO,
+    ajuda: null,
+    pedirConfirmacao: false,
+  },
   etapaCodigo,
-  restricoes: null,
-  impedimento: null,
+  regras: SEM_REGRAS_DO_CAMPO,
 });
 
 /**
@@ -50,7 +58,10 @@ const modeloDoContrato: ModeloFormularioView = {
       },
       { ...grupoFamilia, codigo: 'RENDA', rotulo: 'Renda familiar', ordem: 3, subitens: [] },
     ],
-    termos: [termoLgpd, { ...termoLgpd, codigo: 'USO_DE_IMAGEM', ordem: 1, termoId: 'T2' }],
+    termos: [
+      termoLgpd,
+      { ...termoLgpd, codigo: 'USO_DE_IMAGEM', ordem: 1, termo: { termoId: 'T2', versaoId: 'V1' } },
+    ],
   },
 };
 

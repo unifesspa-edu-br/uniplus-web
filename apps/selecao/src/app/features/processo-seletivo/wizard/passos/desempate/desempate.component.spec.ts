@@ -4,131 +4,42 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import {
-  CaraterEtapa,
   OrigemCandidatos,
   ProcessoSeletivoDto,
   SELECAO_BASE_PATH,
   StatusProcesso,
 } from '@uniplus/shared-data/selecao';
+import { apresentacaoDaEtapa, apresentacaoDoCampo } from '@uniplus/shared-ui/components';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { CriterioDesempateConfigurado, EtapaPontuada } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { ReleituraDoSnapshot } from '../../shared/releitura-do-snapshot.service';
 import { LeituraDoCadastroDePesos } from '../classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from '../classificacao/catalogos-de-classificacao.service';
+import { item, secao } from '../formulario/formulario-de-inscricao.testing';
 import { DesempatePassoComponent } from './desempate.component';
+import {
+  BASE,
+  criterio,
+  FATOS,
+  montarPassoDeDesempate,
+  PROCESSO_ID,
+} from './desempate.component.testing';
 import { EdicaoDosCriterios } from './edicao-dos-criterios.service';
 import { PASSO_FORMULARIO } from './desempate-por-idade';
-
-const BASE = 'http://localhost:5000';
-const PROCESSO_ID = '01960000-0000-7000-0000-0000000007aa';
-const ROTA_DESEMPATE = `${BASE}/api/selecao/processos-seletivos/${PROCESSO_ID}/criterios-desempate`;
-
-const ETAPA_PERSISTIDA: EtapaPontuada = {
-  id: 'etapa-1',
-  nome: 'Prova objetiva',
-  carater: CaraterEtapa.classificatoria,
-  tipoEtapaOrigemId: 'tipo-1',
-  peso: '1',
-  notaMinima: '',
-  ordem: 1,
-  faseCodigo: '',
-  produtos: [],
-  inicio: '',
-  fim: '',
-  emiteParecerIndividual: false,
-  bancas: [],
-  recursos: [],
-};
-
-/** O catálogo institucional, como a API o publica — só o que o predicado pode citar. */
-const FATOS = [
-  {
-    id: 'f1',
-    codigo: 'RENDA_PER_CAPITA',
-    nome: 'Renda familiar per capita',
-    descricao: null,
-    dominio: 'NUMERICO',
-    origem: 'DERIVADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: 'ATRIBUTO_CANDIDATO:RENDA_PER_CAPITA',
-    valoresDominioDeclarados: null,
-  },
-  {
-    id: 'f2',
-    codigo: 'COR_RACA',
-    nome: 'Cor ou raça',
-    descricao: null,
-    dominio: 'CATEGORICO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: ['BRANCA', 'PRETA', 'PARDA', 'INDIGENA', 'AMARELA'],
-    pontoResolucao: 'INSCRICAO',
-    binding: 'CAMPO_INSCRICAO:COR_RACA',
-    valoresDominioDeclarados: null,
-  },
-];
-
-function criterio(patch: Partial<CriterioDesempateConfigurado>): CriterioDesempateConfigurado {
-  return {
-    regraCodigo: '',
-    regraVersao: '',
-    etapaRef: '',
-    idadeMinima: '',
-    fato: '',
-    operador: '',
-    valor: '',
-    areas: [],
-    ...patch,
-  };
-}
 
 describe('DesempatePassoComponent', () => {
   let componente: DesempatePassoComponent;
   let fixture: ComponentFixture<DesempatePassoComponent>;
-  const edicao = (): EdicaoDosCriterios =>
-    fixture.debugElement.injector.get(EdicaoDosCriterios);
+  const edicao = (): EdicaoDosCriterios => fixture.debugElement.injector.get(EdicaoDosCriterios);
   let store: ProcessoSeletivoStore;
   let controller: HttpTestingController;
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [DesempatePassoComponent],
-      providers: [
-        ProcessoSeletivoStore,
-        CadastroInicial,
-        GravacaoDoProcesso,
-        CatalogosDeClassificacao,
-        LeituraDoCadastroDePesos,
-        ReleituraDoSnapshot,
-        provideHttpClient(withInterceptors([apiResultInterceptor])),
-        provideHttpClientTesting(),
-        { provide: SELECAO_BASE_PATH, useValue: BASE },
-        // O passo lê o catálogo de fatos do candidato, que é do módulo Configuração.
-        { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      ],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(DesempatePassoComponent);
+    ({ fixture, store, controller } = await montarPassoDeDesempate());
     componente = fixture.componentInstance;
-    store = TestBed.inject(ProcessoSeletivoStore);
-    controller = TestBed.inject(HttpTestingController);
-
-    fixture.detectChanges();
-    for (const requisicao of controller.match(() => true)) {
-      // O catálogo de fatos do candidato governa o que o predicado pode citar; respondê-lo
-      // vazio faria todo critério por predicado ser recusado por "fato fora do catálogo".
-      requisicao.flush(requisicao.request.url.includes('fatos-candidato') ? FATOS : []);
-    }
-    fixture.detectChanges();
-
-    store.processoSeletivoId.set(PROCESSO_ID);
-    store.patchObjectSection('cronograma', { etapas: [ETAPA_PERSISTIDA] });
   });
 
   afterEach(() => controller.verify());
@@ -252,41 +163,28 @@ describe('DesempatePassoComponent', () => {
     expect(host.textContent).toContain('RENDA_PER_CAPITA');
     expect(host.textContent).not.toContain('fora do catálogo');
     expect(host.textContent).toContain('Não foi possível carregar os dados do candidato');
-    expect(host.textContent).toContain('Os critérios que citam um fato aparecem pelo código gravado');
+    expect(host.textContent).toContain(
+      'Os critérios que citam um fato aparecem pelo código gravado',
+    );
     expect(host.querySelector('button')?.textContent).toContain('Tentar novamente');
   });
 
   it('avisa que o maior idade não tem data de nascimento no formulário e leva a ele', () => {
     // A data de nascimento é dos dados básicos: só falta quando a seção deles veio sem ela.
-    const secao = {
-      codigo: 'DADOS_BASICOS',
-      ordem: 0,
-      tipo: 'SECAO',
-      bloco: null,
-      titulo: 'Dados',
-      descricao: null,
-      aviso: null,
-      exibicao: null,
-    };
-    const item = (fatoCodigo: string, ordem: number) => ({
-      fatoCodigo,
-      ordem,
-      rotulo: fatoCodigo,
-      tipoRenderizacao: 'TEXTO',
-      obrigatoriedade: 'SEMPRE',
-      precondicao: null,
-      etapaCodigo: 'DADOS_BASICOS',
-      pedirConfirmacao: false,
-    });
-    const conteudo = (...itens: ReturnType<typeof item>[]) => ({
+    const dadosBasicos = secao('DADOS_BASICOS', 0, { apresentacao: apresentacaoDaEtapa('Dados') });
+    const campo = (fatoCodigo: string, ordem: number) =>
+      item(fatoCodigo, ordem, 'DADOS_BASICOS', {
+        apresentacao: apresentacaoDoCampo(fatoCodigo, 'TEXTO'),
+      });
+    const conteudo = (...itens: ReturnType<typeof campo>[]) => ({
       titulo: null,
-      etapas: [secao],
+      etapas: [dadosBasicos],
       itens,
       termos: [],
       pressupostos: [],
       grupos: [],
     });
-    store.patchObjectSection('formulario', { conteudo: conteudo(item('NOME', 0)) });
+    store.patchObjectSection('formulario', { conteudo: conteudo(campo('NOME', 0)) });
     expect(componente.semDataDeNascimento()).toBe(false);
 
     store.patchSection('desempate', [
@@ -298,7 +196,7 @@ describe('DesempatePassoComponent', () => {
     expect(store.passoAtual()).toBe(PASSO_FORMULARIO);
 
     store.patchObjectSection('formulario', {
-      conteudo: conteudo(item('NOME', 0), item('DATA_NASCIMENTO', 1)),
+      conteudo: conteudo(campo('NOME', 0), campo('DATA_NASCIMENTO', 1)),
     });
     expect(componente.semDataDeNascimento()).toBe(false);
   });
@@ -375,267 +273,5 @@ describe('DesempatePassoComponent', () => {
     edicao().remover(0);
 
     expect(store.draft().desempate).toEqual([]);
-  });
-
-  describe('DESEMPATE-MAIOR-NOTA-ETAPA — exige etapaRef existente', () => {
-    it('recusa sem etapaRef', () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA', regraVersao: '1.0' }),
-      ]);
-
-      expect(componente.validar().valid).toBe(false);
-    });
-
-    it('recusa quando a etapa referenciada não existe mais', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
-          regraVersao: '1.0',
-          etapaRef: 'etapa-removida',
-        }),
-      ]);
-
-      expect(componente.validar().valid).toBe(false);
-    });
-
-    it('aceita com etapaRef existente', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
-          regraVersao: '1.0',
-          etapaRef: 'etapa-1',
-        }),
-      ]);
-
-      expect(componente.validar().valid).toBe(true);
-    });
-  });
-
-  describe('DESEMPATE-IDOSO — exige idadeMinima maior que zero', () => {
-    it('recusa idade mínima ausente', () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0' }),
-      ]);
-
-      expect(componente.validar().valid).toBe(false);
-    });
-
-    it('aceita com idade mínima informada', () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
-      ]);
-
-      expect(componente.validar().valid).toBe(true);
-    });
-  });
-
-  describe('DESEMPATE-PREDICADO-FATO — exige fato, operador e valor', () => {
-    it('recusa incompleto', () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-PREDICADO-FATO', regraVersao: '1.0', fato: 'RENDA' }),
-      ]);
-
-      expect(componente.validar().valid).toBe(false);
-    });
-
-    it('aceita completo', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'RENDA_PER_CAPITA',
-          operador: 'MENOR_IGUAL',
-          valor: '1',
-        }),
-      ]);
-
-      expect(componente.validar().valid).toBe(true);
-    });
-
-    /**
-     * Antes a conferência olhava só se os três campos estavam preenchidos. `lte` parece um
-     * operador e não é: o vocabulário do domínio tem `MENOR_IGUAL`, e o servidor recusava sem
-     * dizer qual dos três campos estava errado.
-     */
-    it('recusa a comparação que não pertence ao vocabulário', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'RENDA_PER_CAPITA',
-          operador: 'lte',
-          valor: '1',
-        }),
-      ]);
-
-      const resultado = componente.validar();
-      expect(resultado.valid).toBe(false);
-      expect(resultado.messages?.[0]).toContain('não admite a comparação escolhida');
-    });
-
-    /** Valor fora do domínio declarado também é acusado antes da gravação. */
-    it('recusa o valor que não pertence ao domínio do fato', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'COR_RACA',
-          operador: 'IGUAL',
-          valor: '"AZUL"',
-        }),
-      ]);
-
-      const resultado = componente.validar();
-      expect(resultado.valid).toBe(false);
-      expect(resultado.messages?.[0]).toContain('fora do domínio declarado');
-    });
-
-    /**
-     * Voltar o seletor para "escolha o fato" tem de limpar o critério. Enquanto a escolha em
-     * branco era ignorada, a tela mostrava o campo vazio e o rascunho continuava com o fato
-     * anterior — gravava-se um desempate por cor/raça que o operador acreditava ter apagado.
-     */
-    it('voltar o seletor ao branco limpa o fato no rascunho, não só na tela', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'COR_RACA',
-          operador: 'IGUAL',
-          valor: '"PRETA"',
-        }),
-      ]);
-
-      fixture.detectChanges();
-      const fato = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
-        '#desemp-0-fato',
-      );
-      if (fato === null) throw new Error('seletor do fato ausente');
-      fato.value = '';
-      fato.dispatchEvent(new Event('change'));
-      fixture.detectChanges();
-
-      const criterioAtual = store.draft().desempate[0];
-      expect(criterioAtual.fato).toBe('');
-      expect(criterioAtual.operador).toBe('');
-      expect(criterioAtual.valor).toBe('');
-      expect(componente.validar().valid).toBe(false);
-    });
-
-    /**
-     * O valor categórico chega do servidor como texto JSON — o mesmo formato do gatilho da
-     * exigência documental. Antes de as duas leituras convergirem, o select ficava em branco
-     * sobre um critério íntegro, e a gravação era recusada por "está sem valor".
-     */
-    it('lê de volta o valor categórico no formato em que o servidor o devolve', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'COR_RACA',
-          operador: 'IGUAL',
-          valor: '"PRETA"',
-        }),
-      ]);
-
-      fixture.detectChanges();
-      const valor = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>(
-        '#desemp-0-valor',
-      );
-      expect(valor?.value).toBe('PRETA');
-      expect(componente.validar().valid).toBe(true);
-    });
-
-    /** Fato que não está no catálogo é acusado pelo código, não silenciosamente aceito. */
-    it('recusa o fato que não está no catálogo', () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-PREDICADO-FATO',
-          regraVersao: '1.0',
-          fato: 'RELIGIAO',
-          operador: 'IGUAL',
-          valor: '"X"',
-        }),
-      ]);
-
-      expect(componente.validar().valid).toBe(false);
-    });
-  });
-
-  describe('DESEMPATE-MAIOR-IDADE — sem argumento', () => {
-    it('aceita sem nenhum campo adicional', () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-MAIOR-IDADE', regraVersao: '1.0' }),
-      ]);
-
-      expect(componente.validar().valid).toBe(true);
-    });
-  });
-
-  describe('persistir()', () => {
-    it('grava a coleção vazia quando não há critério (CA-05)', async () => {
-      const gravacao = componente.persistir();
-
-      const requisicao = controller.expectOne(ROTA_DESEMPATE);
-      expect(requisicao.request.method).toBe('PUT');
-      expect(requisicao.request.headers.get('Idempotency-Key')).toBeTruthy();
-      expect(requisicao.request.body).toEqual([]);
-
-      requisicao.flush(null, { status: 204, statusText: 'No Content' });
-      await expect(gravacao).resolves.toEqual({ valid: true });
-    });
-
-    it('grava a coleção inteira, com ordem pela posição em tela', async () => {
-      store.patchSection('desempate', [
-        criterio({
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
-          regraVersao: '1.0',
-          etapaRef: 'etapa-1',
-        }),
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0', idadeMinima: '60' }),
-      ]);
-
-      const gravacao = componente.persistir();
-
-      const requisicao = controller.expectOne(ROTA_DESEMPATE);
-      expect(requisicao.request.body).toEqual([
-        {
-          ordem: 1,
-          regraCodigo: 'DESEMPATE-MAIOR-NOTA-ETAPA',
-          regraVersao: '1.0',
-          etapaRef: 'etapa-1',
-          idadeMinima: null,
-          fato: null,
-          operador: null,
-          valor: null,
-          areas: null,
-        },
-        {
-          ordem: 2,
-          regraCodigo: 'DESEMPATE-IDOSO',
-          regraVersao: '1.0',
-          etapaRef: null,
-          idadeMinima: 60,
-          fato: null,
-          operador: null,
-          valor: null,
-          areas: null,
-        },
-      ]);
-
-      requisicao.flush(null, { status: 204, statusText: 'No Content' });
-      await gravacao;
-    });
-
-    it('não chama a API quando a validação recusa', async () => {
-      store.patchSection('desempate', [
-        criterio({ regraCodigo: 'DESEMPATE-IDOSO', regraVersao: '1.0' }),
-      ]);
-
-      const resultado = await componente.persistir();
-
-      expect(resultado.valid).toBe(false);
-      controller.verify();
-    });
   });
 });

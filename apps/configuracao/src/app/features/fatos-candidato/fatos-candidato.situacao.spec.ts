@@ -5,15 +5,13 @@ import {
   PERMISSAO_DE_CONSULTAR,
   PERMISSAO_DE_MANTER,
   Pagina,
-  comAprovacao,
-  corRaca,
   montarPagina,
   problema,
   sucesso,
-  trabalha,
   urlDoFato,
   compilarPaginaUmaVez,
 } from './fatos-candidato.testing';
+import { comAprovacao, corRaca, trabalha, emManutencao } from './fatos-candidato.fixtures';
 
 const inativo = { ...trabalha, ativo: false };
 const ajuste = comAprovacao(trabalha, 'AJUSTE_RECOMENDADO', 'SENSIVEL');
@@ -327,13 +325,13 @@ describe('FatosCandidatoPage — desativar e reativar', () => {
         .expectOne((r) => r.method === 'PUT' && r.url === urlDoFato(corRaca))
         .flush(...sucesso());
       await p.propagar();
-      p.http.expectOne(urlDoFato(corRaca)).flush(structuredClone(corRaca));
+      p.http.expectOne(urlDoFato(corRaca)).flush(emManutencao(structuredClone(corRaca)));
       p.atenderPendencias();
       await p.propagar();
 
       expect(p.edicao.gravando()).toBe(true);
       expect(p.texto('tbody')).not.toContain('Reativando');
-      p.pedidoDaLista().flush([trabalha, corRaca]);
+      p.pedidoDaLista().flush([trabalha, corRaca].map(emManutencao));
       p.atenderPendencias();
       await p.propagar();
     });

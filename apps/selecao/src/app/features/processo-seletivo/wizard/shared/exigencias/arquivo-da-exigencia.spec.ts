@@ -13,14 +13,14 @@ describe('teto de tamanho', () => {
     const raizes = comando(
       rascunho(exigenciaNova(ID_CONTRACHEQUE, 'HABILITACAO', { tamanhoMaximoMb: 4096 })),
     );
-    expect(raizes[0].documento?.tamanhoMaximoBytes).toBeNull();
+    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBeNull();
   });
 
   it('mantém o teto que cabe', () => {
     const raizes = comando(
       rascunho(exigenciaNova(ID_CONTRACHEQUE, 'HABILITACAO', { tamanhoMaximoMb: 5 })),
     );
-    expect(raizes[0].documento?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
+    expect(raizes[0].documento?.requisitos?.tamanhoMaximoBytes).toBe(5 * 1024 * 1024);
   });
 });
 

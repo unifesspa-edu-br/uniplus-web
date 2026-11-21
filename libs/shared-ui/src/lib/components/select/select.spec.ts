@@ -46,6 +46,9 @@ interface Entradas {
   readonly placeholderText?: string;
   readonly hint?: string;
   readonly errorMessage?: string;
+  readonly idDoCampo?: string | null;
+  readonly descritoPor?: string | null;
+  readonly carregandoOpcoes?: boolean;
 }
 
 describe('SelectComponent', () => {
@@ -70,6 +73,9 @@ describe('SelectComponent', () => {
     fixture.componentRef.setInput('placeholderText', entradas.placeholderText ?? '');
     fixture.componentRef.setInput('hint', entradas.hint ?? '');
     fixture.componentRef.setInput('errorMessage', entradas.errorMessage ?? '');
+    fixture.componentRef.setInput('idDoCampo', entradas.idDoCampo ?? null);
+    fixture.componentRef.setInput('descritoPor', entradas.descritoPor ?? null);
+    fixture.componentRef.setInput('carregandoOpcoes', entradas.carregandoOpcoes ?? false);
     fixture.detectChanges();
   }
 
@@ -275,6 +281,52 @@ describe('SelectComponent', () => {
       expect(opcaoVazia()).not.toBeNull();
       expect(campo().options[1]?.textContent?.trim()).toBe('Todas');
       expect(campo().options[1]?.selected).toBe(false);
+    });
+  });
+
+  describe('uso dentro de uma tela', () => {
+    it('usa o id informado no campo e no rótulo, e deriva dele os ids de apoio', () => {
+      mostrar({ idDoCampo: 'cfg-tipo', hint: 'Dica' });
+
+      expect(campo().id).toBe('cfg-tipo');
+      expect(raiz().querySelector('label')?.getAttribute('for')).toBe('cfg-tipo');
+      expect(apoios()[0]?.id).toBe('cfg-tipo-hint');
+    });
+
+    it('sem id informado, gera um id próprio', () => {
+      mostrar();
+
+      expect(campo().id).toMatch(/^ui-select-\d+$/);
+    });
+
+    it('o aviso externo é descrito antes de dica, descrição e erro', () => {
+      document.body.insertAdjacentHTML('beforeend', '<p id="aviso-externo">Aviso</p>');
+      fixture.componentInstance.writeValue(SituacaoDaVagaCodigo.aberta);
+      mostrar({ descritoPor: 'aviso-externo', hint: 'Dica', errorMessage: 'Erro' });
+
+      expect(textosReferidos()).toEqual(['Aviso', 'Dica', OPCOES[0]?.description, 'Erro']);
+      document.getElementById('aviso-externo')?.remove();
+    });
+
+    it('enquanto as opções carregam, o campo fica ocupado e continua habilitado', () => {
+      mostrar({ carregandoOpcoes: true });
+      expect(campo().getAttribute('aria-busy')).toBe('true');
+      expect(campo().disabled).toBe(false);
+
+      mostrar({ carregandoOpcoes: false });
+      expect(campo().hasAttribute('aria-busy')).toBe(false);
+    });
+
+    it('avisa a escolha da pessoa, mas não o valor escrito pelo formulário', () => {
+      const aoEscolher = vi.fn();
+      fixture.componentInstance.escolhido.subscribe(aoEscolher);
+      mostrar();
+
+      fixture.componentInstance.writeValue(SituacaoDaVagaCodigo.cancelada);
+      expect(aoEscolher).not.toHaveBeenCalled();
+
+      escolher(SituacaoDaVagaCodigo.preenchida);
+      expect(aoEscolher).toHaveBeenCalledTimes(1);
     });
   });
 

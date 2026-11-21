@@ -37,21 +37,21 @@
           @for (banca of bancas(); track banca.id) {
             <tr [attr.data-tipo-banca-id]="banca.id">
               <td data-label="Código">
-                <code>{{ banca.codigo }}</code>
+                <code>{{ banca.codigo.codigo }}</code>
               </td>
               <td data-label="Nome">{{ banca.nome }}</td>
               <td data-label="Fase típica">{{ banca.faseTipica || '—' }}</td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ui-icon-button
                   icon="pi-pencil"
-                  [accessibleName]="nomeDaAcao('editar', banca.codigo)"
+                  [accessibleName]="nomeDaAcao('editar', banca.codigo.codigo)"
                   tooltip="Editar tipo de banca"
                   [isDisabled]="indisponivel()"
                   (triggered)="acionar('editar', banca)"
                 />
                 <ui-icon-button
                   icon="pi-trash"
-                  [accessibleName]="nomeDaAcao('remover', banca.codigo)"
+                  [accessibleName]="nomeDaAcao('remover', banca.codigo.codigo)"
                   tooltip="Remover tipo de banca"
                   [isDisabled]="indisponivel()"
                   (triggered)="acionar('remover', banca)"

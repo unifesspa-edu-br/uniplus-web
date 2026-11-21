@@ -4,7 +4,11 @@ import { ApplicationRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
-import { CONFIGURACAO_BASE_PATH, ModalidadeDto } from '@uniplus/shared-data/configuracao';
+import {
+  CONFIGURACAO_BASE_PATH,
+  ModalidadeDto,
+  OperadorCodigo,
+} from '@uniplus/shared-data/configuracao';
 import { expect } from 'vitest';
 import { CATALOGO } from './catalogo-de-fatos.fixture';
 import { ModalidadesListPage } from './modalidades-list.page';
@@ -23,10 +27,10 @@ export const V = modalidade({
   remanejamentoDestino: 'AC',
   regraDeAplicabilidade: [
     [
-      { fato: 'ESCOLA_PUBLICA', operador: 'IGUAL', valor: true },
-      { fato: 'COR_RACA', operador: 'EM', valor: ['PRETA', 'INDIGENA'] },
+      { fato: 'ESCOLA_PUBLICA', operador: OperadorCodigo.IGUAL, valor: true },
+      { fato: 'COR_RACA', operador: OperadorCodigo.EM, valor: ['PRETA', 'INDIGENA'] },
     ],
-    [{ fato: 'COR_RACA', operador: 'IGUAL', valor: 'PARDA' }],
+    [{ fato: 'COR_RACA', operador: OperadorCodigo.IGUAL, valor: 'PARDA' }],
   ],
 });
 

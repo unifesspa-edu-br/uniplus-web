@@ -1,5 +1,5 @@
 import { codigoDoNome, codigoLivre } from './codigos';
-import { OBRIGATORIEDADE_SEMPRE } from './constantes';
+import { REGRAS_INICIAIS } from './constantes';
 import { ConteudoDoFormulario, TermoDisponivel, TermoDoFormulario } from './tipos';
 
 /** Os termos em ordem. */
@@ -12,7 +12,7 @@ export function termosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
   disponiveis: readonly TermoDisponivel[],
 ): readonly TermoDisponivel[] {
-  const exigidos = new Set((conteudo.termos ?? []).map((termo) => termo.termoId));
+  const exigidos = new Set((conteudo.termos ?? []).map((termo) => termo.termo.termoId));
   return disponiveis.filter((termo) => termo.versoes.length > 0 && !exigidos.has(termo.termoId));
 }
 
@@ -29,11 +29,8 @@ export function acrescentarTermo(
     codigo: codigoLivre(codigoDoNome(termo.nome, 'TERMO'), new Set(termos.map((t) => t.codigo))),
     // Depois da maior ordem gravada: a gravada pode ter buraco, e ordem repetida é recusada.
     ordem: Math.max(-1, ...termos.map((t) => t.ordem)) + 1,
-    termoId: termo.termoId,
-    versaoId: termo.versoes[0]?.versaoId ?? '',
-    exibicao: null,
-    obrigatoriedade: OBRIGATORIEDADE_SEMPRE,
-    predicadoObrigatoriedade: null,
+    termo: { termoId: termo.termoId, versaoId: termo.versoes[0]?.versaoId ?? '' },
+    regras: REGRAS_INICIAIS,
   };
   return { ...conteudo, termos: [...termos, novo] };
 }

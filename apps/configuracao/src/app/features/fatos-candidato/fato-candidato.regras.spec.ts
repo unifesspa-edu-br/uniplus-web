@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   fatoDeMembroDoBinding,
   acaoDeAtivacao,
-  citacoesDaRecusa,
   classificacoesDoDominio,
   corpoDaDefinicao,
   podeEditarDefinicao,
@@ -13,17 +12,28 @@ import {
   podeTerValores,
   resumoDoAgregado,
 } from './fato-candidato.regras';
+import { citacoesDaRecusa } from './citacoes-do-fato';
+
+const vinculo = (binding: string) => ({ definicao: { resolucao: { binding } } });
 
 const fato = (
   binding: string,
-  extra: Partial<{ semeadoPeloSistema: boolean; dominio: string; fonteValores: string | null }> = {},
-) => ({
-  binding,
-  semeadoPeloSistema: false,
-  dominio: 'CATEGORICO',
-  fonteValores: 'GLOBAL' as string | null,
-  ...extra,
-});
+  extra: Partial<{
+    semeadoPeloSistema: boolean;
+    dominio: string;
+    fonteValores: string | null;
+  }> = {},
+) => {
+  const { semeadoPeloSistema = false, dominio = 'CATEGORICO', fonteValores = 'GLOBAL' } = extra;
+  return {
+    semeadoPeloSistema,
+    definicao: {
+      dominio,
+      valores: { fonte: fonteValores },
+      resolucao: { binding },
+    },
+  };
+};
 
 describe('o que cada fato deixa manter', () => {
   it('valores: declarado e derivado por regra categóricos de fonte global do administrador', () => {
@@ -49,7 +59,9 @@ describe('o que cada fato deixa manter', () => {
       podeTerRegras(fato('AGREGACAO_GRUPO:RENDA')),
       'o agregado também é derivado, mas não tem regra',
     ).toBe(false);
-    expect(podeTerRegras(fato('REGRA_DERIVACAO:MODALIDADE', { semeadoPeloSistema: true }))).toBe(false);
+    expect(podeTerRegras(fato('REGRA_DERIVACAO:MODALIDADE', { semeadoPeloSistema: true }))).toBe(
+      false,
+    );
   });
 });
 
@@ -154,9 +166,13 @@ describe('a definição que o administrador altera', () => {
   });
 
   it('o fato de sistema e o de vínculo desconhecido não se editam', () => {
-    expect(podeEditarDefinicao({ binding: 'CAMPO_INSCRICAO:X', semeadoPeloSistema: true })).toBe(false);
-    expect(podeEditarDefinicao({ binding: 'SISTEMA:X', semeadoPeloSistema: false })).toBe(false);
-    expect(podeEditarDefinicao({ binding: 'REGRA_DERIVACAO:X', semeadoPeloSistema: false })).toBe(true);
+    expect(podeEditarDefinicao({ ...vinculo('CAMPO_INSCRICAO:X'), semeadoPeloSistema: true })).toBe(
+      false,
+    );
+    expect(podeEditarDefinicao({ ...vinculo('SISTEMA:X'), semeadoPeloSistema: false })).toBe(false);
+    expect(
+      podeEditarDefinicao({ ...vinculo('REGRA_DERIVACAO:X'), semeadoPeloSistema: false }),
+    ).toBe(true);
   });
 
   it('agrupa as citações por tipo e deixa de fora a recusa de campo', () => {
@@ -175,7 +191,7 @@ describe('a definição que o administrador altera', () => {
 
 describe('o fato de membro do agregado', () => {
   it('sai do binding do agregado e é nulo nos outros tipos', () => {
-    expect(fatoDeMembroDoBinding({ binding: 'AGREGACAO_GRUPO:RENDA' })).toBe('RENDA');
-    expect(fatoDeMembroDoBinding({ binding: 'REGRA_DERIVACAO:RENDA' })).toBeNull();
+    expect(fatoDeMembroDoBinding(vinculo('AGREGACAO_GRUPO:RENDA'))).toBe('RENDA');
+    expect(fatoDeMembroDoBinding(vinculo('REGRA_DERIVACAO:RENDA'))).toBeNull();
   });
 });

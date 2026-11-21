@@ -22,7 +22,7 @@ export class DiaDoEnvio {
 
   /** O envio que a tela supõe para os limites de data, ou `null` enquanto o formulário não chegou. */
   readonly envio = computed<EnvioDasRespostas | null>(() => {
-    const fuso = this.leitura.formulario()?.fusoDoEnvio;
+    const fuso = this.leitura.formulario()?.formulario.pressupostos.fusoDoEnvio;
     return fuso ? { instante: this.instante().toISOString(), fuso } : null;
   });
 
@@ -58,7 +58,7 @@ export class DiaDoEnvio {
    * próxima virada. A aba em segundo plano pode atrasar o timer, então a volta dela também confere.
    */
   private acompanhar(): void {
-    const fuso = this.leitura.formulario()?.fusoDoEnvio;
+    const fuso = this.leitura.formulario()?.formulario.pressupostos.fusoDoEnvio;
     if (!fuso) return;
     const agora = this.relogio();
     if (diaNoFuso(agora, fuso) !== diaNoFuso(this.instante(), fuso)) this.instante.set(agora);

@@ -94,17 +94,17 @@
                 <button
                   type="button"
                   class="table-responsive__alvo"
-                  [attr.aria-label]="'Ver o detalhe de ' + fato.nome"
+                  [attr.aria-label]="'Ver o detalhe de ' + fato.descritivo.nome"
                   (click)="detalhar.emit(fato)"
                 >
-                  {{ fato.nome }}
+                  {{ fato.descritivo.nome }}
                 </button>
                 @if (fato.semeadoPeloSistema) {
                   <ui-tag variant="primary">Sistema</ui-tag>
                 }
               </td>
-              <td data-label="Origem">{{ rotulo(origens, fato.origem) }}</td>
-              <td data-label="Tipo de dado">{{ rotulo(dominios, fato.dominio) }}</td>
+              <td data-label="Origem">{{ rotulo(origens, fato.definicao.resolucao.origem) }}</td>
+              <td data-label="Tipo de dado">{{ rotulo(dominios, fato.definicao.dominio) }}</td>
               <td data-label="Situação" class="u-nowrap-desktop">
                 @if (fato.id === andamento()?.id) {
                   <span aria-hidden="true">{{ andamento()?.rotulo }}</span>
@@ -115,10 +115,13 @@
                 }
               </td>
               <td data-label="Sensibilidade" class="u-nowrap-desktop">
-                {{ rotulo(classificacoes, fato.classificacaoProtecao) }}
+                {{ rotulo(classificacoes, fato.definicao.protecao.classificacao) }}
               </td>
               <td data-label="Aprovação" class="u-nowrap-desktop">
-                <cfg-situacao-da-aprovacao [situacao]="fato.aprovacao.situacao" [emLista]="true" />
+                <cfg-situacao-da-aprovacao
+                  [situacao]="fato.definicao.protecao.aprovacao.situacao"
+                  [emLista]="true"
+                />
               </td>
               <td class="table-responsive__actions" data-label="Ações">
                 <ng-container *authTemPermissao="permissaoDeManter">

@@ -7,6 +7,7 @@ export type {
   DependenciasDaAvaliacao,
   ErroDoServidor,
   FormularioDoCandidato,
+  FormularioNoProcesso,
   GrupoRenderizavel,
   PressupostoDoFormulario,
   PassoPrefixado,

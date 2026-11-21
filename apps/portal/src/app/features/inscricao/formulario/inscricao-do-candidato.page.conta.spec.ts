@@ -2,8 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpHeaders } from '@angular/common/http';
 import { of } from 'rxjs';
 import { apiFailure } from '@uniplus/shared-core/http';
-import { type FormularioRenderizavelDto, SituacaoInscricao } from '@uniplus/shared-data/selecao';
-import { FORMULARIO_DE_INSCRICAO_MOCK } from './inscricao-do-candidato.testing';
+import { SituacaoInscricao, TipoRenderizacaoCodigo } from '@uniplus/shared-data/selecao';
+import {
+  FORMULARIO_DE_INSCRICAO_MOCK,
+  campoColetado,
+  comCampoColetado,
+  comFormulario,
+} from './inscricao-do-candidato.testing';
 import {
   CPF_DA_CONTA,
   NOME_DA_CONTA,
@@ -51,34 +56,15 @@ describe('InscricaoDoCandidatoPage', () => {
   });
 
   /** O formulário de teste que também coleta o município de nascimento. */
-  const COM_MUNICIPIO: FormularioRenderizavelDto = {
-    ...FORMULARIO_DE_INSCRICAO_MOCK,
-    fatosColetados: [
-      ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados,
-      {
-        ...FORMULARIO_DE_INSCRICAO_MOCK.fatosColetados[0],
-        fatoCodigo: 'NATURALIDADE_MUNICIPIO',
-        ordem: 8,
-        rotulo: 'Município de nascimento',
-        tipoRenderizacao: 'MUNICIPIO',
-        formato: null,
-      },
-    ],
-    regras: {
-      ...FORMULARIO_DE_INSCRICAO_MOCK.regras,
-      etapas: FORMULARIO_DE_INSCRICAO_MOCK.regras.etapas.map((e, i) =>
-        i === 0
-          ? {
-              ...e,
-              itens: [
-                ...e.itens,
-                { ...e.itens[0], fatoCodigo: 'NATURALIDADE_MUNICIPIO', formato: null },
-              ],
-            }
-          : e,
-      ),
-    },
-  };
+  const COM_MUNICIPIO = comCampoColetado(
+    FORMULARIO_DE_INSCRICAO_MOCK,
+    campoColetado(
+      'NATURALIDADE_MUNICIPIO',
+      'Município de nascimento',
+      TipoRenderizacaoCodigo.MUNICIPIO,
+      { ordem: 8 },
+    ),
+  );
   const SALVADOR = { codigoIbge: '2927408', nome: 'Salvador', uf: 'BA' };
   const NAO_ENCONTRADO = apiFailure(
     { type: 'about:blank', title: 'Falha', status: 503, code: 'falha', traceId: '' },
@@ -204,14 +190,20 @@ describe('InscricaoDoCandidatoPage', () => {
   it('a recusa do envio sem nome social na conta aparece no campo travado, com a orientação', async () => {
     const mensagem =
       'Você marcou que deseja usar nome social, mas sua conta não tem nome social cadastrado. Cadastre o nome social em Meu perfil ou desmarque a opção.';
-    cenario.servico.formulario = {
-      ...COM_NOME_SOCIAL,
-      fatosColetados: COM_NOME_SOCIAL.fatosColetados.map((c) =>
-        c.fatoCodigo === 'NOME_SOCIAL'
-          ? { ...c, ajuda: 'Cadastre o nome social em Meu perfil.' }
-          : c,
-      ),
-    };
+    const { coleta } = COM_NOME_SOCIAL.formulario;
+    cenario.servico.formulario = comFormulario(COM_NOME_SOCIAL, {
+      coleta: {
+        ...coleta,
+        itens: coleta.itens.map((c) =>
+          c.fatoCodigo === 'NOME_SOCIAL'
+            ? {
+                ...c,
+                apresentacao: { ...c.apresentacao, ajuda: 'Cadastre o nome social em Meu perfil.' },
+              }
+            : c,
+        ),
+      },
+    });
     cenario.servico.recusaDoEnvio = apiFailure(
       {
         type: 'about:blank',

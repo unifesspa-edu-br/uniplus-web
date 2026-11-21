@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { OperadorCodigo } from '@uniplus/shared-data/configuracao';
 import { exigenciasLocalizadasDaFase } from '../../shared/exigencias/consulta-das-exigencias';
 import {
   comRepeticao,
   exigenciaNova,
   folhaDe,
 } from '../../shared/exigencias/exigencias-documentais';
+import { REGRAS_INICIAIS, type GrupoDoFormulario } from '@uniplus/shared-ui/components';
+import { item } from '../formulario/formulario-de-inscricao.testing';
 import { CatalogoDeFatos } from '../cronograma/catalogos/catalogo-de-fatos.service';
 import { fase, ID_AVALIACAO, ID_CPF, ID_HOMOLOGACAO } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
@@ -61,35 +64,21 @@ describe('FasePassoComponent', () => {
         hipoteseLegal: 'EXECUCAO_POLITICAS_PUBLICAS',
         finalidadeTratamento: 'Compor a renda familiar.',
         protecaoAprovada: true,
+        operadoresAdmitidos: [{ codigo: OperadorCodigo.IGUAL, rotulo: 'é' }],
       };
-      const SUBITEM = {
-        fatoCodigo: 'PARENTESCO',
-        ordem: 0,
-        rotulo: 'Parentesco',
-        tipoRenderizacao: 'SELECAO_UNICA',
-        obrigatoriedade: 'SEMPRE',
-        precondicao: null,
-        etapaCodigo: null,
-        predicadoObrigatoriedade: null,
-        ajuda: null,
-        pedirConfirmacao: false,
-      };
-      const FAMILIA = {
+      const SUBITEM = item('PARENTESCO', 0, '', { etapaCodigo: null });
+      const FAMILIA: GrupoDoFormulario = {
         codigo: 'FAMILIA',
         ordem: 0,
         rotulo: 'Composição familiar',
         etapaCodigo: null,
-        minimo: 1,
-        maximo: null,
-        exibicao: null,
-        obrigatoriedade: 'SEMPRE',
-        predicadoObrigatoriedade: null,
+        ocorrencias: { minimo: 1, maximo: null, incluiCandidato: true },
+        regras: REGRAS_INICIAIS,
         subitens: [SUBITEM],
-        incluiCandidato: true,
       };
 
       /** A habilitação, respondida na fase Homologação das inscrições, com ou sem a composição familiar. */
-      function comHabilitacao(grupos: readonly (typeof FAMILIA)[]): void {
+      function comHabilitacao(grupos: readonly GrupoDoFormulario[]): void {
         store.patchObjectSection('formulario', {
           outrasFinalidades: [
             {

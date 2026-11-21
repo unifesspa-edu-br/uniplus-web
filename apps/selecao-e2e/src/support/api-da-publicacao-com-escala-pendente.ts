@@ -22,20 +22,38 @@ const ROTA_DO_PROCESSO_COMPLETO = new RegExp(
   `/api/selecao/processos-seletivos/${ID_DO_PROCESSO_COMPLETO}`,
 );
 
+const IGUALDADE = [
+  { codigo: 'IGUAL', rotulo: 'é' },
+  { codigo: 'DIFERENTE', rotulo: 'não é' },
+];
+
+const FATO_DECLARADO = {
+  descricao: null,
+  origem: 'DECLARADO',
+  cardinalidade: 'ESCALAR',
+  valoresDominio: null,
+  pontoResolucao: 'INSCRICAO',
+  valoresDominioDeclarados: null,
+};
+
+/** A data não é citável em regra: a API devolve a lista de operadores vazia. */
+function fatoDoFormulario(codigo: string) {
+  const data = codigo === 'DATA_NASCIMENTO';
+  return {
+    fato: {
+      ...FATO_DECLARADO,
+      id: `fato-${codigo}`,
+      codigo,
+      nome: codigo,
+      dominio: data ? 'DATA' : 'BOOLEANO',
+      binding: `CAMPO_INSCRICAO:${codigo}`,
+    },
+    operadoresAdmitidos: data ? [] : IGUALDADE,
+  };
+}
+
 const FATOS_DO_FORMULARIO = ['DATA_NASCIMENTO', 'OPTOU_PELAS_COTAS_DA_LEI', 'MODALIDADE'].map(
-  (codigo) => ({
-    id: `fato-${codigo}`,
-    codigo,
-    nome: codigo,
-    descricao: null,
-    dominio: codigo === 'DATA_NASCIMENTO' ? 'DATA' : 'BOOLEANO',
-    origem: 'DECLARADO',
-    cardinalidade: 'ESCALAR',
-    valoresDominio: null,
-    pontoResolucao: 'INSCRICAO',
-    binding: `CAMPO_INSCRICAO:${codigo}`,
-    valoresDominioDeclarados: null,
-  }),
+  fatoDoFormulario,
 );
 
 const ITEM_DA_ESCALA_PENDENTE = {

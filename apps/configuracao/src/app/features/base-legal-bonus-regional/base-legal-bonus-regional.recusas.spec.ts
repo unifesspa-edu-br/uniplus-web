@@ -1,9 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   ESCRITA,
-  LISTA,
   Pagina,
-  TITULO_DA_LISTA,
   corpoDaFalha,
   criado,
   decreto,
@@ -11,7 +9,6 @@ import {
   portaria,
   problema,
   recusaDeCampo,
-  sucesso,
 } from './base-legal-bonus-regional.testing';
 
 const PROCESSANDO = { code: 'uniplus.idempotency.processing_conflict', title: 'Em processamento' };
@@ -173,25 +170,24 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
   });
 
   describe('ao salvar', () => {
-    it.each([
-      ['tipoInstrumento', 'select', 'tipoInstrumento'],
-      ['identificacao', 'input', 'identificacao'],
-      ['descricao', 'textarea', 'descricao'],
-    ] as const)('mostra a recusa de %s no campo e o foca', async (campo, tag, nome) => {
-      await p.abrirCadastro();
-      (await p.enviar()).flush(...recusaDeCampo(campo, 'Valor recusado.'));
-      await p.propagar();
-      await p.propagar();
+    it.each(['tipoInstrumento', 'identificacao', 'descricao'] as const)(
+      'mostra a recusa de %s no campo e o foca',
+      async (campo) => {
+        await p.abrirCadastro();
+        (await p.enviar()).flush(...recusaDeCampo(campo, 'Valor recusado.'));
+        await p.propagar();
+        await p.propagar();
 
-      const controle = p.elemento<HTMLElement>(`${tag}[formcontrolname="${nome}"]`);
-      expect(controle.getAttribute('aria-invalid')).toBe('true');
-      expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
-      expect(mensagemDe(nome)).toBe('Valor recusado.');
-      expect(controle.getAttribute('aria-describedby')).toContain('-erro');
-      expect(document.activeElement).toBe(controle);
-      expect(p.elemento('ui-drawer [role="status"]').textContent).toContain('Revise os campos');
-      expect(p.erros).not.toHaveBeenCalled();
-    });
+        const controle = p.campo(campo);
+        expect(controle.getAttribute('aria-invalid')).toBe('true');
+        expect(controle.closest('.field')?.classList.contains('is-error')).toBe(true);
+        expect(mensagemDe(campo)).toBe('Valor recusado.');
+        expect(controle.getAttribute('aria-describedby')).toContain('-erro');
+        expect(document.activeElement).toBe(controle);
+        expect(p.elemento('ui-drawer [role="status"]').textContent).toContain('Revise os campos');
+        expect(p.erros).not.toHaveBeenCalled();
+      },
+    );
 
     it.each(['municipios', 'municipios[0]'])(
       'a recusa de %s aparece junto da busca de município, que é marcada e focada',
@@ -367,103 +363,6 @@ describe('BaseLegalBonusRegionalPage — recusas e validação', () => {
 
       expect(p.fixture.nativeElement.querySelector('ui-drawer ui-alert')).toBeNull();
       p.http.expectNone(ESCRITA);
-    });
-  });
-
-  describe('ao remover', () => {
-    const lerMensagem = (): string | undefined =>
-      p.elemento('cfg-confirmacao-de-remocao .field__error').textContent?.trim();
-
-    it('recusa 404 mantém o diálogo, a mensagem e o foco no botão, sem toast', async () => {
-      (await p.confirmarRemocao(portaria)).flush(...problema(404, NAO_ENCONTRADA));
-      await p.propagar();
-
-      expect(lerMensagem()).toBe(NAO_ENCONTRADA.title);
-      expect(p.edicao.confirmando()).toBe(true);
-      expect(p.confirmar().getAttribute('aria-disabled')).toBeNull();
-      expect(document.activeElement).toBe(p.confirmar());
-      expect(p.elemento('cfg-confirmacao-de-remocao [role="status"]').textContent).toContain(
-        'Não foi possível remover a base legal Portaria Unifesspa nº 2514/2023.',
-      );
-      expect(p.erros).not.toHaveBeenCalled();
-      expect(p.sucessos).not.toHaveBeenCalled();
-
-      p.confirmar().click();
-      await p.propagar();
-      p.http.expectOne(`${ESCRITA}/${portaria.id}`).flush(...sucesso());
-      await p.recarregarCom([decreto]);
-      expect(p.edicao.confirmando()).toBe(false);
-    });
-
-    it('falta de permissão mantém o diálogo com a mensagem, sem toast', async () => {
-      (await p.confirmarRemocao(portaria)).flush(...problema(403, corpoDaFalha(403)));
-      await p.propagar();
-
-      expect(lerMensagem()).toBe('Falha');
-      expect(p.erros).not.toHaveBeenCalled();
-    });
-
-    it('falha 5xx mantém o diálogo com a mensagem, avisa por toast e aceita nova tentativa', async () => {
-      (await p.confirmarRemocao(portaria)).flush(...problema(500, corpoDaFalha(500)));
-      await p.propagar();
-
-      expect(lerMensagem()).toBe('Falha');
-      expect(p.erros).toHaveBeenCalledTimes(1);
-      expect(document.activeElement).toBe(p.confirmar());
-      p.cancelarDaConfirmacao().click();
-      await p.propagar();
-      expect(document.activeElement).toBe(p.remover(portaria));
-    });
-
-    it('pede a confirmação antes de qualquer requisição e a nomeia pela base', async () => {
-      p.remover(portaria).focus();
-      p.remover(portaria).click();
-      await p.propagar();
-
-      p.http.expectNone(`${ESCRITA}/${portaria.id}`);
-      expect(p.elemento('cfg-confirmacao-de-remocao').textContent).toContain('Remover base legal');
-      expect(p.elemento('cfg-confirmacao-de-remocao').textContent).toContain(
-        'Tem certeza que deseja remover "Portaria Unifesspa nº 2514/2023"? Processos que já a referenciam mantêm o snapshot congelado.',
-      );
-    });
-  });
-
-  describe('foco depois da escrita', () => {
-    it('edição concluída com a linha na recarga devolve o foco ao botão de editar', async () => {
-      await p.abrirEdicao(portaria);
-      (await p.enviar(`${ESCRITA}/${portaria.id}`)).flush(...sucesso());
-      await p.recarregarCom([portaria, decreto]);
-      expect(document.activeElement).toBe(p.editar(portaria));
-    });
-
-    it('cancelar a edição devolve o foco ao botão que abriu o drawer', async () => {
-      await p.abrirEdicao(portaria);
-      p.elemento<HTMLButtonElement>('.form-drawer__footer button').click();
-      await p.propagar();
-      expect(document.activeElement).toBe(p.editar(portaria));
-    });
-
-    it('remoção concluída leva o foco ao título quando a linha some da recarga', async () => {
-      (await p.confirmarRemocao(portaria)).flush(...sucesso());
-      await p.recarregarCom([decreto]);
-      expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
-    });
-
-    it('escrita com falha na recarga leva o foco ao título da lista', async () => {
-      (await p.confirmarRemocao(portaria)).flush(...sucesso());
-      await p.propagar();
-      p.http.expectOne((r) => r.url === LISTA).flush(...problema(503));
-      await p.propagar();
-      expect(document.activeElement).toBe(p.elemento(TITULO_DA_LISTA));
-    });
-
-    it('cancelar a confirmação devolve o foco ao botão de remover da linha', async () => {
-      p.remover(portaria).focus();
-      p.remover(portaria).click();
-      await p.propagar();
-      p.cancelarDaConfirmacao().click();
-      await p.propagar();
-      expect(document.activeElement).toBe(p.remover(portaria));
     });
   });
 });

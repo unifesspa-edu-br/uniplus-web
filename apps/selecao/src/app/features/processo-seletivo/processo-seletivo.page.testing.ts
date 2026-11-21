@@ -45,6 +45,7 @@ import {
   VagasDoProcessoApi,
 } from '@uniplus/shared-data/selecao';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import { opcoesDoRecursoApiDeTeste } from './wizard/passos/cronograma/catalogos/catalogos.testing';
 import type { CriterioDesempateConfigurado } from './wizard/processo-seletivo.models';
 
 export const CRITERIO_POR_AREA: CriterioDesempateConfigurado = {
@@ -110,9 +111,9 @@ export const PAGE_PROVIDERS = [
   { provide: CursosApi, useValue: catalogoVazioStub },
   { provide: OfertasCursoApi, useValue: catalogoVazioStub },
   { provide: ReservaDemograficaApi, useValue: catalogoVazioStub },
+  { provide: OpcoesDoRecursoApi, useValue: opcoesDoRecursoApiDeTeste() },
   { provide: RegrasCatalogoApi, useValue: catalogoVazioStub },
-  // O passo de bônus carrega o catálogo de base legal ao montar, e o vocabulário que traduz o
-  // tipo de instrumento da norma.
+  // O passo de bônus carrega o catálogo de base legal e o vocabulário de tipos de norma ao montar.
   { provide: BaseLegalBonusRegionalApi, useValue: catalogoVazioStub },
   { provide: TiposInstrumentoNormativoApi, useValue: catalogoVazioStub },
   // O passo da fórmula carrega o cadastro de Peso por Área, de onde sai a resolução do ENEM.

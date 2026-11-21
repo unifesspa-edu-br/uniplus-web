@@ -1,7 +1,8 @@
 import { HttpTestingController } from '@angular/common/http/testing';
 import { ComponentFixture } from '@angular/core/testing';
 import {
-  type FatoCandidatoView,
+  OperadorCodigo,
+  type FatoDoCatalogoDto,
   type ModeloFormularioView,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -31,7 +32,7 @@ describe('ModeloFormularioEdicaoPage', () => {
 
   async function carregar(
     doModelo: ModeloFormularioView = modelo,
-    fatosExtras: readonly FatoCandidatoView[] = [],
+    fatosExtras: readonly FatoDoCatalogoDto[] = [],
     fases: readonly object[] = FASES,
     falhando: readonly string[] = [],
   ): Promise<HTMLElement> {
@@ -63,8 +64,8 @@ describe('ModeloFormularioEdicaoPage', () => {
     expect(documentos).toHaveLength(2);
     expect(documentos[0]).toMatchObject({
       tipoDocumentoCodigo: 'ATESTADO',
-      quando: modelo.conteudo.documentosExigidos?.[0].quando,
-      basesLegais: modelo.conteudo.documentosExigidos?.[0].basesLegais,
+      quando: modelo.conteudo.documentosExigidos[0].quando,
+      basesLegais: modelo.conteudo.documentosExigidos[0].basesLegais,
     });
     expect(documentos[1]).toMatchObject({ faseCodigo: 'INSCRICAO', quando: null });
     req.flush(null, { status: 204, statusText: 'No Content' });
@@ -79,7 +80,10 @@ describe('ModeloFormularioEdicaoPage', () => {
       conteudo: {
         ...modelo.conteudo,
         documentosExigidos: [
-          { ...laudo, quando: [[{ fato: 'GESTANTE', operador: 'IGUAL', valor: true }]] },
+          {
+            ...laudo,
+            quando: [[{ fato: 'GESTANTE', operador: OperadorCodigo.IGUAL, valor: true }]],
+          },
         ],
       },
     });
@@ -136,11 +140,19 @@ describe('ModeloFormularioEdicaoPage', () => {
         conteudo: {
           ...modelo.conteudo,
           documentosExigidos: [
-            { ...laudo, quando: [[{ fato: 'MUNICIPIO', operador: 'EM', valor: ['1500000'] }]] },
+            {
+              ...laudo,
+              quando: [[{ fato: 'MUNICIPIO', operador: OperadorCodigo.EM, valor: ['1500000'] }]],
+            },
           ],
         },
       },
-      [{ ...fato('MUNICIPIO'), dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' }],
+      [
+        {
+          fato: { ...fato('MUNICIPIO').fato, dominio: 'CATEGORICO', fonteValores: 'GEO_MUNICIPIO' },
+          operadoresAdmitidos: [{ codigo: OperadorCodigo.EM, rotulo: 'é um de' }],
+        },
+      ],
     );
 
     const documento = tela.querySelector(

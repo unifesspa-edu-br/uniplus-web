@@ -31,20 +31,11 @@ export function distribuirRecusas(
   recusas: readonly { readonly field: string; readonly message: string }[],
   enviado: ConteudoDoFormulario,
 ): RecusasDoConteudo {
-  const porItem = new Map<string, string[]>();
-  const porRestricao = new Map<string, RecusaDaRestricao[]>();
-  const porEtapa = new Map<string, string[]>();
-  const porTermo = new Map<string, string[]>();
-  const porGrupo = new Map<string, string[]>();
-  const gerais: string[] = [];
-  const mapas = { grupo: porGrupo, etapa: porEtapa, termo: porTermo };
+  const distribuicao = new DistribuicaoDasRecusas();
   for (const recusa of recusas) {
-    const destino = destinoDaRecusa(recusa.field, enviado);
-    if (destino.tipo === 'campo') acumularNoCampo(porItem, porRestricao, destino.campo, recusa);
-    else if (destino.tipo === 'geral') gerais.push(recusa.message);
-    else acumular(mapas[destino.tipo], destino.codigo, recusa.message);
+    distribuicao.receber(destinoDaRecusa(recusa.field, enviado), recusa);
   }
-  return { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais };
+  return distribuicao.recusas();
 }
 
 type DestinoDaRecusa =
@@ -74,33 +65,79 @@ function destinoNoGrupo(campo: string, enviado: ConteudoDoFormulario): DestinoDa
     : { tipo: 'campo', campo: campoDoGrupo };
 }
 
-/**
- * A recusa do campo vai à restrição que ela aponta — e ao grupo de opções, quando aponta um —, ou
- * ao campo quando não aponta restrição que o envio tenha.
- */
-function acumularNoCampo(
-  porItem: Map<string, string[]>,
-  porRestricao: Map<string, RecusaDaRestricao[]>,
-  enviado: ItemDoFormulario,
-  recusa: { readonly field: string; readonly message: string },
-): void {
-  const apontada = /\.restricoes\[(\d+)\](?:\.entradas\[(\d+)\])?/iu.exec(recusa.field);
-  const restricao = apontada === null ? undefined : (enviado.restricoes ?? [])[Number(apontada[1])];
-  if (apontada === null || restricao === undefined) {
-    acumular(porItem, enviado.fatoCodigo, recusa.message);
-    return;
+interface Recusa {
+  readonly field: string;
+  readonly message: string;
+}
+
+class DistribuicaoDasRecusas {
+  private readonly porItem = new Map<string, string[]>();
+  private readonly porRestricao = new Map<string, RecusaDaRestricao[]>();
+  private readonly porEtapa = new Map<string, string[]>();
+  private readonly porTermo = new Map<string, string[]>();
+  private readonly porGrupo = new Map<string, string[]>();
+  private readonly gerais: string[] = [];
+
+  receber(destino: DestinoDaRecusa, recusa: Recusa): void {
+    if (destino.tipo === 'campo') this.acumularNoCampo(destino.campo, recusa);
+    else if (destino.tipo === 'geral') this.gerais.push(recusa.message);
+    else if (destino.tipo === 'grupo') acumular(this.porGrupo, destino.codigo, recusa.message);
+    else if (destino.tipo === 'etapa') acumular(this.porEtapa, destino.codigo, recusa.message);
+    else acumular(this.porTermo, destino.codigo, recusa.message);
   }
+
+  recusas(): RecusasDoConteudo {
+    const { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais } = this;
+    return { porItem, porRestricao, porEtapa, porTermo, porGrupo, gerais };
+  }
+
+  /**
+   * A recusa do campo vai à restrição que ela aponta — e ao grupo de opções, quando aponta um —, ou
+   * ao campo quando não aponta restrição que o envio tenha.
+   */
+  private acumularNoCampo(enviado: ItemDoFormulario, recusa: Recusa): void {
+    const apontada = restricaoApontada(enviado, recusa.field);
+    if (apontada === undefined) {
+      acumular(this.porItem, enviado.fatoCodigo, recusa.message);
+      return;
+    }
+    acumular(
+      this.porRestricao,
+      enviado.fatoCodigo,
+      recusaDaRestricaoApontada(apontada, recusa.message),
+    );
+  }
+}
+
+type RestricaoDoItem = NonNullable<ItemDoFormulario['regras']['restricoes']>[number];
+
+interface RestricaoApontada {
+  readonly restricao: RestricaoDoItem;
+  readonly grupo: OpcoesCondicionadas | undefined;
+}
+
+function restricaoApontada(
+  enviado: ItemDoFormulario,
+  field: string,
+): RestricaoApontada | undefined {
+  const apontada = /\.restricoes\[(\d+)\](?:\.entradas\[(\d+)\])?/iu.exec(field);
+  if (apontada === null) return undefined;
+  const restricao = (enviado.regras.restricoes ?? [])[Number(apontada[1])];
+  if (restricao === undefined) return undefined;
   const grupo =
     apontada[2] === undefined ? undefined : (restricao.entradas ?? [])[Number(apontada[2])];
-  const recusaDaRestricao: RecusaDaRestricao = {
+  return { restricao, grupo };
+}
+
+function recusaDaRestricaoApontada(
+  { restricao, grupo }: RestricaoApontada,
+  mensagem: string,
+): RecusaDaRestricao {
+  return {
     tipo: restricao.tipo,
     grupo: grupo === undefined ? null : chaveDoGrupoDeOpcoes(grupo),
-    mensagem: recusa.message,
+    mensagem,
   };
-  porRestricao.set(enviado.fatoCodigo, [
-    ...(porRestricao.get(enviado.fatoCodigo) ?? []),
-    recusaDaRestricao,
-  ]);
 }
 
 /** O conteúdo do grupo de opções como chave: a condição como veio e os valores sem depender da ordem. */
@@ -136,6 +173,6 @@ function elementoApontado<T>(campo: string, lista: string, elementos: readonly T
   return encontrado === null ? undefined : elementos[Number(encontrado[1])];
 }
 
-function acumular(mapa: Map<string, string[]>, chave: string, mensagem: string): void {
-  mapa.set(chave, [...(mapa.get(chave) ?? []), mensagem]);
+function acumular<T>(mapa: Map<string, T[]>, chave: string, recusa: T): void {
+  mapa.set(chave, [...(mapa.get(chave) ?? []), recusa]);
 }

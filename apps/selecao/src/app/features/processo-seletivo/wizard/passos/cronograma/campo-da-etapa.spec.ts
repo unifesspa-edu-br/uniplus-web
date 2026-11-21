@@ -153,9 +153,7 @@ describe('campoNaTelaDaEtapa', () => {
     const doEnem = umaEtapaDoCronograma({ tipoEtapaOrigemId: 'enem' });
     const tipoEnem = {
       nome: 'ENEM',
-      admitePontuacao: true,
-      admiteEliminacao: false,
-      notaDeOrigemNoEnem: true,
+      avaliacao: { admitePontuacao: true, admiteEliminacao: false, notaDeOrigemNoEnem: true },
     };
 
     expect(campoNaTelaDaEtapa('notaMaxima', umaEtapaDoCronograma({ carater: '' }), undefined)).toBe(
@@ -228,9 +226,7 @@ describe('campoNaTelaDaEtapa', () => {
     });
     const tipoEnem = {
       nome: 'ENEM',
-      admitePontuacao: true,
-      admiteEliminacao: false,
-      notaDeOrigemNoEnem: true,
+      avaliacao: { admitePontuacao: true, admiteEliminacao: false, notaDeOrigemNoEnem: true },
     };
 
     expect(campoNaTelaDaEtapa('bancas.0.quorum', doEnem, tipoEnem)).toBe(false);

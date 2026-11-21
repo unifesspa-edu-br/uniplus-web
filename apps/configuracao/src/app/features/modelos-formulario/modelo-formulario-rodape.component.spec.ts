@@ -16,11 +16,9 @@ const conteudo = {
 const modelo: ModeloFormularioView = {
   id: 'm1',
   codigo: 'INSCRICAO',
-  nome: 'Inscrição',
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
   ativo: true,
+  descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo,
 };
 

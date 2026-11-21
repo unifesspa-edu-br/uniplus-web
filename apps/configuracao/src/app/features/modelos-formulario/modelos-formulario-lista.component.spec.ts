@@ -17,11 +17,9 @@ const conteudo = {
 const ativo: ModeloFormularioView = {
   id: 'm1',
   codigo: 'INSCRICAO',
-  nome: 'Inscrição',
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
   ativo: true,
+  descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   conteudo,
 };
 const inativo: ModeloFormularioView = {
@@ -29,7 +27,7 @@ const inativo: ModeloFormularioView = {
   id: 'm2',
   codigo: 'ANTIGO',
   ativo: false,
-  tipoProcessoCodigo: 'VESTIBULAR',
+  descritivo: { ...ativo.descritivo, tipoProcessoCodigo: 'VESTIBULAR' },
 };
 
 describe('ModelosFormularioListaComponent', () => {

@@ -21,11 +21,13 @@ const provaObjetiva: TipoEtapaDto = {
   nome: 'Prova Objetiva',
   descricao: null,
   ativo: true,
-  admitePontuacao: true,
-  admiteEliminacao: true,
-  notaDeOrigemNoEnem: false,
-  exigeCorrecaoIndependente: false,
-  conceitosAdmitidos: [],
+  avaliacao: {
+    admitePontuacao: true,
+    admiteEliminacao: true,
+    notaDeOrigemNoEnem: false,
+    exigeCorrecaoIndependente: false,
+    conceitosAdmitidos: [],
+  },
   criadoEm: '2026-08-30T12:00:00Z',
 };
 
@@ -80,10 +82,12 @@ describe('TiposEtapaApi', () => {
         {
           codigo: 'ANALISE_SOCIOECONOMICA',
           nome: 'Análise socioeconômica',
-          admitePontuacao: false,
-          admiteEliminacao: true,
-          exigeCorrecaoIndependente: false,
-          conceitosAdmitidos: [],
+          avaliacao: {
+            admitePontuacao: false,
+            admiteEliminacao: true,
+            exigeCorrecaoIndependente: false,
+            conceitosAdmitidos: [],
+          },
           descricao: null,
         },
         withIdempotencyKey('k'),
@@ -94,7 +98,9 @@ describe('TiposEtapaApi', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('k');
     expect(req.request.headers.get('Accept')).toBe('application/json');
-    expect(req.request.body).toMatchObject({ admitePontuacao: false, admiteEliminacao: true });
+    expect(req.request.body).toMatchObject({
+      avaliacao: { admitePontuacao: false, admiteEliminacao: true },
+    });
     req.flush(provaObjetiva.id, { status: 201, statusText: 'Created' });
 
     expect(isApiOk((await promise) as ApiResult<string>)).toBe(true);
@@ -107,10 +113,12 @@ describe('TiposEtapaApi', () => {
         {
           id: provaObjetiva.id,
           nome: 'Prova Objetiva',
-          admitePontuacao: true,
-          admiteEliminacao: false,
-          exigeCorrecaoIndependente: true,
-          conceitosAdmitidos: [],
+          avaliacao: {
+            admitePontuacao: true,
+            admiteEliminacao: false,
+            exigeCorrecaoIndependente: true,
+            conceitosAdmitidos: [],
+          },
           descricao: null,
         },
         withIdempotencyKey('k'),
@@ -123,8 +131,7 @@ describe('TiposEtapaApi', () => {
     expect(req.request.method).toBe('PUT');
     expect(req.request.body).not.toHaveProperty('codigo');
     expect(req.request.body).toMatchObject({
-      admiteEliminacao: false,
-      exigeCorrecaoIndependente: true,
+      avaliacao: { admiteEliminacao: false, exigeCorrecaoIndependente: true },
     });
     req.flush(null, { status: 204, statusText: 'No Content' });
 

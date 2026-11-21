@@ -1,12 +1,36 @@
-import type { EtapaProcessoDto } from '@uniplus/shared-data/selecao';
+import {
+  PapelDaBancaCodigo,
+  TipoDeBancaCodigo,
+  type ConfiguracaoBonusRegionalDto,
+  type CriterioDesempateDto,
+  type EtapaProcessoDto,
+} from '@uniplus/shared-data/selecao';
+import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { PROCESSO_PUBLICADO_DA_MEDICINA } from './consulta-da-medicina';
 import {
   etapaDoServidor,
   faseDoServidor,
   PARAMETROS_DO_RECURSO_DO_SERVIDOR,
 } from './cronograma-do-servidor';
+import {
+  PARAMETROS_DO_DESEMPATE_SEM_VALOR as PARAMETROS_SEM_VALOR,
+  referencia,
+} from './regras-congeladas-do-servidor';
+import { folhaDaExigencia } from './no-da-exigencia-do-servidor';
 
 type RecursoDaEtapa = EtapaProcessoDto['publicacoes']['recursos'][number];
+
+const TIPO_DA_BANCA = {
+  codigo: {
+    codigo: TipoDeBancaCodigo.BANCA_ANALISE_DOCUMENTAL,
+    rotulo: 'Banca de análise documental',
+  },
+  posicaoNoTipo: 1,
+  papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+  exigeDuasOuMaisBancas: false,
+  encerraRecursoNaPrimeiraInstancia: false,
+  tiposDeDecisaoJulgados: [],
+};
 
 /**
  * O processo da Medicina 2027 publicado, com os 12 passos preenchidos: é o que a varredura da
@@ -43,52 +67,6 @@ const PARAMETROS_DO_RECURSO: RecursoDaEtapa['parametros'] = {
   prazoSegundaInstanciaUnidade: { codigo: 'diasUteis', rotulo: 'Dias úteis' },
 } as RecursoDaEtapa['parametros'];
 
-/** A referência congelada de uma regra do catálogo, como o detalhe do processo a devolve. */
-function referencia(codigo: string) {
-  return { codigo, versao: '1.0', hash: `hash-${codigo}` };
-}
-
-function normaDoDocumento(id: string) {
-  return {
-    id: `${id}-norma`,
-    referencia: 'Edital nº 1/2027, Anexo III',
-    abrangencia: 'INTERNA_EDITAL',
-    status: 'RESOLVIDO',
-    observacao: null,
-  };
-}
-
-function documentoDaFolha(id: string, documento: Record<string, unknown>) {
-  return {
-    id: `${id}-doc`,
-    exigidoNaFaseId: FASE_ID,
-    tipoDocumentoCategoria: 'IDENTIFICACAO',
-    condicoes: [],
-    basesLegais: [normaDoDocumento(id)],
-    idadeMaximaEmissao: null,
-    formatosPermitidos: ['pdf'],
-    tamanhoMaximoBytes: 10485760,
-    exigidoNaEtapaId: null,
-    ...documento,
-  };
-}
-
-function folha(id: string, documento: Record<string, unknown>) {
-  return {
-    id,
-    tipo: 'FOLHA',
-    quantidadeMinima: null,
-    consequencia: null,
-    basesLegais: [],
-    filhos: [],
-    chaveDistincao: null,
-    dataReferencia: null,
-    ocorrenciasEsperadas: null,
-    repetePorEntidade: null,
-    documento: documentoDaFolha(id, documento),
-  };
-}
-
 export const PROCESSO_PUBLICADO_COMPLETO = {
   ...PROCESSO_PUBLICADO_DA_MEDICINA,
   aplicaBonusRegional: true,
@@ -98,25 +76,23 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     regra: referencia('BONUS-MULTIPLICATIVO'),
     fator: 1.2,
     teto: null,
-    baseLegalBonusRegionalId: BASE_LEGAL_BONUS_REGIONAL_ID,
-    tipoInstrumento: 'PORTARIA',
-    identificacao: 'Portaria Unifesspa nº 2514/2023',
-    descricao: 'Institui inclusão regional.',
-    municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
-  },
+    fatoElegibilidadeCodigo: null,
+    baseLegal: {
+      id: BASE_LEGAL_BONUS_REGIONAL_ID,
+      tipoInstrumento: 'PORTARIA',
+      identificacao: 'Portaria Unifesspa nº 2514/2023',
+      descricao: 'Institui inclusão regional.',
+      municipios: [{ codigoIbge: '1504208', nome: 'Marabá', uf: 'PA' }],
+    },
+  } satisfies JsonDaApi<ConfiguracaoBonusRegionalDto>,
   criteriosDesempate: [
     {
       id: '01a0d640-0000-7000-8000-0000000000e2',
       ordem: 1,
       regra: referencia('DESEMPATE-MAIOR-IDADE'),
-      etapaRef: null,
-      idadeMinima: null,
-      fato: null,
-      operador: null,
-      valor: null,
-      areas: null,
+      parametros: PARAMETROS_SEM_VALOR,
     },
-  ],
+  ] satisfies readonly JsonDaApi<CriterioDesempateDto>[],
   classificacao: {
     id: '01a0d640-0000-7000-8000-0000000000e3',
     regraCalculo: referencia('FORMULA-MEDIA-PONDERADA'),
@@ -172,7 +148,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
         {
           id: '01a0d640-0000-7000-8000-0000000000f2',
           tipoBancaOrigemId: TIPO_BANCA_ID,
-          codigo: 'BANCA_GERAL',
+          ...TIPO_DA_BANCA,
           nome: 'Banca geral',
           regraDeDeliberacao: null,
         },
@@ -204,10 +180,10 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
         {
           id: '01a0d640-0000-7000-8000-0000000000c3',
           tipoBancaOrigemId: TIPO_BANCA_ID,
-          codigo: 'BANCA_GERAL',
+          ...TIPO_DA_BANCA,
           nome: 'Banca geral',
           regraDeDeliberacao: null,
-          recorteDeCompetencia: [
+          candidatosAtendidos: [
             {
               id: '01a0d640-0000-7000-8000-0000000000c4',
               categoriaDocumentoOrigemId: CATEGORIA_ID,
@@ -219,21 +195,27 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
     }),
   ],
   raizesExigencia: [
-    folha('01a0d640-0000-7000-8000-000000000a11', {
-      tipoDocumentoOrigemId: '01a0d640-0000-7000-8000-000000000a21',
-      tipoDocumentoCodigo: 'DOC_IDENTIDADE',
-      tipoDocumentoNome: 'Documento de identidade',
-      aplicabilidade: 'GERAL',
+    folhaDaExigencia({
+      id: '01a0d640-0000-7000-8000-000000000a11',
+      faseId: FASE_ID,
+      tipoDocumento: {
+        id: '01a0d640-0000-7000-8000-000000000a21',
+        codigo: 'DOC_IDENTIDADE',
+        nome: 'Documento de identidade',
+      },
       obrigatorio: true,
-      consequenciaIndeferimento: 'ELIMINA',
+      consequencia: 'ELIMINA',
     }),
-    folha('01a0d640-0000-7000-8000-000000000a12', {
-      tipoDocumentoOrigemId: '01a0d640-0000-7000-8000-000000000a22',
-      tipoDocumentoCodigo: 'AUTODECLARACAO_PPI',
-      tipoDocumentoNome: 'Autodeclaração étnico-racial',
-      aplicabilidade: 'CONDICIONAL',
+    folhaDaExigencia({
+      id: '01a0d640-0000-7000-8000-000000000a12',
+      faseId: FASE_ID,
+      tipoDocumento: {
+        id: '01a0d640-0000-7000-8000-000000000a22',
+        codigo: 'AUTODECLARACAO_PPI',
+        nome: 'Autodeclaração étnico-racial',
+      },
       obrigatorio: false,
-      consequenciaIndeferimento: 'RECLASSIFICA_AC',
+      consequencia: 'RECLASSIFICA_AC',
       condicoes: [
         {
           id: '01a0d640-0000-7000-8000-000000000a13',

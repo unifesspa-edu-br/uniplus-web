@@ -26,12 +26,16 @@ export {
   FINALIDADE_INSCRICAO,
   LIMITES_DO_FORMULARIO,
   OBRIGATORIEDADES,
+  OBRIGATORIEDADE_INICIAL,
   OBRIGATORIEDADE_NUNCA,
   OBRIGATORIEDADE_QUANDO,
   OBRIGATORIEDADE_SEMPRE,
+  REGRAS_INICIAIS,
   SECAO_DADOS_BASICOS,
   TIPO_BLOCO,
   TIPO_SECAO,
+  apresentacaoDaEtapa,
+  apresentacaoDoCampo,
   blocosAdmitidos,
   conteudoInicial,
 } from '../../src/lib/components/editor-de-formulario/modelo/constantes';
@@ -77,6 +81,11 @@ export {
   renumerar,
 } from '../../src/lib/components/editor-de-formulario/modelo/ordem-das-entradas';
 export {
+  CODIGOS_EM_TEXTO,
+  conteudoComCodigos,
+  type TrocaDeCodigos,
+} from '../../src/lib/components/editor-de-formulario/modelo/codigos-do-conteudo';
+export {
   acrescentarPressuposto,
   removerPressuposto,
 } from '../../src/lib/components/editor-de-formulario/modelo/pressupostos';
@@ -95,8 +104,8 @@ export {
   recusasDoGrupoDeOpcoes,
 } from '../../src/lib/components/editor-de-formulario/modelo/recusas';
 export {
-  ANCORA_DATA_FIXA,
-  ANCORA_ENVIO,
+  LIMITE_EM_DATA_FIXA,
+  LIMITE_CONTADO_DO_ENVIO,
   RESTRICAO_FAIXA_DE_DATA,
   RESTRICAO_FAIXA_NUMERICA,
   RESTRICAO_MUNICIPIOS_DA_UF,
@@ -129,6 +138,8 @@ export {
   termosParaAcrescentar,
 } from '../../src/lib/components/editor-de-formulario/modelo/termos';
 export {
+  type ApresentacaoDaEtapa,
+  type ApresentacaoDoCampo,
   type ChaveDaEntrada,
   type ConteudoDoFormulario,
   ESCOPO_CANDIDATO,
@@ -136,20 +147,25 @@ export {
   type EntradaDaSecao,
   type EscopoDoCampo,
   type EtapaDoFormulario,
+  type ExibicaoEObrigatoriedade,
   type FatoDoFormulario,
   type GrupoDoFormulario,
   type Impedimento,
   type ItemDoFormulario,
   type LimiteDeDataNoWire,
   type NumeroDigitado,
+  type Obrigatoriedade,
+  type OcorrenciasDoGrupo,
   type OpcaoDoFormulario,
   type OpcoesCondicionadas,
   type PredicadoNoWire,
+  type RegrasDoCampo,
   type RestricaoDeValor,
   type ResultadoDaEdicao,
   type ResultadoDoGrupo,
   type TermoDisponivel,
   type TermoDoFormulario,
+  type VersaoDoTermo,
 } from '../../src/lib/components/editor-de-formulario/modelo/tipos';
 export * from '../../src/lib/components/editor-de-formulario/termos-disponiveis';
 

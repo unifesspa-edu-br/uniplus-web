@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
+import { ID_DO_TIPO_DE_BANCA, TIPO_DE_BANCA_ENTREVISTA } from '../support/api-de-tipos-banca';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 /**
@@ -17,16 +18,7 @@ const CORS_HEADERS = {
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
 
-const BANCA_ID = '01960000-0000-7000-0000-0000000000b2';
-
-const bancaSeed = {
-  id: BANCA_ID,
-  codigo: 'BANCA_ENTREVISTA',
-  nome: 'Banca de Entrevista',
-  faseTipica: 'Avaliação',
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const bancaSeed = TIPO_DE_BANCA_ENTREVISTA;
 
 async function jsonRoute(route: Route, body: unknown, status = 200): Promise<void> {
   if (route.request().method() === 'OPTIONS') {
@@ -143,7 +135,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo.codigo}`, exact: true })
       .click();
     await expect(page.getByText('Editar tipo de banca')).toBeVisible();
 
@@ -173,7 +165,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo}`, exact: true })
+      .getByRole('button', { name: `Editar tipo de banca ${bancaSeed.codigo.codigo}`, exact: true })
       .click();
     await page
       .locator('[formControlName="faseTipica"]')
@@ -193,13 +185,16 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     await abrirPagina(page);
 
     await page
-      .getByRole('button', { name: `Remover tipo de banca ${bancaSeed.codigo}`, exact: true })
+      .getByRole('button', {
+        name: `Remover tipo de banca ${bancaSeed.codigo.codigo}`,
+        exact: true,
+      })
       .click();
     const dialog = page.locator('dialog.uni-dialog');
     await dialog.getByRole('button', { name: 'Remover', exact: true }).click();
 
     await expect.poll(() => capturado.deletedIds.length).toBe(1);
-    expect(capturado.deletedIds[0]).toBe(BANCA_ID);
+    expect(capturado.deletedIds[0]).toBe(ID_DO_TIPO_DE_BANCA);
     expect(capturado.posts).toHaveLength(0);
   });
   test('gravação pendente mantém o foco e bloqueia fechamento e novo envio', async ({ page }) => {
@@ -219,7 +214,7 @@ test.describe('Tipo de banca — sem criação pela interface (#713)', () => {
     });
     await abrirPagina(page);
     const acionador = page.getByRole('button', {
-      name: `Editar tipo de banca ${bancaSeed.codigo}`,
+      name: `Editar tipo de banca ${bancaSeed.codigo.codigo}`,
     });
     await acionador.focus();
     await acionador.click();

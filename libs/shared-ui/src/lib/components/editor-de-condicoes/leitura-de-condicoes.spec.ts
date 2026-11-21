@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { COM_LISTA, SO_IGUALDADE } from './operadores-de-exemplo.testing';
 import { type CondicaoEmClausula } from './condicoes/condicoes-em-clausulas';
 import { fatoEscolhivel, type FatoEscolhivel } from './condicoes/fatos-escolhiveis';
 import {
@@ -22,12 +23,14 @@ const COR_RACA = fatoEscolhivel({
     { codigo: 'NAO_DECLARADA', descricao: null },
   ],
   binding: 'CAMPO_INSCRICAO:corRaca',
+  operadoresAdmitidos: COM_LISTA,
 }) as FatoEscolhivel;
 const ESCOLA_PUBLICA = fatoEscolhivel({
   codigo: 'ESCOLA_PUBLICA',
   nome: 'Cursou o ensino médio em escola pública',
   dominio: 'BOOLEANO',
   binding: 'CAMPO_INSCRICAO:escolaPublica',
+  operadoresAdmitidos: SO_IGUALDADE,
 }) as FatoEscolhivel;
 const FATOS = new Map([COR_RACA, ESCOLA_PUBLICA].map((fato) => [fato.codigo, fato]));
 

@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Route, type TestInfo } from '@playwright/test';
+import { TIPO_DE_BANCA_ENTREVISTA } from '../support/api-de-tipos-banca';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
 type VisualTheme = 'light' | 'dark' | 'contrast';
@@ -8,14 +9,7 @@ const CORS_HEADERS = {
   'access-control-allow-methods': 'GET, PUT, OPTIONS',
   'access-control-allow-headers': 'authorization, content-type, accept, idempotency-key',
 };
-const BANCA = {
-  id: '01960000-0000-7000-0000-0000000000b2',
-  codigo: 'BANCA_ENTREVISTA',
-  nome: 'Banca de Entrevista',
-  faseTipica: 'Avaliação',
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const BANCA = TIPO_DE_BANCA_ENTREVISTA;
 const TOLERANCIA = 1;
 
 async function caixa(locator: Locator) {
@@ -82,7 +76,7 @@ test.describe('Tipos de banca — geometria da página e do formulário', () => 
     page,
   }) => {
     await page.goto('/tipos-banca');
-    await page.getByRole('button', { name: `Editar tipo de banca ${BANCA.codigo}` }).click();
+    await page.getByRole('button', { name: `Editar tipo de banca ${BANCA.codigo.codigo}` }).click();
     const drawer = page.getByRole('dialog', { name: 'Formulário de tipo de banca' });
     await expect(drawer).toBeVisible();
     await drawer.evaluate((el) =>

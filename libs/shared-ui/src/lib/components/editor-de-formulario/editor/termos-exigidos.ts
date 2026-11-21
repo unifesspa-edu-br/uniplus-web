@@ -42,7 +42,7 @@ import { TermoDoFormularioComponent } from '../termo-do-formulario';
           <li>
             <ui-termo-do-formulario
               [termo]="termo"
-              [disponivel]="termoDisponivel(termo.termoId)"
+              [disponivel]="termoDisponivel(termo.termo.termoId)"
               [posicao]="posicao + 1"
               [fatos]="contexto().fatosDosTermos"
               [idBase]="idDoTermo(idBase(), termo.codigo)"
@@ -149,7 +149,7 @@ export class TermosExigidosComponent {
     this.conteudoChange.emit(conteudo);
     const termos = termosEmOrdem(conteudo);
     const posicao = termos.findIndex((termo) => termo.codigo === codigo) + 1;
-    const nome = this.nomeDoTermo(termos[posicao - 1]?.termoId, codigo);
+    const nome = this.nomeDoTermo(termos[posicao - 1]?.termo.termoId, codigo);
     this.anuncio.emit(`Termo “${nome}” movido para a posição ${posicao} de ${termos.length}.`);
     const prefixo = idDoTermo(this.idBase(), codigo);
     const [mesmo, oposto] = direcao < 0 ? ['subir', 'descer'] : ['descer', 'subir'];
@@ -159,7 +159,9 @@ export class TermosExigidosComponent {
   protected remover(codigo: string): void {
     const termo = (this.contexto().conteudo.termos ?? []).find((t) => t.codigo === codigo);
     this.conteudoChange.emit(removerTermo(this.contexto().conteudo, codigo));
-    this.anuncio.emit(`Termo “${this.nomeDoTermo(termo?.termoId, codigo)}” deixou de ser exigido.`);
+    this.anuncio.emit(
+      `Termo “${this.nomeDoTermo(termo?.termo.termoId, codigo)}” deixou de ser exigido.`,
+    );
     focarDepois(this.injector, `${this.idBase()}-termo`, `${this.idBase()}-titulo`);
   }
 }

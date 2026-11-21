@@ -11,6 +11,7 @@ import {
   fatosCitaveisPelosTermos,
   fatosOferecidos,
   fatosQueExigemResposta,
+  predicadosDasRegras,
   predicadosSobreRespostasAnteriores,
 } from './citacoes';
 import { FINALIDADE_INSCRICAO, LIMITES_DO_FORMULARIO } from './constantes';
@@ -46,10 +47,15 @@ export interface EntradasDoEditor {
 }
 
 /** O que o campo precisa para as regras sobre a própria resposta. */
-export interface RegrasProprias {
+export interface RegrasProprias extends OpcoesProprias, ImpedimentoProprio {}
+
+interface OpcoesProprias {
   readonly valoresConhecidos: readonly string[];
   readonly fontesDeOpcoes: readonly { readonly codigo: string; readonly nome: string }[];
   readonly ufs: readonly { readonly codigo: string; readonly nome: string }[];
+}
+
+interface ImpedimentoProprio {
   readonly impedimentoPermitido: boolean;
   readonly fatosDoImpedimento: readonly FatoEscolhivel[];
 }
@@ -74,8 +80,7 @@ export interface ContextoDoEditor extends EntradasDoEditor {
 
 export function contextoDoEditor(entradas: EntradasDoEditor): ContextoDoEditor {
   const conteudoParaCitacoes = conteudoParaCitar(entradas);
-  const escolhiveis: Escolhiveis = (citaveis, predicados) =>
-    fatosOferecidos(entradas.catalogo, citaveis, predicados, entradas.comMunicipios);
+  const escolhiveis = escolhiveisDo(entradas);
   const fatosDoItem = fatosQueOItemPodeCitar(conteudoParaCitacoes, escolhiveis);
   return {
     ...entradas,
@@ -85,13 +90,7 @@ export function contextoDoEditor(entradas: EntradasDoEditor): ContextoDoEditor {
     fatosDoItem,
     regrasProprias: regrasPropriasDosCampos({ entradas, conteudoParaCitacoes, fatosDoItem }),
     fatosDaSecao: fatosQueASecaoPodeCitar(conteudoParaCitacoes, escolhiveis),
-    fatosDosTermos: escolhiveis(
-      fatosCitaveisPelosTermos(conteudoParaCitacoes),
-      (conteudoParaCitacoes.termos ?? []).flatMap((termo) => [
-        termo.exibicao,
-        termo.predicadoObrigatoriedade,
-      ]),
-    ),
+    fatosDosTermos: fatosQueOsTermosPodemCitar(conteudoParaCitacoes, escolhiveis),
   };
 }
 
@@ -115,6 +114,11 @@ type Escolhiveis = (
   citaveis: ReadonlySet<string>,
   predicados: readonly PredicadoNoWire[],
 ) => readonly FatoEscolhivel[];
+
+function escolhiveisDo(entradas: EntradasDoEditor): Escolhiveis {
+  return (citaveis, predicados) =>
+    fatosOferecidos(entradas.catalogo, citaveis, predicados, entradas.comMunicipios);
+}
 
 function fatosNaoColetaveisAqui(entradas: EntradasDoEditor): readonly string[] {
   return [
@@ -165,6 +169,16 @@ function fatosQueASecaoPodeCitar(
   );
 }
 
+function fatosQueOsTermosPodemCitar(
+  conteudo: ConteudoDoFormulario,
+  escolhiveis: Escolhiveis,
+): readonly FatoEscolhivel[] {
+  return escolhiveis(
+    fatosCitaveisPelosTermos(conteudo),
+    (conteudo.termos ?? []).flatMap((termo) => predicadosDasRegras(termo.regras)),
+  );
+}
+
 /**
  * O que cada item precisa para as regras sobre a própria resposta: os valores que as opções
  * permitidas marcam, os campos anteriores de onde as opções podem vir, as UFs de onde o município
@@ -198,27 +212,40 @@ function regrasPropriasDo(
   item: ItemDoFormulario,
   proprio: FatoEscolhivel | undefined,
 ): RegrasProprias {
-  const { entradas, conteudoParaCitacoes: conteudo } = base;
+  return { ...opcoesPropriasDo(base, item, proprio), ...impedimentoProprioDo(base, item, proprio) };
+}
+
+function opcoesPropriasDo(
+  base: BaseDasRegras,
+  item: ItemDoFormulario,
+  proprio: FatoEscolhivel | undefined,
+): OpcoesProprias {
+  const { catalogo } = base.entradas;
+  const { fatoCodigo } = item;
+  const citaveis = fatosCitaveisPeloItem(base.conteudoParaCitacoes, fatoCodigo);
+  return {
+    valoresConhecidos: proprio?.tipoDominio === 'CATEGORICO_ESTATICO' ? proprio.valores : [],
+    fontesDeOpcoes: fontesDasOpcoes(catalogo, citaveis, fatoCodigo).map(codigoENome),
+    ufs: ufsAnteriores(base.conteudoParaCitacoes, catalogo, fatoCodigo).map(codigoENome),
+  };
+}
+
+function codigoENome(fato: { codigo: string; nome: string }): { codigo: string; nome: string } {
+  return { codigo: fato.codigo, nome: fato.nome };
+}
+
+function impedimentoProprioDo(
+  base: BaseDasRegras,
+  item: ItemDoFormulario,
+  proprio: FatoEscolhivel | undefined,
+): ImpedimentoProprio {
+  const { finalidade } = base.entradas;
   const anteriores = (base.fatosDoItem.get(item.fatoCodigo) ?? []).filter(
     (fato) => fato.codigo !== item.fatoCodigo,
   );
-  const codigoENome = (fato: { codigo: string; nome: string }) => ({
-    codigo: fato.codigo,
-    nome: fato.nome,
-  });
+  const renderizacao = item.apresentacao.tipoRenderizacao;
   return {
-    valoresConhecidos: proprio?.tipoDominio === 'CATEGORICO_ESTATICO' ? proprio.valores : [],
-    fontesDeOpcoes: fontesDasOpcoes(
-      entradas.catalogo,
-      fatosCitaveisPeloItem(conteudo, item.fatoCodigo),
-      item.fatoCodigo,
-    ).map(codigoENome),
-    ufs: ufsAnteriores(conteudo, entradas.catalogo, item.fatoCodigo).map(codigoENome),
-    impedimentoPermitido: impedimentoCabe(
-      entradas.finalidade,
-      item.tipoRenderizacao,
-      proprio !== undefined,
-    ),
+    impedimentoPermitido: impedimentoCabe(finalidade, renderizacao, proprio !== undefined),
     fatosDoImpedimento: proprio === undefined ? anteriores : [proprio, ...anteriores],
   };
 }

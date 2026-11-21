@@ -1,4 +1,8 @@
-import type { CamposEditadosDoFormulario } from './modelo/campos-editados';
+import {
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+  type CamposEditadosDoFormulario,
+} from './modelo/campos-editados';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -27,7 +31,11 @@ import {
 
 /** O tamanho da mensagem ao candidato (`FormaDoItem.MensagemDoImpedimentoMaxLength`). */
 const MENSAGEM_MAX = 500;
-const CAMPOS_DO_IMPEDIMENTO = ['impedimento', 'obrigatoriedade', 'predicadoObrigatoriedade'];
+const CAMPOS_DO_IMPEDIMENTO: CamposEditadosDoFormulario = [
+  ['regras', 'impedimento'],
+  CAMINHO_DO_TIPO_DA_OBRIGATORIEDADE,
+  CAMINHO_DO_PREDICADO_DA_OBRIGATORIEDADE,
+];
 
 /**
  * O impedimento da inscrição por um campo: quando a resposta dele — sozinha ou junto de respostas
@@ -87,7 +95,7 @@ const CAMPOS_DO_IMPEDIMENTO = ['impedimento', 'obrigatoriedade', 'predicadoObrig
             class="textarea"
             rows="2"
             [id]="idBase() + '-impedimento-mensagem'"
-            [value]="item().impedimento?.mensagem ?? ''"
+            [value]="item().regras.impedimento?.mensagem ?? ''"
             [maxLength]="mensagemMax"
             [disabled]="disabled()"
             [attr.aria-invalid]="mensagemVazia() ? 'true' : null"
@@ -124,18 +132,21 @@ export class ImpedimentoDoCampoComponent {
   readonly itemChange = output<ItemDoFormulario>();
 
   protected readonly mensagemMax = MENSAGEM_MAX;
-  protected readonly ligado = computed(() => this.item().impedimento != null);
+  protected readonly ligado = computed(() => this.item().regras.impedimento != null);
   protected readonly mensagemVazia = computed(
-    () => this.ligado() && (this.item().impedimento?.mensagem ?? '').trim() === '',
+    () => this.ligado() && (this.item().regras.impedimento?.mensagem ?? '').trim() === '',
   );
   protected readonly semOProprioCampo = computed(
     () =>
       this.ligado() &&
-      alternativaSemOProprioCampo(this.item().impedimento?.quando ?? null, this.item().fatoCodigo),
+      alternativaSemOProprioCampo(
+        this.item().regras.impedimento?.quando ?? null,
+        this.item().fatoCodigo,
+      ),
   );
 
   protected readonly condicoes = linkedSignal<PredicadoNoWire, readonly CondicaoEmClausula[]>({
-    source: () => this.item().impedimento?.quando ?? null,
+    source: () => this.item().regras.impedimento?.quando ?? null,
     computation: recopiarSeMudouPorFora,
   });
 
@@ -146,7 +157,8 @@ export class ImpedimentoDoCampoComponent {
   /** Ligar põe a condição sobre o próprio campo e torna o campo obrigatório; desligar tira o impedimento inteiro. */
   protected alternar(): void {
     if (this.ligado()) {
-      this.publicar({ ...this.item(), impedimento: null }, ['impedimento']);
+      const regras = { ...this.item().regras, impedimento: null };
+      this.publicar({ ...this.item(), regras }, [['regras', 'impedimento']]);
       return;
     }
     const proprio = this.fatos().find((fato) => fato.codigo === this.item().fatoCodigo);
@@ -159,26 +171,23 @@ export class ImpedimentoDoCampoComponent {
 
   protected trocarCondicoes(condicoes: readonly CondicaoEmClausula[]): void {
     this.condicoes.set(condicoes);
-    this.camposEditados.emit([['impedimento', 'quando']]);
-    this.itemChange.emit({
-      ...this.item(),
-      impedimento: {
-        quando: paraPredicado(condicoes),
-        mensagem: this.item().impedimento?.mensagem ?? '',
-      },
-    });
+    const impedimento = {
+      quando: paraPredicado(condicoes),
+      mensagem: this.item().regras.impedimento?.mensagem ?? '',
+    };
+    const regras = { ...this.item().regras, impedimento };
+    this.publicar({ ...this.item(), regras }, [['regras', 'impedimento', 'quando']]);
   }
 
   protected trocarMensagem(evento: Event): void {
     const mensagem = (evento.target as HTMLTextAreaElement).value;
-    this.camposEditados.emit([['impedimento', 'mensagem']]);
-    this.itemChange.emit({
-      ...this.item(),
-      impedimento: { quando: this.item().impedimento?.quando ?? null, mensagem },
-    });
+    const impedimento = { quando: this.item().regras.impedimento?.quando ?? null, mensagem };
+    const regras = { ...this.item().regras, impedimento };
+    this.publicar({ ...this.item(), regras }, [['regras', 'impedimento', 'mensagem']]);
   }
-  private publicar(item: ItemDoFormulario, campos: readonly string[]): void {
-    this.camposEditados.emit(campos.map((campo) => [campo]));
+
+  private publicar(item: ItemDoFormulario, campos: CamposEditadosDoFormulario): void {
+    this.camposEditados.emit(campos);
     this.itemChange.emit(item);
   }
 }

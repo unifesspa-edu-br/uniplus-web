@@ -8,25 +8,20 @@ import {
   CONFIGURACAO_BASE_PATH,
   FaseCanonicaDto,
   TipoBancaDto,
+  TipoDeBancaCodigo,
 } from '@uniplus/shared-data/configuracao';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TiposBancaPage } from './tipos-banca.page';
 import { TiposBancaStore } from './tipos-banca.store';
 import { EdicaoDosTiposBanca } from './edicao-dos-tipos-banca';
+import { tipoDeBanca } from './tipos-banca.testing';
 
 const BASE = 'http://localhost:5000';
 const CRIAR_URL = `${BASE}/api/configuracao/admin/tipos-banca`;
 const FASES_URL = `${BASE}/api/configuracao/fases-canonicas`;
 const LIMITE_MAXIMO_API = 100;
 
-const bancaSeed: TipoBancaDto = {
-  id: '01960000-0000-7000-0000-0000000000b2',
-  codigo: 'BANCA_ENTREVISTA',
-  nome: 'Banca de Entrevista',
-  faseTipica: 'Avaliação',
-  descricao: null,
-  criadoEm: '2026-06-10T12:00:00Z',
-};
+const bancaSeed = tipoDeBanca(TipoDeBancaCodigo.BANCA_ENTREVISTA);
 
 function faseCanonica(codigo: string, nome: string): FaseCanonicaDto {
   return {
@@ -141,12 +136,10 @@ describe('TiposBancaPage', () => {
   });
 
   it('CA-13: a busca filtra os registros carregados por código ou nome', async () => {
-    const outra: TipoBancaDto = {
-      ...bancaSeed,
+    const outra = tipoDeBanca(TipoDeBancaCodigo.BANCA_HETEROIDENTIFICACAO, {
       id: 'b3',
-      codigo: 'BANCA_HETEROIDENTIFICACAO',
       nome: 'Banca de Heteroidentificação',
-    };
+    });
     await flushLista([bancaSeed, outra]);
 
     store.termoBusca.set('hetero');

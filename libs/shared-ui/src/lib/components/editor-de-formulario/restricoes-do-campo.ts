@@ -255,8 +255,10 @@ export class RestricoesDoCampoComponent {
   protected readonly problema = problemaDaRestricao;
 
   protected readonly escolhida = signal('');
-  protected readonly restricoes = computed(() => this.item().restricoes ?? []);
-  protected readonly nome = computed(() => this.item().rotulo.trim() || this.item().fatoCodigo);
+  protected readonly restricoes = computed(() => this.item().regras.restricoes ?? []);
+  protected readonly nome = computed(
+    () => this.item().apresentacao.rotulo.trim() || this.item().fatoCodigo,
+  );
   protected readonly paraAcrescentar = computed(() =>
     restricoesParaAcrescentar(
       this.item(),
@@ -332,7 +334,7 @@ export class RestricoesDoCampoComponent {
     grupo: number,
     campos: CamposEditadosDoFormulario,
   ): void {
-    const prefixo = ['restricoes', String(indice), 'entradas', String(grupo)];
+    const prefixo = ['regras', 'restricoes', String(indice), 'entradas', String(grupo)];
     this.camposEditados.emit(camposNaParte(prefixo, campos));
   }
 

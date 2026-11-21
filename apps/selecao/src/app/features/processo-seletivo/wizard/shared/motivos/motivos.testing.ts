@@ -1,4 +1,4 @@
-import type { MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
+import { TipoMotivoDeDecisaoCodigo, type MotivoDeDecisaoDto } from '@uniplus/shared-data/selecao';
 
 import type { FaseOuEtapaDoMotivo, MotivoNoDocumento } from './motivo-no-documento';
 
@@ -27,16 +27,21 @@ export function umMotivoNoDocumento(
   };
 }
 
+type CamposDoMotivoDoCadastro = Partial<Omit<MotivoDeDecisaoDto, 'tipo'>> & {
+  readonly tipo?: TipoMotivoDeDecisaoCodigo;
+};
+
 /** Um motivo ativo do cadastro; o cenário sobrescreve só o que importa a ele. */
-export function umMotivoDoCadastro(campos: Partial<MotivoDeDecisaoDto> = {}): MotivoDeDecisaoDto {
+export function umMotivoDoCadastro(campos: CamposDoMotivoDoCadastro = {}): MotivoDeDecisaoDto {
+  const { tipo = TipoMotivoDeDecisaoCodigo.HOMOLOGACAO_DAS_INSCRICOES, ...demais } = campos;
   return {
     id: '01960000-0000-7000-0000-0000000000a1',
-    tipo: 'HOMOLOGACAO_DAS_INSCRICOES',
+    tipo: { codigo: tipo, rotulo: tipo },
     codigo: 'SEM_RESULTADO_NO_ENEM',
     descricao: 'Sem resultado no ENEM informado.',
     subclassificacao: null,
     sentido: 'DESFAVORAVEL',
     ativo: true,
-    ...campos,
+    ...demais,
   };
 }

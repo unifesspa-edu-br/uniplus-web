@@ -106,14 +106,18 @@ describe('corpoDaAvaliacao: as ocorrências dos grupos', () => {
 });
 
 describe('corpoDaGravacao: o corpo do salvar e do envio', () => {
-  const termos = FORMULARIO_DE_INSCRICAO_MOCK.termos;
+  const termos = FORMULARIO_DE_INSCRICAO_MOCK.formulario.termos;
   const corpo = corpoDaAvaliacao(inscricao(), {}, SEM_OFERTAS);
 
   it('leva o aceite com a versão e o hash que o formulário publica', () => {
     const request = corpoDaGravacao(corpo, ['VERACIDADE'], termos);
 
     expect(request.aceites).toEqual([
-      { codigo: 'VERACIDADE', versaoId: termos[0].versaoId, hashVersao: termos[0].hashVersao },
+      {
+        codigo: 'VERACIDADE',
+        versaoId: termos[0].versaoId,
+        hashVersao: termos[0].conteudo.hashVersao,
+      },
     ]);
   });
 

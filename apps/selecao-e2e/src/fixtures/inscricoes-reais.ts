@@ -188,6 +188,12 @@ async function ofertaDeMedicina(processoId: string): Promise<string> {
   return oferta.ofertaCursoOrigemId;
 }
 
+interface TermoDoFormulario {
+  readonly codigo: string;
+  readonly versaoId: string;
+  readonly conteudo: { readonly hashVersao: string };
+}
+
 /**
  * Inscreve a persona no processo. Com `comLaudo`, ela declara deficiência e envia o laudo
  * médico que o processo exige; devolve a inscrição já submetida. Repetir a chamada para quem
@@ -217,7 +223,7 @@ export async function inscreverPersona(
     return { username, inscricaoId: rascunho.id, cpf: p.cpf, rg: p.rg, nome: p.nome };
   }
 
-  const formulario = await json<{ termos: { codigo: string; versaoId: string; hashVersao: string }[] }>(
+  const { formulario } = await json<{ formulario: { termos: TermoDoFormulario[] } }>(
     await fetch(`${API_URL}/api/selecao/processos-seletivos/${processoId}/formularios/INSCRICAO`),
     200,
     'formulário de inscrição',
@@ -227,7 +233,11 @@ export async function inscreverPersona(
     ofertaCursoSegundaOpcaoId: null,
     respostas: await respostasDa(p, token, comLaudo),
     grupos: {},
-    aceites: formulario.termos.map(({ codigo, versaoId, hashVersao }) => ({ codigo, versaoId, hashVersao })),
+    aceites: formulario.termos.map(({ codigo, versaoId, conteudo }) => ({
+      codigo,
+      versaoId,
+      hashVersao: conteudo.hashVersao,
+    })),
   };
 
   resposta = await fetch(base, {

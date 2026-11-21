@@ -1,5 +1,6 @@
 import {
   acrescentarItem,
+  apresentacaoDaEtapa,
   comEtapa,
   ehColetavel,
   entradasDaSecao,
@@ -9,6 +10,7 @@ import {
   TIPO_BLOCO,
   TIPO_SECAO,
   type ConteudoDoFormulario,
+  type EtapaDoFormulario,
   type FatoDoFormulario,
   type ItemDoFormulario,
 } from '@uniplus/shared-ui/components';
@@ -96,19 +98,26 @@ function comoSemOsItens(
  * modalidade, faixa etária — não vira campo: ele resolve por derivação ou por atributo do
  * candidato, não por pergunta no formulário.
  */
-function comCamposNovos(
+function fatosParaAcrescentar(
   conteudo: ConteudoDoFormulario,
   pressupostos: PressupostosDoProcesso,
-): ConteudoDoFormulario {
+): readonly FatoDoFormulario[] {
   const presentes = new Set([
     ...fatosColetadosPelaInscricao(conteudo),
     ...pressupostos.fatosDeOutrasFinalidades,
   ]);
   const porCodigo = new Map(pressupostos.catalogo.map((fato) => [fato.codigo, fato]));
-  const novos = [...pressupostos.citados]
+  return [...pressupostos.citados]
     .filter((codigo) => !presentes.has(codigo))
     .map((codigo) => porCodigo.get(codigo))
     .filter((fato): fato is FatoDoFormulario => fato !== undefined && ehColetavel(fato));
+}
+
+function comCamposNovos(
+  conteudo: ConteudoDoFormulario,
+  pressupostos: PressupostosDoProcesso,
+): ConteudoDoFormulario {
+  const novos = fatosParaAcrescentar(conteudo, pressupostos);
   if (novos.length === 0) return conteudo;
 
   return novos.reduce(
@@ -133,21 +142,20 @@ function comSecaoDeOutrosDados(conteudo: ConteudoDoFormulario): ConteudoDoFormul
       : comEtapa(conteudo, { ...existente, exibicao: null });
   }
 
-  const primeiroBloco = etapasEmOrdem(conteudo).find((etapa) => etapa.tipo === TIPO_BLOCO);
   return renumerar({
     ...conteudo,
-    etapas: [
-      ...(conteudo.etapas ?? []),
-      {
-        codigo: SECAO_OUTROS_DADOS,
-        ordem: primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : primeiroBloco.ordem - 0.5,
-        tipo: TIPO_SECAO,
-        bloco: null,
-        titulo: TITULO_SECAO_OUTROS_DADOS,
-        descricao: null,
-        aviso: null,
-        exibicao: null,
-      },
-    ],
+    etapas: [...(conteudo.etapas ?? []), secaoDeOutrosDados(conteudo)],
   });
+}
+
+function secaoDeOutrosDados(conteudo: ConteudoDoFormulario): EtapaDoFormulario {
+  const primeiroBloco = etapasEmOrdem(conteudo).find((etapa) => etapa.tipo === TIPO_BLOCO);
+  return {
+    codigo: SECAO_OUTROS_DADOS,
+    ordem: primeiroBloco === undefined ? Number.MAX_SAFE_INTEGER : primeiroBloco.ordem - 0.5,
+    tipo: TIPO_SECAO,
+    bloco: null,
+    apresentacao: apresentacaoDaEtapa(TITULO_SECAO_OUTROS_DADOS),
+    exibicao: null,
+  };
 }
