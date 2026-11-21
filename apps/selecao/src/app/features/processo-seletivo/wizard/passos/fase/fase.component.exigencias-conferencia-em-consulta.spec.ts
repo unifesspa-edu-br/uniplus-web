@@ -10,12 +10,12 @@ import { fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS, TIPOS_DOCUMENTO } from './fase
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
-  let componente: ContextoDaFase['componente'];
   let store: ContextoDaFase['store'];
   let controller: ContextoDaFase['controller'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
+  let abrirFase: ContextoDaFase['abrirFase'];
   let exigencias: ContextoDaFase['exigencias'];
   let documentos: ContextoDaFase['documentos'];
   let linhas: ContextoDaFase['linhas'];
@@ -24,12 +24,12 @@ describe('FasePassoComponent', () => {
 
   usarFase((tela) => {
     ({
-      componente,
       store,
       controller,
       detectar,
       nativo,
       comCronograma,
+      abrirFase,
       exigencias,
       documentos,
       linhas,
@@ -53,7 +53,7 @@ describe('FasePassoComponent', () => {
         documentos().saiuDaLista.set('CPF saiu da lista, porque não é mais do público filtrado.');
         detectar();
 
-        componente.abrirFase(ID_RECURSOS);
+        abrirFase(ID_RECURSOS);
         exigencias().alternarExigencia(ID_CPF, true);
         detectar();
 
@@ -77,13 +77,13 @@ describe('FasePassoComponent', () => {
         detectar();
         expect(documentos().emEdicao(ID_CPF)).toBe(true);
 
-        componente.abrirFase(ID_RECURSOS);
+        abrirFase(ID_RECURSOS);
         exigencias().alternarExigencia(ID_CPF, true);
         detectar();
         expect(documentos().emEdicao(ID_CPF)).toBe(false);
         expect(campoDeEntrega()).toBeNull();
 
-        componente.abrirFase(ID_AVALIACAO);
+        abrirFase(ID_AVALIACAO);
         detectar();
         expect(documentos().emEdicao(ID_CPF)).toBe(true);
       });

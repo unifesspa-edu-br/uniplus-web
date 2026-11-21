@@ -34,6 +34,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
   let detectar: ContextoDoCertame['detectar'];
   let proximoPasso: ContextoDoCertame['proximoPasso'];
   let comCertame: ContextoDoCertame['comCertame'];
+  let abrirFase: ContextoDoCertame['abrirFase'];
 
   usarFaseECronograma((tela) => {
     ({
@@ -46,6 +47,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
       detectar,
       proximoPasso,
       comCertame,
+      abrirFase,
     } = tela);
   });
 
@@ -64,8 +66,7 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     detectar();
 
     // 2. Superfície da fase: declara o que a segunda publica e quem a julga.
-    superficie.abrirFase(ID_RESULTADO);
-    detectar();
+    abrirFase(ID_RESULTADO);
     publicacoes().acrescentarProduto();
     publicacoes().escolherAto(0, 'RESULTADO_FINAL');
     publicacoes().escolherPapel(0, 'DEFINITIVO');

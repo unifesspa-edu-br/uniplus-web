@@ -131,7 +131,6 @@ export class BancasDaFaseComponent {
   }
 
   private escreverBancas(bancas: readonly BancaRequeridaDaFase[]): void {
-    this.faseEmEdicao.esquecerRecusasDasBancas();
     this.espelho.formulario()?.controls.bancasRequeridas.setValue(bancas);
   }
 }

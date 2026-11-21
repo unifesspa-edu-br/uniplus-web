@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
@@ -30,7 +30,7 @@ export interface FaseNoSeletor {
 
 /**
  * O que as seções do passo da fase compartilham: qual fase está aberta, o formulário que a
- * espelha, o que a conferência e a última gravação recusaram por campo e o id de cada elemento.
+ * espelha, o que a conferência recusa por campo e o id de cada elemento.
  * Cada passo da fase tem a sua instância, porque o Cronograma embute um por fase.
  */
 @Injectable()
@@ -44,12 +44,6 @@ export class FaseEmEdicao {
   readonly faseAberta = signal('');
 
   readonly espelho = new EspelhoDaFase(this.store);
-
-  /** O que a última gravação recusou, por campo desta fase. */
-  readonly recusaPorCampo = signal<ReadonlyMap<CampoDaFase, string>>(new Map());
-
-  /** Recusas que não pertencem a nenhum campo da fase aberta. */
-  readonly recusasGerais = signal<readonly string[]>([]);
 
   /** As fases do certame na ordem em que ocorrem. */
   readonly fasesDoCronograma = computed<readonly FaseDoCronograma[]>(() =>
@@ -137,15 +131,9 @@ export class FaseEmEdicao {
     );
   });
 
-  /**
-   * O que a tela mostra sob um campo: a conferência local, e a recusa que o
-   * servidor devolveu por aquele mesmo campo. A conferência vem primeiro porque
-   * descreve o estado atual — a recusa descreve o que foi enviado.
-   */
-  readonly erroDoCampo = (campo: CampoDaFase): string | null => {
-    const local = this.problemas().find((problema) => problema.campo === campo);
-    return local?.mensagem ?? this.recusaPorCampo().get(campo) ?? null;
-  };
+  /** O que a tela mostra sob um campo: o que a conferência local diz dele. */
+  readonly erroDoCampo = (campo: CampoDaFase): string | null =>
+    this.problemas().find((problema) => problema.campo === campo)?.mensagem ?? null;
 
   readonly nomeDaBanca = (tipoBancaId: string): string =>
     nomeDaBanca(this.bancasEscolhiveis(), tipoBancaId);
@@ -155,28 +143,4 @@ export class FaseEmEdicao {
    */
   readonly idDaFase = (sufixo: string): string =>
     idDaFase(this.faseDoRascunho()?.codigo ?? '', sufixo);
-
-  constructor() {
-    // Outro processo entra em cena: a recusa que está na tela era do anterior.
-    effect(() => {
-      this.store.geracao();
-      untracked(() => this.limparRecusa());
-    });
-  }
-
-  /**
-   * A recusa de uma banca vem pela posição dela na lista, e mexer na lista (editar uma regra,
-   * acrescentar, remover) a desfaz: a mensagem ficaria sob uma banca que já não é a recusada.
-   */
-  esquecerRecusasDasBancas(): void {
-    const restantes = [...this.recusaPorCampo()].filter(
-      ([campo]) => !/^bancasRequeridas\.\d+\./.test(campo),
-    );
-    if (restantes.length < this.recusaPorCampo().size) this.recusaPorCampo.set(new Map(restantes));
-  }
-
-  limparRecusa(): void {
-    this.recusaPorCampo.set(new Map());
-    this.recusasGerais.set([]);
-  }
 }

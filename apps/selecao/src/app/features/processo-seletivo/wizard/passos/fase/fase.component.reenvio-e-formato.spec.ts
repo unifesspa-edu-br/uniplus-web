@@ -11,11 +11,11 @@ import { congeladosDaFase, fase, ID_AVALIACAO, ID_CPF, ID_RECURSOS } from './fas
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
-  let componente: ContextoDaFase['componente'];
   let store: ContextoDaFase['store'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
+  let abrirFase: ContextoDaFase['abrirFase'];
   let exigencias: ContextoDaFase['exigencias'];
   let editor: ContextoDaFase['editor'];
   let eixoFormulario: ContextoDaFase['eixoFormulario'];
@@ -23,11 +23,11 @@ describe('FasePassoComponent', () => {
 
   usarFase((tela) => {
     ({
-      componente,
       store,
       detectar,
       nativo,
       comCronograma,
+      abrirFase,
       exigencias,
       editor,
       eixoFormulario,
@@ -305,7 +305,7 @@ describe('FasePassoComponent', () => {
           congelados: congeladosDaFase(),
         }),
       );
-      componente.abrirFase(ID_RECURSOS);
+      abrirFase(ID_RECURSOS);
       detectar();
 
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
