@@ -1,8 +1,6 @@
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 
 import type {
-  BancaDaEtapa,
-  BancaRequeridaDaFase,
   EtapaPontuada,
   FaseDoCronograma,
   ItemDeAvaliacaoDaEtapa,
@@ -17,11 +15,11 @@ import {
   type LeituraDoRecurso,
   type ParametrosDoRecurso,
 } from '../configuracao-do-recurso/parametros-do-recurso';
-import { regraDoDto } from '../deliberacao/regra-de-deliberacao-contrato';
 import { campoDoInstante } from '../fuso-institucional';
 import { alvoLidoDoServidor } from '../procedimentos-do-recurso/alvo-do-procedimento';
 import { percentualDaFracao } from '../itens-de-avaliacao';
 import { comoInteiro, comoTexto } from './campos-lidos';
+import { bancaDaEtapaDe, bancaRequeridaDe } from './hidratacao-das-bancas';
 
 /**
  * Projeta o cronograma, as etapas pontuadas e a convenção de contagem.
@@ -136,16 +134,6 @@ function publicacoesDaFaseDe(
     emiteParecerIndividual: publicacoes.emiteParecerIndividual,
     regraRecurso: recursoDe(publicacoes.regraRecurso, publicacoes.produtos),
     tiposDeDecisao: publicacoes.tiposDeDecisao.map((tipo) => tipo.codigo),
-  };
-}
-
-function bancaRequeridaDe(banca: FaseDoDto['bancasRequeridas'][number]): BancaRequeridaDaFase {
-  return {
-    tipoBancaId: banca.tipoBancaOrigemId,
-    categoriasDocumentoIds: banca.candidatosAtendidos.map(
-      (categoria) => categoria.categoriaDocumentoOrigemId,
-    ),
-    regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
   };
 }
 
@@ -344,13 +332,6 @@ function publicacoesDaEtapaDe(
     emiteParecerIndividual: publicacoes.emiteParecerIndividual,
     recursos: publicacoes.recursos.map(recursoDaEtapaDe),
     tiposDeDecisao: publicacoes.tiposDeDecisao.map((tipo) => tipo.codigo),
-  };
-}
-
-function bancaDaEtapaDe(banca: EtapaDoDto['bancas'][number]): BancaDaEtapa {
-  return {
-    tipoBancaId: banca.tipoBancaOrigemId,
-    regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
   };
 }
 
