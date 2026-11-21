@@ -1,7 +1,8 @@
 /**
  * A regra de aplicabilidade de cada modalidade, como a api a congela na oferta: a ampla
  * concorrência para todos, cada cota da Lei 12.711 pela opção pelas cotas e pelas condições da
- * própria cota, e a reserva de pessoa com deficiência para quem não optou pelas cotas.
+ * própria cota, e a reserva de pessoa com deficiência para quem tem deficiência e quer concorrer
+ * a ela, tenha optado ou não pelas cotas da lei.
  */
 export const REGRAS_DE_APLICABILIDADE = {
   AC: [],
@@ -77,7 +78,6 @@ export const REGRAS_DE_APLICABILIDADE = {
   ],
   AC_PCD: [
     [
-      { fato: 'OPTOU_PELAS_COTAS_DA_LEI', operador: 'IGUAL', valor: false },
       { fato: 'PCD', operador: 'IGUAL', valor: true },
       { fato: 'CONCORRER_PCD', operador: 'IGUAL', valor: true },
     ],
