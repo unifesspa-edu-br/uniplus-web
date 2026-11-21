@@ -4,23 +4,23 @@ import { decimalDoCampo } from './numero-do-campo';
 
 /** Uma unidade que o operador escolhe, com o nome no plural (rótulo) e no singular. */
 export interface UnidadeDePrazoDoRecurso {
-  readonly valor: UnidadePrazo;
+  readonly codigo: UnidadePrazo;
   readonly rotulo: string;
   readonly singular: string;
 }
 
 const DIAS_UTEIS: UnidadeDePrazoDoRecurso = {
-  valor: UnidadePrazo.diasUteis,
+  codigo: UnidadePrazo.diasUteis,
   rotulo: 'dias úteis',
   singular: 'dia útil',
 };
 const DIAS_CORRIDOS: UnidadeDePrazoDoRecurso = {
-  valor: UnidadePrazo.dias,
+  codigo: UnidadePrazo.dias,
   rotulo: 'dias corridos',
   singular: 'dia corrido',
 };
 const HORAS: UnidadeDePrazoDoRecurso = {
-  valor: UnidadePrazo.horas,
+  codigo: UnidadePrazo.horas,
   rotulo: 'horas',
   singular: 'hora',
 };
@@ -38,7 +38,7 @@ export const UNIDADES_DA_SUSPENSIVIDADE: readonly UnidadeDePrazoDoRecurso[] = [
 /** O par valor e unidade em texto, com a unidade concordando em número; sem valor, vazio. */
 export function prazoEmTexto(valor: string, unidade: string): string {
   if (valor.trim() === '') return '';
-  const conhecida = UNIDADES_DA_SUSPENSIVIDADE.find((candidata) => candidata.valor === unidade);
+  const conhecida = UNIDADES_DA_SUSPENSIVIDADE.find((candidata) => candidata.codigo === unidade);
   if (conhecida === undefined) return `${valor} ${unidade}`;
   return `${valor} ${decimalDoCampo(valor) === 1 ? conhecida.singular : conhecida.rotulo}`;
 }

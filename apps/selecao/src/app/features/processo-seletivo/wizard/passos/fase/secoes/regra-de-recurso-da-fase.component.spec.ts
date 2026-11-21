@@ -1,4 +1,6 @@
 import type { HttpTestingController } from '@angular/common/http/testing';
+import type { DebugElement } from '@angular/core';
+import { By } from '@angular/platform-browser';
 import {
   StatusProcesso,
   UnidadePrazo,
@@ -8,31 +10,20 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
 import type { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
+import { PrazoDoRecursoComponent } from '../../../shared/configuracao-do-recurso/prazo-do-recurso.component';
 import { fase, montarFase } from '../fase.testing';
-
-const REGRA = {
-  regraCodigo: 'RECURSO-PRAZO-ANCORADO-EM-ATO',
-  regraVersao: 'v1',
-  prazoValor: '2',
-  prazoUnidade: 'diasUteis',
-  atoAncoraCodigo: 'RESULTADO_PRELIMINAR',
-  suspensividadePrimeiraInstanciaValor: '1',
-  suspensividadePrimeiraInstanciaUnidade: 'horas',
-  admiteInstanciaSuperior: true,
-  suspensividadeSegundaInstanciaValor: '',
-  suspensividadeSegundaInstanciaUnidade: '',
-  procedimentos: [],
-};
+import { faseComRegra, REGRA } from './regra-de-recurso-da-fase.testing';
 
 describe('RegraDeRecursoDaFaseComponent', () => {
   let controller: HttpTestingController;
   let nativo: HTMLElement;
   let store: ProcessoSeletivoStore;
   let detectar: () => void;
+  let raiz: DebugElement;
   let comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
 
   beforeEach(async () => {
-    ({ controller, nativo, comCronograma, store, detectar } = await montarFase());
+    ({ controller, nativo, comCronograma, store, detectar, raiz } = await montarFase());
     comCronograma(
       fase({
         produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
@@ -46,7 +37,7 @@ describe('RegraDeRecursoDaFaseComponent', () => {
   const campo = (sufixo: string) =>
     nativo.querySelector<HTMLElement>(`#fase-AVALIACAO-${sufixo}`) as HTMLElement;
 
-  it('desenha os três pares de prazo e unidade ligados ao rótulo e à ajuda de cada um', () => {
+  it('desenha os três prazos, cada um ligado ao rótulo e à ajuda dele', () => {
     for (const [par, ajuda] of [
       ['prazo', 'prazo-ajuda'],
       ['susp1', 'susp-ajuda'],
@@ -57,12 +48,47 @@ describe('RegraDeRecursoDaFaseComponent', () => {
         expect(controle, `${par}-${parte}`).not.toBeNull();
         expect(nativo.querySelector(`label[for="fase-AVALIACAO-${par}-${parte}"]`)).not.toBeNull();
         expect(controle.getAttribute('aria-describedby')).toBe(`fase-AVALIACAO-${ajuda}`);
-        expect(controle.getAttribute('formcontrolname')).not.toBeNull();
       }
     }
-    expect(campo('prazo-valor').parentElement?.parentElement?.classList).toContain('form-grid');
-    expect(campo('susp1-unidade').querySelector('option')?.textContent).toBe('Sem suspensividade');
-    expect(campo('prazo-unidade').querySelector('option')?.textContent).toBe('Selecione…');
+  });
+
+  it('põe cada prazo num grupo nomeado pela legenda, na linha inteira da grade da regra', () => {
+    const grupos = Array.from(nativo.querySelectorAll('sel-prazo-do-recurso'));
+
+    expect(grupos.map((grupo) => grupo.querySelector('legend')?.textContent?.trim())).toEqual([
+      'Prazo de interposição (obrigatório)',
+      'Suspensividade da 1ª instância',
+      'Suspensividade da 2ª instância',
+    ]);
+    for (const grupo of grupos) {
+      expect(grupo.classList).toContain('form-grid__full');
+      expect(grupo.parentElement?.classList).toContain('form-grid');
+    }
+  });
+
+  it('pede o prazo de interposição como obrigatório e as suspensividades como opcionais', () => {
+    expect(campo('prazo-valor').getAttribute('aria-required')).toBe('true');
+    expect(campo('prazo-unidade').getAttribute('aria-required')).toBe('true');
+    expect(campo('susp1-valor').hasAttribute('aria-required')).toBe(false);
+    expect(campo('susp2-unidade').hasAttribute('aria-required')).toBe(false);
+  });
+
+  it('o prazo de interposição começa com a opção em branco "Escolha a unidade"', () => {
+    expect(campo('prazo-unidade').querySelector('option')?.textContent?.trim()).toBe(
+      'Escolha a unidade',
+    );
+  });
+
+  it('a suspensividade começa com a opção em branco "Sem suspensividade"', () => {
+    expect(campo('susp1-unidade').querySelector('option')?.textContent?.trim()).toBe(
+      'Sem suspensividade',
+    );
+  });
+
+  it('mostra o valor e a unidade que a regra já traz', () => {
+    expect((campo('prazo-valor') as HTMLInputElement).value).toBe('2');
+    expect((campo('prazo-unidade') as HTMLSelectElement).value).toBe(UnidadePrazo.diasUteis);
+    expect((campo('susp1-unidade') as HTMLSelectElement).value).toBe(UnidadePrazo.horas);
   });
 
   it('liga a regra e as duas suspensividades às respectivas mensagens de erro', () => {
@@ -90,6 +116,43 @@ describe('RegraDeRecursoDaFaseComponent', () => {
       );
       expect(campo(erro).getAttribute('role')).toBe('alert');
     }
+  });
+
+  describe('escolha da regra de contagem', () => {
+    const regraNoRascunho = () => store.draft().cronograma.fases[0]?.regraRecurso;
+
+    const escolher = (codigo: string) => {
+      const seletor = campo('regra') as HTMLSelectElement;
+      seletor.value = codigo;
+      seletor.dispatchEvent(new Event('change'));
+      detectar();
+    };
+
+    it('grava a versão da regra escolhida junto com o código, e não a que a fase tinha antes', () => {
+      comCronograma(faseComRegra({ regraCodigo: 'REGRA-ANTIGA', regraVersao: 'v0' }));
+
+      escolher(REGRA.regraCodigo);
+
+      expect(regraNoRascunho()?.regraCodigo).toBe(REGRA.regraCodigo);
+      expect(regraNoRascunho()?.regraVersao).toBe('v1');
+    });
+
+    it('ao voltar para "Selecione a regra", limpa o código e a versão gravados', () => {
+      escolher('');
+
+      expect(regraNoRascunho()?.regraCodigo).toBe('');
+      expect(regraNoRascunho()?.regraVersao).toBe('');
+    });
+  });
+
+  it('grava em branco a unidade de suspensividade que a tela não oferece', () => {
+    const suspensividade = raiz.queryAll(By.directive(PrazoDoRecursoComponent))[1];
+
+    (suspensividade.componentInstance as PrazoDoRecursoComponent).unidadeAlterada.emit('semanas');
+    detectar();
+
+    const regra = store.draft().cronograma.fases[0]?.regraRecurso;
+    expect(regra?.suspensividadePrimeiraInstanciaUnidade).toBe('');
   });
 
   const unidadesDe = (sufixo: string): string[] =>
@@ -132,6 +195,84 @@ describe('RegraDeRecursoDaFaseComponent', () => {
     const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
     expect(leitura).toContain('3 dias corridos');
     expect(leitura).toContain('1 dia corrido');
+  });
+
+  describe('prazo de interposição', () => {
+    const comPrazo = (prazoValor: string, prazoUnidade: string) =>
+      comCronograma(
+        fase({
+          produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
+          regraRecurso: { ...REGRA, prazoValor, prazoUnidade } as FaseDoCronograma['regraRecurso'],
+        }),
+      );
+
+    const regraNoRascunho = () => store.draft().cronograma.fases[0]?.regraRecurso;
+    const marcado = (sufixo: string) => campo(sufixo).getAttribute('aria-invalid');
+    const problema = () => nativo.querySelector('#fase-AVALIACAO-prazo-erro');
+
+    it('leva ao rascunho da fase o valor digitado, sem conferir nada no componente', () => {
+      const entrada = campo('prazo-valor') as HTMLInputElement;
+
+      entrada.value = '3';
+      entrada.dispatchEvent(new Event('input'));
+      detectar();
+
+      expect(regraNoRascunho()?.prazoValor).toBe('3');
+    });
+
+    it('leva ao rascunho da fase a unidade escolhida', () => {
+      const seletor = campo('prazo-unidade') as HTMLSelectElement;
+
+      seletor.value = UnidadePrazo.horas;
+      seletor.dispatchEvent(new Event('change'));
+      detectar();
+
+      expect(regraNoRascunho()?.prazoUnidade).toBe(UnidadePrazo.horas);
+    });
+
+    it('mantém à vista e marcada a unidade gravada que a interposição não oferece mais', () => {
+      comPrazo('2', UnidadePrazo.dias);
+
+      const seletor = campo('prazo-unidade') as HTMLSelectElement;
+      expect(seletor.value).toBe(UnidadePrazo.dias);
+      expect(seletor.selectedOptions[0]?.textContent).toContain('não é mais oferecida');
+      expect(unidadesDe('prazo-unidade')).toEqual([
+        '',
+        UnidadePrazo.diasUteis,
+        UnidadePrazo.horas,
+        UnidadePrazo.dias,
+      ]);
+    });
+
+    it.each([
+      ['em branco', '', UnidadePrazo.horas],
+      ['zero', '0', UnidadePrazo.horas],
+      ['fracionário em dias úteis', '1,5', UnidadePrazo.diasUteis],
+    ])('com o prazo %s, marca e descreve valor e unidade pelo problema do prazo', (_, v, u) => {
+      comPrazo(v, u);
+
+      expect(problema()?.getAttribute('role')).toBe('alert');
+      for (const sufixo of ['prazo-valor', 'prazo-unidade']) {
+        expect(marcado(sufixo)).toBe('true');
+        expect(campo(sufixo).getAttribute('aria-describedby')).toContain(
+          'fase-AVALIACAO-prazo-erro',
+        );
+      }
+    });
+
+    it('aceita o prazo fracionário em horas, sem problema', () => {
+      comPrazo('1,5', UnidadePrazo.horas);
+
+      expect(problema()).toBeNull();
+      expect(marcado('prazo-valor')).toBeNull();
+    });
+
+    it('com o prazo inteiro em dias úteis, não há problema nem marca', () => {
+      comPrazo('5', UnidadePrazo.diasUteis);
+
+      expect(problema()).toBeNull();
+      expect(marcado('prazo-unidade')).toBeNull();
+    });
   });
 
   describe('procedimentos declarados do recurso', () => {

@@ -185,8 +185,8 @@ test.describe('Configuração por fase — matriz DS @ds', () => {
 
     await expect(page.getByLabel('Publicação', { exact: true })).toBeVisible();
     await expect(page.getByLabel('Papel', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('Prazo de interposição')).toBeVisible();
-    await expect(page.getByLabel('Unidade do prazo')).toBeVisible();
+    await expect(prazoDeInterposicao(page).valor).toBeVisible();
+    await expect(prazoDeInterposicao(page).unidade).toBeVisible();
     await expect(page.getByLabel('Tipo de banca')).toBeVisible();
 
     // Caixa de seleção: a anatomia do design system esconde o controle nativo e desenha a
@@ -241,13 +241,22 @@ async function declararPublicacao(page: Page, ato: string): Promise<void> {
   });
 }
 
+/** O valor e a unidade do prazo de interposição, que o grupo com esse nome reúne. */
+function prazoDeInterposicao(page: Page) {
+  const grupo = page.getByRole('group', { name: 'Prazo de interposição' });
+  return {
+    valor: grupo.getByLabel('Valor', { exact: true }),
+    unidade: grupo.getByLabel('Unidade', { exact: true }),
+  };
+}
+
 /** Liga o recurso e requer uma banca com recorte — o estado mais cheio da tela. */
 async function ligarRecursoComBanca(page: Page): Promise<void> {
   // O controle nativo é escondido pela anatomia do design system — quem recebe o clique
   // é o rótulo, como acontece com quem usa a tela.
   await page.getByText('Cabe recurso do que esta fase publica').click();
-  await page.getByLabel('Prazo de interposição').fill('2');
-  await page.getByLabel('Unidade do prazo').selectOption({ label: 'dias úteis' });
+  await prazoDeInterposicao(page).valor.fill('2');
+  await prazoDeInterposicao(page).unidade.selectOption({ label: 'dias úteis' });
 
   await page.getByRole('button', { name: 'Acrescentar banca' }).click();
   await page.getByLabel('Tipo de banca').selectOption({ label: 'Banca de heteroidentificação' });

@@ -5,11 +5,11 @@ import type { EtapaForm } from '../cronograma-form';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from '../servicos/expansao-do-cronograma.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
-import { JanelaRecursalComponent } from './janela-recursal.component';
+import { ConfiguracaoDoRecursoDaEtapaComponent } from './configuracao-do-recurso-da-etapa.component';
 
 @Component({
   selector: 'sel-recursos-da-etapa',
-  imports: [JanelaRecursalComponent],
+  imports: [ConfiguracaoDoRecursoDaEtapaComponent],
   templateUrl: './recursos-da-etapa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

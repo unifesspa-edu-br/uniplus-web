@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { mockPermissoesEfetivas } from '@uniplus/shared-e2e';
 import { PERMISSOES_DO_LEANDRO } from '../support/permissoes';
 import {
@@ -11,6 +11,15 @@ import {
 test.beforeEach(async ({ page }) => {
   await mockPermissoesEfetivas(page, PERMISSOES_DO_LEANDRO);
 });
+
+/** O valor e a unidade do prazo que o grupo de legenda `legenda` reúne, na posição dada. */
+function prazo(recursos: Locator, legenda: string, posicao = 0) {
+  const grupo = recursos.getByRole('group', { name: legenda }).nth(posicao);
+  return {
+    valor: grupo.getByLabel('Valor', { exact: true }),
+    unidade: grupo.getByLabel('Unidade', { exact: true }),
+  };
+}
 
 /**
  * O que a reformulação do eixo fase → etapa habilita, exercitado de ponta a ponta na
@@ -62,21 +71,21 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await abrirBloco(page, 'Recursos que esta etapa admite');
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
-    await recursos.getByLabel('Prazo', { exact: true }).nth(0).fill('24');
-    await recursos.getByLabel('Unidade', { exact: true }).nth(0).selectOption('horas');
+    await prazo(recursos, 'Prazo de interposição', 0).valor.fill('24');
+    await prazo(recursos, 'Prazo de interposição', 0).unidade.selectOption('horas');
 
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
     await recursos.getByLabel('Contra qual publicação').nth(1).selectOption('RESULTADO_FINAL');
-    await recursos.getByLabel('Prazo', { exact: true }).nth(1).fill('2');
-    await recursos.getByLabel('Unidade', { exact: true }).nth(1).selectOption('diasUteis');
+    await prazo(recursos, 'Prazo de interposição', 1).valor.fill('2');
+    await prazo(recursos, 'Prazo de interposição', 1).unidade.selectOption('diasUteis');
 
-    await expect(recursos.getByLabel('Prazo', { exact: true }).nth(0)).toHaveValue('24');
-    await expect(recursos.getByLabel('Unidade', { exact: true }).nth(0)).toHaveValue('horas');
+    await expect(prazo(recursos, 'Prazo de interposição', 0).valor).toHaveValue('24');
+    await expect(prazo(recursos, 'Prazo de interposição', 0).unidade).toHaveValue('horas');
     await expect(recursos.getByLabel('Contra qual publicação').nth(0)).toHaveValue(
       'RESULTADO_PRELIMINAR',
     );
-    await expect(recursos.getByLabel('Prazo', { exact: true }).nth(1)).toHaveValue('2');
-    await expect(recursos.getByLabel('Unidade', { exact: true }).nth(1)).toHaveValue('diasUteis');
+    await expect(prazo(recursos, 'Prazo de interposição', 1).valor).toHaveValue('2');
+    await expect(prazo(recursos, 'Prazo de interposição', 1).unidade).toHaveValue('diasUteis');
     await expect(recursos.getByLabel('Contra qual publicação').nth(1)).toHaveValue(
       'RESULTADO_FINAL',
     );
@@ -96,10 +105,10 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
-    await recursos.getByLabel('Suspensividade da 1ª instância — prazo').fill('3');
-    await recursos.getByLabel('Suspensividade da 1ª instância — unidade').selectOption('diasUteis');
+    await prazo(recursos, 'Suspensividade da 1ª instância').valor.fill('3');
+    await prazo(recursos, 'Suspensividade da 1ª instância').unidade.selectOption('diasUteis');
     // A 2ª instância só tem suspensividade quando a janela admite instância superior.
-    const prazoDaSegunda = recursos.getByLabel('Suspensividade da 2ª instância — prazo');
+    const prazoDaSegunda = prazo(recursos, 'Suspensividade da 2ª instância').valor;
     await expect(prazoDaSegunda).toHaveCount(0);
     const instanciaSuperior = recursos.getByRole('group', {
       name: 'Admite recurso em instância superior?',
@@ -107,16 +116,14 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await instanciaSuperior.getByText('Sim', { exact: true }).click();
     await expect(instanciaSuperior.getByRole('radio', { name: 'Sim', exact: true })).toBeChecked();
     await prazoDaSegunda.fill('48');
-    await recursos.getByLabel('Suspensividade da 2ª instância — unidade').selectOption('horas');
+    await prazo(recursos, 'Suspensividade da 2ª instância').unidade.selectOption('horas');
 
-    await expect(recursos.getByLabel('Suspensividade da 1ª instância — prazo')).toHaveValue('3');
-    await expect(recursos.getByLabel('Suspensividade da 1ª instância — unidade')).toHaveValue(
+    await expect(prazo(recursos, 'Suspensividade da 1ª instância').valor).toHaveValue('3');
+    await expect(prazo(recursos, 'Suspensividade da 1ª instância').unidade).toHaveValue(
       'diasUteis',
     );
-    await expect(recursos.getByLabel('Suspensividade da 2ª instância — prazo')).toHaveValue('48');
-    await expect(recursos.getByLabel('Suspensividade da 2ª instância — unidade')).toHaveValue(
-      'horas',
-    );
+    await expect(prazo(recursos, 'Suspensividade da 2ª instância').valor).toHaveValue('48');
+    await expect(prazo(recursos, 'Suspensividade da 2ª instância').unidade).toHaveValue('horas');
   });
 
   /** Instância sem os dois campos é desativação declarada, e a tela nomeia isso. */
@@ -127,9 +134,9 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     const recursos = blocoDaEtapa(page, 'Recursos que esta etapa admite');
     await recursos.getByRole('button', { name: 'Acrescentar recurso' }).click();
 
-    await expect(recursos.getByLabel('Suspensividade da 1ª instância — unidade')).toHaveValue('');
+    await expect(prazo(recursos, 'Suspensividade da 1ª instância').unidade).toHaveValue('');
     await expect(
-      recursos.getByLabel('Suspensividade da 1ª instância — unidade').getByRole('option', {
+      prazo(recursos, 'Suspensividade da 1ª instância').unidade.getByRole('option', {
         name: 'Sem suspensividade',
       }),
     ).toHaveCount(1);
