@@ -15,7 +15,7 @@ describe('CronogramaPassoComponent: gravação', () => {
   let componente: ContextoDoCronograma['componente'];
   let raiz: ContextoDoCronograma['raiz'];
   let cronograma: ContextoDoCronograma['cronograma'];
-  let releituraDasEtapas: ContextoDoCronograma['releituraDasEtapas'];
+  let releituraDosIdentificadores: ContextoDoCronograma['releituraDosIdentificadores'];
   let store: ContextoDoCronograma['store'];
   let controller: ContextoDoCronograma['controller'];
   let detectar: ContextoDoCronograma['detectar'];
@@ -29,7 +29,7 @@ describe('CronogramaPassoComponent: gravação', () => {
       componente,
       raiz,
       cronograma,
-      releituraDasEtapas,
+      releituraDosIdentificadores,
       store,
       controller,
       detectar,
@@ -191,7 +191,7 @@ describe('CronogramaPassoComponent: gravação', () => {
 
     const primeira = await gravacao;
     expect(primeira.valid).toBe(false);
-    expect(primeira.messages?.[0]).toContain('identificadores');
+    expect(primeira.messages?.[0]).toContain('confirmar as etapas e bancas acrescentadas');
     expect(store.draft().cronograma.etapas[0].id).toBeNull();
 
     const segunda = await componente.persistir();
@@ -245,12 +245,12 @@ describe('CronogramaPassoComponent: gravação', () => {
     await proximoPasso();
     await gravacao;
 
-    const releitura = releituraDasEtapas.relerEtapas();
+    const releitura = releituraDosIdentificadores.relerIdentificadores();
     controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
     await releitura;
     detectar();
 
-    expect(releituraDasEtapas.releituraPendente()).toBe(false);
+    expect(releituraDosIdentificadores.pendente()).toBe(null);
     expect(cronograma.edicaoLiberada()).toBe(true);
     expect(store.draft().cronograma.etapas[0].id).toBe(ID_ETAPA_GRAVADA);
 
@@ -269,11 +269,11 @@ describe('CronogramaPassoComponent: gravação', () => {
 
   it('a releitura que falha mantém o bloqueio, com o motivo e a nova tentativa', async () => {
     store.processoSeletivoId.set(PROCESSO_ID);
-    releituraDasEtapas.releituraPendente.set(true);
+    releituraDosIdentificadores.pendente.set('etapas');
     detectar();
     const tela = (): HTMLElement => raiz.nativeElement as HTMLElement;
     const alerta = (): string => tela().textContent ?? '';
-    expect(alerta()).toContain('a edição fica suspensa');
+    expect(alerta()).toContain('A gravação fica suspensa');
 
     const tentar = Array.from(tela().querySelectorAll('button')).find((b) =>
       b.textContent?.includes('Tentar novamente'),
@@ -285,8 +285,8 @@ describe('CronogramaPassoComponent: gravação', () => {
     await proximoPasso();
     detectar();
 
-    expect(releituraDasEtapas.releituraPendente()).toBe(true);
-    expect(alerta()).toContain('Não foi possível reler as etapas agora');
+    expect(releituraDosIdentificadores.pendente()).toBe('etapas');
+    expect(alerta()).toContain('Não foi possível reler os dados agora');
   });
 
   /**
@@ -312,6 +312,6 @@ describe('CronogramaPassoComponent: gravação', () => {
     store.reset();
     detectar();
 
-    expect(releituraDasEtapas.releituraPendente()).toBe(false);
+    expect(releituraDosIdentificadores.pendente()).toBe(null);
   });
 });

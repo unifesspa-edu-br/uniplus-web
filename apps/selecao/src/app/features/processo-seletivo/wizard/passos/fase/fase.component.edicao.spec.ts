@@ -51,6 +51,9 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
 
       expect(store.draft().cronograma.fases[0].bancasRequeridas).toEqual([
         {
+          id: null,
+          identificadorLocal: 'banca-1',
+          copiaDoTipo: null,
           tipoBancaId: ID_BANCA_HETERO,
           categoriasDocumentoIds: [ID_CATEGORIA_RACA],
           regraDeDeliberacao: null,
@@ -63,11 +66,21 @@ describe('FasePassoComponent: edição da fase no rascunho', () => {
         fase({
           bancasRequeridas: [
             {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
               tipoBancaId: ID_BANCA_HETERO,
               categoriasDocumentoIds: [ID_CATEGORIA_RACA],
               regraDeDeliberacao: null,
             },
-            { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao: null },
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              tipoBancaId: ID_BANCA_HETERO,
+              categoriasDocumentoIds: [],
+              regraDeDeliberacao: null,
+            },
           ],
         }),
       );

@@ -25,8 +25,8 @@ import {
 import { etapaComOQueDeclara } from '../regras-da-etapa';
 import { espelharFasesNoFormulario } from './espelho-das-fases-no-formulario';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
-import { ReleituraDasEtapas } from './releitura-das-etapas.service';
 import { SequenciaDasFases } from './sequencia-das-fases';
+import { ReleituraDosIdentificadores } from './releitura-dos-identificadores.service';
 import { UnidadesResponsaveisDasFases } from './unidades-responsaveis-das-fases.service';
 
 /**
@@ -47,7 +47,7 @@ export class FormularioDoCronograma {
   private readonly catalogoDeFases = inject(CatalogoDeFases);
   private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly unidades = inject(UnidadesResponsaveisDasFases);
-  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
+  private readonly releituraDosIdentificadores = inject(ReleituraDosIdentificadores);
   private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
 
   readonly formulario = novoFormularioDoCronograma();
@@ -77,7 +77,7 @@ export class FormularioDoCronograma {
    * resposta, resolvidas aqui para que nenhum controle repita a conjunção.
    */
   readonly edicaoLiberada = computed(
-    () => this.store.aceitaEdicao() && !this.releituraDasEtapas.releituraPendente(),
+    () => this.store.aceitaEdicao() && this.releituraDosIdentificadores.pendente() === null,
   );
 
   /**

@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -47,6 +48,7 @@ import { PublicacoesDaFaseComponent } from './secoes/publicacoes-da-fase.compone
 })
 export class FasePassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
+  private readonly cronograma = inject(FormularioDoCronograma);
   readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
   private readonly destruicao = inject(DestroyRef);
 
@@ -97,7 +99,7 @@ export class FasePassoComponent {
     // Fora de rascunho o servidor recusa qualquer gravação, e deixar a tela
     // aceitar digitação faria a revisão exibir o que o avanço descarta.
     effect(() => {
-      const editavel = this.store.aceitaEdicao();
+      const editavel = this.cronograma.edicaoLiberada();
       const formulario = this.formulario();
       untracked(() => {
         if (formulario === null) return;

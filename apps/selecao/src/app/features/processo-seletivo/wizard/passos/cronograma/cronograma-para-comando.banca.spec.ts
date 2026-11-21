@@ -72,9 +72,24 @@ describe('regra de deliberação da banca no comando da etapa', () => {
   it('envia cada banca da etapa com a regra que declara', () => {
     const comando = comoComandoDeEtapa(
       etapaComBancas([
-        { tipoBancaId: 'tipo-banca-1', regraDeDeliberacao: COLEGIADA },
-        { tipoBancaId: 'tipo-banca-2', regraDeDeliberacao: null },
         {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: 'tipo-banca-1',
+          regraDeDeliberacao: COLEGIADA,
+        },
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: 'tipo-banca-2',
+          regraDeDeliberacao: null,
+        },
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
           tipoBancaId: 'tipo-banca-3',
           regraDeDeliberacao: comRegra({ integrantes: '1' }, ATO_INDIVIDUAL),
         },
@@ -83,11 +98,13 @@ describe('regra de deliberação da banca no comando da etapa', () => {
 
     expect(comando.bancas).toEqual([
       {
+        id: null,
         tipoBancaId: 'tipo-banca-1',
         regraDeDeliberacao: expect.objectContaining({ integrantes: 5 }),
       },
-      { tipoBancaId: 'tipo-banca-2', regraDeDeliberacao: null },
+      { id: null, tipoBancaId: 'tipo-banca-2', regraDeDeliberacao: null },
       {
+        id: null,
         tipoBancaId: 'tipo-banca-3',
         regraDeDeliberacao: { modo: ModoDeDeliberacao.atoIndividual, integrantes: 1, suplentes: 0 },
       },

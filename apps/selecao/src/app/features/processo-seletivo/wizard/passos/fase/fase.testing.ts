@@ -17,6 +17,9 @@ import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
 import { SEM_RECUSAS_DA_PUBLICACAO } from '../cronograma/servicos/recusas-da-publicacao-no-cronograma.testing';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
 import { CATALOGOS_DO_CRONOGRAMA } from '../cronograma/catalogos/catalogos-do-cronograma';
+import { FormularioDoCronograma } from '../cronograma/servicos/formulario-do-cronograma.service';
+import { ReleituraDosIdentificadores } from '../cronograma/servicos/releitura-dos-identificadores.service';
+import { UnidadesResponsaveisDasFases } from '../cronograma/servicos/unidades-responsaveis-das-fases.service';
 import { FasePassoComponent } from './fase.component';
 import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
@@ -158,7 +161,6 @@ export function congeladosDaFase(
     coletaInscricao: false,
     permiteComplementacao: false,
     coletaSolicitacaoIsencao: false,
-    bancas: [],
     ...parcial,
   };
 }
@@ -194,6 +196,9 @@ export interface FaseMontada {
 
 const PROVEDORES_DA_FASE = [
   ProcessoSeletivoStore,
+  FormularioDoCronograma,
+  ReleituraDosIdentificadores,
+  UnidadesResponsaveisDasFases,
   RecusasDoServidorNasFases,
   SEM_RECUSAS_DA_PUBLICACAO,
   CadastroInicial,

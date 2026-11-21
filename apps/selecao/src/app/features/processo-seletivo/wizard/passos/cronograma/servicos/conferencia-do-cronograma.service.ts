@@ -14,7 +14,10 @@ import { problemasDoCronograma } from '../cronograma-do-certame';
 import { faseDoFormulario } from '../cronograma-form';
 import { exigenciasDeclaradas, type CatalogosDasExigencias } from './exigencias-declaradas';
 import { FormularioDoCronograma } from './formulario-do-cronograma.service';
-import { AGUARDA_RELEITURA, ReleituraDasEtapas } from './releitura-das-etapas.service';
+import {
+  TEXTOS_RELEITURA,
+  ReleituraDosIdentificadores,
+} from './releitura-dos-identificadores.service';
 
 /** O que impede o passo de gravar, e o que apenas merece aviso. */
 @Injectable()
@@ -27,7 +30,7 @@ export class ConferenciaDoCronograma {
   private readonly catalogoDeFatos = inject(CatalogoDeFatos);
   private readonly catalogoDeTiposDeEtapa = inject(CatalogoDeTiposDeEtapa);
   private readonly cronograma = inject(FormularioDoCronograma);
-  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
+  private readonly releituraDosIdentificadores = inject(ReleituraDosIdentificadores);
 
   /**
    * Os grupos de exigências que o rascunho carrega. A tela não os edita — eles chegam da
@@ -68,17 +71,21 @@ export class ConferenciaDoCronograma {
       fases: this.cronograma.fases.controls.map(faseDoFormulario),
       etapas: this.cronograma.etapasParaEnvio(),
       exigencias: this.exigenciasDeclaradas(),
-      catalogos: {
-        fasePorId: this.catalogoDeFases.fasePorId(),
-        precedencias: this.catalogoDeFases.precedencias(),
-        atoPorCodigo: this.catalogoDeAtos.atoPorCodigo(),
-        nomeDaBanca: (tipoBancaId) =>
-          this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
-        tipoDaEtapa: (tipoEtapaOrigemId) =>
-          this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(tipoEtapaOrigemId),
-      },
+      catalogos: this.catalogosDoCronograma(),
     });
   });
+
+  private catalogosDoCronograma() {
+    return {
+      fasePorId: this.catalogoDeFases.fasePorId(),
+      precedencias: this.catalogoDeFases.precedencias(),
+      atoPorCodigo: this.catalogoDeAtos.atoPorCodigo(),
+      nomeDaBanca: (tipoBancaId: string) =>
+        this.catalogoDeBancas.bancaPorId().get(tipoBancaId)?.nome ?? tipoBancaId,
+      tipoDaEtapa: (tipoEtapaOrigemId: string) =>
+        this.catalogoDeTiposDeEtapa.tipoEtapaPorId().get(tipoEtapaOrigemId),
+    };
+  }
 
   /**
    * O que a publicação vai cobrar dos grupos, dito como aviso: eles não se editam aqui, e
@@ -93,8 +100,9 @@ export class ConferenciaDoCronograma {
    * íntegro um cronograma que o servidor ainda não confirmou.
    */
   validar(): ValidacaoDoPasso {
-    if (this.releituraDasEtapas.releituraPendente()) {
-      return { valid: false, messages: [AGUARDA_RELEITURA] };
+    const pendente = this.releituraDosIdentificadores.pendente();
+    if (pendente !== null) {
+      return { valid: false, messages: [TEXTOS_RELEITURA[pendente]] };
     }
 
     const problemas = this.problemas();

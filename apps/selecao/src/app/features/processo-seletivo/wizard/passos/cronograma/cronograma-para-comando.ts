@@ -86,6 +86,7 @@ function comoComandoDoProdutoDaFase(produto: ProdutoDaFase): ProdutoDaFaseInput 
 
 function comoComandoDeBancaRequerida(banca: BancaRequeridaDaFase): BancaRequeridaInput {
   return {
+    id: banca.id,
     tipoBancaId: banca.tipoBancaId,
     categoriasDocumentoIds: [...banca.categoriasDocumentoIds],
     regraDeDeliberacao: regraComoInput(banca.regraDeDeliberacao),
@@ -216,6 +217,7 @@ function comoComandoDoProdutoDaEtapa(
 
 function comoComandoDeBancaDaEtapa(banca: BancaDaEtapa): BancaDaEtapaInput {
   return {
+    id: banca.id,
     tipoBancaId: banca.tipoBancaId,
     regraDeDeliberacao: regraComoInput(banca.regraDeDeliberacao),
   };

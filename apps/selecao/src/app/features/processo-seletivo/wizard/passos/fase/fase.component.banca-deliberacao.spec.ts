@@ -45,14 +45,38 @@ describe('FasePassoComponent', () => {
 
   describe('regra de deliberação da banca requerida', () => {
     it('declara a banca sem regra, com o seletor de modo e nada mais', () => {
-      comCronograma(fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: null }] }));
+      comCronograma(
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: null,
+            },
+          ],
+        }),
+      );
 
       expect(campo<HTMLSelectElement>('modo')?.value).toBe('');
       expect(campo('integrantes')).toBeNull();
     });
 
     it('cria a regra ao escolher o modo e a completa campo a campo', () => {
-      comCronograma(fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: null }] }));
+      comCronograma(
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: null,
+            },
+          ],
+        }),
+      );
 
       escolher('modo', ModoDeDeliberacao.colegiadaComVotacao);
       digitar('integrantes', '5');
@@ -69,7 +93,15 @@ describe('FasePassoComponent', () => {
     it('cobra sob o campo o que a regra ainda não tem, antes de gravar', () => {
       comCronograma(
         fase({
-          bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: comRegra({ criterio: '' }) }],
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: comRegra({ criterio: '' }),
+            },
+          ],
         }),
       );
 
@@ -80,7 +112,17 @@ describe('FasePassoComponent', () => {
 
     it('volta a banca a sem regra ao escolher a opção de não declará-la', () => {
       comCronograma(
-        fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA }] }),
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: COLEGIADA,
+            },
+          ],
+        }),
       );
 
       escolher('modo', '');
@@ -91,7 +133,17 @@ describe('FasePassoComponent', () => {
 
     it('declara o ato individual sem votação e sem nada a cobrar', () => {
       comCronograma(
-        fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA }] }),
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: COLEGIADA,
+            },
+          ],
+        }),
       );
 
       escolher('modo', ModoDeDeliberacao.atoIndividual);
@@ -104,7 +156,17 @@ describe('FasePassoComponent', () => {
 
     it('não aceita edição enquanto uma gravação corre', () => {
       comCronograma(
-        fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA }] }),
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: COLEGIADA,
+            },
+          ],
+        }),
       );
 
       store.salvando.set(true);
@@ -116,7 +178,17 @@ describe('FasePassoComponent', () => {
 
     it('lê a regra em consulta como uma linha, sem campo nem seletor', () => {
       comCronograma(
-        fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA }] }),
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: COLEGIADA,
+            },
+          ],
+        }),
       );
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
@@ -129,7 +201,19 @@ describe('FasePassoComponent', () => {
     });
 
     it('lê em consulta a banca sem regra declarada como tal', () => {
-      comCronograma(fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: null }] }));
+      comCronograma(
+        fase({
+          bancasRequeridas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              ...SEM_RECORTE,
+              regraDeDeliberacao: null,
+            },
+          ],
+        }),
+      );
       store.remoteSnapshot.set({
         status: StatusProcesso.publicado,
       } as unknown as ProcessoSeletivoDto);

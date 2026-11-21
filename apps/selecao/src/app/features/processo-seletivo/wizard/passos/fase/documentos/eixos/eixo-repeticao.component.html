@@ -2,8 +2,8 @@
 @if (repeticaoDoDoc.atual?.herdada) {
   <span class="label">Repetir por</span>
   <p class="field__hint">
-    {{ repeticaoDoDoc.rotulo }}, declarado no grupo de alternativas: o
-    documento é cobrado uma vez por ocorrência do grupo.
+    {{ repeticaoDoDoc.rotulo }}, declarado no grupo de alternativas: o documento é cobrado uma vez
+    por ocorrência do grupo.
   </p>
   @if (repeticaoDoDoc.erro; as erro) {
     <p class="field__erro">{{ erro }}</p>
@@ -11,18 +11,15 @@
 } @else if (repeticaoDoDoc.semGrupo && repeticaoDoDoc.atual === null) {
   <span class="label">Repetir por</span>
   <p class="field__hint">
-    Nenhum formulário do processo tem grupo repetível, como a composição
-    familiar. Os grupos vêm dos formulários: acrescente um no passo
-    Formulários para cobrar o documento uma vez por ocorrência.
+    Nenhum formulário do processo tem grupo repetível, como a composição familiar. Os grupos vêm dos
+    formulários: acrescente um no passo Formulários para cobrar o documento uma vez por ocorrência.
   </p>
 } @else {
-  <label class="label" [attr.for]="idDaFase('doc-repeticao-' + documentoId())"
-    >Repetir por</label
-  >
+  <label class="label" [attr.for]="idDaFase('doc-repeticao-' + documentoId())">Repetir por</label>
   <select
     class="select"
     [attr.id]="idDaFase('doc-repeticao-' + documentoId())"
-    [disabled]="!store.aceitaEdicao()"
+    [disabled]="!cronograma.edicaoLiberada()"
     [attr.aria-invalid]="repeticaoDoDoc.erro !== null ? 'true' : null"
     [attr.aria-describedby]="
       repeticaoDoDoc.erro !== null
@@ -37,34 +34,23 @@
       Não repete: um por candidato
     </option>
     @for (grupo of repeticaoDoDoc.oferecidos; track grupo.codigo) {
-      <option
-        [value]="grupo.codigo"
-        [selected]="repeticaoDoDoc.atual?.grupo === grupo.codigo"
-      >
+      <option [value]="grupo.codigo" [selected]="repeticaoDoDoc.atual?.grupo === grupo.codigo">
         {{ grupo.rotulo }} ({{ grupo.codigo }})
       </option>
     }
     @if (repeticaoDoDoc.erro !== null && repeticaoDoDoc.atual; as atual) {
-      <option [value]="atual.grupo" selected>
-        {{ repeticaoDoDoc.rotulo }} (não vale mais)
-      </option>
+      <option [value]="atual.grupo" selected>{{ repeticaoDoDoc.rotulo }} (não vale mais)</option>
     }
   </select>
-  <span
-    class="field__hint"
-    [attr.id]="idDaFase('doc-repeticao-ajuda-' + documentoId())"
-  >
-    Cobra o documento uma vez por ocorrência do grupo, como cada membro
-    da composição familiar, e deixa o gatilho citar os campos dele.
+  <span class="field__hint" [attr.id]="idDaFase('doc-repeticao-ajuda-' + documentoId())">
+    Cobra o documento uma vez por ocorrência do grupo, como cada membro da composição familiar, e
+    deixa o gatilho citar os campos dele.
     @if (repeticaoDoDoc.naoOferecidos.length > 0) {
       Não oferecidos aqui: {{ repeticaoDoDoc.naoOferecidos.join('; ') }}.
     }
   </span>
   @if (repeticaoDoDoc.erro; as erro) {
-    <p
-      class="field__erro"
-      [attr.id]="idDaFase('doc-repeticao-erro-' + documentoId())"
-    >
+    <p class="field__erro" [attr.id]="idDaFase('doc-repeticao-erro-' + documentoId())">
       {{ erro }}
     </p>
   }

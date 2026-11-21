@@ -1,3 +1,5 @@
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
+import { novaChave } from '../../../shared/chaves/chave-local';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
@@ -35,6 +37,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 })
 export class BancasDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;
@@ -56,18 +59,17 @@ export class BancasDaFaseComponent {
   /** A leitura da consulta: cada banca em texto, com o recorte que julga. */
   protected faseLida() {
     if (this.espelho.formulario() === null) return null;
+    return { bancas: this.bancas.map((banca) => this.descreverBanca(banca)) };
+  }
+
+  private descreverBanca(banca: BancaRequeridaDaFase): string {
     const categorias = this.categorias();
-    return {
-      bancas: this.bancas.map((banca) => {
-        const nomes = banca.categoriasDocumentoIds.map(
-          (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
-        );
-        const nomeDaBanca = this.faseEmEdicao.nomeDaBanca(banca.tipoBancaId);
-        const recorte =
-          nomes.length === 0 ? nomeDaBanca : `${nomeDaBanca} — julga ${nomes.join(', ')}`;
-        return `${recorte} — ${descricaoDaRegra(banca.regraDeDeliberacao)}`;
-      }),
-    };
+    const nomes = banca.categoriasDocumentoIds.map(
+      (id) => categorias.find((categoria) => categoria.id === id)?.nome ?? id,
+    );
+    const nome = banca.copiaDoTipo?.rotulo ?? this.faseEmEdicao.nomeDaBanca(banca.tipoBancaId);
+    const recorte = nomes.length === 0 ? nome : `${nome} — julga ${nomes.join(', ')}`;
+    return `${recorte} — ${descricaoDaRegra(banca.regraDeDeliberacao)}`;
   }
 
   /** O que a conferência local recusa em cada campo da regra de cada banca, estável entre ciclos de detecção. */
@@ -88,10 +90,22 @@ export class BancasDaFaseComponent {
   }
 
   acrescentarBanca(): void {
-    this.escreverBancas([
-      ...this.bancas,
-      { tipoBancaId: '', categoriasDocumentoIds: [], regraDeDeliberacao: null },
-    ]);
+    this.escreverBancas([...this.bancas, this.novaBanca()]);
+  }
+
+  private novaBanca(): BancaRequeridaDaFase {
+    return {
+      id: null,
+      identificadorLocal: novaChave({
+        tipo: 'banca',
+        nome: '',
+        tomadas: new Set(this.bancas.map((banca) => banca.identificadorLocal)),
+      }),
+      copiaDoTipo: null,
+      tipoBancaId: '',
+      categoriasDocumentoIds: [],
+      regraDeDeliberacao: null,
+    };
   }
 
   removerBanca(posicao: number): void {

@@ -1,6 +1,4 @@
-<label class="label" [attr.for]="idDaFase('doc-alcance-' + documentoId())"
-  >Exigido em</label
->
+<label class="label" [attr.for]="idDaFase('doc-alcance-' + documentoId())">Exigido em</label>
 <!--
 Alcance entre fases, que é outro eixo do "Coletado em" ao lado: este diz em
 QUAIS fases o documento é exigido; aquele, em que ponto DESTA fase ele é
@@ -10,10 +8,8 @@ primeiro diz "todas".
 <select
   class="select"
   [attr.id]="idDaFase('doc-alcance-' + documentoId())"
-  [disabled]="!store.aceitaEdicao()"
-  (change)="
-    escolherAlcanceDoDocumento(documentoId(), $any($event.target).value)
-  "
+  [disabled]="!cronograma.edicaoLiberada()"
+  (change)="escolherAlcanceDoDocumento(documentoId(), $any($event.target).value)"
 >
   <option value="fase" [selected]="!exigencias.valeEmTodasAsFases(documentoId())">
     Só em {{ nomeDaFaseAberta() }}

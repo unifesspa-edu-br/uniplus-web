@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, type FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -62,6 +63,7 @@ function regraDeRecursoLida(recurso: RecursoDaFase): string | null {
 })
 export class RegraDeRecursoDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly catalogoDeAtos = inject(CatalogoDeAtos);
   private readonly catalogoDeRegras = inject(CatalogoDeRegras);
   private readonly faseEmEdicao = inject(FaseEmEdicao);

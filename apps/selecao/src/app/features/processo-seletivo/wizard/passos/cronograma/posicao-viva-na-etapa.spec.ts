@@ -69,8 +69,20 @@ describe('novasPosicoes', () => {
 });
 
 describe('as bancas da etapa', () => {
-  const primeira = { tipoBancaId: 'primeira', regraDeDeliberacao: null };
-  const segunda = { tipoBancaId: 'segunda', regraDeDeliberacao: null };
+  const primeira = {
+    id: null,
+    identificadorLocal: 'primeira',
+    copiaDoTipo: null,
+    tipoBancaId: 'primeira',
+    regraDeDeliberacao: null,
+  };
+  const segunda = {
+    id: null,
+    identificadorLocal: 'segunda',
+    copiaDoTipo: null,
+    tipoBancaId: 'segunda',
+    regraDeDeliberacao: null,
+  };
   const bancas = (...lista: (typeof primeira)[]) =>
     listasDaEtapa(umaEtapaDoCronograma({ bancas: lista }));
 

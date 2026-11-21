@@ -11,15 +11,13 @@
       <span class="doc-item__desc">{{ exigencias.posicaoNaArvore(doc.id) }}</span>
     }
     @if (exigencias.declaradoMaisDeUmaVez(doc.id) !== '') {
-      <span class="field__hint">{{
-        exigencias.declaradoMaisDeUmaVez(doc.id)
-      }}</span>
+      <span class="field__hint">{{ exigencias.declaradoMaisDeUmaVez(doc.id) }}</span>
     }
   </div>
   <button
     class="btn btn--tertiary"
     type="button"
-    [disabled]="!store.aceitaEdicao()"
+    [disabled]="!cronograma.edicaoLiberada()"
     [attr.aria-label]="'Remover ' + doc.nome"
     (click)="remover.emit()"
   >
@@ -50,15 +48,12 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     <div class="form-field">
       <span class="label">Quem deve entregar</span>
       <p class="field__hint">
-        O quadro de vagas ainda não seleciona modalidade alguma. Declare
-        as ofertas no passo Vagas.
+        O quadro de vagas ainda não seleciona modalidade alguma. Declare as ofertas no passo Vagas.
       </p>
     </div>
   } @else {
     <div class="form-field">
-      <label class="label" [attr.for]="modalidadesDoDoc.campoId">
-        Quem deve entregar
-      </label>
+      <label class="label" [attr.for]="modalidadesDoDoc.campoId"> Quem deve entregar </label>
       <ui-combobox
         #modalidadesDoDoc
         multiplo
@@ -67,7 +62,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
         textoSemResultado="Nenhuma modalidade do quadro casa com o que você digitou."
         [grupos]="gatilho.modalidadesEscolhiveis()"
         [values]="gatilho.modalidadesEfetivas(doc.id)"
-        [disabled]="!store.aceitaEdicao()"
+        [disabled]="!cronograma.edicaoLiberada()"
         (valuesChange)="gatilho.definirModalidades(doc.id, $event)"
       />
     </div>
@@ -76,12 +71,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   <sel-eixo-repeticao class="form-field" [documentoId]="doc.id"></sel-eixo-repeticao>
 
   <div class="form-field">
-    <label
-      class="label"
-      [attr.for]="idDaFase('doc-exigido-de-' + doc.id)"
-    >
-      Exigido de
-    </label>
+    <label class="label" [attr.for]="idDaFase('doc-exigido-de-' + doc.id)"> Exigido de </label>
     <!--
     Declaração, não dedução: uma exigência pode ser "de quem satisfaz" e ainda
     não ter condição escrita — é exigida de ninguém até que a primeira apareça.
@@ -90,20 +80,16 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     <select
       class="select"
       [attr.id]="idDaFase('doc-exigido-de-' + doc.id)"
-      [disabled]="!store.aceitaEdicao()"
+      [disabled]="!cronograma.edicaoLiberada()"
       (change)="gatilho.escolherExigidoDe(doc.id, $any($event.target).value)"
     >
-      <option value="todos" [selected]="gatilho.ehExigidoDeTodos(doc.id)">
-        Todo candidato
-      </option>
+      <option value="todos" [selected]="gatilho.ehExigidoDeTodos(doc.id)">Todo candidato</option>
       <option value="quem" [selected]="!gatilho.ehExigidoDeTodos(doc.id)">
         Só de quem satisfaz as condições declaradas
       </option>
     </select>
     @if (gatilho.avisoDeDescarteDoGatilho(doc.id) !== '') {
-      <span class="field__hint">{{
-        gatilho.avisoDeDescarteDoGatilho(doc.id)
-      }}</span>
+      <span class="field__hint">{{ gatilho.avisoDeDescarteDoGatilho(doc.id) }}</span>
     }
   </div>
 
@@ -122,7 +108,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
       [erros]="gatilho.errosDeFaseDoGatilho(doc.id)"
       [textoSemFatos]="gatilho.textoSemFatosDoGatilho()"
       [idBase]="idDaFase('doc-' + doc.id)"
-      [disabled]="!store.aceitaEdicao()"
+      [disabled]="!cronograma.edicaoLiberada()"
       [fatoDoRecorte]="fatoDoRecorte"
       [textoSemCondicao]="gatilho.gatilhoSemCondicaoDiz(doc.id)"
       (condicoesChange)="gatilho.escreverCondicoes(doc.id, $event)"
@@ -130,23 +116,14 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   }
 
   <div class="form-field">
-    <label
-      class="label"
-      [attr.for]="idDaFase('doc-obrigatorio-' + doc.id)"
-    >
-      Entrega
-    </label>
+    <label class="label" [attr.for]="idDaFase('doc-obrigatorio-' + doc.id)"> Entrega </label>
     <select
       class="select"
       [attr.id]="idDaFase('doc-obrigatorio-' + doc.id)"
-      [disabled]="!store.aceitaEdicao()"
-      (change)="
-        escolherObrigatoriedade(doc.id, $any($event.target).value)
-      "
+      [disabled]="!cronograma.edicaoLiberada()"
+      (change)="escolherObrigatoriedade(doc.id, $any($event.target).value)"
     >
-      <option value="sim" [selected]="ehObrigatorio(doc.id)">
-        Obrigatória
-      </option>
+      <option value="sim" [selected]="ehObrigatorio(doc.id)">Obrigatória</option>
       <option value="nao" [selected]="!ehObrigatorio(doc.id)">
         Facultativa — a análise segue sem ela
       </option>
@@ -154,10 +131,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   </div>
 
   <div class="form-field">
-    <label
-      class="label"
-      [attr.for]="idDaFase('doc-consequencia-' + doc.id)"
-    >
+    <label class="label" [attr.for]="idDaFase('doc-consequencia-' + doc.id)">
       Se não for entregue
     </label>
     <!--
@@ -167,14 +141,11 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     <select
       class="select"
       [attr.id]="idDaFase('doc-consequencia-' + doc.id)"
-      [disabled]="!store.aceitaEdicao()"
+      [disabled]="!cronograma.edicaoLiberada()"
       (change)="escolherConsequencia(doc.id, $any($event.target).value)"
     >
       @for (opcao of consequenciasDaFase(); track opcao.valor) {
-        <option
-          [value]="opcao.valor"
-          [selected]="opcao.valor === consequenciaDoDocumento(doc.id)"
-        >
+        <option [value]="opcao.valor" [selected]="opcao.valor === consequenciaDoDocumento(doc.id)">
           {{ rotuloDaConsequencia(opcao.valor, ehObrigatorio(doc.id)) }}
         </option>
       }
@@ -187,7 +158,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   <sel-modelo-da-exigencia
     class="doc-item__modelo"
     [modelo]="modeloDoDocumento(doc.id)"
-    [desabilitado]="!store.aceitaEdicao()"
+    [desabilitado]="!cronograma.edicaoLiberada()"
     [idBase]="idDaFase('doc-modelo-' + doc.id)"
     [nomeDoDocumento]="doc.nome"
     (modeloChange)="definirModelo(doc.id, $event)"
@@ -200,7 +171,7 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
     disposicao="na-grade"
     [bases]="basesLegaisDoDocumento(doc.id)"
     [idBase]="idDaFase('doc-normas-' + doc.id)"
-    [disabled]="!store.aceitaEdicao()"
+    [disabled]="!cronograma.edicaoLiberada()"
     [minimo]="1"
     [textos]="textosDasNormas"
     [referenciaObrigatoria]="false"
@@ -210,8 +181,8 @@ fases ela vale, em que ponto desta fase é coletada, e de quem é cobrada.
   >
     @if (exigencias.faltaNormaResolvida(doc.id)) {
       <p class="field__hint doc-item__aviso-norma">
-        Sem uma norma declarada e identificada como "Resolvida", a
-        publicação recusa esta exigência, que decide o resultado.
+        Sem uma norma declarada e identificada como "Resolvida", a publicação recusa esta exigência,
+        que decide o resultado.
       </p>
     }
   </ui-normas-do-documento>

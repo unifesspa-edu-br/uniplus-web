@@ -1,8 +1,8 @@
-  <h3 class="form-section__title">Documentos exigidos nesta fase</h3>
-  @if (!store.emConsulta()) {
+<h3 class="form-section__title">Documentos exigidos nesta fase</h3>
+@if (!store.emConsulta()) {
   <p class="field__hint">
-    Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades
-    que devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
+    Acrescente o que o candidato precisa entregar em {{ nomeDaFaseAberta() }}. As modalidades que
+    devem entregar acompanham o quadro de vagas, e podem ser recortadas por documento.
   </p>
 
   <!--
@@ -25,13 +25,13 @@
           textoSemResultado="Nenhum documento do catálogo casa com o que você digitou."
           [grupos]="documentosDisponiveis()"
           [value]="documentoAAcrescentar()"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           (valueChange)="escolherDocumento($event)"
         />
         <button
           class="btn btn--secondary"
           type="button"
-          [disabled]="!store.aceitaEdicao() || documentoAAcrescentar() === ''"
+          [disabled]="!cronograma.edicaoLiberada() || documentoAAcrescentar() === ''"
           (click)="acrescentarDocumento()"
         >
           Acrescentar documento
@@ -40,98 +40,107 @@
       <p class="sr-only" role="status">{{ avisoDaRemocao() }}</p>
     </div>
   </div>
-  }
+}
 
-  @if (resumos().length > 0) {
-    <!--
+@if (resumos().length > 0) {
+  <!--
       A conferência lê a fase inteira pelo resumo: o que decide cada exigência fica à vista,
       e os campos abrem por documento. O filtro responde "o que este candidato entrega".
     -->
-    <!-- Em consulta o filtro não tem o que mostrar: sai da vista, mas fica no DOM porque a
+  <!-- Em consulta o filtro não tem o que mostrar: sai da vista, mas fica no DOM porque a
          edição devolve o foco a ele (`#seletorDoPublico`). -->
-    <div class="form-field doc-conferencia__filtro" [hidden]="store.emConsulta()">
-      <label class="label" [attr.for]="idDaFase('doc-filtro')"
-        >Conferir os documentos de</label
-      >
-      <select
-        #seletorDoPublico
-        class="select"
-        [attr.id]="idDaFase('doc-filtro')"
-        [attr.aria-describedby]="idDaFase('doc-filtro-total')"
-        (change)="escolherPublico($any($event.target).value)"
-      >
-        @for (opcao of opcoesDoFiltro(); track opcao.valor) {
-          <option [value]="opcao.valor" [selected]="opcao.valor === filtroDoPublico()">
-            {{ opcao.rotulo }}
-          </option>
-        }
-      </select>
-      <p class="field__hint" [attr.id]="idDaFase('doc-filtro-total')" role="status">
-        {{ resumosVisiveis().length }} de {{ resumos().length }} documentos.
-        {{ saiuDaLista() }}
-      </p>
-    </div>
+  <div class="form-field doc-conferencia__filtro" [hidden]="store.emConsulta()">
+    <label class="label" [attr.for]="idDaFase('doc-filtro')">Conferir os documentos de</label>
+    <select
+      #seletorDoPublico
+      class="select"
+      [attr.id]="idDaFase('doc-filtro')"
+      [attr.aria-describedby]="idDaFase('doc-filtro-total')"
+      (change)="escolherPublico($any($event.target).value)"
+    >
+      @for (opcao of opcoesDoFiltro(); track opcao.valor) {
+        <option [value]="opcao.valor" [selected]="opcao.valor === filtroDoPublico()">
+          {{ opcao.rotulo }}
+        </option>
+      }
+    </select>
+    <p class="field__hint" [attr.id]="idDaFase('doc-filtro-total')" role="status">
+      {{ resumosVisiveis().length }} de {{ resumos().length }} documentos.
+      {{ saiuDaLista() }}
+    </p>
+  </div>
 
-    @if (normaComumDaFase(); as norma) {
-      <p class="doc-conferencia__norma-comum">
-        <span class="doc-conferencia__rotulo">Norma de todos os documentos:</span>
-        {{ norma.referencia }} ({{ norma.detalhe }})
-        @if (norma.observacao !== '') {
-          <span class="doc-conferencia__meta">{{ norma.observacao }}</span>
-        }
-      </p>
-    }
+  @if (normaComumDaFase(); as norma) {
+    <p class="doc-conferencia__norma-comum">
+      <span class="doc-conferencia__rotulo">Norma de todos os documentos:</span>
+      {{ norma.referencia }} ({{ norma.detalhe }})
+      @if (norma.observacao !== '') {
+        <span class="doc-conferencia__meta">{{ norma.observacao }}</span>
+      }
+    </p>
+  }
 
-    <!--
+  <!--
       Na fase que divide inscrição e isenção, uma tabela por formulário: o candidato apresenta
       cada documento no bloco de comprovação de um deles.
     -->
-    @for (grupo of conferenciaPorFormulario(); track grupo.finalidade ?? '') {
-      @let dividida = exigencias.finalidadesDaFaseAberta().length > 1;
-      @if (dividida) {
-        <h4 class="form-section__title">{{ tituloDoFormulario(grupo.finalidade) }}</h4>
-      }
-      <div class="table-responsive quadro-empilhavel doc-conferencia">
-        <table>
-          <caption class="sr-only">
-            Documentos exigidos nesta fase{{
-              dividida ? ' — ' + tituloDoFormulario(grupo.finalidade) : ''
-            }}
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col" class="doc-conferencia__col-documento">Documento</th>
-              <th scope="col" class="doc-conferencia__col-publico">A quem se aplica</th>
-              <th scope="col" class="doc-conferencia__col-entrega">Entrega</th>
-              <th scope="col" class="doc-conferencia__col-consequencia">
-                Se não for entregue
-              </th>
-              <th scope="col" class="doc-conferencia__col-coleta">Coleta</th>
-              @if (normaComumDaFase() === null) {
-                <th scope="col" class="doc-conferencia__col-norma">Norma</th>
-              }
-            </tr>
-          </thead>
-          <tbody>
-            @for (resumo of grupo.itens; track resumo.id) {
-              <tr selLinhaDoDocumento class="doc-conferencia__linha" [resumo]="resumo" [aberta]="emEdicao(resumo.id)" [semNormaComum]="normaComumDaFase() === null" (alternar)="alternarEdicaoNaConferencia(resumo.id, seletorDoPublico)"></tr>
-              @if (resumo.detalhe; as detalhe) {
-                <tr selDetalheDoDocumento class="doc-conferencia__campos" [detalhe]="detalhe" [nomeDoDocumento]="resumo.nome" [colunas]="colunasDaConferencia()"></tr>
-              } @else if (emEdicao(resumo.id)) {
-                <tr
-                  class="doc-conferencia__campos"
-                  [attr.id]="idDaFase('doc-campos-' + resumo.id)"
-                >
-                  <td [attr.colspan]="colunasDaConferencia()">
-                    <sel-editor-da-exigencia [resumo]="resumo" (remover)="removerDocumento(resumo.id, seletorDoPublico)"></sel-editor-da-exigencia>
-                  </td>
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      </div>
+  @for (grupo of conferenciaPorFormulario(); track grupo.finalidade ?? '') {
+    @let dividida = exigencias.finalidadesDaFaseAberta().length > 1;
+    @if (dividida) {
+      <h4 class="form-section__title">{{ tituloDoFormulario(grupo.finalidade) }}</h4>
     }
-  } @else {
-    <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>
+    <div class="table-responsive quadro-empilhavel doc-conferencia">
+      <table>
+        <caption class="sr-only">
+          Documentos exigidos nesta fase{{
+            dividida ? ' — ' + tituloDoFormulario(grupo.finalidade) : ''
+          }}
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="doc-conferencia__col-documento">Documento</th>
+            <th scope="col" class="doc-conferencia__col-publico">A quem se aplica</th>
+            <th scope="col" class="doc-conferencia__col-entrega">Entrega</th>
+            <th scope="col" class="doc-conferencia__col-consequencia">Se não for entregue</th>
+            <th scope="col" class="doc-conferencia__col-coleta">Coleta</th>
+            @if (normaComumDaFase() === null) {
+              <th scope="col" class="doc-conferencia__col-norma">Norma</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (resumo of grupo.itens; track resumo.id) {
+            <tr
+              selLinhaDoDocumento
+              class="doc-conferencia__linha"
+              [resumo]="resumo"
+              [aberta]="emEdicao(resumo.id)"
+              [semNormaComum]="normaComumDaFase() === null"
+              (alternar)="alternarEdicaoNaConferencia(resumo.id, seletorDoPublico)"
+            ></tr>
+            @if (resumo.detalhe; as detalhe) {
+              <tr
+                selDetalheDoDocumento
+                class="doc-conferencia__campos"
+                [detalhe]="detalhe"
+                [nomeDoDocumento]="resumo.nome"
+                [colunas]="colunasDaConferencia()"
+              ></tr>
+            } @else if (emEdicao(resumo.id)) {
+              <tr class="doc-conferencia__campos" [attr.id]="idDaFase('doc-campos-' + resumo.id)">
+                <td [attr.colspan]="colunasDaConferencia()">
+                  <sel-editor-da-exigencia
+                    [resumo]="resumo"
+                    (remover)="removerDocumento(resumo.id, seletorDoPublico)"
+                  ></sel-editor-da-exigencia>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
   }
+} @else {
+  <p class="field__hint">Esta fase ainda não exige documento nenhum.</p>
+}

@@ -25,7 +25,7 @@
           [attr.id]="idDaFase('banca-' + $index)"
           [ngModel]="banca.tipoBancaId"
           [ngModelOptions]="{ standalone: true }"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           [attr.aria-describedby]="
             temMensagemNaLista()
               ? idDaFase('bancas-erro') + ' ' + idDaFase('bancas-ajuda')
@@ -60,7 +60,7 @@
                 type="checkbox"
                 [attr.id]="idDaFase('recorte-' + $index + '-' + categoria.id)"
                 [checked]="categoriaMarcada($index, categoria.id)"
-                [disabled]="!store.aceitaEdicao()"
+                [disabled]="!cronograma.edicaoLiberada()"
                 (change)="alternarCategoria($index, categoria.id, $any($event.target).checked)"
               />
               <span class="checkbox__box" aria-hidden="true"></span>
@@ -74,7 +74,7 @@
         class="form-grid__full"
         [regra]="banca.regraDeDeliberacao"
         [idBase]="idDaFase('regra-' + $index)"
-        [desabilitada]="!store.aceitaEdicao()"
+        [desabilitada]="!cronograma.edicaoLiberada()"
         [erros]="errosDasRegras()[$index]"
         [recusas]="recusasDasRegras()[$index]"
         (regraChange)="declararRegra($index, $event)"
@@ -84,7 +84,7 @@
         <button
           class="btn btn--tertiary"
           type="button"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           [attr.aria-label]="'Remover banca ' + ($index + 1) + ' desta fase'"
           (click)="removerBanca($index)"
         >
@@ -101,7 +101,7 @@
   <button
     class="btn btn--secondary"
     type="button"
-    [disabled]="!store.aceitaEdicao()"
+    [disabled]="!cronograma.edicaoLiberada()"
     (click)="acrescentarBanca()"
   >
     Acrescentar banca

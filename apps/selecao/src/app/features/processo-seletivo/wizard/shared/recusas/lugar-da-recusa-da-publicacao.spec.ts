@@ -116,7 +116,14 @@ describe('lugarDaRecusaDaPublicacao: fase', () => {
         umaFaseDoCronograma({
           codigo: 'INSCRICAO',
           bancasRequeridas: [
-            { tipoBancaId: 'banca', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+            {
+              id: null,
+              identificadorLocal: 'banca',
+              copiaDoTipo: null,
+              tipoBancaId: 'banca',
+              categoriasDocumentoIds: [],
+              regraDeDeliberacao: null,
+            },
           ],
         }),
       ],

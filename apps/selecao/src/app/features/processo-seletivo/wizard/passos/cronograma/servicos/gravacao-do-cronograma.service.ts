@@ -28,7 +28,11 @@ import {
 } from './gravar-cronograma-fases';
 import { GravacaoDasExigenciasDocumentais } from './gravacao-das-exigencias-documentais.service';
 import { RecusaDaGravacaoDasEtapas } from './recusa-da-gravacao-das-etapas.service';
-import { ReleituraDasEtapas, AGUARDA_RELEITURA } from './releitura-das-etapas.service';
+import {
+  ReleituraDosIdentificadores,
+  AVISO_DIVERGENCIA,
+  TEXTOS_RELEITURA,
+} from './releitura-dos-identificadores.service';
 import { RecusasDoServidorNasEtapas } from './recusas-do-servidor-nas-etapas.service';
 import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.service';
 
@@ -59,7 +63,7 @@ export class GravacaoDoCronograma {
   private readonly exigencias = inject(GravacaoDasExigenciasDocumentais);
   private readonly cronograma = inject(FormularioDoCronograma);
   private readonly conferencia = inject(ConferenciaDoCronograma);
-  private readonly releituraDasEtapas = inject(ReleituraDasEtapas);
+  private readonly releituraDosIdentificadores = inject(ReleituraDosIdentificadores);
   private readonly recusas = inject(RecusasDoServidorNasEtapas);
   private readonly recusaDasEtapas = inject(RecusaDaGravacaoDasEtapas);
   private readonly recusasDasFases = inject(RecusasDoServidorNasFases);
@@ -148,6 +152,7 @@ export class GravacaoDoCronograma {
   private async gravarEmSequencia(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {
     const passos = [
       () => this.gravarFases(conteudo),
+      () => this.recolherIdentificadoresDasFases(conteudo),
       () => this.gravarEtapas(conteudo),
       () => this.recolherIdentificadores(conteudo),
       () => this.gravarExigencias(conteudo),
@@ -267,17 +272,30 @@ export class GravacaoDoCronograma {
     return this.recusaDasEtapas.recusar(conteudo, gravacao.problem);
   }
 
+  private async recolherIdentificadoresDasFases(
+    conteudo: ConteudoDaGravacao,
+  ): Promise<ValidacaoDoPasso | null> {
+    if (!conteudo.fases.some((fase) => fase.bancasRequeridas.some((banca) => banca.id === null)))
+      return null;
+    return this.relerAposGravacao(conteudo, 'fases');
+  }
+
   private async recolherIdentificadores(
     conteudo: ConteudoDaGravacao,
   ): Promise<ValidacaoDoPasso | null> {
-    const recolheu = await this.releituraDasEtapas.recolherIdentificadoresDasEtapas(
-      conteudo.processoId,
-    );
-    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
-    if (recolheu) return null;
+    return this.relerAposGravacao(conteudo, 'etapas');
+  }
 
-    this.releituraDasEtapas.releituraPendente.set(true);
-    return { valid: false, messages: [AGUARDA_RELEITURA] };
+  private async relerAposGravacao(
+    conteudo: ConteudoDaGravacao,
+    escopo: 'fases' | 'etapas',
+  ): Promise<ValidacaoDoPasso | null> {
+    const resultado = await this.releituraDosIdentificadores.recolher(conteudo.processoId, escopo);
+    if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
+    if (resultado === 'confere') return null;
+    if (resultado === 'divergencia') return { valid: false, messages: [AVISO_DIVERGENCIA] };
+    this.releituraDosIdentificadores.pendente.set(escopo);
+    return { valid: false, messages: [TEXTOS_RELEITURA[escopo]] };
   }
 
   private async gravarExigencias(conteudo: ConteudoDaGravacao): Promise<ValidacaoDoPasso | null> {

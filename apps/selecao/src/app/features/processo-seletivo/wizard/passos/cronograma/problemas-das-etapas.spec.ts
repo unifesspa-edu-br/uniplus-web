@@ -357,7 +357,17 @@ describe('etapa de nota do ENEM', () => {
       procedimentos: [],
     });
     expect(
-      problemasDaEnem({ bancas: [{ tipoBancaId: 'banca-1', regraDeDeliberacao: null }] }),
+      problemasDaEnem({
+        bancas: [
+          {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
+            tipoBancaId: 'banca-1',
+            regraDeDeliberacao: null,
+          },
+        ],
+      }),
     ).toHaveLength(1);
     expect(problemasDaEnem({ inicio: '2027-01-10T08:00' })).toHaveLength(1);
     expect(problemasDaEnem({ fim: '2027-01-10T18:00' })).toHaveLength(1);

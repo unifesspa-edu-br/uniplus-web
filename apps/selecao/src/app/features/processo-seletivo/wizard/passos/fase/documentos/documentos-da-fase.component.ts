@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -60,6 +61,7 @@ import { LinhaDoDocumentoComponent } from './linha-do-documento.component';
 })
 export class DocumentosDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly catalogoDeDocumentos = inject(CatalogoDeDocumentos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
@@ -91,18 +93,16 @@ export class DocumentosDaFaseComponent {
         label: grupo.label,
         options: grupo.docs
           .filter((doc) => !jaExigidos.has(doc.id))
-          .map((doc) =>
-            aguardandoProtecao.has(doc.id)
-              ? {
-                  value: doc.id,
-                  label: `${doc.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`,
-                  disabled: true,
-                }
-              : { value: doc.id, label: doc.nome },
-          ),
+          .map((doc) => this.opcaoDoDocumento(doc, aguardandoProtecao)),
       }))
       .filter((grupo) => grupo.options.length > 0);
   });
+
+  private opcaoDoDocumento(doc: DocumentoDefinicao, aguardandoProtecao: ReadonlySet<string>) {
+    return aguardandoProtecao.has(doc.id)
+      ? { value: doc.id, label: `${doc.nome} — ${MOTIVO_DA_PROTECAO_PENDENTE}`, disabled: true }
+      : { value: doc.id, label: doc.nome };
+  }
 
   /** Quantos documentos o catálogo ainda oferece a esta fase. */
   readonly documentosAlcancados = computed(() =>
@@ -180,34 +180,45 @@ export class DocumentosDaFaseComponent {
 
   /** O resumo de cada documento da fase: o que decide a exigência, sem abrir os campos. */
   readonly resumos = computed<readonly ResumoDoDocumento[]>(() =>
-    this.exigencias.documentosDaFase().map((doc) => {
-      const exigencia = this.exigencias.exigenciaDoDocumento(doc.id);
-      const publico = publicoDaExigencia(exigencia, this.gatilho.fatoPorCodigo());
-      return {
-        id: doc.id,
-        nome: doc.nome,
-        documento: doc,
-        publico,
-        aplicaA: descreverPublico(publico),
-        entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
-        composicao: composicaoResumida(this.exigencias.grupoDoDocumento(doc.id)),
-        repeticao: this.repeticaoResumidaDoDocumento(doc.id),
-        consequencia: rotuloDaConsequencia(
-          exigencia.consequenciaIndeferimento,
-          exigencia.obrigatorio,
-        ),
-        coleta: this.coletaDoDocumento(doc.id),
-        bases: exigencia.basesLegais,
-        normas: exigencia.basesLegais.map(descreverNorma),
-        faltaNorma: this.exigencias.faltaNormaResolvida(doc.id),
-        repetido: this.exigencias.declaradoMaisDeUmaVez(doc.id),
-        finalidade: this.exigencias.finalidadeDoDocumento(doc.id),
-        orientacao: doc.orientacao,
-        avisoDeFormatos: this.exigencias.avisoDeFormatos(doc.id),
-        detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc) : null,
-      };
-    }),
+    this.exigencias.documentosDaFase().map((doc) => this.resumoDoDocumento(doc)),
   );
+
+  private resumoDoDocumento(doc: DocumentoDefinicao): ResumoDoDocumento {
+    const exigencia = this.exigencias.exigenciaDoDocumento(doc.id);
+    const publico = publicoDaExigencia(exigencia, this.gatilho.fatoPorCodigo());
+    return {
+      id: doc.id,
+      nome: doc.nome,
+      documento: doc,
+      publico,
+      aplicaA: descreverPublico(publico),
+      entrega: exigencia.obrigatorio ? 'Obrigatória' : 'Facultativa',
+      composicao: composicaoResumida(this.exigencias.grupoDoDocumento(doc.id)),
+      repeticao: this.repeticaoResumidaDoDocumento(doc.id),
+      ...this.detalhesDoResumo(doc),
+    };
+  }
+
+  private detalhesDoResumo(doc: DocumentoDefinicao) {
+    const exigencia = this.exigencias.exigenciaDoDocumento(doc.id);
+    return {
+      coleta: this.coletaDoDocumento(doc.id),
+      consequencia: this.consequenciaDoDocumento(doc.id),
+      bases: exigencia.basesLegais,
+      normas: exigencia.basesLegais.map(descreverNorma),
+      faltaNorma: this.exigencias.faltaNormaResolvida(doc.id),
+      repetido: this.exigencias.declaradoMaisDeUmaVez(doc.id),
+      finalidade: this.exigencias.finalidadeDoDocumento(doc.id),
+      orientacao: doc.orientacao,
+      avisoDeFormatos: this.exigencias.avisoDeFormatos(doc.id),
+      detalhe: this.store.emConsulta() ? this.detalheLidoDoDocumento(doc) : null,
+    };
+  }
+
+  private consequenciaDoDocumento(id: string): string {
+    const exigencia = this.exigencias.exigenciaDoDocumento(id);
+    return rotuloDaConsequencia(exigencia.consequenciaIndeferimento, exigencia.obrigatorio);
+  }
 
   /** O arquivo que a exigência gravou aceitar, escrito como o formulário e a revisão o escrevem. */
   arquivoPublicadoDoDocumento(id: string): string {
@@ -219,24 +230,28 @@ export class DocumentosDaFaseComponent {
   detalheLidoDoDocumento(doc: DocumentoDefinicao): DetalheLidoDoDocumento {
     const id = doc.id;
     const modelo = this.exigencias.exigenciaDoDocumento(id).modelo;
-    const finalidade = this.exigencias.finalidadeDoDocumento(id);
     return {
       descricao: doc.descricao,
       formatos: this.arquivoPublicadoDoDocumento(id),
       situacao: doc.situacao,
-      formulario: mostraFormulario(
-        this.exigencias.exigenciaDoDocumento(id).finalidade,
-        this.exigencias.finalidadesDaFaseAberta(),
-      )
-        ? (formulariosEscolhiveis(this.exigencias.finalidadesDaFaseAberta()).find(
-            (opcao) => opcao.valor === finalidade,
-          )?.rotulo ?? null)
-        : null,
+      formulario: this.formularioDoDocumento(id),
       exigidoEm: this.exigencias.valeEmTodasAsFases(id)
         ? 'Todas as fases do edital'
         : `Só em ${this.nomeDaFaseAberta()}`,
       modelo: modelo === null ? null : `${modelo.nomeArquivo} (${modelo.formato})`,
     };
+  }
+
+  private formularioDoDocumento(id: string): string | null {
+    const finalidade = this.exigencias.finalidadeDoDocumento(id);
+    return mostraFormulario(
+      this.exigencias.exigenciaDoDocumento(id).finalidade,
+      this.exigencias.finalidadesDaFaseAberta(),
+    )
+      ? (formulariosEscolhiveis(this.exigencias.finalidadesDaFaseAberta()).find(
+          (opcao) => opcao.valor === finalidade,
+        )?.rotulo ?? null)
+      : null;
   }
 
   /**
@@ -333,15 +348,16 @@ export class DocumentosDaFaseComponent {
       ...condicoes.map((condicao) => opcaoDoFiltro(`condicao:${condicao}`)),
     ];
 
-    // O público escolhido continua na lista mesmo quando nenhum documento o declara mais — a
-    // condição sendo reescrita, a modalidade que saiu do quadro. Voltar sozinho a "todos" a
-    // cada tecla trocaria a lista inteira debaixo de quem edita; mantido, o seletor diz qual
-    // filtro está valendo.
+    return this.manterFiltroEscolhido(opcoes);
+  });
+
+  /** Mantém o filtro escolhido mesmo quando nenhum documento mais o declara. */
+  private manterFiltroEscolhido(opcoes: OpcaoDoFiltro[]): OpcaoDoFiltro[] {
     const escolhido = this.filtroDoPublico();
     return opcoes.some((opcao) => opcao.valor === escolhido)
       ? opcoes
       : [...opcoes, opcaoDoFiltro(escolhido)];
-  });
+  }
 
   /**
    * Os documentos que o filtro alcança, e sempre o que está com os campos abertos: tirá-lo da

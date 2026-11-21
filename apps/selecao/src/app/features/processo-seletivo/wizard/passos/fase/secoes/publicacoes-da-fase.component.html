@@ -30,7 +30,7 @@
           [attr.id]="idDaFase('produto-ato-' + $index)"
           [ngModel]="produto.atoCodigo"
           [ngModelOptions]="{ standalone: true }"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           [attr.aria-describedby]="idsQueDescrevemAPublicacao($index)"
           [attr.aria-invalid]="publicacaoRecusada($index) ? 'true' : null"
           (ngModelChange)="escolherAto($index, $event)"
@@ -62,7 +62,7 @@
         <button
           class="btn btn--tertiary"
           type="button"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           [attr.aria-label]="'Remover a publicação ' + ($index + 1) + ' desta fase'"
           (click)="removerProduto($index)"
         >
@@ -99,7 +99,7 @@
   <button
     class="btn btn--secondary"
     type="button"
-    [disabled]="!store.aceitaEdicao()"
+    [disabled]="!cronograma.edicaoLiberada()"
     (click)="acrescentarProduto()"
   >
     Acrescentar publicação

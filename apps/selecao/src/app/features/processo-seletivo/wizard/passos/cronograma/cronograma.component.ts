@@ -31,7 +31,7 @@ import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.serv
 import { RecusaDaGravacaoDasEtapas } from './servicos/recusa-da-gravacao-das-etapas.service';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
 import { RecusasDoServidorNasFases } from './servicos/recusas-do-servidor-nas-fases.service';
-import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
+import { ReleituraDosIdentificadores } from './servicos/releitura-dos-identificadores.service';
 import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import { convencaoLida } from './convencao-de-contagem';
 import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
@@ -58,7 +58,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
   providers: [
     provePassoDoWizard(CronogramaPassoComponent),
     UnidadesResponsaveisDasFases,
-    ReleituraDasEtapas,
+    ReleituraDosIdentificadores,
     FormularioDoCronograma,
     RecusasDoServidorNasEtapas,
     RecusaDaGravacaoDasEtapas,
@@ -75,7 +75,7 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
 export class CronogramaPassoComponent {
   readonly store = inject(ProcessoSeletivoStore);
   readonly situacao = inject(SituacaoDosCatalogosDoCronograma);
-  protected readonly releituraDasEtapas = inject(ReleituraDasEtapas);
+  protected readonly releituraDosIdentificadores = inject(ReleituraDosIdentificadores);
   protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly conferencia = inject(ConferenciaDoCronograma);
   protected readonly gravacao = inject(GravacaoDoCronograma);

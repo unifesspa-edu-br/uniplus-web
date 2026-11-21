@@ -87,7 +87,6 @@ describe('exigências da fase', () => {
         coletaInscricao: false,
         permiteComplementacao: false,
         coletaSolicitacaoIsencao: false,
-        bancas: [],
       },
     });
 

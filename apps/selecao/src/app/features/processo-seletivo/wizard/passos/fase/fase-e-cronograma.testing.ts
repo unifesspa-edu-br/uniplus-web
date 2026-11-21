@@ -229,6 +229,7 @@ const PROVEDORES = [
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,
   ...CATALOGOS_DO_CRONOGRAMA,
+  { provide: FormularioDoCronograma, useFactory: () => formularioCompartilhado },
   provideHttpClient(withInterceptors([apiResultInterceptor])),
   provideHttpClientTesting(),
   { provide: SELECAO_BASE_PATH, useValue: BASE },
@@ -237,6 +238,8 @@ const PROVEDORES = [
   { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
   { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
 ];
+
+let formularioCompartilhado: FormularioDoCronograma;
 
 /** Responde ao que os catálogos pedem quando os dois passos abrem. */
 function atenderCatalogos(controller: HttpTestingController): void {
@@ -261,10 +264,10 @@ export class ContextoDoCertame {
   readonly store = TestBed.inject(ProcessoSeletivoStore);
   readonly controller = TestBed.inject(HttpTestingController);
   private readonly fixtureCronograma = TestBed.createComponent(CronogramaPassoComponent);
-  private readonly fixtureSuperficie = TestBed.createComponent(FasePassoComponent);
   readonly cronograma = this.fixtureCronograma.componentInstance;
-  readonly formularioDoCronograma =
-    this.fixtureCronograma.debugElement.injector.get(FormularioDoCronograma);
+  readonly formularioDoCronograma = (formularioCompartilhado =
+    this.fixtureCronograma.debugElement.injector.get(FormularioDoCronograma));
+  private readonly fixtureSuperficie = TestBed.createComponent(FasePassoComponent);
   readonly superficie = this.fixtureSuperficie.componentInstance;
 
   readonly bancas = () =>
