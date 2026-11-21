@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import { localDaRecusa } from '../../shared/recusas/local-da-recusa';
-import { campoDaRecusaDaFase, NO_TOPO_DA_FASE } from './campo-da-fase';
+import type { ExigenciasDaFase } from '../../shared/descricao-da-fase';
+import {
+  campoDaRecusaDaFase,
+  campoNaTela,
+  fimDaFaseNaTela,
+  NO_TOPO_DA_FASE,
+} from './campo-da-fase';
 
 const campoDe = (field: string) => {
   const local = localDaRecusa(field);
@@ -82,5 +88,45 @@ describe('campoDaRecusaDaFase', () => {
 
   it('lê o campo sem distinguir a caixa que a API usa', () => {
     expect(campoDe('request.Fases[0].UnidadeResponsavelId')).toBe('unidadeResponsavelId');
+  });
+});
+
+describe('o Fim e o início da fase na tela', () => {
+  const exigencias = (parcial: Partial<ExigenciasDaFase>): ExigenciasDaFase => ({
+    janelaObrigatoria: false,
+    publicaProduto: false,
+    admiteRecurso: false,
+    fimObrigatorio: false,
+    agrupaEtapas: false,
+    ...parcial,
+  });
+
+  it.each([
+    ['período obrigatório', { janelaObrigatoria: true }, false, true],
+    ['Fim obrigatório para publicar', { fimObrigatorio: true }, false, true],
+    ['Fim já existente ou recusado', {}, true, true],
+    ['nenhum motivo', {}, false, false],
+  ])('o Fim aparece por %s? %s', (_motivo, parcial, haFimOuRecusa, esperado) => {
+    expect(fimDaFaseNaTela(exigencias(parcial), haFimOuRecusa)).toBe(esperado);
+  });
+
+  it('o Fim existente ou recusado aparece mesmo quando a tela não sabe o que a fase exige', () => {
+    expect(fimDaFaseNaTela(null, true)).toBe(true);
+    expect(fimDaFaseNaTela(null, false)).toBe(false);
+  });
+
+  it('a recusa ao Fim acha controle mesmo quando a tela não descreve a fase', () => {
+    expect(campoNaTela('fim', exigencias({}))).toBe(true);
+    expect(campoNaTela('fim', null)).toBe(true);
+  });
+
+  it('a unidade só tem controle quando a tela descreve a fase', () => {
+    expect(campoNaTela('unidadeResponsavelId', exigencias({}))).toBe(true);
+    expect(campoNaTela('unidadeResponsavelId', null)).toBe(false);
+  });
+
+  it('o início só aparece com o período obrigatório', () => {
+    expect(campoNaTela('inicio', exigencias({ fimObrigatorio: true }))).toBe(false);
+    expect(campoNaTela('inicio', exigencias({ janelaObrigatoria: true }))).toBe(true);
   });
 });

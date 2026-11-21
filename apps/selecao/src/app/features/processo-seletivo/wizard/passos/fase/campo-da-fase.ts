@@ -77,12 +77,27 @@ function campoDoRecurso(campo: string): CampoDaRecusaDaFase | null {
 }
 
 /**
- * O campo da linha do tempo da fase tem controle na tela. A unidade responsável só aparece quando
- * a tela sabe o que a fase exige, e o início e o fim só quando o período é obrigatório; os demais
- * campos da fase têm controle sempre que a fase está aberta.
+ * O Fim da fase está à vista: o período é obrigatório, a publicação exige o Fim, ou há Fim ou
+ * recusa a ele. O Fim que existe nunca fica escondido, nem na fase que a tela não sabe descrever.
+ */
+export function fimDaFaseNaTela(
+  exigencias: ExigenciasDaFase | null,
+  haFimOuRecusa: boolean,
+): boolean {
+  return (
+    haFimOuRecusa || exigencias?.janelaObrigatoria === true || exigencias?.fimObrigatorio === true
+  );
+}
+
+/**
+ * O campo da linha do tempo da fase tem controle na tela. A fase que a tela não sabe descrever não
+ * mostra a unidade nem o início: só existem quando se sabe o que a fase exige. O início aparece só
+ * com o período obrigatório. O Fim tem sempre onde receber a recusa, porque `fimDaFaseNaTela` o
+ * mostra quando há recusa a ele, mesmo sem saber o que a fase exige. Os demais campos da fase têm
+ * controle sempre que a fase está aberta.
  */
 export function campoNaTela(campo: string, exigencias: ExigenciasDaFase | null): boolean {
   if (campo === 'unidadeResponsavelId') return exigencias !== null;
-  if (campo === 'inicio' || campo === 'fim') return exigencias?.janelaObrigatoria === true;
+  if (campo === 'inicio') return exigencias?.janelaObrigatoria === true;
   return true;
 }

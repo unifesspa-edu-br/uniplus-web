@@ -170,21 +170,28 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
     ]);
   });
 
-  it('resume o início e o fim recusados quando o período da fase não é obrigatório na tela', async () => {
+  it('resume o início recusado quando o período da fase não é obrigatório na tela', async () => {
     comFases(ID_RESULTADO);
     comEtapasEmFases(['RESULTADO_FINAL']);
 
     const resultado = await recusarFases([
       { field: 'fases[0].inicio', code: 'uniplus.x', message: 'Início inválido.' },
-      { field: 'fases[0].fim', code: 'uniplus.y', message: 'Fim inválido.' },
     ]);
 
     expect(bloco('cr-inicio-erro-0')).toBeNull();
-    expect(bloco('cr-fim-erro-0')).toBeNull();
-    expect(resultado.messages).toEqual([
-      textoNoResumo('Início inválido.', 'uniplus.x'),
-      textoNoResumo('Fim inválido.', 'uniplus.y'),
+    expect(resultado.messages).toEqual([textoNoResumo('Início inválido.', 'uniplus.x')]);
+  });
+
+  it('mostra no campo o fim recusado, mesmo quando o período da fase não é obrigatório', async () => {
+    comFases(ID_RESULTADO);
+    comEtapasEmFases(['RESULTADO_FINAL']);
+
+    const resultado = await recusarFases([
+      { field: 'fases[0].fim', code: 'uniplus.y', message: 'Fim inválido.' },
     ]);
+
+    expect(bloco('cr-fim-erro-0')).toContain('Fim inválido.');
+    expect(resultado.messages).toEqual([RECUSADA_NOS_CAMPOS]);
   });
 
   it('resume a unidade recusada quando a tela não mostra o que a fase exige', async () => {

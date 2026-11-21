@@ -7,13 +7,9 @@ import {
 
 import { problemasDaRegra } from '../../shared/deliberacao/conferencia-da-regra';
 import type { CampoDaBanca } from '../../shared/deliberacao/recusas-da-regra';
+import { publicaResultadoDefinitivo } from '../../shared/publicacoes-da-fase';
 import { repetidos } from '../../shared/repetidos';
 import { problemasDoRecurso, produtosPreliminares } from './problemas-do-recurso-da-fase';
-
-/** A fase encerra a matéria que abriu: do que ela publica não cabe mais recurso. */
-export function publicaResultadoDefinitivo(produtos: FaseDoCronograma['produtos']): boolean {
-  return produtos.some((produto) => produto.papel === PAPEL_DEFINITIVO);
-}
 
 /** Um campo da regra de deliberação da banca que ocupa a posição `n` entre as requeridas. */
 export type CampoDaBancaRequerida = `bancasRequeridas.${number}.${CampoDaBanca}`;
@@ -124,16 +120,16 @@ function problemasDePapelEmAtoQueNaoEResultado(
   atoPorCodigo: ReadonlyMap<string, AtoDoCatalogo>,
 ): readonly ProblemaDaFase[] {
   return fase.produtos.flatMap((produto) => {
-    if (produto.papel === null) return [];
-    const ato = atoPorCodigo.get(produto.atoCodigo);
-    if (ato === undefined || ato.ehResultado) return [];
-    return [
-      {
-        campo: 'produtos' as const,
-        mensagem: `A publicação ${ato.nome} não é resultado no catálogo e não recebe papel preliminar nem definitivo.`,
-      },
-    ];
+    const ato = produto.papel === null ? undefined : atoPorCodigo.get(produto.atoCodigo);
+    return ato === undefined || ato.ehResultado ? [] : [papelEmAtoQueNaoEResultado(ato)];
   });
+}
+
+function papelEmAtoQueNaoEResultado(ato: AtoDoCatalogo): ProblemaDaFase {
+  return {
+    campo: 'produtos',
+    mensagem: `A publicação ${ato.nome} não é resultado no catálogo e não recebe papel preliminar nem definitivo.`,
+  };
 }
 
 /**
@@ -152,21 +148,23 @@ function problemasDaConclusao(
   const publicaPreliminar = produtosPreliminares(fase.produtos).length > 0;
   const declarada = fase.faseConcluinteCodigo;
 
-  if (!publicaPreliminar) {
-    return declarada === null
-      ? []
-      : recusaDaConclusao(
-          'Só fase que publica resultado preliminar declara quem conclui o ciclo recursal dela.',
-        );
-  }
-  if (declarada === null) {
-    return publicaResultadoDefinitivo(fase.produtos)
-      ? []
-      : recusaDaConclusao(
-          'A fase publica resultado preliminar e não publica o definitivo: declare qual fase conclui o ciclo recursal.',
-        );
-  }
+  if (!publicaPreliminar) return problemaDeConclusaoSemPreliminar(declarada);
+  if (declarada === null) return problemaDeConclusaoNaoDeclarada(fase);
   return problemasDaFaseConcluinteDeclarada(fase, fases, declarada);
+}
+
+function problemaDeConclusaoSemPreliminar(declarada: string | null): readonly ProblemaDaFase[] {
+  if (declarada === null) return [];
+  return recusaDaConclusao(
+    'Só fase que publica resultado preliminar declara quem conclui o ciclo recursal dela.',
+  );
+}
+
+function problemaDeConclusaoNaoDeclarada(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
+  if (publicaResultadoDefinitivo(fase.produtos)) return [];
+  return recusaDaConclusao(
+    'A fase publica resultado preliminar e não publica o definitivo: declare qual fase conclui o ciclo recursal.',
+  );
 }
 
 function problemasDaFaseConcluinteDeclarada(
@@ -174,29 +172,33 @@ function problemasDaFaseConcluinteDeclarada(
   fases: readonly FaseDoCronograma[],
   declarada: string,
 ): readonly ProblemaDaFase[] {
-  if (declarada === fase.codigo) {
-    return recusaDaConclusao(
-      'A fase não conclui a si mesma por declaração: para encerrar o próprio ciclo, ela publica o resultado definitivo.',
-    );
-  }
+  const mensagem = mensagemDaConclusaoInvalida(fase, fases, declarada);
+  return mensagem === null ? [] : recusaDaConclusao(mensagem);
+}
 
+function mensagemDaConclusaoInvalida(
+  fase: FaseDoCronograma,
+  fases: readonly FaseDoCronograma[],
+  declarada: string,
+): string | null {
+  if (declarada === fase.codigo)
+    return 'A fase não conclui a si mesma por declaração: para encerrar o próprio ciclo, ela publica o resultado definitivo.';
   const concluinte = fases.find((outra) => outra.codigo === declarada);
-  if (concluinte === undefined) {
-    return recusaDaConclusao(
-      `A fase ${declarada} não está no cronograma e não pode concluir o ciclo recursal desta.`,
-    );
-  }
-  if (!publicaResultadoDefinitivo(concluinte.produtos)) {
-    return recusaDaConclusao(
-      `A fase ${declarada} não publica resultado definitivo e não conclui o ciclo recursal desta.`,
-    );
-  }
-  if (concluinte.ordem <= fase.ordem) {
-    return recusaDaConclusao(
-      `A fase ${declarada} vem antes desta na linha do tempo e não pode encerrar o ciclo recursal dela.`,
-    );
-  }
-  return [];
+  if (concluinte === undefined)
+    return `A fase ${declarada} não está no cronograma e não pode concluir o ciclo recursal desta.`;
+  return mensagemDaConcluinteInvalida(fase, concluinte, declarada);
+}
+
+function mensagemDaConcluinteInvalida(
+  fase: FaseDoCronograma,
+  concluinte: FaseDoCronograma,
+  declarada: string,
+): string | null {
+  if (!publicaResultadoDefinitivo(concluinte.produtos))
+    return `A fase ${declarada} não publica resultado definitivo e não conclui o ciclo recursal desta.`;
+  if (concluinte.ordem <= fase.ordem)
+    return `A fase ${declarada} vem antes desta na linha do tempo e não pode encerrar o ciclo recursal dela.`;
+  return null;
 }
 
 function recusaDaConclusao(mensagem: string): readonly ProblemaDaFase[] {
@@ -229,21 +231,20 @@ function problemasDasBancas(
   fase: FaseDoCronograma,
   nomeDaBanca: (tipoBancaId: string) => string,
 ): readonly ProblemaDaFase[] {
-  const emBranco: readonly ProblemaDaFase[] = fase.bancasRequeridas.some(
-    (banca) => banca.tipoBancaId === '',
-  )
-    ? [
-        {
-          campo: 'bancasRequeridas',
-          mensagem: 'Escolha o tipo de cada banca requerida, ou remova a linha em branco.',
-        },
-      ]
-    : [];
-
   const recortesPorTipo = [...recortesDeCompetenciaPorTipo(fase)].flatMap(
     ([tipoBancaId, recortes]) => problemaDoRecorte(nomeDaBanca(tipoBancaId), recortes),
   );
-  return [...emBranco, ...recortesPorTipo];
+  return [...problemaDeBancaEmBranco(fase), ...recortesPorTipo];
+}
+
+function problemaDeBancaEmBranco(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
+  if (!fase.bancasRequeridas.some((banca) => banca.tipoBancaId === '')) return [];
+  return [
+    {
+      campo: 'bancasRequeridas',
+      mensagem: 'Escolha o tipo de cada banca requerida, ou remova a linha em branco.',
+    },
+  ];
 }
 
 function problemasDasRegrasDasBancas(fase: FaseDoCronograma): readonly ProblemaDaFase[] {
@@ -274,24 +275,16 @@ function recortesDeCompetenciaPorTipo(fase: FaseDoCronograma): ReadonlyMap<strin
 
 function problemaDoRecorte(nome: string, recortes: readonly string[][]): readonly ProblemaDaFase[] {
   if (recortes.length === 1) return [];
+  const mensagem = mensagemDoRecorte(nome, recortes);
+  return mensagem === null ? [] : [{ campo: 'bancasRequeridas', mensagem }];
+}
 
-  if (recortes.some((recorte) => recorte.length === 0)) {
-    return [
-      {
-        campo: 'bancasRequeridas',
-        mensagem: `A fase requer mais de uma banca de ${nome}: cada uma precisa declarar as categorias de documento que julga.`,
-      },
-    ];
+function mensagemDoRecorte(nome: string, recortes: readonly string[][]): string | null {
+  if (recortes.some((item) => item.length === 0)) {
+    return `A fase requer mais de uma banca de ${nome}: cada uma precisa declarar as categorias de documento que julga.`;
   }
-
-  const assinaturas = recortes.map((recorte) => recorte.join('|'));
-  if (repetidos(assinaturas).length === 0) return [];
-  return [
-    {
-      campo: 'bancasRequeridas',
-      mensagem: `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`,
-    },
-  ];
+  if (repetidos(recortes.map((item) => item.join('|'))).length === 0) return null;
+  return `Duas bancas de ${nome} declaram o mesmo recorte de competência — não haveria como saber qual julga o quê.`;
 }
 
 /** Como a tela nomeia o papel de uma publicação nos seletores. */

@@ -29,6 +29,17 @@ export class PublicacoesDaFaseComponent {
   protected readonly recusasDoCampo = this.faseEmEdicao.recusasDoCampo;
   protected readonly temMensagem = this.faseEmEdicao.temMensagem;
   protected readonly papeis = PAPEIS_ESCOLHIVEIS;
+  protected readonly publicaPreliminar = this.faseEmEdicao.publicaPreliminar;
+
+  /**
+   * O que descreve cada controle da lista: a recusa, quando há, a ajuda e, na fase que publica
+   * preliminar, a orientação de publicar também o definitivo.
+   */
+  protected idsQueDescrevemAPublicacao(): string {
+    const recusa = this.temMensagem('produtos') ? [this.idDaFase('produtos-erro')] : [];
+    const orientacao = this.publicaPreliminar() ? [this.idDaFase('produtos-definitivo')] : [];
+    return [...recusa, this.idDaFase('produtos-ajuda'), ...orientacao].join(' ');
+  }
 
   /** A leitura da consulta: cada publicação em texto, sem o controle que a edita. */
   protected faseLida() {

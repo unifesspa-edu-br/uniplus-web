@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { descreverFase, exigenciasDe } from './descricao-da-fase';
-import { publicaResultadoDefinitivo } from '../passos/fase/configuracao-da-fase';
 import {
   faseCanonica,
   fase,
@@ -55,13 +54,24 @@ describe('exigências da fase', () => {
   });
 
   /**
-   * Ato que não é resultado não torna a fase produtora de resultado — publicar
-   * um comunicado não abre nem encerra matéria nenhuma.
+   * A publicação do processo exige o Fim da fase que não publica o definitivo. A tela só indica:
+   * a indicação nasce do que a fase declara publicar.
    */
-  it('produto sem papel não publica resultado definitivo', () => {
-    expect(publicaResultadoDefinitivo([DEFINITIVO])).toBe(true);
-    expect(publicaResultadoDefinitivo([PRELIMINAR, AVISO])).toBe(false);
-    expect(publicaResultadoDefinitivo([])).toBe(false);
+  it('o Fim é obrigatório para publicar quando a fase não publica resultado definitivo', () => {
+    const canonica = faseCanonica({});
+
+    expect(exigenciasDe(canonica, []).fimObrigatorio).toBe(true);
+    expect(exigenciasDe(canonica, [AVISO]).fimObrigatorio).toBe(true);
+    expect(exigenciasDe(canonica, [PRELIMINAR]).fimObrigatorio).toBe(true);
+    expect(exigenciasDe(canonica, [DEFINITIVO]).fimObrigatorio).toBe(false);
+    expect(exigenciasDe(canonica, [PRELIMINAR, DEFINITIVO]).fimObrigatorio).toBe(false);
+  });
+
+  it('o Fim obrigatório não depende de o período ser obrigatório', () => {
+    const naExecucao = faseCanonica({ origemData: 'NA_EXECUCAO' });
+
+    expect(exigenciasDe(naExecucao, []).janelaObrigatoria).toBe(false);
+    expect(exigenciasDe(naExecucao, []).fimObrigatorio).toBe(true);
   });
 
   /**
@@ -86,6 +96,7 @@ describe('exigências da fase', () => {
     expect(descricao.exigencias?.admiteRecurso).toBe(true);
     expect(descricao.exigencias?.publicaProduto).toBe(true);
     expect(descricao.publicaResultadoDefinitivo).toBe(false);
+    expect(descricao.exigencias?.fimObrigatorio).toBe(true);
     expect(descricao.foraDoCatalogo).toBe(true);
   });
 });

@@ -13,6 +13,13 @@
     resultado: é ele que abre o ciclo recursal (preliminar) e o encerra (definitivo).
   </p>
 
+  @if (publicaPreliminar()) {
+    <p class="field__hint" [attr.id]="idDaFase('produtos-definitivo')">
+      Para cada publicação com o papel "Resultado preliminar", a fase precisa ter também a mesma
+      publicação com o papel "Resultado definitivo".
+    </p>
+  }
+
   @for (produto of produtos; track $index) {
     <div class="form-grid">
       <div class="form-field">
@@ -23,11 +30,7 @@
           [ngModel]="produto.atoCodigo"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao()"
-          [attr.aria-describedby]="
-            temMensagem('produtos')
-              ? idDaFase('produtos-erro') + ' ' + idDaFase('produtos-ajuda')
-              : idDaFase('produtos-ajuda')
-          "
+          [attr.aria-describedby]="idsQueDescrevemAPublicacao()"
           [attr.aria-invalid]="erroDoCampo('produtos') ? 'true' : null"
           (ngModelChange)="escolherAto($index, $event)"
         >
@@ -45,6 +48,7 @@
           [ngModel]="produto.papel ?? ''"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
+          [attr.aria-describedby]="idsQueDescrevemAPublicacao()"
           (ngModelChange)="escolherPapel($index, $event)"
         >
           @for (papel of papeis; track papel.valor) {
