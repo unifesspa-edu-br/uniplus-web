@@ -57,7 +57,8 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     await recusarProdutoEPrazo();
 
     expect(bloco(RECUSAS_DO_PRAZO)).toContain('O prazo precisa ser maior');
-    expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
+    expect(bloco('fase-AVALIACAO-produto-0-erro')).toContain('Sem ato.');
+    expect(aConferir('fase-AVALIACAO-produto-0-erro')).toBe(false);
     expect(aConferir(RECUSAS_DO_PRAZO)).toBe(false);
   });
 
@@ -67,7 +68,8 @@ describe('CronogramaPassoComponent: recusas das fases a conferir de novo', () =>
     digitar(ID_DO_PRAZO, '5');
 
     expect(aConferir(RECUSAS_DO_PRAZO)).toBe(true);
-    expect(aConferir('fase-AVALIACAO-produtos-erro')).toBe(false);
+    expect(bloco('fase-AVALIACAO-produto-0-erro')).toContain('Sem ato.');
+    expect(aConferir('fase-AVALIACAO-produto-0-erro')).toBe(false);
   });
 
   it('passa só a recusa da fase a conferir quando outro campo dela muda no passo da fase', async () => {

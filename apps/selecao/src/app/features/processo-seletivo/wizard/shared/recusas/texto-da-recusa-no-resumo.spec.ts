@@ -41,7 +41,46 @@ describe('textoDaRecusaNoResumo', () => {
     );
   });
 
+  it('começa pela posição da publicação, contada de um, quando a recusa é a uma linha da lista', () => {
+    const texto = textoDaRecusaNoResumo({
+      campo: 'fases[5].produtos[1].atoCodigo',
+      mensagem: 'Sem ato.',
+      codigo: 'uniplus.x',
+      pagina: null,
+    });
+
+    expect(texto).toBe('Publicação 2: Sem ato. (código uniplus.x)');
+  });
+
+  it.each(['fases[5].produtos', 'fases[5].fim', 'fases[5].bancasRequeridas[1]'])(
+    'não põe posição na recusa de %s, que não é a uma linha da lista de publicações',
+    (campo) => {
+      const texto = textoDaRecusaNoResumo({
+        campo,
+        mensagem: 'Recusada.',
+        codigo: 'uniplus.x',
+        pagina: null,
+      });
+
+      expect(texto).toBe('Recusada. (código uniplus.x)');
+    },
+  );
+
   describe('resumoDasRecusasSemLugar', () => {
+    it('mantém no resumo a mesma recusa a duas linhas da lista, cada uma com a sua posição', () => {
+      const daLinha = (posicao: number) => ({
+        campo: `fases[5].produtos[${posicao}].atoCodigo`,
+        mensagem: 'Sem ato.',
+        codigo: 'uniplus.x',
+        pagina: null,
+      });
+
+      expect(resumoDasRecusasSemLugar(problema([]), [daLinha(0), daLinha(1)])).toEqual([
+        'Publicação 1: Sem ato. (código uniplus.x)',
+        'Publicação 2: Sem ato. (código uniplus.x)',
+      ]);
+    });
+
     it('fica vazio quando nenhuma recusa ficou sem lugar e não há causa geral', () => {
       expect(resumoDasRecusasSemLugar(problema([]), [])).toEqual([]);
     });

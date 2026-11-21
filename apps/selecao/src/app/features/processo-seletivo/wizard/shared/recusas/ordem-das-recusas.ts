@@ -20,7 +20,9 @@ export interface RecusaOrdenada extends RecusaDoCampo {
 /**
  * As recusas na ordem em que a pessoa deve lê-las: as ativas antes das que estão a conferir; em
  * cada estado, a resposta mais recente primeiro; dentro da resposta, a ordem da API. O mesmo
- * campo com o mesmo código aparece uma vez, a que viria primeiro nessa ordem.
+ * campo com o mesmo código aparece uma vez, a que viria primeiro nessa ordem. O campo de um item
+ * de lista traz a posição dele: o mesmo código em itens diferentes são recusas diferentes, e todas
+ * aparecem.
  */
 export function emOrdem<T extends RecusaOrdenada>(recusas: readonly T[]): T[] {
   return [...semRepeticao(recusas)].sort(vemAntes);

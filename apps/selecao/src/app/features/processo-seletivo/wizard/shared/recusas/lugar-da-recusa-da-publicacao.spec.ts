@@ -28,6 +28,40 @@ const CRONOGRAMA: CronogramaConferido = {
   ],
 };
 
+const DUAS_PUBLICACOES = [
+  { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+  { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+];
+const COM_PUBLICACOES: CronogramaConferido = {
+  ...CRONOGRAMA,
+  fases: [
+    umaFaseDoCronograma({ codigo: 'INSCRICAO', faseCanonicaId: 'f1', produtos: DUAS_PUBLICACOES }),
+  ],
+};
+
+describe('lugarDaRecusaDaPublicacao: linha da lista de publicações', () => {
+  const doItem = (campo: string) =>
+    lugarDaRecusaDaPublicacao({ campo, identificadores: [daFase('INSCRICAO')] }, COM_PUBLICACOES);
+
+  it('liga a recusa à linha que a posição aponta, no ato ou no papel dela', () => {
+    expect(doItem('fases[0].produtos[1].atoCodigo')).toMatchObject({
+      campo: 'produtos.1.atoCodigo',
+    });
+    expect(doItem('fases[0].produtos[0].papel')).toMatchObject({ campo: 'produtos.0.papel' });
+  });
+
+  it('dá lugares diferentes à mesma recusa em linhas diferentes', () => {
+    const primeira = doItem('fases[0].produtos[0].atoCodigo');
+    const segunda = doItem('fases[0].produtos[1].atoCodigo');
+
+    expect(primeira).not.toEqual(segunda);
+  });
+
+  it('leva à lista a recusa de uma posição que a fase de hoje não tem', () => {
+    expect(doItem('fases[0].produtos[2].atoCodigo')).toMatchObject({ campo: 'produtos' });
+  });
+});
+
 describe('lugarDaRecusaDaPublicacao: fase', () => {
   it('liga o Fim à fase pelo código, seja qual for a posição que a API deu', () => {
     const lugar = lugarDaRecusaDaPublicacao(

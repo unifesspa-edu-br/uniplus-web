@@ -8,12 +8,22 @@ import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service
 import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
-import { NO_TOPO_DA_FASE, type CampoDaRecusaDaFase } from './campo-da-fase';
+import { NO_TOPO_DA_FASE, posicaoDaPublicacao, type CampoDaRecusaDaFase } from './campo-da-fase';
 import { problemasDaFase, type AtoDoCatalogo, type ProblemaDaFase } from './configuracao-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';
 import { EspelhoDaFase } from './espelho-da-fase';
 import { idDaFase } from './ids-da-fase';
+
+/**
+ * A recusa fica no bloco da lista de publicações quando é à lista inteira, quando a pessoa já
+ * alterou a fase por baixo dela (a conferir de novo) ou quando a linha que ela aponta não existe mais.
+ */
+function ficaNaListaDePublicacoes(recusa: RecusaOrdenada, quantidadeDeLinhas: number): boolean {
+  const posicao = posicaoDaPublicacao(recusa.campo);
+  if (posicao === null) return recusa.campo === 'produtos';
+  return recusa.aConferir || posicao >= quantidadeDeLinhas;
+}
 
 /**
  * A fase como o seletor a apresenta: posição na linha do tempo e nome resolvido
@@ -146,6 +156,27 @@ export class FaseEmEdicao {
   /** As recusas que a tela não liga a um controle da fase, para o topo dela. */
   readonly recusasDaConfiguracao = computed(() =>
     emOrdem(this.recusasDaFase().filter((recusa) => recusa.campo === NO_TOPO_DA_FASE)),
+  );
+
+  /** As recusas ativas a uma linha da lista de publicações: ao ato, ao papel ou à linha inteira. */
+  readonly recusasDaLinha = (posicao: number): readonly RecusaOrdenada[] =>
+    emOrdem(
+      this.recusasDaFase().filter(
+        (recusa) => !recusa.aConferir && posicaoDaPublicacao(recusa.campo) === posicao,
+      ),
+    );
+
+  /** As recusas do bloco da lista de publicações: as que não cabem numa linha, para o alto da lista. */
+  readonly recusasDaListaDePublicacoes = computed(() => {
+    const linhas = this.faseDoRascunho()?.produtos.length ?? 0;
+    return emOrdem(
+      this.recusasDaFase().filter((recusa) => ficaNaListaDePublicacoes(recusa, linhas)),
+    );
+  });
+
+  /** O bloco da lista de publicações tem o que mostrar: um problema local ou uma recusa do bloco. */
+  readonly temMensagemNaListaDePublicacoes = computed(
+    () => this.problemaLocal('produtos') !== null || this.recusasDaListaDePublicacoes().length > 0,
   );
 
   /** As recusas à regra de recurso, de qualquer controle dela, para o alto da seção. */

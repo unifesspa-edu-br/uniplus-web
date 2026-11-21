@@ -1,7 +1,7 @@
 import type { RecusaDoProblema } from '@uniplus/shared-core/http';
 
 import type { FaseDoCronograma } from '../../../processo-seletivo.models';
-import { campoDaRecusaDaFase } from '../../fase/campo-da-fase';
+import { campoComLinhaNaLista, campoDaRecusaDaFase } from '../../fase/campo-da-fase';
 import { conteudoDaParte, parteDaFase, type ParteDaFase } from '../../fase/parte-da-fase';
 import { localDaRecusa, type LocalDaRecusa } from '../../../shared/recusas/local-da-recusa';
 import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
@@ -35,7 +35,7 @@ interface LugarNaFase {
 /**
  * A fase enviada que o `field` aponta, ou `null` quando ele não nomeia fase, nomeia uma posição
  * que não foi enviada, nomeia um campo que a fase não conhece ou nomeia um campo cujo controle a
- * tela não mostra.
+ * tela não mostra. A recusa a uma linha de publicações que a fase enviada não tinha fica na lista.
  */
 function lugarNaFase(
   recusa: RecusaDoProblema,
@@ -46,7 +46,8 @@ function lugarNaFase(
   const fase = local?.dono === 'fase' ? enviadas[local.indice] : undefined;
   const campo = local === null ? null : campoDaRecusaDaFase(local);
   if (local === null || fase === undefined || campo === null) return null;
-  return controleNaTela(fase.faseCanonicaId, campo) ? { local, fase, campo } : null;
+  const doLugar = campoComLinhaNaLista(campo, fase.produtos.length);
+  return controleNaTela(fase.faseCanonicaId, doLugar) ? { local, fase, campo: doLugar } : null;
 }
 
 /**

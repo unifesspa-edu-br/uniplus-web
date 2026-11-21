@@ -1,13 +1,31 @@
 import { paginaDoErro, separarCausas, type ProblemDetails } from '@uniplus/shared-core/http';
 import type { RecusaDoCampo } from '@uniplus/shared-ui/components';
 
+import { posicaoDaPublicacao } from '../../passos/fase/campo-da-fase';
+import { localDaRecusa } from './local-da-recusa';
+
+/** A recusa que o resumo diz, com o `field` que a API deu quando ela veio de um campo. */
+export type RecusaNoResumo = RecusaDoCampo & { readonly campo?: string };
+
+/**
+ * `Publicação 2: ` para a recusa à segunda linha da lista de publicações. O resumo não tem a
+ * linha onde a recusa apareceria, e sem a posição duas recusas iguais a linhas diferentes
+ * pareceriam uma só.
+ */
+function prefixoDaPublicacao(campo: string | undefined): string {
+  const caminho = campo === undefined ? null : (localDaRecusa(campo)?.caminho ?? null);
+  const posicao = caminho === null ? null : posicaoDaPublicacao(caminho);
+  return posicao === null ? '' : `Publicação ${posicao + 1}: `;
+}
+
 /**
  * A recusa como o resumo do passo a diz: a mensagem da API, o código e, quando existe, a página
  * que a explica. O resumo é uma lista de textos, então a página vai por extenso.
  */
-export function textoDaRecusaNoResumo(recusa: RecusaDoCampo): string {
+export function textoDaRecusaNoResumo(recusa: RecusaNoResumo): string {
   const pagina = recusa.pagina === null ? '' : `; entenda a recusa em ${recusa.pagina}`;
-  return `${recusa.mensagem} (código ${recusa.codigo}${pagina})`;
+  const prefixo = prefixoDaPublicacao(recusa.campo);
+  return `${prefixo}${recusa.mensagem} (código ${recusa.codigo}${pagina})`;
 }
 
 /**
@@ -18,7 +36,7 @@ export function textoDaRecusaNoResumo(recusa: RecusaDoCampo): string {
  */
 export function resumoDasRecusasSemLugar(
   problema: ProblemDetails,
-  semLugar: readonly RecusaDoCampo[],
+  semLugar: readonly RecusaNoResumo[],
 ): string[] {
   const gerais = separarCausas(problema.errors).gerais.map((causa) => ({
     codigo: causa.code,
@@ -50,7 +68,7 @@ export interface ExplicacaoDaRaiz {
  */
 export function resumoDaGravacaoRecusada(
   problema: ProblemDetails,
-  semLugar: readonly RecusaDoCampo[],
+  semLugar: readonly RecusaNoResumo[],
   raiz: ExplicacaoDaRaiz,
 ): string[] {
   const { deCampo, gerais } = separarCausas(problema.errors);

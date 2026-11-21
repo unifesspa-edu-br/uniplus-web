@@ -125,7 +125,7 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
     ]);
 
     expect(resultado.messages).toEqual([
-      `Sem ato. (código ${SEM_PRODUTO}; entenda a recusa em ${PAGINAS_DE_ERRO}${SEM_PRODUTO})`,
+      `Publicação 1: Sem ato. (código ${SEM_PRODUTO}; entenda a recusa em ${PAGINAS_DE_ERRO}${SEM_PRODUTO})`,
     ]);
   });
 
@@ -165,7 +165,7 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
 
     expect(bloco('fase-AVALIACAO-produtos-erro')).toContain('Sem ato.');
     expect(resultado.messages).toEqual([
-      textoNoResumo('Fase que o envio não tinha.', SEM_PRODUTO),
+      textoNoResumo('Publicação 1: Fase que o envio não tinha.', SEM_PRODUTO),
       textoNoResumo('O cronograma está incompleto.', GERAL),
     ]);
   });

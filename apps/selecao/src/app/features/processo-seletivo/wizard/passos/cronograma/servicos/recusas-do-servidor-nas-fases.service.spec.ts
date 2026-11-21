@@ -17,6 +17,14 @@ import { SEM_RECUSAS_DA_PUBLICACAO } from './recusas-da-publicacao-no-cronograma
 const PRIMEIRA = umaFaseDoCronograma({ faseCanonicaId: 'fase-a', codigo: 'A', ordem: 1 });
 const SEGUNDA = umaFaseDoCronograma({ faseCanonicaId: 'fase-b', codigo: 'B', ordem: 2 });
 
+const COM_DUAS_PUBLICACOES = umaFaseDoCronograma({
+  ...PRIMEIRA,
+  produtos: [
+    { atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' },
+    { atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' },
+  ],
+});
+
 const TUDO_NA_TELA: ControleNaTela = () => true;
 
 function registrar(
@@ -158,14 +166,36 @@ describe('RecusasDoServidorNasFases', () => {
   });
 
   it('lê a recusa do campo na ordem em que a API a deu dentro da mesma resposta', () => {
-    const a = recusa('fases[0].produtos[1]', 3, 'uniplus.selecao.c');
-    const b = recusa('fases[0].produtos[0]', 1, 'uniplus.selecao.b');
+    noRascunho(COM_DUAS_PUBLICACOES);
+    const depois = recusa('fases[0].produtos[0].atoCodigo', 3, 'uniplus.selecao.c');
+    const antes = recusa('fases[0].produtos[0].atoCodigo', 1, 'uniplus.selecao.b');
 
-    registrar(recusasNasFases, 1, [PRIMEIRA], [a, b]);
+    registrar(recusasNasFases, 1, [COM_DUAS_PUBLICACOES], [depois, antes]);
 
-    expect(recusasNasFases.recusasDoCampo('fase-a', 'produtos').map((r) => r.ordem)).toEqual([
-      1, 3,
-    ]);
+    const doCampo = recusasNasFases.recusasDoCampo('fase-a', 'produtos.0.atoCodigo');
+    expect(doCampo.map((r) => r.ordem)).toEqual([1, 3]);
+  });
+
+  it('guarda sob o campo de cada linha a recusa dela, mesmo com a mesma recusa em várias linhas', () => {
+    noRascunho(COM_DUAS_PUBLICACOES);
+    const daSegunda = recusa('fases[0].produtos[1].atoCodigo', 3);
+    const daPrimeira = recusa('fases[0].produtos[0].atoCodigo', 1);
+
+    registrar(recusasNasFases, 1, [COM_DUAS_PUBLICACOES], [daSegunda, daPrimeira]);
+
+    const ordemDe = (campo: 'produtos.0.atoCodigo' | 'produtos.1.atoCodigo') =>
+      recusasNasFases.recusasDoCampo('fase-a', campo).map((r) => r.ordem);
+    expect(ordemDe('produtos.0.atoCodigo')).toEqual([1]);
+    expect(ordemDe('produtos.1.atoCodigo')).toEqual([3]);
+    expect(recusasNasFases.recusasDoCampo('fase-a', 'produtos')).toEqual([]);
+  });
+
+  it('põe na lista a recusa à linha que a fase enviada não tinha', () => {
+    noRascunho(COM_DUAS_PUBLICACOES);
+
+    registrar(recusasNasFases, 1, [COM_DUAS_PUBLICACOES], [recusa('fases[0].produtos[2].papel')]);
+
+    expect(recusasNasFases.recusasDoCampo('fase-a', 'produtos')).toHaveLength(1);
   });
 
   it('troca tudo pelas recusas da resposta seguinte', () => {

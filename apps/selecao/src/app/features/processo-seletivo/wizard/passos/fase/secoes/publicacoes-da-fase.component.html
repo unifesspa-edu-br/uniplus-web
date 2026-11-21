@@ -31,8 +31,8 @@
           [ngModel]="produto.atoCodigo"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao()"
-          [attr.aria-describedby]="idsQueDescrevemAPublicacao()"
-          [attr.aria-invalid]="erroDoCampo('produtos') ? 'true' : null"
+          [attr.aria-describedby]="idsQueDescrevemAPublicacao($index)"
+          [attr.aria-invalid]="publicacaoRecusada($index) ? 'true' : null"
           (ngModelChange)="escolherAto($index, $event)"
         >
           <option value="">Selecione o tipo de ato…</option>
@@ -49,7 +49,8 @@
           [ngModel]="produto.papel ?? ''"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
-          [attr.aria-describedby]="idsQueDescrevemAPublicacao()"
+          [attr.aria-describedby]="idsQueDescrevemAPublicacao($index)"
+          [attr.aria-invalid]="papelRecusado($index) ? 'true' : null"
           (ngModelChange)="escolherPapel($index, $event)"
         >
           @for (papel of papeis; track papel.valor) {
@@ -68,6 +69,16 @@
           Remover
         </button>
       </div>
+      @let daLinha = recusasDaLinha($index);
+      @if (daLinha.length > 0) {
+        <div
+          class="form-grid__full"
+          [attr.id]="idDaFase('produto-' + $index + '-erro')"
+          tabindex="-1"
+        >
+          <sel-recusas-do-campo [recusas]="daLinha" />
+        </div>
+      }
     </div>
   }
 
@@ -84,12 +95,12 @@
     Acrescentar publicação
   </button>
 
-  @if (temMensagem('produtos')) {
+  @if (temMensagemNaLista()) {
     <div [attr.id]="idDaFase('produtos-erro')" tabindex="-1">
       @if (problemaLocal('produtos'); as erro) {
         <p class="field__erro" role="alert">{{ erro }}</p>
       }
-      <sel-recusas-do-campo [recusas]="recusasDoCampo('produtos')" />
+      <sel-recusas-do-campo [recusas]="recusasDaLista()" />
     </div>
   }
 

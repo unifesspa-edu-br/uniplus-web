@@ -1,6 +1,6 @@
 import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { alvosDoControleDosParametros } from '../../shared/configuracao-do-recurso/ids-dos-parametros';
-import { NO_TOPO_DA_FASE } from './campo-da-fase';
+import { NO_TOPO_DA_FASE, posicaoDaPublicacao } from './campo-da-fase';
 import {
   BLOCO_DAS_RECUSAS_DO_RECURSO,
   CONTROLE_DO_RECURSO,
@@ -24,11 +24,23 @@ export function alvosDaRecusaDaFase(
   const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
   if (campo === 'unidadeResponsavelId') return [`cr-unidade-${indice}`];
   if (campo === 'inicio' || campo === 'fim') return [`cr-${campo}-${indice}`];
-  if (campo === 'produtos') return [id('produto-ato-0'), id('produtos-erro')];
+  if (campo.startsWith('produtos')) return alvosDaPublicacao(campo, fase);
   if (campo === 'bancasRequeridas') return [id('banca-0'), id('bancas-erro')];
   if (campo === 'emiteParecerIndividual') return [id('parecer'), id('parecer-erro')];
   if (campo.startsWith('recurso')) return alvosDoRecurso(campo, fase);
   return campo === NO_TOPO_DA_FASE ? [id('recusas')] : [];
+}
+
+/**
+ * O controle da linha de publicações que a recusa aponta, com o bloco das recusas da linha e o da
+ * lista de reserva. A recusa à lista inteira vai à primeira linha.
+ */
+function alvosDaPublicacao(campo: string, fase: FaseDoCronograma): readonly string[] {
+  const id = (sufixo: string) => idDaFase(fase.codigo, sufixo);
+  const posicao = posicaoDaPublicacao(campo);
+  if (posicao === null) return [id('produto-ato-0'), id('produtos-erro')];
+  const controle = campo.endsWith('.papel') ? 'produto-papel' : 'produto-ato';
+  return [id(`${controle}-${posicao}`), id(`produto-${posicao}-erro`), id('produtos-erro')];
 }
 
 function alvosDoRecurso(campo: string, fase: FaseDoCronograma): readonly string[] {
