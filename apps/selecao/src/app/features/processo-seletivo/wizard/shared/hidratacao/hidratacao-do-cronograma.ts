@@ -66,10 +66,6 @@ function congeladosDe(fase: FaseDoDto): NonNullable<FaseDoCronograma['congelados
     coletaInscricao: faseCanonica.coletaInscricao,
     permiteComplementacao: faseCanonica.permiteComplementacao,
     coletaSolicitacaoIsencao: faseCanonica.coletaSolicitacaoIsencao,
-    bancas: fase.bancasRequeridas.map((banca) => ({
-      id: banca.tipoBancaOrigemId,
-      codigo: banca.codigo.codigo,
-    })),
   };
 }
 

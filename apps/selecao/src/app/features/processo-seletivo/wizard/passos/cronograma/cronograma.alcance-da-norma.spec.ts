@@ -233,7 +233,6 @@ describe('CronogramaPassoComponent: alcance da norma', () => {
               coletaInscricao: true,
               permiteComplementacao: false,
               coletaSolicitacaoIsencao: true,
-              bancas: [],
             },
           },
         ],

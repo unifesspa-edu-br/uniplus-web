@@ -22,7 +22,14 @@ describe('campos de texto das seções da fase', () => {
         produtos: [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
         regraRecurso: RECURSO,
         bancasRequeridas: [
-          { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao: null },
+          {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
+            tipoBancaId: ID_BANCA_HETERO,
+            categoriasDocumentoIds: [],
+            regraDeDeliberacao: null,
+          },
         ],
       }),
     );

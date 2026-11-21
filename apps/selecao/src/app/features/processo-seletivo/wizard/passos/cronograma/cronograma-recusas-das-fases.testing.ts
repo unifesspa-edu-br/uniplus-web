@@ -80,7 +80,14 @@ export class AjudantesDeRecusasDasFases {
   /** A primeira fase passa a requerer uma banca, com a regra de deliberação informada. */
   readonly requererBanca = (regraDeDeliberacao: RegraDeDeliberacaoDaBanca = COLEGIADA): void => {
     const [fase] = this.tela.store.draft().cronograma.fases;
-    const banca = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [], regraDeDeliberacao };
+    const banca = {
+      id: null,
+      identificadorLocal: ID_BANCA_HETERO,
+      copiaDoTipo: null,
+      tipoBancaId: ID_BANCA_HETERO,
+      categoriasDocumentoIds: [],
+      regraDeDeliberacao,
+    };
     this.tela.store.patchObjectSection('cronograma', {
       fases: [{ ...fase, bancasRequeridas: [banca] }],
     });

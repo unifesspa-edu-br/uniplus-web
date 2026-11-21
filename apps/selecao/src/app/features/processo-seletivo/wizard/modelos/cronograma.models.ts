@@ -4,7 +4,8 @@ import type {
   LeituraDoRecurso,
   ParametrosDoRecurso,
 } from '../shared/configuracao-do-recurso/parametros-do-recurso';
-import type { BancaDaEtapa, RegraDeDeliberacaoDaBanca } from './deliberacao.models';
+import type { BancaDaEtapa, BancaRequeridaDaFase } from './banca.models';
+export type { BancaRequeridaDaFase } from './banca.models';
 
 /**
  * Uma fase do cronograma. É referenciada pelo id da fase canônica: código, dono, origem da data e
@@ -55,16 +56,6 @@ export interface ProdutoDaFase {
   readonly papel: string | null;
 }
 
-/**
- * Uma banca que a fase requer, e as categorias de documento que ela julga. O recorte distingue
- * duas bancas do mesmo tipo na mesma fase, e vazio significa "julga tudo o que a fase exige".
- */
-export interface BancaRequeridaDaFase {
-  readonly tipoBancaId: string;
-  readonly categoriasDocumentoIds: readonly string[];
-  readonly regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null;
-}
-
 /** Papel do produto de cujo instante de publicação o prazo de recurso conta. */
 export const PAPEL_PRELIMINAR = 'PRELIMINAR';
 
@@ -87,8 +78,6 @@ export interface AtributosCongeladosDaFase {
   readonly permiteComplementacao: boolean;
   /** Se é nela que o candidato pede isenção da taxa. */
   readonly coletaSolicitacaoIsencao: boolean;
-  /** Código de cada banca exigida, como a fase o congelou. */
-  readonly bancas: readonly { readonly id: string; readonly codigo: string }[];
 }
 
 /**

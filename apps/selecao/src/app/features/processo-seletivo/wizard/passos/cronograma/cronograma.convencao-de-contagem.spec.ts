@@ -1,13 +1,10 @@
 import { expect, it } from 'vitest';
 import {
   PROCESSO_ID,
-  ROTA_ETAPAS,
   ROTA_FASES,
   ROTA_ALGORITMO,
-  ROTA_PROCESSO,
   PROBLEM_JSON,
   ID_INSCRICAO,
-  PROCESSO_COM_ETAPA_GRAVADA,
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 
@@ -229,13 +226,8 @@ describe('CronogramaPassoComponent: convenção de contagem', () => {
     fases.flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();
 
-    const etapas = controller.expectOne(ROTA_ETAPAS);
     controller.expectNone(ROTA_ALGORITMO);
-    etapas.flush(null, { status: 204, statusText: 'No Content' });
-    await proximoPasso();
-
-    controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
-    await proximoPasso();
+    await gravouEtapas();
     await gravouExigencias();
 
     const algoritmo = controller.expectOne(ROTA_ALGORITMO);

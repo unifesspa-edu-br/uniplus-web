@@ -20,7 +20,15 @@ describe('regra de deliberação das bancas da etapa', () => {
         etapa({
           ...etapaValida,
           nome: 'Entrevista',
-          bancas: [{ tipoBancaId: 'banca-1', regraDeDeliberacao }],
+          bancas: [
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              tipoBancaId: 'banca-1',
+              regraDeDeliberacao,
+            },
+          ],
         }),
       ],
       catalogoDeFases,

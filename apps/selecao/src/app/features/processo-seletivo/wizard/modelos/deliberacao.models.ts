@@ -21,8 +21,4 @@ export interface RegraDeDeliberacaoDaBanca {
   readonly semUnanimidade: ResultadoSemUnanimidade | '';
 }
 
-/** A banca que a etapa declara, com a regra de deliberação, que o rascunho aceita ainda vazia. */
-export interface BancaDaEtapa {
-  readonly tipoBancaId: string;
-  readonly regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null;
-}
+export type { BancaDaEtapa } from './banca.models';

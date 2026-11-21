@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../../../cronograma/servicos/formulario-do-cronograma.service';
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 
 import {
@@ -23,6 +24,7 @@ import { FaseEmEdicao } from '../../fase-em-edicao';
 })
 export class EixoFormularioComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
 

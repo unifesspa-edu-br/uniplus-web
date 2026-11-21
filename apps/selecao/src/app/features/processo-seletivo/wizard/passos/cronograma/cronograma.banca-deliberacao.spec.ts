@@ -164,7 +164,13 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     edicao.alternarBancaDaEtapa(etapa, 'outra-banca', false);
 
     expect(edicao.bancasDaEtapa(etapa)).toEqual([
-      { tipoBancaId: ID_BANCA_HETERO, regraDeDeliberacao: COLEGIADA },
+      {
+        id: null,
+        identificadorLocal: 'banca-1',
+        copiaDoTipo: null,
+        tipoBancaId: ID_BANCA_HETERO,
+        regraDeDeliberacao: COLEGIADA,
+      },
     ]);
   });
 

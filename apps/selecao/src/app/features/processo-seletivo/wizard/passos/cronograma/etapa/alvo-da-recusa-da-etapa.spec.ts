@@ -77,8 +77,20 @@ describe('alvosDaRecusaDaEtapa', () => {
   describe('campo da regra de uma banca', () => {
     const comBancas = umaEtapaDoCronograma({
       bancas: [
-        { tipoBancaId: 'primeira', regraDeDeliberacao: null },
-        { tipoBancaId: 'segunda', regraDeDeliberacao: null },
+        {
+          id: null,
+          identificadorLocal: 'primeira',
+          copiaDoTipo: null,
+          tipoBancaId: 'primeira',
+          regraDeDeliberacao: null,
+        },
+        {
+          id: null,
+          identificadorLocal: 'segunda',
+          copiaDoTipo: null,
+          tipoBancaId: 'segunda',
+          regraDeDeliberacao: null,
+        },
       ],
     });
     const reserva = 'cr-etapa-bancas-erro-3';

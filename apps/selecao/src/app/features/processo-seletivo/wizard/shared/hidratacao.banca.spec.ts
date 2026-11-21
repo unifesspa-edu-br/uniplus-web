@@ -73,8 +73,22 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
     ]);
 
     expect(etapa.bancas).toEqual([
-      { tipoBancaId: 'tipo-banca-1', regraDeDeliberacao: COLEGIADA },
-      { tipoBancaId: 'tipo-banca-2', regraDeDeliberacao: null },
+      {
+        id: 'banca-da-etapa-1',
+        posicaoNoTipo: 1,
+        identificadorLocal: 'banca-banca-da-etapa-1',
+        copiaDoTipo: expect.objectContaining({ rotulo: 'BANCA_ENTREVISTA' }),
+        tipoBancaId: 'tipo-banca-1',
+        regraDeDeliberacao: COLEGIADA,
+      },
+      {
+        id: 'banca-da-etapa-2',
+        posicaoNoTipo: 1,
+        identificadorLocal: 'banca-banca-da-etapa-2',
+        copiaDoTipo: expect.objectContaining({ rotulo: 'BANCA_CORRECAO_REDACOES' }),
+        tipoBancaId: 'tipo-banca-2',
+        regraDeDeliberacao: null,
+      },
     ]);
   });
 });

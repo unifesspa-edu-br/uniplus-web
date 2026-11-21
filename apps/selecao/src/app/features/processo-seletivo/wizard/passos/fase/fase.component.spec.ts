@@ -73,6 +73,9 @@ describe('FasePassoComponent', () => {
           produtos: [{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }],
           bancasRequeridas: [
             {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
               tipoBancaId: ID_BANCA_HETERO,
               categoriasDocumentoIds: [ID_CATEGORIA_RACA],
               regraDeDeliberacao: null,

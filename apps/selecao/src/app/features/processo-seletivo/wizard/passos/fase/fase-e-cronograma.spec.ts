@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import {
   type ContextoDoCertame,
   PROCESSO_ID,
@@ -87,6 +88,9 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     expect(publicacoes().produtos).toEqual([{ atoCodigo: 'RESULTADO_FINAL', papel: 'DEFINITIVO' }]);
     expect(bancas().bancas).toEqual([
       {
+        id: null,
+        identificadorLocal: 'banca-1',
+        copiaDoTipo: null,
         tipoBancaId: ID_BANCA_HETERO,
         categoriasDocumentoIds: [ID_CATEGORIA_RACA],
         regraDeDeliberacao: null,
@@ -119,6 +123,20 @@ describe('a linha do tempo e a superfície da fase sobre o mesmo cronograma', ()
     });
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    const bancaLida = faseDoServidor().bancasRequeridas[0];
+    controller.expectOne(ROTA_PROCESSO).flush({
+      ...PROCESSO_COM_ETAPA_GRAVADA,
+      cronogramaFases: [
+        faseDoServidor({ faseCanonica: { origemId: ID_AVALIACAO }, bancasRequeridas: [] }),
+        faseDoServidor({
+          faseCanonica: { origemId: ID_RESULTADO },
+          bancasRequeridas: [
+            { ...bancaLida, id: 'banca-gravada', tipoBancaOrigemId: ID_BANCA_HETERO },
+          ],
+        }),
+      ],
+    });
     await proximoPasso();
     controller.expectOne(ROTA_ETAPAS).flush(null, { status: 204, statusText: 'No Content' });
     await proximoPasso();

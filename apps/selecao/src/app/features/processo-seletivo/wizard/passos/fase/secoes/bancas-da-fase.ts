@@ -16,16 +16,11 @@ export function bancasEscolhiveis(
   fase: FaseDoCronograma | null,
 ): readonly BancaEscolhivel[] {
   const conhecidas = new Set(doCadastro.map((banca) => banca.id));
-  const codigoCongelado = new Map(
-    (fase?.congelados?.bancas ?? []).map((banca) => [banca.id, banca.codigo]),
-  );
-
   const congeladas = (fase?.bancasRequeridas ?? [])
-    .map((banca) => banca.tipoBancaId)
-    .filter((id) => id !== '' && !conhecidas.has(id))
-    .map((id) => ({
-      id,
-      nome: `${codigoCongelado.get(id) ?? 'Banca'} (fora do cadastro atual)`,
+    .filter((banca) => banca.tipoBancaId !== '' && !conhecidas.has(banca.tipoBancaId))
+    .map((banca) => ({
+      id: banca.tipoBancaId,
+      nome: `${banca.copiaDoTipo?.rotulo ?? 'Banca'} (fora do cadastro atual)`,
     }));
 
   return [...doCadastro, ...congeladas];

@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ControlContainer, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ValorEmConsultaComponent, ValorLegivelDirective } from '@uniplus/shared-ui/components';
@@ -32,6 +33,7 @@ import { FaseEmEdicao } from '../fase-em-edicao';
 })
 export class PublicacoesDaFaseComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   private readonly catalogoDeAtos = inject(CatalogoDeAtos);
   private readonly faseEmEdicao = inject(FaseEmEdicao);
   private readonly espelho = this.faseEmEdicao.espelho;

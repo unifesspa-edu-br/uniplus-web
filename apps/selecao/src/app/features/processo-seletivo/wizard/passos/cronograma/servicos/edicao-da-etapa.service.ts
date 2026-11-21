@@ -1,3 +1,4 @@
+import { novaChave } from '../../../shared/chaves/chave-local';
 import { computed, inject, Injectable } from '@angular/core';
 import type { FormGroup } from '@angular/forms';
 
@@ -252,12 +253,24 @@ export class EdicaoDaEtapa {
     const atuais = grupo.controls.bancas.value;
     const jaDeclarada = atuais.some((banca) => banca.tipoBancaId === tipoBancaId);
     if (marcada === jaDeclarada) return;
-    this.escreverBancas(
-      grupo,
-      marcada
-        ? [...atuais, { tipoBancaId, regraDeDeliberacao: null }]
-        : atuais.filter((banca) => banca.tipoBancaId !== tipoBancaId),
-    );
+    const bancas = marcada
+      ? [...atuais, this.novaBancaDaEtapa(tipoBancaId, atuais)]
+      : atuais.filter((banca) => banca.tipoBancaId !== tipoBancaId);
+    this.escreverBancas(grupo, bancas);
+  }
+
+  private novaBancaDaEtapa(tipoBancaId: string, atuais: readonly BancaDaEtapa[]): BancaDaEtapa {
+    return {
+      id: null,
+      identificadorLocal: novaChave({
+        tipo: 'banca',
+        nome: '',
+        tomadas: new Set(atuais.map((banca) => banca.identificadorLocal)),
+      }),
+      copiaDoTipo: null,
+      tipoBancaId,
+      regraDeDeliberacao: null,
+    };
   }
 
   declararRegraDaBancaDaEtapa(

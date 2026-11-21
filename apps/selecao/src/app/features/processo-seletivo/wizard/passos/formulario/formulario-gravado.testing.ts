@@ -30,7 +30,6 @@ export const CONGELADOS_DA_INSCRICAO: AtributosCongeladosDaFase = {
   coletaInscricao: true,
   permiteComplementacao: false,
   coletaSolicitacaoIsencao: false,
-  bancas: [],
 };
 
 export const FASE_INSCRICAO: FaseDoCronograma = {

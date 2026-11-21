@@ -8,7 +8,14 @@ const COM_UMA_BANCA = umaFaseDoCronograma({
   faseCanonicaId: 'fase-1',
   produtos: [{ atoCodigo: 'EDITAL', papel: 'PRELIMINAR' }],
   bancasRequeridas: [
-    { tipoBancaId: 'banca', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+    {
+      id: null,
+      identificadorLocal: 'banca',
+      copiaDoTipo: null,
+      tipoBancaId: 'banca',
+      categoriasDocumentoIds: [],
+      regraDeDeliberacao: null,
+    },
   ],
 });
 

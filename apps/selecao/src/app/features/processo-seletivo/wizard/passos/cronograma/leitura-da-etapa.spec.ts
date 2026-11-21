@@ -134,8 +134,20 @@ describe('etapa lida na consulta', () => {
     const lidaComRefs = lida({
       emiteParecerIndividual: true,
       bancas: [
-        { tipoBancaId: BANCA, regraDeDeliberacao: null },
-        { tipoBancaId: 'banca-sem-cadastro', regraDeDeliberacao: null },
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: BANCA,
+          regraDeDeliberacao: null,
+        },
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: 'banca-sem-cadastro',
+          regraDeDeliberacao: null,
+        },
       ],
       produtos: [
         { atoCodigo: ATO, papel: 'resultado_preliminar' },
@@ -237,7 +249,17 @@ describe('etapa lida na consulta', () => {
   });
 
   it('lê a regra de deliberação da banca ao lado do nome dela', () => {
-    const { bancas } = lida({ bancas: [{ tipoBancaId: BANCA, regraDeDeliberacao: COLEGIADA }] });
+    const { bancas } = lida({
+      bancas: [
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: BANCA,
+          regraDeDeliberacao: COLEGIADA,
+        },
+      ],
+    });
 
     expect(bancas).toEqual([
       'Banca de redação — 5 titulares, 2 suplentes; quórum 3; maioria simples; ' +

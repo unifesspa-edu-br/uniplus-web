@@ -123,7 +123,14 @@ describe('bancas requeridas e o recorte de competência', () => {
       conferir(
         fase({
           bancasRequeridas: [
-            { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+            {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
+              tipoBancaId: 'banca-hetero',
+              categoriasDocumentoIds: [],
+              regraDeDeliberacao: null,
+            },
           ],
         }),
       ),
@@ -135,11 +142,21 @@ describe('bancas requeridas e o recorte de competência', () => {
       fase({
         bancasRequeridas: [
           {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
             tipoBancaId: 'banca-hetero',
             categoriasDocumentoIds: ['raca'],
             regraDeDeliberacao: null,
           },
-          { tipoBancaId: 'banca-hetero', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+          {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
+            tipoBancaId: 'banca-hetero',
+            categoriasDocumentoIds: [],
+            regraDeDeliberacao: null,
+          },
         ],
       }),
     );
@@ -153,11 +170,17 @@ describe('bancas requeridas e o recorte de competência', () => {
       fase({
         bancasRequeridas: [
           {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
             tipoBancaId: 'banca-hetero',
             categoriasDocumentoIds: ['raca', 'renda'],
             regraDeDeliberacao: null,
           },
           {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
             tipoBancaId: 'banca-hetero',
             categoriasDocumentoIds: ['renda', 'raca'],
             regraDeDeliberacao: null,
@@ -175,11 +198,17 @@ describe('bancas requeridas e o recorte de competência', () => {
         fase({
           bancasRequeridas: [
             {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
               tipoBancaId: 'banca-hetero',
               categoriasDocumentoIds: ['raca'],
               regraDeDeliberacao: null,
             },
             {
+              id: null,
+              identificadorLocal: 'banca-teste',
+              copiaDoTipo: null,
               tipoBancaId: 'banca-hetero',
               categoriasDocumentoIds: ['renda'],
               regraDeDeliberacao: null,
@@ -194,7 +223,14 @@ describe('bancas requeridas e o recorte de competência', () => {
     const problemas = campos(
       fase({
         bancasRequeridas: [
-          { tipoBancaId: '', categoriasDocumentoIds: [], regraDeDeliberacao: null },
+          {
+            id: null,
+            identificadorLocal: 'banca-teste',
+            copiaDoTipo: null,
+            tipoBancaId: '',
+            categoriasDocumentoIds: [],
+            regraDeDeliberacao: null,
+          },
         ],
       }),
     );
@@ -208,7 +244,14 @@ describe('bancas requeridas e o recorte de competência', () => {
     const banca = (
       regraDeDeliberacao: RegraDeDeliberacaoDaBanca | null,
       tipoBancaId = 'banca-hetero',
-    ) => ({ tipoBancaId, categoriasDocumentoIds: [], regraDeDeliberacao });
+    ) => ({
+      id: null,
+      identificadorLocal: 'banca-teste',
+      copiaDoTipo: null,
+      tipoBancaId,
+      categoriasDocumentoIds: [],
+      regraDeDeliberacao,
+    });
 
     it('não cobra a banca sem regra: ela só é exigida na publicação', () => {
       expect(comRegra(banca(null))).toEqual([]);

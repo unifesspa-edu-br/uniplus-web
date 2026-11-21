@@ -211,7 +211,15 @@ describe('campoNaTelaDaEtapa', () => {
 
   it('mostra o campo da regra de uma banca só enquanto a banca existe na etapa', () => {
     const comUmaBanca = umaEtapaDoCronograma({
-      bancas: [{ tipoBancaId: 'banca', regraDeDeliberacao: null }],
+      bancas: [
+        {
+          id: null,
+          identificadorLocal: 'banca',
+          copiaDoTipo: null,
+          tipoBancaId: 'banca',
+          regraDeDeliberacao: null,
+        },
+      ],
     });
 
     expect(campoNaTelaDaEtapa('bancas.0.quorum', comUmaBanca, undefined)).toBe(true);
@@ -222,7 +230,15 @@ describe('campoNaTelaDaEtapa', () => {
   it('esconde o campo da regra da banca na etapa que traz a nota do ENEM', () => {
     const doEnem = umaEtapaDoCronograma({
       tipoEtapaOrigemId: 'enem',
-      bancas: [{ tipoBancaId: 'banca', regraDeDeliberacao: null }],
+      bancas: [
+        {
+          id: null,
+          identificadorLocal: 'banca',
+          copiaDoTipo: null,
+          tipoBancaId: 'banca',
+          regraDeDeliberacao: null,
+        },
+      ],
     });
     const tipoEnem = {
       nome: 'ENEM',

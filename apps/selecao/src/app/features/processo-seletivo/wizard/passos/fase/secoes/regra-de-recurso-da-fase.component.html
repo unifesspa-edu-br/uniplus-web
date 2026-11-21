@@ -75,7 +75,7 @@
           [attr.id]="idDaFase('regra')"
           [ngModel]="form.controls.recurso.controls.regraCodigo.value"
           [ngModelOptions]="{ standalone: true }"
-          [disabled]="!store.aceitaEdicao()"
+          [disabled]="!cronograma.edicaoLiberada()"
           [attr.aria-invalid]="erroDoCampo('recurso.regra') ? 'true' : null"
           [attr.aria-describedby]="descritoPorErro('recurso.regra', 'regra-erro')"
           (ngModelChange)="escolherRegra($event)"
@@ -130,7 +130,7 @@
         [leitura]="leituraDoRecurso()"
         [recusas]="recusasDosParametros()"
         [prefixoDoId]="prefixoDosParametros()"
-        [desabilitado]="!store.aceitaEdicao()"
+        [desabilitado]="!cronograma.edicaoLiberada()"
         (alterado)="alterarParametro($event)"
         (retirarPrazoDaSegundaInstancia)="retirarOPrazoDaSegundaInstancia()"
       />

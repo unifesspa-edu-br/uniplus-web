@@ -42,6 +42,10 @@ describe('hidratarDraft — cronograma e etapas', () => {
     expect(fase.faseCanonicaId).toBe('fase-canonica-homologacao');
     expect(fase.bancasRequeridas).toEqual([
       {
+        id: 'snapshot-banca',
+        identificadorLocal: 'banca-snapshot-banca',
+        posicaoNoTipo: 1,
+        copiaDoTipo: expect.objectContaining({ rotulo: 'BANCA_ANALISE_RECURSOS' }),
         tipoBancaId: 'tipo-banca-1',
         categoriasDocumentoIds: ['categoria-renda'],
         regraDeDeliberacao: null,

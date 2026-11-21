@@ -35,7 +35,7 @@ import { etapaDoFormulario, grupoDaEtapa } from '../cronograma-form';
 import { BASE } from '../cronograma.testing';
 import { EdicaoDaEtapa } from '../servicos/edicao-da-etapa.service';
 import { FormularioDoCronograma } from '../servicos/formulario-do-cronograma.service';
-import { ReleituraDasEtapas } from '../servicos/releitura-das-etapas.service';
+import { ReleituraDosIdentificadores } from '../servicos/releitura-dos-identificadores.service';
 import { RecusasDoServidorNasEtapas } from '../servicos/recusas-do-servidor-nas-etapas.service';
 import { RecusasDoServidorNasFases } from '../servicos/recusas-do-servidor-nas-fases.service';
 import { UnidadesResponsaveisDasFases } from '../servicos/unidades-responsaveis-das-fases.service';
@@ -66,7 +66,7 @@ describe('ConfiguracaoDoRecursoDaEtapaComponent', () => {
         GravacaoDoProcesso,
         ...CATALOGOS_DO_CRONOGRAMA,
         UnidadesResponsaveisDasFases,
-        ReleituraDasEtapas,
+        ReleituraDosIdentificadores,
         FormularioDoCronograma,
         RecusasDoServidorNasEtapas,
         SEM_RECUSAS_DA_PUBLICACAO,

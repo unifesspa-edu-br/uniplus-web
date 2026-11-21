@@ -1,3 +1,4 @@
+import { FormularioDoCronograma } from '../../cronograma/servicos/formulario-do-cronograma.service';
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import {
   ComboboxComponent,
@@ -47,6 +48,7 @@ import { GatilhoDasExigenciasStore } from './gatilho-das-exigencias.store';
 })
 export class EditorDaExigenciaComponent {
   protected readonly store = inject(ProcessoSeletivoStore);
+  protected readonly cronograma = inject(FormularioDoCronograma);
   protected readonly exigencias = inject(ExigenciasDaFaseStore);
   protected readonly gatilho = inject(GatilhoDasExigenciasStore);
   private readonly catalogoDeFases = inject(CatalogoDeFases);

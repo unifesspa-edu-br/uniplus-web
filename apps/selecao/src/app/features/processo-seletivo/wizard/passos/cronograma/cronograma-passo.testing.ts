@@ -50,7 +50,7 @@ import { FormularioDoCronograma } from './servicos/formulario-do-cronograma.serv
 import { GravacaoDasExigenciasDocumentais } from './servicos/gravacao-das-exigencias-documentais.service';
 import { LeituraDaLinhaDoTempo } from './servicos/leitura-da-linha-do-tempo.service';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
-import { ReleituraDasEtapas } from './servicos/releitura-das-etapas.service';
+import { ReleituraDosIdentificadores } from './servicos/releitura-dos-identificadores.service';
 import { UnidadesResponsaveisDasFases } from './servicos/unidades-responsaveis-das-fases.service';
 import { provideTiposDeDecisaoDaApi } from '../../shared/decisoes-da-fase-ou-etapa/tipos-de-decisao-da-api.testing';
 
@@ -105,7 +105,6 @@ function congeladosDaFase(agrupaEtapas: boolean): FaseDoCronograma['congelados']
     coletaInscricao: false,
     permiteComplementacao: false,
     coletaSolicitacaoIsencao: false,
-    bancas: [],
   };
 }
 
@@ -184,7 +183,7 @@ export class ContextoDoCronograma {
   readonly conferencia = this.injetor.get(ConferenciaDoCronograma);
   readonly recusas = this.injetor.get(RecusasDoServidorNasEtapas);
   readonly cronograma = this.injetor.get(FormularioDoCronograma);
-  readonly releituraDasEtapas = this.injetor.get(ReleituraDasEtapas);
+  readonly releituraDosIdentificadores = this.injetor.get(ReleituraDosIdentificadores);
   readonly unidades = this.injetor.get(UnidadesResponsaveisDasFases);
   readonly detectar = (): void => this.fixture.detectChanges();
 
@@ -216,7 +215,9 @@ export class ContextoDoCronograma {
   readonly gravouEtapas = async (): Promise<void> => {
     this.controller.expectOne(ROTA_ETAPAS).flush(null, SEM_CONTEUDO);
     await this.proximoPasso();
-    this.controller.expectOne(ROTA_PROCESSO).flush(PROCESSO_COM_ETAPA_GRAVADA);
+    const etapas =
+      this.store.draft().cronograma.etapas.length === 0 ? [] : PROCESSO_COM_ETAPA_GRAVADA.etapas;
+    this.controller.expectOne(ROTA_PROCESSO).flush({ ...PROCESSO_COM_ETAPA_GRAVADA, etapas });
     await this.proximoPasso();
   };
 

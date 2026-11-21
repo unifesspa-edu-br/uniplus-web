@@ -10,7 +10,7 @@ export function bancaRequeridaDe(
   banca: FaseDoDto['bancasRequeridas'][number],
 ): BancaRequeridaDaFase {
   return {
-    tipoBancaId: banca.tipoBancaOrigemId,
+    ...identidadeDaBanca(banca),
     categoriasDocumentoIds: banca.candidatosAtendidos.map(
       (categoria) => categoria.categoriaDocumentoOrigemId,
     ),
@@ -20,7 +20,22 @@ export function bancaRequeridaDe(
 
 export function bancaDaEtapaDe(banca: EtapaDoDto['bancas'][number]): BancaDaEtapa {
   return {
-    tipoBancaId: banca.tipoBancaOrigemId,
+    ...identidadeDaBanca(banca),
     regraDeDeliberacao: regraDoDto(banca.regraDeDeliberacao),
+  };
+}
+
+function identidadeDaBanca(banca: EtapaDoDto['bancas'][number]) {
+  return {
+    id: banca.id,
+    identificadorLocal: `banca-${banca.id}`,
+    tipoBancaId: banca.tipoBancaOrigemId,
+    posicaoNoTipo: banca.posicaoNoTipo,
+    copiaDoTipo: {
+      rotulo: banca.codigo.rotulo,
+      papel: banca.papel,
+      exigeDuasOuMaisBancas: banca.exigeDuasOuMaisBancas,
+      encerraRecursoNaPrimeiraInstancia: banca.encerraRecursoNaPrimeiraInstancia,
+    },
   };
 }

@@ -1,3 +1,6 @@
+@if (releituraDosIdentificadores.aviso(); as aviso) {
+  <p role="alert">{{ aviso }}</p>
+}
 <p id="sel-cronograma-subtitulo" class="step-subtitle" tabindex="-1">
   A linha do tempo do certame. Cada fase vem do catálogo institucional e pede só o que os seus
   atributos exigem. Qualquer fase pode subdividir-se em etapas — e é a etapa que diz a que fase
@@ -51,8 +54,8 @@
     <sel-nova-fase class="step-card"></sel-nova-fase>
 
     <ui-falha-de-leitura
-      titulo="Etapas sem identificadores"
-      [leitura]="releituraDasEtapas.leitura"
+      titulo="Etapas ou bancas sem identificadores"
+      [leitura]="releituraDosIdentificadores.leitura"
     />
 
     <div role="status" class="field__hint">

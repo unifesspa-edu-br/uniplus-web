@@ -1,4 +1,5 @@
 import { expect, it } from 'vitest';
+import { faseDoServidor } from '../../shared/cronograma-do-servidor.testing';
 import {
   PROCESSO_ID,
   ROTA_ETAPAS,
@@ -9,9 +10,11 @@ import {
   PROBLEM_JSON,
   ID_INSCRICAO,
   ID_AVALIACAO,
+  ID_RESULTADO,
   ID_BANCA_HETERO,
   ID_CATEGORIA_RACA,
   ID_CATEGORIA_RENDA,
+  PROCESSO_COM_ETAPA_GRAVADA,
 } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 
@@ -209,11 +212,17 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
       [{ atoCodigo: 'RESULTADO_PRELIMINAR', papel: 'PRELIMINAR' }],
       [
         {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
           tipoBancaId: ID_BANCA_HETERO,
           categoriasDocumentoIds: [ID_CATEGORIA_RACA],
           regraDeDeliberacao: null,
         },
         {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
           tipoBancaId: ID_BANCA_HETERO,
           categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
           regraDeDeliberacao: null,
@@ -229,11 +238,13 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
 
     expect((enviadas.request.body as { bancasRequeridas: unknown }[])[0].bancasRequeridas).toEqual([
       {
+        id: null,
         tipoBancaId: ID_BANCA_HETERO,
         categoriasDocumentoIds: [ID_CATEGORIA_RACA],
         regraDeDeliberacao: null,
       },
       {
+        id: null,
         tipoBancaId: ID_BANCA_HETERO,
         categoriasDocumentoIds: [ID_CATEGORIA_RENDA],
         regraDeDeliberacao: null,
@@ -241,6 +252,35 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
     ]);
 
     enviadas.flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    const bancaLida = faseDoServidor().bancasRequeridas[0];
+    const faseLida = faseDoServidor({
+      faseCanonica: { origemId: ID_RESULTADO },
+      bancasRequeridas: [
+        {
+          ...bancaLida,
+          id: 'banca-raca',
+          tipoBancaOrigemId: ID_BANCA_HETERO,
+          posicaoNoTipo: 1,
+          candidatosAtendidos: [
+            { ...bancaLida.candidatosAtendidos[0], categoriaDocumentoOrigemId: ID_CATEGORIA_RACA },
+          ],
+        },
+        {
+          ...bancaLida,
+          id: 'banca-renda',
+          tipoBancaOrigemId: ID_BANCA_HETERO,
+          posicaoNoTipo: 2,
+          candidatosAtendidos: [
+            { ...bancaLida.candidatosAtendidos[0], categoriaDocumentoOrigemId: ID_CATEGORIA_RENDA },
+          ],
+        },
+      ],
+    });
+    controller.expectOne(ROTA_PROCESSO).flush({
+      ...PROCESSO_COM_ETAPA_GRAVADA,
+      cronogramaFases: [faseLida],
+    });
     await proximoPasso();
     await gravouEtapas();
     await gravouExigencias();
@@ -304,7 +344,9 @@ describe('CronogramaPassoComponent: etapas sem fase e reenvio', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.[0]).toContain('Releia as etapas');
+    expect(resultado.messages?.[0]).toBe(
+      'As etapas foram gravadas, mas a tela não conseguiu confirmar as etapas e bancas acrescentadas. A gravação fica suspensa até essa confirmação: gravar agora criaria de novo essas etapas e bancas e desfaria as referências de desempate e eliminação.',
+    );
     controller.expectNone(ROTA_FASES);
   });
 
