@@ -1,0 +1,123 @@
+<div role="status" aria-live="polite">{{ anuncio() }}</div>
+@if (recusas().length) {
+  <sel-recusas-do-campo
+    [attr.id]="idRecusas() ?? idBase() + '-recusas'"
+    tabindex="-1"
+    [recusas]="recusas()"
+  />
+}
+@for (grupo of grupos(); track grupo[0].tipoBancaId) {
+  <section [attr.aria-labelledby]="idBase() + '-grupo-' + grupo[0].tipoBancaId">
+    <h5 [id]="idBase() + '-grupo-' + grupo[0].tipoBancaId">{{ rotulo(grupo[0]) }}</h5>
+    @if (grupo.length > 1) {
+      <p [id]="idBase() + '-ordem-' + grupo[0].tipoBancaId">
+        A ordem das bancas deste tipo define qual banca julga o recurso (UNI-REQ-0474). Mudar a
+        ordem não muda a identidade da banca.
+      </p>
+      <p>Bancas do mesmo tipo julgam em paralelo.</p>
+      @if (marcas(grupo[0])?.papel?.codigo === 'JULGA_A_PRIMEIRA_INSTANCIA') {
+        <p>Os recursos se dividem de forma equilibrada entre estas bancas (UNI-REQ-0483).</p>
+      }
+    }
+    @for (banca of grupo; track banca.identificadorLocal; let indice = $index) {
+      <div
+        role="group"
+        [id]="idDaBanca(banca)"
+        tabindex="-1"
+        [attr.aria-labelledby]="idDaBanca(banca) + '-titulo'"
+        [attr.aria-describedby]="
+          recusasPorBanca().get(banca.identificadorLocal)?.length
+            ? idDaBanca(banca) + '-recusas'
+            : null
+        "
+      >
+        <h6 [id]="idDaBanca(banca) + '-titulo'">{{ identificacao(banca) }}</h6>
+        @if (marcas(banca)?.exigeDuasOuMaisBancas) {
+          <p>Este tipo exige duas ou mais bancas.</p>
+        }
+        @if (marcas(banca)?.encerraRecursoNaPrimeiraInstancia) {
+          <p>O recurso deste tipo se encerra na 1ª instância.</p>
+        }
+        @if (recusasPorBanca().get(banca.identificadorLocal); as recusasDaBanca) {
+          <sel-recusas-do-campo [id]="idDaBanca(banca) + '-recusas'" [recusas]="recusasDaBanca" />
+        }
+        @if (detalhe(); as template) {
+          <ng-container *ngTemplateOutlet="template; context: { $implicit: banca }" />
+        }
+        @if (edicaoLiberada()) {
+          @if (indice > 0) {
+            <button
+              class="btn btn--secondary"
+              type="button"
+              [attr.aria-describedby]="idBase() + '-ordem-' + banca.tipoBancaId"
+              [attr.aria-label]="
+                'Mover a ' +
+                identificacao(banca) +
+                ' para antes da ' +
+                identificacao(grupo[indice - 1])
+              "
+              (click)="mover(banca, -1)"
+            >
+              Mover para antes
+            </button>
+          }
+          @if (indice < grupo.length - 1) {
+            <button
+              class="btn btn--secondary"
+              type="button"
+              [attr.aria-describedby]="idBase() + '-ordem-' + banca.tipoBancaId"
+              [attr.aria-label]="
+                'Mover a ' +
+                identificacao(banca) +
+                ' para depois da ' +
+                identificacao(grupo[indice + 1])
+              "
+              (click)="mover(banca, 1)"
+            >
+              Mover para depois
+            </button>
+          }
+          <button
+            class="btn btn--secondary"
+            type="button"
+            [attr.aria-label]="'Retirar a ' + identificacao(banca)"
+            (click)="retirar(banca, grupo, indice)"
+          >
+            Retirar
+          </button>
+        }
+      </div>
+    }
+  </section>
+}
+<div class="form-field">
+  <label class="label" [for]="idBase() + '-tipo'">Tipo da banca a acrescentar</label>
+  @if (tipos().length === 0) {
+    <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
+  }
+  <select
+    #seletor
+    class="select"
+    [id]="idBase() + '-tipo'"
+    [disabled]="!edicaoLiberada()"
+    [attr.aria-describedby]="faltaTipo() ? idBase() + '-tipo-erro' : null"
+    [attr.aria-invalid]="faltaTipo() ? 'true' : null"
+    (change)="escolherTipo(seletor.value)"
+  >
+    <option value="">Selecione</option>
+    @for (tipo of tipos(); track tipo.id) {
+      <option [value]="tipo.id">{{ tipo.rotulo }}</option>
+    }
+  </select>
+  @if (faltaTipo()) {
+    <p class="field__erro" [id]="idBase() + '-tipo-erro'">Selecione o tipo da banca.</p>
+  }
+</div>
+<button
+  class="btn btn--secondary"
+  type="button"
+  [disabled]="!edicaoLiberada()"
+  (click)="acrescentar()"
+>
+  Acrescentar banca
+</button>

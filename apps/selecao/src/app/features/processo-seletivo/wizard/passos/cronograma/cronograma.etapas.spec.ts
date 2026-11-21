@@ -1,3 +1,4 @@
+import { acrescentarBancaNaEtapa, retirarBancaDaEtapa } from './bancas-da-etapa.testing';
 import { describe, expect, it } from 'vitest';
 import { ID_AVALIACAO, ID_BANCA_HETERO } from './cronograma.testing';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
@@ -104,7 +105,7 @@ describe('CronogramaPassoComponent: etapas', () => {
       { atoCodigo: 'EDITAL', papel: null },
       { atoCodigo: 'RESULTADO', papel: null },
     ]);
-    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     edicao.acrescentarRecursoNaEtapa(etapa);
     edicao.acrescentarRecursoNaEtapa(etapa);
     etapa.controls.emiteParecerIndividual.setValue(true);
@@ -118,13 +119,13 @@ describe('CronogramaPassoComponent: etapas', () => {
     ]);
   });
 
-  it('marcar a banca duas vezes não a repete, e desmarcar a retira', () => {
+  it('acrescenta duas bancas do mesmo tipo e retira apenas a escolhida', () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
     const etapa = cronograma.etapas.at(0);
 
-    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
-    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, true);
+    acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
+    acrescentarBancaNaEtapa(edicao, etapa, ID_BANCA_HETERO);
     expect(edicao.bancasDaEtapa(etapa)).toEqual([
       {
         id: null,
@@ -133,10 +134,19 @@ describe('CronogramaPassoComponent: etapas', () => {
         tipoBancaId: ID_BANCA_HETERO,
         regraDeDeliberacao: null,
       },
+      {
+        id: null,
+        identificadorLocal: 'banca-2',
+        copiaDoTipo: null,
+        tipoBancaId: ID_BANCA_HETERO,
+        regraDeDeliberacao: null,
+      },
     ]);
 
-    edicao.alternarBancaDaEtapa(etapa, ID_BANCA_HETERO, false);
-    expect(edicao.bancasDaEtapa(etapa)).toEqual([]);
+    retirarBancaDaEtapa(edicao, etapa, 'banca-1');
+    expect(edicao.bancasDaEtapa(etapa)).toEqual([
+      expect.objectContaining({ identificadorLocal: 'banca-2' }),
+    ]);
   });
 
   describe('instância superior do recurso da etapa', () => {
