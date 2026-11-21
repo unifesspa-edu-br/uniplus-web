@@ -25,7 +25,7 @@ import type { AndamentoDaEscrita } from '../../shared/escrita';
 })
 export class PrecedenciasFaseListaComponent {
   readonly arestas = input.required<readonly PrecedenciaFaseDto[]>();
-  /** O nome de cada fase pelo código; vazio quando o cadastro de fases não está disponível. */
+  /** O nome de cada fase pelo código; vazio quando o catálogo de fases não está disponível. */
   readonly nomesDasFases = input.required<ReadonlyMap<string, string>>();
   readonly carregando = input.required<boolean>();
   readonly gravando = input.required<boolean>();

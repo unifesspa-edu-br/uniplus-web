@@ -32,7 +32,7 @@ export class PrecedenciaFormularioComponent {
   readonly modo = input.required<'criar' | 'editar'>();
   readonly titulo = input.required<string>();
   readonly opcoesDeFase = input.required<readonly OpcaoDeFase[]>();
-  /** Os nomes das fases: o aviso da página fica inerte atrás do drawer modal, e aqui está a nova tentativa. */
+  /** As fases do catálogo: o aviso da página fica inerte atrás do drawer modal, e aqui está a nova tentativa. */
   readonly leituraDasFases = input.required<LeituraAcompanhada>();
   readonly erro = input.required<string | null>();
   readonly anuncio = input.required<string>();

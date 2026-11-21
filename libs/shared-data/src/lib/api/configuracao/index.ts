@@ -66,12 +66,11 @@ export {
 } from './ofertas-curso.api';
 export {
   FasesCanonicasApi,
-  CODIGOS_FASE_CANONICA,
   ORIGENS_DATA_FASE,
   ROTULO_ORIGEM_DATA_FASE,
   type AtualizarFaseCanonicaCommand,
-  type CodigoFaseCanonica,
   type FaseCanonicaDto,
+  type FaseCanonicaVocabularioDto,
   type FasesCanonicasQuery,
   type OrigemDataFase,
 } from './fases-canonicas.api';

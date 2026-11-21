@@ -1,53 +1,78 @@
 import { DestroyRef, Injectable, computed, inject } from '@angular/core';
 import { API_MAX_PAGE_SIZE, lookupCompleto } from '@uniplus/shared-core/http';
-import { CODIGOS_FASE_CANONICA, FasesCanonicasApi } from '@uniplus/shared-data/configuracao';
+import {
+  FasesCanonicasApi,
+  type FaseCanonicaVocabularioDto,
+} from '@uniplus/shared-data/configuracao';
+import { comCodigoAparado, temCodigoUtilizavel } from '../../shared/codigo-e-rotulo';
+import { listaDeReferencia } from '../../shared/lista-de-referencia';
 
 export interface OpcaoDeFase {
   readonly codigo: string;
   readonly rotulo: string;
 }
 
+const MARCA_SEM_CADASTRO = '(não cadastrada)';
+
 /**
- * Nomes das fases canônicas cadastradas, por código. Só enriquece a apresentação: o domínio
- * fechado das opções é o roster canônico, que o servidor valida contra o catálogo da API, e não
- * contra este cadastro.
+ * As fases que a API oferece, lidas a cada abertura da página: o catálogo dá as opções, na ordem
+ * dele, e os nomes. O cadastro de fases só diz quais delas ainda não foram cadastradas.
  */
 @Injectable()
 export class FasesDoGrafoStore {
   private readonly api = inject(FasesCanonicasApi);
-  private readonly fases = lookupCompleto(
-    (cursor) => this.api.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
-    inject(DestroyRef),
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly catalogo = listaDeReferencia<FaseCanonicaVocabularioDto>(
+    () => this.api.listarVocabulario(),
+    this.destroyRef,
+    temCodigoUtilizavel,
+    comCodigoAparado,
   );
-  readonly nomes = computed(
-    () => new Map(this.fases.opcoes().map((fase) => [fase.codigo, fase.nome])),
+  private readonly cadastro = lookupCompleto(
+    (cursor) => this.api.listar({ cursor, direction: 'next', limit: API_MAX_PAGE_SIZE }),
+    this.destroyRef,
   );
 
-  /** Sinalizada à parte da lista principal: sem os nomes, as opções ainda aparecem, só pelo código. */
-  readonly falhou = this.fases.comErro;
-  /** Enquanto os nomes carregam, as opções aparecem só pelo código, sem afirmar que a fase não existe. */
-  readonly pendente = this.fases.pendente;
+  readonly nomes = computed(
+    () => new Map(this.catalogo.opcoes().map((fase) => [fase.codigo, fase.nome])),
+  );
+
+  /** Sem o catálogo não há opção a oferecer; o aviso da página traz a nova tentativa. */
+  readonly falhou = this.catalogo.falhou;
+  readonly pendente = this.catalogo.pendente;
 
   /**
-   * O roster canônico completo, porque é contra ele que o servidor valida. Fase ainda não
-   * cadastrada continua selecionável e é marcada como tal: restringir ao cadastro faria a tela
-   * recusar arestas que a API aceita, e o seed da API cria arestas antes de as fases existirem.
+   * Fase do catálogo que o cadastro não tem continua selecionável: a API aceita a aresta, e o
+   * seed dela cria arestas antes de as fases serem cadastradas. Sem a resposta do cadastro, não
+   * se afirma que a fase falta.
    */
+  private readonly semCadastro = computed(() => {
+    if (this.cadastro.pendente() || this.cadastro.comErro()) return new Set<string>();
+    const cadastradas = new Set(this.cadastro.opcoes().map((fase) => fase.codigo));
+    return new Set(
+      this.catalogo
+        .opcoes()
+        .map((fase) => fase.codigo)
+        .filter((codigo) => !cadastradas.has(codigo)),
+    );
+  });
+
   readonly opcoes = computed<readonly OpcaoDeFase[]>(() =>
-    CODIGOS_FASE_CANONICA.map((codigo) => {
-      const nome = this.nomes().get(codigo);
-      if (nome !== undefined) return { codigo, rotulo: `${codigo} — ${nome}` };
-      const semNomes = this.pendente() || this.falhou();
-      return { codigo, rotulo: semNomes ? codigo : `${codigo} — (não cadastrada)` };
-    }),
+    this.catalogo.opcoes().map(({ codigo, nome }) => ({
+      codigo,
+      rotulo: this.semCadastro().has(codigo)
+        ? `${codigo} — ${nome} ${MARCA_SEM_CADASTRO}`
+        : `${codigo} — ${nome}`,
+    })),
   );
 
   constructor() {
-    this.fases.recarregar();
+    this.catalogo.garantirCarregado();
+    this.cadastro.recarregar();
   }
 
-  recarregar(): void {
-    if (!this.pendente()) this.fases.recarregar();
+  tentarDeNovo(): void {
+    this.catalogo.tentarDeNovo();
   }
 
   nomeDaFase(codigo: string): string {

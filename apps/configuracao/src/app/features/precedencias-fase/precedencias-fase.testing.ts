@@ -12,6 +12,7 @@ import { NotificationService } from '@uniplus/shared-core/notifications';
 import {
   CONFIGURACAO_BASE_PATH,
   FaseCanonicaDto,
+  FaseCanonicaVocabularioDto,
   PrecedenciaFaseDto,
 } from '@uniplus/shared-data/configuracao';
 import { MockInstance, expect, vi } from 'vitest';
@@ -23,6 +24,7 @@ import { PrecedenciasFaseStore } from './precedencias-fase.store';
 const BASE = 'http://localhost:5000';
 export const LISTA = `${BASE}/api/configuracao/precedencias-fase`;
 export const FASES = `${BASE}/api/configuracao/fases-canonicas`;
+export const CATALOGO = `${BASE}/api/configuracao/vocabularios/fases-canonicas`;
 export const ESCRITA = `${BASE}/api/configuracao/admin/precedencias-fase`;
 export const TITULO_DA_LISTA = '#cfg-precedencias-fase-list-title';
 
@@ -40,6 +42,24 @@ export const avaliacaoClassificacao: PrecedenciaFaseDto = {
   antecessoraCodigo: 'AVALIACAO',
   sucessoraCodigo: 'CLASSIFICACAO',
 };
+
+/** O catálogo da API, na ordem dela: as fases que os testes escolhem nos campos do formulário. */
+export const CATALOGO_PADRAO: readonly FaseCanonicaVocabularioDto[] = [
+  { codigo: 'INSCRICAO', nome: 'Inscrição' },
+  { codigo: 'HOMOLOGACAO', nome: 'Homologação' },
+  { codigo: 'AVALIACAO', nome: 'Avaliação' },
+  { codigo: 'CLASSIFICACAO', nome: 'Classificação' },
+  { codigo: 'RESULTADO_FINAL', nome: 'Resultado final' },
+];
+
+/** O que a API responde a uma leitura: a lista, a falha, ou nada ainda (o teste responde depois). */
+export type RespostaDaLeitura<T> = readonly T[] | 'falha' | 'pendente';
+
+export interface LeiturasDaPagina {
+  readonly catalogo?: RespostaDaLeitura<FaseCanonicaVocabularioDto>;
+  readonly cadastro?: RespostaDaLeitura<FaseCanonicaDto>;
+  readonly linkDoCadastro?: string;
+}
 
 const FASE_CANONICA_PADRAO: Omit<FaseCanonicaDto, 'id' | 'codigo' | 'nome'> = {
   descricao: null,
@@ -108,7 +128,8 @@ export class PaginaDePrecedencias {
   readonly sucessos: MockInstance<NotificationService['success']>;
   readonly erros: MockInstance<NotificationService['errorFromProblem']>;
   private readonly app = TestBed.inject(ApplicationRef);
-  private pedidoDeFases!: TestRequest;
+  private pedidoDoCatalogo!: TestRequest;
+  private pedidoDoCadastro!: TestRequest;
 
   constructor() {
     this.fixture = TestBed.createComponent(PrecedenciasFasePage);
@@ -124,28 +145,31 @@ export class PaginaDePrecedencias {
 
   async carregar(
     itens: readonly PrecedenciaFaseDto[],
-    fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente',
-    linkDasFases?: string,
+    { catalogo = CATALOGO_PADRAO, cadastro = [], linkDoCadastro }: LeiturasDaPagina,
   ): Promise<void> {
     this.fixture.detectChanges();
-    this.pedidoDeFases = this.http.expectOne((r) => r.url === FASES);
-    this.responderFasesNaMontagem(fases, linkDasFases);
+    this.pedidoDoCatalogo = this.http.expectOne((r) => r.url === CATALOGO);
+    this.pedidoDoCadastro = this.http.expectOne((r) => r.url === FASES);
+    this.responder(this.pedidoDoCatalogo, catalogo);
+    this.responder(this.pedidoDoCadastro, cadastro, linkDoCadastro);
     this.http.expectOne((r) => r.url === LISTA).flush(itens);
     await this.propagar();
   }
 
-  private responderFasesNaMontagem(
-    fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente',
-    linkDasFases?: string,
-  ): void {
-    // 'pendente': a requisição das fases segue em aberto; o teste a responde com `responderFases`.
-    if (fases === 'pendente') return;
-    if (fases === 'falha') this.pedidoDeFases.flush(...problema(503));
-    else this.pedidoDeFases.flush(fases, linkDasFases ? { headers: { Link: linkDasFases } } : {});
+  // 'pendente': a requisição segue em aberto; o teste a responde com `responderCatalogo` ou `responderCadastro`.
+  private responder<T>(pedido: TestRequest, resposta: RespostaDaLeitura<T>, link?: string): void {
+    if (resposta === 'pendente') return;
+    if (resposta === 'falha') pedido.flush(...problema(503));
+    else pedido.flush(resposta, link ? { headers: { Link: link } } : {});
   }
 
-  async responderFases(corpo: readonly FaseCanonicaDto[]): Promise<void> {
-    this.pedidoDeFases.flush(corpo);
+  async responderCatalogo(corpo: readonly FaseCanonicaVocabularioDto[]): Promise<void> {
+    this.pedidoDoCatalogo.flush(corpo);
+    await this.propagar();
+  }
+
+  async responderCadastro(corpo: readonly FaseCanonicaDto[]): Promise<void> {
+    this.pedidoDoCadastro.flush(corpo);
     await this.propagar();
   }
 
@@ -233,15 +257,14 @@ export class PaginaDePrecedencias {
 const nomeDoPar = (a: PrecedenciaFaseDto): string =>
   `precedência entre ${a.antecessoraCodigo} e ${a.sucessoraCodigo}`;
 
-/** A página montada com a lista e as fases já carregadas. */
+/** A página montada com a lista, o catálogo e o cadastro de fases já carregados. */
 export async function montarPagina(
   itens: readonly PrecedenciaFaseDto[] = [inscricaoHomologacao],
-  fases: readonly FaseCanonicaDto[] | 'falha' | 'pendente' = [],
-  linkDasFases?: string,
+  leituras: LeiturasDaPagina = {},
 ): Promise<PaginaDePrecedencias> {
   configurarModuloDaPagina();
   const pagina = new PaginaDePrecedencias();
-  await pagina.carregar(itens, fases, linkDasFases);
+  await pagina.carregar(itens, leituras);
   return pagina;
 }
 

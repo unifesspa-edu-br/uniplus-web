@@ -15,11 +15,7 @@
 </ui-alert>
 
 <ui-falha-de-leitura titulo="Não foi possível carregar as precedências" [leitura]="leitura" />
-<ui-falha-de-leitura
-  titulo="Nomes das fases indisponíveis"
-  variante="warning"
-  [leitura]="leituraDasFases"
-/>
+<ui-falha-de-leitura titulo="Fases indisponíveis" variante="warning" [leitura]="leituraDasFases" />
 
 <span class="sr-only" role="status">{{ edicao.anuncioDaPagina() }}</span>
 <cfg-precedencias-fase-lista
