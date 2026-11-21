@@ -5,18 +5,17 @@ import { fase, ID_CPF, ID_RECURSOS } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 describe('FasePassoComponent', () => {
-  let componente: ContextoDaFase['componente'];
   let store: ContextoDaFase['store'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
+  let abrirFase: ContextoDaFase['abrirFase'];
   let exigencias: ContextoDaFase['exigencias'];
   let gatilho: ContextoDaFase['gatilho'];
   let documentos: ContextoDaFase['documentos'];
 
   usarFase((tela) => {
-    ({ componente, store, detectar, nativo, comCronograma, exigencias, gatilho, documentos } =
-      tela);
+    ({ store, detectar, nativo, comCronograma, abrirFase, exigencias, gatilho, documentos } = tela);
   });
 
   describe('exigências documentais da fase', () => {
@@ -27,7 +26,7 @@ describe('FasePassoComponent', () => {
       detectar();
 
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(true);
-      componente.abrirFase(ID_RECURSOS);
+      abrirFase(ID_RECURSOS);
       detectar();
       expect(exigencias().exigidoNestaFase(ID_CPF)).toBe(false);
     });
@@ -111,7 +110,7 @@ describe('FasePassoComponent', () => {
       });
 
       it('oferece na fase da habilitação o dado que ela coleta', () => {
-        componente.abrirFase(ID_RECURSOS);
+        abrirFase(ID_RECURSOS);
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
         gatilho().escolherExigidoDe(ID_CPF, 'quem');

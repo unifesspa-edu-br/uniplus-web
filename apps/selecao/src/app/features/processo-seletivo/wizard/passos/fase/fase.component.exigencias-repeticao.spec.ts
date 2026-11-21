@@ -16,13 +16,23 @@ describe('FasePassoComponent', () => {
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
+  let abrirFase: ContextoDaFase['abrirFase'];
   let exigencias: ContextoDaFase['exigencias'];
   let gatilho: ContextoDaFase['gatilho'];
   let documentos: ContextoDaFase['documentos'];
 
   usarFase((tela) => {
-    ({ componente, store, detectar, nativo, comCronograma, exigencias, gatilho, documentos } =
-      tela);
+    ({
+      componente,
+      store,
+      detectar,
+      nativo,
+      comCronograma,
+      abrirFase,
+      exigencias,
+      gatilho,
+      documentos,
+    } = tela);
   });
 
   describe('exigências documentais da fase', () => {
@@ -99,7 +109,7 @@ describe('FasePassoComponent', () => {
       }
 
       function exigirCpfNaFase(faseCanonicaId: string): void {
-        componente.abrirFase(faseCanonicaId);
+        abrirFase(faseCanonicaId);
         documentos().escolherDocumento(ID_CPF);
         documentos().acrescentarDocumento();
         gatilho().escolherExigidoDe(ID_CPF, 'quem');
@@ -188,7 +198,7 @@ describe('FasePassoComponent', () => {
 
       it('dentro de grupo de alternativas que se repete, mostra a repetição herdada só para leitura', () => {
         comHabilitacao([FAMILIA]);
-        componente.abrirFase(ID_RECURSOS);
+        abrirFase(ID_RECURSOS);
         const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
         store.patchSection('documentos', {
           raizes: [
@@ -219,7 +229,7 @@ describe('FasePassoComponent', () => {
 
       it('a repetição herdada que deixou de valer diz o que fazer sem apontar campo que o documento não tem', () => {
         comHabilitacao([]);
-        componente.abrirFase(ID_RECURSOS);
+        abrirFase(ID_RECURSOS);
         const folha = folhaDe(exigenciaNova(ID_CPF, 'RECURSOS'));
         store.patchSection('documentos', {
           raizes: [

@@ -2,21 +2,20 @@ import { StatusProcesso } from '@uniplus/shared-data/selecao';
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import { fase, fasesEnviadas, PROCESSO_ID, ROTA_FASES } from './fase.testing';
+import { fase } from './fase.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 
 const GRUPO = 'fase-AVALIACAO-tipos-de-decisao';
 
 describe('FasePassoComponent: tipos de decisão da fase', () => {
   let store: ContextoDaFase['store'];
-  let controller: ContextoDaFase['controller'];
   let componente: ContextoDaFase['componente'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
 
   usarFase((tela) => {
-    ({ store, controller, componente, detectar, nativo, comCronograma } = tela);
+    ({ store, componente, detectar, nativo, comCronograma } = tela);
   });
 
   const caixa = (codigo: string) =>
@@ -61,21 +60,6 @@ describe('FasePassoComponent: tipos de decisão da fase', () => {
     marcar('CLASSIFICACAO', false);
 
     expect(store.draft().cronograma.fases[0].tiposDeDecisao).toEqual(['NOTA_DA_ETAPA']);
-  });
-
-  it('envia os tipos declarados na gravação do cronograma', async () => {
-    store.processoSeletivoId.set(PROCESSO_ID);
-    comCronograma(fase({ tiposDeDecisao: ['CLASSIFICACAO'] }));
-    marcar('GABARITO_DA_PROVA', true);
-
-    const gravacao = componente.persistir();
-    const enviadas = controller.expectOne(ROTA_FASES);
-
-    expect(fasesEnviadas(enviadas.request.body)[0]).toMatchObject({
-      tiposDeDecisao: ['CLASSIFICACAO', 'GABARITO_DA_PROVA'],
-    });
-    enviadas.flush(null, { status: 204, statusText: 'No Content' });
-    await gravacao;
   });
 
   it('trava as caixas quando o formulário está desabilitado', () => {

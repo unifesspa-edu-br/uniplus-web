@@ -40,7 +40,9 @@ describe('FasePassoComponent', () => {
       documentos().acrescentarDocumento();
       detectar();
 
-      const rotulo = nativo.querySelector(`label[for="fase-AVALIACAO-doc-normas-${ID_CPF}-base-0-obs"]`);
+      const rotulo = nativo.querySelector(
+        `label[for="fase-AVALIACAO-doc-normas-${ID_CPF}-base-0-obs"]`,
+      );
       const normalizar = (texto: string | null | undefined) => texto?.replace(/\s+/g, ' ').trim();
       expect(normalizar(rotulo?.textContent)).toBe('Observação sobre a norma (opcional)');
 

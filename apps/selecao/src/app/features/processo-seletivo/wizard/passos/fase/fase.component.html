@@ -1,90 +1,25 @@
-@if (faseFixada() === null) {
-  <p class="step-subtitle">
-    Tudo o que pertence a uma fase do certame num só lugar: o que ela publica, quem conclui o ciclo
-    recursal dela, o prazo de recurso, as bancas que ela requer e os documentos que exige.
-  </p>
-}
-
 @if (fasesNoSeletor().length === 0) {
   <p class="field__hint">
     Este processo ainda não tem cronograma. Defina as fases no passo Cronograma antes de configurar
     o que cada uma publica, julga e exige.
   </p>
-} @else {
-  @if (faseFixada() === null) {
-    <div class="step-card">
-      <div class="form-grid">
-        <div class="form-field form-grid__full">
-          <label class="label" [attr.for]="idDaFase('aberta')">Fase a configurar</label>
-          <select
-            class="input"
-            [attr.id]="idDaFase('aberta')"
-            [ngModel]="faseAberta()"
-            [ngModelOptions]="{ standalone: true }"
-            (ngModelChange)="abrirFase($event)"
-          >
-            @for (fase of fasesNoSeletor(); track fase.faseCanonicaId) {
-              <option [value]="fase.faseCanonicaId">{{ fase.ordem }}. {{ fase.nome }}</option>
-            }
-          </select>
-          <p class="field__hint">
-            A ordem é a da linha do tempo. Trocar de fase aqui não perde o que já foi declarado nas
-            outras — a gravação envia todas.
-          </p>
-        </div>
-      </div>
-    </div>
-  }
+} @else if (formulario(); as form) {
+  <form [formGroup]="form">
+    <!-- Publicações -->
+    <sel-publicacoes-da-fase class="step-card"></sel-publicacoes-da-fase>
 
-  @if (formulario(); as form) {
-    <div aria-live="polite" aria-atomic="true">
-      @if (recusasGerais().length > 0) {
-        <div class="field__erro" role="alert">
-          <p>O servidor recusou a gravação:</p>
-          <ul class="u-list">
-            @for (recusa of recusasGerais(); track recusa) {
-              <li>{{ recusa }}</li>
-            }
-          </ul>
-        </div>
-      }
-    </div>
+    <!-- Conclusão do ciclo recursal e parecer -->
+    <sel-ciclo-recursal-da-fase class="step-card"></sel-ciclo-recursal-da-fase>
 
-    <form [formGroup]="form">
-      <!--
-        Embutida na fase, a identificação e a janela já estão logo acima, no cabeçalho da
-        própria fase: repeti-las aqui faria a mesma fase aparecer duas vezes seguidas.
-      -->
-      @if (faseFixada() === null) {
-        <div class="step-card">
-          <h2 class="form-section__title">{{ nomeDaFaseAberta() }}</h2>
-          <p class="field__hint">
-            @if (form.controls.inicio.value === null && form.controls.fim.value === null) {
-              Esta fase não declara janela própria — o sistema a deriva de outra.
-            } @else {
-              Janela declarada no passo Cronograma: de {{ form.controls.inicio.value ?? '—' }} até
-              {{ form.controls.fim.value ?? '—' }}.
-            }
-          </p>
-        </div>
-      }
+    <sel-decisoes-da-fase class="step-card"></sel-decisoes-da-fase>
 
-      <!-- Publicações -->
-      <sel-publicacoes-da-fase class="step-card"></sel-publicacoes-da-fase>
+    <!-- Regra de recurso -->
+    <sel-regra-de-recurso-da-fase class="step-card"></sel-regra-de-recurso-da-fase>
 
-      <!-- Conclusão do ciclo recursal e parecer -->
-      <sel-ciclo-recursal-da-fase class="step-card"></sel-ciclo-recursal-da-fase>
+    <!-- Bancas requeridas -->
+    <sel-bancas-da-fase class="step-card"></sel-bancas-da-fase>
 
-      <sel-decisoes-da-fase class="step-card"></sel-decisoes-da-fase>
-
-      <!-- Regra de recurso -->
-      <sel-regra-de-recurso-da-fase class="step-card"></sel-regra-de-recurso-da-fase>
-
-      <!-- Bancas requeridas -->
-      <sel-bancas-da-fase class="step-card"></sel-bancas-da-fase>
-
-      <!-- Exigências documentais -->
-      <sel-documentos-da-fase class="step-card"></sel-documentos-da-fase>
-    </form>
-  }
+    <!-- Exigências documentais -->
+    <sel-documentos-da-fase class="step-card"></sel-documentos-da-fase>
+  </form>
 }

@@ -263,6 +263,12 @@ export class ContextoDoCertame {
     this.fixtureSuperficie.detectChanges();
   };
 
+  /** Abre a fase indicada na superfície, como o Cronograma a embute. */
+  readonly abrirFase = (faseCanonicaId: string): void => {
+    this.fixtureSuperficie.componentRef.setInput('faseFixada', faseCanonicaId);
+    this.detectar();
+  };
+
   /** Deixa a cadeia de `await` do comando avançar antes da próxima expectativa. */
   readonly proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -292,7 +298,7 @@ export async function montarFaseECronograma(): Promise<ContextoDoCertame> {
     providers: PROVEDORES,
   }).compileComponents();
   const contexto = new ContextoDoCertame();
-  contexto.detectar();
+  contexto.abrirFase(ID_AVALIACAO);
   atenderCatalogos(contexto.controller);
   contexto.detectar();
   return contexto;

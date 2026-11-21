@@ -36,6 +36,7 @@ export class ContextoDaFase {
   readonly atenderCatalogos: FaseMontada['atenderCatalogos'];
   readonly comCronograma: FaseMontada['comCronograma'];
   readonly selecionado: FaseMontada['selecionado'];
+  readonly abrirFase: FaseMontada['abrirFase'];
 
   constructor(montada: FaseMontada) {
     ({
@@ -48,6 +49,7 @@ export class ContextoDaFase {
       atenderCatalogos: this.atenderCatalogos,
       comCronograma: this.comCronograma,
       selecionado: this.selecionado,
+      abrirFase: this.abrirFase,
     } = montada);
   }
 

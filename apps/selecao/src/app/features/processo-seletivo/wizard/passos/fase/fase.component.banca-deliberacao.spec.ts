@@ -8,7 +8,7 @@ import {
   comRegra,
 } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
-import { fase, ID_BANCA_HETERO, PROBLEM_JSON, PROCESSO_ID, ROTA_FASES } from './fase.testing';
+import { fase, ID_BANCA_HETERO } from './fase.testing';
 
 const ID_DA_REGRA = 'fase-AVALIACAO-regra-0';
 const SEM_RECORTE = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] };
@@ -16,17 +16,12 @@ const SEM_RECORTE = { tipoBancaId: ID_BANCA_HETERO, categoriasDocumentoIds: [] }
 describe('FasePassoComponent', () => {
   let componente: ContextoDaFase['componente'];
   let store: ContextoDaFase['store'];
-  let controller: ContextoDaFase['controller'];
   let detectar: ContextoDaFase['detectar'];
   let nativo: ContextoDaFase['nativo'];
   let comCronograma: ContextoDaFase['comCronograma'];
-  let bancasDaFase: ContextoDaFase['bancas'];
-  let proximoPasso: () => Promise<unknown>;
 
   usarFase((tela) => {
-    ({ componente, store, controller, detectar, nativo, comCronograma } = tela);
-    bancasDaFase = tela.bancas;
-    proximoPasso = () => new Promise((resolve) => setTimeout(resolve, 0));
+    ({ componente, store, detectar, nativo, comCronograma } = tela);
   });
 
   const campo = <T extends HTMLElement>(sufixo: string) =>
@@ -40,13 +35,6 @@ describe('FasePassoComponent', () => {
   };
   const digitar = (sufixo: string, valor: string) => {
     const input = campo<HTMLInputElement>(sufixo);
-    if (input === null) throw new Error(`Campo ${sufixo} não está na tela.`);
-    input.value = valor;
-    input.dispatchEvent(new Event('input'));
-    detectar();
-  };
-  const digitarNaSegunda = (sufixo: string, valor: string) => {
-    const input = nativo.querySelector<HTMLInputElement>(`#fase-AVALIACAO-regra-1-${sufixo}`);
     if (input === null) throw new Error(`Campo ${sufixo} não está na tela.`);
     input.value = valor;
     input.dispatchEvent(new Event('input'));
@@ -124,94 +112,6 @@ describe('FasePassoComponent', () => {
 
       expect(campo<HTMLSelectElement>('modo')?.disabled).toBe(true);
       expect(campo<HTMLInputElement>('integrantes')?.disabled).toBe(true);
-    });
-
-    it('leva a recusa do servidor ao campo da regra que ela nomeia', async () => {
-      store.processoSeletivoId.set(PROCESSO_ID);
-      comCronograma(
-        fase({ bancasRequeridas: [{ ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA }] }),
-      );
-
-      const gravacao = componente.persistir();
-      controller.expectOne(ROTA_FASES).flush(
-        {
-          type: 'about:blank',
-          title: 'Cronograma recusado',
-          status: 422,
-          code: 'uniplus.selecao.banca.quorum_fora_do_intervalo',
-          traceId: '00000000000000000000000000000001',
-          errors: [
-            {
-              field: 'fases[0].bancasRequeridas[0].regraDeDeliberacao.quorum',
-              code: 'uniplus.selecao.banca.quorum_fora_do_intervalo',
-              message: 'detalhe do servidor',
-            },
-          ],
-        },
-        { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-      );
-      await proximoPasso();
-      detectar();
-
-      expect((await gravacao).valid).toBe(false);
-      expect(campo('quorum-erro')?.textContent).toContain('entre 1 e o número de integrantes');
-      expect(campo('quorum')?.getAttribute('aria-invalid')).toBe('true');
-    });
-
-    describe('com a recusa do servidor na segunda banca', () => {
-      const OUTRO_TIPO = { tipoBancaId: 'outro-tipo', categoriasDocumentoIds: [] };
-
-      async function recusarQuorumDaSegunda(): Promise<void> {
-        store.processoSeletivoId.set(PROCESSO_ID);
-        comCronograma(
-          fase({
-            bancasRequeridas: [
-              { ...SEM_RECORTE, regraDeDeliberacao: COLEGIADA },
-              { ...OUTRO_TIPO, regraDeDeliberacao: COLEGIADA },
-            ],
-          }),
-        );
-        const gravacao = componente.persistir();
-        controller.expectOne(ROTA_FASES).flush(
-          {
-            type: 'about:blank',
-            title: 'Cronograma recusado',
-            status: 422,
-            code: 'uniplus.selecao.banca.quorum_fora_do_intervalo',
-            traceId: '00000000000000000000000000000001',
-            errors: [
-              {
-                field: 'fases[0].bancasRequeridas[1].regraDeDeliberacao.quorum',
-                code: 'uniplus.selecao.banca.quorum_fora_do_intervalo',
-                message: 'detalhe do servidor',
-              },
-            ],
-          },
-          { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
-        );
-        await proximoPasso();
-        await gravacao;
-        detectar();
-      }
-
-      it('não passa a recusa à banca que ocupa a posição depois de remover a anterior', async () => {
-        await recusarQuorumDaSegunda();
-        expect(componente.erroDoCampo('bancasRequeridas.1.quorum')).not.toBeNull();
-
-        bancasDaFase().removerBanca(0);
-        detectar();
-
-        expect(componente.erroDoCampo('bancasRequeridas.0.quorum')).toBeNull();
-        expect(componente.erroDoCampo('bancasRequeridas.1.quorum')).toBeNull();
-      });
-
-      it('some quando a regra da banca é corrigida', async () => {
-        await recusarQuorumDaSegunda();
-
-        digitarNaSegunda('quorum', '4');
-
-        expect(componente.erroDoCampo('bancasRequeridas.1.quorum')).toBeNull();
-      });
     });
 
     it('lê a regra em consulta como uma linha, sem campo nem seletor', () => {

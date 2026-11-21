@@ -1,7 +1,7 @@
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import type { DebugElement } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { apiResultInterceptor } from '@uniplus/shared-core/http';
 import { CONFIGURACAO_BASE_PATH } from '@uniplus/shared-data/configuracao';
 import { ORGANIZACAO_BASE_PATH } from '@uniplus/shared-data/organizacao';
@@ -185,6 +185,104 @@ export interface FaseMontada {
   readonly atenderCatalogos: () => void;
   readonly comCronograma: (...fases: readonly FaseDoCronograma[]) => void;
   readonly selecionado: (id: string) => string;
+  readonly abrirFase: (faseCanonicaId: string) => void;
+}
+
+const PROVEDORES_DA_FASE = [
+  ProcessoSeletivoStore,
+  CadastroInicial,
+  GravacaoDoProcesso,
+  ...CATALOGOS_DO_CRONOGRAMA,
+  provideHttpClient(withInterceptors([apiResultInterceptor])),
+  provideHttpClientTesting(),
+  { provide: SELECAO_BASE_PATH, useValue: BASE },
+  { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
+  { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
+  { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
+];
+
+/** Responde ao que os catálogos pedem quando um passo abre. */
+function atenderOsCatalogos(controller: HttpTestingController): void {
+  for (const requisicao of controller.match(() => true)) {
+    const { url } = requisicao.request;
+    if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
+    else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
+    else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
+    else if (url.includes('tipos-documento')) requisicao.flush(TIPOS_DOCUMENTO);
+    else if (url.includes('tipos-ato')) requisicao.flush(ATOS);
+    else if (url.includes('regras')) requisicao.flush(REGRAS);
+    else requisicao.flush([]);
+  }
+}
+
+function falharOsCatalogos(controller: HttpTestingController): void {
+  for (const requisicao of controller.match(() => true)) {
+    requisicao.flush('indisponível', { status: 500, statusText: 'Server Error' });
+  }
+}
+
+/** O seletor, como o operador o vê — não como o modelo o guarda. */
+function valorDoSeletor(nativo: HTMLElement, id: string): string {
+  const campo = nativo.querySelector<HTMLSelectElement>(`#${id}`);
+  if (campo === null) throw new Error(`Seletor ${id} não está na tela.`);
+  return campo.value;
+}
+
+/** O que o Cronograma faz ao embutir o passo: fixa a fase e relê o rascunho. */
+function fixarAFase(fixture: ComponentFixture<FasePassoComponent>, faseCanonicaId: string): void {
+  fixture.componentRef.setInput('faseFixada', faseCanonicaId);
+  fixture.detectChanges();
+}
+
+function comAsFases(
+  fixture: ComponentFixture<FasePassoComponent>,
+  store: ProcessoSeletivoStore,
+  fases: readonly FaseDoCronograma[],
+): void {
+  store.patchObjectSection('cronograma', { fases: [...fases] });
+  if (fases.length > 0) fixarAFase(fixture, fases[0].faseCanonicaId);
+  else fixture.detectChanges();
+}
+
+function atenderOuFalhar(
+  controller: HttpTestingController,
+  catalogos: 'atendidos' | 'pendentes' | 'com-erro',
+): void {
+  if (catalogos === 'atendidos') atenderOsCatalogos(controller);
+  if (catalogos === 'com-erro') falharOsCatalogos(controller);
+}
+
+type OperacoesDoPasso = Pick<
+  FaseMontada,
+  'atenderCatalogos' | 'comCronograma' | 'selecionado' | 'abrirFase'
+>;
+
+function operacoesDoPasso(
+  fixture: ComponentFixture<FasePassoComponent>,
+  controller: HttpTestingController,
+): OperacoesDoPasso {
+  const store = TestBed.inject(ProcessoSeletivoStore);
+  return {
+    atenderCatalogos: () => atenderOsCatalogos(controller),
+    comCronograma: (...fases) => comAsFases(fixture, store, fases),
+    selecionado: (id) => valorDoSeletor(fixture.nativeElement as HTMLElement, id),
+    abrirFase: (faseCanonicaId) => fixarAFase(fixture, faseCanonicaId),
+  };
+}
+
+function passoMontado(
+  fixture: ComponentFixture<FasePassoComponent>,
+  controller: HttpTestingController,
+): FaseMontada {
+  return {
+    componente: fixture.componentInstance,
+    store: TestBed.inject(ProcessoSeletivoStore),
+    controller,
+    detectar: () => fixture.detectChanges(),
+    nativo: fixture.nativeElement as HTMLElement,
+    raiz: fixture.debugElement,
+    ...operacoesDoPasso(fixture, controller),
+  };
 }
 
 /** O passo da fase montado com os catálogos já atendidos, como ele abre para o operador. */
@@ -193,70 +291,13 @@ export async function montarFase(
 ): Promise<FaseMontada> {
   await TestBed.configureTestingModule({
     imports: [FasePassoComponent],
-    providers: [
-      ProcessoSeletivoStore,
-      CadastroInicial,
-      GravacaoDoProcesso,
-      ...CATALOGOS_DO_CRONOGRAMA,
-      provideHttpClient(withInterceptors([apiResultInterceptor])),
-      provideHttpClientTesting(),
-      { provide: SELECAO_BASE_PATH, useValue: BASE },
-      { provide: CONFIGURACAO_BASE_PATH, useValue: BASE },
-      { provide: ORGANIZACAO_BASE_PATH, useValue: BASE },
-      { provide: PUBLICACOES_BASE_PATH, useValue: BASE },
-    ],
+    providers: PROVEDORES_DA_FASE,
   }).compileComponents();
-
   const fixture = TestBed.createComponent(FasePassoComponent);
-  const store = TestBed.inject(ProcessoSeletivoStore);
+  fixture.componentRef.setInput('faseFixada', ID_AVALIACAO);
   const controller = TestBed.inject(HttpTestingController);
-  const nativo = fixture.nativeElement as HTMLElement;
-  const detectar = () => fixture.detectChanges();
-
-  /** Responde ao que os catálogos pedem quando um passo abre. */
-  const atenderCatalogos = (): void => {
-    for (const requisicao of controller.match(() => true)) {
-      const { url } = requisicao.request;
-      if (url.includes('fases-canonicas')) requisicao.flush(FASES_CANONICAS);
-      else if (url.includes('tipos-banca')) requisicao.flush(BANCAS);
-      else if (url.includes('categorias-documento')) requisicao.flush(CATEGORIAS);
-      else if (url.includes('tipos-documento')) requisicao.flush(TIPOS_DOCUMENTO);
-      else if (url.includes('tipos-ato')) requisicao.flush(ATOS);
-      else if (url.includes('regras')) requisicao.flush(REGRAS);
-      else requisicao.flush([]);
-    }
-  };
-
-  const comCronograma = (...fases: readonly FaseDoCronograma[]): void => {
-    store.patchObjectSection('cronograma', { fases: [...fases] });
-    detectar();
-  };
-
-  /** O seletor, como o operador o vê — não como o modelo o guarda. */
-  const selecionado = (id: string): string => {
-    const campo = nativo.querySelector<HTMLSelectElement>(`#${id}`);
-    if (campo === null) throw new Error(`Seletor ${id} não está na tela.`);
-    return campo.value;
-  };
-
-  detectar();
-  if (catalogos === 'atendidos') atenderCatalogos();
-  if (catalogos === 'com-erro') {
-    for (const requisicao of controller.match(() => true)) {
-      requisicao.flush('indisponível', { status: 500, statusText: 'Server Error' });
-    }
-  }
-  detectar();
-
-  return {
-    componente: fixture.componentInstance,
-    store,
-    controller,
-    detectar,
-    nativo,
-    raiz: fixture.debugElement,
-    atenderCatalogos,
-    comCronograma,
-    selecionado,
-  };
+  fixture.detectChanges();
+  atenderOuFalhar(controller, catalogos);
+  fixture.detectChanges();
+  return passoMontado(fixture, controller);
 }
