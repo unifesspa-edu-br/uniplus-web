@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { ID_AVALIACAO, ID_RESULTADO } from './cronograma.testing';
 import { DEFINITIVO, PRELIMINAR } from './cronograma-do-certame.testing';
-import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
+import {
+  abrirOCronograma,
+  type ContextoDoCronograma,
+  usarCronograma,
+} from './cronograma-passo.testing';
 import {
   AjudantesDaPublicacaoRecusada,
   daFase,
@@ -146,6 +150,28 @@ describe('CronogramaPassoComponent: recusas da publicação nas fases', () => {
       expect(ajudantes.bloco('cr-fim-erro-0')).toBeNull();
     });
 
+    it('mostra no topo do passo as recusas de duas fases removidas, mesmo com o mesmo código', () => {
+      tela.comFases(ID_AVALIACAO);
+      tela.expansao.abrirFases([0]);
+      tela.detectar();
+
+      ajudantes.recusar(
+        {
+          ...FIM_RECUSADO,
+          message: 'Recusa da primeira fase removida.',
+          identificadores: [daFase('FASE_REMOVIDA_A')],
+        },
+        {
+          ...FIM_RECUSADO,
+          message: 'Recusa da segunda fase removida.',
+          identificadores: [daFase('FASE_REMOVIDA_B')],
+        },
+      );
+
+      expect(tela.nativo.textContent).toContain('Recusa da primeira fase removida.');
+      expect(tela.nativo.textContent).toContain('Recusa da segunda fase removida.');
+    });
+
     it('não mostra o bloco do topo do passo quando toda recusa achou o campo', () => {
       abrirResultado({ produtos: [], ...SEM_PERIODO });
 
@@ -194,6 +220,31 @@ describe('CronogramaPassoComponent: recusas da publicação nas fases', () => {
       ajudantes.recusar({ ...FIM_RECUSADO, identificadores: [daFase('RESULTADO_FINAL')] });
 
       expect(campo('cr-fim-0')?.getAttribute('aria-invalid')).toBe('true');
+    });
+  });
+
+  describe('ao sair do passo e voltar', () => {
+    it('mantém a recusa a conferir de novo, mesmo com o valor de volta ao que a publicação conferiu', () => {
+      abrirResultado({ produtos: [], ...SEM_PERIODO });
+      ajudantes.recusar({ ...FIM_RECUSADO, identificadores: [daFase('RESULTADO_FINAL')] });
+      const [fase] = tela.store.draft().cronograma.fases;
+      tela.store.patchObjectSection('cronograma', {
+        fases: [{ ...fase, fim: '2026-03-10T18:00:00-03:00' }],
+      });
+      tela.detectar();
+      tela.store.patchObjectSection('cronograma', { fases: [fase] });
+      tela.detectar();
+
+      tela.sair();
+      const volta = abrirOCronograma();
+      volta.expansao.abrirFases([0]);
+      volta.detectar();
+
+      const fim = volta.nativo.querySelector('#cr-fim-0');
+      expect(fim?.getAttribute('aria-invalid')).toBeNull();
+      expect(volta.nativo.querySelector('#cr-fim-erro-0')?.textContent).toContain(
+        'conferida de novo na próxima publicação',
+      );
     });
   });
 

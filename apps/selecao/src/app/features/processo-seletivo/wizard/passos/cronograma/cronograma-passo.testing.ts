@@ -42,6 +42,7 @@ import {
   TIPO_ETAPA,
   TIPOS_ETAPA,
 } from './cronograma.testing';
+import { RecusasDaPublicacaoNoCronograma } from './servicos/recusas-da-publicacao-no-cronograma.service';
 import { ConferenciaDoCronograma } from './servicos/conferencia-do-cronograma.service';
 import { EdicaoDaEtapa } from './servicos/edicao-da-etapa.service';
 import { ExpansaoDoCronograma } from './servicos/expansao-do-cronograma.service';
@@ -60,6 +61,7 @@ const PROVEDORES = [
   ProcessoSeletivoStore,
   NumeracaoDasRespostasRecusadas,
   RecusasDaPublicacao,
+  RecusasDaPublicacaoNoCronograma,
   CadastroInicial,
   GravacaoDoProcesso,
   GravacaoDosCamposPressupostos,
@@ -184,6 +186,9 @@ export class ContextoDoCronograma {
   readonly unidades = this.injetor.get(UnidadesResponsaveisDasFases);
   readonly detectar = (): void => this.fixture.detectChanges();
 
+  /** A pessoa deixou o Cronograma: a tela é desmontada, e o que é da página continua. */
+  readonly sair = (): void => this.fixture.destroy();
+
   readonly convencao = (): ConvencaoDeContagemComponent =>
     this.raiz.query(By.directive(ConvencaoDeContagemComponent)).componentInstance;
 
@@ -294,6 +299,11 @@ export async function montarCronograma(): Promise<ContextoDoCronograma> {
     imports: [CronogramaPassoComponent],
     providers: PROVEDORES,
   }).compileComponents();
+  return abrirOCronograma();
+}
+
+/** Monta a tela do Cronograma de novo, no mesmo contexto de página: a pessoa voltou ao passo. */
+export function abrirOCronograma(): ContextoDoCronograma {
   const contexto = new ContextoDoCronograma();
   contexto.detectar();
   responderOsCatalogos(contexto.controller);

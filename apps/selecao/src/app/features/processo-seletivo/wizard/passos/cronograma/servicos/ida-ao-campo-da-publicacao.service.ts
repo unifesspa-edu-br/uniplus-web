@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, Injector, untracked } from '@angular/core';
+import { DestroyRef, effect, inject, Injectable, Injector, untracked } from '@angular/core';
 
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { focarAposATrocaDePasso } from '../../../shared/foco-apos-renderizar';
@@ -16,7 +16,8 @@ import { RecusasDaPublicacaoNoCronograma } from './recusas-da-publicacao-no-cron
 /**
  * Leva a pessoa que usou "Ir ao campo" na Revisão ao campo que a recusa da publicação aponta: abre
  * a fase, a etapa e o bloco dos recursos e põe o foco no controle. Espera o passo estar visível e
- * os catálogos lidos, porque deles depende saber se o campo tem controle na tela.
+ * os catálogos lidos, porque deles depende saber se o campo tem controle na tela. O pedido que
+ * ficou à espera não sobrevive à saída do Cronograma.
  */
 @Injectable()
 export class IdaAoCampoDaPublicacao {
@@ -31,6 +32,7 @@ export class IdaAoCampoDaPublicacao {
 
   constructor() {
     effect(() => this.levarAoDestino());
+    inject(DestroyRef).onDestroy(() => this.publicacao.destino.set(null));
   }
 
   private levarAoDestino(): void {

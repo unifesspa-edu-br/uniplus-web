@@ -121,6 +121,32 @@ describe('CronogramaPassoComponent: recusas da publicação nas etapas', () => {
       expect(ajudantes.bloco('cr-etapa-recusas-0')).toContain('conferida de novo');
     });
 
+    it('com dois recursos gravados de novo e o mesmo código, mostra no topo da etapa as duas recusas', () => {
+      etapaComRecurso(RECURSO_GRAVADO_DE_NOVO);
+
+      ajudantes.recusar(
+        {
+          field: 'etapas[0].recursos[0].prazoValor',
+          code: CODIGO,
+          message: 'O prazo do primeiro recurso não serve.',
+          identificadores: [daEtapa(ETAPA), doRecurso(RECURSO)],
+        },
+        {
+          field: 'etapas[0].recursos[1].prazoValor',
+          code: CODIGO,
+          message: 'O prazo do segundo recurso não serve.',
+          identificadores: [daEtapa(ETAPA), doRecurso('01960000-0000-7000-0000-0000000000f3')],
+        },
+      );
+
+      expect(ajudantes.bloco('cr-etapa-recusas-0')).toContain(
+        'O prazo do primeiro recurso não serve.',
+      );
+      expect(ajudantes.bloco('cr-etapa-recusas-0')).toContain(
+        'O prazo do segundo recurso não serve.',
+      );
+    });
+
     it('sem o Id do recurso na recusa, deixa a recusa no topo da etapa', () => {
       etapaComRecurso();
 

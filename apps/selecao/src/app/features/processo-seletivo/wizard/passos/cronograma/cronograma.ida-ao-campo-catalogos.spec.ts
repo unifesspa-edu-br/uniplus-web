@@ -34,6 +34,16 @@ describe('Ir ao campo enquanto os catálogos são lidos', () => {
     expect(tela.expansao.faseExpandida(0)).toBe(false);
   });
 
+  it('descarta o pedido que ficou à espera quando a pessoa sai do Cronograma', async () => {
+    TestBed.inject(CatalogoDeBancas).erro.set('Falha ao carregar.');
+    await ajudantes.irAoCampo(0);
+    expect(ajudantes.publicacao.destino()).not.toBeNull();
+
+    tela.sair();
+
+    expect(ajudantes.publicacao.destino()).toBeNull();
+  });
+
   it('preserva o destino na falha e foca o campo quando a nova tentativa termina', async () => {
     TestBed.inject(CatalogoDeBancas).erro.set('Falha ao carregar.');
     await ajudantes.irAoCampo(0);

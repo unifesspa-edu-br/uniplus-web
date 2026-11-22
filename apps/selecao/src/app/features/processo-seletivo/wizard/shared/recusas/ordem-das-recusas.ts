@@ -19,13 +19,14 @@ export interface RecusaOrdenada extends RecusaDoCampo {
 
 /**
  * As recusas na ordem em que a pessoa deve lê-las: as ativas antes das que estão a conferir; em
- * cada estado, a resposta mais recente primeiro; dentro da resposta, a ordem da API. O mesmo
- * campo com o mesmo código aparece uma vez, a que viria primeiro nessa ordem. O campo de um item
- * de lista traz a posição dele: o mesmo código em itens diferentes são recusas diferentes, e todas
- * aparecem.
+ * cada estado, a resposta mais recente primeiro; dentro da resposta, a ordem da API. Para o mesmo
+ * campo e o mesmo código vale uma só resposta, a que viria primeiro nessa ordem. Dentro dela todas
+ * as recusas ficam: vários lugares do cadastro (itens de lista, fases ou etapas retiradas) caem no
+ * mesmo campo da tela e cada um tem a sua recusa. Entre respostas diferentes é a mesma recusa
+ * repetida e aparece uma vez.
  */
 export function emOrdem<T extends RecusaOrdenada>(recusas: readonly T[]): T[] {
-  return [...semRepeticao(recusas)].sort(vemAntes);
+  return semRepeticao(recusas).sort(vemAntes);
 }
 
 function vemAntes(a: RecusaOrdenada, b: RecusaOrdenada): number {
@@ -33,13 +34,17 @@ function vemAntes(a: RecusaOrdenada, b: RecusaOrdenada): number {
 }
 
 function semRepeticao<T extends RecusaOrdenada>(recusas: readonly T[]): T[] {
-  const escolhidas = new Map<string, T>();
+  const doMesmoPar = new Map<string, T[]>();
   for (const recusa of recusas) {
     const chave = `${recusa.campo}\u0000${recusa.codigo}`;
-    const atual = escolhidas.get(chave);
-    if (atual === undefined || vemAntes(recusa, atual) < 0) escolhidas.set(chave, recusa);
+    doMesmoPar.set(chave, [...(doMesmoPar.get(chave) ?? []), recusa]);
   }
-  return [...escolhidas.values()];
+  return [...doMesmoPar.values()].flatMap(daRespostaQueVemPrimeiro);
+}
+
+function daRespostaQueVemPrimeiro<T extends RecusaOrdenada>(doPar: readonly T[]): T[] {
+  const [primeira] = [...doPar].sort(vemAntes);
+  return doPar.filter((recusa) => recusa.resposta === primeira.resposta);
 }
 
 /** Alguma recusa ainda vale, isto é, a pessoa não alterou a parte do cadastro que ela aponta. */

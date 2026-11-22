@@ -81,6 +81,25 @@ describe('emOrdem', () => {
     expect(emOrdem(lista).map((r) => r.mensagem)).toEqual(['recente']);
   });
 
+  it('mantém as duas do mesmo campo e código de uma resposta, na ordem da API', () => {
+    const lista = [
+      recusa({ ordem: 1, mensagem: 'segunda' }),
+      recusa({ ordem: 0, mensagem: 'primeira' }),
+    ];
+
+    expect(emOrdem(lista).map((r) => r.mensagem)).toEqual(['primeira', 'segunda']);
+  });
+
+  it('fica com todas as da resposta mais recente quando outra, mais antiga, repete o par', () => {
+    const lista = [
+      recusa({ resposta: 4, mensagem: 'antiga' }),
+      recusa({ resposta: 5, ordem: 0, mensagem: 'recente 1' }),
+      recusa({ resposta: 5, ordem: 1, mensagem: 'recente 2' }),
+    ];
+
+    expect(emOrdem(lista).map((r) => r.mensagem)).toEqual(['recente 1', 'recente 2']);
+  });
+
   it('mantém as duas quando o código é o mesmo e o campo é outro', () => {
     const lista = [recusa({ campo: 'fim' }), recusa({ campo: 'inicio' })];
 
