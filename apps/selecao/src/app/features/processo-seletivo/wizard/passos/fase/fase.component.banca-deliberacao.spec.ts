@@ -6,6 +6,7 @@ import {
 import type { ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
+import { comRotulos } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { COLEGIADA, comRegra } from '../../shared/deliberacao/regra-de-deliberacao.testing';
 import { usarFase, type ContextoDaFase } from './fase-passo.testing';
 import { fase, ID_BANCA_HETERO } from './fase.testing';
@@ -86,7 +87,7 @@ describe('FasePassoComponent', () => {
       escolher('desempate', 'votoDaPresidencia');
       digitar('suplentes', '2');
 
-      expect(regraDoRascunho()).toEqual(COLEGIADA);
+      expect(regraDoRascunho()).toEqual(comRotulos(COLEGIADA));
       expect(componente.erroDoCampo('bancasRequeridas.0.quorum')).toBeNull();
     });
 
@@ -156,6 +157,7 @@ describe('FasePassoComponent', () => {
         integrantes: '1',
         suplentes: '0',
         desempate: '',
+        rotulos: { modo: { codigo: 'atoIndividual', rotulo: 'Ato individual' } },
       });
       expect(campo('criterio')).not.toBeNull();
     });
@@ -191,7 +193,7 @@ describe('FasePassoComponent', () => {
               identificadorLocal: 'banca-teste',
               copiaDoTipo: null,
               ...SEM_RECORTE,
-              regraDeDeliberacao: COLEGIADA,
+              regraDeDeliberacao: comRotulos(COLEGIADA),
             },
           ],
         }),
@@ -202,7 +204,9 @@ describe('FasePassoComponent', () => {
       detectar();
 
       const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
-      expect(leitura).toContain('5 titulares, 2 suplentes; quórum 3; maioria simples');
+      expect(leitura).toContain(
+        '5 titulares, 2 suplentes; Colegiada, com votação; quórum 3; Maioria simples',
+      );
       expect(campo('modo')).toBeNull();
     });
 

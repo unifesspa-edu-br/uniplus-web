@@ -24,6 +24,7 @@ import {
   criterioDaVotacao,
   declararAVotacao,
   declararOModo,
+  REGRA_COLEGIADA,
   desempateDaVotacao,
   encerramentoDaVotacao,
   integrantesDaBanca,
@@ -47,7 +48,7 @@ const NOME_DA_BANCA = 'Banca de homologação das inscrições 1';
 const ID_DA_BANCA = idDaBancaGravada(1);
 
 const SO_O_ATO_INDIVIDUAL: RegraLida = {
-  modo: 'atoIndividual' as ModoDeDeliberacao,
+  modo: { codigo: 'atoIndividual' as ModoDeDeliberacao, rotulo: 'Ato individual' },
   integrantes: 1,
   suplentes: 0,
   quorum: null,
@@ -61,9 +62,9 @@ const ATO_INDIVIDUAL_COM_VOTACAO: RegraLida = {
   ...SO_O_ATO_INDIVIDUAL,
   integrantes: 3,
   quorum: 2,
-  criterio: 'maioriaSimples',
-  desempate: 'votoDaPresidencia',
-  encerramento: 'presidenciaNoQuorum',
+  criterio: REGRA_COLEGIADA.criterio,
+  desempate: REGRA_COLEGIADA.desempate,
+  encerramento: REGRA_COLEGIADA.encerramento,
 };
 
 const VOTACAO_ESCOLHIDA = {
@@ -162,6 +163,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
     await gravarOCronograma(page, servidor);
     expect(servidor.fasesEnviadas.at(-1)?.[0].bancasRequeridas[0].regraDeDeliberacao).toEqual({
       ...SO_O_ATO_INDIVIDUAL,
+      modo: 'atoIndividual' as ModoDeDeliberacao,
       integrantes: 3,
     });
   });
@@ -234,7 +236,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
       id: idDaBancaGravada(2),
       regraDeDeliberacao: {
         ...ATO_INDIVIDUAL_COM_VOTACAO,
-        modo: 'colegiadaComVotacao' as ModoDeDeliberacao,
+        modo: REGRA_COLEGIADA.modo,
       },
     });
     const servidor = novoServidorDasBancas({
@@ -245,7 +247,7 @@ test.describe('Votação do recurso na banca de ato individual — matriz DS @ds
         (item) => item.tipoBancaOrigemId === ID_DO_TIPO_ANALISE_DE_RECURSOS,
       );
       const regra = banca?.regraDeDeliberacao;
-      return regra?.modo === ('colegiadaComVotacao' as ModoDeDeliberacao) &&
+      return regra?.modo.codigo === ('colegiadaComVotacao' as ModoDeDeliberacao) &&
         regra.integrantes &&
         regra.quorum &&
         regra.criterio &&

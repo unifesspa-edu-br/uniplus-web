@@ -253,7 +253,7 @@ export {
   CaraterEtapa,
   EfeitoSuspensivoCodigo,
   GuardaDaVagaCodigo,
-  ModoDeDeliberacao,
+  ModoDeDeliberacaoCodigo as ModoDeDeliberacao,
   OrigemCandidatos,
   SituacaoInscricao,
   StatusProcesso,

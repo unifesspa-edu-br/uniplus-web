@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { descricaoDaRegra, SEM_REGRA_DE_DELIBERACAO } from './descricao-da-regra';
 import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
+import { comRotulos } from './vocabularios-da-regra.testing';
 
 describe('descricaoDaRegra', () => {
   it('diz que a banca não declarou regra', () => {
@@ -10,9 +11,9 @@ describe('descricaoDaRegra', () => {
   });
 
   it('descreve a colegiada em uma linha, com quórum, critério, encerramento e desempate', () => {
-    expect(descricaoDaRegra(COLEGIADA)).toBe(
-      '5 titulares, 2 suplentes; quórum 3; maioria simples; ' +
-        'encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+    expect(descricaoDaRegra(comRotulos(COLEGIADA))).toBe(
+      '5 titulares, 2 suplentes; Colegiada, com votação; quórum 3; Maioria simples; ' +
+        'encerra: A presidência encerra ao atingir o quórum; desempate: Voto da presidência',
     );
   });
 
@@ -24,21 +25,23 @@ describe('descricaoDaRegra', () => {
       suplentes: '0',
     });
 
-    expect(descricaoDaRegra(regra)).toBe(
-      '5 titulares, sem suplentes; quórum 3; unanimidade; ' +
-        'encerra: a presidência encerra ao atingir o quórum; sem unanimidade: nova votação',
+    expect(descricaoDaRegra(comRotulos(regra))).toBe(
+      '5 titulares, sem suplentes; Colegiada, com votação; quórum 3; Unanimidade; ' +
+        'encerra: A presidência encerra ao atingir o quórum; sem unanimidade: Nova votação',
     );
   });
 
   it('descreve o ato individual sem quórum nem votação', () => {
-    expect(descricaoDaRegra(ATO_INDIVIDUAL)).toBe('1 titular, sem suplentes; ato individual');
+    expect(descricaoDaRegra(comRotulos(ATO_INDIVIDUAL))).toBe(
+      '1 titular, sem suplentes; Ato individual',
+    );
   });
 
   it('descreve a votação do recurso no ato individual', () => {
     const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
 
-    expect(descricaoDaRegra(regra)).toBe(
-      '5 titulares, 2 suplentes; ato individual; recurso: quórum 3; maioria simples; encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+    expect(descricaoDaRegra(comRotulos(regra))).toBe(
+      '5 titulares, 2 suplentes; Ato individual; recurso: quórum 3; Maioria simples; encerra: A presidência encerra ao atingir o quórum; desempate: Voto da presidência',
     );
   });
 

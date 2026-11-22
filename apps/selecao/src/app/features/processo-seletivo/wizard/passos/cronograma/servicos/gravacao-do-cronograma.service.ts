@@ -8,6 +8,7 @@ import {
 import type { ValidacaoDoPasso } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CadastroInicial } from '../../../shared/cadastro-inicial.service';
+import { VocabulariosDaRegra } from '../../../shared/deliberacao/vocabularios-da-regra.service';
 import { focarAposRenderizar } from '../../../shared/foco-apos-renderizar';
 import { NumeracaoDasRespostasRecusadas } from '../../../shared/recusas/numeracao-das-respostas-recusadas';
 import { resumoDaGravacaoRecusada } from '../../../shared/recusas/texto-da-recusa-no-resumo';
@@ -57,6 +58,7 @@ const SEM_PROCESSO: ValidacaoDoPasso = {
 @Injectable()
 export class GravacaoDoCronograma {
   private readonly store = inject(ProcessoSeletivoStore);
+  private readonly vocabularios = inject(VocabulariosDaRegra);
   private readonly catalogoDeUnidades = inject(CatalogoDeUnidadesDoCadastro);
   private readonly cadastro = inject(CadastroInicial);
   private readonly problemI18n = inject(ProblemI18nService);
@@ -120,17 +122,30 @@ export class GravacaoDoCronograma {
   async persistir(): Promise<ValidacaoDoPasso> {
     const processoId = this.store.processoSeletivoId();
     if (processoId === null) return SEM_PROCESSO;
-
     const conferencia = this.conferencia.validar();
     if (!conferencia.valid) return this.recusarAConferencia(conferencia);
-
     const conteudo = this.congelarConteudo(processoId);
+    const recusa = this.recusaDasOpcoes(conteudo);
+    if (recusa !== null) return recusa;
     this.store.salvando.set(true);
     try {
       return (await this.gravarEmSequencia(conteudo)) ?? { valid: true };
     } finally {
       if (conteudo.geracao === this.store.geracao()) this.store.salvando.set(false);
     }
+  }
+
+  private recusaDasOpcoes(conteudo: ConteudoDaGravacao): ValidacaoDoPasso | null {
+    if (!this.temRegra(conteudo) || this.vocabularios.pronta()) return null;
+    return { valid: false, messages: ['As opções da regra de deliberação não estão disponíveis.'] };
+  }
+
+  private temRegra(conteudo: ConteudoDaGravacao): boolean {
+    const bancas = [
+      ...conteudo.fases.flatMap((fase) => fase.bancasRequeridas),
+      ...conteudo.etapas.flatMap((etapa) => etapa.bancas),
+    ];
+    return bancas.some((banca) => banca.regraDeDeliberacao !== null);
   }
 
   private recusarAConferencia(conferencia: ValidacaoDoPasso): ValidacaoDoPasso {

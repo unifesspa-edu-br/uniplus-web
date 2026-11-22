@@ -1,18 +1,28 @@
 <div class="form-grid">
+  @if (vocabularios.indisponivel()) {
+    <p class="form-grid__full" role="alert">
+      As opções da regra de deliberação não estão disponíveis.
+    </p>
+  } @else if (!vocabularios.pronta()) {
+    <p class="form-grid__full" role="status">Carregando opções da regra de deliberação.</p>
+  }
   <div class="form-field form-grid__full">
     <label class="label" [attr.for]="id('modo')">Deliberação da banca</label>
     <select
       #seletorDeModo
       class="input"
       [attr.id]="id('modo')"
-      [disabled]="desabilitada()"
+      [disabled]="desabilitada() || !vocabularios.pronta()"
       [attr.aria-describedby]="estadoDoModo().descritoPor"
       [attr.aria-invalid]="estadoDoModo().invalido ? 'true' : null"
       (change)="escolherModo($any($event.target).value)"
     >
       <option [value]="semRegra" [selected]="regra() === null">Sem regra declarada</option>
-      @for (modo of modos; track modo.valor) {
-        <option [value]="modo.valor" [selected]="regra()?.modo === modo.valor">
+      @for (
+        modo of opcoesComValorAtual(vocabularios.modos().opcoes, regra(), 'modo');
+        track modo.codigo
+      ) {
+        <option [value]="modo.codigo" [selected]="regra()?.modo === modo.codigo">
           {{ modo.rotulo }}
         </option>
       }
@@ -30,72 +40,64 @@
   </div>
 
   @if (regra(); as atual) {
-    @let doIntegrantes = estado('integrantes');
-    <div class="form-field">
-      <label class="label" [attr.for]="id('integrantes')">Integrantes titulares</label>
-      <input
-        class="input"
-        type="text"
-        inputmode="numeric"
-        [attr.id]="id('integrantes')"
-        [value]="atual.integrantes"
-        [disabled]="desabilitada()"
-        [attr.aria-describedby]="doIntegrantes.descritoPor"
-        [attr.aria-invalid]="doIntegrantes.invalido ? 'true' : null"
-        (input)="alterar('integrantes', $any($event.target).value)"
-      />
-      @if (doIntegrantes.erro; as mensagem) {
-        <p class="field__erro" [attr.id]="id('integrantes') + '-erro'" role="alert">
-          {{ mensagem }}
-        </p>
-      }
-      @if (doIntegrantes.recusas.length) {
-        <sel-recusas-do-campo
-          [attr.id]="id('integrantes') + '-recusas'"
-          tabindex="-1"
-          [recusas]="doIntegrantes.recusas"
+    @if (modoConhecido(atual)) {
+      @let doIntegrantes = estado('integrantes');
+      <div class="form-field">
+        <label class="label" [attr.for]="id('integrantes')">Integrantes titulares</label>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          [attr.id]="id('integrantes')"
+          [value]="atual.integrantes"
+          [disabled]="desabilitada()"
+          [attr.aria-describedby]="doIntegrantes.descritoPor"
+          [attr.aria-invalid]="doIntegrantes.invalido ? 'true' : null"
+          (input)="alterar('integrantes', $any($event.target).value)"
         />
-      }
-    </div>
+        @if (doIntegrantes.erro; as mensagem) {
+          <p class="field__erro" [attr.id]="id('integrantes') + '-erro'" role="alert">
+            {{ mensagem }}
+          </p>
+        }
+        @if (doIntegrantes.recusas.length) {
+          <sel-recusas-do-campo
+            [attr.id]="id('integrantes') + '-recusas'"
+            tabindex="-1"
+            [recusas]="doIntegrantes.recusas"
+          />
+        }
+      </div>
 
-    @let doSuplentes = estado('suplentes');
-    <div class="form-field">
-      <label class="label" [attr.for]="id('suplentes')">Suplentes</label>
-      <input
-        class="input"
-        type="text"
-        inputmode="numeric"
-        [attr.id]="id('suplentes')"
-        [value]="atual.suplentes"
-        [disabled]="desabilitada()"
-        [attr.aria-describedby]="doSuplentes.descritoPor"
-        [attr.aria-invalid]="doSuplentes.invalido ? 'true' : null"
-        (input)="alterar('suplentes', $any($event.target).value)"
-      />
-      @if (doSuplentes.erro; as mensagem) {
-        <p class="field__erro" [attr.id]="id('suplentes') + '-erro'" role="alert">{{ mensagem }}</p>
-      }
-      @if (doSuplentes.recusas.length) {
-        <sel-recusas-do-campo
-          [attr.id]="id('suplentes') + '-recusas'"
-          tabindex="-1"
-          [recusas]="doSuplentes.recusas"
+      @let doSuplentes = estado('suplentes');
+      <div class="form-field">
+        <label class="label" [attr.for]="id('suplentes')">Suplentes</label>
+        <input
+          class="input"
+          type="text"
+          inputmode="numeric"
+          [attr.id]="id('suplentes')"
+          [value]="atual.suplentes"
+          [disabled]="desabilitada()"
+          [attr.aria-describedby]="doSuplentes.descritoPor"
+          [attr.aria-invalid]="doSuplentes.invalido ? 'true' : null"
+          (input)="alterar('suplentes', $any($event.target).value)"
         />
-      }
-    </div>
+        @if (doSuplentes.erro; as mensagem) {
+          <p class="field__erro" [attr.id]="id('suplentes') + '-erro'" role="alert">
+            {{ mensagem }}
+          </p>
+        }
+        @if (doSuplentes.recusas.length) {
+          <sel-recusas-do-campo
+            [attr.id]="id('suplentes') + '-recusas'"
+            tabindex="-1"
+            [recusas]="doSuplentes.recusas"
+          />
+        }
+      </div>
 
-    @if (colegiada()) {
-      <sel-votacao-da-banca
-        [regra]="atual"
-        [idBase]="idBase()"
-        [desabilitada]="desabilitada()"
-        [erros]="erros()"
-        [recusas]="recusas()"
-        (regraChange)="regraChange.emit($event)"
-      />
-    } @else {
-      <fieldset class="form-grid__full">
-        <legend class="label">Votação usada quando esta banca julga recurso</legend>
+      @if (colegiada()) {
         <sel-votacao-da-banca
           [regra]="atual"
           [idBase]="idBase()"
@@ -104,15 +106,29 @@
           [recusas]="recusas()"
           (regraChange)="regraChange.emit($event)"
         />
-        <button
-          type="button"
-          class="btn btn--secondary"
-          [disabled]="desabilitada()"
-          (click)="retirarVotacao(seletorDeModo)"
-        >
-          Retirar a votação do recurso
-        </button>
-      </fieldset>
+      } @else if (atual.modo === modoIndividual) {
+        <fieldset class="form-grid__full">
+          <legend class="label">Votação usada quando esta banca julga recurso</legend>
+          <sel-votacao-da-banca
+            [regra]="atual"
+            [idBase]="idBase()"
+            [desabilitada]="desabilitada()"
+            [erros]="erros()"
+            [recusas]="recusas()"
+            (regraChange)="regraChange.emit($event)"
+          />
+          <button
+            type="button"
+            class="btn btn--secondary"
+            [disabled]="desabilitada()"
+            (click)="retirarVotacao(seletorDeModo)"
+          >
+            Retirar a votação do recurso
+          </button>
+        </fieldset>
+      }
+    } @else {
+      <p class="form-grid__full">Escolha novamente a regra de deliberação.</p>
     }
   }
   <p role="status" class="form-grid__full">{{ anuncio() }}</p>

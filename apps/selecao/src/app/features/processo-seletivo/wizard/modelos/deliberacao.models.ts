@@ -1,9 +1,9 @@
-import type { ModoDeDeliberacao, RegraDeDeliberacaoDto } from '@uniplus/shared-data/selecao';
+import type { ModoDeDeliberacao, RegraDeDeliberacaoInput } from '@uniplus/shared-data/selecao';
 
-export type CriterioDaVotacao = NonNullable<RegraDeDeliberacaoDto['criterio']>;
-export type DesempateDaVotacao = NonNullable<RegraDeDeliberacaoDto['desempate']>;
-export type EncerramentoDaVotacao = NonNullable<RegraDeDeliberacaoDto['encerramento']>;
-export type ResultadoSemUnanimidade = NonNullable<RegraDeDeliberacaoDto['semUnanimidade']>;
+export type CriterioDaVotacao = `${NonNullable<RegraDeDeliberacaoInput['criterio']>}`;
+export type DesempateDaVotacao = `${NonNullable<RegraDeDeliberacaoInput['desempate']>}`;
+export type EncerramentoDaVotacao = `${NonNullable<RegraDeDeliberacaoInput['encerramento']>}`;
+export type ResultadoSemUnanimidade = `${NonNullable<RegraDeDeliberacaoInput['semUnanimidade']>}`;
 
 /**
  * Como a banca delibera. Os números ficam como o operador os digita (texto), e o que a regra não
@@ -11,6 +11,12 @@ export type ResultadoSemUnanimidade = NonNullable<RegraDeDeliberacaoDto['semUnan
  * sem unanimidade só existem no critério e com o número de integrantes que os pedem.
  */
 export interface RegraDeDeliberacaoDaBanca {
+  readonly rotulos?: Partial<
+    Record<
+      'modo' | 'criterio' | 'desempate' | 'encerramento' | 'semUnanimidade',
+      { readonly codigo: string; readonly rotulo: string }
+    >
+  >;
   readonly modo: ModoDeDeliberacao;
   readonly integrantes: string;
   readonly suplentes: string;

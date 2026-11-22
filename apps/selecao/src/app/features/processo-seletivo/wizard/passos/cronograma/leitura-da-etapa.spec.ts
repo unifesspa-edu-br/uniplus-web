@@ -9,6 +9,7 @@ import {
 } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { PARAMETROS_EM_BRANCO } from '../../shared/configuracao-do-recurso/parametros-do-recurso';
 import { COLEGIADA } from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { comRotulos } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { FORMA_HUMANA, FORMA_OBJETIVA } from '../../shared/forma-de-avaliacao';
 import { etapa } from './cronograma-do-certame.testing';
 import { grupoDaEtapa } from './cronograma-form';
@@ -242,14 +243,14 @@ describe('etapa lida na consulta', () => {
           identificadorLocal: 'banca-teste',
           copiaDoTipo: COPIA_DA_ENTREVISTA,
           tipoBancaId: BANCA,
-          regraDeDeliberacao: COLEGIADA,
+          regraDeDeliberacao: comRotulos(COLEGIADA),
         },
       ],
     });
 
     expect(bancas).toEqual([
-      'Banca de entrevista 1 — 5 titulares, 2 suplentes; quórum 3; maioria simples; ' +
-        'encerra: a presidência encerra ao atingir o quórum; desempate: voto da presidência',
+      'Banca de entrevista 1 — 5 titulares, 2 suplentes; Colegiada, com votação; quórum 3; Maioria simples; ' +
+        'encerra: A presidência encerra ao atingir o quórum; desempate: Voto da presidência',
     ]);
   });
 

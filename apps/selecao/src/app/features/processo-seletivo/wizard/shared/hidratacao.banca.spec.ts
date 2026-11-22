@@ -17,14 +17,32 @@ import { DRAFT, FASE_COM_RECURSO, dtoComCronograma } from './hidratacao.testing'
 type RegraDoServidor = NonNullable<EtapaProcessoDto['bancas'][number]['regraDeDeliberacao']>;
 
 const REGRA_DA_API: RegraDoServidor = {
-  modo: ModoDeDeliberacao.colegiadaComVotacao,
+  modo: { codigo: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada' },
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
-  criterio: 'maioriaSimples' as RegraDoServidor['criterio'],
-  desempate: 'votoDaPresidencia' as RegraDoServidor['desempate'],
-  encerramento: 'presidenciaNoQuorum' as RegraDoServidor['encerramento'],
+  criterio: {
+    codigo: 'maioriaSimples' as NonNullable<RegraDoServidor['criterio']>['codigo'],
+    rotulo: 'teste',
+  },
+  desempate: {
+    codigo: 'votoDaPresidencia' as NonNullable<RegraDoServidor['desempate']>['codigo'],
+    rotulo: 'teste',
+  },
+  encerramento: {
+    codigo: 'presidenciaNoQuorum' as NonNullable<RegraDoServidor['encerramento']>['codigo'],
+    rotulo: 'teste',
+  },
   semUnanimidade: null,
+};
+const REGRA_LIDA = {
+  ...COLEGIADA,
+  rotulos: {
+    modo: REGRA_DA_API.modo,
+    criterio: REGRA_DA_API.criterio,
+    desempate: REGRA_DA_API.desempate,
+    encerramento: REGRA_DA_API.encerramento,
+  },
 };
 
 const [BANCA_DA_FASE] = FASE_COM_RECURSO.bancasRequeridas;
@@ -47,7 +65,7 @@ function comBancasNaEtapa(bancas: EtapaProcessoDto['bancas']) {
 
 describe('hidratarDraft — regra de deliberação da banca', () => {
   it('lê a regra da banca requerida pela fase, com os números como o campo os edita', () => {
-    expect(comRegraNaFase(REGRA_DA_API).bancasRequeridas[0].regraDeDeliberacao).toEqual(COLEGIADA);
+    expect(comRegraNaFase(REGRA_DA_API).bancasRequeridas[0].regraDeDeliberacao).toEqual(REGRA_LIDA);
   });
 
   it('lê a banca da fase sem regra como sem regra declarada', () => {
@@ -79,7 +97,7 @@ describe('hidratarDraft — regra de deliberação da banca', () => {
         identificadorLocal: 'banca-banca-da-etapa-1',
         copiaDoTipo: expect.objectContaining({ rotulo: 'BANCA_ENTREVISTA' }),
         tipoBancaId: 'tipo-banca-1',
-        regraDeDeliberacao: COLEGIADA,
+        regraDeDeliberacao: REGRA_LIDA,
       },
       {
         id: 'banca-da-etapa-2',

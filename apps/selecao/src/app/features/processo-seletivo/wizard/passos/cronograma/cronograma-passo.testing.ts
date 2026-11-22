@@ -23,6 +23,7 @@ import { ProcessoSeletivoStore } from '../../processo-seletivo.store';
 import { NumeracaoDasRespostasRecusadas } from '../../shared/recusas/numeracao-das-respostas-recusadas';
 import { RecusasDaPublicacao } from '../../shared/recusas/recusas-da-publicacao.service';
 import { CadastroInicial } from '../../shared/cadastro-inicial.service';
+import { fornecerVocabulariosDaRegra } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { opcoesDoRecursoDaUrl } from '../../shared/configuracao-do-recurso/parametros-do-recurso.testing';
 import { GravacaoDosCamposPressupostos } from '../../shared/campos-pressupostos.service';
 import { GravacaoDoProcesso } from '../../shared/gravacao/gravacao-do-processo';
@@ -59,6 +60,7 @@ const INICIO_DA_FASE = '2026-03-01T08:00:00-03:00';
 const FIM_DA_FASE = '2026-03-10T18:00:00-03:00';
 
 const PROVEDORES = [
+  fornecerVocabulariosDaRegra(),
   ProcessoSeletivoStore,
   NumeracaoDasRespostasRecusadas,
   RecusasDaPublicacao,

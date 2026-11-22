@@ -1,17 +1,14 @@
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
-import {
-  CRITERIOS_DE_VOTACAO,
-  DESEMPATES_DA_VOTACAO,
-  ENCERRAMENTOS_DA_VOTACAO,
-  RESULTADOS_SEM_UNANIMIDADE,
-  ehColegiada,
-  type OpcaoDaRegra,
-} from './regra-de-deliberacao';
+import { ehColegiada } from './regra-de-deliberacao';
 
 export const SEM_REGRA_DE_DELIBERACAO = 'Sem regra de deliberação declarada';
 
-function rotuloDe<T extends string>(opcoes: readonly OpcaoDaRegra<T>[], valor: T | ''): string {
-  return opcoes.find((opcao) => opcao.valor === valor)?.rotulo.toLowerCase() ?? '';
+function rotuloDe(
+  regra: RegraDeDeliberacaoDaBanca,
+  campo: keyof NonNullable<RegraDeDeliberacaoDaBanca['rotulos']>,
+): string {
+  const opcao = regra.rotulos?.[campo];
+  return opcao?.codigo === regra[campo] ? opcao.rotulo : '';
 }
 
 const quantidade = (valor: string, singular: string, plural: string): string =>
@@ -27,13 +24,12 @@ function composicao(regra: RegraDeDeliberacaoDaBanca): string {
 function votacao(regra: RegraDeDeliberacaoDaBanca): readonly string[] {
   const partes = [
     `quórum ${regra.quorum}`,
-    rotuloDe(CRITERIOS_DE_VOTACAO, regra.criterio),
-    `encerra: ${rotuloDe(ENCERRAMENTOS_DA_VOTACAO, regra.encerramento)}`,
+    rotuloDe(regra, 'criterio'),
+    `encerra: ${rotuloDe(regra, 'encerramento')}`,
   ];
-  if (regra.desempate !== '')
-    partes.push(`desempate: ${rotuloDe(DESEMPATES_DA_VOTACAO, regra.desempate)}`);
+  if (regra.desempate !== '') partes.push(`desempate: ${rotuloDe(regra, 'desempate')}`);
   if (regra.semUnanimidade !== '') {
-    partes.push(`sem unanimidade: ${rotuloDe(RESULTADOS_SEM_UNANIMIDADE, regra.semUnanimidade)}`);
+    partes.push(`sem unanimidade: ${rotuloDe(regra, 'semUnanimidade')}`);
   }
   return partes;
 }
@@ -41,9 +37,8 @@ function votacao(regra: RegraDeDeliberacaoDaBanca): readonly string[] {
 /** A regra em uma linha, para a leitura em consulta e o resumo. */
 export function descricaoDaRegra(regra: RegraDeDeliberacaoDaBanca | null): string {
   if (regra === null) return SEM_REGRA_DE_DELIBERACAO;
-  const partes = [composicao(regra)];
+  const partes = [composicao(regra), rotuloDe(regra, 'modo')].filter(Boolean);
   if (ehColegiada(regra)) return [...partes, ...votacao(regra)].join('; ');
-  partes.push('ato individual');
   if (
     [regra.quorum, regra.criterio, regra.encerramento, regra.desempate, regra.semUnanimidade].some(
       Boolean,

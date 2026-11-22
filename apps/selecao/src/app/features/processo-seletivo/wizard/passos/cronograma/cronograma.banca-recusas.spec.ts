@@ -1,4 +1,5 @@
 import type { FormGroup } from '@angular/forms';
+import type { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import type { TipoBancaDto } from '@uniplus/shared-data/configuracao';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -15,7 +16,7 @@ import type { EtapaForm } from './cronograma-form';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
 import { AjudantesDeRecusasDasEtapas } from './cronograma-recusas-das-etapas.testing';
 import { RecusasDoServidorNasEtapas } from './servicos/recusas-do-servidor-nas-etapas.service';
-import { ID_AVALIACAO, ID_BANCA_HETERO } from './cronograma.testing';
+import { ID_AVALIACAO, ID_BANCA_HETERO, ROTA_ETAPAS } from './cronograma.testing';
 
 const BANCAS = [
   { id: ID_BANCA_HETERO, nome: 'Heteroidentificação', codigo: { rotulo: 'Heteroidentificação' } },
@@ -157,6 +158,35 @@ describe('CronogramaPassoComponent: recusas do servidor às bancas da etapa', ()
     await tela.proximoPasso();
 
     expect(document.activeElement).toBe(controle(2, 'quorum'));
+  });
+
+  it('mostra a recusa de código desconhecido uma vez junto do campo e leva o foco a ele', async () => {
+    const etapa = comDuasBancasDoMesmoTipo();
+    const valor = 'modoDesconhecido';
+    declararRegraNaBanca(
+      tela.edicao,
+      etapa,
+      'banca-2',
+      comRegra({ modo: valor as ModoDeDeliberacao }),
+    );
+    tela.detectar();
+    const mensagem = 'O modo de deliberação deve ser colegiada com votação ou ato individual';
+    const codigo = 'uniplus.selecao.banca.modo_de_deliberacao_invalido';
+    const requisicoes = vi.spyOn(tela.controller, 'expectOne');
+    const resultado = await ajudantes.recusarEtapas([
+      { field: 'etapas[0].bancas[1].regraDeDeliberacao.modo', code: codigo, message: mensagem },
+    ]);
+    await tela.proximoPasso();
+    const enviada = requisicoes.mock.results.find((r) => r.value?.request.url === ROTA_ETAPAS);
+    expect(JSON.stringify(enviada?.value.request.body)).toContain(valor);
+    expect(doControle(2, 'modo')).toContain(mensagem);
+    expect(doControle(2, 'modo')).toContain(codigo);
+    expect(vezes(mensagem)).toBe(1);
+    expect(doControle(2, 'modo')).not.toContain(valor);
+    expect(vezes(valor)).toBe(0);
+    expect(controle(2, 'modo')?.textContent).toContain('Valor não reconhecido');
+    expect(resultado.messages).toEqual([RECUSA_MOSTRADA_NOS_CAMPOS]);
+    expect(document.activeElement).toBe(controle(2, 'modo'));
   });
 
   it('leva o foco ao modo quando o controle recusado não está à vista', async () => {

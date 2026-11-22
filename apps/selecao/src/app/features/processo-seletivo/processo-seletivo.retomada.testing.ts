@@ -1,3 +1,4 @@
+import { fornecerVocabulariosDaRegra } from './wizard/shared/deliberacao/vocabularios-da-regra.testing';
 import { Provider } from '@angular/core';
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -302,6 +303,7 @@ function configurarModulo(opts: CenarioOpts, leituras: LeiturasDoServidor): void
   TestBed.configureTestingModule({
     imports: [ProcessoSeletivoPage],
     providers: [
+      fornecerVocabulariosDaRegra(),
       { provide: PermissoesService, useValue: { tem: concedeSoPublicar } },
       provideRouter([]),
       ...provedoresDaIdentificacao(opts),

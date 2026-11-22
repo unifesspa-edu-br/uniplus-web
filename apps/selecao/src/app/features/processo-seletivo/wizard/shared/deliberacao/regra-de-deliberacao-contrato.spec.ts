@@ -6,13 +6,22 @@ import { regraComoInput, regraDoDto } from './regra-de-deliberacao-contrato';
 import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 
 const DTO_COLEGIADA: RegraDeDeliberacaoDto = {
-  modo: ModoDeDeliberacao.colegiadaComVotacao,
+  modo: { codigo: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada' },
   integrantes: 5,
   suplentes: 2,
   quorum: 3,
-  criterio: 'maioriaSimples',
-  desempate: 'votoDaPresidencia',
-  encerramento: 'presidenciaNoQuorum',
+  criterio: {
+    codigo: 'maioriaSimples' as NonNullable<RegraDeDeliberacaoDto['criterio']>['codigo'],
+    rotulo: 'teste',
+  },
+  desempate: {
+    codigo: 'votoDaPresidencia' as NonNullable<RegraDeDeliberacaoDto['desempate']>['codigo'],
+    rotulo: 'teste',
+  },
+  encerramento: {
+    codigo: 'presidenciaNoQuorum' as NonNullable<RegraDeDeliberacaoDto['encerramento']>['codigo'],
+    rotulo: 'teste',
+  },
   semUnanimidade: null,
 };
 
@@ -23,12 +32,20 @@ describe('regraDoDto', () => {
   });
 
   it('traz os números como o campo os edita e o que não há como vazio', () => {
-    expect(regraDoDto(DTO_COLEGIADA)).toEqual(COLEGIADA);
+    expect(regraDoDto(DTO_COLEGIADA)).toEqual({
+      ...COLEGIADA,
+      rotulos: {
+        modo: DTO_COLEGIADA.modo,
+        criterio: DTO_COLEGIADA.criterio,
+        desempate: DTO_COLEGIADA.desempate,
+        encerramento: DTO_COLEGIADA.encerramento,
+      },
+    });
   });
 
   it('lê o ato individual sem nenhum campo de votação', () => {
     const dto: RegraDeDeliberacaoDto = {
-      modo: ModoDeDeliberacao.atoIndividual,
+      modo: { codigo: ModoDeDeliberacao.atoIndividual, rotulo: 'Individual' },
       integrantes: 1,
       suplentes: 0,
       quorum: null,
@@ -38,9 +55,20 @@ describe('regraDoDto', () => {
       semUnanimidade: null,
     };
 
-    expect(regraDoDto(dto)).toEqual(ATO_INDIVIDUAL);
+    expect(regraDoDto(dto)).toEqual({ ...ATO_INDIVIDUAL, rotulos: { modo: dto.modo } });
   });
 });
+
+const INPUT_COLEGIADA = {
+  modo: ModoDeDeliberacao.colegiadaComVotacao,
+  integrantes: 5,
+  suplentes: 2,
+  quorum: 3,
+  criterio: 'maioriaSimples',
+  desempate: 'votoDaPresidencia',
+  encerramento: 'presidenciaNoQuorum',
+  semUnanimidade: null,
+};
 
 describe('regraComoInput', () => {
   it('leva a banca sem regra como nula', () => {
@@ -48,7 +76,7 @@ describe('regraComoInput', () => {
   });
 
   it('leva a colegiada com os números e a votação declarada', () => {
-    expect(regraComoInput(COLEGIADA)).toEqual(DTO_COLEGIADA);
+    expect(regraComoInput(COLEGIADA)).toEqual(INPUT_COLEGIADA);
   });
 
   it('leva o ato individual sem votação com os campos nulos', () => {
@@ -68,7 +96,7 @@ describe('regraComoInput', () => {
     const regra = comRegra({ modo: ModoDeDeliberacao.atoIndividual });
 
     expect(regraComoInput(regra)).toEqual({
-      ...DTO_COLEGIADA,
+      ...INPUT_COLEGIADA,
       modo: ModoDeDeliberacao.atoIndividual,
     });
   });
@@ -80,6 +108,6 @@ describe('regraComoInput', () => {
   });
 
   it('devolve à API o que dela recebeu', () => {
-    expect(regraComoInput(regraDoDto(DTO_COLEGIADA))).toEqual(DTO_COLEGIADA);
+    expect(regraComoInput(regraDoDto(DTO_COLEGIADA))).toEqual(INPUT_COLEGIADA);
   });
 });

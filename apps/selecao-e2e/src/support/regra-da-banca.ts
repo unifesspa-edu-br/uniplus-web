@@ -7,13 +7,22 @@ export type RegraLida = NonNullable<BancaDaFaseLida['regraDeDeliberacao']>;
 
 /** Uma banca colegiada de três titulares, que decide por maioria simples com quórum de dois. */
 export const REGRA_COLEGIADA: RegraLida = {
-  modo: 'colegiadaComVotacao' as ModoDeDeliberacao,
+  modo: { codigo: 'colegiadaComVotacao' as ModoDeDeliberacao, rotulo: 'Colegiada, com votação' },
   integrantes: 3,
   suplentes: 0,
   quorum: 2,
-  criterio: 'maioriaSimples',
-  desempate: 'votoDaPresidencia',
-  encerramento: 'presidenciaNoQuorum',
+  criterio: {
+    codigo: 'maioriaSimples' as NonNullable<RegraLida['criterio']>['codigo'],
+    rotulo: 'Maioria simples',
+  },
+  desempate: {
+    codigo: 'votoDaPresidencia' as NonNullable<RegraLida['desempate']>['codigo'],
+    rotulo: 'Voto da presidência',
+  },
+  encerramento: {
+    codigo: 'presidenciaNoQuorum' as NonNullable<RegraLida['encerramento']>['codigo'],
+    rotulo: 'A presidência encerra ao atingir o quórum',
+  },
   semUnanimidade: null,
 };
 

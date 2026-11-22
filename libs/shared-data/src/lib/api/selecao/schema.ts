@@ -9472,6 +9472,226 @@ export interface paths {
         readonly patch?: never;
         readonly trace?: never;
     };
+    readonly "/api/selecao/vocabularios/modos-deliberacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.modo-deliberacao.v1+json": readonly components["schemas"]["ModoDeDeliberacao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/criterios-votacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.criterio-votacao.v1+json": readonly components["schemas"]["CriterioDeVotacao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/desempates-votacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.desempate-votacao.v1+json": readonly components["schemas"]["DesempateDaVotacao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/encerramentos-votacao": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.encerramento-votacao.v1+json": readonly components["schemas"]["EncerramentoDaVotacao"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
+    readonly "/api/selecao/vocabularios/resultados-sem-unanimidade": {
+        readonly parameters: {
+            readonly query?: never;
+            readonly header?: never;
+            readonly path?: never;
+            readonly cookie?: never;
+        };
+        readonly get: {
+            readonly parameters: {
+                readonly query?: never;
+                readonly header?: never;
+                readonly path?: never;
+                readonly cookie?: never;
+            };
+            readonly requestBody?: never;
+            readonly responses: {
+                /** @description OK */
+                readonly 200: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/vnd.uniplus.resultado-sem-unanimidade.v1+json": readonly components["schemas"]["ResultadoSemUnanimidade"][];
+                    };
+                };
+                /** @description Not Acceptable */
+                readonly 406: {
+                    headers: {
+                        readonly [name: string]: unknown;
+                    };
+                    content: {
+                        readonly "application/problem+json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        readonly put?: never;
+        readonly post?: never;
+        readonly delete?: never;
+        readonly options?: never;
+        readonly head?: never;
+        readonly patch?: never;
+        readonly trace?: never;
+    };
     readonly "/api/selecao/vocabularios/formas-comprovacao": {
         readonly parameters: {
             readonly query?: never;
@@ -10202,8 +10422,17 @@ export interface components {
             readonly regra: null | components["schemas"]["ReferenciaRegraInput"];
             readonly parametros: null | components["schemas"]["ParametrosDoCriterioDesempateInput"];
         };
-        /** @enum {string} */
-        readonly CriterioDeVotacao: "maioriaSimples" | "maioriaAbsoluta" | "unanimidade" | null;
+        readonly CriterioDeVotacao: {
+            readonly codigo: components["schemas"]["CriterioDeVotacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `maioriaSimples`: Maioria simples
+         *     - `maioriaAbsoluta`: Maioria absoluta
+         *     - `unanimidade`: Unanimidade
+         * @enum {string}
+         */
+        readonly CriterioDeVotacaoCodigo: CriterioDeVotacaoCodigo;
         readonly CronogramaDaFaseDto: {
             /** Format: int32 */
             readonly ordem: number;
@@ -10325,8 +10554,16 @@ export interface components {
             readonly booleano: boolean;
             readonly regras: readonly components["schemas"]["RegraDerivacaoPortavel"][];
         };
-        /** @enum {string} */
-        readonly DesempateDaVotacao: "votoDaPresidencia" | "novaVotacao" | null;
+        readonly DesempateDaVotacao: {
+            readonly codigo: components["schemas"]["DesempateDaVotacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `votoDaPresidencia`: Voto da presidência
+         *     - `novaVotacao`: Nova votação
+         * @enum {string}
+         */
+        readonly DesempateDaVotacaoCodigo: DesempateDaVotacaoCodigo;
         readonly DestinoRemanejamentoDto: {
             /** Format: uuid */
             readonly id: string;
@@ -12715,8 +12952,16 @@ export interface components {
             readonly rotulo: string;
             readonly descricao: string;
         };
-        /** @enum {string} */
-        readonly EncerramentoDaVotacao: "todosOsTitulares" | "presidenciaNoQuorum" | null;
+        readonly EncerramentoDaVotacao: {
+            readonly codigo: components["schemas"]["EncerramentoDaVotacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `todosOsTitulares`: Todos os titulares votam
+         *     - `presidenciaNoQuorum`: A presidência encerra ao atingir o quórum
+         * @enum {string}
+         */
+        readonly EncerramentoDaVotacaoCodigo: EncerramentoDaVotacaoCodigo;
         readonly EnvioDoComprovanteDto: {
             readonly numeroInscricao: string;
             /** Format: date-time */
@@ -13539,8 +13784,16 @@ export interface components {
             /** Format: uri */
             readonly urlDownload: null | string;
         };
-        /** @enum {string} */
-        readonly ModoDeDeliberacao: ModoDeDeliberacao;
+        readonly ModoDeDeliberacao: {
+            readonly codigo: components["schemas"]["ModoDeDeliberacaoCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `colegiadaComVotacao`: Colegiada, com votação
+         *     - `atoIndividual`: Ato individual
+         * @enum {string}
+         */
+        readonly ModoDeDeliberacaoCodigo: ModoDeDeliberacaoCodigo;
         readonly MomentoDaExigenciaDto: {
             /** Format: uuid */
             readonly faseId: string;
@@ -14262,17 +14515,17 @@ export interface components {
             readonly semUnanimidade: null | components["schemas"]["ResultadoSemUnanimidade"];
         };
         readonly RegraDeDeliberacaoInput: {
-            readonly modo: components["schemas"]["ModoDeDeliberacao"];
+            readonly modo: null | components["schemas"]["ModoDeDeliberacaoCodigo"];
             /** Format: int32 */
             readonly integrantes: number;
             /** Format: int32 */
             readonly suplentes: number;
             /** Format: int32 */
             readonly quorum?: null | number;
-            readonly criterio?: null | components["schemas"]["CriterioDeVotacao"];
-            readonly desempate?: null | components["schemas"]["DesempateDaVotacao"];
-            readonly encerramento?: null | components["schemas"]["EncerramentoDaVotacao"];
-            readonly semUnanimidade?: null | components["schemas"]["ResultadoSemUnanimidade"];
+            readonly criterio?: null | components["schemas"]["CriterioDeVotacaoCodigo"];
+            readonly desempate?: null | components["schemas"]["DesempateDaVotacaoCodigo"];
+            readonly encerramento?: null | components["schemas"]["EncerramentoDaVotacaoCodigo"];
+            readonly semUnanimidade?: null | components["schemas"]["ResultadoSemUnanimidadeCodigo"];
         };
         readonly RegraDeHomologacaoDto: {
             readonly resultadoAtoCodigo: null | string;
@@ -14393,8 +14646,17 @@ export interface components {
             readonly dataMinima?: null | components["schemas"]["LimiteDeDataInput"];
             readonly dataMaxima?: null | components["schemas"]["LimiteDeDataInput"];
         };
-        /** @enum {string} */
-        readonly ResultadoSemUnanimidade: "favoravel" | "desfavoravel" | "novaVotacao" | null;
+        readonly ResultadoSemUnanimidade: {
+            readonly codigo: components["schemas"]["ResultadoSemUnanimidadeCodigo"];
+            readonly rotulo: string;
+        };
+        /**
+         * @description - `favoravel`: Favorável
+         *     - `desfavoravel`: Desfavorável
+         *     - `novaVotacao`: Nova votação
+         * @enum {string}
+         */
+        readonly ResultadoSemUnanimidadeCodigo: ResultadoSemUnanimidadeCodigo;
         readonly RetificacaoCertameDto: {
             /** Format: uuid */
             readonly atoRetificadoId: string;
@@ -14782,6 +15044,11 @@ export enum CategoriaObrigatoriedade {
     atendimento = "atendimento",
     outros = "outros"
 }
+export enum CriterioDeVotacaoCodigo {
+    maioriaSimples = "maioriaSimples",
+    maioriaAbsoluta = "maioriaAbsoluta",
+    unanimidade = "unanimidade"
+}
 export enum DefinirConfiguracaoDivulgacaoRequestCamposPublicos {
     numero_inscricao = "numero_inscricao",
     nome_abreviado = "nome_abreviado",
@@ -14791,6 +15058,10 @@ export enum DefinirTaxaInscricaoRequestFundamentos {
     CADASTRO_UNICO = "CADASTRO_UNICO",
     DOACAO_MEDULA_OSSEA = "DOACAO_MEDULA_OSSEA",
     CARENCIA_SOCIOECONOMICA = "CARENCIA_SOCIOECONOMICA"
+}
+export enum DesempateDaVotacaoCodigo {
+    votoDaPresidencia = "votoDaPresidencia",
+    novaVotacao = "novaVotacao"
 }
 export enum DocumentoDaConfiguracaoOpcoesDeCursoNumero {
     Value1 = 1,
@@ -15005,6 +15276,10 @@ export enum DocumentoDaConfiguracaoTaxaDeInscricaoFundamentos {
 export enum EfeitoSuspensivoCodigo {
     semEfeitoSuspensivo = "semEfeitoSuspensivo"
 }
+export enum EncerramentoDaVotacaoCodigo {
+    todosOsTitulares = "todosOsTitulares",
+    presidenciaNoQuorum = "presidenciaNoQuorum"
+}
 export enum FinalidadeDoDocumento {
     documentoDoEdital = "documentoDoEdital",
     anexoDoEdital = "anexoDoEdital",
@@ -15024,7 +15299,7 @@ export enum ImpedimentoDoProduto {
     preliminarNaoPublicado = "preliminarNaoPublicado",
     tipoDeAtoNaoVigente = "tipoDeAtoNaoVigente"
 }
-export enum ModoDeDeliberacao {
+export enum ModoDeDeliberacaoCodigo {
     colegiadaComVotacao = "colegiadaComVotacao",
     atoIndividual = "atoIndividual"
 }
@@ -15074,6 +15349,11 @@ export enum PredicadoObrigatoriedadeEtapaObrigatoria$tipo {
 }
 export enum PredicadoObrigatoriedadeModalidadesMinimas$tipo {
     modalidadesMinimas = "modalidadesMinimas"
+}
+export enum ResultadoSemUnanimidadeCodigo {
+    favoravel = "favoravel",
+    desfavoravel = "desfavoravel",
+    novaVotacao = "novaVotacao"
 }
 export enum SituacaoDoArquivoDoCandidato {
     pendente = "pendente",
