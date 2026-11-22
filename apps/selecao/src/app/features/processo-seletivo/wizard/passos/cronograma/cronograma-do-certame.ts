@@ -1,7 +1,7 @@
 import type { FaseCanonicaDto, PrecedenciaFaseDto } from '@uniplus/shared-data/configuracao';
 
 import type { EtapaPontuada, FaseDoCronograma } from '../../processo-seletivo.models';
-import { descreverFase } from '../../shared/descricao-da-fase';
+import { descreverFase, type ExigenciasDaFase } from '../../shared/descricao-da-fase';
 import { problemasDaFase, type AtoDoCatalogo } from '../fase/configuracao-da-fase';
 import {
   problemasDasExigencias,
@@ -83,7 +83,7 @@ function problemasDaFaseDoCronograma(
   const { nome, exigencias } = descreverFase(fase, catalogos.fasePorId);
   if (exigencias === null) return [];
   const declarados = problemasDeclaradosDaFase(fase, catalogos, nome);
-  return [...problemasDaJanelaDaFase(fase, nome, exigencias.janelaObrigatoria), ...declarados];
+  return [...problemasDaJanelaDaFase(fase, nome, exigencias), ...declarados];
 }
 
 /** Confere as declarações que o passo carrega e a gravação substitui por inteiro. */
@@ -97,14 +97,30 @@ function problemasDeclaradosDaFase(
   );
 }
 
+/**
+ * O que falta do período que o tipo de fase exige. O Fim da fase que não publica resultado
+ * definitivo só é exigido na publicação do processo, e por isso não impede gravar o rascunho.
+ */
+function periodoQueFalta(
+  fase: FaseDoCronograma,
+  { janelaObrigatoria, fimObrigatorio }: ExigenciasDaFase,
+): readonly string[] {
+  if (!janelaObrigatoria) return [];
+  return [
+    ...(fase.inicio === null ? ['início'] : []),
+    ...(fase.fim === null && !fimObrigatorio ? ['fim'] : []),
+  ];
+}
+
 function problemasDaJanelaDaFase(
   fase: FaseDoCronograma,
   nome: string,
-  janelaObrigatoria: boolean,
+  exigencias: ExigenciasDaFase,
 ): readonly string[] {
   const problemas: string[] = [];
-  if (janelaObrigatoria && (fase.inicio === null || fase.fim === null)) {
-    problemas.push(`A fase ${nome} precisa de data e hora de início e de fim.`);
+  const faltando = periodoQueFalta(fase, exigencias);
+  if (faltando.length > 0) {
+    problemas.push(`A fase ${nome} precisa de data e hora de ${faltando.join(' e de ')}.`);
   }
   if (fase.inicio !== null && fase.fim !== null && Date.parse(fase.fim) < Date.parse(fase.inicio)) {
     problemas.push(`Na fase ${nome}, o fim não pode vir antes do início.`);
