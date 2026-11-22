@@ -15,47 +15,60 @@ describe('FormularioPassoComponent: campos citados por outras partes do processo
     ({ fixture, store, host } = contexto);
   });
 
-  it('o campo que uma exigência documental cita não sai, e o editor diz por quê', () => {
+  const botaoDeRemoverPcd = () =>
+    host.querySelector<HTMLButtonElement>('button[aria-label="Remover o campo PCD"]');
+  const pcdNoFormulario = () =>
+    store.draft().formulario.conteudo.itens?.some((item) => item.fatoCodigo === 'PCD') ?? false;
+  const motivoDaTrava = () =>
+    fixture.debugElement.injector.get(CamposPressupostosDoFormulario).remocoesTravadas().get('PCD');
+
+  function documentoQueCitaPcd(): void {
     const exigencia = {
       ...exigenciaNova('01960000-0000-7000-0000-0000000000d1', 'INSCRICAO'),
       aplicabilidade: 'CONDICIONAL',
       condicoes: [{ clausula: 0, fato: 'PCD', operador: 'IGUAL', valor: 'true' }],
     } as ExigenciaDeDocumento;
     store.patchSection('documentos', comExigencia({ raizes: [], emTodasAsFases: [] }, exigencia));
-    fixture.detectChanges();
+  }
 
-    expect(
-      fixture.debugElement.injector
-        .get(CamposPressupostosDoFormulario)
-        .remocoesTravadas()
-        .get('PCD'),
-    ).toMatch(/^Não pode sair: o documento/);
-    expect(host.textContent).toContain('Não pode sair: o documento');
-  });
-
-  it('o campo que a regra de uma modalidade ofertada cita não sai depois de gravar o quadro', () => {
+  function modalidadeQueCitaPcd(): void {
+    const regraDeAplicabilidade = [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]];
     store.registrarRegrasDasModalidades({
       distribuicaoVagas: [
         {
           modalidades: [
-            {
-              codigo: 'AC_PCD',
-              descricao: 'Pessoa com deficiência',
-              regraDeAplicabilidade: [[{ fato: 'PCD', operador: 'IGUAL', valor: true }]],
-            },
+            { codigo: 'AC_PCD', descricao: 'Pessoa com deficiência', regraDeAplicabilidade },
           ],
         },
       ],
     } as unknown as ProcessoSeletivoDto);
+  }
+
+  function tentarRemoverPcd(): void {
+    botaoDeRemoverPcd()?.click();
+    fixture.detectChanges();
+  }
+
+  it('o campo que uma exigência documental cita não sai, e o editor diz por quê', () => {
+    documentoQueCitaPcd();
     fixture.detectChanges();
 
-    expect(
-      fixture.debugElement.injector
-        .get(CamposPressupostosDoFormulario)
-        .remocoesTravadas()
-        .get('PCD'),
-    ).toBe(
-      'Não pode sair: a regra de quem concorre em AC_PCD depende deste dado. Desfaça a dependência antes de remover o campo.',
-    );
+    tentarRemoverPcd();
+
+    expect(motivoDaTrava()).toMatch(/^Não pode sair: o documento/);
+    expect(host.textContent).toContain('Não pode sair: o documento');
+    expect(botaoDeRemoverPcd()?.disabled).toBe(true);
+    expect(pcdNoFormulario()).toBe(true);
+  });
+
+  it('o campo que a regra de uma modalidade ofertada cita não sai depois de gravar o quadro', () => {
+    modalidadeQueCitaPcd();
+    fixture.detectChanges();
+
+    tentarRemoverPcd();
+
+    expect(motivoDaTrava()).toContain('a regra de quem concorre em AC_PCD depende deste dado');
+    expect(botaoDeRemoverPcd()?.disabled).toBe(true);
+    expect(pcdNoFormulario()).toBe(true);
   });
 });

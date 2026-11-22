@@ -1,14 +1,11 @@
-import type { FormularioDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
-import type { FaseDoCronograma } from '../../processo-seletivo.models';
 import { conteudoDoFormulario } from './formulario-do-processo';
 import { RemocaoDoFormulario } from './servicos/remocao-do-formulario.service';
 import { CamposPressupostosDoFormulario } from './servicos/campos-pressupostos-do-formulario.service';
 import {
-  etapa,
-  FASE_INSCRICAO,
   GRAVADO,
+  HABILITACAO_GRAVADA,
   PROBLEM_JSON,
   PROCESSO,
   PROCESSO_ID,
@@ -24,34 +21,13 @@ describe('FormularioPassoComponent: um formulário por finalidade', () => {
   let store: ContextoDoPasso['store'];
   let controller: ContextoDoPasso['controller'];
   let host: ContextoDoPasso['host'];
+  let comHabilitacao: ContextoDoPasso['comHabilitacao'];
 
   usarPasso((contexto) => {
-    ({ fixture, store, controller, host } = contexto);
+    ({ fixture, store, controller, host, comHabilitacao } = contexto);
   });
 
   describe('com um formulário por finalidade', () => {
-    const FASE_HABILITACAO: FaseDoCronograma = {
-      ...FASE_INSCRICAO,
-      faseCanonicaId: 'fc-habilitacao',
-      codigo: 'HABILITACAO',
-      ordem: 1,
-      congelados: {
-        origemData: 'NO_EDITAL',
-        agrupaEtapas: false,
-        coletaInscricao: false,
-        permiteComplementacao: false,
-        coletaSolicitacaoIsencao: false,
-        bancas: [],
-      },
-    };
-    const HABILITACAO_GRAVADA = {
-      ...GRAVADO,
-      finalidade: 'HABILITACAO',
-      faseId: 'F-HABILITACAO',
-      etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
-      fatosColetados: [],
-    } as unknown as FormularioDto;
-
     const abas = (): HTMLButtonElement[] =>
       Array.from(host.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
     const teclar = (aba: HTMLButtonElement, key: string): void => {
@@ -59,22 +35,7 @@ describe('FormularioPassoComponent: um formulário por finalidade', () => {
       fixture.detectChanges();
     };
 
-    beforeEach(() => {
-      store.patchSection('cronograma', {
-        ...store.draft().cronograma,
-        fases: [FASE_INSCRICAO, FASE_HABILITACAO],
-      });
-      store.patchObjectSection('formulario', {
-        outrasFinalidades: [
-          {
-            finalidade: 'HABILITACAO',
-            faseCodigo: '',
-            conteudo: conteudoDoFormulario(HABILITACAO_GRAVADA),
-          },
-        ],
-      });
-      fixture.detectChanges();
-    });
+    beforeEach(() => comHabilitacao());
 
     it('só a aba ativa entra no Tab, e setas, Home e End trocam de aba levando o foco', () => {
       const [inscricao, habilitacao] = abas();

@@ -118,6 +118,30 @@ export const GRAVADO = {
   ],
 } as unknown as FormularioDto;
 
+/** A fase que colhe a habilitação, depois da inscrição. */
+export const FASE_HABILITACAO: FaseDoCronograma = {
+  ...FASE_INSCRICAO,
+  faseCanonicaId: 'fc-habilitacao',
+  codigo: 'HABILITACAO',
+  ordem: 1,
+  congelados: {
+    origemData: 'NO_EDITAL',
+    agrupaEtapas: false,
+    coletaInscricao: false,
+    permiteComplementacao: false,
+    coletaSolicitacaoIsencao: false,
+    bancas: [],
+  },
+};
+/** O formulário de habilitação como o servidor o devolve. */
+export const HABILITACAO_GRAVADA = {
+  ...GRAVADO,
+  finalidade: 'HABILITACAO',
+  faseId: 'F-HABILITACAO',
+  etapas: [etapa('REVISAO_E_ACEITE', 0, 'REVISAO_E_ACEITE')],
+  fatosColetados: [],
+} as unknown as FormularioDto;
+
 export const PROCESSO = {
   formularios: [GRAVADO],
   cronogramaFases: [{ id: 'F-INSCRICAO', codigo: 'INSCRICAO', coletaInscricao: true }],
@@ -210,8 +234,29 @@ export class ContextoDoPasso {
   };
 
   /** O processo como a hidratação o deixa: o gravado é o que a simulação abre. */
-  readonly comProcessoLido = (): void => {
-    this.store.remoteSnapshot.set({ ...PROCESSO, id: PROCESSO_ID, status: 'rascunho' } as never);
+  readonly comProcessoLido = (
+    formularios: readonly FormularioDto[] = PROCESSO.formularios,
+  ): void => {
+    this.store.remoteSnapshot.set({
+      ...PROCESSO,
+      formularios,
+      id: PROCESSO_ID,
+      status: 'rascunho',
+    } as never);
+    this.fixture.detectChanges();
+  };
+
+  /** O processo com a habilitação como segunda aba do formulário, depois da inscrição. */
+  readonly comHabilitacao = (): void => {
+    const { cronograma } = this.store.draft();
+    this.store.patchSection('cronograma', {
+      ...cronograma,
+      fases: [FASE_INSCRICAO, FASE_HABILITACAO],
+    });
+    const conteudo = conteudoDoFormulario(HABILITACAO_GRAVADA);
+    this.store.patchObjectSection('formulario', {
+      outrasFinalidades: [{ finalidade: 'HABILITACAO', faseCodigo: '', conteudo }],
+    });
     this.fixture.detectChanges();
   };
 

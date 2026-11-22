@@ -214,7 +214,7 @@ describe('parametrosAlterados', () => {
     expect(resultado.retirado).toBeNull();
   });
 
-  it('desfazer não restaura: marcar Sim de novo não devolve o prazo, e marcar Não não devolve "não guarda"', () => {
+  it('desfazer não restaura o prazo da 2ª: marcar Sim depois de Não não o devolve', () => {
     const naoDeNovo = parametrosAlterados(comPrazoDaSegunda, LEITURA_EM_BRANCO, {
       campo: 'admiteInstanciaSuperior',
       valor: false,
@@ -225,7 +225,22 @@ describe('parametrosAlterados', () => {
     });
 
     expect(simDeNovo.parametros.prazoSegundaInstanciaValor).toBe('');
-    expect(simDeNovo.parametros.guardaDaVaga).toBe('');
+    expect(simDeNovo.parametros.prazoSegundaInstanciaUnidade).toBe('');
+  });
+
+  it('desfazer não restaura "não guarda": marcar Não depois de Sim não o devolve', () => {
+    const comNaoGuarda = { ...PARAMETROS_EM_BRANCO, guardaDaVaga: GuardaDaVagaCodigo.naoGuarda };
+    const sim = parametrosAlterados(comNaoGuarda, LEITURA_EM_BRANCO, {
+      campo: 'admiteInstanciaSuperior',
+      valor: true,
+    });
+    const naoDeNovo = parametrosAlterados(sim.parametros, sim.leitura, {
+      campo: 'admiteInstanciaSuperior',
+      valor: false,
+    });
+
+    expect(sim.parametros.guardaDaVaga).toBe('');
+    expect(naoDeNovo.parametros.guardaDaVaga).toBe('');
   });
 });
 

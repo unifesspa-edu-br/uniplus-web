@@ -19,21 +19,33 @@ describe('FasePassoComponent', () => {
   let nativo: ContextoDaFase['nativo'];
   let raiz: ContextoDaFase['raiz'];
   let comCronograma: ContextoDaFase['comCronograma'];
+  let abrirFase: ContextoDaFase['abrirFase'];
   let selecionado: ContextoDaFase['selecionado'];
   let publicacoes: ContextoDaFase['publicacoes'];
 
   usarFase((tela) => {
-    ({ componente, store, detectar, nativo, raiz, comCronograma, selecionado, publicacoes } = tela);
+    ({
+      componente,
+      store,
+      detectar,
+      nativo,
+      raiz,
+      comCronograma,
+      abrirFase,
+      selecionado,
+      publicacoes,
+    } = tela);
   });
 
-  it('abre a primeira fase do cronograma sem que ninguém escolha', () => {
+  it('abre a fase que o Cronograma fixa, mesmo quando não é a primeira', () => {
     comCronograma(
       fase({}),
       fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
     );
+    abrirFase(ID_HOMOLOGACAO);
 
-    expect(componente.faseAberta()).toBe(ID_AVALIACAO);
-    expect(raiz.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe('Avaliação');
+    expect(componente.faseAberta()).toBe(ID_HOMOLOGACAO);
+    expect(raiz.injector.get(FaseEmEdicao).nomeDaFaseAberta()).toBe('Homologação das inscrições');
   });
 
   it('espelha no formulário a fase que chega ao rascunho', () => {

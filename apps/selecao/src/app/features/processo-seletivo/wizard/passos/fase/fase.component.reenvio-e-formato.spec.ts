@@ -220,16 +220,17 @@ describe('FasePassoComponent', () => {
   describe('alcance de todas as fases na tela', () => {
     it('semeia o modelo na fase ABERTA, não na primeira do cronograma', () => {
       comCronograma(
-        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 1 }),
-        fase({ ordem: 2 }),
+        fase({ ordem: 1 }),
+        fase({ faseCanonicaId: ID_HOMOLOGACAO, codigo: 'HOMOLOGACAO_INSCRICOES', ordem: 2 }),
       );
-      // A fase aberta é a AVALIACAO (a fixada do componente), não a primeira da lista.
+      abrirFase(ID_HOMOLOGACAO);
+
       exigencias().valerEmTodasAsFases(ID_CPF);
       detectar();
 
-      const naAvaliacao = exigenciasDaFase(store.draft().documentos, 'AVALIACAO');
-      expect(naAvaliacao).toHaveLength(1);
-      expect(naAvaliacao[0].tipoDocumentoId).toBe(ID_CPF);
+      const { documentos: declaradas } = store.draft();
+      expect(declaradas.raizes[0].documento?.faseCodigo).toBe('HOMOLOGACAO_INSCRICOES');
+      expect(exigenciasDaFase(declaradas, 'AVALIACAO')).toHaveLength(1);
     });
 
     /**

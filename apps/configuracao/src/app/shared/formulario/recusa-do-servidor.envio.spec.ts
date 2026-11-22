@@ -29,18 +29,14 @@ describe('validarParaEnvio', () => {
   });
 });
 
+const CAMPO_DO_CODIGO = new Map([['duplicado', 'codigo']]);
+
 describe('marcarConflitoNoCampo', () => {
   it('marca o campo correspondente sem página', () => {
     const codigo = new FormControl('valor');
     const form = new FormGroup({ codigo });
-    expect(
-      marcarConflitoNoCampo(
-        { code: 'duplicado' },
-        'Já existe',
-        form,
-        new Map([['duplicado', 'codigo']]),
-      ),
-    ).toBe(true);
+    const marcou = marcarConflitoNoCampo({ code: 'duplicado' }, 'Já existe', form, CAMPO_DO_CODIGO);
+    expect(marcou).toBe(true);
     expect(recusasDoControle(codigo)).toEqual([
       { codigo: 'duplicado', mensagem: 'Já existe', pagina: null },
     ]);

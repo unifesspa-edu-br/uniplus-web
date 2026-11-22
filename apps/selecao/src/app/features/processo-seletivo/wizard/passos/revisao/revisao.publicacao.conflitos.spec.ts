@@ -10,7 +10,6 @@ import {
   flushProntidaoVerde,
   montarOCenario,
   prepararCamposLocais,
-  textoDaTela,
   CenarioDaRevisao,
 } from './revisao.testing';
 
@@ -49,6 +48,10 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
     return { resultado, antes };
   }
 
+  const textoDoBlocoDoAto = (): string =>
+    (cenario.fixture.nativeElement as HTMLElement).querySelector('sel-ato-da-publicacao')
+      ?.textContent ?? '';
+
   it.each([
     [
       'uniplus.publicacoes.ato_normativo.objeto_ja_tem_ato_vivo_do_tipo',
@@ -61,7 +64,7 @@ describe('RevisaoPassoComponent — publicação recusada com 409', () => {
       const { resultado, antes } = await publicarERecusarComConflito(code, titulo);
 
       expect(resultado).toEqual({ valid: false, messages: [titulo] });
-      expect(textoDaTela(cenario)).toContain(titulo);
+      expect(textoDoBlocoDoAto()).toContain(titulo);
       expect(store.draft().publicacao).toEqual(antes);
     },
   );

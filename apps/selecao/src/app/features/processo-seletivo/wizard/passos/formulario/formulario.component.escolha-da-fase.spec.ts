@@ -3,7 +3,12 @@ import { describe, expect, it } from 'vitest';
 
 import { FasesDosFormularios } from './servicos/fases-dos-formularios.service';
 import { conteudoDoFormulario } from './formulario-do-processo';
-import { GRAVADO, usarPasso, type ContextoDoPasso } from './formulario-passo.testing';
+import {
+  GRAVADO,
+  HABILITACAO_GRAVADA,
+  usarPasso,
+  type ContextoDoPasso,
+} from './formulario-passo.testing';
 
 describe('FormularioPassoComponent: escolha da fase e simulação', () => {
   let fixture: ContextoDoPasso['fixture'];
@@ -29,11 +34,15 @@ describe('FormularioPassoComponent: escolha da fase e simulação', () => {
   });
 
   it('cada formulário gravado tem o link que abre a simulação dele em nova aba', () => {
-    comProcessoLido();
+    comProcessoLido([GRAVADO, HABILITACAO_GRAVADA]);
 
-    const link = host.querySelector('.form-simulacao__links a') as HTMLAnchorElement;
-    expect(link.getAttribute('href')).toMatch(/\/processo-seletivo\/.+\/simulacao\/INSCRICAO$/);
-    expect(link.target).toBe('_blank');
+    const links = Array.from(host.querySelectorAll<HTMLAnchorElement>('.form-simulacao__links a'));
+    expect(links).toHaveLength(2);
+    expect(links[0].getAttribute('href')).toMatch(/\/processo-seletivo\/.+\/simulacao\/INSCRICAO$/);
+    expect(links[1].getAttribute('href')).toMatch(
+      /\/processo-seletivo\/.+\/simulacao\/HABILITACAO$/,
+    );
+    expect(links.every((link) => link.target === '_blank')).toBe(true);
   });
 
   it('com uma só fase que coleta inscrição, a escolhe sozinho', () => {

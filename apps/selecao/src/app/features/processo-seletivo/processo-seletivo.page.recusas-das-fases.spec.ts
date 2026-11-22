@@ -10,6 +10,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ConducaoDoWizard } from './editor/conducao-do-wizard.service';
 import { ProcessoSeletivoPage } from './processo-seletivo.page';
+import type { PassoDoWizard } from './wizard/passo-do-wizard';
+import type { ProcessoSeletivoStore } from './wizard/processo-seletivo.store';
 import { PAGE_PROVIDERS } from './processo-seletivo.page.testing';
 import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
 import { FASES_CANONICAS, ID_RESULTADO } from './wizard/passos/cronograma/cronograma.testing';
@@ -68,6 +70,30 @@ async function abrirNoCronograma() {
   return { fixture, store };
 }
 
+/** Os passos que a página conduz: o Cronograma é o real, a Revisão é a que o caso traz, os demais não têm pendência. */
+function conduzirComARevisao(
+  fixture: ComponentFixture<ProcessoSeletivoPage>,
+  store: ProcessoSeletivoStore,
+  revisao: PassoDoWizard,
+): void {
+  const cronograma = fixture.debugElement.query(By.directive(CronogramaPassoComponent))
+    .componentInstance as CronogramaPassoComponent;
+  const semPendencia = { validar: () => ({ valid: true }) };
+  vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
+    (index: number) => {
+      if (index === PASSO_DO_CRONOGRAMA) return cronograma;
+      return index === store.totalDePassos - 1 ? revisao : semPendencia;
+    },
+  );
+}
+
+const pendenciaDaGravacaoRecusada = (pendencias: readonly string[]): boolean =>
+  pendencias.some(
+    (pendencia) =>
+      pendencia.startsWith(`Passo ${PASSO_DO_CRONOGRAMA + 1}`) &&
+      pendencia.includes('A gravação do cronograma foi recusada'),
+  );
+
 describe('ProcessoSeletivoPage: recusas da gravação das fases ao sair do passo Cronograma', () => {
   afterEach(() => TestBed.resetTestingModule());
 
@@ -102,24 +128,17 @@ describe('ProcessoSeletivoPage: recusas da gravação das fases ao sair do passo
 
   it('não publica, e conta como pendência do Cronograma, a gravação recusada só com recusas de campo', async () => {
     const { fixture, store } = await abrirNoCronograma();
-    const cronograma = fixture.debugElement.query(By.directive(CronogramaPassoComponent))
-      .componentInstance as CronogramaPassoComponent;
-    const semPendencia = { validar: () => ({ valid: true }) };
-    vi.spyOn(fixture.debugElement.injector.get(ConducaoDoWizard), 'passoNo').mockImplementation(
-      (index: number) => (index === PASSO_DO_CRONOGRAMA ? cronograma : semPendencia),
-    );
+    const publicacao = vi.fn(() => Promise.resolve({ valid: true }));
+    conduzirComARevisao(fixture, store, {
+      validar: () => ({ valid: true }),
+      persistir: publicacao,
+    });
     store.goTo(store.totalDePassos - 1);
     fixture.detectChanges();
 
     await fixture.componentInstance.nextOrPublish();
 
-    const pendencias = store.erroDoPasso() ?? [];
-    expect(
-      pendencias.some(
-        (pendencia) =>
-          pendencia.startsWith(`Passo ${PASSO_DO_CRONOGRAMA + 1}`) &&
-          pendencia.includes('A gravação do cronograma foi recusada'),
-      ),
-    ).toBe(true);
+    expect(publicacao).not.toHaveBeenCalled();
+    expect(pendenciaDaGravacaoRecusada(store.erroDoPasso() ?? [])).toBe(true);
   });
 });

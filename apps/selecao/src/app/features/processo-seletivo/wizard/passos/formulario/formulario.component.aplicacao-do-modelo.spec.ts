@@ -31,6 +31,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
   let host: ContextoDoPasso['host'];
   let servicoDeModelos: ContextoDoPasso['servicoDeModelos'];
   let comModelosCarregados: ContextoDoPasso['comModelosCarregados'];
+  let comHabilitacao: ContextoDoPasso['comHabilitacao'];
   let escolherEAplicar: ContextoDoPasso['escolherEAplicar'];
 
   usarPasso((contexto) => {
@@ -41,6 +42,7 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
       host,
       servicoDeModelos,
       comModelosCarregados,
+      comHabilitacao,
       escolherEAplicar,
     } = contexto);
   });
@@ -48,19 +50,30 @@ describe('FormularioPassoComponent: aplicação do modelo', () => {
   describe('partindo de um modelo', () => {
     beforeEach(() => comModelosCarregados());
 
-    it('lista os modelos ativos do tipo do processo, e cada aba só os da finalidade dela', () => {
+    const opcoesDoModelo = (finalidade: string): string[] =>
+      Array.from(
+        host.querySelectorAll<HTMLOptionElement>(`#form-${finalidade}-modelo option`),
+        (opcao) => opcao.value,
+      );
+
+    it('pede ao cadastro só os modelos ativos do tipo do processo', () => {
       // O beforeEach já respondeu; a requisição é refeita para conferir os filtros que ela leva.
       servicoDeModelos().carregarModelos();
       const listagem = controller.expectOne((r) => r.url === ROTA_MODELOS);
+
       expect(listagem.request.params.get('tipoProcesso')).toBe('MEDICINA');
       expect(listagem.request.params.get('ativo')).toBe('true');
       listagem.flush(MODELOS);
-      fixture.detectChanges();
+    });
 
-      const opcoes = Array.from(
-        host.querySelectorAll<HTMLOptionElement>('#form-inscricao-modelo option'),
-      ).map((opcao) => opcao.value);
-      expect(opcoes).toEqual(['', 'insc']);
+    it('cada aba oferece só os modelos da finalidade dela', () => {
+      comHabilitacao();
+
+      expect(opcoesDoModelo('inscricao')).toEqual(['', 'insc']);
+      expect(opcoesDoModelo('habilitacao')).toEqual(['', 'hab']);
+    });
+
+    it('liga a lista de modelos à ajuda que explica a substituição', () => {
       expect(host.querySelector('#form-inscricao-modelo')?.getAttribute('aria-describedby')).toBe(
         'form-inscricao-modelo-ajuda',
       );
