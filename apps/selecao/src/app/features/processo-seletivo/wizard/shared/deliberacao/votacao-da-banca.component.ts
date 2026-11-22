@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
 import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
@@ -7,13 +7,12 @@ import type { CampoDaBanca, RecusasDaBancaPorCampo } from './recusas-da-regra';
 import {
   alterarRegra,
   controlesAVista,
-  CRITERIOS_DE_VOTACAO,
-  DESEMPATES_DA_VOTACAO,
-  ENCERRAMENTOS_DA_VOTACAO,
   quorumSegueOsIntegrantes,
-  RESULTADOS_SEM_UNANIMIDADE,
   type CampoDaRegra,
 } from './regra-de-deliberacao';
+
+import { opcoesComValorAtual } from './opcoes-da-regra';
+import { VocabulariosDaRegra } from './vocabularios-da-regra.service';
 
 @Component({
   selector: 'sel-votacao-da-banca',
@@ -32,10 +31,8 @@ export class VotacaoDaBancaComponent {
   readonly recusas = input<RecusasDaBancaPorCampo>({});
   readonly regraChange = output<RegraDeDeliberacaoDaBanca>();
 
-  protected readonly criterios = CRITERIOS_DE_VOTACAO;
-  protected readonly desempates = DESEMPATES_DA_VOTACAO;
-  protected readonly encerramentos = ENCERRAMENTOS_DA_VOTACAO;
-  protected readonly semUnanimidade = RESULTADOS_SEM_UNANIMIDADE;
+  protected readonly vocabularios = inject(VocabulariosDaRegra);
+  protected readonly opcoesComValorAtual = opcoesComValorAtual;
   protected readonly quorumFixo = computed(() => quorumSegueOsIntegrantes(this.regra()));
   protected readonly aVista = computed(() => controlesAVista(this.regra()));
 
@@ -53,6 +50,10 @@ export class VotacaoDaBancaComponent {
   }
 
   protected alterar(campo: CampoDaRegra, valor: string): void {
-    this.regraChange.emit(alterarRegra(this.regra(), campo, valor));
+    const regra = alterarRegra(this.regra(), campo, valor);
+    const opcao = this.vocabularios.opcao(campo, valor);
+    this.regraChange.emit(
+      opcao ? { ...regra, rotulos: { ...regra.rotulos, [campo]: opcao } } : regra,
+    );
   }
 }

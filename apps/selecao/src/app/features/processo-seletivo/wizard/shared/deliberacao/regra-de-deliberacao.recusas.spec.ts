@@ -1,5 +1,6 @@
 import type { ComponentFixture } from '@angular/core/testing';
 import { TestBed } from '@angular/core/testing';
+import { fornecerVocabulariosDaRegra } from './vocabularios-da-regra.testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
@@ -40,6 +41,7 @@ describe('RegraDeDeliberacaoComponent: recusas do servidor', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: [fornecerVocabulariosDaRegra()],
       imports: [RegraDeDeliberacaoComponent],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);

@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
@@ -9,10 +17,12 @@ import {
   alterarRegra,
   controlesAVista,
   ehColegiada,
-  MODOS_DE_DELIBERACAO,
+  modoConhecido,
   regraNova,
   type CampoDaRegra,
 } from './regra-de-deliberacao';
+import { opcoesComValorAtual } from './opcoes-da-regra';
+import { VocabulariosDaRegra } from './vocabularios-da-regra.service';
 import { VotacaoDaBancaComponent } from './votacao-da-banca.component';
 
 /** O valor do seletor de modo que declara a banca sem regra de deliberação. */
@@ -41,11 +51,14 @@ export class RegraDeDeliberacaoComponent {
 
   readonly regraChange = output<RegraDeDeliberacaoDaBanca | null>();
 
-  protected readonly modos = MODOS_DE_DELIBERACAO;
+  protected readonly vocabularios = inject(VocabulariosDaRegra);
+  protected readonly opcoesComValorAtual = opcoesComValorAtual;
   protected readonly colegiada = computed(() => {
     const regra = this.regra();
     return regra !== null && ehColegiada(regra);
   });
+  protected readonly modoConhecido = modoConhecido;
+  protected readonly modoIndividual = ModoDeDeliberacao.atoIndividual;
   protected readonly semRegra = SEM_REGRA;
   protected readonly anuncio = signal('');
 
@@ -67,8 +80,17 @@ export class RegraDeDeliberacaoComponent {
   }
 
   protected escolherModo(valor: string): void {
-    const modo = this.modos.find((opcao) => opcao.valor === valor)?.valor;
-    this.regraChange.emit(modo === undefined ? null : this.regraDoModo(modo));
+    const modo = this.vocabularios.modos().opcoes.find((opcao) => opcao.codigo === valor)
+      ?.codigo as ModoDeDeliberacao | undefined;
+    if (modo === undefined) {
+      this.regraChange.emit(null);
+      return;
+    }
+    const regra = this.regraDoModo(modo);
+    this.regraChange.emit({
+      ...regra,
+      rotulos: { ...regra.rotulos, modo: this.vocabularios.opcao('modo', modo) },
+    });
   }
 
   protected alterar(campo: CampoDaRegra, valor: string): void {

@@ -44,6 +44,7 @@ import { VagasPassoComponent } from './wizard/passos/vagas/vagas.component';
 import { CATALOGOS_DO_CRONOGRAMA } from './wizard/passos/cronograma/catalogos/catalogos-do-cronograma';
 import { RecusasDaPublicacaoNoCronograma } from './wizard/passos/cronograma/servicos/recusas-da-publicacao-no-cronograma.service';
 import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
+import { VocabulariosDaRegra } from './wizard/shared/deliberacao/vocabularios-da-regra.service';
 import { FormularioPassoComponent } from './wizard/passos/formulario/formulario.component';
 import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-do-cadastro-de-pesos.service';
 import { CatalogosDeClassificacao } from './wizard/passos/classificacao/catalogos-de-classificacao.service';
@@ -111,6 +112,19 @@ export class ProcessoSeletivoPage {
   private readonly passos = viewChildren(PASSO_DO_WIZARD);
 
   readonly store = inject(ProcessoSeletivoStore);
+  protected readonly vocabulariosDaRegra = inject(VocabulariosDaRegra);
+  protected readonly regraIndisponivel = computed(() => {
+    const { fases, etapas } = this.store.draft().cronograma;
+    const bancas = [
+      ...fases.flatMap((fase) => fase.bancasRequeridas),
+      ...etapas.flatMap((etapa) => etapa.bancas),
+    ];
+    return (
+      this.store.cronogramaVisivel() &&
+      this.vocabulariosDaRegra.indisponivel() &&
+      bancas.some((banca) => banca.regraDeDeliberacao !== null)
+    );
+  });
   private readonly conducao = inject(ConducaoDoWizard);
   private readonly leitura = inject(LeituraDoProcesso);
   private readonly foco = inject(FocoDoEditor);

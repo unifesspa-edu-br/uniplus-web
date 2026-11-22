@@ -9,6 +9,7 @@ import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import type { CampoDaBanca } from './recusas-da-regra';
 import { RegraDeDeliberacaoComponent } from './regra-de-deliberacao.component';
 import { ATO_INDIVIDUAL, COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
+import { fornecerVocabulariosDaRegra } from './vocabularios-da-regra.testing';
 
 const ID = 'banca';
 
@@ -45,12 +46,35 @@ describe('RegraDeDeliberacaoComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      providers: [fornecerVocabulariosDaRegra()],
       imports: [RegraDeDeliberacaoComponent],
     }).compileComponents();
     fixture = TestBed.createComponent(RegraDeDeliberacaoComponent);
     fixture.componentRef.setInput('idBase', ID);
     emitidas = [];
     fixture.componentInstance.regraChange.subscribe((regra) => emitidas.push(regra));
+  });
+
+  it('mostra o modo lido que não consta das opções', () => {
+    const codigo = 'modoNovo' as ModoDeDeliberacao;
+    exibe(comRegra({ modo: codigo, rotulos: { modo: { codigo, rotulo: 'Modo novo' } } }));
+    const seletor = controle<HTMLSelectElement>('modo');
+    expect(seletor?.value).toBe(codigo);
+    expect(seletor?.selectedOptions[0].textContent?.trim()).toBe('Modo novo');
+    expect(controle('integrantes')).toBeNull();
+    expect(controle('quorum')).toBeNull();
+    expect(nativo().querySelector('fieldset')).toBeNull();
+    expect(nativo().querySelector('button')).toBeNull();
+    expect(nativo().textContent).toContain('Escolha novamente a regra de deliberação.');
+  });
+
+  it('mostra no modo a recusa de um campo oculto pelo modo desconhecido', () => {
+    const modo = 'modoNovo' as ModoDeDeliberacao;
+    exibe(comRegra({ modo }), { recusas: { quorum: [recusaDe('quorum', 'Confira o quórum.')] } });
+
+    expect(controle('quorum')).toBeNull();
+    expect(controle('modo-recusas')?.textContent).toContain('Confira o quórum.');
+    expect(controle('modo')?.getAttribute('aria-describedby')).toBe(`${ID}-modo-recusas`);
   });
 
   describe('sem regra declarada', () => {

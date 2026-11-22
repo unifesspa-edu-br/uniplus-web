@@ -11828,6 +11828,166 @@
         }
       }
     },
+    "/api/selecao/vocabularios/modos-deliberacao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.modo-deliberacao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ModoDeDeliberacao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/criterios-votacao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.criterio-votacao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CriterioDeVotacao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/desempates-votacao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.desempate-votacao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DesempateDaVotacao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/encerramentos-votacao": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.encerramento-votacao.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EncerramentoDaVotacao"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/selecao/vocabularios/resultados-sem-unanimidade": {
+      "get": {
+        "tags": [
+          "Vocabularios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/vnd.uniplus.resultado-sem-unanimidade.v1\u002Bjson": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ResultadoSemUnanimidade"
+                  }
+                }
+              }
+            }
+          },
+          "406": {
+            "description": "Not Acceptable",
+            "content": {
+              "application/problem\u002Bjson": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/selecao/vocabularios/formas-comprovacao": {
       "get": {
         "tags": [
@@ -14826,13 +14986,28 @@
         }
       },
       "CriterioDeVotacao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/CriterioDeVotacaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "CriterioDeVotacaoCodigo": {
         "enum": [
           "maioriaSimples",
           "maioriaAbsoluta",
-          "unanimidade",
-          null
+          "unanimidade"
         ],
-        "type": "string"
+        "type": "string",
+        "description": "- \u0060maioriaSimples\u0060: Maioria simples\n- \u0060maioriaAbsoluta\u0060: Maioria absoluta\n- \u0060unanimidade\u0060: Unanimidade"
       },
       "CronogramaDaFaseDto": {
         "required": [
@@ -15420,12 +15595,27 @@
         }
       },
       "DesempateDaVotacao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/DesempateDaVotacaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "DesempateDaVotacaoCodigo": {
         "enum": [
           "votoDaPresidencia",
-          "novaVotacao",
-          null
+          "novaVotacao"
         ],
-        "type": "string"
+        "type": "string",
+        "description": "- \u0060votoDaPresidencia\u0060: Voto da presid\u00EAncia\n- \u0060novaVotacao\u0060: Nova vota\u00E7\u00E3o"
       },
       "DestinoRemanejamentoDto": {
         "required": [
@@ -19773,12 +19963,27 @@
         }
       },
       "EncerramentoDaVotacao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/EncerramentoDaVotacaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "EncerramentoDaVotacaoCodigo": {
         "enum": [
           "todosOsTitulares",
-          "presidenciaNoQuorum",
-          null
+          "presidenciaNoQuorum"
         ],
-        "type": "string"
+        "type": "string",
+        "description": "- \u0060todosOsTitulares\u0060: Todos os titulares votam\n- \u0060presidenciaNoQuorum\u0060: A presid\u00EAncia encerra ao atingir o qu\u00F3rum"
       },
       "EnvioDoComprovanteDto": {
         "required": [
@@ -23340,11 +23545,27 @@
         }
       },
       "ModoDeDeliberacao": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ModoDeDeliberacaoCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "ModoDeDeliberacaoCodigo": {
         "enum": [
           "colegiadaComVotacao",
           "atoIndividual"
         ],
-        "type": "string"
+        "type": "string",
+        "description": "- \u0060colegiadaComVotacao\u0060: Colegiada, com vota\u00E7\u00E3o\n- \u0060atoIndividual\u0060: Ato individual"
       },
       "MomentoDaExigenciaDto": {
         "required": [
@@ -26494,7 +26715,14 @@
         "type": "object",
         "properties": {
           "modo": {
-            "$ref": "#/components/schemas/ModoDeDeliberacao"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ModoDeDeliberacaoCodigo"
+              }
+            ]
           },
           "integrantes": {
             "type": "integer",
@@ -26517,7 +26745,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/CriterioDeVotacao"
+                "$ref": "#/components/schemas/CriterioDeVotacaoCodigo"
               }
             ]
           },
@@ -26527,7 +26755,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/DesempateDaVotacao"
+                "$ref": "#/components/schemas/DesempateDaVotacaoCodigo"
               }
             ]
           },
@@ -26537,7 +26765,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/EncerramentoDaVotacao"
+                "$ref": "#/components/schemas/EncerramentoDaVotacaoCodigo"
               }
             ]
           },
@@ -26547,7 +26775,7 @@
                 "type": "null"
               },
               {
-                "$ref": "#/components/schemas/ResultadoSemUnanimidade"
+                "$ref": "#/components/schemas/ResultadoSemUnanimidadeCodigo"
               }
             ]
           }
@@ -27213,13 +27441,28 @@
         }
       },
       "ResultadoSemUnanimidade": {
+        "required": [
+          "codigo",
+          "rotulo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "$ref": "#/components/schemas/ResultadoSemUnanimidadeCodigo"
+          },
+          "rotulo": {
+            "type": "string"
+          }
+        }
+      },
+      "ResultadoSemUnanimidadeCodigo": {
         "enum": [
           "favoravel",
           "desfavoravel",
-          "novaVotacao",
-          null
+          "novaVotacao"
         ],
-        "type": "string"
+        "type": "string",
+        "description": "- \u0060favoravel\u0060: Favor\u00E1vel\n- \u0060desfavoravel\u0060: Desfavor\u00E1vel\n- \u0060novaVotacao\u0060: Nova vota\u00E7\u00E3o"
       },
       "RetificacaoCertameDto": {
         "required": [

@@ -1,11 +1,13 @@
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { fornecerVocabulariosDaRegra } from './vocabularios-da-regra.testing';
 
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import { COLEGIADA, comRegra } from './regra-de-deliberacao.testing';
 import { VotacaoDaBancaComponent } from './votacao-da-banca.component';
 
 describe('VotacaoDaBancaComponent', () => {
+  beforeEach(() => TestBed.configureTestingModule({ providers: [fornecerVocabulariosDaRegra()] }));
   it('emite a regra normalizada ao trocar o critério para unanimidade', () => {
     const fixture = TestBed.createComponent(VotacaoDaBancaComponent);
     fixture.componentRef.setInput('idBase', 'banca');
@@ -40,6 +42,30 @@ describe('VotacaoDaBancaComponent', () => {
     expect(quorum?.readOnly).toBe(true);
     expect(quorum?.getAttribute('aria-describedby')).toBe('banca-quorum-dica banca-quorum-erro');
     expect(host.querySelector('#banca-quorum-erro')?.getAttribute('role')).toBe('alert');
+  });
+
+  it('mostra os valores lidos que faltam nas opções de votação', () => {
+    const fixture = TestBed.createComponent(VotacaoDaBancaComponent);
+    const regra = comRegra({
+      encerramento: 'novo' as typeof COLEGIADA.encerramento,
+      criterio: 'novo' as typeof COLEGIADA.criterio,
+      rotulos: {
+        encerramento: { codigo: 'novo', rotulo: 'Encerramento novo' },
+        criterio: { codigo: 'novo', rotulo: 'Critério novo' },
+      },
+    });
+    fixture.componentRef.setInput('idBase', 'banca');
+    fixture.componentRef.setInput('regra', regra);
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    for (const [campo, rotulo] of [
+      ['encerramento', 'Encerramento novo'],
+      ['criterio', 'Critério novo'],
+    ]) {
+      const seletor = host.querySelector<HTMLSelectElement>(`#banca-${campo}`);
+      expect(seletor?.value).toBe('novo');
+      expect(seletor?.selectedOptions[0].textContent?.trim()).toBe(rotulo);
+    }
   });
 
   describe('recusas do servidor', () => {

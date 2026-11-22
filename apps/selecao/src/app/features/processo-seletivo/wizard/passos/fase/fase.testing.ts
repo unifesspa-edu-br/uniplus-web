@@ -1,3 +1,4 @@
+import { fornecerVocabulariosDaRegra } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import type { DebugElement } from '@angular/core';
@@ -195,6 +196,7 @@ export interface FaseMontada {
 }
 
 const PROVEDORES_DA_FASE = [
+  fornecerVocabulariosDaRegra(),
   ProcessoSeletivoStore,
   FormularioDoCronograma,
   ReleituraDosIdentificadores,

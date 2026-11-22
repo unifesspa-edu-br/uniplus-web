@@ -8,7 +8,7 @@ type BancaRequeridaDto = ProcessoSeletivoDto['cronogramaFases'][number]['bancasR
 type BancaDaEtapaDto = ProcessoSeletivoDto['etapas'][number]['bancas'][number];
 
 const REGRA_DO_DTO = {
-  modo: ModoDeDeliberacao.atoIndividual,
+  modo: { codigo: ModoDeDeliberacao.atoIndividual, rotulo: 'Individual' },
   integrantes: 1,
   suplentes: 0,
 };

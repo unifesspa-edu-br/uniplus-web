@@ -95,17 +95,53 @@ function novoId(servidor: ServidorDasBancas): string {
   return `01a0d640-0000-7000-8000-00000000b${String(servidor.gravadas).padStart(3, '0')}`;
 }
 
+const ROTULOS_DA_REGRA: Readonly<Record<string, string>> = {
+  colegiadaComVotacao: 'Colegiada, com votação',
+  atoIndividual: 'Ato individual',
+  maioriaSimples: 'Maioria simples',
+  maioriaAbsoluta: 'Maioria absoluta',
+  unanimidade: 'Unanimidade',
+  votoDaPresidencia: 'Voto da presidência',
+  novaVotacao: 'Nova votação',
+  todosOsTitulares: 'Todos os titulares votam',
+  presidenciaNoQuorum: 'A presidência encerra ao atingir o quórum',
+  favoravel: 'Favorável',
+  desfavoravel: 'Desfavorável',
+};
+
+const CODIGOS_DOS_VOCABULARIOS = {
+  'modos-deliberacao': ['colegiadaComVotacao', 'atoIndividual'],
+  'criterios-votacao': ['maioriaSimples', 'maioriaAbsoluta', 'unanimidade'],
+  'desempates-votacao': ['votoDaPresidencia', 'novaVotacao'],
+  'encerramentos-votacao': ['todosOsTitulares', 'presidenciaNoQuorum'],
+  'resultados-sem-unanimidade': ['favoravel', 'desfavoravel', 'novaVotacao'],
+} as const;
+
+const VOCABULARIOS_DA_REGRA = Object.entries(CODIGOS_DOS_VOCABULARIOS).map(
+  ([recurso, codigos]) =>
+    [
+      `selecao/vocabularios/${recurso}`,
+      codigos.map((codigo) => ({ codigo, rotulo: ROTULOS_DA_REGRA[codigo] })),
+    ] as const,
+);
+
+function valorLido<T extends string>(
+  codigo: T | null | undefined,
+): { codigo: T; rotulo: string } | null {
+  return codigo ? { codigo, rotulo: ROTULOS_DA_REGRA[codigo] ?? '' } : null;
+}
+
 function regraLida(regra: RegraEnviada | null | undefined): BancaDaEtapaLida['regraDeDeliberacao'] {
-  if (!regra) return null;
+  if (!regra?.modo) return null;
   return {
-    modo: regra.modo,
+    modo: { codigo: regra.modo, rotulo: ROTULOS_DA_REGRA[regra.modo] ?? '' },
     integrantes: regra.integrantes,
     suplentes: regra.suplentes,
     quorum: regra.quorum ?? null,
-    criterio: regra.criterio ?? null,
-    desempate: regra.desempate ?? null,
-    encerramento: regra.encerramento ?? null,
-    semUnanimidade: regra.semUnanimidade ?? null,
+    criterio: valorLido(regra.criterio),
+    desempate: valorLido(regra.desempate),
+    encerramento: valorLido(regra.encerramento),
+    semUnanimidade: valorLido(regra.semUnanimidade),
   };
 }
 
@@ -278,7 +314,7 @@ export async function mockarServidorDasBancas(
   await responder(page, ROTA_DOS_TIPOS_DE_BANCA, () => servidor.catalogo, CORS);
   await responderCatalogos(
     page,
-    [['configuracao/categorias-documento', CATEGORIAS_DE_DOCUMENTO]],
+    [['configuracao/categorias-documento', CATEGORIAS_DE_DOCUMENTO], ...VOCABULARIOS_DA_REGRA],
     CORS,
   );
   await page.route(ROTA_DO_PROCESSO, (route: Route) => atender(route, servidor));

@@ -1,48 +1,10 @@
 import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 
-import type {
-  CriterioDaVotacao,
-  DesempateDaVotacao,
-  EncerramentoDaVotacao,
-  RegraDeDeliberacaoDaBanca,
-  ResultadoSemUnanimidade,
-} from '../../modelos/deliberacao.models';
+import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
 import { inteiroDoCampo } from '../numero-do-campo';
 
-export interface OpcaoDaRegra<T extends string> {
-  readonly valor: T;
-  readonly rotulo: string;
-}
-
-export const MODOS_DE_DELIBERACAO: readonly OpcaoDaRegra<ModoDeDeliberacao>[] = [
-  { valor: ModoDeDeliberacao.colegiadaComVotacao, rotulo: 'Colegiada, com votação' },
-  { valor: ModoDeDeliberacao.atoIndividual, rotulo: 'Ato individual' },
-];
-
-export const CRITERIOS_DE_VOTACAO: readonly OpcaoDaRegra<CriterioDaVotacao>[] = [
-  { valor: 'maioriaSimples', rotulo: 'Maioria simples' },
-  { valor: 'maioriaAbsoluta', rotulo: 'Maioria absoluta' },
-  { valor: 'unanimidade', rotulo: 'Unanimidade' },
-];
-
-export const DESEMPATES_DA_VOTACAO: readonly OpcaoDaRegra<DesempateDaVotacao>[] = [
-  { valor: 'votoDaPresidencia', rotulo: 'Voto da presidência' },
-  { valor: 'novaVotacao', rotulo: 'Nova votação' },
-];
-
-export const ENCERRAMENTOS_DA_VOTACAO: readonly OpcaoDaRegra<EncerramentoDaVotacao>[] = [
-  { valor: 'todosOsTitulares', rotulo: 'Todos os titulares votam' },
-  { valor: 'presidenciaNoQuorum', rotulo: 'A presidência encerra ao atingir o quórum' },
-];
-
-export const RESULTADOS_SEM_UNANIMIDADE: readonly OpcaoDaRegra<ResultadoSemUnanimidade>[] = [
-  { valor: 'favoravel', rotulo: 'Favorável' },
-  { valor: 'desfavoravel', rotulo: 'Desfavorável' },
-  { valor: 'novaVotacao', rotulo: 'Nova votação' },
-];
-
 /** O campo da regra que o operador edita. */
-export type CampoDaRegra = keyof RegraDeDeliberacaoDaBanca;
+export type CampoDaRegra = Exclude<keyof RegraDeDeliberacaoDaBanca, 'rotulos'>;
 
 export function regraNova(modo: ModoDeDeliberacao): RegraDeDeliberacaoDaBanca {
   return normalizarRegra({
@@ -59,6 +21,9 @@ export function regraNova(modo: ModoDeDeliberacao): RegraDeDeliberacaoDaBanca {
 
 export const ehColegiada = (regra: RegraDeDeliberacaoDaBanca): boolean =>
   regra.modo === ModoDeDeliberacao.colegiadaComVotacao;
+
+export const modoConhecido = (regra: RegraDeDeliberacaoDaBanca): boolean =>
+  ehColegiada(regra) || regra.modo === ModoDeDeliberacao.atoIndividual;
 
 const integrantesLidos = (regra: RegraDeDeliberacaoDaBanca): number | null =>
   inteiroDoCampo(regra.integrantes);
@@ -94,7 +59,7 @@ const CONTROLES_SEMPRE_A_VISTA: readonly CampoDaRegra[] = [
 export function controlesAVista(
   regra: RegraDeDeliberacaoDaBanca | null,
 ): ReadonlySet<CampoDaRegra> {
-  if (regra === null) return new Set<CampoDaRegra>(['modo']);
+  if (regra === null || !modoConhecido(regra)) return new Set<CampoDaRegra>(['modo']);
   const condicionais: readonly CampoDaRegra[] = [
     ...(pedeDesempate(regra) ? (['desempate'] as const) : []),
     ...(pedeResultadoSemUnanimidade(regra) ? (['semUnanimidade'] as const) : []),

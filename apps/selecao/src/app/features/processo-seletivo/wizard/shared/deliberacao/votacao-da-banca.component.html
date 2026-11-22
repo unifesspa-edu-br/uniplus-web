@@ -4,14 +4,17 @@
   <select
     class="input"
     [attr.id]="id('encerramento')"
-    [disabled]="desabilitada()"
+    [disabled]="desabilitada() || !vocabularios.pronta()"
     [attr.aria-describedby]="doEncerramento.descritoPor"
     [attr.aria-invalid]="doEncerramento.invalido ? 'true' : null"
     (change)="alterar('encerramento', $any($event.target).value)"
   >
     <option value="" [selected]="regra().encerramento === ''">Selecione…</option>
-    @for (opcao of encerramentos; track opcao.valor) {
-      <option [value]="opcao.valor" [selected]="regra().encerramento === opcao.valor">
+    @for (
+      opcao of opcoesComValorAtual(vocabularios.encerramentos().opcoes, regra(), 'encerramento');
+      track opcao.codigo
+    ) {
+      <option [value]="opcao.codigo" [selected]="regra().encerramento === opcao.codigo">
         {{ opcao.rotulo }}
       </option>
     }
@@ -40,7 +43,7 @@
     [attr.id]="id('quorum')"
     [value]="regra().quorum"
     [readOnly]="quorumFixo()"
-    [disabled]="desabilitada()"
+    [disabled]="desabilitada() || !vocabularios.pronta()"
     [attr.aria-describedby]="doQuorum.descritoPor"
     [attr.aria-invalid]="doQuorum.invalido ? 'true' : null"
     (input)="alterar('quorum', $any($event.target).value)"
@@ -68,14 +71,17 @@
   <select
     class="input"
     [attr.id]="id('criterio')"
-    [disabled]="desabilitada()"
+    [disabled]="desabilitada() || !vocabularios.pronta()"
     [attr.aria-describedby]="doCriterio.descritoPor"
     [attr.aria-invalid]="doCriterio.invalido ? 'true' : null"
     (change)="alterar('criterio', $any($event.target).value)"
   >
     <option value="" [selected]="regra().criterio === ''">Selecione…</option>
-    @for (opcao of criterios; track opcao.valor) {
-      <option [value]="opcao.valor" [selected]="regra().criterio === opcao.valor">
+    @for (
+      opcao of opcoesComValorAtual(vocabularios.criterios().opcoes, regra(), 'criterio');
+      track opcao.codigo
+    ) {
+      <option [value]="opcao.codigo" [selected]="regra().criterio === opcao.codigo">
         {{ opcao.rotulo }}
       </option>
     }
@@ -101,14 +107,17 @@
     <select
       class="input"
       [attr.id]="id('desempate')"
-      [disabled]="desabilitada()"
+      [disabled]="desabilitada() || !vocabularios.pronta()"
       [attr.aria-describedby]="doDesempate.descritoPor"
       [attr.aria-invalid]="doDesempate.invalido ? 'true' : null"
       (change)="alterar('desempate', $any($event.target).value)"
     >
       <option value="" [selected]="regra().desempate === ''">Selecione…</option>
-      @for (opcao of desempates; track opcao.valor) {
-        <option [value]="opcao.valor" [selected]="regra().desempate === opcao.valor">
+      @for (
+        opcao of opcoesComValorAtual(vocabularios.desempates().opcoes, regra(), 'desempate');
+        track opcao.codigo
+      ) {
+        <option [value]="opcao.codigo" [selected]="regra().desempate === opcao.codigo">
           {{ opcao.rotulo }}
         </option>
       }
@@ -135,14 +144,17 @@
     <select
       class="input"
       [attr.id]="id('semUnanimidade')"
-      [disabled]="desabilitada()"
+      [disabled]="desabilitada() || !vocabularios.pronta()"
       [attr.aria-describedby]="doResultado.descritoPor"
       [attr.aria-invalid]="doResultado.invalido ? 'true' : null"
       (change)="alterar('semUnanimidade', $any($event.target).value)"
     >
       <option value="" [selected]="regra().semUnanimidade === ''">Selecione…</option>
-      @for (opcao of semUnanimidade; track opcao.valor) {
-        <option [value]="opcao.valor" [selected]="regra().semUnanimidade === opcao.valor">
+      @for (
+        opcao of opcoesComValorAtual(vocabularios.resultados().opcoes, regra(), 'semUnanimidade');
+        track opcao.codigo
+      ) {
+        <option [value]="opcao.codigo" [selected]="regra().semUnanimidade === opcao.codigo">
           {{ opcao.rotulo }}
         </option>
       }

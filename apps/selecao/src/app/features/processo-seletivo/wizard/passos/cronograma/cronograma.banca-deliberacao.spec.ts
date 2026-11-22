@@ -9,6 +9,7 @@ import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 
 import { COLEGIADA, comRegra } from '../../shared/deliberacao/regra-de-deliberacao.testing';
+import { comRotulos } from '../../shared/deliberacao/vocabularios-da-regra.testing';
 import { CatalogoDeBancas } from './catalogos/catalogo-de-bancas.service';
 import type { EtapaForm } from './cronograma-form';
 import { type ContextoDoCronograma, usarCronograma } from './cronograma-passo.testing';
@@ -93,7 +94,7 @@ describe('CronogramaPassoComponent: regra de deliberação da banca da etapa', (
     escolher('criterio', 'maioriaSimples');
     escolher('desempate', 'votoDaPresidencia');
 
-    expect(regraDa(etapa)).toEqual(COLEGIADA);
+    expect(regraDa(etapa)).toEqual(comRotulos(COLEGIADA));
     expect(etapa.controls.bancas.dirty).toBe(true);
   });
 

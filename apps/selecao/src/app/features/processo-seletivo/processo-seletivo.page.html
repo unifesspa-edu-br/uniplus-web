@@ -139,11 +139,14 @@ leituraDoProcesso.visivel()) {
            isto o botão pareceria ocioso — sem "Salvando…", clicável de
            novo — durante uma janela em que um novo clique só seria
            descartado em silêncio por `nextOrPublish()`. -->
+      @if (regraIndisponivel()) {
+      <p role="alert">As opções da regra de deliberação não estão disponíveis.</p>
+      }
       <button
         class="btn btn--primary"
         type="button"
         [attr.aria-busy]="store.operacaoEmAndamento() || null"
-        [disabled]="store.operacaoEmAndamento()"
+        [disabled]="store.operacaoEmAndamento() || regraIndisponivel()"
         (click)="nextOrPublish()"
       >
         @if (store.operacaoEmAndamento()) { Salvando… } @else { {{ rotuloDeAvanco() }} } @if

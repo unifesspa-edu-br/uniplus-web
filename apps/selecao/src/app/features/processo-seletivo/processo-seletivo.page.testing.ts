@@ -1,3 +1,4 @@
+import { fornecerVocabulariosDaRegra } from './wizard/shared/deliberacao/vocabularios-da-regra.testing';
 import { PermissoesService } from '@uniplus/shared-auth/bootstrap';
 import { HttpHeaders } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
@@ -104,6 +105,7 @@ export const concedeSoPublicar = (codigo: string): boolean =>
   codigo === 'selecao:processos:publicar';
 
 export const PAGE_PROVIDERS = [
+  fornecerVocabulariosDaRegra(),
   provideRouter([]),
   provideApiDosTiposDeDecisao(),
   { provide: TiposProcessoApi, useValue: tiposProcessoApiStub },
