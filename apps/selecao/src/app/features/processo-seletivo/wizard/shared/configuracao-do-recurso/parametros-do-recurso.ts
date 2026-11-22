@@ -81,6 +81,8 @@ export interface OpcaoDeEscolha extends OpcaoDoVocabulario {
 
 export const MENSAGEM_DA_INSTANCIA_SUPERIOR_EM_ABERTO =
   'Responda se o recurso admite instância superior.';
+export const MENSAGEM_DO_RECURSO_QUE_SE_ENCERRA =
+  'O recurso deste tipo se encerra na 1ª instância.';
 export const MENSAGEM_DA_GUARDA_FIXA =
   'Com 2ª instância, a vaga fica sempre guardada até o resultado definitivo.';
 export const MENSAGEM_DA_GUARDA_RETIRADA = `${MENSAGEM_DA_GUARDA_FIXA} A escolha "não guarda" foi retirada.`;

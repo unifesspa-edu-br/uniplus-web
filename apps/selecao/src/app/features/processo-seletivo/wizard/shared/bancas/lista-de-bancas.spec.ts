@@ -3,6 +3,7 @@ import { PapelDaBancaCodigo } from '@uniplus/shared-data/selecao';
 import type { BancaDeclarada } from '../../modelos/banca.models';
 import {
   acrescentarBanca,
+  algumaBancaEncerraORecurso,
   gruposPorTipo,
   identificacaoDaBanca,
   moverNoTipo,
@@ -56,5 +57,31 @@ describe('lista de bancas', () => {
       },
     };
     expect(identificacaoDaBanca([gravada], gravada, 'Cadastro')).toBe('Cópia 1');
+  });
+});
+
+describe('algumaBancaEncerraORecurso', () => {
+  const copia = (encerra: boolean): NonNullable<BancaDeclarada['copiaDoTipo']> => ({
+    rotulo: 'Banca de entrevista',
+    papel: { codigo: PapelDaBancaCodigo.AVALIA_O_MERITO, rotulo: 'Avalia o mérito' },
+    exigeDuasOuMaisBancas: false,
+    encerraRecursoNaPrimeiraInstancia: encerra,
+  });
+  const comCopia = (chave: string, encerra: boolean): BancaDeclarada => ({
+    ...banca(chave, 'entrevista'),
+    copiaDoTipo: copia(encerra),
+  });
+
+  it('é verdadeira quando a cópia do tipo de uma banca traz a marca', () => {
+    expect(algumaBancaEncerraORecurso([comCopia('a', false), comCopia('b', true)])).toBe(true);
+  });
+
+  it('é falsa quando nenhuma cópia traz a marca', () => {
+    expect(algumaBancaEncerraORecurso([comCopia('a', false)])).toBe(false);
+  });
+
+  it('é falsa sem banca e para a banca ainda sem cópia do tipo', () => {
+    expect(algumaBancaEncerraORecurso([])).toBe(false);
+    expect(algumaBancaEncerraORecurso([banca('a', 'entrevista')])).toBe(false);
   });
 });

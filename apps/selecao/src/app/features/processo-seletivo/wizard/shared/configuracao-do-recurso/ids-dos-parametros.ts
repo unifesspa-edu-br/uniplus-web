@@ -26,6 +26,7 @@ function idsDaInstanciaSuperior(prefixo: string) {
     sim: `${prefixo}-superior-sim`,
     nao: `${prefixo}-superior-nao`,
     ajuda: `${prefixo}-superior-ajuda`,
+    encerra: `${prefixo}-superior-encerra`,
     erro: `${prefixo}-superior-erro`,
     recusas: `${prefixo}-superior-recusas`,
   };

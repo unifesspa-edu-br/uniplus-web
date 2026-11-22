@@ -11,8 +11,8 @@
     <h5 [id]="idBase() + '-grupo-' + grupo[0].tipoBancaId">{{ rotulo(grupo[0]) }}</h5>
     @if (grupo.length > 1) {
       <p [id]="idBase() + '-ordem-' + grupo[0].tipoBancaId">
-        A ordem das bancas deste tipo define qual banca julga o recurso (UNI-REQ-0474). Mudar a
-        ordem não muda a identidade da banca.
+        A ordem das bancas do mesmo tipo é a ordem em que a API as considera para distribuir os
+        recursos entre as que atendem o mesmo grupo de candidatos.
       </p>
       <p>{{ textoDoGrupo() }}</p>
       @if (marcas(grupo[0])?.papel?.codigo === 'JULGA_A_PRIMEIRA_INSTANCIA') {
@@ -92,6 +92,7 @@
 }
 <div class="form-field">
   <label class="label" [for]="idBase() + '-tipo'">Tipo da banca a acrescentar</label>
+  <p class="field__hint" [id]="idBase() + '-recurso-ajuda'">{{ textoDaBancaDeRecursos }}</p>
   @if (tipos().length === 0) {
     <p class="field__hint">Nenhum tipo de banca no cadastro.</p>
   }
@@ -100,7 +101,9 @@
     class="select"
     [id]="idBase() + '-tipo'"
     [disabled]="!edicaoLiberada()"
-    [attr.aria-describedby]="faltaTipo() ? idBase() + '-tipo-erro' : null"
+    [attr.aria-describedby]="
+      idBase() + '-recurso-ajuda' + (faltaTipo() ? ' ' + idBase() + '-tipo-erro' : '')
+    "
     [attr.aria-invalid]="faltaTipo() ? 'true' : null"
     (change)="escolherTipo(seletor.value)"
   >

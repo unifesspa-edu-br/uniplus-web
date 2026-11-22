@@ -15,6 +15,7 @@ import {
   type ParametrosAlterados,
   type ParametrosDoRecurso,
 } from '../../../shared/configuracao-do-recurso/parametros-do-recurso';
+import { algumaBancaEncerraORecurso } from '../../../shared/bancas/lista-de-bancas';
 import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 import { RecusasDaConfiguracaoDoRecursoComponent } from '../../../shared/configuracao-do-recurso/recusas-da-configuracao-do-recurso.component';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
@@ -87,6 +88,11 @@ export class RegraDeRecursoDaFaseComponent {
   protected readonly parametros = computed<ParametrosDoRecurso>(() => {
     this.espelho.versao();
     return this.formulario().controls.recurso.getRawValue();
+  });
+  /** Lido da cópia do tipo que cada banca da fase guarda, nunca do cadastro vivo. */
+  protected readonly encerraNaPrimeiraInstancia = computed(() => {
+    this.espelho.versao();
+    return algumaBancaEncerraORecurso(this.formulario().controls.bancasRequeridas.value);
   });
   protected readonly leituraDoRecurso = computed<LeituraDoRecurso>(() => {
     this.espelho.versao();

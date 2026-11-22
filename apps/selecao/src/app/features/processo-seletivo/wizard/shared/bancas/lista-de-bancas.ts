@@ -56,3 +56,7 @@ export function gruposPorTipo<T extends BancaDeclarada>(bancas: readonly T[]): T
   }
   return [...grupos.values()];
 }
+
+export function algumaBancaEncerraORecurso(bancas: readonly BancaDeclarada[]): boolean {
+  return bancas.some((banca) => banca.copiaDoTipo?.encerraRecursoNaPrimeiraInstancia === true);
+}

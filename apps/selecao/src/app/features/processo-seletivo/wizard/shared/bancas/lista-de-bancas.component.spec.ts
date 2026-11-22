@@ -5,6 +5,7 @@ import type { BancaDeclarada } from '../../modelos/banca.models';
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import { umaBancaDeclarada } from './banca-declarada.testing';
 import { ListaDeBancasComponent } from './lista-de-bancas.component';
+import { recusasDasBancas } from './recusas-das-bancas';
 
 describe('ListaDeBancasComponent', () => {
   let fixture: ComponentFixture<ListaDeBancasComponent>;
@@ -37,16 +38,63 @@ describe('ListaDeBancasComponent', () => {
     document.body.appendChild(raiz());
   });
 
+  it('guarda as marcas do tipo ao acrescentar uma banca', () => {
+    fixture.componentRef.setInput('tipos', [
+      {
+        id: 'entrevista',
+        rotulo: 'Entrevista',
+        exigeDuasOuMaisBancas: true,
+        encerraRecursoNaPrimeiraInstancia: true,
+        papel: { codigo: 'AVALIA' },
+      },
+    ]);
+    fixture.detectChanges();
+    acrescentar();
+    expect(bancas[0].copiaDoTipo).toMatchObject({
+      rotulo: 'Entrevista',
+      exigeDuasOuMaisBancas: true,
+      encerraRecursoNaPrimeiraInstancia: true,
+      papel: { codigo: 'AVALIA' },
+    });
+  });
+
+  it('explica a ordem para a distribuição entre bancas do mesmo grupo', () => {
+    acrescentar();
+    acrescentar();
+    expect(raiz().querySelector('#bancas-ordem-entrevista')?.textContent?.trim()).toBe(
+      'A ordem das bancas do mesmo tipo é a ordem em que a API as considera para distribuir os recursos entre as que atendem o mesmo grupo de candidatos.',
+    );
+  });
+
   it('pede o tipo junto ao seletor e leva o foco a ele', async () => {
     vi.useFakeTimers();
     raiz().querySelector('button')?.click();
     fixture.detectChanges();
     vi.runAllTimers();
     expect(raiz().querySelector('select')?.getAttribute('aria-describedby')).toBe(
-      'bancas-tipo-erro',
+      'bancas-recurso-ajuda bancas-tipo-erro',
     );
     expect(document.activeElement).toBe(raiz().querySelector('select'));
     vi.useRealTimers();
+  });
+
+  it('explica, junto do seletor, quando a banca de análise de recursos é opcional e quando é obrigatória', () => {
+    const select = raiz().querySelector('select');
+    const ajuda = raiz().querySelector('#bancas-recurso-ajuda');
+
+    expect(select?.getAttribute('aria-describedby')).toBe('bancas-recurso-ajuda');
+    expect(ajuda?.textContent?.trim()).toBe(
+      'A banca de análise de recursos é opcional quando já existe banca que avalia o item contestado, e obrigatória quando o item contestado não é avaliado por banca, como o gabarito, a nota do ENEM e a classificação. Se ela faltar, a publicação mostra o que a API recusou.',
+    );
+  });
+
+  it('mostra o mesmo texto, sem depender das bancas declaradas', () => {
+    const texto = () => raiz().querySelector('#bancas-recurso-ajuda')?.textContent;
+    const semBancas = texto();
+
+    atualizar([umaBancaDeclarada({ tipoBancaId: 'entrevista' })]);
+
+    expect(texto()).toBe(semBancas);
   });
 
   it('acrescenta, move e retira com anúncio e foco', () => {
@@ -118,6 +166,12 @@ describe('ListaDeBancasComponent', () => {
       nota,
     });
     const grupo = (chave: string) => raiz().querySelector(`[role=group][id="bancas-${chave}"]`);
+    const distribuir = (lista: 'bancas' | 'bancasRequeridas', recusas: RecusaOrdenada[]) => {
+      const distribuidas = recusasDasBancas(recusas, lista, bancas);
+      fixture.componentRef.setInput('recusas', distribuidas.secao);
+      fixture.componentRef.setInput('recusasPorBanca', distribuidas.daBanca);
+      fixture.detectChanges();
+    };
 
     beforeEach(() => {
       atualizar([
@@ -153,5 +207,22 @@ describe('ListaDeBancasComponent', () => {
       expect(bloco?.textContent).toContain('Sobre uma banca que não está mais nesta tela.');
       expect(bloco?.getAttribute('tabindex')).toBe('-1');
     });
+
+    it.each(['bancas', 'bancasRequeridas'] as const)(
+      'não atribui à nova banca a recusa da banca retirada em %s',
+      (lista) => {
+        atualizar([]);
+        acrescentar();
+        const recusas = [recusa(`${lista}.${bancas[0].identificadorLocal}`, 'Recusa antiga.')];
+        distribuir(lista, recusas);
+        expect(grupo(bancas[0].identificadorLocal)?.textContent).toContain('Recusa antiga.');
+        botao('Retirar a Banca de entrevista 1')?.click();
+        distribuir(lista, recusas);
+        acrescentar();
+        distribuir(lista, recusas);
+        expect(grupo(bancas[0].identificadorLocal)?.textContent).not.toContain('Recusa antiga.');
+        expect(raiz().querySelector('#bancas-recusas')?.textContent).toContain('Recusa antiga.');
+      },
+    );
   });
 });
