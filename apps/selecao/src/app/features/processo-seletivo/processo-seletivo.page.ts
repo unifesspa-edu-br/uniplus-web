@@ -42,6 +42,7 @@ import { IdentificacaoPassoComponent } from './wizard/passos/identificacao/ident
 import { PagamentoPassoComponent } from './wizard/passos/pagamento/pagamento.component';
 import { VagasPassoComponent } from './wizard/passos/vagas/vagas.component';
 import { CATALOGOS_DO_CRONOGRAMA } from './wizard/passos/cronograma/catalogos/catalogos-do-cronograma';
+import { RecusasDaPublicacaoNoCronograma } from './wizard/passos/cronograma/servicos/recusas-da-publicacao-no-cronograma.service';
 import { CronogramaPassoComponent } from './wizard/passos/cronograma/cronograma.component';
 import { FormularioPassoComponent } from './wizard/passos/formulario/formulario.component';
 import { LeituraDoCadastroDePesos } from './wizard/passos/classificacao/leitura-do-cadastro-de-pesos.service';
@@ -100,6 +101,7 @@ import {
     ReleituraDoSnapshot,
     NumeracaoDasRespostasRecusadas,
     RecusasDaPublicacao,
+    RecusasDaPublicacaoNoCronograma,
   ],
   templateUrl: './processo-seletivo.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

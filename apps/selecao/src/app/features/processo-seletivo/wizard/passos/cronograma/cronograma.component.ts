@@ -62,7 +62,6 @@ import { EtapasDaFaseComponent } from './fase/etapas-da-fase.component';
     FormularioDoCronograma,
     RecusasDoServidorNasEtapas,
     RecusaDaGravacaoDasEtapas,
-    RecusasDaPublicacaoNoCronograma,
     RecusasDoServidorNasFases,
     EdicaoDaEtapa,
     LeituraDaLinhaDoTempo,

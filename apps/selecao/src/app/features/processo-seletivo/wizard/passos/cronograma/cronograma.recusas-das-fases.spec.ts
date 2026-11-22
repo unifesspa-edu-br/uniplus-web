@@ -79,6 +79,19 @@ describe('CronogramaPassoComponent: recusas da gravação das fases', () => {
     expect(resultado.messages).toEqual([RECUSADA_NOS_CAMPOS]);
   });
 
+  it('mostra no topo da fase as recusas de dois tipos de decisão com o mesmo código', async () => {
+    comFases(ID_AVALIACAO);
+    comEtapasEmFases(['AVALIACAO']);
+
+    await recusarFases([
+      { field: 'fases[0].tiposDeDecisao[0]', code: TIPO_INVALIDO, message: 'Primeiro tipo.' },
+      { field: 'fases[0].tiposDeDecisao[1]', code: TIPO_INVALIDO, message: 'Segundo tipo.' },
+    ]);
+
+    expect(bloco('fase-AVALIACAO-recusas')).toContain('Primeiro tipo.');
+    expect(bloco('fase-AVALIACAO-recusas')).toContain('Segundo tipo.');
+  });
+
   it('resume a recusa de campo que a fase não conhece, e não a põe no topo da fase', async () => {
     comFases(ID_AVALIACAO);
     comEtapasEmFases(['AVALIACAO']);
