@@ -333,15 +333,14 @@ describe('RecusasDoServidorNasFases: a conferir de novo', () => {
     expect(estado('produtos')).toBe(false);
   });
 
-  it('volta a valer a recusa que a resposta traz com a fase já alterada e depois desfeita', () => {
+  it('mantém a recusa a conferir ao desfazer a alteração e a reativa só na resposta seguinte', () => {
     alterar({ ...COM_REGRA, fim: '2026-04-01T18:00:00-03:00' });
-    registrar(
-      recusasNasFases,
-      2,
-      [{ ...COM_REGRA, fim: '2026-04-01T18:00:00-03:00' }],
-      [recusa('fases[0].produtos')],
-    );
+    expect(estado('produtos')).toBe(true);
 
+    alterar(COM_REGRA);
+    expect(estado('produtos')).toBe(true);
+
+    registrar(recusasNasFases, 2, [COM_REGRA], [recusa('fases[0].produtos')]);
     expect(estado('produtos')).toBe(false);
   });
 

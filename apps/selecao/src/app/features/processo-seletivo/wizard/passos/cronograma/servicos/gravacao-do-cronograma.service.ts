@@ -36,6 +36,11 @@ import { RecusasDoServidorNasFases } from './recusas-do-servidor-nas-fases.servi
 const UNIDADE_RESPONSAVEL_NAO_ENCONTRADA =
   'uniplus.selecao.fase_cronograma.unidade_responsavel_nao_encontrada';
 
+/** A falha não trouxe causa nenhuma: a API não respondeu sobre os campos, e não houve conferência. */
+function semCausas(problema: ProblemaDaGravacao): boolean {
+  return (problema.errors ?? []).length === 0;
+}
+
 /** A gravação foi superada por troca de processo ou de rascunho: nada a relatar ao operador. */
 const GRAVACAO_SUPERADA: ValidacaoDoPasso = { valid: false, messages: [] };
 
@@ -166,11 +171,20 @@ export class GravacaoDoCronograma {
       conteudo.fases,
     );
     if (this.superada(conteudo)) return GRAVACAO_SUPERADA;
-    if (!cronograma.ok) return this.recusarFases(conteudo, cronograma.problem);
+    if (!cronograma.ok) return this.tratarAFalhaDasFases(conteudo, cronograma.problem);
 
     this.recusasDasFases.limpar();
     this.recusas.limpar();
     return null;
+  }
+
+  /** Só a resposta que traz causas confere os campos e troca as recusas guardadas; a falha sem elas as mantém. */
+  private tratarAFalhaDasFases(
+    conteudo: ConteudoDaGravacao,
+    problema: ProblemaDaGravacao,
+  ): ValidacaoDoPasso {
+    if (!semCausas(problema)) return this.recusarFases(conteudo, problema);
+    return { valid: false, messages: this.resumoDaRecusaDasFases(problema, []) };
   }
 
   private recusarFases(
