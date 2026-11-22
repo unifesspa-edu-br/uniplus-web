@@ -59,7 +59,7 @@ describe('ListaDeBancasComponent', () => {
     expect(document.activeElement?.id).toBe('bancas-banca-1');
     expect(raiz().querySelector('[aria-label^="Mover"]')).toBeNull();
     acrescentar();
-    botao('Mover a Banca de entrevista 2 para antes da Banca de entrevista 1')?.click();
+    botao('Mover para antes: Banca de entrevista 2, antes da Banca de entrevista 1')?.click();
     vi.runAllTimers();
     fixture.detectChanges();
     expect(bancas[0].identificadorLocal).toBe('banca-2');
@@ -83,9 +83,26 @@ describe('ListaDeBancasComponent', () => {
   it('liga os botões ao aviso de ordem e não apresenta violações axe', async () => {
     acrescentar();
     acrescentar();
-    const mover = botao('Mover a Banca de entrevista 2 para antes da Banca de entrevista 1');
+    const mover = botao('Mover para antes: Banca de entrevista 2, antes da Banca de entrevista 1');
     expect(mover?.getAttribute('aria-describedby')).toBe('bancas-ordem-entrevista');
     expect((await axe.run(raiz())).violations).toEqual([]);
+  });
+
+  it('dá a cada botão um nome acessível que começa pelo texto visível (WCAG 2.5.3)', () => {
+    acrescentar();
+    acrescentar();
+    acrescentar();
+    const botoes = Array.from(raiz().querySelectorAll<HTMLButtonElement>('button[aria-label]'));
+    const visiveis = botoes.map((botao) => botao.textContent?.trim() ?? '');
+
+    expect(visiveis).toContain('Mover para antes');
+    expect(visiveis).toContain('Mover para depois');
+    botoes.forEach((botao, indice) => {
+      expect(botao.getAttribute('aria-label')?.startsWith(visiveis[indice])).toBe(true);
+    });
+    expect(
+      botao('Mover para depois: Banca de entrevista 2, depois da Banca de entrevista 3'),
+    ).not.toBeNull();
   });
 
   describe('recusas', () => {
