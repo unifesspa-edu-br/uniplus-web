@@ -6,6 +6,7 @@ import type { ProdutoDaFase } from '../../../processo-seletivo.models';
 import { ProcessoSeletivoStore } from '../../../processo-seletivo.store';
 import { CatalogoDeAtos } from '../../cronograma/catalogos/catalogo-de-atos.service';
 import { PAPEIS_ESCOLHIVEIS } from '../configuracao-da-fase';
+import type { RecusaOrdenada } from '../../../shared/recusas/ordem-das-recusas';
 import { RecusasDoCampoComponent } from '../../../shared/recusas/recusas-do-campo.component';
 import { FaseEmEdicao } from '../fase-em-edicao';
 
@@ -50,25 +51,57 @@ export class PublicacoesDaFaseComponent {
     return this.espelho.formulario()?.controls.emiteParecerIndividual.value ?? false;
   });
 
-  /** A recusa à linha inteira ou ao ato dela marca a publicação como inválida. */
+  /** As recusas da linha inteira ou do ato dela, que a "Publicação" anuncia. */
+  protected recusasDaPublicacao(posicao: number): readonly RecusaOrdenada[] {
+    return this.recusasDaLinha(posicao).filter((recusa) => !this.ehDoPapel(recusa, posicao));
+  }
+
+  /** As recusas ao papel da linha, que só o "Papel" anuncia. */
+  protected recusasDoPapel(posicao: number): readonly RecusaOrdenada[] {
+    return this.recusasDaLinha(posicao).filter((recusa) => this.ehDoPapel(recusa, posicao));
+  }
+
+  /** A recusa à linha, ao ato dela ou à lista inteira marca a publicação como inválida. */
   protected publicacaoRecusada(posicao: number): boolean {
-    const dela = [`produtos.${posicao}`, `produtos.${posicao}.atoCodigo`];
-    return this.recusasDaLinha(posicao).some((recusa) => dela.includes(recusa.campo));
+    return this.listaRecusada() || this.recusasDaPublicacao(posicao).length > 0;
   }
 
   /** A recusa ao papel da linha marca o papel como inválido. */
   protected papelRecusado(posicao: number): boolean {
-    const doPapel = `produtos.${posicao}.papel`;
-    return this.recusasDaLinha(posicao).some((recusa) => recusa.campo === doPapel);
+    return this.recusasDoPapel(posicao).length > 0;
   }
 
-  /**
-   * O que descreve cada controle de uma linha: a recusa da linha e a da lista, quando há, a ajuda
-   * e, na fase que publica preliminar, a orientação de publicar também o definitivo.
-   */
+  /** A lista inteira tem problema local ou recusa ainda vigente; a que será conferida de novo não conta. */
+  private listaRecusada(): boolean {
+    return (
+      this.problemaLocal('produtos') !== null ||
+      this.recusasDaLista().some((recusa) => !recusa.aConferir)
+    );
+  }
+
+  private ehDoPapel(recusa: RecusaOrdenada, posicao: number): boolean {
+    return recusa.campo === `produtos.${posicao}.papel`;
+  }
+
+  /** O que descreve a "Publicação" da linha: a recusa dela, a da lista, a ajuda e a orientação do definitivo. */
   protected idsQueDescrevemAPublicacao(posicao: number): string {
     const daLinha =
-      this.recusasDaLinha(posicao).length > 0 ? [this.idDaFase(`produto-${posicao}-erro`)] : [];
+      this.recusasDaPublicacao(posicao).length > 0
+        ? [this.idDaFase(`produto-${posicao}-publicacao-erro`)]
+        : [];
+    return this.comAAjudaDaLista(daLinha);
+  }
+
+  /** O que descreve o "Papel" da linha: a recusa dele, a da lista, a ajuda e a orientação do definitivo. */
+  protected idsQueDescrevemOPapel(posicao: number): string {
+    const doPapel =
+      this.recusasDoPapel(posicao).length > 0
+        ? [this.idDaFase(`produto-${posicao}-papel-erro`)]
+        : [];
+    return this.comAAjudaDaLista(doPapel);
+  }
+
+  private comAAjudaDaLista(daLinha: readonly string[]): string {
     const daLista = this.temMensagemNaLista() ? [this.idDaFase('produtos-erro')] : [];
     const orientacao = this.publicaPreliminar() ? [this.idDaFase('produtos-definitivo')] : [];
     return [...daLinha, ...daLista, this.idDaFase('produtos-ajuda'), ...orientacao].join(' ');

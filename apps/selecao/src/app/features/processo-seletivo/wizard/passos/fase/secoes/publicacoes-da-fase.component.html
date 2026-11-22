@@ -49,7 +49,7 @@
           [ngModel]="produto.papel ?? ''"
           [ngModelOptions]="{ standalone: true }"
           [disabled]="!store.aceitaEdicao() || !aceitaPapel(produto.atoCodigo)"
-          [attr.aria-describedby]="idsQueDescrevemAPublicacao($index)"
+          [attr.aria-describedby]="idsQueDescrevemOPapel($index)"
           [attr.aria-invalid]="papelRecusado($index) ? 'true' : null"
           (ngModelChange)="escolherPapel($index, $event)"
         >
@@ -69,14 +69,24 @@
           Remover
         </button>
       </div>
-      @let daLinha = recusasDaLinha($index);
-      @if (daLinha.length > 0) {
+      @let daPublicacao = recusasDaPublicacao($index);
+      @let doPapel = recusasDoPapel($index);
+      @if (daPublicacao.length > 0 || doPapel.length > 0) {
         <div
           class="form-grid__full"
           [attr.id]="idDaFase('produto-' + $index + '-erro')"
           tabindex="-1"
         >
-          <sel-recusas-do-campo [recusas]="daLinha" />
+          @if (daPublicacao.length > 0) {
+            <div [attr.id]="idDaFase('produto-' + $index + '-publicacao-erro')">
+              <sel-recusas-do-campo [recusas]="daPublicacao" />
+            </div>
+          }
+          @if (doPapel.length > 0) {
+            <div [attr.id]="idDaFase('produto-' + $index + '-papel-erro')">
+              <sel-recusas-do-campo [recusas]="doPapel" />
+            </div>
+          }
         </div>
       }
     </div>
