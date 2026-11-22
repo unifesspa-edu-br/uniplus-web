@@ -99,6 +99,8 @@ test.describe('Revisão e publicação — escala da nota final, matriz DS @ds',
     ).toBeVisible();
     expect(recebido.tentouPublicar).toBe(true);
     expect(recebido.publicou).toBe(false);
+    const resultadoComARecusa = await runAxeWcagAA(page);
+    expect(identificadoresDe(resultadoComARecusa)).toEqual([]);
     await page.getByRole('button', { name: /Ir para Fórmula de classificação/ }).click();
     const escala = page.getByLabel('Escala da nota final', { exact: true });
     await expect(escala).toHaveAttribute('aria-invalid', 'true');
