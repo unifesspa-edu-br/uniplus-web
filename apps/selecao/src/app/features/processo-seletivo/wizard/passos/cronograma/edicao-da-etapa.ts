@@ -10,12 +10,11 @@ import type { CaraterEscolhido, EtapaForm } from './cronograma-form';
 import { eliminaPorCarater, pontuaPorCarater } from './regras-da-etapa';
 
 /**
- * Banca, publicação, janela própria e recurso somem da tela da
- * etapa de nota do ENEM. Ficar com o que já estava declarado seria mandar ao servidor, a
- * cada gravação, o que ninguém vê e ele recusa.
+ * Publicação, janela própria e recurso somem da tela da etapa de nota do ENEM. Ficar com o que
+ * já estava declarado seria mandar ao servidor, a cada gravação, o que ninguém vê e ele recusa.
+ * A banca continua na tela e no rascunho.
  */
 function descartarOQueANotaDoEnemNaoTem(grupo: FormGroup<EtapaForm>): void {
-  grupo.controls.bancas.setValue([]);
   descartarEscalaEAvaliacao(grupo);
   grupo.controls.produtos.setValue([]);
   grupo.controls.inicio.setValue('');

@@ -65,8 +65,8 @@
       @if (notaDoEnem) {
         <p class="field__hint" [attr.id]="'cr-etapa-enem-' + posicao">
           A nota desta etapa é calculada pelo sistema a partir da nota do ENEM do candidato, e não
-          lançada. Por isso ela não tem banca, publicação, janela própria nem recurso: acontece na
-          janela da fase, sempre compõe a nota final e se contesta no recurso da fase que a divulga.
+          lançada. Por isso ela não tem publicação, janela própria nem recurso: acontece na janela
+          da fase, sempre compõe a nota final e se contesta no recurso da fase que a divulga.
         </p>
       }
     </div>
@@ -280,13 +280,11 @@
     ></sel-janela-da-etapa>
 
     <!-- Quem julga a etapa. -->
-    @if (!notaDoEnem) {
-      <sel-bancas-da-etapa
-        class="form-grid__full etapa-publica"
-        [grupo]="etapa"
-        [indiceDaEtapa]="posicao"
-      ></sel-bancas-da-etapa>
-    }
+    <sel-bancas-da-etapa
+      class="form-grid__full etapa-publica"
+      [grupo]="etapa"
+      [indiceDaEtapa]="posicao"
+    ></sel-bancas-da-etapa>
 
     @if (!notaDoEnem) {
       <sel-publicacoes-da-etapa

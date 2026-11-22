@@ -10,7 +10,6 @@ import { prazoDaSegundaInstanciaVisivel } from '../../shared/configuracao-do-rec
 import type { LocalDaRecusa } from '../../shared/recusas/local-da-recusa';
 import type { EtapaPontuada } from '../../processo-seletivo.models';
 import {
-  declaraNotaDoEnem,
   declaraNotaMaxima,
   eliminaPorCarater,
   type TipoDeEtapaDoCatalogo,
@@ -161,7 +160,6 @@ interface EtapaNaTela {
   /** A etapa tem nota lançada por banca: declara nota máxima, forma de avaliação e itens. */
   readonly comNota: boolean;
   readonly humana: boolean;
-  readonly doEnem: boolean;
 }
 
 const TEM_CONTROLE: Readonly<Record<CampoDaEtapa, (tela: EtapaNaTela) => boolean>> = {
@@ -172,7 +170,7 @@ const TEM_CONTROLE: Readonly<Record<CampoDaEtapa, (tela: EtapaNaTela) => boolean
   regraConsolidacao: ({ humana }) => humana,
   passoDoLancamento: ({ humana, etapa }) => humana && !escalaVale(etapa),
   escalaDeAtendimento: ({ humana, etapa }) => humana && (etapa.itensDeAvaliacao ?? []).length > 0,
-  bancas: ({ doEnem }) => !doEnem,
+  bancas: () => true,
 };
 
 function naTela(etapa: EtapaPontuada, tipo: TipoDeEtapaDoCatalogo | undefined): EtapaNaTela {
@@ -181,7 +179,6 @@ function naTela(etapa: EtapaPontuada, tipo: TipoDeEtapaDoCatalogo | undefined): 
     etapa,
     comNota,
     humana: comNota && etapa.formaDeAvaliacao === FORMA_HUMANA,
-    doEnem: declaraNotaDoEnem(etapa, tipo),
   };
 }
 

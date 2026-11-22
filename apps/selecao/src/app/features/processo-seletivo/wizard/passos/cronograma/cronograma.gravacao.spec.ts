@@ -87,9 +87,9 @@ describe('CronogramaPassoComponent: gravação', () => {
     controller.expectOne(ROTA_ETAPAS).flush(
       {
         type: 'about:blank',
-        title: 'Etapa de nota do ENEM não admite banca',
+        title: 'Etapa de nota do ENEM não compõe a nota',
         status: 422,
-        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
         traceId: '00000000000000000000000000000005',
       },
       { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
@@ -97,7 +97,32 @@ describe('CronogramaPassoComponent: gravação', () => {
 
     const resultado = await gravacao;
     expect(resultado.valid).toBe(false);
-    expect(resultado.messages?.join(' ')).toContain('quem julga o recurso');
+    expect(resultado.messages?.join(' ')).toContain('compõe a média');
+  });
+
+  it('a recusa por banca na etapa de nota do ENEM mostra o título da resposta, sem texto próprio da tela', async () => {
+    store.processoSeletivoId.set(PROCESSO_ID);
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+
+    const gravacao = componente.persistir();
+
+    controller.expectOne(ROTA_FASES).flush(null, { status: 204, statusText: 'No Content' });
+    await proximoPasso();
+    controller.expectOne(ROTA_ETAPAS).flush(
+      {
+        type: 'about:blank',
+        title: 'Recusa da API à banca da etapa',
+        status: 422,
+        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+        traceId: '00000000000000000000000000000006',
+      },
+      { status: 422, statusText: 'Unprocessable Content', headers: PROBLEM_JSON },
+    );
+
+    const resultado = await gravacao;
+    expect(resultado.valid).toBe(false);
+    expect(resultado.messages).toEqual(['Recusa da API à banca da etapa']);
   });
 
   it('mantém o texto da recusa do ENEM da raiz e remete aos campos que trazem os erros', async () => {
@@ -114,7 +139,7 @@ describe('CronogramaPassoComponent: gravação', () => {
         type: 'about:blank',
         title: 'Validação',
         status: 422,
-        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca',
+        code: 'uniplus.selecao.processo_seletivo.etapa_nota_enem_nao_compoe_nota',
         traceId: '00000000000000000000000000000007',
         errors: [
           {
@@ -129,7 +154,7 @@ describe('CronogramaPassoComponent: gravação', () => {
 
     const resultado = await gravacao;
     const texto = resultado.messages?.join(' ');
-    expect(texto).toContain('quem julga o recurso');
+    expect(texto).toContain('compõe a média');
     expect(texto).toContain('A mensagem de cada recusa está no campo a que ela se refere');
     expect(texto).not.toContain('A nota máxima precisa ser maior que zero');
   });

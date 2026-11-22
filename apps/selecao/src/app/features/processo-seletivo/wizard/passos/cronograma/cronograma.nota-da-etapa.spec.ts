@@ -1,4 +1,5 @@
 import type { FormGroup } from '@angular/forms';
+import { StatusProcesso, type ProcessoSeletivoDto } from '@uniplus/shared-data/selecao';
 import { describe, expect, it } from 'vitest';
 import type { EtapaForm } from './cronograma-form';
 import {
@@ -76,17 +77,46 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
       ]);
     });
 
-    it('avisa que a nota é calculada e não oferece banca, publicação nem janela própria', () => {
+    it('avisa que a nota é calculada e não oferece publicação nem janela própria', () => {
       comEtapaDoEnemAberta();
       expect(nativo.querySelector('#cr-etapa-enem-0')?.textContent).toContain('calculada');
       expect(nativo.querySelector('#cr-etapa-ini-0')).toBeNull();
       expect(nativo.querySelector('#cr-etapa-fim-0')).toBeNull();
-      expect(nativo.textContent).not.toContain('Quem julga esta etapa');
       expect(nativo.textContent).not.toContain('O que esta etapa publica');
       expect(nativo.querySelector('#cr-etapa-parecer-0')).not.toBeNull();
     });
 
-    it('escolher o tipo descarta banca, publicação, janela e recurso contado de publicação', () => {
+    it('mostra a seção de bancas e não diz que a etapa não tem banca', () => {
+      comEtapaDoEnemAberta();
+      expect(nativo.querySelector('#cr-etapa-bancas-titulo-0')?.textContent).toContain(
+        'Quem julga esta etapa',
+      );
+      expect(nativo.querySelector('#cr-etapa-enem-0')?.textContent).not.toContain('banca');
+    });
+
+    it('em consulta, lê quem julga a etapa e não lê o que ela publica', () => {
+      const etapa = comEtapaDoEnemAberta();
+      etapa.controls.bancas.setValue([
+        {
+          id: null,
+          identificadorLocal: 'banca-teste',
+          copiaDoTipo: null,
+          tipoBancaId: 'banca-1',
+          regraDeDeliberacao: null,
+        },
+      ]);
+      store.remoteSnapshot.set({
+        status: StatusProcesso.publicado,
+      } as unknown as ProcessoSeletivoDto);
+      detectar();
+
+      const leitura = (nativo.textContent ?? '').replace(/\s+/g, ' ');
+      expect(leitura).toContain('Quem julga esta etapa');
+      expect(leitura).toContain('banca-1');
+      expect(leitura).not.toContain('O que esta etapa publica');
+    });
+
+    it('escolher o tipo descarta publicação, janela e recurso contado de publicação e preserva a banca', () => {
       comFases(ID_AVALIACAO);
       comEtapasEmFases(['AVALIACAO']);
       const etapa = cronograma.etapas.at(0);
@@ -111,7 +141,7 @@ describe('CronogramaPassoComponent: nota da etapa', () => {
 
       edicao.escolherTipoEtapa(etapa, TIPO_ETAPA_NOTA_ENEM);
 
-      expect(etapa.controls.bancas.value).toEqual([]);
+      expect(etapa.controls.bancas.value.map((b) => b.identificadorLocal)).toEqual(['banca-teste']);
       expect(etapa.controls.produtos.value).toEqual([]);
       expect(etapa.controls.inicio.value).toBe('');
       expect(etapa.controls.recursos.value).toEqual([]);
