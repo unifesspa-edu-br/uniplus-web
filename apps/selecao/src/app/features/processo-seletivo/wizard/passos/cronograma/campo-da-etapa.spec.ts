@@ -155,17 +155,26 @@ describe('campoNaTelaDaEtapa', () => {
       false,
     );
     expect(campoNaTelaDaEtapa('notaMaxima', doEnem, tipoEnem)).toBe(false);
-    expect(campoNaTelaDaEtapa('bancas', doEnem, tipoEnem)).toBe(false);
   });
 
-  it('trata o campo de uma banca como a seção de bancas: some junto com ela na etapa do ENEM', () => {
+  it('mostra a seção de bancas também na etapa do ENEM', () => {
     const doEnem = umaEtapaDoCronograma({ tipoEtapaOrigemId: 'enem' });
     const tipoEnem = {
       nome: 'ENEM',
       avaliacao: { admitePontuacao: true, admiteEliminacao: false, notaDeOrigemNoEnem: true },
     };
 
-    expect(campoNaTelaDaEtapa('bancas.banca-1.quorum', doEnem, tipoEnem)).toBe(false);
+    expect(campoNaTelaDaEtapa('bancas', doEnem, tipoEnem)).toBe(true);
+  });
+
+  it('trata o campo de uma banca como a seção de bancas: aparece também na etapa do ENEM', () => {
+    const doEnem = umaEtapaDoCronograma({ tipoEtapaOrigemId: 'enem' });
+    const tipoEnem = {
+      nome: 'ENEM',
+      avaliacao: { admitePontuacao: true, admiteEliminacao: false, notaDeOrigemNoEnem: true },
+    };
+
+    expect(campoNaTelaDaEtapa('bancas.banca-1.quorum', doEnem, tipoEnem)).toBe(true);
     expect(campoNaTelaDaEtapa('bancas.banca-1.quorum', umaEtapaDoCronograma(), undefined)).toBe(
       true,
     );

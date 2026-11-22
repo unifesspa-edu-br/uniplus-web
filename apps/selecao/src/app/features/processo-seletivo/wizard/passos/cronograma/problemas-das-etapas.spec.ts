@@ -346,7 +346,7 @@ describe('etapa de nota do ENEM', () => {
     expect(problemasDaEnem({ carater: CaraterEtapa.eliminatoria, peso: '' })).toHaveLength(1);
   });
 
-  it('com banca, publicação, janela própria ou recurso contado de publicação é recusada', () => {
+  it('com publicação, janela própria ou recurso contado de publicação é recusada', () => {
     const recurso = (ancora: RecursoDaEtapa['ancora']): RecursoDaEtapa => ({
       ancora,
       regraCodigo: 'R',
@@ -356,24 +356,24 @@ describe('etapa de nota do ENEM', () => {
       leitura: umaLeituraDoRecurso(),
       procedimentos: [],
     });
-    expect(
-      problemasDaEnem({
-        bancas: [
-          {
-            id: null,
-            identificadorLocal: 'banca-teste',
-            copiaDoTipo: null,
-            tipoBancaId: 'banca-1',
-            regraDeDeliberacao: null,
-          },
-        ],
-      }),
-    ).toHaveLength(1);
     expect(problemasDaEnem({ inicio: '2027-01-10T08:00' })).toHaveLength(1);
     expect(problemasDaEnem({ fim: '2027-01-10T18:00' })).toHaveLength(1);
     expect(problemasDaEnem({ produtos: [{ atoCodigo: 'ATO', papel: null }] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [recurso('atoPublicado')] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [recurso('cienciaIndividual')] })).toHaveLength(1);
     expect(problemasDaEnem({ recursos: [] })).toEqual([]);
+  });
+
+  it('não é recusada por declarar banca: quem decide se a banca basta é a API, na publicação', () => {
+    const banca = (identificadorLocal: string): EtapaPontuada['bancas'][number] => ({
+      id: null,
+      identificadorLocal,
+      copiaDoTipo: null,
+      tipoBancaId: 'banca-1',
+      regraDeDeliberacao: null,
+    });
+
+    expect(problemasDaEnem({ bancas: [banca('banca-a')] })).toEqual([]);
+    expect(problemasDaEnem({ bancas: [banca('banca-a'), banca('banca-b')] })).toEqual([]);
   });
 });

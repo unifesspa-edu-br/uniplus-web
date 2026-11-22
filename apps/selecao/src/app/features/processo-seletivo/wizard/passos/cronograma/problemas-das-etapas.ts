@@ -18,8 +18,8 @@ import {
 
 /**
  * A etapa de nota do ENEM sempre compõe a média, e a nota dela é calculada, não julgada:
- * não tem banca, não publica ato próprio, não abre janela própria e não admite recurso: a nota
- * se contesta no recurso da fase que a divulga.
+ * não publica ato próprio, não abre janela própria e não admite recurso: a nota se contesta no
+ * recurso da fase que a divulga. A banca é admitida: a API decide, na publicação, se ela basta.
  */
 function problemasDaEtapaDeNotaDoEnem(etapa: EtapaPontuada): readonly string[] {
   const nome = etapa.nome.trim();
@@ -31,7 +31,7 @@ function problemasDaEtapaDeNotaDoEnem(etapa: EtapaPontuada): readonly string[] {
       : []),
     ...(declaraOQueANotaDoEnemNaoTem(etapa)
       ? [
-          `A etapa de nota do ENEM "${nome}" tem a nota calculada: não declara banca, publicação, janela própria nem recurso: a nota se contesta no recurso da fase que a divulga.`,
+          `A etapa de nota do ENEM "${nome}" tem a nota calculada: não declara publicação, janela própria nem recurso: a nota se contesta no recurso da fase que a divulga.`,
         ]
       : []),
   ];
@@ -43,7 +43,6 @@ function caraterNaoCompoeANota(etapa: EtapaPontuada): boolean {
 
 function declaraOQueANotaDoEnemNaoTem(etapa: EtapaPontuada): boolean {
   return (
-    etapa.bancas.length > 0 ||
     etapa.produtos.length > 0 ||
     etapa.inicio !== '' ||
     etapa.fim !== '' ||

@@ -164,13 +164,13 @@
           />
         }
         <ui-valor-em-consulta rotulo="Emite parecer individual" [valor]="etapa.parecerIndividual" />
+        <ui-valor-em-consulta
+          class="form-grid__full"
+          rotulo="Quem julga esta etapa"
+          seVazio="Nenhuma banca"
+          [valor]="etapa.bancas"
+        />
         @if (!etapa.notaDoEnem) {
-          <ui-valor-em-consulta
-            class="form-grid__full"
-            rotulo="Quem julga esta etapa"
-            seVazio="Nenhuma banca"
-            [valor]="etapa.bancas"
-          />
           <ui-valor-em-consulta
             class="form-grid__full"
             rotulo="O que esta etapa publica"

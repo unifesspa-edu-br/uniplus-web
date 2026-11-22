@@ -10,15 +10,18 @@ describe('recusas do servidor à etapa de nota do ENEM', () => {
       ),
     ).toContain('compõe a média');
     expect(
-      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca'),
-    ).toContain('não admite banca');
-    expect(
       recusaDaEtapaDeNotaDoEnem(
         'uniplus.selecao.processo_seletivo.etapa_nota_enem_com_produto_ou_recurso_em_ato',
       ),
     ).toContain('recurso da fase que a divulga');
     expect(
       recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_lancamento'),
+    ).toBeNull();
+  });
+
+  it('a recusa por banca na etapa de nota do ENEM não tem texto próprio: vale o da API', () => {
+    expect(
+      recusaDaEtapaDeNotaDoEnem('uniplus.selecao.processo_seletivo.etapa_nota_enem_com_banca'),
     ).toBeNull();
   });
 });
