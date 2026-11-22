@@ -45,6 +45,23 @@ describe('alvosDaRecusaDaFase', () => {
     ]);
   });
 
+  it('leva a recusa ao campo da regra de uma banca ao controle, ao bloco das recusas dele, ao do modo e ao das bancas', () => {
+    expect(alvosDaRecusaDaFase('bancasRequeridas.2.quorum', FASE, 0)).toEqual([
+      'fase-AVALIACAO-regra-2-quorum',
+      'fase-AVALIACAO-regra-2-quorum-recusas',
+      'fase-AVALIACAO-regra-2-modo-recusas',
+      'fase-AVALIACAO-bancas-erro',
+    ]);
+  });
+
+  it('leva a recusa à regra inteira da banca ao modo dela', () => {
+    expect(alvosDaRecusaDaFase('bancasRequeridas.0.regra', FASE, 0)).toEqual([
+      'fase-AVALIACAO-regra-0-modo',
+      'fase-AVALIACAO-regra-0-modo-recusas',
+      'fase-AVALIACAO-bancas-erro',
+    ]);
+  });
+
   it('leva a recusa do parecer individual à caixa de marcar', () => {
     expect(alvosDaRecusaDaFase('emiteParecerIndividual', FASE, 0)[0]).toBe(
       'fase-AVALIACAO-parecer',

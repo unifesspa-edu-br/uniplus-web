@@ -2,20 +2,26 @@ import type { EtapaPontuada } from '../../processo-seletivo.models';
 import type { ParteDaEtapa } from './parte-da-etapa';
 
 /** As listas da etapa cujos itens a recusa aponta pela posição que tinham quando foi enviada. */
-export type ListaComPosicao = 'recursos' | 'itensDeAvaliacao' | 'escalaDeAtendimento';
+export type ListaComPosicao = 'recursos' | 'itensDeAvaliacao' | 'escalaDeAtendimento' | 'bancas';
 
 export type ListasDaEtapa = Readonly<Record<ListaComPosicao, readonly unknown[]>>;
 
 /** Para cada posição antiga de cada lista, a posição de hoje, ou `null` quando o item saiu. */
 export type NovasPosicoes = Readonly<Record<ListaComPosicao, readonly (number | null)[]>>;
 
-const LISTAS: readonly ListaComPosicao[] = ['recursos', 'itensDeAvaliacao', 'escalaDeAtendimento'];
+const LISTAS: readonly ListaComPosicao[] = [
+  'recursos',
+  'itensDeAvaliacao',
+  'escalaDeAtendimento',
+  'bancas',
+];
 
 export function listasDaEtapa(etapa: EtapaPontuada): ListasDaEtapa {
   return {
     recursos: etapa.recursos,
     itensDeAvaliacao: etapa.itensDeAvaliacao ?? [],
     escalaDeAtendimento: etapa.escalaDeAtendimento ?? [],
+    bancas: etapa.bancas,
   };
 }
 
@@ -42,6 +48,7 @@ export function novasPosicoes(antes: ListasDaEtapa, depois: ListasDaEtapa): Nova
     recursos: doGrupo('recursos'),
     itensDeAvaliacao: doGrupo('itensDeAvaliacao'),
     escalaDeAtendimento: doGrupo('escalaDeAtendimento'),
+    bancas: doGrupo('bancas'),
   };
 }
 
@@ -50,7 +57,7 @@ export function todasNoLugar(novas: NovasPosicoes): boolean {
   return LISTAS.every((lista) => novas[lista].every((posicao, i) => posicao === i));
 }
 
-const CAMPO_DE_ITEM = /^(recursos|itensDeAvaliacao|escalaDeAtendimento)\.(\d+)(\..+)$/;
+const CAMPO_DE_ITEM = /^(recursos|itensDeAvaliacao|escalaDeAtendimento|bancas)\.(\d+)(\..+)$/;
 
 /** O campo da recusa na posição de hoje do item, ou `null` quando o item saiu. */
 export function campoNasNovasPosicoes(campo: string, novas: NovasPosicoes): string | null {

@@ -43,12 +43,27 @@ describe('campoDaRecusaDaEtapa', () => {
   });
 
   it.each([
-    'etapas[0].bancas[1]',
-    'etapas[0].bancas[0].regraDeDeliberacao.quorum',
-    'etapas[0].bancas[0].tipoBancaId',
-  ])('reúne sob as bancas o caminho %s', (field) => {
-    expect(campoDe(field)).toBe('bancas');
+    ['etapas[0].bancas[0].regraDeDeliberacao.quorum', 'bancas.0.quorum'],
+    ['etapas[0].bancas[3].regraDeDeliberacao.semUnanimidade', 'bancas.3.semUnanimidade'],
+    ['etapas[0].bancas[1].regraDeDeliberacao.modo', 'bancas.1.modo'],
+    ['etapas[0].bancas[1].regraDeDeliberacao.integrantes', 'bancas.1.integrantes'],
+  ])('leva %s ao campo %s da regra da banca', (field, campo) => {
+    expect(campoDe(field)).toBe(campo);
   });
+
+  it.each([
+    'etapas[0].bancas[2].regraDeDeliberacao',
+    'etapas[0].bancas[2].regraDeDeliberacao.campoQueNaoExiste',
+  ])('leva %s à regra inteira da banca', (field) => {
+    expect(campoDe(field)).toBe('bancas.2.regra');
+  });
+
+  it.each(['etapas[0].bancas[1]', 'etapas[0].bancas[0].tipoBancaId', 'etapas[0].bancas'])(
+    'reúne sob as bancas o caminho %s, que não é da regra',
+    (field) => {
+      expect(campoDe(field)).toBe('bancas');
+    },
+  );
 
   it.each([
     ['etapas[1].recursos[0].prazoValor', 'recursos.0.prazoValor'],
@@ -96,7 +111,9 @@ describe('campoDaRecusaDaEtapa', () => {
   });
 
   it('reconhece o campo sem distinguir a caixa', () => {
-    expect(campoDe('Etapas[0].Bancas[3].RegraDeDeliberacao.SemUnanimidade')).toBe('bancas');
+    expect(campoDe('Etapas[0].Bancas[3].RegraDeDeliberacao.SemUnanimidade')).toBe(
+      'bancas.3.semUnanimidade',
+    );
     expect(campoDe('Etapas[0].NotaMaxima')).toBe('notaMaxima');
   });
 
@@ -192,6 +209,31 @@ describe('campoNaTelaDaEtapa', () => {
       expect(campoNaTelaDaEtapa(campo, sem, undefined)).toBe(false);
       expect(campoNaTelaDaEtapa(campo, com, undefined)).toBe(true);
     }
+  });
+
+  it('mostra o campo da regra de uma banca só enquanto a banca existe na etapa', () => {
+    const comUmaBanca = umaEtapaDoCronograma({
+      bancas: [{ tipoBancaId: 'banca', regraDeDeliberacao: null }],
+    });
+
+    expect(campoNaTelaDaEtapa('bancas.0.quorum', comUmaBanca, undefined)).toBe(true);
+    expect(campoNaTelaDaEtapa('bancas.0.regra', comUmaBanca, undefined)).toBe(true);
+    expect(campoNaTelaDaEtapa('bancas.1.quorum', comUmaBanca, undefined)).toBe(false);
+  });
+
+  it('esconde o campo da regra da banca na etapa que traz a nota do ENEM', () => {
+    const doEnem = umaEtapaDoCronograma({
+      tipoEtapaOrigemId: 'enem',
+      bancas: [{ tipoBancaId: 'banca', regraDeDeliberacao: null }],
+    });
+    const tipoEnem = {
+      nome: 'ENEM',
+      admitePontuacao: true,
+      admiteEliminacao: false,
+      notaDeOrigemNoEnem: true,
+    };
+
+    expect(campoNaTelaDaEtapa('bancas.0.quorum', doEnem, tipoEnem)).toBe(false);
   });
 
   it('mostra o prazo da 2ª instância lido sem instância superior, para a pessoa poder retirá-lo', () => {

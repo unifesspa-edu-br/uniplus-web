@@ -35,7 +35,8 @@ interface LugarNaFase {
 /**
  * A fase enviada que o `field` aponta, ou `null` quando ele não nomeia fase, nomeia uma posição
  * que não foi enviada, nomeia um campo que a fase não conhece ou nomeia um campo cujo controle a
- * tela não mostra. A recusa a uma linha de publicações que a fase enviada não tinha fica na lista.
+ * tela não mostra. A recusa a uma linha de publicações ou de bancas que a fase enviada não tinha fica
+ * na lista.
  */
 function lugarNaFase(
   recusa: RecusaDoProblema,
@@ -46,7 +47,10 @@ function lugarNaFase(
   const fase = local?.dono === 'fase' ? enviadas[local.indice] : undefined;
   const campo = local === null ? null : campoDaRecusaDaFase(local);
   if (local === null || fase === undefined || campo === null) return null;
-  const doLugar = campoComLinhaNaLista(campo, fase.produtos.length);
+  const doLugar = campoComLinhaNaLista(campo, {
+    produtos: fase.produtos.length,
+    bancasRequeridas: fase.bancasRequeridas.length,
+  });
   return controleNaTela(fase.faseCanonicaId, doLugar) ? { local, fase, campo: doLugar } : null;
 }
 

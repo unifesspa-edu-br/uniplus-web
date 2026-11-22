@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
 import { ModoDeDeliberacao } from '@uniplus/shared-data/selecao';
 
 import type { RegraDeDeliberacaoDaBanca } from '../../modelos/deliberacao.models';
+import { RecusasDoCampoComponent } from '../recusas/recusas-do-campo.component';
+import { emOrdem, haRecusaAtiva, type RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import {
   alterarRegra,
   CRITERIOS_DE_VOTACAO,
@@ -16,10 +18,16 @@ import {
   RESULTADOS_SEM_UNANIMIDADE,
   type CampoDaRegra,
 } from './regra-de-deliberacao';
-import type { CampoDaBanca } from './recusas-da-regra';
+import {
+  CAMPOS_DA_BANCA,
+  type CampoDaBanca,
+  type RecusasDaBancaPorCampo,
+} from './recusas-da-regra';
 
 /** O valor do seletor de modo que declara a banca sem regra de deliberação. */
 const SEM_REGRA = '';
+
+const SEM_RECUSAS: readonly RecusaOrdenada[] = [];
 
 /**
  * Como a banca delibera: o modo, o tamanho do colegiado e, quando há votação, o quórum e o critério.
@@ -27,6 +35,7 @@ const SEM_REGRA = '';
  */
 @Component({
   selector: 'sel-regra-de-deliberacao',
+  imports: [RecusasDoCampoComponent],
   templateUrl: './regra-de-deliberacao.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: ':host { display: block; }',
@@ -36,8 +45,10 @@ export class RegraDeDeliberacaoComponent {
   /** Prefixo dos `id` dos controles: único na tela, para ligar rótulo, ajuda e erro. */
   readonly idBase = input.required<string>();
   readonly desabilitada = input(false);
-  /** Recusa por campo (conferência local ou resposta do servidor); `regra` é a regra inteira. */
+  /** O que a conferência local recusa em cada campo; `regra` é a regra inteira. */
   readonly erros = input<Partial<Record<CampoDaBanca, string>>>({});
+  /** O que o servidor recusou em cada campo; `regra` é a regra inteira. */
+  readonly recusas = input<RecusasDaBancaPorCampo>({});
 
   readonly regraChange = output<RegraDeDeliberacaoDaBanca | null>();
 
@@ -66,22 +77,53 @@ export class RegraDeDeliberacaoComponent {
 
   protected readonly semRegra = SEM_REGRA;
 
-  /** O modo mostra a recusa dele e a da regra inteira, que não tem controle próprio. */
-  protected readonly erroDoModo = computed(() => this.erros().modo ?? this.erros().regra);
+  /** Os campos que a tela mostra num controle próprio, fora o modo, nas condições de agora. */
+  private readonly comControleProprio = computed(() => {
+    const colegiada = this.colegiada();
+    return new Set<CampoDaBanca>([
+      ...(this.regra() === null ? [] : (['integrantes', 'suplentes'] as const)),
+      ...(colegiada ? (['encerramento', 'quorum', 'criterio'] as const) : []),
+      ...(colegiada && this.comDesempate() ? (['desempate'] as const) : []),
+      ...(colegiada && this.comSemUnanimidade() ? (['semUnanimidade'] as const) : []),
+    ]);
+  });
+
+  /** O modo mostra as recusas dele, as da regra inteira e as dos campos que a tela não mostra. */
+  private readonly recusasDoModo = computed(() => {
+    const comControle = this.comControleProprio();
+    const recusas = this.recusas();
+    return emOrdem(
+      CAMPOS_DA_BANCA.filter((campo) => !comControle.has(campo)).flatMap(
+        (campo) => recusas[campo] ?? SEM_RECUSAS,
+      ),
+    );
+  });
 
   protected id(campo: CampoDaBanca): string {
     return `${this.idBase()}-${campo}`;
   }
 
+  /** A recusa da conferência local; o modo mostra também a da regra inteira. */
   protected erro(campo: CampoDaBanca): string | undefined {
-    return this.erros()[campo];
+    const erros = this.erros();
+    return campo === 'modo' ? (erros.modo ?? erros.regra) : erros[campo];
   }
 
-  /** Os `id` que descrevem o controle: a dica do campo, e o erro quando há. */
+  protected recusasDe(campo: CampoDaBanca): readonly RecusaOrdenada[] {
+    return campo === 'modo' ? this.recusasDoModo() : (this.recusas()[campo] ?? SEM_RECUSAS);
+  }
+
+  /** O campo está inválido: a conferência local o recusa ou há recusa do servidor que ainda vale. */
+  protected invalido(campo: CampoDaBanca): boolean {
+    return !!this.erro(campo) || haRecusaAtiva(this.recusasDe(campo));
+  }
+
+  /** Os `id` que descrevem o controle: a dica do campo, o erro local e as recusas, quando há. */
   protected descritoPor(campo: CampoDaBanca, comDica = false): string | null {
     const ids = [
       ...(comDica ? [`${this.id(campo)}-dica`] : []),
       ...(this.erro(campo) === undefined ? [] : [`${this.id(campo)}-erro`]),
+      ...(this.recusasDe(campo).length === 0 ? [] : [`${this.id(campo)}-recusas`]),
     ];
     return ids.length === 0 ? null : ids.join(' ');
   }

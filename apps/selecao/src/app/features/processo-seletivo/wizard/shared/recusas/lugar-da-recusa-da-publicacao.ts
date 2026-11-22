@@ -52,7 +52,7 @@ interface RecusaComIdentificadores {
   readonly identificadores: readonly IdentificadorDoItem[];
 }
 
-const ITEM_DE_LISTA_DA_ETAPA = /^(itensDeAvaliacao|escalaDeAtendimento)\.\d+\..+$/;
+const ITEM_DE_LISTA_DA_ETAPA = /^(itensDeAvaliacao|escalaDeAtendimento|bancas)\.\d+\..+$/;
 
 function identificadorDa(
   identificadores: readonly IdentificadorDoItem[],
@@ -61,19 +61,26 @@ function identificadorDa(
   return identificadores.find((item) => item.lista === lista)?.identificador ?? null;
 }
 
-/** A lista inteira, quando o campo é de um item sem identificador: ele não é achado pela posição. */
+/**
+ * A lista inteira, quando o campo é de um item sem identificador: ele não é achado pela posição.
+ * É o caso da regra de uma banca, cuja recusa a publicação mostra no bloco das bancas.
+ */
 function campoDaListaDaEtapa(campo: CampoDaRecusaDaEtapa): CampoDaRecusaDaEtapa {
   const lista = ITEM_DE_LISTA_DA_ETAPA.exec(campo);
   return lista === null ? campo : (lista[1] as CampoDaRecusaDaEtapa);
 }
 
+/**
+ * A recusa da publicação a uma linha de publicações fica na linha; a recusa à regra de uma banca
+ * fica no bloco das bancas, e por isso nenhuma linha de banca conta como existente.
+ */
 function lugarNaFase(local: LocalDaRecusa, codigo: string, fases: readonly FaseDoCronograma[]) {
   const fase = fases.find((candidata) => candidata.codigo === codigo);
   if (fase === undefined) return { tipo: 'passo' } as const;
-  const campo = campoComLinhaNaLista(
-    campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE,
-    fase.produtos.length,
-  );
+  const campo = campoComLinhaNaLista(campoDaRecusaDaFase(local) ?? NO_TOPO_DA_FASE, {
+    produtos: fase.produtos.length,
+    bancasRequeridas: 0,
+  });
   return { tipo: 'fase', codigo, campo, parte: parteDaFase(local) } as const;
 }
 

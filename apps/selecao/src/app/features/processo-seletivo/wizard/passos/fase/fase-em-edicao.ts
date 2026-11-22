@@ -8,7 +8,12 @@ import { CatalogoDeAtos } from '../cronograma/catalogos/catalogo-de-atos.service
 import { CatalogoDeBancas } from '../cronograma/catalogos/catalogo-de-bancas.service';
 import { CatalogoDeFases } from '../cronograma/catalogos/catalogo-de-fases.service';
 import { RecusasDoServidorNasFases } from '../cronograma/servicos/recusas-do-servidor-nas-fases.service';
-import { NO_TOPO_DA_FASE, posicaoDaPublicacao, type CampoDaRecusaDaFase } from './campo-da-fase';
+import {
+  NO_TOPO_DA_FASE,
+  posicaoNaLista,
+  type CampoDaRecusaDaFase,
+  type ListaDaFase,
+} from './campo-da-fase';
 import { problemasDaFase, type AtoDoCatalogo, type ProblemaDaFase } from './configuracao-da-fase';
 import { produtosPreliminares } from './problemas-do-recurso-da-fase';
 import { bancasEscolhiveis, nomeDaBanca } from './secoes/bancas-da-fase';
@@ -16,12 +21,17 @@ import { EspelhoDaFase } from './espelho-da-fase';
 import { idDaFase } from './ids-da-fase';
 
 /**
- * A recusa fica no bloco da lista de publicações quando é à lista inteira, quando a pessoa já
- * alterou a fase por baixo dela (a conferir de novo) ou quando a linha que ela aponta não existe mais.
+ * A recusa fica no bloco da lista (de publicações ou de bancas) quando é à lista inteira, quando a
+ * pessoa já alterou a fase por baixo dela (a conferir de novo) ou quando a linha que ela aponta
+ * não existe mais.
  */
-function ficaNaListaDePublicacoes(recusa: RecusaOrdenada, quantidadeDeLinhas: number): boolean {
-  const posicao = posicaoDaPublicacao(recusa.campo);
-  if (posicao === null) return recusa.campo === 'produtos';
+function ficaNoBlocoDaLista(
+  recusa: RecusaOrdenada,
+  lista: ListaDaFase,
+  quantidadeDeLinhas: number,
+): boolean {
+  const posicao = posicaoNaLista(recusa.campo, lista);
+  if (posicao === null) return recusa.campo === lista;
   return recusa.aConferir || posicao >= quantidadeDeLinhas;
 }
 
@@ -162,7 +172,7 @@ export class FaseEmEdicao {
   readonly recusasDaLinha = (posicao: number): readonly RecusaOrdenada[] =>
     emOrdem(
       this.recusasDaFase().filter(
-        (recusa) => !recusa.aConferir && posicaoDaPublicacao(recusa.campo) === posicao,
+        (recusa) => !recusa.aConferir && posicaoNaLista(recusa.campo, 'produtos') === posicao,
       ),
     );
 
@@ -170,9 +180,25 @@ export class FaseEmEdicao {
   readonly recusasDaListaDePublicacoes = computed(() => {
     const linhas = this.faseDoRascunho()?.produtos.length ?? 0;
     return emOrdem(
-      this.recusasDaFase().filter((recusa) => ficaNaListaDePublicacoes(recusa, linhas)),
+      this.recusasDaFase().filter((recusa) => ficaNoBlocoDaLista(recusa, 'produtos', linhas)),
     );
   });
+
+  /** As recusas do bloco das bancas: as que não cabem na regra de uma banca, para o alto da lista. */
+  readonly recusasDaListaDeBancas = computed(() => {
+    const linhas = this.faseDoRascunho()?.bancasRequeridas.length ?? 0;
+    return emOrdem(
+      this.recusasDaFase().filter((recusa) =>
+        ficaNoBlocoDaLista(recusa, 'bancasRequeridas', linhas),
+      ),
+    );
+  });
+
+  /** O bloco das bancas tem o que mostrar: um problema local ou uma recusa do bloco. */
+  readonly temMensagemNaListaDeBancas = computed(
+    () =>
+      this.problemaLocal('bancasRequeridas') !== null || this.recusasDaListaDeBancas().length > 0,
+  );
 
   /** O bloco da lista de publicações tem o que mostrar: um problema local ou uma recusa do bloco. */
   readonly temMensagemNaListaDePublicacoes = computed(
