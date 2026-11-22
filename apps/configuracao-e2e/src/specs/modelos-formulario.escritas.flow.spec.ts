@@ -1,3 +1,4 @@
+import type { ModeloFormularioView } from '@uniplus/shared-data/configuracao';
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import { mockConfiguracaoRuntimeConfig } from '../support/runtime-config';
 
@@ -12,10 +13,8 @@ const ID_DO_NOVO_MODELO = '01960000-0000-7000-0000-0000000000a2';
 const MODELO = {
   id: ID_DO_MODELO,
   codigo: 'INSCRICAO',
-  nome: 'Inscrição',
-  descricao: null,
   finalidade: 'INSCRICAO',
-  tipoProcessoCodigo: null,
+  descritivo: { nome: 'Inscrição', descricao: null, tipoProcessoCodigo: null },
   ativo: true,
   conteudo: {
     titulo: 'Inscrição',
@@ -26,7 +25,7 @@ const MODELO = {
     grupos: [],
     documentosExigidos: [],
   },
-};
+} satisfies ModeloFormularioView;
 
 /** Atraso da recarga da lista após a escrita: o botão da linha ainda está indisponível quando a troca termina. */
 const ATRASO_DA_RECARGA_EM_MS = 1500;
