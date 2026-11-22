@@ -262,13 +262,19 @@ describe('PrecedenciasFasePage', () => {
         ),
       ].find((a) => a.textContent?.includes('Fases indisponíveis')) ?? null;
 
+    const antecessora = (linha: HTMLElement): string | undefined =>
+      linha
+        .querySelector('td[data-label="Fase antecessora"]')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim();
+
     it('a lista mostra o nome do catálogo e só o código da fase que o catálogo não tem', async () => {
       p = await montarPagina([inscricaoHomologacao, avaliacaoClassificacao], {
         catalogo: [{ codigo: 'AVALIACAO', nome: 'Avaliação' }],
       });
 
-      expect(linhas()[0].textContent).not.toContain('Inscrição');
-      expect(linhas()[1].textContent).toContain('Avaliação');
+      expect(antecessora(linhas()[0])).toBe('INSCRICAO');
+      expect(antecessora(linhas()[1])).toBe('AVALIACAO Avaliação');
     });
 
     it('a falha do catálogo deixa o formulário sem fases, sem se confundir com a falha da lista', async () => {

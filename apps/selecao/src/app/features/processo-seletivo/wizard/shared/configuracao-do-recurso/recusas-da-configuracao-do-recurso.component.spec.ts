@@ -1,5 +1,6 @@
+import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RecusaOrdenada } from '../recusas/ordem-das-recusas';
 import { RecusasDaConfiguracaoDoRecursoComponent } from './recusas-da-configuracao-do-recurso.component';
@@ -51,13 +52,22 @@ describe('RecusasDaConfiguracaoDoRecursoComponent', () => {
     ).toBe(true);
   });
 
-  it('pede o foco aos destinos do campo recusado quando a pessoa aciona "Ir ao campo"', () => {
-    const alvos = vi.fn((campo: string) => [`ids-de-${campo}`]);
-    const { raiz } = montar([recusa('prazoValor', 'O prazo não serve.', 1)], alvos);
+  describe('"Ir ao campo"', () => {
+    afterEach(() => document.getElementById('destino-do-foco')?.remove());
 
-    raiz.querySelector<HTMLButtonElement>('li button')?.click();
+    it('leva o foco ao controle do campo recusado', () => {
+      const destino = document.createElement('input');
+      destino.id = 'destino-do-foco';
+      document.body.append(destino);
+      const alvos = vi.fn((_campo: string) => ['inexistente', 'destino-do-foco']);
+      const { raiz } = montar([recusa('prazoValor', 'O prazo não serve.', 1)], alvos);
 
-    expect(alvos).toHaveBeenCalledWith('prazoValor');
+      raiz.querySelector<HTMLButtonElement>('li button')?.click();
+      TestBed.inject(ApplicationRef).tick();
+
+      expect(alvos).toHaveBeenCalledWith('prazoValor');
+      expect(document.activeElement).toBe(destino);
+    });
   });
 
   it('mantém à vista a recusa que a pessoa já tocou, com a nota de que será conferida de novo', () => {

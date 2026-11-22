@@ -124,11 +124,17 @@ describe('ParametrosDoRecursoComponent', () => {
     });
 
     it('emite o efeito e a guarda escolhidos pelo código', () => {
-      const { raiz, alteracoes } = montarParametrosDoRecurso();
+      const { raiz, alteracoes } = montarParametrosDoRecurso({
+        parametros: { ...PARAMETROS_SEM_INSTANCIA_SUPERIOR, efeitoSuspensivo: '' },
+      });
 
+      radio(raiz, `${P}-efeito-opcao-semEfeitoSuspensivo`)?.click();
       radio(raiz, `${P}-guarda-opcao-naoGuarda`)?.click();
 
-      expect(alteracoes).toEqual([{ campo: 'guardaDaVaga', valor: 'naoGuarda' }]);
+      expect(alteracoes).toEqual([
+        { campo: 'efeitoSuspensivo', valor: 'semEfeitoSuspensivo' },
+        { campo: 'guardaDaVaga', valor: 'naoGuarda' },
+      ]);
     });
   });
 

@@ -26,6 +26,15 @@ function comParametros(parcial: Partial<typeof PARAMETROS_DO_RECURSO>) {
   return { ...RECURSO_DA_FASE, parametros: { ...PARAMETROS_DO_RECURSO, ...parcial } };
 }
 
+/** A regra de recurso da fase como a tela a recebe depois de ler os parâmetros que o servidor deu. */
+function regraDaFaseLidaCom(parcial: Partial<typeof PARAMETROS_DO_RECURSO>) {
+  const dto = dtoComCronograma({
+    cronogramaFases: [faseDoServidor({ publicacoes: { regraRecurso: comParametros(parcial) } })],
+    etapas: [],
+  });
+  return hidratarDraft(DRAFT, dto).cronograma.fases[0]?.regraRecurso;
+}
+
 describe('hidratarDraft — cronograma e etapas', () => {
   it('projeta a fase pelo id de origem, não pelo id do snapshot', () => {
     const [fase] = hidratarDraft(DRAFT, COM_CRONOGRAMA).cronograma.fases;
@@ -249,23 +258,17 @@ describe('hidratarDraft — cronograma e etapas', () => {
   );
 
   it('lê o código de efeito e de guarda que o vocabulário atual não conhece, sem trocá-lo', () => {
-    const dto = dtoComCronograma({
-      cronogramaFases: [
-        faseDoServidor({
-          publicacoes: {
-            regraRecurso: comParametros({
-              efeitoSuspensivo: { codigo: 'efeitoDoFuturo' as never, rotulo: 'Efeito do futuro' },
-            }),
-          },
-        }),
-      ],
-      etapas: [],
+    const regra = regraDaFaseLidaCom({
+      efeitoSuspensivo: { codigo: 'efeitoDoFuturo' as never, rotulo: 'Efeito do futuro' },
+      guardaDaVaga: { codigo: 'guardaDoFuturo' as never, rotulo: 'Guarda do futuro' },
     });
 
-    const regra = hidratarDraft(DRAFT, dto).cronograma.fases[0]?.regraRecurso;
-
     expect(regra?.efeitoSuspensivo).toBe('efeitoDoFuturo');
-    expect(regra?.leitura.rotulos.efeitoSuspensivo).toBe('Efeito do futuro');
+    expect(regra?.guardaDaVaga).toBe('guardaDoFuturo');
+    expect(regra?.leitura.rotulos).toMatchObject({
+      efeitoSuspensivo: 'Efeito do futuro',
+      guardaDaVaga: 'Guarda do futuro',
+    });
   });
 
   it('projeta os parâmetros do recurso da etapa do mesmo jeito que os da fase', () => {
