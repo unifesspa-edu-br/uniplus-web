@@ -126,3 +126,8 @@ export const PERMISSOES_DO_LEANDRO_ADMINISTRA_TIPOS_E_FATOS = [
   'configuracao:tipos-documento:manter',
   'configuracao:fatos-candidato:consultar',
 ] as const;
+
+/** Quem administra o cadastro de tipos de banca não tem nenhuma outra concessão da Configuração. */
+export const PERMISSOES_DE_QUEM_ADMINISTRA_OS_TIPOS_DE_BANCA = [
+  'configuracao:tipos-banca:manter',
+] as const;

@@ -3,6 +3,8 @@ import type {
   FaseCronogramaDto,
   TipoMotivoDeDecisaoCodigo,
 } from '@uniplus/shared-data/selecao';
+import type { TipoDeBancaDoCatalogo } from './tipos-de-banca';
+import { VOCABULARIO_DE_TIPOS_DE_DECISAO } from '../support/vocabulario-de-tipos-de-decisao';
 
 /**
  * A fase e a etapa do cronograma como o servidor as devolve no detalhe do processo, com a mesma
@@ -157,7 +159,12 @@ export function comUnidadeNaFase(
 function tiposDoServidor(
   codigos: readonly string[],
 ): FaseCronogramaDto['publicacoes']['tiposDeDecisao'] {
-  return codigos.map((codigo) => ({ codigo: codigo as TipoMotivoDeDecisaoCodigo, rotulo: codigo }));
+  return codigos.map((codigo) => ({
+    codigo: codigo as TipoMotivoDeDecisaoCodigo,
+    rotulo:
+      VOCABULARIO_DE_TIPOS_DE_DECISAO.find((tipo) => tipo.codigo === codigo)?.rotulo ??
+      'Tipo de decisão não identificado',
+  }));
 }
 
 /** A mesma fase com os tipos de decisão que ela declara trocados. */
@@ -180,4 +187,63 @@ export function comTiposDeDecisaoNaEtapa(
     ...etapa,
     publicacoes: { ...etapa.publicacoes, tiposDeDecisao: tiposDoServidor(tiposDeDecisao) },
   };
+}
+
+type BancaDaEtapaLida = EtapaProcessoDto['bancas'][number];
+type BancaDaFaseLida = FaseCronogramaDto['bancasRequeridas'][number];
+
+/** O que a banca guarda do tipo ao ser criada: a origem, o código, o nome, o papel e as marcas. */
+function copiaDoTipoNaBanca(tipo: TipoDeBancaDoCatalogo) {
+  return {
+    tipoBancaOrigemId: tipo.id,
+    codigo: tipo.codigo,
+    nome: tipo.nome,
+    papel: tipo.papel,
+    exigeDuasOuMaisBancas: tipo.exigeDuasOuMaisBancas,
+    encerraRecursoNaPrimeiraInstancia: tipo.encerraRecursoNaPrimeiraInstancia,
+    tiposDeDecisaoJulgados: tipo.tiposDeDecisaoJulgados,
+  };
+}
+
+/** A banca da etapa como a leitura a devolve: a cópia do tipo, a posição e a regra declarada. */
+export function bancaDaEtapaDoServidor(
+  tipo: TipoDeBancaDoCatalogo,
+  parcial: Partial<BancaDaEtapaLida> = {},
+): BancaDaEtapaLida {
+  return {
+    id: '01a0d640-0000-7000-8000-00000000b001',
+    ...copiaDoTipoNaBanca(tipo),
+    posicaoNoTipo: 1,
+    regraDeDeliberacao: null,
+    ...parcial,
+  };
+}
+
+/** O id de uma banca que já foi gravada, pela ordem em que o cenário a conta. */
+export function idDaBancaGravada(ordem: number): string {
+  return `01a0d640-0000-7000-8000-00000000e${String(ordem).padStart(3, '0')}`;
+}
+
+/** A banca da fase como a leitura a devolve, sem candidatos atendidos definidos. */
+export function bancaDaFaseDoServidor(
+  tipo: TipoDeBancaDoCatalogo,
+  parcial: Partial<BancaDaFaseLida> = {},
+): BancaDaFaseLida {
+  return { ...bancaDaEtapaDoServidor(tipo), candidatosAtendidos: [], ...parcial };
+}
+
+/** A mesma fase com as bancas que ela requer trocadas. */
+export function comBancasNaFase(
+  fase: FaseCronogramaDto,
+  bancasRequeridas: FaseCronogramaDto['bancasRequeridas'],
+): FaseCronogramaDto {
+  return { ...fase, bancasRequeridas };
+}
+
+/** A mesma etapa com as bancas que a julgam trocadas. */
+export function comBancasNaEtapa(
+  etapa: EtapaProcessoDto,
+  bancas: EtapaProcessoDto['bancas'],
+): EtapaProcessoDto {
+  return { ...etapa, bancas };
 }

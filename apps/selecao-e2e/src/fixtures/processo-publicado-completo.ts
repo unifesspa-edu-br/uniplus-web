@@ -7,6 +7,7 @@ import type {
 } from '@uniplus/shared-data/selecao';
 import type { JsonDaApi } from '@uniplus/shared-e2e';
 import { PROCESSO_PUBLICADO_DA_MEDICINA } from './consulta-da-medicina';
+import { ID_DO_TIPO_ENTREVISTA } from './tipos-de-banca';
 import {
   etapaDoServidor,
   faseDoServidor,
@@ -50,7 +51,6 @@ const FASE_ID = '01a0d640-0000-7000-8000-0000000000a1';
 const FASE_CANONICA_ID = '01a0d640-0000-7000-8000-0000000000a2';
 const CODIGO_DA_FASE = 'COLETA_INSCRICAO';
 const TIPO_ETAPA_ID = '01a0d640-0000-7000-8000-0000000000b1';
-const TIPO_BANCA_ID = '01a0d640-0000-7000-8000-0000000000c1';
 const CATEGORIA_ID = '01a0d640-0000-7000-8000-0000000000c2';
 const PRODUTO_ID = '01a0d640-0000-7000-8000-0000000000d1';
 const BASE_LEGAL_BONUS_REGIONAL_ID = 'ba5e0000-0000-7000-8000-000000000001';
@@ -150,7 +150,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       bancas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000f2',
-          tipoBancaOrigemId: TIPO_BANCA_ID,
+          tipoBancaOrigemId: ID_DO_TIPO_ENTREVISTA,
           ...TIPO_DA_BANCA,
           nome: 'Banca geral',
           regraDeDeliberacao: null,
@@ -182,7 +182,7 @@ export const PROCESSO_PUBLICADO_COMPLETO = {
       bancasRequeridas: [
         {
           id: '01a0d640-0000-7000-8000-0000000000c3',
-          tipoBancaOrigemId: TIPO_BANCA_ID,
+          tipoBancaOrigemId: ID_DO_TIPO_ENTREVISTA,
           ...TIPO_DA_BANCA,
           nome: 'Banca geral',
           regraDeDeliberacao: null,

@@ -13,6 +13,7 @@ export {
   WCAG_AAA_APPLICABLE_TAGS,
 } from './lib/a11y';
 export type { RunAxeOptions } from './lib/a11y';
+export { assertOrdemDeFocoSegueOLeiaute } from './lib/a11y-ordem-de-foco';
 export { assertAaaVisualContract } from './lib/a11y-contrato-visual';
 export type { AaaVisualContractOptions } from './lib/a11y-contrato-visual';
 export { assertDocumentoSemRolagemVertical, assertReflowContract } from './lib/a11y-reflow';

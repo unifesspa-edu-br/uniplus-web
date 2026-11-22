@@ -53,10 +53,10 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     const etapa = page.locator('.etapa-bloco--aberta').last();
 
-    await etapa.getByLabel('Tipo').selectOption({ label: 'Análise Documental' });
+    await etapa.getByLabel('Tipo', { exact: true }).selectOption({ label: 'Análise Documental' });
 
-    const carater = etapa.getByLabel('Caráter');
-    await expect(carater.getByRole('option', { name: 'Eliminatória' })).toHaveCount(1);
+    const carater = etapa.getByLabel('Caráter', { exact: true });
+    await expect(carater.getByRole('option', { name: 'Eliminatória', exact: true })).toHaveCount(1);
     await expect(carater.getByRole('option', { name: 'Classificatória', exact: true })).toHaveCount(
       0,
     );
@@ -65,8 +65,8 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     ).toHaveCount(0);
 
     await carater.selectOption({ label: 'Eliminatória' });
-    await expect(etapa.getByLabel('Peso')).toHaveCount(0);
-    await expect(etapa.getByLabel('Nota mínima')).toBeVisible();
+    await expect(etapa.getByLabel('Peso', { exact: true })).toHaveCount(0);
+    await expect(etapa.getByLabel('Nota mínima', { exact: true })).toBeVisible();
   });
 
   /** Trocar para um tipo que pontua devolve as três escolhas, e o peso volta a fazer sentido. */
@@ -74,13 +74,13 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     const etapa = page.locator('.etapa-bloco--aberta').last();
 
-    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+    await etapa.getByLabel('Tipo', { exact: true }).selectOption({ label: 'Prova Objetiva' });
 
-    const carater = etapa.getByLabel('Caráter');
+    const carater = etapa.getByLabel('Caráter', { exact: true });
     await expect(carater.getByRole('option'), 'as três escolhas mais "Selecione…"').toHaveCount(4);
 
     await carater.selectOption({ label: 'Classificatória' });
-    await expect(etapa.getByLabel('Peso')).toBeVisible();
+    await expect(etapa.getByLabel('Peso', { exact: true })).toBeVisible();
   });
 
   /**
@@ -91,15 +91,15 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     const etapa = page.locator('.etapa-bloco--aberta').last();
 
-    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
-    await expect(etapa.getByLabel('Nota máxima')).toHaveCount(0);
+    await etapa.getByLabel('Tipo', { exact: true }).selectOption({ label: 'Prova Objetiva' });
+    await expect(etapa.getByLabel('Nota máxima', { exact: true })).toHaveCount(0);
 
-    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
-    await expect(etapa.getByLabel('Nota máxima')).toBeVisible();
+    await etapa.getByLabel('Caráter', { exact: true }).selectOption({ label: 'Classificatória' });
+    await expect(etapa.getByLabel('Nota máxima', { exact: true })).toBeVisible();
 
-    await etapa.getByLabel('Nota máxima').fill('10');
-    await etapa.getByLabel('Caráter').selectOption({ label: 'Eliminatória' });
-    await expect(etapa.getByLabel('Nota máxima')).toHaveValue('10');
+    await etapa.getByLabel('Nota máxima', { exact: true }).fill('10');
+    await etapa.getByLabel('Caráter', { exact: true }).selectOption({ label: 'Eliminatória' });
+    await expect(etapa.getByLabel('Nota máxima', { exact: true })).toHaveValue('10');
   });
 
   /**
@@ -111,36 +111,36 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     const etapa = page.locator('.etapa-bloco--aberta').last();
 
-    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
+    await etapa.getByLabel('Tipo', { exact: true }).selectOption({ label: 'Prova Objetiva' });
     await expect(etapa.getByRole('group', { name: 'Forma de avaliação' })).toHaveCount(0);
 
-    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
+    await etapa.getByLabel('Caráter', { exact: true }).selectOption({ label: 'Classificatória' });
     const forma = etapa.getByRole('group', { name: 'Forma de avaliação' });
     await expect(forma.getByRole('radio')).toHaveCount(2);
     await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(
       0,
     );
-    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toHaveCount(0);
 
     await forma.getByText('Humana — banca').click();
     const regra = etapa.getByRole('group', { name: 'Regra de consolidação das notas' });
     await expect(regra.getByRole('radio')).toHaveCount(2);
     await expect(regra).toContainText('mais de um avaliador corrige cada candidato');
     await regra.getByText(/CONSOLIDACAO-CORRECAO-INDEPENDENTE/).click();
-    await etapa.getByLabel('Nota máxima').fill('10');
-    await etapa.getByLabel('Passo do lançamento').fill('0,25');
+    await etapa.getByLabel('Nota máxima', { exact: true }).fill('10');
+    await etapa.getByLabel('Passo do lançamento', { exact: true }).fill('0,25');
 
     await expect(regra.getByRole('radio', { name: /CORRECAO-INDEPENDENTE/ })).toBeChecked();
-    await expect(etapa.getByLabel('Passo do lançamento')).toHaveValue('0,25');
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toHaveValue('0,25');
 
     await forma.getByText('Objetiva — gabarito ou leitora').click();
     await expect(etapa.getByRole('group', { name: 'Regra de consolidação das notas' })).toHaveCount(
       0,
     );
-    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toHaveCount(0);
 
     await forma.getByText('Humana — banca').click();
-    await expect(etapa.getByLabel('Passo do lançamento')).toHaveValue('');
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toHaveValue('');
     await expect(
       etapa
         .getByRole('group', { name: 'Regra de consolidação das notas' })
@@ -157,24 +157,24 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
     await acrescentarEtapa(page);
     const etapa = page.locator('.etapa-bloco--aberta').last();
 
-    await etapa.getByLabel('Tipo').selectOption({ label: 'Prova Objetiva' });
-    await etapa.getByLabel('Caráter').selectOption({ label: 'Classificatória' });
-    await etapa.getByLabel('Nota máxima').fill('10');
+    await etapa.getByLabel('Tipo', { exact: true }).selectOption({ label: 'Prova Objetiva' });
+    await etapa.getByLabel('Caráter', { exact: true }).selectOption({ label: 'Classificatória' });
+    await etapa.getByLabel('Nota máxima', { exact: true }).fill('10');
 
     const itens = etapa.getByRole('group', { name: 'Itens de avaliação', exact: true });
     await itens.getByRole('button', { name: 'Acrescentar item' }).click();
     const primeiro = itens.getByRole('group', { name: 'Item 1' });
-    await expect(primeiro.getByLabel('Rótulo')).toBeFocused();
-    await primeiro.getByLabel('Rótulo').fill('Clareza');
-    await primeiro.getByLabel('Pontuação máxima').fill('4');
+    await expect(primeiro.getByLabel('Rótulo', { exact: true })).toBeFocused();
+    await primeiro.getByLabel('Rótulo', { exact: true }).fill('Clareza');
+    await primeiro.getByLabel('Pontuação máxima', { exact: true }).fill('4');
 
     await expect(itens.getByText('Soma dos itens: 4 de 10')).toBeVisible();
     await expect(itens.getByText(/precisa ser igual à nota máxima/)).toBeVisible();
 
     await itens.getByRole('button', { name: 'Acrescentar item' }).click();
     const segundo = itens.getByRole('group', { name: 'Item 2' });
-    await segundo.getByLabel('Rótulo').fill('Método');
-    await segundo.getByLabel('Pontuação máxima').fill('6');
+    await segundo.getByLabel('Rótulo', { exact: true }).fill('Método');
+    await segundo.getByLabel('Pontuação máxima', { exact: true }).fill('6');
 
     await expect(itens.getByText('Soma dos itens: 10 de 10')).toBeVisible();
     await expect(itens.getByText(/precisa ser igual à nota máxima/)).toHaveCount(0);
@@ -186,44 +186,47 @@ test.describe('Etapa da fase — o que ela publica e que recurso admite', () => 
       .getByRole('group', { name: 'Forma de avaliação' })
       .getByText('Humana — banca')
       .click();
-    await etapa.getByLabel('Passo do lançamento').fill('0,5');
+    await etapa.getByLabel('Passo do lançamento', { exact: true }).fill('0,5');
     const escala = etapa.getByRole('group', { name: 'Escala de atendimento', exact: true });
     await escala.getByRole('button', { name: 'Usar a escala sugerida' }).click();
 
-    await expect(escala.getByRole('group', { name: 'Nível 1' }).getByLabel('Rótulo')).toHaveValue(
-      'Atendeu',
-    );
     await expect(
-      escala.getByRole('group', { name: 'Nível 2' }).getByLabel('Percentual da pontuação'),
+      escala.getByRole('group', { name: 'Nível 1' }).getByLabel('Rótulo', { exact: true }),
+    ).toHaveValue('Atendeu');
+    await expect(
+      escala
+        .getByRole('group', { name: 'Nível 2' })
+        .getByLabel('Percentual da pontuação', { exact: true }),
     ).toHaveValue('50');
     await expect(
-      escala.getByRole('group', { name: 'Nível 3' }).getByLabel('Percentual da pontuação'),
+      escala
+        .getByRole('group', { name: 'Nível 3' })
+        .getByLabel('Percentual da pontuação', { exact: true }),
     ).toHaveValue('0');
-    await expect(etapa.getByLabel('Passo do lançamento')).toHaveCount(0);
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toHaveCount(0);
 
     await itens.getByRole('button', { name: 'Remover o item Método' }).click();
     await itens.getByRole('button', { name: 'Remover o item Clareza' }).click();
     await expect(etapa.getByRole('group', { name: 'Escala de atendimento' })).toHaveCount(0);
-    await expect(etapa.getByLabel('Passo do lançamento')).toBeVisible();
+    await expect(etapa.getByLabel('Passo do lançamento', { exact: true })).toBeVisible();
   });
 
   /**
-   * A escolha da banca precisa de um indicador desenhado. O controle nativo fica
-   * escondido — é a caixa que mostra o estado —, e sem ela o operador clicava, o valor
-   * mudava por baixo e a tela não respondia nada.
+   * A banca da etapa é acrescentada pelo tipo, e cada uma aparece com o nome do tipo e a posição:
+   * a lista não marca mais um tipo por caixa de seleção.
    */
-  test('a banca traz a caixa que mostra a escolha', async ({ page }) => {
+  test('a banca é acrescentada pelo tipo e aparece com a posição', async ({ page }) => {
     await acrescentarEtapa(page);
 
     const bloco = blocoDaEtapa(page, 'Quem julga esta etapa');
-    const banca = bloco.getByText('Banca de análise documental');
-    await expect(banca).toBeVisible();
+    await bloco
+      .getByLabel('Tipo da banca a acrescentar', { exact: true })
+      .selectOption({ label: 'Banca de análise documental' });
+    await bloco.getByRole('button', { name: 'Acrescentar banca' }).click();
 
-    await expect(bloco.locator('.checkbox__box')).toHaveCount(1);
-    await expect(bloco.locator('.checkbox__box')).toBeVisible();
-
-    await banca.click();
-
-    await expect(bloco.locator('input[type="checkbox"]')).toBeChecked();
+    await expect(
+      bloco.getByRole('group', { name: 'Banca de análise documental 1', exact: true }),
+    ).toBeFocused();
+    await expect(bloco.locator('input[type="checkbox"]')).toHaveCount(0);
   });
 });
