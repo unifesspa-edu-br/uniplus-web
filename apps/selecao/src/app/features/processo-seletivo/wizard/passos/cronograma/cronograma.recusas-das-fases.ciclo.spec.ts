@@ -90,6 +90,19 @@ describe('CronogramaPassoComponent: ciclo de vida das recusas das fases', () => 
     );
   });
 
+  it('mantém as recusas quando a gravação seguinte falha sem resposta da API', async () => {
+    comFases(ID_AVALIACAO);
+    comUmaEtapa();
+    await recusarFases([doProduto(0)]);
+
+    const gravacao = componente.persistir();
+    controller.expectOne(ROTA_FASES).error(new ProgressEvent('error'));
+    await gravacao;
+    detectar();
+
+    expect(bloco('fase-AVALIACAO-produtos-erro')).toContain('Sem ato.');
+  });
+
   it('tira as recusas quando a gravação seguinte é aceita', async () => {
     comFases(ID_AVALIACAO);
     comUmaEtapa();
